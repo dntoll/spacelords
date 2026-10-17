@@ -6,6 +6,9 @@
 - Ge varje krav ett unikt, stabilt och läsbart namn i kebab-case, exempelvis
   `tom-startsida`. Använd samma namn i tester, dokumentation och relevanta
   kodkommentarer. Ändra inte namnet när formuleringen förtydligas.
+- Ange status för varje aktivt krav: **Ej implementerat**, **Delvis implementerat**
+  eller **Fullständigt implementerat**. Förklara vad som återstår för delvisa krav.
+  En informationsvy eller ett inaktivt byggalternativ är inte färdig spelmekanik.
 - `requirements.md` börjar med en sammanfattning/vision och därefter en
   sammanfattning av kravkategorierna. Flytta detaljer till egna Markdownfiler i
   `docs/` när översikten växer.
@@ -38,6 +41,8 @@
   `docs/domain-model.puml`. Hitta inte på domänbegrepp innan produktkrav finns.
 - Använd ESLint med typescript-eslint. Detta ersätter användarens ursprungliga
   JSLint-val efter uttrycklig ändring i samtalet.
+- Använd p5.js i instance mode för 2D-kartan. Håll domänmodell, hexgeometri och
+  controllers oberoende av p5. Övriga vyer och kontroller använder vanlig HTML.
 - Använd tydliga namn och Clean Code. Kommentera bara när kommentaren tillför
   något, exempelvis kravkoppling, motiv eller en oväntad begränsning.
 
