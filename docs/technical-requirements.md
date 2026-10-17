@@ -38,9 +38,25 @@ Produktkraven finns separat i [requirements.md](requirements.md).
 Processkrav kan inte bevisas med meningsfulla enhetstester. De följs upp genom
 verktygskontroller, CI och granskning enligt tabellen.
 
+## Driftsättning
+
+| Kravnamn                     | Krav                                                                                                                                                                                                                                   | Verifiering                                                                         |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `pages-underkatalog`         | Klienten ska kunna publiceras som statiska filer i `spacelords/` i `dntoll/dntoll.github.io`, på `https://curiousengineerstudio.se/spacelords/`. Alla klientresurser använder rätt basadress. Node-servern ingår inte i Pages-driften. | `npm run build:pages`, integrationstestet `pages-underkatalog` i den utökade sviten |
+| `bevara-befintlig-webbplats` | En driftsättning får endast ändra `spacelords/`. Bevara andra projekt, startsidan, navigationen, rotfiler, domän och befintlig Pages-konfiguration. Undvik samtidighetskonflikter med andra publiceringar.                             | Avgränsad diff i målrepot och kontroll före/efter publicering enligt instruktionen  |
+| `hemlighetsfri-publicering`  | Båda repona och byggresultatet är publika. Publicera inga hemligheter i filer, byggvariabler eller loggar. Eventuell framtida CI-autentisering hålls separat från källkod och klientbygge.                                             | Granskning av bygginnehåll, staged diff och eventuell framtida CI-konfiguration     |
+| `dokumenterad-driftsattning` | Bevara en verifierbar instruktion för bygge, avgränsad publicering, kontroll och återställning. Instruktionen innebär inte automatisk publicering.                                                                                     | `docs/deployment.md` och hänvisning i `AGENTS.md`                                   |
+
+Produktkravet `direktatkomst-utan-lankar` verifieras genom att driftsättningsdiffen
+bara omfattar appens egen katalog. Startsida och navigation ska inte ändras.
+Inga konstlade enhetstester behövs för en dokumenterad publiceringsprocess.
+
 ## Beslut och ändringar
 
 - 2026-10-17: ESLint med typescript-eslint ersätter det tidigare JSLint-kravet på
   användarens förslag, eftersom projektet ska skrivas i TypeScript.
 - 2026-10-17: Läsbara kravnamn och en separat teknisk kravlista tillkommer på
   användarens begäran.
+- 2026-10-17: GitHub Pages blir mål för den statiska klienten under `/spacelords/`.
+  Lokal Node-drift finns kvar; Pages kan inte köra servern. Befintlig webbplats
+  och andra projekt ska bevaras och inga länkar till appen ska läggas till där.

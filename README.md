@@ -36,6 +36,7 @@ inställningen. Vite byter inte port automatiskt.
 | `npm run format`        | Formatera kod och dokumentation med Prettier.                   |
 | `npm run check`         | Format, lint, båda testsviterna, typkontroll och bygge.         |
 | `npm run build`         | Skapa `dist/client` och `dist/server`.                          |
+| `npm run build:pages`   | Bygg enbart klienten för `/spacelords/` i `dist/pages`.         |
 | `npm start`             | Kör produktionsbygget på port 3000. Bygg först.                 |
 
 GitHub Actions kör kvalitetskontroller och båda testsviterna vid push och pull
@@ -82,3 +83,11 @@ Tekniska MVC-klasser är inte verksamhetsdomänens klasser.
 VS Code-inställningar, tilläggsförslag och felsökningskonfiguration finns i
 `.vscode/`. Använd en arbetsbranch och gör sammanhängande commits med tydliga
 meddelanden. Reproducera buggar med ett misslyckat regressionstest före rättning.
+
+## Driftsättning
+
+Målet för den statiska klienten är
+[curiousengineerstudio.se/spacelords/](https://curiousengineerstudio.se/spacelords/).
+Följ [driftsättningsinstruktionen](docs/deployment.md). Endast `spacelords/` i
+`dntoll/dntoll.github.io` får ändras. Ingen automatisk publicering är aktiverad.
+Node-servern kan inte köras på GitHub Pages.

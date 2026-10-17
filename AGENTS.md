@@ -46,3 +46,16 @@
 - Arbeta i branches, normalt med prefixet `codex/`, inte direkt på `main`.
 - Gör regelbundna, sammanhängande commits med tydliga commitmeddelanden.
 - Kör relevanta kontroller före commit. Bevara användarens befintliga ändringar.
+
+## Driftsättning
+
+- Läs och följ `docs/deployment.md` inför driftsättning. Målet är
+  `https://curiousengineerstudio.se/spacelords/`, med enbart klientbygget i
+  `spacelords/` i `dntoll/dntoll.github.io`.
+- Ändra aldrig andra publiceringskataloger, startsida, navigation, rotens
+  `CNAME`, DNS eller Pages-inställningar för att publicera Spacelords. Skapa inga
+  länkar till appen från den befintliga webbplatsen.
+- Båda repona och allt klientinnehåll är publika. Lägg aldrig hemligheter i kod,
+  dokumentation, byggfiler, webbläsarvariabler eller loggar.
+- Att förbereda ett bygge eller uppdatera instruktionen innebär inte att
+  driftsätta. Publicera först när användaren beställer en driftsättning.
