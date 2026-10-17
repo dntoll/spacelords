@@ -8,10 +8,13 @@ import {
 } from './HexCoordinate.js';
 import type { PlanetSnapshot } from './Planet.js';
 
+export type PlanetTab = 'overview' | 'resources' | 'buildings';
+
 export type Screen = 'map' | 'planet' | 'research';
 
 export interface AppReadModel {
   readonly screen: Screen;
+  readonly planetTab: PlanetTab;
   readonly playerName: string;
   readonly radius: number;
   readonly cells: readonly MapCell[];
@@ -25,6 +28,7 @@ export class AppModel {
   readonly #camera: Camera;
   #selected: HexCoordinate;
   #screen: Screen = 'map';
+  #planetTab: PlanetTab = 'overview';
 
   constructor(galaxy = createExampleGalaxy()) {
     this.#galaxy = galaxy;
@@ -36,6 +40,7 @@ export class AppModel {
   get snapshot(): AppReadModel {
     return Object.freeze({
       screen: this.#screen,
+      planetTab: this.#planetTab,
       playerName: this.#galaxy.player.name,
       radius: this.#galaxy.radius,
       cells: this.#galaxy.mapSnapshot(),
@@ -59,6 +64,10 @@ export class AppModel {
 
   openPlanet(): void {
     if (this.#galaxy.ownedPlanetAt(this.#selected)) this.#screen = 'planet';
+  }
+
+  showPlanetTab(tab: PlanetTab): void {
+    if (this.#screen === 'planet') this.#planetTab = tab;
   }
 
   openResearch(): void {

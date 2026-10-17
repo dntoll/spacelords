@@ -27,14 +27,19 @@ och överlever vybyte. Inga nya serveradresser behövs.
 
 Musdrag och en fingerkontakt panorerar. Mushjul, nypgest och knappar zoomar.
 Klick väljer ruta, men ett drag ska inte göra det. Kamera och zoom begränsas så
-att kartan inte tappas bort; hemknappen återställer läget. Knappar och
-tangentbordsstöd kompletterar canvas, och panelen är en sidopanel på dator men
-placeras under kartan på liten skärm.
+att kartan inte tappas bort; `Homeworld` återställer läget. `Known objects` och
+tangentbordsstöd kompletterar canvas. Kartan fyller spelytan; kompakta kontroller
+och en panel för vald himlakropp ligger ovanpå. På mobil ligger panelen vid
+nederkanten. Ingen vy använder sidscroll. Detta ersätter den tidigare staplade
+mobillayouten efter användarens uttryckliga ändring.
 
-Hemplanetens vy visar namn, typ, ägare, befolkning, gästvänlighet, råvaror per år
-och byggplatser. Forskningsstationen visas som tillgänglig från start, men
-byggfunktionen är tydligt inaktiv. Forskningsvyn visar enbart information, utan
-tekniknoder. Båda vyerna har en tydlig tillbaka-knapp.
+Planetens `Overview` visar namn, typ, `Owner`, `Population`, `Habitability` och
+`Used build slots`. `Resources` visar `Iron`, `Water` och `Oil` i `units/year`.
+`Buildings` visar kommande `Research station` och lediga byggplatser. Flikval
+förmedlas via controller och sparas i applikationsmodellen; endast aktiv panel
+renderas. Tangentbordets vänster/höger samt Home/End växlar flik.
+`Research` visar enbart information, utan tekniknoder. `Build research station`
+är tydligt inaktiv och båda vyerna har `Back to map`.
 
 ## Kravkoppling och verifiering
 
@@ -56,15 +61,31 @@ invånare, 100 procents gästvänlighet och sex lediga byggplatser. Det finns in
 byggorder eller forskningsval. Gasplaneterna finns i världen men är ännu dolda
 för spelarens lokala sikt.
 
-Kända objekt kan väljas med HTML-knappar. Kartan har även tangentbordsstöd:
+Kända objekt kan väljas via `Known objects`. Kartan har även tangentbordsstöd:
 piltangenter panorerar, plus/minus zoomar, Home återgår och Enter väljer centrum.
 Pekargester och kamera är separata från både DOM och p5. Endast synliga objekt
 lämnas till ritning och tillgänglighetstext.
 
-Verifieringen omfattar 28 snabba enhetstester och 21 browserkontroller på fyra
+Verifieringen omfattar snabba enhetstester och browserkontroller på fyra
 projekt: desktop Chromium, telefon Chromium, telefon WebKit och surfplatta
-WebKit. Sju enhetsspecifika browserfall hoppas avsiktligt över: musdrag på
-touchenheter samt touch på desktop och native multitouch där Playwright saknar
-det gränssnittet. Inga misslyckade tester undantas. HTTP-sviten omfattar fem
-kontroller. Browserresultat och skärmbilder ligger i den ignorerade katalogen
-`test-results/`. Publicering beställs fortsatt separat.
+WebKit. Enhetsspecifika fall hoppas endast över när inmatningsmetoden inte finns,
+exempelvis multitouch via CDP i WebKit. Inga misslyckade tester undantas.
+HTTP-sviten omfattar fem kontroller. Browserresultat och skärmbilder ligger i den
+ignorerade katalogen `test-results/`. Publicering beställs fortsatt separat.
+
+## Skärmfyllande vyer och engelska
+
+`viewport-game-layout` skyddas av enhetstest för fliknavigation och browsertester
+som kontrollerar att karta, planetens tre flikar och `Research` ryms utan scroll
+eller klippta kontroller. Förutom ordinarie enheter provas 320×568, 844×390 och
+667×320. Kartans canvas ska uppta mer än 80 procent av fönstrets yta.
+
+`english-game` och `focused-interface` verifieras i vytester: användbara
+objektbeskrivningar och engelska handlingar finns kvar utan introduktionsslogans.
+Browsertester följer engelska synliga och tillgängliga namn, resurser och
+språkattribut. Kod och spel är engelska; svensk dokumentation återger speltermer
+på engelska. De befintliga kravnamen är oförändrade.
+
+Regressionstestet för vertikal scroll misslyckades mot den tidigare
+mobillayouten före ändringen. Vyerna använder nu fönstrets dynamiska höjd och
+informationsflikar. Kartans storlek observeras även vid ändrad fönsterstorlek.

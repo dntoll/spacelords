@@ -7,7 +7,6 @@ async function canvas(page: Page): Promise<Locator> {
 }
 
 async function center(map: Locator): Promise<{ x: number; y: number }> {
-  await map.scrollIntoViewIfNeeded();
   const box = await map.boundingBox();
   if (!box) throw new Error('Map is not visible.');
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
@@ -43,18 +42,14 @@ test('hexkarta / lokal-sikt / synliga-stjarnor: paints a real canvas without hid
     return values.size;
   });
   expect(colors).toBeGreaterThan(10);
-  await expect(
-    page.getByRole('button', { name: 'Tellus', exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: 'Vesta', exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: 'Nadir', exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: 'Aster', exact: true }),
-  ).toBeVisible();
+  expect(
+    await page
+      .getByRole('combobox', { name: 'Known objects' })
+      .locator('option')
+      .allTextContents(),
+  ).toEqual(
+    expect.arrayContaining(['Tellus', 'Vesta', 'Sol', 'Nadir', 'Aster']),
+  );
   expect(await page.locator('body').innerHTML()).not.toMatch(
     /Brontes|Nadir I|Aster I/,
   );
@@ -62,41 +57,43 @@ test('hexkarta / lokal-sikt / synliga-stjarnor: paints a real canvas without hid
     path: testInfo.outputPath('starmap.png'),
     fullPage: true,
   });
-  await page.getByRole('button', { name: 'Vesta', exact: true }).click();
+  await page
+    .getByRole('combobox', { name: 'Known objects' })
+    .selectOption({ label: 'Vesta' });
   await expect(
-    page.getByRole('button', { name: 'Öppna planet', exact: true }),
+    page.getByRole('button', { name: 'Open planet', exact: true }),
   ).toHaveCount(0);
 });
 
 test('planetinformation / visa-byggalternativ / vynavigation: preserves camera through both views', async ({
   page,
 }, testInfo) => {
-  await page.getByRole('button', { name: 'Zooma in', exact: true }).click();
-  const zoom = await page.getByLabel('Kartans zoom').textContent();
-  await page.getByRole('button', { name: 'Öppna planet', exact: true }).click();
+  await page.getByRole('button', { name: 'Zoom in', exact: true }).click();
+  const zoom = await page.getByLabel('Map zoom').textContent();
+  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Tellus', exact: true }),
   ).toBeVisible();
-  await expect(page.getByText('42 enheter/år', { exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: 'Resources', exact: true }).click();
+  await expect(page.getByText('42 units/year', { exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: 'Buildings', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Bygg forskningsstation' }),
+    page.getByRole('button', { name: 'Build research station' }),
   ).toBeDisabled();
   await page.screenshot({
     path: testInfo.outputPath('planet.png'),
     fullPage: true,
   });
-  await page
-    .getByRole('button', { name: 'Tillbaka till kartan', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Back to map', exact: true }).click();
   await canvas(page);
-  await expect(page.getByLabel('Kartans zoom')).toHaveText(zoom ?? '');
+  await expect(page.getByLabel('Map zoom')).toHaveText(zoom ?? '');
   for (let count = 0; count < 3; count += 1) {
-    await page.getByRole('button', { name: 'Forskning', exact: true }).click();
+    await page.getByRole('button', { name: 'Research', exact: true }).click();
     await expect(
-      page.getByRole('heading', { name: 'Forskning', exact: true }),
+      page.getByRole('heading', { name: 'Research', exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByText('Forskning kommer senare', { exact: true }),
+      page.getByText('Research is not available yet', { exact: true }),
     ).toBeVisible();
     await expect(page.locator('canvas')).toHaveCount(0);
     if (count === 0)
@@ -105,7 +102,7 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
         fullPage: true,
       });
     await page
-      .getByRole('button', { name: 'Tillbaka till kartan', exact: true })
+      .getByRole('button', { name: 'Back to map', exact: true })
       .click();
     await canvas(page);
   }
@@ -113,10 +110,10 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
   await expect(
     page.getByRole('heading', { name: 'Tellus', exact: true }),
   ).toBeVisible();
-  await expect(page.getByLabel('Kartans zoom')).toHaveText(zoom ?? '');
+  await expect(page.getByLabel('Map zoom')).toHaveText(zoom ?? '');
   await page.reload();
   await canvas(page);
-  await expect(page.getByLabel('Kartans zoom')).toHaveText('100 %');
+  await expect(page.getByLabel('Map zoom')).toHaveText('100%');
 });
 
 test('kartnavigation: keyboard pans and zooms, canvas hit-testing selects the home planet', async ({
@@ -129,14 +126,16 @@ test('kartnavigation: keyboard pans and zooms, canvas hit-testing selects the ho
   await map.press('ArrowRight');
   await expect(position).not.toHaveText(before ?? '');
   await map.press('+');
-  await expect(page.getByLabel('Kartans zoom')).toHaveText('120 %');
+  await expect(page.getByLabel('Map zoom')).toHaveText('120%');
   await map.press('Home');
   await expect(position).toHaveText(before ?? '');
-  await page.getByRole('button', { name: 'Vesta', exact: true }).click();
+  await page
+    .getByRole('combobox', { name: 'Known objects' })
+    .selectOption({ label: 'Vesta' });
   const point = await center(map);
   await page.mouse.click(point.x, point.y);
   await expect(
-    page.getByRole('button', { name: 'Öppna planet', exact: true }),
+    page.getByRole('button', { name: 'Open planet', exact: true }),
   ).toBeVisible();
 });
 
@@ -155,13 +154,13 @@ test('kartnavigation: a mouse drag pans without changing selection; wheel zoom s
   await page.mouse.up();
   await expect(position).not.toHaveText(before ?? '');
   await expect(
-    page.getByRole('button', { name: 'Öppna planet', exact: true }),
+    page.getByRole('button', { name: 'Open planet', exact: true }),
   ).toBeVisible();
   await page.mouse.wheel(0, -100);
-  await expect(page.getByLabel('Kartans zoom')).not.toHaveText('100 %');
-  await page.getByRole('button', { name: 'Hemplanet', exact: true }).click();
+  await expect(page.getByLabel('Map zoom')).not.toHaveText('100%');
+  await page.getByRole('button', { name: 'Homeworld', exact: true }).click();
   await expect(position).toHaveText(before ?? '');
-  await expect(page.getByLabel('Kartans zoom')).toHaveText('100 %');
+  await expect(page.getByLabel('Map zoom')).toHaveText('100%');
 });
 
 test('kartnavigation: native touch selects the planet', async ({
@@ -170,11 +169,13 @@ test('kartnavigation: native touch selects the planet', async ({
 }) => {
   test.skip(!isMobile, 'Touch is exercised by phone and tablet projects.');
   const map = await canvas(page);
-  await page.getByRole('button', { name: 'Vesta', exact: true }).tap();
+  await page
+    .getByRole('combobox', { name: 'Known objects' })
+    .selectOption({ label: 'Vesta' });
   const point = await center(map);
   await page.touchscreen.tap(point.x, point.y);
   await expect(
-    page.getByRole('button', { name: 'Öppna planet', exact: true }),
+    page.getByRole('button', { name: 'Open planet', exact: true }),
   ).toBeVisible();
 });
 
@@ -208,9 +209,9 @@ test('kartnavigation: native touch drag and pinch preserve the selected planet',
   });
   await expect(position).not.toHaveText(before ?? '');
   await expect(
-    page.getByRole('button', { name: 'Öppna planet', exact: true }),
+    page.getByRole('button', { name: 'Open planet', exact: true }),
   ).toBeVisible();
-  const zoom = await page.getByLabel('Kartans zoom').textContent();
+  const zoom = await page.getByLabel('Map zoom').textContent();
   await session.send('Input.dispatchTouchEvent', {
     type: 'touchStart',
     touchPoints: [
@@ -232,9 +233,9 @@ test('kartnavigation: native touch drag and pinch preserve the selected planet',
     touchPoints: [],
   });
   await session.detach();
-  await expect(page.getByLabel('Kartans zoom')).not.toHaveText(zoom ?? '');
+  await expect(page.getByLabel('Map zoom')).not.toHaveText(zoom ?? '');
   await expect(
-    page.getByRole('button', { name: 'Öppna planet', exact: true }),
+    page.getByRole('button', { name: 'Open planet', exact: true }),
   ).toBeVisible();
 });
 
@@ -263,7 +264,7 @@ test('flera-skarmstorlekar: canvas follows its container without horizontal over
       .toBeLessThan(1);
     await expect(map).toHaveAttribute('data-rendered', 'true');
   }
-  await page.getByRole('button', { name: 'Öppna planet', exact: true }).click();
+  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth,

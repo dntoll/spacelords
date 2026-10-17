@@ -36,6 +36,9 @@ export class AppController {
         this.#model.openResearch();
         this.#gesture.cancel();
         break;
+      case 'planet-tab':
+        this.#model.showPlanetTab(intent.tab);
+        break;
       case 'home':
         this.#model.home();
         break;

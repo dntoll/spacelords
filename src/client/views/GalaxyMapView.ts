@@ -29,7 +29,7 @@ export class GalaxyMapView implements MapPort {
         sketch.noLoop();
         sketch.textFont('system-ui');
         sketch.describe(
-          'Stjärnkarta. Din hemplanet och närmaste omgivning är synliga. Stjärnor syns i den outforskade rymden.',
+          'Star map. Your homeworld and its surroundings are visible. Stars are visible in unexplored space.',
         );
         this.#canvas = container.querySelector('canvas');
         if (this.#canvas) this.#bindInput(this.#canvas);
@@ -159,7 +159,7 @@ export class GalaxyMapView implements MapPort {
     canvas.setAttribute('role', 'img');
     canvas.setAttribute(
       'aria-label',
-      'Stjärnkarta. Dra för att panorera, använd plus och minus för zoom. Piltangenter flyttar kartan; Home återgår till hemplaneten; Enter väljer rutans centrum.',
+      'Star map. Drag to pan; use plus and minus to zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.',
     );
     canvas.addEventListener(
       'pointerdown',

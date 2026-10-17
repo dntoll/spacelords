@@ -25,6 +25,11 @@ Produktkraven finns separat i [product-requirements.md](product-requirements.md)
 
 ## Koppling mellan beteendekrav och tester
 
+- `english-game` och `focused-interface`: vytester skyddar engelska handlingar,
+  synliga modellvärden och beskrivningar av valda himlakroppar.
+- `viewport-game-layout`: enhetstester skyddar controllerstyrda flikar;
+  browsertester kontrollerar alla vyer utan scroll eller klippta kontroller,
+  även i stående och liggande format.
 - Spelgrundens kravkoppling beskrivs i [first-iteration.md](first-iteration.md).
 - `mvc-arkitektur`: enhetstest verifierar att modellens läsdata inte kan ändras
   utifrån. Typkontrollen begränsar vyn till modellens läsgränssnitt.

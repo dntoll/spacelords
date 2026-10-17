@@ -75,3 +75,20 @@ describe('fast-exempelvarld', () => {
     expect(restarted.snapshot.selected?.position.key).toBe('1,0');
   });
 });
+
+describe('viewport-game-layout', () => {
+  it('routes planet tabs through the controller and preserves their state across navigation', () => {
+    const model = new AppModel();
+    const view = new TestView();
+    new AppController(model, view).start();
+    view.handler({ type: 'planet-tab', tab: 'buildings' });
+    expect(model.snapshot.planetTab).toBe('overview');
+    view.handler({ type: 'open-planet' });
+    view.handler({ type: 'planet-tab', tab: 'resources' });
+    expect(model.snapshot.planetTab).toBe('resources');
+    view.handler({ type: 'open-map' });
+    view.handler({ type: 'open-planet' });
+    expect(model.snapshot.planetTab).toBe('resources');
+    expect(new AppModel().snapshot.planetTab).toBe('overview');
+  });
+});

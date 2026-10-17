@@ -3,44 +3,26 @@ import { button, element } from './dom.js';
 
 export function renderResearch(emit: IntentHandler): HTMLElement {
   const page = element('section', 'research-page');
-  page.append(
-    button(
-      'Tillbaka till kartan',
-      () => emit({ type: 'open-map' }),
-      'back-button',
-    ),
+  const header = element('div', 'screen-header');
+  header.append(
+    element('h1', '', 'Research'),
+    button('Back to map', () => emit({ type: 'open-map' }), 'back-button'),
   );
-  const panel = element('div', 'panel research-panel');
-  const orbit = element('div', 'research-orbit', '✦');
-  orbit.setAttribute('aria-hidden', 'true');
+  const panel = element('div', 'research-panel');
   panel.append(
-    element('p', 'eyebrow', 'KUNSKAP TAR OSS LÄNGRE'),
-    element('h1', '', 'Forskning'),
-    element(
-      'p',
-      'page-description',
-      'Ditt imperiums nästa stora upptäckt börjar med en fråga.',
-    ),
-    orbit,
-    element('span', 'pill pill-warm', 'Forskning kommer senare'),
-    element('h2', '', 'Forskningsstation'),
+    element('span', 'pill pill-warm', 'Research is not available yet'),
+    element('h2', '', 'Research station'),
     element(
       'p',
       '',
-      'Din första forskningsstation blir grunden för nya tekniker. Den är tillgänglig att bygga från början när byggandet införs.',
-    ),
-    element(
-      'p',
-      '',
-      'På sikt kan forskning öppna vägen till bättre fabriker, mindre utsläpp och effektivare användning av arbetskraft.',
+      'Available from the start once construction is introduced.',
     ),
     element(
       'p',
       'muted-note',
-      'I detta första steg finns inga teknikval eller forskningsorder. Utforska kartan och lär känna din hemvärld så länge.',
+      'Future research will unlock better factories, cleaner production and more efficient use of workers.',
     ),
-    button('Utforska kartan', () => emit({ type: 'open-map' }), 'button'),
   );
-  page.append(panel);
+  page.append(header, panel);
   return page;
 }

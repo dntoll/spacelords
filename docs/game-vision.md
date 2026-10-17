@@ -11,7 +11,7 @@ stjärna och dess omgivande planeter upptar egna hexagoner. Mellan systemen finn
 tom rymd. Planeterna ligger stilla. Spelaren börjar med en planet, ser närmaste
 omgivningen och kan urskilja även avlägsna stjärnor.
 
-Planeter har namn, råvaror som järn, vatten och olja samt noll till tio byggplatser.
+Planeter har namn, råvaror som `Iron`, `Water` och `Oil` samt noll till tio byggplatser.
 Råvarutillgångar anges i enheter per år. En koloni har en befolkning som växer
 eller minskar beroende på hur det går för planeten. Gästvänligheten varierar
 mellan noll och hundra procent och kan förändras över tiden: en oförstörd jord
@@ -26,8 +26,7 @@ gästvänligheten, medan förorenande fabriker kan försämra den.
 Fabriker kan producera kolonisationsskepp, andra skepp, habitat,
 forskningsstationer, terraformare och senare fler saker. Forskning öppnar nya
 tekniker och fabriker. Tidiga fabriker kan behöva många arbetare och förorena mer;
-senare teknik kan förbättra dessa egenskaper. Forskningsstationen är tillgänglig
-från början.
+senare teknik kan förbättra dessa egenskaper. `Research station` är tillgänglig från början.
 
 ## Order, flottor och andra civilisationer
 
@@ -50,3 +49,15 @@ Kostnader, byggtider, reseregler, befolkningstillväxt, råvaruutvinning,
 forskningsberoenden, asteroidbältens placering och multiplayerregler behöver
 preciseras när respektive del ska byggas. Det är framtidsbeslut, inte hinder för
 den första kartan. Visionen och kraven ska kunna förändras över tiden.
+
+## Spelupplevelse och språk
+
+Spelet fyller fönstret utan scroll på mobil, surfplatta och dator, även i liggande
+läge. `Star map` tar huvuddelen av skärmen; kortfattade kontroller och information
+om vald himlakropp ligger ovanpå. Beskrivningar av stjärnor och planeter behålls.
+Introduktionsrubriker och dekorativa småtexter tas bort.
+
+Planetinformationen nås via `Open planet` och har flikarna `Overview`, `Resources`
+och `Buildings`. `Research` öppnar forskningsinformationen och `Back to map`
+återgår till kartan. Spelet är på engelska. Dokumentationen är på svenska och
+använder spelets engelska namn och etiketter för att undvika dubbla benämningar.

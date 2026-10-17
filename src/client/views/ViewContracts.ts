@@ -1,4 +1,4 @@
-import type { AppReadModel } from '../models/AppModel.js';
+import type { AppReadModel, PlanetTab } from '../models/AppModel.js';
 import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 
 export type AppIntent =
@@ -10,6 +10,7 @@ export type AppIntent =
         | 'home'
         | 'pointer-cancel';
     }
+  | { readonly type: 'planet-tab'; readonly tab: PlanetTab }
   | { readonly type: 'select'; readonly position: HexCoordinate }
   | { readonly type: 'pan'; readonly delta: Point }
   | { readonly type: 'zoom'; readonly factor: number; readonly anchor: Point }

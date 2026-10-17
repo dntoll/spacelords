@@ -4,11 +4,11 @@ import { Colony, Planet, Player } from './Planet.js';
 
 // fast-exempelvarld: illustrative values, not economic or research balance.
 export function createExampleGalaxy(): Galaxy {
-  const player = new Player('player', 'Ditt imperium');
+  const player = new Player('player', 'Your empire');
   const definitions = [
     {
       id: 'sol',
-      name: 'Solen',
+      name: 'Sol',
       q: 0,
       r: 0,
       planets: ['Tellus', 'Vesta', 'Brontes'],
@@ -48,9 +48,9 @@ export function createExampleGalaxy(): Galaxy {
             habitability: home ? 100 : index === 2 ? 0 : 25,
             buildSlots: home ? 6 : index === 2 ? 0 : 4,
             resources: [
-              { name: 'Järn', perYear: home ? 42 : 18 },
-              { name: 'Vatten', perYear: home ? 60 : 5 },
-              { name: 'Olja', perYear: home ? 12 : 0 },
+              { name: 'Iron', perYear: home ? 42 : 18 },
+              { name: 'Water', perYear: home ? 60 : 5 },
+              { name: 'Oil', perYear: home ? 12 : 0 },
             ],
             colony: home ? new Colony(player.id, 12_000) : null,
           });

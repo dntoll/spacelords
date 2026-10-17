@@ -1,7 +1,7 @@
 # Spacelords
 
 Första grunden till ett långsamt rymdimperiespel: en hexkarta med p5.js,
-begränsad sikt, planetinformation och en enkel forskningsöversikt. Spelet fungerar
+begränsad sikt och vyerna `Star map`, planetinformation och `Research`. Spelet fungerar
 lokalt i klienten på mobil, surfplatta och dator. Node.js 24 och strikt TypeScript
 används med MVC och en liten Express-server för lokal produktionsdrift.
 
@@ -80,6 +80,14 @@ händelser och ResizeObserver vid vybyte och hot reload. Navigation sker inom
 klienten, så att Pages behöver inga nya serveradresser. Se
 [första iterationen](docs/first-iteration.md) för ansvar och testkopplingar.
 
+## Språk och spelyta
+
+Kod och speltexter är på engelska. Dokumentationen är på svenska, med engelska
+namn och etiketter för sådant som visas i spelet. Befintliga kravnamn behålls.
+Alla spelvyer fyller fönstret utan scroll även på mobil och i liggande läge.
+Kartan använder hela spelytan med kompakta kontroller ovanpå. Planetens flikar
+håller information och handlingar åtkomliga utan en lång sida.
+
 ## Krav och arbetssätt
 
 Läs [kravöversikten](requirements.md), [produktkraven](docs/product-requirements.md),
@@ -108,12 +116,13 @@ Node-servern kan inte köras på GitHub Pages.
 ## Spela lokalt
 
 Dra kartan med mus eller ett finger. Mushjul, två fingrar och plus/minusknappar
-zoomar. Hemknappen återställer kamera och vald planet. Piltangenter panorerar när
+zoomar. `Homeworld` återställer kamera och vald planet. Piltangenter panorerar när
 canvas har fokus; plus/minus zoomar, Home återställer och Enter väljer mitten.
-Knapparna under kartan väljer kända objekt utan att behöva träffa canvas.
+`Known objects` väljer kända objekt utan att behöva träffa canvas.
 
-Öppna Tellus för att se planetens värden och den kommande forskningsstationen.
-Forskning öppnar en informationsvy. Tillbaka-knapparna bevarar karta och markering.
+Välj `Open planet` på Tellus. Flikarna `Overview`, `Resources` och `Buildings`
+visar planetvärden, råvaror och kommande `Research station`. `Research` öppnar
+forskningsinformationen. `Back to map` bevarar karta och markering.
 Sidan återställs vid omladdning. Det finns inga byggorder eller pågående forskning.
 
 ## Browsertester

@@ -1,106 +1,114 @@
+import type { PlanetTab } from '../models/AppModel.js';
 import type { PlanetSnapshot } from '../models/Planet.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element, labelValue, planetIllustration } from './dom.js';
 
+const tabs = [
+  ['overview', 'Overview'],
+  ['resources', 'Resources'],
+  ['buildings', 'Buildings'],
+] as const;
+
 export function renderPlanet(
   planet: PlanetSnapshot,
   owner: string,
+  activeTab: PlanetTab,
   emit: IntentHandler,
 ): HTMLElement {
   const page = element('section', 'planet-page');
-  page.append(
-    button(
-      'Tillbaka till kartan',
-      () => emit({ type: 'open-map' }),
-      'back-button',
-    ),
-  );
-  const hero = element('div', 'planet-hero panel');
-  const introduction = element('div', 'planet-introduction');
-  introduction.append(
-    element('p', 'eyebrow', 'DIN HEMVÄRLD'),
+  const header = element('div', 'screen-header');
+  const identity = element('div', 'planet-identity');
+  identity.append(
     element('h1', '', planet.name),
-    element('p', 'page-description', 'Här börjar ditt imperiums historia.'),
     element(
       'span',
       'pill',
-      planet.type === 'solid' ? 'Fast planet' : 'Gasplanet',
+      planet.type === 'solid' ? 'Rocky planet' : 'Gas giant',
     ),
   );
-  hero.append(introduction, planetIllustration(true));
-  const values = element('dl', 'planet-stats');
-  const population = new Intl.NumberFormat('sv-SE')
-    .format(planet.colony?.population ?? 0)
-    .replaceAll('\u00a0', ' ');
-  const used = planet.colony?.buildings.length ?? 0;
-  values.append(
-    labelValue('Ägare', owner),
-    labelValue('Befolkning', population),
-    labelValue('Gästvänlighet', `${planet.habitability} %`),
-    labelValue('Använda byggplatser', `${used} av ${planet.buildSlots}`),
+  header.append(
+    identity,
+    button('Back to map', () => emit({ type: 'open-map' }), 'back-button'),
   );
-  hero.append(values);
-  page.append(hero);
-
-  const columns = element('div', 'planet-columns');
-  const resources = element('section', 'panel content-panel');
-  resources.append(
-    element('p', 'eyebrow', 'PLANETENS TILLGÅNGAR'),
-    element('h2', '', 'Råvaror'),
-  );
-  const resourceList = element('dl', 'resource-list');
-  for (const resource of planet.resources) {
-    resourceList.append(
-      labelValue(resource.name, `${resource.perYear} enheter/år`),
+  const navigation = element('div', 'planet-tabs');
+  navigation.setAttribute('role', 'tablist');
+  navigation.setAttribute('aria-label', 'Planet information');
+  for (const [id, label] of tabs) {
+    const tab = button(
+      label,
+      () => emit({ type: 'planet-tab', tab: id }),
+      'tab-button',
     );
+    tab.id = `tab-${id}`;
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-selected', String(id === activeTab));
+    tab.setAttribute('aria-controls', 'planet-content');
+    tab.tabIndex = id === activeTab ? 0 : -1;
+    tab.addEventListener('keydown', (event) => {
+      const index = tabs.findIndex(([candidate]) => candidate === id);
+      const next =
+        event.key === 'ArrowRight'
+          ? (index + 1) % tabs.length
+          : event.key === 'ArrowLeft'
+            ? (index + tabs.length - 1) % tabs.length
+            : event.key === 'Home'
+              ? 0
+              : event.key === 'End'
+                ? tabs.length - 1
+                : null;
+      if (next !== null) {
+        event.preventDefault();
+        emit({ type: 'planet-tab', tab: tabs[next]![0] });
+      }
+    });
+    navigation.append(tab);
   }
-  resources.append(
-    resourceList,
-    element(
-      'p',
-      'muted-note',
-      'Tillgångar per spelår. Utvinning införs senare.',
-    ),
-  );
-  const buildings = element('section', 'panel content-panel');
-  buildings.append(
-    element('p', 'eyebrow', 'UTVECKLA DIN VÄRLD'),
-    element('h2', '', 'Byggnader'),
-  );
-  const slots = element('div', 'build-slots');
-  slots.setAttribute(
-    'aria-label',
-    `${planet.buildSlots - used} lediga byggplatser`,
-  );
-  for (let index = 0; index < planet.buildSlots; index += 1)
-    slots.append(element('span', 'build-slot', '+'));
-  const station = element('div', 'station-card');
-  station.append(
-    element('span', 'pill', 'Tillgänglig från start'),
-    element('h3', '', 'Forskningsstation'),
-    element('p', '', 'En plats för nya idéer och framtida upptäckter.'),
-    element(
-      'p',
-      'muted-note',
-      'Byggande kommer i nästa steg. Inga byggorder kan ges ännu.',
-    ),
-  );
-  const build = button(
-    'Bygg forskningsstation',
-    () => undefined,
-    'button button-secondary',
-  );
-  build.disabled = true;
-  station.append(build);
-  buildings.append(slots, station);
-  columns.append(resources, buildings);
-  page.append(
-    columns,
-    element(
-      'p',
-      'example-note',
-      'Exempelvärld · Värdena är preliminära och förändras inte ännu.',
-    ),
-  );
+  const panel = element('section', `planet-content ${activeTab}`);
+  panel.id = 'planet-content';
+  panel.setAttribute('role', 'tabpanel');
+  panel.setAttribute('aria-labelledby', `tab-${activeTab}`);
+  const used = planet.colony?.buildings.length ?? 0;
+  if (activeTab === 'overview') {
+    const values = element('dl', 'planet-stats');
+    values.append(
+      labelValue('Owner', owner),
+      labelValue(
+        'Population',
+        new Intl.NumberFormat('en-GB').format(planet.colony?.population ?? 0),
+      ),
+      labelValue('Habitability', `${planet.habitability}%`),
+      labelValue('Used build slots', `${used} of ${planet.buildSlots}`),
+    );
+    panel.append(planetIllustration(true), values);
+  } else if (activeTab === 'resources') {
+    const resources = element('dl', 'resource-list');
+    for (const resource of planet.resources)
+      resources.append(
+        labelValue(resource.name, `${resource.perYear} units/year`),
+      );
+    panel.append(
+      resources,
+      element(
+        'p',
+        'muted-note',
+        'Annual deposits. Extraction is not available yet.',
+      ),
+    );
+  } else {
+    const station = element('div', 'station-card');
+    station.append(
+      element('h2', '', 'Research station'),
+      element('span', 'pill', 'Available from the start'),
+      element('p', '', `${planet.buildSlots - used} free build slots`),
+    );
+    const build = button('Build research station', () => undefined, 'button');
+    build.disabled = true;
+    station.append(
+      build,
+      element('p', 'muted-note', 'Construction is not available yet.'),
+    );
+    panel.append(station);
+  }
+  page.append(header, navigation, panel);
   return page;
 }
