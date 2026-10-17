@@ -21,7 +21,9 @@
     "test": "npm run test:fast",
     "test:fast": "node scripts/test-fast.mjs",
     "test:watch": "vitest --config vitest.config.ts",
-    "test:extended": "npm run build && npm run build:pages && vitest run --config vitest.extended.config.ts",
+    "test:extended": "npm run build && npm run build:pages && vitest run --config vitest.extended.config.ts && npm run test:browser",
+    "test:browser": "playwright test",
+    "preview:pages": "node scripts/preview-pages.mjs",
     "check": "npm run format:check && npm run lint && npm run test:fast && npm run test:extended"
   },
   "dependencies": {

@@ -47,3 +47,24 @@ Playwright i den utökade sviten testar faktisk p5-rendering, mus och touch,
 canvasstorlek, upprepade vybyten och mobil-, surfplatte- och datorstorlekar mot
 det byggda Pages-resultatet. Befintliga HTTP-tester för server och underkatalog
 behålls. CI kör samtliga kontroller. Publicering beställs separat.
+
+## Genomfört
+
+Den fasta exempelvärlden, läsmodellerna, p5-kartan, kameran och de båda
+informationsvyerna är implementerade. Planeten Tellus har preliminärt 12 000
+invånare, 100 procents gästvänlighet och sex lediga byggplatser. Det finns inga
+byggorder eller forskningsval. Gasplaneterna finns i världen men är ännu dolda
+för spelarens lokala sikt.
+
+Kända objekt kan väljas med HTML-knappar. Kartan har även tangentbordsstöd:
+piltangenter panorerar, plus/minus zoomar, Home återgår och Enter väljer centrum.
+Pekargester och kamera är separata från både DOM och p5. Endast synliga objekt
+lämnas till ritning och tillgänglighetstext.
+
+Verifieringen omfattar 28 snabba enhetstester och 21 browserkontroller på fyra
+projekt: desktop Chromium, telefon Chromium, telefon WebKit och surfplatta
+WebKit. Sju enhetsspecifika browserfall hoppas avsiktligt över: musdrag på
+touchenheter samt touch på desktop och native multitouch där Playwright saknar
+det gränssnittet. Inga misslyckade tester undantas. HTTP-sviten omfattar fem
+kontroller. Browserresultat och skärmbilder ligger i den ignorerade katalogen
+`test-results/`. Publicering beställs fortsatt separat.
