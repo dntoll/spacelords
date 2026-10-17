@@ -1,0 +1,46 @@
+{
+  "name": "spacelords",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "concurrently --kill-others --names server,client npm:dev:server npm:dev:client",
+    "dev:client": "vite",
+    "dev:server": "node --env-file-if-exists=.env --watch --import tsx src/server/main.ts",
+    "build": "npm run typecheck && vite build && tsc -p tsconfig.server.json",
+    "start": "node --env-file-if-exists=.env dist/server/main.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "npm run lint -- --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run test:fast",
+    "test:fast": "node scripts/test-fast.mjs",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:extended": "npm run build && vitest run --config vitest.extended.config.ts",
+    "check": "npm run format:check && npm run lint && npm run test:fast && npm run test:extended"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/express": "^5.0.6",
+    "@types/jsdom": "^30.0.0",
+    "@types/node": "^24.19.2",
+    "concurrently": "^10.0.6",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.13.0",
+    "jsdom": "^30.1.3",
+    "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vite": "~8.3.4",
+    "vitest": "~5.0.5"
+  }
+}
