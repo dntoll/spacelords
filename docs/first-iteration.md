@@ -89,3 +89,9 @@ på engelska. De befintliga kravnamen är oförändrade.
 Regressionstestet för vertikal scroll misslyckades mot den tidigare
 mobillayouten före ändringen. Vyerna använder nu fönstrets dynamiska höjd och
 informationsflikar. Kartans storlek observeras även vid ändrad fönsterstorlek.
+
+CI upptäckte att bredare systemtypsnitt kunde låta flikarnas minsta innehållsbredd
+pressa planetvyn utanför en 320 pixlar bred skärm. Ett nytt regressionstest med
+systemtypsnitt och större textmått återskapade felet före rättningen. Planetvyn
+har nu uttrycklig fönsterbegränsning och flikarna får krympa med kompaktare
+mellanrum på mobil. Samma kontroll körs i Chromium och WebKit.

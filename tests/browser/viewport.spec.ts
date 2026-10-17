@@ -28,7 +28,7 @@ async function expectContentFits(page: Page): Promise<void> {
     const viewport = { width: window.innerWidth, height: window.innerHeight };
     return [
       ...main.querySelectorAll(
-        'button, [role="tabpanel"], .stat, .muted-note, .research-panel, .selection-panel',
+        'button, [role="tabpanel"], .planet-page, .stat, .muted-note, .research-panel, .selection-panel',
       ),
     ]
       .filter((node) => {
@@ -93,3 +93,21 @@ for (const size of [
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
   });
 }
+
+test('viewport-game-layout: wider fallback font metrics cannot expand the planet screen', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.goto('./');
+  await page.addStyleTag({
+    content: ':root { font-family: system-ui, sans-serif; font-size: 18px; }',
+  });
+  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await expectContentFits(page);
+  for (const tab of ['Resources', 'Buildings', 'Overview']) {
+    await page.getByRole('tab', { name: tab, exact: true }).click();
+    await expectContentFits(page);
+  }
+  await page.getByRole('button', { name: 'Research', exact: true }).click();
+  await expectContentFits(page);
+});
