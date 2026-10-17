@@ -12,13 +12,16 @@ funktioner från framtida spelmekanik. Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Spelupplevelse och språk:** skärmfyllande vyer utan scroll, stor karta och
+  kortfattad spelinformation på engelska. Dokumentationen är på svenska med
+  spelets engelska namn och etiketter.
 - **Första spelgrunden:** en fast stjärnkarta, begränsad sikt, kartnavigation och
   information om hemplaneten och framtida forskning.
 - **Imperiets utveckling:** kolonier, befolkning, råvaror, byggande och forskning.
 - **Order och omvärld:** rundor, kolonisation, flottor, civilisationer och senare
   multiplayer.
 
-[Produktkraven](docs/requirements.md) anger status för varje aktivt krav:
+[Produktkraven](docs/product-requirements.md) anger status för varje aktivt krav:
 **Ej implementerat**, **Delvis implementerat** eller **Fullständigt implementerat**.
 De beskriver också vad som återstår. Denna iteration omfattar inte byggorder
 eller simulering av rundor.

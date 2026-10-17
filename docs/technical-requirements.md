@@ -1,7 +1,7 @@
 # Tekniska krav och arbetsregler
 
 Namnen nedan är stabila referenser i tester, kod och dokumentation.
-Produktkraven finns separat i [requirements.md](requirements.md).
+Produktkraven finns separat i [product-requirements.md](product-requirements.md).
 
 | Kravnamn                 | Status                     | Krav                                                                                                                                                                                                             | Verifiering                                                |
 | ------------------------ | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
@@ -70,3 +70,13 @@ Inga konstlade enhetstester behövs för en dokumenterad publiceringsprocess.
 2026-10-17: Spelvisionen ersätter den tomma startsidan. p5.js väljs i stället
 för planförslagets SVG. Se [första iterationen](first-iteration.md) för
 avgränsning och tekniska beslut. Ingen ny driftsättning ingår.
+
+## Språk och spelyta
+
+| Kravnamn                           | Status                     | Krav                                                                                                                                                                                           | Verifiering                                    |
+| ---------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `english-code-and-docs-convention` | Fullständigt implementerat | Kod, identifierare och kodkommentarer är på engelska. Dokumentation är på svenska med engelska namn och etiketter för sådant som finns direkt i spelet. Befintliga kravnamn är stabila.        | Kod- och dokumentationsgranskning, `AGENTS.md` |
+| `distinct-requirement-documents`   | Fullständigt implementerat | Endast rotöversikten heter `requirements.md`. Produktkrav finns i `docs/product-requirements.md` och teknik i `docs/technical-requirements.md`. Länkar och arbetsregler följer samma struktur. | Dokumentations- och länkgranskning             |
+
+2026-10-17: Språkregeln ersätter tidigare svenska speltexter. Skärmfyllande vyer
+ersätter den tidigare staplade mobillayouten. Webbläsarens helskärmsläge krävs inte.

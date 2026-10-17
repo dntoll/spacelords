@@ -7,7 +7,7 @@ används med MVC och en liten Express-server för lokal produktionsdrift.
 
 Tre fasta exempelstjärnsystem och en hemplanet, Tellus, återställs vid omladdning.
 Byggorder, rundor, faktisk forskning och simulering kommer i senare steg. Se
-[visionen](docs/game-vision.md) och [kravstatusen](docs/requirements.md).
+[visionen](docs/game-vision.md) och [kravstatusen](docs/product-requirements.md).
 
 ## Kom igång
 
@@ -82,7 +82,7 @@ klienten, så att Pages behöver inga nya serveradresser. Se
 
 ## Krav och arbetssätt
 
-Läs [kravöversikten](requirements.md), [produktkraven](docs/requirements.md),
+Läs [kravöversikten](requirements.md), [produktkraven](docs/product-requirements.md),
 [de tekniska kraven](docs/technical-requirements.md) och [AGENTS.md](AGENTS.md).
 Använd kravnamen i testernas `describe` och i kommentarer när det hjälper
 spårbarheten. Processkrav granskas genom relevant verktygskontroll och review;

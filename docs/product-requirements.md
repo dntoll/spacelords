@@ -21,6 +21,14 @@ För delvisa krav anges vad som återstår. Exempelvärden är inte beslut om ba
 | `flera-skarmstorlekar`      | Fullständigt implementerat | Spelet går att använda på mobil, surfplatta och dator.                                                                                                                |
 | `direktatkomst-utan-lankar` | Fullständigt implementerat | Appen nås via sin direktadress utan nya länkar eller navigationsval på den befintliga webbplatsen.                                                                    |
 
+## Spelupplevelse
+
+| Kravnamn               | Status           | Krav och återstående arbete                                                                                                                     |
+| ---------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `viewport-game-layout` | Ej implementerat | Alla vyer fyller skärmen och används utan scroll på mobil, surfplatta och dator, i stående och liggande läge. Kartan tar huvuddelen av skärmen. |
+| `focused-interface`    | Ej implementerat | Visa spelinformation och handlingar utan introduktionsrubriker och dekorativa småtexter. Behåll beskrivningar av stjärnor och planeter.         |
+| `english-game`         | Ej implementerat | Alla texter, hjälptexter och namn på råvaror i spelet är på engelska.                                                                           |
+
 ## Fortsatt spelutveckling
 
 | Kravnamn                          | Status               | Krav och återstående arbete                                                                                                                                        |
@@ -50,3 +58,8 @@ För delvisa krav anges vad som återstår. Exempelvärden är inte beslut om ba
   ovan. Den tomma startsidan är inte längre ett aktivt produktkrav.
 - Första iterationen omfattar enbart karta, navigation och läsbara vyer.
   Tillgängliga byggalternativ innebär inte fungerande byggorder.
+
+- 2026-10-17: Användaren ersätter webbsidelayouten med skärmfyllande spelvyer utan
+  scroll. Engelska ersätter svenska i spelet. Beskrivningar av himlakroppar behålls.
+- 2026-10-17: Produktkravsfilen heter `product-requirements.md` för att skiljas från
+  rotens kravöversikt. Innehåll och stabila kravnamn behålls.

@@ -12,7 +12,7 @@
 - `requirements.md` börjar med en sammanfattning/vision och därefter en
   sammanfattning av kravkategorierna. Flytta detaljer till egna Markdownfiler i
   `docs/` när översikten växer.
-- `docs/requirements.md` beskriver produktkraven kortfattat och otekniskt.
+- `docs/product-requirements.md` beskriver produktkraven kortfattat och otekniskt.
   Teknikval, dialoger, implementation och arbetsprocesser hör inte hemma där.
 - `docs/technical-requirements.md` listar tekniska krav och arbetsregler separat.
 - Ifrågasätt nya krav som motsäger befintliga innan de genomförs. En uttrycklig
@@ -45,6 +45,14 @@
   controllers oberoende av p5. Övriga vyer och kontroller använder vanlig HTML.
 - Använd tydliga namn och Clean Code. Kommentera bara när kommentaren tillför
   något, exempelvis kravkoppling, motiv eller en oväntad begränsning.
+
+## Språk
+
+- Kod, identifierare, kodkommentarer och alla texter i spelet ska vara på engelska,
+  inklusive hjälptexter, tillgänglighetstexter och exempelvärldens namn på råvaror.
+- Dokumentation skrivs på svenska. Återge namn, begrepp och etiketter som finns
+  direkt i spelet på engelska även där, exempelvis `Star map`, `Resources` och
+  `Research station`. Befintliga stabila kravnamn behålls för spårbarhet.
 
 ## Git
 
