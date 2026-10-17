@@ -1,0 +1,6 @@
+@startuml
+title Spacelords – problemdomän
+
+note "Inga domänbegrepp är ännu beslutade.\nLägg till klasser och relationer när produktkraven växer.\nTekniska MVC-klasser hör inte till denna domänmodell." as Scope
+
+@enduml
