@@ -146,6 +146,27 @@ driftsättning är beställd. Före merge:
 4. Mergea via målrepots vanliga process när granskningen är klar. Följ dess
    befintliga Pages-körning till lyckad publicering.
 
+### Om PR-integrationen saknar behörighet
+
+Vid en uttryckligen beställd driftsättning kan en granskad arbetsbranch
+publiceras med en vanlig fast-forward-push till `main` om befintlig
+SSH-autentisering och målrepots regler tillåter det. Detta är reservvägen när
+PR inte kan skapas genom den anslutna GitHub-integrationen:
+
+1. Hämta aktuell `origin/main` och kontrollera att den är en förälder till den
+   granskade deploycommitten. Om andra commits har tillkommit, uppdatera först
+   arbetsbranchen och granska diffen igen.
+2. Verifiera att diffen från aktuell `origin/main` enbart omfattar `spacelords/`.
+3. Pusha den granskade arbetsbranchens `HEAD` till `main` med en vanlig push,
+   aldrig `--force`. Om pushen avvisas, utred och granska igen; kringgå inte
+   branchskydd eller ändra behörigheter.
+4. Följ befintlig Pages-körning och gör samma kontroller efter publicering.
+
+Arbeta och committa fortsatt på arbetsbranchen. Reservvägen ersätter bara
+PR-mergen, inte avgränsningen, granskningen eller verifieringen. Läsning via
+HTTPS och push via en befintlig SSH-inloggning kan kombineras; lägg aldrig
+nyckelmaterial eller tokens i remote-URL eller dokumentation.
+
 Den här instruktionen inför ingen ny deployment-action och behöver inga
 incheckade autentiseringsuppgifter. Om automatisk överföring senare beställs:
 håll den begränsad till samma katalog, hantera samtidiga uppdateringar och lägg
@@ -205,6 +226,29 @@ En lokal kopieringsrepetition mot en tillfällig kopia av målrepots granskade
 revision `75622c6` bevarade samtliga 281 befintliga webbplatsfiler. Bara
 `spacelords/` ändrades; även borttagning av en simulerad gammal byggfil hölls
 inom den katalogen. Det riktiga målrepot och den publicerade sajten ändrades inte.
+
+## Första driftsättningen: 2026-10-17
+
+- Publicerad klientrevision: `4461af5` i `dntoll/spacelords`.
+- Målrepots tidigare revision: `75622c666eb39a2c4648355d66647857e9524e06`.
+- Deploycommit: `57849f32023e5951df81def7454e34b17026ad3e`. Committen lägger
+  endast till `spacelords/index.html` och två filer i `spacelords/assets/`.
+- Befintligt branchbaserat Pages-flöde bekräftades genom tidigare lyckad
+  `pages build and deployment` på `main`. Inga Pages-inställningar ändrades.
+- PR-integrationen gav ett behörighetsfel. Efter granskad arbetsbranch och ny
+  kontroll mot aktuell `main` användes reservvägen: en vanlig fast-forward-push
+  via befintlig SSH-autentisering. Ingen force-push eller behörighetsändring.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/39049665491)
+  lyckades. Liveadressen `/spacelords/` visar rubriken Spacelords, även verifierat
+  i webbläsare. `/spacelords` leder vidare till `/spacelords/`.
+- Publicerad HTML, JavaScript och CSS gav HTTP 200, rätt innehållstyper och
+  exakt samma innehåll som det verifierade Pages-bygget.
+- Kontrollsummor före/efter var identiska för `/`, `/MachineBloom/`,
+  `/Defence-Grid/test/`, `/styles.css` och `/i18n.js`. Inga länkar eller
+  navigationsval lades till på den befintliga webbplatsen.
+- Källrepots tre ursprungliga commits pushades till `main` och arbetsbranchen.
+  Båda [CI-körningarna](https://github.com/dntoll/spacelords/actions/runs/39049517862)
+  [lyckades](https://github.com/dntoll/spacelords/actions/runs/39049519098).
 
 ## Referenser
 
