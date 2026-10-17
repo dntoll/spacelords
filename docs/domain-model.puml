@@ -1,6 +1,63 @@
 @startuml
 title Spacelords – problemdomän
 
-note "Inga domänbegrepp är ännu beslutade.\nLägg till klasser och relationer när produktkraven växer.\nTekniska MVC-klasser hör inte till denna domänmodell." as Scope
+class Galaxy {
+  radius
+  homePlanet
+  mapSnapshot()
+}
+class StarSystem
+class Star {
+  name
+}
+class Planet {
+  name
+  type: solid | gas
+  habitability: 0..100
+  buildSlots: 0..10
+  resources: units/year
+}
+class Colony {
+  population
+  buildings
+}
+class Player {
+  name
+}
+class HexCoordinate <<value object>> {
+  q
+  r
+  neighbors()
+  distanceTo()
+}
+
+Galaxy "1" o-- "1..*" StarSystem
+Galaxy "1" --> "1" Player
+StarSystem "1" *-- "1" Star
+StarSystem "1" *-- "0..6" Planet
+Star --> HexCoordinate : position
+Planet --> HexCoordinate : position
+Planet "1" *-- "0..1" Colony
+Colony --> Player : ownerId
+
+note bottom of Galaxy
+  Första iterationen använder en fast exempelvärld.
+  Kartans läsdata döljer planeter utanför lokal sikt.
+end note
+
+package "Framtida domän – ej implementerad" {
+  class AsteroidBelt <<planned>>
+  class Building <<planned>>
+  class Technology <<planned>>
+  class Order <<planned>>
+  class Fleet <<planned>>
+  class Ship <<planned>>
+  class Civilization <<planned>>
+  Fleet "1" o-- "1..*" Ship
+  Fleet --> Civilization : encounter orders
+  Technology --> Building : unlocks
+}
+
+note "Kamera, controllers och p5-vyer är tekniska begrepp\noch ingår inte i problemdomänen." as Scope
 
 @enduml
