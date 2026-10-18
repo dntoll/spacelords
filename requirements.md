@@ -14,7 +14,8 @@ funktioner från framtida spelmekanik. Se [hela visionen](docs/game-vision.md).
 
 - **Spelupplevelse och språk:** skärmfyllande vyer utan scroll, stor karta och
   kortfattad spelinformation på engelska. Dokumentationen är på svenska med
-  spelets engelska namn och etiketter.
+  spelets engelska namn och etiketter. `viewport-game-layout` omfattar även
+  smala skärmar med större systemtypsnitt.
 - **Första spelgrunden:** en fast stjärnkarta, begränsad sikt, kartnavigation och
   information om hemplaneten, byggande, flottor och rundor.
 - **Imperiets utveckling:** kolonier, befolkning, råvaror, byggande och forskning.

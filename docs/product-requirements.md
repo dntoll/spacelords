@@ -23,11 +23,11 @@ För delvisa krav anges vad som återstår. Exempelvärden är inte beslut om ba
 
 ## Spelupplevelse
 
-| Kravnamn               | Status                     | Krav och återstående arbete                                                                                                                            |
-| ---------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `viewport-game-layout` | Fullständigt implementerat | Alla vyer fyller skärmen utan sidscroll på mobil, surfplatta och dator. Avgränsade spelpaneler får ha intern scroll. Kartan tar huvuddelen av skärmen. |
-| `focused-interface`    | Fullständigt implementerat | Visa spelinformation och handlingar utan introduktionsrubriker och dekorativa småtexter. Behåll beskrivningar av stjärnor och planeter.                |
-| `english-game`         | Fullständigt implementerat | Alla texter, hjälptexter och namn på råvaror i spelet är på engelska.                                                                                  |
+| Kravnamn               | Status                     | Krav och återstående arbete                                                                                                                                                                             |
+| ---------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `viewport-game-layout` | Fullständigt implementerat | Alla vyer fyller skärmen utan sidscroll på mobil, surfplatta och dator, även med större systemtypsnitt på smala skärmar. Avgränsade spelpaneler får ha intern scroll. Kartan tar huvuddelen av skärmen. |
+| `focused-interface`    | Fullständigt implementerat | Visa spelinformation och handlingar utan introduktionsrubriker och dekorativa småtexter. Behåll beskrivningar av stjärnor och planeter.                                                                 |
+| `english-game`         | Fullständigt implementerat | Alla texter, hjälptexter och namn på råvaror i spelet är på engelska.                                                                                                                                   |
 
 ## Fortsatt spelutveckling
 

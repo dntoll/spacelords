@@ -23,6 +23,7 @@ body {
 #app {
   height: 100dvh;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
 }
 button,
@@ -571,7 +572,7 @@ p {
   }
   .nav-button {
     font-size: 0.8rem;
-    padding: 8px 10px;
+    padding: 8px;
   }
   .selection-panel {
     top: auto;
