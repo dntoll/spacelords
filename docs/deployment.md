@@ -250,6 +250,37 @@ inom den katalogen. Det riktiga målrepot och den publicerade sajten ändrades i
   Båda [CI-körningarna](https://github.com/dntoll/spacelords/actions/runs/39049517862)
   [lyckades](https://github.com/dntoll/spacelords/actions/runs/39049519098).
 
+## Driftsättning: 2026-10-18
+
+- Publicerad klientrevision: `a37d7e82bbaeb80afdf129b43e4777f983ee26e9`
+  i `dntoll/spacelords`, fast-forward-mergad till `main`.
+- Målrepots tidigare revision: `57849f32023e5951df81def7454e34b17026ad3e`.
+- Deploycommit: `4b56017a558b7c407c26a71ad1394be02c25014e`. Endast
+  `spacelords/` ändrades; dess tre filer motsvarar exakt Pages-bygget.
+  Kontrollsummorna för samtliga 281 övriga webbplatsfiler var oförändrade.
+- Formatering, ESLint, typkontroll, båda byggena, 50 snabba tester, fem
+  integrationstester och 45 browsertester passerade. Sju plattformsberoende
+  browsertester hoppades över enligt testernas villkor. En befintlig preview
+  använde port 4178, så browsertesterna kördes med samma inställningar på 4189.
+- [Källrepots CI på `main`](https://github.com/dntoll/spacelords/actions/runs/39101924167)
+  lyckades för den publicerade klientrevisionen.
+- Före publiceringen hittade befintligt regressionstest för
+  `viewport-game-layout` att större systemtypsnitt vid 320 pixlars bredd kunde
+  bredda hela appen. Felet reproducerades före rättningen och testet passerade
+  därefter i Chromium och WebKit.
+- PR-integrationen gav HTTP 403. Den dokumenterade reservvägen användes:
+  granskad arbetsbranch och vanlig fast-forward-push via befintlig SSH.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/39101956647)
+  lyckades. Livekontrollen verifierade att `/spacelords` leder till
+  `/spacelords/` och att HTML, JavaScript och CSS gav HTTP 200 med rätt
+  innehållstyper och exakt samma innehåll som bygget.
+- En mobil Chromium-kontroll av liveadressen visade karta och planetvy utan
+  JavaScriptfel eller HTTP-fel. Klientresurserna hämtades enbart under
+  `/spacelords/assets/`.
+- Kontrollsummorna för `/`, `/MachineBloom/`, `/Defence-Grid/test/`,
+  `/styles.css` och `/i18n.js` var identiska före och efter publiceringen.
+  Inga länkar, navigationsval, DNS- eller Pages-inställningar ändrades.
+
 ## Referenser
 
 - [Vite: statisk driftsättning och basadress](https://vite.dev/guide/static-deploy.html)
