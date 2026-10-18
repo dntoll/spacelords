@@ -306,6 +306,38 @@ inom den katalogen. Det riktiga målrepot och den publicerade sajten ändrades i
   `/styles.css` och `/i18n.js` är identiska före och efter publiceringen.
   Inga länkar, navigationsval, DNS- eller Pages-inställningar ändrades.
 
+## Driftsättning av byggplatser och forskning: 2026-10-18
+
+- Publicerad klientrevision: `c0672e5ea610cfba137264ea851d47c858f680cd`
+  från `codex/game-viewport-and-english` i `dntoll/spacelords`.
+  Versionen innehåller separata flottmarkörer, byggplatser, fabriksköer,
+  fabriksforskning och kolonisation.
+- Målrepots tidigare revision: `1622a70d50e173e5a7ec1d525f548126c874642d`.
+- Deploycommit: `9f7e388244ce246454b40f57a7f3b01ed872983f` på
+  `codex/deploy-spacelords-c0672e5`, publicerad till målrepots `main`.
+- Endast de tre klientfilerna under `spacelords/` ändrades och de motsvarar
+  exakt Pages-bygget. Samtliga 281 övriga filers Git-objekt är oförändrade.
+  Den isolerade publiceringskopians startsidor och rotresurser motsvarar
+  kontrollsummorna från den befintliga webbplatsen före publiceringen.
+- Node.js 24, `npm ci` och hela `npm run check` passerade: formatering, lint,
+  typkontroll, båda byggena, 80 snabba tester, fem integrationstester och
+  49 browsertester. Sju plattformsberoende browsertester hoppades över enligt
+  deras villkor. [Källrevisionens CI](https://github.com/dntoll/spacelords/actions/runs/39130489749)
+  lyckades också.
+- Två mobiltester passerade både mot publiceringskopian och liveadressen:
+  karta samt hela kedjan Research station, fabriksforskning, skeppsproduktion
+  till vald flotta och kolonisation av Vesta.
+- PR-integrationen gav HTTP 403. Efter ny kontroll av `origin/main`,
+  föräldrarelation och avgränsad diff användes instruktionens reservväg:
+  vanlig fast-forward-push via befintlig SSH-autentisering.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/39135203054)
+  lyckades. Publicerad HTML, JavaScript och CSS motsvarar exakt bygget.
+  Klientresurserna gav HTTP 200 med rätt innehållstyper under
+  `/spacelords/assets/`. `/spacelords` leder till `/spacelords/`.
+- Kontrollsummorna för `/`, `/MachineBloom/`, `/Defence-Grid/test/`,
+  `/styles.css` och `/i18n.js` är identiska före och efter publiceringen.
+  Inga länkar, navigationsval, DNS- eller Pages-inställningar ändrades.
+
 ## Referenser
 
 - [Vite: statisk driftsättning och basadress](https://vite.dev/guide/static-deploy.html)
