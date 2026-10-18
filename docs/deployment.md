@@ -281,6 +281,31 @@ inom den katalogen. Det riktiga målrepot och den publicerade sajten ändrades i
   `/styles.css` och `/i18n.js` var identiska före och efter publiceringen.
   Inga länkar, navigationsval, DNS- eller Pages-inställningar ändrades.
 
+## Driftsättning av byggkö: 2026-10-18
+
+- Publicerad klientrevision: `b0c4f95ed8df52d896b38c4659a6990e505d6a02`
+  från arbetsbranchen `codex/game-viewport-and-english` i `dntoll/spacelords`.
+- Målrepots tidigare revision: `4b56017a558b7c407c26a71ad1394be02c25014e`.
+- Deploycommit: `1622a70d50e173e5a7ec1d525f548126c874642d` på arbetsbranchen
+  `codex/deploy-spacelords-b0c4f95`, publicerad till målrepots `main`.
+- Endast `spacelords/` ändrades. Klientens tre filer motsvarar exakt det
+  verifierade Pages-bygget; samtliga 281 övriga webbplatsfiler är oförändrade.
+- Formatering, lint, typkontroll, båda byggena, 62 snabba tester, fem
+  integrationstester och 49 browsertester passerade. Sju plattformsberoende
+  browsertester hoppades över enligt deras villkor. Två ytterligare mobiltester
+  passerade mot den isolerade publiceringskopian. Samma två mobiltester
+  passerade därefter mot liveadressen: skärmfyllande karta samt beställning,
+  omordning och skeppsleverans till vald flotta.
+- PR-integrationen gav HTTP 403. Den dokumenterade reservvägen användes efter
+  förnyad kontroll mot aktuell `origin/main`: vanlig fast-forward-push via SSH.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/39114648492)
+  lyckades. Publicerad HTML, JavaScript och CSS gav HTTP 200 med rätt
+  innehållstyper och exakt samma innehåll som bygget. `/spacelords` leder till
+  `/spacelords/`.
+- Kontrollsummorna för `/`, `/MachineBloom/`, `/Defence-Grid/test/`,
+  `/styles.css` och `/i18n.js` är identiska före och efter publiceringen.
+  Inga länkar, navigationsval, DNS- eller Pages-inställningar ändrades.
+
 ## Referenser
 
 - [Vite: statisk driftsättning och basadress](https://vite.dev/guide/static-deploy.html)
