@@ -67,9 +67,6 @@ export function renderMapFleets(
     const target = fleet.destination
       ? HexGeometry.toPoint(fleet.destination)
       : null;
-    const angle = target
-      ? Math.atan2(target.y - point.y, target.x - point.x)
-      : -Math.PI / 2;
     sketch.noStroke();
     sketch.fill('#72d8ca');
     const columns = Math.min(3, sizes.length);
@@ -81,6 +78,9 @@ export function renderMapFleets(
         x: point.x + (((index % columns) - (rowCount - 1) / 2) * 8) / zoom,
         y: point.y + ((row - (rows - 1) / 2) * 8) / zoom,
       };
+      const angle = target
+        ? Math.atan2(target.y - center.y, target.x - center.x)
+        : -Math.PI / 2;
       shipTriangle(sketch, center, size / zoom, angle);
     });
   }

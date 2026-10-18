@@ -46,6 +46,29 @@ function drawing() {
 }
 
 describe('kartflottor', () => {
+  it.each(new HexCoordinate(0, 0).neighbors())(
+    'points every ship tip toward destination $key from its own swarm position',
+    (destination) => {
+      const target = HexGeometry.toPoint(destination);
+      for (const zoom of [0.5, 1, 2]) {
+        const { sketch, render } = drawing();
+        render([{ ...fleet('moving', 9), destination }], zoom);
+        const ships = sketch.triangle.mock.calls.slice(1);
+        expect(ships).toHaveLength(9);
+        for (const [tipX, tipY, leftX, leftY, rightX, rightY] of ships) {
+          const centerX = (tipX + leftX + rightX) / 3;
+          const centerY = (tipY + leftY + rightY) / 3;
+          const headingX = tipX - centerX;
+          const headingY = tipY - centerY;
+          const targetX = target.x - centerX;
+          const targetY = target.y - centerY;
+          expect(headingX * targetY - headingY * targetX).toBeCloseTo(0, 8);
+          expect(headingX * targetX + headingY * targetY).toBeGreaterThan(0);
+        }
+      }
+    },
+  );
+
   it('separates colocated fleets and starts each destination arrow at its own marker', () => {
     const { sketch, render } = drawing();
     render([fleet('first'), fleet('second'), fleet('empty', 0)]);

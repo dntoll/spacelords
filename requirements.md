@@ -20,7 +20,8 @@ funktioner från framtida spelmekanik. Se [hela visionen](docs/game-vision.md).
   information om hemplaneten, byggande, flottor och rundor. Byggnader visar sin
   resursanvändning. En gemensam byggkö för byggnader och skepp kan ordnas om,
   och skeppsorder kan tilldelas en mottagande flotta. `kartflottor` visar varje
-  flotta som en egen skeppssvärm med destinationspil från flottan.
+  flotta som en egen skeppssvärm med destinationspil från flottan och
+  skeppens spetsar riktade mot destinationen.
 - **Imperiets utveckling:** kolonier, befolkning, råvaror, byggande och forskning.
 - **Order och omvärld:** rundor, kolonisation, flottor, civilisationer och senare
   multiplayer.
