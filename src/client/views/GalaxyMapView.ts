@@ -1,3 +1,4 @@
+import { renderMapFleets } from './FleetMapView.js';
 import p5 from 'p5';
 import type { AppReadModel } from '../models/AppModel.js';
 import { HexGeometry, type Point } from '../models/HexCoordinate.js';
@@ -94,24 +95,7 @@ export class GalaxyMapView implements MapPort {
     if (selected) this.#hex(sketch, selected, true, model.camera.zoom);
     for (const cell of model.cells)
       if (cell.object) this.#object(sketch, cell, model.camera.zoom);
-    for (const fleet of model.fleets.filter((fleet) =>
-      Object.values(fleet.ships).some((count) => count > 0),
-    )) {
-      const point = HexGeometry.toPoint(fleet.position);
-      sketch.fill('#72d8ca');
-      sketch.noStroke();
-      sketch.circle(
-        point.x,
-        point.y - 16 / model.camera.zoom,
-        10 / model.camera.zoom,
-      );
-      if (fleet.destination) {
-        const destination = HexGeometry.toPoint(fleet.destination);
-        sketch.stroke('#72d8ca');
-        sketch.strokeWeight(1 / model.camera.zoom);
-        sketch.line(point.x, point.y, destination.x, destination.y);
-      }
-    }
+    renderMapFleets(sketch, model.fleets, model.camera.zoom);
     sketch.pop();
     if (this.#canvas) this.#canvas.dataset.rendered = 'true';
   }
