@@ -1,4 +1,5 @@
-import type { AppReadModel, PlanetTab, Screen } from '../models/AppModel.js';
+import type { AppReadModel, Screen } from '../models/AppModel.js';
+import type { TurnFrame } from '../models/Game.js';
 import type {
   AppPort,
   IntentHandler,
@@ -7,6 +8,7 @@ import type {
 } from './ViewContracts.js';
 import { renderPlanet } from './PlanetView.js';
 import { renderResearch } from './ResearchView.js';
+import { renderFleets } from './FleetView.js';
 import { button, element } from './dom.js';
 
 export class AppView implements AppPort {
@@ -14,7 +16,6 @@ export class AppView implements AppPort {
   readonly #mapFactory: MapFactory;
   #emit: IntentHandler = () => undefined;
   #screen: Screen | null = null;
-  #planetTab: PlanetTab | null = null;
   #map: MapPort | null = null;
   #container: HTMLElement | null = null;
   #panel: HTMLElement | null = null;
@@ -50,6 +51,8 @@ export class AppView implements AppPort {
             this.#emit,
           ),
         );
+      else if (model.screen === 'fleets')
+        main.append(renderFleets(model, this.#emit));
       else main.append(renderResearch(this.#emit));
       this.#root.append(main);
       if (model.screen === 'map' && this.#container) {
@@ -63,11 +66,7 @@ export class AppView implements AppPort {
         heading?.focus({ preventScroll: true });
       }
       this.#screen = model.screen;
-    } else if (
-      model.screen === 'planet' &&
-      model.planet &&
-      this.#planetTab !== model.planetTab
-    ) {
+    } else if (model.screen === 'planet' && model.planet) {
       this.#root
         .querySelector('main')
         ?.replaceChildren(
@@ -81,20 +80,53 @@ export class AppView implements AppPort {
       this.#root
         .querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
         ?.focus({ preventScroll: true });
-    }
-    this.#planetTab = model.planetTab;
+    } else if (model.screen === 'fleets')
+      this.#root
+        .querySelector('main')
+        ?.replaceChildren(renderFleets(model, this.#emit));
     if (model.screen === 'map') {
       this.#map?.render(model);
       if (this.#zoom)
         this.#zoom.value = `${Math.round(model.camera.zoom * 100)}%`;
       if (this.#coordinates)
         this.#coordinates.textContent = `X ${model.camera.center.x.toFixed(0)} · Y ${model.camera.center.y.toFixed(0)}`;
-      const key = model.selected?.position.key ?? '';
+      const key = JSON.stringify({
+        selected: model.selected,
+        fleets: model.fleets.filter(
+          (fleet) => fleet.position.key === model.selected?.position.key,
+        ),
+        destination: model.destinationFleetId,
+      });
       if (key !== this.#selectionKey) {
         this.#selectionKey = key;
         if (this.#known) this.#known.value = key;
         this.#renderSelection(model);
       }
+      const existingNotice = this.#root.querySelector('.game-notice');
+      if (model.notice) {
+        const notice = element('p', 'game-notice', model.notice);
+        notice.setAttribute('role', 'status');
+        existingNotice?.replaceWith(notice);
+        if (!existingNotice) this.#root.append(notice);
+      } else existingNotice?.remove();
+      const existing = this.#root.querySelector('.turn-summary');
+      if (model.phase === 'summary') {
+        const summary = element('section', 'turn-summary');
+        summary.setAttribute('role', 'dialog');
+        summary.append(
+          element('h2', '', 'Turn summary'),
+          ...model.events
+            .filter((event) => event.round === model.round - 1)
+            .map((event) => element('p', '', event.text)),
+          button(
+            'Continue',
+            () => this.#emit({ type: 'continue-planning' }),
+            'button',
+          ),
+        );
+        existing?.replaceWith(summary);
+        if (!existing) this.#root.append(summary);
+      } else existing?.remove();
     }
   }
 
@@ -120,11 +152,19 @@ export class AppView implements AppPort {
     for (const [target, label] of [
       ['map', 'Star map'],
       ['research', 'Research'],
+      ['fleets', 'Fleets'],
     ] as const) {
       const choice = button(
         label,
         () =>
-          this.#emit({ type: target === 'map' ? 'open-map' : 'open-research' }),
+          this.#emit({
+            type:
+              target === 'map'
+                ? 'open-map'
+                : target === 'research'
+                  ? 'open-research'
+                  : 'open-fleets',
+          }),
         'nav-button',
       );
       if (screen === target) choice.setAttribute('aria-current', 'page');
@@ -198,6 +238,9 @@ export class AppView implements AppPort {
       this.#coordinates,
       this.#panel,
     );
+    page.append(
+      button('End turn', () => this.#emit({ type: 'end-turn' }), 'end-turn'),
+    );
     return page;
   }
 
@@ -235,6 +278,18 @@ export class AppView implements AppPort {
       title,
       element('p', 'selection-description', description),
     ];
+    const destinationFleet = model.destinationFleetId
+      ? model.fleets.find((fleet) => fleet.id === model.destinationFleetId)
+      : null;
+    if (destinationFleet)
+      contents.push(
+        element(
+          'p',
+          'destination-mode',
+          `Choose a destination for ${destinationFleet.name}.`,
+        ),
+        button('Cancel', () => this.#emit({ type: 'open-map' }), 'button'),
+      );
     if (object?.kind === 'planet')
       contents.push(
         element('span', 'pill', owned ? model.playerName : 'Uninhabited'),
@@ -247,6 +302,49 @@ export class AppView implements AppPort {
           'button open-planet',
         ),
       );
+    if (cell)
+      for (const fleet of model.fleets.filter(
+        (candidate) =>
+          candidate.position.key === cell.position.key &&
+          Object.values(candidate.ships).some((count) => count > 0),
+      )) {
+        const fleetInfo = element('div', 'fleet-summary');
+        const ships = Object.entries(fleet.ships)
+          .filter(([, count]) => count > 0)
+          .map(([type, count]) => `${count} ${type}`)
+          .join(' · ');
+        fleetInfo.append(
+          element('h3', '', fleet.name),
+          element(
+            'p',
+            'muted-note',
+            `${ships}${fleet.destination ? ` · destination ${fleet.destination.key}` : ''}`,
+          ),
+          button(
+            'Edit fleet',
+            () => this.#emit({ type: 'open-fleet', id: fleet.id }),
+            'button',
+          ),
+          button(
+            'Set destination',
+            () => this.#emit({ type: 'begin-destination', id: fleet.id }),
+            'button',
+          ),
+        );
+        if (fleet.destination)
+          fleetInfo.append(
+            button(
+              'Clear destination',
+              () => this.#emit({ type: 'clear-destination', id: fleet.id }),
+              'button',
+            ),
+          );
+        contents.push(fleetInfo);
+      }
     this.#panel.replaceChildren(...contents);
+  }
+
+  animateTurnStep(frame: TurnFrame): Promise<void> {
+    return this.#map?.animateTurnStep?.(frame) ?? Promise.resolve();
   }
 }

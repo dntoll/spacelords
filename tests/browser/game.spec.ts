@@ -74,12 +74,14 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
   await expect(
     page.getByRole('heading', { name: 'Tellus', exact: true }),
   ).toBeVisible();
-  await page.getByRole('tab', { name: 'Resources', exact: true }).click();
-  await expect(page.getByText('42 units/year', { exact: true })).toBeVisible();
-  await page.getByRole('tab', { name: 'Buildings', exact: true }).click();
+  await page.getByRole('tab', { name: 'Overview', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Build research station' }),
-  ).toBeDisabled();
+    page.getByText('42 units/year', { exact: true }).first(),
+  ).toBeVisible();
+  await page.getByRole('tab', { name: 'Construction', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Build Research station' }),
+  ).toBeEnabled();
   await page.screenshot({
     path: testInfo.outputPath('planet.png'),
     fullPage: true,
@@ -114,6 +116,47 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
   await page.reload();
   await canvas(page);
   await expect(page.getByLabel('Map zoom')).toHaveText('100%');
+});
+
+test('flottadministration / flottdestinationer: map orders and fleet-grid transfers preserve fleets', async ({
+  page,
+}) => {
+  await page
+    .getByRole('button', { name: 'Set destination', exact: true })
+    .click();
+  await expect(
+    page.getByText('Choose a destination for Home Fleet.'),
+  ).toBeVisible();
+  await page
+    .getByRole('combobox', { name: 'Known objects' })
+    .selectOption({ label: 'Vesta' });
+  await expect(
+    page.getByRole('button', { name: 'Clear destination', exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole('combobox', { name: 'Known objects' })
+    .selectOption({ label: 'Tellus' });
+  await page.getByRole('button', { name: 'Edit fleet', exact: true }).click();
+  await page.getByRole('button', { name: 'Home Fleet', exact: true }).click();
+  await page.getByRole('button', { name: 'New fleet', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Fleet 1', exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Home Fleet, Fighter: 1' })
+    .dragTo(page.getByRole('button', { name: 'Fleet 1, Fighter: 0' }));
+  await expect(
+    page.getByRole('button', { name: 'Fleet 1, Fighter: 1' }),
+  ).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Home Fleet, Exploration ship: 1' })
+    .click();
+  await page
+    .getByRole('button', { name: 'Fleet 1, Exploration ship: 0' })
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Fleet 1, Exploration ship: 1' }),
+  ).toBeVisible();
 });
 
 test('kartnavigation: keyboard pans and zooms, canvas hit-testing selects the home planet', async ({

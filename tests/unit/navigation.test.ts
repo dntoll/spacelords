@@ -81,14 +81,14 @@ describe('viewport-game-layout', () => {
     const model = new AppModel();
     const view = new TestView();
     new AppController(model, view).start();
-    view.handler({ type: 'planet-tab', tab: 'buildings' });
+    view.handler({ type: 'planet-tab', tab: 'construction' });
     expect(model.snapshot.planetTab).toBe('overview');
     view.handler({ type: 'open-planet' });
-    view.handler({ type: 'planet-tab', tab: 'resources' });
-    expect(model.snapshot.planetTab).toBe('resources');
+    view.handler({ type: 'planet-tab', tab: 'construction' });
+    expect(model.snapshot.planetTab).toBe('construction');
     view.handler({ type: 'open-map' });
     view.handler({ type: 'open-planet' });
-    expect(model.snapshot.planetTab).toBe('resources');
+    expect(model.snapshot.planetTab).toBe('construction');
     expect(new AppModel().snapshot.planetTab).toBe('overview');
   });
 });

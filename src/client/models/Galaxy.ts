@@ -105,8 +105,41 @@ export class Galaxy {
     Object.freeze(this);
   }
 
-  mapSnapshot(): readonly MapCell[] {
-    return this.#cells;
+  mapSnapshot(explored?: ReadonlySet<string>): readonly MapCell[] {
+    if (!explored) return this.#cells;
+    const planets = this.systems.flatMap((system) => system.planets);
+    return Object.freeze(
+      this.#cells.map((cell) => {
+        const star = this.systems.find(
+          (system) => system.star.position.key === cell.position.key,
+        )?.star;
+        const planet = explored.has(cell.position.key)
+          ? planets.find(
+              (candidate) => candidate.position.key === cell.position.key,
+            )
+          : undefined;
+        const object = star
+          ? Object.freeze({
+              kind: 'star' as const,
+              type: 'star' as const,
+              name: star.name,
+              owned: false,
+            })
+          : planet
+            ? Object.freeze({
+                kind: 'planet' as const,
+                type: planet.type,
+                name: planet.name,
+                owned: planet.colony?.ownerId === this.player.id,
+              })
+            : null;
+        return Object.freeze({
+          position: cell.position,
+          visible: explored.has(cell.position.key),
+          object,
+        });
+      }),
+    );
   }
 
   cellAt(position: HexCoordinate): MapCell | undefined {

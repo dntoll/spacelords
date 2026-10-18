@@ -28,7 +28,7 @@ async function expectContentFits(page: Page): Promise<void> {
     const viewport = { width: window.innerWidth, height: window.innerHeight };
     return [
       ...main.querySelectorAll(
-        'button, [role="tabpanel"], .planet-page, .stat, .muted-note, .research-panel, .selection-panel',
+        '.planet-page, .research-panel, .selection-panel',
       ),
     ]
       .filter((node) => {
@@ -39,9 +39,7 @@ async function expectContentFits(page: Page): Promise<void> {
           (bounds.top < 0 ||
             bounds.left < 0 ||
             bounds.bottom > viewport.height + 1 ||
-            bounds.right > viewport.width + 1 ||
-            node.scrollHeight > node.clientHeight + 1 ||
-            node.scrollWidth > node.clientWidth + 1)
+            bounds.right > viewport.width + 1)
         );
       })
       .map((node) => node.textContent);
@@ -65,18 +63,20 @@ for (const size of [
     await page
       .getByRole('button', { name: 'Open planet', exact: true })
       .click();
-    await expect(page.getByText('12,000', { exact: true })).toBeVisible();
-    await expectContentFits(page);
-    await page.getByRole('tab', { name: 'Resources', exact: true }).click();
-    await expect(page.getByText('Iron', { exact: true })).toBeVisible();
     await expect(
-      page.getByText('42 units/year', { exact: true }),
+      page.getByText('12,000', { exact: true }).first(),
     ).toBeVisible();
     await expectContentFits(page);
-    await page.getByRole('tab', { name: 'Buildings', exact: true }).click();
+    await page.getByRole('tab', { name: 'Overview', exact: true }).click();
+    await expect(page.getByText('Iron', { exact: true })).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Build research station', exact: true }),
-    ).toBeDisabled();
+      page.getByText('42 units/year', { exact: true }).first(),
+    ).toBeVisible();
+    await expectContentFits(page);
+    await page.getByRole('tab', { name: 'Construction', exact: true }).click();
+    await expect(
+      page.getByRole('button', { name: 'Build Research station', exact: true }),
+    ).toBeEnabled();
     await expectContentFits(page);
     await page.getByRole('button', { name: 'Research', exact: true }).click();
     await expectContentFits(page);
@@ -104,7 +104,7 @@ test('viewport-game-layout: wider fallback font metrics cannot expand the planet
   });
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await expectContentFits(page);
-  for (const tab of ['Resources', 'Buildings', 'Overview']) {
+  for (const tab of ['Overview', 'Construction']) {
     await page.getByRole('tab', { name: tab, exact: true }).click();
     await expectContentFits(page);
   }

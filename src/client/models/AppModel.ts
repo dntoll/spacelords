@@ -1,16 +1,21 @@
 import { Camera, type CameraSnapshot } from './Camera.js';
 import { createExampleGalaxy } from './exampleGalaxy.js';
-import type { Galaxy, MapCell } from './Galaxy.js';
 import {
-  type HexCoordinate,
-  HexGeometry,
-  type Point,
-} from './HexCoordinate.js';
-import type { PlanetSnapshot } from './Planet.js';
+  Game,
+  type BuildType,
+  type FleetSnapshot,
+  type GameEvent,
+  type GamePhase,
+  type PlanetGameSnapshot,
+  type ShipType,
+  type TurnFrame,
+} from './Game.js';
+import type { MapCell } from './Galaxy.js';
+import { HexCoordinate, HexGeometry, type Point } from './HexCoordinate.js';
 
-export type PlanetTab = 'overview' | 'resources' | 'buildings';
+export type PlanetTab = 'overview' | 'construction';
 
-export type Screen = 'map' | 'planet' | 'research';
+export type Screen = 'map' | 'planet' | 'research' | 'fleets';
 
 export interface AppReadModel {
   readonly screen: Screen;
@@ -20,18 +25,28 @@ export interface AppReadModel {
   readonly cells: readonly MapCell[];
   readonly selected: MapCell | null;
   readonly camera: CameraSnapshot;
-  readonly planet: PlanetSnapshot | null;
+  readonly planet: PlanetGameSnapshot | null;
+  readonly round: number;
+  readonly phase: GamePhase;
+  readonly fleets: readonly FleetSnapshot[];
+  readonly selectedFleet: FleetSnapshot | null;
+  readonly destinationFleetId: string | null;
+  readonly events: readonly GameEvent[];
+  readonly notice: string | null;
 }
 
 export class AppModel {
-  readonly #galaxy: Galaxy;
+  readonly #game: Game;
   readonly #camera: Camera;
   #selected: HexCoordinate;
   #screen: Screen = 'map';
   #planetTab: PlanetTab = 'overview';
+  #selectedFleetId: string | null = null;
+  #destinationFleetId: string | null = null;
+  #notice: string | null = null;
 
   constructor(galaxy = createExampleGalaxy()) {
-    this.#galaxy = galaxy;
+    this.#game = new Game(galaxy);
     this.#camera = new Camera(galaxy.homePlanet.position, galaxy.radius);
     this.#selected = galaxy.homePlanet.position;
   }
@@ -41,21 +56,47 @@ export class AppModel {
     return Object.freeze({
       screen: this.#screen,
       planetTab: this.#planetTab,
-      playerName: this.#galaxy.player.name,
-      radius: this.#galaxy.radius,
-      cells: this.#galaxy.mapSnapshot(),
-      selected: this.#galaxy.cellAt(this.#selected) ?? null,
+      playerName: this.#game.galaxy.player.name,
+      radius: this.#game.galaxy.radius,
+      cells: this.#game.mapSnapshot(),
+      selected:
+        this.#game
+          .mapSnapshot()
+          .find((cell) => cell.position.key === this.#selected.key) ?? null,
       camera: this.#camera.snapshot,
       planet:
         this.#screen === 'planet'
-          ? (this.#galaxy.ownedPlanetAt(this.#selected)?.snapshot ?? null)
+          ? this.#game.planetAt(this.#selected)
+            ? this.#game.planetSnapshot(this.#game.planetAt(this.#selected)!)
+            : null
           : null,
+      round: this.#game.round,
+      phase: this.#game.phase,
+      fleets: this.#game.fleetSnapshots(),
+      selectedFleet: this.#selectedFleetId
+        ? this.#game.fleet(this.#selectedFleetId)
+        : null,
+      destinationFleetId: this.#destinationFleetId,
+      events: this.#game.events,
+      notice: this.#notice,
     });
   }
 
   select(position: HexCoordinate): void {
-    if (this.#screen === 'map' && this.#galaxy.cellAt(position))
-      this.#selected = position;
+    if (this.#screen !== 'map' || !this.#game.galaxy.cellAt(position)) return;
+    if (this.#destinationFleetId) {
+      this.#game.setDestination(this.#destinationFleetId, position);
+      this.#destinationFleetId = null;
+    } else this.#selected = position;
+  }
+  reportError(error: unknown): void {
+    this.#notice =
+      error instanceof Error
+        ? error.message
+        : 'The order could not be completed.';
+  }
+  clearNotice(): void {
+    this.#notice = null;
   }
 
   selectPoint(point: Point): void {
@@ -63,7 +104,7 @@ export class AppModel {
   }
 
   openPlanet(): void {
-    if (this.#galaxy.ownedPlanetAt(this.#selected)) this.#screen = 'planet';
+    if (this.#game.planetAt(this.#selected)) this.#screen = 'planet';
   }
 
   showPlanetTab(tab: PlanetTab): void {
@@ -75,6 +116,16 @@ export class AppModel {
   }
   openMap(): void {
     this.#screen = 'map';
+    this.#destinationFleetId = null;
+  }
+  openFleets(): void {
+    this.#screen = 'fleets';
+  }
+  openFleet(id: string): void {
+    if (this.#game.fleet(id)) {
+      this.#selectedFleetId = id;
+      this.#screen = 'fleets';
+    }
   }
   pan(delta: Point): void {
     this.#camera.panBy(delta);
@@ -85,6 +136,76 @@ export class AppModel {
 
   home(): void {
     this.#camera.reset();
-    this.#selected = this.#galaxy.homePlanet.position;
+    this.#selected = this.#game.galaxy.homePlanet.position;
+  }
+
+  build(type: BuildType): void {
+    const planet = this.#game.planetAt(this.#selected);
+    if (planet) this.#game.scheduleBuild(planet, type);
+  }
+  cancelProject(id: string): void {
+    const planet = this.#game.planetAt(this.#selected);
+    if (planet) this.#game.cancelProject(planet, id);
+  }
+  toggleDemolition(id: string): void {
+    const planet = this.#game.planetAt(this.#selected);
+    if (planet) this.#game.toggleDemolition(planet, id);
+  }
+  produceFighter(): void {
+    const planet = this.#game.planetAt(this.#selected);
+    if (planet) this.#game.produceFighter(planet);
+  }
+  canBuild(type: BuildType): string | null {
+    const planet = this.#game.planetAt(this.#selected);
+    return planet
+      ? this.#game.canBuild(planet, type)
+      : 'No owned planet selected.';
+  }
+  selectFleet(id: string): void {
+    this.#selectedFleetId = this.#game.fleet(id) ? id : null;
+  }
+  renameFleet(id: string, name: string): void {
+    this.#game.renameFleet(id, name);
+  }
+  transferShips(
+    source: string,
+    ship: ShipType,
+    amount: number,
+    target: string | null,
+  ): void {
+    this.#game.transferShips(source, ship, amount, target);
+  }
+  createFleet(source: string): void {
+    this.#selectedFleetId = this.#game.createFleet(source).id;
+  }
+  deleteFleet(id: string): void {
+    this.#game.deleteFleet(id);
+    if (this.#selectedFleetId === id) this.#selectedFleetId = null;
+  }
+  beginDestination(id: string): void {
+    if (this.#game.fleet(id)) {
+      this.#destinationFleetId = id;
+      this.#screen = 'map';
+    }
+  }
+  setDestination(id: string, q: number, r: number): void {
+    this.#game.setDestination(id, new HexCoordinate(q, r));
+  }
+  clearDestination(id: string): void {
+    this.#game.clearDestination(id);
+  }
+  startTurn(): readonly TurnFrame[] {
+    this.#screen = 'map';
+    this.#destinationFleetId = null;
+    return this.#game.startTurn();
+  }
+  applyTurnFrame(frame: TurnFrame): void {
+    this.#game.applyFrame(frame);
+  }
+  finishTurn(): void {
+    this.#game.finishTurn();
+  }
+  continuePlanning(): void {
+    this.#game.continuePlanning();
   }
 }

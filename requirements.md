@@ -16,15 +16,18 @@ funktioner från framtida spelmekanik. Se [hela visionen](docs/game-vision.md).
   kortfattad spelinformation på engelska. Dokumentationen är på svenska med
   spelets engelska namn och etiketter.
 - **Första spelgrunden:** en fast stjärnkarta, begränsad sikt, kartnavigation och
-  information om hemplaneten och framtida forskning.
+  information om hemplaneten, byggande, flottor och rundor.
 - **Imperiets utveckling:** kolonier, befolkning, råvaror, byggande och forskning.
 - **Order och omvärld:** rundor, kolonisation, flottor, civilisationer och senare
   multiplayer.
 
 [Produktkraven](docs/product-requirements.md) anger status för varje aktivt krav:
 **Ej implementerat**, **Delvis implementerat** eller **Fullständigt implementerat**.
-De beskriver också vad som återstår. Denna iteration omfattar inte byggorder
-eller simulering av rundor.
+De beskriver också vad som återstår. Denna iteration omfattar byggorder,
+flottor, utforskning och simulering av rundor, men inte kolonisering eller
+forskningseffekt. `planetbudgetoversikt` och `tomma-flottor` är färdiga krav i
+produktkraven. `rakare-hexforflyttning` anger att flottornas kortaste hexvägar
+fördelar riktningsbyten jämnt mot målet.
 
 - **Utveckling och kvalitet:** enkel lokal utveckling, kontroller, testning och
   leveransflöde, MVC och p5-karta. Se [tekniska krav](docs/technical-requirements.md).

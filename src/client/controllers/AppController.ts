@@ -23,6 +23,17 @@ export class AppController {
   }
 
   #handle(intent: AppIntent): void {
+    try {
+      this.#model.clearNotice();
+      this.#handleIntent(intent);
+    } catch (error) {
+      console.warn(error);
+      this.#model.reportError(error);
+      this.#view.render(this.#model.snapshot);
+    }
+  }
+
+  #handleIntent(intent: AppIntent): void {
     switch (intent.type) {
       case 'open-map':
         this.#model.openMap();
@@ -35,6 +46,9 @@ export class AppController {
       case 'open-research':
         this.#model.openResearch();
         this.#gesture.cancel();
+        break;
+      case 'open-fleets':
+        this.#model.openFleets();
         break;
       case 'planet-tab':
         this.#model.showPlanetTab(intent.tab);
@@ -51,6 +65,53 @@ export class AppController {
       case 'zoom':
         this.#model.zoom(intent.factor, intent.anchor);
         break;
+      case 'build':
+        this.#model.build(intent.building);
+        break;
+      case 'cancel-project':
+        this.#model.cancelProject(intent.id);
+        break;
+      case 'toggle-demolition':
+        this.#model.toggleDemolition(intent.id);
+        break;
+      case 'produce-fighter':
+        this.#model.produceFighter();
+        break;
+      case 'select-fleet':
+        this.#model.selectFleet(intent.id);
+        break;
+      case 'open-fleet':
+        this.#model.openFleet(intent.id);
+        break;
+      case 'rename-fleet':
+        this.#model.renameFleet(intent.id, intent.name);
+        break;
+      case 'transfer-ships':
+        this.#model.transferShips(
+          intent.source,
+          intent.ship,
+          intent.amount,
+          intent.target,
+        );
+        break;
+      case 'begin-destination':
+        this.#model.beginDestination(intent.id);
+        break;
+      case 'clear-destination':
+        this.#model.clearDestination(intent.id);
+        break;
+      case 'create-fleet':
+        this.#model.createFleet(intent.id);
+        break;
+      case 'delete-fleet':
+        this.#model.deleteFleet(intent.id);
+        break;
+      case 'continue-planning':
+        this.#model.continuePlanning();
+        break;
+      case 'end-turn':
+        void this.#runTurn();
+        return;
       case 'pointer-start':
         this.#gesture.start(intent.id, intent.point);
         return;
@@ -78,5 +139,21 @@ export class AppController {
       }
     }
     this.#view.render(this.#model.snapshot);
+  }
+
+  async #runTurn(): Promise<void> {
+    try {
+      const frames = this.#model.startTurn();
+      this.#view.render(this.#model.snapshot);
+      for (const frame of frames) {
+        await (this.#view.animateTurnStep?.(frame) ?? Promise.resolve());
+        this.#model.applyTurnFrame(frame);
+        this.#view.render(this.#model.snapshot);
+      }
+      this.#model.finishTurn();
+      this.#view.render(this.#model.snapshot);
+    } catch (error) {
+      console.warn(error);
+    }
   }
 }

@@ -3,6 +3,7 @@ import type { AppReadModel } from '../models/AppModel.js';
 import { HexGeometry, type Point } from '../models/HexCoordinate.js';
 import type { MapCell } from '../models/Galaxy.js';
 import type { IntentHandler, MapPort } from './ViewContracts.js';
+import type { TurnFrame } from '../models/Game.js';
 
 export class GalaxyMapView implements MapPort {
   readonly #container: HTMLElement;
@@ -63,6 +64,13 @@ export class GalaxyMapView implements MapPort {
     this.#container.replaceChildren();
   }
 
+  animateTurnStep(frame: TurnFrame): Promise<void> {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+      return Promise.resolve();
+    void frame;
+    return new Promise((resolve) => window.setTimeout(resolve, 300));
+  }
+
   #draw(sketch: p5): void {
     const model = this.#model;
     if (!model || this.#disposed) return;
@@ -86,6 +94,24 @@ export class GalaxyMapView implements MapPort {
     if (selected) this.#hex(sketch, selected, true, model.camera.zoom);
     for (const cell of model.cells)
       if (cell.object) this.#object(sketch, cell, model.camera.zoom);
+    for (const fleet of model.fleets.filter((fleet) =>
+      Object.values(fleet.ships).some((count) => count > 0),
+    )) {
+      const point = HexGeometry.toPoint(fleet.position);
+      sketch.fill('#72d8ca');
+      sketch.noStroke();
+      sketch.circle(
+        point.x,
+        point.y - 16 / model.camera.zoom,
+        10 / model.camera.zoom,
+      );
+      if (fleet.destination) {
+        const destination = HexGeometry.toPoint(fleet.destination);
+        sketch.stroke('#72d8ca');
+        sketch.strokeWeight(1 / model.camera.zoom);
+        sketch.line(point.x, point.y, destination.x, destination.y);
+      }
+    }
     sketch.pop();
     if (this.#canvas) this.#canvas.dataset.rendered = 'true';
   }

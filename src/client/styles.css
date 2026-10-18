@@ -294,16 +294,24 @@ p {
 }
 .planet-content {
   min-height: 0;
+  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 5px;
   background: radial-gradient(ellipse at 10% 10%, #1c3a41, #0d1b26 65%);
   padding: clamp(18px, 4vw, 40px);
 }
-.overview {
+.overview,
+.construction {
   display: grid;
-  grid-template-columns: 1fr 1.3fr;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 20px;
+  overflow: auto;
+}
+.planet-overview {
+  display: grid;
+  grid-template-columns: 0.8fr 1fr;
+  gap: 20px;
+  align-content: start;
 }
 .planet-stats {
   display: grid;
@@ -352,33 +360,170 @@ p {
     inset -20px -10px 30px #020915b0,
     0 0 60px #619d9c24;
 }
-.resources {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 20px;
+.budget-panel {
+  min-width: 0;
 }
-.resource-list {
-  display: grid;
-  gap: 20px;
+.budget-panel table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
 }
-.resource-list .stat {
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: baseline;
+.budget-panel th,
+.budget-panel td {
+  padding: 9px 7px;
   border-bottom: 1px solid var(--line);
-  padding-bottom: 12px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
-.resource-list .stat-label {
-  font-size: 1rem;
+.budget-panel th:first-child,
+.budget-panel td:first-child {
+  text-align: left;
+}
+.existing-buildings {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
 }
 .muted-note {
   color: var(--muted);
   font-size: 0.85rem;
 }
-.buildings {
+.building-panel,
+.fleet-list,
+.fleet-detail {
+  min-height: 0;
+  overflow: auto;
+}
+.building-panel {
   display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.order-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
   align-items: center;
+}
+.fleet-page {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px;
+}
+.fleet-page > h1 {
+  grid-row: 1;
+}
+.fleet-page > .back-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+.fleet-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.fleet-controls input {
+  min-height: 40px;
+  padding: 6px 9px;
+  background: #091923;
+  color: #e5e8e6;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.fleet-grid {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+.fleet-grid-row {
+  min-width: 620px;
+  display: grid;
+  grid-template-columns: minmax(140px, 1.3fr) minmax(120px, 1fr) repeat(
+      3,
+      minmax(100px, 1fr)
+    );
+  border-bottom: 1px solid var(--line);
+}
+.fleet-grid-row > * {
+  min-height: 48px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+.fleet-grid-header {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.fleet-name-button:hover,
+.ship-cell:hover {
+  background: #ffffff12;
+}
+.selected-fleet-row {
+  background: #79d7bd10;
+}
+.ship-cell {
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+.transfer-source {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+  background: #79d7bd22;
+}
+.destructive-button {
+  color: #4d1111;
+  background: #f1b0a9;
+  border-color: #f1b0a9;
+}
+.fleet-summary {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.destination-mode {
+  color: var(--accent);
+}
+.game-notice {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 3;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid #d3a86a;
+  border-radius: 4px;
+  background: #2c2014;
+  color: #f3d5a5;
+}
+.end-turn {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2;
+}
+.turn-summary {
+  position: fixed;
+  inset: 15% 10%;
+  z-index: 10;
+  overflow: auto;
+  padding: 24px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: #10222e;
+  display: grid;
+  gap: 12px;
 }
 .station-card {
   width: 100%;
@@ -442,6 +587,18 @@ p {
   .selection-description {
     grid-column: 1 / -1;
   }
+  .selection-panel .selection-description,
+  .selection-panel .pill {
+    display: none;
+  }
+  .selection-panel button {
+    min-height: 34px;
+    padding-block: 4px;
+  }
+  .fleet-summary {
+    gap: 4px;
+    padding-top: 6px;
+  }
   .open-planet {
     width: auto;
   }
@@ -478,13 +635,48 @@ p {
     grid-template-rows: minmax(0, 1fr) auto;
     gap: 12px;
   }
+  .construction,
+  .planet-overview {
+    grid-template-columns: 1fr;
+  }
   .planet-art {
-    width: auto;
-    height: 100%;
-    max-height: 220px;
+    display: none;
   }
   .planet-stats {
-    gap: 22px 12px;
+    gap: 10px 12px;
+  }
+  .planet-content {
+    padding: 10px;
+  }
+  .budget-panel table {
+    font-size: 0.68rem;
+  }
+  .budget-panel th,
+  .budget-panel td {
+    padding: 4px 3px;
+  }
+  .budget-panel h2,
+  .existing-buildings h2 {
+    font-size: 1rem;
+  }
+  .fleet-page {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    padding: 10px;
+  }
+  .fleet-page > h1 {
+    grid-row: 1;
+  }
+  .fleet-page > .back-button {
+    grid-row: 1;
+    justify-self: end;
+  }
+  .fleet-list {
+    grid-row: 2;
+    max-height: 120px;
+  }
+  .fleet-detail {
+    grid-row: 3;
   }
   .stat {
     gap: 5px;
@@ -504,19 +696,18 @@ p {
     align-items: center;
   }
   .planet-content {
-    padding: 14px 20px;
+    padding: 7px 10px;
   }
   .overview {
     grid-template-columns: 0.7fr 1.3fr;
     grid-template-rows: 1fr;
   }
   .planet-art {
-    width: auto;
-    height: 100%;
-    max-height: 140px;
+    display: none;
   }
   .planet-stats {
-    gap: 12px 20px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
   }
   .stat {
     gap: 3px;
@@ -534,7 +725,7 @@ p {
     gap: 10px;
   }
   .station-card {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     align-items: center;
     gap: 10px 20px;
   }
@@ -544,6 +735,44 @@ p {
   .station-card .muted-note {
     grid-column: 1 / -1;
   }
+  .construction {
+    grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
+    gap: 8px;
+  }
+  .construction .building-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+  }
+  .construction .building-panel > h2,
+  .construction .order-row {
+    grid-column: 1 / -1;
+  }
+  .station-card {
+    gap: 2px;
+    padding: 4px;
+  }
+  .station-card p {
+    display: none;
+  }
+  .station-card h3 {
+    font-size: 0.72rem;
+  }
+  .station-card .button {
+    min-height: 28px;
+    padding: 3px 5px;
+    font-size: 0.65rem;
+  }
+  .budget-panel h2,
+  .existing-buildings h2 {
+    font-size: 0.85rem;
+  }
+  .budget-panel table {
+    font-size: 0.58rem;
+  }
+  .budget-panel th,
+  .budget-panel td {
+    padding: 2px;
+  }
   .research-panel {
     padding: 16px 20px;
     gap: 10px;
@@ -551,6 +780,18 @@ p {
   .selection-panel {
     width: 230px;
     padding: 12px;
-    gap: 8px;
+    gap: 4px;
+  }
+  .selection-panel .selection-description,
+  .selection-panel .pill {
+    display: none;
+  }
+  .selection-panel button {
+    min-height: 32px;
+    padding: 5px 8px;
+  }
+  .fleet-summary {
+    gap: 4px;
+    padding-top: 6px;
   }
 }

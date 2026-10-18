@@ -21,6 +21,28 @@ class Colony {
   population
   buildings
 }
+class Building {
+  type
+  workers
+  annualBudget
+}
+class ConstructionProject {
+  type
+  reservedCrew
+}
+class Ship {
+  type
+  speed
+  crew
+}
+class Fleet {
+  name
+  courseOrigin
+  destination
+  ships: 0..*
+}
+class TurnOrder
+class GameEvent
 class Player {
   name
 }
@@ -39,21 +61,23 @@ Star --> HexCoordinate : position
 Planet --> HexCoordinate : position
 Planet "1" *-- "0..1" Colony
 Colony --> Player : ownerId
+Colony "1" o-- "0..*" Building
+Colony "1" o-- "0..*" ConstructionProject
+Fleet "1" o-- "0..*" Ship
+TurnOrder --> ConstructionProject
+TurnOrder --> Fleet
+GameEvent --> TurnOrder
 
 note bottom of Galaxy
   Första iterationen använder en fast exempelvärld.
-  Kartans läsdata döljer planeter utanför lokal sikt.
+  Kartans läsdata döljer planeter utanför utforskad rymd.
+  Skepp utforskar besökta hexagoner; explorers även grannar.
 end note
 
 package "Framtida domän – ej implementerad" {
   class AsteroidBelt <<planned>>
-  class Building <<planned>>
   class Technology <<planned>>
-  class Order <<planned>>
-  class Fleet <<planned>>
-  class Ship <<planned>>
   class Civilization <<planned>>
-  Fleet "1" o-- "1..*" Ship
   Fleet --> Civilization : encounter orders
   Technology --> Building : unlocks
 }
