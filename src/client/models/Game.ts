@@ -20,6 +20,7 @@ export interface Cost {
 }
 export interface BuildDefinition {
   readonly permanent: boolean;
+  readonly description: string;
   readonly workers: number;
   readonly cost: Cost;
   readonly crew: number;
@@ -29,29 +30,36 @@ export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
   Object.freeze({
     'Research station': {
       permanent: true,
+      description:
+        'Contributes one research point per year to the selected technology.',
       workers: 600,
       cost: { Iron: 2, Water: 3, Oil: 1 },
       crew: 0,
     },
     'Colony ship factory': {
-      permanent: false,
+      permanent: true,
+      description:
+        'Shipyard: builds Colony ships for settling uninhabited planets.',
       workers: 2000,
       cost: { Iron: 18, Water: 10, Oil: 6 },
-      crew: 1000,
+      crew: 0,
       ship: 'Colony ship',
     },
     'Exploration ship factory': {
-      permanent: false,
+      permanent: true,
+      description:
+        'Shipyard: builds Exploration ships that reveal nearby space.',
       workers: 1200,
       cost: { Iron: 10, Water: 8, Oil: 3 },
-      crew: 200,
+      crew: 0,
       ship: 'Exploration ship',
     },
     'Fighter factory': {
       permanent: true,
+      description: 'Shipyard: builds Fighters for your fleets.',
       workers: 800,
       cost: { Iron: 8, Water: 5, Oil: 2 },
-      crew: 50,
+      crew: 0,
       ship: 'Fighter',
     },
   });
@@ -64,15 +72,33 @@ export const SHIPS: Readonly<
 });
 export function projectDefinition(type: ProjectType): BuildDefinition {
   if (type in BUILDINGS) return BUILDINGS[type as BuildType];
-  const factory = BUILDINGS[`${type} factory` as BuildType];
   return {
-    ...factory,
     permanent: false,
-    cost: type === 'Fighter' ? { Iron: 0, Water: 0, Oil: 0 } : factory.cost,
-    workers: type === 'Fighter' ? 0 : factory.workers,
+    description: `Produces one ${type}. Factory staff operate the shipyard.`,
+    cost:
+      type === 'Colony ship'
+        ? { Iron: 6, Water: 3, Oil: 1 }
+        : type === 'Exploration ship'
+          ? { Iron: 3, Water: 2, Oil: 1 }
+          : { Iron: 2, Water: 1, Oil: 1 },
+    workers: 0,
+    crew: SHIPS[type as ShipType].crew,
     ship: type as ShipType,
   };
 }
+export const QUEUE_CAPACITY = 5;
+export const TECHNOLOGIES = [
+  'Colony ship factory',
+  'Exploration ship factory',
+  'Fighter factory',
+] as const;
+export type Technology = (typeof TECHNOLOGIES)[number];
+export interface ResearchSnapshot {
+  readonly completed: readonly Technology[];
+  readonly selected: Technology | null;
+  readonly stations: number;
+}
+
 const emptyCost = (): { Iron: number; Water: number; Oil: number } => ({
   Iron: 0,
   Water: 0,
@@ -89,7 +115,9 @@ const addCost = (
 
 export interface BuildingSnapshot {
   readonly id: string;
-  readonly type: 'Research station' | 'Fighter factory';
+  readonly type: BuildType;
+  readonly slotIndex: number;
+  readonly queue: readonly ConstructionProjectSnapshot[];
   readonly scheduledForDemolition: boolean;
 }
 export interface ConstructionProjectSnapshot {
@@ -97,6 +125,8 @@ export interface ConstructionProjectSnapshot {
   readonly type: ProjectType;
   readonly destinationFleetId: string | null;
   readonly blockedReason: string | null;
+  readonly slotIndex: number | null;
+  readonly factoryId: string | null;
 }
 export interface BudgetSnapshot {
   readonly production: Cost;
@@ -121,6 +151,22 @@ export interface PlanetGameSnapshot {
   readonly buildings: readonly BuildingSnapshot[];
   readonly projects: readonly ConstructionProjectSnapshot[];
   readonly position: HexCoordinate;
+  readonly sites: readonly BuildingSiteSnapshot[];
+  readonly buildOptions: readonly {
+    readonly type: BuildType;
+    readonly blockedReason: string | null;
+  }[];
+}
+export interface BuildingSiteSnapshot {
+  readonly index: number;
+  readonly building: BuildingSnapshot | null;
+  readonly project: ConstructionProjectSnapshot | null;
+}
+export interface PlanetOrderSnapshot {
+  readonly planetId: string;
+  readonly position: HexCoordinate;
+  readonly emptySites: number;
+  readonly emptyQueues: number;
 }
 export interface FleetSnapshot {
   readonly id: string;
@@ -152,12 +198,16 @@ interface ColonyState {
 }
 interface Building {
   id: string;
-  type: 'Research station' | 'Fighter factory';
+  type: BuildType;
+  slotIndex: number;
+  queue: Project[];
   demolition: boolean;
 }
 interface Project {
   id: string;
   type: ProjectType;
+  slotIndex: number | null;
+  factoryId: string | null;
   destinationFleetId: string | null;
 }
 interface Fleet {
@@ -176,6 +226,8 @@ const zeroShips = (): Record<ShipType, number> => ({
 
 /** Private mutable game state; views receive only immutable snapshots. */
 export class Game {
+  #researched = new Set<Technology>();
+  #researchTarget: Technology | null = null;
   #round = 1;
   #phase: GamePhase = 'planning';
   #sequence = 1;
@@ -218,16 +270,38 @@ export class Game {
     return Object.freeze([...this.#events]);
   }
   mapSnapshot(): readonly MapCell[] {
-    this.#mapCells ??= this.galaxy.mapSnapshot(this.#explored);
+    this.#mapCells ??= this.galaxy.mapSnapshot(
+      this.#explored,
+      new Set(this.#colonies.keys()),
+    );
     return this.#mapCells;
   }
   planetAt(position: HexCoordinate): Planet | undefined {
-    return this.galaxy.ownedPlanetAt(position);
+    return this.#ownedPlanets().find(
+      (planet) => planet.position.key === position.key,
+    );
   }
   planetSnapshot(planet: Planet): PlanetGameSnapshot | null {
     const state = this.#colonies.get(planet.id);
     if (!state) return null;
-    const budget = this.#budget(planet, state);
+    const { budget, blocks } = this.#allocation(planet, state);
+    const projectSnapshot = (project: Project): ConstructionProjectSnapshot =>
+      Object.freeze({
+        ...project,
+        blockedReason: blocks.get(project.id) ?? null,
+      });
+    const buildings = Object.freeze(
+      state.buildings.map((building) =>
+        Object.freeze({
+          id: building.id,
+          type: building.type,
+          slotIndex: building.slotIndex,
+          scheduledForDemolition: building.demolition,
+          queue: Object.freeze(building.queue.map(projectSnapshot)),
+        }),
+      ),
+    );
+    const projects = Object.freeze(state.projects.map(projectSnapshot));
     return Object.freeze({
       id: planet.id,
       name: planet.name,
@@ -235,26 +309,112 @@ export class Game {
       habitability: planet.habitability,
       buildSlots: planet.buildSlots,
       budget: Object.freeze(budget),
-      buildings: Object.freeze(
-        state.buildings.map((b) =>
-          Object.freeze({
-            id: b.id,
-            type: b.type,
-            scheduledForDemolition: b.demolition,
-          }),
-        ),
-      ),
-      projects: Object.freeze(
-        state.projects.map((p, index) =>
-          Object.freeze({
-            ...p,
-            blockedReason:
-              index === 0 ? this.#projectBlock(planet, state, p) : null,
-          }),
-        ),
-      ),
+      buildings,
+      projects,
       position: planet.position,
+      sites: Object.freeze(
+        Array.from({ length: planet.buildSlots }, (_, index) =>
+          Object.freeze({
+            index,
+            building:
+              buildings.find((building) => building.slotIndex === index) ??
+              null,
+            project:
+              projects.find((project) => project.slotIndex === index) ?? null,
+          }),
+        ),
+      ),
+      buildOptions: Object.freeze(
+        (
+          [
+            'Research station',
+            ...TECHNOLOGIES.filter((type) => this.#researched.has(type)),
+          ] as BuildType[]
+        ).map((type) =>
+          Object.freeze({ type, blockedReason: this.canBuild(planet, type) }),
+        ),
+      ),
     });
+  }
+  get research(): ResearchSnapshot {
+    return Object.freeze({
+      completed: Object.freeze([...this.#researched]),
+      selected: this.#researchTarget,
+      stations: this.#ownedPlanets().reduce(
+        (count, planet) =>
+          count +
+          (this.#costBlock(this.#budget(planet, this.#state(planet)))
+            ? 0
+            : this.#state(planet).buildings.filter(
+                (b) => b.type === 'Research station' && !b.demolition,
+              ).length),
+        0,
+      ),
+    });
+  }
+  selectResearch(type: Technology | null): void {
+    this.#requirePlanning();
+    if (
+      type !== null &&
+      (!TECHNOLOGIES.includes(type) || this.#researched.has(type))
+    )
+      throw new Error('Choose an undiscovered technology.');
+    this.#researchTarget = type;
+  }
+  planetOrders(): readonly PlanetOrderSnapshot[] {
+    return Object.freeze(
+      this.#ownedPlanets().map((planet) => {
+        const state = this.#state(planet);
+        return Object.freeze({
+          planetId: planet.id,
+          position: planet.position,
+          emptySites:
+            planet.buildSlots - state.buildings.length - state.projects.length,
+          emptyQueues: state.buildings.filter(
+            (b) =>
+              BUILDINGS[b.type].ship && !b.demolition && b.queue.length === 0,
+          ).length,
+        });
+      }),
+    );
+  }
+  canColonize(fleetId: string): string | null {
+    if (this.#phase !== 'planning')
+      return 'Orders are locked during simulation.';
+    const fleet = this.#fleetState(fleetId);
+    const planet = this.galaxy.systems
+      .flatMap((system) => system.planets)
+      .find((p) => p.position.key === fleet.position.key);
+    if (!planet || planet.colony || this.#colonies.has(planet.id))
+      return 'Choose an uninhabited planet.';
+    if (fleet.ships['Colony ship'] < 1)
+      return 'A Colony ship is required at this planet.';
+    return null;
+  }
+  colonize(fleetId: string): void {
+    const why = this.canColonize(fleetId);
+    if (why) throw new Error(why);
+    const fleet = this.#fleetState(fleetId);
+    const planet = this.galaxy.systems
+      .flatMap((system) => system.planets)
+      .find((p) => p.position.key === fleet.position.key)!;
+    fleet.ships['Colony ship'] -= 1;
+    if (this.#shipCount(fleet.ships) === 0) fleet.destination = null;
+    this.#colonies.set(planet.id, {
+      population: SHIPS['Colony ship'].crew,
+      buildings: [],
+      projects: [],
+      homeFleetId: fleet.id,
+    });
+    this.#reveal(planet.position);
+    this.#mapCells = null;
+    this.#events.push(
+      Object.freeze({
+        id: this.#id('event'),
+        round: this.#round,
+        text: `${planet.name} was colonized by ${fleet.name}.`,
+      }),
+    );
   }
   fleetSnapshots(): readonly FleetSnapshot[] {
     return Object.freeze(
@@ -274,31 +434,44 @@ export class Game {
   fleet(id: string): FleetSnapshot | null {
     return this.fleetSnapshots().find((fleet) => fleet.id === id) ?? null;
   }
-  canBuild(planet: Planet, type: BuildType): string | null {
+  canBuild(planet: Planet, type: BuildType, slotIndex?: number): string | null {
     const state = this.#colonies.get(planet.id);
     if (!state) return 'This planet is not owned.';
     if (this.#phase !== 'planning')
       return 'Orders are locked during simulation.';
     if (!Object.hasOwn(BUILDINGS, type)) return 'Unknown building type.';
-    if (this.#budget(planet, state).availableSlots < 1)
-      return 'No build slots are available.';
-    return null;
+    if (type !== 'Research station' && !this.#researched.has(type))
+      return 'Research this building first.';
+    const slot = slotIndex ?? this.#emptySlot(planet, state);
+    if (
+      slot < 0 ||
+      !Number.isInteger(slot) ||
+      slot >= planet.buildSlots ||
+      state.buildings.some((b) => b.slotIndex === slot) ||
+      state.projects.some((p) => p.slotIndex === slot)
+    )
+      return 'No build slots are available at this site.';
+    const budget = this.#budget(planet, state);
+    return this.#costBlock(budget, BUILDINGS[type]);
   }
-  scheduleBuild(planet: Planet, type: BuildType): void {
-    const why = this.canBuild(planet, type);
+  scheduleBuild(planet: Planet, type: BuildType, slotIndex?: number): void {
+    const why = this.canBuild(planet, type, slotIndex);
     if (why) throw new Error(why);
-    this.#colonies.get(planet.id)?.projects.push({
+    const state = this.#state(planet);
+    state.projects.push({
       id: this.#id('project'),
       type,
       destinationFleetId: null,
+      slotIndex: slotIndex ?? this.#emptySlot(planet, state),
+      factoryId: null,
     });
   }
   cancelProject(planet: Planet, projectId: string): void {
     this.#requirePlanning();
     const state = this.#state(planet);
-    state.projects = state.projects.filter(
-      (project) => project.id !== projectId,
-    );
+    state.projects = state.projects.filter((p) => p.id !== projectId);
+    for (const building of state.buildings)
+      building.queue = building.queue.filter((p) => p.id !== projectId);
   }
   toggleDemolition(planet: Planet, buildingId: string): void {
     this.#requirePlanning();
@@ -312,38 +485,62 @@ export class Game {
     planet: Planet,
     type: ShipType,
     destinationFleetId: string | null = null,
+    factoryId?: string,
   ): void {
     this.#requirePlanning();
+    if (!Object.hasOwn(SHIPS, type)) throw new Error('Unknown ship type.');
     this.#validateProjectFleet(planet, destinationFleetId);
-    this.#state(planet).projects.push({
+    const building = this.#state(planet).buildings.find(
+      (b) =>
+        (!factoryId || b.id === factoryId) &&
+        BUILDINGS[b.type].ship === type &&
+        !b.demolition,
+    );
+    if (!building)
+      throw new Error('A matching completed shipyard is required.');
+    if (building.queue.length >= QUEUE_CAPACITY)
+      throw new Error('This factory queue is full (5 orders).');
+    building.queue.push({
       id: this.#id('project'),
       type,
       destinationFleetId,
+      slotIndex: null,
+      factoryId: building.id,
     });
   }
   moveProject(planet: Planet, id: string, index: number): void {
     this.#requirePlanning();
-    const projects = this.#state(planet).projects;
-    const previous = projects.findIndex((project) => project.id === id);
+    const projects = this.#state(planet).buildings.find((b) =>
+      b.queue.some((p) => p.id === id),
+    )?.queue;
     if (
-      previous < 0 ||
+      !projects ||
       !Number.isInteger(index) ||
       index < 0 ||
       index >= projects.length
     )
-      throw new Error('Choose a valid queue position.');
+      throw new Error('Choose a valid factory queue position.');
+    const previous = projects.findIndex((p) => p.id === id);
     const [project] = projects.splice(previous, 1);
     projects.splice(index, 0, project!);
   }
   setProjectFleet(planet: Planet, id: string, fleetId: string | null): void {
     this.#requirePlanning();
     this.#validateProjectFleet(planet, fleetId);
-    const project = this.#state(planet).projects.find(
-      (project) => project.id === id,
-    );
-    if (!project || !projectDefinition(project.type).ship)
-      throw new Error('Choose a ship production order.');
+    const project = this.#state(planet)
+      .buildings.flatMap((b) => b.queue)
+      .find((p) => p.id === id);
+    if (!project) throw new Error('Choose a ship production order.');
     project.destinationFleetId = fleetId;
+  }
+  #emptySlot(planet: Planet, state: ColonyState): number {
+    return (
+      Array.from({ length: planet.buildSlots }, (_, index) => index).find(
+        (index) =>
+          !state.buildings.some((b) => b.slotIndex === index) &&
+          !state.projects.some((p) => p.slotIndex === index),
+      ) ?? -1
+    );
   }
   #validateProjectFleet(planet: Planet, id: string | null): void {
     if (id && this.#fleetState(id).position.key !== planet.position.key)
@@ -479,20 +676,33 @@ export class Game {
         fleet.destination = null;
         this.#event(`Fleet ${fleet.name} reached its destination.`);
       }
+    const researchStations = this.research.stations;
     for (const planet of this.#ownedPlanets()) {
       const state = this.#state(planet);
       for (const building of state.buildings.filter((b) => b.demolition))
-        this.#event(`${building.type} was demolished on ${planet.name}.`);
+        this.#event(
+          `${building.type} was demolished on ${planet.name}; its queue was cancelled.`,
+        );
       state.buildings = state.buildings.filter((b) => !b.demolition);
-      const project = state.projects[0];
-      if (project) {
-        const blocked = this.#projectBlock(planet, state, project);
+      const { blocks } = this.#allocation(planet, state);
+      const active = [
+        ...state.projects,
+        ...state.buildings.flatMap((b) => (b.queue[0] ? [b.queue[0]] : [])),
+      ];
+      for (const project of active) {
+        const blocked = blocks.get(project.id);
         if (blocked)
           this.#event(
             `${project.type} is waiting on ${planet.name}: ${blocked}`,
           );
         else {
-          state.projects.shift();
+          if (project.factoryId) {
+            const factory = state.buildings.find(
+              (b) => b.id === project.factoryId,
+            )!;
+            factory.queue.shift();
+          } else
+            state.projects = state.projects.filter((p) => p.id !== project.id);
           this.#completeProject(planet, state, project);
         }
       }
@@ -501,6 +711,11 @@ export class Game {
       );
       state.population += growth;
       this.#event(`Population on ${planet.name} changed by +${growth}.`);
+    }
+    if (this.#researchTarget && researchStations > 0) {
+      this.#researched.add(this.#researchTarget);
+      this.#event(`Research completed: ${this.#researchTarget}.`);
+      this.#researchTarget = null;
     }
     this.#round += 1;
     this.#events.push(...this.#turnEvents);
@@ -516,12 +731,12 @@ export class Game {
     if (d.permanent) {
       state.buildings.push({
         id: this.#id('building'),
-        type: project.type as Building['type'],
+        type: project.type as BuildType,
+        slotIndex: project.slotIndex!,
+        queue: [],
         demolition: false,
       });
       this.#event(`${project.type} was completed on ${planet.name}.`);
-      if (d.ship)
-        this.#createShip(planet, state, d.ship, project.destinationFleetId);
     } else if (d.ship) {
       this.#createShip(planet, state, d.ship, project.destinationFleetId);
       this.#event(`${project.type} completed on ${planet.name}.`);
@@ -560,79 +775,87 @@ export class Game {
     this.#event(`${ship} was produced at ${planet.name}.`);
   }
   #budget(planet: Planet, state: ColonyState): BudgetSnapshot {
-    const yieldOf = (name: string) =>
-      planet.resources.find((resource) => resource.name === name)?.perYear ?? 0;
-    const production: Cost = {
-      Iron: yieldOf('Iron'),
-      Water: yieldOf('Water'),
-      Oil: yieldOf('Oil'),
-    };
+    return this.#allocation(planet, state).budget;
+  }
+  #costBlock(
+    budget: BudgetSnapshot,
+    definition?: BuildDefinition,
+  ): string | null {
+    if (
+      budget.availableWorkers <
+      (definition?.workers ?? 0) + (definition?.crew ?? 0)
+    )
+      return 'Not enough population for workers and crew.';
+    if (
+      (['Iron', 'Water', 'Oil'] as const).some(
+        (r) => budget.available[r] < (definition?.cost[r] ?? 0),
+      )
+    )
+      return 'Annual resource budget is too small.';
+    return null;
+  }
+  #allocation(
+    planet: Planet,
+    state: ColonyState,
+  ): { budget: BudgetSnapshot; blocks: Map<string, string> } {
+    const production = emptyCost();
+    for (const resource of ['Iron', 'Water', 'Oil'] as const)
+      production[resource] =
+        planet.resources.find((yieldOf) => yieldOf.name === resource)
+          ?.perYear ?? 0;
     const reserved = emptyCost();
     let workers = 0;
     let crew = 0;
-    let slots = 0;
-    for (const building of state.buildings)
-      if (!building.demolition) {
-        const d = BUILDINGS[building.type];
-        addCost(reserved, d.cost);
-        workers += d.workers;
-        slots += 1;
-      }
-    for (const project of state.projects)
-      if (project.type in BUILDINGS) slots += 1;
-    const active = state.projects[0];
-    if (active) {
-      const d = projectDefinition(active.type);
-      addCost(reserved, d.cost);
-      workers += d.workers;
-      crew += d.crew;
+    const blocks = new Map<string, string>();
+    for (const item of [
+      ...state.buildings.filter((b) => !b.demolition),
+      ...state.projects,
+    ]) {
+      const definition = BUILDINGS[item.type as BuildType];
+      addCost(reserved, definition.cost);
+      workers += definition.workers;
     }
-    const population = state.population;
-    return {
-      production: Object.freeze(production),
-      reserved: Object.freeze(reserved),
+    const snapshot = (): BudgetSnapshot => ({
+      production: Object.freeze({ ...production }),
+      reserved: Object.freeze({ ...reserved }),
       available: Object.freeze({
         Iron: production.Iron - reserved.Iron,
         Water: production.Water - reserved.Water,
         Oil: production.Oil - reserved.Oil,
       }),
-      workers: population,
+      workers: state.population,
       reservedWorkers: workers,
-      availableWorkers: population - workers - crew,
+      availableWorkers: state.population - workers - crew,
       reservedCrew: crew,
-      availableCrew: population - workers - crew,
+      availableCrew: state.population - workers - crew,
       slots: planet.buildSlots,
-      reservedSlots: slots,
-      availableSlots: planet.buildSlots - slots,
-    };
-  }
-  #projectBlock(
-    planet: Planet,
-    state: ColonyState,
-    project: Project,
-  ): string | null {
-    if (
-      project.type === 'Fighter' &&
-      !state.buildings.some(
-        (b) => b.type === 'Fighter factory' && !b.demolition,
-      )
-    )
-      return 'A Fighter factory is required.';
-    const budget = this.#budget(planet, state);
-    if (budget.availableWorkers < 0)
-      return 'Not enough population for workers and crew.';
-    if (
-      (['Iron', 'Water', 'Oil'] as const).some(
-        (resource) => budget.available[resource] < 0,
-      )
-    )
-      return 'Annual resource budget is too small.';
-    if (
-      project.type in BUILDINGS &&
-      state.buildings.filter((b) => !b.demolition).length >= planet.buildSlots
-    )
-      return 'No build slots are available.';
-    return null;
+      reservedSlots: state.buildings.length + state.projects.length,
+      availableSlots:
+        planet.buildSlots - state.buildings.length - state.projects.length,
+    });
+    const base = snapshot();
+    const baseBlock = this.#costBlock(base);
+    for (const project of state.projects)
+      if (baseBlock) blocks.set(project.id, baseBlock);
+    for (const building of state.buildings.toSorted(
+      (a, b) => a.slotIndex - b.slotIndex,
+    )) {
+      const head = building.queue[0];
+      if (!head) continue;
+      if (building.demolition) {
+        blocks.set(head.id, 'Shipyard is scheduled for demolition.');
+        continue;
+      }
+      const definition = projectDefinition(head.type);
+      const why = this.#costBlock(snapshot(), definition);
+      if (why) blocks.set(head.id, why);
+      else {
+        addCost(reserved, definition.cost);
+        workers += definition.workers;
+        crew += definition.crew;
+      }
+    }
+    return { budget: snapshot(), blocks };
   }
   #route(fleet: Fleet): { fleet: Fleet; path: HexCoordinate[] } {
     if (!fleet.destination) return { fleet, path: [] };

@@ -105,7 +105,10 @@ export class Galaxy {
     Object.freeze(this);
   }
 
-  mapSnapshot(explored?: ReadonlySet<string>): readonly MapCell[] {
+  mapSnapshot(
+    explored?: ReadonlySet<string>,
+    ownedPlanetIds?: ReadonlySet<string>,
+  ): readonly MapCell[] {
     if (!explored) return this.#cells;
     const planets = this.systems.flatMap((system) => system.planets);
     return Object.freeze(
@@ -130,7 +133,9 @@ export class Galaxy {
                 kind: 'planet' as const,
                 type: planet.type,
                 name: planet.name,
-                owned: planet.colony?.ownerId === this.player.id,
+                owned:
+                  ownedPlanetIds?.has(planet.id) ??
+                  planet.colony?.ownerId === this.player.id,
               })
             : null;
         return Object.freeze({

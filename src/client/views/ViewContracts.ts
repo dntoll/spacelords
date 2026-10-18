@@ -1,5 +1,10 @@
 import type { AppReadModel, PlanetTab } from '../models/AppModel.js';
-import type { BuildType, ShipType, TurnFrame } from '../models/Game.js';
+import type {
+  BuildType,
+  ShipType,
+  TurnFrame,
+  Technology,
+} from '../models/Game.js';
 import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 
 export type AppIntent =
@@ -22,6 +27,7 @@ export type AppIntent =
   | {
       readonly type: 'queue-ship';
       readonly ship: ShipType;
+      readonly factoryId?: string;
       readonly fleetId: string | null;
     }
   | {
@@ -34,7 +40,15 @@ export type AppIntent =
       readonly id: string;
       readonly fleetId: string | null;
     }
-  | { readonly type: 'build'; readonly building: BuildType }
+  | {
+      readonly type: 'build';
+      readonly building: BuildType;
+      readonly slotIndex?: number;
+    }
+  | { readonly type: 'build-site'; readonly index: number | null }
+  | { readonly type: 'shipyard-menu'; readonly id: string | null }
+  | { readonly type: 'research'; readonly technology: Technology | null }
+  | { readonly type: 'colonize'; readonly id: string }
   | {
       readonly type: 'cancel-project' | 'toggle-demolition';
       readonly id: string;

@@ -39,11 +39,15 @@ Produktkraven finns separat i [product-requirements.md](product-requirements.md)
   faktiska JavaScript- och CSS-filer går att hämta med rätt innehållstyp.
 
 - `byggnaders-resursanvandning`: vytest kontrollerar drift per färdig byggnad.
-- `flera-byggnader-av-samma-typ`, `gemensam-byggko`, `skepp-i-byggko` och
+- `flera-byggnader-av-samma-typ`, `planetbyggplatser`, `fabrikskoer`, `skepp-i-byggko` och
   `skepp-till-destinationsflotta`: modelltester kontrollerar köordning över år,
   budgetblockering, avbrott, byggplatser, mottagarval och reservbeteende.
   Vytester kontrollerar controllerstyrda knappar, dragning och mottagarval;
   browsertester kontrollerar beställning, omordning och färdigställning.
+- `forska-fram-fabriker`, `kolonisation` och `kartorderstatus`: modelltester
+  kontrollerar upplåsning, forskningsförutsättningar, kolonibildning, ägarskap
+  och orderräkning. Vy- och browsertester följer hela kedjan från forskning
+  till ny koloni; kartvyns markeringar kontrolleras separat.
 
 Processkrav kan inte bevisas med meningsfulla enhetstester. De följs upp genom
 verktygskontroller, CI och granskning enligt tabellen.

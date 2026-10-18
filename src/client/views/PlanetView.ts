@@ -1,10 +1,11 @@
-import type { PlanetTab } from '../models/AppModel.js';
+import type { AppReadModel, PlanetTab } from '../models/AppModel.js';
 import {
   BUILDINGS,
-  SHIPS,
+  QUEUE_CAPACITY,
+  type BuildingSnapshot,
+  type ConstructionProjectSnapshot,
   projectDefinition,
   type FleetSnapshot,
-  type ShipType,
   type BuildType,
   type PlanetGameSnapshot,
   type Resource,
@@ -23,6 +24,11 @@ export function renderPlanet(
   activeTab: PlanetTab,
   emit: IntentHandler,
   fleets: readonly FleetSnapshot[] = [],
+  menus: Pick<AppReadModel, 'constructionSite' | 'shipyardId' | 'phase'> = {
+    constructionSite: null,
+    shipyardId: null,
+    phase: 'planning',
+  },
 ): HTMLElement {
   const page = element('section', 'planet-page');
   const header = element('div', 'screen-header');
@@ -47,7 +53,11 @@ export function renderPlanet(
   panel.setAttribute('role', 'tabpanel');
   if (activeTab === 'overview')
     panel.append(overview(planet, owner), budgetPanel(planet));
-  else panel.append(budgetPanel(planet), construction(planet, emit, fleets));
+  else
+    panel.append(
+      budgetPanel(planet),
+      construction(planet, emit, fleets, menus),
+    );
   page.append(navigation, panel);
   return page;
 }
@@ -137,151 +147,317 @@ function construction(
   planet: PlanetGameSnapshot,
   emit: IntentHandler,
   fleets: readonly FleetSnapshot[],
+  menus: Pick<AppReadModel, 'constructionSite' | 'shipyardId' | 'phase'>,
 ): HTMLElement {
   const box = element('section', 'building-panel');
-  box.append(element('h2', '', 'Construction'));
-  for (const building of planet.buildings) {
-    const row = element(
-      'div',
-      'order-row',
-      `${building.type}${building.scheduledForDemolition ? ' · demolition scheduled' : ''} · ${buildingUsage(building.type, building.scheduledForDemolition)}`,
-    );
-    row.append(
-      button(
+  box.append(element('h2', '', 'Building sites'));
+  for (const site of planet.sites) {
+    const card = element('article', 'building-site');
+    card.setAttribute('aria-label', `Building site ${site.index + 1}`);
+    card.dataset.siteIndex = String(site.index);
+    card.append(element('span', 'site-number', `SITE ${site.index + 1}`));
+    if (site.building) {
+      const building = site.building;
+      const definition = BUILDINGS[building.type];
+      card.append(
+        element('h3', '', building.type),
+        element('p', '', definition.description),
+        element(
+          'p',
+          'muted-note',
+          buildingUsage(building.type, building.scheduledForDemolition),
+        ),
+      );
+      const demolish = button(
         building.scheduledForDemolition ? 'Keep' : 'Demolish',
         () => emit({ type: 'toggle-demolition', id: building.id }),
-        'button',
-      ),
-    );
-    box.append(row);
-  }
-  box.append(element('h2', '', 'Build queue'));
-  box.append(
-    element(
-      'p',
-      'muted-note',
-      'One project per year. Drag orders or use Move up / Move down. Only the first project reserves annual resources and workers.',
-    ),
-  );
-  if (!planet.projects.length)
-    box.append(element('p', 'muted-note', 'The build queue is empty.'));
-  planet.projects.forEach((project, index) => {
-    const row = element('div', 'order-row queue-order');
-    row.dataset.projectId = project.id;
-    row.draggable = true;
-    row.addEventListener('dragstart', (event) => {
-      event.dataTransfer?.setData('text/plain', project.id);
-    });
-    row.addEventListener('dragover', (event) => event.preventDefault());
-    row.addEventListener('drop', (event) => {
-      event.preventDefault();
-      const id = event.dataTransfer?.getData('text/plain');
-      if (id && planet.projects.some((candidate) => candidate.id === id))
-        emit({ type: 'move-project', id, index });
-    });
-    const details = element('div', 'queue-details');
-    details.append(
-      element(
-        'p',
-        '',
-        `${index + 1}. ${project.type} · ${index === 0 ? 'next' : 'queued'}`,
-      ),
-    );
-    if (project.blockedReason)
-      details.append(
-        element('p', 'muted-note', `Waiting: ${project.blockedReason}`),
+        'button destructive-button',
       );
-    if (projectDefinition(project.type).ship) {
-      const select = fleetSelect(planet, fleets, project.destinationFleetId);
-      select.addEventListener('change', () =>
-        emit({
-          type: 'project-fleet',
-          id: project.id,
-          fleetId: select.value || null,
-        }),
-      );
-      details.append(select);
-    }
-    const actions = element('div', 'queue-actions');
-    for (const [label, offset] of [
-      ['Move up', -1],
-      ['Move down', 1],
-    ] as const) {
-      const move = button(
-        label,
-        () =>
-          emit({ type: 'move-project', id: project.id, index: index + offset }),
-        'button',
-      );
-      move.disabled =
-        index + offset < 0 || index + offset >= planet.projects.length;
-      move.setAttribute(
-        'aria-label',
-        `${label}: ${project.type}, position ${index + 1}`,
-      );
-      actions.append(move);
-    }
-    actions.append(
-      button(
-        'Cancel',
-        () => emit({ type: 'cancel-project', id: project.id }),
-        'button',
-      ),
-    );
-    row.append(details, actions);
-    box.append(row);
-  });
-  box.append(element('h2', '', 'Buildings'));
-  for (const type of Object.keys(BUILDINGS) as BuildType[]) {
-    const definition = BUILDINGS[type];
-    const card = element('div', 'station-card');
-    card.append(
-      element('h3', '', type),
-      element(
-        'p',
-        '',
-        `${definition.workers} workers · Iron ${definition.cost.Iron}, Water ${definition.cost.Water}, Oil ${definition.cost.Oil}`,
-      ),
-      button(
-        `Build ${type}`,
-        () => emit({ type: 'build', building: type }),
-        'button',
-      ),
-    );
-    box.append(card);
-  }
-  box.append(element('h2', '', 'Ships'));
-  for (const ship of Object.keys(SHIPS) as ShipType[]) {
-    const definition = projectDefinition(ship);
-    const card = element('div', 'station-card');
-    const select = fleetSelect(planet, fleets, null);
-    select.setAttribute('aria-label', `Destination fleet for ${ship}`);
-    card.append(
-      element('h3', '', ship),
-      element(
-        'p',
-        '',
-        `${definition.workers} workers · ${definition.crew} crew · Iron ${definition.cost.Iron}, Water ${definition.cost.Water}, Oil ${definition.cost.Oil}`,
-      ),
-      ...(ship === 'Fighter'
-        ? [
+      demolish.disabled = menus.phase !== 'planning';
+      card.append(demolish);
+      if (definition.ship) {
+        const build = button(
+          'Build',
+          () =>
+            emit({
+              type: 'shipyard-menu',
+              id: menus.shipyardId === building.id ? null : building.id,
+            }),
+          'button',
+        );
+        build.setAttribute(
+          'aria-label',
+          `Build ships at site ${site.index + 1}`,
+        );
+        build.setAttribute(
+          'aria-expanded',
+          String(menus.shipyardId === building.id),
+        );
+        build.disabled =
+          building.scheduledForDemolition ||
+          menus.phase !== 'planning' ||
+          building.queue.length >= QUEUE_CAPACITY;
+        card.append(build);
+        if (
+          menus.shipyardId === building.id &&
+          !building.scheduledForDemolition
+        ) {
+          const ship = definition.ship;
+          const shipDefinition = projectDefinition(ship);
+          const select = fleetSelect(planet, fleets, null);
+          select.setAttribute('aria-label', `Destination fleet for ${ship}`);
+          const queue = button(
+            `Queue ${ship}`,
+            () =>
+              emit({
+                type: 'queue-ship',
+                ship,
+                fleetId: select.value || null,
+                factoryId: building.id,
+              }),
+            'button',
+          );
+          queue.disabled =
+            building.queue.length >= QUEUE_CAPACITY ||
+            menus.phase !== 'planning';
+          card.append(
             element(
               'p',
               'muted-note',
-              'Requires a completed Fighter factory. Its annual upkeep covers production.',
+              `${costText(shipDefinition.cost)} per ship · ${shipDefinition.crew} crew`,
             ),
-          ]
-        : []),
-      select,
-      button(
-        `Queue ${ship}`,
-        () => emit({ type: 'queue-ship', ship, fleetId: select.value || null }),
+            select,
+            queue,
+          );
+        }
+        card.append(
+          factoryQueue(
+            planet,
+            building,
+            fleets,
+            emit,
+            menus.phase !== 'planning' || building.scheduledForDemolition,
+          ),
+        );
+      }
+    } else if (site.project) {
+      card.append(
+        element('h3', '', site.project.type),
+        element(
+          'p',
+          'muted-note',
+          'Under construction · completes at the end of the year',
+        ),
+      );
+      if (site.project.blockedReason)
+        card.append(element('p', 'muted-note', site.project.blockedReason));
+      const cancel = button(
+        'Cancel construction',
+        () => emit({ type: 'cancel-project', id: site.project!.id }),
         'button',
-      ),
-    );
+      );
+      cancel.disabled = menus.phase !== 'planning';
+      card.append(cancel);
+    } else {
+      card.classList.add('empty-site');
+      card.append(element('h3', '', 'Empty site'));
+      const build = button(
+        'Build building',
+        () =>
+          emit({
+            type: 'build-site',
+            index: menus.constructionSite === site.index ? null : site.index,
+          }),
+        'button',
+      );
+      build.setAttribute(
+        'aria-label',
+        `Build building at site ${site.index + 1}`,
+      );
+      build.setAttribute(
+        'aria-expanded',
+        String(menus.constructionSite === site.index),
+      );
+      build.disabled = menus.phase !== 'planning';
+      card.append(build);
+      if (menus.constructionSite === site.index) {
+        const menu = element('section', 'building-menu');
+        menu.setAttribute('aria-label', 'Available buildings');
+        for (const option of planet.buildOptions) {
+          const definition = BUILDINGS[option.type];
+          const choice = element('article', 'building-choice');
+          choice.classList.toggle('unaffordable', !!option.blockedReason);
+          const image = element('div', 'building-placeholder', 'Image pending');
+          image.setAttribute('role', 'img');
+          image.setAttribute('aria-label', `${option.type} image placeholder`);
+          const order = button(
+            `Build ${option.type}`,
+            () =>
+              emit({
+                type: 'build',
+                building: option.type,
+                slotIndex: site.index,
+              }),
+            'button',
+          );
+          order.disabled = !!option.blockedReason;
+          choice.append(
+            image,
+            element('h4', '', option.type),
+            element('p', '', definition.description),
+            element(
+              'p',
+              'muted-note',
+              `${costText(definition.cost)} units/year · ${definition.workers} workers`,
+            ),
+            order,
+          );
+          if (option.blockedReason)
+            choice.append(element('p', 'muted-note', option.blockedReason));
+          menu.append(choice);
+        }
+        menu.append(
+          button(
+            'Close building menu',
+            () => emit({ type: 'build-site', index: null }),
+            'back-button',
+          ),
+        );
+        card.append(menu);
+      }
+    }
     box.append(card);
   }
+  if (!planet.sites.length)
+    box.append(
+      element('p', 'muted-note', 'This planet has no building sites.'),
+    );
   return box;
+}
+
+function costText(cost: {
+  readonly Iron: number;
+  readonly Water: number;
+  readonly Oil: number;
+}): string {
+  return `Iron ${cost.Iron}, Water ${cost.Water}, Oil ${cost.Oil}`;
+}
+
+function factoryQueue(
+  planet: PlanetGameSnapshot,
+  building: BuildingSnapshot,
+  fleets: readonly FleetSnapshot[],
+  emit: IntentHandler,
+  locked: boolean,
+): HTMLElement {
+  const section = element('section', 'factory-queue');
+  section.setAttribute(
+    'aria-label',
+    `Build queue at site ${building.slotIndex + 1}`,
+  );
+  section.append(
+    element(
+      'h4',
+      '',
+      `Build queue · ${building.queue.length}/${QUEUE_CAPACITY}`,
+    ),
+  );
+  const list = element('ol', 'queue-slots');
+  for (let index = 0; index < QUEUE_CAPACITY; index += 1) {
+    const project = building.queue[index];
+    const row = element(
+      'li',
+      project ? 'order-row queue-order' : 'empty-queue-slot',
+    );
+    if (!project) row.append(element('span', 'muted-note', 'Empty queue slot'));
+    else
+      renderQueueOrder(
+        row,
+        project,
+        index,
+        building,
+        planet,
+        fleets,
+        emit,
+        locked,
+      );
+    list.append(row);
+  }
+  section.append(list);
+  return section;
+}
+
+function renderQueueOrder(
+  row: HTMLElement,
+  project: ConstructionProjectSnapshot,
+  index: number,
+  building: BuildingSnapshot,
+  planet: PlanetGameSnapshot,
+  fleets: readonly FleetSnapshot[],
+  emit: IntentHandler,
+  locked: boolean,
+): void {
+  row.dataset.projectId = project.id;
+  row.draggable = !locked;
+  row.addEventListener('dragstart', (event) =>
+    event.dataTransfer?.setData('text/plain', project.id),
+  );
+  row.addEventListener('dragover', (event) => event.preventDefault());
+  row.addEventListener('drop', (event) => {
+    event.preventDefault();
+    const id = event.dataTransfer?.getData('text/plain');
+    if (!locked && id && building.queue.some((p) => p.id === id))
+      emit({ type: 'move-project', id, index });
+  });
+  const details = element('div', 'queue-details');
+  details.append(
+    element(
+      'p',
+      '',
+      `${index + 1}. ${project.type} · ${index === 0 ? 'next' : 'queued'}`,
+    ),
+  );
+  if (project.blockedReason)
+    details.append(
+      element('p', 'muted-note', `Waiting: ${project.blockedReason}`),
+    );
+  const select = fleetSelect(planet, fleets, project.destinationFleetId);
+  select.disabled = locked;
+  select.addEventListener('change', () =>
+    emit({
+      type: 'project-fleet',
+      id: project.id,
+      fleetId: select.value || null,
+    }),
+  );
+  details.append(select);
+  const actions = element('div', 'queue-actions');
+  for (const [label, offset] of [
+    ['Move up', -1],
+    ['Move down', 1],
+  ] as const) {
+    const move = button(
+      label,
+      () =>
+        emit({ type: 'move-project', id: project.id, index: index + offset }),
+      'button',
+    );
+    move.disabled =
+      locked || index + offset < 0 || index + offset >= building.queue.length;
+    move.setAttribute(
+      'aria-label',
+      `${label}: ${project.type}, position ${index + 1}`,
+    );
+    actions.append(move);
+  }
+  const cancel = button(
+    'Cancel',
+    () => emit({ type: 'cancel-project', id: project.id }),
+    'button',
+  );
+  cancel.disabled = locked;
+  actions.append(cancel);
+  row.append(details, actions);
 }
 
 function buildingUsage(type: BuildType, demolition: boolean): string {

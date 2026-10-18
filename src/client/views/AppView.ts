@@ -1,4 +1,5 @@
 import type { AppReadModel, Screen } from '../models/AppModel.js';
+import { HexCoordinate } from '../models/HexCoordinate.js';
 import type { TurnFrame } from '../models/Game.js';
 import type {
   AppPort,
@@ -50,11 +51,19 @@ export class AppView implements AppPort {
             model.planetTab,
             this.#emit,
             model.fleets,
+            model,
           ),
         );
       else if (model.screen === 'fleets')
         main.append(renderFleets(model, this.#emit));
-      else main.append(renderResearch(this.#emit));
+      else
+        main.append(
+          renderResearch(
+            model.research,
+            model.phase !== 'planning',
+            this.#emit,
+          ),
+        );
       this.#root.append(main);
       if (model.screen === 'map' && this.#container) {
         this.#map = this.#mapFactory(this.#container, (intent) =>
@@ -68,6 +77,8 @@ export class AppView implements AppPort {
       }
       this.#screen = model.screen;
     } else if (model.screen === 'planet' && model.planet) {
+      const scrollTop =
+        this.#root.querySelector('.planet-content')?.scrollTop ?? 0;
       this.#root
         .querySelector('main')
         ?.replaceChildren(
@@ -77,8 +88,11 @@ export class AppView implements AppPort {
             model.planetTab,
             this.#emit,
             model.fleets,
+            model,
           ),
         );
+      const panel = this.#root.querySelector('.planet-content');
+      if (panel) panel.scrollTop = scrollTop;
       this.#root
         .querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
         ?.focus({ preventScroll: true });
@@ -86,13 +100,40 @@ export class AppView implements AppPort {
       this.#root
         .querySelector('main')
         ?.replaceChildren(renderFleets(model, this.#emit));
+    if (!changedScreen && model.screen === 'research')
+      this.#root
+        .querySelector('main')
+        ?.replaceChildren(
+          renderResearch(
+            model.research,
+            model.phase !== 'planning',
+            this.#emit,
+          ),
+        );
     if (model.screen === 'map') {
       this.#map?.render(model);
+      if (this.#known) {
+        const options = model.cells
+          .filter((cell) => cell.object)
+          .toSorted(
+            (a, b) => Number(b.object?.owned) - Number(a.object?.owned),
+          );
+        this.#known.replaceChildren(
+          ...options.map((cell) => {
+            const option = element('option', '', cell.object!.name);
+            option.value = cell.position.key;
+            return option;
+          }),
+        );
+        this.#known.value = model.selected?.position.key ?? '';
+      }
       if (this.#zoom)
         this.#zoom.value = `${Math.round(model.camera.zoom * 100)}%`;
       if (this.#coordinates)
         this.#coordinates.textContent = `X ${model.camera.center.x.toFixed(0)} · Y ${model.camera.center.y.toFixed(0)}`;
       const key = JSON.stringify({
+        orders: model.planetOrders,
+        phase: model.phase,
         selected: model.selected,
         fleets: model.fleets.filter(
           (fleet) => fleet.position.key === model.selected?.position.key,
@@ -101,7 +142,7 @@ export class AppView implements AppPort {
       });
       if (key !== this.#selectionKey) {
         this.#selectionKey = key;
-        if (this.#known) this.#known.value = key;
+        if (this.#known) this.#known.value = model.selected?.position.key ?? '';
         this.#renderSelection(model);
       }
       const existing = this.#root.querySelector('.turn-summary');
@@ -199,10 +240,9 @@ export class AppView implements AppPort {
       this.#known.append(option);
     }
     this.#known.addEventListener('change', () => {
-      const selected = objects.find(
-        (cell) => cell.position.key === this.#known?.value,
-      );
-      if (selected) this.#emit({ type: 'select', position: selected.position });
+      const [q, r] = (this.#known?.value ?? '').split(',').map(Number);
+      if (Number.isInteger(q) && Number.isInteger(r))
+        this.#emit({ type: 'select', position: new HexCoordinate(q!, r!) });
     });
     known.append(this.#known);
     const controls = element('div', 'map-controls hud');
@@ -236,6 +276,11 @@ export class AppView implements AppPort {
     page.append(
       this.#container,
       known,
+      element(
+        'p',
+        'map-order-legend hud',
+        'S: empty building sites · Q: idle shipyards',
+      ),
       controls,
       this.#coordinates,
       this.#panel,
@@ -268,7 +313,7 @@ export class AppView implements AppPort {
         ),
       );
     const description = owned
-      ? 'Your first colony among the stars.'
+      ? 'A colony of your empire.'
       : object?.kind === 'star'
         ? 'A star shining through unexplored space.'
         : object?.kind === 'planet'
@@ -304,6 +349,17 @@ export class AppView implements AppPort {
           'button open-planet',
         ),
       );
+    const orderStatus = model.planetOrders.find(
+      (status) => status.position.key === cell?.position.key,
+    );
+    if (orderStatus)
+      contents.push(
+        element(
+          'p',
+          'order-status',
+          `${orderStatus.emptySites} empty building sites · ${orderStatus.emptyQueues} idle shipyards`,
+        ),
+      );
     if (cell)
       for (const fleet of model.fleets.filter(
         (candidate) =>
@@ -333,6 +389,19 @@ export class AppView implements AppPort {
             'button',
           ),
         );
+        if (
+          object?.kind === 'planet' &&
+          !owned &&
+          fleet.ships['Colony ship'] > 0
+        ) {
+          const colonize = button(
+            'Colonize',
+            () => this.#emit({ type: 'colonize', id: fleet.id }),
+            'button',
+          );
+          colonize.disabled = model.phase !== 'planning';
+          fleetInfo.append(colonize);
+        }
         if (fleet.destination)
           fleetInfo.append(
             button(

@@ -18,8 +18,9 @@ funktioner från framtida spelmekanik. Se [hela visionen](docs/game-vision.md).
   smala skärmar med större systemtypsnitt.
 - **Första spelgrunden:** en fast stjärnkarta, begränsad sikt, kartnavigation och
   information om hemplaneten, byggande, flottor och rundor. Byggnader visar sin
-  resursanvändning. En gemensam byggkö för byggnader och skepp kan ordnas om,
-  och skeppsorder kan tilldelas en mottagande flotta. `kartflottor` visar varje
+  resursanvändning och beställs på bestämda byggplatser. Varje shipyard har en egen kö med fem platser och kan
+  färdigställa ett skepp per år, parallellt med andra fabriker och byggplatser.
+  Skeppsorder kan tilldelas en mottagande flotta. `kartflottor` visar varje
   flotta som en egen skeppssvärm med destinationspil från flottan och
   skeppens spetsar riktade mot destinationen.
 - **Imperiets utveckling:** kolonier, befolkning, råvaror, byggande och forskning.
@@ -28,14 +29,13 @@ funktioner från framtida spelmekanik. Se [hela visionen](docs/game-vision.md).
 
 [Produktkraven](docs/product-requirements.md) anger status för varje aktivt krav:
 **Ej implementerat**, **Delvis implementerat** eller **Fullständigt implementerat**.
-De beskriver också vad som återstår. Denna iteration omfattar byggorder,
-flottor, utforskning och simulering av rundor, men inte kolonisering eller
-forskningseffekt. `planetbudgetoversikt` och `tomma-flottor` är färdiga krav i
-produktkraven. `rakare-hexforflyttning` anger att flottornas kortaste hexvägar
-fördelar riktningsbyten jämnt mot målet. `byggnaders-resursanvandning`,
-`flera-byggnader-av-samma-typ`, `gemensam-byggko`, `skepp-i-byggko` och
-`skepp-till-destinationsflotta` är fullständigt implementerade. Byggkön färdigställer
-ett projekt per år och ersätter tidigare samtidig produktion och unik Research station.
+De beskriver också vad som återstår. Denna iteration omfattar byggplatser,
+fabriksköer, flottor, utforskning, fungerande kolonisation och forskning som låser
+upp de tre befintliga skeppsfabrikerna. Research station kan byggas från start.
+`planetbyggplatser` och `fabrikskoer` ersätter `gemensam-byggko`.
+`forska-fram-fabriker`, `kolonisation` och `kartorderstatus` är fullständigt
+implementerade. Kartan visar tomma byggplatser och tomma fabriksköer.
+`rakare-hexforflyttning` fördelar flottornas riktningsbyten jämnt mot målet.
 
 - **Utveckling och kvalitet:** enkel lokal utveckling, kontroller, testning och
   leveransflöde, MVC och p5-karta. Se [tekniska krav](docs/technical-requirements.md).

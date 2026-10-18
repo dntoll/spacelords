@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppController } from '../../src/client/controllers/AppController.js';
+import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import type { MapFactory } from '../../src/client/views/ViewContracts.js';
@@ -73,6 +74,7 @@ describe('bygga-forskningsstation', () => {
     start();
     click('Open planet');
     click('Construction');
+    click('Build building');
     const build = [...root.querySelectorAll('button')].find(
       (button) => button.textContent === 'Build Research station',
     );
@@ -81,13 +83,17 @@ describe('bygga-forskningsstation', () => {
 });
 
 describe('forskningsoversikt', () => {
-  it('explains future research without pretending research is running', () => {
+  it('shows factory research and its station prerequisite', () => {
     start();
     click('Research');
     expect(root.querySelector('h1')?.textContent).toBe('Research');
     expect(root.textContent).toContain('Research station');
-    expect(root.textContent).toContain('Research is not available yet');
-    expect(root.querySelector('[data-technology]')).toBeNull();
+    expect(root.textContent).toContain(
+      'Build a Research station to advance research.',
+    );
+    expect(root.querySelectorAll('[data-technology]')).toHaveLength(3);
+    click('Research Colony ship factory');
+    expect(root.textContent).toContain('Researching · 0/1 points');
     click('Back to map');
     expect(root.querySelector('[data-testid="map-container"]')).not.toBeNull();
   });
@@ -121,7 +127,7 @@ describe('english-game / focused-interface', () => {
     start();
     expect(
       root.querySelector('[aria-label="Selected hex"]')?.textContent,
-    ).toContain('Your first colony among the stars.');
+    ).toContain('A colony of your empire.');
     expect(root.querySelector('[aria-label="Open planet"]')).not.toBeNull();
     expect(root.textContent).not.toContain('Din plats i galaxen.');
     click('Open planet');
@@ -161,7 +167,7 @@ describe('viewport-game-layout', () => {
     click('Construction');
     expect(root.querySelectorAll('[role="tabpanel"]')).toHaveLength(1);
     expect(root.querySelector('[role="tabpanel"]')?.textContent).toContain(
-      'Construction',
+      'Building sites',
     );
     click('Overview');
     expect(
@@ -187,60 +193,123 @@ describe('byggnaders-resursanvandning', () => {
   });
 });
 
-describe('gemensam-byggko / skepp-i-byggko / skepp-till-destinationsflotta', () => {
-  it('routes queue ordering, destination selection and cancellation through the controller', () => {
+function advance(model: AppModel): void {
+  for (const frame of model.startTurn()) model.applyTurnFrame(frame);
+  model.finishTurn();
+  model.continuePlanning();
+}
+function buildShipyard(model: AppModel): void {
+  model.build('Research station');
+  advance(model);
+  model.research('Colony ship factory');
+  advance(model);
+  model.build('Colony ship factory');
+  advance(model);
+}
+
+describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () => {
+  it('opens a site-specific menu with researched buildings, costs, effects and image placeholders', () => {
     const model = new AppModel();
+    model.build('Research station');
+    advance(model);
+    model.research('Colony ship factory');
+    advance(model);
+    model.openPlanet();
+    model.showPlanetTab('construction');
+    new AppController(model, new AppView(root, mapFactory)).start();
+    expect(root.querySelectorAll('.building-site')).toHaveLength(6);
+    expect(root.querySelector('.building-menu')).toBeNull();
+    click('Build building');
+    const menu = root.querySelector('.building-menu')!;
+    expect(menu.textContent).toContain('Colony ship factory');
+    expect(menu.textContent).not.toContain('Exploration ship factory');
+    expect(menu.textContent).not.toContain('Queue Colony ship');
+    expect(menu.textContent).toContain('Iron 18, Water 10, Oil 6');
+    expect(menu.textContent).toContain('2000 workers');
+    expect(menu.querySelector('[role="img"]')).not.toBeNull();
+    click('Build Colony ship factory');
+    expect(model.snapshot.planet!.sites[1]!.project?.type).toBe(
+      'Colony ship factory',
+    );
+    click('Build building');
+    const disabled = root.querySelector<HTMLButtonElement>(
+      '.unaffordable button',
+    )!;
+    expect(disabled.textContent).toBe('Build Colony ship factory');
+    expect(disabled.disabled).toBe(true);
+  });
+});
+
+describe('fabrikskoer / skepp-till-destinationsflotta', () => {
+  it('routes ship production, five queue slots, reordering, recipients and cancellation through the controller', () => {
+    const model = new AppModel();
+    buildShipyard(model);
     const home = model.snapshot.fleets[0]!;
     model.createFleet(home.id);
     const target = model.snapshot.fleets[1]!;
     model.openPlanet();
     model.showPlanetTab('construction');
-    const controller = new AppController(model, new AppView(root, mapFactory));
-    controller.start();
-    click('Build Research station');
-    const select = root.querySelector<HTMLSelectElement>(
+    new AppController(model, new AppView(root, mapFactory)).start();
+    const site = () =>
+      root.querySelector<HTMLElement>('[data-site-index="1"]')!;
+    expect(site().querySelectorAll('.queue-slots > li')).toHaveLength(5);
+    site()
+      .querySelector<HTMLButtonElement>('[aria-label="Build ships at site 2"]')!
+      .click();
+    const select = site().querySelector<HTMLSelectElement>(
       '[aria-label="Destination fleet for Colony ship"]',
     )!;
     select.value = target.id;
     click('Queue Colony ship');
-    expect(model.snapshot.planet!.projects[1]!.destinationFleetId).toBe(
-      target.id,
-    );
-    click('Move up');
-    expect(model.snapshot.planet!.projects[0]!.type).toBe('Research station');
-    const moveUp = root
-      .querySelectorAll<HTMLElement>('.queue-order')[1]!
-      .querySelector<HTMLButtonElement>('button')!;
-    moveUp.click();
-    expect(model.snapshot.planet!.projects[0]!.type).toBe('Colony ship');
-    const queuedFleet = root.querySelector<HTMLSelectElement>(
+    click('Queue Colony ship');
+    const queue = () =>
+      model.snapshot.planet!.buildings.find(
+        (b) => b.type === 'Colony ship factory',
+      )!.queue;
+    expect(queue()[0]!.destinationFleetId).toBe(target.id);
+    expect(site().querySelectorAll('.empty-queue-slot')).toHaveLength(3);
+    const second = queue()[1]!.id;
+    site()
+      .querySelectorAll<HTMLButtonElement>('[aria-label^="Move up"]')[1]!
+      .click();
+    expect(queue()[0]!.id).toBe(second);
+    const queuedFleet = site().querySelector<HTMLSelectElement>(
       '.queue-order select',
     )!;
-    queuedFleet.value = '';
+    queuedFleet.value = target.id;
     queuedFleet.dispatchEvent(new Event('change'));
-    expect(model.snapshot.planet!.projects[0]!.destinationFleetId).toBeNull();
-    click('Move down');
-    expect(model.snapshot.planet!.projects[0]!.type).toBe('Research station');
-    click('Cancel');
-    expect(
-      model.snapshot.planet!.projects.map((project) => project.type),
-    ).toEqual(['Colony ship']);
-  });
-
-  it('uses drag data to reorder an existing queue item', () => {
-    const model = new AppModel();
-    model.build('Research station');
-    model.scheduleShip('Colony ship', null);
-    model.openPlanet();
-    model.showPlanetTab('construction');
-    new AppController(model, new AppView(root, mapFactory)).start();
-    const rows = root.querySelectorAll('.queue-order');
-    const id = model.snapshot.planet!.projects[1]!.id;
+    expect(queue()[0]!.destinationFleetId).toBe(target.id);
     const drop = new Event('drop', { cancelable: true });
     Object.defineProperty(drop, 'dataTransfer', {
-      value: { getData: () => id },
+      value: { getData: () => queue()[1]!.id },
     });
-    rows[0]!.dispatchEvent(drop);
-    expect(model.snapshot.planet!.projects[0]!.id).toBe(id);
+    site().querySelector('.queue-order')!.dispatchEvent(drop);
+    expect(queue()[0]!.id).not.toBe(second);
+    click('Cancel');
+    expect(queue()).toHaveLength(1);
+  });
+});
+
+describe('kolonisation / kartorderstatus', () => {
+  it('offers Colonize at an uninhabited destination and opens the resulting colony', () => {
+    const model = new AppModel();
+    buildShipyard(model);
+    model.scheduleShip('Colony ship', null);
+    advance(model);
+    model.setDestination('fleet-home', 0, 1);
+    advance(model);
+    model.select(new HexCoordinate(0, 1));
+    new AppController(model, new AppView(root, mapFactory)).start();
+    click('Colonize');
+    expect(root.textContent).toContain('4 empty building sites');
+    click('Open planet');
+    expect(root.querySelector('h1')!.textContent).toBe('Vesta');
+    expect(root.textContent).toContain('1,000');
+    click('Construction');
+    expect(root.querySelectorAll('.building-site')).toHaveLength(4);
+    click('Build building');
+    expect(
+      root.querySelector<HTMLButtonElement>('.building-menu button')!.disabled,
+    ).toBe(true);
   });
 });

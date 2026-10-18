@@ -9,6 +9,9 @@ import {
   type PlanetGameSnapshot,
   type ShipType,
   type TurnFrame,
+  type Technology,
+  type ResearchSnapshot,
+  type PlanetOrderSnapshot,
 } from './Game.js';
 import type { MapCell } from './Galaxy.js';
 import { HexCoordinate, HexGeometry, type Point } from './HexCoordinate.js';
@@ -18,6 +21,10 @@ export type PlanetTab = 'overview' | 'construction';
 export type Screen = 'map' | 'planet' | 'research' | 'fleets';
 
 export interface AppReadModel {
+  readonly research: ResearchSnapshot;
+  readonly planetOrders: readonly PlanetOrderSnapshot[];
+  readonly constructionSite: number | null;
+  readonly shipyardId: string | null;
   readonly screen: Screen;
   readonly planetTab: PlanetTab;
   readonly playerName: string;
@@ -39,6 +46,8 @@ export class AppModel {
   readonly #game: Game;
   readonly #camera: Camera;
   #selected: HexCoordinate;
+  #constructionSite: number | null = null;
+  #shipyardId: string | null = null;
   #screen: Screen = 'map';
   #planetTab: PlanetTab = 'overview';
   #selectedFleetId: string | null = null;
@@ -54,6 +63,10 @@ export class AppModel {
   // mvc-arkitektur: no write operations or hidden world data cross into views.
   get snapshot(): AppReadModel {
     return Object.freeze({
+      research: this.#game.research,
+      planetOrders: this.#game.planetOrders(),
+      constructionSite: this.#constructionSite,
+      shipyardId: this.#shipyardId,
       screen: this.#screen,
       planetTab: this.#planetTab,
       playerName: this.#game.galaxy.player.name,
@@ -104,7 +117,11 @@ export class AppModel {
   }
 
   openPlanet(): void {
-    if (this.#game.planetAt(this.#selected)) this.#screen = 'planet';
+    if (this.#game.planetAt(this.#selected)) {
+      this.#screen = 'planet';
+      this.#constructionSite = null;
+      this.#shipyardId = null;
+    }
   }
 
   showPlanetTab(tab: PlanetTab): void {
@@ -139,13 +156,35 @@ export class AppModel {
     this.#selected = this.#game.galaxy.homePlanet.position;
   }
 
-  build(type: BuildType): void {
-    const planet = this.#game.planetAt(this.#selected);
-    if (planet) this.#game.scheduleBuild(planet, type);
+  openBuildSite(index: number | null): void {
+    this.#constructionSite = index;
   }
-  scheduleShip(ship: ShipType, fleetId: string | null): void {
+  openShipyard(id: string | null): void {
+    this.#shipyardId = id;
+  }
+  research(type: Technology | null): void {
+    this.#game.selectResearch(type);
+  }
+  colonize(id: string): void {
+    this.#game.colonize(id);
+  }
+  build(type: BuildType, slotIndex?: number): void {
     const planet = this.#game.planetAt(this.#selected);
-    if (planet) this.#game.scheduleShip(planet, ship, fleetId);
+    if (planet)
+      this.#game.scheduleBuild(
+        planet,
+        type,
+        slotIndex ?? this.#constructionSite ?? undefined,
+      );
+    this.#constructionSite = null;
+  }
+  scheduleShip(
+    ship: ShipType,
+    fleetId: string | null,
+    factoryId?: string,
+  ): void {
+    const planet = this.#game.planetAt(this.#selected);
+    if (planet) this.#game.scheduleShip(planet, ship, fleetId, factoryId);
   }
   moveProject(id: string, index: number): void {
     const planet = this.#game.planetAt(this.#selected);

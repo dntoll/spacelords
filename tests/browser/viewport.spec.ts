@@ -74,6 +74,9 @@ for (const size of [
     ).toBeVisible();
     await expectContentFits(page);
     await page.getByRole('tab', { name: 'Construction', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Build building at site 1', exact: true })
+      .click();
     await expect(
       page.getByRole('button', { name: 'Build Research station', exact: true }),
     ).toBeEnabled();

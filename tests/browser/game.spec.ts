@@ -79,6 +79,9 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
     page.getByText('42 units/year', { exact: true }).first(),
   ).toBeVisible();
   await page.getByRole('tab', { name: 'Construction', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Build building at site 1', exact: true })
+    .click();
   await expect(
     page.getByRole('button', { name: 'Build Research station' }),
   ).toBeEnabled();
@@ -95,7 +98,9 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
       page.getByRole('heading', { name: 'Research', exact: true }),
     ).toBeVisible();
     await expect(
-      page.getByText('Research is not available yet', { exact: true }),
+      page.getByText('Build a Research station to advance research.', {
+        exact: true,
+      }),
     ).toBeVisible();
     await expect(page.locator('canvas')).toHaveCount(0);
     if (count === 0)
@@ -315,21 +320,67 @@ test('flera-skarmstorlekar: canvas follows its container without horizontal over
   ).toBe(false);
 });
 
-test('gemensam-byggko / skepp-i-byggko / skepp-till-destinationsflotta: orders survive turns and deliver to the selected fleet', async ({
+test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: research, build ships and settle a new colony', async ({
   page,
-  isMobile,
 }, testInfo) => {
-  await page.getByRole('button', { name: 'Edit fleet', exact: true }).click();
-  await page.getByRole('button', { name: 'Home Fleet', exact: true }).click();
-  await page.getByRole('button', { name: 'New fleet', exact: true }).click();
-  await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page.getByRole('tab', { name: 'Construction', exact: true }).click();
+  test.setTimeout(90_000);
+  const nextYear = async () => {
+    await page.getByRole('button', { name: 'Star map', exact: true }).click();
+    await page.getByRole('button', { name: 'End turn', exact: true }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  };
+  const construction = async () => {
+    await page
+      .getByRole('button', { name: 'Open planet', exact: true })
+      .click();
+    await page.getByRole('tab', { name: 'Construction', exact: true }).click();
+  };
+  await expect(page.locator('.order-status')).toContainText(
+    '6 empty building sites',
+  );
+  await construction();
+  await page
+    .getByRole('button', { name: 'Build building at site 1', exact: true })
+    .click();
+  await expect(page.locator('.building-menu .building-choice')).toHaveCount(1);
+  await expect(
+    page.getByRole('button', { name: 'Queue Colony ship', exact: true }),
+  ).toHaveCount(0);
   await page
     .getByRole('button', { name: 'Build Research station', exact: true })
     .click();
+  await nextYear();
+  await page.getByRole('button', { name: 'Research', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Build Research station', exact: true })
+    .getByRole('button', { name: 'Research Colony ship factory', exact: true })
+    .click();
+  await expect(
+    page.getByText('Researching · 0/1 points', { exact: true }),
+  ).toBeVisible();
+  await nextYear();
+  await construction();
+  await page
+    .getByRole('button', { name: 'Build building at site 2', exact: true })
+    .click();
+  await expect(page.locator('.building-menu .building-choice')).toHaveCount(2);
+  await page
+    .getByRole('button', { name: 'Build Colony ship factory', exact: true })
+    .click();
+  await nextYear();
+  await expect(page.locator('.order-status')).toContainText('1 idle shipyards');
+  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+  await page.getByRole('button', { name: 'Home Fleet', exact: true }).click();
+  await page.getByRole('button', { name: 'New fleet', exact: true }).click();
+  await page.getByRole('button', { name: 'Star map', exact: true }).click();
+  await construction();
+  const yard = page.getByRole('article', {
+    name: 'Building site 2',
+    exact: true,
+  });
+  await expect(yard.locator('.queue-slots > li')).toHaveCount(5);
+  await page
+    .getByRole('button', { name: 'Build ships at site 2', exact: true })
     .click();
   await page
     .getByRole('combobox', {
@@ -340,43 +391,65 @@ test('gemensam-byggko / skepp-i-byggko / skepp-till-destinationsflotta: orders s
   await page
     .getByRole('button', { name: 'Queue Colony ship', exact: true })
     .click();
-  const rows = page.locator('.queue-order');
-  await expect(rows).toHaveCount(3);
-  await rows
-    .nth(2)
+  for (let index = 0; index < 4; index += 1)
+    await page
+      .getByRole('button', { name: 'Queue Colony ship', exact: true })
+      .click();
+  await expect(
+    page.getByRole('button', { name: 'Queue Colony ship', exact: true }),
+  ).toBeDisabled();
+  await expect(yard.locator('.queue-order')).toHaveCount(5);
+  await yard
+    .locator('.queue-order')
+    .nth(1)
     .getByRole('button', { name: /Move up/ })
     .click();
-  if (isMobile)
-    await rows
-      .nth(1)
-      .getByRole('button', { name: /Move up/ })
-      .click();
-  else await rows.nth(1).dragTo(rows.nth(0));
-  await expect(rows.nth(0)).toContainText('1. Colony ship');
+  await yard
+    .locator('.queue-order')
+    .nth(1)
+    .getByRole('button', { name: /Move up/ })
+    .click();
   await page.screenshot({
-    path: testInfo.outputPath('build-queue.png'),
+    path: testInfo.outputPath('shipyard-queue.png'),
     fullPage: true,
   });
-  await page.getByRole('button', { name: 'Back to map', exact: true }).click();
-  await page.getByRole('button', { name: 'End turn', exact: true }).click();
-  await expect(page.getByRole('dialog')).toContainText(
-    'Colony ship was produced',
-  );
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await nextYear();
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await expect(
     page.getByRole('button', { name: 'Fleet 1, Colony ship: 1', exact: true }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await expect(rows).toHaveCount(2);
-  await page.getByRole('button', { name: 'Back to map', exact: true }).click();
-  await page.getByRole('button', { name: 'End turn', exact: true }).click();
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await expect(rows).toHaveCount(1);
-  await page.getByRole('tab', { name: 'Overview', exact: true }).click();
-  await expect(page.locator('.existing-buildings')).toContainText(
-    'Uses Iron 2, Water 3, Oil 1 units/year',
+  const fleet = page.locator('.fleet-summary').filter({
+    has: page.getByRole('heading', { name: 'Fleet 1', exact: true }),
+  });
+  await fleet
+    .getByRole('button', { name: 'Set destination', exact: true })
+    .click();
+  await page
+    .getByRole('combobox', { name: 'Known objects', exact: true })
+    .selectOption({ label: 'Vesta' });
+  await nextYear();
+  await page
+    .getByRole('combobox', { name: 'Known objects', exact: true })
+    .selectOption({ label: 'Vesta' });
+  await page.getByRole('button', { name: 'Colonize', exact: true }).click();
+  await expect(page.locator('.order-status')).toContainText(
+    '4 empty building sites',
   );
+  await page.screenshot({
+    path: testInfo.outputPath('colonized-map.png'),
+    fullPage: true,
+  });
+  await construction();
+  await expect(
+    page.getByRole('heading', { name: 'Vesta', exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('.building-site')).toHaveCount(4);
+  await page
+    .getByRole('button', { name: 'Build building at site 1', exact: true })
+    .click();
+  await expect(page.locator('.building-menu .unaffordable')).toHaveCount(2);
+  await expect(
+    page.getByRole('button', { name: 'Build Research station', exact: true }),
+  ).toBeDisabled();
 });

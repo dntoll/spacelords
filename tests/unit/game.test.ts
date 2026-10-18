@@ -4,25 +4,25 @@ import { AppModel } from '../../src/client/models/AppModel.js';
 describe('arsbudget', () => {
   it('reserves slots, workers, annual resources and crew immediately', () => {
     const model = new AppModel();
-    model.build('Exploration ship factory');
+    model.build('Research station');
     const planet = model.snapshot.planet;
     expect(planet).toBeNull();
     model.openPlanet();
     model.showPlanetTab('construction');
     const budget = model.snapshot.planet!.budget;
     expect(budget.reservedSlots).toBe(1);
-    expect(budget.reservedWorkers).toBe(1200);
-    expect(budget.reservedCrew).toBe(200);
+    expect(budget.reservedWorkers).toBe(600);
+    expect(budget.reservedCrew).toBe(0);
   });
 });
 
 describe('rundsimulering', () => {
-  it('finishes projects, removes crew and advances the round', () => {
+  it('finishes building construction and advances population and the round', () => {
     const model = new AppModel();
     model.openPlanet();
     const before = model.snapshot.planet!.population;
     model.openMap();
-    model.build('Colony ship factory');
+    model.build('Research station');
     const frames = model.startTurn();
     for (const frame of frames) model.applyTurnFrame(frame);
     model.finishTurn();
@@ -30,9 +30,10 @@ describe('rundsimulering', () => {
     expect(model.snapshot.phase).toBe('summary');
     expect(model.snapshot.planet).toBeNull();
     model.openPlanet();
-    expect(model.snapshot.planet!.population).toBe(before - 1000 + 1100);
+    expect(model.snapshot.planet!.population).toBe(before + 1200);
+    expect(model.snapshot.planet!.buildings[0]!.type).toBe('Research station');
     expect(
-      model.snapshot.fleets.some((fleet) => fleet.ships['Colony ship'] === 1),
+      model.snapshot.fleets.some((fleet) => fleet.ships['Colony ship'] === 0),
     ).toBe(true);
   });
 });

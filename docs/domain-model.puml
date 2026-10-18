@@ -25,13 +25,25 @@ class Building {
   type
   workers
   annualBudget
+  demolition
 }
 class ConstructionProject {
   type
   reservedCrew
   destinationFleetId
 }
+class BuildingSite {
+  index
+}
+class Technology {
+  researched
+}
+class Research {
+  selectedTechnology
+  completeSelectedPerYear()
+}
 class BuildQueue {
+  capacity: 5
   moveProject()
   cancelProject()
   completeFirstPerYear()
@@ -67,20 +79,28 @@ Star --> HexCoordinate : position
 Planet --> HexCoordinate : position
 Planet "1" *-- "0..1" Colony
 Colony --> Player : ownerId
-Colony "1" o-- "0..*" Building
-Colony "1" *-- "1" BuildQueue
-BuildQueue "1" o-- "0..*" ConstructionProject : ordered
+Colony "1" *-- "0..10" BuildingSite
+BuildingSite "1" o-- "0..1" Building
+BuildingSite "1" o-- "0..1" ConstructionProject : building construction
+Building "1" *-- "0..1" BuildQueue : shipyard
+BuildQueue "1" o-- "0..5" ConstructionProject : ordered ships
+Player "1" *-- "1" Research
+Research --> Technology : selects
+Technology --> Building : unlocks
+Building --> Research : Research station contributes
 ConstructionProject --> Fleet : ship recipient
 Colony --> Fleet : home fleet
 Fleet "1" o-- "0..*" Ship
+Ship --> Colony : Colony ship consumed to settle
 TurnOrder --> ConstructionProject
 TurnOrder --> Fleet
 GameEvent --> TurnOrder
 
 note bottom of BuildQueue
-  Byggnader och skepp delar kö.
-  Endast första projektet använder årets byggbudget.
-  Högst ett projekt färdigställs per år.
+  Varje shipyard har egen kö med fem platser.
+  Högst ett skepp per fabrik och år.
+  Byggnader byggs parallellt på egna platser.
+  Årsbudgeten delas utan dubbla reservationer.
 end note
 
 note bottom of Galaxy
@@ -91,10 +111,8 @@ end note
 
 package "Framtida domän – ej implementerad" {
   class AsteroidBelt <<planned>>
-  class Technology <<planned>>
   class Civilization <<planned>>
   Fleet --> Civilization : encounter orders
-  Technology --> Building : unlocks
 }
 
 note "Kamera, controllers och p5-vyer är tekniska begrepp\noch ingår inte i problemdomänen." as Scope

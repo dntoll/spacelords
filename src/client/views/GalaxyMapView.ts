@@ -1,3 +1,4 @@
+import { renderPlanetOrders } from './PlanetOrderView.js';
 import { renderMapFleets } from './FleetMapView.js';
 import p5 from 'p5';
 import type { AppReadModel } from '../models/AppModel.js';
@@ -96,6 +97,7 @@ export class GalaxyMapView implements MapPort {
     for (const cell of model.cells)
       if (cell.object) this.#object(sketch, cell, model.camera.zoom);
     renderMapFleets(sketch, model.fleets, model.camera.zoom);
+    renderPlanetOrders(sketch, model.planetOrders, model.camera.zoom);
     sketch.pop();
     if (this.#canvas) this.#canvas.dataset.rendered = 'true';
   }

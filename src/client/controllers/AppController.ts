@@ -66,10 +66,22 @@ export class AppController {
         this.#model.zoom(intent.factor, intent.anchor);
         break;
       case 'build':
-        this.#model.build(intent.building);
+        this.#model.build(intent.building, intent.slotIndex);
+        break;
+      case 'build-site':
+        this.#model.openBuildSite(intent.index);
+        break;
+      case 'shipyard-menu':
+        this.#model.openShipyard(intent.id);
+        break;
+      case 'research':
+        this.#model.research(intent.technology);
+        break;
+      case 'colonize':
+        this.#model.colonize(intent.id);
         break;
       case 'queue-ship':
-        this.#model.scheduleShip(intent.ship, intent.fleetId);
+        this.#model.scheduleShip(intent.ship, intent.fleetId, intent.factoryId);
         break;
       case 'move-project':
         this.#model.moveProject(intent.id, intent.index);
