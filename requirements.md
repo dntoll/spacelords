@@ -17,7 +17,9 @@ funktioner från framtida spelmekanik. Se [hela visionen](docs/game-vision.md).
   spelets engelska namn och etiketter. `viewport-game-layout` omfattar även
   smala skärmar med större systemtypsnitt.
 - **Första spelgrunden:** en fast stjärnkarta, begränsad sikt, kartnavigation och
-  information om hemplaneten, byggande, flottor och rundor.
+  information om hemplaneten, byggande, flottor och rundor. Byggnader visar sin
+  resursanvändning. En gemensam byggkö för byggnader och skepp kan ordnas om,
+  och skeppsorder kan tilldelas en mottagande flotta.
 - **Imperiets utveckling:** kolonier, befolkning, råvaror, byggande och forskning.
 - **Order och omvärld:** rundor, kolonisation, flottor, civilisationer och senare
   multiplayer.
@@ -28,7 +30,10 @@ De beskriver också vad som återstår. Denna iteration omfattar byggorder,
 flottor, utforskning och simulering av rundor, men inte kolonisering eller
 forskningseffekt. `planetbudgetoversikt` och `tomma-flottor` är färdiga krav i
 produktkraven. `rakare-hexforflyttning` anger att flottornas kortaste hexvägar
-fördelar riktningsbyten jämnt mot målet.
+fördelar riktningsbyten jämnt mot målet. `byggnaders-resursanvandning`,
+`flera-byggnader-av-samma-typ`, `gemensam-byggko`, `skepp-i-byggko` och
+`skepp-till-destinationsflotta` är fullständigt implementerade. Byggkön färdigställer
+ett projekt per år och ersätter tidigare samtidig produktion och unik Research station.
 
 - **Utveckling och kvalitet:** enkel lokal utveckling, kontroller, testning och
   leveransflöde, MVC och p5-karta. Se [tekniska krav](docs/technical-requirements.md).

@@ -314,3 +314,69 @@ test('flera-skarmstorlekar: canvas follows its container without horizontal over
     ),
   ).toBe(false);
 });
+
+test('gemensam-byggko / skepp-i-byggko / skepp-till-destinationsflotta: orders survive turns and deliver to the selected fleet', async ({
+  page,
+  isMobile,
+}, testInfo) => {
+  await page.getByRole('button', { name: 'Edit fleet', exact: true }).click();
+  await page.getByRole('button', { name: 'Home Fleet', exact: true }).click();
+  await page.getByRole('button', { name: 'New fleet', exact: true }).click();
+  await page.getByRole('button', { name: 'Star map', exact: true }).click();
+  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await page.getByRole('tab', { name: 'Construction', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Build Research station', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Build Research station', exact: true })
+    .click();
+  await page
+    .getByRole('combobox', {
+      name: 'Destination fleet for Colony ship',
+      exact: true,
+    })
+    .selectOption({ label: 'Fleet 1' });
+  await page
+    .getByRole('button', { name: 'Queue Colony ship', exact: true })
+    .click();
+  const rows = page.locator('.queue-order');
+  await expect(rows).toHaveCount(3);
+  await rows
+    .nth(2)
+    .getByRole('button', { name: /Move up/ })
+    .click();
+  if (isMobile)
+    await rows
+      .nth(1)
+      .getByRole('button', { name: /Move up/ })
+      .click();
+  else await rows.nth(1).dragTo(rows.nth(0));
+  await expect(rows.nth(0)).toContainText('1. Colony ship');
+  await page.screenshot({
+    path: testInfo.outputPath('build-queue.png'),
+    fullPage: true,
+  });
+  await page.getByRole('button', { name: 'Back to map', exact: true }).click();
+  await page.getByRole('button', { name: 'End turn', exact: true }).click();
+  await expect(page.getByRole('dialog')).toContainText(
+    'Colony ship was produced',
+  );
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Fleet 1, Colony ship: 1', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Star map', exact: true }).click();
+  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await expect(rows).toHaveCount(2);
+  await page.getByRole('button', { name: 'Back to map', exact: true }).click();
+  await page.getByRole('button', { name: 'End turn', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await expect(rows).toHaveCount(1);
+  await page.getByRole('tab', { name: 'Overview', exact: true }).click();
+  await expect(page.locator('.existing-buildings')).toContainText(
+    'Uses Iron 2, Water 3, Oil 1 units/year',
+  );
+});

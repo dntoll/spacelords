@@ -49,6 +49,7 @@ export class AppView implements AppPort {
             model.playerName,
             model.planetTab,
             this.#emit,
+            model.fleets,
           ),
         );
       else if (model.screen === 'fleets')
@@ -75,6 +76,7 @@ export class AppView implements AppPort {
             model.playerName,
             model.planetTab,
             this.#emit,
+            model.fleets,
           ),
         );
       this.#root
@@ -102,13 +104,6 @@ export class AppView implements AppPort {
         if (this.#known) this.#known.value = key;
         this.#renderSelection(model);
       }
-      const existingNotice = this.#root.querySelector('.game-notice');
-      if (model.notice) {
-        const notice = element('p', 'game-notice', model.notice);
-        notice.setAttribute('role', 'status');
-        existingNotice?.replaceWith(notice);
-        if (!existingNotice) this.#root.append(notice);
-      } else existingNotice?.remove();
       const existing = this.#root.querySelector('.turn-summary');
       if (model.phase === 'summary') {
         const summary = element('section', 'turn-summary');
@@ -128,6 +123,13 @@ export class AppView implements AppPort {
         if (!existing) this.#root.append(summary);
       } else existing?.remove();
     }
+    const existingNotice = this.#root.querySelector('.game-notice');
+    if (model.notice) {
+      const notice = element('p', 'game-notice', model.notice);
+      notice.setAttribute('role', 'status');
+      existingNotice?.replaceWith(notice);
+      if (!existingNotice) this.#root.append(notice);
+    } else existingNotice?.remove();
   }
 
   dispose(): void {

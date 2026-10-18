@@ -68,6 +68,15 @@ export class AppController {
       case 'build':
         this.#model.build(intent.building);
         break;
+      case 'queue-ship':
+        this.#model.scheduleShip(intent.ship, intent.fleetId);
+        break;
+      case 'move-project':
+        this.#model.moveProject(intent.id, intent.index);
+        break;
+      case 'project-fleet':
+        this.#model.setProjectFleet(intent.id, intent.fleetId);
+        break;
       case 'cancel-project':
         this.#model.cancelProject(intent.id);
         break;

@@ -38,6 +38,13 @@ Produktkraven finns separat i [product-requirements.md](product-requirements.md)
 - `produktionsstart`: integrationstest verifierar att byggd startsida och dess
   faktiska JavaScript- och CSS-filer går att hämta med rätt innehållstyp.
 
+- `byggnaders-resursanvandning`: vytest kontrollerar drift per färdig byggnad.
+- `flera-byggnader-av-samma-typ`, `gemensam-byggko`, `skepp-i-byggko` och
+  `skepp-till-destinationsflotta`: modelltester kontrollerar köordning över år,
+  budgetblockering, avbrott, byggplatser, mottagarval och reservbeteende.
+  Vytester kontrollerar controllerstyrda knappar, dragning och mottagarval;
+  browsertester kontrollerar beställning, omordning och färdigställning.
+
 Processkrav kan inte bevisas med meningsfulla enhetstester. De följs upp genom
 verktygskontroller, CI och granskning enligt tabellen.
 

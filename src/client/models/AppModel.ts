@@ -143,6 +143,18 @@ export class AppModel {
     const planet = this.#game.planetAt(this.#selected);
     if (planet) this.#game.scheduleBuild(planet, type);
   }
+  scheduleShip(ship: ShipType, fleetId: string | null): void {
+    const planet = this.#game.planetAt(this.#selected);
+    if (planet) this.#game.scheduleShip(planet, ship, fleetId);
+  }
+  moveProject(id: string, index: number): void {
+    const planet = this.#game.planetAt(this.#selected);
+    if (planet) this.#game.moveProject(planet, id, index);
+  }
+  setProjectFleet(id: string, fleetId: string | null): void {
+    const planet = this.#game.planetAt(this.#selected);
+    if (planet) this.#game.setProjectFleet(planet, id, fleetId);
+  }
   cancelProject(id: string): void {
     const planet = this.#game.planetAt(this.#selected);
     if (planet) this.#game.cancelProject(planet, id);

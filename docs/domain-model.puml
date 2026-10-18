@@ -29,6 +29,12 @@ class Building {
 class ConstructionProject {
   type
   reservedCrew
+  destinationFleetId
+}
+class BuildQueue {
+  moveProject()
+  cancelProject()
+  completeFirstPerYear()
 }
 class Ship {
   type
@@ -62,11 +68,20 @@ Planet --> HexCoordinate : position
 Planet "1" *-- "0..1" Colony
 Colony --> Player : ownerId
 Colony "1" o-- "0..*" Building
-Colony "1" o-- "0..*" ConstructionProject
+Colony "1" *-- "1" BuildQueue
+BuildQueue "1" o-- "0..*" ConstructionProject : ordered
+ConstructionProject --> Fleet : ship recipient
+Colony --> Fleet : home fleet
 Fleet "1" o-- "0..*" Ship
 TurnOrder --> ConstructionProject
 TurnOrder --> Fleet
 GameEvent --> TurnOrder
+
+note bottom of BuildQueue
+  Byggnader och skepp delar kö.
+  Endast första projektet använder årets byggbudget.
+  Högst ett projekt färdigställs per år.
+end note
 
 note bottom of Galaxy
   Första iterationen använder en fast exempelvärld.

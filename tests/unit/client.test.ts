@@ -170,3 +170,77 @@ describe('viewport-game-layout', () => {
     expect(root.querySelector('button')?.textContent).not.toBe('');
   });
 });
+
+describe('byggnaders-resursanvandning', () => {
+  it('shows upkeep per completed building in Buildings', () => {
+    const model = new AppModel();
+    model.build('Research station');
+    model.startTurn();
+    model.finishTurn();
+    model.continuePlanning();
+    model.openPlanet();
+    const controller = new AppController(model, new AppView(root, mapFactory));
+    controller.start();
+    expect(root.querySelector('.existing-buildings')?.textContent).toContain(
+      'Uses Iron 2, Water 3, Oil 1 units/year · 600 workers',
+    );
+  });
+});
+
+describe('gemensam-byggko / skepp-i-byggko / skepp-till-destinationsflotta', () => {
+  it('routes queue ordering, destination selection and cancellation through the controller', () => {
+    const model = new AppModel();
+    const home = model.snapshot.fleets[0]!;
+    model.createFleet(home.id);
+    const target = model.snapshot.fleets[1]!;
+    model.openPlanet();
+    model.showPlanetTab('construction');
+    const controller = new AppController(model, new AppView(root, mapFactory));
+    controller.start();
+    click('Build Research station');
+    const select = root.querySelector<HTMLSelectElement>(
+      '[aria-label="Destination fleet for Colony ship"]',
+    )!;
+    select.value = target.id;
+    click('Queue Colony ship');
+    expect(model.snapshot.planet!.projects[1]!.destinationFleetId).toBe(
+      target.id,
+    );
+    click('Move up');
+    expect(model.snapshot.planet!.projects[0]!.type).toBe('Research station');
+    const moveUp = root
+      .querySelectorAll<HTMLElement>('.queue-order')[1]!
+      .querySelector<HTMLButtonElement>('button')!;
+    moveUp.click();
+    expect(model.snapshot.planet!.projects[0]!.type).toBe('Colony ship');
+    const queuedFleet = root.querySelector<HTMLSelectElement>(
+      '.queue-order select',
+    )!;
+    queuedFleet.value = '';
+    queuedFleet.dispatchEvent(new Event('change'));
+    expect(model.snapshot.planet!.projects[0]!.destinationFleetId).toBeNull();
+    click('Move down');
+    expect(model.snapshot.planet!.projects[0]!.type).toBe('Research station');
+    click('Cancel');
+    expect(
+      model.snapshot.planet!.projects.map((project) => project.type),
+    ).toEqual(['Colony ship']);
+  });
+
+  it('uses drag data to reorder an existing queue item', () => {
+    const model = new AppModel();
+    model.build('Research station');
+    model.scheduleShip('Colony ship', null);
+    model.openPlanet();
+    model.showPlanetTab('construction');
+    new AppController(model, new AppView(root, mapFactory)).start();
+    const rows = root.querySelectorAll('.queue-order');
+    const id = model.snapshot.planet!.projects[1]!.id;
+    const drop = new Event('drop', { cancelable: true });
+    Object.defineProperty(drop, 'dataTransfer', {
+      value: { getData: () => id },
+    });
+    rows[0]!.dispatchEvent(drop);
+    expect(model.snapshot.planet!.projects[0]!.id).toBe(id);
+  });
+});

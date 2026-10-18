@@ -796,3 +796,24 @@ p {
     padding-top: 6px;
   }
 }
+
+.queue-order {
+  flex-wrap: wrap;
+  padding: 8px;
+  border: 1px solid var(--muted);
+  border-radius: 6px;
+  cursor: grab;
+}
+.queue-details {
+  min-width: 0;
+  flex: 1 1 180px;
+  overflow-wrap: anywhere;
+}
+.queue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.building-panel select {
+  max-width: 100%;
+}

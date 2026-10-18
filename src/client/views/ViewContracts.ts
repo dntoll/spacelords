@@ -19,6 +19,21 @@ export type AppIntent =
   | { readonly type: 'select'; readonly position: HexCoordinate }
   | { readonly type: 'pan'; readonly delta: Point }
   | { readonly type: 'zoom'; readonly factor: number; readonly anchor: Point }
+  | {
+      readonly type: 'queue-ship';
+      readonly ship: ShipType;
+      readonly fleetId: string | null;
+    }
+  | {
+      readonly type: 'move-project';
+      readonly id: string;
+      readonly index: number;
+    }
+  | {
+      readonly type: 'project-fleet';
+      readonly id: string;
+      readonly fleetId: string | null;
+    }
   | { readonly type: 'build'; readonly building: BuildType }
   | {
       readonly type: 'cancel-project' | 'toggle-demolition';
