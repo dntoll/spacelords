@@ -45,6 +45,9 @@ Produktkraven finns separat i [product-requirements.md](product-requirements.md)
 - `viewport-game-layout`: enhetstester skyddar controllerstyrd navigation mellan Overview och Build selection;
   browsertester kontrollerar alla vyer utan scroll eller klippta kontroller,
   även i stående och liggande format.
+  Mobilnavigationen får egen bredd oberoende av logotypens fontmått.
+  Regressionstest kontrollerar att kartan behåller minst 80 procent av
+  telefonens skärmyta även med alternativa fontmått; CI verifierar också Linux/WebKit.
 - Spelgrundens kravkoppling beskrivs i [first-iteration.md](first-iteration.md).
 - `mvc-arkitektur`: enhetstest verifierar att modellens läsdata inte kan ändras
   utifrån. Typkontrollen begränsar vyn till modellens läsgränssnitt.

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 
-describe('arsbudget', () => {
-  it('reserves slots, workers, annual resources and crew immediately', () => {
+describe('planetlager / arbetskraft-och-besattning', () => {
+  it('reserves a construction site and workers without spending materials before construction', () => {
     const model = new AppModel();
     model.build('Research station');
     const planet = model.snapshot.planet;
@@ -12,6 +12,7 @@ describe('arsbudget', () => {
     expect(budget.reservedSlots).toBe(1);
     expect(budget.reservedWorkers).toBe(600);
     expect(budget.reservedCrew).toBe(0);
+    expect(model.snapshot.planet!.economy.stock.Iron).toBe(100);
   });
 });
 

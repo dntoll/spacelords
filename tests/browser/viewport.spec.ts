@@ -49,6 +49,30 @@ async function expectContentFits(page: Page): Promise<void> {
   expect(clipped).toEqual([]);
 }
 
+test('viewport-game-layout: navigation font changes cannot crowd out the phone map', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('./');
+  await startFirstSlot(page);
+  await page.addStyleTag({
+    content: ':root { font-family: monospace; font-size: 8px; }',
+  });
+  const brand = (await page.locator('.brand').boundingBox())!;
+  const navigation = (await page.locator('.main-nav').boundingBox())!;
+  expect(navigation.y).toBeGreaterThanOrEqual(brand.y + brand.height);
+  const canvas = page.locator('canvas[data-rendered="true"]');
+  await expect(canvas).toHaveCount(1);
+  await expect
+    .poll(async () => (await canvas.boundingBox())!.height / 844)
+    .toBeGreaterThan(0.8);
+  await page.addStyleTag({ content: ':root { font-size: 20px; }' });
+  await expect
+    .poll(async () => (await canvas.boundingBox())!.height / 844)
+    .toBeGreaterThan(0.8);
+  await expectNoScroll(page);
+});
+
 for (const size of [
   { width: 320, height: 568 },
   { width: 844, height: 390 },
