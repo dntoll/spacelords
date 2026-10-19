@@ -23,13 +23,13 @@ För delvisa krav anges vad som återstår. Exempelvärden är inte beslut om ba
 
 ## Spelupplevelse
 
-| Kravnamn                    | Status                     | Krav och återstående arbete                                                                                                                                                                                         |
-| --------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `viewport-game-layout`      | Fullständigt implementerat | Alla vyer fyller skärmen utan sidscroll på mobil, surfplatta och dator, även med större systemtypsnitt på smala skärmar. Avgränsade spelpaneler får ha intern scroll. Kartan tar huvuddelen av skärmen.             |
-| `focused-interface`         | Fullständigt implementerat | Visa spelinformation och handlingar utan introduktionsrubriker och dekorativa småtexter. Behåll beskrivningar av stjärnor och planeter.                                                                             |
-| `english-game`              | Fullständigt implementerat | Alla texter, hjälptexter och namn på råvaror i spelet är på engelska.                                                                                                                                               |
-| `gemensamma-byggnadsbilder` | Fullständigt implementerat | Samma byggnadsbild används i Build selection, pågående bygge och färdig byggnad i Overview. Gemensam platshållare visas tills bilder finns eller om bilden inte kan visas. Användaren tillhandahåller slutbilderna. |
-| `kompakta-bygghandlingar`   | Fullständigt implementerat | Byggplatser och byggval har kompakta, innehållsbreda knappar med minst 44 px klickhöjd. Byggande är primär handling, rivning och avbrytning sekundära. Status och fabrikens tillhörande kö framgår tydligt.         |
+| Kravnamn                    | Status                     | Krav och återstående arbete                                                                                                                                                                                                                                                                                                                     |
+| --------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `viewport-game-layout`      | Fullständigt implementerat | Alla vyer fyller skärmen utan sidscroll på mobil, surfplatta och dator, även med större systemtypsnitt på smala skärmar. Avgränsade spelpaneler får ha intern scroll. Kartan tar huvuddelen av skärmen.                                                                                                                                         |
+| `focused-interface`         | Fullständigt implementerat | Visa spelinformation och handlingar utan introduktionsrubriker och dekorativa småtexter. Behåll beskrivningar av stjärnor och planeter.                                                                                                                                                                                                         |
+| `english-game`              | Fullständigt implementerat | Alla texter, hjälptexter och namn på råvaror i spelet är på engelska.                                                                                                                                                                                                                                                                           |
+| `gemensamma-byggnadsbilder` | Fullständigt implementerat | Colony ship factory, Exploration ship factory, Fighter factory och Research station använder var sin tillhandahållen byggnadsbild. Samma bild används i Research, Build selection samt pågående och färdiga byggen i Overview. Hela bilden visas med bevarade proportioner. Gemensam platshållare visas om en bild saknas eller inte kan visas. |
+| `kompakta-bygghandlingar`   | Fullständigt implementerat | Byggplatser och byggval har kompakta, innehållsbreda knappar med minst 44 px klickhöjd. Byggande är primär handling, rivning och avbrytning sekundära. Status och fabrikens tillhörande kö framgår tydligt.                                                                                                                                     |
 
 ## Fortsatt spelutveckling
 
@@ -141,3 +141,7 @@ Exploration ship 3/2/1, Fighter 2/1/1; arbetarna täcks av shipyardens drift.
   hexen. `flottval-pa-kartan` och `dra-flottdestination` tillkommer. Flottval
   prioriteras framför hexval inom träffytan. Kartbakgrundens panorering och det
   befintliga destinationsvalet via Set destination behålls.
+
+- 2026-10-19: `gemensamma-byggnadsbilder` omfattar de fyra tillhandahållna
+  byggnadsbilderna och utökas till Research. Bilderna ersätter tidigare
+  platshållare; reservvisning behålls för saknade eller oladdbara bilder.

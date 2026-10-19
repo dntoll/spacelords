@@ -352,6 +352,10 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     .click();
   await nextYear();
   await page.getByRole('button', { name: 'Research', exact: true }).click();
+  const factorySource = await page
+    .getByRole('img', { name: 'Colony ship factory', exact: true })
+    .getAttribute('src');
+
   await page
     .getByRole('button', { name: 'Research Colony ship factory', exact: true })
     .click();
@@ -364,6 +368,10 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     .getByRole('button', { name: 'Build building at site 2', exact: true })
     .click();
   await expect(page.locator('.building-menu .building-choice')).toHaveCount(2);
+  await expect(
+    page.getByRole('img', { name: 'Colony ship factory', exact: true }),
+  ).toHaveAttribute('src', factorySource!);
+
   await page
     .getByRole('button', { name: 'Build Colony ship factory', exact: true })
     .click();
@@ -378,6 +386,9 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     name: 'Building site 2',
     exact: true,
   });
+  await expect(
+    yard.getByRole('img', { name: 'Colony ship factory', exact: true }),
+  ).toHaveAttribute('src', factorySource!);
   await expect(yard.locator('.queue-slots > li')).toHaveCount(5);
   // fabrikskoer: the factory and its own queue share a row only when space permits.
   const detailsBounds = (await yard.locator('.site-details').boundingBox())!;

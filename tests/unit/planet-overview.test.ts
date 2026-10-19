@@ -4,6 +4,8 @@ import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppController } from '../../src/client/controllers/AppController.js';
 import { renderPlanet } from '../../src/client/views/PlanetView.js';
 import { renderBuildSelection } from '../../src/client/views/BuildSelectionView.js';
+import { renderResearch } from '../../src/client/views/ResearchView.js';
+import { BUILDINGS, type BuildType } from '../../src/client/models/Game.js';
 import { buildingImage } from '../../src/client/views/BuildingImage.js';
 import { AppView } from '../../src/client/views/AppView.js';
 
@@ -86,16 +88,12 @@ describe('planetbudgetoversikt', () => {
 });
 
 describe('gemensamma-byggnadsbilder', () => {
-  it('uses the same placeholder for selection and construction', () => {
+  it('uses the same supplied image for selection and construction', () => {
     const { root, click } = setup();
     click('Build building');
-    const label = root
-      .querySelector('.building-placeholder')
-      ?.getAttribute('aria-label');
+    const label = root.querySelector('img')?.getAttribute('src');
     click('Build Research station');
-    expect(
-      root.querySelector('.building-placeholder')?.getAttribute('aria-label'),
-    ).toBe(label);
+    expect(root.querySelector('img')?.getAttribute('src')).toBe(label);
   });
 });
 
@@ -231,5 +229,28 @@ describe('gemensamma-byggnadsbilder', () => {
     expect(view.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe(
       'Research station image placeholder',
     );
+  });
+});
+
+describe('gemensamma-byggnadsbilder', () => {
+  it('shows a distinct supplied image for every building and reuses it in Research', () => {
+    const research = renderResearch(
+      { completed: [], selected: null, stations: 0 },
+      false,
+      () => {},
+    );
+    const sources: string[] = [];
+    for (const type of Object.keys(BUILDINGS) as BuildType[]) {
+      const image = buildingImage(type).querySelector('img');
+      expect(image, type).not.toBeNull();
+      expect(image!.alt).toBe(type);
+      sources.push(image!.getAttribute('src')!);
+      expect(
+        research
+          .querySelector<HTMLImageElement>(`img[alt="${type}"]`)
+          ?.getAttribute('src'),
+      ).toBe(image!.getAttribute('src'));
+    }
+    expect(new Set(sources).size).toBe(4);
   });
 });

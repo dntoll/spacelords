@@ -4,6 +4,7 @@ import {
   type ResearchSnapshot,
 } from '../models/Game.js';
 import type { IntentHandler } from './ViewContracts.js';
+import { buildingImage } from './BuildingImage.js';
 import { button, element } from './dom.js';
 
 export function renderResearch(
@@ -18,7 +19,9 @@ export function renderResearch(
     button('Back to map', () => emit({ type: 'open-map' }), 'back-button'),
   );
   const panel = element('section', 'research-panel');
-  panel.append(
+  const introduction = element('div', 'research-introduction');
+  const details = element('div', 'research-introduction-details');
+  details.append(
     element('h2', '', 'Research station'),
     element(
       'p',
@@ -31,6 +34,8 @@ export function renderResearch(
       `Operating research stations: ${research.stations}`,
     ),
   );
+  introduction.append(buildingImage('Research station'), details);
+  panel.append(introduction);
   if (!research.stations)
     panel.append(
       element(
@@ -44,6 +49,7 @@ export function renderResearch(
     card.dataset.technology = type;
     const complete = research.completed.includes(type);
     card.append(
+      buildingImage(type),
       element('h3', '', type),
       element('p', 'muted-note', BUILDINGS[type].description),
     );

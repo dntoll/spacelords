@@ -55,7 +55,10 @@ Produktkraven finns separat i [product-requirements.md](product-requirements.md)
   `kompakta-bygghandlingar` och `fabrikskoer` verifieras i webbläsare med
   innehållsbreda knappar, minst 44 px klickhöjd och fabrik/kö sida vid sida från
   720 px panelbredd, annars staplade. Scrolläge och tangentbordsfokus verifieras.
-  Bildkopplingar ligger i vylagret och använder klientens basadress; inga nya
+  Originalbilder behålls i `assets/original/buildings/`. Webbversionerna är
+  512 × 512 px WebP (kvalitet 85) i `src/client/assets/buildings/` och importeras
+  genom Vite, som ger byggda bilder rätt basadress och innehållshash.
+  Bildkopplingar ligger i vylagret; inga nya
   domänbegrepp eller domänrelationer tillkommer.
 
 - `kartflottor`, `flottval-pa-kartan` och `dra-flottdestination`: gemensam

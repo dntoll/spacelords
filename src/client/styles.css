@@ -1053,7 +1053,7 @@ p {
 }
 .planet-content.building-menu {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
   align-content: start;
   align-items: start;
   overflow: auto;
@@ -1172,5 +1172,70 @@ p {
   /* flottval-pa-kartan: keep central fleet markers clear of the information HUD. */
   .selection-panel {
     max-height: calc(50% - 108px);
+  }
+}
+
+/* gemensamma-byggnadsbilder: retain the complete square artwork in every view. */
+.building-image {
+  overflow: hidden;
+  border-radius: 4px;
+  background: #091923;
+}
+.building-image img {
+  display: block;
+}
+.site-details .building-image {
+  width: 112px;
+  height: 112px;
+}
+.building-choice .building-image {
+  height: 180px;
+}
+.research-introduction {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.research-introduction-details {
+  display: grid;
+  gap: 8px;
+}
+.research-introduction .building-image {
+  width: 96px;
+  height: 96px;
+}
+.research-choice {
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 8px 12px;
+  align-content: start;
+}
+.research-choice .building-image {
+  grid-column: 1;
+  grid-row: 1 / span 4;
+  width: 112px;
+  height: 112px;
+}
+.research-choice > :not(.building-image) {
+  grid-column: 2;
+}
+.research-choice h3 {
+  margin: 0;
+}
+.research-choice .button {
+  width: fit-content;
+  justify-self: start;
+  min-height: 44px;
+}
+@media (max-width: 400px) {
+  .research-introduction {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .research-choice {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+  .research-choice .building-image {
+    width: 72px;
+    height: 72px;
   }
 }

@@ -65,7 +65,7 @@ describe('planetinformation', () => {
     expect(root.querySelector('h1')?.textContent).toBe(
       '<img src=x onerror="alert(1)">',
     );
-    expect(root.querySelector('img')).toBeNull();
+    expect(root.querySelector('img[src="x"], [onerror]')).toBeNull();
   });
 });
 
@@ -221,7 +221,7 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
     expect(menu.textContent).toContain('Water 10 units/year');
     expect(menu.textContent).toContain('Oil 6 units/year');
     expect(menu.textContent).toContain('2000 workers');
-    expect(menu.querySelector('[role="img"]')).not.toBeNull();
+    expect(menu.querySelector('img')).not.toBeNull();
     click('Build Colony ship factory');
     expect(model.snapshot.planet!.sites[1]!.project?.type).toBe(
       'Colony ship factory',
