@@ -27,7 +27,7 @@ Produktkraven finns separat i [product-requirements.md](product-requirements.md)
 
 - `english-game` och `focused-interface`: vytester skyddar engelska handlingar,
   synliga modellvärden och beskrivningar av valda himlakroppar.
-- `viewport-game-layout`: enhetstester skyddar controllerstyrda flikar;
+- `viewport-game-layout`: enhetstester skyddar controllerstyrd navigation mellan Overview och Build selection;
   browsertester kontrollerar alla vyer utan scroll eller klippta kontroller,
   även i stående och liggande format.
 - Spelgrundens kravkoppling beskrivs i [first-iteration.md](first-iteration.md).
@@ -48,6 +48,15 @@ Produktkraven finns separat i [product-requirements.md](product-requirements.md)
   kontrollerar upplåsning, forskningsförutsättningar, kolonibildning, ägarskap
   och orderräkning. Vy- och browsertester följer hela kedjan från forskning
   till ny koloni; kartvyns markeringar kontrolleras separat.
+
+- `visa-byggalternativ`, `planetbudgetoversikt` och `gemensamma-byggnadsbilder`:
+  vytester skyddar sökning, kostnadsstatus, återgång till rätt plats,
+  budgetproportioner, rivningsreservationer och bilders reservvisning.
+  `kompakta-bygghandlingar` och `fabrikskoer` verifieras i webbläsare med
+  innehållsbreda knappar, minst 44 px klickhöjd och fabrik/kö sida vid sida från
+  720 px panelbredd, annars staplade. Scrolläge och tangentbordsfokus verifieras.
+  Bildkopplingar ligger i vylagret och använder klientens basadress; inga nya
+  domänbegrepp eller domänrelationer tillkommer.
 
 Processkrav kan inte bevisas med meningsfulla enhetstester. De följs upp genom
 verktygskontroller, CI och granskning enligt tabellen.

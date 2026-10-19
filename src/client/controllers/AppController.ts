@@ -50,8 +50,8 @@ export class AppController {
       case 'open-fleets':
         this.#model.openFleets();
         break;
-      case 'planet-tab':
-        this.#model.showPlanetTab(intent.tab);
+      case 'build-search':
+        this.#model.searchBuildings(intent.query);
         break;
       case 'home':
         this.#model.home();

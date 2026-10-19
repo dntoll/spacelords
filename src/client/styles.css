@@ -920,3 +920,228 @@ p {
     max-width: 150px;
   }
 }
+
+/* kompakta-bygghandlingar: actions keep their intrinsic width in game panels. */
+.planet-page {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+.planet-content.overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: start;
+  gap: 20px;
+  container-type: inline-size;
+  overflow: auto;
+  padding: 14px;
+}
+.planet-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 20px;
+}
+.planet-overview {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.planet-overview .planet-art {
+  width: 100px;
+}
+.planet-stats {
+  gap: 10px;
+}
+.building-site {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding: 12px;
+  gap: 16px;
+}
+.building-site h3,
+.building-site h4 {
+  margin: 0;
+}
+.site-details {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+.site-actions,
+.queue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.site-actions .button,
+.building-choice > .button,
+.site-details > .button,
+.queue-actions .button {
+  width: fit-content;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 6px 12px;
+  justify-self: start;
+  flex: 0 1 auto;
+}
+.secondary-button,
+.queue-actions .button {
+  background: #142d3b;
+  border-color: #466071;
+  color: #e2ecf0;
+}
+.secondary-button:hover:enabled,
+.queue-actions .button:hover:enabled {
+  background: #234455;
+}
+.destructive-button {
+  border-color: #ad7070;
+}
+.site-status {
+  color: var(--accent);
+  font-size: 0.8rem;
+}
+.site-details .building-placeholder,
+.site-details .building-image {
+  width: 112px;
+  height: 72px;
+  min-height: 72px;
+}
+.building-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.factory-queue {
+  align-content: start;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.queue-details select {
+  width: 100%;
+}
+.queue-order {
+  cursor: grab;
+}
+.build-selection-page {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+.build-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+.build-search-label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.8rem;
+  min-width: 0;
+  max-width: 100%;
+}
+.build-search-label input {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  color: inherit;
+  background: #091923;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font: inherit;
+}
+.planet-content.building-menu {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  align-content: start;
+  align-items: start;
+  overflow: auto;
+  gap: 12px;
+  padding: 12px;
+}
+.building-choice {
+  gap: 8px;
+}
+.building-choice .building-placeholder,
+.building-choice .building-image {
+  height: 140px;
+}
+.building-choice.unaffordable {
+  opacity: 1;
+  filter: none;
+}
+.building-costs {
+  display: grid;
+  gap: 4px;
+  font-size: 0.8rem;
+}
+.cost-ok {
+  color: #a4e4ba;
+}
+.cost-missing,
+.blocked-reason {
+  color: #ffacac;
+}
+.resource-budget {
+  display: grid;
+  gap: 5px;
+  margin: 12px 0;
+}
+.resource-budget h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.budget-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.75rem;
+}
+.budget-total-label {
+  color: #b1d5ff;
+}
+.budget-used-label {
+  color: #efb76a;
+}
+.budget-available-label {
+  color: #a4e4ba;
+}
+.budget-bar {
+  display: flex;
+  overflow: hidden;
+  height: 12px;
+  border: 2px solid #75a6da;
+  border-radius: 3px;
+  background: #091923;
+}
+.budget-used {
+  background: #d9963c;
+}
+.budget-available {
+  background: #6cbb8c;
+}
+.budget-panel table {
+  table-layout: fixed;
+  overflow-wrap: anywhere;
+}
+@container (min-width: 720px) {
+  .factory-site {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  }
+  .factory-queue {
+    border-top: 0;
+    border-left: 1px solid var(--line);
+    padding-top: 0;
+    padding-left: 16px;
+  }
+}
+@media (max-width: 700px) {
+  .planet-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .planet-content.overview {
+    padding: 10px;
+    gap: 14px;
+  }
+}

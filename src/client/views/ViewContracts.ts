@@ -1,4 +1,4 @@
-import type { AppReadModel, PlanetTab } from '../models/AppModel.js';
+import type { AppReadModel } from '../models/AppModel.js';
 import type {
   BuildType,
   ShipType,
@@ -20,7 +20,7 @@ export type AppIntent =
         | 'continue-planning'
         | 'produce-fighter';
     }
-  | { readonly type: 'planet-tab'; readonly tab: PlanetTab }
+  | { readonly type: 'build-search'; readonly query: string }
   | { readonly type: 'select'; readonly position: HexCoordinate }
   | { readonly type: 'pan'; readonly delta: Point }
   | { readonly type: 'zoom'; readonly factor: number; readonly anchor: Point }

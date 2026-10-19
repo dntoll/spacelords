@@ -16,9 +16,8 @@ import {
 import type { MapCell } from './Galaxy.js';
 import { HexCoordinate, HexGeometry, type Point } from './HexCoordinate.js';
 
-export type PlanetTab = 'overview' | 'construction';
-
-export type Screen = 'map' | 'planet' | 'research' | 'fleets';
+export type Screen =
+  'map' | 'planet' | 'build-selection' | 'research' | 'fleets';
 
 export interface AppReadModel {
   readonly research: ResearchSnapshot;
@@ -26,7 +25,8 @@ export interface AppReadModel {
   readonly constructionSite: number | null;
   readonly shipyardId: string | null;
   readonly screen: Screen;
-  readonly planetTab: PlanetTab;
+  readonly buildSearch: string;
+  readonly returnSite: number | null;
   readonly playerName: string;
   readonly radius: number;
   readonly cells: readonly MapCell[];
@@ -49,7 +49,8 @@ export class AppModel {
   #constructionSite: number | null = null;
   #shipyardId: string | null = null;
   #screen: Screen = 'map';
-  #planetTab: PlanetTab = 'overview';
+  #buildSearch = '';
+  #returnSite: number | null = null;
   #selectedFleetId: string | null = null;
   #destinationFleetId: string | null = null;
   #notice: string | null = null;
@@ -68,7 +69,8 @@ export class AppModel {
       constructionSite: this.#constructionSite,
       shipyardId: this.#shipyardId,
       screen: this.#screen,
-      planetTab: this.#planetTab,
+      buildSearch: this.#buildSearch,
+      returnSite: this.#returnSite,
       playerName: this.#game.galaxy.player.name,
       radius: this.#game.galaxy.radius,
       cells: this.#game.mapSnapshot(),
@@ -78,7 +80,7 @@ export class AppModel {
           .find((cell) => cell.position.key === this.#selected.key) ?? null,
       camera: this.#camera.snapshot,
       planet:
-        this.#screen === 'planet'
+        this.#screen === 'planet' || this.#screen === 'build-selection'
           ? this.#game.planetAt(this.#selected)
             ? this.#game.planetSnapshot(this.#game.planetAt(this.#selected)!)
             : null
@@ -120,12 +122,9 @@ export class AppModel {
     if (this.#game.planetAt(this.#selected)) {
       this.#screen = 'planet';
       this.#constructionSite = null;
+      this.#returnSite = null;
       this.#shipyardId = null;
     }
-  }
-
-  showPlanetTab(tab: PlanetTab): void {
-    if (this.#screen === 'planet') this.#planetTab = tab;
   }
 
   openResearch(): void {
@@ -157,7 +156,25 @@ export class AppModel {
   }
 
   openBuildSite(index: number | null): void {
+    if (index === null) {
+      if (this.#screen !== 'build-selection') return;
+      this.#returnSite = this.#constructionSite;
+      this.#constructionSite = null;
+      this.#screen = 'planet';
+      return;
+    }
+    if (this.#screen !== 'planet' || this.#game.phase !== 'planning') return;
+    const planet = this.#game.planetAt(this.#selected);
+    const site = planet
+      ? this.#game.planetSnapshot(planet)?.sites[index]
+      : null;
+    if (!site || site.building || site.project) return;
     this.#constructionSite = index;
+    this.#buildSearch = '';
+    this.#screen = 'build-selection';
+  }
+  searchBuildings(query: string): void {
+    this.#buildSearch = query;
   }
   openShipyard(id: string | null): void {
     this.#shipyardId = id;
@@ -176,7 +193,7 @@ export class AppModel {
         type,
         slotIndex ?? this.#constructionSite ?? undefined,
       );
-    this.#constructionSite = null;
+    if (this.#screen === 'build-selection') this.openBuildSite(null);
   }
   scheduleShip(
     ship: ShipType,

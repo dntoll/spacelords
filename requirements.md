@@ -46,4 +46,11 @@ implementerade. Kartan visar tomma byggplatser och tomma fabriksköer.
   och versionshantering. Se [tekniska krav](docs/technical-requirements.md) och
   [arbetsreglerna](AGENTS.md).
 
+Planetens `Overview` samlar nu byggplatser och fabriksköer, med kompakta
+handlingar och resursstaplar i `Annual budget`. `Build selection` är en egen
+sökbar vy med kortrutnät, kostnadsindikatorer och gemensamma byggnadsbilder.
+`gemensamma-byggnadsbilder` och `kompakta-bygghandlingar` är fullständigt
+implementerade; slutbilder tillhandahålls av användaren och platshållare visas
+tills dess. `Construction`-fliken och den inbäddade byggmenyn ersätts.
+
 Detaljer hålls i `docs/` så att denna översikt förblir kort. Publicering beställs separat.

@@ -73,7 +73,6 @@ describe('bygga-forskningsstation', () => {
   it('offers a research station build order', () => {
     start();
     click('Open planet');
-    click('Construction');
     click('Build building');
     const build = [...root.querySelectorAll('button')].find(
       (button) => button.textContent === 'Build Research station',
@@ -159,21 +158,16 @@ describe('focused-interface', () => {
 });
 
 describe('viewport-game-layout', () => {
-  it('exposes one planet panel at a time', () => {
+  it('shows management in Overview without construction tabs', () => {
     start();
     click('Open planet');
-    const overview = root.querySelector('[role="tab"][aria-selected="true"]');
-    expect(overview?.textContent).toBe('Overview');
-    click('Construction');
-    expect(root.querySelectorAll('[role="tabpanel"]')).toHaveLength(1);
-    expect(root.querySelector('[role="tabpanel"]')?.textContent).toContain(
+    expect(root.querySelector('[role="tab"]')).toBeNull();
+    expect(root.querySelector('.overview')?.textContent).toContain(
       'Building sites',
     );
-    click('Overview');
-    expect(
-      root.querySelector('[role="tab"][aria-selected="true"]')?.textContent,
-    ).toBe('Overview');
-    expect(root.querySelector('button')?.textContent).not.toBe('');
+    expect(root.querySelector('.overview')?.textContent).toContain(
+      'Annual budget',
+    );
   });
 });
 
@@ -187,7 +181,7 @@ describe('byggnaders-resursanvandning', () => {
     model.openPlanet();
     const controller = new AppController(model, new AppView(root, mapFactory));
     controller.start();
-    expect(root.querySelector('.existing-buildings')?.textContent).toContain(
+    expect(root.querySelector('.building-panel')?.textContent).toContain(
       'Uses Iron 2, Water 3, Oil 1 units/year · 600 workers',
     );
   });
@@ -215,7 +209,6 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
     model.research('Colony ship factory');
     advance(model);
     model.openPlanet();
-    model.showPlanetTab('construction');
     new AppController(model, new AppView(root, mapFactory)).start();
     expect(root.querySelectorAll('.building-site')).toHaveLength(6);
     expect(root.querySelector('.building-menu')).toBeNull();
@@ -224,7 +217,9 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
     expect(menu.textContent).toContain('Colony ship factory');
     expect(menu.textContent).not.toContain('Exploration ship factory');
     expect(menu.textContent).not.toContain('Queue Colony ship');
-    expect(menu.textContent).toContain('Iron 18, Water 10, Oil 6');
+    expect(menu.textContent).toContain('Iron 18 units/year');
+    expect(menu.textContent).toContain('Water 10 units/year');
+    expect(menu.textContent).toContain('Oil 6 units/year');
     expect(menu.textContent).toContain('2000 workers');
     expect(menu.querySelector('[role="img"]')).not.toBeNull();
     click('Build Colony ship factory');
@@ -248,7 +243,6 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
     model.createFleet(home.id);
     const target = model.snapshot.fleets[1]!;
     model.openPlanet();
-    model.showPlanetTab('construction');
     new AppController(model, new AppView(root, mapFactory)).start();
     const site = () =>
       root.querySelector<HTMLElement>('[data-site-index="1"]')!;
@@ -305,7 +299,6 @@ describe('kolonisation / kartorderstatus', () => {
     click('Open planet');
     expect(root.querySelector('h1')!.textContent).toBe('Vesta');
     expect(root.textContent).toContain('1,000');
-    click('Construction');
     expect(root.querySelectorAll('.building-site')).toHaveLength(4);
     click('Build building');
     expect(

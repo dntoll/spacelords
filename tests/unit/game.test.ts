@@ -8,7 +8,6 @@ describe('arsbudget', () => {
     const planet = model.snapshot.planet;
     expect(planet).toBeNull();
     model.openPlanet();
-    model.showPlanetTab('construction');
     const budget = model.snapshot.planet!.budget;
     expect(budget.reservedSlots).toBe(1);
     expect(budget.reservedWorkers).toBe(600);

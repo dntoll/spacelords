@@ -67,13 +67,11 @@ for (const size of [
       page.getByText('12,000', { exact: true }).first(),
     ).toBeVisible();
     await expectContentFits(page);
-    await page.getByRole('tab', { name: 'Overview', exact: true }).click();
     await expect(page.getByText('Iron', { exact: true })).toBeVisible();
     await expect(
-      page.getByText('42 units/year', { exact: true }).first(),
+      page.getByText('Total 42 units/year', { exact: true }).first(),
     ).toBeVisible();
     await expectContentFits(page);
-    await page.getByRole('tab', { name: 'Construction', exact: true }).click();
     await page
       .getByRole('button', { name: 'Build building at site 1', exact: true })
       .click();
@@ -107,10 +105,55 @@ test('viewport-game-layout: wider fallback font metrics cannot expand the planet
   });
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await expectContentFits(page);
-  for (const tab of ['Overview', 'Construction']) {
-    await page.getByRole('tab', { name: tab, exact: true }).click();
-    await expectContentFits(page);
-  }
+  await page
+    .getByRole('button', { name: 'Build building at site 1', exact: true })
+    .click();
+  await expectContentFits(page);
+  await expect(
+    page.getByRole('button', { name: 'Build Research station', exact: true }),
+  ).toBeEnabled();
   await page.getByRole('button', { name: 'Research', exact: true }).click();
+  await expectContentFits(page);
+});
+
+test('visa-byggalternativ / kompakta-bygghandlingar: selection preserves Overview position and keyboard focus', async ({
+  page,
+}, testInfo) => {
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  const overview = page.locator('.overview');
+  const open = page.getByRole('button', {
+    name: 'Build building at site 6',
+    exact: true,
+  });
+  await open.scrollIntoViewIfNeeded();
+  const before = await overview.evaluate((node) => node.scrollTop);
+  await open.focus();
+  await page.keyboard.press('Enter');
+  await expect(
+    page.getByRole('heading', { name: 'Build selection', exact: true }),
+  ).toBeVisible();
+  const search = page.getByRole('searchbox', { name: 'Search buildings' });
+  await search.fill('no such building');
+  await expect(page.locator('.empty-results')).toBeVisible();
+  await expect(search).toBeFocused();
+  await search.fill('research point');
+  await expect(page.locator('.building-choice')).toHaveCount(1);
+  await expectContentFits(page);
+  await page.screenshot({ path: testInfo.outputPath('build-selection.png') });
+  await page
+    .getByRole('button', { name: 'Back to Overview', exact: true })
+    .click();
+  await expect(page.locator('[data-site-index="5"]')).toBeFocused();
+  expect(await overview.evaluate((node) => node.scrollTop)).toBeCloseTo(
+    before,
+    0,
+  );
+  const bounds = (await open.boundingBox())!;
+  const siteBounds = (await page
+    .locator('[data-site-index="5"] .site-details')
+    .boundingBox())!;
+  expect(bounds.width).toBeLessThan(siteBounds.width);
+  expect(bounds.height).toBeGreaterThanOrEqual(44);
   await expectContentFits(page);
 });

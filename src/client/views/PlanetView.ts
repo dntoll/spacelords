@@ -1,4 +1,4 @@
-import type { AppReadModel, PlanetTab } from '../models/AppModel.js';
+import type { AppReadModel } from '../models/AppModel.js';
 import {
   BUILDINGS,
   QUEUE_CAPACITY,
@@ -12,20 +12,14 @@ import {
 } from '../models/Game.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element, planetIllustration } from './dom.js';
-
-const tabs = [
-  ['overview', 'Overview'],
-  ['construction', 'Construction'],
-] as const;
+import { buildingImage } from './BuildingImage.js';
 
 export function renderPlanet(
   planet: PlanetGameSnapshot,
   owner: string,
-  activeTab: PlanetTab,
   emit: IntentHandler,
   fleets: readonly FleetSnapshot[] = [],
-  menus: Pick<AppReadModel, 'constructionSite' | 'shipyardId' | 'phase'> = {
-    constructionSite: null,
+  menus: Pick<AppReadModel, 'shipyardId' | 'phase'> = {
     shipyardId: null,
     phase: 'planning',
   },
@@ -37,28 +31,12 @@ export function renderPlanet(
     button('Back to map', () => emit({ type: 'open-map' }), 'back-button'),
   );
   page.append(header);
-  const navigation = element('div', 'planet-tabs');
-  navigation.setAttribute('role', 'tablist');
-  for (const [id, label] of tabs) {
-    const tab = button(
-      label,
-      () => emit({ type: 'planet-tab', tab: id }),
-      'tab-button',
-    );
-    tab.setAttribute('role', 'tab');
-    tab.setAttribute('aria-selected', String(id === activeTab));
-    navigation.append(tab);
-  }
-  const panel = element('section', `planet-content ${activeTab}`);
-  panel.setAttribute('role', 'tabpanel');
-  if (activeTab === 'overview')
-    panel.append(overview(planet, owner), budgetPanel(planet));
-  else
-    panel.append(
-      budgetPanel(planet),
-      construction(planet, emit, fleets, menus),
-    );
-  page.append(navigation, panel);
+  const panel = element('section', 'planet-content overview');
+  panel.setAttribute('aria-label', 'Overview');
+  const summary = element('div', 'planet-summary');
+  summary.append(overview(planet, owner), budgetPanel(planet));
+  panel.append(summary, construction(planet, emit, fleets, menus));
+  page.append(panel);
   return page;
 }
 
@@ -78,21 +56,7 @@ function overview(planet: PlanetGameSnapshot, owner: string): HTMLElement {
     );
     stats.append(pair);
   }
-  const buildings = element('div', 'existing-buildings');
-  buildings.append(element('h2', '', 'Buildings'));
-  if (planet.buildings.length === 0)
-    buildings.append(
-      element('p', 'muted-note', 'No buildings have been completed.'),
-    );
-  for (const building of planet.buildings)
-    buildings.append(
-      element(
-        'p',
-        '',
-        `${building.type}${building.scheduledForDemolition ? ' · demolition scheduled' : ''} · ${buildingUsage(building.type, building.scheduledForDemolition)}`,
-      ),
-    );
-  section.append(planetIllustration(true), stats, buildings);
+  section.append(planetIllustration(true), stats);
   return section;
 }
 
@@ -103,14 +67,36 @@ function budgetPanel(planet: PlanetGameSnapshot): HTMLElement {
   table.innerHTML =
     '<thead><tr><th>Category</th><th>Total</th><th>Used / Reserved</th><th>Available</th></tr></thead>';
   const body = document.createElement('tbody');
-  for (const resource of ['Iron', 'Water', 'Oil'] as Resource[])
-    budgetRow(
-      body,
-      resource,
-      `${planet.budget.production[resource]} units/year`,
-      `${planet.budget.reserved[resource]} units/year`,
-      `${planet.budget.available[resource]} units/year`,
+  for (const resource of ['Iron', 'Water', 'Oil'] as Resource[]) {
+    const total = planet.budget.production[resource];
+    const used = planet.budget.reserved[resource];
+    const available = planet.budget.available[resource];
+    const row = element('div', 'resource-budget');
+    row.dataset.resource = resource;
+    row.append(element('h3', '', resource));
+    const values = element('div', 'budget-values');
+    values.append(
+      element('span', 'budget-total-label', `Total ${total} units/year`),
+      element('span', 'budget-used-label', `Used / Reserved ${used}`),
+      element('span', 'budget-available-label', `Available ${available}`),
     );
+    const bar = element('div', 'budget-bar');
+    bar.setAttribute('role', 'img');
+    bar.setAttribute(
+      'aria-label',
+      `${resource}: Total ${total}, Used / Reserved ${used}, Available ${available} units/year`,
+    );
+    for (const [name, value] of [
+      ['used', used],
+      ['available', available],
+    ] as const) {
+      const segment = element('span', `budget-${name}`);
+      segment.style.width = `${total > 0 ? Math.max(0, Math.min(100, (value / total) * 100)) : 0}%`;
+      bar.append(segment);
+    }
+    row.append(values, bar);
+    section.append(row);
+  }
   budgetRow(
     body,
     'Population',
@@ -147,7 +133,7 @@ function construction(
   planet: PlanetGameSnapshot,
   emit: IntentHandler,
   fleets: readonly FleetSnapshot[],
-  menus: Pick<AppReadModel, 'constructionSite' | 'shipyardId' | 'phase'>,
+  menus: Pick<AppReadModel, 'shipyardId' | 'phase'>,
 ): HTMLElement {
   const box = element('section', 'building-panel');
   box.append(element('h2', '', 'Building sites'));
@@ -155,12 +141,23 @@ function construction(
     const card = element('article', 'building-site');
     card.setAttribute('aria-label', `Building site ${site.index + 1}`);
     card.dataset.siteIndex = String(site.index);
-    card.append(element('span', 'site-number', `SITE ${site.index + 1}`));
+    card.tabIndex = -1;
+    const details = element('div', 'site-details');
+    const actions = element('div', 'site-actions');
+    details.append(element('span', 'site-number', `SITE ${site.index + 1}`));
     if (site.building) {
       const building = site.building;
       const definition = BUILDINGS[building.type];
-      card.append(
+      details.append(
+        buildingImage(building.type),
         element('h3', '', building.type),
+        element(
+          'p',
+          'site-status',
+          building.scheduledForDemolition
+            ? 'Demolition scheduled'
+            : 'Operational',
+        ),
         element('p', '', definition.description),
         element(
           'p',
@@ -171,10 +168,10 @@ function construction(
       const demolish = button(
         building.scheduledForDemolition ? 'Keep' : 'Demolish',
         () => emit({ type: 'toggle-demolition', id: building.id }),
-        'button destructive-button',
+        'button secondary-button destructive-button',
       );
       demolish.disabled = menus.phase !== 'planning';
-      card.append(demolish);
+      actions.append(demolish);
       if (definition.ship) {
         const build = button(
           'Build',
@@ -197,7 +194,7 @@ function construction(
           building.scheduledForDemolition ||
           menus.phase !== 'planning' ||
           building.queue.length >= QUEUE_CAPACITY;
-        card.append(build);
+        actions.prepend(build);
         if (
           menus.shipyardId === building.id &&
           !building.scheduledForDemolition
@@ -220,7 +217,7 @@ function construction(
           queue.disabled =
             building.queue.length >= QUEUE_CAPACITY ||
             menus.phase !== 'planning';
-          card.append(
+          details.append(
             element(
               'p',
               'muted-note',
@@ -230,6 +227,7 @@ function construction(
             queue,
           );
         }
+        card.classList.add('factory-site');
         card.append(
           factoryQueue(
             planet,
@@ -241,7 +239,8 @@ function construction(
         );
       }
     } else if (site.project) {
-      card.append(
+      details.append(
+        buildingImage(site.project.type as BuildType),
         element('h3', '', site.project.type),
         element(
           'p',
@@ -250,23 +249,23 @@ function construction(
         ),
       );
       if (site.project.blockedReason)
-        card.append(element('p', 'muted-note', site.project.blockedReason));
+        details.append(element('p', 'muted-note', site.project.blockedReason));
       const cancel = button(
         'Cancel construction',
         () => emit({ type: 'cancel-project', id: site.project!.id }),
-        'button',
+        'button secondary-button',
       );
       cancel.disabled = menus.phase !== 'planning';
-      card.append(cancel);
+      actions.append(cancel);
     } else {
       card.classList.add('empty-site');
-      card.append(element('h3', '', 'Empty site'));
+      details.append(element('h3', '', 'Empty site'));
       const build = button(
         'Build building',
         () =>
           emit({
             type: 'build-site',
-            index: menus.constructionSite === site.index ? null : site.index,
+            index: site.index,
           }),
         'button',
       );
@@ -274,58 +273,12 @@ function construction(
         'aria-label',
         `Build building at site ${site.index + 1}`,
       );
-      build.setAttribute(
-        'aria-expanded',
-        String(menus.constructionSite === site.index),
-      );
+
       build.disabled = menus.phase !== 'planning';
-      card.append(build);
-      if (menus.constructionSite === site.index) {
-        const menu = element('section', 'building-menu');
-        menu.setAttribute('aria-label', 'Available buildings');
-        for (const option of planet.buildOptions) {
-          const definition = BUILDINGS[option.type];
-          const choice = element('article', 'building-choice');
-          choice.classList.toggle('unaffordable', !!option.blockedReason);
-          const image = element('div', 'building-placeholder', 'Image pending');
-          image.setAttribute('role', 'img');
-          image.setAttribute('aria-label', `${option.type} image placeholder`);
-          const order = button(
-            `Build ${option.type}`,
-            () =>
-              emit({
-                type: 'build',
-                building: option.type,
-                slotIndex: site.index,
-              }),
-            'button',
-          );
-          order.disabled = !!option.blockedReason;
-          choice.append(
-            image,
-            element('h4', '', option.type),
-            element('p', '', definition.description),
-            element(
-              'p',
-              'muted-note',
-              `${costText(definition.cost)} units/year · ${definition.workers} workers`,
-            ),
-            order,
-          );
-          if (option.blockedReason)
-            choice.append(element('p', 'muted-note', option.blockedReason));
-          menu.append(choice);
-        }
-        menu.append(
-          button(
-            'Close building menu',
-            () => emit({ type: 'build-site', index: null }),
-            'back-button',
-          ),
-        );
-        card.append(menu);
-      }
+      actions.prepend(build);
     }
+    details.append(actions);
+    card.prepend(details);
     box.append(card);
   }
   if (!planet.sites.length)

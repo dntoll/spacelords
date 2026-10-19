@@ -7,6 +7,7 @@ import type {
   MapFactory,
   MapPort,
 } from './ViewContracts.js';
+import { renderBuildSelection } from './BuildSelectionView.js';
 import { renderPlanet } from './PlanetView.js';
 import { renderResearch } from './ResearchView.js';
 import { renderFleets } from './FleetView.js';
@@ -24,6 +25,7 @@ export class AppView implements AppPort {
   #zoom: HTMLOutputElement | null = null;
   #coordinates: HTMLElement | null = null;
   #selectionKey = '';
+  #planetScroll = new Map<string, number>();
 
   constructor(root: HTMLElement, mapFactory: MapFactory) {
     this.#root = root;
@@ -36,6 +38,19 @@ export class AppView implements AppPort {
 
   render(model: AppReadModel): void {
     const changedScreen = this.#screen !== model.screen;
+    const active = document.activeElement;
+    const focusLabel = active?.getAttribute('aria-label');
+    const focusScope = active?.closest('[data-project-id], [data-site-index]');
+    const scopeSelector = focusScope?.hasAttribute('data-project-id')
+      ? `[data-project-id="${focusScope.getAttribute('data-project-id')}"]`
+      : focusScope?.hasAttribute('data-site-index')
+        ? `[data-site-index="${focusScope.getAttribute('data-site-index')}"]`
+        : null;
+    if (this.#screen === 'planet') {
+      const panel = this.#root.querySelector<HTMLElement>('.planet-content');
+      if (panel?.dataset.planetId)
+        this.#planetScroll.set(panel.dataset.planetId, panel.scrollTop);
+    }
     if (changedScreen) {
       this.#map?.dispose();
       this.#map = null;
@@ -48,12 +63,13 @@ export class AppView implements AppPort {
           renderPlanet(
             model.planet,
             model.playerName,
-            model.planetTab,
             this.#emit,
             model.fleets,
             model,
           ),
         );
+      else if (model.screen === 'build-selection' && model.planet)
+        main.append(renderBuildSelection(model, this.#emit));
       else if (model.screen === 'fleets')
         main.append(renderFleets(model, this.#emit));
       else
@@ -77,29 +93,61 @@ export class AppView implements AppPort {
       }
       this.#screen = model.screen;
     } else if (model.screen === 'planet' && model.planet) {
-      const scrollTop =
-        this.#root.querySelector('.planet-content')?.scrollTop ?? 0;
       this.#root
         .querySelector('main')
         ?.replaceChildren(
           renderPlanet(
             model.planet,
             model.playerName,
-            model.planetTab,
             this.#emit,
             model.fleets,
             model,
           ),
         );
-      const panel = this.#root.querySelector('.planet-content');
-      if (panel) panel.scrollTop = scrollTop;
+    } else if (model.screen === 'build-selection') {
+      const focused =
+        document.activeElement instanceof HTMLInputElement &&
+        document.activeElement.type === 'search';
+      const selection = focused
+        ? (document.activeElement as HTMLInputElement).selectionStart
+        : null;
+      const scroll =
+        this.#root.querySelector('.planet-content')?.scrollTop ?? 0;
       this.#root
-        .querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
-        ?.focus({ preventScroll: true });
+        .querySelector('main')
+        ?.replaceChildren(renderBuildSelection(model, this.#emit));
+      const panel = this.#root.querySelector('.planet-content');
+      if (panel) panel.scrollTop = scroll;
+      if (focused) {
+        const search = this.#root.querySelector<HTMLInputElement>(
+          'input[type="search"]',
+        );
+        search?.focus({ preventScroll: true });
+        if (selection !== null) search?.setSelectionRange(selection, selection);
+      }
     } else if (model.screen === 'fleets')
       this.#root
         .querySelector('main')
         ?.replaceChildren(renderFleets(model, this.#emit));
+    if (!changedScreen && model.screen === 'planet' && focusLabel) {
+      const scope = scopeSelector
+        ? this.#root.querySelector(scopeSelector)
+        : this.#root;
+      [...(scope?.querySelectorAll<HTMLElement>('[aria-label]') ?? [])]
+        .find((node) => node.getAttribute('aria-label') === focusLabel)
+        ?.focus({ preventScroll: true });
+    }
+    if (model.screen === 'planet' && model.planet) {
+      const panel = this.#root.querySelector<HTMLElement>('.planet-content');
+      if (panel) {
+        panel.dataset.planetId = model.planet.id;
+        panel.scrollTop = this.#planetScroll.get(model.planet.id) ?? 0;
+      }
+      if (changedScreen && model.returnSite !== null)
+        this.#root
+          .querySelector<HTMLElement>(`[data-site-index="${model.returnSite}"]`)
+          ?.focus({ preventScroll: true });
+    }
     if (!changedScreen && model.screen === 'research')
       this.#root
         .querySelector('main')

@@ -74,11 +74,9 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
   await expect(
     page.getByRole('heading', { name: 'Tellus', exact: true }),
   ).toBeVisible();
-  await page.getByRole('tab', { name: 'Overview', exact: true }).click();
   await expect(
-    page.getByText('42 units/year', { exact: true }).first(),
+    page.getByText('Total 42 units/year', { exact: true }).first(),
   ).toBeVisible();
-  await page.getByRole('tab', { name: 'Construction', exact: true }).click();
   await page
     .getByRole('button', { name: 'Build building at site 1', exact: true })
     .click();
@@ -89,6 +87,9 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
     path: testInfo.outputPath('planet.png'),
     fullPage: true,
   });
+  await page
+    .getByRole('button', { name: 'Back to Overview', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Back to map', exact: true }).click();
   await canvas(page);
   await expect(page.getByLabel('Map zoom')).toHaveText(zoom ?? '');
@@ -334,7 +335,6 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     await page
       .getByRole('button', { name: 'Open planet', exact: true })
       .click();
-    await page.getByRole('tab', { name: 'Construction', exact: true }).click();
   };
   await expect(page.locator('.order-status')).toContainText(
     '6 empty building sites',
@@ -379,6 +379,36 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     exact: true,
   });
   await expect(yard.locator('.queue-slots > li')).toHaveCount(5);
+  // fabrikskoer: the factory and its own queue share a row only when space permits.
+  const detailsBounds = (await yard.locator('.site-details').boundingBox())!;
+  const queueBounds = (await yard.locator('.factory-queue').boundingBox())!;
+  const contentWidth = await page
+    .locator('.overview')
+    .evaluate(
+      (node) =>
+        node.clientWidth -
+        parseFloat(getComputedStyle(node).paddingLeft) -
+        parseFloat(getComputedStyle(node).paddingRight),
+    );
+  if (contentWidth >= 720) {
+    expect(queueBounds.x).toBeGreaterThan(
+      detailsBounds.x + detailsBounds.width,
+    );
+    expect(Math.abs(queueBounds.y - detailsBounds.y)).toBeLessThan(2);
+  } else
+    expect(queueBounds.y).toBeGreaterThanOrEqual(
+      detailsBounds.y + detailsBounds.height,
+    );
+  for (const action of await yard.locator('.site-actions button').all()) {
+    const bounds = (await action.boundingBox())!;
+    expect(bounds.width).toBeLessThan(detailsBounds.width);
+    expect(bounds.height).toBeGreaterThanOrEqual(44);
+  }
+  await yard.scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: testInfo.outputPath('overview-factory-queue.png'),
+  });
+
   await page
     .getByRole('button', { name: 'Build ships at site 2', exact: true })
     .click();
