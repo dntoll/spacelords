@@ -299,6 +299,7 @@ export class AppModel {
     if (
       this.#screen !== 'map' ||
       !this.#mapFleetId ||
+      this.#game.fleet(this.#mapFleetId)?.routeId ||
       this.#game.phase !== 'planning'
     )
       return;
@@ -551,6 +552,10 @@ export class AppModel {
       this.#selectedFleetId = this.#game.fleetSnapshots()[0]?.id ?? null;
   }
   beginDestination(id: string): void {
+    if (this.#game.fleet(id)?.routeId) {
+      this.openTradeRoutes();
+      return;
+    }
     if (this.#game.fleet(id)) {
       this.#destinationFleetId = id;
       this.#screen = 'map';

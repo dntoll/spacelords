@@ -107,11 +107,9 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     .getByRole('button', { name: 'Queue Colony ship', exact: true })
     .click();
   await nextYear(page);
-  const settlers = page
-    .locator('.fleet-summary')
-    .filter({
-      has: page.getByRole('heading', { name: 'Settlers', exact: true }),
-    });
+  const settlers = page.locator('.fleet-summary').filter({
+    has: page.getByRole('heading', { name: 'Settlers', exact: true }),
+  });
   await settlers
     .getByRole('button', { name: 'Set destination', exact: true })
     .click();

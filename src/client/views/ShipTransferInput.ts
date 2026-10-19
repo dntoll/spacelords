@@ -32,6 +32,8 @@ export function bindShipTransfers(
       model.phase === 'planning' &&
       !!from &&
       !!to &&
+      !from.routeId &&
+      !to.routeId &&
       from.id !== to.id &&
       from.ships[source.ship] > 0 &&
       (!to.position || from.position?.key === to.position.key)

@@ -698,10 +698,16 @@ export class AppView implements AppPort {
             'button',
           ),
         );
+        for (const action of fleetInfo.querySelectorAll<HTMLButtonElement>(
+          'button',
+        ))
+          if (action.textContent === 'Set destination')
+            action.disabled = model.phase !== 'planning' || !!fleet.routeId;
         if (
           object?.kind === 'planet' &&
           !owned &&
-          fleet.ships['Colony ship'] > 0
+          fleet.ships['Colony ship'] > 0 &&
+          !fleet.routeId
         ) {
           const colonize = button(
             'Colonize',

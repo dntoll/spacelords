@@ -10,6 +10,19 @@ function turn(game: Game) {
 }
 
 describe('utvinningsbara-resurser / utvinningsbyggnader / planetlager / planetbyggnadsko', () => {
+  it('reports understaffed operating buildings even when no construction is queued', () => {
+    const game = new Game(createExampleGalaxy());
+    game.scheduleBuild(game.galaxy.homePlanet, 'Iron mine');
+    turn(game);
+    const saved = game.exportState();
+    saved.colonies[0]![1].population = 50;
+    const restored = Game.restore(saved);
+    expect(restored.decisions.some((d) => d.id === 'staff-sol-0')).toBe(true);
+    expect(
+      restored.planetSnapshot(restored.galaxy.homePlanet)!.economy.extraction
+        .Iron,
+    ).toBe(0);
+  });
   it('stops at depletion without negative deposits or invented material', () => {
     const stock = emptyStock(),
       deposits = { ...emptyStock(), Iron: 3 };

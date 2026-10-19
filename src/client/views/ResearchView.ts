@@ -68,7 +68,7 @@ export function renderResearch(
     if (complete) card.append(element('span', 'pill', 'Researched'));
     else {
       const selected = research.queue.includes(type);
-      if (selected)
+      if (research.selected === type)
         card.append(element('span', 'pill', 'Researching · 0/1 points'));
       const choose = button(
         selected ? 'Queued' : `Research ${type}`,

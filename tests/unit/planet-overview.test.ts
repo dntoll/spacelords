@@ -91,6 +91,27 @@ describe('planetbudgetoversikt', () => {
 });
 
 describe('gemensamma-byggnadsbilder', () => {
+  it('labels only the research queue head as actively researching', () => {
+    const view = renderResearch(
+      {
+        completed: [],
+        selected: 'Exploration ship factory',
+        stations: 1,
+        queue: [
+          'Exploration ship factory',
+          'Transport ship factory',
+          'Trade logistics',
+        ],
+      },
+      false,
+      () => {},
+    );
+    expect(
+      [...view.querySelectorAll('.pill')].filter((node) =>
+        node.textContent?.startsWith('Researching'),
+      ),
+    ).toHaveLength(1);
+  });
   it('uses the same supplied image for selection and construction', () => {
     const { root, click } = setup();
     click('Build building');

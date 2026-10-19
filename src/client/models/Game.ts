@@ -1127,7 +1127,12 @@ export class Game {
         });
       const status = this.supplyStatus(planet.id);
       const { blocks } = this.#allocation(planet, state);
-      if ([...blocks.values()].some((s) => s.includes('population')))
+      if (
+        [...blocks.values()].some((s) => s.includes('population')) ||
+        state.buildings
+          .filter((b) => !b.demolition)
+          .reduce((n, b) => n + BUILDINGS[b.type].workers, 0) > state.population
+      )
         items.push({
           id: `staff-${planet.id}`,
           label: `${planet.name}: not enough workers or crew`,
