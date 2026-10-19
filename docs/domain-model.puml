@@ -60,7 +60,7 @@ class Research {
   completeSelectedPerYear()
 }
 class BuildQueue {
-  capacity: 5
+  capacity
   moveProject()
   cancelProject()
   completeFirstPerYear()
@@ -108,7 +108,7 @@ Colony "1" *-- "0..10" BuildingSite
 BuildingSite "1" o-- "0..1" Building
 BuildingSite "1" o-- "0..1" ConstructionProject : building construction
 Building "1" *-- "0..1" BuildQueue : shipyard
-BuildQueue "1" o-- "0..5" ConstructionProject : ordered ships
+BuildQueue "1" o-- "0..*" ConstructionProject : ordered projects
 Player "1" *-- "1" Research
 Research --> Technology : selects
 Technology --> Building : unlocks

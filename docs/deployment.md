@@ -373,3 +373,49 @@ inom den katalogen. Det riktiga målrepot och den publicerade sajten ändrades i
 - Kontrollsummorna för `/`, `/MachineBloom/`, `/Defence-Grid/test/`,
   `/styles.css` och `/i18n.js` var identiska före och efter publiceringen.
   Inga länkar, navigationsval, DNS- eller Pages-inställningar ändrades.
+
+## Driftsättning av resursutvinning, handelsnät och beslut: 2026-10-19
+
+- Publicerad klientrevision: `c04132e1fc43b7c238be9d85da1c76fb11f0640d`
+  från `codex/resource-logistics-decisions` i `dntoll/spacelords`.
+  Källrepots `main` och den tidigare arbetsbranchen är oförändrade.
+- Målrepots tidigare revision: `6b78833e810f8d0f0f19ffd8bbace537b941bc89`.
+  Publicerad deployrevision: `b6dfc1e1014a3c61b67c00ca0f4f75156aa8b56c`
+  på `codex/deploy-spacelords-logistics-20261019`. Publiceringsändringen
+  består av två sammanhängande appcommits, `e42ef63` och `b6dfc1e`.
+- Endast `spacelords/` ändrades. Samtliga 281 övriga webbplatsfilers Git-objekt
+  är oförändrade. Alla elva klientfiler och appens startsida motsvarar exakt
+  det verifierade Pages-bygget, även hämtade från liveadressen med rätt
+  innehållstyper. `/spacelords` ger HTTP 301 till `/spacelords/`.
+- Ren beroendeinstallation och hela `npm run check` passerade: formatering,
+  ESLint, typkontroll, båda byggena, 156 snabba tester inom 20 sekunder,
+  fem integrationstester och 114 browsertester. Tio plattformsberoende
+  browsertester hoppades över enligt sina villkor. Installationen rapporterade
+  inga kända sårbarheter.
+- [Källrevisionens CI](https://github.com/dntoll/spacelords/actions/runs/39305920143)
+  lyckades. Föregående CI-körning hittade att Linux/WebKits fontmått kunde
+  få mobilnavigationen att ta för stor höjd. Felet verifierades före
+  CSS-rättningen; ett ytterligare fontregressionstest och det ursprungliga
+  kravet på minst 80 procents kartyta passerar nu.
+- Sex mobiltester passerade mot både den isolerade publiceringskopian och
+  liveadressen i Chromium och WebKit. De följer hela kedjan från nytt spel
+  via utvinning, forskningskö, fabriker och kolonisation till ett automatiskt
+  försörjt bygge och återupptagen rutt efter omladdning. Kartans yta och
+  alternativa fontmått kontrolleras samtidigt.
+- PR-integrationen gav HTTP 403. Efter ny kontroll av aktuell `origin/main`,
+  föräldrarelation, ren checkout och avgränsad diff användes instruktionens
+  reservväg: vanlig fast-forward-push med befintlig SSH-autentisering.
+  Ingen force-push eller behörighetsändring gjordes.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/39306957969)
+  lyckades. Kontrollsummorna för `/`, `/MachineBloom/`, `/Defence-Grid/test/`,
+  `/styles.css` och `/i18n.js` är identiska före och efter publiceringen.
+  Inga länkar, navigationsval, DNS- eller Pages-inställningar ändrades.
+- `engangsreset-ekonomi`: äldre version 1-sparplatser raderas en gång när
+  den nya klienten öppnas, enligt uttryckligt användarbeslut för denna leverans.
+  Version 2-spel bevaras vid omladdning. Framtida uppdateringar får inte anta
+  tillåtelse att radera spel. Piratrån och eskortskydd ingår inte ännu.
+
+För att återställa hela föregående publicerade version: återställ enbart
+`spacelords/` från `6b78833e810f8d0f0f19ffd8bbace537b941bc89` på en ny branch
+från aktuell `main`, med samma avgränsade gransknings- och publiceringsflöde.
+Att enbart revertera den sista CSS-committen återställer inte den gamla ekonomin.
