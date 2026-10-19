@@ -112,9 +112,6 @@ export class AppController {
       case 'build-site':
         this.#model.openBuildSite(intent.index);
         break;
-      case 'shipyard-menu':
-        this.#model.openShipyard(intent.id);
-        break;
       case 'research':
         this.#model.research(intent.technology);
         break;

@@ -1570,3 +1570,37 @@ p {
 .ship-token > * {
   pointer-events: none;
 }
+
+/* fabrikskoer / kompakta-bygghandlingar: always-visible ship ordering. */
+.factory-order {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.factory-order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+}
+.factory-destination {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 0.8rem;
+}
+.factory-destination select {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+}
+.factory-order-actions .button {
+  width: fit-content;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 6px 12px;
+  flex: 0 1 auto;
+}

@@ -35,7 +35,6 @@ export interface AppReadModel {
   readonly research: ResearchSnapshot;
   readonly planetOrders: readonly PlanetOrderSnapshot[];
   readonly constructionSite: number | null;
-  readonly shipyardId: string | null;
   readonly screen: Screen;
   readonly buildSearch: string;
   readonly returnSite: number | null;
@@ -67,7 +66,6 @@ export class AppModel {
   #camera: Camera;
   #selected: HexCoordinate;
   #constructionSite: number | null = null;
-  #shipyardId: string | null = null;
   #screen: Screen = 'map';
   #buildSearch = '';
   #returnSite: number | null = null;
@@ -148,7 +146,6 @@ export class AppModel {
     this.#screen = 'map';
     this.#pendingClearSlot = null;
     this.#constructionSite = null;
-    this.#shipyardId = null;
     this.#selectedFleetId = null;
     this.#shipTransfer = null;
     this.#mapFleetId = null;
@@ -202,7 +199,6 @@ export class AppModel {
       research: this.#game.research,
       planetOrders: this.#game.planetOrders(),
       constructionSite: this.#constructionSite,
-      shipyardId: this.#shipyardId,
       screen: this.#screen,
       buildSearch: this.#buildSearch,
       returnSite: this.#returnSite,
@@ -319,7 +315,6 @@ export class AppModel {
       this.#screen = 'planet';
       this.#constructionSite = null;
       this.#returnSite = null;
-      this.#shipyardId = null;
     }
   }
 
@@ -374,9 +369,6 @@ export class AppModel {
   }
   searchBuildings(query: string): void {
     this.#buildSearch = query;
-  }
-  openShipyard(id: string | null): void {
-    this.#shipyardId = id;
   }
   research(type: Technology | null): void {
     this.#game.selectResearch(type);

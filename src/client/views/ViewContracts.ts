@@ -58,7 +58,6 @@ export type AppIntent =
       readonly slotIndex?: number;
     }
   | { readonly type: 'build-site'; readonly index: number | null }
-  | { readonly type: 'shipyard-menu'; readonly id: string | null }
   | { readonly type: 'research'; readonly technology: Technology | null }
   | { readonly type: 'colonize'; readonly id: string }
   | {

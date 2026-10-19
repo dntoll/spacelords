@@ -254,3 +254,102 @@ describe('gemensamma-byggnadsbilder', () => {
     expect(new Set(sources).size).toBe(4);
   });
 });
+
+describe('fabrikskoer / kompakta-bygghandlingar', () => {
+  it.each([
+    'Colony ship factory',
+    'Exploration ship factory',
+    'Fighter factory',
+  ] as const)('always exposes ordering above the queue for %s', (type) => {
+    const model = new AppModel();
+    model.openPlanet();
+    const planet = model.snapshot.planet!;
+    const building = {
+      id: 'yard',
+      type,
+      slotIndex: 0,
+      queue: [],
+      scheduledForDemolition: false,
+    };
+    const emit = vi.fn();
+    const view = renderPlanet(
+      {
+        ...planet,
+        buildings: [building],
+        sites: [{ index: 0, building, project: null }],
+      },
+      'You',
+      emit,
+      model.snapshot.fleets,
+    );
+    expect(
+      view.querySelector('[aria-label="Build ships at site 1"]'),
+    ).toBeNull();
+    const order = view.querySelector('.factory-queue .factory-order')!;
+    expect(order).not.toBeNull();
+    expect(order.textContent).toContain('per ship');
+    const select = order.querySelector('select')!;
+    select.value = 'fleet-home';
+    const queue = order.querySelector('button')!;
+    expect(queue.textContent).toBe(`Queue ${BUILDINGS[type].ship}`);
+    queue.click();
+    expect(emit).toHaveBeenCalledWith({
+      type: 'queue-ship',
+      ship: BUILDINGS[type].ship,
+      factoryId: 'yard',
+      fleetId: 'fleet-home',
+    });
+    const list = view.querySelector('.queue-slots')!;
+    expect(
+      order.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(list.children).toHaveLength(5);
+  });
+  it.each(['full', 'demolition', 'locked'])(
+    'keeps ordering visible but disabled for %s factories',
+    (state) => {
+      const model = new AppModel();
+      model.openPlanet();
+      const planet = model.snapshot.planet!;
+      const building = {
+        id: 'yard',
+        type: 'Colony ship factory' as const,
+        slotIndex: 0,
+        scheduledForDemolition: state === 'demolition',
+        queue:
+          state === 'full'
+            ? Array.from({ length: 5 }, (_, i) => ({
+                id: `order-${i}`,
+                type: 'Colony ship' as const,
+                destinationFleetId: null,
+                blockedReason: null,
+                slotIndex: null,
+                factoryId: 'yard',
+              }))
+            : [],
+      };
+      const view = renderPlanet(
+        {
+          ...planet,
+          buildings: [building],
+          sites: [{ index: 0, building, project: null }],
+        },
+        'You',
+        vi.fn(),
+        [],
+        { phase: state === 'locked' ? 'summary' : 'planning' },
+      );
+      expect(
+        view.querySelector<HTMLButtonElement>('.factory-order button')
+          ?.disabled,
+      ).toBe(true);
+      expect(
+        view.querySelector<HTMLSelectElement>('.factory-order select')
+          ?.disabled,
+      ).toBe(true);
+      expect(
+        view.querySelector('.factory-order [role="status"]')?.textContent,
+      ).toBeTruthy();
+    },
+  );
+});

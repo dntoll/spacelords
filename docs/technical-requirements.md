@@ -161,3 +161,8 @@ webbläsare eller enheter. Flera samtidiga flikar samordnas inte i detta steg.
 Tester för `sparat-spel`, `tre-sparplatser`, `sparplats-utforskad-karta` och
 `tomm-sparplats` skyddar återupptagning, oberoende spel, filtrering av dold rymd,
 varningsdialog, avbrott, lagringsfel och radering av en enda plats.
+
+- `fabrikskoer`: skeppsbeställning renderas permanent inom respektive fabrikskö.
+  Det tillfälliga menyvalet har tagits bort ur navigeringsmodellen. Controllers
+  och domänmodell validerar fortfarande order; enhetstester skyddar alla tre
+  skeppstyper, rätt fabrik och destination samt full kö, rivning och låsta order.

@@ -247,9 +247,9 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
     const site = () =>
       root.querySelector<HTMLElement>('[data-site-index="1"]')!;
     expect(site().querySelectorAll('.queue-slots > li')).toHaveLength(5);
-    site()
-      .querySelector<HTMLButtonElement>('[aria-label="Build ships at site 2"]')!
-      .click();
+    expect(
+      site().querySelector('[aria-label="Build ships at site 2"]'),
+    ).toBeNull();
     const select = site().querySelector<HTMLSelectElement>(
       '[aria-label="Destination fleet for Colony ship"]',
     )!;

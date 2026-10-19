@@ -421,9 +421,13 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     path: testInfo.outputPath('overview-factory-queue.png'),
   });
 
-  await page
-    .getByRole('button', { name: 'Build ships at site 2', exact: true })
-    .click();
+  await expect(
+    yard.getByRole('button', { name: 'Build ships at site 2', exact: true }),
+  ).toHaveCount(0);
+  await expect(yard.locator('.factory-order')).toBeVisible();
+  await expect(yard.locator('.factory-order')).toContainText(
+    'Iron 6, Water 3, Oil 1 per ship',
+  );
   await page
     .getByRole('combobox', {
       name: 'Destination fleet for Colony ship',

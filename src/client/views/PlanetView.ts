@@ -19,8 +19,7 @@ export function renderPlanet(
   owner: string,
   emit: IntentHandler,
   fleets: readonly FleetSnapshot[] = [],
-  menus: Pick<AppReadModel, 'shipyardId' | 'phase'> = {
-    shipyardId: null,
+  menus: Pick<AppReadModel, 'phase'> = {
     phase: 'planning',
   },
 ): HTMLElement {
@@ -133,7 +132,7 @@ function construction(
   planet: PlanetGameSnapshot,
   emit: IntentHandler,
   fleets: readonly FleetSnapshot[],
-  menus: Pick<AppReadModel, 'shipyardId' | 'phase'>,
+  menus: Pick<AppReadModel, 'phase'>,
 ): HTMLElement {
   const box = element('section', 'building-panel');
   box.append(element('h2', '', 'Building sites'));
@@ -173,60 +172,6 @@ function construction(
       demolish.disabled = menus.phase !== 'planning';
       actions.append(demolish);
       if (definition.ship) {
-        const build = button(
-          'Build',
-          () =>
-            emit({
-              type: 'shipyard-menu',
-              id: menus.shipyardId === building.id ? null : building.id,
-            }),
-          'button',
-        );
-        build.setAttribute(
-          'aria-label',
-          `Build ships at site ${site.index + 1}`,
-        );
-        build.setAttribute(
-          'aria-expanded',
-          String(menus.shipyardId === building.id),
-        );
-        build.disabled =
-          building.scheduledForDemolition ||
-          menus.phase !== 'planning' ||
-          building.queue.length >= QUEUE_CAPACITY;
-        actions.prepend(build);
-        if (
-          menus.shipyardId === building.id &&
-          !building.scheduledForDemolition
-        ) {
-          const ship = definition.ship;
-          const shipDefinition = projectDefinition(ship);
-          const select = fleetSelect(planet, fleets, null);
-          select.setAttribute('aria-label', `Destination fleet for ${ship}`);
-          const queue = button(
-            `Queue ${ship}`,
-            () =>
-              emit({
-                type: 'queue-ship',
-                ship,
-                fleetId: select.value || null,
-                factoryId: building.id,
-              }),
-            'button',
-          );
-          queue.disabled =
-            building.queue.length >= QUEUE_CAPACITY ||
-            menus.phase !== 'planning';
-          details.append(
-            element(
-              'p',
-              'muted-note',
-              `${costText(shipDefinition.cost)} per ship · ${shipDefinition.crew} crew`,
-            ),
-            select,
-            queue,
-          );
-        }
         card.classList.add('factory-site');
         card.append(
           factoryQueue(
@@ -309,6 +254,7 @@ function factoryQueue(
     `Build queue at site ${building.slotIndex + 1}`,
   );
   section.append(
+    factoryOrder(planet, building, fleets, emit, locked),
     element(
       'h4',
       '',
@@ -338,6 +284,61 @@ function factoryQueue(
   }
   section.append(list);
   return section;
+}
+
+// fabrikskoer: ordering stays above its own factory queue, including when locked.
+function factoryOrder(
+  planet: PlanetGameSnapshot,
+  building: BuildingSnapshot,
+  fleets: readonly FleetSnapshot[],
+  emit: IntentHandler,
+  locked: boolean,
+): HTMLElement {
+  const ship = BUILDINGS[building.type].ship!;
+  const definition = projectDefinition(ship);
+  const order = element('div', 'factory-order');
+  order.setAttribute('role', 'group');
+  order.setAttribute(
+    'aria-label',
+    `Ship order at site ${building.slotIndex + 1}`,
+  );
+  const reason = building.scheduledForDemolition
+    ? 'Shipyard is scheduled for demolition.'
+    : locked
+      ? 'Orders are locked during simulation.'
+      : building.queue.length >= QUEUE_CAPACITY
+        ? 'Queue full (5 orders).'
+        : null;
+  const select = fleetSelect(planet, fleets, null);
+  select.setAttribute('aria-label', `Destination fleet for ${ship}`);
+  select.disabled = !!reason;
+  const destination = element('label', 'factory-destination');
+  destination.append(element('span', '', 'Destination fleet'), select);
+  const queue = button(`Queue ${ship}`, () =>
+    emit({
+      type: 'queue-ship',
+      ship,
+      fleetId: select.value || null,
+      factoryId: building.id,
+    }),
+  );
+  queue.disabled = !!reason;
+  const actions = element('div', 'factory-order-actions');
+  actions.append(destination, queue);
+  order.append(
+    element(
+      'p',
+      'muted-note',
+      `${costText(definition.cost)} per ship · ${definition.crew} crew`,
+    ),
+    actions,
+  );
+  if (reason) {
+    const status = element('p', 'muted-note', reason);
+    status.setAttribute('role', 'status');
+    order.append(status);
+  }
+  return order;
 }
 
 function renderQueueOrder(

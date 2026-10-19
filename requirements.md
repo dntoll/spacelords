@@ -59,7 +59,10 @@ implementerade. Kartan visar tomma byggplatser och tomma fabriksköer.
   och versionshantering. Se [tekniska krav](docs/technical-requirements.md) och
   [arbetsreglerna](AGENTS.md).
 
-Planetens `Overview` samlar nu byggplatser och fabriksköer, med kompakta
+Planetens `Overview` samlar nu byggplatser och fabriksköer. `fabrikskoer` är
+**Fullständigt implementerat** med alltid synlig skeppsbeställning ovanför varje
+kö: kostnad, destination och `Queue`-knapp ersätter fabrikens `Build`-meny.
+Vyn har kompakta
 handlingar och resursstaplar i `Annual budget`. `Build selection` är en egen
 sökbar vy med kortrutnät, kostnadsindikatorer och gemensamma byggnadsbilder.
 `gemensamma-byggnadsbilder` och `kompakta-bygghandlingar` är fullständigt
