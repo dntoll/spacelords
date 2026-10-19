@@ -49,7 +49,7 @@ export function renderFleets(
     'muted-note fleet-transfer-help',
     model.shipTransfer
       ? `Choose a fleet box for one ${model.shipTransfer.ship}, or press Escape to cancel.`
-      : 'Drag a ship into a fleet box at the same location or into an empty fleet, or choose a ship and then a destination fleet.',
+      : 'Drag a ship into a fleet box, or choose a ship and then a destination fleet. Ships join immediately on the same hex; otherwise they follow the fleet as reinforcements marked En route.',
   );
   help.setAttribute('role', 'status');
   collection.append(help);
@@ -91,7 +91,7 @@ function fleetCard(
   model: AppReadModel,
   emit: IntentHandler,
 ): HTMLElement {
-  const locked = model.phase !== 'planning' || !!fleet.routeId;
+  const locked = model.phase !== 'planning';
   const card = element('article', 'fleet-card');
   card.dataset.fleetId = fleet.id;
   card.setAttribute('aria-label', `Fleet ${fleet.name}`);
@@ -116,7 +116,7 @@ function fleetCard(
     emit({ type: 'choose-ship-transfer', fleetId: fleet.id, ship }),
   );
   for (const token of manifest.querySelectorAll<HTMLButtonElement>('button')) {
-    token.disabled = locked;
+    token.disabled = locked || !!fleet.routeId;
     token.draggable = false;
     token.classList.toggle(
       'transfer-source',
@@ -130,18 +130,24 @@ function fleetCard(
       (candidate) => candidate.id === model.shipTransfer!.fleetId,
     );
     const available =
-      !locked &&
-      source?.id !== fleet.id &&
-      (!fleet.position || source?.position?.key === fleet.position.key);
+      !locked && !!source && !source.routeId && source.id !== fleet.id;
     hangar.classList.toggle('transfer-available', available);
     const move = button(`Move ship to ${fleet.name}`, () =>
       emit({ type: 'transfer-chosen-ship', target: fleet.id }),
     );
     move.disabled = !available;
     hangar.append(move);
-    if (!available && source?.id !== fleet.id)
+    if (
+      available &&
+      fleet.position &&
+      source.position?.key !== fleet.position.key
+    )
       hangar.append(
-        element('p', 'muted-note', 'Fleets must share a location.'),
+        element(
+          'p',
+          'muted-note',
+          'Sends reinforcements to follow this fleet until they meet.',
+        ),
       );
   }
   hangar.addEventListener('click', (event) => {
@@ -150,25 +156,26 @@ function fleetCard(
       const source = model.fleets.find(
         (candidate) => candidate.id === model.shipTransfer!.fleetId,
       );
-      if (
-        !locked &&
-        source?.id !== fleet.id &&
-        (!fleet.position || source?.position?.key === fleet.position.key)
-      )
+      if (!locked && !!source && !source.routeId && source.id !== fleet.id)
         emit({ type: 'transfer-chosen-ship', target: fleet.id });
     } else emit({ type: 'select-fleet', id: fleet.id });
   });
   card.append(title, hangar);
-  if (fleet.routeId) {
-    card.append(
-      element(
-        'p',
-        'muted-note',
-        fleet.releaseRequested
-          ? 'Leaving trade route after arrival'
-          : 'Assigned to trade route',
-      ),
+  const assignment = fleetAssignmentLabel(fleet, model);
+  if (assignment)
+    card.append(element('p', 'muted-note fleet-assignment', assignment));
+  if (fleet.joinFleetId) {
+    const cancel = button('Cancel reinforcement', () =>
+      emit({ type: 'clear-destination', id: fleet.id }),
     );
+    cancel.disabled = locked;
+    card.append(cancel);
+  }
+  if (fleet.routeId) {
+    if (fleet.releaseRequested)
+      card.append(
+        element('p', 'muted-note', 'Leaving trade route after arrival'),
+      );
     const release = button('Release from trade route', () =>
       emit({ type: 'release-trade-fleet', id: fleet.id }),
     );
@@ -176,4 +183,21 @@ function fleetCard(
     card.append(release);
   }
   return card;
+}
+
+export function fleetAssignmentLabel(
+  fleet: FleetSnapshot,
+  model: AppReadModel,
+): string {
+  if (fleet.joinFleetId) {
+    const target = model.fleets.find(
+      (target) => target.id === fleet.joinFleetId,
+    );
+    return `En route to ${target?.name ?? fleet.joinFleetId}`;
+  }
+  if (fleet.routeId) {
+    const route = model.tradeRoutes.find((route) => route.id === fleet.routeId);
+    return `Trade route: ${route ? `${route.from} ↔ ${route.to}` : fleet.routeId}`;
+  }
+  return '';
 }

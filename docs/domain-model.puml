@@ -75,6 +75,7 @@ class Fleet {
   name
   courseOrigin
   destination
+  joinFleetId : optional reinforcement target
   ships: 0..*
 }
 class TurnOrder
@@ -121,7 +122,12 @@ note right of Fleet
   Tom flotta saknar position.
   Första skeppet bestämmer positionen.
   Sista skeppet släpper positionen.
+  Ruttflotta kan ta emot skepp på samma hex.
+  Skepp lämnar först efter avslutat ruttuppdrag.
+  Förstärkning reser som egen flotta (En route).
+  Skeppen ansluter fysiskt vid möte på samma hex.
 end note
+Fleet "0..*" --> "0..1" Fleet : follows to join
 Ship --> Colony : Colony ship consumed to settle
 TurnOrder --> ConstructionProject
 TurnOrder --> Fleet

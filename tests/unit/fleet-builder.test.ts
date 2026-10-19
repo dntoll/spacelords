@@ -165,8 +165,8 @@ describe('skeppsbilder', () => {
   });
 });
 
-describe('flottadministration', () => {
-  it('does not accept transfers to fleets at another hex or while orders are locked', () => {
+describe('flottadministration / skepp-till-rorlig-flotta', () => {
+  it('accepts a distant destination but locks transfers during simulation', () => {
     const model = new AppModel();
     model.createFleet('fleet-home');
     model.openFleets();
@@ -182,7 +182,10 @@ describe('flottadministration', () => {
     const target = view.querySelector<HTMLButtonElement>(
       '[aria-label="Move ship to Fleet 1"]',
     )!;
-    expect(target.disabled).toBe(true);
+    expect(target.disabled).toBe(false);
+    expect(view.textContent).toContain(
+      'Sends reinforcements to follow this fleet',
+    );
     const token = view.querySelector<HTMLElement>(
       '[aria-label="Fighter 1 in Home Fleet"]',
     )!;
@@ -195,12 +198,125 @@ describe('flottadministration', () => {
     token.dispatchEvent(pointer('pointerdown', 10, 10));
     view.dispatchEvent(pointer('pointermove', 100, 100));
     view.dispatchEvent(pointer('pointerup', 100, 100));
-    expect(intents).toHaveLength(0);
+    expect(intents).toContainEqual({
+      type: 'transfer-ships',
+      source: 'fleet-home',
+      ship: 'Fighter',
+      target: fleets[1]!.id,
+      amount: 1,
+    });
     const locked = renderFleets({ ...snapshot, phase: 'simulating' }, () => {});
     expect(
       [...locked.querySelectorAll<HTMLButtonElement>('.ship-token')].every(
         (token) => token.disabled && !token.draggable,
       ),
     ).toBe(true);
+  });
+});
+
+describe('skepp-till-rorlig-flotta', () => {
+  it('shows the target name and lets a reinforcement cancel its order', () => {
+    const model = new AppModel();
+    const snapshot = model.snapshot;
+    const fleet = {
+      ...snapshot.fleets[0]!,
+      id: 'reinforcement',
+      joinFleetId: 'fleet-home',
+    };
+    const intents: unknown[] = [];
+    const view = renderFleets(
+      { ...snapshot, fleets: [...snapshot.fleets, fleet] },
+      (intent) => intents.push(intent),
+    );
+    expect(view.textContent).toContain('En route to Home Fleet');
+    view
+      .querySelector<HTMLButtonElement>('[aria-label="Cancel reinforcement"]')!
+      .click();
+    expect(intents).toContainEqual({
+      type: 'clear-destination',
+      id: 'reinforcement',
+    });
+  });
+});
+
+describe('forstarka-ruttflotta / flottans-handelsrutt', () => {
+  function routeView() {
+    const model = new AppModel();
+    model.createFleet('fleet-home');
+    model.chooseShipTransfer('fleet-home', 'Fighter');
+    const snapshot = model.snapshot;
+    const fleets = snapshot.fleets.map((fleet, index) =>
+      index === 1
+        ? {
+            ...fleet,
+            routeId: 'route-test',
+            position: snapshot.fleets[0]!.position,
+            ships: { ...fleet.ships, 'Transport ship': 1 },
+          }
+        : fleet,
+    );
+    const intents: unknown[] = [];
+    const view = renderFleets(
+      {
+        ...snapshot,
+        fleets,
+        tradeRoutes: [
+          {
+            id: 'route-test',
+            a: 'sol-0',
+            b: 'sol-1',
+            from: 'Tellus',
+            to: 'Vesta',
+            start: new HexCoordinate(1, 0),
+            end: new HexCoordinate(2, 0),
+            closing: false,
+            fleetIds: [fleets[1]!.id],
+            capacity: 30,
+            waiting: 0,
+            status: 'Idle',
+          },
+        ],
+      },
+      (intent) => intents.push(intent),
+    );
+    return { view, intents, target: fleets[1]!.id };
+  }
+
+  it('names the assigned route and allows a chosen ship to join it on the same hex', () => {
+    const { view, intents, target } = routeView();
+    const card = view.querySelectorAll('.fleet-card')[1]!;
+    expect(card.textContent).toContain('Trade route: Tellus ↔ Vesta');
+    const move = card.querySelector<HTMLButtonElement>(
+      '[aria-label="Move ship to Fleet 1"]',
+    )!;
+    expect(move.disabled).toBe(false);
+    expect(card.querySelector<HTMLButtonElement>('.ship-token')!.disabled).toBe(
+      true,
+    );
+    move.click();
+    expect(intents).toContainEqual({ type: 'transfer-chosen-ship', target });
+  });
+
+  it('accepts a pointer drop into a route fleet on the same hex', () => {
+    const { view, intents, target } = routeView();
+    const token = view.querySelector<HTMLElement>(
+      '[aria-label="Fighter 1 in Home Fleet"]',
+    )!;
+    token.setPointerCapture = vi.fn();
+    token.hasPointerCapture = () => false;
+    Object.defineProperty(document, 'elementFromPoint', {
+      configurable: true,
+      value: () => view.querySelectorAll('.fleet-hangar')[1]!,
+    });
+    token.dispatchEvent(pointer('pointerdown', 10, 10));
+    view.dispatchEvent(pointer('pointermove', 100, 100));
+    view.dispatchEvent(pointer('pointerup', 100, 100));
+    expect(intents).toContainEqual({
+      type: 'transfer-ships',
+      source: 'fleet-home',
+      ship: 'Fighter',
+      target,
+      amount: 1,
+    });
   });
 });

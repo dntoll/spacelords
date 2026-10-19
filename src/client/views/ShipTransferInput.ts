@@ -33,10 +33,8 @@ export function bindShipTransfers(
       !!from &&
       !!to &&
       !from.routeId &&
-      !to.routeId &&
       from.id !== to.id &&
-      from.ships[source.ship] > 0 &&
-      (!to.position || from.position?.key === to.position.key)
+      from.ships[source.ship] > 0
     );
   };
   const clearHighlights = () =>
@@ -58,7 +56,8 @@ export function bindShipTransfers(
     token.addEventListener('pointerdown', (event) => {
       if (
         (event.pointerType === 'mouse' && event.button !== 0) ||
-        model.phase !== 'planning'
+        model.phase !== 'planning' ||
+        model.fleets.find((fleet) => fleet.id === source.source)?.routeId
       )
         return;
       if (gesture) {

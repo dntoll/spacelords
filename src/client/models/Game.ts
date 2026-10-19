@@ -18,6 +18,7 @@ import {
   type TradeRouteSnapshot,
 } from './Logistics.js';
 import { DecisionBoard, type Decision } from './Decisions.js';
+import { FleetPursuit, type PursuingFleet } from './FleetPursuit.js';
 export { TECHNOLOGIES, type Technology } from './Research.js';
 
 export type GamePhase = 'planning' | 'simulating';
@@ -225,6 +226,7 @@ export interface PlanetOrderSnapshot {
   readonly emptyQueues: number;
 }
 export interface FleetSnapshot {
+  readonly joinFleetId?: string | undefined;
   readonly routeId?: string | undefined;
   readonly releaseRequested?: boolean | undefined;
   readonly cargo?: Readonly<Stock>;
@@ -272,6 +274,7 @@ interface Project {
   destinationFleetId: string | null;
 }
 interface Fleet {
+  joinFleetId?: string;
   routeId?: string;
   releaseRequested?: boolean;
   id: string;
@@ -488,6 +491,7 @@ export class Game {
           event.text,
         ),
     );
+    game.#refreshReinforcements();
     // Exercise derived data before accepting a stored record.
     game.mapSnapshot();
     game.fleetSnapshots();
@@ -667,6 +671,7 @@ export class Game {
       projects: [],
       homeFleetId: fleet.id,
     });
+    this.#refreshReinforcements();
     this.#reveal(planet.position);
     this.#mapCells = null;
     this.#events.push(
@@ -689,6 +694,7 @@ export class Game {
           speed: this.#speed(fleet),
           crew: this.#crew(fleet.ships),
           routeId: fleet.routeId,
+          joinFleetId: fleet.joinFleetId,
           releaseRequested: fleet.releaseRequested,
           cargo: Object.freeze(this.#cargo(fleet.id)),
         }),
@@ -848,9 +854,23 @@ export class Game {
     let target: Fleet;
     if (targetId) {
       target = this.#fleetState(targetId);
-      this.#requireManualFleet(target);
-      if (target.position && target.position.key !== source.position?.key)
-        throw new Error('Fleets must share a hex to transfer ships.');
+      if (target.id === source.id) throw new Error('Choose another fleet.');
+      if (target.position && target.position.key !== source.position?.key) {
+        const group: Fleet = {
+          id: this.#id('fleet'),
+          name: this.#nextFleetName(),
+          position: source.position,
+          destination: target.position,
+          courseOrigin: source.position!,
+          joinFleetId: target.id,
+          ships: { ...zeroShips(), [ship]: amount },
+        };
+        source.ships[ship] -= amount;
+        this.#fleets.push(group);
+        this.#releaseEmptyFleet(source);
+        this.#refreshReinforcements();
+        return;
+      }
     } else {
       target = {
         id: this.#id('fleet'),
@@ -866,6 +886,7 @@ export class Game {
     source.ships[ship] -= amount;
     target.ships[ship] += amount;
     this.#releaseEmptyFleet(source);
+    this.#refreshReinforcements();
   }
   createFleet(sourceId?: string): FleetSnapshot {
     this.#requirePlanning();
@@ -886,6 +907,7 @@ export class Game {
     if (this.#shipCount(fleet.ships) !== 0)
       throw new Error('Only empty fleets can be deleted.');
     this.#fleets = this.#fleets.filter((candidate) => candidate.id !== id);
+    this.#refreshReinforcements();
   }
   setDestination(id: string, destination: HexCoordinate): void {
     this.#requirePlanning();
@@ -895,6 +917,7 @@ export class Game {
     this.#requireManualFleet(fleet);
     if (this.#shipCount(fleet.ships) === 0)
       throw new Error('Empty fleets cannot receive destinations.');
+    delete fleet.joinFleetId;
     fleet.destination = destination;
     fleet.courseOrigin = fleet.position!;
   }
@@ -902,35 +925,20 @@ export class Game {
     this.#requirePlanning();
     this.#requireManualFleet(this.#fleetState(id));
     this.#fleetState(id).destination = null;
+    delete this.#fleetState(id).joinFleetId;
+    delete this.#fleetState(id).courseOrigin;
   }
   startTurn(): readonly TurnFrame[] {
     this.#requirePlanning();
     this.#logistics.prepare(this.#logisticsPort());
+    this.#refreshReinforcements();
+    this.#mergeReinforcements();
     this.#phase = 'simulating';
-    const routes = this.#fleets
-      .filter((fleet) => this.#shipCount(fleet.ships) > 0)
-      .map((fleet) => this.#route(fleet));
-    const frames: TurnFrame[] = [];
-    const length = Math.max(0, ...routes.map((route) => route.path.length));
-    for (let step = 0; step < length; step += 1)
-      frames.push(
-        Object.freeze({
-          movements: Object.freeze(
-            routes.flatMap(({ fleet, path }) =>
-              path[step]
-                ? [
-                    {
-                      fleetId: fleet.id,
-                      from: step === 0 ? fleet.position! : path[step - 1]!,
-                      to: path[step]!,
-                    },
-                  ]
-                : [],
-            ),
-          ),
-        }),
-      );
-    return Object.freeze(frames);
+    return FleetPursuit.plan(
+      this.#fleets,
+      (fleet) => this.#route(fleet).path,
+      (fleet) => this.#speed(fleet),
+    );
   }
   applyFrame(frame: TurnFrame): void {
     if (this.#phase !== 'simulating')
@@ -941,6 +949,8 @@ export class Game {
       this.#reveal(movement.to, fleet.ships['Exploration ship'] > 0);
       this.#recordArrival(fleet);
     }
+    this.#mergeReinforcements();
+    this.#refreshReinforcements();
   }
   finishTurn(): void {
     if (this.#phase !== 'simulating')
@@ -998,6 +1008,7 @@ export class Game {
     this.#round += 1;
     this.#decisions.skipped.clear();
     this.#logistics.cleanup(this.#logisticsPort());
+    this.#refreshReinforcements();
     this.#phase = 'planning';
   }
   #completeProject(planet: Planet, state: ColonyState, project: Project): void {
@@ -1077,6 +1088,10 @@ export class Game {
   }
   assignTradeFleet(routeId: string, fleetId: string): void {
     this.#requirePlanning();
+    if (this.#fleetState(fleetId).joinFleetId)
+      throw new Error(
+        'Cancel the reinforcement order before assigning a trade route.',
+      );
     this.#logistics.assign(
       routeId,
       this.#fleetState(fleetId),
@@ -1148,7 +1163,11 @@ export class Game {
         });
     }
     for (const fleet of this.#fleets.filter(
-      (f) => !f.routeId && !f.destination && this.#shipCount(f.ships),
+      (f) =>
+        !f.routeId &&
+        !f.joinFleetId &&
+        !f.destination &&
+        this.#shipCount(f.ships),
     ))
       items.push({
         id: `fleet-idle-${fleet.id}`,
@@ -1294,6 +1313,27 @@ export class Game {
         'Release this fleet from its trade route before issuing manual orders.',
       );
   }
+  #refreshReinforcements(): void {
+    FleetPursuit.refresh(this.#fleets, (fleet) =>
+      this.#event(
+        `${fleet.name}: reinforcement target unavailable; choose new orders.`,
+      ),
+    );
+  }
+  #mergeReinforcements(): void {
+    FleetPursuit.merge(this.#fleets, (group, target) => {
+      for (const state of this.#colonies.values()) {
+        if (state.homeFleetId === group.id) state.homeFleetId = target.id;
+        for (const project of [
+          ...state.projects,
+          ...state.buildings.flatMap((building) => building.queue),
+        ])
+          if (project.destinationFleetId === group.id)
+            project.destinationFleetId = target.id;
+      }
+      this.#event(`${group.name} joined ${target.name}.`);
+    });
+  }
   #extraction(planet: Planet, state: ColonyState): Stock {
     const rates = emptyStock();
     const workers = state.buildings
@@ -1411,7 +1451,10 @@ export class Game {
     }
     return { budget: snapshot(), blocks };
   }
-  #route(fleet: Fleet): { fleet: Fleet; path: HexCoordinate[] } {
+  #route(fleet: PursuingFleet): {
+    fleet: PursuingFleet;
+    path: HexCoordinate[];
+  } {
     if (!fleet.destination || !fleet.position) return { fleet, path: [] };
     const path: HexCoordinate[] = [];
     let current = fleet.position;
@@ -1461,8 +1504,9 @@ export class Game {
     fleet.position = null;
     fleet.destination = null;
     delete fleet.courseOrigin;
+    delete fleet.joinFleetId;
   }
-  #speed(fleet: Fleet): number {
+  #speed(fleet: PursuingFleet): number {
     const speeds = Object.entries(fleet.ships).flatMap(([type, count]) =>
       count > 0 ? [SHIPS[type as ShipType].speed] : [],
     );
@@ -1494,6 +1538,7 @@ export class Game {
   }
   // handelser: report arrival once, at the point it happens, with a usable place name.
   #recordArrival(fleet: Fleet): void {
+    if (fleet.joinFleetId) return;
     if (!fleet.destination || fleet.destination.key !== fleet.position?.key)
       return;
     const place =

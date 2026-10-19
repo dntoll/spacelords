@@ -104,6 +104,7 @@ export function renderTradeRoutes(
     for (const fleet of model.fleets.filter(
       (f) =>
         !f.routeId &&
+        !f.joinFleetId &&
         !f.destination &&
         f.ships['Transport ship'] > 0 &&
         [route.start.key, route.end.key].includes(f.position?.key ?? ''),

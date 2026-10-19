@@ -513,7 +513,7 @@ export class AppModel {
   chooseShipTransfer(fleetId: string, ship: ShipType): void {
     if (this.#game.phase !== 'planning') return;
     const fleet = this.#game.fleet(fleetId);
-    if (!fleet || !(fleet.ships[ship] > 0)) return;
+    if (!fleet || fleet.routeId || !(fleet.ships[ship] > 0)) return;
     this.#selectedFleetId = fleetId;
     this.#shipTransfer =
       this.#shipTransfer?.fleetId === fleetId &&

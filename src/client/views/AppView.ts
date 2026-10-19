@@ -14,7 +14,7 @@ import { renderBuildSelection } from './BuildSelectionView.js';
 import { renderPlanet } from './PlanetView.js';
 import { renderResearch } from './ResearchView.js';
 import { renderFleetShips } from './ShipView.js';
-import { renderFleets } from './FleetView.js';
+import { renderFleets, fleetAssignmentLabel } from './FleetView.js';
 import { button, element } from './dom.js';
 import {
   renderDecisions,
@@ -572,9 +572,11 @@ export class AppView implements AppPort {
         ? model.fleetDestinationPreview
           ? `Destination preview: HEX ${model.fleetDestinationPreview.key}`
           : 'Choose a destination on the map.'
-        : selectedFleet.destination
-          ? `Destination: HEX ${selectedFleet.destination.key}`
-          : 'No destination';
+        : selectedFleet.joinFleetId
+          ? fleetAssignmentLabel(selectedFleet, model)
+          : selectedFleet.destination
+            ? `Destination: HEX ${selectedFleet.destination.key}`
+            : 'No destination';
       const status = element('p', 'fleet-destination-status', destination);
       status.setAttribute('aria-live', 'polite');
       const edit = button('Edit fleet', () =>
@@ -590,7 +592,7 @@ export class AppView implements AppPort {
         const clear = button('Clear destination', () =>
           this.#emit({ type: 'clear-destination', id: selectedFleet.id }),
         );
-        clear.disabled = model.phase !== 'planning';
+        clear.disabled = model.phase !== 'planning' || !!selectedFleet.routeId;
         actions.append(clear);
       }
       this.#panel.replaceChildren(
@@ -698,6 +700,11 @@ export class AppView implements AppPort {
             'button',
           ),
         );
+        const assignment = fleetAssignmentLabel(fleet, model);
+        if (assignment)
+          fleetInfo.append(
+            element('p', 'muted-note fleet-assignment', assignment),
+          );
         for (const action of fleetInfo.querySelectorAll<HTMLButtonElement>(
           'button',
         ))
@@ -717,7 +724,7 @@ export class AppView implements AppPort {
           colonize.disabled = model.phase !== 'planning';
           fleetInfo.append(colonize);
         }
-        if (fleet.destination)
+        if (fleet.destination && !fleet.routeId)
           fleetInfo.append(
             button(
               'Clear destination',

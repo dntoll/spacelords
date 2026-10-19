@@ -25,6 +25,23 @@ En rutt länkar exakt två ägda planeter. Flera flottor kan tilldelas samma rut
 vid någon av dess ändplaneter. Transport ships ger lastkapacitet; övriga skepp
 följer med flottan. Ingen pirat- eller eskortskyddsmekanik ingår ännu.
 
+En ruttflotta kan förstärkas med skepp från en vanlig flotta. På samma hex sker
+anslutningen direkt. På avstånd reser skeppen som en egen grupp med status
+En route och följer målflottans rörelser tills de möts på samma hex. Detta gäller
+också vanliga mottagarflottor. Avstånd och fart gäller även under förföljelsen;
+en långsammare grupp kan behöva att målflottan stannar för att hinna ikapp.
+Anslutningen ger inga extra förflyttningssteg under året.
+
+Förstärkningsordern sparas, kan avbrytas i Fleets eller ersättas med en ny
+destination. Om målet blir tomt eller försvinner stannar skeppen där de är och
+blir ett nytt beslut. När en förstärkningsgrupp ansluter försvinner dess
+tillfälliga flottkort; den ursprungliga avsändarflottan behålls även om den
+blev tom. Tom mottagarflotta tar fortfarande emot direkt vid avsändarens position.
+
+Ruttuppdrag, last och färdorder behålls när nya skepp ansluter. För att ta skepp
+ur ruttflottan behöver den först lämna rutten. I Fleets visas båda
+ändplaneternas namn. Piratrån och eskortskydd är fortfarande inte implementerade.
+
 Aktiva byggprojekt beställer saknade resurser automatiskt. Källplanetens egna
 aktiva behov och tidigare reservationer skyddas. Äldsta behov behandlas först.
 Tillgängliga källor jämförs efter uppskattad leveranstid, inklusive avstånd,

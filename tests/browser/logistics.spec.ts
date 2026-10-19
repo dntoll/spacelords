@@ -24,7 +24,7 @@ async function build(page: Page, site: number, type: string) {
     .click();
 }
 
-test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk-frakt: a new game supplies its colony through an assigned fleet', async ({
+test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk-frakt / forstarka-ruttflotta / flottans-handelsrutt: a new game supplies its colony through an assigned fleet', async ({
   page,
 }, testInfo) => {
   test.setTimeout(180_000);
@@ -146,6 +146,24 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await expect(
     page.getByRole('article', { name: 'Tellus to Vesta' }),
   ).toContainText('30 cargo capacity');
+  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+  const freighters = page.getByRole('article', {
+    name: 'Fleet Freighters',
+    exact: true,
+  });
+  await expect(freighters).toContainText('Trade route: Tellus ↔ Vesta');
+  await page
+    .getByRole('button', { name: 'Fighter 1 in Home Fleet', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Move ship to Freighters', exact: true })
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Fighter 1 in Freighters', exact: true }),
+  ).toBeDisabled();
+  await freighters.locator('.fleet-assignment').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath('fleet-trade-route.png') });
+  await page.getByRole('button', { name: 'Trade routes', exact: true }).click();
   await page.screenshot({ path: testInfo.outputPath('trade-routes.png') });
   await nextYear(page);
   await page

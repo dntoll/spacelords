@@ -13,21 +13,20 @@ describe('tomma-flottor-utan-position', () => {
     for (const frame of game.startTurn()) game.applyFrame(frame);
     game.finishTurn();
 
-    const arrived = game.fleet(home.id)!;
     game.transferShips(home.id, 'Fighter', 1, empty.id);
     game.setDestination(empty.id, new HexCoordinate(1, 0));
     for (const frame of game.startTurn()) game.applyFrame(frame);
     game.finishTurn();
 
-    expect(() =>
-      game.transferShips(home.id, 'Exploration ship', 1, empty.id),
-    ).toThrow(/share a hex/);
-    game.setDestination(empty.id, arrived.position!);
+    game.transferShips(home.id, 'Exploration ship', 1, empty.id);
+    expect(game.fleet(empty.id)!.ships['Exploration ship']).toBe(0);
+    expect(
+      game.fleetSnapshots().some((fleet) => fleet.joinFleetId === empty.id),
+    ).toBe(true);
     for (const frame of game.startTurn()) game.applyFrame(frame);
     game.finishTurn();
 
-    expect(game.fleet(empty.id)!.position).toEqual(arrived.position);
-    game.transferShips(home.id, 'Exploration ship', 1, empty.id);
+    expect(game.fleet(empty.id)!.ships['Exploration ship']).toBe(1);
     expect(game.fleet(home.id)!.position).toBeNull();
     expect(game.fleet(home.id)!.destination).toBeNull();
     expect(() => game.setDestination(home.id, new HexCoordinate(1, 0))).toThrow(

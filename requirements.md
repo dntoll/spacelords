@@ -18,7 +18,10 @@ Se [hela visionen](docs/game-vision.md).
   antas vid framtida uppdateringar.
 - **Karta och flottor:** fast exempelvärld, begränsad sikt, navigation,
   utforskning, kolonisation, flottbyggare och fysisk rörelse på kartan.
-  Skepp kan överföras mellan samlokaliserade flottor eller till tomma flottor.
+  Skepp ansluter direkt på samma hex eller till tomma flottor. På avstånd följer
+  en fysisk förstärkningsgrupp målflottan tills den når ikapp
+  (`skepp-till-rorlig-flotta`). Även ruttflottor kan förstärkas; Fleets anger
+  ruttens ändplaneter (`forstarka-ruttflotta`, `flottans-handelsrutt`).
 - **Ekonomi och byggande:** ändliga fyndigheter av Iron, Water och Oil utvinns
   till lokala obegränsade lager. Material förbrukas en gång vid byggstart.
   Planetens byggnadskö färdigställer högst en byggnad per år. Varje shipyard
