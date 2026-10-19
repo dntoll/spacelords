@@ -49,6 +49,10 @@ export interface AppReadModel {
   readonly phase: GamePhase;
   readonly fleets: readonly FleetSnapshot[];
   readonly selectedFleet: FleetSnapshot | null;
+  readonly shipTransfer: {
+    readonly fleetId: string;
+    readonly ship: ShipType;
+  } | null;
   readonly mapFleetId: string | null;
   readonly hoveredFleetId: string | null;
   readonly fleetDestinationPreview: HexCoordinate | null;
@@ -68,6 +72,8 @@ export class AppModel {
   #buildSearch = '';
   #returnSite: number | null = null;
   #selectedFleetId: string | null = null;
+  #shipTransfer: { readonly fleetId: string; readonly ship: ShipType } | null =
+    null;
   #mapFleetId: string | null = null;
   #hoveredFleetId: string | null = null;
   #fleetDestinationPreview: HexCoordinate | null = null;
@@ -144,6 +150,7 @@ export class AppModel {
     this.#constructionSite = null;
     this.#shipyardId = null;
     this.#selectedFleetId = null;
+    this.#shipTransfer = null;
     this.#mapFleetId = null;
     this.#destinationFleetId = null;
     this.#returnSite = null;
@@ -219,6 +226,7 @@ export class AppModel {
       selectedFleet: this.#selectedFleetId
         ? this.#game.fleet(this.#selectedFleetId)
         : null,
+      shipTransfer: this.#shipTransfer,
       mapFleetId: this.#mapFleetId,
       hoveredFleetId: this.#hoveredFleetId,
       fleetDestinationPreview: this.#fleetDestinationPreview,
@@ -324,6 +332,8 @@ export class AppModel {
   }
   openFleets(): void {
     this.#screen = 'fleets';
+    if (!this.#selectedFleetId)
+      this.#selectedFleetId = this.#game.fleetSnapshots()[0]?.id ?? null;
   }
   openFleet(id: string): void {
     if (this.#game.fleet(id)) {
@@ -424,6 +434,29 @@ export class AppModel {
   renameFleet(id: string, name: string): void {
     this.#game.renameFleet(id, name);
   }
+  chooseShipTransfer(fleetId: string, ship: ShipType): void {
+    if (this.#game.phase !== 'planning') return;
+    const fleet = this.#game.fleet(fleetId);
+    if (!fleet || !(fleet.ships[ship] > 0)) return;
+    this.#selectedFleetId = fleetId;
+    this.#shipTransfer =
+      this.#shipTransfer?.fleetId === fleetId &&
+      this.#shipTransfer.ship === ship
+        ? null
+        : Object.freeze({ fleetId, ship });
+  }
+  cancelShipTransfer(): void {
+    this.#shipTransfer = null;
+  }
+  transferChosenShip(target: string): void {
+    if (this.#shipTransfer)
+      this.transferShips(
+        this.#shipTransfer.fleetId,
+        this.#shipTransfer.ship,
+        1,
+        target,
+      );
+  }
   transferShips(
     source: string,
     ship: ShipType,
@@ -431,13 +464,16 @@ export class AppModel {
     target: string | null,
   ): void {
     this.#game.transferShips(source, ship, amount, target);
+    this.#shipTransfer = null;
+    if (target) this.#selectedFleetId = target;
   }
-  createFleet(source: string): void {
+  createFleet(source?: string): void {
     this.#selectedFleetId = this.#game.createFleet(source).id;
   }
   deleteFleet(id: string): void {
     this.#game.deleteFleet(id);
-    if (this.#selectedFleetId === id) this.#selectedFleetId = null;
+    if (this.#selectedFleetId === id)
+      this.#selectedFleetId = this.#game.fleetSnapshots()[0]?.id ?? null;
   }
   beginDestination(id: string): void {
     if (this.#game.fleet(id)) {

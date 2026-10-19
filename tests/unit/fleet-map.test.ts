@@ -125,7 +125,7 @@ describe('kartflottor', () => {
           expect(
             HexGeometry.fromPoint({ x: points[index]!, y: points[index + 1]! })
               .key,
-          ).toBe(mixed.position.key);
+          ).toBe(mixed.position!.key);
     }
   });
 

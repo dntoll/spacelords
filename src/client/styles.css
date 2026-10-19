@@ -1361,3 +1361,212 @@ p {
     margin-top: 12px;
   }
 }
+
+/* flottadministration / skeppsbilder: each fleet has one visual hangar. */
+.fleet-page {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  min-width: 0;
+}
+.fleet-builder {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 14px;
+  min-height: 0;
+}
+.fleet-collection {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-rows: auto auto;
+  align-content: start;
+  gap: 12px;
+}
+.fleet-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
+  gap: 12px;
+}
+.fleet-card {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #10222e;
+}
+.selected-fleet-card {
+  border-color: var(--accent);
+}
+.fleet-name-button {
+  border: 0;
+  border-radius: 4px;
+  color: inherit;
+  padding: 6px 8px;
+  background: transparent;
+  text-align: left;
+  font-weight: 600;
+}
+.fleet-hangar {
+  min-height: 124px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed #496574;
+  border-radius: 5px;
+  background: #091923;
+}
+.fleet-hangar > .button {
+  justify-self: start;
+  width: fit-content;
+}
+.ship-manifest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: start;
+}
+.ship-token,
+.ship-portrait {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  justify-items: center;
+  width: 108px;
+  min-height: 80px;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid #36525f;
+  border-radius: 4px;
+  background: #142b38;
+  color: inherit;
+}
+.ship-token {
+  touch-action: none;
+  cursor: grab;
+}
+.ship-token:active {
+  cursor: grabbing;
+}
+.ship-token:hover {
+  border-color: #9edbc9;
+  background: #1c3e4b;
+}
+.ship-image {
+  width: 100%;
+  height: 48px;
+  object-fit: contain;
+}
+.ship-token-label {
+  font-size: 0.7rem;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.ship-overflow {
+  border-style: dashed;
+}
+.transfer-available {
+  border-color: #9cceae;
+}
+.drop-target {
+  outline: 2px solid #ffdc88;
+  background: #284239;
+}
+.ship-drag-ghost {
+  position: fixed;
+  width: 112px;
+  height: 80px;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 20;
+  filter: drop-shadow(0 0 8px #97edd7);
+}
+.fleet-location-panel {
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+  align-self: start;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #10222e;
+}
+.fleet-location-map {
+  width: 100%;
+  height: 190px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.fleet-location-map canvas {
+  display: block;
+}
+.selection-panel .ship-portrait {
+  width: 86px;
+  min-height: 64px;
+  padding: 4px;
+}
+.selection-panel .ship-image {
+  height: 36px;
+}
+@media (max-width: 760px) {
+  .fleet-builder {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .fleet-location-panel {
+    grid-row: 1;
+    padding: 8px;
+    grid-template-columns: minmax(0, 1fr) 150px;
+  }
+  .fleet-location-map {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    height: 96px;
+  }
+  .fleet-collection {
+    grid-row: 2;
+  }
+  .fleet-location-panel h2 {
+    font-size: 1rem;
+  }
+}
+@media (max-width: 380px) {
+  .fleet-location-panel {
+    grid-template-columns: minmax(0, 1fr) 110px;
+  }
+  .ship-token {
+    width: 100px;
+  }
+}
+@media (max-height: 500px) {
+  .fleet-builder {
+    grid-template-columns: minmax(0, 1fr) 160px;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .fleet-location-panel {
+    grid-column: 2;
+    grid-row: 1;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fleet-location-map {
+    grid-column: 1;
+    grid-row: auto;
+    height: 90px;
+  }
+  .fleet-collection {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}
+
+.ship-token {
+  user-select: none;
+}
+.ship-token > * {
+  pointer-events: none;
+}

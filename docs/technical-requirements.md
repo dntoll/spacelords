@@ -71,6 +71,22 @@ Produktkraven finns separat i [product-requirements.md](product-requirements.md)
   oförändrad vald hex och Escape i Chromium och WebKit på fyra skärmprofiler.
   Inga nya domänbegrepp eller relationer införs; domänmodellen är oförändrad.
 
+- `skeppsbilder`, `flottadministration` och `flottbyggar-minikarta`: samma
+  optimerade transparenta WebP-bilder används i kartans flottpanel och
+  flottbyggaren. Modellens tillfälliga överföringsval är skrivskyddat för vyerna;
+  överföringar går genom controller och befintlig domänvalidering. Vyn hanterar
+  musdrag, touch och tangentbord. Enhetstester skyddar exakt en överföring,
+  tomma mottagare, olika positioner, låsta order och begränsade stora bildlistor.
+  Minikartan använder en separat skrivskyddad p5-instans som avvecklas vid
+  vybyte och återrendering. Browsertester verifierar riktig bildladdning,
+  minikartans positionsmarkör, bibehållen huvudkamera och native touchdrag.
+  Se [skeppsgrafik](ship-artwork.md) för original, friläggning och webbversioner.
+  `tomma-flottor-utan-position` gör flottans position valfri i domänmodellen.
+  Första överföringen eller fabriksleveransen sätter positionen; sista skeppet
+  släpper position och färdorder även vid kolonisation. Äldre sparade tomma
+  flottors position normaliseras vid inläsning. Enhetstester skyddar dessa
+  övergångar, samtidiga leveranser från olika planeter och sparformatet.
+
 Processkrav kan inte bevisas med meningsfulla enhetstester. De följs upp genom
 verktygskontroller, CI och granskning enligt tabellen.
 

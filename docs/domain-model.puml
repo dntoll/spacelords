@@ -70,6 +70,7 @@ class Ship {
   crew
 }
 class Fleet {
+  position : HexCoordinate [0..1]
   name
   courseOrigin
   destination
@@ -107,6 +108,11 @@ Building --> Research : Research station contributes
 ConstructionProject --> Fleet : ship recipient
 Colony --> Fleet : home fleet
 Fleet "1" o-- "0..*" Ship
+note right of Fleet
+  Tom flotta saknar position.
+  Första skeppet bestämmer positionen.
+  Sista skeppet släpper positionen.
+end note
 Ship --> Colony : Colony ship consumed to settle
 TurnOrder --> ConstructionProject
 TurnOrder --> Fleet

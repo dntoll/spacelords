@@ -5,6 +5,7 @@ import { HexCoordinate } from '../models/HexCoordinate.js';
 import type { TurnFrame } from '../models/Game.js';
 import type {
   AppPort,
+  FleetPreviewFactory,
   IntentHandler,
   MapFactory,
   MapPort,
@@ -12,6 +13,7 @@ import type {
 import { renderBuildSelection } from './BuildSelectionView.js';
 import { renderPlanet } from './PlanetView.js';
 import { renderResearch } from './ResearchView.js';
+import { renderFleetShips } from './ShipView.js';
 import { renderFleets } from './FleetView.js';
 import { button, element } from './dom.js';
 
@@ -31,6 +33,7 @@ export class AppView implements AppPort {
   #saveKey = '';
   #dialog: HTMLDialogElement | null = null;
   #clearReturnSlot: number | null = null;
+  #fleetPreview: { dispose(): void } | null = null;
   #planetScroll = new Map<string, number>();
 
   constructor(
@@ -40,6 +43,7 @@ export class AppView implements AppPort {
       container: HTMLElement,
       cells: readonly MapCell[],
     ) => { dispose(): void },
+    private readonly fleetPreviewFactory?: FleetPreviewFactory,
   ) {
     this.#root = root;
     this.#mapFactory = mapFactory;
@@ -50,6 +54,8 @@ export class AppView implements AppPort {
   }
 
   render(model: AppReadModel): void {
+    this.#fleetPreview?.dispose();
+    this.#fleetPreview = null;
     if (model.screen === 'saves') {
       const key = JSON.stringify(model.saveSlots);
       if (this.#screen !== 'saves' || this.#saveKey !== key) {
@@ -98,14 +104,20 @@ export class AppView implements AppPort {
     this.#dialog?.remove();
     this.#dialog = null;
     const changedScreen = this.#screen !== model.screen;
+    const fleetScroll =
+      this.#root.querySelector('.fleet-collection')?.scrollTop ?? 0;
     const active = document.activeElement;
     const focusLabel = active?.getAttribute('aria-label');
-    const focusScope = active?.closest('[data-project-id], [data-site-index]');
+    const focusScope = active?.closest(
+      '[data-project-id], [data-site-index], .fleet-card',
+    );
     const scopeSelector = focusScope?.hasAttribute('data-project-id')
       ? `[data-project-id="${focusScope.getAttribute('data-project-id')}"]`
       : focusScope?.hasAttribute('data-site-index')
         ? `[data-site-index="${focusScope.getAttribute('data-site-index')}"]`
-        : null;
+        : focusScope?.hasAttribute('data-fleet-id')
+          ? `[data-fleet-id="${focusScope.getAttribute('data-fleet-id')}"]`
+          : null;
     if (this.#screen === 'planet') {
       const panel = this.#root.querySelector<HTMLElement>('.planet-content');
       if (panel?.dataset.planetId)
@@ -189,13 +201,38 @@ export class AppView implements AppPort {
       this.#root
         .querySelector('main')
         ?.replaceChildren(renderFleets(model, this.#emit));
-    if (!changedScreen && model.screen === 'planet' && focusLabel) {
+    if (!changedScreen && model.screen === 'fleets') {
+      const collection = this.#root.querySelector('.fleet-collection');
+      if (collection) collection.scrollTop = fleetScroll;
+    }
+    if (
+      model.screen === 'fleets' &&
+      model.selectedFleet &&
+      this.fleetPreviewFactory
+    ) {
+      const container = this.#root.querySelector<HTMLElement>(
+        '.fleet-location-map',
+      );
+      if (container)
+        this.#fleetPreview = this.fleetPreviewFactory(
+          container,
+          model.cells,
+          model.selectedFleet,
+        );
+    }
+    if (
+      !changedScreen &&
+      (model.screen === 'planet' || model.screen === 'fleets') &&
+      focusLabel
+    ) {
       const scope = scopeSelector
         ? this.#root.querySelector(scopeSelector)
         : this.#root;
-      [...(scope?.querySelectorAll<HTMLElement>('[aria-label]') ?? [])]
-        .find((node) => node.getAttribute('aria-label') === focusLabel)
-        ?.focus({ preventScroll: true });
+      const focus =
+        [...(scope?.querySelectorAll<HTMLElement>('[aria-label]') ?? [])].find(
+          (node) => node.getAttribute('aria-label') === focusLabel,
+        ) ?? scope?.querySelector<HTMLElement>('.fleet-name-button');
+      focus?.focus({ preventScroll: true });
     }
     if (model.screen === 'planet' && model.planet) {
       const panel = this.#root.querySelector<HTMLElement>('.planet-content');
@@ -247,7 +284,7 @@ export class AppView implements AppPort {
         preview: model.fleetDestinationPreview,
         dragging: model.fleetDragging,
         fleets: model.fleets.filter(
-          (fleet) => fleet.position.key === model.selected?.position.key,
+          (fleet) => fleet.position?.key === model.selected?.position.key,
         ),
         destination: model.destinationFleetId,
       });
@@ -289,6 +326,8 @@ export class AppView implements AppPort {
   }
 
   dispose(): void {
+    this.#fleetPreview?.dispose();
+    this.#fleetPreview = null;
     this.#previews.forEach((preview) => preview.dispose());
     this.#previews = [];
     this.#dialog?.close();
@@ -436,7 +475,7 @@ export class AppView implements AppPort {
         element(
           'span',
           'coordinate-label',
-          `HEX ${selectedFleet.position.q}, ${selectedFleet.position.r}`,
+          `HEX ${selectedFleet.position?.q}, ${selectedFleet.position?.r}`,
         ),
       );
       const ships = Object.entries(selectedFleet.ships)
@@ -471,6 +510,7 @@ export class AppView implements AppPort {
       this.#panel.replaceChildren(
         title,
         element('p', 'muted-note', ships),
+        renderFleetShips(selectedFleet),
         status,
         actions,
       );
@@ -546,7 +586,7 @@ export class AppView implements AppPort {
     if (cell)
       for (const fleet of model.fleets.filter(
         (candidate) =>
-          candidate.position.key === cell.position.key &&
+          candidate.position?.key === cell.position.key &&
           Object.values(candidate.ships).some((count) => count > 0),
       )) {
         const fleetInfo = element('div', 'fleet-summary');

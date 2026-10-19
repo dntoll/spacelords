@@ -3,6 +3,7 @@ import { AppModel } from './models/AppModel.js';
 import { AppView } from './views/AppView.js';
 import { GalaxyMapView } from './views/GalaxyMapView.js';
 import './styles.css';
+import { FleetLocationPreview } from './views/FleetLocationPreview.js';
 import { SaveMapPreview } from './views/SaveMapPreview.js';
 import { BrowserSaveRepository } from './storage/BrowserSaveRepository.js';
 
@@ -24,6 +25,8 @@ const controller = new AppController(
     root,
     (container, emit) => new GalaxyMapView(container, emit),
     (container, cells) => new SaveMapPreview(container, cells),
+    (container, cells, fleet) =>
+      new FleetLocationPreview(container, cells, fleet),
   ),
 );
 controller.start();

@@ -14,7 +14,7 @@ describe('rakare-hexforflyttning', () => {
   ])('distributes direction changes toward offset %i,%i', (q, r) => {
     const model = new AppModel();
     const fleet = model.snapshot.fleets[0]!;
-    const start = fleet.position;
+    const start = fleet.position!;
     const distance = Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r));
     model.setDestination(fleet.id, start.q + q, start.r + r);
     const frames = model.startTurn();
@@ -34,7 +34,11 @@ describe('rakare-hexforflyttning', () => {
   it('keeps alternating across turn boundaries', () => {
     const model = new AppModel();
     const fleet = model.snapshot.fleets[0]!;
-    model.setDestination(fleet.id, fleet.position.q + 3, fleet.position.r + 3);
+    model.setDestination(
+      fleet.id,
+      fleet.position!.q + 3,
+      fleet.position!.r + 3,
+    );
     const directions: string[] = [];
     for (let turn = 0; turn < 2; turn += 1) {
       for (const frame of model.startTurn()) {
@@ -59,15 +63,19 @@ describe('rakare-hexforflyttning', () => {
   ])('keeps straight routes and stops at the destination %i,%i', (q, r) => {
     const model = new AppModel();
     const fleet = model.snapshot.fleets[0]!;
-    model.setDestination(fleet.id, fleet.position.q + q, fleet.position.r + r);
+    model.setDestination(
+      fleet.id,
+      fleet.position!.q + q,
+      fleet.position!.r + r,
+    );
     const frames = model.startTurn();
     expect(frames).toHaveLength(
       Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)),
     );
     for (const frame of frames) model.applyTurnFrame(frame);
     model.finishTurn();
-    expect(model.snapshot.fleets[0]!.position.key).toBe(
-      `${fleet.position.q + q},${fleet.position.r + r}`,
+    expect(model.snapshot.fleets[0]!.position!.key).toBe(
+      `${fleet.position!.q + q},${fleet.position!.r + r}`,
     );
     expect(model.snapshot.fleets[0]!.destination).toBeNull();
   });

@@ -233,7 +233,7 @@ describe('skepp-till-destinationsflotta', () => {
     turn();
     const local = game
       .fleetSnapshots()
-      .find((f) => f.position.key === planet.position.key)!;
+      .find((f) => f.position?.key === planet.position.key)!;
     expect(local.ships['Colony ship']).toBe(1);
     expect(game.fleet('fleet-home')!.ships['Colony ship']).toBe(0);
   });
@@ -384,5 +384,53 @@ describe('kolonisation', () => {
     game.startTurn();
     expect(() => game.colonize('fleet-home')).toThrow('locked');
     expect(game.planetAt(planet.position)).toBe(planet);
+  });
+});
+
+describe('tomma-flottor-utan-position / skepp-till-destinationsflotta', () => {
+  it('assigns the location on the first delivery and keeps later remote deliveries local', () => {
+    const base = createExampleGalaxy();
+    const remote = new Planet({
+      ...base.homePlanet,
+      id: 'remote',
+      name: 'Remote',
+      position: new HexCoordinate(0, 1),
+      colony: new Colony(base.player.id, 20000),
+    });
+    const galaxy = new Galaxy(base.player, [
+      new StarSystem(base.systems[0]!.star, [base.homePlanet, remote]),
+    ]);
+    const { game, planet, turn, factory } = setup(galaxy);
+    factory('Fighter factory');
+    game.scheduleBuild(remote, 'Fighter factory');
+    turn();
+    const target = game.createFleet();
+    game.scheduleShip(planet, 'Fighter', target.id);
+    game.scheduleShip(remote, 'Fighter', target.id);
+    expect(game.fleet(target.id)!.position).toBeNull();
+    turn();
+    expect(game.fleet(target.id)!.position).toEqual(planet.position);
+    expect(game.fleet(target.id)!.ships.Fighter).toBe(1);
+    const local = game
+      .fleetSnapshots()
+      .find((fleet) => fleet.position?.key === remote.position.key)!;
+    expect(local.ships.Fighter).toBe(1);
+    expect(() => game.scheduleShip(remote, 'Fighter', target.id)).toThrow(
+      /at this planet/,
+    );
+  });
+  it('releases a fleet location when its only ship establishes a colony', () => {
+    const { game, planet, turn, factory } = setup();
+    factory('Colony ship factory');
+    const target = game.createFleet();
+    game.scheduleShip(planet, 'Colony ship', target.id);
+    turn();
+    const vesta = game.galaxy.systems[0]!.planets[1]!;
+    game.setDestination(target.id, vesta.position);
+    turn();
+    game.colonize(target.id);
+    expect(game.fleet(target.id)!.position).toBeNull();
+    expect(game.fleet(target.id)!.destination).toBeNull();
+    expect(game.planetAt(vesta.position)).toBe(vesta);
   });
 });

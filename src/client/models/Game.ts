@@ -171,7 +171,7 @@ export interface PlanetOrderSnapshot {
 export interface FleetSnapshot {
   readonly id: string;
   readonly name: string;
-  readonly position: HexCoordinate;
+  readonly position: HexCoordinate | null;
   readonly destination: HexCoordinate | null;
   readonly ships: Readonly<Record<ShipType, number>>;
   readonly speed: number;
@@ -213,7 +213,7 @@ interface Project {
 interface Fleet {
   id: string;
   name: string;
-  position: HexCoordinate;
+  position: HexCoordinate | null;
   destination: HexCoordinate | null;
   courseOrigin?: HexCoordinate;
   ships: Record<ShipType, number>;
@@ -239,7 +239,7 @@ interface SavedFleet extends Omit<
   Fleet,
   'position' | 'destination' | 'courseOrigin'
 > {
-  readonly position: SavedCoordinate;
+  readonly position: SavedCoordinate | null;
   readonly destination: SavedCoordinate | null;
   readonly courseOrigin?: SavedCoordinate;
 }
@@ -389,12 +389,19 @@ export class Game {
     game.#researchTarget = copy.researchTarget;
     game.#colonies = new Map(copy.colonies);
     game.#fleets = copy.fleets.map(
-      ({ position: current, destination, courseOrigin, ...fleet }) => ({
-        ...fleet,
-        position: position(current),
-        destination: destination ? position(destination) : null,
-        ...(courseOrigin ? { courseOrigin: position(courseOrigin) } : {}),
-      }),
+      ({ position: current, destination, courseOrigin, ...fleet }) => {
+        const empty = game.#shipCount(fleet.ships) === 0;
+        if (!empty && !current)
+          throw new Error('A fleet with ships needs a position.');
+        return {
+          ...fleet,
+          position: empty ? null : position(current!),
+          destination: !empty && destination ? position(destination) : null,
+          ...(!empty && courseOrigin
+            ? { courseOrigin: position(courseOrigin) }
+            : {}),
+        };
+      },
     );
     game.#explored = new Set(copy.explored);
     game.#events = [...copy.events];
@@ -530,7 +537,7 @@ export class Game {
     const fleet = this.#fleetState(fleetId);
     const planet = this.galaxy.systems
       .flatMap((system) => system.planets)
-      .find((p) => p.position.key === fleet.position.key);
+      .find((p) => p.position.key === fleet.position?.key);
     if (!planet || planet.colony || this.#colonies.has(planet.id))
       return 'Choose an uninhabited planet.';
     if (fleet.ships['Colony ship'] < 1)
@@ -543,9 +550,9 @@ export class Game {
     const fleet = this.#fleetState(fleetId);
     const planet = this.galaxy.systems
       .flatMap((system) => system.planets)
-      .find((p) => p.position.key === fleet.position.key)!;
+      .find((p) => p.position.key === fleet.position?.key)!;
     fleet.ships['Colony ship'] -= 1;
-    if (this.#shipCount(fleet.ships) === 0) fleet.destination = null;
+    this.#releaseEmptyFleet(fleet);
     this.#colonies.set(planet.id, {
       population: SHIPS['Colony ship'].crew,
       buildings: [],
@@ -689,8 +696,9 @@ export class Game {
     );
   }
   #validateProjectFleet(planet: Planet, id: string | null): void {
-    if (id && this.#fleetState(id).position.key !== planet.position.key)
-      throw new Error('Choose a fleet at this planet.');
+    const fleet = id ? this.#fleetState(id) : null;
+    if (fleet?.position && fleet.position.key !== planet.position.key)
+      throw new Error('Choose an empty fleet or a fleet at this planet.');
   }
   produceFighter(planet: Planet): void {
     this.scheduleShip(planet, 'Fighter');
@@ -716,7 +724,7 @@ export class Game {
     let target: Fleet;
     if (targetId) {
       target = this.#fleetState(targetId);
-      if (target.position.key !== source.position.key)
+      if (target.position && target.position.key !== source.position?.key)
         throw new Error('Fleets must share a hex to transfer ships.');
     } else {
       target = {
@@ -729,17 +737,18 @@ export class Game {
       this.#fleets.push(target);
     }
     if (target.id === source.id) throw new Error('Choose another fleet.');
+    target.position = source.position;
     source.ships[ship] -= amount;
     target.ships[ship] += amount;
-    if (this.#shipCount(source.ships) === 0) source.destination = null;
+    this.#releaseEmptyFleet(source);
   }
-  createFleet(sourceId: string): FleetSnapshot {
+  createFleet(sourceId?: string): FleetSnapshot {
     this.#requirePlanning();
-    const source = this.#fleetState(sourceId);
+    if (sourceId) this.#fleetState(sourceId);
     const fleet: Fleet = {
       id: this.#id('fleet'),
       name: this.#nextFleetName(),
-      position: source.position,
+      position: null,
       destination: null,
       ships: zeroShips(),
     };
@@ -761,7 +770,7 @@ export class Game {
     if (this.#shipCount(fleet.ships) === 0)
       throw new Error('Empty fleets cannot receive destinations.');
     fleet.destination = destination;
-    fleet.courseOrigin = fleet.position;
+    fleet.courseOrigin = fleet.position!;
   }
   clearDestination(id: string): void {
     this.#requirePlanning();
@@ -785,7 +794,7 @@ export class Game {
                 ? [
                     {
                       fleetId: fleet.id,
-                      from: step === 0 ? fleet.position : path[step - 1]!,
+                      from: step === 0 ? fleet.position! : path[step - 1]!,
                       to: path[step]!,
                     },
                   ]
@@ -818,7 +827,7 @@ export class Game {
     if (this.#phase !== 'simulating')
       throw new Error('No turn is being simulated.');
     for (const fleet of this.#fleets)
-      if (fleet.destination?.key === fleet.position.key) {
+      if (fleet.destination && fleet.destination.key === fleet.position?.key) {
         fleet.destination = null;
         this.#event(`Fleet ${fleet.name} reached its destination.`);
       }
@@ -899,12 +908,12 @@ export class Game {
       this.#fleets.find(
         (fleet) =>
           fleet.id === destinationFleetId &&
-          fleet.position.key === planet.position.key,
+          (!fleet.position || fleet.position.key === planet.position.key),
       ) ??
       this.#fleets.find(
         (fleet) =>
           fleet.id === state.homeFleetId &&
-          fleet.position.key === planet.position.key,
+          (!fleet.position || fleet.position.key === planet.position.key),
       );
     if (!reserve) {
       reserve = {
@@ -917,6 +926,7 @@ export class Game {
       this.#fleets.push(reserve);
       state.homeFleetId = reserve.id;
     }
+    reserve.position = planet.position;
     reserve.ships[ship] += 1;
     this.#event(`${ship} was produced at ${planet.name}.`);
   }
@@ -1004,7 +1014,7 @@ export class Game {
     return { budget: snapshot(), blocks };
   }
   #route(fleet: Fleet): { fleet: Fleet; path: HexCoordinate[] } {
-    if (!fleet.destination) return { fleet, path: [] };
+    if (!fleet.destination || !fleet.position) return { fleet, path: [] };
     const path: HexCoordinate[] = [];
     let current = fleet.position;
     const destination = fleet.destination;
@@ -1046,6 +1056,13 @@ export class Game {
         changed = true;
       }
     if (changed) this.#mapCells = null;
+  }
+  // tomma-flottor-utan-position: the last ship releases both location and course.
+  #releaseEmptyFleet(fleet: Fleet): void {
+    if (this.#shipCount(fleet.ships) !== 0) return;
+    fleet.position = null;
+    fleet.destination = null;
+    delete fleet.courseOrigin;
   }
   #speed(fleet: Fleet): number {
     const speeds = Object.entries(fleet.ships).flatMap(([type, count]) =>

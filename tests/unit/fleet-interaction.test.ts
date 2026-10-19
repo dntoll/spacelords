@@ -46,7 +46,7 @@ describe('kartflottor', () => {
         { length: count },
         (_, index) => ({ ...original, id: `fleet-${index}` }),
       );
-      const center = HexGeometry.toPoint(original.position);
+      const center = HexGeometry.toPoint(original.position!);
       const markers = FleetMapLayout.markers(fleets);
       expect(markers).toHaveLength(count);
       expect(
@@ -58,7 +58,7 @@ describe('kartflottor', () => {
           Math.hypot(marker.point.x - center.x, marker.point.y - center.y),
         ).toBeCloseTo(HexGeometry.size / 2);
         expect(HexGeometry.fromPoint(marker.point).key).toBe(
-          original.position.key,
+          original.position!.key,
         );
       }
       expect(FleetMapLayout.markers([...fleets].reverse())).toEqual(markers);
@@ -169,7 +169,7 @@ describe('flottval-pa-kartan', () => {
     };
     expect(FleetMapLayout.markers([empty])).toHaveLength(0);
     expect(
-      FleetMapLayout.hit([empty], HexGeometry.toPoint(empty.position)),
+      FleetMapLayout.hit([empty], HexGeometry.toPoint(first.position!)),
     ).toBeNull();
   });
 });

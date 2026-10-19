@@ -36,6 +36,8 @@ export class AppController {
   }
 
   #handleIntent(intent: AppIntent): void {
+    if (intent.type.startsWith('open-') || intent.type === 'end-turn')
+      this.#model.cancelShipTransfer();
     if (
       [
         'open-map',
@@ -145,6 +147,15 @@ export class AppController {
         break;
       case 'rename-fleet':
         this.#model.renameFleet(intent.id, intent.name);
+        break;
+      case 'choose-ship-transfer':
+        this.#model.chooseShipTransfer(intent.fleetId, intent.ship);
+        break;
+      case 'transfer-chosen-ship':
+        this.#model.transferChosenShip(intent.target);
+        break;
+      case 'cancel-ship-transfer':
+        this.#model.cancelShipTransfer();
         break;
       case 'transfer-ships':
         this.#model.transferShips(

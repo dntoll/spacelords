@@ -29,7 +29,13 @@ funktioner från framtida spelmekanik. Se [hela visionen](docs/game-vision.md).
   skeppens spetsar riktade mot destinationen. Flottor i samma hex ligger på en
   cirkel innanför hexen. `flottval-pa-kartan` och `dra-flottdestination` är
   fullständigt implementerade: flottor kan markeras separat, lysas upp och dras
-  till en destination med förhandsvisad pil.
+  till en destination med förhandsvisad pil. `skeppsbilder` och
+  `flottbyggar-minikarta` är fullständigt implementerade: markerade flottor visar
+  skeppsbilder och Fleets har gemensamma skeppsrutor med dragöverföring samt en
+  minikarta för vald flotta, i stället för enbart position och sifferkolumner.
+  `tomma-flottor-utan-position` är **Fullständigt implementerat**: första skeppet
+  sätter positionen, sista skeppet släpper den. Tomma flottor tar emot skepp
+  från alla platser; fyllda flottor kräver samma hex.
 - **Imperiets utveckling:** kolonier, befolkning, råvaror, byggande och forskning.
 - **Order och omvärld:** rundor, kolonisation, flottor, civilisationer och senare
   multiplayer.

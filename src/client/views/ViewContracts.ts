@@ -1,6 +1,8 @@
+import type { MapCell } from '../models/Galaxy.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import type {
   BuildType,
+  FleetSnapshot,
   ShipType,
   TurnFrame,
   Technology,
@@ -23,6 +25,13 @@ export type AppIntent =
         | 'continue-planning'
         | 'produce-fighter';
     }
+  | {
+      readonly type: 'choose-ship-transfer';
+      readonly fleetId: string;
+      readonly ship: ShipType;
+    }
+  | { readonly type: 'transfer-chosen-ship'; readonly target: string }
+  | { readonly type: 'cancel-ship-transfer' }
   | { readonly type: 'build-search'; readonly query: string }
   | { readonly type: 'select'; readonly position: HexCoordinate }
   | { readonly type: 'pan'; readonly delta: Point }
@@ -62,10 +71,10 @@ export type AppIntent =
         | 'open-fleet'
         | 'begin-destination'
         | 'clear-destination'
-        | 'delete-fleet'
-        | 'create-fleet';
+        | 'delete-fleet';
       readonly id: string;
     }
+  | { readonly type: 'create-fleet'; readonly id?: string }
   | {
       readonly type: 'rename-fleet';
       readonly id: string;
@@ -103,3 +112,9 @@ export type MapFactory = (
   container: HTMLElement,
   emit: IntentHandler,
 ) => MapPort;
+
+export type FleetPreviewFactory = (
+  container: HTMLElement,
+  cells: readonly MapCell[],
+  fleet: FleetSnapshot,
+) => { dispose(): void };

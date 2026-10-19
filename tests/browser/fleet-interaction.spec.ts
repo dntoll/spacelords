@@ -64,10 +64,10 @@ test('kartflottor / flottval-pa-kartan: colocated fleets occupy separate positio
   await page.getByRole('button', { name: 'Home Fleet', exact: true }).click();
   await page.getByRole('button', { name: 'New fleet', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Home Fleet, Fighter: 1', exact: true })
+    .getByRole('button', { name: 'Fighter 1 in Home Fleet', exact: true })
     .click();
   await page
-    .getByRole('button', { name: 'Fleet 1, Fighter: 0', exact: true })
+    .getByRole('button', { name: 'Move ship to Fleet 1', exact: true })
     .click();
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   const { x, y } = await mapCenter(page);

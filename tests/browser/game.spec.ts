@@ -152,19 +152,17 @@ test('flottadministration / flottdestinationer: map orders and fleet-grid transf
     page.getByRole('button', { name: 'Fleet 1', exact: true }),
   ).toBeVisible();
   await page
-    .getByRole('button', { name: 'Home Fleet, Fighter: 1' })
-    .dragTo(page.getByRole('button', { name: 'Fleet 1, Fighter: 0' }));
+    .getByRole('button', { name: 'Fighter 1 in Home Fleet' })
+    .dragTo(page.getByRole('group', { name: 'Ships in Fleet 1', exact: true }));
   await expect(
-    page.getByRole('button', { name: 'Fleet 1, Fighter: 1' }),
+    page.getByRole('button', { name: 'Fighter 1 in Fleet 1' }),
   ).toBeVisible();
   await page
-    .getByRole('button', { name: 'Home Fleet, Exploration ship: 1' })
+    .getByRole('button', { name: 'Exploration ship 1 in Home Fleet' })
     .click();
-  await page
-    .getByRole('button', { name: 'Fleet 1, Exploration ship: 0' })
-    .click();
+  await page.getByRole('button', { name: 'Move ship to Fleet 1' }).click();
   await expect(
-    page.getByRole('button', { name: 'Fleet 1, Exploration ship: 1' }),
+    page.getByRole('button', { name: 'Exploration ship 1 in Fleet 1' }),
   ).toBeVisible();
 });
 
@@ -460,7 +458,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await nextYear();
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Fleet 1, Colony ship: 1', exact: true }),
+    page.getByRole('button', { name: 'Colony ship 1 in Fleet 1', exact: true }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   const fleet = page.locator('.fleet-summary').filter({

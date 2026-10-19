@@ -15,7 +15,11 @@ export class FleetMapLayout {
   static markers(fleets: readonly FleetSnapshot[]): readonly FleetMapMarker[] {
     const groups = new Map<string, FleetSnapshot[]>();
     for (const fleet of fleets) {
-      if (!Object.values(fleet.ships).some((count) => count > 0)) continue;
+      if (
+        !fleet.position ||
+        !Object.values(fleet.ships).some((count) => count > 0)
+      )
+        continue;
       const group = groups.get(fleet.position.key) ?? [];
       group.push(fleet);
       groups.set(fleet.position.key, group);
@@ -27,7 +31,7 @@ export class FleetMapLayout {
           group
             .sort((a, b) => a.id.localeCompare(b.id))
             .map((fleet, index) => {
-              const center = HexGeometry.toPoint(fleet.position);
+              const center = HexGeometry.toPoint(fleet.position!);
               const angle = -Math.PI / 2 + (index * 2 * Math.PI) / group.length;
               const spacing =
                 group.length > 1
