@@ -344,3 +344,32 @@ inom den katalogen. Det riktiga målrepot och den publicerade sajten ändrades i
 - [GitHub Pages: statisk hosting](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages)
 - [GitHub Pages: publiceringskälla och tokenbegränsningar](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site)
 - [Vite: publika miljövariabler](https://vite.dev/guide/env-and-mode.html)
+
+## Driftsättning av sparplatser, Fleet builder och händelsekonsol: 2026-10-19
+
+- Publicerad klientrevision: `64abd0038dab84c155bc39e271eb1aeb09f74108`
+  från `codex/game-viewport-and-english` i den lokala källkopian.
+- Målrepots tidigare revision: `9f7e388244ce246454b40f57a7f3b01ed872983f`.
+- Deploycommit: `6b78833e810f8d0f0f19ffd8bbace537b941bc89` på
+  `codex/deploy-spacelords-64abd00`, publicerad till målrepots `main`.
+- Endast `spacelords/` ändrades. Samtliga 281 övriga filers Git-objekt är
+  oförändrade. Publiceringskopians befintliga sidor motsvarade liveinnehållet
+  med hänsyn till lokala Windows-radslut.
+- `npm ci` och hela `npm run check` passerade: formatering, lint,
+  typkontroll, båda byggena, 141 snabba tester, fem integrationstester och
+  106 browsertester. Tio plattformsberoende browsertester hoppades över enligt
+  testernas villkor. Den ursprungliga Node-miljön var 24.7.0; snabbsviten,
+  Pages-bygget och integrationstesterna verifierades även med Node 24.19.0.
+- Sju mobiltester passerade mot både publiceringskopian och liveadressen:
+  Fleet builder, forskning/produktion/kolonisation, sparplatser,
+  händelsekonsolen i tre skärmstorlekar samt skärmfyllande karta.
+- PR-integrationen gav HTTP 403. Instruktionens reservväg användes efter
+  förnyad kontroll av aktuell `origin/main`, föräldrarelation och avgränsad diff:
+  vanlig fast-forward-push via befintlig SSH-autentisering.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/39268463313)
+  lyckades. Alla tio publicerade klientfiler gav HTTP 200, rätt innehållstyper
+  och exakt samma byteinnehåll som Pages-bygget. `/spacelords` leder vidare
+  till `/spacelords/`.
+- Kontrollsummorna för `/`, `/MachineBloom/`, `/Defence-Grid/test/`,
+  `/styles.css` och `/i18n.js` var identiska före och efter publiceringen.
+  Inga länkar, navigationsval, DNS- eller Pages-inställningar ändrades.
