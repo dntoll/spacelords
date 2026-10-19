@@ -77,7 +77,14 @@ class Fleet {
   ships: 0..*
 }
 class TurnOrder
-class GameEvent
+class GameEvent {
+  round
+  text
+}
+note right of GameEvent
+  Publiceras när händelsen inträffar.
+  Simulering återgår direkt till planering.
+end note
 class Player {
   name
 }

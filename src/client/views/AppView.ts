@@ -293,26 +293,40 @@ export class AppView implements AppPort {
         if (this.#known) this.#known.value = model.selected?.position.key ?? '';
         this.#renderSelection(model);
       }
-      const existing = this.#root.querySelector('.turn-summary');
-      if (model.phase === 'summary') {
-        const summary = element('section', 'turn-summary');
-        summary.setAttribute('role', 'dialog');
-        summary.append(
-          element('h2', '', 'Turn summary'),
-          ...model.events
-            .filter((event) => event.round === model.round - 1)
-            .map((event) => element('p', '', event.text)),
-          button(
-            'Continue',
-            () => this.#emit({ type: 'continue-planning' }),
-            'button',
-          ),
-        );
-        existing?.replaceWith(summary);
-        if (!existing) this.#root.append(summary);
-      } else existing?.remove();
+      const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
+      if (end) end.disabled = model.phase !== 'planning';
+      this.#renderTurnConsole(model);
     }
     this.#renderNotice(model);
+  }
+
+  #renderTurnConsole(model: AppReadModel): void {
+    const log = this.#root.querySelector<HTMLElement>(
+      '.turn-console [role="log"]',
+    );
+    if (!log) return;
+    const events = model.events.slice(-100);
+    const key = events.at(-1)?.id ?? 'empty';
+    if (log.dataset.lastEvent === key) return;
+    const follow = log.scrollHeight - log.clientHeight - log.scrollTop < 8;
+    const list = log.querySelector('ol')!;
+    const ids = new Set(events.map((event) => event.id));
+    for (const item of list.querySelectorAll<HTMLElement>('li'))
+      if (!ids.has(item.dataset.eventId!)) item.remove();
+    const existing = new Set(
+      [...list.querySelectorAll<HTMLElement>('li')].map(
+        (item) => item.dataset.eventId,
+      ),
+    );
+    if (events.length) log.querySelector('.console-empty')?.remove();
+    for (const event of events) {
+      if (existing.has(event.id)) continue;
+      const item = element('li', '', `Year ${event.round}: ${event.text}`);
+      item.dataset.eventId = event.id;
+      list.append(item);
+    }
+    log.dataset.lastEvent = key;
+    if (follow) log.scrollTop = log.scrollHeight;
   }
 
   #renderNotice(model: AppReadModel): void {
@@ -450,7 +464,18 @@ export class AppView implements AppPort {
       this.#coordinates,
       this.#panel,
     );
+    const console = element('section', 'turn-console hud');
+    console.setAttribute('aria-label', 'Turn console');
+    const log = element('div', 'console-log');
+    log.setAttribute('role', 'log');
+    log.setAttribute('aria-label', 'Game events');
+    log.setAttribute('aria-live', 'polite');
+    log.setAttribute('aria-relevant', 'additions');
+    log.tabIndex = 0;
+    log.append(element('p', 'console-empty', 'No events yet.'), element('ol'));
+    console.append(element('h2', '', 'Events'), log);
     page.append(
+      console,
       button('End turn', () => this.#emit({ type: 'end-turn' }), 'end-turn'),
     );
     return page;

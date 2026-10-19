@@ -2,7 +2,7 @@ import { Galaxy, Star, StarSystem, type MapCell } from './Galaxy.js';
 import { HexCoordinate } from './HexCoordinate.js';
 import { Planet, Player, Colony, type PlanetSnapshot } from './Planet.js';
 
-export type GamePhase = 'planning' | 'simulating' | 'summary';
+export type GamePhase = 'planning' | 'simulating';
 export type Resource = 'Iron' | 'Water' | 'Oil';
 export type ShipType = 'Colony ship' | 'Exploration ship' | 'Fighter';
 export type BuildType =
@@ -259,6 +259,7 @@ export interface GameState {
     }[];
   };
   readonly round: number;
+  // summary is accepted only for backwards compatibility with older saves.
   readonly phase: 'planning' | 'summary';
   readonly sequence: number;
   readonly researched: readonly Technology[];
@@ -280,7 +281,6 @@ export class Game {
   #fleets: Fleet[];
   #explored = new Set<string>();
   #events: GameEvent[] = [];
-  #turnEvents: GameEvent[] = [];
   #mapCells: readonly MapCell[] | null = null;
 
   constructor(readonly galaxy: Galaxy) {
@@ -383,7 +383,7 @@ export class Game {
     const game = new Game(galaxy);
     const copy = structuredClone(state);
     game.#round = copy.round;
-    game.#phase = copy.phase;
+    game.#phase = 'planning';
     game.#sequence = copy.sequence;
     game.#researched = new Set(copy.researched);
     game.#researchTarget = copy.researchTarget;
@@ -404,7 +404,12 @@ export class Game {
       },
     );
     game.#explored = new Set(copy.explored);
-    game.#events = [...copy.events];
+    game.#events = copy.events.filter(
+      (event) =>
+        !/^Fleet .* moved to -?\d+,-?\d+\.$|^Exploration from .* revealed \d+ hexes\.$/.test(
+          event.text,
+        ),
+    );
     // Exercise derived data before accepting a stored record.
     game.mapSnapshot();
     game.fleetSnapshots();
@@ -779,7 +784,6 @@ export class Game {
   startTurn(): readonly TurnFrame[] {
     this.#requirePlanning();
     this.#phase = 'simulating';
-    this.#turnEvents = [];
     const routes = this.#fleets
       .filter((fleet) => this.#shipCount(fleet.ships) > 0)
       .map((fleet) => this.#route(fleet));
@@ -811,26 +815,14 @@ export class Game {
     for (const movement of frame.movements) {
       const fleet = this.#fleetState(movement.fleetId);
       fleet.position = movement.to;
-      this.#event(`Fleet ${fleet.name} moved to ${movement.to.key}.`);
-      {
-        const before = this.#explored.size;
-        this.#reveal(movement.to, fleet.ships['Exploration ship'] > 0);
-        const revealed = this.#explored.size - before;
-        if (revealed)
-          this.#event(
-            `Exploration from ${fleet.name} revealed ${revealed} hexes.`,
-          );
-      }
+      this.#reveal(movement.to, fleet.ships['Exploration ship'] > 0);
+      this.#recordArrival(fleet);
     }
   }
   finishTurn(): void {
     if (this.#phase !== 'simulating')
       throw new Error('No turn is being simulated.');
-    for (const fleet of this.#fleets)
-      if (fleet.destination && fleet.destination.key === fleet.position?.key) {
-        fleet.destination = null;
-        this.#event(`Fleet ${fleet.name} reached its destination.`);
-      }
+    for (const fleet of this.#fleets) this.#recordArrival(fleet);
     const researchStations = this.research.stations;
     for (const planet of this.#ownedPlanets()) {
       const state = this.#state(planet);
@@ -873,12 +865,6 @@ export class Game {
       this.#researchTarget = null;
     }
     this.#round += 1;
-    this.#events.push(...this.#turnEvents);
-    this.#phase = 'summary';
-  }
-  continuePlanning(): void {
-    if (this.#phase !== 'summary')
-      throw new Error('The summary must be shown after a turn.');
     this.#phase = 'planning';
   }
   #completeProject(planet: Planet, state: ColonyState, project: Project): void {
@@ -1094,8 +1080,20 @@ export class Game {
       .flatMap((s) => s.planets)
       .filter((p) => this.#colonies.has(p.id));
   }
+  // handelser: report arrival once, at the point it happens, with a usable place name.
+  #recordArrival(fleet: Fleet): void {
+    if (!fleet.destination || fleet.destination.key !== fleet.position?.key)
+      return;
+    const place =
+      this.mapSnapshot().find(
+        (cell) => cell.position.key === fleet.position!.key,
+      )?.object?.name ?? `HEX ${fleet.position.key}`;
+    fleet.destination = null;
+    delete fleet.courseOrigin;
+    this.#event(`${fleet.name} arrived at ${place}.`);
+  }
   #event(text: string): void {
-    this.#turnEvents.push(
+    this.#events.push(
       Object.freeze({ id: this.#id('event'), round: this.#round, text }),
     );
   }

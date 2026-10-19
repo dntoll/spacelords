@@ -12,7 +12,6 @@ function setup(galaxy = createExampleGalaxy()) {
   const turn = () => {
     for (const frame of game.startTurn()) game.applyFrame(frame);
     game.finishTurn();
-    game.continuePlanning();
   };
   const unlock = (type: Technology) => {
     if (!game.research.stations) {

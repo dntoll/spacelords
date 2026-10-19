@@ -43,8 +43,7 @@ describe('sparat-spel / frontend-backend-mock', () => {
     expect(restored.planetSnapshot(restored.galaxy.homePlanet)).toEqual(
       game.planetSnapshot(game.galaxy.homePlanet),
     );
-    restored.continuePlanning();
-    game.continuePlanning();
+
     restored.scheduleBuild(restored.galaxy.homePlanet, 'Research station', 1);
     game.scheduleBuild(game.galaxy.homePlanet, 'Research station', 1);
     expect(restored.exportState()).toEqual(game.exportState());
@@ -55,7 +54,6 @@ describe('sparat-spel / frontend-backend-mock', () => {
     const turn = (current: Game) => {
       for (const frame of current.startTurn()) current.applyFrame(frame);
       current.finishTurn();
-      current.continuePlanning();
     };
     game.scheduleBuild(home, 'Research station', 0);
     turn(game);
@@ -252,7 +250,7 @@ describe('frontend-backend-mock', () => {
     finishAnimation();
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(repo.load(1)?.state.round).toBe(2);
-    expect(repo.load(1)?.state.phase).toBe('summary');
+    expect(repo.load(1)?.state.phase).toBe('planning');
     controller.dispose();
   });
 });

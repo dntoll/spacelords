@@ -491,7 +491,4 @@ export class AppModel {
   finishTurn(): void {
     this.#game.finishTurn();
   }
-  continuePlanning(): void {
-    this.#game.continuePlanning();
-  }
 }

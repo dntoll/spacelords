@@ -514,18 +514,6 @@ p {
   bottom: 12px;
   z-index: 2;
 }
-.turn-summary {
-  position: fixed;
-  inset: 15% 10%;
-  z-index: 10;
-  overflow: auto;
-  padding: 24px;
-  border: 1px solid var(--accent);
-  border-radius: 6px;
-  background: #10222e;
-  display: grid;
-  gap: 12px;
-}
 .station-card {
   width: 100%;
   max-width: 580px;
@@ -1603,4 +1591,60 @@ p {
   min-height: 44px;
   padding: 6px 12px;
   flex: 0 1 auto;
+}
+
+/* handelser: a bounded console stays above End turn without a blocking dialog. */
+.turn-console {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(68px, calc(env(safe-area-inset-bottom) + 68px));
+  width: min(320px, calc(100% - 24px));
+  height: 84px;
+  padding: 6px 8px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 4px;
+  z-index: 2;
+}
+.turn-console h2 {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--accent);
+}
+.console-log {
+  overflow: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+.console-log ol {
+  margin: 0;
+  padding-left: 1.6em;
+}
+.console-log li {
+  padding-bottom: 3px;
+  overflow-wrap: anywhere;
+}
+.console-empty {
+  color: var(--muted);
+}
+.selection-panel {
+  max-height: calc(100% - 176px);
+}
+@media (max-width: 600px) {
+  .selection-panel {
+    bottom: max(164px, calc(env(safe-area-inset-bottom) + 164px));
+    max-height: calc(50% - 190px);
+  }
+}
+@media (max-height: 500px) {
+  .turn-console {
+    height: 64px;
+  }
+  .selection-panel {
+    top: 12px;
+    bottom: auto;
+    max-height: calc(100% - 156px);
+  }
 }

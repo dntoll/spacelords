@@ -166,3 +166,11 @@ varningsdialog, avbrott, lagringsfel och radering av en enda plats.
   Det tillfälliga menyvalet har tagits bort ur navigeringsmodellen. Controllers
   och domänmodell validerar fortfarande order; enhetstester skyddar alla tre
   skeppstyper, rätt fabrik och destination samt full kö, rivning och låsta order.
+
+- `handelser` och `arsrundor-och-order`: domänmodellen publicerar händelser när
+  de inträffar; ankomst registreras exakt en gång. Livefaserna är planning och
+  simulating. Äldre sparad summary läses som planning och gamla steghändelser
+  filtreras bort. Konsolen läser oföränderliga händelser, visar de senaste 100
+  med intern scroll och följer nya händelser när spelaren är längst ned.
+  Händelsehistoriken sparas i sin helhet. Tester skyddar fasväxling, ordning,
+  ankomst, sparkompatibilitet, tillgänglig logg och små skärmar.

@@ -49,7 +49,6 @@ describe('rakare-hexforflyttning', () => {
         model.applyTurnFrame(frame);
       }
       model.finishTurn();
-      model.continuePlanning();
     }
     expect(directions).toHaveLength(6);
     for (let index = 1; index < directions.length; index += 1)

@@ -38,7 +38,9 @@ funktioner från framtida spelmekanik. Se [hela visionen](docs/game-vision.md).
   från alla platser; fyllda flottor kräver samma hex.
 - **Imperiets utveckling:** kolonier, befolkning, råvaror, byggande och forskning.
 - **Order och omvärld:** rundor, kolonisation, flottor, civilisationer och senare
-  multiplayer.
+  multiplayer. `handelser` och `arsrundor-och-order` är **Fullständigt implementerade**
+  med en liten kronologisk konsol ovanför `End turn`, ankomstbesked och
+  automatisk planering utan `Turn summary` eller `Continue`.
 
 [Produktkraven](docs/product-requirements.md) anger status för varje aktivt krav:
 **Ej implementerat**, **Delvis implementerat** eller **Fullständigt implementerat**.

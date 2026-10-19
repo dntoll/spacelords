@@ -329,8 +329,9 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   const nextYear = async () => {
     await page.getByRole('button', { name: 'Star map', exact: true }).click();
     await page.getByRole('button', { name: 'End turn', exact: true }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await expect(
+      page.getByRole('button', { name: 'End turn', exact: true }),
+    ).toBeEnabled();
   };
   const construction = async () => {
     await page

@@ -177,7 +177,7 @@ describe('byggnaders-resursanvandning', () => {
     model.build('Research station');
     model.startTurn();
     model.finishTurn();
-    model.continuePlanning();
+
     model.openPlanet();
     const controller = new AppController(model, new AppView(root, mapFactory));
     controller.start();
@@ -190,7 +190,6 @@ describe('byggnaders-resursanvandning', () => {
 function advance(model: AppModel): void {
   for (const frame of model.startTurn()) model.applyTurnFrame(frame);
   model.finishTurn();
-  model.continuePlanning();
 }
 function buildShipyard(model: AppModel): void {
   model.build('Research station');

@@ -26,7 +26,7 @@ describe('rundsimulering', () => {
     for (const frame of frames) model.applyTurnFrame(frame);
     model.finishTurn();
     expect(model.snapshot.round).toBe(2);
-    expect(model.snapshot.phase).toBe('summary');
+    expect(model.snapshot.phase).toBe('planning');
     expect(model.snapshot.planet).toBeNull();
     model.openPlanet();
     expect(model.snapshot.planet!.population).toBe(before + 1200);

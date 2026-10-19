@@ -167,8 +167,9 @@ test('flottbyggar-minikarta: the marker follows a fleet after travelling', async
     .getByRole('combobox', { name: 'Known objects' })
     .selectOption({ label: 'Vesta' });
   await page.getByRole('button', { name: 'End turn', exact: true }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'End turn', exact: true }),
+  ).toBeEnabled();
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await expect(
     page.locator(

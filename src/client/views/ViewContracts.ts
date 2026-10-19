@@ -22,7 +22,6 @@ export type AppIntent =
         | 'pointer-cancel'
         | 'map-leave'
         | 'end-turn'
-        | 'continue-planning'
         | 'produce-fighter';
     }
   | {

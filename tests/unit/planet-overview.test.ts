@@ -137,7 +137,7 @@ describe('planetbudgetoversikt', () => {
     model.build('Research station');
     for (const frame of model.startTurn()) model.applyTurnFrame(frame);
     model.finishTurn();
-    model.continuePlanning();
+
     model.openPlanet();
     new AppController(
       model,
@@ -337,7 +337,7 @@ describe('fabrikskoer / kompakta-bygghandlingar', () => {
         'You',
         vi.fn(),
         [],
-        { phase: state === 'locked' ? 'summary' : 'planning' },
+        { phase: state === 'locked' ? 'simulating' : 'planning' },
       );
       expect(
         view.querySelector<HTMLButtonElement>('.factory-order button')

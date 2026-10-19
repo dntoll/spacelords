@@ -191,7 +191,7 @@ describe('flottadministration', () => {
     view.dispatchEvent(pointer('pointermove', 100, 100));
     view.dispatchEvent(pointer('pointerup', 100, 100));
     expect(intents).toHaveLength(0);
-    const locked = renderFleets({ ...snapshot, phase: 'summary' }, () => {});
+    const locked = renderFleets({ ...snapshot, phase: 'simulating' }, () => {});
     expect(
       [...locked.querySelectorAll<HTMLButtonElement>('.ship-token')].every(
         (token) => token.disabled && !token.draggable,

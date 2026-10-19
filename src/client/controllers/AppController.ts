@@ -174,9 +174,6 @@ export class AppController {
       case 'delete-fleet':
         this.#model.deleteFleet(intent.id);
         break;
-      case 'continue-planning':
-        this.#model.continuePlanning();
-        break;
       case 'end-turn':
         void this.#runTurn();
         return;
@@ -277,6 +274,7 @@ export class AppController {
   }
 
   async #runTurn(): Promise<void> {
+    if (this.#model.snapshot.phase !== 'planning') return;
     try {
       const frames = this.#model.startTurn();
       this.#view.render(this.#model.snapshot);
