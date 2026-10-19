@@ -1,3 +1,4 @@
+import { startFirstSlot } from './save-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 
 async function expectNoScroll(page: Page): Promise<void> {
@@ -12,6 +13,7 @@ test('viewport-game-layout: the map fills the viewport without page scrolling', 
   page,
 }) => {
   await page.goto('./');
+  await startFirstSlot(page);
   const map = page.locator('canvas[data-rendered="true"]');
   await expect(map).toHaveCount(1);
   await expectNoScroll(page);
@@ -57,6 +59,7 @@ for (const size of [
   }, testInfo) => {
     await page.setViewportSize(size);
     await page.goto('./');
+    await startFirstSlot(page);
     await expect(page.locator('canvas[data-rendered="true"]')).toHaveCount(1);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expectContentFits(page);
@@ -100,6 +103,7 @@ test('viewport-game-layout: wider fallback font metrics cannot expand the planet
 }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto('./');
+  await startFirstSlot(page);
   await page.addStyleTag({
     content: ':root { font-family: system-ui, sans-serif; font-size: 18px; }',
   });
@@ -120,6 +124,7 @@ test('visa-byggalternativ / kompakta-bygghandlingar: selection preserves Overvie
   page,
 }, testInfo) => {
   await page.goto('./');
+  await startFirstSlot(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   const overview = page.locator('.overview');
   const open = page.getByRole('button', {

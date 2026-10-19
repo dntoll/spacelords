@@ -1,9 +1,11 @@
+import { startFirstSlot } from './save-helpers.js';
 import { expect, test } from '@playwright/test';
 
 test('gemensamma-byggnadsbilder: supplied images load in Research, selection and building sites', async ({
   page,
 }, testInfo) => {
   await page.goto('./');
+  await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   const images = page.locator('.research-panel img');
   await expect(images).toHaveCount(4);

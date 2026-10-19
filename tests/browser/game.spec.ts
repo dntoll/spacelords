@@ -1,3 +1,4 @@
+import { startFirstSlot } from './save-helpers.js';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 async function canvas(page: Page): Promise<Locator> {
@@ -19,6 +20,7 @@ test.beforeEach(async ({ page }) => {
   runtimeErrors.set(page, errors);
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');
+  await startFirstSlot(page);
   await canvas(page);
 });
 
@@ -120,6 +122,7 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
   ).toBeVisible();
   await expect(page.getByLabel('Map zoom')).toHaveText(zoom ?? '');
   await page.reload();
+  await startFirstSlot(page);
   await canvas(page);
   await expect(page.getByLabel('Map zoom')).toHaveText('100%');
 });

@@ -1239,3 +1239,125 @@ p {
     height: 72px;
   }
 }
+
+.save-page {
+  height: 100%;
+  overflow: auto;
+  padding: clamp(16px, 4vw, 56px);
+  background: radial-gradient(ellipse at 50% 0%, #1b3542 0%, #09121b 70%);
+}
+.save-intro {
+  max-width: 1120px;
+  margin: 0 auto 28px;
+}
+.save-intro h1 {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  margin: 10px 0;
+}
+.save-storage-note {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-top: 8px;
+}
+.save-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  max-width: 1120px;
+  margin: auto;
+}
+.save-card {
+  min-width: 0;
+  border: 1px solid #34515c;
+  border-radius: 12px;
+  padding: 18px;
+  background: #0e1e29;
+}
+.save-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.save-map-preview {
+  height: clamp(120px, 22vh, 240px);
+  margin: 18px 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #091520;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+.save-map-preview canvas {
+  display: block;
+}
+.save-empty-mark {
+  font-size: 2.5rem;
+  color: #56727e;
+}
+.save-last-played {
+  min-height: 3em;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+.save-actions button {
+  padding: 8px 14px;
+}
+.save-start {
+  background: #b0e5ce;
+  color: #0b241e;
+  border-color: #b0e5ce;
+}
+.save-clear {
+  background: #291f25;
+  color: #ffb3aa;
+  border-color: #86524f;
+}
+.save-clear:hover:enabled {
+  background: #452e35;
+}
+.clear-slot-dialog {
+  max-width: min(460px, calc(100vw - 32px));
+  border: 1px solid #86524f;
+  border-radius: 12px;
+  background: #10212b;
+  color: #e5e8e6;
+  padding: 24px;
+}
+.clear-slot-dialog p {
+  margin-top: 16px;
+}
+.clear-slot-dialog::backdrop {
+  background: #02070dc9;
+}
+@media (max-width: 760px) {
+  .save-grid {
+    grid-template-columns: 1fr;
+  }
+  .save-card {
+    padding: 14px;
+  }
+  .save-intro {
+    margin-bottom: 18px;
+  }
+  .save-map-preview {
+    height: 130px;
+    margin: 12px 0;
+  }
+  .save-last-played {
+    min-height: 0;
+  }
+  .save-actions {
+    margin-top: 12px;
+  }
+}

@@ -118,3 +118,30 @@ avgränsning och tekniska beslut. Ingen ny driftsättning ingår.
 
 2026-10-17: Språkregeln ersätter tidigare svenska speltexter. Skärmfyllande vyer
 ersätter den tidigare staplade mobillayouten. Webbläsarens helskärmsläge krävs inte.
+
+## Tillfällig spellagring
+
+| Kravnamn                | Status                     | Krav                                                                                                                                                                                          | Verifiering                                           |
+| ----------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `frontend-backend-mock` | Fullständigt implementerat | Spellagring sker tills vidare i frontend bakom ett injicerat `SaveRepository`-gränssnitt. Versionerade, serialiserbara speldata skiljs från skrivskyddade vydata och från webbläsarlagringen. | Modell-, controller- och browsertester i `save-slots` |
+
+`BrowserSaveRepository` är en lokal mock med en `localStorage`-nyckel per plats.
+`Game.exportState()` och `Game.restore()` bevarar värld, identifierarsekvens,
+kolonier, befolkning, byggnader, rivningsorder, bygg- och fabriksköer, forskning,
+flottor med färdriktning, utforskade hexagoner, händelser, år och fas.
+Modellerna beror inte på webbläsare eller p5. Förhandsvisningar får bara
+skrivskyddade, utforskade kartceller och använder p5 i instance mode.
+
+En runda sparas efter slutförd simulering; vid omladdning mitt i animationen
+laddas föregående stabila tillstånd. Sparfel visas och oläsbara platser bevaras
+tills spelaren bekräftar tömning. Senaste speldatum uppdateras när ett spel startas,
+ändras eller lämnas. Kameraläge och tillfälliga menyval återställs vid återupptagning.
+
+Framtida multiplayer behöver en asynkron serveradapter, autentisering,
+serverauktoritativa order och samtidighetskontroll. Det synkrona lokala gränssnittet
+är en avgränsad mock, inte en färdig multiplayerbackend. Spel delas ännu inte mellan
+webbläsare eller enheter. Flera samtidiga flikar samordnas inte i detta steg.
+
+Tester för `sparat-spel`, `tre-sparplatser`, `sparplats-utforskad-karta` och
+`tomm-sparplats` skyddar återupptagning, oberoende spel, filtrering av dold rymd,
+varningsdialog, avbrott, lagringsfel och radering av en enda plats.

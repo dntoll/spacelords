@@ -2,11 +2,14 @@
 
 ## Avgränsning
 
-En fast exempelvärld återställs vid omladdning. Kartan är en hexagonal skiva med
+Den ursprungliga iterationen återställde exempelvärlden vid omladdning. Sedan
+2026-10-19 ersätts detta av `sparat-spel`: varje tom sparplats börjar i den fasta
+exempelvärlden, och befintliga spel återupptas. Kartan är en hexagonal skiva med
 radie tio, med stjärnor på `(0,0)`, `(7,-3)` och `(-6,6)`. Varje stjärna har tre
 planeter i direkta grannhexagoner. Hemplaneten finns på `(1,0)` och är spelarens
 enda koloni. Både fasta planeter och gasplaneter ingår. Exempelvärden är
-preliminära; byggorder, sparning, rundor och simulering ingår inte.
+preliminära. Ursprungligen ingick inte byggorder, sparning, rundor eller
+simulering; aktuell omfattning och status finns i [produktkraven](product-requirements.md).
 
 Sikten omfattar hemplaneten och dess sex grannar. Alla stjärnpositioner är synliga,
 men dolda planeter förekommer inte i renderingsdata, paneler eller

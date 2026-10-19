@@ -1,3 +1,5 @@
+import { renderSaveSlots, clearSlotDialog } from './SaveSlotsView.js';
+import type { MapCell } from '../models/Galaxy.js';
 import type { AppReadModel, Screen } from '../models/AppModel.js';
 import { HexCoordinate } from '../models/HexCoordinate.js';
 import type { TurnFrame } from '../models/Game.js';
@@ -25,9 +27,20 @@ export class AppView implements AppPort {
   #zoom: HTMLOutputElement | null = null;
   #coordinates: HTMLElement | null = null;
   #selectionKey = '';
+  #previews: { dispose(): void }[] = [];
+  #saveKey = '';
+  #dialog: HTMLDialogElement | null = null;
+  #clearReturnSlot: number | null = null;
   #planetScroll = new Map<string, number>();
 
-  constructor(root: HTMLElement, mapFactory: MapFactory) {
+  constructor(
+    root: HTMLElement,
+    mapFactory: MapFactory,
+    private readonly previewFactory?: (
+      container: HTMLElement,
+      cells: readonly MapCell[],
+    ) => { dispose(): void },
+  ) {
     this.#root = root;
     this.#mapFactory = mapFactory;
   }
@@ -37,6 +50,53 @@ export class AppView implements AppPort {
   }
 
   render(model: AppReadModel): void {
+    if (model.screen === 'saves') {
+      const key = JSON.stringify(model.saveSlots);
+      if (this.#screen !== 'saves' || this.#saveKey !== key) {
+        this.#map?.dispose();
+        this.#map = null;
+        this.#previews.forEach((preview) => preview.dispose());
+        this.#previews = [];
+        this.#root.replaceChildren(this.#header('saves'));
+        const main = element('main', 'page');
+        main.append(renderSaveSlots(model, this.#emit));
+        this.#root.append(main);
+        for (const slot of model.saveSlots) {
+          const container = main.querySelector<HTMLElement>(
+            `[data-preview-slot="${slot.id}"]`,
+          );
+          if (container && slot.lastPlayed && this.previewFactory)
+            this.#previews.push(this.previewFactory(container, slot.cells));
+        }
+        this.#saveKey = key;
+      }
+      if (model.pendingClearSlot !== null && !this.#dialog) {
+        this.#clearReturnSlot = model.pendingClearSlot;
+        this.#dialog = clearSlotDialog(model.pendingClearSlot, this.#emit);
+        this.#root.append(this.#dialog);
+        this.#dialog.showModal();
+      } else if (model.pendingClearSlot === null && this.#dialog) {
+        this.#dialog.close();
+        this.#dialog.remove();
+        this.#dialog = null;
+        const card = this.#root.querySelector(
+          `[data-slot="${this.#clearReturnSlot}"]`,
+        );
+        (
+          card?.querySelector<HTMLElement>('.save-clear:not(:disabled)') ??
+          card?.querySelector<HTMLElement>('.save-start')
+        )?.focus();
+        this.#clearReturnSlot = null;
+      }
+      this.#screen = 'saves';
+      this.#renderNotice(model);
+      return;
+    }
+    this.#previews.forEach((preview) => preview.dispose());
+    this.#previews = [];
+    this.#dialog?.close();
+    this.#dialog?.remove();
+    this.#dialog = null;
     const changedScreen = this.#screen !== model.screen;
     const active = document.activeElement;
     const focusLabel = active?.getAttribute('aria-label');
@@ -215,6 +275,10 @@ export class AppView implements AppPort {
         if (!existing) this.#root.append(summary);
       } else existing?.remove();
     }
+    this.#renderNotice(model);
+  }
+
+  #renderNotice(model: AppReadModel): void {
     const existingNotice = this.#root.querySelector('.game-notice');
     if (model.notice) {
       const notice = element('p', 'game-notice', model.notice);
@@ -225,6 +289,11 @@ export class AppView implements AppPort {
   }
 
   dispose(): void {
+    this.#previews.forEach((preview) => preview.dispose());
+    this.#previews = [];
+    this.#dialog?.close();
+    this.#dialog?.remove();
+    this.#dialog = null;
     this.#map?.dispose();
     this.#map = null;
     this.#root.replaceChildren();
@@ -235,14 +304,20 @@ export class AppView implements AppPort {
     const header = element('header', 'app-header');
     const brand = button(
       'SPACELORDS',
-      () => this.#emit({ type: 'open-map' }),
+      () => this.#emit({ type: 'open-saves' }),
       'brand',
     );
+    brand.setAttribute('aria-label', 'Saved games');
+    brand.title = 'Saved games';
     const emblem = element('span', 'brand-mark', '✦');
     emblem.setAttribute('aria-hidden', 'true');
     brand.prepend(emblem);
     const navigation = element('nav', 'main-nav');
     navigation.setAttribute('aria-label', 'Main navigation');
+    if (screen === 'saves') {
+      header.append(brand);
+      return header;
+    }
     for (const [target, label] of [
       ['map', 'Star map'],
       ['research', 'Research'],

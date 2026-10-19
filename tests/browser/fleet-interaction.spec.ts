@@ -1,3 +1,4 @@
+import { startFirstSlot } from './save-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 
 async function mapCenter(page: Page) {
@@ -17,6 +18,7 @@ test('flottval-pa-kartan / dra-flottdestination: selects a fleet, previews a sna
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');
+  await startFirstSlot(page);
   const { canvas, x, y } = await mapCenter(page);
   await page
     .getByRole('combobox', { name: 'Known objects' })
@@ -57,6 +59,7 @@ test('kartflottor / flottval-pa-kartan: colocated fleets occupy separate positio
   page,
 }, testInfo) => {
   await page.goto('./');
+  await startFirstSlot(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await page.getByRole('button', { name: 'Home Fleet', exact: true }).click();
   await page.getByRole('button', { name: 'New fleet', exact: true }).click();

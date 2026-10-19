@@ -16,6 +16,10 @@ funktioner från framtida spelmekanik. Se [hela visionen](docs/game-vision.md).
   kortfattad spelinformation på engelska. Dokumentationen är på svenska med
   spelets engelska namn och etiketter. `viewport-game-layout` omfattar även
   smala skärmar med större systemtypsnitt.
+- **Sparade spel:** `tre-sparplatser`, `sparat-spel`, `sparplats-utforskad-karta`
+  och `tomm-sparplats` är fullständigt implementerade. Startsidan visar tre
+  separata spel med senaste speldatum och utforskad karta. Automatisk sparning i
+  webbläsaren ersätter återställning vid omladdning.
 - **Första spelgrunden:** en fast stjärnkarta, begränsad sikt, kartnavigation och
   information om hemplaneten, byggande, flottor och rundor. Byggnader visar sin
   resursanvändning och beställs på bestämda byggplatser. Varje shipyard har en egen kö med fem platser och kan

@@ -50,7 +50,33 @@ export class AppController {
       ].includes(intent.type)
     )
       this.#cancelPointer();
+    if (
+      this.#model.snapshot.screen === 'saves' &&
+      ![
+        'start-slot',
+        'request-clear-slot',
+        'cancel-clear-slot',
+        'confirm-clear-slot',
+      ].includes(intent.type)
+    )
+      return;
     switch (intent.type) {
+      case 'open-saves':
+        this.#cancelPointer();
+        this.#model.openSaves();
+        break;
+      case 'start-slot':
+        this.#model.startSlot(intent.id);
+        break;
+      case 'request-clear-slot':
+        this.#model.requestClearSlot(intent.id);
+        break;
+      case 'cancel-clear-slot':
+        this.#model.cancelClearSlot();
+        break;
+      case 'confirm-clear-slot':
+        this.#model.confirmClearSlot();
+        break;
       case 'open-map':
         this.#model.openMap();
         break;
@@ -222,6 +248,17 @@ export class AppController {
         break;
       }
     }
+    if (
+      ![
+        'pointer-move',
+        'pointer-start',
+        'pan',
+        'zoom',
+        'home',
+        'map-leave',
+      ].includes(intent.type)
+    )
+      this.#model.save();
     this.#view.render(this.#model.snapshot);
   }
 
@@ -241,9 +278,12 @@ export class AppController {
         this.#view.render(this.#model.snapshot);
       }
       this.#model.finishTurn();
+      this.#model.save();
       this.#view.render(this.#model.snapshot);
     } catch (error) {
       console.warn(error);
+      this.#model.reportError(error);
+      this.#view.render(this.#model.snapshot);
     }
   }
 }

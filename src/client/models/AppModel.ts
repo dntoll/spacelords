@@ -1,3 +1,4 @@
+import type { SaveRepository } from './SaveRepository.js';
 import { FleetMapLayout } from './FleetMapLayout.js';
 import { Camera, type CameraSnapshot } from './Camera.js';
 import { createExampleGalaxy } from './exampleGalaxy.js';
@@ -18,9 +19,19 @@ import type { MapCell } from './Galaxy.js';
 import { HexCoordinate, HexGeometry, type Point } from './HexCoordinate.js';
 
 export type Screen =
-  'map' | 'planet' | 'build-selection' | 'research' | 'fleets';
+  'saves' | 'map' | 'planet' | 'build-selection' | 'research' | 'fleets';
+
+export interface SaveSlotSnapshot {
+  readonly id: number;
+  readonly lastPlayed: string | null;
+  readonly round: number | null;
+  readonly cells: readonly MapCell[];
+  readonly error: string | null;
+}
 
 export interface AppReadModel {
+  readonly saveSlots: readonly SaveSlotSnapshot[];
+  readonly pendingClearSlot: number | null;
   readonly research: ResearchSnapshot;
   readonly planetOrders: readonly PlanetOrderSnapshot[];
   readonly constructionSite: number | null;
@@ -48,8 +59,8 @@ export interface AppReadModel {
 }
 
 export class AppModel {
-  readonly #game: Game;
-  readonly #camera: Camera;
+  #game: Game;
+  #camera: Camera;
   #selected: HexCoordinate;
   #constructionSite: number | null = null;
   #shipyardId: string | null = null;
@@ -64,15 +75,123 @@ export class AppModel {
   #destinationFleetId: string | null = null;
   #notice: string | null = null;
 
-  constructor(galaxy = createExampleGalaxy()) {
+  #activeSlot: number | null = null;
+  #pendingClearSlot: number | null = null;
+  #saveSlots: readonly SaveSlotSnapshot[] = [];
+
+  constructor(
+    galaxy = createExampleGalaxy(),
+    private readonly saves?: SaveRepository,
+  ) {
     this.#game = new Game(galaxy);
     this.#camera = new Camera(galaxy.homePlanet.position, galaxy.radius);
     this.#selected = galaxy.homePlanet.position;
+    if (saves) {
+      this.#screen = 'saves';
+      this.#refreshSlots();
+    }
+  }
+
+  #refreshSlots(): void {
+    this.#saveSlots = Object.freeze(
+      [1, 2, 3].map((id) => {
+        try {
+          const saved = this.saves?.load(id);
+          const game = saved ? Game.restore(saved.state) : null;
+          return Object.freeze({
+            id,
+            lastPlayed: saved?.lastPlayed ?? null,
+            round: game?.round ?? null,
+            cells: Object.freeze(
+              game?.mapSnapshot().filter((cell) => cell.visible) ?? [],
+            ),
+            error: null,
+          });
+        } catch {
+          return Object.freeze({
+            id,
+            lastPlayed: null,
+            round: null,
+            cells: Object.freeze([]),
+            error: 'Saved game unavailable. Clear this slot to start again.',
+          });
+        }
+      }),
+    );
+  }
+
+  startSlot(id: number): void {
+    if (this.#screen !== 'saves' || !this.saves || ![1, 2, 3].includes(id))
+      return;
+    const saved = this.saves.load(id);
+    const game = saved
+      ? Game.restore(saved.state)
+      : new Game(createExampleGalaxy());
+    // Save before switching so a failed write leaves the previous session intact.
+    this.saves.save(id, {
+      lastPlayed: new Date().toISOString(),
+      state: game.exportState(),
+    });
+    this.#game = game;
+    this.#activeSlot = id;
+    this.#camera = new Camera(
+      game.galaxy.homePlanet.position,
+      game.galaxy.radius,
+    );
+    this.#selected = game.galaxy.homePlanet.position;
+    this.#screen = 'map';
+    this.#pendingClearSlot = null;
+    this.#constructionSite = null;
+    this.#shipyardId = null;
+    this.#selectedFleetId = null;
+    this.#mapFleetId = null;
+    this.#destinationFleetId = null;
+    this.#returnSite = null;
+    this.#buildSearch = '';
+    this.cancelMapPointer();
+  }
+
+  save(): void {
+    if (
+      this.saves &&
+      this.#activeSlot !== null &&
+      this.#screen !== 'saves' &&
+      this.#game.phase !== 'simulating'
+    )
+      this.saves.save(this.#activeSlot, {
+        lastPlayed: new Date().toISOString(),
+        state: this.#game.exportState(),
+      });
+  }
+
+  openSaves(): void {
+    if (!this.saves || this.#game.phase === 'simulating') return;
+    this.save();
+    this.cancelMapPointer();
+    this.#screen = 'saves';
+    this.#pendingClearSlot = null;
+    this.#refreshSlots();
+  }
+  requestClearSlot(id: number): void {
+    if (this.#screen === 'saves' && [1, 2, 3].includes(id))
+      this.#pendingClearSlot = id;
+  }
+  cancelClearSlot(): void {
+    this.#pendingClearSlot = null;
+  }
+  confirmClearSlot(): void {
+    if (this.#screen !== 'saves' || this.#pendingClearSlot === null) return;
+    this.saves?.clear(this.#pendingClearSlot);
+    if (this.#activeSlot === this.#pendingClearSlot) this.#activeSlot = null;
+    this.#pendingClearSlot = null;
+    this.#refreshSlots();
   }
 
   // mvc-arkitektur: no write operations or hidden world data cross into views.
   get snapshot(): AppReadModel {
     return Object.freeze({
+      saveSlots: this.#saveSlots,
+      pendingClearSlot: this.#pendingClearSlot,
       research: this.#game.research,
       planetOrders: this.#game.planetOrders(),
       constructionSite: this.#constructionSite,

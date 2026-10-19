@@ -1,6 +1,6 @@
-import type { Galaxy, MapCell } from './Galaxy.js';
-import type { HexCoordinate } from './HexCoordinate.js';
-import type { Planet } from './Planet.js';
+import { Galaxy, Star, StarSystem, type MapCell } from './Galaxy.js';
+import { HexCoordinate } from './HexCoordinate.js';
+import { Planet, Player, Colony, type PlanetSnapshot } from './Planet.js';
 
 export type GamePhase = 'planning' | 'simulating' | 'summary';
 export type Resource = 'Iron' | 'Water' | 'Oil';
@@ -224,6 +224,51 @@ const zeroShips = (): Record<ShipType, number> => ({
   Fighter: 0,
 });
 
+interface SavedCoordinate {
+  readonly q: number;
+  readonly r: number;
+}
+interface SavedPlanet extends Omit<PlanetSnapshot, 'position' | 'colony'> {
+  readonly position: SavedCoordinate;
+  readonly colony: {
+    readonly ownerId: string;
+    readonly population: number;
+  } | null;
+}
+interface SavedFleet extends Omit<
+  Fleet,
+  'position' | 'destination' | 'courseOrigin'
+> {
+  readonly position: SavedCoordinate;
+  readonly destination: SavedCoordinate | null;
+  readonly courseOrigin?: SavedCoordinate;
+}
+
+export interface GameState {
+  readonly version: 1;
+  readonly world: {
+    readonly player: { readonly id: string; readonly name: string };
+    readonly radius: number;
+    readonly systems: readonly {
+      readonly star: {
+        readonly id: string;
+        readonly name: string;
+        readonly position: { readonly q: number; readonly r: number };
+      };
+      readonly planets: readonly SavedPlanet[];
+    }[];
+  };
+  readonly round: number;
+  readonly phase: 'planning' | 'summary';
+  readonly sequence: number;
+  readonly researched: readonly Technology[];
+  readonly researchTarget: Technology | null;
+  readonly colonies: readonly (readonly [string, ColonyState])[];
+  readonly fleets: readonly SavedFleet[];
+  readonly explored: readonly string[];
+  readonly events: readonly GameEvent[];
+}
+
 /** Private mutable game state; views receive only immutable snapshots. */
 export class Game {
   #researched = new Set<Technology>();
@@ -258,6 +303,107 @@ export class Game {
         ships: { 'Colony ship': 0, 'Exploration ship': 1, Fighter: 1 },
       },
     ];
+  }
+
+  // sparat-spel: persist completed turns and planning orders, never partial animation.
+  exportState(): GameState {
+    if (this.#phase === 'simulating')
+      throw new Error('Wait for the turn to finish before saving.');
+    return structuredClone({
+      version: 1,
+      world: {
+        player: { id: this.galaxy.player.id, name: this.galaxy.player.name },
+        radius: this.galaxy.radius,
+        systems: this.galaxy.systems.map((system) => ({
+          star: {
+            id: system.star.id,
+            name: system.star.name,
+            position: system.star.position,
+          },
+          planets: system.planets.map((planet) => ({
+            ...planet,
+            colony: planet.colony ? { ...planet.colony } : null,
+          })),
+        })),
+      },
+      round: this.#round,
+      phase: this.#phase,
+      sequence: this.#sequence,
+      researched: [...this.#researched],
+      researchTarget: this.#researchTarget,
+      colonies: [...this.#colonies],
+      fleets: this.#fleets,
+      explored: [...this.#explored],
+      events: this.#events,
+    });
+  }
+
+  static restore(state: GameState): Game {
+    if (
+      state.version !== 1 ||
+      !Number.isSafeInteger(state.round) ||
+      state.round < 1 ||
+      !Number.isSafeInteger(state.sequence) ||
+      state.sequence < 1 ||
+      !['planning', 'summary'].includes(state.phase)
+    )
+      throw new Error('This saved game cannot be loaded.');
+    const position = (point: {
+      readonly q: number;
+      readonly r: number;
+    }): HexCoordinate => new HexCoordinate(point.q, point.r);
+    const world = state.world;
+    const galaxy = new Galaxy(
+      new Player(world.player.id, world.player.name),
+      world.systems.map(
+        (system) =>
+          new StarSystem(
+            new Star(
+              system.star.id,
+              system.star.name,
+              position(system.star.position),
+            ),
+            system.planets.map(
+              (planet) =>
+                new Planet({
+                  ...planet,
+                  position: position(planet.position),
+                  colony: planet.colony
+                    ? new Colony(
+                        planet.colony.ownerId,
+                        planet.colony.population,
+                      )
+                    : null,
+                }),
+            ),
+          ),
+      ),
+      world.radius,
+    );
+    const game = new Game(galaxy);
+    const copy = structuredClone(state);
+    game.#round = copy.round;
+    game.#phase = copy.phase;
+    game.#sequence = copy.sequence;
+    game.#researched = new Set(copy.researched);
+    game.#researchTarget = copy.researchTarget;
+    game.#colonies = new Map(copy.colonies);
+    game.#fleets = copy.fleets.map(
+      ({ position: current, destination, courseOrigin, ...fleet }) => ({
+        ...fleet,
+        position: position(current),
+        destination: destination ? position(destination) : null,
+        ...(courseOrigin ? { courseOrigin: position(courseOrigin) } : {}),
+      }),
+    );
+    game.#explored = new Set(copy.explored);
+    game.#events = [...copy.events];
+    // Exercise derived data before accepting a stored record.
+    game.mapSnapshot();
+    game.fleetSnapshots();
+    for (const planet of galaxy.systems.flatMap((system) => system.planets))
+      game.planetSnapshot(planet);
+    return game;
   }
 
   get round(): number {

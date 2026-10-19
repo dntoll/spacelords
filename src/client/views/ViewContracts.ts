@@ -8,6 +8,8 @@ import type {
 import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 
 export type AppIntent =
+  | { readonly type: 'start-slot' | 'request-clear-slot'; readonly id: number }
+  | { readonly type: 'open-saves' | 'cancel-clear-slot' | 'confirm-clear-slot' }
   | {
       readonly type:
         | 'open-map'
