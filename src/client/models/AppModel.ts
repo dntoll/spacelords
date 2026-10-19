@@ -1,3 +1,4 @@
+import { FleetMapLayout } from './FleetMapLayout.js';
 import { Camera, type CameraSnapshot } from './Camera.js';
 import { createExampleGalaxy } from './exampleGalaxy.js';
 import {
@@ -37,6 +38,10 @@ export interface AppReadModel {
   readonly phase: GamePhase;
   readonly fleets: readonly FleetSnapshot[];
   readonly selectedFleet: FleetSnapshot | null;
+  readonly mapFleetId: string | null;
+  readonly hoveredFleetId: string | null;
+  readonly fleetDestinationPreview: HexCoordinate | null;
+  readonly fleetDragging: boolean;
   readonly destinationFleetId: string | null;
   readonly events: readonly GameEvent[];
   readonly notice: string | null;
@@ -52,6 +57,10 @@ export class AppModel {
   #buildSearch = '';
   #returnSite: number | null = null;
   #selectedFleetId: string | null = null;
+  #mapFleetId: string | null = null;
+  #hoveredFleetId: string | null = null;
+  #fleetDestinationPreview: HexCoordinate | null = null;
+  #fleetDragging = false;
   #destinationFleetId: string | null = null;
   #notice: string | null = null;
 
@@ -91,6 +100,10 @@ export class AppModel {
       selectedFleet: this.#selectedFleetId
         ? this.#game.fleet(this.#selectedFleetId)
         : null,
+      mapFleetId: this.#mapFleetId,
+      hoveredFleetId: this.#hoveredFleetId,
+      fleetDestinationPreview: this.#fleetDestinationPreview,
+      fleetDragging: this.#fleetDragging,
       destinationFleetId: this.#destinationFleetId,
       events: this.#game.events,
       notice: this.#notice,
@@ -102,7 +115,10 @@ export class AppModel {
     if (this.#destinationFleetId) {
       this.#game.setDestination(this.#destinationFleetId, position);
       this.#destinationFleetId = null;
-    } else this.#selected = position;
+    } else {
+      this.#selected = position;
+      this.#mapFleetId = null;
+    }
   }
   reportError(error: unknown): void {
     this.#notice =
@@ -112,6 +128,59 @@ export class AppModel {
   }
   clearNotice(): void {
     this.#notice = null;
+  }
+
+  fleetAtPoint(point: Point): string | null {
+    if (this.#screen !== 'map' || this.#destinationFleetId) return null;
+    return FleetMapLayout.hit(
+      this.#game.fleetSnapshots(),
+      this.#camera.screenToWorld(point),
+    );
+  }
+  selectMapFleet(id: string): void {
+    if (this.#screen !== 'map') return;
+    const fleet = this.#game.fleet(id);
+    if (fleet && Object.values(fleet.ships).some((count) => count > 0))
+      this.#mapFleetId = id;
+  }
+  hoverMapFleet(point: Point | null): boolean {
+    const next = point ? this.fleetAtPoint(point) : null;
+    if (next === this.#hoveredFleetId) return false;
+    this.#hoveredFleetId = next;
+    return true;
+  }
+  previewFleetDestination(point: Point): void {
+    if (
+      this.#screen !== 'map' ||
+      !this.#mapFleetId ||
+      this.#game.phase !== 'planning'
+    )
+      return;
+    const target = HexGeometry.fromPoint(this.#camera.screenToWorld(point));
+    this.#fleetDragging = true;
+    this.#fleetDestinationPreview = this.#game.galaxy.cellAt(target)
+      ? target
+      : null;
+  }
+  commitFleetDestination(): void {
+    try {
+      if (
+        this.#mapFleetId &&
+        this.#fleetDragging &&
+        this.#fleetDestinationPreview
+      )
+        this.#game.setDestination(
+          this.#mapFleetId,
+          this.#fleetDestinationPreview,
+        );
+    } finally {
+      this.cancelMapPointer();
+    }
+  }
+  cancelMapPointer(): void {
+    this.#hoveredFleetId = null;
+    this.#fleetDestinationPreview = null;
+    this.#fleetDragging = false;
   }
 
   selectPoint(point: Point): void {
@@ -153,6 +222,7 @@ export class AppModel {
   home(): void {
     this.#camera.reset();
     this.#selected = this.#game.galaxy.homePlanet.position;
+    this.#mapFleetId = null;
   }
 
   openBuildSite(index: number | null): void {
@@ -263,6 +333,7 @@ export class AppModel {
     this.#game.clearDestination(id);
   }
   startTurn(): readonly TurnFrame[] {
+    this.cancelMapPointer();
     this.#screen = 'map';
     this.#destinationFleetId = null;
     return this.#game.startTurn();

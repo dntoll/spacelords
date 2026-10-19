@@ -15,6 +15,10 @@ export class MapGesture {
   #start: Point = { x: 0, y: 0 };
   #consumed = false;
 
+  get pointerCount(): number {
+    return this.#pointers.size;
+  }
+
   start(id: number, point: Point): void {
     if (this.#pointers.size === 0) {
       this.#start = point;

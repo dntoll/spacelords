@@ -58,6 +58,16 @@ Produktkraven finns separat i [product-requirements.md](product-requirements.md)
   Bildkopplingar ligger i vylagret och använder klientens basadress; inga nya
   domänbegrepp eller domänrelationer tillkommer.
 
+- `kartflottor`, `flottval-pa-kartan` och `dra-flottdestination`: gemensam
+  p5-oberoende geometri används för ritning och träfftestning. Modellens
+  skrivskyddade ögonblicksbild skiljer hovring, vald flotta och tillfällig
+  destination från sparad order. Controllers skiljer flottgest från panorering
+  och tvåfingerzoom. Enhetstester skyddar cirkelplacering, tomma flottor,
+  överlappande träffytor, zoom/panorering, markering, förhandsvisning och avbrott.
+  Browsertester verifierar flottval, separata flottor, pilförhandsvisning,
+  oförändrad vald hex och Escape i Chromium och WebKit på fyra skärmprofiler.
+  Inga nya domänbegrepp eller relationer införs; domänmodellen är oförändrad.
+
 Processkrav kan inte bevisas med meningsfulla enhetstester. De följs upp genom
 verktygskontroller, CI och granskning enligt tabellen.
 

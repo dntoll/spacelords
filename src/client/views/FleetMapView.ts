@@ -1,4 +1,6 @@
 import type p5 from 'p5';
+import type { AppReadModel } from '../models/AppModel.js';
+import { FleetMapLayout } from '../models/FleetMapLayout.js';
 import type { FleetSnapshot, ShipType } from '../models/Game.js';
 import { HexGeometry, type Point } from '../models/HexCoordinate.js';
 
@@ -12,38 +14,40 @@ export function renderMapFleets(
   sketch: p5,
   fleets: readonly FleetSnapshot[],
   zoom: number,
+  interaction: Pick<
+    AppReadModel,
+    | 'mapFleetId'
+    | 'hoveredFleetId'
+    | 'fleetDragging'
+    | 'fleetDestinationPreview'
+  > = {
+    mapFleetId: null,
+    hoveredFleetId: null,
+    fleetDragging: false,
+    fleetDestinationPreview: null,
+  },
 ): void {
-  const groups = new Map<string, FleetSnapshot[]>();
-  for (const fleet of fleets) {
-    if (!Object.values(fleet.ships).some((count) => count > 0)) continue;
-    const group = groups.get(fleet.position.key) ?? [];
-    group.push(fleet);
-    groups.set(fleet.position.key, group);
-  }
-  const markers = [...groups.values()].flatMap((group) => {
-    const columns = Math.min(3, group.length);
-    return group.map((fleet, index) => {
-      const point = HexGeometry.toPoint(fleet.position);
-      return {
-        fleet,
-        point: {
-          x: point.x + (((index % columns) - (columns - 1) / 2) * 32) / zoom,
-          y: point.y - (26 + Math.floor(index / columns) * 30) / zoom,
-        },
-      };
-    });
-  });
+  const markers = FleetMapLayout.markers(fleets);
+  const destinationFor = (fleet: FleetSnapshot) =>
+    interaction.fleetDragging && interaction.mapFleetId === fleet.id
+      ? interaction.fleetDestinationPreview
+      : fleet.destination;
 
   // kartflottor: draw routes underneath the separate fleet swarms.
   for (const { fleet, point } of markers) {
-    if (!fleet.destination) continue;
-    const destination = HexGeometry.toPoint(fleet.destination);
+    const target = destinationFor(fleet);
+    if (!target) continue;
+    const destination = HexGeometry.toPoint(target);
     const angle = Math.atan2(destination.y - point.y, destination.x - point.x);
-    sketch.stroke('#72d8ca');
+    const color =
+      interaction.fleetDragging && interaction.mapFleetId === fleet.id
+        ? '#ffdc88'
+        : '#72d8ca';
+    sketch.stroke(color);
     sketch.strokeWeight(1 / zoom);
     sketch.line(point.x, point.y, destination.x, destination.y);
     sketch.noStroke();
-    sketch.fill('#72d8ca');
+    sketch.fill(color);
     const length = 8 / zoom;
     const width = 3 / zoom;
     sketch.triangle(
@@ -55,7 +59,17 @@ export function renderMapFleets(
       destination.y - Math.sin(angle) * length - Math.cos(angle) * width,
     );
   }
-  for (const { fleet, point } of markers) {
+  for (const { fleet, point, scale } of markers) {
+    const selected = interaction.mapFleetId === fleet.id;
+    const hovered = interaction.hoveredFleetId === fleet.id;
+    const color = selected ? '#ffdc88' : hovered ? '#d5fff6' : '#72d8ca';
+    if (selected || hovered) {
+      sketch.stroke(color);
+      sketch.strokeWeight((selected ? 2 : 1.5) / zoom);
+      sketch.fill(selected ? '#ffdc8833' : '#72d8ca33');
+      sketch.circle(point.x, point.y, FleetMapLayout.hitRadius * 2);
+    }
+    const shipScale = Math.min(1 / zoom, scale);
     const sizes: number[] = [];
     // A bounded, round-robin sample preserves each ship type in large fleets.
     for (let layer = 0; layer < 9 && sizes.length < 9; layer += 1) {
@@ -64,24 +78,23 @@ export function renderMapFleets(
           sizes.push(shipSizes[type]);
       }
     }
-    const target = fleet.destination
-      ? HexGeometry.toPoint(fleet.destination)
-      : null;
+    const destination = destinationFor(fleet);
+    const target = destination ? HexGeometry.toPoint(destination) : null;
     sketch.noStroke();
-    sketch.fill('#72d8ca');
+    sketch.fill(color);
     const columns = Math.min(3, sizes.length);
     const rows = Math.ceil(sizes.length / columns);
     sizes.forEach((size, index) => {
       const row = Math.floor(index / columns);
       const rowCount = Math.min(columns, sizes.length - row * columns);
       const center = {
-        x: point.x + (((index % columns) - (rowCount - 1) / 2) * 8) / zoom,
-        y: point.y + ((row - (rows - 1) / 2) * 8) / zoom,
+        x: point.x + ((index % columns) - (rowCount - 1) / 2) * 8 * shipScale,
+        y: point.y + (row - (rows - 1) / 2) * 8 * shipScale,
       };
       const angle = target
         ? Math.atan2(target.y - center.y, target.x - center.x)
         : -Math.PI / 2;
-      shipTriangle(sketch, center, size / zoom, angle);
+      shipTriangle(sketch, center, size * shipScale, angle);
     });
   }
 }

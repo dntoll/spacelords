@@ -22,7 +22,10 @@ funktioner från framtida spelmekanik. Se [hela visionen](docs/game-vision.md).
   färdigställa ett skepp per år, parallellt med andra fabriker och byggplatser.
   Skeppsorder kan tilldelas en mottagande flotta. `kartflottor` visar varje
   flotta som en egen skeppssvärm med destinationspil från flottan och
-  skeppens spetsar riktade mot destinationen.
+  skeppens spetsar riktade mot destinationen. Flottor i samma hex ligger på en
+  cirkel innanför hexen. `flottval-pa-kartan` och `dra-flottdestination` är
+  fullständigt implementerade: flottor kan markeras separat, lysas upp och dras
+  till en destination med förhandsvisad pil.
 - **Imperiets utveckling:** kolonier, befolkning, råvaror, byggande och forskning.
 - **Order och omvärld:** rundor, kolonisation, flottor, civilisationer och senare
   multiplayer.

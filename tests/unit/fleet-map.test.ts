@@ -5,6 +5,8 @@ import {
   HexCoordinate,
   HexGeometry,
 } from '../../src/client/models/HexCoordinate.js';
+import { AppModel } from '../../src/client/models/AppModel.js';
+import { renderMapOverlays } from '../../src/client/views/MapOverlayView.js';
 import { renderMapFleets } from '../../src/client/views/FleetMapView.js';
 
 function fleet(id: string, count = 3): FleetSnapshot {
@@ -40,8 +42,11 @@ function drawing() {
   };
   return {
     sketch,
-    render: (fleets: readonly FleetSnapshot[], zoom = 1) =>
-      renderMapFleets(sketch as unknown as p5, fleets, zoom),
+    render: (
+      fleets: readonly FleetSnapshot[],
+      zoom = 1,
+      interaction?: Parameters<typeof renderMapFleets>[3],
+    ) => renderMapFleets(sketch as unknown as p5, fleets, zoom, interaction),
   };
 }
 
@@ -112,13 +117,16 @@ describe('kartflottor', () => {
       Math.abs((c - a) * (f - b) - (e - a) * (d - b)),
     );
     expect(new Set(areas).size).toBe(3);
-    const second = drawing();
-    second.render([mixed], 0.5);
-    expect(second.sketch.triangle.mock.calls).toEqual(
-      first.sketch.triangle.mock.calls.map((points) =>
-        points.map((value: number) => value * 2),
-      ),
-    );
+    for (const zoom of [0.35, 1, 2.5]) {
+      const { sketch, render } = drawing();
+      render([mixed], zoom);
+      for (const points of sketch.triangle.mock.calls)
+        for (let index = 0; index < points.length; index += 2)
+          expect(
+            HexGeometry.fromPoint({ x: points[index]!, y: points[index + 1]! })
+              .key,
+          ).toBe(mixed.position.key);
+    }
   });
 
   it('keeps large fleets compact and omits empty fleets', () => {
@@ -130,5 +138,63 @@ describe('kartflottor', () => {
     expect(sketch.triangle.mock.calls.length).toBeGreaterThan(1);
     expect(sketch.triangle.mock.calls.length).toBeLessThanOrEqual(9);
     expect(sketch.line).not.toHaveBeenCalled();
+  });
+});
+
+describe('flottval-pa-kartan / dra-flottdestination', () => {
+  it('lights hovered and selected fleets with distinct rings', () => {
+    const { sketch, render } = drawing();
+    render([fleet('first'), fleet('second')], 1, {
+      mapFleetId: 'first',
+      hoveredFleetId: 'second',
+      fleetDragging: false,
+      fleetDestinationPreview: null,
+    });
+    expect(sketch.circle).toHaveBeenCalledTimes(2);
+    expect(sketch.fill).toHaveBeenCalledWith('#ffdc8833');
+    expect(sketch.fill).toHaveBeenCalledWith('#72d8ca33');
+  });
+  it('draws only the dragged fleet arrow to the preview target and restores its order afterward', () => {
+    const { sketch, render } = drawing();
+    const preview = new HexCoordinate(-2, 1);
+    render([fleet('first'), fleet('second')], 1, {
+      mapFleetId: 'first',
+      hoveredFleetId: null,
+      fleetDragging: true,
+      fleetDestinationPreview: preview,
+    });
+    expect(sketch.line.mock.calls[0]!.slice(2)).toEqual(
+      Object.values(HexGeometry.toPoint(preview)),
+    );
+    expect(sketch.line.mock.calls[1]!.slice(2)).toEqual(
+      Object.values(HexGeometry.toPoint(new HexCoordinate(2, 0))),
+    );
+    const normal = drawing();
+    normal.render([fleet('first')]);
+    expect(normal.sketch.line.mock.calls[0]!.slice(2)).toEqual(
+      Object.values(HexGeometry.toPoint(new HexCoordinate(2, 0))),
+    );
+  });
+});
+
+describe('kartflottor', () => {
+  it('keeps fleet markers visible above colony order badges where the circle crosses a badge', () => {
+    const model = new AppModel().snapshot;
+    const { sketch } = drawing();
+    const platform = {
+      ...sketch,
+      rect: vi.fn(),
+      text: vi.fn(),
+      textAlign: vi.fn(),
+      textSize: vi.fn(),
+      LEFT: 'left',
+      CENTER: 'center',
+    };
+    renderMapOverlays(platform as unknown as p5, model);
+    expect(platform.rect).toHaveBeenCalled();
+    expect(sketch.triangle).toHaveBeenCalled();
+    expect(Math.max(...platform.rect.mock.invocationCallOrder)).toBeLessThan(
+      Math.min(...sketch.triangle.mock.invocationCallOrder),
+    );
   });
 });

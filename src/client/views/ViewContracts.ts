@@ -16,6 +16,7 @@ export type AppIntent =
         | 'open-fleets'
         | 'home'
         | 'pointer-cancel'
+        | 'map-leave'
         | 'end-turn'
         | 'continue-planning'
         | 'produce-fighter';

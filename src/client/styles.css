@@ -1145,3 +1145,32 @@ p {
     gap: 14px;
   }
 }
+
+.fleet-map-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fleet-map-actions .button {
+  width: fit-content;
+  flex: 0 1 auto;
+  min-height: 44px;
+  padding: 6px 10px;
+}
+.fleet-destination-status {
+  color: #ffdc88;
+  font-size: 0.85rem;
+}
+
+.selection-panel[aria-label='Selected fleet'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.selection-panel .fleet-summary h3 {
+  margin: 0;
+}
+@media (max-width: 600px) {
+  /* flottval-pa-kartan: keep central fleet markers clear of the information HUD. */
+  .selection-panel {
+    max-height: calc(50% - 108px);
+  }
+}

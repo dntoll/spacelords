@@ -183,6 +183,9 @@ export class AppView implements AppPort {
         orders: model.planetOrders,
         phase: model.phase,
         selected: model.selected,
+        mapFleet: model.fleets.find((fleet) => fleet.id === model.mapFleetId),
+        preview: model.fleetDestinationPreview,
+        dragging: model.fleetDragging,
         fleets: model.fleets.filter(
           (fleet) => fleet.position.key === model.selected?.position.key,
         ),
@@ -341,6 +344,63 @@ export class AppView implements AppPort {
 
   #renderSelection(model: AppReadModel): void {
     if (!this.#panel) return;
+    const selectedFleet = model.fleets.find(
+      (fleet) =>
+        !model.destinationFleetId &&
+        fleet.id === model.mapFleetId &&
+        Object.values(fleet.ships).some((count) => count > 0),
+    );
+    this.#panel.setAttribute(
+      'aria-label',
+      selectedFleet ? 'Selected fleet' : 'Selected hex',
+    );
+    if (selectedFleet) {
+      const title = element('div', 'selection-heading');
+      title.append(
+        element('h2', '', selectedFleet.name),
+        element(
+          'span',
+          'coordinate-label',
+          `HEX ${selectedFleet.position.q}, ${selectedFleet.position.r}`,
+        ),
+      );
+      const ships = Object.entries(selectedFleet.ships)
+        .filter(([, count]) => count > 0)
+        .map(([type, count]) => `${count} ${type}`)
+        .join(' · ');
+      const destination = model.fleetDragging
+        ? model.fleetDestinationPreview
+          ? `Destination preview: HEX ${model.fleetDestinationPreview.key}`
+          : 'Choose a destination on the map.'
+        : selectedFleet.destination
+          ? `Destination: HEX ${selectedFleet.destination.key}`
+          : 'No destination';
+      const status = element('p', 'fleet-destination-status', destination);
+      status.setAttribute('aria-live', 'polite');
+      const edit = button('Edit fleet', () =>
+        this.#emit({ type: 'open-fleet', id: selectedFleet.id }),
+      );
+      const set = button('Set destination', () =>
+        this.#emit({ type: 'begin-destination', id: selectedFleet.id }),
+      );
+      const actions = element('div', 'fleet-map-actions');
+      set.disabled = model.phase !== 'planning';
+      actions.append(edit, set);
+      if (selectedFleet.destination) {
+        const clear = button('Clear destination', () =>
+          this.#emit({ type: 'clear-destination', id: selectedFleet.id }),
+        );
+        clear.disabled = model.phase !== 'planning';
+        actions.append(clear);
+      }
+      this.#panel.replaceChildren(
+        title,
+        element('p', 'muted-note', ships),
+        status,
+        actions,
+      );
+      return;
+    }
     const cell = model.selected;
     const object = cell?.object;
     const owned = object?.kind === 'planet' && object.owned;

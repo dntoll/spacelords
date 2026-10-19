@@ -1,5 +1,4 @@
-import { renderPlanetOrders } from './PlanetOrderView.js';
-import { renderMapFleets } from './FleetMapView.js';
+import { renderMapOverlays } from './MapOverlayView.js';
 import p5 from 'p5';
 import type { AppReadModel } from '../models/AppModel.js';
 import { HexGeometry, type Point } from '../models/HexCoordinate.js';
@@ -96,8 +95,13 @@ export class GalaxyMapView implements MapPort {
     if (selected) this.#hex(sketch, selected, true, model.camera.zoom);
     for (const cell of model.cells)
       if (cell.object) this.#object(sketch, cell, model.camera.zoom);
-    renderMapFleets(sketch, model.fleets, model.camera.zoom);
-    renderPlanetOrders(sketch, model.planetOrders, model.camera.zoom);
+    renderMapOverlays(sketch, model);
+    if (this.#canvas)
+      this.#canvas.style.cursor = model.fleetDragging
+        ? 'grabbing'
+        : model.hoveredFleetId
+          ? 'pointer'
+          : 'grab';
     sketch.pop();
     if (this.#canvas) this.#canvas.dataset.rendered = 'true';
   }
@@ -171,7 +175,7 @@ export class GalaxyMapView implements MapPort {
     canvas.setAttribute('role', 'img');
     canvas.setAttribute(
       'aria-label',
-      'Star map. Drag to pan; use plus and minus to zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.',
+      'Star map. Click a fleet to select it; drag a fleet to set its destination; Escape cancels. Drag empty space to pan; use plus and minus to zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.',
     );
     canvas.addEventListener(
       'pointerdown',
@@ -217,6 +221,16 @@ export class GalaxyMapView implements MapPort {
       options,
     );
     canvas.addEventListener(
+      'pointerleave',
+      () => this.#emit({ type: 'map-leave' }),
+      options,
+    );
+    canvas.addEventListener(
+      'lostpointercapture',
+      () => this.#emit({ type: 'pointer-cancel' }),
+      options,
+    );
+    canvas.addEventListener(
       'wheel',
       (event) => {
         event.preventDefault();
@@ -240,7 +254,8 @@ export class GalaxyMapView implements MapPort {
           ArrowDown: { x: 0, y: -50 },
         };
         const delta = pans[event.key];
-        if (delta) this.#emit({ type: 'pan', delta });
+        if (event.key === 'Escape') this.#emit({ type: 'pointer-cancel' });
+        else if (delta) this.#emit({ type: 'pan', delta });
         else if (['+', '=', '-'].includes(event.key))
           this.#emit({
             type: 'zoom',

@@ -1,11 +1,13 @@
 import type { AppModel } from '../models/AppModel.js';
 import type { AppIntent, AppPort } from '../views/ViewContracts.js';
+import type { Point } from '../models/HexCoordinate.js';
 import { MapGesture } from './MapGesture.js';
 
 export class AppController {
   readonly #model: AppModel;
   readonly #view: AppPort;
   readonly #gesture = new MapGesture();
+  #fleetPointer: { id: number; start: Point; dragged: boolean } | null = null;
 
   constructor(model: AppModel, view: AppPort) {
     this.#model = model;
@@ -18,7 +20,7 @@ export class AppController {
   }
 
   dispose(): void {
-    this.#gesture.cancel();
+    this.#cancelPointer();
     this.#view.dispose();
   }
 
@@ -34,18 +36,29 @@ export class AppController {
   }
 
   #handleIntent(intent: AppIntent): void {
+    if (
+      [
+        'open-map',
+        'open-planet',
+        'open-research',
+        'open-fleets',
+        'home',
+        'pan',
+        'zoom',
+        'begin-destination',
+        'end-turn',
+      ].includes(intent.type)
+    )
+      this.#cancelPointer();
     switch (intent.type) {
       case 'open-map':
         this.#model.openMap();
-        this.#gesture.cancel();
         break;
       case 'open-planet':
         this.#model.openPlanet();
-        this.#gesture.cancel();
         break;
       case 'open-research':
         this.#model.openResearch();
-        this.#gesture.cancel();
         break;
       case 'open-fleets':
         this.#model.openFleets();
@@ -133,15 +146,50 @@ export class AppController {
       case 'end-turn':
         void this.#runTurn();
         return;
-      case 'pointer-start':
+      case 'pointer-start': {
         this.#gesture.start(intent.id, intent.point);
-        return;
+        if (this.#gesture.pointerCount > 1) {
+          this.#fleetPointer = null;
+          this.#model.cancelMapPointer();
+        } else {
+          const fleetId = this.#model.fleetAtPoint(intent.point);
+          if (!fleetId) return;
+          this.#model.selectMapFleet(fleetId);
+          this.#fleetPointer = {
+            id: intent.id,
+            start: intent.point,
+            dragged: false,
+          };
+        }
+        break;
+      }
+      case 'map-leave':
+        if (!this.#model.hoverMapFleet(null)) return;
+        break;
       case 'pointer-cancel':
-        this.#gesture.cancel();
-        return;
+        this.#cancelPointer();
+        break;
       case 'pointer-move': {
+        if (this.#fleetPointer?.id === intent.id) {
+          this.#gesture.move(intent.id, intent.point);
+          if (
+            Math.hypot(
+              intent.point.x - this.#fleetPointer.start.x,
+              intent.point.y - this.#fleetPointer.start.y,
+            ) > 6
+          )
+            this.#fleetPointer.dragged = true;
+          if (this.#fleetPointer.dragged)
+            this.#model.previewFleetDestination(intent.point);
+          break;
+        }
+        if (this.#gesture.pointerCount === 0) {
+          if (!this.#model.hoverMapFleet(intent.point)) return;
+          break;
+        }
         const action = this.#gesture.move(intent.id, intent.point);
         if (action.type === 'none') return;
+        this.#model.hoverMapFleet(null);
         if (action.type === 'pan') this.#model.pan(action.delta);
         else {
           this.#model.zoom(action.factor, action.previousCenter);
@@ -153,6 +201,21 @@ export class AppController {
         break;
       }
       case 'pointer-end': {
+        if (this.#fleetPointer?.id === intent.id) {
+          const dragged =
+            this.#fleetPointer.dragged ||
+            Math.hypot(
+              intent.point.x - this.#fleetPointer.start.x,
+              intent.point.y - this.#fleetPointer.start.y,
+            ) > 6;
+          this.#gesture.end(intent.id);
+          this.#fleetPointer = null;
+          if (dragged) {
+            this.#model.previewFleetDestination(intent.point);
+            this.#model.commitFleetDestination();
+          }
+          break;
+        }
         this.#gesture.move(intent.id, intent.point);
         const selected = this.#gesture.end(intent.id);
         if (selected) this.#model.selectPoint(selected);
@@ -160,6 +223,12 @@ export class AppController {
       }
     }
     this.#view.render(this.#model.snapshot);
+  }
+
+  #cancelPointer(): void {
+    this.#gesture.cancel();
+    this.#fleetPointer = null;
+    this.#model.cancelMapPointer();
   }
 
   async #runTurn(): Promise<void> {
