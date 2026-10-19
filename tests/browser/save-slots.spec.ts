@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { startFirstSlot } from './save-helpers.js';
+import { startFirstSlot, endTurn } from './save-helpers.js';
 
 test('tre-sparplatser / sparat-spel / tomm-sparplats: reload, preview, isolation and confirmation', async ({
   page,
@@ -16,7 +16,7 @@ test('tre-sparplatser / sparat-spel / tomm-sparplats: reload, preview, isolation
     fullPage: true,
   });
   await startFirstSlot(page);
-  await page.getByRole('button', { name: 'End turn', exact: true }).click();
+  await endTurn(page);
   await expect(
     page.getByRole('button', { name: 'End turn', exact: true }),
   ).toBeEnabled();

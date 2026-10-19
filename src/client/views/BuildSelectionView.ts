@@ -60,7 +60,7 @@ export function renderBuildSelection(
           resource,
           definition.cost[resource],
           planet.budget.available[resource],
-          'units/year',
+          'units at build start',
         ),
       );
     costs.append(

@@ -165,7 +165,12 @@ describe('flottval-pa-kartan', () => {
       expect(FleetMapLayout.hit(fleets, marker.point)).toBe(marker.fleet.id);
     const empty = {
       ...first,
-      ships: { Fighter: 0, 'Colony ship': 0, 'Exploration ship': 0 },
+      ships: {
+        Fighter: 0,
+        'Colony ship': 0,
+        'Exploration ship': 0,
+        'Transport ship': 0,
+      },
     };
     expect(FleetMapLayout.markers([empty])).toHaveLength(0);
     expect(

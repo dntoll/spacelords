@@ -92,6 +92,8 @@ describe('handelser / arsrundor-och-order', () => {
       dispose() {},
       animateTurnStep: () => animation,
     }));
+    for (const decision of model.snapshot.decisions)
+      model.skipDecision(decision.id);
     const controller = new AppController(model, view);
     controller.start();
     const end = root.querySelector<HTMLButtonElement>('.end-turn')!;

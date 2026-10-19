@@ -72,7 +72,7 @@ for (const size of [
     await expectContentFits(page);
     await expect(page.getByText('Iron', { exact: true })).toBeVisible();
     await expect(
-      page.getByText('Total 42 units/year', { exact: true }).first(),
+      page.getByText('Stored 100 · Extracting 0/year', { exact: true }).first(),
     ).toBeVisible();
     await expectContentFits(page);
     await page

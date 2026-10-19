@@ -46,11 +46,11 @@ export function createExampleGalaxy(): Galaxy {
             type: index === 2 ? 'gas' : 'solid',
             position: new HexCoordinate(system.q + q, system.r + r),
             habitability: home ? 100 : index === 2 ? 0 : 25,
-            buildSlots: home ? 6 : index === 2 ? 0 : 4,
+            buildSlots: home ? 10 : index === 2 ? 0 : 6,
             resources: [
-              { name: 'Iron', perYear: home ? 42 : 18 },
-              { name: 'Water', perYear: home ? 60 : 5 },
-              { name: 'Oil', perYear: home ? 12 : 0 },
+              { name: 'Iron', perYear: home ? 10 : index === 0 ? 12 : 4 },
+              { name: 'Water', perYear: home ? 8 : index === 0 ? 3 : 10 },
+              { name: 'Oil', perYear: home ? 4 : index === 0 ? 0 : 6 },
             ],
             colony: home ? new Colony(player.id, 12_000) : null,
           });

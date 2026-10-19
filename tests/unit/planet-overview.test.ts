@@ -6,7 +6,10 @@ import { renderPlanet } from '../../src/client/views/PlanetView.js';
 import { renderBuildSelection } from '../../src/client/views/BuildSelectionView.js';
 import { renderResearch } from '../../src/client/views/ResearchView.js';
 import { BUILDINGS, type BuildType } from '../../src/client/models/Game.js';
-import { buildingImage } from '../../src/client/views/BuildingImage.js';
+import {
+  BUILDING_IMAGES,
+  buildingImage,
+} from '../../src/client/views/BuildingImage.js';
 import { AppView } from '../../src/client/views/AppView.js';
 
 function setup() {
@@ -40,8 +43,8 @@ describe('visa-byggalternativ', () => {
       .click();
     expect(root.querySelector('h1')?.textContent).toBe('Build selection');
     expect(root.textContent).not.toContain('\ufffd');
-    expect(root.querySelectorAll('.building-choice')).toHaveLength(1);
-    expect(root.querySelectorAll('.cost-ok')).toHaveLength(4);
+    expect(root.querySelectorAll('.building-choice')).toHaveLength(4);
+    expect(root.querySelectorAll('.cost-ok')).toHaveLength(16);
     click('Build Research station');
     expect(model.snapshot.planet?.sites[2]?.project?.type).toBe(
       'Research station',
@@ -111,11 +114,11 @@ describe('planetbudgetoversikt', () => {
       const view = renderPlanet(
         {
           ...planet,
-          budget: {
-            ...planet.budget,
-            production: { Iron: total, Water: total, Oil: total },
-            reserved: { Iron: used, Water: used, Oil: used },
-            available: { Iron: available, Water: available, Oil: available },
+          economy: {
+            ...planet.economy,
+            stock: { Iron: total, Water: total, Oil: total },
+            demand: { Iron: used, Water: used, Oil: used },
+            incoming: { Iron: available, Water: available, Oil: available },
           },
         },
         'Owner',
@@ -128,11 +131,11 @@ describe('planetbudgetoversikt', () => {
       expect(
         bar.querySelector<HTMLElement>('.budget-available')!.style.width,
       ).toBe(`${total ? (available / total) * 100 : 0}%`);
-      expect(bar.textContent).toContain(`Total ${total} units/year`);
-      expect(bar.textContent).toContain(`Available ${available}`);
+      expect(bar.textContent).toContain(`Stored ${total}`);
+      expect(bar.textContent).toContain(`Incoming ${available}`);
     },
   );
-  it('releases and restores upkeep reservations for demolition and Keep', () => {
+  it('keeps completed building material costs at zero for demolition and Keep', () => {
     const { model, root } = setup();
     model.build('Research station');
     for (const frame of model.startTurn()) model.applyTurnFrame(frame);
@@ -235,12 +238,12 @@ describe('gemensamma-byggnadsbilder', () => {
 describe('gemensamma-byggnadsbilder', () => {
   it('shows a distinct supplied image for every building and reuses it in Research', () => {
     const research = renderResearch(
-      { completed: [], selected: null, stations: 0 },
+      { completed: [], selected: null, stations: 0, queue: [] },
       false,
       () => {},
     );
     const sources: string[] = [];
-    for (const type of Object.keys(BUILDINGS) as BuildType[]) {
+    for (const type of Object.keys(BUILDING_IMAGES) as BuildType[]) {
       const image = buildingImage(type).querySelector('img');
       expect(image, type).not.toBeNull();
       expect(image!.alt).toBe(type);

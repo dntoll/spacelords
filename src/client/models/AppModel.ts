@@ -1,4 +1,6 @@
 import type { SaveRepository } from './SaveRepository.js';
+import type { Decision } from './Decisions.js';
+import type { TradeRouteSnapshot } from './Logistics.js';
 import { FleetMapLayout } from './FleetMapLayout.js';
 import { Camera, type CameraSnapshot } from './Camera.js';
 import { createExampleGalaxy } from './exampleGalaxy.js';
@@ -19,7 +21,14 @@ import type { MapCell } from './Galaxy.js';
 import { HexCoordinate, HexGeometry, type Point } from './HexCoordinate.js';
 
 export type Screen =
-  'saves' | 'map' | 'planet' | 'build-selection' | 'research' | 'fleets';
+  | 'saves'
+  | 'map'
+  | 'planet'
+  | 'build-selection'
+  | 'research'
+  | 'fleets'
+  | 'trade-routes'
+  | 'decisions';
 
 export interface SaveSlotSnapshot {
   readonly id: number;
@@ -30,6 +39,11 @@ export interface SaveSlotSnapshot {
 }
 
 export interface AppReadModel {
+  readonly decisions: readonly Decision[];
+  readonly tradeRoutes: readonly TradeRouteSnapshot[];
+  readonly ownedPlanets: readonly PlanetGameSnapshot[];
+  readonly pendingEndTurn: boolean;
+  readonly pendingResearchRemoval: Technology | null;
   readonly saveSlots: readonly SaveSlotSnapshot[];
   readonly pendingClearSlot: number | null;
   readonly research: ResearchSnapshot;
@@ -62,6 +76,8 @@ export interface AppReadModel {
 }
 
 export class AppModel {
+  #pendingEndTurn = false;
+  #pendingResearchRemoval: Technology | null = null;
   #game: Game;
   #camera: Camera;
   #selected: HexCoordinate;
@@ -137,6 +153,8 @@ export class AppModel {
       state: game.exportState(),
     });
     this.#game = game;
+    this.#pendingEndTurn = false;
+    this.#pendingResearchRemoval = null;
     this.#activeSlot = id;
     this.#camera = new Camera(
       game.galaxy.homePlanet.position,
@@ -194,6 +212,11 @@ export class AppModel {
   // mvc-arkitektur: no write operations or hidden world data cross into views.
   get snapshot(): AppReadModel {
     return Object.freeze({
+      decisions: this.#game.decisions,
+      tradeRoutes: this.#game.tradeRoutes,
+      ownedPlanets: this.#game.ownedPlanetSnapshots(),
+      pendingEndTurn: this.#pendingEndTurn,
+      pendingResearchRemoval: this.#pendingResearchRemoval,
       saveSlots: this.#saveSlots,
       pendingClearSlot: this.#pendingClearSlot,
       research: this.#game.research,
@@ -373,6 +396,66 @@ export class AppModel {
   research(type: Technology | null): void {
     this.#game.selectResearch(type);
   }
+  moveResearch(type: Technology, index: number): void {
+    this.#game.moveResearch(type, index);
+  }
+  requestResearchRemoval(type: Technology | null): void {
+    this.#pendingResearchRemoval = type;
+  }
+  confirmResearchRemoval(): void {
+    if (this.#pendingResearchRemoval)
+      this.#game.removeResearch(this.#pendingResearchRemoval);
+    this.#pendingResearchRemoval = null;
+  }
+  openTradeRoutes(): void {
+    this.#screen = 'trade-routes';
+  }
+  openDecisions(): void {
+    this.#screen = 'decisions';
+  }
+  openDecision(id?: string): void {
+    const decision = id
+      ? this.#game.decisions.find((d) => d.id === id)
+      : this.#game.decisions.find((d) => !d.skipped);
+    if (!decision) {
+      this.openDecisions();
+      return;
+    }
+    if (decision.kind === 'research') this.openResearch();
+    else if (decision.kind === 'route') this.openTradeRoutes();
+    else if (decision.fleetId) this.openFleet(decision.fleetId);
+    else {
+      const planet = this.#game
+        .ownedPlanetSnapshots()
+        .find((p) => p.id === decision.planetId);
+      if (planet) {
+        this.#selected = planet.position;
+        this.openPlanet();
+      }
+    }
+  }
+  skipDecision(id: string): void {
+    this.#game.skipDecision(id);
+  }
+  requestEndTurn(): boolean {
+    this.#pendingEndTurn = this.#game.decisions.some((d) => !d.skipped);
+    return !this.#pendingEndTurn;
+  }
+  cancelEndTurn(): void {
+    this.#pendingEndTurn = false;
+  }
+  createTradeRoute(a: string, b: string): void {
+    this.#game.createTradeRoute(a, b);
+  }
+  assignTradeFleet(routeId: string, fleetId: string): void {
+    this.#game.assignTradeFleet(routeId, fleetId);
+  }
+  releaseTradeFleet(id: string): void {
+    this.#game.releaseTradeFleet(id);
+  }
+  closeTradeRoute(id: string): void {
+    this.#game.closeTradeRoute(id);
+  }
   colonize(id: string): void {
     this.#game.colonize(id);
   }
@@ -480,6 +563,7 @@ export class AppModel {
     this.#game.clearDestination(id);
   }
   startTurn(): readonly TurnFrame[] {
+    this.#pendingEndTurn = false;
     this.cancelMapPointer();
     this.#screen = 'map';
     this.#destinationFleetId = null;

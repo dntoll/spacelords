@@ -25,6 +25,21 @@ Produktkraven finns separat i [product-requirements.md](product-requirements.md)
 
 ## Koppling mellan beteendekrav och tester
 
+- `engangsreset-ekonomi`: **Fullständigt implementerat**. Just denna leverans
+  raderar de tre äldre version 1-sparplatserna efter uttryckligt användarbeslut.
+  Version 2 använder egna nycklar och återställs inte vid omladdning.
+  Framtida formatändringar kräver bevarande eller nytt uttryckligt beslut.
+- Ekonomi, forskningsordning, rutter, last, reservationer och överhoppade beslut
+  ingår i sparformat version 2. Modellerna PlanetEconomy, ResearchPlan,
+  Logistics och DecisionBoard hålls oberoende av HTML och p5.
+- `utvinningsbara-resurser`, `utvinningsbyggnader`, `planetlager`,
+  `planetbyggnadsko`, `forskningsko`, `forskningsberoenden`, `transportfabrik`,
+  `handelsnatverk`, `flera-ruttflottor`, `fysisk-frakt`,
+  `automatisk-resursforsorjning`, `beslutslista`, `hoppa-over-beslut` och
+  `rundvarning` skyddas av modell-, vy- och browsertester.
+  Utökad verifiering följer kedjan från nytt spel till försörjd koloni.
+  Äldre hänvisningar till årsbudget nedan är historik; planetlager ersätter dem.
+
 - `english-game` och `focused-interface`: vytester skyddar engelska handlingar,
   synliga modellvärden och beskrivningar av valda himlakroppar.
 - `viewport-game-layout`: enhetstester skyddar controllerstyrd navigation mellan Overview och Build selection;

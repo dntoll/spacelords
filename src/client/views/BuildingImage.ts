@@ -6,7 +6,7 @@ import type { BuildType } from '../models/Game.js';
 import { element } from './dom.js';
 
 // gemensamma-byggnadsbilder: Vite resolves shared image URLs under the app base.
-export const BUILDING_IMAGES: Readonly<Record<BuildType, string>> =
+export const BUILDING_IMAGES: Readonly<Partial<Record<BuildType, string>>> =
   Object.freeze({
     'Colony ship factory': colonyFactory,
     'Exploration ship factory': explorationFactory,

@@ -16,6 +16,11 @@ import { renderResearch } from './ResearchView.js';
 import { renderFleetShips } from './ShipView.js';
 import { renderFleets } from './FleetView.js';
 import { button, element } from './dom.js';
+import {
+  renderDecisions,
+  renderTradeRoutes,
+  renderTurnWarning,
+} from './EmpireView.js';
 
 export class AppView implements AppPort {
   readonly #root: HTMLElement;
@@ -35,6 +40,7 @@ export class AppView implements AppPort {
   #clearReturnSlot: number | null = null;
   #fleetPreview: { dispose(): void } | null = null;
   #planetScroll = new Map<string, number>();
+  #decisionDialog: HTMLDialogElement | null = null;
 
   constructor(
     root: HTMLElement,
@@ -54,6 +60,9 @@ export class AppView implements AppPort {
   }
 
   render(model: AppReadModel): void {
+    this.#decisionDialog?.close();
+    this.#decisionDialog?.remove();
+    this.#decisionDialog = null;
     this.#fleetPreview?.dispose();
     this.#fleetPreview = null;
     if (model.screen === 'saves') {
@@ -144,6 +153,10 @@ export class AppView implements AppPort {
         main.append(renderBuildSelection(model, this.#emit));
       else if (model.screen === 'fleets')
         main.append(renderFleets(model, this.#emit));
+      else if (model.screen === 'trade-routes')
+        main.append(renderTradeRoutes(model, this.#emit));
+      else if (model.screen === 'decisions')
+        main.append(renderDecisions(model, this.#emit));
       else
         main.append(
           renderResearch(
@@ -255,6 +268,17 @@ export class AppView implements AppPort {
             this.#emit,
           ),
         );
+    if (!changedScreen && model.screen === 'trade-routes')
+      this.#root
+        .querySelector('main')
+        ?.replaceChildren(renderTradeRoutes(model, this.#emit));
+    if (!changedScreen && model.screen === 'decisions')
+      this.#root
+        .querySelector('main')
+        ?.replaceChildren(renderDecisions(model, this.#emit));
+    const counter = this.#root.querySelector('.decision-counter');
+    if (counter)
+      counter.textContent = `Decisions (${model.decisions.filter((d) => !d.skipped).length})`;
     if (model.screen === 'map') {
       this.#map?.render(model);
       if (this.#known) {
@@ -298,6 +322,33 @@ export class AppView implements AppPort {
       this.#renderTurnConsole(model);
     }
     this.#renderNotice(model);
+    if (model.pendingEndTurn) {
+      this.#decisionDialog = renderTurnWarning(model, this.#emit);
+    } else if (model.pendingResearchRemoval) {
+      const dialog = element('dialog', 'decision-dialog');
+      dialog.setAttribute('aria-label', 'Remove research');
+      dialog.append(
+        element('h2', '', `Remove ${model.pendingResearchRemoval}?`),
+        element(
+          'p',
+          '',
+          'Dependent technologies will also be removed from the queue.',
+        ),
+        button('Remove research', () =>
+          this.#emit({ type: 'confirm-research-removal' }),
+        ),
+        button('Cancel', () => this.#emit({ type: 'cancel-research-removal' })),
+      );
+      dialog.addEventListener('cancel', (event) => {
+        event.preventDefault();
+        this.#emit({ type: 'cancel-research-removal' });
+      });
+      this.#decisionDialog = dialog;
+    }
+    if (this.#decisionDialog) {
+      this.#root.append(this.#decisionDialog);
+      this.#decisionDialog.showModal();
+    }
   }
 
   #renderTurnConsole(model: AppReadModel): void {
@@ -340,6 +391,9 @@ export class AppView implements AppPort {
   }
 
   dispose(): void {
+    this.#decisionDialog?.close();
+    this.#decisionDialog?.remove();
+    this.#decisionDialog = null;
     this.#fleetPreview?.dispose();
     this.#fleetPreview = null;
     this.#previews.forEach((preview) => preview.dispose());
@@ -375,6 +429,8 @@ export class AppView implements AppPort {
       ['map', 'Star map'],
       ['research', 'Research'],
       ['fleets', 'Fleets'],
+      ['trade-routes', 'Trade routes'],
+      ['decisions', 'Decisions'],
     ] as const) {
       const choice = button(
         label,
@@ -385,11 +441,16 @@ export class AppView implements AppPort {
                 ? 'open-map'
                 : target === 'research'
                   ? 'open-research'
-                  : 'open-fleets',
+                  : target === 'fleets'
+                    ? 'open-fleets'
+                    : target === 'trade-routes'
+                      ? 'open-trade-routes'
+                      : 'open-decisions',
           }),
         'nav-button',
       );
       if (screen === target) choice.setAttribute('aria-current', 'page');
+      if (target === 'decisions') choice.classList.add('decision-counter');
       navigation.append(choice);
     }
     header.append(brand, navigation);
@@ -523,7 +584,7 @@ export class AppView implements AppPort {
         this.#emit({ type: 'begin-destination', id: selectedFleet.id }),
       );
       const actions = element('div', 'fleet-map-actions');
-      set.disabled = model.phase !== 'planning';
+      set.disabled = model.phase !== 'planning' || !!selectedFleet.routeId;
       actions.append(edit, set);
       if (selectedFleet.destination) {
         const clear = button('Clear destination', () =>

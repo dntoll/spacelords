@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { startFirstSlot } from './save-helpers.js';
+import { startFirstSlot, endTurn } from './save-helpers.js';
 
 test('skeppsbilder / flottadministration / flottbyggar-minikarta: images, visual fleet boxes and keyboard transfers', async ({
   page,
@@ -166,7 +166,7 @@ test('flottbyggar-minikarta: the marker follows a fleet after travelling', async
   await page
     .getByRole('combobox', { name: 'Known objects' })
     .selectOption({ label: 'Vesta' });
-  await page.getByRole('button', { name: 'End turn', exact: true }).click();
+  await endTurn(page);
   await expect(
     page.getByRole('button', { name: 'End turn', exact: true }),
   ).toBeEnabled();

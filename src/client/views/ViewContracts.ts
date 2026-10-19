@@ -10,6 +10,40 @@ import type {
 import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 
 export type AppIntent =
+  | {
+      readonly type:
+        | 'open-trade-routes'
+        | 'open-decisions'
+        | 'next-decision'
+        | 'confirm-end-turn'
+        | 'cancel-end-turn'
+        | 'confirm-research-removal'
+        | 'cancel-research-removal';
+    }
+  | {
+      readonly type:
+        | 'open-decision'
+        | 'skip-decision'
+        | 'release-trade-fleet'
+        | 'close-trade-route';
+      readonly id: string;
+    }
+  | {
+      readonly type: 'create-trade-route';
+      readonly a: string;
+      readonly b: string;
+    }
+  | {
+      readonly type: 'assign-trade-fleet';
+      readonly routeId: string;
+      readonly fleetId: string;
+    }
+  | {
+      readonly type: 'move-research';
+      readonly technology: Technology;
+      readonly index: number;
+    }
+  | { readonly type: 'remove-research'; readonly technology: Technology }
   | { readonly type: 'start-slot' | 'request-clear-slot'; readonly id: number }
   | { readonly type: 'open-saves' | 'cancel-clear-slot' | 'confirm-clear-slot' }
   | {

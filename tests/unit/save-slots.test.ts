@@ -59,6 +59,7 @@ describe('sparat-spel / frontend-backend-mock', () => {
     turn(game);
     game.selectResearch('Colony ship factory');
     turn(game);
+    turn(game);
     game.scheduleBuild(home, 'Colony ship factory', 1);
     turn(game);
     const snapshot = game.planetSnapshot(home)!;
@@ -188,7 +189,7 @@ describe('tre-sparplatser / sparplats-utforskad-karta', () => {
 
 describe('frontend-backend-mock', () => {
   it('preserves unreadable saves until explicitly cleared', () => {
-    const storage = new Map([['spacelords.save.v1.1', '{broken json']]);
+    const storage = new Map([['spacelords.save.v2.1', '{broken json']]);
     const repo = new BrowserSaveRepository({
       getItem: (key) => storage.get(key) ?? null,
       setItem: (key, value) => {
@@ -201,7 +202,7 @@ describe('frontend-backend-mock', () => {
     const model = new AppModel(undefined, repo);
     expect(model.snapshot.saveSlots[0]?.error).not.toBeNull();
     expect(() => model.startSlot(1)).toThrow();
-    expect(storage.get('spacelords.save.v1.1')).toBe('{broken json');
+    expect(storage.get('spacelords.save.v2.1')).toBe('{broken json');
     model.requestClearSlot(1);
     model.confirmClearSlot();
     model.startSlot(1);
@@ -244,7 +245,7 @@ describe('frontend-backend-mock', () => {
     );
     model.setDestination('fleet-home', 3, 0);
     model.save();
-    emit({ type: 'end-turn' });
+    emit({ type: 'confirm-end-turn' });
     expect(model.snapshot.phase).toBe('simulating');
     expect(repo.load(1)?.state.phase).toBe('planning');
     finishAnimation();

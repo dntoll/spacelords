@@ -1,4 +1,4 @@
-import { startFirstSlot } from './save-helpers.js';
+import { startFirstSlot, endTurn } from './save-helpers.js';
 import { expect, test } from '@playwright/test';
 
 test('gemensamma-byggnadsbilder: supplied images load in Research, selection and building sites', async ({
@@ -55,7 +55,7 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
   });
   await expect(site.getByRole('img')).toHaveAttribute('src', stationSource!);
   await page.getByRole('button', { name: 'Back to map', exact: true }).click();
-  await page.getByRole('button', { name: 'End turn', exact: true }).click();
+  await endTurn(page);
   await expect(
     page.getByRole('button', { name: 'End turn', exact: true }),
   ).toBeEnabled();

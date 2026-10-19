@@ -46,7 +46,7 @@ describe('planetinformation', () => {
     expect(root.querySelector('h1')?.textContent).toBe('Tellus');
     expect(root.textContent).toContain('12,000');
     expect(root.textContent).toContain('100%');
-    expect(root.textContent).toContain('42 units/year');
+    expect(root.textContent).toContain('Stored 100');
     expect(root.textContent).toContain('0');
     expect(root.textContent).toContain('Your empire');
   });
@@ -90,7 +90,7 @@ describe('forskningsoversikt', () => {
     expect(root.textContent).toContain(
       'Build a Research station to advance research.',
     );
-    expect(root.querySelectorAll('[data-technology]')).toHaveLength(3);
+    expect(root.querySelectorAll('[data-technology]')).toHaveLength(5);
     click('Research Colony ship factory');
     expect(root.textContent).toContain('Researching · 0/1 points');
     click('Back to map');
@@ -165,9 +165,7 @@ describe('viewport-game-layout', () => {
     expect(root.querySelector('.overview')?.textContent).toContain(
       'Building sites',
     );
-    expect(root.querySelector('.overview')?.textContent).toContain(
-      'Annual budget',
-    );
+    expect(root.querySelector('.overview')?.textContent).toContain('Resources');
   });
 });
 
@@ -182,7 +180,7 @@ describe('byggnaders-resursanvandning', () => {
     const controller = new AppController(model, new AppView(root, mapFactory));
     controller.start();
     expect(root.querySelector('.building-panel')?.textContent).toContain(
-      'Uses Iron 2, Water 3, Oil 1 units/year · 600 workers',
+      '600 workers · No recurring material cost',
     );
   });
 });
@@ -196,6 +194,7 @@ function buildShipyard(model: AppModel): void {
   advance(model);
   model.research('Colony ship factory');
   advance(model);
+  advance(model);
   model.build('Colony ship factory');
   advance(model);
 }
@@ -207,18 +206,19 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
     advance(model);
     model.research('Colony ship factory');
     advance(model);
+    advance(model);
     model.openPlanet();
     new AppController(model, new AppView(root, mapFactory)).start();
-    expect(root.querySelectorAll('.building-site')).toHaveLength(6);
+    expect(root.querySelectorAll('.building-site')).toHaveLength(10);
     expect(root.querySelector('.building-menu')).toBeNull();
     click('Build building');
     const menu = root.querySelector('.building-menu')!;
     expect(menu.textContent).toContain('Colony ship factory');
-    expect(menu.textContent).not.toContain('Exploration ship factory');
+    expect(menu.textContent).toContain('Exploration ship factory');
     expect(menu.textContent).not.toContain('Queue Colony ship');
-    expect(menu.textContent).toContain('Iron 18 units/year');
-    expect(menu.textContent).toContain('Water 10 units/year');
-    expect(menu.textContent).toContain('Oil 6 units/year');
+    expect(menu.textContent).toContain('Iron 18 units at build start');
+    expect(menu.textContent).toContain('Water 10 units at build start');
+    expect(menu.textContent).toContain('Oil 6 units at build start');
     expect(menu.textContent).toContain('2000 workers');
     expect(menu.querySelector('img')).not.toBeNull();
     click('Build Colony ship factory');
@@ -226,11 +226,10 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
       'Colony ship factory',
     );
     click('Build building');
-    const disabled = root.querySelector<HTMLButtonElement>(
-      '.unaffordable button',
-    )!;
-    expect(disabled.textContent).toBe('Build Colony ship factory');
-    expect(disabled.disabled).toBe(true);
+    const queuedAgain = [
+      ...root.querySelectorAll<HTMLButtonElement>('.building-choice button'),
+    ].find((b) => b.textContent === 'Build Colony ship factory')!;
+    expect(queuedAgain.disabled).toBe(false);
   });
 });
 
@@ -294,14 +293,14 @@ describe('kolonisation / kartorderstatus', () => {
     model.select(new HexCoordinate(0, 1));
     new AppController(model, new AppView(root, mapFactory)).start();
     click('Colonize');
-    expect(root.textContent).toContain('4 empty building sites');
+    expect(root.textContent).toContain('6 empty building sites');
     click('Open planet');
     expect(root.querySelector('h1')!.textContent).toBe('Vesta');
     expect(root.textContent).toContain('1,000');
-    expect(root.querySelectorAll('.building-site')).toHaveLength(4);
+    expect(root.querySelectorAll('.building-site')).toHaveLength(6);
     click('Build building');
     expect(
       root.querySelector<HTMLButtonElement>('.building-menu button')!.disabled,
-    ).toBe(true);
+    ).toBe(false);
   });
 });

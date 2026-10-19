@@ -31,7 +31,8 @@ class Planet {
   type: solid | gas
   habitability: 0..100
   buildSlots: 0..10
-  resources: units/year
+  deposits: finite resources
+  extractionPotential
 }
 class Colony {
   population
@@ -40,7 +41,7 @@ class Colony {
 class Building {
   type
   workers
-  annualBudget
+  constructionCost
   demolition
 }
 class ConstructionProject {
@@ -55,7 +56,7 @@ class Technology {
   researched
 }
 class Research {
-  selectedTechnology
+  technologyQueue
   completeSelectedPerYear()
 }
 class BuildQueue {
@@ -111,6 +112,7 @@ BuildQueue "1" o-- "0..5" ConstructionProject : ordered ships
 Player "1" *-- "1" Research
 Research --> Technology : selects
 Technology --> Building : unlocks
+Technology --> Technology : prerequisites
 Building --> Research : Research station contributes
 ConstructionProject --> Fleet : ship recipient
 Colony --> Fleet : home fleet
@@ -128,9 +130,48 @@ GameEvent --> TurnOrder
 note bottom of BuildQueue
   Varje shipyard har egen kö med fem platser.
   Högst ett skepp per fabrik och år.
-  Byggnader byggs parallellt på egna platser.
-  Årsbudgeten delas utan dubbla reservationer.
+  Planetens kö färdigställer en byggnad per år.
+  Material betalas en gång vid byggstart.
 end note
+
+class ResourceDeposit {
+  resource
+  remaining
+}
+class PlanetStock {
+  resource
+  amount
+}
+class TradeRoute {
+  closing
+}
+class Shipment {
+  resource
+  amount
+  recipient
+  path
+}
+class Decision {
+  context
+  skippedThisTurn
+}
+Planet "1" *-- "3" ResourceDeposit
+Colony "1" *-- "3" PlanetStock
+Building --> ResourceDeposit : extracts
+Colony "1" *-- "1" BuildQueue : buildings
+TradeRoute "*" --> "2" Planet : endpoints
+TradeRoute "0..1" <-- "0..*" Fleet : assigned
+Shipment --> Fleet : in transit
+Shipment --> PlanetStock : awaiting pickup
+Shipment --> ConstructionProject : requested by
+Shipment --> TradeRoute : traverses
+Player --> Decision
+Decision --> Colony
+Decision --> Fleet
+Decision --> Research
+Decision --> TradeRoute
+SavedGame --> TradeRoute
+SavedGame --> Shipment
 
 note bottom of Galaxy
   Första iterationen använder en fast exempelvärld.

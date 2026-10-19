@@ -61,29 +61,37 @@ function overview(planet: PlanetGameSnapshot, owner: string): HTMLElement {
 
 function budgetPanel(planet: PlanetGameSnapshot): HTMLElement {
   const section = element('section', 'budget-panel');
-  section.append(element('h2', '', 'Annual budget'));
+  section.append(element('h2', '', 'Resources'));
   const table = document.createElement('table');
   table.innerHTML =
     '<thead><tr><th>Category</th><th>Total</th><th>Used / Reserved</th><th>Available</th></tr></thead>';
   const body = document.createElement('tbody');
   for (const resource of ['Iron', 'Water', 'Oil'] as Resource[]) {
-    const total = planet.budget.production[resource];
-    const used = planet.budget.reserved[resource];
-    const available = planet.budget.available[resource];
+    const total = planet.economy.stock[resource];
+    const used = planet.economy.demand[resource];
+    const available = planet.economy.incoming[resource];
     const row = element('div', 'resource-budget');
     row.dataset.resource = resource;
     row.append(element('h3', '', resource));
     const values = element('div', 'budget-values');
     values.append(
-      element('span', 'budget-total-label', `Total ${total} units/year`),
-      element('span', 'budget-used-label', `Used / Reserved ${used}`),
-      element('span', 'budget-available-label', `Available ${available}`),
+      element(
+        'span',
+        'budget-total-label',
+        `Stored ${total} · Extracting ${planet.economy.extraction[resource]}/year`,
+      ),
+      element(
+        'span',
+        'budget-used-label',
+        `Demand ${used} · Deposit ${planet.economy.deposits[resource]}`,
+      ),
+      element('span', 'budget-available-label', `Incoming ${available}`),
     );
     const bar = element('div', 'budget-bar');
     bar.setAttribute('role', 'img');
     bar.setAttribute(
       'aria-label',
-      `${resource}: Total ${total}, Used / Reserved ${used}, Available ${available} units/year`,
+      `${resource}: Stored ${total}, Demand ${used}, Incoming ${available}, Deposit ${planet.economy.deposits[resource]}`,
     );
     for (const [name, value] of [
       ['used', used],
@@ -135,6 +143,44 @@ function construction(
   menus: Pick<AppReadModel, 'phase'>,
 ): HTMLElement {
   const box = element('section', 'building-panel');
+  const queue = element('section', 'planet-building-queue');
+  queue.setAttribute('aria-label', 'Planet building queue');
+  queue.append(element('h2', '', 'Building queue'));
+  for (const [index, project] of planet.projects.entries()) {
+    const row = element('article', 'empire-card');
+    row.append(
+      element(
+        'p',
+        '',
+        `${index + 1}. ${project.type} · Site ${project.slotIndex! + 1}`,
+      ),
+    );
+    for (const [label, offset] of [
+      ['Move up', -1],
+      ['Move down', 1],
+    ] as const) {
+      const move = button(`${label}: ${project.type}`, () =>
+        emit({ type: 'move-project', id: project.id, index: index + offset }),
+      );
+      move.disabled =
+        menus.phase !== 'planning' ||
+        index + offset < 0 ||
+        index + offset >= planet.projects.length;
+      row.append(move);
+    }
+    if (project.blockedReason)
+      row.append(element('p', '', project.blockedReason));
+    queue.append(row);
+  }
+  if (!planet.projects.length)
+    queue.append(
+      element(
+        'p',
+        'muted-note',
+        'No buildings queued. Choose an empty site below.',
+      ),
+    );
+  box.append(queue);
   box.append(element('h2', '', 'Building sites'));
   for (const site of planet.sites) {
     const card = element('article', 'building-site');
@@ -155,7 +201,9 @@ function construction(
           'site-status',
           building.scheduledForDemolition
             ? 'Demolition scheduled'
-            : 'Operational',
+            : building.operational === false
+              ? 'Waiting for workers'
+              : 'Operational',
         ),
         element('p', '', definition.description),
         element(
@@ -190,7 +238,9 @@ function construction(
         element(
           'p',
           'muted-note',
-          'Under construction · completes at the end of the year',
+          planet.projects[0]?.id === site.project.id
+            ? 'Next building · completes when materials and workers are available'
+            : 'Queued building',
         ),
       );
       if (site.project.blockedReason)
@@ -416,8 +466,8 @@ function renderQueueOrder(
 
 function buildingUsage(type: BuildType, demolition: boolean): string {
   const definition = BUILDINGS[type];
-  if (demolition) return 'No resources or workers reserved';
-  return `Uses Iron ${definition.cost.Iron}, Water ${definition.cost.Water}, Oil ${definition.cost.Oil} units/year · ${definition.workers} workers`;
+  if (demolition) return 'Workers released when demolished';
+  return `${definition.workers} workers · No recurring material cost`;
 }
 
 function fleetSelect(

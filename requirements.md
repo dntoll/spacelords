@@ -6,69 +6,50 @@ Spelaren förvaltar och expanderar ett rymdimperium över lång tid. Ett spelår
 en runda: spelaren ger order och får sedan se resultatet. Spelet ska fungera på
 mobil, surfplatta och dator. Det börjar som en lokal enspelarupplevelse;
 multiplayer och en eller två rundor per verkligt dygn är en senare riktning.
-
-Visionen är föränderlig. Vi bygger små, testade steg och skiljer beslutade
-funktioner från framtida spelmekanik. Se [hela visionen](docs/game-vision.md).
+Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
-- **Spelupplevelse och språk:** skärmfyllande vyer utan scroll, stor karta och
-  kortfattad spelinformation på engelska. Dokumentationen är på svenska med
-  spelets engelska namn och etiketter. `viewport-game-layout` omfattar även
-  smala skärmar med större systemtypsnitt.
-- **Sparade spel:** `tre-sparplatser`, `sparat-spel`, `sparplats-utforskad-karta`
-  och `tomm-sparplats` är fullständigt implementerade. Startsidan visar tre
-  separata spel med senaste speldatum och utforskad karta. Automatisk sparning i
-  webbläsaren ersätter återställning vid omladdning.
-- **Första spelgrunden:** en fast stjärnkarta, begränsad sikt, kartnavigation och
-  information om hemplaneten, byggande, flottor och rundor. Byggnader visar sin
-  resursanvändning och beställs på bestämda byggplatser. Varje shipyard har en egen kö med fem platser och kan
-  färdigställa ett skepp per år, parallellt med andra fabriker och byggplatser.
-  Skeppsorder kan tilldelas en mottagande flotta. `kartflottor` visar varje
-  flotta som en egen skeppssvärm med destinationspil från flottan och
-  skeppens spetsar riktade mot destinationen. Flottor i samma hex ligger på en
-  cirkel innanför hexen. `flottval-pa-kartan` och `dra-flottdestination` är
-  fullständigt implementerade: flottor kan markeras separat, lysas upp och dras
-  till en destination med förhandsvisad pil. `skeppsbilder` och
-  `flottbyggar-minikarta` är fullständigt implementerade: markerade flottor visar
-  skeppsbilder och Fleets har gemensamma skeppsrutor med dragöverföring samt en
-  minikarta för vald flotta, i stället för enbart position och sifferkolumner.
-  `tomma-flottor-utan-position` är **Fullständigt implementerat**: första skeppet
-  sätter positionen, sista skeppet släpper den. Tomma flottor tar emot skepp
-  från alla platser; fyllda flottor kräver samma hex.
-- **Imperiets utveckling:** kolonier, befolkning, råvaror, byggande och forskning.
-- **Order och omvärld:** rundor, kolonisation, flottor, civilisationer och senare
-  multiplayer. `handelser` och `arsrundor-och-order` är **Fullständigt implementerade**
-  med en liten kronologisk konsol ovanför `End turn`, ankomstbesked och
-  automatisk planering utan `Turn summary` eller `Continue`.
+- **Spelupplevelse och språk:** skärmfyllande vyer, stor hexkarta och engelska
+  speltexter. Dokumentationen är svenska med spelets engelska namn och etiketter.
+- **Sparade spel:** tre separata spel med senaste speldatum, utforskad karta och
+  automatisk sparning. Ny ekonomi använder ett nytt sparformat. Äldre spel tas
+  bort i just denna leverans efter uttryckligt användarbeslut; detta får inte
+  antas vid framtida uppdateringar.
+- **Karta och flottor:** fast exempelvärld, begränsad sikt, navigation,
+  utforskning, kolonisation, flottbyggare och fysisk rörelse på kartan.
+  Skepp kan överföras mellan samlokaliserade flottor eller till tomma flottor.
+- **Ekonomi och byggande:** ändliga fyndigheter av Iron, Water och Oil utvinns
+  till lokala obegränsade lager. Material förbrukas en gång vid byggstart.
+  Planetens byggnadskö färdigställer högst en byggnad per år. Varje shipyard
+  har dessutom en egen femplatskö och kan färdigställa ett skepp per år.
+- **Forskning:** forskningskö med automatiska förkunskaper låser upp alla
+  skeppsfabriker och Trade logistics. Grundutvinning och Research station finns
+  från start.
+- **Logistik:** Trade routes länkar två ägda planeter och bildar nätverk.
+  Flera flottor per rutt fraktar material till aktiva köprojekt automatiskt.
+  Last, omlastning, avstånd och flottposition påverkar leveranser.
+  Piratrån och eskortskydd ingår ännu inte.
+- **Beslut och händelser:** Decisions och Next decision samlar val och
+  försörjningsproblem. Spelaren kan hoppa över beslut ett år. End turn varnar
+  samlat och låter spelaren fortsätta ändå. Händelsekonsolen bevaras.
+- **Utveckling och kvalitet:** MVC, TypeScript, ESLint, p5 i instance mode,
+  en snabb testsvit inom 20 sekunder och en utökad svit i GitHub CI.
+- **Driftsättning:** endast klientbygget under `spacelords/` i målrepot;
+  befintlig webbplats, navigation, DNS och Pages-inställningar bevaras.
 
-[Produktkraven](docs/product-requirements.md) anger status för varje aktivt krav:
+## Detaljer och status
+
+[Produktkraven](docs/product-requirements.md) anger varje aktivt kravs status:
 **Ej implementerat**, **Delvis implementerat** eller **Fullständigt implementerat**.
-De beskriver också vad som återstår. Denna iteration omfattar byggplatser,
-fabriksköer, flottor, utforskning, fungerande kolonisation och forskning som låser
-upp de tre befintliga skeppsfabrikerna. Research station kan byggas från start.
-`planetbyggplatser` och `fabrikskoer` ersätter `gemensam-byggko`.
-`forska-fram-fabriker`, `kolonisation` och `kartorderstatus` är fullständigt
-implementerade. Kartan visar tomma byggplatser och tomma fabriksköer.
-`rakare-hexforflyttning` fördelar flottornas riktningsbyten jämnt mot målet.
+[Ekonomi och logistik](docs/economy-logistics.md) beskriver de nya spelreglerna.
 
-- **Utveckling och kvalitet:** enkel lokal utveckling, kontroller, testning och
-  leveransflöde, MVC och p5-karta. Se [tekniska krav](docs/technical-requirements.md).
-- **Driftsättning:** publicera under en egen sökväg utan att påverka den
-  befintliga webbplatsen eller exponera hemligheter.
-  Se [driftsättningsinstruktionen](docs/deployment.md).
-- **Arkitektur och arbetssätt:** ansvarsfördelning, domänmodell, läsbara kravnamn
-  och versionshantering. Se [tekniska krav](docs/technical-requirements.md) och
-  [arbetsreglerna](AGENTS.md).
+Denna iteration ersätter `arsbudget` med `planetlager` och parallella
+planetbyggen med `planetbyggnadsko`. Den inför utvinning, forskningskö,
+transportfabrik, fysiskt handelsnätverk och beslutsstöd.
+Befintliga fabriksköer, byggplatser, kartstyrning och sparplatsgränssnitt behålls.
 
-Planetens `Overview` samlar nu byggplatser och fabriksköer. `fabrikskoer` är
-**Fullständigt implementerat** med alltid synlig skeppsbeställning ovanför varje
-kö: kostnad, destination och `Queue`-knapp ersätter fabrikens `Build`-meny.
-Vyn har kompakta
-handlingar och resursstaplar i `Annual budget`. `Build selection` är en egen
-sökbar vy med kortrutnät, kostnadsindikatorer och gemensamma byggnadsbilder.
-`gemensamma-byggnadsbilder` och `kompakta-bygghandlingar` är fullständigt
-implementerade. De fyra tillhandahållna byggnadsbilderna visas i `Research`,
-`Build selection` och på byggplatserna; platshållare används vid bildfel. `Construction`-fliken och den inbäddade byggmenyn ersätts.
-
-Detaljer hålls i `docs/` så att denna översikt förblir kort. Publicering beställs separat.
+[Tekniska krav](docs/technical-requirements.md),
+[domänmodell](docs/domain-model.puml),
+[arbetsregler](AGENTS.md) och
+[driftsättning](docs/deployment.md) hålls separat.

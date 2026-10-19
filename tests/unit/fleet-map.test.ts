@@ -15,7 +15,12 @@ function fleet(id: string, count = 3): FleetSnapshot {
     name: id,
     position: new HexCoordinate(0, 0),
     destination: new HexCoordinate(2, 0),
-    ships: { Fighter: count, 'Colony ship': 0, 'Exploration ship': 0 },
+    ships: {
+      Fighter: count,
+      'Colony ship': 0,
+      'Exploration ship': 0,
+      'Transport ship': 0,
+    },
     speed: 1,
     crew: 0,
   };
@@ -107,7 +112,12 @@ describe('kartflottor', () => {
     const mixed = {
       ...fleet('mixed'),
       destination: null,
-      ships: { Fighter: 1, 'Colony ship': 1, 'Exploration ship': 1 },
+      ships: {
+        Fighter: 1,
+        'Colony ship': 1,
+        'Exploration ship': 1,
+        'Transport ship': 0,
+      },
     };
     const first = drawing();
     first.render([mixed]);

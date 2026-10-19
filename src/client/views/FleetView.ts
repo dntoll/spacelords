@@ -91,7 +91,7 @@ function fleetCard(
   model: AppReadModel,
   emit: IntentHandler,
 ): HTMLElement {
-  const locked = model.phase !== 'planning';
+  const locked = model.phase !== 'planning' || !!fleet.routeId;
   const card = element('article', 'fleet-card');
   card.dataset.fleetId = fleet.id;
   card.setAttribute('aria-label', `Fleet ${fleet.name}`);
@@ -159,5 +159,21 @@ function fleetCard(
     } else emit({ type: 'select-fleet', id: fleet.id });
   });
   card.append(title, hangar);
+  if (fleet.routeId) {
+    card.append(
+      element(
+        'p',
+        'muted-note',
+        fleet.releaseRequested
+          ? 'Leaving trade route after arrival'
+          : 'Assigned to trade route',
+      ),
+    );
+    const release = button('Release from trade route', () =>
+      emit({ type: 'release-trade-fleet', id: fleet.id }),
+    );
+    release.disabled = model.phase !== 'planning' || !!fleet.releaseRequested;
+    card.append(release);
+  }
   return card;
 }

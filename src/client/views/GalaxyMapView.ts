@@ -91,6 +91,13 @@ export class GalaxyMapView implements MapPort {
     sketch.translate(-model.camera.center.x, -model.camera.center.y);
     for (const cell of model.cells)
       this.#hex(sketch, cell, false, model.camera.zoom);
+    sketch.stroke('#547caa');
+    sketch.strokeWeight(2 / model.camera.zoom);
+    for (const route of model.tradeRoutes) {
+      const from = HexGeometry.toPoint(route.start),
+        to = HexGeometry.toPoint(route.end);
+      sketch.line(from.x, from.y, to.x, to.y);
+    }
     const selected = model.selected;
     if (selected) this.#hex(sketch, selected, true, model.camera.zoom);
     for (const cell of model.cells)

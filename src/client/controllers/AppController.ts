@@ -63,6 +63,51 @@ export class AppController {
     )
       return;
     switch (intent.type) {
+      case 'open-trade-routes':
+        this.#model.openTradeRoutes();
+        break;
+      case 'open-decisions':
+        this.#model.openDecisions();
+        break;
+      case 'next-decision':
+        this.#model.openDecision();
+        break;
+      case 'open-decision':
+        this.#model.openDecision(intent.id);
+        break;
+      case 'skip-decision':
+        this.#model.skipDecision(intent.id);
+        break;
+      case 'create-trade-route':
+        this.#model.createTradeRoute(intent.a, intent.b);
+        break;
+      case 'assign-trade-fleet':
+        this.#model.assignTradeFleet(intent.routeId, intent.fleetId);
+        break;
+      case 'release-trade-fleet':
+        this.#model.releaseTradeFleet(intent.id);
+        break;
+      case 'close-trade-route':
+        this.#model.closeTradeRoute(intent.id);
+        break;
+      case 'move-research':
+        this.#model.moveResearch(intent.technology, intent.index);
+        break;
+      case 'remove-research':
+        this.#model.requestResearchRemoval(intent.technology);
+        break;
+      case 'confirm-research-removal':
+        this.#model.confirmResearchRemoval();
+        break;
+      case 'cancel-research-removal':
+        this.#model.requestResearchRemoval(null);
+        break;
+      case 'cancel-end-turn':
+        this.#model.cancelEndTurn();
+        break;
+      case 'confirm-end-turn':
+        void this.#runTurn();
+        return;
       case 'open-saves':
         this.#cancelPointer();
         this.#model.openSaves();
@@ -175,8 +220,11 @@ export class AppController {
         this.#model.deleteFleet(intent.id);
         break;
       case 'end-turn':
-        void this.#runTurn();
-        return;
+        if (this.#model.requestEndTurn()) {
+          void this.#runTurn();
+          return;
+        }
+        break;
       case 'pointer-start': {
         this.#gesture.start(intent.id, intent.point);
         if (this.#gesture.pointerCount > 1) {

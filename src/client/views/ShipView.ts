@@ -8,6 +8,7 @@ export const SHIP_IMAGES: Readonly<Record<ShipType, string>> = Object.freeze({
   'Colony ship': colonyShip,
   'Exploration ship': explorationShip,
   Fighter: fighter,
+  'Transport ship': `${import.meta.env.BASE_URL}transport-ship.svg`,
 });
 export const SHIP_TYPES: readonly ShipType[] = Object.freeze(
   Object.keys(SHIP_IMAGES) as ShipType[],

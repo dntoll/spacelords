@@ -8,6 +8,7 @@ const shipSizes: Readonly<Record<ShipType, number>> = {
   Fighter: 5,
   'Exploration ship': 7,
   'Colony ship': 9,
+  'Transport ship': 8,
 };
 
 export function renderMapFleets(

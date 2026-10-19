@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { startFirstSlot } from './save-helpers.js';
+import { startFirstSlot, endTurn } from './save-helpers.js';
 
 for (const size of [
   { width: 320, height: 568 },
@@ -21,7 +21,7 @@ for (const size of [
     await page
       .getByRole('combobox', { name: 'Known objects' })
       .selectOption({ label: 'Vesta' });
-    await end.click();
+    await endTurn(page);
     await expect(log).toContainText('Home Fleet arrived at Vesta.');
     await expect(end).toBeEnabled();
     await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -31,7 +31,7 @@ for (const size of [
     await expect(log).not.toContainText('moved to');
     await expect(log).not.toContainText('hexes');
     const before = await log.locator('li').count();
-    await end.click();
+    await endTurn(page);
     await expect(end).toBeEnabled();
     await expect(log.locator('li')).toHaveCount(before + 1);
     const logBounds = (await console.boundingBox())!;

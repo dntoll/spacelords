@@ -1,4 +1,4 @@
-import { startFirstSlot } from './save-helpers.js';
+import { startFirstSlot, endTurn } from './save-helpers.js';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 async function canvas(page: Page): Promise<Locator> {
@@ -77,7 +77,7 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
     page.getByRole('heading', { name: 'Tellus', exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText('Total 42 units/year', { exact: true }).first(),
+    page.getByText('Stored 100 · Extracting 0/year', { exact: true }).first(),
   ).toBeVisible();
   await page
     .getByRole('button', { name: 'Build building at site 1', exact: true })
@@ -328,7 +328,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   test.setTimeout(90_000);
   const nextYear = async () => {
     await page.getByRole('button', { name: 'Star map', exact: true }).click();
-    await page.getByRole('button', { name: 'End turn', exact: true }).click();
+    await endTurn(page);
     await expect(
       page.getByRole('button', { name: 'End turn', exact: true }),
     ).toBeEnabled();
@@ -339,13 +339,13 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
       .click();
   };
   await expect(page.locator('.order-status')).toContainText(
-    '6 empty building sites',
+    '10 empty building sites',
   );
   await construction();
   await page
     .getByRole('button', { name: 'Build building at site 1', exact: true })
     .click();
-  await expect(page.locator('.building-menu .building-choice')).toHaveCount(1);
+  await expect(page.locator('.building-menu .building-choice')).toHaveCount(4);
   await expect(
     page.getByRole('button', { name: 'Queue Colony ship', exact: true }),
   ).toHaveCount(0);
@@ -365,11 +365,12 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     page.getByText('Researching · 0/1 points', { exact: true }),
   ).toBeVisible();
   await nextYear();
+  await nextYear();
   await construction();
   await page
     .getByRole('button', { name: 'Build building at site 2', exact: true })
     .click();
-  await expect(page.locator('.building-menu .building-choice')).toHaveCount(2);
+  await expect(page.locator('.building-menu .building-choice')).toHaveCount(6);
   await expect(
     page.getByRole('img', { name: 'Colony ship factory', exact: true }),
   ).toHaveAttribute('src', factorySource!);
@@ -481,7 +482,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     .selectOption({ label: 'Vesta' });
   await page.getByRole('button', { name: 'Colonize', exact: true }).click();
   await expect(page.locator('.order-status')).toContainText(
-    '4 empty building sites',
+    '6 empty building sites',
   );
   await page.screenshot({
     path: testInfo.outputPath('colonized-map.png'),
@@ -491,12 +492,12 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await expect(
     page.getByRole('heading', { name: 'Vesta', exact: true }),
   ).toBeVisible();
-  await expect(page.locator('.building-site')).toHaveCount(4);
+  await expect(page.locator('.building-site')).toHaveCount(6);
   await page
     .getByRole('button', { name: 'Build building at site 1', exact: true })
     .click();
-  await expect(page.locator('.building-menu .unaffordable')).toHaveCount(2);
+  await expect(page.locator('.building-menu .cost-missing')).not.toHaveCount(0);
   await expect(
     page.getByRole('button', { name: 'Build Research station', exact: true }),
-  ).toBeDisabled();
+  ).toBeEnabled();
 });

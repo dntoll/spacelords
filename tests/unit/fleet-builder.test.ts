@@ -149,12 +149,17 @@ describe('skeppsbilder', () => {
     const model = new AppModel();
     const fleet = {
       ...model.snapshot.fleets[0]!,
-      ships: { Fighter: 1000000, 'Colony ship': 1, 'Exploration ship': 1 },
+      ships: {
+        Fighter: 1000000,
+        'Colony ship': 1,
+        'Exploration ship': 1,
+        'Transport ship': 1,
+      },
     };
     const view = renderFleetShips(fleet);
     expect(view.querySelectorAll('img').length).toBeLessThan(20);
     expect(view.textContent).toContain('+999988 Fighter');
-    expect(new Set(Object.values(SHIP_IMAGES)).size).toBe(3);
+    expect(new Set(Object.values(SHIP_IMAGES)).size).toBe(4);
     for (const ship of Object.keys(SHIP_IMAGES))
       expect(view.querySelector(`img[alt="${ship}"]`)).not.toBeNull();
   });
