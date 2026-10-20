@@ -91,6 +91,9 @@ export class GalaxyMapView implements MapPort {
     sketch.translate(-model.camera.center.x, -model.camera.center.y);
     for (const cell of model.cells)
       this.#hex(sketch, cell, false, model.camera.zoom);
+    const selected = model.selected;
+    if (selected) this.#hex(sketch, selected, true, model.camera.zoom);
+    // synliga-handelsrutter: selection fills stay below routes; objects stay above.
     sketch.stroke('#547caa');
     sketch.strokeWeight(2 / model.camera.zoom);
     for (const route of model.tradeRoutes) {
@@ -98,8 +101,6 @@ export class GalaxyMapView implements MapPort {
         to = HexGeometry.toPoint(route.end);
       sketch.line(from.x, from.y, to.x, to.y);
     }
-    const selected = model.selected;
-    if (selected) this.#hex(sketch, selected, true, model.camera.zoom);
     for (const cell of model.cells)
       if (cell.object) this.#object(sketch, cell, model.camera.zoom);
     renderMapOverlays(sketch, model);

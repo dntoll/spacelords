@@ -1,5 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { endTurn, startFirstSlot, chooseResearch } from './save-helpers.js';
+import {
+  HexCoordinate,
+  HexGeometry,
+} from '../../src/client/models/HexCoordinate.js';
 
 async function nextYear(page: Page) {
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
@@ -145,6 +149,20 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await expect(
     page.getByRole('article', { name: 'Tellus to Vesta' }),
   ).toContainText('30 cargo capacity');
+  await page.getByRole('button', { name: 'Star map', exact: true }).click();
+  await page.getByRole('button', { name: 'Homeworld', exact: true }).click();
+  for (const [planet, fraction] of [
+    ['Tellus', 0.35],
+    ['Vesta', 0.65],
+  ] as const) {
+    await page
+      .getByRole('combobox', { name: 'Known objects' })
+      .selectOption({ label: planet });
+    await expectVisibleRoute(page, fraction);
+  }
+  await page.screenshot({
+    path: testInfo.outputPath('selected-trade-route.png'),
+  });
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   const freighters = page.getByRole('article', {
     name: 'Fleet Freighters',
@@ -188,3 +206,37 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   ).toBe(false);
   expect(errors).toEqual([]);
 });
+
+async function expectVisibleRoute(page: Page, fraction: number): Promise<void> {
+  const start = HexGeometry.toPoint(new HexCoordinate(1, 0));
+  const end = HexGeometry.toPoint(new HexCoordinate(0, 1));
+  // synliga-handelsrutter: sample inside the selected tile, outside planet badges.
+  await expect
+    .poll(() =>
+      page.locator('canvas[data-rendered="true"]').evaluate(
+        (node, offset) => {
+          const canvas = node as HTMLCanvasElement;
+          const density = canvas.width / canvas.getBoundingClientRect().width;
+          const radius = Math.ceil(3 * density);
+          const pixels = canvas
+            .getContext('2d')!
+            .getImageData(
+              Math.round(canvas.width / 2 + offset.x * density) - radius,
+              Math.round(canvas.height / 2 + offset.y * density) - radius,
+              radius * 2 + 1,
+              radius * 2 + 1,
+            ).data;
+          let routePixels = 0;
+          for (let i = 0; i < pixels.length; i += 4)
+            if (
+              pixels[i + 2]! > pixels[i]! + 50 &&
+              pixels[i + 2]! > pixels[i + 1]! + 20
+            )
+              routePixels++;
+          return routePixels;
+        },
+        { x: (end.x - start.x) * fraction, y: (end.y - start.y) * fraction },
+      ),
+    )
+    .toBeGreaterThan(2);
+}

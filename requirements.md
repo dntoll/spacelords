@@ -43,6 +43,8 @@ Se [hela visionen](docs/game-vision.md).
   från start.
 - **Logistik:** Trade routes länkar två ägda planeter och bildar nätverk.
   Flera flottor per rutt fraktar material till aktiva köprojekt automatiskt.
+  `synliga-handelsrutter` är **Fullständigt implementerat**: handelsrutternas
+  linjer syns även genom markerade hexrutor.
   Last, omlastning, avstånd och flottposition påverkar leveranser.
   Piratrån och eskortskydd ingår ännu inte.
 - **Beslut och händelser:** Decisions och Next decision samlar val och

@@ -118,6 +118,10 @@ Byggnader, delar och skepp delar planetens enda kö. Se [ekonomi och logistik](e
 
 ## Ekonomi, transport och beslutsstöd
 
+`synliga-handelsrutter` — **Fullständigt implementerat**: Handelsrutter syns
+även inne i markerade hexrutor. Markeringen får inte dölja rutten. Planeter,
+flottor och kartans informationsmärken förblir tydliga ovanpå linjerna.
+
 `tysta-beslut` — **Fullständigt implementerat**: Mute tystar ett enskilt beslut
 även under kommande rundor. Det undantas från Next decision, beslutsräknaren
 och rundvarningen. Beslutet ligger kvar i Decisions med Unmute, även när det
