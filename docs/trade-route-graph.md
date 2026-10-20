@@ -10,9 +10,20 @@ i en valpanel. Den tidigare Fleet bay med alla flottor ersätts av samma valpane
 
 - `handelsgraf-valpanel` — **Fullständigt implementerat**: panelen följer vald planet,
   flotta eller rutt. Materialdetaljer visas för vald planet, skepp och uppdrag för
-  vald flotta och tilldelningskontroller för vald rutt.
-- `handelsgraf-flottboxar` förtydligas: varje flotta visas en gång på spelbrädet.
-  Ruttflottor ligger i ruttens box och visas inte samtidigt vid sin position.
+  vald flotta och tilldelningskontroller för vald rutt. Vald rutt visar även sina
+  tilldelade flottor med skepp, antal, position, last och frigörande.
+- `handelsgraf-flottboxar` förtydligas: varje flotta har ett kort på spelbrädet.
+  Ruttflottornas kort ligger i ruttens box. Ett separat skeppsmärke vid flottans
+  fysiska position är uttryckligen tillåtet enligt den ändrade utformningen.
+- `handelsgraf-skeppspositioner` — **Fullständigt implementerat**: varje positionerad
+  flotta med skepp visas även med skeppsbilder och antal vid sin aktuella plats,
+  inklusive ruttflottor. Märket kan väljas och leder till flottans detaljer.
+  Kortet behålls.
+- `handelsgraf-lasbarhet` — **Fullständigt implementerat**: planeterna har dubblerad
+  diameter. Planetnamn, kort, skeppsmärken och kontroller behåller läsbar storlek
+  när avstånden zoomas. Kort placeras fria från planeter, skeppsmärken och andra
+  kort, med ledlinjer till sina ankare. Panorering ger åtkomst när allt inte ryms.
+  Planetnamn placeras separat så att närliggande planeter inte döljer dem.
 
 | Kravnamn                     | Status                     | Beskrivning                                                                                                                                                                                                                                       |
 | ---------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

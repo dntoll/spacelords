@@ -104,3 +104,53 @@ export function tradeNetworkState(withRoute = true): GameState {
     ],
   };
 }
+
+export function distantTradeNetworkState(): GameState {
+  const state = tradeNetworkState();
+  const distant = state.world.systems
+    .flatMap((s) => s.planets)
+    .find((p) => p.id === 'nadir-1')!;
+  return {
+    ...state,
+    world: {
+      ...state.world,
+      systems: state.world.systems.map((system) => ({
+        ...system,
+        planets: system.planets.map((planet) =>
+          planet.id === distant.id
+            ? { ...planet, colony: { ownerId: 'player', population: 1000 } }
+            : planet,
+        ),
+      })),
+    },
+    colonies: [
+      ...state.colonies,
+      [
+        distant.id,
+        {
+          ...structuredClone(state.colonies[1]![1]),
+          projects: [],
+          homeFleetId: null,
+        },
+      ],
+    ],
+    tradeRoutes: [
+      ...state.tradeRoutes,
+      { id: 'route-distant', a: 'sol-0', b: distant.id, closing: false },
+    ],
+    fleets: state.fleets.map((fleet) =>
+      fleet.id === 'freighters'
+        ? { ...fleet, routeId: 'route-test' }
+        : fleet.id === 'travellers'
+          ? {
+              ...fleet,
+              position: distant.position,
+              destination: null,
+              routeId: 'route-distant',
+            }
+          : fleet.id === state.fleets[0]!.id
+            ? { ...fleet, position: distant.position }
+            : fleet,
+    ),
+  };
+}

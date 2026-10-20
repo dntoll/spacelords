@@ -14,7 +14,7 @@ export function renderTradeFleet(
   fleet: FleetSnapshot,
   model: AppReadModel,
   emit: IntentHandler,
-  mode: 'details' | 'marker' | 'dock',
+  mode: 'details' | 'route-details' | 'marker' | 'dock',
 ): HTMLElement {
   const card = element(
     'article',
@@ -67,7 +67,7 @@ export function renderTradeFleet(
     ships,
     element('p', 'trade-fleet-position', position),
   );
-  if (mode === 'details') {
+  if (mode === 'details' || mode === 'route-details') {
     const assignment = fleetAssignmentLabel(fleet, model);
     if (assignment)
       card.append(element('p', 'trade-fleet-assignment', assignment));
@@ -115,6 +115,42 @@ export function renderTradeFleet(
     if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
   });
   return card;
+}
+
+export function renderTradeShipLocation(
+  fleet: FleetSnapshot,
+  model: AppReadModel,
+  emit: IntentHandler,
+): HTMLElement {
+  const marker = button(
+    `Select ships of ${fleet.name}`,
+    () => emit({ type: 'trade-select-fleet', id: fleet.id }),
+    'trade-ship-location diagram-card',
+  );
+  marker.dataset.fleetId = fleet.id;
+  marker.setAttribute(
+    'aria-pressed',
+    String(model.tradeGraph.fleetId === fleet.id),
+  );
+  marker.title = `${fleet.name} · HEX ${fleet.position!.q}, ${fleet.position!.r}`;
+  const ships = element('span', 'trade-position-ships');
+  for (const type of SHIP_TYPES) {
+    const count = fleet.ships[type];
+    if (!count) continue;
+    const ship = element('span', 'trade-position-ship');
+    ship.dataset.ship = type;
+    ship.title = `${count} ${type}`;
+    ship.append(
+      shipImage(type),
+      element('span', 'trade-ship-count', String(count)),
+    );
+    ships.append(ship);
+  }
+  marker.replaceChildren(
+    ships,
+    element('span', 'trade-position-name', fleet.name),
+  );
+  return marker;
 }
 
 export function renderTradeAssignment(

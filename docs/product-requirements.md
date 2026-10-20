@@ -125,6 +125,11 @@ Planeter visas med namn på spelbrädet. En valpanel visar material och produkti
 för vald planet, skepp och uppdrag för vald flotta eller tilldelning för vald rutt
 (`handelsgraf-valpanel`). Varje flotta har en enda box på spelbrädet: ruttflottor
 visas på sin rutt, övriga vid sin position.
+Alla positionerade flottor visas dessutom med skeppsbilder vid sin fysiska plats
+(`handelsgraf-skeppspositioner`). Även dessa märken kan väljas. Planetnamn och kort
+förblir läsbara vid zoom, planeterna visas större och korten placeras fria från
+planeter och skeppsmärken (`handelsgraf-lasbarhet`). Vald rutt visar sina aktuella
+flottor, deras skepp, position och last.
 
 `synliga-handelsrutter` — **Fullständigt implementerat**: Handelsrutter syns
 även inne i markerade hexrutor. Markeringen får inte dölja rutten. Planeter,

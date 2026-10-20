@@ -89,7 +89,7 @@ it('handelsgraf-flottboxar: displays exact ship totals and positions, and emits 
   const emit = vi.fn();
   const view = renderTradeRoutes(model.snapshot, emit);
   const fleet = view.querySelector(
-    '.trade-graph-stage [data-fleet-id="freighters"]',
+    '.trade-graph-stage .trade-fleet-box[data-fleet-id="freighters"]',
   )!;
   expect(
     fleet.querySelector('[data-ship="Transport ship"] figcaption')!.textContent,
@@ -117,7 +117,9 @@ it('handelsgraf-valpanel / handelsgraf-flottboxar: follows the selected object a
   model.assignTradeFleet('route-test', 'freighters');
   let view = renderTradeRoutes(model.snapshot, () => {});
   expect(
-    view.querySelectorAll('.trade-graph-stage [data-fleet-id="freighters"]'),
+    view.querySelectorAll(
+      '.trade-graph-stage .trade-fleet-box[data-fleet-id="freighters"]',
+    ),
   ).toHaveLength(1);
   expect(
     view.querySelector('.trade-fleet-marker[data-fleet-id="freighters"]'),
@@ -126,8 +128,17 @@ it('handelsgraf-valpanel / handelsgraf-flottboxar: follows the selected object a
     '60 cargo capacity',
   );
   expect(
-    view.querySelector('.trade-selection-panel .trade-fleet-box'),
-  ).toBeNull();
+    view.querySelector('.trade-selection-panel [data-fleet-id="freighters"]')!
+      .textContent,
+  ).toContain('Tellus · HEX 1, 0');
+  expect(
+    view.querySelectorAll('.trade-ship-location[data-fleet-id="freighters"]'),
+  ).toHaveLength(1);
+  expect(
+    view.querySelector(
+      '.trade-ship-location[data-fleet-id="freighters"] [data-ship="Transport ship"]',
+    )!.textContent,
+  ).toContain('2');
   model.selectTradeFleet('freighters');
   view = renderTradeRoutes(model.snapshot, () => {});
   expect(view.querySelector('.trade-selection-panel')!.textContent).toContain(
@@ -147,7 +158,9 @@ it('handelsgraf-valpanel / handelsgraf-flottboxar: follows the selected object a
   model.releaseTradeFleet('freighters');
   view = renderTradeRoutes(model.snapshot, () => {});
   expect(
-    view.querySelectorAll('.trade-graph-stage [data-fleet-id="freighters"]'),
+    view.querySelectorAll(
+      '.trade-graph-stage .trade-fleet-box[data-fleet-id="freighters"]',
+    ),
   ).toHaveLength(1);
   expect(
     view.querySelector('.trade-fleet-marker[data-fleet-id="freighters"]'),

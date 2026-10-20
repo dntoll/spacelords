@@ -48,6 +48,10 @@ Se [hela visionen](docs/game-vision.md).
   `handelsgraf-valpanel` är **Fullständigt implementerat**: namngivna planeter och
   en enda box per flotta visas på spelbrädet; vald planet, flotta eller rutt
   visas i sidopanelen.
+  `handelsgraf-skeppspositioner` och `handelsgraf-lasbarhet` är **Fullständigt implementerade**:
+  flottornas skepp visas vid sin fysiska plats utöver korten; dubbelt så stora
+  planeter, läsbara planetnamn och kort behåller sin storlek vid zoom.
+  Kort och planetnamn placeras fria från planeter och skeppsmärken.
   Flera flottor per rutt fraktar material till aktiva köprojekt automatiskt.
   `synliga-handelsrutter` är **Fullständigt implementerat**: handelsrutternas
   linjer syns även genom markerade hexrutor.

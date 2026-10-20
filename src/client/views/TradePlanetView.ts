@@ -21,13 +21,28 @@ export function renderTradePlanet(
   );
   const sphere = element('span', 'trade-planet-sphere');
   sphere.setAttribute('aria-hidden', 'true');
-  choose.replaceChildren(
-    sphere,
-    element('span', 'trade-planet-label', planet.name),
-  );
+  choose.replaceChildren(sphere);
   choose.setAttribute('aria-pressed', String(selected >= 0));
   card.append(choose);
   return card;
+}
+
+export function renderTradePlanetTitle(
+  planet: PlanetGameSnapshot,
+  model: AppReadModel,
+  emit: IntentHandler,
+): HTMLElement {
+  const label = button(
+    `Select details for planet ${planet.name}`,
+    () => emit({ type: 'trade-select-planet', id: planet.id }),
+    'trade-planet-label diagram-card',
+  );
+  label.textContent = planet.name;
+  label.setAttribute(
+    'aria-pressed',
+    String(model.tradeGraph.planets.includes(planet.id)),
+  );
+  return label;
 }
 
 export function renderTradePlanetDetails(

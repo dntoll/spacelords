@@ -8,12 +8,28 @@ import type { IntentHandler } from './ViewContracts.js';
 import { bindDiagramNavigation } from './DiagramNavigation.js';
 import {
   renderTradePlanet,
+  renderTradePlanetTitle,
   renderTradePlanetDetails,
 } from './TradePlanetView.js';
-import { renderTradeFleet, renderTradeAssignment } from './TradeFleetView.js';
+import {
+  renderTradeFleet,
+  renderTradeAssignment,
+  renderTradeShipLocation,
+} from './TradeFleetView.js';
+import { TradeGraphPresentation } from '../models/TradeGraphPresentation.js';
 import { button, element } from './dom.js';
 
 const svgNamespace = 'http://www.w3.org/2000/svg';
+const presentations = new WeakMap<
+  HTMLElement,
+  {
+    zoom: number;
+    width: number;
+    height: number;
+    offset: Readonly<{ x: number; y: number }>;
+    layout: TradeGraphPresentation;
+  }
+>();
 
 export function renderTradeRoutes(
   model: AppReadModel,
@@ -106,6 +122,7 @@ export function renderTradeRoutes(
     line.setAttribute('x2', String(end.x));
     line.setAttribute('y2', String(end.y));
     line.classList.add('trade-route-line');
+    line.setAttribute('vector-effect', 'non-scaling-stroke');
     line.classList.toggle(
       'selected-route',
       route.id === model.tradeGraph.routeId,
@@ -134,6 +151,8 @@ export function renderTradeRoutes(
     if (!fleet.anchor) continue;
     const leader = document.createElementNS(svgNamespace, 'line');
     leader.classList.add('trade-fleet-leader');
+    leader.dataset.objectKey = `fleet:${fleet.id}`;
+    leader.setAttribute('vector-effect', 'non-scaling-stroke');
     leader.setAttribute('x1', String(fleet.anchor.x));
     leader.setAttribute('y1', String(fleet.anchor.y));
     leader.setAttribute('x2', String(fleet.x));
@@ -144,6 +163,8 @@ export function renderTradeRoutes(
   for (const route of layout.routes) {
     const leader = document.createElementNS(svgNamespace, 'line');
     leader.classList.add('trade-fleet-leader');
+    leader.dataset.objectKey = `route:${route.id}`;
+    leader.setAttribute('vector-effect', 'non-scaling-stroke');
     leader.setAttribute('x1', String(route.anchor.x));
     leader.setAttribute('y1', String(route.anchor.y));
     leader.setAttribute('x2', String(route.x + 110));
@@ -155,13 +176,23 @@ export function renderTradeRoutes(
   for (const node of layout.planets) {
     const planet = model.ownedPlanets.find((p) => p.id === node.id)!;
     const card = renderTradePlanet(planet, model, emit);
+    card.dataset.objectKey = `planet:${planet.id}`;
     card.style.left = `${node.x - TradeGraphLayout.planetWidth / 2}px`;
     card.style.top = `${node.y - TradeGraphLayout.planetHeight / 2}px`;
     stage.append(card);
+    const name = renderTradePlanetTitle(planet, model, emit);
+    name.dataset.objectKey = `name:${planet.id}`;
+    stage.append(name);
+    const leader = document.createElementNS(svgNamespace, 'line');
+    leader.classList.add('trade-fleet-leader');
+    leader.dataset.objectKey = `name:${planet.id}`;
+    leader.setAttribute('vector-effect', 'non-scaling-stroke');
+    svg.append(leader);
   }
   for (const route of model.tradeRoutes) {
     const placement = layout.routes.find((r) => r.id === route.id)!;
     const dock = renderRouteDock(route, model, emit);
+    dock.dataset.objectKey = `route:${route.id}`;
     dock.style.left = `${placement.x}px`;
     dock.style.top = `${placement.y}px`;
     stage.append(dock);
@@ -169,10 +200,26 @@ export function renderTradeRoutes(
   for (const node of layout.fleets) {
     const fleet = model.fleets.find((f) => f.id === node.id)!;
     const marker = renderTradeFleet(fleet, model, emit, 'marker');
+    marker.dataset.objectKey = `fleet:${fleet.id}`;
     marker.classList.add('diagram-card');
     marker.style.left = `${node.x}px`;
     marker.style.top = `${node.y}px`;
     stage.append(marker);
+  }
+  for (const fleet of model.fleets) {
+    if (
+      !fleet.position ||
+      !Object.values(fleet.ships).some((count) => count > 0)
+    )
+      continue;
+    const ships = renderTradeShipLocation(fleet, model, emit);
+    ships.dataset.objectKey = `ships:${fleet.id}`;
+    stage.append(ships);
+    const leader = document.createElementNS(svgNamespace, 'line');
+    leader.classList.add('trade-fleet-leader');
+    leader.dataset.objectKey = `ships:${fleet.id}`;
+    leader.setAttribute('vector-effect', 'non-scaling-stroke');
+    svg.append(leader);
   }
   viewport.append(stage);
   bindDiagramNavigation(
@@ -238,6 +285,73 @@ export function updateTradeCamera(
   const stage = root.querySelector<HTMLElement>('.trade-graph-stage');
   if (stage)
     stage.style.transform = `translate(${camera.offset.x}px, ${camera.offset.y}px) scale(${camera.zoom})`;
+  if (stage) {
+    const viewport = stage.parentElement!;
+    let presentation = presentations.get(stage);
+    if (
+      !presentation ||
+      presentation.zoom !== camera.zoom ||
+      presentation.width !== viewport.clientWidth ||
+      presentation.height !== viewport.clientHeight
+    ) {
+      presentation = {
+        zoom: camera.zoom,
+        width: viewport.clientWidth,
+        height: viewport.clientHeight,
+        offset: camera.offset,
+        layout: new TradeGraphPresentation(
+          new TradeGraphLayout(
+            model.ownedPlanets,
+            model.fleets,
+            model.tradeRoutes,
+          ),
+          model.fleets,
+          camera,
+          { width: viewport.clientWidth, height: viewport.clientHeight },
+        ),
+      };
+      presentations.set(stage, presentation);
+    }
+    const nodes = new Map(
+      Array.from(stage.querySelectorAll<HTMLElement>('.diagram-card')).map(
+        (node) => [node.dataset.objectKey, node],
+      ),
+    );
+    const leaders = new Map(
+      Array.from(
+        stage.querySelectorAll<SVGLineElement>('.trade-fleet-leader'),
+      ).map((line) => [line.dataset.objectKey, line]),
+    );
+    for (const placement of presentation.layout.objects) {
+      const object = {
+        ...placement,
+        x: placement.x + camera.offset.x - presentation.offset.x,
+        y: placement.y + camera.offset.y - presentation.offset.y,
+      };
+      const node = nodes.get(object.key)!;
+      node.style.left = `${(object.x - camera.offset.x) / camera.zoom}px`;
+      node.style.top = `${(object.y - camera.offset.y) / camera.zoom}px`;
+      node.style.width = `${object.width}px`;
+      node.style.height = `${object.height}px`;
+      node.style.transform = `scale(${1 / camera.zoom})`;
+      node.style.transformOrigin = '0 0';
+      const leader = leaders.get(object.key);
+      if (leader && object.anchor) {
+        leader.setAttribute('x1', String(object.anchor.x));
+        leader.setAttribute('y1', String(object.anchor.y));
+        leader.setAttribute(
+          'x2',
+          String((object.x + object.width / 2 - camera.offset.x) / camera.zoom),
+        );
+        leader.setAttribute(
+          'y2',
+          String(
+            (object.y + object.height / 2 - camera.offset.y) / camera.zoom,
+          ),
+        );
+      }
+    }
+  }
   const output = root.querySelector('.trade-graph-zoom');
   if (output) output.textContent = `${Math.round(camera.zoom * 100)}%`;
 }
@@ -359,7 +473,21 @@ function renderSelectionPanel(
       'button secondary-button',
     );
     close.disabled = route.closing || model.phase !== 'planning';
-    panel.append(close, element('h3', '', 'Assign fleet'));
+    panel.append(
+      close,
+      element('h3', '', `Assigned fleets · ${route.fleetIds.length}`),
+    );
+    const assigned = element('div', 'trade-assigned-fleets');
+    for (const id of route.fleetIds) {
+      const assignedFleet = model.fleets.find((f) => f.id === id);
+      if (assignedFleet)
+        assigned.append(
+          renderTradeFleet(assignedFleet, model, emit, 'route-details'),
+        );
+    }
+    if (!route.fleetIds.length)
+      assigned.append(element('p', 'muted-note', 'No fleet assigned'));
+    panel.append(assigned, element('h3', '', 'Assign fleet'));
     for (const candidate of model.fleets.filter((f) => !f.routeId))
       panel.append(
         renderTradeAssignment(candidate, route, model, emit, candidate.name),

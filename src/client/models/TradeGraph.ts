@@ -209,7 +209,6 @@ export class TradeGraphState {
       this.#initialized = true;
       this.fit();
     }
-    this.#bound();
   }
   fit(): void {
     this.#zoom = Math.max(
@@ -235,12 +234,10 @@ export class TradeGraphState {
       x: this.#width / 2 - point.x,
       y: this.#height / 2 - point.y,
     };
-    this.#bound();
   }
   panBy(delta: Point): void {
     if (![delta.x, delta.y].every(Number.isFinite)) return;
     this.#offset = { x: this.#offset.x + delta.x, y: this.#offset.y + delta.y };
-    this.#bound();
   }
   zoomAt(factor: number, anchor: Point): void {
     if (![factor, anchor.x, anchor.y].every(Number.isFinite) || factor <= 0)
@@ -251,20 +248,6 @@ export class TradeGraphState {
       y: anchor.y - ((anchor.y - this.#offset.y) * zoom) / this.#zoom,
     };
     this.#zoom = zoom;
-    this.#bound();
-  }
-  #bound(): void {
-    const b = this.#bounds;
-    this.#offset = {
-      x: Math.max(
-        64 - (b.x + b.width) * this.#zoom,
-        Math.min(this.#width - 64 - b.x * this.#zoom, this.#offset.x),
-      ),
-      y: Math.max(
-        64 - (b.y + b.height) * this.#zoom,
-        Math.min(this.#height - 64 - b.y * this.#zoom, this.#offset.y),
-      ),
-    };
   }
 }
 

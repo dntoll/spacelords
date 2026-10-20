@@ -2106,8 +2106,8 @@ p {
 }
 .trade-planet-node {
   position: absolute;
-  width: 160px;
-  height: 130px;
+  width: 172px;
+  height: 172px;
   user-select: none;
 }
 .trade-planet-name {
@@ -2127,8 +2127,8 @@ p {
 }
 .trade-planet-sphere {
   display: block;
-  width: 76px;
-  height: 76px;
+  width: 152px;
+  height: 152px;
   border-radius: 50%;
   background: radial-gradient(
     circle at 30% 25%,
@@ -2142,17 +2142,25 @@ p {
     0 0 25px #8adac433;
 }
 .trade-planet-label {
-  max-width: 100%;
-  overflow-wrap: anywhere;
+  position: absolute;
+  min-height: 32px;
+  border: 0;
   padding: 2px 6px;
   border-radius: 4px;
-  background: #09151fd9;
+  background: #09151f;
+  color: #ddf9ed;
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .chosen-endpoint .trade-planet-sphere {
   outline: 3px solid #f3d28e;
   outline-offset: 7px;
 }
-.chosen-endpoint .trade-planet-label {
+.trade-planet-label[aria-pressed='true'] {
   color: #f3d28e;
 }
 .trade-coordinates {
@@ -2213,10 +2221,10 @@ p {
 }
 .trade-route-dock {
   position: absolute;
-  width: 220px;
-  height: 220px;
+  width: 270px;
+  height: 290px;
   display: grid;
-  grid-template-rows: 28px 18px minmax(0, 1fr) 36px;
+  grid-template-rows: 32px 30px minmax(0, 1fr) 36px;
   gap: 4px;
   padding: 10px;
   border: 1px solid #5d91ae;
@@ -2236,13 +2244,13 @@ p {
   color: #c9e5f5;
   padding: 0;
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 600;
   text-align: left;
 }
 .trade-route-capacity {
   margin: 0;
-  font-size: 0.65rem;
+  font-size: 0.8rem;
   color: var(--muted);
 }
 .trade-route-dock > .button {
@@ -2257,7 +2265,7 @@ p {
   margin: 0;
 }
 .trade-route-fleets > .muted-note {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
 }
 .fleet-drop-target {
   outline: 3px solid #b0e5ce;
@@ -2269,14 +2277,14 @@ p {
   margin: 0;
 }
 .trade-fleet-box .fleet-name-button {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   overflow-wrap: anywhere;
 }
 .trade-fleet-position,
 .trade-fleet-assignment,
 .trade-cargo,
 .trade-assignment-issue {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   line-height: 1.3;
   margin: 5px 0;
   overflow-wrap: anywhere;
@@ -2321,7 +2329,7 @@ p {
   border-radius: 3px;
   background: #07111be6;
   color: #d9f1e6;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
 }
 .trade-ship-token .ship-token-label {
   display: block;
@@ -2344,8 +2352,8 @@ p {
 }
 .trade-fleet-marker {
   position: absolute;
-  width: 184px;
-  height: 120px;
+  width: 240px;
+  height: 170px;
   overflow: hidden;
   background: #122b38;
   border-color: #526a91;
@@ -2356,12 +2364,12 @@ p {
 }
 .trade-fleet-marker .trade-ship-token,
 .trade-fleet-dock .trade-ship-token {
-  width: 30px;
-  height: 28px;
+  width: 40px;
+  height: 36px;
 }
 .trade-fleet-marker .trade-ship-token .ship-image,
 .trade-fleet-dock .trade-ship-token .ship-image {
-  height: 26px;
+  height: 34px;
 }
 .trade-fleet-marker .ship-token-label,
 .trade-fleet-dock .ship-token-label {
@@ -2381,7 +2389,49 @@ p {
   padding: 0 6px;
 }
 .trade-fleet-dock .trade-fleet-position {
-  font-size: 0.6rem;
+  font-size: 0.75rem;
+}
+.trade-ship-location {
+  position: absolute;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #d6f3ee;
+  background: #09151fb3;
+  font: inherit;
+}
+.trade-ship-location[aria-pressed='true'] {
+  border-color: #f3d28e;
+}
+.trade-position-ships {
+  display: flex;
+  gap: 4px;
+}
+.trade-position-ship {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+.trade-position-ship .ship-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 4px #8adac455);
+}
+.trade-position-name {
+  font-size: 0.8rem;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.trade-assigned-fleets {
+  display: grid;
+  gap: 8px;
 }
 .trade-selection-panel {
   min-height: 0;

@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
-import { tradeNetworkState } from '../fixtures/trade-network.js';
+import {
+  tradeNetworkState,
+  distantTradeNetworkState,
+} from '../fixtures/trade-network.js';
 import { connectTradePlanets, startFirstSlot } from './save-helpers.js';
 
 test.beforeEach(async ({ page }) => {
@@ -68,7 +71,9 @@ test('handelsgraf / handelsgraf-planetoversikt / handelsgraf-flottboxar: connect
   await expect(page.locator('.trade-route-line')).toHaveCount(1);
   const bay = page.getByRole('complementary', { name: 'Selected object' });
   await expect(
-    page.locator('.trade-graph-stage [data-fleet-id="freighters"]'),
+    page.locator(
+      '.trade-graph-stage .trade-fleet-box[data-fleet-id="freighters"]',
+    ),
   ).toContainText('Tellus · HEX 1, 0');
   await expect(
     bay.getByRole('button', {
@@ -91,8 +96,19 @@ test('handelsgraf / handelsgraf-planetoversikt / handelsgraf-flottboxar: connect
     .click();
   const dock = page.locator('.trade-route-dock');
   await expect(dock).toContainText('60 cargo capacity');
+  await expect(bay).toContainText('Assigned fleets · 1');
+  await expect(bay.locator('[data-fleet-id="freighters"]')).toContainText(
+    'Tellus · HEX 1, 0',
+  );
+  const ships = page.getByRole('button', {
+    name: 'Select ships of Freighters',
+    exact: true,
+  });
+  await expect(ships).toHaveCount(1);
   await expect(
-    page.locator('.trade-graph-stage [data-fleet-id="freighters"]'),
+    page.locator(
+      '.trade-graph-stage .trade-fleet-box[data-fleet-id="freighters"]',
+    ),
   ).toHaveCount(1);
   await expect(
     page.locator('.trade-fleet-marker[data-fleet-id="freighters"]'),
@@ -103,6 +119,11 @@ test('handelsgraf / handelsgraf-planetoversikt / handelsgraf-flottboxar: connect
     ),
   ).toHaveText('2');
   await expect(stage).toHaveAttribute('style', camera!);
+  await ships.focus();
+  await ships.click();
+  await expect(
+    bay.getByRole('heading', { name: 'Freighters', exact: true }),
+  ).toBeVisible();
   await page
     .getByRole('button', { name: 'Fit trade network', exact: true })
     .click();
@@ -170,6 +191,89 @@ test('handelsgraf / handelsgraf-planetoversikt / handelsgraf-flottboxar: connect
   ).toBe(true);
 });
 
+test('handelsgraf-lasbarhet / handelsgraf-skeppspositioner: a distant network keeps readable names and assigned fleets at their actual positions', async ({
+  page,
+}, testInfo) => {
+  await page.evaluate(
+    (state) =>
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-10-20T10:00:00Z', state }),
+      ),
+    distantTradeNetworkState(),
+  );
+  await page.reload();
+  await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Trade routes', exact: true }).click();
+  await expect(page.locator('.trade-planet-node')).toHaveCount(3);
+  await expect(page.locator('.trade-ship-location')).toHaveCount(3);
+  await expect(
+    page.locator('.trade-fleet-marker[data-fleet-id="travellers"]'),
+  ).toHaveCount(0);
+  const route = page.getByRole('button', {
+    name: 'Assign fleets to Tellus to Nadir II',
+    exact: true,
+  });
+  await route.focus();
+  await route.click();
+  const panel = page.getByRole('complementary', { name: 'Selected object' });
+  await expect(panel).toContainText('Assigned fleets · 1');
+  await expect(panel.locator('[data-fleet-id="travellers"]')).toContainText(
+    'Nadir II',
+  );
+  await expect(
+    panel.locator(
+      '[data-fleet-id="travellers"] [data-ship="Transport ship"] figcaption',
+    ),
+  ).toHaveText('1');
+  await page
+    .getByRole('button', { name: 'Fit trade network', exact: true })
+    .click();
+  await page.screenshot({
+    path: testInfo.outputPath('distant-trade-network.png'),
+  });
+  const name = page.getByRole('button', {
+    name: 'Select details for planet Tellus',
+    exact: true,
+  });
+  await name.focus();
+  await name.click();
+  await expect(
+    panel.getByRole('heading', { name: 'Tellus', exact: true }),
+  ).toBeVisible();
+});
+
+test('handelsgraf-lasbarhet: planet names, doubled planets and cards stay readable when zoomed out', async ({
+  page,
+}, testInfo) => {
+  await connectTradePlanets(page, 'Tellus', 'Vesta');
+  for (let i = 0; i < 5; i++)
+    await page
+      .getByRole('button', { name: 'Zoom out trade network', exact: true })
+      .click();
+  const sphere = page.locator('.trade-planet-sphere').first();
+  expect((await sphere.boundingBox())!.width).toBeCloseTo(152, 0);
+  const title = page.locator('.trade-planet-label').first();
+  const height = await title.evaluate((node) => {
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    return range.getBoundingClientRect().height;
+  });
+  expect(height).toBeGreaterThanOrEqual(16);
+  expect(
+    (await page.locator('.trade-route-dock').boundingBox())!.width,
+  ).toBeCloseTo(270, 0);
+  expect(
+    (await page.locator('.trade-fleet-marker').first().boundingBox())!.width,
+  ).toBeCloseTo(240, 0);
+  await page
+    .getByRole('button', { name: 'Fit trade network', exact: true })
+    .click();
+  await page.screenshot({
+    path: testInfo.outputPath('readable-trade-network.png'),
+  });
+});
+
 test('handelsgraf-flottboxar / handelsgraf-navigation: mouse drag assigns a fleet and the graph supports wheel zoom', async ({
   page,
   isMobile,
@@ -183,7 +287,7 @@ test('handelsgraf-flottboxar / handelsgraf-navigation: mouse drag assigns a flee
     .getByRole('button', { name: 'Fit trade network', exact: true })
     .click();
   const source = page.locator(
-    '.trade-graph-stage [data-fleet-id="freighters"]',
+    '.trade-graph-stage .trade-fleet-box[data-fleet-id="freighters"]',
   );
   await source.dragTo(page.locator('.trade-route-dock'));
   await expect(page.locator('.trade-route-dock')).toContainText(
