@@ -2090,6 +2090,17 @@ p {
   pointer-events: stroke;
   cursor: pointer;
 }
+.trade-route-hit {
+  stroke: transparent;
+  stroke-width: 28;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.trade-route-line.fleet-drop-target {
+  outline: none;
+  stroke: #b0e5ce;
+  stroke-width: 8;
+}
 .trade-route-line.selected-route {
   stroke: #f3d28e;
   stroke-width: 7;
@@ -2150,7 +2161,7 @@ p {
   border: 0;
   padding: 2px 6px;
   border-radius: 4px;
-  background: #09151f;
+  background: transparent;
   color: #ddf9ed;
   font: inherit;
   font-size: 1.1rem;
@@ -2221,54 +2232,6 @@ p {
 }
 .trade-project-status {
   color: #ddc99b;
-}
-.trade-route-dock {
-  position: absolute;
-  width: 270px;
-  height: 290px;
-  display: grid;
-  grid-template-rows: 32px 30px minmax(0, 1fr) 36px;
-  gap: 4px;
-  padding: 10px;
-  border: 1px solid #5d91ae;
-  border-radius: 10px;
-  background: #102532f2;
-  box-shadow: 0 8px 22px #0007;
-}
-.trade-route-dock.selected-route {
-  border-color: #f3d28e;
-}
-.trade-route-name {
-  display: block;
-  min-height: 28px;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  color: #c9e5f5;
-  padding: 0;
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 600;
-  text-align: left;
-}
-.trade-route-capacity {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--muted);
-}
-.trade-route-dock > .button {
-  min-height: 36px;
-  padding: 4px 8px;
-  font-size: 0.75rem;
-}
-.trade-route-fleets {
-  min-height: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
-  margin: 0;
-}
-.trade-route-fleets > .muted-note {
-  font-size: 0.8rem;
 }
 .fleet-drop-target {
   outline: 3px solid #b0e5ce;
@@ -2353,47 +2316,6 @@ p {
   font-size: 0.75rem;
   margin: 4px 4px 0 0;
 }
-.trade-fleet-marker {
-  position: absolute;
-  width: 240px;
-  height: 170px;
-  overflow: hidden;
-  background: #122b38;
-  border-color: #526a91;
-}
-.trade-fleet-marker .fleet-name-button,
-.trade-fleet-dock .fleet-name-button {
-  min-height: 24px;
-}
-.trade-fleet-marker .trade-ship-token,
-.trade-fleet-dock .trade-ship-token {
-  width: 40px;
-  height: 36px;
-}
-.trade-fleet-marker .trade-ship-token .ship-image,
-.trade-fleet-dock .trade-ship-token .ship-image {
-  height: 34px;
-}
-.trade-fleet-marker .ship-token-label,
-.trade-fleet-dock .ship-token-label {
-  display: none;
-}
-.trade-fleet-dock {
-  position: relative;
-  background: #0c1e2b;
-  padding: 6px;
-  margin-bottom: 4px;
-}
-.trade-fleet-dock > .button {
-  position: absolute;
-  right: 3px;
-  top: 3px;
-  min-height: 28px;
-  padding: 0 6px;
-}
-.trade-fleet-dock .trade-fleet-position {
-  font-size: 0.75rem;
-}
 .trade-ship-location {
   position: absolute;
   display: grid;
@@ -2431,6 +2353,12 @@ p {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+.trade-fleet-drag-preview {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.8;
 }
 .trade-assigned-fleets {
   display: grid;

@@ -143,7 +143,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     })
     .click();
   await expect(
-    page.getByRole('article', { name: 'Tellus to Vesta' }),
+    page.getByRole('complementary', { name: 'Selected object' }),
   ).toContainText('30 cargo capacity');
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await page.getByRole('button', { name: 'Homeworld', exact: true }).click();
@@ -190,8 +190,14 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await page.reload();
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Trade routes', exact: true }).click();
+  const route = page.getByRole('button', {
+    name: 'Select route Tellus to Vesta',
+    exact: true,
+  });
+  await route.focus();
+  await route.press('Enter');
   await expect(
-    page.getByRole('article', { name: 'Tellus to Vesta' }),
+    page.getByRole('complementary', { name: 'Selected object' }),
   ).toContainText('Freighters');
   expect(
     await page.evaluate(

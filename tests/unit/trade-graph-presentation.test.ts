@@ -39,9 +39,10 @@ it('handelsgraf-lasbarhet / handelsgraf-skeppspositioner: preserves readable dim
   for (const zoom of [0.08, 0.3, 1, 2]) {
     const camera = { zoom, offset: { x: 300, y: 200 } };
     const { objects } = new TradeGraphPresentation(layout, fleets, camera);
-    const card = objects.find((o) => o.key === `fleet:${fleets[0]!.id}`)!;
-    expect(card.width).toBe(240);
-    expect(objects.find((o) => o.key === 'route:route')!.width).toBe(270);
+    const card = objects.find((o) => o.key === 'fleet:unpositioned')!;
+    expect(card.width).toBe(128);
+    expect(objects.some((o) => o.key.startsWith('route:'))).toBe(false);
+    expect(objects.some((o) => o.key === `fleet:${fleets[0]!.id}`)).toBe(false);
     expect(objects.find((o) => o.key === 'ships:freighters')!.anchor).toEqual(
       TradeGraphLayout.point(fleets[1]!.position!),
     );

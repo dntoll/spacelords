@@ -15,10 +15,8 @@ export interface TradeObjectPlacement extends GraphBounds {
 export class TradeGraphPresentation {
   static readonly planetWidth = 172;
   static readonly planetHeight = 172;
-  static readonly fleetWidth = 240;
-  static readonly fleetHeight = 170;
-  static readonly routeWidth = 270;
-  static readonly routeHeight = 290;
+  static readonly fleetWidth = 128;
+  static readonly fleetHeight = 60;
   readonly objects: readonly TradeObjectPlacement[];
 
   constructor(
@@ -116,19 +114,10 @@ export class TradeGraphPresentation {
         y: 128,
       });
     }
-    for (const route of layout.routes)
-      place(
-        `route:${route.id}`,
-        route.anchor,
-        project(route.anchor),
-        TradeGraphPresentation.routeWidth,
-        TradeGraphPresentation.routeHeight,
-        {
-          x: -TradeGraphPresentation.routeWidth / 2,
-          y: -TradeGraphPresentation.routeHeight / 2,
-        },
-      );
     for (const fleet of layout.fleets) {
+      const data = fleets.find((f) => f.id === fleet.id)!;
+      if (data.position && Object.values(data.ships).some((count) => count > 0))
+        continue;
       const anchor = fleet.anchor;
       place(
         `fleet:${fleet.id}`,

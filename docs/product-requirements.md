@@ -123,14 +123,14 @@ flottboxar och interaktiva rutter. Se [handelsgrafens krav och status](trade-rou
 Detta ersätter den tidigare listvyn och formulären; transportreglerna behålls.
 Planeter visas med namn på spelbrädet. En valpanel visar material och produktion
 för vald planet, skepp och uppdrag för vald flotta eller tilldelning för vald rutt
-(`handelsgraf-valpanel`). Varje flotta har en enda box på spelbrädet: ruttflottor
-visas på sin rutt, övriga vid sin position.
+(`handelsgraf-valpanel`). Stora flottkort och ruttrutor finns inte i vänstervyn;
+flottornas detaljer visas till höger (`handelsgraf-kompakt-flottvy`).
 Alla positionerade flottor visas dessutom med skeppsbilder vid sin fysiska plats
 (`handelsgraf-skeppspositioner`). Även dessa märken kan väljas. Planetnamn och kort
 förblir läsbara vid zoom, planeterna zoomas med kartan och deras namn visas direkt
-ovanför dem utan ledlinje. Kort följer sina kartankare och placeras fria från
-planeter och skeppsmärken. Flottor utanför kameran drar inte in positionskort i
-bild (`handelsgraf-lasbarhet`). Vald rutt visar sina aktuella
+ovanför dem utan bakgrund eller ledlinje. En ledig transportflottas skeppsmarkör
+kan dras till en ruttlinje för att tilldela flottan. Flottor utanför kameran visar
+inga skeppsmärken i bild (`handelsgraf-lasbarhet`). Vald rutt visar sina aktuella
 flottor, deras skepp, position och last.
 
 `synliga-handelsrutter` — **Fullständigt implementerat**: Handelsrutter syns

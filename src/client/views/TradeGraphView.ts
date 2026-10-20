@@ -145,32 +145,20 @@ export function renderTradeRoutes(
         emit({ type: 'trade-select-route', id: route.id });
       }
     });
-    svg.append(line);
-  }
-  for (const fleet of layout.fleets) {
-    if (!fleet.anchor) continue;
-    const leader = document.createElementNS(svgNamespace, 'line');
-    leader.classList.add('trade-fleet-leader');
-    leader.dataset.objectKey = `fleet:${fleet.id}`;
-    leader.setAttribute('vector-effect', 'non-scaling-stroke');
-    leader.setAttribute('x1', String(fleet.anchor.x));
-    leader.setAttribute('y1', String(fleet.anchor.y));
-    leader.setAttribute('x2', String(fleet.x));
-    leader.setAttribute('y2', String(fleet.y + 45));
-    leader.setAttribute('aria-hidden', 'true');
-    svg.append(leader);
-  }
-  for (const route of layout.routes) {
-    const leader = document.createElementNS(svgNamespace, 'line');
-    leader.classList.add('trade-fleet-leader');
-    leader.dataset.objectKey = `route:${route.id}`;
-    leader.setAttribute('vector-effect', 'non-scaling-stroke');
-    leader.setAttribute('x1', String(route.anchor.x));
-    leader.setAttribute('y1', String(route.anchor.y));
-    leader.setAttribute('x2', String(route.x + 110));
-    leader.setAttribute('y2', String(route.y + 110));
-    leader.setAttribute('aria-hidden', 'true');
-    svg.append(leader);
+    const hit = line.cloneNode(false) as SVGLineElement;
+    hit.classList.remove('trade-route-line', 'selected-route', 'closing-route');
+    hit.classList.add('trade-route-hit');
+    hit.removeAttribute('role');
+    hit.removeAttribute('tabindex');
+    hit.removeAttribute('aria-label');
+    hit.setAttribute('aria-hidden', 'true');
+    hit.addEventListener('pointerdown', (event) => event.stopPropagation());
+    hit.addEventListener('click', () =>
+      emit({ type: 'trade-select-route', id: route.id }),
+    );
+    bindTradeRouteDrop(hit, line, route, model, emit);
+    bindTradeRouteDrop(line, line, route, model, emit);
+    svg.append(hit, line);
   }
   stage.append(svg);
   for (const node of layout.planets) {
@@ -184,37 +172,19 @@ export function renderTradeRoutes(
     name.dataset.objectKey = `name:${planet.id}`;
     stage.append(name);
   }
-  for (const route of model.tradeRoutes) {
-    const placement = layout.routes.find((r) => r.id === route.id)!;
-    const dock = renderRouteDock(route, model, emit);
-    dock.dataset.objectKey = `route:${route.id}`;
-    dock.style.left = `${placement.x}px`;
-    dock.style.top = `${placement.y}px`;
-    stage.append(dock);
-  }
-  for (const node of layout.fleets) {
-    const fleet = model.fleets.find((f) => f.id === node.id)!;
-    const marker = renderTradeFleet(fleet, model, emit, 'marker');
-    marker.dataset.objectKey = `fleet:${fleet.id}`;
-    marker.classList.add('diagram-card');
-    marker.style.left = `${node.x}px`;
-    marker.style.top = `${node.y}px`;
-    stage.append(marker);
-  }
   for (const fleet of model.fleets) {
-    if (
-      !fleet.position ||
-      !Object.values(fleet.ships).some((count) => count > 0)
-    )
-      continue;
+    const hasShips = Object.values(fleet.ships).some((count) => count > 0);
+    const positioned = !!fleet.position && hasShips;
     const ships = renderTradeShipLocation(fleet, model, emit);
-    ships.dataset.objectKey = `ships:${fleet.id}`;
+    ships.dataset.objectKey = `${positioned ? 'ships' : 'fleet'}:${fleet.id}`;
     stage.append(ships);
-    const leader = document.createElementNS(svgNamespace, 'line');
-    leader.classList.add('trade-fleet-leader');
-    leader.dataset.objectKey = `ships:${fleet.id}`;
-    leader.setAttribute('vector-effect', 'non-scaling-stroke');
-    svg.append(leader);
+    if (positioned) {
+      const leader = document.createElementNS(svgNamespace, 'line');
+      leader.classList.add('trade-fleet-leader');
+      leader.dataset.objectKey = `ships:${fleet.id}`;
+      leader.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.append(leader);
+    }
   }
   viewport.append(stage);
   bindDiagramNavigation(
@@ -363,59 +333,25 @@ export function updateTradeCamera(
   if (output) output.textContent = `${Math.round(camera.zoom * 100)}%`;
 }
 
-function renderRouteDock(
+function bindTradeRouteDrop(
+  target: SVGLineElement,
+  highlight: SVGLineElement,
   route: TradeRouteSnapshot,
   model: AppReadModel,
   emit: IntentHandler,
-): HTMLElement {
-  const dock = element('article', 'trade-route-dock diagram-card');
-  dock.dataset.routeId = route.id;
-  dock.setAttribute('aria-label', `${route.from} to ${route.to}`);
-  dock.classList.toggle(
-    'selected-route',
-    route.id === model.tradeGraph.routeId,
-  );
-  const choose = button(
-    `Assign fleets to ${route.from} to ${route.to}`,
-    () => emit({ type: 'trade-select-route', id: route.id }),
-    'trade-route-name',
-  );
-  choose.textContent = `${route.from} ↔ ${route.to}`;
-  dock.append(
-    choose,
-    element(
-      'p',
-      'trade-route-capacity',
-      `${route.capacity} cargo capacity · ${route.waiting} waiting`,
-    ),
-  );
-  const fleets = element('div', 'trade-route-fleets');
-  for (const id of route.fleetIds) {
-    const fleet = model.fleets.find((f) => f.id === id);
-    if (fleet) fleets.append(renderTradeFleet(fleet, model, emit, 'dock'));
-  }
-  if (!route.fleetIds.length)
-    fleets.append(element('p', 'muted-note', 'No fleet assigned'));
-  const add = button(
-    `Select ${route.from} to ${route.to} for assignment`,
-    () => emit({ type: 'trade-select-route', id: route.id }),
-    'button secondary-button',
-  );
-  add.textContent = '+ Fleet';
-  add.disabled = route.closing || model.phase !== 'planning';
-  dock.append(fleets, add);
-  dock.addEventListener('dragover', (event) => {
+): void {
+  target.addEventListener('dragover', (event) => {
     if (event.dataTransfer?.types.includes('application/x-spacelords-fleet')) {
       event.preventDefault();
-      dock.classList.add('fleet-drop-target');
+      highlight.classList.add('fleet-drop-target');
     }
   });
-  dock.addEventListener('dragleave', () =>
-    dock.classList.remove('fleet-drop-target'),
+  target.addEventListener('dragleave', () =>
+    highlight.classList.remove('fleet-drop-target'),
   );
-  dock.addEventListener('drop', (event) => {
+  target.addEventListener('drop', (event) => {
     event.preventDefault();
-    dock.classList.remove('fleet-drop-target');
+    highlight.classList.remove('fleet-drop-target');
     const id = event.dataTransfer?.getData('application/x-spacelords-fleet');
     const fleet = model.fleets.find((f) => f.id === id);
     if (
@@ -429,9 +365,7 @@ function renderRouteDock(
         fleetId: fleet.id,
       });
   });
-  return dock;
 }
-
 function renderSelectionPanel(
   model: AppReadModel,
   emit: IntentHandler,
@@ -500,20 +434,14 @@ function renderSelectionPanel(
         renderTradeAssignment(candidate, route, model, emit, candidate.name),
       );
     if (!model.fleets.some((f) => !f.routeId))
-      panel.append(
-        element(
-          'p',
-          'muted-note',
-          'No unassigned fleets. Select a fleet on the route to inspect it.',
-        ),
-      );
+      panel.append(element('p', 'muted-note', 'No unassigned fleets.'));
   } else {
     panel.append(
       element('h2', '', 'Selection'),
       element(
         'p',
         'muted-note',
-        'Select a planet, fleet or route to inspect it. Select two planets to connect them. Drag a fleet box onto a route or use Assign.',
+        'Select a planet, fleet or route to inspect it. Select two planets to connect them. Drag ships onto a route line or use Assign.',
       ),
     );
   }

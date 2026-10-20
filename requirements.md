@@ -46,13 +46,14 @@ Se [hela visionen](docs/game-vision.md).
   materialöversikter och flottboxar är **Fullständigt implementerad**. Zoom,
   panorering och tilldelning via länkar ersätter listvyn.
   `handelsgraf-valpanel` är **Fullständigt implementerat**: namngivna planeter och
-  en enda box per flotta visas på spelbrädet; vald planet, flotta eller rutt
-  visas i sidopanelen.
+  skeppsmärken visas på spelbrädet; vald planet, flotta eller rutt
+  visas i sidopanelen. `handelsgraf-kompakt-flottvy` är **Fullständigt implementerat**:
+  stora flottkort och ruttrutor är borttagna från vänstervyn. Skeppsmarkören kan
+  dras direkt till ruttlinjen för tilldelning. Flottkort och frigörande finns till höger.
   `handelsgraf-skeppspositioner` och `handelsgraf-lasbarhet` är **Fullständigt implementerade**:
   flottornas skepp visas vid sin fysiska plats utöver korten; dubbelt så stora
-  planeter skalas med kartans zoom, medan planetnamn och kort förblir läsbara.
-  Namn visas direkt ovanför planeter utan ledlinje. Kort följer sina kartankare
-  och flyttas inte in från positioner utanför bild. Positionsbundna flottkort
+  planeter skalas med kartans zoom, medan planetnamn och skeppsmärken förblir läsbara.
+  Namn visas direkt ovanför planeter utan bakgrund eller ledlinje. Skeppsmärken
   visas när flottans fysiska position finns i kameran.
   Flera flottor per rutt fraktar material till aktiva köprojekt automatiskt.
   `synliga-handelsrutter` är **Fullständigt implementerat**: handelsrutternas

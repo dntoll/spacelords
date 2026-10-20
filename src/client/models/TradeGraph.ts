@@ -27,7 +27,7 @@ export class TradeGraphLayout {
   static readonly scale = 12;
   static readonly planetWidth = 160;
   static readonly planetHeight = 130;
-  static readonly dockSize = 220;
+
   readonly planets: readonly Readonly<{ id: string; x: number; y: number }>[];
   readonly fleets: readonly Readonly<{
     id: string;
@@ -92,57 +92,30 @@ export class TradeGraphLayout {
         width: TradeGraphLayout.planetWidth,
         height: TradeGraphLayout.planetHeight,
       })),
-      ...this.fleets.map((n) => ({ x: n.x, y: n.y, width: 184, height: 120 })),
+      ...fleets
+        .filter((fleet) => fleet.position)
+        .map((fleet) => ({
+          ...TradeGraphLayout.point(fleet.position!),
+          width: 0,
+          height: 0,
+        })),
+      ...this.fleets
+        .filter((n) => !n.anchor)
+        .map((n) => ({ x: n.x, y: n.y, width: 0, height: 0 })),
     ];
     this.routes = Object.freeze(
-      routes.map((route, index) => {
-        const from = TradeGraphLayout.point(route.start),
-          to = TradeGraphLayout.point(route.end);
-        const length = Math.hypot(to.x - from.x, to.y - from.y) || 1;
-        let chosen: { x: number; y: number; anchor: Point } | null = null;
-        for (const offset of [0, 160, -160, 280, -280, 440, -440]) {
-          for (const fraction of [0.5, 0.35, 0.65, 0.2, 0.8]) {
-            const anchor = {
-              x: from.x + (to.x - from.x) * fraction,
-              y: from.y + (to.y - from.y) * fraction,
-            };
-            const candidate = {
-              x: anchor.x - ((to.y - from.y) / length) * offset - 110,
-              y: anchor.y + ((to.x - from.x) / length) * offset - 110,
-              width: 220,
-              height: 220,
-            };
-            if (
-              !occupied.some(
-                (rect) =>
-                  candidate.x < rect.x + rect.width + 16 &&
-                  candidate.x + 220 + 16 > rect.x &&
-                  candidate.y < rect.y + rect.height + 16 &&
-                  candidate.y + 220 + 16 > rect.y,
-              )
-            ) {
-              chosen = { x: candidate.x, y: candidate.y, anchor };
-              break;
-            }
-          }
-          if (chosen) break;
-        }
-        const placement = chosen ?? {
-          x: Math.min(...occupied.map((r) => r.x), 0) - 260,
-          y: index * 260,
-          anchor: { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 },
-        };
-        occupied.push({
-          x: placement.x,
-          y: placement.y,
-          width: 220,
-          height: 220,
+      routes.map((route) => {
+        const from = TradeGraphLayout.point(route.start);
+        const to = TradeGraphLayout.point(route.end);
+        const anchor = Object.freeze({
+          x: (from.x + to.x) / 2,
+          y: (from.y + to.y) / 2,
         });
         return Object.freeze({
           id: route.id,
-          x: placement.x,
-          y: placement.y,
-          anchor: Object.freeze(placement.anchor),
+          x: anchor.x,
+          y: anchor.y,
+          anchor,
         });
       }),
     );

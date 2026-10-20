@@ -12,22 +12,28 @@ i en valpanel. Den tidigare Fleet bay med alla flottor ersätts av samma valpane
   flotta eller rutt. Materialdetaljer visas för vald planet, skepp och uppdrag för
   vald flotta och tilldelningskontroller för vald rutt. Vald rutt visar även sina
   tilldelade flottor med skepp, antal, position, last och frigörande.
-- `handelsgraf-flottboxar` förtydligas: varje flotta har ett kort på spelbrädet.
-  Ruttflottornas kort ligger i ruttens box. Ett separat skeppsmärke vid flottans
-  fysiska position är uttryckligen tillåtet enligt den ändrade utformningen.
+- `handelsgraf-flottboxar` gäller detaljpanelen: där visas skepp, antal, position
+  och last. Den tidigare utformningen med stora kort på spelbrädet ersätts
+  uttryckligen av `handelsgraf-kompakt-flottvy`.
+- `handelsgraf-kompakt-flottvy` — **Fullständigt implementerat**: vänstervyn har
+  inga stora flottkort eller ruttrutor. Flottan väljs via sina skepp vid den
+  fysiska positionen. Flottor utan position eller skepp har en liten namnmarkör.
+  En ledig transportflottas skeppsmarkör kan dras direkt till en ruttlinje för
+  tilldelning. Linjen markeras vid släpp; samma regler för position och uppdrag
+  gäller som tidigare. Vald rutt visar flottorna och frigörande till höger.
 - `handelsgraf-skeppspositioner` — **Fullständigt implementerat**: varje positionerad
   flotta med skepp visas även med skeppsbilder och antal vid sin aktuella plats,
   inklusive ruttflottor. Märket kan väljas och leder till flottans detaljer.
-  Kortet behålls.
+  Detaljerna visas i sidopanelen.
 - `handelsgraf-lasbarhet` — **Fullständigt implementerat**: planeterna har dubblerad
   grunddiameter och skalas med kartans zoom. Detta ersätter den tidigare fasta
   planetstorleken efter uttrycklig ändring. Planetnamn, kort, skeppsmärken och
-  kontroller behåller läsbar storlek. Kort placeras fria från planeter, skeppsmärken och andra
-  kort, med ledlinjer till sina ankare. Panorering ger åtkomst när allt inte ryms.
+  kontroller behåller läsbar storlek. Skeppsmärken placeras fria från planeter och
+  andra märken. Panorering ger åtkomst när allt inte ryms.
   Planetnamn är centrerade direkt ovanför sin planet utan ledlinje; detta ersätter
-  den tidigare fria placeringen av namnen. Kort flyttas inte in i bild för att
-  fylla ledigt utrymme. Positionsbundna flottkort och skeppsmärken döljs när deras
-  fysiska position ligger utanför kameran; ruttflottornas kort ligger fortsatt på rutten.
+  den tidigare fria placeringen av namnen. Namnens bakgrund är genomskinlig så
+  att ruttlinjer syns bakom dem. Skeppsmärken döljs när deras fysiska position
+  ligger utanför kameran.
 
 | Kravnamn                     | Status                     | Beskrivning                                                                                                                                                                                                                                       |
 | ---------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
