@@ -2076,6 +2076,9 @@ p {
   left: 0;
   transform-origin: 0 0;
 }
+.trade-graph-stage [hidden] {
+  display: none;
+}
 .trade-graph-links {
   position: absolute;
   overflow: visible;

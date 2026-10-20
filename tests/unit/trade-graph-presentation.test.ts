@@ -38,10 +38,7 @@ it('handelsgraf-lasbarhet / handelsgraf-skeppspositioner: preserves readable dim
   const layout = new TradeGraphLayout(planets, fleets, [route]);
   for (const zoom of [0.08, 0.3, 1, 2]) {
     const camera = { zoom, offset: { x: 300, y: 200 } };
-    const { objects } = new TradeGraphPresentation(layout, fleets, camera, {
-      width: 1440,
-      height: 900,
-    });
+    const { objects } = new TradeGraphPresentation(layout, fleets, camera);
     const card = objects.find((o) => o.key === `fleet:${fleets[0]!.id}`)!;
     expect(card.width).toBe(240);
     expect(objects.find((o) => o.key === 'route:route')!.width).toBe(270);
@@ -59,6 +56,10 @@ it('handelsgraf-lasbarhet / handelsgraf-skeppspositioner: preserves readable dim
             other.y + other.height <= object.y,
         ).toBe(true);
     const planet = objects.find((o) => o.key === `planet:${home.id}`)!;
+    expect(planet.width).toBeCloseTo(172 * zoom);
+    const name = objects.find((o) => o.key === `name:${home.id}`)!;
+    expect(name.x + name.width / 2).toBeCloseTo(planet.x + planet.width / 2);
+    expect(name.y + name.height).toBeCloseTo(planet.y - 8);
     expect(planet.x + planet.width / 2).toBeCloseTo(
       TradeGraphLayout.point(home.position).x * zoom + camera.offset.x,
     );
@@ -76,4 +77,21 @@ it('handelsgraf-lasbarhet / handelsgraf-skeppspositioner: preserves readable dim
   expect(
     after.objects.find((o) => o.key === 'ships:freighters')!.anchor,
   ).toEqual(TradeGraphLayout.point(new HexCoordinate(5, -1)));
+});
+
+it('handelsgraf-lasbarhet: card placement follows map anchors instead of pulling distant fleets into the viewport', () => {
+  const model = new AppModel().snapshot;
+  const layout = new TradeGraphLayout(model.ownedPlanets, model.fleets);
+  const camera = { zoom: 0.5, offset: { x: 0, y: 0 } };
+  const before = new TradeGraphPresentation(layout, model.fleets, camera);
+  const shift = { x: -5000, y: 2400 };
+  const after = new TradeGraphPresentation(layout, model.fleets, {
+    ...camera,
+    offset: shift,
+  });
+  for (const a of before.objects) {
+    const b = after.objects.find((o) => o.key === a.key)!;
+    expect(b.x - a.x).toBeCloseTo(shift.x);
+    expect(b.y - a.y).toBeCloseTo(shift.y);
+  }
 });

@@ -127,8 +127,10 @@ för vald planet, skepp och uppdrag för vald flotta eller tilldelning för vald
 visas på sin rutt, övriga vid sin position.
 Alla positionerade flottor visas dessutom med skeppsbilder vid sin fysiska plats
 (`handelsgraf-skeppspositioner`). Även dessa märken kan väljas. Planetnamn och kort
-förblir läsbara vid zoom, planeterna visas större och korten placeras fria från
-planeter och skeppsmärken (`handelsgraf-lasbarhet`). Vald rutt visar sina aktuella
+förblir läsbara vid zoom, planeterna zoomas med kartan och deras namn visas direkt
+ovanför dem utan ledlinje. Kort följer sina kartankare och placeras fria från
+planeter och skeppsmärken. Flottor utanför kameran drar inte in positionskort i
+bild (`handelsgraf-lasbarhet`). Vald rutt visar sina aktuella
 flottor, deras skepp, position och last.
 
 `synliga-handelsrutter` — **Fullständigt implementerat**: Handelsrutter syns

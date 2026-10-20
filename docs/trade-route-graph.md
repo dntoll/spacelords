@@ -20,10 +20,14 @@ i en valpanel. Den tidigare Fleet bay med alla flottor ersätts av samma valpane
   inklusive ruttflottor. Märket kan väljas och leder till flottans detaljer.
   Kortet behålls.
 - `handelsgraf-lasbarhet` — **Fullständigt implementerat**: planeterna har dubblerad
-  diameter. Planetnamn, kort, skeppsmärken och kontroller behåller läsbar storlek
-  när avstånden zoomas. Kort placeras fria från planeter, skeppsmärken och andra
+  grunddiameter och skalas med kartans zoom. Detta ersätter den tidigare fasta
+  planetstorleken efter uttrycklig ändring. Planetnamn, kort, skeppsmärken och
+  kontroller behåller läsbar storlek. Kort placeras fria från planeter, skeppsmärken och andra
   kort, med ledlinjer till sina ankare. Panorering ger åtkomst när allt inte ryms.
-  Planetnamn placeras separat så att närliggande planeter inte döljer dem.
+  Planetnamn är centrerade direkt ovanför sin planet utan ledlinje; detta ersätter
+  den tidigare fria placeringen av namnen. Kort flyttas inte in i bild för att
+  fylla ledigt utrymme. Positionsbundna flottkort och skeppsmärken döljs när deras
+  fysiska position ligger utanför kameran; ruttflottornas kort ligger fortsatt på rutten.
 
 | Kravnamn                     | Status                     | Beskrivning                                                                                                                                                                                                                                       |
 | ---------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

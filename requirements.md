@@ -50,8 +50,10 @@ Se [hela visionen](docs/game-vision.md).
   visas i sidopanelen.
   `handelsgraf-skeppspositioner` och `handelsgraf-lasbarhet` är **Fullständigt implementerade**:
   flottornas skepp visas vid sin fysiska plats utöver korten; dubbelt så stora
-  planeter, läsbara planetnamn och kort behåller sin storlek vid zoom.
-  Kort och planetnamn placeras fria från planeter och skeppsmärken.
+  planeter skalas med kartans zoom, medan planetnamn och kort förblir läsbara.
+  Namn visas direkt ovanför planeter utan ledlinje. Kort följer sina kartankare
+  och flyttas inte in från positioner utanför bild. Positionsbundna flottkort
+  visas när flottans fysiska position finns i kameran.
   Flera flottor per rutt fraktar material till aktiva köprojekt automatiskt.
   `synliga-handelsrutter` är **Fullständigt implementerat**: handelsrutternas
   linjer syns även genom markerade hexrutor.

@@ -243,16 +243,17 @@ test('handelsgraf-lasbarhet / handelsgraf-skeppspositioner: a distant network ke
   ).toBeVisible();
 });
 
-test('handelsgraf-lasbarhet: planet names, doubled planets and cards stay readable when zoomed out', async ({
+test('handelsgraf-lasbarhet: planets scale while names stay above them and cards stay readable', async ({
   page,
 }, testInfo) => {
   await connectTradePlanets(page, 'Tellus', 'Vesta');
+  const sphere = page.locator('.trade-planet-sphere').first();
+  const before = (await sphere.boundingBox())!.width;
   for (let i = 0; i < 5; i++)
     await page
       .getByRole('button', { name: 'Zoom out trade network', exact: true })
       .click();
-  const sphere = page.locator('.trade-planet-sphere').first();
-  expect((await sphere.boundingBox())!.width).toBeCloseTo(152, 0);
+  expect((await sphere.boundingBox())!.width).toBeCloseTo(before * 0.8 ** 5, 0);
   const title = page.locator('.trade-planet-label').first();
   const height = await title.evaluate((node) => {
     const range = document.createRange();
@@ -260,6 +261,19 @@ test('handelsgraf-lasbarhet: planet names, doubled planets and cards stay readab
     return range.getBoundingClientRect().height;
   });
   expect(height).toBeGreaterThanOrEqual(16);
+  const planetBounds = (await page
+    .locator('.trade-planet-node')
+    .first()
+    .boundingBox())!;
+  const titleBounds = (await title.boundingBox())!;
+  expect(titleBounds.y + titleBounds.height).toBeLessThan(planetBounds.y);
+  expect(titleBounds.x + titleBounds.width / 2).toBeCloseTo(
+    planetBounds.x + planetBounds.width / 2,
+    0,
+  );
+  await expect(
+    page.locator('.trade-fleet-leader[data-object-key^="name:"]'),
+  ).toHaveCount(0);
   expect(
     (await page.locator('.trade-route-dock').boundingBox())!.width,
   ).toBeCloseTo(270, 0);
@@ -272,6 +286,40 @@ test('handelsgraf-lasbarhet: planet names, doubled planets and cards stay readab
   await page.screenshot({
     path: testInfo.outputPath('readable-trade-network.png'),
   });
+});
+
+test('handelsgraf-lasbarhet: fleets outside the camera do not leave cards or ships in view', async ({
+  page,
+}) => {
+  const graph = page.getByRole('region', {
+    name: 'Trade network',
+    exact: true,
+  });
+  await graph.focus();
+  for (let i = 0; i < 25; i++) await page.keyboard.press('ArrowRight');
+  const fleet = page.locator('.trade-fleet-marker').filter({
+    has: page.getByRole('button', {
+      name: 'Select trade fleet Home Fleet',
+      exact: true,
+    }),
+  });
+  await expect(fleet).toBeHidden();
+  await expect(
+    page.getByRole('button', {
+      name: 'Select ships of Home Fleet',
+      exact: true,
+    }),
+  ).toBeHidden();
+  await page
+    .getByRole('button', { name: 'Fit trade network', exact: true })
+    .click();
+  await expect(fleet).toBeVisible();
+  await expect(
+    page.getByRole('button', {
+      name: 'Select ships of Home Fleet',
+      exact: true,
+    }),
+  ).toBeVisible();
 });
 
 test('handelsgraf-flottboxar / handelsgraf-navigation: mouse drag assigns a fleet and the graph supports wheel zoom', async ({

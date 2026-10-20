@@ -11,7 +11,7 @@ export interface TradeObjectPlacement extends GraphBounds {
   readonly anchor: Point | null;
 }
 
-// handelsgraf-lasbarhet: zoom changes distances, never the size of text or controls.
+// handelsgraf-lasbarhet: planets scale with the map; text and controls stay readable.
 export class TradeGraphPresentation {
   static readonly planetWidth = 172;
   static readonly planetHeight = 172;
@@ -25,7 +25,6 @@ export class TradeGraphPresentation {
     layout: TradeGraphLayout,
     fleets: readonly FleetSnapshot[],
     camera: GraphCameraSnapshot,
-    viewport?: Readonly<{ width: number; height: number }>,
   ) {
     const project = (point: Point): Point => ({
       x: point.x * camera.zoom + camera.offset.x,
@@ -36,10 +35,10 @@ export class TradeGraphPresentation {
       return {
         key: `planet:${planet.id}`,
         anchor: null,
-        x: center.x - TradeGraphPresentation.planetWidth / 2,
-        y: center.y - TradeGraphPresentation.planetHeight / 2,
-        width: TradeGraphPresentation.planetWidth,
-        height: TradeGraphPresentation.planetHeight,
+        x: center.x - (TradeGraphPresentation.planetWidth * camera.zoom) / 2,
+        y: center.y - (TradeGraphPresentation.planetHeight * camera.zoom) / 2,
+        width: TradeGraphPresentation.planetWidth * camera.zoom,
+        height: TradeGraphPresentation.planetHeight * camera.zoom,
       };
     });
     const place = (
@@ -49,36 +48,26 @@ export class TradeGraphPresentation {
       width: number,
       height: number,
       preferred: Point,
-      alternatives: readonly Point[] = [],
     ) => {
-      const candidates: Point[] = [preferred, ...alternatives];
-      for (let ring = 1; ring <= objects.length + 4; ring++) {
-        const horizontal = (width + 24) * ring;
-        const vertical = (height + 24) * ring;
-        candidates.push(
-          { x: -width / 2, y: vertical },
-          { x: horizontal, y: -height / 2 },
-          { x: -horizontal - width, y: -height / 2 },
-          { x: -width / 2, y: -vertical - height },
-          { x: horizontal, y: vertical },
-          { x: -horizontal - width, y: vertical },
-          { x: horizontal, y: -vertical - height },
-          { x: -horizontal - width, y: -vertical - height },
-        );
-      }
-      if (viewport) {
-        const grid: Point[] = [];
-        for (let y = 8; y + height <= viewport.height - 8; y += 24)
-          for (let x = 8; x + width <= viewport.width - 8; x += 24)
-            grid.push({ x: x - center.x, y: y - center.y });
-        grid.sort(
-          (a, b) =>
-            Math.hypot(a.x + width / 2, a.y + height / 2) -
-            Math.hypot(b.x + width / 2, b.y + height / 2),
-        );
-        candidates.push(...grid);
-      }
-      const available = candidates.filter(
+      const candidates: Point[] = [preferred];
+      for (
+        let radius = 0;
+        radius <= (objects.length + 4) * Math.max(width, height);
+        radius += 24
+      )
+        for (let direction = 0; direction < 16; direction++) {
+          const angle = (direction * Math.PI) / 8;
+          candidates.push({
+            x: Math.cos(angle) * radius - width / 2,
+            y: Math.sin(angle) * radius - height / 2,
+          });
+        }
+      candidates.sort(
+        (a, b) =>
+          Math.hypot(a.x + width / 2, a.y + height / 2) -
+          Math.hypot(b.x + width / 2, b.y + height / 2),
+      );
+      const offset = candidates.find(
         (p) =>
           !objects.some(
             (rect) =>
@@ -87,17 +76,7 @@ export class TradeGraphPresentation {
               center.y + p.y < rect.y + rect.height + 16 &&
               center.y + p.y + height + 16 > rect.y,
           ),
-      );
-      const offset =
-        (viewport &&
-          available.find(
-            (p) =>
-              center.x + p.x >= 8 &&
-              center.x + p.x + width <= viewport.width - 8 &&
-              center.y + p.y >= 8 &&
-              center.y + p.y + height <= viewport.height - 8,
-          )) ||
-        available[0]!;
+      )!;
       objects.push({
         key,
         anchor,
@@ -107,20 +86,20 @@ export class TradeGraphPresentation {
         height,
       });
     };
-    for (const planet of layout.planets)
-      place(
-        `name:${planet.id}`,
-        planet,
-        project(planet),
-        200,
-        32,
-        { x: -100, y: 104 },
-        [
-          { x: -100, y: -136 },
-          { x: 110, y: -16 },
-          { x: -310, y: -16 },
-        ],
-      );
+    for (const planet of layout.planets) {
+      const center = project(planet);
+      objects.push({
+        key: `name:${planet.id}`,
+        anchor: null,
+        x: center.x - 100,
+        y:
+          center.y -
+          (TradeGraphPresentation.planetHeight * camera.zoom) / 2 -
+          40,
+        width: 200,
+        height: 32,
+      });
+    }
     for (const fleet of fleets) {
       if (
         !fleet.position ||

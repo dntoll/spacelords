@@ -183,11 +183,6 @@ export function renderTradeRoutes(
     const name = renderTradePlanetTitle(planet, model, emit);
     name.dataset.objectKey = `name:${planet.id}`;
     stage.append(name);
-    const leader = document.createElementNS(svgNamespace, 'line');
-    leader.classList.add('trade-fleet-leader');
-    leader.dataset.objectKey = `name:${planet.id}`;
-    leader.setAttribute('vector-effect', 'non-scaling-stroke');
-    svg.append(leader);
   }
   for (const route of model.tradeRoutes) {
     const placement = layout.routes.find((r) => r.id === route.id)!;
@@ -307,7 +302,6 @@ export function updateTradeCamera(
           ),
           model.fleets,
           camera,
-          { width: viewport.clientWidth, height: viewport.clientHeight },
         ),
       };
       presentations.set(stage, presentation);
@@ -331,11 +325,24 @@ export function updateTradeCamera(
       const node = nodes.get(object.key)!;
       node.style.left = `${(object.x - camera.offset.x) / camera.zoom}px`;
       node.style.top = `${(object.y - camera.offset.y) / camera.zoom}px`;
-      node.style.width = `${object.width}px`;
-      node.style.height = `${object.height}px`;
-      node.style.transform = `scale(${1 / camera.zoom})`;
+      const planet = object.key.startsWith('planet:');
+      node.style.width = `${planet ? TradeGraphPresentation.planetWidth : object.width}px`;
+      node.style.height = `${planet ? TradeGraphPresentation.planetHeight : object.height}px`;
+      node.style.transform = planet ? '' : `scale(${1 / camera.zoom})`;
       node.style.transformOrigin = '0 0';
+      const location = object.anchor;
+      const locatedFleet =
+        object.key.startsWith('fleet:') || object.key.startsWith('ships:');
+      const visible =
+        !locatedFleet ||
+        !location ||
+        (location.x * camera.zoom + camera.offset.x >= 0 &&
+          location.x * camera.zoom + camera.offset.x <= viewport.clientWidth &&
+          location.y * camera.zoom + camera.offset.y >= 0 &&
+          location.y * camera.zoom + camera.offset.y <= viewport.clientHeight);
+      node.hidden = !visible;
       const leader = leaders.get(object.key);
+      if (leader) leader.style.display = visible ? '' : 'none';
       if (leader && object.anchor) {
         leader.setAttribute('x1', String(object.anchor.x));
         leader.setAttribute('y1', String(object.anchor.y));
