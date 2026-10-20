@@ -33,6 +33,9 @@ Se [hela visionen](docs/game-vision.md).
   produkter planeten kan tillverka. Rocket engine factory och Weapons module
   factory tillverkar delarna till Fighter; saknade lokalt byggbara delar köas
   automatiskt före skeppet (`delfabriker`, `skeppsdelar`, `automatiska-delorder`).
+  `byggnadsantal-lokalt-och-globalt` är **Fullständigt implementerat**: Build
+  selection visar befintliga byggnader per typ på vald planet och totalt på
+  spelarens planeter. Köade byggprojekt ingår inte.
 - **Forskning:** `forsknings-tradnavigation` är **Fullständigt implementerat**:
   ett zoom- och panorerbart forskningsträd med beroendepilar och bibehållen kamera.
   Forskningskö med automatiska förkunskaper låser upp alla

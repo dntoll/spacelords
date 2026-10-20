@@ -1171,6 +1171,35 @@ p {
   gap: 4px;
   font-size: 0.8rem;
 }
+.building-inventory {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #091923;
+}
+.building-inventory h3 {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  color: var(--accent);
+}
+.building-inventory dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+.building-inventory .stat {
+  min-width: 0;
+  gap: 2px;
+}
+.building-inventory .stat-label {
+  font-size: 0.7rem;
+  overflow-wrap: anywhere;
+}
+.building-inventory .stat-value {
+  margin: 0;
+  font-size: 1rem;
+}
 .cost-ok {
   color: #a4e4ba;
 }

@@ -383,3 +383,72 @@ describe('gemensam-planetko / fabrikskoer / kompakta-bygghandlingar', () => {
     },
   );
 });
+
+describe('byggnadsantal-lokalt-och-globalt', () => {
+  it('shows completed buildings per selected planet and across the empire without counting queued projects twice', () => {
+    const { model } = setup();
+    model.build('Research station', 0);
+    model.openBuildSite(1);
+    const snapshot = model.snapshot;
+    const planet = snapshot.planet!;
+    const building = (
+      id: string,
+      type: BuildType,
+      scheduledForDemolition = false,
+    ) => ({
+      id,
+      type,
+      slotIndex: 2,
+      scheduledForDemolition,
+      operational: false,
+    });
+    const local = {
+      ...planet,
+      buildings: [
+        building('r1', 'Research station'),
+        building('r2', 'Research station', true),
+        building('i1', 'Iron mine'),
+      ],
+    };
+    const remote = {
+      ...planet,
+      id: 'another-colony',
+      name: 'Vesta',
+      buildings: [
+        building('r3', 'Research station'),
+        building('r4', 'Research station'),
+        building('r5', 'Research station'),
+        building('w1', 'Water extractor'),
+      ],
+    };
+    for (const [selected, expected] of [
+      [local, '2'],
+      [remote, '3'],
+    ] as const) {
+      const view = renderBuildSelection(
+        { ...snapshot, planet: selected, ownedPlanets: [local, remote] },
+        () => {},
+      );
+      const inventory = (type: string) =>
+        view.querySelector(
+          `[data-building-type="${type}"] .building-inventory`,
+        )!;
+      expect(inventory('Research station').textContent).toContain(
+        `On ${selected.name}`,
+      );
+      expect(inventory('Research station').textContent).toContain(
+        'All your planets',
+      );
+      expect(
+        [...inventory('Research station').querySelectorAll('dd')].map(
+          (n) => n.textContent,
+        ),
+      ).toEqual([expected, '5']);
+      expect(
+        [...inventory('Oil extractor').querySelectorAll('dd')].map(
+          (n) => n.textContent,
+        ),
+      ).toEqual(['0', '0']);
+    }
+  });
+});

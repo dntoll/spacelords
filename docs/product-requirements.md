@@ -12,6 +12,12 @@ För delvisa krav anges vad som återstår. Exempelvärden är inte beslut om ba
 
 ## Första spelgrunden
 
+`byggnadsantal-lokalt-och-globalt` — **Fullständigt implementerat**: Varje
+byggnadstyp i Build selection visar Already built med antal på aktuell planet
+och totalt på alla spelarens planeter, inklusive den aktuella. Noll visas när
+byggnadstypen saknas. Befintliga byggnader räknas även om de tillfälligt står
+stilla eller väntar på rivning; köade projekt räknas först när de är färdiga.
+
 | Kravnamn                    | Status                     | Krav och återstående arbete                                                                                                                                                                                |
 | --------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `fast-exempelvarld`         | Fullständigt implementerat | En återkommande exempelvärld med tre åtskilda stjärnsystem, både gasplaneter och fasta planeter och exakt en ägd hemplanet. En tom sparplats börjar i exempelvärlden; befintliga spel återupptas.          |

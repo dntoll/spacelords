@@ -2,7 +2,7 @@ import type { AppReadModel } from '../models/AppModel.js';
 import { BUILDINGS } from '../models/Game.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { buildingImage } from './BuildingImage.js';
-import { button, element } from './dom.js';
+import { button, element, labelValue } from './dom.js';
 
 export function renderBuildSelection(
   model: AppReadModel,
@@ -47,12 +47,32 @@ export function renderBuildSelection(
     )
       continue;
     const card = element('article', 'building-choice');
+    card.dataset.buildingType = option.type;
     card.classList.toggle('unaffordable', !!option.blockedReason);
     card.append(
       buildingImage(option.type),
       element('h2', '', option.type),
       element('p', '', definition.description),
     );
+    const inventory = element('div', 'building-inventory');
+    const counts = element('dl');
+    const local = planet.buildings.filter(
+      (building) => building.type === option.type,
+    ).length;
+    const empireTotal = model.ownedPlanets.reduce(
+      (total, ownedPlanet) =>
+        total +
+        ownedPlanet.buildings.filter(
+          (building) => building.type === option.type,
+        ).length,
+      0,
+    );
+    counts.append(
+      labelValue(`On ${planet.name}`, String(local)),
+      labelValue('All your planets', String(empireTotal)),
+    );
+    inventory.append(element('h3', '', 'Already built'), counts);
+    card.append(inventory);
     const costs = element('div', 'building-costs');
     for (const resource of ['Iron', 'Water', 'Oil'] as const)
       costs.append(
