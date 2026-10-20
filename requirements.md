@@ -43,7 +43,9 @@ Se [hela visionen](docs/game-vision.md).
   Last, omlastning, avstånd och flottposition påverkar leveranser.
   Piratrån och eskortskydd ingår ännu inte.
 - **Beslut och händelser:** Decisions och Next decision samlar val och
-  försörjningsproblem. Spelaren kan hoppa över beslut ett år. End turn varnar
+  försörjningsproblem. Spelaren kan hoppa över beslut ett år eller tysta ett
+  enskilt beslut tills det återaktiveras i Decisions. `tysta-beslut` är
+  **Fullständigt implementerat** och sparas separat i varje spel. End turn varnar
   samlat och låter spelaren fortsätta ändå. Händelsekonsolen (`handelser`) är
   fullständigt implementerad och anpassar sin storlek efter skärmen: fler
   synliga rader på större skärmar och kompakt format på små eller låga skärmar.

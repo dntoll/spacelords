@@ -1,4 +1,5 @@
 import { renderSaveSlots, clearSlotDialog } from './SaveSlotsView.js';
+import { needsAttention } from '../models/Decisions.js';
 import type { MapCell } from '../models/Galaxy.js';
 import type { AppReadModel, Screen } from '../models/AppModel.js';
 import { HexCoordinate } from '../models/HexCoordinate.js';
@@ -315,7 +316,7 @@ export class AppView implements AppPort {
         ?.replaceChildren(renderDecisions(model, this.#emit));
     const counter = this.#root.querySelector('.decision-counter');
     if (counter)
-      counter.textContent = `Decisions (${model.decisions.filter((d) => !d.skipped).length})`;
+      counter.textContent = `Decisions (${model.decisions.filter(needsAttention).length})`;
     if (model.screen === 'map') {
       this.#map?.render(model);
       if (this.#known) {

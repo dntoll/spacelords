@@ -4,6 +4,8 @@ import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import { AppController } from '../../src/client/controllers/AppController.js';
 import { BrowserSaveRepository } from '../../src/client/storage/BrowserSaveRepository.js';
+import { Game } from '../../src/client/models/Game.js';
+import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 
 describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
   it('opens the selected context and skips only until the next turn, including after saving', () => {
@@ -75,5 +77,113 @@ describe('engangsreset-ekonomi / tre-sparplatser', () => {
     reloaded.openPlanet();
     expect(reloaded.snapshot.planet!.projects[0]!.type).toBe('Iron mine');
     expect(stored.get('another-app')).toBe('keep');
+  });
+});
+
+describe('tysta-beslut', () => {
+  it('keeps a recurring decision muted after it disappears and becomes relevant again', () => {
+    const game = new Game(createExampleGalaxy());
+    game.muteDecision('research-empty');
+    game.selectResearch('Colony ship factory');
+    expect(game.decisions.find((d) => d.id === 'research-empty')!.current).toBe(
+      false,
+    );
+    game.removeResearch('Exploration ship factory');
+    expect(game.decisions.find((d) => d.id === 'research-empty')).toMatchObject(
+      { current: true, muted: true },
+    );
+    game.unmuteDecision('research-empty');
+    expect(game.decisions.find((d) => d.id === 'research-empty')).toMatchObject(
+      { current: true, muted: false, skipped: false },
+    );
+  });
+  it('loads older saves without muted preferences and keeps warnings active', () => {
+    const state = new Game(createExampleGalaxy()).exportState();
+    delete (state as { mutedDecisions?: unknown }).mutedDecisions;
+    const restored = Game.restore(
+      JSON.parse(JSON.stringify(state)) as ReturnType<Game['exportState']>,
+    );
+    expect(restored.decisions).toHaveLength(3);
+    expect(restored.decisions.every((d) => !d.muted)).toBe(true);
+  });
+  it('keeps muted decisions quiet across turns and restores their warnings on unmute', () => {
+    const model = new AppModel();
+    for (const decision of model.snapshot.decisions)
+      model.muteDecision(decision.id);
+    expect(model.snapshot.decisions.every((d) => d.muted)).toBe(true);
+    expect(model.requestEndTurn()).toBe(true);
+    for (const frame of model.startTurn()) model.applyTurnFrame(frame);
+    model.finishTurn();
+    expect(model.snapshot.decisions.every((d) => d.muted && !d.skipped)).toBe(
+      true,
+    );
+    expect(model.requestEndTurn()).toBe(true);
+    model.unmuteDecision('fleet-idle-fleet-home');
+    expect(model.requestEndTurn()).toBe(false);
+    model.openDecision();
+    expect(model.snapshot.screen).toBe('fleets');
+    expect(
+      model.snapshot.decisions.find((d) => d.id === 'fleet-idle-fleet-home')!
+        .muted,
+    ).toBe(false);
+  });
+
+  it('persists per save slot and keeps temporarily resolved decisions available to unmute', () => {
+    const stored = new Map<string, string>();
+    const repo = new BrowserSaveRepository({
+      getItem: (key) => stored.get(key) ?? null,
+      setItem: (key, value) => {
+        stored.set(key, value);
+      },
+      removeItem: (key) => {
+        stored.delete(key);
+      },
+    });
+    const model = new AppModel(undefined, repo);
+    model.startSlot(1);
+    model.muteDecision('research-empty');
+    model.research('Colony ship factory');
+    expect(
+      model.snapshot.decisions.find((d) => d.id === 'research-empty'),
+    ).toMatchObject({ muted: true, current: false });
+    model.save();
+    const reloaded = new AppModel(undefined, repo);
+    reloaded.startSlot(1);
+    expect(
+      reloaded.snapshot.decisions.find((d) => d.id === 'research-empty'),
+    ).toMatchObject({ muted: true, current: false });
+    reloaded.unmuteDecision('research-empty');
+    expect(
+      reloaded.snapshot.decisions.some((d) => d.id === 'research-empty'),
+    ).toBe(false);
+    reloaded.openSaves();
+    reloaded.startSlot(2);
+    expect(reloaded.snapshot.decisions.every((d) => !d.muted)).toBe(true);
+  });
+
+  it('routes Mute and Unmute through Decisions and excludes muted items from the counter', () => {
+    const root = document.createElement('div');
+    document.body.replaceChildren(root);
+    const model = new AppModel();
+    model.openDecisions();
+    new AppController(
+      model,
+      new AppView(root, () => ({ render() {}, dispose() {} })),
+    ).start();
+    const card = () =>
+      root.querySelector('[data-decision-id="fleet-idle-fleet-home"]')!;
+    const control = (label: string) =>
+      [...card().querySelectorAll('button')].find(
+        (b) => b.textContent === label,
+      )!;
+    control('Mute').click();
+    expect(card().textContent).toContain('Muted for future turns');
+    expect(root.querySelector('.decision-counter')?.textContent).toBe(
+      'Decisions (2)',
+    );
+    control('Unmute').click();
+    expect(root.querySelector('.decision-counter')?.textContent).toBe(
+      'Decisions (3)',
+    );
   });
 });

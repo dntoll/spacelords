@@ -112,6 +112,14 @@ Byggnader, delar och skepp delar planetens enda kö. Se [ekonomi och logistik](e
 
 ## Ekonomi, transport och beslutsstöd
 
+`tysta-beslut` — **Fullständigt implementerat**: Mute tystar ett enskilt beslut
+även under kommande rundor. Det undantas från Next decision, beslutsräknaren
+och rundvarningen. Beslutet ligger kvar i Decisions med Unmute, även när det
+tillfälligt inte längre är aktuellt. Unmute återaktiverar aktuella påminnelser
+direkt. Inställningen sparas per spel och gäller samma beslut för samma
+flotta, planet eller rutt; andra beslut påverkas inte. Skip this turn behåller
+sin betydelse för enbart innevarande runda.
+
 | Kravnamn               | Status                     | Krav                                                                                                                                                                                                                                                                                |
 | ---------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `gemensam-planetko`    | Fullständigt implementerat | Varje planet har exakt en Build queue för byggnader, delar och skepp, utan fast kögräns. Högst ett projekt färdigställs per planet och år. Flera fabriker ger fler produktval, inte parallella köer.                                                                                |

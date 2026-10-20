@@ -115,6 +115,12 @@ export class AppController {
       case 'skip-decision':
         this.#model.skipDecision(intent.id);
         break;
+      case 'mute-decision':
+        this.#model.muteDecision(intent.id);
+        break;
+      case 'unmute-decision':
+        this.#model.unmuteDecision(intent.id);
+        break;
       case 'create-trade-route':
         this.#model.createTradeRoute(intent.a, intent.b);
         break;

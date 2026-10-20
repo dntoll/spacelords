@@ -20,7 +20,11 @@ import {
   type Shipment,
   type TradeRouteSnapshot,
 } from './Logistics.js';
-import { DecisionBoard, type Decision } from './Decisions.js';
+import {
+  DecisionBoard,
+  type Decision,
+  type DecisionDescriptor,
+} from './Decisions.js';
 import { FleetPursuit, type PursuingFleet } from './FleetPursuit.js';
 export { TECHNOLOGIES, type Technology } from './Research.js';
 
@@ -352,6 +356,7 @@ export interface GameState {
   readonly tradeRoutes: readonly TradeRoute[];
   readonly shipments: readonly Shipment[];
   readonly skippedDecisions: readonly string[];
+  readonly mutedDecisions?: readonly DecisionDescriptor[];
   readonly version: 2 | 3;
   readonly world: {
     readonly player: { readonly id: string; readonly name: string };
@@ -446,6 +451,7 @@ export class Game {
       tradeRoutes: this.#logistics.routes,
       shipments: this.#logistics.shipments,
       skippedDecisions: [...this.#decisions.skipped],
+      mutedDecisions: this.#decisions.muted,
       colonies: [...this.#colonies],
       fleets: this.#fleets,
       explored: [...this.#explored],
@@ -504,7 +510,10 @@ export class Game {
       ...copy.researchQueue,
     ]);
     game.#logistics = new Logistics([...copy.tradeRoutes], [...copy.shipments]);
-    game.#decisions = new DecisionBoard(new Set(copy.skippedDecisions));
+    game.#decisions = new DecisionBoard(
+      new Set(copy.skippedDecisions),
+      copy.mutedDecisions ?? [],
+    );
     game.#colonies = new Map(copy.colonies);
     for (const colony of game.#colonies.values()) {
       colony.stock = { ...emptyStock(), ...colony.stock };
@@ -1204,8 +1213,17 @@ export class Game {
     if (this.decisions.some((item) => item.id === id))
       this.#decisions.skipped.add(id);
   }
+  muteDecision(id: string): void {
+    this.#requirePlanning();
+    const decision = this.decisions.find((item) => item.id === id);
+    if (decision) this.#decisions.mute(decision);
+  }
+  unmuteDecision(id: string): void {
+    this.#requirePlanning();
+    this.#decisions.unmute(id);
+  }
   get decisions(): readonly Decision[] {
-    const items: Omit<Decision, 'skipped'>[] = [];
+    const items: DecisionDescriptor[] = [];
     if (
       !this.#research.queue.length &&
       this.#research.completed.size < TECHNOLOGIES.length

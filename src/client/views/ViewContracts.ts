@@ -45,6 +45,8 @@ export type AppIntent =
       readonly type:
         | 'open-decision'
         | 'skip-decision'
+        | 'mute-decision'
+        | 'unmute-decision'
         | 'release-trade-fleet'
         | 'close-trade-route';
       readonly id: string;

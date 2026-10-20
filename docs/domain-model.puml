@@ -166,6 +166,7 @@ class Shipment {
 class Decision {
   context
   skippedThisTurn
+  mutedUntilUnmuted
 }
 Planet "1" *-- "3" ResourceDeposit
 Colony "1" *-- "*" PlanetStock
@@ -178,6 +179,7 @@ Shipment --> PlanetStock : awaiting pickup
 Shipment --> ConstructionProject : requested by
 Shipment --> TradeRoute : traverses
 Player --> Decision
+SavedGame --> Decision : muted preferences
 Decision --> Colony
 Decision --> Fleet
 Decision --> Research

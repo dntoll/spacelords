@@ -4,7 +4,7 @@ import {
   type ResearchCameraSnapshot,
 } from './ResearchTree.js';
 import type { Component } from './Economy.js';
-import type { Decision } from './Decisions.js';
+import { needsAttention, type Decision } from './Decisions.js';
 import type { TradeRouteSnapshot } from './Logistics.js';
 import { FleetMapLayout } from './FleetMapLayout.js';
 import { Camera, type CameraSnapshot } from './Camera.js';
@@ -437,7 +437,7 @@ export class AppModel {
   openDecision(id?: string): void {
     const decision = id
       ? this.#game.decisions.find((d) => d.id === id)
-      : this.#game.decisions.find((d) => !d.skipped);
+      : this.#game.decisions.find(needsAttention);
     if (!decision) {
       this.openDecisions();
       return;
@@ -458,8 +458,14 @@ export class AppModel {
   skipDecision(id: string): void {
     this.#game.skipDecision(id);
   }
+  muteDecision(id: string): void {
+    this.#game.muteDecision(id);
+  }
+  unmuteDecision(id: string): void {
+    this.#game.unmuteDecision(id);
+  }
   requestEndTurn(): boolean {
-    this.#pendingEndTurn = this.#game.decisions.some((d) => !d.skipped);
+    this.#pendingEndTurn = this.#game.decisions.some(needsAttention);
     return !this.#pendingEndTurn;
   }
   cancelEndTurn(): void {
