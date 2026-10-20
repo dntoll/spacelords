@@ -419,3 +419,49 @@ För att återställa hela föregående publicerade version: återställ enbart
 `spacelords/` från `6b78833e810f8d0f0f19ffd8bbace537b941bc89` på en ny branch
 från aktuell `main`, med samma avgränsade gransknings- och publiceringsflöde.
 Att enbart revertera den sista CSS-committen återställer inte den gamla ekonomin.
+
+## Driftsättning av gemensam byggkö, komponenter och förstärkningar: 2026-10-20
+
+- Publicerad klientrevision: `1af48d2e3eaf6c219c8455d88efaa9e23a787577`
+  från `codex/resource-logistics-decisions` i `dntoll/spacelords`.
+  Även föregående funktionscommit `04acf91` ingår. Källrepots `main` är
+  oförändrad; ändringarna har pushats till testbranchen.
+- Målrepots tidigare revision: `b6dfc1e1014a3c61b67c00ca0f4f75156aa8b56c`.
+  Deploycommit: `a7d4e32250bd3817946794162cdcb50f3372b280` från
+  `codex/deploy-spacelords-1af48d2`, publicerad till målrepots `main`.
+  Endast `spacelords/` ändrades. Samtliga 281 övriga webbplatsfilers Git-objekt
+  är oförändrade, även jämfört med aktuell `origin/main` före publiceringen.
+- Ren installation med Node.js 24.19.0 och hela `npm run check` passerade:
+  formatering, ESLint, typkontroll, båda byggena, 180 snabba tester på
+  7,21 sekunder, fem integrationstester och 122 browsertester. Tio
+  plattformsberoende browsertester hoppades över enligt sina villkor.
+  Installationen rapporterade inga kända sårbarheter.
+- [Källrevisionens CI](https://github.com/dntoll/spacelords/actions/runs/39370612412)
+  och [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/39371112422)
+  lyckades. PR-integrationen gav HTTP 403. Instruktionens reservväg användes
+  efter förnyad kontroll av aktuell `origin/main`, föräldrarelation, ren
+  publiceringskopia och avgränsad diff: vanlig fast-forward-push via befintlig
+  SSH-autentisering. Ingen force-push eller behörighetsändring gjordes.
+- Tio mobiltester passerade både mot hela den isolerade publiceringskopian och
+  liveadressen i Chromium och WebKit. De verifierar en gemensam Build queue,
+  forskning av komponentfabriker, automatiska delorder före Fighter, sparning,
+  förstärkningar som hinner ifatt rörliga flottor, flottans Trade route och
+  automatisk försörjning genom handelsnätet. Kartans yta och alternativa
+  fontmått kontrolleras också.
+- Alla elva publicerade klientfiler gav HTTP 200 med rätt innehållstyper och
+  exakt samma byteinnehåll som Pages-bygget och de granskade Git-objekten.
+  `/spacelords` ger HTTP 301 till `/spacelords/`. Separata mobilkontroller av
+  nytt spel, karta och planetvy gav inga JavaScript- eller HTTP-fel och inga
+  anrop till rotens `/assets/` eller `/api/`.
+- Kontrollsummorna för `/`, `/MachineBloom/`, `/Defence-Grid/test/`,
+  `/styles.css` och `/i18n.js` var identiska före och efter publiceringen.
+  Inga länkar, navigationsval, DNS- eller Pages-inställningar ändrades.
+- Befintliga version 2-spel migreras utan radering till den gemensamma kön.
+  Nya sparningar har version 3. Vid återställning av klienten till föregående
+  publicering måste sparningarna säkerhetskopieras och kompatibiliteten
+  hanteras separat: den äldre klienten kan inte läsa version 3.
+
+För att återställa föregående klientbygge: återställ enbart `spacelords/` från
+`b6dfc1e1014a3c61b67c00ca0f4f75156aa8b56c` på en ny branch från aktuell
+`main`, med samma avgränsade gransknings- och publiceringsflöde. Detta återställer
+inte automatiskt version 3-sparningar till det äldre formatet.
