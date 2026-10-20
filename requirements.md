@@ -42,7 +42,9 @@ Se [hela visionen](docs/game-vision.md).
   Piratrån och eskortskydd ingår ännu inte.
 - **Beslut och händelser:** Decisions och Next decision samlar val och
   försörjningsproblem. Spelaren kan hoppa över beslut ett år. End turn varnar
-  samlat och låter spelaren fortsätta ändå. Händelsekonsolen bevaras.
+  samlat och låter spelaren fortsätta ändå. Händelsekonsolen (`handelser`) är
+  fullständigt implementerad och anpassar sin storlek efter skärmen: fler
+  synliga rader på större skärmar och kompakt format på små eller låga skärmar.
 - **Utveckling och kvalitet:** MVC, TypeScript, ESLint, p5 i instance mode,
   en snabb testsvit inom 20 sekunder och en utökad svit i GitHub CI.
 - **Driftsättning:** endast klientbygget under `spacelords/` i målrepot;

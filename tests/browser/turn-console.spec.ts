@@ -58,3 +58,52 @@ for (const size of [
     await expect(end).toBeEnabled();
   });
 }
+
+test('handelser: Events adapts to available screen space and keeps controls separate', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('./');
+  await startFirstSlot(page);
+  for (let year = 0; year < 8; year++) await endTurn(page);
+  const panel = page.getByRole('region', { name: 'Turn console' });
+  const log = page.getByRole('log', { name: 'Game events' });
+  const large = (await panel.boundingBox())!;
+  expect(large.height).toBeGreaterThanOrEqual(180);
+  expect(large.width).toBeGreaterThan(320);
+  expect(
+    await log.evaluate(
+      (node) =>
+        node.clientHeight / parseFloat(getComputedStyle(node).lineHeight),
+    ),
+  ).toBeGreaterThanOrEqual(8);
+  await page.screenshot({ path: testInfo.outputPath('events-desktop.png') });
+  await page.setViewportSize({ width: 1024, height: 768 });
+  const medium = (await panel.boundingBox())!;
+  expect(medium.height).toBeLessThan(large.height);
+  expect(medium.height).toBeGreaterThan(90);
+  for (const size of [
+    { width: 1024, height: 768 },
+    { width: 320, height: 568 },
+    { width: 844, height: 390 },
+  ]) {
+    await page.setViewportSize(size);
+    const bounds = (await panel.boundingBox())!;
+    const end = (await page
+      .getByRole('button', { name: 'End turn', exact: true })
+      .boundingBox())!;
+    const selection = (await page.locator('.selection-panel').boundingBox())!;
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(end.y);
+    expect(selection.y + selection.height).toBeLessThanOrEqual(bounds.y);
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(size.width);
+    if (size.width < 900) expect(bounds.height).toBeLessThanOrEqual(90);
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollHeight <= innerHeight &&
+          document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+});

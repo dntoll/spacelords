@@ -1700,13 +1700,13 @@ p {
   flex: 0 1 auto;
 }
 
-/* handelser: a bounded console stays above End turn without a blocking dialog. */
+/* handelser: reserve space for Events while keeping map controls separate. */
 .turn-console {
   position: absolute;
   right: max(12px, env(safe-area-inset-right));
   bottom: max(68px, calc(env(safe-area-inset-bottom) + 68px));
-  width: min(320px, calc(100% - 24px));
-  height: 84px;
+  width: min(var(--events-width, 320px), calc(100% - 24px));
+  height: var(--events-height, 84px);
   padding: 6px 8px;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -1737,7 +1737,13 @@ p {
   color: var(--muted);
 }
 .selection-panel {
-  max-height: calc(100% - 176px);
+  max-height: calc(100% - var(--events-height, 84px) - 92px);
+}
+@media (min-width: 900px) and (min-height: 600px) {
+  .map-page {
+    --events-width: clamp(320px, 32vw, 520px);
+    --events-height: clamp(120px, 22dvh, 260px);
+  }
 }
 @media (max-width: 600px) {
   .selection-panel {
