@@ -70,11 +70,15 @@ export class AppView implements AppPort {
       this.#tradeObserver = null;
       this.#tradeViewport = null;
     }
-    const tradeBayScroll =
-      this.#root.querySelector('.trade-fleet-bay')?.scrollTop ?? 0;
-    const tradeRouteChanged =
+    const tradePanelScroll =
+      this.#root.querySelector('.trade-selection-panel')?.scrollTop ?? 0;
+    const tradeSelectionChanged =
       (this.#root.querySelector<HTMLElement>('.trade-graph-page')?.dataset
-        .routeId ?? '') !== (model.tradeGraph.routeId ?? '');
+        .selection ?? '') !==
+      (model.tradeGraph.fleetId ??
+        model.tradeGraph.routeId ??
+        model.tradeGraph.planets.at(-1) ??
+        '');
     if (model.screen !== 'research') {
       this.#researchObserver?.disconnect();
       this.#researchObserver = null;
@@ -337,8 +341,10 @@ export class AppView implements AppPort {
     if (model.screen === 'trade-routes') {
       this.#tradeGraphKey = tradeGraphKey;
       updateTradeCamera(this.#root, model);
-      const bay = this.#root.querySelector<HTMLElement>('.trade-fleet-bay');
-      if (bay) bay.scrollTop = tradeRouteChanged ? 0 : tradeBayScroll;
+      const panel = this.#root.querySelector<HTMLElement>(
+        '.trade-selection-panel',
+      );
+      if (panel) panel.scrollTop = tradeSelectionChanged ? 0 : tradePanelScroll;
       const viewport = this.#root.querySelector<HTMLElement>(
         '.trade-graph-viewport',
       );

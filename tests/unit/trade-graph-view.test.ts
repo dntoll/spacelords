@@ -22,9 +22,11 @@ function modelWithRoute() {
 
 it('handelsgraf-planetoversikt: exposes stock, extraction, net need, incoming and manufacturing without foreign planets', () => {
   const model = modelWithRoute();
+  model.selectTradePlanet('sol-0');
   const view = renderTradeRoutes(model.snapshot, () => {});
   expect(view.querySelectorAll('.trade-planet-node')).toHaveLength(2);
-  const home = view.querySelector('[data-planet-id="sol-0"]')!;
+  expect(view.querySelector('.trade-graph-stage .trade-materials')).toBeNull();
+  const home = view.querySelector('.trade-selection-panel')!;
   expect(
     home.querySelector('[data-material="Iron"] .trade-stock')!.textContent,
   ).toBe('120');
@@ -32,7 +34,10 @@ it('handelsgraf-planetoversikt: exposes stock, extraction, net need, incoming an
     home.querySelector('[data-material="Iron"] .trade-extraction')!.textContent,
   ).toBe('10');
   expect(home.textContent).toContain('Factories: Rocket engine');
-  const vesta = view.querySelector('[data-planet-id="sol-1"]')!;
+  model.selectTradePlanet('sol-1');
+  const vesta = renderTradeRoutes(model.snapshot, () => {}).querySelector(
+    '.trade-selection-panel',
+  )!;
   expect(
     vesta.querySelector('[data-material="Iron"] .trade-shortage')!.textContent,
   ).toBe('5');
@@ -83,15 +88,17 @@ it('handelsgraf-flottboxar: displays exact ship totals and positions, and emits 
   const model = modelWithRoute();
   const emit = vi.fn();
   const view = renderTradeRoutes(model.snapshot, emit);
-  const bay = view.querySelector('.trade-fleet-bay')!;
-  const fleet = bay.querySelector('[data-fleet-id="freighters"]')!;
+  const fleet = view.querySelector(
+    '.trade-graph-stage [data-fleet-id="freighters"]',
+  )!;
   expect(
     fleet.querySelector('[data-ship="Transport ship"] figcaption')!.textContent,
   ).toBe('2');
   expect(fleet.textContent).toContain('Tellus · HEX 1, 0');
-  expect(bay.querySelector('[data-fleet-id="empty"]')!.textContent).toContain(
-    'No position',
-  );
+  expect(
+    view.querySelector('.trade-graph-stage [data-fleet-id="empty"]')!
+      .textContent,
+  ).toContain('No position');
   const drop = new Event('drop', { cancelable: true });
   Object.defineProperty(drop, 'dataTransfer', {
     value: { getData: () => 'freighters' },
@@ -102,4 +109,47 @@ it('handelsgraf-flottboxar: displays exact ship totals and positions, and emits 
     routeId: 'route-test',
     fleetId: 'freighters',
   });
+});
+
+it('handelsgraf-valpanel / handelsgraf-flottboxar: follows the selected object and renders assigned fleets once in the graph', () => {
+  const model = modelWithRoute();
+  model.selectTradeRoute('route-test');
+  model.assignTradeFleet('route-test', 'freighters');
+  let view = renderTradeRoutes(model.snapshot, () => {});
+  expect(
+    view.querySelectorAll('.trade-graph-stage [data-fleet-id="freighters"]'),
+  ).toHaveLength(1);
+  expect(
+    view.querySelector('.trade-fleet-marker[data-fleet-id="freighters"]'),
+  ).toBeNull();
+  expect(view.querySelector('.trade-selection-panel')!.textContent).toContain(
+    '60 cargo capacity',
+  );
+  expect(
+    view.querySelector('.trade-selection-panel .trade-fleet-box'),
+  ).toBeNull();
+  model.selectTradeFleet('freighters');
+  view = renderTradeRoutes(model.snapshot, () => {});
+  expect(view.querySelector('.trade-selection-panel')!.textContent).toContain(
+    'Trade route: Tellus',
+  );
+  expect(
+    view.querySelector('.trade-selection-panel')!.textContent,
+  ).not.toContain('Close route');
+  model.selectTradePlanet('sol-1');
+  view = renderTradeRoutes(model.snapshot, () => {});
+  expect(view.querySelector('.trade-selection-panel h2')!.textContent).toBe(
+    'Vesta',
+  );
+  expect(
+    view.querySelector('.trade-selection-panel .trade-materials'),
+  ).not.toBeNull();
+  model.releaseTradeFleet('freighters');
+  view = renderTradeRoutes(model.snapshot, () => {});
+  expect(
+    view.querySelectorAll('.trade-graph-stage [data-fleet-id="freighters"]'),
+  ).toHaveLength(1);
+  expect(
+    view.querySelector('.trade-fleet-marker[data-fleet-id="freighters"]'),
+  ).not.toBeNull();
 });

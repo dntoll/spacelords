@@ -27,25 +27,49 @@ test('handelsgraf / handelsgraf-planetoversikt / handelsgraf-flottboxar: connect
   });
   const stage = page.locator('.trade-graph-stage');
   await expect(page.locator('.trade-planet-node')).toHaveCount(2);
-  await expect(page.locator('.trade-fleet-marker')).toHaveCount(3);
-  const home = page.locator('.trade-planet-node[data-planet-id="sol-0"]');
+  await expect(page.locator('.trade-fleet-marker')).toHaveCount(4);
+  await expect(page.locator('.trade-graph-stage .trade-materials')).toHaveCount(
+    0,
+  );
+  const home = page.getByRole('complementary', { name: 'Selected object' });
+  const tellus = page.getByRole('button', {
+    name: 'Select planet Tellus',
+    exact: true,
+  });
+  await tellus.focus();
+  await tellus.click();
+  await expect(
+    home.getByRole('heading', { name: 'Tellus', exact: true }),
+  ).toBeVisible();
   await expect(home.locator('[data-material="Iron"] .trade-stock')).toHaveText(
     '120',
   );
   await expect(
     home.locator('[data-material="Iron"] .trade-extraction'),
   ).toHaveText('10');
+  await page.screenshot({
+    path: testInfo.outputPath('trade-planet-selection.png'),
+  });
+  await tellus.click();
+  const vesta = page.getByRole('button', {
+    name: 'Select planet Vesta',
+    exact: true,
+  });
+  await vesta.focus();
+  await vesta.click();
   await expect(
-    page.locator(
-      '.trade-planet-node[data-planet-id="sol-1"] [data-material="Iron"] .trade-shortage',
-    ),
+    home.getByRole('heading', { name: 'Vesta', exact: true }),
+  ).toBeVisible();
+  await expect(
+    home.locator('[data-material="Iron"] .trade-shortage'),
   ).toHaveText('5');
+  await vesta.click();
   await connectTradePlanets(page, 'Tellus', 'Vesta');
   await expect(page.locator('.trade-route-line')).toHaveCount(1);
-  const bay = page.getByRole('complementary', { name: 'Trade fleets' });
-  await expect(bay.locator('[data-fleet-id="freighters"]')).toContainText(
-    'Tellus · HEX 1, 0',
-  );
+  const bay = page.getByRole('complementary', { name: 'Selected object' });
+  await expect(
+    page.locator('.trade-graph-stage [data-fleet-id="freighters"]'),
+  ).toContainText('Tellus · HEX 1, 0');
   await expect(
     bay.getByRole('button', {
       name: 'Assign Home Fleet to Tellus to Vesta',
@@ -68,6 +92,12 @@ test('handelsgraf / handelsgraf-planetoversikt / handelsgraf-flottboxar: connect
   const dock = page.locator('.trade-route-dock');
   await expect(dock).toContainText('60 cargo capacity');
   await expect(
+    page.locator('.trade-graph-stage [data-fleet-id="freighters"]'),
+  ).toHaveCount(1);
+  await expect(
+    page.locator('.trade-fleet-marker[data-fleet-id="freighters"]'),
+  ).toHaveCount(0);
+  await expect(
     dock.locator(
       '[data-fleet-id="freighters"] [data-ship="Transport ship"] figcaption',
     ),
@@ -87,6 +117,22 @@ test('handelsgraf / handelsgraf-planetoversikt / handelsgraf-flottboxar: connect
     ).toBe(true);
   }
   await page.screenshot({ path: testInfo.outputPath('trade-network.png') });
+  const selectFleet = dock.getByRole('button', {
+    name: 'Select trade fleet Freighters',
+    exact: true,
+  });
+  await selectFleet.focus();
+  await selectFleet.click();
+  await expect(
+    bay.getByRole('heading', { name: 'Freighters', exact: true }),
+  ).toBeVisible();
+  await expect(bay).toContainText('Trade route: Tellus');
+  await page.screenshot({
+    path: testInfo.outputPath('trade-fleet-selection.png'),
+  });
+  await expect(
+    bay.getByRole('button', { name: 'Close route', exact: true }),
+  ).toHaveCount(0);
   const release = dock.getByRole('button', {
     name: 'Release Freighters',
     exact: true,
@@ -94,6 +140,9 @@ test('handelsgraf / handelsgraf-planetoversikt / handelsgraf-flottboxar: connect
   await release.focus();
   await release.click();
   await expect(dock).toContainText('No fleet assigned');
+  await expect(
+    page.locator('.trade-fleet-marker[data-fleet-id="freighters"]'),
+  ).toHaveCount(1);
   await expect(
     bay.getByRole('button', {
       name: 'Assign Freighters to Tellus to Vesta',
@@ -133,7 +182,9 @@ test('handelsgraf-flottboxar / handelsgraf-navigation: mouse drag assigns a flee
   await page
     .getByRole('button', { name: 'Fit trade network', exact: true })
     .click();
-  const source = page.locator('.trade-fleet-bay [data-fleet-id="freighters"]');
+  const source = page.locator(
+    '.trade-graph-stage [data-fleet-id="freighters"]',
+  );
   await source.dragTo(page.locator('.trade-route-dock'));
   await expect(page.locator('.trade-route-dock')).toContainText(
     '60 cargo capacity',
@@ -209,7 +260,7 @@ for (const size of [
   { width: 320, height: 568 },
   { width: 667, height: 320 },
 ]) {
-  test(`handelsgraf-navigation: graph and fleet bay remain contained at ${size.width}x${size.height}`, async ({
+  test(`handelsgraf-valpanel / handelsgraf-navigation: graph and selection panel remain contained at ${size.width}x${size.height}`, async ({
     page,
   }) => {
     await page.setViewportSize(size);
@@ -226,8 +277,17 @@ for (const size of [
           document.documentElement.scrollHeight <= innerHeight,
       ),
     ).toBe(true);
-    const fleet = page.locator('.trade-fleet-bay [data-fleet-id="empty"]');
-    await fleet.scrollIntoViewIfNeeded();
-    await expect(fleet).toContainText('No position');
+    const fleet = page.locator('.trade-graph-stage [data-fleet-id="empty"]');
+    const select = fleet.getByRole('button', {
+      name: 'Select trade fleet Reserve',
+      exact: true,
+    });
+    await select.focus();
+    await select.click();
+    const panel = page.getByRole('complementary', { name: 'Selected object' });
+    await expect(panel).toContainText('No position');
+    await expect(
+      panel.getByRole('heading', { name: 'Reserve', exact: true }),
+    ).toBeVisible();
   });
 }

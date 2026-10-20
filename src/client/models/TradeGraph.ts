@@ -25,15 +25,15 @@ export interface TradeGraphSnapshot {
 
 export class TradeGraphLayout {
   static readonly scale = 12;
-  static readonly planetWidth = 300;
-  static readonly planetHeight = 360;
+  static readonly planetWidth = 160;
+  static readonly planetHeight = 130;
   static readonly dockSize = 220;
   readonly planets: readonly Readonly<{ id: string; x: number; y: number }>[];
   readonly fleets: readonly Readonly<{
     id: string;
     x: number;
     y: number;
-    anchor: Point;
+    anchor: Point | null;
   }>[];
   readonly bounds: GraphBounds;
   readonly routes: readonly Readonly<{
@@ -62,27 +62,35 @@ export class TradeGraphLayout {
       ),
     );
     const colocated = new Map<string, number>();
+    let unpositioned = 0;
     this.fleets = Object.freeze(
       fleets
-        .filter((fleet) => fleet.position)
+        .filter((fleet) => !fleet.routeId)
         .map((fleet) => {
-          const anchor = TradeGraphLayout.point(fleet.position!);
-          const index = colocated.get(fleet.position!.key) ?? 0;
-          colocated.set(fleet.position!.key, index + 1);
+          if (!fleet.position)
+            return Object.freeze({
+              id: fleet.id,
+              anchor: null,
+              x: Math.min(...this.planets.map((p) => p.x), 0) - 380,
+              y: unpositioned++ * 132,
+            });
+          const anchor = TradeGraphLayout.point(fleet.position);
+          const index = colocated.get(fleet.position.key) ?? 0;
+          colocated.set(fleet.position.key, index + 1);
           return Object.freeze({
             id: fleet.id,
             anchor,
-            x: anchor.x + 174,
-            y: anchor.y - 110 + index * 132,
+            x: anchor.x + 112,
+            y: anchor.y - 60 + index * 132,
           });
         }),
     );
     const occupied: GraphBounds[] = [
       ...this.planets.map((n) => ({
-        x: n.x - 150,
-        y: n.y - 180,
-        width: 300,
-        height: 360,
+        x: n.x - TradeGraphLayout.planetWidth / 2,
+        y: n.y - TradeGraphLayout.planetHeight / 2,
+        width: TradeGraphLayout.planetWidth,
+        height: TradeGraphLayout.planetHeight,
       })),
       ...this.fleets.map((n) => ({ x: n.x, y: n.y, width: 184, height: 120 })),
     ];
@@ -177,16 +185,20 @@ export class TradeGraphState {
   }
   selectPlanet(id: string): void {
     this.#routeId = null;
+    this.#fleetId = null;
     this.#planets = this.#planets.includes(id)
       ? this.#planets.filter((p) => p !== id)
       : [...this.#planets.slice(-1), id];
   }
   selectRoute(id: string | null): void {
     this.#routeId = id;
+    this.#fleetId = null;
     this.#planets = [];
   }
   selectFleet(id: string): void {
     this.#fleetId = id;
+    this.#routeId = null;
+    this.#planets = [];
   }
   resize(width: number, height: number, bounds: GraphBounds): void {
     if (![width, height].every((n) => Number.isFinite(n) && n > 0)) return;

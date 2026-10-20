@@ -14,8 +14,7 @@ export function renderTradeFleet(
   fleet: FleetSnapshot,
   model: AppReadModel,
   emit: IntentHandler,
-  mode: 'bay' | 'marker' | 'dock',
-  route?: TradeRouteSnapshot,
+  mode: 'details' | 'marker' | 'dock',
 ): HTMLElement {
   const card = element(
     'article',
@@ -63,8 +62,12 @@ export function renderTradeFleet(
     ? `HEX ${fleet.position.q}, ${fleet.position.r}`
     : 'No position';
   const position = `${location ? `${location} · ` : ''}${coordinates}${fleet.destination ? ` → HEX ${fleet.destination.q}, ${fleet.destination.r}` : ''}`;
-  card.append(name, ships, element('p', 'trade-fleet-position', position));
-  if (mode === 'bay') {
+  card.append(
+    mode === 'details' ? element('h2', '', fleet.name) : name,
+    ships,
+    element('p', 'trade-fleet-position', position),
+  );
+  if (mode === 'details') {
     const assignment = fleetAssignmentLabel(fleet, model);
     if (assignment)
       card.append(element('p', 'trade-fleet-assignment', assignment));
@@ -100,21 +103,6 @@ export function renderTradeFleet(
     release.title = 'Leave route after the current trip and unloading';
     release.disabled = !!fleet.releaseRequested || model.phase !== 'planning';
     card.append(release);
-  } else if (mode === 'bay' && route) {
-    const issue = tradeAssignmentIssue(fleet, route);
-    const assign = button(
-      `Assign ${fleet.name} to ${route.from} to ${route.to}`,
-      () =>
-        emit({
-          type: 'assign-trade-fleet',
-          routeId: route.id,
-          fleetId: fleet.id,
-        }),
-    );
-    assign.textContent = 'Assign';
-    assign.disabled = !!issue || model.phase !== 'planning';
-    if (issue) card.append(element('p', 'trade-assignment-issue', issue));
-    card.append(assign);
   }
   card.draggable =
     !fleet.routeId &&
@@ -127,4 +115,30 @@ export function renderTradeFleet(
     if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
   });
   return card;
+}
+
+export function renderTradeAssignment(
+  fleet: FleetSnapshot,
+  route: TradeRouteSnapshot,
+  model: AppReadModel,
+  emit: IntentHandler,
+  label: string,
+): HTMLElement {
+  const row = element('div', 'trade-assignment-option');
+  const issue = tradeAssignmentIssue(fleet, route);
+  const assign = button(
+    `Assign ${fleet.name} to ${route.from} to ${route.to}`,
+    () =>
+      emit({
+        type: 'assign-trade-fleet',
+        routeId: route.id,
+        fleetId: fleet.id,
+      }),
+    'button secondary-button',
+  );
+  assign.textContent = `Assign · ${label}`;
+  assign.disabled = !!issue || model.phase !== 'planning';
+  row.append(assign);
+  if (issue) row.append(element('p', 'trade-assignment-issue', issue));
+  return row;
 }

@@ -1,7 +1,6 @@
 import type { AppReadModel } from '../models/AppModel.js';
 import { BUILDINGS, type PlanetGameSnapshot } from '../models/Game.js';
 import { MATERIALS } from '../models/Economy.js';
-import { TradeGraphLayout } from '../models/TradeGraph.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element } from './dom.js';
 
@@ -15,32 +14,33 @@ export function renderTradePlanet(
   card.setAttribute('aria-label', `Planet ${planet.name}`);
   const selected = model.tradeGraph.planets.indexOf(planet.id);
   card.classList.toggle('chosen-endpoint', selected >= 0);
-  const heading = element('div', 'trade-node-heading');
   const choose = button(
     `Select planet ${planet.name}`,
     () => emit({ type: 'trade-select-planet', id: planet.id }),
     'trade-planet-name',
   );
-  choose.textContent = planet.name;
-  choose.setAttribute('aria-pressed', String(selected >= 0));
-  const focus = button(
-    `Focus planet ${planet.name}`,
-    () =>
-      emit({
-        type: 'trade-focus',
-        point: TradeGraphLayout.point(planet.position),
-      }),
-    'button secondary-button graph-icon',
+  const sphere = element('span', 'trade-planet-sphere');
+  sphere.setAttribute('aria-hidden', 'true');
+  choose.replaceChildren(
+    sphere,
+    element('span', 'trade-planet-label', planet.name),
   );
-  focus.textContent = '⌖';
-  focus.title = `Zoom to ${planet.name}`;
-  heading.append(choose, focus);
+  choose.setAttribute('aria-pressed', String(selected >= 0));
+  card.append(choose);
+  return card;
+}
+
+export function renderTradePlanetDetails(
+  planet: PlanetGameSnapshot,
+): HTMLElement {
+  const card = element('section', 'trade-planet-details');
+  card.dataset.planetId = planet.id;
   card.append(
-    heading,
+    element('h2', '', planet.name),
     element(
       'p',
       'trade-coordinates',
-      `HEX ${planet.position.q}, ${planet.position.r}${selected >= 0 ? ` · Endpoint ${selected + 1}` : ''}`,
+      `HEX ${planet.position.q}, ${planet.position.r} · Population ${planet.population}`,
     ),
   );
   const table = element('table', 'trade-materials');

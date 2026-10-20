@@ -6,8 +6,11 @@ import {
 } from '../models/TradeGraph.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { bindDiagramNavigation } from './DiagramNavigation.js';
-import { renderTradePlanet } from './TradePlanetView.js';
-import { renderTradeFleet } from './TradeFleetView.js';
+import {
+  renderTradePlanet,
+  renderTradePlanetDetails,
+} from './TradePlanetView.js';
+import { renderTradeFleet, renderTradeAssignment } from './TradeFleetView.js';
 import { button, element } from './dom.js';
 
 const svgNamespace = 'http://www.w3.org/2000/svg';
@@ -18,6 +21,11 @@ export function renderTradeRoutes(
 ): HTMLElement {
   const page = element('section', 'trade-graph-page');
   page.dataset.routeId = model.tradeGraph.routeId ?? '';
+  page.dataset.selection =
+    model.tradeGraph.fleetId ??
+    model.tradeGraph.routeId ??
+    model.tradeGraph.planets.at(-1) ??
+    '';
   const header = element('div', 'screen-header');
   header.append(
     element('h1', '', 'Trade routes'),
@@ -123,6 +131,7 @@ export function renderTradeRoutes(
     svg.append(line);
   }
   for (const fleet of layout.fleets) {
+    if (!fleet.anchor) continue;
     const leader = document.createElementNS(svgNamespace, 'line');
     leader.classList.add('trade-fleet-leader');
     leader.setAttribute('x1', String(fleet.anchor.x));
@@ -216,7 +225,7 @@ export function renderTradeRoutes(
     element('span', 'trade-graph-hint', 'Drag · Pinch / scroll'),
   );
   area.append(viewport, controls);
-  workspace.append(area, renderFleetBay(model, emit));
+  workspace.append(area, renderSelectionPanel(model, emit));
   page.append(header, toolbar, workspace);
   return page;
 }
@@ -262,8 +271,7 @@ function renderRouteDock(
   const fleets = element('div', 'trade-route-fleets');
   for (const id of route.fleetIds) {
     const fleet = model.fleets.find((f) => f.id === id);
-    if (fleet)
-      fleets.append(renderTradeFleet(fleet, model, emit, 'dock', route));
+    if (fleet) fleets.append(renderTradeFleet(fleet, model, emit, 'dock'));
   }
   if (!route.fleetIds.length)
     fleets.append(element('p', 'muted-note', 'No fleet assigned'));
@@ -303,18 +311,42 @@ function renderRouteDock(
   return dock;
 }
 
-function renderFleetBay(model: AppReadModel, emit: IntentHandler): HTMLElement {
-  const bay = element('aside', 'trade-fleet-bay');
-  bay.setAttribute('aria-label', 'Trade fleets');
+function renderSelectionPanel(
+  model: AppReadModel,
+  emit: IntentHandler,
+): HTMLElement {
+  const panel = element('aside', 'trade-selection-panel');
+  panel.setAttribute('aria-label', 'Selected object');
+  const planet = model.ownedPlanets.find(
+    (p) => p.id === model.tradeGraph.planets.at(-1),
+  );
+  const fleet = model.fleets.find((f) => f.id === model.tradeGraph.fleetId);
   const route = model.tradeRoutes.find(
     (r) => r.id === model.tradeGraph.routeId,
   );
-  const context = element('section', 'trade-route-context');
-  context.append(
-    element('h2', '', route ? `${route.from} ↔ ${route.to}` : 'Fleet bay'),
-  );
-  if (route) {
-    context.append(
+  if (planet) panel.append(renderTradePlanetDetails(planet));
+  else if (fleet) {
+    panel.append(renderTradeFleet(fleet, model, emit, 'details'));
+    if (!fleet.routeId) {
+      panel.append(element('h3', '', 'Assign to route'));
+      for (const candidate of model.tradeRoutes)
+        panel.append(
+          renderTradeAssignment(
+            fleet,
+            candidate,
+            model,
+            emit,
+            `${candidate.from} ↔ ${candidate.to}`,
+          ),
+        );
+      if (!model.tradeRoutes.length)
+        panel.append(
+          element('p', 'muted-note', 'Connect two planets to create a route.'),
+        );
+    }
+  } else if (route) {
+    panel.append(
+      element('h2', '', `${route.from} ↔ ${route.to}`),
       element(
         'p',
         'trade-route-status',
@@ -327,22 +359,28 @@ function renderFleetBay(model: AppReadModel, emit: IntentHandler): HTMLElement {
       'button secondary-button',
     );
     close.disabled = route.closing || model.phase !== 'planning';
-    context.append(close);
-  } else
-    context.append(
+    panel.append(close, element('h3', '', 'Assign fleet'));
+    for (const candidate of model.fleets.filter((f) => !f.routeId))
+      panel.append(
+        renderTradeAssignment(candidate, route, model, emit, candidate.name),
+      );
+    if (!model.fleets.some((f) => !f.routeId))
+      panel.append(
+        element(
+          'p',
+          'muted-note',
+          'No unassigned fleets. Select a fleet on the route to inspect it.',
+        ),
+      );
+  } else {
+    panel.append(
+      element('h2', '', 'Selection'),
       element(
         'p',
         'muted-note',
-        'Select a link to assign fleets. Drag a fleet box onto a link or use Assign.',
+        'Select a planet, fleet or route to inspect it. Select two planets to connect them. Drag a fleet box onto a route or use Assign.',
       ),
     );
-  bay.append(
-    context,
-    element('h2', 'trade-fleet-heading', `Fleets · ${model.fleets.length}`),
-  );
-  const collection = element('div', 'trade-fleet-collection');
-  for (const fleet of model.fleets)
-    collection.append(renderTradeFleet(fleet, model, emit, 'bay', route));
-  bay.append(collection);
-  return bay;
+  }
+  return panel;
 }

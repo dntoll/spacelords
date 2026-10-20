@@ -10,7 +10,7 @@ import {
   tradeAssignmentIssue,
 } from '../../src/client/models/TradeGraph.js';
 
-describe('handelsgraf / handelsgraf-navigation', () => {
+describe('handelsgraf / handelsgraf-navigation / handelsgraf-valpanel', () => {
   it('preserves the star map geometry for every planet and moving fleet', () => {
     const model = new AppModel().snapshot;
     const home = model.ownedPlanets[0]!;
@@ -59,6 +59,11 @@ describe('handelsgraf / handelsgraf-navigation', () => {
     expect(state.snapshot.camera).toEqual(camera);
     state.selectFleet('fleet-home');
     expect(state.snapshot.fleetId).toBe('fleet-home');
+    expect(state.snapshot.routeId).toBeNull();
+    state.selectPlanet(home.id);
+    expect(state.snapshot.fleetId).toBeNull();
+    expect(state.snapshot.planets).toEqual([home.id]);
+    expect(state.snapshot.camera).toEqual(camera);
   });
 });
 
