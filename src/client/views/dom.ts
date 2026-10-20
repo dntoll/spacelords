@@ -30,6 +30,17 @@ export function labelValue(label: string, value: string): HTMLElement {
   return pair;
 }
 
+export function queueButton(
+  symbol: '↑' | '↓' | '×',
+  label: string,
+  onClick: () => void,
+): HTMLButtonElement {
+  const node = button(label, onClick, 'button queue-icon-button');
+  node.textContent = symbol;
+  node.title = label;
+  return node;
+}
+
 export function planetIllustration(large = false): HTMLElement {
   const orbit = element(
     'div',

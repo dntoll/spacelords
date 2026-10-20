@@ -11,7 +11,7 @@ import {
 } from '../models/Game.js';
 import { COMPONENTS } from '../models/Economy.js';
 import type { IntentHandler } from './ViewContracts.js';
-import { button, element, planetIllustration } from './dom.js';
+import { button, element, planetIllustration, queueButton } from './dom.js';
 import { buildingImage } from './BuildingImage.js';
 
 export function renderPlanet(
@@ -428,28 +428,24 @@ function renderQueueOrder(
     details.append(select);
   }
   const actions = element('div', 'queue-actions');
-  for (const [label, offset] of [
-    ['Move up', -1],
-    ['Move down', 1],
+  for (const [symbol, label, offset] of [
+    ['↑', 'Move up', -1],
+    ['↓', 'Move down', 1],
   ] as const) {
-    const move = button(
-      label,
+    const move = queueButton(
+      symbol,
+      `${label}: ${project.type}, position ${index + 1}`,
       () =>
         emit({ type: 'move-project', id: project.id, index: index + offset }),
-      'button',
     );
     move.disabled =
       locked || index + offset < 0 || index + offset >= projects.length;
-    move.setAttribute(
-      'aria-label',
-      `${label}: ${project.type}, position ${index + 1}`,
-    );
     actions.append(move);
   }
-  const cancel = button(
-    'Cancel',
+  const cancel = queueButton(
+    '×',
+    `Cancel: ${project.type}, position ${index + 1}`,
     () => emit({ type: 'cancel-project', id: project.id }),
-    'button',
   );
   cancel.disabled = locked;
   actions.append(cancel);

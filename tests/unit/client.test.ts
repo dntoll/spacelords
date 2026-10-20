@@ -276,7 +276,9 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
     });
     production().querySelector('.queue-order')!.dispatchEvent(drop);
     expect(queue()[0]!.id).not.toBe(second);
-    click('Cancel');
+    production()
+      .querySelector<HTMLButtonElement>('[aria-label^="Cancel:"]')!
+      .click();
     expect(queue()).toHaveLength(1);
   });
 });
@@ -301,5 +303,62 @@ describe('kolonisation / kartorderstatus', () => {
     expect(
       root.querySelector<HTMLButtonElement>('.building-menu button')!.disabled,
     ).toBe(false);
+  });
+});
+
+describe('kompakta-koknappar', () => {
+  it('uses symbols while preserving named research actions, boundaries and controller dispatch', () => {
+    const model = new AppModel();
+    model.research('Exploration ship factory');
+    model.research('Colony ship factory');
+    model.research('Transport ship factory');
+    model.openResearch();
+    new AppController(model, new AppView(root, mapFactory)).start();
+    const rows = () => [...root.querySelectorAll('.research-queue article')];
+    const buttons = () => [
+      ...rows()[0]!.querySelectorAll<HTMLButtonElement>('button'),
+    ];
+    expect(buttons().map((b) => b.textContent)).toEqual(['↑', '↓', '×']);
+    expect(buttons()[0]!.disabled).toBe(true);
+    expect(buttons()[1]!.disabled).toBe(false);
+    for (const control of buttons()) {
+      expect(control.getAttribute('aria-label')).toContain(
+        'Exploration ship factory',
+      );
+      expect(control.title).toBe(control.getAttribute('aria-label'));
+    }
+    rows()[1]!.querySelectorAll<HTMLButtonElement>('button')[1]!.click();
+    expect(model.snapshot.research.queue[1]).toBe('Transport ship factory');
+    rows()[2]!.querySelectorAll<HTMLButtonElement>('button')[2]!.click();
+    expect(model.snapshot.research.queue).toContain('Colony ship factory');
+    click('Remove research');
+    expect(model.snapshot.research.queue).not.toContain('Colony ship factory');
+  });
+
+  it('uses symbols for planet production without losing project actions', () => {
+    const model = new AppModel();
+    buildShipyard(model);
+    model.openPlanet();
+    new AppController(model, new AppView(root, mapFactory)).start();
+    click('Queue Colony ship');
+    click('Queue Colony ship');
+    const controls = () => [
+      ...root.querySelectorAll<HTMLButtonElement>(
+        '.queue-order .queue-actions button',
+      ),
+    ];
+    expect(
+      controls()
+        .slice(0, 3)
+        .map((b) => b.textContent),
+    ).toEqual(['↑', '↓', '×']);
+    expect(controls()[0]!.disabled).toBe(true);
+    expect(controls()[4]!.disabled).toBe(true);
+    const first = model.snapshot.planet!.projects[0]!.id;
+    controls()[1]!.click();
+    expect(model.snapshot.planet!.projects[1]!.id).toBe(first);
+    expect(controls()[2]!.getAttribute('aria-label')).toContain('Colony ship');
+    controls()[2]!.click();
+    expect(model.snapshot.planet!.projects).toHaveLength(1);
   });
 });

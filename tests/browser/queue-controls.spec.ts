@@ -1,0 +1,63 @@
+import { expect, test, type Locator } from '@playwright/test';
+import { startFirstSlot } from './save-helpers.js';
+
+for (const width of [320, 900]) {
+  test(`kompakta-koknappar: research and build queues use compact controls at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('./');
+    await startFirstSlot(page);
+    await page.getByRole('button', { name: 'Research', exact: true }).click();
+    await page
+      .getByRole('button', {
+        name: 'Research Colony ship factory',
+        exact: true,
+      })
+      .click();
+    const research = page.locator('.research-queue');
+    await checkControls(research.locator('article').first());
+    await research.screenshot({
+      path: testInfo.outputPath('research-queue.png'),
+    });
+    await page.getByRole('button', { name: 'Star map', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Open planet', exact: true })
+      .click();
+    for (const [index, type] of ['Research station', 'Iron mine'].entries()) {
+      await page
+        .getByRole('button', {
+          name: `Build building at site ${index + 1}`,
+          exact: true,
+        })
+        .click();
+      await page
+        .getByRole('button', { name: `Build ${type}`, exact: true })
+        .click();
+    }
+    const production = page.locator('.planet-building-queue');
+    await checkControls(production.locator('.queue-order').first());
+    await production.screenshot({
+      path: testInfo.outputPath('build-queue.png'),
+    });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  });
+}
+
+async function checkControls(row: Locator): Promise<void> {
+  const controls = row.locator('.queue-actions button');
+  await expect(controls).toHaveText(['↑', '↓', '×']);
+  for (const control of await controls.all()) {
+    await expect(control).toHaveAttribute(
+      'title',
+      (await control.getAttribute('aria-label'))!,
+    );
+    const bounds = (await control.boundingBox())!;
+    expect(bounds.width).toBe(44);
+    expect(bounds.height).toBe(44);
+  }
+}

@@ -1093,6 +1093,28 @@ p {
 .queue-details select {
   width: 100%;
 }
+.research-queue-order {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.research-queue-order > p {
+  flex: 1 1 160px;
+  margin: 0;
+}
+.queue-actions:has(.queue-icon-button) {
+  flex-wrap: nowrap;
+}
+.queue-actions .queue-icon-button {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+}
 .queue-order {
   cursor: grab;
 }

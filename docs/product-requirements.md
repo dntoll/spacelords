@@ -1,5 +1,11 @@
 # Produktkrav och status
 
+`kompakta-koknappar` — **Fullständigt implementerat**: Research queue och
+Build queue har kompakta symbolknappar: ↑ och ↓ flyttar en order, × tar bort
+den. Knapparna visar förklarande hjälptexter och har tydliga namn för
+skärmläsare. Knapparna behåller minst 44 px klickyta och befintliga regler för
+omordning, borttagning och bekräftelse.
+
 Visionen beskrivs i [game-vision.md](game-vision.md). Namnen är stabila referenser.
 **Fullständigt implementerat** avser hela det beskrivna kravet, inte hela spelet.
 För delvisa krav anges vad som återstår. Exempelvärden är inte beslut om balans.

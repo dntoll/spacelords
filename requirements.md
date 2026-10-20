@@ -10,6 +10,10 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Kompakta köhandlingar:** `kompakta-koknappar` är **Fullständigt implementerat**.
+  Research queue och Build queue använder små knappar med ↑, ↓ och × för
+  omordning och borttagning, med förklarande hjälptexter.
+
 - **Spelupplevelse och språk:** skärmfyllande vyer, stor hexkarta och engelska
   speltexter. Dokumentationen är svenska med spelets engelska namn och etiketter.
 - **Sparade spel:** tre separata spel med senaste speldatum, utforskad karta och
