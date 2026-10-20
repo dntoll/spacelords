@@ -42,6 +42,9 @@ Se [hela visionen](docs/game-vision.md).
   skeppsfabriker och Trade logistics. Grundutvinning och Research station finns
   från start.
 - **Logistik:** Trade routes länkar två ägda planeter och bildar nätverk.
+  En [handelsgraf](docs/trade-route-graph.md) med karttrogna planetpositioner,
+  materialöversikter och flottboxar är **Fullständigt implementerad**. Zoom,
+  panorering och tilldelning via länkar ersätter listvyn.
   Flera flottor per rutt fraktar material till aktiva köprojekt automatiskt.
   `synliga-handelsrutter` är **Fullständigt implementerat**: handelsrutternas
   linjer syns även genom markerade hexrutor.

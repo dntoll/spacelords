@@ -118,6 +118,10 @@ Byggnader, delar och skepp delar planetens enda kö. Se [ekonomi och logistik](e
 
 ## Ekonomi, transport och beslutsstöd
 
+Trade routes är en spelgraf med ägda planeter, materialöversikter,
+flottboxar och interaktiva rutter. Se [handelsgrafens krav och status](trade-route-graph.md).
+Detta ersätter den tidigare listvyn och formulären; transportreglerna behålls.
+
 `synliga-handelsrutter` — **Fullständigt implementerat**: Handelsrutter syns
 även inne i markerade hexrutor. Markeringen får inte dölja rutten. Planeter,
 flottor och kartans informationsmärken förblir tydliga ovanpå linjerna.

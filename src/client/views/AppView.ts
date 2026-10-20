@@ -15,14 +15,11 @@ import { renderBuildSelection } from './BuildSelectionView.js';
 import { renderPlanet } from './PlanetView.js';
 import { renderResearch } from './ResearchView.js';
 import { updateResearchCamera } from './ResearchTreeView.js';
+import { renderTradeRoutes, updateTradeCamera } from './TradeGraphView.js';
 import { renderFleetShips } from './ShipView.js';
 import { renderFleets, fleetAssignmentLabel } from './FleetView.js';
 import { button, element } from './dom.js';
-import {
-  renderDecisions,
-  renderTradeRoutes,
-  renderTurnWarning,
-} from './EmpireView.js';
+import { renderDecisions, renderTurnWarning } from './EmpireView.js';
 
 export class AppView implements AppPort {
   readonly #root: HTMLElement;
@@ -46,6 +43,9 @@ export class AppView implements AppPort {
   #researchKey = '';
   #researchViewport: HTMLElement | null = null;
   #researchObserver: ResizeObserver | null = null;
+  #tradeGraphKey = '';
+  #tradeViewport: HTMLElement | null = null;
+  #tradeObserver: ResizeObserver | null = null;
 
   constructor(
     root: HTMLElement,
@@ -65,6 +65,16 @@ export class AppView implements AppPort {
   }
 
   render(model: AppReadModel): void {
+    if (model.screen !== 'trade-routes') {
+      this.#tradeObserver?.disconnect();
+      this.#tradeObserver = null;
+      this.#tradeViewport = null;
+    }
+    const tradeBayScroll =
+      this.#root.querySelector('.trade-fleet-bay')?.scrollTop ?? 0;
+    const tradeRouteChanged =
+      (this.#root.querySelector<HTMLElement>('.trade-graph-page')?.dataset
+        .routeId ?? '') !== (model.tradeGraph.routeId ?? '');
     if (model.screen !== 'research') {
       this.#researchObserver?.disconnect();
       this.#researchObserver = null;
@@ -306,10 +316,49 @@ export class AppView implements AppPort {
         }
       }
     }
-    if (!changedScreen && model.screen === 'trade-routes')
+    const tradeGraphKey = JSON.stringify([
+      model.ownedPlanets,
+      model.fleets,
+      model.tradeRoutes,
+      model.phase,
+      model.research.completed,
+      model.tradeGraph.planets,
+      model.tradeGraph.routeId,
+      model.tradeGraph.fleetId,
+    ]);
+    if (
+      !changedScreen &&
+      model.screen === 'trade-routes' &&
+      this.#tradeGraphKey !== tradeGraphKey
+    )
       this.#root
         .querySelector('main')
         ?.replaceChildren(renderTradeRoutes(model, this.#emit));
+    if (model.screen === 'trade-routes') {
+      this.#tradeGraphKey = tradeGraphKey;
+      updateTradeCamera(this.#root, model);
+      const bay = this.#root.querySelector<HTMLElement>('.trade-fleet-bay');
+      if (bay) bay.scrollTop = tradeRouteChanged ? 0 : tradeBayScroll;
+      const viewport = this.#root.querySelector<HTMLElement>(
+        '.trade-graph-viewport',
+      );
+      if (viewport && viewport !== this.#tradeViewport) {
+        this.#tradeObserver?.disconnect();
+        this.#tradeViewport = viewport;
+        if (typeof ResizeObserver !== 'undefined') {
+          this.#tradeObserver = new ResizeObserver((entries) => {
+            const bounds = entries[0]?.contentRect;
+            if (bounds && viewport.isConnected)
+              this.#emit({
+                type: 'trade-size',
+                width: bounds.width,
+                height: bounds.height,
+              });
+          });
+          this.#tradeObserver.observe(viewport);
+        }
+      }
+    }
     if (!changedScreen && model.screen === 'decisions')
       this.#root
         .querySelector('main')
@@ -429,6 +478,8 @@ export class AppView implements AppPort {
   }
 
   dispose(): void {
+    this.#tradeObserver?.disconnect();
+    this.#tradeViewport = null;
     this.#researchObserver?.disconnect();
     this.#researchViewport = null;
     this.#decisionDialog?.close();

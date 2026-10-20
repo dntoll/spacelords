@@ -1,5 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
-import { endTurn, startFirstSlot, chooseResearch } from './save-helpers.js';
+import {
+  endTurn,
+  startFirstSlot,
+  chooseResearch,
+  connectTradePlanets,
+} from './save-helpers.js';
 import {
   HexCoordinate,
   HexGeometry,
@@ -130,22 +135,13 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     'no active transport path',
   );
   await page.getByRole('button', { name: 'Trade routes', exact: true }).click();
+  await connectTradePlanets(page, 'Tellus', 'Vesta');
   await page
-    .getByRole('combobox', { name: 'Route origin', exact: true })
-    .selectOption({ label: 'Tellus' });
-  await page
-    .getByRole('combobox', { name: 'Route destination', exact: true })
-    .selectOption({ label: 'Vesta' });
-  await page
-    .getByRole('button', { name: 'Create trade route', exact: true })
-    .click();
-  await page
-    .getByRole('combobox', {
-      name: 'Transport fleet for Tellus to Vesta',
+    .getByRole('button', {
+      name: 'Assign Freighters to Tellus to Vesta',
       exact: true,
     })
-    .selectOption({ label: 'Freighters' });
-  await page.getByRole('button', { name: 'Assign fleet', exact: true }).click();
+    .click();
   await expect(
     page.getByRole('article', { name: 'Tellus to Vesta' }),
   ).toContainText('30 cargo capacity');

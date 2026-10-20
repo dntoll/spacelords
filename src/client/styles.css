@@ -2012,3 +2012,456 @@ p {
     max-height: none;
   }
 }
+
+/* handelsgraf: positions use the same hex projection as Star map. */
+.trade-graph-page {
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  padding: 12px;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 8px;
+}
+.trade-graph-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.trade-connection {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+.trade-graph-toolbar > .button {
+  min-height: 44px;
+  padding: 6px 12px;
+}
+.trade-graph-toolbar > .muted-note {
+  font-size: 0.75rem;
+}
+.trade-graph-workspace {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 10px;
+}
+.trade-graph-area {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
+  border: 1px solid #304c59;
+  border-radius: 12px;
+  background: #09151f;
+}
+.trade-graph-viewport {
+  position: absolute;
+  inset: 0 0 64px;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+  cursor: grab;
+  background-image: radial-gradient(#45606a66 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.trade-graph-viewport:active {
+  cursor: grabbing;
+}
+.trade-graph-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+.trade-graph-links {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+.trade-route-line {
+  stroke: #5f9ec7;
+  stroke-width: 5;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+.trade-route-line.selected-route {
+  stroke: #f3d28e;
+  stroke-width: 7;
+}
+.trade-route-line:focus-visible {
+  stroke: #d8f6ef;
+  outline: none;
+}
+.trade-route-line.closing-route {
+  stroke-dasharray: 12 10;
+  opacity: 0.6;
+}
+.trade-fleet-leader {
+  stroke: #506c78;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 5;
+}
+.trade-planet-node {
+  position: absolute;
+  width: 300px;
+  height: 360px;
+  padding: 12px;
+  border: 1px solid #56847e;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #1b3a40, #10232f);
+  box-shadow: 0 10px 24px #0006;
+  overflow: hidden;
+  user-select: none;
+}
+.trade-planet-node.chosen-endpoint {
+  border: 2px solid #f3d28e;
+  box-shadow: 0 0 18px #e3bd5a33;
+}
+.trade-node-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.trade-planet-name {
+  border: 0;
+  padding: 0;
+  min-height: 40px;
+  text-align: left;
+  color: #ddf9ed;
+  background: transparent;
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.trade-coordinates {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin: 3px 0 10px;
+}
+.trade-materials {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+  table-layout: fixed;
+}
+.trade-materials th,
+.trade-materials td {
+  border-bottom: 1px solid #36505a;
+  padding: 5px 2px;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.trade-materials th:first-child {
+  width: 31%;
+  text-align: left;
+  font-weight: 400;
+}
+.trade-materials thead th {
+  color: var(--muted);
+  font-size: 0.65rem;
+}
+.trade-materials th:last-child {
+  width: 20%;
+}
+.trade-stock {
+  color: #d4ecf1;
+}
+.trade-extraction {
+  color: #a4e4ba;
+}
+.trade-shortage {
+  color: #ffb0a3;
+  font-weight: 700;
+}
+.trade-incoming {
+  color: #9ecafa;
+}
+.trade-production,
+.trade-project,
+.trade-project-status {
+  margin: 8px 0 0;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.trade-production {
+  color: #a4e4ba;
+}
+.trade-project-status {
+  color: #ddc99b;
+}
+.trade-route-dock {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  display: grid;
+  grid-template-rows: 28px 18px minmax(0, 1fr) 36px;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid #5d91ae;
+  border-radius: 10px;
+  background: #102532f2;
+  box-shadow: 0 8px 22px #0007;
+}
+.trade-route-dock.selected-route {
+  border-color: #f3d28e;
+}
+.trade-route-name {
+  display: block;
+  min-height: 28px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #c9e5f5;
+  padding: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+}
+.trade-route-capacity {
+  margin: 0;
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+.trade-route-dock > .button {
+  min-height: 36px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+.trade-route-fleets {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  margin: 0;
+}
+.trade-route-fleets > .muted-note {
+  font-size: 0.7rem;
+}
+.fleet-drop-target {
+  outline: 3px solid #b0e5ce;
+  background: #244b4a;
+}
+.trade-fleet-box {
+  padding: 10px;
+  min-width: 0;
+  margin: 0;
+}
+.trade-fleet-box .fleet-name-button {
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.trade-fleet-position,
+.trade-fleet-assignment,
+.trade-cargo,
+.trade-assignment-issue {
+  font-size: 0.7rem;
+  line-height: 1.3;
+  margin: 5px 0;
+  overflow-wrap: anywhere;
+}
+.trade-fleet-position {
+  color: #b7d1de;
+}
+.trade-fleet-assignment {
+  color: #b0e5ce;
+}
+.trade-assignment-issue {
+  color: #c4b9a2;
+}
+.trade-ship-manifest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-block: 5px;
+}
+.trade-ship-token {
+  position: relative;
+  width: 64px;
+  height: 76px;
+  padding: 0;
+  min-height: 0;
+  margin: 0;
+  border-radius: 5px;
+  background: #071924;
+  border: 1px solid #37515e;
+  overflow: hidden;
+}
+.trade-ship-token .ship-image {
+  width: 100%;
+  height: 42px;
+  object-fit: contain;
+}
+.trade-ship-count {
+  position: absolute;
+  right: 2px;
+  top: 1px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: #07111be6;
+  color: #d9f1e6;
+  font-size: 0.65rem;
+}
+.trade-ship-token .ship-token-label {
+  display: block;
+  position: static;
+  padding: 2px;
+  font-size: 0.55rem;
+  line-height: 1;
+  text-align: center;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.trade-fleet-box[draggable='true'] {
+  cursor: grab;
+}
+.trade-fleet-box > .button {
+  min-height: 36px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  margin: 4px 4px 0 0;
+}
+.trade-fleet-marker {
+  position: absolute;
+  width: 184px;
+  height: 120px;
+  overflow: hidden;
+  background: #122b38;
+  border-color: #526a91;
+}
+.trade-fleet-marker .fleet-name-button,
+.trade-fleet-dock .fleet-name-button {
+  min-height: 24px;
+}
+.trade-fleet-marker .trade-ship-token,
+.trade-fleet-dock .trade-ship-token {
+  width: 30px;
+  height: 28px;
+}
+.trade-fleet-marker .trade-ship-token .ship-image,
+.trade-fleet-dock .trade-ship-token .ship-image {
+  height: 26px;
+}
+.trade-fleet-marker .ship-token-label,
+.trade-fleet-dock .ship-token-label {
+  display: none;
+}
+.trade-fleet-dock {
+  position: relative;
+  background: #0c1e2b;
+  padding: 6px;
+  margin-bottom: 4px;
+}
+.trade-fleet-dock > .button {
+  position: absolute;
+  right: 3px;
+  top: 3px;
+  min-height: 28px;
+  padding: 0 6px;
+}
+.trade-fleet-dock .trade-fleet-position {
+  font-size: 0.6rem;
+}
+.trade-fleet-bay {
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #10232e;
+}
+.trade-route-context h2,
+.trade-fleet-heading {
+  font-size: 0.95rem;
+  margin: 0 0 8px;
+}
+.trade-route-context p {
+  font-size: 0.75rem;
+  margin: 6px 0;
+}
+.trade-route-context .button {
+  min-height: 36px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}
+.trade-fleet-heading {
+  margin-top: 16px;
+}
+.trade-fleet-collection {
+  display: grid;
+  gap: 8px;
+}
+.trade-graph-controls {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.trade-graph-controls .graph-icon,
+.trade-node-heading .graph-icon {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 1.2rem;
+}
+.trade-graph-zoom {
+  min-width: 44px;
+  text-align: center;
+  font-size: 0.7rem;
+}
+.trade-graph-hint {
+  color: var(--muted);
+  font-size: 0.65rem;
+  margin-left: 4px;
+}
+@media (max-width: 760px) {
+  .trade-graph-page {
+    padding: 8px;
+    gap: 6px;
+  }
+  .trade-graph-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(110px, 1fr) clamp(120px, 25dvh, 220px);
+    gap: 6px;
+  }
+  .trade-graph-hint {
+    display: none;
+  }
+  .trade-fleet-collection {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  }
+}
+@media (max-height: 500px) {
+  .trade-graph-workspace {
+    grid-template-columns: minmax(0, 1fr) 230px;
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .trade-graph-hint {
+    display: none;
+  }
+  .trade-graph-toolbar p {
+    font-size: 0.7rem;
+  }
+  .trade-graph-page .back-button {
+    min-height: 28px;
+    padding: 4px 8px;
+  }
+  .trade-graph-page h1 {
+    font-size: 1rem;
+  }
+  .trade-graph-toolbar > .button {
+    min-height: 32px;
+  }
+}

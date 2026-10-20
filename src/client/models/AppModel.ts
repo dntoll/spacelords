@@ -1,5 +1,10 @@
 import type { SaveRepository } from './SaveRepository.js';
 import {
+  TradeGraphState,
+  TradeGraphLayout,
+  type TradeGraphSnapshot,
+} from './TradeGraph.js';
+import {
   ResearchTreeCamera,
   type ResearchCameraSnapshot,
 } from './ResearchTree.js';
@@ -46,6 +51,7 @@ export interface SaveSlotSnapshot {
 export interface AppReadModel {
   readonly decisions: readonly Decision[];
   readonly tradeRoutes: readonly TradeRouteSnapshot[];
+  readonly tradeGraph: TradeGraphSnapshot;
   readonly ownedPlanets: readonly PlanetGameSnapshot[];
   readonly pendingEndTurn: boolean;
   readonly pendingResearchRemoval: Technology | null;
@@ -91,6 +97,7 @@ export class AppModel {
   #screen: Screen = 'map';
   #buildSearch = '';
   readonly #researchCamera = new ResearchTreeCamera();
+  readonly #tradeGraph = new TradeGraphState();
   #returnSite: number | null = null;
   #selectedFleetId: string | null = null;
   #shipTransfer: { readonly fleetId: string; readonly ship: ShipType } | null =
@@ -221,6 +228,7 @@ export class AppModel {
     return Object.freeze({
       decisions: this.#game.decisions,
       tradeRoutes: this.#game.tradeRoutes,
+      tradeGraph: this.#tradeGraph.snapshot,
       ownedPlanets: this.#game.ownedPlanetSnapshots(),
       pendingEndTurn: this.#pendingEndTurn,
       pendingResearchRemoval: this.#pendingResearchRemoval,
@@ -417,6 +425,39 @@ export class AppModel {
   fitResearch(): void {
     this.#researchCamera.fit();
   }
+  resizeTradeGraph(width: number, height: number): void {
+    const layout = new TradeGraphLayout(
+      this.#game.ownedPlanetSnapshots(),
+      this.#game.fleetSnapshots(),
+      this.#game.tradeRoutes,
+    );
+    this.#tradeGraph.resize(width, height, layout.bounds);
+  }
+  panTradeGraph(delta: Point): void {
+    this.#tradeGraph.panBy(delta);
+  }
+  zoomTradeGraph(factor: number, anchor: Point): void {
+    this.#tradeGraph.zoomAt(factor, anchor);
+  }
+  fitTradeGraph(): void {
+    this.#tradeGraph.fit();
+  }
+  focusTradeGraph(point: Point): void {
+    if ([point.x, point.y].every(Number.isFinite))
+      this.#tradeGraph.focus(point);
+  }
+  selectTradePlanet(id: string): void {
+    if (this.#game.ownedPlanetSnapshots().some((planet) => planet.id === id))
+      this.#tradeGraph.selectPlanet(id);
+  }
+  selectTradeRoute(id: string): void {
+    if (this.#game.tradeRoutes.some((route) => route.id === id))
+      this.#tradeGraph.selectRoute(id);
+  }
+  selectTradeFleet(id: string): void {
+    if (this.#game.fleetSnapshots().some((fleet) => fleet.id === id))
+      this.#tradeGraph.selectFleet(id);
+  }
   moveResearch(type: Technology, index: number): void {
     this.#game.moveResearch(type, index);
   }
@@ -472,7 +513,8 @@ export class AppModel {
     this.#pendingEndTurn = false;
   }
   createTradeRoute(a: string, b: string): void {
-    this.#game.createTradeRoute(a, b);
+    const id = this.#game.createTradeRoute(a, b);
+    this.#tradeGraph.selectRoute(id);
   }
   assignTradeFleet(routeId: string, fleetId: string): void {
     this.#game.assignTradeFleet(routeId, fleetId);
@@ -482,6 +524,8 @@ export class AppModel {
   }
   closeTradeRoute(id: string): void {
     this.#game.closeTradeRoute(id);
+    if (!this.#game.tradeRoutes.some((route) => route.id === id))
+      this.#tradeGraph.selectRoute(null);
   }
   colonize(id: string): void {
     this.#game.colonize(id);

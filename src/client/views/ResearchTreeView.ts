@@ -1,3 +1,4 @@
+import { bindDiagramNavigation } from './DiagramNavigation.js';
 import { BUILDINGS, type ResearchSnapshot } from '../models/Game.js';
 import { PREREQUISITES } from '../models/Research.js';
 import {
@@ -189,116 +190,17 @@ export function updateResearchCamera(
 }
 
 function bindNavigation(viewport: HTMLElement, emit: IntentHandler): void {
-  const adoptScroll = () => {
-    const delta = { x: -viewport.scrollLeft, y: -viewport.scrollTop };
-    if (!delta.x && !delta.y) return;
-    viewport.scrollLeft = 0;
-    viewport.scrollTop = 0;
-    emit({ type: 'research-pan', delta });
-  };
-  viewport.addEventListener('scroll', adoptScroll);
-  const point = (event: { clientX: number; clientY: number }) => {
-    const bounds = viewport.getBoundingClientRect();
-    return { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
-  };
-  viewport.addEventListener('pointerdown', (event) => {
-    if (event.button !== 0 || (event.target as Element).closest('button'))
-      return;
-    viewport.focus({ preventScroll: true });
-    viewport.setPointerCapture(event.pointerId);
-    emit({
-      type: 'research-pointer-start',
-      id: event.pointerId,
-      point: point(event),
-    });
-  });
-  viewport.addEventListener('pointermove', (event) => {
-    if (viewport.hasPointerCapture(event.pointerId))
-      emit({
-        type: 'research-pointer-move',
-        id: event.pointerId,
-        point: point(event),
-      });
-  });
-  viewport.addEventListener('pointerup', (event) => {
-    emit({
-      type: 'research-pointer-end',
-      id: event.pointerId,
-      point: point(event),
-    });
-    if (viewport.hasPointerCapture(event.pointerId))
-      viewport.releasePointerCapture(event.pointerId);
-  });
-  viewport.addEventListener('pointercancel', () =>
-    emit({ type: 'research-pointer-cancel' }),
-  );
-  viewport.addEventListener('lostpointercapture', () =>
-    emit({ type: 'research-pointer-cancel' }),
-  );
-  viewport.addEventListener(
-    'wheel',
-    (event) => {
-      event.preventDefault();
-      const delta =
-        event.deltaY *
-        (event.deltaMode === 1
-          ? 16
-          : event.deltaMode === 2
-            ? viewport.clientHeight
-            : 1);
-      emit({
-        type: 'research-zoom',
-        factor: Math.exp(Math.max(-0.7, Math.min(0.7, -delta * 0.002))),
-        anchor: point(event),
-      });
+  bindDiagramNavigation(
+    viewport,
+    {
+      pan: (delta) => emit({ type: 'research-pan', delta }),
+      zoom: (factor, anchor) => emit({ type: 'research-zoom', factor, anchor }),
+      fit: () => emit({ type: 'research-fit' }),
+      start: (id, point) => emit({ type: 'research-pointer-start', id, point }),
+      move: (id, point) => emit({ type: 'research-pointer-move', id, point }),
+      end: (id, point) => emit({ type: 'research-pointer-end', id, point }),
+      cancel: () => emit({ type: 'research-pointer-cancel' }),
     },
-    { passive: false },
+    '.research-node',
   );
-  viewport.addEventListener('keydown', (event) => {
-    if (event.target !== viewport) return;
-    const delta = {
-      ArrowLeft: { x: 64, y: 0 },
-      ArrowRight: { x: -64, y: 0 },
-      ArrowUp: { x: 0, y: 64 },
-      ArrowDown: { x: 0, y: -64 },
-    }[event.key];
-    if (delta) emit({ type: 'research-pan', delta });
-    else if (['+', '=', '-', '−'].includes(event.key))
-      emit({
-        type: 'research-zoom',
-        factor: ['-', '−'].includes(event.key) ? 0.8 : 1.25,
-        anchor: { x: viewport.clientWidth / 2, y: viewport.clientHeight / 2 },
-      });
-    else if (event.key === '0') emit({ type: 'research-fit' });
-    else return;
-    event.preventDefault();
-  });
-  viewport.addEventListener('focusin', (event) => {
-    adoptScroll();
-    const card = (event.target as Element).closest<HTMLElement>(
-      '.research-node',
-    );
-    if (!card) return;
-    const frame = viewport.getBoundingClientRect();
-    const cardBounds = card.getBoundingClientRect();
-    const bounds =
-      cardBounds.width <= frame.width && cardBounds.height <= frame.height
-        ? cardBounds
-        : (event.target as HTMLElement).getBoundingClientRect();
-    if (
-      bounds.left < frame.left ||
-      bounds.right > frame.right ||
-      bounds.top < frame.top ||
-      bounds.bottom > frame.bottom
-    )
-      emit({
-        type: 'research-pan',
-        delta: {
-          x: (frame.left + frame.right - bounds.left - bounds.right) / 2,
-          y: (frame.top + frame.bottom - bounds.top - bounds.bottom) / 2,
-        },
-      });
-    viewport.scrollLeft = 0;
-    viewport.scrollTop = 0;
-  });
 }

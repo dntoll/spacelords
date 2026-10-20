@@ -12,6 +12,24 @@ export async function chooseResearch(
   await choose.click();
 }
 
+export async function connectTradePlanets(
+  page: Page,
+  from: string,
+  to: string,
+): Promise<void> {
+  for (const name of [from, to]) {
+    const planet = page.getByRole('button', {
+      name: `Select planet ${name}`,
+      exact: true,
+    });
+    await planet.focus();
+    await planet.click();
+  }
+  await page
+    .getByRole('button', { name: 'Create trade route', exact: true })
+    .click();
+}
+
 export async function startFirstSlot(page: Page): Promise<void> {
   await page
     .getByRole('article', { name: 'Save slot 1', exact: true })
