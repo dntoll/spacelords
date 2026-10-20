@@ -1,5 +1,17 @@
 import { expect, type Page } from '@playwright/test';
 
+export async function chooseResearch(
+  page: Page,
+  technology: string,
+): Promise<void> {
+  const choose = page.getByRole('button', {
+    name: `Research ${technology}`,
+    exact: true,
+  });
+  await choose.focus();
+  await choose.click();
+}
+
 export async function startFirstSlot(page: Page): Promise<void> {
   await page
     .getByRole('article', { name: 'Save slot 1', exact: true })

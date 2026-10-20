@@ -13,6 +13,7 @@ import type {
 import { renderBuildSelection } from './BuildSelectionView.js';
 import { renderPlanet } from './PlanetView.js';
 import { renderResearch } from './ResearchView.js';
+import { updateResearchCamera } from './ResearchTreeView.js';
 import { renderFleetShips } from './ShipView.js';
 import { renderFleets, fleetAssignmentLabel } from './FleetView.js';
 import { button, element } from './dom.js';
@@ -41,6 +42,9 @@ export class AppView implements AppPort {
   #fleetPreview: { dispose(): void } | null = null;
   #planetScroll = new Map<string, number>();
   #decisionDialog: HTMLDialogElement | null = null;
+  #researchKey = '';
+  #researchViewport: HTMLElement | null = null;
+  #researchObserver: ResizeObserver | null = null;
 
   constructor(
     root: HTMLElement,
@@ -60,6 +64,11 @@ export class AppView implements AppPort {
   }
 
   render(model: AppReadModel): void {
+    if (model.screen !== 'research') {
+      this.#researchObserver?.disconnect();
+      this.#researchObserver = null;
+      this.#researchViewport = null;
+    }
     this.#decisionDialog?.close();
     this.#decisionDialog?.remove();
     this.#decisionDialog = null;
@@ -258,7 +267,12 @@ export class AppView implements AppPort {
           .querySelector<HTMLElement>(`[data-site-index="${model.returnSite}"]`)
           ?.focus({ preventScroll: true });
     }
-    if (!changedScreen && model.screen === 'research')
+    const researchKey = JSON.stringify([model.research, model.phase]);
+    if (
+      !changedScreen &&
+      model.screen === 'research' &&
+      this.#researchKey !== researchKey
+    )
       this.#root
         .querySelector('main')
         ?.replaceChildren(
@@ -268,6 +282,29 @@ export class AppView implements AppPort {
             this.#emit,
           ),
         );
+    if (model.screen === 'research') {
+      this.#researchKey = researchKey;
+      updateResearchCamera(this.#root, model.researchCamera);
+      const viewport = this.#root.querySelector<HTMLElement>(
+        '.research-tree-viewport',
+      );
+      if (viewport && viewport !== this.#researchViewport) {
+        this.#researchObserver?.disconnect();
+        this.#researchViewport = viewport;
+        if (typeof ResizeObserver !== 'undefined') {
+          this.#researchObserver = new ResizeObserver((entries) => {
+            const bounds = entries[0]?.contentRect;
+            if (bounds && viewport.isConnected)
+              this.#emit({
+                type: 'research-size',
+                width: bounds.width,
+                height: bounds.height,
+              });
+          });
+          this.#researchObserver.observe(viewport);
+        }
+      }
+    }
     if (!changedScreen && model.screen === 'trade-routes')
       this.#root
         .querySelector('main')
@@ -391,6 +428,8 @@ export class AppView implements AppPort {
   }
 
   dispose(): void {
+    this.#researchObserver?.disconnect();
+    this.#researchViewport = null;
     this.#decisionDialog?.close();
     this.#decisionDialog?.remove();
     this.#decisionDialog = null;

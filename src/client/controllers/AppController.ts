@@ -7,6 +7,7 @@ export class AppController {
   readonly #model: AppModel;
   readonly #view: AppPort;
   readonly #gesture = new MapGesture();
+  readonly #researchGesture = new MapGesture();
   #fleetPointer: { id: number; start: Point; dragged: boolean } | null = null;
 
   constructor(model: AppModel, view: AppPort) {
@@ -36,6 +37,8 @@ export class AppController {
   }
 
   #handleIntent(intent: AppIntent): void {
+    if (!intent.type.startsWith('research-pointer-'))
+      this.#researchGesture.cancel();
     if (intent.type.startsWith('open-') || intent.type === 'end-turn')
       this.#model.cancelShipTransfer();
     if (
@@ -63,6 +66,40 @@ export class AppController {
     )
       return;
     switch (intent.type) {
+      case 'research-size':
+        this.#model.resizeResearch(intent.width, intent.height);
+        break;
+      case 'research-pan':
+        this.#model.panResearch(intent.delta);
+        break;
+      case 'research-zoom':
+        this.#model.zoomResearch(intent.factor, intent.anchor);
+        break;
+      case 'research-fit':
+        this.#model.fitResearch();
+        break;
+      case 'research-pointer-start':
+        this.#researchGesture.start(intent.id, intent.point);
+        return;
+      case 'research-pointer-cancel':
+        this.#researchGesture.cancel();
+        return;
+      case 'research-pointer-end':
+        this.#researchGesture.end(intent.id);
+        return;
+      case 'research-pointer-move': {
+        const action = this.#researchGesture.move(intent.id, intent.point);
+        if (action.type === 'none') return;
+        if (action.type === 'pan') this.#model.panResearch(action.delta);
+        else {
+          this.#model.zoomResearch(action.factor, action.previousCenter);
+          this.#model.panResearch({
+            x: action.center.x - action.previousCenter.x,
+            y: action.center.y - action.previousCenter.y,
+          });
+        }
+        break;
+      }
       case 'open-trade-routes':
         this.#model.openTradeRoutes();
         break;
@@ -305,6 +342,7 @@ export class AppController {
       }
     }
     if (
+      !intent.type.startsWith('research-') &&
       ![
         'pointer-move',
         'pointer-start',

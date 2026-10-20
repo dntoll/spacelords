@@ -1,5 +1,5 @@
 import { expect, test, type Locator } from '@playwright/test';
-import { startFirstSlot } from './save-helpers.js';
+import { startFirstSlot, chooseResearch } from './save-helpers.js';
 
 for (const width of [320, 900]) {
   test(`kompakta-koknappar: research and build queues use compact controls at ${width}px`, async ({
@@ -9,12 +9,7 @@ for (const width of [320, 900]) {
     await page.goto('./');
     await startFirstSlot(page);
     await page.getByRole('button', { name: 'Research', exact: true }).click();
-    await page
-      .getByRole('button', {
-        name: 'Research Colony ship factory',
-        exact: true,
-      })
-      .click();
+    await chooseResearch(page, 'Colony ship factory');
     const research = page.locator('.research-queue');
     await checkControls(research.locator('article').first());
     await research.screenshot({

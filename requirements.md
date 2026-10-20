@@ -33,7 +33,9 @@ Se [hela visionen](docs/game-vision.md).
   produkter planeten kan tillverka. Rocket engine factory och Weapons module
   factory tillverkar delarna till Fighter; saknade lokalt byggbara delar köas
   automatiskt före skeppet (`delfabriker`, `skeppsdelar`, `automatiska-delorder`).
-- **Forskning:** forskningskö med automatiska förkunskaper låser upp alla
+- **Forskning:** `forsknings-tradnavigation` är **Fullständigt implementerat**:
+  ett zoom- och panorerbart forskningsträd med beroendepilar och bibehållen kamera.
+  Forskningskö med automatiska förkunskaper låser upp alla
   skeppsfabriker och Trade logistics. Grundutvinning och Research station finns
   från start.
 - **Logistik:** Trade routes länkar två ägda planeter och bildar nätverk.

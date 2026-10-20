@@ -22,7 +22,7 @@ För delvisa krav anges vad som återstår. Exempelvärden är inte beslut om ba
 | `kartnavigation`            | Fullständigt implementerat | Spelaren kan markera rutor, zooma, panorera och återgå till hemplaneten med mus, touch och knappar. Dragning ska inte välja en ruta.                                                                       |
 | `planetinformation`         | Fullständigt implementerat | Spelaren kan öppna en ägd planet och se namn, ägare, befolkning, gästvänlighet, resurser, byggplatser och byggnader.                                                                                       |
 | `visa-byggalternativ`       | Fullständigt implementerat | Build selection visar upplåsta byggnader, engångskostnad och personalbehov. Material- och personalbrist visas men hindrar inte köläggning. Beställning eller Back to Overview återgår till rätt byggplats. |
-| `forskningsoversikt`        | Fullständigt implementerat | Research visar valbar fabriksforskning, pågående forskning och färdiga upplåsningar samt antal arbetande Research stations.                                                                                |
+| `forskningsoversikt`        | Fullständigt implementerat | Research visar ett navigerbart träd med valbar forskning, pågående forskning, färdiga upplåsningar och antal arbetande Research stations.                                                                  |
 | `vynavigation`              | Fullständigt implementerat | Spelaren kan återgå till kartan från planet- och forskningsinformationen. Vald ruta och kartans läge bevaras tills sidan laddas om.                                                                        |
 | `flera-skarmstorlekar`      | Fullständigt implementerat | Spelet går att använda på mobil, surfplatta och dator.                                                                                                                                                     |
 | `direktatkomst-utan-lankar` | Fullständigt implementerat | Appen nås via sin direktadress utan nya länkar eller navigationsval på den befintliga webbplatsen.                                                                                                         |
@@ -36,6 +36,14 @@ För delvisa krav anges vad som återstår. Exempelvärden är inte beslut om ba
 | `english-game`              | Fullständigt implementerat | Alla texter, hjälptexter och namn på råvaror i spelet är på engelska.                                                                                                                                                                                                                                                                           |
 | `gemensamma-byggnadsbilder` | Fullständigt implementerat | Colony ship factory, Exploration ship factory, Fighter factory och Research station använder var sin tillhandahållen byggnadsbild. Samma bild används i Research, Build selection samt pågående och färdiga byggen i Overview. Hela bilden visas med bevarade proportioner. Gemensam platshållare visas om en bild saknas eller inte kan visas. |
 | `kompakta-bygghandlingar`   | Fullständigt implementerat | Byggplatser och byggval har kompakta, innehållsbreda knappar med minst 44 px klickhöjd. Byggande är primär handling, rivning och avbrytning sekundära. Status och fabrikens tillhörande kö framgår tydligt.                                                                                                                                     |
+
+`forsknings-tradnavigation` — **Fullständigt implementerat**: Research är ett
+forskningsträd med pilar från förkunskap till beroende teknik. Spelaren kan
+panorera, zooma och få en översikt med mus, touch eller tangentbord. Kameran
+behålls vid köändringar och navigering mellan vyer. Byggnadsbilder och tydliga
+statusar visar valbar, köad, pågående och färdig forskning. Research queue
+behåller omordning och bekräftad borttagning. Detta ersätter den tidigare
+listvyn; forskningsreglerna och teknikernas förkunskaper behålls.
 
 ## Fortsatt spelutveckling
 

@@ -1,11 +1,7 @@
-import {
-  BUILDINGS,
-  TECHNOLOGIES,
-  type ResearchSnapshot,
-} from '../models/Game.js';
+import { type ResearchSnapshot } from '../models/Game.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { buildingImage } from './BuildingImage.js';
-import { PREREQUISITES } from '../models/Research.js';
+import { renderResearchTree } from './ResearchTreeView.js';
 import { button, element, queueButton } from './dom.js';
 
 export function renderResearch(
@@ -20,7 +16,12 @@ export function renderResearch(
     button('Back to map', () => emit({ type: 'open-map' }), 'back-button'),
   );
   const panel = element('section', 'research-panel');
-  const introduction = element('div', 'research-introduction');
+  const introduction = element('details', 'research-introduction');
+  const summary = element('summary');
+  summary.append(
+    buildingImage('Research station'),
+    element('span', '', `Research stations · ${research.stations}`),
+  );
   const details = element('div', 'research-introduction-details');
   details.append(
     element('h2', '', 'Research station'),
@@ -35,51 +36,17 @@ export function renderResearch(
       `Operating research stations: ${research.stations}`,
     ),
   );
-  introduction.append(buildingImage('Research station'), details);
-  panel.append(introduction);
+  introduction.append(summary, details);
+  const sidebar = element('aside', 'research-sidebar');
+  sidebar.append(introduction);
   if (!research.stations)
-    panel.append(
+    sidebar.append(
       element(
         'p',
         'muted-note',
         'Build a Research station to advance research.',
       ),
     );
-  for (const type of TECHNOLOGIES) {
-    const card = element('article', 'research-choice');
-    card.dataset.technology = type;
-    const complete = research.completed.includes(type);
-    card.append(
-      ...(type === 'Trade logistics' ? [] : [buildingImage(type)]),
-      element('h3', '', type),
-      element(
-        'p',
-        'muted-note',
-        type === 'Trade logistics'
-          ? 'Connect owned planets with automated transport fleets.'
-          : BUILDINGS[type].description,
-      ),
-      element(
-        'p',
-        'muted-note',
-        `Requires: ${PREREQUISITES[type].join(', ') || 'No prerequisites'}`,
-      ),
-    );
-    if (complete) card.append(element('span', 'pill', 'Researched'));
-    else {
-      const selected = research.queue.includes(type);
-      if (research.selected === type)
-        card.append(element('span', 'pill', 'Researching · 0/1 points'));
-      const choose = button(
-        selected ? 'Queued' : `Research ${type}`,
-        () => emit({ type: 'research', technology: type }),
-        'button',
-      );
-      choose.disabled = locked || selected;
-      card.append(choose);
-    }
-    panel.append(card);
-  }
   const queue = element('section', 'research-queue');
   queue.append(element('h2', '', 'Research queue'));
   for (const [index, technology] of research.queue.entries()) {
@@ -111,7 +78,8 @@ export function renderResearch(
     row.append(actions);
     queue.append(row);
   }
-  panel.prepend(queue);
+  sidebar.append(queue);
+  panel.append(renderResearchTree(research, locked, emit), sidebar);
   page.append(header, panel);
   return page;
 }

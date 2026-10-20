@@ -11,6 +11,26 @@ import type {
 import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 
 export type AppIntent =
+  | { readonly type: 'research-pan'; readonly delta: Point }
+  | {
+      readonly type: 'research-zoom';
+      readonly factor: number;
+      readonly anchor: Point;
+    }
+  | {
+      readonly type: 'research-size';
+      readonly width: number;
+      readonly height: number;
+    }
+  | { readonly type: 'research-fit' | 'research-pointer-cancel' }
+  | {
+      readonly type:
+        | 'research-pointer-start'
+        | 'research-pointer-move'
+        | 'research-pointer-end';
+      readonly id: number;
+      readonly point: Point;
+    }
   | {
       readonly type:
         | 'open-trade-routes'

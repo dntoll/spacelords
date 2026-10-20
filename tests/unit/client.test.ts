@@ -33,7 +33,9 @@ function start(): AppController {
 
 function click(label: string): void {
   const button = [...root.querySelectorAll('button')].find(
-    (candidate) => candidate.textContent === label,
+    (candidate) =>
+      candidate.textContent === label ||
+      candidate.getAttribute('aria-label') === label,
   );
   expect(button).toBeDefined();
   button?.click();

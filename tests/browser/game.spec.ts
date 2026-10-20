@@ -1,4 +1,4 @@
-import { startFirstSlot, endTurn } from './save-helpers.js';
+import { startFirstSlot, endTurn, chooseResearch } from './save-helpers.js';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 async function canvas(page: Page): Promise<Locator> {
@@ -358,9 +358,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     .getByRole('img', { name: 'Colony ship factory', exact: true })
     .getAttribute('src');
 
-  await page
-    .getByRole('button', { name: 'Research Colony ship factory', exact: true })
-    .click();
+  await chooseResearch(page, 'Colony ship factory');
   await expect(
     page.getByText('Researching · 0/1 points', { exact: true }),
   ).toBeVisible();

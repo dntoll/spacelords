@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { endTurn, startFirstSlot } from './save-helpers.js';
+import { endTurn, startFirstSlot, chooseResearch } from './save-helpers.js';
 
 async function nextYear(page: Page) {
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
@@ -34,9 +34,7 @@ test('gemensam-planetko / delfabriker / automatiska-delorder: research, manufact
   await build(page, 1, 'Research station');
   await nextYear(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Research Fighter factory', exact: true })
-    .click();
+  await chooseResearch(page, 'Fighter factory');
   await expect(page.locator('.research-queue article')).toHaveCount(4);
   for (let year = 0; year < 4; year++) await nextYear(page);
   await home(page);

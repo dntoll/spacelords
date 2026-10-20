@@ -1,4 +1,8 @@
 import type { SaveRepository } from './SaveRepository.js';
+import {
+  ResearchTreeCamera,
+  type ResearchCameraSnapshot,
+} from './ResearchTree.js';
 import type { Component } from './Economy.js';
 import type { Decision } from './Decisions.js';
 import type { TradeRouteSnapshot } from './Logistics.js';
@@ -48,6 +52,7 @@ export interface AppReadModel {
   readonly saveSlots: readonly SaveSlotSnapshot[];
   readonly pendingClearSlot: number | null;
   readonly research: ResearchSnapshot;
+  readonly researchCamera: ResearchCameraSnapshot;
   readonly planetOrders: readonly PlanetOrderSnapshot[];
   readonly constructionSite: number | null;
   readonly screen: Screen;
@@ -85,6 +90,7 @@ export class AppModel {
   #constructionSite: number | null = null;
   #screen: Screen = 'map';
   #buildSearch = '';
+  readonly #researchCamera = new ResearchTreeCamera();
   #returnSite: number | null = null;
   #selectedFleetId: string | null = null;
   #shipTransfer: { readonly fleetId: string; readonly ship: ShipType } | null =
@@ -221,6 +227,7 @@ export class AppModel {
       saveSlots: this.#saveSlots,
       pendingClearSlot: this.#pendingClearSlot,
       research: this.#game.research,
+      researchCamera: this.#researchCamera.snapshot,
       planetOrders: this.#game.planetOrders(),
       constructionSite: this.#constructionSite,
       screen: this.#screen,
@@ -397,6 +404,18 @@ export class AppModel {
   }
   research(type: Technology | null): void {
     this.#game.selectResearch(type);
+  }
+  resizeResearch(width: number, height: number): void {
+    this.#researchCamera.resize(width, height);
+  }
+  panResearch(delta: Point): void {
+    this.#researchCamera.panBy(delta);
+  }
+  zoomResearch(factor: number, anchor: Point): void {
+    this.#researchCamera.zoomAt(factor, anchor);
+  }
+  fitResearch(): void {
+    this.#researchCamera.fit();
   }
   moveResearch(type: Technology, index: number): void {
     this.#game.moveResearch(type, index);
