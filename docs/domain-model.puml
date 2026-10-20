@@ -60,7 +60,6 @@ class Research {
   completeSelectedPerYear()
 }
 class BuildQueue {
-  capacity
   moveProject()
   cancelProject()
   completeFirstPerYear()
@@ -69,6 +68,9 @@ class Ship {
   type
   speed
   crew
+}
+class Component {
+  type: Rocket engine | Weapons module
 }
 class Fleet {
   position : HexCoordinate [0..1]
@@ -108,7 +110,10 @@ Colony --> Player : ownerId
 Colony "1" *-- "0..10" BuildingSite
 BuildingSite "1" o-- "0..1" Building
 BuildingSite "1" o-- "0..1" ConstructionProject : building construction
-Building "1" *-- "0..1" BuildQueue : shipyard
+Building --> Ship : enables production
+Building --> Component : enables production
+ConstructionProject --> Component : produces or consumes
+Ship --> Component : construction requires
 BuildQueue "1" o-- "0..*" ConstructionProject : ordered projects
 Player "1" *-- "1" Research
 Research --> Technology : selects
@@ -134,9 +139,10 @@ TurnOrder --> Fleet
 GameEvent --> TurnOrder
 
 note bottom of BuildQueue
-  Varje shipyard har egen kö med fem platser.
-  Högst ett skepp per fabrik och år.
-  Planetens kö färdigställer en byggnad per år.
+  En gemensam kö för byggnader, delar och skepp per planet.
+  Högst ett färdigt projekt per planet och år.
+  Fabriker avgör vilka produkter som kan byggas.
+  Saknade lokalt byggbara delar köas före skeppet.
   Material betalas en gång vid byggstart.
 end note
 
@@ -162,9 +168,9 @@ class Decision {
   skippedThisTurn
 }
 Planet "1" *-- "3" ResourceDeposit
-Colony "1" *-- "3" PlanetStock
+Colony "1" *-- "*" PlanetStock
 Building --> ResourceDeposit : extracts
-Colony "1" *-- "1" BuildQueue : buildings
+Colony "1" *-- "1" BuildQueue : all production
 TradeRoute "*" --> "2" Planet : endpoints
 TradeRoute "0..1" <-- "0..*" Fleet : assigned
 Shipment --> Fleet : in transit

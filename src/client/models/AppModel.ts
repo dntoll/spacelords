@@ -1,4 +1,5 @@
 import type { SaveRepository } from './SaveRepository.js';
+import type { Component } from './Economy.js';
 import type { Decision } from './Decisions.js';
 import type { TradeRouteSnapshot } from './Logistics.js';
 import { FleetMapLayout } from './FleetMapLayout.js';
@@ -481,6 +482,10 @@ export class AppModel {
   moveProject(id: string, index: number): void {
     const planet = this.#game.planetAt(this.#selected);
     if (planet) this.#game.moveProject(planet, id, index);
+  }
+  scheduleComponent(component: Component): void {
+    const planet = this.#game.planetAt(this.#selected);
+    if (planet) this.#game.scheduleComponent(planet, component);
   }
   setProjectFleet(id: string, fleetId: string | null): void {
     const planet = this.#game.planetAt(this.#selected);

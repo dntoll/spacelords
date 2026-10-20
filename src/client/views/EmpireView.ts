@@ -130,16 +130,12 @@ export function renderTradeRoutes(
     panel.append(card);
   }
   for (const planet of model.ownedPlanets) {
-    if (
-      planet.projects.some((p) => p.blockedReason) ||
-      planet.buildings.some((b) => b.queue.some((p) => p.blockedReason))
-    ) {
+    if (planet.projects.some((p) => p.blockedReason)) {
       const card = element('article', 'empire-card');
       card.append(element('h2', '', planet.name));
-      for (const project of [
-        ...planet.projects.slice(0, 1),
-        ...planet.buildings.flatMap((b) => b.queue.slice(0, 1)),
-      ].filter((p) => p.blockedReason))
+      for (const project of planet.projects
+        .slice(0, 1)
+        .filter((p) => p.blockedReason))
         card.append(
           element('p', '', `${project.type}: ${project.blockedReason}`),
         );

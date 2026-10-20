@@ -137,9 +137,24 @@ describe('planetbudgetoversikt', () => {
           ...planet,
           economy: {
             ...planet.economy,
-            stock: { Iron: total, Water: total, Oil: total },
-            demand: { Iron: used, Water: used, Oil: used },
-            incoming: { Iron: available, Water: available, Oil: available },
+            stock: {
+              ...planet.economy.stock,
+              Iron: total,
+              Water: total,
+              Oil: total,
+            },
+            demand: {
+              ...planet.economy.demand,
+              Iron: used,
+              Water: used,
+              Oil: used,
+            },
+            incoming: {
+              ...planet.economy.incoming,
+              Iron: available,
+              Water: available,
+              Oil: available,
+            },
           },
         },
         'Owner',
@@ -279,12 +294,12 @@ describe('gemensamma-byggnadsbilder', () => {
   });
 });
 
-describe('fabrikskoer / kompakta-bygghandlingar', () => {
+describe('gemensam-planetko / fabrikskoer / kompakta-bygghandlingar', () => {
   it.each([
     'Colony ship factory',
     'Exploration ship factory',
     'Fighter factory',
-  ] as const)('always exposes ordering above the queue for %s', (type) => {
+  ] as const)('exposes ordering but no independent queue for %s', (type) => {
     const model = new AppModel();
     model.openPlanet();
     const planet = model.snapshot.planet!;
@@ -309,7 +324,7 @@ describe('fabrikskoer / kompakta-bygghandlingar', () => {
     expect(
       view.querySelector('[aria-label="Build ships at site 1"]'),
     ).toBeNull();
-    const order = view.querySelector('.factory-queue .factory-order')!;
+    const order = view.querySelector('.factory-production .factory-order')!;
     expect(order).not.toBeNull();
     expect(order.textContent).toContain('per ship');
     const select = order.querySelector('select')!;
@@ -324,12 +339,13 @@ describe('fabrikskoer / kompakta-bygghandlingar', () => {
       fleetId: 'fleet-home',
     });
     const list = view.querySelector('.queue-slots')!;
+    expect(view.querySelectorAll('.queue-slots')).toHaveLength(1);
     expect(
-      order.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(list.children).toHaveLength(5);
+      order.closest('.factory-production')!.querySelector('.queue-slots'),
+    ).toBeNull();
+    expect(list.children).toHaveLength(0);
   });
-  it.each(['full', 'demolition', 'locked'])(
+  it.each(['demolition', 'locked'])(
     'keeps ordering visible but disabled for %s factories',
     (state) => {
       const model = new AppModel();
@@ -340,17 +356,7 @@ describe('fabrikskoer / kompakta-bygghandlingar', () => {
         type: 'Colony ship factory' as const,
         slotIndex: 0,
         scheduledForDemolition: state === 'demolition',
-        queue:
-          state === 'full'
-            ? Array.from({ length: 5 }, (_, i) => ({
-                id: `order-${i}`,
-                type: 'Colony ship' as const,
-                destinationFleetId: null,
-                blockedReason: null,
-                slotIndex: null,
-                factoryId: 'yard',
-              }))
-            : [],
+        queue: [],
       };
       const view = renderPlanet(
         {

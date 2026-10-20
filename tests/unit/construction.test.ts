@@ -130,19 +130,16 @@ describe('forska-fram-fabriker / bygga-forskningsstation', () => {
   });
 });
 
-describe('fabrikskoer / skepp-i-byggko', () => {
-  it('requires a matching completed shipyard and enforces five queue slots without spilling to another factory', () => {
+describe('gemensam-planetko / fabrikskoer / skepp-i-byggko', () => {
+  it('requires a matching completed shipyard and appends all orders to one uncapped planet queue', () => {
     const { game, planet, snapshot, factory } = setup();
     expect(() => game.scheduleShip(planet, 'Colony ship')).toThrow('shipyard');
     const yard = factory('Colony ship factory');
     for (let index = 0; index < 5; index += 1)
       game.scheduleShip(planet, 'Colony ship', null, yard.id);
-    expect(
-      snapshot().buildings.find((b) => b.id === yard.id)!.queue,
-    ).toHaveLength(5);
-    expect(() =>
-      game.scheduleShip(planet, 'Colony ship', null, yard.id),
-    ).toThrow('full');
+    expect(snapshot().projects).toHaveLength(5);
+    game.scheduleShip(planet, 'Colony ship', null, yard.id);
+    expect(snapshot().projects).toHaveLength(6);
     expect(() => game.scheduleShip(planet, 'Fighter', null, yard.id)).toThrow(
       'matching',
     );
@@ -151,53 +148,51 @@ describe('fabrikskoer / skepp-i-byggko', () => {
     ).toThrow('matching');
   });
 
-  it('completes one ship per factory, simultaneously with building construction, without consuming waiting orders', () => {
+  it('completes only the planet queue head, even with several factories and building orders', () => {
     const { game, planet, snapshot, turn, factory, unlock } = setup();
-    const colony = factory('Fighter factory');
+    const colony = factory('Colony ship factory');
     unlock('Exploration ship factory');
     game.scheduleBuild(planet, 'Exploration ship factory');
     turn();
     const explorer = snapshot().buildings.find(
       (b) => b.type === 'Exploration ship factory',
     )!;
-    game.scheduleShip(planet, 'Fighter', null, colony.id);
-    game.scheduleShip(planet, 'Fighter', null, colony.id);
+    game.scheduleShip(planet, 'Colony ship', null, colony.id);
+    game.scheduleShip(planet, 'Colony ship', null, colony.id);
     game.scheduleShip(planet, 'Exploration ship', null, explorer.id);
     game.scheduleBuild(planet, 'Research station');
     const before = game.fleet('fleet-home')!;
     turn();
-    expect(game.fleet('fleet-home')!.ships['Fighter']).toBe(
-      before.ships['Fighter'] + 1,
+    expect(game.fleet('fleet-home')!.ships['Colony ship']).toBe(
+      before.ships['Colony ship'] + 1,
     );
     expect(game.fleet('fleet-home')!.ships['Exploration ship']).toBe(
-      before.ships['Exploration ship'] + 1,
+      before.ships['Exploration ship'],
     );
+    expect(snapshot().buildings).toHaveLength(3);
+    expect(snapshot().projects.map((p) => p.type)).toEqual([
+      'Colony ship',
+      'Exploration ship',
+      'Research station',
+    ]);
+    turn();
+    turn();
+    turn();
     expect(snapshot().buildings).toHaveLength(4);
-    expect(
-      snapshot().buildings.find((b) => b.id === colony.id)!.queue,
-    ).toHaveLength(1);
-    expect(
-      snapshot().buildings.find((b) => b.id === explorer.id)!.queue,
-    ).toHaveLength(0);
+    expect(snapshot().projects).toHaveLength(0);
   });
 
   it('reorders and cancels queues and rejects invalid positions or orders during simulation', () => {
     const { game, planet, snapshot, factory } = setup();
-    const yard = factory('Fighter factory');
-    game.scheduleShip(planet, 'Fighter');
-    game.scheduleShip(planet, 'Fighter');
-    const [first, second] = snapshot().buildings.find(
-      (b) => b.id === yard.id,
-    )!.queue;
+    factory('Colony ship factory');
+    game.scheduleShip(planet, 'Colony ship');
+    game.scheduleShip(planet, 'Colony ship');
+    const [first, second] = snapshot().projects;
     game.moveProject(planet, second!.id, 0);
-    expect(
-      snapshot().buildings.find((b) => b.id === yard.id)!.queue[0]!.id,
-    ).toBe(second!.id);
+    expect(snapshot().projects[0]!.id).toBe(second!.id);
     expect(() => game.moveProject(planet, first!.id, -1)).toThrow();
     game.cancelProject(planet, second!.id);
-    expect(
-      snapshot().buildings.find((b) => b.id === yard.id)!.queue,
-    ).toHaveLength(1);
+    expect(snapshot().projects).toHaveLength(1);
     game.scheduleBuild(planet, 'Research station');
     expect(() =>
       game.moveProject(planet, snapshot().projects[0]!.id, 0),
@@ -208,15 +203,25 @@ describe('fabrikskoer / skepp-i-byggko', () => {
     expect(() => game.selectResearch('Exploration ship factory')).toThrow();
   });
 
-  it('demolishes the shipyard and cancels its orders without producing ships', () => {
+  it('keeps production blocked after its only factory is demolished and resumes after rebuilding', () => {
     const { game, planet, snapshot, turn, factory } = setup();
-    const yard = factory('Fighter factory');
-    game.scheduleShip(planet, 'Fighter');
+    const yard = factory('Colony ship factory');
+    game.scheduleShip(planet, 'Colony ship');
     game.toggleDemolition(planet, yard.id);
-    expect(() => game.scheduleShip(planet, 'Fighter', null, yard.id)).toThrow();
+    expect(() =>
+      game.scheduleShip(planet, 'Colony ship', null, yard.id),
+    ).toThrow();
     turn();
     expect(snapshot().buildings.some((b) => b.id === yard.id)).toBe(false);
-    expect(game.fleet('fleet-home')!.ships.Fighter).toBe(1);
+    expect(game.fleet('fleet-home')!.ships['Colony ship']).toBe(0);
+    expect(snapshot().projects[0]!.blockedReason).toContain(
+      'factory is required',
+    );
+    game.scheduleBuild(planet, 'Colony ship factory');
+    game.moveProject(planet, snapshot().projects[1]!.id, 0);
+    turn();
+    turn();
+    expect(game.fleet('fleet-home')!.ships['Colony ship']).toBe(1);
   });
 });
 
@@ -229,11 +234,7 @@ describe('skepp-till-destinationsflotta', () => {
       game.scheduleShip(planet, 'Colony ship', 'missing', yard.id),
     ).toThrow();
     game.scheduleShip(planet, 'Colony ship');
-    game.setProjectFleet(
-      planet,
-      snapshot().buildings.find((b) => b.id === yard.id)!.queue[0]!.id,
-      target.id,
-    );
+    game.setProjectFleet(planet, snapshot().projects[0]!.id, target.id);
     turn();
     expect(game.fleet(target.id)!.ships['Colony ship']).toBe(1);
   });
@@ -292,12 +293,7 @@ describe('planetlager / arbetskraft-och-besattning', () => {
     restored.finishTurn();
     expect(restored.fleet('fleet-home')!.ships['Colony ship']).toBe(1);
     expect(restored.planetSnapshot(planet)!.economy.stock.Iron).toBe(0);
-    expect(
-      restored
-        .planetSnapshot(planet)!
-        .buildings.filter((b) => b.type === 'Colony ship factory')
-        .map((b) => b.queue.length),
-    ).toEqual([1, 2]);
+    expect(restored.planetSnapshot(planet)!.projects).toHaveLength(3);
   });
 });
 
@@ -312,7 +308,7 @@ describe('kartorderstatus', () => {
     });
     game.scheduleShip(planet, 'Fighter', null, yard.id);
     expect(game.planetOrders()[0]!.emptyQueues).toBe(0);
-    const order = snapshot().buildings.find((b) => b.id === yard.id)!.queue[0]!;
+    const order = snapshot().projects[0]!;
     game.cancelProject(planet, order.id);
     expect(game.planetOrders()[0]!.emptyQueues).toBe(1);
   });
@@ -378,23 +374,23 @@ describe('tomma-flottor-utan-position / skepp-till-destinationsflotta', () => {
       new StarSystem(base.systems[0]!.star, [base.homePlanet, remote]),
     ]);
     const { game, planet, turn, factory } = setup(galaxy);
-    factory('Fighter factory');
-    game.scheduleBuild(remote, 'Fighter factory');
+    factory('Exploration ship factory');
+    game.scheduleBuild(remote, 'Exploration ship factory');
     turn();
     const target = game.createFleet();
-    game.scheduleShip(planet, 'Fighter', target.id);
-    game.scheduleShip(remote, 'Fighter', target.id);
+    game.scheduleShip(planet, 'Exploration ship', target.id);
+    game.scheduleShip(remote, 'Exploration ship', target.id);
     expect(game.fleet(target.id)!.position).toBeNull();
     turn();
     expect(game.fleet(target.id)!.position).toEqual(planet.position);
-    expect(game.fleet(target.id)!.ships.Fighter).toBe(1);
+    expect(game.fleet(target.id)!.ships['Exploration ship']).toBe(1);
     const local = game
       .fleetSnapshots()
       .find((fleet) => fleet.position?.key === remote.position.key)!;
-    expect(local.ships.Fighter).toBe(1);
-    expect(() => game.scheduleShip(remote, 'Fighter', target.id)).toThrow(
-      /at this planet/,
-    );
+    expect(local.ships['Exploration ship']).toBe(1);
+    expect(() =>
+      game.scheduleShip(remote, 'Exploration ship', target.id),
+    ).toThrow(/at this planet/);
   });
   it('releases a fleet location when its only ship establishes a colony', () => {
     const { game, planet, turn, factory } = setup();

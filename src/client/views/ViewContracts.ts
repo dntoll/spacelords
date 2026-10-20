@@ -1,4 +1,5 @@
 import type { MapCell } from '../models/Galaxy.js';
+import type { Component } from '../models/Economy.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import type {
   BuildType,
@@ -65,6 +66,7 @@ export type AppIntent =
     }
   | { readonly type: 'transfer-chosen-ship'; readonly target: string }
   | { readonly type: 'cancel-ship-transfer' }
+  | { readonly type: 'queue-component'; readonly component: Component }
   | { readonly type: 'build-search'; readonly query: string }
   | { readonly type: 'select'; readonly position: HexCoordinate }
   | { readonly type: 'pan'; readonly delta: Point }

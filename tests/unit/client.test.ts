@@ -90,7 +90,7 @@ describe('forskningsoversikt', () => {
     expect(root.textContent).toContain(
       'Build a Research station to advance research.',
     );
-    expect(root.querySelectorAll('[data-technology]')).toHaveLength(5);
+    expect(root.querySelectorAll('[data-technology]')).toHaveLength(7);
     click('Research Colony ship factory');
     expect(root.textContent).toContain('Researching · 0/1 points');
     click('Back to map');
@@ -234,7 +234,7 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
 });
 
 describe('fabrikskoer / skepp-till-destinationsflotta', () => {
-  it('routes ship production, five queue slots, reordering, recipients and cancellation through the controller', () => {
+  it('routes shared planet production, reordering, recipients and cancellation through the controller', () => {
     const model = new AppModel();
     buildShipyard(model);
     const home = model.snapshot.fleets[0]!;
@@ -244,7 +244,9 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
     new AppController(model, new AppView(root, mapFactory)).start();
     const site = () =>
       root.querySelector<HTMLElement>('[data-site-index="1"]')!;
-    expect(site().querySelectorAll('.queue-slots > li')).toHaveLength(5);
+    const production = () => root.querySelector('.planet-building-queue')!;
+    expect(root.querySelectorAll('.queue-slots')).toHaveLength(1);
+    expect(site().querySelectorAll('.queue-slots')).toHaveLength(0);
     expect(
       site().querySelector('[aria-label="Build ships at site 2"]'),
     ).toBeNull();
@@ -254,18 +256,15 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
     select.value = target.id;
     click('Queue Colony ship');
     click('Queue Colony ship');
-    const queue = () =>
-      model.snapshot.planet!.buildings.find(
-        (b) => b.type === 'Colony ship factory',
-      )!.queue;
+    const queue = () => model.snapshot.planet!.projects;
     expect(queue()[0]!.destinationFleetId).toBe(target.id);
-    expect(site().querySelectorAll('.empty-queue-slot')).toHaveLength(3);
+    expect(production().querySelectorAll('.queue-order')).toHaveLength(2);
     const second = queue()[1]!.id;
-    site()
+    production()
       .querySelectorAll<HTMLButtonElement>('[aria-label^="Move up"]')[1]!
       .click();
     expect(queue()[0]!.id).toBe(second);
-    const queuedFleet = site().querySelector<HTMLSelectElement>(
+    const queuedFleet = production().querySelector<HTMLSelectElement>(
       '.queue-order select',
     )!;
     queuedFleet.value = target.id;
@@ -275,7 +274,7 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
     Object.defineProperty(drop, 'dataTransfer', {
       value: { getData: () => queue()[1]!.id },
     });
-    site().querySelector('.queue-order')!.dispatchEvent(drop);
+    production().querySelector('.queue-order')!.dispatchEvent(drop);
     expect(queue()[0]!.id).not.toBe(second);
     click('Cancel');
     expect(queue()).toHaveLength(1);

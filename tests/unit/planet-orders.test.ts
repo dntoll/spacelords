@@ -4,7 +4,7 @@ import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { renderPlanetOrders } from '../../src/client/views/PlanetOrderView.js';
 
 describe('kartorderstatus', () => {
-  it('labels planets with empty sites and idle shipyards and omits planets with no free orders', () => {
+  it('labels planets with empty sites and an idle planet queue and omits planets with no free orders', () => {
     const text = vi.fn<(label: string, x: number, y: number) => void>();
     const sketch = {
       textAlign: vi.fn(),

@@ -1,4 +1,4 @@
-import { RESOURCES, emptyStock, type Resource, type Stock } from './Economy.js';
+import { MATERIALS, emptyStock, type Material, type Stock } from './Economy.js';
 import type { HexCoordinate } from './HexCoordinate.js';
 
 export interface TradeRoute {
@@ -9,7 +9,7 @@ export interface TradeRoute {
 }
 export interface Shipment {
   id: string;
-  resource: Resource;
+  resource: Material;
   amount: number;
   path: string[];
   stage: number;
@@ -255,7 +255,7 @@ export class Logistics {
       );
     const local = new Map(port.planets.map((p) => [p.id, { ...p.stock }]));
     for (const { planet, project } of needs) {
-      for (const resource of RESOURCES) {
+      for (const resource of MATERIALS) {
         const localStock = local.get(planet.id)!;
         const usable = Math.max(
           0,

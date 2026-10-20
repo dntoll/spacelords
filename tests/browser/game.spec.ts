@@ -379,7 +379,9 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     .getByRole('button', { name: 'Build Colony ship factory', exact: true })
     .click();
   await nextYear();
-  await expect(page.locator('.order-status')).toContainText('1 idle shipyards');
+  await expect(page.locator('.order-status')).toContainText(
+    '1 idle planet build queue',
+  );
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await page.getByRole('button', { name: 'Home Fleet', exact: true }).click();
   await page.getByRole('button', { name: 'New fleet', exact: true }).click();
@@ -392,10 +394,17 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await expect(
     yard.getByRole('img', { name: 'Colony ship factory', exact: true }),
   ).toHaveAttribute('src', factorySource!);
-  await expect(yard.locator('.queue-slots > li')).toHaveCount(5);
-  // fabrikskoer: the factory and its own queue share a row only when space permits.
+  const planetQueue = page.getByRole('region', {
+    name: 'Planet build queue',
+    exact: true,
+  });
+  await expect(page.locator('.queue-slots')).toHaveCount(1);
+  await expect(yard.locator('.queue-slots')).toHaveCount(0);
+  // gemensam-planetko: factories expose order controls, not separate queues.
   const detailsBounds = (await yard.locator('.site-details').boundingBox())!;
-  const queueBounds = (await yard.locator('.factory-queue').boundingBox())!;
+  const queueBounds = (await yard
+    .locator('.factory-production')
+    .boundingBox())!;
   const contentWidth = await page
     .locator('.overview')
     .evaluate(
@@ -445,14 +454,14 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
       .click();
   await expect(
     page.getByRole('button', { name: 'Queue Colony ship', exact: true }),
-  ).toBeDisabled();
-  await expect(yard.locator('.queue-order')).toHaveCount(5);
-  await yard
+  ).toBeEnabled();
+  await expect(planetQueue.locator('.queue-order')).toHaveCount(5);
+  await planetQueue
     .locator('.queue-order')
     .nth(1)
     .getByRole('button', { name: /Move up/ })
     .click();
-  await yard
+  await planetQueue
     .locator('.queue-order')
     .nth(1)
     .getByRole('button', { name: /Move up/ })

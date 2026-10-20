@@ -6,16 +6,33 @@ lager. Bemanning krävs; nya byggnader arbetar från nästa år. Material som in
 används ligger kvar. Hemvärlden börjar med material för att starta ekonomin;
 nya kolonier behöver försörjning eller senare lokal utvinning.
 
-Byggnader och skepp kostar material en gång vid byggstart. Planetens byggnadskö
-färdigställer högst en byggnad per år. Varje färdig fabrik har dessutom sin egen
-skeppskö med fem platser och högst ett färdigt skepp per år. Brist på material
-eller personal stoppar förstaprojektet, som återupptas automatiskt när det går.
+Byggnader, delar och skepp delar en enda Build queue per planet, utan fast
+kögräns. Högst ett köprojekt blir klart per planet och år. Färdiga fabriker
+avgör vilka produkter som kan beställas; de har inga egna köer. Material betalas
+en gång vid faktisk byggstart. Brist på material, delar, fabrik eller personal
+stoppar förstaprojektet. Kön kan omordnas eller projekt avbrytas.
+
+Rocket engine factory och Weapons module factory tillverkar Rocket engine
+respektive Weapons module. En Fighter förbrukar en av varje, förutom sitt
+material och sin besättning. Delar lagras och transporteras som andra varor.
+Om lokala färdiga delfabriker finns läggs saknade delar automatiskt före en ny
+Fighter-order. Befintligt lager, inkommande leveranser och tidigare
+produktionsorder räknas av. Utan lokal delfabrik väntar skeppet på leverans
+eller manuellt ordnad delproduktion. Övriga skeppsrecept är oförändrade.
+Om skeppet avbryts ligger delorder kvar för annan användning.
+
+Om en fabrik rivs ligger planetens produktionsorder kvar. De kan använda en
+annan motsvarande fabrik eller vänta tills den byggs igen; byggordern kan flyttas
+före det blockerade projektet. Äldre sparade fabriksköer slås ihop utan att
+inbördes ordning inom respektive gammal kö ändras.
 
 ## Research
 
 Utvinning och Research station är tillgängliga från början. Exploration ship
-factory är första fabrikstekniken och öppnar forskning för Colony ship factory,
-Fighter factory och Transport ship factory. Den sista öppnar Trade logistics.
+factory är första fabrikstekniken och öppnar forskning för Colony ship factory
+och Transport ship factory. Den sista öppnar Trade logistics. Rocket engine
+factory kräver Exploration ship factory, Weapons module factory kräver Rocket
+engine factory och Fighter factory kräver Weapons module factory.
 Val av en senare teknik köar även saknade förkunskaper. Köer kan redigeras,
 men förkunskaper måste komma först. Högst en teknik slutförs per år.
 
@@ -56,7 +73,7 @@ som vanligt lagermaterial. Om rutten stängs lossas pågående last vid dess nä
 
 ## Decisions
 
-Tom forskningskö, tom planetkö med ledig plats, tom fabrikskö, ledig flotta och
+Tom forskningskö, tom gemensam planetkö, saknad fabrik, ledig flotta och
 försörjningsproblem samlas i Decisions. Next decision och Review öppnar rätt
 sammanhang. Normal väntan på lokal utvinning eller fungerande transport visas
 som status. Skip this turn gäller ett år. End turn visar en samlad varning;

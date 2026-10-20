@@ -166,6 +166,9 @@ export class AppController {
       case 'queue-ship':
         this.#model.scheduleShip(intent.ship, intent.fleetId, intent.factoryId);
         break;
+      case 'queue-component':
+        this.#model.scheduleComponent(intent.component);
+        break;
       case 'move-project':
         this.#model.moveProject(intent.id, intent.index);
         break;

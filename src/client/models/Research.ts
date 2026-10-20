@@ -4,6 +4,8 @@ export const TECHNOLOGIES = [
   'Fighter factory',
   'Transport ship factory',
   'Trade logistics',
+  'Rocket engine factory',
+  'Weapons module factory',
 ] as const;
 export type Technology = (typeof TECHNOLOGIES)[number];
 export const PREREQUISITES: Readonly<
@@ -11,9 +13,11 @@ export const PREREQUISITES: Readonly<
 > = Object.freeze({
   'Exploration ship factory': [],
   'Colony ship factory': ['Exploration ship factory'],
-  'Fighter factory': ['Exploration ship factory'],
+  'Fighter factory': ['Weapons module factory'],
   'Transport ship factory': ['Exploration ship factory'],
   'Trade logistics': ['Transport ship factory'],
+  'Rocket engine factory': ['Exploration ship factory'],
+  'Weapons module factory': ['Rocket engine factory'],
 });
 
 export class ResearchPlan {

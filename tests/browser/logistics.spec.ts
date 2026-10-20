@@ -70,8 +70,8 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     await page
       .getByRole('button', { name: `Research ${technology}`, exact: true })
       .click();
-  await expect(page.locator('.research-queue article')).toHaveCount(5);
-  for (let year = 0; year < 5; year++) await nextYear(page);
+  await expect(page.locator('.research-queue article')).toHaveCount(7);
+  for (let year = 0; year < 7; year++) await nextYear(page);
   await home(page);
   for (const [index, type] of [
     'Transport ship factory',
@@ -106,6 +106,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await page
     .getByRole('button', { name: 'Queue Colony ship', exact: true })
     .click();
+  await nextYear(page);
   await nextYear(page);
   const settlers = page.locator('.fleet-summary').filter({
     has: page.getByRole('heading', { name: 'Settlers', exact: true }),

@@ -13,9 +13,9 @@ Se [hela visionen](docs/game-vision.md).
 - **Spelupplevelse och språk:** skärmfyllande vyer, stor hexkarta och engelska
   speltexter. Dokumentationen är svenska med spelets engelska namn och etiketter.
 - **Sparade spel:** tre separata spel med senaste speldatum, utforskad karta och
-  automatisk sparning. Ny ekonomi använder ett nytt sparformat. Äldre spel tas
-  bort i just denna leverans efter uttryckligt användarbeslut; detta får inte
-  antas vid framtida uppdateringar.
+  automatisk sparning. Äldre ekonomi-spel bevaras och deras separata köer slås
+  ihop vid uppdatering. Den tidigare uttryckligen beställda engångsrensningen
+  av äldre spel är inte ett generellt tillstånd att radera sparplatser.
 - **Karta och flottor:** fast exempelvärld, begränsad sikt, navigation,
   utforskning, kolonisation, flottbyggare och fysisk rörelse på kartan.
   Skepp ansluter direkt på samma hex eller till tomma flottor. På avstånd följer
@@ -24,8 +24,11 @@ Se [hela visionen](docs/game-vision.md).
   ruttens ändplaneter (`forstarka-ruttflotta`, `flottans-handelsrutt`).
 - **Ekonomi och byggande:** ändliga fyndigheter av Iron, Water och Oil utvinns
   till lokala obegränsade lager. Material förbrukas en gång vid byggstart.
-  Planetens byggnadskö färdigställer högst en byggnad per år. Varje shipyard
-  har dessutom en egen femplatskö och kan färdigställa ett skepp per år.
+  Varje planet har en enda Build queue för byggnader, delar och skepp, med
+  högst ett färdigt projekt per år (`gemensam-planetko`). Fabriker avgör vilka
+  produkter planeten kan tillverka. Rocket engine factory och Weapons module
+  factory tillverkar delarna till Fighter; saknade lokalt byggbara delar köas
+  automatiskt före skeppet (`delfabriker`, `skeppsdelar`, `automatiska-delorder`).
 - **Forskning:** forskningskö med automatiska förkunskaper låser upp alla
   skeppsfabriker och Trade logistics. Grundutvinning och Research station finns
   från start.
@@ -50,7 +53,8 @@ Se [hela visionen](docs/game-vision.md).
 Denna iteration ersätter `arsbudget` med `planetlager` och parallella
 planetbyggen med `planetbyggnadsko`. Den inför utvinning, forskningskö,
 transportfabrik, fysiskt handelsnätverk och beslutsstöd.
-Befintliga fabriksköer, byggplatser, kartstyrning och sparplatsgränssnitt behålls.
+Separata fabriksköer ersätts nu av en gemensam planetkö. Byggplatser,
+kartstyrning och sparplatsgränssnitt behålls, liksom befintliga sparade order.
 
 [Tekniska krav](docs/technical-requirements.md),
 [domänmodell](docs/domain-model.puml),

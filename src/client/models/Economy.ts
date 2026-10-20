@@ -1,7 +1,17 @@
 export const RESOURCES = ['Iron', 'Water', 'Oil'] as const;
 export type Resource = (typeof RESOURCES)[number];
-export type Stock = Record<Resource, number>;
-export const emptyStock = (): Stock => ({ Iron: 0, Water: 0, Oil: 0 });
+export const COMPONENTS = ['Rocket engine', 'Weapons module'] as const;
+export type Component = (typeof COMPONENTS)[number];
+export const MATERIALS = [...RESOURCES, ...COMPONENTS] as const;
+export type Material = (typeof MATERIALS)[number];
+export type Stock = Record<Material, number>;
+export const emptyStock = (): Stock => ({
+  Iron: 0,
+  Water: 0,
+  Oil: 0,
+  'Rocket engine': 0,
+  'Weapons module': 0,
+});
 
 export interface EconomySnapshot {
   readonly stock: Readonly<Stock>;
@@ -28,7 +38,7 @@ export class PlanetEconomy {
 
   static shortage(stock: Readonly<Stock>, cost: Readonly<Stock>): Stock {
     return Object.fromEntries(
-      RESOURCES.map((r) => [r, Math.max(0, cost[r] - stock[r])]),
+      MATERIALS.map((r) => [r, Math.max(0, cost[r] - stock[r])]),
     ) as Stock;
   }
 }

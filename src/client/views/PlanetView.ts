@@ -1,7 +1,6 @@
 import type { AppReadModel } from '../models/AppModel.js';
 import {
   BUILDINGS,
-  QUEUE_CAPACITY,
   type BuildingSnapshot,
   type ConstructionProjectSnapshot,
   projectDefinition,
@@ -10,6 +9,7 @@ import {
   type PlanetGameSnapshot,
   type Resource,
 } from '../models/Game.js';
+import { COMPONENTS } from '../models/Economy.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element, planetIllustration } from './dom.js';
 import { buildingImage } from './BuildingImage.js';
@@ -120,6 +120,16 @@ function budgetPanel(planet: PlanetGameSnapshot): HTMLElement {
   );
   table.append(body);
   section.append(table);
+  section.append(element('h3', '', 'Components'));
+  for (const component of COMPONENTS) {
+    const row = element(
+      'p',
+      'component-stock',
+      `${component}: Stored ${planet.economy.stock[component]} · Demand ${planet.economy.demand[component]} · Incoming ${planet.economy.incoming[component]}`,
+    );
+    row.dataset.component = component;
+    section.append(row);
+  }
   return section;
 }
 
@@ -144,40 +154,37 @@ function construction(
 ): HTMLElement {
   const box = element('section', 'building-panel');
   const queue = element('section', 'planet-building-queue');
-  queue.setAttribute('aria-label', 'Planet building queue');
-  queue.append(element('h2', '', 'Building queue'));
+  queue.setAttribute('aria-label', 'Planet build queue');
+  queue.append(
+    element('h2', '', 'Build queue'),
+    element(
+      'p',
+      'muted-note',
+      'One shared queue for buildings, components and ships. One project completes per year.',
+    ),
+  );
+  const list = element('ol', 'queue-slots');
   for (const [index, project] of planet.projects.entries()) {
-    const row = element('article', 'empire-card');
-    row.append(
-      element(
-        'p',
-        '',
-        `${index + 1}. ${project.type} · Site ${project.slotIndex! + 1}`,
-      ),
+    const row = element('li', 'order-row queue-order');
+    renderQueueOrder(
+      row,
+      project,
+      index,
+      planet.projects,
+      planet,
+      fleets,
+      emit,
+      menus.phase !== 'planning',
     );
-    for (const [label, offset] of [
-      ['Move up', -1],
-      ['Move down', 1],
-    ] as const) {
-      const move = button(`${label}: ${project.type}`, () =>
-        emit({ type: 'move-project', id: project.id, index: index + offset }),
-      );
-      move.disabled =
-        menus.phase !== 'planning' ||
-        index + offset < 0 ||
-        index + offset >= planet.projects.length;
-      row.append(move);
-    }
-    if (project.blockedReason)
-      row.append(element('p', '', project.blockedReason));
-    queue.append(row);
+    list.append(row);
   }
+  queue.append(list);
   if (!planet.projects.length)
     queue.append(
       element(
         'p',
         'muted-note',
-        'No buildings queued. Choose an empty site below.',
+        'No production queued. Choose a building site or order from a factory below.',
       ),
     );
   box.append(queue);
@@ -219,10 +226,10 @@ function construction(
       );
       demolish.disabled = menus.phase !== 'planning';
       actions.append(demolish);
-      if (definition.ship) {
+      if (definition.ship || definition.component) {
         card.classList.add('factory-site');
         card.append(
-          factoryQueue(
+          factoryProduction(
             planet,
             building,
             fleets,
@@ -291,52 +298,23 @@ function costText(cost: {
   return `Iron ${cost.Iron}, Water ${cost.Water}, Oil ${cost.Oil}`;
 }
 
-function factoryQueue(
+function factoryProduction(
   planet: PlanetGameSnapshot,
   building: BuildingSnapshot,
   fleets: readonly FleetSnapshot[],
   emit: IntentHandler,
   locked: boolean,
 ): HTMLElement {
-  const section = element('section', 'factory-queue');
+  const section = element('section', 'factory-production');
   section.setAttribute(
     'aria-label',
-    `Build queue at site ${building.slotIndex + 1}`,
+    `Production at site ${building.slotIndex + 1}`,
   );
-  section.append(
-    factoryOrder(planet, building, fleets, emit, locked),
-    element(
-      'h4',
-      '',
-      `Build queue · ${building.queue.length}/${QUEUE_CAPACITY}`,
-    ),
-  );
-  const list = element('ol', 'queue-slots');
-  for (let index = 0; index < QUEUE_CAPACITY; index += 1) {
-    const project = building.queue[index];
-    const row = element(
-      'li',
-      project ? 'order-row queue-order' : 'empty-queue-slot',
-    );
-    if (!project) row.append(element('span', 'muted-note', 'Empty queue slot'));
-    else
-      renderQueueOrder(
-        row,
-        project,
-        index,
-        building,
-        planet,
-        fleets,
-        emit,
-        locked,
-      );
-    list.append(row);
-  }
-  section.append(list);
+  section.append(factoryOrder(planet, building, fleets, emit, locked));
   return section;
 }
 
-// fabrikskoer: ordering stays above its own factory queue, including when locked.
+// gemensam-planetko: factories expose capabilities, never independent queues.
 function factoryOrder(
   planet: PlanetGameSnapshot,
   building: BuildingSnapshot,
@@ -344,45 +322,59 @@ function factoryOrder(
   emit: IntentHandler,
   locked: boolean,
 ): HTMLElement {
-  const ship = BUILDINGS[building.type].ship!;
-  const definition = projectDefinition(ship);
+  const factory = BUILDINGS[building.type];
+  const product = (factory.ship ?? factory.component)!;
+  const definition = projectDefinition(product);
   const order = element('div', 'factory-order');
   order.setAttribute('role', 'group');
   order.setAttribute(
     'aria-label',
-    `Ship order at site ${building.slotIndex + 1}`,
+    `Production order at site ${building.slotIndex + 1}`,
   );
   const reason = building.scheduledForDemolition
-    ? 'Shipyard is scheduled for demolition.'
+    ? 'Factory is scheduled for demolition.'
     : locked
       ? 'Orders are locked during simulation.'
-      : building.queue.length >= QUEUE_CAPACITY
-        ? 'Queue full (5 orders).'
-        : null;
+      : null;
   const select = fleetSelect(planet, fleets, null);
-  select.setAttribute('aria-label', `Destination fleet for ${ship}`);
+  select.setAttribute('aria-label', `Destination fleet for ${product}`);
   select.disabled = !!reason;
   const destination = element('label', 'factory-destination');
   destination.append(element('span', '', 'Destination fleet'), select);
-  const queue = button(`Queue ${ship}`, () =>
-    emit({
-      type: 'queue-ship',
-      ship,
-      fleetId: select.value || null,
-      factoryId: building.id,
-    }),
+  const queue = button(`Queue ${product}`, () =>
+    factory.ship
+      ? emit({
+          type: 'queue-ship',
+          ship: factory.ship,
+          fleetId: select.value || null,
+          factoryId: building.id,
+        })
+      : emit({ type: 'queue-component', component: factory.component! }),
   );
   queue.disabled = !!reason;
   const actions = element('div', 'factory-order-actions');
-  actions.append(destination, queue);
+  if (factory.ship) actions.append(destination);
+  actions.append(queue);
   order.append(
     element(
       'p',
       'muted-note',
-      `${costText(definition.cost)} per ship · ${definition.crew} crew`,
+      `${costText(definition.cost)} per ${factory.ship ? 'ship' : 'component'}${factory.ship ? ` · ${definition.crew} crew` : ''}`,
     ),
     actions,
   );
+  if (definition.parts)
+    order.append(
+      element(
+        'p',
+        'muted-note',
+        `Requires ${Object.entries(definition.parts)
+          .map(([part, count]) => `${count} ${part}`)
+          .join(
+            ', ',
+          )}. Missing parts are queued first when local factories are available.`,
+      ),
+    );
   if (reason) {
     const status = element('p', 'muted-note', reason);
     status.setAttribute('role', 'status');
@@ -395,7 +387,7 @@ function renderQueueOrder(
   row: HTMLElement,
   project: ConstructionProjectSnapshot,
   index: number,
-  building: BuildingSnapshot,
+  projects: readonly ConstructionProjectSnapshot[],
   planet: PlanetGameSnapshot,
   fleets: readonly FleetSnapshot[],
   emit: IntentHandler,
@@ -410,7 +402,7 @@ function renderQueueOrder(
   row.addEventListener('drop', (event) => {
     event.preventDefault();
     const id = event.dataTransfer?.getData('text/plain');
-    if (!locked && id && building.queue.some((p) => p.id === id))
+    if (!locked && id && projects.some((p) => p.id === id))
       emit({ type: 'move-project', id, index });
   });
   const details = element('div', 'queue-details');
@@ -418,23 +410,23 @@ function renderQueueOrder(
     element(
       'p',
       '',
-      `${index + 1}. ${project.type} · ${index === 0 ? 'next' : 'queued'}`,
+      `${index + 1}. ${project.type} · ${index === 0 ? 'next' : 'queued'}${project.slotIndex !== null ? ` · Site ${project.slotIndex + 1}` : ''}`,
     ),
   );
   if (project.blockedReason)
-    details.append(
-      element('p', 'muted-note', `Waiting: ${project.blockedReason}`),
+    details.append(element('p', 'muted-note', project.blockedReason));
+  if (projectDefinition(project.type).ship) {
+    const select = fleetSelect(planet, fleets, project.destinationFleetId);
+    select.disabled = locked;
+    select.addEventListener('change', () =>
+      emit({
+        type: 'project-fleet',
+        id: project.id,
+        fleetId: select.value || null,
+      }),
     );
-  const select = fleetSelect(planet, fleets, project.destinationFleetId);
-  select.disabled = locked;
-  select.addEventListener('change', () =>
-    emit({
-      type: 'project-fleet',
-      id: project.id,
-      fleetId: select.value || null,
-    }),
-  );
-  details.append(select);
+    details.append(select);
+  }
   const actions = element('div', 'queue-actions');
   for (const [label, offset] of [
     ['Move up', -1],
@@ -447,7 +439,7 @@ function renderQueueOrder(
       'button',
     );
     move.disabled =
-      locked || index + offset < 0 || index + offset >= building.queue.length;
+      locked || index + offset < 0 || index + offset >= projects.length;
     move.setAttribute(
       'aria-label',
       `${label}: ${project.type}, position ${index + 1}`,

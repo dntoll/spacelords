@@ -30,7 +30,8 @@ Produktkraven finns separat i [product-requirements.md](product-requirements.md)
   Version 2 använder egna nycklar och återställs inte vid omladdning.
   Framtida formatändringar kräver bevarande eller nytt uttryckligt beslut.
 - Ekonomi, forskningsordning, rutter, last, reservationer och överhoppade beslut
-  ingår i sparformat version 2. Modellerna PlanetEconomy, ResearchPlan,
+  ingår i sparformat version 3. Version 2 migreras utan att spel tas bort.
+  Modellerna PlanetEconomy, ResearchPlan,
   Logistics och DecisionBoard hålls oberoende av HTML och p5.
 - `utvinningsbara-resurser`, `utvinningsbyggnader`, `planetlager`,
   `planetbyggnadsko`, `forskningsko`, `forskningsberoenden`, `transportfabrik`,
@@ -71,7 +72,7 @@ Produktkraven finns separat i [product-requirements.md](product-requirements.md)
   vytester skyddar sökning, kostnadsstatus, återgång till rätt plats,
   budgetproportioner, rivningsreservationer och bilders reservvisning.
   `kompakta-bygghandlingar` och `fabrikskoer` verifieras i webbläsare med
-  innehållsbreda knappar, minst 44 px klickhöjd och fabrik/kö sida vid sida från
+  innehållsbreda knappar, minst 44 px klickhöjd och fabrik/beställning sida vid sida från
   720 px panelbredd, annars staplade. Scrolläge och tangentbordsfokus verifieras.
   Originalbilder behålls i `assets/original/buildings/`. Webbversionerna är
   512 × 512 px WebP (kvalitet 85) i `src/client/assets/buildings/` och importeras
@@ -161,7 +162,7 @@ ersätter den tidigare staplade mobillayouten. Webbläsarens helskärmsläge kr�
 
 `BrowserSaveRepository` är en lokal mock med en `localStorage`-nyckel per plats.
 `Game.exportState()` och `Game.restore()` bevarar värld, identifierarsekvens,
-kolonier, befolkning, byggnader, rivningsorder, bygg- och fabriksköer, forskning,
+kolonier, befolkning, byggnader, rivningsorder, gemensamma produktionsköer, forskning,
 flottor med färdriktning, utforskade hexagoner, händelser, år och fas.
 Modellerna beror inte på webbläsare eller p5. Förhandsvisningar får bara
 skrivskyddade, utforskade kartceller och använder p5 i instance mode.
@@ -180,10 +181,22 @@ Tester för `sparat-spel`, `tre-sparplatser`, `sparplats-utforskad-karta` och
 `tomm-sparplats` skyddar återupptagning, oberoende spel, filtrering av dold rymd,
 varningsdialog, avbrott, lagringsfel och radering av en enda plats.
 
-- `fabrikskoer`: skeppsbeställning renderas permanent inom respektive fabrikskö.
-  Det tillfälliga menyvalet har tagits bort ur navigeringsmodellen. Controllers
-  och domänmodell validerar fortfarande order; enhetstester skyddar alla tre
-  skeppstyper, rätt fabrik och destination samt full kö, rivning och låsta order.
+- `fabrikskoer`: fabriker visar beställningskontroller, inte egna köer.
+  Controllers skickar order till planetens enda produktionskö. Modellen
+  validerar rätt färdig fabrik och destination; låsta order och rivning spärras.
+
+- `bevara-aldre-produktionskoer` — **Fullständigt implementerat**: sparformat
+  version 3 använder en enda projektlista per koloni. Version 2 läses från samma
+  sparplatsnycklar; planetens och fabrikernas gamla köer vävs ihop efter
+  projektidentifierare, med bibehållen ordning inom varje gammal kö. Gamla
+  projektidentifierare och leveransreservationer bevaras. Saknade delposter i
+  gamla lager fylls med noll. Upprepad återläsning ändrar inte kön. Automatisk
+  rensning av sparplatser tillkommer inte. Modelltester täcker migreringen.
+
+- `gemensam-planetko`, `skeppsdelar`, `delfabriker` och `automatiska-delorder`
+  skyddas av modelltester för en färdig order per år, reservationer, automatisk
+  delplanering, fabriksbrist, deltransporter och sparning, samt webbläsartester
+  som forskar fram fabrikerna och tillverkar en Fighter genom hela kedjan.
 
 - `handelser` och `arsrundor-och-order`: domänmodellen publicerar händelser när
   de inträffar; ankomst registreras exakt en gång. Livefaserna är planning och

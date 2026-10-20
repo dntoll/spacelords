@@ -100,23 +100,26 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
     game.selectResearch('Trade logistics');
     game.selectResearch('Colony ship factory');
     game.selectResearch('Fighter factory');
-    for (let year = 0; year < 5; year++) turn(game);
+    for (let year = 0; year < 7; year++) turn(game);
     for (const factory of [
       'Transport ship factory',
       'Exploration ship factory',
       'Colony ship factory',
       'Fighter factory',
+      'Rocket engine factory',
+      'Weapons module factory',
     ] as const)
       game.scheduleBuild(home, factory);
-    for (let year = 0; year < 4; year++) turn(game);
-    expect(game.planetSnapshot(home)!.buildings).toHaveLength(8);
+    for (let year = 0; year < 6; year++) turn(game);
+    expect(game.planetSnapshot(home)!.buildings).toHaveLength(10);
     const colonyFleet = game.createFleet(),
       tradeFleet = game.createFleet();
     game.scheduleShip(home, 'Colony ship', colonyFleet.id);
     game.scheduleShip(home, 'Transport ship', tradeFleet.id);
     game.scheduleShip(home, 'Exploration ship');
     game.scheduleShip(home, 'Fighter');
-    turn(game);
+    for (let year = 0; year < 6; year++) turn(game);
+    expect(game.fleet('fleet-home')!.ships.Fighter).toBe(2);
     const target = game.galaxy.systems[0]!.planets[1]!;
     game.setDestination(colonyFleet.id, target.position);
     turn(game);

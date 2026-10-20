@@ -519,7 +519,7 @@ export class AppView implements AppPort {
       element(
         'p',
         'map-order-legend hud',
-        'S: empty building sites · Q: idle shipyards',
+        'S: empty building sites · Q: idle planet build queue',
       ),
       controls,
       this.#coordinates,
@@ -668,7 +668,7 @@ export class AppView implements AppPort {
         element(
           'p',
           'order-status',
-          `${orderStatus.emptySites} empty building sites · ${orderStatus.emptyQueues} idle shipyards`,
+          `${orderStatus.emptySites} empty building sites · ${orderStatus.emptyQueues} idle planet build queue`,
         ),
       );
     if (cell)

@@ -914,7 +914,7 @@ p {
   border-style: dashed;
 }
 .building-menu,
-.factory-queue {
+.factory-production {
   display: grid;
   gap: 12px;
   min-width: 0;
@@ -1085,7 +1085,7 @@ p {
   height: 100%;
   object-fit: contain;
 }
-.factory-queue {
+.factory-production {
   align-content: start;
   padding-top: 10px;
   border-top: 1px solid var(--line);
@@ -1202,7 +1202,7 @@ p {
   .factory-site {
     grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
   }
-  .factory-queue {
+  .factory-production {
     border-top: 0;
     border-left: 1px solid var(--line);
     padding-top: 0;
