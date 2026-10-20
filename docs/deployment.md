@@ -465,3 +465,32 @@ För att återställa föregående klientbygge: återställ enbart `spacelords/`
 `b6dfc1e1014a3c61b67c00ca0f4f75156aa8b56c` på en ny branch från aktuell
 `main`, med samma avgränsade gransknings- och publiceringsflöde. Detta återställer
 inte automatiskt version 3-sparningar till det äldre formatet.
+
+## Driftsättning av handelsgraf och kompakta spelkontroller: 2026-10-20
+
+- Publicerad klientrevision: `e25cd07` från `codex/trade-route-graph` i
+  `dntoll/spacelords`. Källändringen är pushad; källrepots `main` är oförändrad.
+- Målrepots tidigare revision: `a7d4e32250bd3817946794162cdcb50f3372b280`.
+  Deploycommit: `2299125cc04ce41e263ff4f6cf2e569bd4acd34a` från
+  `codex/deploy-spacelords-e25cd07`, publicerad till målrepots `main`.
+- Endast `spacelords/` ändrades. Samtliga 281 övriga webbplatsfilers Git-objekt
+  är oförändrade. Aktuell `origin/main`, föräldrarelation, ren publiceringskopia
+  och avgränsad diff verifierades före publiceringen.
+- Ren installation med Node.js 24.19.0 och hela `npm run check` passerade:
+  formatering, ESLint, typkontroll, båda byggena, 203 snabba tester inom
+  20 sekunder, fem integrationstester och 175 webbläsartester. De 25
+  plattformsberoende testerna hoppades över enligt sina villkor.
+- [Källrevisionens CI](https://github.com/dntoll/spacelords/actions/runs/39447723910)
+  och [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/39449229505)
+  lyckades. PR-integrationen gav HTTP 403. Instruktionens reservväg användes:
+  vanlig fast-forward-push med befintlig SSH-autentisering, utan force-push
+  eller ändrade behörigheter.
+- Fyra mobilkontroller passerade mot både hela publiceringskopian och
+  liveadressen i Chromium och WebKit. De verifierar val av planeter och flottor,
+  tilldelning och frigörande, sparning samt ruttflottornas ankare vid ruttens
+  mittpunkt och verkliga position i detaljpanelen.
+- Alla elva publicerade klientfiler motsvarar exakt det verifierade bygget.
+  `/spacelords` leder vidare till `/spacelords/`. Kontrollsummorna för `/`,
+  `/MachineBloom/`, `/Defence-Grid/test/`, `/styles.css` och `/i18n.js` är
+  identiska före och efter publiceringen. Inga länkar, navigationsval, DNS-
+  eller Pages-inställningar ändrades.
