@@ -125,11 +125,14 @@ Planeter visas med namn på spelbrädet. En valpanel visar material och produkti
 för vald planet, skepp och uppdrag för vald flotta eller tilldelning för vald rutt
 (`handelsgraf-valpanel`). Stora flottkort och ruttrutor finns inte i vänstervyn;
 flottornas detaljer visas till höger (`handelsgraf-kompakt-flottvy`).
-Alla positionerade flottor visas dessutom med skeppsbilder vid sin fysiska plats
-(`handelsgraf-skeppspositioner`). Även dessa märken kan väljas. Planetnamn och kort
+Lediga flottor visas med skeppsbilder vid sin fysiska plats
+(`handelsgraf-skeppspositioner`). Tilldelade flottor visas mitt på sin rutt när
+platsen är fri, annars intill med en ledlinje till mittpunkten
+(`handelsgraf-ruttflottor`, **Fullständigt implementerat**). Detta ersätter deras
+fysiska placering i handelsgrafen; verklig position visas i detaljpanelen. Även dessa märken kan väljas. Planetnamn och kort
 förblir läsbara vid zoom, planeterna zoomas med kartan och deras namn visas direkt
 ovanför dem utan bakgrund eller ledlinje. En ledig transportflottas skeppsmarkör
-kan dras till en ruttlinje för att tilldela flottan. Flottor utanför kameran visar
+kan dras till en ruttlinje för att tilldela flottan. Flottor vars visningsankare ligger utanför kameran visar
 inga skeppsmärken i bild (`handelsgraf-lasbarhet`). Vald rutt visar sina aktuella
 flottor, deras skepp, position och last.
 

@@ -104,7 +104,9 @@ export class TradeGraphPresentation {
         !Object.values(fleet.ships).some((count) => count > 0)
       )
         continue;
-      const anchor = TradeGraphLayout.point(fleet.position);
+      // handelsgraf-ruttflottor: assigned ships represent their route, not their current hex.
+      const route = layout.routes.find((route) => route.id === fleet.routeId);
+      const anchor = route?.anchor ?? TradeGraphLayout.point(fleet.position);
       const types = Object.values(fleet.ships).filter(
         (count) => count > 0,
       ).length;

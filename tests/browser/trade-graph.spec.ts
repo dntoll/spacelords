@@ -100,9 +100,8 @@ test('handelsgraf-kompakt-flottvy / handelsgraf-valpanel: select planets and shi
     ),
   ).toBe(true);
 });
-test('handelsgraf-lasbarhet / handelsgraf-skeppspositioner: a distant network keeps readable names and assigned fleets at their actual positions', async ({
+test('handelsgraf-ruttflottor: assigned fleets anchor to their route midpoint while details retain actual positions', async ({
   page,
-  isMobile,
 }, testInfo) => {
   await page.evaluate(
     (state) =>
@@ -125,16 +124,49 @@ test('handelsgraf-lasbarhet / handelsgraf-skeppspositioner: a distant network ke
     exact: true,
   });
   await route.focus();
-  const point = await route.evaluate((element) => {
-    const line = element as SVGLineElement;
-    const center = new DOMPoint(
-      (Number(line.getAttribute('x1')) + Number(line.getAttribute('x2'))) / 2,
-      (Number(line.getAttribute('y1')) + Number(line.getAttribute('y2'))) / 2,
-    ).matrixTransform(line.getScreenCTM()!);
-    return { x: center.x, y: center.y };
+  const midpoint = await route.evaluate((element) => ({
+    x:
+      (Number(element.getAttribute('x1')) +
+        Number(element.getAttribute('x2'))) /
+      2,
+    y:
+      (Number(element.getAttribute('y1')) +
+        Number(element.getAttribute('y2'))) /
+      2,
+  }));
+  const leader = page.locator(
+    '.trade-fleet-leader[data-object-key="ships:travellers"]',
+  );
+  expect(Number(await leader.getAttribute('x1'))).toBeCloseTo(midpoint.x);
+  expect(Number(await leader.getAttribute('y1'))).toBeCloseTo(midpoint.y);
+  const marker = page.getByRole('button', {
+    name: 'Select ships of Travellers',
+    exact: true,
   });
-  if (isMobile) await page.touchscreen.tap(point.x, point.y);
-  else await page.mouse.click(point.x, point.y);
+  await expect(marker).toBeVisible();
+  const geometry = await leader.evaluate((element) => {
+    const line = element as SVGLineElement;
+    const matrix = line.getScreenCTM()!;
+    const start = new DOMPoint(
+      Number(line.getAttribute('x1')),
+      Number(line.getAttribute('y1')),
+    ).matrixTransform(matrix);
+    const end = new DOMPoint(
+      Number(line.getAttribute('x2')),
+      Number(line.getAttribute('y2')),
+    ).matrixTransform(matrix);
+    return { start: { x: start.x, y: start.y }, end: { x: end.x, y: end.y } };
+  });
+  const bounds = (await marker.boundingBox())!;
+  expect(bounds.x + bounds.width / 2).toBeCloseTo(geometry.end.x, 0);
+  expect(bounds.y + bounds.height / 2).toBeCloseTo(geometry.end.y, 0);
+  const displaced =
+    Math.hypot(
+      geometry.start.x - geometry.end.x,
+      geometry.start.y - geometry.end.y,
+    ) > 0.5;
+  await expect(leader).toHaveCSS('display', displaced ? 'inline' : 'none');
+  await route.press('Enter');
   const panel = page.getByRole('complementary', { name: 'Selected object' });
   await expect(panel).toContainText('Assigned fleets · 1');
   await expect(panel.locator('[data-fleet-id="travellers"]')).toContainText(

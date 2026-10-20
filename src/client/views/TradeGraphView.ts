@@ -181,6 +181,7 @@ export function renderTradeRoutes(
     if (positioned) {
       const leader = document.createElementNS(svgNamespace, 'line');
       leader.classList.add('trade-fleet-leader');
+      if (fleet.routeId) leader.classList.add('assigned-route-leader');
       leader.dataset.objectKey = `ships:${fleet.id}`;
       leader.setAttribute('vector-effect', 'non-scaling-stroke');
       svg.append(leader);
@@ -312,7 +313,19 @@ export function updateTradeCamera(
           location.y * camera.zoom + camera.offset.y <= viewport.clientHeight);
       node.hidden = !visible;
       const leader = leaders.get(object.key);
-      if (leader) leader.style.display = visible ? '' : 'none';
+      if (leader) {
+        const displaced =
+          location &&
+          Math.hypot(
+            object.x +
+              object.width / 2 -
+              (location.x * camera.zoom + camera.offset.x),
+            object.y +
+              object.height / 2 -
+              (location.y * camera.zoom + camera.offset.y),
+          ) > 0.5;
+        leader.style.display = visible && displaced ? '' : 'none';
+      }
       if (leader && object.anchor) {
         leader.setAttribute('x1', String(object.anchor.x));
         leader.setAttribute('y1', String(object.anchor.y));

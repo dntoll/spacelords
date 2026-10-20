@@ -2118,6 +2118,10 @@ p {
   stroke-width: 1.5;
   stroke-dasharray: 5 5;
 }
+.trade-fleet-leader.assigned-route-leader {
+  stroke: #9fcedc;
+  stroke-dasharray: none;
+}
 .trade-planet-node {
   position: absolute;
   width: 172px;

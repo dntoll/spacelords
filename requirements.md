@@ -51,10 +51,14 @@ Se [hela visionen](docs/game-vision.md).
   stora flottkort och ruttrutor är borttagna från vänstervyn. Skeppsmarkören kan
   dras direkt till ruttlinjen för tilldelning. Flottkort och frigörande finns till höger.
   `handelsgraf-skeppspositioner` och `handelsgraf-lasbarhet` är **Fullständigt implementerade**:
-  flottornas skepp visas vid sin fysiska plats utöver korten; dubbelt så stora
+  lediga flottors skepp visas vid sin fysiska plats; dubbelt så stora
   planeter skalas med kartans zoom, medan planetnamn och skeppsmärken förblir läsbara.
   Namn visas direkt ovanför planeter utan bakgrund eller ledlinje. Skeppsmärken
-  visas när flottans fysiska position finns i kameran.
+  visas när deras ankare finns i kameran.
+  `handelsgraf-ruttflottor` är **Fullständigt implementerat**: tilldelade flottor
+  visas mitt på sin rutt om platsen är fri, annars intill med ledlinje till
+  mittpunkten. Detta ersätter deras tidigare fysiska placering i handelsgrafen;
+  den verkliga positionen visas i detaljpanelen.
   Flera flottor per rutt fraktar material till aktiva köprojekt automatiskt.
   `synliga-handelsrutter` är **Fullständigt implementerat**: handelsrutternas
   linjer syns även genom markerade hexrutor.

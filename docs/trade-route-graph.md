@@ -16,15 +16,21 @@ i en valpanel. Den tidigare Fleet bay med alla flottor ersätts av samma valpane
   och last. Den tidigare utformningen med stora kort på spelbrädet ersätts
   uttryckligen av `handelsgraf-kompakt-flottvy`.
 - `handelsgraf-kompakt-flottvy` — **Fullständigt implementerat**: vänstervyn har
-  inga stora flottkort eller ruttrutor. Flottan väljs via sina skepp vid den
-  fysiska positionen. Flottor utan position eller skepp har en liten namnmarkör.
+  inga stora flottkort eller ruttrutor. Flottan väljs via sina skepp på spelbrädet. Flottor utan position eller skepp har en liten namnmarkör.
   En ledig transportflottas skeppsmarkör kan dras direkt till en ruttlinje för
   tilldelning. Linjen markeras vid släpp; samma regler för position och uppdrag
   gäller som tidigare. Vald rutt visar flottorna och frigörande till höger.
 - `handelsgraf-skeppspositioner` — **Fullständigt implementerat**: varje positionerad
-  flotta med skepp visas även med skeppsbilder och antal vid sin aktuella plats,
-  inklusive ruttflottor. Märket kan väljas och leder till flottans detaljer.
+  ledig flotta med skepp visas med skeppsbilder och antal vid sin aktuella plats.
+  Ruttflottornas tidigare fysiska placering ersätts uttryckligen av
+  `handelsgraf-ruttflottor`. Märket kan väljas och leder till flottans detaljer.
   Detaljerna visas i sidopanelen.
+- `handelsgraf-ruttflottor` — **Fullständigt implementerat**: tilldelade flottors
+  skeppsmärken centreras på sin ruttlinjes mittpunkt när platsen är fri. Vid
+  kollision med planeter, namn eller andra skeppsmärken placeras de intill med
+  en ledlinje till samma mittpunkt. Flera flottor på samma rutt får egna märken.
+  Den verkliga positionen visas fortfarande i detaljpanelen. Synligheten följer
+  ruttens mittpunkt, även när flottans verkliga position ligger utanför kameran.
 - `handelsgraf-lasbarhet` — **Fullständigt implementerat**: planeterna har dubblerad
   grunddiameter och skalas med kartans zoom. Detta ersätter den tidigare fasta
   planetstorleken efter uttrycklig ändring. Planetnamn, kort, skeppsmärken och
@@ -32,8 +38,9 @@ i en valpanel. Den tidigare Fleet bay med alla flottor ersätts av samma valpane
   andra märken. Panorering ger åtkomst när allt inte ryms.
   Planetnamn är centrerade direkt ovanför sin planet utan ledlinje; detta ersätter
   den tidigare fria placeringen av namnen. Namnens bakgrund är genomskinlig så
-  att ruttlinjer syns bakom dem. Skeppsmärken döljs när deras fysiska position
-  ligger utanför kameran.
+  att ruttlinjer syns bakom dem. Skeppsmärken döljs när deras ankare
+  ligger utanför kameran: fysisk position för lediga flottor, ruttens mittpunkt
+  för tilldelade flottor.
 
 | Kravnamn                     | Status                     | Beskrivning                                                                                                                                                                                                                                       |
 | ---------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
