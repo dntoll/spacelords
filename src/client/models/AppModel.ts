@@ -477,8 +477,14 @@ export class AppModel {
     this.#mapFleetId = null;
   }
 
-  openPlanet(): void {
-    if (this.#game.planetAt(this.#selected)) {
+  openPlanet(id?: string): void {
+    const planet = id
+      ? this.#game
+          .ownedPlanetSnapshots()
+          .find((candidate) => candidate.id === id)
+      : this.#game.planetAt(this.#selected);
+    if (planet) {
+      this.#selected = planet.position;
       this.#screen = 'planet';
       this.#constructionSite = null;
       this.#returnSite = null;

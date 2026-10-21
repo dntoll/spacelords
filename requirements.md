@@ -16,6 +16,8 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Spelupplevelse och språk:** skärmfyllande vyer, stor hexkarta och engelska
   speltexter. Dokumentationen är svenska med spelets engelska namn och etiketter.
+  `planetoppning-i-kartrubrik` är **Fullständigt implementerat**: kompakt
+  Open planet visas bredvid planetnamn och hexkoordinat överst i kartpanelen.
 - **Sparade spel:** tre separata spel med senaste speldatum, utforskad karta och
   automatisk sparning. Äldre ekonomi-spel bevaras och deras separata köer slås
   ihop vid uppdatering. Den tidigare uttryckligen beställda engångsrensningen
@@ -29,7 +31,8 @@ Se [hela visionen](docs/game-vision.md).
   `flottadministration`, `flottnamn-direktredigering` och
   `flottknappar-pa-kartan` är **Fullständigt implementerat**: skepp organiseras
   direkt på Star map, namn ändras med dubbelklick och New fleet bildas med
-  första skeppet. Fleets ger en kompakt översikt med Show on map; tomma flottor,
+  första skeppet. Flottkorten visas direkt utan Expand fleet panel eller Help.
+  Fleets ger en kompakt översikt med Show on map; tomma flottor,
   förstärkningar och minikarta behålls. Se [genomförandeplanen](docs/fleet-map-plan.md).
 - **Ekonomi och byggande:** ändliga fyndigheter av Iron, Water och Oil utvinns
   till lokala obegränsade lager. Material förbrukas en gång vid byggstart.

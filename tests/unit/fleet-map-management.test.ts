@@ -29,6 +29,34 @@ function setup(model = new AppModel()) {
 }
 
 describe('flottadministration / flottval-pa-kartan', () => {
+  it('planetoppning-i-kartrubrik: places Open planet beside the displayed planet name and coordinates without Create route', () => {
+    const { model, root, view, click } = setup();
+    model.select(new HexCoordinate(0, 1));
+    model.selectMapFleet('fleet-home');
+    view.render(model.snapshot);
+    const heading = root.querySelector(
+      '.map-fleet-management .map-location-heading',
+    )!;
+    expect(heading).not.toBeNull();
+    expect(heading.textContent).toContain('Tellus');
+    expect(heading.querySelector('.coordinate-label')?.textContent).toContain(
+      '1,0',
+    );
+    expect(heading.querySelector('[aria-label="Open planet"]')).not.toBeNull();
+    expect(root.querySelector('[aria-label="Create route"]')).toBeNull();
+    click('Open planet');
+    expect(model.snapshot.screen).toBe('planet');
+    expect(model.snapshot.planet?.name).toBe('Tellus');
+  });
+  it('shows ships directly without an expansion control or help disclosure', () => {
+    const { root } = setup();
+    const panel = root.querySelector('.map-fleet-management')!;
+    expect(panel.querySelectorAll('.ship-token')).toHaveLength(2);
+    expect(panel.querySelector('.fleet-panel-sizing')).toBeNull();
+    expect(panel.querySelector('.fleet-panel-help')).toBeNull();
+    expect(panel.textContent).not.toContain('Expand fleet panel');
+    expect(panel.textContent).not.toContain('Help');
+  });
   it('shows only fleets at the panel location and preserves hex selection on fleet selection', () => {
     const { model, root, view } = setup();
     model.transferShips('fleet-home', 'Fighter', 1, null);

@@ -88,7 +88,6 @@ export type AppIntent =
   | {
       readonly type:
         | 'open-map'
-        | 'open-planet'
         | 'open-research'
         | 'open-fleets'
         | 'home'
@@ -97,6 +96,7 @@ export type AppIntent =
         | 'end-turn'
         | 'produce-fighter';
     }
+  | { readonly type: 'open-planet'; readonly id?: string }
   | {
       readonly type: 'choose-ship-transfer';
       readonly fleetId: string;

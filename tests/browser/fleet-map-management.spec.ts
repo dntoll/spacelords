@@ -17,11 +17,26 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
   await expect(
     panel.getByRole('button', { name: 'Edit fleet', exact: true }),
   ).toHaveCount(0);
-  await panel.locator('.fleet-panel-sizing > summary').click();
+  await expect(
+    panel.locator('.fleet-panel-sizing, .fleet-panel-help'),
+  ).toHaveCount(0);
   const fighter = panel.getByRole('button', {
     name: 'Fighter 1 in Home Fleet',
     exact: true,
   });
+  await expect(
+    panel.getByRole('button', { name: 'Create route', exact: true }),
+  ).toHaveCount(0);
+  const heading = panel.locator('.map-location-heading').first();
+  const open = heading.getByRole('button', {
+    name: 'Open planet',
+    exact: true,
+  });
+  await expect(open).toBeVisible();
+  const openBounds = (await open.boundingBox())!;
+  const panelBounds = (await panel.boundingBox())!;
+  expect(openBounds.width).toBeLessThan(panelBounds.width / 2);
+  expect(openBounds.height).toBeGreaterThanOrEqual(44);
   await fighter.focus();
   await page.keyboard.press('Enter');
   await expect(fighter).toBeFocused();
@@ -140,7 +155,6 @@ test('flottadministration: native touch forms a fleet on Star map', async ({
   await page.setViewportSize({ width: 600, height: 1100 });
   await page.goto('./');
   await startFirstSlot(page);
-  await page.locator('.fleet-panel-sizing > summary').click();
   const source = page.getByRole('button', {
     name: 'Fighter 1 in Home Fleet',
     exact: true,

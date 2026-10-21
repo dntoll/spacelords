@@ -6,6 +6,7 @@ import { bindShipTransfers } from './ShipTransferInput.js';
 import { renderTradeAssignment } from './TradeFleetView.js';
 import { button, element } from './dom.js';
 import { mapFleetRouteFeedback } from './StarMapTradeView.js';
+import { renderMapLocationHeading } from './MapLocationHeading.js';
 
 export function renderMapFleetPanel(
   model: AppReadModel,
@@ -17,11 +18,16 @@ export function renderMapFleetPanel(
   const cell = model.cells.find(
     (candidate) => candidate.position.key === position.key,
   );
-  const place = element('div', 'fleet-place');
-  place.append(
-    element('h2', '', cell?.object?.name ?? 'Fleets'),
-    element('span', 'coordinate-label', `HEX ${position.key}`),
+  const planet = model.ownedPlanets.find(
+    (candidate) => candidate.position.key === position.key,
   );
+  const place = renderMapLocationHeading(
+    cell?.object?.name ?? 'Fleets',
+    position,
+    planet?.id,
+    emit,
+  );
+  place.classList.add('fleet-place');
   const local = model.fleets.filter(
     (fleet) => fleet.position?.key === position.key,
   );
@@ -30,24 +36,6 @@ export function renderMapFleetPanel(
     return panel;
   }
   panel.append(place);
-  const sizing = element('details', 'fleet-panel-sizing');
-  const sizeToggle = element('summary');
-  sizeToggle.append(
-    element('span', 'fleet-panel-expand-label', 'Expand fleet panel'),
-    element('span', 'fleet-panel-collapse-label', 'Collapse fleet panel'),
-  );
-  sizing.append(sizeToggle);
-  const help = element('details', 'fleet-panel-help');
-  help.append(
-    element('summary', '', 'Help'),
-    element(
-      'p',
-      'muted-note fleet-transfer-help',
-      'Drag a ship between fleet cards or onto New fleet. Choose a ship for keyboard or touch transfers. Drag a fleet marker on the map to move the fleet; drag the background to pan. Double-click a fleet name to rename it.',
-    ),
-  );
-  sizing.append(help);
-  panel.append(sizing);
   const cards = element('div', 'map-fleet-cards');
   for (const fleet of local) {
     const card = renderFleetCard(fleet, model, emit, true);

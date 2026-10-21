@@ -1,5 +1,6 @@
 import { renderMapTradeSelection } from './StarMapTradeView.js';
 import { renderMapFleetPanel } from './FleetMapPanel.js';
+import { renderMapLocationHeading } from './MapLocationHeading.js';
 import { renderSaveSlots, clearSlotDialog } from './SaveSlotsView.js';
 import { needsAttention } from '../models/Decisions.js';
 import type { MapCell } from '../models/Galaxy.js';
@@ -46,7 +47,6 @@ export class AppView implements AppPort {
   #researchObserver: ResizeObserver | null = null;
   #supplyScroll = 0;
   #supplyKey = '';
-  #fleetPanelExpanded = false;
 
   constructor(
     root: HTMLElement,
@@ -155,10 +155,6 @@ export class AppView implements AppPort {
     const previousMapFleet = this.#panel
       ?.querySelector('.selected-fleet-card')
       ?.getAttribute('data-fleet-id');
-    const fleetSizing = this.#panel?.querySelector<HTMLDetailsElement>(
-      '.fleet-panel-sizing',
-    );
-    if (fleetSizing) this.#fleetPanelExpanded = fleetSizing.open;
     const wasChoosingDestination = !!this.#panel?.querySelector(
       '[aria-label="Destination hex"]',
     );
@@ -435,11 +431,6 @@ export class AppView implements AppPort {
         this.#selectionKey = key;
         if (this.#known) this.#known.value = model.selected?.position.key ?? '';
         this.#renderSelection(model);
-        const sizing = this.#panel?.querySelector<HTMLDetailsElement>(
-          '.fleet-panel-sizing',
-        );
-        if (sizing)
-          sizing.open = this.#fleetPanelExpanded || !!model.fleetNameEdit;
         if (this.#panel)
           this.#panel.scrollTop =
             wasChoosingDestination !== !!model.destinationFleetId
@@ -743,22 +734,15 @@ export class AppView implements AppPort {
     const cell = model.selected;
     const object = cell?.object;
     const owned = object?.kind === 'planet' && object.owned;
-    const title = element('div', 'selection-heading');
-    title.append(
-      element(
-        'h2',
-        '',
-        object?.name ?? (cell?.visible ? 'Empty space' : 'Unexplored space'),
-      ),
+    const source = model.ownedPlanets.find(
+      (planet) => planet.position.key === cell?.position.key,
     );
-    if (cell)
-      title.append(
-        element(
-          'span',
-          'coordinate-label',
-          `HEX ${cell.position.q}, ${cell.position.r}`,
-        ),
-      );
+    const title = renderMapLocationHeading(
+      object?.name ?? (cell?.visible ? 'Empty space' : 'Unexplored space'),
+      cell?.position,
+      source?.id,
+      this.#emit,
+    );
     const description = owned
       ? 'A colony of your empire.'
       : object?.kind === 'star'
@@ -812,33 +796,11 @@ export class AppView implements AppPort {
       contents.push(
         element('span', 'pill', owned ? model.playerName : 'Uninhabited'),
       );
-    if (owned)
-      contents.push(
-        button(
-          'Open planet',
-          () => this.#emit({ type: 'open-planet' }),
-          'button open-planet',
-        ),
-      );
     if (owned && object) {
       const source = model.ownedPlanets.find(
         (p) => p.position.key === cell?.position.key,
       );
       if (source) {
-        const issue =
-          model.phase !== 'planning'
-            ? 'Wait until planning to create a route.'
-            : !model.research.completed.includes('Trade logistics')
-              ? 'Research Trade logistics first.'
-              : null;
-        const create = button(
-          'Create route',
-          () => this.#emit({ type: 'begin-map-route', id: source.id }),
-          'button secondary-button',
-        );
-        create.disabled = !!issue;
-        contents.push(create);
-        if (issue) contents.push(element('p', 'muted-note', issue));
         const routes = model.tradeRoutes.filter(
           (r) => r.a === source.id || r.b === source.id,
         );

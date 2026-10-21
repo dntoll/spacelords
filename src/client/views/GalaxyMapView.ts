@@ -178,7 +178,7 @@ export class GalaxyMapView implements MapPort {
     canvas.setAttribute('role', 'img');
     canvas.setAttribute(
       'aria-label',
-      'Star map. Click a fleet or trade route to select it. Drag a selected owned planet to another owned planet to create a route. Drag a fleet onto a route to assign it, or elsewhere to set its destination. Escape cancels. Drag empty space to pan; use plus and minus to zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.',
+      'Star map. Click a fleet or trade route to select it. Drag a selected owned planet to another owned planet to create a route. Press R to start a route from the selected owned planet, then choose its target. Drag a fleet onto a route to assign it, or elsewhere to set its destination. Escape cancels. Drag empty space to pan; use plus and minus to zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.',
     );
     const activePointers = new Set<number>();
     canvas.addEventListener(
@@ -276,7 +276,23 @@ export class GalaxyMapView implements MapPort {
             anchor: { x: 0, y: 0 },
           });
         else if (event.key === 'Home') this.#emit({ type: 'home' });
-        else if (event.key === 'Enter') {
+        else if (
+          event.key.toLowerCase() === 'r' &&
+          !event.ctrlKey &&
+          !event.altKey &&
+          !event.metaKey
+        ) {
+          const source = this.#model?.ownedPlanets.find(
+            (planet) =>
+              planet.position.key === this.#model?.selected?.position.key,
+          );
+          if (
+            source &&
+            this.#model?.phase === 'planning' &&
+            this.#model.research.completed.includes('Trade logistics')
+          )
+            this.#emit({ type: 'begin-map-route', id: source.id });
+        } else if (event.key === 'Enter') {
           this.#emit({ type: 'pointer-start', id: -1, point: { x: 0, y: 0 } });
           this.#emit({ type: 'pointer-end', id: -1, point: { x: 0, y: 0 } });
         } else return;

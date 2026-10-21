@@ -9,11 +9,12 @@ alla flottor vid sin verkliga position.
 - `handelsrutt-skapande-pa-stjarnkartan` — **Fullständigt implementerat**:
   markera en ägd planet och dra från dess symbol till en annan ägd planets hex.
   Förhandsvisningen visar ändplaneternas namn och om målet är giltigt. Släpp
-  skapar och väljer rutten utan att ändra kameran. Create route i planetens
-  informationsruta låter spelaren välja mål genom klick, Known objects eller
+  skapar och väljer rutten utan att ändra kameran. Knappen Create route är
+  borttagen efter användarens ändring. R med fokus på kartan börjar en rutt
+  från markerad ägd planet; målet kan väljas genom klick, Known objects eller
   kartans tangentbordsnavigering. Cancel och Escape avbryter. Trade logistics
   och planning krävs; samma planet, främmande planeter, tom rymd och dubbla
-  rutter godtas inte. Låsta knappar visar orsaken.
+  rutter godtas inte. Ogiltiga mål får en förklaring i förhandsvisningen.
   Detta ersätter panorering från själva den markerade planetsymbolen;
   panorering från tom kartbakgrund behålls.
 - `handelsrutt-val-pa-stjarnkartan` — **Fullständigt implementerat**:

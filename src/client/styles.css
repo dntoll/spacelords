@@ -2337,6 +2337,29 @@ p {
   display: grid;
   gap: 10px;
 }
+.map-location-heading {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.map-location-heading h2 {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+}
+.map-location-heading .open-planet {
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 44px;
+  margin-left: auto;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.75rem;
+}
 .map-fleet-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
@@ -2397,26 +2420,11 @@ p {
   align-content: center;
 }
 .fleet-orders summary,
-.fleet-panel-sizing summary,
 .map-fleet-route-options summary {
   min-height: 44px;
   display: list-item;
   align-content: center;
   cursor: pointer;
-}
-.fleet-panel-sizing {
-  font-size: 0.8rem;
-}
-.fleet-panel-collapse-label,
-.fleet-panel-sizing[open] .fleet-panel-expand-label {
-  display: none;
-}
-.fleet-panel-sizing[open] .fleet-panel-collapse-label {
-  display: inline;
-}
-.selection-panel:has(.fleet-panel-sizing[open]) {
-  max-height: calc(100% - var(--events-height, 84px) - 92px);
-  background: #10222e;
 }
 .fleet-remote-targets {
   display: grid;
@@ -2455,8 +2463,5 @@ p {
 @media (max-width: 600px) {
   .selection-panel:has(.map-fleet-management) {
     width: auto;
-  }
-  .map-fleet-cards {
-    grid-template-columns: minmax(0, 1fr);
   }
 }

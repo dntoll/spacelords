@@ -41,10 +41,17 @@ och återupptagning. Befintliga logistiktester skyddar lossning och stängning.
 
 ## Flottadministration på Star map
 
+`planetoppning-i-kartrubrik` använder en gemensam MapLocationHeading i hex-
+och flottpanelen. Open planet skickar planetens id till controllern så att
+planetinformationen öppnas för rubrikens planet, oberoende av tidigare hexval.
+Knappen har kompakt form och minst 44 px klickhöjd. Kartans R-tangent börjar
+en handelsrutt utan Create route-knapp; forsknings- och planeringsvillkoren
+kontrolleras före avsikten och domänens målvalidering behålls.
+
 `flottadministration`, `flottnamn-direktredigering` och
 `flottknappar-pa-kartan` använder gemensamma FleetCard och ShipTransferInput
 i kartpanelen och Fleets. FleetMapPanel visar flottorna vid aktuell position
-utan att ändra kartans hexval. HTML-panelen kan förstoras och rullas internt.
+utan att ändra kartans hexval. HTML-panelen visar flottkorten direkt och rullas internt utan separat utfällning eller hjälpruta.
 Fleets har kompakta skeppsförhandsvisningar, aktuell position och Show on map;
 den befintliga minikartan och hanteringen av tomma flottor behålls.
 
@@ -55,7 +62,7 @@ domänhandlingen; kommandot returnerar den mottagande flottans ögonblicksbild.
 Inga nya domänbegrepp, relationer eller sparformat tillkommer;
 docs/domain-model.puml har granskats och behöver inte ändras.
 
-Vyn bevarar fokus, markörläge, panelstorlek och rullning vid återrendering.
+Vyn bevarar fokus, markörläge och rullning vid återrendering.
 Vid flottval rullas flottans namn fram även i långa listor och efter Show on map.
 Programmatisk borttagning av ett namnfält skiljs från användarens fokusbyte.
 Det senare avbryter utkastet utan att förstöra kontrollen som tar emot nästa

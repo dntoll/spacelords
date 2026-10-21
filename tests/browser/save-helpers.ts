@@ -21,7 +21,7 @@ export async function connectTradePlanets(
   await page
     .getByRole('combobox', { name: 'Known objects' })
     .selectOption({ label: from });
-  await page.getByRole('button', { name: 'Create route', exact: true }).click();
+  await page.locator('canvas[data-rendered="true"]').press('r');
   await page
     .getByRole('combobox', { name: 'Known objects' })
     .selectOption({ label: to });

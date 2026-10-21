@@ -229,7 +229,7 @@ export class AppController {
         this.#model.openMap();
         break;
       case 'open-planet':
-        this.#model.openPlanet();
+        this.#model.openPlanet(intent.id);
         break;
       case 'open-research':
         this.#model.openResearch();

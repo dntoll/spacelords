@@ -47,8 +47,11 @@ implementationsbeställning. Grundreglerna för rörelse och logistik behålls.
 - Receiving fleet ger åtkomst till tomma och avlägsna mottagare från kartan.
 - Orders → Choose destination ersätter Set destination. Hexväljare,
   Known objects och kartan ger alternativ till drag. Edit fleet är borttagen.
-- Mobilpanelen prioriterar flottorna och kan förstoras; hjälp visas på begäran.
+- Mobilpanelen prioriterar flottorna och visar dem direkt med intern rullning.
+  Expand fleet panel och Help har tagits bort efter användarens förenkling.
 - Vald flottas namn rullas fram i långa listor, även efter Show on map.
+- Open planet är kompakt i rubrikraden. Create route är borttagen; kartdrag
+  och R med fokus på kartan behåller ruttskapandet.
 - Befintliga domänrelationer och sparformat behålls.
 
 Enhets- och webbläsartester för kraven finns i fleet-map-management, med
@@ -61,6 +64,12 @@ och 186 webbläsarfall; 22 plattformsspecifika fall hoppades över. Efter
 rättningen för långa listor passerade 21 riktade webbläsarfall (3 överhoppade),
 inklusive fyra nya fall med 25 flottor. Den sista separata snabbkörningen
 passerade med 236 tester på 18,83 sekunder av tillåtna 20.
+
+Efter förenklingen av rubrikraden och borttagningen av Expand fleet panel,
+Help och Create route passerade lint, typkontroll, klientbygge samt 238
+snabbtester på 10,22 sekunder. De 62 riktade webbläsarfallen för flottor,
+planetnavigation, rutter och skärmstorlekar passerade; 6 plattformsbundna fall
+hoppades över.
 
 ## Ursprunglig genomförandeordning
 

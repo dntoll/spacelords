@@ -160,12 +160,10 @@ test('handelsrutt-skapande-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: pl
 test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives retain orders after visiting Supply & production and reloading', async ({
   page,
 }) => {
-  const create = page.getByRole('button', {
-    name: 'Create route',
-    exact: true,
-  });
-  await create.focus();
-  await create.press('Enter');
+  await expect(
+    page.getByRole('button', { name: 'Create route', exact: true }),
+  ).toHaveCount(0);
+  await page.locator('canvas[data-rendered="true"]').press('r');
   await page
     .getByRole('combobox', { name: 'Known objects' })
     .selectOption({ label: 'Vesta' });
@@ -202,7 +200,7 @@ test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives retain orders after
 test('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: clicking a line selects it and an invalid drop cannot set a destination', async ({
   page,
 }) => {
-  await page.getByRole('button', { name: 'Create route', exact: true }).click();
+  await page.locator('canvas[data-rendered="true"]').press('r');
   await page
     .getByRole('combobox', { name: 'Known objects' })
     .selectOption({ label: 'Vesta' });

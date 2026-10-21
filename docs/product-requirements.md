@@ -94,6 +94,14 @@ listvyn; forskningsreglerna och teknikernas förkunskaper behålls.
 
 ## Flottval och destinationsdrag
 
+`planetoppning-i-kartrubrik` — **Fullständigt implementerat**: Open planet är
+en kompakt knapp bredvid den ägda planetens namn och hexkoordinat överst i
+kartpanelen. Den öppnar planeten i rubriken, även när en flotta har valts på
+en annan plats än den markerade hexen. Knappen behåller en lättanvänd klickyta.
+
+`flottadministration` visar flottkorten direkt utan Expand fleet panel eller
+Help. Detta ersätter den tidigare utfällningen; panelen kan fortsatt rullas.
+
 `flottnamn-direktredigering` — **Fullständigt implementerat**: Flottans namn på Star map
 kan redigeras genom dubbelklick. Enter sparar och Escape avbryter. Namnbyte
 är också åtkomligt med touch och tangentbord utan dubbelklick.
@@ -183,6 +191,12 @@ sin betydelse för enbart innevarande runda.
 | `rundvarning`                  | Fullständigt implementerat | End turn visar kvarvarande beslut tillsammans. Spelaren kan återgå eller välja End turn anyway.                                                                                                                                                                                                                                        |
 
 ## Ändringshistorik
+
+- 2026-10-21: `planetoppning-i-kartrubrik` ersätter den stora fristående
+  Open planet-knappen. `flottadministration` visar korten utan Expand fleet panel
+  eller Help. Knappen Create route i `handelsrutt-skapande-pa-stjarnkartan`
+  tas bort efter användarens uttryckliga ändring; kartdrag och tangentbordets R
+  behåller ruttskapandet.
 
 - 2026-10-21: `flottadministration` ändras från separat flottbyggare i Fleets
   till lokal hantering och skapande på Star map. `flottnamn-direktredigering`
