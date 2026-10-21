@@ -38,9 +38,23 @@ men förkunskaper måste komma först. Högst en teknik slutförs per år.
 
 ## Trade routes
 
-En rutt länkar exakt två ägda planeter. Flera flottor kan tilldelas samma rutt,
-vid någon av dess ändplaneter. Transport ships ger lastkapacitet; övriga skepp
+En rutt länkar exakt två ägda planeter. Flera lediga flottor kan tilldelas samma
+rutt från valfri position. Transport ships ger lastkapacitet; övriga skepp
 följer med flottan. Ingen pirat- eller eskortskyddsmekanik ingår ännu.
+
+`ruttflotta-till-narmaste-andplanet` — **Fullständigt implementerat**:
+en tilldelad flotta utanför rutten reser först till den närmaste ändplaneten,
+mätt i hexavstånd. Vid lika avstånd väljs ruttens första ändplanet, oberoende
+av planetlistans ordning. Uppdraget tilldelas direkt men flottan behåller sin
+verkliga position och förflyttas med sin vanliga fart under kommande år.
+Anslutningsresan sker även utan väntande frakt och går klart innan flottan
+hämtar material. Vid ankomst börjar vanlig ruttrafik. En flotta vid en
+ändplanet får ingen extra anslutningsresa. Resan och ruttuppdraget sparas.
+Frigörande och stängning under anslutningsresan följer befintliga regler:
+flottan når destinationen innan den lämnar uppdraget. Regeln ersätter kravet
+att flottan måste stå vid en ändplanet vid tilldelning, i båda vyerna.
+Krav på transportskepp och position samt spärr mot pågående resa,
+förstärkningsuppdrag, annat ruttuppdrag och stängande rutter behålls.
 
 En ruttflotta kan förstärkas med skepp från en vanlig flotta. På samma hex sker
 anslutningen direkt. På avstånd reser skeppen som en egen grupp med status

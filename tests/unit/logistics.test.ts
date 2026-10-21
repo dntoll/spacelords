@@ -74,6 +74,66 @@ function setup() {
 }
 
 describe('handelsnatverk / fysisk-frakt / flera-ruttflottor', () => {
+  it.each([
+    [-3, 'a'],
+    [7, 'b'],
+    [2, 'a'],
+  ])(
+    'ruttflotta-till-narmaste-andplanet: approaches the closest endpoint from q=%s, even without cargo demand',
+    (q, endpoint) => {
+      const { logistics, port, planets, fleets, ab, turn } = setup();
+      planets[2]!.projects = [];
+      planets[2]!.demand = emptyStock();
+      const remote: TransportFleet = {
+        id: 'remote',
+        position: new HexCoordinate(q, 0),
+        destination: null,
+        ships: { 'Transport ship': 1 },
+      };
+      fleets.push(remote);
+      port.planets = [...planets].reverse();
+      const position = remote.position;
+      logistics.assign(ab, remote, port);
+      expect(remote.routeId).toBe(ab);
+      expect(remote.position).toEqual(position);
+      expect(remote.destination).toEqual(
+        planets.find((p) => p.id === endpoint)!.position,
+      );
+      expect(remote.courseOrigin).toEqual(position);
+      for (let year = 0; year < 4; year++) turn();
+      expect(remote.position).toEqual(
+        planets.find((p) => p.id === endpoint)!.position,
+      );
+      expect(remote.destination).toBeNull();
+      expect(remote.routeId).toBe(ab);
+      expect(logistics.shipments).toHaveLength(0);
+    },
+  );
+
+  it('ruttflotta-till-narmaste-andplanet: closing a route waits for an approaching fleet without collecting cargo', () => {
+    const { logistics, port, planets, fleets, ab, turn } = setup();
+    planets[2]!.projects = [];
+    planets[2]!.demand = emptyStock();
+    const remote: TransportFleet = {
+      id: 'remote',
+      position: new HexCoordinate(-5, 0),
+      destination: null,
+      ships: { 'Transport ship': 1 },
+    };
+    fleets.push(remote);
+    logistics.assign(ab, remote, port);
+    logistics.close(ab, port);
+    expect(remote.releaseRequested).toBe(true);
+    turn();
+    expect(remote.position!.q).toBe(-3);
+    expect(remote.routeId).toBe(ab);
+    turn();
+    turn();
+    expect(remote.position).toEqual(planets[0]!.position);
+    expect(remote.routeId).toBeUndefined();
+    expect(logistics.routes.some((r) => r.id === ab)).toBe(false);
+  });
+
   it('moves material over two physical links without teleporting, duplicating or spending transit reserves', () => {
     const { logistics, planets, turn, total } = setup();
     turn();

@@ -29,7 +29,9 @@ vid ruttens mittpunkt hör enbart till den separata handelsgrafen.
   dra en flottmarkör till en ruttlinje eller använd Assign i informationsrutan.
   Förhandsvisningen skiljer tilldelning från vanlig destination och visar
   orsaken vid ogiltig tilldelning. Flottan måste vara ledig, ha transportskepp
-  och stå vid en ändplanet, utan resa eller förstärkningsuppdrag. Vid flera
+  och ha en position, utan resa eller förstärkningsuppdrag. Tilldelning på
+  avstånd följer `ruttflotta-till-narmaste-andplanet` och ersätter uttryckligen
+  det tidigare kravet att flottan redan står vid en ändplanet. Vid flera
   träffade rutter väljer spelaren mål innan någon order ges. Ogiltigt ruttsläpp
   ger aldrig en flyttorder. Utanför linjerna behålls vanlig flottförflyttning;
   Set destination är fortsatt ett uttryckligt flyttläge.

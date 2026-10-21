@@ -22,8 +22,9 @@ i en valpanel. Den tidigare Fleet bay med alla flottor ersätts av samma valpane
 - `handelsgraf-kompakt-flottvy` — **Fullständigt implementerat**: vänstervyn har
   inga stora flottkort eller ruttrutor. Flottan väljs via sina skepp på spelbrädet. Flottor utan position eller skepp har en liten namnmarkör.
   En ledig transportflottas skeppsmarkör kan dras direkt till en ruttlinje för
-  tilldelning. Linjen markeras vid släpp; samma regler för position och uppdrag
-  gäller som tidigare. Vald rutt visar flottorna och frigörande till höger.
+  tilldelning. Linjen markeras vid släpp. Lediga transportflottor kan tilldelas
+  från valfri position och reser då till närmaste ändplanet enligt
+  `ruttflotta-till-narmaste-andplanet`. Vald rutt visar flottorna och frigörande till höger.
 - `handelsgraf-skeppspositioner` — **Fullständigt implementerat**: varje positionerad
   ledig flotta med skepp visas med skeppsbilder och antal vid sin aktuella plats.
   Ruttflottornas tidigare fysiska placering ersätts uttryckligen av

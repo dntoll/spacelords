@@ -146,6 +146,13 @@ Den separata Trade routes-vyn behålls. Kraven
 `flottilldelning-pa-stjarnkartan` är **Fullständigt implementerade**;
 se [beteenden och status](star-map-trade.md).
 
+`ruttflotta-till-narmaste-andplanet` — **Fullständigt implementerat**:
+en ledig transportflotta kan tilldelas en rutt från valfri position. Den reser
+först till närmaste ändplanet och börjar därefter frakta material. Vid lika
+avstånd används ruttens första ändplanet. Resan sker även utan väntande frakt
+och sparas vid omladdning. Detta ersätter det tidigare kravet på att stå vid
+en ändplanet vid tilldelning; andra uppdrag måste fortfarande avslutas först.
+
 `synliga-handelsrutter` — **Fullständigt implementerat**: Handelsrutter syns
 även inne i markerade hexrutor. Markeringen får inte dölja rutten. Planeter,
 flottor och kartans informationsmärken förblir tydliga ovanpå linjerna.

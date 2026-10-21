@@ -68,7 +68,7 @@ describe('handelsgraf / handelsgraf-navigation / handelsgraf-valpanel', () => {
 });
 
 describe('handelsgraf-flottboxar', () => {
-  it('offers assignment only to idle transport fleets at a route endpoint', () => {
+  it('ruttflotta-till-narmaste-andplanet: offers assignment to idle transport fleets regardless of distance', () => {
     const fleet = new AppModel().snapshot.fleets[0]!;
     const transport = {
       ...fleet,
@@ -89,12 +89,17 @@ describe('handelsgraf-flottboxar', () => {
       status: 'Idle',
     };
     expect(tradeAssignmentIssue(transport, route)).toBeNull();
+    expect(
+      tradeAssignmentIssue(
+        { ...transport, position: new HexCoordinate(4, 0) },
+        route,
+      ),
+    ).toBeNull();
     for (const unavailable of [
       fleet,
       { ...transport, routeId: 'another' },
       { ...transport, destination: route.end },
       { ...transport, joinFleetId: 'other' },
-      { ...transport, position: new HexCoordinate(4, 0) },
       { ...transport, position: null },
     ])
       expect(tradeAssignmentIssue(unavailable, route)).not.toBeNull();

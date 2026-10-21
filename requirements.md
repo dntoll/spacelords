@@ -67,6 +67,9 @@ Se [hela visionen](docs/game-vision.md).
   [Star map hanterar samma rutter](docs/star-map-trade.md) genom planetdragning,
   valbara linjer, informationsrutor och flottilldelning. Den separata handelsvyn
   behålls. På Star map visas flottor alltid vid sin verkliga position.
+  `ruttflotta-till-narmaste-andplanet` är **Fullständigt implementerat**:
+  lediga transportflottor kan tilldelas på avstånd och reser först till
+  närmaste ändplanet. Detta ersätter kravet på att redan vara vid rutten.
   Last, omlastning, avstånd och flottposition påverkar leveranser.
   Piratrån och eskortskydd ingår ännu inte.
 - **Beslut och händelser:** Decisions och Next decision samlar val och

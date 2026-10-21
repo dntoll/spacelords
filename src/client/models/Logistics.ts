@@ -104,17 +104,23 @@ export class Logistics {
       fleet.routeId ||
       fleet.destination ||
       fleet.ships['Transport ship'] < 1 ||
-      !port.planets.some(
-        (p) =>
-          [route.a, route.b].includes(p.id) &&
-          p.position.key === fleet.position?.key,
-      )
+      !fleet.position
     )
-      throw new Error(
-        'Assign an idle transport fleet at either route endpoint.',
-      );
+      throw new Error('Assign an idle transport fleet with a position.');
     fleet.routeId = routeId;
     fleet.releaseRequested = false;
+    // ruttflotta-till-narmaste-andplanet: travel physically before serving the route.
+    const a = port.planets.find((planet) => planet.id === route.a)!;
+    const b = port.planets.find((planet) => planet.id === route.b)!;
+    const endpoint =
+      fleet.position.distanceTo(a.position) <=
+      fleet.position.distanceTo(b.position)
+        ? a
+        : b;
+    if (fleet.position.key !== endpoint.position.key) {
+      fleet.courseOrigin = fleet.position;
+      fleet.destination = endpoint.position;
+    }
   }
 
   release(fleet: TransportFleet): void {

@@ -233,10 +233,6 @@ export function tradeAssignmentIssue(
   if (fleet.joinFleetId) return 'Reinforcement order active';
   if (fleet.destination) return 'Fleet is travelling';
   if (!fleet.ships['Transport ship']) return 'Needs a Transport ship';
-  if (
-    !fleet.position ||
-    ![route.start.key, route.end.key].includes(fleet.position.key)
-  )
-    return 'Must be at a route endpoint';
+  if (!fleet.position) return 'Fleet has no position';
   return null;
 }
