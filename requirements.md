@@ -51,6 +51,9 @@ Se [hela visionen](docs/game-vision.md).
   spelarens planeter. Köade byggprojekt ingår inte.
 - **Forskning:** `forsknings-tradnavigation` är **Fullständigt implementerat**:
   ett zoom- och panorerbart forskningsträd med beroendepilar och bibehållen kamera.
+  `forskningstradets-utrymme` är **Fullständigt implementerat**: trädet fyller
+  vyn under rubriken, antal stationer visas vid rubriken och Research queue
+  öppnas vid behov. Zoomrutan är borttagen; pinch och mushjul finns kvar.
   Forskningskö med automatiska förkunskaper låser upp alla
   skeppsfabriker och Trade logistics. Grundutvinning och Research station finns
   från start.

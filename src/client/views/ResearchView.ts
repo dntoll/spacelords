@@ -11,16 +11,16 @@ export function renderResearch(
 ): HTMLElement {
   const page = element('section', 'research-page');
   const header = element('div', 'screen-header');
-  header.append(
-    element('h1', '', 'Research'),
-    button('Back to map', () => emit({ type: 'open-map' }), 'back-button'),
-  );
   const panel = element('section', 'research-panel');
   const introduction = element('details', 'research-introduction');
   const summary = element('summary');
+  summary.setAttribute(
+    'aria-label',
+    `Research stations · ${research.stations}`,
+  );
   summary.append(
     buildingImage('Research station'),
-    element('span', '', `Research stations · ${research.stations}`),
+    element('span', '', `Stations · ${research.stations}`),
   );
   const details = element('div', 'research-introduction-details');
   details.append(
@@ -37,18 +37,27 @@ export function renderResearch(
     ),
   );
   introduction.append(summary, details);
-  const sidebar = element('aside', 'research-sidebar');
-  sidebar.append(introduction);
+  const heading = element('div', 'research-heading');
+  heading.append(element('h1', '', 'Research'), introduction);
+  header.append(
+    heading,
+    button('Back to map', () => emit({ type: 'open-map' }), 'back-button'),
+  );
   if (!research.stations)
-    sidebar.append(
+    details.append(
       element(
         'p',
         'muted-note',
         'Build a Research station to advance research.',
       ),
     );
-  const queue = element('section', 'research-queue');
-  queue.append(element('h2', '', 'Research queue'));
+  const queue = element('details', 'research-queue hud');
+  queue.append(
+    element('summary', '', `Research queue · ${research.queue.length}`),
+  );
+  const orders = element('div', 'research-queue-content');
+  if (!research.queue.length)
+    orders.append(element('p', 'muted-note', 'No research queued.'));
   for (const [index, technology] of research.queue.entries()) {
     const row = element('article', 'empire-card research-queue-order');
     row.append(
@@ -76,10 +85,10 @@ export function renderResearch(
     remove.disabled = locked;
     actions.append(remove);
     row.append(actions);
-    queue.append(row);
+    orders.append(row);
   }
-  sidebar.append(queue);
-  panel.append(renderResearchTree(research, locked, emit), sidebar);
+  queue.append(orders);
+  panel.append(renderResearchTree(research, locked, emit), queue);
   page.append(header, panel);
   return page;
 }

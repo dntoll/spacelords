@@ -300,6 +300,12 @@ export class AppView implements AppPort {
           .querySelector<HTMLElement>(`[data-site-index="${model.returnSite}"]`)
           ?.focus({ preventScroll: true });
     }
+    const previousResearchQueue =
+      this.#root.querySelector<HTMLDetailsElement>('.research-queue');
+    const researchQueueOpen = previousResearchQueue?.open ?? false;
+    const researchQueueScroll =
+      previousResearchQueue?.querySelector('.research-queue-content')
+        ?.scrollTop ?? 0;
     const researchKey = JSON.stringify([model.research, model.phase]);
     if (
       !changedScreen &&
@@ -316,6 +322,27 @@ export class AppView implements AppPort {
           ),
         );
     if (model.screen === 'research') {
+      if (!changedScreen) {
+        const queue =
+          this.#root.querySelector<HTMLDetailsElement>('.research-queue');
+        if (queue) queue.open = researchQueueOpen;
+        const content = queue?.querySelector('.research-queue-content');
+        if (content) content.scrollTop = researchQueueScroll;
+        if (
+          active instanceof HTMLElement &&
+          !active.isConnected &&
+          active.closest('.research-queue')
+        ) {
+          const control = [
+            ...(queue?.querySelectorAll<HTMLElement>('[aria-label]') ?? []),
+          ].find(
+            (control) => control.getAttribute('aria-label') === focusLabel,
+          );
+          (control ?? queue?.querySelector<HTMLElement>('summary'))?.focus({
+            preventScroll: true,
+          });
+        }
+      }
       this.#researchKey = researchKey;
       updateResearchCamera(this.#root, model.researchCamera);
       const viewport = this.#root.querySelector<HTMLElement>(

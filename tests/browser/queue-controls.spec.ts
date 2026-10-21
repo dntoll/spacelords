@@ -11,6 +11,7 @@ for (const width of [320, 900]) {
     await page.getByRole('button', { name: 'Research', exact: true }).click();
     await chooseResearch(page, 'Colony ship factory');
     const research = page.locator('.research-queue');
+    await research.locator('summary').click();
     await checkControls(research.locator('article').first());
     await research.screenshot({
       path: testInfo.outputPath('research-queue.png'),

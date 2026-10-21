@@ -1248,19 +1248,9 @@ p {
 .building-choice .building-image {
   height: 180px;
 }
-.research-introduction {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  gap: 12px;
-  align-items: start;
-}
 .research-introduction-details {
   display: grid;
   gap: 8px;
-}
-.research-introduction .building-image {
-  width: 96px;
-  height: 96px;
 }
 .research-choice {
   grid-template-columns: 112px minmax(0, 1fr);
@@ -1285,9 +1275,6 @@ p {
   min-height: 44px;
 }
 @media (max-width: 400px) {
-  .research-introduction {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .research-choice {
     grid-template-columns: 72px minmax(0, 1fr);
   }
@@ -1733,12 +1720,16 @@ p {
 }
 .research-page .research-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 290px;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   max-width: none;
   width: 100%;
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: transparent;
   overflow: hidden;
-  gap: 12px;
+  gap: 0;
 }
 .research-tree-area {
   position: relative;
@@ -1753,7 +1744,6 @@ p {
 .research-tree-viewport {
   position: absolute;
   inset: 0;
-  bottom: 64px;
   overflow: hidden;
   touch-action: none;
   overscroll-behavior: none;
@@ -1855,62 +1845,67 @@ p {
 .research-tree-stage .research-node.locked {
   border-color: #3b505d;
 }
-.research-tree-tools {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
+/* forskningstradets-utrymme: auxiliary information never reserves tree space. */
+.research-heading {
+  position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #091923ed;
-}
-.research-tree-tools .button {
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  font-size: 1.3rem;
-}
-.research-zoom {
-  min-width: 48px;
-  font-size: 0.75rem;
-  text-align: center;
-}
-.research-sidebar {
+  gap: 4px 8px;
   min-width: 0;
-  min-height: 0;
-  overflow: auto;
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #10232e;
 }
-.research-sidebar .research-introduction {
+.research-heading .research-introduction {
   display: block;
+  position: static;
+  min-width: 0;
 }
 .research-introduction summary {
   display: flex;
-  gap: 10px;
+  gap: 6px;
   align-items: center;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
+  min-height: 32px;
 }
 .research-introduction summary .building-image {
-  width: 44px;
-  height: 44px;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
 }
-.research-sidebar .research-introduction-details {
-  padding-block: 10px;
+.research-introduction-details {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 5;
+  width: min(300px, calc(100vw - 32px));
+  padding: 12px;
+  background: #10232e;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  box-shadow: 0 4px 24px #0005;
+}
+.research-queue {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  max-width: calc(100% - 16px);
+  z-index: 3;
+}
+.research-queue > summary {
+  min-height: 44px;
+  padding: 12px;
+  cursor: pointer;
   font-size: 0.8rem;
 }
-.research-sidebar .muted-note {
-  font-size: 0.75rem;
+.research-queue[open] {
+  width: min(340px, calc(100% - 16px));
 }
-.research-queue h2 {
-  margin-block: 12px 8px;
-  font-size: 0.95rem;
+.research-queue-content {
+  max-height: min(40dvh, 280px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0 8px 8px;
 }
 .research-queue-order {
   padding: 8px;
@@ -1925,24 +1920,14 @@ p {
     padding: 8px;
     gap: 6px;
   }
-  .research-page .research-panel {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(120px, 1fr) auto;
-    gap: 8px;
-  }
-  .research-sidebar {
-    height: clamp(96px, 22dvh, 180px);
-    max-height: none;
-  }
 }
-@media (max-height: 500px) {
-  .research-page .research-panel {
-    grid-template-columns: minmax(0, 1fr) 230px;
-    grid-template-rows: minmax(0, 1fr);
+
+@media (max-width: 400px) {
+  .research-heading h1 {
+    font-size: 1.25rem;
   }
-  .research-sidebar {
-    height: auto;
-    max-height: none;
+  .research-introduction summary {
+    font-size: 0.7rem;
   }
 }
 

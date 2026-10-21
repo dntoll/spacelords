@@ -7,7 +7,7 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
-  const images = page.locator('.research-panel img');
+  const images = page.locator('.research-page img');
   await expect(images).toHaveCount(4);
   const sources: string[] = [];
   for (const image of await images.all()) {

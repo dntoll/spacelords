@@ -303,3 +303,8 @@ hela CI-jobbet; `snabb-testsvit` behåller sin gräns på 20 sekunder.
   rundknappens indata och spärr under simulering. Webbläsartester kontrollerar
   nedre panelens utrymme och att Events och End turn går att använda i Decisions
   utan sidscroll på telefon och i liggande format.
+
+- `forskningstradets-utrymme`: enhetstester skyddar stationsantalets placering,
+  borttagna zoomkontroller och öppen kö vid orderändringar. Webbläsartester
+  kontrollerar trädets tillgängliga yta i stående och liggande format,
+  oförändrad trädyta när kön öppnas samt pinch, mushjul och tangentbord.

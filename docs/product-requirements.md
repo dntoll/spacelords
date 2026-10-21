@@ -51,6 +51,18 @@ statusar visar valbar, köad, pågående och färdig forskning. Research queue
 behåller omordning och bekräftad borttagning. Detta ersätter den tidigare
 listvyn; forskningsreglerna och teknikernas förkunskaper behålls.
 
+`forskningstradets-utrymme` — **Fullständigt implementerat**: Forskningsträdet
+fyller Research under rubriken. Antal Research stations visas vid rubriken,
+med stationsinformation tillgänglig vid behov. Ingen nedre panel eller
+sidopanel reserverar utrymme. Research queue visar sitt antal och öppnas vid
+behov ovanpå trädet; en öppen kö ligger kvar under omordning och borttagning.
+Zoomrutan med plus, minus, procent och anpassning tas bort. Pinch, mushjul och
+tangentbordets zoom, panorering och översikt finns kvar.
+
+- 2026-10-21: `forskningstradets-utrymme` ersätter den fasta stations- och
+  köpanelen samt zoomrutan i Research. Reglerna i `forskningsoversikt` och
+  `forsknings-tradnavigation` behålls.
+
 ## Fortsatt spelutveckling
 
 | Kravnamn                          | Status                     | Krav och återstående arbete                                                                                                                                                                                                                                                                                                                                                                            |

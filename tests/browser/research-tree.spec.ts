@@ -96,9 +96,7 @@ test('forsknings-tradnavigation: dependency arrows, navigation and research pres
     page.locator('[data-technology="Exploration ship factory"]'),
   ).toHaveAttribute('data-state', 'active');
   await page.screenshot({ path: testInfo.outputPath('research-tree.png') });
-  await page
-    .getByRole('button', { name: 'Fit research tree', exact: true })
-    .click();
+  await tree.press('0');
   const viewport = (await tree.boundingBox())!;
   await page.screenshot({
     path: testInfo.outputPath('research-tree-overview.png'),
@@ -148,3 +146,64 @@ test('forsknings-tradnavigation: mouse drag pans and wheel zooms without queuein
   await expect(stage).not.toHaveAttribute('style', panned!);
   await expect(page.locator('.research-queue article')).toHaveCount(0);
 });
+
+for (const size of [
+  { width: 320, height: 568 },
+  { width: 393, height: 851 },
+  { width: 844, height: 390 },
+]) {
+  test(`forskningstradets-utrymme: the tree fills Research at ${size.width}x${size.height}`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize(size);
+    await page.goto('./');
+    await startFirstSlot(page);
+    await page.getByRole('button', { name: 'Research', exact: true }).click();
+    const tree = page.getByRole('region', {
+      name: 'Research tree',
+      exact: true,
+    });
+    const pageBounds = (await page.locator('.research-page').boundingBox())!;
+    const header = (await page
+      .locator('.research-page .screen-header')
+      .boundingBox())!;
+    const bounds = (await tree.boundingBox())!;
+    expect(bounds.width).toBeGreaterThanOrEqual(pageBounds.width - 26);
+    expect(bounds.height).toBeGreaterThanOrEqual(
+      pageBounds.height - header.height - 40,
+    );
+    const count = page.locator('.research-introduction summary');
+    await expect(count).toHaveAttribute('aria-label', 'Research stations · 0');
+    if (size.width <= 393) {
+      const heading = (await page
+        .getByRole('heading', { name: 'Research', exact: true })
+        .boundingBox())!;
+      const stations = (await count.boundingBox())!;
+      expect(stations.x).toBeGreaterThan(heading.x + heading.width);
+      expect(Math.abs(stations.y - heading.y)).toBeLessThan(16);
+    }
+    await expect(
+      page.locator('.research-tree-tools, .research-sidebar'),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: /Zoom .*research tree/ }),
+    ).toHaveCount(0);
+    await expect(page.getByLabel('Research tree zoom')).toHaveCount(0);
+    const queue = page.locator('details.research-queue');
+    await expect(queue).not.toHaveAttribute('open');
+    await queue.locator('summary').click();
+    const opened = (await tree.boundingBox())!;
+    expect(opened).toEqual(bounds);
+    await queue.locator('summary').click();
+    await page.screenshot({
+      path: testInfo.outputPath('research-full-tree.png'),
+    });
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <= innerWidth &&
+          document.documentElement.scrollHeight <= innerHeight,
+      ),
+    ).toBe(true);
+  });
+}

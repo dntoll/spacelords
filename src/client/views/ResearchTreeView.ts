@@ -144,37 +144,7 @@ export function renderResearchTree(
   }
   viewport.append(stage);
   bindNavigation(viewport, emit);
-  const tools = element('div', 'research-tree-tools');
-  const zoom = (factor: number) =>
-    emit({
-      type: 'research-zoom',
-      factor,
-      anchor: { x: viewport.clientWidth / 2, y: viewport.clientHeight / 2 },
-    });
-  const out = button(
-    'Zoom out research tree',
-    () => zoom(1 / 1.25),
-    'button secondary-button',
-  );
-  out.textContent = '−';
-  const into = button(
-    'Zoom in research tree',
-    () => zoom(1.25),
-    'button secondary-button',
-  );
-  into.textContent = '+';
-  const fit = button(
-    'Fit research tree',
-    () => emit({ type: 'research-fit' }),
-    'button secondary-button',
-  );
-  fit.textContent = '⤢';
-  for (const control of [out, into, fit])
-    control.title = control.getAttribute('aria-label')!;
-  const output = element('output', 'research-zoom', '100%');
-  output.setAttribute('aria-label', 'Research tree zoom');
-  tools.append(out, output, into, fit);
-  area.append(viewport, tools);
+  area.append(viewport);
   return area;
 }
 
@@ -185,8 +155,6 @@ export function updateResearchCamera(
   const stage = root.querySelector<HTMLElement>('.research-tree-stage');
   if (stage)
     stage.style.transform = `translate(${camera.offset.x}px, ${camera.offset.y}px) scale(${camera.zoom})`;
-  const output = root.querySelector('.research-zoom');
-  if (output) output.textContent = `${Math.round(camera.zoom * 100)}%`;
 }
 
 function bindNavigation(viewport: HTMLElement, emit: IntentHandler): void {
