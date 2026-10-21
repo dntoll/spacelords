@@ -44,8 +44,10 @@ export class AppController {
   #handleIntent(intent: AppIntent): void {
     if (!intent.type.startsWith('research-pointer-'))
       this.#researchGesture.cancel();
-    if (intent.type.startsWith('open-') || intent.type === 'end-turn')
+    if (intent.type.startsWith('open-') || intent.type === 'end-turn') {
       this.#model.cancelShipTransfer();
+      this.#model.cancelFleetRename();
+    }
     if (
       [
         'open-map',
@@ -73,6 +75,25 @@ export class AppController {
     )
       return;
     switch (intent.type) {
+      case 'show-fleet-on-map':
+        this.#model.cancelShipTransfer();
+        this.#model.cancelFleetRename();
+        this.#model.showFleetOnMap(intent.id);
+        break;
+      case 'begin-fleet-rename':
+        this.#model.beginFleetRename(intent.id);
+        break;
+      case 'edit-fleet-name':
+        this.#model.editFleetName(intent.draft);
+        break;
+      case 'cancel-fleet-rename':
+        this.#model.cancelFleetRename();
+        // flottnamn-direktredigering: keep the blurred-to control alive until its click.
+        if (intent.reason === 'blur') return;
+        break;
+      case 'submit-fleet-name':
+        this.#model.submitFleetName();
+        break;
       case 'map-select-route':
         this.#model.selectMapRoute(intent.id);
         break;
@@ -413,6 +434,9 @@ export class AppController {
         'zoom',
         'home',
         'map-leave',
+        'edit-fleet-name',
+        'begin-fleet-rename',
+        'cancel-fleet-rename',
       ].includes(intent.type)
     )
       this.#model.save();

@@ -1,0 +1,162 @@
+import type { AppReadModel } from '../models/AppModel.js';
+import type { HexCoordinate } from '../models/HexCoordinate.js';
+import type { IntentHandler } from './ViewContracts.js';
+import { renderFleetCard } from './FleetCard.js';
+import { bindShipTransfers } from './ShipTransferInput.js';
+import { renderTradeAssignment } from './TradeFleetView.js';
+import { button, element } from './dom.js';
+import { mapFleetRouteFeedback } from './StarMapTradeView.js';
+
+export function renderMapFleetPanel(
+  model: AppReadModel,
+  emit: IntentHandler,
+  position: HexCoordinate,
+): HTMLElement {
+  const panel = element('section', 'map-fleet-management');
+  panel.setAttribute('aria-label', 'Fleets at this location');
+  const cell = model.cells.find(
+    (candidate) => candidate.position.key === position.key,
+  );
+  const place = element('div', 'fleet-place');
+  place.append(
+    element('h2', '', cell?.object?.name ?? 'Fleets'),
+    element('span', 'coordinate-label', `HEX ${position.key}`),
+  );
+  const local = model.fleets.filter(
+    (fleet) => fleet.position?.key === position.key,
+  );
+  if (!local.length) {
+    panel.append(element('p', 'muted-note', 'No fleets here.'));
+    return panel;
+  }
+  panel.append(place);
+  const sizing = element('details', 'fleet-panel-sizing');
+  const sizeToggle = element('summary');
+  sizeToggle.append(
+    element('span', 'fleet-panel-expand-label', 'Expand fleet panel'),
+    element('span', 'fleet-panel-collapse-label', 'Collapse fleet panel'),
+  );
+  sizing.append(sizeToggle);
+  const help = element('details', 'fleet-panel-help');
+  help.append(
+    element('summary', '', 'Help'),
+    element(
+      'p',
+      'muted-note fleet-transfer-help',
+      'Drag a ship between fleet cards or onto New fleet. Choose a ship for keyboard or touch transfers. Drag a fleet marker on the map to move the fleet; drag the background to pan. Double-click a fleet name to rename it.',
+    ),
+  );
+  sizing.append(help);
+  panel.append(sizing);
+  const cards = element('div', 'map-fleet-cards');
+  for (const fleet of local) {
+    const card = renderFleetCard(fleet, model, emit, true);
+    if (
+      cell?.object?.kind === 'planet' &&
+      !cell.object.owned &&
+      fleet.ships['Colony ship'] > 0 &&
+      !fleet.routeId
+    ) {
+      const colonize = button('Colonize', () =>
+        emit({ type: 'colonize', id: fleet.id }),
+      );
+      colonize.disabled = model.phase !== 'planning';
+      card.append(colonize);
+    }
+    const routes = element('details', 'map-fleet-route-options');
+    routes.append(element('summary', '', 'Trade routes'));
+    if (!fleet.routeId) {
+      for (const route of model.tradeRoutes)
+        routes.append(
+          renderTradeAssignment(
+            fleet,
+            route,
+            model,
+            emit,
+            `${route.from} ↔ ${route.to}`,
+          ),
+        );
+      if (!model.tradeRoutes.length)
+        routes.append(element('p', 'muted-note', 'No trade routes.'));
+    } else {
+      const route = model.tradeRoutes.find(
+        (candidate) => candidate.id === fleet.routeId,
+      );
+      if (route)
+        routes.append(
+          button(`Select route ${route.from} to ${route.to}`, () =>
+            emit({ type: 'map-select-route', id: route.id }),
+          ),
+        );
+    }
+    card.append(routes);
+    cards.append(card);
+  }
+  const create = element('div', 'fleet-hangar new-fleet-drop');
+  create.dataset.newFleet = 'true';
+  create.setAttribute('role', 'group');
+  create.setAttribute('aria-label', 'New fleet');
+  create.append(
+    element('h3', '', 'New fleet'),
+    element('p', 'muted-note', 'Drop a ship here to form a fleet.'),
+  );
+  if (model.shipTransfer) {
+    const source = model.fleets.find(
+      (fleet) => fleet.id === model.shipTransfer?.fleetId,
+    );
+    const move = button('Move ship to new fleet', () =>
+      emit({ type: 'transfer-chosen-ship', target: null }),
+    );
+    move.disabled = model.phase !== 'planning' || !source || !!source.routeId;
+    create.append(move);
+  }
+  cards.append(create);
+  panel.append(cards);
+  const feedback = mapFleetRouteFeedback(model);
+  if (feedback) panel.append(element('p', 'map-route-feedback', feedback));
+  if (model.shipTransfer) {
+    const transfer = model.shipTransfer;
+    const destinations = element('section', 'fleet-remote-targets');
+    destinations.append(
+      element('h3', '', 'Send ship to another fleet'),
+      element(
+        'p',
+        'muted-note',
+        `One ${transfer.ship}. Distant fleets receive physical reinforcements marked En route; an empty fleet receives the ship here.`,
+      ),
+    );
+    const select = element('select');
+    select.setAttribute('aria-label', 'Receiving fleet');
+    const placeholder = element('option', '', 'Choose receiving fleet');
+    placeholder.value = '';
+    select.append(placeholder);
+    for (const fleet of model.fleets.filter(
+      (fleet) => fleet.id !== transfer.fleetId,
+    )) {
+      const option = element(
+        'option',
+        '',
+        `${fleet.name} · ${fleet.position ? `HEX ${fleet.position.key}${fleet.position.key !== position.key ? ' · En route' : ''}` : 'No position'}`,
+      );
+      option.value = fleet.id;
+      select.append(option);
+    }
+    select.disabled = model.phase !== 'planning';
+    select.addEventListener('change', () => {
+      if (select.value)
+        emit({ type: 'transfer-chosen-ship', target: select.value });
+    });
+    destinations.append(
+      select,
+      button('Cancel ship transfer', () =>
+        emit({ type: 'cancel-ship-transfer' }),
+      ),
+    );
+    panel.append(destinations);
+  }
+  panel.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') emit({ type: 'cancel-ship-transfer' });
+  });
+  bindShipTransfers(panel, model, emit);
+  return panel;
+}

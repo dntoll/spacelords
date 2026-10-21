@@ -1,3 +1,4 @@
+import { chooseFleetDestination } from './fleet-helpers.js';
 import { startFirstSlot, endTurn, chooseResearch } from './save-helpers.js';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
@@ -130,9 +131,7 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
 test('flottadministration / flottdestinationer: map orders and fleet-grid transfers preserve fleets', async ({
   page,
 }) => {
-  await page
-    .getByRole('button', { name: 'Set destination', exact: true })
-    .click();
+  await chooseFleetDestination(page);
   await expect(
     page.getByText('Choose a destination for Home Fleet.'),
   ).toBeVisible();
@@ -145,7 +144,7 @@ test('flottadministration / flottdestinationer: map orders and fleet-grid transf
   await page
     .getByRole('combobox', { name: 'Known objects' })
     .selectOption({ label: 'Tellus' });
-  await page.getByRole('button', { name: 'Edit fleet', exact: true }).click();
+  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await page.getByRole('button', { name: 'Home Fleet', exact: true }).click();
   await page.getByRole('button', { name: 'New fleet', exact: true }).click();
   await expect(
@@ -208,6 +207,7 @@ test('kartnavigation: a mouse drag pans without changing selection; wheel zoom s
   await expect(
     page.getByRole('button', { name: 'Open planet', exact: true }),
   ).toBeVisible();
+  await page.mouse.move(panStart.x, panStart.y);
   await page.mouse.wheel(0, -100);
   await expect(page.getByLabel('Map zoom')).not.toHaveText('100%');
   await page.getByRole('button', { name: 'Homeworld', exact: true }).click();
@@ -481,12 +481,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     page.getByRole('button', { name: 'Colony ship 1 in Fleet 1', exact: true }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  const fleet = page.locator('.fleet-summary').filter({
-    has: page.getByRole('heading', { name: 'Fleet 1', exact: true }),
-  });
-  await fleet
-    .getByRole('button', { name: 'Set destination', exact: true })
-    .click();
+  await chooseFleetDestination(page, 'Fleet 1');
   await page
     .getByRole('combobox', { name: 'Known objects', exact: true })
     .selectOption({ label: 'Vesta' });

@@ -1,3 +1,4 @@
+import { chooseFleetDestination } from './fleet-helpers.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot, endTurn } from './save-helpers.js';
 
@@ -17,11 +18,11 @@ test('skeppsbilder / flottadministration / flottbyggar-minikarta: images, visual
     bounds.y + bounds.height / 2 - 18,
   );
   const panel = page.getByRole('complementary', { name: 'Selected fleet' });
-  await expect(panel.locator('.ship-portrait img')).toHaveCount(2);
+  await expect(panel.locator('.ship-token img')).toHaveCount(2);
   const source = await panel
     .getByRole('img', { name: 'Fighter', exact: true })
     .getAttribute('src');
-  for (const image of await panel.locator('.ship-portrait img').all())
+  for (const image of await panel.locator('.ship-token img').all())
     await expect
       .poll(() =>
         image.evaluate((node) => (node as HTMLImageElement).naturalWidth),
@@ -30,7 +31,7 @@ test('skeppsbilder / flottadministration / flottbyggar-minikarta: images, visual
   await page.screenshot({
     path: testInfo.outputPath('selected-fleet-ships.png'),
   });
-  await panel.getByRole('button', { name: 'Edit fleet', exact: true }).click();
+  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await expect(page.locator('[role="table"]')).toHaveCount(0);
   await expect(
     page.locator(
@@ -160,9 +161,7 @@ test('flottbyggar-minikarta: the marker follows a fleet after travelling', async
 }) => {
   await page.goto('./');
   await startFirstSlot(page);
-  await page
-    .getByRole('button', { name: 'Set destination', exact: true })
-    .click();
+  await chooseFleetDestination(page);
   await page
     .getByRole('combobox', { name: 'Known objects' })
     .selectOption({ label: 'Vesta' });

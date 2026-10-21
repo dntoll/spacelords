@@ -102,7 +102,14 @@ export type AppIntent =
       readonly fleetId: string;
       readonly ship: ShipType;
     }
-  | { readonly type: 'transfer-chosen-ship'; readonly target: string }
+  | { readonly type: 'transfer-chosen-ship'; readonly target: string | null }
+  | {
+      readonly type: 'show-fleet-on-map' | 'begin-fleet-rename';
+      readonly id: string;
+    }
+  | { readonly type: 'edit-fleet-name'; readonly draft: string }
+  | { readonly type: 'cancel-fleet-rename'; readonly reason?: 'blur' }
+  | { readonly type: 'submit-fleet-name' }
   | { readonly type: 'cancel-ship-transfer' }
   | { readonly type: 'queue-component'; readonly component: Component }
   | { readonly type: 'build-search'; readonly query: string }

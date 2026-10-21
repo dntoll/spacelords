@@ -1,8 +1,5 @@
-import {
-  renderMapTradeSelection,
-  mapFleetRouteFeedback,
-} from './StarMapTradeView.js';
-import { renderTradeAssignment } from './TradeFleetView.js';
+import { renderMapTradeSelection } from './StarMapTradeView.js';
+import { renderMapFleetPanel } from './FleetMapPanel.js';
 import { renderSaveSlots, clearSlotDialog } from './SaveSlotsView.js';
 import { needsAttention } from '../models/Decisions.js';
 import type { MapCell } from '../models/Galaxy.js';
@@ -21,8 +18,7 @@ import { renderPlanet } from './PlanetView.js';
 import { renderResearch } from './ResearchView.js';
 import { updateResearchCamera } from './ResearchTreeView.js';
 import { renderSupply } from './SupplyView.js';
-import { renderFleetShips } from './ShipView.js';
-import { renderFleets, fleetAssignmentLabel } from './FleetView.js';
+import { renderFleets } from './FleetView.js';
 import { button, element } from './dom.js';
 import { renderDecisions, renderTurnWarning } from './EmpireView.js';
 
@@ -50,6 +46,7 @@ export class AppView implements AppPort {
   #researchObserver: ResizeObserver | null = null;
   #supplyScroll = 0;
   #supplyKey = '';
+  #fleetPanelExpanded = false;
 
   constructor(
     root: HTMLElement,
@@ -146,6 +143,22 @@ export class AppView implements AppPort {
     const fleetScroll =
       this.#root.querySelector('.fleet-collection')?.scrollTop ?? 0;
     const active = document.activeElement;
+    const editingName =
+      active instanceof HTMLInputElement &&
+      active.classList.contains('fleet-name-input');
+    // flottnamn-direktredigering: browser blur can fire before a replaced input disconnects.
+    if (editingName) active.dataset.rendering = 'true';
+    const nameCaret = editingName
+      ? [active.selectionStart, active.selectionEnd]
+      : null;
+    const selectionScroll = this.#panel?.scrollTop ?? 0;
+    const fleetSizing = this.#panel?.querySelector<HTMLDetailsElement>(
+      '.fleet-panel-sizing',
+    );
+    if (fleetSizing) this.#fleetPanelExpanded = fleetSizing.open;
+    const wasChoosingDestination = !!this.#panel?.querySelector(
+      '[aria-label="Destination hex"]',
+    );
     const focusLabel = active?.getAttribute('aria-label');
     const focusScope = active?.closest(
       '[data-project-id], [data-site-index], .fleet-card',
@@ -412,17 +425,53 @@ export class AppView implements AppPort {
           (fleet) => fleet.position?.key === model.selected?.position.key,
         ),
         destination: model.destinationFleetId,
+        shipTransfer: model.shipTransfer,
+        fleetNameEdit: model.fleetNameEdit,
       });
       if (key !== this.#selectionKey) {
         this.#selectionKey = key;
         if (this.#known) this.#known.value = model.selected?.position.key ?? '';
         this.#renderSelection(model);
+        const sizing = this.#panel?.querySelector<HTMLDetailsElement>(
+          '.fleet-panel-sizing',
+        );
+        if (sizing)
+          sizing.open = this.#fleetPanelExpanded || !!model.fleetNameEdit;
+        if (this.#panel)
+          this.#panel.scrollTop =
+            wasChoosingDestination !== !!model.destinationFleetId
+              ? 0
+              : selectionScroll;
       }
       const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
       if (end) end.disabled = model.phase !== 'planning';
       this.#renderTurnConsole(model);
     }
+    const nameInput =
+      this.#root.querySelector<HTMLInputElement>('.fleet-name-input');
+    if (nameInput && model.fleetNameEdit) {
+      nameInput.focus({ preventScroll: true });
+      if (nameCaret)
+        nameInput.setSelectionRange(nameCaret[0] ?? 0, nameCaret[1] ?? 0);
+      else nameInput.select();
+      if (!editingName) nameInput.scrollIntoView?.({ block: 'nearest' });
+    } else if (
+      model.screen === 'map' &&
+      active instanceof HTMLElement &&
+      !active.isConnected &&
+      focusLabel
+    ) {
+      const scope = scopeSelector
+        ? this.#root.querySelector(scopeSelector)
+        : this.#root;
+      const restored =
+        [...(scope?.querySelectorAll<HTMLElement>('[aria-label]') ?? [])].find(
+          (node) => node.getAttribute('aria-label') === focusLabel,
+        ) ?? scope?.querySelector<HTMLElement>('.fleet-name-button');
+      restored?.focus({ preventScroll: true });
+    }
     this.#renderNotice(model);
+    if (editingName) delete active.dataset.rendering;
     if (model.pendingEndTurn) {
       this.#decisionDialog = renderTurnWarning(model, this.#emit);
     } else if (model.pendingResearchRemoval) {
@@ -673,90 +722,10 @@ export class AppView implements AppPort {
       'aria-label',
       selectedFleet ? 'Selected fleet' : 'Selected hex',
     );
-    if (selectedFleet) {
-      const title = element('div', 'selection-heading');
-      title.append(
-        element('h2', '', selectedFleet.name),
-        element(
-          'span',
-          'coordinate-label',
-          `HEX ${selectedFleet.position?.q}, ${selectedFleet.position?.r}`,
-        ),
-      );
-      const ships = Object.entries(selectedFleet.ships)
-        .filter(([, count]) => count > 0)
-        .map(([type, count]) => `${count} ${type}`)
-        .join(' · ');
-      const destination =
-        mapFleetRouteFeedback(model) ??
-        (model.fleetDragging
-          ? model.fleetDestinationPreview
-            ? `Destination preview: HEX ${model.fleetDestinationPreview.key}`
-            : 'Choose a destination on the map.'
-          : selectedFleet.joinFleetId
-            ? fleetAssignmentLabel(selectedFleet, model)
-            : selectedFleet.destination
-              ? `Destination: HEX ${selectedFleet.destination.key}`
-              : 'No destination');
-      const status = element('p', 'fleet-destination-status', destination);
-      status.setAttribute('aria-live', 'polite');
-      const edit = button('Edit fleet', () =>
-        this.#emit({ type: 'open-fleet', id: selectedFleet.id }),
-      );
-      const set = button('Set destination', () =>
-        this.#emit({ type: 'begin-destination', id: selectedFleet.id }),
-      );
-      const actions = element('div', 'fleet-map-actions');
-      set.disabled = model.phase !== 'planning' || !!selectedFleet.routeId;
-      actions.append(edit, set);
-      if (selectedFleet.destination) {
-        const clear = button('Clear destination', () =>
-          this.#emit({ type: 'clear-destination', id: selectedFleet.id }),
-        );
-        clear.disabled = model.phase !== 'planning' || !!selectedFleet.routeId;
-        actions.append(clear);
-      }
+    if (selectedFleet?.position) {
       this.#panel.replaceChildren(
-        title,
-        element('p', 'muted-note', ships),
-        renderFleetShips(selectedFleet),
-        status,
-        actions,
+        renderMapFleetPanel(model, this.#emit, selectedFleet.position),
       );
-      if (selectedFleet.routeId) {
-        const route = model.tradeRoutes.find(
-          (r) => r.id === selectedFleet.routeId,
-        );
-        if (route)
-          this.#panel.append(
-            element(
-              'p',
-              'fleet-assignment',
-              fleetAssignmentLabel(selectedFleet, model),
-            ),
-            button(
-              `Select route ${route.from} to ${route.to}`,
-              () => this.#emit({ type: 'map-select-route', id: route.id }),
-              'button secondary-button',
-            ),
-          );
-      } else {
-        const options = element('div', 'map-fleet-route-options');
-        options.append(element('h3', '', 'Assign to route'));
-        for (const route of model.tradeRoutes)
-          options.append(
-            renderTradeAssignment(
-              selectedFleet,
-              route,
-              model,
-              this.#emit,
-              `${route.from} ↔ ${route.to}`,
-            ),
-          );
-        if (!model.tradeRoutes.length)
-          options.append(element('p', 'muted-note', 'No trade routes.'));
-        this.#panel.append(options);
-      }
       return;
     }
     const cell = model.selected;
@@ -794,7 +763,7 @@ export class AppView implements AppPort {
     const destinationFleet = model.destinationFleetId
       ? model.fleets.find((fleet) => fleet.id === model.destinationFleetId)
       : null;
-    if (destinationFleet)
+    if (destinationFleet) {
       contents.push(
         element(
           'p',
@@ -803,6 +772,30 @@ export class AppView implements AppPort {
         ),
         button('Cancel', () => this.#emit({ type: 'open-map' }), 'button'),
       );
+      const picker = element('select');
+      picker.setAttribute('aria-label', 'Destination hex');
+      const placeholder = element('option', '', 'Choose destination hex');
+      placeholder.value = '';
+      picker.append(placeholder);
+      for (const target of model.cells) {
+        const option = element(
+          'option',
+          '',
+          `${target.object?.name ?? 'HEX'} ${target.position.key}`,
+        );
+        option.value = target.position.key;
+        picker.append(option);
+      }
+      picker.addEventListener('change', () => {
+        if (!picker.value) return;
+        const [q, r] = picker.value.split(',').map(Number);
+        this.#emit({ type: 'select', position: new HexCoordinate(q!, r!) });
+      });
+      picker.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') this.#emit({ type: 'open-map' });
+      });
+      contents.push(picker);
+    }
     if (object?.kind === 'planet')
       contents.push(
         element('span', 'pill', owned ? model.playerName : 'Uninhabited'),
@@ -859,69 +852,16 @@ export class AppView implements AppPort {
           `${orderStatus.emptySites} empty building sites · ${orderStatus.emptyQueues} idle planet build queue`,
         ),
       );
-    if (cell)
-      for (const fleet of model.fleets.filter(
-        (candidate) =>
-          candidate.position?.key === cell.position.key &&
-          Object.values(candidate.ships).some((count) => count > 0),
-      )) {
-        const fleetInfo = element('div', 'fleet-summary');
-        const ships = Object.entries(fleet.ships)
-          .filter(([, count]) => count > 0)
-          .map(([type, count]) => `${count} ${type}`)
-          .join(' · ');
-        fleetInfo.append(
-          element('h3', '', fleet.name),
-          element(
-            'p',
-            'muted-note',
-            `${ships}${fleet.destination ? ` · destination ${fleet.destination.key}` : ''}`,
-          ),
-          button(
-            'Edit fleet',
-            () => this.#emit({ type: 'open-fleet', id: fleet.id }),
-            'button',
-          ),
-          button(
-            'Set destination',
-            () => this.#emit({ type: 'begin-destination', id: fleet.id }),
-            'button',
-          ),
-        );
-        const assignment = fleetAssignmentLabel(fleet, model);
-        if (assignment)
-          fleetInfo.append(
-            element('p', 'muted-note fleet-assignment', assignment),
-          );
-        for (const action of fleetInfo.querySelectorAll<HTMLButtonElement>(
-          'button',
-        ))
-          if (action.textContent === 'Set destination')
-            action.disabled = model.phase !== 'planning' || !!fleet.routeId;
-        if (
-          object?.kind === 'planet' &&
-          !owned &&
-          fleet.ships['Colony ship'] > 0 &&
-          !fleet.routeId
-        ) {
-          const colonize = button(
-            'Colonize',
-            () => this.#emit({ type: 'colonize', id: fleet.id }),
-            'button',
-          );
-          colonize.disabled = model.phase !== 'planning';
-          fleetInfo.append(colonize);
-        }
-        if (fleet.destination && !fleet.routeId)
-          fleetInfo.append(
-            button(
-              'Clear destination',
-              () => this.#emit({ type: 'clear-destination', id: fleet.id }),
-              'button',
-            ),
-          );
-        contents.push(fleetInfo);
-      }
+    if (cell && !model.destinationFleetId) {
+      const fleets = renderMapFleetPanel(model, this.#emit, cell.position);
+      if (
+        model.fleets.some((fleet) => fleet.position?.key === cell.position.key)
+      ) {
+        // flottadministration: position and ships take priority over planet administration.
+        contents.splice(0, 1);
+        contents.unshift(fleets);
+      } else contents.push(fleets);
+    }
     this.#panel.replaceChildren(...contents);
   }
 

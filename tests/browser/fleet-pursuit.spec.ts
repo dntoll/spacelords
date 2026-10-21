@@ -1,3 +1,4 @@
+import { chooseFleetDestination } from './fleet-helpers.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot, endTurn } from './save-helpers.js';
 
@@ -17,12 +18,7 @@ test('skepp-till-rorlig-flotta: reinforcements survive reload and catch a moving
     .getByRole('button', { name: 'Move ship to Fleet 1', exact: true })
     .click();
   await page.getByRole('button', { name: 'Back to map', exact: true }).click();
-  const fleet = page.locator('.fleet-summary').filter({
-    has: page.getByRole('heading', { name: 'Fleet 1', exact: true }),
-  });
-  await fleet
-    .getByRole('button', { name: 'Set destination', exact: true })
-    .click();
+  await chooseFleetDestination(page, 'Fleet 1');
   await page
     .getByRole('combobox', { name: 'Known objects' })
     .selectOption({ label: 'Vesta' });
@@ -59,9 +55,7 @@ test('skepp-till-rorlig-flotta: reinforcements survive reload and catch a moving
   await page
     .getByRole('combobox', { name: 'Known objects' })
     .selectOption({ label: 'Vesta' });
-  await fleet
-    .getByRole('button', { name: 'Set destination', exact: true })
-    .click();
+  await chooseFleetDestination(page, 'Fleet 1');
   await page
     .getByRole('combobox', { name: 'Known objects' })
     .selectOption({ label: 'Nadir' });

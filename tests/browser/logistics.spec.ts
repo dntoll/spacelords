@@ -1,3 +1,4 @@
+import { chooseFleetDestination } from './fleet-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 import {
   endTurn,
@@ -91,8 +92,9 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   for (const name of ['Freighters', 'Settlers']) {
     await page.getByRole('button', { name: 'New fleet', exact: true }).click();
+    await page.locator('.selected-fleet-card .fleet-rename-button').click();
     await page.getByRole('textbox', { name: 'Fleet name' }).fill(name);
-    await page.getByRole('button', { name: 'Rename', exact: true }).click();
+    await page.getByRole('textbox', { name: 'Fleet name' }).press('Enter');
   }
   await home(page);
   await page
@@ -115,12 +117,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     .click();
   await nextYear(page);
   await nextYear(page);
-  const settlers = page.locator('.fleet-summary').filter({
-    has: page.getByRole('heading', { name: 'Settlers', exact: true }),
-  });
-  await settlers
-    .getByRole('button', { name: 'Set destination', exact: true })
-    .click();
+  await chooseFleetDestination(page, 'Settlers');
   await page
     .getByRole('combobox', { name: 'Known objects' })
     .selectOption({ label: 'Vesta' });

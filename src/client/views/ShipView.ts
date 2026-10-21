@@ -27,11 +27,12 @@ export function shipImage(type: ShipType): HTMLImageElement {
 export function renderFleetShips(
   fleet: FleetSnapshot,
   choose?: (ship: ShipType) => void,
+  previewLimit = 12,
 ): HTMLElement {
   const manifest = element('div', 'ship-manifest');
   for (const type of SHIP_TYPES) {
     const count = fleet.ships[type];
-    for (let index = 0; index < Math.min(count, 12); index++) {
+    for (let index = 0; index < Math.min(count, previewLimit); index++) {
       const token = choose
         ? button(
             `${type} ${index + 1} in ${fleet.name}`,
@@ -47,7 +48,7 @@ export function renderFleetShips(
       );
       manifest.append(token);
     }
-    if (count > 12) {
+    if (count > previewLimit) {
       const more = choose
         ? button(
             `Move another ${type} from ${fleet.name}`,
@@ -59,7 +60,7 @@ export function renderFleetShips(
       more.dataset.fleetId = fleet.id;
       more.append(
         shipImage(type),
-        element('span', 'ship-token-label', `+${count - 12} ${type}`),
+        element('span', 'ship-token-label', `+${count - previewLimit} ${type}`),
       );
       manifest.append(more);
     }

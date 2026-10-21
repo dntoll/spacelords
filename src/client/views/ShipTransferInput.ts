@@ -24,16 +24,16 @@ export function bindShipTransfers(
   let suppressClick = false;
   const valid = (
     source: Transfer,
-    target: string | undefined,
-  ): target is string => {
+    target: string | null | undefined,
+  ): target is string | null => {
     const from = model.fleets.find((fleet) => fleet.id === source.source);
     const to = model.fleets.find((fleet) => fleet.id === target);
     return (
       model.phase === 'planning' &&
       !!from &&
-      !!to &&
+      (target === null || !!to) &&
       !from.routeId &&
-      from.id !== to.id &&
+      from.id !== to?.id &&
       from.ships[source.ship] > 0
     );
   };
@@ -46,10 +46,24 @@ export function bindShipTransfers(
     gesture = null;
     clearHighlights();
   };
-  const transfer = (source: Transfer, target: string | undefined) => {
+  const transfer = (source: Transfer, target: string | null | undefined) => {
     if (valid(source, target))
       emit({ type: 'transfer-ships', ...source, target, amount: 1 });
   };
+  const targetAt = (x: number, y: number) => {
+    const zone = document
+      .elementFromPoint(x, y)
+      ?.closest<HTMLElement>('.fleet-hangar');
+    return {
+      zone,
+      target: zone?.hasAttribute('data-new-fleet')
+        ? null
+        : zone?.dataset.fleetId,
+    };
+  };
+  page.addEventListener('pointerdown', (event) => {
+    if (gesture && gesture.id !== event.pointerId) clearGesture();
+  });
   for (const token of page.querySelectorAll<HTMLElement>('.ship-token')) {
     const ship = token.dataset.ship as ShipType;
     const source: Transfer = { source: token.dataset.fleetId!, ship };
@@ -104,18 +118,14 @@ export function bindShipTransfers(
       gesture.ghost.style.top = `${event.clientY}px`;
     }
     clearHighlights();
-    const zone = document
-      .elementFromPoint(event.clientX, event.clientY)
-      ?.closest<HTMLElement>('.fleet-hangar');
-    if (zone && valid(gesture.source, zone.dataset.fleetId))
+    const { zone, target } = targetAt(event.clientX, event.clientY);
+    if (zone && valid(gesture.source, target))
       zone.classList.add('drop-target');
   });
   page.addEventListener('pointerup', (event) => {
     if (!gesture || gesture.id !== event.pointerId) return;
     const completed = gesture;
-    const target = document
-      .elementFromPoint(event.clientX, event.clientY)
-      ?.closest<HTMLElement>('.fleet-hangar')?.dataset.fleetId;
+    const { target } = targetAt(event.clientX, event.clientY);
     suppressClick = completed.dragged;
     clearGesture();
     if (completed.token.hasPointerCapture(event.pointerId))

@@ -78,6 +78,10 @@ export interface AppReadModel {
   readonly phase: GamePhase;
   readonly fleets: readonly FleetSnapshot[];
   readonly selectedFleet: FleetSnapshot | null;
+  readonly fleetNameEdit: {
+    readonly id: string;
+    readonly draft: string;
+  } | null;
   readonly shipTransfer: {
     readonly fleetId: string;
     readonly ship: ShipType;
@@ -108,6 +112,7 @@ export class AppModel {
   );
   #returnSite: number | null = null;
   #selectedFleetId: string | null = null;
+  #fleetNameEdit: { readonly id: string; readonly draft: string } | null = null;
   #shipTransfer: { readonly fleetId: string; readonly ship: ShipType } | null =
     null;
   #mapFleetId: string | null = null;
@@ -189,6 +194,7 @@ export class AppModel {
     this.#pendingClearSlot = null;
     this.#constructionSite = null;
     this.#selectedFleetId = null;
+    this.#fleetNameEdit = null;
     this.#shipTransfer = null;
     this.#mapFleetId = null;
     this.#destinationFleetId = null;
@@ -275,6 +281,7 @@ export class AppModel {
         ? this.#game.fleet(this.#selectedFleetId)
         : null,
       shipTransfer: this.#shipTransfer,
+      fleetNameEdit: this.#fleetNameEdit,
       mapFleetId: this.#mapFleetId,
       hoveredFleetId: this.#hoveredFleetId,
       fleetDestinationPreview: this.#fleetDestinationPreview,
@@ -299,6 +306,8 @@ export class AppModel {
       });
       this.commitMapRoute();
     } else {
+      this.cancelShipTransfer();
+      this.cancelFleetRename();
       this.#mapTrade.clearSelection();
       this.#selected = position;
       this.#mapFleetId = null;
@@ -333,6 +342,13 @@ export class AppModel {
       this.#mapTrade.clearSelection();
       this.#mapFleetId = id;
     }
+  }
+  showFleetOnMap(id: string): void {
+    const fleet = this.#game.fleet(id);
+    if (!fleet?.position) return;
+    this.openMap();
+    this.#camera.focus(fleet.position);
+    this.selectMapFleet(id);
   }
   hoverMapFleet(point: Point | null): boolean {
     const next = point ? this.fleetAtPoint(point) : null;
@@ -438,6 +454,8 @@ export class AppModel {
       : null;
   }
   beginMapRoute(id: string): void {
+    this.cancelShipTransfer();
+    this.cancelFleetRename();
     this.#mapFleetId = null;
     this.#destinationFleetId = null;
     this.#mapTrade.begin(id);
@@ -449,6 +467,8 @@ export class AppModel {
     if (this.#mapTrade.commit()) this.#mapFleetId = null;
   }
   selectMapRoute(id: string): void {
+    this.cancelShipTransfer();
+    this.cancelFleetRename();
     this.#mapFleetId = null;
     this.#mapTrade.selectRoute(id);
   }
@@ -693,11 +713,29 @@ export class AppModel {
   renameFleet(id: string, name: string): void {
     this.#game.renameFleet(id, name);
   }
+  beginFleetRename(id: string): void {
+    const fleet = this.#game.fleet(id);
+    if (!fleet || this.#game.phase !== 'planning') return;
+    this.#fleetNameEdit = Object.freeze({ id, draft: fleet.name });
+  }
+  editFleetName(draft: string): void {
+    if (this.#fleetNameEdit)
+      this.#fleetNameEdit = Object.freeze({ ...this.#fleetNameEdit, draft });
+  }
+  cancelFleetRename(): void {
+    this.#fleetNameEdit = null;
+  }
+  submitFleetName(): void {
+    if (!this.#fleetNameEdit) return;
+    this.renameFleet(this.#fleetNameEdit.id, this.#fleetNameEdit.draft);
+    this.cancelFleetRename();
+  }
   chooseShipTransfer(fleetId: string, ship: ShipType): void {
     if (this.#game.phase !== 'planning') return;
     const fleet = this.#game.fleet(fleetId);
     if (!fleet || fleet.routeId || !(fleet.ships[ship] > 0)) return;
     this.#selectedFleetId = fleetId;
+    if (this.#screen === 'map') this.#mapFleetId = fleetId;
     this.#shipTransfer =
       this.#shipTransfer?.fleetId === fleetId &&
       this.#shipTransfer.ship === ship
@@ -707,7 +745,7 @@ export class AppModel {
   cancelShipTransfer(): void {
     this.#shipTransfer = null;
   }
-  transferChosenShip(target: string): void {
+  transferChosenShip(target: string | null): void {
     if (this.#shipTransfer)
       this.transferShips(
         this.#shipTransfer.fleetId,
@@ -722,9 +760,13 @@ export class AppModel {
     amount: number,
     target: string | null,
   ): void {
-    this.#game.transferShips(source, ship, amount, target);
+    const received = this.#game.transferShips(source, ship, amount, target);
     this.#shipTransfer = null;
-    if (target) this.#selectedFleetId = target;
+    this.#selectedFleetId = target ?? received.id;
+    if (this.#screen === 'map') {
+      this.#mapFleetId = received.id;
+      if (!target) this.beginFleetRename(received.id);
+    }
   }
   createFleet(source?: string): void {
     this.#selectedFleetId = this.#game.createFleet(source).id;
@@ -735,6 +777,8 @@ export class AppModel {
       this.#selectedFleetId = this.#game.fleetSnapshots()[0]?.id ?? null;
   }
   beginDestination(id: string): void {
+    this.cancelShipTransfer();
+    this.cancelFleetRename();
     if (this.#game.fleet(id)?.routeId) {
       this.openSupplyRoute(this.#game.fleet(id)!.routeId!);
       return;

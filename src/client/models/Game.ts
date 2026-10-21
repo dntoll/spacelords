@@ -960,7 +960,7 @@ export class Game {
     ship: ShipType,
     amount: number,
     targetId: string | null,
-  ): void {
+  ): FleetSnapshot {
     this.#requirePlanning();
     const source = this.#fleetState(sourceId);
     this.#requireManualFleet(source);
@@ -984,7 +984,7 @@ export class Game {
         this.#fleets.push(group);
         this.#releaseEmptyFleet(source);
         this.#refreshReinforcements();
-        return;
+        return this.fleet(group.id)!;
       }
     } else {
       target = {
@@ -1002,6 +1002,7 @@ export class Game {
     target.ships[ship] += amount;
     this.#releaseEmptyFleet(source);
     this.#refreshReinforcements();
+    return this.fleet(target.id)!;
   }
   createFleet(sourceId?: string): FleetSnapshot {
     this.#requirePlanning();

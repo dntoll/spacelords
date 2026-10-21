@@ -138,7 +138,12 @@ test('handelsrutt-skapande-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: pl
     name: 'Selected fleet',
     exact: true,
   });
-  await expect(fleetPanel).toContainText('HEX 1, 0');
+  await expect(fleetPanel).toContainText('HEX 1,0');
+  await fleetPanel
+    .locator(
+      '.fleet-card[data-fleet-id="freighters"] .map-fleet-route-options > summary',
+    )
+    .click();
   await fleetPanel
     .getByRole('button', { name: 'Select route Tellus to Vesta', exact: true })
     .click();

@@ -1,3 +1,4 @@
+import { chooseFleetDestination } from './fleet-helpers.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot, endTurn } from './save-helpers.js';
 
@@ -15,9 +16,7 @@ for (const size of [
     const end = page.getByRole('button', { name: 'End turn', exact: true });
     const console = page.getByRole('region', { name: 'Turn console' });
     const log = page.getByRole('log', { name: 'Game events' });
-    await page
-      .getByRole('button', { name: 'Set destination', exact: true })
-      .click();
+    await chooseFleetDestination(page);
     await page
       .getByRole('combobox', { name: 'Known objects' })
       .selectOption({ label: 'Vesta' });

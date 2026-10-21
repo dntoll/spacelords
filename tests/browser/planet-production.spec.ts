@@ -90,6 +90,12 @@ test('gemensam-planetko / delfabriker / automatiska-delorder: research, manufact
   await expect(queue.locator('.queue-order')).toHaveCount(1);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await expect(
+    page.getByRole('group', { name: 'Ships in Home Fleet', exact: true }),
+  ).toContainText('+1 Fighter');
+  await page
+    .getByRole('button', { name: 'Show on map: Home Fleet', exact: true })
+    .click();
+  await expect(
     page
       .getByRole('group', { name: 'Ships in Home Fleet', exact: true })
       .getByRole('button', { name: /Fighter \d in Home Fleet/ }),

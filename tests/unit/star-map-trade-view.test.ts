@@ -45,7 +45,8 @@ it('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: the map p
   ).toContain('Tellus');
   click('Select trade fleet Freighters');
   expect(
-    root.querySelector('[aria-label="Selected fleet"] h2')!.textContent,
+    root.querySelector('[aria-label="Selected fleet"] .selected-fleet-card h3')!
+      .textContent,
   ).toBe('Freighters');
   click('Select route Tellus to Vesta');
   click('Release Freighters');

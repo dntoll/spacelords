@@ -2326,3 +2326,137 @@ p {
     display: none;
   }
 }
+
+/* flottadministration: local fleet cards keep current position beside the ships. */
+.selection-panel:has(.map-fleet-management) {
+  width: clamp(280px, 40vw, 620px);
+  grid-template-columns: minmax(0, 1fr);
+}
+.map-fleet-management {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+}
+.map-fleet-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 10px;
+}
+.fleet-place {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+.fleet-place h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+.fleet-card-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.fleet-card-heading {
+  min-width: 0;
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+}
+.fleet-name-button {
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+.fleet-rename-button {
+  min-width: 44px;
+  min-height: 44px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.fleet-name-input {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  color: inherit;
+  background: #091923;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 6px;
+}
+.fleet-current-position {
+  margin: 6px 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.new-fleet-drop {
+  align-content: center;
+}
+.fleet-orders summary,
+.fleet-panel-sizing summary,
+.map-fleet-route-options summary {
+  min-height: 44px;
+  display: list-item;
+  align-content: center;
+  cursor: pointer;
+}
+.fleet-panel-sizing {
+  font-size: 0.8rem;
+}
+.fleet-panel-collapse-label,
+.fleet-panel-sizing[open] .fleet-panel-expand-label {
+  display: none;
+}
+.fleet-panel-sizing[open] .fleet-panel-collapse-label {
+  display: inline;
+}
+.selection-panel:has(.fleet-panel-sizing[open]) {
+  max-height: calc(100% - var(--events-height, 84px) - 92px);
+  background: #10222e;
+}
+.fleet-remote-targets {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+.fleet-remote-targets select,
+.selection-panel select {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  min-height: 44px;
+}
+.map-fleet-management button,
+.fleet-overview button {
+  min-height: 44px;
+}
+.map-fleet-management .ship-token {
+  width: 80px;
+  min-height: 72px;
+}
+.fleet-overview .ship-token {
+  width: 72px;
+  min-height: 64px;
+}
+.fleet-overview .ship-image {
+  height: 30px;
+}
+.fleet-overview .fleet-hangar {
+  min-height: 50px;
+  padding: 6px;
+}
+.fleet-overview .fleet-card {
+  padding: 8px;
+}
+@media (max-width: 600px) {
+  .selection-panel:has(.map-fleet-management) {
+    width: auto;
+  }
+  .map-fleet-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
