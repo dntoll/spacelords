@@ -1382,7 +1382,7 @@ export class Game {
         }),
       };
     });
-    return new SupplyOverview(inputs, this.shipments);
+    return new SupplyOverview(inputs, this.shipments, MATERIALS);
   }
 
   supplyStatus(planetId: string): string {

@@ -48,65 +48,61 @@ async function drag(page: Page, a: Point, b: Point) {
 const routePanel = (page: Page) =>
   page.getByRole('complementary', { name: 'Selected route', exact: true });
 
-for (const view of ['Star map', 'Trade routes']) {
-  test(`ruttflotta-till-narmaste-andplanet: remote assignment from ${view} saves an approach without teleporting`, async ({
-    page,
-  }) => {
-    const original = tradeNetworkState(true);
-    const state = {
-      ...original,
-      fleets: original.fleets.map((f) =>
-        f.id === 'freighters' ? { ...f, position: { q: 4, r: 0 } } : f,
+test('ruttflotta-till-narmaste-andplanet: remote assignment saves an approach without teleporting', async ({
+  page,
+}) => {
+  const original = tradeNetworkState(true);
+  const state = {
+    ...original,
+    fleets: original.fleets.map((f) =>
+      f.id === 'freighters' ? { ...f, position: { q: 4, r: 0 } } : f,
+    ),
+  };
+  await page.evaluate(
+    (state) =>
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-10-21T10:00:00Z', state }),
       ),
-    };
-    await page.evaluate(
-      (state) =>
-        localStorage.setItem(
-          'spacelords.save.v2.1',
-          JSON.stringify({ lastPlayed: '2026-10-21T10:00:00Z', state }),
-        ),
-      state,
-    );
-    await page.reload();
-    await startFirstSlot(page);
-    await page
-      .getByRole('combobox', { name: 'Known objects' })
-      .selectOption({ label: 'Tellus' });
-    await page
-      .getByRole('button', { name: 'Tellus ↔ Vesta', exact: true })
-      .click();
-    if (view === 'Trade routes')
-      await page.getByRole('button', { name: view, exact: true }).click();
-    const panel = page.getByRole('complementary', {
-      name: view === 'Star map' ? 'Selected route' : 'Selected object',
-      exact: true,
-    });
-    const assign = panel.getByRole('button', {
-      name: 'Assign Freighters to Tellus to Vesta',
-      exact: true,
-    });
-    await expect(assign).toBeEnabled();
-    await assign.click();
-    await expect(panel).toContainText('Assigned fleets · 1');
-    await expect(
-      panel.locator('[data-fleet-id="freighters"] .trade-fleet-position'),
-    ).toContainText('HEX 4, 0');
-    await expect(
-      panel.locator('[data-fleet-id="freighters"] .trade-fleet-position'),
-    ).toContainText('HEX 1, 0');
-    await page.reload();
-    await startFirstSlot(page);
-    const fleet = await page.evaluate(() => {
-      const saved = JSON.parse(
-        localStorage.getItem('spacelords.save.v2.1')!,
-      ) as { state: GameState };
-      return saved.state.fleets.find((f) => f.id === 'freighters')!;
-    });
-    expect(fleet.position).toEqual({ q: 4, r: 0 });
-    expect(fleet.destination).toEqual({ q: 1, r: 0 });
-    expect(fleet.routeId).toBe('route-test');
+    state,
+  );
+  await page.reload();
+  await startFirstSlot(page);
+  await page
+    .getByRole('combobox', { name: 'Known objects' })
+    .selectOption({ label: 'Tellus' });
+  await page
+    .getByRole('button', { name: 'Tellus ↔ Vesta', exact: true })
+    .click();
+  const panel = page.getByRole('complementary', {
+    name: 'Selected route',
+    exact: true,
   });
-}
+  const assign = panel.getByRole('button', {
+    name: 'Assign Freighters to Tellus to Vesta',
+    exact: true,
+  });
+  await expect(assign).toBeEnabled();
+  await assign.click();
+  await expect(panel).toContainText('Assigned fleets · 1');
+  await expect(
+    panel.locator('[data-fleet-id="freighters"] .trade-fleet-position'),
+  ).toContainText('HEX 4, 0');
+  await expect(
+    panel.locator('[data-fleet-id="freighters"] .trade-fleet-position'),
+  ).toContainText('HEX 1, 0');
+  await page.reload();
+  await startFirstSlot(page);
+  const fleet = await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as {
+      state: GameState;
+    };
+    return saved.state.fleets.find((f) => f.id === 'freighters')!;
+  });
+  expect(fleet.position).toEqual({ q: 4, r: 0 });
+  expect(fleet.destination).toEqual({ q: 1, r: 0 });
+  expect(fleet.routeId).toBe('route-test');
+});
 
 test('handelsrutt-skapande-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: planet and fleet drags create and administer a route without moving fleets', async ({
   page,
@@ -156,7 +152,7 @@ test('handelsrutt-skapande-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: pl
   await expect(routePanel(page)).toHaveCount(0);
 });
 
-test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives share routes with Trade routes and retain orders after reload', async ({
+test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives retain orders after visiting Supply & production and reloading', async ({
   page,
 }) => {
   const create = page.getByRole('button', {
@@ -174,10 +170,12 @@ test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives share routes with T
   });
   await assign.focus();
   await assign.press('Enter');
-  await page.getByRole('button', { name: 'Trade routes', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Supply & production', exact: true })
+    .click();
   await expect(
-    page.getByRole('complementary', { name: 'Selected object' }),
-  ).toContainText('Assigned fleets · 1');
+    page.getByRole('heading', { name: 'Supply & production', exact: true }),
+  ).toBeVisible();
   await page.reload();
   await startFirstSlot(page);
   await page

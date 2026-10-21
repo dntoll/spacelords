@@ -44,7 +44,7 @@ Se [hela visionen](docs/game-vision.md).
 - **Försörjning och logistik:** [Supply & production](docs/supply-production.md)
   ersätter den separata handelsgrafen med projektstatus, relevanta material,
   leveranser, produktionsförmåga och materialsökning. De sex nya kraven är
-  **Ej implementerat**. Star map hanterar fortsatt rutter och flottilldelning;
+  **Fullständigt implementerat**. Star map hanterar fortsatt rutter och flottilldelning;
   fysiska transporter, omlastningar och sparade order behålls.
 - **Beslut och händelser:** Decisions och Next decision samlar val och
   försörjningsproblem. Spelaren kan hoppa över beslut ett år eller tysta ett

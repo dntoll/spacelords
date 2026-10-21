@@ -85,6 +85,18 @@ släpper olastade reservationer; redan lastat material fortsätter till mottagar
 som vanligt lagermaterial. Om rutten stängs lossas pågående last vid dess nästa
 ändplanet utan att försvinna. En flotta lämnar tjänsten efter resa och lossning.
 
+## Supply & production
+
+[Försörjningsöversikten](supply-production.md) ersätter handelsgrafen. Varje
+planet visar första projektet i Build queue och Needs attention, Waiting, Ready
+eller Idle. Material reserverat för utleverans eller omlastning räknas inte som
+lokalt tillgängligt. Delvis täckta behov visas med kvarstående Unprovided.
+
+Awaiting pickup skiljs från In transit. Leveranser visar källa, mottagare,
+projekt och nästa anhalt. Uppskattningar bygger på aktuell transportkedja och
+visas som okända om fortsatt transport saknas. En fabrik eller möjlig källa
+räknas inte som en arrangerad leverans. Star map administrerar fortsatt rutter.
+
 ## Decisions
 
 Tom forskningskö, tom gemensam planetkö, saknad fabrik, ledig flotta och

@@ -4,14 +4,14 @@ Supply & production ersätter den separata Trade routes-grafen. Spelaren ser
 vilka planeters nästa projekt som behöver ett beslut, väntar på försörjning,
 är redo eller saknar order. Star map hanterar fortsatt rutter och flottilldelning.
 
-| Kravnamn               | Status           | Produktkrav                                                                                                                                                                                                                       |
-| ---------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `forsorjningsoversikt` | Ej implementerat | Visa ägda planeter med första projektet i Build queue och status. Sortera Needs attention, Waiting, Ready och Idle, därefter namn.                                                                                                |
-| `forsorjningsstatus`   | Ej implementerat | Skilj olösta behov från ordnade leveranser och tillräcklig lokal utvinning. Reservationer, ändliga fyndigheter, saknade fabriker och personal påverkar bedömningen. Decisions ger samma besked. Kvar: presentation i den nya vyn. |
-| `relevanta-material`   | Ej implementerat | Planetens detaljer prioriterar projektmaterial, inklusive helt saknade material. Hela relevanta lagret går att öppna. Nollrader och fasta materialkolumner undviks.                                                               |
-| `leveransfloden`       | Ej implementerat | Visa material, mängd, källa, mottagare, projekt, Awaiting pickup eller In transit, aktuell omlastningsplats och uppskattad ankomst när underlag finns. Visa transporthinder och länka till rutt eller flotta.                     |
-| `produktionsformaga`   | Ej implementerat | Visa vad befintliga fabriker kan tillverka, om förmågan är tillgänglig och antal köade order. Möjlig tillverkning räknas inte som ordnad försörjning. Planeten har fortsatt en enda Build queue.                                  |
-| `materialoversikt`     | Ej implementerat | Materialsökning samlar lager, utvinning, tillverkningsförmåga, leveranser och olösta projektbehov över ägda planeter. Utformningen fungerar med hundratals material.                                                              |
+| Kravnamn               | Status                     | Produktkrav                                                                                                                                                                                                   |
+| ---------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `forsorjningsoversikt` | Fullständigt implementerat | Visa ägda planeter med första projektet i Build queue och status. Sortera Needs attention, Waiting, Ready och Idle, därefter namn.                                                                            |
+| `forsorjningsstatus`   | Fullständigt implementerat | Skilj olösta behov från ordnade leveranser och tillräcklig lokal utvinning. Reservationer, ändliga fyndigheter, saknade fabriker och personal påverkar bedömningen. Decisions ger samma besked.               |
+| `relevanta-material`   | Fullständigt implementerat | Planetens detaljer prioriterar projektmaterial, inklusive helt saknade material. Hela relevanta lagret går att öppna. Nollrader och fasta materialkolumner undviks.                                           |
+| `leveransfloden`       | Fullständigt implementerat | Visa material, mängd, källa, mottagare, projekt, Awaiting pickup eller In transit, aktuell omlastningsplats och uppskattad ankomst när underlag finns. Visa transporthinder och länka till rutt eller flotta. |
+| `produktionsformaga`   | Fullständigt implementerat | Visa vad befintliga fabriker kan tillverka, om förmågan är tillgänglig och antal köade order. Möjlig tillverkning räknas inte som ordnad försörjning. Planeten har fortsatt en enda Build queue.              |
+| `materialoversikt`     | Fullständigt implementerat | Materialsökning samlar lager, utvinning, tillverkningsförmåga, leveranser och olösta projektbehov över ägda planeter. Utformningen fungerar med hundratals material.                                          |
 
 ## Tolkning och avgränsning
 
@@ -27,6 +27,8 @@ transportkedja räknas inte som fungerande försörjning.
 
 Planetlistan har expanderbara detaljer och intern rullning på små skärmar.
 Val, sökning, tangentbordsfokus och rulläge bevaras vid återrendering.
+Materialsökningen omfattar även kända material som för tillfället saknar lager,
+utvinning eller tillverkare. Tillfälliga sökningar och val skriver inte om spelet.
 Alla speltexter är engelska. Transportregler och sparade spel bevaras.
 
 ## Ersatta krav

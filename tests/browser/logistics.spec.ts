@@ -134,7 +134,9 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await expect(page.locator('.planet-building-queue')).toContainText(
     'no active transport path',
   );
-  await page.getByRole('button', { name: 'Trade routes', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Supply & production', exact: true })
+    .click();
   await connectTradePlanets(page, 'Tellus', 'Vesta');
   await page
     .getByRole('button', {
@@ -143,7 +145,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     })
     .click();
   await expect(
-    page.getByRole('complementary', { name: 'Selected object' }),
+    page.getByRole('complementary', { name: 'Selected route' }),
   ).toContainText('30 cargo capacity');
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await page.getByRole('button', { name: 'Homeworld', exact: true }).click();
@@ -176,7 +178,9 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   ).toBeDisabled();
   await freighters.locator('.fleet-assignment').scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath('fleet-trade-route.png') });
-  await page.getByRole('button', { name: 'Trade routes', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Supply & production', exact: true })
+    .click();
   await page.screenshot({ path: testInfo.outputPath('trade-routes.png') });
   await nextYear(page);
   await page
@@ -189,15 +193,17 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await page.screenshot({ path: testInfo.outputPath('supplied-colony.png') });
   await page.reload();
   await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Trade routes', exact: true }).click();
+  await page
+    .getByRole('combobox', { name: 'Known objects' })
+    .selectOption({ label: 'Tellus' });
   const route = page.getByRole('button', {
-    name: 'Select route Tellus to Vesta',
+    name: 'Tellus ↔ Vesta',
     exact: true,
   });
   await route.focus();
   await route.press('Enter');
   await expect(
-    page.getByRole('complementary', { name: 'Selected object' }),
+    page.getByRole('complementary', { name: 'Selected route', exact: true }),
   ).toContainText('Freighters');
   expect(
     await page.evaluate(

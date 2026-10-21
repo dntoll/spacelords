@@ -1,7 +1,7 @@
 import type p5 from 'p5';
 import type { AppReadModel } from '../models/AppModel.js';
 import { HexGeometry } from '../models/HexCoordinate.js';
-import { tradeAssignmentIssue } from '../models/TradeGraph.js';
+import { tradeAssignmentIssue } from '../models/TradeAssignment.js';
 
 export function renderMapTradeRoutes(sketch: p5, model: AppReadModel): void {
   const zoom = model.camera.zoom;

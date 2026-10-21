@@ -1,5 +1,5 @@
 import type { AppReadModel } from '../models/AppModel.js';
-import { tradeAssignmentIssue } from '../models/TradeGraph.js';
+import { tradeAssignmentIssue } from '../models/TradeAssignment.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { renderTradeAssignment } from './TradeFleetView.js';
 import { renderTradeRouteDetails } from './TradeRouteDetailsView.js';
@@ -81,7 +81,7 @@ export function renderMapTradeSelection(
     return panel;
   }
   const route = model.tradeRoutes.find((r) => r.id === state.routeId);
-  return route ? renderTradeRouteDetails(route, model, emit, 'map') : null;
+  return route ? renderTradeRouteDetails(route, model, emit) : null;
 }
 
 export function mapFleetRouteFeedback(model: AppReadModel): string | null {

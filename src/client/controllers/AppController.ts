@@ -8,7 +8,6 @@ export class AppController {
   readonly #view: AppPort;
   readonly #gesture = new MapGesture();
   readonly #researchGesture = new MapGesture();
-  readonly #tradeGesture = new MapGesture();
   #fleetPointer: {
     id: number;
     start: Point;
@@ -27,7 +26,6 @@ export class AppController {
   }
 
   dispose(): void {
-    this.#tradeGesture.cancel();
     this.#cancelPointer();
     this.#view.dispose();
   }
@@ -44,7 +42,6 @@ export class AppController {
   }
 
   #handleIntent(intent: AppIntent): void {
-    if (!intent.type.startsWith('trade-pointer-')) this.#tradeGesture.cancel();
     if (!intent.type.startsWith('research-pointer-'))
       this.#researchGesture.cancel();
     if (intent.type.startsWith('open-') || intent.type === 'end-turn')
@@ -55,7 +52,7 @@ export class AppController {
         'open-planet',
         'open-research',
         'open-fleets',
-        'open-trade-routes',
+        'open-supply',
         'open-decisions',
         'home',
         'pan',
@@ -88,52 +85,24 @@ export class AppController {
       case 'cancel-map-trade':
         this.#cancelPointer();
         break;
-      case 'trade-select-planet':
-        this.#model.selectTradePlanet(intent.id);
+      case 'supply-search':
+        this.#model.searchSupply(intent.query);
         break;
-      case 'trade-select-route':
-        this.#model.selectTradeRoute(intent.id);
+      case 'supply-material':
+        this.#model.selectSupplyMaterial(intent.material);
         break;
-      case 'trade-select-fleet':
-        this.#model.selectTradeFleet(intent.id);
+      case 'supply-toggle':
+        this.#model.toggleSupplyPlanet(intent.id);
         break;
-      case 'trade-size':
-        this.#model.resizeTradeGraph(intent.width, intent.height);
+      case 'supply-inventory':
+        this.#model.toggleSupplyPlanet(intent.id, true);
         break;
-      case 'trade-pan':
-        this.#model.panTradeGraph(intent.delta);
+      case 'supply-open-planet':
+        this.#model.openSupplyPlanet(intent.id);
         break;
-      case 'trade-zoom':
-        this.#model.zoomTradeGraph(intent.factor, intent.anchor);
+      case 'supply-open-route':
+        this.#model.openSupplyRoute(intent.id);
         break;
-      case 'trade-fit':
-        this.#model.fitTradeGraph();
-        break;
-      case 'trade-focus':
-        this.#model.focusTradeGraph(intent.point);
-        break;
-      case 'trade-pointer-start':
-        this.#tradeGesture.start(intent.id, intent.point);
-        return;
-      case 'trade-pointer-end':
-        this.#tradeGesture.end(intent.id);
-        return;
-      case 'trade-pointer-cancel':
-        this.#tradeGesture.cancel();
-        return;
-      case 'trade-pointer-move': {
-        const action = this.#tradeGesture.move(intent.id, intent.point);
-        if (action.type === 'none') return;
-        if (action.type === 'pan') this.#model.panTradeGraph(action.delta);
-        else {
-          this.#model.zoomTradeGraph(action.factor, action.previousCenter);
-          this.#model.panTradeGraph({
-            x: action.center.x - action.previousCenter.x,
-            y: action.center.y - action.previousCenter.y,
-          });
-        }
-        break;
-      }
       case 'research-size':
         this.#model.resizeResearch(intent.width, intent.height);
         break;
@@ -168,8 +137,8 @@ export class AppController {
         }
         break;
       }
-      case 'open-trade-routes':
-        this.#model.openTradeRoutes();
+      case 'open-supply':
+        this.#model.openSupply();
         break;
       case 'open-decisions':
         this.#model.openDecisions();
@@ -436,7 +405,7 @@ export class AppController {
     }
     if (
       !intent.type.startsWith('research-') &&
-      !intent.type.startsWith('trade-') &&
+      !intent.type.startsWith('supply-') &&
       ![
         'pointer-move',
         'pointer-start',

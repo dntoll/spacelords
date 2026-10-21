@@ -33,6 +33,7 @@ const shipment = (
   projectId: 'project',
   project: 'Fighter',
   location: 'Beta',
+  locationId: 'b',
   nextStop: 'Alpha',
   fleetId: null,
   routeId: 'route',
@@ -148,4 +149,12 @@ it('produktionsformaga: capability does not count as a supply commitment', () =>
   expect(overview.planets[0]!.status).toBe('Needs attention');
   expect(overview.materials).toContain('Engine');
   expect(overview.planets[0]!.capabilities[0]!.queued).toBe(0);
+});
+
+it('materialoversikt: an explicit search can find a known material even when no planet has stock or production', () => {
+  const overview = new SupplyOverview([planet()], [], ['Unknown alloy']);
+  expect(overview.materials).toContain('Unknown alloy');
+  expect(
+    overview.planets[0]!.materials.some((m) => m.material === 'Unknown alloy'),
+  ).toBe(false);
 });

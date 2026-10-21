@@ -28,6 +28,7 @@ export interface ShipmentSnapshot {
   readonly recipient: string;
   readonly projectId: string | null;
   readonly project: string | null;
+  readonly locationId: string;
   readonly location: string;
   readonly nextStop: string;
   readonly fleetId: string | null;
@@ -153,6 +154,7 @@ export class Logistics {
           recipient: planet(shipment.recipient)?.name ?? 'Unknown recipient',
           projectId: project,
           project: null,
+          locationId: start,
           location: planet(start)?.name ?? 'Unknown location',
           nextStop: planet(next)?.name ?? 'Unknown destination',
           fleetId: shipment.fleetId,

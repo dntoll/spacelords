@@ -2013,234 +2013,7 @@ p {
   }
 }
 
-/* handelsgraf: positions use the same hex projection as Star map. */
-.trade-graph-page {
-  height: 100%;
-  min-height: 0;
-  min-width: 0;
-  padding: 12px;
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 8px;
-}
-.trade-graph-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 14px;
-}
-.trade-connection {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--accent);
-}
-.trade-graph-toolbar > .button {
-  min-height: 44px;
-  padding: 6px 12px;
-}
-.trade-graph-toolbar > .muted-note {
-  font-size: 0.75rem;
-}
-.trade-graph-workspace {
-  min-width: 0;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 10px;
-}
-.trade-graph-area {
-  position: relative;
-  overflow: hidden;
-  min-height: 0;
-  min-width: 0;
-  border: 1px solid #304c59;
-  border-radius: 12px;
-  background: #09151f;
-}
-.trade-graph-viewport {
-  position: absolute;
-  inset: 0 0 64px;
-  overflow: hidden;
-  touch-action: none;
-  overscroll-behavior: none;
-  cursor: grab;
-  background-image: radial-gradient(#45606a66 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-.trade-graph-viewport:active {
-  cursor: grabbing;
-}
-.trade-graph-stage {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: 0 0;
-}
-.trade-graph-stage [hidden] {
-  display: none;
-}
-.trade-graph-links {
-  position: absolute;
-  overflow: visible;
-  pointer-events: none;
-}
-.trade-route-line {
-  stroke: #5f9ec7;
-  stroke-width: 5;
-  pointer-events: stroke;
-  cursor: pointer;
-}
-.trade-route-hit {
-  stroke: transparent;
-  stroke-width: 28;
-  pointer-events: stroke;
-  cursor: pointer;
-}
-.trade-route-line.fleet-drop-target {
-  outline: none;
-  stroke: #b0e5ce;
-  stroke-width: 8;
-}
-.trade-route-line.selected-route {
-  stroke: #f3d28e;
-  stroke-width: 7;
-}
-.trade-route-line:focus-visible {
-  stroke: #d8f6ef;
-  outline: none;
-}
-.trade-route-line.closing-route {
-  stroke-dasharray: 12 10;
-  opacity: 0.6;
-}
-.trade-fleet-leader {
-  stroke: #506c78;
-  stroke-width: 1.5;
-  stroke-dasharray: 5 5;
-}
-.trade-fleet-leader.assigned-route-leader {
-  stroke: #9fcedc;
-  stroke-dasharray: none;
-}
-.trade-planet-node {
-  position: absolute;
-  width: 172px;
-  height: 172px;
-  user-select: none;
-}
-.trade-planet-name {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  padding: 6px;
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: 8px;
-  color: #ddf9ed;
-  background: transparent;
-  font: inherit;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-.trade-planet-sphere {
-  display: block;
-  width: 152px;
-  height: 152px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 30% 25%,
-    #d6fff0 0 10%,
-    #a9e0cf 12% 32%,
-    #74ad9e 55%,
-    #31565a 80%
-  );
-  box-shadow:
-    0 0 0 9px #72b8ad18,
-    0 0 25px #8adac433;
-}
-.trade-planet-label {
-  position: absolute;
-  min-height: 32px;
-  border: 0;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: transparent;
-  color: #ddf9ed;
-  font: inherit;
-  font-size: 1.1rem;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.chosen-endpoint .trade-planet-sphere {
-  outline: 3px solid #f3d28e;
-  outline-offset: 7px;
-}
-.trade-planet-label[aria-pressed='true'] {
-  color: #f3d28e;
-}
-.trade-coordinates {
-  font-size: 0.7rem;
-  color: var(--muted);
-  margin: 3px 0 10px;
-}
-.trade-materials {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.7rem;
-  table-layout: fixed;
-}
-.trade-materials th,
-.trade-materials td {
-  border-bottom: 1px solid #36505a;
-  padding: 5px 2px;
-  text-align: right;
-  overflow-wrap: anywhere;
-}
-.trade-materials th:first-child {
-  width: 31%;
-  text-align: left;
-  font-weight: 400;
-}
-.trade-materials thead th {
-  color: var(--muted);
-  font-size: 0.65rem;
-}
-.trade-materials th:last-child {
-  width: 20%;
-}
-.trade-stock {
-  color: #d4ecf1;
-}
-.trade-extraction {
-  color: #a4e4ba;
-}
-.trade-shortage {
-  color: #ffb0a3;
-  font-weight: 700;
-}
-.trade-incoming {
-  color: #9ecafa;
-}
-.trade-production,
-.trade-project,
-.trade-project-status {
-  margin: 8px 0 0;
-  font-size: 0.7rem;
-  line-height: 1.35;
-}
-.trade-production {
-  color: #a4e4ba;
-}
-.trade-project-status {
-  color: #ddc99b;
-}
-.fleet-drop-target {
-  outline: 3px solid #b0e5ce;
-  background: #244b4a;
-}
+/* Star map route details. */
 .trade-fleet-box {
   padding: 10px;
   min-width: 0;
@@ -2311,85 +2084,15 @@ p {
   overflow-wrap: normal;
   word-break: normal;
 }
-.trade-fleet-box[draggable='true'] {
-  cursor: grab;
-}
 .trade-fleet-box > .button {
   min-height: 36px;
   padding: 4px 10px;
   font-size: 0.75rem;
   margin: 4px 4px 0 0;
 }
-.trade-ship-location {
-  position: absolute;
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 4px;
-  padding: 5px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: #d6f3ee;
-  background: #09151fb3;
-  font: inherit;
-}
-.trade-ship-location[aria-pressed='true'] {
-  border-color: #f3d28e;
-}
-.trade-position-ships {
-  display: flex;
-  gap: 4px;
-}
-.trade-position-ship {
-  position: relative;
-  width: 40px;
-  height: 40px;
-}
-.trade-position-ship .ship-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 0 4px #8adac455);
-}
-.trade-position-name {
-  font-size: 0.8rem;
-  max-width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.trade-fleet-drag-preview {
-  position: fixed;
-  z-index: 100;
-  pointer-events: none;
-  opacity: 0.8;
-}
 .trade-assigned-fleets {
   display: grid;
   gap: 8px;
-}
-.trade-selection-panel {
-  min-height: 0;
-  min-width: 0;
-  overflow: auto;
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #10232e;
-}
-.trade-selection-panel h2 {
-  font-size: 0.95rem;
-  margin: 0 0 8px;
-}
-.trade-selection-panel > p {
-  font-size: 0.75rem;
-  margin: 6px 0;
-}
-.trade-selection-panel > .button,
-.trade-assignment-option .button {
-  min-height: 36px;
-  padding: 4px 10px;
-  font-size: 0.75rem;
 }
 .trade-assignment-option {
   display: grid;
@@ -2397,74 +2100,229 @@ p {
   padding: 10px 0;
   border-bottom: 1px solid var(--line);
 }
-.trade-selection-panel h3 {
-  font-size: 0.85rem;
-  margin: 16px 0 4px;
+
+/* forsorjningsoversikt / relevanta-material: sparse rows inside a scrolling workspace. */
+.supply-page {
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  padding: 16px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
 }
-.trade-fleet-details {
-  padding: 0;
-  border: 0;
-  background: transparent;
+.supply-content {
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: 0 4px 20px 0;
 }
-.trade-graph-controls {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  right: 8px;
+.supply-toolbar,
+.supply-material-heading {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
 }
-.trade-graph-controls .graph-icon {
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
-  padding: 0;
-  font-size: 1.2rem;
-}
-.trade-graph-zoom {
-  min-width: 44px;
-  text-align: center;
-  font-size: 0.7rem;
-}
-.trade-graph-hint {
+.supply-search-label {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+  max-width: 480px;
+  min-width: 160px;
   color: var(--muted);
-  font-size: 0.65rem;
-  margin-left: 4px;
+  font-size: 0.85rem;
 }
-@media (max-width: 760px) {
-  .trade-graph-page {
-    padding: 8px;
-    gap: 6px;
+.supply-search-label input {
+  min-height: 44px;
+  width: 100%;
+  font: inherit;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #071924;
+  color: #e5e8e6;
+}
+.supply-search-label input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.supply-search-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 180px;
+  overflow: auto;
+  margin-bottom: 16px;
+}
+.supply-planets {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.supply-planet {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #10232e;
+  overflow: hidden;
+}
+.supply-planet-summary {
+  width: 100%;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(0, 2fr) 24px;
+  gap: 16px;
+  text-align: left;
+  align-items: center;
+}
+.supply-planet-summary:hover {
+  background: #17303b;
+}
+.supply-planet-identity,
+.supply-planet-state {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.supply-project,
+.supply-summary-text {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.supply-status {
+  font-size: 0.8rem;
+  font-weight: 700;
+  width: fit-content;
+}
+.supply-status-needs-attention,
+.supply-unprovided {
+  color: #ffb0a3;
+}
+.supply-status-waiting {
+  color: #f3d28e;
+}
+.supply-status-ready {
+  color: var(--accent);
+}
+.supply-status-idle {
+  color: var(--muted);
+}
+.supply-expand {
+  font-size: 1.4rem;
+  color: var(--accent);
+}
+.supply-details {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border-top: 1px solid var(--line);
+}
+.supply-details > .button {
+  justify-self: start;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.supply-materials {
+  display: grid;
+  gap: 8px;
+}
+.supply-material {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(0, 4fr);
+  align-items: start;
+  gap: 12px;
+  padding-block: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.supply-material > .button {
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.supply-quantities {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+.supply-quantities dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-bottom: 4px;
+}
+.supply-quantities dd {
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.supply-capabilities h3,
+.supply-deliveries h3 {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+.supply-capabilities p {
+  margin-block: 6px;
+  font-size: 0.85rem;
+}
+.supply-deliveries {
+  display: grid;
+  gap: 8px;
+  margin-block: 12px;
+}
+.supply-delivery {
+  border-left: 2px solid #547caa;
+  padding: 8px 12px;
+  overflow-wrap: anywhere;
+}
+.supply-delivery p {
+  font-size: 0.85rem;
+  margin-block: 6px;
+}
+.supply-delivery .button {
+  margin: 4px 8px 0 0;
+}
+@media (max-width: 600px) {
+  .supply-page {
+    padding: 10px;
+    gap: 8px;
   }
-  .trade-graph-workspace {
+  .supply-page h1 {
+    font-size: 1.3rem;
+  }
+  .supply-planet-summary {
+    grid-template-columns: minmax(0, 1fr) 20px;
+    gap: 8px;
+    padding: 12px;
+  }
+  .supply-planet-state {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .supply-expand {
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+  .supply-material {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(110px, 1fr) clamp(120px, 25dvh, 220px);
-    gap: 6px;
   }
-  .trade-graph-hint {
-    display: none;
+  .supply-quantities {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@media (max-height: 500px) {
-  .trade-graph-workspace {
-    grid-template-columns: minmax(0, 1fr) 230px;
-    grid-template-rows: minmax(0, 1fr);
+
+.nav-label-compact {
+  display: none;
+}
+@media (max-width: 700px) {
+  .nav-label-compact {
+    display: inline;
   }
-  .trade-graph-hint {
+  .nav-label-full {
     display: none;
-  }
-  .trade-graph-toolbar p {
-    font-size: 0.7rem;
-  }
-  .trade-graph-page .back-button {
-    min-height: 28px;
-    padding: 4px 8px;
-  }
-  .trade-graph-page h1 {
-    font-size: 1rem;
-  }
-  .trade-graph-toolbar > .button {
-    min-height: 32px;
   }
 }

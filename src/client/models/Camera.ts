@@ -58,6 +58,10 @@ export class Camera {
     });
   }
 
+  focus(position: HexCoordinate): void {
+    this.#setCenter(HexGeometry.toPoint(position));
+  }
+
   reset(): void {
     this.#zoom = 1;
     this.#center = HexGeometry.toPoint(this.home);

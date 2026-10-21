@@ -8,7 +8,6 @@ export function renderTradeRouteDetails(
   route: TradeRouteSnapshot,
   model: AppReadModel,
   emit: IntentHandler,
-  context: 'map' | 'graph' = 'graph',
 ): HTMLElement {
   const panel = element('div', 'trade-route-details');
   panel.append(
@@ -32,10 +31,7 @@ export function renderTradeRouteDetails(
   const assigned = element('div', 'trade-assigned-fleets');
   for (const id of route.fleetIds) {
     const fleet = model.fleets.find((f) => f.id === id);
-    if (fleet)
-      assigned.append(
-        renderTradeFleet(fleet, model, emit, 'route-details', context),
-      );
+    if (fleet) assigned.append(renderTradeFleet(fleet, model, emit));
   }
   if (!route.fleetIds.length)
     assigned.append(element('p', 'muted-note', 'No fleet assigned'));

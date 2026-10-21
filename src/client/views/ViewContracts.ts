@@ -17,29 +17,15 @@ export type AppIntent =
       readonly id: string;
     }
   | { readonly type: 'cancel-map-trade' }
-  | { readonly type: 'trade-pan'; readonly delta: Point }
-  | {
-      readonly type: 'trade-zoom';
-      readonly factor: number;
-      readonly anchor: Point;
-    }
-  | {
-      readonly type: 'trade-size';
-      readonly width: number;
-      readonly height: number;
-    }
-  | { readonly type: 'trade-focus'; readonly point: Point }
-  | { readonly type: 'trade-fit' | 'trade-pointer-cancel' }
+  | { readonly type: 'supply-search'; readonly query: string }
+  | { readonly type: 'supply-material'; readonly material: string | null }
   | {
       readonly type:
-        'trade-select-planet' | 'trade-select-route' | 'trade-select-fleet';
+        | 'supply-toggle'
+        | 'supply-inventory'
+        | 'supply-open-planet'
+        | 'supply-open-route';
       readonly id: string;
-    }
-  | {
-      readonly type:
-        'trade-pointer-start' | 'trade-pointer-move' | 'trade-pointer-end';
-      readonly id: number;
-      readonly point: Point;
     }
   | { readonly type: 'research-pan'; readonly delta: Point }
   | {
@@ -63,7 +49,7 @@ export type AppIntent =
     }
   | {
       readonly type:
-        | 'open-trade-routes'
+        | 'open-supply'
         | 'open-decisions'
         | 'next-decision'
         | 'confirm-end-turn'

@@ -20,7 +20,7 @@ import { renderBuildSelection } from './BuildSelectionView.js';
 import { renderPlanet } from './PlanetView.js';
 import { renderResearch } from './ResearchView.js';
 import { updateResearchCamera } from './ResearchTreeView.js';
-import { renderTradeRoutes, updateTradeCamera } from './TradeGraphView.js';
+import { renderSupply } from './SupplyView.js';
 import { renderFleetShips } from './ShipView.js';
 import { renderFleets, fleetAssignmentLabel } from './FleetView.js';
 import { button, element } from './dom.js';
@@ -48,9 +48,8 @@ export class AppView implements AppPort {
   #researchKey = '';
   #researchViewport: HTMLElement | null = null;
   #researchObserver: ResizeObserver | null = null;
-  #tradeGraphKey = '';
-  #tradeViewport: HTMLElement | null = null;
-  #tradeObserver: ResizeObserver | null = null;
+  #supplyScroll = 0;
+  #supplyKey = '';
 
   constructor(
     root: HTMLElement,
@@ -70,20 +69,22 @@ export class AppView implements AppPort {
   }
 
   render(model: AppReadModel): void {
-    if (model.screen !== 'trade-routes') {
-      this.#tradeObserver?.disconnect();
-      this.#tradeObserver = null;
-      this.#tradeViewport = null;
-    }
-    const tradePanelScroll =
-      this.#root.querySelector('.trade-selection-panel')?.scrollTop ?? 0;
-    const tradeSelectionChanged =
-      (this.#root.querySelector<HTMLElement>('.trade-graph-page')?.dataset
-        .selection ?? '') !==
-      (model.tradeGraph.fleetId ??
-        model.tradeGraph.routeId ??
-        model.tradeGraph.planets.at(-1) ??
-        '');
+    const supplyActive = document.activeElement;
+    const supplyFocus =
+      supplyActive instanceof HTMLElement
+        ? supplyActive.dataset.focusKey
+        : undefined;
+    const supplyCaret =
+      supplyActive instanceof HTMLInputElement
+        ? supplyActive.selectionStart
+        : null;
+    const changedSupplyMaterial =
+      this.#screen === 'supply' &&
+      (this.#root.querySelector('.supply-material-heading h2')?.textContent ??
+        null) !== model.supplySelection.material;
+    if (this.#screen === 'supply')
+      this.#supplyScroll =
+        this.#root.querySelector('.supply-content')?.scrollTop ?? 0;
     if (model.screen !== 'research') {
       this.#researchObserver?.disconnect();
       this.#researchObserver = null;
@@ -182,8 +183,8 @@ export class AppView implements AppPort {
         main.append(renderBuildSelection(model, this.#emit));
       else if (model.screen === 'fleets')
         main.append(renderFleets(model, this.#emit));
-      else if (model.screen === 'trade-routes')
-        main.append(renderTradeRoutes(model, this.#emit));
+      else if (model.screen === 'supply')
+        main.append(renderSupply(model, this.#emit));
       else if (model.screen === 'decisions')
         main.append(renderDecisions(model, this.#emit));
       else
@@ -325,50 +326,48 @@ export class AppView implements AppPort {
         }
       }
     }
-    const tradeGraphKey = JSON.stringify([
-      model.ownedPlanets,
-      model.fleets,
+    const supplyKey = JSON.stringify([
+      model.supply,
+      model.shipments,
+      model.supplySelection,
       model.tradeRoutes,
-      model.phase,
-      model.research.completed,
-      model.tradeGraph.planets,
-      model.tradeGraph.routeId,
-      model.tradeGraph.fleetId,
     ]);
     if (
       !changedScreen &&
-      model.screen === 'trade-routes' &&
-      this.#tradeGraphKey !== tradeGraphKey
+      model.screen === 'supply' &&
+      this.#supplyKey !== supplyKey
     )
       this.#root
         .querySelector('main')
-        ?.replaceChildren(renderTradeRoutes(model, this.#emit));
-    if (model.screen === 'trade-routes') {
-      this.#tradeGraphKey = tradeGraphKey;
-      updateTradeCamera(this.#root, model);
-      const panel = this.#root.querySelector<HTMLElement>(
-        '.trade-selection-panel',
-      );
-      if (panel) panel.scrollTop = tradeSelectionChanged ? 0 : tradePanelScroll;
-      const viewport = this.#root.querySelector<HTMLElement>(
-        '.trade-graph-viewport',
-      );
-      if (viewport && viewport !== this.#tradeViewport) {
-        this.#tradeObserver?.disconnect();
-        this.#tradeViewport = viewport;
-        if (typeof ResizeObserver !== 'undefined') {
-          this.#tradeObserver = new ResizeObserver((entries) => {
-            const bounds = entries[0]?.contentRect;
-            if (bounds && viewport.isConnected)
-              this.#emit({
-                type: 'trade-size',
-                width: bounds.width,
-                height: bounds.height,
-              });
-          });
-          this.#tradeObserver.observe(viewport);
-        }
+        ?.replaceChildren(renderSupply(model, this.#emit));
+    if (model.screen === 'supply') {
+      this.#supplyKey = supplyKey;
+      if (
+        !changedScreen &&
+        changedSupplyMaterial &&
+        (model.supplySelection.material !== null ||
+          supplyFocus !== 'supply-search')
+      ) {
+        this.#root
+          .querySelector<HTMLElement>(
+            '.supply-material-heading h2, .supply-planet-summary',
+          )
+          ?.focus({ preventScroll: true });
+      } else if (!changedScreen && supplyFocus) {
+        const previous = [
+          ...this.#root.querySelectorAll<HTMLElement>('[data-focus-key]'),
+        ].find((node) => node.dataset.focusKey === supplyFocus);
+        const focus =
+          previous ??
+          this.#root.querySelector<HTMLElement>(
+            '.supply-material-heading h2, .supply-planet-summary',
+          );
+        focus?.focus({ preventScroll: true });
+        if (focus instanceof HTMLInputElement && supplyCaret !== null)
+          focus.setSelectionRange(supplyCaret, supplyCaret);
       }
+      const content = this.#root.querySelector('.supply-content');
+      if (content) content.scrollTop = this.#supplyScroll;
     }
     if (!changedScreen && model.screen === 'decisions')
       this.#root
@@ -493,8 +492,6 @@ export class AppView implements AppPort {
   }
 
   dispose(): void {
-    this.#tradeObserver?.disconnect();
-    this.#tradeViewport = null;
     this.#researchObserver?.disconnect();
     this.#researchViewport = null;
     this.#decisionDialog?.close();
@@ -535,7 +532,7 @@ export class AppView implements AppPort {
       ['map', 'Star map'],
       ['research', 'Research'],
       ['fleets', 'Fleets'],
-      ['trade-routes', 'Trade routes'],
+      ['supply', 'Supply & production'],
       ['decisions', 'Decisions'],
     ] as const) {
       const choice = button(
@@ -549,12 +546,19 @@ export class AppView implements AppPort {
                   ? 'open-research'
                   : target === 'fleets'
                     ? 'open-fleets'
-                    : target === 'trade-routes'
-                      ? 'open-trade-routes'
+                    : target === 'supply'
+                      ? 'open-supply'
                       : 'open-decisions',
           }),
         'nav-button',
       );
+      if (target === 'supply') {
+        choice.replaceChildren(
+          element('span', 'nav-label-full', label),
+          element('span', 'nav-label-compact', 'Supply'),
+        );
+        choice.title = label;
+      }
       if (screen === target) choice.setAttribute('aria-current', 'page');
       if (target === 'decisions') choice.classList.add('decision-counter');
       navigation.append(choice);

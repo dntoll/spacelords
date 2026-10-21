@@ -97,6 +97,7 @@ export class SupplyOverview {
   constructor(
     inputs: readonly SupplyPlanetInput[],
     shipments: readonly ShipmentSnapshot[],
+    catalogue: readonly string[] = [],
   ) {
     const priority: Record<SupplyStatus, number> = {
       'Needs attention': 0,
@@ -214,6 +215,7 @@ export class SupplyOverview {
     this.materials = Object.freeze(
       [
         ...new Set([
+          ...catalogue,
           ...this.planets.flatMap((p) => p.materials.map((m) => m.material)),
           ...this.planets.flatMap((p) =>
             p.capabilities
