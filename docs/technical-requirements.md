@@ -39,6 +39,40 @@ Enhets- och webbläsartester skyddar zoom, överlappningar, träffprioritet,
 dragavbrott, ogiltiga släpp, tangentbordsalternativ, verkliga flottpositioner
 och återupptagning. Befintliga logistiktester skyddar lossning och stängning.
 
+## Flottadministration på Star map
+
+`flottadministration`, `flottnamn-direktredigering` och
+`flottknappar-pa-kartan` använder gemensamma FleetCard och ShipTransferInput
+i kartpanelen och Fleets. FleetMapPanel visar flottorna vid aktuell position
+utan att ändra kartans hexval. HTML-panelen kan förstoras och rullas internt.
+Fleets har kompakta skeppsförhandsvisningar, aktuell position och Show on map;
+den befintliga minikartan och hanteringen av tomma flottor behålls.
+
+AppModel håller ett oföränderligt, tillfälligt namnutkast. AppController
+samordnar redigering, validering och sparning genom befintliga Game-kommandon.
+En överföring till en ny flotta använder den befintliga sammanhängande
+domänhandlingen; kommandot returnerar den mottagande flottans ögonblicksbild.
+Inga nya domänbegrepp, relationer eller sparformat tillkommer;
+docs/domain-model.puml har granskats och behöver inte ändras.
+
+Vyn bevarar fokus, markörläge, panelstorlek och rullning vid återrendering.
+Vid flottval rullas flottans namn fram även i långa listor och efter Show on map.
+Programmatisk borttagning av ett namnfält skiljs från användarens fokusbyte.
+Det senare avbryter utkastet utan att förstöra kontrollen som tar emot nästa
+klick. Enter sparar, Escape avbryter, och F2 eller namnknappen ger alternativ
+till dubbelklick. Orders → Choose destination erbjuder destinationsval med
+hexväljare, Known objects eller kartan utan drag.
+
+Enhetstesterna i fleet-map-management skyddar lokal gruppering, oförändrat
+hexval, skapande med ett skepp, avbrott, namnredigering, fokus, destinationsval,
+kameracentrering, avlägsna förstärkningar, ruttspärrar och sparade spel.
+fleet-map-overflow verifierar 25 flottor på samma hex, begränsad
+skeppsförhandsvisning och åtkomligt flottval på alla skärmprofiler.
+Webbläsartesterna följer hela kartflödet i Chromium och WebKit och provar
+native touch i mobil Chromium. Befintliga flott-, handels-, bygg- och
+sparplatstester behåller skyddet för spelreglerna. Båda testsviterna omfattas
+fortsatt av befintlig GitHub CI.
+
 ## Tekniska krav
 
 | Kravnamn                 | Status                     | Krav                                                                                                                                                                                                             | Verifiering                                                |

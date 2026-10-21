@@ -34,7 +34,8 @@ alla flottor vid sin verkliga position.
   det tidigare kravet att flottan redan står vid en ändplanet. Vid flera
   träffade rutter väljer spelaren mål innan någon order ges. Ogiltigt ruttsläpp
   ger aldrig en flyttorder. Utanför linjerna behålls vanlig flottförflyttning;
-  Set destination är fortsatt ett uttryckligt flyttläge.
+  Orders → Choose destination ger ett uttryckligt flyttläge utan drag och
+  ersätter knappen Set destination enligt `flottknappar-pa-kartan`.
 
 Escape, avbruten pekare och en andra touchpunkt avbryter orderförhandsvisningar.
 Två fingrar kan därefter panorera och zooma. Val och förhandsvisningar är

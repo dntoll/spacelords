@@ -26,10 +26,11 @@ Se [hela visionen](docs/game-vision.md).
   en fysisk förstärkningsgrupp målflottan tills den når ikapp
   (`skepp-till-rorlig-flotta`). Även ruttflottor kan förstärkas; Fleets anger
   ruttens ändplaneter (`forstarka-ruttflotta`, `flottans-handelsrutt`).
-  Flottadministrationen planeras nu på Star map: `flottadministration` är
-  **Delvis implementerat**; lokal hantering på kartan återstår.
-  `flottnamn-direktredigering` och `flottknappar-pa-kartan` är
-  **Ej implementerat**. Se [genomförandeplanen](docs/fleet-map-plan.md).
+  `flottadministration`, `flottnamn-direktredigering` och
+  `flottknappar-pa-kartan` är **Fullständigt implementerat**: skepp organiseras
+  direkt på Star map, namn ändras med dubbelklick och New fleet bildas med
+  första skeppet. Fleets ger en kompakt översikt med Show on map; tomma flottor,
+  förstärkningar och minikarta behålls. Se [genomförandeplanen](docs/fleet-map-plan.md).
 - **Ekonomi och byggande:** ändliga fyndigheter av Iron, Water och Oil utvinns
   till lokala obegränsade lager. Material förbrukas en gång vid byggstart.
   Varje planet har en enda Build queue för byggnader, delar och skepp, med

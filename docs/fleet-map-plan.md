@@ -1,6 +1,6 @@
 # Plan för flottor på Star map
 
-Datum: 2026-10-21. Planerad ändring; spelbeteendet är ännu inte ändrat.
+Datum: 2026-10-21. Implementerad ändring; nedan bevaras genomförandeplanen.
 Aktiva produktkrav och status finns i
 [product-requirements.md](product-requirements.md).
 
@@ -15,10 +15,10 @@ Användarens ändring gäller platsen och enkelheten för flottadministrationen.
 Fysisk rörelse, förstärkningar på avstånd, transportuppdrag, skeppsbyggen och
 sparade spel behåller sina regler.
 
-## Föreslagen utformning att utgå från
+## Vald utformning
 
-Följande är planens rekommenderade lösningar, inte separat beslutade nya
-spelregler. De kan justeras under utformningen utan att ändra målet ovan.
+Planens rekommenderade lösningar nedan har genomförts efter användarens
+implementationsbeställning. Grundreglerna för rörelse och logistik behålls.
 
 - Visa flottkorten i kartans informationspanel med gemensam platsrubrik:
   känt planetnamn när det finns, annars hexkoordinater. Visa destination som en
@@ -38,7 +38,31 @@ spelregler. De kan justeras under utformningen utan att ändra målet ovan.
 - Överföring av ett skepp i taget ingår i första leveransen. Val av antal och
   flytt av alla skepp är ett senare förslag, inte ett krav i denna plan.
 
-## Genomförande
+## Levererad funktion
+
+- Lokal flottpanel med verklig plats, flottkort, skeppsöverföring och New fleet.
+- Namnbyte med dubbelklick, F2 eller namnknapp; Enter sparar, Escape och
+  fokusbyte avbryter. Utkast och markörläge överlever återrendering.
+- Kompakt Fleets med position, destination, uppdrag, minikarta och Show on map.
+- Receiving fleet ger åtkomst till tomma och avlägsna mottagare från kartan.
+- Orders → Choose destination ersätter Set destination. Hexväljare,
+  Known objects och kartan ger alternativ till drag. Edit fleet är borttagen.
+- Mobilpanelen prioriterar flottorna och kan förstoras; hjälp visas på begäran.
+- Vald flottas namn rullas fram i långa listor, även efter Show on map.
+- Befintliga domänrelationer och sparformat behålls.
+
+Enhets- och webbläsartester för kraven finns i fleet-map-management, med
+befintliga flott-, handels-, produktions-, viewport- och sparplatstester som
+regressionsskydd. Domänmodellen har granskats utan behov av nya relationer.
+Mängdflytt av skepp ingår fortsatt inte.
+
+Verifiering: npm run check passerade med 236 snabbtester, 5 integrationstester
+och 186 webbläsarfall; 22 plattformsspecifika fall hoppades över. Efter
+rättningen för långa listor passerade 21 riktade webbläsarfall (3 överhoppade),
+inklusive fyra nya fall med 25 flottor. Den sista separata snabbkörningen
+passerade med 236 tester på 18,83 sekunder av tillåtna 20.
+
+## Ursprunglig genomförandeordning
 
 ### 1. Säkra urval, plats och befintliga regler
 
