@@ -93,7 +93,7 @@ fortsatt av befintlig GitHub CI.
 | `separerade-kravlistor`  | Fullständigt implementerat | Börja rotöversikten med vision och kravkategorier. Håll produktkrav korta och otekniska. Lista tekniska krav separat och flytta växande detaljer till `docs/`. Dokumentera alla krav och ifrågasätt motsägelser. | Dokumentationsgranskning, `AGENTS.md`                      |
 | `meningsfulla-tester`    | Fullständigt implementerat | Knyt beteendekrav till enhetstester som skyddar mot felkategorier. Använd andra relevanta kontroller för verktygs- och processkrav.                                                                              | Kravkopplingen nedan och kodgranskning                     |
 | `snabb-testsvit`         | Fullständigt implementerat | Den snabba svitens totala exekvering får ta högst 20 sekunder, inklusive testverktygets start. Avbryt och rapportera fel om gränsen överskrids.                                                                  | `npm test`, tidsbegränsad testprocess                      |
-| `utokad-testsvit`        | Fullständigt implementerat | Ha en separat svit för tester som får ta längre tid, HTTP-integration samt riktiga browserkontroller mot produktionsbygget.                                                                                      | `npm run test:extended`                                    |
+| `utokad-testsvit`        | Fullständigt implementerat | Ha en separat svit för tester som får ta längre tid, HTTP-integration samt riktiga browserkontroller mot produktionsbygget. CI-jobbet får ta högst 20 minuter inklusive installation av webbläsare.              | `npm run test:extended`                                    |
 | `tester-i-github`        | Fullständigt implementerat | Kör lint, typkontroll, formatkontroll, båda testsviterna och bygge vid push och pull request i GitHub Actions.                                                                                                   | `.github/workflows/ci.yml`, `npm run check` lokalt         |
 | `regressionstest-forst`  | Fullständigt implementerat | Reproducera buggar med ett misslyckat test före rättningen. Skriv även tester först för annan implementation när lämpligt.                                                                                       | Commit- och arbetsgranskning                               |
 | `mvc-arkitektur`         | Fullständigt implementerat | Använd MVC på server och klient. Vyer hanterar plattformens in-/utdata, får läsa modellen och skickar ändringsavsikter till controllers. Modeller är objektorienterade med hög sammanhållning och låg koppling.  | Enhets- och typkontroll, arkitekturgranskning              |
@@ -292,3 +292,8 @@ varningsdialog, avbrott, lagringsfel och radering av en enda plats.
   Modelltester skyddar last, oförändrat tillstånd vid avslag, fysisk resa,
   lossning, väntande lagergods och sparning. Vy- och webbläsartester täcker
   spärrade lastade flottor, dragning och New fleet för olastade flottor.
+
+2026-10-21: `utokad-testsvit` får 20 minuters jobbtid i GitHub CI. Den tidigare
+tiominutersgränsen avbröt körningen utan testfel efter att installation,
+byggen och delar av de fyra webbläsarprofilerna passerat. Ändringen gäller
+hela CI-jobbet; `snabb-testsvit` behåller sin gräns på 20 sekunder.

@@ -68,6 +68,8 @@ Se [hela visionen](docs/game-vision.md).
   synliga rader på större skärmar och kompakt format på små eller låga skärmar.
 - **Utveckling och kvalitet:** MVC, TypeScript, ESLint, p5 i instance mode,
   en snabb testsvit inom 20 sekunder och en utökad svit i GitHub CI.
+  `utokad-testsvit` har en jobbtidsgräns på 20 minuter inklusive installation
+  av webbläsare; snabbsvitens gräns är oförändrad.
 - **Driftsättning:** endast klientbygget under `spacelords/` i målrepot;
   befintlig webbplats, navigation, DNS och Pages-inställningar bevaras.
 

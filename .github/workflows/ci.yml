@@ -31,7 +31,8 @@ jobs:
   integration:
     name: Build and extended tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # utokad-testsvit: allow browser installation and all four device profiles.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
