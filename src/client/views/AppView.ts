@@ -152,6 +152,9 @@ export class AppView implements AppPort {
       ? [active.selectionStart, active.selectionEnd]
       : null;
     const selectionScroll = this.#panel?.scrollTop ?? 0;
+    const previousMapFleet = this.#panel
+      ?.querySelector('.selected-fleet-card')
+      ?.getAttribute('data-fleet-id');
     const fleetSizing = this.#panel?.querySelector<HTMLDetailsElement>(
       '.fleet-panel-sizing',
     );
@@ -442,6 +445,15 @@ export class AppView implements AppPort {
             wasChoosingDestination !== !!model.destinationFleetId
               ? 0
               : selectionScroll;
+        if (
+          model.mapFleetId &&
+          (changedScreen || previousMapFleet !== model.mapFleetId)
+        )
+          this.#panel
+            ?.querySelector<HTMLElement>(
+              '.selected-fleet-card .fleet-name-button',
+            )
+            ?.scrollIntoView?.({ block: 'nearest' });
       }
       const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
       if (end) end.disabled = model.phase !== 'planning';

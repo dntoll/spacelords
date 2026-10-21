@@ -1,0 +1,74 @@
+import { expect, test } from '@playwright/test';
+import { tradeNetworkState } from '../fixtures/trade-network.js';
+import { startFirstSlot } from './save-helpers.js';
+
+test('flottadministration / skeppsbilder / viewport-game-layout: long fleet lists stay bounded and the selected fleet is reachable', async ({
+  page,
+}) => {
+  const initial = tradeNetworkState(false);
+  const original = initial.fleets[0]!;
+  const state = {
+    ...initial,
+    fleets: [
+      { ...original, ships: { ...original.ships, Fighter: 500 } },
+      ...Array.from({ length: 24 }, (_, index) => ({
+        ...original,
+        id: `patrol-${index + 1}`,
+        name: `Patrol ${index + 1}`,
+        ships: {
+          Fighter: 1,
+          'Colony ship': 0,
+          'Exploration ship': 0,
+          'Transport ship': 0,
+        },
+      })),
+    ],
+  };
+  await page.addInitScript((saved) => {
+    localStorage.setItem('spacelords.economy-v2-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({ lastPlayed: '2026-10-21T10:00:00Z', state: saved }),
+    );
+  }, state);
+  await page.goto('./');
+  await startFirstSlot(page);
+  const panel = page.locator('.selection-panel');
+  await expect(panel.locator('.fleet-card')).toHaveCount(25);
+  const home = panel.getByRole('article', {
+    name: 'Fleet Home Fleet',
+    exact: true,
+  });
+  expect(await home.locator('.ship-token').count()).toBeLessThan(16);
+  await expect(home).toContainText('+488 Fighter');
+  await panel
+    .getByRole('button', { name: 'Rename Patrol 24', exact: true })
+    .click();
+  const name = page.getByRole('textbox', { name: 'Fleet name', exact: true });
+  await name.fill('Sentinel');
+  await name.press('Enter');
+  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+  expect(
+    await page
+      .getByRole('article', { name: 'Fleet Home Fleet', exact: true })
+      .locator('.ship-token')
+      .count(),
+  ).toBeLessThan(5);
+  await page
+    .getByRole('button', { name: 'Show on map: Sentinel', exact: true })
+    .click();
+  await expect(panel.locator('.selected-fleet-card')).toContainText('Sentinel');
+  await expect(
+    panel.locator('.selected-fleet-card .fleet-name-button'),
+  ).toBeInViewport();
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth > innerWidth ||
+        document.documentElement.scrollHeight > innerHeight,
+    ),
+  ).toBe(false);
+  expect(
+    await panel.evaluate((node) => node.scrollHeight > node.clientHeight),
+  ).toBe(true);
+});
