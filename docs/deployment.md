@@ -494,3 +494,46 @@ inte automatiskt version 3-sparningar till det äldre formatet.
   `/MachineBloom/`, `/Defence-Grid/test/`, `/styles.css` och `/i18n.js` är
   identiska före och efter publiceringen. Inga länkar, navigationsval, DNS-
   eller Pages-inställningar ändrades.
+
+## Driftsättning av flotthantering på Star map: 2026-10-21
+
+- Publicerad klientrevision: `c67a8f3668c54c02cc220622d2a594578faea2c6`
+  från `codex/fleet-map-plan` i `dntoll/spacelords`. Källändringarna är
+  pushade till arbetsbranchen; källrepots `main` är oförändrad.
+- Målrepots tidigare revision: `2299125cc04ce41e263ff4f6cf2e569bd4acd34a`.
+  Deploycommit: `c38283c3ea86b536970215d32baa74038a72698b` från
+  `codex/deploy-spacelords-c67a8f3`, publicerad till målrepots `main`.
+  Endast `spacelords/` ändrades. Alla elva klientfiler motsvarar exakt bygget
+  och samtliga 281 övriga webbplatsfilers Git-objekt är oförändrade.
+- Ren installation och hela `npm run check` passerade: formatering, ESLint,
+  typkontroll, båda byggena, 250 snabba tester på 11,59 sekunder,
+  fem integrationstester och 198 webbläsartester. De 22 plattformsberoende
+  testerna hoppades över enligt sina villkor.
+- [Källrevisionens CI](https://github.com/dntoll/spacelords/actions/runs/39623295682)
+  passerade kvalitetskontrollerna, snabbsviten, byggena och integrationstesterna,
+  men det utökade jobbet avbröts vid tiominutersgränsen utan rapporterade
+  testfel. `96a4a97` höjer jobbets tidsgräns till 20 minuter utan ändrad
+  klientkod. [Omkörningen](https://github.com/dntoll/spacelords/actions/runs/39625205414)
+  pågår vid liveverifieringen; dess slutresultat är ännu inte bekräftat.
+  Den lokala fullständiga körningen och publiceringskontrollerna är godkända.
+- PR-integrationen gav HTTP 403. Efter ny kontroll av aktuell `origin/main`,
+  föräldrarelation, ren publiceringskopia och avgränsad diff användes
+  instruktionens reservväg: vanlig fast-forward-push med befintlig SSH.
+  Ingen force-push eller behörighetsändring gjordes.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/39625295603)
+  lyckades. Alla elva publicerade klientfiler gav HTTP 200, rätt innehållstyper
+  och exakt samma byteinnehåll som bygget. `/spacelords` ger HTTP 301 till
+  `/spacelords/`.
+- Fyra mobilkontroller passerade både mot hela publiceringskopian och
+  liveadressen i Chromium och WebKit. De verifierar New fleet från en olastad
+  Trade fleet, bibehållet ruttuppdrag, lastspärr, sparning, återupptagning,
+  kartpanelen och skärmytan utan JavaScript- eller HTTP-fel. Klientanrop till
+  rotens `/assets/` eller `/api/` förekom inte.
+- Kontrollsummorna för `/`, `/MachineBloom/`, `/Defence-Grid/test/`,
+  `/styles.css` och `/i18n.js` är identiska före och efter publiceringen.
+  Samma innehåll verifierades via HTTP i publiceringskopian. Inga länkar,
+  navigationsval, DNS- eller Pages-inställningar ändrades.
+
+Återställ vid behov enbart `spacelords/` från
+`2299125cc04ce41e263ff4f6cf2e569bd4acd34a` på en ny branch från aktuell
+`main`, med samma granskade publiceringsflöde.
