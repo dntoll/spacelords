@@ -222,3 +222,38 @@ describe('handelsnatverk / fysisk-frakt / flera-ruttflottor', () => {
     );
   });
 });
+
+it('leveransfloden: separates pickup from transit, shows relay location, and keeps cancelled cargo visible', () => {
+  const { logistics, port, turn, planets } = setup();
+  turn();
+  const snapshots = logistics.shipmentSnapshots(port);
+  expect(snapshots.find((s) => s.state === 'Awaiting pickup')!.amount).toBe(10);
+  expect(snapshots.find((s) => s.state === 'In transit')).toMatchObject({
+    amount: 30,
+    source: 'a',
+    recipient: 'c',
+    nextStop: 'b',
+  });
+  expect(Object.isFrozen(snapshots[0])).toBe(true);
+  planets[2]!.projects = [];
+  logistics.cleanup(port);
+  expect(logistics.shipmentSnapshots(port)).toHaveLength(1);
+  expect(logistics.shipmentSnapshots(port)[0]!.projectId).toBeNull();
+  turn();
+  expect(logistics.shipmentSnapshots(port)[0]).toMatchObject({
+    state: 'Awaiting pickup',
+    location: 'b',
+    source: 'a',
+    recipient: 'c',
+  });
+});
+
+it('leveransfloden: a broken remaining transport leg has no arrival promise', () => {
+  const { logistics, port, turn, fleets } = setup();
+  turn();
+  logistics.release(fleets[1]!);
+  expect(logistics.shipmentSnapshots(port)[0]).toMatchObject({
+    years: null,
+    issue: 'No active transport path',
+  });
+});

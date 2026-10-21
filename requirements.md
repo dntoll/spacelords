@@ -41,37 +41,11 @@ Se [hela visionen](docs/game-vision.md).
   Forskningskö med automatiska förkunskaper låser upp alla
   skeppsfabriker och Trade logistics. Grundutvinning och Research station finns
   från start.
-- **Logistik:** Trade routes länkar två ägda planeter och bildar nätverk.
-  En [handelsgraf](docs/trade-route-graph.md) med karttrogna planetpositioner,
-  materialöversikter och flottboxar är **Fullständigt implementerad**. Zoom,
-  panorering och tilldelning via länkar ersätter listvyn.
-  `handelsgraf-valpanel` är **Fullständigt implementerat**: namngivna planeter och
-  skeppsmärken visas på spelbrädet; vald planet, flotta eller rutt
-  visas i sidopanelen. `handelsgraf-kompakt-flottvy` är **Fullständigt implementerat**:
-  stora flottkort och ruttrutor är borttagna från vänstervyn. Skeppsmarkören kan
-  dras direkt till ruttlinjen för tilldelning. Flottkort och frigörande finns till höger.
-  `handelsgraf-skeppspositioner` och `handelsgraf-lasbarhet` är **Fullständigt implementerade**:
-  lediga flottors skepp visas vid sin fysiska plats; dubbelt så stora
-  planeter skalas med kartans zoom, medan planetnamn och skeppsmärken förblir läsbara.
-  Namn visas direkt ovanför planeter utan bakgrund eller ledlinje. Skeppsmärken
-  visas när deras ankare finns i kameran.
-  `handelsgraf-ruttflottor` är **Fullständigt implementerat**: tilldelade flottor
-  visas mitt på sin rutt om platsen är fri, annars intill med ledlinje till
-  mittpunkten. Detta ersätter deras tidigare fysiska placering i handelsgrafen;
-  den verkliga positionen visas i detaljpanelen.
-  Flera flottor per rutt fraktar material till aktiva köprojekt automatiskt.
-  `synliga-handelsrutter` är **Fullständigt implementerat**: handelsrutternas
-  linjer syns även genom markerade hexrutor.
-  `handelsrutt-skapande-pa-stjarnkartan`, `handelsrutt-val-pa-stjarnkartan` och
-  `flottilldelning-pa-stjarnkartan` är **Fullständigt implementerade**:
-  [Star map hanterar samma rutter](docs/star-map-trade.md) genom planetdragning,
-  valbara linjer, informationsrutor och flottilldelning. Den separata handelsvyn
-  behålls. På Star map visas flottor alltid vid sin verkliga position.
-  `ruttflotta-till-narmaste-andplanet` är **Fullständigt implementerat**:
-  lediga transportflottor kan tilldelas på avstånd och reser först till
-  närmaste ändplanet. Detta ersätter kravet på att redan vara vid rutten.
-  Last, omlastning, avstånd och flottposition påverkar leveranser.
-  Piratrån och eskortskydd ingår ännu inte.
+- **Försörjning och logistik:** [Supply & production](docs/supply-production.md)
+  ersätter den separata handelsgrafen med projektstatus, relevanta material,
+  leveranser, produktionsförmåga och materialsökning. De sex nya kraven är
+  **Ej implementerat**. Star map hanterar fortsatt rutter och flottilldelning;
+  fysiska transporter, omlastningar och sparade order behålls.
 - **Beslut och händelser:** Decisions och Next decision samlar val och
   försörjningsproblem. Spelaren kan hoppa över beslut ett år eller tysta ett
   enskilt beslut tills det återaktiveras i Decisions. `tysta-beslut` är

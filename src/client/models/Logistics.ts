@@ -18,6 +18,24 @@ export interface Shipment {
   fleetId: string | null;
   committed?: boolean;
 }
+export interface ShipmentSnapshot {
+  readonly id: string;
+  readonly material: string;
+  readonly amount: number;
+  readonly sourceId: string;
+  readonly source: string;
+  readonly recipientId: string;
+  readonly recipient: string;
+  readonly projectId: string | null;
+  readonly project: string | null;
+  readonly location: string;
+  readonly nextStop: string;
+  readonly fleetId: string | null;
+  readonly routeId: string | null;
+  readonly state: 'Awaiting pickup' | 'In transit';
+  readonly years: number | null;
+  readonly issue: string | null;
+}
 export interface TransportFleet {
   id: string;
   position: HexCoordinate | null;
@@ -64,6 +82,90 @@ export class Logistics {
     public routes: TradeRoute[] = [],
     public shipments: Shipment[] = [],
   ) {}
+
+  shipmentSnapshots(port: LogisticsPort): readonly ShipmentSnapshot[] {
+    return Object.freeze(
+      this.shipments.map((shipment) => {
+        const planet = (id: string) => port.planets.find((p) => p.id === id);
+        const start = shipment.path[shipment.stage]!;
+        const next = shipment.path[shipment.stage + 1]!;
+        const fleet = port.fleets.find((f) => f.id === shipment.fleetId);
+        let years = 0;
+        let issue: string | null = null;
+        for (
+          let stage = shipment.stage;
+          stage < shipment.path.length - 1;
+          stage++
+        ) {
+          const from = planet(shipment.path[stage]!)!;
+          const to = planet(shipment.path[stage + 1]!)!;
+          const route = this.routes.find(
+            (r) => [r.a, r.b].includes(from.id) && [r.a, r.b].includes(to.id),
+          );
+          if (stage === shipment.stage && fleet?.position) {
+            years += Math.max(
+              1,
+              Math.ceil(
+                fleet.position.distanceTo(to.position) / port.speed(fleet),
+              ),
+            );
+          } else {
+            const carriers = port.fleets.filter(
+              (f) =>
+                f.routeId === route?.id &&
+                !f.releaseRequested &&
+                f.position &&
+                f.ships['Transport ship'] > 0,
+            );
+            if (!route || route.closing || !carriers.length) {
+              issue = 'No active transport path';
+              break;
+            }
+            years += Math.min(
+              ...carriers.map(
+                (carrier) =>
+                  Math.ceil(
+                    carrier.position!.distanceTo(from.position) /
+                      port.speed(carrier),
+                  ) +
+                  Math.max(
+                    1,
+                    Math.ceil(
+                      from.position.distanceTo(to.position) /
+                        port.speed(carrier),
+                    ),
+                  ) +
+                  this.shipments.filter((s) => s.fleetId === carrier.id).length,
+              ),
+            );
+          }
+        }
+        const project = port.projectExists(shipment.projectId)
+          ? shipment.projectId
+          : null;
+        return Object.freeze({
+          id: shipment.id,
+          material: shipment.resource,
+          amount: shipment.amount,
+          sourceId: shipment.path[0]!,
+          source: planet(shipment.path[0]!)?.name ?? 'Unknown source',
+          recipientId: shipment.recipient,
+          recipient: planet(shipment.recipient)?.name ?? 'Unknown recipient',
+          projectId: project,
+          project: null,
+          location: planet(start)?.name ?? 'Unknown location',
+          nextStop: planet(next)?.name ?? 'Unknown destination',
+          fleetId: shipment.fleetId,
+          routeId: this.#routeFor(shipment)?.id ?? null,
+          state: shipment.fleetId
+            ? ('In transit' as const)
+            : ('Awaiting pickup' as const),
+          years: issue ? null : years,
+          issue,
+        });
+      }),
+    );
+  }
 
   incoming(planetId: string): Stock {
     const stock = emptyStock();

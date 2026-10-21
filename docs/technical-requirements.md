@@ -3,6 +3,23 @@
 Namnen nedan är stabila referenser i tester, kod och dokumentation.
 Produktkraven finns separat i [product-requirements.md](product-requirements.md).
 
+## Supply & production
+
+De sex kraven i [försörjningsvyn](supply-production.md) använder SupplyOverview
+för gemensam, plattformsoberoende bedömning. Game exponerar oföränderliga
+leveransdata och SupplySelection håller tillfällig sökning och expansion separat
+från sparade speldata. Vyn läser ögonblicksbilder och skickar avsikter via
+AppController. Materialrader skapas från data utan fem fasta materialfält.
+
+Enhetstester skyddar reservationer, delvis täckta behov, ändliga fyndigheter,
+framtida projekt, produktionsförmåga, omlastning, avbrutna projekt, brutna kedjor,
+skrivskydd och 300 material. Vytester skyddar urval och fokus vid återrendering.
+Webbläsartester verifierar navigation, lager, sökning, leveranser, sparade spel,
+intern rullning och minst 44 px höga kontroller på telefon, surfplatta och dator.
+
+Ingen ändring av sparformat eller transportregler behövs. TradeAssignment
+innehåller den tilldelningsvalidering som Star map tidigare delade med grafen.
+
 ## Handelsrutter på Star map
 
 `handelsrutt-skapande-pa-stjarnkartan`, `handelsrutt-val-pa-stjarnkartan` och
@@ -15,8 +32,7 @@ eller en andra touchpunkt. Förväntat avslut av pointer capture efter ett släp
 får inte ta bort ett kvarvarande ruttval.
 
 p5 ritar ruttlinjer och förhandsvisning mellan hexmarkeringar och kartobjekt.
-HTML-rutor återanvänder ruttinformation och tilldelningsvalidering från
-handelsvyn. Skapande, tilldelning, frigörande och stängning använder befintliga
+HTML-rutor visar ruttinformation och använder den gemensamma tilldelningsvalideringen. Skapande, tilldelning, frigörande och stängning använder befintliga
 domänkommandon. Domänrelationerna och sparformatet ändras inte.
 
 Enhets- och webbläsartester skyddar zoom, överlappningar, träffprioritet,

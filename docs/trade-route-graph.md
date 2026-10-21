@@ -1,4 +1,7 @@
-# Handelsgraf
+# Handelsgraf — historik
+
+Den separata grafens vykrav ersätts av [Supply & production](supply-production.md)
+efter uttryckligt användarbeslut. Statusarna nedan beskriver den tidigare leveransen.
 
 Trade routes ersätter den tidigare formulär- och listvyn med ett spelbräde.
 Forskningskrav, ruttkapacitet, fysisk frakt och regler för flottornas

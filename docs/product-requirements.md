@@ -118,32 +118,13 @@ Byggnader, delar och skepp delar planetens enda kö. Se [ekonomi och logistik](e
 
 ## Ekonomi, transport och beslutsstöd
 
-Trade routes är en spelgraf med ägda planeter, materialöversikter,
-flottboxar och interaktiva rutter. Se [handelsgrafens krav och status](trade-route-graph.md).
-Detta ersätter den tidigare listvyn och formulären; transportreglerna behålls.
-Planeter visas med namn på spelbrädet. En valpanel visar material och produktion
-för vald planet, skepp och uppdrag för vald flotta eller tilldelning för vald rutt
-(`handelsgraf-valpanel`). Stora flottkort och ruttrutor finns inte i vänstervyn;
-flottornas detaljer visas till höger (`handelsgraf-kompakt-flottvy`).
-Lediga flottor visas med skeppsbilder vid sin fysiska plats
-(`handelsgraf-skeppspositioner`). Tilldelade flottor visas mitt på sin rutt när
-platsen är fri, annars intill med en ledlinje till mittpunkten
-(`handelsgraf-ruttflottor`, **Fullständigt implementerat**). Detta ersätter deras
-fysiska placering i handelsgrafen; verklig position visas i detaljpanelen. Även dessa märken kan väljas. Planetnamn och kort
-förblir läsbara vid zoom, planeterna zoomas med kartan och deras namn visas direkt
-ovanför dem utan bakgrund eller ledlinje. En ledig transportflottas skeppsmarkör
-kan dras till en ruttlinje för att tilldela flottan. Flottor vars visningsankare ligger utanför kameran visar
-inga skeppsmärken i bild (`handelsgraf-lasbarhet`). Vald rutt visar sina aktuella
-flottor, deras skepp, position och last.
+[Supply & production](supply-production.md) ersätter den separata handelsgrafen
+med en planet- och projektöversikt, försörjningsstatus, materialdetaljer,
+leveransflöden, produktionsförmåga och materialsökning. Krav och status finns i
+den länkade beskrivningen. Endast första projektet i Build queue styr behoven.
 
-Star map kan också skapa och administrera samma handelsrutter. Dra från en
-markerad ägd planet till en annan planet, välj en ruttlinje för information eller
-dra en ledig transportflotta till linjen för tilldelning. Create route, Assign,
-Release och Close route finns även som knappar. Ogiltiga släpp och avbrott ger
-inga oavsiktliga order. Alla flottor visas vid sin verkliga position på Star map.
-Den separata Trade routes-vyn behålls. Kraven
-`handelsrutt-skapande-pa-stjarnkartan`, `handelsrutt-val-pa-stjarnkartan` och
-`flottilldelning-pa-stjarnkartan` är **Fullständigt implementerade**;
+Star map hanterar fortsatt skapande, val och stängning av rutter samt tilldelning
+eller frigörande av flottor. De befintliga Star map-kraven gäller fortsatt;
 se [beteenden och status](star-map-trade.md).
 
 `ruttflotta-till-narmaste-andplanet` — **Fullständigt implementerat**:

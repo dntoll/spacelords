@@ -1,8 +1,8 @@
 # Handelsrutter på Star map
 
-Star map och Trade routes visar samma handelsnätverk. Den separata handelsvyn
-behålls. På Star map visas alla flottor vid sin verkliga position; flottmärken
-vid ruttens mittpunkt hör enbart till den separata handelsgrafen.
+Star map administrerar handelsnätverket. Supply & production ersätter den separata
+handelsgrafen och visar materialförsörjning och produktion. På Star map visas
+alla flottor vid sin verkliga position.
 
 ## Krav och status
 
