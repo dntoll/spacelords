@@ -27,6 +27,7 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
     const model = new AppModel();
+    model.openDecisions();
     new AppController(
       model,
       new AppView(root, () => ({ render() {}, dispose() {} })),

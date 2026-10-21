@@ -1,3 +1,4 @@
+import { selectMapObject } from './map-helpers.js';
 import { chooseFleetDestination } from './fleet-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 import {
@@ -19,7 +20,7 @@ async function nextYear(page: Page) {
 
 async function home(page: Page) {
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await page.getByRole('button', { name: 'Homeworld', exact: true }).click();
+  await page.locator('canvas[data-rendered="true"]').press('Home');
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
 }
 
@@ -43,6 +44,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');
   await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Decisions', exact: true }).click();
   await page.getByRole('button', { name: 'End turn', exact: true }).click();
   await expect(
     page.getByRole('dialog', { name: 'Decisions remaining' }),
@@ -119,13 +121,9 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await nextYear(page);
   await nextYear(page);
   await chooseFleetDestination(page, 'Settlers');
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Vesta' });
+  await selectMapObject(page, 'Vesta');
   await nextYear(page);
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Vesta' });
+  await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Colonize', exact: true }).click();
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await build(page, 1, 'Iron mine');
@@ -141,14 +139,12 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     page.getByRole('complementary', { name: 'Selected route' }),
   ).toContainText('30 cargo capacity');
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await page.getByRole('button', { name: 'Homeworld', exact: true }).click();
+  await page.locator('canvas[data-rendered="true"]').press('Home');
   for (const [planet, fraction] of [
     ['Tellus', 0.35],
     ['Vesta', 0.65],
   ] as const) {
-    await page
-      .getByRole('combobox', { name: 'Known objects' })
-      .selectOption({ label: planet });
+    await selectMapObject(page, planet);
     await expectVisibleRoute(page, fraction);
   }
   await page.screenshot({
@@ -176,9 +172,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     .click();
   await page.screenshot({ path: testInfo.outputPath('trade-routes.png') });
   await nextYear(page);
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Vesta' });
+  await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await expect(
     page.getByRole('article', { name: 'Building site 1', exact: true }),
@@ -186,9 +180,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await page.screenshot({ path: testInfo.outputPath('supplied-colony.png') });
   await page.reload();
   await startFirstSlot(page);
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Tellus' });
+  await selectMapObject(page, 'Tellus');
   const route = page.getByRole('button', {
     name: 'Tellus ↔ Vesta',
     exact: true,
@@ -209,6 +201,10 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
 });
 
 async function expectVisibleRoute(page: Page, fraction: number): Promise<void> {
+  // Clear pointer hover so this check samples the ordinary blue route.
+  const map = page.locator('canvas[data-rendered="true"]');
+  await map.press('ArrowRight');
+  await map.press('ArrowLeft');
   const start = HexGeometry.toPoint(new HexCoordinate(1, 0));
   const end = HexGeometry.toPoint(new HexCoordinate(0, 1));
   // synliga-handelsrutter: sample inside the selected tile, outside planet badges.

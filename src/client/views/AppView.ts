@@ -22,6 +22,7 @@ import { renderSupply } from './SupplyView.js';
 import { renderFleets } from './FleetView.js';
 import { button, element } from './dom.js';
 import { renderDecisions, renderTurnWarning } from './EmpireView.js';
+import { renderTurnActions } from './TurnActionsView.js';
 
 export class AppView implements AppPort {
   readonly #root: HTMLElement;
@@ -31,7 +32,6 @@ export class AppView implements AppPort {
   #map: MapPort | null = null;
   #container: HTMLElement | null = null;
   #panel: HTMLElement | null = null;
-  #known: HTMLSelectElement | null = null;
   #zoom: HTMLOutputElement | null = null;
   #coordinates: HTMLElement | null = null;
   #selectionKey = '';
@@ -180,7 +180,7 @@ export class AppView implements AppPort {
       this.#selectionKey = '';
       this.#root.replaceChildren(this.#header(model.screen));
       const main = element('main', 'page');
-      if (model.screen === 'map') main.append(this.#mapPage(model));
+      if (model.screen === 'map') main.append(this.#mapPage());
       else if (model.screen === 'planet' && model.planet)
         main.append(
           renderPlanet(
@@ -381,30 +381,17 @@ export class AppView implements AppPort {
       const content = this.#root.querySelector('.supply-content');
       if (content) content.scrollTop = this.#supplyScroll;
     }
-    if (!changedScreen && model.screen === 'decisions')
-      this.#root
-        .querySelector('main')
-        ?.replaceChildren(renderDecisions(model, this.#emit));
+    if (!changedScreen && model.screen === 'decisions') {
+      const actions = this.#root.querySelector('.turn-actions');
+      const page = renderDecisions(model, this.#emit);
+      if (actions) page.querySelector('.turn-actions')?.replaceWith(actions);
+      this.#root.querySelector('main')?.replaceChildren(page);
+    }
     const counter = this.#root.querySelector('.decision-counter');
     if (counter)
       counter.textContent = `Decisions (${model.decisions.filter(needsAttention).length})`;
     if (model.screen === 'map') {
       this.#map?.render(model);
-      if (this.#known) {
-        const options = model.cells
-          .filter((cell) => cell.object)
-          .toSorted(
-            (a, b) => Number(b.object?.owned) - Number(a.object?.owned),
-          );
-        this.#known.replaceChildren(
-          ...options.map((cell) => {
-            const option = element('option', '', cell.object!.name);
-            option.value = cell.position.key;
-            return option;
-          }),
-        );
-        this.#known.value = model.selected?.position.key ?? '';
-      }
       if (this.#zoom)
         this.#zoom.value = `${Math.round(model.camera.zoom * 100)}%`;
       if (this.#coordinates)
@@ -429,7 +416,6 @@ export class AppView implements AppPort {
       });
       if (key !== this.#selectionKey) {
         this.#selectionKey = key;
-        if (this.#known) this.#known.value = model.selected?.position.key ?? '';
         this.#renderSelection(model);
         if (this.#panel)
           this.#panel.scrollTop =
@@ -446,6 +432,16 @@ export class AppView implements AppPort {
             )
             ?.scrollIntoView?.({ block: 'nearest' });
       }
+      const selected = !this.#panel?.hidden;
+      this.#root
+        .querySelector('.map-page')
+        ?.classList.toggle('has-selection', selected);
+      for (const control of this.#root.querySelectorAll<HTMLElement>(
+        '.turn-console, .end-turn',
+      ))
+        control.hidden = selected;
+    }
+    if (model.screen === 'map' || model.screen === 'decisions') {
       const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
       if (end) end.disabled = model.phase !== 'planning';
       this.#renderTurnConsole(model);
@@ -508,7 +504,7 @@ export class AppView implements AppPort {
     const log = this.#root.querySelector<HTMLElement>(
       '.turn-console [role="log"]',
     );
-    if (!log) return;
+    if (!log || log.closest<HTMLElement>('.turn-console')?.hidden) return;
     const events = model.events.slice(-100);
     const key = events.at(-1)?.id ?? 'empty';
     if (log.dataset.lastEvent === key) return;
@@ -619,93 +615,30 @@ export class AppView implements AppPort {
     return header;
   }
 
-  #mapPage(model: AppReadModel): HTMLElement {
+  #mapPage(): HTMLElement {
     const page = element('section', 'map-page');
     page.append(element('h1', 'visually-hidden', 'Star map'));
     this.#container = element('div', 'map-container');
     this.#container.dataset.testid = 'map-container';
-    const known = element('label', 'known-objects hud');
-    known.append(element('span', 'visually-hidden', 'Known objects'));
-    this.#known = element('select');
-    this.#known.append(element('option', '', 'Known objects'));
-    this.#known.options[0]!.value = '';
-    this.#known.options[0]!.disabled = true;
-    const objects = model.cells
-      .filter((cell) => cell.object !== null)
-      .toSorted(
-        (left, right) =>
-          Number(right.object?.owned) - Number(left.object?.owned),
-      );
-    for (const cell of objects) {
-      const option = element('option', '', cell.object?.name);
-      option.value = cell.position.key;
-      this.#known.append(option);
-    }
-    this.#known.addEventListener('change', () => {
-      const [q, r] = (this.#known?.value ?? '').split(',').map(Number);
-      if (Number.isInteger(q) && Number.isInteger(r))
-        this.#emit({ type: 'select', position: new HexCoordinate(q!, r!) });
-    });
-    known.append(this.#known);
-    const controls = element('div', 'map-controls hud');
-    controls.setAttribute('role', 'group');
-    controls.setAttribute('aria-label', 'Map controls');
-    const home = button(
-      'Homeworld',
-      () => this.#emit({ type: 'home' }),
-      'map-control home-control',
-    );
-    const minus = button(
-      '−',
-      () =>
-        this.#emit({ type: 'zoom', factor: 1 / 1.2, anchor: { x: 0, y: 0 } }),
-      'map-control',
-    );
-    minus.setAttribute('aria-label', 'Zoom out');
-    const plus = button(
-      '+',
-      () => this.#emit({ type: 'zoom', factor: 1.2, anchor: { x: 0, y: 0 } }),
-      'map-control',
-    );
-    plus.setAttribute('aria-label', 'Zoom in');
-    this.#zoom = element('output', 'zoom-value');
+    this.#zoom = element('output', 'visually-hidden');
     this.#zoom.setAttribute('aria-label', 'Map zoom');
-    controls.append(home, minus, this.#zoom, plus);
-    this.#coordinates = element('span', 'map-coordinates');
+    this.#coordinates = element('span', 'map-coordinates visually-hidden');
     this.#coordinates.dataset.testid = 'camera-position';
     this.#panel = element('aside', 'selection-panel hud');
     this.#panel.setAttribute('aria-label', 'Selected hex');
     page.append(
       this.#container,
-      known,
-      element(
-        'p',
-        'map-order-legend hud',
-        'S: empty building sites · Q: idle planet build queue',
-      ),
-      controls,
       this.#coordinates,
+      this.#zoom,
       this.#panel,
-    );
-    const console = element('section', 'turn-console hud');
-    console.setAttribute('aria-label', 'Turn console');
-    const log = element('div', 'console-log');
-    log.setAttribute('role', 'log');
-    log.setAttribute('aria-label', 'Game events');
-    log.setAttribute('aria-live', 'polite');
-    log.setAttribute('aria-relevant', 'additions');
-    log.tabIndex = 0;
-    log.append(element('p', 'console-empty', 'No events yet.'), element('ol'));
-    console.append(element('h2', '', 'Events'), log);
-    page.append(
-      console,
-      button('End turn', () => this.#emit({ type: 'end-turn' }), 'end-turn'),
+      renderTurnActions(this.#emit),
     );
     return page;
   }
 
   #renderSelection(model: AppReadModel): void {
     if (!this.#panel) return;
+    this.#panel.hidden = false;
     const trade = renderMapTradeSelection(model, this.#emit);
     if (trade) {
       this.#panel.setAttribute(
@@ -738,7 +671,7 @@ export class AppView implements AppPort {
       (planet) => planet.position.key === cell?.position.key,
     );
     const title = renderMapLocationHeading(
-      object?.name ?? (cell?.visible ? 'Empty space' : 'Unexplored space'),
+      object?.name ?? 'Fleets',
       cell?.position,
       source?.id,
       this.#emit,
@@ -749,13 +682,10 @@ export class AppView implements AppPort {
         ? 'A star shining through unexplored space.'
         : object?.kind === 'planet'
           ? 'An uninhabited world near your homeworld.'
-          : cell?.visible
-            ? 'No known celestial bodies here.'
-            : 'This region lies beyond your current sight.';
-    const contents: HTMLElement[] = [
-      title,
-      element('p', 'selection-description', description),
-    ];
+          : '';
+    const contents: HTMLElement[] = object
+      ? [title, element('p', 'selection-description', description)]
+      : [];
     const destinationFleet = model.destinationFleetId
       ? model.fleets.find((fleet) => fleet.id === model.destinationFleetId)
       : null;
@@ -832,11 +762,12 @@ export class AppView implements AppPort {
         model.fleets.some((fleet) => fleet.position?.key === cell.position.key)
       ) {
         // flottadministration: position and ships take priority over planet administration.
-        contents.splice(0, 1);
+        if (object) contents.splice(0, 1);
         contents.unshift(fleets);
-      } else contents.push(fleets);
+      }
     }
     this.#panel.replaceChildren(...contents);
+    this.#panel.hidden = contents.length === 0;
   }
 
   animateTurnStep(frame: TurnFrame): Promise<void> {

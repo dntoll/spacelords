@@ -22,11 +22,9 @@ test('tysta-beslut: Mute persists across turns and reload, Unmute restores warni
   ).toBeDisabled();
   await expect(page.locator('.decision-counter')).toHaveText('Decisions (0)');
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
+  await page.getByRole('button', { name: 'Decisions', exact: true }).click();
   await page.getByRole('button', { name: 'End turn', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(
-    page.getByRole('button', { name: 'End turn', exact: true }),
-  ).toBeEnabled();
   await page.reload();
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Decisions', exact: true }).click();
@@ -39,6 +37,7 @@ test('tysta-beslut: Mute persists across turns and reload, Unmute restores warni
   await expect(page.locator('.decision-counter')).toHaveText('Decisions (1)');
   await page.screenshot({ path: testInfo.outputPath('decision-muting.png') });
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
+  await page.getByRole('button', { name: 'Decisions', exact: true }).click();
   await page.getByRole('button', { name: 'End turn', exact: true }).click();
   const warning = page.getByRole('dialog', { name: 'Decisions remaining' });
   await expect(warning.locator('li')).toHaveCount(1);

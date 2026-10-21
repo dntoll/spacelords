@@ -17,9 +17,6 @@ test('tre-sparplatser / sparat-spel / tomm-sparplats: reload, preview, isolation
   });
   await startFirstSlot(page);
   await endTurn(page);
-  await expect(
-    page.getByRole('button', { name: 'End turn', exact: true }),
-  ).toBeEnabled();
   await page.getByRole('button', { name: 'Saved games', exact: true }).click();
   const first = page.getByRole('article', { name: 'Save slot 1', exact: true });
   const second = page.getByRole('article', {

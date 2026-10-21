@@ -297,3 +297,9 @@ varningsdialog, avbrott, lagringsfel och radering av en enda plats.
 tiominutersgränsen avbröt körningen utan testfel efter att installation,
 byggen och delar av de fyra webbläsarprofilerna passerat. Ändringen gäller
 hela CI-jobbet; `snabb-testsvit` behåller sin gräns på 20 sekunder.
+
+- `fokuserat-kartval` och `rundkontroller-i-decisions`: enhetstester kontrollerar
+  växlingen mellan tomma rutor, himlakroppar, flottor och handelsrutter samt
+  rundknappens indata och spärr under simulering. Webbläsartester kontrollerar
+  nedre panelens utrymme och att Events och End turn går att använda i Decisions
+  utan sidscroll på telefon och i liggande format.

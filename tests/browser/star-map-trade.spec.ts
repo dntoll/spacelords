@@ -1,3 +1,4 @@
+import { selectMapObject } from './map-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 import {
   tradeNetworkState,
@@ -68,9 +69,7 @@ test('ruttflotta-till-narmaste-andplanet: remote assignment saves an approach wi
   );
   await page.reload();
   await startFirstSlot(page);
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Tellus' });
+  await selectMapObject(page, 'Tellus');
   await page
     .getByRole('button', { name: 'Tellus ↔ Vesta', exact: true })
     .click();
@@ -164,9 +163,7 @@ test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives retain orders after
     page.getByRole('button', { name: 'Create route', exact: true }),
   ).toHaveCount(0);
   await page.locator('canvas[data-rendered="true"]').press('r');
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Vesta' });
+  await selectMapObject(page, 'Vesta');
   await assignFleetToRoute(page, 'Freighters', 'Tellus', 'Vesta');
   await page
     .getByRole('button', { name: 'Supply & production', exact: true })
@@ -176,9 +173,7 @@ test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives retain orders after
   ).toBeVisible();
   await page.reload();
   await startFirstSlot(page);
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Tellus' });
+  await selectMapObject(page, 'Tellus');
   await page
     .getByRole('button', { name: 'Tellus ↔ Vesta', exact: true })
     .click();
@@ -196,12 +191,8 @@ test('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: clickin
   page,
 }) => {
   await page.locator('canvas[data-rendered="true"]').press('r');
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Vesta' });
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Tellus' });
+  await selectMapObject(page, 'Vesta');
+  await selectMapObject(page, 'Tellus');
   const p = await screenPoint(page, {
     x: start.x + (end.x - start.x) / 3,
     y: start.y + (end.y - start.y) / 3,

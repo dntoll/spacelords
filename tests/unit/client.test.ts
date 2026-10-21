@@ -107,7 +107,7 @@ describe('lokal-sikt', () => {
     expect(root.outerHTML).not.toContain('Nadir I');
     expect(root.outerHTML).not.toContain('Aster I');
     expect(root.textContent).toContain('Tellus');
-    expect(root.textContent).toContain('Vesta');
+    expect(root.querySelector('.known-objects')).toBeNull();
   });
 });
 
@@ -139,19 +139,17 @@ describe('english-game / focused-interface', () => {
 
 describe('focused-interface', () => {
   it('retains descriptions when selecting stars and uninhabited planets', () => {
-    start();
-    const known = root.querySelector('select')!;
-    const select = (name: string): void => {
-      known.value = [...known.options].find(
-        (option) => option.textContent === name,
-      )!.value;
-      known.dispatchEvent(new Event('change'));
+    const model = new AppModel();
+    const view = new AppView(root, mapFactory);
+    const select = (q: number, r: number): void => {
+      model.select(new HexCoordinate(q, r));
+      view.render(model.snapshot);
     };
-    select('Sol');
+    select(0, 0);
     expect(
       root.querySelector('[aria-label="Selected hex"]')?.textContent,
     ).toContain('A star shining through unexplored space.');
-    select('Vesta');
+    select(0, 1);
     expect(
       root.querySelector('[aria-label="Selected hex"]')?.textContent,
     ).toContain('An uninhabited world near your homeworld.');

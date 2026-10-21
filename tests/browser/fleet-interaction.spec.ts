@@ -1,3 +1,4 @@
+import { selectMapObject } from './map-helpers.js';
 import { startFirstSlot } from './save-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 
@@ -20,9 +21,7 @@ test('flottval-pa-kartan / dra-flottdestination: selects a fleet, previews a sna
   await page.goto('./');
   await startFirstSlot(page);
   const { canvas, x, y } = await mapCenter(page);
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Vesta' });
+  await selectMapObject(page, 'Vesta');
   const camera = await page.getByTestId('camera-position').textContent();
   await page.mouse.move(x, y - 18);
   await expect(canvas).toHaveCSS('cursor', 'pointer');
@@ -33,7 +32,7 @@ test('flottval-pa-kartan / dra-flottdestination: selects a fleet, previews a sna
   ).toBeVisible();
   await expect(
     page.getByRole('combobox', { name: 'Known objects' }),
-  ).toHaveValue('0,1');
+  ).toHaveCount(0);
   await page.mouse.move(x, y - 18);
   await page.mouse.down();
   await page.mouse.move(x + Math.sqrt(3) * 36, y, { steps: 8 });

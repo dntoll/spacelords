@@ -1,3 +1,4 @@
+import { selectMapObject } from './map-helpers.js';
 import { chooseFleetDestination } from './fleet-helpers.js';
 import { startFirstSlot, endTurn, chooseResearch } from './save-helpers.js';
 import { expect, test, type Locator, type Page } from '@playwright/test';
@@ -45,14 +46,9 @@ test('hexkarta / lokal-sikt / synliga-stjarnor: paints a real canvas without hid
     return values.size;
   });
   expect(colors).toBeGreaterThan(10);
-  expect(
-    await page
-      .getByRole('combobox', { name: 'Known objects' })
-      .locator('option')
-      .allTextContents(),
-  ).toEqual(
-    expect.arrayContaining(['Tellus', 'Vesta', 'Sol', 'Nadir', 'Aster']),
-  );
+  await expect(
+    page.getByRole('combobox', { name: 'Known objects' }),
+  ).toHaveCount(0);
   expect(await page.locator('body').innerHTML()).not.toMatch(
     /Brontes|Nadir I|Aster I/,
   );
@@ -60,9 +56,7 @@ test('hexkarta / lokal-sikt / synliga-stjarnor: paints a real canvas without hid
     path: testInfo.outputPath('starmap.png'),
     fullPage: true,
   });
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Vesta' });
+  await selectMapObject(page, 'Vesta');
   await expect(
     page.getByRole('button', { name: 'Open planet', exact: true }),
   ).toHaveCount(0);
@@ -71,7 +65,7 @@ test('hexkarta / lokal-sikt / synliga-stjarnor: paints a real canvas without hid
 test('planetinformation / visa-byggalternativ / vynavigation: preserves camera through both views', async ({
   page,
 }, testInfo) => {
-  await page.getByRole('button', { name: 'Zoom in', exact: true }).click();
+  await page.locator('canvas[data-rendered="true"]').press('+');
   const zoom = await page.getByLabel('Map zoom').textContent();
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await expect(
@@ -135,15 +129,11 @@ test('flottadministration / flottdestinationer: map orders and fleet-grid transf
   await expect(
     page.getByText('Choose a destination for Home Fleet.'),
   ).toBeVisible();
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Vesta' });
+  await selectMapObject(page, 'Vesta');
   await expect(
     page.getByRole('button', { name: 'Clear destination', exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Tellus' });
+  await selectMapObject(page, 'Tellus');
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await page.getByRole('button', { name: 'Home Fleet', exact: true }).click();
   await page.getByRole('button', { name: 'New fleet', exact: true }).click();
@@ -178,9 +168,7 @@ test('kartnavigation: keyboard pans and zooms, canvas hit-testing selects the ho
   await expect(page.getByLabel('Map zoom')).toHaveText('120%');
   await map.press('Home');
   await expect(position).toHaveText(before ?? '');
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Vesta' });
+  await selectMapObject(page, 'Vesta');
   const point = await center(map);
   await page.mouse.click(point.x, point.y);
   await expect(
@@ -210,7 +198,7 @@ test('kartnavigation: a mouse drag pans without changing selection; wheel zoom s
   await page.mouse.move(panStart.x, panStart.y);
   await page.mouse.wheel(0, -100);
   await expect(page.getByLabel('Map zoom')).not.toHaveText('100%');
-  await page.getByRole('button', { name: 'Homeworld', exact: true }).click();
+  await page.locator('canvas[data-rendered="true"]').press('Home');
   await expect(position).toHaveText(before ?? '');
   await expect(page.getByLabel('Map zoom')).toHaveText('100%');
 });
@@ -221,9 +209,7 @@ test('kartnavigation: native touch selects the planet', async ({
 }) => {
   test.skip(!isMobile, 'Touch is exercised by phone and tablet projects.');
   const map = await canvas(page);
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Vesta' });
+  await selectMapObject(page, 'Vesta');
   const point = await center(map);
   await page.touchscreen.tap(point.x, point.y);
   await expect(
@@ -336,9 +322,6 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   const nextYear = async () => {
     await page.getByRole('button', { name: 'Star map', exact: true }).click();
     await endTurn(page);
-    await expect(
-      page.getByRole('button', { name: 'End turn', exact: true }),
-    ).toBeEnabled();
   };
   const construction = async () => {
     await page
@@ -482,13 +465,9 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   ).toBeVisible();
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await chooseFleetDestination(page, 'Fleet 1');
-  await page
-    .getByRole('combobox', { name: 'Known objects', exact: true })
-    .selectOption({ label: 'Vesta' });
+  await selectMapObject(page, 'Vesta');
   await nextYear();
-  await page
-    .getByRole('combobox', { name: 'Known objects', exact: true })
-    .selectOption({ label: 'Vesta' });
+  await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Colonize', exact: true }).click();
   await expect(page.locator('.order-status')).toContainText(
     '6 empty building sites',

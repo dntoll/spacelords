@@ -231,50 +231,7 @@ p {
   border-radius: 5px;
   box-shadow: 0 4px 24px #0005;
 }
-.known-objects {
-  position: absolute;
-  top: 12px;
-  left: max(12px, env(safe-area-inset-left));
-}
-.known-objects select {
-  min-height: 44px;
-  min-width: 150px;
-  padding: 8px 12px;
-  border: 0;
-  border-radius: 5px;
-  color: #e5e8e6;
-  background: transparent;
-}
-.known-objects option {
-  background: #0e1d28;
-}
-.map-controls {
-  position: absolute;
-  bottom: max(12px, env(safe-area-inset-bottom));
-  left: max(12px, env(safe-area-inset-left));
-  display: flex;
-  align-items: center;
-}
-.map-control {
-  border: 0;
-  padding: 8px 13px;
-  background: transparent;
-  color: #e5e8e6;
-  font-size: 1.2rem;
-}
-.map-control:hover {
-  background: #ffffff12;
-}
-.home-control {
-  font-size: 0.85rem;
-  border-right: 1px solid var(--line);
-}
-.zoom-value {
-  min-width: 46px;
-  font-size: 0.8rem;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
+
 .map-coordinates {
   position: absolute;
   right: max(12px, env(safe-area-inset-right));
@@ -680,15 +637,7 @@ p {
     bottom: max(28px, env(safe-area-inset-bottom));
     font-size: 0.6rem;
   }
-  .map-control {
-    padding-inline: 10px;
-  }
-  .home-control {
-    font-size: 0.75rem;
-  }
-  .zoom-value {
-    min-width: 40px;
-  }
+
   .planet-page,
   .research-page {
     padding: 10px max(12px, env(safe-area-inset-right))
@@ -955,15 +904,7 @@ p {
 .building-panel {
   overflow: visible;
 }
-.map-order-legend {
-  position: absolute;
-  top: 72px;
-  left: max(12px, env(safe-area-inset-left));
-  padding: 6px 9px;
-  font-size: 0.65rem;
-  color: #e9c78b;
-  pointer-events: none;
-}
+
 .selection-panel {
   max-height: calc(100% - 100px);
   overflow: auto;
@@ -974,9 +915,6 @@ p {
   .research-choice {
     padding: 10px;
   }
-  .map-order-legend {
-    top: 65px;
-  }
 }
 @media (max-height: 500px) {
   .construction .building-panel {
@@ -986,11 +924,6 @@ p {
   .building-choice p,
   .research-choice p {
     display: block;
-  }
-  .map-order-legend {
-    top: 12px;
-    left: 250px;
-    max-width: 150px;
   }
 }
 
@@ -2464,4 +2397,46 @@ p {
   .selection-panel:has(.map-fleet-management) {
     width: auto;
   }
+}
+
+/* fokuserat-kartval: selection details own the lower map area. */
+[hidden] {
+  display: none !important;
+}
+.map-page .selection-panel {
+  top: auto;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  max-height: calc(100% - 24px);
+}
+@media (max-width: 900px), (max-height: 500px) {
+  .map-page .selection-panel,
+  .map-page .selection-panel:has(.map-fleet-management) {
+    top: auto;
+    left: max(8px, env(safe-area-inset-left));
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    width: auto;
+    max-height: calc(50% - 40px);
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+}
+.decisions-page {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.decisions-page .turn-actions {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+.decisions-page .turn-console {
+  position: static;
+  width: 100%;
+  height: clamp(64px, 18dvh, 180px);
+}
+.decisions-page .end-turn {
+  position: static;
 }

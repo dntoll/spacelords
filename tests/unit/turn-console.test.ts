@@ -83,6 +83,7 @@ describe('handelser / arsrundor-och-order', () => {
     document.body.replaceChildren(root);
     const model = new AppModel();
     model.setDestination('fleet-home', 0, 1);
+    model.select(new HexCoordinate(-2, 0));
     let resume!: () => void;
     const animation = new Promise<void>((resolve) => {
       resume = resolve;
@@ -125,6 +126,7 @@ describe('handelser / arsrundor-och-order', () => {
     document.body.replaceChildren(root);
     const model = new AppModel();
     const view = new AppView(root, () => ({ render() {}, dispose() {} }));
+    model.select(new HexCoordinate(-2, 0));
     const events = Array.from({ length: 120 }, (_, i) => ({
       id: `event-${i}`,
       round: i + 1,

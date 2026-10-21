@@ -7,7 +7,7 @@ async function nextYear(page: Page) {
 }
 async function home(page: Page) {
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await page.getByRole('button', { name: 'Homeworld', exact: true }).click();
+  await page.locator('canvas[data-rendered="true"]').press('Home');
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
 }
 async function build(page: Page, site: number, type: string) {

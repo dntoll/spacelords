@@ -1,3 +1,4 @@
+import { selectMapObject } from './map-helpers.js';
 import { chooseFleetDestination } from './fleet-helpers.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot, endTurn } from './save-helpers.js';
@@ -162,13 +163,8 @@ test('flottbyggar-minikarta: the marker follows a fleet after travelling', async
   await page.goto('./');
   await startFirstSlot(page);
   await chooseFleetDestination(page);
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: 'Vesta' });
+  await selectMapObject(page, 'Vesta');
   await endTurn(page);
-  await expect(
-    page.getByRole('button', { name: 'End turn', exact: true }),
-  ).toBeEnabled();
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await expect(
     page.locator(

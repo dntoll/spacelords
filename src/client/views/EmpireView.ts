@@ -1,13 +1,14 @@
 import type { AppReadModel } from '../models/AppModel.js';
 import { needsAttention } from '../models/Decisions.js';
 import type { IntentHandler } from './ViewContracts.js';
+import { renderTurnActions } from './TurnActionsView.js';
 import { button, element } from './dom.js';
 
 export function renderDecisions(
   model: AppReadModel,
   emit: IntentHandler,
 ): HTMLElement {
-  const page = element('section', 'empire-page');
+  const page = element('section', 'empire-page decisions-page');
   page.append(element('h1', '', 'Decisions'));
   const panel = element('div', 'empire-content');
   const next = button('Next decision', () => emit({ type: 'next-decision' }));
@@ -45,7 +46,7 @@ export function renderDecisions(
     card.append(skip, mute);
     panel.append(card);
   }
-  page.append(panel);
+  page.append(panel, renderTurnActions(emit));
   return page;
 }
 

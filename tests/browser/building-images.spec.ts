@@ -56,9 +56,6 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
   await expect(site.getByRole('img')).toHaveAttribute('src', stationSource!);
   await page.getByRole('button', { name: 'Back to map', exact: true }).click();
   await endTurn(page);
-  await expect(
-    page.getByRole('button', { name: 'End turn', exact: true }),
-  ).toBeEnabled();
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await expect(site.getByRole('img')).toHaveAttribute('src', stationSource!);
   await expect(site).toContainText('Operational');

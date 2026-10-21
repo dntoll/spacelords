@@ -59,6 +59,10 @@ Se [hela visionen](docs/game-vision.md).
   leveranser, produktionsförmåga och materialsökning. De sex nya kraven är
   **Fullständigt implementerat**. Star map hanterar fortsatt rutter och flottilldelning;
   fysiska transporter, omlastningar och sparade order behålls.
+- **Kartans utrymme:** `fokuserat-kartval` är **Fullständigt implementerat**.
+  Kartan saknar objektmeny, S/Q-förklaring och kontrollruta för zoom/Homeworld.
+  Tomma rutor utan flottor visar ingen informationspanel. Val av himlakropp,
+  flotta eller handelsrutt får den undre delen på små skärmar.
 - **Beslut och händelser:** Decisions och Next decision samlar val och
   försörjningsproblem. Spelaren kan hoppa över beslut ett år eller tysta ett
   enskilt beslut tills det återaktiveras i Decisions. `tysta-beslut` är
@@ -66,6 +70,9 @@ Se [hela visionen](docs/game-vision.md).
   samlat och låter spelaren fortsätta ändå. Händelsekonsolen (`handelser`) är
   fullständigt implementerad och anpassar sin storlek efter skärmen: fler
   synliga rader på större skärmar och kompakt format på små eller låga skärmar.
+  Events och End turn döljs när kartan visar ett val.
+  `rundkontroller-i-decisions` är **Fullständigt implementerat**: båda finns
+  även i Decisions.
 - **Utveckling och kvalitet:** MVC, TypeScript, ESLint, p5 i instance mode,
   en snabb testsvit inom 20 sekunder och en utökad svit i GitHub CI.
   `utokad-testsvit` har en jobbtidsgräns på 20 minuter inklusive installation

@@ -1,3 +1,4 @@
+import { selectMapObject } from './map-helpers.js';
 import { expect, type Page } from '@playwright/test';
 
 export async function chooseResearch(
@@ -18,13 +19,9 @@ export async function connectTradePlanets(
   to: string,
 ): Promise<void> {
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: from });
+  await selectMapObject(page, from);
   await page.locator('canvas[data-rendered="true"]').press('r');
-  await page
-    .getByRole('combobox', { name: 'Known objects' })
-    .selectOption({ label: to });
+  await selectMapObject(page, to);
 }
 
 export async function startFirstSlot(page: Page): Promise<void> {
@@ -57,6 +54,13 @@ export async function assignFleetToRoute(
 }
 
 export async function endTurn(page: Page): Promise<void> {
+  const onMap = (await page.locator('.map-page').count()) > 0;
+  if (
+    !(await page
+      .getByRole('button', { name: 'End turn', exact: true })
+      .isVisible())
+  )
+    await page.getByRole('button', { name: /^Decisions/ }).click();
   await page.getByRole('button', { name: 'End turn', exact: true }).click();
   const warning = page.getByRole('dialog', { name: 'Decisions remaining' });
   if (await warning.isVisible())
@@ -66,4 +70,6 @@ export async function endTurn(page: Page): Promise<void> {
   await expect(
     page.getByRole('button', { name: 'End turn', exact: true }),
   ).toBeEnabled();
+  if (onMap && !(await page.locator('.map-page').count()))
+    await page.getByRole('button', { name: 'Star map', exact: true }).click();
 }
