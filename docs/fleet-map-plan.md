@@ -132,8 +132,11 @@ direkt, även utan musdrag eller dubbelklick.
 - Behåll ett uttryckligt mottagarval för förstärkningar på avstånd, åtkomligt
   från ett valt skepp. Märk att skeppet skickas som En route i stället för att
   omedelbart ingå i mottagarflottan.
-- Mottagarvalet omfattar också tillåtna ruttflottor. Skepp tas fortsatt inte ur
-  aktiva ruttflottor och deras last och uppdrag påverkas inte.
+- Mottagarvalet omfattar också tillåtna ruttflottor. Efter användarens ändring
+  2026-10-21 får skepp lämna olastade ruttflottor enligt
+  `skepp-ur-olastad-ruttflotta`. Last blockerar alla uttag; sista Transport ship
+  frigör flottan från rutten. Förstärkning av mottagarflottor behåller deras last
+  och uppdrag.
 - Bevara `flottbyggar-minikarta` i denna leverans. Att ta bort minikartan eller
   möjligheten att skapa en tom flotta kräver ett separat uttryckligt kravbyte.
 

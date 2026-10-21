@@ -1,3 +1,4 @@
+import { shipTransferIssue } from '../models/FleetTransfer.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import type { FleetSnapshot } from '../models/Game.js';
 import type { IntentHandler } from './ViewContracts.js';
@@ -101,7 +102,7 @@ export function renderFleetCard(
     onMap ? 12 : 1,
   );
   for (const token of manifest.querySelectorAll<HTMLButtonElement>('button')) {
-    token.disabled = locked || !!fleet.routeId;
+    token.disabled = locked || !!shipTransferIssue(fleet);
     token.draggable = false;
     token.classList.toggle(
       'transfer-source',
@@ -115,7 +116,10 @@ export function renderFleetCard(
       (candidate) => candidate.id === model.shipTransfer!.fleetId,
     );
     const available =
-      !locked && !!source && !source.routeId && source.id !== fleet.id;
+      !locked &&
+      !!source &&
+      !shipTransferIssue(source) &&
+      source.id !== fleet.id;
     hangar.classList.toggle('transfer-available', available);
     const move = button(`Move ship to ${fleet.name}`, () =>
       emit({ type: 'transfer-chosen-ship', target: fleet.id }),
@@ -141,7 +145,12 @@ export function renderFleetCard(
       const source = model.fleets.find(
         (candidate) => candidate.id === model.shipTransfer!.fleetId,
       );
-      if (!locked && !!source && !source.routeId && source.id !== fleet.id)
+      if (
+        !locked &&
+        !!source &&
+        !shipTransferIssue(source) &&
+        source.id !== fleet.id
+      )
         emit({ type: 'transfer-chosen-ship', target: fleet.id });
     } else
       emit({ type: onMap ? 'map-select-fleet' : 'select-fleet', id: fleet.id });
@@ -157,14 +166,8 @@ export function renderFleetCard(
     ),
     hangar,
   );
-  if (fleet.routeId)
-    card.append(
-      element(
-        'p',
-        'muted-note',
-        'Ships cannot be taken out of an active trade fleet.',
-      ),
-    );
+  const transferIssue = shipTransferIssue(fleet);
+  if (transferIssue) card.append(element('p', 'muted-note', transferIssue));
   const assignment = fleetAssignmentLabel(fleet, model);
   if (assignment)
     card.append(element('p', 'muted-note fleet-assignment', assignment));

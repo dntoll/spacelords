@@ -69,9 +69,21 @@ blir ett nytt beslut. När en förstärkningsgrupp ansluter försvinner dess
 tillfälliga flottkort; den ursprungliga avsändarflottan behålls även om den
 blev tom. Tom mottagarflotta tar fortfarande emot direkt vid avsändarens position.
 
-Ruttuppdrag, last och färdorder behålls när nya skepp ansluter. För att ta skepp
-ur ruttflottan behöver den först lämna rutten. På Star map och i Fleets visas båda
-ändplaneternas namn. Piratrån och eskortskydd är fortfarande inte implementerade.
+Ruttuppdrag, last och färdorder behålls när nya skepp ansluter. På Star map och
+i Fleets visas båda ändplaneternas namn. Piratrån och eskortskydd är fortfarande
+inte implementerade.
+
+`skepp-ur-olastad-ruttflotta` — **Fullständigt implementerat**: skepp får lämna
+en Trade fleet när hela flottans lastrum är tomt. Last blockerar alla
+skeppstyper, även Fighter, oavsett återstående lastkapacitet. Väntande gods i
+planetlager räknas inte som last på flottan. Flytt till annan flotta, fysisk
+förstärkning på avstånd och New fleet följer samma regel. Rutten och färden
+behålls så länge ett Transport ship återstår. När sista Transport ship lämnar
+frigörs flottan direkt från rutten och en eventuell Release-begäran tas bort.
+Kvarvarande skepp behåller position och färd; en helt tom flotta saknar position
+och färdorder. En stängande rutt tas bort när dess sista flotta lämnat.
+Tilldelning, last och frigörande bevaras vid sparning. Regeln ersätter den
+tidigare spärren mot alla uttag ur aktiva ruttflottor.
 
 Aktiva byggprojekt beställer saknade resurser automatiskt. Källplanetens egna
 aktiva behov och tidigare reservationer skyddas. Äldsta behov behandlas först.
@@ -83,7 +95,9 @@ vid faktisk ankomst. Flera länkar kräver omlastning och en ny resa tidigast
 nästa år. Transitmaterial är reserverat för slutmottagaren. Avbrutna order
 släpper olastade reservationer; redan lastat material fortsätter till mottagaren
 som vanligt lagermaterial. Om rutten stängs lossas pågående last vid dess nästa
-ändplanet utan att försvinna. En flotta lämnar tjänsten efter resa och lossning.
+ändplanet utan att försvinna. Vid Release lämnar en flotta tjänsten efter resa
+och lossning. En olastad flotta vars sista Transport ship flyttas ut frigörs
+direkt enligt `skepp-ur-olastad-ruttflotta`.
 
 ## Supply & production
 

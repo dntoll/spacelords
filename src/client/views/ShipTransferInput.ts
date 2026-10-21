@@ -1,3 +1,4 @@
+import { shipTransferIssue } from '../models/FleetTransfer.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import type { ShipType } from '../models/Game.js';
 import type { IntentHandler } from './ViewContracts.js';
@@ -32,7 +33,7 @@ export function bindShipTransfers(
       model.phase === 'planning' &&
       !!from &&
       (target === null || !!to) &&
-      !from.routeId &&
+      !shipTransferIssue(from) &&
       from.id !== to?.id &&
       from.ships[source.ship] > 0
     );
@@ -68,10 +69,12 @@ export function bindShipTransfers(
     const ship = token.dataset.ship as ShipType;
     const source: Transfer = { source: token.dataset.fleetId!, ship };
     token.addEventListener('pointerdown', (event) => {
+      const fleet = model.fleets.find((fleet) => fleet.id === source.source);
       if (
         (event.pointerType === 'mouse' && event.button !== 0) ||
         model.phase !== 'planning' ||
-        model.fleets.find((fleet) => fleet.id === source.source)?.routeId
+        !fleet ||
+        shipTransferIssue(fleet)
       )
         return;
       if (gesture) {

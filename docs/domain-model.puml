@@ -128,7 +128,9 @@ note right of Fleet
   Första skeppet bestämmer positionen.
   Sista skeppet släpper positionen.
   Ruttflotta kan ta emot skepp på samma hex.
-  Skepp lämnar först efter avslutat ruttuppdrag.
+  skepp-ur-olastad-ruttflotta:
+  Skepp lämnar ruttflottan endast utan last.
+  Sista Transport ship frigör ruttuppdraget.
   Förstärkning reser som egen flotta (En route).
   Skeppen ansluter fysiskt vid möte på samma hex.
 end note

@@ -168,7 +168,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     .click();
   await expect(
     page.getByRole('button', { name: 'Fighter 1 in Freighters', exact: true }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   await freighters.locator('.fleet-assignment').scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath('fleet-trade-route.png') });
   await page

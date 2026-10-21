@@ -1,3 +1,4 @@
+import { shipTransferIssue } from '../models/FleetTransfer.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import type { HexCoordinate } from '../models/HexCoordinate.js';
 import type { IntentHandler } from './ViewContracts.js';
@@ -95,7 +96,8 @@ export function renderMapFleetPanel(
     const move = button('Move ship to new fleet', () =>
       emit({ type: 'transfer-chosen-ship', target: null }),
     );
-    move.disabled = model.phase !== 'planning' || !source || !!source.routeId;
+    move.disabled =
+      model.phase !== 'planning' || !source || !!shipTransferIssue(source);
     create.append(move);
   }
   cards.append(create);

@@ -284,3 +284,11 @@ varningsdialog, avbrott, lagringsfel och radering av en enda plats.
   med intern scroll och följer nya händelser när spelaren är längst ned.
   Händelsehistoriken sparas i sin helhet. Tester skyddar fasväxling, ordning,
   ankomst, sparkompatibilitet, tillgänglig logg och små skärmar.
+
+- `skepp-ur-olastad-ruttflotta`: samma läsbara validering används för skeppsval,
+  klickflytt, dragning och domänens order. Game kontrollerar aktuell last före
+  mutation, inklusive skapande av nya flottor. När sista Transport ship lämnar
+  tas ruttuppdrag och Release-begäran bort och stängande rutter städas.
+  Modelltester skyddar last, oförändrat tillstånd vid avslag, fysisk resa,
+  lossning, väntande lagergods och sparning. Vy- och webbläsartester täcker
+  spärrade lastade flottor, dragning och New fleet för olastade flottor.

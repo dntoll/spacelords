@@ -126,7 +126,7 @@ describe('forstarka-ruttflotta', () => {
     expect(Game.restore(saved).exportState()).toEqual(saved);
   });
 
-  it('keeps removal blocked but accepts remote reinforcements without interrupting the route', () => {
+  it('accepts remote reinforcements without interrupting the route', () => {
     const game = setup();
     game.setDestination(
       'fleet-home',
@@ -137,11 +137,6 @@ describe('forstarka-ruttflotta', () => {
     expect(game.fleet('fleet-home')!.position).not.toEqual(
       game.fleet('freighters')!.position,
     );
-    const before = game.exportState();
-    expect(() =>
-      game.transferShips('freighters', 'Transport ship', 1, 'fleet-home'),
-    ).toThrow('Release');
-    expect(game.exportState()).toEqual(before);
     game.transferShips('fleet-home', 'Fighter', 1, 'freighters');
     expect(game.fleet('freighters')!.ships.Fighter).toBe(0);
     expect(
@@ -151,5 +146,155 @@ describe('forstarka-ruttflotta', () => {
     game.finishTurn();
     expect(game.fleet('freighters')!.ships.Fighter).toBe(1);
     expect(game.fleet('freighters')!.routeId).toBe('route-test');
+  });
+});
+
+describe('skepp-ur-olastad-ruttflotta', () => {
+  function unloaded(transports = 2) {
+    const state = setup().exportState();
+    return Game.restore({
+      ...state,
+      shipments: [],
+      fleets: state.fleets.map((fleet) =>
+        fleet.id === 'freighters'
+          ? {
+              ...fleet,
+              ships: {
+                ...fleet.ships,
+                Fighter: 1,
+                'Transport ship': transports,
+              },
+            }
+          : fleet,
+      ),
+    });
+  }
+
+  it('moves ships out without changing the remaining trade fleet course or assignment', () => {
+    const game = unloaded();
+    const before = game.fleet('freighters')!;
+    game.transferShips('freighters', 'Transport ship', 1, 'fleet-home');
+    expect(game.fleet('freighters')).toMatchObject({
+      routeId: before.routeId,
+      position: before.position,
+      destination: before.destination,
+      ships: { Fighter: 1, 'Transport ship': 1 },
+    });
+    expect(game.fleet('fleet-home')!.ships['Transport ship']).toBe(1);
+    const saved = game.exportState();
+    expect(saved.fleets[1]!.courseOrigin).toEqual(before.position);
+    expect(Game.restore(saved).exportState()).toEqual(saved);
+  });
+
+  it.each(['Fighter', 'Transport ship'] as const)(
+    'blocks removing a %s while any cargo is aboard, without changing saved state',
+    (ship) => {
+      const game = setup();
+      game.transferShips('fleet-home', 'Fighter', 1, 'freighters');
+      const before = game.exportState();
+      for (const target of ['fleet-home', null]) {
+        expect(() => game.transferShips('freighters', ship, 1, target)).toThrow(
+          'cargo',
+        );
+        expect(game.exportState()).toEqual(before);
+      }
+    },
+  );
+
+  it('releases the route when its last transport leaves, preserving the remaining ships and course', () => {
+    const game = unloaded(1);
+    const before = game.fleet('freighters')!;
+    const received = game.transferShips(
+      'freighters',
+      'Transport ship',
+      1,
+      null,
+    );
+    expect(received.position).toEqual(before.position);
+    expect(game.fleet('freighters')).toMatchObject({
+      position: before.position,
+      destination: before.destination,
+      ships: { Fighter: 1, 'Transport ship': 0 },
+    });
+    expect(game.fleet('freighters')!.routeId).toBeUndefined();
+    expect(game.fleet('freighters')!.releaseRequested).toBeUndefined();
+    expect(game.tradeRoutes[0]!.fleetIds).toEqual([]);
+  });
+
+  it('leaves no route assignment or position when the last ship leaves', () => {
+    const state = setup().exportState();
+    const game = Game.restore({ ...state, shipments: [] });
+    game.transferShips('freighters', 'Transport ship', 1, null);
+    expect(game.fleet('freighters')).toMatchObject({
+      position: null,
+      destination: null,
+    });
+    expect(game.fleet('freighters')!.routeId).toBeUndefined();
+    expect(game.exportState().fleets[1]!.courseOrigin).toBeUndefined();
+  });
+
+  it('sends unloaded ships to distant fleets as physical reinforcements', () => {
+    const game = unloaded();
+    game.setDestination(
+      'fleet-home',
+      game.galaxy.systems[0]!.planets[2]!.position,
+    );
+    for (const frame of game.startTurn()) game.applyFrame(frame);
+    game.finishTurn();
+    const source = game.fleet('freighters')!;
+    const received = game.transferShips(
+      'freighters',
+      'Fighter',
+      1,
+      'fleet-home',
+    );
+    expect(received.joinFleetId).toBe('fleet-home');
+    expect(received.position).toEqual(source.position);
+    expect(game.fleet('fleet-home')!.ships.Fighter).toBe(1);
+    expect(game.fleet('freighters')!.routeId).toBe('route-test');
+  });
+
+  it('allows removal after delivery has unloaded the cargo', () => {
+    const game = setup();
+    for (const frame of game.startTurn()) game.applyFrame(frame);
+    game.finishTurn();
+    expect(game.fleet('freighters')!.cargo!.Iron).toBe(0);
+    expect(() =>
+      game.transferShips('freighters', 'Transport ship', 1, null),
+    ).not.toThrow();
+  });
+
+  it('does not mistake a waiting warehouse shipment for cargo aboard the fleet', () => {
+    const state = setup().exportState();
+    const game = Game.restore({
+      ...state,
+      shipments: state.shipments.map((shipment) => ({
+        ...shipment,
+        fleetId: null,
+      })),
+    });
+    const waiting = game.exportState().shipments;
+    game.transferShips('freighters', 'Transport ship', 1, 'fleet-home');
+    expect(game.exportState().shipments).toEqual(waiting);
+    expect(game.tradeRoutes[0]!.status).toBe('Needs transport fleet');
+  });
+
+  it('finishes closing the route when its last unloaded carrier loses its transport', () => {
+    const game = unloaded(1);
+    game.closeTradeRoute('route-test');
+    expect(game.fleet('freighters')!.releaseRequested).toBe(true);
+    game.transferShips('freighters', 'Transport ship', 1, null);
+    expect(game.tradeRoutes).toEqual([]);
+    expect(game.fleet('freighters')!.releaseRequested).toBeUndefined();
+  });
+
+  it('keeps manual course changes and transfers during simulation blocked', () => {
+    const game = unloaded();
+    expect(() => game.clearDestination('freighters')).toThrow('Release');
+    game.startTurn();
+    expect(() =>
+      game.transferShips('freighters', 'Fighter', 1, null),
+    ).toThrow();
+    expect(game.fleet('freighters')!.ships.Fighter).toBe(1);
   });
 });

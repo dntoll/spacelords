@@ -1,3 +1,4 @@
+import { shipTransferIssue } from './FleetTransfer.js';
 import { StarMapTrade, type MapTradeSnapshot } from './StarMapTrade.js';
 import type { SaveRepository } from './SaveRepository.js';
 import {
@@ -739,7 +740,7 @@ export class AppModel {
   chooseShipTransfer(fleetId: string, ship: ShipType): void {
     if (this.#game.phase !== 'planning') return;
     const fleet = this.#game.fleet(fleetId);
-    if (!fleet || fleet.routeId || !(fleet.ships[ship] > 0)) return;
+    if (!fleet || shipTransferIssue(fleet) || !(fleet.ships[ship] > 0)) return;
     this.#selectedFleetId = fleetId;
     if (this.#screen === 'map') this.#mapFleetId = fleetId;
     this.#shipTransfer =

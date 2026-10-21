@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { startFirstSlot } from './save-helpers.js';
 import { chooseFleetDestination } from './fleet-helpers.js';
+import { tradeNetworkState } from '../fixtures/trade-network.js';
 
 test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan: organize fleets on the map and restore them', async ({
   page,
@@ -199,3 +200,111 @@ test('flottadministration: native touch forms a fleet on Star map', async ({
     page.getByRole('button', { name: 'Fighter 1 in Fleet 1', exact: true }),
   ).toBeVisible();
 });
+
+for (const cargo of [false, true]) {
+  test(`skepp-ur-olastad-ruttflotta: ${cargo ? 'loaded ships stay locked' : 'unloaded ships can be dragged out and saved'}`, async ({
+    page,
+  }) => {
+    const original = tradeNetworkState();
+    const state = {
+      ...original,
+      fleets: original.fleets.map((fleet) =>
+        fleet.id === 'freighters' ? { ...fleet, routeId: 'route-test' } : fleet,
+      ),
+      shipments: cargo
+        ? [
+            {
+              id: 'cargo-test',
+              resource: 'Iron' as const,
+              amount: 5,
+              path: ['sol-0', 'sol-1'],
+              stage: 0,
+              projectId: 'vesta-mine',
+              recipient: 'sol-1',
+              fleetId: 'freighters',
+              committed: true,
+            },
+          ]
+        : [],
+    };
+    await page.addInitScript((state) => {
+      if (localStorage.getItem('fleet-transfer-seeded')) return;
+      localStorage.setItem('spacelords.economy-v2-reset', 'done');
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-10-21T10:00:00Z', state }),
+      );
+      localStorage.setItem('fleet-transfer-seeded', 'yes');
+    }, state);
+    await page.goto('./');
+    await startFirstSlot(page);
+    const freighters = page.locator(
+      '.map-fleet-cards [data-fleet-id="freighters"].fleet-card',
+    );
+    const fighter = freighters.getByRole('button', {
+      name: 'Fighter 1 in Freighters',
+      exact: true,
+    });
+    const transport = () =>
+      freighters.getByRole('button', {
+        name: 'Transport ship 1 in Freighters',
+        exact: true,
+      });
+    if (cargo) {
+      await expect(fighter).toBeDisabled();
+      await expect(transport()).toBeDisabled();
+      await expect(freighters).toContainText(
+        'Ships cannot be moved out while this fleet carries cargo.',
+      );
+      await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+      const overview = page.getByRole('article', {
+        name: 'Fleet Freighters',
+        exact: true,
+      });
+      await expect(overview.locator('.ship-token').first()).toBeDisabled();
+      await expect(overview).toContainText('carries cargo');
+      return;
+    }
+    await expect(fighter).toBeEnabled();
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await fighter.dragTo(
+      page.getByRole('group', { name: 'Ships in Home Fleet', exact: true }),
+    );
+    await expect(freighters).toContainText('Trade route: Tellus ↔ Vesta');
+    await expect(
+      page.getByRole('button', {
+        name: 'Fighter 2 in Home Fleet',
+        exact: true,
+      }),
+    ).toBeVisible();
+    await transport().focus();
+    await page.keyboard.press('Enter');
+    await page
+      .getByRole('button', { name: 'Move ship to new fleet', exact: true })
+      .press('Enter');
+    await page
+      .getByRole('textbox', { name: 'Fleet name', exact: true })
+      .press('Escape');
+    await expect(freighters).toContainText('Trade route: Tellus ↔ Vesta');
+    await transport().focus();
+    await page.keyboard.press('Enter');
+    await page
+      .getByRole('button', { name: 'Move ship to Home Fleet', exact: true })
+      .press('Enter');
+    await page.reload();
+    await startFirstSlot(page);
+    await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+    const empty = page.getByRole('article', {
+      name: 'Fleet Freighters',
+      exact: true,
+    });
+    await expect(empty).toContainText('No position');
+    await expect(empty).not.toContainText('Trade route:');
+    await expect(
+      page.getByRole('button', {
+        name: 'Transport ship 1 in Home Fleet',
+        exact: true,
+      }),
+    ).toBeEnabled();
+  });
+}

@@ -269,7 +269,7 @@ describe('flottadministration / skepp-till-rorlig-flotta / forstarka-ruttflotta'
     expect(root.textContent).toContain('En route to Travellers');
   });
 
-  it('reinforces a route fleet without unlocking its ships or changing its assignment', () => {
+  it('reinforces an unloaded route fleet without changing its assignment', () => {
     const { model, root, view, click } = network();
     model.assignTradeFleet('route-test', 'freighters');
     model.selectMapFleet('fleet-home');
@@ -278,7 +278,7 @@ describe('flottadministration / skepp-till-rorlig-flotta / forstarka-ruttflotta'
       root.querySelector<HTMLButtonElement>(
         '[aria-label="Transport ship 1 in Freighters"]',
       )!.disabled,
-    ).toBe(true);
+    ).toBe(false);
     click('Fighter 1 in Home Fleet');
     click('Move ship to Freighters');
     const fleet = model.snapshot.fleets.find(
@@ -329,5 +329,73 @@ describe('flottadministration / flottnamn-direktredigering / sparat-spel', () =>
     expect(restored.snapshot.fleets[1]!.name).toBe('Vanguard');
     expect(restored.snapshot.fleets[1]!.ships.Fighter).toBe(1);
     expect(restored.snapshot.fleetNameEdit).toBeNull();
+  });
+});
+
+describe('skepp-ur-olastad-ruttflotta', () => {
+  function assigned(cargo: boolean) {
+    const original = tradeNetworkState();
+    const state = {
+      ...original,
+      fleets: original.fleets.map((fleet) =>
+        fleet.id === 'freighters' ? { ...fleet, routeId: 'route-test' } : fleet,
+      ),
+      shipments: cargo
+        ? [
+            {
+              id: 'cargo-test',
+              resource: 'Water' as const,
+              amount: 1,
+              path: ['sol-0', 'sol-1'],
+              stage: 0,
+              projectId: 'vesta-mine',
+              recipient: 'sol-1',
+              fleetId: 'freighters',
+              committed: true,
+            },
+          ]
+        : [],
+    };
+    const model = new AppModel(undefined, {
+      load: () => ({ lastPlayed: '2026-10-21T10:00:00Z', state }),
+      save() {},
+      clear() {},
+    });
+    model.startSlot(1);
+    return setup(model);
+  }
+
+  it('lets a player select an unloaded route ship and form a new fleet', () => {
+    const { model, root, click } = assigned(false);
+    click('Transport ship 1 in Freighters');
+    expect(model.snapshot.shipTransfer).toEqual({
+      fleetId: 'freighters',
+      ship: 'Transport ship',
+    });
+    expect(root.textContent).not.toContain('Ships cannot');
+    click('Move ship to new fleet');
+    expect(
+      model.snapshot.fleets.find((fleet) => fleet.id === 'freighters'),
+    ).toMatchObject({
+      routeId: 'route-test',
+      ships: { 'Transport ship': 1 },
+    });
+    expect(model.snapshot.fleetNameEdit).not.toBeNull();
+  });
+
+  it('disables every ship in a loaded route fleet and rejects selection in the model', () => {
+    const { model, root } = assigned(true);
+    const tokens = root.querySelectorAll<HTMLButtonElement>(
+      '.fleet-card[data-fleet-id="freighters"] .ship-token',
+    );
+    expect(tokens.length).toBeGreaterThan(0);
+    expect([...tokens].every((token) => token.disabled)).toBe(true);
+    expect(root.textContent).toContain(
+      'Ships cannot be moved out while this fleet carries cargo.',
+    );
+    model.chooseShipTransfer('freighters', 'Fighter');
+    expect(model.snapshot.shipTransfer).toBeNull();
+    model.chooseShipTransfer('fleet-home', 'Fighter');
+    expect(model.snapshot.shipTransfer?.fleetId).toBe('fleet-home');
   });
 });

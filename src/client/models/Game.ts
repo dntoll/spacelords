@@ -1,5 +1,6 @@
 import { Galaxy, Star, StarSystem, type MapCell } from './Galaxy.js';
 import { HexCoordinate } from './HexCoordinate.js';
+import { shipTransferIssue } from './FleetTransfer.js';
 import { Planet, Player, Colony, type PlanetSnapshot } from './Planet.js';
 import {
   PlanetEconomy,
@@ -963,7 +964,11 @@ export class Game {
   ): FleetSnapshot {
     this.#requirePlanning();
     const source = this.#fleetState(sourceId);
-    this.#requireManualFleet(source);
+    const issue = shipTransferIssue({
+      routeId: source.routeId,
+      cargo: this.#cargo(source.id),
+    });
+    if (issue) throw new Error(issue);
     if (!Number.isInteger(amount) || amount < 1 || source.ships[ship] < amount)
       throw new Error('Choose an available number of ships.');
     let target: Fleet;
@@ -1698,6 +1703,12 @@ export class Game {
   }
   // tomma-flottor-utan-position: the last ship releases both location and course.
   #releaseEmptyFleet(fleet: Fleet): void {
+    // skepp-ur-olastad-ruttflotta: a route needs at least one transport ship.
+    if (fleet.routeId && fleet.ships['Transport ship'] === 0) {
+      delete fleet.routeId;
+      delete fleet.releaseRequested;
+      this.#logistics.cleanup(this.#logisticsPort());
+    }
     if (this.#shipCount(fleet.ships) !== 0) return;
     fleet.position = null;
     fleet.destination = null;

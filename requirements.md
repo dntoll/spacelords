@@ -28,6 +28,9 @@ Se [hela visionen](docs/game-vision.md).
   en fysisk förstärkningsgrupp målflottan tills den når ikapp
   (`skepp-till-rorlig-flotta`). Även ruttflottor kan förstärkas; Fleets anger
   ruttens ändplaneter (`forstarka-ruttflotta`, `flottans-handelsrutt`).
+  `skepp-ur-olastad-ruttflotta` är **Fullständigt implementerat**: skepp kan
+  lämna en Trade fleet när hela flottan är olastad. Sista Transport ship
+  frigör flottan från rutten; kvarvarande skepp behåller position och färd.
   `flottadministration`, `flottnamn-direktredigering` och
   `flottknappar-pa-kartan` är **Fullständigt implementerat**: skepp organiseras
   direkt på Star map, namn ändras med dubbelklick och New fleet bildas med
