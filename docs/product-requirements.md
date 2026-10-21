@@ -136,6 +136,16 @@ kan dras till en ruttlinje för att tilldela flottan. Flottor vars visningsankar
 inga skeppsmärken i bild (`handelsgraf-lasbarhet`). Vald rutt visar sina aktuella
 flottor, deras skepp, position och last.
 
+Star map kan också skapa och administrera samma handelsrutter. Dra från en
+markerad ägd planet till en annan planet, välj en ruttlinje för information eller
+dra en ledig transportflotta till linjen för tilldelning. Create route, Assign,
+Release och Close route finns även som knappar. Ogiltiga släpp och avbrott ger
+inga oavsiktliga order. Alla flottor visas vid sin verkliga position på Star map.
+Den separata Trade routes-vyn behålls. Kraven
+`handelsrutt-skapande-pa-stjarnkartan`, `handelsrutt-val-pa-stjarnkartan` och
+`flottilldelning-pa-stjarnkartan` är **Fullständigt implementerade**;
+se [beteenden och status](star-map-trade.md).
+
 `synliga-handelsrutter` — **Fullständigt implementerat**: Handelsrutter syns
 även inne i markerade hexrutor. Markeringen får inte dölja rutten. Planeter,
 flottor och kartans informationsmärken förblir tydliga ovanpå linjerna.

@@ -3,6 +3,28 @@
 Namnen nedan är stabila referenser i tester, kod och dokumentation.
 Produktkraven finns separat i [product-requirements.md](product-requirements.md).
 
+## Handelsrutter på Star map
+
+`handelsrutt-skapande-pa-stjarnkartan`, `handelsrutt-val-pa-stjarnkartan` och
+`flottilldelning-pa-stjarnkartan` använder oföränderliga läsdata från modellen.
+StarMapTrade håller val och förhandsvisningar separat från sparade speldata.
+TradeRouteMapLayout gör p5-oberoende träffprovning med 14 skärmpixlar för val
+och 20 för tilldelning, oberoende av zoom. Kartans controller skiljer drag från
+panorering med befintlig tröskel och avbryter order vid Escape, pekaravbrott
+eller en andra touchpunkt. Förväntat avslut av pointer capture efter ett släpp
+får inte ta bort ett kvarvarande ruttval.
+
+p5 ritar ruttlinjer och förhandsvisning mellan hexmarkeringar och kartobjekt.
+HTML-rutor återanvänder ruttinformation och tilldelningsvalidering från
+handelsvyn. Skapande, tilldelning, frigörande och stängning använder befintliga
+domänkommandon. Domänrelationerna och sparformatet ändras inte.
+
+Enhets- och webbläsartester skyddar zoom, överlappningar, träffprioritet,
+dragavbrott, ogiltiga släpp, tangentbordsalternativ, verkliga flottpositioner
+och återupptagning. Befintliga logistiktester skyddar lossning och stängning.
+
+## Tekniska krav
+
 | Kravnamn                 | Status                     | Krav                                                                                                                                                                                                             | Verifiering                                                |
 | ------------------------ | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
 | `typescript-projekt`     | Fullständigt implementerat | Node.js-projekt med strikt TypeScript för server och klient.                                                                                                                                                     | `npm run typecheck`, `npm run build`                       |

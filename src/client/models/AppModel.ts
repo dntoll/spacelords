@@ -1,3 +1,4 @@
+import { StarMapTrade, type MapTradeSnapshot } from './StarMapTrade.js';
 import type { SaveRepository } from './SaveRepository.js';
 import {
   TradeGraphState,
@@ -52,6 +53,7 @@ export interface AppReadModel {
   readonly decisions: readonly Decision[];
   readonly tradeRoutes: readonly TradeRouteSnapshot[];
   readonly tradeGraph: TradeGraphSnapshot;
+  readonly mapTrade: MapTradeSnapshot;
   readonly ownedPlanets: readonly PlanetGameSnapshot[];
   readonly pendingEndTurn: boolean;
   readonly pendingResearchRemoval: Technology | null;
@@ -98,6 +100,10 @@ export class AppModel {
   #buildSearch = '';
   readonly #researchCamera = new ResearchTreeCamera();
   readonly #tradeGraph = new TradeGraphState();
+  readonly #mapTrade = new StarMapTrade(
+    () => this.#game,
+    () => this.#camera,
+  );
   #returnSite: number | null = null;
   #selectedFleetId: string | null = null;
   #shipTransfer: { readonly fleetId: string; readonly ship: ShipType } | null =
@@ -166,6 +172,7 @@ export class AppModel {
       lastPlayed: new Date().toISOString(),
       state: game.exportState(),
     });
+    this.#mapTrade.clearSelection();
     this.#game = game;
     this.#pendingEndTurn = false;
     this.#pendingResearchRemoval = null;
@@ -229,6 +236,7 @@ export class AppModel {
       decisions: this.#game.decisions,
       tradeRoutes: this.#game.tradeRoutes,
       tradeGraph: this.#tradeGraph.snapshot,
+      mapTrade: this.#mapTrade.snapshot,
       ownedPlanets: this.#game.ownedPlanetSnapshots(),
       pendingEndTurn: this.#pendingEndTurn,
       pendingResearchRemoval: this.#pendingResearchRemoval,
@@ -277,7 +285,16 @@ export class AppModel {
     if (this.#destinationFleetId) {
       this.#game.setDestination(this.#destinationFleetId, position);
       this.#destinationFleetId = null;
+    } else if (this.#mapTrade.snapshot.sourcePlanetId) {
+      const world = HexGeometry.toPoint(position);
+      const camera = this.#camera.snapshot;
+      this.previewMapRoute({
+        x: (world.x - camera.center.x) * camera.zoom,
+        y: (world.y - camera.center.y) * camera.zoom,
+      });
+      this.commitMapRoute();
     } else {
+      this.#mapTrade.clearSelection();
       this.#selected = position;
       this.#mapFleetId = null;
     }
@@ -293,7 +310,12 @@ export class AppModel {
   }
 
   fleetAtPoint(point: Point): string | null {
-    if (this.#screen !== 'map' || this.#destinationFleetId) return null;
+    if (
+      this.#screen !== 'map' ||
+      this.#destinationFleetId ||
+      this.#mapTrade.snapshot.sourcePlanetId
+    )
+      return null;
     return FleetMapLayout.hit(
       this.#game.fleetSnapshots(),
       this.#camera.screenToWorld(point),
@@ -302,12 +324,15 @@ export class AppModel {
   selectMapFleet(id: string): void {
     if (this.#screen !== 'map') return;
     const fleet = this.#game.fleet(id);
-    if (fleet && Object.values(fleet.ships).some((count) => count > 0))
+    if (fleet && Object.values(fleet.ships).some((count) => count > 0)) {
+      this.#mapTrade.clearSelection();
       this.#mapFleetId = id;
+    }
   }
   hoverMapFleet(point: Point | null): boolean {
     const next = point ? this.fleetAtPoint(point) : null;
-    if (next === this.#hoveredFleetId) return false;
+    const changed = this.#mapTrade.hover(next ? null : point);
+    if (next === this.#hoveredFleetId) return changed;
     this.#hoveredFleetId = next;
     return true;
   }
@@ -315,17 +340,31 @@ export class AppModel {
     if (
       this.#screen !== 'map' ||
       !this.#mapFleetId ||
-      this.#game.fleet(this.#mapFleetId)?.routeId ||
       this.#game.phase !== 'planning'
     )
       return;
-    const target = HexGeometry.fromPoint(this.#camera.screenToWorld(point));
     this.#fleetDragging = true;
-    this.#fleetDestinationPreview = this.#game.galaxy.cellAt(target)
-      ? target
-      : null;
+    if (this.#mapTrade.hoverAssignment(this.#mapFleetId, point)) {
+      this.#fleetDestinationPreview = null;
+      return;
+    }
+    const target = HexGeometry.fromPoint(this.#camera.screenToWorld(point));
+    this.#fleetDestinationPreview =
+      !this.#game.fleet(this.#mapFleetId)?.routeId &&
+      this.#game.galaxy.cellAt(target)
+        ? target
+        : null;
   }
   commitFleetDestination(): void {
+    const trade = this.#mapTrade.snapshot;
+    if (this.#mapFleetId && trade.hoveredRouteIds.length) {
+      const id = this.#mapFleetId;
+      const candidates = trade.hoveredRouteIds;
+      this.cancelMapPointer();
+      if (candidates.length > 1) this.#mapTrade.choose(candidates, id);
+      else this.assignMapTradeFleet(candidates[0]!, id);
+      return;
+    }
     try {
       if (
         this.#mapFleetId &&
@@ -340,14 +379,81 @@ export class AppModel {
       this.cancelMapPointer();
     }
   }
-  cancelMapPointer(): void {
+  cancelMapPointer(keepRouteSource = false): void {
+    this.#mapTrade.cancel(keepRouteSource);
     this.#hoveredFleetId = null;
     this.#fleetDestinationPreview = null;
     this.#fleetDragging = false;
   }
 
   selectPoint(point: Point): void {
-    this.select(HexGeometry.fromPoint(this.#camera.screenToWorld(point)));
+    const world = this.#camera.screenToWorld(point);
+    const hex = HexGeometry.fromPoint(world);
+    if (!this.#destinationFleetId && !this.#mapTrade.snapshot.sourcePlanetId) {
+      const cell = this.#game
+        .mapSnapshot()
+        .find((c) => c.position.key === hex.key);
+      const center = HexGeometry.toPoint(hex);
+      const onPlanet =
+        cell?.object?.kind === 'planet' &&
+        Math.hypot(world.x - center.x, world.y - center.y) <=
+          Math.max(8.5, 12 / this.#camera.snapshot.zoom);
+      const routes = onPlanet ? [] : this.#mapTrade.hits(point);
+      if (routes.length === 1) {
+        this.selectMapRoute(routes[0]!);
+        return;
+      }
+      if (routes.length > 1) {
+        this.#mapFleetId = null;
+        this.#mapTrade.clearSelection();
+        this.#mapTrade.choose(routes);
+        return;
+      }
+    }
+    this.select(hex);
+  }
+  mapRouteDragSource(point: Point): string | null {
+    if (
+      this.#screen !== 'map' ||
+      this.#destinationFleetId ||
+      this.#mapFleetId ||
+      this.#mapTrade.snapshot.sourcePlanetId ||
+      this.#mapTrade.snapshot.routeId
+    )
+      return null;
+    const world = this.#camera.screenToWorld(point);
+    const planet = this.#game
+      .ownedPlanetSnapshots()
+      .find((p) => p.position.key === this.#selected.key);
+    if (!planet) return null;
+    const center = HexGeometry.toPoint(planet.position);
+    return Math.hypot(world.x - center.x, world.y - center.y) <=
+      Math.max(8.5, 12 / this.#camera.snapshot.zoom)
+      ? planet.id
+      : null;
+  }
+  beginMapRoute(id: string): void {
+    this.#mapFleetId = null;
+    this.#destinationFleetId = null;
+    this.#mapTrade.begin(id);
+  }
+  previewMapRoute(point: Point): void {
+    this.#mapTrade.preview(point);
+  }
+  commitMapRoute(): void {
+    const id = this.#mapTrade.commit();
+    if (id) {
+      this.#mapFleetId = null;
+      this.#tradeGraph.selectRoute(id);
+    }
+  }
+  selectMapRoute(id: string): void {
+    this.#mapFleetId = null;
+    this.#mapTrade.selectRoute(id);
+  }
+  assignMapTradeFleet(routeId: string, fleetId: string): void {
+    this.#mapTrade.assign(fleetId, routeId);
+    this.#mapFleetId = null;
   }
 
   openPlanet(): void {
@@ -384,6 +490,7 @@ export class AppModel {
   }
 
   home(): void {
+    this.#mapTrade.clearSelection();
     this.#camera.reset();
     this.#selected = this.#game.galaxy.homePlanet.position;
     this.#mapFleetId = null;
@@ -470,6 +577,9 @@ export class AppModel {
     this.#pendingResearchRemoval = null;
   }
   openTradeRoutes(): void {
+    const id = this.#mapTrade.snapshot.routeId;
+    if (id) this.#tradeGraph.selectRoute(id);
+    this.cancelMapPointer();
     this.#screen = 'trade-routes';
   }
   openDecisions(): void {
@@ -515,9 +625,11 @@ export class AppModel {
   createTradeRoute(a: string, b: string): void {
     const id = this.#game.createTradeRoute(a, b);
     this.#tradeGraph.selectRoute(id);
+    if (this.#screen === 'map') this.selectMapRoute(id);
   }
   assignTradeFleet(routeId: string, fleetId: string): void {
-    this.#game.assignTradeFleet(routeId, fleetId);
+    if (this.#screen === 'map') this.assignMapTradeFleet(routeId, fleetId);
+    else this.#game.assignTradeFleet(routeId, fleetId);
   }
   releaseTradeFleet(id: string): void {
     this.#game.releaseTradeFleet(id);
@@ -631,6 +743,7 @@ export class AppModel {
       return;
     }
     if (this.#game.fleet(id)) {
+      this.#mapTrade.clearSelection();
       this.#destinationFleetId = id;
       this.#screen = 'map';
     }

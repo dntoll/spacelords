@@ -1,3 +1,8 @@
+import {
+  renderMapTradeSelection,
+  mapFleetRouteFeedback,
+} from './StarMapTradeView.js';
+import { renderTradeAssignment } from './TradeFleetView.js';
 import { renderSaveSlots, clearSlotDialog } from './SaveSlotsView.js';
 import { needsAttention } from '../models/Decisions.js';
 import type { MapCell } from '../models/Galaxy.js';
@@ -394,6 +399,10 @@ export class AppView implements AppPort {
       if (this.#coordinates)
         this.#coordinates.textContent = `X ${model.camera.center.x.toFixed(0)} · Y ${model.camera.center.y.toFixed(0)}`;
       const key = JSON.stringify({
+        mapTrade: model.mapTrade,
+        routes: model.tradeRoutes,
+        routeFleets: model.fleets,
+        research: model.research.completed,
         orders: model.planetOrders,
         phase: model.phase,
         selected: model.selected,
@@ -641,6 +650,15 @@ export class AppView implements AppPort {
 
   #renderSelection(model: AppReadModel): void {
     if (!this.#panel) return;
+    const trade = renderMapTradeSelection(model, this.#emit);
+    if (trade) {
+      this.#panel.setAttribute(
+        'aria-label',
+        model.mapTrade.routeId ? 'Selected route' : 'Trade route selection',
+      );
+      this.#panel.replaceChildren(trade);
+      return;
+    }
     const selectedFleet = model.fleets.find(
       (fleet) =>
         !model.destinationFleetId &&
@@ -665,15 +683,17 @@ export class AppView implements AppPort {
         .filter(([, count]) => count > 0)
         .map(([type, count]) => `${count} ${type}`)
         .join(' · ');
-      const destination = model.fleetDragging
-        ? model.fleetDestinationPreview
-          ? `Destination preview: HEX ${model.fleetDestinationPreview.key}`
-          : 'Choose a destination on the map.'
-        : selectedFleet.joinFleetId
-          ? fleetAssignmentLabel(selectedFleet, model)
-          : selectedFleet.destination
-            ? `Destination: HEX ${selectedFleet.destination.key}`
-            : 'No destination';
+      const destination =
+        mapFleetRouteFeedback(model) ??
+        (model.fleetDragging
+          ? model.fleetDestinationPreview
+            ? `Destination preview: HEX ${model.fleetDestinationPreview.key}`
+            : 'Choose a destination on the map.'
+          : selectedFleet.joinFleetId
+            ? fleetAssignmentLabel(selectedFleet, model)
+            : selectedFleet.destination
+              ? `Destination: HEX ${selectedFleet.destination.key}`
+              : 'No destination');
       const status = element('p', 'fleet-destination-status', destination);
       status.setAttribute('aria-live', 'polite');
       const edit = button('Edit fleet', () =>
@@ -699,6 +719,40 @@ export class AppView implements AppPort {
         status,
         actions,
       );
+      if (selectedFleet.routeId) {
+        const route = model.tradeRoutes.find(
+          (r) => r.id === selectedFleet.routeId,
+        );
+        if (route)
+          this.#panel.append(
+            element(
+              'p',
+              'fleet-assignment',
+              fleetAssignmentLabel(selectedFleet, model),
+            ),
+            button(
+              `Select route ${route.from} to ${route.to}`,
+              () => this.#emit({ type: 'map-select-route', id: route.id }),
+              'button secondary-button',
+            ),
+          );
+      } else {
+        const options = element('div', 'map-fleet-route-options');
+        options.append(element('h3', '', 'Assign to route'));
+        for (const route of model.tradeRoutes)
+          options.append(
+            renderTradeAssignment(
+              selectedFleet,
+              route,
+              model,
+              this.#emit,
+              `${route.from} ↔ ${route.to}`,
+            ),
+          );
+        if (!model.tradeRoutes.length)
+          options.append(element('p', 'muted-note', 'No trade routes.'));
+        this.#panel.append(options);
+      }
       return;
     }
     const cell = model.selected;
@@ -757,6 +811,39 @@ export class AppView implements AppPort {
           'button open-planet',
         ),
       );
+    if (owned && object) {
+      const source = model.ownedPlanets.find(
+        (p) => p.position.key === cell?.position.key,
+      );
+      if (source) {
+        const issue =
+          model.phase !== 'planning'
+            ? 'Wait until planning to create a route.'
+            : !model.research.completed.includes('Trade logistics')
+              ? 'Research Trade logistics first.'
+              : null;
+        const create = button(
+          'Create route',
+          () => this.#emit({ type: 'begin-map-route', id: source.id }),
+          'button secondary-button',
+        );
+        create.disabled = !!issue;
+        contents.push(create);
+        if (issue) contents.push(element('p', 'muted-note', issue));
+        const routes = model.tradeRoutes.filter(
+          (r) => r.a === source.id || r.b === source.id,
+        );
+        if (routes.length) contents.push(element('h3', '', 'Connected routes'));
+        for (const route of routes)
+          contents.push(
+            button(
+              `${route.from} ↔ ${route.to}`,
+              () => this.#emit({ type: 'map-select-route', id: route.id }),
+              'button secondary-button',
+            ),
+          );
+      }
+    }
     const orderStatus = model.planetOrders.find(
       (status) => status.position.key === cell?.position.key,
     );

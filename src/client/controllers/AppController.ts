@@ -9,7 +9,12 @@ export class AppController {
   readonly #gesture = new MapGesture();
   readonly #researchGesture = new MapGesture();
   readonly #tradeGesture = new MapGesture();
-  #fleetPointer: { id: number; start: Point; dragged: boolean } | null = null;
+  #fleetPointer: {
+    id: number;
+    start: Point;
+    dragged: boolean;
+    kind: 'fleet' | 'route';
+  } | null = null;
 
   constructor(model: AppModel, view: AppPort) {
     this.#model = model;
@@ -50,6 +55,8 @@ export class AppController {
         'open-planet',
         'open-research',
         'open-fleets',
+        'open-trade-routes',
+        'open-decisions',
         'home',
         'pan',
         'zoom',
@@ -57,7 +64,7 @@ export class AppController {
         'end-turn',
       ].includes(intent.type)
     )
-      this.#cancelPointer();
+      this.#cancelPointer(['pan', 'zoom'].includes(intent.type));
     if (
       this.#model.snapshot.screen === 'saves' &&
       ![
@@ -69,6 +76,18 @@ export class AppController {
     )
       return;
     switch (intent.type) {
+      case 'map-select-route':
+        this.#model.selectMapRoute(intent.id);
+        break;
+      case 'map-select-fleet':
+        this.#model.selectMapFleet(intent.id);
+        break;
+      case 'begin-map-route':
+        this.#model.beginMapRoute(intent.id);
+        break;
+      case 'cancel-map-trade':
+        this.#cancelPointer();
+        break;
       case 'trade-select-planet':
         this.#model.selectTradePlanet(intent.id);
         break;
@@ -327,12 +346,16 @@ export class AppController {
           this.#model.cancelMapPointer();
         } else {
           const fleetId = this.#model.fleetAtPoint(intent.point);
-          if (!fleetId) return;
-          this.#model.selectMapFleet(fleetId);
+          const source = fleetId
+            ? null
+            : this.#model.mapRouteDragSource(intent.point);
+          if (!fleetId && !source) return;
+          if (fleetId) this.#model.selectMapFleet(fleetId);
           this.#fleetPointer = {
             id: intent.id,
             start: intent.point,
             dragged: false,
+            kind: fleetId ? 'fleet' : 'route',
           };
         }
         break;
@@ -353,8 +376,15 @@ export class AppController {
             ) > 6
           )
             this.#fleetPointer.dragged = true;
-          if (this.#fleetPointer.dragged)
-            this.#model.previewFleetDestination(intent.point);
+          if (this.#fleetPointer.dragged) {
+            if (this.#fleetPointer.kind === 'route') {
+              const source = this.#model.mapRouteDragSource(
+                this.#fleetPointer.start,
+              );
+              if (source) this.#model.beginMapRoute(source);
+              this.#model.previewMapRoute(intent.point);
+            } else this.#model.previewFleetDestination(intent.point);
+          }
           break;
         }
         if (this.#gesture.pointerCount === 0) {
@@ -383,10 +413,18 @@ export class AppController {
               intent.point.y - this.#fleetPointer.start.y,
             ) > 6;
           this.#gesture.end(intent.id);
+          const pointer = this.#fleetPointer;
           this.#fleetPointer = null;
           if (dragged) {
-            this.#model.previewFleetDestination(intent.point);
-            this.#model.commitFleetDestination();
+            if (pointer.kind === 'route') {
+              const source = this.#model.mapRouteDragSource(pointer.start);
+              if (source) this.#model.beginMapRoute(source);
+              this.#model.previewMapRoute(intent.point);
+              this.#model.commitMapRoute();
+            } else {
+              this.#model.previewFleetDestination(intent.point);
+              this.#model.commitFleetDestination();
+            }
           }
           break;
         }
@@ -412,10 +450,10 @@ export class AppController {
     this.#view.render(this.#model.snapshot);
   }
 
-  #cancelPointer(): void {
+  #cancelPointer(keepRouteSource = false): void {
     this.#gesture.cancel();
     this.#fleetPointer = null;
-    this.#model.cancelMapPointer();
+    this.#model.cancelMapPointer(keepRouteSource);
   }
 
   async #runTurn(): Promise<void> {

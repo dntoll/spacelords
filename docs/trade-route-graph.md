@@ -4,6 +4,10 @@ Trade routes ersätter den tidigare formulär- och listvyn med ett spelbräde.
 Forskningskrav, ruttkapacitet, fysisk frakt och regler för flottornas
 tilldelning och frigörande behålls.
 
+Samma nätverk kan även administreras på [Star map](star-map-trade.md).
+Regeln om flottmärken vid ruttens mittpunkt nedan gäller enbart Trade routes;
+på Star map behåller flottor alltid sin verkliga position.
+
 Den uppdaterade utformningen ersätter planeternas materialkort på spelbrädet
 med namngivna planeter. `handelsgraf-planetoversikt` visar i stället informationen
 i en valpanel. Den tidigare Fleet bay med alla flottor ersätts av samma valpanel.

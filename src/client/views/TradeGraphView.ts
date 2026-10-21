@@ -1,3 +1,4 @@
+import { renderTradeRouteDetails } from './TradeRouteDetailsView.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import type { TradeRouteSnapshot } from '../models/Logistics.js';
 import {
@@ -413,41 +414,7 @@ function renderSelectionPanel(
         );
     }
   } else if (route) {
-    panel.append(
-      element('h2', '', `${route.from} ↔ ${route.to}`),
-      element(
-        'p',
-        'trade-route-status',
-        `${route.status} · ${route.capacity} cargo capacity · ${route.waiting} units waiting`,
-      ),
-    );
-    const close = button(
-      'Close route',
-      () => emit({ type: 'close-trade-route', id: route.id }),
-      'button secondary-button',
-    );
-    close.disabled = route.closing || model.phase !== 'planning';
-    panel.append(
-      close,
-      element('h3', '', `Assigned fleets · ${route.fleetIds.length}`),
-    );
-    const assigned = element('div', 'trade-assigned-fleets');
-    for (const id of route.fleetIds) {
-      const assignedFleet = model.fleets.find((f) => f.id === id);
-      if (assignedFleet)
-        assigned.append(
-          renderTradeFleet(assignedFleet, model, emit, 'route-details'),
-        );
-    }
-    if (!route.fleetIds.length)
-      assigned.append(element('p', 'muted-note', 'No fleet assigned'));
-    panel.append(assigned, element('h3', '', 'Assign fleet'));
-    for (const candidate of model.fleets.filter((f) => !f.routeId))
-      panel.append(
-        renderTradeAssignment(candidate, route, model, emit, candidate.name),
-      );
-    if (!model.fleets.some((f) => !f.routeId))
-      panel.append(element('p', 'muted-note', 'No unassigned fleets.'));
+    panel.append(renderTradeRouteDetails(route, model, emit));
   } else {
     panel.append(
       element('h2', '', 'Selection'),

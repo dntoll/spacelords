@@ -15,6 +15,7 @@ export function renderTradeFleet(
   model: AppReadModel,
   emit: IntentHandler,
   mode: 'details' | 'route-details' | 'marker' | 'dock',
+  context: 'map' | 'graph' = 'graph',
 ): HTMLElement {
   const card = element(
     'article',
@@ -24,17 +25,25 @@ export function renderTradeFleet(
   card.setAttribute('aria-label', `Trade fleet ${fleet.name} ${mode}`);
   card.classList.toggle(
     'selected-fleet-card',
-    model.tradeGraph.fleetId === fleet.id,
+    (context === 'map' ? model.mapFleetId : model.tradeGraph.fleetId) ===
+      fleet.id,
   );
   const name = button(
     `Select trade fleet ${fleet.name}`,
-    () => emit({ type: 'trade-select-fleet', id: fleet.id }),
+    () =>
+      emit({
+        type: context === 'map' ? 'map-select-fleet' : 'trade-select-fleet',
+        id: fleet.id,
+      }),
     'fleet-name-button',
   );
   name.textContent = fleet.name;
   name.setAttribute(
     'aria-pressed',
-    String(model.tradeGraph.fleetId === fleet.id),
+    String(
+      (context === 'map' ? model.mapFleetId : model.tradeGraph.fleetId) ===
+        fleet.id,
+    ),
   );
   const ships = element('div', 'trade-ship-manifest');
   ships.setAttribute('role', 'group');
@@ -78,7 +87,7 @@ export function renderTradeFleet(
     card.append(
       element('p', 'trade-cargo', cargo ? `Cargo: ${cargo}` : 'Empty hold'),
     );
-    if (fleet.position) {
+    if (fleet.position && context === 'graph') {
       const focus = button(
         `Locate ${fleet.name}`,
         () =>
@@ -311,7 +320,10 @@ export function renderTradeAssignment(
   label: string,
 ): HTMLElement {
   const row = element('div', 'trade-assignment-option');
-  const issue = tradeAssignmentIssue(fleet, route);
+  const issue =
+    model.phase !== 'planning'
+      ? 'Wait until planning to assign a fleet.'
+      : tradeAssignmentIssue(fleet, route);
   const assign = button(
     `Assign ${fleet.name} to ${route.from} to ${route.to}`,
     () =>

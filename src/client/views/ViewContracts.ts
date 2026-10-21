@@ -11,6 +11,12 @@ import type {
 import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 
 export type AppIntent =
+  | {
+      readonly type:
+        'map-select-route' | 'map-select-fleet' | 'begin-map-route';
+      readonly id: string;
+    }
+  | { readonly type: 'cancel-map-trade' }
   | { readonly type: 'trade-pan'; readonly delta: Point }
   | {
       readonly type: 'trade-zoom';

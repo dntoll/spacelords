@@ -1,3 +1,4 @@
+import { renderMapTradeRoutes } from './MapTradeRoutesView.js';
 import { renderMapOverlays } from './MapOverlayView.js';
 import p5 from 'p5';
 import type { AppReadModel } from '../models/AppModel.js';
@@ -94,20 +95,14 @@ export class GalaxyMapView implements MapPort {
     const selected = model.selected;
     if (selected) this.#hex(sketch, selected, true, model.camera.zoom);
     // synliga-handelsrutter: selection fills stay below routes; objects stay above.
-    sketch.stroke('#547caa');
-    sketch.strokeWeight(2 / model.camera.zoom);
-    for (const route of model.tradeRoutes) {
-      const from = HexGeometry.toPoint(route.start),
-        to = HexGeometry.toPoint(route.end);
-      sketch.line(from.x, from.y, to.x, to.y);
-    }
+    renderMapTradeRoutes(sketch, model);
     for (const cell of model.cells)
       if (cell.object) this.#object(sketch, cell, model.camera.zoom);
     renderMapOverlays(sketch, model);
     if (this.#canvas)
       this.#canvas.style.cursor = model.fleetDragging
         ? 'grabbing'
-        : model.hoveredFleetId
+        : model.hoveredFleetId || model.mapTrade.hoveredRouteIds.length
           ? 'pointer'
           : 'grab';
     sketch.pop();
@@ -183,12 +178,14 @@ export class GalaxyMapView implements MapPort {
     canvas.setAttribute('role', 'img');
     canvas.setAttribute(
       'aria-label',
-      'Star map. Click a fleet to select it; drag a fleet to set its destination; Escape cancels. Drag empty space to pan; use plus and minus to zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.',
+      'Star map. Click a fleet or trade route to select it. Drag a selected owned planet to another owned planet to create a route. Drag a fleet onto a route to assign it, or elsewhere to set its destination. Escape cancels. Drag empty space to pan; use plus and minus to zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.',
     );
+    const activePointers = new Set<number>();
     canvas.addEventListener(
       'pointerdown',
       (event) => {
         if (event.pointerType === 'mouse' && event.button !== 0) return;
+        activePointers.add(event.pointerId);
         canvas.setPointerCapture(event.pointerId);
         canvas.focus({ preventScroll: true });
         this.#emit({
@@ -213,6 +210,7 @@ export class GalaxyMapView implements MapPort {
     canvas.addEventListener(
       'pointerup',
       (event) => {
+        activePointers.delete(event.pointerId);
         this.#emit({
           type: 'pointer-end',
           id: event.pointerId,
@@ -225,7 +223,10 @@ export class GalaxyMapView implements MapPort {
     );
     canvas.addEventListener(
       'pointercancel',
-      () => this.#emit({ type: 'pointer-cancel' }),
+      () => {
+        activePointers.clear();
+        this.#emit({ type: 'pointer-cancel' });
+      },
       options,
     );
     canvas.addEventListener(
@@ -235,7 +236,11 @@ export class GalaxyMapView implements MapPort {
     );
     canvas.addEventListener(
       'lostpointercapture',
-      () => this.#emit({ type: 'pointer-cancel' }),
+      (event) => {
+        // A completed drop may leave a route chooser; only unexpected loss cancels.
+        if (activePointers.delete(event.pointerId))
+          this.#emit({ type: 'pointer-cancel' });
+      },
       options,
     );
     canvas.addEventListener(

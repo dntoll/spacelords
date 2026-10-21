@@ -198,9 +198,11 @@ test('kartnavigation: a mouse drag pans without changing selection; wheel zoom s
   const point = await center(map);
   const position = page.getByTestId('camera-position');
   const before = await position.textContent();
-  await page.mouse.move(point.x, point.y);
+  // handelsrutt-skapande-pa-stjarnkartan: pan from empty space, not the selected planet.
+  const panStart = { x: point.x + 80, y: point.y - 60 };
+  await page.mouse.move(panStart.x, panStart.y);
   await page.mouse.down();
-  await page.mouse.move(point.x + 100, point.y + 40, { steps: 8 });
+  await page.mouse.move(panStart.x + 100, panStart.y + 40, { steps: 8 });
   await page.mouse.up();
   await expect(position).not.toHaveText(before ?? '');
   await expect(
@@ -243,14 +245,19 @@ test('kartnavigation: native touch drag and pinch preserve the selected planet',
   const position = page.getByTestId('camera-position');
   const before = await position.textContent();
   const session = await page.context().newCDPSession(page);
+  // handelsrutt-skapande-pa-stjarnkartan: the selected planet now starts a route;
+  // navigation gestures begin on empty map space instead.
+  const panStart = { x: point.x + 80, y: point.y - 60 };
   await session.send('Input.dispatchTouchEvent', {
     type: 'touchStart',
-    touchPoints: [{ x: point.x, y: point.y, id: 1 }],
+    touchPoints: [{ x: panStart.x, y: panStart.y, id: 1 }],
   });
   for (let step = 1; step <= 5; step += 1) {
     await session.send('Input.dispatchTouchEvent', {
       type: 'touchMove',
-      touchPoints: [{ x: point.x + step * 12, y: point.y + step * 4, id: 1 }],
+      touchPoints: [
+        { x: panStart.x + step * 12, y: panStart.y + step * 4, id: 1 },
+      ],
     });
   }
   await session.send('Input.dispatchTouchEvent', {
