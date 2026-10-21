@@ -52,7 +52,8 @@ behåller omordning och bekräftad borttagning. Detta ersätter den tidigare
 listvyn; forskningsreglerna och teknikernas förkunskaper behålls.
 
 `forskningstradets-utrymme` — **Fullständigt implementerat**: Forskningsträdet
-fyller Research under rubriken. Antal Research stations visas vid rubriken,
+fyller Research under rubriken. Antal Research stations visas bredvid rubriken
+även på smala telefoner med bredare systemtypsnitt,
 med stationsinformation tillgänglig vid behov. Ingen nedre panel eller
 sidopanel reserverar utrymme. Research queue visar sitt antal och öppnas vid
 behov ovanpå trädet; en öppen kö ligger kvar under omordning och borttagning.

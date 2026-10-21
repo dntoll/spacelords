@@ -1846,10 +1846,14 @@ p {
   border-color: #3b505d;
 }
 /* forskningstradets-utrymme: auxiliary information never reserves tree space. */
+.research-page > .screen-header {
+  flex-wrap: wrap;
+}
 .research-heading {
   position: relative;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
   align-items: center;
   gap: 4px 8px;
   min-width: 0;

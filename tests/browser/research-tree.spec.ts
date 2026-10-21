@@ -148,16 +148,21 @@ test('forsknings-tradnavigation: mouse drag pans and wheel zooms without queuein
 });
 
 for (const size of [
-  { width: 320, height: 568 },
+  { width: 320, height: 568, font: false },
+  { width: 320, height: 568, font: true },
   { width: 393, height: 851 },
   { width: 844, height: 390 },
 ]) {
-  test(`forskningstradets-utrymme: the tree fills Research at ${size.width}x${size.height}`, async ({
+  test(`forskningstradets-utrymme: the tree fills Research at ${size.width}x${size.height}${'font' in size && size.font ? ' with wider fonts' : ''}`, async ({
     page,
   }, testInfo) => {
     await page.setViewportSize(size);
     await page.goto('./');
     await startFirstSlot(page);
+    if ('font' in size && size.font)
+      await page.addStyleTag({
+        content: ':root { font-family: monospace; font-size: 18px; }',
+      });
     await page.getByRole('button', { name: 'Research', exact: true }).click();
     const tree = page.getByRole('region', {
       name: 'Research tree',
