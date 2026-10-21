@@ -5,6 +5,7 @@ import {
   startFirstSlot,
   chooseResearch,
   connectTradePlanets,
+  assignFleetToRoute,
 } from './save-helpers.js';
 import {
   HexCoordinate,
@@ -135,12 +136,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     .getByRole('button', { name: 'Supply & production', exact: true })
     .click();
   await connectTradePlanets(page, 'Tellus', 'Vesta');
-  await page
-    .getByRole('button', {
-      name: 'Assign Freighters to Tellus to Vesta',
-      exact: true,
-    })
-    .click();
+  await assignFleetToRoute(page, 'Freighters', 'Tellus', 'Vesta');
   await expect(
     page.getByRole('complementary', { name: 'Selected route' }),
   ).toContainText('30 cargo capacity');

@@ -34,6 +34,8 @@ Se [hela visionen](docs/game-vision.md).
   första skeppet. Flottkorten visas direkt utan Expand fleet panel eller Help.
   Fleets ger en kompakt översikt med Show on map; tomma flottor,
   förstärkningar och minikarta behålls. Se [genomförandeplanen](docs/fleet-map-plan.md).
+  Ruttpanelen visar bara redan tilldelade flottor; den globala Assign fleet-listan
+  är borttagen. Flottor kan fortsatt dras till ruttlinjen för tilldelning.
 - **Ekonomi och byggande:** ändliga fyndigheter av Iron, Water och Oil utvinns
   till lokala obegränsade lager. Material förbrukas en gång vid byggstart.
   Varje planet har en enda Build queue för byggnader, delar och skepp, med

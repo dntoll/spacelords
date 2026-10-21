@@ -1,6 +1,6 @@
 import type { AppReadModel } from '../models/AppModel.js';
 import type { TradeRouteSnapshot } from '../models/Logistics.js';
-import { renderTradeAssignment, renderTradeFleet } from './TradeFleetView.js';
+import { renderTradeFleet } from './TradeFleetView.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element } from './dom.js';
 
@@ -35,10 +35,6 @@ export function renderTradeRouteDetails(
   }
   if (!route.fleetIds.length)
     assigned.append(element('p', 'muted-note', 'No fleet assigned'));
-  panel.append(assigned, element('h3', '', 'Assign fleet'));
-  for (const fleet of model.fleets.filter((f) => !f.routeId))
-    panel.append(renderTradeAssignment(fleet, route, model, emit, fleet.name));
-  if (!model.fleets.some((f) => !f.routeId))
-    panel.append(element('p', 'muted-note', 'No unassigned fleets.'));
+  panel.append(assigned);
   return panel;
 }

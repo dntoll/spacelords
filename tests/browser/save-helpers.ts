@@ -34,6 +34,28 @@ export async function startFirstSlot(page: Page): Promise<void> {
     .click();
 }
 
+export async function assignFleetToRoute(
+  page: Page,
+  fleet: string,
+  from: string,
+  to: string,
+): Promise<void> {
+  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+  await page
+    .getByRole('button', { name: `Show on map: ${fleet}`, exact: true })
+    .click();
+  const card = page.locator('.map-fleet-cards .selected-fleet-card');
+  const routes = card.locator('.map-fleet-route-options > summary');
+  await routes.focus();
+  await routes.press('Enter');
+  const assign = card.getByRole('button', {
+    name: `Assign ${fleet} to ${from} to ${to}`,
+    exact: true,
+  });
+  await assign.focus();
+  await assign.press('Enter');
+}
+
 export async function endTurn(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'End turn', exact: true }).click();
   const warning = page.getByRole('dialog', { name: 'Decisions remaining' });

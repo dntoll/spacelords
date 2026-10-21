@@ -26,8 +26,11 @@ alla flottor vid sin verkliga position.
   Flottnamnet väljer flottans kartinformation och dess rutt kan väljas därifrån.
   Ägda planeter visar Connected routes. Flottor och planetsymboler har företräde
   framför ruttlinjer; överlappande linjer ger ett val mellan träffade rutter.
+  Ruttpanelen listar enbart redan tilldelade flottor. Den globala listan
+  Assign fleet över otilldelade flottor är borttagen, även för närbelägna flottor.
 - `flottilldelning-pa-stjarnkartan` — **Fullständigt implementerat**:
-  dra en flottmarkör till en ruttlinje eller använd Assign i informationsrutan.
+  dra en flottmarkör till en ruttlinje. Alternativet utan drag utgår från
+  vald flottas Trade routes, utan någon global flottlista i ruttpanelen.
   Förhandsvisningen skiljer tilldelning från vanlig destination och visar
   orsaken vid ogiltig tilldelning. Flottan måste vara ledig, ha transportskepp
   och ha en position, utan resa eller förstärkningsuppdrag. Tilldelning på

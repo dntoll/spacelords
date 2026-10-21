@@ -3,7 +3,7 @@ import {
   tradeNetworkState,
   distantTradeNetworkState,
 } from '../fixtures/trade-network.js';
-import { startFirstSlot } from './save-helpers.js';
+import { startFirstSlot, assignFleetToRoute } from './save-helpers.js';
 import { Game, type GameState } from '../../src/client/models/Game.js';
 import {
   HexGeometry,
@@ -78,12 +78,12 @@ test('ruttflotta-till-narmaste-andplanet: remote assignment saves an approach wi
     name: 'Selected route',
     exact: true,
   });
-  const assign = panel.getByRole('button', {
-    name: 'Assign Freighters to Tellus to Vesta',
-    exact: true,
-  });
-  await expect(assign).toBeEnabled();
-  await assign.click();
+  await expect(panel.locator('.trade-assignment-option')).toHaveCount(0);
+  await expect(
+    panel.getByRole('heading', { name: 'Assign fleet', exact: true }),
+  ).toHaveCount(0);
+  await expect(panel).not.toContainText('Freighters');
+  await assignFleetToRoute(page, 'Freighters', 'Tellus', 'Vesta');
   await expect(panel).toContainText('Assigned fleets · 1');
   await expect(
     panel.locator('[data-fleet-id="freighters"] .trade-fleet-position'),
@@ -167,12 +167,7 @@ test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives retain orders after
   await page
     .getByRole('combobox', { name: 'Known objects' })
     .selectOption({ label: 'Vesta' });
-  const assign = routePanel(page).getByRole('button', {
-    name: 'Assign Freighters to Tellus to Vesta',
-    exact: true,
-  });
-  await assign.focus();
-  await assign.press('Enter');
+  await assignFleetToRoute(page, 'Freighters', 'Tellus', 'Vesta');
   await page
     .getByRole('button', { name: 'Supply & production', exact: true })
     .click();

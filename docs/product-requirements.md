@@ -192,6 +192,12 @@ sin betydelse för enbart innevarande runda.
 
 ## Ändringshistorik
 
+- 2026-10-21: `handelsrutt-val-pa-stjarnkartan` och
+  `flottilldelning-pa-stjarnkartan` ändras så att ruttpanelen bara listar redan
+  tilldelade flottor. Den globala Assign fleet-listan tas bort efter användarens
+  uttryckliga ändring. Flottmarkörer dras till ruttlinjen för tilldelning;
+  tangentbordsalternativet finns vid vald flotta.
+
 - 2026-10-21: `planetoppning-i-kartrubrik` ersätter den stora fristående
   Open planet-knappen. `flottadministration` visar korten utan Expand fleet panel
   eller Help. Knappen Create route i `handelsrutt-skapande-pa-stjarnkartan`

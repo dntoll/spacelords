@@ -24,15 +24,25 @@ it('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: the map p
   model.selectMapRoute('route-test');
   const root = document.createElement('div');
   document.body.replaceChildren(root);
-  const controller = new AppController(
-    model,
-    new AppView(root, () => ({ render() {}, dispose() {} })),
-  );
+  const view = new AppView(root, () => ({ render() {}, dispose() {} }));
+  const controller = new AppController(model, view);
   controller.start();
+  expect(
+    root.querySelector('.trade-route-details .trade-assignment-option'),
+  ).toBeNull();
+  expect(root.querySelector('.trade-route-details')!.textContent).not.toContain(
+    'Home Fleet',
+  );
   const click = (label: string) =>
     root.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!.click();
-  click('Assign Freighters to Tellus to Vesta');
-  click('Assign Travellers to Tellus to Vesta');
+  for (const [id, name] of [
+    ['freighters', 'Freighters'],
+    ['travellers', 'Travellers'],
+  ] as const) {
+    model.selectMapFleet(id);
+    view.render(model.snapshot);
+    click(`Assign ${name} to Tellus to Vesta`);
+  }
   expect(
     root.querySelector('[aria-label="Selected route"]')!.textContent,
   ).toContain('Assigned fleets · 2');
