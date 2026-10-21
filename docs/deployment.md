@@ -537,3 +537,51 @@ inte automatiskt version 3-sparningar till det äldre formatet.
 Återställ vid behov enbart `spacelords/` från
 `2299125cc04ce41e263ff4f6cf2e569bd4acd34a` på en ny branch från aktuell
 `main`, med samma granskade publiceringsflöde.
+
+## Driftsättning av mobilkarta och Research: 2026-10-21
+
+- Publicerad klientrevision: `b763f47e487b5f8b9f5f80b497b2a0e85f7e1309`
+  från `codex/mobile-map-selection` i `dntoll/spacelords`. Källändringarna är
+  pushade till arbetsbranchen; källrepots `main` är oförändrad.
+- Målrepots tidigare revision: `c38283c3ea86b536970215d32baa74038a72698b`.
+  Publiceringsrevision: `5d0a7917af3c7ac0b452fa998031b1e8b13b0841` från
+  `codex/deploy-spacelords-0d43c45`. Den omfattar appcommits `8d8e8fb` och
+  `5d0a791`. Endast `spacelords/` ändrades; samtliga 281 övriga filers
+  Git-objekt och publiceringskopians filinnehåll är oförändrade.
+- Ren installation och hela `npm run check` passerade: formatering, ESLint,
+  typkontroll, båda byggena, 259 snabba tester på 14,75 sekunder,
+  fem integrationstester och 214 webbläsartester. De 22 plattformsberoende
+  testerna hoppades över enligt sina villkor.
+- GitHub CI hittade därefter att stationsantalet kunde radbrytas under Research
+  vid 320 pixlars bredd med Linuxmiljöns fontmått. Ett nytt regressionstest med
+  bredare typsnitt reproducerade felet före rättningen. Efter CSS-rättningen
+  passerade samtliga 16 Research-layouttester i fyra webbläsarprofiler,
+  formatering, lint, typkontroll, båda byggena och fem integrationstester.
+- Två mobilkontroller passerade mot den isolerade publiceringskopian i Chromium
+  och WebKit: kartval, dolda och synliga rundkontroller, Research, forskningskö
+  och Decisions. Skärmbilder granskades. Inga JavaScript- eller HTTP-fel,
+  rotanrop till `/assets/` eller `/api/`, eller dokumentöverflöden påvisades.
+  WebKit fastnade vid sidladdning på separat testport 4190; samma kopia och
+  tester passerade på den ordinarie testporten 4178.
+- PR-integrationen gav HTTP 403. Efter ny kontroll av aktuell `origin/main`,
+  föräldrarelation, ren publiceringskopia och avgränsad diff användes den
+  dokumenterade reservvägen: vanlig fast-forward-push via befintlig SSH.
+  Ingen force-push eller behörighetsändring gjordes.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/39657359401)
+  lyckades. Samtliga elva publicerade klientfiler gav HTTP 200, rätt
+  innehållstyper och exakt samma byteinnehåll som Pages-bygget.
+  `/spacelords` leder vidare till `/spacelords/`.
+- Samma två mobilkontroller passerade mot liveadressen i Chromium och WebKit,
+  utan JavaScript- eller HTTP-fel. Kontrollsummorna för `/`, `/MachineBloom/`,
+  `/Defence-Grid/test/`, `/styles.css` och `/i18n.js` är identiska före och
+  efter publiceringen. Inga länkar, navigationsval, DNS- eller
+  Pages-inställningar ändrades.
+- [Källrevisionens CI](https://github.com/dntoll/spacelords/actions/runs/39657106395)
+  har passerat kvalitetskontroller och snabbtester; det utökade jobbet pågår
+  vid liveverifieringen. Dess slutresultat är ännu inte bekräftat. Den lokala
+  fullständiga körningen, den riktade omkörningen efter CSS-rättningen och
+  publiceringskontrollerna är godkända.
+
+Återställ vid behov enbart `spacelords/` från
+`c38283c3ea86b536970215d32baa74038a72698b` på en ny branch från aktuell
+`main`, med samma granskade publiceringsflöde.
