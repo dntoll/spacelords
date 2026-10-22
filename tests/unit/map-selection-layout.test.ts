@@ -139,3 +139,69 @@ describe('rundkontroller-i-decisions', () => {
     );
   });
 });
+
+describe('rullningsbar-kartpanel', () => {
+  it('grows with native scrolling, stays bounded and gives the map its space back at the top', () => {
+    view.render(model.snapshot);
+    const panel = root.querySelector<HTMLElement>('.selection-panel')!;
+    const page = root.querySelector<HTMLElement>('.map-page')!;
+    Object.defineProperty(page, 'clientHeight', { value: 600 });
+    Object.defineProperties(panel, {
+      scrollHeight: { value: 1200 },
+      clientHeight: {
+        get: () =>
+          260 +
+          Number.parseFloat(
+            panel.style.getPropertyValue('--selection-expansion') || '0',
+          ),
+      },
+    });
+    panel.dispatchEvent(new WheelEvent('wheel', { deltaY: 100 }));
+    const scroll = (top: number) => {
+      panel.scrollTop = top;
+      panel.dispatchEvent(new Event('scroll'));
+      return Number.parseFloat(
+        panel.style.getPropertyValue('--selection-expansion'),
+      );
+    };
+    expect(scroll(100)).toBe(100);
+    expect(scroll(500)).toBe(210);
+    expect(scroll(800)).toBe(210);
+    expect(scroll(50)).toBe(50);
+    expect(scroll(0)).toBe(0);
+    expect(model.snapshot.camera).toEqual(new AppModel().snapshot.camera);
+  });
+
+  it('leaves enough overflow to avoid a resize pushing short content back to the top', () => {
+    view.render(model.snapshot);
+    const panel = root.querySelector<HTMLElement>('.selection-panel')!;
+    Object.defineProperty(root.querySelector('.map-page'), 'clientHeight', {
+      value: 600,
+    });
+    Object.defineProperties(panel, {
+      scrollHeight: { value: 300 },
+      clientHeight: { value: 260 },
+    });
+    panel.dispatchEvent(new Event('touchmove'));
+    panel.scrollTop = 30;
+    panel.dispatchEvent(new Event('scroll'));
+    expect(panel.style.getPropertyValue('--selection-expansion')).toBe('20px');
+  });
+});
+
+describe('rullningsbar-kartpanel / flottval-pa-kartan', () => {
+  it('does not grow when automatic fleet focus scrolls the panel', () => {
+    view.render(model.snapshot);
+    const panel = root.querySelector<HTMLElement>('.selection-panel')!;
+    Object.defineProperty(root.querySelector('.map-page'), 'clientHeight', {
+      value: 600,
+    });
+    Object.defineProperties(panel, {
+      scrollHeight: { value: 1200 },
+      clientHeight: { value: 260 },
+    });
+    panel.scrollTop = 100;
+    panel.dispatchEvent(new Event('scroll'));
+    expect(panel.style.getPropertyValue('--selection-expansion')).toBe('');
+  });
+});

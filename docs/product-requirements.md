@@ -37,7 +37,7 @@ stilla eller väntar på rivning; köade projekt räknas först när de är fär
 
 | Kravnamn                    | Status                     | Krav och återstående arbete                                                                                                                                                                                                                                                                                                                     |
 | --------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `viewport-game-layout`      | Fullständigt implementerat | Alla vyer fyller skärmen utan sidscroll på mobil, surfplatta och dator, även med större systemtypsnitt på smala skärmar. Avgränsade spelpaneler får ha intern scroll. Kartan tar huvuddelen av skärmen.                                                                                                                                         |
+| `viewport-game-layout`      | Fullständigt implementerat | Alla vyer fyller skärmen utan sidscroll på mobil, surfplatta och dator, även med större systemtypsnitt på smala skärmar. Avgränsade spelpaneler får ha intern scroll. Kartan tar huvuddelen av skärmen tills spelaren utökar detaljpanelen genom rullning enligt `rullningsbar-kartpanel`.                                                      |
 | `focused-interface`         | Fullständigt implementerat | Visa spelinformation och handlingar utan introduktionsrubriker och dekorativa småtexter. Behåll beskrivningar av stjärnor och planeter.                                                                                                                                                                                                         |
 | `english-game`              | Fullständigt implementerat | Alla texter, hjälptexter och namn på råvaror i spelet är på engelska.                                                                                                                                                                                                                                                                           |
 | `gemensamma-byggnadsbilder` | Fullständigt implementerat | Colony ship factory, Exploration ship factory, Fighter factory och Research station använder var sin tillhandahållen byggnadsbild. Samma bild används i Research, Build selection samt pågående och färdiga byggen i Overview. Hela bilden visas med bevarade proportioner. Gemensam platshållare visas om en bild saknas eller inte kan visas. |
@@ -325,3 +325,10 @@ framtida spelmekanik.
   S/Q-markeringarna och vald planets orderstatus i `kartorderstatus` behålls,
   men förklaringsrutan på kartan tas bort. `rundkontroller-i-decisions`
   ger tillgång till rundstyrning även när kartan visar ett objekt.
+
+`rullningsbar-kartpanel` — **Fullständigt implementerat**: På små eller låga
+skärmar växer detaljpanelen för vald hex, flotta eller handelsrutt när spelaren
+rullar ned i innehållet. Överkanten flyttas upp så att mindre av Star map syns.
+När spelaren rullar tillbaka till toppen får kartan sitt utrymme tillbaka.
+Panelen lämnar alltid en del av kartan synlig och hela innehållet kan nås.
+Detta utökar `fokuserat-kartval` och ersätter dess fasta panelhöjd vid rullning.

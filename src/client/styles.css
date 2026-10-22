@@ -2405,7 +2405,10 @@ p {
     right: max(8px, env(safe-area-inset-right));
     bottom: max(8px, env(safe-area-inset-bottom));
     width: auto;
-    max-height: calc(50% - 40px);
+    max-height: min(
+      calc(85% - 16px),
+      calc(50% - 40px + var(--selection-expansion, 0px))
+    );
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
   }

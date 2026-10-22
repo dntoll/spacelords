@@ -1,3 +1,4 @@
+import { bindMapSelectionScroll } from './MapSelectionScroll.js';
 import { renderMapTradeSelection } from './StarMapTradeView.js';
 import { renderMapFleetPanel } from './FleetMapPanel.js';
 import { renderMapLocationHeading } from './MapLocationHeading.js';
@@ -35,6 +36,7 @@ export class AppView implements AppPort {
   #zoom: HTMLOutputElement | null = null;
   #coordinates: HTMLElement | null = null;
   #selectionKey = '';
+  #suspendSelectionScroll: (() => void) | null = null;
   #previews: { dispose(): void }[] = [];
   #saveKey = '';
   #dialog: HTMLDialogElement | null = null;
@@ -653,6 +655,7 @@ export class AppView implements AppPort {
     this.#coordinates.dataset.testid = 'camera-position';
     this.#panel = element('aside', 'selection-panel hud');
     this.#panel.setAttribute('aria-label', 'Selected hex');
+    this.#suspendSelectionScroll = bindMapSelectionScroll(this.#panel, page);
     page.append(
       this.#container,
       this.#coordinates,
@@ -665,6 +668,7 @@ export class AppView implements AppPort {
 
   #renderSelection(model: AppReadModel): void {
     if (!this.#panel) return;
+    this.#suspendSelectionScroll?.();
     this.#panel.hidden = false;
     const trade = renderMapTradeSelection(model, this.#emit);
     if (trade) {
