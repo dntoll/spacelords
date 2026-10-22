@@ -585,3 +585,42 @@ inte automatiskt version 3-sparningar till det äldre formatet.
 Återställ vid behov enbart `spacelords/` från
 `c38283c3ea86b536970215d32baa74038a72698b` på en ny branch från aktuell
 `main`, med samma granskade publiceringsflöde.
+
+## Driftsättning av rullningsbar kartpanel: 2026-10-22
+
+- Publicerad klientrevision: `31bbf7b9eda6a27a4b406de485d26cfa72114939`
+  från `codex/mobile-map-selection` i `dntoll/spacelords`. Arbetsbranchen är
+  pushad; källrepots `main` är oförändrad.
+- Målrepots tidigare revision: `5d0a7917af3c7ac0b452fa998031b1e8b13b0841`.
+  Deploycommit: `fc8d32f41614e7dd3b5cc9d6a66ad33e1f9969d5` från
+  `codex/deploy-spacelords-31bbf7b`, publicerad till målrepots `main`.
+  Endast `spacelords/` ändrades. Samtliga 281 andra filers Git-objekt är
+  oförändrade, verifierat mot aktuell `origin/main` före publiceringen.
+- Formatering, ESLint, typkontroll, båda byggena, 262 snabba tester på
+  13,50 sekunder och fem integrationstester passerade. Webbläsarsvitens
+  226 aktiva testfall passerade efter riktade omkörningar; 22
+  plattformsberoende fall hoppades över. Testerna anpassades till att Playwright
+  saknar native mushjul i mobil WebKit och till panelens begränsade tillväxt
+  med kort innehåll. Ett befintligt förstärkningstest nådde 30-sekundersgränsen
+  i full körning och passerade isolerat på 16,1 sekunder.
+- Åtta paneltester passerade mot både den isolerade publiceringskopian och
+  liveadressen i Chromium och WebKit för telefon, surfplatta och dator. De verifierar hex- och flottval,
+  växande panel, åtkomst till botteninnehållet, återgång vid toppen,
+  bibehållen kamera och frånvaro av dokumentöverflöde. Native fingersvepning
+  verifierades också i emulerad Android/Chromium före publiceringen.
+- PR-integrationen gav HTTP 403. Den dokumenterade reservvägen användes efter
+  kontroll av ren checkout, föräldrarelation och avgränsad diff: vanlig
+  fast-forward-push via befintlig SSH, utan force-push eller behörighetsändring.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/39852815446)
+  lyckades. Alla elva publicerade klientfiler gav HTTP 200, rätt innehållstyper
+  och exakt samma byteinnehåll som Pages-bygget. `/spacelords` leder vidare
+  till `/spacelords/`.
+- Kontrollsummorna för `/`, `/MachineBloom/`, `/Defence-Grid/test/`,
+  `/styles.css` och `/i18n.js` är identiska före och efter publiceringen.
+  Inga länkar, navigationsval, DNS- eller Pages-inställningar ändrades.
+- [Källrevisionens CI](https://github.com/dntoll/spacelords/actions/runs/39852106833)
+  pågår vid liveverifieringen; dess slutresultat är ännu inte bekräftat.
+
+Återställ vid behov enbart `spacelords/` från
+`5d0a7917af3c7ac0b452fa998031b1e8b13b0841` på en ny branch från aktuell
+`main`, med samma granskade publiceringsflöde.
