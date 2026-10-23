@@ -624,3 +624,42 @@ inte automatiskt version 3-sparningar till det äldre formatet.
 Återställ vid behov enbart `spacelords/` från
 `5d0a7917af3c7ac0b452fa998031b1e8b13b0841` på en ny branch från aktuell
 `main`, med samma granskade publiceringsflöde.
+
+## Rättning av förstoring före rullning: 2026-10-23
+
+- Publicerad klientrevision: `3b00aec20bcd0859ad6837d97a62400beb7477bc`
+  från `codex/mobile-map-selection`. Ändringen är pushad; källrepots `main`
+  är oförändrad. Kravet `rullningsbar-kartpanel` förtydligas: rörelsen förstorar
+  först panelen utan att ändra innehållets rullningsläge. Först vid maximal
+  höjd rullas resterande rörelse. Vid återgång rullas innehållet till toppen
+  innan panelen krymper.
+- Målrepots tidigare revision: `fc8d32f41614e7dd3b5cc9d6a66ad33e1f9969d5`.
+  Deploycommit: `bacb505497f817f7072aa669707686e7545c475e` från
+  `codex/deploy-spacelords-expand-first`, publicerad till målrepots `main`.
+  Endast appens HTML och JavaScript ändrades under `spacelords/`.
+  Samtliga 281 övriga webbplatsfilers Git-objekt är oförändrade.
+- Regressionstester reproducerade felet före rättningen. Formatering, ESLint,
+  typkontroll, båda byggena, 265 snabba tester på 13,50 sekunder och fem
+  integrationstester passerade. Den riktade utökade körningen omfattade
+  kartpanel, flottval, långa listor och flottadministration: 38 tester
+  passerade i Chromium och WebKit; sex plattformsberoende tester hoppades över.
+- Nio paneltester passerade mot både den isolerade publiceringskopian och
+  liveadressen, med tre plattformsberoende överhoppningar per körning. Native Android/Chromium-svepning
+  verifierar att innehållet står stilla under förstoringen och först rullas
+  när höjden inte kan öka mer. Enhetstester täcker även återgång, kort innehåll,
+  tangentbord, avbruten kontakt, fler fingrar och opåverkad skeppsflytt.
+- PR-integrationen gav HTTP 403. Den dokumenterade reservvägen användes efter
+  kontroll av aktuell `origin/main`, föräldrarelation, ren checkout och diff:
+  vanlig fast-forward-push med befintlig SSH, utan force-push.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/39907824130)
+  lyckades. Samtliga elva livefiler gav HTTP 200, rätt innehållstyper och
+  identiskt byteinnehåll med Pages-bygget. `/spacelords` leder vidare till
+  `/spacelords/`. Kontrollsummorna för `/`, `/MachineBloom/`,
+  `/Defence-Grid/test/`, `/styles.css` och `/i18n.js` är oförändrade.
+  Inga länkar, navigationsval, DNS- eller Pages-inställningar ändrades.
+- [Källrevisionens CI](https://github.com/dntoll/spacelords/actions/runs/39907705543)
+  pågår vid liveverifieringen; slutresultatet är ännu inte bekräftat.
+
+Återställ vid behov enbart `spacelords/` från
+`fc8d32f41614e7dd3b5cc9d6a66ad33e1f9969d5` på en ny branch från aktuell
+`main`, med samma granskade publiceringsflöde.
