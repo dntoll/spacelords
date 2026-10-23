@@ -663,3 +663,52 @@ inte automatiskt version 3-sparningar till det äldre formatet.
 Återställ vid behov enbart `spacelords/` från
 `fc8d32f41614e7dd3b5cc9d6a66ad33e1f9969d5` på en ny branch från aktuell
 `main`, med samma granskade publiceringsflöde.
+
+## Driftsättning av automatiska delorder: 2026-10-23
+
+- Publicerad klientrevision: `aa57c5c5f2dac78fe5d214a1512b4ac6d3450c37`
+  från `codex/network-component-orders`. Arbetsbranchen är pushad;
+  källrepots `main` är oförändrad. Publiceringen omfattar automatiska
+  delorder genom handelsrutter och reservation av leveranser under planeringen.
+- Målrepots tidigare revision: `bacb505497f817f7072aa669707686e7545c475e`.
+  Deploycommit: `87adc361d7a397abac6f6a0f935aca42173d03c1` från
+  `codex/deploy-spacelords-aa57c5c`, publicerad till målrepots `main`.
+  Endast appens HTML och JavaScript ändrades under `spacelords/`.
+  Samtliga 281 övriga webbplatsfilers innehåll och Git-objekt är oförändrade.
+- Ren installation och verifiering kördes i en separat källkopia eftersom
+  en laddad beroendefil var låst i arbetskatalogen. Arbetskatalogens beroenden
+  återställdes därefter till låsfilens exakta versioner. Formatering, ESLint,
+  typkontroll, båda byggena, 299 snabba tester på 15,19 sekunder och fem
+  integrationstester passerade.
+- Ett befintligt test för `rullningsbar-kartpanel` reproducerade ett felaktigt
+  antagande: kort innehåll ryms helt efter förstoring och behöver då inte
+  rullas. Sveptestet använder nu samma långa flottlista som övriga paneltester.
+  Felet verifierades före testrättningen; förstoring före rullning passerade
+  därefter med native Android/Chromium-inmatning. Spelmekaniken ändrades inte.
+- [Källrevisionens CI](https://github.com/dntoll/spacelords/actions/runs/39976804939)
+  lyckades före publiceringen. Den utökade sviten passerade 235 aktiva
+  webbläsartester; 25 plattformsberoende fall hoppades över enligt sina villkor.
+- Samma 25 riktade tester passerade mot både den isolerade publiceringskopian
+  och liveadressen i Chromium och WebKit för telefon, surfplatta och dator.
+  Tre plattformsberoende fall hoppades över per körning. Testerna verifierar
+  kartpanel, delproduktion via handelsrutter, avvisade delorder, sparade spel
+  och leveransstatus i Supply & production.
+- PR-integrationen gav HTTP 403. Efter ny kontroll av aktuell `origin/main`,
+  föräldrarelation, ren publiceringskopia och avgränsad diff användes den
+  dokumenterade reservvägen: vanlig fast-forward-push med befintlig SSH,
+  utan force-push eller behörighetsändring.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/39979084581)
+  lyckades. Samtliga elva publicerade klientfiler gav HTTP 200, rätt
+  innehållstyper och exakt samma byteinnehåll som Pages-bygget.
+  `/spacelords` leder vidare till `/spacelords/`.
+- Separata mobilkontroller av navigation och rendering passerade i Chromium
+  och WebKit mot både förhandsvisningen och liveadressen. Skärmbilder granskades;
+  inga JavaScript- eller HTTP-fel, rotanrop till `/assets/` eller `/api/`,
+  eller dokumentöverflöden påvisades.
+- Kontrollsummorna för `/`, `/MachineBloom/`, `/Defence-Grid/test/`,
+  `/styles.css` och `/i18n.js` är identiska före och efter publiceringen.
+  Inga länkar, navigationsval, DNS- eller Pages-inställningar ändrades.
+
+Återställ vid behov enbart `spacelords/` från
+`bacb505497f817f7072aa669707686e7545c475e` på en ny branch från aktuell
+`main`, med samma granskade publiceringsflöde.
