@@ -1,6 +1,33 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 import { startFirstSlot } from './save-helpers.js';
+
+async function startScrollablePanel(page: Page): Promise<void> {
+  const initialState = tradeNetworkState(false);
+  const state = {
+    ...initialState,
+    fleets: [
+      ...initialState.fleets,
+      ...Array.from({ length: 8 }, (_, index) => ({
+        ...initialState.fleets[0]!,
+        id: `patrol-${index}`,
+        name: `Patrol ${index}`,
+      })),
+    ],
+  };
+  await page.addInitScript((state) => {
+    localStorage.setItem('spacelords.economy-v2-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({
+        lastPlayed: '2026-10-22T10:00:00Z',
+        state,
+      }),
+    );
+  }, state);
+  await page.goto('./');
+  await startFirstSlot(page);
+}
 
 for (const selection of ['hex', 'fleet'] as const) {
   test(`rullningsbar-kartpanel: ${selection} details grow upward and return map space at the top`, async ({
@@ -8,30 +35,7 @@ for (const selection of ['hex', 'fleet'] as const) {
     browserName,
     isMobile,
   }) => {
-    const initialState = tradeNetworkState(false);
-    const state = {
-      ...initialState,
-      fleets: [
-        ...initialState.fleets,
-        ...Array.from({ length: 8 }, (_, index) => ({
-          ...initialState.fleets[0]!,
-          id: `patrol-${index}`,
-          name: `Patrol ${index}`,
-        })),
-      ],
-    };
-    await page.addInitScript((state) => {
-      localStorage.setItem('spacelords.economy-v2-reset', 'done');
-      localStorage.setItem(
-        'spacelords.save.v2.1',
-        JSON.stringify({
-          lastPlayed: '2026-10-22T10:00:00Z',
-          state,
-        }),
-      );
-    }, state);
-    await page.goto('./');
-    await startFirstSlot(page);
+    await startScrollablePanel(page);
     if (selection === 'fleet') {
       await page.getByRole('button', { name: 'Fleets', exact: true }).click();
       await page
@@ -107,8 +111,7 @@ test('rullningsbar-kartpanel: a native swipe expands before scrolling content', 
     browserName !== 'chromium' || !isMobile,
     'Native swipe input requires Chromium CDP.',
   );
-  await page.goto('./');
-  await startFirstSlot(page);
+  await startScrollablePanel(page);
   const panel = page.locator('.selection-panel');
   const initial = (await panel.boundingBox())!;
   const session = await page.context().newCDPSession(page);
