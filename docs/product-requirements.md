@@ -356,3 +356,12 @@ sitt utrymme. Detta ersätter beteendet med samtidig förstoring och rullning
 som infördes 2026-10-22.
 Panelen lämnar alltid en del av kartan synlig och hela innehållet kan nås.
 Detta utökar `fokuserat-kartval` och ersätter dess fasta panelhöjd vid rullning.
+
+## Kompakta flottkort
+
+`kompakta-flottkort` är **Fullständigt implementerat**. Star map och Fleets
+visar små skeppsrutor och flottkort med tätare avstånd så att fler flottor ryms
+samtidigt, även på mobil. Fyra skepp ryms på en rad i kartans flottkort på
+vanliga mobilskärmar. Namn, position, skeppstyper, destination och ruttuppdrag
+är fortsatt synliga. Order, namnbyte och skeppsöverföring är fortsatt åtkomliga
+med pekytor på minst 44 pixlar i höjd.

@@ -72,3 +72,59 @@ test('flottadministration / skeppsbilder / viewport-game-layout: long fleet list
     await panel.evaluate((node) => node.scrollHeight > node.clientHeight),
   ).toBe(true);
 });
+
+test('kompakta-flottkort: four ships fit in one row and fleet actions remain touch accessible', async ({
+  page,
+}) => {
+  const initial = tradeNetworkState(false);
+  const original = initial.fleets[0]!;
+  const state = {
+    ...initial,
+    fleets: Array.from({ length: 3 }, (_, index) => ({
+      ...original,
+      id: `compact-${index}`,
+      name: `Compact ${index}`,
+      ships: {
+        Fighter: 3,
+        'Transport ship': 1,
+        'Colony ship': 0,
+        'Exploration ship': 0,
+      },
+    })),
+  };
+  await page.addInitScript((saved) => {
+    localStorage.setItem('spacelords.economy-v2-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({ lastPlayed: '2026-10-23T10:00:00Z', state: saved }),
+    );
+  }, state);
+  await page.goto('./');
+  await startFirstSlot(page);
+  const card = page.locator('.map-fleet-cards .fleet-card').first();
+  await expect(card).toBeVisible();
+  const layout = await card.evaluate((node) => ({
+    height: node.getBoundingClientRect().height,
+    width: node.getBoundingClientRect().width,
+    shipRows: [...node.querySelectorAll('.ship-token')].map(
+      (token) => token.getBoundingClientRect().top,
+    ),
+    targets: [...node.querySelectorAll('button, summary')].map(
+      (target) => target.getBoundingClientRect().height,
+    ),
+  }));
+  expect(layout.height).toBeLessThanOrEqual(280);
+  if (layout.width >= 276) expect(new Set(layout.shipRows).size).toBe(1);
+  else expect(new Set(layout.shipRows).size).toBeLessThanOrEqual(2);
+  expect(layout.targets.every((height) => height >= 44)).toBe(true);
+  await card.locator('.fleet-orders > summary').click();
+  await expect(
+    card.getByRole('button', {
+      name: 'Choose destination for Compact 0',
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: `test-results/compact-fleets-${test.info().project.name}.png`,
+  });
+});
