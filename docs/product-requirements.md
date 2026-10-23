@@ -328,7 +328,11 @@ framtida spelmekanik.
 
 `rullningsbar-kartpanel` — **Fullständigt implementerat**: På små eller låga
 skärmar växer detaljpanelen för vald hex, flotta eller handelsrutt när spelaren
-rullar ned i innehållet. Överkanten flyttas upp så att mindre av Star map syns.
-När spelaren rullar tillbaka till toppen får kartan sitt utrymme tillbaka.
+börjar dra uppåt eller rulla nedåt. Panelens överkant flyttas först upp utan
+att innehållet rullas. Först när panelen nått maximal höjd börjar innehållet
+rulla; kort innehåll behöver inte rullas när allt ryms. Vid återgång rullas
+innehållet först till toppen, därefter krymper panelen och kartan får tillbaka
+sitt utrymme. Detta ersätter beteendet med samtidig förstoring och rullning
+som infördes 2026-10-22.
 Panelen lämnar alltid en del av kartan synlig och hela innehållet kan nås.
 Detta utökar `fokuserat-kartval` och ersätter dess fasta panelhöjd vid rullning.

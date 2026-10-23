@@ -68,7 +68,9 @@ Se [hela visionen](docs/game-vision.md).
   Tomma rutor utan flottor visar ingen informationspanel. Val av himlakropp,
   flotta eller handelsrutt får den undre delen på små skärmar.
   `rullningsbar-kartpanel` är **Fullständigt implementerat**: panelens överkant
-  flyttas upp när innehållet rullas ned och återgår när man rullar till toppen.
+  flyttas upp först när spelaren drar eller rullar. Innehållet börjar rulla
+  först vid maximal panelhöjd. Vid återgång rullas innehållet först till toppen
+  innan panelen krymper.
   En del av kartan förblir synlig.
 - **Beslut och händelser:** Decisions och Next decision samlar val och
   försörjningsproblem. Spelaren kan hoppa över beslut ett år eller tysta ett

@@ -36,7 +36,7 @@ export class AppView implements AppPort {
   #zoom: HTMLOutputElement | null = null;
   #coordinates: HTMLElement | null = null;
   #selectionKey = '';
-  #suspendSelectionScroll: (() => void) | null = null;
+  #cancelSelectionGesture: (() => void) | null = null;
   #previews: { dispose(): void }[] = [];
   #saveKey = '';
   #dialog: HTMLDialogElement | null = null;
@@ -655,7 +655,7 @@ export class AppView implements AppPort {
     this.#coordinates.dataset.testid = 'camera-position';
     this.#panel = element('aside', 'selection-panel hud');
     this.#panel.setAttribute('aria-label', 'Selected hex');
-    this.#suspendSelectionScroll = bindMapSelectionScroll(this.#panel, page);
+    this.#cancelSelectionGesture = bindMapSelectionScroll(this.#panel, page);
     page.append(
       this.#container,
       this.#coordinates,
@@ -668,7 +668,7 @@ export class AppView implements AppPort {
 
   #renderSelection(model: AppReadModel): void {
     if (!this.#panel) return;
-    this.#suspendSelectionScroll?.();
+    this.#cancelSelectionGesture?.();
     this.#panel.hidden = false;
     const trade = renderMapTradeSelection(model, this.#emit);
     if (trade) {

@@ -141,13 +141,14 @@ describe('rundkontroller-i-decisions', () => {
 });
 
 describe('rullningsbar-kartpanel', () => {
-  it('grows with native scrolling, stays bounded and gives the map its space back at the top', () => {
+  function panelWithContent(contentHeight = 1200) {
     view.render(model.snapshot);
     const panel = root.querySelector<HTMLElement>('.selection-panel')!;
-    const page = root.querySelector<HTMLElement>('.map-page')!;
-    Object.defineProperty(page, 'clientHeight', { value: 600 });
+    Object.defineProperty(root.querySelector('.map-page'), 'clientHeight', {
+      value: 600,
+    });
     Object.defineProperties(panel, {
-      scrollHeight: { value: 1200 },
+      scrollHeight: { value: contentHeight },
       clientHeight: {
         get: () =>
           260 +
@@ -156,52 +157,121 @@ describe('rullningsbar-kartpanel', () => {
           ),
       },
     });
-    panel.dispatchEvent(new WheelEvent('wheel', { deltaY: 100 }));
-    const scroll = (top: number) => {
-      panel.scrollTop = top;
-      panel.dispatchEvent(new Event('scroll'));
-      return Number.parseFloat(
-        panel.style.getPropertyValue('--selection-expansion'),
-      );
+    return panel;
+  }
+  function wheel(panel: HTMLElement, deltaY: number) {
+    const event = new WheelEvent('wheel', { deltaY, cancelable: true });
+    panel.dispatchEvent(event);
+    return event;
+  }
+  function expansion(panel: HTMLElement) {
+    return Number.parseFloat(
+      panel.style.getPropertyValue('--selection-expansion') || '0',
+    );
+  }
+
+  it('consumes input by expanding first and scrolls only the remainder after maximum height', () => {
+    const panel = panelWithContent();
+    expect(wheel(panel, 120).defaultPrevented).toBe(true);
+    expect(expansion(panel)).toBe(120);
+    expect(panel.scrollTop).toBe(0);
+    wheel(panel, 200);
+    expect(expansion(panel)).toBe(210);
+    expect(panel.scrollTop).toBe(110);
+    wheel(panel, -80);
+    expect(expansion(panel)).toBe(210);
+    expect(panel.scrollTop).toBe(30);
+    wheel(panel, -60);
+    expect(panel.scrollTop).toBe(0);
+    expect(expansion(panel)).toBe(180);
+    wheel(panel, -180);
+    expect(expansion(panel)).toBe(0);
+  });
+
+  it('shows short content completely without scrolling it past the top', () => {
+    const panel = panelWithContent(300);
+    wheel(panel, 40);
+    expect(expansion(panel)).toBe(40);
+    expect(panel.scrollTop).toBe(0);
+  });
+
+  it('expands a touch drag without scrolling and stops on cancellation or a second finger', () => {
+    const panel = panelWithContent();
+    const send = (type: string, y: number, count = 1) => {
+      const event = new Event(type, { cancelable: true });
+      Object.defineProperty(event, 'touches', {
+        value: Array.from({ length: count }, (_, identifier) => ({
+          identifier,
+          clientX: 10,
+          clientY: y,
+        })),
+      });
+      panel.dispatchEvent(event);
+      return event;
     };
-    expect(scroll(100)).toBe(100);
-    expect(scroll(500)).toBe(210);
-    expect(scroll(800)).toBe(210);
-    expect(scroll(50)).toBe(50);
-    expect(scroll(0)).toBe(0);
-    expect(model.snapshot.camera).toEqual(new AppModel().snapshot.camera);
+    send('touchstart', 400);
+    expect(send('touchmove', 300).defaultPrevented).toBe(true);
+    expect(expansion(panel)).toBe(100);
+    expect(panel.scrollTop).toBe(0);
+    send('touchmove', 200, 2);
+    expect(send('touchmove', 100).defaultPrevented).toBe(false);
+    expect(expansion(panel)).toBe(100);
+    send('touchstart', 400);
+    send('touchcancel', 400);
+    send('touchmove', 100);
+    expect(expansion(panel)).toBe(100);
   });
 
-  it('leaves enough overflow to avoid a resize pushing short content back to the top', () => {
-    view.render(model.snapshot);
-    const panel = root.querySelector<HTMLElement>('.selection-panel')!;
-    Object.defineProperty(root.querySelector('.map-page'), 'clientHeight', {
-      value: 600,
+  it('leaves ship dragging and editable controls to their own handlers', () => {
+    const panel = panelWithContent();
+    const token = document.createElement('button');
+    token.className = 'ship-token';
+    panel.append(token);
+    const touch = (type: string, y: number) => {
+      const event = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperty(event, 'touches', {
+        value: [{ identifier: 0, clientX: 10, clientY: y }],
+      });
+      token.dispatchEvent(event);
+      return event;
+    };
+    touch('touchstart', 400);
+    expect(touch('touchmove', 100).defaultPrevented).toBe(false);
+    const input = document.createElement('input');
+    panel.append(input);
+    const key = new KeyboardEvent('keydown', {
+      key: 'ArrowDown',
+      bubbles: true,
+      cancelable: true,
     });
-    Object.defineProperties(panel, {
-      scrollHeight: { value: 300 },
-      clientHeight: { value: 260 },
-    });
-    panel.dispatchEvent(new Event('touchmove'));
-    panel.scrollTop = 30;
-    panel.dispatchEvent(new Event('scroll'));
-    expect(panel.style.getPropertyValue('--selection-expansion')).toBe('20px');
+    input.dispatchEvent(key);
+    expect(key.defaultPrevented).toBe(false);
+    expect(expansion(panel)).toBe(0);
   });
-});
 
-describe('rullningsbar-kartpanel / flottval-pa-kartan', () => {
-  it('does not grow when automatic fleet focus scrolls the panel', () => {
-    view.render(model.snapshot);
-    const panel = root.querySelector<HTMLElement>('.selection-panel')!;
-    Object.defineProperty(root.querySelector('.map-page'), 'clientHeight', {
-      value: 600,
-    });
-    Object.defineProperties(panel, {
-      scrollHeight: { value: 1200 },
-      clientHeight: { value: 260 },
-    });
+  it('uses keyboard scrolling to expand first as well', () => {
+    const panel = panelWithContent();
+    panel.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', cancelable: true }),
+    );
+    expect(expansion(panel)).toBe(40);
+    expect(panel.scrollTop).toBe(0);
+    panel.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'End', cancelable: true }),
+    );
+    expect(expansion(panel)).toBe(210);
+    expect(panel.scrollTop).toBe(730);
+    panel.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Home', cancelable: true }),
+    );
+    expect(expansion(panel)).toBe(0);
+    expect(panel.scrollTop).toBe(0);
+  });
+
+  it('does not expand for automatic focus scrolling', () => {
+    const panel = panelWithContent();
     panel.scrollTop = 100;
     panel.dispatchEvent(new Event('scroll'));
-    expect(panel.style.getPropertyValue('--selection-expansion')).toBe('');
+    expect(expansion(panel)).toBe(0);
   });
 });
