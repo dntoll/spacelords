@@ -63,6 +63,9 @@ Se [hela visionen](docs/game-vision.md).
   leveranser, produktionsförmåga och materialsökning. De sex nya kraven är
   **Fullständigt implementerat**. Star map hanterar fortsatt rutter och flottilldelning;
   fysiska transporter, omlastningar och sparade order behålls.
+  `forsorjningsstatus` och `leveransfloden` omfattar även planeringen: en
+  fungerande rutt reserverar tillgängligt material direkt som Awaiting pickup.
+  Täckta behov visas som Waiting utan ett försörjningsbeslut före nästa år.
 - **Kartans utrymme:** `fokuserat-kartval` är **Fullständigt implementerat**.
   Kartan saknar objektmeny, S/Q-förklaring och kontrollruta för zoom/Homeworld.
   Tomma rutor utan flottor visar ingen informationspanel. Val av himlakropp,

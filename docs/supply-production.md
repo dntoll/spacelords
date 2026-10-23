@@ -21,6 +21,18 @@ efter tillgängligt lokalt lager, användbara arrangerade leveranser och lokal
 utvinning som fyndigheten räcker till. Utvinning är framtida försörjning, inte
 material som finns i lager. Uppskattningar är inte löften om leveranstid.
 
+`forsorjningsstatus` och `leveransfloden` gäller redan under planeringen:
+när ett projekt saknar material och en aktiv transportkedja med tilldelade
+Transport ships kan hämta tillgängligt lager, reserveras leveransen direkt
+och visas som Awaiting pickup. Fullt täckta behov visas som Waiting och ger
+inget försörjningsbeslut. Detta gäller även nya eller omordnade projekt och
+inlästa spel. Tidigare reservationer skyddas. Även källplanetens egna nya aktiva
+behov skyddas genom att ännu inte påbörjade leveranser vid behov minskas.
+Last som redan lämnat
+källan behåller sin reservation även vid omlastning. Kvarstående brist eller
+en bruten transportkedja kräver fortsatt ett beslut. Lastning och förflyttning
+sker när året genomförs.
+
 Leveranser till senare projekt räknas inte av från det första projektets behov.
 Last till ett avbrutet projekt kan visas som kommande lager. En bruten fortsatt
 transportkedja räknas inte som fungerande försörjning.

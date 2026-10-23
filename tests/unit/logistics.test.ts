@@ -210,6 +210,21 @@ describe('handelsnatverk / fysisk-frakt / flera-ruttflottor', () => {
     expect(planets[0]!.stock.Iron).toBe(80);
   });
 
+  it('automatisk-resursforsorjning: a newly active older project cannot take an existing pickup reservation', () => {
+    const { planets, logistics, port } = setup();
+    planets[0]!.stock.Iron = 40;
+    logistics.reserve(port);
+    const reserved = structuredClone(logistics.shipments);
+    planets[1]!.demand.Iron = 40;
+    planets[1]!.projects = [
+      { id: 'project-0', cost: { ...emptyStock(), Iron: 40 } },
+    ];
+    logistics.reserve(port);
+    expect(logistics.shipments).toEqual(reserved);
+    expect(logistics.incoming('c').Iron).toBe(40);
+    expect(logistics.incoming('b').Iron).toBe(0);
+  });
+
   it('chooses shorter travel time and is independent of planet iteration order', () => {
     const first = setup(),
       second = setup();

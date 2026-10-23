@@ -184,6 +184,8 @@ note right of TradeRoute
 end note
 note right of Shipment
   Awaiting pickup: reserverad mängd i ett planetlager.
+  Reservation sker redan under planeringen.
+  Ej påbörjad frakt skyddar källplanetens aktiva behov.
   In transit: lastad mängd på en flotta.
   Omlastat material är reserverat för slutmottagaren.
   Försörjningsöversikten läser dessa tillstånd.

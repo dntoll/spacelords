@@ -351,8 +351,32 @@ export class Logistics {
     return null;
   }
 
-  prepare(port: LogisticsPort): void {
+  // forsorjningsstatus / leveransfloden: reserve during planning; load at turn start.
+  reserve(port: LogisticsPort): void {
     this.cleanup(port);
+    for (const planet of port.planets) {
+      for (const resource of MATERIALS) {
+        const waiting = this.shipments.filter(
+          (s) =>
+            !s.fleetId &&
+            s.path[s.stage] === planet.id &&
+            s.resource === resource,
+        );
+        let available = Math.max(
+          0,
+          planet.stock[resource] -
+            planet.demand[resource] -
+            waiting
+              .filter((s) => s.committed)
+              .reduce((n, s) => n + s.amount, 0),
+        );
+        for (const shipment of waiting.filter((s) => !s.committed)) {
+          shipment.amount = Math.min(shipment.amount, available);
+          available -= shipment.amount;
+        }
+      }
+    }
+    this.shipments = this.shipments.filter((s) => s.amount > 0);
     const needs = port.planets
       .flatMap((planet) =>
         planet.projects.map((project) => ({ planet, project })),
@@ -421,6 +445,10 @@ export class Logistics {
         }
       }
     }
+  }
+
+  prepare(port: LogisticsPort): void {
+    this.reserve(port);
     for (const fleet of [...port.fleets].sort((a, b) =>
       a.id.localeCompare(b.id),
     )) {

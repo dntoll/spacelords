@@ -206,6 +206,11 @@ sin betydelse för enbart innevarande runda.
 
 ## Ändringshistorik
 
+- 2026-10-23: `forsorjningsstatus`, `leveransfloden`,
+  `automatisk-resursforsorjning` och `beslutslista` förtydligas: en aktiv
+  transportkedja reserverar tillgängligt material redan under planeringen.
+  Täckta behov visas som Waiting och Awaiting pickup utan försörjningsbeslut.
+  Kvarstående brist kräver fortsatt beslut; skeppen lastas när året genomförs.
 - 2026-10-21: `skepp-ur-olastad-ruttflotta` ersätter efter användarens uttryckliga
   ändring spärren mot alla uttag ur aktiva ruttflottor i `forstarka-ruttflotta`.
   Uttag tillåts när hela flottan är olastad; sista Transport ship frigör

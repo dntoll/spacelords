@@ -567,6 +567,7 @@ export class Game {
         ),
     );
     game.#refreshReinforcements();
+    game.#logistics.reserve(game.#logisticsPort());
     // Exercise derived data before accepting a stored record.
     game.mapSnapshot();
     game.fleetSnapshots();
@@ -821,12 +822,13 @@ export class Game {
       slotIndex: slotIndex ?? this.#emptySlot(planet, state),
       factoryId: null,
     });
+    this.#logistics.reserve(this.#logisticsPort());
   }
   cancelProject(planet: Planet, projectId: string): void {
     this.#requirePlanning();
     const state = this.#state(planet);
     state.projects = state.projects.filter((p) => p.id !== projectId);
-    this.#logistics.cleanup(this.#logisticsPort());
+    this.#logistics.reserve(this.#logisticsPort());
   }
   toggleDemolition(planet: Planet, buildingId: string): void {
     this.#requirePlanning();
@@ -887,6 +889,7 @@ export class Game {
       slotIndex: null,
       factoryId: building.id,
     });
+    this.#logistics.reserve(this.#logisticsPort());
   }
   scheduleComponent(planet: Planet, component: Component): void {
     this.#requirePlanning();
@@ -905,6 +908,7 @@ export class Game {
       slotIndex: null,
       factoryId: factory.id,
     });
+    this.#logistics.reserve(this.#logisticsPort());
   }
   moveProject(planet: Planet, id: string, index: number): void {
     this.#requirePlanning();
@@ -922,6 +926,7 @@ export class Game {
     const previous = projects.findIndex((p) => p.id === id);
     const [project] = projects.splice(previous, 1);
     projects.splice(index, 0, project!);
+    this.#logistics.reserve(this.#logisticsPort());
   }
   setProjectFleet(planet: Planet, id: string, fleetId: string | null): void {
     this.#requirePlanning();
@@ -1118,6 +1123,7 @@ export class Game {
     this.#logistics.cleanup(this.#logisticsPort());
     this.#refreshReinforcements();
     this.#phase = 'planning';
+    this.#logistics.reserve(this.#logisticsPort());
   }
   #completeProject(planet: Planet, state: ColonyState, project: Project): void {
     const d = projectDefinition(project.type);
@@ -1210,6 +1216,7 @@ export class Game {
       this.#fleetState(fleetId),
       this.#logisticsPort(),
     );
+    this.#logistics.reserve(this.#logisticsPort());
   }
   releaseTradeFleet(fleetId: string): void {
     this.#requirePlanning();

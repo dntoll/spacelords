@@ -180,7 +180,14 @@ it('forsorjningsstatus / leveransfloden: decisions and supply agree, inspection 
   expect(game.decisions.some((d) => d.id === 'supply-sol-1')).toBe(true);
   expect(game.exportState()).toEqual(before);
   game.assignTradeFleet('route-test', 'freighters');
-  expect(game.supplyOverview().planets[0]!.status).toBe('Needs attention');
+  expect(game.supplyOverview().planets[0]!.status).toBe('Waiting');
+  expect(game.decisions.some((d) => d.id === 'supply-sol-1')).toBe(false);
+  expect(game.shipments[0]).toMatchObject({
+    state: 'Awaiting pickup',
+    source: 'Tellus',
+    recipient: 'Vesta',
+    project: 'Iron mine',
+  });
   const frames = game.startTurn();
   expect(game.shipments[0]).toMatchObject({
     state: 'In transit',
