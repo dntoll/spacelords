@@ -63,19 +63,13 @@ describe('gemensam-planetko / delfabriker / automatiska-delorder', () => {
     ).toEqual(['Fighter', 'Rocket engine', 'Weapons module', 'Fighter']);
   });
 
-  it('queues only the components that have local factories and keeps invalid orders atomic', () => {
-    const { game, home, snapshot } = setup([
-      'Fighter factory',
-      'Rocket engine factory',
-    ]);
+  it('rejects missing component factories and keeps invalid orders atomic', () => {
+    const { game, home } = setup(['Fighter factory', 'Rocket engine factory']);
     const before = game.exportState();
     expect(() => game.scheduleShip(home, 'Fighter', 'missing')).toThrow();
     expect(game.exportState()).toEqual(before);
-    game.scheduleShip(home, 'Fighter');
-    expect(snapshot().projects.map((p) => p.type)).toEqual([
-      'Rocket engine',
-      'Fighter',
-    ]);
+    expect(() => game.scheduleShip(home, 'Fighter')).toThrow('Weapons module');
+    expect(game.exportState()).toEqual(before);
   });
   it('queues missing Fighter parts before the ship and completes only one item per planet-year', () => {
     const { game, home, snapshot, turn } = setup();
@@ -129,12 +123,22 @@ describe('gemensam-planetko / delfabriker / automatiska-delorder', () => {
     ).toEqual(saved);
   });
 
-  it('waits for missing parts without local factories and never charges a blocked ship', () => {
-    const { game, home, snapshot, turn } = setup(['Fighter factory']);
-    game.scheduleShip(home, 'Fighter');
+  it('preserves legacy blocked orders without creating new component orders or charging the ship', () => {
+    const base = setup(['Fighter factory']).game.exportState();
+    base.colonies[0]![1].projects.push({
+      id: 'legacy-fighter',
+      type: 'Fighter',
+      slotIndex: null,
+      factoryId: 'factory-0',
+      destinationFleetId: null,
+    });
+    const game = Game.restore({ ...base, version: 3 });
+    const home = game.galaxy.homePlanet;
+    const snapshot = () => game.planetSnapshot(home)!;
     expect(snapshot().projects.map((p) => p.type)).toEqual(['Fighter']);
     const stock = snapshot().economy.stock;
-    turn();
+    for (const frame of game.startTurn()) game.applyFrame(frame);
+    game.finishTurn();
     expect(snapshot().economy.stock).toEqual(stock);
     expect(snapshot().projects[0]!.blockedReason).toContain('Rocket engine');
     expect(() => game.scheduleComponent(home, 'Rocket engine')).toThrow(
@@ -219,7 +223,7 @@ describe('gemensam-planetko / sparat-spel / bevara-aldre-produktionskoer', () =>
         .planetSnapshot(restored.galaxy.homePlanet)!
         .projects.map((p) => p.id),
     ).toEqual(['project-2', 'project-3', 'project-1', 'project-6']);
-    expect(restored.exportState().version).toBe(3);
+    expect(restored.exportState().version).toBe(4);
     expect(restored.fleetSnapshots()).toEqual(
       Game.restore(base).fleetSnapshots(),
     );
@@ -291,9 +295,9 @@ describe('skeppsdelar / automatisk-resursforsorjning', () => {
       ],
     });
     const target = game.galaxy.systems[0]!.planets[1]!;
-    game.scheduleShip(target, 'Fighter');
     const route = game.createTradeRoute(home.id, target.id);
     game.assignTradeFleet(route, 'freighters');
+    game.scheduleShip(target, 'Fighter');
     const frames = game.startTurn();
     expect(game.fleet('freighters')!.cargo).toMatchObject({
       'Rocket engine': 1,

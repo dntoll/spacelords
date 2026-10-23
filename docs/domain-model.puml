@@ -144,7 +144,9 @@ note bottom of BuildQueue
   En gemensam kö för byggnader, delar och skepp per planet.
   Högst ett färdigt projekt per planet och år.
   Fabriker avgör vilka produkter som kan byggas.
-  Saknade lokalt byggbara delar köas före skeppet.
+  Saknade lokalt byggbara delar köas före huvudordern.
+  Annars beställs delar genom aktiva handelsrutter.
+  Om en del inte kan ordnas avvisas hela beställningen.
   Material betalas en gång vid byggstart.
 end note
 
@@ -167,6 +169,20 @@ class Shipment {
   stage
   committed
 }
+class ComponentOrder {
+  component
+  amount
+  source
+  location
+  delivered
+  committed
+}
+ComponentOrder --> ConstructionProject : supplies
+ComponentOrder --> ConstructionProject : optional production order
+ComponentOrder --> Planet : source and recipient
+ComponentOrder --> Shipment : reserved physical delivery
+ComponentOrder --> PlanetStock : protects until consumption
+SavedGame --> ComponentOrder
 class Decision {
   context
   skippedThisTurn
@@ -181,6 +197,7 @@ TradeRoute "0..1" <-- "0..*" Fleet : assigned
 note right of TradeRoute
   Tilldelning på avstånd startar en fysisk resa
   till närmaste ändplanet före vanlig ruttrafik.
+  Rutt utan aktiv transport visas streckad.
 end note
 note right of Shipment
   Awaiting pickup: reserverad mängd i ett planetlager.

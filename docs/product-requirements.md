@@ -176,12 +176,27 @@ direkt. Inställningen sparas per spel och gäller samma beslut för samma
 flotta, planet eller rutt; andra beslut påverkas inte. Skip this turn behåller
 sin betydelse för enbart innevarande runda.
 
-| Kravnamn               | Status                     | Krav                                                                                                                                                                                                                                                                                |
-| ---------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `gemensam-planetko`    | Fullständigt implementerat | Varje planet har exakt en Build queue för byggnader, delar och skepp, utan fast kögräns. Högst ett projekt färdigställs per planet och år. Flera fabriker ger fler produktval, inte parallella köer.                                                                                |
-| `delfabriker`          | Fullständigt implementerat | Rocket engine factory och Weapons module factory kan forskas fram och byggas. De tillverkar var sin del i den gemensamma kön och behöver personal. Tillverkade delar läggs i planetens lager.                                                                                       |
-| `skeppsdelar`          | Fullständigt implementerat | En Fighter kräver en Rocket engine och en Weapons module utöver material och besättning. Delarna förbrukas en gång vid skeppsbygget. De kan lagras och fraktas genom handelsnätverket. Övriga skeppsrecept är oförändrade.                                                          |
-| `automatiska-delorder` | Fullständigt implementerat | När en Fighter köas läggs saknade delar före skeppet om motsvarande färdiga lokala delfabriker finns. Lager, inkommande leveranser och tidigare order räknas av utan dubbelbeställning. Saknad lokal delfabrik hindrar inte beställning; skeppet väntar på delar som kan levereras. |
+| Kravnamn               | Status                     | Krav                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `gemensam-planetko`    | Fullständigt implementerat | Varje planet har exakt en Build queue för byggnader, delar och skepp, utan fast kögräns. Högst ett projekt färdigställs per planet och år. Flera fabriker ger fler produktval, inte parallella köer.                                                                                                                                             |
+| `delfabriker`          | Fullständigt implementerat | Rocket engine factory och Weapons module factory kan forskas fram och byggas. De tillverkar var sin del i den gemensamma kön och behöver personal. Tillverkade delar läggs i planetens lager.                                                                                                                                                    |
+| `skeppsdelar`          | Fullständigt implementerat | En Fighter kräver en Rocket engine och en Weapons module utöver material och besättning. Delarna förbrukas en gång vid skeppsbygget. De kan lagras och fraktas genom handelsnätverket. Övriga skeppsrecept är oförändrade.                                                                                                                       |
+| `automatiska-delorder` | Fullständigt implementerat | Saknade delar beställs automatiskt, i första hand från lokal produktion och annars från lager eller delfabriker genom aktiva handelsrutter. Kortast uppskattade leveranstid avgör leverantör. Befintlig försörjning räknas av och varje del reserveras för sin order. Om någon del inte kan ordnas avvisas hela beställningen med en förklaring. |
+
+`streckade-rutter-utan-transporter` — **Fullständigt implementerat**:
+Handelsrutter utan aktiv transport visas streckade på Star map. När en
+transportflotta tilldelas blir linjen heldragen; när den sista aktiva
+transportflottan frigörs blir linjen streckad. En flotta på väg till rutten
+räknas som tilldelad, men en flotta som begärt Release gör det inte.
+Stängande rutter visas fortsatt streckade.
+
+2026-10-23: `automatiska-delorder` ersätter den tidigare regeln som tillät
+beställningar utan möjlig delförsörjning. Lokal delfabrik har företräde framför
+fjärrlager. Utan lokal fabrik används först tillgängliga fjärrlager, därefter
+tidigare obokad delproduktion eller nya order hos närmaste producent.
+Varje ruttlänk behöver en tilldelad transportflotta. Material- och personalbrist
+får innebära väntan. Avbeställning behåller delorder för annan användning;
+senare transportbortfall blockerar försörjningen men raderar inte huvudordern.
 
 | Kravnamn                       | Status                     | Krav                                                                                                                                                                                                                                                                                                                                                                                |
 | ------------------------------ | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

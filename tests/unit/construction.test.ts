@@ -301,12 +301,12 @@ describe('kartorderstatus', () => {
   it('counts truly empty sites and idle queues separately and updates on order cancellation', () => {
     const { game, planet, snapshot, factory } = setup();
     expect(game.planetOrders()[0]!.emptySites).toBe(10);
-    const yard = factory('Fighter factory');
+    const yard = factory('Exploration ship factory');
     expect(game.planetOrders()[0]).toMatchObject({
       emptySites: 8,
       emptyQueues: 1,
     });
-    game.scheduleShip(planet, 'Fighter', null, yard.id);
+    game.scheduleShip(planet, 'Exploration ship', null, yard.id);
     expect(game.planetOrders()[0]!.emptyQueues).toBe(0);
     const order = snapshot().projects[0]!;
     game.cancelProject(planet, order.id);

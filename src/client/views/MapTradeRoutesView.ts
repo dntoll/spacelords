@@ -23,7 +23,9 @@ export function renderMapTradeRoutes(sketch: p5, model: AppReadModel): void {
             : '#547caa',
     );
     sketch.strokeWeight((selected || target ? 3 : 2) / zoom);
-    context?.setLineDash(route.closing ? [7 / zoom, 5 / zoom] : []);
+    context?.setLineDash(
+      route.closing || !route.hasActiveTransport ? [7 / zoom, 5 / zoom] : [],
+    );
     const from = HexGeometry.toPoint(route.start),
       to = HexGeometry.toPoint(route.end);
     sketch.line(from.x, from.y, to.x, to.y);

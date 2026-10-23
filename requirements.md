@@ -44,8 +44,10 @@ Se [hela visionen](docs/game-vision.md).
   Varje planet har en enda Build queue för byggnader, delar och skepp, med
   högst ett färdigt projekt per år (`gemensam-planetko`). Fabriker avgör vilka
   produkter planeten kan tillverka. Rocket engine factory och Weapons module
-  factory tillverkar delarna till Fighter; saknade lokalt byggbara delar köas
-  automatiskt före skeppet (`delfabriker`, `skeppsdelar`, `automatiska-delorder`).
+  factory tillverkar delarna till Fighter. `automatiska-delorder` är
+  **Fullständigt implementerat**: saknade delar köas lokalt eller beställs från
+  lager och fabriker genom aktiva handelsrutter, utan dubbelreservationer.
+  Om en del inte kan ordnas avvisas hela beställningen utan delvisa ändringar.
   `byggnadsantal-lokalt-och-globalt` är **Fullständigt implementerat**: Build
   selection visar befintliga byggnader per typ på vald planet och totalt på
   spelarens planeter. Köade byggprojekt ingår inte.
@@ -66,6 +68,9 @@ Se [hela visionen](docs/game-vision.md).
   `forsorjningsstatus` och `leveransfloden` omfattar även planeringen: en
   fungerande rutt reserverar tillgängligt material direkt som Awaiting pickup.
   Täckta behov visas som Waiting utan ett försörjningsbeslut före nästa år.
+  Beställd delproduktion visas separat från verkliga leveranser.
+  `streckade-rutter-utan-transporter` är **Fullständigt implementerat**:
+  rutter utan aktiv transport visas streckade på Star map.
 - **Kartans utrymme:** `fokuserat-kartval` är **Fullständigt implementerat**.
   Kartan saknar objektmeny, S/Q-förklaring och kontrollruta för zoom/Homeworld.
   Tomma rutor utan flottor visar ingen informationspanel. Val av himlakropp,

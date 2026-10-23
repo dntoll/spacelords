@@ -232,6 +232,8 @@ function materialList(
         'Incoming',
         `${material.awaitingPickup} awaiting pickup · ${material.inTransit} in transit`,
       );
+    if (material.ordered > 0)
+      pair('Ordered production', String(material.ordered));
     if (material.required > 0)
       pair(
         'Unprovided',

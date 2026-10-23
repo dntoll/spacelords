@@ -1,4 +1,10 @@
-import { MATERIALS, emptyStock, type Material, type Stock } from './Economy.js';
+import {
+  MATERIALS,
+  emptyStock,
+  type Component,
+  type Material,
+  type Stock,
+} from './Economy.js';
 import type { HexCoordinate } from './HexCoordinate.js';
 
 export interface TradeRoute {
@@ -16,6 +22,20 @@ export interface Shipment {
   projectId: string;
   recipient: string;
   fleetId: string | null;
+  committed?: boolean;
+  componentOrderId?: string;
+}
+export interface ComponentOrder {
+  id: string;
+  projectId: string;
+  recipient: string;
+  source: string;
+  location: string;
+  component: Component;
+  amount: number;
+  productionProjectId: string | null;
+  shipmentId: string | null;
+  delivered: boolean;
   committed?: boolean;
 }
 export interface ShipmentSnapshot {
@@ -73,6 +93,7 @@ export interface TradeRouteSnapshot {
   readonly closing: boolean;
   readonly fleetIds: readonly string[];
   readonly capacity: number;
+  readonly hasActiveTransport: boolean;
   readonly waiting: number;
   readonly status: string;
 }
@@ -82,7 +103,45 @@ export class Logistics {
   constructor(
     public routes: TradeRoute[] = [],
     public shipments: Shipment[] = [],
+    public componentOrders: ComponentOrder[] = [],
   ) {}
+
+  activeCarriers(
+    route: TradeRoute,
+    port: LogisticsPort,
+  ): readonly TransportFleet[] {
+    return route.closing
+      ? []
+      : port.fleets.filter(
+          (fleet) =>
+            fleet.routeId === route.id &&
+            !fleet.releaseRequested &&
+            fleet.position &&
+            fleet.ships['Transport ship'] > 0,
+        );
+  }
+
+  completeComponent(projectId: string): void {
+    for (const order of this.componentOrders.filter(
+      (order) => order.productionProjectId === projectId,
+    )) {
+      order.productionProjectId = null;
+      order.delivered = order.location === order.recipient;
+    }
+  }
+
+  componentStockReserved(planetId: string, projectId?: string): Stock {
+    const stock = emptyStock();
+    for (const order of this.componentOrders)
+      if (
+        order.projectId !== projectId &&
+        !order.productionProjectId &&
+        order.location === planetId &&
+        !this.shipments.some((s) => s.componentOrderId === order.id)
+      )
+        stock[order.component] += order.amount;
+    return stock;
+  }
 
   shipmentSnapshots(port: LogisticsPort): readonly ShipmentSnapshot[] {
     return Object.freeze(
@@ -111,13 +170,7 @@ export class Logistics {
               ),
             );
           } else {
-            const carriers = port.fleets.filter(
-              (f) =>
-                f.routeId === route?.id &&
-                !f.releaseRequested &&
-                f.position &&
-                f.ships['Transport ship'] > 0,
-            );
+            const carriers = route ? this.activeCarriers(route, port) : [];
             if (!route || route.closing || !carriers.length) {
               issue = 'No active transport path';
               break;
@@ -177,8 +230,8 @@ export class Logistics {
     return stock;
   }
 
-  reserved(planetId: string): Stock {
-    const reserved = emptyStock();
+  reserved(planetId: string, projectId?: string): Stock {
+    const reserved = this.componentStockReserved(planetId, projectId);
     for (const shipment of this.shipments)
       if (!shipment.fleetId && shipment.path[shipment.stage] === planetId)
         reserved[shipment.resource] += shipment.amount;
@@ -246,6 +299,9 @@ export class Logistics {
   }
 
   cleanup(port: LogisticsPort): void {
+    this.componentOrders = this.componentOrders.filter((order) =>
+      port.projectExists(order.projectId),
+    );
     this.shipments = this.shipments.filter(
       (s) =>
         s.fleetId ||
@@ -283,12 +339,13 @@ export class Logistics {
             (sum, f) => sum + f.ships['Transport ship'] * 30,
             0,
           ),
+          hasActiveTransport: this.activeCarriers(r, port).length > 0,
           waiting: this.shipments
             .filter((s) => !s.fleetId && this.#routeFor(s)?.id === r.id)
             .reduce((sum, s) => sum + s.amount, 0),
           status: r.closing
             ? 'Closing after deliveries'
-            : fleets.length
+            : this.activeCarriers(r, port).length
               ? 'Active'
               : 'Needs transport fleet',
         });
@@ -319,28 +376,19 @@ export class Logistics {
         const next = route.a === last ? route.b : route.a;
         const origin = port.planets.find((p) => p.id === last)!;
         const target = port.planets.find((p) => p.id === next)!;
-        const years = port.fleets
-          .filter(
-            (f) =>
-              f.routeId === route.id &&
-              !f.releaseRequested &&
-              f.ships['Transport ship'] > 0,
-          )
-          .map((f) => {
-            const speed = port.speed(f);
-            const reposition = f.position!.distanceTo(origin.position);
-            const busy = this.shipments.filter(
-              (s) => s.fleetId === f.id,
-            ).length;
-            return (
-              Math.max(
-                1,
-                Math.ceil(origin.position.distanceTo(target.position) / speed),
-              ) +
-              Math.ceil(reposition / speed) +
-              busy
-            );
-          });
+        const years = this.activeCarriers(route, port).map((f) => {
+          const speed = port.speed(f);
+          const reposition = f.position!.distanceTo(origin.position);
+          const busy = this.shipments.filter((s) => s.fleetId === f.id).length;
+          return (
+            Math.max(
+              1,
+              Math.ceil(origin.position.distanceTo(target.position) / speed),
+            ) +
+            Math.ceil(reposition / speed) +
+            busy
+          );
+        });
         if (years.length)
           queue.push({
             planets: [...current.planets, next],
@@ -354,6 +402,7 @@ export class Logistics {
   // forsorjningsstatus / leveransfloden: reserve during planning; load at turn start.
   reserve(port: LogisticsPort): void {
     this.cleanup(port);
+    this.#reserveComponents(port);
     for (const planet of port.planets) {
       for (const resource of MATERIALS) {
         const waiting = this.shipments.filter(
@@ -366,11 +415,14 @@ export class Logistics {
           0,
           planet.stock[resource] -
             planet.demand[resource] -
+            this.componentStockReserved(planet.id)[resource] -
             waiting
-              .filter((s) => s.committed)
+              .filter((s) => s.committed || s.componentOrderId)
               .reduce((n, s) => n + s.amount, 0),
         );
-        for (const shipment of waiting.filter((s) => !s.committed)) {
+        for (const shipment of waiting.filter(
+          (s) => !s.committed && !s.componentOrderId,
+        )) {
           shipment.amount = Math.min(shipment.amount, available);
           available -= shipment.amount;
         }
@@ -393,7 +445,7 @@ export class Logistics {
         const localStock = local.get(planet.id)!;
         const usable = Math.max(
           0,
-          localStock[resource] - this.reserved(planet.id)[resource],
+          localStock[resource] - this.reserved(planet.id, project.id)[resource],
         );
         const use = Math.min(usable, project.cost[resource]);
         localStock[resource] -= use;
@@ -404,7 +456,16 @@ export class Logistics {
             .filter(
               (s) => s.projectId === project.id && s.resource === resource,
             )
-            .reduce((n, s) => n + s.amount, 0);
+            .reduce((n, s) => n + s.amount, 0) -
+          this.componentOrders
+            .filter(
+              (order) =>
+                order.projectId === project.id &&
+                order.component === resource &&
+                !order.delivered &&
+                !this.shipments.some((s) => s.componentOrderId === order.id),
+            )
+            .reduce((n, order) => n + order.amount, 0);
         const sources = port.planets
           .filter((p) => p.id !== planet.id)
           .flatMap((p) => {
@@ -444,6 +505,54 @@ export class Logistics {
           missing -= amount;
         }
       }
+    }
+  }
+
+  #reserveComponents(port: LogisticsPort): void {
+    for (const order of this.componentOrders) {
+      if (
+        order.productionProjectId ||
+        order.delivered ||
+        this.shipments.some((s) => s.componentOrderId === order.id)
+      )
+        continue;
+      if (order.shipmentId) {
+        const shipment = this.shipments.find((s) => s.id === order.shipmentId);
+        if (shipment) {
+          order.committed = !!shipment.committed;
+          if (shipment.amount > order.amount) {
+            shipment.amount -= order.amount;
+            this.shipments.push({
+              ...shipment,
+              path: [...shipment.path],
+              id: port.id('shipment'),
+              amount: order.amount,
+              componentOrderId: order.id,
+              projectId: order.projectId,
+            });
+          } else {
+            shipment.componentOrderId = order.id;
+            shipment.projectId = order.projectId;
+          }
+          order.shipmentId = null;
+          continue;
+        }
+        order.shipmentId = null;
+      }
+      const route = this.path(order.location, order.recipient, port);
+      if (!route) continue;
+      this.shipments.push({
+        id: port.id('shipment'),
+        resource: order.component,
+        amount: order.amount,
+        projectId: order.projectId,
+        recipient: order.recipient,
+        path: route.planets,
+        stage: 0,
+        fleetId: null,
+        componentOrderId: order.id,
+        ...(order.committed ? { committed: true } : {}),
+      });
     }
   }
 
@@ -492,6 +601,10 @@ export class Logistics {
           shipment.amount = amount;
           shipment.fleetId = fleet.id;
           shipment.committed = true;
+          const order = this.componentOrders.find(
+            (order) => order.id === shipment.componentOrderId,
+          );
+          if (order) order.committed = true;
           origin.stock[shipment.resource] -= amount;
           capacity -= amount;
         }
@@ -514,6 +627,15 @@ export class Logistics {
         target.stock[shipment.resource] += shipment.amount;
         shipment.stage += 1;
         shipment.fleetId = null;
+        const order = this.componentOrders.find(
+          (order) => order.id === shipment.componentOrderId,
+        );
+        if (order) {
+          order.location = target.id;
+          order.committed = true;
+          order.delivered = shipment.stage === shipment.path.length - 1;
+          order.shipmentId = null;
+        }
         port.event(
           `${fleet.id} delivered ${shipment.amount} ${shipment.resource} to ${target.name}.`,
         );

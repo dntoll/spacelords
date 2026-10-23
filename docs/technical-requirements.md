@@ -265,7 +265,7 @@ varningsdialog, avbrott, lagringsfel och radering av en enda plats.
   validerar rätt färdig fabrik och destination; låsta order och rivning spärras.
 
 - `bevara-aldre-produktionskoer` — **Fullständigt implementerat**: sparformat
-  version 3 använder en enda projektlista per koloni. Version 2 läses från samma
+  version 4 använder en enda projektlista per koloni, liksom version 3. Version 2 läses från samma
   sparplatsnycklar; planetens och fabrikernas gamla köer vävs ihop efter
   projektidentifierare, med bibehållen ordning inom varje gammal kö. Gamla
   projektidentifierare och leveransreservationer bevaras. Saknade delposter i
@@ -308,3 +308,33 @@ hela CI-jobbet; `snabb-testsvit` behåller sin gräns på 20 sekunder.
   borttagna zoomkontroller och öppen kö vid orderändringar. Webbläsartester
   kontrollerar trädets tillgängliga yta i stående och liggande format,
   oförändrad trädyta när kön öppnas samt pinch, mushjul och tangentbord.
+
+## Automatiska delorder genom handelsnätverket
+
+`automatiska-delorder` — **Fullständigt implementerat**: `ComponentPlanner`
+tar fram en plan med privata tillgänglighetspooler och en lokal ID-sekvens.
+`Game` validerar hela planen innan köer, reservationer och ID-sekvens ändras.
+Alla produktionsorder använder samma planeringsingång och befintliga recept.
+Controllers och vyer behåller MVC-gränserna.
+
+Sparformat version 4 innehåller `componentOrders`, som kopplar huvudprojekt,
+del, mängd, källa, aktuell lagerplats och eventuell produktionsorder.
+`Shipment.componentOrderId` kopplar fysisk frakt till reservationen. Delar
+reserveras även för senare köprojekt och efter lossning fram till förbrukning.
+Avbrutna huvudorder släpper reservationer; delproduktion behålls och lastat
+gods följer tidigare avbrottsregler. Version 2 och 3 läses utan automatisk
+nybeställning eller radering. Sparplatsnycklarna ändras inte.
+
+Supply & production får skrivskyddade mängder för beställd produktion och
+aktuella hinder. Framtida produktion blir aldrig en fiktiv Shipment.
+`streckade-rutter-utan-transporter` — **Fullständigt implementerat**:
+`TradeRouteSnapshot.hasActiveTransport` använder samma transportvillkor som
+ruttsökningen. p5-vyn använder detta värde för zoomoberoende streckning och
+återställer canvasens linjemönster efter ritning.
+
+Kravkopplade modelltester skyddar avslag utan delvisa ändringar, prioritering,
+leveranstider och likafall, reservationer, omordning, avbeställning, omlastning,
+sparning och faktisk färdigställning. Vytester skyddar streckningen vid flera
+zoomnivåer. Browsertester verifierar beställning genom controller, synlig
+väntan och fel, sparning och hela produktionskedjan. Snabbsviten behåller
+20-sekundersgränsen; den utökade sviten kör bygg- och browsertester i CI.

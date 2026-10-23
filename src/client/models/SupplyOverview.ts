@@ -20,6 +20,11 @@ export interface SupplyPlanetInput {
   readonly extraction: Quantities;
   readonly deposits: Quantities;
   readonly capabilities: readonly ProductionCapability[];
+  readonly componentProduction?: readonly {
+    readonly material: string;
+    readonly amount: number;
+    readonly issue: string | null;
+  }[];
 }
 export interface SupplyMaterial {
   readonly material: string;
@@ -32,6 +37,7 @@ export interface SupplyMaterial {
   readonly incoming: number;
   readonly awaitingPickup: number;
   readonly inTransit: number;
+  readonly ordered: number;
   readonly unprovided: number;
   readonly localYears: number | null;
 }
@@ -136,7 +142,13 @@ export class SupplyOverview {
                   (s.projectId === input.project?.id || s.projectId === null),
               );
               const supplied = usable.reduce((sum, s) => sum + s.amount, 0);
-              const remainder = Math.max(0, required - available - supplied);
+              const ordered = (input.componentProduction ?? [])
+                .filter((order) => order.material === material && !order.issue)
+                .reduce((sum, order) => sum + order.amount, 0);
+              const remainder = Math.max(
+                0,
+                required - available - supplied - ordered,
+              );
               const local = extraction > 0 ? Math.min(remainder, deposits) : 0;
               return Object.freeze({
                 material,
@@ -153,6 +165,7 @@ export class SupplyOverview {
                 inTransit: deliveries
                   .filter((s) => s.state === 'In transit')
                   .reduce((sum, s) => sum + s.amount, 0),
+                ordered,
                 unprovided: remainder - local,
                 localYears:
                   remainder > 0 && local === remainder
@@ -169,17 +182,23 @@ export class SupplyOverview {
                 m.reserved > 0,
             );
           const missing = materials.filter((m) => m.unprovided > 0);
+          const productionIssue = input.componentProduction?.find(
+            (order) =>
+              order.issue &&
+              missing.some((material) => material.material === order.material),
+          )?.issue;
+          const issue = input.issue ?? productionIssue;
           const waiting = materials.filter((m) => m.required > m.available);
           const status: SupplyStatus = !input.project
             ? 'Idle'
-            : input.issue || missing.length
+            : issue || missing.length
               ? 'Needs attention'
               : waiting.length
                 ? 'Waiting'
                 : 'Ready';
           const summary = !input.project
             ? 'No project queued'
-            : (input.issue ??
+            : (issue ??
               (missing.length
                 ? missing
                     .map((m) => `${m.unprovided} ${m.material} unprovided`)
@@ -189,7 +208,9 @@ export class SupplyOverview {
                       .map((m) =>
                         m.localYears !== null
                           ? `Waiting for local ${m.material} extraction (~${m.localYears} year(s))`
-                          : `Waiting for ${m.material} delivery`,
+                          : m.ordered > 0
+                            ? `Waiting for ${m.material} production`
+                            : `Waiting for ${m.material} delivery`,
                       )
                       .join(' · ')
                   : 'Materials and production requirements ready'));

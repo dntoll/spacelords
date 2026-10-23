@@ -272,6 +272,7 @@ describe('forstarka-ruttflotta / flottans-handelsrutt', () => {
             end: new HexCoordinate(2, 0),
             closing: false,
             fleetIds: [fleets[1]!.id],
+            hasActiveTransport: true,
             capacity: 30,
             waiting: 0,
             status: 'Idle',

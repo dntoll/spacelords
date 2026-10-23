@@ -6,6 +6,14 @@ alla flottor vid sin verkliga position.
 
 ## Krav och status
 
+- `streckade-rutter-utan-transporter` — **Fullständigt implementerat**:
+  rutter utan aktiv tilldelad transportflotta visas streckade, även när de är
+  markerade eller hovrade. En tilldelad flotta under anslutningsresa räknas som
+  aktiv; en flotta utan Transport ship, utan position eller med Release gör det
+  inte. Öppna rutter med aktiv transport visas heldragna. Stängande rutter
+  förblir streckade. Linjemönstrets skärmstorlek behålls vid zoom och hela
+  ruttlinjen går fortsatt att välja.
+
 - `handelsrutt-skapande-pa-stjarnkartan` — **Fullständigt implementerat**:
   markera en ägd planet och dra från dess symbol till en annan ägd planets hex.
   Förhandsvisningen visar ändplaneternas namn och om målet är giltigt. Släpp
@@ -44,4 +52,5 @@ alla flottor vid sin verkliga position.
 Escape, avbruten pekare och en andra touchpunkt avbryter orderförhandsvisningar.
 Två fingrar kan därefter panorera och zooma. Val och förhandsvisningar är
 tillfälliga; rutter och flottuppdrag sparas och syns i båda vyerna efter omladdning.
-Fraktmekanik och sparformat ändras inte.
+Fysisk frakt följer [ekonomireglerna](economy-logistics.md). Delbeställningar
+och deras reservationer bevaras i sparformat version 4.

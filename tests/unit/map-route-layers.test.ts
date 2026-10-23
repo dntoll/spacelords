@@ -111,6 +111,7 @@ it.each([0.5, 1, 2])(
             closing: false,
             fleetIds: [],
             capacity: 0,
+            hasActiveTransport: false,
             waiting: 0,
             status: 'Idle',
           },

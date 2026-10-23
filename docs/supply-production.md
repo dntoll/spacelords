@@ -15,11 +15,19 @@ vilka planeters nästa projekt som behöver ett beslut, väntar på försörjnin
 
 ## Tolkning och avgränsning
 
-Available är Stock minus material reserverat för utleverans eller vidaretransport.
+Available är Stock minus material reserverat för andra projekt, utleverans eller
+vidaretransport. Första projektets egna mottagna delar räknas som tillgängliga.
 Required gäller endast första köprojektet. Unprovided är det behov som återstår
-efter tillgängligt lokalt lager, användbara arrangerade leveranser och lokal
+efter tillgängligt lokalt lager, användbara arrangerade leveranser, beställd
+delproduktion och lokal
 utvinning som fyndigheten räcker till. Utvinning är framtida försörjning, inte
 material som finns i lager. Uppskattningar är inte löften om leveranstid.
+
+`automatiska-delorder`: Ordered production visar reserverade delorder separat
+från Incoming. En fungerande beställning ger Waiting; saknad fabrik, personal,
+olöst råvarubrist eller bruten transportväg ger Needs attention. Bara färdiga
+delar visas som Awaiting pickup eller In transit. Reservationer för senare
+projekt räknas inte som tillgängliga för det första projektet.
 
 `forsorjningsstatus` och `leveransfloden` gäller redan under planeringen:
 när ett projekt saknar material och en aktiv transportkedja med tilldelade

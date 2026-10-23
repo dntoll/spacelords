@@ -15,10 +15,21 @@ stoppar förstaprojektet. Kön kan omordnas eller projekt avbrytas.
 Rocket engine factory och Weapons module factory tillverkar Rocket engine
 respektive Weapons module. En Fighter förbrukar en av varje, förutom sitt
 material och sin besättning. Delar lagras och transporteras som andra varor.
-Om lokala färdiga delfabriker finns läggs saknade delar automatiskt före en ny
-Fighter-order. Befintligt lager, inkommande leveranser och tidigare
-produktionsorder räknas av. Utan lokal delfabrik väntar skeppet på leverans
-eller manuellt ordnad delproduktion. Övriga skeppsrecept är oförändrade.
+`automatiska-delorder`: lokalt lager, inkommande leveranser och tidigare
+produktionsorder räknas av utan att använda samma del två gånger. Finns en
+färdig lokal delfabrik köas återstående delar före huvudordern. Annars söks
+tillgängliga lager genom aktiva handelsrutter, med kortast uppskattade
+leveranstid först. För återstående brist används obokade delorder eller nya
+order hos närmaste producent med rätt färdig fabrik. Fjärrorder läggs sist i
+producentens Build queue. Lika leveranstid avgörs med planetens stabila
+identifierare. Varje länk måste ha en tilldelad transportflotta som inte begärt
+Release; stängande rutter räknas inte. En anslutningsresa till rutten räknas
+in i väntetiden. Delproduktion kan vänta på råvaror eller personal.
+
+Hela beställningen avvisas med en förklaring om någon del inte kan ordnas.
+Inga delorder, reservationer eller lager ändras då. Detta ersätter den tidigare
+regeln om att acceptera en Fighter utan möjlig delförsörjning, enligt
+användarens ändring 2026-10-23. Övriga skeppsrecept är oförändrade.
 Om skeppet avbryts ligger delorder kvar för annan användning.
 
 Om en fabrik rivs ligger planetens produktionsorder kvar. De kan använda en
@@ -109,7 +120,12 @@ lokalt tillgängligt. Delvis täckta behov visas med kvarstående Unprovided.
 Awaiting pickup skiljs från In transit. Leveranser visar källa, mottagare,
 projekt och nästa anhalt. Uppskattningar bygger på aktuell transportkedja och
 visas som okända om fortsatt transport saknas. En fabrik eller möjlig källa
-räknas inte som en arrangerad leverans. Star map administrerar fortsatt rutter.
+räknas inte som en arrangerad leverans. Beställd delproduktion visas däremot
+som Ordered production och ger Waiting när försörjningen fungerar. Delarna
+blir Awaiting pickup först när de verkligen finns i lager. Reservationen
+följer delarna genom transport, omlastning och väntan på förbrukning.
+Star map administrerar fortsatt rutter; rutter utan aktiv transport visas
+streckade enligt `streckade-rutter-utan-transporter`.
 
 ## Decisions
 
