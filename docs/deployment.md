@@ -712,3 +712,39 @@ inte automatiskt version 3-sparningar till det äldre formatet.
 Återställ vid behov enbart `spacelords/` från
 `bacb505497f817f7072aa669707686e7545c475e` på en ny branch från aktuell
 `main`, med samma granskade publiceringsflöde.
+
+## Driftsättning av kompakta flottkort: 2026-10-23
+
+- Publicerad klientrevision: `9f52ff639328c5816398edc6d52c1ca964b5a739`
+  från `codex/compact-fleet-cards`. Arbetsbranchen är pushad; källrepots
+  `main` är oförändrad. Star map och Fleets visar mindre skeppsrutor och
+  tätare flottkort enligt `kompakta-flottkort`.
+- Målrepots tidigare revision: `87adc361d7a397abac6f6a0f935aca42173d03c1`.
+  Deploycommit: `17179cf6b9d2096b49ca963db688f4de6d4bfc11` från
+  `codex/deploy-spacelords-9f52ff6`, publicerad till målrepots `main`.
+  Endast `spacelords/` ändrades. Samtliga 281 övriga webbplatsfiler är
+  oförändrade; publiceringskopians klientfiler matchar Pages-bygget exakt.
+- [Källrevisionens CI](https://github.com/dntoll/spacelords/actions/runs/40017168349)
+  lyckades före publiceringen: ren installation, formatering, ESLint,
+  typkontroll, båda byggena, 299 snabba tester, fem integrationstester och
+  239 webbläsartester. De 25 plattformsberoende fallen hoppades över enligt
+  sina villkor. Lokalt passerade även 25 riktade tester för flottadministration
+  och layout, med tre plattformsberoende överhoppningar.
+- Åtta layouttester passerade mot både den isolerade publiceringskopian och
+  liveadressen i Chromium och WebKit på mobil, surfplatta och dator. De
+  verifierar kompakta flottkort, skeppsrader, pekytor, destinationsval,
+  långa flottlistor och åtkomst till vald flotta.
+- PR-integrationen gav HTTP 403. Efter kontroll av aktuell `origin/main`,
+  föräldrarelation, ren publiceringskopia och avgränsad diff användes den
+  dokumenterade reservvägen: vanlig fast-forward-push med befintlig SSH,
+  utan force-push eller behörighetsändring.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/40019086571)
+  lyckades. Alla elva livefiler gav HTTP 200, rätt innehållstyper och exakt
+  samma byteinnehåll som bygget. `/spacelords` leder till `/spacelords/`.
+- Kontrollsummorna för `/`, `/MachineBloom/`, `/Defence-Grid/test/`,
+  `/styles.css` och `/i18n.js` är identiska före och efter publiceringen.
+  Inga länkar, navigationsval, DNS- eller Pages-inställningar ändrades.
+
+Återställ vid behov enbart `spacelords/` från
+`87adc361d7a397abac6f6a0f935aca42173d03c1` på en ny branch från aktuell
+`main`, med samma granskade publiceringsflöde.
