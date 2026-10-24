@@ -470,6 +470,8 @@ export class AppModel {
     return FleetMapLayout.hit(
       this.#game.fleetSnapshots(),
       this.#camera.screenToWorld(point),
+      this.#screen === 'route' ? this.#game.tradeRoutes : [],
+      this.#camera.snapshot.zoom,
     );
   }
   selectMapFleet(id: string): void {

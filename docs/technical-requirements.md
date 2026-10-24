@@ -487,3 +487,14 @@ prioriteras när lediga oförberedda platser finns. Befintliga fabrikers produkt
 påverkas inte. Kartan och planetens Production-undersida läser samma oföränderliga
 ProductionGuidance; alla val och beställningar går genom controller. Sparformat,
 forskning och Domes-per-byggplats-regler ändras inte.
+
+`unika-flottnamn` valideras i Game vid namnbyte och används vid all automatisk
+namngivning. Inläsning normaliserar äldre dubbletter utan att ändra flott-ID,
+skepp, order eller sparformat. `rutt-eskortfordelning` använder samma
+TradeAssignment-validering i modell och förhandsvisning. Game fördelar Fighters
+via befintlig transferShips och fysisk FleetPursuit; skeppsenheter och motorer
+bevaras. Fördelningen räknar även väntande förstärkningar och muterar först efter
+validering. Kapacitet och leveranser använder fortfarande enbart Transport ship.
+`ruttflottor-pa-kartan` använder FleetMapLayout för både p5-rendering och
+träfftest. Endast Route skickar in rutter för mittpunktsplacering. Kamerazoom
+styr avstånd och träffradie. Flottornas verkliga positioner ändras inte av vyn.

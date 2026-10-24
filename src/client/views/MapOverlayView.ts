@@ -42,5 +42,6 @@ export function renderMapOverlays(sketch: p5, model: AppReadModel): void {
     model.camera.zoom,
     model,
     model.screen === 'fleets',
+    model.screen === 'route' ? model.tradeRoutes : null,
   );
 }

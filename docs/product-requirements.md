@@ -489,3 +489,16 @@ upptagna platser.
 | Krav                                  | Status                     | Beskrivning                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `handelser-grupperade-per-ar-och-typ` | Fullständigt implementerat | Events visar varje år en gång, med äldsta året först. Inom året samlas liknande händelser under gemensamma typer, exempelvis Population changes, Fleet arrivals och Research completed. Typerna följer sin första förekomst under året; händelser inom samma typ behåller sin inbördes ordning. Population changes visar planetnamn och förändring, inklusive +0, exempelvis Terra +0 och Vesta +20. Okända händelser visas under Other events. Förtydligar visningsordningen i handelser; sparad kronologi, de senaste 100 händelserna och rullningsbeteendet behålls. |
+
+## Ruttflottor och eskort
+
+`unika-flottnamn`, `rutt-eskortfordelning` och `ruttflottor-pa-kartan` är
+**Fullständigt implementerat**. Varje flotta har ett unikt namn. Fighters kan
+ansluta som eskort till en rutt med aktiv transport och fördelas jämnt mellan
+transportflottorna med hänsyn till befintliga eskorter. Skepp på annan plats
+måste först resa till sin flotta. Route visar tilldelade flottor vid ruttens mitt
+med sina namn; lediga transportflottor visas lila för att vara lätta att hitta.
+Star map och Fleets visar fortsatt verkliga positioner. Detta utökar tidigare
+kravet på transportskepp i den tilldelade ursprungsflottan och ersätter Route-vyns
+fysiska placering av tilldelade flottmarkörer. Se
+[kartkraven](route-production.md#flottor-på-rutter) för fullständig avgränsning.

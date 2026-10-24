@@ -40,8 +40,10 @@ alla flottor vid sin verkliga position.
   dra en flottmarkör till en ruttlinje. Alternativet utan drag utgår från
   vald flottas Trade routes, utan någon global flottlista i ruttpanelen.
   Förhandsvisningen skiljer tilldelning från vanlig destination och visar
-  orsaken vid ogiltig tilldelning. Flottan måste vara ledig, ha transportskepp
-  och ha en position, utan resa eller förstärkningsuppdrag. Tilldelning på
+  orsaken vid ogiltig tilldelning. Flottan måste vara ledig och ha en position, utan resa eller förstärkningsuppdrag.
+  En flotta med transportskepp tilldelas direkt. Fighters utan egen transport
+  ansluter till ruttens aktiva transportflottor enligt `rutt-eskortfordelning`
+  i [kartkraven](route-production.md#flottor-på-rutter). Tilldelning på
   avstånd följer `ruttflotta-till-narmaste-andplanet` och ersätter uttryckligen
   det tidigare kravet att flottan redan står vid en ändplanet. Vid flera
   träffade rutter väljer spelaren mål innan någon order ges. Ogiltigt ruttsläpp

@@ -2349,6 +2349,9 @@ p {
 }
 .map-attention-legend {
   position: absolute;
+  right: 10px;
+  width: fit-content;
+  max-width: calc(100% - 20px);
   left: 10px;
   top: 6px;
   margin: 0;
@@ -2492,4 +2495,11 @@ p {
     max-height: none;
     width: min(350px, 40%);
   }
+}
+
+.route-available-legend {
+  color: #d8a7ff;
+}
+.route-assigned-legend {
+  color: #72d8ca;
 }

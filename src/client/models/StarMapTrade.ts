@@ -150,7 +150,7 @@ export class StarMapTrade {
       .find((f) => f.id === fleetId);
     const route = this.game().tradeRoutes.find((r) => r.id === routeId);
     return fleet && route
-      ? tradeAssignmentIssue(fleet, route)
+      ? tradeAssignmentIssue(fleet, route, this.game().fleetSnapshots())
       : 'Fleet or route is no longer available.';
   }
   assign(fleetId: string, routeId: string): void {

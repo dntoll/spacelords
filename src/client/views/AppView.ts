@@ -782,6 +782,16 @@ export class AppView implements AppPort {
       legend = element('p', 'map-attention-legend', '! Needs attention');
       this.#container?.append(legend);
     }
+    if (legend) {
+      legend.replaceChildren(element('span', '', '! Needs attention'));
+      if (model.screen === 'route')
+        legend.append(
+          document.createTextNode(' · '),
+          element('span', 'route-available-legend', '● Available transports'),
+          document.createTextNode(' · '),
+          element('span', 'route-assigned-legend', '● Route fleets'),
+        );
+    }
     if (!show) legend?.remove();
   }
 

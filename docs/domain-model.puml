@@ -149,6 +149,7 @@ ConstructionProject --> Fleet : ship recipient
 Colony --> Fleet : home fleet
 Fleet "1" o-- "0..*" Ship
 note right of Fleet
+  unika-flottnamn: namnet är unikt inom spelet.
   Tom flotta saknar position.
   Första skeppet bestämmer positionen.
   Sista skeppet släpper positionen.
@@ -233,6 +234,10 @@ note right of TradeRoute
   Tilldelning på avstånd startar en fysisk resa
   till närmaste ändplanet före vanlig ruttrafik.
   Rutt utan aktiv transport visas streckad.
+  rutt-eskortfordelning: Fighters tilldelas endast med aktiv transport.
+  Fighters fördelas till transportflottan med minst eskort,
+  inklusive väntande förstärkningar, via fysisk anslutning.
+  Fraktkapacitet kommer fortsatt bara från Transport ship.
 end note
 note right of Shipment
   Awaiting pickup: reserverad mängd i ett planetlager.

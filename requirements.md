@@ -113,6 +113,10 @@ Se [hela visionen](docs/game-vision.md).
   prioriterar rätt Dome när en tom plats behöver förberedas. Fabriker föreslås
   först när en förberedd plats finns; upptagna platser och saknad Dome-forskning
   får rätt förklaring. Detta gäller även planetens Production-undersida.
+  `unika-flottnamn`, `rutt-eskortfordelning` och `ruttflottor-pa-kartan` är
+  **Fullständigt implementerat**: flottor har unika namn, Fighters tilldelas
+  rutters transportflottor med jämn fördelning och Route visar tilldelade flottor
+  vid ruttens mitt samt lediga transporter i lila.
   Se [kartbaserade Route och Production](docs/route-production.md).
   Försörjningsreglerna `forsorjningsstatus`, `leveransfloden` och
   `produktionsformaga` behålls enligt [försörjningsreglerna](docs/supply-production.md).

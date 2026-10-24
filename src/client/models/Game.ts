@@ -1,3 +1,4 @@
+import { routeEscortTargets, tradeAssignmentIssue } from './TradeAssignment.js';
 import {
   projectSupplyChain,
   type SupplyChainSnapshot,
@@ -724,6 +725,11 @@ export class Game {
         };
       },
     );
+    const named = new Set<string>();
+    for (const fleet of game.#fleets) {
+      fleet.name = game.#uniqueFleetName(fleet.name, named);
+      named.add(fleet.name.toLowerCase());
+    }
     game.#normalizeShips();
     game.#explored = new Set(copy.explored);
     game.#events = copy.events.filter(
@@ -1380,6 +1386,13 @@ export class Game {
     const clean = name.trim();
     if (!clean || clean.length > 40)
       throw new Error('Fleet names must be 1–40 characters.');
+    if (
+      this.#fleets.some(
+        (other) =>
+          other.id !== id && other.name.toLowerCase() === clean.toLowerCase(),
+      )
+    )
+      throw new Error('Fleet names must be unique.');
     fleet.name = clean;
   }
   transferShips(
@@ -1653,7 +1666,7 @@ export class Game {
     if (!reserve) {
       reserve = {
         id: this.#id('fleet'),
-        name: `${planet.name} Home Fleet`,
+        name: this.#uniqueFleetName(`${planet.name} Home Fleet`),
         position: planet.position,
         destination: null,
         ships: zeroShips(),
@@ -1704,15 +1717,37 @@ export class Game {
   }
   assignTradeFleet(routeId: string, fleetId: string): void {
     this.#requirePlanning();
-    if (this.#fleetState(fleetId).joinFleetId)
-      throw new Error(
-        'Cancel the reinforcement order before assigning a trade route.',
-      );
-    this.#logistics.assign(
-      routeId,
-      this.#fleetState(fleetId),
-      this.#logisticsPort(),
-    );
+    const snapshots = this.fleetSnapshots();
+    const source = this.#fleetState(fleetId);
+    const route = this.tradeRoutes.find((route) => route.id === routeId);
+    if (!route) throw new Error('Route is no longer available.');
+    const issue = tradeAssignmentIssue(this.fleet(fleetId)!, route, snapshots);
+    if (issue) throw new Error(issue);
+    if (source.ships['Transport ship']) {
+      this.#logistics.assign(routeId, source, this.#logisticsPort());
+    } else {
+      // rutt-eskortfordelning: include reinforcements already on their way.
+      const targets = routeEscortTargets(routeId, snapshots).map((fleet) => ({
+        id: fleet.id,
+        fighters:
+          fleet.ships.Fighter +
+          snapshots
+            .filter((group) => group.joinFleetId === fleet.id)
+            .reduce((total, group) => total + group.ships.Fighter, 0),
+        amount: 0,
+      }));
+      for (let count = source.ships.Fighter; count > 0; count--) {
+        targets.sort(
+          (a, b) => a.fighters - b.fighters || a.id.localeCompare(b.id),
+        );
+        targets[0]!.fighters++;
+        targets[0]!.amount++;
+      }
+      for (const target of targets) {
+        if (target.amount)
+          this.transferShips(fleetId, 'Fighter', target.amount, target.id);
+      }
+    }
     this.#logistics.reserve(this.#logisticsPort());
   }
   releaseTradeFleet(fleetId: string): void {
@@ -2479,9 +2514,25 @@ export class Game {
   #id(prefix: string): string {
     return `${prefix}-${this.#sequence++}`;
   }
+  #uniqueFleetName(
+    base: string,
+    names = new Set(this.#fleets.map((fleet) => fleet.name.toLowerCase())),
+  ): string {
+    const clean = base.trim().slice(0, 40) || 'Fleet';
+    let name = clean;
+    for (let number = 2; names.has(name.toLowerCase()); number++) {
+      const suffix = ` (${number})`;
+      name = clean.slice(0, 40 - suffix.length) + suffix;
+    }
+    return name;
+  }
   #nextFleetName(): string {
     let number = 1;
-    while (this.#fleets.some((fleet) => fleet.name === `Fleet ${number}`))
+    while (
+      this.#fleets.some(
+        (fleet) => fleet.name.toLowerCase() === `fleet ${number}`,
+      )
+    )
       number += 1;
     return `Fleet ${number}`;
   }

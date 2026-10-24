@@ -92,7 +92,7 @@ export function renderTradeAssignment(
   const issue =
     model.phase !== 'planning'
       ? 'Wait until planning to assign a fleet.'
-      : tradeAssignmentIssue(fleet, route);
+      : tradeAssignmentIssue(fleet, route, model.fleets);
   const assign = button(
     `Assign ${fleet.name} to ${route.from} to ${route.to}`,
     () =>

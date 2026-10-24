@@ -13,7 +13,8 @@ export function renderMapTradeRoutes(sketch: p5, model: AppReadModel): void {
     const fleet = model.fleets.find(
       (f) => f.id === model.mapTrade.assignmentFleetId,
     );
-    const invalid = target && fleet && tradeAssignmentIssue(fleet, route);
+    const invalid =
+      target && fleet && tradeAssignmentIssue(fleet, route, model.fleets);
     const selected =
       (model.screen === 'map' || model.screen === 'route') &&
       model.mapTrade.routeId === route.id;

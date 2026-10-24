@@ -28,10 +28,15 @@ export async function selectMapFleet(
     () =>
       JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
   );
-  const fleets = Game.restore(record.state).fleetSnapshots();
-  const marker = FleetMapLayout.markers(fleets).find(
-    (marker) => marker.fleet.name === name,
-  );
+  const game = Game.restore(record.state);
+  const fleets = game.fleetSnapshots();
+  const routeView = await page
+    .locator('.nav-button[data-screen="route"][aria-current="page"]')
+    .count();
+  const marker = FleetMapLayout.markers(
+    fleets,
+    routeView ? game.tradeRoutes : [],
+  ).find((marker) => marker.fleet.name === name);
   if (!marker) throw new Error(`No positioned fleet: ${name}`);
   await selectMapPoint(page, marker.point);
   await expect(

@@ -1,4 +1,5 @@
 import type p5 from 'p5';
+import type { TradeRouteSnapshot } from '../models/Logistics.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import { FleetMapLayout } from '../models/FleetMapLayout.js';
 import type { FleetSnapshot, ShipType } from '../models/Game.js';
@@ -28,8 +29,9 @@ export function renderMapFleets(
     fleetDestinationPreview: null,
   },
   showUnselectedRings = false,
+  routeView: readonly TradeRouteSnapshot[] | null = null,
 ): void {
-  const markers = FleetMapLayout.markers(fleets);
+  const markers = FleetMapLayout.markers(fleets, routeView ?? [], zoom);
   const destinationFor = (fleet: FleetSnapshot) =>
     interaction.fleetDragging && interaction.mapFleetId === fleet.id
       ? interaction.fleetDestinationPreview
@@ -37,6 +39,18 @@ export function renderMapFleets(
 
   // kartflottor: draw routes underneath the separate fleet swarms.
   for (const { fleet, point } of markers) {
+    const route = routeView?.find((route) => route.id === fleet.routeId);
+    if (route) {
+      const start = HexGeometry.toPoint(route.start),
+        end = HexGeometry.toPoint(route.end);
+      const center = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+      if (Math.hypot(point.x - center.x, point.y - center.y) > 1) {
+        sketch.stroke('#72d8ca');
+        sketch.strokeWeight(1 / zoom);
+        sketch.line(point.x, point.y, center.x, center.y);
+      }
+      continue;
+    }
     const target = destinationFor(fleet);
     if (!target) continue;
     const destination = HexGeometry.toPoint(target);
@@ -64,8 +78,26 @@ export function renderMapFleets(
   for (const { fleet, point, scale } of markers) {
     const selected = interaction.mapFleetId === fleet.id;
     const hovered = interaction.hoveredFleetId === fleet.id;
-    const color = selected ? '#ffdc88' : hovered ? '#d5fff6' : '#72d8ca';
-    if (selected || hovered || showUnselectedRings) {
+    const availableTransport =
+      routeView !== null &&
+      !fleet.routeId &&
+      !fleet.destination &&
+      !fleet.joinFleetId &&
+      fleet.ships['Transport ship'] > 0;
+    const color = selected
+      ? '#ffdc88'
+      : hovered
+        ? '#d5fff6'
+        : availableTransport
+          ? '#d8a7ff'
+          : '#72d8ca';
+    if (
+      selected ||
+      hovered ||
+      showUnselectedRings ||
+      availableTransport ||
+      (routeView && fleet.routeId)
+    ) {
       const context = sketch.drawingContext as
         CanvasRenderingContext2D | undefined;
       context?.setLineDash(
@@ -78,6 +110,22 @@ export function renderMapFleets(
       else sketch.noFill();
       sketch.circle(point.x, point.y, FleetMapLayout.hitRadius * 2);
       context?.setLineDash([]);
+    }
+    if (routeView && (fleet.routeId || availableTransport)) {
+      sketch.noStroke();
+      const width = (fleet.name.length * 6.5 + 10) / zoom;
+      sketch.fill('#0a1520ed');
+      sketch.rect(
+        point.x - width / 2,
+        point.y + 11 / zoom,
+        width,
+        16 / zoom,
+        3 / zoom,
+      );
+      sketch.fill(color);
+      sketch.textSize(11 / zoom);
+      sketch.textAlign(sketch.CENTER, sketch.TOP);
+      sketch.text(fleet.name, point.x, point.y + 13 / zoom);
     }
     const shipScale = Math.min(1 / zoom, scale);
     const sizes: number[] = [];

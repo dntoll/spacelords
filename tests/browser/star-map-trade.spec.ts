@@ -220,7 +220,9 @@ test('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: clickin
   await page.mouse.move(p.x, p.y, { steps: 8 });
   await expect(
     page.getByRole('complementary', { name: 'Selected fleet' }),
-  ).toContainText('Needs a Transport ship');
+  ).toContainText(
+    'Assign a transport fleet to this route before adding Fighters',
+  );
   await page.mouse.up();
   const state = await page.evaluate(
     () =>

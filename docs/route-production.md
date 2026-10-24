@@ -25,6 +25,35 @@ en Dome skapar inte extra byggplatser. Befintliga fabriker kan fortfarande
 producera delar och skepp utan en tom byggplats. Planetens Production-undersida
 använder samma förslag och kan öppna Dome-detaljerna i kartans Production.
 
+## Flottor på rutter
+
+- `unika-flottnamn` — **Fullständigt implementerat**: flottnamn är unika inom
+  spelet, även utan hänsyn till stora/små bokstäver och omgivande blanksteg.
+  Namnbyte till en annan flottas namn avvisas. Automatiskt skapade flottor får
+  lediga namn. Äldre sparningar med dubbletter behåller alla flottor och får
+  unika namnsuffix när de läses in; sparformatet ändras inte.
+- `rutt-eskortfordelning` — **Fullständigt implementerat**: en ledig flotta med
+  Fighters kan tilldelas en öppen rutt som har minst en aktiv transportflotta.
+  Fighters flyttas till transportflottorna, en i taget till den som har minst
+  Fighters, inklusive redan beställda förstärkningar. Vid lika antal används
+  en stabil ordning. Övriga skepp i ursprungsflottan stannar kvar. En flotta
+  som själv har Transport ship tilldelas fortsatt som en egen transportflotta.
+  På samma hex ansluter Fighters direkt; annars reser de som förstärkningar
+  och ansluter fysiskt vid möte. Stängande rutter, transportflottor med Release,
+  pågående resor/förstärkningsorder och simuleringsfas tillåter ingen sådan
+  tilldelning. Detta utökar uttryckligen transportkravet i
+  `flottilldelning-pa-stjarnkartan`; fraktkapacitet och regler för last ändras inte.
+  Ingen ny strids- eller piratskyddsmekanik ingår.
+- `ruttflottor-pa-kartan` — **Fullständigt implementerat**: i Route visas tilldelade
+  flottor vid ruttens mitt, med eget namn och separata väljbara markörer vid flera
+  flottor. Avståndet mellan markörerna behålls på skärmen vid zoom, med ledlinjer
+  till mitten. Lediga, positionerade transportflottor utan resa eller
+  förstärkningsorder visas lila med ring och namn vid sina verkliga positioner.
+  En förklaring anger färgens betydelse. Val och hovring behåller egna färger.
+  Star map och Fleets behåller fysisk flottplacering. Detaljpanelen visar alltid
+  den verkliga positionen. Detta ersätter Route-delens tidigare fysiska
+  markörplacering under `route-kartvy`.
+
 ## Beställning och åtkomst
 
 Byggnader använder första giltiga byggplats med befintliga regler för Domes,

@@ -93,7 +93,7 @@ export function mapFleetRouteFeedback(model: AppReadModel): string | null {
   return model.mapTrade.hoveredRouteIds
     .map((id) => {
       const route = model.tradeRoutes.find((r) => r.id === id)!;
-      const issue = tradeAssignmentIssue(fleet, route);
+      const issue = tradeAssignmentIssue(fleet, route, model.fleets);
       return `${route.from} ↔ ${route.to}: ${issue ?? 'Release to assign fleet'}`;
     })
     .join(' · ');

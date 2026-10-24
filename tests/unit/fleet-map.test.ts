@@ -268,3 +268,79 @@ describe('flottfokuserad-kartvy', () => {
     },
   );
 });
+
+it('ruttflottor-pa-kartan: Route highlights idle transports, labels route fleets and preserves selected and hovered colors at every zoom', () => {
+  const assigned = {
+    ...fleet('assigned'),
+    routeId: 'route-test',
+    ships: { ...fleet('assigned').ships, 'Transport ship': 1 },
+  };
+  const available = {
+    ...fleet('available'),
+    destination: null,
+    ships: { ...fleet('available').ships, 'Transport ship': 1 },
+  };
+  const busy = {
+    ...available,
+    id: 'busy',
+    destination: new HexCoordinate(1, 0),
+  };
+  for (const zoom of [0.35, 1, 2.5]) {
+    const { sketch } = drawing();
+    const route = {
+      id: 'route-test',
+      a: 'a',
+      b: 'b',
+      from: 'A',
+      to: 'B',
+      start: new HexCoordinate(0, 0),
+      end: new HexCoordinate(2, 0),
+      closing: false,
+      fleetIds: [assigned.id],
+      capacity: 30,
+      hasActiveTransport: true,
+      waiting: 0,
+      status: 'Ready',
+    };
+    const text = vi.fn<(text: string, x: number, y: number) => void>();
+    const canvas = {
+      ...sketch,
+      rect: vi.fn(),
+      text,
+      textSize: vi.fn(),
+      textAlign: vi.fn(),
+      CENTER: 'center',
+      TOP: 'top',
+    } as unknown as p5;
+    renderMapFleets(
+      canvas,
+      [assigned, available, busy],
+      zoom,
+      undefined,
+      false,
+      [route],
+    );
+    expect(sketch.fill).toHaveBeenCalledWith('#d8a7ff');
+    expect(text.mock.calls.map((call) => call[0])).toEqual(
+      expect.arrayContaining(['assigned', 'available']),
+    );
+    expect(text.mock.calls.map((call) => call[0])).not.toContain('busy');
+    expect(sketch.line).toHaveBeenCalledTimes(1);
+    sketch.fill.mockClear();
+    renderMapFleets(
+      canvas,
+      [available],
+      zoom,
+      {
+        mapFleetId: available.id,
+        hoveredFleetId: null,
+        fleetDragging: false,
+        fleetDestinationPreview: null,
+      },
+      false,
+      [route],
+    );
+    expect(sketch.fill).toHaveBeenCalledWith('#ffdc88');
+    expect(sketch.fill).not.toHaveBeenCalledWith('#d8a7ff');
+  }
+});
