@@ -10,6 +10,11 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Events:** `handelser-grupperade-per-ar-och-typ` är **Fullständigt implementerat**.
+  Events samlas under årsrubriker och grupperas efter händelsetyp inom varje år.
+  Population changes visar planetnamn och förändring, även +0.
+  Se [produktkraven](docs/product-requirements.md).
+
 - **Skeppsmotorer:** `motorbehov-for-alla-skepp`, `ion-pulse-engine` och
   `automatisk-motormontering` är **Fullständigt implementerat**. Alla skepp kräver
   motorer och minst en Ion pulse engine ger +1 fart. Automatisk försörjning,
