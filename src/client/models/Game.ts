@@ -58,6 +58,7 @@ export type BuildType =
   | 'Colony ship factory'
   | 'Exploration ship factory'
   | 'Rocket engine factory'
+  | 'Ion pulse engine factory'
   | 'Weapons module factory'
   | 'Fighter factory'
   | `${TerraformEnvironment} dome`
@@ -178,6 +179,15 @@ export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
       crew: 0,
       component: 'Rocket engine',
     },
+    'Ion pulse engine factory': {
+      permanent: true,
+      description:
+        'Produces Ion pulse engines. At least one gives a ship +1 speed.',
+      workers: 300,
+      cost: { Iron: 16, Water: 8, Oil: 4 },
+      crew: 0,
+      component: 'Ion pulse engine',
+    },
     'Weapons module factory': {
       permanent: true,
       description: 'Produces Weapons modules for Fighter construction.',
@@ -253,6 +263,19 @@ export const SHIPS: Readonly<
   Fighter: { crew: 50, speed: 3 },
   'Transport ship': { crew: 50, speed: 2 },
 });
+export function engineCount(type: ShipType): number {
+  return type === 'Colony ship' ? 3 : type === 'Exploration ship' ? 2 : 1;
+}
+
+export interface ShipUnit {
+  readonly id: string;
+  readonly type: ShipType;
+  readonly engines: Readonly<{
+    'Rocket engine': number;
+    'Ion pulse engine': number;
+  }>;
+}
+
 export function projectDefinition(type: ProjectType): BuildDefinition {
   if (type in BUILDINGS) return BUILDINGS[type as BuildType];
   if (COMPONENTS.includes(type as Component))
@@ -262,7 +285,10 @@ export function projectDefinition(type: ProjectType): BuildDefinition {
       workers: 0,
       crew: 0,
       component: type as Component,
-      cost: { Iron: type === 'Rocket engine' ? 3 : 2, Water: 1, Oil: 1 },
+      cost:
+        type === 'Ion pulse engine'
+          ? { Iron: 6, Water: 2, Oil: 2 }
+          : { Iron: type === 'Rocket engine' ? 3 : 2, Water: 1, Oil: 1 },
     };
   return {
     permanent: false,
@@ -278,9 +304,10 @@ export function projectDefinition(type: ProjectType): BuildDefinition {
     workers: 0,
     crew: SHIPS[type as ShipType].crew,
     ship: type as ShipType,
-    ...(type === 'Fighter'
-      ? { parts: { 'Rocket engine': 1, 'Weapons module': 1 } }
-      : {}),
+    parts: {
+      'Rocket engine': engineCount(type as ShipType),
+      ...(type === 'Fighter' ? { 'Weapons module': 1 } : {}),
+    },
   };
 }
 export function projectCost(type: ProjectType): Stock {
@@ -385,6 +412,7 @@ export interface FleetSnapshot {
   readonly position: HexCoordinate | null;
   readonly destination: HexCoordinate | null;
   readonly ships: Readonly<Record<ShipType, number>>;
+  readonly shipUnits?: readonly ShipUnit[];
   readonly speed: number;
   readonly crew: number;
 }
@@ -419,6 +447,7 @@ interface Building {
   demolition: boolean;
 }
 interface Project {
+  parts?: Partial<Record<Component, number>>;
   id: string;
   type: ProjectType;
   slotIndex: number | null;
@@ -426,6 +455,7 @@ interface Project {
   destinationFleetId: string | null;
 }
 interface Fleet {
+  shipUnits?: ShipUnit[];
   joinFleetId?: string;
   routeId?: string;
   releaseRequested?: boolean;
@@ -469,7 +499,7 @@ export interface GameState {
   readonly componentOrders?: readonly ComponentOrder[];
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
-  readonly version: 2 | 3 | 4 | 5;
+  readonly version: 2 | 3 | 4 | 5 | 6;
   readonly world: {
     readonly player: { readonly id: string; readonly name: string };
     readonly radius: number;
@@ -533,6 +563,7 @@ export class Game {
         ships: { ...zeroShips(), 'Exploration ship': 1, Fighter: 1 },
       },
     ];
+    this.#normalizeShips();
   }
 
   // sparat-spel: persist completed turns and planning orders, never partial animation.
@@ -540,7 +571,7 @@ export class Game {
     if (this.#phase === 'simulating')
       throw new Error('Wait for the turn to finish before saving.');
     return structuredClone({
-      version: 5,
+      version: 6,
       world: {
         player: { id: this.galaxy.player.id, name: this.galaxy.player.name },
         radius: this.galaxy.radius,
@@ -576,7 +607,7 @@ export class Game {
 
   static restore(state: GameState): Game {
     if (
-      ![2, 3, 4, 5].includes(state.version) ||
+      ![2, 3, 4, 5, 6].includes(state.version) ||
       !Number.isSafeInteger(state.round) ||
       state.round < 1 ||
       !Number.isSafeInteger(state.sequence) ||
@@ -624,6 +655,21 @@ export class Game {
     game.#research = new ResearchPlan(new Set(copy.researched), [
       ...copy.researchQueue,
     ]);
+    if (state.version < 6) {
+      if (
+        copy.researched.some(
+          (technology) =>
+            technology.endsWith('ship factory') ||
+            technology === 'Fighter factory',
+        )
+      )
+        game.#research.completed.add('Rocket engine factory');
+      const queue = [...copy.researchQueue];
+      game.#research.queue = [];
+      for (const technology of queue)
+        if (!game.#research.completed.has(technology))
+          game.#research.add(technology);
+    }
     game.#logistics = new Logistics(
       [...copy.tradeRoutes],
       [...copy.shipments],
@@ -672,6 +718,7 @@ export class Game {
         };
       },
     );
+    game.#normalizeShips();
     game.#explored = new Set(copy.explored);
     game.#events = copy.events.filter(
       (event) =>
@@ -880,6 +927,12 @@ export class Game {
     const planet = this.galaxy.systems
       .flatMap((system) => system.planets)
       .find((p) => p.position.key === fleet.position?.key)!;
+    const coloniser = fleet.shipUnits!.find(
+      (unit) => unit.type === 'Colony ship',
+    )!;
+    fleet.shipUnits = fleet.shipUnits!.filter(
+      (unit) => unit.id !== coloniser.id,
+    );
     fleet.ships['Colony ship'] -= 1;
     this.#releaseEmptyFleet(fleet);
     this.#colonies.set(planet.id, {
@@ -912,6 +965,14 @@ export class Game {
           position: fleet.position,
           destination: fleet.destination,
           ships: Object.freeze({ ...fleet.ships }),
+          shipUnits: Object.freeze(
+            fleet.shipUnits!.map((unit) =>
+              Object.freeze({
+                ...unit,
+                engines: Object.freeze({ ...unit.engines }),
+              }),
+            ),
+          ),
           speed: this.#speed(fleet),
           crew: this.#crew(fleet.ships),
           routeId: fleet.routeId,
@@ -1068,7 +1129,7 @@ export class Game {
           const definition = projectDefinition(project.type);
           return {
             id: project.id,
-            parts: definition.parts,
+            parts: project.parts ?? definition.parts,
             component: definition.permanent ? undefined : definition.component,
           };
         }),
@@ -1088,7 +1149,12 @@ export class Game {
         slotIndex: null,
         destinationFleetId: null,
       });
-    this.#state(planet).projects.push({ id: projectId, type, ...fields });
+    this.#state(planet).projects.push({
+      id: projectId,
+      type,
+      ...fields,
+      parts: plan.parts,
+    });
     this.#logistics.componentOrders.push(...plan.orders);
     this.#sequence = sequence;
     this.#logistics.reserve(this.#logisticsPort());
@@ -1157,6 +1223,7 @@ export class Game {
     ship: ShipType,
     amount: number,
     targetId: string | null,
+    shipId?: string,
   ): FleetSnapshot {
     this.#requirePlanning();
     const source = this.#fleetState(sourceId);
@@ -1167,6 +1234,20 @@ export class Game {
     if (issue) throw new Error(issue);
     if (!Number.isInteger(amount) || amount < 1 || source.ships[ship] < amount)
       throw new Error('Choose an available number of ships.');
+    const selected = source
+      .shipUnits!.filter(
+        (unit) => unit.type === ship && (!shipId || unit.id === shipId),
+      )
+      .toSorted((a, b) => a.id.localeCompare(b.id))
+      .slice(0, amount);
+    if (selected.length !== amount)
+      throw new Error('Choose an available ship.');
+    const moveUnits = (target: Fleet) => {
+      source.shipUnits = source.shipUnits!.filter(
+        (unit) => !selected.includes(unit),
+      );
+      (target.shipUnits ??= []).push(...selected);
+    };
     let target: Fleet;
     if (targetId) {
       target = this.#fleetState(targetId);
@@ -1181,6 +1262,7 @@ export class Game {
           joinFleetId: target.id,
           ships: { ...zeroShips(), [ship]: amount },
         };
+        moveUnits(group);
         source.ships[ship] -= amount;
         this.#fleets.push(group);
         this.#releaseEmptyFleet(source);
@@ -1199,6 +1281,7 @@ export class Game {
     }
     if (target.id === source.id) throw new Error('Choose another fleet.');
     target.position = source.position;
+    moveUnits(target);
     source.ships[ship] -= amount;
     target.ships[ship] += amount;
     this.#releaseEmptyFleet(source);
@@ -1214,6 +1297,7 @@ export class Game {
       position: null,
       destination: null,
       ships: zeroShips(),
+      shipUnits: [],
     };
     this.#fleets.push(fleet);
     return this.fleet(fleet.id)!;
@@ -1320,8 +1404,14 @@ export class Game {
             `${project.type} is waiting on ${planet.name}: ${blocked}`,
           );
         else {
+          const cost = this.#projectCost(planet, project);
           for (const resource of MATERIALS)
-            state.stock[resource] -= projectCost(project.type)[resource];
+            state.stock[resource] -= cost[resource];
+          project.parts = {
+            ...project.parts,
+            'Rocket engine': cost['Rocket engine'],
+            'Ion pulse engine': cost['Ion pulse engine'],
+          };
           state.projects.shift();
           this.#completeProject(planet, state, project);
         }
@@ -1367,7 +1457,13 @@ export class Game {
       this.#logistics.completeComponent(project.id);
       this.#event(`${d.component} was produced at ${planet.name}.`);
     } else if (d.ship) {
-      this.#createShip(planet, state, d.ship, project.destinationFleetId);
+      this.#createShip(
+        planet,
+        state,
+        d.ship,
+        project.destinationFleetId,
+        project.parts,
+      );
       this.#event(`${project.type} completed on ${planet.name}.`);
     }
   }
@@ -1376,6 +1472,7 @@ export class Game {
     state: ColonyState,
     ship: ShipType,
     destinationFleetId: string | null,
+    parts: Partial<Record<Component, number>> = {},
   ): void {
     state.population -= SHIPS[ship].crew;
     let reserve =
@@ -1402,6 +1499,14 @@ export class Game {
     }
     reserve.position = planet.position;
     reserve.ships[ship] += 1;
+    (reserve.shipUnits ??= []).push({
+      id: this.#id('ship'),
+      type: ship,
+      engines: {
+        'Rocket engine': parts['Rocket engine'] ?? engineCount(ship),
+        'Ion pulse engine': parts['Ion pulse engine'] ?? 0,
+      },
+    });
     this.#event(`${ship} was produced at ${planet.name}.`);
   }
   #budget(planet: Planet, state: ColonyState): BudgetSnapshot {
@@ -1604,7 +1709,7 @@ export class Game {
           return {
             id: project.id,
             type: project.type,
-            cost: projectCost(project.type),
+            cost: this.#projectCost(planet, project),
             issue,
           };
         }),
@@ -1854,7 +1959,7 @@ export class Game {
         const state = this.#state(planet);
         const projects = state.projects
           .slice(0, 1)
-          .map((p) => ({ id: p.id, cost: projectCost(p.type) }));
+          .map((p) => ({ id: p.id, cost: this.#projectCost(planet, p) }));
         const demand = emptyStock();
         for (const project of projects)
           for (const material of MATERIALS)
@@ -1931,7 +2036,7 @@ export class Game {
     const demand = emptyStock();
     for (const project of state.projects.slice(0, 1))
       for (const material of MATERIALS)
-        demand[material] += projectCost(project.type)[material];
+        demand[material] += this.#projectCost(planet, project)[material];
     return Object.freeze({
       stock: Object.freeze({ ...state.stock }),
       deposits: Object.freeze({ ...state.deposits }),
@@ -2030,7 +2135,8 @@ export class Game {
         : (this.#costBlock(snapshot(), definition) ??
           (COMPONENTS.some(
             (part) =>
-              state.stock[part] - held[part] < (definition.parts?.[part] ?? 0),
+              state.stock[part] - held[part] <
+              this.#projectCost(planet, project)[part],
           )
             ? 'Waiting for resources.'
             : null));
@@ -2104,10 +2210,64 @@ export class Game {
     delete fleet.courseOrigin;
     delete fleet.joinFleetId;
   }
-  #speed(fleet: PursuingFleet): number {
-    const speeds = Object.entries(fleet.ships).flatMap(([type, count]) =>
-      count > 0 ? [SHIPS[type as ShipType].speed] : [],
+  // automatisk-motormontering: one projection drives consumption, blocking and supply.
+  #projectCost(planet: Planet, project: Project): Stock {
+    const cost = { ...projectCost(project.type), ...project.parts };
+    const definition = projectDefinition(project.type);
+    if (!definition.ship || definition.permanent) return cost;
+    const count = engineCount(definition.ship);
+    const stock = this.#state(planet).stock;
+    const held = this.#logistics.reserved(planet.id, project.id);
+    const ion = Math.max(
+      0,
+      stock['Ion pulse engine'] - held['Ion pulse engine'],
     );
+    const rocket = Math.max(0, stock['Rocket engine'] - held['Rocket engine']);
+    const chosenIon = Math.min(
+      count,
+      ion + rocket >= count ? ion : Math.max(ion, cost['Ion pulse engine']),
+    );
+    return {
+      ...cost,
+      'Ion pulse engine': chosenIon,
+      'Rocket engine': count - chosenIon,
+    };
+  }
+
+  #normalizeShips(): void {
+    for (const fleet of this.#fleets) {
+      const remaining = { ...fleet.ships };
+      const units = (fleet.shipUnits ?? []).filter(
+        (unit) => remaining[unit.type]-- > 0,
+      );
+      for (const type of Object.keys(SHIPS) as ShipType[]) {
+        for (
+          let index = units.filter((unit) => unit.type === type).length;
+          index < fleet.ships[type];
+          index++
+        )
+          units.push({
+            id: `${fleet.id}-legacy-${type}-${index}`,
+            type,
+            engines: {
+              'Rocket engine': engineCount(type),
+              'Ion pulse engine': 0,
+            },
+          });
+      }
+      fleet.shipUnits = units;
+    }
+  }
+  #speed(fleet: PursuingFleet): number {
+    const speeds =
+      fleet.shipUnits?.map(
+        (unit) =>
+          SHIPS[unit.type].speed +
+          (unit.engines['Ion pulse engine'] > 0 ? 1 : 0),
+      ) ??
+      Object.entries(fleet.ships).flatMap(([type, count]) =>
+        count > 0 ? [SHIPS[type as ShipType].speed] : [],
+      );
     return speeds.length === 0 ? 0 : Math.min(...speeds);
   }
   #crew(ships: Record<ShipType, number>): number {

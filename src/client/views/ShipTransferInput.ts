@@ -6,6 +6,7 @@ import type { IntentHandler } from './ViewContracts.js';
 interface Transfer {
   source: string;
   ship: ShipType;
+  shipId?: string | undefined;
 }
 
 export function bindShipTransfers(
@@ -67,7 +68,11 @@ export function bindShipTransfers(
   });
   for (const token of page.querySelectorAll<HTMLElement>('.ship-token')) {
     const ship = token.dataset.ship as ShipType;
-    const source: Transfer = { source: token.dataset.fleetId!, ship };
+    const source: Transfer = {
+      source: token.dataset.fleetId!,
+      ship,
+      shipId: token.dataset.shipId,
+    };
     token.addEventListener('pointerdown', (event) => {
       const fleet = model.fleets.find((fleet) => fleet.id === source.source);
       if (

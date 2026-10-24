@@ -10,8 +10,10 @@ import { Galaxy, StarSystem } from '../../src/client/models/Galaxy.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 
 function setup(galaxy = createExampleGalaxy()) {
-  const game = new Game(galaxy);
-  const planet = galaxy.homePlanet;
+  const state = new Game(galaxy).exportState();
+  for (const [, colony] of state.colonies) colony.stock['Rocket engine'] = 100;
+  const game = Game.restore(state);
+  const planet = game.galaxy.homePlanet;
   const snapshot = () => game.planetSnapshot(planet)!;
   const turn = () => {
     for (const frame of game.startTurn()) game.applyFrame(frame);
@@ -95,9 +97,11 @@ describe('forska-fram-fabriker / bygga-forskningsstation', () => {
     turn();
     expect(game.research.completed).toEqual([]);
     turn();
-    expect(game.research.completed).toEqual(['Exploration ship factory']);
+    expect(game.research.completed).toEqual(['Rocket engine factory']);
+    turn();
     turn();
     expect(game.research.completed).toEqual([
+      'Rocket engine factory',
       'Exploration ship factory',
       'Colony ship factory',
     ]);
@@ -126,7 +130,7 @@ describe('forska-fram-fabriker / bygga-forskningsstation', () => {
     game.toggleDemolition(planet, snapshot().buildings[0]!.id);
     turn();
     expect(game.research.completed).toEqual([]);
-    expect(game.research.selected).toBe('Exploration ship factory');
+    expect(game.research.selected).toBe('Rocket engine factory');
   });
 });
 

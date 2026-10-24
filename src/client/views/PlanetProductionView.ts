@@ -113,8 +113,13 @@ export function renderProduction(
           'p',
           'muted-note',
           `Requires ${Object.entries(definition.parts)
-            .map(([part, count]) => `${count} ${part}`)
-            .join(', ')}. Missing parts are ordered automatically.`,
+            .map(
+              ([part, count]) =>
+                `${count} ${part === 'Rocket engine' ? 'engines (Rocket engine or Ion pulse engine)' : part}`,
+            )
+            .join(
+              ', ',
+            )}. Missing parts are ordered automatically. Available Ion pulse engines are fitted first; at least one gives +1 speed.`,
         ),
       );
     if (active.length && active.every((b) => b.operational === false))

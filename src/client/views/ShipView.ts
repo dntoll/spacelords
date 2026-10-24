@@ -1,7 +1,7 @@
 import colonyShip from '../assets/ships/colony-ship.webp';
 import explorationShip from '../assets/ships/exploration-ship.webp';
 import fighter from '../assets/ships/fighter.webp';
-import type { FleetSnapshot, ShipType } from '../models/Game.js';
+import { SHIPS, type FleetSnapshot, type ShipType } from '../models/Game.js';
 import { button, element } from './dom.js';
 
 export const SHIP_IMAGES: Readonly<Record<ShipType, string>> = Object.freeze({
@@ -26,20 +26,32 @@ export function shipImage(type: ShipType): HTMLImageElement {
 // skeppsbilder: bound the preview while keeping exact totals visible for large fleets.
 export function renderFleetShips(
   fleet: FleetSnapshot,
-  choose?: (ship: ShipType) => void,
+  choose?: (ship: ShipType, shipId?: string) => void,
   previewLimit = 12,
 ): HTMLElement {
   const manifest = element('div', 'ship-manifest');
   for (const type of SHIP_TYPES) {
     const count = fleet.ships[type];
+    const units = fleet.shipUnits
+      ?.filter((unit) => unit.type === type)
+      .toSorted((a, b) => a.id.localeCompare(b.id));
     for (let index = 0; index < Math.min(count, previewLimit); index++) {
+      const unit = units?.[index];
       const token = choose
         ? button(
             `${type} ${index + 1} in ${fleet.name}`,
-            () => choose(type),
+            () => choose(type, unit?.id),
             'ship-token',
           )
         : element('figure', 'ship-portrait');
+      if (unit) {
+        token.dataset.shipId = unit.id;
+        const engines = Object.entries(unit.engines)
+          .filter(([, count]) => count > 0)
+          .map(([name, count]) => `${count} ${name}`)
+          .join(', ');
+        token.title = `${type} · ${engines} · Speed ${SHIPS[type].speed + (unit.engines['Ion pulse engine'] > 0 ? 1 : 0)} hexes/year`;
+      }
       token.dataset.ship = type;
       token.dataset.fleetId = fleet.id;
       token.replaceChildren(
@@ -64,6 +76,22 @@ export function renderFleetShips(
       );
       manifest.append(more);
     }
+  }
+  if (fleet.shipUnits?.length) {
+    const details = element('details', 'ship-engine-details');
+    details.append(element('summary', '', 'Engines & speed'));
+    const profiles = new Map<string, number>();
+    for (const unit of fleet.shipUnits) {
+      const engines = Object.entries(unit.engines)
+        .filter(([, count]) => count > 0)
+        .map(([name, count]) => `${count} ${name}`)
+        .join(', ');
+      const label = `${unit.type} · ${engines} · Speed ${SHIPS[unit.type].speed + (unit.engines['Ion pulse engine'] > 0 ? 1 : 0)} hexes/year`;
+      profiles.set(label, (profiles.get(label) ?? 0) + 1);
+    }
+    for (const [label, count] of profiles)
+      details.append(element('p', 'muted-note', `${count} × ${label}`));
+    manifest.append(details);
   }
   if (!manifest.children.length)
     manifest.append(element('p', 'muted-note', 'No ships'));

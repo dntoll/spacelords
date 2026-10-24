@@ -105,6 +105,7 @@ export interface AppReadModel {
   } | null;
   readonly shipTransfer: {
     readonly fleetId: string;
+    readonly shipId?: string | undefined;
     readonly ship: ShipType;
   } | null;
   readonly mapFleetId: string | null;
@@ -143,8 +144,11 @@ export class AppModel {
   #returnSite: number | null = null;
   #selectedFleetId: string | null = null;
   #fleetNameEdit: { readonly id: string; readonly draft: string } | null = null;
-  #shipTransfer: { readonly fleetId: string; readonly ship: ShipType } | null =
-    null;
+  #shipTransfer: {
+    readonly fleetId: string;
+    readonly ship: ShipType;
+    readonly shipId?: string | undefined;
+  } | null = null;
   #mapFleetId: string | null = null;
   #hoveredFleetId: string | null = null;
   #fleetDestinationPreview: HexCoordinate | null = null;
@@ -871,7 +875,7 @@ export class AppModel {
     this.renameFleet(this.#fleetNameEdit.id, this.#fleetNameEdit.draft);
     this.cancelFleetRename();
   }
-  chooseShipTransfer(fleetId: string, ship: ShipType): void {
+  chooseShipTransfer(fleetId: string, ship: ShipType, shipId?: string): void {
     if (this.#game.phase !== 'planning') return;
     const fleet = this.#game.fleet(fleetId);
     if (!fleet || shipTransferIssue(fleet) || !(fleet.ships[ship] > 0)) return;
@@ -879,9 +883,10 @@ export class AppModel {
     if (this.#isMapScreen()) this.#mapFleetId = fleetId;
     this.#shipTransfer =
       this.#shipTransfer?.fleetId === fleetId &&
-      this.#shipTransfer.ship === ship
+      this.#shipTransfer.ship === ship &&
+      this.#shipTransfer.shipId === shipId
         ? null
-        : Object.freeze({ fleetId, ship });
+        : Object.freeze({ fleetId, ship, shipId });
   }
   cancelShipTransfer(): void {
     this.#shipTransfer = null;
@@ -893,6 +898,7 @@ export class AppModel {
         this.#shipTransfer.ship,
         1,
         target,
+        this.#shipTransfer.shipId,
       );
   }
   transferShips(
@@ -900,8 +906,15 @@ export class AppModel {
     ship: ShipType,
     amount: number,
     target: string | null,
+    shipId?: string,
   ): void {
-    const received = this.#game.transferShips(source, ship, amount, target);
+    const received = this.#game.transferShips(
+      source,
+      ship,
+      amount,
+      target,
+      shipId,
+    );
     this.#shipTransfer = null;
     this.#selectedFleetId = target ?? received.id;
     if (this.#isMapScreen()) {

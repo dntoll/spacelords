@@ -12,11 +12,19 @@ avgör vilka produkter som kan beställas; de har inga egna köer. Material beta
 en gång vid faktisk byggstart. Brist på material, delar, fabrik eller personal
 stoppar förstaprojektet. Kön kan omordnas eller projekt avbrytas.
 
-Rocket engine factory och Weapons module factory tillverkar Rocket engine
-respektive Weapons module. En Fighter förbrukar en av varje, förutom sitt
-material och sin besättning. Delar lagras och transporteras som andra varor.
+Rocket engine factory, Ion pulse engine factory och Weapons module factory
+producerar sina respektive delar. Colony ship förbrukar tre motorer,
+Exploration ship två och Transport ship och Fighter en. Fighter förbrukar
+även en Weapons module, utöver material och besättning. Minst en Ion pulse
+engine ger skeppet +1 fart; flottans långsammaste skepp avgör farten.
+Motorer blandas och monteras vid byggstart, med tillgänglig lokal Ion först.
+Brist täcks av befintlig försörjning och lager före ny produktion, sorterat
+efter kortast beräknad transporttid. Lokal transporttid är noll. Vid lika tid
+väljs Ion före Rocket och därefter planetens stabila identifierare.
+Reservationer för andra projekt skyddas. Överblivna motorer och redan beställd
+produktion behålls; reservationer släpps när skeppet är färdigt. Delar lagras och transporteras som andra varor.
 `automatiska-delorder`: lokalt lager, inkommande leveranser och tidigare
-produktionsorder räknas av utan att använda samma del två gånger. Finns en
+produktionsorder räknas av utan att använda samma del två gånger. För Weapons module: finns en
 färdig lokal delfabrik köas återstående delar före huvudordern. Annars söks
 tillgängliga lager genom aktiva handelsrutter, med kortast uppskattade
 leveranstid först. För återstående brist används obokade delorder eller nya
@@ -29,7 +37,7 @@ in i väntetiden. Delproduktion kan vänta på råvaror eller personal.
 Hela beställningen avvisas med en förklaring om någon del inte kan ordnas.
 Inga delorder, reservationer eller lager ändras då. Detta ersätter den tidigare
 regeln om att acceptera en Fighter utan möjlig delförsörjning, enligt
-användarens ändring 2026-10-23. Övriga skeppsrecept är oförändrade.
+användarens ändring 2026-10-23. Motorreglerna ovan ersätter tidigare oförändrade skeppsrecept och lokal motorproduktions företräde, enligt ändringen 2026-10-24.
 Om skeppet avbryts ligger delorder kvar för annan användning.
 
 Om en fabrik rivs ligger planetens produktionsorder kvar. De kan använda en
@@ -39,11 +47,14 @@ inbördes ordning inom respektive gammal kö ändras.
 
 ## Research
 
-Utvinning och Research station är tillgängliga från början. Exploration ship
-factory är första fabrikstekniken och öppnar forskning för Colony ship factory
-och Transport ship factory. Den sista öppnar Trade logistics. Rocket engine
-factory kräver Exploration ship factory, Weapons module factory kräver Rocket
-engine factory och Fighter factory kräver Weapons module factory.
+Utvinning och Research station är tillgängliga från början. Rocket engine
+factory är första fabrikstekniken. Exploration ship factory kräver den och
+öppnar Colony ship factory samt Transport ship factory; den sista öppnar
+Trade logistics. Weapons module factory kräver Rocket engine factory och
+Fighter factory kräver Weapons module factory. Ion pulse engine factory är
+en separat gren efter Rocket engine factory och krävs inte för skeppsfabrikerna.
+Den kostar 16 Iron, 8 Water och 4 Oil och behöver 300 personal. Varje Ion pulse
+engine kostar 6 Iron, 2 Water och 2 Oil.
 Val av en senare teknik köar även saknade förkunskaper. Köer kan redigeras,
 men förkunskaper måste komma först. Högst en teknik slutförs per år.
 

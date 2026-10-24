@@ -86,13 +86,17 @@ class BuildQueue {
   completeFirstPerYear()
 }
 class Ship {
+  id
+  installedEngines
   type
   speed
   crew
 }
 class Component {
-  type: Rocket engine | Weapons module
+  type: Rocket engine | Ion pulse engine | Weapons module
 }
+Ship "1" *-- "1..3" Component : installed engines
+
 class Fleet {
   position : HexCoordinate [0..1]
   name

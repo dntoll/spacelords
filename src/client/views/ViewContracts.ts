@@ -122,6 +122,7 @@ export type AppIntent =
   | { readonly type: 'open-planet'; readonly id?: string }
   | {
       readonly type: 'choose-ship-transfer';
+      readonly shipId?: string | undefined;
       readonly fleetId: string;
       readonly ship: ShipType;
     }
@@ -186,6 +187,7 @@ export type AppIntent =
     }
   | {
       readonly type: 'transfer-ships';
+      readonly shipId?: string | undefined;
       readonly source: string;
       readonly ship: ShipType;
       readonly amount: number;

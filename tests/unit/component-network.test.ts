@@ -329,7 +329,7 @@ describe('automatiska-delorder', () => {
         .status,
     ).toBe('Waiting');
     const saved = game.exportState();
-    expect(saved.version).toBe(5);
+    expect(saved.version).toBe(6);
     expect(
       Game.restore(
         JSON.parse(JSON.stringify(saved)) as typeof saved,
@@ -415,14 +415,17 @@ describe('automatiska-delorder', () => {
     expect(types()).toEqual(['Rocket engine', 'Weapons module']);
   });
 
-  it('prefers local production over remote inventory', () => {
+  it('prefers existing remote engines over new local production', () => {
     const { game, destination, types } = network({
       stock: 1,
       localEngine: true,
     });
     game.scheduleShip(destination, 'Fighter');
-    expect(types(destination)).toEqual(['Rocket engine', 'Fighter']);
-    expect(game.shipments.map((s) => s.material)).toEqual(['Weapons module']);
+    expect(types(destination)).toEqual(['Fighter']);
+    expect(game.shipments.map((s) => s.material)).toEqual([
+      'Rocket engine',
+      'Weapons module',
+    ]);
   });
 
   it('chooses the fastest delivery and breaks equal estimates by stable planet ID', () => {

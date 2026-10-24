@@ -43,9 +43,17 @@ export class ComponentPlanner {
   ): {
     production: readonly PlannedComponentProduction[];
     orders: readonly ComponentOrder[];
+    parts: Partial<Record<Component, number>>;
   } {
+    const selected = { ...parts };
+    const engines =
+      (parts['Rocket engine'] ?? 0) + (parts['Ion pulse engine'] ?? 0);
+    if (engines)
+      Object.assign(selected, this.#planEngines(projectId, recipient, engines));
     const local = this.sites.find((site) => site.id === recipient)!;
     for (const component of COMPONENTS) {
+      if (component === 'Rocket engine' || component === 'Ion pulse engine')
+        continue;
       let missing = parts[component] ?? 0;
       if (!missing) continue;
       const pools = new Map(
@@ -135,7 +143,107 @@ export class ComponentPlanner {
           `Cannot order ${component}: no available supplier or completed factory with an active transport path.`,
         );
     }
-    return { production: this.#production, orders: this.#orders };
+    return {
+      production: this.#production,
+      orders: this.#orders,
+      parts: selected,
+    };
+  }
+
+  // automatisk-motormontering: engine variants share a need, never two reservations.
+  #planEngines(
+    projectId: string,
+    recipient: string,
+    count: number,
+  ): Partial<Record<Component, number>> {
+    const chosen = { 'Rocket engine': 0, 'Ion pulse engine': 0 };
+    let missing = count;
+    const candidates = this.sites
+      .flatMap((site) => {
+        const years =
+          site.id === recipient
+            ? 0
+            : this.logistics.path(site.id, recipient, this.port)?.years;
+        return years === undefined
+          ? []
+          : (['Ion pulse engine', 'Rocket engine'] as const).map(
+              (component) => ({
+                site,
+                component,
+                years,
+                pool: this.#pool(site, component, count),
+              }),
+            );
+      })
+      .sort(
+        (a, b) =>
+          a.years - b.years ||
+          Number(b.component === 'Ion pulse engine') -
+            Number(a.component === 'Ion pulse engine') ||
+          a.site.id.localeCompare(b.site.id),
+      );
+    const take = (
+      candidate: (typeof candidates)[number],
+      kind: keyof ComponentPool | 'new',
+    ) => {
+      const { site, component, pool } = candidate;
+      while (
+        missing > 0 &&
+        (kind === 'new'
+          ? !!site.factories[component]
+          : kind === 'stock'
+            ? pool.stock > 0
+            : pool[kind].length > 0)
+      ) {
+        let productionProjectId: string | null = null;
+        const shipmentId = kind === 'incoming' ? pool.incoming.shift()! : null;
+        if (kind === 'stock') pool.stock--;
+        if (kind === 'production')
+          productionProjectId = pool.production.shift()!;
+        if (kind === 'new') {
+          productionProjectId = this.id('project');
+          this.#production.push({
+            id: productionProjectId,
+            planetId: site.id,
+            component,
+            factoryId: site.factories[component]!,
+          });
+        }
+        const shipment = this.logistics.shipments.find(
+          (s) => s.id === shipmentId,
+        );
+        this.#orders.push({
+          id: this.id('component-order'),
+          projectId,
+          recipient,
+          source: shipment?.path[0] ?? site.id,
+          location: shipment?.path[shipment.stage] ?? site.id,
+          component,
+          amount: 1,
+          productionProjectId,
+          shipmentId,
+          delivered: kind === 'stock' && site.id === recipient,
+        });
+        chosen[component]++;
+        missing--;
+      }
+    };
+    for (const candidate of candidates.filter((c) => c.site.id === recipient))
+      take(candidate, 'stock');
+    for (const candidate of candidates.filter((c) => c.site.id === recipient))
+      take(candidate, 'incoming');
+    for (const candidate of candidates.filter((c) => c.site.id !== recipient))
+      take(candidate, 'stock');
+    for (const candidate of candidates.filter(
+      (c) => c.site.factories[c.component],
+    ))
+      take(candidate, 'production');
+    for (const candidate of candidates) take(candidate, 'new');
+    if (missing)
+      throw new Error(
+        'Cannot order Rocket engine or Ion pulse engine: no available supplier or completed factory with an active transport path.',
+      );
+    return chosen;
   }
 
   #pool(

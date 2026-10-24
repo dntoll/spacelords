@@ -196,12 +196,12 @@ direkt. Inställningen sparas per spel och gäller samma beslut för samma
 flotta, planet eller rutt; andra beslut påverkas inte. Skip this turn behåller
 sin betydelse för enbart innevarande runda.
 
-| Kravnamn               | Status                     | Krav                                                                                                                                                                                                                                                                                                                                             |
-| ---------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `gemensam-planetko`    | Fullständigt implementerat | Varje planet har exakt en Build queue för byggnader, delar och skepp, utan fast kögräns. Högst ett projekt färdigställs per planet och år. Flera fabriker ger fler produktval, inte parallella köer.                                                                                                                                             |
-| `delfabriker`          | Fullständigt implementerat | Rocket engine factory och Weapons module factory kan forskas fram och byggas. De tillverkar var sin del i den gemensamma kön och behöver personal. Tillverkade delar läggs i planetens lager.                                                                                                                                                    |
-| `skeppsdelar`          | Fullständigt implementerat | En Fighter kräver en Rocket engine och en Weapons module utöver material och besättning. Delarna förbrukas en gång vid skeppsbygget. De kan lagras och fraktas genom handelsnätverket. Övriga skeppsrecept är oförändrade.                                                                                                                       |
-| `automatiska-delorder` | Fullständigt implementerat | Saknade delar beställs automatiskt, i första hand från lokal produktion och annars från lager eller delfabriker genom aktiva handelsrutter. Kortast uppskattade leveranstid avgör leverantör. Befintlig försörjning räknas av och varje del reserveras för sin order. Om någon del inte kan ordnas avvisas hela beställningen med en förklaring. |
+| Kravnamn               | Status                     | Krav                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `gemensam-planetko`    | Fullständigt implementerat | Varje planet har exakt en Build queue för byggnader, delar och skepp, utan fast kögräns. Högst ett projekt färdigställs per planet och år. Flera fabriker ger fler produktval, inte parallella köer.                                                                                                                                                                                                                           |
+| `delfabriker`          | Fullständigt implementerat | Rocket engine factory, Ion pulse engine factory och Weapons module factory kan forskas fram och byggas. De tillverkar var sin del i den gemensamma kön och behöver personal. Tillverkade delar läggs i planetens lager.                                                                                                                                                                                                        |
+| `skeppsdelar`          | Fullständigt implementerat | Alla skepp kräver motorer: Colony ship tre, Exploration ship två, Transport ship och Fighter en. Fighter kräver även en Weapons module utöver material och besättning. Delarna förbrukas en gång vid skeppsbygget. De kan lagras och fraktas genom handelsnätverket.                                                                                                                                                           |
+| `automatiska-delorder` | Fullständigt implementerat | Saknade delar beställs automatiskt genom aktiva handelsrutter. Motorer tas först ur lokalt lager, därefter befintlig försörjning och fjärrlager före ny produktion. Weapons module prioriterar fortsatt lokal produktion. Kortast uppskattade leveranstid avgör leverantör. Befintlig försörjning räknas av och varje del reserveras för sin order. Om någon del inte kan ordnas avvisas hela beställningen med en förklaring. |
 
 `streckade-rutter-utan-transporter` — **Fullständigt implementerat**:
 Handelsrutter utan aktiv transport visas streckade på Star map. När en
@@ -211,8 +211,8 @@ räknas som tilldelad, men en flotta som begärt Release gör det inte.
 Stängande rutter visas fortsatt streckade.
 
 2026-10-23: `automatiska-delorder` ersätter den tidigare regeln som tillät
-beställningar utan möjlig delförsörjning. Lokal delfabrik har företräde framför
-fjärrlager. Utan lokal fabrik används först tillgängliga fjärrlager, därefter
+beställningar utan möjlig delförsörjning. För Weapons module har lokal delfabrik företräde framför
+fjärrlager. Motorernas nya regler nedan ersätter detta företräde för motorer. Utan lokal fabrik används först tillgängliga fjärrlager, därefter
 tidigare obokad delproduktion eller nya order hos närmaste producent.
 Varje ruttlänk behöver en tilldelad transportflotta. Material- och personalbrist
 får innebära väntan. Avbeställning behåller delorder för annan användning;
@@ -440,3 +440,26 @@ behåller sin översikt över varje planets första projekt.
 ständigt utfällda byggkorten i `visa-byggalternativ` och rullgardinsvalen i
 `planetgemensamt-produktval`. Den kompakta byggkön och alla orderregler behålls.
 Tillfälliga kategori-, sök- och detaljval skriver inte om sparade spel.
+
+## Skeppsmotorer
+
+`motorbehov-for-alla-skepp` — **Delvis implementerat**: Colony ship kräver tre
+motorer, Exploration ship två, Transport ship och Fighter en. Rocket engine
+factory forskas fram före alla skeppsfabriker. Riktad verifiering återstår.
+
+`ion-pulse-engine` — **Delvis implementerat**: Ion pulse engine factory forskas
+fram efter Rocket engine factory. Den kostar 16 Iron, 8 Water och 4 Oil och
+behöver 300 personal. En motor kostar 6 Iron, 2 Water och 2 Oil. Minst en Ion
+pulse engine ger skeppet +1 fart. Flottan följer sitt långsammaste skepp.
+Riktad verifiering av produktion och fart återstår.
+
+`automatisk-motormontering` — **Delvis implementerat**: Motorer monteras från
+byggplanetens tillgängliga lager vid byggstart. Ion väljs först och blandning
+är tillåten. Saknade motorer ordnas från tillgängliga lager och därefter
+fabriker med kortast beräknad transporttid, oavsett motortyp. Ion har företräde
+vid lika tid. Redan reserverade delar skyddas. Installerade motorer följer
+skeppet vid flottflytt och sparning; befintliga skepp uppgraderas inte.
+Verifiering av reservationer och mobilvisning återstår.
+
+2026-10-24: Motorreglerna ersätter tidigare oförändrade recept för andra skepp
+än Fighter samt företrädet för lokal motorproduktion framför fjärrlager.

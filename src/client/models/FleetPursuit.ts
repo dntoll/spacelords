@@ -1,4 +1,4 @@
-import type { ShipType, TurnFrame } from './Game.js';
+import type { ShipType, ShipUnit, TurnFrame } from './Game.js';
 import type { HexCoordinate } from './HexCoordinate.js';
 
 export interface PursuingFleet {
@@ -9,6 +9,7 @@ export interface PursuingFleet {
   courseOrigin?: HexCoordinate;
   joinFleetId?: string;
   ships: Record<ShipType, number>;
+  shipUnits?: ShipUnit[];
 }
 
 /** skepp-till-rorlig-flotta: resolve simultaneous travel and physical meetings. */
@@ -65,6 +66,7 @@ export class FleetPursuit {
           continue;
         for (const ship of Object.keys(group.ships) as ShipType[])
           target.ships[ship] += group.ships[ship];
+        if (group.shipUnits) (target.shipUnits ??= []).push(...group.shipUnits);
         for (const follower of fleets)
           if (follower.joinFleetId === group.id)
             follower.joinFleetId = target.id;
@@ -83,6 +85,7 @@ export class FleetPursuit {
     const forecast = fleets.map((fleet) => ({
       ...fleet,
       ships: { ...fleet.ships },
+      ...(fleet.shipUnits ? { shipUnits: [...fleet.shipUnits] } : {}),
     }));
     const remaining = new Map(
       forecast.map((fleet) => [fleet.id, speed(fleet)]),

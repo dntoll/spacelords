@@ -434,3 +434,16 @@ Kloning och sparse checkout tog tillsammans 3,18 sekunder.
 verifierad separat. [Pages](https://github.com/dntoll/dntoll.github.io/actions/runs/40070361118)
 lyckades; tolv livefiler matchade bygget och revisionsmetadata. Sluttest och merge
 har inte beställts eller genomförts; inga nya tider för hela sluttestsviten finns.
+
+## Motorbestyckning och sparkompatibilitet
+
+`automatisk-motormontering` — **Delvis implementerat**: Modellen bevarar varje
+skepps stabila id och installerade motorer. Vyer får oföränderliga
+ögonblicksbilder och skickar individuella skeppsval via controller.
+Verifiering av alla flyttvägar återstår.
+
+`avstamning-sparkompatibilitet`: Sparversion 6 läser fortsatt version 2–5.
+Befintliga skepp får Rocket engine utan lageravdrag; äldre uppnådd forskning
+behålls och saknade motorförkunskaper kompletteras. Äldre köade skepp behålls
+med synligt motorbehov. Ingen ny rensningsmarkör eller ändrad lagringsnyckel
+införs. Gamla spel ska verifieras före publicering.

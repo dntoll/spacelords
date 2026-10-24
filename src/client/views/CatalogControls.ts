@@ -31,7 +31,7 @@ function symbolFor(name: string): SymbolName {
   if (name === 'Iron mine') return 'Resources';
   if (name === 'Water extractor') return 'Water';
   if (name === 'Oil extractor') return 'Oil';
-  if (name === 'Rocket engine') return 'Engine';
+  if (name === 'Rocket engine' || name === 'Ion pulse engine') return 'Engine';
   if (name === 'Weapons module') return 'Weapons';
   if (name === 'Colony ship') return 'Colony';
   if (name === 'Exploration ship') return 'Exploration';

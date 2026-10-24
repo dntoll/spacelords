@@ -87,7 +87,8 @@ export function renderFleetCard(
   hangar.setAttribute('aria-label', `Ships in ${fleet.name}`);
   const manifest = renderFleetShips(
     fleet,
-    (ship) => emit({ type: 'choose-ship-transfer', fleetId: fleet.id, ship }),
+    (ship, shipId) =>
+      emit({ type: 'choose-ship-transfer', fleetId: fleet.id, ship, shipId }),
     12,
   );
   for (const token of manifest.querySelectorAll<HTMLButtonElement>('button')) {
@@ -96,7 +97,9 @@ export function renderFleetCard(
     token.classList.toggle(
       'transfer-source',
       model.shipTransfer?.fleetId === fleet.id &&
-        model.shipTransfer.ship === token.dataset.ship,
+        model.shipTransfer.ship === token.dataset.ship &&
+        (!model.shipTransfer.shipId ||
+          model.shipTransfer.shipId === token.dataset.shipId),
     );
   }
   hangar.append(manifest);

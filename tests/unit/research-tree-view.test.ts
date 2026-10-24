@@ -11,7 +11,7 @@ it('forsknings-tradnavigation: distinguishes completed, active, queued and unava
   const view = renderResearch(
     {
       available: TECHNOLOGIES,
-      completed: ['Exploration ship factory'],
+      completed: ['Rocket engine factory', 'Exploration ship factory'],
       selected: 'Transport ship factory',
       stations: 1,
       queue: ['Transport ship factory', 'Trade logistics'],
@@ -35,7 +35,7 @@ it('forsknings-tradnavigation: distinguishes completed, active, queued and unava
     type: 'research',
     technology: 'Fighter factory',
   });
-  expect(view.querySelectorAll('.research-edge.unlocked')).toHaveLength(3);
+  expect(view.querySelectorAll('.research-edge.unlocked')).toHaveLength(5);
   const tree = view.querySelector<HTMLElement>('.research-tree-viewport')!;
   tree.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
   expect(emit).toHaveBeenLastCalledWith({

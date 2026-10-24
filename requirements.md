@@ -10,6 +10,11 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Skeppsmotorer:** `motorbehov-for-alla-skepp`, `ion-pulse-engine` och
+  `automatisk-motormontering` är **Delvis implementerat**. Alla skepp kräver
+  motorer och Ion pulse engine ger +1 fart. Riktad verifiering av försörjning,
+  sparkompatibilitet och mobilflöde återstår. Se [ekonomireglerna](docs/economy-logistics.md).
+
 - **Kategoriserade bygg- och produktval:** `byggkategorier` och
   `symbolbaserade-kataloger` är **Fullständigt implementerat**. Symbolknappar
   filtrerar kompakta listor med symbol och namn i Build selection och Production.

@@ -311,7 +311,11 @@ export class AppController {
         this.#model.renameFleet(intent.id, intent.name);
         break;
       case 'choose-ship-transfer':
-        this.#model.chooseShipTransfer(intent.fleetId, intent.ship);
+        this.#model.chooseShipTransfer(
+          intent.fleetId,
+          intent.ship,
+          intent.shipId,
+        );
         break;
       case 'transfer-chosen-ship':
         this.#model.transferChosenShip(intent.target);
@@ -325,6 +329,7 @@ export class AppController {
           intent.ship,
           intent.amount,
           intent.target,
+          intent.shipId,
         );
         break;
       case 'begin-destination':

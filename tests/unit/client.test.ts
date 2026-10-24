@@ -99,7 +99,7 @@ describe('forskningsoversikt', () => {
     expect(root.textContent).toContain(
       'Build a Research station to advance research.',
     );
-    expect(root.querySelectorAll('[data-technology]')).toHaveLength(9);
+    expect(root.querySelectorAll('[data-technology]')).toHaveLength(10);
     click('Research Colony ship factory');
     expect(root.textContent).toContain('Researching · 0/1 points');
     click('Back to map');
@@ -201,8 +201,15 @@ function buildShipyard(model: AppModel): void {
   model.research('Colony ship factory');
   advance(model);
   advance(model);
+  advance(model);
   model.build('Colony ship factory');
   advance(model);
+  model.build('Rocket engine factory');
+  advance(model);
+  for (let index = 0; index < 6; index++) {
+    model.scheduleComponent('Rocket engine');
+    advance(model);
+  }
 }
 
 describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () => {
@@ -211,6 +218,7 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
     model.build('Research station');
     advance(model);
     model.research('Colony ship factory');
+    advance(model);
     advance(model);
     advance(model);
     model.openPlanet();
@@ -342,13 +350,13 @@ describe('kompakta-koknappar', () => {
     expect(buttons()[1]!.disabled).toBe(false);
     for (const control of buttons()) {
       expect(control.getAttribute('aria-label')).toContain(
-        'Exploration ship factory',
+        'Rocket engine factory',
       );
       expect(control.title).toBe(control.getAttribute('aria-label'));
     }
-    rows()[1]!.querySelectorAll<HTMLButtonElement>('button')[1]!.click();
-    expect(model.snapshot.research.queue[1]).toBe('Transport ship factory');
-    rows()[2]!.querySelectorAll<HTMLButtonElement>('button')[2]!.click();
+    rows()[2]!.querySelectorAll<HTMLButtonElement>('button')[1]!.click();
+    expect(model.snapshot.research.queue[2]).toBe('Transport ship factory');
+    rows()[3]!.querySelectorAll<HTMLButtonElement>('button')[2]!.click();
     expect(model.snapshot.research.queue).toContain('Colony ship factory');
     click('Remove research');
     expect(model.snapshot.research.queue).not.toContain('Colony ship factory');

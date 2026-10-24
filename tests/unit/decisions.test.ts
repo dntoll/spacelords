@@ -89,7 +89,7 @@ describe('tysta-beslut', () => {
     expect(game.decisions.find((d) => d.id === 'research-empty')!.current).toBe(
       false,
     );
-    game.removeResearch('Exploration ship factory');
+    game.removeResearch('Rocket engine factory');
     expect(game.decisions.find((d) => d.id === 'research-empty')).toMatchObject(
       { current: true, muted: true },
     );

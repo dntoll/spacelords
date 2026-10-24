@@ -49,7 +49,9 @@ describe('sparat-spel / frontend-backend-mock', () => {
     expect(restored.exportState()).toEqual(game.exportState());
   });
   it('preserves pending factory queues, recipients, demolition and build orders through later turns', () => {
-    const game = new Game(createExampleGalaxy());
+    const state = new Game(createExampleGalaxy()).exportState();
+    state.colonies[0]![1].stock['Rocket engine'] = 6;
+    const game = Game.restore(state);
     const home = game.galaxy.homePlanet;
     const turn = (current: Game) => {
       for (const frame of current.startTurn()) current.applyFrame(frame);
@@ -58,6 +60,7 @@ describe('sparat-spel / frontend-backend-mock', () => {
     game.scheduleBuild(home, 'Research station', 0);
     turn(game);
     game.selectResearch('Colony ship factory');
+    turn(game);
     turn(game);
     turn(game);
     game.scheduleBuild(home, 'Colony ship factory', 1);

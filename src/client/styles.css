@@ -2517,3 +2517,14 @@ p {
 .catalog-details .production-field {
   margin-block: 4px;
 }
+
+.ship-engine-details {
+  flex-basis: 100%;
+  width: 100%;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+.ship-engine-details summary {
+  cursor: pointer;
+  padding-block: 0.4rem;
+}

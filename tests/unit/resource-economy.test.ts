@@ -59,7 +59,10 @@ describe('forskningsko / forskningsberoenden', () => {
     research.add('Trade logistics');
     expect(() => research.move('Trade logistics', 0)).toThrow('Prerequisites');
     research.remove('Transport ship factory');
-    expect(research.queue).toEqual(['Exploration ship factory']);
+    expect(research.queue).toEqual([
+      'Rocket engine factory',
+      'Exploration ship factory',
+    ]);
   });
   it('adds prerequisites once and researches in dependency order', () => {
     const game = new Game(createExampleGalaxy());
@@ -67,6 +70,7 @@ describe('forskningsko / forskningsberoenden', () => {
     game.selectResearch('Trade logistics');
     game.selectResearch('Trade logistics');
     expect(game.research.queue).toEqual([
+      'Rocket engine factory',
       'Exploration ship factory',
       'Transport ship factory',
       'Trade logistics',
@@ -76,7 +80,9 @@ describe('forskningsko / forskningsberoenden', () => {
     turn(game);
     turn(game);
     turn(game);
+    turn(game);
     expect(game.research.completed).toEqual([
+      'Rocket engine factory',
       'Exploration ship factory',
       'Transport ship factory',
       'Trade logistics',
@@ -119,7 +125,7 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
     game.scheduleShip(home, 'Transport ship', tradeFleet.id);
     game.scheduleShip(home, 'Exploration ship');
     game.scheduleShip(home, 'Fighter');
-    for (let year = 0; year < 6; year++) turn(game);
+    for (let year = 0; year < 12; year++) turn(game);
     expect(game.fleet('fleet-home')!.ships.Fighter).toBe(2);
     const target = game.galaxy.systems[0]!.planets[1]!;
     game.setDestination(colonyFleet.id, target.position);
@@ -157,7 +163,7 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
     expect(game.decisions.some((d) => d.fleetId === tradeFleet.id)).toBe(false);
     const secondColonizer = game.createFleet();
     game.scheduleShip(home, 'Colony ship', secondColonizer.id);
-    turn(game);
+    for (let year = 0; year < 4; year++) turn(game);
     const remote = game.galaxy.systems[1]!.planets[0]!;
     game.setDestination(secondColonizer.id, remote.position);
     for (let i = 0; game.fleet(secondColonizer.id)!.destination && i < 8; i++)

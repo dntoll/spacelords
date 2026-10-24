@@ -1,6 +1,10 @@
 export const RESOURCES = ['Iron', 'Water', 'Oil'] as const;
 export type Resource = (typeof RESOURCES)[number];
-export const COMPONENTS = ['Rocket engine', 'Weapons module'] as const;
+export const COMPONENTS = [
+  'Rocket engine',
+  'Ion pulse engine',
+  'Weapons module',
+] as const;
 export type Component = (typeof COMPONENTS)[number];
 export const MATERIALS = [...RESOURCES, ...COMPONENTS] as const;
 export type Material = (typeof MATERIALS)[number];
@@ -10,6 +14,7 @@ export const emptyStock = (): Stock => ({
   Water: 0,
   Oil: 0,
   'Rocket engine': 0,
+  'Ion pulse engine': 0,
   'Weapons module': 0,
 });
 
