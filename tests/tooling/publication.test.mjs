@@ -148,8 +148,31 @@ function concurrentCheckout(root, remote) {
   return other;
 }
 
-test('bevara-befintlig-webbplats: retains concurrent changes to other apps', (t) => {
-  const { root, remote, checkout, build } = fixture(t);
+function sparseCheckout(root, remote) {
+  const checkout = join(root, 'sparse');
+  git(remote, 'config', 'uploadpack.allowFilter', 'true');
+  git(
+    root,
+    'clone',
+    '--depth',
+    '1',
+    '--filter=blob:none',
+    '--sparse',
+    `file://${remote}`,
+    checkout,
+  );
+  git(checkout, 'sparse-checkout', 'set', 'spacelords');
+  git(checkout, 'config', 'user.name', 'Sparse publisher');
+  git(checkout, 'config', 'user.email', 'sparse@example.invalid');
+  git(checkout, 'switch', '-c', 'codex/sparse-publication');
+  assert.equal(git(checkout, 'rev-parse', '--is-shallow-repository'), 'true');
+  assert.throws(() => readFileSync(join(checkout, 'MachineBloom/index.html')));
+  return checkout;
+}
+
+test('bevara-befintlig-webbplats: sparse shallow publication retains concurrent changes to other apps', (t) => {
+  const { root, remote, build } = fixture(t);
+  const checkout = sparseCheckout(root, remote);
   const { base } = preparePublication(checkout, build, 'revision');
   const other = concurrentCheckout(root, remote);
   writeFileSync(join(other, 'MachineBloom/index.html'), 'Updated other app');
@@ -157,15 +180,16 @@ test('bevara-befintlig-webbplats: retains concurrent changes to other apps', (t)
   git(other, 'push', 'origin', 'main');
   const { previous, commit } = refreshPublication(checkout, base);
   assert.equal(
-    readFileSync(join(checkout, 'MachineBloom/index.html'), 'utf8'),
+    git(checkout, 'show', 'HEAD:MachineBloom/index.html'),
     'Updated other app',
   );
   assertAppDiff(checkout, previous, commit);
   git(checkout, 'push', 'origin', 'HEAD:main');
 });
 
-test('bevara-befintlig-webbplats: aborts when another publisher changed spacelords', (t) => {
-  const { root, remote, checkout, build } = fixture(t);
+test('bevara-befintlig-webbplats: sparse shallow publication aborts when another publisher changed spacelords', (t) => {
+  const { root, remote, build } = fixture(t);
+  const checkout = sparseCheckout(root, remote);
   const { base } = preparePublication(checkout, build, 'revision');
   const other = concurrentCheckout(root, remote);
   writeFileSync(join(other, 'spacelords/index.html'), 'Concurrent app update');

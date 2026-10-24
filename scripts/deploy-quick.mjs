@@ -106,6 +106,8 @@ export async function deploy() {
   console.log(`Deployment report: ${join(directory, 'report.json')}`);
   try {
     report.checks = check('quick');
+    report.status = 'checked';
+    save();
     assertSource(root, source.revision);
     const work = mkdtempSync(join(tmpdir(), 'spacelords-deploy-'));
     report.checkout = join(work, 'site');
@@ -141,9 +143,18 @@ export async function deploy() {
               '--branch',
               'main',
               '--single-branch',
+              '--depth',
+              '1',
+              '--filter=blob:none',
+              '--sparse',
               `https://github.com/${repository}.git`,
               report.checkout,
             ],
+          ],
+          [
+            'sparse-site',
+            'git',
+            ['-C', report.checkout, 'sparse-checkout', 'set', 'spacelords'],
           ],
         ],
         directory,

@@ -37,8 +37,10 @@ Publiceringsskriptet:
 
 1. Fryser och kontrollerar källrevisionen och sparar det testade klientbygget.
 2. Pushar den exakta källrevisionen till arbetsbranchen med befintlig SSH.
-3. Klonar webbplatsrepots `main` till en separat tillfällig katalog och skapar
-   en deploybranch. Okända filer, fel appinnehåll och symboliska länkar avvisas.
+3. Hämtar webbplatsrepots aktuella `main` med `--depth 1`, `--filter=blob:none`
+   och sparse checkout för `spacelords/` till en separat tillfällig katalog.
+   Skapar en deploybranch. Okända filer, fel appinnehåll och symboliska länkar
+   avvisas. Övriga kataloger bevaras i Git-trädet utan att laddas ned.
 4. Ersätter endast `spacelords/`, lägger till `deployment.json` med
    källrevision och kontrollsummor, granskar diffens avgränsning och committar.
 5. Hämtar aktuell `origin/main`. Andra projekts samtidiga ändringar bevaras med

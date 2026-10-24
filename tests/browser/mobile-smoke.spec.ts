@@ -45,17 +45,18 @@ test('snabb-mobilpublicering / viewport-game-layout / sparat-spel: touch navigat
       vertical: document.documentElement.scrollHeight > innerHeight,
     })),
   ).toEqual({ horizontal: false, vertical: false });
-  // Live tests use a fresh browser context and never touch the player's saves.
-  if (!process.env.SPACELORDS_SMOKE_URL) await endTurn(page);
+  // Live smoke stops after navigation; save/reload is covered before publishing.
+  if (process.env.SPACELORDS_SMOKE_URL) {
+    expect(errors).toEqual([]);
+    return;
+  }
+  await endTurn(page);
   await page.getByRole('button', { name: 'Saved games', exact: true }).tap();
   const slot = page.getByRole('article', { name: 'Save slot 1', exact: true });
-  await expect(slot).toContainText(
-    process.env.SPACELORDS_SMOKE_URL ? 'Year 1' : 'Year 2',
-  );
+  await expect(slot).toContainText('Year 2');
+  await page.waitForLoadState('networkidle');
   await page.reload();
-  await expect(slot).toContainText(
-    process.env.SPACELORDS_SMOKE_URL ? 'Year 1' : 'Year 2',
-  );
+  await expect(slot).toContainText('Year 2');
   await startFirstSlot(page);
   await expect(map).toBeVisible();
   expect(errors).toEqual([]);
