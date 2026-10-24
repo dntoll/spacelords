@@ -1,7 +1,15 @@
 import { Galaxy, Star, StarSystem, type MapCell } from './Galaxy.js';
 import { HexCoordinate } from './HexCoordinate.js';
 import { shipTransferIssue } from './FleetTransfer.js';
-import { Planet, Player, Colony, type PlanetSnapshot } from './Planet.js';
+import { PlanetEnvironment } from './PlanetEnvironment.js';
+import {
+  Planet,
+  Player,
+  Colony,
+  type PlanetEnvironmentType,
+  type TerraformEnvironment,
+  type PlanetSnapshot,
+} from './Planet.js';
 import {
   PlanetEconomy,
   RESOURCES,
@@ -50,7 +58,9 @@ export type BuildType =
   | 'Exploration ship factory'
   | 'Rocket engine factory'
   | 'Weapons module factory'
-  | 'Fighter factory';
+  | 'Fighter factory'
+  | `${TerraformEnvironment} dome`
+  | `${TerraformEnvironment} terraforming factory`;
 
 export type ProjectType = BuildType | ShipType | Component;
 
@@ -61,6 +71,9 @@ export interface Cost {
 }
 export interface BuildDefinition {
   readonly permanent: boolean;
+  readonly sitePreparation?: boolean;
+  readonly environment?: TerraformEnvironment;
+  readonly terraforming?: number;
   readonly description: string;
   readonly workers: number;
   readonly cost: Cost;
@@ -72,6 +85,82 @@ export interface BuildDefinition {
 }
 export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
   Object.freeze({
+    'Ice dome': {
+      permanent: false,
+      sitePreparation: true,
+      environment: 'Ice',
+      description: 'Prepares one site for construction below 80% habitability.',
+      workers: 0,
+      cost: { Iron: 8, Water: 4, Oil: 2 },
+      crew: 0,
+    },
+    'Ice terraforming factory': {
+      permanent: true,
+      environment: 'Ice',
+      terraforming: 5,
+      description:
+        'Raises habitability by 5 percentage points per year when staffed, up to 100%.',
+      workers: 300,
+      cost: { Iron: 12, Water: 6, Oil: 3 },
+      crew: 0,
+    },
+    'Desert dome': {
+      permanent: false,
+      sitePreparation: true,
+      environment: 'Desert',
+      description: 'Prepares one site for construction below 80% habitability.',
+      workers: 0,
+      cost: { Iron: 8, Water: 4, Oil: 2 },
+      crew: 0,
+    },
+    'Desert terraforming factory': {
+      permanent: true,
+      environment: 'Desert',
+      terraforming: 5,
+      description:
+        'Raises habitability by 5 percentage points per year when staffed, up to 100%.',
+      workers: 300,
+      cost: { Iron: 12, Water: 6, Oil: 3 },
+      crew: 0,
+    },
+    'Ocean dome': {
+      permanent: false,
+      sitePreparation: true,
+      environment: 'Ocean',
+      description: 'Prepares one site for construction below 80% habitability.',
+      workers: 0,
+      cost: { Iron: 8, Water: 4, Oil: 2 },
+      crew: 0,
+    },
+    'Ocean terraforming factory': {
+      permanent: true,
+      environment: 'Ocean',
+      terraforming: 5,
+      description:
+        'Raises habitability by 5 percentage points per year when staffed, up to 100%.',
+      workers: 300,
+      cost: { Iron: 12, Water: 6, Oil: 3 },
+      crew: 0,
+    },
+    'Toxic dome': {
+      permanent: false,
+      sitePreparation: true,
+      environment: 'Toxic',
+      description: 'Prepares one site for construction below 80% habitability.',
+      workers: 0,
+      cost: { Iron: 8, Water: 4, Oil: 2 },
+      crew: 0,
+    },
+    'Toxic terraforming factory': {
+      permanent: true,
+      environment: 'Toxic',
+      terraforming: 5,
+      description:
+        'Raises habitability by 5 percentage points per year when staffed, up to 100%.',
+      workers: 300,
+      cost: { Iron: 12, Water: 6, Oil: 3 },
+      crew: 0,
+    },
     'Iron mine': {
       permanent: true,
       description: 'Extracts Iron from the local finite deposit.',
@@ -198,6 +287,7 @@ export function projectCost(type: ProjectType): Stock {
   return { ...emptyStock(), ...definition.cost, ...definition.parts };
 }
 export interface ResearchSnapshot {
+  readonly available: readonly Technology[];
   readonly completed: readonly Technology[];
   readonly selected: Technology | null;
   readonly stations: number;
@@ -247,6 +337,10 @@ export interface BudgetSnapshot {
   readonly availableSlots: number;
 }
 export interface PlanetGameSnapshot {
+  readonly environment: PlanetEnvironmentType | 'Gas';
+  readonly breathable: boolean;
+  readonly populationCapacity: number;
+  readonly potentialBuildSlots: number;
   readonly id: string;
   readonly name: string;
   readonly population: number;
@@ -264,6 +358,12 @@ export interface PlanetGameSnapshot {
   }[];
 }
 export interface BuildingSiteSnapshot {
+  readonly locked: boolean;
+  readonly requiredHabitability: number;
+  readonly hasDome: boolean;
+  readonly domeRequired: boolean;
+  readonly domeType: BuildType | null;
+  readonly domeBlockedReason: string | null;
   readonly index: number;
   readonly building: BuildingSnapshot | null;
   readonly project: ConstructionProjectSnapshot | null;
@@ -301,6 +401,8 @@ export interface TurnFrame {
 }
 
 interface ColonyState {
+  habitability?: number;
+  domes?: number[];
   stock: Stock;
   deposits: Stock;
   population: number;
@@ -366,7 +468,7 @@ export interface GameState {
   readonly componentOrders?: readonly ComponentOrder[];
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
-  readonly version: 2 | 3 | 4;
+  readonly version: 2 | 3 | 4 | 5;
   readonly world: {
     readonly player: { readonly id: string; readonly name: string };
     readonly radius: number;
@@ -412,6 +514,8 @@ export class Game {
         this.#colonies.set(planet.id, {
           stock: { ...emptyStock(), Iron: 100, Water: 75, Oil: 30 },
           deposits: this.#initialDeposits(planet),
+          habitability: planet.habitability,
+          domes: [],
           population: planet.colony.population,
           buildings: [],
           projects: [],
@@ -435,7 +539,7 @@ export class Game {
     if (this.#phase === 'simulating')
       throw new Error('Wait for the turn to finish before saving.');
     return structuredClone({
-      version: 4,
+      version: 5,
       world: {
         player: { id: this.galaxy.player.id, name: this.galaxy.player.name },
         radius: this.galaxy.radius,
@@ -471,7 +575,7 @@ export class Game {
 
   static restore(state: GameState): Game {
     if (
-      ![2, 3, 4].includes(state.version) ||
+      ![2, 3, 4, 5].includes(state.version) ||
       !Number.isSafeInteger(state.round) ||
       state.round < 1 ||
       !Number.isSafeInteger(state.sequence) ||
@@ -522,7 +626,7 @@ export class Game {
     game.#logistics = new Logistics(
       [...copy.tradeRoutes],
       [...copy.shipments],
-      state.version === 4 ? [...(copy.componentOrders ?? [])] : [],
+      state.version >= 4 ? [...(copy.componentOrders ?? [])] : [],
     );
     game.#decisions = new DecisionBoard(
       new Set(copy.skippedDecisions),
@@ -605,9 +709,13 @@ export class Game {
       (planet) => planet.position.key === position.key,
     );
   }
-  planetSnapshot(planet: Planet): PlanetGameSnapshot | null {
+  planetSnapshot(
+    planet: Planet,
+    slotIndex?: number,
+  ): PlanetGameSnapshot | null {
     const state = this.#colonies.get(planet.id);
     if (!state) return null;
+    const environment = this.#environment(planet, state);
     const { budget, blocks } = this.#allocation(planet, state);
     const projectSnapshot = (project: Project): ConstructionProjectSnapshot =>
       Object.freeze({
@@ -638,8 +746,12 @@ export class Game {
       id: planet.id,
       name: planet.name,
       population: state.population,
-      habitability: planet.habitability,
-      buildSlots: planet.buildSlots,
+      environment: planet.type === 'gas' ? 'Gas' : planet.environment,
+      breathable: environment.breathable,
+      populationCapacity: environment.populationCapacity,
+      potentialBuildSlots: planet.buildSlots,
+      habitability: environment.habitability,
+      buildSlots: environment.buildSlots,
       budget: Object.freeze(budget),
       economy: this.#economySnapshot(planet, state),
       buildings,
@@ -649,6 +761,14 @@ export class Game {
         Array.from({ length: planet.buildSlots }, (_, index) =>
           Object.freeze({
             index,
+            locked: index >= environment.buildSlots,
+            requiredHabitability: environment.thresholdForSite(index),
+            hasDome: state.domes?.includes(index) ?? false,
+            domeRequired: planet.type === 'solid' && !environment.breathable,
+            domeType: this.#domeType(planet),
+            domeBlockedReason: this.#domeType(planet)
+              ? this.canBuild(planet, this.#domeType(planet)!, index)
+              : 'No Dome technology exists for this planet type.',
             building:
               buildings.find((building) => building.slotIndex === index) ??
               null,
@@ -667,17 +787,24 @@ export class Game {
             ...TECHNOLOGIES.filter(
               (type) =>
                 type !== 'Trade logistics' &&
-                this.#research.completed.has(type),
+                this.#research.completed.has(type) &&
+                (!BUILDINGS[type].environment ||
+                  (planet.type === 'solid' &&
+                    BUILDINGS[type].environment === planet.environment)),
             ),
           ] as BuildType[]
         ).map((type) =>
-          Object.freeze({ type, blockedReason: this.canBuild(planet, type) }),
+          Object.freeze({
+            type,
+            blockedReason: this.canBuild(planet, type, slotIndex),
+          }),
         ),
       ),
     });
   }
   get research(): ResearchSnapshot {
     return Object.freeze({
+      available: Object.freeze(this.#availableResearch()),
       completed: Object.freeze([...this.#research.completed]),
       selected: this.#research.queue[0] ?? null,
       queue: Object.freeze([...this.#research.queue]),
@@ -696,7 +823,13 @@ export class Game {
   selectResearch(type: Technology | null): void {
     this.#requirePlanning();
     if (type === null) this.#research.queue = [];
-    else this.#research.add(type);
+    else {
+      if (!this.#availableResearch().includes(type))
+        throw new Error(
+          'Discover this planet type before researching its technology.',
+        );
+      this.#research.add(type);
+    }
   }
   moveResearch(type: Technology, index: number): void {
     this.#requirePlanning();
@@ -714,7 +847,7 @@ export class Game {
           planetId: planet.id,
           position: planet.position,
           emptySites:
-            planet.buildSlots -
+            this.#environment(planet, state).buildSlots -
             state.buildings.length -
             state.projects.filter((p) => p.slotIndex !== null).length,
           emptyQueues:
@@ -751,6 +884,8 @@ export class Game {
     this.#colonies.set(planet.id, {
       stock: emptyStock(),
       deposits: this.#initialDeposits(planet),
+      habitability: planet.habitability,
+      domes: [],
       population: SHIPS['Colony ship'].crew,
       buildings: [],
       projects: [],
@@ -805,15 +940,40 @@ export class Game {
       !this.#research.completed.has(type as Technology)
     )
       return 'Research this building first.';
-    const slot = slotIndex ?? this.#emptySlot(planet, state);
+    const definition = BUILDINGS[type];
+    const environment = this.#environment(planet, state);
+    if (
+      definition.environment &&
+      (planet.type !== 'solid' || definition.environment !== planet.environment)
+    )
+      return 'This building requires a matching solid planet type.';
+    const slot = slotIndex ?? this.#emptySlot(planet, state, type);
+    if (
+      slot < 0 &&
+      !definition.sitePreparation &&
+      planet.type === 'solid' &&
+      !environment.breathable &&
+      this.#emptySlot(planet, state) >= 0
+    )
+      return 'Build a Dome at this site first.';
     if (
       slot < 0 ||
       !Number.isInteger(slot) ||
-      slot >= planet.buildSlots ||
+      slot >= environment.buildSlots ||
       state.buildings.some((b) => b.slotIndex === slot) ||
       state.projects.some((p) => p.slotIndex === slot)
     )
       return 'No build slots are available at this site.';
+    if (definition.sitePreparation) {
+      if (environment.breathable)
+        return 'Domes are unnecessary in a breathable atmosphere.';
+      if (state.domes?.includes(slot)) return 'This site already has a Dome.';
+    } else if (
+      planet.type === 'solid' &&
+      !environment.breathable &&
+      !state.domes?.includes(slot)
+    )
+      return 'Build a Dome at this site first.';
     const resource = BUILDINGS[type].extraction;
     if (resource && state.deposits[resource] <= 0)
       return 'This planet has no remaining deposit of this resource.';
@@ -825,7 +985,7 @@ export class Game {
     const state = this.#state(planet);
     this.#scheduleProject(planet, type, {
       destinationFleetId: null,
-      slotIndex: slotIndex ?? this.#emptySlot(planet, state),
+      slotIndex: slotIndex ?? this.#emptySlot(planet, state, type),
       factoryId: null,
     });
   }
@@ -958,10 +1118,18 @@ export class Game {
       throw new Error('Choose a ship production order.');
     project.destinationFleetId = fleetId;
   }
-  #emptySlot(planet: Planet, state: ColonyState): number {
+  #emptySlot(planet: Planet, state: ColonyState, type?: BuildType): number {
+    const environment = this.#environment(planet, state);
+    const preparation = type && BUILDINGS[type].sitePreparation;
     return (
-      Array.from({ length: planet.buildSlots }, (_, index) => index).find(
+      Array.from({ length: environment.buildSlots }, (_, index) => index).find(
         (index) =>
+          (!preparation || !state.domes?.includes(index)) &&
+          (!type ||
+            preparation ||
+            planet.type === 'gas' ||
+            environment.breathable ||
+            state.domes?.includes(index)) &&
           !state.buildings.some((b) => b.slotIndex === index) &&
           !state.projects.some((p) => p.slotIndex === index),
       ) ?? -1
@@ -1117,6 +1285,31 @@ export class Game {
       for (const building of state.buildings.filter((b) => b.demolition))
         this.#event(`${building.type} was demolished on ${planet.name}.`);
       state.buildings = state.buildings.filter((b) => !b.demolition);
+      const staffed =
+        state.buildings.reduce(
+          (total, b) => total + BUILDINGS[b.type].workers,
+          0,
+        ) <= state.population;
+      const improvement =
+        planet.type === 'solid' && staffed
+          ? state.buildings.reduce(
+              (total, b) =>
+                total +
+                (BUILDINGS[b.type].environment === planet.environment
+                  ? (BUILDINGS[b.type].terraforming ?? 0)
+                  : 0),
+              0,
+            )
+          : 0;
+      const previousHabitability = this.#environment(
+        planet,
+        state,
+      ).habitability;
+      state.habitability = Math.min(100, previousHabitability + improvement);
+      if (state.habitability !== previousHabitability)
+        this.#event(
+          `Habitability on ${planet.name} increased to ${state.habitability}%.`,
+        );
       const { blocks } = this.#allocation(planet, state);
       const active = state.projects.slice(0, 1);
       for (const project of active) {
@@ -1132,8 +1325,13 @@ export class Game {
           this.#completeProject(planet, state, project);
         }
       }
-      const growth = Math.floor(
-        (state.population * 0.1 * planet.habitability) / 100,
+      const environment = this.#environment(planet, state);
+      const growth = Math.max(
+        0,
+        Math.min(
+          environment.populationCapacity - state.population,
+          Math.floor((state.population * 0.1 * environment.habitability) / 100),
+        ),
       );
       state.population += growth;
       this.#event(`Population on ${planet.name} changed by +${growth}.`);
@@ -1149,7 +1347,13 @@ export class Game {
   }
   #completeProject(planet: Planet, state: ColonyState, project: Project): void {
     const d = projectDefinition(project.type);
-    if (d.permanent) {
+    if (d.sitePreparation) {
+      state.domes ??= [];
+      state.domes.push(project.slotIndex!);
+      this.#event(
+        `${project.type} was completed at site ${project.slotIndex! + 1} on ${planet.name}.`,
+      );
+    } else if (d.permanent) {
       state.buildings.push({
         id: this.#id('building'),
         type: project.type as BuildType,
@@ -1267,7 +1471,9 @@ export class Game {
     const items: DecisionDescriptor[] = [];
     if (
       !this.#research.queue.length &&
-      this.#research.completed.size < TECHNOLOGIES.length
+      this.#availableResearch().some(
+        (type) => !this.#research.completed.has(type),
+      )
     )
       items.push({
         id: 'research-empty',
@@ -1695,7 +1901,7 @@ export class Game {
   }
   #canChooseProduction(planet: Planet, state: ColonyState): boolean {
     return (
-      state.buildings.length < planet.buildSlots ||
+      state.buildings.length < this.#environment(planet, state).buildSlots ||
       state.buildings.some(
         (building) =>
           !building.demolition &&
@@ -1736,12 +1942,12 @@ export class Game {
       availableWorkers: state.population - workers - crew,
       reservedCrew: crew,
       availableCrew: state.population - workers - crew,
-      slots: planet.buildSlots,
+      slots: this.#environment(planet, state).buildSlots,
       reservedSlots:
         state.buildings.length +
         state.projects.filter((p) => p.slotIndex !== null).length,
       availableSlots:
-        planet.buildSlots -
+        this.#environment(planet, state).buildSlots -
         state.buildings.length -
         state.projects.filter((p) => p.slotIndex !== null).length,
     });
@@ -1753,6 +1959,7 @@ export class Game {
       const definition = projectDefinition(project.type);
       const missingFactory =
         !definition.permanent &&
+        !definition.sitePreparation &&
         !state.buildings.some(
           (building) =>
             !building.demolition &&
@@ -1895,6 +2102,36 @@ export class Game {
     while (this.#fleets.some((fleet) => fleet.name === `Fleet ${number}`))
       number += 1;
     return `Fleet ${number}`;
+  }
+  #environment(planet: Planet, state: ColonyState): PlanetEnvironment {
+    return new PlanetEnvironment(
+      planet,
+      state.habitability ?? planet.habitability,
+    );
+  }
+  #domeType(planet: Planet): BuildType | null {
+    return planet.type === 'solid' &&
+      planet.environment &&
+      planet.environment !== 'Temperate'
+      ? `${planet.environment} dome`
+      : null;
+  }
+  #availableResearch(): Technology[] {
+    const discovered = new Set(
+      this.galaxy.systems
+        .flatMap((system) => system.planets)
+        .filter(
+          (planet) =>
+            planet.type === 'solid' && this.#explored.has(planet.position.key),
+        )
+        .map((planet) => planet.environment),
+    );
+    return TECHNOLOGIES.filter(
+      (type) =>
+        type === 'Trade logistics' ||
+        !BUILDINGS[type].environment ||
+        discovered.has(BUILDINGS[type].environment),
+    );
   }
   #requirePlanning(): void {
     if (this.#phase !== 'planning')

@@ -92,7 +92,7 @@ describe('forskningsoversikt', () => {
     expect(root.textContent).toContain(
       'Build a Research station to advance research.',
     );
-    expect(root.querySelectorAll('[data-technology]')).toHaveLength(7);
+    expect(root.querySelectorAll('[data-technology]')).toHaveLength(9);
     click('Research Colony ship factory');
     expect(root.textContent).toContain('Researching · 0/1 points');
     click('Back to map');
@@ -294,15 +294,23 @@ describe('kolonisation / kartorderstatus', () => {
     model.select(new HexCoordinate(0, 1));
     new AppController(model, new AppView(root, mapFactory)).start();
     click('Colonize');
-    expect(root.textContent).toContain('6 empty building sites');
+    expect(root.textContent).toContain('1 empty building sites');
     click('Open planet');
     expect(root.querySelector('h1')!.textContent).toBe('Vesta');
     expect(root.textContent).toContain('1,000');
     expect(root.querySelectorAll('.building-site')).toHaveLength(6);
-    click('Build building');
     expect(
-      root.querySelector<HTMLButtonElement>('.building-menu button')!.disabled,
-    ).toBe(false);
+      root.querySelector<HTMLButtonElement>(
+        '[aria-label="Build building at site 1"]',
+      )!.disabled,
+    ).toBe(true);
+    expect(
+      root.querySelector<HTMLButtonElement>(
+        '[aria-label="Build dome at site 1"]',
+      )!.disabled,
+    ).toBe(true);
+    expect(root.textContent).toContain('Research this building first.');
+    expect(root.querySelectorAll('.locked-site')).toHaveLength(5);
   });
 });
 

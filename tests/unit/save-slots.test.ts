@@ -189,7 +189,10 @@ describe('tre-sparplatser / sparplats-utforskad-karta', () => {
 
 describe('frontend-backend-mock', () => {
   it('preserves unreadable saves until explicitly cleared', () => {
-    const storage = new Map([['spacelords.save.v2.1', '{broken json']]);
+    const storage = new Map([
+      ['spacelords.terraforming-v5-reset', 'done'],
+      ['spacelords.save.v2.1', '{broken json'],
+    ]);
     const repo = new BrowserSaveRepository({
       getItem: (key) => storage.get(key) ?? null,
       setItem: (key, value) => {
@@ -217,7 +220,9 @@ describe('frontend-backend-mock', () => {
       removeItem() {},
     });
     const model = new AppModel(undefined, repo);
-    expect(() => model.startSlot(1)).toThrow('Game could not be saved');
+    expect(() => model.startSlot(1)).toThrow(
+      'Game storage could not be initialized',
+    );
     expect(model.snapshot.screen).toBe('saves');
   });
   it('autosaves controller orders and completed turns without persisting animation frames', async () => {

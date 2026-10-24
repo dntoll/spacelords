@@ -19,9 +19,9 @@ Se [hela visionen](docs/game-vision.md).
   `planetoppning-i-kartrubrik` är **Fullständigt implementerat**: kompakt
   Open planet visas bredvid planetnamn och hexkoordinat överst i kartpanelen.
 - **Sparade spel:** tre separata spel med senaste speldatum, utforskad karta och
-  automatisk sparning. Äldre ekonomi-spel bevaras och deras separata köer slås
-  ihop vid uppdatering. Den tidigare uttryckligen beställda engångsrensningen
-  av äldre spel är inte ett generellt tillstånd att radera sparplatser.
+  automatisk sparning. Denna leverans rensar befintliga testsparningar en gång efter
+  uttryckligt användarbeslut; nya spel bevaras därefter. Engångsrensningar
+  är inte ett generellt tillstånd att radera sparplatser.
 - **Karta och flottor:** `kompakta-flottkort` är **Fullständigt implementerat**:
   mindre skeppsrutor och tätare flottkort visar fler flottor samtidigt på Star map
   och i Fleets, med bibehållna pekytor och åtkomst till order.
@@ -42,6 +42,12 @@ Se [hela visionen](docs/game-vision.md).
   förstärkningar och minikarta behålls. Se [genomförandeplanen](docs/fleet-map-plan.md).
   Ruttpanelen visar bara redan tilldelade flottor; den globala Assign fleet-listan
   är borttagen. Flottor kan fortsatt dras till ruttlinjen för tilldelning.
+- **Terraforming och Domes:** `terraformning`, `planettypsforskning`,
+  `domes-per-byggplats`, `andningsbar-atmosfar` och `habitability-kapacitet`
+  är **Delvis implementerat**: modeller och gränssnitt finns; utökad verifiering
+  återstår. Se [spelreglerna](docs/terraforming.md). Domes ersätter `habitat`.
+  `engangsreset-terraformning` rensar denna leverans testsparningar en gång.
+  Framtida inkompatibla ändringar ska stämmas av med användaren på nytt.
 - **Ekonomi och byggande:** ändliga fyndigheter av Iron, Water och Oil utvinns
   till lokala obegränsade lager. Material förbrukas en gång vid byggstart.
   Varje planet har en enda Build queue för byggnader, delar och skepp, med

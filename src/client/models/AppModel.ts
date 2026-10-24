@@ -272,7 +272,10 @@ export class AppModel {
       planet:
         this.#screen === 'planet' || this.#screen === 'build-selection'
           ? this.#game.planetAt(this.#selected)
-            ? this.#game.planetSnapshot(this.#game.planetAt(this.#selected)!)
+            ? this.#game.planetSnapshot(
+                this.#game.planetAt(this.#selected)!,
+                this.#constructionSite ?? undefined,
+              )
             : null
           : null,
       round: this.#game.round,
@@ -537,7 +540,7 @@ export class AppModel {
     const site = planet
       ? this.#game.planetSnapshot(planet)?.sites[index]
       : null;
-    if (!site || site.building || site.project) return;
+    if (!site || site.locked || site.building || site.project) return;
     this.#constructionSite = index;
     this.#buildSearch = '';
     this.#screen = 'build-selection';
@@ -549,6 +552,7 @@ export class AppModel {
     this.#game.selectResearch(type);
   }
   resizeResearch(width: number, height: number): void {
+    this.#researchCamera.setTechnologies(this.#game.research.available);
     this.#researchCamera.resize(width, height);
   }
   panResearch(delta: Point): void {

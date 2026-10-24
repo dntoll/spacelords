@@ -17,13 +17,14 @@ eller minskar beroende på hur det går för planeten. Gästvänligheten variera
 mellan noll och hundra procent och kan förändras över tiden: en oförstörd jord
 är ungefär hundra procent, Mars tjugofem och Jupiter noll.
 
-Obebodda planeter kan koloniseras med kolonisationsskepp. Habitat gör det möjligt
-att ha större befolkning trots dålig gästvänlighet. Terraformare kan förbättra
-gästvänligheten, medan förorenande fabriker kan försämra den.
+Obebodda planeter kan koloniseras med kolonisationsskepp. Domes förbereder
+byggplatser där atmosfären inte är andningsbar. Terraforming förbättrar
+gästvänligheten och ökar planetens befolkningskapacitet och användbara byggplatser.
+Förorenande fabriker som kan försämra gästvänligheten är en framtida riktning.
 
 ## Produktion och forskning
 
-Fabriker kan producera kolonisationsskepp, andra skepp, habitat,
+Fabriker kan producera kolonisationsskepp, andra skepp, Domes,
 forskningsstationer, terraformare och senare fler saker. Forskning öppnar nya
 tekniker och fabriker. Tidiga fabriker kan behöva många arbetare och förorena mer;
 senare teknik kan förbättra dessa egenskaper. `Research station` är tillgänglig från början.

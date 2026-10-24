@@ -39,6 +39,7 @@ test('automatiska-delorder: orders remote production through the UI and preserve
   await page.addInitScript((state) => {
     if (localStorage.getItem('components-seeded')) return;
     localStorage.setItem('spacelords.economy-v2-reset', 'done');
+    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
     localStorage.setItem(
       'spacelords.save.v2.1',
       JSON.stringify({ lastPlayed: '2026-10-23T10:00:00Z', state }),
@@ -90,7 +91,7 @@ test('automatiska-delorder: orders remote production through the UI and preserve
         }
       ).state,
   );
-  expect(saved.version).toBe(4);
+  expect(saved.version).toBe(5);
   expect(saved.componentOrders).toEqual([]);
   expect(saved.colonies[0]![1].projects).toEqual([]);
   expect(saved.fleets.reduce((n, fleet) => n + fleet.ships.Fighter, 0)).toBe(3);
@@ -104,6 +105,7 @@ test('automatiska-delorder: explains a missing part and leaves the saved order s
   state.colonies[0]![1].buildings.pop();
   await page.addInitScript((state) => {
     localStorage.setItem('spacelords.economy-v2-reset', 'done');
+    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
     localStorage.setItem(
       'spacelords.save.v2.1',
       JSON.stringify({ lastPlayed: '2026-10-23T10:00:00Z', state }),

@@ -42,6 +42,7 @@ export function renderBuildSelection(
   const query = model.buildSearch.trim().toLowerCase();
   for (const option of planet.buildOptions) {
     const definition = BUILDINGS[option.type];
+    if (definition.sitePreparation) continue;
     if (
       !`${option.type} ${definition.description}`.toLowerCase().includes(query)
     )

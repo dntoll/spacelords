@@ -1,5 +1,14 @@
 import type { HexCoordinate } from './HexCoordinate.js';
 
+export const TERRAFORM_ENVIRONMENTS = [
+  'Ice',
+  'Desert',
+  'Ocean',
+  'Toxic',
+] as const;
+export type TerraformEnvironment = (typeof TERRAFORM_ENVIRONMENTS)[number];
+export type PlanetEnvironmentType = 'Temperate' | TerraformEnvironment;
+
 export interface ResourceYield {
   readonly name: string;
   readonly perYear: number;
@@ -32,6 +41,7 @@ export interface PlanetSnapshot {
   readonly id: string;
   readonly name: string;
   readonly type: 'solid' | 'gas';
+  readonly environment?: PlanetEnvironmentType;
   readonly position: HexCoordinate;
   readonly habitability: number;
   readonly buildSlots: number;
@@ -43,6 +53,7 @@ export class Planet implements PlanetSnapshot {
   readonly id: string;
   readonly name: string;
   readonly type: 'solid' | 'gas';
+  readonly environment: PlanetEnvironmentType;
   readonly position: HexCoordinate;
   readonly habitability: number;
   readonly buildSlots: number;
@@ -72,6 +83,12 @@ export class Planet implements PlanetSnapshot {
     ) {
       throw new RangeError('Resource yields must be finite and non-negative.');
     }
+    if (
+      data.environment !== undefined &&
+      !['Temperate', ...TERRAFORM_ENVIRONMENTS].includes(data.environment)
+    )
+      throw new RangeError('Unknown planet environment.');
+    this.environment = data.environment ?? 'Temperate';
     this.id = data.id;
     this.name = data.name;
     this.type = data.type;

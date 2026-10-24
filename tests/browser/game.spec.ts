@@ -471,7 +471,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Colonize', exact: true }).click();
   await expect(page.locator('.order-status')).toContainText(
-    '6 empty building sites',
+    '1 empty building sites',
   );
   await page.screenshot({
     path: testInfo.outputPath('colonized-map.png'),
@@ -482,11 +482,14 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     page.getByRole('heading', { name: 'Vesta', exact: true }),
   ).toBeVisible();
   await expect(page.locator('.building-site')).toHaveCount(6);
-  await page
-    .getByRole('button', { name: 'Build building at site 1', exact: true })
-    .click();
-  await expect(page.locator('.building-menu .cost-missing')).not.toHaveCount(0);
   await expect(
-    page.getByRole('button', { name: 'Build Research station', exact: true }),
-  ).toBeEnabled();
+    page.getByRole('button', { name: 'Build building at site 1', exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole('button', { name: 'Build dome at site 1', exact: true }),
+  ).toBeDisabled();
+  await expect(page.locator('.blocked-reason')).toContainText(
+    'Research this building first.',
+  );
+  await expect(page.locator('.locked-site')).toHaveCount(5);
 });

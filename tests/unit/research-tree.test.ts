@@ -73,6 +73,7 @@ describe('forsknings-tradnavigation', () => {
   it('fits the entire tree, anchors zoom, bounds navigation and retains the camera on resize', () => {
     const camera = new ResearchTreeCamera();
     camera.resize(800, 600);
+    camera.fit();
     const initial = camera.snapshot;
     expect(initial.offset.x).toBeGreaterThanOrEqual(0);
     expect(initial.offset.y).toBeGreaterThanOrEqual(0);

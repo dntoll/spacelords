@@ -54,6 +54,12 @@
   direkt i spelet på engelska även där, exempelvis `Star map`, `Resources` och
   `Research station`. Befintliga stabila kravnamn behålls för spårbarhet.
 
+## Sparkompatibilitet
+
+- `avstamning-sparkompatibilitet`: stäm av med användaren på nytt inför framtida
+  inkompatibla ändringar av sparade spel. Engångsrensningen för terraforming är
+  uttryckligen godkänd endast för denna leverans, även om nuvarande spel är tester.
+
 ## Git
 
 - Arbeta i branches, normalt med prefixet `codex/`, inte direkt på `main`.

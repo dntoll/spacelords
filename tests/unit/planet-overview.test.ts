@@ -5,7 +5,11 @@ import { AppController } from '../../src/client/controllers/AppController.js';
 import { renderPlanet } from '../../src/client/views/PlanetView.js';
 import { renderBuildSelection } from '../../src/client/views/BuildSelectionView.js';
 import { renderResearch } from '../../src/client/views/ResearchView.js';
-import { BUILDINGS, type BuildType } from '../../src/client/models/Game.js';
+import {
+  BUILDINGS,
+  TECHNOLOGIES,
+  type BuildType,
+} from '../../src/client/models/Game.js';
 import {
   BUILDING_IMAGES,
   buildingImage,
@@ -94,6 +98,7 @@ describe('gemensamma-byggnadsbilder', () => {
   it('labels only the research queue head as actively researching', () => {
     const view = renderResearch(
       {
+        available: TECHNOLOGIES,
         completed: [],
         selected: 'Exploration ship factory',
         stations: 1,
@@ -274,7 +279,13 @@ describe('gemensamma-byggnadsbilder', () => {
 describe('gemensamma-byggnadsbilder', () => {
   it('shows a distinct supplied image for every building and reuses it in Research', () => {
     const research = renderResearch(
-      { completed: [], selected: null, stations: 0, queue: [] },
+      {
+        available: TECHNOLOGIES,
+        completed: [],
+        selected: null,
+        stations: 0,
+        queue: [],
+      },
       false,
       () => {},
     );
@@ -315,7 +326,7 @@ describe('gemensam-planetko / fabrikskoer / kompakta-bygghandlingar', () => {
       {
         ...planet,
         buildings: [building],
-        sites: [{ index: 0, building, project: null }],
+        sites: [{ ...planet.sites[0]!, index: 0, building, project: null }],
       },
       'You',
       emit,
@@ -362,7 +373,7 @@ describe('gemensam-planetko / fabrikskoer / kompakta-bygghandlingar', () => {
         {
           ...planet,
           buildings: [building],
-          sites: [{ index: 0, building, project: null }],
+          sites: [{ ...planet.sites[0]!, index: 0, building, project: null }],
         },
         'You',
         vi.fn(),

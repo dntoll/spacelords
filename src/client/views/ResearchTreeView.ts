@@ -2,7 +2,7 @@ import { bindDiagramNavigation } from './DiagramNavigation.js';
 import { BUILDINGS, type ResearchSnapshot } from '../models/Game.js';
 import { PREREQUISITES } from '../models/Research.js';
 import {
-  RESEARCH_TREE,
+  ResearchTreeLayout,
   type ResearchCameraSnapshot,
 } from '../models/ResearchTree.js';
 import type { IntentHandler } from './ViewContracts.js';
@@ -16,6 +16,7 @@ export function renderResearchTree(
   locked: boolean,
   emit: IntentHandler,
 ): HTMLElement {
+  const layout = new ResearchTreeLayout(research.available);
   const area = element('section', 'research-tree-area');
   const viewport = element('div', 'research-tree-viewport');
   viewport.tabIndex = 0;
@@ -26,11 +27,11 @@ export function renderResearchTree(
     'Drag to pan. Scroll or pinch to zoom. Arrow keys pan; plus and minus zoom; 0 fits the tree.',
   );
   const stage = element('div', 'research-tree-stage');
-  stage.style.width = `${RESEARCH_TREE.width}px`;
-  stage.style.height = `${RESEARCH_TREE.height}px`;
+  stage.style.width = `${layout.width}px`;
+  stage.style.height = `${layout.height}px`;
   const svg = document.createElementNS(svgNamespace, 'svg');
-  svg.setAttribute('width', String(RESEARCH_TREE.width));
-  svg.setAttribute('height', String(RESEARCH_TREE.height));
+  svg.setAttribute('width', String(layout.width));
+  svg.setAttribute('height', String(layout.height));
   svg.setAttribute('aria-hidden', 'true');
   const defs = document.createElementNS(svgNamespace, 'defs');
   const marker = document.createElementNS(svgNamespace, 'marker');
@@ -50,12 +51,12 @@ export function renderResearchTree(
   marker.append(tip);
   defs.append(marker);
   svg.append(defs);
-  for (const edge of RESEARCH_TREE.edges) {
-    const from = RESEARCH_TREE.nodes.find((n) => n.technology === edge.from)!;
-    const to = RESEARCH_TREE.nodes.find((n) => n.technology === edge.to)!;
-    const x = from.x + RESEARCH_TREE.cardWidth;
-    const y = from.y + RESEARCH_TREE.cardHeight / 2;
-    const endY = to.y + RESEARCH_TREE.cardHeight / 2;
+  for (const edge of layout.edges) {
+    const from = layout.nodes.find((n) => n.technology === edge.from)!;
+    const to = layout.nodes.find((n) => n.technology === edge.to)!;
+    const x = from.x + layout.cardWidth;
+    const y = from.y + layout.cardHeight / 2;
+    const endY = to.y + layout.cardHeight / 2;
     const mid = (x + to.x) / 2;
     const path = document.createElementNS(svgNamespace, 'path');
     path.dataset.from = edge.from;
@@ -74,7 +75,7 @@ export function renderResearchTree(
     svg.append(path);
   }
   stage.append(svg);
-  for (const node of RESEARCH_TREE.nodes) {
+  for (const node of layout.nodes) {
     const type = node.technology;
     const complete = research.completed.includes(type);
     const queued = research.queue.indexOf(type);

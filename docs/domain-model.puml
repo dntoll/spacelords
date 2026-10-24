@@ -29,12 +29,14 @@ class Star {
 class Planet {
   name
   type: solid | gas
-  habitability: 0..100
-  buildSlots: 0..10
+  environment: Temperate | Ice | Desert | Ocean | Toxic
+  buildSlotPotential: 0..10
   deposits: finite resources
   extractionPotential
 }
 class Colony {
+  habitability: 0..100
+  populationCapacity
   population
   buildings
 }
@@ -51,7 +53,26 @@ class ConstructionProject {
 }
 class BuildingSite {
   index
+  requiredHabitability
+  domePrepared
 }
+class PlanetEnvironment {
+  habitability
+  breathable: habitability >= 80
+  populationCapacity
+  buildSlots
+}
+class DomePreparation
+class TerraformingFactory {
+  environment
+  improvementPerYear: 5
+}
+Colony --> PlanetEnvironment
+PlanetEnvironment --> Planet
+BuildingSite "1" o-- "0..1" DomePreparation
+TerraformingFactory --|> Building
+DomePreparation --> Technology
+TerraformingFactory --> Technology
 class Technology {
   researched
 }

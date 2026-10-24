@@ -66,8 +66,8 @@ test('forsknings-tradnavigation: dependency arrows, navigation and research pres
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   const tree = page.getByRole('region', { name: 'Research tree', exact: true });
   const stage = page.locator('.research-tree-stage');
-  await expect(page.locator('.research-node')).toHaveCount(7);
-  await expect(page.locator('.research-edge')).toHaveCount(6);
+  await expect(page.locator('.research-node')).toHaveCount(9);
+  await expect(page.locator('.research-edge')).toHaveCount(7);
   await expect(
     page.locator(
       '[data-from="Weapons module factory"][data-to="Fighter factory"]',

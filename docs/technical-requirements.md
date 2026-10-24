@@ -338,3 +338,26 @@ sparning och faktisk färdigställning. Vytester skyddar streckningen vid flera
 zoomnivåer. Browsertester verifierar beställning genom controller, synlig
 väntan och fel, sparning och hela produktionskedjan. Snabbsviten behåller
 20-sekundersgränsen; den utökade sviten kör bygg- och browsertester i CI.
+
+## Terraforming och engångsrensning
+
+- `engangsreset-terraformning` — **Delvis implementerat**: efter uttryckligt
+  användarbeslut 2026-10-24 töms de tre befintliga testsparplatserna en gång.
+  Markören `spacelords.terraforming-v5-reset` förhindrar upprepad rensning.
+  Annan webbläsarlagring lämnas kvar. Utökad verifiering återstår.
+- `avstamning-sparkompatibilitet` — **Fullständigt implementerat**: arbetsregeln
+  finns i AGENTS.md. Beslutet ersätter äldre bevarandekrav enbart för denna leverans. Fråga
+  användaren på nytt vid framtida inkompatibla ändringar; testsparningarnas
+  nuvarande status är inte ett generellt tillstånd att radera spel.
+- Sparformat version 5 lagrar planetens aktuella habitability och
+  Dome-förberedelser per plats. Nya spel och köade Dome-projekt ska överleva
+  omladdning. Tidigare modellformat kan fortsatt läsas för regressionstester;
+  ingen migrering av användarens äldre testspel ingår i leveransen.
+- PlanetEnvironment beräknar kapacitet oberoende av HTML och p5. Game samordnar
+  utveckling, upptäckt och byggvalidering. Vyer läser skrivskyddade snapshots
+  och skickar order genom controllers. Forskningsträdets vy och kamera får
+  samma upptäckta teknikmängd.
+- Modelltester i `terraforming` använder kravnamnen `terraformning`,
+  `planettypsforskning`, `domes-per-byggplats`, `andningsbar-atmosfar`,
+  `habitability-kapacitet` och `engangsreset-terraformning`. Browserflödet
+  verifierar forskning, Dome, fabrik, atmosfärgräns och sparning på mobil och dator.

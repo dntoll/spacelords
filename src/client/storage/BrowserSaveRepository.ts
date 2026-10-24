@@ -14,19 +14,7 @@ export class BrowserSaveRepository implements SaveRepository {
     return `spacelords.save.v2.${slot}`;
   }
   load(slot: number): SavedGame | null {
-    // engangsreset-ekonomi: explicitly authorized for this release only.
-    // Future save-format changes must preserve games unless separately authorized.
-    if (this.storage.getItem('spacelords.economy-v2-reset') !== 'done') {
-      for (const legacySlot of [1, 2, 3])
-        this.storage.removeItem(`spacelords.save.v1.${legacySlot}`);
-      try {
-        this.storage.setItem('spacelords.economy-v2-reset', 'done');
-      } catch {
-        throw new Error(
-          'Game could not be saved. Browser storage may be unavailable or full.',
-        );
-      }
-    }
+    this.#prepareStorage();
     const raw = this.storage.getItem(this.#key(slot));
     if (raw === null) return null;
     const record = JSON.parse(raw) as SavedGame;
@@ -40,11 +28,29 @@ export class BrowserSaveRepository implements SaveRepository {
     return record;
   }
   save(slot: number, game: SavedGame): void {
+    this.#prepareStorage();
     try {
       this.storage.setItem(this.#key(slot), JSON.stringify(game));
     } catch {
       throw new Error(
         'Game could not be saved. Browser storage may be unavailable or full.',
+      );
+    }
+  }
+  #prepareStorage(): void {
+    // engangsreset-terraformning: authorized for this release only.
+    // Ask again before future incompatible changes; this is not a reset policy.
+    if (this.storage.getItem('spacelords.terraforming-v5-reset') === 'done')
+      return;
+    try {
+      for (const slot of [1, 2, 3]) {
+        this.storage.removeItem(`spacelords.save.v1.${slot}`);
+        this.storage.removeItem(this.#key(slot));
+      }
+      this.storage.setItem('spacelords.terraforming-v5-reset', 'done');
+    } catch {
+      throw new Error(
+        'Game storage could not be initialized. Browser storage may be unavailable or full.',
       );
     }
   }

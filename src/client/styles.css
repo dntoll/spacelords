@@ -859,8 +859,12 @@ p {
     monospace;
   letter-spacing: 0.08em;
 }
-.empty-site {
+.empty-site,
+.locked-site {
   border-style: dashed;
+}
+.locked-site {
+  background: #0c1922;
 }
 .building-menu,
 .factory-production {

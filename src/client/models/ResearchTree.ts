@@ -1,12 +1,10 @@
 import { PREREQUISITES, TECHNOLOGIES, type Technology } from './Research.js';
 import type { Point } from './HexCoordinate.js';
 
-class ResearchTreeLayout {
+export class ResearchTreeLayout {
   readonly cardWidth = 224;
   readonly cardHeight = 204;
-  readonly edges = TECHNOLOGIES.flatMap((to) =>
-    PREREQUISITES[to].map((from) => Object.freeze({ from, to })),
-  );
+  readonly edges: readonly Readonly<{ from: Technology; to: Technology }>[];
   readonly nodes: readonly Readonly<{
     technology: Technology;
     x: number;
@@ -15,7 +13,14 @@ class ResearchTreeLayout {
   readonly width: number;
   readonly height: number;
 
-  constructor() {
+  constructor(technologies: readonly Technology[] = TECHNOLOGIES) {
+    this.edges = Object.freeze(
+      technologies.flatMap((to) =>
+        PREREQUISITES[to]
+          .filter((from) => technologies.includes(from))
+          .map((from) => Object.freeze({ from, to })),
+      ),
+    );
     const rows = new Map<Technology, number>();
     let leaf = 0;
     const row = (technology: Technology): number => {
@@ -35,7 +40,7 @@ class ResearchTreeLayout {
         ? 1 + Math.max(...PREREQUISITES[technology].map(depth))
         : 0;
     this.nodes = Object.freeze(
-      TECHNOLOGIES.map((technology) =>
+      technologies.map((technology) =>
         Object.freeze({
           technology,
           x: 32 + depth(technology) * 336,
@@ -58,6 +63,19 @@ export interface ResearchCameraSnapshot {
 }
 
 export class ResearchTreeCamera {
+  #layout = RESEARCH_TREE;
+  #technologies: readonly Technology[] = TECHNOLOGIES;
+
+  setTechnologies(technologies: readonly Technology[]): void {
+    if (
+      technologies.length === this.#technologies.length &&
+      technologies.every((type, index) => type === this.#technologies[index])
+    )
+      return;
+    this.#technologies = [...technologies];
+    this.#layout = new ResearchTreeLayout(technologies);
+    this.#bound();
+  }
   #width = 800;
   #height = 600;
   #initialized = false;
@@ -79,13 +97,13 @@ export class ResearchTreeCamera {
       this.#initialized = true;
       this.fit();
       if (this.#zoom < 0.55) {
-        const root = RESEARCH_TREE.nodes.find(
+        const root = this.#layout.nodes.find(
           (n) => !PREREQUISITES[n.technology].length,
         )!;
         this.#zoom = 1;
         this.#offset = {
-          x: width / 2 - root.x - RESEARCH_TREE.cardWidth / 2,
-          y: height / 2 - root.y - RESEARCH_TREE.cardHeight / 2,
+          x: width / 2 - root.x - this.#layout.cardWidth / 2,
+          y: height / 2 - root.y - this.#layout.cardHeight / 2,
         };
       }
     }
@@ -97,13 +115,13 @@ export class ResearchTreeCamera {
       0.15,
       Math.min(
         1,
-        this.#width / RESEARCH_TREE.width,
-        this.#height / RESEARCH_TREE.height,
+        this.#width / this.#layout.width,
+        this.#height / this.#layout.height,
       ),
     );
     this.#offset = {
-      x: (this.#width - RESEARCH_TREE.width * this.#zoom) / 2,
-      y: (this.#height - RESEARCH_TREE.height * this.#zoom) / 2,
+      x: (this.#width - this.#layout.width * this.#zoom) / 2,
+      y: (this.#height - this.#layout.height * this.#zoom) / 2,
     };
   }
 
@@ -128,11 +146,11 @@ export class ResearchTreeCamera {
   #bound(): void {
     this.#offset = {
       x: Math.max(
-        64 - RESEARCH_TREE.width * this.#zoom,
+        64 - this.#layout.width * this.#zoom,
         Math.min(this.#width - 64, this.#offset.x),
       ),
       y: Math.max(
-        64 - RESEARCH_TREE.height * this.#zoom,
+        64 - this.#layout.height * this.#zoom,
         Math.min(this.#height - 64, this.#offset.y),
       ),
     };

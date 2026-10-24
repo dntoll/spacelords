@@ -100,7 +100,8 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
     game.selectResearch('Trade logistics');
     game.selectResearch('Colony ship factory');
     game.selectResearch('Fighter factory');
-    for (let year = 0; year < 7; year++) turn(game);
+    game.selectResearch('Desert dome');
+    for (let year = 0; year < 8; year++) turn(game);
     for (const factory of [
       'Transport ship factory',
       'Exploration ship factory',
@@ -125,7 +126,7 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
     turn(game);
     game.colonize(colonyFleet.id);
     expect(game.planetSnapshot(target)!.economy.stock).toEqual(emptyStock());
-    game.scheduleBuild(target, 'Iron mine');
+    game.scheduleBuild(target, 'Desert dome');
     const route = game.createTradeRoute(home.id, target.id);
     game.assignTradeFleet(route, tradeFleet.id);
     expect(() => game.setDestination(tradeFleet.id, home.position)).toThrow(
@@ -133,9 +134,12 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
     );
     const head = game.planetSnapshot(target)!.projects[0]!.id;
     const frames = game.startTurn();
-    expect(game.fleet(tradeFleet.id)!.cargo!.Iron).toBe(5);
+    expect(game.fleet(tradeFleet.id)!.cargo!.Iron).toBe(8);
     for (const frame of frames) game.applyFrame(frame);
     game.finishTurn();
+    expect(game.planetSnapshot(target)!.sites[0]!.hasDome).toBe(true);
+    game.scheduleBuild(target, 'Iron mine');
+    for (let year = 0; year < 3; year++) turn(game);
     expect(game.planetSnapshot(target)!.buildings[0]!.type).toBe('Iron mine');
     expect(
       game.planetSnapshot(target)!.projects.some((p) => p.id === head),
@@ -159,7 +163,9 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
     for (let i = 0; game.fleet(secondColonizer.id)!.destination && i < 8; i++)
       turn(game);
     game.colonize(secondColonizer.id);
-    game.scheduleBuild(remote, 'Iron mine');
+    game.selectResearch('Ice dome');
+    turn(game);
+    game.scheduleBuild(remote, 'Ice dome');
     game.releaseTradeFleet(tradeFleet.id);
     game.setDestination(tradeFleet.id, home.position);
     turn(game);
@@ -167,7 +173,7 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
     game.assignTradeFleet(longRoute, tradeFleet.id);
     turn(game);
     expect(game.fleet(tradeFleet.id)!.destination).not.toBeNull();
-    expect(game.fleet(tradeFleet.id)!.cargo!.Iron).toBe(5);
+    expect(game.fleet(tradeFleet.id)!.cargo!.Iron).toBe(8);
     const restored = Game.restore(
       JSON.parse(JSON.stringify(game.exportState())) as ReturnType<
         Game['exportState']

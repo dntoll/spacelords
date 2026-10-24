@@ -1,6 +1,11 @@
 import { Galaxy, Star, StarSystem } from './Galaxy.js';
 import { HexCoordinate } from './HexCoordinate.js';
-import { Colony, Planet, Player } from './Planet.js';
+import {
+  Colony,
+  Planet,
+  Player,
+  type PlanetEnvironmentType,
+} from './Planet.js';
 
 // fast-exempelvarld: illustrative values, not economic or research balance.
 export function createExampleGalaxy(): Galaxy {
@@ -28,6 +33,11 @@ export function createExampleGalaxy(): Galaxy {
       planets: ['Aster I', 'Aster II', 'Aster III'],
     },
   ];
+  const environments: readonly (readonly PlanetEnvironmentType[])[] = [
+    ['Temperate', 'Desert', 'Temperate'],
+    ['Ice', 'Ocean', 'Temperate'],
+    ['Toxic', 'Desert', 'Temperate'],
+  ];
   const offsets = [
     [1, 0],
     [0, 1],
@@ -44,6 +54,7 @@ export function createExampleGalaxy(): Galaxy {
             id: `${system.id}-${index}`,
             name,
             type: index === 2 ? 'gas' : 'solid',
+            environment: environments[systemIndex]![index]!,
             position: new HexCoordinate(system.q + q, system.r + r),
             habitability: home ? 100 : index === 2 ? 0 : 25,
             buildSlots: home ? 10 : index === 2 ? 0 : 6,

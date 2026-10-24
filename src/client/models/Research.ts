@@ -6,6 +6,14 @@ export const TECHNOLOGIES = [
   'Trade logistics',
   'Rocket engine factory',
   'Weapons module factory',
+  'Ice dome',
+  'Ice terraforming factory',
+  'Desert dome',
+  'Desert terraforming factory',
+  'Ocean dome',
+  'Ocean terraforming factory',
+  'Toxic dome',
+  'Toxic terraforming factory',
 ] as const;
 export type Technology = (typeof TECHNOLOGIES)[number];
 export const PREREQUISITES: Readonly<
@@ -18,6 +26,14 @@ export const PREREQUISITES: Readonly<
   'Trade logistics': ['Transport ship factory'],
   'Rocket engine factory': ['Exploration ship factory'],
   'Weapons module factory': ['Rocket engine factory'],
+  'Ice dome': [],
+  'Ice terraforming factory': ['Ice dome'],
+  'Desert dome': [],
+  'Desert terraforming factory': ['Desert dome'],
+  'Ocean dome': [],
+  'Ocean terraforming factory': ['Ocean dome'],
+  'Toxic dome': [],
+  'Toxic terraforming factory': ['Toxic dome'],
 });
 
 export class ResearchPlan {

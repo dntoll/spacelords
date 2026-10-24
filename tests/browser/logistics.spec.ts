@@ -79,10 +79,11 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     'Trade logistics',
     'Colony ship factory',
     'Fighter factory',
+    'Desert dome',
   ])
     await chooseResearch(page, technology);
-  await expect(page.locator('.research-queue article')).toHaveCount(7);
-  for (let year = 0; year < 7; year++) await nextYear(page);
+  await expect(page.locator('.research-queue article')).toHaveCount(8);
+  for (let year = 0; year < 8; year++) await nextYear(page);
   await home(page);
   for (const [index, type] of [
     'Transport ship factory',
@@ -126,7 +127,9 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Colonize', exact: true }).click();
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await build(page, 1, 'Iron mine');
+  await page
+    .getByRole('button', { name: 'Build dome at site 1', exact: true })
+    .click();
   await expect(page.locator('.planet-building-queue')).toContainText(
     'no active transport path',
   );
@@ -172,6 +175,13 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     .click();
   await page.screenshot({ path: testInfo.outputPath('trade-routes.png') });
   await nextYear(page);
+  await selectMapObject(page, 'Vesta');
+  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await expect(
+    page.getByRole('article', { name: 'Building site 1', exact: true }),
+  ).toContainText('Dome ready');
+  await build(page, 1, 'Iron mine');
+  for (let year = 0; year < 3; year++) await nextYear(page);
   await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await expect(

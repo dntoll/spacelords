@@ -23,6 +23,7 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript((state) => {
     if (localStorage.getItem('star-map-trade-seeded')) return;
     localStorage.setItem('spacelords.economy-v2-reset', 'done');
+    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
     localStorage.setItem(
       'spacelords.save.v2.1',
       JSON.stringify({ lastPlayed: '2026-10-21T10:00:00Z', state }),

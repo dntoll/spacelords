@@ -44,7 +44,13 @@ function overview(planet: PlanetGameSnapshot, owner: string): HTMLElement {
   const stats = element('dl', 'planet-stats');
   for (const [label, value] of [
     ['Owner', owner],
-    ['Population', planet.population.toLocaleString('en-GB')],
+    ['Type', planet.environment],
+    [
+      'Population',
+      `${planet.population.toLocaleString('en-GB')} / ${planet.populationCapacity.toLocaleString('en-GB')}`,
+    ],
+    ['Atmosphere', planet.breathable ? 'Breathable' : 'Unbreathable'],
+    ['Build slots', `${planet.buildSlots} / ${planet.potentialBuildSlots}`],
     ['Habitability', `${planet.habitability}%`],
     ['Buildings', String(planet.buildings.length)],
   ]) {
@@ -197,7 +203,18 @@ function construction(
     const details = element('div', 'site-details');
     const actions = element('div', 'site-actions');
     details.append(element('span', 'site-number', `SITE ${site.index + 1}`));
-    if (site.building) {
+    if (site.hasDome) details.append(element('span', 'pill', 'Dome ready'));
+    if (site.locked) {
+      card.classList.add('locked-site');
+      details.append(
+        element('h3', '', 'Locked site'),
+        element(
+          'p',
+          'muted-note',
+          `Requires ${site.requiredHabitability}% habitability`,
+        ),
+      );
+    } else if (site.building) {
       const building = site.building;
       const definition = BUILDINGS[building.type];
       details.append(
@@ -262,6 +279,38 @@ function construction(
     } else {
       card.classList.add('empty-site');
       details.append(element('h3', '', 'Empty site'));
+      if (site.domeRequired && !site.hasDome) {
+        details.append(
+          element(
+            'p',
+            'muted-note',
+            'A Dome is required before this site can be used.',
+          ),
+        );
+        const dome = button('Build dome', () => {
+          if (site.domeType)
+            emit({
+              type: 'build',
+              building: site.domeType,
+              slotIndex: site.index,
+            });
+        });
+        dome.setAttribute('aria-label', `Build dome at site ${site.index + 1}`);
+        dome.disabled = menus.phase !== 'planning' || !!site.domeBlockedReason;
+        actions.append(dome);
+        if (site.domeType)
+          details.append(
+            element(
+              'p',
+              'muted-note',
+              `${site.domeType} · ${costText(BUILDINGS[site.domeType].cost)} · No permanent workers`,
+            ),
+          );
+        if (site.domeBlockedReason)
+          details.append(
+            element('p', 'blocked-reason', site.domeBlockedReason),
+          );
+      }
       const build = button(
         'Build building',
         () =>
@@ -276,7 +325,8 @@ function construction(
         `Build building at site ${site.index + 1}`,
       );
 
-      build.disabled = menus.phase !== 'planning';
+      build.disabled =
+        menus.phase !== 'planning' || (site.domeRequired && !site.hasDome);
       actions.prepend(build);
     }
     details.append(actions);
