@@ -22,6 +22,7 @@ export interface ProductionOption {
   readonly crew: number;
   readonly parts: Readonly<Record<string, number>>;
   readonly blockedReason: string | null;
+  readonly dependencyWarning: string | null;
   readonly localCount: number;
   readonly empireCount: number;
 }

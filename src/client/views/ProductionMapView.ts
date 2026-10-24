@@ -83,6 +83,16 @@ export function renderProductionRing(
         ),
       );
     }
+    if (option.dependencyWarning) {
+      const marker = element('span', 'production-dependency-marker', '!');
+      marker.setAttribute('aria-hidden', 'true');
+      choice.append(marker);
+      choice.title = `${option.type}. ${option.dependencyWarning}`;
+      choice.setAttribute(
+        'aria-description',
+        `${choice.getAttribute('aria-description') ?? ''} ${option.dependencyWarning}`.trim(),
+      );
+    }
     ring.append(choice);
   }
   return ring;
@@ -168,6 +178,15 @@ export function renderProductionMapPanel(
         `${option.workers} workers · ${option.crew} crew · ${planet.budget.availableWorkers} available workers`,
       ),
     );
+    if (option.dependencyWarning)
+      detail.insertBefore(
+        element(
+          'p',
+          'production-dependency-warning',
+          `! ${option.dependencyWarning}`,
+        ),
+        heading.nextSibling,
+      );
     const parts = Object.entries(option.parts).map(
       ([name, amount]) =>
         `${amount} ${name === 'Rocket engine' ? 'engines (Rocket engine or Ion pulse engine)' : name}`,

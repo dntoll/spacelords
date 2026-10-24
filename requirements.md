@@ -124,6 +124,9 @@ Se [hela visionen](docs/game-vision.md).
   `dubbelklick-bygger-pa-kartan` och `byggknapp-vid-titel` är
   **Fullständigt implementerat**: dubbelklick på ett radiellt val köar en order
   och Build visas bredvid titeln före byggdetaljerna.
+  `produktionsval-efter-forekomst` och `produktionsberoenden-i-byggval` är
+  **Fullständigt implementerat**: saknade val kommer först, saknade producenter
+  före beroende fabriker och ! förklarar produktionsberoenden utan ny byggspärr.
   Se [kartbaserade Route och Production](docs/route-production.md).
   Försörjningsreglerna `forsorjningsstatus`, `leveransfloden` och
   `produktionsformaga` behålls enligt [försörjningsreglerna](docs/supply-production.md).

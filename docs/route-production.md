@@ -15,7 +15,7 @@ zoom följer med mellan kartvyerna.
 | `forsorjningsproblem-pa-kartan`    | Fullständigt implementerat | Aktiva problem markeras med röd ring och ! på berörd planet, samt ! på relevant navigeringsknapp. Route hjälper vid material-/transportproblem och ruttproblem; Production vid saknad fabrik eller personal/besättning. En förklaring och projektinformation finns. Tystade problem och problem överhoppade för året markeras inte. Fungerande försörjning visas som Waiting utan röd problemmarkering. |
 
 `dome-fore-fabriksforslag` är **Fullständigt implementerat**. Production visar
-planettypens upplåsta Dome först bland byggvalen. När ingen ledig förberedd
+planettypens upplåsta Dome när en plats behöver förberedas. När ingen ledig förberedd
 byggplats finns erbjuds inte vanliga byggnader eller fabriker som nästa byggval;
 i stället visas rätt Dome och Prepare building site öppnar dess byggdetaljer.
 Saknas forskningen visas vilken Dome som måste forskas fram. En redan köad Dome
@@ -24,6 +24,34 @@ byggnads- och fabriksvalen. Om alla platser är upptagna förklaras platsbristen
 en Dome skapar inte extra byggplatser. Befintliga fabriker kan fortfarande
 producera delar och skepp utan en tom byggplats. Planetens Production-undersida
 använder samma förslag och kan öppna Dome-detaljerna i kartans Production.
+
+## Ordning och produktionsberoenden
+
+- `produktionsval-efter-forekomst` — **Fullständigt implementerat**: i kartans
+  Production kommer först sådant som inte finns någonstans i spelarens rike,
+  därefter sådant som finns på andra planeter men saknas här, sist sådant som
+  redan finns här. Inom lika grupper behålls katalogens ordning. Byggnader och
+  färdiga Domes räknas som byggda; köade byggen räknas inte. Delar bedöms efter
+  befintligt lager och totalt även pågående frakt; skepp efter flottornas
+  nuvarande position och totala antal, inte historisk byggplats. Samma ordning
+  behålls över kategoriernas sidor. Detta ersätter tidigare ren katalogordning
+  och ovillkorlig Dome-först när vanliga byggplatser redan är förberedda.
+  Finns ingen förberedd plats gäller fortfarande `dome-fore-fabriksforslag`.
+- `produktionsberoenden-i-byggval` — **Fullständigt implementerat**: saknade
+  komponentfabriker kommer före byggval som behöver deras produktion, även vid
+  beroendekedjor. Beroenden har företräde framför förekomstgrupperna. Bedömningen
+  använder byggnadens delar och, för fabriker, delbehovet för dess produkt.
+  I dagens regler kräver fabriksbyggen bara råvaror: varningen för exempelvis
+  Fighter factory avser motorer och Weapons modules till dess Fighters.
+  Finns ingen färdig producent i riket visas ! på byggvalet, med full förklaring
+  vid val och för tangentbord. Rocket engine factory och Ion pulse engine factory
+  är alternativa motorproducenter; en av dem räcker. Fabriker under uppförande
+  eller markerade för rivning uppfyller inte beroendet. En färdig fabrik på en
+  annan ägd planet räcker för denna förekomstbedömning; verkliga leveransvägar
+  och lager kontrolleras fortsatt vid produktbeställning. Varningen skapar ingen
+  ny byggspärr eller delkostnad. Befintligt dellager kan användas även när en
+  producent saknas. Alla val förblir åtkomliga även vid felaktiga cirkulära
+  katalogberoenden. Granskning reserverar inget och förbrukar inga ID:n.
 
 ## Snabb beställning
 

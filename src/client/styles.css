@@ -2520,3 +2520,18 @@ p {
 .map-build-heading > button {
   flex-shrink: 0;
 }
+
+.production-dependency-marker {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  color: #ffdc88;
+  background: #102d42;
+  border-radius: 50%;
+  padding: 0 4px;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+.production-dependency-warning {
+  color: #ffdc88;
+}

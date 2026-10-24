@@ -1,3 +1,4 @@
+import { prioritizeProduction } from './ProductionPriorities.js';
 import { routeEscortTargets, tradeAssignmentIssue } from './TradeAssignment.js';
 import {
   projectSupplyChain,
@@ -1201,31 +1202,119 @@ export class Game {
         }),
       ),
     ];
-    return Object.freeze(
-      types.map((type) => {
-        const definition = projectDefinition(type);
-        return Object.freeze({
-          type,
-          category: Object.hasOwn(BUILDINGS, type)
-            ? ('Buildings' as const)
-            : definition.ship
-              ? ('Ships' as const)
-              : ('Components' as const),
-          description: definition.description,
-          cost: Object.freeze({ ...definition.cost }),
-          workers: definition.workers,
-          crew: definition.crew,
-          parts: Object.freeze({ ...(definition.parts ?? {}) }),
-          blockedReason: this.productionIssue(planet, type),
-          localCount: snapshot.buildings.filter((b) => b.type === type).length,
-          empireCount: [...this.#colonies.values()].reduce(
-            (n, colony) =>
-              n + colony.buildings.filter((b) => b.type === type).length,
+    const missing = new Map<ProjectType, readonly BuildType[]>();
+    const factoryTypes = Object.keys(BUILDINGS) as BuildType[];
+    const producers = new Set(
+      [...this.#colonies.values()].flatMap((colony) =>
+        colony.buildings
+          .filter((building) => !building.demolition)
+          .map((building) => building.type),
+      ),
+    );
+    const options = types.map((type): ProductionOption => {
+      const definition = projectDefinition(type);
+      const product = Object.hasOwn(BUILDINGS, type)
+        ? (definition.ship ?? definition.component)
+        : null;
+      const parts = {
+        ...definition.parts,
+        ...(product ? projectDefinition(product).parts : {}),
+      };
+      const groups: BuildType[][] = [];
+      for (const component of COMPONENTS) {
+        if (!(parts[component] ?? 0)) continue;
+        const alternatives = factoryTypes.filter((factory) => {
+          const produced = BUILDINGS[factory].component;
+          return component === 'Rocket engine' ||
+            component === 'Ion pulse engine'
+            ? produced === 'Rocket engine' || produced === 'Ion pulse engine'
+            : produced === component;
+        });
+        if (
+          !alternatives.some((factory) => producers.has(factory)) &&
+          !groups.some((group) => group.join() === alternatives.join())
+        )
+          groups.push(alternatives);
+      }
+      missing.set(type, groups.flat());
+      const counts = this.#productionCounts(planet, snapshot, type);
+      return Object.freeze({
+        type,
+        category: Object.hasOwn(BUILDINGS, type)
+          ? 'Buildings'
+          : definition.ship
+            ? 'Ships'
+            : 'Components',
+        description: definition.description,
+        cost: Object.freeze({ ...definition.cost }),
+        workers: definition.workers,
+        crew: definition.crew,
+        parts: Object.freeze({ ...(definition.parts ?? {}) }),
+        blockedReason: this.productionIssue(planet, type),
+        dependencyWarning: groups.length
+          ? `Missing production factories: ${groups.map((group) => group.join(' or ')).join('; ')}.`
+          : null,
+        ...counts,
+      });
+    });
+    return prioritizeProduction(options, missing);
+  }
+
+  #productionCounts(
+    planet: Planet,
+    snapshot: PlanetGameSnapshot,
+    type: ProjectType,
+  ) {
+    if (COMPONENTS.includes(type as Component)) {
+      const component = type as Component;
+      return {
+        localCount: this.#state(planet).stock[component],
+        empireCount:
+          [...this.#colonies.values()].reduce(
+            (total, colony) => total + colony.stock[component],
+            0,
+          ) +
+          this.#logistics.shipments
+            .filter(
+              (shipment) =>
+                shipment.resource === component && shipment.fleetId !== null,
+            )
+            .reduce((total, shipment) => total + shipment.amount, 0),
+      };
+    }
+    if (Object.hasOwn(SHIPS, type)) {
+      const ship = type as ShipType;
+      return {
+        localCount: this.#fleets
+          .filter((fleet) => fleet.position?.key === planet.position.key)
+          .reduce((total, fleet) => total + fleet.ships[ship], 0),
+        empireCount: this.#fleets.reduce(
+          (total, fleet) => total + fleet.ships[ship],
+          0,
+        ),
+      };
+    }
+    const building = type as BuildType;
+    if (BUILDINGS[building].sitePreparation)
+      return {
+        localCount: this.#state(planet).domes?.length ?? 0,
+        empireCount: this.#ownedPlanets()
+          .filter((owned) => this.#domeType(owned) === type)
+          .reduce(
+            (total, owned) => total + (this.#state(owned).domes?.length ?? 0),
             0,
           ),
-        });
-      }),
-    );
+      };
+    return {
+      localCount: snapshot.buildings.filter((built) => built.type === type)
+        .length,
+      empireCount: [...this.#colonies.values()].reduce(
+        (total, colony) =>
+          total +
+          colony.buildings.filter((built) => built.type === type).length,
+        0,
+      ),
+    };
   }
 
   supplyChain(projectId: string | null): SupplyChainSnapshot {

@@ -538,3 +538,17 @@ köläggning före stationens färdigställande under `forskningsko` och behåll
 **Fullständigt implementerat**: i Production ger enkelklick byggdetaljer,
 dubbelklick eller dubbeltryck beställer en gång och Build visas bredvid titeln
 före detaljerna. Befintliga kostnader, köregler och hinder gäller fortsatt.
+
+## Prioriterade byggval
+
+`produktionsval-efter-forekomst` och `produktionsberoenden-i-byggval` är
+**Fullständigt implementerat**. Kartans Production visar först sådant som
+saknas i hela riket, därefter sådant som saknas på vald planet och sist sådant
+som finns där. Saknade komponentfabriker visas före byggval som behöver deras
+produktion. Ett ! på det beroende valet förklarar vilken producent som saknas.
+En av de två motorfabrikerna räcker för motorbehovet. Bedömningen gäller färdiga
+producenter i riket, medan faktiska order fortfarande behöver fungerande
+försörjning. Varningen hindrar inte själva fabriksbygget och lägger inte till
+nya byggkostnader. Köade fabriker räknas inte som färdiga. Se
+[kartkraven](route-production.md#ordning-och-produktionsberoenden) för omfattning,
+inventering och ersatt katalogordning.

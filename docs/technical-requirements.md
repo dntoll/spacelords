@@ -526,3 +526,17 @@ Needs attention för tillgänglighet på varje berörd flik. Ingen ny data spara
 `tystade-beslut-sist` grupperas stabilt i DecisionBoard innan oföränderliga
 ögonblicksbilder skapas. Next decision tas bort från vy, controller och
 avsiktskontrakt; Review går fortsatt genom befintliga navigeringshandlingar.
+
+`produktionsval-efter-forekomst` härleds i Game.productionOptions från färdiga
+byggnader, lagrade Domes, komponentlager/frakt och befintliga flottor.
+`produktionsberoenden-i-byggval` härleds från projectDefinition.parts och
+fabrikens produktrecept samt BUILDINGS.component. Alternativa motorfabriker
+behandlas som ett gemensamt behov. Endast färdiga fabriker utan rivningsorder
+uppfyller producentbedömningen. ProductionPriorities använder en stabil
+beroendeordning med förekomstgrupper som prioritet; en cirkel bryts
+förutsägbart så att inga val försvinner eller låser traverseringen.
+ProductionOption exponerar oföränderliga antal och dependencyWarning. Vyn
+visar !, tillgänglig förklaring och vald varning, men ändrar inte domänregler
+eller spärrar Build på grund av rådgivningen. Befintliga controllers,
+validering, kategorier och sidor återanvänds. Granskning ändrar inte sparat spel,
+order, reservationer eller ID-sekvens. Sparformatet ändras inte.

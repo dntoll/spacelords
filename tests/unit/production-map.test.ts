@@ -495,3 +495,168 @@ it('byggknapp-vid-titel: keeps Build beside the selected option heading before i
   );
   controller.dispose();
 });
+
+it('produktionsval-efter-forekomst: puts globally missing buildings before buildings missing locally, then local buildings, without changing the save', () => {
+  const state = tradeNetworkState();
+  state.colonies[1]![1].projects = [];
+  state.colonies[1]![1].buildings = [
+    { id: 'water', type: 'Water extractor', slotIndex: 0, demolition: false },
+  ];
+  const game = Game.restore({ ...state, researched: TECHNOLOGIES });
+  const before = game.exportState();
+  const options = game.productionOptions(game.galaxy.homePlanet);
+  const index = (type: string) =>
+    options.findIndex((option) => option.type === type);
+  expect(index('Oil extractor')).toBeLessThan(index('Water extractor'));
+  expect(index('Water extractor')).toBeLessThan(index('Iron mine'));
+  expect(
+    options.find((option) => option.type === 'Water extractor'),
+  ).toMatchObject({ localCount: 0, empireCount: 1 });
+  expect(game.productionOptions(game.galaxy.homePlanet)).toEqual(options);
+  expect(game.exportState()).toEqual(before);
+});
+
+it('produktionsberoenden-i-byggval: missing component factories precede shipyards and warn without preventing construction', () => {
+  const state = tradeNetworkState();
+  state.colonies[0]![1].buildings = [];
+  state.colonies[0]![1].stock['Rocket engine'] = 0;
+  const { model, emit, root, click, controller } = setup({
+    ...state,
+    researched: TECHNOLOGIES,
+  });
+  const game = Game.restore({ ...state, researched: TECHNOLOGIES });
+  const options = game.productionOptions(game.galaxy.homePlanet);
+  const index = (type: string) =>
+    options.findIndex((option) => option.type === type);
+  expect(index('Rocket engine factory')).toBeLessThan(index('Fighter factory'));
+  expect(index('Weapons module factory')).toBeLessThan(
+    index('Fighter factory'),
+  );
+  emit({ type: 'open-production' });
+  emit({ type: 'map-production-option', option: 'Fighter factory' });
+  expect(
+    root.querySelector('.production-dependency-warning')?.textContent,
+  ).toContain('Weapons module factory');
+  expect(
+    root.querySelector<HTMLButtonElement>('[aria-label="Build"]')!.disabled,
+  ).toBe(false);
+  click('Build');
+  expect(model.snapshot.planet!.projects.at(-1)!.type).toBe('Fighter factory');
+  controller.dispose();
+});
+
+it('produktionsberoenden-i-byggval: queued factories remain missing until completed, and either engine variant plus a remote weapons factory satisfies the advisory', () => {
+  const state = tradeNetworkState();
+  state.colonies[0]![1].buildings = [];
+  state.colonies[1]![1].projects = [];
+  const game = Game.restore({ ...state, researched: TECHNOLOGIES });
+  const warning = () =>
+    game
+      .productionOptions(game.galaxy.homePlanet)
+      .find((option) => option.type === 'Fighter factory')!.dependencyWarning;
+  game.scheduleBuild(game.galaxy.homePlanet, 'Rocket engine factory');
+  game.scheduleBuild(game.galaxy.homePlanet, 'Weapons module factory');
+  expect(warning()).toContain('Weapons module factory');
+  for (let year = 0; year < 2; year++) {
+    for (const frame of game.startTurn()) game.applyFrame(frame);
+    game.finishTurn();
+  }
+  expect(warning()).toBeNull();
+  state.colonies[1]![1].buildings = [
+    {
+      id: 'ion',
+      type: 'Ion pulse engine factory',
+      slotIndex: 0,
+      demolition: false,
+    },
+    {
+      id: 'weapons',
+      type: 'Weapons module factory',
+      slotIndex: 1,
+      demolition: false,
+    },
+  ];
+  const remote = Game.restore({ ...state, researched: TECHNOLOGIES });
+  expect(
+    remote
+      .productionOptions(remote.galaxy.homePlanet)
+      .find((option) => option.type === 'Fighter factory')!.dependencyWarning,
+  ).toBeNull();
+  state.colonies[1]![1].buildings[1]!.demolition = true;
+  const closing = Game.restore({ ...state, researched: TECHNOLOGIES });
+  expect(
+    closing
+      .productionOptions(closing.galaxy.homePlanet)
+      .find((option) => option.type === 'Fighter factory')!.dependencyWarning,
+  ).toContain('Weapons module factory');
+});
+
+it('produktionsval-efter-forekomst: counts completed Domes, current parts and fleet presence rather than queued construction', () => {
+  const state = domeWorld();
+  state.colonies[0]![1].domes = [0, 1];
+  state.colonies[0]![1].buildings = [
+    {
+      id: 'transport-yard',
+      type: 'Transport ship factory',
+      slotIndex: 0,
+      demolition: false,
+    },
+    {
+      id: 'engines',
+      type: 'Rocket engine factory',
+      slotIndex: 1,
+      demolition: false,
+    },
+  ];
+  const game = Game.restore({ ...state, researched: TECHNOLOGIES });
+  const options = game.productionOptions(game.galaxy.homePlanet);
+  expect(options.find((option) => option.type === 'Desert dome')).toMatchObject(
+    { localCount: 2, empireCount: 2 },
+  );
+  expect(
+    options.find((option) => option.type === 'Rocket engine'),
+  ).toMatchObject({ localCount: 3, empireCount: 3 });
+  expect(
+    options.find((option) => option.type === 'Transport ship'),
+  ).toMatchObject({ localCount: 2, empireCount: 3 });
+});
+
+it('produktionsberoenden-i-byggval: orders transitive missing dependencies and retains all choices even with a cyclic catalog', async () => {
+  const { prioritizeProduction } =
+    await import('../../src/client/models/ProductionPriorities.js');
+  const game = Game.restore({
+    ...tradeNetworkState(),
+    researched: TECHNOLOGIES,
+  });
+  const options = game
+    .productionOptions(game.galaxy.homePlanet)
+    .filter((option) =>
+      [
+        'Colony ship factory',
+        'Exploration ship factory',
+        'Rocket engine factory',
+      ].includes(option.type),
+    );
+  const ordered = prioritizeProduction(
+    options,
+    new Map([
+      ['Colony ship factory', ['Exploration ship factory']],
+      ['Exploration ship factory', ['Rocket engine factory']],
+    ]),
+  );
+  expect(ordered.map((option) => option.type)).toEqual([
+    'Rocket engine factory',
+    'Exploration ship factory',
+    'Colony ship factory',
+  ]);
+  const cycle = new Map([
+    ['Colony ship factory', ['Exploration ship factory']],
+    ['Exploration ship factory', ['Colony ship factory']],
+  ] as const);
+  const cyclic = prioritizeProduction(options, cycle);
+  expect(new Set(cyclic.map((option) => option.type)).size).toBe(
+    options.length,
+  );
+  expect(prioritizeProduction(options, cycle)).toEqual(cyclic);
+  expect(Object.isFrozen(cyclic)).toBe(true);
+});
