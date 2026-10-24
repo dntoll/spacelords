@@ -5,6 +5,7 @@ import {
   type MapViewport,
   type MapProductionCategory,
   type ProductionMapSnapshot,
+  type ProductionGuidance,
   type MapProblem,
 } from './ProductionMap.js';
 import {
@@ -87,6 +88,7 @@ export interface AppReadModel {
   readonly supply: SupplyOverview;
   readonly shipments: readonly ShipmentSnapshot[];
   readonly productionMap: ProductionMapSnapshot;
+  readonly productionGuidance: ProductionGuidance | null;
   readonly supplyChain: SupplyChainSnapshot;
   readonly mapProblems: readonly MapProblem[];
   readonly mapTrade: MapTradeSnapshot;
@@ -321,6 +323,11 @@ export class AppModel {
       supply: this.#game.supplyOverview(),
       shipments: this.#game.shipments,
       productionMap: this.#productionMapSnapshot(),
+      productionGuidance:
+        (this.#screen === 'production' || this.#screen === 'planet') &&
+        this.#game.planetAt(this.#selected)
+          ? this.#game.productionGuidance(this.#game.planetAt(this.#selected)!)
+          : null,
       supplyChain:
         this.#screen === 'production'
           ? this.#game.supplyChain(this.#selectedMapProject())
@@ -889,13 +896,22 @@ export class AppModel {
       );
   }
   selectMapProductionOption(type: ProjectType | null): void {
+    if (type === null) {
+      this.#mapProductionOption = null;
+      return;
+    }
     const planet = this.#game.planetAt(this.#selected);
-    if (
-      type === null ||
-      (planet &&
-        this.#game.productionOptions(planet).some((o) => o.type === type))
-    )
-      this.#mapProductionOption = type;
+    const option = planet
+      ? this.#game
+          .productionOptions(planet)
+          .find((option) => option.type === type)
+      : null;
+    if (!option) return;
+    if (option.category !== this.#mapProductionCategory) {
+      this.#mapProductionCategory = option.category;
+      this.#mapProductionPage = 0;
+    }
+    this.#mapProductionOption = type;
   }
   selectMapProject(id: string): void {
     const planet = this.#game.planetAt(this.#selected);

@@ -109,6 +109,10 @@ Se [hela visionen](docs/game-vision.md).
   `kompakt-produktionsko` omfattar både kartans individuella köposter och
   planetvyns befintliga gruppering. Tystade eller överhoppade problem ger inga
   kartmarkeringar; relevant navigeringsknapp visar ! för aktiva problem.
+  `dome-fore-fabriksforslag` är **Fullständigt implementerat**: Production
+  prioriterar rätt Dome när en tom plats behöver förberedas. Fabriker föreslås
+  först när en förberedd plats finns; upptagna platser och saknad Dome-forskning
+  får rätt förklaring. Detta gäller även planetens Production-undersida.
   Se [kartbaserade Route och Production](docs/route-production.md).
   Försörjningsreglerna `forsorjningsstatus`, `leveransfloden` och
   `produktionsformaga` behålls enligt [försörjningsreglerna](docs/supply-production.md).

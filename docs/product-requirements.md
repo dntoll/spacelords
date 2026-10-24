@@ -479,6 +479,10 @@ kraven `farledskontrast`, `route-kartvy`, `produktions-kartvy`,
 `radiella-byggval`, `kompakt-produktionsko`, `byggprojektets-forsorjningskedja`
 och `forsorjningsproblem-pa-kartan` samt ersatta gränssnittskrav.
 Planetvyns befintliga kategorier, destinationsval och kögruppering behålls.
+`dome-fore-fabriksforslag` är **Fullständigt implementerat**: båda Production-vyerna
+leder till rätt Dome när en tom plats behöver förberedas och föreslår fabriker
+först när en förberedd byggplats finns. Se kartkraven för väntan, forskning och
+upptagna platser.
 
 ## Grupperade Events
 

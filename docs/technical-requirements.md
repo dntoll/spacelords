@@ -478,3 +478,12 @@ kartpanelen på dator eller surfplatta. Skeppsknapparnas bredd anpassas till
 radens utrymme mellan 44 och 60 px; träffytorna behålls och Engines & speed
 förblir åtkomligt. Webbläsarregressionen verifierar radantal, korthöjd och
 kontrollernas träffytor.
+
+`dome-fore-fabriksforslag` använder Game.productionGuidance och samma skrivskyddade
+byggplatsdata som produktionsalternativen. Ledig förberedd plats, tom plats som
+behöver Dome, köad Dome och upptagna platser skiljs åt i modellen. Fabriker och
+vanliga byggnader erbjuds endast med en ledig förberedd plats; Dome-alternativ
+prioriteras när lediga oförberedda platser finns. Befintliga fabrikers produkter
+påverkas inte. Kartan och planetens Production-undersida läser samma oföränderliga
+ProductionGuidance; alla val och beställningar går genom controller. Sparformat,
+forskning och Domes-per-byggplats-regler ändras inte.

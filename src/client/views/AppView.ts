@@ -432,6 +432,7 @@ export class AppView implements AppPort {
       const key = JSON.stringify({
         screen: model.screen,
         productionMap: model.productionMap,
+        productionGuidance: model.productionGuidance,
         projectSupply: model.projectSupply,
         supplyChain: model.supplyChain,
         mapProblems: model.mapProblems,

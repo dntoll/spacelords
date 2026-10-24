@@ -1,4 +1,4 @@
-import type { Cost, ProjectType } from './Game.js';
+import type { BuildType, Cost, ProjectType } from './Game.js';
 import type { Point } from './HexCoordinate.js';
 
 export type MapScreen = 'map' | 'fleets' | 'route' | 'production';
@@ -8,6 +8,11 @@ export function isMapScreen(screen: string | null): screen is MapScreen {
   );
 }
 export type MapProductionCategory = 'Buildings' | 'Components' | 'Ships';
+export interface ProductionGuidance {
+  readonly kind: 'factory' | 'dome' | 'research' | 'waiting' | 'full';
+  readonly message: string;
+  readonly dome: BuildType | null;
+}
 export interface ProductionOption {
   readonly type: ProjectType;
   readonly category: MapProductionCategory;

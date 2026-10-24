@@ -9,10 +9,21 @@ zoom följer med mellan kartvyerna.
 | `farledskontrast`                  | Fullständigt implementerat | Farleder på Star map och Route är ljusare blå och kraftigare. Vald, hovrad och ogiltig rutt förblir tydliga. Rutter utan aktiv transport och rutter under stängning är streckade vid alla zoomnivåer. Fleets behåller diskreta bakgrundsrutter.                                                                                                                                                         |
 | `route-kartvy`                     | Fullständigt implementerat | Route visar den stora kartan med skapande, val och stängning av farleder, transportflottilldelning och Release. Dragning och alternativ med klick och tangentbord finns. Planetval visar första projektets försörjning och Open in Production.                                                                                                                                                          |
 | `produktions-kartvy`               | Fullständigt implementerat | Production visar byggval kring vald ägd planet och dess Build queue. Flottor och rutter tar inte över planetvalet. Andra planeter och tom rymd visar inga byggkontroller. Planetens befintliga undersidor behålls.                                                                                                                                                                                      |
-| `radiella-byggval`                 | Fullständigt implementerat | Upplåsta byggnader och produkter från befintliga fabriker visas med symbol och namn, högst åtta åt gången och färre på smala kartytor. Vid fler än åtta alternativ används Buildings, Components och Ships. Sidbyte gör alla val åtkomliga. Byggnader visar befintligt antal lokalt och totalt. Ett val visar detaljer och separat Build.                                                               |
+| `radiella-byggval`                 | Fullständigt implementerat | Upplåsta byggnader för lediga förberedda platser, passande Domes och produkter från befintliga fabriker visas med symbol och namn, högst åtta åt gången och färre på smala kartytor. Vid fler än åtta alternativ används Buildings, Components och Ships. Sidbyte gör alla val åtkomliga. Byggnader visar befintligt antal lokalt och totalt. Ett val visar detaljer och separat Build.                 |
 | `kompakt-produktionsko`            | Fullständigt implementerat | Kartans Production visar varje projekt på egen rad med ordning, namn, status och ↑, ↓, ×. Första posten väljs initialt; annat projekt väljs genom tryck och behålls vid omordning. Om det försvinner väljs första återstående. Planetvyn behåller gruppering av intilliggande likadana projekt.                                                                                                         |
 | `byggprojektets-forsorjningskedja` | Fullständigt implementerat | Vald köpost markerar projektplanet, leverantörer, tillverkare, omlastningar och berörda farleder. Kopplad delproduktion och dess råvaruleveranser ingår. Endast verkliga projekt, reservationer och transportkopplingar visas; granskning av ett byggalternativ skapar ingen kedja.                                                                                                                     |
 | `forsorjningsproblem-pa-kartan`    | Fullständigt implementerat | Aktiva problem markeras med röd ring och ! på berörd planet, samt ! på relevant navigeringsknapp. Route hjälper vid material-/transportproblem och ruttproblem; Production vid saknad fabrik eller personal/besättning. En förklaring och projektinformation finns. Tystade problem och problem överhoppade för året markeras inte. Fungerande försörjning visas som Waiting utan röd problemmarkering. |
+
+`dome-fore-fabriksforslag` är **Fullständigt implementerat**. Production visar
+planettypens upplåsta Dome först bland byggvalen. När ingen ledig förberedd
+byggplats finns erbjuds inte vanliga byggnader eller fabriker som nästa byggval;
+i stället visas rätt Dome och Prepare building site öppnar dess byggdetaljer.
+Saknas forskningen visas vilken Dome som måste forskas fram. En redan köad Dome
+visas som väntan när den upptar sista lediga platsen. När den är klar återkommer
+byggnads- och fabriksvalen. Om alla platser är upptagna förklaras platsbristen;
+en Dome skapar inte extra byggplatser. Befintliga fabriker kan fortfarande
+producera delar och skepp utan en tom byggplats. Planetens Production-undersida
+använder samma förslag och kan öppna Dome-detaljerna i kartans Production.
 
 ## Beställning och åtkomst
 

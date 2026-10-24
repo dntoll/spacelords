@@ -21,7 +21,10 @@ type Menus = Pick<AppReadModel, 'phase'> &
   Partial<
     Pick<
       AppReadModel,
-      'productionCategory' | 'productionProduct' | 'productionFleetId'
+      | 'productionCategory'
+      | 'productionProduct'
+      | 'productionFleetId'
+      | 'productionGuidance'
     >
   >;
 
@@ -201,8 +204,21 @@ export function renderProduction(
       element(
         'p',
         'muted-note',
-        `No ${category.toLowerCase()} can be produced here. Build a matching factory in Building sites.`,
+        `No ${category.toLowerCase()} can be produced here. ${menus.productionGuidance?.message ?? ''}`.trim(),
       ),
+    );
+  if (!products.length && menus.productionGuidance?.dome) {
+    const dome = menus.productionGuidance.dome;
+    order.append(
+      button('Prepare building site', () => {
+        emit({ type: 'open-production', planetId: planet.id });
+        emit({ type: 'map-production-option', option: dome });
+      }),
+    );
+  }
+  if (!products.length && menus.productionGuidance?.kind === 'research')
+    order.append(
+      button('Open research', () => emit({ type: 'open-research' })),
     );
   if (products.length && !product)
     order.append(

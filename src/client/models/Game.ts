@@ -2,7 +2,7 @@ import {
   projectSupplyChain,
   type SupplyChainSnapshot,
 } from './ProjectSupplyChain.js';
-import type { ProductionOption } from './ProductionMap.js';
+import type { ProductionOption, ProductionGuidance } from './ProductionMap.js';
 import { ProjectSupply, type ProjectSupplySnapshot } from './ProjectSupply.js';
 import { Galaxy, Star, StarSystem, type MapCell } from './Galaxy.js';
 import { HexCoordinate } from './HexCoordinate.js';
@@ -1105,10 +1105,71 @@ export class Game {
     }
   }
 
+  // dome-fore-fabriksforslag: factories need a prepared, unoccupied site.
+  #productionSites(snapshot: PlanetGameSnapshot) {
+    const free = snapshot.sites.filter(
+      (site) => !site.locked && !site.building && !site.project,
+    );
+    return {
+      prepared: free.some((site) => !site.domeRequired || site.hasDome),
+      domeSite: free.find(
+        (site) => site.domeRequired && !site.hasDome && site.domeType,
+      ),
+    };
+  }
+
+  productionGuidance(planet: Planet): ProductionGuidance {
+    const snapshot = this.planetSnapshot(planet)!;
+    const { prepared, domeSite } = this.#productionSites(snapshot);
+    if (prepared)
+      return Object.freeze({
+        kind: 'factory',
+        message: 'Build a matching factory at an available building site.',
+        dome: null,
+      });
+    if (domeSite) {
+      const type = domeSite.domeType!;
+      const unlocked = this.#research.completed.has(type as Technology);
+      return Object.freeze({
+        kind: unlocked ? 'dome' : 'research',
+        message: unlocked
+          ? `Build a ${type} to prepare a building site.`
+          : `Research ${type} before preparing a building site.`,
+        dome: unlocked ? type : null,
+      });
+    }
+    if (
+      snapshot.projects.some(
+        (project) => BUILDINGS[project.type as BuildType]?.sitePreparation,
+      )
+    )
+      return Object.freeze({
+        kind: 'waiting',
+        message:
+          'A Dome is already queued. Wait for it to complete before building a factory.',
+        dome: null,
+      });
+    return Object.freeze({
+      kind: 'full',
+      message:
+        'No building sites are available. Free a site or increase habitability.',
+      dome: null,
+    });
+  }
+
   productionOptions(planet: Planet): readonly ProductionOption[] {
     const snapshot = this.planetSnapshot(planet)!;
+    const { prepared, domeSite } = this.#productionSites(snapshot);
+    const buildings = snapshot.buildOptions.filter((option) =>
+      BUILDINGS[option.type].sitePreparation ? !!domeSite : prepared,
+    );
+    buildings.sort(
+      (a, b) =>
+        Number(!!BUILDINGS[b.type].sitePreparation) -
+        Number(!!BUILDINGS[a.type].sitePreparation),
+    );
     const types: ProjectType[] = [
-      ...snapshot.buildOptions.map((o) => o.type),
+      ...buildings.map((o) => o.type),
       ...new Set(
         snapshot.buildings.flatMap((b) => {
           const definition = BUILDINGS[b.type];

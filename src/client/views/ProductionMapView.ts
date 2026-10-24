@@ -97,14 +97,22 @@ export function renderProductionMapPanel(
     );
     panel.append(pages);
   }
-  if (!map.options.length)
+  const guidance = model.productionGuidance;
+  if (guidance && (!map.options.length || guidance.kind !== 'factory')) {
     panel.append(
-      element(
-        'p',
-        'muted-note',
-        'No options in this category. Build a matching factory in Buildings.',
-      ),
+      element('p', 'production-guidance muted-note', guidance.message),
     );
+    if (guidance.dome)
+      panel.append(
+        button('Prepare building site', () =>
+          emit({ type: 'map-production-option', option: guidance.dome }),
+        ),
+      );
+    if (guidance.kind === 'research')
+      panel.append(
+        button('Open research', () => emit({ type: 'open-research' })),
+      );
+  }
   const option = map.selectedOption;
   if (option) {
     const detail = element('section', 'map-build-details');

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { domeProductionState as domeWorld } from '../fixtures/production-dome.js';
 import { describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppController } from '../../src/client/controllers/AppController.js';
@@ -369,5 +370,92 @@ it('produktions-kartvy: clears controls after selecting space outside the galaxy
   expect(model.snapshot.planet).toBeNull();
   expect(model.snapshot.supplyChain.projectIds).toEqual([]);
   expect(root.querySelector('.production-ring')).toBeNull();
+  controller.dispose();
+});
+
+it('radiella-byggval / domes-per-byggplats / dome-fore-fabriksforslag: Production offers the matching Dome before factories when no site is prepared', () => {
+  const { model, root, click, emit, controller } = setup(domeWorld());
+  emit({ type: 'open-production' });
+  expect(model.snapshot.productionMap.options[0]?.type).toBe('Desert dome');
+  expect(
+    model.snapshot.productionMap.options.some((option) =>
+      option.type.includes('factory'),
+    ),
+  ).toBe(false);
+  expect(root.textContent).not.toContain('Build a matching factory');
+  click('Prepare building site');
+  expect(model.snapshot.productionMap.selectedOption?.type).toBe('Desert dome');
+  click('Build');
+  expect(model.snapshot.planet!.projects[0]).toMatchObject({
+    type: 'Desert dome',
+    slotIndex: 0,
+  });
+  controller.dispose();
+});
+
+it('dome-fore-fabriksforslag: requires Dome research, waits for a queued Dome and restores factory options when it completes', () => {
+  const locked = setup(domeWorld(false));
+  locked.emit({ type: 'open-production' });
+  expect(locked.root.textContent).toContain('Research Desert dome');
+  expect(locked.root.textContent).not.toContain('Build a matching factory');
+  expect(
+    locked.model.snapshot.productionMap.options.some(
+      (o) => o.type === 'Desert dome',
+    ),
+  ).toBe(false);
+  locked.controller.dispose();
+
+  const state = domeWorld(true, 2);
+  const { model, root, click, emit, controller } = setup(state);
+  emit({ type: 'open-production' });
+  click('Prepare building site');
+  click('Build');
+  expect(model.snapshot.productionGuidance?.kind).toBe('waiting');
+  expect(root.textContent).toContain('A Dome is already queued');
+  expect(model.snapshot.productionMap.options).toEqual([]);
+  for (const frame of model.startTurn()) model.applyTurnFrame(frame);
+  model.finishTurn();
+  expect(model.snapshot.productionGuidance?.kind).toBe('factory');
+  expect(model.snapshot.planet!.sites[0]!.hasDome).toBe(true);
+  emit({ type: 'map-production-option', option: 'Rocket engine factory' });
+  click('Build');
+  expect(model.snapshot.planet!.projects[0]).toMatchObject({
+    type: 'Rocket engine factory',
+    slotIndex: 0,
+  });
+  controller.dispose();
+});
+
+it('dome-fore-fabriksforslag: occupied sites cannot accept another Dome, while existing factories can keep producing', () => {
+  const state = domeWorld();
+  state.colonies[0]![1].domes = [0, 1, 2];
+  state.colonies[0]![1].buildings = [0, 1, 2].map((slotIndex) => ({
+    id: `engine-${slotIndex}`,
+    type: 'Rocket engine factory' as const,
+    slotIndex,
+    demolition: false,
+  }));
+  const { model, root, emit, controller } = setup(state);
+  emit({ type: 'open-production' });
+  expect(model.snapshot.productionGuidance?.kind).toBe('full');
+  expect(root.textContent).toContain('No building sites are available');
+  expect(root.textContent).not.toContain('Build a matching factory');
+  expect(model.snapshot.productionMap.options.map((o) => o.type)).toEqual([
+    'Rocket engine',
+  ]);
+  controller.dispose();
+});
+
+it('dome-fore-fabriksforslag: the planet Production tab opens the matching Dome details on the map', () => {
+  const { model, root, click, emit, controller } = setup(domeWorld());
+  emit({ type: 'open-planet' });
+  root
+    .querySelector<HTMLButtonElement>('.planet-tabs [aria-label="Production"]')!
+    .click();
+  expect(root.textContent).toContain('Build a Desert dome');
+  expect(root.textContent).not.toContain('Build a matching factory');
+  click('Prepare building site');
+  expect(model.snapshot.screen).toBe('production');
+  expect(model.snapshot.productionMap.selectedOption?.type).toBe('Desert dome');
   controller.dispose();
 });
