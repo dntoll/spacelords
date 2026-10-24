@@ -2429,3 +2429,91 @@ p {
   border-radius: 4px;
   font: inherit;
 }
+
+/* symbolbaserade-kataloger: compact choices, with full information on selection. */
+.catalog-icon {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.catalog-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.build-toolbar .catalog-categories {
+  flex: 1 0 100%;
+}
+.catalog-category {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 8px;
+}
+.catalog-category[aria-pressed='true'],
+.catalog-item-button[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: #29434b;
+}
+.planet-content.building-menu.catalog-browser {
+  grid-template-columns: minmax(0, 1fr);
+}
+.catalog-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 6px;
+  align-content: start;
+}
+.catalog-item-button {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  text-align: left;
+  white-space: normal;
+  padding: 8px 10px;
+}
+.catalog-details {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #10232d;
+  scroll-margin-top: 8px;
+}
+.catalog-details > .button {
+  justify-self: start;
+}
+.catalog-detail-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.catalog-detail-heading h2 {
+  margin: 0;
+}
+.catalog-details .building-image {
+  width: 140px;
+  max-width: 100%;
+}
+.catalog-details p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.catalog-details .production-field {
+  margin-block: 4px;
+}

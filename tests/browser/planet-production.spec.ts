@@ -21,6 +21,7 @@ async function build(page: Page, site: number, type: string) {
       exact: true,
     })
     .click();
+  await page.getByRole('button', { name: `Show ${type}`, exact: true }).click();
   await page
     .getByRole('button', { name: `Build ${type}`, exact: true })
     .click();
@@ -37,7 +38,10 @@ test('gemensam-planetko / delfabriker / automatiska-delorder: research, manufact
   await home(page);
   await build(page, 1, 'Research station');
   await nextYear(page);
-  await page.getByRole('button', { name: 'Research', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('button', { name: 'Research', exact: true })
+    .click();
   await chooseResearch(page, 'Fighter factory');
   await expect(page.locator('.research-queue article')).toHaveCount(4);
   for (let year = 0; year < 4; year++) await nextYear(page);
@@ -52,6 +56,7 @@ test('gemensam-planetko / delfabriker / automatiska-delorder: research, manufact
   await home(page);
   await page.getByRole('button', { name: 'Production', exact: true }).click();
   await expect(page.locator('.production-order')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Show Fighter', exact: true }).click();
   await page
     .getByRole('button', { name: 'Queue Fighter', exact: true })
     .click();

@@ -6,9 +6,15 @@ import {
   type PlanetGameSnapshot,
   type FleetSnapshot,
   type ShipType,
+  SHIPS,
 } from '../models/Game.js';
 import type { Component } from '../models/Economy.js';
 import type { IntentHandler } from './ViewContracts.js';
+import {
+  categoryButtons,
+  catalogItem,
+  catalogHeading,
+} from './CatalogControls.js';
 import { button, element } from './dom.js';
 
 type Menus = Pick<AppReadModel, 'phase'> &
@@ -55,43 +61,33 @@ export function renderProduction(
       }),
     ),
   ];
-  const product =
-    products.find((p) => p === menus.productionProduct) ?? products[0] ?? null;
-  const label = element('label', 'production-field', 'Category');
-  const categories = element('select');
-  categories.setAttribute('aria-label', 'Production category');
-  for (const value of ['Ships', 'Components']) {
-    const option = element('option', '', value);
-    option.value = value;
-    categories.append(option);
-  }
-  categories.value = category;
-  categories.addEventListener('change', () =>
-    emit({
-      type: 'production-selection',
-      category: categories.value as 'Ships' | 'Components',
-      product: null,
-    }),
-  );
-  label.append(categories);
-  const productLabel = element('label', 'production-field', 'Product');
-  const select = element('select');
-  select.setAttribute('aria-label', 'Production product');
-  for (const value of products) {
-    const option = element('option', '', value);
-    option.value = value;
-    select.append(option);
-  }
-  select.disabled = !products.length;
-  if (product) select.value = product;
-  select.addEventListener('change', () =>
-    emit({ type: 'production-selection', category, product: select.value }),
-  );
-  productLabel.append(select);
+  const product = products.find((p) => p === menus.productionProduct) ?? null;
   const order = element('section', 'production-order');
-  order.append(element('h2', '', 'Production'), label, productLabel);
+  order.append(
+    element('h2', '', 'Production'),
+    categoryButtons(
+      'Production categories',
+      ['Ships', 'Components'] as const,
+      category,
+      (next) =>
+        emit({ type: 'production-selection', category: next, product: null }),
+    ),
+  );
+  const list = element('ul', 'catalog-list');
+  list.setAttribute('aria-label', 'Product list');
+  for (const value of products)
+    list.append(
+      catalogItem(value, `product:${value}`, value === product, () =>
+        emit({ type: 'production-selection', category, product: value }),
+      ),
+    );
+  order.append(list);
   if (product) {
+    const detail = element('section', 'catalog-details production-details');
+    detail.dataset.detailKey = `product:${product}`;
+    detail.append(catalogHeading(product));
     const definition = projectDefinition(product);
+    detail.append(element('p', '', definition.description));
     const matches = planet.buildings.filter(
       (b) =>
         BUILDINGS[b.type].ship === product ||
@@ -104,7 +100,7 @@ export function renderProduction(
         : !active.length
           ? 'Factory is scheduled for demolition.'
           : null;
-    order.append(
+    detail.append(
       element(
         'p',
         '',
@@ -112,7 +108,7 @@ export function renderProduction(
       ),
     );
     if (definition.parts)
-      order.append(
+      detail.append(
         element(
           'p',
           'muted-note',
@@ -122,7 +118,7 @@ export function renderProduction(
         ),
       );
     if (active.length && active.every((b) => b.operational === false))
-      order.append(
+      detail.append(
         element(
           'p',
           'muted-note',
@@ -146,7 +142,7 @@ export function renderProduction(
         'Destination fleet',
       );
       destinationLabel.append(destination);
-      order.append(destinationLabel);
+      detail.append(destinationLabel);
     }
     const queue = button(`Queue ${product}`, () =>
       definition.ship
@@ -158,15 +154,53 @@ export function renderProduction(
         : emit({ type: 'queue-component', component: product as Component }),
     );
     queue.disabled = !!reason;
-    order.append(queue);
-    if (reason) order.append(element('p', 'blocked-reason', reason));
-  } else
+    if (reason) detail.append(element('p', 'blocked-reason', reason));
+    if (definition.ship)
+      detail.append(
+        element(
+          'p',
+          '',
+          `Speed ${SHIPS[definition.ship].speed} hexes/year · ${definition.crew} crew`,
+        ),
+      );
+    if (definition.component)
+      detail.append(
+        element(
+          'p',
+          '',
+          `Stored ${planet.economy.stock[definition.component]} · Demand ${planet.economy.demand[definition.component]} · Incoming ${planet.economy.incoming[definition.component]}`,
+        ),
+      );
+    detail.append(
+      element(
+        'p',
+        'muted-note',
+        `Factory staff: ${active.reduce((total, factory) => total + BUILDINGS[factory.type].workers, 0)} workers · Available workforce: ${planet.budget.availableWorkers}`,
+      ),
+      element(
+        'p',
+        'muted-note',
+        'One shared build queue. One project completes per planet and year.',
+      ),
+      queue,
+      button(
+        'Back to products',
+        () => emit({ type: 'production-selection', category, product: null }),
+        'button secondary-button',
+      ),
+    );
+    order.append(detail);
+  } else if (!products.length)
     order.append(
       element(
         'p',
         'muted-note',
         `No ${category.toLowerCase()} can be produced here. Build a matching factory in Building sites.`,
       ),
+    );
+  if (products.length && !product)
+    order.append(
+      element('p', 'muted-note', 'Select a product for full details.'),
     );
   const queue = element('section', 'compact-build-queue');
   queue.setAttribute('aria-label', 'Compact build queue');
@@ -178,7 +212,7 @@ export function renderProduction(
       'button secondary-button',
     ),
   );
-  const list = element('ol', 'compact-queue-list');
+  const queueList = element('ol', 'compact-queue-list');
   let position = 1;
   for (const group of compactProjectGroups(planet.projects)) {
     const first = group[0]!;
@@ -200,10 +234,10 @@ export function renderProduction(
         'button secondary-button compact-queue-item',
       ),
     );
-    list.append(item);
+    queueList.append(item);
     position = lastPosition + 1;
   }
-  queue.append(list);
+  queue.append(queueList);
   if (!planet.projects.length)
     queue.append(element('p', 'muted-note', 'No production queued.'));
   section.append(order, queue);

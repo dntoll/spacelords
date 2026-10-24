@@ -41,6 +41,7 @@ export class AppView implements AppPort {
   #clearReturnSlot: number | null = null;
   #planetScroll = new Map<string, number>();
   #planetFocusTarget: string | null = null;
+  #catalogDetailKey: string | null = null;
   #decisionDialog: HTMLDialogElement | null = null;
   #researchKey = '';
   #researchViewport: HTMLElement | null = null;
@@ -155,15 +156,17 @@ export class AppView implements AppPort {
     );
     const focusLabel = active?.getAttribute('aria-label');
     const focusScope = active?.closest(
-      '[data-project-id], [data-site-index], .fleet-card',
+      '[data-project-id], [data-site-index], .fleet-card, .catalog-categories',
     );
-    const scopeSelector = focusScope?.hasAttribute('data-project-id')
-      ? `[data-project-id="${focusScope.getAttribute('data-project-id')}"]`
-      : focusScope?.hasAttribute('data-site-index')
-        ? `[data-site-index="${focusScope.getAttribute('data-site-index')}"]`
-        : focusScope?.hasAttribute('data-fleet-id')
-          ? `[data-fleet-id="${focusScope.getAttribute('data-fleet-id')}"]`
-          : null;
+    const scopeSelector = focusScope?.classList.contains('catalog-categories')
+      ? `.catalog-categories[aria-label="${focusScope.getAttribute('aria-label')}"]`
+      : focusScope?.hasAttribute('data-project-id')
+        ? `[data-project-id="${focusScope.getAttribute('data-project-id')}"]`
+        : focusScope?.hasAttribute('data-site-index')
+          ? `[data-site-index="${focusScope.getAttribute('data-site-index')}"]`
+          : focusScope?.hasAttribute('data-fleet-id')
+            ? `[data-fleet-id="${focusScope.getAttribute('data-fleet-id')}"]`
+            : null;
     if (this.#screen === 'planet') {
       const panel = this.#root.querySelector<HTMLElement>('.planet-content');
       if (panel?.dataset.planetId)
@@ -253,7 +256,11 @@ export class AppView implements AppPort {
         if (selection !== null) search?.setSelectionRange(selection, selection);
       }
     }
-    if (!changedScreen && model.screen === 'planet' && focusLabel) {
+    if (
+      !changedScreen &&
+      (model.screen === 'planet' || model.screen === 'build-selection') &&
+      focusLabel
+    ) {
       const scope = scopeSelector
         ? this.#root.querySelector(scopeSelector)
         : this.#root;
@@ -291,6 +298,23 @@ export class AppView implements AppPort {
           .querySelector<HTMLElement>(`[data-site-index="${model.returnSite}"]`)
           ?.focus({ preventScroll: true });
     }
+    const detail = this.#root.querySelector<HTMLElement>('.catalog-details');
+    const detailKey = detail?.dataset.detailKey ?? null;
+    if (detailKey && detailKey !== this.#catalogDetailKey) {
+      detail?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
+      detail?.scrollIntoView?.({ block: 'start' });
+    } else if (
+      !detailKey &&
+      this.#catalogDetailKey &&
+      (focusLabel === 'Back to buildings' || focusLabel === 'Back to products')
+    ) {
+      const item = [
+        ...this.#root.querySelectorAll<HTMLElement>('[data-catalog-item]'),
+      ].find((node) => node.dataset.catalogItem === this.#catalogDetailKey);
+      item?.focus({ preventScroll: true });
+      item?.scrollIntoView?.({ block: 'nearest' });
+    }
+    this.#catalogDetailKey = detailKey;
     const previousResearchQueue =
       this.#root.querySelector<HTMLDetailsElement>('.research-queue');
     const researchQueueOpen = previousResearchQueue?.open ?? false;

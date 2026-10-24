@@ -51,6 +51,7 @@ test('automatiska-delorder: orders remote production through the UI and preserve
   await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page.getByRole('button', { name: 'Show Fighter', exact: true }).click();
   await page
     .getByRole('button', { name: 'Queue Fighter', exact: true })
     .click();
@@ -135,6 +136,7 @@ test('automatiska-delorder: explains a missing part and leaves the saved order s
   const before = await page.evaluate(() =>
     localStorage.getItem('spacelords.save.v2.1'),
   );
+  await page.getByRole('button', { name: 'Show Fighter', exact: true }).click();
   await page
     .getByRole('button', { name: 'Queue Fighter', exact: true })
     .click();

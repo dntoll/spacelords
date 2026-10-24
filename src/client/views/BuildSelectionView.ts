@@ -2,6 +2,13 @@ import type { AppReadModel } from '../models/AppModel.js';
 import { BUILDINGS } from '../models/Game.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { buildingImage } from './BuildingImage.js';
+import {
+  BUILDING_CATEGORIES,
+  buildingCategory,
+  categoryButtons,
+  catalogItem,
+  catalogHeading,
+} from './CatalogControls.js';
 import { button, element, labelValue } from './dom.js';
 
 export function renderBuildSelection(
@@ -37,22 +44,64 @@ export function renderBuildSelection(
     ),
     label,
   );
-  const grid = element('section', 'planet-content building-menu');
+  const grid = element(
+    'section',
+    'planet-content building-menu catalog-browser',
+  );
+  const categories = BUILDING_CATEGORIES.filter(
+    (category) =>
+      category === 'All' ||
+      planet.buildOptions.some(
+        (option) =>
+          !BUILDINGS[option.type].sitePreparation &&
+          buildingCategory(option.type) === category,
+      ),
+  );
+  toolbar.append(
+    categoryButtons(
+      'Building categories',
+      categories,
+      model.buildingCategory,
+      (category) => emit({ type: 'building-category', category }),
+    ),
+  );
+  const list = element('ul', 'catalog-list');
+  list.setAttribute('aria-label', 'Building list');
+  grid.append(list);
   grid.setAttribute('aria-label', 'Available buildings');
   const query = model.buildSearch.trim().toLowerCase();
-  for (const option of planet.buildOptions) {
+  const options = planet.buildOptions.filter((option) => {
     const definition = BUILDINGS[option.type];
-    if (definition.sitePreparation) continue;
-    if (
-      !`${option.type} ${definition.description}`.toLowerCase().includes(query)
-    )
-      continue;
-    const card = element('article', 'building-choice');
+    return (
+      !definition.sitePreparation &&
+      (model.buildingCategory === 'All' ||
+        buildingCategory(option.type) === model.buildingCategory) &&
+      `${option.type} ${definition.description}`.toLowerCase().includes(query)
+    );
+  });
+  for (const option of options) {
+    list.append(
+      catalogItem(
+        option.type,
+        `building:${option.type}`,
+        model.selectedBuilding === option.type,
+        () => emit({ type: 'building-selection', building: option.type }),
+      ),
+    );
+  }
+  const selected = options.find(
+    (option) => option.type === model.selectedBuilding,
+  );
+  if (selected) {
+    const option = selected;
+    const definition = BUILDINGS[option.type];
+    const card = element('article', 'building-choice catalog-details');
+    card.dataset.detailKey = `building:${option.type}`;
     card.dataset.buildingType = option.type;
     card.classList.toggle('unaffordable', !!option.blockedReason);
     card.append(
+      catalogHeading(option.type),
       buildingImage(option.type),
-      element('h2', '', option.type),
       element('p', '', definition.description),
     );
     const inventory = element('div', 'building-inventory');
@@ -100,15 +149,36 @@ export function renderBuildSelection(
       }),
     );
     order.disabled = !!option.blockedReason || model.phase !== 'planning';
-    card.append(costs, order);
+    card.append(
+      costs,
+      element(
+        'p',
+        'muted-note',
+        'One shared build queue. One project completes per planet and year.',
+      ),
+      order,
+      button(
+        'Back to buildings',
+        () => emit({ type: 'building-selection', building: null }),
+        'button secondary-button',
+      ),
+    );
     if (option.blockedReason)
       card.append(element('p', 'blocked-reason', option.blockedReason));
     grid.append(card);
-  }
-  if (!grid.children.length)
+  } else if (!list.children.length)
     grid.append(
-      element('p', 'empty-results', 'No buildings match your search.'),
+      element(
+        'p',
+        'empty-results',
+        'No buildings match this category and search.',
+      ),
     );
+  else
+    grid.append(
+      element('p', 'muted-note', 'Select a building for full details.'),
+    );
+
   page.append(header, toolbar, grid);
   return page;
 }

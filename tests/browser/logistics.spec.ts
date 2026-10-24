@@ -39,6 +39,7 @@ async function build(page: Page, site: number, type: string) {
       exact: true,
     })
     .click();
+  await page.getByRole('button', { name: `Show ${type}`, exact: true }).click();
   await page
     .getByRole('button', { name: `Build ${type}`, exact: true })
     .click();
@@ -82,7 +83,10 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await expect(page.locator('[data-resource="Iron"]')).toContainText(
     'Extracting 10/year',
   );
-  await page.getByRole('button', { name: 'Research', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('button', { name: 'Research', exact: true })
+    .click();
   for (const technology of [
     'Trade logistics',
     'Colony ship factory',
@@ -105,6 +109,10 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await formFleet(page, 'Fighter', 'Home Fleet', 'Freighters');
   await formFleet(page, 'Exploration ship', 'Home Fleet', 'Settlers');
   await home(page);
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Show Transport ship', exact: true })
+    .click();
   await page
     .getByRole('combobox', {
       name: 'Destination fleet for Transport ship',
@@ -113,10 +121,14 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     .selectOption({ label: 'Freighters' });
   await page.getByRole('button', { name: 'Production', exact: true }).click();
   await page
-    .getByRole('combobox', { name: 'Production product', exact: true })
-    .selectOption('Transport ship');
+    .getByRole('button', { name: 'Show Transport ship', exact: true })
+    .click();
   await page
     .getByRole('button', { name: 'Queue Transport ship', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Show Colony ship', exact: true })
     .click();
   await page
     .getByRole('combobox', {
@@ -126,8 +138,8 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     .selectOption({ label: 'Settlers' });
   await page.getByRole('button', { name: 'Production', exact: true }).click();
   await page
-    .getByRole('combobox', { name: 'Production product', exact: true })
-    .selectOption('Colony ship');
+    .getByRole('button', { name: 'Show Colony ship', exact: true })
+    .click();
   await page
     .getByRole('button', { name: 'Queue Colony ship', exact: true })
     .click();

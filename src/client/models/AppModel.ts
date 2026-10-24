@@ -35,6 +35,13 @@ import { HexCoordinate, HexGeometry, type Point } from './HexCoordinate.js';
 
 export type PlanetTab = 'overview' | 'sites' | 'queue' | 'production';
 export type ProductionCategory = 'Ships' | 'Components';
+export type BuildingCategory =
+  | 'All'
+  | 'Resources'
+  | 'Research'
+  | 'Shipyards'
+  | 'Components'
+  | 'Terraforming';
 
 export type Screen =
   | 'saves'
@@ -79,6 +86,8 @@ export interface AppReadModel {
   readonly constructionSite: number | null;
   readonly screen: Screen;
   readonly buildSearch: string;
+  readonly buildingCategory: BuildingCategory;
+  readonly selectedBuilding: BuildType | null;
   readonly returnSite: number | null;
   readonly playerName: string;
   readonly radius: number;
@@ -123,6 +132,8 @@ export class AppModel {
   #constructionSite: number | null = null;
   #screen: Screen = 'map';
   #buildSearch = '';
+  #buildingCategory: BuildingCategory = 'All';
+  #selectedBuilding: BuildType | null = null;
   readonly #researchCamera = new ResearchTreeCamera();
   readonly #supplySelection = new SupplySelection();
   readonly #mapTrade = new StarMapTrade(
@@ -295,6 +306,8 @@ export class AppModel {
       constructionSite: this.#constructionSite,
       screen: this.#screen,
       buildSearch: this.#buildSearch,
+      buildingCategory: this.#buildingCategory,
+      selectedBuilding: this.#selectedBuilding,
       returnSite: this.#returnSite,
       playerName: this.#game.galaxy.player.name,
       radius: this.#game.galaxy.radius,
@@ -650,10 +663,20 @@ export class AppModel {
     if (!site || site.locked || site.building || site.project) return;
     this.#constructionSite = index;
     this.#buildSearch = '';
+    this.#buildingCategory = 'All';
+    this.#selectedBuilding = null;
     this.#screen = 'build-selection';
   }
   searchBuildings(query: string): void {
     this.#buildSearch = query;
+    this.#selectedBuilding = null;
+  }
+  selectBuildingCategory(category: BuildingCategory): void {
+    this.#buildingCategory = category;
+    this.#selectedBuilding = null;
+  }
+  selectBuilding(type: BuildType | null): void {
+    this.#selectedBuilding = type;
   }
   research(type: Technology | null): void {
     this.#game.selectResearch(type);

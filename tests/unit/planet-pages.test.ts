@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
+import { AppView } from '../../src/client/views/AppView.js';
 import { AppController } from '../../src/client/controllers/AppController.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
+import { renderBuildSelection } from '../../src/client/views/BuildSelectionView.js';
 import { renderPlanet } from '../../src/client/views/PlanetView.js';
 import { compactProjectGroups } from '../../src/client/views/PlanetProductionView.js';
 import type { ConstructionProjectSnapshot } from '../../src/client/models/Game.js';
@@ -70,10 +72,14 @@ describe('planetgemensamt-produktval', () => {
       'You',
       emit,
       model.snapshot.fleets,
-      { ...model.snapshot, planetTab: 'production' },
+      {
+        ...model.snapshot,
+        planetTab: 'production',
+        productionProduct: 'Fighter',
+      },
     );
     expect(
-      view.querySelectorAll('[aria-label="Production product"] option'),
+      view.querySelectorAll('[aria-label="Product list"] .catalog-item'),
     ).toHaveLength(1);
     view
       .querySelector<HTMLButtonElement>('[aria-label="Queue Fighter"]')!
@@ -167,6 +173,9 @@ it('planetundersidor / sparat-spel: browsing pages, products and supply steps ne
   });
   controller.start();
   save.mockClear();
+  emit({ type: 'building-category', category: 'Resources' });
+  emit({ type: 'building-selection', building: 'Iron mine' });
+  emit({ type: 'build-search', query: 'Iron' });
   emit({ type: 'planet-tab', tab: 'production' });
   emit({
     type: 'production-selection',
@@ -181,4 +190,164 @@ it('planetundersidor / sparat-spel: browsing pages, products and supply steps ne
   });
   emit({ type: 'project-supply', id: planet.projects[0]!.id, open: false });
   expect(save).not.toHaveBeenCalled();
+});
+
+describe('byggkategorier / symbolbaserade-kataloger', () => {
+  it('filters building types by category and search, with symbol-only named category buttons', () => {
+    const { model, emit } = setup();
+    model.openBuildSite(0);
+    const snapshot = model.snapshot;
+    const options = [
+      'Research station',
+      'Iron mine',
+      'Fighter factory',
+      'Rocket engine factory',
+    ] as const;
+    const render = (
+      buildingCategory: typeof snapshot.buildingCategory,
+      buildSearch = '',
+    ) =>
+      renderBuildSelection(
+        {
+          ...snapshot,
+          buildingCategory,
+          buildSearch,
+          planet: {
+            ...snapshot.planet!,
+            buildOptions: options.map((type) => ({
+              type,
+              blockedReason: null,
+            })),
+          },
+        },
+        emit,
+      );
+    const ships = render('Shipyards');
+    expect(
+      [...ships.querySelectorAll('.catalog-item')].map(
+        (item) => item.textContent,
+      ),
+    ).toEqual(['Fighter factory']);
+    const categories =
+      ships.querySelectorAll<HTMLButtonElement>('.catalog-category');
+    for (const category of categories) {
+      expect(category.textContent).toBe('');
+      expect(category.getAttribute('aria-label')).toBe(category.title);
+      expect(category.querySelector('svg')?.getAttribute('aria-hidden')).toBe(
+        'true',
+      );
+    }
+    ships
+      .querySelector<HTMLButtonElement>('[aria-label="Components"]')!
+      .click();
+    expect(emit).toHaveBeenCalledWith({
+      type: 'building-category',
+      category: 'Components',
+    });
+    expect(
+      render('Resources', 'finite').querySelector('.catalog-item')?.textContent,
+    ).toBe('Iron mine');
+    expect(
+      render('Research', 'Fighter').querySelector('.empty-results'),
+    ).not.toBeNull();
+  });
+  it('keeps compact building rows free of order controls until selected and then shows full information', () => {
+    const { model, emit } = setup();
+    model.openBuildSite(0);
+    const initial = renderBuildSelection(model.snapshot, emit);
+    const choice = initial.querySelector<HTMLButtonElement>(
+      '[aria-label="Show Research station"]',
+    )!;
+    expect(choice.textContent).toBe('Research station');
+    expect(choice.querySelector('svg')).not.toBeNull();
+    expect(initial.querySelector('.catalog-details')).toBeNull();
+    choice.click();
+    expect(emit).toHaveBeenCalledExactlyOnceWith({
+      type: 'building-selection',
+      building: 'Research station',
+    });
+    model.selectBuilding('Research station');
+    const details = renderBuildSelection(model.snapshot, emit).querySelector(
+      '.catalog-details',
+    )!;
+    expect(details.textContent).toContain('Contributes one research point');
+    expect(details.textContent).toContain('600 workers');
+    expect(details.textContent).toContain('Already built');
+    expect(
+      details.querySelector('[aria-label="Build Research station"]'),
+    ).not.toBeNull();
+    model.selectBuildingCategory('Resources');
+    expect(model.snapshot.selectedBuilding).toBeNull();
+    expect(
+      renderBuildSelection(model.snapshot, emit).querySelector(
+        '.catalog-details',
+      ),
+    ).toBeNull();
+  });
+  it('shows product details only on selection and preserves the separate compact queue', () => {
+    const { model, emit } = setup();
+    const planet = {
+      ...model.snapshot.planet!,
+      buildings: [
+        {
+          id: 'fighter',
+          type: 'Fighter factory' as const,
+          slotIndex: 0,
+          scheduledForDemolition: false,
+        },
+      ],
+    };
+    const render = (productionProduct: string | null) =>
+      renderPlanet(planet, 'You', emit, [], {
+        ...model.snapshot,
+        planetTab: 'production',
+        productionProduct,
+      });
+    const initial = render(null);
+    expect(initial.querySelectorAll('select')).toHaveLength(0);
+    expect(initial.querySelector('.catalog-details')).toBeNull();
+    const choice = initial.querySelector<HTMLButtonElement>(
+      '[aria-label="Show Fighter"]',
+    )!;
+    expect(choice.textContent).toBe('Fighter');
+    expect(choice.querySelector('svg')).not.toBeNull();
+    choice.click();
+    expect(emit).toHaveBeenCalledExactlyOnceWith({
+      type: 'production-selection',
+      category: 'Ships',
+      product: 'Fighter',
+    });
+    const selected = render('Fighter');
+    const details = selected.querySelector('.catalog-details')!;
+    expect(details.textContent).toContain('Speed 3 hexes/year');
+    expect(details.textContent).toContain('50 crew');
+    expect(details.textContent).toContain('Rocket engine');
+    expect(details.textContent).toContain('Weapons module');
+    expect(selected.querySelector('.compact-build-queue')).not.toBeNull();
+    expect(
+      details.querySelector('[aria-label="Queue Fighter"]'),
+    ).not.toBeNull();
+  });
+});
+
+it('symbolbaserade-kataloger: keeps keyboard focus on a category that shares a name with main navigation', () => {
+  const { model } = setup();
+  model.openBuildSite(0);
+  const root = document.createElement('div');
+  document.body.replaceChildren(root);
+  const controller = new AppController(
+    model,
+    new AppView(root, () => ({ render() {}, dispose() {} })),
+  );
+  controller.start();
+  const category = root.querySelector<HTMLButtonElement>(
+    '.catalog-categories [aria-label="Research"]',
+  )!;
+  category.focus();
+  category.click();
+  expect(model.snapshot.buildingCategory).toBe('Research');
+  expect(document.activeElement).toBe(
+    root.querySelector('.catalog-categories [aria-label="Research"]'),
+  );
+  controller.dispose();
 });

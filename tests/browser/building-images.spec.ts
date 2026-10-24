@@ -6,7 +6,10 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
 }, testInfo) => {
   await page.goto('./');
   await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Research', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('button', { name: 'Research', exact: true })
+    .click();
   const images = page.locator('.research-page img');
   await expect(images).toHaveCount(4);
   const sources: string[] = [];
@@ -35,6 +38,9 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
   await page
     .getByRole('button', { name: 'Build building at site 1', exact: true })
     .click();
+  await page
+    .getByRole('button', { name: 'Show Research station', exact: true })
+    .click();
   const selected = page.getByRole('img', {
     name: 'Research station',
     exact: true,
@@ -49,6 +55,9 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
   await page.screenshot({
     path: testInfo.outputPath('build-selection-image.png'),
   });
+  await page
+    .getByRole('button', { name: 'Show Research station', exact: true })
+    .click();
   await page
     .getByRole('button', { name: 'Build Research station', exact: true })
     .click();

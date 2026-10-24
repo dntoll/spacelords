@@ -50,7 +50,10 @@ test('planettypsforskning / domes-per-byggplats / terraformning / andningsbar-at
   }, initialState());
   await page.goto('./');
   await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Research', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('button', { name: 'Research', exact: true })
+    .click();
   await expect(page.locator('[data-technology="Ice dome"]')).toHaveCount(0);
   await chooseResearch(page, 'Desert terraforming factory');
   for (let year = 0; year < 2; year++) {
@@ -97,10 +100,16 @@ test('planettypsforskning / domes-per-byggplats / terraformning / andningsbar-at
     .click();
   await expect(
     page.getByRole('button', {
-      name: 'Build Ice terraforming factory',
+      name: 'Show Ice terraforming factory',
       exact: true,
     }),
   ).toHaveCount(0);
+  await page
+    .getByRole('button', {
+      name: 'Show Desert terraforming factory',
+      exact: true,
+    })
+    .click();
   await page
     .getByRole('button', {
       name: 'Build Desert terraforming factory',

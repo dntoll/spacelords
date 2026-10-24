@@ -32,6 +32,11 @@ function start(): AppController {
 }
 
 function click(label: string): void {
+  const action = /^(Build|Queue) (.+)$/.exec(label);
+  if (action && !root.querySelector(`[aria-label="${label}"]`))
+    root
+      .querySelector<HTMLButtonElement>(`[aria-label="Show ${action[2]}"]`)
+      ?.click();
   const button = [...root.querySelectorAll('button')].find(
     (candidate) =>
       candidate.textContent === label ||
@@ -77,6 +82,7 @@ describe('bygga-forskningsstation', () => {
     click('Open planet');
     click('Building sites');
     click('Build building');
+    click('Show Research station');
     const build = [...root.querySelectorAll('button')].find(
       (button) => button.textContent === 'Build Research station',
     );
@@ -214,6 +220,7 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
     expect(root.querySelector('.building-menu')).toBeNull();
     click('Building sites');
     click('Build building');
+    click('Show Colony ship factory');
     const menu = root.querySelector('.building-menu')!;
     expect(menu.textContent).toContain('Colony ship factory');
     expect(menu.textContent).toContain('Exploration ship factory');
@@ -229,6 +236,7 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
     );
     click('Building sites');
     click('Build building');
+    click('Show Colony ship factory');
     const queuedAgain = [
       ...root.querySelectorAll<HTMLButtonElement>('.building-choice button'),
     ].find((b) => b.textContent === 'Build Colony ship factory')!;
@@ -249,6 +257,7 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
     const production = () => root.querySelector('.planet-building-queue')!;
     expect(root.querySelectorAll('.compact-build-queue')).toHaveLength(1);
     expect(root.querySelector('.building-site')).toBeNull();
+    click('Show Colony ship');
     const select = root.querySelector<HTMLSelectElement>(
       '[aria-label="Destination fleet for Colony ship"]',
     )!;

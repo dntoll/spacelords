@@ -232,6 +232,12 @@ export class AppController {
       case 'open-fleets':
         this.#model.openFleets();
         break;
+      case 'building-category':
+        this.#model.selectBuildingCategory(intent.category);
+        break;
+      case 'building-selection':
+        this.#model.selectBuilding(intent.building);
+        break;
       case 'build-search':
         this.#model.searchBuildings(intent.query);
         break;
@@ -449,6 +455,9 @@ export class AppController {
         'begin-fleet-rename',
         'cancel-fleet-rename',
         'planet-tab',
+        'building-category',
+        'building-selection',
+        'build-search',
         'production-selection',
         'production-fleet',
         'project-supply',

@@ -1,6 +1,7 @@
 import type { Component } from '../models/Economy.js';
 import type {
   AppReadModel,
+  BuildingCategory,
   PlanetTab,
   ProductionCategory,
 } from '../models/AppModel.js';
@@ -134,6 +135,8 @@ export type AppIntent =
   | { readonly type: 'submit-fleet-name' }
   | { readonly type: 'cancel-ship-transfer' }
   | { readonly type: 'queue-component'; readonly component: Component }
+  | { readonly type: 'building-category'; readonly category: BuildingCategory }
+  | { readonly type: 'building-selection'; readonly building: BuildType | null }
   | { readonly type: 'build-search'; readonly query: string }
   | { readonly type: 'select'; readonly position: HexCoordinate }
   | { readonly type: 'pan'; readonly delta: Point }

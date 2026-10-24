@@ -105,11 +105,17 @@ for (const size of [
     await page
       .getByRole('button', { name: 'Build building at site 1', exact: true })
       .click();
+    await page
+      .getByRole('button', { name: 'Show Research station', exact: true })
+      .click();
     await expect(
       page.getByRole('button', { name: 'Build Research station', exact: true }),
     ).toBeEnabled();
     await expectContentFits(page);
-    await page.getByRole('button', { name: 'Research', exact: true }).click();
+    await page
+      .getByRole('navigation', { name: 'Main navigation' })
+      .getByRole('button', { name: 'Research', exact: true })
+      .click();
     await expectContentFits(page);
     await page.screenshot({
       path: testInfo.outputPath('research-viewport.png'),
@@ -143,10 +149,16 @@ test('viewport-game-layout: wider fallback font metrics cannot expand the planet
     .getByRole('button', { name: 'Build building at site 1', exact: true })
     .click();
   await expectContentFits(page);
+  await page
+    .getByRole('button', { name: 'Show Research station', exact: true })
+    .click();
   await expect(
     page.getByRole('button', { name: 'Build Research station', exact: true }),
   ).toBeEnabled();
-  await page.getByRole('button', { name: 'Research', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('button', { name: 'Research', exact: true })
+    .click();
   await expectContentFits(page);
 });
 
@@ -176,7 +188,7 @@ test('visa-byggalternativ / kompakta-bygghandlingar: selection preserves Overvie
   await expect(page.locator('.empty-results')).toBeVisible();
   await expect(search).toBeFocused();
   await search.fill('research point');
-  await expect(page.locator('.building-choice')).toHaveCount(1);
+  await expect(page.locator('.catalog-item')).toHaveCount(1);
   await expectContentFits(page);
   await page.screenshot({ path: testInfo.outputPath('build-selection.png') });
   await page

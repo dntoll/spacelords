@@ -8,7 +8,10 @@ for (const width of [320, 900]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto('./');
     await startFirstSlot(page);
-    await page.getByRole('button', { name: 'Research', exact: true }).click();
+    await page
+      .getByRole('navigation', { name: 'Main navigation' })
+      .getByRole('button', { name: 'Research', exact: true })
+      .click();
     await chooseResearch(page, 'Colony ship factory');
     const research = page.locator('.research-queue');
     await research.locator('summary').click();
@@ -29,6 +32,9 @@ for (const width of [320, 900]) {
           name: `Build building at site ${index + 1}`,
           exact: true,
         })
+        .click();
+      await page
+        .getByRole('button', { name: `Show ${type}`, exact: true })
         .click();
       await page
         .getByRole('button', { name: `Build ${type}`, exact: true })

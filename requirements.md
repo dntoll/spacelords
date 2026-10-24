@@ -10,6 +10,12 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Kategoriserade bygg- och produktval:** `byggkategorier` och
+  `symbolbaserade-kataloger` är **Fullständigt implementerat**. Symbolknappar
+  filtrerar kompakta listor med symbol och namn i Build selection och Production.
+  Val av en post öppnar full information och en separat beställningsknapp.
+  Sökning, tangentbordsfokus och den kompakta byggkön behålls.
+
 - **Planetens undersidor:** `planetundersidor`, `byggplatsrutnat`,
   `projektens-forsorjningssteg`, `planetgemensamt-produktval` och
   `kompakt-produktionsko` är **Fullständigt implementerat**. Overview,

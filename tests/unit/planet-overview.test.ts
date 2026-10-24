@@ -26,8 +26,13 @@ function setup() {
   );
   controller.start();
   const click = (text: string) => {
+    const action = /^(Build|Queue) (.+)$/.exec(text);
+    if (action && !root.querySelector(`[aria-label="${text}"]`))
+      root
+        .querySelector<HTMLButtonElement>(`[aria-label="Show ${action[2]}"]`)
+        ?.click();
     const button = [...root.querySelectorAll('button')].find(
-      (b) => b.textContent === text,
+      (b) => b.textContent === text || b.getAttribute('aria-label') === text,
     );
     expect(button, text).toBeDefined();
     button!.click();
@@ -47,8 +52,10 @@ describe('visa-byggalternativ', () => {
       .click();
     expect(root.querySelector('h1')?.textContent).toBe('Build selection');
     expect(root.textContent).not.toContain('\ufffd');
-    expect(root.querySelectorAll('.building-choice')).toHaveLength(4);
-    expect(root.querySelectorAll('.cost-ok')).toHaveLength(16);
+    expect(root.querySelectorAll('.catalog-item')).toHaveLength(4);
+    expect(root.querySelector('.catalog-details')).toBeNull();
+    click('Show Research station');
+    expect(root.querySelectorAll('.cost-ok')).toHaveLength(4);
     click('Build Research station');
     expect(model.snapshot.planet?.sites[2]?.project?.type).toBe(
       'Research station',
@@ -66,7 +73,7 @@ describe('visa-byggalternativ', () => {
     search.focus();
     search.value = 'unknown';
     search.dispatchEvent(new Event('input'));
-    expect(root.querySelectorAll('.building-choice')).toHaveLength(0);
+    expect(root.querySelectorAll('.catalog-item')).toHaveLength(0);
     expect(document.activeElement?.getAttribute('type')).toBe('search');
     click('Back to Building sites');
     expect(model.snapshot.planet?.projects).toHaveLength(0);
@@ -126,6 +133,7 @@ describe('gemensamma-byggnadsbilder', () => {
     const { root, click } = setup();
     click('Building sites');
     click('Build building');
+    click('Show Research station');
     const label = root.querySelector('img')?.getAttribute('src');
     click('Build Research station');
     expect(root.querySelector('img')?.getAttribute('src')).toBe(label);
@@ -217,6 +225,7 @@ describe('visa-byggalternativ', () => {
     const view = renderBuildSelection(
       {
         ...snapshot,
+        selectedBuilding: 'Research station',
         planet: {
           ...planet,
           budget: {
@@ -242,12 +251,16 @@ describe('visa-byggalternativ', () => {
     const { root, model, click } = setup();
     click('Building sites');
     click('Build building');
+    click('Show Research station');
+    const staleOrder = root.querySelector<HTMLButtonElement>(
+      '[aria-label="Build Research station"]',
+    )!;
     model.build('Research station', 0);
     model.openBuildSite(1);
     const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       // Submit the old view's site 0 order after it has become occupied.
-      click('Build Research station');
+      staleOrder.click();
       expect(model.snapshot.screen).toBe('build-selection');
       expect(model.snapshot.constructionSite).toBe(1);
       expect(model.snapshot.planet?.projects).toHaveLength(1);
@@ -263,7 +276,7 @@ describe('visa-byggalternativ', () => {
     model.searchBuildings('research point');
     expect(
       renderBuildSelection(model.snapshot, () => {}).querySelectorAll(
-        '.building-choice',
+        '.catalog-item',
       ),
     ).toHaveLength(1);
   });
@@ -342,7 +355,11 @@ describe('gemensam-planetko / fabrikskoer / kompakta-bygghandlingar', () => {
       'You',
       emit,
       model.snapshot.fleets,
-      { phase: 'planning', planetTab: 'production' },
+      {
+        phase: 'planning',
+        planetTab: 'production',
+        productionProduct: BUILDINGS[type].ship!,
+      },
     );
     expect(
       view.querySelector('[aria-label="Build ships at site 1"]'),
@@ -392,11 +409,13 @@ describe('gemensam-planetko / fabrikskoer / kompakta-bygghandlingar', () => {
         {
           phase: state === 'locked' ? 'simulating' : 'planning',
           planetTab: 'production',
+          productionProduct: 'Colony ship',
         },
       );
       expect(
-        view.querySelector<HTMLButtonElement>('.production-order button')
-          ?.disabled,
+        view.querySelector<HTMLButtonElement>(
+          '.production-details button[aria-label^="Queue "]',
+        )?.disabled,
       ).toBe(true);
       expect(
         view.querySelector<HTMLSelectElement>(
@@ -451,14 +470,16 @@ describe('byggnadsantal-lokalt-och-globalt', () => {
       [local, '2'],
       [remote, '3'],
     ] as const) {
-      const view = renderBuildSelection(
-        { ...snapshot, planet: selected, ownedPlanets: [local, remote] },
-        () => {},
-      );
-      const inventory = (type: string) =>
-        view.querySelector(
-          `[data-building-type="${type}"] .building-inventory`,
-        )!;
+      const inventory = (type: BuildType) =>
+        renderBuildSelection(
+          {
+            ...snapshot,
+            selectedBuilding: type,
+            planet: selected,
+            ownedPlanets: [local, remote],
+          },
+          () => {},
+        ).querySelector(`[data-building-type="${type}"] .building-inventory`)!;
       expect(inventory('Research station').textContent).toContain(
         `On ${selected.name}`,
       );
