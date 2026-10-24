@@ -184,8 +184,11 @@ for (const size of [
       .boundingBox())!;
     const bounds = (await tree.boundingBox())!;
     expect(bounds.width).toBeGreaterThanOrEqual(pageBounds.width - 26);
+    const turnActions = (await page
+      .locator('.research-page .turn-actions')
+      .boundingBox())!;
     expect(bounds.height).toBeGreaterThanOrEqual(
-      pageBounds.height - header.height - 40,
+      pageBounds.height - header.height - turnActions.height - 50,
     );
     const count = page.locator('.research-introduction summary');
     await expect(count).toHaveAttribute('aria-label', 'Research stations · 0');

@@ -315,8 +315,8 @@ varningsdialog, avbrott, lagringsfel och radering av en enda plats.
 - `handelser` och `arsrundor-och-order`: domänmodellen publicerar händelser när
   de inträffar; ankomst registreras exakt en gång. Livefaserna är planning och
   simulating. Äldre sparad summary läses som planning och gamla steghändelser
-  filtreras bort. Konsolen läser oföränderliga händelser, visar de senaste 100
-  med intern scroll och följer nya händelser när spelaren är längst ned.
+  filtreras bort. Konsolen läser oföränderliga händelser, visar ett begränsat historikfönster
+  utan att klippa senaste året och rullas enligt `senaste-aret-i-events`.
   Händelsehistoriken sparas i sin helhet. Tester skyddar fasväxling, ordning,
   ankomst, sparkompatibilitet, tillgänglig logg och små skärmar.
 
@@ -521,7 +521,8 @@ införs.
 målfunktion för Review och navigeringsmarkeringar. AppReadModel exponerar en
 oföränderlig lista attentionScreens som härleds från needsAttention. Kartans
 problemmarkeringar behåller sin avgränsning; byggval och lediga flottor ger
-flikmarkeringar utan nya problemringar på planeter. Vyn lägger till ! samt
+flikmarkeringar och riktad gul vägledning enligt `beslutsvagledning-i-vyn`;
+röda problemringar behåller sin tidigare betydelse. Vyn lägger till ! samt
 Needs attention för tillgänglighet på varje berörd flik. Ingen ny data sparas.
 `tystade-beslut-sist` grupperas stabilt i DecisionBoard innan oföränderliga
 ögonblicksbilder skapas. Next decision tas bort från vy, controller och
@@ -540,3 +541,18 @@ visar !, tillgänglig förklaring och vald varning, men ändrar inte domänregle
 eller spärrar Build på grund av rådgivningen. Befintliga controllers,
 validering, kategorier och sidor återanvänds. Granskning ändrar inte sparat spel,
 order, reservationer eller ID-sekvens. Sparformatet ändras inte.
+
+`senaste-aret-i-events` bevarar Decisions-konsolen ansluten när beslutslistan
+renderas om. Ändrat år följer alltid slutet; uppdateringar inom samma år
+respekterar läsposition. `utvikbara-events` använder HTML details/summary och
+tillfälligt presentationstillstånd i AppView. Utfällning rullar till senaste
+händelserna. Höjd begränsas av sidans och skärmens utrymme, med intern scroll.
+`rundkontroller-pa-fler-vyer` återanvänder TurnActionsView och befintliga
+controllerhandlingar. Research och planetvyn behålls under startTurn.
+
+`beslutsvagledning-i-vyn` använder en separat vy för åtgärdstext, Show och
+HTML-markeringar. needsAttention och decisionScreen är gemensamma med
+navigeringen. p5 ritar ringar från samma aktiva beslut och gemensam
+FleetMapLayout; markerade skepp och planeter behåller korrekt träfftest.
+Varken guidning, utfällning eller läsposition skapar nya domänorder,
+reservationer, sparfält eller ID:n. Befintliga sparningar bevaras.

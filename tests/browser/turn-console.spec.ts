@@ -46,6 +46,7 @@ for (const size of [
     await expect(panel).toBeHidden();
     await expect(console).toBeVisible();
     await expect(end).toBeVisible();
+    await console.locator('summary').click();
     await expect(page.getByText('Empty space', { exact: true })).toHaveCount(0);
     await expect(
       page.getByText('Unexplored space', { exact: true }),
@@ -90,6 +91,7 @@ for (const size of [
     await page.reload();
     await startFirstSlot(page);
     await page.getByRole('button', { name: 'Decisions', exact: true }).click();
+    await console.locator('summary').click();
     await expect(log).toContainText('Home Fleet arrived at Vesta.');
   });
 }
@@ -103,6 +105,7 @@ test('handelser: Events adapts to available screen space without a selection', a
   await selectMapHex(page, new HexCoordinate(-2, 0));
   for (let year = 0; year < 8; year++) await endTurn(page);
   const panel = page.getByRole('region', { name: 'Turn console' });
+  await panel.locator('summary').click();
   const large = (await panel.boundingBox())!;
   expect(large.height).toBeGreaterThanOrEqual(180);
   expect(large.width).toBeGreaterThan(320);
@@ -120,6 +123,6 @@ test('handelser: Events adapts to available screen space without a selection', a
     expect(bounds.y + bounds.height).toBeLessThanOrEqual(end.y);
     expect(bounds.x).toBeGreaterThanOrEqual(0);
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(size.width);
-    if (size.width < 900) expect(bounds.height).toBeLessThanOrEqual(90);
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
   }
 });

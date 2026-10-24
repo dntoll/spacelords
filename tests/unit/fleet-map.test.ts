@@ -344,3 +344,38 @@ it('ruttflottor-pa-kartan: Route highlights idle transports, labels route fleets
     expect(sketch.fill).not.toHaveBeenCalledWith('#d8a7ff');
   }
 });
+
+it('beslutsvagledning-i-vyn: idle fleet decisions have a solid amber ring and Production marks the planet needing an order', () => {
+  const { sketch } = drawing();
+  const dash = vi.fn();
+  renderMapFleets(
+    { ...sketch, drawingContext: { setLineDash: dash } } as unknown as p5,
+    [{ ...fleet('idle'), destination: null }],
+    1,
+    undefined,
+    true,
+    null,
+    ['idle'],
+  );
+  expect(sketch.stroke).toHaveBeenCalledWith('#ffdc88');
+  expect(dash).toHaveBeenCalledWith([]);
+  const model = new AppModel();
+  model.openProduction();
+  const text = vi.fn();
+  renderMapOverlays(
+    {
+      ...sketch,
+      text,
+      textSize: vi.fn(),
+      textAlign: vi.fn(),
+      CENTER: 'center',
+      BOTTOM: 'bottom',
+    } as unknown as p5,
+    model.snapshot,
+  );
+  expect(text).toHaveBeenCalledWith(
+    '!',
+    expect.any(Number),
+    expect.any(Number),
+  );
+});

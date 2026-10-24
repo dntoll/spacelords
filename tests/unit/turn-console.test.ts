@@ -152,3 +152,39 @@ describe('handelser / arsrundor-och-order', () => {
     view.dispose();
   });
 });
+
+it('utvikbara-events / senaste-aret-i-events: retains every event in the latest year even when it exceeds the history limit', () => {
+  const root = document.createElement('div');
+  document.body.replaceChildren(root);
+  const model = new AppModel();
+  model.openDecisions();
+  const view = new AppView(root, () => ({ render() {}, dispose() {} }));
+  const events = Array.from({ length: 140 }, (_, index) => ({
+    id: `latest-${index}`,
+    round: 20,
+    text: `Event ${index}`,
+  }));
+  view.render({ ...model.snapshot, events });
+  expect(root.querySelectorAll('[data-event-id]')).toHaveLength(140);
+  expect(root.querySelector('.turn-console')!.tagName).toBe('DETAILS');
+  expect(root.querySelector('.turn-console summary')).not.toBeNull();
+  view.dispose();
+});
+
+it('rundkontroller-pa-fler-vyer: exposes Events and End turn on Research and planet pages and keeps the view through a turn', () => {
+  for (const screen of ['research', 'planet'] as const) {
+    const root = document.createElement('div');
+    document.body.replaceChildren(root);
+    const model = new AppModel();
+    if (screen === 'research') model.openResearch();
+    else model.openPlanet();
+    const view = new AppView(root, () => ({ render() {}, dispose() {} }));
+    view.render(model.snapshot);
+    expect(root.querySelector('.turn-console')).not.toBeNull();
+    expect(root.querySelector('.end-turn')).not.toBeNull();
+    for (const frame of model.startTurn()) model.applyTurnFrame(frame);
+    model.finishTurn();
+    expect(model.snapshot.screen).toBe(screen);
+    view.dispose();
+  }
+});

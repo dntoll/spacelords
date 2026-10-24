@@ -1,3 +1,4 @@
+import { decisionScreen, needsAttention } from '../models/Decisions.js';
 import { HexGeometry } from '../models/HexCoordinate.js';
 import type p5 from 'p5';
 import type { AppReadModel } from '../models/AppModel.js';
@@ -13,11 +14,17 @@ export function renderMapOverlays(sketch: p5, model: AppReadModel): void {
       const attention = model.mapProblems.some(
         (p) => p.planetId === planet.id && p.screen === model.screen,
       );
+      const decision = model.decisions.some(
+        (decision) =>
+          needsAttention(decision) &&
+          decision.planetId === planet.id &&
+          decisionScreen(decision) === model.screen,
+      );
       const chain =
         model.screen === 'production'
           ? model.supplyChain.planets.find((p) => p.id === planet.id)
           : null;
-      if (!attention && !chain) continue;
+      if (!attention && !decision && !chain) continue;
       const zoom = model.camera.zoom;
       sketch.noFill();
       sketch.stroke(attention ? '#ff8e85' : '#ffdc88');
@@ -28,7 +35,7 @@ export function renderMapOverlays(sketch: p5, model: AppReadModel): void {
       sketch.textSize(12 / zoom);
       sketch.textAlign(sketch.CENTER, sketch.BOTTOM);
       sketch.text(
-        attention ? '!' : chain!.roles.join(' / '),
+        attention || decision ? '!' : chain!.roles.join(' / '),
         point.x,
         point.y - 24 / zoom,
       );
@@ -43,5 +50,10 @@ export function renderMapOverlays(sketch: p5, model: AppReadModel): void {
     model,
     model.screen === 'fleets',
     model.screen === 'route' ? model.tradeRoutes : null,
+    model.screen === 'fleets'
+      ? model.decisions
+          .filter(needsAttention)
+          .flatMap((decision) => (decision.fleetId ? [decision.fleetId] : []))
+      : [],
   );
 }

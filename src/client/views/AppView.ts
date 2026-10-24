@@ -1,3 +1,4 @@
+import { updateDecisionGuidance } from './DecisionGuidanceView.js';
 import {
   isMapScreen,
   productionPosition,
@@ -62,6 +63,7 @@ export class AppView implements AppPort {
   #viewportKey = '';
   #resizeFrame = 0;
   #productionDetailType: string | null = null;
+  #eventsExpanded = false;
 
   constructor(
     root: HTMLElement,
@@ -80,6 +82,15 @@ export class AppView implements AppPort {
   }
 
   render(model: AppReadModel): void {
+    const previousActions =
+      this.#root.querySelector<HTMLElement>('.turn-actions');
+    const previousConsole =
+      previousActions?.querySelector<HTMLDetailsElement>('.turn-console');
+    if (previousConsole && !previousConsole.hidden)
+      this.#eventsExpanded = previousConsole.open;
+    const previousEventScroll =
+      previousActions?.querySelector<HTMLElement>('[role="log"]')?.scrollTop ??
+      0;
     if (model.screen !== 'research') {
       this.#researchObserver?.disconnect();
       this.#researchObserver = null;
@@ -412,10 +423,28 @@ export class AppView implements AppPort {
       }
     }
     if (!changedScreen && model.screen === 'decisions') {
-      const actions = this.#root.querySelector('.turn-actions');
+      // senaste-aret-i-events: keep the log attached while decisions change.
       const page = renderDecisions(model, this.#emit);
-      if (actions) page.querySelector('.turn-actions')?.replaceWith(actions);
-      this.#root.querySelector('main')?.replaceChildren(page);
+      this.#root
+        .querySelector('.decisions-page .empire-content')
+        ?.replaceWith(page.querySelector('.empire-content')!);
+    }
+    if (model.screen === 'research' || model.screen === 'planet') {
+      const page = this.#root.querySelector<HTMLElement>(
+        `.${model.screen}-page`,
+      );
+      page?.classList.add('has-turn-actions');
+      if (page && !page.querySelector('.turn-actions')) {
+        const actions =
+          !changedScreen && previousActions
+            ? previousActions
+            : renderTurnActions(this.#emit);
+        actions.classList.add('screen-turn-actions');
+        page.append(actions);
+        if (!changedScreen)
+          actions.querySelector<HTMLElement>('[role="log"]')!.scrollTop =
+            previousEventScroll;
+      }
     }
     this.#renderMapProblems(model);
     const counter = this.#root.querySelector('.decision-counter');
@@ -481,11 +510,15 @@ export class AppView implements AppPort {
       ))
         control.hidden = selected;
     }
-    if (isMapScreen(model.screen) || model.screen === 'decisions') {
+    if (
+      isMapScreen(model.screen) ||
+      ['decisions', 'research', 'planet'].includes(model.screen)
+    ) {
       const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
       if (end) end.disabled = model.phase !== 'planning';
       this.#renderTurnConsole(model);
     }
+    updateDecisionGuidance(this.#root, model, this.#emit);
     const nameInput =
       this.#root.querySelector<HTMLInputElement>('.fleet-name-input');
     if (nameInput && model.fleetNameEdit) {
@@ -568,15 +601,53 @@ export class AppView implements AppPort {
     const log = this.#root.querySelector<HTMLElement>(
       '.turn-console [role="log"]',
     );
-    if (!log || log.closest<HTMLElement>('.turn-console')?.hidden) return;
-    const events = model.events.slice(-100);
-    const key = events.at(-1)?.id ?? 'empty';
+    if (!log) return;
+    const console = log.closest<HTMLDetailsElement>('.turn-console')!;
+    if (console.open !== this.#eventsExpanded)
+      console.open = this.#eventsExpanded;
+    if (console.hidden) return;
+    const layout = () => {
+      const pageHeight =
+        console.closest<HTMLElement>(
+          '.map-page, .decisions-page, .research-page, .planet-page',
+        )?.clientHeight ?? 0;
+      const maximum = console.closest('.map-page')
+        ? pageHeight - 104
+        : pageHeight * 0.5;
+      console.style.setProperty(
+        '--events-max-height',
+        `${Math.max(80, maximum || 260)}px`,
+      );
+    };
+    layout();
+    if (!console.dataset.bound) {
+      console.dataset.bound = 'true';
+      console.addEventListener('toggle', () => {
+        if (!console.isConnected) return;
+        this.#eventsExpanded = console.open;
+        layout();
+        if (console.open) log.scrollTop = log.scrollHeight;
+      });
+    }
+    const latestYear = model.events.at(-1)?.round;
+    const firstLatest = model.events.findIndex(
+      (event) => event.round === latestYear,
+    );
+    const start = Math.min(
+      Math.max(0, model.events.length - 100),
+      Math.max(0, firstLatest),
+    );
+    const events = model.events.slice(start);
+    const key = `${events.at(-1)?.id ?? 'empty'}:${model.round}`;
     if (log.dataset.lastEvent === key) return;
-    const follow = log.scrollHeight - log.clientHeight - log.scrollTop < 8;
+    const follow =
+      log.dataset.round !== String(model.round) ||
+      log.scrollHeight - log.clientHeight - log.scrollTop < 8;
     const list = log.querySelector('ol')!;
     if (events.length) log.querySelector('.console-empty')?.remove();
     list.replaceChildren(...renderGroupedEvents(events));
     log.dataset.lastEvent = key;
+    log.dataset.round = String(model.round);
     if (follow) log.scrollTop = log.scrollHeight;
   }
 

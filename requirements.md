@@ -152,11 +152,17 @@ Se [hela visionen](docs/game-vision.md).
   beslut öppnas med Review. Next decision är borttagen och ersätter det tidigare
   knappkravet i `beslutslista`. End turn varnar
   samlat och låter spelaren fortsätta ändå. Händelsekonsolen (`handelser`) är
-  fullständigt implementerad och anpassar sin storlek efter skärmen: fler
-  synliga rader på större skärmar och kompakt format på små eller låga skärmar.
+  fullständigt implementerad: Events är fällbar och visar hela senaste året
+  när utrymmet räcker, med intern rullning för resten.
   Events och End turn döljs när kartan visar ett val.
   `rundkontroller-i-decisions` är **Fullständigt implementerat**: båda finns
   även i Decisions.
+  `senaste-aret-i-events`, `utvikbara-events` och `rundkontroller-pa-fler-vyer`
+  är **Fullständigt implementerat**: nytt år visar senaste händelserna, Events
+  kan fällas ut och in, och Research samt planetvyn har egna rundkontroller.
+  `beslutsvagledning-i-vyn` är **Fullständigt implementerat**: ! följs av
+  gulmarkeringar på rätt objekt och kontroller, kort åtgärdshjälp och Show.
+  Se [Events och beslutsguidning](docs/events-and-guidance.md).
 - **Utveckling och kvalitet:** MVC, TypeScript, ESLint, p5 i instance mode,
   en snabb testsvit inom 20 sekunder och en utökad svit i GitHub CI.
   `utokad-testsvit` har en jobbtidsgräns på 20 minuter inklusive installation

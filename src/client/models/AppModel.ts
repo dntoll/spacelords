@@ -1186,7 +1186,10 @@ export class AppModel {
   startTurn(): readonly TurnFrame[] {
     this.#pendingEndTurn = false;
     this.cancelMapPointer();
-    if (this.#screen !== 'decisions' && !this.#isMapScreen())
+    if (
+      !['decisions', 'research', 'planet'].includes(this.#screen) &&
+      !this.#isMapScreen()
+    )
       this.#screen = 'map';
     this.#destinationFleetId = null;
     return this.#game.startTurn();

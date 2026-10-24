@@ -2535,3 +2535,102 @@ p {
 .production-dependency-warning {
   color: #ffdc88;
 }
+
+/* utvikbara-events / rundkontroller-pa-fler-vyer */
+.turn-console,
+.decisions-page .turn-console {
+  height: auto;
+  max-height: min(var(--events-max-height, 260px), calc(100dvh - 130px));
+  display: block;
+}
+.turn-console > summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--accent);
+}
+.turn-console > summary::before {
+  content: '▸';
+}
+.turn-console[open] > summary::before {
+  content: '▾';
+}
+.turn-console > summary h2 {
+  font-size: 0.8rem;
+}
+.turn-console .console-log {
+  max-height: min(
+    calc(var(--events-max-height, 260px) - 56px),
+    calc(100dvh - 190px)
+  );
+}
+.screen-turn-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+  min-height: 0;
+}
+.screen-turn-actions .turn-console {
+  position: static;
+  width: 100%;
+}
+.screen-turn-actions .end-turn {
+  position: static;
+  min-height: 44px;
+}
+.research-page.has-turn-actions {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.planet-page.has-turn-actions {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+
+/* beslutsvagledning-i-vyn: visible targets share the navigation warning color. */
+.decision-guidance {
+  padding: 6px 8px;
+  border: 1px solid #ffdc88;
+  color: #e5e8e6;
+  background: #0a1520f5;
+  max-height: 120px;
+  overflow: auto;
+  font-size: 0.75rem;
+}
+.decision-guidance-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.decision-guidance-row p {
+  margin: 4px 0;
+  flex: 1;
+}
+.decision-guidance-row button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 8px;
+}
+.page.has-map-guidance > .map-page {
+  top: var(--decision-guide-height);
+}
+.page > .decision-guidance {
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  width: calc(100% - 20px);
+  z-index: 3;
+}
+.decision-target:not(.production-ring) {
+  outline: 2px solid #ffdc88;
+  outline-offset: -2px;
+}
+.research-page.has-turn-actions.has-decision-guidance {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+@media (max-height: 500px) {
+  .page > .decision-guidance {
+    max-height: 76px;
+  }
+}

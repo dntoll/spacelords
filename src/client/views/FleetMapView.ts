@@ -30,6 +30,7 @@ export function renderMapFleets(
   },
   showUnselectedRings = false,
   routeView: readonly TradeRouteSnapshot[] | null = null,
+  attentionFleetIds: readonly string[] = [],
 ): void {
   const markers = FleetMapLayout.markers(fleets, routeView ?? [], zoom);
   const destinationFor = (fleet: FleetSnapshot) =>
@@ -78,6 +79,7 @@ export function renderMapFleets(
   for (const { fleet, point, scale } of markers) {
     const selected = interaction.mapFleetId === fleet.id;
     const hovered = interaction.hoveredFleetId === fleet.id;
+    const needsOrder = attentionFleetIds.includes(fleet.id);
     const availableTransport =
       routeView !== null &&
       !fleet.routeId &&
@@ -88,23 +90,28 @@ export function renderMapFleets(
       ? '#ffdc88'
       : hovered
         ? '#d5fff6'
-        : availableTransport
-          ? '#d8a7ff'
-          : '#72d8ca';
+        : needsOrder
+          ? '#ffdc88'
+          : availableTransport
+            ? '#d8a7ff'
+            : '#72d8ca';
     if (
       selected ||
       hovered ||
       showUnselectedRings ||
       availableTransport ||
+      needsOrder ||
       (routeView && fleet.routeId)
     ) {
       const context = sketch.drawingContext as
         CanvasRenderingContext2D | undefined;
       context?.setLineDash(
-        showUnselectedRings && !selected ? [3 / zoom, 3 / zoom] : [],
+        showUnselectedRings && !selected && !needsOrder
+          ? [3 / zoom, 3 / zoom]
+          : [],
       );
       sketch.stroke(color);
-      sketch.strokeWeight((selected ? 2 : 1.5) / zoom);
+      sketch.strokeWeight((selected || needsOrder ? 2.5 : 1.5) / zoom);
       if (selected || hovered)
         sketch.fill(selected ? '#ffdc8833' : '#72d8ca33');
       else sketch.noFill();

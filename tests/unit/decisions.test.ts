@@ -279,3 +279,35 @@ it.each([
     expect(decisionScreen({ id, kind, label: id })).toBe(expected);
   },
 );
+
+it('beslutsvagledning-i-vyn: explains the missing order and highlights its interactive target on each view with an attention marker', () => {
+  const root = document.createElement('div');
+  document.body.replaceChildren(root);
+  const model = researchStationModel();
+  const view = new AppView(root, () => ({ render() {}, dispose() {} }));
+  model.openDecision('fleet-idle-fleet-home');
+  view.render(model.snapshot);
+  expect(
+    root.querySelector('[aria-label="Decisions in this view"]')?.textContent,
+  ).toContain('Home Fleet');
+  expect(root.querySelector('.fleet-card.decision-target')).not.toBeNull();
+  model.openResearch();
+  view.render(model.snapshot);
+  expect(
+    root.querySelector('[aria-label="Decisions in this view"]')?.textContent,
+  ).toContain('Choose a technology');
+  expect(
+    root.querySelector('.research-tree-viewport.decision-target'),
+  ).not.toBeNull();
+  model.openProduction();
+  view.render(model.snapshot);
+  expect(
+    root.querySelector('[aria-label="Decisions in this view"]')?.textContent,
+  ).toContain('queue a build');
+  model.muteDecision('building-empty-sol-0');
+  view.render(model.snapshot);
+  expect(
+    root.querySelector('[aria-label="Decisions in this view"]'),
+  ).toBeNull();
+  view.dispose();
+});
