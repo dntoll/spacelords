@@ -141,7 +141,8 @@ streckade enligt `streckade-rutter-utan-transporter`.
 ## Decisions
 
 Tom forskningskö, tom gemensam planetkö, saknad fabrik, ledig flotta och
-försörjningsproblem samlas i Decisions. Next decision och Review öppnar rätt
-sammanhang. Normal väntan på lokal utvinning eller fungerande transport visas
+försörjningsproblem samlas i Decisions. Review på varje beslut öppnar rätt
+sammanhang. Motsvarande flik visar ! för aktiva beslut. Tystade beslut visas
+sist i listan och saknar flikmarkering. Next decision är borttagen. Normal väntan på lokal utvinning eller fungerande transport visas
 som status. Skip this turn gäller ett år. End turn visar en samlad varning;
 spelaren får alltid fortsätta med End turn anyway.

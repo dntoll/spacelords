@@ -112,7 +112,12 @@ describe('forsorjningsproblem-pa-kartan', () => {
       model.snapshot.supply.planets.find((p) => p.id === 'sol-1')!.status,
     ).toBe('Waiting');
     expect(model.snapshot.mapProblems).toEqual([]);
-    expect(root.querySelector('.nav-attention')).toBeNull();
+    expect(
+      root.querySelector('[data-screen="route"] .nav-attention'),
+    ).toBeNull();
+    expect(
+      root.querySelector('[data-screen="fleets"] .nav-attention'),
+    ).not.toBeNull();
     controller.dispose();
   });
   it('routes decisions to Route or Production with the affected object selected', () => {

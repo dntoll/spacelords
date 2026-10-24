@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
+import { decisionScreen } from '../../src/client/models/Decisions.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import { AppController } from '../../src/client/controllers/AppController.js';
@@ -194,3 +195,87 @@ describe('tysta-beslut', () => {
     );
   });
 });
+
+it('beslutsmarkering-pa-flikar: marks every resolving tab and updates markers after mute, skip and review', () => {
+  const model = researchStationModel();
+  const root = document.createElement('div');
+  document.body.replaceChildren(root);
+  const controller = new AppController(
+    model,
+    new AppView(root, () => ({ render() {}, dispose() {} })),
+  );
+  controller.start();
+  const marker = (screen: string) =>
+    root.querySelector(`[data-screen="${screen}"] .nav-attention`);
+  expect(marker('fleets')).not.toBeNull();
+  expect(marker('research')).not.toBeNull();
+  expect(marker('production')).not.toBeNull();
+  expect(marker('route')).toBeNull();
+  expect(marker('map')).toBeNull();
+  model.muteDecision('fleet-idle-fleet-home');
+  controller.start();
+  expect(marker('fleets')).toBeNull();
+  model.unmuteDecision('fleet-idle-fleet-home');
+  model.openDecision('fleet-idle-fleet-home');
+  controller.start();
+  expect(model.snapshot.screen).toBe('fleets');
+  expect(marker('fleets')).not.toBeNull();
+  model.skipDecision('fleet-idle-fleet-home');
+  controller.start();
+  expect(marker('fleets')).toBeNull();
+  controller.dispose();
+});
+
+it('tystade-beslut-sist: keeps active and skipped decisions before muted decisions, including resolved reminders', () => {
+  const game = Game.restore(researchStationState());
+  game.muteDecision('research-empty');
+  expect(game.decisions.map((decision) => decision.id)).toEqual([
+    'building-empty-sol-0',
+    'fleet-idle-fleet-home',
+    'research-empty',
+  ]);
+  game.skipDecision('building-empty-sol-0');
+  game.selectResearch('Colony ship factory');
+  expect(game.decisions.at(-1)).toMatchObject({
+    id: 'research-empty',
+    muted: true,
+    current: false,
+  });
+  game.unmuteDecision('research-empty');
+  expect(game.decisions.map((decision) => decision.id)).toEqual([
+    'building-empty-sol-0',
+    'fleet-idle-fleet-home',
+  ]);
+});
+
+it('beslutslista: removes Next decision and retains Review on each decision', () => {
+  const root = document.createElement('div');
+  document.body.replaceChildren(root);
+  const model = researchStationModel();
+  model.openDecisions();
+  const controller = new AppController(
+    model,
+    new AppView(root, () => ({ render() {}, dispose() {} })),
+  );
+  controller.start();
+  expect(root.querySelector('[aria-label="Next decision"]')).toBeNull();
+  expect(
+    root.querySelectorAll('[data-decision-id] [aria-label="Review"]'),
+  ).toHaveLength(3);
+  controller.dispose();
+});
+
+it.each([
+  ['research-empty', 'research', 'research'],
+  ['fleet-idle-home', 'fleet', 'fleets'],
+  ['route-idle-one', 'route', 'route'],
+  ['supply-sol-0', 'planet', 'route'],
+  ['staff-sol-0', 'planet', 'production'],
+  ['production-sol-0', 'planet', 'production'],
+  ['building-empty-sol-0', 'planet', 'production'],
+] as const)(
+  'beslutsmarkering-pa-flikar: %s belongs to %s decisions and highlights %s',
+  (id, kind, expected) => {
+    expect(decisionScreen({ id, kind, label: id })).toBe(expected);
+  },
+);

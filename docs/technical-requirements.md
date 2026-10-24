@@ -516,3 +516,13 @@ Hovring behåller minst 4,5:1 kontrast mellan byggvalets text och bakgrund.
 `byggknapp-vid-titel` använder en gemensam flexrad för titel och Build i kartans
 byggdetaljer. Kostnader och hinder finns nedanför och ingen ny köbegränsning
 införs.
+
+`beslutsmarkering-pa-flikar` använder decisionScreen i modellen som gemensam
+målfunktion för Review och navigeringsmarkeringar. AppReadModel exponerar en
+oföränderlig lista attentionScreens som härleds från needsAttention. Kartans
+problemmarkeringar behåller sin avgränsning; byggval och lediga flottor ger
+flikmarkeringar utan nya problemringar på planeter. Vyn lägger till ! samt
+Needs attention för tillgänglighet på varje berörd flik. Ingen ny data sparas.
+`tystade-beslut-sist` grupperas stabilt i DecisionBoard innan oföränderliga
+ögonblicksbilder skapas. Next decision tas bort från vy, controller och
+avsiktskontrakt; Review går fortsatt genom befintliga navigeringshandlingar.

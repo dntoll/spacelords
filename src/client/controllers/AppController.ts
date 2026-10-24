@@ -51,7 +51,6 @@ export class AppController {
     }
     if (
       intent.type.startsWith('open-') ||
-      intent.type === 'next-decision' ||
       ['home', 'pan', 'zoom', 'begin-destination', 'end-turn'].includes(
         intent.type,
       )
@@ -160,9 +159,6 @@ export class AppController {
       }
       case 'open-decisions':
         this.#model.openDecisions();
-        break;
-      case 'next-decision':
-        this.#model.openDecision();
         break;
       case 'open-decision':
         this.#model.openDecision(intent.id);

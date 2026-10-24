@@ -68,7 +68,6 @@ export type AppIntent =
   | {
       readonly type:
         | 'open-decisions'
-        | 'next-decision'
         | 'confirm-end-turn'
         | 'cancel-end-turn'
         | 'confirm-research-removal'

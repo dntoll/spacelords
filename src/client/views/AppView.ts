@@ -761,15 +761,15 @@ export class AppView implements AppPort {
     for (const control of this.#root.querySelectorAll<HTMLElement>(
       '.nav-button[data-screen]',
     )) {
-      const attention = model.mapProblems.some(
-        (problem) => problem.screen === control.dataset.screen,
+      const attention = model.attentionScreens.some(
+        (screen) => screen === control.dataset.screen,
       );
       control.querySelector('.nav-attention')?.remove();
       if (attention) {
         const marker = element('span', 'nav-attention', '!');
         marker.setAttribute('aria-hidden', 'true');
         control.append(marker);
-        control.title = `${control.dataset.screen === 'route' ? 'Route' : 'Production'}: Needs attention`;
+        control.title = `${control.getAttribute('aria-label')}: Needs attention`;
       } else control.removeAttribute('title');
       control.setAttribute(
         'aria-description',

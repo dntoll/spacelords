@@ -140,10 +140,14 @@ Se [hela visionen](docs/game-vision.md).
   först vid maximal panelhöjd. Vid återgång rullas innehållet först till toppen
   innan panelen krymper.
   En del av kartan förblir synlig.
-- **Beslut och händelser:** Decisions och Next decision samlar val och
+- **Beslut och händelser:** Decisions samlar val och
   försörjningsproblem. Spelaren kan hoppa över beslut ett år eller tysta ett
   enskilt beslut tills det återaktiveras i Decisions. `tysta-beslut` är
-  **Fullständigt implementerat** och sparas separat i varje spel. End turn varnar
+  **Fullständigt implementerat** och sparas separat i varje spel.
+  `beslutsmarkering-pa-flikar` och `tystade-beslut-sist` är **Fullständigt implementerat**:
+  aktiva beslut markerar rätt flik med !, tystade beslut ligger sist och varje
+  beslut öppnas med Review. Next decision är borttagen och ersätter det tidigare
+  knappkravet i `beslutslista`. End turn varnar
   samlat och låter spelaren fortsätta ändå. Händelsekonsolen (`handelser`) är
   fullständigt implementerad och anpassar sin storlek efter skärmen: fler
   synliga rader på större skärmar och kompakt format på små eller låga skärmar.

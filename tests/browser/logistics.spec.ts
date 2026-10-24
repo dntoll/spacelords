@@ -62,7 +62,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await page.getByRole('button', { name: 'Decisions', exact: true }).click();
   await expect(
     page.getByRole('button', { name: 'Next decision', exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await page
     .locator('[data-decision-id="building-empty-sol-0"]')
     .getByRole('button', { name: 'Skip this turn' })

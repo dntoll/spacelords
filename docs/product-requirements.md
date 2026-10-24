@@ -194,12 +194,29 @@ en ändplanet vid tilldelning; andra uppdrag måste fortfarande avslutas först.
 flottor och kartans informationsmärken förblir tydliga ovanpå linjerna.
 
 `tysta-beslut` — **Fullständigt implementerat**: Mute tystar ett enskilt beslut
-även under kommande rundor. Det undantas från Next decision, beslutsräknaren
+även under kommande rundor. Det undantas från flikmarkeringar, beslutsräknaren
 och rundvarningen. Beslutet ligger kvar i Decisions med Unmute, även när det
 tillfälligt inte längre är aktuellt. Unmute återaktiverar aktuella påminnelser
 direkt. Inställningen sparas per spel och gäller samma beslut för samma
 flotta, planet eller rutt; andra beslut påverkas inte. Skip this turn behåller
 sin betydelse för enbart innevarande runda.
+
+`beslutsmarkering-pa-flikar` är **Fullständigt implementerat**: Research, Fleets,
+Route och Production visar ! när det finns ett aktivt, otystat och inte
+överhoppat beslut som hanteras där. Markeringen följer samma mål som Review:
+forskning → Research; flottorder → Fleets; rutter och försörjning → Route;
+byggval, saknad fabrik och personal → Production. Flera beslut på samma flik
+ger en gemensam markering, som finns kvar tills alla dessa beslut är lösta,
+överhoppade eller tystade. Markeringarna uppdateras direkt på alla skärmar och
+vid inläsning av sparat spel. Detta utökar den tidigare flikmarkeringen för
+endast kartans försörjningsproblem.
+
+`tystade-beslut-sist` är **Fullständigt implementerat**: Decisions visar tystade
+beslut efter övriga beslut, även när de tillfälligt inte längre är aktuella.
+Den inbördes ordningen behålls inom grupperna. Unmute flyttar ett aktuellt
+beslut till dess vanliga plats. Review, Skip this turn, Mute och Unmute finns
+kvar per beslut. Next decision är borttagen efter uttrycklig ändring och
+ersätter det tidigare knappkravet under `beslutslista`.
 
 | Kravnamn               | Status                     | Krav                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ---------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -240,7 +257,7 @@ senare transportbortfall blockerar försörjningen men raderar inte huvudordern.
 | `skepp-till-rorlig-flotta`     | Fullständigt implementerat | Skepp som skickas till en avlägsen flotta reser som en separat grupp med status En route och följer målflottans rörelser tills de möts. Fart och avstånd gäller; långsammare skepp är inte garanterade att hinna ikapp. Ordern sparas, kan avbrytas eller ersättas. Om målet försvinner eller blir tomt stannar gruppen för nya order.                                              |
 | `fysisk-frakt`                 | Fullständigt implementerat | Last flyttas med flottor på kartan och lastas om vid mellanplaneter. Kapacitet, position och avstånd påverkar leveranstiden.                                                                                                                                                                                                                                                        |
 | `automatisk-resursforsorjning` | Fullständigt implementerat | Aktiva köprojekt beställer saknat material från nätverkets tillgängliga överskott. Lager och inkommande leveranser räknas av utan dubbelbokning.                                                                                                                                                                                                                                    |
-| `beslutslista`                 | Fullständigt implementerat | Decisions och Next decision samlar obesvarade val och försörjningsproblem. Tom produktionskö ger ett gemensamt val per planet, inte en påminnelse per fabrik. Saknad fabrik för köad produktion ger ett beslut. Normal leveransväntan visas som status.                                                                                                                             |
+| `beslutslista`                 | Fullständigt implementerat | Decisions samlar obesvarade val och försörjningsproblem; varje beslut har Review. Tom produktionskö ger ett gemensamt val per planet, inte en påminnelse per fabrik. Saknad fabrik för köad produktion ger ett beslut. Normal leveransväntan visas som status.                                                                                                                      |
 | `hoppa-over-beslut`            | Fullständigt implementerat | Skip this turn låter spelaren avstå från ett val utan ny varning samma år.                                                                                                                                                                                                                                                                                                          |
 | `rundvarning`                  | Fullständigt implementerat | End turn visar kvarvarande beslut tillsammans. Spelaren kan återgå eller välja End turn anyway.                                                                                                                                                                                                                                                                                     |
 

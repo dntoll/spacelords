@@ -22,7 +22,12 @@ import {
   type ResearchCameraSnapshot,
 } from './ResearchTree.js';
 import type { Component } from './Economy.js';
-import { needsAttention, type Decision } from './Decisions.js';
+import {
+  decisionScreen,
+  needsAttention,
+  type Decision,
+  type DecisionScreen,
+} from './Decisions.js';
 import type { ShipmentSnapshot, TradeRouteSnapshot } from './Logistics.js';
 import { FleetMapLayout } from './FleetMapLayout.js';
 import { Camera, type CameraSnapshot } from './Camera.js';
@@ -84,6 +89,7 @@ export interface AppReadModel {
   readonly focusedProjectId: string | null;
   readonly projectSupply: readonly ProjectSupplySnapshot[];
   readonly decisions: readonly Decision[];
+  readonly attentionScreens: readonly DecisionScreen[];
   readonly tradeRoutes: readonly TradeRouteSnapshot[];
   readonly supply: SupplyOverview;
   readonly shipments: readonly ShipmentSnapshot[];
@@ -299,6 +305,7 @@ export class AppModel {
 
   // mvc-arkitektur: no write operations or hidden world data cross into views.
   get snapshot(): AppReadModel {
+    const decisions = this.#game.decisions;
     const projectSupply =
       (this.#screen === 'planet' && this.#planetTab === 'queue') ||
       this.#screen === 'production'
@@ -318,7 +325,10 @@ export class AppModel {
       ]),
       focusedProjectId: this.#focusedProjectId,
       projectSupply,
-      decisions: this.#game.decisions,
+      decisions,
+      attentionScreens: Object.freeze([
+        ...new Set(decisions.filter(needsAttention).map(decisionScreen)),
+      ]),
       tradeRoutes: this.#game.tradeRoutes,
       supply: this.#game.supplyOverview(),
       shipments: this.#game.shipments,
@@ -333,28 +343,26 @@ export class AppModel {
           ? this.#game.supplyChain(this.#selectedMapProject())
           : emptySupplyChain(),
       mapProblems: Object.freeze(
-        this.#game.decisions
-          .filter(needsAttention)
-          .flatMap((decision): MapProblem[] => {
-            const screen =
-              decision.id.startsWith('supply-') || decision.kind === 'route'
-                ? 'route'
-                : decision.id.startsWith('staff-') ||
-                    decision.id.startsWith('production-')
-                  ? 'production'
-                  : null;
-            return screen
-              ? [
-                  Object.freeze({
-                    decisionId: decision.id,
-                    planetId: decision.planetId,
-                    routeId: decision.routeId,
-                    screen,
-                    explanation: decision.label,
-                  }),
-                ]
-              : [];
-          }),
+        decisions.filter(needsAttention).flatMap((decision): MapProblem[] => {
+          const screen =
+            decision.id.startsWith('supply-') || decision.kind === 'route'
+              ? 'route'
+              : decision.id.startsWith('staff-') ||
+                  decision.id.startsWith('production-')
+                ? 'production'
+                : null;
+          return screen
+            ? [
+                Object.freeze({
+                  decisionId: decision.id,
+                  planetId: decision.planetId,
+                  routeId: decision.routeId,
+                  screen,
+                  explanation: decision.label,
+                }),
+              ]
+            : [];
+        }),
       ),
       mapTrade: this.#mapTrade.snapshot,
       ownedPlanets: this.#game.ownedPlanetSnapshots(),
@@ -983,18 +991,15 @@ export class AppModel {
       this.openDecisions();
       return;
     }
-    if (decision.kind === 'research') this.openResearch();
-    else if (decision.routeId) this.openSupplyRoute(decision.routeId);
-    else if (decision.fleetId) this.openFleet(decision.fleetId);
-    else {
-      const planet = this.#game
-        .ownedPlanetSnapshots()
-        .find((p) => p.id === decision.planetId);
-      if (planet && decision.id.startsWith('supply-')) {
-        this.openRoute(planet.id);
-      } else if (planet) {
-        this.openProduction(planet.id);
-      }
+    const target = decisionScreen(decision);
+    if (target === 'research') this.openResearch();
+    else if (target === 'fleets' && decision.fleetId)
+      this.openFleet(decision.fleetId);
+    else if (target === 'route' && decision.routeId)
+      this.openSupplyRoute(decision.routeId);
+    else if (decision.planetId) {
+      if (target === 'route') this.openRoute(decision.planetId);
+      else this.openProduction(decision.planetId);
     }
   }
   skipDecision(id: string): void {

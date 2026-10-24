@@ -11,9 +11,7 @@ export function renderDecisions(
   const page = element('section', 'empire-page decisions-page');
   page.append(element('h1', '', 'Decisions'));
   const panel = element('div', 'empire-content');
-  const next = button('Next decision', () => emit({ type: 'next-decision' }));
-  next.disabled = !model.decisions.some(needsAttention);
-  panel.append(next);
+
   if (!model.decisions.length)
     panel.append(element('p', '', 'No decisions need your attention.'));
   for (const item of model.decisions) {

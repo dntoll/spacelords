@@ -17,6 +17,21 @@ export function needsAttention(decision: Decision): boolean {
   return decision.current && !decision.skipped && !decision.muted;
 }
 
+export type DecisionScreen = 'research' | 'fleets' | 'route' | 'production';
+
+// beslutsmarkering-pa-flikar: Review and navigation use the same destination.
+export function decisionScreen(decision: DecisionDescriptor): DecisionScreen {
+  if (decision.kind === 'research') return 'research';
+  if (
+    decision.routeId ||
+    decision.kind === 'route' ||
+    decision.id.startsWith('supply-')
+  )
+    return 'route';
+  if (decision.fleetId || decision.kind === 'fleet') return 'fleets';
+  return 'production';
+}
+
 export class DecisionBoard {
   readonly #muted = new Map<string, Readonly<DecisionDescriptor>>();
 
@@ -58,14 +73,19 @@ export class DecisionBoard {
       ...this.muted.filter((item) => !current.has(item.id)),
     ];
     return Object.freeze(
-      all.map((item) =>
-        Object.freeze({
-          ...item,
-          skipped: this.skipped.has(item.id),
-          muted: this.#muted.has(item.id),
-          current: current.has(item.id),
-        }),
-      ),
+      all
+        .sort(
+          (a, b) =>
+            Number(this.#muted.has(a.id)) - Number(this.#muted.has(b.id)),
+        )
+        .map((item) =>
+          Object.freeze({
+            ...item,
+            skipped: this.skipped.has(item.id),
+            muted: this.#muted.has(item.id),
+            current: current.has(item.id),
+          }),
+        ),
     );
   }
 }
