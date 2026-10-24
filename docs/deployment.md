@@ -645,3 +645,22 @@ inte automatiskt version 3-sparningar till det äldre formatet.
 Återställ vid behov enbart `spacelords/` från
 `87adc361d7a397abac6f6a0f935aca42173d03c1` på en ny branch från aktuell
 `main`, med samma granskade publiceringsflöde.
+
+## Provkörning av normalflödet: 2026-10-24
+
+- Publicerad källrevision: `1120d5104cfdc70aaef46f9f35be13ef644ccacf` på
+  `codex/quick-mobile-deployment`, med aktuell flottkarteändring.
+- Deploycommit: `aa56a651b394d943e172b6b3afaced520f53d029`.
+  Webbplatsrepots tidigare revision: `1e0dc0bf120bf775db2386bfce2e35d29afef3d9`.
+  Bara `spacelords/` ändrades. Källrepots `main` är oförändrad.
+- `deploy:quick` avslutades med `verified`: snabbkontroller 56,88 sekunder,
+  hela flödet 140,25 sekunder inklusive Pages. Begränsad kloning och sparse
+  checkout tog 3,18 sekunder.
+- 328 snabba tester, nio verktygskontroller, Pages-integration och två
+  mobiltester passerade. Ytterligare två korta mobilkontroller passerade live.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/40070361118)
+  lyckades. Alla tolv livefiler matchade kontrollsummorna; omdirigeringen och
+  HTML/JS/CSS-typerna verifierades. Kontrolladresserna för befintlig webbplats
+  var oförändrade. Inga sparformat eller rensningsregler ändrades av arbetsflödet.
+- Lokal rapport: `dist/deployments/1120d5104cfd-1792823258061/report.json`.
+  Manuell mobiltest följer; sluttest och merge väntar på användarens begäran.

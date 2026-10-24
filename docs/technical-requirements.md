@@ -394,14 +394,16 @@ och manuellt startat sluttest för exakt källrevision. Båda sviterna finns kva
 GitHub CI; 20-sekundersgränsen gäller fortsatt hela snabbsviten och sluttestjobbet
 har fortsatt högst 20 minuter inklusive installation.
 
-- `snabb-mobilpublicering` — **Delvis implementerat**: `check:quick` kontrollerar
+- `snabb-mobilpublicering` — **Fullständigt implementerat**: `check:quick` kontrollerar
   kvalitet, typer, snabbsvit, Pages-bygge, publiceringsskydd, Pages-integration och
   kort mobiltest i Chromium och WebKit. `deploy:quick` kräver ren arbetsbranch,
   pushar exakt källrevision och publicerar enbart `spacelords/` via isolerad
   checkout och vanlig push. Den sparar rapport och kontrollerar Pages, livefiler
-  och mobilnavigation. Verklig snabbpublicering och CI återstår att verifiera.
-- `sluttest-fore-merge` — **Delvis implementerat**: hela sviten är manuellt
-  startbar i CI med låst källrevision. Separat ja krävs efter godkänt sluttest
+  och mobilnavigation. Normalflödet är verifierat mot liveadressen; snabb-CI har
+  också passerat. Gles hämtning av aktuell revision undviker webbplatsrepots
+  övriga innehåll och historik.
+- `sluttest-fore-merge` — **Delvis implementerat**: hela sviten är förberedd för
+  manuell CI-start med låst källrevision. Separat ja krävs efter godkänt sluttest
   innan merge till källrepots `main`. Första aktivering på defaultbranch och
   verklig manuell CI-körning återstår; införandeundantaget finns i
   `docs/deployment.md`. Inga branchskydd eller Pages-inställningar ändras.
@@ -414,3 +416,18 @@ för avgränsning, okända filer, symboliska länkar, revisioner, avbrutna kontr
 och samtidiga publiceringar. Mobiltestet använder kravnamnen
 `snabb-mobilpublicering`, `viewport-game-layout` och `sparat-spel`. Processkravet
 på begäran och mergegodkännande verifieras genom arbetsregler och granskning.
+
+### Verifiering av normalflödet 2026-10-24
+
+`deploy:quick` publicerade källrevision `1120d5104cfdc70aaef46f9f35be13ef644ccacf`
+och avslutades med `verified`. Snabbkontrollerna tog 56,88 sekunder;
+hela flödet tog 140,25 sekunder inklusive Git, Pages och livekontroll.
+328 enhetstester passerade på 15,46 sekunder inklusive verktygsstart,
+nio verktygskontroller och Pages-integration passerade. Två mobiltester
+passerade före publicering och två korta mobilkontroller passerade live.
+Kloning och sparse checkout tog tillsammans 3,18 sekunder.
+
+[Snabb-CI](https://github.com/dntoll/spacelords/actions/runs/40069893096) är
+verifierad separat. [Pages](https://github.com/dntoll/dntoll.github.io/actions/runs/40070361118)
+lyckades; tolv livefiler matchade bygget och revisionsmetadata. Sluttest och merge
+har inte beställts eller genomförts; inga nya tider för hela sluttestsviten finns.

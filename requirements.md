@@ -106,10 +106,11 @@ Se [hela visionen](docs/game-vision.md).
   en snabb testsvit inom 20 sekunder och en utökad svit i GitHub CI.
   `utokad-testsvit` har en jobbtidsgräns på 20 minuter inklusive installation
   av webbläsare; snabbsvitens gräns är oförändrad.
-  `snabb-mobilpublicering` och `sluttest-fore-merge` är **Delvis implementerat**:
-  snabbkontroller och lokal publiceringsautomatik införs; verklig publicering och
-  första CI-körningen återstår att verifiera. Normalläget prioriterar mobil och
-  manuell test; fullständig testning beställs separat före godkänd merge.
+  `snabb-mobilpublicering` är **Fullständigt implementerat** och provpublicerat:
+  normalläget prioriterar mobil och manuell test efter automatiska kontroller.
+  `sluttest-fore-merge` är **Delvis implementerat**: fullständig testning beställs
+  separat före godkänd merge; första aktivering av manuell sluttest-CI på
+  defaultbranch återstår.
 - **Driftsättning:** endast klientbygget under `spacelords/` i målrepot;
   befintlig webbplats, navigation, DNS och Pages-inställningar bevaras.
 
