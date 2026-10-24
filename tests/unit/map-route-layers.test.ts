@@ -44,6 +44,7 @@ it.each(
     const context = { globalAlpha: 1, setLineDash: () => {} };
     const alphaStack: number[] = [];
     const planetAlphas: number[] = [];
+    const planetLabelAlphas: number[] = [];
     const sketch = {
       width: 800,
       height: 600,
@@ -93,7 +94,10 @@ it.each(
       ellipse: noop,
       textAlign: noop,
       textSize: noop,
-      text: noop,
+      text: (label: string) => {
+        if (label === 'Tellus' || label === 'Vesta')
+          planetLabelAlphas.push(context.globalAlpha);
+      },
     };
     runtime.sketch = sketch as unknown as p5;
     vi.stubGlobal(
@@ -143,6 +147,8 @@ it.each(
       if (screen === 'map') expect(selection).toBeGreaterThanOrEqual(0);
       else expect(selection).toBe(-1);
       expect(planetAlphas.at(-1)).toBe(screen === 'fleets' ? 0.35 : 1);
+      expect(planetLabelAlphas.length).toBeGreaterThan(0);
+      expect(planetLabelAlphas.every((alpha) => alpha === 1)).toBe(true);
       expect(context.globalAlpha).toBe(1);
       expect(
         container.querySelector('canvas')?.getAttribute('aria-label'),

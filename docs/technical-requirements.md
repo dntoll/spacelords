@@ -56,7 +56,10 @@ utan att ändra kartans hexval. HTML-panelen visar flottkorten direkt och rullas
 AppView monterar GalaxyMapView för både Star map och Fleets. Samma Camera i
 AppModel används utan återställning vid växling. Skärmens typ styr rendering,
 träfftestning och tillåtna ruttgester. Fleets tonar ned himlakroppar och rutter,
-döljer planetmärken och använder FleetMapPanel för flottval. Ingen separat
+döljer planetmärken och använder FleetMapPanel för flottval. Ej valda flottor
+får streckade cirklar med zoomkompenserade streck; ritkontextens streckmönster
+återställs före skeppen. Himlakropparnas namn ritas med full opacitet utanför
+kropparnas nedtonade ritkontext. Ingen separat
 minikarta, översiktsvy eller förhandsvisningsfabrik för flottor finns kvar.
 Explicit ruttval från flottpanelen öppnar Star map; kartbakgrunden är inaktiv.
 Sparformat och domänmodell ändras inte.

@@ -100,8 +100,10 @@ tangentbordets zoom, panorering och översikt finns kvar.
 ## Flottfokuserad karta
 
 `flottfokuserad-kartvy` — **Fullständigt implementerat**: Fleets visar flottor,
-deras destinationer och en lokal flottpanel. Planeter, stjärnor, namn och
-handelslinjer visas diskret som orientering och går inte att välja eller dra.
+deras destinationer och en lokal flottpanel. Ej valda flottor har streckade
+cirklar, även vid hovring; vald flotta har en heldragen markeringscirkel.
+Planeter, stjärnor och handelslinjer visas diskret som orientering och går inte
+att välja eller dra. Himlakropparnas namn visas med full tydlighet.
 Planeternas informationsmärken döljs. Klick på bakgrunden stänger flottvalet,
 även utanför hexområdet. Under destinationsval anger ett giltigt kartklick
 i stället destinationen. Escape avbryter tillfälliga val. Drag över en handelslinje
@@ -238,6 +240,10 @@ senare transportbortfall blockerar försörjningen men raderar inte huvudordern.
 | `rundvarning`                  | Fullständigt implementerat | End turn visar kvarvarande beslut tillsammans. Spelaren kan återgå eller välja End turn anyway.                                                                                                                                                                                                                                                                                     |
 
 ## Ändringshistorik
+
+- 2026-10-24: `flottfokuserad-kartvy` förtydligas: ej valda flottor får
+  streckade cirklar och himlakropparnas namn visas med full tydlighet. Detta
+  ersätter den tidigare nedtoningen av namn; himlakropparna är fortsatt inaktiva.
 
 - 2026-10-24: `flottfokuserad-kartvy` och `delad-kartkamera` ersätter
   den kompakta översikten och Show on map-delen av `flottadministration`, samt

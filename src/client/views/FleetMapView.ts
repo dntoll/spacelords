@@ -27,6 +27,7 @@ export function renderMapFleets(
     fleetDragging: false,
     fleetDestinationPreview: null,
   },
+  showUnselectedRings = false,
 ): void {
   const markers = FleetMapLayout.markers(fleets);
   const destinationFor = (fleet: FleetSnapshot) =>
@@ -64,11 +65,19 @@ export function renderMapFleets(
     const selected = interaction.mapFleetId === fleet.id;
     const hovered = interaction.hoveredFleetId === fleet.id;
     const color = selected ? '#ffdc88' : hovered ? '#d5fff6' : '#72d8ca';
-    if (selected || hovered) {
+    if (selected || hovered || showUnselectedRings) {
+      const context = sketch.drawingContext as
+        CanvasRenderingContext2D | undefined;
+      context?.setLineDash(
+        showUnselectedRings && !selected ? [3 / zoom, 3 / zoom] : [],
+      );
       sketch.stroke(color);
       sketch.strokeWeight((selected ? 2 : 1.5) / zoom);
-      sketch.fill(selected ? '#ffdc8833' : '#72d8ca33');
+      if (selected || hovered)
+        sketch.fill(selected ? '#ffdc8833' : '#72d8ca33');
+      else sketch.noFill();
       sketch.circle(point.x, point.y, FleetMapLayout.hitRadius * 2);
+      context?.setLineDash([]);
     }
     const shipScale = Math.min(1 / zoom, scale);
     const sizes: number[] = [];

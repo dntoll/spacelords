@@ -7,5 +7,11 @@ export function renderMapOverlays(sketch: p5, model: AppReadModel): void {
   if (model.screen === 'map')
     renderPlanetOrders(sketch, model.planetOrders, model.camera.zoom);
   // kartflottor: colony badges must not hide selectable fleet markers.
-  renderMapFleets(sketch, model.fleets, model.camera.zoom, model);
+  renderMapFleets(
+    sketch,
+    model.fleets,
+    model.camera.zoom,
+    model,
+    model.screen === 'fleets',
+  );
 }

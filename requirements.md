@@ -40,7 +40,8 @@ Se [hela visionen](docs/game-vision.md).
   första skeppet. Flottkorten visas direkt utan Expand fleet panel eller Help.
   `flottfokuserad-kartvy` och `delad-kartkamera` är **Fullständigt implementerat**:
   Fleets visar en karta för flottval, rörelse och skeppsöverföring med samma
-  kamera som Star map. Planeter och rutter är diskret, inaktiv bakgrund.
+  kamera som Star map. Ej valda flottor har streckade cirklar.
+  Planeter och rutter är diskret, inaktiv bakgrund; namnen visas med full tydlighet.
   Den gamla översikten, minikartan och knapparna för tomma flottor ersätts;
   sparade flottor och förstärkningsregler bevaras. Se [produktkraven](docs/product-requirements.md).
   Ruttpanelen visar bara redan tilldelade flottor; den globala Assign fleet-listan

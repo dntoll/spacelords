@@ -113,13 +113,14 @@ export class GalaxyMapView implements MapPort {
     if (selected) this.#hex(sketch, selected, true, model.camera.zoom);
     // synliga-handelsrutter: selection fills stay below routes; objects stay above.
     renderMapTradeRoutes(sketch, model);
-    sketch.push();
-    const context = sketch.drawingContext as
-      CanvasRenderingContext2D | undefined;
-    if (context && model.screen === 'fleets') context.globalAlpha *= 0.35;
     for (const cell of model.cells)
-      if (cell.object) this.#object(sketch, cell, model.camera.zoom);
-    sketch.pop();
+      if (cell.object)
+        this.#object(
+          sketch,
+          cell,
+          model.camera.zoom,
+          model.screen === 'fleets',
+        );
     renderMapOverlays(sketch, model);
     if (this.#canvas)
       this.#canvas.style.cursor = model.fleetDragging
@@ -147,11 +148,15 @@ export class GalaxyMapView implements MapPort {
     sketch.endShape(sketch.CLOSE);
   }
 
-  #object(sketch: p5, cell: MapCell, zoom: number): void {
+  #object(sketch: p5, cell: MapCell, zoom: number, dimmed: boolean): void {
     const object = cell.object;
     if (!object) return;
     const point = HexGeometry.toPoint(cell.position);
     const star = object.kind === 'star';
+    sketch.push();
+    const context = sketch.drawingContext as
+      CanvasRenderingContext2D | undefined;
+    if (context && dimmed) context.globalAlpha *= 0.35;
     const color = star
       ? '#e9c78b'
       : object.owned
@@ -180,6 +185,8 @@ export class GalaxyMapView implements MapPort {
       sketch.fill(230, 245, 230, 80);
       sketch.circle(point.x - 4, point.y - 4, 4);
     }
+    sketch.pop();
+    sketch.noStroke();
     sketch.fill(star ? '#d7c49e' : object.owned ? '#d5f5e5' : '#b9c4c5');
     sketch.textAlign(sketch.CENTER, sketch.TOP);
     sketch.textSize(11 / zoom);

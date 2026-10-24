@@ -29,6 +29,7 @@ function drawing() {
   const sketch = {
     fill: vi.fn(),
     noStroke: vi.fn(),
+    noFill: vi.fn(),
     circle: vi.fn(),
     stroke: vi.fn(),
     strokeWeight: vi.fn(),
@@ -213,6 +214,57 @@ describe('kartflottor', () => {
       expect(Math.max(...platform.rect.mock.invocationCallOrder)).toBeLessThan(
         Math.min(...sketch.triangle.mock.invocationCallOrder),
       );
+    },
+  );
+});
+
+describe('flottfokuserad-kartvy', () => {
+  it.each([0.35, 1, 2.5])(
+    'outlines unselected fleets with screen-sized dashes only in Fleets at zoom %s',
+    (zoom) => {
+      for (const screen of ['fleets', 'map'] as const) {
+        const { sketch } = drawing();
+        const context = { setLineDash: vi.fn<(dash: number[]) => void>() };
+        let dash: number[] = [];
+        context.setLineDash.mockImplementation((value) => {
+          dash = value;
+        });
+        const rings: number[][] = [];
+        sketch.circle.mockImplementation(() => {
+          rings.push([...dash]);
+        });
+        sketch.triangle.mockImplementation(() => {
+          expect(dash).toEqual([]);
+        });
+        const platform = {
+          ...sketch,
+          drawingContext: context,
+          noFill: vi.fn(),
+        };
+        renderMapFleets(
+          platform as unknown as p5,
+          [
+            fleet('selected'),
+            fleet('hovered'),
+            fleet('idle'),
+            fleet('empty', 0),
+          ],
+          zoom,
+          {
+            mapFleetId: 'selected',
+            hoveredFleetId: 'hovered',
+            fleetDragging: false,
+            fleetDestinationPreview: null,
+          },
+          screen === 'fleets',
+        );
+        expect(rings).toEqual(
+          screen === 'fleets'
+            ? [[3 / zoom, 3 / zoom], [3 / zoom, 3 / zoom], []]
+            : [[], []],
+        );
+        expect(dash).toEqual([]);
+      }
     },
   );
 });
