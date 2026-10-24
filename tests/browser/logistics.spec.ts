@@ -110,7 +110,10 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await formFleet(page, 'Fighter', 'Home Fleet', 'Freighters');
   await formFleet(page, 'Exploration ship', 'Home Fleet', 'Settlers');
   await home(page);
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('button', { name: 'Production', exact: true })
+    .click();
   await page
     .getByRole('button', { name: 'Show Transport ship', exact: true })
     .click();
@@ -120,14 +123,20 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
       exact: true,
     })
     .selectOption({ label: 'Freighters' });
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('button', { name: 'Production', exact: true })
+    .click();
   await page
     .getByRole('button', { name: 'Show Transport ship', exact: true })
     .click();
   await page
     .getByRole('button', { name: 'Queue Transport ship', exact: true })
     .click();
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('button', { name: 'Production', exact: true })
+    .click();
   await page
     .getByRole('button', { name: 'Show Colony ship', exact: true })
     .click();
@@ -137,7 +146,10 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
       exact: true,
     })
     .selectOption({ label: 'Settlers' });
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('button', { name: 'Production', exact: true })
+    .click();
   await page
     .getByRole('button', { name: 'Show Colony ship', exact: true })
     .click();
@@ -168,9 +180,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await expect(page.locator('.planet-building-queue')).toContainText(
     'no active transport path',
   );
-  await page
-    .getByRole('button', { name: 'Supply & production', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Route', exact: true }).click();
   await connectTradePlanets(page, 'Tellus', 'Vesta');
   await assignFleetToRoute(page, 'Freighters', 'Tellus', 'Vesta');
   await expect(
@@ -206,9 +216,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   ).toBeEnabled();
   await freighters.locator('.fleet-assignment').scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath('fleet-trade-route.png') });
-  await page
-    .getByRole('button', { name: 'Supply & production', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Route', exact: true }).click();
   await page.screenshot({ path: testInfo.outputPath('trade-routes.png') });
   await nextYear(page);
   await selectMapObject(page, 'Vesta');

@@ -1,3 +1,13 @@
+import {
+  isMapScreen,
+  productionPosition,
+  type MapScreen,
+} from '../models/ProductionMap.js';
+import {
+  renderProductionRing,
+  renderProductionMapPanel,
+  renderRoutePlanet,
+} from './ProductionMapView.js';
 import { bindMapSelectionScroll } from './MapSelectionScroll.js';
 import { renderMapTradeSelection } from './StarMapTradeView.js';
 import { renderMapFleetPanel } from './FleetMapPanel.js';
@@ -6,7 +16,7 @@ import { renderSaveSlots, clearSlotDialog } from './SaveSlotsView.js';
 import { needsAttention } from '../models/Decisions.js';
 import type { MapCell } from '../models/Galaxy.js';
 import type { AppReadModel, Screen } from '../models/AppModel.js';
-import { HexCoordinate } from '../models/HexCoordinate.js';
+import { HexGeometry, HexCoordinate } from '../models/HexCoordinate.js';
 import type { TurnFrame } from '../models/Game.js';
 import type {
   AppPort,
@@ -18,7 +28,6 @@ import { renderBuildSelection } from './BuildSelectionView.js';
 import { renderPlanet } from './PlanetView.js';
 import { renderResearch } from './ResearchView.js';
 import { updateResearchCamera } from './ResearchTreeView.js';
-import { renderSupply } from './SupplyView.js';
 import { button, element } from './dom.js';
 import { renderDecisions, renderTurnWarning } from './EmpireView.js';
 import { renderTurnActions } from './TurnActionsView.js';
@@ -46,8 +55,12 @@ export class AppView implements AppPort {
   #researchKey = '';
   #researchViewport: HTMLElement | null = null;
   #researchObserver: ResizeObserver | null = null;
-  #supplyScroll = 0;
-  #supplyKey = '';
+  #mapObserver: ResizeObserver | null = null;
+  #ring: HTMLElement | null = null;
+  #ringKey = '';
+  #viewportKey = '';
+  #resizeFrame = 0;
+  #productionDetailType: string | null = null;
 
   constructor(
     root: HTMLElement,
@@ -66,22 +79,6 @@ export class AppView implements AppPort {
   }
 
   render(model: AppReadModel): void {
-    const supplyActive = document.activeElement;
-    const supplyFocus =
-      supplyActive instanceof HTMLElement
-        ? supplyActive.dataset.focusKey
-        : undefined;
-    const supplyCaret =
-      supplyActive instanceof HTMLInputElement
-        ? supplyActive.selectionStart
-        : null;
-    const changedSupplyMaterial =
-      this.#screen === 'supply' &&
-      (this.#root.querySelector('.supply-material-heading h2')?.textContent ??
-        null) !== model.supplySelection.material;
-    if (this.#screen === 'supply')
-      this.#supplyScroll =
-        this.#root.querySelector('.supply-content')?.scrollTop ?? 0;
     if (model.screen !== 'research') {
       this.#researchObserver?.disconnect();
       this.#researchObserver = null;
@@ -93,6 +90,10 @@ export class AppView implements AppPort {
     if (model.screen === 'saves') {
       const key = JSON.stringify(model.saveSlots);
       if (this.#screen !== 'saves' || this.#saveKey !== key) {
+        this.#mapObserver?.disconnect();
+        this.#mapObserver = null;
+        if (typeof cancelAnimationFrame !== 'undefined')
+          cancelAnimationFrame(this.#resizeFrame);
         this.#map?.dispose();
         this.#map = null;
         this.#previews.forEach((preview) => preview.dispose());
@@ -155,6 +156,8 @@ export class AppView implements AppPort {
       '[aria-label="Destination hex"]',
     );
     const focusLabel = active?.getAttribute('aria-label');
+    const focusKey =
+      active instanceof HTMLElement ? active.dataset.focusKey : undefined;
     const focusScope = active?.closest(
       '[data-project-id], [data-site-index], .fleet-card, .catalog-categories',
     );
@@ -175,14 +178,42 @@ export class AppView implements AppPort {
           panel.scrollTop,
         );
     }
-    if (changedScreen) {
+    if (
+      changedScreen &&
+      isMapScreen(this.#screen) &&
+      isMapScreen(model.screen)
+    ) {
+      this.#root
+        .querySelector('header')
+        ?.replaceWith(this.#header(model.screen));
+      const page = this.#root.querySelector<HTMLElement>('.map-page');
+      if (page) page.dataset.mapScreen = model.screen;
+      const heading = page?.querySelector('h1');
+      if (heading)
+        heading.textContent =
+          model.screen === 'map'
+            ? 'Star map'
+            : model.screen === 'fleets'
+              ? 'Fleets'
+              : model.screen === 'route'
+                ? 'Route'
+                : 'Production';
+      this.#selectionKey = '';
+      this.#ringKey = '';
+      this.#screen = model.screen;
+    } else if (changedScreen) {
+      this.#mapObserver?.disconnect();
+      this.#mapObserver = null;
+      this.#ring?.remove();
+      this.#ring = null;
+      this.#ringKey = '';
+      this.#viewportKey = '';
       this.#map?.dispose();
       this.#map = null;
       this.#selectionKey = '';
       this.#root.replaceChildren(this.#header(model.screen));
       const main = element('main', 'page');
-      if (model.screen === 'map' || model.screen === 'fleets')
-        main.append(this.#mapPage(model.screen));
+      if (isMapScreen(model.screen)) main.append(this.#mapPage(model.screen));
       else if (model.screen === 'planet' && model.planet)
         main.append(
           renderPlanet(
@@ -195,8 +226,6 @@ export class AppView implements AppPort {
         );
       else if (model.screen === 'build-selection' && model.planet)
         main.append(renderBuildSelection(model, this.#emit));
-      else if (model.screen === 'supply')
-        main.append(renderSupply(model, this.#emit));
       else if (model.screen === 'decisions')
         main.append(renderDecisions(model, this.#emit));
       else
@@ -208,10 +237,7 @@ export class AppView implements AppPort {
           ),
         );
       this.#root.append(main);
-      if (
-        (model.screen === 'map' || model.screen === 'fleets') &&
-        this.#container
-      ) {
+      if (isMapScreen(model.screen) && this.#container) {
         this.#map = this.#mapFactory(this.#container, (intent) =>
           this.#emit(intent),
         );
@@ -267,7 +293,11 @@ export class AppView implements AppPort {
       const focus =
         [...(scope?.querySelectorAll<HTMLElement>('[aria-label]') ?? [])].find(
           (node) => node.getAttribute('aria-label') === focusLabel,
-        ) ?? scope?.querySelector<HTMLElement>('.fleet-name-button');
+        ) ??
+        scope?.querySelector<HTMLElement>('.fleet-name-button') ??
+        this.#root.querySelector<HTMLElement>(
+          '.map-queue-choice[aria-pressed="true"]',
+        );
       focus?.focus({ preventScroll: true });
     }
     if (model.screen === 'planet' && model.planet) {
@@ -380,65 +410,31 @@ export class AppView implements AppPort {
         }
       }
     }
-    const supplyKey = JSON.stringify([
-      model.supply,
-      model.shipments,
-      model.supplySelection,
-      model.tradeRoutes,
-    ]);
-    if (
-      !changedScreen &&
-      model.screen === 'supply' &&
-      this.#supplyKey !== supplyKey
-    )
-      this.#root
-        .querySelector('main')
-        ?.replaceChildren(renderSupply(model, this.#emit));
-    if (model.screen === 'supply') {
-      this.#supplyKey = supplyKey;
-      if (
-        !changedScreen &&
-        changedSupplyMaterial &&
-        (model.supplySelection.material !== null ||
-          supplyFocus !== 'supply-search')
-      ) {
-        this.#root
-          .querySelector<HTMLElement>(
-            '.supply-material-heading h2, .supply-planet-summary',
-          )
-          ?.focus({ preventScroll: true });
-      } else if (!changedScreen && supplyFocus) {
-        const previous = [
-          ...this.#root.querySelectorAll<HTMLElement>('[data-focus-key]'),
-        ].find((node) => node.dataset.focusKey === supplyFocus);
-        const focus =
-          previous ??
-          this.#root.querySelector<HTMLElement>(
-            '.supply-material-heading h2, .supply-planet-summary',
-          );
-        focus?.focus({ preventScroll: true });
-        if (focus instanceof HTMLInputElement && supplyCaret !== null)
-          focus.setSelectionRange(supplyCaret, supplyCaret);
-      }
-      const content = this.#root.querySelector('.supply-content');
-      if (content) content.scrollTop = this.#supplyScroll;
-    }
     if (!changedScreen && model.screen === 'decisions') {
       const actions = this.#root.querySelector('.turn-actions');
       const page = renderDecisions(model, this.#emit);
       if (actions) page.querySelector('.turn-actions')?.replaceWith(actions);
       this.#root.querySelector('main')?.replaceChildren(page);
     }
+    this.#renderMapProblems(model);
     const counter = this.#root.querySelector('.decision-counter');
     if (counter)
       counter.textContent = `Decisions (${model.decisions.filter(needsAttention).length})`;
-    if (model.screen === 'map' || model.screen === 'fleets') {
+    if (isMapScreen(model.screen)) {
       this.#map?.render(model);
+      this.#renderProductionRing(model);
+      this.#measureMap();
       if (this.#zoom)
         this.#zoom.value = `${Math.round(model.camera.zoom * 100)}%`;
       if (this.#coordinates)
         this.#coordinates.textContent = `X ${model.camera.center.x.toFixed(0)} · Y ${model.camera.center.y.toFixed(0)}`;
       const key = JSON.stringify({
+        screen: model.screen,
+        productionMap: model.productionMap,
+        projectSupply: model.projectSupply,
+        supplyChain: model.supplyChain,
+        mapProblems: model.mapProblems,
+        supply: model.supply,
         mapTrade: model.mapTrade,
         routes: model.tradeRoutes,
         routeFleets: model.fleets,
@@ -483,11 +479,7 @@ export class AppView implements AppPort {
       ))
         control.hidden = selected;
     }
-    if (
-      model.screen === 'map' ||
-      model.screen === 'fleets' ||
-      model.screen === 'decisions'
-    ) {
+    if (isMapScreen(model.screen) || model.screen === 'decisions') {
       const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
       if (end) end.disabled = model.phase !== 'planning';
       this.#renderTurnConsole(model);
@@ -501,7 +493,7 @@ export class AppView implements AppPort {
       else nameInput.select();
       if (!editingName) nameInput.scrollIntoView?.({ block: 'nearest' });
     } else if (
-      (model.screen === 'map' || model.screen === 'fleets') &&
+      isMapScreen(model.screen) &&
       active instanceof HTMLElement &&
       !active.isConnected &&
       focusLabel
@@ -510,10 +502,34 @@ export class AppView implements AppPort {
         ? this.#root.querySelector(scopeSelector)
         : this.#root;
       const restored =
+        (focusKey
+          ? [
+              ...this.#root.querySelectorAll<HTMLElement>('[data-focus-key]'),
+            ].find((node) => node.dataset.focusKey === focusKey)
+          : null) ??
         [...(scope?.querySelectorAll<HTMLElement>('[aria-label]') ?? [])].find(
           (node) => node.getAttribute('aria-label') === focusLabel,
-        ) ?? scope?.querySelector<HTMLElement>('.fleet-name-button');
-      restored?.focus({ preventScroll: true });
+        ) ??
+        scope?.querySelector<HTMLElement>('.fleet-name-button') ??
+        this.#root.querySelector<HTMLElement>(
+          '.map-queue-choice[aria-pressed="true"]',
+        );
+      const focusTarget =
+        restored instanceof HTMLButtonElement && restored.disabled
+          ? (scope?.querySelector<HTMLElement>('.map-queue-choice') ??
+            this.#root.querySelector<HTMLElement>(
+              '.map-queue-choice[aria-pressed="true"]',
+            ))
+          : restored;
+      focusTarget?.focus({ preventScroll: true });
+    }
+    if (
+      model.screen === 'production' &&
+      model.productionMap.selectedOption?.type !== this.#productionDetailType
+    ) {
+      this.#productionDetailType =
+        model.productionMap.selectedOption?.type ?? null;
+      if (this.#productionDetailType && this.#panel) this.#panel.scrollTop = 0;
     }
     this.#renderNotice(model);
     if (editingName) delete active.dataset.rendering;
@@ -586,6 +602,9 @@ export class AppView implements AppPort {
   }
 
   dispose(): void {
+    if (typeof cancelAnimationFrame !== 'undefined')
+      cancelAnimationFrame(this.#resizeFrame);
+    this.#mapObserver?.disconnect();
     this.#researchObserver?.disconnect();
     this.#researchViewport = null;
     this.#decisionDialog?.close();
@@ -624,7 +643,8 @@ export class AppView implements AppPort {
       ['map', 'Star map'],
       ['research', 'Research'],
       ['fleets', 'Fleets'],
-      ['supply', 'Supply & production'],
+      ['route', 'Route'],
+      ['production', 'Production'],
       ['decisions', 'Decisions'],
     ] as const) {
       const choice = button(
@@ -638,19 +658,15 @@ export class AppView implements AppPort {
                   ? 'open-research'
                   : target === 'fleets'
                     ? 'open-fleets'
-                    : target === 'supply'
-                      ? 'open-supply'
-                      : 'open-decisions',
+                    : target === 'route'
+                      ? 'open-route'
+                      : target === 'production'
+                        ? 'open-production'
+                        : 'open-decisions',
           }),
         'nav-button',
       );
-      if (target === 'supply') {
-        choice.replaceChildren(
-          element('span', 'nav-label-full', label),
-          element('span', 'nav-label-compact', 'Supply'),
-        );
-        choice.title = label;
-      }
+      choice.dataset.screen = target;
       if (screen === target) choice.setAttribute('aria-current', 'page');
       if (target === 'decisions') choice.classList.add('decision-counter');
       navigation.append(choice);
@@ -659,14 +675,20 @@ export class AppView implements AppPort {
     return header;
   }
 
-  #mapPage(screen: 'map' | 'fleets'): HTMLElement {
+  #mapPage(screen: MapScreen): HTMLElement {
     const page = element('section', 'map-page');
     page.dataset.mapScreen = screen;
     page.append(
       element(
         'h1',
         'visually-hidden',
-        screen === 'fleets' ? 'Fleets' : 'Star map',
+        screen === 'fleets'
+          ? 'Fleets'
+          : screen === 'route'
+            ? 'Route'
+            : screen === 'production'
+              ? 'Production'
+              : 'Star map',
       ),
     );
     this.#container = element('div', 'map-container');
@@ -685,7 +707,131 @@ export class AppView implements AppPort {
       this.#panel,
       renderTurnActions(this.#emit),
     );
+    if (typeof ResizeObserver !== 'undefined') {
+      this.#mapObserver = new ResizeObserver(() => this.#measureMap());
+      this.#mapObserver.observe(this.#container);
+    }
     return page;
+  }
+
+  #measureMap(): void {
+    if (!this.#container?.isConnected) return;
+    const width = this.#container.clientWidth,
+      height = this.#container.clientHeight;
+    if (!width || !height) return;
+    const production = this.#screen === 'production';
+    const wide = window.matchMedia('(min-width: 601px)').matches;
+    const panelHeight = Math.min(224, Math.max(88, height - 320 - 16));
+    this.#root
+      .querySelector<HTMLElement>('.map-page')
+      ?.style.setProperty('--production-panel-height', `${panelHeight}px`);
+    const origin = this.#ring?.getBoundingClientRect();
+    const bounds = this.#ring
+      ? [...this.#ring.querySelectorAll('button')].map((node) =>
+          node.getBoundingClientRect(),
+        )
+      : [];
+    const viewport = {
+      width,
+      height,
+      fontScale:
+        parseFloat(getComputedStyle(document.documentElement).fontSize) / 16,
+      ...(origin && bounds.length
+        ? {
+            ringLeft: Math.ceil(
+              Math.max(1, ...bounds.map((rect) => origin.x - rect.left)) - 0.01,
+            ),
+            ringRight: Math.ceil(
+              Math.max(1, ...bounds.map((rect) => rect.right - origin.x)) -
+                0.01,
+            ),
+            ringTop: Math.ceil(
+              Math.max(1, ...bounds.map((rect) => origin.y - rect.top)) - 0.01,
+            ),
+            ringBottom: Math.ceil(
+              Math.max(1, ...bounds.map((rect) => rect.bottom - origin.y)) -
+                0.01,
+            ),
+          }
+        : {}),
+      availableWidth:
+        production && wide ? width - Math.min(350, width * 0.4) - 24 : width,
+      availableHeight: production && !wide ? height - panelHeight - 16 : height,
+    };
+    const key = JSON.stringify(viewport);
+    if (key === this.#viewportKey) return;
+    this.#viewportKey = key;
+    if (typeof cancelAnimationFrame !== 'undefined')
+      cancelAnimationFrame(this.#resizeFrame);
+    this.#resizeFrame = requestAnimationFrame(() =>
+      this.#emit({ type: 'map-size', viewport }),
+    );
+  }
+
+  #renderMapProblems(model: AppReadModel): void {
+    for (const control of this.#root.querySelectorAll<HTMLElement>(
+      '.nav-button[data-screen]',
+    )) {
+      const attention = model.mapProblems.some(
+        (problem) => problem.screen === control.dataset.screen,
+      );
+      control.querySelector('.nav-attention')?.remove();
+      if (attention) {
+        const marker = element('span', 'nav-attention', '!');
+        marker.setAttribute('aria-hidden', 'true');
+        control.append(marker);
+        control.title = `${control.dataset.screen === 'route' ? 'Route' : 'Production'}: Needs attention`;
+      } else control.removeAttribute('title');
+      control.setAttribute(
+        'aria-description',
+        attention ? 'Needs attention' : '',
+      );
+    }
+    let legend = this.#root.querySelector<HTMLElement>('.map-attention-legend');
+    const show = model.screen === 'route' || model.screen === 'production';
+    if (show && !legend) {
+      legend = element('p', 'map-attention-legend', '! Needs attention');
+      this.#container?.append(legend);
+    }
+    if (!show) legend?.remove();
+  }
+
+  #renderProductionRing(model: AppReadModel): void {
+    const planet = model.screen === 'production' ? model.planet : null;
+    if (!planet) {
+      this.#ring?.remove();
+      this.#ring = null;
+      this.#ringKey = '';
+      return;
+    }
+    const key = JSON.stringify([planet.id, model.productionMap]);
+    if (key !== this.#ringKey || !this.#ring) {
+      const active = document.activeElement;
+      const label =
+        active instanceof HTMLElement && this.#ring?.contains(active)
+          ? active.getAttribute('aria-label')
+          : null;
+      this.#ring?.remove();
+      this.#ring = renderProductionRing(model, this.#emit);
+      this.#container?.append(this.#ring);
+      this.#ringKey = key;
+      if (label)
+        [...this.#ring.querySelectorAll<HTMLElement>('[aria-label]')]
+          .find((node) => node.getAttribute('aria-label') === label)
+          ?.focus({ preventScroll: true });
+    }
+    const point = productionPosition(
+      HexGeometry.toPoint(planet.position),
+      model.camera,
+      {
+        width: this.#container?.clientWidth ?? 0,
+        height: this.#container?.clientHeight ?? 0,
+        availableWidth: 1,
+        availableHeight: 1,
+      },
+    );
+    this.#ring.style.left = `${point.x}px`;
+    this.#ring.style.top = `${point.y}px`;
   }
 
   #renderSelection(model: AppReadModel): void {
@@ -693,7 +839,7 @@ export class AppView implements AppPort {
     this.#cancelSelectionGesture?.();
     this.#panel.hidden = false;
     const trade =
-      model.screen === 'map'
+      model.screen === 'map' || model.screen === 'route'
         ? renderMapTradeSelection(model, this.#emit)
         : null;
     if (trade) {
@@ -702,6 +848,29 @@ export class AppView implements AppPort {
         model.mapTrade.routeId ? 'Selected route' : 'Trade route selection',
       );
       this.#panel.replaceChildren(trade);
+      return;
+    }
+    if (model.screen === 'production') {
+      this.#panel.setAttribute('aria-label', 'Production controls');
+      this.#panel.replaceChildren(
+        ...(model.planet ? [renderProductionMapPanel(model, this.#emit)] : []),
+      );
+      this.#panel.hidden = !model.planet;
+      return;
+    }
+    if (
+      model.screen === 'route' &&
+      !model.mapFleetId &&
+      !model.destinationFleetId
+    ) {
+      const planet = model.ownedPlanets.find(
+        (p) => p.position.key === model.selected?.position.key,
+      );
+      this.#panel.setAttribute('aria-label', 'Route planet');
+      this.#panel.replaceChildren(
+        ...(planet ? [renderRoutePlanet(model, planet, this.#emit)] : []),
+      );
+      this.#panel.hidden = !planet;
       return;
     }
     const selectedFleet = model.fleets.find(
@@ -740,7 +909,7 @@ export class AppView implements AppPort {
           ? 'An uninhabited world near your homeworld.'
           : '';
     const contents: HTMLElement[] =
-      object && model.screen === 'map'
+      object && (model.screen === 'map' || model.screen === 'route')
         ? [title, element('p', 'selection-description', description)]
         : [];
     const destinationFleet = model.destinationFleetId
@@ -789,11 +958,18 @@ export class AppView implements AppPort {
       });
       contents.push(picker);
     }
-    if (model.screen === 'map' && object?.kind === 'planet')
+    if (
+      (model.screen === 'map' || model.screen === 'route') &&
+      object?.kind === 'planet'
+    )
       contents.push(
         element('span', 'pill', owned ? model.playerName : 'Uninhabited'),
       );
-    if (model.screen === 'map' && owned && object) {
+    if (
+      (model.screen === 'map' || model.screen === 'route') &&
+      owned &&
+      object
+    ) {
       const source = model.ownedPlanets.find(
         (p) => p.position.key === cell?.position.key,
       );
@@ -815,7 +991,7 @@ export class AppView implements AppPort {
     const orderStatus = model.planetOrders.find(
       (status) => status.position.key === cell?.position.key,
     );
-    if (model.screen === 'map' && orderStatus)
+    if ((model.screen === 'map' || model.screen === 'route') && orderStatus)
       contents.push(
         element(
           'p',
@@ -823,7 +999,11 @@ export class AppView implements AppPort {
           `${orderStatus.emptySites} empty building sites · ${orderStatus.emptyQueues} idle planet build queue`,
         ),
       );
-    if (model.screen === 'map' && cell && !model.destinationFleetId) {
+    if (
+      (model.screen === 'map' || model.screen === 'route') &&
+      cell &&
+      !model.destinationFleetId
+    ) {
       const fleets = renderMapFleetPanel(model, this.#emit, cell.position);
       if (
         model.fleets.some((fleet) => fleet.position?.key === cell.position.key)

@@ -75,7 +75,10 @@ test('motorbehov-for-alla-skepp / ion-pulse-engine / automatisk-motormontering: 
   await endTurn(page);
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('button', { name: 'Production', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Components', exact: true }).click();
   await page
     .getByRole('button', { name: 'Show Ion pulse engine', exact: true })
@@ -86,7 +89,10 @@ test('motorbehov-for-alla-skepp / ion-pulse-engine / automatisk-motormontering: 
   await endTurn(page);
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('button', { name: 'Production', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Ships', exact: true }).click();
   await page
     .getByRole('button', { name: 'Show Colony ship', exact: true })

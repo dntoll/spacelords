@@ -1,17 +1,25 @@
-# Supply & production
+# Försörjningsregler
 
-Supply & production ersätter den separata Trade routes-grafen. Spelaren ser
-vilka planeters nästa projekt som behöver ett beslut, väntar på försörjning,
-är redo eller saknar order. Star map hanterar fortsatt rutter och flottilldelning.
+Route och Production ersätter den tidigare Supply & production-vyn enligt
+[kartkraven](route-production.md). Försörjningsbedömning och transportregler
+behålls. Första projektet i planetens Build queue styr sammanfattad status;
+Production kan visa den valda köpostens verkliga försörjningskedja.
 
-| Kravnamn               | Status                     | Produktkrav                                                                                                                                                                                                   |
-| ---------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `forsorjningsoversikt` | Fullständigt implementerat | Visa ägda planeter med första projektet i Build queue och status. Sortera Needs attention, Waiting, Ready och Idle, därefter namn.                                                                            |
-| `forsorjningsstatus`   | Fullständigt implementerat | Skilj olösta behov från ordnade leveranser och tillräcklig lokal utvinning. Reservationer, ändliga fyndigheter, saknade fabriker och personal påverkar bedömningen. Decisions ger samma besked.               |
-| `relevanta-material`   | Fullständigt implementerat | Planetens detaljer prioriterar projektmaterial, inklusive helt saknade material. Hela relevanta lagret går att öppna. Nollrader och fasta materialkolumner undviks.                                           |
-| `leveransfloden`       | Fullständigt implementerat | Visa material, mängd, källa, mottagare, projekt, Awaiting pickup eller In transit, aktuell omlastningsplats och uppskattad ankomst när underlag finns. Visa transporthinder och länka till rutt eller flotta. |
-| `produktionsformaga`   | Fullständigt implementerat | Visa vad befintliga fabriker kan tillverka, om förmågan är tillgänglig och antal köade order. Möjlig tillverkning räknas inte som ordnad försörjning. Planeten har fortsatt en enda Build queue.              |
-| `materialoversikt`     | Fullständigt implementerat | Materialsökning samlar lager, utvinning, tillverkningsförmåga, leveranser och olösta projektbehov över ägda planeter. Utformningen fungerar med hundratals material.                                          |
+| Kravnamn             | Status                     | Produktkrav                                                                                                                                                                                                                                        |
+| -------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `forsorjningsstatus` | Fullständigt implementerat | Skilj olösta behov från ordnade leveranser och tillräcklig lokal utvinning. Reservationer, ändliga fyndigheter, saknade fabriker och personal påverkar bedömningen. Decisions och kartmarkeringar använder samma underlag.                         |
+| `leveransfloden`     | Fullständigt implementerat | Visa verkliga leveranser och beställd delproduktion som steg i projektets försörjning, med status, källa, mottagare, aktuell transportplats, hinder och ankomstuppskattning när underlag finns. Production markerar berörda planeter och farleder. |
+| `produktionsformaga` | Fullständigt implementerat | Production erbjuder produkter från färdigbyggda fabriker och förklarar hinder. Möjlig tillverkning räknas inte som ordnad försörjning. Planeten har fortsatt en enda Build queue.                                                                  |
+
+## Ersatta Supply-gränssnittskrav
+
+2026-10-24: `forsorjningsoversikt` ersätts av `route-kartvy` och
+`forsorjningsproblem-pa-kartan`. `relevanta-material` och `materialoversikt`
+ersätts av projektval, byggdetaljer och `byggprojektets-forsorjningskedja`.
+Den sorterade planetlistan, expanderbart globalt lager, materialsökning och
+detaljerad global materialöversikt tas bort. `produktionsformaga` och
+`leveransfloden` behåller sina namn men får presentation i de nya kartvyerna.
+Planetvyns lager- och projektinformation behålls.
 
 ## Tolkning och avgränsning
 
@@ -45,15 +53,12 @@ Leveranser till senare projekt räknas inte av från det första projektets beho
 Last till ett avbrutet projekt kan visas som kommande lager. En bruten fortsatt
 transportkedja räknas inte som fungerande försörjning.
 
-Planetlistan har expanderbara detaljer och intern rullning på små skärmar.
-Val, sökning, tangentbordsfokus och rulläge bevaras vid återrendering.
-Materialsökningen omfattar även kända material som för tillfället saknar lager,
-utvinning eller tillverkare. Tillfälliga sökningar och val skriver inte om spelet.
-Alla speltexter är engelska. Transportregler och sparade spel bevaras.
+Tillfälliga kart- och produktionsval skriver inte om spelet. Alla speltexter är
+engelska. Transportregler och sparade spel bevaras.
 
 ## Ersatta krav
 
-Efter uttryckligt användarbeslut ersätter denna vy `handelsgraf`,
+Den historiska Supply & production-vyn ersatte efter användarbeslut `handelsgraf`,
 `handelsgraf-planetoversikt`, `handelsgraf-flottboxar`, `handelsgraf-navigation`,
 `handelsgraf-valpanel`, `handelsgraf-kompakt-flottvy`,
 `handelsgraf-skeppspositioner`, `handelsgraf-ruttflottor` och
@@ -62,7 +67,7 @@ Star map-krav och fysisk frakt gäller fortsatt.
 
 ## Försörjningssteg i planetens Build queue
 
-`projektens-forsorjningssteg` kompletterar denna imperieöversikt: planetens
+`projektens-forsorjningssteg` gäller fortsatt i planetvyn: planetens
 Build queue visar behov för varje projekt, även senare order. Lokalt fritt lager
 fördelas i köordning efter skyddade reservationer. Egna mottagna komponenter
 hör till rätt projekt; samma lager eller ändliga fyndighet täcker inte flera
@@ -74,4 +79,4 @@ Awaiting pickup och In transit används för verkliga reserverade leveranser,
 med aktuell plats, nästa etapp, hinder och uppskattning när sådan finns.
 En annullerad eller felplacerad delorder visas som ett hinder. Vyn visar och
 länkar till spelets befintliga order; den väljer inte nya leverantörer eller
-transportvägar. Den globala översiktens Required gäller fortsatt första projektet.
+transportvägar. Route sammanfattar fortsatt planetens första projekt.

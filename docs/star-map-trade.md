@@ -1,6 +1,6 @@
 # Handelsrutter på Star map
 
-Star map administrerar handelsnätverket. Supply & production ersätter den separata
+Star map och Route administrerar handelsnätverket. Route och Production ersätter den separata
 handelsgrafen och visar materialförsörjning och produktion. På Star map visas
 alla flottor vid sin verkliga position.
 

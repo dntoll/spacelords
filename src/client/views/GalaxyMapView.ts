@@ -81,7 +81,11 @@ export class GalaxyMapView implements MapPort {
       sketch.describe(
         model.screen === 'fleets'
           ? 'Fleets map. Fleet positions and destinations are highlighted; planets and trade routes are background landmarks.'
-          : 'Star map. Your homeworld and its surroundings are visible. Stars are visible in unexplored space.',
+          : model.screen === 'route'
+            ? 'Route map. Select planets, create routes and assign transport fleets.'
+            : model.screen === 'production'
+              ? 'Production map. Select an owned planet to build and inspect its project supply chain.'
+              : 'Star map. Your homeworld and its surroundings are visible. Stars are visible in unexplored space.',
       );
       this.#descriptionScreen = model.screen;
     }
@@ -90,7 +94,11 @@ export class GalaxyMapView implements MapPort {
         'aria-label',
         model.screen === 'fleets'
           ? 'Fleets map. Click a fleet to select it; drag a fleet to set its destination. Planets and trade routes are background landmarks. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.'
-          : STAR_MAP_LABEL,
+          : model.screen === 'production'
+            ? 'Production map. Select an owned planet to show build options and its queue. Drag empty space to pan; pinch or use the mouse wheel to zoom. Arrow keys pan; Enter selects the central hex.'
+            : model.screen === 'route'
+              ? STAR_MAP_LABEL.replace('Star map.', 'Route map.')
+              : STAR_MAP_LABEL,
       );
     }
     sketch.background('#0a1520');
@@ -313,7 +321,8 @@ export class GalaxyMapView implements MapPort {
               planet.position.key === this.#model?.selected?.position.key,
           );
           if (
-            this.#model?.screen === 'map' &&
+            (this.#model?.screen === 'map' ||
+              this.#model?.screen === 'route') &&
             source &&
             this.#model?.phase === 'planning' &&
             this.#model.research.completed.includes('Trade logistics')

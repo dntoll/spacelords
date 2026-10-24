@@ -54,3 +54,21 @@ describe('kartnavigation', () => {
     expect(gesture.end(1)).toBeNull();
   });
 });
+
+it('radiella-byggval: minimally frames an edge planet with room for its controls without changing zoom', () => {
+  const planet = new HexCoordinate(10, 0);
+  const camera = new Camera(planet, 10);
+  camera.zoomAt(1.5, { x: 0, y: 0 });
+  camera.reveal(planet, { left: -200, right: -120, top: -150, bottom: 150 });
+  const world = HexGeometry.toPoint(planet);
+  expect(
+    (world.x - camera.snapshot.center.x) * camera.snapshot.zoom,
+  ).toBeCloseTo(-120);
+  expect(
+    (world.y - camera.snapshot.center.y) * camera.snapshot.zoom,
+  ).toBeCloseTo(0);
+  expect(camera.snapshot.zoom).toBe(1.5);
+  const before = camera.snapshot;
+  camera.reveal(planet, { left: -200, right: -120, top: -150, bottom: 150 });
+  expect(camera.snapshot).toEqual(before);
+});

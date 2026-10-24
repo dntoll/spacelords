@@ -261,7 +261,11 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
     const target = model.snapshot.fleets[1]!;
     model.openPlanet();
     new AppController(model, new AppView(root, mapFactory)).start();
-    click('Production');
+    root
+      .querySelector<HTMLButtonElement>(
+        '.planet-tabs [aria-label="Production"]',
+      )!
+      .click();
     const production = () => root.querySelector('.planet-building-queue')!;
     expect(root.querySelectorAll('.compact-build-queue')).toHaveLength(1);
     expect(root.querySelector('.building-site')).toBeNull();
@@ -367,7 +371,11 @@ describe('kompakta-koknappar', () => {
     buildShipyard(model);
     model.openPlanet();
     new AppController(model, new AppView(root, mapFactory)).start();
-    click('Production');
+    root
+      .querySelector<HTMLButtonElement>(
+        '.planet-tabs [aria-label="Production"]',
+      )!
+      .click();
     click('Queue Colony ship');
     click('Queue Colony ship');
     click('Build queue');

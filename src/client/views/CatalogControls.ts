@@ -27,6 +27,7 @@ function symbolFor(name: string): SymbolName {
     if (definition.terraforming) return 'Terraforming';
   }
   if (name === 'Shipyards') return 'Ships';
+  if (name === 'Buildings') return 'All';
   if (name === 'Research station') return 'Research';
   if (name === 'Iron mine') return 'Resources';
   if (name === 'Water extractor') return 'Water';

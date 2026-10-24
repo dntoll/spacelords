@@ -1,12 +1,21 @@
+import {
+  isMapScreen,
+  BUILD_RING_EXTENT,
+  type MapScreen,
+  type MapViewport,
+  type MapProductionCategory,
+  type ProductionMapSnapshot,
+  type MapProblem,
+} from './ProductionMap.js';
+import {
+  emptySupplyChain,
+  type SupplyChainSnapshot,
+} from './ProjectSupplyChain.js';
 import type { ProjectSupplySnapshot } from './ProjectSupply.js';
 import { shipTransferIssue } from './FleetTransfer.js';
 import { StarMapTrade, type MapTradeSnapshot } from './StarMapTrade.js';
 import type { SaveRepository } from './SaveRepository.js';
-import {
-  SupplySelection,
-  type SupplySelectionSnapshot,
-  type SupplyOverview,
-} from './SupplyOverview.js';
+import type { SupplyOverview } from './SupplyOverview.js';
 import {
   ResearchTreeCamera,
   type ResearchCameraSnapshot,
@@ -19,6 +28,9 @@ import { Camera, type CameraSnapshot } from './Camera.js';
 import { createExampleGalaxy } from './exampleGalaxy.js';
 import {
   Game,
+  BUILDINGS,
+  projectDefinition,
+  type ProjectType,
   type BuildType,
   type FleetSnapshot,
   type GameEvent,
@@ -50,7 +62,8 @@ export type Screen =
   | 'build-selection'
   | 'research'
   | 'fleets'
-  | 'supply'
+  | 'route'
+  | 'production'
   | 'decisions';
 
 export interface SaveSlotSnapshot {
@@ -73,7 +86,9 @@ export interface AppReadModel {
   readonly tradeRoutes: readonly TradeRouteSnapshot[];
   readonly supply: SupplyOverview;
   readonly shipments: readonly ShipmentSnapshot[];
-  readonly supplySelection: SupplySelectionSnapshot;
+  readonly productionMap: ProductionMapSnapshot;
+  readonly supplyChain: SupplyChainSnapshot;
+  readonly mapProblems: readonly MapProblem[];
   readonly mapTrade: MapTradeSnapshot;
   readonly ownedPlanets: readonly PlanetGameSnapshot[];
   readonly pendingEndTurn: boolean;
@@ -136,7 +151,11 @@ export class AppModel {
   #buildingCategory: BuildingCategory = 'All';
   #selectedBuilding: BuildType | null = null;
   readonly #researchCamera = new ResearchTreeCamera();
-  readonly #supplySelection = new SupplySelection();
+  #mapProductionCategory: MapProductionCategory = 'Buildings';
+  #mapProductionPage = 0;
+  #mapProductionOption: ProjectType | null = null;
+  #mapProjectId: string | null = null;
+  #mapViewport: MapViewport | null = null;
   readonly #mapTrade = new StarMapTrade(
     () => this.#game,
     () => this.#camera,
@@ -214,7 +233,10 @@ export class AppModel {
       state: game.exportState(),
     });
     this.#mapTrade.clearSelection();
-    this.#supplySelection.reset();
+    this.#mapProductionCategory = 'Buildings';
+    this.#mapProductionPage = 0;
+    this.#mapProductionOption = null;
+    this.#mapProjectId = null;
     this.#game = game;
     this.#pendingEndTurn = false;
     this.#pendingResearchRemoval = null;
@@ -276,7 +298,8 @@ export class AppModel {
   // mvc-arkitektur: no write operations or hidden world data cross into views.
   get snapshot(): AppReadModel {
     const projectSupply =
-      this.#screen === 'planet' && this.#planetTab === 'queue'
+      (this.#screen === 'planet' && this.#planetTab === 'queue') ||
+      this.#screen === 'production'
         ? this.#game.projectSupply(this.#game.planetAt(this.#selected)?.id)
         : [];
     return Object.freeze({
@@ -297,7 +320,35 @@ export class AppModel {
       tradeRoutes: this.#game.tradeRoutes,
       supply: this.#game.supplyOverview(),
       shipments: this.#game.shipments,
-      supplySelection: this.#supplySelection.snapshot,
+      productionMap: this.#productionMapSnapshot(),
+      supplyChain:
+        this.#screen === 'production'
+          ? this.#game.supplyChain(this.#selectedMapProject())
+          : emptySupplyChain(),
+      mapProblems: Object.freeze(
+        this.#game.decisions
+          .filter(needsAttention)
+          .flatMap((decision): MapProblem[] => {
+            const screen =
+              decision.id.startsWith('supply-') || decision.kind === 'route'
+                ? 'route'
+                : decision.id.startsWith('staff-') ||
+                    decision.id.startsWith('production-')
+                  ? 'production'
+                  : null;
+            return screen
+              ? [
+                  Object.freeze({
+                    decisionId: decision.id,
+                    planetId: decision.planetId,
+                    routeId: decision.routeId,
+                    screen,
+                    explanation: decision.label,
+                  }),
+                ]
+              : [];
+          }),
+      ),
       mapTrade: this.#mapTrade.snapshot,
       ownedPlanets: this.#game.ownedPlanetSnapshots(),
       pendingEndTurn: this.#pendingEndTurn,
@@ -322,7 +373,9 @@ export class AppModel {
           .find((cell) => cell.position.key === this.#selected.key) ?? null,
       camera: this.#camera.snapshot,
       planet:
-        this.#screen === 'planet' || this.#screen === 'build-selection'
+        this.#screen === 'planet' ||
+        this.#screen === 'build-selection' ||
+        this.#screen === 'production'
           ? this.#game.planetAt(this.#selected)
             ? this.#game.planetSnapshot(
                 this.#game.planetAt(this.#selected)!,
@@ -351,6 +404,12 @@ export class AppModel {
   select(position: HexCoordinate): void {
     if (!this.#isMapScreen()) return;
     if (!this.#game.galaxy.cellAt(position)) {
+      if (this.#screen === 'production') {
+        this.#selected = position;
+        this.#mapProjectId = null;
+        this.#mapProductionOption = null;
+        this.#mapProductionPage = 0;
+      }
       if (this.#screen === 'fleets' && !this.#destinationFleetId) {
         this.cancelShipTransfer();
         this.cancelFleetRename();
@@ -373,8 +432,14 @@ export class AppModel {
       this.cancelShipTransfer();
       this.cancelFleetRename();
       this.#mapTrade.clearSelection();
+      if (this.#selected.key !== position.key) {
+        this.#mapProductionOption = null;
+        this.#mapProductionPage = 0;
+        this.#mapProjectId = null;
+      }
       this.#selected = position;
       this.#mapFleetId = null;
+      this.#fitProduction();
     }
   }
   reportError(error: unknown): void {
@@ -390,6 +455,7 @@ export class AppModel {
   fleetAtPoint(point: Point): string | null {
     if (
       !this.#isMapScreen() ||
+      this.#screen === 'production' ||
       this.#destinationFleetId ||
       this.#mapTrade.snapshot.sourcePlanetId
     )
@@ -400,7 +466,7 @@ export class AppModel {
     );
   }
   selectMapFleet(id: string): void {
-    if (!this.#isMapScreen()) return;
+    if (!this.#isMapScreen() || this.#screen === 'production') return;
     const fleet = this.#game.fleet(id);
     if (fleet && Object.values(fleet.ships).some((count) => count > 0)) {
       this.#mapTrade.clearSelection();
@@ -410,7 +476,9 @@ export class AppModel {
   hoverMapFleet(point: Point | null): boolean {
     const next = point ? this.fleetAtPoint(point) : null;
     const changed = this.#mapTrade.hover(
-      this.#screen === 'fleets' || next ? null : point,
+      this.#screen === 'fleets' || this.#screen === 'production' || next
+        ? null
+        : point,
     );
     if (next === this.#hoveredFleetId) return changed;
     this.#hoveredFleetId = next;
@@ -419,13 +487,14 @@ export class AppModel {
   previewFleetDestination(point: Point): void {
     if (
       !this.#isMapScreen() ||
+      this.#screen === 'production' ||
       !this.#mapFleetId ||
       this.#game.phase !== 'planning'
     )
       return;
     this.#fleetDragging = true;
     if (
-      this.#screen === 'map' &&
+      (this.#screen === 'map' || this.#screen === 'route') &&
       this.#mapTrade.hoverAssignment(this.#mapFleetId, point)
     ) {
       this.#fleetDestinationPreview = null;
@@ -441,7 +510,7 @@ export class AppModel {
   commitFleetDestination(): void {
     const trade = this.#mapTrade.snapshot;
     if (
-      this.#screen === 'map' &&
+      (this.#screen === 'map' || this.#screen === 'route') &&
       this.#mapFleetId &&
       trade.hoveredRouteIds.length
     ) {
@@ -477,7 +546,7 @@ export class AppModel {
     const world = this.#camera.screenToWorld(point);
     const hex = HexGeometry.fromPoint(world);
     if (
-      this.#screen === 'map' &&
+      (this.#screen === 'map' || this.#screen === 'route') &&
       !this.#destinationFleetId &&
       !this.#mapTrade.snapshot.sourcePlanetId
     ) {
@@ -505,7 +574,7 @@ export class AppModel {
   }
   mapRouteDragSource(point: Point): string | null {
     if (
-      this.#screen !== 'map' ||
+      (this.#screen !== 'map' && this.#screen !== 'route') ||
       this.#destinationFleetId ||
       this.#mapFleetId ||
       this.#mapTrade.snapshot.sourcePlanetId ||
@@ -524,7 +593,7 @@ export class AppModel {
       : null;
   }
   beginMapRoute(id: string): void {
-    if (this.#screen !== 'map') return;
+    if (this.#screen !== 'map' && this.#screen !== 'route') return;
     this.cancelShipTransfer();
     this.cancelFleetRename();
     this.#mapFleetId = null;
@@ -539,6 +608,7 @@ export class AppModel {
   }
   selectMapRoute(id: string): void {
     if (this.#screen === 'fleets') this.openMap();
+    if (this.#screen === 'production') this.openRoute();
     this.cancelShipTransfer();
     this.cancelFleetRename();
     this.#mapFleetId = null;
@@ -610,9 +680,9 @@ export class AppModel {
     this.#screen = 'research';
   }
   #isMapScreen(): boolean {
-    return this.#screen === 'map' || this.#screen === 'fleets';
+    return isMapScreen(this.#screen);
   }
-  #openMapScreen(screen: 'map' | 'fleets'): void {
+  #openMapScreen(screen: MapScreen): void {
     this.cancelMapPointer();
     this.cancelShipTransfer();
     this.cancelFleetRename();
@@ -620,6 +690,11 @@ export class AppModel {
       this.#mapTrade.clearSelection();
     this.#destinationFleetId = null;
     this.#screen = screen;
+    if (screen === 'production') {
+      this.#mapFleetId = null;
+      this.#mapTrade.clearSelection();
+      this.#fitProduction();
+    }
   }
   openMap(): void {
     this.#openMapScreen('map');
@@ -648,6 +723,10 @@ export class AppModel {
     this.#camera.reset();
     this.#selected = this.#game.galaxy.homePlanet.position;
     this.#mapFleetId = null;
+    this.#mapProjectId = null;
+    this.#mapProductionOption = null;
+    this.#mapProductionPage = 0;
+    this.#fitProduction();
   }
 
   openBuildSite(index: number | null): void {
@@ -698,32 +777,13 @@ export class AppModel {
   fitResearch(): void {
     this.#researchCamera.fit();
   }
-  searchSupply(query: string): void {
-    this.#supplySelection.search(query);
-  }
-  selectSupplyMaterial(material: string | null): void {
-    if (
-      material === null ||
-      this.#game.supplyOverview().materials.includes(material)
-    )
-      this.#supplySelection.select(material);
-  }
-  toggleSupplyPlanet(id: string, inventory = false): void {
-    if (this.#game.ownedPlanetSnapshots().some((p) => p.id === id))
-      this.#supplySelection.toggle(id, inventory);
-  }
   openSupplyPlanet(id: string): void {
-    const planet = this.#game.ownedPlanetSnapshots().find((p) => p.id === id);
-    if (planet) {
-      this.#selected = planet.position;
-      this.openPlanet();
-    }
+    this.openPlanet(id);
   }
   openSupplyRoute(id: string): void {
     const route = this.#game.tradeRoutes.find((r) => r.id === id);
     if (!route) return;
-    this.cancelMapPointer();
-    this.openMap();
+    this.openRoute();
     this.#selected = route.start;
     this.#camera.focus(route.start);
     this.selectMapRoute(id);
@@ -739,10 +799,151 @@ export class AppModel {
       this.#game.removeResearch(this.#pendingResearchRemoval);
     this.#pendingResearchRemoval = null;
   }
-  openSupply(): void {
-    this.cancelMapPointer();
-    this.#screen = 'supply';
+  openRoute(planetId?: string): void {
+    this.#openMapScreen('route');
+    if (planetId) this.#focusMapPlanet(planetId);
   }
+  openProduction(planetId?: string): void {
+    if (planetId) this.#focusMapPlanet(planetId);
+    this.#openMapScreen('production');
+  }
+  #focusMapPlanet(id: string): void {
+    const planet = this.#game.ownedPlanetSnapshots().find((p) => p.id === id);
+    if (!planet) return;
+    if (planet.position.key !== this.#selected.key) {
+      this.#mapProductionOption = null;
+      this.#mapProductionPage = 0;
+      this.#mapProjectId = null;
+    }
+    this.#selected = planet.position;
+    this.#camera.focus(planet.position);
+  }
+  #selectedMapProject(): string | null {
+    const projects = this.#game.planetAt(this.#selected)
+      ? this.#game.planetSnapshot(this.#game.planetAt(this.#selected)!)!
+          .projects
+      : [];
+    return (
+      projects.find((p) => p.id === this.#mapProjectId)?.id ??
+      projects[0]?.id ??
+      null
+    );
+  }
+  #productionMapSnapshot(): ProductionMapSnapshot {
+    const planet =
+      this.#screen === 'production'
+        ? this.#game.planetAt(this.#selected)
+        : null;
+    const options = planet ? this.#game.productionOptions(planet) : [];
+    const categorized = options.length > 8;
+    const filtered = categorized
+      ? options.filter((o) => o.category === this.#mapProductionCategory)
+      : options;
+    const viewport = this.#mapViewport;
+    const pageSize =
+      (viewport?.fontScale ?? 1) > 1.5
+        ? 2
+        : viewport &&
+            (viewport.width <= 600 ||
+              viewport.availableWidth < 440 ||
+              viewport.availableHeight < 440)
+          ? 4
+          : 8;
+    const radius = viewport
+      ? Math.max(
+          64,
+          Math.min(
+            pageSize === 8 ? 160 : 106,
+            (viewport.availableWidth - 100) / 2,
+            (viewport.availableHeight - 120) / 2,
+          ),
+        )
+      : 160;
+    const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const page = Math.min(this.#mapProductionPage, pages - 1);
+    return Object.freeze({
+      category: this.#mapProductionCategory,
+      categorized,
+      page,
+      pages,
+      radius,
+      options: Object.freeze(
+        filtered.slice(page * pageSize, page * pageSize + pageSize),
+      ),
+      selectedOption:
+        options.find((o) => o.type === this.#mapProductionOption) ?? null,
+      selectedProjectId:
+        this.#screen === 'production' ? this.#selectedMapProject() : null,
+    });
+  }
+  selectMapProductionCategory(category: MapProductionCategory): void {
+    this.#mapProductionCategory = category;
+    this.#mapProductionPage = 0;
+    this.#mapProductionOption = null;
+  }
+  selectMapProductionPage(page: number): void {
+    if (Number.isInteger(page))
+      this.#mapProductionPage = Math.max(
+        0,
+        Math.min(page, this.#productionMapSnapshot().pages - 1),
+      );
+  }
+  selectMapProductionOption(type: ProjectType | null): void {
+    const planet = this.#game.planetAt(this.#selected);
+    if (
+      type === null ||
+      (planet &&
+        this.#game.productionOptions(planet).some((o) => o.type === type))
+    )
+      this.#mapProductionOption = type;
+  }
+  selectMapProject(id: string): void {
+    const planet = this.#game.planetAt(this.#selected);
+    if (
+      planet &&
+      this.#game.planetSnapshot(planet)?.projects.some((p) => p.id === id)
+    )
+      this.#mapProjectId = id;
+  }
+  orderMapProduction(): void {
+    if (this.#screen !== 'production' || !this.#mapProductionOption) return;
+    const planet = this.#game.planetAt(this.#selected);
+    if (!planet) return;
+    const type = this.#mapProductionOption;
+    if (Object.hasOwn(BUILDINGS, type))
+      this.#game.scheduleBuild(planet, type as BuildType);
+    else if (projectDefinition(type).ship)
+      this.#game.scheduleShip(planet, type as ShipType);
+    else this.#game.scheduleComponent(planet, type as Component);
+  }
+  resizeMap(viewport: MapViewport): void {
+    if (!Object.values(viewport).every((v) => Number.isFinite(v) && v > 0))
+      return;
+    this.#mapViewport = Object.freeze({ ...viewport });
+    this.#fitProduction();
+  }
+  #fitProduction(): void {
+    if (
+      this.#screen !== 'production' ||
+      !this.#mapViewport ||
+      !this.#game.planetAt(this.#selected)
+    )
+      return;
+    const viewport = this.#mapViewport;
+    this.#camera.reveal(this.#selected, {
+      left: (viewport.ringLeft ?? BUILD_RING_EXTENT) - viewport.width / 2,
+      right:
+        viewport.availableWidth -
+        (viewport.ringRight ?? BUILD_RING_EXTENT) -
+        viewport.width / 2,
+      top: (viewport.ringTop ?? BUILD_RING_EXTENT) - viewport.height / 2,
+      bottom:
+        viewport.availableHeight -
+        (viewport.ringBottom ?? BUILD_RING_EXTENT) -
+        viewport.height / 2,
+    });
+  }
+
   openDecisions(): void {
     this.#screen = 'decisions';
   }
@@ -762,12 +963,9 @@ export class AppModel {
         .ownedPlanetSnapshots()
         .find((p) => p.id === decision.planetId);
       if (planet && decision.id.startsWith('supply-')) {
-        this.#supplySelection.select(null);
-        this.#supplySelection.expand(planet.id);
-        this.openSupply();
+        this.openRoute(planet.id);
       } else if (planet) {
-        this.#selected = planet.position;
-        this.openPlanet();
+        this.openProduction(planet.id);
       }
     }
   }
@@ -789,10 +987,12 @@ export class AppModel {
   }
   createTradeRoute(a: string, b: string): void {
     const id = this.#game.createTradeRoute(a, b);
-    if (this.#screen === 'map') this.selectMapRoute(id);
+    if (this.#screen === 'map' || this.#screen === 'route')
+      this.selectMapRoute(id);
   }
   assignTradeFleet(routeId: string, fleetId: string): void {
-    if (this.#screen === 'map') this.assignMapTradeFleet(routeId, fleetId);
+    if (this.#screen === 'map' || this.#screen === 'route')
+      this.assignMapTradeFleet(routeId, fleetId);
     else this.#game.assignTradeFleet(routeId, fleetId);
   }
   releaseTradeFleet(id: string): void {
@@ -940,7 +1140,8 @@ export class AppModel {
     if (this.#game.fleet(id)) {
       this.#mapTrade.clearSelection();
       this.#destinationFleetId = id;
-      if (!this.#isMapScreen()) this.#screen = 'map';
+      if (!this.#isMapScreen() || this.#screen === 'production')
+        this.#screen = 'map';
     }
   }
   setDestination(id: string, q: number, r: number): void {
@@ -952,7 +1153,8 @@ export class AppModel {
   startTurn(): readonly TurnFrame[] {
     this.#pendingEndTurn = false;
     this.cancelMapPointer();
-    if (this.#screen !== 'decisions') this.#screen = 'map';
+    if (this.#screen !== 'decisions' && !this.#isMapScreen())
+      this.#screen = 'map';
     this.#destinationFleetId = null;
     return this.#game.startTurn();
   }

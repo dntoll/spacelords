@@ -32,7 +32,7 @@ export class AppController {
 
   #handle(intent: AppIntent): void {
     try {
-      this.#model.clearNotice();
+      if (intent.type !== 'map-size') this.#model.clearNotice();
       this.#handleIntent(intent);
     } catch (error) {
       console.warn(error);
@@ -42,6 +42,7 @@ export class AppController {
   }
 
   #handleIntent(intent: AppIntent): void {
+    let mapOrder = false;
     if (!intent.type.startsWith('research-pointer-'))
       this.#researchGesture.cancel();
     if (intent.type.startsWith('open-') || intent.type === 'end-turn') {
@@ -49,19 +50,11 @@ export class AppController {
       this.#model.cancelFleetRename();
     }
     if (
-      [
-        'open-map',
-        'open-planet',
-        'open-research',
-        'open-fleets',
-        'open-supply',
-        'open-decisions',
-        'home',
-        'pan',
-        'zoom',
-        'begin-destination',
-        'end-turn',
-      ].includes(intent.type)
+      intent.type.startsWith('open-') ||
+      intent.type === 'next-decision' ||
+      ['home', 'pan', 'zoom', 'begin-destination', 'end-turn'].includes(
+        intent.type,
+      )
     )
       this.#cancelPointer(['pan', 'zoom'].includes(intent.type));
     if (
@@ -101,17 +94,29 @@ export class AppController {
       case 'cancel-map-trade':
         this.#cancelPointer();
         break;
-      case 'supply-search':
-        this.#model.searchSupply(intent.query);
+      case 'open-route':
+        this.#model.openRoute(intent.planetId);
         break;
-      case 'supply-material':
-        this.#model.selectSupplyMaterial(intent.material);
+      case 'open-production':
+        this.#model.openProduction(intent.planetId);
         break;
-      case 'supply-toggle':
-        this.#model.toggleSupplyPlanet(intent.id);
+      case 'map-production-category':
+        this.#model.selectMapProductionCategory(intent.category);
         break;
-      case 'supply-inventory':
-        this.#model.toggleSupplyPlanet(intent.id, true);
+      case 'map-production-page':
+        this.#model.selectMapProductionPage(intent.page);
+        break;
+      case 'map-production-option':
+        this.#model.selectMapProductionOption(intent.option);
+        break;
+      case 'map-production-project':
+        this.#model.selectMapProject(intent.id);
+        break;
+      case 'map-production-build':
+        this.#model.orderMapProduction();
+        break;
+      case 'map-size':
+        this.#model.resizeMap(intent.viewport);
         break;
       case 'supply-open-planet':
         this.#model.openSupplyPlanet(intent.id);
@@ -153,9 +158,6 @@ export class AppController {
         }
         break;
       }
-      case 'open-supply':
-        this.#model.openSupply();
-        break;
       case 'open-decisions':
         this.#model.openDecisions();
         break;
@@ -244,9 +246,13 @@ export class AppController {
       case 'home':
         this.#model.home();
         break;
-      case 'select':
+      case 'select': {
+        const snapshot = this.#model.snapshot;
+        mapOrder =
+          !!snapshot.destinationFleetId || !!snapshot.mapTrade.sourcePlanetId;
         this.#model.select(intent.position);
         break;
+      }
       case 'pan':
         this.#model.pan(intent.delta);
         break;
@@ -428,6 +434,7 @@ export class AppController {
           const pointer = this.#fleetPointer;
           this.#fleetPointer = null;
           if (dragged) {
+            mapOrder = true;
             if (pointer.kind === 'route') {
               const source = this.#model.mapRouteDragSource(pointer.start);
               if (source) this.#model.beginMapRoute(source);
@@ -442,14 +449,31 @@ export class AppController {
         }
         this.#gesture.move(intent.id, intent.point);
         const selected = this.#gesture.end(intent.id);
-        if (selected) this.#model.selectPoint(selected);
+        if (selected) {
+          const snapshot = this.#model.snapshot;
+          mapOrder =
+            !!snapshot.destinationFleetId || !!snapshot.mapTrade.sourcePlanetId;
+          this.#model.selectPoint(selected);
+        }
         break;
       }
     }
     if (
+      !(['select', 'pointer-end'].includes(intent.type) && !mapOrder) &&
       !intent.type.startsWith('research-') &&
       !intent.type.startsWith('supply-') &&
+      !intent.type.startsWith('open-') &&
+      !(
+        intent.type.startsWith('map-production-') &&
+        intent.type !== 'map-production-build'
+      ) &&
       ![
+        'pointer-cancel',
+        'begin-map-route',
+        'cancel-map-trade',
+        'map-size',
+        'map-select-route',
+        'map-select-fleet',
         'pointer-move',
         'pointer-start',
         'pan',

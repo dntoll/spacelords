@@ -8,7 +8,9 @@ export function bindMapSelectionScroll(
   let expansion = 0;
   let touch: { id: number; x: number; y: number; started: boolean } | null =
     null;
-  const isCompact = () => window.matchMedia?.(compactLayout).matches ?? true;
+  const isCompact = () =>
+    page.dataset.mapScreen !== 'production' &&
+    (window.matchMedia?.(compactLayout).matches ?? true);
   const setExpansion = (height: number) => {
     expansion = height;
     panel.style.setProperty('--selection-expansion', `${height}px`);

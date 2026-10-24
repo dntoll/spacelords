@@ -51,50 +51,6 @@ export interface SupplyPlanet {
   readonly capabilities: readonly ProductionCapability[];
 }
 
-export interface SupplySelectionSnapshot {
-  readonly query: string;
-  readonly material: string | null;
-  readonly expanded: readonly string[];
-  readonly inventories: readonly string[];
-}
-
-export class SupplySelection {
-  #query = '';
-  #material: string | null = null;
-  readonly #expanded = new Set<string>();
-  readonly #inventories = new Set<string>();
-  get snapshot(): SupplySelectionSnapshot {
-    return Object.freeze({
-      query: this.#query,
-      material: this.#material,
-      expanded: Object.freeze([...this.#expanded]),
-      inventories: Object.freeze([...this.#inventories]),
-    });
-  }
-  search(query: string): void {
-    this.#query = query;
-    this.#material = null;
-  }
-  select(material: string | null): void {
-    this.#material = material;
-    this.#query = '';
-  }
-  expand(id: string): void {
-    this.#expanded.add(id);
-  }
-  toggle(id: string, inventory = false): void {
-    const collection = inventory ? this.#inventories : this.#expanded;
-    if (collection.has(id)) collection.delete(id);
-    else collection.add(id);
-  }
-  reset(): void {
-    this.#query = '';
-    this.#material = null;
-    this.#expanded.clear();
-    this.#inventories.clear();
-  }
-}
-
 // forsorjningsstatus: assess commitments separately from possible production.
 export class SupplyOverview {
   readonly planets: readonly SupplyPlanet[];

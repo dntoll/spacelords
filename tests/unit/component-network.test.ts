@@ -670,3 +670,32 @@ it('automatisk-motormontering: reuses motors still in transit after local Ion co
   expect(game.shipments).toHaveLength(2);
   expect(game.planetSnapshot(game.galaxy.homePlanet)!.projects).toHaveLength(0);
 });
+
+it('byggprojektets-forsorjningskedja / automatisk-motormontering: projects expose only their committed remote part production and transport routes', () => {
+  const { game, destination, home } = network({
+    factories: ['Ion pulse engine factory', 'Weapons module factory'],
+  });
+  const before = game.exportState();
+  const option = game
+    .productionOptions(destination)
+    .find((o) => o.type === 'Fighter')!;
+  expect(option.blockedReason).toBeNull();
+  expect(game.exportState()).toEqual(before);
+  expect(game.supplyChain(null).projectIds).toEqual([]);
+  game.scheduleShip(destination, 'Fighter');
+  const fighter = game.planetSnapshot(destination)!.projects[0]!;
+  const producers = game.planetSnapshot(home)!.projects;
+  expect(producers.map((p) => p.type)).toEqual([
+    'Ion pulse engine',
+    'Weapons module',
+  ]);
+  const chain = game.supplyChain(fighter.id);
+  expect(chain.projectIds).toEqual([fighter.id, ...producers.map((p) => p.id)]);
+  expect(chain.routeIds).toEqual(['route-test']);
+  expect(chain.planets.find((p) => p.id === home.id)!.roles).toContain(
+    'Producer',
+  );
+  const saved = game.exportState();
+  game.supplyChain(fighter.id);
+  expect(game.exportState()).toEqual(saved);
+});

@@ -50,7 +50,10 @@ test('automatiska-delorder: orders remote production through the UI and preserve
   await startFirstSlot(page);
   await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('button', { name: 'Production', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Show Fighter', exact: true }).click();
   await page
     .getByRole('button', { name: 'Queue Fighter', exact: true })
@@ -71,35 +74,31 @@ test('automatiska-delorder: orders remote production through the UI and preserve
   await expect(
     page.getByRole('complementary', { name: 'Selected route' }),
   ).toContainText('Tellus');
-  await page
-    .getByRole('button', { name: 'Supply & production', exact: true })
-    .click();
-  const target = page.locator('[data-planet-id="sol-1"]');
-  await expect(target.locator('.supply-status')).toHaveText('Waiting');
-  await target
-    .getByRole('button', { name: 'Supply details for Vesta', exact: true })
-    .click();
-  await expect(target.locator('[data-material="Rocket engine"]')).toContainText(
-    'Ordered production1',
-  );
+  await page.getByRole('button', { name: 'Route', exact: true }).click();
+  await selectMapObject(page, 'Vesta');
+  await expect(page.locator('.route-supply-summary')).toContainText('Waiting');
+  await page.getByRole('button', { name: 'Open in Production' }).click();
   await expect(
-    target.locator('[data-material="Weapons module"]'),
-  ).toContainText('Ordered production1');
-  await expect(target.locator('.supply-delivery')).toHaveCount(0);
+    page.getByRole('region', { name: 'Selected project supply chain' }),
+  ).toContainText('Rocket engine');
+  await expect(
+    page.getByRole('region', { name: 'Selected project supply chain' }),
+  ).toContainText('Weapons module');
+  await expect(
+    page.getByRole('region', { name: 'Selected project supply chain' }),
+  ).toContainText('Planned transport');
   await page.screenshot({
     path: testInfo.outputPath('ordered-component-production.png'),
   });
   await page.reload();
   await startFirstSlot(page);
-  await page
-    .getByRole('button', { name: 'Supply & production', exact: true })
-    .click();
-  await expect(target.locator('.supply-status')).toHaveText('Waiting');
+  await page.getByRole('button', { name: 'Route', exact: true }).click();
+  await selectMapObject(page, 'Vesta');
+  await expect(page.locator('.route-supply-summary')).toContainText('Waiting');
   for (let year = 0; year < 6; year++) await endTurn(page);
-  await page
-    .getByRole('button', { name: 'Supply & production', exact: true })
-    .click();
-  await expect(target.locator('.supply-status')).toHaveText('Idle');
+  await page.getByRole('button', { name: 'Route', exact: true }).click();
+  await selectMapObject(page, 'Vesta');
+  await expect(page.locator('.route-supply-summary')).toContainText('Idle');
   const saved = await page.evaluate(
     () =>
       (
@@ -108,7 +107,7 @@ test('automatiska-delorder: orders remote production through the UI and preserve
         }
       ).state,
   );
-  expect(saved.version).toBe(5);
+  expect(saved.version).toBe(6);
   expect(saved.componentOrders).toEqual([]);
   expect(saved.colonies[0]![1].projects).toEqual([]);
   expect(saved.fleets.reduce((n, fleet) => n + fleet.ships.Fighter, 0)).toBe(3);
@@ -132,7 +131,10 @@ test('automatiska-delorder: explains a missing part and leaves the saved order s
   await startFirstSlot(page);
   await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('button', { name: 'Production', exact: true })
+    .click();
   const before = await page.evaluate(() =>
     localStorage.getItem('spacelords.save.v2.1'),
   );

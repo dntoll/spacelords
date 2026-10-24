@@ -1,3 +1,8 @@
+import {
+  projectSupplyChain,
+  type SupplyChainSnapshot,
+} from './ProjectSupplyChain.js';
+import type { ProductionOption } from './ProductionMap.js';
 import { ProjectSupply, type ProjectSupplySnapshot } from './ProjectSupply.js';
 import { Galaxy, Star, StarSystem, type MapCell } from './Galaxy.js';
 import { HexCoordinate } from './HexCoordinate.js';
@@ -1069,6 +1074,96 @@ export class Game {
     if (!building) throw new Error('Building was not found.');
     building.demolition = !building.demolition;
   }
+  productionIssue(planet: Planet, type: ProjectType): string | null {
+    try {
+      this.#requirePlanning();
+      const state = this.#state(planet);
+      if (Object.hasOwn(BUILDINGS, type)) {
+        const issue = this.canBuild(planet, type as BuildType);
+        if (issue) return issue;
+      } else {
+        const definition = projectDefinition(type);
+        if (
+          !state.buildings.some(
+            (b) =>
+              !b.demolition &&
+              (definition.ship
+                ? BUILDINGS[b.type].ship === type
+                : BUILDINGS[b.type].component === type),
+          )
+        )
+          return definition.ship
+            ? 'A matching completed shipyard is required.'
+            : 'A matching completed component factory is required.';
+      }
+      this.#planProject(planet, type);
+      return null;
+    } catch (error) {
+      return error instanceof Error
+        ? error.message
+        : 'The order could not be completed.';
+    }
+  }
+
+  productionOptions(planet: Planet): readonly ProductionOption[] {
+    const snapshot = this.planetSnapshot(planet)!;
+    const types: ProjectType[] = [
+      ...snapshot.buildOptions.map((o) => o.type),
+      ...new Set(
+        snapshot.buildings.flatMap((b) => {
+          const definition = BUILDINGS[b.type];
+          return definition.ship
+            ? [definition.ship]
+            : definition.component
+              ? [definition.component]
+              : [];
+        }),
+      ),
+    ];
+    return Object.freeze(
+      types.map((type) => {
+        const definition = projectDefinition(type);
+        return Object.freeze({
+          type,
+          category: Object.hasOwn(BUILDINGS, type)
+            ? ('Buildings' as const)
+            : definition.ship
+              ? ('Ships' as const)
+              : ('Components' as const),
+          description: definition.description,
+          cost: Object.freeze({ ...definition.cost }),
+          workers: definition.workers,
+          crew: definition.crew,
+          parts: Object.freeze({ ...(definition.parts ?? {}) }),
+          blockedReason: this.productionIssue(planet, type),
+          localCount: snapshot.buildings.filter((b) => b.type === type).length,
+          empireCount: [...this.#colonies.values()].reduce(
+            (n, colony) =>
+              n + colony.buildings.filter((b) => b.type === type).length,
+            0,
+          ),
+        });
+      }),
+    );
+  }
+
+  supplyChain(projectId: string | null): SupplyChainSnapshot {
+    return projectSupplyChain(
+      projectId,
+      [...this.#colonies].flatMap(([planetId, state]) =>
+        state.projects.map((p) => ({ id: p.id, planetId })),
+      ),
+      this.#logistics.componentOrders,
+      this.#logistics.shipments,
+      (from, to) =>
+        this.#logistics.path(from, to, this.#logisticsPort())?.planets ?? null,
+      (from, to) =>
+        this.#logistics.routes.find(
+          (r) => [r.a, r.b].includes(from) && [r.a, r.b].includes(to),
+        )?.id,
+    );
+  }
+
   scheduleShip(
     planet: Planet,
     type: ShipType,
@@ -1109,11 +1204,7 @@ export class Game {
     });
   }
 
-  #scheduleProject(
-    planet: Planet,
-    type: ProjectType,
-    fields: Omit<Project, 'id' | 'type'>,
-  ): void {
+  #planProject(planet: Planet, type: ProjectType) {
     let sequence = this.#sequence;
     const id = (prefix: string) => `${prefix}-${sequence++}`;
     const projectId = id('project');
@@ -1145,6 +1236,14 @@ export class Game {
       this.#logisticsPort(),
       id,
     ).plan(projectId, planet.id, projectDefinition(type).parts ?? {});
+    return { plan, sequence, projectId };
+  }
+  #scheduleProject(
+    planet: Planet,
+    type: ProjectType,
+    fields: Omit<Project, 'id' | 'type'>,
+  ): void {
+    const { plan, sequence, projectId } = this.#planProject(planet, type);
     for (const production of plan.production)
       this.#colonies.get(production.planetId)!.projects.push({
         id: production.id,

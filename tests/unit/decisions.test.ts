@@ -14,7 +14,7 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
     model.openDecision('research-empty');
     expect(model.snapshot.screen).toBe('research');
     model.openDecision('building-empty-sol-0');
-    expect(model.snapshot.screen).toBe('planet');
+    expect(model.snapshot.screen).toBe('production');
     model.openDecision('fleet-idle-fleet-home');
     expect(model.snapshot.screen).toBe('fleets');
     for (const item of model.snapshot.decisions) model.skipDecision(item.id);

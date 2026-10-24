@@ -113,9 +113,11 @@ Flottpanelens befintliga åtgärder behålls, inklusive Colonize och rutttilldel
 Uttryckliga planetlänkar öppnar planeten och ruttlänkar öppnar Star map.
 Star map behåller sitt utseende och sina interaktioner.
 
-`delad-kartkamera` — **Fullständigt implementerat**: Star map och Fleets har
-samma zoom och panorering med mus, touch och tangentbord. Växling bevarar centrum,
-zoom och giltigt flottval, men avbryter tillfälliga orderval och gester.
+`delad-kartkamera` — **Fullständigt implementerat**: Star map, Fleets, Route och
+Production har samma kamera, zoom och panorering med mus, touch och tangentbord.
+Växling avbryter tillfälliga orderval och gester. Flottval bevaras mellan Star map
+och Fleets; Production prioriterar planetval. Vid planetval i Production flyttas
+kameran bara om byggcirkeln behöver mer plats.
 Direktöppning av en bestämd flotta från exempelvis Decisions väljer och centrerar
 på den om den har position, utan att återställa zoom.
 
@@ -169,10 +171,12 @@ Byggnader, delar och skepp delar planetens enda kö. Se [ekonomi och logistik](e
 
 ## Ekonomi, transport och beslutsstöd
 
-[Supply & production](supply-production.md) ersätter den separata handelsgrafen
-med en planet- och projektöversikt, försörjningsstatus, materialdetaljer,
-leveransflöden, produktionsförmåga och materialsökning. Krav och status finns i
-den länkade beskrivningen. Endast första projektet i Build queue styr behoven.
+[Route och Production](route-production.md) ersätter Supply & production
+med kartbaserad rutt- och produktionshantering. De tidigare kraven
+`forsorjningsoversikt`, `relevanta-material` och `materialoversikt` ersätts.
+[Försörjningsreglerna](supply-production.md) för status, verkliga leveranser
+och produktionsförmåga gäller fortsatt. Planetens första projekt styr dess
+övergripande försörjningsstatus; vald köpost styr kartans visade kedja.
 
 Star map hanterar fortsatt skapande, val och stängning av rutter samt tilldelning
 eller frigörande av flottor. De befintliga Star map-kraven gäller fortsatt;
@@ -421,14 +425,14 @@ platsnummer men antalet användbara platser styrs nu av `habitability-kapacitet`
 | `byggplatsrutnat`             | Fullständigt implementerat | Building sites visar numrerade byggplatser i ett rutnät med byggnader, pågående byggen, Domes och låsta platser. Byggval, avbrott och rivning finns här. Produkter beställs i Production. Build selection återgår till den valda byggplatsen.                                                                                                                                                                                                  |
 | `projektens-forsorjningssteg` | Fullständigt implementerat | Varje projekt i Build queue visar utfällbara materialbehov och steg för tillgång, utvinning, beställd delproduktion och transport. Första projektets detaljer är öppna från början. Kopplad delproduktion visar även sina råvarubehov. Mängder, status, hinder, aktuell transportplats och nästa etapp framgår. Länkar öppnar berörd planet, köpost, rutt eller flotta. Lokala delorder har egna köplatser och refereras under huvudprojektet. |
 | `planetgemensamt-produktval`  | Fullständigt implementerat | Production har kategorierna Ships och Components med symbolknappar och en produktlista med symbol och namn utifrån planetens färdigbyggda fabriker. Ett produktval öppnar full information och beställning. Flera likadana fabriker ger ett produktval. Spelaren kan köa en produkt åt gången, välja destinationsflotta för skepp och behålla valen mellan beställningar.                                                                      |
-| `kompakt-produktionsko`       | Fullständigt implementerat | Production visar en kompakt Build queue i verklig ordning. Endast intilliggande likadana projekt med samma destination och byggplats grupperas. Ett tryck öppnar gruppens första projekt i hela kön, där order kan ändras.                                                                                                                                                                                                                     |
+| `kompakt-produktionsko`       | Fullständigt implementerat | Production visar en kompakt Build queue i verklig ordning. Endast intilliggande likadana projekt med samma destination och byggplats grupperas. I planetvyn öppnar ett tryck gruppens första projekt i hela kön, där order kan ändras. Kartans Production visar i stället en rad per projekt med val av försörjningskedja och direkta ↑, ↓ och ×.                                                                                              |
 
 2026-10-24: `planetundersidor`, `byggplatsrutnat` och
 `planetgemensamt-produktval` ersätter den samlade hanteringen i Overview och
 fabriksvisa beställningar i `fabrikskoer`. `visa-byggalternativ` återgår nu till
 Building sites. `gemensam-planetko`, automatiska delorder och sparade order
-behålls. Den detaljerade planetkön omfattar alla projekt; Supply & production
-behåller sin översikt över varje planets första projekt.
+behålls. Den detaljerade planetkön omfattar alla projekt; Route visar försörjningsstatus
+för planetens första projekt och Production kan visa varje projekts kedja.
 
 ## Kategorier och detaljer i bygg- och produktval
 
@@ -466,3 +470,11 @@ skeppet vid flottflytt och sparning; befintliga skepp uppgraderas inte.
 
 2026-10-24: Motorreglerna ersätter tidigare oförändrade recept för andra skepp
 än Fighter samt företrädet för lokal motorproduktion framför fjärrlager.
+
+## Kartbaserade Route och Production
+
+Se [Route och Production](route-production.md) för de fullständigt implementerade
+kraven `farledskontrast`, `route-kartvy`, `produktions-kartvy`,
+`radiella-byggval`, `kompakt-produktionsko`, `byggprojektets-forsorjningskedja`
+och `forsorjningsproblem-pa-kartan` samt ersatta gränssnittskrav.
+Planetvyns befintliga kategorier, destinationsval och kögruppering behålls.

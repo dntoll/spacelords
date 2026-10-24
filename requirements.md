@@ -19,7 +19,8 @@ Se [hela visionen](docs/game-vision.md).
   `symbolbaserade-kataloger` är **Fullständigt implementerat**. Symbolknappar
   filtrerar kompakta listor med symbol och namn i Build selection och Production.
   Val av en post öppnar full information och en separat beställningsknapp.
-  Sökning, tangentbordsfokus och den kompakta byggkön behålls.
+  Planetvyns sökning, tangentbordsfokus och kompakta byggkö behålls.
+  Kartans Production kompletterar dessa kataloger med radiella byggval.
 
 - **Planetens undersidor:** `planetundersidor`, `byggplatsrutnat`,
   `projektens-forsorjningssteg`, `planetgemensamt-produktval` och
@@ -93,17 +94,22 @@ Se [hela visionen](docs/game-vision.md).
   Forskningskö med automatiska förkunskaper låser upp alla
   skeppsfabriker och Trade logistics. Grundutvinning och Research station finns
   från start.
-- **Försörjning och logistik:** [Supply & production](docs/supply-production.md)
-  ersätter den separata handelsgrafen med projektstatus, relevanta material,
-  leveranser, produktionsförmåga och materialsökning. De sex nya kraven är
-  **Fullständigt implementerat**. Star map hanterar fortsatt rutter och flottilldelning;
-  fysiska transporter, omlastningar och sparade order behålls.
-  `forsorjningsstatus` och `leveransfloden` omfattar även planeringen: en
-  fungerande rutt reserverar tillgängligt material direkt som Awaiting pickup.
-  Täckta behov visas som Waiting utan ett försörjningsbeslut före nästa år.
-  Beställd delproduktion visas separat från verkliga leveranser.
-  `streckade-rutter-utan-transporter` är **Fullständigt implementerat**:
-  rutter utan aktiv transport visas streckade på Star map.
+- **Route, Production och försörjning:** `farledskontrast`, `route-kartvy`,
+  `produktions-kartvy`, `radiella-byggval`, `byggprojektets-forsorjningskedja`
+  och `forsorjningsproblem-pa-kartan` är **Fullständigt implementerat**.
+  Route ersätter Supply & production. Production visar byggval runt en ägd
+  planet och en kö med en rad per projekt. Fyra kartlägen delar kartinstans
+  och kamera; projektets faktiska försörjning markeras på kartan.
+  `kompakt-produktionsko` omfattar både kartans individuella köposter och
+  planetvyns befintliga gruppering. Tystade eller överhoppade problem ger inga
+  kartmarkeringar; relevant navigeringsknapp visar ! för aktiva problem.
+  Se [kartbaserade Route och Production](docs/route-production.md).
+  Försörjningsreglerna `forsorjningsstatus`, `leveransfloden` och
+  `produktionsformaga` behålls enligt [försörjningsreglerna](docs/supply-production.md).
+  `forsorjningsoversikt`, `relevanta-material` och `materialoversikt` ersätts;
+  Supply-lista, materialsökning och global materialdetaljvy är borttagna.
+  `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och
+  gäller fortsatt, liksom fysisk frakt, automatiska delorder och sparade spel.
 - **Kartans utrymme:** `fokuserat-kartval` är **Fullständigt implementerat**.
   Kartan saknar objektmeny, S/Q-förklaring och kontrollruta för zoom/Homeworld.
   Tomma rutor utan flottor visar ingen informationspanel. Val av himlakropp,

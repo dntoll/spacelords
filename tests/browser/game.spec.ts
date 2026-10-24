@@ -441,14 +441,20 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     yard.getByRole('button', { name: 'Build ships at site 2', exact: true }),
   ).toHaveCount(0);
   await expect(yard.locator('.factory-order')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('button', { name: 'Production', exact: true })
+    .click();
   await page
     .getByRole('button', { name: 'Show Colony ship', exact: true })
     .click();
   await expect(page.locator('.production-order')).toContainText(
     'Iron 6, Water 3, Oil 1',
   );
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('button', { name: 'Production', exact: true })
+    .click();
   await page
     .getByRole('button', { name: 'Show Colony ship', exact: true })
     .click();

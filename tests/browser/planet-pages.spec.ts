@@ -61,7 +61,10 @@ test('planetundersidor / planetgemensamt-produktval / kompakt-produktionsko / pr
   const sites = page.locator('.building-sites-grid');
   await expect(sites.locator('.building-site')).toHaveCount(10);
   await expect(sites.getByRole('button', { name: /^Queue / })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('button', { name: 'Production', exact: true })
+    .click();
   await expect(
     page.getByRole('list', { name: 'Product list' }).getByRole('button'),
   ).toHaveText(['Fighter']);
@@ -118,7 +121,10 @@ test('planetundersidor / planetgemensamt-produktval / kompakt-produktionsko / pr
     'open',
     '',
   );
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('button', { name: 'Production', exact: true })
+    .click();
   await expect(
     page.getByRole('button', { name: 'Show Rocket engine', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true');
@@ -238,7 +244,10 @@ test('byggkategorier / symbolbaserade-kataloger: icon categories and compact lis
   await expect(page.locator('[data-site-index="4"]')).toContainText(
     'Rocket engine factory',
   );
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('button', { name: 'Production', exact: true })
+    .click();
   const saved = await page.evaluate(() =>
     localStorage.getItem('spacelords.save.v2.1'),
   );

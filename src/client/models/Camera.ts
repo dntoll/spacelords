@@ -58,6 +58,38 @@ export class Camera {
     });
   }
 
+  // radiella-byggval: framing may need a small margin outside the galaxy edge.
+  reveal(
+    position: HexCoordinate,
+    bounds: {
+      readonly left: number;
+      readonly right: number;
+      readonly top: number;
+      readonly bottom: number;
+    },
+  ): void {
+    if (!Object.values(bounds).every(Number.isFinite)) return;
+    const world = HexGeometry.toPoint(position);
+    const screen = {
+      x: (world.x - this.#center.x) * this.#zoom,
+      y: (world.y - this.#center.y) * this.#zoom,
+    };
+    const clamp = (value: number, low: number, high: number) =>
+      low > high
+        ? (low + high) / 2
+        : value >= low - 1e-7 && value <= high + 1e-7
+          ? value
+          : Math.max(low, Math.min(high, value));
+    this.#center = {
+      x:
+        this.#center.x +
+        (screen.x - clamp(screen.x, bounds.left, bounds.right)) / this.#zoom,
+      y:
+        this.#center.y +
+        (screen.y - clamp(screen.y, bounds.top, bounds.bottom)) / this.#zoom,
+    };
+  }
+
   focus(position: HexCoordinate): void {
     this.#setCenter(HexGeometry.toPoint(position));
   }

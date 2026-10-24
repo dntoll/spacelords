@@ -209,6 +209,10 @@ note right of ComponentOrder
   på en annan planet och därefter fysisk transport.
   Delproduktionen behåller sin verkliga köplats.
   Byggkön visar samma beroenden under huvudprojektet.
+  Production visar projektets härledda försörjningskedja:
+  leverantörer, delproduktion, omlastning och faktiska farleder.
+  Kedjan följer order och leveranser, inte möjliga leverantörer.
+  Den är inte ett nytt sparat domänobjekt.
 end note
 ComponentOrder --> Planet : source and recipient
 ComponentOrder --> Shipment : reserved physical delivery
@@ -236,7 +240,7 @@ note right of Shipment
   Ej påbörjad frakt skyddar källplanetens aktiva behov.
   In transit: lastad mängd på en flotta.
   Omlastat material är reserverat för slutmottagaren.
-  Försörjningsöversikten läser dessa tillstånd.
+  Projektets försörjningskedja läser dessa tillstånd och path.
 end note
 Shipment --> Fleet : in transit
 Shipment --> PlanetStock : awaiting pickup

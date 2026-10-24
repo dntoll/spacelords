@@ -1,3 +1,8 @@
+import type {
+  MapProductionCategory,
+  MapViewport,
+} from '../models/ProductionMap.js';
+import type { ProjectType } from '../models/Game.js';
 import type { Component } from '../models/Economy.js';
 import type {
   AppReadModel,
@@ -20,14 +25,24 @@ export type AppIntent =
       readonly id: string;
     }
   | { readonly type: 'cancel-map-trade' }
-  | { readonly type: 'supply-search'; readonly query: string }
-  | { readonly type: 'supply-material'; readonly material: string | null }
   | {
-      readonly type:
-        | 'supply-toggle'
-        | 'supply-inventory'
-        | 'supply-open-planet'
-        | 'supply-open-route';
+      readonly type: 'open-route' | 'open-production';
+      readonly planetId?: string;
+    }
+  | {
+      readonly type: 'map-production-category';
+      readonly category: MapProductionCategory;
+    }
+  | { readonly type: 'map-production-page'; readonly page: number }
+  | {
+      readonly type: 'map-production-option';
+      readonly option: ProjectType | null;
+    }
+  | { readonly type: 'map-production-project'; readonly id: string }
+  | { readonly type: 'map-production-build' }
+  | { readonly type: 'map-size'; readonly viewport: MapViewport }
+  | {
+      readonly type: 'supply-open-planet' | 'supply-open-route';
       readonly id: string;
     }
   | { readonly type: 'research-pan'; readonly delta: Point }
@@ -52,7 +67,6 @@ export type AppIntent =
     }
   | {
       readonly type:
-        | 'open-supply'
         | 'open-decisions'
         | 'next-decision'
         | 'confirm-end-turn'

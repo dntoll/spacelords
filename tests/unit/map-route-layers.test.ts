@@ -29,7 +29,10 @@ afterEach(() => vi.unstubAllGlobals());
 
 it.each(
   [0.5, 1, 2].flatMap((zoom) =>
-    (['map', 'fleets'] as const).map((screen) => ({ screen, zoom })),
+    (['map', 'fleets', 'route', 'production'] as const).map((screen) => ({
+      screen,
+      zoom,
+    })),
   ),
 )(
   'synliga-handelsrutter / flottfokuserad-kartvy: background layers and opacity on $screen at zoom $zoom',
@@ -138,13 +141,19 @@ it.each(
       expect(sketch.describe).toHaveBeenLastCalledWith(
         screen === 'fleets'
           ? 'Fleets map. Fleet positions and destinations are highlighted; planets and trade routes are background landmarks.'
-          : 'Star map. Your homeworld and its surroundings are visible. Stars are visible in unexplored space.',
+          : screen === 'route'
+            ? 'Route map. Select planets, create routes and assign transport fleets.'
+            : screen === 'production'
+              ? 'Production map. Select an owned planet to build and inspect its project supply chain.'
+              : 'Star map. Your homeworld and its surroundings are visible. Stars are visible in unexplored space.',
       );
       const selection = runtime.events.indexOf('hex:#1b3e41');
       const route = runtime.events.indexOf(
-        screen === 'fleets' ? 'line:#2b3d50' : 'line:#547caa',
+        screen === 'fleets' || screen === 'production'
+          ? 'line:#2b3d50'
+          : 'line:#83b8ed',
       );
-      if (screen === 'map') expect(selection).toBeGreaterThanOrEqual(0);
+      if (screen !== 'fleets') expect(selection).toBeGreaterThanOrEqual(0);
       else expect(selection).toBe(-1);
       expect(planetAlphas.at(-1)).toBe(screen === 'fleets' ? 0.35 : 1);
       expect(planetLabelAlphas.length).toBeGreaterThan(0);
@@ -152,7 +161,15 @@ it.each(
       expect(context.globalAlpha).toBe(1);
       expect(
         container.querySelector('canvas')?.getAttribute('aria-label'),
-      ).toContain(screen === 'fleets' ? 'Fleets map.' : 'Star map.');
+      ).toContain(
+        screen === 'fleets'
+          ? 'Fleets map.'
+          : screen === 'route'
+            ? 'Route map.'
+            : screen === 'production'
+              ? 'Production map.'
+              : 'Star map.',
+      );
       expect(route).toBeGreaterThan(selection);
       expect(runtime.events.indexOf('circle:#b1e4d1')).toBeGreaterThan(route);
       expect(runtime.events.indexOf('overlays')).toBeGreaterThan(route);

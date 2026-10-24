@@ -54,7 +54,10 @@ test('gemensam-planetko / delfabriker / automatiska-delorder: research, manufact
     await build(page, index + 2, type);
   for (let year = 0; year < 3; year++) await nextYear(page);
   await home(page);
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('button', { name: 'Production', exact: true })
+    .click();
   await expect(page.locator('.production-order')).toHaveCount(1);
   await page.getByRole('button', { name: 'Show Fighter', exact: true }).click();
   await page

@@ -3,22 +3,45 @@
 Namnen nedan är stabila referenser i tester, kod och dokumentation.
 Produktkraven finns separat i [product-requirements.md](product-requirements.md).
 
-## Supply & production
+## Kartbaserade Route och Production
 
-De sex kraven i [försörjningsvyn](supply-production.md) använder SupplyOverview
-för gemensam, plattformsoberoende bedömning. Game exponerar oföränderliga
-leveransdata och SupplySelection håller tillfällig sökning och expansion separat
-från sparade speldata. Vyn läser ögonblicksbilder och skickar avsikter via
-AppController. Materialrader skapas från data utan fem fasta materialfält.
+`route-kartvy`, `produktions-kartvy` och `delad-kartkamera` använder en gemensam
+GalaxyMapView-instans mellan map, fleets, route och production. AppModel håller
+Camera och tillfälliga kategori-, sid-, alternativ- och projektval. AppController
+avbryter gester vid navigation. Production tillåter planetval och kameragester;
+rutt- och flottorder hör till andra tillämpliga kartlägen.
 
-Enhetstester skyddar reservationer, delvis täckta behov, ändliga fyndigheter,
-framtida projekt, produktionsförmåga, omlastning, avbrutna projekt, brutna kedjor,
-skrivskydd och 300 material. Vytester skyddar urval och fokus vid återrendering.
-Webbläsartester verifierar navigation, lager, sökning, leveranser, sparade spel,
-intern rullning och minst 44 px höga kontroller på telefon, surfplatta och dator.
+`radiella-byggval` använder oföränderliga ProductionOption och
+ProductionMapSnapshot. Game använder samma rena ComponentPlanner-planering för
+förhandsbedömning och faktisk order. Förhandsbedömning ändrar varken order,
+reservationer eller ID-sekvens. Första giltiga byggplats och matchande fabrik
+väljs enligt befintliga domänoperationer; simuleringslåset gäller även här.
+HTML-vyer rapporterar kart- och kontrollmått till controller; Camera panoreras
+minimalt utan automatisk zoom. Smala kartytor använder färre alternativ per
+sida. Panelen rullas internt och kontroller har minst 44 px träffyta.
 
-Ingen ändring av sparformat eller transportregler behövs. TradeAssignment
-innehåller den tilldelningsvalidering som Star map tidigare delade med grafen.
+`byggprojektets-forsorjningskedja` använder projekt-ID, ComponentOrder och
+Shipment.path. Registrerade leveranser behåller sin faktiska väg även när en
+etapp brutits. Beställd produktion utan Shipment får befintlig planerad väg.
+Traversal följer produktionsprojekt med besökta ID:n och unika planetroller och
+rutt-ID:n; inget leverantörsval görs av läsmodellen. ProjectSupply behåller
+projektens textuella försörjningssteg.
+
+`forsorjningsproblem-pa-kartan` bygger på aktiva Decisions och samma
+SupplyOverview-bedömning. Tystning och årets överhoppning filtrerar markeringar.
+Problemet får navigeringsmarkering i sin lösningsvy: Route för försörjning och
+rutter, Production för saknad fabrik och personal/besättning. Tom kö och normal
+väntan ger inga röda markeringar. Underliggande status går fortsatt att granska.
+
+`farledskontrast` verifieras mot kartans bakgrund och hexytor med minst 4,5:1
+för normal farled. Grundbredden är 2,5 skärmpixlar; markeringar och streckning
+kompenserar för zoom. Fleets behåller nedtonade bakgrundsrutter.
+
+SupplyView och SupplySelection är borttagna; SupplyOverview och transportregler
+behålls. Inga UI-val införs i GameState och ingen sparformatmigration behövs.
+Kravkopplade tester täcker modell, controller, rendering, mobilflöde och sparning.
+Full plattformsmatris körs vid separat beställt sluttest för explicit revision.
+Ingen driftsättning ingår i denna leverans.
 
 ## Handelsrutter på Star map
 
@@ -335,7 +358,7 @@ Avbrutna huvudorder släpper reservationer; delproduktion behålls och lastat
 gods följer tidigare avbrottsregler. Version 2 och 3 läses utan automatisk
 nybeställning eller radering. Sparplatsnycklarna ändras inte.
 
-Supply & production får skrivskyddade mängder för beställd produktion och
+Kartornas försörjningsläsmodeller får skrivskyddade mängder för beställd produktion och
 aktuella hinder. Framtida produktion blir aldrig en fiktiv Shipment.
 `streckade-rutter-utan-transporter` — **Fullständigt implementerat**:
 `TradeRouteSnapshot.hasActiveTransport` använder samma transportvillkor som

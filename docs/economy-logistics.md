@@ -121,11 +121,11 @@ som vanligt lagermaterial. Om rutten stängs lossas pågående last vid dess nä
 och lossning. En olastad flotta vars sista Transport ship flyttas ut frigörs
 direkt enligt `skepp-ur-olastad-ruttflotta`.
 
-## Supply & production
+## Route, Production och försörjning
 
-[Försörjningsöversikten](supply-production.md) ersätter handelsgrafen. Varje
-planet visar första projektet i Build queue och Needs attention, Waiting, Ready
-eller Idle. Material reserverat för utleverans eller omlastning räknas inte som
+[Route och Production](route-production.md) visar försörjningen på kartan.
+Route sammanfattar första projektet i Build queue med Needs attention, Waiting,
+Ready eller Idle; Production kan följa varje köposts försörjningskedja. Material reserverat för utleverans eller omlastning räknas inte som
 lokalt tillgängligt. Delvis täckta behov visas med kvarstående Unprovided.
 
 Awaiting pickup skiljs från In transit. Leveranser visar källa, mottagare,
