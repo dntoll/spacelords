@@ -1,6 +1,8 @@
 # Plan för flottor på Star map
 
-Datum: 2026-10-21. Implementerad ändring; nedan bevaras genomförandeplanen.
+Datum: 2026-10-21. Historisk genomförandeplan. Fleets-översikten och minikartan
+ersattes 2026-10-24 av `flottfokuserad-kartvy` och `delad-kartkamera`;
+övrig flotthantering på Star map gäller fortsatt.
 Aktiva produktkrav och status finns i
 [product-requirements.md](product-requirements.md).
 

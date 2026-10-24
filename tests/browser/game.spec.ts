@@ -1,3 +1,4 @@
+import { formFleet, selectMapFleet } from './fleet-helpers.js';
 import { selectMapObject } from './map-helpers.js';
 import { chooseFleetDestination } from './fleet-helpers.js';
 import { startFirstSlot, endTurn, chooseResearch } from './save-helpers.js';
@@ -136,14 +137,7 @@ test('flottadministration / flottdestinationer: map orders and fleet-grid transf
   ).toBeVisible();
   await selectMapObject(page, 'Tellus');
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await page.getByRole('button', { name: 'Home Fleet', exact: true }).click();
-  await page.getByRole('button', { name: 'New fleet', exact: true }).click();
-  await expect(
-    page.getByRole('button', { name: 'Fleet 1', exact: true }),
-  ).toBeVisible();
-  await page
-    .getByRole('button', { name: 'Fighter 1 in Home Fleet' })
-    .dragTo(page.getByRole('group', { name: 'Ships in Fleet 1', exact: true }));
+  await formFleet(page);
   await expect(
     page.getByRole('button', { name: 'Fighter 1 in Fleet 1' }),
   ).toBeVisible();
@@ -372,8 +366,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     '1 idle planet build queue',
   );
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await page.getByRole('button', { name: 'Home Fleet', exact: true }).click();
-  await page.getByRole('button', { name: 'New fleet', exact: true }).click();
+  await formFleet(page);
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await construction();
   const yard = page.getByRole('article', {
@@ -461,6 +454,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   });
   await nextYear();
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+  await selectMapFleet(page, 'Fleet 1');
   await expect(
     page.getByRole('button', { name: 'Colony ship 1 in Fleet 1', exact: true }),
   ).toBeVisible();

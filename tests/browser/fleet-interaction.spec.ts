@@ -1,3 +1,4 @@
+import { formFleet } from './fleet-helpers.js';
 import { selectMapObject } from './map-helpers.js';
 import { startFirstSlot } from './save-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
@@ -60,18 +61,11 @@ test('kartflottor / flottval-pa-kartan: colocated fleets occupy separate positio
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await page.getByRole('button', { name: 'Home Fleet', exact: true }).click();
-  await page.getByRole('button', { name: 'New fleet', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Fighter 1 in Home Fleet', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Move ship to Fleet 1', exact: true })
-    .click();
+  await formFleet(page);
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   const { x, y } = await mapCenter(page);
   const hud = (await page
-    .getByRole('complementary', { name: 'Selected hex' })
+    .getByRole('complementary', { name: 'Selected fleet' })
     .boundingBox())!;
   // flottval-pa-kartan: the information panel must not cover either fleet marker.
   expect(

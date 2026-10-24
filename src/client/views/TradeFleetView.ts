@@ -4,7 +4,7 @@ import type { TradeRouteSnapshot } from '../models/Logistics.js';
 import { tradeAssignmentIssue } from '../models/TradeAssignment.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { SHIP_TYPES, shipImage } from './ShipView.js';
-import { fleetAssignmentLabel } from './FleetView.js';
+import { fleetAssignmentLabel } from './FleetCard.js';
 import { button, element } from './dom.js';
 
 export function renderTradeFleet(

@@ -1,3 +1,4 @@
+import { selectMapFleet } from './fleet-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 import { startFirstSlot } from './save-helpers.js';
@@ -39,9 +40,7 @@ for (const selection of ['hex', 'fleet'] as const) {
     await startScrollablePanel(page);
     if (selection === 'fleet') {
       await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-      await page
-        .getByRole('button', { name: 'Show on map: Home Fleet', exact: true })
-        .click();
+      await selectMapFleet(page);
     }
     const panel = page.locator('.selection-panel');
     await panel.evaluate((node) => {

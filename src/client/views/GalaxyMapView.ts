@@ -7,6 +7,9 @@ import type { MapCell } from '../models/Galaxy.js';
 import type { IntentHandler, MapPort } from './ViewContracts.js';
 import type { TurnFrame } from '../models/Game.js';
 
+const STAR_MAP_LABEL =
+  'Star map. Click a fleet or trade route to select it. Drag a selected owned planet to another owned planet to create a route. Press R to start a route from the selected owned planet, then choose its target. Drag a fleet onto a route to assign it, or elsewhere to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.';
+
 export class GalaxyMapView implements MapPort {
   readonly #container: HTMLElement;
   readonly #emit: IntentHandler;
@@ -17,6 +20,7 @@ export class GalaxyMapView implements MapPort {
   #canvas: HTMLCanvasElement | null = null;
   #disposed = false;
   #ready = false;
+  #descriptionScreen: AppReadModel['screen'] | null = null;
 
   constructor(container: HTMLElement, emit: IntentHandler) {
     this.#container = container;
@@ -31,9 +35,6 @@ export class GalaxyMapView implements MapPort {
         sketch.pixelDensity(Math.min(window.devicePixelRatio || 1, 2));
         sketch.noLoop();
         sketch.textFont('system-ui');
-        sketch.describe(
-          'Star map. Your homeworld and its surroundings are visible. Stars are visible in unexplored space.',
-        );
         this.#canvas = container.querySelector('canvas');
         if (this.#canvas) this.#bindInput(this.#canvas);
         this.#ready = true;
@@ -76,6 +77,22 @@ export class GalaxyMapView implements MapPort {
   #draw(sketch: p5): void {
     const model = this.#model;
     if (!model || this.#disposed) return;
+    if (this.#descriptionScreen !== model.screen) {
+      sketch.describe(
+        model.screen === 'fleets'
+          ? 'Fleets map. Fleet positions and destinations are highlighted; planets and trade routes are background landmarks.'
+          : 'Star map. Your homeworld and its surroundings are visible. Stars are visible in unexplored space.',
+      );
+      this.#descriptionScreen = model.screen;
+    }
+    if (this.#canvas) {
+      this.#canvas.setAttribute(
+        'aria-label',
+        model.screen === 'fleets'
+          ? 'Fleets map. Click a fleet to select it; drag a fleet to set its destination. Planets and trade routes are background landmarks. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.'
+          : STAR_MAP_LABEL,
+      );
+    }
     sketch.background('#0a1520');
     sketch.noStroke();
     for (let index = 0; index < 100; index += 1) {
@@ -92,12 +109,17 @@ export class GalaxyMapView implements MapPort {
     sketch.translate(-model.camera.center.x, -model.camera.center.y);
     for (const cell of model.cells)
       this.#hex(sketch, cell, false, model.camera.zoom);
-    const selected = model.selected;
+    const selected = model.screen === 'fleets' ? null : model.selected;
     if (selected) this.#hex(sketch, selected, true, model.camera.zoom);
     // synliga-handelsrutter: selection fills stay below routes; objects stay above.
     renderMapTradeRoutes(sketch, model);
+    sketch.push();
+    const context = sketch.drawingContext as
+      CanvasRenderingContext2D | undefined;
+    if (context && model.screen === 'fleets') context.globalAlpha *= 0.35;
     for (const cell of model.cells)
       if (cell.object) this.#object(sketch, cell, model.camera.zoom);
+    sketch.pop();
     renderMapOverlays(sketch, model);
     if (this.#canvas)
       this.#canvas.style.cursor = model.fleetDragging
@@ -176,10 +198,7 @@ export class GalaxyMapView implements MapPort {
     const options = { signal: this.#events.signal };
     canvas.tabIndex = 0;
     canvas.setAttribute('role', 'img');
-    canvas.setAttribute(
-      'aria-label',
-      'Star map. Click a fleet or trade route to select it. Drag a selected owned planet to another owned planet to create a route. Press R to start a route from the selected owned planet, then choose its target. Drag a fleet onto a route to assign it, or elsewhere to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.',
-    );
+    canvas.setAttribute('aria-label', STAR_MAP_LABEL);
     const activePointers = new Set<number>();
     canvas.addEventListener(
       'pointerdown',
@@ -287,6 +306,7 @@ export class GalaxyMapView implements MapPort {
               planet.position.key === this.#model?.selected?.position.key,
           );
           if (
+            this.#model?.screen === 'map' &&
             source &&
             this.#model?.phase === 'planning' &&
             this.#model.research.completed.includes('Trade logistics')

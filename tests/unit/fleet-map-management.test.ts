@@ -214,20 +214,15 @@ describe('flottknappar-pa-kartan / flottadministration', () => {
     expect(model.snapshot.fleets[0]!.destination).toBeNull();
   });
 
-  it('locates a fleet from the overview, preserving zoom and exposing no fake empty position', () => {
-    const { model, root, view, click } = setup();
+  it('delad-kartkamera: explicitly opens a fleet without resetting zoom', () => {
+    const { model, root, view } = setup();
     model.zoom(1.5, { x: 0, y: 0 });
     model.setDestination('fleet-home', 0, 1);
     model.pan({ x: 80, y: 25 });
-    model.openFleets();
-    model.createFleet();
+    model.openFleet('fleet-home');
     view.render(model.snapshot);
     expect(root.textContent).toContain('Destination: HEX 0,1');
-    const empty = root.querySelectorAll('.fleet-card')[1]!;
-    expect(empty.textContent).toContain('No position');
-    expect(empty.querySelector('[aria-label^="Show on map"]')).toBeNull();
-    click('Show on map: Home Fleet');
-    expect(model.snapshot.screen).toBe('map');
+    expect(model.snapshot.screen).toBe('fleets');
     expect(model.snapshot.mapFleetId).toBe('fleet-home');
     expect(model.snapshot.camera.center).toEqual(
       HexGeometry.toPoint(model.snapshot.fleets[0]!.position!),

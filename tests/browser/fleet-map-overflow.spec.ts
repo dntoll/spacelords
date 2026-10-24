@@ -1,3 +1,4 @@
+import { selectMapFleet } from './fleet-helpers.js';
 import { expect, test } from '@playwright/test';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 import { startFirstSlot } from './save-helpers.js';
@@ -49,15 +50,14 @@ test('flottadministration / skeppsbilder / viewport-game-layout: long fleet list
   await name.fill('Sentinel');
   await name.press('Enter');
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+  await selectMapFleet(page, 'Home Fleet');
   expect(
     await page
       .getByRole('article', { name: 'Fleet Home Fleet', exact: true })
       .locator('.ship-token')
       .count(),
-  ).toBeLessThan(5);
-  await page
-    .getByRole('button', { name: 'Show on map: Sentinel', exact: true })
-    .click();
+  ).toBeLessThan(16);
+  await selectMapFleet(page, 'Sentinel');
   await expect(panel.locator('.selected-fleet-card')).toContainText('Sentinel');
   await expect(
     panel.locator('.selected-fleet-card .fleet-name-button'),

@@ -38,10 +38,13 @@ Se [hela visionen](docs/game-vision.md).
   `flottknappar-pa-kartan` är **Fullständigt implementerat**: skepp organiseras
   direkt på Star map, namn ändras med dubbelklick och New fleet bildas med
   första skeppet. Flottkorten visas direkt utan Expand fleet panel eller Help.
-  Fleets ger en kompakt översikt med Show on map; tomma flottor,
-  förstärkningar och minikarta behålls. Se [genomförandeplanen](docs/fleet-map-plan.md).
+  `flottfokuserad-kartvy` och `delad-kartkamera` är **Fullständigt implementerat**:
+  Fleets visar en karta för flottval, rörelse och skeppsöverföring med samma
+  kamera som Star map. Planeter och rutter är diskret, inaktiv bakgrund.
+  Den gamla översikten, minikartan och knapparna för tomma flottor ersätts;
+  sparade flottor och förstärkningsregler bevaras. Se [produktkraven](docs/product-requirements.md).
   Ruttpanelen visar bara redan tilldelade flottor; den globala Assign fleet-listan
-  är borttagen. Flottor kan fortsatt dras till ruttlinjen för tilldelning.
+  är borttagen. På Star map kan flottor fortsatt dras till ruttlinjen för tilldelning.
 - **Terraforming och Domes:** `terraformning`, `planettypsforskning`,
   `domes-per-byggplats`, `andningsbar-atmosfar` och `habitability-kapacitet`
   är **Fullständigt implementerat**. Se [spelreglerna](docs/terraforming.md).

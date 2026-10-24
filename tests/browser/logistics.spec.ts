@@ -1,5 +1,10 @@
 import { selectMapObject } from './map-helpers.js';
-import { chooseFleetDestination } from './fleet-helpers.js';
+import {
+  chooseFleetDestination,
+  formFleet,
+  selectMapFleet,
+  receiveShip,
+} from './fleet-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 import {
   endTurn,
@@ -94,12 +99,8 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     await build(page, index + 5, type);
   for (let year = 0; year < 4; year++) await nextYear(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  for (const name of ['Freighters', 'Settlers']) {
-    await page.getByRole('button', { name: 'New fleet', exact: true }).click();
-    await page.locator('.selected-fleet-card .fleet-rename-button').click();
-    await page.getByRole('textbox', { name: 'Fleet name' }).fill(name);
-    await page.getByRole('textbox', { name: 'Fleet name' }).press('Enter');
-  }
+  await formFleet(page, 'Fighter', 'Home Fleet', 'Freighters');
+  await formFleet(page, 'Exploration ship', 'Home Fleet', 'Settlers');
   await home(page);
   await page
     .getByRole('combobox', {
@@ -121,6 +122,13 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     .click();
   await nextYear(page);
   await nextYear(page);
+  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+  await selectMapFleet(page, 'Freighters');
+  await page
+    .getByRole('button', { name: 'Fighter 1 in Freighters', exact: true })
+    .click();
+  await receiveShip(page, 'Home Fleet');
+  await selectMapFleet(page, 'Settlers');
   await chooseFleetDestination(page, 'Settlers');
   await selectMapObject(page, 'Vesta');
   await nextYear(page);
@@ -154,6 +162,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     path: testInfo.outputPath('selected-trade-route.png'),
   });
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+  await selectMapFleet(page, 'Freighters');
   const freighters = page.getByRole('article', {
     name: 'Fleet Freighters',
     exact: true,

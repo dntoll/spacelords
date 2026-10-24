@@ -448,36 +448,7 @@ p {
   gap: 12px;
   align-items: center;
 }
-.fleet-page {
-  height: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 12px;
-  padding: 16px;
-}
-.fleet-page > h1 {
-  grid-row: 1;
-}
-.fleet-page > .back-button {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-}
-.fleet-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-.fleet-controls input {
-  min-height: 40px;
-  padding: 6px 9px;
-  background: #091923;
-  color: #e5e8e6;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-}
+
 .fleet-grid {
   overflow: auto;
   border: 1px solid var(--line);
@@ -682,18 +653,7 @@ p {
   .existing-buildings h2 {
     font-size: 1rem;
   }
-  .fleet-page {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto minmax(0, 1fr);
-    padding: 10px;
-  }
-  .fleet-page > h1 {
-    grid-row: 1;
-  }
-  .fleet-page > .back-button {
-    grid-row: 1;
-    justify-self: end;
-  }
+
   .fleet-list {
     grid-row: 2;
     max-height: 120px;
@@ -1411,30 +1371,7 @@ p {
 }
 
 /* flottadministration / skeppsbilder: each fleet has one visual hangar. */
-.fleet-page {
-  grid-template-rows: auto auto minmax(0, 1fr);
-  min-width: 0;
-}
-.fleet-builder {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 14px;
-  min-height: 0;
-}
-.fleet-collection {
-  min-width: 0;
-  min-height: 0;
-  overflow: auto;
-  display: grid;
-  grid-template-rows: auto auto;
-  align-content: start;
-  gap: 12px;
-}
-.fleet-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
-  gap: 12px;
-}
+
 .fleet-card {
   min-width: 0;
   padding: 10px;
@@ -1530,29 +1467,7 @@ p {
   z-index: 20;
   filter: drop-shadow(0 0 8px #97edd7);
 }
-.fleet-location-panel {
-  min-width: 0;
-  min-height: 0;
-  max-height: 100%;
-  overflow: auto;
-  align-self: start;
-  padding: 12px;
-  display: grid;
-  gap: 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #10222e;
-}
-.fleet-location-map {
-  width: 100%;
-  height: 190px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-}
-.fleet-location-map canvas {
-  display: block;
-}
+
 .selection-panel .ship-portrait {
   width: 86px;
   min-height: 64px;
@@ -1561,54 +1476,10 @@ p {
 .selection-panel .ship-image {
   height: 36px;
 }
-@media (max-width: 760px) {
-  .fleet-builder {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
-  }
-  .fleet-location-panel {
-    grid-row: 1;
-    padding: 8px;
-    grid-template-columns: minmax(0, 1fr) 150px;
-  }
-  .fleet-location-map {
-    grid-column: 2;
-    grid-row: 1 / span 3;
-    height: 96px;
-  }
-  .fleet-collection {
-    grid-row: 2;
-  }
-  .fleet-location-panel h2 {
-    font-size: 1rem;
-  }
-}
+
 @media (max-width: 380px) {
-  .fleet-location-panel {
-    grid-template-columns: minmax(0, 1fr) 110px;
-  }
   .ship-token {
     width: 100px;
-  }
-}
-@media (max-height: 500px) {
-  .fleet-builder {
-    grid-template-columns: minmax(0, 1fr) 160px;
-    grid-template-rows: minmax(0, 1fr);
-  }
-  .fleet-location-panel {
-    grid-column: 2;
-    grid-row: 1;
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .fleet-location-map {
-    grid-column: 1;
-    grid-row: auto;
-    height: 90px;
-  }
-  .fleet-collection {
-    grid-column: 1;
-    grid-row: 1;
   }
 }
 
@@ -2365,44 +2236,35 @@ p {
   width: 100%;
   min-height: 44px;
 }
-.map-fleet-management button,
-.fleet-overview button {
+.map-fleet-management button {
   min-height: 44px;
 }
 /* kompakta-flottkort: fit small fleets on one row without shrinking touch targets. */
-.map-fleet-management .fleet-card,
-.fleet-overview .fleet-card {
+.map-fleet-management .fleet-card {
   padding: 6px;
 }
-.map-fleet-management .fleet-hangar,
-.fleet-overview .fleet-hangar {
+.map-fleet-management .fleet-hangar {
   min-height: 0;
   padding: 4px;
   gap: 4px;
 }
-.map-fleet-management .ship-manifest,
-.fleet-overview .ship-manifest {
+.map-fleet-management .ship-manifest {
   gap: 4px;
 }
-.map-fleet-management .ship-token,
-.fleet-overview .ship-token {
+.map-fleet-management .ship-token {
   width: 60px;
   min-height: 52px;
   gap: 2px;
   padding: 3px;
 }
-.map-fleet-management .ship-image,
-.fleet-overview .ship-image {
+.map-fleet-management .ship-image {
   height: 24px;
 }
-.map-fleet-management .fleet-current-position,
-.fleet-overview .fleet-current-position {
+.map-fleet-management .fleet-current-position {
   margin: 2px 0 4px;
 }
 .map-fleet-management .fleet-destination-status,
-.map-fleet-management .fleet-assignment,
-.fleet-overview .fleet-destination-status,
-.fleet-overview .fleet-assignment {
+.map-fleet-management .fleet-assignment {
   margin: 3px 0;
   font-size: 0.75rem;
 }

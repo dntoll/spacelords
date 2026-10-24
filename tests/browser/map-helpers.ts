@@ -1,6 +1,9 @@
 import { expect, type Page } from '@playwright/test';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
-import type { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
+import type {
+  Point,
+  HexCoordinate,
+} from '../../src/client/models/HexCoordinate.js';
 import { HexGeometry } from '../../src/client/models/HexCoordinate.js';
 
 export async function selectMapObject(page: Page, name: string): Promise<void> {
@@ -16,9 +19,12 @@ export async function selectMapHex(
   page: Page,
   position: HexCoordinate,
 ): Promise<void> {
+  await selectMapPoint(page, HexGeometry.toPoint(position));
+}
+
+export async function selectMapPoint(page: Page, target: Point): Promise<void> {
   const map = page.locator('canvas[data-rendered="true"]');
   await expect(map).toHaveCount(1);
-  const target = HexGeometry.toPoint(position);
   const reverse: string[] = [];
   // Temporarily pan covered targets into the exposed map, then restore the camera.
   for (let attempt = 0; attempt < 40; attempt++) {
@@ -66,5 +72,5 @@ export async function selectMapHex(
     );
     await map.press(key);
   }
-  throw new Error(`Could not reach HEX ${position.key}`);
+  throw new Error(`Could not reach map point ${target.x},${target.y}`);
 }

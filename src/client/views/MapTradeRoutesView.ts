@@ -7,22 +7,29 @@ export function renderMapTradeRoutes(sketch: p5, model: AppReadModel): void {
   const zoom = model.camera.zoom;
   const context = sketch.drawingContext as CanvasRenderingContext2D | undefined;
   for (const route of model.tradeRoutes) {
-    const target = model.mapTrade.hoveredRouteIds.includes(route.id);
+    const target =
+      model.screen === 'map' &&
+      model.mapTrade.hoveredRouteIds.includes(route.id);
     const fleet = model.fleets.find(
       (f) => f.id === model.mapTrade.assignmentFleetId,
     );
     const invalid = target && fleet && tradeAssignmentIssue(fleet, route);
-    const selected = model.mapTrade.routeId === route.id;
+    const selected =
+      model.screen === 'map' && model.mapTrade.routeId === route.id;
     sketch.stroke(
-      invalid
-        ? '#ef8d85'
-        : selected
-          ? '#ffdc88'
-          : target
-            ? '#b1e4d1'
-            : '#547caa',
+      model.screen === 'fleets'
+        ? '#2b3d50'
+        : invalid
+          ? '#ef8d85'
+          : selected
+            ? '#ffdc88'
+            : target
+              ? '#b1e4d1'
+              : '#547caa',
     );
-    sketch.strokeWeight((selected || target ? 3 : 2) / zoom);
+    sketch.strokeWeight(
+      (model.screen === 'fleets' ? 1 : selected || target ? 3 : 2) / zoom,
+    );
     context?.setLineDash(
       route.closing || !route.hasActiveTransport ? [7 / zoom, 5 / zoom] : [],
     );
@@ -32,7 +39,7 @@ export function renderMapTradeRoutes(sketch: p5, model: AppReadModel): void {
   }
   context?.setLineDash([]);
   const preview = model.mapTrade.preview;
-  if (!preview) return;
+  if (!preview || model.screen === 'fleets') return;
   const color = preview.issue ? '#ef8d85' : '#b1e4d1';
   sketch.stroke(color);
   sketch.strokeWeight(2 / zoom);

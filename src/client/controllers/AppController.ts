@@ -75,11 +75,6 @@ export class AppController {
     )
       return;
     switch (intent.type) {
-      case 'show-fleet-on-map':
-        this.#model.cancelShipTransfer();
-        this.#model.cancelFleetRename();
-        this.#model.showFleetOnMap(intent.id);
-        break;
       case 'begin-fleet-rename':
         this.#model.beginFleetRename(intent.id);
         break;
@@ -355,6 +350,7 @@ export class AppController {
         break;
       case 'pointer-cancel':
         this.#cancelPointer();
+        if (this.#model.snapshot.screen === 'fleets') this.#model.openFleets();
         break;
       case 'pointer-move': {
         if (this.#fleetPointer?.id === intent.id) {

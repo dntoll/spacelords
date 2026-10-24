@@ -52,8 +52,14 @@ kontrolleras före avsikten och domänens målvalidering behålls.
 `flottknappar-pa-kartan` använder gemensamma FleetCard och ShipTransferInput
 i kartpanelen och Fleets. FleetMapPanel visar flottorna vid aktuell position
 utan att ändra kartans hexval. HTML-panelen visar flottkorten direkt och rullas internt utan separat utfällning eller hjälpruta.
-Fleets har kompakta skeppsförhandsvisningar, aktuell position och Show on map;
-den befintliga minikartan och hanteringen av tomma flottor behålls.
+`flottfokuserad-kartvy` och `delad-kartkamera` är **Fullständigt implementerat**.
+AppView monterar GalaxyMapView för både Star map och Fleets. Samma Camera i
+AppModel används utan återställning vid växling. Skärmens typ styr rendering,
+träfftestning och tillåtna ruttgester. Fleets tonar ned himlakroppar och rutter,
+döljer planetmärken och använder FleetMapPanel för flottval. Ingen separat
+minikarta, översiktsvy eller förhandsvisningsfabrik för flottor finns kvar.
+Explicit ruttval från flottpanelen öppnar Star map; kartbakgrunden är inaktiv.
+Sparformat och domänmodell ändras inte.
 
 AppModel håller ett oföränderligt, tillfälligt namnutkast. AppController
 samordnar redigering, validering och sparning genom befintliga Game-kommandon.
@@ -63,12 +69,12 @@ Inga nya domänbegrepp, relationer eller sparformat tillkommer;
 docs/domain-model.puml har granskats och behöver inte ändras.
 
 Vyn bevarar fokus, markörläge och rullning vid återrendering.
-Vid flottval rullas flottans namn fram även i långa listor och efter Show on map.
+Vid flottval rullas flottans namn fram även i långa lokala listor på båda kartvyerna.
 Programmatisk borttagning av ett namnfält skiljs från användarens fokusbyte.
 Det senare avbryter utkastet utan att förstöra kontrollen som tar emot nästa
 klick. Enter sparar, Escape avbryter, och F2 eller namnknappen ger alternativ
 till dubbelklick. Orders → Choose destination erbjuder destinationsval med
-hexväljare, Known objects eller kartan utan drag.
+hexväljare eller kartan utan drag.
 
 Enhetstesterna i fleet-map-management skyddar lokal gruppering, oförändrat
 hexval, skapande med ett skepp, avbrott, namnredigering, fokus, destinationsval,
@@ -169,15 +175,14 @@ fortsatt av befintlig GitHub CI.
   oförändrad vald hex och Escape i Chromium och WebKit på fyra skärmprofiler.
   Inga nya domänbegrepp eller relationer införs; domänmodellen är oförändrad.
 
-- `skeppsbilder`, `flottadministration` och `flottbyggar-minikarta`: samma
+- `skeppsbilder`, `flottadministration` och `flottfokuserad-kartvy`: samma
   optimerade transparenta WebP-bilder används i kartans flottpanel och
-  flottbyggaren. Modellens tillfälliga överföringsval är skrivskyddat för vyerna;
+  flottkartan. Modellens tillfälliga överföringsval är skrivskyddat för vyerna;
   överföringar går genom controller och befintlig domänvalidering. Vyn hanterar
   musdrag, touch och tangentbord. Enhetstester skyddar exakt en överföring,
   tomma mottagare, olika positioner, låsta order och begränsade stora bildlistor.
-  Minikartan använder en separat skrivskyddad p5-instans som avvecklas vid
-  vybyte och återrendering. Browsertester verifierar riktig bildladdning,
-  minikartans positionsmarkör, bibehållen huvudkamera och native touchdrag.
+  Browsertester verifierar riktig bildladdning, gemensamt kameraläge,
+  rörelse, överföringar och native touchdrag på flottkartan.
   Se [skeppsgrafik](ship-artwork.md) för original, friläggning och webbversioner.
   `tomma-flottor-utan-position` gör flottans position valfri i domänmodellen.
   Första överföringen eller fabriksleveransen sätter positionen; sista skeppet

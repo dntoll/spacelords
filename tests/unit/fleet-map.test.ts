@@ -188,23 +188,31 @@ describe('flottval-pa-kartan / dra-flottdestination', () => {
 });
 
 describe('kartflottor', () => {
-  it('keeps fleet markers visible above colony order badges where the circle crosses a badge', () => {
-    const model = new AppModel().snapshot;
-    const { sketch } = drawing();
-    const platform = {
-      ...sketch,
-      rect: vi.fn(),
-      text: vi.fn(),
-      textAlign: vi.fn(),
-      textSize: vi.fn(),
-      LEFT: 'left',
-      CENTER: 'center',
-    };
-    renderMapOverlays(platform as unknown as p5, model);
-    expect(platform.rect).toHaveBeenCalled();
-    expect(sketch.triangle).toHaveBeenCalled();
-    expect(Math.max(...platform.rect.mock.invocationCallOrder)).toBeLessThan(
-      Math.min(...sketch.triangle.mock.invocationCallOrder),
-    );
-  });
+  it.each(['map', 'fleets'] as const)(
+    'kartflottor / flottfokuserad-kartvy: keeps fleet markers prominent and shows planet badges only on Star map (%s)',
+    (screen) => {
+      const model = new AppModel().snapshot;
+      const { sketch } = drawing();
+      const platform = {
+        ...sketch,
+        rect: vi.fn(),
+        text: vi.fn(),
+        textAlign: vi.fn(),
+        textSize: vi.fn(),
+        LEFT: 'left',
+        CENTER: 'center',
+      };
+      renderMapOverlays(platform as unknown as p5, { ...model, screen });
+      if (screen === 'fleets') {
+        expect(platform.rect).not.toHaveBeenCalled();
+        expect(sketch.triangle).toHaveBeenCalled();
+        return;
+      }
+      expect(platform.rect).toHaveBeenCalled();
+      expect(sketch.triangle).toHaveBeenCalled();
+      expect(Math.max(...platform.rect.mock.invocationCallOrder)).toBeLessThan(
+        Math.min(...sketch.triangle.mock.invocationCallOrder),
+      );
+    },
+  );
 });

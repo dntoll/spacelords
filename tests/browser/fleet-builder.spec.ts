@@ -1,9 +1,8 @@
-import { selectMapObject } from './map-helpers.js';
-import { chooseFleetDestination } from './fleet-helpers.js';
 import { expect, test } from '@playwright/test';
-import { startFirstSlot, endTurn } from './save-helpers.js';
+import { startFirstSlot } from './save-helpers.js';
+import { formFleet, selectMapFleet } from './fleet-helpers.js';
 
-test('skeppsbilder / flottadministration / flottbyggar-minikarta: images, visual fleet boxes and keyboard transfers', async ({
+test('delad-kartkamera / flottfokuserad-kartvy: shares camera, shows fleet images and transfers ships by pointer and keyboard', async ({
   page,
 }, testInfo) => {
   const errors: string[] = [];
@@ -11,48 +10,29 @@ test('skeppsbilder / flottadministration / flottbyggar-minikarta: images, visual
   await page.goto('./');
   await startFirstSlot(page);
   const map = page.locator('canvas[data-rendered="true"]');
-  await expect(map).toHaveCount(1);
+  await map.press('ArrowRight');
+  await map.press('+');
   const camera = await page.getByTestId('camera-position').textContent();
-  const bounds = (await map.boundingBox())!;
-  await page.mouse.click(
-    bounds.x + bounds.width / 2,
-    bounds.y + bounds.height / 2 - 18,
-  );
-  const panel = page.getByRole('complementary', { name: 'Selected fleet' });
-  await expect(panel.locator('.ship-token img')).toHaveCount(2);
-  const source = await panel
-    .getByRole('img', { name: 'Fighter', exact: true })
-    .getAttribute('src');
-  for (const image of await panel.locator('.ship-token img').all())
+  const zoom = await page.getByLabel('Map zoom').textContent();
+  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+  await expect(page.getByTestId('camera-position')).toHaveText(camera!);
+  await expect(page.getByLabel('Map zoom')).toHaveText(zoom!);
+  await expect(
+    page.locator('.fleet-location-map, .fleet-collection'),
+  ).toHaveCount(0);
+  await selectMapFleet(page);
+  for (const image of await page.locator('.ship-token img').all())
     await expect
       .poll(() =>
         image.evaluate((node) => (node as HTMLImageElement).naturalWidth),
       )
       .toBeGreaterThan(0);
-  await page.screenshot({
-    path: testInfo.outputPath('selected-fleet-ships.png'),
-  });
-  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await expect(page.locator('[role="table"]')).toHaveCount(0);
-  await expect(
-    page.locator(
-      '.fleet-location-map canvas[data-fleet-preview-rendered="true"]',
-    ),
-  ).toHaveAttribute('data-fleet-position', '1,0');
-  await page.getByRole('button', { name: 'New fleet', exact: true }).click();
-  await expect(page.locator('.coordinate-label')).toContainText('No position.');
-  await expect(page.locator('.fleet-location-map canvas')).toHaveAttribute(
-    'data-fleet-position',
-    '',
-  );
-  const fighter = page.getByRole('button', {
-    name: 'Fighter 1 in Home Fleet',
-    exact: true,
-  });
-  await expect(fighter.getByRole('img')).toHaveAttribute('src', source!);
-  await fighter.dragTo(
-    page.getByRole('group', { name: 'Ships in Fleet 1', exact: true }),
-  );
+  await page
+    .getByRole('button', { name: 'Fighter 1 in Home Fleet', exact: true })
+    .dragTo(page.getByRole('group', { name: 'New fleet', exact: true }));
+  await page
+    .getByRole('textbox', { name: 'Fleet name', exact: true })
+    .press('Escape');
   await expect(
     page.getByRole('button', { name: 'Fighter 1 in Fleet 1', exact: true }),
   ).toBeVisible();
@@ -61,13 +41,13 @@ test('skeppsbilder / flottadministration / flottbyggar-minikarta: images, visual
     exact: true,
   });
   await explorer.focus();
-  await page.keyboard.press('Enter');
+  await explorer.press('Enter');
   const move = page.getByRole('button', {
     name: 'Move ship to Fleet 1',
     exact: true,
   });
   await move.focus();
-  await page.keyboard.press('Enter');
+  await move.press('Enter');
   await expect(
     page.getByRole('button', {
       name: 'Exploration ship 1 in Fleet 1',
@@ -75,36 +55,27 @@ test('skeppsbilder / flottadministration / flottbyggar-minikarta: images, visual
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole('group', { name: 'Ships in Home Fleet', exact: true }),
-  ).toContainText('No ships');
-  await expect(
-    page.getByRole('img', { name: 'Fleet location: Fleet 1', exact: true }),
-  ).toBeVisible();
+    page.getByRole('article', { name: 'Fleet Home Fleet', exact: true }),
+  ).toHaveCount(0);
   await expect(
     page.locator(
-      '.fleet-location-map canvas[data-fleet-preview-rendered="true"]',
+      'button[aria-label="New fleet"], button[aria-label="Delete fleet"]',
     ),
-  ).toHaveCount(1);
-  await page.screenshot({ path: testInfo.outputPath('fleet-builder.png') });
-  await page.getByRole('button', { name: 'Home Fleet', exact: true }).click();
-  await expect(page.locator('.coordinate-label')).toContainText('No position.');
-  await expect(page.locator('.fleet-location-map canvas')).toHaveAttribute(
-    'data-fleet-position',
-    '',
-  );
-  const overflow = await page.evaluate(
-    () =>
-      document.documentElement.scrollWidth > innerWidth ||
-      document.documentElement.scrollHeight > innerHeight,
-  );
-  expect(overflow).toBe(false);
-  await page.getByRole('button', { name: 'Back to map', exact: true }).click();
-  await expect(page.getByTestId('camera-position')).toHaveText(camera!);
-  await expect(page.locator('.fleet-location-map')).toHaveCount(0);
+  ).toHaveCount(0);
+  await map.press('ArrowDown');
+  await map.press('-');
+  const nextCamera = await page.getByTestId('camera-position').textContent();
+  const nextZoom = await page.getByLabel('Map zoom').textContent();
+  await page.getByRole('button', { name: 'Star map', exact: true }).click();
+  await expect(page.getByTestId('camera-position')).toHaveText(nextCamera!);
+  await expect(page.getByLabel('Map zoom')).toHaveText(nextZoom!);
+  await expect(page.locator('.selected-fleet-card')).toContainText('Fleet 1');
+  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+  await page.screenshot({ path: testInfo.outputPath('fleet-focused-map.png') });
   expect(errors).toEqual([]);
 });
 
-test('flottadministration: a ship can be dragged into a fleet box with native touch', async ({
+test('flottfokuserad-kartvy / flottadministration: native touch forms a new fleet', async ({
   page,
   browserName,
   isMobile,
@@ -117,12 +88,12 @@ test('flottadministration: a ship can be dragged into a fleet box with native to
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await page.getByRole('button', { name: 'New fleet', exact: true }).click();
+  await selectMapFleet(page);
   const source = (await page
     .getByRole('button', { name: 'Fighter 1 in Home Fleet', exact: true })
     .boundingBox())!;
   const target = (await page
-    .getByRole('group', { name: 'Ships in Fleet 1', exact: true })
+    .getByRole('group', { name: 'New fleet', exact: true })
     .boundingBox())!;
   const from = {
     x: source.x + source.width / 2,
@@ -152,25 +123,12 @@ test('flottadministration: a ship can be dragged into a fleet box with native to
     type: 'touchEnd',
     touchPoints: [],
   });
+  await page
+    .getByRole('textbox', { name: 'Fleet name', exact: true })
+    .press('Escape');
   await expect(
     page.getByRole('button', { name: 'Fighter 1 in Fleet 1', exact: true }),
   ).toBeVisible();
-});
-
-test('flottbyggar-minikarta: the marker follows a fleet after travelling', async ({
-  page,
-}) => {
-  await page.goto('./');
-  await startFirstSlot(page);
-  await chooseFleetDestination(page);
-  await selectMapObject(page, 'Vesta');
-  await endTurn(page);
-  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await expect(
-    page.locator(
-      '.fleet-location-map canvas[data-fleet-preview-rendered="true"]',
-    ),
-  ).toHaveAttribute('data-fleet-position', '0,1');
 });
 
 for (const size of [
@@ -178,47 +136,39 @@ for (const size of [
   { width: 844, height: 390 },
   { width: 667, height: 320 },
 ]) {
-  test(`flottadministration / flottbyggar-minikarta: larger text fits ${size.width}x${size.height}`, async ({
+  test(`flottfokuserad-kartvy / kompakta-flottkort: larger text fits ${size.width}x${size.height}`, async ({
     page,
   }, testInfo) => {
     await page.setViewportSize(size);
     await page.goto('./');
     await startFirstSlot(page);
     await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-    await page.getByRole('button', { name: 'New fleet', exact: true }).click();
     await page.addStyleTag({ content: 'html { font-size: 125%; }' });
-    await expect(page.locator('.fleet-location-map canvas')).toHaveCount(1);
-    await expect(page.locator('.coordinate-label')).toContainText(
-      'No position.',
-    );
-    const dimensions = await page.evaluate(() => ({
-      overflow:
-        document.documentElement.scrollWidth > innerWidth ||
-        document.documentElement.scrollHeight > innerHeight,
-      locationBottom: document
-        .querySelector('.fleet-location-panel')!
-        .getBoundingClientRect().bottom,
-      viewportHeight: innerHeight,
-      height: document.querySelector('.fleet-collection')!.clientHeight,
-      width: document.querySelector('.fleet-collection')!.clientWidth,
-    }));
-    expect(dimensions.overflow).toBe(false);
-    expect(dimensions.locationBottom).toBeLessThanOrEqual(
-      dimensions.viewportHeight,
-    );
-    expect(dimensions.height).toBeGreaterThan(60);
-    expect(dimensions.width).toBeGreaterThan(120);
+    await formFleet(page);
     await page
-      .getByRole('button', { name: 'Fighter 1 in Home Fleet', exact: true })
+      .getByRole('button', {
+        name: 'Exploration ship 1 in Home Fleet',
+        exact: true,
+      })
       .click();
     await page
       .getByRole('button', { name: 'Move ship to Fleet 1', exact: true })
       .click();
     await expect(
-      page.getByRole('button', { name: 'Fighter 1 in Fleet 1', exact: true }),
+      page.getByRole('button', {
+        name: 'Exploration ship 1 in Fleet 1',
+        exact: true,
+      }),
     ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth > innerWidth ||
+          document.documentElement.scrollHeight > innerHeight,
+      ),
+    ).toBe(false);
     await page.screenshot({
-      path: testInfo.outputPath('fleet-builder-larger-text.png'),
+      path: testInfo.outputPath('fleet-map-larger-text.png'),
     });
   });
 }

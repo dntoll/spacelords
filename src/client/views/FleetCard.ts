@@ -9,7 +9,6 @@ export function renderFleetCard(
   fleet: FleetSnapshot,
   model: AppReadModel,
   emit: IntentHandler,
-  onMap = false,
 ): HTMLElement {
   const locked = model.phase !== 'planning';
   const placeName = fleet.position
@@ -19,10 +18,7 @@ export function renderFleetCard(
   const card = element('article', 'fleet-card');
   card.dataset.fleetId = fleet.id;
   card.setAttribute('aria-label', `Fleet ${fleet.name}`);
-  card.classList.toggle(
-    'selected-fleet-card',
-    fleet.id === (onMap ? model.mapFleetId : model.selectedFleet?.id),
-  );
+  card.classList.toggle('selected-fleet-card', fleet.id === model.mapFleetId);
   const heading = element('h3', 'fleet-card-heading');
   const header = element('div', 'fleet-card-header');
   header.append(heading);
@@ -30,21 +26,14 @@ export function renderFleetCard(
   const title = button(
     fleet.name,
     () => {
-      if (!onMap) emit({ type: 'select-fleet', id: fleet.id });
-      else {
-        clearTimeout(selectTimer);
-        selectTimer = setTimeout(() => {
-          if (title.isConnected)
-            emit({ type: 'map-select-fleet', id: fleet.id });
-        }, 250);
-      }
+      clearTimeout(selectTimer);
+      selectTimer = setTimeout(() => {
+        if (title.isConnected) emit({ type: 'map-select-fleet', id: fleet.id });
+      }, 250);
     },
     'fleet-name-button',
   );
-  title.setAttribute(
-    'aria-pressed',
-    String(fleet.id === (onMap ? model.mapFleetId : model.selectedFleet?.id)),
-  );
+  title.setAttribute('aria-pressed', String(fleet.id === model.mapFleetId));
   title.title = 'Double-click or press F2 to rename';
   title.addEventListener('dblclick', () => {
     clearTimeout(selectTimer);
@@ -99,7 +88,7 @@ export function renderFleetCard(
   const manifest = renderFleetShips(
     fleet,
     (ship) => emit({ type: 'choose-ship-transfer', fleetId: fleet.id, ship }),
-    onMap ? 12 : 1,
+    12,
   );
   for (const token of manifest.querySelectorAll<HTMLButtonElement>('button')) {
     token.disabled = locked || !!shipTransferIssue(fleet);
@@ -152,8 +141,7 @@ export function renderFleetCard(
         source.id !== fleet.id
       )
         emit({ type: 'transfer-chosen-ship', target: fleet.id });
-    } else
-      emit({ type: onMap ? 'map-select-fleet' : 'select-fleet', id: fleet.id });
+    } else emit({ type: 'map-select-fleet', id: fleet.id });
   });
   card.append(
     header,
@@ -171,55 +159,35 @@ export function renderFleetCard(
   const assignment = fleetAssignmentLabel(fleet, model);
   if (assignment)
     card.append(element('p', 'muted-note fleet-assignment', assignment));
-  if (!onMap && fleet.position) {
-    const show = button(
-      `Show on map: ${fleet.name}`,
-      () => emit({ type: 'show-fleet-on-map', id: fleet.id }),
-      'button secondary-button',
+  card.append(
+    element(
+      'p',
+      'fleet-destination-status',
+      model.fleetDragging && model.mapFleetId === fleet.id
+        ? model.fleetDestinationPreview
+          ? `Destination preview: HEX ${model.fleetDestinationPreview.key}`
+          : 'Choose a destination on the map.'
+        : fleet.destination
+          ? `Destination: HEX ${fleet.destination.key}`
+          : 'No destination',
+    ),
+  );
+  if (!fleet.routeId) {
+    const orders = element('details', 'fleet-orders');
+    orders.append(element('summary', '', 'Orders'));
+    const choose = button(`Choose destination for ${fleet.name}`, () =>
+      emit({ type: 'begin-destination', id: fleet.id }),
     );
-    show.textContent = 'Show on map';
-    card.append(show);
-  }
-  if (!onMap && fleet.destination) {
-    card.append(
-      element(
-        'p',
-        'fleet-destination-status',
-        `Destination: HEX ${fleet.destination.key}`,
-      ),
-    );
-  }
-  if (onMap) {
-    card.append(
-      element(
-        'p',
-        'fleet-destination-status',
-        model.fleetDragging && model.mapFleetId === fleet.id
-          ? model.fleetDestinationPreview
-            ? `Destination preview: HEX ${model.fleetDestinationPreview.key}`
-            : 'Choose a destination on the map.'
-          : fleet.destination
-            ? `Destination: HEX ${fleet.destination.key}`
-            : 'No destination',
-      ),
-    );
-    if (!fleet.routeId) {
-      const orders = element('details', 'fleet-orders');
-      orders.append(element('summary', '', 'Orders'));
-      const choose = button(`Choose destination for ${fleet.name}`, () =>
-        emit({ type: 'begin-destination', id: fleet.id }),
+    choose.textContent = 'Choose destination';
+    choose.disabled = locked || !fleet.position;
+    orders.append(choose);
+    card.append(orders);
+    if (fleet.destination) {
+      const clear = button('Clear destination', () =>
+        emit({ type: 'clear-destination', id: fleet.id }),
       );
-      choose.textContent = 'Choose destination';
-      choose.disabled = locked || !fleet.position;
-      orders.append(choose);
-      card.append(orders);
-      if (fleet.destination) {
-        const clear = button('Clear destination', () =>
-          emit({ type: 'clear-destination', id: fleet.id }),
-        );
-        clear.disabled = locked;
-        card.append(clear);
-      }
+      clear.disabled = locked;
+      card.append(clear);
     }
   }
   if (fleet.joinFleetId) {

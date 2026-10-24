@@ -1,9 +1,7 @@
-import type { MapCell } from '../models/Galaxy.js';
 import type { Component } from '../models/Economy.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import type {
   BuildType,
-  FleetSnapshot,
   ShipType,
   TurnFrame,
   Technology,
@@ -104,7 +102,7 @@ export type AppIntent =
     }
   | { readonly type: 'transfer-chosen-ship'; readonly target: string | null }
   | {
-      readonly type: 'show-fleet-on-map' | 'begin-fleet-rename';
+      readonly type: 'begin-fleet-rename';
       readonly id: string;
     }
   | { readonly type: 'edit-fleet-name'; readonly draft: string }
@@ -191,9 +189,3 @@ export type MapFactory = (
   container: HTMLElement,
   emit: IntentHandler,
 ) => MapPort;
-
-export type FleetPreviewFactory = (
-  container: HTMLElement,
-  cells: readonly MapCell[],
-  fleet: FleetSnapshot,
-) => { dispose(): void };

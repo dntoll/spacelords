@@ -4,7 +4,8 @@ import { renderMapFleets } from './FleetMapView.js';
 import { renderPlanetOrders } from './PlanetOrderView.js';
 
 export function renderMapOverlays(sketch: p5, model: AppReadModel): void {
-  renderPlanetOrders(sketch, model.planetOrders, model.camera.zoom);
+  if (model.screen === 'map')
+    renderPlanetOrders(sketch, model.planetOrders, model.camera.zoom);
   // kartflottor: colony badges must not hide selectable fleet markers.
   renderMapFleets(sketch, model.fleets, model.camera.zoom, model);
 }

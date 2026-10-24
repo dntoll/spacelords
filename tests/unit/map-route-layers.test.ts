@@ -27,9 +27,13 @@ vi.mock('../../src/client/views/MapOverlayView.js', () => ({
 }));
 afterEach(() => vi.unstubAllGlobals());
 
-it.each([0.5, 1, 2])(
-  'synliga-handelsrutter: selected tile fills stay below routes and routes below planets at zoom %s',
-  (zoom) => {
+it.each(
+  [0.5, 1, 2].flatMap((zoom) =>
+    (['map', 'fleets'] as const).map((screen) => ({ screen, zoom })),
+  ),
+)(
+  'synliga-handelsrutter / flottfokuserad-kartvy: background layers and opacity on $screen at zoom $zoom',
+  ({ screen, zoom }) => {
     document.body.replaceChildren();
     runtime.events = [];
     const container = document.createElement('div');
@@ -37,6 +41,9 @@ it.each([0.5, 1, 2])(
     let fill = '',
       stroke = '';
     const noop = () => {};
+    const context = { globalAlpha: 1, setLineDash: () => {} };
+    const alphaStack: number[] = [];
+    const planetAlphas: number[] = [];
     const sketch = {
       width: 800,
       height: 600,
@@ -51,12 +58,17 @@ it.each([0.5, 1, 2])(
       pixelDensity: noop,
       noLoop: noop,
       textFont: noop,
-      describe: noop,
+      describe: vi.fn(),
       background: noop,
       noStroke: noop,
       noFill: noop,
-      push: noop,
-      pop: noop,
+      drawingContext: context,
+      push: () => {
+        alphaStack.push(context.globalAlpha);
+      },
+      pop: () => {
+        context.globalAlpha = alphaStack.pop()!;
+      },
       translate: noop,
       scale: noop,
       fill: (color: unknown) => {
@@ -76,6 +88,7 @@ it.each([0.5, 1, 2])(
       },
       circle: () => {
         runtime.events.push(`circle:${fill}`);
+        if (fill === '#b1e4d1') planetAlphas.push(context.globalAlpha);
       },
       ellipse: noop,
       textAlign: noop,
@@ -97,6 +110,7 @@ it.each([0.5, 1, 2])(
       runtime.events = [];
       view.render({
         ...model,
+        screen,
         camera: { ...model.camera, zoom },
         selected: model.cells.find((c) => c.position.key === position.key)!,
         tradeRoutes: [
@@ -117,9 +131,22 @@ it.each([0.5, 1, 2])(
           },
         ],
       });
+      expect(sketch.describe).toHaveBeenLastCalledWith(
+        screen === 'fleets'
+          ? 'Fleets map. Fleet positions and destinations are highlighted; planets and trade routes are background landmarks.'
+          : 'Star map. Your homeworld and its surroundings are visible. Stars are visible in unexplored space.',
+      );
       const selection = runtime.events.indexOf('hex:#1b3e41');
-      const route = runtime.events.indexOf('line:#547caa');
-      expect(selection).toBeGreaterThanOrEqual(0);
+      const route = runtime.events.indexOf(
+        screen === 'fleets' ? 'line:#2b3d50' : 'line:#547caa',
+      );
+      if (screen === 'map') expect(selection).toBeGreaterThanOrEqual(0);
+      else expect(selection).toBe(-1);
+      expect(planetAlphas.at(-1)).toBe(screen === 'fleets' ? 0.35 : 1);
+      expect(context.globalAlpha).toBe(1);
+      expect(
+        container.querySelector('canvas')?.getAttribute('aria-label'),
+      ).toContain(screen === 'fleets' ? 'Fleets map.' : 'Star map.');
       expect(route).toBeGreaterThan(selection);
       expect(runtime.events.indexOf('circle:#b1e4d1')).toBeGreaterThan(route);
       expect(runtime.events.indexOf('overlays')).toBeGreaterThan(route);

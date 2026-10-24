@@ -39,7 +39,7 @@ export function renderMapFleetPanel(
   panel.append(place);
   const cards = element('div', 'map-fleet-cards');
   for (const fleet of local) {
-    const card = renderFleetCard(fleet, model, emit, true);
+    const card = renderFleetCard(fleet, model, emit);
     if (
       cell?.object?.kind === 'planet' &&
       !cell.object.owned &&

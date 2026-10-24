@@ -10,7 +10,6 @@ import { HexCoordinate } from '../models/HexCoordinate.js';
 import type { TurnFrame } from '../models/Game.js';
 import type {
   AppPort,
-  FleetPreviewFactory,
   IntentHandler,
   MapFactory,
   MapPort,
@@ -20,7 +19,6 @@ import { renderPlanet } from './PlanetView.js';
 import { renderResearch } from './ResearchView.js';
 import { updateResearchCamera } from './ResearchTreeView.js';
 import { renderSupply } from './SupplyView.js';
-import { renderFleets } from './FleetView.js';
 import { button, element } from './dom.js';
 import { renderDecisions, renderTurnWarning } from './EmpireView.js';
 import { renderTurnActions } from './TurnActionsView.js';
@@ -41,7 +39,6 @@ export class AppView implements AppPort {
   #saveKey = '';
   #dialog: HTMLDialogElement | null = null;
   #clearReturnSlot: number | null = null;
-  #fleetPreview: { dispose(): void } | null = null;
   #planetScroll = new Map<string, number>();
   #decisionDialog: HTMLDialogElement | null = null;
   #researchKey = '';
@@ -57,7 +54,6 @@ export class AppView implements AppPort {
       container: HTMLElement,
       cells: readonly MapCell[],
     ) => { dispose(): void },
-    private readonly fleetPreviewFactory?: FleetPreviewFactory,
   ) {
     this.#root = root;
     this.#mapFactory = mapFactory;
@@ -92,8 +88,6 @@ export class AppView implements AppPort {
     this.#decisionDialog?.close();
     this.#decisionDialog?.remove();
     this.#decisionDialog = null;
-    this.#fleetPreview?.dispose();
-    this.#fleetPreview = null;
     if (model.screen === 'saves') {
       const key = JSON.stringify(model.saveSlots);
       if (this.#screen !== 'saves' || this.#saveKey !== key) {
@@ -142,8 +136,6 @@ export class AppView implements AppPort {
     this.#dialog?.remove();
     this.#dialog = null;
     const changedScreen = this.#screen !== model.screen;
-    const fleetScroll =
-      this.#root.querySelector('.fleet-collection')?.scrollTop ?? 0;
     const active = document.activeElement;
     const editingName =
       active instanceof HTMLInputElement &&
@@ -182,7 +174,8 @@ export class AppView implements AppPort {
       this.#selectionKey = '';
       this.#root.replaceChildren(this.#header(model.screen));
       const main = element('main', 'page');
-      if (model.screen === 'map') main.append(this.#mapPage());
+      if (model.screen === 'map' || model.screen === 'fleets')
+        main.append(this.#mapPage(model.screen));
       else if (model.screen === 'planet' && model.planet)
         main.append(
           renderPlanet(
@@ -195,8 +188,6 @@ export class AppView implements AppPort {
         );
       else if (model.screen === 'build-selection' && model.planet)
         main.append(renderBuildSelection(model, this.#emit));
-      else if (model.screen === 'fleets')
-        main.append(renderFleets(model, this.#emit));
       else if (model.screen === 'supply')
         main.append(renderSupply(model, this.#emit));
       else if (model.screen === 'decisions')
@@ -210,7 +201,10 @@ export class AppView implements AppPort {
           ),
         );
       this.#root.append(main);
-      if (model.screen === 'map' && this.#container) {
+      if (
+        (model.screen === 'map' || model.screen === 'fleets') &&
+        this.#container
+      ) {
         this.#map = this.#mapFactory(this.#container, (intent) =>
           this.#emit(intent),
         );
@@ -254,34 +248,8 @@ export class AppView implements AppPort {
         search?.focus({ preventScroll: true });
         if (selection !== null) search?.setSelectionRange(selection, selection);
       }
-    } else if (model.screen === 'fleets')
-      this.#root
-        .querySelector('main')
-        ?.replaceChildren(renderFleets(model, this.#emit));
-    if (!changedScreen && model.screen === 'fleets') {
-      const collection = this.#root.querySelector('.fleet-collection');
-      if (collection) collection.scrollTop = fleetScroll;
     }
-    if (
-      model.screen === 'fleets' &&
-      model.selectedFleet &&
-      this.fleetPreviewFactory
-    ) {
-      const container = this.#root.querySelector<HTMLElement>(
-        '.fleet-location-map',
-      );
-      if (container)
-        this.#fleetPreview = this.fleetPreviewFactory(
-          container,
-          model.cells,
-          model.selectedFleet,
-        );
-    }
-    if (
-      !changedScreen &&
-      (model.screen === 'planet' || model.screen === 'fleets') &&
-      focusLabel
-    ) {
+    if (!changedScreen && model.screen === 'planet' && focusLabel) {
       const scope = scopeSelector
         ? this.#root.querySelector(scopeSelector)
         : this.#root;
@@ -419,7 +387,7 @@ export class AppView implements AppPort {
     const counter = this.#root.querySelector('.decision-counter');
     if (counter)
       counter.textContent = `Decisions (${model.decisions.filter(needsAttention).length})`;
-    if (model.screen === 'map') {
+    if (model.screen === 'map' || model.screen === 'fleets') {
       this.#map?.render(model);
       if (this.#zoom)
         this.#zoom.value = `${Math.round(model.camera.zoom * 100)}%`;
@@ -470,7 +438,11 @@ export class AppView implements AppPort {
       ))
         control.hidden = selected;
     }
-    if (model.screen === 'map' || model.screen === 'decisions') {
+    if (
+      model.screen === 'map' ||
+      model.screen === 'fleets' ||
+      model.screen === 'decisions'
+    ) {
       const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
       if (end) end.disabled = model.phase !== 'planning';
       this.#renderTurnConsole(model);
@@ -484,7 +456,7 @@ export class AppView implements AppPort {
       else nameInput.select();
       if (!editingName) nameInput.scrollIntoView?.({ block: 'nearest' });
     } else if (
-      model.screen === 'map' &&
+      (model.screen === 'map' || model.screen === 'fleets') &&
       active instanceof HTMLElement &&
       !active.isConnected &&
       focusLabel
@@ -574,8 +546,6 @@ export class AppView implements AppPort {
     this.#decisionDialog?.close();
     this.#decisionDialog?.remove();
     this.#decisionDialog = null;
-    this.#fleetPreview?.dispose();
-    this.#fleetPreview = null;
     this.#previews.forEach((preview) => preview.dispose());
     this.#previews = [];
     this.#dialog?.close();
@@ -644,9 +614,16 @@ export class AppView implements AppPort {
     return header;
   }
 
-  #mapPage(): HTMLElement {
+  #mapPage(screen: 'map' | 'fleets'): HTMLElement {
     const page = element('section', 'map-page');
-    page.append(element('h1', 'visually-hidden', 'Star map'));
+    page.dataset.mapScreen = screen;
+    page.append(
+      element(
+        'h1',
+        'visually-hidden',
+        screen === 'fleets' ? 'Fleets' : 'Star map',
+      ),
+    );
     this.#container = element('div', 'map-container');
     this.#container.dataset.testid = 'map-container';
     this.#zoom = element('output', 'visually-hidden');
@@ -670,7 +647,10 @@ export class AppView implements AppPort {
     if (!this.#panel) return;
     this.#cancelSelectionGesture?.();
     this.#panel.hidden = false;
-    const trade = renderMapTradeSelection(model, this.#emit);
+    const trade =
+      model.screen === 'map'
+        ? renderMapTradeSelection(model, this.#emit)
+        : null;
     if (trade) {
       this.#panel.setAttribute(
         'aria-label',
@@ -714,9 +694,10 @@ export class AppView implements AppPort {
         : object?.kind === 'planet'
           ? 'An uninhabited world near your homeworld.'
           : '';
-    const contents: HTMLElement[] = object
-      ? [title, element('p', 'selection-description', description)]
-      : [];
+    const contents: HTMLElement[] =
+      object && model.screen === 'map'
+        ? [title, element('p', 'selection-description', description)]
+        : [];
     const destinationFleet = model.destinationFleetId
       ? model.fleets.find((fleet) => fleet.id === model.destinationFleetId)
       : null;
@@ -727,7 +708,14 @@ export class AppView implements AppPort {
           'destination-mode',
           `Choose a destination for ${destinationFleet.name}.`,
         ),
-        button('Cancel', () => this.#emit({ type: 'open-map' }), 'button'),
+        button(
+          'Cancel',
+          () =>
+            this.#emit({
+              type: model.screen === 'fleets' ? 'open-fleets' : 'open-map',
+            }),
+          'button',
+        ),
       );
       const picker = element('select');
       picker.setAttribute('aria-label', 'Destination hex');
@@ -749,15 +737,18 @@ export class AppView implements AppPort {
         this.#emit({ type: 'select', position: new HexCoordinate(q!, r!) });
       });
       picker.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') this.#emit({ type: 'open-map' });
+        if (event.key === 'Escape')
+          this.#emit({
+            type: model.screen === 'fleets' ? 'open-fleets' : 'open-map',
+          });
       });
       contents.push(picker);
     }
-    if (object?.kind === 'planet')
+    if (model.screen === 'map' && object?.kind === 'planet')
       contents.push(
         element('span', 'pill', owned ? model.playerName : 'Uninhabited'),
       );
-    if (owned && object) {
+    if (model.screen === 'map' && owned && object) {
       const source = model.ownedPlanets.find(
         (p) => p.position.key === cell?.position.key,
       );
@@ -779,7 +770,7 @@ export class AppView implements AppPort {
     const orderStatus = model.planetOrders.find(
       (status) => status.position.key === cell?.position.key,
     );
-    if (orderStatus)
+    if (model.screen === 'map' && orderStatus)
       contents.push(
         element(
           'p',
@@ -787,7 +778,7 @@ export class AppView implements AppPort {
           `${orderStatus.emptySites} empty building sites · ${orderStatus.emptyQueues} idle planet build queue`,
         ),
       );
-    if (cell && !model.destinationFleetId) {
+    if (model.screen === 'map' && cell && !model.destinationFleetId) {
       const fleets = renderMapFleetPanel(model, this.#emit, cell.position);
       if (
         model.fleets.some((fleet) => fleet.position?.key === cell.position.key)

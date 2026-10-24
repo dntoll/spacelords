@@ -82,12 +82,12 @@ tangentbordets zoom, panorering och översikt finns kvar.
 | `forskningstrad`                  | Delvis implementerat       | Forskningskö med förkunskaper låser upp fyra skeppsfabriker och Trade logistics. Bättre fabriker, minskade utsläpp och effektivare arbetskraft återstår.                                                                                                                                                                                                                                               |
 | `arsrundor-och-order`             | Fullständigt implementerat | Spelaren ger order, kan ändra bygg- och flyttorder före årets slut, avslutar året och återgår automatiskt till nästa års planering utan Continue-knapp. Colonize grundar kolonin direkt.                                                                                                                                                                                                               |
 | `manuell-rundstyrning`            | Ej implementerat           | Under utveckling kan spelåren styras manuellt.                                                                                                                                                                                                                                                                                                                                                         |
-| `flottor`                         | Delvis implementerat       | Flottor kan döpas, delas på samma hexagon och få destinationer från `Star map`. Strid och diplomati återstår.                                                                                                                                                                                                                                                                                          |
+| `flottor`                         | Delvis implementerat       | Flottor kan döpas, delas på samma hexagon och få destinationer från Star map och Fleets. Strid och diplomati återstår.                                                                                                                                                                                                                                                                                 |
 | `arbetskraft-och-besattning`      | Fullständigt implementerat | Byggnader, projekt och skepp reserverar arbetare och besättning.                                                                                                                                                                                                                                                                                                                                       |
 | `skeppstyper`                     | Fullständigt implementerat | Colony ship, Exploration ship, Fighter och Transport ship har fasta roller, fart och besättning. Transport ship ger lastkapacitet.                                                                                                                                                                                                                                                                     |
-| `flottadministration`             | Fullständigt implementerat | Star map visar flottorna vid vald hex med skeppsbilder. Ett skepp kan dras eller väljas och flyttas mellan flottor eller till New fleet. Fleets visar en kompakt översikt med position, order och Show on map. Förstärkningar på avstånd, tomma mottagare och uttrycklig borttagning av tomma flottor behåller sina regler.                                                                            |
-| `tomma-flottor`                   | Fullständigt implementerat | Tomma flottor behåller namn och kort, saknar destination och kan tas bort uttryckligen.                                                                                                                                                                                                                                                                                                                |
-| `flottdestinationer`              | Fullständigt implementerat | En destination väljs på `Star map`, kan ändras eller rensas före årets slut och kan inte ges till en tom flotta.                                                                                                                                                                                                                                                                                       |
+| `flottadministration`             | Fullständigt implementerat | Star map och Fleets visar flottorna vid vald flotta med skeppsbilder. På Star map fungerar även hexval. Ett skepp kan dras eller väljas och flyttas till en lokal eller avlägsen flotta, eller till New fleet. Namnbyte, destinationsorder, Colonize, rutttilldelning och frigörande finns i flottpanelen. Förstärknings- och lastregler behålls.                                                      |
+| `tomma-flottor`                   | Fullständigt implementerat | Tomma flottor behåller sina namn, saknar position och destination och kan väljas som mottagare av skepp. De visas inte på kartan. Separata knappar för att skapa eller radera tomma flottor ingår inte längre.                                                                                                                                                                                         |
+| `flottdestinationer`              | Fullständigt implementerat | En destination väljs på Star map eller Fleets, kan ändras eller rensas före årets slut och kan inte ges till en tom flotta eller ersätta ett aktivt ruttuppdrag.                                                                                                                                                                                                                                       |
 | `kartflottor`                     | Fullständigt implementerat | Varje egen flotta med skepp visas som en separat liten svärm av trianglar, även utanför synlig rymd. Flottor i samma hex placeras jämnt längs en cirkel innanför hexen och behåller sin ordning medan samma flottor finns kvar. Svärmarna anpassas för att rymmas. Skeppstyper har olika storlek. Skeppen pekar mot destinationen och pilen börjar vid flottmarkören. Tomma flottor saknar kartmarkör. |
 | `rundsimulering`                  | Fullständigt implementerat | Flottor färdas samtidigt längs kortaste väg enligt långsammaste skeppets fart.                                                                                                                                                                                                                                                                                                                         |
 | `handelser`                       | Fullständigt implementerat | Events visas tillsammans med End turn i Decisions och på kartan när inget objekt är valt. Loggen växer med skärmen för fler rader och förblir kompakt på små/låga skärmar. Loggen kan rullas utan att täcka andra kontroller. Flottankomster visar namn och destination; enskilda steg och upptäcktsantal utelämnas. Händelser sparas i kronologisk ordning. Ersätter Turn summary.                    |
@@ -97,13 +97,31 @@ tangentbordets zoom, panorering och översikt finns kvar.
 | `multiplayer`                     | Ej implementerat           | Flera spelare kan delta, med riktningen en eller två rundor per verkligt dygn.                                                                                                                                                                                                                                                                                                                         |
 | `sparat-spel`                     | Fullständigt implementerat | Spelaren kan återuppta varje sparplats efter omladdning. Order, byggnader, köer, forskning, kolonier, flottor, utforskning, händelser och spelår bevaras. Sparning sker automatiskt efter order och avslutade rundor.                                                                                                                                                                                  |
 
+## Flottfokuserad karta
+
+`flottfokuserad-kartvy` — **Fullständigt implementerat**: Fleets visar flottor,
+deras destinationer och en lokal flottpanel. Planeter, stjärnor, namn och
+handelslinjer visas diskret som orientering och går inte att välja eller dra.
+Planeternas informationsmärken döljs. Klick på bakgrunden stänger flottvalet,
+även utanför hexområdet. Under destinationsval anger ett giltigt kartklick
+i stället destinationen. Escape avbryter tillfälliga val. Drag över en handelslinje
+ger en destination och tilldelar aldrig rutten. R-tangenten skapar ingen rutt.
+Flottpanelens befintliga åtgärder behålls, inklusive Colonize och rutttilldelning.
+Uttryckliga planetlänkar öppnar planeten och ruttlänkar öppnar Star map.
+Star map behåller sitt utseende och sina interaktioner.
+
+`delad-kartkamera` — **Fullständigt implementerat**: Star map och Fleets har
+samma zoom och panorering med mus, touch och tangentbord. Växling bevarar centrum,
+zoom och giltigt flottval, men avbryter tillfälliga orderval och gester.
+Direktöppning av en bestämd flotta från exempelvis Decisions väljer och centrerar
+på den om den har position, utan att återställa zoom.
+
 ## Skeppsbilder och flottbyggare
 
 | Kravnamn                      | Status                     | Krav                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | ----------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `tomma-flottor-utan-position` | Fullständigt implementerat | En ny eller tömd flotta saknar position och kan ta emot skepp från vilken plats som helst. Första skeppet bestämmer positionen. Därefter sker direkt anslutning bara på samma hex; förstärkning på avstånd följer `skepp-till-rorlig-flotta`. Fabriker levererar lokalt eller till tom mottagare. Tomma flottor har ingen kartmarkör och kan inte få destination. Regeln ersätter tidigare krav på samlokalisering även för tomma mottagare. |
 | `skeppsbilder`                | Fullständigt implementerat | Colony ship, Fighter och Exploration ship använder var sin frilagd bild från den tillhandahållna skeppsbilden. Bilderna visar flottans skepp både när flottan är markerad på Star map och i Fleets. Stora flottor får en begränsad bildförhandsvisning med tydligt antal ytterligare skepp.                                                                                                                                                  |
-| `flottbyggar-minikarta`       | Fullständigt implementerat | Fleets visar en minikarta med vald flottas position tydligt markerad i stjärnkartan, med en förklaring utan positionsmarkör när flottan är tom. Kartan följer flottval och flottans verkliga position utan att ändra Star maps kameravinkel eller val. Endast kända himlakroppar visas.                                                                                                                                                      |
 
 ## Flottval och destinationsdrag
 
@@ -221,11 +239,19 @@ senare transportbortfall blockerar försörjningen men raderar inte huvudordern.
 
 ## Ändringshistorik
 
+- 2026-10-24: `flottfokuserad-kartvy` och `delad-kartkamera` ersätter
+  den kompakta översikten och Show on map-delen av `flottadministration`, samt
+  det tidigare kravet `flottbyggar-minikarta`. Separat skapande, kortvisning och
+  borttagning av tomma flottor i `tomma-flottor` ersätts efter uttrycklig beställning.
+  Befintliga tomma flottor och deras mottagarregler bevaras. Minikartekravet är
+  historiskt och inte längre aktivt.
+
 - 2026-10-23: `forsorjningsstatus`, `leveransfloden`,
   `automatisk-resursforsorjning` och `beslutslista` förtydligas: en aktiv
   transportkedja reserverar tillgängligt material redan under planeringen.
   Täckta behov visas som Waiting och Awaiting pickup utan försörjningsbeslut.
   Kvarstående brist kräver fortsatt beslut; skeppen lastas när året genomförs.
+
 - 2026-10-21: `skepp-ur-olastad-ruttflotta` ersätter efter användarens uttryckliga
   ändring spärren mot alla uttag ur aktiva ruttflottor i `forstarka-ruttflotta`.
   Uttag tillåts när hela flottan är olastad; sista Transport ship frigör

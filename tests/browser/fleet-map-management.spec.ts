@@ -1,6 +1,7 @@
+import type { SavedGame } from '../../src/client/models/SaveRepository.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot } from './save-helpers.js';
-import { chooseFleetDestination } from './fleet-helpers.js';
+import { chooseFleetDestination, selectMapFleet } from './fleet-helpers.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 
 test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan: organize fleets on the map and restore them', async ({
@@ -107,18 +108,12 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
     panel.getByRole('heading', { name: 'Vanguard', exact: true }),
   ).toBeVisible();
   await expect(panel).toContainText('Destination: HEX 0,1');
+  await selectMapFleet(page, 'Vanguard');
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  const empty = page.getByRole('article', {
-    name: 'Fleet Home Fleet',
-    exact: true,
-  });
-  await expect(empty).toContainText('No position');
   await expect(
-    empty.getByRole('button', { name: 'Show on map: Home Fleet', exact: true }),
+    panel.getByRole('article', { name: 'Fleet Home Fleet', exact: true }),
   ).toHaveCount(0);
-  await page
-    .getByRole('button', { name: 'Show on map: Vanguard', exact: true })
-    .click();
+  await expect(page.locator('.fleet-location-map')).toHaveCount(0);
   await expect(panel.locator('.selected-fleet-card')).toContainText('Vanguard');
   expect(errors).toEqual([]);
 });
@@ -258,6 +253,7 @@ for (const cargo of [false, true]) {
         'Ships cannot be moved out while this fleet carries cargo.',
       );
       await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+      await selectMapFleet(page, 'Freighters');
       const overview = page.getByRole('article', {
         name: 'Fleet Freighters',
         exact: true,
@@ -299,8 +295,16 @@ for (const cargo of [false, true]) {
       name: 'Fleet Freighters',
       exact: true,
     });
-    await expect(empty).toContainText('No position');
-    await expect(empty).not.toContainText('Trade route:');
+    await expect(empty).toHaveCount(0);
+    const restored = await page.evaluate(() => {
+      const saved = JSON.parse(
+        localStorage.getItem('spacelords.save.v2.1')!,
+      ) as SavedGame;
+      return saved.state.fleets.find((fleet) => fleet.id === 'freighters')!;
+    });
+    expect(restored.position).toBeNull();
+    expect(restored.routeId).toBeFalsy();
+    await selectMapFleet(page);
     await expect(
       page.getByRole('button', {
         name: 'Transport ship 1 in Home Fleet',

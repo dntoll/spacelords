@@ -1,3 +1,4 @@
+import { selectMapFleet } from './fleet-helpers.js';
 import { selectMapObject } from './map-helpers.js';
 import { expect, type Page } from '@playwright/test';
 
@@ -37,10 +38,8 @@ export async function assignFleetToRoute(
   from: string,
   to: string,
 ): Promise<void> {
-  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await page
-    .getByRole('button', { name: `Show on map: ${fleet}`, exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Star map', exact: true }).click();
+  await selectMapFleet(page, fleet);
   const card = page.locator('.map-fleet-cards .selected-fleet-card');
   const routes = card.locator('.map-fleet-route-options > summary');
   await routes.focus();
