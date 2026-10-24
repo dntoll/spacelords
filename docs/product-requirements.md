@@ -229,7 +229,7 @@ senare transportbortfall blockerar försörjningen men raderar inte huvudordern.
 | `utvinningsbyggnader`          | Fullständigt implementerat | Iron mine, Water extractor och Oil extractor behöver personal och producerar från året efter färdigställande.                                                                                                                                                                                                                                                                       |
 | `planetlager`                  | Fullständigt implementerat | Varje koloni har obegränsat lokalt lager som bevaras mellan år. Ny koloni börjar utan material.                                                                                                                                                                                                                                                                                     |
 | `planetbyggnadsko`             | Fullständigt implementerat | Byggnadsorder ingår i planetens gemensamma kö tillsammans med delar och skepp. Order kan omordnas eller avbrytas. Ett blockerat förstaprojekt släpper inte förbi senare projekt; material betalas bara när projektet faktiskt byggs.                                                                                                                                                |
-| `forskningsko`                 | Fullständigt implementerat | Flera tekniker kan planeras och omordnas. Borttagning av förkunskap och dess beroende köposter bekräftas först.                                                                                                                                                                                                                                                                     |
+| `forskningsko`                 | Fullständigt implementerat | Med en färdig Research station kan flera tekniker planeras och omordnas. Borttagning av förkunskap och dess beroende köposter bekräftas först.                                                                                                                                                                                                                                      |
 | `forskningsberoenden`          | Fullständigt implementerat | Val av senare teknik lägger automatiskt in saknade förkunskaper i rätt ordning utan dubbletter. Allt byggbart kan nås genom forskning.                                                                                                                                                                                                                                              |
 | `transportfabrik`              | Fullständigt implementerat | Transport ship factory bygger riktiga Transport ships som kan ingå i vanliga flottor.                                                                                                                                                                                                                                                                                               |
 | `handelsnatverk`               | Fullständigt implementerat | Trade routes är dubbelriktade länkar mellan två ägda planeter. Länkar bildar ett nätverk.                                                                                                                                                                                                                                                                                           |
@@ -502,3 +502,22 @@ Star map och Fleets visar fortsatt verkliga positioner. Detta utökar tidigare
 kravet på transportskepp i den tilldelade ursprungsflottan och ersätter Route-vyns
 fysiska placering av tilldelade flottmarkörer. Se
 [kartkraven](route-production.md#flottor-på-rutter) för fullständig avgränsning.
+
+## Forskning kräver station
+
+`forskning-kraver-station` är **Fullständigt implementerat**. En färdig, ägd
+Research station som inte är markerad för rivning krävs för att köa forskning,
+även när förkunskaper behöver läggas till automatiskt. En station som bara är
+beställd räcker inte. Endast fungerande stationer ger forskningsframsteg.
+Personalbrist stoppar framsteg men hindrar inte köläggning när stationen finns.
+Utan station är forskningsvalen spärrade och vyn förklarar vad som saknas.
+Decisions föreslår inte att välja forskning innan en station finns. Befintliga
+forskningsköer bevaras om stationer försvinner och väntar tills driften återupptas;
+kön kan fortfarande ordnas och poster tas bort. Detta ersätter tidigare fri
+köläggning före stationens färdigställande under `forskningsko` och behåller
+`forska-fram-fabriker` för framsteg och förkunskaper.
+
+`dubbelklick-bygger-pa-kartan` och `byggknapp-vid-titel` är
+**Fullständigt implementerat**: i Production ger enkelklick byggdetaljer,
+dubbelklick eller dubbeltryck beställer en gång och Build visas bredvid titeln
+före detaljerna. Befintliga kostnader, köregler och hinder gäller fortsatt.

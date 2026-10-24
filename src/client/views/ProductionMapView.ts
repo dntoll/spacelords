@@ -17,15 +17,48 @@ export function renderProductionRing(
   const ring = element('div', 'production-ring');
   ring.setAttribute('role', 'group');
   ring.setAttribute('aria-label', 'Build options');
+  let lastTouchOption: string | null = null;
+  let lastTouchTime = -Infinity;
   for (const [index, option] of model.productionMap.options.entries()) {
     const angle =
       (index * Math.PI * 2) / model.productionMap.options.length -
       (model.productionMap.options.length === 2 ? 0 : Math.PI / 2);
+    let touchClick = false;
+    const order = () => {
+      if (model.phase === 'planning')
+        emit({ type: 'map-production-build', option: option.type });
+    };
     const choice = button(
       `Show ${option.type}`,
-      () => emit({ type: 'map-production-option', option: option.type }),
+      () => {
+        if (touchClick) {
+          touchClick = false;
+          const now = performance.now();
+          const doubleTap =
+            lastTouchOption === option.type && now - lastTouchTime <= 500;
+          lastTouchOption = option.type;
+          lastTouchTime = now;
+          if (doubleTap) {
+            lastTouchOption = null;
+            order();
+            return;
+          }
+        } else {
+          lastTouchOption = null;
+          lastTouchTime = -Infinity;
+        }
+        emit({ type: 'map-production-option', option: option.type });
+      },
       'button radial-build-option',
     );
+    choice.dataset.productionOption = option.type;
+    choice.addEventListener('pointerup', (event) => {
+      touchClick = event.pointerType === 'touch';
+    });
+    choice.addEventListener('dblclick', () => {
+      // dubbelklick-bygger-pa-kartan: touch already orders on its second click.
+      if (performance.now() - lastTouchTime > 750) order();
+    });
     choice.style.left = `${Math.cos(angle) * model.productionMap.radius}px`;
     choice.style.top = `${Math.sin(angle) * model.productionMap.radius}px`;
     choice.setAttribute(
@@ -117,8 +150,12 @@ export function renderProductionMapPanel(
   if (option) {
     const detail = element('section', 'map-build-details');
     detail.setAttribute('aria-label', 'Build details');
+    const heading = element('div', 'map-build-heading');
+    const build = button('Build', () => emit({ type: 'map-production-build' }));
+    build.disabled = !!option.blockedReason || model.phase !== 'planning';
+    heading.append(catalogHeading(option.type), build);
     detail.append(
-      catalogHeading(option.type),
+      heading,
       element('p', '', option.description),
       element(
         'p',
@@ -179,9 +216,7 @@ export function renderProductionMapPanel(
       );
     if (option.blockedReason)
       detail.append(element('p', 'blocked-reason', option.blockedReason));
-    const build = button('Build', () => emit({ type: 'map-production-build' }));
-    build.disabled = !!option.blockedReason || model.phase !== 'planning';
-    detail.append(build);
+
     panel.append(detail);
   }
   const problems = model.mapProblems.filter(

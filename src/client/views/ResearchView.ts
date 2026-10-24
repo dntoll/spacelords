@@ -88,6 +88,14 @@ export function renderResearch(
     orders.append(row);
   }
   queue.append(orders);
+  if (research.queueBlockedReason)
+    panel.append(
+      element(
+        'p',
+        'research-station-required muted-note',
+        research.queueBlockedReason,
+      ),
+    );
   panel.append(renderResearchTree(research, locked, emit), queue);
   page.append(header, panel);
   return page;

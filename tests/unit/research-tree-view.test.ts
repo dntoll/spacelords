@@ -14,6 +14,7 @@ it('forsknings-tradnavigation: distinguishes completed, active, queued and unava
       completed: ['Rocket engine factory', 'Exploration ship factory'],
       selected: 'Transport ship factory',
       stations: 1,
+      queueBlockedReason: null,
       queue: ['Transport ship factory', 'Trade logistics'],
     },
     false,
@@ -64,4 +65,50 @@ it('planettypsforskning: omits hidden projects and sizes the diagram for only di
       '[data-from="Desert dome"][data-to="Desert terraforming factory"]',
     ),
   ).not.toBeNull();
+});
+
+it('forskning-kraver-station: cannot queue research before a station is completed, but can queue afterwards and pauses when it is demolished', () => {
+  const game = new Game(createExampleGalaxy());
+  const before = game.exportState();
+  expect(() => game.selectResearch('Colony ship factory')).toThrow(
+    /Research station/,
+  );
+  expect(game.exportState()).toEqual(before);
+  game.scheduleBuild(game.galaxy.homePlanet, 'Research station');
+  expect(() => game.selectResearch('Colony ship factory')).toThrow(
+    /Research station/,
+  );
+  for (const frame of game.startTurn()) game.applyFrame(frame);
+  game.finishTurn();
+  game.selectResearch('Colony ship factory');
+  const station = game.planetSnapshot(game.galaxy.homePlanet)!.buildings[0]!;
+  game.toggleDemolition(game.galaxy.homePlanet, station.id);
+  const queue = game.research.queue;
+  expect(() => game.selectResearch('Fighter factory')).toThrow(
+    /Research station/,
+  );
+  for (const frame of game.startTurn()) game.applyFrame(frame);
+  game.finishTurn();
+  expect(game.research.completed).toEqual([]);
+  expect(game.research.queue).toEqual(queue);
+  expect(Game.restore(game.exportState()).research.queue).toEqual(queue);
+});
+
+it('forskning-kraver-station: explains the missing station and disables queue actions in the research tree', () => {
+  const emit = vi.fn();
+  const view = renderResearch(
+    new Game(createExampleGalaxy()).research,
+    false,
+    emit,
+  );
+  for (const button of view.querySelectorAll<HTMLButtonElement>(
+    '.research-node button',
+  )) {
+    expect(button.disabled).toBe(true);
+    button.click();
+  }
+  expect(emit).not.toHaveBeenCalled();
+  expect(
+    view.querySelector('.research-station-required')?.textContent,
+  ).toContain('Build a Research station');
 });

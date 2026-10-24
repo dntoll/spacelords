@@ -64,11 +64,11 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     page.getByRole('button', { name: 'Next decision', exact: true }),
   ).toBeVisible();
   await page
-    .locator('[data-decision-id="research-empty"]')
+    .locator('[data-decision-id="building-empty-sol-0"]')
     .getByRole('button', { name: 'Skip this turn' })
     .click();
   await expect(
-    page.locator('[data-decision-id="research-empty"]'),
+    page.locator('[data-decision-id="building-empty-sol-0"]'),
   ).toContainText('Skipped this turn');
   await home(page);
   for (const [index, type] of [

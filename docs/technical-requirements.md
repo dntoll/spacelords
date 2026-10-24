@@ -498,3 +498,21 @@ validering. Kapacitet och leveranser använder fortfarande enbart Transport ship
 `ruttflottor-pa-kartan` använder FleetMapLayout för både p5-rendering och
 träfftest. Endast Route skickar in rutter för mittpunktsplacering. Kamerazoom
 styr avstånd och träffradie. Flottornas verkliga positioner ändras inte av vyn.
+
+`forskning-kraver-station` valideras i Game.selectResearch innan ResearchPlan
+lägger till tekniken eller dess förkunskaper. ResearchSnapshot exponerar
+queueBlockedReason från färdiga, ägda stationer utan rivningsorder. Samma
+läsmodell spärrar knappar och styr Decisions. Operating stations räknas fortsatt
+separat för framsteg. Befintliga sparningar och forskningsköer bevaras utan
+formatändring eller rensning.
+
+`dubbelklick-bygger-pa-kartan` använder en controlleravsikt med explicit
+produkttyp och befintliga beställningsoperationer i modellen. HTML-knapparna i
+byggcirkeln bevaras vid enbart ändrat val så att webbläsarens dubbelklick kan
+registreras; aria-pressed uppdateras utan att ersätta knapparna. Två efterföljande
+tryck på samma alternativ inom 500 ms beställer en gång även i WebKit, och
+den efterföljande syntetiska dubbelklickshändelsen skapar ingen extra order.
+Hovring behåller minst 4,5:1 kontrast mellan byggvalets text och bakgrund.
+`byggknapp-vid-titel` använder en gemensam flexrad för titel och Build i kartans
+byggdetaljer. Kostnader och hinder finns nedanför och ingen ny köbegränsning
+införs.

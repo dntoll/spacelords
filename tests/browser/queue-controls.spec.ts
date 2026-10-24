@@ -1,3 +1,4 @@
+import { researchStationState } from '../fixtures/research-station.js';
 import { expect, test, type Locator } from '@playwright/test';
 import { startFirstSlot, chooseResearch } from './save-helpers.js';
 
@@ -6,6 +7,13 @@ for (const width of [320, 900]) {
     page,
   }, testInfo) => {
     await page.setViewportSize({ width, height: 800 });
+    await page.addInitScript((state) => {
+      localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
+      );
+    }, researchStationState());
     await page.goto('./');
     await startFirstSlot(page);
     await page
@@ -29,7 +37,7 @@ for (const width of [320, 900]) {
         .click();
       await page
         .getByRole('button', {
-          name: `Build building at site ${index + 1}`,
+          name: `Build building at site ${index + 2}`,
           exact: true,
         })
         .click();

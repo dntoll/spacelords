@@ -113,7 +113,7 @@ export class AppController {
         this.#model.selectMapProject(intent.id);
         break;
       case 'map-production-build':
-        this.#model.orderMapProduction();
+        this.#model.orderMapProduction(intent.option);
         break;
       case 'map-size':
         this.#model.resizeMap(intent.viewport);

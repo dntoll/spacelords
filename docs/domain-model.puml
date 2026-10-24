@@ -142,6 +142,12 @@ Ship --> Component : construction requires
 BuildQueue "1" o-- "0..*" ConstructionProject : ordered projects
 Player "1" *-- "1" Research
 Research --> Technology : selects
+note right of Research
+  forskning-kraver-station:
+  Nya köposter kräver en färdig, ägd Research station utan rivningsorder.
+  Endast stationer i drift ger framsteg.
+  Befintliga köposter väntar när stationer saknas.
+end note
 Technology --> Building : unlocks
 Technology --> Technology : prerequisites
 Building --> Research : Research station contributes

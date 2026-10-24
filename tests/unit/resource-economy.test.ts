@@ -67,6 +67,8 @@ describe('forskningsko / forskningsberoenden', () => {
   it('adds prerequisites once and researches in dependency order', () => {
     const game = new Game(createExampleGalaxy());
     game.scheduleBuild(game.galaxy.homePlanet, 'Research station');
+    turn(game);
+    expect(game.research.completed).toEqual([]);
     game.selectResearch('Trade logistics');
     game.selectResearch('Trade logistics');
     expect(game.research.queue).toEqual([
@@ -75,8 +77,6 @@ describe('forskningsko / forskningsberoenden', () => {
       'Transport ship factory',
       'Trade logistics',
     ]);
-    turn(game);
-    expect(game.research.completed).toEqual([]);
     turn(game);
     turn(game);
     turn(game);

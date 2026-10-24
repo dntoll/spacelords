@@ -803,7 +803,12 @@ export class AppView implements AppPort {
       this.#ringKey = '';
       return;
     }
-    const key = JSON.stringify([planet.id, model.productionMap]);
+    const key = JSON.stringify([
+      planet.id,
+      model.phase,
+      model.productionMap.options,
+      model.productionMap.radius,
+    ]);
     if (key !== this.#ringKey || !this.#ring) {
       const active = document.activeElement;
       const label =
@@ -818,6 +823,17 @@ export class AppView implements AppPort {
         [...this.#ring.querySelectorAll<HTMLElement>('[aria-label]')]
           .find((node) => node.getAttribute('aria-label') === label)
           ?.focus({ preventScroll: true });
+    }
+    for (const choice of this.#ring.querySelectorAll<HTMLElement>(
+      '[data-production-option]',
+    )) {
+      choice.setAttribute(
+        'aria-pressed',
+        String(
+          choice.dataset.productionOption ===
+            model.productionMap.selectedOption?.type,
+        ),
+      );
     }
     const point = productionPosition(
       HexGeometry.toPoint(planet.position),

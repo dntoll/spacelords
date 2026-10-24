@@ -325,6 +325,7 @@ export interface ResearchSnapshot {
   readonly completed: readonly Technology[];
   readonly selected: Technology | null;
   readonly stations: number;
+  readonly queueBlockedReason: string | null;
   readonly queue: readonly Technology[];
 }
 
@@ -865,8 +866,19 @@ export class Game {
       ),
     });
   }
+  #researchQueueIssue(): string | null {
+    return this.#ownedPlanets().some((planet) =>
+      this.#state(planet).buildings.some(
+        (building) =>
+          building.type === 'Research station' && !building.demolition,
+      ),
+    )
+      ? null
+      : 'Build a Research station before queuing research.';
+  }
   get research(): ResearchSnapshot {
     return Object.freeze({
+      queueBlockedReason: this.#researchQueueIssue(),
       available: Object.freeze(this.#availableResearch()),
       completed: Object.freeze([...this.#research.completed]),
       selected: this.#research.queue[0] ?? null,
@@ -887,6 +899,8 @@ export class Game {
     this.#requirePlanning();
     if (type === null) this.#research.queue = [];
     else {
+      const issue = this.#researchQueueIssue();
+      if (issue) throw new Error(issue);
       if (!this.#availableResearch().includes(type))
         throw new Error(
           'Discover this planet type before researching its technology.',
@@ -1776,6 +1790,7 @@ export class Game {
     const items: DecisionDescriptor[] = [];
     if (
       !this.#research.queue.length &&
+      !this.#researchQueueIssue() &&
       this.#availableResearch().some(
         (type) => !this.#research.completed.has(type),
       )

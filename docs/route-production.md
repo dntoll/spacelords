@@ -25,6 +25,20 @@ en Dome skapar inte extra byggplatser. Befintliga fabriker kan fortfarande
 producera delar och skepp utan en tom byggplats. Planetens Production-undersida
 använder samma förslag och kan öppna Dome-detaljerna i kartans Production.
 
+## Snabb beställning
+
+- `dubbelklick-bygger-pa-kartan` — **Fullständigt implementerat**: enkelklick på
+  ett radiellt byggval väljer och visar detaljer. Dubbelklick eller dubbeltryck
+  väljer alternativet och köar exakt en beställning med samma validering som
+  Build. Byggnader, delar och skepp använder befintliga beställningsregler.
+  Hovrade byggval behåller mörk bakgrund och läsbar text.
+  Låst simuleringsfas och ogiltiga val skapar inga order; ett fel behåller valet
+  och visar orsaken. Build finns kvar som alternativ med tangentbord.
+- `byggknapp-vid-titel` — **Fullständigt implementerat**: Build ligger bredvid
+  valt projekts titel, före beskrivning, kostnad och personalbehov. På mobil
+  syns knappen utan att först rulla förbi byggdetaljerna. Träffytan är minst
+  44 px. Detta ersätter knappens tidigare placering sist i detaljsektionen.
+
 ## Flottor på rutter
 
 - `unika-flottnamn` — **Fullständigt implementerat**: flottnamn är unika inom

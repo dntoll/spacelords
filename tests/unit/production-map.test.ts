@@ -461,3 +461,32 @@ it('dome-fore-fabriksforslag: the planet Production tab opens the matching Dome 
   expect(model.snapshot.productionMap.selectedOption?.type).toBe('Desert dome');
   controller.dispose();
 });
+
+it('dubbelklick-bygger-pa-kartan: keeps radial buttons through selection and queues exactly once on a double click', () => {
+  const { model, root, emit, controller } = setup();
+  emit({ type: 'open-production' });
+  const choice = root.querySelector<HTMLButtonElement>(
+    '[aria-label="Show Iron mine"]',
+  )!;
+  const before = model.snapshot.planet!.projects.length;
+  choice.click();
+  expect(root.querySelector('[aria-label="Show Iron mine"]')).toBe(choice);
+  expect(model.snapshot.planet!.projects.length).toBe(before);
+  choice.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+  expect(model.snapshot.planet!.projects.length).toBe(before + 1);
+  expect(model.snapshot.planet!.projects.at(-1)!.type).toBe('Iron mine');
+  controller.dispose();
+});
+
+it('byggknapp-vid-titel: keeps Build beside the selected option heading before its details', () => {
+  const { root, emit, click, controller } = setup();
+  emit({ type: 'open-production' });
+  click('Show Iron mine');
+  const heading = root.querySelector('.map-build-heading')!;
+  expect(heading?.querySelector('h2')?.textContent).toContain('Iron mine');
+  expect(heading?.querySelector('button')?.textContent).toBe('Build');
+  expect(root.querySelector('.map-build-details')!.firstElementChild).toBe(
+    heading,
+  );
+  controller.dispose();
+});

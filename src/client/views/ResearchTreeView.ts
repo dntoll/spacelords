@@ -120,7 +120,9 @@ export function renderResearchTree(
     const status = complete
       ? 'Researched'
       : queued === 0
-        ? 'Researching · 0/1 points'
+        ? research.stations
+          ? 'Researching · 0/1 points'
+          : 'Waiting for an operating Research station'
         : queued > 0
           ? `Queued · ${queued + 1}`
           : ready
@@ -138,7 +140,7 @@ export function renderResearchTree(
         emit({ type: 'research', technology: type }),
       );
       choose.textContent = queued >= 0 ? 'Queued' : 'Research';
-      choose.disabled = locked || queued >= 0;
+      choose.disabled = locked || !!research.queueBlockedReason || queued >= 0;
       card.append(choose);
     }
     stage.append(card);

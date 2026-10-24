@@ -1,9 +1,19 @@
+import { researchStationState } from '../fixtures/research-station.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot } from './save-helpers.js';
 
 test('tysta-beslut: Mute persists across turns and reload, Unmute restores warnings', async ({
   page,
 }, testInfo) => {
+  await page.addInitScript((state) => {
+    if (localStorage.getItem('decision-station-seeded')) return;
+    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
+    );
+    localStorage.setItem('decision-station-seeded', 'yes');
+  }, researchStationState());
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Decisions', exact: true }).click();

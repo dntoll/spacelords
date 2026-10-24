@@ -39,7 +39,7 @@ export type AppIntent =
       readonly option: ProjectType | null;
     }
   | { readonly type: 'map-production-project'; readonly id: string }
-  | { readonly type: 'map-production-build' }
+  | { readonly type: 'map-production-build'; readonly option?: ProjectType }
   | { readonly type: 'map-size'; readonly viewport: MapViewport }
   | {
       readonly type: 'supply-open-planet' | 'supply-open-route';

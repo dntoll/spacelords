@@ -5,11 +5,14 @@ import { AppView } from '../../src/client/views/AppView.js';
 import { AppController } from '../../src/client/controllers/AppController.js';
 import { BrowserSaveRepository } from '../../src/client/storage/BrowserSaveRepository.js';
 import { Game } from '../../src/client/models/Game.js';
-import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
+import {
+  researchStationState,
+  researchStationModel,
+} from '../fixtures/research-station.js';
 
 describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
   it('opens the selected context and skips only until the next turn, including after saving', () => {
-    const model = new AppModel();
+    const model = researchStationModel();
     expect(model.snapshot.decisions).toHaveLength(3);
     model.openDecision('research-empty');
     expect(model.snapshot.screen).toBe('research');
@@ -26,7 +29,7 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
   it('shows one summary warning and advances only after confirmation', () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
-    const model = new AppModel();
+    const model = researchStationModel();
     model.openDecisions();
     new AppController(
       model,
@@ -83,7 +86,7 @@ describe('engangsreset-ekonomi / tre-sparplatser', () => {
 
 describe('tysta-beslut', () => {
   it('keeps a recurring decision muted after it disappears and becomes relevant again', () => {
-    const game = new Game(createExampleGalaxy());
+    const game = Game.restore(researchStationState());
     game.muteDecision('research-empty');
     game.selectResearch('Colony ship factory');
     expect(game.decisions.find((d) => d.id === 'research-empty')!.current).toBe(
@@ -99,7 +102,7 @@ describe('tysta-beslut', () => {
     );
   });
   it('loads older saves without muted preferences and keeps warnings active', () => {
-    const state = new Game(createExampleGalaxy()).exportState();
+    const state = Game.restore(researchStationState()).exportState();
     delete (state as { mutedDecisions?: unknown }).mutedDecisions;
     const restored = Game.restore(
       JSON.parse(JSON.stringify(state)) as ReturnType<Game['exportState']>,
@@ -108,7 +111,7 @@ describe('tysta-beslut', () => {
     expect(restored.decisions.every((d) => !d.muted)).toBe(true);
   });
   it('keeps muted decisions quiet across turns and restores their warnings on unmute', () => {
-    const model = new AppModel();
+    const model = researchStationModel();
     for (const decision of model.snapshot.decisions)
       model.muteDecision(decision.id);
     expect(model.snapshot.decisions.every((d) => d.muted)).toBe(true);
@@ -142,6 +145,9 @@ describe('tysta-beslut', () => {
     });
     const model = new AppModel(undefined, repo);
     model.startSlot(1);
+    model.build('Research station');
+    for (const frame of model.startTurn()) model.applyTurnFrame(frame);
+    model.finishTurn();
     model.muteDecision('research-empty');
     model.research('Colony ship factory');
     expect(
@@ -165,7 +171,7 @@ describe('tysta-beslut', () => {
   it('routes Mute and Unmute through Decisions and excludes muted items from the counter', () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
-    const model = new AppModel();
+    const model = researchStationModel();
     model.openDecisions();
     new AppController(
       model,

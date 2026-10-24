@@ -113,6 +113,7 @@ describe('gemensamma-byggnadsbilder', () => {
         available: TECHNOLOGIES,
         completed: [],
         selected: 'Exploration ship factory',
+        queueBlockedReason: null,
         stations: 1,
         queue: [
           'Exploration ship factory',
@@ -307,6 +308,7 @@ describe('gemensamma-byggnadsbilder', () => {
         available: TECHNOLOGIES,
         completed: [],
         selected: null,
+        queueBlockedReason: null,
         stations: 0,
         queue: [],
       },

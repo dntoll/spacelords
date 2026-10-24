@@ -1,3 +1,4 @@
+import { researchStationState } from '../fixtures/research-station.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot } from './save-helpers.js';
 
@@ -61,6 +62,15 @@ test('forsknings-tradnavigation: native touch pans and pinches the tree', async 
 test('forsknings-tradnavigation: dependency arrows, navigation and research preserve the camera', async ({
   page,
 }, testInfo) => {
+  await page.addInitScript((state) => {
+    if (localStorage.getItem('research-station-seeded')) return;
+    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
+    );
+    localStorage.setItem('research-station-seeded', 'yes');
+  }, researchStationState());
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();

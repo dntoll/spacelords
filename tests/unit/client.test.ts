@@ -101,7 +101,14 @@ describe('forskningsoversikt', () => {
     );
     expect(root.querySelectorAll('[data-technology]')).toHaveLength(10);
     click('Research Colony ship factory');
-    expect(root.textContent).toContain('Researching · 0/1 points');
+    expect(
+      root.querySelector<HTMLButtonElement>(
+        '[aria-label="Research Colony ship factory"]',
+      )!.disabled,
+    ).toBe(true);
+    expect(root.textContent).toContain(
+      'Build a Research station before queuing research.',
+    );
     click('Back to map');
     expect(root.querySelector('[data-testid="map-container"]')).not.toBeNull();
   });
@@ -340,6 +347,8 @@ describe('kolonisation / kartorderstatus', () => {
 describe('kompakta-koknappar', () => {
   it('uses symbols while preserving named research actions, boundaries and controller dispatch', () => {
     const model = new AppModel();
+    model.build('Research station');
+    advance(model);
     model.research('Exploration ship factory');
     model.research('Colony ship factory');
     model.research('Transport ship factory');

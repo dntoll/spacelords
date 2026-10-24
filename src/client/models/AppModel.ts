@@ -923,11 +923,21 @@ export class AppModel {
     )
       this.#mapProjectId = id;
   }
-  orderMapProduction(): void {
-    if (this.#screen !== 'production' || !this.#mapProductionOption) return;
+  orderMapProduction(option?: ProjectType): void {
+    if (this.#screen !== 'production') return;
     const planet = this.#game.planetAt(this.#selected);
     if (!planet) return;
+    if (option !== undefined) {
+      if (
+        !this.#game
+          .productionOptions(planet)
+          .some((candidate) => candidate.type === option)
+      )
+        throw new Error('This production option is no longer available.');
+      this.selectMapProductionOption(option);
+    }
     const type = this.#mapProductionOption;
+    if (!type) return;
     if (Object.hasOwn(BUILDINGS, type))
       this.#game.scheduleBuild(planet, type as BuildType);
     else if (projectDefinition(type).ship)

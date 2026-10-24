@@ -90,12 +90,13 @@ describe('forska-fram-fabriker / bygga-forskningsstation', () => {
     expect(() => game.scheduleBuild(planet, 'Colony ship factory')).toThrow(
       'Research',
     );
-    game.selectResearch('Colony ship factory');
-    turn();
-    expect(game.research.completed).toEqual([]);
+    expect(() => game.selectResearch('Colony ship factory')).toThrow(
+      'Research station',
+    );
     game.scheduleBuild(planet, 'Research station');
     turn();
     expect(game.research.completed).toEqual([]);
+    game.selectResearch('Colony ship factory');
     turn();
     expect(game.research.completed).toEqual(['Rocket engine factory']);
     turn();

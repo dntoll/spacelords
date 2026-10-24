@@ -29,6 +29,8 @@ describe('sparat-spel / frontend-backend-mock', () => {
   it('round-trips research, construction, fleets, exploration, events and future IDs', () => {
     const game = new Game(createExampleGalaxy());
     game.scheduleBuild(game.galaxy.homePlanet, 'Research station', 0);
+    for (const frame of game.startTurn()) game.applyFrame(frame);
+    game.finishTurn();
     game.selectResearch('Colony ship factory');
     game.setDestination('fleet-home', new HexCoordinate(3, 0));
     for (const frame of game.startTurn()) game.applyFrame(frame);
@@ -72,13 +74,13 @@ describe('sparat-spel / frontend-backend-mock', () => {
     game.scheduleShip(home, 'Colony ship', 'fleet-home', factory.id);
     game.scheduleShip(home, 'Colony ship', null, factory.id);
     game.scheduleBuild(home, 'Research station', 2);
+    game.selectResearch('Fighter factory');
     game.toggleDemolition(
       home,
       snapshot.buildings.find(
         (building) => building.type === 'Research station',
       )!.id,
     );
-    game.selectResearch('Fighter factory');
     const restored = Game.restore(
       JSON.parse(JSON.stringify(game.exportState())) as ReturnType<
         Game['exportState']

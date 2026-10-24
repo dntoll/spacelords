@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
+import { researchStationModel } from '../fixtures/research-station.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import { renderResearch } from '../../src/client/views/ResearchView.js';
@@ -27,7 +28,7 @@ describe('forskningstradets-utrymme', () => {
   });
 
   it('keeps an opened queue available while its orders change without changing the camera', () => {
-    const model = new AppModel();
+    const model = researchStationModel();
     model.openResearch();
     const root = document.createElement('div');
     document.body.replaceChildren(root);

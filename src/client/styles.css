@@ -2386,6 +2386,10 @@ p {
   color: #e5e8e6;
   border: 1px solid #83b8ed;
 }
+.radial-build-option:hover:enabled {
+  background: #1b4059;
+  color: #e5e8e6;
+}
 .radial-build-option .catalog-icon {
   width: 20px;
   height: 20px;
@@ -2502,4 +2506,17 @@ p {
 }
 .route-assigned-legend {
   color: #72d8ca;
+}
+
+.map-build-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.map-build-heading .catalog-detail-heading {
+  min-width: 0;
+}
+.map-build-heading > button {
+  flex-shrink: 0;
 }

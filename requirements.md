@@ -93,6 +93,10 @@ Se [hela visionen](docs/game-vision.md).
   vald planet och totalt på spelarens planeter. Köade byggprojekt ingår inte.
 - **Forskning:** `forsknings-tradnavigation` är **Fullständigt implementerat**:
   ett zoom- och panorerbart forskningsträd med beroendepilar och bibehållen kamera.
+  `forskning-kraver-station` är **Fullständigt implementerat**: en färdig
+  Research station krävs för nya forskningsbeställningar. Befintliga köer väntar
+  utan drift; Decisions föreslår forskning först när en station finns. Detta
+  ersätter tidigare fri köläggning under `forskningsko`.
   `forskningstradets-utrymme` är **Fullständigt implementerat**: trädet fyller
   vyn under rubriken, antal stationer visas bredvid rubriken även med bredare
   systemtypsnitt på smala telefoner och Research queue
@@ -117,6 +121,9 @@ Se [hela visionen](docs/game-vision.md).
   **Fullständigt implementerat**: flottor har unika namn, Fighters tilldelas
   rutters transportflottor med jämn fördelning och Route visar tilldelade flottor
   vid ruttens mitt samt lediga transporter i lila.
+  `dubbelklick-bygger-pa-kartan` och `byggknapp-vid-titel` är
+  **Fullständigt implementerat**: dubbelklick på ett radiellt val köar en order
+  och Build visas bredvid titeln före byggdetaljerna.
   Se [kartbaserade Route och Production](docs/route-production.md).
   Försörjningsreglerna `forsorjningsstatus`, `leveransfloden` och
   `produktionsformaga` behålls enligt [försörjningsreglerna](docs/supply-production.md).

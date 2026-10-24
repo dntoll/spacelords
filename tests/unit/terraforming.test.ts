@@ -1,3 +1,4 @@
+import { researchStationState } from '../fixtures/research-station.js';
 import { describe, expect, it } from 'vitest';
 import {
   Game,
@@ -208,6 +209,7 @@ describe('planettypsforskning', () => {
       const game = Game.restore({ ...initial.exportState(), researched: [] });
       const planet = game.galaxy.homePlanet;
       game.scheduleBuild(planet, 'Research station');
+      turn(game);
       game.selectResearch(`${environment} terraforming factory` as Technology);
       turn(game);
       turn(game);
@@ -254,7 +256,7 @@ describe('planettypsforskning', () => {
   });
 
   it('requests more research only when an unfinished discovered project exists', () => {
-    const initial = new Game(createExampleGalaxy());
+    const initial = Game.restore(researchStationState());
     const state = {
       ...initial.exportState(),
       researched: initial.research.available,
@@ -278,7 +280,7 @@ describe('planettypsforskning', () => {
   });
 
   it('reveals both projects through visibility and queues the matching Dome prerequisite', () => {
-    const game = new Game(createExampleGalaxy());
+    const game = Game.restore(researchStationState());
     expect(game.research.available).toContain('Desert dome');
     expect(game.research.available).toContain('Desert terraforming factory');
     expect(game.research.available).not.toContain('Ice dome');
