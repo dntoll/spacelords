@@ -82,8 +82,8 @@ Se [hela visionen](docs/game-vision.md).
   lager och fabriker genom aktiva handelsrutter, utan dubbelreservationer.
   Om en del inte kan ordnas avvisas hela beställningen utan delvisa ändringar.
   `byggnadsantal-lokalt-och-globalt` är **Fullständigt implementerat**: Build
-  selection visar befintliga byggnader per typ på vald planet och totalt på
-  spelarens planeter. Köade byggprojekt ingår inte.
+  selection visar redan i den kompakta listan befintliga byggnader per typ på
+  vald planet och totalt på spelarens planeter. Köade byggprojekt ingår inte.
 - **Forskning:** `forsknings-tradnavigation` är **Fullständigt implementerat**:
   ett zoom- och panorerbart forskningsträd med beroendepilar och bibehållen kamera.
   `forskningstradets-utrymme` är **Fullständigt implementerat**: trädet fyller

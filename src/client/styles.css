@@ -2529,3 +2529,21 @@ p {
   cursor: pointer;
   padding-block: 0.4rem;
 }
+
+/* byggnadsantal-lokalt-och-globalt: keep counts visible without opening details. */
+.catalog-item-button:has(> .building-list-inventory) {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 4px 10px;
+}
+.catalog-item-button:has(> .building-list-inventory) > .catalog-icon {
+  grid-row: 1 / span 2;
+}
+.building-list-inventory {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: normal;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}

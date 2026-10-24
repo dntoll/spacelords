@@ -224,9 +224,9 @@ describe('byggkategorier / symbolbaserade-kataloger', () => {
       );
     const ships = render('Shipyards');
     expect(
-      [...ships.querySelectorAll('.catalog-item')].map(
-        (item) => item.textContent,
-      ),
+      [
+        ...ships.querySelectorAll('.catalog-item-button > span:first-of-type'),
+      ].map((item) => item.textContent),
     ).toEqual(['Fighter factory']);
     const categories =
       ships.querySelectorAll<HTMLButtonElement>('.catalog-category');
@@ -245,7 +245,9 @@ describe('byggkategorier / symbolbaserade-kataloger', () => {
       category: 'Components',
     });
     expect(
-      render('Resources', 'finite').querySelector('.catalog-item')?.textContent,
+      render('Resources', 'finite').querySelector(
+        '.catalog-item-button > span:first-of-type',
+      )?.textContent,
     ).toBe('Iron mine');
     expect(
       render('Research', 'Fighter').querySelector('.empty-results'),
@@ -258,7 +260,7 @@ describe('byggkategorier / symbolbaserade-kataloger', () => {
     const choice = initial.querySelector<HTMLButtonElement>(
       '[aria-label="Show Research station"]',
     )!;
-    expect(choice.textContent).toBe('Research station');
+    expect(choice.querySelector('span')?.textContent).toBe('Research station');
     expect(choice.querySelector('svg')).not.toBeNull();
     expect(initial.querySelector('.catalog-details')).toBeNull();
     choice.click();

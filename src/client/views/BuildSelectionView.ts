@@ -1,5 +1,5 @@
 import type { AppReadModel } from '../models/AppModel.js';
-import { BUILDINGS } from '../models/Game.js';
+import { BUILDINGS, type BuildType } from '../models/Game.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { buildingImage } from './BuildingImage.js';
 import {
@@ -80,14 +80,23 @@ export function renderBuildSelection(
     );
   });
   for (const option of options) {
-    list.append(
-      catalogItem(
-        option.type,
-        `building:${option.type}`,
-        model.selectedBuilding === option.type,
-        () => emit({ type: 'building-selection', building: option.type }),
-      ),
+    const item = catalogItem(
+      option.type,
+      `building:${option.type}`,
+      model.selectedBuilding === option.type,
+      () => emit({ type: 'building-selection', building: option.type }),
     );
+    const { local, empireTotal } = buildingCounts(model, option.type);
+    const inventory = element(
+      'span',
+      'building-list-inventory',
+      `On ${planet.name}: ${local} · All your planets: ${empireTotal}`,
+    );
+    inventory.id = `building-list-counts-${list.children.length}`;
+    const choice = item.querySelector('button')!;
+    choice.append(inventory);
+    choice.setAttribute('aria-describedby', inventory.id);
+    list.append(item);
   }
   const selected = options.find(
     (option) => option.type === model.selectedBuilding,
@@ -106,17 +115,7 @@ export function renderBuildSelection(
     );
     const inventory = element('div', 'building-inventory');
     const counts = element('dl');
-    const local = planet.buildings.filter(
-      (building) => building.type === option.type,
-    ).length;
-    const empireTotal = model.ownedPlanets.reduce(
-      (total, ownedPlanet) =>
-        total +
-        ownedPlanet.buildings.filter(
-          (building) => building.type === option.type,
-        ).length,
-      0,
-    );
+    const { local, empireTotal } = buildingCounts(model, option.type);
     counts.append(
       labelValue(`On ${planet.name}`, String(local)),
       labelValue('All your planets', String(empireTotal)),
@@ -181,6 +180,23 @@ export function renderBuildSelection(
 
   page.append(header, toolbar, grid);
   return page;
+}
+
+// byggnadsantal-lokalt-och-globalt: list and details count the same completed buildings.
+function buildingCounts(
+  model: AppReadModel,
+  type: BuildType,
+): { local: number; empireTotal: number } {
+  return {
+    local: model.planet!.buildings.filter((building) => building.type === type)
+      .length,
+    empireTotal: model.ownedPlanets.reduce(
+      (total, planet) =>
+        total +
+        planet.buildings.filter((building) => building.type === type).length,
+      0,
+    ),
+  };
 }
 
 function costIndicator(
