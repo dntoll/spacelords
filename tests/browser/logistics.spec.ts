@@ -102,9 +102,10 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     'Exploration ship factory',
     'Colony ship factory',
     'Fighter factory',
+    'Rocket engine factory',
   ].entries())
     await build(page, index + 5, type);
-  for (let year = 0; year < 4; year++) await nextYear(page);
+  for (let year = 0; year < 5; year++) await nextYear(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await formFleet(page, 'Fighter', 'Home Fleet', 'Freighters');
   await formFleet(page, 'Exploration ship', 'Home Fleet', 'Settlers');
@@ -143,8 +144,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await page
     .getByRole('button', { name: 'Queue Colony ship', exact: true })
     .click();
-  await nextYear(page);
-  await nextYear(page);
+  for (let year = 0; year < 6; year++) await nextYear(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page, 'Freighters');
   await page

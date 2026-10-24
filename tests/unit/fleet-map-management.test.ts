@@ -364,6 +364,7 @@ describe('skepp-ur-olastad-ruttflotta', () => {
     const { model, root, click } = assigned(false);
     click('Transport ship 1 in Freighters');
     expect(model.snapshot.shipTransfer).toEqual({
+      shipId: 'freighters-legacy-Transport ship-0',
       fleetId: 'freighters',
       ship: 'Transport ship',
     });

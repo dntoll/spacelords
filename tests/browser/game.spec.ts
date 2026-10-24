@@ -367,6 +367,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   ).toBeVisible();
   await nextYear();
   await nextYear();
+  await nextYear();
   await construction();
   await page
     .getByRole('button', { name: 'Building sites', exact: true })
@@ -374,7 +375,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await page
     .getByRole('button', { name: 'Build building at site 2', exact: true })
     .click();
-  await expect(page.locator('.building-menu .catalog-item')).toHaveCount(6);
+  await expect(page.locator('.building-menu .catalog-item')).toHaveCount(7);
   await page
     .getByRole('button', { name: 'Show Colony ship factory', exact: true })
     .click();
@@ -387,6 +388,20 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     .click();
   await page
     .getByRole('button', { name: 'Build Colony ship factory', exact: true })
+    .click();
+  await nextYear();
+  await construction();
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Build building at site 3', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Show Rocket engine factory', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Build Rocket engine factory', exact: true })
     .click();
   await nextYear();
   await expect(page.locator('.order-status')).toContainText(
@@ -449,18 +464,19 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await page
     .getByRole('button', { name: 'Queue Colony ship', exact: true })
     .click();
-  for (let index = 0; index < 4; index += 1)
+  for (let index = 0; index < 4; index += 1) {
     await page
       .getByRole('button', { name: 'Show Colony ship', exact: true })
       .click();
-  await page
-    .getByRole('button', { name: 'Queue Colony ship', exact: true })
-    .click();
+    await page
+      .getByRole('button', { name: 'Queue Colony ship', exact: true })
+      .click();
+  }
   await expect(
     page.getByRole('button', { name: 'Queue Colony ship', exact: true }),
   ).toBeEnabled();
   await page.getByRole('button', { name: 'Build queue', exact: true }).click();
-  await expect(planetQueue.locator('.queue-order')).toHaveCount(5);
+  await expect(planetQueue.locator('.queue-order')).toHaveCount(20);
   await planetQueue
     .locator('.queue-order')
     .nth(1)
@@ -475,7 +491,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     path: testInfo.outputPath('shipyard-queue.png'),
     fullPage: true,
   });
-  await nextYear();
+  for (let year = 0; year < 4; year++) await nextYear();
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page, 'Fleet 1');
   await expect(

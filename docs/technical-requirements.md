@@ -437,13 +437,13 @@ har inte beställts eller genomförts; inga nya tider för hela sluttestsviten f
 
 ## Motorbestyckning och sparkompatibilitet
 
-`automatisk-motormontering` — **Delvis implementerat**: Modellen bevarar varje
+`automatisk-motormontering` — **Fullständigt implementerat**: Modellen bevarar varje
 skepps stabila id och installerade motorer. Vyer får oföränderliga
 ögonblicksbilder och skickar individuella skeppsval via controller.
-Verifiering av alla flyttvägar återstår.
+Motorer och fart verifieras vid flytt, förstärkning, sammanslagning och kolonisering.
 
 `avstamning-sparkompatibilitet`: Sparversion 6 läser fortsatt version 2–5.
 Befintliga skepp får Rocket engine utan lageravdrag; äldre uppnådd forskning
 behålls och saknade motorförkunskaper kompletteras. Äldre köade skepp behålls
 med synligt motorbehov. Ingen ny rensningsmarkör eller ändrad lagringsnyckel
-införs. Gamla spel ska verifieras före publicering.
+införs. Laddning av version 2–5 och bevarande av motorbestyckning verifieras automatiskt.

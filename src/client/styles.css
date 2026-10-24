@@ -2525,6 +2525,7 @@ p {
   overflow-wrap: anywhere;
 }
 .ship-engine-details summary {
+  min-height: 44px;
   cursor: pointer;
   padding-block: 0.4rem;
 }

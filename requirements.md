@@ -11,9 +11,9 @@ Se [hela visionen](docs/game-vision.md).
 ## Kravkategorier
 
 - **Skeppsmotorer:** `motorbehov-for-alla-skepp`, `ion-pulse-engine` och
-  `automatisk-motormontering` är **Delvis implementerat**. Alla skepp kräver
-  motorer och Ion pulse engine ger +1 fart. Riktad verifiering av försörjning,
-  sparkompatibilitet och mobilflöde återstår. Se [ekonomireglerna](docs/economy-logistics.md).
+  `automatisk-motormontering` är **Fullständigt implementerat**. Alla skepp kräver
+  motorer och minst en Ion pulse engine ger +1 fart. Automatisk försörjning,
+  sparkompatibilitet och mobilflöde är verifierade. Se [ekonomireglerna](docs/economy-logistics.md).
 
 - **Kategoriserade bygg- och produktval:** `byggkategorier` och
   `symbolbaserade-kataloger` är **Fullständigt implementerat**. Symbolknappar
@@ -75,8 +75,9 @@ Se [hela visionen](docs/game-vision.md).
   till lokala obegränsade lager. Material förbrukas en gång vid byggstart.
   Varje planet har en enda Build queue för byggnader, delar och skepp, med
   högst ett färdigt projekt per år (`gemensam-planetko`). Fabriker avgör vilka
-  produkter planeten kan tillverka. Rocket engine factory och Weapons module
-  factory tillverkar delarna till Fighter. `automatiska-delorder` är
+  produkter planeten kan tillverka. Rocket engine factory och Ion pulse engine
+  factory tillverkar motorer till alla skepp; Weapons module factory
+  tillverkar vapendelar till Fighter. `automatiska-delorder` är
   **Fullständigt implementerat**: saknade delar köas lokalt eller beställs från
   lager och fabriker genom aktiva handelsrutter, utan dubbelreservationer.
   Om en del inte kan ordnas avvisas hela beställningen utan delvisa ändringar.

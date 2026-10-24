@@ -66,8 +66,8 @@ test('forsknings-tradnavigation: dependency arrows, navigation and research pres
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   const tree = page.getByRole('region', { name: 'Research tree', exact: true });
   const stage = page.locator('.research-tree-stage');
-  await expect(page.locator('.research-node')).toHaveCount(9);
-  await expect(page.locator('.research-edge')).toHaveCount(7);
+  await expect(page.locator('.research-node')).toHaveCount(10);
+  await expect(page.locator('.research-edge')).toHaveCount(8);
   await expect(
     page.locator(
       '[data-from="Weapons module factory"][data-to="Fighter factory"]',
@@ -87,13 +87,13 @@ test('forsknings-tradnavigation: dependency arrows, navigation and research pres
   await choose.focus();
   const camera = await stage.getAttribute('style');
   await choose.click();
-  await expect(page.locator('.research-queue article')).toHaveCount(4);
+  await expect(page.locator('.research-queue article')).toHaveCount(3);
   await expect(stage).toHaveAttribute('style', camera!);
   await expect(
     page.locator('[data-technology="Fighter factory"]'),
   ).toHaveAttribute('data-state', 'queued');
   await expect(
-    page.locator('[data-technology="Exploration ship factory"]'),
+    page.locator('[data-technology="Rocket engine factory"]'),
   ).toHaveAttribute('data-state', 'active');
   await page.screenshot({ path: testInfo.outputPath('research-tree.png') });
   await tree.press('0');
@@ -114,7 +114,7 @@ test('forsknings-tradnavigation: dependency arrows, navigation and research pres
   }
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await page.getByRole('button', { name: 'Research', exact: true }).click();
-  await expect(page.locator('.research-queue article')).toHaveCount(4);
+  await expect(page.locator('.research-queue article')).toHaveCount(3);
   expect(
     await page.evaluate(
       () =>

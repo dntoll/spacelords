@@ -344,6 +344,7 @@ export interface BuildingSnapshot {
   readonly scheduledForDemolition: boolean;
 }
 export interface ConstructionProjectSnapshot {
+  readonly parts?: Readonly<Partial<Record<Component, number>>>;
   readonly id: string;
   readonly type: ProjectType;
   readonly destinationFleetId: string | null;
@@ -768,6 +769,9 @@ export class Game {
     const projectSnapshot = (project: Project): ConstructionProjectSnapshot =>
       Object.freeze({
         ...project,
+        ...(project.parts
+          ? { parts: Object.freeze({ ...project.parts }) }
+          : {}),
         blockedReason:
           blocks.get(project.id) === 'Waiting for resources.'
             ? this.supplyStatus(planet.id)
@@ -927,9 +931,9 @@ export class Game {
     const planet = this.galaxy.systems
       .flatMap((system) => system.planets)
       .find((p) => p.position.key === fleet.position?.key)!;
-    const coloniser = fleet.shipUnits!.find(
-      (unit) => unit.type === 'Colony ship',
-    )!;
+    const coloniser = fleet
+      .shipUnits!.toSorted((a, b) => a.id.localeCompare(b.id))
+      .find((unit) => unit.type === 'Colony ship')!;
     fleet.shipUnits = fleet.shipUnits!.filter(
       (unit) => unit.id !== coloniser.id,
     );

@@ -5,6 +5,7 @@ import {
   type BuildType,
   type ShipType,
 } from '../../src/client/models/Game.js';
+import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { emptyStock } from '../../src/client/models/Economy.js';
 import { ResearchPlan } from '../../src/client/models/Research.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
@@ -132,4 +133,203 @@ describe('ion-pulse-engine / automatisk-motormontering', () => {
       'Ion pulse engine factory',
     ]);
   });
+});
+
+describe('automatisk-motormontering / automatiska-delorder', () => {
+  it('does not promise the same local Ion to two competing ships', () => {
+    const game = prepared(0, 1);
+    const home = game.galaxy.homePlanet;
+    game.scheduleShip(home, 'Transport ship');
+    const before = game.exportState();
+    expect(() => game.scheduleShip(home, 'Transport ship')).toThrow();
+    expect(game.exportState()).toEqual(before);
+  });
+
+  it('protects a later ship reservation even if its motors arrive before the head builds', () => {
+    let game = prepared(3, 1);
+    const home = game.galaxy.homePlanet;
+    const first = game.createFleet();
+    const second = game.createFleet();
+    game.scheduleShip(home, 'Transport ship', first.id);
+    game.scheduleShip(home, 'Colony ship', second.id);
+    const state = game.exportState();
+    const queue = state.colonies[0]![1].projects;
+    queue.reverse();
+    game = Game.restore(state);
+    turn(game);
+    expect(game.fleet(second.id)!.speed).toBe(2);
+    expect(
+      game.planetSnapshot(game.galaxy.homePlanet)!.economy.stock[
+        'Ion pulse engine'
+      ],
+    ).toBe(1);
+    turn(game);
+    expect(game.fleet(first.id)!.speed).toBe(3);
+  });
+
+  it('reuses surplus motors after cancellation without retaining the cancelled reservation', () => {
+    const game = prepared(2, 1);
+    const home = game.galaxy.homePlanet;
+    game.scheduleShip(home, 'Colony ship');
+    game.cancelProject(home, game.planetSnapshot(home)!.projects[0]!.id);
+    const fleet = game.createFleet();
+    game.scheduleShip(home, 'Colony ship', fleet.id);
+    turn(game);
+    expect(game.fleet(fleet.id)!.speed).toBe(3);
+  });
+
+  it('manufactures Ion in its own factory before fitting it to a ship', () => {
+    const state = prepared().exportState();
+    state.colonies[0]![1].buildings.push({
+      id: 'ion-factory',
+      type: 'Ion pulse engine factory',
+      slotIndex: 4,
+      demolition: false,
+    });
+    const game = Game.restore(state);
+    const home = game.galaxy.homePlanet;
+    const fleet = game.createFleet();
+    game.scheduleShip(home, 'Transport ship', fleet.id);
+    expect(game.planetSnapshot(home)!.projects.map((p) => p.type)).toEqual([
+      'Ion pulse engine',
+      'Transport ship',
+    ]);
+    const before = game.planetSnapshot(home)!.economy.stock;
+    turn(game);
+    expect(game.planetSnapshot(home)!.economy.stock).toMatchObject({
+      Iron: before.Iron - 6,
+      Water: before.Water - 2,
+      Oil: before.Oil - 2,
+      'Ion pulse engine': 1,
+    });
+    turn(game);
+    expect(game.fleet(fleet.id)!.speed).toBe(3);
+    expect(game.fleet(fleet.id)!.shipUnits![0]!.engines).toEqual({
+      'Rocket engine': 0,
+      'Ion pulse engine': 1,
+    });
+  });
+
+  it('keeps the slowest individual speed and moves the selected upgraded ship rather than another of its type', () => {
+    const game = prepared(1, 1);
+    const home = game.galaxy.homePlanet;
+    const fleet = game.createFleet();
+    game.scheduleShip(home, 'Transport ship', fleet.id);
+    game.scheduleShip(home, 'Transport ship', fleet.id);
+    turn(game);
+    turn(game);
+    expect(game.fleet(fleet.id)!.speed).toBe(2);
+    const upgraded = game
+      .fleet(fleet.id)!
+      .shipUnits!.find((u) => u.engines['Ion pulse engine'] > 0)!;
+    const moved = game.transferShips(
+      fleet.id,
+      'Transport ship',
+      1,
+      null,
+      upgraded.id,
+    );
+    expect(moved.speed).toBe(3);
+    expect(moved.shipUnits![0]!.id).toBe(upgraded.id);
+    expect(game.fleet(fleet.id)!.speed).toBe(2);
+    const merged = game.transferShips(moved.id, 'Transport ship', 1, fleet.id);
+    expect(merged.speed).toBe(2);
+    expect(Game.restore(game.exportState()).fleet(fleet.id)!.shipUnits).toEqual(
+      merged.shipUnits,
+    );
+  });
+});
+
+describe('avstamning-sparkompatibilitet / motorbehov-for-alla-skepp', () => {
+  it.each([2, 3, 4, 5] as const)(
+    'loads version %s without charging existing ships or deleting queued ships',
+    (version) => {
+      const state = prepared().exportState();
+      for (const fleet of state.fleets) delete fleet.shipUnits;
+      state.colonies[0]![1].projects.push({
+        id: 'legacy-ship',
+        type: 'Colony ship',
+        slotIndex: null,
+        factoryId: 'yard-0',
+        destinationFleetId: null,
+      });
+      const game = Game.restore({
+        ...state,
+        version,
+        researched: ['Exploration ship factory'],
+      });
+      expect(game.fleet('fleet-home')!.speed).toBe(3);
+      expect(
+        game
+          .fleet('fleet-home')!
+          .shipUnits!.every((u) => u.engines['Ion pulse engine'] === 0),
+      ).toBe(true);
+      expect(game.research.completed).toContain('Rocket engine factory');
+      expect(
+        game.planetSnapshot(game.galaxy.homePlanet)!.economy.stock.Iron,
+      ).toBe(1000);
+      expect(
+        game.planetSnapshot(game.galaxy.homePlanet)!.projects,
+      ).toHaveLength(1);
+      expect(
+        game.planetSnapshot(game.galaxy.homePlanet)!.projects[0]!.blockedReason,
+      ).not.toBeNull();
+      expect(game.exportState().version).toBe(6);
+    },
+  );
+
+  it('inserts missing prerequisites into legacy research queues while preserving their dependent order', () => {
+    const state = prepared().exportState();
+    const game = Game.restore({
+      ...state,
+      version: 5,
+      researched: [],
+      researchQueue: ['Exploration ship factory', 'Colony ship factory'],
+      researchTarget: 'Exploration ship factory',
+    });
+    expect(game.research.queue).toEqual([
+      'Rocket engine factory',
+      'Exploration ship factory',
+      'Colony ship factory',
+    ]);
+  });
+});
+
+describe('automatisk-motormontering / flottdestinationer / kolonisation', () => {
+  it('travels three hexes in one year with an upgraded Transport ship', () => {
+    const game = prepared(0, 1);
+    const fleet = game.createFleet();
+    game.scheduleShip(game.galaxy.homePlanet, 'Transport ship', fleet.id);
+    turn(game);
+    const destination = new HexCoordinate(3, 0);
+    game.setDestination(fleet.id, destination);
+    turn(game);
+    expect(game.fleet(fleet.id)!.position).toEqual(destination);
+    expect(game.fleet(fleet.id)!.destination).toBeNull();
+  });
+
+  it('consumes the colonising ship and its installed engines without returning parts to storage', () => {
+    const game = prepared(2, 1);
+    const fleet = game.createFleet();
+    game.scheduleShip(game.galaxy.homePlanet, 'Colony ship', fleet.id);
+    turn(game);
+    const target = game.galaxy.systems[0]!.planets[1]!;
+    game.setDestination(fleet.id, target.position);
+    turn(game);
+    game.colonize(fleet.id);
+    expect(game.fleet(fleet.id)!.shipUnits).toEqual([]);
+    expect(game.fleet(fleet.id)!.speed).toBe(0);
+    expect(game.planetSnapshot(target)!.economy.stock).toEqual(emptyStock());
+  });
+});
+
+it('automatisk-motormontering: exposes immutable project reservations and ship loadouts', () => {
+  const game = prepared(2, 1);
+  const home = game.galaxy.homePlanet;
+  game.scheduleShip(home, 'Colony ship');
+  const project = game.planetSnapshot(home)!.projects[0]!;
+  expect(Object.isFrozen(project.parts)).toBe(true);
+  const fleet = game.fleet('fleet-home')!;
+  expect(Object.isFrozen(fleet.shipUnits)).toBe(true);
+  expect(Object.isFrozen(fleet.shipUnits![0]!.engines)).toBe(true);
 });

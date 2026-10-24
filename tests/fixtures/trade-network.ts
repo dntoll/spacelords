@@ -82,12 +82,14 @@ export function tradeNetworkState(withRoute = true): GameState {
       {
         ...fleet,
         id: 'freighters',
+        shipUnits: [],
         name: 'Freighters',
         ships: { ...noShips, 'Transport ship': 2, Fighter: 1 },
       },
       {
         ...fleet,
         id: 'travellers',
+        shipUnits: [],
         name: 'Travellers',
         position: { q: 0, r: 0 },
         destination: { q: 0, r: 1 },
@@ -96,6 +98,7 @@ export function tradeNetworkState(withRoute = true): GameState {
       {
         ...fleet,
         id: 'empty',
+        shipUnits: [],
         name: 'Reserve',
         position: null,
         destination: null,

@@ -107,21 +107,22 @@ export function renderProduction(
         `${active.length} available ${active.length === 1 ? 'factory' : 'factories'} · Iron ${definition.cost.Iron}, Water ${definition.cost.Water}, Oil ${definition.cost.Oil}${definition.ship ? ` · ${definition.crew} crew` : ''}`,
       ),
     );
-    if (definition.parts)
+    if (definition.parts) {
+      const requirements = Object.entries(definition.parts)
+        .map(([part, count]) =>
+          part === 'Rocket engine'
+            ? `${count} ${count === 1 ? 'engine' : 'engines'} (Rocket engine or Ion pulse engine)`
+            : `${count} ${part}`,
+        )
+        .join(', ');
       detail.append(
         element(
           'p',
           'muted-note',
-          `Requires ${Object.entries(definition.parts)
-            .map(
-              ([part, count]) =>
-                `${count} ${part === 'Rocket engine' ? 'engines (Rocket engine or Ion pulse engine)' : part}`,
-            )
-            .join(
-              ', ',
-            )}. Missing parts are ordered automatically. Available Ion pulse engines are fitted first; at least one gives +1 speed.`,
+          `Requires ${requirements}. Missing parts are ordered automatically. Available Ion pulse engines are fitted first; at least one gives +1 speed.`,
         ),
       );
+    }
     if (active.length && active.every((b) => b.operational === false))
       detail.append(
         element(

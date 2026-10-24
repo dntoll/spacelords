@@ -274,6 +274,7 @@ describe('forstarka-ruttflotta / flottans-handelsrutt', () => {
     view.dispatchEvent(pointer('pointermove', 100, 100));
     view.dispatchEvent(pointer('pointerup', 100, 100));
     expect(intents).toContainEqual({
+      shipId: 'fleet-home-legacy-Fighter-0',
       type: 'transfer-ships',
       source: 'fleet-home',
       ship: 'Fighter',

@@ -443,23 +443,21 @@ Tillfälliga kategori-, sök- och detaljval skriver inte om sparade spel.
 
 ## Skeppsmotorer
 
-`motorbehov-for-alla-skepp` — **Delvis implementerat**: Colony ship kräver tre
+`motorbehov-for-alla-skepp` — **Fullständigt implementerat**: Colony ship kräver tre
 motorer, Exploration ship två, Transport ship och Fighter en. Rocket engine
-factory forskas fram före alla skeppsfabriker. Riktad verifiering återstår.
+factory forskas fram före alla skeppsfabriker.
 
-`ion-pulse-engine` — **Delvis implementerat**: Ion pulse engine factory forskas
+`ion-pulse-engine` — **Fullständigt implementerat**: Ion pulse engine factory forskas
 fram efter Rocket engine factory. Den kostar 16 Iron, 8 Water och 4 Oil och
 behöver 300 personal. En motor kostar 6 Iron, 2 Water och 2 Oil. Minst en Ion
 pulse engine ger skeppet +1 fart. Flottan följer sitt långsammaste skepp.
-Riktad verifiering av produktion och fart återstår.
 
-`automatisk-motormontering` — **Delvis implementerat**: Motorer monteras från
+`automatisk-motormontering` — **Fullständigt implementerat**: Motorer monteras från
 byggplanetens tillgängliga lager vid byggstart. Ion väljs först och blandning
 är tillåten. Saknade motorer ordnas från tillgängliga lager och därefter
 fabriker med kortast beräknad transporttid, oavsett motortyp. Ion har företräde
 vid lika tid. Redan reserverade delar skyddas. Installerade motorer följer
 skeppet vid flottflytt och sparning; befintliga skepp uppgraderas inte.
-Verifiering av reservationer och mobilvisning återstår.
 
 2026-10-24: Motorreglerna ersätter tidigare oförändrade recept för andra skepp
 än Fighter samt företrädet för lokal motorproduktion framför fjärrlager.

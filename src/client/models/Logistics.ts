@@ -308,6 +308,14 @@ export class Logistics {
     this.componentOrders = this.componentOrders.filter((order) =>
       port.projectExists(order.projectId),
     );
+    // automatisk-motormontering: surplus cargo becomes available to another order.
+    const activeOrders = new Set(this.componentOrders.map((order) => order.id));
+    for (const shipment of this.shipments)
+      if (
+        shipment.componentOrderId &&
+        !activeOrders.has(shipment.componentOrderId)
+      )
+        delete shipment.componentOrderId;
     this.shipments = this.shipments.filter(
       (s) =>
         s.fleetId ||

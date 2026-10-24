@@ -7,6 +7,7 @@ function network(
   options: {
     factories?: BuildType[];
     stock?: number;
+    ionStock?: number;
     active?: boolean;
     localEngine?: boolean;
   } = {},
@@ -20,6 +21,7 @@ function network(
     Water: 1000,
     Oil: 1000,
     'Rocket engine': options.stock ?? 0,
+    'Ion pulse engine': options.ionStock ?? 0,
     'Weapons module': options.stock ?? 0,
   };
   source.population = 10000;
@@ -97,6 +99,7 @@ function thirdSource(game: Game, viaHome = false) {
       {
         ...state.fleets.find((f) => f.id === 'freighters')!,
         id: 'third-carrier',
+        shipUnits: [],
         position: planet.position,
         destination: null,
         routeId: 'route-third',
@@ -553,4 +556,117 @@ describe('streckade-rutter-utan-transporter', () => {
     game.releaseTradeFleet('freighters');
     expect(game.tradeRoutes[0]).toMatchObject({ hasActiveTransport: false });
   });
+});
+
+describe('automatisk-motormontering / automatiska-delorder', () => {
+  it('takes remote Ion stock before manufacturing local Rocket engines', () => {
+    const { game, destination, types } = network({
+      factories: [],
+      stock: 1,
+      ionStock: 1,
+      localEngine: true,
+    });
+    game.scheduleShip(destination, 'Fighter');
+    expect(types(destination)).toEqual(['Fighter']);
+    expect(game.shipments.map((shipment) => shipment.material)).toEqual([
+      'Ion pulse engine',
+      'Weapons module',
+    ]);
+  });
+
+  it('chooses the local Rocket factory before a remote Ion factory', () => {
+    const { game, destination, types } = network({
+      factories: ['Ion pulse engine factory', 'Weapons module factory'],
+      localEngine: true,
+    });
+    game.scheduleShip(destination, 'Fighter');
+    expect(types(destination)).toEqual(['Rocket engine', 'Fighter']);
+    expect(types()).toEqual(['Weapons module']);
+  });
+
+  it('chooses Ion when both motor factories have the same transport time', () => {
+    const { game, destination, types } = network({
+      factories: [
+        'Rocket engine factory',
+        'Ion pulse engine factory',
+        'Weapons module factory',
+      ],
+    });
+    game.scheduleShip(destination, 'Fighter');
+    expect(types()).toEqual(['Ion pulse engine', 'Weapons module']);
+  });
+
+  it('delivers a remote Ion physically and preserves its speed bonus across reinforcement', () => {
+    const { game, destination, turn } = network({
+      factories: [],
+      stock: 1,
+      ionStock: 1,
+    });
+    const fleet = game.createFleet();
+    game.scheduleShip(destination, 'Fighter', fleet.id);
+    for (
+      let year = 0;
+      year < 8 && game.planetSnapshot(destination)!.projects.length;
+      year++
+    )
+      turn();
+    expect(game.fleet(fleet.id)!.speed).toBe(4);
+    const upgraded = game.fleet(fleet.id)!.shipUnits![0]!;
+    game.transferShips(fleet.id, 'Fighter', 1, 'fleet-home', upgraded.id);
+    for (
+      let year = 0;
+      year < 8 && game.fleetSnapshots().some((f) => f.joinFleetId);
+      year++
+    )
+      turn();
+    expect(game.fleet('fleet-home')!.shipUnits).toContainEqual(upgraded);
+    const saved = game.exportState();
+    expect(Game.restore(saved).exportState()).toEqual(saved);
+  });
+
+  it('chooses nearer Rocket stock over farther Ion stock', () => {
+    const state = thirdSource(network({ factories: [], stock: 1 }).game);
+    state.colonies[2]![1].stock['Ion pulse engine'] = 1;
+    state.colonies[2]![1].stock['Rocket engine'] = 0;
+    const game = Game.restore(state);
+    game.scheduleShip(game.galaxy.systems[0]!.planets[1]!, 'Fighter');
+    expect(
+      game
+        .exportState()
+        .componentOrders!.find((order) => order.component !== 'Weapons module'),
+    ).toMatchObject({ source: 'sol-0', component: 'Rocket engine' });
+  });
+});
+
+it('automatisk-motormontering: reuses motors still in transit after local Ion completes their original ship', () => {
+  const initial = network({ factories: [], stock: 1 });
+  initial.game.scheduleShip(initial.destination, 'Fighter');
+  const state = initial.game.exportState();
+  state.colonies[1]![1].stock['Ion pulse engine'] = 1;
+  state.colonies[1]![1].stock['Weapons module'] = 1;
+  for (const shipment of state.shipments) {
+    shipment.fleetId = 'freighters';
+    shipment.committed = true;
+    state.colonies[0]![1].stock[shipment.resource] -= shipment.amount;
+  }
+  const game = Game.restore({
+    ...state,
+    fleets: state.fleets.map((fleet) =>
+      fleet.id === 'freighters'
+        ? {
+            ...fleet,
+            position: { q: 8, r: 0 },
+            destination: state.world.systems[0]!.planets[1]!.position,
+          }
+        : fleet,
+    ),
+  });
+  for (const frame of game.startTurn()) game.applyFrame(frame);
+  game.finishTurn();
+  const destination = game.galaxy.systems[0]!.planets[1]!;
+  expect(game.planetSnapshot(destination)!.projects).toHaveLength(0);
+  expect(game.shipments).toHaveLength(2);
+  expect(() => game.scheduleShip(destination, 'Fighter')).not.toThrow();
+  expect(game.shipments).toHaveLength(2);
+  expect(game.planetSnapshot(game.galaxy.homePlanet)!.projects).toHaveLength(0);
 });
