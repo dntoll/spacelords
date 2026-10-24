@@ -23,7 +23,18 @@
 - Knyt automatiska enhetstester till varje beteendekrav med kravets läsbara namn.
   Varje test ska skydda mot en kategori av fel, inte bara upprepa implementationen.
 - Dela testerna i en snabb svit med högst 20 sekunders total exekveringstid och en
-  utökad svit som får ta längre tid. Kör båda i GitHub CI.
+  utökad svit som får ta längre tid. Båda finns i GitHub CI: snabbkontroller vid
+  push/PR, hela sviten först vid begärt sluttest med explicit källrevision.
+- Normalläge (`snabb-mobilpublicering`): prioritera mobil, kör
+  `npm run deploy:quick` efter committad ändring på arbetsbranch och låt användaren
+  testa manuellt på mobilen. En vanlig ändringsbeställning ger tillstånd till
+  denna publicering. Kör riktade regressionstester för ändrat beteende; kör inte
+  hela plattformsmatrisen eller upprepa godkända kontroller utan nytt skäl.
+- Sluttest (`sluttest-fore-merge`) görs när användaren ber om det: starta hela
+  CI-sviten för exakt aktuell källrevision, redovisa resultat och fråga därefter
+  om merge till källrepots `main`. Merge kräver godkänt sluttest och separat ja.
+  Ändrad revision eller konfliktlösning kräver nytt sluttest. Vid rättning:
+  snabbtest, ny publicering och ny manuell test innan nytt begärt sluttest.
 - Vid en bugg: skriv först ett regressionstest, kör det och verifiera att det
   misslyckas av rätt orsak, och rätta därefter felet.
 - Skriv även tester före annan implementation när det är lämpligt.
@@ -76,5 +87,9 @@
   länkar till appen från den befintliga webbplatsen.
 - Båda repona och allt klientinnehåll är publika. Lägg aldrig hemligheter i kod,
   dokumentation, byggfiler, webbläsarvariabler eller loggar.
-- Att förbereda ett bygge eller uppdatera instruktionen innebär inte att
-  driftsätta. Publicera först när användaren beställer en driftsättning.
+- Normalläget innebär beställd driftsättning efter vanliga ändringsbeställningar,
+  om användaren inte uttryckligen avstår. Att enbart förbereda ett bygge eller
+  redigera driftsättningsinstruktionen innebär inte att publicera.
+- Publicering till webbplatsrepots `main` är separat från merge till källrepots
+  `main`. Samma redan publicerade revision publiceras inte igen för att sluttest
+  lyckats. Fråga fortsatt inför varje inkompatibel ändring av sparade spel.

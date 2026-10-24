@@ -100,7 +100,7 @@ fortsatt av befintlig GitHub CI.
 | `meningsfulla-tester`    | Fullständigt implementerat | Knyt beteendekrav till enhetstester som skyddar mot felkategorier. Använd andra relevanta kontroller för verktygs- och processkrav.                                                                              | Kravkopplingen nedan och kodgranskning                     |
 | `snabb-testsvit`         | Fullständigt implementerat | Den snabba svitens totala exekvering får ta högst 20 sekunder, inklusive testverktygets start. Avbryt och rapportera fel om gränsen överskrids.                                                                  | `npm test`, tidsbegränsad testprocess                      |
 | `utokad-testsvit`        | Fullständigt implementerat | Ha en separat svit för tester som får ta längre tid, HTTP-integration samt riktiga browserkontroller mot produktionsbygget. CI-jobbet får ta högst 20 minuter inklusive installation av webbläsare.              | `npm run test:extended`                                    |
-| `tester-i-github`        | Fullständigt implementerat | Kör lint, typkontroll, formatkontroll, båda testsviterna och bygge vid push och pull request i GitHub Actions.                                                                                                   | `.github/workflows/ci.yml`, `npm run check` lokalt         |
+| `tester-i-github`        | Fullständigt implementerat | Kör snabbkontroller, Pages-bygge och mobilröktest vid push/PR. Kör hela sviten i GitHub Actions vid begärt sluttest för explicit källrevision.                                                                   | `.github/workflows/ci.yml`, `npm run check` lokalt         |
 | `regressionstest-forst`  | Fullständigt implementerat | Reproducera buggar med ett misslyckat test före rättningen. Skriv även tester först för annan implementation när lämpligt.                                                                                       | Commit- och arbetsgranskning                               |
 | `mvc-arkitektur`         | Fullständigt implementerat | Använd MVC på server och klient. Vyer hanterar plattformens in-/utdata, får läsa modellen och skickar ändringsavsikter till controllers. Modeller är objektorienterade med hög sammanhållning och låg koppling.  | Enhets- och typkontroll, arkitekturgranskning              |
 | `plantuml-domanmodell`   | Fullständigt implementerat | Underhåll problemdomänens klasser och relationer i PlantUML. Lägg till domänbegrepp först när krav motiverar dem.                                                                                                | `docs/domain-model.puml`, domängranskning                  |
@@ -200,7 +200,7 @@ verktygskontroller, CI och granskning enligt tabellen.
 | `pages-underkatalog`         | Fullständigt implementerat | Klienten ska kunna publiceras som statiska filer i `spacelords/` i `dntoll/dntoll.github.io`, på `https://curiousengineerstudio.se/spacelords/`. Alla klientresurser använder rätt basadress. Node-servern ingår inte i Pages-driften. | `npm run build:pages`, integrationstestet `pages-underkatalog` i den utökade sviten |
 | `bevara-befintlig-webbplats` | Fullständigt implementerat | En driftsättning får endast ändra `spacelords/`. Bevara andra projekt, startsidan, navigationen, rotfiler, domän och befintlig Pages-konfiguration. Undvik samtidighetskonflikter med andra publiceringar.                             | Avgränsad diff i målrepot och kontroll före/efter publicering enligt instruktionen  |
 | `hemlighetsfri-publicering`  | Fullständigt implementerat | Båda repona och byggresultatet är publika. Publicera inga hemligheter i filer, byggvariabler eller loggar. Eventuell framtida CI-autentisering hålls separat från källkod och klientbygge.                                             | Granskning av bygginnehåll, staged diff och eventuell framtida CI-konfiguration     |
-| `dokumenterad-driftsattning` | Fullständigt implementerat | Bevara en verifierbar instruktion för bygge, avgränsad publicering, kontroll och återställning. Instruktionen innebär inte automatisk publicering.                                                                                     | `docs/deployment.md` och hänvisning i `AGENTS.md`                                   |
+| `dokumenterad-driftsattning` | Fullständigt implementerat | Bevara en verifierbar instruktion för bygge, avgränsad publicering, kontroll och återställning. Normalläget automatiserar lokal publicering; CI publicerar inget.                                                                      | `docs/deployment.md` och hänvisning i `AGENTS.md`                                   |
 
 Produktkravet `direktatkomst-utan-lankar` verifieras genom att driftsättningsdiffen
 bara omfattar appens egen katalog. Startsida och navigation ska inte ändras.
@@ -384,3 +384,33 @@ väntan och fel, sparning och hela produktionskedjan. Snabbsviten behåller
   terraforming, planet-/forskningsvyer och flottflödet på samtliga fyra profiler.
   CI-jobbets gräns är fortsatt 20 minuter; denna lokala körning verifierar
   inte CI:s exekveringstid.
+
+## Snabb mobilpublicering och sluttest
+
+Beslut 2026-10-24: `snabb-mobilpublicering` ersätter tidigare krav på fullständigt
+`check` inför varje driftsättning. `tester-i-github` behåller sitt namn men
+ersätter kravet på långsam svit vid varje push/PR med snabbkontroller vid push/PR
+och manuellt startat sluttest för exakt källrevision. Båda sviterna finns kvar i
+GitHub CI; 20-sekundersgränsen gäller fortsatt hela snabbsviten och sluttestjobbet
+har fortsatt högst 20 minuter inklusive installation.
+
+- `snabb-mobilpublicering` — **Delvis implementerat**: `check:quick` kontrollerar
+  kvalitet, typer, snabbsvit, Pages-bygge, publiceringsskydd, Pages-integration och
+  kort mobiltest i Chromium och WebKit. `deploy:quick` kräver ren arbetsbranch,
+  pushar exakt källrevision och publicerar enbart `spacelords/` via isolerad
+  checkout och vanlig push. Den sparar rapport och kontrollerar Pages, livefiler
+  och mobilnavigation. Verklig snabbpublicering och CI återstår att verifiera.
+- `sluttest-fore-merge` — **Delvis implementerat**: hela sviten är manuellt
+  startbar i CI med låst källrevision. Separat ja krävs efter godkänt sluttest
+  innan merge till källrepots `main`. Första aktivering på defaultbranch och
+  verklig manuell CI-körning återstår; införandeundantaget finns i
+  `docs/deployment.md`. Inga branchskydd eller Pages-inställningar ändras.
+- `avstamning-sparkompatibilitet` förtydligas: användaren accepterar förlust av
+  sparningar efter ny fråga inför varje inkompatibel ändring. Ingen generell
+  rensning införs med snabbflödet.
+
+Automatiska verktygskontroller i `tests/tooling/` använder tillfälliga Git-repon
+för avgränsning, okända filer, symboliska länkar, revisioner, avbrutna kontroller
+och samtidiga publiceringar. Mobiltestet använder kravnamnen
+`snabb-mobilpublicering`, `viewport-game-layout` och `sparat-spel`. Processkravet
+på begäran och mergegodkännande verifieras genom arbetsregler och granskning.

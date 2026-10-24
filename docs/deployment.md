@@ -1,231 +1,126 @@
 # Driftsättning av Spacelords
 
-Denna instruktion ska läsas inför varje driftsättning. Den beskriver en framtida
-publicering; att instruktionen finns eller att CI bygger appen publicerar inget.
+Läs instruktionen inför varje driftsättning. Arbetsflödet nedan gäller från
+2026-10-24 och ersätter kravet på fullständigt `check` inför varje publicering.
+Äldre leveransanteckningar längre ned beskriver det dåvarande flödet.
 
-## Mål och nuläge
+## Normalläge: ändring, snabbtest, publicering, manuell mobiltest
 
-- Publik appadress: `https://curiousengineerstudio.se/spacelords/`. Adressen utan
-  avslutande snedstreck ska leda till katalogens startsida; verifiera detta efter
-  den första publiceringen.
-- Målrepo: `dntoll/dntoll.github.io`, katalogen `spacelords/` i repots rot.
-- Källa: `dntoll/spacelords`. Publicera **endast innehållet i `dist/pages/`**.
-- 2026-10-17: den publika webbplatsen visar Curious Engineer Studio och Machine
-  Bloom. Målrepots README anger GitHub Pages från `main`. Rotens `CNAME` innehåller
-  `curiousengineerstudio.se`, och `.nojekyll` finns redan. Andra appar har egna
-  underkataloger. Ingen `spacelords/` syntes i den granskade lokala katalogstrukturen.
-- README och publika filer har granskats; Pages-inställningarna har inte ändrats
-  eller administrativt verifierats. Kontrollera aktuell publiceringskälla
-  läsande inför första driftsättningen. Om den avviker, utred innan publicering.
+En vanlig ändringsbeställning ger tillstånd att publicera den committade
+arbetsbranchen, om användaren inte avstår. Källrepots `main` ändras först efter
+separat sluttest och godkännande. Prioritera mobil; användaren testar sedan på
+sin telefon och kan beställa ändringar eller mer omfattande tester.
 
-Källor till nuläget:
-[webbplatsen](https://curiousengineerstudio.se/),
-[målrepots README](https://github.com/dntoll/dntoll.github.io/blob/main/README.md),
-[CNAME](https://github.com/dntoll/dntoll.github.io/blob/main/CNAME).
-Nuläget är daterat, inte en garanti för framtida konfiguration.
-
-## Avgränsning som alltid gäller
-
-Kraven `pages-underkatalog`, `bevara-befintlig-webbplats`,
-`direktatkomst-utan-lankar` och `hemlighetsfri-publicering` innebär:
-
-- Endast filer under `spacelords/` får läggas till, ersättas eller tas bort i
-  målrepot. Kopiera aldrig ett byggresultat till målrepots rot.
-- Bevara startsidan, navigationen, `MachineBloom/`, `Defence-Grid/`, `assets/`,
-  rotens `CNAME`, `.nojekyll` och alla andra befintliga filer oförändrade.
-- Skapa inga länkar, menyer eller reklam för Spacelords på den befintliga sajten.
-- Ändra inte DNS, domän, publiceringsbranch eller Pages-inställningar. Lägg inte
-  till ett workflow som ersätter hela den befintliga Pages-webbplatsen.
-- Publicera inte `dist/server/`, `src/`, `node_modules/`, `.env`, Git-metadata,
-  dokumentation eller autentiseringsmaterial.
-- Använd en ren, separat checkout av målrepot. Ändra inte någon annans pågående
-  arbete eller en lokal checkout med osparade ändringar.
-
-Ingen ny `CNAME` behövs för en underkatalog på den befintliga domänen. URL:en får
-sin sökväg från katalogen `spacelords/`.
-
-## 1. Bygg och verifiera i källrepot
-
-Använd Node.js 24 och kör från roten i `spacelords`:
+Använd Node.js 24. Installera beroenden med `npm ci` när låsfilen ändrats eller
+beroenden saknas. Installera webbläsarna vid behov:
 
 ```sh
-npm ci
-npm run check
+npx playwright install --with-deps chromium webkit
 ```
 
-`check` kör båda testsviterna och bygger både den lokala Node-versionen och
-Pages-klienten. För att enbart upprepa Pages-bygget används:
+Skriv kravkopplade tester för ändrat beteende. Vid bugg ska regressionstestet
+först misslyckas av rätt orsak. Kör relevanta kontroller före commit och committa
+bara avsedda ändringar på en arbetsbranch. Publicera sedan med:
 
 ```sh
-npm run build:pages
+npm run deploy:quick
 ```
 
-Det kommandot typkontrollerar och bygger med Vites `base=/spacelords/` till
-`dist/pages/`, separat från Node-bygget i `dist/client/` och `dist/server/`.
-Publiceringsenheten är `dist/pages/index.html` och dess klientresurser, vilka
-hamnar direkt i `spacelords/index.html` och `spacelords/assets/` på målwebbplatsen.
-Skapa inte en extra nästlad katalog som `spacelords/pages/`.
+Kommandot kräver ren arbetsbranch, inklusive inga ocommittade nya filer.
+Det kör `check:quick`: formatkontroll, ESLint, snabbsviten, en typkontroll,
+Pages-bygge, automatiska publiceringsskydd, Pages-integration och korta
+mobiltester i Chromium och WebKit. Enhetstestsviten har fortsatt högst
+20 sekunders total exekveringstid; hela flödet har ingen sådan tidsgräns.
+Mobiltesterna använder isolerad webbläsarlagring och rör inte spelarens sparningar.
 
-Integrationstestet `pages-underkatalog` serverar det faktiska bygget under
-`/spacelords/` och verifierar HTML, JavaScript, CSS, basadresser och innehållstyper.
-Det körs även i befintlig GitHub CI och kräver ingen publiceringsbehörighet.
-Testet bevisar att bygget fungerar i underkatalogen, inte att en livepublicering
-har genomförts eller att målrepots övriga innehåll är oförändrat.
+Publiceringsskriptet:
 
-GitHub Pages serverar statiska filer och kör inte Node/Express. Klienten får
-inte förutsätta att `/api/health` eller andra API-adresser finns där. Nuvarande
-startsida använder inget API. Ett framtida serverbehov kräver ett separat
-driftbeslut. Om klientrouting senare införs måste den hantera denna basadress
-och Pages begränsningar; lägg inte en global `404.html` i målrepots rot.
+1. Fryser och kontrollerar källrevisionen och sparar det testade klientbygget.
+2. Pushar den exakta källrevisionen till arbetsbranchen med befintlig SSH.
+3. Klonar webbplatsrepots `main` till en separat tillfällig katalog och skapar
+   en deploybranch. Okända filer, fel appinnehåll och symboliska länkar avvisas.
+4. Ersätter endast `spacelords/`, lägger till `deployment.json` med
+   källrevision och kontrollsummor, granskar diffens avgränsning och committar.
+5. Hämtar aktuell `origin/main`. Andra projekts samtidiga ändringar bevaras med
+   rebase; ändrad `spacelords/` avbryter publiceringen för granskning.
+6. Använder dokumenterad vanlig push från den granskade deploybranchen till
+   webbplatsrepots `main`, med befintlig SSH. Ingen force-push eller ändring av
+   branchskydd görs. Avvisad push kräver ny granskning.
+7. Följer Pages-körningen för deployrevisionen, kontrollerar alla livefilers
+   byteinnehåll, HTML/JS/CSS-typer och omdirigeringen `/spacelords`.
+8. Kontrollerar att startsidan och tidigare kontrolladresser är oförändrade och
+   kör en kort mobilkontroll mot liveadressen i båda webbläsarmotorerna.
 
-## 2. Förbered en isolerad publiceringsändring
+Kompakt rapport med revisioner, tider, filkontrollsummor, Pages-länk och utfall
+finns i `dist/deployments/<revision>-<tid>/report.json`. Stegloggar ligger bredvid,
+kontrolloggar i `dist/checks/`. Dessa filer är ignorerade av Git. Läs fullständiga
+loggar, spår och skärmbilder vid fel; läs inte om lyckade körningar utan skäl.
+Vid avbrott efter push kan publicering redan pågå: kontrollera rapporten och
+Pages innan du försöker igen. Ett misslyckat livetest innebär inte återställning.
 
-Gör dessa steg först vid en beställd driftsättning. Följande Bash-exempel bygger
-på installerade `git`, `rsync` och Node.js. Autentisering sköts av befintlig
-credential manager; skriv aldrig in en token i kommandon eller remote-URL.
+`npm run check:quick` kör samma förkontroller utan publicering. Dela resultat
+mellan körningar bara när källrevision och byggresultat är oförändrade. GitHub
+kör snabbkontroller vid push/PR, men lokal publicering väntar inte på en
+upprepning av samma kontroller i CI. GitHub CI publicerar inget.
 
-Från källrepots rot, efter ett godkänt bygge och med alla avsedda källändringar
-committade:
+## Begärt sluttest och merge
 
-```sh
-spacelords_build="$(pwd)/dist/pages"
-release_id="$(git rev-parse --short HEAD)"
-pages_checkout="$(mktemp -d)/dntoll.github.io"
-git clone --branch main --single-branch https://github.com/dntoll/dntoll.github.io.git "$pages_checkout"
-git -C "$pages_checkout" switch -c "codex/deploy-spacelords-$release_id"
-```
+När användaren ber om sluttest startas workflowet `CI` manuellt i GitHub Actions
+med `revision` satt till hela aktuell käll-SHA och workflowets branch satt till
+arbetsbranchen. Jobbet `Final tests` checkar ut och verifierar denna revision och
+kör `npm run check`: kvalitetskontroller, snabbsvit, båda byggena, alla
+integrationstester och hela webbläsarsviten. Matrisen är telefon Chromium,
+telefon WebKit, surfplatta WebKit och dator Chromium. Jobbgränsen är fortsatt
+20 minuter inklusive installation. Loggar och felunderlag sparas som artefakter.
 
-Kontrollera först att `dist/pages/index.html` finns och att målrepots aktuella
-struktur och publiceringskälla fortfarande stämmer. Om `spacelords/` redan
-finns: granska att katalogen tillhör denna app och inte har ändrats av någon
-annan. Avbryt vid oväntat innehåll eller symboliska länkar i målkatalogen.
+`workflow_dispatch` blir tillgängligt när workflowändringen finns på GitHubs
+defaultbranch. Vid införandet måste denna första version därför sluttestas
+med `npm run check` lokalt och CI:s tillgängliga kontroller redovisas innan
+användaren tillfrågas om första merge. Detta undantag gäller enbart införandet;
+merge får inte ske automatiskt för att aktivera workflowet.
 
-Kopiera därefter endast appens katalog. Snedstrecken och det fasta
-`/spacelords/` i destinationen är avsiktliga. `--delete` tar bort gamla byggfiler
-enbart i denna katalog och får aldrig riktas mot målrepots rot.
+Efter godkänt sluttest redovisas testad SHA, CI-länk och relevanta överhoppade
+fall. Fråga därefter om merge till källrepots `main`. Ett separat ja krävs för
+den testade revisionen. Kontrollera åter aktuell branchrevision, CI-resultat och
+att inga konfliktlösningar eller andra ändringar tillkommit före merge.
+Ändrad källrevision kräver nytt sluttest. Samma godkända fullständiga körning
+behöver inte upprepas lokalt.
 
-```sh
-mkdir -p "$pages_checkout/spacelords"
-rsync --archive --delete -- "$spacelords_build/" "$pages_checkout/spacelords/"
-git -C "$pages_checkout" add -- spacelords
-git -C "$pages_checkout" diff --cached --name-status
-git -C "$pages_checkout" diff --cached --stat
-git -C "$pages_checkout" diff --cached --check
-```
+Om fel upptäcks: regressionstest, rättning, snabbtest och ny publicering.
+Låt användaren testa manuellt igen och invänta ny begäran om sluttest. Fråga vid
+behov om förändrat beteende eller större omfattning. En oförändrad, redan
+publicerad revision publiceras inte igen enbart för att sluttestet lyckats.
 
-Varje ändrad sökväg måste börja med `spacelords/`. Granska även själva staged
-innehållet före commit: det ska enbart vara de byggda publika klientfilerna.
-Om en enda annan sökväg har ändrats, avbryt och utred; inkludera den aldrig för
-att få igenom en driftsättning. Använd inte `git add .` eller global rensning.
+## Avgränsning och sparade spel
 
-Spara en tydlig, separat deploycommit med källrevisionen:
-
-```sh
-git -C "$pages_checkout" commit -m "deploy: publish spacelords $release_id"
-```
-
-Förhandsgranska lokalt genom att servera hela denna isolerade checkout med en
-statisk webbserver och öppna `/spacelords/`. Kontrollera också att `/` och de
-befintliga projekten fortfarande visar samma innehåll. Lägg inte in några länkar
-för att hitta appen.
-
-## 3. Publicera genom målrepots befintliga flöde
-
-Publicering sker när den avgränsade ändringen når den befintliga
-publiceringsbranchen `main`. En lokal commit eller en PR är inte i sig en
-livepublicering. Pusha arbetsbranchen och skapa en PR till målrepots `main` när
-driftsättning är beställd. Före merge:
-
-1. Hämta aktuell `origin/main` och uppdatera arbetsbranchen vid behov. Bevara
-   andra projekts nytillkomna commits. Om `spacelords/` har ändrats under tiden,
-   bygg från avsedd källrevision igen och granska konflikten.
-2. Granska PR-diffen igen: den får enbart omfatta `spacelords/`. Gör ingen
-   force-push till `main` och ersätt aldrig dess historik.
-3. Spara målets tidigare revision och den granskade deploycommitten för eventuell
-   återställning. Kontrollera några befintliga publika adresser före publicering.
-4. Mergea via målrepots vanliga process när granskningen är klar. Följ dess
-   befintliga Pages-körning till lyckad publicering.
-
-### Om PR-integrationen saknar behörighet
-
-Vid en uttryckligen beställd driftsättning kan en granskad arbetsbranch
-publiceras med en vanlig fast-forward-push till `main` om befintlig
-SSH-autentisering och målrepots regler tillåter det. Detta är reservvägen när
-PR inte kan skapas genom den anslutna GitHub-integrationen:
-
-1. Hämta aktuell `origin/main` och kontrollera att den är en förälder till den
-   granskade deploycommitten. Om andra commits har tillkommit, uppdatera först
-   arbetsbranchen och granska diffen igen.
-2. Verifiera att diffen från aktuell `origin/main` enbart omfattar `spacelords/`.
-3. Pusha den granskade arbetsbranchens `HEAD` till `main` med en vanlig push,
-   aldrig `--force`. Om pushen avvisas, utred och granska igen; kringgå inte
-   branchskydd eller ändra behörigheter.
-4. Följ befintlig Pages-körning och gör samma kontroller efter publicering.
-
-Arbeta och committa fortsatt på arbetsbranchen. Reservvägen ersätter bara
-PR-mergen, inte avgränsningen, granskningen eller verifieringen. Läsning via
-HTTPS och push via en befintlig SSH-inloggning kan kombineras; lägg aldrig
-nyckelmaterial eller tokens i remote-URL eller dokumentation.
-
-Den här instruktionen inför ingen ny deployment-action och behöver inga
-incheckade autentiseringsuppgifter. Om automatisk överföring senare beställs:
-håll den begränsad till samma katalog, hantera samtidiga uppdateringar och lägg
-autentiseringen i GitHub Actions Secrets. Ett repos `GITHUB_TOKEN` räcker inte
-för skrivning till ett annat repo, och pushar med `GITHUB_TOKEN` utlöser inte
-branchbaserade Pages-byggen. Välj då en separat, minimalt behörig autentisering
-och verifiera den befintliga publiceringstriggern. Återanvänd inte andra projekts
-hemligheter och inför inte automatisk publicering som en del av denna guide.
-
-## 4. Kontrollera efter publicering
-
-- Öppna `https://curiousengineerstudio.se/spacelords/` och även adressen utan
-  avslutande snedstreck. Verifiera appen och att JavaScript/CSS hämtas under
-  `/spacelords/assets/` utan 404 eller begäran mot rotens `/assets/`.
-- Verifiera att företagsstartsidan och befintliga projekts tidigare kontrollerade
-  adresser är oförändrade. Diffen ska fortfarande bara omfatta `spacelords/`.
-- Kontrollera att inga nya navigationslänkar har skapats. Direktadressen fungerar
-  ändå. Frånvaron av länkar är inte åtkomstkontroll: innehållet är publikt.
-- Anteckna källrevision, deploycommit och utfall utan tokens, miljödumpar eller
-  annan känslig information.
-
-Om ett oförändrat gammalt innehåll visas, kontrollera först Pages-körningen och
-webbläsarens cache. Försök inte lösa det genom att ändra domän eller DNS.
+- Publik adress: `https://curiousengineerstudio.se/spacelords/`.
+- Källa: `dntoll/spacelords`. Publicera enbart klientinnehållet i `dist/pages/`
+  samt skriptets ofarliga revisionsmetadata till `spacelords/` i
+  `dntoll/dntoll.github.io`. Node/Express körs inte i GitHub Pages.
+- Bevara alla andra kataloger, startsida, navigation, rotens `CNAME`, `.nojekyll`,
+  DNS och Pages-inställningar. Skapa inga länkar till appen på webbplatsen.
+- Publicera aldrig serverbygge, källkod, dokumentation, Git-metadata,
+  autentiseringsmaterial eller miljöfiler. Publika filnamn tillåts uttryckligen i
+  skriptet; utöka granskningen när nya typer av klientresurser införs.
+- Befintlig SSH och credential manager används. Inga nya CI-hemligheter behövs.
+  Ett repos `GITHUB_TOKEN` ger inte skrivbehörighet till ett annat repo.
+- `avstamning-sparkompatibilitet` gäller fortsatt: fråga inför varje framtida
+  inkompatibel sparändring och förklara vad som raderas eller ersätts.
+  Normalläget innebär inte ett generellt tillstånd att radera sparningar.
+- Publicering till webbplatsrepots `main` och merge till källrepots `main` är
+  två separata åtgärder. Det senare kräver godkänt sluttest och separat ja.
 
 ## Återställning
 
-Skapa en ny branch från målrepots aktuella `main`. Revertera den separata
-deploycommitten om den enbart ändrade `spacelords/` och inga senare uppdateringar
-av samma katalog riskerar att gå förlorade. Annars återställ just `spacelords/`
-från den avsedda tidigare revisionen. Vid första publiceringen kan återställningen
-vara att ta bort just appens nya katalog.
+Rapporten sparar webbplatsrepots tidigare revision och deploycommit. Skapa en
+ny branch från aktuell `main` i en separat checkout. Återställ enbart
+`spacelords/` från den tidigare revisionen, eller revertera deploycommitten om
+inga senare ändringar av katalogen riskerar att gå förlorade. Granska att diffen
+bara omfattar appen, committa och publicera med vanlig push enligt samma
+avgränsning. Följ Pages och verifiera liveadressen. Återställ aldrig hela
+webbplatsrepot och använd inte force-push.
 
-Granska att återställningsdiffen enbart omfattar `spacelords/` och publicera via
-samma PR- och Pages-flöde. Återställ aldrig hela webbplatsens gamla revision,
-använd inte `reset --hard` eller force-push på `main`: andra projekt kan ha
-publicerats efter Spacelords.
-
-## Offentliga filer och hemligheter
-
-- Båda repona är publika. Förvara inga lösenord, tokens, privata nycklar,
-  anslutningssträngar eller privata personuppgifter i dem, inte heller i exempel.
-- Allt i klientbygget kan läsas av besökaren. `VITE_*`-variabler bakas in i
-  klientkoden och får aldrig innehålla hemligheter. GitHub Secrets gör inte ett
-  värde hemligt om det injiceras i en publik klientbundle.
-- Publicera inget annat än granskade klientfiler. Håll sourcemaps avstängda för
-  Pages-bygget enligt Vites standard. Kontrollera också framtida statiska
-  `public/`-filer, eftersom de kan kopieras till bygget utan bearbetning.
-- Skriv inte ut tokens, fullständig miljö eller credential-konfiguration i loggar.
-  Om en hemlighet skulle hamna i en publik commit, återkalla/rotera den direkt;
-  att bara radera den i en senare commit räcker inte.
-
-## Verifiering vid införandet
-
-2026-10-17 passerade `npm run check`: fem enhetstester och fem integrationstester,
-inklusive `pages-underkatalog`, samt bygge, typkontroll, lint och formatering.
-En lokal kopieringsrepetition mot en tillfällig kopia av målrepots granskade
-revision `75622c6` bevarade samtliga 281 befintliga webbplatsfiler. Bara
-`spacelords/` ändrades; även borttagning av en simulerad gammal byggfil hölls
-inom den katalogen. Det riktiga målrepot och den publicerade sajten ändrades inte.
+## Tidigare leveranser
 
 ## Första driftsättningen: 2026-10-17
 
