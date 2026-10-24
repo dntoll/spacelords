@@ -13,6 +13,16 @@ test('byggnadsantal-lokalt-och-globalt: Build selection counts completed buildin
   await page
     .getByRole('button', { name: 'Build building at site 1', exact: true })
     .click();
+  const row = page.getByRole('button', {
+    name: 'Show Research station',
+    exact: true,
+  });
+  const compact = row.locator('.building-list-inventory');
+  await expect(page.locator('.catalog-details')).toHaveCount(0);
+  await expect(compact).toHaveText('On Tellus: 0 · All your planets: 0');
+  await expect(row).toHaveAccessibleDescription(
+    'On Tellus: 0 · All your planets: 0',
+  );
   await page
     .getByRole('button', { name: 'Show Research station', exact: true })
     .click();
@@ -23,6 +33,7 @@ test('byggnadsantal-lokalt-och-globalt: Build selection counts completed buildin
   await expect(inventory).toContainText('On Tellus');
   await expect(inventory).toContainText('All your planets');
   await expect(inventory.locator('dd')).toHaveText(['0', '0']);
+  await expect(compact).toHaveText('On Tellus: 0 · All your planets: 0');
   await page
     .getByRole('button', { name: 'Show Research station', exact: true })
     .click();
@@ -35,6 +46,7 @@ test('byggnadsantal-lokalt-och-globalt: Build selection counts completed buildin
   await page
     .getByRole('button', { name: 'Build building at site 2', exact: true })
     .click();
+  await expect(compact).toHaveText('On Tellus: 0 · All your planets: 0');
   await page
     .getByRole('button', { name: 'Show Research station', exact: true })
     .click();
@@ -48,6 +60,10 @@ test('byggnadsantal-lokalt-och-globalt: Build selection counts completed buildin
   await page
     .getByRole('button', { name: 'Build building at site 2', exact: true })
     .click();
+  await expect(compact).toHaveText('On Tellus: 1 · All your planets: 1');
+  await page.screenshot({
+    path: testInfo.outputPath('compact-building-inventory.png'),
+  });
   await page
     .getByRole('button', { name: 'Show Research station', exact: true })
     .click();

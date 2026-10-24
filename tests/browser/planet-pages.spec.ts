@@ -186,10 +186,9 @@ test('byggkategorier / symbolbaserade-kataloger: icon categories and compact lis
   await categories
     .getByRole('button', { name: 'Shipyards', exact: true })
     .click();
-  await expect(page.locator('.catalog-item-button')).toHaveText([
-    'Exploration ship factory',
-    'Fighter factory',
-  ]);
+  await expect(
+    page.locator('.catalog-item-button > span:first-of-type'),
+  ).toHaveText(['Exploration ship factory', 'Fighter factory']);
   await page.screenshot({
     path: testInfo.outputPath('building-catalog-list.png'),
   });
@@ -218,17 +217,16 @@ test('byggkategorier / symbolbaserade-kataloger: icon categories and compact lis
   await categories
     .getByRole('button', { name: 'Components', exact: true })
     .click();
-  await expect(page.locator('.catalog-item-button')).toHaveText([
-    'Rocket engine factory',
-    'Weapons module factory',
-  ]);
+  await expect(
+    page.locator('.catalog-item-button > span:first-of-type'),
+  ).toHaveText(['Rocket engine factory', 'Weapons module factory']);
   await expect(page.locator('.catalog-item svg')).toHaveCount(2);
   await page
     .getByRole('searchbox', { name: 'Search buildings' })
     .fill('weapons');
-  await expect(page.locator('.catalog-item-button')).toHaveText([
-    'Weapons module factory',
-  ]);
+  await expect(
+    page.locator('.catalog-item-button > span:first-of-type'),
+  ).toHaveText(['Weapons module factory']);
   await page.getByRole('searchbox', { name: 'Search buildings' }).fill('');
   await page
     .getByRole('button', { name: 'Show Rocket engine factory', exact: true })

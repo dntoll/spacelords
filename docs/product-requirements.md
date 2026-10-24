@@ -13,8 +13,9 @@ För delvisa krav anges vad som återstår. Exempelvärden är inte beslut om ba
 ## Första spelgrunden
 
 `byggnadsantal-lokalt-och-globalt` — **Fullständigt implementerat**: Varje
-byggnadstyp i Build selection visar Already built med antal på aktuell planet
-och totalt på alla spelarens planeter, inklusive den aktuella. Noll visas när
+byggnadstyp i Build selection visar antal direkt i den kompakta listan, både
+på aktuell planet och totalt på alla spelarens planeter, inklusive den aktuella.
+Detaljpanelens Already built visar samma värden. Noll visas när
 byggnadstypen saknas. Befintliga byggnader räknas även om de tillfälligt står
 stilla eller väntar på rivning; köade projekt räknas först när de är färdiga.
 
@@ -440,3 +441,7 @@ behåller sin översikt över varje planets första projekt.
 ständigt utfällda byggkorten i `visa-byggalternativ` och rullgardinsvalen i
 `planetgemensamt-produktval`. Den kompakta byggkön och alla orderregler behålls.
 Tillfälliga kategori-, sök- och detaljval skriver inte om sparade spel.
+
+2026-10-24: `byggnadsantal-lokalt-och-globalt` omfattar även den kompakta
+bygglistan. Antalen visas utan att spelaren behöver öppna detaljpanelen och
+har samma betydelse och avgränsning som där.

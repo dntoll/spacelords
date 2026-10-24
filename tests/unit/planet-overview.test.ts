@@ -470,6 +470,32 @@ describe('byggnadsantal-lokalt-och-globalt', () => {
       [local, '2'],
       [remote, '3'],
     ] as const) {
+      const compact = renderBuildSelection(
+        {
+          ...snapshot,
+          selectedBuilding: null,
+          planet: selected,
+          ownedPlanets: [local, remote],
+        },
+        () => {},
+      );
+      const compactCounts = (type: BuildType) =>
+        compact.querySelector(
+          `[aria-label="Show ${type}"] .building-list-inventory`,
+        );
+      expect(compact.querySelector('.catalog-details')).toBeNull();
+      expect(compactCounts('Research station')?.textContent).toContain(
+        `On ${selected.name}: ${expected}`,
+      );
+      expect(compactCounts('Research station')?.textContent).toContain(
+        'All your planets: 5',
+      );
+      expect(compactCounts('Oil extractor')?.textContent).toContain(
+        `On ${selected.name}: 0`,
+      );
+      expect(compactCounts('Oil extractor')?.textContent).toContain(
+        'All your planets: 0',
+      );
       const inventory = (type: BuildType) =>
         renderBuildSelection(
           {
