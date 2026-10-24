@@ -49,7 +49,8 @@ Se [hela visionen](docs/game-vision.md).
   är inte ett generellt tillstånd att radera sparplatser.
 - **Karta och flottor:** `kompakta-flottkort` är **Fullständigt implementerat**:
   mindre skeppsrutor och tätare flottkort visar fler flottor samtidigt på Star map
-  och i Fleets, med bibehållna pekytor och åtkomst till order.
+  och i Fleets, med bibehållna pekytor och åtkomst till order. Fyra skepp ryms på
+  en rad även i smala flottkort på dator och surfplatta.
   Fast exempelvärld, begränsad sikt, navigation,
   utforskning, kolonisation, flottbyggare och fysisk rörelse på kartan.
   Skepp ansluter direkt på samma hex eller till tomma flottor. På avstånd följer

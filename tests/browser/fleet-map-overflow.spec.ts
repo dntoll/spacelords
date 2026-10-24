@@ -111,14 +111,17 @@ test('kompakta-flottkort: four ships fit in one row and fleet actions remain tou
     shipRows: [...node.querySelectorAll('.ship-token')].map(
       (token) => token.getBoundingClientRect().top,
     ),
-    targets: [...node.querySelectorAll('button, summary')].map(
-      (target) => target.getBoundingClientRect().height,
-    ),
+    targets: [...node.querySelectorAll('button, summary')].map((target) => {
+      const { width, height } = target.getBoundingClientRect();
+      return { width, height };
+    }),
   }));
-  expect(layout.height).toBeLessThanOrEqual(280);
-  if (layout.width >= 276) expect(new Set(layout.shipRows).size).toBe(1);
+  if (layout.width >= 220) expect(new Set(layout.shipRows).size).toBe(1);
   else expect(new Set(layout.shipRows).size).toBeLessThanOrEqual(2);
-  expect(layout.targets.every((height) => height >= 44)).toBe(true);
+  expect(layout.height).toBeLessThanOrEqual(280);
+  expect(
+    layout.targets.every(({ width, height }) => width >= 44 && height >= 44),
+  ).toBe(true);
   await card.locator('.fleet-orders > summary').click();
   await expect(
     card.getByRole('button', {

@@ -41,7 +41,9 @@ SupplyView och SupplySelection är borttagna; SupplyOverview och transportregler
 behålls. Inga UI-val införs i GameState och ingen sparformatmigration behövs.
 Kravkopplade tester täcker modell, controller, rendering, mobilflöde och sparning.
 Full plattformsmatris körs vid separat beställt sluttest för explicit revision.
-Ingen driftsättning ingår i denna leverans.
+Driftsättning beställs separat och följer normalflödet i deployment.md. En
+allmän begäran om test och publicering använder snabbkontroller; omfattande
+sluttest beställs uttryckligen separat.
 
 ## Handelsrutter på Star map
 
@@ -470,3 +472,9 @@ Befintliga skepp får Rocket engine utan lageravdrag; äldre uppnådd forskning
 behålls och saknade motorförkunskaper kompletteras. Äldre köade skepp behålls
 med synligt motorbehov. Ingen ny rensningsmarkör eller ändrad lagringsnyckel
 införs. Laddning av version 2–5 och bevarande av motorbestyckning verifieras automatiskt.
+
+`kompakta-flottkort` behåller fyra skepp per rad även när flera flottkort delar
+kartpanelen på dator eller surfplatta. Skeppsknapparnas bredd anpassas till
+radens utrymme mellan 44 och 60 px; träffytorna behålls och Engines & speed
+förblir åtkomligt. Webbläsarregressionen verifierar radantal, korthöjd och
+kontrollernas träffytor.

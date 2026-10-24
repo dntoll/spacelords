@@ -399,7 +399,8 @@ Detta utökar `fokuserat-kartval` och ersätter dess fasta panelhöjd vid rullni
 `kompakta-flottkort` är **Fullständigt implementerat**. Star map och Fleets
 visar små skeppsrutor och flottkort med tätare avstånd så att fler flottor ryms
 samtidigt, även på mobil. Fyra skepp ryms på en rad i kartans flottkort på
-vanliga mobilskärmar. Namn, position, skeppstyper, destination och ruttuppdrag
+vanliga mobilskärmar och i smala flottkort på dator och surfplatta. Namn,
+position, skeppstyper, destination och ruttuppdrag
 är fortsatt synliga. Order, namnbyte och skeppsöverföring är fortsatt åtkomliga
 med pekytor på minst 44 pixlar i höjd.
 

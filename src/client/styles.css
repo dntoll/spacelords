@@ -2042,7 +2042,7 @@ p {
   gap: 4px;
 }
 .map-fleet-management .ship-token {
-  width: 60px;
+  width: clamp(44px, calc((100% - 12px) / 4), 60px);
   min-height: 52px;
   gap: 2px;
   padding: 3px;
