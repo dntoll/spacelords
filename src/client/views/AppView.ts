@@ -31,6 +31,7 @@ import { updateResearchCamera } from './ResearchTreeView.js';
 import { button, element } from './dom.js';
 import { renderDecisions, renderTurnWarning } from './EmpireView.js';
 import { renderTurnActions } from './TurnActionsView.js';
+import { renderGroupedEvents } from './GroupedEventsView.js';
 
 export class AppView implements AppPort {
   readonly #root: HTMLElement;
@@ -572,21 +573,8 @@ export class AppView implements AppPort {
     if (log.dataset.lastEvent === key) return;
     const follow = log.scrollHeight - log.clientHeight - log.scrollTop < 8;
     const list = log.querySelector('ol')!;
-    const ids = new Set(events.map((event) => event.id));
-    for (const item of list.querySelectorAll<HTMLElement>('li'))
-      if (!ids.has(item.dataset.eventId!)) item.remove();
-    const existing = new Set(
-      [...list.querySelectorAll<HTMLElement>('li')].map(
-        (item) => item.dataset.eventId,
-      ),
-    );
     if (events.length) log.querySelector('.console-empty')?.remove();
-    for (const event of events) {
-      if (existing.has(event.id)) continue;
-      const item = element('li', '', `Year ${event.round}: ${event.text}`);
-      item.dataset.eventId = event.id;
-      list.append(item);
-    }
+    list.replaceChildren(...renderGroupedEvents(events));
     log.dataset.lastEvent = key;
     if (follow) log.scrollTop = log.scrollHeight;
   }

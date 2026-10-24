@@ -67,9 +67,15 @@ for (const size of [
     await page.getByRole('button', { name: 'Decisions', exact: true }).click();
     await expect(console).toBeVisible();
     await expect(log).toContainText('Home Fleet arrived at Vesta.');
-    const before = await log.locator('li').count();
+    await expect(
+      log.getByRole('heading', { name: 'Year 1', exact: true }),
+    ).toHaveCount(1);
+    await expect(
+      log.locator('.event-type-label', { hasText: 'Population changes:' }),
+    ).toHaveCount(1);
+    const before = await log.locator('[data-event-id]').count();
     await endTurn(page);
-    await expect(log.locator('li')).toHaveCount(before + 1);
+    await expect(log.locator('[data-event-id]')).toHaveCount(before + 1);
     await expect(end).toBeEnabled();
     await page.screenshot({
       path: testInfo.outputPath('decisions-turn-actions.png'),

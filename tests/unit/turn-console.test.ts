@@ -78,7 +78,7 @@ describe('handelser / arsrundor-och-order', () => {
     expect(restored.phase).toBe('planning');
     expect(restored.events).toEqual(state.events);
   });
-  it('shows a persistent chronological console instead of a dialog and disables End turn during animation', async () => {
+  it('shows a persistent console ordered by year instead of a dialog and disables End turn during animation', async () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
     const model = new AppModel();
@@ -110,12 +110,10 @@ describe('handelser / arsrundor-och-order', () => {
     expect(log).not.toBeNull();
     expect(log.textContent).toContain('Vesta');
     expect(
-      [...log.querySelectorAll('li')].map((item) => item.textContent),
-    ).toEqual(
-      model.snapshot.events.map(
-        (event) => `Year ${event.round}: ${event.text}`,
+      [...log.querySelectorAll<HTMLElement>('[data-event-id]')].map(
+        (item) => item.dataset.eventId,
       ),
-    );
+    ).toEqual(model.snapshot.events.map((event) => event.id));
     expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
       false,
     );
@@ -134,8 +132,8 @@ describe('handelser / arsrundor-och-order', () => {
     }));
     view.render({ ...model.snapshot, events });
     const log = root.querySelector<HTMLElement>('[role="log"]')!;
-    expect(log.querySelectorAll('li')).toHaveLength(100);
-    expect(log.querySelector('li')!.textContent).toBe('Year 21: Event 20');
+    expect(log.querySelectorAll('[data-event-id]')).toHaveLength(100);
+    expect(log.querySelector('[data-event-id]')!.textContent).toBe('Event 20');
     Object.defineProperties(log, {
       scrollHeight: { value: 1000 },
       clientHeight: { value: 60 },
@@ -148,8 +146,8 @@ describe('handelser / arsrundor-och-order', () => {
     });
     expect(document.activeElement).toBe(log);
     expect(log.scrollTop).toBe(100);
-    expect(log.querySelectorAll('li')).toHaveLength(100);
-    expect(log.querySelector('li')!.textContent).toBe('Year 22: Event 21');
+    expect(log.querySelectorAll('[data-event-id]')).toHaveLength(100);
+    expect(log.querySelector('[data-event-id]')!.textContent).toBe('Event 21');
     expect(events).toHaveLength(120);
     view.dispose();
   });

@@ -1553,6 +1553,22 @@ p {
   margin: 0;
   padding-left: 1.6em;
 }
+.console-log > ol {
+  padding-left: 0;
+  list-style: none;
+}
+.console-log ul {
+  margin: 0;
+  padding-left: 1.4em;
+}
+.console-log h3 {
+  margin: 3px 0;
+  font-size: inherit;
+  color: var(--accent);
+}
+.event-type-label {
+  font-weight: 600;
+}
 .console-log li {
   padding-bottom: 3px;
   overflow-wrap: anywhere;

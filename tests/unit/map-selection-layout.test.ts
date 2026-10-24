@@ -65,12 +65,14 @@ describe('fokuserat-kartval', () => {
     view.render({ ...model.snapshot, events });
     const log = root.querySelector<HTMLElement>('[role="log"]')!;
     Object.defineProperties(log, {
-      scrollHeight: { get: () => log.querySelectorAll('li').length * 10 },
+      scrollHeight: {
+        get: () => log.querySelectorAll('[data-event-id]').length * 10,
+      },
       clientHeight: { value: 60 },
     });
     model.select(new HexCoordinate(-2, 0));
     view.render({ ...model.snapshot, events });
-    expect(log.querySelectorAll('li')).toHaveLength(100);
+    expect(log.querySelectorAll('[data-event-id]')).toHaveLength(100);
     expect(log.scrollTop).toBe(1000);
   });
 
@@ -126,8 +128,9 @@ describe('rundkontroller-i-decisions', () => {
       ...model.snapshot,
       events: [{ id: 'arrival', round: 1, text: 'Fleet arrived.' }],
     });
-    expect(root.querySelector('[role="log"]')?.textContent).toContain(
-      'Year 1: Fleet arrived.',
+    expect(root.querySelector('.event-year h3')?.textContent).toBe('Year 1');
+    expect(root.querySelector('[data-event-id="arrival"]')?.textContent).toBe(
+      'Fleet arrived.',
     );
     const end = root.querySelector<HTMLButtonElement>('.end-turn')!;
     expect(end).not.toBeNull();
