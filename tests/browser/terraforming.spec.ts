@@ -71,6 +71,9 @@ test('planettypsforskning / domes-per-byggplats / terraformning / andningsbar-at
   };
   await openColony();
   await expect(page.locator('.planet-stats')).toContainText('Unbreathable');
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
   const first = page.getByRole('article', {
     name: 'Building site 1',
     exact: true,
@@ -85,6 +88,9 @@ test('planettypsforskning / domes-per-byggplats / terraformning / andningsbar-at
     .getByRole('button', { name: 'Build dome at site 1', exact: true })
     .click();
   await nextYear();
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
   await expect(first).toContainText('Dome ready');
   await first
     .getByRole('button', { name: 'Build building at site 1', exact: true })
@@ -106,6 +112,9 @@ test('planettypsforskning / domes-per-byggplats / terraformning / andningsbar-at
   await nextYear();
   await expect(page.locator('.planet-stats')).toContainText('80%');
   await expect(page.locator('.planet-stats')).toContainText('Breathable');
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
   await expect(
     page
       .getByRole('article', { name: 'Building site 2', exact: true })
@@ -124,6 +133,9 @@ test('planettypsforskning / domes-per-byggplats / terraformning / andningsbar-at
   await startFirstSlot(page);
   await openColony();
   await expect(page.locator('.planet-stats')).toContainText('80%');
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
   await expect(first).toContainText('Dome ready');
   expect(errors).toEqual([]);
 });

@@ -39,7 +39,7 @@ function setup() {
 describe('visa-byggalternativ', () => {
   it('opens a separate selection and returns to the original site after an order', () => {
     const { root, model, click } = setup();
-    expect(root.querySelector('[role="tab"]')).toBeNull();
+    click('Building sites');
     root
       .querySelector<HTMLButtonElement>(
         '[aria-label="Build building at site 3"]',
@@ -58,6 +58,7 @@ describe('visa-byggalternativ', () => {
   });
   it('cancels without ordering and searches without losing input focus', () => {
     const { root, model, click } = setup();
+    click('Building sites');
     click('Build building');
     const search = root.querySelector<HTMLInputElement>(
       'input[type="search"]',
@@ -67,7 +68,7 @@ describe('visa-byggalternativ', () => {
     search.dispatchEvent(new Event('input'));
     expect(root.querySelectorAll('.building-choice')).toHaveLength(0);
     expect(document.activeElement?.getAttribute('type')).toBe('search');
-    click('Back to Overview');
+    click('Back to Building sites');
     expect(model.snapshot.planet?.projects).toHaveLength(0);
   });
 });
@@ -80,13 +81,17 @@ describe('planetbudgetoversikt', () => {
       root.querySelector<HTMLElement>('[data-resource="Iron"] .budget-used')
         ?.style.width,
     ).toBe('0%');
+    click('Building sites');
     click('Build building');
     click('Build Research station');
+    click('Overview');
     expect(
       root.querySelector<HTMLElement>('[data-resource="Iron"] .budget-used')
         ?.style.width,
     ).not.toBe('0%');
+    click('Building sites');
     click('Cancel construction');
+    click('Overview');
     expect(
       root.querySelector<HTMLElement>('[data-resource="Iron"] .budget-used')
         ?.style.width,
@@ -119,6 +124,7 @@ describe('gemensamma-byggnadsbilder', () => {
   });
   it('uses the same supplied image for selection and construction', () => {
     const { root, click } = setup();
+    click('Building sites');
     click('Build building');
     const label = root.querySelector('img')?.getAttribute('src');
     click('Build Research station');
@@ -177,7 +183,7 @@ describe('planetbudgetoversikt', () => {
     },
   );
   it('keeps completed building material costs at zero for demolition and Keep', () => {
-    const { model, root } = setup();
+    const { model, root, click } = setup();
     model.build('Research station');
     for (const frame of model.startTurn()) model.applyTurnFrame(frame);
     model.finishTurn();
@@ -191,9 +197,13 @@ describe('planetbudgetoversikt', () => {
       root.querySelector<HTMLElement>('[data-resource="Iron"] .budget-used')!
         .style.width;
     const original = used();
+    click('Building sites');
     root.querySelector<HTMLButtonElement>('[aria-label="Demolish"]')!.click();
+    click('Overview');
     expect(used()).toBe('0%');
+    click('Building sites');
     root.querySelector<HTMLButtonElement>('[aria-label="Keep"]')!.click();
+    click('Overview');
     expect(used()).toBe(original);
   });
 });
@@ -230,6 +240,7 @@ describe('visa-byggalternativ', () => {
   });
   it('keeps a rejected order on selection without changing occupied sites', () => {
     const { root, model, click } = setup();
+    click('Building sites');
     click('Build building');
     model.build('Research station', 0);
     model.openBuildSite(1);
@@ -331,30 +342,30 @@ describe('gemensam-planetko / fabrikskoer / kompakta-bygghandlingar', () => {
       'You',
       emit,
       model.snapshot.fleets,
+      { phase: 'planning', planetTab: 'production' },
     );
     expect(
       view.querySelector('[aria-label="Build ships at site 1"]'),
     ).toBeNull();
-    const order = view.querySelector('.factory-production .factory-order')!;
+    const order = view.querySelector('.production-order')!;
     expect(order).not.toBeNull();
-    expect(order.textContent).toContain('per ship');
-    const select = order.querySelector('select')!;
+    expect(order.textContent).toContain('crew');
+    const select = order.querySelector<HTMLSelectElement>(
+      '[aria-label^="Destination fleet for"]',
+    )!;
     select.value = 'fleet-home';
-    const queue = order.querySelector('button')!;
+    const queue = order.querySelector<HTMLButtonElement>(
+      '[aria-label^="Queue "]',
+    )!;
     expect(queue.textContent).toBe(`Queue ${BUILDINGS[type].ship}`);
     queue.click();
     expect(emit).toHaveBeenCalledWith({
       type: 'queue-ship',
       ship: BUILDINGS[type].ship,
-      factoryId: 'yard',
       fleetId: 'fleet-home',
     });
-    const list = view.querySelector('.queue-slots')!;
-    expect(view.querySelectorAll('.queue-slots')).toHaveLength(1);
-    expect(
-      order.closest('.factory-production')!.querySelector('.queue-slots'),
-    ).toBeNull();
-    expect(list.children).toHaveLength(0);
+    expect(view.querySelectorAll('.compact-build-queue')).toHaveLength(1);
+    expect(view.querySelector('.queue-slots')).toBeNull();
   });
   it.each(['demolition', 'locked'])(
     'keeps ordering visible but disabled for %s factories',
@@ -378,18 +389,22 @@ describe('gemensam-planetko / fabrikskoer / kompakta-bygghandlingar', () => {
         'You',
         vi.fn(),
         [],
-        { phase: state === 'locked' ? 'simulating' : 'planning' },
+        {
+          phase: state === 'locked' ? 'simulating' : 'planning',
+          planetTab: 'production',
+        },
       );
       expect(
-        view.querySelector<HTMLButtonElement>('.factory-order button')
+        view.querySelector<HTMLButtonElement>('.production-order button')
           ?.disabled,
       ).toBe(true);
       expect(
-        view.querySelector<HTMLSelectElement>('.factory-order select')
-          ?.disabled,
+        view.querySelector<HTMLSelectElement>(
+          '[aria-label^="Destination fleet for"]',
+        )?.disabled,
       ).toBe(true);
       expect(
-        view.querySelector('.factory-order [role="status"]')?.textContent,
+        view.querySelector('.production-order .blocked-reason')?.textContent,
       ).toBeTruthy();
     },
   );

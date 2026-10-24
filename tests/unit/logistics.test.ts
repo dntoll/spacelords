@@ -248,6 +248,7 @@ it('leveransfloden: separates pickup from transit, shows relay location, and kee
     source: 'a',
     recipient: 'c',
     nextStop: 'b',
+    remainingStops: ['b', 'c'],
   });
   expect(Object.isFrozen(snapshots[0])).toBe(true);
   planets[2]!.projects = [];

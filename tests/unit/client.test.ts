@@ -75,6 +75,7 @@ describe('bygga-forskningsstation', () => {
   it('offers a research station build order', () => {
     start();
     click('Open planet');
+    click('Building sites');
     click('Build building');
     const build = [...root.querySelectorAll('button')].find(
       (button) => button.textContent === 'Build Research station',
@@ -158,13 +159,11 @@ describe('focused-interface', () => {
 });
 
 describe('viewport-game-layout', () => {
-  it('shows management in Overview without construction tabs', () => {
+  it('separates Overview and building site management', () => {
     start();
     click('Open planet');
     expect(root.querySelector('[role="tab"]')).toBeNull();
-    expect(root.querySelector('.overview')?.textContent).toContain(
-      'Building sites',
-    );
+    expect(root.querySelector('.overview')?.textContent).toContain('Buildings');
     expect(root.querySelector('.overview')?.textContent).toContain('Resources');
   });
 });
@@ -179,6 +178,7 @@ describe('byggnaders-resursanvandning', () => {
     model.openPlanet();
     const controller = new AppController(model, new AppView(root, mapFactory));
     controller.start();
+    click('Building sites');
     expect(root.querySelector('.building-panel')?.textContent).toContain(
       '600 workers · No recurring material cost',
     );
@@ -209,8 +209,10 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
     advance(model);
     model.openPlanet();
     new AppController(model, new AppView(root, mapFactory)).start();
+    click('Building sites');
     expect(root.querySelectorAll('.building-site')).toHaveLength(10);
     expect(root.querySelector('.building-menu')).toBeNull();
+    click('Building sites');
     click('Build building');
     const menu = root.querySelector('.building-menu')!;
     expect(menu.textContent).toContain('Colony ship factory');
@@ -225,6 +227,7 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
     expect(model.snapshot.planet!.sites[1]!.project?.type).toBe(
       'Colony ship factory',
     );
+    click('Building sites');
     click('Build building');
     const queuedAgain = [
       ...root.querySelectorAll<HTMLButtonElement>('.building-choice button'),
@@ -242,20 +245,18 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
     const target = model.snapshot.fleets[1]!;
     model.openPlanet();
     new AppController(model, new AppView(root, mapFactory)).start();
-    const site = () =>
-      root.querySelector<HTMLElement>('[data-site-index="1"]')!;
+    click('Production');
     const production = () => root.querySelector('.planet-building-queue')!;
-    expect(root.querySelectorAll('.queue-slots')).toHaveLength(1);
-    expect(site().querySelectorAll('.queue-slots')).toHaveLength(0);
-    expect(
-      site().querySelector('[aria-label="Build ships at site 2"]'),
-    ).toBeNull();
-    const select = site().querySelector<HTMLSelectElement>(
+    expect(root.querySelectorAll('.compact-build-queue')).toHaveLength(1);
+    expect(root.querySelector('.building-site')).toBeNull();
+    const select = root.querySelector<HTMLSelectElement>(
       '[aria-label="Destination fleet for Colony ship"]',
     )!;
     select.value = target.id;
+    select.dispatchEvent(new Event('change'));
     click('Queue Colony ship');
     click('Queue Colony ship');
+    click('Build queue');
     const queue = () => model.snapshot.planet!.projects;
     expect(queue()[0]!.destinationFleetId).toBe(target.id);
     expect(production().querySelectorAll('.queue-order')).toHaveLength(2);
@@ -298,6 +299,7 @@ describe('kolonisation / kartorderstatus', () => {
     click('Open planet');
     expect(root.querySelector('h1')!.textContent).toBe('Vesta');
     expect(root.textContent).toContain('1,000');
+    click('Building sites');
     expect(root.querySelectorAll('.building-site')).toHaveLength(6);
     expect(
       root.querySelector<HTMLButtonElement>(
@@ -348,8 +350,10 @@ describe('kompakta-koknappar', () => {
     buildShipyard(model);
     model.openPlanet();
     new AppController(model, new AppView(root, mapFactory)).start();
+    click('Production');
     click('Queue Colony ship');
     click('Queue Colony ship');
+    click('Build queue');
     const controls = () => [
       ...root.querySelectorAll<HTMLButtonElement>(
         '.queue-order .queue-actions button',

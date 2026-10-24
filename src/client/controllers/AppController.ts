@@ -250,6 +250,21 @@ export class AppController {
       case 'build':
         this.#model.build(intent.building, intent.slotIndex);
         break;
+      case 'planet-tab':
+        this.#model.selectPlanetTab(intent.tab);
+        break;
+      case 'production-selection':
+        this.#model.selectProduction(intent.category, intent.product);
+        break;
+      case 'production-fleet':
+        this.#model.selectProductionFleet(intent.id);
+        break;
+      case 'project-supply':
+        this.#model.toggleProjectSupply(intent.id, intent.open);
+        break;
+      case 'open-planet-project':
+        this.#model.openPlanetProject(intent.planetId, intent.projectId);
+        break;
       case 'build-site':
         this.#model.openBuildSite(intent.index);
         break;
@@ -433,6 +448,11 @@ export class AppController {
         'edit-fleet-name',
         'begin-fleet-rename',
         'cancel-fleet-rename',
+        'planet-tab',
+        'production-selection',
+        'production-fleet',
+        'project-supply',
+        'open-planet-project',
       ].includes(intent.type)
     )
       this.#model.save();

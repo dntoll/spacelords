@@ -1,3 +1,4 @@
+import type { ProjectSupplySnapshot } from './ProjectSupply.js';
 import { shipTransferIssue } from './FleetTransfer.js';
 import { StarMapTrade, type MapTradeSnapshot } from './StarMapTrade.js';
 import type { SaveRepository } from './SaveRepository.js';
@@ -32,6 +33,9 @@ import {
 import type { MapCell } from './Galaxy.js';
 import { HexCoordinate, HexGeometry, type Point } from './HexCoordinate.js';
 
+export type PlanetTab = 'overview' | 'sites' | 'queue' | 'production';
+export type ProductionCategory = 'Ships' | 'Components';
+
 export type Screen =
   | 'saves'
   | 'map'
@@ -51,6 +55,13 @@ export interface SaveSlotSnapshot {
 }
 
 export interface AppReadModel {
+  readonly planetTab: PlanetTab;
+  readonly productionCategory: ProductionCategory;
+  readonly productionProduct: string | null;
+  readonly productionFleetId: string | null;
+  readonly expandedProjectIds: readonly string[];
+  readonly focusedProjectId: string | null;
+  readonly projectSupply: readonly ProjectSupplySnapshot[];
   readonly decisions: readonly Decision[];
   readonly tradeRoutes: readonly TradeRouteSnapshot[];
   readonly supply: SupplyOverview;
@@ -97,6 +108,13 @@ export interface AppReadModel {
 }
 
 export class AppModel {
+  #planetTab: PlanetTab = 'overview';
+  #productionCategory: ProductionCategory = 'Ships';
+  #productionProduct: string | null = null;
+  #productionFleetId: string | null = null;
+  #closedProjectIds = new Set<string>();
+  #expandedProjectIds = new Set<string>();
+  #focusedProjectId: string | null = null;
   #pendingEndTurn = false;
   #pendingResearchRemoval: Technology | null = null;
   #game: Game;
@@ -242,7 +260,24 @@ export class AppModel {
 
   // mvc-arkitektur: no write operations or hidden world data cross into views.
   get snapshot(): AppReadModel {
+    const projectSupply =
+      this.#screen === 'planet' && this.#planetTab === 'queue'
+        ? this.#game.projectSupply(this.#game.planetAt(this.#selected)?.id)
+        : [];
     return Object.freeze({
+      planetTab: this.#planetTab,
+      productionCategory: this.#productionCategory,
+      productionProduct: this.#productionProduct,
+      productionFleetId: this.#productionFleetId,
+      expandedProjectIds: Object.freeze([
+        ...this.#expandedProjectIds,
+        ...(() => {
+          const id = projectSupply[0]?.projectId;
+          return id && !this.#closedProjectIds.has(id) ? [id] : [];
+        })(),
+      ]),
+      focusedProjectId: this.#focusedProjectId,
+      projectSupply,
       decisions: this.#game.decisions,
       tradeRoutes: this.#game.tradeRoutes,
       supply: this.#game.supplyOverview(),
@@ -506,9 +541,52 @@ export class AppModel {
     if (planet) {
       this.#selected = planet.position;
       this.#screen = 'planet';
+      this.#planetTab = 'overview';
+      this.#productionCategory = 'Ships';
+      this.#productionProduct = null;
+      this.#productionFleetId = null;
+      this.#closedProjectIds.clear();
+      this.#expandedProjectIds = new Set();
+      const head = (
+        'projects' in planet ? planet : this.#game.planetSnapshot(planet)
+      )?.projects[0];
+      if (head) this.#expandedProjectIds.add(head.id);
+      this.#focusedProjectId = null;
       this.#constructionSite = null;
       this.#returnSite = null;
     }
+  }
+
+  selectPlanetTab(tab: PlanetTab): void {
+    if (this.#screen !== 'planet') return;
+    this.#planetTab = tab;
+    this.#focusedProjectId = null;
+  }
+  selectProduction(category: ProductionCategory, product: string | null): void {
+    this.#productionCategory = category;
+    this.#productionProduct = product;
+  }
+  selectProductionFleet(id: string | null): void {
+    this.#productionFleetId = id;
+  }
+  toggleProjectSupply(id: string, open: boolean): void {
+    if (open) {
+      this.#expandedProjectIds.add(id);
+      this.#closedProjectIds.delete(id);
+    } else {
+      this.#expandedProjectIds.delete(id);
+      this.#closedProjectIds.add(id);
+    }
+  }
+  openPlanetProject(planetId: string, projectId: string): void {
+    const current = this.#game.planetAt(this.#selected);
+    if (current?.id !== planetId || this.#screen !== 'planet')
+      this.openPlanet(planetId);
+    if (this.#game.planetAt(this.#selected)?.id !== planetId) return;
+    this.#planetTab = 'queue';
+    this.#expandedProjectIds.add(projectId);
+    this.#closedProjectIds.delete(projectId);
+    this.#focusedProjectId = projectId;
   }
 
   openResearch(): void {
@@ -561,6 +639,7 @@ export class AppModel {
       this.#returnSite = this.#constructionSite;
       this.#constructionSite = null;
       this.#screen = 'planet';
+      this.#planetTab = 'sites';
       return;
     }
     if (this.#screen !== 'planet' || this.#game.phase !== 'planning') return;

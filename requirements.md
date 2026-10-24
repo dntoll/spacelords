@@ -10,6 +10,14 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Planetens undersidor:** `planetundersidor`, `byggplatsrutnat`,
+  `projektens-forsorjningssteg`, `planetgemensamt-produktval` och
+  `kompakt-produktionsko` är **Fullständigt implementerat**. Overview,
+  Building sites, Build queue och Production delar upp planetens hantering.
+  Byggplatser visas i rutnät, produktval samlas per planet och varje köprojekt
+  visar sina försörjningssteg. Production har en kompakt kö med gruppering av
+  intilliggande likadana projekt. Se [produktkraven](docs/product-requirements.md).
+
 - **Kompakta köhandlingar:** `kompakta-koknappar` är **Fullständigt implementerat**.
   Research queue och Build queue använder små knappar med ↑, ↓ och × för
   omordning och borttagning, med förklarande hjälptexter.

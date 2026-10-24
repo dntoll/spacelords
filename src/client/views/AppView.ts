@@ -40,6 +40,7 @@ export class AppView implements AppPort {
   #dialog: HTMLDialogElement | null = null;
   #clearReturnSlot: number | null = null;
   #planetScroll = new Map<string, number>();
+  #planetFocusTarget: string | null = null;
   #decisionDialog: HTMLDialogElement | null = null;
   #researchKey = '';
   #researchViewport: HTMLElement | null = null;
@@ -166,7 +167,10 @@ export class AppView implements AppPort {
     if (this.#screen === 'planet') {
       const panel = this.#root.querySelector<HTMLElement>('.planet-content');
       if (panel?.dataset.planetId)
-        this.#planetScroll.set(panel.dataset.planetId, panel.scrollTop);
+        this.#planetScroll.set(
+          `${panel.dataset.planetId}:${panel.dataset.planetTab}`,
+          panel.scrollTop,
+        );
     }
     if (changedScreen) {
       this.#map?.dispose();
@@ -263,8 +267,25 @@ export class AppView implements AppPort {
       const panel = this.#root.querySelector<HTMLElement>('.planet-content');
       if (panel) {
         panel.dataset.planetId = model.planet.id;
-        panel.scrollTop = this.#planetScroll.get(model.planet.id) ?? 0;
+        panel.scrollTop =
+          this.#planetScroll.get(`${model.planet.id}:${model.planetTab}`) ?? 0;
       }
+      const focusKey = model.focusedProjectId
+        ? `${model.planet.id}:${model.focusedProjectId}`
+        : null;
+      if (
+        model.planetTab === 'queue' &&
+        focusKey &&
+        focusKey !== this.#planetFocusTarget
+      ) {
+        const row = [
+          ...this.#root.querySelectorAll<HTMLElement>('[data-project-id]'),
+        ].find((item) => item.dataset.projectId === model.focusedProjectId);
+        row?.setAttribute('tabindex', '-1');
+        row?.focus({ preventScroll: true });
+        row?.scrollIntoView?.({ block: 'nearest' });
+      }
+      this.#planetFocusTarget = focusKey;
       if (changedScreen && model.returnSite !== null)
         this.#root
           .querySelector<HTMLElement>(`[data-site-index="${model.returnSite}"]`)

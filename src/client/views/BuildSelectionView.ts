@@ -14,7 +14,7 @@ export function renderBuildSelection(
   header.append(
     element('h1', '', 'Build selection'),
     button(
-      'Back to Overview',
+      'Back to Building sites',
       () => emit({ type: 'build-site', index: null }),
       'back-button',
     ),

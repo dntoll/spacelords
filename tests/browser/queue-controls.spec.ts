@@ -22,6 +22,9 @@ for (const width of [320, 900]) {
       .click();
     for (const [index, type] of ['Research station', 'Iron mine'].entries()) {
       await page
+        .getByRole('button', { name: 'Building sites', exact: true })
+        .click();
+      await page
         .getByRole('button', {
           name: `Build building at site ${index + 1}`,
           exact: true,
@@ -31,6 +34,9 @@ for (const width of [320, 900]) {
         .getByRole('button', { name: `Build ${type}`, exact: true })
         .click();
     }
+    await page
+      .getByRole('button', { name: 'Build queue', exact: true })
+      .click();
     const production = page.locator('.planet-building-queue');
     await checkControls(production.locator('.queue-order').first());
     await production.screenshot({

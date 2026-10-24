@@ -8,6 +8,9 @@ test('byggnadsantal-lokalt-och-globalt: Build selection counts completed buildin
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
+  await page
     .getByRole('button', { name: 'Build building at site 1', exact: true })
     .click();
   const inventory = page.locator(
@@ -21,12 +24,18 @@ test('byggnadsantal-lokalt-och-globalt: Build selection counts completed buildin
     .getByRole('button', { name: 'Build Research station', exact: true })
     .click();
   await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
+  await page
     .getByRole('button', { name: 'Build building at site 2', exact: true })
     .click();
   await expect(inventory.locator('dd')).toHaveText(['0', '0']);
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await endTurn(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
   await page
     .getByRole('button', { name: 'Build building at site 2', exact: true })
     .click();

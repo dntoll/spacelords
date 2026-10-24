@@ -50,10 +50,26 @@ test('automatiska-delorder: orders remote production through the UI and preserve
   await startFirstSlot(page);
   await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
   await page
     .getByRole('button', { name: 'Queue Fighter', exact: true })
     .click();
+  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
   await expect(page.locator('.queue-order')).toHaveCount(1);
+  const supply = page.locator('.project-supply');
+  await expect(supply).toContainText('Produce 1 Rocket engine at Tellus');
+  await expect(supply).toContainText('Produce 1 Weapons module at Tellus');
+  await expect(supply).toContainText(
+    'Transport 1 Rocket engine from Tellus to Vesta',
+  );
+  await expect(supply).toContainText('Planned transport');
+  await supply
+    .getByRole('button', { name: 'View route', exact: true })
+    .first()
+    .click();
+  await expect(
+    page.getByRole('complementary', { name: 'Selected route' }),
+  ).toContainText('Tellus');
   await page
     .getByRole('button', { name: 'Supply & production', exact: true })
     .click();
@@ -115,6 +131,7 @@ test('automatiska-delorder: explains a missing part and leaves the saved order s
   await startFirstSlot(page);
   await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
   const before = await page.evaluate(() =>
     localStorage.getItem('spacelords.save.v2.1'),
   );

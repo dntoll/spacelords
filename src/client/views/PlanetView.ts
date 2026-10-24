@@ -1,7 +1,6 @@
 import type { AppReadModel } from '../models/AppModel.js';
 import {
   BUILDINGS,
-  type BuildingSnapshot,
   type ConstructionProjectSnapshot,
   projectDefinition,
   type FleetSnapshot,
@@ -10,16 +9,31 @@ import {
   type Resource,
 } from '../models/Game.js';
 import { COMPONENTS } from '../models/Economy.js';
+import type { SupplyStep } from '../models/ProjectSupply.js';
+import { renderProduction, fleetSelect } from './PlanetProductionView.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element, planetIllustration, queueButton } from './dom.js';
 import { buildingImage } from './BuildingImage.js';
+
+type PlanetMenus = Pick<AppReadModel, 'phase'> &
+  Partial<
+    Pick<
+      AppReadModel,
+      | 'planetTab'
+      | 'productionCategory'
+      | 'productionProduct'
+      | 'productionFleetId'
+      | 'expandedProjectIds'
+      | 'projectSupply'
+    >
+  >;
 
 export function renderPlanet(
   planet: PlanetGameSnapshot,
   owner: string,
   emit: IntentHandler,
   fleets: readonly FleetSnapshot[] = [],
-  menus: Pick<AppReadModel, 'phase'> = {
+  menus: PlanetMenus = {
     phase: 'planning',
   },
 ): HTMLElement {
@@ -30,11 +44,54 @@ export function renderPlanet(
     button('Back to map', () => emit({ type: 'open-map' }), 'back-button'),
   );
   page.append(header);
+  const tab = menus.planetTab ?? 'overview';
+  const tabs = element('nav', 'planet-tabs');
+  tabs.setAttribute('aria-label', 'Planet pages');
+  for (const [id, label] of [
+    ['overview', 'Overview'],
+    ['sites', 'Building sites'],
+    ['queue', 'Build queue'],
+    ['production', 'Production'],
+  ] as const) {
+    const control = button(
+      label,
+      () => emit({ type: 'planet-tab', tab: id }),
+      'button secondary-button',
+    );
+    control.setAttribute('aria-current', String(id === tab ? 'page' : 'false'));
+    tabs.append(control);
+  }
+  page.append(tabs);
   const panel = element('section', 'planet-content overview');
-  panel.setAttribute('aria-label', 'Overview');
-  const summary = element('div', 'planet-summary');
-  summary.append(overview(planet, owner), budgetPanel(planet));
-  panel.append(summary, construction(planet, emit, fleets, menus));
+  panel.dataset.planetTab = tab;
+  panel.setAttribute(
+    'aria-label',
+    {
+      overview: 'Overview',
+      sites: 'Building sites',
+      queue: 'Build queue',
+      production: 'Production',
+    }[tab],
+  );
+  if (tab === 'overview') {
+    const summary = element('div', 'planet-summary');
+    summary.append(overview(planet, owner), budgetPanel(planet));
+    panel.append(summary);
+    const inventory = element('section', 'planet-building-inventory');
+    inventory.append(element('h2', '', 'Buildings'));
+    const counts = new Map<string, number>();
+    for (const building of planet.buildings)
+      counts.set(building.type, (counts.get(building.type) ?? 0) + 1);
+    for (const [type, count] of counts)
+      inventory.append(element('p', '', `${type} ×${count}`));
+    if (!counts.size)
+      inventory.append(element('p', 'muted-note', 'No buildings yet.'));
+    panel.append(inventory);
+  } else if (tab === 'production')
+    panel.append(renderProduction(planet, fleets, emit, menus));
+  else if (tab === 'queue')
+    panel.append(buildQueue(planet, emit, fleets, menus));
+  else panel.append(buildingSites(planet, emit, menus));
   page.append(panel);
   return page;
 }
@@ -152,13 +209,12 @@ function budgetRow(
   body.append(row);
 }
 
-function construction(
+function buildQueue(
   planet: PlanetGameSnapshot,
   emit: IntentHandler,
   fleets: readonly FleetSnapshot[],
-  menus: Pick<AppReadModel, 'phase'>,
+  menus: PlanetMenus,
 ): HTMLElement {
-  const box = element('section', 'building-panel');
   const queue = element('section', 'planet-building-queue');
   queue.setAttribute('aria-label', 'Planet build queue');
   queue.append(
@@ -182,6 +238,26 @@ function construction(
       emit,
       menus.phase !== 'planning',
     );
+    const supply = menus.projectSupply?.find(
+      (item) => item.projectId === project.id,
+    );
+    if (supply) {
+      const details = element('details', 'project-supply');
+      details.open =
+        menus.expandedProjectIds?.includes(project.id) ?? index === 0;
+      const summary = element('summary', '', 'Supply chain');
+      summary.setAttribute(
+        'aria-label',
+        `Supply chain: ${project.type}, position ${index + 1}`,
+      );
+      details.append(summary, supplySteps(supply.requirements, emit));
+      const renderedOpen = details.open;
+      details.addEventListener('toggle', () => {
+        if (details.isConnected && details.open !== renderedOpen)
+          emit({ type: 'project-supply', id: project.id, open: details.open });
+      });
+      row.append(details);
+    }
     list.append(row);
   }
   queue.append(list);
@@ -190,11 +266,20 @@ function construction(
       element(
         'p',
         'muted-note',
-        'No production queued. Choose a building site or order from a factory below.',
+        'No production queued. Choose a building in Building sites or a product in Production.',
       ),
     );
-  box.append(queue);
-  box.append(element('h2', '', 'Building sites'));
+  return queue;
+}
+
+function buildingSites(
+  planet: PlanetGameSnapshot,
+  emit: IntentHandler,
+  menus: PlanetMenus,
+): HTMLElement {
+  const box = element('section', 'building-panel');
+  const grid = element('div', 'building-sites-grid');
+  box.append(element('h2', '', 'Building sites'), grid);
   for (const site of planet.sites) {
     const card = element('article', 'building-site');
     card.setAttribute('aria-label', `Building site ${site.index + 1}`);
@@ -243,18 +328,6 @@ function construction(
       );
       demolish.disabled = menus.phase !== 'planning';
       actions.append(demolish);
-      if (definition.ship || definition.component) {
-        card.classList.add('factory-site');
-        card.append(
-          factoryProduction(
-            planet,
-            building,
-            fleets,
-            emit,
-            menus.phase !== 'planning' || building.scheduledForDemolition,
-          ),
-        );
-      }
     } else if (site.project) {
       details.append(
         buildingImage(site.project.type as BuildType),
@@ -331,7 +404,7 @@ function construction(
     }
     details.append(actions);
     card.prepend(details);
-    box.append(card);
+    grid.append(card);
   }
   if (!planet.sites.length)
     box.append(
@@ -346,91 +419,6 @@ function costText(cost: {
   readonly Oil: number;
 }): string {
   return `Iron ${cost.Iron}, Water ${cost.Water}, Oil ${cost.Oil}`;
-}
-
-function factoryProduction(
-  planet: PlanetGameSnapshot,
-  building: BuildingSnapshot,
-  fleets: readonly FleetSnapshot[],
-  emit: IntentHandler,
-  locked: boolean,
-): HTMLElement {
-  const section = element('section', 'factory-production');
-  section.setAttribute(
-    'aria-label',
-    `Production at site ${building.slotIndex + 1}`,
-  );
-  section.append(factoryOrder(planet, building, fleets, emit, locked));
-  return section;
-}
-
-// gemensam-planetko: factories expose capabilities, never independent queues.
-function factoryOrder(
-  planet: PlanetGameSnapshot,
-  building: BuildingSnapshot,
-  fleets: readonly FleetSnapshot[],
-  emit: IntentHandler,
-  locked: boolean,
-): HTMLElement {
-  const factory = BUILDINGS[building.type];
-  const product = (factory.ship ?? factory.component)!;
-  const definition = projectDefinition(product);
-  const order = element('div', 'factory-order');
-  order.setAttribute('role', 'group');
-  order.setAttribute(
-    'aria-label',
-    `Production order at site ${building.slotIndex + 1}`,
-  );
-  const reason = building.scheduledForDemolition
-    ? 'Factory is scheduled for demolition.'
-    : locked
-      ? 'Orders are locked during simulation.'
-      : null;
-  const select = fleetSelect(planet, fleets, null);
-  select.setAttribute('aria-label', `Destination fleet for ${product}`);
-  select.disabled = !!reason;
-  const destination = element('label', 'factory-destination');
-  destination.append(element('span', '', 'Destination fleet'), select);
-  const queue = button(`Queue ${product}`, () =>
-    factory.ship
-      ? emit({
-          type: 'queue-ship',
-          ship: factory.ship,
-          fleetId: select.value || null,
-          factoryId: building.id,
-        })
-      : emit({ type: 'queue-component', component: factory.component! }),
-  );
-  queue.disabled = !!reason;
-  const actions = element('div', 'factory-order-actions');
-  if (factory.ship) actions.append(destination);
-  actions.append(queue);
-  order.append(
-    element(
-      'p',
-      'muted-note',
-      `${costText(definition.cost)} per ${factory.ship ? 'ship' : 'component'}${factory.ship ? ` · ${definition.crew} crew` : ''}`,
-    ),
-    actions,
-  );
-  if (definition.parts)
-    order.append(
-      element(
-        'p',
-        'muted-note',
-        `Requires ${Object.entries(definition.parts)
-          .map(([part, count]) => `${count} ${part}`)
-          .join(
-            ', ',
-          )}. Missing parts are queued first when local factories are available.`,
-      ),
-    );
-  if (reason) {
-    const status = element('p', 'muted-note', reason);
-    status.setAttribute('role', 'status');
-    order.append(status);
-  }
-  return order;
 }
 
 function renderQueueOrder(
@@ -508,25 +496,55 @@ function buildingUsage(type: BuildType, demolition: boolean): string {
   return `${definition.workers} workers · No recurring material cost`;
 }
 
-function fleetSelect(
-  planet: PlanetGameSnapshot,
-  fleets: readonly FleetSnapshot[],
-  selected: string | null,
-): HTMLSelectElement {
-  const select = element('select');
-  select.setAttribute('aria-label', 'Destination fleet');
-  const home = element('option', '', 'Planet home fleet (default)');
-  home.value = '';
-  select.append(home);
-  for (const fleet of fleets.filter(
-    (fleet) => !fleet.position || fleet.position.key === planet.position.key,
-  )) {
-    const option = element('option', '', fleet.name);
-    option.value = fleet.id;
-    select.append(option);
+function supplySteps(
+  steps: readonly SupplyStep[],
+  emit: IntentHandler,
+): HTMLOListElement {
+  const list = element('ol', 'supply-steps');
+  for (const step of steps) {
+    const item = element('li', 'supply-step');
+    item.append(element('span', '', `${step.label} · ${step.status}`));
+    const links = element('div', 'supply-step-links');
+    if (step.projectId && step.planetId)
+      links.append(
+        button(
+          'View production',
+          () =>
+            emit({
+              type: 'open-planet-project',
+              planetId: step.planetId!,
+              projectId: step.projectId!,
+            }),
+          'button secondary-button',
+        ),
+      );
+    else if (step.planetId)
+      links.append(
+        button(
+          'Open planet',
+          () => emit({ type: 'open-planet', id: step.planetId! }),
+          'button secondary-button',
+        ),
+      );
+    if (step.routeId)
+      links.append(
+        button(
+          'View route',
+          () => emit({ type: 'supply-open-route', id: step.routeId! }),
+          'button secondary-button',
+        ),
+      );
+    if (step.fleetId)
+      links.append(
+        button(
+          'View fleet',
+          () => emit({ type: 'open-fleet', id: step.fleetId! }),
+          'button secondary-button',
+        ),
+      );
+    item.append(links);
+    if (step.children.length) item.append(supplySteps(step.children, emit));
+    list.append(item);
   }
-  select.value = [...select.options].some((option) => option.value === selected)
-    ? selected!
-    : '';
-  return select;
+  return list;
 }

@@ -100,6 +100,9 @@ for (const size of [
     ).toBeVisible();
     await expectContentFits(page);
     await page
+      .getByRole('button', { name: 'Building sites', exact: true })
+      .click();
+    await page
       .getByRole('button', { name: 'Build building at site 1', exact: true })
       .click();
     await expect(
@@ -134,6 +137,9 @@ test('viewport-game-layout: wider fallback font metrics cannot expand the planet
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await expectContentFits(page);
   await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
+  await page
     .getByRole('button', { name: 'Build building at site 1', exact: true })
     .click();
   await expectContentFits(page);
@@ -150,6 +156,9 @@ test('visa-byggalternativ / kompakta-bygghandlingar: selection preserves Overvie
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
   const overview = page.locator('.overview');
   const open = page.getByRole('button', {
     name: 'Build building at site 6',
@@ -171,7 +180,7 @@ test('visa-byggalternativ / kompakta-bygghandlingar: selection preserves Overvie
   await expectContentFits(page);
   await page.screenshot({ path: testInfo.outputPath('build-selection.png') });
   await page
-    .getByRole('button', { name: 'Back to Overview', exact: true })
+    .getByRole('button', { name: 'Back to Building sites', exact: true })
     .click();
   await expect(page.locator('[data-site-index="5"]')).toBeFocused();
   expect(await overview.evaluate((node) => node.scrollTop)).toBeCloseTo(

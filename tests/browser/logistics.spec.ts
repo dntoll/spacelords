@@ -31,6 +31,9 @@ async function home(page: Page) {
 
 async function build(page: Page, site: number, type: string) {
   await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
+  await page
     .getByRole('button', {
       name: `Build building at site ${site}`,
       exact: true,
@@ -108,6 +111,10 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
       exact: true,
     })
     .selectOption({ label: 'Freighters' });
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('combobox', { name: 'Production product', exact: true })
+    .selectOption('Transport ship');
   await page
     .getByRole('button', { name: 'Queue Transport ship', exact: true })
     .click();
@@ -117,6 +124,10 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
       exact: true,
     })
     .selectOption({ label: 'Settlers' });
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('combobox', { name: 'Production product', exact: true })
+    .selectOption('Colony ship');
   await page
     .getByRole('button', { name: 'Queue Colony ship', exact: true })
     .click();
@@ -136,8 +147,12 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await page.getByRole('button', { name: 'Colonize', exact: true }).click();
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
+  await page
     .getByRole('button', { name: 'Build dome at site 1', exact: true })
     .click();
+  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
   await expect(page.locator('.planet-building-queue')).toContainText(
     'no active transport path',
   );
@@ -186,6 +201,9 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await nextYear(page);
   await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
   await expect(
     page.getByRole('article', { name: 'Building site 1', exact: true }),
   ).toContainText('Dome ready');
@@ -193,6 +211,9 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   for (let year = 0; year < 3; year++) await nextYear(page);
   await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
   await expect(
     page.getByRole('article', { name: 'Building site 1', exact: true }),
   ).toContainText('Operational');

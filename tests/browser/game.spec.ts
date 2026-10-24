@@ -76,6 +76,9 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
     page.getByText('Stored 100 · Extracting 0/year', { exact: true }).first(),
   ).toBeVisible();
   await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
+  await page
     .getByRole('button', { name: 'Build building at site 1', exact: true })
     .click();
   await expect(
@@ -86,7 +89,7 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
     fullPage: true,
   });
   await page
-    .getByRole('button', { name: 'Back to Overview', exact: true })
+    .getByRole('button', { name: 'Back to Building sites', exact: true })
     .click();
   await page.getByRole('button', { name: 'Back to map', exact: true }).click();
   await canvas(page);
@@ -328,6 +331,9 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   );
   await construction();
   await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
+  await page
     .getByRole('button', { name: 'Build building at site 1', exact: true })
     .click();
   await expect(page.locator('.building-menu .building-choice')).toHaveCount(4);
@@ -351,6 +357,9 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await nextYear();
   await construction();
   await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
+  await page
     .getByRole('button', { name: 'Build building at site 2', exact: true })
     .click();
   await expect(page.locator('.building-menu .building-choice')).toHaveCount(6);
@@ -369,6 +378,9 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await formFleet(page);
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await construction();
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
   const yard = page.getByRole('article', {
     name: 'Building site 2',
     exact: true,
@@ -380,30 +392,8 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     name: 'Planet build queue',
     exact: true,
   });
-  await expect(page.locator('.queue-slots')).toHaveCount(1);
-  await expect(yard.locator('.queue-slots')).toHaveCount(0);
-  // gemensam-planetko: factories expose order controls, not separate queues.
+  await expect(page.locator('.queue-slots')).toHaveCount(0);
   const detailsBounds = (await yard.locator('.site-details').boundingBox())!;
-  const queueBounds = (await yard
-    .locator('.factory-production')
-    .boundingBox())!;
-  const contentWidth = await page
-    .locator('.overview')
-    .evaluate(
-      (node) =>
-        node.clientWidth -
-        parseFloat(getComputedStyle(node).paddingLeft) -
-        parseFloat(getComputedStyle(node).paddingRight),
-    );
-  if (contentWidth >= 720) {
-    expect(queueBounds.x).toBeGreaterThan(
-      detailsBounds.x + detailsBounds.width,
-    );
-    expect(Math.abs(queueBounds.y - detailsBounds.y)).toBeLessThan(2);
-  } else
-    expect(queueBounds.y).toBeGreaterThanOrEqual(
-      detailsBounds.y + detailsBounds.height,
-    );
   for (const action of await yard.locator('.site-actions button').all()) {
     const bounds = (await action.boundingBox())!;
     expect(bounds.width).toBeLessThan(detailsBounds.width);
@@ -417,9 +407,10 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await expect(
     yard.getByRole('button', { name: 'Build ships at site 2', exact: true }),
   ).toHaveCount(0);
-  await expect(yard.locator('.factory-order')).toBeVisible();
-  await expect(yard.locator('.factory-order')).toContainText(
-    'Iron 6, Water 3, Oil 1 per ship',
+  await expect(yard.locator('.factory-order')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await expect(page.locator('.production-order')).toContainText(
+    'Iron 6, Water 3, Oil 1',
   );
   await page
     .getByRole('combobox', {
@@ -437,6 +428,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await expect(
     page.getByRole('button', { name: 'Queue Colony ship', exact: true }),
   ).toBeEnabled();
+  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
   await expect(planetQueue.locator('.queue-order')).toHaveCount(5);
   await planetQueue
     .locator('.queue-order')
@@ -475,6 +467,9 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await expect(
     page.getByRole('heading', { name: 'Vesta', exact: true }),
   ).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
   await expect(page.locator('.building-site')).toHaveCount(6);
   await expect(
     page.getByRole('button', { name: 'Build building at site 1', exact: true }),

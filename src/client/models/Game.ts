@@ -1,3 +1,4 @@
+import { ProjectSupply, type ProjectSupplySnapshot } from './ProjectSupply.js';
 import { Galaxy, Star, StarSystem, type MapCell } from './Galaxy.js';
 import { HexCoordinate } from './HexCoordinate.js';
 import { shipTransferIssue } from './FleetTransfer.js';
@@ -1564,6 +1565,63 @@ export class Game {
         }),
       ),
     );
+  }
+
+  projectSupply(planetId?: string): readonly ProjectSupplySnapshot[] {
+    const port = this.#logisticsPort();
+    const inputs = this.#ownedPlanets().map((planet) => {
+      const state = this.#state(planet);
+      const workers = state.buildings
+        .filter((b) => !b.demolition)
+        .reduce((total, b) => total + BUILDINGS[b.type].workers, 0);
+      let plannedWorkers = workers;
+      return {
+        id: planet.id,
+        name: planet.name,
+        stock: state.stock,
+        reserved: this.#logistics.reserved(planet.id),
+        extraction: this.#extraction(planet, state),
+        deposits: state.deposits,
+        projects: state.projects.map((project) => {
+          const definition = projectDefinition(project.type);
+          const factoryMissing =
+            !definition.permanent &&
+            !definition.sitePreparation &&
+            !state.buildings.some(
+              (b) =>
+                !b.demolition &&
+                (definition.ship
+                  ? BUILDINGS[b.type].ship === definition.ship
+                  : BUILDINGS[b.type].component === definition.component),
+            );
+          const issue = factoryMissing
+            ? `A matching completed factory is required for ${project.type}.`
+            : plannedWorkers + definition.workers + definition.crew >
+                state.population
+              ? 'Not enough workers or crew.'
+              : null;
+          plannedWorkers += definition.workers + definition.crew;
+          return {
+            id: project.id,
+            type: project.type,
+            cost: projectCost(project.type),
+            issue,
+          };
+        }),
+      };
+    });
+    return new ProjectSupply(
+      inputs,
+      this.#logistics.componentOrders,
+      this.shipments,
+      (from, to) => this.#logistics.path(from, to, port)?.planets ?? null,
+      (from, to) =>
+        this.#logistics.routes.find(
+          (route) =>
+            [route.a, route.b].includes(from) &&
+            [route.a, route.b].includes(to),
+        )?.id,
+    ).forPlanet(planetId);
   }
 
   supplyOverview(): SupplyOverview {

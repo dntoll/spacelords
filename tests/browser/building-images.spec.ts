@@ -30,6 +30,9 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
   await page.getByRole('button', { name: 'Back to map', exact: true }).click();
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
+  await page
     .getByRole('button', { name: 'Build building at site 1', exact: true })
     .click();
   const selected = page.getByRole('img', {
@@ -53,10 +56,16 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
     name: 'Building site 1',
     exact: true,
   });
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
   await expect(site.getByRole('img')).toHaveAttribute('src', stationSource!);
   await page.getByRole('button', { name: 'Back to map', exact: true }).click();
   await endTurn(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
   await expect(site.getByRole('img')).toHaveAttribute('src', stationSource!);
   await expect(site).toContainText('Operational');
   await site.scrollIntoViewIfNeeded();

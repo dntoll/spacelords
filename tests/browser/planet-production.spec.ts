@@ -13,6 +13,9 @@ async function home(page: Page) {
 }
 async function build(page: Page, site: number, type: string) {
   await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
+  await page
     .getByRole('button', {
       name: `Build building at site ${site}`,
       exact: true,
@@ -47,11 +50,12 @@ test('gemensam-planetko / delfabriker / automatiska-delorder: research, manufact
     await build(page, index + 2, type);
   for (let year = 0; year < 3; year++) await nextYear(page);
   await home(page);
-  await expect(page.locator('.factory-production')).toHaveCount(3);
-  await expect(page.locator('.queue-slots')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await expect(page.locator('.production-order')).toHaveCount(1);
   await page
     .getByRole('button', { name: 'Queue Fighter', exact: true })
     .click();
+  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
   const queue = page.getByRole('region', {
     name: 'Planet build queue',
     exact: true,
@@ -67,6 +71,7 @@ test('gemensam-planetko / delfabriker / automatiska-delorder: research, manufact
   await page.reload();
   await startFirstSlot(page);
   await home(page);
+  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
   await expect(queue.locator('.queue-order')).toHaveCount(4);
   await queue.scrollIntoViewIfNeeded();
   await page.screenshot({
@@ -77,6 +82,7 @@ test('gemensam-planetko / delfabriker / automatiska-delorder: research, manufact
   await expect(page.locator('[data-component="Rocket engine"]')).toContainText(
     'Stored 1',
   );
+  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
   await expect(queue.locator('.queue-order')).toHaveCount(3);
   await nextYear(page);
   await home(page);
@@ -88,6 +94,7 @@ test('gemensam-planetko / delfabriker / automatiska-delorder: research, manufact
   await expect(page.locator('[data-component="Rocket engine"]')).toContainText(
     'Stored 0',
   );
+  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
   await expect(queue.locator('.queue-order')).toHaveCount(1);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page);

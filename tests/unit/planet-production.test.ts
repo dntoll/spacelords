@@ -322,3 +322,30 @@ describe('skeppsdelar / automatisk-resursforsorjning', () => {
     ).toBe(0);
   });
 });
+
+describe('projektens-forsorjningssteg / gemensam-planetko / sparat-spel', () => {
+  it('projects actual component links for every queued project and reacts to reorder and cancellation without rewriting saves', () => {
+    const { game, home, snapshot } = setup();
+    game.scheduleShip(home, 'Fighter');
+    const before = game.exportState();
+    const supplies = game.projectSupply(home.id);
+    expect(supplies).toHaveLength(3);
+    expect(JSON.stringify(supplies[2])).toContain(
+      'Produce 1 Rocket engine at Tellus',
+    );
+    expect(JSON.stringify(supplies[2])).toContain('Require 2 Iron');
+    expect(game.exportState()).toEqual(before);
+    const fighter = snapshot().projects[2]!;
+    game.moveProject(home, fighter.id, 0);
+    expect(JSON.stringify(game.projectSupply(home.id)[0])).toContain(
+      'Move production before',
+    );
+    game.cancelProject(home, snapshot().projects[1]!.id);
+    expect(JSON.stringify(game.projectSupply(home.id)[0])).toContain(
+      'production order was cancelled',
+    );
+    expect(Game.restore(game.exportState()).projectSupply(home.id)).toEqual(
+      game.projectSupply(home.id),
+    );
+  });
+});

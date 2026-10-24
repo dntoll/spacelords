@@ -200,6 +200,12 @@ class ComponentOrder {
 }
 ComponentOrder --> ConstructionProject : supplies
 ComponentOrder --> ConstructionProject : optional production order
+note right of ComponentOrder
+  Ett köprojekts materialbehov kan kräva delproduktion
+  på en annan planet och därefter fysisk transport.
+  Delproduktionen behåller sin verkliga köplats.
+  Byggkön visar samma beroenden under huvudprojektet.
+end note
 ComponentOrder --> Planet : source and recipient
 ComponentOrder --> Shipment : reserved physical delivery
 ComponentOrder --> PlanetStock : protects until consumption

@@ -59,3 +59,19 @@ Efter uttryckligt användarbeslut ersätter denna vy `handelsgraf`,
 `handelsgraf-skeppspositioner`, `handelsgraf-ruttflottor` och
 `handelsgraf-lasbarhet`. Beskrivningen i trade-route-graph.md är historik.
 Star map-krav och fysisk frakt gäller fortsatt.
+
+## Försörjningssteg i planetens Build queue
+
+`projektens-forsorjningssteg` kompletterar denna imperieöversikt: planetens
+Build queue visar behov för varje projekt, även senare order. Lokalt fritt lager
+fördelas i köordning efter skyddade reservationer. Egna mottagna komponenter
+hör till rätt projekt; samma lager eller ändliga fyndighet täcker inte flera
+behov. Framtida utvinning visas som Waiting.
+
+Kopplad delproduktion visas med sin produktionsplanet och råvarubehov.
+Transport som ännu inte har en verklig leverans visas som Planned transport.
+Awaiting pickup och In transit används för verkliga reserverade leveranser,
+med aktuell plats, nästa etapp, hinder och uppskattning när sådan finns.
+En annullerad eller felplacerad delorder visas som ett hinder. Vyn visar och
+länkar till spelets befintliga order; den väljer inte nya leverantörer eller
+transportvägar. Den globala översiktens Required gäller fortsatt första projektet.

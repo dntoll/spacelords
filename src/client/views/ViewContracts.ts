@@ -1,5 +1,9 @@
 import type { Component } from '../models/Economy.js';
-import type { AppReadModel } from '../models/AppModel.js';
+import type {
+  AppReadModel,
+  PlanetTab,
+  ProductionCategory,
+} from '../models/AppModel.js';
 import type {
   BuildType,
   ShipType,
@@ -93,6 +97,26 @@ export type AppIntent =
         | 'map-leave'
         | 'end-turn'
         | 'produce-fighter';
+    }
+  | {
+      readonly type: 'planet-tab';
+      readonly tab: PlanetTab;
+    }
+  | {
+      readonly type: 'production-selection';
+      readonly category: ProductionCategory;
+      readonly product: string | null;
+    }
+  | { readonly type: 'production-fleet'; readonly id: string | null }
+  | {
+      readonly type: 'project-supply';
+      readonly id: string;
+      readonly open: boolean;
+    }
+  | {
+      readonly type: 'open-planet-project';
+      readonly planetId: string;
+      readonly projectId: string;
     }
   | { readonly type: 'open-planet'; readonly id?: string }
   | {

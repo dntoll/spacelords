@@ -51,6 +51,7 @@ export interface ShipmentSnapshot {
   readonly locationId: string;
   readonly location: string;
   readonly nextStop: string;
+  readonly remainingStops?: readonly string[];
   readonly fleetId: string | null;
   readonly routeId: string | null;
   readonly state: 'Awaiting pickup' | 'In transit';
@@ -210,6 +211,11 @@ export class Logistics {
           locationId: start,
           location: planet(start)?.name ?? 'Unknown location',
           nextStop: planet(next)?.name ?? 'Unknown destination',
+          remainingStops: Object.freeze(
+            shipment.path
+              .slice(shipment.stage + 1)
+              .map((id) => planet(id)?.name ?? 'Unknown destination'),
+          ),
           fleetId: shipment.fleetId,
           routeId: this.#routeFor(shipment)?.id ?? null,
           state: shipment.fleetId
