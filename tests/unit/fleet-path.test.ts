@@ -68,9 +68,11 @@ describe('rakare-hexforflyttning', () => {
       fleet.position!.r + r,
     );
     const frames = model.startTurn();
-    expect(frames).toHaveLength(
-      Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)),
-    );
+    expect(
+      frames.filter((frame) =>
+        frame.movements.some((movement) => movement.fleetId === fleet.id),
+      ),
+    ).toHaveLength(Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)));
     for (const frame of frames) model.applyTurnFrame(frame);
     model.finishTurn();
     expect(model.snapshot.fleets[0]!.position!.key).toBe(

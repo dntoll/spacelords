@@ -1,4 +1,5 @@
 import type { ShipType, ShipUnit, TurnFrame } from './Game.js';
+import type { CombatResult } from './FleetCombat.js';
 import type { HexCoordinate } from './HexCoordinate.js';
 
 export interface PursuingFleet {
@@ -81,6 +82,7 @@ export class FleetPursuit {
     fleets: readonly PursuingFleet[],
     path: (fleet: PursuingFleet) => readonly HexCoordinate[],
     speed: (fleet: PursuingFleet) => number,
+    encounter: (fleets: PursuingFleet[]) => readonly CombatResult[] = () => [],
   ): readonly TurnFrame[] {
     const forecast = fleets.map((fleet) => ({
       ...fleet,
@@ -135,6 +137,7 @@ export class FleetPursuit {
         fleet.position = to;
         remaining.set(fleet.id, remaining.get(fleet.id)! - 1);
       }
+      const combats = encounter(forecast);
       this.merge(forecast, (group, target) => {
         // A merge must not grant either group extra movement this year.
         remaining.set(
@@ -142,8 +145,10 @@ export class FleetPursuit {
           Math.min(remaining.get(target.id)!, remaining.get(group.id)!),
         );
       });
-      if (movements.length)
-        frames.push(Object.freeze({ movements: Object.freeze(movements) }));
+      if (movements.length || combats.length)
+        frames.push(
+          Object.freeze({ movements: Object.freeze(movements), combats }),
+        );
     }
     return Object.freeze(frames);
   }

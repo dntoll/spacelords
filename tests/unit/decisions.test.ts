@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { decisionScreen } from '../../src/client/models/Decisions.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppView } from '../../src/client/views/AppView.js';
@@ -27,7 +27,7 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
     model.finishTurn();
     expect(model.snapshot.decisions.every((d) => !d.skipped)).toBe(true);
   });
-  it('shows one summary warning and advances only after confirmation', () => {
+  it('shows one summary warning and advances only after confirmation', async () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
     const model = researchStationModel();
@@ -49,7 +49,7 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
     [...root.querySelectorAll('button')]
       .find((b) => b.textContent === 'End turn anyway')!
       .click();
-    expect(model.snapshot.round).toBe(2);
+    await vi.waitFor(() => expect(model.snapshot.round).toBe(2));
   });
 });
 

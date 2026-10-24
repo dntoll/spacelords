@@ -116,25 +116,25 @@ fortsatt av befintlig GitHub CI.
 
 ## Tekniska krav
 
-| Kravnamn                 | Status                     | Krav                                                                                                                                                                                                             | Verifiering                                                |
-| ------------------------ | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `typescript-projekt`     | Fullständigt implementerat | Node.js-projekt med strikt TypeScript för server och klient.                                                                                                                                                     | `npm run typecheck`, `npm run build`                       |
-| `enkel-utvecklingsstart` | Fullständigt implementerat | Ett kommando startar klientens utvecklingsserver och servern med automatisk omladdning. Dokumentera installation, adresser och felsökning.                                                                       | `npm run dev`, lokal startkontroll                         |
-| `produktionsstart`       | Fullständigt implementerat | Byggd klient och server kan köras tillsammans utan utvecklingsverktyg.                                                                                                                                           | Utökade HTTP-tester mot byggd server                       |
-| `serverstatus`           | Fullständigt implementerat | Servern erbjuder en enkel statuskontroll utan verksamhetsfunktioner. Okända API-adresser ger 404.                                                                                                                | Enhetstest av statusmodell/controller och utökat HTTP-test |
-| `rena-gitfiler`          | Fullständigt implementerat | Ignorera beroenden, byggresultat, testresultat, lokala inställningar och hemligheter. Checka in låsfil och ofarligt miljöexempel.                                                                                | `.gitignore`, `git status`, `git check-ignore`             |
-| `lasbara-kravnamn`       | Fullständigt implementerat | Ge varje krav ett stabilt, unikt och läsbart namn. Använd samma namn i tester, docs och relevanta kodkommentarer.                                                                                                | Kravgranskning och namngivna tester                        |
-| `separerade-kravlistor`  | Fullständigt implementerat | Börja rotöversikten med vision och kravkategorier. Håll produktkrav korta och otekniska. Lista tekniska krav separat och flytta växande detaljer till `docs/`. Dokumentera alla krav och ifrågasätt motsägelser. | Dokumentationsgranskning, `AGENTS.md`                      |
-| `meningsfulla-tester`    | Fullständigt implementerat | Knyt beteendekrav till enhetstester som skyddar mot felkategorier. Använd andra relevanta kontroller för verktygs- och processkrav.                                                                              | Kravkopplingen nedan och kodgranskning                     |
-| `snabb-testsvit`         | Fullständigt implementerat | Den snabba svitens totala exekvering får ta högst 20 sekunder, inklusive testverktygets start. Avbryt och rapportera fel om gränsen överskrids.                                                                  | `npm test`, tidsbegränsad testprocess                      |
-| `utokad-testsvit`        | Fullständigt implementerat | Ha en separat svit för tester som får ta längre tid, HTTP-integration samt riktiga browserkontroller mot produktionsbygget. CI-jobbet får ta högst 20 minuter inklusive installation av webbläsare.              | `npm run test:extended`                                    |
-| `tester-i-github`        | Fullständigt implementerat | Kör snabbkontroller, Pages-bygge och mobilröktest vid push/PR. Kör hela sviten i GitHub Actions vid begärt sluttest för explicit källrevision.                                                                   | `.github/workflows/ci.yml`, `npm run check` lokalt         |
-| `regressionstest-forst`  | Fullständigt implementerat | Reproducera buggar med ett misslyckat test före rättningen. Skriv även tester först för annan implementation när lämpligt.                                                                                       | Commit- och arbetsgranskning                               |
-| `mvc-arkitektur`         | Fullständigt implementerat | Använd MVC på server och klient. Vyer hanterar plattformens in-/utdata, får läsa modellen och skickar ändringsavsikter till controllers. Modeller är objektorienterade med hög sammanhållning och låg koppling.  | Enhets- och typkontroll, arkitekturgranskning              |
-| `plantuml-domanmodell`   | Fullständigt implementerat | Underhåll problemdomänens klasser och relationer i PlantUML. Lägg till domänbegrepp först när krav motiverar dem.                                                                                                | `docs/domain-model.puml`, domängranskning                  |
-| `branches-och-commits`   | Fullständigt implementerat | Arbeta på branches och gör regelbundna commits med tydliga meddelanden.                                                                                                                                          | Git-historik och arbetsregler                              |
-| `typescript-lintning`    | Fullständigt implementerat | Använd ESLint med typescript-eslint och meningsfull typmedveten kontroll. Undanta genererade bygg-, täcknings- och browserresultat från källkodsgranskningen.                                                    | `npm run lint`                                             |
-| `lasbar-kod`             | Fullständigt implementerat | Använd tydlig namngivning och Clean Code. Kommentarer förklarar motiv, begränsningar och kravkopplingar utan att upprepa koden. Håll formatering konsekvent.                                                     | Kodgranskning och `npm run format:check`                   |
+| Kravnamn                 | Status                     | Krav                                                                                                                                                                                                                                  | Verifiering                                                |
+| ------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `typescript-projekt`     | Fullständigt implementerat | Node.js-projekt med strikt TypeScript för server och klient.                                                                                                                                                                          | `npm run typecheck`, `npm run build`                       |
+| `enkel-utvecklingsstart` | Fullständigt implementerat | Ett kommando startar klientens utvecklingsserver och servern med automatisk omladdning. Dokumentera installation, adresser och felsökning.                                                                                            | `npm run dev`, lokal startkontroll                         |
+| `produktionsstart`       | Fullständigt implementerat | Byggd klient och server kan köras tillsammans utan utvecklingsverktyg.                                                                                                                                                                | Utökade HTTP-tester mot byggd server                       |
+| `serverstatus`           | Fullständigt implementerat | Servern erbjuder en enkel statuskontroll utan verksamhetsfunktioner. Okända API-adresser ger 404.                                                                                                                                     | Enhetstest av statusmodell/controller och utökat HTTP-test |
+| `rena-gitfiler`          | Fullständigt implementerat | Ignorera beroenden, byggresultat, testresultat, lokala inställningar och hemligheter. Checka in låsfil och ofarligt miljöexempel.                                                                                                     | `.gitignore`, `git status`, `git check-ignore`             |
+| `lasbara-kravnamn`       | Fullständigt implementerat | Ge varje krav ett stabilt, unikt och läsbart namn. Använd samma namn i tester, docs och relevanta kodkommentarer.                                                                                                                     | Kravgranskning och namngivna tester                        |
+| `separerade-kravlistor`  | Fullständigt implementerat | Börja rotöversikten med vision och kravkategorier. Håll produktkrav korta och otekniska. Lista tekniska krav separat och flytta växande detaljer till `docs/`. Dokumentera alla krav och ifrågasätt motsägelser.                      | Dokumentationsgranskning, `AGENTS.md`                      |
+| `meningsfulla-tester`    | Fullständigt implementerat | Knyt beteendekrav till enhetstester som skyddar mot felkategorier. Använd andra relevanta kontroller för verktygs- och processkrav.                                                                                                   | Kravkopplingen nedan och kodgranskning                     |
+| `snabb-testsvit`         | Fullständigt implementerat | Den snabba svitens totala exekvering får ta högst 20 sekunder, inklusive testverktygets start. Avbryt vid överskriden gräns och flytta tester med lägre regressionsvärde till den utökade sviten, som körs först vid begärt sluttest. | `npm test`, tidsbegränsad testprocess                      |
+| `utokad-testsvit`        | Fullständigt implementerat | Ha en separat svit för tester som får ta längre tid, HTTP-integration samt riktiga browserkontroller mot produktionsbygget. CI-jobbet får ta högst 20 minuter inklusive installation av webbläsare.                                   | `npm run test:extended`                                    |
+| `tester-i-github`        | Fullständigt implementerat | Kör snabbkontroller, Pages-bygge och mobilröktest vid push/PR. Kör hela sviten i GitHub Actions vid begärt sluttest för explicit källrevision.                                                                                        | `.github/workflows/ci.yml`, `npm run check` lokalt         |
+| `regressionstest-forst`  | Fullständigt implementerat | Reproducera buggar med ett misslyckat test före rättningen. Skriv även tester först för annan implementation när lämpligt.                                                                                                            | Commit- och arbetsgranskning                               |
+| `mvc-arkitektur`         | Fullständigt implementerat | Använd MVC på server och klient. Vyer hanterar plattformens in-/utdata, får läsa modellen och skickar ändringsavsikter till controllers. Modeller är objektorienterade med hög sammanhållning och låg koppling.                       | Enhets- och typkontroll, arkitekturgranskning              |
+| `plantuml-domanmodell`   | Fullständigt implementerat | Underhåll problemdomänens klasser och relationer i PlantUML. Lägg till domänbegrepp först när krav motiverar dem.                                                                                                                     | `docs/domain-model.puml`, domängranskning                  |
+| `branches-och-commits`   | Fullständigt implementerat | Arbeta på branches och gör regelbundna commits med tydliga meddelanden.                                                                                                                                                               | Git-historik och arbetsregler                              |
+| `typescript-lintning`    | Fullständigt implementerat | Använd ESLint med typescript-eslint och meningsfull typmedveten kontroll. Undanta genererade bygg-, täcknings- och browserresultat från källkodsgranskningen.                                                                         | `npm run lint`                                             |
+| `lasbar-kod`             | Fullständigt implementerat | Använd tydlig namngivning och Clean Code. Kommentarer förklarar motiv, begränsningar och kravkopplingar utan att upprepa koden. Håll formatering konsekvent.                                                                          | Kodgranskning och `npm run format:check`                   |
 
 ## Koppling mellan beteendekrav och tester
 
@@ -467,7 +467,7 @@ skepps stabila id och installerade motorer. Vyer får oföränderliga
 ögonblicksbilder och skickar individuella skeppsval via controller.
 Motorer och fart verifieras vid flytt, förstärkning, sammanslagning och kolonisering.
 
-`avstamning-sparkompatibilitet`: Sparversion 6 läser fortsatt version 2–5.
+`avstamning-sparkompatibilitet`: Sparversion 7 läser fortsatt version 2–6.
 Befintliga skepp får Rocket engine utan lageravdrag; äldre uppnådd forskning
 behålls och saknade motorförkunskaper kompletteras. Äldre köade skepp behålls
 med synligt motorbehov. Ingen ny rensningsmarkör eller ändrad lagringsnyckel
@@ -556,3 +556,29 @@ navigeringen. p5 ritar ringar från samma aktiva beslut och gemensam
 FleetMapLayout; markerade skepp och planeter behåller korrekt träfftest.
 Varken guidning, utfällning eller läsposition skapar nya domänorder,
 reservationer, sparfält eller ID:n. Befintliga sparningar bevaras.
+
+## Space pirates och strid
+
+- `rymdpiraters-sparning`: sparformat 7 har en uttrycklig lista `pirates`.
+  Format 2–6 läses utan pirater; ingen sparplats rensas. En tom lista betyder
+  att inga pirater finns kvar. Varje piratflotta sparar identitet, hemsystem,
+  position och antal. Ogiltiga positioner, antal och dubbla flottidentiteter avvisas.
+- `flottstrid-per-hex`: rörelseprognosen och genomförandet använder samma
+  stridsresultat. Oföränderliga TurnFrame innehåller rörelser och stridsresultat.
+  Prognosen tar bort förluster före nästa steg och före förstärkningsanslutning;
+  förstörda skepp kan inte fortsätta färden. Kvarvarande rörelsebudget ökas inte
+  av förluster. Förluster väljs efter stabilt skepps-ID och flottordning efter
+  stabilt flott-ID. Flottantal och individuella skepp uppdateras tillsammans.
+- `rymdpirater-per-stjarna` och `rymdpiraters-patrullering`: PirateFleet och
+  FleetCombat är oberoende av p5. Pirater lagras separat från spelarflottorna.
+  Vyer får enbart synliga, oföränderliga ögonblicksbilder och kan inte styra
+  pirater. Starthex är stjärnans första granne enligt HexCoordinate; patrullen
+  följer samma grannordning. Piratrörelser utökar inte spelarens utforskade karta.
+
+`snabb-testsvit`: snabbsviten använder tre isolerade testworkers och behåller
+spelregler, sparning, rörelse och centrala användarflöden. De detaljerade
+ritlager-, kontrast-, streckmönster- och Research-layoutkontrollerna ligger i
+`tests/extended/`: de har lägre regressionsvärde vid vanliga speländringar än
+beteendetesterna. Inga tester tas bort. Den utökade sviten upptäcker dem via
+`vitest.extended.config.ts` och kör dem först vid separat begärt sluttest.
+20-sekundersgränsen inkluderar fortsatt verktygsstarten.

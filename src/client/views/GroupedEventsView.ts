@@ -2,6 +2,7 @@ import type { GameEvent } from '../models/Game.js';
 import { element } from './dom.js';
 
 const eventTypes: readonly (readonly [RegExp, string])[] = [
+  [/^Combat at HEX /, 'Combat'],
   [/^Habitability on .+ increased to /, 'Habitability changes'],
   [/ was demolished on /, 'Demolitions'],
   [/ is waiting on /, 'Production waiting'],

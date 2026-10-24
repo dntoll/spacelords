@@ -1,3 +1,9 @@
+import {
+  PirateFleet,
+  type PirateSnapshot,
+  type SavedPirateFleet,
+} from './PirateFleet.js';
+import { FleetCombat, type CombatResult } from './FleetCombat.js';
 import { prioritizeProduction } from './ProductionPriorities.js';
 import { routeEscortTargets, tradeAssignmentIssue } from './TradeAssignment.js';
 import {
@@ -431,6 +437,7 @@ export interface GameEvent {
   readonly text: string;
 }
 export interface TurnFrame {
+  readonly combats?: readonly CombatResult[];
   readonly movements: readonly {
     readonly fleetId: string;
     readonly from: HexCoordinate;
@@ -508,7 +515,8 @@ export interface GameState {
   readonly componentOrders?: readonly ComponentOrder[];
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
-  readonly version: 2 | 3 | 4 | 5 | 6;
+  readonly version: 2 | 3 | 4 | 5 | 6 | 7;
+  readonly pirates?: readonly SavedPirateFleet[];
   readonly world: {
     readonly player: { readonly id: string; readonly name: string };
     readonly radius: number;
@@ -544,11 +552,13 @@ export class Game {
   #sequence = 1;
   #colonies = new Map<string, ColonyState>();
   #fleets: Fleet[];
+  #pirates: PirateFleet[];
   #explored = new Set<string>();
   #events: GameEvent[] = [];
   #mapCells: readonly MapCell[] | null = null;
 
   constructor(readonly galaxy: Galaxy) {
+    this.#pirates = PirateFleet.seed(galaxy);
     for (const planet of galaxy.systems.flatMap((system) => system.planets)) {
       if (planet.colony?.ownerId === galaxy.player.id)
         this.#colonies.set(planet.id, {
@@ -580,7 +590,8 @@ export class Game {
     if (this.#phase === 'simulating')
       throw new Error('Wait for the turn to finish before saving.');
     return structuredClone({
-      version: 6,
+      version: 7,
+      pirates: this.#pirates.map((pirate) => pirate.snapshot()),
       world: {
         player: { id: this.galaxy.player.id, name: this.galaxy.player.name },
         radius: this.galaxy.radius,
@@ -616,7 +627,7 @@ export class Game {
 
   static restore(state: GameState): Game {
     if (
-      ![2, 3, 4, 5, 6].includes(state.version) ||
+      ![2, 3, 4, 5, 6, 7].includes(state.version) ||
       !Number.isSafeInteger(state.round) ||
       state.round < 1 ||
       !Number.isSafeInteger(state.sequence) ||
@@ -658,6 +669,18 @@ export class Game {
     );
     const game = new Game(galaxy);
     const copy = structuredClone(state);
+    if (state.version === 7 && !Array.isArray(state.pirates))
+      throw new Error('Missing saved pirate fleets.');
+    game.#pirates =
+      state.version >= 7
+        ? copy.pirates!.map((pirate) => PirateFleet.restore(pirate, galaxy))
+        : [];
+    const ids = [
+      ...copy.fleets.map((fleet) => fleet.id),
+      ...game.#pirates.map((pirate) => pirate.id),
+    ];
+    if (new Set(ids).size !== ids.length)
+      throw new Error('Duplicate fleet ID.');
     game.#round = copy.round;
     game.#phase = 'planning';
     game.#sequence = copy.sequence;
@@ -719,6 +742,7 @@ export class Game {
           throw new Error('A fleet with ships needs a position.');
         return {
           ...fleet,
+          ships: { ...fleet.ships },
           position: empty ? null : position(current!),
           destination: !empty && destination ? position(destination) : null,
           ...(!empty && courseOrigin
@@ -986,6 +1010,14 @@ export class Game {
       }),
     );
   }
+  pirateSnapshots(): readonly PirateSnapshot[] {
+    return Object.freeze(
+      this.#pirates
+        .filter((pirate) => this.#explored.has(pirate.position.key))
+        .map((pirate) => pirate.snapshot()),
+    );
+  }
+
   fleetSnapshots(): readonly FleetSnapshot[] {
     return Object.freeze(
       this.#fleets.map((fleet) =>
@@ -1615,21 +1647,53 @@ export class Game {
     this.#refreshReinforcements();
     this.#mergeReinforcements();
     this.#phase = 'simulating';
+    const pirates = new Map(this.#pirates.map((pirate) => [pirate.id, pirate]));
     return FleetPursuit.plan(
-      this.#fleets,
-      (fleet) => this.#route(fleet).path,
-      (fleet) => this.#speed(fleet),
+      [...this.#fleets, ...this.#pirates.map((pirate) => pirate.movingFleet())],
+      (fleet) =>
+        pirates.has(fleet.id)
+          ? [pirates.get(fleet.id)!.nextPosition(this.galaxy)]
+          : this.#route(fleet).path,
+      (fleet) => (pirates.has(fleet.id) ? 1 : this.#speed(fleet)),
+      (fleets) => FleetCombat.resolve(fleets, new Set(pirates.keys())),
     );
   }
   applyFrame(frame: TurnFrame): void {
     if (this.#phase !== 'simulating')
       throw new Error('No turn is being simulated.');
     for (const movement of frame.movements) {
+      const pirate = this.#pirates.find(
+        (pirate) => pirate.id === movement.fleetId,
+      );
+      if (pirate) {
+        pirate.position = movement.to;
+        continue;
+      }
       const fleet = this.#fleetState(movement.fleetId);
       fleet.position = movement.to;
       this.#reveal(movement.to, fleet.ships['Exploration ship'] > 0);
       this.#recordArrival(fleet);
     }
+    for (const combat of frame.combats ?? []) {
+      const fleet = this.#fleetState(combat.fleetId);
+      const pirate = this.#pirates.find(
+        (pirate) => pirate.id === combat.pirateId,
+      )!;
+      FleetCombat.applyLosses(fleet, combat.losses);
+      pirate.count = combat.survivingPirates;
+      if (combat.losses['Transport ship'] > 0)
+        this.#logistics.destroyCargo(fleet.id);
+      this.#releaseEmptyFleet(fleet);
+      const losses =
+        (Object.entries(combat.losses) as [ShipType, number][])
+          .filter(([, count]) => count > 0)
+          .map(([type, count]) => `${count} ${type}`)
+          .join(', ') || 'no ships';
+      this.#event(
+        `Combat at HEX ${combat.position.key}: ${fleet.name} versus Space pirate. Lost ${losses}; destroyed ${combat.pirateLosses} pirates. Survivors: ${combat.survivingFighters} Fighters, ${combat.survivingPirates} pirates, ${fleet.ships['Colony ship'] + fleet.ships['Exploration ship'] + fleet.ships['Transport ship']} civilian ships.`,
+      );
+    }
+    this.#pirates = this.#pirates.filter((pirate) => pirate.count > 0);
     this.#mergeReinforcements();
     this.#refreshReinforcements();
   }

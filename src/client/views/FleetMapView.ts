@@ -31,6 +31,7 @@ export function renderMapFleets(
   showUnselectedRings = false,
   routeView: readonly TradeRouteSnapshot[] | null = null,
   attentionFleetIds: readonly string[] = [],
+  pirateIds: readonly string[] = [],
 ): void {
   const markers = FleetMapLayout.markers(fleets, routeView ?? [], zoom);
   const destinationFor = (fleet: FleetSnapshot) =>
@@ -77,6 +78,7 @@ export function renderMapFleets(
     );
   }
   for (const { fleet, point, scale } of markers) {
+    const hostile = pirateIds.includes(fleet.id);
     const selected = interaction.mapFleetId === fleet.id;
     const hovered = interaction.hoveredFleetId === fleet.id;
     const needsOrder = attentionFleetIds.includes(fleet.id);
@@ -86,16 +88,19 @@ export function renderMapFleets(
       !fleet.destination &&
       !fleet.joinFleetId &&
       fleet.ships['Transport ship'] > 0;
-    const color = selected
-      ? '#ffdc88'
-      : hovered
-        ? '#d5fff6'
-        : needsOrder
-          ? '#ffdc88'
-          : availableTransport
-            ? '#d8a7ff'
-            : '#72d8ca';
+    const color = hostile
+      ? '#ff8e85'
+      : selected
+        ? '#ffdc88'
+        : hovered
+          ? '#d5fff6'
+          : needsOrder
+            ? '#ffdc88'
+            : availableTransport
+              ? '#d8a7ff'
+              : '#72d8ca';
     if (
+      hostile ||
       selected ||
       hovered ||
       showUnselectedRings ||
@@ -118,7 +123,7 @@ export function renderMapFleets(
       sketch.circle(point.x, point.y, FleetMapLayout.hitRadius * 2);
       context?.setLineDash([]);
     }
-    if (routeView && (fleet.routeId || availableTransport)) {
+    if (hostile || (routeView && (fleet.routeId || availableTransport))) {
       sketch.noStroke();
       const width = (fleet.name.length * 6.5 + 10) / zoom;
       sketch.fill('#0a1520ed');

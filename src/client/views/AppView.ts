@@ -1,3 +1,4 @@
+import { pirateAsFleet } from '../models/PirateFleet.js';
 import { updateDecisionGuidance } from './DecisionGuidanceView.js';
 import {
   isMapScreen,
@@ -469,6 +470,8 @@ export class AppView implements AppPort {
         mapTrade: model.mapTrade,
         routes: model.tradeRoutes,
         routeFleets: model.fleets,
+        pirates: model.pirates,
+        mapFleetId: model.mapFleetId,
         research: model.research.completed,
         orders: model.planetOrders,
         phase: model.phase,
@@ -959,7 +962,10 @@ export class AppView implements AppPort {
       this.#panel.hidden = !planet;
       return;
     }
-    const selectedFleet = model.fleets.find(
+    const selectedFleet = [
+      ...model.fleets,
+      ...(model.pirates ?? []).map(pirateAsFleet),
+    ].find(
       (fleet) =>
         !model.destinationFleetId &&
         fleet.id === model.mapFleetId &&
@@ -1092,7 +1098,12 @@ export class AppView implements AppPort {
     ) {
       const fleets = renderMapFleetPanel(model, this.#emit, cell.position);
       if (
-        model.fleets.some((fleet) => fleet.position?.key === cell.position.key)
+        model.fleets.some(
+          (fleet) => fleet.position?.key === cell.position.key,
+        ) ||
+        model.pirates.some(
+          (pirate) => pirate.position.key === cell.position.key,
+        )
       ) {
         // flottadministration: position and ships take priority over planet administration.
         if (object) contents.splice(0, 1);

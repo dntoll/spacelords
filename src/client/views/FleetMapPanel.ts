@@ -1,3 +1,4 @@
+import { shipImage } from './ShipView.js';
 import { shipTransferIssue } from '../models/FleetTransfer.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import type { HexCoordinate } from '../models/HexCoordinate.js';
@@ -32,12 +33,44 @@ export function renderMapFleetPanel(
   const local = model.fleets.filter(
     (fleet) => fleet.position?.key === position.key,
   );
-  if (!local.length) {
+  const pirates = (model.pirates ?? []).filter(
+    (pirate) => pirate.position.key === position.key,
+  );
+  if (!local.length && !pirates.length) {
     panel.append(element('p', 'muted-note', 'No fleets here.'));
     return panel;
   }
   panel.append(place);
   const cards = element('div', 'map-fleet-cards');
+  for (const pirate of pirates) {
+    const card = element('article', 'fleet-card pirate-card');
+    card.dataset.pirateId = pirate.id;
+    card.setAttribute('aria-label', 'Space pirate');
+    const image = shipImage('Fighter');
+    image.alt = 'Space pirate';
+    const portrait = element('figure', 'ship-portrait');
+    portrait.append(image, element('figcaption', '', 'Space pirate'));
+    card.append(
+      element('h3', '', 'Space pirate'),
+      portrait,
+      element(
+        'p',
+        '',
+        `Hostile · ${pirate.count} ${pirate.count === 1 ? 'pirate' : 'pirates'} · Speed 1 hex/year`,
+      ),
+      element(
+        'p',
+        'muted-note',
+        'Patrols this star system. Combat occurs on a shared hex after movement. One Fighter destroys up to two pirates; each pair of pirates destroys one Fighter.',
+      ),
+    );
+    cards.append(card);
+  }
+  if (!local.length) {
+    panel.append(cards);
+    return panel;
+  }
+
   for (const fleet of local) {
     const card = renderFleetCard(fleet, model, emit);
     if (

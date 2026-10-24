@@ -1,3 +1,4 @@
+import { pirateAsFleet, type PirateSnapshot } from './PirateFleet.js';
 import {
   isMapScreen,
   BUILD_RING_EXTENT,
@@ -121,6 +122,7 @@ export interface AppReadModel {
   readonly round: number;
   readonly phase: GamePhase;
   readonly fleets: readonly FleetSnapshot[];
+  readonly pirates: readonly PirateSnapshot[];
   readonly selectedFleet: FleetSnapshot | null;
   readonly fleetNameEdit: {
     readonly id: string;
@@ -401,6 +403,7 @@ export class AppModel {
       round: this.#game.round,
       phase: this.#game.phase,
       fleets: this.#game.fleetSnapshots(),
+      pirates: this.#game.pirateSnapshots(),
       selectedFleet: this.#selectedFleetId
         ? this.#game.fleet(this.#selectedFleetId)
         : null,
@@ -476,7 +479,10 @@ export class AppModel {
     )
       return null;
     return FleetMapLayout.hit(
-      this.#game.fleetSnapshots(),
+      [
+        ...this.#game.fleetSnapshots(),
+        ...this.#game.pirateSnapshots().map(pirateAsFleet),
+      ],
       this.#camera.screenToWorld(point),
       this.#screen === 'route' ? this.#game.tradeRoutes : [],
       this.#camera.snapshot.zoom,
@@ -484,7 +490,11 @@ export class AppModel {
   }
   selectMapFleet(id: string): void {
     if (!this.#isMapScreen() || this.#screen === 'production') return;
-    const fleet = this.#game.fleet(id);
+    const pirate = this.#game
+      .pirateSnapshots()
+      .find((pirate) => pirate.id === id);
+    const fleet =
+      this.#game.fleet(id) ?? (pirate ? pirateAsFleet(pirate) : null);
     if (fleet && Object.values(fleet.ships).some((count) => count > 0)) {
       this.#mapTrade.clearSelection();
       this.#mapFleetId = id;
@@ -506,6 +516,7 @@ export class AppModel {
       !this.#isMapScreen() ||
       this.#screen === 'production' ||
       !this.#mapFleetId ||
+      !this.#game.fleet(this.#mapFleetId) ||
       this.#game.phase !== 'planning'
     )
       return;

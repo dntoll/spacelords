@@ -280,4 +280,19 @@ package "Framtida domän – ej implementerad" {
 
 note "Kamera, controllers och p5-vyer är tekniska begrepp\noch ingår inte i problemdomänen." as Scope
 
+class PirateFleet {
+  id
+  systemId
+  position : HexCoordinate
+  count
+  nextPosition()
+}
+class FleetCombat {
+  resolve()
+}
+SavedGame --> PirateFleet
+StarSystem "1" <-- "0..*" PirateFleet : patrols
+FleetCombat --> Fleet
+FleetCombat --> PirateFleet
+FleetCombat --> GameEvent : combat outcome
 @enduml

@@ -10,6 +10,12 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Space pirates:** `rymdpirater-per-stjarna`, `rymdpiraters-patrullering`,
+  `flottstrid-per-hex` och `rymdpiraters-sparning` är **Fullständigt implementerat**.
+  Nya spel har fientliga pirater runt andra stjärnor, patrullering och strid
+  efter varje hexsteg. Enhetstester och mobilflöden i Chromium och WebKit är verifierade.
+  Äldre spel får inga pirater. Se [spelreglerna](docs/space-pirates.md).
+
 - **Events:** `handelser-grupperade-per-ar-och-typ` är **Fullständigt implementerat**.
   Events samlas under årsrubriker och grupperas efter händelsetyp inom varje år.
   Population changes visar planetnamn och förändring, även +0.
@@ -165,6 +171,9 @@ Se [hela visionen](docs/game-vision.md).
   Se [Events och beslutsguidning](docs/events-and-guidance.md).
 - **Utveckling och kvalitet:** MVC, TypeScript, ESLint, p5 i instance mode,
   en snabb testsvit inom 20 sekunder och en utökad svit i GitHub CI.
+  `snabb-testsvit` är **Fullständigt implementerat**: om tiden överskrids flyttas
+  mindre prioriterade tester till den utökade sviten vid begärt sluttest.
+  Detaljerade rit- och layoutkontroller ligger där; centrala spelregler behålls snabba.
   `utokad-testsvit` har en jobbtidsgräns på 20 minuter inklusive installation
   av webbläsare; snabbsvitens gräns är oförändrad.
   `snabb-mobilpublicering` är **Fullständigt implementerat** och provpublicerat:

@@ -1,3 +1,4 @@
+import { pirateAsFleet } from '../models/PirateFleet.js';
 import { decisionScreen, needsAttention } from '../models/Decisions.js';
 import { HexGeometry } from '../models/HexCoordinate.js';
 import type p5 from 'p5';
@@ -45,7 +46,7 @@ export function renderMapOverlays(sketch: p5, model: AppReadModel): void {
   // kartflottor: colony badges must not hide selectable fleet markers.
   renderMapFleets(
     sketch,
-    model.fleets,
+    [...model.fleets, ...(model.pirates ?? []).map(pirateAsFleet)],
     model.camera.zoom,
     model,
     model.screen === 'fleets',
@@ -55,5 +56,6 @@ export function renderMapOverlays(sketch: p5, model: AppReadModel): void {
           .filter(needsAttention)
           .flatMap((decision) => (decision.fleetId ? [decision.fleetId] : []))
       : [],
+    (model.pirates ?? []).map((pirate) => pirate.id),
   );
 }

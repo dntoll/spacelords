@@ -628,6 +628,20 @@ export class Logistics {
     }
   }
 
+  // flottstrid-per-hex: lost cargo cannot be delivered or remain reserved.
+  destroyCargo(fleetId: string): void {
+    const lost = this.shipments.filter(
+      (shipment) => shipment.fleetId === fleetId,
+    );
+    const orders = new Set(lost.map((shipment) => shipment.componentOrderId));
+    this.componentOrders = this.componentOrders.filter(
+      (order) => !orders.has(order.id),
+    );
+    this.shipments = this.shipments.filter(
+      (shipment) => shipment.fleetId !== fleetId,
+    );
+  }
+
   unload(port: LogisticsPort): void {
     for (const fleet of port.fleets) {
       if (!fleet.routeId || fleet.destination) continue;

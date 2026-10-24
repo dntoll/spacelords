@@ -562,3 +562,14 @@ ger konkret vägledning i sin vy: rätt objekt och kontroller markeras med färg
 Show öppnar rätt mål och kort hjälp förklarar vad spelaren kan göra.
 Tystade, överhoppade och lösta beslut ger ingen sådan markering.
 Se [utförliga krav och ersatta gränssnittskrav](events-and-guidance.md).
+
+## Space pirates
+
+| Krav                        | Status                     | Beteende                                                                                                                                                                                                |
+| --------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rymdpirater-per-stjarna`   | Fullständigt implementerat | Ett nytt spel börjar med en Space pirate vid varje stjärna utanför hemsystemet. Pirater är fientliga och kan inspekteras på utforskade hexar på Star map och Fleets.                                    |
+| `rymdpiraters-patrullering` | Fullständigt implementerat | Pirater går ett hexsteg per år runt sin stjärna och lämnar aldrig systemet. Besegrade pirater återkommer inte.                                                                                          |
+| `flottstrid-per-hex`        | Fullständigt implementerat | Efter varje samtidigt hexsteg strider flottorna var för sig. Varje Fighter förstör upp till två pirater; varje par pirater förstör en Fighter. Kvarvarande pirater förstör civila skepp och deras last. |
+| `rymdpiraters-sparning`     | Fullständigt implementerat | Äldre spel får inga pirater. Nya spel bevarar piraternas position och förluster efter omladdning.                                                                                                       |
+
+Se [Space pirates](space-pirates.md) för stridsregler och exempel.

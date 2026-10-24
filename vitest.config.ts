@@ -6,7 +6,7 @@ export default defineConfig({
     include: ['tests/unit/**/*.test.ts'],
     environment: 'node',
     pool: 'threads',
-    maxWorkers: 2,
+    maxWorkers: 3,
     testTimeout: 2_000,
     hookTimeout: 2_000,
     clearMocks: true,
