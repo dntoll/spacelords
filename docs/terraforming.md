@@ -1,5 +1,8 @@
 # Terraforming och Domes
 
+Reglerna hör till `terraformning`, `planettypsforskning`,
+`domes-per-byggplats`, `andningsbar-atmosfar` och `habitability-kapacitet`.
+
 Stenplaneter har en fast grundtyp: `Temperate`, `Ice`, `Desert`, `Ocean`
 eller `Toxic`. Gasplaneter kan inte terraformeras. Tellus är `Temperate` med
 100% habitability. Övriga stenplaneter i exempelvärlden täcker alla fyra specialtyperna.

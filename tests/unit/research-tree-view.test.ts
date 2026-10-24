@@ -48,6 +48,9 @@ it('planettypsforskning: omits hidden projects and sizes the diagram for only di
   const research = new Game(createExampleGalaxy()).research;
   const view = renderResearch(research, false, vi.fn());
   const layout = new ResearchTreeLayout(research.available);
+  expect(
+    view.querySelector('.research-introduction-details')!.textContent,
+  ).toContain('Dome');
   expect(view.querySelector('[data-technology="Ice dome"]')).toBeNull();
   expect(view.querySelector('[data-technology="Desert dome"]')).not.toBeNull();
   expect(view.querySelectorAll('[data-technology]')).toHaveLength(

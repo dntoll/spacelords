@@ -28,7 +28,7 @@ export function renderResearch(
     element(
       'p',
       '',
-      'Build a Research station on any colony without prior research. Each operating station contributes one research point per year. Each technology costs one point.',
+      'Research station needs no technology of its own. Unbreathable planets require a researched Dome at the site first. Each operating station contributes one research point per year. Each technology costs one point.',
     ),
     element(
       'p',

@@ -44,9 +44,9 @@ Se [hela visionen](docs/game-vision.md).
   är borttagen. Flottor kan fortsatt dras till ruttlinjen för tilldelning.
 - **Terraforming och Domes:** `terraformning`, `planettypsforskning`,
   `domes-per-byggplats`, `andningsbar-atmosfar` och `habitability-kapacitet`
-  är **Delvis implementerat**: modeller och gränssnitt finns; utökad verifiering
-  återstår. Se [spelreglerna](docs/terraforming.md). Domes ersätter `habitat`.
-  `engangsreset-terraformning` rensar denna leverans testsparningar en gång.
+  är **Fullständigt implementerat**. Se [spelreglerna](docs/terraforming.md).
+  Domes ersätter `habitat`. `engangsreset-terraformning` är
+  **Fullständigt implementerat** och rensar denna leverans testsparningar en gång.
   Framtida inkompatibla ändringar ska stämmas av med användaren på nytt.
 - **Ekonomi och byggande:** ändliga fyndigheter av Iron, Water och Oil utvinns
   till lokala obegränsade lager. Material förbrukas en gång vid byggstart.
@@ -112,11 +112,12 @@ Se [hela visionen](docs/game-vision.md).
 **Ej implementerat**, **Delvis implementerat** eller **Fullständigt implementerat**.
 [Ekonomi och logistik](docs/economy-logistics.md) beskriver de nya spelreglerna.
 
-Denna iteration ersätter `arsbudget` med `planetlager` och parallella
-planetbyggen med `planetbyggnadsko`. Den inför utvinning, forskningskö,
-transportfabrik, fysiskt handelsnätverk och beslutsstöd.
-Separata fabriksköer ersätts nu av en gemensam planetkö. Byggplatser,
-kartstyrning och sparplatsgränssnitt behålls, liksom befintliga sparade order.
+Denna iteration inför terraforming, planettypsforskning och Domes samt
+befolknings- och byggplatsgränser utifrån habitability. Domes ersätter `habitat`.
+`engangsreset-terraformning` ersätter äldre bevarandekrav enbart för denna
+leverans: befintliga testsparningar töms en gång efter användarens beslut.
+Nya sparningar bevaras, och framtida inkompatibla ändringar kräver ny avstämning.
+Ekonomins planetlager, gemensamma Build queue och fysiska handelsnät behålls.
 
 [Tekniska krav](docs/technical-requirements.md),
 [domänmodell](docs/domain-model.puml),

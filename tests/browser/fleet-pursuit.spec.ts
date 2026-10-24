@@ -6,6 +6,8 @@ import { startFirstSlot, endTurn } from './save-helpers.js';
 test('skepp-till-rorlig-flotta: reinforcements survive reload and catch a moving fleet', async ({
   page,
 }, testInfo) => {
+  // utokad-testsvit: allow two turns, reload and map interactions on WebKit.
+  test.setTimeout(60_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');

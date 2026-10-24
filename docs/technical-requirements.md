@@ -104,8 +104,8 @@ fortsatt av befintlig GitHub CI.
 
 ## Koppling mellan beteendekrav och tester
 
-- `engangsreset-ekonomi`: **Fullständigt implementerat**. Just denna leverans
-  raderar de tre äldre version 1-sparplatserna efter uttryckligt användarbeslut.
+- `engangsreset-ekonomi`: **Fullständigt implementerat**. Den tidigare leveransen
+  av ekonomiversion 2 raderade de tre äldre version 1-sparplatserna efter uttryckligt användarbeslut.
   Version 2 använder egna nycklar och återställs inte vid omladdning.
   Framtida formatändringar kräver bevarande eller nytt uttryckligt beslut.
 - Ekonomi, forskningsordning, rutter, last, reservationer och överhoppade beslut
@@ -270,7 +270,9 @@ varningsdialog, avbrott, lagringsfel och radering av en enda plats.
   projektidentifierare, med bibehållen ordning inom varje gammal kö. Gamla
   projektidentifierare och leveransreservationer bevaras. Saknade delposter i
   gamla lager fylls med noll. Upprepad återläsning ändrar inte kön. Automatisk
-  rensning av sparplatser tillkommer inte. Modelltester täcker migreringen.
+  rensning av sparplatser infördes inte i version 4. Modelltester täcker
+  migreringen. Version 5 har ett separat uttryckligt undantag enligt
+  `engangsreset-terraformning` nedan.
 
 - `gemensam-planetko`, `skeppsdelar`, `delfabriker` och `automatiska-delorder`
   skyddas av modelltester för en färdig order per år, reservationer, automatisk
@@ -341,10 +343,10 @@ väntan och fel, sparning och hela produktionskedjan. Snabbsviten behåller
 
 ## Terraforming och engångsrensning
 
-- `engangsreset-terraformning` — **Delvis implementerat**: efter uttryckligt
+- `engangsreset-terraformning` — **Fullständigt implementerat**: efter uttryckligt
   användarbeslut 2026-10-24 töms de tre befintliga testsparplatserna en gång.
   Markören `spacelords.terraforming-v5-reset` förhindrar upprepad rensning.
-  Annan webbläsarlagring lämnas kvar. Utökad verifiering återstår.
+  Annan webbläsarlagring lämnas kvar.
 - `avstamning-sparkompatibilitet` — **Fullständigt implementerat**: arbetsregeln
   finns i AGENTS.md. Beslutet ersätter äldre bevarandekrav enbart för denna leverans. Fråga
   användaren på nytt vid framtida inkompatibla ändringar; testsparningarnas
@@ -361,3 +363,19 @@ väntan och fel, sparning och hela produktionskedjan. Snabbsviten behåller
   `planettypsforskning`, `domes-per-byggplats`, `andningsbar-atmosfar`,
   `habitability-kapacitet` och `engangsreset-terraformning`. Browserflödet
   verifierar forskning, Dome, fabrik, atmosfärgräns och sparning på mobil och dator.
+
+- Det längre browserflödet för `skepp-till-rorlig-flotta` har 60 sekunders
+  tidsbudget för två rundor, omladdning och kartinteraktioner i WebKit.
+  Kontrollerna och CI-jobbets gräns på 20 minuter behålls.
+
+### Verifiering 2026-10-24
+
+- Snabbsviten: 319 godkända tester på 14,43 sekunder av högst 20.
+  Formatkontroll, ESLint, typkontroll, båda byggena och fem integrationstester
+  är godkända.
+- Den fullständiga lokala browserkörningen tog 22,5 minuter: 242 godkända,
+  25 plattformsanpassat överhoppade och ett tidsgränsfall i flottflödet.
+  Efter justerad tidsbudget passerade tolv riktade tester mot slutbygget:
+  terraforming, planet-/forskningsvyer och flottflödet på samtliga fyra profiler.
+  CI-jobbets gräns är fortsatt 20 minuter; denna lokala körning verifierar
+  inte CI:s exekveringstid.

@@ -42,7 +42,7 @@ function turn(game: Game) {
   game.finishTurn();
 }
 
-describe('habitability-kapacitet / andningsbar-atmosfar', () => {
+describe('befolkningsutveckling / gastvanlighet / habitability-kapacitet / andningsbar-atmosfar', () => {
   it.each([
     [0, 1_000, 1, false],
     [25, 5_000, 1, false],
@@ -250,6 +250,31 @@ describe('planettypsforskning', () => {
       'solid planet type',
     );
     expect(game.research.available).not.toContain('Desert dome');
+    expect(game.planetSnapshot(planet)!.environment).toBe('Gas');
+  });
+
+  it('requests more research only when an unfinished discovered project exists', () => {
+    const initial = new Game(createExampleGalaxy());
+    const state = {
+      ...initial.exportState(),
+      researched: initial.research.available,
+    };
+    const finished = Game.restore(state);
+    expect(
+      finished.decisions.some(
+        (decision) => decision.id === 'research-empty' && decision.current,
+      ),
+    ).toBe(false);
+    const ice = finished.galaxy.systems[1]!.planets[0]!;
+    const discovered = Game.restore({
+      ...state,
+      explored: [...state.explored, ice.position.key],
+    });
+    expect(
+      discovered.decisions.some(
+        (decision) => decision.id === 'research-empty' && decision.current,
+      ),
+    ).toBe(true);
   });
 
   it('reveals both projects through visibility and queues the matching Dome prerequisite', () => {
