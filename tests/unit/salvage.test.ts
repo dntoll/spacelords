@@ -40,6 +40,54 @@ describe('stridsrapport-i-dialog / vrak-efter-strid', () => {
 });
 
 describe('bargningsorder / bogsering-av-vrak', () => {
+  it('retains the Ion bonus while towing without regaining time at pickup', () => {
+    const state = salvageState();
+    state.fleets[0]!.shipUnits = [
+      {
+        id: 'ion-tug',
+        type: 'Salvage ship',
+        engines: { 'Rocket engine': 0, 'Ion pulse engine': 2 },
+      },
+    ];
+    const game = Game.restore(state);
+    expect(game.fleet('fleet-home')!.speed).toBe(6);
+    game.orderSalvage('fleet-home', 'advanced-wreck');
+    finishYear(game);
+    expect(game.fleet('fleet-home')!.speed).toBe(2);
+    expect(game.fleet('fleet-home')!.position?.key).toBe('3,0');
+    finishYear(game);
+    expect(game.wrecks).toHaveLength(0);
+  });
+  it('rejects competing reservations and capacity overflow without changing the existing mission', () => {
+    const state = salvageState();
+    state.salvage.wrecks.push({
+      ...state.salvage.wrecks[0]!,
+      id: 'another-wreck',
+      ship: { ...advancedExplorer, id: 'another-ship' },
+    });
+    state.fleets.push({
+      ...structuredClone(state.fleets[0]!),
+      id: 'competitor',
+      name: 'Competitor',
+      shipUnits: [
+        {
+          id: 'other-tug',
+          type: 'Salvage ship',
+          engines: { 'Rocket engine': 2, 'Ion pulse engine': 0 },
+        },
+      ],
+    });
+    const game = Game.restore(state);
+    game.orderSalvage('fleet-home', 'advanced-wreck');
+    const before = game.exportState();
+    expect(() => game.orderSalvage('competitor', 'advanced-wreck')).toThrow(
+      'not available',
+    );
+    expect(() => game.orderSalvage('fleet-home', 'another-wreck')).toThrow(
+      'One Salvage ship',
+    );
+    expect(game.exportState()).toEqual(before);
+  });
   it('reserves one wreck per tug and spends time at the speed used for each step', () => {
     const game = Game.restore(salvageState());
     game.orderSalvage('fleet-home', 'advanced-wreck');

@@ -72,6 +72,10 @@ test('upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: Handl
     path: testInfo.outputPath('discovery-handling.png'),
   });
   await controls.getByRole('button', { name: 'Continue', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Battle report', exact: true })
+    .getByRole('button', { name: 'Continue', exact: true })
+    .click();
   await expect
     .poll(async () => {
       const saved = await page.evaluate(
