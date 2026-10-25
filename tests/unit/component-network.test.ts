@@ -275,7 +275,7 @@ describe('automatiska-delorder', () => {
   });
 
   it.each(['resources', 'workers'])(
-    'accepts %s shortages but reports the actual production obstacle',
+    'beslut-vantar-pa-paborjad-atgard: accepts %s shortages and reports the actual production obstacle at its source',
     (shortage) => {
       const state = network().game.exportState();
       if (shortage === 'resources') {
@@ -287,10 +287,18 @@ describe('automatiska-delorder', () => {
       const supply = game
         .supplyOverview()
         .planets.find((p) => p.id === target.id)!;
-      expect(supply.status).toBe('Needs attention');
-      expect(supply.summary).toContain(
-        shortage === 'resources' ? 'Iron' : 'workers',
+      expect(supply.status).toBe(
+        shortage === 'resources' ? 'Needs attention' : 'Waiting',
       );
+      expect(supply.summary).toContain(
+        shortage === 'resources' ? 'Iron' : 'Waiting',
+      );
+      if (shortage === 'workers')
+        expect(
+          game.decisions.some(
+            (decision) => decision.id === 'staff-sol-0' && decision.current,
+          ),
+        ).toBe(true);
       expect(game.planetSnapshot(target)!.projects).toHaveLength(1);
     },
   );
@@ -511,7 +519,7 @@ describe('automatiska-delorder', () => {
     ).toBe(0);
   });
 
-  it('keeps accepted orders and reports missing transport or factory after planning', () => {
+  it('beslut-vantar-pa-paborjad-atgard: keeps accepted orders and reports missing transport or factory at its source', () => {
     const { game, home, destination } = network();
     game.scheduleShip(destination, 'Fighter');
     game.releaseTradeFleet('freighters');
@@ -529,7 +537,13 @@ describe('automatiska-delorder', () => {
     expect(
       game.supplyOverview().planets.find((p) => p.id === destination.id)!
         .status,
-    ).toBe('Needs attention');
+    ).toBe('Waiting');
+    expect(
+      game.decisions.some(
+        (decision) =>
+          decision.id === `production-${home.id}` && decision.current,
+      ),
+    ).toBe(true);
   });
 
   it('protects parts allocated to an earlier order after queue reordering', () => {

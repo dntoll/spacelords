@@ -13,13 +13,13 @@ function nextStep(decision: Decision): string {
   if (decision.kind === 'fleet')
     return 'Use the highlighted Move button in Orders, transfer ships, or assign a transport to a route.';
   if (decision.kind === 'route')
-    return 'Select a purple transport fleet, open Trade routes and assign it to this route.';
+    return 'Use Research or Production to prepare transport. Select an available purple transport fleet and assign it via Trade routes.';
   if (decision.id.startsWith('supply-'))
     return 'Inspect the marked planet and its project. Connect suppliers with a route and assign transport for missing deliveries.';
   if (decision.id.startsWith('staff-'))
     return 'Inspect workers and crew. Free workers or wait for population growth.';
   if (decision.id.startsWith('production-'))
-    return 'Inspect the blocked project and build its required factory.';
+    return 'Inspect the blocked project. Build its required factory or move the queued factory before the project.';
   return 'Choose an option around the marked planet and queue a build.';
 }
 

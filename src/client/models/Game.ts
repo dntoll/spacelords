@@ -1709,17 +1709,13 @@ export class Game {
         message: 'Build a matching factory at an available building site.',
         dome: null,
       });
-    if (domeSite) {
-      const type = domeSite.domeType!;
-      const unlocked = this.#research.completed.has(type as Technology);
+    const domeResearch = this.#pendingDomeResearch(planet, this.#state(planet));
+    if (domeResearch)
       return Object.freeze({
-        kind: unlocked ? 'dome' : 'research',
-        message: unlocked
-          ? `Build a ${type} to prepare a building site.`
-          : `Research ${type} before preparing a building site.`,
-        dome: unlocked ? type : null,
+        kind: 'waiting',
+        message: domeResearch,
+        dome: null,
       });
-    }
     if (
       snapshot.projects.some(
         (project) => BUILDINGS[project.type as BuildType]?.sitePreparation,
@@ -1731,6 +1727,17 @@ export class Game {
           'A Dome is already queued. Wait for it to complete before building a factory.',
         dome: null,
       });
+    if (domeSite) {
+      const type = domeSite.domeType!;
+      const unlocked = this.#research.completed.has(type as Technology);
+      return Object.freeze({
+        kind: unlocked ? 'dome' : 'research',
+        message: unlocked
+          ? `Build a ${type} to prepare a building site.`
+          : `Research ${type} before preparing a building site.`,
+        dome: unlocked ? type : null,
+      });
+    }
     return Object.freeze({
       kind: 'full',
       message:
@@ -2714,7 +2721,15 @@ export class Game {
     );
   }
   get tradeRoutes(): readonly TradeRouteSnapshot[] {
-    return this.#logistics.snapshots(this.#logisticsPort());
+    return Object.freeze(
+      this.#logistics.snapshots(this.#logisticsPort()).map((route) => {
+        const waiting =
+          !route.closing && !route.capacity
+            ? this.#transportWaiting(route)
+            : null;
+        return waiting ? Object.freeze({ ...route, status: waiting }) : route;
+      }),
+    );
   }
   createTradeRoute(a: string, b: string): string {
     this.#requirePlanning();
@@ -2799,6 +2814,19 @@ export class Game {
         kind: 'research',
       });
     const supplies = this.supplyOverview().planets;
+    if (
+      this.#research.queue.length &&
+      this.#researchQueueIssue() &&
+      ![...this.#colonies.values()].some((state) =>
+        state.projects.some((project) => project.type === 'Research station'),
+      )
+    )
+      items.push({
+        id: 'research-stalled',
+        label: 'Build a Research station to resume queued research',
+        kind: 'planet',
+        planetId: this.#ownedPlanets()[0]!.id,
+      });
     for (const order of this.#salvage.orders.filter((order) => order.issue))
       items.push({
         id: `salvage-${order.fleetId}`,
@@ -2827,14 +2855,14 @@ export class Game {
       const supply = supplies.find((p) => p.id === planet.id)!;
       const status = this.#supplyDescription(supply);
       const { blocks } = this.#allocation(planet, state);
-      if (
-        [...blocks.values()].some((reason) =>
-          reason.includes('factory is required'),
-        )
-      )
+      const project = state.projects[0];
+      const factory = project
+        ? this.#factoryRequirement(planet, state, project)
+        : null;
+      if (factory?.status === 'Needs attention')
         items.push({
           id: `production-${planet.id}`,
-          label: `${planet.name}: a required factory is missing`,
+          label: `${planet.name}: ${factory.message}`,
           kind: 'planet',
           planetId: planet.id,
         });
@@ -2850,7 +2878,11 @@ export class Game {
           kind: 'planet',
           planetId: planet.id,
         });
-      if (supply.materials.some((material) => material.unprovided > 0))
+      if (
+        supply.materials.some(
+          (material) => material.unprovided > 0 && !material.waitingReason,
+        )
+      )
         items.push({
           id: `supply-${planet.id}`,
           label: `${planet.name}: ${status.slice(16)}`,
@@ -2873,11 +2905,11 @@ export class Game {
         fleetId: fleet.id,
       });
     for (const route of this.tradeRoutes.filter(
-      (r) => !r.closing && !r.capacity,
+      (r) => !r.closing && !r.capacity && !this.#transportWaiting(r),
     ))
       items.push({
         id: `route-idle-${route.id}`,
-        label: `${route.from} ↔ ${route.to}: assign transport fleet`,
+        label: `${route.from} ↔ ${route.to}: ${this.#transportNextStep(route)}`,
         kind: 'route',
         routeId: route.id,
       });
@@ -2903,6 +2935,7 @@ export class Game {
 
   projectSupply(planetId?: string): readonly ProjectSupplySnapshot[] {
     const port = this.#logisticsPort();
+    const assessments = this.supplyOverview().planets;
     const inputs = this.#ownedPlanets().map((planet) => {
       const state = this.#state(planet);
       const workers = state.buildings
@@ -2918,35 +2951,22 @@ export class Game {
         deposits: state.deposits,
         projects: state.projects.map((project) => {
           const definition = projectDefinition(project.type);
-          const factoryMissing =
-            project.type === 'Shipyard station'
-              ? !state.buildings.some(
-                  (building) =>
-                    building.id === project.factoryId &&
-                    building.type === 'Orbital shipyard' &&
-                    !building.demolition,
-                )
-              : !definition.permanent &&
-                !definition.sitePreparation &&
-                !state.buildings.some(
-                  (b) =>
-                    !b.demolition &&
-                    (definition.ship
-                      ? BUILDINGS[b.type].ship === definition.ship
-                      : BUILDINGS[b.type].component === definition.component),
-                );
-          const issue = factoryMissing
-            ? `A matching completed factory is required for ${project.type}.`
-            : plannedWorkers + definition.workers + definition.crew >
-                state.population
-              ? 'Not enough workers or crew.'
-              : null;
+          const factory = this.#factoryRequirement(planet, state, project);
+          const issue =
+            factory.status === 'Needs attention'
+              ? factory.message
+              : plannedWorkers + definition.workers + definition.crew >
+                  state.population
+                ? 'Not enough workers or crew.'
+                : null;
           plannedWorkers += definition.workers + definition.crew;
           return {
             id: project.id,
             type: project.type,
             cost: this.#projectCost(planet, project),
             issue,
+            waitingReason:
+              factory.status === 'Waiting' ? factory.message : null,
           };
         }),
       };
@@ -2962,6 +2982,16 @@ export class Game {
             [route.a, route.b].includes(from) &&
             [route.a, route.b].includes(to),
         )?.id,
+      (planetId, projectId, material, missing) =>
+        assessments
+          .find(
+            (planet) =>
+              planet.id === planetId && planet.project?.id === projectId,
+          )
+          ?.materials.find(
+            (item) => item.material === material && item.unprovided >= missing,
+          )?.waitingReason ?? null,
+      (from, to) => this.#pendingTransportPath(from, to, to),
     ).forPlanet(planetId);
   }
 
@@ -2974,6 +3004,9 @@ export class Game {
         ? (this.#allocation(planet, state).blocks.get(project.id) ?? null)
         : null;
       const componentProduction = this.#componentProduction(project?.id);
+      const factory = project
+        ? this.#factoryRequirement(planet, state, project)
+        : null;
       const staffed =
         state.buildings
           .filter((b) => !b.demolition)
@@ -2995,7 +3028,11 @@ export class Game {
         id: planet.id,
         name: planet.name,
         project,
-        issue: block === 'Waiting for resources.' ? null : block,
+        issue:
+          block === 'Waiting for resources.' || factory?.status === 'Waiting'
+            ? null
+            : block,
+        waitingReason: factory?.status === 'Waiting' ? factory.message : null,
         stock: economy.stock,
         reserved: this.#logistics.reserved(planet.id, project?.id),
         componentProduction,
@@ -3025,7 +3062,25 @@ export class Game {
         }),
       };
     });
-    return new SupplyOverview(inputs, this.shipments, MATERIALS);
+    const waitingStock = new Map<string, number>();
+    inputs.sort(
+      (a, b) =>
+        (a.project?.id ?? '').localeCompare(b.project?.id ?? '') ||
+        a.id.localeCompare(b.id),
+    );
+    return new SupplyOverview(
+      inputs,
+      this.shipments,
+      MATERIALS,
+      (planetId, projectId, material, missing) =>
+        this.#pendingMaterial(
+          planetId,
+          projectId,
+          material,
+          missing,
+          waitingStock,
+        ),
+    );
   }
 
   supplyStatus(planetId: string): string {
@@ -3037,7 +3092,9 @@ export class Game {
   }
 
   #supplyDescription(assessment: SupplyPlanet): string {
-    const missing = assessment.materials.filter((m) => m.unprovided > 0);
+    const missing = assessment.materials.filter(
+      (m) => m.unprovided > 0 && !m.waitingReason,
+    );
     if (missing.length) {
       const port = this.#logisticsPort();
       const messages = missing.map((material) => {
@@ -3069,9 +3126,15 @@ export class Game {
       return `Needs decision: ${messages.join(' · ')}`;
     }
     if (assessment.status === 'Waiting') {
+      if (
+        assessment.summary.startsWith('Waiting for ') &&
+        !assessment.materials.some((m) => m.required > m.available)
+      )
+        return assessment.summary;
       return assessment.materials
         .filter((m) => m.required > m.available)
         .map((m) => {
+          if (m.waitingReason) return m.waitingReason;
           const local =
             m.localYears !== null
               ? `Waiting for local ${m.material} extraction (~${m.localYears} year(s))`
@@ -3110,9 +3173,12 @@ export class Game {
       stock[shipment.resource] += shipment.amount;
     return stock;
   }
-  #componentProduction(
-    projectId?: string,
-  ): readonly { material: Component; amount: number; issue: string | null }[] {
+  #componentProduction(projectId?: string): readonly {
+    orderId: string;
+    material: Component;
+    amount: number;
+    issue: string | null;
+  }[] {
     const port = this.#logisticsPort();
     return this.#logistics.componentOrders
       .filter(
@@ -3186,7 +3252,12 @@ export class Game {
                   : order.productionProjectId && missingResource
                     ? `${order.component} production needs ${missingResource} at ${source.name}`
                     : null;
-        return { material: order.component, amount: order.amount, issue };
+        return {
+          orderId: order.id,
+          material: order.component,
+          amount: order.amount,
+          issue,
+        };
       });
   }
   #logisticsPort(): LogisticsPort {
@@ -3301,16 +3372,246 @@ export class Game {
     return null;
   }
   #canChooseProduction(planet: Planet, state: ColonyState): boolean {
+    const producer = state.buildings.some(
+      (building) =>
+        !building.demolition &&
+        !!(BUILDINGS[building.type].ship || BUILDINGS[building.type].component),
+    );
+    if (!producer && this.#pendingDomeResearch(planet, state)) return false;
     return (
-      state.buildings.length < this.#environment(planet, state).buildSlots ||
+      producer ||
+      state.buildings.length < this.#environment(planet, state).buildSlots
+    );
+  }
+
+  // beslut-vantar-pa-paborjad-atgard: projections explain waiting without granting capacity or placing orders.
+  #pendingDomeResearch(planet: Planet, state: ColonyState): string | null {
+    const dome = this.#domeType(planet) as Technology | null;
+    if (!dome || !this.#research.queue.includes(dome)) return null;
+    const environment = this.#environment(planet, state);
+    const prepared = Array.from(
+      { length: environment.buildSlots },
+      (_, index) => index,
+    ).some(
+      (index) =>
+        !state.buildings.some((building) => building.slotIndex === index) &&
+        !state.projects.some((project) => project.slotIndex === index) &&
+        (environment.breathable || state.domes?.includes(index)),
+    );
+    return prepared ? null : `Waiting for ${dome} research.`;
+  }
+
+  #factoryRequirement(
+    planet: Planet,
+    state: ColonyState,
+    project: Project,
+  ): {
+    status: 'Ready' | 'Waiting' | 'Needs attention';
+    message: string;
+  } {
+    const definition = projectDefinition(project.type);
+    const matching = (building: { type: BuildType; id?: string }) =>
+      project.type === 'Shipyard station'
+        ? building.type === 'Orbital shipyard' &&
+          building.id === project.factoryId
+        : definition.ship
+          ? BUILDINGS[building.type].ship === definition.ship
+          : !!definition.component &&
+            BUILDINGS[building.type].component === definition.component;
+    if (
+      ((definition.permanent || definition.sitePreparation) &&
+        project.type !== 'Shipyard station') ||
+      state.buildings.some(
+        (building) => !building.demolition && matching(building),
+      )
+    )
+      return { status: 'Ready', message: '' };
+    const factories = (Object.keys(BUILDINGS) as BuildType[]).filter((type) =>
+      matching({ type }),
+    );
+    const queued = state.projects.find((candidate) =>
+      factories.includes(candidate.type as BuildType),
+    );
+    if (queued)
+      return state.projects.indexOf(queued) < state.projects.indexOf(project)
+        ? {
+            status: 'Waiting',
+            message: `Waiting for ${queued.type} construction.`,
+          }
+        : {
+            status: 'Needs attention',
+            message: `Move ${queued.type} before ${project.type} in the build queue.`,
+          };
+    const research = factories.find((type) =>
+      this.#research.queue.includes(type as Technology),
+    );
+    const waiting = research
+      ? `Waiting for ${research} research.`
+      : factories.length
+        ? this.#pendingDomeResearch(planet, state)
+        : null;
+    return waiting
+      ? { status: 'Waiting', message: waiting }
+      : {
+          status: 'Needs attention',
+          message: `A matching completed factory is required for ${project.type}.`,
+        };
+  }
+
+  #transportPreparation(excludePlanetId?: string): string | null {
+    if (this.#research.queue.includes('Transport ship factory'))
+      return 'Waiting for Transport ship factory research.';
+    for (const [id, state] of this.#colonies) {
+      if (id === excludePlanetId) continue;
+      const project = state.projects.find(
+        (item) =>
+          item.type === 'Transport ship' ||
+          item.type === 'Transport ship factory',
+      );
+      if (project) return `Waiting for ${project.type} construction.`;
+    }
+    return null;
+  }
+
+  #availableTransport(route: TradeRouteSnapshot): boolean {
+    return this.fleetSnapshots().some(
+      (fleet) =>
+        fleet.ships['Transport ship'] > 0 &&
+        !tradeAssignmentIssue(fleet, route),
+    );
+  }
+
+  #transportWaiting(
+    route: TradeRouteSnapshot,
+    excludePlanetId?: string,
+  ): string | null {
+    return this.#availableTransport(route)
+      ? null
+      : this.#transportPreparation(excludePlanetId);
+  }
+
+  #transportNextStep(route: TradeRouteSnapshot): string {
+    if (this.#availableTransport(route)) return 'assign transport fleet';
+    if (!this.#research.completed.has('Transport ship factory'))
+      return 'research Transport ship factory in Research';
+    const factory = [...this.#colonies.values()].some((state) =>
       state.buildings.some(
         (building) =>
-          !building.demolition &&
-          !!(
-            BUILDINGS[building.type].ship || BUILDINGS[building.type].component
-          ),
-      )
+          building.type === 'Transport ship factory' && !building.demolition,
+      ),
     );
+    return factory
+      ? 'build a Transport ship in Production'
+      : 'build a Transport ship factory in Production';
+  }
+
+  #pendingTransportPath(
+    from: string,
+    to: string,
+    excludePlanetId?: string,
+  ): readonly string[] | null {
+    const routes = this.#logistics.snapshots(this.#logisticsPort());
+    const visited = new Set([from]);
+    const paths = [[from]];
+    for (const path of paths) {
+      const last = path.at(-1)!;
+      if (last === to) return path;
+      for (const route of routes) {
+        if (
+          route.closing ||
+          ![route.a, route.b].includes(last) ||
+          (!route.capacity && !this.#transportWaiting(route, excludePlanetId))
+        )
+          continue;
+        const next = route.a === last ? route.b : route.a;
+        if (!visited.has(next)) {
+          visited.add(next);
+          paths.push([...path, next]);
+        }
+      }
+    }
+    return null;
+  }
+
+  #pendingMaterial(
+    planetId: string,
+    projectId: string,
+    material: string,
+    missing: number,
+    waitingStock: Map<string, number>,
+  ): string | null {
+    let covered = 0;
+    for (const shipment of this.shipments) {
+      if (
+        shipment.projectId === projectId &&
+        shipment.material === material &&
+        shipment.issue === 'No active transport path' &&
+        this.#pendingTransportPath(shipment.locationId, planetId, planetId)
+      )
+        covered += shipment.amount;
+    }
+    const orders = this.#logistics.componentOrders.filter(
+      (order) =>
+        order.projectId === projectId &&
+        order.component === material &&
+        !order.delivered,
+    );
+    const production = this.#componentProduction(projectId);
+    for (const order of orders) {
+      if (!production.find((item) => item.orderId === order.id)?.issue)
+        continue;
+      const source = this.#colonies.get(order.source)!;
+      const producer = source.projects.find(
+        (project) => project.id === order.productionProjectId,
+      );
+      const behind =
+        producer &&
+        order.source === planetId &&
+        source.projects.indexOf(producer) >
+          source.projects.findIndex((project) => project.id === projectId);
+      const path = this.#pendingTransportPath(
+        order.location,
+        planetId,
+        planetId,
+      );
+      if (!behind && (!order.productionProjectId || producer) && path)
+        covered += order.amount;
+    }
+    if (covered >= missing)
+      return `Waiting for ${material} production or transport preparation.`;
+    if (!this.#transportPreparation(planetId)) return null;
+    const allocations: { key: string; amount: number; available: number }[] =
+      [];
+    for (const source of this.#ownedPlanets()) {
+      if (
+        source.id === planetId ||
+        !this.#pendingTransportPath(source.id, planetId, planetId)
+      )
+        continue;
+      if (this.#logistics.path(source.id, planetId, this.#logisticsPort()))
+        continue;
+      const state = this.#state(source);
+      const head = state.projects[0];
+      const key = `${source.id}:${material}`;
+      const available =
+        waitingStock.get(key) ??
+        Math.max(
+          0,
+          state.stock[material as keyof Stock] -
+            this.#logistics.reserved(source.id)[material as keyof Stock] -
+            (head
+              ? this.#projectCost(source, head)[material as keyof Stock]
+              : 0),
+        );
+      const amount = Math.min(available, missing - covered);
+      allocations.push({ key, amount, available });
+      covered += amount;
+      if (covered >= missing) break;
+    }
+    if (covered < missing) return null;
+    for (const { key, amount, available } of allocations)
+      waitingStock.set(key, available - amount);
+    return `Waiting for ${material} transport preparation.`;
   }
   #allocation(
     planet: Planet,
@@ -3358,34 +3659,18 @@ export class Game {
         continue;
       }
       const definition = projectDefinition(project.type);
-      const missingFactory =
-        project.type === 'Shipyard station'
-          ? !state.buildings.some(
-              (building) =>
-                building.id === project.factoryId &&
-                building.type === 'Orbital shipyard' &&
-                !building.demolition,
+      const factory = this.#factoryRequirement(planet, state, project);
+      const why =
+        factory.status !== 'Ready'
+          ? factory.message
+          : (this.#costBlock(snapshot(), definition) ??
+            (COMPONENTS.some(
+              (part) =>
+                state.stock[part] - held[part] <
+                this.#projectCost(planet, project)[part],
             )
-          : !definition.permanent &&
-            !definition.sitePreparation &&
-            !state.buildings.some(
-              (building) =>
-                !building.demolition &&
-                (definition.ship
-                  ? BUILDINGS[building.type].ship === definition.ship
-                  : BUILDINGS[building.type].component ===
-                    definition.component),
-            );
-      const why = missingFactory
-        ? `A matching completed factory is required for ${project.type}.`
-        : (this.#costBlock(snapshot(), definition) ??
-          (COMPONENTS.some(
-            (part) =>
-              state.stock[part] - held[part] <
-              this.#projectCost(planet, project)[part],
-          )
-            ? 'Waiting for resources.'
-            : null));
+              ? 'Waiting for resources.'
+              : null));
       if (why) blocks.set(project.id, why);
       else {
         addCost(reserved, definition.cost);
@@ -3434,8 +3719,12 @@ export class Game {
     return { fleet, path };
   }
   #fleetDisplayName(fleet: Fleet): string {
-    const route = this.tradeRoutes.find((route) => route.id === fleet.routeId);
-    return route ? `Route ${route.from} <> ${route.to}` : fleet.name;
+    const route = this.#logistics.routes.find(
+      (route) => route.id === fleet.routeId,
+    );
+    return route
+      ? `Route ${this.#planetName(route.a)} <> ${this.#planetName(route.b)}`
+      : fleet.name;
   }
   #updateExploration(fleet: Fleet): void {
     if (!fleet.exploration) return;

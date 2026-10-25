@@ -180,6 +180,11 @@ Se [hela visionen](docs/game-vision.md).
   kan fällas ut och in, och Research samt planetvyn har egna rundkontroller.
   `beslutsvagledning-i-vyn` är **Fullständigt implementerat**: ! följs av
   gulmarkeringar på rätt objekt och kontroller, kort åtgärdshjälp och Show.
+  `beslut-vantar-pa-paborjad-atgard` är **Fullständigt implementerat**:
+  relevant köad forskning eller produktion ersätter följdbeslut med Waiting.
+  Nästa manuella steg och verkliga grundproblem ger åter beslut; ett
+  tilldelningsbart Transport ship ger alltid ett ruttbeslut. Personal, varv
+  och bärgning omfattas inte av den nya väntoregeln.
   Se [Events och beslutsguidning](docs/events-and-guidance.md).
 - **Utveckling och kvalitet:** MVC, TypeScript, ESLint, p5 i instance mode,
   en snabb testsvit inom 20 sekunder och en utökad svit i GitHub CI.

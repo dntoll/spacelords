@@ -1,6 +1,6 @@
 # Events och beslutsguidning
 
-Alla fyra krav är **Fullständigt implementerat**.
+Kraven nedan är **Fullständigt implementerat**.
 
 ## Händelser
 
@@ -58,3 +58,36 @@ bekräftelse vid obesvarade beslut behålls. End turn är spärrad under simuler
 Guidningen utför inte någon order automatiskt. Alla navigerings- och
 spelhandlingar går via befintliga controllers. Kartan, kameran och
 försörjningsreglerna behålls.
+
+## Väntan på påbörjade åtgärder
+
+`beslut-vantar-pa-paborjad-atgard` förtydligar `beslutslista`:
+
+- En planet utan andra produktionsval väntar på köad forskning av rätt Dome.
+  En förberedd byggplats eller befintlig produktionsfabrik behåller sitt val.
+  Köad Dome visas som väntan; när forskning eller bygge är klart visas nästa
+  manuella steg. Avbrutna åtgärder återaktiverar beslutet direkt.
+- Relevant fabriksforskning eller ett tidigare beställt fabriksbygge ersätter
+  uppmaningen att påbörja samma åtgärd. En fabrik bakom sitt beroende projekt
+  ger i stället ett beslut om att ändra köordningen.
+- Rutter utan kapacitet väntar när Transport ship factory forskas fram,
+  fabriken byggs eller Transport ship tillverkas. Detta gäller alla berörda
+  rutter. Ett transportskepp som kan tilldelas ger alltid ett nytt ruttbeslut,
+  även när fler skepp byggs. Efter varje avslutad förberedelse uppmärksammas
+  nästa manuella steg.
+- Följdproblem med material visar Waiting när en befintlig ruttförbindelse
+  väntar på transportförberedelsen och tillräckligt tillgängligt lager finns,
+  eller när beställd komponentproduktion väntar på en relevant åtgärd.
+  Samma lager får inte täcka flera behov. Mängder, reservationer och verklig
+  fraktkapacitet ändras inte av väntestatusen.
+- Beslut finns kvar för grundproblemet i en blockerad förberedelse och för
+  oberoende brister. Saknad rutt, otillräckligt material, avbruten produktion
+  och fel köordning får inte beskrivas som ordnad försörjning. Saknad sista
+  Research station ger ett byggbeslut om ingen ersättning redan beställts.
+- Väntande följdproblem ger ingen beslutsräkning, flikmarkering, riktad
+  vägledning, problemmarkering eller rundvarning. Vanlig statusinformation
+  finns kvar. Mute och Unmute behåller sina sparade inställningar.
+
+Regeln gäller produktion och transport. Personal, varv och bärgning behåller
+sina tidigare beslutsregler. Ett hinder hos en komponentleverantör visas vid
+källan; mottagaren väntar på sin beställda produktion.

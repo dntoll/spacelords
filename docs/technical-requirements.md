@@ -736,3 +736,18 @@ Kartmarkörer och träffytor delar geometri; order nås också utan dragning.
 Riktade modelltester och mobiltester i Chromium och WebKit skyddar bärgning,
 bogseringens fart, varvsplacering, reparation, förstörelse, återuppbyggnad,
 forskningsundantag och omladdning. Snabbsvitens gräns på 20 sekunder gäller fortsatt.
+
+## Beslut som väntar på påbörjade åtgärder
+
+`beslut-vantar-pa-paborjad-atgard` bedöms i modellen från befintliga köer,
+forskningsmål, rutter, leveranser och lager. Samma bedömning används för
+Decisions, produktionsvägledning, försörjningsöversikten och projektens steg.
+Bedömningen utför inga order och ändrar inga verkliga lager, reservationer
+eller transportvägar. Tillgängligt lager för väntande transport räknas bara
+en gång i en stabil projektordning; senare projekt får inte lovas samma mängd.
+
+Vyerna läser oföränderliga ögonblicksbilder. Vänteskäl lagras inte i sparningen;
+de beräknas på nytt efter köändring och omladdning. Befintliga besluts-ID:n,
+Mute-inställningar och sparformat behålls. Det nya grundbeslutet
+`research-stalled` används när köad forskning saknar Research station och
+ingen ersättning har beställts.

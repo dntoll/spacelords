@@ -305,6 +305,13 @@ Decision --> Colony
 Decision --> Fleet
 Decision --> Research
 Decision --> TradeRoute
+Decision --> ConstructionProject : påbörjad åtgärd ger väntan
+note right of Decision
+  beslut-vantar-pa-paborjad-atgard:
+  relevant forskning och produktion kan lösa ett följdproblem.
+  Nästa manuella steg eller grundproblemet kräver nytt beslut.
+  Väntan skapar inga order eller materialreservationer.
+end note
 SavedGame --> TradeRoute
 SavedGame --> Shipment
 

@@ -269,7 +269,18 @@ senare transportbortfall blockerar försörjningen men raderar inte huvudordern.
 | `hoppa-over-beslut`            | Fullständigt implementerat | Skip this turn låter spelaren avstå från ett val utan ny varning samma år.                                                                                                                                                                                                                                                                                                          |
 | `rundvarning`                  | Fullständigt implementerat | End turn visar kvarvarande beslut tillsammans. Spelaren kan återgå eller välja End turn anyway.                                                                                                                                                                                                                                                                                     |
 
+`beslut-vantar-pa-paborjad-atgard` — **Fullständigt implementerat**:
+Decisions upprepar inte ett produktions- eller transportval när relevant
+forskning eller produktion redan ligger i kö. Väntan visas som status. Nästa
+manuella steg, ett tilldelningsbart Transport ship och kvarstående grundproblem
+ger beslut. Detta förtydligar `beslutslista`. Personal, varv och bärgning
+behåller sina tidigare regler. Se [väntan och beslut](events-and-guidance.md).
+
 ## Ändringshistorik
+
+- 2026-10-25: `beslut-vantar-pa-paborjad-atgard` förtydligar `beslutslista`:
+  köad forskning och produktion ska inte kräva samma beslut igen. Nästa val
+  och kvarstående grundproblem ska fortsatt uppmärksammas.
 
 - 2026-10-24: `flottfokuserad-kartvy` förtydligas: ej valda flottor får
   streckade cirklar och himlakropparnas namn visas med full tydlighet. Detta

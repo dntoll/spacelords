@@ -14,6 +14,7 @@ export interface SupplyPlanetInput {
   readonly name: string;
   readonly project: Readonly<{ id: string; type: string }> | null;
   readonly issue: string | null;
+  readonly waitingReason?: string | null;
   readonly stock: Quantities;
   readonly reserved: Quantities;
   readonly demand: Quantities;
@@ -40,6 +41,7 @@ export interface SupplyMaterial {
   readonly ordered: number;
   readonly unprovided: number;
   readonly localYears: number | null;
+  readonly waitingReason?: string | null;
 }
 export interface SupplyPlanet {
   readonly id: string;
@@ -60,6 +62,12 @@ export class SupplyOverview {
     inputs: readonly SupplyPlanetInput[],
     shipments: readonly ShipmentSnapshot[],
     catalogue: readonly string[] = [],
+    pendingMaterial?: (
+      planetId: string,
+      projectId: string,
+      material: string,
+      missing: number,
+    ) => string | null,
   ) {
     const priority: Record<SupplyStatus, number> = {
       'Needs attention': 0,
@@ -123,6 +131,15 @@ export class SupplyOverview {
                   .reduce((sum, s) => sum + s.amount, 0),
                 ordered,
                 unprovided: remainder - local,
+                waitingReason:
+                  remainder > local && input.project
+                    ? (pendingMaterial?.(
+                        input.id,
+                        input.project.id,
+                        material,
+                        remainder - local,
+                      ) ?? null)
+                    : null,
                 localYears:
                   remainder > 0 && local === remainder
                     ? Math.ceil(remainder / extraction)
@@ -137,7 +154,9 @@ export class SupplyOverview {
                 m.incoming > 0 ||
                 m.reserved > 0,
             );
-          const missing = materials.filter((m) => m.unprovided > 0);
+          const missing = materials.filter(
+            (m) => m.unprovided > 0 && !m.waitingReason,
+          );
           const productionIssue = input.componentProduction?.find(
             (order) =>
               order.issue &&
@@ -149,7 +168,7 @@ export class SupplyOverview {
             ? 'Idle'
             : issue || missing.length
               ? 'Needs attention'
-              : waiting.length
+              : waiting.length || input.waitingReason
                 ? 'Waiting'
                 : 'Ready';
           const summary = !input.project
@@ -159,17 +178,20 @@ export class SupplyOverview {
                 ? missing
                     .map((m) => `${m.unprovided} ${m.material} unprovided`)
                     .join(' · ')
-                : waiting.length
-                  ? waiting
-                      .map((m) =>
-                        m.localYears !== null
-                          ? `Waiting for local ${m.material} extraction (~${m.localYears} year(s))`
-                          : m.ordered > 0
-                            ? `Waiting for ${m.material} production`
-                            : `Waiting for ${m.material} delivery`,
-                      )
-                      .join(' · ')
-                  : 'Materials and production requirements ready'));
+                : (input.waitingReason ??
+                  (waiting.length
+                    ? waiting
+                        .map(
+                          (m) =>
+                            m.waitingReason ??
+                            (m.localYears !== null
+                              ? `Waiting for local ${m.material} extraction (~${m.localYears} year(s))`
+                              : m.ordered > 0
+                                ? `Waiting for ${m.material} production`
+                                : `Waiting for ${m.material} delivery`),
+                        )
+                        .join(' · ')
+                    : 'Materials and production requirements ready'))));
           return Object.freeze({
             id: input.id,
             name: input.name,

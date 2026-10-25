@@ -9,6 +9,7 @@ export interface SupplyStep {
   readonly routeId?: string;
   readonly fleetId?: string;
   readonly children: readonly SupplyStep[];
+  readonly waitingForDependency?: boolean;
 }
 export interface ProjectSupplySnapshot {
   readonly projectId: string;
@@ -19,6 +20,7 @@ export interface SupplyProjectInput {
   readonly type: string;
   readonly cost: Readonly<Stock>;
   readonly issue: string | null;
+  readonly waitingReason?: string | null;
 }
 export interface ProjectSupplyPlanet {
   readonly id: string;
@@ -48,6 +50,16 @@ export class ProjectSupply {
     shipments: readonly ShipmentSnapshot[],
     transportPath: (from: string, to: string) => readonly string[] | null,
     transportRoute?: (from: string, to: string) => string | undefined,
+    pendingMaterial?: (
+      planetId: string,
+      projectId: string,
+      material: string,
+      missing: number,
+    ) => string | null,
+    pendingTransportPath?: (
+      from: string,
+      to: string,
+    ) => readonly string[] | null,
   ) {
     for (const planet of planets) this.#planets.set(planet.id, planet);
     for (const planet of planets) {
@@ -62,6 +74,8 @@ export class ProjectSupply {
         const requirements: SupplyStep[] = [];
         if (project.issue)
           requirements.push(step(project.issue, 'Needs attention'));
+        else if (project.waitingReason)
+          requirements.push(step(project.waitingReason, 'Waiting'));
         for (const material of MATERIALS) {
           let missing = project.cost[material];
           if (!missing) continue;
@@ -103,17 +117,24 @@ export class ProjectSupply {
                 order.source === planet.id &&
                 source!.projects.findIndex((p) => p.id === producer?.id) >
                   planet.projects.indexOf(project);
+              const waitingForDependency =
+                !!producer &&
+                !behind &&
+                !!pendingMaterial?.(planet.id, project.id, material, amount);
               children.push(
                 step(
                   producer
                     ? `Produce ${amount} ${material} at ${source!.name}${behind ? ' · Move production before this project' : ''}`
                     : `${material} production order was cancelled`,
-                  !producer || behind || producer.issue
+                  !producer ||
+                    behind ||
+                    (producer.issue && !waitingForDependency)
                     ? 'Needs attention'
                     : 'Waiting',
                   {
                     planetId: order.source,
                     ...(producer ? { projectId: producer.id } : {}),
+                    waitingForDependency,
                   },
                 ),
               );
@@ -127,14 +148,17 @@ export class ProjectSupply {
               );
             if (order.location !== planet.id) {
               const path = transportPath(order.location, planet.id);
+              const pendingPath = !path
+                ? pendingTransportPath?.(order.location, planet.id)
+                : null;
               const routeId = transportRoute?.(
                 order.location,
                 path?.[1] ?? planet.id,
               );
               children.push(
                 step(
-                  `Transport ${amount} ${material} from ${this.#planets.get(order.location)?.name ?? order.location} to ${planet.name} · ${path ? `Planned transport · ${path.map((id) => this.#planets.get(id)?.name ?? id).join(' → ')}` : 'No active transport path'}`,
-                  path ? 'Waiting' : 'Needs attention',
+                  `Transport ${amount} ${material} from ${this.#planets.get(order.location)?.name ?? order.location} to ${planet.name} · ${path ? `Planned transport · ${path.map((id) => this.#planets.get(id)?.name ?? id).join(' → ')}` : pendingPath ? 'Waiting for transport preparation' : 'No active transport path'}`,
+                  path || pendingPath ? 'Waiting' : 'Needs attention',
                   { planetId: order.location, ...(routeId ? { routeId } : {}) },
                 ),
               );
@@ -146,10 +170,13 @@ export class ProjectSupply {
           )) {
             const amount = Math.min(missing, shipment.amount);
             if (!amount) continue;
+            const pending =
+              shipment.issue === 'No active transport path' &&
+              pendingTransportPath?.(shipment.locationId, planet.id);
             children.push(
               step(
                 `Transport ${amount} ${material} from ${shipment.source} to ${shipment.recipient} · ${shipment.state} · At ${shipment.location} → ${shipment.remainingStops?.join(' → ') ?? shipment.nextStop}${shipment.years === null ? '' : ` · ~${shipment.years} year(s)`}${shipment.issue ? ` · ${shipment.issue}` : ''}`,
-                shipment.issue ? 'Needs attention' : 'Waiting',
+                shipment.issue && !pending ? 'Needs attention' : 'Waiting',
                 {
                   planetId: shipment.locationId,
                   ...(shipment.routeId ? { routeId: shipment.routeId } : {}),
@@ -172,13 +199,21 @@ export class ProjectSupply {
                 ),
               );
           }
-          if (missing)
+          if (missing) {
+            const waiting = pendingMaterial?.(
+              planet.id,
+              project.id,
+              material,
+              missing,
+            );
             children.push(
               step(
-                `${missing} ${material} unprovided · No supply arranged`,
-                'Needs attention',
+                waiting ??
+                  `${missing} ${material} unprovided · No supply arranged`,
+                waiting ? 'Waiting' : 'Needs attention',
               ),
             );
+          }
           const status = children.some((s) => s.status === 'Needs attention')
             ? 'Needs attention'
             : children.some((s) => s.status === 'Waiting')
@@ -208,9 +243,11 @@ export class ProjectSupply {
         return Object.freeze({
           ...item,
           children: Object.freeze(children),
-          status: children.some((c) => c.status === 'Needs attention')
-            ? ('Needs attention' as const)
-            : item.status,
+          status:
+            !item.waitingForDependency &&
+            children.some((c) => c.status === 'Needs attention')
+              ? ('Needs attention' as const)
+              : item.status,
         });
       }
       const children = item.children.map((child) => expand(child, visited));
