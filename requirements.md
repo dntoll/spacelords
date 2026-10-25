@@ -193,6 +193,11 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Detaljer och status
 
+`aktuell-detektionssikt`, `kartans-sikttillstand`, `teleskopnivaer`,
+`teleskopfabriker`, `teleskop-i-exploration-ships` och `pirat-aterupptackt` är
+**Fullständigt implementerat**: aktuell sikt, mörkare kartminne, tre forskningsbara
+teleskopfabriker och monterade skeppsteleskop samt avbrott vid återupptäckt. Se [sikt och teleskop](docs/detection-telescopes.md).
+
 [Produktkraven](docs/product-requirements.md) anger varje aktivt kravs status:
 **Ej implementerat**, **Delvis implementerat** eller **Fullständigt implementerat**.
 [Ekonomi och logistik](docs/economy-logistics.md) beskriver de nya spelreglerna.

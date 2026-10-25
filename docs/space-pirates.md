@@ -7,7 +7,7 @@ Nya spel börjar med en Space pirate runt varje stjärna utanför hemsystemet.
 
 Piraterna går ett steg per spelår runt stjärnans sex grannhexar och stannar i
 sitt eget system. De visas som fientliga på Star map och Fleets när deras
-nuvarande hex är utforskad. Piraterna tillhör samma fraktion och anfaller inte
+nuvarande hex ligger inom aktuell detektionssikt. Tidigare utforskning räcker inte. Piraterna tillhör samma fraktion och anfaller inte
 varandra. Spelaren kan läsa information om dem men inte ge dem order.
 
 ## Strid
@@ -33,3 +33,6 @@ Transport ships. Om alla pirater förstörs överlever de civila skeppen, även 
 alla Fighters också har förstörts. Förstörd last förloras och kan inte levereras.
 Besegrade spelarflottor finns kvar som tomma flottor utan position.
 Striden redovisas i Events under Combat med plats, deltagare och förluster.
+
+Sikt, teleskop och avbrott vid återupptäckt beskrivs i
+[sikt och teleskop](detection-telescopes.md).

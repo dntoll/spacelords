@@ -115,7 +115,9 @@ export function renderProduction(
         .map(([part, count]) =>
           part === 'Rocket engine'
             ? `${count} ${count === 1 ? 'engine' : 'engines'} (Rocket engine or Ion pulse engine)`
-            : `${count} ${part}`,
+            : part === 'Telescope I'
+              ? `${count} telescope (best available: Telescope I, II or III)`
+              : `${count} ${part}`,
         )
         .join(', ');
       detail.append(

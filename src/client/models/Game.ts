@@ -5,6 +5,7 @@ import {
   type ExplorationOrder,
   type SavedTurnSimulation,
 } from './TurnSimulation.js';
+import { Detection, TELESCOPES, type TelescopeLevel } from './Detection.js';
 import {
   PirateFleet,
   type PirateSnapshot,
@@ -70,6 +71,9 @@ export type Resource = 'Iron' | 'Water' | 'Oil';
 export type ShipType =
   'Colony ship' | 'Exploration ship' | 'Fighter' | 'Transport ship';
 export type BuildType =
+  | 'Telescope I factory'
+  | 'Telescope II factory'
+  | 'Telescope III factory'
   | 'Research station'
   | 'Iron mine'
   | 'Water extractor'
@@ -107,6 +111,33 @@ export interface BuildDefinition {
 }
 export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
   Object.freeze({
+    'Telescope I factory': {
+      permanent: true,
+      description:
+        'Produces Telescope I and gives this planet detection range 1 hex.',
+      workers: 300,
+      cost: { Iron: 8, Water: 4, Oil: 2 },
+      crew: 0,
+      component: 'Telescope I',
+    },
+    'Telescope II factory': {
+      permanent: true,
+      description:
+        'Produces Telescope II and gives this planet detection range 2 hexes.',
+      workers: 300,
+      cost: { Iron: 16, Water: 8, Oil: 4 },
+      crew: 0,
+      component: 'Telescope II',
+    },
+    'Telescope III factory': {
+      permanent: true,
+      description:
+        'Produces Telescope III and gives this planet detection range 3 hexes.',
+      workers: 300,
+      cost: { Iron: 24, Water: 12, Oil: 6 },
+      crew: 0,
+      component: 'Telescope III',
+    },
     'Ice dome': {
       permanent: false,
       sitePreparation: true,
@@ -288,6 +319,7 @@ export function engineCount(type: ShipType): number {
 }
 
 export interface ShipUnit {
+  readonly telescope?: TelescopeLevel;
   readonly id: string;
   readonly type: ShipType;
   readonly engines: Readonly<{
@@ -305,8 +337,14 @@ export function projectDefinition(type: ProjectType): BuildDefinition {
       workers: 0,
       crew: 0,
       component: type as Component,
-      cost:
-        type === 'Ion pulse engine'
+      cost: TELESCOPES.includes(type as (typeof TELESCOPES)[number])
+        ? {
+            Iron:
+              3 * (TELESCOPES.indexOf(type as (typeof TELESCOPES)[number]) + 1),
+            Water: TELESCOPES.indexOf(type as (typeof TELESCOPES)[number]) + 1,
+            Oil: TELESCOPES.indexOf(type as (typeof TELESCOPES)[number]) + 1,
+          }
+        : type === 'Ion pulse engine'
           ? { Iron: 6, Water: 2, Oil: 2 }
           : { Iron: type === 'Rocket engine' ? 3 : 2, Water: 1, Oil: 1 },
     };
@@ -327,6 +365,7 @@ export function projectDefinition(type: ProjectType): BuildDefinition {
     parts: {
       'Rocket engine': engineCount(type as ShipType),
       ...(type === 'Fighter' ? { 'Weapons module': 1 } : {}),
+      ...(type === 'Exploration ship' ? { 'Telescope I': 1 } : {}),
     },
   };
 }
@@ -394,6 +433,7 @@ export interface BudgetSnapshot {
   readonly availableSlots: number;
 }
 export interface PlanetGameSnapshot {
+  readonly detectionRange?: number;
   readonly environment: PlanetEnvironmentType | 'Gas';
   readonly breathable: boolean;
   readonly populationCapacity: number;
@@ -432,6 +472,7 @@ export interface PlanetOrderSnapshot {
   readonly emptyQueues: number;
 }
 export interface FleetSnapshot {
+  readonly detectionRange?: number;
   readonly exploration?: ExplorationOrder | undefined;
   readonly remainingMovement?: number | undefined;
   readonly canIssueOrders?: boolean;
@@ -455,6 +496,7 @@ export interface GameEvent {
   readonly text: string;
 }
 export interface TurnFrame {
+  readonly settlement?: boolean;
   readonly combats?: readonly CombatResult[];
   readonly movements: readonly {
     readonly fleetId: string;
@@ -534,7 +576,8 @@ export interface GameState {
   readonly componentOrders?: readonly ComponentOrder[];
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
-  readonly version: 2 | 3 | 4 | 5 | 6 | 7 | 8;
+  readonly version: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  readonly visiblePirates?: readonly string[];
   readonly knownObjects?: readonly string[];
   readonly simulation?: SavedTurnSimulation | null;
   readonly pirates?: readonly SavedPirateFleet[];
@@ -575,6 +618,8 @@ export class Game {
   #fleets: Fleet[];
   #pirates: PirateFleet[];
   #explored = new Set<string>();
+  #visible: ReadonlySet<string> = new Set();
+  #visiblePirates = new Set<string>();
   #events: GameEvent[] = [];
   #knownObjects = new Set<string>();
   #simulation: TurnSimulation | null = null;
@@ -607,6 +652,10 @@ export class Game {
       },
     ];
     this.#normalizeShips();
+    this.#updateSight();
+    this.#visiblePirates = new Set(
+      this.pirateSnapshots().map((pirate) => pirate.id),
+    );
     this.#visibleDiscoveries().forEach((discovery) =>
       this.#knownObjects.add(discovery.id),
     );
@@ -617,7 +666,8 @@ export class Game {
     if (this.#phase === 'simulating')
       throw new Error('Wait for the turn to finish before saving.');
     return structuredClone({
-      version: 8,
+      version: 9,
+      visiblePirates: [...this.#visiblePirates],
       knownObjects: [...this.#knownObjects],
       simulation: this.#simulation?.snapshot() ?? null,
       pirates: this.#pirates.map((pirate) => pirate.snapshot()),
@@ -656,7 +706,7 @@ export class Game {
 
   static restore(state: GameState): Game {
     if (
-      ![2, 3, 4, 5, 6, 7, 8].includes(state.version) ||
+      ![2, 3, 4, 5, 6, 7, 8, 9].includes(state.version) ||
       !Number.isSafeInteger(state.round) ||
       state.round < 1 ||
       !Number.isSafeInteger(state.sequence) ||
@@ -664,7 +714,7 @@ export class Game {
       ![
         'planning',
         'summary',
-        ...(state.version === 8 ? ['interrupted'] : []),
+        ...(state.version >= 8 ? ['interrupted'] : []),
       ].includes(state.phase)
     )
       throw new Error('This saved game cannot be loaded.');
@@ -798,10 +848,11 @@ export class Game {
         ),
     );
     game.#refreshReinforcements();
-    if (state.version === 8 && !Array.isArray(copy.knownObjects))
+    game.#updateSight();
+    if (state.version >= 8 && !Array.isArray(copy.knownObjects))
       throw new Error('Missing discovered objects.');
     game.#knownObjects = new Set(
-      state.version === 8
+      state.version >= 8
         ? copy.knownObjects
         : game.#visibleDiscoveries().map((discovery) => discovery.id),
     );
@@ -815,8 +866,42 @@ export class Game {
           !!galaxy.cellAt(position(point)),
       );
       game.#phase = 'interrupted';
-    } else if (state.version === 8 && copy.simulation)
+    } else if (state.version >= 8 && copy.simulation)
       throw new Error('Unexpected interrupted year.');
+    if (state.version < 9) {
+      if (game.#research.completed.has('Exploration ship factory'))
+        game.#research.completed.add('Telescope I factory');
+      const queue = [...game.#research.queue];
+      game.#research.queue = [];
+      for (const technology of queue)
+        if (!game.#research.completed.has(technology))
+          game.#research.add(technology);
+      game.#migrateTelescopeOrders();
+      if (game.#simulation) {
+        game.#simulation.discoveries = game.#simulation.discoveries.filter(
+          (discovery) =>
+            discovery.kind !== 'pirate' ||
+            game.#visible.has(
+              `${discovery.position.q},${discovery.position.r}`,
+            ),
+        );
+        if (!game.#simulation.discoveries.length)
+          game.#simulation.handling = true;
+      }
+    }
+    if (
+      state.version >= 9 &&
+      (!Array.isArray(copy.visiblePirates) ||
+        copy.visiblePirates.some(
+          (id) => !game.#pirates.some((pirate) => pirate.id === id),
+        ))
+    )
+      throw new Error('Invalid saved pirate contacts.');
+    game.#visiblePirates = new Set(
+      state.version >= 9
+        ? copy.visiblePirates
+        : game.pirateSnapshots().map((pirate) => pirate.id),
+    );
     if (game.#phase === 'planning')
       game.#logistics.reserve(game.#logisticsPort());
     // Exercise derived data before accepting a stored record.
@@ -840,6 +925,7 @@ export class Game {
     this.#mapCells ??= this.galaxy.mapSnapshot(
       this.#explored,
       new Set(this.#colonies.keys()),
+      this.#visible,
     );
     return this.#mapCells;
   }
@@ -886,6 +972,7 @@ export class Game {
     const projects = Object.freeze(state.projects.map(projectSnapshot));
     return Object.freeze({
       id: planet.id,
+      detectionRange: Detection.planetRange(state.buildings),
       name: planet.name,
       population: state.population,
       environment: planet.type === 'gas' ? 'Gas' : planet.environment,
@@ -1068,7 +1155,7 @@ export class Game {
   pirateSnapshots(): readonly PirateSnapshot[] {
     return Object.freeze(
       this.#pirates
-        .filter((pirate) => this.#explored.has(pirate.position.key))
+        .filter((pirate) => this.#visible.has(pirate.position.key))
         .map((pirate) => pirate.snapshot()),
     );
   }
@@ -1080,6 +1167,7 @@ export class Game {
           id: fleet.id,
           name: this.#fleetDisplayName(fleet),
           ownName: fleet.name,
+          detectionRange: this.#fleetDetectionRange(fleet),
           exploration: fleet.exploration,
           remainingMovement: this.#simulation?.remaining.get(fleet.id),
           canIssueOrders: this.canIssueFleetOrders(fleet.id),
@@ -1323,7 +1411,9 @@ export class Game {
           return component === 'Rocket engine' ||
             component === 'Ion pulse engine'
             ? produced === 'Rocket engine' || produced === 'Ion pulse engine'
-            : produced === component;
+            : TELESCOPES.includes(component as (typeof TELESCOPES)[number])
+              ? TELESCOPES.some((telescope) => telescope === produced)
+              : produced === component;
         });
         if (
           !alternatives.some((factory) => producers.has(factory)) &&
@@ -1333,6 +1423,14 @@ export class Game {
       }
       missing.set(type, groups.flat());
       const counts = this.#productionCounts(planet, snapshot, type);
+      let displayedParts = definition.parts ?? {};
+      if (type === 'Exploration ship') {
+        try {
+          displayedParts = this.#planProject(planet, type).plan.parts;
+        } catch {
+          /* The existing production issue explains missing supply. */
+        }
+      }
       return Object.freeze({
         type,
         category: Object.hasOwn(BUILDINGS, type)
@@ -1344,7 +1442,7 @@ export class Game {
         cost: Object.freeze({ ...definition.cost }),
         workers: definition.workers,
         crew: definition.crew,
-        parts: Object.freeze({ ...(definition.parts ?? {}) }),
+        parts: Object.freeze({ ...displayedParts }),
         blockedReason: this.productionIssue(planet, type),
         dependencyWarning: groups.length
           ? `Missing production factories: ${groups.map((group) => group.join(' or ')).join('; ')}.`
@@ -1469,10 +1567,15 @@ export class Game {
     });
   }
 
-  #planProject(planet: Planet, type: ProjectType) {
+  #planProject(
+    planet: Planet,
+    type: ProjectType,
+    existingId?: string,
+    telescopeOnly = false,
+  ) {
     let sequence = this.#sequence;
     const id = (prefix: string) => `${prefix}-${sequence++}`;
-    const projectId = id('project');
+    const projectId = existingId ?? id('project');
     const sites = this.#ownedPlanets().map((site) => {
       const state = this.#state(site);
       const factories: Partial<Record<Component, string>> = {};
@@ -1495,13 +1598,64 @@ export class Game {
         }),
       };
     });
-    const plan = new ComponentPlanner(
-      sites,
-      this.#logistics,
-      this.#logisticsPort(),
-      id,
-    ).plan(projectId, planet.id, projectDefinition(type).parts ?? {});
-    return { plan, sequence, projectId };
+    const start = sequence;
+    const parts = telescopeOnly ? {} : (projectDefinition(type).parts ?? {});
+    let lastError: unknown;
+    for (const telescope of type === 'Exploration ship'
+      ? [...TELESCOPES].reverse()
+      : [null]) {
+      sequence = start;
+      const selected = { ...parts };
+      if (telescope) {
+        delete selected['Telescope I'];
+        selected[telescope] = 1;
+      }
+      try {
+        const plan = new ComponentPlanner(
+          sites,
+          this.#logistics,
+          this.#logisticsPort(),
+          id,
+        ).plan(projectId, planet.id, selected);
+        return { plan, sequence, projectId };
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError;
+  }
+
+  #migrateTelescopeOrders(): void {
+    for (const planet of this.#ownedPlanets())
+      for (const project of [...this.#state(planet).projects]) {
+        if (
+          project.type !== 'Exploration ship' ||
+          TELESCOPES.some((part) => project.parts?.[part])
+        )
+          continue;
+        project.parts = { ...project.parts, 'Telescope I': 1 };
+        try {
+          const { plan, sequence } = this.#planProject(
+            planet,
+            project.type,
+            project.id,
+            true,
+          );
+          for (const production of plan.production)
+            this.#colonies.get(production.planetId)!.projects.unshift({
+              id: production.id,
+              type: production.component,
+              factoryId: production.factoryId,
+              slotIndex: null,
+              destinationFleetId: null,
+            });
+          project.parts = { ...project.parts, 'Telescope I': 0, ...plan.parts };
+          this.#logistics.componentOrders.push(...plan.orders);
+          this.#sequence = sequence;
+        } catch {
+          // teleskop-i-exploration-ships: keep legacy orders blocked until supply exists.
+        }
+      }
   }
   #scheduleProject(
     planet: Planet,
@@ -1779,6 +1933,7 @@ export class Game {
   nextTurnFrame(): TurnFrame | null {
     if (this.#phase !== 'simulating') return null;
     if (this.#pendingFrame) return this.#pendingFrame;
+    if (this.#simulation!.economyApplied) return null;
     if (this.#simulation!.awaitingCombat) {
       const forecast = this.#movingFleets().map((fleet) => ({
         ...fleet,
@@ -1805,7 +1960,7 @@ export class Game {
     )[0];
     return (this.#pendingFrame = frame
       ? Object.freeze({ movements: frame.movements })
-      : null);
+      : Object.freeze({ movements: Object.freeze([]), settlement: true }));
   }
   #movingFleets(): PursuingFleet[] {
     return [
@@ -1819,6 +1974,19 @@ export class Game {
     if (frame !== this.#pendingFrame)
       throw new Error('This turn step is no longer current.');
     this.#pendingFrame = null;
+    if (frame.settlement) {
+      this.#settleYear();
+      this.#simulation!.economyApplied = true;
+      for (const id of this.#simulation!.remaining.keys())
+        this.#simulation!.remaining.set(id, 0);
+      this.#updateSight();
+      const discoveries = this.#newDiscoveries(frame);
+      if (discoveries.length) {
+        this.#simulation!.discoveries = discoveries;
+        this.#phase = 'interrupted';
+      }
+      return;
+    }
     for (const movement of frame.movements) {
       this.#simulation!.spend(movement.fleetId);
       const pirate = this.#pirates.find(
@@ -1830,9 +1998,9 @@ export class Game {
       }
       const fleet = this.#fleetState(movement.fleetId);
       fleet.position = movement.to;
-      this.#reveal(movement.to, fleet.ships['Exploration ship'] > 0);
       this.#recordArrival(fleet);
     }
+    this.#updateSight();
     if (frame.combats === undefined) {
       this.#simulation!.awaitingCombat = true;
       const discoveries = this.#newDiscoveries(frame);
@@ -1867,6 +2035,11 @@ export class Game {
     this.#pirates = this.#pirates.filter((pirate) => pirate.count > 0);
     this.#mergeReinforcements();
     this.#refreshReinforcements();
+    this.#visiblePirates = new Set(
+      this.pirateSnapshots()
+        .map((pirate) => pirate.id)
+        .filter((id) => this.#visiblePirates.has(id)),
+    );
     for (const fleet of this.#fleets) this.#updateExploration(fleet);
   }
   finishTurn(): void {
@@ -1874,6 +2047,13 @@ export class Game {
       throw new Error('No turn is being simulated.');
     if (this.#simulation?.awaitingCombat || this.nextTurnFrame())
       throw new Error('Complete the remaining turn steps first.');
+    this.#round += 1;
+    this.#decisions.skipped.clear();
+    this.#phase = 'planning';
+    this.#simulation = null;
+    this.#logistics.reserve(this.#logisticsPort());
+  }
+  #settleYear(): void {
     for (const fleet of this.#fleets) this.#recordArrival(fleet);
     this.#logistics.unload(this.#logisticsPort());
     const researchStations = this.research.stations;
@@ -1947,13 +2127,8 @@ export class Game {
     }
     const researched = this.#research.advance(researchStations);
     if (researched) this.#event(`Research completed: ${researched}.`);
-    this.#round += 1;
-    this.#decisions.skipped.clear();
     this.#logistics.cleanup(this.#logisticsPort());
     this.#refreshReinforcements();
-    this.#phase = 'planning';
-    this.#simulation = null;
-    this.#logistics.reserve(this.#logisticsPort());
   }
   #completeProject(planet: Planet, state: ColonyState, project: Project): void {
     const d = projectDefinition(project.type);
@@ -2021,6 +2196,12 @@ export class Game {
     (reserve.shipUnits ??= []).push({
       id: this.#id('ship'),
       type: ship,
+      ...(ship === 'Exploration ship'
+        ? {
+            telescope: (TELESCOPES.findIndex((part) => (parts[part] ?? 0) > 0) +
+              1) as TelescopeLevel,
+          }
+        : {}),
       engines: {
         'Rocket engine': parts['Rocket engine'] ?? engineCount(ship),
         'Ion pulse engine': parts['Ion pulse engine'] ?? 0,
@@ -2546,6 +2727,7 @@ export class Game {
         `${fleet.name}: reinforcement target unavailable; choose new orders.`,
       ),
     );
+    this.#updateSight();
   }
   #mergeReinforcements(): void {
     FleetPursuit.merge(this.#fleets, (group, target) => {
@@ -2778,7 +2960,7 @@ export class Game {
           });
     }
     for (const pirate of this.#pirates)
-      if (this.#explored.has(pirate.position.key))
+      if (this.#visible.has(pirate.position.key))
         discoveries.push({
           id: pirate.id,
           kind: 'pirate',
@@ -2789,8 +2971,13 @@ export class Game {
     return discoveries;
   }
   #newDiscoveries(frame: TurnFrame): readonly Discovery[] {
-    const discoveries = this.#visibleDiscoveries().filter(
-      (discovery) => !this.#knownObjects.has(discovery.id),
+    const discoveries = this.#visibleDiscoveries().filter((discovery) =>
+      discovery.kind === 'pirate'
+        ? !this.#visiblePirates.has(discovery.id)
+        : !this.#knownObjects.has(discovery.id),
+    );
+    this.#visiblePirates = new Set(
+      this.pirateSnapshots().map((pirate) => pirate.id),
     );
     for (const discovery of discoveries) {
       this.#knownObjects.add(discovery.id);
@@ -2803,7 +2990,7 @@ export class Game {
           (fleet) =>
             fleet.position &&
             fleet.position.distanceTo(position) <=
-              (fleet.ships['Exploration ship'] ? 1 : 0),
+              this.#fleetDetectionRange(fleet),
         )
         .sort(
           (a, b) =>
@@ -2826,6 +3013,38 @@ export class Game {
           a.id.localeCompare(b.id),
       ),
     );
+  }
+  #fleetDetectionRange(fleet: Fleet): number {
+    return Math.max(
+      0,
+      ...(fleet.shipUnits ?? [])
+        .filter((unit) => unit.type === 'Exploration ship')
+        .map((unit) => unit.telescope ?? 1),
+    );
+  }
+  #updateSight(): void {
+    this.#visible = Detection.coverage([
+      ...this.#ownedPlanets().map((planet) => ({
+        position: planet.position,
+        range: Detection.planetRange(this.#state(planet).buildings),
+      })),
+      ...this.#fleets
+        .filter((fleet) => fleet.position && this.#shipCount(fleet.ships))
+        .map((fleet) => ({
+          position: fleet.position!,
+          range: this.#fleetDetectionRange(fleet),
+        })),
+    ]);
+    for (const key of this.#visible)
+      if (
+        this.galaxy.cellAt(
+          new HexCoordinate(
+            ...(key.split(',').map(Number) as [number, number]),
+          ),
+        )
+      )
+        this.#explored.add(key);
+    this.#mapCells = null;
   }
   #reveal(position: HexCoordinate, radius = true): void {
     let changed = false;
@@ -2854,7 +3073,14 @@ export class Game {
   }
   // automatisk-motormontering: one projection drives consumption, blocking and supply.
   #projectCost(planet: Planet, project: Project): Stock {
-    const cost = { ...projectCost(project.type), ...project.parts };
+    const cost = {
+      ...projectCost(project.type),
+      ...(project.type === 'Exploration ship' &&
+      TELESCOPES.some((part) => project.parts?.[part])
+        ? { 'Telescope I': 0 }
+        : {}),
+      ...project.parts,
+    };
     const definition = projectDefinition(project.type);
     if (!definition.ship || definition.permanent) return cost;
     const count = engineCount(definition.ship);
@@ -2882,6 +3108,17 @@ export class Game {
       const units = (fleet.shipUnits ?? []).filter(
         (unit) => remaining[unit.type]-- > 0,
       );
+      for (let index = 0; index < units.length; index++) {
+        const unit = units[index]!;
+        if (unit.type === 'Exploration ship') {
+          if (
+            unit.telescope !== undefined &&
+            ![1, 2, 3].includes(unit.telescope)
+          )
+            throw new Error('Invalid installed telescope.');
+          units[index] = { ...unit, telescope: unit.telescope ?? 1 };
+        }
+      }
       for (const type of Object.keys(SHIPS) as ShipType[]) {
         for (
           let index = units.filter((unit) => unit.type === type).length;
@@ -2891,6 +3128,7 @@ export class Game {
           units.push({
             id: `${fleet.id}-legacy-${type}-${index}`,
             type,
+            ...(type === 'Exploration ship' ? { telescope: 1 as const } : {}),
             engines: {
               'Rocket engine': engineCount(type),
               'Ion pulse engine': 0,

@@ -3,6 +3,32 @@
 Namnen nedan är stabila referenser i tester, kod och dokumentation.
 Produktkraven finns separat i [product-requirements.md](product-requirements.md).
 
+## Aktuell sikt och teleskop
+
+`aktuell-detektionssikt` beräknas p5-oberoende av Detection utifrån ägda planeter
+och flottornas monterade teleskop. MapCell skiljer `explored` från `visible`.
+Game filtrerar pirater innan oföränderliga läsdata lämnas till vyerna; träffprovning
+och informationspaneler använder samma filtrerade data. Sparplatskartan visar
+utforskning, inte bara aktuell sikt. Synfältskanten ritas i p5 instance mode.
+
+`teleskop-i-exploration-ships` lagrar teleskopnivå på ShipUnit. De tre
+komponenterna använder ComponentPlanner, planetlager och Logistics med separata
+fabriker. Planeringsförsök för olika nivåer ändrar inga lager, reservationer eller ID:n.
+`pirat-aterupptackt` jämför nuvarande kontakter med föregående observation.
+
+Sparformat 9 bevarar teleskop och piratkontakter samt om årets ekonomisteg redan
+körts. Årssimuleringen har ett avslutande ekonomisteg; upptäckter där kan pausas
+och laddas om före finishTurn utan upprepad produktion, tillväxt eller rörelse.
+Version 2–8 migreras utan rensning; startskepp och äldre explorers får nivå I.
+Gamla produktionsorder behålls med nytt teleskopbehov och ny delplanering där
+försörjning finns. Forskningskön kompletteras med den nya förkunskapen. Gamla avbrott med enbart
+piratobservationer utanför sikt öppnas med Continue utan falsk piratdialog;
+förbrukad rörelse och väntande strid bevaras.
+
+`dubbelklick-bygger-pa-kartan` behåller aktuell sida när ett produktval byter
+kategori i en okategoriserad produktionsring. Ett dubbelklick kan därmed inte
+beställa en annan produkt efter det första klickets omritning.
+
 ## Kartbaserade Route och Production
 
 `route-kartvy`, `produktions-kartvy` och `delad-kartkamera` använder en gemensam

@@ -66,6 +66,7 @@ describe('sparat-spel / frontend-backend-mock', () => {
     turn(game);
     turn(game);
     turn(game);
+    turn(game);
     game.scheduleBuild(home, 'Colony ship factory', 1);
     turn(game);
     const snapshot = game.planetSnapshot(home)!;

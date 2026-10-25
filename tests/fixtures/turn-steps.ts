@@ -19,7 +19,7 @@ export function* turnFrames(
     if (phase(subject) === 'interrupted') subject.continueTurn();
     const frame = subject.nextTurnFrame();
     if (!frame) return;
-    if (frame.combats !== undefined) apply(subject, frame);
+    if (frame.combats !== undefined || frame.settlement) apply(subject, frame);
     else yield frame;
   }
   throw new Error('Turn did not terminate.');

@@ -38,6 +38,7 @@ export interface MapObject {
 
 export interface MapCell {
   readonly position: HexCoordinate;
+  readonly explored: boolean;
   readonly visible: boolean;
   readonly object: MapObject | null;
 }
@@ -99,7 +100,7 @@ export class Galaxy {
                 owned: planet.colony?.ownerId === player.id,
               })
             : null;
-        return Object.freeze({ position, visible, object });
+        return Object.freeze({ position, visible, explored: visible, object });
       }),
     );
     Object.freeze(this);
@@ -108,6 +109,7 @@ export class Galaxy {
   mapSnapshot(
     explored?: ReadonlySet<string>,
     ownedPlanetIds?: ReadonlySet<string>,
+    visible: ReadonlySet<string> = explored ?? new Set(),
   ): readonly MapCell[] {
     if (!explored) return this.#cells;
     const planets = this.systems.flatMap((system) => system.planets);
@@ -140,7 +142,8 @@ export class Galaxy {
             : null;
         return Object.freeze({
           position: cell.position,
-          visible: explored.has(cell.position.key),
+          explored: explored.has(cell.position.key),
+          visible: visible.has(cell.position.key),
           object,
         });
       }),

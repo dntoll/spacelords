@@ -150,6 +150,15 @@ export function renderFleetCard(
   const speed = element('small', 'fleet-speed', `S: ${fleet.speed} hex`);
   speed.title = `Fleet speed: ${fleet.speed} hexes/year${fleet.remainingMovement === undefined ? '' : ` · ${fleet.remainingMovement} hex remaining this year`}`;
   footer.append(speed);
+  if (fleet.detectionRange !== undefined) {
+    const detection = element(
+      'small',
+      'fleet-detection',
+      `D: ${fleet.detectionRange} hex`,
+    );
+    detection.title = `Detection range: ${fleet.detectionRange} hexes`;
+    footer.append(detection);
+  }
   if (routeMenu) orders.append(routeMenu);
   card.title = [
     fleetAssignmentLabel(fleet, model),

@@ -1,6 +1,7 @@
 import colonyShip from '../assets/ships/colony-ship.webp';
 import explorationShip from '../assets/ships/exploration-ship.webp';
 import fighter from '../assets/ships/fighter.webp';
+import { TELESCOPES } from '../models/Detection.js';
 import { type FleetSnapshot, type ShipType } from '../models/Game.js';
 import { button, element } from './dom.js';
 
@@ -46,7 +47,9 @@ export function renderFleetShips(
         : element('figure', 'ship-portrait');
       if (unit) {
         token.dataset.shipId = unit.id;
-        token.title = type;
+        token.title = unit.telescope
+          ? `${type} · ${TELESCOPES[unit.telescope - 1]} · Detection ${unit.telescope} hex`
+          : type;
       }
       token.dataset.ship = type;
       token.dataset.fleetId = fleet.id;

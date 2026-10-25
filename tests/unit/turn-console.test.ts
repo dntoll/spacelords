@@ -20,7 +20,11 @@ describe('handelser / arsrundor-och-order', () => {
     const game = new Game(createExampleGalaxy());
     game.setDestination('fleet-home', new HexCoordinate(7, 0));
     for (const frame of turnFrames(game)) game.applyFrame(frame);
-    expect(game.events).toHaveLength(0);
+    expect(
+      game.events.filter((event) =>
+        /arrived|moved to|revealed/.test(event.text),
+      ),
+    ).toHaveLength(0);
     game.finishTurn();
     for (const frame of turnFrames(game)) game.applyFrame(frame);
     const arrivals = game.events.filter((event) =>

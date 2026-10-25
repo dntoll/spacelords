@@ -100,7 +100,7 @@ describe('forskningsoversikt', () => {
     expect(root.textContent).toContain(
       'Build a Research station to advance research.',
     );
-    expect(root.querySelectorAll('[data-technology]')).toHaveLength(10);
+    expect(root.querySelectorAll('[data-technology]')).toHaveLength(13);
     click('Research Colony ship factory');
     expect(
       root.querySelector<HTMLButtonElement>(
@@ -210,6 +210,7 @@ function buildShipyard(model: AppModel): void {
   advance(model);
   advance(model);
   advance(model);
+  advance(model);
   model.build('Colony ship factory');
   advance(model);
   model.build('Rocket engine factory');
@@ -226,6 +227,7 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
     model.build('Research station');
     advance(model);
     model.research('Colony ship factory');
+    advance(model);
     advance(model);
     advance(model);
     advance(model);
@@ -368,9 +370,9 @@ describe('kompakta-koknappar', () => {
       );
       expect(control.title).toBe(control.getAttribute('aria-label'));
     }
-    rows()[2]!.querySelectorAll<HTMLButtonElement>('button')[1]!.click();
-    expect(model.snapshot.research.queue[2]).toBe('Transport ship factory');
-    rows()[3]!.querySelectorAll<HTMLButtonElement>('button')[2]!.click();
+    rows()[3]!.querySelectorAll<HTMLButtonElement>('button')[1]!.click();
+    expect(model.snapshot.research.queue[3]).toBe('Transport ship factory');
+    rows()[4]!.querySelectorAll<HTMLButtonElement>('button')[2]!.click();
     expect(model.snapshot.research.queue).toContain('Colony ship factory');
     click('Remove research');
     expect(model.snapshot.research.queue).not.toContain('Colony ship factory');

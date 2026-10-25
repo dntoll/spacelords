@@ -7,6 +7,7 @@ import { AppController } from '../../src/client/controllers/AppController.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { Game, TECHNOLOGIES } from '../../src/client/models/Game.js';
+import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import {
   HexCoordinate,
   HexGeometry,
@@ -48,6 +49,49 @@ function setup(state = tradeNetworkState()) {
   };
   return { model, root, factory, dispose, emit, click, save, controller };
 }
+
+it('dubbelklick-bygger-pa-kartan / teleskop-i-exploration-ships: an uncategorized ship choice keeps page two stable between clicks', () => {
+  const state = new Game(createExampleGalaxy()).exportState();
+  state.colonies[0]![1].buildings = [
+    {
+      id: 'yard',
+      type: 'Exploration ship factory',
+      slotIndex: 0,
+      demolition: false,
+    },
+    {
+      id: 'telescope',
+      type: 'Telescope III factory',
+      slotIndex: 1,
+      demolition: false,
+    },
+  ];
+  const { model, emit } = setup(state);
+  emit({ type: 'open-production' });
+  emit({
+    type: 'map-size',
+    viewport: {
+      width: 390,
+      height: 800,
+      availableWidth: 390,
+      availableHeight: 500,
+    },
+  });
+  emit({ type: 'map-production-page', page: 1 });
+  expect(model.snapshot.productionMap.categorized).toBe(false);
+  expect(
+    model.snapshot.productionMap.options.some(
+      (option) => option.type === 'Exploration ship',
+    ),
+  ).toBe(true);
+  emit({ type: 'map-production-option', option: 'Exploration ship' });
+  expect(model.snapshot.productionMap.page).toBe(1);
+  expect(
+    model.snapshot.productionMap.options.some(
+      (option) => option.type === 'Exploration ship',
+    ),
+  ).toBe(true);
+});
 
 it('produktionsorder-aterkoppling: confirms a double-click order outside the queue and renews the receipt', () => {
   vi.useFakeTimers();

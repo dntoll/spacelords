@@ -62,6 +62,7 @@ describe('forskningsko / forskningsberoenden', () => {
     research.remove('Transport ship factory');
     expect(research.queue).toEqual([
       'Rocket engine factory',
+      'Telescope I factory',
       'Exploration ship factory',
     ]);
   });
@@ -74,6 +75,7 @@ describe('forskningsko / forskningsberoenden', () => {
     game.selectResearch('Trade logistics');
     expect(game.research.queue).toEqual([
       'Rocket engine factory',
+      'Telescope I factory',
       'Exploration ship factory',
       'Transport ship factory',
       'Trade logistics',
@@ -82,8 +84,10 @@ describe('forskningsko / forskningsberoenden', () => {
     turn(game);
     turn(game);
     turn(game);
+    turn(game);
     expect(game.research.completed).toEqual([
       'Rocket engine factory',
+      'Telescope I factory',
       'Exploration ship factory',
       'Transport ship factory',
       'Trade logistics',
@@ -108,7 +112,7 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
     game.selectResearch('Colony ship factory');
     game.selectResearch('Fighter factory');
     game.selectResearch('Desert dome');
-    for (let year = 0; year < 8; year++) turn(game);
+    for (let year = 0; year < 9; year++) turn(game);
     for (const factory of [
       'Transport ship factory',
       'Exploration ship factory',
@@ -120,6 +124,19 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
       game.scheduleBuild(home, factory);
     for (let year = 0; year < 6; year++) turn(game);
     expect(game.planetSnapshot(home)!.buildings).toHaveLength(10);
+    game.scheduleComponent(home, 'Weapons module');
+    turn(game);
+    game.toggleDemolition(
+      home,
+      game
+        .planetSnapshot(home)!
+        .buildings.find(
+          (building) => building.type === 'Weapons module factory',
+        )!.id,
+    );
+    turn(game);
+    game.scheduleBuild(home, 'Telescope I factory');
+    turn(game);
     const colonyFleet = game.createFleet(),
       tradeFleet = game.createFleet();
     game.scheduleShip(home, 'Colony ship', colonyFleet.id);
@@ -167,6 +184,7 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
     game.scheduleShip(home, 'Colony ship', secondColonizer.id);
     for (let year = 0; year < 4; year++) turn(game);
     const remote = game.galaxy.systems[1]!.planets[0]!;
+    game.transferShips('fleet-home', 'Fighter', 1, secondColonizer.id);
     game.setDestination(secondColonizer.id, remote.position);
     for (let i = 0; game.fleet(secondColonizer.id)!.destination && i < 8; i++)
       turn(game);

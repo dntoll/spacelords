@@ -1,4 +1,7 @@
 export const TECHNOLOGIES = [
+  'Telescope I factory',
+  'Telescope II factory',
+  'Telescope III factory',
   'Exploration ship factory',
   'Colony ship factory',
   'Fighter factory',
@@ -20,7 +23,10 @@ export type Technology = (typeof TECHNOLOGIES)[number];
 export const PREREQUISITES: Readonly<
   Record<Technology, readonly Technology[]>
 > = Object.freeze({
-  'Exploration ship factory': ['Rocket engine factory'],
+  'Telescope I factory': [],
+  'Telescope II factory': ['Telescope I factory'],
+  'Telescope III factory': ['Telescope II factory'],
+  'Exploration ship factory': ['Rocket engine factory', 'Telescope I factory'],
   'Colony ship factory': ['Exploration ship factory'],
   'Fighter factory': ['Weapons module factory'],
   'Transport ship factory': ['Exploration ship factory'],

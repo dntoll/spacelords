@@ -109,6 +109,7 @@ function overview(planet: PlanetGameSnapshot, owner: string): HTMLElement {
     ['Atmosphere', planet.breathable ? 'Breathable' : 'Unbreathable'],
     ['Build slots', `${planet.buildSlots} / ${planet.potentialBuildSlots}`],
     ['Habitability', `${planet.habitability}%`],
+    ['Detection range', `${planet.detectionRange ?? 1} hex`],
     ['Buildings', String(planet.buildings.length)],
   ]) {
     const pair = element('div', 'stat');

@@ -88,13 +88,27 @@ class BuildQueue {
 class Ship {
   id
   installedEngines
+  installedTelescope: I | II | III [0..1]
   type
   speed
   crew
 }
 class Component {
-  type: Rocket engine | Ion pulse engine | Weapons module
+  type: Rocket engine | Ion pulse engine | Weapons module | Telescope I | Telescope II | Telescope III
 }
+class Detection {
+  currentVisibleHexes
+  visiblePirateContacts
+}
+class TelescopeFactory {
+  level: I | II | III
+  detectionRange: 1..3
+}
+TelescopeFactory --|> Building
+TelescopeFactory --> Component : produces matching telescope
+Detection --> Colony : highest completed telescope factory
+Detection --> Fleet : best installed telescope
+SavedGame --> Detection : pirate contacts
 Ship "1" *-- "1..3" Component : installed engines
 
 class Fleet {
@@ -113,6 +127,7 @@ class Discovery {
   observerFleet
 }
 class TurnSimulation {
+  economyApplied
   remainingMovement
   awaitingCombat
   handling
@@ -286,7 +301,7 @@ SavedGame --> Shipment
 note bottom of Galaxy
   Första iterationen använder en fast exempelvärld.
   Kartans läsdata döljer planeter utanför utforskad rymd.
-  Skepp utforskar besökta hexagoner; explorers även grannar.
+  Skepp utforskar besökta hexagoner; explorers inom monterat teleskops 1–3 hex.
 end note
 
 package "Framtida domän – ej implementerad" {

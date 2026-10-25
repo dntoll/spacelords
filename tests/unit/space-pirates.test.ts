@@ -357,14 +357,27 @@ describe('flottstrid-per-hex / motorbehov-for-alla-skepp', () => {
 });
 
 describe('rymdpirater-per-stjarna / lokal-sikt', () => {
-  it('shows only pirates currently on explored hexes and never accepts player orders for them', () => {
+  it('aktuell-detektionssikt: shows only pirates in current sight and never accepts player orders for them', () => {
     const initial = new Game(createExampleGalaxy()).exportState();
     const game = Game.restore({
       ...initial,
       explored: [...initial.explored, '8,-3'],
+      fleets: [
+        {
+          ...initial.fleets[0]!,
+          position: { q: 8, r: -3 },
+          ships: {
+            'Exploration ship': 0,
+            Fighter: 1,
+            'Colony ship': 0,
+            'Transport ship': 0,
+          },
+          shipUnits: [],
+        },
+      ],
     });
     expect(game.pirateSnapshots()).toHaveLength(1);
-    expect(Object.isFrozen(game.pirateSnapshots()[0])).toBe(true);
+    expect(Object.isFrozen(game.pirateSnapshots())).toBe(true);
     const before = game.exportState();
     expect(() =>
       game.setDestination('pirate-nadir', new HexCoordinate(1, 0)),

@@ -2715,10 +2715,13 @@ p {
 }
 .fleet-card-footer {
   display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
   min-width: 0;
   line-height: 1;
 }
-.fleet-speed {
+.fleet-speed,
+.fleet-detection {
   font-size: 0.65rem;
 }
 .production-receipt {

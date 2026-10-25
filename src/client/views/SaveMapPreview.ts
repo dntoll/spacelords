@@ -10,7 +10,7 @@ export class SaveMapPreview {
   #disposed = false;
 
   constructor(container: HTMLElement, cells: readonly MapCell[]) {
-    const visible = cells.filter((cell) => cell.visible);
+    const visible = cells.filter((cell) => cell.explored);
     const points = visible.map((cell) => HexGeometry.toPoint(cell.position));
     const minX = Math.min(...points.map((point) => point.x), 0) - 45;
     const maxX = Math.max(...points.map((point) => point.x), 0) + 45;

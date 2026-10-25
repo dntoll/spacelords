@@ -37,6 +37,7 @@ function prepared(rocket = 0, ion = 0) {
     demolition: false,
   }));
   colony.stock['Weapons module'] = 10;
+  colony.stock['Telescope I'] = 10;
   return Game.restore(state);
 }
 function turn(game: Game) {
@@ -275,7 +276,7 @@ describe('avstamning-sparkompatibilitet / motorbehov-for-alla-skepp', () => {
       expect(
         game.planetSnapshot(game.galaxy.homePlanet)!.projects[0]!.blockedReason,
       ).not.toBeNull();
-      expect(game.exportState().version).toBe(8);
+      expect(game.exportState().version).toBe(9);
     },
   );
 
@@ -290,6 +291,7 @@ describe('avstamning-sparkompatibilitet / motorbehov-for-alla-skepp', () => {
     });
     expect(game.research.queue).toEqual([
       'Rocket engine factory',
+      'Telescope I factory',
       'Exploration ship factory',
       'Colony ship factory',
     ]);

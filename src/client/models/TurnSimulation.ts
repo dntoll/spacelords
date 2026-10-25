@@ -11,6 +11,7 @@ export interface Discovery {
 }
 
 export interface SavedTurnSimulation {
+  readonly economyApplied?: boolean;
   readonly remaining: readonly (readonly [string, number])[];
   readonly awaitingCombat: boolean;
   readonly discoveries: readonly Discovery[];
@@ -20,6 +21,7 @@ export interface SavedTurnSimulation {
 
 /** spara-avbrutet-ar: movement is spent once and survives order changes and reloads. */
 export class TurnSimulation {
+  economyApplied = false;
   readonly remaining: Map<string, number>;
   awaitingCombat = false;
   discoveries: readonly Discovery[] = [];
@@ -57,6 +59,7 @@ export class TurnSimulation {
 
   snapshot(): SavedTurnSimulation {
     return Object.freeze({
+      economyApplied: this.economyApplied,
       remaining: Object.freeze(
         [...this.remaining].map((entry) => Object.freeze(entry)),
       ),
@@ -86,8 +89,10 @@ export class TurnSimulation {
       typeof saved.awaitingCombat !== 'boolean' ||
       typeof saved.handling !== 'boolean' ||
       typeof saved.otherFleets !== 'boolean' ||
-      !saved.awaitingCombat ||
-      !saved.discoveries.length ||
+      (!saved.awaitingCombat && !saved.economyApplied) ||
+      (saved.economyApplied !== undefined &&
+        typeof saved.economyApplied !== 'boolean') ||
+      (!saved.discoveries.length && !saved.handling) ||
       new Set(saved.remaining.map(([id]: readonly [string, number]) => id))
         .size !== saved.remaining.length ||
       saved.remaining.some(
@@ -108,6 +113,7 @@ export class TurnSimulation {
     )
       throw new Error('Invalid interrupted year.');
     const simulation = new TurnSimulation(saved.remaining);
+    simulation.economyApplied = saved.economyApplied ?? false;
     simulation.awaitingCombat = saved.awaitingCombat;
     simulation.discoveries = structuredClone(saved.discoveries);
     simulation.handling = saved.handling;

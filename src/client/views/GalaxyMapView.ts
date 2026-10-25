@@ -1,4 +1,5 @@
 import { renderMapTradeRoutes } from './MapTradeRoutesView.js';
+import { renderDetectionBoundary } from './DetectionMapView.js';
 import { renderMapOverlays } from './MapOverlayView.js';
 import p5 from 'p5';
 import type { AppReadModel } from '../models/AppModel.js';
@@ -91,6 +92,10 @@ export class GalaxyMapView implements MapPort {
     }
     if (this.#canvas) {
       this.#canvas.setAttribute(
+        'aria-description',
+        'Bright hexes are currently visible. Dim hexes were explored earlier. Dark hexes are unknown. The outline marks current detection range. Pirates are shown only within current sight.',
+      );
+      this.#canvas.setAttribute(
         'aria-label',
         model.screen === 'fleets'
           ? 'Fleets map. Click a fleet to select it; drag a fleet to set its destination. Planets and trade routes are background landmarks. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.'
@@ -117,6 +122,7 @@ export class GalaxyMapView implements MapPort {
     sketch.translate(-model.camera.center.x, -model.camera.center.y);
     for (const cell of model.cells)
       this.#hex(sketch, cell, false, model.camera.zoom);
+    renderDetectionBoundary(sketch, model.cells, model.camera.zoom);
     const selected = model.screen === 'fleets' ? null : model.selected;
     if (selected) this.#hex(sketch, selected, true, model.camera.zoom);
     // synliga-handelsrutter: selection fills stay below routes; objects stay above.
@@ -142,9 +148,25 @@ export class GalaxyMapView implements MapPort {
 
   #hex(sketch: p5, cell: MapCell, selected: boolean, zoom: number): void {
     const point = HexGeometry.toPoint(cell.position);
-    sketch.stroke(selected ? '#ade8cf' : cell.visible ? '#345555' : '#1e303c');
+    sketch.stroke(
+      selected
+        ? '#ade8cf'
+        : cell.visible
+          ? '#345555'
+          : cell.explored
+            ? '#293e49'
+            : '#1e303c',
+    );
     sketch.strokeWeight((selected ? 1.8 : 0.7) / zoom);
-    sketch.fill(selected ? '#1b3e41' : cell.visible ? '#112d34' : '#0d1c28');
+    sketch.fill(
+      selected
+        ? '#1b3e41'
+        : cell.visible
+          ? '#112d34'
+          : cell.explored
+            ? '#10242e'
+            : '#0d1c28',
+    );
     sketch.beginShape();
     for (let corner = 0; corner < 6; corner += 1) {
       const angle = (Math.PI / 3) * corner - Math.PI / 6;
@@ -165,6 +187,7 @@ export class GalaxyMapView implements MapPort {
     const context = sketch.drawingContext as
       CanvasRenderingContext2D | undefined;
     if (context && dimmed) context.globalAlpha *= 0.35;
+    if (context && cell.explored && !cell.visible) context.globalAlpha *= 0.65;
     const color = star
       ? '#e9c78b'
       : object.owned

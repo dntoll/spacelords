@@ -12,7 +12,10 @@ import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 
 function setup(galaxy = createExampleGalaxy()) {
   const state = new Game(galaxy).exportState();
-  for (const [, colony] of state.colonies) colony.stock['Rocket engine'] = 100;
+  for (const [, colony] of state.colonies) {
+    colony.stock['Rocket engine'] = 100;
+    colony.stock['Telescope I'] = 100;
+  }
   const game = Game.restore(state);
   const planet = game.galaxy.homePlanet;
   const snapshot = () => game.planetSnapshot(planet)!;
@@ -102,8 +105,10 @@ describe('forska-fram-fabriker / bygga-forskningsstation', () => {
     expect(game.research.completed).toEqual(['Rocket engine factory']);
     turn();
     turn();
+    turn();
     expect(game.research.completed).toEqual([
       'Rocket engine factory',
+      'Telescope I factory',
       'Exploration ship factory',
       'Colony ship factory',
     ]);

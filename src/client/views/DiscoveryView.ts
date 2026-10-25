@@ -29,7 +29,9 @@ export function discoveryDialog(
     element(
       'p',
       '',
-      'The year is paused. Fleets already sharing a hex will fight before the next movement.',
+      model.interruption!.economyApplied
+        ? 'The year is paused after production. No movement remains this year.'
+        : 'The year is paused. Fleets already sharing a hex will fight before the next movement.',
     ),
     button('Handle', () => emit({ type: 'handle-discoveries' })),
     button('Ignore', () => emit({ type: 'ignore-discoveries' })),

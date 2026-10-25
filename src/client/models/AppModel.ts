@@ -221,7 +221,7 @@ export class AppModel {
             lastPlayed: saved?.lastPlayed ?? null,
             round: game?.round ?? null,
             cells: Object.freeze(
-              game?.mapSnapshot().filter((cell) => cell.visible) ?? [],
+              game?.mapSnapshot().filter((cell) => cell.explored) ?? [],
             ),
             error: null,
           });
@@ -942,8 +942,9 @@ export class AppModel {
       : null;
     if (!option) return;
     if (option.category !== this.#mapProductionCategory) {
+      const categorized = this.#productionMapSnapshot().categorized;
       this.#mapProductionCategory = option.category;
-      this.#mapProductionPage = 0;
+      if (categorized) this.#mapProductionPage = 0;
     }
     this.#mapProductionOption = type;
   }
