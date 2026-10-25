@@ -1,4 +1,5 @@
 import { engineCount } from './ShipEquipment.js';
+import { FleetPatrol, type PatrolOrder } from './FleetPatrol.js';
 export { engineCount } from './ShipEquipment.js';
 import {
   TurnSimulation,
@@ -512,6 +513,11 @@ export interface PlanetOrderSnapshot {
   readonly emptyQueues: number;
 }
 export interface FleetSnapshot {
+  readonly patrol?: Readonly<{
+    center: HexCoordinate;
+    range: number;
+    targetPirateId?: string;
+  }>;
   readonly salvage?: Readonly<{
     targets: readonly string[];
     yardId: string | null;
@@ -578,6 +584,7 @@ interface Project {
   destinationFleetId: string | null;
 }
 interface Fleet {
+  patrol?: PatrolOrder;
   exploration?: ExplorationOrder;
   shipUnits?: ShipUnit[];
   joinFleetId?: string;
@@ -624,7 +631,7 @@ export interface GameState {
   readonly componentOrders?: readonly ComponentOrder[];
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
-  readonly version: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+  readonly version: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
   readonly salvage?: ReturnType<Salvage['snapshot']>;
   readonly recoveredResearch?: readonly Technology[];
   readonly visiblePirates?: readonly string[];
@@ -719,7 +726,7 @@ export class Game {
     if (this.#phase === 'simulating')
       throw new Error('Wait for the turn to finish before saving.');
     return structuredClone({
-      version: 10,
+      version: 11,
       salvage: this.#salvage.snapshot(),
       recoveredResearch: [...this.#research.recovered],
       visiblePirates: [...this.#visiblePirates],
@@ -761,7 +768,7 @@ export class Game {
 
   static restore(state: GameState): Game {
     if (
-      ![2, 3, 4, 5, 6, 7, 8, 9, 10].includes(state.version) ||
+      ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(state.version) ||
       !Number.isSafeInteger(state.round) ||
       state.round < 1 ||
       !Number.isSafeInteger(state.sequence) ||
@@ -886,6 +893,17 @@ export class Game {
     game.#fleets = copy.fleets.map(
       ({ position: current, destination, courseOrigin, ...fleet }) => {
         const empty = game.#shipCount(fleet.ships) === 0;
+        if (fleet.patrol !== undefined) {
+          FleetPatrol.validate(fleet.patrol, (point) => !!galaxy.cellAt(point));
+          if (
+            empty ||
+            !fleet.ships.Fighter ||
+            fleet.routeId ||
+            fleet.joinFleetId ||
+            fleet.exploration
+          )
+            throw new Error('Invalid saved Patrol fleet.');
+        }
         if (!empty && !current)
           throw new Error('A fleet with ships needs a position.');
         return {
@@ -1267,6 +1285,20 @@ export class Game {
             this.#salvage.towing(fleet.id).map((wreck) => wreck.id),
           ),
           detectionRange: this.#fleetDetectionRange(fleet),
+          ...(fleet.patrol
+            ? {
+                patrol: Object.freeze({
+                  center: new HexCoordinate(
+                    fleet.patrol.center.q,
+                    fleet.patrol.center.r,
+                  ),
+                  range: this.#speed(fleet),
+                  ...(fleet.patrol.targetPirateId
+                    ? { targetPirateId: fleet.patrol.targetPirateId }
+                    : {}),
+                }),
+              }
+            : {}),
           exploration: fleet.exploration,
           remainingMovement: this.#simulation
             ? this.#simulation.movement(fleet.id, this.#speed(fleet))
@@ -1335,6 +1367,7 @@ export class Game {
     this.#requireFleetOrders(fleetId);
     const fleet = this.#fleetState(fleetId);
     this.#salvage.assign(fleet, wreckId);
+    delete fleet.patrol;
     delete fleet.exploration;
     delete fleet.joinFleetId;
     this.#updateSalvage();
@@ -1343,6 +1376,7 @@ export class Game {
     this.#requireFleetOrders(fleetId);
     const fleet = this.#fleetState(fleetId);
     this.#salvage.returnHome(fleet);
+    delete fleet.patrol;
     delete fleet.exploration;
     delete fleet.joinFleetId;
     this.#updateSalvage();
@@ -2208,6 +2242,7 @@ export class Game {
     delete fleet.joinFleetId;
     delete fleet.exploration;
     fleet.destination = destination;
+    delete fleet.patrol;
     fleet.courseOrigin = fleet.position!;
   }
   clearDestination(id: string): void {
@@ -2215,6 +2250,7 @@ export class Game {
     this.#salvage.stop(id);
     delete this.#fleetState(id).exploration;
     this.#requireManualFleet(this.#fleetState(id));
+    delete this.#fleetState(id).patrol;
     this.#fleetState(id).destination = null;
     delete this.#fleetState(id).joinFleetId;
     delete this.#fleetState(id).courseOrigin;
@@ -2249,9 +2285,22 @@ export class Game {
     if (!fleet.ships['Exploration ship'])
       throw new Error('An Exploration ship is required.');
     this.#salvage.stop(id);
+    delete fleet.patrol;
     delete fleet.joinFleetId;
     fleet.exploration = order;
     this.#updateExploration(fleet);
+  }
+  setPatrol(id: string): void {
+    this.#requireFleetOrders(id);
+    const fleet = this.#fleetState(id);
+    if (!fleet.ships.Fighter)
+      throw new Error('A Fighter is required for Patrol.');
+    if (fleet.patrol) return;
+    this.#salvage.stop(id);
+    delete fleet.exploration;
+    delete fleet.joinFleetId;
+    fleet.patrol = { center: fleet.position!, nextIndex: 0 };
+    this.#updatePatrol(fleet);
   }
   handleDiscoveries(): void {
     if (this.#phase !== 'interrupted')
@@ -2303,6 +2352,7 @@ export class Game {
     }
     this.#updateSalvage();
     for (const fleet of this.#fleets) this.#updateExploration(fleet);
+    for (const fleet of this.#fleets) this.#updatePatrol(fleet);
     const pirates = new Map(this.#pirates.map((pirate) => [pirate.id, pirate]));
     const frame = FleetPursuit.plan(
       this.#movingFleets(),
@@ -2447,6 +2497,7 @@ export class Game {
         .filter((id) => this.#visiblePirates.has(id)),
     );
     for (const fleet of this.#fleets) this.#updateExploration(fleet);
+    for (const fleet of this.#fleets) this.#updatePatrol(fleet);
     reports.push(...this.#destroyHostileShipyards());
     this.#updateSalvage();
     if (reports.length) {
@@ -2680,7 +2731,12 @@ export class Game {
     const issue = tradeAssignmentIssue(this.fleet(fleetId)!, route, snapshots);
     if (issue) throw new Error(issue);
     if (source.ships['Transport ship']) {
+      if (source.patrol) {
+        source.destination = null;
+        delete source.courseOrigin;
+      }
       this.#logistics.assign(routeId, source, this.#logisticsPort());
+      delete source.patrol;
     } else {
       // rutt-eskortfordelning: include reinforcements already on their way.
       const targets = routeEscortTargets(routeId, snapshots).map((fleet) => ({
@@ -2806,6 +2862,7 @@ export class Game {
       (f) =>
         !f.routeId &&
         !f.joinFleetId &&
+        !f.patrol &&
         !f.destination &&
         this.#shipCount(f.ships),
     ))
@@ -3402,6 +3459,28 @@ export class Game {
       fleet.courseOrigin = fleet.position!;
     }
   }
+  #updatePatrol(fleet: Fleet): void {
+    if (!fleet.patrol) return;
+    if (!fleet.ships.Fighter || !fleet.position) {
+      delete fleet.patrol;
+      fleet.destination = null;
+      delete fleet.courseOrigin;
+      this.#event(
+        `${this.#fleetDisplayName(fleet)}: Patrol stopped; no Fighter available.`,
+      );
+      return;
+    }
+    const destination = FleetPatrol.destination(
+      fleet.patrol,
+      fleet.position,
+      this.#speed(fleet),
+      this.pirateSnapshots(),
+      (point) => !!this.galaxy.cellAt(point),
+    );
+    fleet.destination = destination;
+    if (destination) fleet.courseOrigin = fleet.position;
+    else delete fleet.courseOrigin;
+  }
   #visibleDiscoveries(): Discovery[] {
     const discoveries: Discovery[] = [];
     for (const wreck of this.#salvage.wrecks)
@@ -3537,6 +3616,7 @@ export class Game {
   }
   // tomma-flottor-utan-position: the last ship releases both location and course.
   #releaseEmptyFleet(fleet: Fleet): void {
+    if (fleet.patrol && !fleet.ships.Fighter) this.#updatePatrol(fleet);
     if (fleet.exploration && !fleet.ships['Exploration ship'])
       this.#updateExploration(fleet);
     // skepp-ur-olastad-ruttflotta: a route needs at least one transport ship.
@@ -3664,6 +3744,7 @@ export class Game {
   }
   // handelser: report arrival once, at the point it happens, with a usable place name.
   #recordArrival(fleet: Fleet): void {
+    if (fleet.patrol) return;
     if (fleet.joinFleetId) return;
     if (!fleet.destination || fleet.destination.key !== fleet.position?.key)
       return;

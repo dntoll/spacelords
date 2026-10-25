@@ -10,6 +10,12 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Patrol:** `flottpatrullering` är **Fullständigt implementerat**. Flottor med
+  Fighters cirklar runt orderhexen och jagar synliga pirater inom sin effektiva
+  flottfart, mätt från flottans aktuella position. Gemensam sikt används;
+  tappad kontakt eller räckvidd ger återgång till patrullvarvet. Ordern och
+  avbrutna år bevaras utan rensning av äldre sparningar. Se [spelreglerna](docs/space-pirates.md).
+
 - **Utforskning och kompakta order:** ytterligare komprimerade flottkort,
   ordersymboler, tillfälliga ruttnamn, produktionskvitton och bestående
   utforskningsuppdrag. Året ska kunna avbrytas vid upptäckter och återupptas

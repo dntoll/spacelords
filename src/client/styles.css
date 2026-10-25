@@ -2721,8 +2721,15 @@ p {
   line-height: 1;
 }
 .fleet-speed,
-.fleet-detection {
+.fleet-detection,
+.fleet-patrol-status {
   font-size: 0.65rem;
+}
+.fleet-patrol-status {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .production-receipt {
   position: fixed;

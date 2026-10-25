@@ -3,6 +3,39 @@
 Namnen nedan är stabila referenser i tester, kod och dokumentation.
 Produktkraven finns separat i [product-requirements.md](product-requirements.md).
 
+## Patrol och sparformat 11
+
+`flottpatrullering` — **Fullständigt implementerat**: FleetPatrol väljer mål
+och patrullpunkt oberoende av p5 och HTML. Game validerar ordern och använder
+befintlig effektiv flottfart, gemensam detektionssikt, routing och
+TurnSimulation. Jaktbeslut uppdateras mellan hexsteg utan framtida eller
+osynliga piratpositioner. Ingen extra rörelsebudget skapas vid orderbyte,
+förstärkning, avbrott eller omladdning.
+
+Game.setPatrol, controlleravsikten patrol-fleet och AppModel.patrolFleet
+förmedlar ordern. Vyer läser frysta ögonblicksbilder med centrum, härledd
+räckvidd och eventuellt piratmål. Samma kompakta orderrad används på Star map
+och Fleets. En aktiv patrull är ett uppdrag och ger inget sysslolöshetsbeslut.
+Handelstilldelning får ersätta en Patrol-kurs efter övrig validering;
+regeln om att andra resande flottor först måste stoppas behålls.
+
+`avstamning-sparkompatibilitet`: sparformat 11 läser fortsatt version 2–10
+utan rensning. Fleet.patrol lagrar centrum, nästa grannindex och eventuellt
+pirat-ID. Centrum och grannindex valideras, liksom att flottan har Fighter
+och inte samtidigt har rutt-, förstärknings- eller utforskningsorder.
+Återstående tid och uppskjuten strid använder befintligt avbrottsformat.
+Inga sparplatsnycklar eller rensningsmarkörer ändras.
+
+Verifiering av `flottpatrullering`: 17 modelltester samt två controller- och
+vytester skyddar order, målval, motorberoende gränser, förstärkning, kartkant,
+strid och sparade avbrott. Sex riktade mobilscenarier passerar i Chromium och
+WebKit; flottkortens höjd och pekytor kontrolleras och mobilbilder granskas.
+`snabb-testsvit`: en första körning överskred tidsgränsen. Patrol-vytesterna
+samlas därför i befintlig flottestmiljö; de 14 presentationstesterna i
+grouped-events och star-map-trade-view flyttas till den utökade sviten utan
+borttagning. Därefter passerar alla 475 snabba tester på 10,46 sekunder
+inklusive verktygsstart, av högst 20 sekunder.
+
 ## Aktuell sikt och teleskop
 
 `snabb-testsvit`: efter en avbruten körning över 20 sekunder flyttades 44

@@ -106,6 +106,9 @@ export class AppController {
       case 'explore-fleet':
         this.#model.exploreFleet(intent.id, intent.order);
         break;
+      case 'patrol-fleet':
+        this.#model.patrolFleet(intent.id);
+        break;
       case 'handle-discoveries':
         this.#model.handleDiscoveries();
         break;

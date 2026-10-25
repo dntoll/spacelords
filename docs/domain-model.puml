@@ -122,6 +122,16 @@ class Fleet {
 class ExplorationOrder {
   mode: Explore | Explore stars
 }
+class PatrolOrder {
+  center : HexCoordinate
+  nextNeighborIndex
+  targetPirateId
+  range : effective fleet speed
+}
+Fleet "1" o-- "0..1" PatrolOrder
+PatrolOrder --> HexCoordinate : fixed center
+PatrolOrder --> PirateFleet : visible target within range
+PatrolOrder --> Detection : shared visible contacts
 class Discovery {
   kind: planet | star | pirate
   observerFleet

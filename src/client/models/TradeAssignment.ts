@@ -11,7 +11,7 @@ export function tradeAssignmentIssue(
   if (fleet.salvage) return 'Salvage order active';
   if (fleet.routeId) return 'Already assigned to a route';
   if (fleet.joinFleetId) return 'Reinforcement order active';
-  if (fleet.destination) return 'Fleet is travelling';
+  if (fleet.destination && !fleet.patrol) return 'Fleet is travelling';
   if (!fleet.ships['Transport ship']) {
     if (!fleet.ships.Fighter) return 'Needs a Transport ship or Fighter';
     if (!routeEscortTargets(route.id, fleets).length)

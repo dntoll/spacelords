@@ -160,6 +160,16 @@ export function renderFleetCard(
     footer.append(detection);
   }
   if (routeMenu) orders.append(routeMenu);
+  if (fleet.patrol) {
+    const status = element(
+      'small',
+      'fleet-patrol-status',
+      `Patrol · R: ${fleet.patrol.range}`,
+    );
+    status.title = fleetAssignmentLabel(fleet, model);
+    status.setAttribute('aria-label', status.title);
+    footer.append(status);
+  }
   if (fleet.salvage?.issue)
     footer.append(element('small', 'muted-note', fleet.salvage.issue));
   if (fleet.towing?.length) {
@@ -199,6 +209,9 @@ export function fleetAssignmentLabel(
   fleet: FleetSnapshot,
   model: AppReadModel,
 ): string {
+  if (fleet.patrol) {
+    return `Patrol: HEX ${fleet.patrol.center.key}, range ${fleet.patrol.range} hex${fleet.patrol.targetPirateId ? ', pursuing Space pirate' : ''}`;
+  }
   if (fleet.joinFleetId) {
     const target = model.fleets.find(
       (target) => target.id === fleet.joinFleetId,

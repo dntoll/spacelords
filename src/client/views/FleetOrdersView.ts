@@ -49,15 +49,33 @@ export function renderFleetOrders(
         '➜',
         () => emit({ type: 'begin-destination', id: fleet.id }),
         locked,
-        !!fleet.destination && !fleet.exploration && !fleet.joinFleetId,
+        !!fleet.destination &&
+          !fleet.exploration &&
+          !fleet.joinFleetId &&
+          !fleet.patrol,
       ),
       fleetOrderButton(
-        fleet.joinFleetId ? 'Cancel reinforcement' : 'Clear destination',
+        fleet.patrol
+          ? 'Cancel patrol'
+          : fleet.joinFleetId
+            ? 'Cancel reinforcement'
+            : 'Clear destination',
         '■',
         () => emit({ type: 'clear-destination', id: fleet.id }),
         locked,
       ),
     );
+    if (fleet.ships.Fighter) {
+      const patrol = fleetOrderButton(
+        'Patrol',
+        '⟳',
+        () => emit({ type: 'patrol-fleet', id: fleet.id }),
+        locked,
+        !!fleet.patrol,
+      );
+      patrol.title = `Patrol around the current hex. Pursue visible pirates within ${fleet.speed} hexes of this fleet, using shared detection.`;
+      orders.append(patrol);
+    }
     if (fleet.ships['Exploration ship'])
       orders.append(
         fleetOrderButton(

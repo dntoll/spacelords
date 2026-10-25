@@ -12,6 +12,15 @@ För delvisa krav anges vad som återstår. Exempelvärden är inte beslut om ba
 
 ## Första spelgrunden
 
+`flottpatrullering` — **Fullständigt implementerat**: Flottor med minst en
+Fighter kan få ordern Patrol. Hela flottan cirklar runt orderhexens sex
+grannhexar och jagar pirater som syns genom spelarens gemensamma sikt, inom
+flottans aktuella fart i hex från dess nuvarande position. Motorer och
+långsammare medföljande skepp påverkar räckvidden. När ingen giltig pirat finns
+återgår flottan till sitt ursprungliga patrullvarv. Patrol består tills den
+avbryts, ersätts av en annan order eller flottan saknar Fighters. Ordern och
+pågående år bevaras vid omladdning. Se [Space pirates](space-pirates.md).
+
 `byggnadsantal-lokalt-och-globalt` — **Fullständigt implementerat**: Varje
 byggnadstyp i Build selection visar antal direkt i den kompakta listan, både
 på aktuell planet och totalt på alla spelarens planeter, inklusive den aktuella.

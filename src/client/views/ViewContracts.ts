@@ -20,6 +20,7 @@ import type {
 import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 
 export type AppIntent =
+  | { readonly type: 'patrol-fleet'; readonly id: string }
   | {
       readonly type: 'salvage-wreck';
       readonly fleetId: string;

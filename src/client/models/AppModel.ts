@@ -1274,6 +1274,9 @@ export class AppModel {
   exploreFleet(id: string, order: ExplorationOrder): void {
     this.#game.setExploration(id, order);
   }
+  patrolFleet(id: string): void {
+    this.#game.setPatrol(id);
+  }
   handleDiscoveries(): void {
     this.#game.handleDiscoveries();
     this.#focusInterruptedFleet();

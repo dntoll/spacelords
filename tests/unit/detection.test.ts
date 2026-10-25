@@ -429,7 +429,7 @@ describe('teleskop-i-exploration-ships', () => {
   });
 
   it.each([2, 3, 4, 5, 6, 7, 8] as const)(
-    'saves version %i as version 10 without resetting explored memory or charging existing ships',
+    'saves version %i as version 11 without resetting explored memory or charging existing ships',
     (version) => {
       const state = shipyard();
       const game = Game.restore({
@@ -441,7 +441,7 @@ describe('teleskop-i-exploration-ships', () => {
           shipUnits: [],
         })),
       });
-      expect(game.exportState().version).toBe(10);
+      expect(game.exportState().version).toBe(11);
       expect(game.exportState().explored).toContain('-6,6');
       expect(
         game.planetSnapshot(game.galaxy.homePlanet)!.economy.stock.Iron,

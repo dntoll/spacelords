@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { renderFleetCard } from '../../src/client/views/FleetCard.js';
+import { renderFleetOrders } from '../../src/client/views/FleetOrdersView.js';
+import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppController } from '../../src/client/controllers/AppController.js';
 import { AppView } from '../../src/client/views/AppView.js';
@@ -403,5 +406,79 @@ describe('skepp-ur-olastad-ruttflotta', () => {
     expect(model.snapshot.shipTransfer).toBeNull();
     model.chooseShipTransfer('fleet-home', 'Fighter');
     expect(model.snapshot.shipTransfer?.fleetId).toBe('fleet-home');
+  });
+});
+
+describe('flottpatrullering', () => {
+  it('routes Patrol and Cancel patrol through the controller and exposes a frozen readable status', () => {
+    const model = new AppModel();
+    let emit: IntentHandler = () => {};
+    const controller = new AppController(model, {
+      bind(handler) {
+        emit = handler;
+      },
+      render() {},
+      dispose() {},
+    });
+    controller.start();
+    const card = () =>
+      renderFleetCard(model.snapshot.fleets[0]!, model.snapshot, emit);
+    const control = card().querySelector<HTMLButtonElement>(
+      '[aria-label="Patrol"]',
+    )!;
+    expect(control.disabled).toBe(false);
+    expect(control.title).toContain('3 hexes');
+    control.click();
+    const fleet = model.snapshot.fleets[0]!;
+    expect(fleet.patrol?.center).toEqual(fleet.position);
+    expect(Object.isFrozen(fleet.patrol)).toBe(true);
+    expect(Object.isFrozen(fleet.patrol!.center)).toBe(true);
+    const active = card();
+    expect(
+      active
+        .querySelector('[aria-label="Patrol"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(active.querySelector('.fleet-patrol-status')?.textContent).toBe(
+      'Patrol · R: 3',
+    );
+    expect(active.getAttribute('aria-description')).toContain(
+      'Patrol: HEX 1,0, range 3 hex',
+    );
+    expect(
+      active
+        .querySelector('[aria-label="Choose destination for Home Fleet"]')
+        ?.getAttribute('aria-pressed'),
+    ).toBe('false');
+    active
+      .querySelector<HTMLButtonElement>('[aria-label="Cancel patrol"]')!
+      .click();
+    expect(model.snapshot.fleets[0]!.patrol).toBeUndefined();
+    expect(model.snapshot.fleets[0]!.destination).toBeNull();
+    controller.dispose();
+  });
+
+  it('offers Patrol only for non-route Fighter fleets and respects order locks', () => {
+    const model = new AppModel();
+    const fleet = model.snapshot.fleets[0]!;
+    for (const unavailable of [
+      { ...fleet, ships: { ...fleet.ships, Fighter: 0 } },
+      { ...fleet, routeId: 'route-test' },
+    ]) {
+      expect(
+        renderFleetOrders(unavailable, model.snapshot, () => {}).querySelector(
+          '[aria-label="Patrol"]',
+        ),
+      ).toBeNull();
+    }
+    const locked = renderFleetOrders(
+      { ...fleet, canIssueOrders: false },
+      model.snapshot,
+      () => {},
+    );
+    expect(
+      locked.querySelector<HTMLButtonElement>('[aria-label="Patrol"]')!
+        .disabled,
+    ).toBe(true);
   });
 });
