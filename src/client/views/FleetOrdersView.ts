@@ -33,6 +33,16 @@ export function renderFleetOrders(
   const locked =
     !(fleet.canIssueOrders ?? model.phase === 'planning') || !fleet.position;
   if (!fleet.routeId) {
+    if (fleet.towing?.length)
+      orders.append(
+        fleetOrderButton(
+          'Return to shipyard',
+          '⚓',
+          () => emit({ type: 'return-shipyard', id: fleet.id }),
+          locked,
+          !!fleet.salvage,
+        ),
+      );
     orders.append(
       fleetOrderButton(
         `Choose destination for ${fleet.name}`,

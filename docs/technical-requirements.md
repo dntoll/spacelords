@@ -677,3 +677,29 @@ Regressionstestet verifierar förlorat fokus före klicket.
 
 Namnknappen i `kompakta-flottkort` behåller minst 88 px bredd. Ruttsymbolen
 delar den horisontellt rullbara orderraden för att ge namnet mer utrymme.
+
+### Bärgning och sparformat 10
+
+`spara-bargning-och-stridsavbrott`: format 10 läser även format 2–9 utan rensning.
+Äldre spel får inga retroaktiva vrak. Vrakets ShipUnit, exklusiva reservationer,
+släp, stationer, FIFO-köer, forskningsfynd och stridsrapporter sparas. Inkonsekvent
+dockning, fel motorantal och okända fynd avvisas.
+
+`bogsering-av-vrak`: årssimuleringen räknar 60 tidsenheter per flotta. Ett steg
+kostar 60/farten vid steget. Ändrad fart vid upphämtning, lossning eller reparation
+ger ingen ny tidsbudget. Äldre sparningars återstående hexantal omvandlas till tid.
+
+`stridsrapport-i-dialog`: alla strider i samma samtidiga steg avgörs innan paus.
+Controller sparar resultaten före visning. Handle ger orderbehörighet; Continue
+återupptar kvarvarande rörelse och applicerar årets ekonomi exakt en gång.
+
+`orbitalt-varv` och `automatisk-vrakreparation`: stationens grannhex reserveras
+vid köläggning. Reparationsköer är separata från planetens Build queue och behandlas
+i stabil varvsordning efter ordinarie produktion. Material och personer debiteras
+först vid färdig reparation; inga nya komponenter tillverkas för det gamla skrovet.
+Salvage håller vrak, dockning och order samlade. Vyer läser frysta ögonblicksbilder.
+Kartmarkörer och träffytor delar geometri; order nås också utan dragning.
+
+Riktade modelltester och mobiltester i Chromium och WebKit skyddar bärgning,
+bogseringens fart, varvsplacering, reparation, förstörelse, återuppbyggnad,
+forskningsundantag och omladdning. Snabbsvitens gräns på 20 sekunder gäller fortsatt.

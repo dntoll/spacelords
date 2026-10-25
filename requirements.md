@@ -193,6 +193,10 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Detaljer och status
 
+Stridsrapporter, vrak, bärgning, orbitala varv och forskning från hemförda delar
+är **Fullständigt implementerat**. Se [bärgning och varv](docs/salvage-shipyards.md) för
+de nya kraven och deras stabila namn.
+
 `aktuell-detektionssikt`, `kartans-sikttillstand`, `teleskopnivaer`,
 `teleskopfabriker`, `teleskop-i-exploration-ships` och `pirat-aterupptackt` är
 **Fullständigt implementerat**: aktuell sikt, mörkare kartminne, tre forskningsbara

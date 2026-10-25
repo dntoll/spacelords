@@ -74,6 +74,13 @@ it('upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: control
   ).toBe(2);
   restored.emit({ type: 'continue-turn' });
   await vi.waitFor(() =>
+    expect(restored.model.snapshot.interruption?.battles?.length).toBe(1),
+  );
+  expect(root.querySelector('.discovery-dialog')?.textContent).toContain(
+    'Battle report',
+  );
+  restored.emit({ type: 'continue-turn' });
+  await vi.waitFor(() =>
     expect(restored.model.snapshot.phase).toBe('planning'),
   );
   expect(saved.state.round).toBe(2);

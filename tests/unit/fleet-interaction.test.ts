@@ -170,6 +170,7 @@ describe('flottval-pa-kartan', () => {
         'Colony ship': 0,
         'Exploration ship': 0,
         'Transport ship': 0,
+        'Salvage ship': 0,
       },
     };
     expect(FleetMapLayout.markers([empty])).toHaveLength(0);

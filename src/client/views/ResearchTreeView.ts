@@ -79,9 +79,10 @@ export function renderResearchTree(
     const type = node.technology;
     const complete = research.completed.includes(type);
     const queued = research.queue.indexOf(type);
-    const ready = PREREQUISITES[type].every((p) =>
-      research.completed.includes(p),
-    );
+    const recovered = research.recovered?.includes(type) ?? false;
+    const ready =
+      recovered ||
+      PREREQUISITES[type].every((p) => research.completed.includes(p));
     const state = complete
       ? 'completed'
       : queued === 0
@@ -132,7 +133,9 @@ export function renderResearchTree(
     const dependencies = element(
       'p',
       'research-requires',
-      `Requires: ${PREREQUISITES[type].join(', ') || 'No prerequisites'}`,
+      recovered
+        ? 'Recovered technology · Prerequisites bypassed'
+        : `Requires: ${PREREQUISITES[type].join(', ') || 'No prerequisites'}`,
     );
     card.append(dependencies);
     if (!complete) {

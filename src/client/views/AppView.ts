@@ -473,6 +473,10 @@ export class AppView implements AppPort {
       if (this.#coordinates)
         this.#coordinates.textContent = `X ${model.camera.center.x.toFixed(0)} · Y ${model.camera.center.y.toFixed(0)}`;
       const key = JSON.stringify({
+        salvageSelection: model.salvageSelection,
+        shipyardPlacement: model.shipyardPlacement,
+        wrecks: model.wrecks,
+        shipyards: model.shipyards,
         screen: model.screen,
         productionMap: model.productionMap,
         productionGuidance: model.productionGuidance,
@@ -960,6 +964,12 @@ export class AppView implements AppPort {
     if (!this.#panel) return;
     this.#cancelSelectionGesture?.();
     this.#panel.hidden = false;
+    const salvage = renderSalvageSelection(model, this.#emit);
+    if (salvage) {
+      this.#panel.setAttribute('aria-label', 'Salvage and shipyard');
+      this.#panel.replaceChildren(salvage);
+      return;
+    }
     const trade =
       model.screen === 'map' || model.screen === 'route'
         ? renderMapTradeSelection(model, this.#emit)
@@ -1151,3 +1161,4 @@ export class AppView implements AppPort {
     return this.#map?.animateTurnStep?.(frame) ?? Promise.resolve();
   }
 }
+import { renderSalvageSelection } from './SalvageView.js';

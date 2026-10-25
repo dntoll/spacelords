@@ -1,5 +1,6 @@
 import { renderMapTradeRoutes } from './MapTradeRoutesView.js';
 import { renderDetectionBoundary } from './DetectionMapView.js';
+import { salvageMarkers } from '../models/SalvageMapLayout.js';
 import { renderMapOverlays } from './MapOverlayView.js';
 import p5 from 'p5';
 import type { AppReadModel } from '../models/AppModel.js';
@@ -136,6 +137,34 @@ export class GalaxyMapView implements MapPort {
           model.screen === 'fleets',
         );
     renderMapOverlays(sketch, model);
+    for (const marker of salvageMarkers(
+      model.wrecks ?? [],
+      model.shipyards ?? [],
+      model.camera.zoom,
+    )) {
+      sketch.push();
+      sketch.translate(marker.point.x, marker.point.y);
+      sketch.scale(1 / model.camera.zoom);
+      sketch.stroke(
+        marker.id === model.salvageSelection ? '#ffffff' : '#e8bd76',
+      );
+      sketch.strokeWeight(2);
+      sketch.fill('#152936');
+      if (marker.kind === 'yard') sketch.rect(-10, -8, 20, 16);
+      else {
+        sketch.line(-8, -7, 8, 7);
+        sketch.line(-8, 7, 8, -7);
+        sketch.circle(0, 0, 6);
+      }
+      sketch.pop();
+    }
+    for (const choice of model.shipyardPlacement?.choices ?? []) {
+      const point = HexGeometry.toPoint(choice);
+      sketch.noFill();
+      sketch.stroke('#e8bd76');
+      sketch.strokeWeight(2 / model.camera.zoom);
+      sketch.circle(point.x, point.y, 32);
+    }
     if (this.#canvas)
       this.#canvas.style.cursor = model.fleetDragging
         ? 'grabbing'

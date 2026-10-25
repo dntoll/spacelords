@@ -63,6 +63,7 @@ export const BUILDING_CATEGORIES: readonly BuildingCategory[] = [
   'Terraforming',
 ];
 export function buildingCategory(type: BuildType): BuildingCategory {
+  if (type === 'Orbital shipyard') return 'Shipyards';
   const definition = BUILDINGS[type];
   return definition.ship
     ? 'Shipyards'

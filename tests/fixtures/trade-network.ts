@@ -11,6 +11,7 @@ export function tradeNetworkState(withRoute = true): GameState {
     'Exploration ship': 0,
     'Colony ship': 0,
     'Transport ship': 0,
+    'Salvage ship': 0,
   };
   return {
     ...state,

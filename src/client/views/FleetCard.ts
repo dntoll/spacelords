@@ -160,6 +160,23 @@ export function renderFleetCard(
     footer.append(detection);
   }
   if (routeMenu) orders.append(routeMenu);
+  if (fleet.salvage?.issue)
+    footer.append(element('small', 'muted-note', fleet.salvage.issue));
+  if (fleet.towing?.length) {
+    const towing = element('details', 'towed-wrecks');
+    towing.append(
+      element('summary', '', `Towing ${fleet.towing.length} wrecks`),
+    );
+    for (const id of fleet.towing) {
+      const wreck = model.wrecks.find((item) => item.id === id);
+      const release = button(`Release ${wreck?.ship.type ?? 'wreck'}`, () =>
+        emit({ type: 'release-wreck', fleetId: fleet.id, id }),
+      );
+      release.disabled = !(fleet.canIssueOrders ?? !locked);
+      towing.append(release);
+    }
+    footer.append(towing);
+  }
   card.title = [
     fleetAssignmentLabel(fleet, model),
     model.fleetDragging && model.mapFleetId === fleet.id

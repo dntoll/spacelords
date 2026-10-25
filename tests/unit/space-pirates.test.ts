@@ -11,6 +11,7 @@ const empty = {
   'Colony ship': 0,
   'Exploration ship': 0,
   'Transport ship': 0,
+  'Salvage ship': 0,
 };
 function turn(game: Game) {
   for (const frame of turnFrames(game)) game.applyFrame(frame);
@@ -371,6 +372,7 @@ describe('rymdpirater-per-stjarna / lokal-sikt', () => {
             Fighter: 1,
             'Colony ship': 0,
             'Transport ship': 0,
+            'Salvage ship': 0,
           },
           shipUnits: [],
         },

@@ -1,4 +1,6 @@
 export const TECHNOLOGIES = [
+  'Orbital shipyard',
+  'Salvage ship factory',
   'Telescope I factory',
   'Telescope II factory',
   'Telescope III factory',
@@ -23,6 +25,8 @@ export type Technology = (typeof TECHNOLOGIES)[number];
 export const PREREQUISITES: Readonly<
   Record<Technology, readonly Technology[]>
 > = Object.freeze({
+  'Orbital shipyard': ['Rocket engine factory'],
+  'Salvage ship factory': ['Orbital shipyard'],
   'Telescope I factory': [],
   'Telescope II factory': ['Telescope I factory'],
   'Telescope III factory': ['Telescope II factory'],
@@ -48,12 +52,17 @@ export class ResearchPlan {
   constructor(
     readonly completed = new Set<Technology>(),
     public queue: Technology[] = [],
+    readonly recovered = new Set<Technology>(),
   ) {}
+
+  prerequisites(technology: Technology): readonly Technology[] {
+    return this.recovered.has(technology) ? [] : PREREQUISITES[technology];
+  }
 
   add(technology: Technology): void {
     if (!TECHNOLOGIES.includes(technology) || this.completed.has(technology))
       throw new Error('Choose an undiscovered technology.');
-    for (const prerequisite of PREREQUISITES[technology])
+    for (const prerequisite of this.prerequisites(technology))
       if (!this.completed.has(prerequisite)) this.add(prerequisite);
     if (!this.queue.includes(technology)) this.queue.push(technology);
   }
@@ -61,7 +70,8 @@ export class ResearchPlan {
   remove(technology: Technology): void {
     const removed = new Set<Technology>([technology]);
     for (const item of this.queue)
-      if (PREREQUISITES[item].some((p) => removed.has(p))) removed.add(item);
+      if (this.prerequisites(item).some((p) => removed.has(p)))
+        removed.add(item);
     this.queue = this.queue.filter((item) => !removed.has(item));
   }
 
@@ -77,7 +87,7 @@ export class ResearchPlan {
     next.splice(index, 0, technology);
     const available = new Set(this.completed);
     for (const item of next) {
-      if (PREREQUISITES[item].some((p) => !available.has(p)))
+      if (this.prerequisites(item).some((p) => !available.has(p)))
         throw new Error(
           'Prerequisites must precede their dependent technology.',
         );

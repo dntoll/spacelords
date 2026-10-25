@@ -15,7 +15,7 @@ export class AppController {
     id: number;
     start: Point;
     dragged: boolean;
-    kind: 'fleet' | 'route';
+    kind: 'fleet' | 'route' | 'wreck';
   } | null = null;
 
   constructor(model: AppModel, view: AppPort) {
@@ -60,6 +60,7 @@ export class AppController {
     if (!intent.type.startsWith('research-pointer-'))
       this.#researchGesture.cancel();
     if (intent.type.startsWith('open-') || intent.type === 'end-turn') {
+      this.#model.cancelShipyardPlacement();
       this.#model.cancelShipTransfer();
       this.#model.cancelFleetRename();
     }
@@ -81,6 +82,27 @@ export class AppController {
     )
       return;
     switch (intent.type) {
+      case 'salvage-wreck':
+        this.#model.orderSalvage(intent.fleetId, intent.wreckId);
+        break;
+      case 'release-wreck':
+        this.#model.releaseWreck(intent.fleetId, intent.id);
+        break;
+      case 'return-shipyard':
+        this.#model.returnToShipyard(intent.id);
+        break;
+      case 'select-salvage':
+        this.#model.selectSalvage(intent.id);
+        break;
+      case 'rebuild-shipyard':
+        this.#model.rebuildShipyard(intent.id);
+        break;
+      case 'cancel-shipyard-placement':
+        this.#model.cancelShipyardPlacement();
+        break;
+      case 'place-shipyard':
+        this.#model.placeShipyard(intent.position);
+        break;
       case 'explore-fleet':
         this.#model.exploreFleet(intent.id, intent.order);
         break;
@@ -385,6 +407,17 @@ export class AppController {
           this.#fleetPointer = null;
           this.#model.cancelMapPointer();
         } else {
+          const salvageId = this.#model.salvageAtPoint(intent.point);
+          if (salvageId) {
+            this.#model.selectSalvage(salvageId);
+            this.#fleetPointer = {
+              id: intent.id,
+              start: intent.point,
+              dragged: false,
+              kind: 'wreck',
+            };
+            break;
+          }
           const fleetId = this.#model.fleetAtPoint(intent.point);
           const source = fleetId
             ? null
@@ -404,6 +437,7 @@ export class AppController {
         if (!this.#model.hoverMapFleet(null)) return;
         break;
       case 'pointer-cancel':
+        this.#model.cancelShipyardPlacement();
         this.#cancelPointer();
         if (this.#model.snapshot.screen === 'fleets') this.#model.openFleets();
         break;
@@ -418,6 +452,10 @@ export class AppController {
           )
             this.#fleetPointer.dragged = true;
           if (this.#fleetPointer.dragged) {
+            if (this.#fleetPointer.kind === 'wreck') {
+              this.#model.previewSalvage(intent.point);
+              break;
+            }
             if (this.#fleetPointer.kind === 'route') {
               const source = this.#model.mapRouteDragSource(
                 this.#fleetPointer.start,
@@ -458,7 +496,9 @@ export class AppController {
           this.#fleetPointer = null;
           if (dragged) {
             mapOrder = true;
-            if (pointer.kind === 'route') {
+            if (pointer.kind === 'wreck') {
+              this.#model.dropSalvage(intent.point);
+            } else if (pointer.kind === 'route') {
               const source = this.#model.mapRouteDragSource(pointer.start);
               if (source) this.#model.beginMapRoute(source);
               this.#model.previewMapRoute(intent.point);

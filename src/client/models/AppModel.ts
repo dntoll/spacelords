@@ -27,6 +27,8 @@ import {
   type ResearchCameraSnapshot,
 } from './ResearchTree.js';
 import type { Component } from './Economy.js';
+import type { WreckSnapshot, ShipyardSnapshot } from './Salvage.js';
+import { hitSalvageMarker } from './SalvageMapLayout.js';
 import {
   decisionScreen,
   needsAttention,
@@ -87,6 +89,15 @@ export interface SaveSlotSnapshot {
 }
 
 export interface AppReadModel {
+  readonly wrecks: readonly WreckSnapshot[];
+  readonly shipyards: readonly ShipyardSnapshot[];
+  readonly salvageSelection: string | null;
+  readonly shipyardPlacement: {
+    readonly planetId: string;
+    readonly site: number | undefined;
+    readonly yardId: string | null;
+    readonly choices: readonly HexCoordinate[];
+  } | null;
   readonly planetTab: PlanetTab;
   readonly productionCategory: ProductionCategory;
   readonly productionProduct: string | null;
@@ -150,6 +161,8 @@ export interface AppReadModel {
 }
 
 export class AppModel {
+  #salvageSelection: string | null = null;
+  #shipyardPlacement: AppReadModel['shipyardPlacement'] = null;
   #planetTab: PlanetTab = 'overview';
   #productionCategory: ProductionCategory = 'Ships';
   #productionProduct: string | null = null;
@@ -256,6 +269,8 @@ export class AppModel {
     this.#mapProductionOption = null;
     this.#mapProjectId = null;
     this.#game = game;
+    this.#salvageSelection = null;
+    this.#shipyardPlacement = null;
     this.#pendingEndTurn = false;
     this.#pendingResearchRemoval = null;
     this.#activeSlot = id;
@@ -324,6 +339,10 @@ export class AppModel {
         ? this.#game.projectSupply(this.#game.planetAt(this.#selected)?.id)
         : [];
     return Object.freeze({
+      wrecks: this.#game.wrecks,
+      shipyards: this.#game.shipyards,
+      salvageSelection: this.#salvageSelection,
+      shipyardPlacement: this.#shipyardPlacement,
       planetTab: this.#planetTab,
       productionCategory: this.#productionCategory,
       productionProduct: this.#productionProduct,
@@ -433,6 +452,11 @@ export class AppModel {
 
   select(position: HexCoordinate): void {
     if (!this.#isMapScreen()) return;
+    if (this.#shipyardPlacement) {
+      this.placeShipyard(position);
+      return;
+    }
+    this.#salvageSelection = null;
     if (!this.#game.galaxy.cellAt(position)) {
       if (this.#screen === 'production') {
         this.#selected = position;
@@ -501,6 +525,7 @@ export class AppModel {
     );
   }
   selectMapFleet(id: string): void {
+    this.#salvageSelection = null;
     if (!this.#isMapScreen() || this.#screen === 'production') return;
     const pirate = this.#game
       .pirateSnapshots()
@@ -972,6 +997,10 @@ export class AppModel {
     }
     const type = this.#mapProductionOption;
     if (!type) return;
+    if (type === 'Orbital shipyard') {
+      this.beginShipyardPlacement(planet.id);
+      return;
+    }
     this.#productionReceipt = Object.hasOwn(BUILDINGS, type)
       ? this.#game.scheduleBuild(planet, type as BuildType)
       : projectDefinition(type).ship
@@ -1018,6 +1047,10 @@ export class AppModel {
       : this.#game.decisions.find(needsAttention);
     if (!decision) {
       this.openDecisions();
+      return;
+    }
+    if (decision.id.startsWith('shipyard-')) {
+      this.selectSalvage(decision.id.slice('shipyard-'.length));
       return;
     }
     const target = decisionScreen(decision);
@@ -1070,6 +1103,13 @@ export class AppModel {
   }
   build(type: BuildType, slotIndex?: number): void {
     const planet = this.#game.planetAt(this.#selected);
+    if (planet && type === 'Orbital shipyard') {
+      this.beginShipyardPlacement(
+        planet.id,
+        slotIndex ?? this.#constructionSite ?? undefined,
+      );
+      return;
+    }
     if (planet)
       this.#game.scheduleBuild(
         planet,
@@ -1241,11 +1281,16 @@ export class AppModel {
   #focusInterruptedFleet(): void {
     this.cancelMapPointer();
     this.#screen = 'map';
-    const id = this.#game.interruption?.discoveries.find(
-      (discovery) => discovery.fleetId,
-    )?.fleetId;
+    const id =
+      this.#game.interruption?.battles?.find((battle) => battle.fleetId)
+        ?.fleetId ??
+      this.#game.interruption?.discoveries.find(
+        (discovery) => discovery.fleetId,
+      )?.fleetId;
     const fleet = id ? this.#game.fleet(id) : null;
-    const discovery = this.#game.interruption?.discoveries[0];
+    const discovery =
+      this.#game.interruption?.battles?.[0] ??
+      this.#game.interruption?.discoveries[0];
     if (!fleet && discovery) {
       this.#selected = new HexCoordinate(
         discovery.position.q,
@@ -1272,5 +1317,119 @@ export class AppModel {
   }
   finishTurn(): void {
     this.#game.finishTurn();
+  }
+
+  salvageAtPoint(point: Point): string | null {
+    if (
+      !this.#isMapScreen() ||
+      this.#destinationFleetId ||
+      this.#shipyardPlacement
+    )
+      return null;
+    return (
+      hitSalvageMarker(
+        this.#game.wrecks,
+        this.#game.shipyards,
+        this.#camera.snapshot.zoom,
+        this.#camera.screenToWorld(point),
+      )?.id ?? null
+    );
+  }
+  selectSalvage(id: string): void {
+    this.#shipyardPlacement = null;
+    this.#screen = 'map';
+    this.#salvageSelection = id;
+    this.#mapFleetId = null;
+  }
+  orderSalvage(fleetId: string, wreckId: string): void {
+    this.#game.orderSalvage(fleetId, wreckId);
+    this.#salvageSelection = null;
+    this.#mapFleetId = fleetId;
+  }
+  dropSalvage(point: Point): void {
+    const fleetId = this.#salvageDropTarget(point);
+    if (!fleetId || !this.#salvageSelection)
+      throw new Error('Drop the wreck onto a fleet with a Salvage ship.');
+    this.orderSalvage(fleetId, this.#salvageSelection);
+    this.#hoveredFleetId = null;
+  }
+  previewSalvage(point: Point): void {
+    this.#hoveredFleetId = this.#salvageDropTarget(point);
+  }
+  #salvageDropTarget(point: Point): string | null {
+    const world = this.#camera.screenToWorld(point);
+    return (
+      FleetMapLayout.markers(
+        this.#game.fleetSnapshots(),
+        [],
+        this.#camera.snapshot.zoom,
+      )
+        .filter(
+          ({ fleet }) =>
+            this.#game.canIssueFleetOrders(fleet.id) &&
+            fleet.ships['Salvage ship'] >
+              this.#game.wrecks.filter(
+                (wreck) =>
+                  wreck.reservedBy === fleet.id || wreck.towedBy === fleet.id,
+              ).length,
+        )
+        .map((marker) => ({
+          id: marker.fleet.id,
+          distance: Math.hypot(
+            marker.point.x - world.x,
+            marker.point.y - world.y,
+          ),
+        }))
+        .filter((marker) => marker.distance <= 22 / this.#camera.snapshot.zoom)
+        .sort((a, b) => a.distance - b.distance)[0]?.id ?? null
+    );
+  }
+  returnToShipyard(id: string): void {
+    this.#game.returnToShipyard(id);
+  }
+  releaseWreck(fleetId: string, id: string): void {
+    this.#game.releaseWreck(fleetId, id);
+  }
+  beginShipyardPlacement(
+    planetId: string,
+    site?: number,
+    yardId: string | null = null,
+  ): void {
+    const choices = this.#game.freeShipyardHexes(planetId);
+    if (!choices.length)
+      throw new Error('No free neighboring hex is available.');
+    this.#shipyardPlacement = Object.freeze({
+      planetId,
+      site,
+      yardId,
+      choices,
+    });
+    this.#screen = 'map';
+    this.#salvageSelection = null;
+    this.#mapFleetId = null;
+  }
+  rebuildShipyard(id: string): void {
+    const yard = this.#game.shipyards.find((item) => item.id === id);
+    if (yard) this.beginShipyardPlacement(yard.planetId, undefined, id);
+  }
+  cancelShipyardPlacement(): void {
+    this.#shipyardPlacement = null;
+  }
+  placeShipyard(position: HexCoordinate): void {
+    const placement = this.#shipyardPlacement;
+    if (!placement) return;
+    if (placement.yardId)
+      this.#game.scheduleRebuildShipyard(placement.yardId, position);
+    else
+      this.#game.scheduleBuild(
+        this.#game.galaxy.systems
+          .flatMap((system) => system.planets)
+          .find((planet) => planet.id === placement.planetId)!,
+        'Orbital shipyard',
+        placement.site,
+        position,
+      );
+    this.#shipyardPlacement = null;
+    this.#notice = 'Shipyard construction queued.';
   }
 }

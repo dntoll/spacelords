@@ -224,7 +224,7 @@ describe('gemensam-planetko / sparat-spel / bevara-aldre-produktionskoer', () =>
         .planetSnapshot(restored.galaxy.homePlanet)!
         .projects.map((p) => p.id),
     ).toEqual(['project-2', 'project-3', 'project-1', 'project-6']);
-    expect(restored.exportState().version).toBe(9);
+    expect(restored.exportState().version).toBe(10);
     expect(restored.fleetSnapshots()).toEqual(
       Game.restore(base).fleetSnapshots(),
     );
@@ -291,6 +291,7 @@ describe('skeppsdelar / automatisk-resursforsorjning', () => {
             'Exploration ship': 0,
             'Colony ship': 0,
             'Transport ship': 1,
+            'Salvage ship': 0,
           },
         },
       ],

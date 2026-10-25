@@ -87,6 +87,7 @@ export class PirateFleet {
         'Colony ship': 0,
         'Exploration ship': 0,
         'Transport ship': 0,
+        'Salvage ship': 0,
       },
     };
   }
@@ -103,6 +104,7 @@ export function pirateAsFleet(pirate: PirateSnapshot): FleetSnapshot {
       'Colony ship': 0,
       'Exploration ship': 0,
       'Transport ship': 0,
+      'Salvage ship': 0,
     }),
     speed: 1,
     crew: 0,

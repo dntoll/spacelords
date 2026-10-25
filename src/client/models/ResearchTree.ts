@@ -39,15 +39,27 @@ export class ResearchTreeLayout {
       PREREQUISITES[technology].length
         ? 1 + Math.max(...PREREQUISITES[technology].map(depth))
         : 0;
-    this.nodes = Object.freeze(
-      technologies.map((technology) =>
-        Object.freeze({
-          technology,
-          x: 32 + depth(technology) * 336,
-          y: 32 + row(technology) * 256,
-        }),
-      ),
+    const nodes = technologies.map((technology) =>
+      Object.freeze({
+        technology,
+        x: 32 + depth(technology) * 336,
+        y: 32 + row(technology) * 256,
+      }),
     );
+    this.nodes = nodes;
+    // forsknings-tradnavigation: shared dependencies may place siblings on the same row.
+    for (const x of new Set(this.nodes.map((node) => node.x))) {
+      let bottom = -Infinity;
+      for (const node of this.nodes
+        .filter((node) => node.x === x)
+        .toSorted((a, b) => a.y - b.y)) {
+        const y = Math.max(node.y, bottom + 256);
+        if (y !== node.y)
+          nodes[nodes.indexOf(node)] = Object.freeze({ ...node, y });
+        bottom = y;
+      }
+    }
+    Object.freeze(nodes);
     this.width = Math.max(...this.nodes.map((n) => n.x)) + this.cardWidth + 32;
     this.height =
       Math.max(...this.nodes.map((n) => n.y)) + this.cardHeight + 32;

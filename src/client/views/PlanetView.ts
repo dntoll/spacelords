@@ -25,6 +25,7 @@ type PlanetMenus = Pick<AppReadModel, 'phase'> &
       | 'productionFleetId'
       | 'expandedProjectIds'
       | 'projectSupply'
+      | 'shipyards'
     >
   >;
 
@@ -62,6 +63,17 @@ export function renderPlanet(
     tabs.append(control);
   }
   page.append(tabs);
+  for (const yard of menus.shipyards?.filter(
+    (yard) => yard.planetId === planet.id,
+  ) ?? [])
+    page.append(
+      button(
+        yard.destroyed
+          ? 'Shipyard station destroyed — inspect and rebuild'
+          : `Inspect orbital shipyard · ${yard.queue.length} wrecks`,
+        () => emit({ type: 'select-salvage', id: yard.id }),
+      ),
+    );
   const panel = element('section', 'planet-content overview');
   panel.dataset.planetTab = tab;
   panel.setAttribute(

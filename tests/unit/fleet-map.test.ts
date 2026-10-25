@@ -20,6 +20,7 @@ function fleet(id: string, count = 3): FleetSnapshot {
       'Colony ship': 0,
       'Exploration ship': 0,
       'Transport ship': 0,
+      'Salvage ship': 0,
     },
     speed: 1,
     crew: 0,
@@ -57,6 +58,21 @@ function drawing() {
 }
 
 describe('kartflottor', () => {
+  it.each([
+    'Fighter',
+    'Exploration ship',
+    'Colony ship',
+    'Transport ship',
+    'Salvage ship',
+  ] as const)('bargningsskepp: renders %s with visible area', (type) => {
+    const { sketch, render } = drawing();
+    const ship = fleet('single', 0);
+    render([
+      { ...ship, destination: null, ships: { ...ship.ships, [type]: 1 } },
+    ]);
+    const [a, b, c, d, e, f] = sketch.triangle.mock.calls[0]!;
+    expect(Math.abs((c - a) * (f - b) - (e - a) * (d - b))).toBeGreaterThan(1);
+  });
   it.each(new HexCoordinate(0, 0).neighbors())(
     'points every ship tip toward destination $key from its own swarm position',
     (destination) => {
@@ -118,6 +134,7 @@ describe('kartflottor', () => {
         'Colony ship': 1,
         'Exploration ship': 1,
         'Transport ship': 0,
+        'Salvage ship': 0,
       },
     };
     const first = drawing();

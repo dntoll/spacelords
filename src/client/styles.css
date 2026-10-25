@@ -2778,3 +2778,37 @@ body:has(.discovery-controls) .selection-panel {
   background: #09151fe8;
   pointer-events: none;
 }
+
+/* bargningsorder: controls remain usable on touch screens. */
+.salvage-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.salvage-panel h3,
+.salvage-panel p {
+  width: 100%;
+  margin: 4px 0;
+}
+.salvage-panel .ship-image {
+  width: 88px;
+  height: 56px;
+  object-fit: contain;
+}
+.salvage-panel button,
+.salvage-panel select,
+.towed-wrecks button,
+.towed-wrecks summary {
+  min-height: 44px;
+}
+.salvage-panel select {
+  max-width: 100%;
+  min-width: 0;
+}
+.towed-wrecks {
+  max-width: 100%;
+}
+.towed-wrecks button {
+  display: block;
+}

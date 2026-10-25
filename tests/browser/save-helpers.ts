@@ -80,7 +80,7 @@ export async function endTurn(page: Page): Promise<void> {
       .not.toBe('running');
     const ignore = page
       .locator('.discovery-dialog[open]')
-      .getByRole('button', { name: 'Ignore', exact: true });
+      .getByRole('button', { name: /^(Ignore|Continue)$/, exact: true });
     if (!(await ignore.isVisible())) break;
     await ignore.click();
   }

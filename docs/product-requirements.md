@@ -585,3 +585,21 @@ Den sammanhängande kravlistan anger status för `flottorder-som-symboler`,
 `produktionsorder-aterkoppling`, `automatisk-hexutforskning`,
 `automatisk-stjarnutforskning`, `upptacktsavbrott`,
 `order-under-upptacktsavbrott` och `spara-avbrutet-ar`.
+
+## Bärgning och varv
+
+Kraven `stridsrapport-i-dialog`, `vrak-efter-strid`, `bargningsskepp`,
+`bargningsorder`, `bogsering-av-vrak`, `orbitalt-varv`, `automatisk-vrakreparation`,
+`forstort-varv`, `forskning-fran-bargade-delar`, `upptackbara-vrak` och
+`spara-bargning-och-stridsavbrott` är **Fullständigt implementerat**.
+
+Spelaren får läsa stridsresultatet innan året fortsätter. Förlorade skepp lämnar
+vrak. Salvage ships kan hämta dem till orbitala varv, där skeppen repareras med
+nya besättningar och en tredjedel av råvarukostnaden. Varv och bärgningsskepp har
+egen forskning och planetanläggningar. Bogsering sänker flottans fart. Pirater
+kan förstöra varvsstationer som sedan kan återuppbyggas.
+
+Hemförda okända komponenter öppnar forskning på motsvarande fabrik utan de
+vanliga förkunskaperna. Tekniken måste fortfarande forskas fram. Nya spel har
+avancerade explorer-vrak att hitta; befintliga sparningar bevaras.
+Se [krav och balansvärden](salvage-shipyards.md).

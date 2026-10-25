@@ -1,3 +1,5 @@
+import { engineCount } from './ShipEquipment.js';
+export { engineCount } from './ShipEquipment.js';
 import {
   TurnSimulation,
   nearestUnexplored,
@@ -12,6 +14,12 @@ import {
   type SavedPirateFleet,
 } from './PirateFleet.js';
 import { FleetCombat, type CombatResult } from './FleetCombat.js';
+import {
+  Salvage,
+  type WreckSnapshot,
+  type ShipyardSnapshot,
+  type BattleReport,
+} from './Salvage.js';
 import { prioritizeProduction } from './ProductionPriorities.js';
 import { routeEscortTargets, tradeAssignmentIssue } from './TradeAssignment.js';
 import {
@@ -69,8 +77,14 @@ export { TECHNOLOGIES, type Technology } from './Research.js';
 export type GamePhase = 'planning' | 'simulating' | 'interrupted';
 export type Resource = 'Iron' | 'Water' | 'Oil';
 export type ShipType =
-  'Colony ship' | 'Exploration ship' | 'Fighter' | 'Transport ship';
+  | 'Colony ship'
+  | 'Exploration ship'
+  | 'Fighter'
+  | 'Transport ship'
+  | 'Salvage ship';
 export type BuildType =
+  | 'Orbital shipyard'
+  | 'Salvage ship factory'
   | 'Telescope I factory'
   | 'Telescope II factory'
   | 'Telescope III factory'
@@ -88,7 +102,7 @@ export type BuildType =
   | `${TerraformEnvironment} dome`
   | `${TerraformEnvironment} terraforming factory`;
 
-export type ProjectType = BuildType | ShipType | Component;
+export type ProjectType = BuildType | ShipType | Component | 'Shipyard station';
 
 export interface Cost {
   readonly Iron: number;
@@ -111,6 +125,22 @@ export interface BuildDefinition {
 }
 export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
   Object.freeze({
+    'Orbital shipyard': {
+      permanent: true,
+      description:
+        'Builds a planetary facility, shuttles and an orbital station. Repairs one wreck per year.',
+      workers: 800,
+      cost: { Iron: 24, Water: 12, Oil: 6 },
+      crew: 0,
+    },
+    'Salvage ship factory': {
+      permanent: true,
+      description: 'Builds Salvage ships to tow wrecks to orbital shipyards.',
+      workers: 600,
+      cost: { Iron: 12, Water: 6, Oil: 3 },
+      crew: 0,
+      ship: 'Salvage ship',
+    },
     'Telescope I factory': {
       permanent: true,
       description:
@@ -309,14 +339,12 @@ export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
 export const SHIPS: Readonly<
   Record<ShipType, { readonly crew: number; readonly speed: number }>
 > = Object.freeze({
+  'Salvage ship': { crew: 100, speed: 5 },
   'Colony ship': { crew: 1000, speed: 2 },
   'Exploration ship': { crew: 200, speed: 4 },
   Fighter: { crew: 50, speed: 3 },
   'Transport ship': { crew: 50, speed: 2 },
 });
-export function engineCount(type: ShipType): number {
-  return type === 'Colony ship' ? 3 : type === 'Exploration ship' ? 2 : 1;
-}
 
 export interface ShipUnit {
   readonly telescope?: TelescopeLevel;
@@ -329,6 +357,15 @@ export interface ShipUnit {
 }
 
 export function projectDefinition(type: ProjectType): BuildDefinition {
+  if (type === 'Shipyard station')
+    return {
+      permanent: false,
+      description:
+        'Rebuilds a destroyed orbital station using its existing planetary facility.',
+      workers: 0,
+      crew: 0,
+      cost: { Iron: 12, Water: 6, Oil: 3 },
+    };
   if (type in BUILDINGS) return BUILDINGS[type as BuildType];
   if (COMPONENTS.includes(type as Component))
     return {
@@ -352,13 +389,15 @@ export function projectDefinition(type: ProjectType): BuildDefinition {
     permanent: false,
     description: `Produces one ${type}. Factory staff operate the shipyard.`,
     cost:
-      type === 'Transport ship'
-        ? { Iron: 4, Water: 2, Oil: 1 }
-        : type === 'Colony ship'
-          ? { Iron: 6, Water: 3, Oil: 1 }
-          : type === 'Exploration ship'
-            ? { Iron: 3, Water: 2, Oil: 1 }
-            : { Iron: 2, Water: 1, Oil: 1 },
+      type === 'Salvage ship'
+        ? { Iron: 5, Water: 3, Oil: 2 }
+        : type === 'Transport ship'
+          ? { Iron: 4, Water: 2, Oil: 1 }
+          : type === 'Colony ship'
+            ? { Iron: 6, Water: 3, Oil: 1 }
+            : type === 'Exploration ship'
+              ? { Iron: 3, Water: 2, Oil: 1 }
+              : { Iron: 2, Water: 1, Oil: 1 },
     workers: 0,
     crew: SHIPS[type as ShipType].crew,
     ship: type as ShipType,
@@ -374,6 +413,7 @@ export function projectCost(type: ProjectType): Stock {
   return { ...emptyStock(), ...definition.cost, ...definition.parts };
 }
 export interface ResearchSnapshot {
+  readonly recovered?: readonly Technology[];
   readonly available: readonly Technology[];
   readonly completed: readonly Technology[];
   readonly selected: Technology | null;
@@ -472,6 +512,12 @@ export interface PlanetOrderSnapshot {
   readonly emptyQueues: number;
 }
 export interface FleetSnapshot {
+  readonly salvage?: Readonly<{
+    targets: readonly string[];
+    yardId: string | null;
+    issue: string | null;
+  }> | null;
+  readonly towing?: readonly string[];
   readonly detectionRange?: number;
   readonly exploration?: ExplorationOrder | undefined;
   readonly remainingMovement?: number | undefined;
@@ -523,6 +569,7 @@ interface Building {
   demolition: boolean;
 }
 interface Project {
+  stationPosition?: { readonly q: number; readonly r: number };
   parts?: Partial<Record<Component, number>>;
   id: string;
   type: ProjectType;
@@ -548,6 +595,7 @@ const zeroShips = (): Record<ShipType, number> => ({
   'Exploration ship': 0,
   Fighter: 0,
   'Transport ship': 0,
+  'Salvage ship': 0,
 });
 
 interface SavedCoordinate {
@@ -576,7 +624,9 @@ export interface GameState {
   readonly componentOrders?: readonly ComponentOrder[];
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
-  readonly version: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+  readonly version: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+  readonly salvage?: ReturnType<Salvage['snapshot']>;
+  readonly recoveredResearch?: readonly Technology[];
   readonly visiblePirates?: readonly string[];
   readonly knownObjects?: readonly string[];
   readonly simulation?: SavedTurnSimulation | null;
@@ -609,6 +659,7 @@ export interface GameState {
 /** Private mutable game state; views receive only immutable snapshots. */
 export class Game {
   #logistics = new Logistics();
+  #salvage: Salvage;
   #decisions = new DecisionBoard();
   #research = new ResearchPlan();
   #round = 1;
@@ -627,6 +678,7 @@ export class Game {
   #mapCells: readonly MapCell[] | null = null;
 
   constructor(readonly galaxy: Galaxy) {
+    this.#salvage = Salvage.seed(galaxy.systems.map((system) => system.star));
     this.#pirates = PirateFleet.seed(galaxy);
     for (const planet of galaxy.systems.flatMap((system) => system.planets)) {
       if (planet.colony?.ownerId === galaxy.player.id)
@@ -653,6 +705,7 @@ export class Game {
     ];
     this.#normalizeShips();
     this.#updateSight();
+    this.#updateSight();
     this.#visiblePirates = new Set(
       this.pirateSnapshots().map((pirate) => pirate.id),
     );
@@ -666,7 +719,9 @@ export class Game {
     if (this.#phase === 'simulating')
       throw new Error('Wait for the turn to finish before saving.');
     return structuredClone({
-      version: 9,
+      version: 10,
+      salvage: this.#salvage.snapshot(),
+      recoveredResearch: [...this.#research.recovered],
       visiblePirates: [...this.#visiblePirates],
       knownObjects: [...this.#knownObjects],
       simulation: this.#simulation?.snapshot() ?? null,
@@ -706,7 +761,7 @@ export class Game {
 
   static restore(state: GameState): Game {
     if (
-      ![2, 3, 4, 5, 6, 7, 8, 9].includes(state.version) ||
+      ![2, 3, 4, 5, 6, 7, 8, 9, 10].includes(state.version) ||
       !Number.isSafeInteger(state.round) ||
       state.round < 1 ||
       !Number.isSafeInteger(state.sequence) ||
@@ -767,9 +822,19 @@ export class Game {
     game.#round = copy.round;
     game.#phase = 'planning';
     game.#sequence = copy.sequence;
-    game.#research = new ResearchPlan(new Set(copy.researched), [
-      ...copy.researchQueue,
-    ]);
+    if (
+      state.version >= 10 &&
+      (!Array.isArray(copy.recoveredResearch) ||
+        copy.recoveredResearch.some(
+          (technology: Technology) => !TECHNOLOGIES.includes(technology),
+        ))
+    )
+      throw new Error('Invalid recovered technology.');
+    game.#research = new ResearchPlan(
+      new Set(copy.researched),
+      [...copy.researchQueue],
+      new Set(copy.recoveredResearch ?? []),
+    );
     if (state.version < 6) {
       if (
         copy.researched.some(
@@ -839,6 +904,8 @@ export class Game {
       fleet.name = game.#uniqueFleetName(fleet.name, named);
       named.add(fleet.name.toLowerCase());
     }
+    for (const fleet of game.#fleets)
+      fleet.ships = { ...zeroShips(), ...fleet.ships };
     game.#normalizeShips();
     game.#explored = new Set(copy.explored);
     game.#events = copy.events.filter(
@@ -847,6 +914,21 @@ export class Game {
           event.text,
         ),
     );
+    game.#salvage =
+      state.version >= 10
+        ? Salvage.restore(
+            copy.salvage,
+            (position) => !!galaxy.cellAt(position),
+            new Set(copy.fleets.map((fleet) => fleet.id)),
+            new Map(
+              [...game.#colonies].flatMap(([id, colony]) =>
+                colony.buildings
+                  .filter((building) => building.type === 'Orbital shipyard')
+                  .map((building) => [building.id, id]),
+              ),
+            ),
+          )
+        : new Salvage();
     game.#refreshReinforcements();
     game.#updateSight();
     if (state.version >= 8 && !Array.isArray(copy.knownObjects))
@@ -864,6 +946,11 @@ export class Game {
           Number.isInteger(point?.q) &&
           Number.isInteger(point?.r) &&
           !!galaxy.cellAt(position(point)),
+        state.version < 10,
+        (id) => {
+          const fleet = game.#fleets.find((fleet) => fleet.id === id);
+          return fleet ? game.#speed(fleet) : 1;
+        },
       );
       game.#phase = 'interrupted';
     } else if (state.version >= 8 && copy.simulation)
@@ -1044,6 +1131,7 @@ export class Game {
   get research(): ResearchSnapshot {
     return Object.freeze({
       queueBlockedReason: this.#researchQueueIssue(),
+      recovered: Object.freeze([...this.#research.recovered]),
       available: Object.freeze(this.#availableResearch()),
       completed: Object.freeze([...this.#research.completed]),
       selected: this.#research.queue[0] ?? null,
@@ -1167,9 +1255,22 @@ export class Game {
           id: fleet.id,
           name: this.#fleetDisplayName(fleet),
           ownName: fleet.name,
+          salvage: this.#salvage.order(fleet.id)
+            ? Object.freeze({
+                ...this.#salvage.order(fleet.id)!,
+                targets: Object.freeze([
+                  ...this.#salvage.order(fleet.id)!.targets,
+                ]),
+              })
+            : null,
+          towing: Object.freeze(
+            this.#salvage.towing(fleet.id).map((wreck) => wreck.id),
+          ),
           detectionRange: this.#fleetDetectionRange(fleet),
           exploration: fleet.exploration,
-          remainingMovement: this.#simulation?.remaining.get(fleet.id),
+          remainingMovement: this.#simulation
+            ? this.#simulation.movement(fleet.id, this.#speed(fleet))
+            : undefined,
           canIssueOrders: this.canIssueFleetOrders(fleet.id),
           position: fleet.position,
           destination: fleet.destination,
@@ -1195,7 +1296,240 @@ export class Game {
   fleet(id: string): FleetSnapshot | null {
     return this.fleetSnapshots().find((fleet) => fleet.id === id) ?? null;
   }
+
+  get wrecks(): readonly WreckSnapshot[] {
+    return this.#salvage.wreckSnapshots();
+  }
+  get shipyards(): readonly ShipyardSnapshot[] {
+    return this.#salvage.yardSnapshots();
+  }
+  freeShipyardHexes(planetId: string): readonly HexCoordinate[] {
+    const planet = this.#ownedPlanets().find(
+      (planet) => planet.id === planetId,
+    );
+    if (!planet) return [];
+    const occupied = new Set(
+      this.galaxy.systems.flatMap((system) => [
+        system.star.position.key,
+        ...system.planets.map((planet) => planet.position.key),
+      ]),
+    );
+    for (const yard of this.#salvage.yards.filter((yard) => !yard.destroyed))
+      occupied.add(yard.position.key);
+    for (const state of this.#colonies.values())
+      for (const project of state.projects)
+        if (project.stationPosition)
+          occupied.add(
+            `${project.stationPosition.q},${project.stationPosition.r}`,
+          );
+    return Object.freeze(
+      planet.position
+        .neighbors()
+        .filter(
+          (position) =>
+            this.galaxy.cellAt(position) && !occupied.has(position.key),
+        ),
+    );
+  }
+  orderSalvage(fleetId: string, wreckId: string): void {
+    this.#requireFleetOrders(fleetId);
+    const fleet = this.#fleetState(fleetId);
+    this.#salvage.assign(fleet, wreckId);
+    delete fleet.exploration;
+    delete fleet.joinFleetId;
+    this.#updateSalvage();
+  }
+  returnToShipyard(fleetId: string): void {
+    this.#requireFleetOrders(fleetId);
+    const fleet = this.#fleetState(fleetId);
+    this.#salvage.returnHome(fleet);
+    delete fleet.exploration;
+    delete fleet.joinFleetId;
+    this.#updateSalvage();
+  }
+  releaseWreck(fleetId: string, wreckId: string): void {
+    this.#requireFleetOrders(fleetId);
+    this.#salvage.release(this.#fleetState(fleetId), wreckId);
+    this.#updateSalvage();
+  }
+  scheduleRebuildShipyard(
+    yardId: string,
+    position: HexCoordinate,
+  ): ProductionReceipt {
+    this.#requirePlanning();
+    const yard = this.#salvage.yards.find(
+      (yard) => yard.id === yardId && yard.destroyed,
+    );
+    const planet =
+      yard &&
+      this.#ownedPlanets().find((planet) => planet.id === yard.planetId);
+    if (
+      !yard ||
+      !planet ||
+      !this.#state(planet).buildings.some(
+        (building) => building.id === yard.facilityId && !building.demolition,
+      )
+    )
+      throw new Error('A surviving shipyard facility is required.');
+    if (
+      this.#state(planet).projects.some(
+        (project) =>
+          project.factoryId === yard.facilityId &&
+          project.type === 'Shipyard station',
+      )
+    )
+      throw new Error('A replacement station is already queued.');
+    if (
+      !this.freeShipyardHexes(planet.id).some((hex) => hex.key === position.key)
+    )
+      throw new Error('Choose an available neighboring hex for the shipyard.');
+    return this.#scheduleProject(planet, 'Shipyard station', {
+      slotIndex: null,
+      factoryId: yard.facilityId,
+      destinationFleetId: null,
+      stationPosition: position,
+    });
+  }
+  #updateSalvage(): void {
+    for (let pass = 0; pass < 2; pass++)
+      this.#salvage.update(
+        this.#fleets,
+        (position) => this.#hostileAt(position),
+        (wreck, yard) => {
+          for (const [part, amount] of Object.entries(
+            Salvage.components(wreck.ship),
+          )) {
+            const technology = `${part} factory` as Technology;
+            if (
+              amount > 0 &&
+              TECHNOLOGIES.includes(technology) &&
+              !this.#research.completed.has(technology) &&
+              !this.#research.recovered.has(technology)
+            ) {
+              this.#research.recovered.add(technology);
+              this.#event(
+                `Recovered technology: ${technology}. Research is available without its usual prerequisites.`,
+              );
+            }
+          }
+          this.#event(
+            `${wreck.ship.type} wreck delivered to Orbit at ${this.#planetName(yard.planetId)}.`,
+          );
+        },
+      );
+  }
+  #hostileAt(position: HexCoordinate): boolean {
+    return this.#pirates.some(
+      (pirate) => pirate.count > 0 && pirate.position.key === position.key,
+    );
+  }
+  #planetName(id: string): string {
+    return this.#ownedPlanets().find((planet) => planet.id === id)!.name;
+  }
+  #destroyHostileShipyards(): BattleReport[] {
+    return this.#salvage.yards
+      .filter((yard) => !yard.destroyed && this.#hostileAt(yard.position))
+      .map((yard) => {
+        this.#salvage.destroyYard(yard);
+        const summary = `Orbital shipyard at ${this.#planetName(yard.planetId)} was destroyed. The planetary facility survives; waiting wrecks remain in this hex.`;
+        this.#event(summary);
+        return {
+          position: yard.position,
+          fleetId: null,
+          title: 'Shipyard destroyed',
+          summary,
+          wreckIds: [],
+        };
+      });
+  }
+  #createShipyard(
+    planet: Planet,
+    facilityId: string,
+    point: { q: number; r: number },
+  ): void {
+    const old = this.#salvage.yards.findIndex(
+      (yard) => yard.facilityId === facilityId,
+    );
+    if (old >= 0) this.#salvage.yards.splice(old, 1);
+    this.#salvage.yards.push({
+      id: this.#id('shipyard'),
+      facilityId,
+      planetId: planet.id,
+      position: new HexCoordinate(point.q, point.r),
+      builtRound: this.#round,
+      destroyed: false,
+      queue: [],
+      orbitFleetId: null,
+      issue: null,
+    });
+  }
+  #repairShipyards(): void {
+    for (const yard of this.#salvage.yards
+      .filter((yard) => !yard.destroyed && yard.builtRound < this.#round)
+      .toSorted((a, b) => a.id.localeCompare(b.id))) {
+      const planet = this.#ownedPlanets().find(
+        (planet) => planet.id === yard.planetId,
+      )!;
+      const state = this.#state(planet);
+      const wreck = this.#salvage.wrecks.find(
+        (wreck) => wreck.id === yard.queue[0],
+      );
+      yard.issue = null;
+      if (!wreck) continue;
+      const cost = Salvage.repairCost(
+        wreck.ship,
+        (type) => projectDefinition(type).cost,
+      );
+      const workers = state.buildings
+        .filter((building) => !building.demolition)
+        .reduce(
+          (total, building) => total + BUILDINGS[building.type].workers,
+          0,
+        );
+      const held = this.#logistics.reserved(planet.id);
+      yard.issue =
+        state.population - workers < SHIPS[wreck.ship.type].crew
+          ? 'Not enough workers or crew for repair.'
+          : RESOURCES.some(
+                (resource) =>
+                  state.stock[resource] - held[resource] < cost[resource],
+              )
+            ? 'Waiting for repair materials.'
+            : null;
+      if (yard.issue) continue;
+      for (const resource of RESOURCES) state.stock[resource] -= cost[resource];
+      state.population -= SHIPS[wreck.ship.type].crew;
+      const ship = this.#salvage.completeRepair(yard);
+      let fleet = this.#fleets.find(
+        (fleet) =>
+          fleet.id === yard.orbitFleetId &&
+          fleet.position?.key === yard.position.key,
+      );
+      if (!fleet) {
+        fleet = {
+          id: this.#id('fleet'),
+          name: this.#uniqueFleetName(`Orbit ${planet.name}`),
+          position: yard.position,
+          destination: null,
+          ships: zeroShips(),
+          shipUnits: [],
+        };
+        this.#fleets.push(fleet);
+        yard.orbitFleetId = fleet.id;
+      }
+      fleet.ships[ship.type]++;
+      fleet.shipUnits!.push(ship);
+      this.#event(
+        `${ship.type} repaired at ${planet.name}; ready in ${fleet.name}.`,
+      );
+    }
+  }
   canBuild(planet: Planet, type: BuildType, slotIndex?: number): string | null {
+    if (
+      type === 'Orbital shipyard' &&
+      !this.freeShipyardHexes(planet.id).length
+    )
+      return 'No available neighboring hex for a shipyard.';
     const state = this.#colonies.get(planet.id);
     if (!state) return 'This planet is not owned.';
     if (this.#phase !== 'planning')
@@ -1254,14 +1588,24 @@ export class Game {
     planet: Planet,
     type: BuildType,
     slotIndex?: number,
+    stationPosition?: HexCoordinate,
   ): ProductionReceipt {
     const why = this.canBuild(planet, type, slotIndex);
     if (why) throw new Error(why);
+    if (
+      type === 'Orbital shipyard' &&
+      (!stationPosition ||
+        !this.freeShipyardHexes(planet.id).some(
+          (hex) => hex.key === stationPosition.key,
+        ))
+    )
+      throw new Error('Choose an available neighboring hex for the shipyard.');
     const state = this.#state(planet);
     return this.#scheduleProject(planet, type, {
       destinationFleetId: null,
       slotIndex: slotIndex ?? this.#emptySlot(planet, state, type),
       factoryId: null,
+      ...(stationPosition ? { stationPosition } : {}),
     });
   }
   cancelProject(planet: Planet, projectId: string): void {
@@ -1765,6 +2109,10 @@ export class Game {
   ): FleetSnapshot {
     this.#requirePlanning();
     const source = this.#fleetState(sourceId);
+    if (ship === 'Salvage ship' && this.#salvage.towing(sourceId).length)
+      throw new Error(
+        'Release towed wrecks before transferring a Salvage ship.',
+      );
     const issue = shipTransferIssue({
       routeId: source.routeId,
       cargo: this.#cargo(source.id),
@@ -1853,6 +2201,7 @@ export class Game {
     if (!this.galaxy.cellAt(destination))
       throw new Error('Choose a hex on the map.');
     const fleet = this.#fleetState(id);
+    this.#salvage.stop(id);
     this.#requireManualFleet(fleet);
     if (this.#shipCount(fleet.ships) === 0)
       throw new Error('Empty fleets cannot receive destinations.');
@@ -1863,6 +2212,7 @@ export class Game {
   }
   clearDestination(id: string): void {
     this.#requireFleetOrders(id);
+    this.#salvage.stop(id);
     delete this.#fleetState(id).exploration;
     this.#requireManualFleet(this.#fleetState(id));
     this.#fleetState(id).destination = null;
@@ -1898,6 +2248,7 @@ export class Game {
     const fleet = this.#fleetState(id);
     if (!fleet.ships['Exploration ship'])
       throw new Error('An Exploration ship is required.');
+    this.#salvage.stop(id);
     delete fleet.joinFleetId;
     fleet.exploration = order;
     this.#updateExploration(fleet);
@@ -1915,9 +2266,11 @@ export class Game {
   continueTurn(): void {
     if (this.#phase !== 'interrupted') throw new Error('No interrupted year.');
     this.#simulation!.discoveries = [];
+    this.#simulation!.battles = [];
     this.#simulation!.handling = false;
     this.#simulation!.otherFleets = false;
     this.#phase = 'simulating';
+    this.#updateSalvage();
   }
   startTurn(): void {
     this.#requirePlanning();
@@ -1948,6 +2301,7 @@ export class Game {
         ),
       }));
     }
+    this.#updateSalvage();
     for (const fleet of this.#fleets) this.#updateExploration(fleet);
     const pirates = new Map(this.#pirates.map((pirate) => [pirate.id, pirate]));
     const frame = FleetPursuit.plan(
@@ -1956,7 +2310,13 @@ export class Game {
         pirates.has(fleet.id)
           ? [pirates.get(fleet.id)!.nextPosition(this.galaxy)]
           : this.#route(fleet).path,
-      (fleet) => ((this.#simulation!.remaining.get(fleet.id) ?? 0) > 0 ? 1 : 0),
+      (fleet) =>
+        this.#simulation!.movement(
+          fleet.id,
+          pirates.has(fleet.id) ? 1 : this.#speed(fleet),
+        ) > 0
+          ? 1
+          : 0,
     )[0];
     return (this.#pendingFrame = frame
       ? Object.freeze({ movements: frame.movements })
@@ -1980,15 +2340,24 @@ export class Game {
       for (const id of this.#simulation!.remaining.keys())
         this.#simulation!.remaining.set(id, 0);
       this.#updateSight();
+      const battles = this.#destroyHostileShipyards();
+      this.#updateSalvage();
       const discoveries = this.#newDiscoveries(frame);
-      if (discoveries.length) {
+      if (discoveries.length || battles.length) {
+        this.#simulation!.battles = battles;
         this.#simulation!.discoveries = discoveries;
         this.#phase = 'interrupted';
       }
       return;
     }
     for (const movement of frame.movements) {
-      this.#simulation!.spend(movement.fleetId);
+      const moving = this.#fleets.find(
+        (fleet) => fleet.id === movement.fleetId,
+      );
+      this.#simulation!.spend(
+        movement.fleetId,
+        moving ? this.#speed(moving) : 1,
+      );
       const pirate = this.#pirates.find(
         (pirate) => pirate.id === movement.fleetId,
       );
@@ -1998,6 +2367,7 @@ export class Game {
       }
       const fleet = this.#fleetState(movement.fleetId);
       fleet.position = movement.to;
+      this.#salvage.follow(fleet);
       this.#recordArrival(fleet);
     }
     this.#updateSight();
@@ -2011,12 +2381,40 @@ export class Game {
       return;
     }
     this.#simulation!.awaitingCombat = false;
+    const reports: BattleReport[] = [];
     for (const combat of frame.combats ?? []) {
       const fleet = this.#fleetState(combat.fleetId);
       const pirate = this.#pirates.find(
         (pirate) => pirate.id === combat.pirateId,
       )!;
+      const lostUnits = fleet.shipUnits!.filter((unit) =>
+        fleet
+          .shipUnits!.filter((candidate) => candidate.type === unit.type)
+          .toSorted((a, b) => a.id.localeCompare(b.id))
+          .slice(0, combat.losses[unit.type])
+          .some((candidate) => candidate.id === unit.id),
+      );
+      const wreckIds = lostUnits.map(
+        (unit) =>
+          this.#salvage.addWreck(this.#id('wreck'), unit, combat.position).id,
+      );
+      for (let index = 0; index < combat.pirateLosses; index++) {
+        const id = this.#id('wreck');
+        wreckIds.push(
+          this.#salvage.addWreck(
+            id,
+            {
+              id: `pirate-${id}`,
+              type: 'Fighter',
+              engines: { 'Rocket engine': 1, 'Ion pulse engine': 0 },
+            },
+            combat.position,
+          ).id,
+        );
+      }
+      for (const id of wreckIds) this.#knownObjects.add(id);
       FleetCombat.applyLosses(fleet, combat.losses);
+      this.#salvage.releaseLostCapacity(fleet, combat.position);
       pirate.count = combat.survivingPirates;
       if (combat.losses['Transport ship'] > 0)
         this.#logistics.destroyCargo(fleet.id);
@@ -2029,18 +2427,32 @@ export class Game {
       this.#event(
         `Combat at HEX ${combat.position.key}: ${this.#fleetDisplayName(fleet)} versus Space pirate. Lost ${losses}; destroyed ${combat.pirateLosses} pirates. Survivors: ${combat.survivingFighters} Fighters, ${combat.survivingPirates} pirates, ${fleet.ships['Colony ship'] + fleet.ships['Exploration ship'] + fleet.ships['Transport ship']} civilian ships.`,
       );
+      reports.push({
+        position: combat.position,
+        fleetId: fleet.id,
+        title: `${this.#fleetDisplayName(fleet)} versus Space pirate`,
+        summary: `Lost ${losses}; destroyed ${combat.pirateLosses} pirates. Survivors: ${combat.survivingFighters} Fighters and ${combat.survivingPirates} pirates.`,
+        wreckIds,
+      });
     }
     for (const pirate of this.#pirates)
       if (pirate.count <= 0) this.#simulation!.remaining.delete(pirate.id);
     this.#pirates = this.#pirates.filter((pirate) => pirate.count > 0);
     this.#mergeReinforcements();
     this.#refreshReinforcements();
+    this.#updateSight();
     this.#visiblePirates = new Set(
       this.pirateSnapshots()
         .map((pirate) => pirate.id)
         .filter((id) => this.#visiblePirates.has(id)),
     );
     for (const fleet of this.#fleets) this.#updateExploration(fleet);
+    reports.push(...this.#destroyHostileShipyards());
+    this.#updateSalvage();
+    if (reports.length) {
+      this.#simulation!.battles = reports;
+      this.#phase = 'interrupted';
+    }
   }
   finishTurn(): void {
     if (this.#phase !== 'simulating')
@@ -2068,6 +2480,14 @@ export class Game {
       for (const building of state.buildings.filter((b) => b.demolition))
         this.#event(`${building.type} was demolished on ${planet.name}.`);
       state.buildings = state.buildings.filter((b) => !b.demolition);
+      for (const yard of [...this.#salvage.yards].filter(
+        (yard) =>
+          yard.planetId === planet.id &&
+          !state.buildings.some((building) => building.id === yard.facilityId),
+      )) {
+        this.#salvage.destroyYard(yard);
+        this.#salvage.yards.splice(this.#salvage.yards.indexOf(yard), 1);
+      }
       const staffed =
         state.buildings.reduce(
           (total, b) => total + BUILDINGS[b.type].workers,
@@ -2127,10 +2547,20 @@ export class Game {
     }
     const researched = this.#research.advance(researchStations);
     if (researched) this.#event(`Research completed: ${researched}.`);
+    this.#repairShipyards();
     this.#logistics.cleanup(this.#logisticsPort());
     this.#refreshReinforcements();
   }
   #completeProject(planet: Planet, state: ColonyState, project: Project): void {
+    if (project.type === 'Shipyard station') {
+      this.#createShipyard(
+        planet,
+        project.factoryId!,
+        project.stationPosition!,
+      );
+      this.#event(`Orbital shipyard rebuilt at ${planet.name}.`);
+      return;
+    }
     const d = projectDefinition(project.type);
     if (d.sitePreparation) {
       state.domes ??= [];
@@ -2139,12 +2569,15 @@ export class Game {
         `${project.type} was completed at site ${project.slotIndex! + 1} on ${planet.name}.`,
       );
     } else if (d.permanent) {
+      const buildingId = this.#id('building');
       state.buildings.push({
-        id: this.#id('building'),
+        id: buildingId,
         type: project.type as BuildType,
         slotIndex: project.slotIndex!,
         demolition: false,
       });
+      if (project.type === 'Orbital shipyard')
+        this.#createShipyard(planet, buildingId, project.stationPosition!);
       this.#event(`${project.type} was completed on ${planet.name}.`);
     } else if (d.component) {
       state.stock[d.component] += 1;
@@ -2310,6 +2743,22 @@ export class Game {
         kind: 'research',
       });
     const supplies = this.supplyOverview().planets;
+    for (const order of this.#salvage.orders.filter((order) => order.issue))
+      items.push({
+        id: `salvage-${order.fleetId}`,
+        label: `${this.#fleetDisplayName(this.#fleetState(order.fleetId))}: ${order.issue}`,
+        kind: 'fleet',
+        fleetId: order.fleetId,
+      });
+    for (const yard of this.#salvage.yards.filter(
+      (yard) => yard.destroyed || yard.issue,
+    ))
+      items.push({
+        id: `shipyard-${yard.id}`,
+        label: `${this.#planetName(yard.planetId)} shipyard: ${yard.destroyed ? 'station destroyed; rebuild required' : yard.issue}`,
+        kind: 'planet',
+        planetId: yard.planetId,
+      });
     for (const planet of this.#ownedPlanets()) {
       const state = this.#state(planet);
       if (!state.projects.length && this.#canChooseProduction(planet, state))
@@ -2413,15 +2862,22 @@ export class Game {
         projects: state.projects.map((project) => {
           const definition = projectDefinition(project.type);
           const factoryMissing =
-            !definition.permanent &&
-            !definition.sitePreparation &&
-            !state.buildings.some(
-              (b) =>
-                !b.demolition &&
-                (definition.ship
-                  ? BUILDINGS[b.type].ship === definition.ship
-                  : BUILDINGS[b.type].component === definition.component),
-            );
+            project.type === 'Shipyard station'
+              ? !state.buildings.some(
+                  (building) =>
+                    building.id === project.factoryId &&
+                    building.type === 'Orbital shipyard' &&
+                    !building.demolition,
+                )
+              : !definition.permanent &&
+                !definition.sitePreparation &&
+                !state.buildings.some(
+                  (b) =>
+                    !b.demolition &&
+                    (definition.ship
+                      ? BUILDINGS[b.type].ship === definition.ship
+                      : BUILDINGS[b.type].component === definition.component),
+                );
           const issue = factoryMissing
             ? `A matching completed factory is required for ${project.type}.`
             : plannedWorkers + definition.workers + definition.crew >
@@ -2846,15 +3302,23 @@ export class Game {
       }
       const definition = projectDefinition(project.type);
       const missingFactory =
-        !definition.permanent &&
-        !definition.sitePreparation &&
-        !state.buildings.some(
-          (building) =>
-            !building.demolition &&
-            (definition.ship
-              ? BUILDINGS[building.type].ship === definition.ship
-              : BUILDINGS[building.type].component === definition.component),
-        );
+        project.type === 'Shipyard station'
+          ? !state.buildings.some(
+              (building) =>
+                building.id === project.factoryId &&
+                building.type === 'Orbital shipyard' &&
+                !building.demolition,
+            )
+          : !definition.permanent &&
+            !definition.sitePreparation &&
+            !state.buildings.some(
+              (building) =>
+                !building.demolition &&
+                (definition.ship
+                  ? BUILDINGS[building.type].ship === definition.ship
+                  : BUILDINGS[building.type].component ===
+                    definition.component),
+            );
       const why = missingFactory
         ? `A matching completed factory is required for ${project.type}.`
         : (this.#costBlock(snapshot(), definition) ??
@@ -2940,6 +3404,19 @@ export class Game {
   }
   #visibleDiscoveries(): Discovery[] {
     const discoveries: Discovery[] = [];
+    for (const wreck of this.#salvage.wrecks)
+      if (
+        this.#visible.has(wreck.position.key) &&
+        !wreck.yardId &&
+        !wreck.towedBy
+      )
+        discoveries.push({
+          id: wreck.id,
+          kind: 'wreck',
+          name: `${wreck.ship.type} wreck`,
+          position: wreck.position,
+          fleetId: null,
+        });
     for (const system of this.galaxy.systems) {
       if (this.#explored.has(system.star.position.key))
         discoveries.push({
@@ -2976,6 +3453,7 @@ export class Game {
         ? !this.#visiblePirates.has(discovery.id)
         : !this.#knownObjects.has(discovery.id),
     );
+    this.#updateSight();
     this.#visiblePirates = new Set(
       this.pirateSnapshots().map((pirate) => pirate.id),
     );
@@ -3003,7 +3481,7 @@ export class Game {
         )[0];
       (discovery as { fleetId: string | null }).fleetId = observer?.id ?? null;
       this.#event(
-        `${discovery.kind === 'pirate' ? 'Pirate ship in sight' : discovery.kind === 'star' ? 'Star explored' : 'Planet discovered'}: ${discovery.name} at HEX ${position.key}.`,
+        `${discovery.kind === 'wreck' ? 'Wreck discovered' : discovery.kind === 'pirate' ? 'Pirate ship in sight' : discovery.kind === 'star' ? 'Star explored' : 'Planet discovered'}: ${discovery.name} at HEX ${position.key}.`,
       );
     }
     return Object.freeze(
@@ -3044,6 +3522,8 @@ export class Game {
         )
       )
         this.#explored.add(key);
+    for (const wreck of this.#salvage.wrecks)
+      if (this.#visible.has(wreck.position.key)) wreck.known = true;
     this.#mapCells = null;
   }
   #reveal(position: HexCoordinate, radius = true): void {
@@ -3148,7 +3628,15 @@ export class Game {
       Object.entries(fleet.ships).flatMap(([type, count]) =>
         count > 0 ? [SHIPS[type as ShipType].speed] : [],
       );
-    return speeds.length === 0 ? 0 : Math.min(...speeds);
+    const normal = speeds.length === 0 ? 0 : Math.min(...speeds);
+    const towed = this.#salvage.towing(fleet.id).length;
+    if (!towed) return normal;
+    const towingSpeeds = fleet.shipUnits
+      ?.filter((unit) => unit.type === 'Salvage ship')
+      .map((unit) => 1 + Number(unit.engines['Ion pulse engine'] > 0))
+      .sort((a, b) => b - a)
+      .slice(0, towed) ?? [1];
+    return Math.min(normal, ...towingSpeeds);
   }
   #crew(ships: Record<ShipType, number>): number {
     return (Object.keys(ships) as ShipType[]).reduce(

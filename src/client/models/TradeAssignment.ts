@@ -7,6 +7,8 @@ export function tradeAssignmentIssue(
   fleets: readonly FleetSnapshot[] = [],
 ): string | null {
   if (route.closing) return 'Route is closing';
+  if (fleet.towing?.length) return 'Release or deliver towed wrecks first';
+  if (fleet.salvage) return 'Salvage order active';
   if (fleet.routeId) return 'Already assigned to a route';
   if (fleet.joinFleetId) return 'Reinforcement order active';
   if (fleet.destination) return 'Fleet is travelling';

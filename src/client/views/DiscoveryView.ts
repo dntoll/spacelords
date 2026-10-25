@@ -8,19 +8,30 @@ export function discoveryDialog(
 ): HTMLDialogElement {
   const dialog = element('dialog', 'decision-dialog discovery-dialog');
   const discoveries = model.interruption!.discoveries;
-  const title = discoveries.some((discovery) => discovery.kind === 'pirate')
-    ? 'Pirate ship in sight'
-    : 'New discoveries';
+  const battles = model.interruption!.battles ?? [];
+  const title = battles.length
+    ? 'Battle report'
+    : discoveries.some((discovery) => discovery.kind === 'pirate')
+      ? 'Pirate ship in sight'
+      : 'New discoveries';
   dialog.setAttribute('aria-label', title);
   dialog.append(element('h2', '', title));
   const list = element('ul');
+  for (const battle of battles)
+    list.append(
+      element(
+        'li',
+        '',
+        `${battle.title} · HEX ${battle.position.q},${battle.position.r}. ${battle.summary}${battle.wreckIds.length ? ` ${battle.wreckIds.length} wrecks remain in the hex.` : ''}`,
+      ),
+    );
   for (const discovery of discoveries) {
     const fleet = model.fleets.find((fleet) => fleet.id === discovery.fleetId);
     list.append(
       element(
         'li',
         '',
-        `${discovery.kind === 'star' ? 'Star explored' : discovery.kind === 'planet' ? 'Planet discovered' : 'Pirate ship in sight'}: ${discovery.name} · HEX ${discovery.position.q},${discovery.position.r}${fleet ? ` · ${fleet.name}` : ''}`,
+        `${discovery.kind === 'wreck' ? 'Wreck discovered' : discovery.kind === 'star' ? 'Star explored' : discovery.kind === 'planet' ? 'Planet discovered' : 'Pirate ship in sight'}: ${discovery.name} · HEX ${discovery.position.q},${discovery.position.r}${fleet ? ` · ${fleet.name}` : ''}`,
       ),
     );
   }
@@ -31,10 +42,14 @@ export function discoveryDialog(
       '',
       model.interruption!.economyApplied
         ? 'The year is paused after production. No movement remains this year.'
-        : 'The year is paused. Fleets already sharing a hex will fight before the next movement.',
+        : battles.length
+          ? 'The year is paused after combat. Handle to change orders, or Continue with the remaining movement.'
+          : 'The year is paused. Fleets already sharing a hex will fight before the next movement.',
     ),
     button('Handle', () => emit({ type: 'handle-discoveries' })),
-    button('Ignore', () => emit({ type: 'ignore-discoveries' })),
+    button(battles.length ? 'Continue' : 'Ignore', () =>
+      emit({ type: 'ignore-discoveries' }),
+    ),
   );
   dialog.addEventListener('cancel', (event) => event.preventDefault());
   return dialog;

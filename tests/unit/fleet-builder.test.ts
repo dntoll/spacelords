@@ -114,7 +114,7 @@ describe('flottadministration / skeppsbilder', () => {
 });
 
 describe('skeppsbilder', () => {
-  it('keeps large fleet previews bounded and preserves all three ship types', () => {
+  it('keeps large fleet previews bounded and preserves all ship types', () => {
     const model = new AppModel();
     const fleet = {
       ...model.snapshot.fleets[0]!,
@@ -123,12 +123,13 @@ describe('skeppsbilder', () => {
         'Colony ship': 1,
         'Exploration ship': 1,
         'Transport ship': 1,
+        'Salvage ship': 1,
       },
     };
     const view = renderFleetShips(fleet);
     expect(view.querySelectorAll('img').length).toBeLessThan(20);
     expect(view.textContent).toContain('+999988 Fighter');
-    expect(new Set(Object.values(SHIP_IMAGES)).size).toBe(4);
+    expect(new Set(Object.values(SHIP_IMAGES)).size).toBe(5);
     for (const ship of Object.keys(SHIP_IMAGES))
       expect(view.querySelector(`img[alt="${ship}"]`)).not.toBeNull();
   });

@@ -23,6 +23,8 @@ export class FleetCombat {
     for (const fleet of ordered.filter((fleet) => !pirateIds.has(fleet.id))) {
       for (const pirate of ordered.filter((fleet) => pirateIds.has(fleet.id))) {
         if (
+          !Object.values(fleet.ships).some((count) => count > 0) ||
+          pirate.ships.Fighter < 1 ||
           !fleet.position ||
           !pirate.position ||
           fleet.position.key !== pirate.position.key
@@ -33,6 +35,7 @@ export class FleetCombat {
         const pirateLosses = Math.min(pirates, 2 * fighters);
         const survivingPirates = pirates - pirateLosses;
         const losses = {
+          'Salvage ship': survivingPirates ? fleet.ships['Salvage ship'] : 0,
           Fighter: Math.min(fighters, Math.floor(pirates / 2)),
           'Colony ship': survivingPirates ? fleet.ships['Colony ship'] : 0,
           'Exploration ship': survivingPirates
@@ -57,6 +60,7 @@ export class FleetCombat {
           'Colony ship': 0,
           'Exploration ship': 0,
           'Transport ship': 0,
+          'Salvage ship': 0,
         });
         results.push(result);
       }

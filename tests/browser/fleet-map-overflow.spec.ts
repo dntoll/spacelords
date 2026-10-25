@@ -21,6 +21,7 @@ test('flottadministration / skeppsbilder / viewport-game-layout: long fleet list
           'Colony ship': 0,
           'Exploration ship': 0,
           'Transport ship': 0,
+          'Salvage ship': 0,
         },
       })),
     ],
@@ -88,6 +89,7 @@ test('kompakta-flottkort: four ships fit in one row and fleet actions remain tou
       ships: {
         Fighter: 3,
         'Transport ship': 1,
+        'Salvage ship': 0,
         'Colony ship': 0,
         'Exploration ship': 0,
       },

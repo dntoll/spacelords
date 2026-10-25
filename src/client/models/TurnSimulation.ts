@@ -1,16 +1,18 @@
 import type { HexCoordinate } from './HexCoordinate.js';
+import type { BattleReport } from './Salvage.js';
 
 export type ExplorationOrder = 'explore' | 'explore-stars';
 
 export interface Discovery {
   readonly id: string;
-  readonly kind: 'planet' | 'star' | 'pirate';
+  readonly kind: 'planet' | 'star' | 'pirate' | 'wreck';
   readonly name: string;
   readonly position: { readonly q: number; readonly r: number };
   readonly fleetId: string | null;
 }
 
 export interface SavedTurnSimulation {
+  readonly battles?: readonly BattleReport[];
   readonly economyApplied?: boolean;
   readonly remaining: readonly (readonly [string, number])[];
   readonly awaitingCombat: boolean;
@@ -21,6 +23,7 @@ export interface SavedTurnSimulation {
 
 /** spara-avbrutet-ar: movement is spent once and survives order changes and reloads. */
 export class TurnSimulation {
+  battles: readonly BattleReport[] = [];
   economyApplied = false;
   readonly remaining: Map<string, number>;
   awaitingCombat = false;
@@ -29,13 +32,20 @@ export class TurnSimulation {
   otherFleets = false;
 
   constructor(budgets: readonly (readonly [string, number])[]) {
-    this.remaining = new Map(budgets);
+    this.remaining = new Map(budgets.map(([id]) => [id, 60]));
   }
 
-  spend(id: string): void {
+  movement(id: string, speed: number): number {
+    return speed > 0
+      ? Math.floor(((this.remaining.get(id) ?? 0) * speed) / 60 + 1e-9)
+      : 0;
+  }
+
+  spend(id: string, speed = 1): void {
     const remaining = this.remaining.get(id) ?? 0;
-    if (remaining <= 0) throw new Error('No movement remaining this year.');
-    this.remaining.set(id, remaining - 1);
+    if (speed <= 0 || this.movement(id, speed) < 1)
+      throw new Error('No movement remaining this year.');
+    this.remaining.set(id, remaining - 60 / speed);
   }
 
   merge(source: string, target: string): void {
@@ -53,12 +63,22 @@ export class TurnSimulation {
     return (
       this.handling &&
       (this.otherFleets ||
-        this.discoveries.some((discovery) => discovery.fleetId === id))
+        this.discoveries.some((discovery) => discovery.fleetId === id) ||
+        this.battles.some((battle) => battle.fleetId === id))
     );
   }
 
   snapshot(): SavedTurnSimulation {
     return Object.freeze({
+      battles: Object.freeze(
+        this.battles.map((battle) =>
+          Object.freeze({
+            ...battle,
+            position: Object.freeze({ ...battle.position }),
+            wreckIds: Object.freeze([...battle.wreckIds]),
+          }),
+        ),
+      ),
       economyApplied: this.economyApplied,
       remaining: Object.freeze(
         [...this.remaining].map((entry) => Object.freeze(entry)),
@@ -81,6 +101,8 @@ export class TurnSimulation {
     saved: SavedTurnSimulation,
     ids: ReadonlySet<string>,
     contains: (position: { readonly q: number; readonly r: number }) => boolean,
+    legacy = false,
+    speed: (id: string) => number = () => 1,
   ): TurnSimulation {
     if (
       !saved ||
@@ -89,10 +111,24 @@ export class TurnSimulation {
       typeof saved.awaitingCombat !== 'boolean' ||
       typeof saved.handling !== 'boolean' ||
       typeof saved.otherFleets !== 'boolean' ||
-      (!saved.awaitingCombat && !saved.economyApplied) ||
+      (!saved.awaitingCombat &&
+        !saved.economyApplied &&
+        !saved.battles?.length) ||
       (saved.economyApplied !== undefined &&
         typeof saved.economyApplied !== 'boolean') ||
-      (!saved.discoveries.length && !saved.handling) ||
+      (!saved.discoveries.length &&
+        !saved.handling &&
+        !saved.battles?.length) ||
+      (saved.battles !== undefined &&
+        (!Array.isArray(saved.battles) ||
+          saved.battles.some(
+            (battle: BattleReport) =>
+              !contains(battle.position) ||
+              !battle.title ||
+              !battle.summary ||
+              !Array.isArray(battle.wreckIds) ||
+              (battle.fleetId !== null && !ids.has(battle.fleetId)),
+          ))) ||
       new Set(saved.remaining.map(([id]: readonly [string, number]) => id))
         .size !== saved.remaining.length ||
       saved.remaining.some(
@@ -100,11 +136,11 @@ export class TurnSimulation {
           !ids.has(id) ||
           !Number.isSafeInteger(count) ||
           count < 0 ||
-          count > 5,
+          count > (legacy ? 5 : 60),
       ) ||
       saved.discoveries.some(
         (discovery: Discovery) =>
-          !['planet', 'star', 'pirate'].includes(discovery.kind) ||
+          !['planet', 'star', 'pirate', 'wreck'].includes(discovery.kind) ||
           !discovery.id ||
           !discovery.name ||
           !contains(discovery.position) ||
@@ -113,6 +149,15 @@ export class TurnSimulation {
     )
       throw new Error('Invalid interrupted year.');
     const simulation = new TurnSimulation(saved.remaining);
+    for (const [
+      id,
+      count,
+    ] of saved.remaining as SavedTurnSimulation['remaining'])
+      simulation.remaining.set(
+        id,
+        legacy ? (count * 60) / Math.max(1, speed(id)) : count,
+      );
+    simulation.battles = structuredClone(saved.battles ?? []);
     simulation.economyApplied = saved.economyApplied ?? false;
     simulation.awaitingCombat = saved.awaitingCombat;
     simulation.discoveries = structuredClone(saved.discoveries);

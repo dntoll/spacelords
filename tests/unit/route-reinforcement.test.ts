@@ -41,6 +41,7 @@ function setup() {
           Fighter: 0,
           'Exploration ship': 0,
           'Transport ship': 1,
+          'Salvage ship': 0,
         },
       },
     ],

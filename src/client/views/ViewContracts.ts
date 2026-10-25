@@ -21,6 +21,22 @@ import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 
 export type AppIntent =
   | {
+      readonly type: 'salvage-wreck';
+      readonly fleetId: string;
+      readonly wreckId: string;
+    }
+  | {
+      readonly type: 'release-wreck';
+      readonly fleetId: string;
+      readonly id: string;
+    }
+  | {
+      readonly type: 'return-shipyard' | 'select-salvage' | 'rebuild-shipyard';
+      readonly id: string;
+    }
+  | { readonly type: 'cancel-shipyard-placement' }
+  | { readonly type: 'place-shipyard'; readonly position: HexCoordinate }
+  | {
       readonly type: 'explore-fleet';
       readonly id: string;
       readonly order: ExplorationOrder;

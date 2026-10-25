@@ -327,4 +327,42 @@ StarSystem "1" <-- "0..*" PirateFleet : patrols
 FleetCombat --> Fleet
 FleetCombat --> PirateFleet
 FleetCombat --> GameEvent : combat outcome
+class Wreck {
+  ship : ShipUnit
+  position : HexCoordinate
+  reservedBy
+  towedBy
+  yardId
+}
+class Shipyard {
+  position : HexCoordinate
+  builtRound
+  destroyed
+  repairQueue
+}
+class SalvageOrder {
+  targets
+  destinationShipyard
+}
+class BattleReport {
+  position
+  losses
+  survivors
+  wrecks
+}
+Fleet "0..1" <-- "0..*" Wreck : tows with Salvage ships
+Wreck "1" *-- "1" ShipUnit : retains installed equipment
+Shipyard "1" --> "1" Building : planetary facility and shuttles
+Shipyard "1" --> "1" Planet : resources and fresh crew
+Shipyard "1" o-- "0..*" Wreck : FIFO repair queue
+Fleet "1" -- "0..1" SalvageOrder
+SalvageOrder --> Wreck : exclusive reservation
+SalvageOrder --> Shipyard : nearest home station
+Wreck --> Research : recovered component unlocks prerequisites exception
+FleetCombat --> Wreck : lost ships
+FleetCombat --> BattleReport
+SavedGame --> Wreck
+SavedGame --> Shipyard
+SavedGame --> SalvageOrder
+SavedGame --> BattleReport
 @enduml
