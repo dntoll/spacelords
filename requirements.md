@@ -179,7 +179,7 @@ Se [hela visionen](docs/game-vision.md).
   en snabb testsvit inom 20 sekunder och en utökad svit i GitHub CI.
   `snabb-testsvit` är **Fullständigt implementerat**: om tiden överskrids flyttas
   mindre prioriterade tester till den utökade sviten vid begärt sluttest.
-  Detaljerade rit- och layoutkontroller ligger där; centrala spelregler behålls snabba.
+  Detaljerade vy-, rit- och layoutkontroller ligger där; centrala spelregler behålls snabba.
   `utokad-testsvit` har en jobbtidsgräns på 20 minuter inklusive installation
   av webbläsare; snabbsvitens gräns är oförändrad.
   `snabb-mobilpublicering` är **Fullständigt implementerat** och provpublicerat:

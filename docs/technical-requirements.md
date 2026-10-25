@@ -5,6 +5,12 @@ Produktkraven finns separat i [product-requirements.md](product-requirements.md)
 
 ## Aktuell sikt och teleskop
 
+`snabb-testsvit`: efter en avbruten körning över 20 sekunder flyttades 44
+presentationstester för Research, planetöversikt, kartval och flottfokus till
+`tests/extended/`. De kördes separat och godkändes. Snabbsviten behåller alla nya
+sikt- och teleskopregler samt centrala användarflöden: 447 tester på 9,97 sekunder
+inklusive verktygsstart vid verifieringen. Tidsgränsen är oförändrad.
+
 `aktuell-detektionssikt` beräknas p5-oberoende av Detection utifrån ägda planeter
 och flottornas monterade teleskop. MapCell skiljer `explored` från `visible`.
 Game filtrerar pirater innan oföränderliga läsdata lämnas till vyerna; träffprovning
