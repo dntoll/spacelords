@@ -637,6 +637,9 @@ Regressionstestet verifierar förlorat fokus före klicket.
 - Alla 340 webbläsarscenarier kördes i de fyra befintliga profilerna. Efter
   rättningar och riktade omkörningar är 312 scenarier godkända; 28 hoppas över
   enligt befintliga villkor för mus, touch och webbläsarprofil.
-- En sista körning av 20 scenarier verifierar den färdiga versionens flottkort,
-  produktionskvitton, utforskning och sparade upptäcktsavbrott. Handle provas
+- En sista körning av 24 scenarier verifierar den färdiga versionens flottkort,
+  produktionskvitton, utforskning, ruttmenyer och sparade upptäcktsavbrott. Handle provas
   även i liggande läge. Ingen driftsättning har gjorts.
+
+Namnknappen i `kompakta-flottkort` behåller minst 88 px bredd. Ruttsymbolen
+delar den horisontellt rullbara orderraden för att ge namnet mer utrymme.

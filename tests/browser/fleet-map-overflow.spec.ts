@@ -108,6 +108,8 @@ test('kompakta-flottkort: four ships fit in one row and fleet actions remain tou
   const layout = await card.evaluate((node) => ({
     height: node.getBoundingClientRect().height,
     width: node.getBoundingClientRect().width,
+    nameWidth: node.querySelector('.fleet-name-button')!.getBoundingClientRect()
+      .width,
     shipRows: [...node.querySelectorAll('.ship-token')].map(
       (token) => token.getBoundingClientRect().top,
     ),
@@ -121,6 +123,7 @@ test('kompakta-flottkort: four ships fit in one row and fleet actions remain tou
   if (layout.width >= 220) expect(new Set(layout.shipRows).size).toBe(1);
   else expect(new Set(layout.shipRows).size).toBeLessThanOrEqual(2);
   expect(layout.height).toBeLessThanOrEqual(layout.width >= 220 ? 140 : 200);
+  expect(layout.nameWidth).toBeGreaterThanOrEqual(88);
   expect(
     layout.targets.every(({ width, height }) => width >= 44 && height >= 44),
   ).toBe(true);

@@ -150,11 +150,7 @@ export function renderFleetCard(
   const speed = element('small', 'fleet-speed', `S: ${fleet.speed} hex`);
   speed.title = `Fleet speed: ${fleet.speed} hexes/year${fleet.remainingMovement === undefined ? '' : ` · ${fleet.remainingMovement} hex remaining this year`}`;
   footer.append(speed);
-  if (routeMenu)
-    header.insertBefore(
-      routeMenu,
-      rename.parentElement === header ? rename : null,
-    );
+  if (routeMenu) orders.append(routeMenu);
   card.title = [
     fleetAssignmentLabel(fleet, model),
     model.fleetDragging && model.mapFleetId === fleet.id

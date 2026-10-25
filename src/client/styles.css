@@ -2648,7 +2648,7 @@ p {
   min-width: 0;
 }
 .fleet-card-heading {
-  min-width: 44px;
+  min-width: 88px;
 }
 .fleet-card-heading .fleet-name-button {
   white-space: nowrap;
