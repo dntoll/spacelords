@@ -1,3 +1,4 @@
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 
@@ -23,7 +24,8 @@ describe('rundsimulering', () => {
     const before = model.snapshot.planet!.population;
     model.openMap();
     model.build('Research station');
-    const frames = model.startTurn();
+    model.startTurn();
+    const frames = turnFrames(model, false);
     for (const frame of frames) model.applyTurnFrame(frame);
     model.finishTurn();
     expect(model.snapshot.round).toBe(2);
@@ -75,7 +77,8 @@ describe('skeppsutforskning', () => {
     const model = new AppModel();
     const fleet = model.snapshot.fleets[0]!;
     model.setDestination(fleet.id, 3, 0);
-    const frames = model.startTurn();
+    model.startTurn();
+    const frames = turnFrames(model, false);
     for (const frame of frames) model.applyTurnFrame(frame);
     model.finishTurn();
     const cells = model.snapshot.cells;

@@ -3,8 +3,7 @@ import type { FleetSnapshot } from '../models/Game.js';
 import type { TradeRouteSnapshot } from '../models/Logistics.js';
 import { tradeAssignmentIssue } from '../models/TradeAssignment.js';
 import type { IntentHandler } from './ViewContracts.js';
-import { SHIP_TYPES, shipImage } from './ShipView.js';
-import { fleetAssignmentLabel } from './FleetCard.js';
+import { renderFleetCard } from './FleetCard.js';
 import { button, element } from './dom.js';
 
 export function renderTradeFleet(
@@ -12,54 +11,8 @@ export function renderTradeFleet(
   model: AppReadModel,
   emit: IntentHandler,
 ): HTMLElement {
-  const card = element(
-    'article',
-    'fleet-card trade-fleet-box trade-fleet-route-details',
-  );
-  card.dataset.fleetId = fleet.id;
-  card.setAttribute('aria-label', `Trade fleet ${fleet.name}`);
-  card.classList.toggle('selected-fleet-card', model.mapFleetId === fleet.id);
-  const name = button(
-    `Select trade fleet ${fleet.name}`,
-    () =>
-      emit({
-        type: 'map-select-fleet',
-        id: fleet.id,
-      }),
-    'fleet-name-button',
-  );
-  name.textContent = fleet.name;
-  name.setAttribute('aria-pressed', String(model.mapFleetId === fleet.id));
-  const ships = element('div', 'trade-ship-manifest');
-  ships.setAttribute('role', 'group');
-  ships.setAttribute('aria-label', `Ships in ${fleet.name}`);
-  for (const type of SHIP_TYPES) {
-    const count = fleet.ships[type];
-    if (!count) continue;
-    const token = element('figure', 'ship-portrait trade-ship-token');
-    token.dataset.ship = type;
-    token.title = `${count} ${type}`;
-    token.append(
-      shipImage(type),
-      element('figcaption', 'trade-ship-count', String(count)),
-      element('span', 'ship-token-label', type),
-    );
-    ships.append(token);
-  }
-  if (!ships.children.length)
-    ships.append(element('p', 'muted-note', 'No ships'));
-  const location = fleet.position
-    ? model.ownedPlanets.find((p) => p.position.key === fleet.position!.key)
-        ?.name
-    : null;
-  const coordinates = fleet.position
-    ? `HEX ${fleet.position.q}, ${fleet.position.r}`
-    : 'No position';
-  const position = `${location ? `${location} · ` : ''}${coordinates}${fleet.destination ? ` → HEX ${fleet.destination.q}, ${fleet.destination.r}` : ''}`;
-  card.append(name, ships, element('p', 'trade-fleet-position', position));
-  const assignment = fleetAssignmentLabel(fleet, model);
-  if (assignment)
-    card.append(element('p', 'trade-fleet-assignment', assignment));
+  const card = renderFleetCard(fleet, model, emit);
+  card.classList.add('trade-fleet-box', 'trade-fleet-route-details');
   const cargo = Object.entries(fleet.cargo ?? {})
     .filter(([, amount]) => amount > 0)
     .map(([material, amount]) => `${amount} ${material}`)
@@ -67,17 +20,6 @@ export function renderTradeFleet(
   card.append(
     element('p', 'trade-cargo', cargo ? `Cargo: ${cargo}` : 'Empty hold'),
   );
-  if (fleet.routeId) {
-    const release = button(
-      fleet.releaseRequested ? 'Release pending' : `Release ${fleet.name}`,
-      () => emit({ type: 'release-trade-fleet', id: fleet.id }),
-      'button secondary-button',
-    );
-    release.textContent = fleet.releaseRequested ? 'Release pending' : '×';
-    release.title = 'Leave route after the current trip and unloading';
-    release.disabled = !!fleet.releaseRequested || model.phase !== 'planning';
-    card.append(release);
-  }
   return card;
 }
 

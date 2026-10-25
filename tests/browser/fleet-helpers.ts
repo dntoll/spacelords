@@ -11,7 +11,7 @@ export async function chooseFleetDestination(
   const card = page.locator('.map-fleet-cards .fleet-card').filter({
     has: page.getByRole('heading', { name, exact: true }),
   });
-  await card.locator('.fleet-orders > summary').click();
+
   await card
     .getByRole('button', {
       name: `Choose destination for ${name}`,
@@ -36,12 +36,14 @@ export async function selectMapFleet(
   const marker = FleetMapLayout.markers(
     fleets,
     routeView ? game.tradeRoutes : [],
-  ).find((marker) => marker.fleet.name === name);
+  ).find(
+    (marker) => marker.fleet.name === name || marker.fleet.ownName === name,
+  );
   if (!marker) throw new Error(`No positioned fleet: ${name}`);
   await selectMapPoint(page, marker.point);
   await expect(
     page.locator('.selected-fleet-card .fleet-name-button'),
-  ).toHaveText(name);
+  ).toHaveText(marker.fleet.name);
 }
 
 export async function formFleet(

@@ -1,3 +1,4 @@
+import { collectTurnFrames, turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { Logistics } from '../../src/client/models/Logistics.js';
 import { Game, type GameState } from '../../src/client/models/Game.js';
@@ -12,7 +13,7 @@ const empty = {
   'Transport ship': 0,
 };
 function turn(game: Game) {
-  for (const frame of game.startTurn()) game.applyFrame(frame);
+  for (const frame of turnFrames(game)) game.applyFrame(frame);
   game.finishTurn();
 }
 function battle(fighters: number, pirates: number, civilians = 0) {
@@ -128,13 +129,13 @@ describe('flottstrid-per-hex', () => {
         destination: { q: 10, r: -4 },
       })),
     });
-    const frames = moving.startTurn();
+    const frames = collectTurnFrames(moving);
     expect(
       frames
         .flatMap((f) => f.movements)
         .filter((m) => m.fleetId === 'fleet-home'),
     ).toHaveLength(1);
-    for (const frame of frames) moving.applyFrame(frame);
+
     moving.finishTurn();
     expect(moving.fleet('fleet-home')).toMatchObject({
       position: null,
@@ -340,7 +341,8 @@ describe('flottstrid-per-hex / motorbehov-for-alla-skepp', () => {
       ],
     });
     const before = game.exportState();
-    const frames = game.startTurn();
+    game.startTurn();
+    const frames = turnFrames(game, false);
     expect(game.fleet('fleet-home')!.ships.Fighter).toBe(2);
     expect(game.fleet('fleet-home')!.shipUnits).toEqual(
       before.fleets[0]!.shipUnits,

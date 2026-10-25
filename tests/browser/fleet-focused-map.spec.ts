@@ -50,14 +50,18 @@ test('flottfokuserad-kartvy: background is inert, route crossings set destinatio
   await page.mouse.move(center.x - Math.sqrt(3) * 18, center.y + 54 - 100, {
     steps: 8,
   });
-  await expect(panel).toContainText('Destination preview: HEX 0,1');
+  await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
+    'aria-description',
+    /Destination preview: HEX 0,1/,
+  );
   await page.mouse.up();
   await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
     'data-fleet-id',
     'freighters',
   );
-  await expect(panel.locator('.selected-fleet-card')).toContainText(
-    'Destination: HEX 0,1',
+  await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
+    'aria-description',
+    /Destination: HEX 0,1/,
   );
   await expect(panel.locator('.selected-fleet-card')).not.toContainText(
     'Trade route:',
@@ -85,7 +89,14 @@ test('flottfokuserad-kartvy: background is inert, route crossings set destinatio
     .getByRole('button', { name: 'Fighter 1 in Home Fleet', exact: true })
     .click();
   await receiveShip(page, 'Travellers');
-  await expect(panel).toContainText('En route to Travellers');
+  await expect(
+    panel.locator('.fleet-card').filter({
+      has: page.getByRole('button', {
+        name: 'Cancel reinforcement',
+        exact: true,
+      }),
+    }),
+  ).toHaveAttribute('aria-description', /En route to Travellers/);
   await page.screenshot({
     path: testInfo.outputPath('fleet-map-route-background.png'),
   });
@@ -108,6 +119,13 @@ test('flottfokuserad-kartvy: background is inert, route crossings set destinatio
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page, reinforcement!.name);
-  await expect(panel).toContainText('En route to Travellers');
+  await expect(
+    panel.locator('.fleet-card').filter({
+      has: page.getByRole('button', {
+        name: 'Cancel reinforcement',
+        exact: true,
+      }),
+    }),
+  ).toHaveAttribute('aria-description', /En route to Travellers/);
   expect(errors).toEqual([]);
 });

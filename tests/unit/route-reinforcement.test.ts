@@ -1,3 +1,4 @@
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
@@ -96,7 +97,7 @@ describe('forstarka-ruttflotta', () => {
       ),
     });
     game.transferShips('fleet-home', 'Fighter', 1, 'freighters');
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
     expect(game.fleet('freighters')).toMatchObject({
       routeId: 'route-test',
@@ -132,7 +133,7 @@ describe('forstarka-ruttflotta', () => {
       'fleet-home',
       game.galaxy.systems[0]!.planets[2]!.position,
     );
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
     expect(game.fleet('fleet-home')!.position).not.toEqual(
       game.fleet('freighters')!.position,
@@ -142,7 +143,7 @@ describe('forstarka-ruttflotta', () => {
     expect(
       game.fleetSnapshots().some((fleet) => fleet.joinFleetId === 'freighters'),
     ).toBe(true);
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
     expect(game.fleet('freighters')!.ships.Fighter).toBe(1);
     expect(game.fleet('freighters')!.routeId).toBe('route-test');
@@ -239,7 +240,7 @@ describe('skepp-ur-olastad-ruttflotta', () => {
       'fleet-home',
       game.galaxy.systems[0]!.planets[2]!.position,
     );
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
     const source = game.fleet('freighters')!;
     const received = game.transferShips(
@@ -256,7 +257,7 @@ describe('skepp-ur-olastad-ruttflotta', () => {
 
   it('allows removal after delivery has unloaded the cargo', () => {
     const game = setup();
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
     expect(game.fleet('freighters')!.cargo!.Iron).toBe(0);
     expect(() =>

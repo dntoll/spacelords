@@ -1,3 +1,4 @@
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import {
   Game,
@@ -39,7 +40,7 @@ function prepared(rocket = 0, ion = 0) {
   return Game.restore(state);
 }
 function turn(game: Game) {
-  for (const frame of game.startTurn()) game.applyFrame(frame);
+  for (const frame of turnFrames(game)) game.applyFrame(frame);
   game.finishTurn();
 }
 
@@ -274,7 +275,7 @@ describe('avstamning-sparkompatibilitet / motorbehov-for-alla-skepp', () => {
       expect(
         game.planetSnapshot(game.galaxy.homePlanet)!.projects[0]!.blockedReason,
       ).not.toBeNull();
-      expect(game.exportState().version).toBe(7);
+      expect(game.exportState().version).toBe(8);
     },
   );
 

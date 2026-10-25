@@ -1,3 +1,4 @@
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { expect, it } from 'vitest';
 import { Game } from '../../src/client/models/Game.js';
 import { routeEscortState } from '../fixtures/route-escorts.js';
@@ -85,7 +86,7 @@ it('rutt-eskortfordelning: balances existing escorts and pending reinforcements,
     year < 5 && restored.fleetSnapshots().some((f) => f.joinFleetId);
     year++
   ) {
-    for (const frame of restored.startTurn()) restored.applyFrame(frame);
+    for (const frame of turnFrames(restored)) restored.applyFrame(frame);
     restored.finishTurn();
   }
   expect(restored.fleetSnapshots().filter((f) => f.joinFleetId)).toEqual([]);

@@ -1,3 +1,4 @@
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/client/models/Game.js';
 import { emptyStock } from '../../src/client/models/Economy.js';
@@ -43,7 +44,7 @@ describe('forsorjningsstatus / leveransfloden / beslutslista', () => {
     expect(game.exportState()).toEqual(saved);
     const restored = Game.restore(saved);
     expect(restored.shipments).toEqual(game.shipments);
-    for (const frame of restored.startTurn()) restored.applyFrame(frame);
+    for (const frame of turnFrames(restored)) restored.applyFrame(frame);
     restored.finishTurn();
     expect(restored.shipments).toHaveLength(0);
     expect(

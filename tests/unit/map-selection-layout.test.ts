@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
@@ -78,7 +79,7 @@ describe('fokuserat-kartval', () => {
 
   it('retains fleet orders in empty space without empty-space descriptions', () => {
     model.setDestination('fleet-home', 3, 0);
-    for (const frame of model.startTurn()) model.applyTurnFrame(frame);
+    for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
     model.finishTurn();
     model.select(new HexCoordinate(3, 0));
     view.render(model.snapshot);
@@ -112,7 +113,8 @@ describe('fokuserat-kartval', () => {
 describe('rundkontroller-i-decisions', () => {
   it('keeps Decisions open while advancing the year so Events and End turn stay available', () => {
     model.openDecisions();
-    const frames = model.startTurn();
+    model.startTurn();
+    const frames = turnFrames(model, false);
     expect(model.snapshot.screen).toBe('decisions');
     for (const frame of frames) model.applyTurnFrame(frame);
     model.finishTurn();

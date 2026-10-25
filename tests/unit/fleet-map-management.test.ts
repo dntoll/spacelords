@@ -221,7 +221,11 @@ describe('flottknappar-pa-kartan / flottadministration', () => {
     model.pan({ x: 80, y: 25 });
     model.openFleet('fleet-home');
     view.render(model.snapshot);
-    expect(root.textContent).toContain('Destination: HEX 0,1');
+    expect(
+      root
+        .querySelector('.selected-fleet-card')!
+        .getAttribute('aria-description'),
+    ).toContain('Destination: HEX 0,1');
     expect(model.snapshot.screen).toBe('fleets');
     expect(model.snapshot.mapFleetId).toBe('fleet-home');
     expect(model.snapshot.camera.center).toEqual(
@@ -261,7 +265,11 @@ describe('flottadministration / skepp-till-rorlig-flotta / forstarka-ruttflotta'
       model.snapshot.fleets.find((fleet) => fleet.id === 'travellers')!.ships
         .Fighter,
     ).toBe(0);
-    expect(root.textContent).toContain('En route to Travellers');
+    expect(
+      root
+        .querySelector(`[data-fleet-id="${reinforcement.id}"]`)!
+        .getAttribute('aria-description'),
+    ).toContain('En route to Travellers');
   });
 
   it('reinforces an unloaded route fleet without changing its assignment', () => {
@@ -271,11 +279,11 @@ describe('flottadministration / skepp-till-rorlig-flotta / forstarka-ruttflotta'
     view.render(model.snapshot);
     expect(
       root.querySelector<HTMLButtonElement>(
-        '[aria-label="Transport ship 1 in Freighters"]',
+        '[aria-label="Transport ship 1 in Route Tellus <> Vesta"]',
       )!.disabled,
     ).toBe(false);
     click('Fighter 1 in Home Fleet');
-    click('Move ship to Freighters');
+    click('Move ship to Route Tellus <> Vesta');
     const fleet = model.snapshot.fleets.find(
       (fleet) => fleet.id === 'freighters',
     )!;
@@ -362,7 +370,7 @@ describe('skepp-ur-olastad-ruttflotta', () => {
 
   it('lets a player select an unloaded route ship and form a new fleet', () => {
     const { model, root, click } = assigned(false);
-    click('Transport ship 1 in Freighters');
+    click('Transport ship 1 in Route Tellus <> Vesta');
     expect(model.snapshot.shipTransfer).toEqual({
       shipId: 'freighters-legacy-Transport ship-0',
       fleetId: 'freighters',
@@ -386,9 +394,11 @@ describe('skepp-ur-olastad-ruttflotta', () => {
     );
     expect(tokens.length).toBeGreaterThan(0);
     expect([...tokens].every((token) => token.disabled)).toBe(true);
-    expect(root.textContent).toContain(
-      'Ships cannot be moved out while this fleet carries cargo.',
-    );
+    expect(
+      root
+        .querySelector('[data-fleet-id="freighters"]')!
+        .getAttribute('aria-description'),
+    ).toContain('Ships cannot be moved out while this fleet carries cargo.');
     model.chooseShipTransfer('freighters', 'Fighter');
     expect(model.snapshot.shipTransfer).toBeNull();
     model.chooseShipTransfer('fleet-home', 'Fighter');

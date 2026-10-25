@@ -1,3 +1,4 @@
+import { discoveryDialog, discoveryControls } from './DiscoveryView.js';
 import { pirateAsFleet } from '../models/PirateFleet.js';
 import { updateDecisionGuidance } from './DecisionGuidanceView.js';
 import {
@@ -571,7 +572,12 @@ export class AppView implements AppPort {
     }
     this.#renderNotice(model);
     if (editingName) delete active.dataset.rendering;
-    if (model.pendingEndTurn) {
+    this.#root.querySelector('.discovery-controls')?.remove();
+    if (model.phase === 'interrupted' && model.interruption) {
+      if (model.interruption.handling)
+        this.#root.append(discoveryControls(model, this.#emit));
+      else this.#decisionDialog = discoveryDialog(model, this.#emit);
+    } else if (model.pendingEndTurn) {
       this.#decisionDialog = renderTurnWarning(model, this.#emit);
     } else if (model.pendingResearchRemoval) {
       const dialog = element('dialog', 'decision-dialog');
@@ -655,6 +661,21 @@ export class AppView implements AppPort {
   }
 
   #renderNotice(model: AppReadModel): void {
+    this.#root.querySelector('.production-receipt')?.remove();
+    const receipt = model.productionReceipt;
+    if (
+      receipt &&
+      model.screen === 'production' &&
+      model.planet?.id === receipt.planetId
+    ) {
+      const confirmation = element(
+        'p',
+        'production-receipt',
+        `Queued ${receipt.product} · #${receipt.queuePosition}`,
+      );
+      confirmation.setAttribute('role', 'status');
+      this.#root.append(confirmation);
+    }
     const existingNotice = this.#root.querySelector('.game-notice');
     if (model.notice) {
       const notice = element('p', 'game-notice', model.notice);

@@ -3,6 +3,8 @@ import { element } from './dom.js';
 
 const eventTypes: readonly (readonly [RegExp, string])[] = [
   [/^Combat at HEX /, 'Combat'],
+  [/^(Planet discovered|Star explored|Pirate ship in sight): /, 'Discoveries'],
+  [/: exploration stopped; /, 'Fleet orders'],
   [/^Habitability on .+ increased to /, 'Habitability changes'],
   [/ was demolished on /, 'Demolitions'],
   [/ is waiting on /, 'Production waiting'],

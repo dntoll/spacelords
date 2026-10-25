@@ -129,14 +129,14 @@ for (const mode of ['Star map', 'Route'] as const)
     await expect(routePanel(page)).toContainText('Assigned fleets · 1');
     await expect(
       routePanel(page).locator('[data-fleet-id="freighters"]'),
-    ).toContainText('Tellus · HEX 1, 0');
+    ).toContainText('Route Tellus <> Vesta');
     await expect(page.getByTestId('camera-position')).toHaveText(camera!);
     await page.screenshot({
       path: testInfo.outputPath('star-map-trade-route.png'),
     });
     await routePanel(page)
       .getByRole('button', {
-        name: 'Select trade fleet Freighters',
+        name: 'Route Tellus <> Vesta',
         exact: true,
       })
       .click();
@@ -146,18 +146,13 @@ for (const mode of ['Star map', 'Route'] as const)
     });
     await expect(fleetPanel).toContainText('HEX 1,0');
     await fleetPanel
-      .locator(
-        '.fleet-card[data-fleet-id="freighters"] .map-fleet-route-options > summary',
-      )
-      .click();
-    await fleetPanel
       .getByRole('button', {
         name: 'Select route Tellus to Vesta',
         exact: true,
       })
       .click();
     await routePanel(page)
-      .getByRole('button', { name: 'Release Freighters', exact: true })
+      .getByRole('button', { name: 'Release from trade route', exact: true })
       .click();
     await expect(routePanel(page)).toContainText('Assigned fleets · 0');
     await routePanel(page)

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { collectTurnFrames, turnFrames } from '../fixtures/turn-steps.js';
 import { describe, it, expect } from 'vitest';
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
@@ -10,7 +11,7 @@ import { AppView } from '../../src/client/views/AppView.js';
 describe('handelser / arsrundor-och-order', () => {
   it('returns directly to planning and allows another turn without acknowledgement', () => {
     const game = new Game(createExampleGalaxy());
-    game.startTurn();
+    collectTurnFrames(game);
     game.finishTurn();
     expect(game.phase).toBe('planning');
     expect(() => game.startTurn()).not.toThrow();
@@ -18,10 +19,10 @@ describe('handelser / arsrundor-och-order', () => {
   it('publishes one useful arrival when the destination is reached, without movement noise', () => {
     const game = new Game(createExampleGalaxy());
     game.setDestination('fleet-home', new HexCoordinate(7, 0));
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     expect(game.events).toHaveLength(0);
     game.finishTurn();
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     const arrivals = game.events.filter((event) =>
       /arrived|reached its destination/.test(event.text),
     );
@@ -47,19 +48,19 @@ describe('handelser / arsrundor-och-order', () => {
     game.setDestination('fleet-home', new HexCoordinate(3, 0));
     game.setDestination(scout.id, new HexCoordinate(0, 1));
     game.scheduleBuild(game.galaxy.homePlanet, 'Research station');
-    const frames = game.startTurn();
-    game.applyFrame(frames[0]!);
+    game.startTurn();
+    game.applyFrame(game.nextTurnFrame()!);
     expect(game.events.map((event) => event.text)).toEqual([
       `${scout.name} arrived at Vesta.`,
     ]);
-    for (const frame of frames.slice(1)) game.applyFrame(frame);
+    collectTurnFrames(game, false);
     expect(game.events[1]!.text).toBe('Home Fleet arrived at HEX 3,0.');
     game.finishTurn();
     expect(game.events[2]!.text).toContain('Research station was completed');
   });
   it('resumes older saved summaries as planning without losing events', () => {
     const game = new Game(createExampleGalaxy());
-    game.startTurn();
+    collectTurnFrames(game);
     game.finishTurn();
     const state = game.exportState();
     const restored = Game.restore({
@@ -182,7 +183,7 @@ it('rundkontroller-pa-fler-vyer: exposes Events and End turn on Research and pla
     view.render(model.snapshot);
     expect(root.querySelector('.turn-console')).not.toBeNull();
     expect(root.querySelector('.end-turn')).not.toBeNull();
-    for (const frame of model.startTurn()) model.applyTurnFrame(frame);
+    for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
     model.finishTurn();
     expect(model.snapshot.screen).toBe(screen);
     view.dispose();

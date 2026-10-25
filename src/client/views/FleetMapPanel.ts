@@ -5,7 +5,6 @@ import type { HexCoordinate } from '../models/HexCoordinate.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { renderFleetCard } from './FleetCard.js';
 import { bindShipTransfers } from './ShipTransferInput.js';
-import { renderTradeAssignment } from './TradeFleetView.js';
 import { button, element } from './dom.js';
 import { mapFleetRouteFeedback } from './StarMapTradeView.js';
 import { renderMapLocationHeading } from './MapLocationHeading.js';
@@ -73,45 +72,6 @@ export function renderMapFleetPanel(
 
   for (const fleet of local) {
     const card = renderFleetCard(fleet, model, emit);
-    if (
-      cell?.object?.kind === 'planet' &&
-      !cell.object.owned &&
-      fleet.ships['Colony ship'] > 0 &&
-      !fleet.routeId
-    ) {
-      const colonize = button('Colonize', () =>
-        emit({ type: 'colonize', id: fleet.id }),
-      );
-      colonize.disabled = model.phase !== 'planning';
-      card.append(colonize);
-    }
-    const routes = element('details', 'map-fleet-route-options');
-    routes.append(element('summary', '', 'Trade routes'));
-    if (!fleet.routeId) {
-      for (const route of model.tradeRoutes)
-        routes.append(
-          renderTradeAssignment(
-            fleet,
-            route,
-            model,
-            emit,
-            `${route.from} ↔ ${route.to}`,
-          ),
-        );
-      if (!model.tradeRoutes.length)
-        routes.append(element('p', 'muted-note', 'No trade routes.'));
-    } else {
-      const route = model.tradeRoutes.find(
-        (candidate) => candidate.id === fleet.routeId,
-      );
-      if (route)
-        routes.append(
-          button(`Select route ${route.from} to ${route.to}`, () =>
-            emit({ type: 'map-select-route', id: route.id }),
-          ),
-        );
-    }
-    card.append(routes);
     cards.append(card);
   }
   const create = element('div', 'fleet-hangar new-fleet-drop');

@@ -1,3 +1,4 @@
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { expect, it } from 'vitest';
 import { Game } from '../../src/client/models/Game.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
@@ -48,7 +49,8 @@ it('forsorjningsstatus / leveransfloden: decisions and supply agree, inspection 
     recipient: 'Vesta',
     project: 'Iron mine',
   });
-  const frames = game.startTurn();
+  game.startTurn();
+  const frames = turnFrames(game, false);
   expect(game.shipments[0]).toMatchObject({
     state: 'In transit',
     source: 'Tellus',

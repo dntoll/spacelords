@@ -2634,3 +2634,131 @@ p {
     max-height: 76px;
   }
 }
+
+/* kompakta-flottkort / flottorder-som-symboler: keep one header and one ship row. */
+.map-fleet-management .ship-token-label {
+  line-height: 1;
+}
+.map-fleet-management .fleet-card {
+  position: relative;
+  display: grid;
+  gap: 2px;
+}
+.fleet-card-header {
+  min-width: 0;
+}
+.fleet-card-heading {
+  min-width: 40px;
+}
+.fleet-card-heading .fleet-name-button {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  display: block;
+}
+.fleet-order-toolbar {
+  display: flex;
+  flex: 0 1 auto;
+  max-width: 50%;
+  min-width: 44px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.fleet-order-button,
+.fleet-rename-button,
+.fleet-route-menu > summary {
+  box-sizing: border-box;
+  flex: 0 0 44px;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: grid;
+  place-content: center;
+  font-size: 1.1rem;
+}
+.fleet-order-button {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+}
+.fleet-order-button[aria-pressed='true'] {
+  color: var(--accent);
+  background: #23434c;
+}
+.fleet-route-menu {
+  flex: 0 0 44px;
+}
+.fleet-route-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.fleet-route-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.fleet-route-menu-choices {
+  position: absolute;
+  z-index: 8;
+  top: 50px;
+  right: 6px;
+  left: 6px;
+  display: grid;
+  padding: 6px;
+  border: 1px solid var(--line);
+  background: #10222e;
+}
+.fleet-route-menu:not([open]) .fleet-route-menu-choices {
+  display: none;
+}
+.fleet-card-footer {
+  display: flex;
+  min-width: 0;
+  line-height: 1;
+}
+.fleet-speed {
+  font-size: 0.65rem;
+}
+.production-receipt {
+  position: fixed;
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  max-width: calc(100vw - 24px);
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: #102e34;
+  color: #e8fff5;
+  pointer-events: none;
+}
+.discovery-controls {
+  position: fixed;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 25;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: #10222e;
+}
+.discovery-controls select {
+  max-width: 100%;
+  min-width: 0;
+}
+body:has(.discovery-controls) .selection-panel {
+  padding-bottom: 170px;
+}
+.discovery-dialog {
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+}

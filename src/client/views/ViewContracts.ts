@@ -1,3 +1,4 @@
+import type { ExplorationOrder } from '../models/TurnSimulation.js';
 import type {
   MapProductionCategory,
   MapViewport,
@@ -19,6 +20,18 @@ import type {
 import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 
 export type AppIntent =
+  | {
+      readonly type: 'explore-fleet';
+      readonly id: string;
+      readonly order: ExplorationOrder;
+    }
+  | {
+      readonly type:
+        | 'handle-discoveries'
+        | 'ignore-discoveries'
+        | 'continue-turn'
+        | 'allow-other-fleet-orders';
+    }
   | {
       readonly type:
         'map-select-route' | 'map-select-fleet' | 'begin-map-route';

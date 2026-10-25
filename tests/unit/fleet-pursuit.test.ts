@@ -1,3 +1,4 @@
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { Game, type ShipType } from '../../src/client/models/Game.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
@@ -31,7 +32,7 @@ function setup(
 }
 
 function turn(game: Game) {
-  for (const frame of game.startTurn()) game.applyFrame(frame);
+  for (const frame of turnFrames(game)) game.applyFrame(frame);
   game.finishTurn();
 }
 

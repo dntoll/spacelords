@@ -1,3 +1,4 @@
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import {
   Game,
@@ -16,7 +17,7 @@ function setup(galaxy = createExampleGalaxy()) {
   const planet = game.galaxy.homePlanet;
   const snapshot = () => game.planetSnapshot(planet)!;
   const turn = () => {
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
   };
   const unlock = (type: Technology) => {
@@ -272,7 +273,7 @@ describe('planetlager / arbetskraft-och-besattning', () => {
     expect(
       restored.planetSnapshot(planet)!.projects[0]!.blockedReason,
     ).toContain('Needs decision');
-    for (const frame of restored.startTurn()) restored.applyFrame(frame);
+    for (const frame of turnFrames(restored)) restored.applyFrame(frame);
     restored.finishTurn();
     expect(restored.planetSnapshot(planet)!.projects).toHaveLength(2);
     expect(restored.planetSnapshot(planet)!.economy.stock.Iron).toBe(0);
@@ -294,7 +295,7 @@ describe('planetlager / arbetskraft-och-besattning', () => {
       restored.scheduleShip(planet, 'Colony ship', null, yard.id);
     }
     expect(restored.planetSnapshot(planet)!.budget.reserved.Iron).toBe(6);
-    for (const frame of restored.startTurn()) restored.applyFrame(frame);
+    for (const frame of turnFrames(restored)) restored.applyFrame(frame);
     restored.finishTurn();
     expect(restored.fleet('fleet-home')!.ships['Colony ship']).toBe(1);
     expect(restored.planetSnapshot(planet)!.economy.stock.Iron).toBe(0);

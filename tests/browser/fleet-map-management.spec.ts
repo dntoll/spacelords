@@ -84,7 +84,10 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
   await page
     .getByRole('combobox', { name: 'Destination hex', exact: true })
     .selectOption('0,1');
-  await expect(panel).toContainText('Destination: HEX 0,1');
+  await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
+    'aria-description',
+    /Destination: HEX 0,1/,
+  );
   const dimensions = await page.evaluate(() => ({
     overflow:
       document.documentElement.scrollWidth > innerWidth ||
@@ -107,7 +110,10 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
   await expect(
     panel.getByRole('heading', { name: 'Vanguard', exact: true }),
   ).toBeVisible();
-  await expect(panel).toContainText('Destination: HEX 0,1');
+  await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
+    'aria-description',
+    /Destination: HEX 0,1/,
+  );
   await selectMapFleet(page, 'Vanguard');
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await expect(
@@ -238,28 +244,32 @@ for (const cargo of [false, true]) {
       '.map-fleet-cards [data-fleet-id="freighters"].fleet-card',
     );
     const fighter = freighters.getByRole('button', {
-      name: 'Fighter 1 in Freighters',
+      name: 'Fighter 1 in Route Tellus <> Vesta',
       exact: true,
     });
     const transport = () =>
       freighters.getByRole('button', {
-        name: 'Transport ship 1 in Freighters',
+        name: 'Transport ship 1 in Route Tellus <> Vesta',
         exact: true,
       });
     if (cargo) {
       await expect(fighter).toBeDisabled();
       await expect(transport()).toBeDisabled();
-      await expect(freighters).toContainText(
-        'Ships cannot be moved out while this fleet carries cargo.',
+      await expect(freighters).toHaveAttribute(
+        'aria-description',
+        /Ships cannot be moved out while this fleet carries cargo/,
       );
       await page.getByRole('button', { name: 'Fleets', exact: true }).click();
       await selectMapFleet(page, 'Freighters');
       const overview = page.getByRole('article', {
-        name: 'Fleet Freighters',
+        name: 'Fleet Route Tellus <> Vesta',
         exact: true,
       });
       await expect(overview.locator('.ship-token').first()).toBeDisabled();
-      await expect(overview).toContainText('carries cargo');
+      await expect(overview).toHaveAttribute(
+        'aria-description',
+        /carries cargo/,
+      );
       return;
     }
     await expect(fighter).toBeEnabled();
@@ -267,7 +277,7 @@ for (const cargo of [false, true]) {
     await fighter.dragTo(
       page.getByRole('group', { name: 'Ships in Home Fleet', exact: true }),
     );
-    await expect(freighters).toContainText('Trade route: Tellus ↔ Vesta');
+    await expect(freighters).toContainText('Route Tellus <> Vesta');
     await expect(
       page.getByRole('button', {
         name: 'Fighter 2 in Home Fleet',
@@ -282,7 +292,7 @@ for (const cargo of [false, true]) {
     await page
       .getByRole('textbox', { name: 'Fleet name', exact: true })
       .press('Escape');
-    await expect(freighters).toContainText('Trade route: Tellus ↔ Vesta');
+    await expect(freighters).toContainText('Route Tellus <> Vesta');
     await transport().focus();
     await page.keyboard.press('Enter');
     await page

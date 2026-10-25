@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it, vi } from 'vitest';
 import { decisionScreen } from '../../src/client/models/Decisions.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
@@ -23,7 +24,7 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
     expect(model.snapshot.screen).toBe('fleets');
     for (const item of model.snapshot.decisions) model.skipDecision(item.id);
     expect(model.requestEndTurn()).toBe(true);
-    for (const frame of model.startTurn()) model.applyTurnFrame(frame);
+    for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
     model.finishTurn();
     expect(model.snapshot.decisions.every((d) => !d.skipped)).toBe(true);
   });
@@ -117,7 +118,7 @@ describe('tysta-beslut', () => {
       model.muteDecision(decision.id);
     expect(model.snapshot.decisions.every((d) => d.muted)).toBe(true);
     expect(model.requestEndTurn()).toBe(true);
-    for (const frame of model.startTurn()) model.applyTurnFrame(frame);
+    for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
     model.finishTurn();
     expect(model.snapshot.decisions.every((d) => d.muted && !d.skipped)).toBe(
       true,
@@ -147,7 +148,7 @@ describe('tysta-beslut', () => {
     const model = new AppModel(undefined, repo);
     model.startSlot(1);
     model.build('Research station');
-    for (const frame of model.startTurn()) model.applyTurnFrame(frame);
+    for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
     model.finishTurn();
     model.muteDecision('research-empty');
     model.research('Colony ship factory');

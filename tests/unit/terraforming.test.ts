@@ -1,3 +1,4 @@
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { researchStationState } from '../fixtures/research-station.js';
 import { describe, expect, it } from 'vitest';
 import {
@@ -39,7 +40,7 @@ function setup(habitability = 25, environment = 'Desert', potential = 6) {
 }
 
 function turn(game: Game) {
-  for (const frame of game.startTurn()) game.applyFrame(frame);
+  for (const frame of turnFrames(game)) game.applyFrame(frame);
   game.finishTurn();
 }
 

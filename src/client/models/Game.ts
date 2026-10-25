@@ -1,4 +1,11 @@
 import {
+  TurnSimulation,
+  nearestUnexplored,
+  type Discovery,
+  type ExplorationOrder,
+  type SavedTurnSimulation,
+} from './TurnSimulation.js';
+import {
   PirateFleet,
   type PirateSnapshot,
   type SavedPirateFleet,
@@ -58,7 +65,7 @@ import {
 } from './SupplyOverview.js';
 export { TECHNOLOGIES, type Technology } from './Research.js';
 
-export type GamePhase = 'planning' | 'simulating';
+export type GamePhase = 'planning' | 'simulating' | 'interrupted';
 export type Resource = 'Iron' | 'Water' | 'Oil';
 export type ShipType =
   'Colony ship' | 'Exploration ship' | 'Fighter' | 'Transport ship';
@@ -357,6 +364,13 @@ export interface BuildingSnapshot {
   readonly slotIndex: number;
   readonly scheduledForDemolition: boolean;
 }
+export interface ProductionReceipt {
+  readonly projectId: string;
+  readonly planetId: string;
+  readonly product: ProjectType;
+  readonly queuePosition: number;
+}
+
 export interface ConstructionProjectSnapshot {
   readonly parts?: Readonly<Partial<Record<Component, number>>>;
   readonly id: string;
@@ -418,6 +432,10 @@ export interface PlanetOrderSnapshot {
   readonly emptyQueues: number;
 }
 export interface FleetSnapshot {
+  readonly exploration?: ExplorationOrder | undefined;
+  readonly remainingMovement?: number | undefined;
+  readonly canIssueOrders?: boolean;
+  readonly ownName?: string;
   readonly joinFleetId?: string | undefined;
   readonly routeId?: string | undefined;
   readonly releaseRequested?: boolean | undefined;
@@ -471,6 +489,7 @@ interface Project {
   destinationFleetId: string | null;
 }
 interface Fleet {
+  exploration?: ExplorationOrder;
   shipUnits?: ShipUnit[];
   joinFleetId?: string;
   routeId?: string;
@@ -515,7 +534,9 @@ export interface GameState {
   readonly componentOrders?: readonly ComponentOrder[];
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
-  readonly version: 2 | 3 | 4 | 5 | 6 | 7;
+  readonly version: 2 | 3 | 4 | 5 | 6 | 7 | 8;
+  readonly knownObjects?: readonly string[];
+  readonly simulation?: SavedTurnSimulation | null;
   readonly pirates?: readonly SavedPirateFleet[];
   readonly world: {
     readonly player: { readonly id: string; readonly name: string };
@@ -531,7 +552,7 @@ export interface GameState {
   };
   readonly round: number;
   // summary is accepted only for backwards compatibility with older saves.
-  readonly phase: 'planning' | 'summary';
+  readonly phase: 'planning' | 'summary' | 'interrupted';
   readonly sequence: number;
   readonly researched: readonly Technology[];
   readonly researchTarget: Technology | null;
@@ -555,6 +576,9 @@ export class Game {
   #pirates: PirateFleet[];
   #explored = new Set<string>();
   #events: GameEvent[] = [];
+  #knownObjects = new Set<string>();
+  #simulation: TurnSimulation | null = null;
+  #pendingFrame: TurnFrame | null = null;
   #mapCells: readonly MapCell[] | null = null;
 
   constructor(readonly galaxy: Galaxy) {
@@ -583,14 +607,19 @@ export class Game {
       },
     ];
     this.#normalizeShips();
+    this.#visibleDiscoveries().forEach((discovery) =>
+      this.#knownObjects.add(discovery.id),
+    );
   }
 
-  // sparat-spel: persist completed turns and planning orders, never partial animation.
+  // spara-avbrutet-ar: only planning and discovery checkpoints are serializable.
   exportState(): GameState {
     if (this.#phase === 'simulating')
       throw new Error('Wait for the turn to finish before saving.');
     return structuredClone({
-      version: 7,
+      version: 8,
+      knownObjects: [...this.#knownObjects],
+      simulation: this.#simulation?.snapshot() ?? null,
       pirates: this.#pirates.map((pirate) => pirate.snapshot()),
       world: {
         player: { id: this.galaxy.player.id, name: this.galaxy.player.name },
@@ -627,12 +656,16 @@ export class Game {
 
   static restore(state: GameState): Game {
     if (
-      ![2, 3, 4, 5, 6, 7].includes(state.version) ||
+      ![2, 3, 4, 5, 6, 7, 8].includes(state.version) ||
       !Number.isSafeInteger(state.round) ||
       state.round < 1 ||
       !Number.isSafeInteger(state.sequence) ||
       state.sequence < 1 ||
-      !['planning', 'summary'].includes(state.phase)
+      ![
+        'planning',
+        'summary',
+        ...(state.version === 8 ? ['interrupted'] : []),
+      ].includes(state.phase)
     )
       throw new Error('This saved game cannot be loaded.');
     const position = (point: {
@@ -669,7 +702,7 @@ export class Game {
     );
     const game = new Game(galaxy);
     const copy = structuredClone(state);
-    if (state.version === 7 && !Array.isArray(state.pirates))
+    if (state.version >= 7 && !Array.isArray(state.pirates))
       throw new Error('Missing saved pirate fleets.');
     game.#pirates =
       state.version >= 7
@@ -765,7 +798,27 @@ export class Game {
         ),
     );
     game.#refreshReinforcements();
-    game.#logistics.reserve(game.#logisticsPort());
+    if (state.version === 8 && !Array.isArray(copy.knownObjects))
+      throw new Error('Missing discovered objects.');
+    game.#knownObjects = new Set(
+      state.version === 8
+        ? copy.knownObjects
+        : game.#visibleDiscoveries().map((discovery) => discovery.id),
+    );
+    if (state.phase === 'interrupted') {
+      game.#simulation = TurnSimulation.restore(
+        copy.simulation!,
+        new Set(ids),
+        (point) =>
+          Number.isInteger(point?.q) &&
+          Number.isInteger(point?.r) &&
+          !!galaxy.cellAt(position(point)),
+      );
+      game.#phase = 'interrupted';
+    } else if (state.version === 8 && copy.simulation)
+      throw new Error('Unexpected interrupted year.');
+    if (game.#phase === 'planning')
+      game.#logistics.reserve(game.#logisticsPort());
     // Exercise derived data before accepting a stored record.
     game.mapSnapshot();
     game.fleetSnapshots();
@@ -974,7 +1027,7 @@ export class Game {
       return 'A Colony ship is required at this planet.';
     return null;
   }
-  colonize(fleetId: string): void {
+  colonize(fleetId: string): readonly Discovery[] {
     const why = this.canColonize(fleetId);
     if (why) throw new Error(why);
     const fleet = this.#fleetState(fleetId);
@@ -1001,6 +1054,7 @@ export class Game {
     });
     this.#refreshReinforcements();
     this.#reveal(planet.position);
+    const discoveries = this.#newDiscoveries({ movements: [] });
     this.#mapCells = null;
     this.#events.push(
       Object.freeze({
@@ -1009,6 +1063,7 @@ export class Game {
         text: `${planet.name} was colonized by ${fleet.name}.`,
       }),
     );
+    return discoveries;
   }
   pirateSnapshots(): readonly PirateSnapshot[] {
     return Object.freeze(
@@ -1023,7 +1078,11 @@ export class Game {
       this.#fleets.map((fleet) =>
         Object.freeze({
           id: fleet.id,
-          name: fleet.name,
+          name: this.#fleetDisplayName(fleet),
+          ownName: fleet.name,
+          exploration: fleet.exploration,
+          remainingMovement: this.#simulation?.remaining.get(fleet.id),
+          canIssueOrders: this.canIssueFleetOrders(fleet.id),
           position: fleet.position,
           destination: fleet.destination,
           ships: Object.freeze({ ...fleet.ships }),
@@ -1103,11 +1162,15 @@ export class Game {
       return 'This planet has no remaining deposit of this resource.';
     return null;
   }
-  scheduleBuild(planet: Planet, type: BuildType, slotIndex?: number): void {
+  scheduleBuild(
+    planet: Planet,
+    type: BuildType,
+    slotIndex?: number,
+  ): ProductionReceipt {
     const why = this.canBuild(planet, type, slotIndex);
     if (why) throw new Error(why);
     const state = this.#state(planet);
-    this.#scheduleProject(planet, type, {
+    return this.#scheduleProject(planet, type, {
       destinationFleetId: null,
       slotIndex: slotIndex ?? this.#emptySlot(planet, state, type),
       factoryId: null,
@@ -1371,7 +1434,7 @@ export class Game {
     type: ShipType,
     destinationFleetId: string | null = null,
     factoryId?: string,
-  ): void {
+  ): ProductionReceipt {
     this.#requirePlanning();
     if (!Object.hasOwn(SHIPS, type)) throw new Error('Unknown ship type.');
     this.#validateProjectFleet(planet, destinationFleetId);
@@ -1383,13 +1446,13 @@ export class Game {
     );
     if (!building)
       throw new Error('A matching completed shipyard is required.');
-    this.#scheduleProject(planet, type, {
+    return this.#scheduleProject(planet, type, {
       destinationFleetId,
       slotIndex: null,
       factoryId: building.id,
     });
   }
-  scheduleComponent(planet: Planet, component: Component): void {
+  scheduleComponent(planet: Planet, component: Component): ProductionReceipt {
     this.#requirePlanning();
     if (!COMPONENTS.includes(component))
       throw new Error('Unknown component type.');
@@ -1399,7 +1462,7 @@ export class Game {
     );
     if (!factory)
       throw new Error('A matching completed component factory is required.');
-    this.#scheduleProject(planet, component, {
+    return this.#scheduleProject(planet, component, {
       destinationFleetId: null,
       slotIndex: null,
       factoryId: factory.id,
@@ -1444,7 +1507,7 @@ export class Game {
     planet: Planet,
     type: ProjectType,
     fields: Omit<Project, 'id' | 'type'>,
-  ): void {
+  ): ProductionReceipt {
     const { plan, sequence, projectId } = this.#planProject(planet, type);
     for (const production of plan.production)
       this.#colonies.get(production.planetId)!.projects.push({
@@ -1463,6 +1526,15 @@ export class Game {
     this.#logistics.componentOrders.push(...plan.orders);
     this.#sequence = sequence;
     this.#logistics.reserve(this.#logisticsPort());
+    return Object.freeze({
+      projectId,
+      planetId: planet.id,
+      product: type,
+      queuePosition:
+        this.#state(planet).projects.findIndex(
+          (project) => project.id === projectId,
+        ) + 1,
+    });
   }
   moveProject(planet: Planet, id: string, index: number): void {
     this.#requirePlanning();
@@ -1623,7 +1695,7 @@ export class Game {
     this.#refreshReinforcements();
   }
   setDestination(id: string, destination: HexCoordinate): void {
-    this.#requirePlanning();
+    this.#requireFleetOrders(id);
     if (!this.galaxy.cellAt(destination))
       throw new Error('Choose a hex on the map.');
     const fleet = this.#fleetState(id);
@@ -1631,37 +1703,124 @@ export class Game {
     if (this.#shipCount(fleet.ships) === 0)
       throw new Error('Empty fleets cannot receive destinations.');
     delete fleet.joinFleetId;
+    delete fleet.exploration;
     fleet.destination = destination;
     fleet.courseOrigin = fleet.position!;
   }
   clearDestination(id: string): void {
-    this.#requirePlanning();
+    this.#requireFleetOrders(id);
+    delete this.#fleetState(id).exploration;
     this.#requireManualFleet(this.#fleetState(id));
     this.#fleetState(id).destination = null;
     delete this.#fleetState(id).joinFleetId;
     delete this.#fleetState(id).courseOrigin;
   }
-  startTurn(): readonly TurnFrame[] {
+  get interruption(): SavedTurnSimulation | null {
+    return this.#phase === 'interrupted' ? this.#simulation!.snapshot() : null;
+  }
+  canIssueFleetOrders(id: string): boolean {
+    const fleet = this.#fleets.find((candidate) => candidate.id === id);
+    return (
+      !!fleet?.position &&
+      !fleet.routeId &&
+      (this.#phase === 'planning' ||
+        (this.#phase === 'interrupted' && !!this.#simulation?.permits(id)))
+    );
+  }
+  #requireFleetOrders(id: string): void {
+    const fleet = this.#fleetState(id);
+    if (!fleet.position)
+      throw new Error('Empty fleets cannot receive destinations.');
+    this.#requireManualFleet(fleet);
+    if (!this.canIssueFleetOrders(id))
+      throw new Error(
+        'Orders are only available while planning or handling a discovery.',
+      );
+  }
+  setExploration(id: string, order: ExplorationOrder): void {
+    this.#requireFleetOrders(id);
+    if (!['explore', 'explore-stars'].includes(order))
+      throw new Error('Unknown exploration order.');
+    const fleet = this.#fleetState(id);
+    if (!fleet.ships['Exploration ship'])
+      throw new Error('An Exploration ship is required.');
+    delete fleet.joinFleetId;
+    fleet.exploration = order;
+    this.#updateExploration(fleet);
+  }
+  handleDiscoveries(): void {
+    if (this.#phase !== 'interrupted')
+      throw new Error('No discovery to handle.');
+    this.#simulation!.handling = true;
+  }
+  allowOtherFleetOrders(): void {
+    if (this.#phase !== 'interrupted' || !this.#simulation!.handling)
+      throw new Error('Handle the discovery first.');
+    this.#simulation!.otherFleets = true;
+  }
+  continueTurn(): void {
+    if (this.#phase !== 'interrupted') throw new Error('No interrupted year.');
+    this.#simulation!.discoveries = [];
+    this.#simulation!.handling = false;
+    this.#simulation!.otherFleets = false;
+    this.#phase = 'simulating';
+  }
+  startTurn(): void {
     this.#requirePlanning();
     this.#logistics.prepare(this.#logisticsPort());
     this.#refreshReinforcements();
     this.#mergeReinforcements();
+    this.#simulation = new TurnSimulation([
+      ...this.#fleets.map((fleet) => [fleet.id, this.#speed(fleet)] as const),
+      ...this.#pirates.map((pirate) => [pirate.id, 1] as const),
+    ]);
     this.#phase = 'simulating';
+  }
+  nextTurnFrame(): TurnFrame | null {
+    if (this.#phase !== 'simulating') return null;
+    if (this.#pendingFrame) return this.#pendingFrame;
+    if (this.#simulation!.awaitingCombat) {
+      const forecast = this.#movingFleets().map((fleet) => ({
+        ...fleet,
+        ships: { ...fleet.ships },
+        shipUnits: fleet.shipUnits ? [...fleet.shipUnits] : [],
+      }));
+      return (this.#pendingFrame = Object.freeze({
+        movements: Object.freeze([]),
+        combats: FleetCombat.resolve(
+          forecast,
+          new Set(this.#pirates.map((pirate) => pirate.id)),
+        ),
+      }));
+    }
+    for (const fleet of this.#fleets) this.#updateExploration(fleet);
     const pirates = new Map(this.#pirates.map((pirate) => [pirate.id, pirate]));
-    return FleetPursuit.plan(
-      [...this.#fleets, ...this.#pirates.map((pirate) => pirate.movingFleet())],
+    const frame = FleetPursuit.plan(
+      this.#movingFleets(),
       (fleet) =>
         pirates.has(fleet.id)
           ? [pirates.get(fleet.id)!.nextPosition(this.galaxy)]
           : this.#route(fleet).path,
-      (fleet) => (pirates.has(fleet.id) ? 1 : this.#speed(fleet)),
-      (fleets) => FleetCombat.resolve(fleets, new Set(pirates.keys())),
-    );
+      (fleet) => ((this.#simulation!.remaining.get(fleet.id) ?? 0) > 0 ? 1 : 0),
+    )[0];
+    return (this.#pendingFrame = frame
+      ? Object.freeze({ movements: frame.movements })
+      : null);
+  }
+  #movingFleets(): PursuingFleet[] {
+    return [
+      ...this.#fleets,
+      ...this.#pirates.map((pirate) => pirate.movingFleet()),
+    ];
   }
   applyFrame(frame: TurnFrame): void {
     if (this.#phase !== 'simulating')
       throw new Error('No turn is being simulated.');
+    if (frame !== this.#pendingFrame)
+      throw new Error('This turn step is no longer current.');
+    this.#pendingFrame = null;
     for (const movement of frame.movements) {
+      this.#simulation!.spend(movement.fleetId);
       const pirate = this.#pirates.find(
         (pirate) => pirate.id === movement.fleetId,
       );
@@ -1674,6 +1833,16 @@ export class Game {
       this.#reveal(movement.to, fleet.ships['Exploration ship'] > 0);
       this.#recordArrival(fleet);
     }
+    if (frame.combats === undefined) {
+      this.#simulation!.awaitingCombat = true;
+      const discoveries = this.#newDiscoveries(frame);
+      if (discoveries.length) {
+        this.#simulation!.discoveries = discoveries;
+        this.#phase = 'interrupted';
+      }
+      return;
+    }
+    this.#simulation!.awaitingCombat = false;
     for (const combat of frame.combats ?? []) {
       const fleet = this.#fleetState(combat.fleetId);
       const pirate = this.#pirates.find(
@@ -1690,16 +1859,21 @@ export class Game {
           .map(([type, count]) => `${count} ${type}`)
           .join(', ') || 'no ships';
       this.#event(
-        `Combat at HEX ${combat.position.key}: ${fleet.name} versus Space pirate. Lost ${losses}; destroyed ${combat.pirateLosses} pirates. Survivors: ${combat.survivingFighters} Fighters, ${combat.survivingPirates} pirates, ${fleet.ships['Colony ship'] + fleet.ships['Exploration ship'] + fleet.ships['Transport ship']} civilian ships.`,
+        `Combat at HEX ${combat.position.key}: ${this.#fleetDisplayName(fleet)} versus Space pirate. Lost ${losses}; destroyed ${combat.pirateLosses} pirates. Survivors: ${combat.survivingFighters} Fighters, ${combat.survivingPirates} pirates, ${fleet.ships['Colony ship'] + fleet.ships['Exploration ship'] + fleet.ships['Transport ship']} civilian ships.`,
       );
     }
+    for (const pirate of this.#pirates)
+      if (pirate.count <= 0) this.#simulation!.remaining.delete(pirate.id);
     this.#pirates = this.#pirates.filter((pirate) => pirate.count > 0);
     this.#mergeReinforcements();
     this.#refreshReinforcements();
+    for (const fleet of this.#fleets) this.#updateExploration(fleet);
   }
   finishTurn(): void {
     if (this.#phase !== 'simulating')
       throw new Error('No turn is being simulated.');
+    if (this.#simulation?.awaitingCombat || this.nextTurnFrame())
+      throw new Error('Complete the remaining turn steps first.');
     for (const fleet of this.#fleets) this.#recordArrival(fleet);
     this.#logistics.unload(this.#logisticsPort());
     const researchStations = this.research.stations;
@@ -1778,6 +1952,7 @@ export class Game {
     this.#logistics.cleanup(this.#logisticsPort());
     this.#refreshReinforcements();
     this.#phase = 'planning';
+    this.#simulation = null;
     this.#logistics.reserve(this.#logisticsPort());
   }
   #completeProject(planet: Planet, state: ColonyState, project: Project): void {
@@ -2006,7 +2181,7 @@ export class Game {
     ))
       items.push({
         id: `fleet-idle-${fleet.id}`,
-        label: `${fleet.name}: choose an assignment`,
+        label: `${this.#fleetDisplayName(fleet)}: choose an assignment`,
         kind: 'fleet',
         fleetId: fleet.id,
       });
@@ -2374,6 +2549,7 @@ export class Game {
   }
   #mergeReinforcements(): void {
     FleetPursuit.merge(this.#fleets, (group, target) => {
+      this.#simulation?.merge(group.id, target.id);
       for (const state of this.#colonies.values()) {
         if (state.homeFleetId === group.id) state.homeFleetId = target.id;
         for (const project of state.projects)
@@ -2554,6 +2730,103 @@ export class Game {
     }
     return { fleet, path };
   }
+  #fleetDisplayName(fleet: Fleet): string {
+    const route = this.tradeRoutes.find((route) => route.id === fleet.routeId);
+    return route ? `Route ${route.from} <> ${route.to}` : fleet.name;
+  }
+  #updateExploration(fleet: Fleet): void {
+    if (!fleet.exploration) return;
+    const candidates =
+      fleet.exploration === 'explore-stars'
+        ? this.galaxy.systems.map((system) => system.star.position)
+        : this.galaxy.mapSnapshot().map((cell) => cell.position);
+    const target =
+      fleet.position && fleet.ships['Exploration ship'] > 0
+        ? nearestUnexplored(fleet.position, candidates, this.#explored)
+        : null;
+    if (!target) {
+      delete fleet.exploration;
+      fleet.destination = null;
+      delete fleet.courseOrigin;
+      this.#event(
+        `${this.#fleetDisplayName(fleet)}: exploration stopped; no unexplored targets or Exploration ship available.`,
+      );
+    } else if (fleet.destination?.key !== target.key) {
+      fleet.destination = target;
+      fleet.courseOrigin = fleet.position!;
+    }
+  }
+  #visibleDiscoveries(): Discovery[] {
+    const discoveries: Discovery[] = [];
+    for (const system of this.galaxy.systems) {
+      if (this.#explored.has(system.star.position.key))
+        discoveries.push({
+          id: system.star.id,
+          kind: 'star',
+          name: system.star.name,
+          position: system.star.position,
+          fleetId: null,
+        });
+      for (const planet of system.planets)
+        if (this.#explored.has(planet.position.key))
+          discoveries.push({
+            id: planet.id,
+            kind: 'planet',
+            name: planet.name,
+            position: planet.position,
+            fleetId: null,
+          });
+    }
+    for (const pirate of this.#pirates)
+      if (this.#explored.has(pirate.position.key))
+        discoveries.push({
+          id: pirate.id,
+          kind: 'pirate',
+          name: 'Space pirate',
+          position: pirate.position,
+          fleetId: null,
+        });
+    return discoveries;
+  }
+  #newDiscoveries(frame: TurnFrame): readonly Discovery[] {
+    const discoveries = this.#visibleDiscoveries().filter(
+      (discovery) => !this.#knownObjects.has(discovery.id),
+    );
+    for (const discovery of discoveries) {
+      this.#knownObjects.add(discovery.id);
+      const position = new HexCoordinate(
+        discovery.position.q,
+        discovery.position.r,
+      );
+      const observer = this.#fleets
+        .filter(
+          (fleet) =>
+            fleet.position &&
+            fleet.position.distanceTo(position) <=
+              (fleet.ships['Exploration ship'] ? 1 : 0),
+        )
+        .sort(
+          (a, b) =>
+            Number(
+              frame.movements.some((movement) => movement.fleetId === b.id),
+            ) -
+              Number(
+                frame.movements.some((movement) => movement.fleetId === a.id),
+              ) || a.id.localeCompare(b.id),
+        )[0];
+      (discovery as { fleetId: string | null }).fleetId = observer?.id ?? null;
+      this.#event(
+        `${discovery.kind === 'pirate' ? 'Pirate ship in sight' : discovery.kind === 'star' ? 'Star explored' : 'Planet discovered'}: ${discovery.name} at HEX ${position.key}.`,
+      );
+    }
+    return Object.freeze(
+      discoveries.sort(
+        (a, b) =>
+          Number(b.kind === 'pirate') - Number(a.kind === 'pirate') ||
+          a.id.localeCompare(b.id),
+      ),
+    );
+  }
   #reveal(position: HexCoordinate, radius = true): void {
     let changed = false;
     for (const cell of [position, ...(radius ? position.neighbors() : [])])
@@ -2565,6 +2838,8 @@ export class Game {
   }
   // tomma-flottor-utan-position: the last ship releases both location and course.
   #releaseEmptyFleet(fleet: Fleet): void {
+    if (fleet.exploration && !fleet.ships['Exploration ship'])
+      this.#updateExploration(fleet);
     // skepp-ur-olastad-ruttflotta: a route needs at least one transport ship.
     if (fleet.routeId && fleet.ships['Transport ship'] === 0) {
       delete fleet.routeId;
@@ -2672,7 +2947,7 @@ export class Game {
       )?.object?.name ?? `HEX ${fleet.position.key}`;
     fleet.destination = null;
     delete fleet.courseOrigin;
-    this.#event(`${fleet.name} arrived at ${place}.`);
+    this.#event(`${this.#fleetDisplayName(fleet)} arrived at ${place}.`);
   }
   #event(text: string): void {
     this.#events.push(

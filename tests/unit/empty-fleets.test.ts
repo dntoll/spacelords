@@ -1,3 +1,4 @@
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
@@ -10,12 +11,12 @@ describe('tomma-flottor-utan-position', () => {
     const empty = game.createFleet(home.id);
     expect(empty.position).toBeNull();
     game.setDestination(home.id, new HexCoordinate(0, 1));
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
 
     game.transferShips(home.id, 'Fighter', 1, empty.id);
     game.setDestination(empty.id, new HexCoordinate(1, 0));
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
 
     game.transferShips(home.id, 'Exploration ship', 1, empty.id);
@@ -23,7 +24,7 @@ describe('tomma-flottor-utan-position', () => {
     expect(
       game.fleetSnapshots().some((fleet) => fleet.joinFleetId === empty.id),
     ).toBe(true);
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
 
     expect(game.fleet(empty.id)!.ships['Exploration ship']).toBe(1);

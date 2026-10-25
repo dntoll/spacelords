@@ -101,7 +101,7 @@ Vid flottval rullas flottans namn fram även i långa lokala listor på båda ka
 Programmatisk borttagning av ett namnfält skiljs från användarens fokusbyte.
 Det senare avbryter utkastet utan att förstöra kontrollen som tar emot nästa
 klick. Enter sparar, Escape avbryter, och F2 eller namnknappen ger alternativ
-till dubbelklick. Orders → Choose destination erbjuder destinationsval med
+till dubbelklick. Move-symbolen erbjuder Choose destination med
 hexväljare eller kartan utan drag.
 
 Enhetstesterna i fleet-map-management skyddar lokal gruppering, oförändrat
@@ -279,8 +279,8 @@ flottor med färdriktning, utforskade hexagoner, händelser, år och fas.
 Modellerna beror inte på webbläsare eller p5. Förhandsvisningar får bara
 skrivskyddade, utforskade kartceller och använder p5 i instance mode.
 
-En runda sparas efter slutförd simulering; vid omladdning mitt i animationen
-laddas föregående stabila tillstånd. Sparfel visas och oläsbara platser bevaras
+En runda sparas efter slutförd simulering och vid upptäcktsavbrott; vid omladdning
+mitt i animationen laddas föregående stabila planering eller avbrott. Sparfel visas och oläsbara platser bevaras
 tills spelaren bekräftar tömning. Senaste speldatum uppdateras när ett spel startas,
 ändras eller lämnas. Kameraläge och tillfälliga menyval återställs vid återupptagning.
 
@@ -313,8 +313,7 @@ varningsdialog, avbrott, lagringsfel och radering av en enda plats.
   som forskar fram fabrikerna och tillverkar en Fighter genom hela kedjan.
 
 - `handelser` och `arsrundor-och-order`: domänmodellen publicerar händelser när
-  de inträffar; ankomst registreras exakt en gång. Livefaserna är planning och
-  simulating. Äldre sparad summary läses som planning och gamla steghändelser
+  de inträffar; ankomst registreras exakt en gång. Livefaserna är planning, simulating och interrupted. Äldre sparad summary läses som planning och gamla steghändelser
   filtreras bort. Konsolen läser oföränderliga händelser, visar ett begränsat historikfönster
   utan att klippa senaste året och rullas enligt `senaste-aret-i-events`.
   Händelsehistoriken sparas i sin helhet. Tester skyddar fasväxling, ordning,
@@ -467,7 +466,7 @@ skepps stabila id och installerade motorer. Vyer får oföränderliga
 ögonblicksbilder och skickar individuella skeppsval via controller.
 Motorer och fart verifieras vid flytt, förstärkning, sammanslagning och kolonisering.
 
-`avstamning-sparkompatibilitet`: Sparversion 7 läser fortsatt version 2–6.
+`avstamning-sparkompatibilitet`: Sparversion 8 läser fortsatt version 2–7.
 Befintliga skepp får Rocket engine utan lageravdrag; äldre uppnådd forskning
 behålls och saknade motorförkunskaper kompletteras. Äldre köade skepp behålls
 med synligt motorbehov. Ingen ny rensningsmarkör eller ändrad lagringsnyckel
@@ -475,8 +474,10 @@ införs. Laddning av version 2–5 och bevarande av motorbestyckning verifieras 
 
 `kompakta-flottkort` behåller fyra skepp per rad även när flera flottkort delar
 kartpanelen på dator eller surfplatta. Skeppsknapparnas bredd anpassas till
-radens utrymme mellan 44 och 60 px; träffytorna behålls och Engines & speed
-förblir åtkomligt. Webbläsarregressionen verifierar radantal, korthöjd och
+radens utrymme mellan 44 och 60 px; träffytorna behålls. En effektiv fart visas
+för hela flottan; Engines & speed tas bort från flottkorten enligt ändringen
+2026-10-25. Standardkort med fyra skepp och stängda menyer är högst 140 px
+höga vid minst 220 px kortbredd. Webbläsarregressionen verifierar radantal, korthöjd och
 kontrollernas träffytor.
 
 `dome-fore-fabriksforslag` använder Game.productionGuidance och samma skrivskyddade
@@ -582,3 +583,31 @@ ritlager-, kontrast-, streckmönster- och Research-layoutkontrollerna ligger i
 beteendetesterna. Inga tester tas bort. Den utökade sviten upptäcker dem via
 `vitest.extended.config.ts` och kör dem först vid separat begärt sluttest.
 20-sekundersgränsen inkluderar fortsatt verktygsstarten.
+
+## Stegvis simulering och upptäcktsavbrott
+
+`upptacktsavbrott`, `order-under-upptacktsavbrott` och `spara-avbrutet-ar`:
+Game äger en TurnSimulation med återstående rörelse, upptäckter och en markering
+för uppskjuten stridsbehandling. Controller begär nästa TurnFrame, animerar
+steget och lämnar tillbaka det till modellen exakt en gång. Rörelse och strid
+är separata steg. Nya objekt upptäcks efter samtidig rörelse, före strid.
+Continue behandlar redan uppkommen strid innan nya order kan flytta flottorna.
+Sammanslagningar använder minsta återstående rörelse; pirater får ett steg per år.
+Byggande och forskning avslutas exakt en gång vid årets slut.
+
+Sparformat 8 innehåller kända objektidentiteter, utforskningsuppdrag och den
+avbrutna sessionen. Äldre versioner får sin nu synliga information som utgångspunkt
+utan retroaktiva dialoger. Inga sparplatsnycklar eller rensningsmarkörer ändras.
+Avbrott och ändrade order sparas före fortsatt simulering. Vyer får frysta
+ögonblicksbilder, inklusive vilka flottor som får rörelseorder. Behörigheten
+kontrolleras även i domänmodellen. Rutt-, last- och motorregler gäller fortsatt.
+
+`produktionsorder-aterkoppling`: beställning returnerar huvudprojektets id och
+köplats, även om automatiska delorder har lagts före det. AppModel förmedlar
+ett oföränderligt kvitto och controller styr dess tresekunderstid. Vyn använder
+role=status. Musens dubbelklick och touchens dubbeltryck delar befintlig
+engångsbeställning. Fel ger ingen lyckad bekräftelse.
+
+Modell-, controller-, vy- och webbläsartester använder kravnamen och skyddar
+utforskning, direkta kontakter, paus/återupptagning, orderbehörighet, omladdning,
+köåterkoppling och kortens mått. Båda befintliga CI-sviterna behålls.

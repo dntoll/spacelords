@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppController } from '../../src/client/controllers/AppController.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
@@ -185,7 +186,7 @@ describe('byggnaders-resursanvandning', () => {
   it('shows upkeep per completed building in Buildings', () => {
     const model = new AppModel();
     model.build('Research station');
-    model.startTurn();
+    for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
     model.finishTurn();
 
     model.openPlanet();
@@ -199,7 +200,7 @@ describe('byggnaders-resursanvandning', () => {
 });
 
 function advance(model: AppModel): void {
-  for (const frame of model.startTurn()) model.applyTurnFrame(frame);
+  for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
   model.finishTurn();
 }
 function buildShipyard(model: AppModel): void {

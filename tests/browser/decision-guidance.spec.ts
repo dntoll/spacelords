@@ -28,9 +28,9 @@ test('beslutsvagledning-i-vyn: navigation warnings lead to highlighted controls 
     .click();
   const fleet = page.locator('.selected-fleet-card.decision-target');
   await expect(fleet).toContainText('Home Fleet');
-  await expect(fleet.locator('.fleet-orders > summary')).toHaveClass(
-    /decision-target/,
-  );
+  await expect(
+    fleet.locator('.fleet-order-toolbar .fleet-order-button').first(),
+  ).toHaveClass(/decision-target/);
   await page.screenshot({
     path: testInfo.outputPath('fleet-decision-guidance.png'),
   });

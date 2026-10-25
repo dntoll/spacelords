@@ -8,6 +8,9 @@ export class AppController {
   readonly #view: AppPort;
   readonly #gesture = new MapGesture();
   readonly #researchGesture = new MapGesture();
+  #runningTurn = false;
+  #disposed = false;
+  #receiptTimer: ReturnType<typeof setTimeout> | undefined;
   #fleetPointer: {
     id: number;
     start: Point;
@@ -26,6 +29,8 @@ export class AppController {
   }
 
   dispose(): void {
+    this.#disposed = true;
+    clearTimeout(this.#receiptTimer);
     this.#cancelPointer();
     this.#view.dispose();
   }
@@ -33,7 +38,16 @@ export class AppController {
   #handle(intent: AppIntent): void {
     try {
       if (intent.type !== 'map-size') this.#model.clearNotice();
+      const receipt = this.#model.snapshot.productionReceipt;
       this.#handleIntent(intent);
+      if (this.#model.snapshot.productionReceipt !== receipt) {
+        clearTimeout(this.#receiptTimer);
+        if (this.#model.snapshot.productionReceipt)
+          this.#receiptTimer = setTimeout(() => {
+            this.#model.clearProductionReceipt();
+            this.#view.render(this.#model.snapshot);
+          }, 3000);
+      }
     } catch (error) {
       console.warn(error);
       this.#model.reportError(error);
@@ -67,6 +81,19 @@ export class AppController {
     )
       return;
     switch (intent.type) {
+      case 'explore-fleet':
+        this.#model.exploreFleet(intent.id, intent.order);
+        break;
+      case 'handle-discoveries':
+        this.#model.handleDiscoveries();
+        break;
+      case 'allow-other-fleet-orders':
+        this.#model.allowOtherFleetOrders();
+        break;
+      case 'ignore-discoveries':
+      case 'continue-turn':
+        void this.#runTurn(true);
+        return;
       case 'begin-fleet-rename':
         this.#model.beginFleetRename(intent.id);
         break;
@@ -499,16 +526,32 @@ export class AppController {
     this.#model.cancelMapPointer(keepRouteSource);
   }
 
-  async #runTurn(): Promise<void> {
-    if (this.#model.snapshot.phase !== 'planning') return;
+  async #runTurn(resume = false): Promise<void> {
+    if (
+      this.#runningTurn ||
+      this.#disposed ||
+      this.#model.snapshot.phase !== (resume ? 'interrupted' : 'planning')
+    )
+      return;
+    this.#runningTurn = true;
     try {
-      const frames = this.#model.startTurn();
+      if (resume) this.#model.continueTurn();
+      else this.#model.startTurn();
       this.#view.render(this.#model.snapshot);
-      for (const frame of frames) {
-        await (this.#view.animateTurnStep?.(frame) ?? Promise.resolve());
+      let frame;
+      while (!this.#disposed && (frame = this.#model.nextTurnFrame())) {
+        if (frame.movements.length || frame.combats?.length)
+          await (this.#view.animateTurnStep?.(frame) ?? Promise.resolve());
+        if (this.#disposed) return;
         this.#model.applyTurnFrame(frame);
+        if (this.#model.snapshot.phase === 'interrupted') {
+          this.#model.save();
+          this.#view.render(this.#model.snapshot);
+          return;
+        }
         this.#view.render(this.#model.snapshot);
       }
+      if (this.#disposed) return;
       this.#model.finishTurn();
       this.#model.save();
       this.#view.render(this.#model.snapshot);
@@ -516,6 +559,8 @@ export class AppController {
       console.warn(error);
       this.#model.reportError(error);
       this.#view.render(this.#model.snapshot);
+    } finally {
+      this.#runningTurn = false;
     }
   }
 }

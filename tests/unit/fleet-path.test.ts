@@ -1,3 +1,4 @@
+import { collectTurnFrames, turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 
@@ -17,9 +18,12 @@ describe('rakare-hexforflyttning', () => {
     const start = fleet.position!;
     const distance = Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r));
     model.setDestination(fleet.id, start.q + q, start.r + r);
-    const frames = model.startTurn();
-    expect(frames).toHaveLength(Math.min(fleet.speed, distance));
-    frames.forEach((frame, index) => {
+    const frames = collectTurnFrames(model);
+    const playerFrames = frames.filter((frame) =>
+      frame.movements.some((movement) => movement.fleetId === fleet.id),
+    );
+    expect(playerFrames).toHaveLength(Math.min(fleet.speed, distance));
+    playerFrames.forEach((frame, index) => {
       const movement = frame.movements[0]!;
       expect(movement.from.distanceTo(movement.to)).toBe(1);
       const step = index + 1;
@@ -41,7 +45,7 @@ describe('rakare-hexforflyttning', () => {
     );
     const directions: string[] = [];
     for (let turn = 0; turn < 2; turn += 1) {
-      for (const frame of model.startTurn()) {
+      for (const frame of turnFrames(model)) {
         const movement = frame.movements[0]!;
         directions.push(
           `${movement.to.q - movement.from.q},${movement.to.r - movement.from.r}`,
@@ -67,13 +71,12 @@ describe('rakare-hexforflyttning', () => {
       fleet.position!.q + q,
       fleet.position!.r + r,
     );
-    const frames = model.startTurn();
+    const frames = collectTurnFrames(model);
     expect(
       frames.filter((frame) =>
         frame.movements.some((movement) => movement.fleetId === fleet.id),
       ),
     ).toHaveLength(Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)));
-    for (const frame of frames) model.applyTurnFrame(frame);
     model.finishTurn();
     expect(model.snapshot.fleets[0]!.position!.key).toBe(
       `${fleet.position!.q + q},${fleet.position!.r + r}`,

@@ -1,3 +1,4 @@
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { Game, type BuildType } from '../../src/client/models/Game.js';
 import { emptyStock } from '../../src/client/models/Economy.js';
@@ -59,7 +60,7 @@ function network(
   const types = (planet = home) =>
     game.planetSnapshot(planet)!.projects.map((p) => p.type);
   const turn = () => {
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
   };
   return { game, home, destination, types, turn };
@@ -150,7 +151,7 @@ describe('automatiska-delorder', () => {
       year < 8 && !game.shipments.some((s) => s.locationId === 'sol-0');
       year++
     ) {
-      for (const frame of game.startTurn()) game.applyFrame(frame);
+      for (const frame of turnFrames(game)) game.applyFrame(frame);
       game.finishTurn();
     }
     expect(game.shipments.every((s) => s.locationId === 'sol-0')).toBe(true);
@@ -206,7 +207,7 @@ describe('automatiska-delorder', () => {
     );
     expect(game.exportState().colonies[0]![1].projects).toEqual([]);
     for (let year = 0; year < 2; year++) {
-      for (const frame of game.startTurn()) game.applyFrame(frame);
+      for (const frame of turnFrames(game)) game.applyFrame(frame);
       game.finishTurn();
     }
     expect(game.planetSnapshot(destination)!.projects).toHaveLength(0);
@@ -332,7 +333,7 @@ describe('automatiska-delorder', () => {
         .status,
     ).toBe('Waiting');
     const saved = game.exportState();
-    expect(saved.version).toBe(7);
+    expect(saved.version).toBe(8);
     expect(
       Game.restore(
         JSON.parse(JSON.stringify(saved)) as typeof saved,
@@ -493,7 +494,7 @@ describe('automatiska-delorder', () => {
       year < 24 && game.planetSnapshot(target)!.projects.length;
       year++
     ) {
-      for (const frame of game.startTurn()) game.applyFrame(frame);
+      for (const frame of turnFrames(game)) game.applyFrame(frame);
       game.finishTurn();
       relay ||= game.shipments.some(
         (s) => s.locationId === 'sol-0' && s.sourceId === 'nadir-0',
@@ -661,7 +662,7 @@ it('automatisk-motormontering: reuses motors still in transit after local Ion co
         : fleet,
     ),
   });
-  for (const frame of game.startTurn()) game.applyFrame(frame);
+  for (const frame of turnFrames(game)) game.applyFrame(frame);
   game.finishTurn();
   const destination = game.galaxy.systems[0]!.planets[1]!;
   expect(game.planetSnapshot(destination)!.projects).toHaveLength(0);

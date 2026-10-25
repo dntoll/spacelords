@@ -50,16 +50,26 @@ it('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: the map p
     root.querySelector('[aria-label="Selected route"]')!.textContent,
   ).toContain('90 cargo capacity');
   expect(
-    root.querySelector('[data-fleet-id="freighters"] .trade-fleet-position')!
+    root.querySelector('[data-fleet-id="freighters"] .fleet-name-button')!
       .textContent,
-  ).toContain('Tellus');
-  click('Select trade fleet Freighters');
+  ).toBe('Route Tellus <> Vesta');
+  root
+    .querySelector<HTMLButtonElement>(
+      '[data-fleet-id="freighters"] .fleet-name-button',
+    )!
+    .click();
+  model.selectMapFleet('freighters');
+  view.render(model.snapshot);
   expect(
     root.querySelector('[aria-label="Selected fleet"] .selected-fleet-card h3')!
       .textContent,
-  ).toBe('Freighters');
+  ).toBe('Route Tellus <> Vesta');
   click('Select route Tellus to Vesta');
-  click('Release Freighters');
+  root
+    .querySelector<HTMLButtonElement>(
+      '[data-fleet-id="freighters"] [aria-label="Release from trade route"]',
+    )!
+    .click();
   expect(model.snapshot.tradeRoutes[0]!.fleetIds).toEqual(['travellers']);
   click('Close route');
   expect(model.snapshot.tradeRoutes).toEqual([]);

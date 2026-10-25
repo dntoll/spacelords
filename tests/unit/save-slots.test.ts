@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { AppController } from '../../src/client/controllers/AppController.js';
 import { AppView } from '../../src/client/views/AppView.js';
@@ -29,11 +30,11 @@ describe('sparat-spel / frontend-backend-mock', () => {
   it('round-trips research, construction, fleets, exploration, events and future IDs', () => {
     const game = new Game(createExampleGalaxy());
     game.scheduleBuild(game.galaxy.homePlanet, 'Research station', 0);
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
     game.selectResearch('Colony ship factory');
     game.setDestination('fleet-home', new HexCoordinate(3, 0));
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
     const state = JSON.parse(JSON.stringify(game.exportState())) as ReturnType<
       Game['exportState']
@@ -56,7 +57,7 @@ describe('sparat-spel / frontend-backend-mock', () => {
     const game = Game.restore(state);
     const home = game.galaxy.homePlanet;
     const turn = (current: Game) => {
-      for (const frame of current.startTurn()) current.applyFrame(frame);
+      for (const frame of turnFrames(current)) current.applyFrame(frame);
       current.finishTurn();
     };
     game.scheduleBuild(home, 'Research station', 0);

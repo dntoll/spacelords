@@ -1,3 +1,4 @@
+import { renderFleetOrders, renderFleetRouteMenu } from './FleetOrdersView.js';
 import { shipTransferIssue } from '../models/FleetTransfer.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import type { FleetSnapshot } from '../models/Game.js';
@@ -11,10 +12,6 @@ export function renderFleetCard(
   emit: IntentHandler,
 ): HTMLElement {
   const locked = model.phase !== 'planning';
-  const placeName = fleet.position
-    ? model.cells.find((cell) => cell.position.key === fleet.position?.key)
-        ?.object?.name
-    : null;
   const card = element('article', 'fleet-card');
   card.dataset.fleetId = fleet.id;
   card.setAttribute('aria-label', `Fleet ${fleet.name}`);
@@ -34,7 +31,7 @@ export function renderFleetCard(
     'fleet-name-button',
   );
   title.setAttribute('aria-pressed', String(fleet.id === model.mapFleetId));
-  title.title = 'Double-click or press F2 to rename';
+  title.title = `${fleet.name}. Double-click or press F2 to rename${fleet.routeId ? ' the original fleet name' : ''}`;
   title.addEventListener('dblclick', () => {
     clearTimeout(selectTimer);
     emit({ type: 'begin-fleet-rename', id: fleet.id });
@@ -146,71 +143,33 @@ export function renderFleetCard(
         emit({ type: 'transfer-chosen-ship', target: fleet.id });
     } else emit({ type: 'map-select-fleet', id: fleet.id });
   });
-  card.append(
-    header,
-    element(
-      'p',
-      'fleet-current-position',
-      fleet.position
-        ? `Current position: ${placeName ? `${placeName} · ` : ''}HEX ${fleet.position.key}`
-        : 'No position. The first ship sets this fleet’s location.',
-    ),
-    hangar,
-  );
-  const transferIssue = shipTransferIssue(fleet);
-  if (transferIssue) card.append(element('p', 'muted-note', transferIssue));
-  const assignment = fleetAssignmentLabel(fleet, model);
-  if (assignment)
-    card.append(element('p', 'muted-note fleet-assignment', assignment));
-  card.append(
-    element(
-      'p',
-      'fleet-destination-status',
-      model.fleetDragging && model.mapFleetId === fleet.id
-        ? model.fleetDestinationPreview
-          ? `Destination preview: HEX ${model.fleetDestinationPreview.key}`
-          : 'Choose a destination on the map.'
-        : fleet.destination
-          ? `Destination: HEX ${fleet.destination.key}`
-          : 'No destination',
-    ),
-  );
-  if (!fleet.routeId) {
-    const orders = element('details', 'fleet-orders');
-    orders.append(element('summary', '', 'Orders'));
-    const choose = button(`Choose destination for ${fleet.name}`, () =>
-      emit({ type: 'begin-destination', id: fleet.id }),
+  const orders = renderFleetOrders(fleet, model, emit);
+  header.insertBefore(orders, rename.parentElement === header ? rename : null);
+  const routeMenu = renderFleetRouteMenu(fleet, model, emit);
+  const footer = element('div', 'fleet-card-footer');
+  const speed = element('small', 'fleet-speed', `S: ${fleet.speed} hex`);
+  speed.title = `Fleet speed: ${fleet.speed} hexes/year${fleet.remainingMovement === undefined ? '' : ` · ${fleet.remainingMovement} hex remaining this year`}`;
+  footer.append(speed);
+  if (routeMenu)
+    header.insertBefore(
+      routeMenu,
+      rename.parentElement === header ? rename : null,
     );
-    choose.textContent = 'Choose destination';
-    choose.disabled = locked || !fleet.position;
-    orders.append(choose);
-    card.append(orders);
-    if (fleet.destination) {
-      const clear = button('Clear destination', () =>
-        emit({ type: 'clear-destination', id: fleet.id }),
-      );
-      clear.disabled = locked;
-      card.append(clear);
-    }
-  }
-  if (fleet.joinFleetId) {
-    const cancel = button('Cancel reinforcement', () =>
-      emit({ type: 'clear-destination', id: fleet.id }),
-    );
-    cancel.disabled = locked;
-    card.append(cancel);
-  }
-  if (fleet.routeId) {
-    if (fleet.releaseRequested)
-      card.append(
-        element('p', 'muted-note', 'Leaving trade route after arrival'),
-      );
-    const release = button('Release from trade route', () =>
-      emit({ type: 'release-trade-fleet', id: fleet.id }),
-    );
-    release.disabled = model.phase !== 'planning' || !!fleet.releaseRequested;
-    card.append(release);
-  }
+  card.title = [
+    fleetAssignmentLabel(fleet, model),
+    model.fleetDragging && model.mapFleetId === fleet.id
+      ? model.fleetDestinationPreview
+        ? `Destination preview: HEX ${model.fleetDestinationPreview.key}`
+        : 'Choose a destination on the map.'
+      : fleet.destination
+        ? `Destination: HEX ${fleet.destination.key}`
+        : 'No destination',
+    shipTransferIssue(fleet),
+  ]
+    .filter(Boolean)
+    .join('. ');
+  card.setAttribute('aria-description', card.title);
+  card.append(header, hangar, footer);
   return card;
 }
 

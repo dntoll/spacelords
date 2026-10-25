@@ -187,7 +187,11 @@ describe('skepp-till-rorlig-flotta', () => {
       (intent) => intents.push(intent),
       snapshot.fleets[0]!.position!,
     );
-    expect(view.textContent).toContain('En route to Home Fleet');
+    expect(
+      view
+        .querySelector('[data-fleet-id="reinforcement"]')!
+        .getAttribute('aria-description'),
+    ).toContain('En route to Home Fleet');
     view
       .querySelector<HTMLButtonElement>('[aria-label="Cancel reinforcement"]')!
       .click();
@@ -209,6 +213,7 @@ describe('forstarka-ruttflotta / flottans-handelsrutt', () => {
         ? {
             ...fleet,
             routeId: 'route-test',
+            name: 'Route Tellus <> Vesta',
             cargo: { ...fleet.cargo!, Iron: 5 },
             position: snapshot.fleets[0]!.position,
             ships: { ...fleet.ships, 'Transport ship': 1 },
@@ -247,9 +252,9 @@ describe('forstarka-ruttflotta / flottans-handelsrutt', () => {
   it('names the assigned route and allows a chosen ship to join a loaded fleet on the same hex', () => {
     const { view, intents, target } = routeView();
     const card = view.querySelectorAll('.fleet-card')[1]!;
-    expect(card.textContent).toContain('Trade route: Tellus ↔ Vesta');
+    expect(card.querySelector('h3')!.textContent).toBe('Route Tellus <> Vesta');
     const move = card.querySelector<HTMLButtonElement>(
-      '[aria-label="Move ship to Fleet 1"]',
+      '[aria-label="Move ship to Route Tellus <> Vesta"]',
     )!;
     expect(move.disabled).toBe(false);
     expect(card.querySelector<HTMLButtonElement>('.ship-token')!.disabled).toBe(

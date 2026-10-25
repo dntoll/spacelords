@@ -105,6 +105,23 @@ class Fleet {
   joinFleetId : optional reinforcement target
   ships: 0..*
 }
+class ExplorationOrder {
+  mode: Explore | Explore stars
+}
+class Discovery {
+  kind: planet | star | pirate
+  observerFleet
+}
+class TurnSimulation {
+  remainingMovement
+  awaitingCombat
+  handling
+  otherFleetOrdersEnabled
+}
+Fleet "1" o-- "0..1" ExplorationOrder
+TurnSimulation "1" o-- "0..*" Discovery
+TurnSimulation --> Fleet : remaining movement
+SavedGame "1" o-- "0..1" TurnSimulation
 class TurnOrder
 class GameEvent {
   round

@@ -10,6 +10,12 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Utforskning och kompakta order:** ytterligare komprimerade flottkort,
+  ordersymboler, tillfälliga ruttnamn, produktionskvitton och bestående
+  utforskningsuppdrag. Året ska kunna avbrytas vid upptäckter och återupptas
+  med bevarad förflyttning, även efter omladdning. Arbetet är **Delvis implementerat**; fullständig webbläsarverifiering återstår;
+  se [utforskning och upptäckter](docs/exploration-interruptions.md).
+
 - **Space pirates:** `rymdpirater-per-stjarna`, `rymdpiraters-patrullering`,
   `flottstrid-per-hex` och `rymdpiraters-sparning` är **Fullständigt implementerat**.
   Nya spel har fientliga pirater runt andra stjärnor, patrullering och strid

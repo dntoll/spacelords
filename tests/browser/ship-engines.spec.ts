@@ -113,10 +113,8 @@ test('motorbehov-for-alla-skepp / ion-pulse-engine / automatisk-motormontering: 
       exact: true,
     }),
   });
-  await card.locator('.ship-engine-details summary').click();
-  await expect(card.locator('.ship-engine-details')).toContainText(
-    'Colony ship · 2 Rocket engine, 1 Ion pulse engine · Speed 3 hexes/year',
-  );
+  await expect(card.locator('.ship-engine-details')).toHaveCount(0);
+  await expect(card.locator('.fleet-speed')).toHaveText('S: 3 hex');
   await card
     .getByRole('button', { name: 'Colony ship 1 in Home Fleet', exact: true })
     .click();
@@ -130,10 +128,21 @@ test('motorbehov-for-alla-skepp / ion-pulse-engine / automatisk-motormontering: 
   const moved = page
     .locator('.fleet-card')
     .filter({ has: page.locator('[data-ship="Colony ship"]') });
-  await moved.locator('.ship-engine-details summary').click();
-  await expect(moved.locator('.ship-engine-details')).toContainText(
-    '2 Rocket engine, 1 Ion pulse engine · Speed 3',
-  );
+  await expect(moved.locator('.fleet-speed')).toHaveText('S: 3 hex');
+  const installed = await page.evaluate(() => {
+    const saved = JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as {
+      state: {
+        fleets: {
+          name: string;
+          shipUnits: { type: string; engines: Record<string, number> }[];
+        }[];
+      };
+    };
+    return saved.state.fleets
+      .find((fleet) => fleet.name === 'Fleet 1')!
+      .shipUnits.find((unit) => unit.type === 'Colony ship')!.engines;
+  });
+  expect(installed).toEqual({ 'Rocket engine': 2, 'Ion pulse engine': 1 });
   await page.screenshot({
     path: testInfo.outputPath('mixed-engine-fleet.png'),
   });

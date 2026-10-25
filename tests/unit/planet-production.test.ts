@@ -1,3 +1,4 @@
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { Game, type BuildType } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
@@ -34,7 +35,7 @@ function setup(
   const home = game.galaxy.homePlanet;
   const snapshot = () => game.planetSnapshot(home)!;
   const turn = () => {
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
   };
   return { game, home, snapshot, turn };
@@ -137,7 +138,7 @@ describe('gemensam-planetko / delfabriker / automatiska-delorder', () => {
     const snapshot = () => game.planetSnapshot(home)!;
     expect(snapshot().projects.map((p) => p.type)).toEqual(['Fighter']);
     const stock = snapshot().economy.stock;
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
     expect(snapshot().economy.stock).toEqual(stock);
     expect(snapshot().projects[0]!.blockedReason).toContain('Rocket engine');
@@ -223,7 +224,7 @@ describe('gemensam-planetko / sparat-spel / bevara-aldre-produktionskoer', () =>
         .planetSnapshot(restored.galaxy.homePlanet)!
         .projects.map((p) => p.id),
     ).toEqual(['project-2', 'project-3', 'project-1', 'project-6']);
-    expect(restored.exportState().version).toBe(7);
+    expect(restored.exportState().version).toBe(8);
     expect(restored.fleetSnapshots()).toEqual(
       Game.restore(base).fleetSnapshots(),
     );
@@ -298,7 +299,8 @@ describe('skeppsdelar / automatisk-resursforsorjning', () => {
     const route = game.createTradeRoute(home.id, target.id);
     game.assignTradeFleet(route, 'freighters');
     game.scheduleShip(target, 'Fighter');
-    const frames = game.startTurn();
+    game.startTurn();
+    const frames = turnFrames(game, false);
     expect(game.fleet('freighters')!.cargo).toMatchObject({
       'Rocket engine': 1,
       'Weapons module': 1,

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, it, expect, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppController } from '../../src/client/controllers/AppController.js';
@@ -194,7 +195,7 @@ describe('planetbudgetoversikt', () => {
   it('keeps completed building material costs at zero for demolition and Keep', () => {
     const { model, root, click } = setup();
     model.build('Research station');
-    for (const frame of model.startTurn()) model.applyTurnFrame(frame);
+    for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
     model.finishTurn();
 
     model.openPlanet();

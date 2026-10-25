@@ -1,3 +1,4 @@
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { expect, it } from 'vitest';
 import { Game } from '../../src/client/models/Game.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
@@ -22,7 +23,7 @@ it('ruttflotta-till-narmaste-andplanet: saves the approach, moves physically and
   let delivered = false;
   for (let year = 0; year < 15; year++) {
     const before = fleet().position!;
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
     expect(before.distanceTo(fleet().position!)).toBeLessThanOrEqual(
       fleet().speed,

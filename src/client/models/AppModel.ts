@@ -1,3 +1,7 @@
+import type {
+  ExplorationOrder,
+  SavedTurnSimulation,
+} from './TurnSimulation.js';
 import { pirateAsFleet, type PirateSnapshot } from './PirateFleet.js';
 import {
   isMapScreen,
@@ -38,6 +42,7 @@ import {
   BUILDINGS,
   projectDefinition,
   type ProjectType,
+  type ProductionReceipt,
   type BuildType,
   type FleetSnapshot,
   type GameEvent,
@@ -121,6 +126,7 @@ export interface AppReadModel {
   readonly planet: PlanetGameSnapshot | null;
   readonly round: number;
   readonly phase: GamePhase;
+  readonly interruption: SavedTurnSimulation | null;
   readonly fleets: readonly FleetSnapshot[];
   readonly pirates: readonly PirateSnapshot[];
   readonly selectedFleet: FleetSnapshot | null;
@@ -140,6 +146,7 @@ export interface AppReadModel {
   readonly destinationFleetId: string | null;
   readonly events: readonly GameEvent[];
   readonly notice: string | null;
+  readonly productionReceipt: ProductionReceipt | null;
 }
 
 export class AppModel {
@@ -184,6 +191,7 @@ export class AppModel {
   #fleetDragging = false;
   #destinationFleetId: string | null = null;
   #notice: string | null = null;
+  #productionReceipt: ProductionReceipt | null = null;
 
   #activeSlot: number | null = null;
   #pendingClearSlot: number | null = null;
@@ -267,6 +275,8 @@ export class AppModel {
     this.#returnSite = null;
     this.#buildSearch = '';
     this.cancelMapPointer();
+    this.#productionReceipt = null;
+    if (game.interruption?.handling) this.#focusInterruptedFleet();
   }
 
   save(): void {
@@ -402,6 +412,7 @@ export class AppModel {
           : null,
       round: this.#game.round,
       phase: this.#game.phase,
+      interruption: this.#game.interruption,
       fleets: this.#game.fleetSnapshots(),
       pirates: this.#game.pirateSnapshots(),
       selectedFleet: this.#selectedFleetId
@@ -416,6 +427,7 @@ export class AppModel {
       destinationFleetId: this.#destinationFleetId,
       events: this.#game.events,
       notice: this.#notice,
+      productionReceipt: this.#productionReceipt,
     });
   }
 
@@ -517,11 +529,12 @@ export class AppModel {
       this.#screen === 'production' ||
       !this.#mapFleetId ||
       !this.#game.fleet(this.#mapFleetId) ||
-      this.#game.phase !== 'planning'
+      !this.#game.canIssueFleetOrders(this.#mapFleetId)
     )
       return;
     this.#fleetDragging = true;
     if (
+      this.#game.phase === 'planning' &&
       (this.#screen === 'map' || this.#screen === 'route') &&
       this.#mapTrade.hoverAssignment(this.#mapFleetId, point)
     ) {
@@ -957,11 +970,15 @@ export class AppModel {
     }
     const type = this.#mapProductionOption;
     if (!type) return;
-    if (Object.hasOwn(BUILDINGS, type))
-      this.#game.scheduleBuild(planet, type as BuildType);
-    else if (projectDefinition(type).ship)
-      this.#game.scheduleShip(planet, type as ShipType);
-    else this.#game.scheduleComponent(planet, type as Component);
+    this.#productionReceipt = null;
+    this.#productionReceipt = Object.hasOwn(BUILDINGS, type)
+      ? this.#game.scheduleBuild(planet, type as BuildType)
+      : projectDefinition(type).ship
+        ? this.#game.scheduleShip(planet, type as ShipType)
+        : this.#game.scheduleComponent(planet, type as Component);
+  }
+  clearProductionReceipt(): void {
+    this.#productionReceipt = null;
   }
   resizeMap(viewport: MapViewport): void {
     if (!Object.values(viewport).every((v) => Number.isFinite(v) && v > 0))
@@ -1046,7 +1063,9 @@ export class AppModel {
     this.#game.closeTradeRoute(id);
   }
   colonize(id: string): void {
-    this.#game.colonize(id);
+    const discoveries = this.#game.colonize(id);
+    if (discoveries.length)
+      this.#notice = `New discoveries: ${discoveries.map((discovery) => discovery.name).join(', ')}.`;
   }
   build(type: BuildType, slotIndex?: number): void {
     const planet = this.#game.planetAt(this.#selected);
@@ -1105,7 +1124,10 @@ export class AppModel {
   beginFleetRename(id: string): void {
     const fleet = this.#game.fleet(id);
     if (!fleet || this.#game.phase !== 'planning') return;
-    this.#fleetNameEdit = Object.freeze({ id, draft: fleet.name });
+    this.#fleetNameEdit = Object.freeze({
+      id,
+      draft: fleet.ownName ?? fleet.name,
+    });
   }
   editFleetName(draft: string): void {
     if (this.#fleetNameEdit)
@@ -1181,7 +1203,7 @@ export class AppModel {
       this.openSupplyRoute(this.#game.fleet(id)!.routeId!);
       return;
     }
-    if (this.#game.fleet(id)) {
+    if (this.#game.canIssueFleetOrders(id)) {
       this.#mapTrade.clearSelection();
       this.#destinationFleetId = id;
       if (!this.#isMapScreen() || this.#screen === 'production')
@@ -1194,7 +1216,7 @@ export class AppModel {
   clearDestination(id: string): void {
     this.#game.clearDestination(id);
   }
-  startTurn(): readonly TurnFrame[] {
+  startTurn(): void {
     this.#pendingEndTurn = false;
     this.cancelMapPointer();
     if (
@@ -1203,7 +1225,46 @@ export class AppModel {
     )
       this.#screen = 'map';
     this.#destinationFleetId = null;
-    return this.#game.startTurn();
+    this.#game.startTurn();
+  }
+  nextTurnFrame(): TurnFrame | null {
+    return this.#game.nextTurnFrame();
+  }
+  exploreFleet(id: string, order: ExplorationOrder): void {
+    this.#game.setExploration(id, order);
+  }
+  handleDiscoveries(): void {
+    this.#game.handleDiscoveries();
+    this.#focusInterruptedFleet();
+  }
+  #focusInterruptedFleet(): void {
+    this.cancelMapPointer();
+    this.#screen = 'map';
+    const id = this.#game.interruption?.discoveries.find(
+      (discovery) => discovery.fleetId,
+    )?.fleetId;
+    const fleet = id ? this.#game.fleet(id) : null;
+    const discovery = this.#game.interruption?.discoveries[0];
+    if (!fleet && discovery) {
+      this.#selected = new HexCoordinate(
+        discovery.position.q,
+        discovery.position.r,
+      );
+      this.#camera.focus(this.#selected);
+    }
+    if (fleet?.position) {
+      this.#selected = fleet.position;
+      this.#mapFleetId = fleet.id;
+      this.#camera.focus(fleet.position);
+    }
+  }
+  allowOtherFleetOrders(): void {
+    this.#game.allowOtherFleetOrders();
+  }
+  continueTurn(): void {
+    this.#destinationFleetId = null;
+    this.cancelMapPointer();
+    this.#game.continueTurn();
   }
   applyTurnFrame(frame: TurnFrame): void {
     this.#game.applyFrame(frame);

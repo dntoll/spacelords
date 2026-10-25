@@ -41,7 +41,7 @@ export async function assignFleetToRoute(
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await selectMapFleet(page, fleet);
   const card = page.locator('.map-fleet-cards .selected-fleet-card');
-  const routes = card.locator('.map-fleet-route-options > summary');
+  const routes = card.locator('.fleet-route-menu > summary');
   await routes.focus();
   await routes.press('Enter');
   const assign = card.getByRole('button', {
@@ -66,6 +66,24 @@ export async function endTurn(page: Page): Promise<void> {
     await warning
       .getByRole('button', { name: 'End turn anyway', exact: true })
       .click();
+  for (let interruptions = 0; interruptions < 32; interruptions++) {
+    await expect
+      .poll(async () => {
+        if (await page.locator('.discovery-dialog[open]').isVisible())
+          return 'discovery';
+        return (await page
+          .getByRole('button', { name: 'End turn', exact: true })
+          .isEnabled())
+          ? 'planning'
+          : 'running';
+      })
+      .not.toBe('running');
+    const ignore = page
+      .locator('.discovery-dialog[open]')
+      .getByRole('button', { name: 'Ignore', exact: true });
+    if (!(await ignore.isVisible())) break;
+    await ignore.click();
+  }
   await expect(
     page.getByRole('button', { name: 'End turn', exact: true }),
   ).toBeEnabled();

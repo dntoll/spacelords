@@ -201,20 +201,26 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page, 'Freighters');
   const freighters = page.getByRole('article', {
-    name: 'Fleet Freighters',
+    name: 'Fleet Route Tellus <> Vesta',
     exact: true,
   });
-  await expect(freighters).toContainText('Trade route: Tellus ↔ Vesta');
+  await expect(freighters).toContainText('Route Tellus <> Vesta');
   await page
     .getByRole('button', { name: 'Fighter 1 in Home Fleet', exact: true })
     .click();
   await page
-    .getByRole('button', { name: 'Move ship to Freighters', exact: true })
+    .getByRole('button', {
+      name: 'Move ship to Route Tellus <> Vesta',
+      exact: true,
+    })
     .click();
   await expect(
-    page.getByRole('button', { name: 'Fighter 1 in Freighters', exact: true }),
+    page.getByRole('button', {
+      name: 'Fighter 1 in Route Tellus <> Vesta',
+      exact: true,
+    }),
   ).toBeEnabled();
-  await freighters.locator('.fleet-assignment').scrollIntoViewIfNeeded();
+  await freighters.locator('.fleet-name-button').scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath('fleet-trade-route.png') });
   await page.getByRole('button', { name: 'Route', exact: true }).click();
   await page.screenshot({ path: testInfo.outputPath('trade-routes.png') });
@@ -249,7 +255,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await route.press('Enter');
   await expect(
     page.getByRole('complementary', { name: 'Selected route', exact: true }),
-  ).toContainText('Freighters');
+  ).toContainText('Route Tellus <> Vesta');
   expect(
     await page.evaluate(
       () =>

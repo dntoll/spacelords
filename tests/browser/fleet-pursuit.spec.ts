@@ -33,7 +33,7 @@ test('skepp-till-rorlig-flotta: reinforcements survive reload and catch a moving
   await receiveShip(page, 'Fleet 1');
   await expect(
     page.getByRole('article', { name: 'Fleet Fleet 2', exact: true }),
-  ).toContainText('En route to Fleet 1');
+  ).toHaveAttribute('aria-description', /En route to Fleet 1/);
   await expect(
     page.getByRole('button', { name: 'Cancel reinforcement', exact: true }),
   ).toBeEnabled();
@@ -43,7 +43,7 @@ test('skepp-till-rorlig-flotta: reinforcements survive reload and catch a moving
   await selectMapFleet(page, 'Fleet 2');
   await expect(
     page.getByRole('article', { name: 'Fleet Fleet 2', exact: true }),
-  ).toContainText('En route to Fleet 1');
+  ).toHaveAttribute('aria-description', /En route to Fleet 1/);
   await page
     .getByRole('button', { name: 'Cancel reinforcement', exact: true })
     .scrollIntoViewIfNeeded();

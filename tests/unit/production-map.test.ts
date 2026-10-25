@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { turnFrames } from '../fixtures/turn-steps.js';
 import { domeProductionState as domeWorld } from '../fixtures/production-dome.js';
 import { describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
@@ -47,6 +48,31 @@ function setup(state = tradeNetworkState()) {
   };
   return { model, root, factory, dispose, emit, click, save, controller };
 }
+
+it('produktionsorder-aterkoppling: confirms a double-click order outside the queue and renews the receipt', () => {
+  vi.useFakeTimers();
+  const { root, emit, model, controller } = setup();
+  emit({ type: 'open-production' });
+  const choice = root.querySelector<HTMLButtonElement>(
+    '[data-production-option="Research station"]',
+  )!;
+  choice.click();
+  choice.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+  expect(model.snapshot.planet!.projects).toHaveLength(1);
+  expect(
+    root.querySelector('.production-receipt[role="status"]')?.textContent,
+  ).toBe('Queued Research station · #1');
+  vi.advanceTimersByTime(2500);
+  emit({ type: 'map-production-build', option: 'Research station' });
+  vi.advanceTimersByTime(600);
+  expect(root.querySelector('.production-receipt')?.textContent).toBe(
+    'Queued Research station · #2',
+  );
+  vi.advanceTimersByTime(2400);
+  expect(root.querySelector('.production-receipt')).toBeNull();
+  controller.dispose();
+  vi.useRealTimers();
+});
 
 describe('route-kartvy / delad-kartkamera', () => {
   it('keeps one map instance and camera across all four modes, cancelling an unfinished route', () => {
@@ -420,7 +446,7 @@ it('dome-fore-fabriksforslag: requires Dome research, waits for a queued Dome an
   expect(model.snapshot.productionGuidance?.kind).toBe('waiting');
   expect(root.textContent).toContain('A Dome is already queued');
   expect(model.snapshot.productionMap.options).toEqual([]);
-  for (const frame of model.startTurn()) model.applyTurnFrame(frame);
+  for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
   model.finishTurn();
   expect(model.snapshot.productionGuidance?.kind).toBe('factory');
   expect(model.snapshot.planet!.sites[0]!.hasDome).toBe(true);
@@ -558,7 +584,7 @@ it('produktionsberoenden-i-byggval: queued factories remain missing until comple
   game.scheduleBuild(game.galaxy.homePlanet, 'Weapons module factory');
   expect(warning()).toContain('Weapons module factory');
   for (let year = 0; year < 2; year++) {
-    for (const frame of game.startTurn()) game.applyFrame(frame);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
   }
   expect(warning()).toBeNull();

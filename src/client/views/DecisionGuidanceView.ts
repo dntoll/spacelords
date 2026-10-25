@@ -11,7 +11,7 @@ function nextStep(decision: Decision): string {
   if (decision.kind === 'research')
     return 'Choose a technology in the highlighted tree to queue research.';
   if (decision.kind === 'fleet')
-    return 'Choose a destination in Orders, transfer ships, or assign a transport to a route.';
+    return 'Use the highlighted Move button in Orders, transfer ships, or assign a transport to a route.';
   if (decision.kind === 'route')
     return 'Select a purple transport fleet, open Trade routes and assign it to this route.';
   if (decision.id.startsWith('supply-'))
@@ -27,6 +27,7 @@ export function renderDecisionGuidance(
   model: AppReadModel,
   emit: IntentHandler,
 ): HTMLElement | null {
+  if (model.phase !== 'planning') return null;
   const decisions = model.decisions.filter(
     (decision) =>
       needsAttention(decision) && decisionScreen(decision) === model.screen,
@@ -107,7 +108,11 @@ export function updateDecisionGuidance(
       for (const card of root.querySelectorAll<HTMLElement>('.fleet-card'))
         if (card.dataset.fleetId === decision.fleetId) {
           highlight(card);
-          highlight(card.querySelector('.fleet-orders > summary'));
+          highlight(
+            card.querySelector(
+              '.fleet-order-toolbar .fleet-order-button:first-child',
+            ),
+          );
         }
     } else if (
       model.screen === 'production' &&
@@ -124,7 +129,7 @@ export function updateDecisionGuidance(
       if (decision.planetId === model.planet?.id)
         highlight(root.querySelector('.route-supply-summary'));
       for (const summary of root.querySelectorAll(
-        '.map-fleet-route-options > summary',
+        '.fleet-route-menu > summary',
       ))
         highlight(summary);
     }

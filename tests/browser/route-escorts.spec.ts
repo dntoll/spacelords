@@ -57,7 +57,7 @@ test('unika-flottnamn / rutt-eskortfordelning / ruttflottor-pa-kartan: assign fi
     'Fleet names must be unique',
   );
   await name.press('Escape');
-  await card.locator('.map-fleet-route-options > summary').click();
+  await card.locator('.fleet-route-menu > summary').click();
   await expect(
     card.getByRole('button', {
       name: 'Assign Fighters to Tellus to Vesta',
