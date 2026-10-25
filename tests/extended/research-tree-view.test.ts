@@ -37,12 +37,50 @@ it('forsknings-tradnavigation: distinguishes completed, active, queued and unava
     type: 'research',
     technology: 'Fighter factory',
   });
-  expect(view.querySelectorAll('.research-edge.unlocked')).toHaveLength(5);
+  expect(view.querySelectorAll('.research-edge.unlocked')).toHaveLength(6);
+  expect(
+    view
+      .querySelector(
+        '[data-from="Rocket engine factory"][data-to="Orbital shipyard"]',
+      )
+      ?.classList.contains('unlocked'),
+  ).toBe(true);
   const tree = view.querySelector<HTMLElement>('.research-tree-viewport')!;
   tree.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
   expect(emit).toHaveBeenLastCalledWith({
     type: 'research-pan',
     delta: { x: -64, y: 0 },
+  });
+});
+
+it('forskning-fran-bargade-delar: shows recovered technology as available while ordinary prerequisite technologies stay unfinished', () => {
+  const emit = vi.fn();
+  const view = renderResearch(
+    {
+      available: TECHNOLOGIES,
+      completed: [],
+      selected: null,
+      stations: 1,
+      queueBlockedReason: null,
+      queue: [],
+      recovered: ['Telescope III factory'],
+    },
+    false,
+    emit,
+  );
+  const recovered = view.querySelector<HTMLElement>(
+    '[data-technology="Telescope III factory"]',
+  )!;
+  expect(recovered.dataset.state).toBe('available');
+  expect(recovered.textContent).toContain('Recovered technology');
+  expect(
+    view.querySelector<HTMLElement>('[data-technology="Telescope II factory"]')!
+      .dataset.state,
+  ).toBe('locked');
+  recovered.querySelector('button')!.click();
+  expect(emit).toHaveBeenCalledWith({
+    type: 'research',
+    technology: 'Telescope III factory',
   });
 });
 
