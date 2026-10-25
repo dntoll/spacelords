@@ -18,6 +18,7 @@ test('forsknings-tradnavigation: native touch pans and pinches the tree', async 
   const tree = page.getByRole('region', { name: 'Research tree', exact: true });
   const stage = page.locator('.research-tree-stage');
   const bounds = (await tree.boundingBox())!;
+  expect(bounds.height).toBeGreaterThan(100);
   const x = bounds.x + bounds.width / 2;
   const y = bounds.y + 30;
   const cdp = await context.newCDPSession(page);

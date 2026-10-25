@@ -86,11 +86,8 @@ test('ruttflotta-till-narmaste-andplanet: remote assignment saves an approach wi
   await assignFleetToRoute(page, 'Freighters', 'Tellus', 'Vesta');
   await expect(panel).toContainText('Assigned fleets · 1');
   await expect(
-    panel.locator('[data-fleet-id="freighters"] .trade-fleet-position'),
-  ).toContainText('HEX 4, 0');
-  await expect(
-    panel.locator('[data-fleet-id="freighters"] .trade-fleet-position'),
-  ).toContainText('HEX 1, 0');
+    panel.locator('.fleet-card[data-fleet-id="freighters"]'),
+  ).toHaveAttribute('aria-description', /Destination: HEX 1,0/);
   await page.reload();
   await startFirstSlot(page);
   const fleet = await page.evaluate(() => {
@@ -128,7 +125,7 @@ for (const mode of ['Star map', 'Route'] as const)
     );
     await expect(routePanel(page)).toContainText('Assigned fleets · 1');
     await expect(
-      routePanel(page).locator('[data-fleet-id="freighters"]'),
+      routePanel(page).locator('.fleet-card[data-fleet-id="freighters"]'),
     ).toContainText('Route Tellus <> Vesta');
     await expect(page.getByTestId('camera-position')).toHaveText(camera!);
     await page.screenshot({

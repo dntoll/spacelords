@@ -353,3 +353,29 @@ it('symbolbaserade-kataloger: keeps keyboard focus on a category that shares a n
   );
   controller.dispose();
 });
+
+it('symbolbaserade-kataloger: returns focus to the list when a browser does not focus a clicked Back button', () => {
+  const { model } = setup();
+  model.openBuildSite(0);
+  const root = document.createElement('div');
+  document.body.replaceChildren(root);
+  const controller = new AppController(
+    model,
+    new AppView(root, () => ({ render() {}, dispose() {} })),
+  );
+  controller.start();
+  root
+    .querySelector<HTMLButtonElement>('[aria-label="Show Research station"]')!
+    .click();
+  expect(document.activeElement).toBe(
+    root.querySelector('.catalog-details h2'),
+  );
+  (document.activeElement as HTMLElement).blur();
+  root
+    .querySelector<HTMLButtonElement>('[aria-label="Back to buildings"]')!
+    .click();
+  expect(document.activeElement).toBe(
+    root.querySelector('[aria-label="Show Research station"]'),
+  );
+  controller.dispose();
+});

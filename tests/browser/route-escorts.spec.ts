@@ -14,7 +14,7 @@ async function assignFleetToRoute(
 ) {
   await selectMapFleet(page, fleet);
   const card = page.locator('.selected-fleet-card');
-  const routes = card.locator('.map-fleet-route-options');
+  const routes = card.locator('.fleet-route-menu');
   if (!(await routes.evaluate((node) => (node as HTMLDetailsElement).open)))
     await routes.locator('summary').click();
   const assign = card.getByRole('button', {
@@ -85,12 +85,14 @@ test('unika-flottnamn / rutt-eskortfordelning / ruttflottor-pa-kartan: assign fi
   await selectMapPoint(page, marker.point);
   await expect(
     page.locator('.selected-fleet-card .fleet-name-button'),
-  ).toHaveText('Carrier A');
+  ).toHaveText('Route Tellus <> Vesta');
   await page.screenshot({ path: testInfo.outputPath('route-escorts.png') });
   await page.reload();
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Route', exact: true }).click();
   await selectMapFleet(page, 'Carrier B');
-  await expect(page.locator('.selected-fleet-card')).toContainText('Carrier B');
+  await expect(page.locator('.selected-fleet-card')).toContainText(
+    'Route Tellus <> Vesta',
+  );
   expect(errors).toEqual([]);
 });

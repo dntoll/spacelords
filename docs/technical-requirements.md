@@ -611,3 +611,32 @@ engångsbeställning. Fel ger ingen lyckad bekräftelse.
 Modell-, controller-, vy- och webbläsartester använder kravnamen och skyddar
 utforskning, direkta kontakter, paus/återupptagning, orderbehörighet, omladdning,
 köåterkoppling och kortens mått. Båda befintliga CI-sviterna behålls.
+
+2026-10-25: `utokad-testsvit` startar npm via Node och npm:s CLI på Windows,
+där npm.cmd annars inte kan startas med execFile/spawn utan skal. Unix behåller
+vanlig npm-start. Startfel skrivs till stegets logg. Verktygstesterna verifierar
+verklig npm-start och fortsatt stopp vid fel. Länkskyddet testas med junctions
+på Windows utan krav på administratörsrättigheter och med symboliska länkar
+på Unix. Ingen publicering mot verkliga repon ingår i dessa tester.
+
+`forskningstradets-utrymme`: varningen om saknad Research station är ett
+överlägg utan att reservera någon innehållsrad. Trädet fyller ytan även utan stationer; native
+touch-regressionen kontrollerar både tillgänglig höjd och zoom/panorering.
+
+`symbolbaserade-kataloger`: återgång från detaljer bevarar vald posts
+fokus även när WebKit släpper fokus före Back-handlingen. Vyn sparar
+återgångsmålet från indata, oberoende av webbläsarens aktiva element.
+Regressionstestet verifierar förlorat fokus före klicket.
+
+### Verifiering 2026-10-25
+
+- Snabbsviten omfattar 465 enhetstester och behåller gränsen 20 sekunder.
+- Typkontroll, ESLint, Prettier, klient/server-bygge och Pages-bygge kontrolleras.
+- Den utökade körningen omfattar 25 integrations-/utökade tester och 10
+  verktygstester. Windows-starten av npm och länkskyddet har verifierats.
+- Alla 340 webbläsarscenarier kördes i de fyra befintliga profilerna. Efter
+  rättningar och riktade omkörningar är 312 scenarier godkända; 28 hoppas över
+  enligt befintliga villkor för mus, touch och webbläsarprofil.
+- En sista körning av 20 scenarier verifierar den färdiga versionens flottkort,
+  produktionskvitton, utforskning och sparade upptäcktsavbrott. Handle provas
+  även i liggande läge. Ingen driftsättning har gjorts.

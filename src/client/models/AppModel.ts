@@ -959,6 +959,7 @@ export class AppModel {
     if (this.#screen !== 'production') return;
     const planet = this.#game.planetAt(this.#selected);
     if (!planet) return;
+    this.#productionReceipt = null;
     if (option !== undefined) {
       if (
         !this.#game
@@ -970,7 +971,6 @@ export class AppModel {
     }
     const type = this.#mapProductionOption;
     if (!type) return;
-    this.#productionReceipt = null;
     this.#productionReceipt = Object.hasOwn(BUILDINGS, type)
       ? this.#game.scheduleBuild(planet, type as BuildType)
       : projectDefinition(type).ship

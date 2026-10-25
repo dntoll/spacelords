@@ -84,7 +84,7 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
   await page
     .getByRole('combobox', { name: 'Destination hex', exact: true })
     .selectOption('0,1');
-  await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
+  await expect(panel.locator('.fleet-card')).toHaveAttribute(
     'aria-description',
     /Destination: HEX 0,1/,
   );
@@ -110,7 +110,7 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
   await expect(
     panel.getByRole('heading', { name: 'Vanguard', exact: true }),
   ).toBeVisible();
-  await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
+  await expect(panel.locator('.fleet-card')).toHaveAttribute(
     'aria-description',
     /Destination: HEX 0,1/,
   );

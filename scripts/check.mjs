@@ -1,6 +1,12 @@
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, openSync, closeSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import {
+  mkdirSync,
+  openSync,
+  closeSync,
+  writeFileSync,
+  appendFileSync,
+} from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export function runSteps(steps, directory) {
@@ -12,15 +18,25 @@ export function runSteps(steps, directory) {
     const started = performance.now();
     let result;
     try {
-      result = spawnSync(command, args, {
-        stdio: ['ignore', descriptor, descriptor],
-        timeout: 20 * 60_000,
-      });
+      // utokad-testsvit: npm is a .cmd launcher on Windows, not an executable.
+      const npmCli =
+        process.env.npm_execpath ??
+        resolve(dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js');
+      const useNpmCli = command === 'npm' && process.platform === 'win32';
+      result = spawnSync(
+        useNpmCli ? process.execPath : command,
+        useNpmCli ? [npmCli, ...args] : args,
+        {
+          stdio: ['ignore', descriptor, descriptor],
+          timeout: 20 * 60_000,
+        },
+      );
     } finally {
       closeSync(descriptor);
     }
     const seconds = Number(((performance.now() - started) / 1_000).toFixed(2));
     const passed = !result.error && result.status === 0;
+    if (result.error) appendFileSync(log, `${result.error.message}\n`);
     results.push({ name, passed, seconds, log });
     writeFileSync(
       resolve(directory, 'steps.json'),

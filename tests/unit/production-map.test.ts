@@ -74,6 +74,52 @@ it('produktionsorder-aterkoppling: confirms a double-click order outside the que
   vi.useRealTimers();
 });
 
+it('produktionsorder-aterkoppling: replaces a previous success with the reason when a stale option is rejected', () => {
+  const { root, emit, model, controller } = setup();
+  emit({ type: 'open-production' });
+  emit({ type: 'map-production-build', option: 'Research station' });
+  expect(root.querySelector('.production-receipt')).not.toBeNull();
+  const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  emit({ type: 'map-production-build', option: 'Fighter' });
+  expect(model.snapshot.notice).toContain('no longer available');
+  expect(root.querySelector('.production-receipt')).toBeNull();
+  expect(model.snapshot.planet!.projects).toHaveLength(1);
+  warning.mockRestore();
+  controller.dispose();
+});
+
+it('produktionsorder-aterkoppling / automatiska-delorder: reports the main order after automatically queued components', () => {
+  const state = tradeNetworkState();
+  state.colonies[0]![1].stock['Rocket engine'] = 0;
+  state.colonies[0]![1].buildings.push(
+    {
+      id: 'weapons',
+      type: 'Weapons module factory',
+      slotIndex: 2,
+      demolition: false,
+    },
+    {
+      id: 'fighters',
+      type: 'Fighter factory',
+      slotIndex: 3,
+      demolition: false,
+    },
+  );
+  const { model, emit, root, controller } = setup(state);
+  emit({ type: 'open-production' });
+  emit({ type: 'map-production-build', option: 'Fighter' });
+  expect(
+    model.snapshot.planet!.projects.map((project) => project.type),
+  ).toEqual(['Rocket engine', 'Weapons module', 'Fighter']);
+  expect(root.querySelector('.production-receipt')!.textContent).toBe(
+    'Queued Fighter · #3',
+  );
+  expect(model.snapshot.productionReceipt!.projectId).toBe(
+    model.snapshot.planet!.projects[2]!.id,
+  );
+  controller.dispose();
+});
+
 describe('route-kartvy / delad-kartkamera', () => {
   it('keeps one map instance and camera across all four modes, cancelling an unfinished route', () => {
     const { model, factory, dispose, emit, click, save, controller } = setup();

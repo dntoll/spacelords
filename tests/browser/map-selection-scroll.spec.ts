@@ -9,7 +9,7 @@ async function startScrollablePanel(page: Page): Promise<void> {
     ...initialState,
     fleets: [
       ...initialState.fleets,
-      ...Array.from({ length: 8 }, (_, index) => ({
+      ...Array.from({ length: 16 }, (_, index) => ({
         ...initialState.fleets[0]!,
         id: `patrol-${index}`,
         name: `Patrol ${index}`,

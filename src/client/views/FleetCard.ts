@@ -12,7 +12,7 @@ export function renderFleetCard(
   emit: IntentHandler,
 ): HTMLElement {
   const locked = model.phase !== 'planning';
-  const card = element('article', 'fleet-card');
+  const card = element('article', 'fleet-card compact-fleet-card');
   card.dataset.fleetId = fleet.id;
   card.setAttribute('aria-label', `Fleet ${fleet.name}`);
   card.classList.toggle('selected-fleet-card', fleet.id === model.mapFleetId);

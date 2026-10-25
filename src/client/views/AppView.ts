@@ -55,6 +55,7 @@ export class AppView implements AppPort {
   #planetScroll = new Map<string, number>();
   #planetFocusTarget: string | null = null;
   #catalogDetailKey: string | null = null;
+  #catalogReturnKey: string | null = null;
   #decisionDialog: HTMLDialogElement | null = null;
   #researchKey = '';
   #researchViewport: HTMLElement | null = null;
@@ -80,7 +81,15 @@ export class AppView implements AppPort {
   }
 
   bind(handler: IntentHandler): void {
-    this.#emit = handler;
+    this.#emit = (intent) => {
+      // symbolbaserade-kataloger: touch browsers can blur before the Back click.
+      if (
+        (intent.type === 'building-selection' && intent.building === null) ||
+        (intent.type === 'production-selection' && intent.product === null)
+      )
+        this.#catalogReturnKey = this.#catalogDetailKey;
+      handler(intent);
+    };
   }
 
   render(model: AppReadModel): void {
@@ -350,7 +359,9 @@ export class AppView implements AppPort {
     } else if (
       !detailKey &&
       this.#catalogDetailKey &&
-      (focusLabel === 'Back to buildings' || focusLabel === 'Back to products')
+      (focusLabel === 'Back to buildings' ||
+        focusLabel === 'Back to products' ||
+        this.#catalogReturnKey === this.#catalogDetailKey)
     ) {
       const item = [
         ...this.#root.querySelectorAll<HTMLElement>('[data-catalog-item]'),
@@ -359,6 +370,7 @@ export class AppView implements AppPort {
       item?.scrollIntoView?.({ block: 'nearest' });
     }
     this.#catalogDetailKey = detailKey;
+    this.#catalogReturnKey = null;
     const previousResearchQueue =
       this.#root.querySelector<HTMLDetailsElement>('.research-queue');
     const researchQueueOpen = previousResearchQueue?.open ?? false;

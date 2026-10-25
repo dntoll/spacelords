@@ -5,6 +5,7 @@ import {
   writeFileSync,
   readFileSync,
   rmSync,
+  rmdirSync,
   symlinkSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -97,12 +98,18 @@ test('snabb-mobilpublicering / bevara-befintlig-webbplats: replaces only the app
 
 test('bevara-befintlig-webbplats: rejects symbolic links, unknown files and unrecognized apps', (t) => {
   const { checkout, build, write } = fixture(t);
-  symlinkSync(join(checkout, 'CNAME'), join(build, 'assets/leak.js'));
+  // Windows junctions exercise the same link rejection without symlink privileges.
+  symlinkSync(
+    process.platform === 'win32' ? checkout : join(checkout, 'CNAME'),
+    join(build, 'assets/leak.js'),
+    process.platform === 'win32' ? 'junction' : undefined,
+  );
   assert.throws(
     () => preparePublication(checkout, build, 'revision'),
     /Symbolic link/,
   );
-  rmSync(join(build, 'assets/leak.js'));
+  if (process.platform === 'win32') rmdirSync(join(build, 'assets/leak.js'));
+  else rmSync(join(build, 'assets/leak.js'));
   writeFileSync(join(build, '.env'), 'not-public');
   assert.throws(
     () => preparePublication(checkout, build, 'revision'),
@@ -130,7 +137,11 @@ test('bevara-befintlig-webbplats: refuses a linked app directory without changin
   const { checkout, build } = fixture(t);
   const target = join(checkout, 'MachineBloom');
   rmSync(join(checkout, 'spacelords'), { recursive: true });
-  symlinkSync(target, join(checkout, 'spacelords'));
+  symlinkSync(
+    target,
+    join(checkout, 'spacelords'),
+    process.platform === 'win32' ? 'junction' : undefined,
+  );
   git(checkout, 'add', 'spacelords');
   git(checkout, 'commit', '-m', 'Linked app directory');
   assert.throws(

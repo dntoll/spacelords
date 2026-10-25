@@ -13,7 +13,7 @@ Se [hela visionen](docs/game-vision.md).
 - **Utforskning och kompakta order:** ytterligare komprimerade flottkort,
   ordersymboler, tillfälliga ruttnamn, produktionskvitton och bestående
   utforskningsuppdrag. Året ska kunna avbrytas vid upptäckter och återupptas
-  med bevarad förflyttning, även efter omladdning. Arbetet är **Delvis implementerat**; fullständig webbläsarverifiering återstår;
+  med bevarad förflyttning, även efter omladdning. Kraven är **Fullständigt implementerat**;
   se [utforskning och upptäckter](docs/exploration-interruptions.md).
 
 - **Space pirates:** `rymdpirater-per-stjarna`, `rymdpiraters-patrullering`,

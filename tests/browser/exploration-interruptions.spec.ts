@@ -48,6 +48,7 @@ test('upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: Handl
     exact: true,
   });
   await expect(controls).toContainText('Home Fleet · 2 hex remaining');
+  await page.setViewportSize({ width: 844, height: 390 });
   await controls
     .getByRole('button', { name: 'Give orders to other fleets', exact: true })
     .click();

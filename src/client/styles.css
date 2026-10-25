@@ -2030,24 +2030,24 @@ p {
   min-height: 44px;
 }
 /* kompakta-flottkort: fit small fleets on one row without shrinking touch targets. */
-.map-fleet-management .fleet-card {
+.compact-fleet-card {
   padding: 6px;
 }
-.map-fleet-management .fleet-hangar {
+.compact-fleet-card .fleet-hangar {
   min-height: 0;
   padding: 4px;
   gap: 4px;
 }
-.map-fleet-management .ship-manifest {
+.compact-fleet-card .ship-manifest {
   gap: 4px;
 }
-.map-fleet-management .ship-token {
+.compact-fleet-card .ship-token {
   width: clamp(44px, calc((100% - 12px) / 4), 60px);
   min-height: 52px;
   gap: 2px;
   padding: 3px;
 }
-.map-fleet-management .ship-image {
+.compact-fleet-card .ship-image {
   height: 24px;
 }
 .map-fleet-management .fleet-current-position {
@@ -2636,10 +2636,10 @@ p {
 }
 
 /* kompakta-flottkort / flottorder-som-symboler: keep one header and one ship row. */
-.map-fleet-management .ship-token-label {
+.compact-fleet-card .ship-token-label {
   line-height: 1;
 }
-.map-fleet-management .fleet-card {
+.compact-fleet-card {
   position: relative;
   display: grid;
   gap: 2px;
@@ -2648,7 +2648,7 @@ p {
   min-width: 0;
 }
 .fleet-card-heading {
-  min-width: 40px;
+  min-width: 44px;
 }
 .fleet-card-heading .fleet-name-button {
   white-space: nowrap;
@@ -2761,4 +2761,17 @@ body:has(.discovery-controls) .selection-panel {
 .discovery-dialog {
   max-height: calc(100dvh - 24px);
   overflow-y: auto;
+}
+
+/* forskningstradets-utrymme: the station warning must not reserve the tree's flexible row. */
+.research-page .research-station-required {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  right: 6px;
+  z-index: 2;
+  margin: 0;
+  padding: 6px;
+  background: #09151fe8;
+  pointer-events: none;
 }
