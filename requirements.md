@@ -183,7 +183,8 @@ Se [hela visionen](docs/game-vision.md).
   `utokad-testsvit` har en jobbtidsgräns på 20 minuter inklusive installation
   av webbläsare; snabbsvitens gräns är oförändrad.
   `snabb-mobilpublicering` är **Fullständigt implementerat** och provpublicerat:
-  normalläget prioriterar mobil och manuell test efter automatiska kontroller.
+  en vanlig ändringsbeställning innebär snabbtest och publicering av arbetsbranchen,
+  om användaren inte uttryckligen avstår. Därefter testar användaren på mobilen.
   `sluttest-fore-merge` är **Delvis implementerat**: fullständig testning beställs
   separat före godkänd merge; första aktivering av manuell sluttest-CI på
   defaultbranch återstår.

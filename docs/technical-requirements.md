@@ -41,9 +41,11 @@ SupplyView och SupplySelection är borttagna; SupplyOverview och transportregler
 behålls. Inga UI-val införs i GameState och ingen sparformatmigration behövs.
 Kravkopplade tester täcker modell, controller, rendering, mobilflöde och sparning.
 Full plattformsmatris körs vid separat beställt sluttest för explicit revision.
-Driftsättning beställs separat och följer normalflödet i deployment.md. En
-allmän begäran om test och publicering använder snabbkontroller; omfattande
-sluttest beställs uttryckligen separat.
+`snabb-mobilpublicering` följer normalflödet i deployment.md: en vanlig
+ändringsbeställning innebär snabbkontroller och driftsättning av den committade
+arbetsbranchen, om användaren inte uttryckligen avstår. Detta ersätter den äldre
+formuleringen här om separat beställd driftsättning. Omfattande sluttest och
+merge till källrepots `main` beställs uttryckligen separat.
 
 ## Handelsrutter på Star map
 
