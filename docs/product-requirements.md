@@ -2,6 +2,12 @@
 
 ## Utökad galax
 
+`stjarnornas-hexutseende` förtydligas 2026-10-26: stjärnan har en livfull,
+texturerad yta och hålls innanför hexen. Outforskade stjärnors korta spikes
+får nå strax utanför kanten. `utokad-utzoomning` kompletterar `kartnavigation`:
+spelaren kan zooma ut till 3 procent och se en renare översikt utan tätt
+rutnät eller överlappande namn. Båda kraven är **Fullständigt implementerat**.
+
 Kraven för den större galaxen, stjärnor, planetavstånd, asteroidbälten,
 nebulosor och utforskning finns i [galax och terräng](galaxy-terrain.md).
 De ersätter tidigare storlek, direkt angränsande planeter och fri passage

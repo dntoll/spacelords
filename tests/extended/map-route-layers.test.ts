@@ -44,7 +44,17 @@ it.each(
     let fill = '',
       stroke = '';
     const noop = () => {};
-    const context = { globalAlpha: 1, setLineDash: () => {} };
+    const context = {
+      globalAlpha: 1,
+      setLineDash: noop,
+      save: noop,
+      restore: noop,
+      beginPath: noop,
+      moveTo: noop,
+      lineTo: noop,
+      closePath: noop,
+      clip: noop,
+    };
     const alphaStack: number[] = [];
     const planetAlphas: number[] = [];
     const planetLabelAlphas: number[] = [];
@@ -61,6 +71,7 @@ it.each(
       },
       pixelDensity: noop,
       noLoop: noop,
+      loadImage: () => Promise.resolve(null),
       textFont: noop,
       describe: vi.fn(),
       background: noop,

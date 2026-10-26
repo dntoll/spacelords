@@ -2,12 +2,15 @@ import p5 from 'p5';
 import type { MapCell } from '../models/Galaxy.js';
 import { HexGeometry } from '../models/HexCoordinate.js';
 import { renderTerrain } from './TerrainMapView.js';
+import { renderStarGlyph } from './StarGlyph.js';
+import starSprite from '../assets/stars/plasma-star.webp';
 
 /** Read-only p5 instance; hidden cells never reach the preview. */
 export class SaveMapPreview {
   readonly #instance: p5;
   readonly #observer: ResizeObserver;
   #ready = false;
+  #starSprite: p5.Image | null = null;
   #disposed = false;
 
   constructor(container: HTMLElement, cells: readonly MapCell[]) {
@@ -28,6 +31,16 @@ export class SaveMapPreview {
         sketch.noLoop();
         sketch.describe('Overview of explored space.');
         this.#ready = true;
+        void sketch
+          .loadImage(starSprite)
+          .then((sprite) => {
+            if (this.#disposed) return;
+            this.#starSprite = sprite;
+            void sketch.redraw();
+          })
+          .catch(() => {
+            /* The bounded loading glyph remains available. */
+          });
       };
       sketch.draw = () => {
         if (this.#disposed) return;
@@ -63,13 +76,9 @@ export class SaveMapPreview {
                   ? '#efcd85'
                   : '#86adc5',
             );
-            sketch.circle(
-              point.x,
-              point.y,
-              cell.object.kind === 'star'
-                ? Math.sqrt(3) * HexGeometry.size
-                : 10,
-            );
+            if (cell.object.kind === 'star')
+              renderStarGlyph(sketch, point, 1, true, this.#starSprite);
+            else sketch.circle(point.x, point.y, 10);
           }
         });
         renderTerrain(sketch, visible);

@@ -10,6 +10,12 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Stjärnbild och utzoomning:** `stjarnornas-hexutseende` förtydligas med
+  en genererad, texturerad stjärna innanför hexens kant och korta spikes utanför.
+  `utokad-utzoomning` tillåter 3 procent zoom med en avskalad galaxöversikt.
+  Kraven är **Fullständigt implementerat**, med verifierade mobilflöden.
+  Se [galax och terräng](docs/galaxy-terrain.md).
+
 - **Utökad galax och terräng:** radie 100, 300 system, planeter två hexsteg
   från stjärnorna, större stjärngrafik, ofarbara stjärnor, två asteroidtyper och
   nebulosor som skymmer sikten. Explore fyller ut kartan i lager; Explore stars

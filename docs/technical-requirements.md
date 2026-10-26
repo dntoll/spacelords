@@ -1,5 +1,18 @@
 # Tekniska krav och arbetsregler
 
+## Stjärnbild och utzoomning
+
+`stjarnornas-hexutseende`: StarGlyph använder en transparent WebP med plasmayta,
+512 × 512 px. Bild och reservsymbol klipps två modellenheter innanför hexens
+kant; bildens diameter har ytterligare marginal. Spikes ritas separat före
+klippningen och når högst 1,12 hexradier från centrum. Bilden laddas asynkront
+i p5:s instans och används även i sparplatsens förhandsvisning. Original och
+[bildprompt](star-artwork.md) bevaras i repot. Spardata påverkas inte.
+
+`utokad-utzoomning`: Camera tillåter zoom 0,03–2,5. Under 0,18 utelämnas
+okända hexars rutnät; under 0,2 visas enbart den valda himlakroppens namn.
+Kända områden, stjärnor, terräng och navigering behålls i översikten.
+
 ## Utökad galax och terräng, 2026-10-26
 
 `utokad-galax`: den publika klientens nyspelsfabrik skapar en oföränderlig,

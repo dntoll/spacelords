@@ -6,7 +6,7 @@ Beslut 2026-10-26. Speltexter återges med sina engelska namn.
 | ---------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `utokad-galax`               | Fullständigt implementerat | Nya spel har radie 100, 30 301 hexar och 300 reproducerbara system med tre planeter vardera.                                                                                                                    |
 | `planetavstand-till-stjarna` | Fullständigt implementerat | Planeter ligger två hexsteg från sin stjärna, med en tom hex emellan. Alla planeter går att nå.                                                                                                                 |
-| `stjarnornas-hexutseende`    | Fullständigt implementerat | Stjärnskivan fyller hexens inskrivna cirkel. Outforskade stjärnor har diffraction spikes, som försvinner efter utforskning.                                                                                     |
+| `stjarnornas-hexutseende`    | Fullständigt implementerat | En genererad stjärnbild med plasmayta och korona hålls med marginal innanför sin hex. Outforskade stjärnors korta diffraction spikes får sticka strax utanför; de försvinner efter utforskning.                 |
 | `ofarbara-stjarnhexar`       | Fullständigt implementerat | Flottor får varken resa in i eller passera stjärnhexar. Ogiltig destination ersätter inte befintlig order.                                                                                                      |
 | `asteroidbalten`             | Fullständigt implementerat | Dense asteroid belt är ofarbar. Ett steg in i eller ut ur Sparse asteroid belt kräver hela årets rörelsebudget och avslutar förflyttningen oavsett motor. Har flottan redan flyttat väntar den till nästa år.   |
 | `nebulosornas-sikt`          | Fullständigt implementerat | Nebula döljer sitt innehåll för observatörer utanför hexen. En observatör inuti ser enbart sin egen hex, oavsett teleskop. Molnet blockerar sikt till bakomliggande hexar. Flera observatörers synfält förenas. |
@@ -60,3 +60,18 @@ bevaras genom upptäcktsavbrott, ändrad order och omladdning.
 Fyra nya mobilscenarier och 20 riktade regressioner för utforskning, patrullering
 och bärgning är godkända i telefon Chromium och WebKit. Skärmbilder har granskats.
 Terrängförklaringar visas även på mobil och vald hex döljer inte terrängen.
+
+## Utökad utzoomning
+
+`utokad-utzoomning` — **Fullständigt implementerat**: Kartan kan zoomas ut till
+3 procent i alla kartlägen. Vid kraftig utzoomning utelämnas det täta rutnätet
+och andra namn än den valda himlakroppens, så galaxen förblir överskådlig.
+Home återställer hemvyn och 100 procent. Ändringen kompletterar `kartnavigation`.
+
+Förtydligandet av `stjarnornas-hexutseende` ersätter den platta cirkeln som
+fyllde hela hexens inskrivna cirkel. [Bild och prompt](star-artwork.md) finns
+bevarade. Bilden används också i sparplatsernas översikt.
+
+Regressionstester för hexklippning och zoomgräns misslyckades före rättningen.
+Närbild och galaxöversikt är verifierade i telefon Chromium och WebKit.
+De tolv riktade ritlagertesterna för kartlägena är också godkända.

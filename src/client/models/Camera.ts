@@ -51,7 +51,7 @@ export class Camera {
     )
       return;
     const world = this.screenToWorld(anchor);
-    this.#zoom = Math.max(0.35, Math.min(2.5, this.#zoom * factor));
+    this.#zoom = Math.max(0.03, Math.min(2.5, this.#zoom * factor));
     this.#setCenter({
       x: world.x - anchor.x / this.#zoom,
       y: world.y - anchor.y / this.#zoom,

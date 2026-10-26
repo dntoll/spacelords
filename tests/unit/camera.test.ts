@@ -6,7 +6,7 @@ import {
 } from '../../src/client/models/HexCoordinate.js';
 import { MapGesture } from '../../src/client/controllers/MapGesture.js';
 
-describe('kartnavigation', () => {
+describe('kartnavigation / utokad-utzoomning', () => {
   it('keeps the point under the pointer fixed while zooming', () => {
     const camera = new Camera(new HexCoordinate(1, 0), 10);
     const anchor = { x: 170, y: -90 };
@@ -22,7 +22,7 @@ describe('kartnavigation', () => {
     camera.zoomAt(1e6, { x: 0, y: 0 });
     expect(camera.snapshot.zoom).toBe(2.5);
     camera.zoomAt(1e-6, { x: 0, y: 0 });
-    expect(camera.snapshot.zoom).toBe(0.35);
+    expect(camera.snapshot.zoom).toBe(0.03);
     camera.panBy({ x: 1e6, y: -1e6 });
     const position = HexGeometry.fromPoint(camera.snapshot.center);
     expect(position.distanceTo(new HexCoordinate(0, 0))).toBeLessThanOrEqual(
