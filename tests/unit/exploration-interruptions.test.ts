@@ -93,7 +93,7 @@ describe('automatisk-hexutforskning / automatisk-stjarnutforskning', () => {
     expect(game.fleet(before.id)!.exploration).toBe('explore');
     const loaded = Game.restore(game.exportState());
     expect(loaded.fleet(before.id)!.exploration).toBe('explore');
-    loaded.setDestination(before.id, new HexCoordinate(0, 0));
+    loaded.setDestination(before.id, new HexCoordinate(0, -1));
     expect(loaded.fleet(before.id)!.exploration).toBeUndefined();
     loaded.setExploration(before.id, 'explore');
     loaded.clearDestination(before.id);
@@ -105,7 +105,7 @@ describe('automatisk-hexutforskning / automatisk-stjarnutforskning', () => {
     const destination = game.fleet('fleet-home')!.destination!;
     expect(
       game.galaxy.systems.some(
-        (system) => system.star.position.key === destination.key,
+        (system) => system.star.position.distanceTo(destination) === 1,
       ),
     ).toBe(true);
     expect(
@@ -116,6 +116,11 @@ describe('automatisk-hexutforskning / automatisk-stjarnutforskning', () => {
     const complete = Game.restore({
       ...state,
       explored: game.mapSnapshot().map((cell) => cell.position.key),
+      fleets: state.fleets.map((fleet) => {
+        const rest = { ...fleet };
+        delete rest.starSurvey;
+        return rest;
+      }),
     });
     finish(complete);
     expect(complete.fleet('fleet-home')!.exploration).toBeUndefined();

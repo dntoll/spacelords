@@ -18,7 +18,7 @@ async function startScrollablePanel(page: Page): Promise<void> {
   };
   await page.addInitScript((state) => {
     localStorage.setItem('spacelords.economy-v2-reset', 'done');
-    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     localStorage.setItem(
       'spacelords.save.v2.1',
       JSON.stringify({

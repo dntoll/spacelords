@@ -1,5 +1,9 @@
 # Utforskning och upptäckter
 
+Ändring 2026-10-26: formuleringarna för `automatisk-hexutforskning` och
+`automatisk-stjarnutforskning` nedan ersätts av
+[områdesvis utforskning och stjärnvarv](galaxy-terrain.md#utforskning).
+
 Beslutat och verifierat 2026-10-25. Status avser hela det beskrivna beteendet.
 
 | Kravnamn                        | Status                     | Krav                                                                                                                                                                                      |

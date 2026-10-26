@@ -1,6 +1,8 @@
 import { collectTurnFrames, turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
+import { Galaxy } from '../../src/client/models/Galaxy.js';
+import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 
 describe('rakare-hexforflyttning', () => {
   it.each([
@@ -13,7 +15,10 @@ describe('rakare-hexforflyttning', () => {
     [5, 2],
     [-2, 7],
   ])('distributes direction changes toward offset %i,%i', (q, r) => {
-    const model = new AppModel();
+    const example = createExampleGalaxy();
+    const model = new AppModel(
+      new Galaxy(example.player, [example.systems[0]!]),
+    );
     const fleet = model.snapshot.fleets[0]!;
     const start = fleet.position!;
     const distance = Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r));

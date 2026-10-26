@@ -12,7 +12,7 @@ for (const screen of ['Star map', 'Fleets']) {
     const state = new Game(createExampleGalaxy()).exportState();
     await page.addInitScript(
       (state) => {
-        localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+        localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
         if (!localStorage.getItem('spacelords.save.v2.1'))
           localStorage.setItem(
             'spacelords.save.v2.1',
@@ -121,7 +121,7 @@ test('flottpatrullering: uses shared sight to catch a pirate, resumes its ring, 
     ],
   };
   await page.addInitScript((state) => {
-    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     if (!localStorage.getItem('spacelords.save.v2.1'))
       localStorage.setItem(
         'spacelords.save.v2.1',

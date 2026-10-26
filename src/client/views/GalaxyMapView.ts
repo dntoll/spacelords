@@ -1,5 +1,7 @@
 import { renderMapTradeRoutes } from './MapTradeRoutesView.js';
 import { renderDetectionBoundary } from './DetectionMapView.js';
+import { renderTerrain } from './TerrainMapView.js';
+import { renderStarGlyph } from './StarGlyph.js';
 import { salvageMarkers } from '../models/SalvageMapLayout.js';
 import { renderMapOverlays } from './MapOverlayView.js';
 import p5 from 'p5';
@@ -121,14 +123,24 @@ export class GalaxyMapView implements MapPort {
     sketch.translate(sketch.width / 2, sketch.height / 2);
     sketch.scale(model.camera.zoom);
     sketch.translate(-model.camera.center.x, -model.camera.center.y);
-    for (const cell of model.cells)
-      this.#hex(sketch, cell, false, model.camera.zoom);
-    renderDetectionBoundary(sketch, model.cells, model.camera.zoom);
+    const margin = HexGeometry.size * 3;
+    const cells = model.cells.filter((cell) => {
+      const point = HexGeometry.toPoint(cell.position);
+      return (
+        Math.abs(point.x - model.camera.center.x) <=
+          sketch.width / (2 * model.camera.zoom) + margin &&
+        Math.abs(point.y - model.camera.center.y) <=
+          sketch.height / (2 * model.camera.zoom) + margin
+      );
+    });
+    for (const cell of cells) this.#hex(sketch, cell, false, model.camera.zoom);
     const selected = model.screen === 'fleets' ? null : model.selected;
     if (selected) this.#hex(sketch, selected, true, model.camera.zoom);
+    renderTerrain(sketch, cells);
+    renderDetectionBoundary(sketch, cells, model.camera.zoom);
     // synliga-handelsrutter: selection fills stay below routes; objects stay above.
     renderMapTradeRoutes(sketch, model);
-    for (const cell of model.cells)
+    for (const cell of cells)
       if (cell.object)
         this.#object(
           sketch,
@@ -226,10 +238,7 @@ export class GalaxyMapView implements MapPort {
           : '#b88870';
     sketch.noStroke();
     if (star) {
-      for (let layer = 4; layer > 0; layer -= 1) {
-        sketch.fill(232, 187, 108, 13);
-        sketch.circle(point.x, point.y, 12 + layer * 8);
-      }
+      renderStarGlyph(sketch, point, zoom, cell.explored);
     } else if (object.owned) {
       sketch.noFill();
       sketch.stroke('#476f68');
@@ -238,7 +247,7 @@ export class GalaxyMapView implements MapPort {
     }
     sketch.noStroke();
     sketch.fill(color);
-    sketch.circle(point.x, point.y, star ? 14 : 17);
+    if (!star) sketch.circle(point.x, point.y, 17);
     if (!star) {
       sketch.fill(20, 52, 54, 100);
       sketch.ellipse(point.x + 3, point.y + 1, 8, 15);
@@ -250,7 +259,11 @@ export class GalaxyMapView implements MapPort {
     sketch.fill(star ? '#d7c49e' : object.owned ? '#d5f5e5' : '#b9c4c5');
     sketch.textAlign(sketch.CENTER, sketch.TOP);
     sketch.textSize(11 / zoom);
-    sketch.text(object.name, point.x, point.y + 18 / zoom);
+    sketch.text(
+      object.name,
+      point.x,
+      point.y + (star ? HexGeometry.size + 4 / zoom : 18 / zoom),
+    );
   }
 
   #point(event: { clientX: number; clientY: number }): Point {

@@ -382,4 +382,18 @@ SavedGame --> Wreck
 SavedGame --> Shipyard
 SavedGame --> SalvageOrder
 SavedGame --> BattleReport
+class TerrainHex {
+  type: dense-asteroids | sparse-asteroids | nebula
+  position
+}
+class StarSurvey {
+  starId
+  startIndex
+  completedSteps
+}
+Galaxy "1" *-- "0..*" TerrainHex
+Fleet "1" *-- "0..1" StarSurvey
+StarSurvey --> Star
+SavedGame --> TerrainHex
+SavedGame --> StarSurvey
 @enduml

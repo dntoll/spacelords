@@ -5,6 +5,7 @@ import { GalaxyMapView } from './views/GalaxyMapView.js';
 import './styles.css';
 import { SaveMapPreview } from './views/SaveMapPreview.js';
 import { BrowserSaveRepository } from './storage/BrowserSaveRepository.js';
+import { createExpandedGalaxy } from './models/exampleGalaxy.js';
 
 const root = document.querySelector<HTMLElement>('#app');
 if (!root) {
@@ -13,7 +14,7 @@ if (!root) {
 
 const controller = new AppController(
   new AppModel(
-    undefined,
+    createExpandedGalaxy(),
     new BrowserSaveRepository({
       getItem: (key) => window.localStorage.getItem(key),
       setItem: (key, value) => window.localStorage.setItem(key, value),

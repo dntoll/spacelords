@@ -15,7 +15,7 @@ test('flottfokuserad-kartvy: background is inert, route crossings set destinatio
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.addInitScript((state) => {
-    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     if (!localStorage.getItem('spacelords.save.v2.1'))
       localStorage.setItem(
         'spacelords.save.v2.1',

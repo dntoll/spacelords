@@ -38,9 +38,9 @@ export class BrowserSaveRepository implements SaveRepository {
     }
   }
   #prepareStorage(): void {
-    // engangsreset-terraformning: authorized for this release only.
+    // engangsreset-utokad-galax: explicitly authorized on 2026-10-26.
     // Ask again before future incompatible changes; this is not a reset policy.
-    if (this.storage.getItem('spacelords.terraforming-v5-reset') === 'done')
+    if (this.storage.getItem('spacelords.expanded-galaxy-v12-reset') === 'done')
       return;
     try {
       for (const slot of [1, 2, 3]) {
@@ -48,6 +48,7 @@ export class BrowserSaveRepository implements SaveRepository {
         this.storage.removeItem(this.#key(slot));
       }
       this.storage.setItem('spacelords.terraforming-v5-reset', 'done');
+      this.storage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     } catch {
       throw new Error(
         'Game storage could not be initialized. Browser storage may be unavailable or full.',

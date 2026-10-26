@@ -1030,8 +1030,16 @@ export class AppView implements AppPort {
     const source = model.ownedPlanets.find(
       (planet) => planet.position.key === cell?.position.key,
     );
+    const terrainName =
+      cell?.terrain === 'dense-asteroids'
+        ? 'Dense asteroid belt'
+        : cell?.terrain === 'sparse-asteroids'
+          ? 'Sparse asteroid belt'
+          : cell?.terrain === 'nebula'
+            ? 'Nebula'
+            : null;
     const title = renderMapLocationHeading(
-      object?.name ?? 'Fleets',
+      object?.name ?? terrainName ?? 'Fleets',
       cell?.position,
       source?.id,
       this.#emit,
@@ -1039,13 +1047,29 @@ export class AppView implements AppPort {
     const description = owned
       ? 'A colony of your empire.'
       : object?.kind === 'star'
-        ? 'A star shining through unexplored space.'
+        ? 'A star. Its hex is impassable.'
         : object?.kind === 'planet'
           ? 'An uninhabited world near your homeworld.'
-          : '';
+          : cell?.terrain === 'dense-asteroids'
+            ? 'Impassable asteroid field.'
+            : cell?.terrain === 'sparse-asteroids'
+              ? 'Entering or leaving this hex uses a full year of movement, regardless of engine.'
+              : cell?.terrain === 'nebula'
+                ? 'Ships inside can only be detected from the same hex. Observers inside see only their own hex. The cloud blocks sight beyond it.'
+                : '';
     const contents: HTMLElement[] =
-      object && (model.screen === 'map' || model.screen === 'route')
-        ? [title, element('p', 'selection-description', description)]
+      (object || terrainName) &&
+      (model.screen === 'map' || model.screen === 'route')
+        ? [
+            title,
+            element(
+              'p',
+              terrainName
+                ? 'selection-description terrain-description'
+                : 'selection-description',
+              description,
+            ),
+          ]
         : [];
     const destinationFleet = model.destinationFleetId
       ? model.fleets.find((fleet) => fleet.id === model.destinationFleetId)
@@ -1072,6 +1096,7 @@ export class AppView implements AppPort {
       placeholder.value = '';
       picker.append(placeholder);
       for (const target of model.cells) {
+        if (target.passable === false) continue;
         const option = element(
           'option',
           '',

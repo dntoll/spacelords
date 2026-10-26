@@ -41,7 +41,7 @@ test('planettypsforskning / domes-per-byggplats / terraformning / andningsbar-at
   page.on('pageerror', (error) => errors.push(error.message));
   await page.addInitScript((state) => {
     if (localStorage.getItem('terraforming-seeded')) return;
-    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     localStorage.setItem(
       'spacelords.save.v2.1',
       JSON.stringify({ lastPlayed: '2026-10-24T10:00:00Z', state }),

@@ -79,6 +79,11 @@ export interface LogisticsPort {
   planets: readonly LogisticsPlanet[];
   fleets: readonly TransportFleet[];
   speed(fleet: TransportFleet): number;
+  travelYears?(
+    fleet: TransportFleet,
+    from: HexCoordinate,
+    to: HexCoordinate,
+  ): number;
   id(prefix: string): string;
   event(message: string): void;
   projectExists(id: string): boolean;
@@ -167,7 +172,8 @@ export class Logistics {
             years += Math.max(
               1,
               Math.ceil(
-                fleet.position.distanceTo(to.position) / port.speed(fleet),
+                port.travelYears?.(fleet, fleet.position, to.position) ??
+                  fleet.position.distanceTo(to.position) / port.speed(fleet),
               ),
             );
           } else {
@@ -180,14 +186,20 @@ export class Logistics {
               ...carriers.map(
                 (carrier) =>
                   Math.ceil(
-                    carrier.position!.distanceTo(from.position) /
-                      port.speed(carrier),
+                    port.travelYears?.(
+                      carrier,
+                      carrier.position!,
+                      from.position,
+                    ) ??
+                      carrier.position!.distanceTo(from.position) /
+                        port.speed(carrier),
                   ) +
                   Math.max(
                     1,
                     Math.ceil(
-                      from.position.distanceTo(to.position) /
-                        port.speed(carrier),
+                      port.travelYears?.(carrier, from.position, to.position) ??
+                        from.position.distanceTo(to.position) /
+                          port.speed(carrier),
                     ),
                   ) +
                   this.shipments.filter((s) => s.fleetId === carrier.id).length,
@@ -195,6 +207,7 @@ export class Logistics {
             );
           }
         }
+        if (!Number.isFinite(years)) issue = 'No known passable route';
         const project = port.projectExists(shipment.projectId)
           ? shipment.projectId
           : null;
@@ -392,18 +405,23 @@ export class Logistics {
         const target = port.planets.find((p) => p.id === next)!;
         const years = this.activeCarriers(route, port).map((f) => {
           const speed = port.speed(f);
-          const reposition = f.position!.distanceTo(origin.position);
+          const reposition =
+            port.travelYears?.(f, f.position!, origin.position) ??
+            f.position!.distanceTo(origin.position) / speed;
           const busy = this.shipments.filter((s) => s.fleetId === f.id).length;
           return (
             Math.max(
               1,
-              Math.ceil(origin.position.distanceTo(target.position) / speed),
+              Math.ceil(
+                port.travelYears?.(f, origin.position, target.position) ??
+                  origin.position.distanceTo(target.position) / speed,
+              ),
             ) +
-            Math.ceil(reposition / speed) +
+            Math.ceil(reposition) +
             busy
           );
         });
-        if (years.length)
+        if (years.some(Number.isFinite))
           queue.push({
             planets: [...current.planets, next],
             years: current.years + Math.min(...years),

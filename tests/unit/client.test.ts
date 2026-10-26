@@ -163,7 +163,7 @@ describe('focused-interface', () => {
     select(0, 0);
     expect(
       root.querySelector('[aria-label="Selected hex"]')?.textContent,
-    ).toContain('A star shining through unexplored space.');
+    ).toContain('A star. Its hex is impassable.');
     select(0, 1);
     expect(
       root.querySelector('[aria-label="Selected hex"]')?.textContent,

@@ -198,6 +198,7 @@ describe('frontend-backend-mock', () => {
   it('preserves unreadable saves until explicitly cleared', () => {
     const storage = new Map([
       ['spacelords.terraforming-v5-reset', 'done'],
+      ['spacelords.expanded-galaxy-v12-reset', 'done'],
       ['spacelords.save.v2.1', '{broken json'],
     ]);
     const repo = new BrowserSaveRepository({

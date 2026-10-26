@@ -10,6 +10,14 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Utökad galax och terräng:** radie 100, 300 system, planeter två hexsteg
+  från stjärnorna, större stjärngrafik, ofarbara stjärnor, två asteroidtyper och
+  nebulosor som skymmer sikten. Explore fyller ut kartan i lager; Explore stars
+  tar ett helt varv för att upptäcka systemets planeter. Kraven är
+  **Fullständigt implementerat**, med verifierade mobilflöden i båda motorerna.
+  Äldre sparplatser rensas en gång efter uttryckligt godkännande för denna
+  leverans. Se [krav och status](docs/galaxy-terrain.md).
+
 - **Patrol:** `flottpatrullering` är **Fullständigt implementerat**. Flottor med
   Fighters cirklar runt orderhexen och jagar synliga pirater inom sin effektiva
   flottfart, mätt från flottans aktuella position. Gemensam sikt används;

@@ -87,7 +87,7 @@ function withPirate(game: Game, position: HexCoordinate, visible = true) {
 
 describe('flottpatrullering', () => {
   it('circles the fixed center in neighbor order over multiple years without idle decisions', () => {
-    const game = setup();
+    const game = setup(hex(3, 0));
     const center = game.fleet('fleet-home')!.position!;
     game.setPatrol('fleet-home');
     expect(

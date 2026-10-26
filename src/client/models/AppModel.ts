@@ -211,9 +211,10 @@ export class AppModel {
   #saveSlots: readonly SaveSlotSnapshot[] = [];
 
   constructor(
-    galaxy = createExampleGalaxy(),
+    private readonly initialGalaxy = createExampleGalaxy(),
     private readonly saves?: SaveRepository,
   ) {
+    const galaxy = this.initialGalaxy;
     this.#game = new Game(galaxy);
     this.#camera = new Camera(galaxy.homePlanet.position, galaxy.radius);
     this.#selected = galaxy.homePlanet.position;
@@ -257,7 +258,7 @@ export class AppModel {
     const saved = this.saves.load(id);
     const game = saved
       ? Game.restore(saved.state)
-      : new Game(createExampleGalaxy());
+      : new Game(this.initialGalaxy);
     // Save before switching so a failed write leaves the previous session intact.
     this.saves.save(id, {
       lastPlayed: new Date().toISOString(),

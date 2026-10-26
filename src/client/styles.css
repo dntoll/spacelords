@@ -264,6 +264,11 @@ p {
   color: var(--muted);
   white-space: nowrap;
 }
+.selection-panel .selection-description.terrain-description {
+  display: block;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
 .selection-description {
   font-size: 0.85rem;
   color: #bdcbd0;

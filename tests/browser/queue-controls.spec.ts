@@ -8,7 +8,7 @@ for (const width of [320, 900]) {
   }, testInfo) => {
     await page.setViewportSize({ width, height: 800 });
     await page.addInitScript((state) => {
-      localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+      localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
       localStorage.setItem(
         'spacelords.save.v2.1',
         JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),

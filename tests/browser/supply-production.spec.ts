@@ -8,7 +8,7 @@ test('forsorjningsproblem-pa-kartan / forsorjningsstatus / leveransfloden: resol
 }) => {
   await page.addInitScript((state) => {
     if (localStorage.getItem('route-map-seeded')) return;
-    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     localStorage.setItem(
       'spacelords.save.v2.1',
       JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),

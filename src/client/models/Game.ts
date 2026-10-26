@@ -31,6 +31,8 @@ import type { ProductionOption, ProductionGuidance } from './ProductionMap.js';
 import { ProjectSupply, type ProjectSupplySnapshot } from './ProjectSupply.js';
 import { Galaxy, Star, StarSystem, type MapCell } from './Galaxy.js';
 import { HexCoordinate } from './HexCoordinate.js';
+import { HexNavigation } from './HexNavigation.js';
+import type { TerrainHex } from './Galaxy.js';
 import { shipTransferIssue } from './FleetTransfer.js';
 import { PlanetEnvironment } from './PlanetEnvironment.js';
 import {
@@ -513,6 +515,7 @@ export interface PlanetOrderSnapshot {
   readonly emptyQueues: number;
 }
 export interface FleetSnapshot {
+  readonly navigationIssue?: string | undefined;
   readonly patrol?: Readonly<{
     center: HexCoordinate;
     range: number;
@@ -584,6 +587,13 @@ interface Project {
   destinationFleetId: string | null;
 }
 interface Fleet {
+  navigationIssue?: string;
+  starSurvey?: {
+    starId: string;
+    startIndex: number;
+    completed: number;
+    arrived: boolean;
+  };
   patrol?: PatrolOrder;
   exploration?: ExplorationOrder;
   shipUnits?: ShipUnit[];
@@ -631,7 +641,8 @@ export interface GameState {
   readonly componentOrders?: readonly ComponentOrder[];
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
-  readonly version: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+  readonly version: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+  readonly knownTerrain?: readonly string[];
   readonly salvage?: ReturnType<Salvage['snapshot']>;
   readonly recoveredResearch?: readonly Technology[];
   readonly visiblePirates?: readonly string[];
@@ -641,7 +652,9 @@ export interface GameState {
   readonly world: {
     readonly player: { readonly id: string; readonly name: string };
     readonly radius: number;
+    readonly terrain?: readonly TerrainHex[];
     readonly systems: readonly {
+      readonly planetDistance?: 1 | 2;
       readonly star: {
         readonly id: string;
         readonly name: string;
@@ -676,6 +689,8 @@ export class Game {
   #fleets: Fleet[];
   #pirates: PirateFleet[];
   #explored = new Set<string>();
+  #knownTerrain = new Set<string>();
+  readonly #navigation: HexNavigation;
   #visible: ReadonlySet<string> = new Set();
   #visiblePirates = new Set<string>();
   #events: GameEvent[] = [];
@@ -685,6 +700,7 @@ export class Game {
   #mapCells: readonly MapCell[] | null = null;
 
   constructor(readonly galaxy: Galaxy) {
+    this.#navigation = new HexNavigation(galaxy);
     this.#salvage = Salvage.seed(galaxy.systems.map((system) => system.star));
     this.#pirates = PirateFleet.seed(galaxy);
     for (const planet of galaxy.systems.flatMap((system) => system.planets)) {
@@ -726,7 +742,8 @@ export class Game {
     if (this.#phase === 'simulating')
       throw new Error('Wait for the turn to finish before saving.');
     return structuredClone({
-      version: 11,
+      version: 12,
+      knownTerrain: [...this.#knownTerrain],
       salvage: this.#salvage.snapshot(),
       recoveredResearch: [...this.#research.recovered],
       visiblePirates: [...this.#visiblePirates],
@@ -736,7 +753,9 @@ export class Game {
       world: {
         player: { id: this.galaxy.player.id, name: this.galaxy.player.name },
         radius: this.galaxy.radius,
+        terrain: this.galaxy.terrain,
         systems: this.galaxy.systems.map((system) => ({
+          planetDistance: system.planetDistance,
           star: {
             id: system.star.id,
             name: system.star.name,
@@ -768,7 +787,7 @@ export class Game {
 
   static restore(state: GameState): Game {
     if (
-      ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(state.version) ||
+      ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(state.version) ||
       !Number.isSafeInteger(state.round) ||
       state.round < 1 ||
       !Number.isSafeInteger(state.sequence) ||
@@ -808,9 +827,11 @@ export class Game {
                     : null,
                 }),
             ),
+            system.planetDistance ?? 1,
           ),
       ),
       world.radius,
+      world.terrain ?? [],
     );
     const game = new Game(galaxy);
     const copy = structuredClone(state);
@@ -926,6 +947,32 @@ export class Game {
       fleet.ships = { ...zeroShips(), ...fleet.ships };
     game.#normalizeShips();
     game.#explored = new Set(copy.explored);
+    game.#knownTerrain = new Set(copy.knownTerrain ?? copy.explored);
+    for (const key of game.#knownTerrain) {
+      const coordinates = key.split(',').map(Number);
+      if (
+        coordinates.length !== 2 ||
+        coordinates.some((value) => !Number.isInteger(value)) ||
+        !galaxy.contains(new HexCoordinate(coordinates[0]!, coordinates[1]!))
+      )
+        throw new Error('Invalid known terrain.');
+    }
+    for (const fleet of game.#fleets) {
+      const survey = fleet.starSurvey;
+      if (
+        survey &&
+        (fleet.exploration !== 'explore-stars' ||
+          !galaxy.systems.some((system) => system.star.id === survey.starId) ||
+          !Number.isInteger(survey.startIndex) ||
+          survey.startIndex < 0 ||
+          survey.startIndex > 5 ||
+          !Number.isInteger(survey.completed) ||
+          survey.completed < 0 ||
+          survey.completed > 6 ||
+          typeof survey.arrived !== 'boolean')
+      )
+        throw new Error('Invalid star survey.');
+    }
     game.#events = copy.events.filter(
       (event) =>
         !/^Fleet .* moved to -?\d+,-?\d+\.$|^Exploration from .* revealed \d+ hexes\.$/.test(
@@ -1031,6 +1078,7 @@ export class Game {
       this.#explored,
       new Set(this.#colonies.keys()),
       this.#visible,
+      this.#knownTerrain,
     );
     return this.#mapCells;
   }
@@ -1300,8 +1348,18 @@ export class Game {
               }
             : {}),
           exploration: fleet.exploration,
+          navigationIssue: fleet.navigationIssue,
           remainingMovement: this.#simulation
-            ? this.#simulation.movement(fleet.id, this.#speed(fleet))
+            ? this.#simulation.movement(
+                fleet.id,
+                fleet.position
+                  ? this.#navigation.stepSpeed(
+                      fleet.position,
+                      fleet.position,
+                      this.#speed(fleet),
+                    )
+                  : this.#speed(fleet),
+              )
             : undefined,
           canIssueOrders: this.canIssueFleetOrders(fleet.id),
           position: fleet.position,
@@ -1359,7 +1417,7 @@ export class Game {
         .neighbors()
         .filter(
           (position) =>
-            this.galaxy.cellAt(position) && !occupied.has(position.key),
+            this.galaxy.isPassable(position) && !occupied.has(position.key),
         ),
     );
   }
@@ -1369,6 +1427,7 @@ export class Game {
     this.#salvage.assign(fleet, wreckId);
     delete fleet.patrol;
     delete fleet.exploration;
+    delete fleet.starSurvey;
     delete fleet.joinFleetId;
     this.#updateSalvage();
   }
@@ -1378,6 +1437,7 @@ export class Game {
     this.#salvage.returnHome(fleet);
     delete fleet.patrol;
     delete fleet.exploration;
+    delete fleet.starSurvey;
     delete fleet.joinFleetId;
     this.#updateSalvage();
   }
@@ -2241,6 +2301,12 @@ export class Game {
     this.#requireFleetOrders(id);
     if (!this.galaxy.cellAt(destination))
       throw new Error('Choose a hex on the map.');
+    if (
+      this.galaxy.isStar(destination) ||
+      (this.#knownTerrain.has(destination.key) &&
+        !this.galaxy.isPassable(destination))
+    )
+      throw new Error('This hex is impassable.');
     const fleet = this.#fleetState(id);
     this.#salvage.stop(id);
     this.#requireManualFleet(fleet);
@@ -2248,7 +2314,9 @@ export class Game {
       throw new Error('Empty fleets cannot receive destinations.');
     delete fleet.joinFleetId;
     delete fleet.exploration;
+    delete fleet.starSurvey;
     fleet.destination = destination;
+    delete fleet.navigationIssue;
     delete fleet.patrol;
     fleet.courseOrigin = fleet.position!;
   }
@@ -2256,6 +2324,7 @@ export class Game {
     this.#requireFleetOrders(id);
     this.#salvage.stop(id);
     delete this.#fleetState(id).exploration;
+    delete this.#fleetState(id).starSurvey;
     this.#requireManualFleet(this.#fleetState(id));
     delete this.#fleetState(id).patrol;
     this.#fleetState(id).destination = null;
@@ -2295,6 +2364,7 @@ export class Game {
     delete fleet.patrol;
     delete fleet.joinFleetId;
     fleet.exploration = order;
+    delete fleet.starSurvey;
     this.#updateExploration(fleet);
   }
   setPatrol(id: string): void {
@@ -2307,6 +2377,7 @@ export class Game {
     delete fleet.exploration;
     delete fleet.joinFleetId;
     fleet.patrol = { center: fleet.position!, nextIndex: 0 };
+    delete fleet.starSurvey;
     this.#updatePatrol(fleet);
   }
   handleDiscoveries(): void {
@@ -2366,7 +2437,7 @@ export class Game {
       (fleet) =>
         pirates.has(fleet.id)
           ? [pirates.get(fleet.id)!.nextPosition(this.galaxy)]
-          : this.#route(fleet).path,
+          : this.#availableRoute(fleet),
       (fleet) =>
         this.#simulation!.movement(
           fleet.id,
@@ -2413,7 +2484,11 @@ export class Game {
       );
       this.#simulation!.spend(
         movement.fleetId,
-        moving ? this.#speed(moving) : 1,
+        this.#navigation.stepSpeed(
+          movement.from,
+          movement.to,
+          moving ? this.#speed(moving) : 1,
+        ),
       );
       const pirate = this.#pirates.find(
         (pirate) => pirate.id === movement.fleetId,
@@ -2752,6 +2827,8 @@ export class Game {
       }
       this.#logistics.assign(routeId, source, this.#logisticsPort());
       delete source.patrol;
+      delete source.exploration;
+      delete source.starSurvey;
     } else {
       // rutt-eskortfordelning: include reinforcements already on their way.
       const targets = routeEscortTargets(routeId, snapshots).map((fleet) => ({
@@ -3291,6 +3368,14 @@ export class Game {
       }),
       fleets: this.#fleets,
       speed: (fleet: TransportFleet) => this.#speed(this.#fleetState(fleet.id)),
+      travelYears: (fleet, from, to) => {
+        if (from.key === to.key) return 0;
+        const speed = this.#speed(this.#fleetState(fleet.id));
+        const path = this.#navigation.path(from, to, speed, this.#knownTerrain);
+        return path.length
+          ? this.#navigation.years(path, from, speed, this.#knownTerrain)
+          : Infinity;
+      },
       id: (prefix: string) => this.#id(prefix),
       event: (message: string) => this.#event(message),
       projectExists: (id: string) =>
@@ -3685,38 +3770,54 @@ export class Game {
     path: HexCoordinate[];
   } {
     if (!fleet.destination || !fleet.position) return { fleet, path: [] };
-    const path: HexCoordinate[] = [];
-    let current = fleet.position;
-    const destination = fleet.destination;
-    const origin = fleet.courseOrigin ?? fleet.position;
-    const distance = origin.distanceTo(destination);
-    const completedSteps = origin.distanceTo(current);
-    for (
-      let steps = 0;
-      steps < this.#speed(fleet) && current.key !== fleet.destination.key;
-      steps += 1
-    ) {
-      const progress = (completedSteps + steps + 1) / distance;
-      const idealQ = origin.q + (destination.q - origin.q) * progress;
-      const idealR = origin.r + (destination.r - origin.r) * progress;
-      const deviation = (position: HexCoordinate): number => {
-        const qError = position.q - idealQ;
-        const rError = position.r - idealR;
-        return qError ** 2 + rError ** 2 + (qError + rError) ** 2;
-      };
-      const next = current
-        .neighbors()
-        .filter((item) => this.galaxy.cellAt(item))
-        .sort(
-          (a, b) =>
-            a.distanceTo(destination) - b.distanceTo(destination) ||
-            deviation(a) - deviation(b),
-        )[0];
-      if (!next) break;
-      path.push(next);
-      current = next;
-    }
+    const path = [
+      ...this.#navigation.path(
+        fleet.position,
+        fleet.destination,
+        this.#speed(fleet),
+        this.#knownTerrain,
+        fleet.courseOrigin ?? fleet.position,
+      ),
+    ];
     return { fleet, path };
+  }
+  #availableRoute(fleet: PursuingFleet): readonly HexCoordinate[] {
+    const state = this.#fleetState(fleet.id);
+    delete state.navigationIssue;
+    let path = this.#route(fleet).path;
+    while (path[0] && !this.galaxy.isPassable(path[0])) {
+      this.#knownTerrain.add(path[0].key);
+      this.#mapCells = null;
+      path = this.#route(fleet).path;
+    }
+    const next = path[0];
+    if (!next) {
+      if (fleet.destination && fleet.position?.key !== fleet.destination.key)
+        state.navigationIssue =
+          'No known passable route. Choose another destination.';
+      return [];
+    }
+    const speed = this.#navigation.stepSpeed(
+      fleet.position!,
+      next,
+      this.#speed(fleet),
+    );
+    if (
+      speed === 1 &&
+      this.#speed(fleet) > 1 &&
+      !this.#knownTerrain.has(next.key)
+    ) {
+      this.#knownTerrain.add(next.key);
+      this.#mapCells = null;
+      path = this.#route(fleet).path;
+      if (path[0]?.key !== next.key) return this.#availableRoute(fleet);
+    }
+    if (!this.#simulation!.movement(fleet.id, speed)) {
+      state.navigationIssue =
+        'Asteroid passage requires a full year of movement.';
+      return [];
+    }
+    return path;
   }
   #fleetDisplayName(fleet: Fleet): string {
     const route = this.#logistics.routes.find(
@@ -3728,16 +3829,48 @@ export class Game {
   }
   #updateExploration(fleet: Fleet): void {
     if (!fleet.exploration) return;
-    const candidates =
-      fleet.exploration === 'explore-stars'
-        ? this.galaxy.systems.map((system) => system.star.position)
-        : this.galaxy.mapSnapshot().map((cell) => cell.position);
-    const target =
-      fleet.position && fleet.ships['Exploration ship'] > 0
-        ? nearestUnexplored(fleet.position, candidates, this.#explored)
-        : null;
+    let target: HexCoordinate | null = null;
+    if (fleet.position && fleet.ships['Exploration ship'] > 0) {
+      if (fleet.exploration === 'explore-stars')
+        target = this.#starSurveyDestination(fleet);
+      else {
+        delete fleet.starSurvey;
+        const home = this.galaxy.homePlanet.position;
+        const candidates = this.galaxy
+          .mapSnapshot()
+          .map((cell) => cell.position)
+          .filter(
+            (point) =>
+              !this.#explored.has(point.key) &&
+              !this.galaxy.isStar(point) &&
+              (!this.#knownTerrain.has(point.key) ||
+                this.galaxy.isPassable(point)) &&
+              point
+                .neighbors()
+                .some((neighbor) => this.#explored.has(neighbor.key)),
+          )
+          .sort(
+            (a, b) =>
+              home.distanceTo(a) - home.distanceTo(b) ||
+              fleet.position!.distanceTo(a) - fleet.position!.distanceTo(b) ||
+              Math.atan2(a.r - home.r, a.q - home.q) -
+                Math.atan2(b.r - home.r, b.q - home.q),
+          );
+        target =
+          candidates.find(
+            (point) =>
+              this.#navigation.path(
+                fleet.position!,
+                point,
+                this.#speed(fleet),
+                this.#knownTerrain,
+              ).length,
+          ) ?? null;
+      }
+    }
     if (!target) {
       delete fleet.exploration;
+      delete fleet.starSurvey;
       fleet.destination = null;
       delete fleet.courseOrigin;
       this.#event(
@@ -3747,6 +3880,67 @@ export class Game {
       fleet.destination = target;
       fleet.courseOrigin = fleet.position!;
     }
+  }
+  #starSurveyDestination(fleet: Fleet): HexCoordinate | null {
+    if (!fleet.position) return null;
+    if (!fleet.starSurvey) {
+      const stars = this.galaxy.systems.map((system) => system.star.position);
+      const remaining = new Set(this.#explored);
+      for (let attempts = 0; attempts < stars.length; attempts++) {
+        const target = nearestUnexplored(fleet.position, stars, remaining);
+        if (!target) return null;
+        const ring = target.neighbors();
+        const approaches = ring
+          .map((point, index) => ({
+            point,
+            index,
+            path: this.#navigation.path(
+              fleet.position!,
+              point,
+              this.#speed(fleet),
+              this.#knownTerrain,
+            ),
+          }))
+          .filter(
+            ({ point, path }) =>
+              this.galaxy.isPassable(point) &&
+              (path.length || point.key === fleet.position!.key),
+          )
+          .sort((a, b) => a.path.length - b.path.length || a.index - b.index);
+        const approach = approaches[0];
+        if (approach) {
+          const star = this.galaxy.systems.find(
+            (system) => system.star.position.key === target.key,
+          )!.star;
+          fleet.starSurvey = {
+            starId: star.id,
+            startIndex: approach.index,
+            completed: 0,
+            arrived: false,
+          };
+          break;
+        }
+        remaining.add(target.key);
+      }
+    }
+    const survey = fleet.starSurvey;
+    if (!survey) return null;
+    const star = this.galaxy.systems.find(
+      (system) => system.star.id === survey.starId,
+    )!.star;
+    const ring = star.position.neighbors();
+    if (!survey.arrived) {
+      if (fleet.position.key !== ring[survey.startIndex]!.key)
+        return ring[survey.startIndex]!;
+      survey.arrived = true;
+    }
+    const next = ring[(survey.startIndex + survey.completed + 1) % 6]!;
+    if (fleet.position.key === next.key) survey.completed++;
+    if (survey.completed >= 6) {
+      delete fleet.starSurvey;
+      return this.#starSurveyDestination(fleet);
+    }
+    return ring[(survey.startIndex + survey.completed + 1) % 6]!;
   }
   #updatePatrol(fleet: Fleet): void {
     if (!fleet.patrol) return;
@@ -3764,7 +3958,10 @@ export class Game {
       fleet.position,
       this.#speed(fleet),
       this.pirateSnapshots(),
-      (point) => !!this.galaxy.cellAt(point),
+      (point) =>
+        this.galaxy.contains(point) &&
+        !this.galaxy.isStar(point) &&
+        (!this.#knownTerrain.has(point.key) || this.galaxy.isPassable(point)),
     );
     fleet.destination = destination;
     if (destination) fleet.courseOrigin = fleet.position;
@@ -3869,7 +4066,7 @@ export class Game {
     );
   }
   #updateSight(): void {
-    this.#visible = Detection.coverage([
+    const sources = [
       ...this.#ownedPlanets().map((planet) => ({
         position: planet.position,
         range: Detection.planetRange(this.#state(planet).buildings),
@@ -3880,7 +4077,16 @@ export class Game {
           position: fleet.position!,
           range: this.#fleetDetectionRange(fleet),
         })),
-    ]);
+    ];
+    const nebula = (point: HexCoordinate) =>
+      this.galaxy.terrainAt(point) === 'nebula';
+    this.#visible = Detection.coverage(sources, nebula);
+    for (const key of Detection.coverage(sources, nebula, true)) {
+      const point = new HexCoordinate(
+        ...(key.split(',').map(Number) as [number, number]),
+      );
+      if (this.galaxy.contains(point)) this.#knownTerrain.add(key);
+    }
     for (const key of this.#visible)
       if (
         this.galaxy.cellAt(

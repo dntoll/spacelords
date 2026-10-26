@@ -1,6 +1,7 @@
 import p5 from 'p5';
 import type { MapCell } from '../models/Galaxy.js';
 import { HexGeometry } from '../models/HexCoordinate.js';
+import { renderTerrain } from './TerrainMapView.js';
 
 /** Read-only p5 instance; hidden cells never reach the preview. */
 export class SaveMapPreview {
@@ -65,10 +66,13 @@ export class SaveMapPreview {
             sketch.circle(
               point.x,
               point.y,
-              cell.object.kind === 'star' ? 14 : 10,
+              cell.object.kind === 'star'
+                ? Math.sqrt(3) * HexGeometry.size
+                : 10,
             );
           }
         });
+        renderTerrain(sketch, visible);
         sketch.pop();
         container
           .querySelector('canvas')

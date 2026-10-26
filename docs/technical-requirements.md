@@ -1,5 +1,28 @@
 # Tekniska krav och arbetsregler
 
+## Utökad galax och terräng, 2026-10-26
+
+`utokad-galax`: den publika klientens nyspelsfabrik skapar en oföränderlig,
+reproducerbar värld med radie 100 och 300 system. Små exempelvärldar behålls
+som isolerade testfixturer. Galaxy indexerar positioner, stjärnor, planeter och
+terräng. p5 ritar endast hexar i skärmytan med marginal.
+
+`asteroidbalten` och `ofarbara-stjarnhexar`: HexNavigation används av Game
+för samtliga flottorder och av transporternas tidsprognoser. Sökningen känner
+bara stjärnor och redan observerad terräng. Genomförandet validerar verklig
+terräng före varje steg. Ett asteroidsteg kostar alla årets 60 tidsenheter;
+avbrott, sammanslagning och omladdning får inte skapa ny rörelsebudget.
+
+`nebulosornas-sikt`: Detection räknar siktlinjer, kontrollerar båda sidor av
+exakta hexkanter och skiljer observerad terrängyta från synligt innehåll.
+Kartminnet bevaras; pirater använder bara aktuell, gemensam sikt.
+
+Sparversion 12 innehåller världens terräng, systemens planetavstånd, känd
+terräng och flottans pågående stjärnvarv. Äldre modellformat kan fortfarande
+läsas för regressioner. `engangsreset-utokad-galax` rensar webbläsarens tre
+spelplatser exakt en gång med markören `spacelords.expanded-galaxy-v12-reset`.
+Detta är ett nytt uttryckligt beslut, inte en generell rensningspolicy.
+
 Namnen nedan är stabila referenser i tester, kod och dokumentation.
 Produktkraven finns separat i [product-requirements.md](product-requirements.md).
 

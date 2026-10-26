@@ -28,7 +28,7 @@ test('flottadministration / skeppsbilder / viewport-game-layout: long fleet list
   };
   await page.addInitScript((saved) => {
     localStorage.setItem('spacelords.economy-v2-reset', 'done');
-    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     localStorage.setItem(
       'spacelords.save.v2.1',
       JSON.stringify({ lastPlayed: '2026-10-21T10:00:00Z', state: saved }),
@@ -97,7 +97,7 @@ test('kompakta-flottkort: four ships fit in one row and fleet actions remain tou
   };
   await page.addInitScript((saved) => {
     localStorage.setItem('spacelords.economy-v2-reset', 'done');
-    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     localStorage.setItem(
       'spacelords.save.v2.1',
       JSON.stringify({ lastPlayed: '2026-10-23T10:00:00Z', state: saved }),

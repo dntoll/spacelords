@@ -41,7 +41,7 @@ test('motorbehov-for-alla-skepp / ion-pulse-engine / automatisk-motormontering: 
   };
   await page.addInitScript((saved) => {
     if (localStorage.getItem('spacelords.save.v2.1')) return;
-    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     localStorage.setItem(
       'spacelords.save.v2.1',
       JSON.stringify({ lastPlayed: '2026-10-24T10:00:00Z', state: saved }),

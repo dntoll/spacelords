@@ -1,5 +1,12 @@
 # Produktkrav och status
 
+## Utökad galax
+
+Kraven för den större galaxen, stjärnor, planetavstånd, asteroidbälten,
+nebulosor och utforskning finns i [galax och terräng](galaxy-terrain.md).
+De ersätter tidigare storlek, direkt angränsande planeter och fri passage
+genom stjärnhexar. Där anges också den uttryckligen godkända engångsrensningen.
+
 `kompakta-koknappar` — **Fullständigt implementerat**: Research queue och
 Build queue har kompakta symbolknappar: ↑ och ↓ flyttar en order, × tar bort
 den. Knapparna visar förklarande hjälptexter och har tydliga namn för

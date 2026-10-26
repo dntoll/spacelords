@@ -8,7 +8,7 @@ test('upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: Handl
   page,
 }, testInfo) => {
   await page.addInitScript((state) => {
-    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     if (!localStorage.getItem('spacelords.save.v2.1'))
       localStorage.setItem(
         'spacelords.save.v2.1',

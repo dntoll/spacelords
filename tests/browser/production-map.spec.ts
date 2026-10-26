@@ -24,7 +24,7 @@ test('route-kartvy / produktions-kartvy / radiella-byggval / kompakt-produktions
   const saved = Game.restore(state).exportState();
   await page.addInitScript((state) => {
     if (localStorage.getItem('production-map-seeded')) return;
-    localStorage.setItem('spacelords.terraforming-v5-reset', 'done');
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     localStorage.setItem(
       'spacelords.save.v2.1',
       JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),

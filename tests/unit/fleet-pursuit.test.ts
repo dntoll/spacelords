@@ -93,7 +93,7 @@ describe('skepp-till-rorlig-flotta', () => {
     turn(game);
     expect(game.fleet('target')!.position?.key).toBe('9,0');
     expect(reinforcement(game).position?.key).toBe('4,0');
-    game.setDestination('target', new HexCoordinate(0, 0));
+    game.setDestination('target', new HexCoordinate(-1, 0));
     turn(game);
     expect(game.fleet('target')!.position?.key).toBe('7,0');
     expect(game.fleet('target')!.ships.Fighter).toBe(1);
