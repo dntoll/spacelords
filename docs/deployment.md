@@ -664,3 +664,33 @@ inte automatiskt version 3-sparningar till det äldre formatet.
   var oförändrade. Inga sparformat eller rensningsregler ändrades av arbetsflödet.
 - Lokal rapport: `dist/deployments/1120d5104cfd-1792823258061/report.json`.
   Manuell mobiltest följer; sluttest och merge väntar på användarens begäran.
+
+## Synlig End turn och årsuppspelning: 2026-10-26
+
+- Publicerad källrevision: `34a1fa6e0ac32e7f2fec3128214804fcbf526a72`
+  från `codex/decisions-pending-actions`. End turn syns även vid kartval.
+  Årets händelser visas en i taget med kartfokus, Pause/Play, Next och Skip.
+  Events visar bara senaste året i händelseordning; layouten följer mobilens
+  orientering. Föregående vy, giltiga val och kamera återställs efteråt.
+- Deploycommit: `4536e20b2138c66ea42451e8da63aa1fc6c9c019`.
+  Webbplatsrepots tidigare revision: `78ac2e1f7d2dfd5a3dad2e37dd383538518041eb`.
+  Endast `spacelords/` ändrades. Källrepots `main` är oförändrad.
+- Regressionstestet reproducerade dold End turn före rättningen. Riktade
+  modell- och vytester verifierar timer, ordning, paus, överhoppning,
+  händelsepositioner, äldre sparningar, avbrutna år och återställning.
+  Mobiltester i Chromium och WebKit verifierar stående/liggande layout,
+  orienteringsbyte, kartmarkeringar, långa listor och återgång till Research.
+  Skärmbilder granskades i båda orienteringarna.
+- `deploy:quick` avslutades med `verified` på 140,26 sekunder. Formatering,
+  ESLint, typkontroll, 516 snabba tester inom 20 sekunder, verktygskontroller,
+  Pages-integration och två mobilkontroller passerade. Ytterligare två
+  mobilkontroller passerade live. Ett första försök stannade på ett
+  tillfälligt nätverksfel före push och ändrade inte webbplatsen.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/40378076829)
+  lyckades. Alla 13 publicerade filer matchade kontrollsummorna. Omdirigering,
+  innehållstyper och befintliga webbplatsadresser verifierades. Inga länkar,
+  DNS- eller Pages-inställningar ändrades. Äldre sparningar bevaras;
+  händelsepositioner är valfria och ingen rensning eller migrering krävs.
+- Lokal rapport: `dist/deployments/34a1fa6e0ac3-1793039251932/report.json`.
+  Manuell mobiltest följer. Fullständigt sluttest och merge inväntar separat
+  beställning respektive godkännande.
