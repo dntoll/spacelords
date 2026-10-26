@@ -42,10 +42,12 @@ Se [hela visionen](docs/game-vision.md).
   efter varje hexsteg. Enhetstester och mobilflöden i Chromium och WebKit är verifierade.
   Äldre spel får inga pirater. Se [spelreglerna](docs/space-pirates.md).
 
-- **Events:** `handelser-grupperade-per-ar-och-typ` är **Fullständigt implementerat**.
-  Events samlas under årsrubriker och grupperas efter händelsetyp inom varje år.
-  Population changes visar planetnamn och förändring, även +0.
-  Se [produktkraven](docs/product-requirements.md).
+- **Events:** `end-turn-vid-kartval`, `sekventiella-arshandelser` och
+  `handelser-pa-kartan` är **Fullständigt implementerat**. End turn syns även
+  med kartval. Årets händelser spelas upp en efter en med paus och kartfokus;
+  listan visar bara senaste året i händelseordning. Stående mobil har listan
+  under kartan, liggande mobil och bredare skärmar bredvid. Detta ersätter
+  `handelser-grupperade-per-ar-och-typ`. Se [Events](docs/events-and-guidance.md).
 
 - **Skeppsmotorer:** `motorbehov-for-alla-skepp`, `ion-pulse-engine` och
   `automatisk-motormontering` är **Fullständigt implementerat**. Alla skepp kräver
@@ -186,7 +188,7 @@ Se [hela visionen](docs/game-vision.md).
   samlat och låter spelaren fortsätta ändå. Händelsekonsolen (`handelser`) är
   fullständigt implementerad: Events är fällbar och visar hela senaste året
   när utrymmet räcker, med intern rullning för resten.
-  Events och End turn döljs när kartan visar ett val.
+  Events kan döljas vid kartval; End turn har alltid egen plats.
   `rundkontroller-i-decisions` är **Fullständigt implementerat**: båda finns
   även i Decisions.
   `senaste-aret-i-events`, `utvikbara-events` och `rundkontroller-pa-fler-vyer`

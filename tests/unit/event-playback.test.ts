@@ -1,0 +1,254 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { EventPlayback } from '../../src/client/models/EventPlayback.js';
+import { AppModel } from '../../src/client/models/AppModel.js';
+import { AppController } from '../../src/client/controllers/AppController.js';
+import type {
+  AppPort,
+  IntentHandler,
+} from '../../src/client/views/ViewContracts.js';
+import { Game } from '../../src/client/models/Game.js';
+import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
+import {
+  HexCoordinate,
+  HexGeometry,
+} from '../../src/client/models/HexCoordinate.js';
+import { collectTurnFrames, turnFrames } from '../fixtures/turn-steps.js';
+import { discoveryState } from '../fixtures/exploration.js';
+import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+
+afterEach(() => vi.useRealTimers());
+
+describe('sekventiella-arshandelser', () => {
+  it('plays only the completed year in occurrence order and pauses manual steps', () => {
+    const events = [
+      { id: 'old', round: 1, text: 'Old event' },
+      { id: 'build', round: 2, text: 'Build event' },
+      {
+        id: 'population',
+        round: 2,
+        text: 'Population on Tellus changed by +0.',
+      },
+      { id: 'arrival', round: 2, text: 'Arrival event' },
+    ];
+    const playback = new EventPlayback(2, events);
+    expect(playback.snapshot.events.map((event) => event.id)).toEqual([
+      'build',
+      'population',
+      'arrival',
+    ]);
+    expect(playback.current?.id).toBe('build');
+    playback.togglePause();
+    playback.advance();
+    expect(playback.current?.id).toBe('build');
+    playback.advance(true);
+    expect(playback.current?.id).toBe('population');
+    expect(playback.snapshot.paused).toBe(true);
+    playback.togglePause();
+    expect(playback.advance()).toBe(true);
+    expect(playback.current?.id).toBe('arrival');
+    expect(playback.advance()).toBe(false);
+    expect(events).toHaveLength(4);
+    expect(new EventPlayback(3, events).current).toBeUndefined();
+  });
+
+  function controlledTurn() {
+    vi.useFakeTimers();
+    const model = new AppModel();
+    model.build('Research station');
+    model.openResearch();
+    for (const decision of model.snapshot.decisions)
+      model.skipDecision(decision.id);
+    let emit!: IntentHandler;
+    const render = vi.fn();
+    const port: AppPort = {
+      bind(handler) {
+        emit = handler;
+      },
+      render,
+      dispose() {},
+    };
+    const controller = new AppController(model, port);
+    controller.start();
+    emit({ type: 'end-turn' });
+    return { model, controller, emit, render };
+  }
+
+  it('uses 1500 ms steps, blocks orders, restores the previous screen and stops on disposal', async () => {
+    const { model, controller, emit, render } = controlledTurn();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(model.snapshot.eventPlayback?.index).toBe(0);
+    expect(model.snapshot.screen).toBe('map');
+    const round = model.snapshot.round;
+    const history = model.snapshot.events;
+    emit({ type: 'end-turn' });
+    emit({ type: 'open-fleets' });
+    expect(model.snapshot.round).toBe(round);
+    expect(model.snapshot.screen).toBe('map');
+    await vi.advanceTimersByTimeAsync(1499);
+    expect(model.snapshot.eventPlayback?.index).toBe(0);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(model.snapshot.eventPlayback?.index).toBe(1);
+    emit({ type: 'playback-toggle' });
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(model.snapshot.eventPlayback?.index).toBe(1);
+    emit({ type: 'playback-skip' });
+    expect(model.snapshot.eventPlayback).toBeNull();
+    expect(model.snapshot.screen).toBe('research');
+    expect(model.snapshot.events).toEqual(history);
+    emit({ type: 'end-turn' });
+    await vi.advanceTimersByTimeAsync(0);
+    controller.dispose();
+    const renders = render.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(render).toHaveBeenCalledTimes(renders);
+  });
+
+  it('Next pauses and natural completion restores the original camera and selection', () => {
+    const model = new AppModel();
+    model.pan({ x: 50, y: -30 });
+    model.zoom(0.5, { x: 70, y: -20 });
+    const before = model.snapshot;
+    for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
+    model.finishTurn();
+    model.beginEventPlayback();
+    expect(model.snapshot.eventPlayback).not.toBeNull();
+    expect(model.requestEndTurn()).toBe(false);
+    model.advanceEventPlayback(true);
+    if (model.snapshot.eventPlayback) {
+      expect(model.snapshot.eventPlayback.paused).toBe(true);
+      model.toggleEventPlayback();
+    }
+    while (model.snapshot.eventPlayback) model.advanceEventPlayback();
+    expect(model.snapshot.camera).toEqual(before.camera);
+    expect(model.snapshot.selected?.position).toEqual(
+      before.selected?.position,
+    );
+    expect(model.snapshot.round).toBe(before.round + 1);
+  });
+
+  it('saves interrupted years before review and saves final results before playback, including earlier discoveries', async () => {
+    vi.useFakeTimers();
+    let saved: SavedGame = {
+      lastPlayed: '2026-10-26',
+      state: discoveryState(),
+    };
+    const model = new AppModel(undefined, {
+      load: () => saved,
+      save(_id, next) {
+        saved = structuredClone(next);
+      },
+      clear() {},
+    });
+    model.startSlot(1);
+    let emit!: IntentHandler;
+    const controller = new AppController(model, {
+      bind(handler) {
+        emit = handler;
+      },
+      render() {},
+      dispose() {},
+    });
+    controller.start();
+    emit({ type: 'confirm-end-turn' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(model.snapshot.phase).toBe('interrupted');
+    expect(model.snapshot.eventPlayback).toBeNull();
+    expect(saved.state.phase).toBe('interrupted');
+    const discovery = saved.state.events.find((event) =>
+      event.text.startsWith('Pirate ship in sight'),
+    )!;
+    expect(discovery.position).toBeDefined();
+    for (
+      let attempt = 0;
+      attempt < 10 && model.snapshot.phase === 'interrupted';
+      attempt++
+    ) {
+      emit({ type: 'ignore-discoveries' });
+      await vi.advanceTimersByTimeAsync(0);
+    }
+    expect(
+      model.snapshot.eventPlayback?.events.some(
+        (event) => event.id === discovery.id,
+      ),
+    ).toBe(true);
+    expect(saved.state.phase).toBe('planning');
+    expect(saved.state.round).toBe(model.snapshot.round);
+    expect(saved.state.events).toEqual(model.snapshot.events);
+    const restored = new AppModel(undefined, {
+      load: () => saved,
+      save() {},
+      clear() {},
+    });
+    restored.startSlot(1);
+    expect(restored.snapshot.eventPlayback).toBeNull();
+    expect(restored.snapshot.events).toEqual(saved.state.events);
+    controller.dispose();
+  });
+});
+
+describe('handelser-pa-kartan', () => {
+  it('records event-time arrival and production positions and keeps research global', () => {
+    const game = new Game(createExampleGalaxy());
+    game.setDestination('fleet-home', new HexCoordinate(3, 0));
+    game.scheduleBuild(game.galaxy.homePlanet, 'Research station');
+    collectTurnFrames(game);
+    game.finishTurn();
+    const arrival = game.events.find((event) =>
+      event.text.includes('arrived'),
+    )!;
+    expect(arrival.position).toEqual({ q: 3, r: 0 });
+    for (const event of game.events.filter((event) =>
+      /completed|Population/.test(event.text),
+    ))
+      expect(event.position).toEqual(game.galaxy.homePlanet.position);
+    game.setDestination('fleet-home', new HexCoordinate(4, 0));
+    game.selectResearch('Rocket engine factory');
+    collectTurnFrames(game);
+    game.finishTurn();
+    expect(
+      game.events.find((event) => event.text.startsWith('Research completed:'))
+        ?.position,
+    ).toBeUndefined();
+    expect(
+      game.events.some((event) => event.text.startsWith('Research completed:')),
+    ).toBe(true);
+    expect(arrival.position).toEqual({ q: 3, r: 0 });
+    expect(Object.isFrozen(arrival.position)).toBe(true);
+    const restored = Game.restore(game.exportState());
+    expect(restored.events).toEqual(game.events);
+    expect(Object.isFrozen(restored.events[0]?.position)).toBe(true);
+  });
+
+  it('loads legacy events without positions and does not replay an already saved year', () => {
+    const game = new Game(createExampleGalaxy());
+    collectTurnFrames(game);
+    game.finishTurn();
+    const state = {
+      ...game.exportState(),
+      events: game.events.map(({ id, round, text }) => ({ id, round, text })),
+    };
+    const model = new AppModel(undefined, {
+      load: () => ({ lastPlayed: '2026-10-26', state }),
+      save() {},
+      clear() {},
+    });
+    model.startSlot(1);
+    expect(model.snapshot.round).toBe(2);
+    expect(model.snapshot.eventPlayback).toBeNull();
+    expect(model.snapshot.events).toEqual(state.events);
+  });
+
+  it('focuses the event coordinates independently of the planning camera', () => {
+    const model = new AppModel();
+    model.setDestination('fleet-home', 3, 0);
+    const before = model.snapshot.camera;
+    for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
+    model.finishTurn();
+    model.beginEventPlayback();
+    expect(model.snapshot.camera.center).toEqual(
+      HexGeometry.toPoint(new HexCoordinate(3, 0)),
+    );
+    model.finishEventPlayback();
+    expect(model.snapshot.camera).toEqual(before);
+  });
+});

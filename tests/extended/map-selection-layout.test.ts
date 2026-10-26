@@ -16,13 +16,41 @@ beforeEach(() => {
   view = new AppView(root, () => ({ render() {}, dispose() {} }));
 });
 
+it('end-turn-vid-kartval: keeps End turn available with a selected planet, fleet and route', () => {
+  const state = tradeNetworkState();
+  model = new AppModel(undefined, {
+    load: () => ({ lastPlayed: '2026-10-26T10:00:00Z', state }),
+    save() {},
+    clear() {},
+  });
+  model.startSlot(1);
+  const intents: unknown[] = [];
+  view.bind((intent) => intents.push(intent));
+  for (const select of [
+    () => model.home(),
+    () => model.selectMapFleet('fleet-home'),
+    () => model.selectMapRoute('route-test'),
+  ]) {
+    select();
+    view.render(model.snapshot);
+    const end = root.querySelector<HTMLButtonElement>('.end-turn')!;
+    expect(end.hidden).toBe(false);
+    expect(end.disabled).toBe(false);
+    end.click();
+  }
+  expect(intents).toEqual(
+    Array.from({ length: 3 }, () => ({ type: 'end-turn' })),
+  );
+  view.dispose();
+});
+
 function expectSelection(active: boolean) {
   expect(root.querySelector<HTMLElement>('.selection-panel')!.hidden).toBe(
     !active,
   );
   expect(root.querySelector<HTMLElement>('.turn-console')!.hidden).toBe(active);
   expect(root.querySelector<HTMLButtonElement>('.end-turn')!.hidden).toBe(
-    active,
+    false,
   );
 }
 
@@ -73,8 +101,8 @@ describe('fokuserat-kartval', () => {
     });
     model.select(new HexCoordinate(-2, 0));
     view.render({ ...model.snapshot, events });
-    expect(log.querySelectorAll('[data-event-id]')).toHaveLength(100);
-    expect(log.scrollTop).toBe(1000);
+    expect(log.querySelectorAll('[data-event-id]')).toHaveLength(1);
+    expect(log.scrollTop).toBe(10);
   });
 
   it('retains fleet orders in empty space without empty-space descriptions', () => {

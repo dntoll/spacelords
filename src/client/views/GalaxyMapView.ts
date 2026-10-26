@@ -1,3 +1,4 @@
+import { renderMapEvent } from './MapEventView.js';
 import { renderMapTradeRoutes } from './MapTradeRoutesView.js';
 import { renderDetectionBoundary } from './DetectionMapView.js';
 import { renderTerrain } from './TerrainMapView.js';
@@ -149,7 +150,8 @@ export class GalaxyMapView implements MapPort {
     for (const cell of cells)
       if (model.camera.zoom >= 0.18 || cell.explored)
         this.#hex(sketch, cell, false, model.camera.zoom);
-    const selected = model.screen === 'fleets' ? null : model.selected;
+    const selected =
+      model.screen === 'fleets' || model.eventPlayback ? null : model.selected;
     if (selected) this.#hex(sketch, selected, true, model.camera.zoom);
     renderTerrain(sketch, cells);
     renderDetectionBoundary(sketch, cells, model.camera.zoom);
@@ -198,6 +200,14 @@ export class GalaxyMapView implements MapPort {
         : model.hoveredFleetId || model.mapTrade.hoveredRouteIds.length
           ? 'pointer'
           : 'grab';
+    renderMapEvent(sketch, model);
+    if (this.#canvas) {
+      const playback = model.eventPlayback;
+      const event = playback?.events[playback.index];
+      if (event?.position)
+        this.#canvas.dataset.eventHex = `${event.position.q},${event.position.r}`;
+      else delete this.#canvas.dataset.eventHex;
+    }
     sketch.pop();
     if (this.#canvas) this.#canvas.dataset.rendered = 'true';
   }

@@ -34,7 +34,7 @@ import { updateResearchCamera } from './ResearchTreeView.js';
 import { button, element } from './dom.js';
 import { renderDecisions, renderTurnWarning } from './EmpireView.js';
 import { renderTurnActions } from './TurnActionsView.js';
-import { renderGroupedEvents } from './GroupedEventsView.js';
+import { renderEvents } from './EventsView.js';
 
 export class AppView implements AppPort {
   readonly #root: HTMLElement;
@@ -67,6 +67,8 @@ export class AppView implements AppPort {
   #resizeFrame = 0;
   #productionDetailType: string | null = null;
   #eventsExpanded = false;
+  #playingEvents = false;
+  #consoleObserver: ResizeObserver | null = null;
 
   constructor(
     root: HTMLElement,
@@ -97,8 +99,9 @@ export class AppView implements AppPort {
       this.#root.querySelector<HTMLElement>('.turn-actions');
     const previousConsole =
       previousActions?.querySelector<HTMLDetailsElement>('.turn-console');
-    if (previousConsole && !previousConsole.hidden)
+    if (previousConsole && !previousConsole.hidden && !this.#playingEvents)
       this.#eventsExpanded = previousConsole.open;
+    this.#playingEvents = !!model.eventPlayback;
     const previousEventScroll =
       previousActions?.querySelector<HTMLElement>('[role="log"]')?.scrollTop ??
       0;
@@ -111,6 +114,8 @@ export class AppView implements AppPort {
     this.#decisionDialog?.remove();
     this.#decisionDialog = null;
     if (model.screen === 'saves') {
+      this.#consoleObserver?.disconnect();
+      this.#consoleObserver = null;
       const key = JSON.stringify(model.saveSlots);
       if (this.#screen !== 'saves' || this.#saveKey !== key) {
         this.#mapObserver?.disconnect();
@@ -225,6 +230,8 @@ export class AppView implements AppPort {
       this.#ringKey = '';
       this.#screen = model.screen;
     } else if (changedScreen) {
+      this.#consoleObserver?.disconnect();
+      this.#consoleObserver = null;
       this.#mapObserver?.disconnect();
       this.#mapObserver = null;
       this.#ring?.remove();
@@ -465,14 +472,22 @@ export class AppView implements AppPort {
     if (counter)
       counter.textContent = `Decisions (${model.decisions.filter(needsAttention).length})`;
     if (isMapScreen(model.screen)) {
+      this.#root
+        .querySelector('.map-page')
+        ?.classList.toggle('is-event-playback', !!model.eventPlayback);
       this.#map?.render(model);
-      this.#renderProductionRing(model);
+      if (model.eventPlayback) {
+        this.#ring?.remove();
+        this.#ring = null;
+        this.#ringKey = '';
+      } else this.#renderProductionRing(model);
       this.#measureMap();
       if (this.#zoom)
         this.#zoom.value = `${Math.round(model.camera.zoom * 100)}%`;
       if (this.#coordinates)
         this.#coordinates.textContent = `X ${model.camera.center.x.toFixed(0)} · Y ${model.camera.center.y.toFixed(0)}`;
       const key = JSON.stringify({
+        eventPlayback: !!model.eventPlayback,
         salvageSelection: model.salvageSelection,
         shipyardPlacement: model.shipyardPlacement,
         wrecks: model.wrecks,
@@ -521,24 +536,30 @@ export class AppView implements AppPort {
             )
             ?.scrollIntoView?.({ block: 'nearest' });
       }
-      const selected = !this.#panel?.hidden;
+      const selected = !model.eventPlayback && !this.#panel?.hidden;
+      if (model.eventPlayback && this.#panel) this.#panel.hidden = true;
       this.#root
         .querySelector('.map-page')
         ?.classList.toggle('has-selection', selected);
       for (const control of this.#root.querySelectorAll<HTMLElement>(
-        '.turn-console, .end-turn',
+        '.turn-console',
       ))
-        control.hidden = selected;
+        control.hidden = selected && !model.eventPlayback;
     }
     if (
       isMapScreen(model.screen) ||
       ['decisions', 'research', 'planet'].includes(model.screen)
     ) {
       const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
-      if (end) end.disabled = model.phase !== 'planning';
+      if (end)
+        end.disabled = model.phase !== 'planning' || !!model.eventPlayback;
       this.#renderTurnConsole(model);
     }
     updateDecisionGuidance(this.#root, model, this.#emit);
+    for (const control of this.#root.querySelectorAll<HTMLButtonElement>(
+      'header button',
+    ))
+      control.disabled = !!model.eventPlayback;
     const nameInput =
       this.#root.querySelector<HTMLInputElement>('.fleet-name-input');
     if (nameInput && model.fleetNameEdit) {
@@ -628,9 +649,28 @@ export class AppView implements AppPort {
     );
     if (!log) return;
     const console = log.closest<HTMLDetailsElement>('.turn-console')!;
-    if (console.open !== this.#eventsExpanded)
-      console.open = this.#eventsExpanded;
+    const playback = model.eventPlayback;
+    const open = !!playback || this.#eventsExpanded;
+    if (console.open !== open) console.open = open;
     if (console.hidden) return;
+    const controls = console.querySelector<HTMLElement>(
+      '.event-playback-controls',
+    )!;
+    controls.hidden = !playback;
+    const focus = console.querySelector<HTMLElement>('.event-focus')!;
+    focus.hidden = !playback;
+    if (playback) {
+      const current = playback.events[playback.index]!;
+      controls.querySelector('.event-progress')!.textContent =
+        `${playback.index + 1} / ${playback.events.length}`;
+      const toggle =
+        controls.querySelector<HTMLButtonElement>('.playback-toggle')!;
+      toggle.textContent = playback.paused ? 'Play' : 'Pause';
+      toggle.setAttribute('aria-label', toggle.textContent);
+      focus.textContent = current.position
+        ? `Event ${playback.index + 1} · HEX ${current.position.q},${current.position.r}`
+        : 'Global event';
+    }
     const layout = () => {
       const pageHeight =
         console.closest<HTMLElement>(
@@ -649,28 +689,39 @@ export class AppView implements AppPort {
       console.dataset.bound = 'true';
       console.addEventListener('toggle', () => {
         if (!console.isConnected) return;
-        this.#eventsExpanded = console.open;
+        if (!this.#playingEvents) this.#eventsExpanded = console.open;
         layout();
         if (console.open) log.scrollTop = log.scrollHeight;
       });
+      if (typeof ResizeObserver !== 'undefined') {
+        this.#consoleObserver?.disconnect();
+        this.#consoleObserver = new ResizeObserver(layout);
+        const page = console.closest(
+          '.map-page, .decisions-page, .research-page, .planet-page',
+        );
+        if (page) this.#consoleObserver.observe(page);
+      }
     }
-    const latestYear = model.events.at(-1)?.round;
-    const firstLatest = model.events.findIndex(
-      (event) => event.round === latestYear,
-    );
-    const start = Math.min(
-      Math.max(0, model.events.length - 100),
-      Math.max(0, firstLatest),
-    );
-    const events = model.events.slice(start);
-    const key = `${events.at(-1)?.id ?? 'empty'}:${model.round}`;
+    const history =
+      model.phase === 'planning'
+        ? model.events
+        : model.events.filter((event) => event.round < model.round);
+    const latestYear = Math.max(model.round - 1, history.at(-1)?.round ?? 0);
+    const events = playback
+      ? playback.events.slice(0, playback.index + 1)
+      : history.filter((event) => event.round === latestYear);
+    const activeId = playback?.events[playback.index]?.id;
+    const key = `${events.at(-1)?.id ?? 'empty'}:${model.round}:${activeId ?? ''}`;
     if (log.dataset.lastEvent === key) return;
     const follow =
+      !!playback ||
       log.dataset.round !== String(model.round) ||
       log.scrollHeight - log.clientHeight - log.scrollTop < 8;
     const list = log.querySelector('ol')!;
     if (events.length) log.querySelector('.console-empty')?.remove();
-    list.replaceChildren(...renderGroupedEvents(events));
+    else if (!log.querySelector('.console-empty'))
+      log.prepend(element('p', 'console-empty', 'No events yet.'));
+    list.replaceChildren(...renderEvents(events, activeId));
     log.dataset.lastEvent = key;
     log.dataset.round = String(model.round);
     if (follow) log.scrollTop = log.scrollHeight;
@@ -705,6 +756,7 @@ export class AppView implements AppPort {
     if (typeof cancelAnimationFrame !== 'undefined')
       cancelAnimationFrame(this.#resizeFrame);
     this.#mapObserver?.disconnect();
+    this.#consoleObserver?.disconnect();
     this.#researchObserver?.disconnect();
     this.#researchViewport = null;
     this.#decisionDialog?.close();

@@ -1571,9 +1571,6 @@ p {
   font-size: inherit;
   color: var(--accent);
 }
-.event-type-label {
-  font-weight: 600;
-}
 .console-log li {
   padding-bottom: 3px;
   overflow-wrap: anywhere;
@@ -2555,6 +2552,7 @@ p {
   gap: 6px;
   cursor: pointer;
   color: var(--accent);
+  flex-shrink: 0;
 }
 .turn-console > summary::before {
   content: '▸';
@@ -2566,10 +2564,15 @@ p {
   font-size: 0.8rem;
 }
 .turn-console .console-log {
+  flex: 0 1 auto;
   max-height: min(
     calc(var(--events-max-height, 260px) - 56px),
     calc(100dvh - 190px)
   );
+}
+.turn-console[open] {
+  display: flex;
+  flex-direction: column;
 }
 .screen-turn-actions {
   display: grid;
@@ -2823,4 +2826,138 @@ body:has(.discovery-controls) .selection-panel {
 }
 .towed-wrecks button {
   display: block;
+}
+
+/* end-turn-vid-kartval: keep the footer outside the scrolling selection. */
+.map-page > .turn-actions {
+  position: absolute;
+  left: max(8px, env(safe-area-inset-left));
+  right: max(8px, env(safe-area-inset-right));
+  bottom: max(8px, env(safe-area-inset-bottom));
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+  z-index: 4;
+  pointer-events: none;
+}
+.map-page > .turn-actions > * {
+  pointer-events: auto;
+}
+.map-page > .turn-actions .turn-console {
+  position: static;
+  width: min(var(--events-width, 320px), 100%);
+  justify-self: end;
+}
+.map-page > .turn-actions .end-turn {
+  position: static;
+  grid-column: 2;
+  min-height: 44px;
+}
+.map-page .selection-panel,
+.map-page .selection-panel:has(.map-fleet-management),
+.map-page[data-map-screen='production'] .selection-panel {
+  bottom: max(64px, calc(env(safe-area-inset-bottom) + 64px));
+  max-height: calc(100% - 80px);
+}
+@media (max-width: 900px), (max-height: 500px) {
+  .map-page:not([data-map-screen='production']) .selection-panel {
+    max-height: min(
+      calc(85% - 72px),
+      calc(50% - 40px + var(--selection-expansion, 0px))
+    );
+  }
+}
+.event-playback-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.event-playback-controls .button {
+  min-height: 44px;
+  padding: 4px 8px;
+}
+.event-progress {
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.event-focus {
+  margin: 4px 0;
+  font-size: 0.7rem;
+  color: #ffdc88;
+  flex-shrink: 0;
+}
+.event-entries [aria-current='step'] {
+  color: #ffdc88;
+  background: #ffdc8812;
+  border-left: 3px solid #ffdc88;
+  padding-left: 4px;
+}
+/* sekventiella-arshandelser / handelser-pa-kartan: the map and log share space. */
+.map-page.is-event-playback {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 35%);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 8px;
+  padding: 8px;
+}
+.map-page.is-event-playback .map-container {
+  position: relative;
+  inset: auto;
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.map-page.is-event-playback > .turn-actions {
+  position: static;
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+  min-height: 0;
+  min-width: 0;
+  pointer-events: auto;
+}
+.map-page.is-event-playback > .turn-actions .turn-console {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  max-height: calc(100% - 52px);
+  flex: 0 1 auto;
+  overflow: hidden;
+}
+.is-event-playback .turn-console > summary {
+  flex-shrink: 0;
+  cursor: default;
+}
+.is-event-playback .turn-console > summary::before {
+  display: none;
+}
+.is-event-playback .console-log {
+  max-height: none;
+  flex: 0 1 auto;
+}
+.is-event-playback .end-turn {
+  align-self: end;
+  flex-shrink: 0;
+}
+@media (orientation: portrait) and (max-width: 900px) {
+  .map-page.is-event-playback {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .map-page.is-event-playback > .turn-actions {
+    grid-column: 1;
+    grid-row: 2;
+    max-height: 45dvh;
+  }
+  .map-page.is-event-playback > .turn-actions .turn-console {
+    max-height: calc(45dvh - 52px);
+  }
 }

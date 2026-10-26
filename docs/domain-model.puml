@@ -151,10 +151,14 @@ class TurnOrder
 class GameEvent {
   round
   text
+  position : HexCoordinate [0..1]
 }
+GameEvent --> HexCoordinate : plats när händelsen inträffade
 note right of GameEvent
   Publiceras när händelsen inträffar.
   Simulering återgår direkt till planering.
+  Händelser visas därefter en i taget med kartfokus.
+  Globala och äldre händelser kan sakna position.
 end note
 class Player {
   name

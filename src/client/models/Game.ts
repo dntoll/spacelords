@@ -549,6 +549,7 @@ export interface GameEvent {
   readonly id: string;
   readonly round: number;
   readonly text: string;
+  readonly position?: { readonly q: number; readonly r: number };
 }
 export interface TurnFrame {
   readonly settlement?: boolean;
@@ -973,12 +974,25 @@ export class Game {
       )
         throw new Error('Invalid star survey.');
     }
-    game.#events = copy.events.filter(
-      (event) =>
-        !/^Fleet .* moved to -?\d+,-?\d+\.$|^Exploration from .* revealed \d+ hexes\.$/.test(
-          event.text,
-        ),
-    );
+    game.#events = copy.events
+      .filter(
+        (event) =>
+          !/^Fleet .* moved to -?\d+,-?\d+\.$|^Exploration from .* revealed \d+ hexes\.$/.test(
+            event.text,
+          ),
+      )
+      .map((event) => {
+        const { position: eventPosition, ...details } = event;
+        const valid =
+          eventPosition &&
+          Number.isSafeInteger(eventPosition.q) &&
+          Number.isSafeInteger(eventPosition.r) &&
+          galaxy.contains(position(eventPosition));
+        return Object.freeze({
+          ...details,
+          ...(valid ? { position: Object.freeze({ ...eventPosition }) } : {}),
+        });
+      });
     game.#salvage =
       state.version >= 10
         ? Salvage.restore(
@@ -1302,6 +1316,7 @@ export class Game {
         id: this.#id('event'),
         round: this.#round,
         text: `${planet.name} was colonized by ${fleet.name}.`,
+        position: Object.freeze({ q: planet.position.q, r: planet.position.r }),
       }),
     );
     return discoveries;
@@ -1508,6 +1523,7 @@ export class Game {
           }
           this.#event(
             `${wreck.ship.type} wreck delivered to Orbit at ${this.#planetName(yard.planetId)}.`,
+            yard.position,
           );
         },
       );
@@ -1526,7 +1542,7 @@ export class Game {
       .map((yard) => {
         this.#salvage.destroyYard(yard);
         const summary = `Orbital shipyard at ${this.#planetName(yard.planetId)} was destroyed. The planetary facility survives; waiting wrecks remain in this hex.`;
-        this.#event(summary);
+        this.#event(summary, yard.position);
         return {
           position: yard.position,
           fleetId: null,
@@ -1615,6 +1631,7 @@ export class Game {
       fleet.shipUnits!.push(ship);
       this.#event(
         `${ship.type} repaired at ${planet.name}; ready in ${fleet.name}.`,
+        yard.position,
       );
     }
   }
@@ -2558,6 +2575,7 @@ export class Game {
           .join(', ') || 'no ships';
       this.#event(
         `Combat at HEX ${combat.position.key}: ${this.#fleetDisplayName(fleet)} versus Space pirate. Lost ${losses}; destroyed ${combat.pirateLosses} pirates. Survivors: ${combat.survivingFighters} Fighters, ${combat.survivingPirates} pirates, ${fleet.ships['Colony ship'] + fleet.ships['Exploration ship'] + fleet.ships['Transport ship']} civilian ships.`,
+        combat.position,
       );
       reports.push({
         position: combat.position,
@@ -2611,7 +2629,10 @@ export class Game {
     for (const planet of this.#ownedPlanets()) {
       const state = this.#state(planet);
       for (const building of state.buildings.filter((b) => b.demolition))
-        this.#event(`${building.type} was demolished on ${planet.name}.`);
+        this.#event(
+          `${building.type} was demolished on ${planet.name}.`,
+          planet.position,
+        );
       state.buildings = state.buildings.filter((b) => !b.demolition);
       for (const yard of [...this.#salvage.yards].filter(
         (yard) =>
@@ -2645,6 +2666,7 @@ export class Game {
       if (state.habitability !== previousHabitability)
         this.#event(
           `Habitability on ${planet.name} increased to ${state.habitability}%.`,
+          planet.position,
         );
       const { blocks } = this.#allocation(planet, state);
       const active = state.projects.slice(0, 1);
@@ -2653,6 +2675,7 @@ export class Game {
         if (blocked)
           this.#event(
             `${project.type} is waiting on ${planet.name}: ${blocked}`,
+            planet.position,
           );
         else {
           const cost = this.#projectCost(planet, project);
@@ -2676,7 +2699,10 @@ export class Game {
         ),
       );
       state.population += growth;
-      this.#event(`Population on ${planet.name} changed by +${growth}.`);
+      this.#event(
+        `Population on ${planet.name} changed by +${growth}.`,
+        planet.position,
+      );
     }
     const researched = this.#research.advance(researchStations);
     if (researched) this.#event(`Research completed: ${researched}.`);
@@ -2691,7 +2717,13 @@ export class Game {
         project.factoryId!,
         project.stationPosition!,
       );
-      this.#event(`Orbital shipyard rebuilt at ${planet.name}.`);
+      this.#event(
+        `Orbital shipyard rebuilt at ${planet.name}.`,
+        new HexCoordinate(
+          project.stationPosition!.q,
+          project.stationPosition!.r,
+        ),
+      );
       return;
     }
     const d = projectDefinition(project.type);
@@ -2700,6 +2732,7 @@ export class Game {
       state.domes.push(project.slotIndex!);
       this.#event(
         `${project.type} was completed at site ${project.slotIndex! + 1} on ${planet.name}.`,
+        planet.position,
       );
     } else if (d.permanent) {
       const buildingId = this.#id('building');
@@ -2711,11 +2744,17 @@ export class Game {
       });
       if (project.type === 'Orbital shipyard')
         this.#createShipyard(planet, buildingId, project.stationPosition!);
-      this.#event(`${project.type} was completed on ${planet.name}.`);
+      this.#event(
+        `${project.type} was completed on ${planet.name}.`,
+        planet.position,
+      );
     } else if (d.component) {
       state.stock[d.component] += 1;
       this.#logistics.completeComponent(project.id);
-      this.#event(`${d.component} was produced at ${planet.name}.`);
+      this.#event(
+        `${d.component} was produced at ${planet.name}.`,
+        planet.position,
+      );
     } else if (d.ship) {
       this.#createShip(
         planet,
@@ -2724,7 +2763,10 @@ export class Game {
         project.destinationFleetId,
         project.parts,
       );
-      this.#event(`${project.type} completed on ${planet.name}.`);
+      this.#event(
+        `${project.type} completed on ${planet.name}.`,
+        planet.position,
+      );
     }
   }
   #createShip(
@@ -2773,7 +2815,7 @@ export class Game {
         'Ion pulse engine': parts['Ion pulse engine'] ?? 0,
       },
     });
-    this.#event(`${ship} was produced at ${planet.name}.`);
+    this.#event(`${ship} was produced at ${planet.name}.`, planet.position);
   }
   #budget(planet: Planet, state: ColonyState): BudgetSnapshot {
     return this.#allocation(planet, state).budget;
@@ -3377,7 +3419,8 @@ export class Game {
           : Infinity;
       },
       id: (prefix: string) => this.#id(prefix),
-      event: (message: string) => this.#event(message),
+      event: (message: string, position?: HexCoordinate) =>
+        this.#event(message, position),
       projectExists: (id: string) =>
         [...this.#colonies.values()].some((s) =>
           s.projects.some((p) => p.id === id),
@@ -3394,6 +3437,7 @@ export class Game {
     FleetPursuit.refresh(this.#fleets, (fleet) =>
       this.#event(
         `${fleet.name}: reinforcement target unavailable; choose new orders.`,
+        fleet.position ?? undefined,
       ),
     );
     this.#updateSight();
@@ -3407,7 +3451,10 @@ export class Game {
           if (project.destinationFleetId === group.id)
             project.destinationFleetId = target.id;
       }
-      this.#event(`${group.name} joined ${target.name}.`);
+      this.#event(
+        `${group.name} joined ${target.name}.`,
+        target.position ?? undefined,
+      );
     });
   }
   #extraction(planet: Planet, state: ColonyState): Stock {
@@ -3875,6 +3922,7 @@ export class Game {
       delete fleet.courseOrigin;
       this.#event(
         `${this.#fleetDisplayName(fleet)}: exploration stopped; no unexplored targets or Exploration ship available.`,
+        fleet.position ?? undefined,
       );
     } else if (fleet.destination?.key !== target.key) {
       fleet.destination = target;
@@ -3950,6 +3998,7 @@ export class Game {
       delete fleet.courseOrigin;
       this.#event(
         `${this.#fleetDisplayName(fleet)}: Patrol stopped; no Fighter available.`,
+        fleet.position ?? undefined,
       );
       return;
     }
@@ -4047,6 +4096,7 @@ export class Game {
       (discovery as { fleetId: string | null }).fleetId = observer?.id ?? null;
       this.#event(
         `${discovery.kind === 'wreck' ? 'Wreck discovered' : discovery.kind === 'pirate' ? 'Pirate ship in sight' : discovery.kind === 'star' ? 'Star explored' : 'Planet discovered'}: ${discovery.name} at HEX ${position.key}.`,
+        position,
       );
     }
     return Object.freeze(
@@ -4249,11 +4299,21 @@ export class Game {
       )?.object?.name ?? `HEX ${fleet.position.key}`;
     fleet.destination = null;
     delete fleet.courseOrigin;
-    this.#event(`${this.#fleetDisplayName(fleet)} arrived at ${place}.`);
+    this.#event(
+      `${this.#fleetDisplayName(fleet)} arrived at ${place}.`,
+      fleet.position,
+    );
   }
-  #event(text: string): void {
+  #event(text: string, position?: HexCoordinate): void {
     this.#events.push(
-      Object.freeze({ id: this.#id('event'), round: this.#round, text }),
+      Object.freeze({
+        id: this.#id('event'),
+        round: this.#round,
+        text,
+        ...(position
+          ? { position: Object.freeze({ q: position.q, r: position.r }) }
+          : {}),
+      }),
     );
   }
   #id(prefix: string): string {

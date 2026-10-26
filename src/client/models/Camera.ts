@@ -94,6 +94,11 @@ export class Camera {
     this.#setCenter(HexGeometry.toPoint(position));
   }
 
+  restore(snapshot: CameraSnapshot): void {
+    this.#zoom = snapshot.zoom;
+    this.#center = { ...snapshot.center };
+  }
+
   reset(): void {
     this.#zoom = 1;
     this.#center = HexGeometry.toPoint(this.home);

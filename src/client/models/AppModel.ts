@@ -1,3 +1,4 @@
+import { EventPlayback, type EventPlaybackSnapshot } from './EventPlayback.js';
 import type {
   ExplorationOrder,
   SavedTurnSimulation,
@@ -89,6 +90,7 @@ export interface SaveSlotSnapshot {
 }
 
 export interface AppReadModel {
+  readonly eventPlayback: EventPlaybackSnapshot | null;
   readonly wrecks: readonly WreckSnapshot[];
   readonly shipyards: readonly ShipyardSnapshot[];
   readonly salvageSelection: string | null;
@@ -161,6 +163,16 @@ export interface AppReadModel {
 }
 
 export class AppModel {
+  #eventPlayback: EventPlayback | null = null;
+  #eventCamera: Camera | null = null;
+  #turnContext: {
+    readonly screen: Screen;
+    readonly selected: HexCoordinate;
+    readonly mapFleetId: string | null;
+    readonly selectedFleetId: string | null;
+    readonly salvageSelection: string | null;
+    readonly camera: CameraSnapshot;
+  } | null = null;
   #salvageSelection: string | null = null;
   #shipyardPlacement: AppReadModel['shipyardPlacement'] = null;
   #planetTab: PlanetTab = 'overview';
@@ -270,6 +282,9 @@ export class AppModel {
     this.#mapProductionOption = null;
     this.#mapProjectId = null;
     this.#game = game;
+    this.#eventPlayback = null;
+    this.#eventCamera = null;
+    this.#turnContext = null;
     this.#salvageSelection = null;
     this.#shipyardPlacement = null;
     this.#pendingEndTurn = false;
@@ -340,6 +355,7 @@ export class AppModel {
         ? this.#game.projectSupply(this.#game.planetAt(this.#selected)?.id)
         : [];
     return Object.freeze({
+      eventPlayback: this.#eventPlayback?.snapshot ?? null,
       wrecks: this.#game.wrecks,
       shipyards: this.#game.shipyards,
       salvageSelection: this.#salvageSelection,
@@ -406,7 +422,7 @@ export class AppModel {
       researchCamera: this.#researchCamera.snapshot,
       planetOrders: this.#game.planetOrders(),
       constructionSite: this.#constructionSite,
-      screen: this.#screen,
+      screen: this.#eventPlayback ? 'map' : this.#screen,
       buildSearch: this.#buildSearch,
       buildingCategory: this.#buildingCategory,
       selectedBuilding: this.#selectedBuilding,
@@ -418,7 +434,7 @@ export class AppModel {
         this.#game
           .mapSnapshot()
           .find((cell) => cell.position.key === this.#selected.key) ?? null,
-      camera: this.#camera.snapshot,
+      camera: this.#eventCamera?.snapshot ?? this.#camera.snapshot,
       planet:
         this.#screen === 'planet' ||
         this.#screen === 'build-selection' ||
@@ -1075,6 +1091,7 @@ export class AppModel {
     this.#game.unmuteDecision(id);
   }
   requestEndTurn(): boolean {
+    if (this.#eventPlayback || this.#game.phase !== 'planning') return false;
     this.#pendingEndTurn = this.#game.decisions.some(needsAttention);
     return !this.#pendingEndTurn;
   }
@@ -1259,6 +1276,15 @@ export class AppModel {
     this.#game.clearDestination(id);
   }
   startTurn(): void {
+    if (this.#eventPlayback) return;
+    this.#turnContext = {
+      screen: this.#screen,
+      selected: this.#selected,
+      mapFleetId: this.#mapFleetId,
+      selectedFleetId: this.#selectedFleetId,
+      salvageSelection: this.#salvageSelection,
+      camera: this.#camera.snapshot,
+    };
     this.#pendingEndTurn = false;
     this.cancelMapPointer();
     if (
@@ -1321,6 +1347,73 @@ export class AppModel {
   }
   finishTurn(): void {
     this.#game.finishTurn();
+  }
+
+  beginEventPlayback(): void {
+    if (this.#game.phase !== 'planning' || this.#eventPlayback) return;
+    const playback = new EventPlayback(this.#game.round - 1, this.#game.events);
+    if (!playback.current) {
+      this.finishEventPlayback();
+      return;
+    }
+    this.#eventPlayback = playback;
+    this.#eventCamera = new Camera(
+      this.#game.galaxy.homePlanet.position,
+      this.#game.galaxy.radius,
+    );
+    this.#eventCamera.restore(this.#camera.snapshot);
+    this.#focusEvent();
+  }
+
+  toggleEventPlayback(): void {
+    this.#eventPlayback?.togglePause();
+  }
+
+  advanceEventPlayback(manual = false): void {
+    if (!this.#eventPlayback) return;
+    if (!this.#eventPlayback.advance(manual)) this.finishEventPlayback();
+    else this.#focusEvent();
+  }
+
+  #focusEvent(): void {
+    const position = this.#eventPlayback?.current?.position;
+    if (
+      !position ||
+      !this.#eventCamera ||
+      !Number.isSafeInteger(position.q) ||
+      !Number.isSafeInteger(position.r)
+    )
+      return;
+    const hex = new HexCoordinate(position.q, position.r);
+    if (!this.#game.galaxy.contains(hex)) return;
+    this.#eventCamera.restore({ ...this.#eventCamera.snapshot, zoom: 1 });
+    this.#eventCamera.focus(hex);
+  }
+
+  finishEventPlayback(): void {
+    this.#eventPlayback = null;
+    this.#eventCamera = null;
+    const context = this.#turnContext;
+    this.#turnContext = null;
+    if (!context) return;
+    this.#screen = context.screen;
+    this.#selected = context.selected;
+    this.#mapFleetId =
+      context.mapFleetId && this.#game.fleet(context.mapFleetId)
+        ? context.mapFleetId
+        : null;
+    this.#selectedFleetId =
+      context.selectedFleetId && this.#game.fleet(context.selectedFleetId)
+        ? context.selectedFleetId
+        : null;
+    this.#salvageSelection =
+      context.salvageSelection &&
+      [...this.#game.wrecks, ...this.#game.shipyards].some(
+        (item) => item.id === context.salvageSelection,
+      )
+        ? context.salvageSelection
+        : null;
+    this.#camera.restore(context.camera);
   }
 
   salvageAtPoint(point: Point): string | null {

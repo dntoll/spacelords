@@ -787,3 +787,33 @@ de beräknas på nytt efter köändring och omladdning. Befintliga besluts-ID:n,
 Mute-inställningar och sparformat behålls. Det nya grundbeslutet
 `research-stalled` används när köad forskning saknar Research station och
 ingen ersättning har beställts.
+
+## Uppspelning av avslutat år
+
+`end-turn-vid-kartval`, `sekventiella-arshandelser`, `handelser-pa-kartan`
+och ändringen av `senaste-aret-i-events` är **Fullständigt implementerat**.
+AppModel äger ett separat EventPlayback med frysta ögonblicksbilder.
+AppController driver 1,5-sekundersstegen och städar timern vid paus,
+överhoppning och dispose. Vyer skickar intents och ändrar aldrig modellen.
+Under uppspelning spärras andra spelhandlingar. Next går framåt och pausar.
+
+Simuleringen avslutas och sparas innan uppspelningen börjar. Spelregler,
+årsnummer och ekonomi ändras inte av uppspelningen. Den är sessionsbunden
+och återupptas inte efter omladdning; den fullständiga senaste årsloggen visas
+i stället. Upptäckts- och stridsavbrott behåller befintlig sparning och
+fortsättning; en återläst avbruten runda får sin normala uppspelning vid avslut.
+
+GameEvent får valfria frysta q/r-koordinater vid händelsens uppkomst, även genom
+LogisticsPort. Händelsepositionen beror inte på ett senare objekts position
+eller existens. Äldre händelser utan koordinater läses utan migrering eller
+rensning. Händelser med ogiltig valfri position behåller sin text utan kartmål.
+Globala forskningshändelser får ingen konstruerad position. p5 i instance mode
+ritar ring och etikett från läsmodellen; HTML visar lista och kontroller.
+
+Uppspelningens kamera är separat från planeringskameran. Föregående vy,
+giltiga val och kamerans exakta centrum och zoom återställs vid avslut.
+Orienteringsbyte ändrar layout utan att återställa aktuell händelse eller paus.
+Listan växer med senaste årets innehåll och rullas internt vid maxhöjd.
+Enhetstester skyddar ordning, timer, spärrar, sparkompatibilitet, positioner
+och återställning. Riktade mobiltester skyddar stående/liggande layout,
+kartmarkering, kontroller, rullning och omladdning i Chromium och WebKit.

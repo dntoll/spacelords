@@ -114,6 +114,10 @@ describe('handelser / arsrundor-och-order', () => {
     const log = root.querySelector('[role="log"]')!;
     expect(log).not.toBeNull();
     expect(log.textContent).toContain('Vesta');
+    expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
+      true,
+    );
+    root.querySelector<HTMLButtonElement>('[aria-label="Skip"]')!.click();
     expect(
       [...log.querySelectorAll<HTMLElement>('[data-event-id]')].map(
         (item) => item.dataset.eventId,
@@ -124,7 +128,7 @@ describe('handelser / arsrundor-och-order', () => {
     );
     controller.dispose();
   });
-  it('bounds the visible history and preserves focus and reading position when new events arrive', () => {
+  it('senaste-aret-i-events: shows only the latest year and preserves focus and reading position within it', () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
     const model = new AppModel();
@@ -132,7 +136,7 @@ describe('handelser / arsrundor-och-order', () => {
     model.select(new HexCoordinate(-2, 0));
     const events = Array.from({ length: 120 }, (_, i) => ({
       id: `event-${i}`,
-      round: i + 1,
+      round: i < 20 ? 1 : 2,
       text: `Event ${i}`,
     }));
     view.render({ ...model.snapshot, events });
@@ -147,12 +151,12 @@ describe('handelser / arsrundor-och-order', () => {
     log.focus();
     view.render({
       ...model.snapshot,
-      events: [...events, { id: 'new', round: 121, text: 'New arrival' }],
+      events: [...events, { id: 'new', round: 2, text: 'New arrival' }],
     });
     expect(document.activeElement).toBe(log);
     expect(log.scrollTop).toBe(100);
-    expect(log.querySelectorAll('[data-event-id]')).toHaveLength(100);
-    expect(log.querySelector('[data-event-id]')!.textContent).toBe('Event 21');
+    expect(log.querySelectorAll('[data-event-id]')).toHaveLength(101);
+    expect(log.querySelector('[data-event-id]')!.textContent).toBe('Event 20');
     expect(events).toHaveLength(120);
     view.dispose();
   });

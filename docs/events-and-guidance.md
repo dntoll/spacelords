@@ -4,12 +4,11 @@ Kraven nedan är **Fullständigt implementerat**.
 
 ## Händelser
 
-- `senaste-aret-i-events`: efter End turn visar Events senaste årets händelser,
-  även i Decisions. Vid vanlig uppdatering inom samma år bevaras en manuellt
-  vald läsposition. Inträde i en vy och utfällning visar senaste händelserna.
-  Loggen behåller högst 100 äldre/senaste händelser, men klipper aldrig bort
-  delar av senaste året om det ensamt har fler än 100 händelser. Sparad
-  händelsehistorik och gruppering per år och typ ändras inte.
+- `senaste-aret-i-events`: Events visar bara senaste årets händelser, i den
+  ordning de inträffade. Äldre år behålls i sparningen men tar ingen plats i
+  listan. Alla senaste årets händelser finns kvar, även fler än 100 och
+  Population changes med +0. Vanliga uppdateringar inom året bevarar manuellt
+  vald läsposition. Nytt år och utfällning visar senaste händelserna.
 - `utvikbara-events`: Events kan fällas ut och in via rubriken med touch eller
   tangentbord. Rubriken har minst 44 px träffyta. Infällt läge visar bara
   rubriken. Utfällt läge växer med innehållet upp till tillgängligt utrymme;
@@ -17,17 +16,43 @@ Kraven nedan är **Fullständigt implementerat**.
   End turn och navigation förblir åtkomliga. Utfällningsvalet följer med mellan
   vyer under sessionen och återställs vid omladdning; det sparas inte i spelet.
 - `rundkontroller-pa-fler-vyer`: Research och planetvyn har Events och End turn
-  i en avsatt nedre rad och stannar kvar under årets genomförande. Decisions
-  och kartvyerna behåller sina rundkontroller. På kartan döljs de fortfarande
-  när ett informationsval använder samma utrymme enligt `fokuserat-kartval`.
-  På andra vyer ersätter de inte formulär eller modala kontroller.
+  i en avsatt nedre rad. Decisions och kartvyerna behåller sina rundkontroller.
+  Kartan visas tillfälligt under årets uppspelning; därefter återkommer den
+  tidigare vyn. På andra vyer ersätter kontrollerna inte formulär eller modaler.
+- `end-turn-vid-kartval`: End turn förblir synlig vid planet-, flott-, rutt-
+  och destinationsval i samtliga kartlägen. Informationspanelen lämnar egen
+  plats för knappen och kan rullas utan att täcka den. Events kan fortfarande
+  döljas av ett kartval utanför uppspelningen. Beslutsvarningen behålls.
+- `sekventiella-arshandelser`: efter helt avslutat år visas händelserna en i
+  taget i verklig ordning, första direkt och nästa efter 1,5 sekunder. Aktuell
+  rad markeras och hålls synlig. Pause/Play styr automatiken, Next visar nästa
+  händelse och pausar, Skip visar hela årets lista och avslutar uppspelningen.
+  Räknaren visar aktuell händelse och årets antal. End turn är synlig men
+  spärrad under simulering och uppspelning. Inga nya order utförs under
+  uppspelning. Upptäckts- och stridsavbrott behålls före årets avslut.
+- `handelser-pa-kartan`: en platsbunden händelse centreras och markeras med
+  ring och etikett på kartan samtidigt som dess rad visas. Globala händelser
+  visas som Global event utan påhittad kartposition. Listan ligger under
+  kartan på stående mobil och bredvid på liggande mobil och bredare skärmar.
+  Den växer efter årets innehåll upp till tillgängligt utrymme, med intern
+  rullning därefter. Tidigare vy, giltiga objektval och kamera återställs när
+  uppspelningen är klar eller hoppas över. Det gäller även Research,
+  Decisions och planetvyn. Händelser avslöjar ingen dold information.
 
-Detta ersätter den tidigare fasta/kompakta konsolhöjden under `handelser`,
-dess absoluta gräns på 100 visade händelser och det tidigare utrymmeskravet i
+Ändring 2026-10-26: detta ersätter `handelser-grupperade-per-ar-och-typ`,
+historikfönstret med äldre år i `senaste-aret-i-events` och delen av
+`fokuserat-kartval` som dolde End turn. Stabilt kravnamn för det ersatta
+grupperingskravet behålls i ändringshistoriken.
+
+Tidigare ändringar ersatte den fasta/kompakta konsolhöjden under `handelser`,
+dess absoluta gräns på 100 visade händelser och utrymmeskravet i
 `forskningstradets-utrymme` att inga nedre kontroller reserverar utrymme.
 Trädet fyller nu återstående yta efter rubrik, eventuell beslutshjälp och
 rundkontroller. `rundkontroller-i-decisions`, sparad kronologi och befintlig
-bekräftelse vid obesvarade beslut behålls. End turn är spärrad under simulering.
+bekräftelse vid obesvarade beslut behålls. Årets resultat sparas före
+uppspelningen; omladdning visar senaste årets fullständiga lista utan att
+genomföra året igen. Äldre sparningar utan händelsepositioner kan fortfarande
+läsas. Sparade spel rensas inte.
 
 ## Vägledning vid beslut
 

@@ -11,6 +11,7 @@ export class AppController {
   #runningTurn = false;
   #disposed = false;
   #receiptTimer: ReturnType<typeof setTimeout> | undefined;
+  #playbackTimer: ReturnType<typeof setTimeout> | undefined;
   #fleetPointer: {
     id: number;
     start: Point;
@@ -31,6 +32,7 @@ export class AppController {
   dispose(): void {
     this.#disposed = true;
     clearTimeout(this.#receiptTimer);
+    clearTimeout(this.#playbackTimer);
     this.#cancelPointer();
     this.#view.dispose();
   }
@@ -56,6 +58,18 @@ export class AppController {
   }
 
   #handleIntent(intent: AppIntent): void {
+    if (intent.type.startsWith('playback-')) {
+      if (!this.#model.snapshot.eventPlayback) return;
+      if (intent.type === 'playback-toggle') this.#model.toggleEventPlayback();
+      else if (intent.type === 'playback-next')
+        this.#model.advanceEventPlayback(true);
+      else if (intent.type === 'playback-skip')
+        this.#model.finishEventPlayback();
+      this.#view.render(this.#model.snapshot);
+      this.#schedulePlayback();
+      return;
+    }
+    if (this.#model.snapshot.eventPlayback) return;
     let mapOrder = false;
     if (!intent.type.startsWith('research-pointer-'))
       this.#researchGesture.cancel();
@@ -569,6 +583,18 @@ export class AppController {
     this.#model.cancelMapPointer(keepRouteSource);
   }
 
+  #schedulePlayback(): void {
+    clearTimeout(this.#playbackTimer);
+    const playback = this.#model.snapshot.eventPlayback;
+    if (this.#disposed || !playback || playback.paused) return;
+    this.#playbackTimer = setTimeout(() => {
+      if (this.#disposed) return;
+      this.#model.advanceEventPlayback();
+      this.#view.render(this.#model.snapshot);
+      this.#schedulePlayback();
+    }, 1500);
+  }
+
   async #runTurn(resume = false): Promise<void> {
     if (
       this.#runningTurn ||
@@ -597,7 +623,9 @@ export class AppController {
       if (this.#disposed) return;
       this.#model.finishTurn();
       this.#model.save();
+      this.#model.beginEventPlayback();
       this.#view.render(this.#model.snapshot);
+      this.#schedulePlayback();
     } catch (error) {
       console.warn(error);
       this.#model.reportError(error);

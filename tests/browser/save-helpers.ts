@@ -71,6 +71,10 @@ export async function endTurn(page: Page): Promise<void> {
       .poll(async () => {
         if (await page.locator('.discovery-dialog[open]').isVisible())
           return 'discovery';
+        if (
+          await page.getByRole('group', { name: 'Event playback' }).isVisible()
+        )
+          return 'playback';
         return (await page
           .getByRole('button', { name: 'End turn', exact: true })
           .isEnabled())
@@ -78,6 +82,13 @@ export async function endTurn(page: Page): Promise<void> {
           : 'running';
       })
       .not.toBe('running');
+    const skip = page
+      .getByRole('group', { name: 'Event playback' })
+      .getByRole('button', { name: 'Skip', exact: true });
+    if (await skip.isVisible()) {
+      await skip.click();
+      break;
+    }
     const ignore = page
       .locator('.discovery-dialog[open]')
       .getByRole('button', { name: /^(Ignore|Continue)$/, exact: true });
