@@ -111,6 +111,36 @@ body {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
 }
+#app.has-game-footer {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.game-turn-actions {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+  padding: 4px 8px max(4px, env(safe-area-inset-bottom));
+  min-height: 0;
+  background: #09121b;
+  z-index: 4;
+}
+.game-turn-actions > .turn-console {
+  position: static;
+  width: 100%;
+  height: auto;
+  max-height: 40dvh;
+  padding: 0 8px;
+}
+.game-turn-actions .console-log {
+  max-height: calc(40dvh - 48px);
+  padding-bottom: 4px;
+}
+.game-turn-actions > .end-turn {
+  position: static;
+  min-height: 44px;
+  margin: 0;
+}
 button,
 select {
   font: inherit;
@@ -256,6 +286,10 @@ p {
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
+}
+.planet-map-info {
+  grid-column: 1 / -1;
+  margin: 0;
 }
 .coordinate-label {
   font:
@@ -2734,8 +2768,8 @@ p {
   outline: 2px solid #ffdc88;
   outline-offset: -2px;
 }
-.research-page.has-turn-actions.has-decision-guidance {
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+.research-page.has-decision-guidance {
+  grid-template-rows: auto auto minmax(0, 1fr);
 }
 @media (max-height: 500px) {
   .page > .decision-guidance {
@@ -3088,4 +3122,88 @@ body:has(.discovery-controls) .selection-panel {
   .map-page.is-event-playback > .turn-actions .turn-console {
     max-height: calc(45dvh - 52px);
   }
+}
+/* gemensam-events-panel: the persistent footer owns the log in every layout. */
+.map-page.is-event-playback {
+  display: block;
+  padding: 0;
+}
+.map-page.is-event-playback .map-container {
+  position: absolute;
+  inset: 0;
+}
+.sortable-queue {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+.sortable-queue > .queue-item,
+.queue-drag-ghost {
+  display: grid;
+  grid-template-columns: 44px 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #10212c;
+}
+.queue-drag-handle {
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #b0e5ce;
+  font-size: 1.4rem;
+  touch-action: none;
+  cursor: grab;
+}
+.queue-content {
+  min-width: 0;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.queue-content p {
+  margin: 0;
+}
+.queue-content > button {
+  width: 100%;
+  text-align: left;
+}
+.queue-item > .catalog-icon {
+  width: 24px;
+  height: 24px;
+}
+.queue-item > .project-supply {
+  grid-column: 3 / -1;
+}
+.queue-item > .queue-actions {
+  margin: 0;
+}
+.queue-dragging {
+  opacity: 0.45;
+}
+.queue-drop-before {
+  box-shadow: 0 -3px #ffdc88;
+}
+.queue-drop-after {
+  box-shadow: 0 3px #ffdc88;
+}
+.queue-drag-ghost {
+  position: fixed;
+  z-index: 1100;
+  pointer-events: none;
+  opacity: 0.9;
+  max-height: 96px;
+  overflow: hidden;
+}
+.game-turn-actions > .turn-console {
+  position: static;
+  max-height: 40dvh;
+  width: 100%;
+  padding: 0 8px;
 }

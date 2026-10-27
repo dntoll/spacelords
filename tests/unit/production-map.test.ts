@@ -277,12 +277,15 @@ describe('produktions-kartvy / radiella-byggval / kompakt-produktionsko', () => 
     expect(model.snapshot.productionMap.selectedProjectId).toBe(first!.id);
     click('Select project 2: Rocket engine');
     expect(model.snapshot.productionMap.selectedProjectId).toBe(second!.id);
-    root
-      .querySelector<HTMLButtonElement>('[aria-label="Move project 2 up"]')!
-      .focus();
-    click('Move project 2 up');
+    const handle =
+      root.querySelectorAll<HTMLButtonElement>('.queue-drag-handle')[1]!;
+    handle.focus();
+    for (const key of [' ', 'ArrowUp', 'Enter'])
+      handle.dispatchEvent(
+        new KeyboardEvent('keydown', { key, bubbles: true }),
+      );
     expect(document.activeElement).toBe(
-      root.querySelector('.map-queue-choice[aria-pressed="true"]'),
+      root.querySelector('.queue-drag-handle'),
     );
     expect(model.snapshot.productionMap.selectedProjectId).toBe(second!.id);
     expect(model.snapshot.planet!.projects[0]!.id).toBe(second!.id);

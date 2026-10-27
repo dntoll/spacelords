@@ -10,6 +10,13 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Enhetliga spelvyer och bildprompter:** `gemensam-events-panel`,
+  `dragbara-koer`, `omordningsbar-reparationsko`, `bildpromptpaket`,
+  `skeppssprites-pa-kartan`, `forskningskamerans-granser` och
+  `planetinformation-pa-kartan` är **Fullständigt implementerat**. Riktade
+  kontroller är godkända; leveransen följer snabbpublicering för mobiltest. Se [krav och ersatta regler](docs/unified-interface.md)
+  samt [bildpromptpaketet](docs/image-prompts/README.md).
+
 - **Varierad galax och kompakta spelvyer:** `stjarnvariation`, `galaxarmar`,
   `dragbara-flottorder`, `kompakt-forskningstrad`, `forskningens-avslojande`,
   `forskningsdetaljer-vid-val` och `produktionsvalens-statusfarger` är
@@ -82,12 +89,12 @@ Se [hela visionen](docs/game-vision.md).
   `kompakt-produktionsko` är **Fullständigt implementerat**. Overview,
   Building sites, Build queue och Production delar upp planetens hantering.
   Byggplatser visas i rutnät, produktval samlas per planet och varje köprojekt
-  visar sina försörjningssteg. Production har en kompakt kö med gruppering av
-  intilliggande likadana projekt. Se [produktkraven](docs/product-requirements.md).
+  visar sina försörjningssteg. Production visar en kompakt rad per projekt
+  enligt `dragbara-koer`. Se [produktkraven](docs/product-requirements.md).
 
 - **Kompakta köhandlingar:** `kompakta-koknappar` är **Fullständigt implementerat**.
-  Research queue och Build queue använder små knappar med ↑, ↓ och × för
-  omordning och borttagning, med förklarande hjälptexter.
+  Research queue och Build queue använder draghandtag och × för omordning
+  och borttagning, med hjälptexter enligt `dragbara-koer`.
 
 - **Spelupplevelse och språk:** skärmfyllande vyer, stor hexkarta och engelska
   speltexter. Dokumentationen är svenska med spelets engelska namn och etiketter.
@@ -161,7 +168,7 @@ Se [hela visionen](docs/game-vision.md).
   planet och en kö med en rad per projekt. Fyra kartlägen delar kartinstans
   och kamera; projektets faktiska försörjning markeras på kartan.
   `kompakt-produktionsko` omfattar både kartans individuella köposter och
-  planetvyns befintliga gruppering. Tystade eller överhoppade problem ger inga
+  planetvyns separata projektrader enligt `dragbara-koer`. Tystade eller överhoppade problem ger inga
   kartmarkeringar; relevant navigeringsknapp visar ! för aktiva problem.
   `dome-fore-fabriksforslag` är **Fullständigt implementerat**: Production
   prioriterar rätt Dome när en tom plats behöver förberedas. Fabriker föreslås
@@ -204,7 +211,7 @@ Se [hela visionen](docs/game-vision.md).
   samlat och låter spelaren fortsätta ändå. Händelsekonsolen (`handelser`) är
   fullständigt implementerad: Events är fällbar och visar hela senaste året
   när utrymmet räcker, med intern rullning för resten.
-  Events kan döljas vid kartval; End turn har alltid egen plats.
+  Events och End turn är alltid tillgängliga enligt `gemensam-events-panel`.
   `rundkontroller-i-decisions` är **Fullständigt implementerat**: båda finns
   även i Decisions.
   `senaste-aret-i-events`, `utvikbara-events` och `rundkontroller-pa-fler-vyer`

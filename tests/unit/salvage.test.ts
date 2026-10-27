@@ -222,7 +222,7 @@ describe('automatisk-vrakreparation / forskning-fran-bargade-delar', () => {
     expect(research.queue).toEqual(['Telescope III factory']);
     expect(research.completed.size).toBe(0);
   });
-  it('repairs one queued wreck per year and leaves the next wreck in FIFO order', () => {
+  it('repairs one queued wreck per year and preserves the remaining queue order', () => {
     const state = salvageState();
     state.salvage.wrecks[0]!.position = new HexCoordinate(2, 0);
     state.salvage.wrecks.push({
@@ -243,6 +243,36 @@ describe('automatisk-vrakreparation / forskning-fran-bargade-delar', () => {
       game.fleetSnapshots().find((fleet) => fleet.name.startsWith('Orbit'))!
         .ships['Exploration ship'],
     ).toBe(2);
+  });
+  it('omordningsbar-reparationsko: persists the chosen order and repairs that wreck first without partial invalid changes', () => {
+    const state = salvageState();
+    state.salvage.wrecks[0]!.position = new HexCoordinate(2, 0);
+    state.salvage.wrecks.push({
+      ...structuredClone(state.salvage.wrecks[0]!),
+      id: 'second',
+      ship: { ...advancedExplorer, id: 'second-ship' },
+    });
+    state.salvage.yards[0]!.queue = ['advanced-wreck', 'second'];
+    for (const wreck of state.salvage.wrecks) wreck.yardId = 'yard';
+    const game = Game.restore(state);
+    game.moveRepair('yard', 'second', 0);
+    expect(() => game.moveRepair('yard', 'advanced-wreck', 8)).toThrow();
+    expect(game.shipyards[0]!.queue).toEqual(['second', 'advanced-wreck']);
+    const restored = Game.restore(
+      JSON.parse(JSON.stringify(game.exportState())) as GameState,
+    );
+    expect(restored.shipyards[0]!.queue).toEqual(['second', 'advanced-wreck']);
+    finishYear(restored);
+    expect(restored.shipyards[0]!.queue).toEqual(['advanced-wreck']);
+    expect(
+      restored
+        .fleetSnapshots()
+        .flatMap((fleet) => fleet.shipUnits ?? [])
+        .some((ship) => ship.id === 'second-ship'),
+    ).toBe(true);
+    expect(restored.wrecks.map((wreck) => wreck.id)).toContain(
+      'advanced-wreck',
+    );
   });
 });
 

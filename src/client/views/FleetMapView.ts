@@ -5,14 +5,6 @@ import { FleetMapLayout } from '../models/FleetMapLayout.js';
 import type { FleetSnapshot, ShipType } from '../models/Game.js';
 import { HexGeometry, type Point } from '../models/HexCoordinate.js';
 
-const shipSizes: Readonly<Record<ShipType, number>> = {
-  Fighter: 5,
-  'Exploration ship': 7,
-  'Colony ship': 9,
-  'Transport ship': 8,
-  'Salvage ship': 7,
-};
-
 export function renderMapFleets(
   sketch: p5,
   fleets: readonly FleetSnapshot[],
@@ -34,6 +26,7 @@ export function renderMapFleets(
   attentionFleetIds: readonly string[] = [],
   pirateIds: readonly string[] = [],
   movementPoints: ReadonlyMap<string, Point> = new Map(),
+  shipImages: ReadonlyMap<ShipType, p5.Image> = new Map(),
 ): void {
   const markers = FleetMapLayout.markers(fleets, routeView ?? [], zoom).map(
     (marker) => ({
@@ -127,7 +120,11 @@ export function renderMapFleets(
       if (selected || hovered)
         sketch.fill(selected ? '#ffdc8833' : '#72d8ca33');
       else sketch.noFill();
-      sketch.circle(point.x, point.y, FleetMapLayout.hitRadius * 2);
+      sketch.circle(
+        point.x,
+        point.y,
+        FleetMapLayout.radius({ fleet, point, scale }, zoom) * 2,
+      );
       context?.setLineDash([]);
     }
     if (
@@ -150,33 +147,42 @@ export function renderMapFleets(
       sketch.textAlign(sketch.CENTER, sketch.TOP);
       sketch.text(fleet.name, point.x, point.y + 13 / zoom);
     }
-    const shipScale = Math.min(1 / zoom, scale);
-    const sizes: number[] = [];
-    // A bounded, round-robin sample preserves each ship type in large fleets.
-    for (let layer = 0; layer < 9 && sizes.length < 9; layer += 1) {
-      for (const type of Object.keys(shipSizes) as ShipType[]) {
-        if (fleet.ships[type] > layer && sizes.length < 9)
-          sizes.push(shipSizes[type]);
-      }
-    }
     const destination = destinationFor(fleet);
     const target = destination ? HexGeometry.toPoint(destination) : null;
     sketch.noStroke();
     sketch.fill(color);
-    const columns = Math.min(3, sizes.length);
-    const rows = Math.ceil(sizes.length / columns);
-    sizes.forEach((size, index) => {
-      const row = Math.floor(index / columns);
-      const rowCount = Math.min(columns, sizes.length - row * columns);
-      const center = {
-        x: point.x + ((index % columns) - (rowCount - 1) / 2) * 8 * shipScale,
-        y: point.y + (row - (rows - 1) / 2) * 8 * shipScale,
-      };
+    if (zoom < 0.2) {
+      sketch.circle(point.x, point.y, 4 / zoom);
+      continue;
+    }
+    for (const glyph of FleetMapLayout.glyphs({ fleet, point, scale }, zoom)) {
+      const center = glyph.point;
       const angle = target
         ? Math.atan2(target.y - center.y, target.x - center.x)
         : -Math.PI / 2;
-      shipTriangle(sketch, center, size * shipScale, angle);
-    });
+      const image = shipImages.get(glyph.type);
+      if (image) {
+        const longest = Math.max(image.width, image.height);
+        const width = (glyph.size * image.width) / longest;
+        const height = (glyph.size * image.height) / longest;
+        sketch.push();
+        sketch.translate(center.x, center.y);
+        sketch.rotate(angle);
+        sketch.image(image, -width / 2, -height / 2, width, height);
+        sketch.pop();
+      } else shipTriangle(sketch, center, glyph.size, angle);
+    }
+    if (zoom < 0.65) {
+      sketch.textSize(10 / zoom);
+      sketch.textAlign(sketch.CENTER, sketch.TOP);
+      sketch.text(
+        String(
+          Object.values(fleet.ships).reduce((sum, count) => sum + count, 0),
+        ),
+        point.x + 10 / zoom,
+        point.y - 5 / zoom,
+      );
+    }
   }
 }
 

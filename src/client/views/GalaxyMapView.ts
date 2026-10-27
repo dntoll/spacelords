@@ -12,7 +12,8 @@ import type { AppReadModel } from '../models/AppModel.js';
 import { HexGeometry, type Point } from '../models/HexCoordinate.js';
 import type { MapCell } from '../models/Galaxy.js';
 import type { IntentHandler, MapPort } from './ViewContracts.js';
-import type { TurnFrame } from '../models/Game.js';
+import type { TurnFrame, ShipType } from '../models/Game.js';
+import { SHIP_IMAGES, SHIP_TYPES } from './ShipImages.js';
 import { FleetMapLayout } from '../models/FleetMapLayout.js';
 import { pirateAsFleet } from '../models/PirateFleet.js';
 
@@ -30,6 +31,7 @@ export class GalaxyMapView implements MapPort {
   #disposed = false;
   #ready = false;
   #starTextures: readonly p5.Image[] | null = null;
+  readonly #shipImages = new Map<ShipType, p5.Image>();
   #descriptionScreen: AppReadModel['screen'] | null = null;
   #movement: {
     movement: TurnFrame['movements'][number];
@@ -54,6 +56,22 @@ export class GalaxyMapView implements MapPort {
         this.#canvas = container.querySelector('canvas');
         if (this.#canvas) this.#bindInput(this.#canvas);
         this.#ready = true;
+        for (const type of SHIP_TYPES) {
+          void sketch
+            .loadImage(SHIP_IMAGES[type])
+            .then((image) => {
+              if (this.#disposed) return;
+              this.#shipImages.set(type, image);
+              this.#canvas?.setAttribute(
+                'data-ship-images-ready',
+                String(this.#shipImages.size),
+              );
+              void sketch.redraw();
+            })
+            .catch(() => {
+              /* Retain the loading glyph if a sprite is unavailable. */
+            });
+        }
         void sketch
           .loadImage(starSprite)
           .then((sprite) => {
@@ -239,7 +257,7 @@ export class GalaxyMapView implements MapPort {
           model.camera.zoom,
           model.screen === 'fleets',
         );
-    renderMapOverlays(sketch, model, movementPoints);
+    renderMapOverlays(sketch, model, movementPoints, this.#shipImages);
     for (const marker of salvageMarkers(
       model.wrecks ?? [],
       model.shipyards ?? [],

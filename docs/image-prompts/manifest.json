@@ -1,0 +1,786 @@
+{
+  "version": 1,
+  "imageGenerationPerformed": false,
+  "assets": [
+    {
+      "id": "ships-transport-ship",
+      "category": "ships",
+      "name": "Transport ship",
+      "prompt": "ships/transport-ship.md",
+      "output": "transport-ship.png",
+      "transparent": true,
+      "references": [
+        "references/fighter.webp",
+        "references/exploration-ship.webp",
+        "references/colony-ship.webp"
+      ],
+      "usage": "fleet portraits and map sprites"
+    },
+    {
+      "id": "ships-salvage-ship",
+      "category": "ships",
+      "name": "Salvage ship",
+      "prompt": "ships/salvage-ship.md",
+      "output": "salvage-ship.png",
+      "transparent": true,
+      "references": [
+        "references/fighter.webp",
+        "references/exploration-ship.webp",
+        "references/colony-ship.webp"
+      ],
+      "usage": "fleet portraits and map sprites"
+    },
+    {
+      "id": "buildings-orbital-shipyard",
+      "category": "buildings",
+      "name": "Orbital shipyard",
+      "prompt": "buildings/orbital-shipyard.md",
+      "output": "orbital-shipyard.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-orbital-shipyard",
+      "category": "symbols",
+      "name": "Orbital shipyard",
+      "prompt": "symbols/orbital-shipyard.md",
+      "output": "orbital-shipyard-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-salvage-ship-factory",
+      "category": "buildings",
+      "name": "Salvage ship factory",
+      "prompt": "buildings/salvage-ship-factory.md",
+      "output": "salvage-ship-factory.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-salvage-ship-factory",
+      "category": "symbols",
+      "name": "Salvage ship factory",
+      "prompt": "symbols/salvage-ship-factory.md",
+      "output": "salvage-ship-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-telescope-i-factory",
+      "category": "buildings",
+      "name": "Telescope I factory",
+      "prompt": "buildings/telescope-i-factory.md",
+      "output": "telescope-i-factory.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-telescope-i-factory",
+      "category": "symbols",
+      "name": "Telescope I factory",
+      "prompt": "symbols/telescope-i-factory.md",
+      "output": "telescope-i-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-telescope-ii-factory",
+      "category": "buildings",
+      "name": "Telescope II factory",
+      "prompt": "buildings/telescope-ii-factory.md",
+      "output": "telescope-ii-factory.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-telescope-ii-factory",
+      "category": "symbols",
+      "name": "Telescope II factory",
+      "prompt": "symbols/telescope-ii-factory.md",
+      "output": "telescope-ii-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-telescope-iii-factory",
+      "category": "buildings",
+      "name": "Telescope III factory",
+      "prompt": "buildings/telescope-iii-factory.md",
+      "output": "telescope-iii-factory.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-telescope-iii-factory",
+      "category": "symbols",
+      "name": "Telescope III factory",
+      "prompt": "symbols/telescope-iii-factory.md",
+      "output": "telescope-iii-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-ice-dome",
+      "category": "buildings",
+      "name": "Ice dome",
+      "prompt": "buildings/ice-dome.md",
+      "output": "ice-dome.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-ice-dome",
+      "category": "symbols",
+      "name": "Ice dome",
+      "prompt": "symbols/ice-dome.md",
+      "output": "ice-dome-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-ice-terraforming-factory",
+      "category": "buildings",
+      "name": "Ice terraforming factory",
+      "prompt": "buildings/ice-terraforming-factory.md",
+      "output": "ice-terraforming-factory.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-ice-terraforming-factory",
+      "category": "symbols",
+      "name": "Ice terraforming factory",
+      "prompt": "symbols/ice-terraforming-factory.md",
+      "output": "ice-terraforming-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-desert-dome",
+      "category": "buildings",
+      "name": "Desert dome",
+      "prompt": "buildings/desert-dome.md",
+      "output": "desert-dome.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-desert-dome",
+      "category": "symbols",
+      "name": "Desert dome",
+      "prompt": "symbols/desert-dome.md",
+      "output": "desert-dome-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-desert-terraforming-factory",
+      "category": "buildings",
+      "name": "Desert terraforming factory",
+      "prompt": "buildings/desert-terraforming-factory.md",
+      "output": "desert-terraforming-factory.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-desert-terraforming-factory",
+      "category": "symbols",
+      "name": "Desert terraforming factory",
+      "prompt": "symbols/desert-terraforming-factory.md",
+      "output": "desert-terraforming-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-ocean-dome",
+      "category": "buildings",
+      "name": "Ocean dome",
+      "prompt": "buildings/ocean-dome.md",
+      "output": "ocean-dome.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-ocean-dome",
+      "category": "symbols",
+      "name": "Ocean dome",
+      "prompt": "symbols/ocean-dome.md",
+      "output": "ocean-dome-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-ocean-terraforming-factory",
+      "category": "buildings",
+      "name": "Ocean terraforming factory",
+      "prompt": "buildings/ocean-terraforming-factory.md",
+      "output": "ocean-terraforming-factory.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-ocean-terraforming-factory",
+      "category": "symbols",
+      "name": "Ocean terraforming factory",
+      "prompt": "symbols/ocean-terraforming-factory.md",
+      "output": "ocean-terraforming-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-toxic-dome",
+      "category": "buildings",
+      "name": "Toxic dome",
+      "prompt": "buildings/toxic-dome.md",
+      "output": "toxic-dome.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-toxic-dome",
+      "category": "symbols",
+      "name": "Toxic dome",
+      "prompt": "symbols/toxic-dome.md",
+      "output": "toxic-dome-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-toxic-terraforming-factory",
+      "category": "buildings",
+      "name": "Toxic terraforming factory",
+      "prompt": "buildings/toxic-terraforming-factory.md",
+      "output": "toxic-terraforming-factory.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-toxic-terraforming-factory",
+      "category": "symbols",
+      "name": "Toxic terraforming factory",
+      "prompt": "symbols/toxic-terraforming-factory.md",
+      "output": "toxic-terraforming-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-iron-mine",
+      "category": "buildings",
+      "name": "Iron mine",
+      "prompt": "buildings/iron-mine.md",
+      "output": "iron-mine.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-iron-mine",
+      "category": "symbols",
+      "name": "Iron mine",
+      "prompt": "symbols/iron-mine.md",
+      "output": "iron-mine-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-rocket-engine-factory",
+      "category": "buildings",
+      "name": "Rocket engine factory",
+      "prompt": "buildings/rocket-engine-factory.md",
+      "output": "rocket-engine-factory.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-rocket-engine-factory",
+      "category": "symbols",
+      "name": "Rocket engine factory",
+      "prompt": "symbols/rocket-engine-factory.md",
+      "output": "rocket-engine-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-ion-pulse-engine-factory",
+      "category": "buildings",
+      "name": "Ion pulse engine factory",
+      "prompt": "buildings/ion-pulse-engine-factory.md",
+      "output": "ion-pulse-engine-factory.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-ion-pulse-engine-factory",
+      "category": "symbols",
+      "name": "Ion pulse engine factory",
+      "prompt": "symbols/ion-pulse-engine-factory.md",
+      "output": "ion-pulse-engine-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-weapons-module-factory",
+      "category": "buildings",
+      "name": "Weapons module factory",
+      "prompt": "buildings/weapons-module-factory.md",
+      "output": "weapons-module-factory.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-weapons-module-factory",
+      "category": "symbols",
+      "name": "Weapons module factory",
+      "prompt": "symbols/weapons-module-factory.md",
+      "output": "weapons-module-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-water-extractor",
+      "category": "buildings",
+      "name": "Water extractor",
+      "prompt": "buildings/water-extractor.md",
+      "output": "water-extractor.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-water-extractor",
+      "category": "symbols",
+      "name": "Water extractor",
+      "prompt": "symbols/water-extractor.md",
+      "output": "water-extractor-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-oil-extractor",
+      "category": "buildings",
+      "name": "Oil extractor",
+      "prompt": "buildings/oil-extractor.md",
+      "output": "oil-extractor.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-oil-extractor",
+      "category": "symbols",
+      "name": "Oil extractor",
+      "prompt": "symbols/oil-extractor.md",
+      "output": "oil-extractor-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "buildings-transport-ship-factory",
+      "category": "buildings",
+      "name": "Transport ship factory",
+      "prompt": "buildings/transport-ship-factory.md",
+      "output": "transport-ship-factory.png",
+      "transparent": false,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "building portraits in Production and planet views"
+    },
+    {
+      "id": "symbols-transport-ship-factory",
+      "category": "symbols",
+      "name": "Transport ship factory",
+      "prompt": "symbols/transport-ship-factory.md",
+      "output": "transport-ship-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "symbols-research-station",
+      "category": "symbols",
+      "name": "Research station",
+      "prompt": "symbols/research-station.md",
+      "output": "research-station-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "symbols-colony-ship-factory",
+      "category": "symbols",
+      "name": "Colony ship factory",
+      "prompt": "symbols/colony-ship-factory.md",
+      "output": "colony-ship-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "symbols-exploration-ship-factory",
+      "category": "symbols",
+      "name": "Exploration ship factory",
+      "prompt": "symbols/exploration-ship-factory.md",
+      "output": "exploration-ship-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "symbols-fighter-factory",
+      "category": "symbols",
+      "name": "Fighter factory",
+      "prompt": "symbols/fighter-factory.md",
+      "output": "fighter-factory-symbol.png",
+      "transparent": true,
+      "references": [
+        "references/fighter-factory.webp",
+        "references/exploration-ship-factory.webp",
+        "references/colony-ship-factory.webp",
+        "references/research-station.webp"
+      ],
+      "usage": "small building selection icons"
+    },
+    {
+      "id": "planets-temperate",
+      "category": "planets",
+      "name": "Temperate",
+      "prompt": "planets/temperate.md",
+      "output": "temperate-planet.png",
+      "transparent": true,
+      "references": [
+        "references/plasma-star.webp",
+        "references/fighter-factory.webp"
+      ],
+      "usage": "planet map bodies and detail portraits"
+    },
+    {
+      "id": "planets-ice",
+      "category": "planets",
+      "name": "Ice",
+      "prompt": "planets/ice.md",
+      "output": "ice-planet.png",
+      "transparent": true,
+      "references": [
+        "references/plasma-star.webp",
+        "references/fighter-factory.webp"
+      ],
+      "usage": "planet map bodies and detail portraits"
+    },
+    {
+      "id": "planets-desert",
+      "category": "planets",
+      "name": "Desert",
+      "prompt": "planets/desert.md",
+      "output": "desert-planet.png",
+      "transparent": true,
+      "references": [
+        "references/plasma-star.webp",
+        "references/fighter-factory.webp"
+      ],
+      "usage": "planet map bodies and detail portraits"
+    },
+    {
+      "id": "planets-ocean",
+      "category": "planets",
+      "name": "Ocean",
+      "prompt": "planets/ocean.md",
+      "output": "ocean-planet.png",
+      "transparent": true,
+      "references": [
+        "references/plasma-star.webp",
+        "references/fighter-factory.webp"
+      ],
+      "usage": "planet map bodies and detail portraits"
+    },
+    {
+      "id": "planets-toxic",
+      "category": "planets",
+      "name": "Toxic",
+      "prompt": "planets/toxic.md",
+      "output": "toxic-planet.png",
+      "transparent": true,
+      "references": [
+        "references/plasma-star.webp",
+        "references/fighter-factory.webp"
+      ],
+      "usage": "planet map bodies and detail portraits"
+    },
+    {
+      "id": "planets-gas",
+      "category": "planets",
+      "name": "Gas",
+      "prompt": "planets/gas.md",
+      "output": "gas-planet.png",
+      "transparent": true,
+      "references": [
+        "references/plasma-star.webp",
+        "references/fighter-factory.webp"
+      ],
+      "usage": "planet map bodies and detail portraits"
+    },
+    {
+      "id": "map-orbital-shipyard",
+      "category": "map",
+      "name": "Orbital shipyard",
+      "prompt": "map/orbital-shipyard.md",
+      "output": "orbital-shipyard-sprite.png",
+      "transparent": true,
+      "references": [
+        "references/fighter.webp",
+        "references/exploration-ship.webp",
+        "references/colony-ship.webp"
+      ],
+      "usage": "orbital station sprite on game maps"
+    }
+  ]
+}

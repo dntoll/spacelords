@@ -2,7 +2,6 @@ import type { AppReadModel } from '../models/AppModel.js';
 import {
   BUILDINGS,
   projectDefinition,
-  type ConstructionProjectSnapshot,
   type PlanetGameSnapshot,
   type FleetSnapshot,
   type ShipType,
@@ -16,6 +15,7 @@ import {
   catalogHeading,
 } from './CatalogControls.js';
 import { button, element } from './dom.js';
+import { bindQueueOrder, decorateQueueRow } from './QueueView.js';
 
 type Menus = Pick<AppReadModel, 'phase'> &
   Partial<
@@ -27,24 +27,6 @@ type Menus = Pick<AppReadModel, 'phase'> &
       | 'productionGuidance'
     >
   >;
-
-// kompakt-produktionsko: adjacent groups preserve actual order and fleet destinations.
-export function compactProjectGroups(
-  projects: readonly ConstructionProjectSnapshot[],
-): readonly (readonly ConstructionProjectSnapshot[])[] {
-  const groups: ConstructionProjectSnapshot[][] = [];
-  for (const project of projects) {
-    const last = groups.at(-1);
-    if (
-      last?.[0]?.type === project.type &&
-      last[0].destinationFleetId === project.destinationFleetId &&
-      last[0].slotIndex === project.slotIndex
-    )
-      last.push(project);
-    else groups.push([project]);
-  }
-  return groups;
-}
 
 export function renderProduction(
   planet: PlanetGameSnapshot,
@@ -237,10 +219,14 @@ export function renderProduction(
     ),
   );
   const queueList = element('ol', 'compact-queue-list');
-  let position = 1;
-  for (const group of compactProjectGroups(planet.projects)) {
-    const first = group[0]!;
-    const lastPosition = position + group.length - 1;
+  bindQueueOrder(
+    queueList,
+    planet.projects.map((project) => project.id),
+    (id, index) => emit({ type: 'move-project', id, index }),
+    menus.phase !== 'planning',
+  );
+  for (const [index, first] of planet.projects.entries()) {
+    const position = index + 1;
     const fleet = first.destinationFleetId
       ? (fleets.find((f) => f.id === first.destinationFleetId)?.name ??
         'Unknown fleet')
@@ -248,7 +234,7 @@ export function renderProduction(
     const item = element('li');
     item.append(
       button(
-        `${position}${lastPosition === position ? '' : `–${lastPosition}`}. ${first.type}${group.length > 1 ? ` ×${group.length}` : ''}${projectDefinition(first.type).ship ? ` · ${fleet}` : ''}${first.slotIndex === null ? '' : ` · Site ${first.slotIndex + 1}`}`,
+        `${position}. ${first.type}${projectDefinition(first.type).ship ? ` · ${fleet}` : ''}${first.slotIndex === null ? '' : ` · Site ${first.slotIndex + 1}`}${first.blockedReason ? ` · ${first.blockedReason}` : ' · Queued'}`,
         () =>
           emit({
             type: 'open-planet-project',
@@ -258,8 +244,13 @@ export function renderProduction(
         'button secondary-button compact-queue-item',
       ),
     );
+    decorateQueueRow(
+      item,
+      first.id,
+      `${first.type}, position ${position}`,
+      menus.phase !== 'planning',
+    );
     queueList.append(item);
-    position = lastPosition + 1;
   }
   queue.append(queueList);
   if (!planet.projects.length)

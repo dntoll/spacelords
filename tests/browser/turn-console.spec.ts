@@ -35,7 +35,7 @@ for (const size of [
     const log = page.getByRole('log', { name: 'Game events' });
     const panel = page.locator('.selection-panel');
     await expect(panel).toBeVisible();
-    await expect(console).toBeHidden();
+    await expect(console).toBeVisible();
     await expect(end).toBeVisible();
     await expect(
       page.getByRole('combobox', { name: 'Known objects' }),
@@ -78,7 +78,7 @@ for (const size of [
     );
 
     await selectMapObject(page, 'Vesta');
-    await expect(console).toBeHidden();
+    await expect(console).toBeVisible();
     await expect(end).toBeVisible();
     await page.getByRole('button', { name: 'Decisions', exact: true }).click();
     await expect(console).toBeVisible();

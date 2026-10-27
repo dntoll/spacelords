@@ -25,6 +25,11 @@ Varvet börjar reparera året efter färdigställandet. Reparationer använder
 planetens lager efter vanlig produktion och kräver dess lediga besättning.
 Material och personer förbrukas först när reparationen färdigställs.
 
+`omordningsbar-reparationsko` ersätter tvingande FIFO-prioritering.
+Reparationskön använder samma draghandtag som andra köer, behåller vald
+ordning efter omladdning och reparerar fortfarande högst ett skepp per år.
+Se [aktuella krav och status](unified-interface.md).
+
 Grundkostnader i exempelvärlden: Salvage ship kostar 5 Iron, 3 Water, 2 Oil,
 två motorer och 100 personer. Egen fabrik kostar 12/6/3 och kräver 600 arbetare.
 Orbital shipyard med skyttlar och station kostar 24/12/6 och kräver 800 arbetare.

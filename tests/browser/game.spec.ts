@@ -482,16 +482,15 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   ).toBeEnabled();
   await page.getByRole('button', { name: 'Build queue', exact: true }).click();
   await expect(planetQueue.locator('.queue-order')).toHaveCount(20);
-  await planetQueue
-    .locator('.queue-order')
-    .nth(1)
-    .getByRole('button', { name: /Move up/ })
-    .click();
-  await planetQueue
-    .locator('.queue-order')
-    .nth(1)
-    .getByRole('button', { name: /Move up/ })
-    .click();
+  for (let index = 0; index < 2; index++) {
+    await planetQueue
+      .locator('.queue-order')
+      .nth(1)
+      .locator('.queue-drag-handle')
+      .focus();
+    for (const key of ['Space', 'ArrowUp', 'Enter'])
+      await page.keyboard.press(key);
+  }
   await page.screenshot({
     path: testInfo.outputPath('shipyard-queue.png'),
     fullPage: true,

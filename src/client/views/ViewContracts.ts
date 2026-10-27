@@ -21,6 +21,12 @@ import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 
 export type AppIntent =
   | {
+      readonly type: 'move-repair';
+      readonly yardId: string;
+      readonly wreckId: string;
+      readonly index: number;
+    }
+  | {
       readonly type: 'inspect-research';
       readonly technology: Technology | null;
     }

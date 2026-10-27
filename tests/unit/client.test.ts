@@ -293,8 +293,18 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
     expect(production().querySelectorAll('.queue-order')).toHaveLength(2);
     const second = queue()[1]!.id;
     production()
-      .querySelectorAll<HTMLButtonElement>('[aria-label^="Move up"]')[1]!
-      .click();
+      .querySelectorAll<HTMLButtonElement>('.queue-drag-handle')[1]!
+      .dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    const handle =
+      production().querySelectorAll<HTMLButtonElement>(
+        '.queue-drag-handle',
+      )[1]!;
+    handle.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }),
+    );
+    handle.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+    );
     expect(queue()[0]!.id).toBe(second);
     const queuedFleet = production().querySelector<HTMLSelectElement>(
       '.queue-order select',
@@ -302,11 +312,12 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
     queuedFleet.value = target.id;
     queuedFleet.dispatchEvent(new Event('change'));
     expect(queue()[0]!.destinationFleetId).toBe(target.id);
-    const drop = new Event('drop', { cancelable: true });
-    Object.defineProperty(drop, 'dataTransfer', {
-      value: { getData: () => queue()[1]!.id },
-    });
-    production().querySelector('.queue-order')!.dispatchEvent(drop);
+    const firstHandle =
+      production().querySelector<HTMLButtonElement>('.queue-drag-handle')!;
+    for (const key of [' ', 'ArrowDown', 'Enter'])
+      firstHandle.dispatchEvent(
+        new KeyboardEvent('keydown', { key, bubbles: true }),
+      );
     expect(queue()[0]!.id).not.toBe(second);
     production()
       .querySelector<HTMLButtonElement>('[aria-label^="Cancel:"]')!
@@ -361,18 +372,22 @@ describe('kompakta-koknappar', () => {
     const buttons = () => [
       ...rows()[0]!.querySelectorAll<HTMLButtonElement>('button'),
     ];
-    expect(buttons().map((b) => b.textContent)).toEqual(['↑', '↓', '×']);
-    expect(buttons()[0]!.disabled).toBe(true);
-    expect(buttons()[1]!.disabled).toBe(false);
+    expect(buttons().map((b) => b.textContent)).toEqual(['⠿', '×']);
+    expect(buttons()[0]!.disabled).toBe(false);
     for (const control of buttons()) {
       expect(control.getAttribute('aria-label')).toContain(
         'Rocket engine factory',
       );
-      expect(control.title).toBe(control.getAttribute('aria-label'));
+      expect(control.title.length).toBeGreaterThan(0);
     }
-    rows()[3]!.querySelectorAll<HTMLButtonElement>('button')[1]!.click();
+    const handle =
+      rows()[3]!.querySelector<HTMLButtonElement>('.queue-drag-handle')!;
+    for (const key of [' ', 'ArrowDown', 'Enter'])
+      handle.dispatchEvent(
+        new KeyboardEvent('keydown', { key, bubbles: true }),
+      );
     expect(model.snapshot.research.queue[3]).toBe('Transport ship factory');
-    rows()[4]!.querySelectorAll<HTMLButtonElement>('button')[2]!.click();
+    rows()[4]!.querySelector<HTMLButtonElement>('.queue-icon-button')!.click();
     expect(model.snapshot.research.queue).toContain('Colony ship factory');
     click('Remove research');
     expect(model.snapshot.research.queue).not.toContain('Colony ship factory');
@@ -400,14 +415,16 @@ describe('kompakta-koknappar', () => {
       controls()
         .slice(0, 3)
         .map((b) => b.textContent),
-    ).toEqual(['↑', '↓', '×']);
-    expect(controls()[0]!.disabled).toBe(true);
-    expect(controls()[4]!.disabled).toBe(true);
+    ).toEqual(['×', '×']);
     const first = model.snapshot.planet!.projects[0]!.id;
-    controls()[1]!.click();
+    const handle = root.querySelector<HTMLButtonElement>('.queue-drag-handle')!;
+    for (const key of [' ', 'ArrowDown', 'Enter'])
+      handle.dispatchEvent(
+        new KeyboardEvent('keydown', { key, bubbles: true }),
+      );
     expect(model.snapshot.planet!.projects[1]!.id).toBe(first);
-    expect(controls()[2]!.getAttribute('aria-label')).toContain('Colony ship');
-    controls()[2]!.click();
+    expect(controls()[1]!.getAttribute('aria-label')).toContain('Colony ship');
+    controls()[1]!.click();
     expect(model.snapshot.planet!.projects).toHaveLength(1);
   });
 });

@@ -112,7 +112,7 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   await page.clock.runFor(32);
   const mapBox = (await page.getByTestId('map-container').boundingBox())!,
     listBox = (await console.boundingBox())!;
-  expect(mapBox.x + mapBox.width).toBeLessThanOrEqual(listBox.x);
+  expect(mapBox.y + mapBox.height).toBeLessThanOrEqual(listBox.y);
   const landscape = (await announcement.boundingBox())!;
   expect(
     Math.abs(landscape.x + landscape.width / 2 - mapBox.x - mapBox.width / 2),
@@ -124,9 +124,7 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   await expect(log.locator('[data-event-id]')).toHaveCount(0);
   await page.waitForTimeout(220);
   const flying = (await announcement.boundingBox())!;
-  expect(flying.x + flying.width / 2).toBeGreaterThan(
-    mapBox.x + mapBox.width / 2,
-  );
+  expect(flying.y).toBeGreaterThan(shortAnnouncement.y);
   await page.screenshot({
     path: testInfo.outputPath('announcement-filing-landscape.png'),
   });

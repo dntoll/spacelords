@@ -103,6 +103,9 @@ export class AppController {
       case 'rebuild-shipyard':
         this.#model.rebuildShipyard(intent.id);
         break;
+      case 'move-repair':
+        this.#model.moveRepair(intent.yardId, intent.wreckId, intent.index);
+        break;
       case 'cancel-shipyard-placement':
         this.#model.cancelShipyardPlacement();
         break;

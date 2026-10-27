@@ -15,14 +15,14 @@ Kraven nedan är **Fullständigt implementerat**.
   hela senaste året syns när det får plats, annars rullas listan internt.
   End turn och navigation förblir åtkomliga. Utfällningsvalet följer med mellan
   vyer under sessionen och återställs vid omladdning; det sparas inte i spelet.
-- `rundkontroller-pa-fler-vyer`: Research och planetvyn har Events och End turn
-  i en avsatt nedre rad. Decisions och kartvyerna behåller sina rundkontroller.
+- `rundkontroller-pa-fler-vyer`: alla spelvyer, inklusive planetens undersidor
+  och Build selection, har samma Events och End turn i en avsatt nedre rad.
   Kartan visas tillfälligt under årets uppspelning; därefter återkommer den
   tidigare vyn. På andra vyer ersätter kontrollerna inte formulär eller modaler.
 - `end-turn-vid-kartval`: End turn förblir synlig vid planet-, flott-, rutt-
   och destinationsval i samtliga kartlägen. Informationspanelen lämnar egen
   plats för knappen och kan rullas utan att täcka den. Events kan fortfarande
-  döljas av ett kartval utanför uppspelningen. Beslutsvarningen behålls.
+  användas vid kartval enligt `gemensam-events-panel`. Beslutsvarningen behålls.
 - `sekventiella-arshandelser`: efter helt avslutat år visas händelserna en i
   taget i verklig ordning. End turn är synlig men spärrad under simulering och
   presentation. Inga nya order utförs medan presentationen pågår.

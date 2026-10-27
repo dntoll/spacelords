@@ -10,6 +10,7 @@ import {
 } from './CatalogControls.js';
 import { renderMapLocationHeading } from './MapLocationHeading.js';
 import { button, element, queueButton } from './dom.js';
+import { bindQueueOrder, decorateQueueRow } from './QueueView.js';
 
 function presenceLabel(option: ProductionOption): string {
   return {
@@ -279,6 +280,12 @@ export function renderProductionMapPanel(
   queue.setAttribute('aria-label', 'Build queue');
   queue.append(element('h2', '', 'Build queue'));
   const list = element('ol', 'map-queue-list');
+  bindQueueOrder(
+    list,
+    planet.projects.map((project) => project.id),
+    (id, index) => emit({ type: 'move-project', id, index }),
+    model.phase !== 'planning',
+  );
   planet.projects.forEach((project, index) => {
     const item = element('li', 'map-queue-row');
     item.dataset.projectId = project.id;
@@ -300,27 +307,22 @@ export function renderProductionMapPanel(
       'aria-pressed',
       String(map.selectedProjectId === project.id),
     );
-    const up = queueButton('↑', `Move project ${index + 1} up`, () =>
-      emit({ type: 'move-project', id: project.id, index: index - 1 }),
-    );
-    const down = queueButton('↓', `Move project ${index + 1} down`, () =>
-      emit({ type: 'move-project', id: project.id, index: index + 1 }),
-    );
     const cancel = queueButton('×', `Cancel project ${index + 1}`, () =>
       emit({ type: 'cancel-project', id: project.id }),
     );
-    up.disabled = model.phase !== 'planning' || index === 0;
-    down.disabled =
-      model.phase !== 'planning' || index === planet.projects.length - 1;
     cancel.disabled = model.phase !== 'planning';
     for (const [action, control] of [
       ['select', choose],
-      ['up', up],
-      ['down', down],
       ['cancel', cancel],
     ] as const)
       control.dataset.focusKey = `project:${project.id}:${action}`;
-    item.append(choose, up, down, cancel);
+    item.append(choose, cancel);
+    decorateQueueRow(
+      item,
+      project.id,
+      `${project.type}, position ${index + 1}`,
+      model.phase !== 'planning',
+    );
     list.append(item);
   });
   queue.append(list);

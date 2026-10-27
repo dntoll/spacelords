@@ -4,6 +4,7 @@ import type { IntentHandler } from './ViewContracts.js';
 import { buildingImage } from './BuildingImage.js';
 import { renderResearchTree } from './ResearchTreeView.js';
 import { button, element, queueButton } from './dom.js';
+import { bindQueueOrder, decorateQueueRow } from './QueueView.js';
 
 export function renderResearch(
   research: ResearchSnapshot,
@@ -80,25 +81,26 @@ export function renderResearch(
       ),
     );
     const actions = element('div', 'queue-actions');
-    for (const [symbol, label, offset] of [
-      ['↑', 'Move up', -1],
-      ['↓', 'Move down', 1],
-    ] as const) {
-      const move = queueButton(symbol, `${label}: ${technology}`, () =>
-        emit({ type: 'move-research', technology, index: index + offset }),
-      );
-      move.disabled =
-        locked || index + offset < 0 || index + offset >= research.queue.length;
-      actions.append(move);
-    }
     const remove = queueButton('×', `Remove ${technology}`, () =>
       emit({ type: 'remove-research', technology }),
     );
     remove.disabled = locked;
     actions.append(remove);
     row.append(actions);
+    decorateQueueRow(row, technology, technology, locked);
     orders.append(row);
   }
+  bindQueueOrder(
+    orders,
+    research.queue,
+    (technology, index) =>
+      emit({
+        type: 'move-research',
+        technology: technology as Technology,
+        index,
+      }),
+    locked,
+  );
   queue.append(orders);
   if (research.queueBlockedReason)
     panel.append(

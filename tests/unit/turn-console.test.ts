@@ -13,6 +13,94 @@ import { AppController } from '../../src/client/controllers/AppController.js';
 import { AppView } from '../../src/client/views/AppView.js';
 
 describe('handelseannonsering / handelser-pa-kartan', () => {
+  it('planetinformation-pa-kartan: returns immutable current, basic and hidden planet knowledge', () => {
+    const state = new Game(createExampleGalaxy()).exportState();
+    state.colonies[0]![1].habitability = 73;
+    const game = Game.restore(state);
+    const home = game.planetKnowledge(game.galaxy.homePlanet.position)!;
+    expect(home.habitability).toBe(73);
+    expect(Object.isFrozen(home)).toBe(true);
+    const planets = game.galaxy.systems.flatMap((system) => system.planets);
+    const vesta = planets.find((planet) => planet.name === 'Vesta')!;
+    expect(game.planetKnowledge(vesta.position)?.habitability).toBe(
+      vesta.habitability,
+    );
+    const unknown = planets.find(
+      (planet) => !state.explored.includes(planet.position.key),
+    )!;
+    expect(game.planetKnowledge(unknown.position)).toBeNull();
+  });
+  it('planetinformation-pa-kartan: reveals discovered planet facts and only Unexplored for unknown space', () => {
+    const root = document.createElement('div');
+    document.body.replaceChildren(root);
+    const model = new AppModel();
+    const view = new AppView(root, () => ({ render() {}, dispose() {} }));
+    view.render(model.snapshot);
+    expect(root.querySelector('.planet-map-info')?.textContent).toMatch(
+      /Type: Temperate.*Habitability: \d+%/,
+    );
+    view.render({
+      ...model.snapshot,
+      selectedPlanetInfo: {
+        ...model.snapshot.selectedPlanetInfo!,
+        habitability: 72,
+      },
+    });
+    expect(root.querySelector('.planet-map-info')?.textContent).toContain(
+      'Habitability: 72%',
+    );
+    model.select(new HexCoordinate(0, 1));
+    view.render(model.snapshot);
+    expect(model.snapshot.selectedPlanetInfo).not.toBeNull();
+    expect(root.querySelector('.planet-map-info')).not.toBeNull();
+    const unknown = model.snapshot.cells.find(
+      (cell) => !cell.explored && cell.object === null,
+    )!;
+    model.select(unknown.position);
+    view.render(model.snapshot);
+    expect(model.snapshot.selectedPlanetInfo).toBeNull();
+    expect(root.querySelector('.selection-panel')?.textContent).toContain(
+      'Unexplored',
+    );
+    expect(root.querySelector('.planet-map-info')).toBeNull();
+    view.dispose();
+  });
+  it('gemensam-events-panel: remains attached and visible through map selection and all game screens', () => {
+    const root = document.createElement('div');
+    document.body.replaceChildren(root);
+    const model = new AppModel();
+    const view = new AppView(root, () => ({ render() {}, dispose() {} }));
+    view.render(model.snapshot);
+    const panel = root.querySelector<HTMLDetailsElement>('.turn-console')!;
+    panel.open = true;
+    const log = panel.querySelector<HTMLElement>('[role="log"]')!;
+    log.scrollTop = 42;
+    model.select(model.snapshot.selected!.position);
+    view.render(model.snapshot);
+    expect(panel.hidden).toBe(false);
+    for (const screen of [
+      'research',
+      'decisions',
+      'planet',
+      'build-selection',
+      'map',
+    ] as const) {
+      view.render({ ...model.snapshot, screen });
+      expect(root.querySelector('.turn-console')).toBe(panel);
+      expect(panel.open).toBe(true);
+      expect(log.scrollTop).toBe(42);
+      expect(panel.hidden).toBe(false);
+    }
+    view.render({
+      ...model.snapshot,
+      screen: 'build-selection',
+      phase: 'simulating',
+    });
+    expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
+      true,
+    );
+    view.dispose();
+  });
   it('anchors the announcement below the event and its label using the actual map and camera', () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);

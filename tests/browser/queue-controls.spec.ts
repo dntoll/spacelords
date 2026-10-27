@@ -65,13 +65,10 @@ for (const width of [320, 900]) {
 }
 
 async function checkControls(row: Locator): Promise<void> {
-  const controls = row.locator('.queue-actions button');
-  await expect(controls).toHaveText(['↑', '↓', '×']);
+  const controls = row.locator('.queue-actions button, .queue-drag-handle');
+  await expect(controls).toHaveText(['⠿', '×']);
   for (const control of await controls.all()) {
-    await expect(control).toHaveAttribute(
-      'title',
-      (await control.getAttribute('aria-label'))!,
-    );
+    await expect(control).toHaveAttribute('title', /.+/);
     const bounds = (await control.boundingBox())!;
     expect(bounds.width).toBe(44);
     expect(bounds.height).toBe(44);

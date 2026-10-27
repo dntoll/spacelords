@@ -1,5 +1,24 @@
 # Tekniska krav och arbetsregler
 
+## Enhetliga spelvyer
+
+Krav och status: [enhetliga spelvyer](unified-interface.md).
+`gemensam-events-panel` behåller samma DOM-instans i appens nedre rad.
+`dragbara-koer` använder QueueView för bygg-, forsknings- och reparationsköer.
+Vyn förhandsvisar ordningen och skickar controller-intent först vid släpp.
+Pointer capture och dokumentlyssnare hanterar släpp utanför listan.
+`omordningsbar-reparationsko` använder move-repair med varv-ID, vrak-ID och
+målindex via controller och modell. Befintlig sparad array behåller ordningen;
+sparformat och lagringsnycklar ändras inte.
+
+`skeppssprites-pa-kartan` delar ShipImages-registret mellan HTML och p5.
+FleetMapLayout beräknar bildpositioner och träffgräns; bilder laddas en gång.
+`forskningskamerans-granser` beräknar minzoom och offsetgränser i modellen
+från aktuellt träd och viewport. Alla inmatningssätt använder samma modell.
+`planetinformation-pa-kartan` använder en fryst läsmodell som kontrollerar
+utforskning innan planetfakta hämtas. `bildpromptpaket` har ett granskningsbart
+manifest med referenser, användning och filnamn.
+
 ## Kompakta vyer och produktionsstatus, 2026-10-27
 
 `dragbara-flottorder`: FleetOrderDrag använder pekarhändelser endast för vänster
@@ -788,7 +807,7 @@ delar den horisontellt rullbara orderraden för att ge namnet mer utrymme.
 
 `spara-bargning-och-stridsavbrott`: format 10 läser även format 2–9 utan rensning.
 Äldre spel får inga retroaktiva vrak. Vrakets ShipUnit, exklusiva reservationer,
-släp, stationer, FIFO-köer, forskningsfynd och stridsrapporter sparas. Inkonsekvent
+släp, stationer, ordnade reparationsköer, forskningsfynd och stridsrapporter sparas. Inkonsekvent
 dockning, fel motorantal och okända fynd avvisas.
 
 `bogsering-av-vrak`: årssimuleringen räknar 60 tidsenheter per flotta. Ett steg

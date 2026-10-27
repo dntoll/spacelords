@@ -1,7 +1,6 @@
 import type { AppReadModel } from '../models/AppModel.js';
 import { needsAttention } from '../models/Decisions.js';
 import type { IntentHandler } from './ViewContracts.js';
-import { renderTurnActions } from './TurnActionsView.js';
 import { button, element } from './dom.js';
 
 export function renderDecisions(
@@ -44,7 +43,7 @@ export function renderDecisions(
     card.append(skip, mute);
     panel.append(card);
   }
-  page.append(panel, renderTurnActions(emit));
+  page.append(panel);
   return page;
 }
 

@@ -382,7 +382,7 @@ Fleet "0..1" <-- "0..*" Wreck : tows with Salvage ships
 Wreck "1" *-- "1" ShipUnit : retains installed equipment
 Shipyard "1" --> "1" Building : planetary facility and shuttles
 Shipyard "1" --> "1" Planet : resources and fresh crew
-Shipyard "1" o-- "0..*" Wreck : FIFO repair queue
+Shipyard "1" o-- "0..*" Wreck : ordered repair queue
 Fleet "1" -- "0..1" SalvageOrder
 SalvageOrder --> Wreck : exclusive reservation
 SalvageOrder --> Shipyard : nearest home station

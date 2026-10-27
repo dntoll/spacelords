@@ -3,6 +3,7 @@ import { decisionScreen, needsAttention } from '../models/Decisions.js';
 import { HexGeometry, type Point } from '../models/HexCoordinate.js';
 import type p5 from 'p5';
 import type { AppReadModel } from '../models/AppModel.js';
+import type { ShipType } from '../models/Game.js';
 import { renderMapFleets } from './FleetMapView.js';
 import { renderPlanetOrders } from './PlanetOrderView.js';
 
@@ -10,6 +11,7 @@ export function renderMapOverlays(
   sketch: p5,
   model: AppReadModel,
   movementPoints: ReadonlyMap<string, Point> = new Map(),
+  shipImages: ReadonlyMap<ShipType, p5.Image> = new Map(),
 ): void {
   if (model.screen === 'map')
     renderPlanetOrders(sketch, model.planetOrders, model.camera.zoom);
@@ -62,5 +64,6 @@ export function renderMapOverlays(
       : [],
     (model.pirates ?? []).map((pirate) => pirate.id),
     movementPoints,
+    shipImages,
   );
 }

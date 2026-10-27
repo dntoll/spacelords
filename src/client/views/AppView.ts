@@ -70,6 +70,7 @@ export class AppView implements AppPort {
   #productionDetailType: string | null = null;
   #eventsExpanded = false;
   #playingEvents = false;
+  #turnActions: HTMLElement | null = null;
   #consoleObserver: ResizeObserver | null = null;
   #announcementObserver: ResizeObserver | null = null;
   #announcementModel: AppReadModel | null = null;
@@ -107,8 +108,7 @@ export class AppView implements AppPort {
         toolbar.closest<HTMLElement>('[data-fleet-id]')?.dataset.fleetId;
       if (id) this.#fleetOrderScroll.set(id, toolbar.scrollLeft);
     }
-    const previousActions =
-      this.#root.querySelector<HTMLElement>('.turn-actions');
+    const previousActions = this.#turnActions;
     const previousConsole =
       previousActions?.querySelector<HTMLDetailsElement>('.turn-console');
     if (previousConsole && !previousConsole.hidden && !this.#playingEvents)
@@ -126,6 +126,9 @@ export class AppView implements AppPort {
     this.#decisionDialog?.remove();
     this.#decisionDialog = null;
     if (model.screen === 'saves') {
+      this.#root.classList.remove('has-game-footer');
+      this.#turnActions = null;
+      this.#eventsExpanded = false;
       this.#consoleObserver?.disconnect();
       this.#consoleObserver = null;
       const key = JSON.stringify(model.saveSlots);
@@ -242,8 +245,6 @@ export class AppView implements AppPort {
       this.#ringKey = '';
       this.#screen = model.screen;
     } else if (changedScreen) {
-      this.#consoleObserver?.disconnect();
-      this.#consoleObserver = null;
       this.#mapObserver?.disconnect();
       this.#mapObserver = null;
       this.#ring?.remove();
@@ -495,22 +496,16 @@ export class AppView implements AppPort {
         .querySelector('.decisions-page .empire-content')
         ?.replaceWith(page.querySelector('.empire-content')!);
     }
-    if (model.screen === 'research' || model.screen === 'planet') {
-      const page = this.#root.querySelector<HTMLElement>(
-        `.${model.screen}-page`,
-      );
-      page?.classList.add('has-turn-actions');
-      if (page && !page.querySelector('.turn-actions')) {
-        const actions =
-          !changedScreen && previousActions
-            ? previousActions
-            : renderTurnActions(this.#emit);
-        actions.classList.add('screen-turn-actions');
-        page.append(actions);
-        if (!changedScreen)
-          actions.querySelector<HTMLElement>('[role="log"]')!.scrollTop =
-            previousEventScroll;
-      }
+    // gemensam-events-panel: retain one log and its reading position across screens.
+    this.#turnActions ??= renderTurnActions((intent) => this.#emit(intent));
+    this.#turnActions.classList.add('game-turn-actions');
+    this.#root.classList.add('has-game-footer');
+    if (this.#turnActions.parentElement !== this.#root) {
+      this.#root.append(this.#turnActions);
+      if (previousActions)
+        this.#turnActions.querySelector<HTMLElement>(
+          '[role="log"]',
+        )!.scrollTop = previousEventScroll;
     }
     this.#renderMapProblems(model);
     const counter = this.#root.querySelector('.decision-counter');
@@ -557,6 +552,7 @@ export class AppView implements AppPort {
         orders: model.planetOrders,
         phase: model.phase,
         selected: model.selected,
+        selectedPlanetInfo: model.selectedPlanetInfo,
         mapFleet: model.fleets.find((fleet) => fleet.id === model.mapFleetId),
         preview: model.fleetDestinationPreview,
         dragging: model.fleetDragging,
@@ -597,21 +593,10 @@ export class AppView implements AppPort {
       this.#root
         .querySelector('.map-page')
         ?.classList.toggle('has-selection', selected);
-      for (const control of this.#root.querySelectorAll<HTMLElement>(
-        '.turn-console',
-      ))
-        control.hidden =
-          !!model.turnMovement || (selected && !model.eventPlayback);
     }
-    if (
-      isMapScreen(model.screen) ||
-      ['decisions', 'research', 'planet'].includes(model.screen)
-    ) {
-      const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
-      if (end)
-        end.disabled = model.phase !== 'planning' || !!model.eventPlayback;
-      this.#renderTurnConsole(model);
-    }
+    const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
+    if (end) end.disabled = model.phase !== 'planning' || !!model.eventPlayback;
+    this.#renderTurnConsole(model);
     updateDecisionGuidance(this.#root, model, this.#emit);
     for (const control of this.#root.querySelectorAll<HTMLButtonElement>(
       'header button',
@@ -713,13 +698,7 @@ export class AppView implements AppPort {
     if (console.open !== open) console.open = open;
     if (console.hidden) return;
     const layout = () => {
-      const pageHeight =
-        console.closest<HTMLElement>(
-          '.map-page, .decisions-page, .research-page, .planet-page',
-        )?.clientHeight ?? 0;
-      const maximum = console.closest('.map-page')
-        ? pageHeight - 104
-        : pageHeight * 0.5;
+      const maximum = window.innerHeight * 0.4;
       console.style.setProperty(
         '--events-max-height',
         `${Math.max(80, maximum || 260)}px`,
@@ -737,10 +716,7 @@ export class AppView implements AppPort {
       if (typeof ResizeObserver !== 'undefined') {
         this.#consoleObserver?.disconnect();
         this.#consoleObserver = new ResizeObserver(layout);
-        const page = console.closest(
-          '.map-page, .decisions-page, .research-page, .planet-page',
-        );
-        if (page) this.#consoleObserver.observe(page);
+        this.#consoleObserver.observe(this.#root);
       }
     }
     const history =
@@ -1005,13 +981,7 @@ export class AppView implements AppPort {
     this.#panel = element('aside', 'selection-panel hud');
     this.#panel.setAttribute('aria-label', 'Selected hex');
     this.#cancelSelectionGesture = bindMapSelectionScroll(this.#panel, page);
-    page.append(
-      this.#container,
-      this.#coordinates,
-      this.#zoom,
-      this.#panel,
-      renderTurnActions(this.#emit),
-    );
+    page.append(this.#container, this.#coordinates, this.#zoom, this.#panel);
     if (typeof ResizeObserver !== 'undefined') {
       this.#mapObserver = new ResizeObserver(() => this.#measureMap());
       this.#mapObserver.observe(this.#container);
@@ -1279,6 +1249,24 @@ export class AppView implements AppPort {
     const destinationFleet = model.destinationFleetId
       ? model.fleets.find((fleet) => fleet.id === model.destinationFleetId)
       : null;
+    if (model.screen === 'map' && model.selectedPlanetInfo) {
+      contents.push(
+        element(
+          'p',
+          'planet-map-info',
+          `Type: ${model.selectedPlanetInfo.environment} · Habitability: ${model.selectedPlanetInfo.habitability}%`,
+        ),
+      );
+    } else if (model.screen === 'map' && cell && !cell.explored && !object) {
+      contents.push(
+        renderMapLocationHeading(
+          'Unexplored',
+          cell.position,
+          undefined,
+          this.#emit,
+        ),
+      );
+    }
     if (destinationFleet) {
       contents.push(
         element(

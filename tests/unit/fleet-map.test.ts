@@ -8,6 +8,7 @@ import {
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { renderMapOverlays } from '../../src/client/views/MapOverlayView.js';
 import { renderMapFleets } from '../../src/client/views/FleetMapView.js';
+import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
 
 function fleet(id: string, count = 3): FleetSnapshot {
   return {
@@ -35,6 +36,9 @@ function drawing() {
     stroke: vi.fn(),
     strokeWeight: vi.fn(),
     line: vi.fn<(x: number, y: number, endX: number, endY: number) => void>(),
+    textSize: vi.fn(),
+    textAlign: vi.fn(),
+    text: vi.fn(),
     triangle:
       vi.fn<
         (
@@ -58,6 +62,76 @@ function drawing() {
 }
 
 describe('kartflottor', () => {
+  it('skeppssprites-pa-kartan: uses each type once, shared hit geometry and progressively simpler sprites', () => {
+    const mixed = {
+      ...fleet('mixed', 100),
+      destination: null,
+      ships: {
+        Fighter: 100,
+        'Colony ship': 2,
+        'Exploration ship': 3,
+        'Transport ship': 4,
+        'Salvage ship': 5,
+      },
+    };
+    const marker = FleetMapLayout.markers([mixed])[0]!;
+    const images = new Map(
+      Object.keys(mixed.ships).map(
+        (type) => [type, { width: 100, height: 50 }] as const,
+      ),
+    ) as unknown as ReadonlyMap<keyof typeof mixed.ships, p5.Image>;
+    for (const [zoom, count] of [
+      [1, 5],
+      [0.4, 1],
+      [0.1, 0],
+    ] as const) {
+      const { sketch } = drawing();
+      const image =
+        vi.fn<
+          (
+            sprite: p5.Image,
+            x: number,
+            y: number,
+            width: number,
+            height: number,
+          ) => void
+        >();
+      const platform = {
+        ...sketch,
+        push: vi.fn(),
+        pop: vi.fn(),
+        translate: vi.fn(),
+        rotate: vi.fn(),
+        image,
+      };
+      renderMapFleets(
+        platform as unknown as p5,
+        [mixed],
+        zoom,
+        undefined,
+        false,
+        null,
+        [],
+        [],
+        new Map(),
+        images,
+      );
+      expect(image).toHaveBeenCalledTimes(count);
+      for (const call of image.mock.calls) expect(call[3] / call[4]).toBe(2);
+      expect(new Set(image.mock.calls.map((call) => call[0])).size).toBe(count);
+      for (const glyph of FleetMapLayout.glyphs(marker, zoom))
+        expect(FleetMapLayout.hit([mixed], glyph.point, [], zoom)).toBe(
+          'mixed',
+        );
+      if (zoom === 0.4)
+        expect(sketch.text).toHaveBeenCalledWith(
+          '114',
+          expect.any(Number),
+          expect.any(Number),
+        );
+      if (zoom === 0.1) expect(sketch.circle).toHaveBeenCalled();
+    }
+  });
   it.each([
     'Fighter',
     'Exploration ship',
@@ -81,7 +155,7 @@ describe('kartflottor', () => {
         const { sketch, render } = drawing();
         render([{ ...fleet('moving', 9), destination }], zoom);
         const ships = sketch.triangle.mock.calls.slice(1);
-        expect(ships).toHaveLength(9);
+        expect(ships).toHaveLength(1);
         for (const [tipX, tipY, leftX, leftY, rightX, rightY] of ships) {
           const centerX = (tipX + leftX + rightX) / 3;
           const centerY = (tipY + leftY + rightY) / 3;
@@ -125,7 +199,7 @@ describe('kartflottor', () => {
     }
   });
 
-  it('renders ship swarms with different sizes and keeps them readable through zoom', () => {
+  it('skeppssprites-pa-kartan: represents each present type and keeps the group within its hex', () => {
     const mixed = {
       ...fleet('mixed'),
       destination: null,
@@ -141,10 +215,6 @@ describe('kartflottor', () => {
     first.render([mixed]);
     expect(first.sketch.circle).not.toHaveBeenCalled();
     expect(first.sketch.triangle).toHaveBeenCalledTimes(3);
-    const areas = first.sketch.triangle.mock.calls.map(([a, b, c, d, e, f]) =>
-      Math.abs((c - a) * (f - b) - (e - a) * (d - b)),
-    );
-    expect(new Set(areas).size).toBe(3);
     for (const zoom of [0.35, 1, 2.5]) {
       const { sketch, render } = drawing();
       render([mixed], zoom);
@@ -163,8 +233,7 @@ describe('kartflottor', () => {
       { ...fleet('large', 1000000), destination: null },
       fleet('empty', 0),
     ]);
-    expect(sketch.triangle.mock.calls.length).toBeGreaterThan(1);
-    expect(sketch.triangle.mock.calls.length).toBeLessThanOrEqual(9);
+    expect(sketch.triangle.mock.calls.length).toBe(1);
     expect(sketch.line).not.toHaveBeenCalled();
   });
 });

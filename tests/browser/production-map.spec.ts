@@ -124,7 +124,10 @@ test('route-kartvy / produktions-kartvy / radiella-byggval / kompakt-produktions
   await expect(
     panel.getByRole('button', { name: 'Select project 2: Rocket engine' }),
   ).toHaveAttribute('aria-pressed', 'true');
-  await panel.getByRole('button', { name: 'Move project 2 up' }).click();
+  const handle = panel.locator('.queue-drag-handle').nth(1);
+  await handle.focus();
+  for (const key of ['Space', 'ArrowUp', 'Enter'])
+    await page.keyboard.press(key);
   await panel.getByRole('button', { name: 'Cancel project 1' }).click();
   await expect(page.locator('.map-queue-row')).toHaveCount(1);
   await categories.getByRole('button', { name: 'Ships', exact: true }).click();

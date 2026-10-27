@@ -141,6 +141,7 @@ export interface AppReadModel {
   readonly radius: number;
   readonly cells: readonly MapCell[];
   readonly selected: MapCell | null;
+  readonly selectedPlanetInfo: ReturnType<Game['planetKnowledge']>;
   readonly camera: CameraSnapshot;
   readonly planet: PlanetGameSnapshot | null;
   readonly round: number;
@@ -463,6 +464,7 @@ export class AppModel {
           .mapSnapshot()
           .find((cell) => cell.position.key === this.#selected.key) ?? null,
       camera: this.#eventCamera?.snapshot ?? this.#camera.snapshot,
+      selectedPlanetInfo: this.#game.planetKnowledge(this.#selected),
       planet:
         this.#screen === 'planet' ||
         this.#screen === 'build-selection' ||
@@ -1573,6 +1575,9 @@ export class AppModel {
   rebuildShipyard(id: string): void {
     const yard = this.#game.shipyards.find((item) => item.id === id);
     if (yard) this.beginShipyardPlacement(yard.planetId, undefined, id);
+  }
+  moveRepair(yardId: string, wreckId: string, index: number): void {
+    this.#game.moveRepair(yardId, wreckId, index);
   }
   cancelShipyardPlacement(): void {
     this.#shipyardPlacement = null;

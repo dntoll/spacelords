@@ -6,7 +6,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { renderBuildSelection } from '../../src/client/views/BuildSelectionView.js';
 import { renderPlanet } from '../../src/client/views/PlanetView.js';
-import { compactProjectGroups } from '../../src/client/views/PlanetProductionView.js';
 import type { ConstructionProjectSnapshot } from '../../src/client/models/Game.js';
 
 const project = (
@@ -123,7 +122,7 @@ describe('planetgemensamt-produktval', () => {
   });
 });
 describe('kompakt-produktionsko', () => {
-  it('groups only adjacent compatible projects and links to their actual queue position', () => {
+  it('dragbara-koer: shows one row per project and links to its actual queue position', () => {
     const projects = [
       project('a'),
       project('b'),
@@ -131,9 +130,6 @@ describe('kompakt-produktionsko', () => {
       project('d'),
       project('e', 'Fighter', 'fleet-home'),
     ];
-    expect(
-      compactProjectGroups(projects).map((group) => group.map((p) => p.id)),
-    ).toEqual([['a', 'b'], ['c'], ['d'], ['e']]);
     const { model, emit } = setup();
     const view = renderPlanet(
       { ...model.snapshot.planet!, projects },
@@ -145,7 +141,8 @@ describe('kompakt-produktionsko', () => {
     const button = view.querySelector<HTMLButtonElement>(
       '.compact-queue-item',
     )!;
-    expect(button.textContent).toContain('1–2. Fighter ×2');
+    expect(view.querySelectorAll('.queue-item')).toHaveLength(5);
+    expect(button.textContent).toContain('1. Fighter');
     button.click();
     expect(emit).toHaveBeenCalledWith({
       type: 'open-planet-project',

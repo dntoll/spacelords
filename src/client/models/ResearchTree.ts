@@ -137,18 +137,8 @@ export class ResearchTreeCamera {
   }
 
   fit(): void {
-    this.#zoom = Math.max(
-      0.15,
-      Math.min(
-        1,
-        this.#width / this.#layout.width,
-        this.#height / this.#layout.height,
-      ),
-    );
-    this.#offset = {
-      x: (this.#width - this.#layout.width * this.#zoom) / 2,
-      y: (this.#height - this.#layout.height * this.#zoom) / 2,
-    };
+    this.#zoom = this.#minimumZoom();
+    this.#bound();
   }
 
   panBy(delta: Point): void {
@@ -160,7 +150,11 @@ export class ResearchTreeCamera {
   zoomAt(factor: number, anchor: Point): void {
     if (![factor, anchor.x, anchor.y].every(Number.isFinite) || factor <= 0)
       return;
-    const zoom = Math.max(0.15, Math.min(1.8, this.#zoom * factor));
+    const zoom = Math.max(
+      this.#minimumZoom(),
+      Math.min(1.8, this.#zoom * factor),
+    );
+    if (zoom === this.#zoom) return;
     this.#offset = {
       x: anchor.x - ((anchor.x - this.#offset.x) * zoom) / this.#zoom,
       y: anchor.y - ((anchor.y - this.#offset.y) * zoom) / this.#zoom,
@@ -169,16 +163,28 @@ export class ResearchTreeCamera {
     this.#bound();
   }
 
+  #minimumZoom(): number {
+    return Math.min(
+      1.8,
+      Math.max(1, this.#width - 32) / (this.#layout.width - 64),
+      Math.max(1, this.#height - 32) / (this.#layout.height - 64),
+    );
+  }
+
   #bound(): void {
+    this.#zoom = Math.max(this.#minimumZoom(), this.#zoom);
+    const bound = (offset: number, viewport: number, content: number) => {
+      const size = (content - 64) * this.#zoom;
+      return size <= viewport - 32 + 0.001
+        ? (viewport - size) / 2 - 32 * this.#zoom
+        : Math.max(
+            viewport - 16 - (content - 32) * this.#zoom,
+            Math.min(16 - 32 * this.#zoom, offset),
+          );
+    };
     this.#offset = {
-      x: Math.max(
-        64 - this.#layout.width * this.#zoom,
-        Math.min(this.#width - 64, this.#offset.x),
-      ),
-      y: Math.max(
-        64 - this.#layout.height * this.#zoom,
-        Math.min(this.#height - 64, this.#offset.y),
-      ),
+      x: bound(this.#offset.x, this.#width, this.#layout.width),
+      y: bound(this.#offset.y, this.#height, this.#layout.height),
     };
   }
 }

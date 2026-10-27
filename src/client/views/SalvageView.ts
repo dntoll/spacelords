@@ -4,6 +4,7 @@ import { projectDefinition } from '../models/Game.js';
 import { button, element } from './dom.js';
 import { shipImage } from './ShipView.js';
 import type { IntentHandler } from './ViewContracts.js';
+import { bindQueueOrder, decorateQueueRow } from './QueueView.js';
 
 export function renderSalvageSelection(
   model: AppReadModel,
@@ -127,6 +128,14 @@ export function renderSalvageSelection(
         'Automatic repairs · one ship per year · fresh crew from the planet.',
       ),
     );
+    const repairs = element('ol', 'repair-queue');
+    bindQueueOrder(
+      repairs,
+      yard.queue,
+      (wreckId, index) =>
+        emit({ type: 'move-repair', yardId: yard.id, wreckId, index }),
+      model.phase !== 'planning',
+    );
     for (const [index, id] of yard.queue.entries()) {
       const queued = model.wrecks.find((item) => item.id === id);
       if (!queued) continue;
@@ -134,14 +143,23 @@ export function renderSalvageSelection(
         queued.ship,
         (type) => projectDefinition(type).cost,
       );
-      panel.append(
+      const row = element('li');
+      row.append(
         element(
           'p',
           '',
-          `${index + 1}. ${queued.ship.type} · Iron ${cost.Iron}, Water ${cost.Water}, Oil ${cost.Oil}`,
+          `${index + 1}. ${queued.ship.type} · ${index === 0 ? (yard.issue ?? 'Next repair') : 'Queued'} · Iron ${cost.Iron}, Water ${cost.Water}, Oil ${cost.Oil}`,
         ),
       );
+      decorateQueueRow(
+        row,
+        id,
+        `${queued.ship.type}, position ${index + 1}`,
+        model.phase !== 'planning',
+      );
+      repairs.append(row);
     }
+    panel.append(repairs);
     panel.append(
       element(
         'p',

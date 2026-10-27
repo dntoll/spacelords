@@ -14,6 +14,7 @@ import { renderProduction, fleetSelect } from './PlanetProductionView.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element, planetIllustration, queueButton } from './dom.js';
 import { buildingImage } from './BuildingImage.js';
+import { bindQueueOrder, decorateQueueRow } from './QueueView.js';
 
 type PlanetMenus = Pick<AppReadModel, 'phase'> &
   Partial<
@@ -239,13 +240,18 @@ function buildQueue(
     ),
   );
   const list = element('ol', 'queue-slots');
+  bindQueueOrder(
+    list,
+    planet.projects.map((project) => project.id),
+    (id, index) => emit({ type: 'move-project', id, index }),
+    menus.phase !== 'planning',
+  );
   for (const [index, project] of planet.projects.entries()) {
     const row = element('li', 'order-row queue-order');
     renderQueueOrder(
       row,
       project,
       index,
-      planet.projects,
       planet,
       fleets,
       emit,
@@ -438,24 +444,12 @@ function renderQueueOrder(
   row: HTMLElement,
   project: ConstructionProjectSnapshot,
   index: number,
-  projects: readonly ConstructionProjectSnapshot[],
   planet: PlanetGameSnapshot,
   fleets: readonly FleetSnapshot[],
   emit: IntentHandler,
   locked: boolean,
 ): void {
   row.dataset.projectId = project.id;
-  row.draggable = !locked;
-  row.addEventListener('dragstart', (event) =>
-    event.dataTransfer?.setData('text/plain', project.id),
-  );
-  row.addEventListener('dragover', (event) => event.preventDefault());
-  row.addEventListener('drop', (event) => {
-    event.preventDefault();
-    const id = event.dataTransfer?.getData('text/plain');
-    if (!locked && id && projects.some((p) => p.id === id))
-      emit({ type: 'move-project', id, index });
-  });
   const details = element('div', 'queue-details');
   details.append(
     element(
@@ -479,20 +473,6 @@ function renderQueueOrder(
     details.append(select);
   }
   const actions = element('div', 'queue-actions');
-  for (const [symbol, label, offset] of [
-    ['↑', 'Move up', -1],
-    ['↓', 'Move down', 1],
-  ] as const) {
-    const move = queueButton(
-      symbol,
-      `${label}: ${project.type}, position ${index + 1}`,
-      () =>
-        emit({ type: 'move-project', id: project.id, index: index + offset }),
-    );
-    move.disabled =
-      locked || index + offset < 0 || index + offset >= projects.length;
-    actions.append(move);
-  }
   const cancel = queueButton(
     '×',
     `Cancel: ${project.type}, position ${index + 1}`,
@@ -501,6 +481,12 @@ function renderQueueOrder(
   cancel.disabled = locked;
   actions.append(cancel);
   row.append(details, actions);
+  decorateQueueRow(
+    row,
+    project.id,
+    `${project.type}, position ${index + 1}`,
+    locked,
+  );
 }
 
 function buildingUsage(type: BuildType, demolition: boolean): string {

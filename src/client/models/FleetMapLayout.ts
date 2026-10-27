@@ -1,4 +1,4 @@
-import type { FleetSnapshot } from './Game.js';
+import type { FleetSnapshot, ShipType } from './Game.js';
 import type { TradeRouteSnapshot } from './Logistics.js';
 import { HexGeometry, type Point } from './HexCoordinate.js';
 
@@ -12,6 +12,49 @@ export interface FleetMapMarker {
 export class FleetMapLayout {
   static readonly hitRadius = HexGeometry.size / 4;
   static readonly orbitRadius = HexGeometry.size / 2;
+
+  // skeppssprites-pa-kartan: identical bounds for rendering and hit testing.
+  static glyphs(marker: FleetMapMarker, zoom: number) {
+    const types = (Object.keys(marker.fleet.ships) as ShipType[])
+      .filter((type) => marker.fleet.ships[type] > 0)
+      .sort((a, b) => a.localeCompare(b));
+    if (zoom < 0.2) return [];
+    const representative = types.toSorted(
+      (a, b) => marker.fleet.ships[b] - marker.fleet.ships[a],
+    )[0];
+    const shown = zoom >= 0.65 ? types : representative ? [representative] : [];
+    const scale = Math.min(1 / zoom, marker.scale);
+    const columns = Math.min(3, shown.length);
+    const rows = Math.ceil(shown.length / columns);
+    return shown.map((type, index) => {
+      const row = Math.floor(index / columns);
+      const rowCount = Math.min(columns, shown.length - row * columns);
+      return Object.freeze({
+        type,
+        point: Object.freeze({
+          x:
+            marker.point.x +
+            ((index % columns) - (rowCount - 1) / 2) * 13 * scale,
+          y: marker.point.y + (row - (rows - 1) / 2) * 13 * scale,
+        }),
+        size: 17 * scale,
+      });
+    });
+  }
+
+  static radius(marker: FleetMapMarker, zoom: number): number {
+    return Math.max(
+      this.hitRadius,
+      ...this.glyphs(marker, zoom).map(
+        (glyph) =>
+          Math.hypot(
+            glyph.point.x - marker.point.x,
+            glyph.point.y - marker.point.y,
+          ) +
+          glyph.size / Math.SQRT2,
+      ),
+    );
+  }
 
   static markers(
     fleets: readonly FleetSnapshot[],
@@ -86,9 +129,12 @@ export class FleetMapLayout {
         point.x - marker.point.x,
         point.y - marker.point.y,
       );
-      const radius = routes.some((route) => route.id === marker.fleet.routeId)
-        ? 22 / zoom
-        : this.hitRadius;
+      const radius = Math.max(
+        this.radius(marker, zoom),
+        routes.some((route) => route.id === marker.fleet.routeId)
+          ? 22 / zoom
+          : 0,
+      );
       if (next <= radius && next < distance) {
         nearest = marker.fleet.id;
         distance = next;

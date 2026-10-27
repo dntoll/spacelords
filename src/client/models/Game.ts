@@ -1105,6 +1105,25 @@ export class Game {
       (planet) => planet.position.key === position.key,
     );
   }
+  // planetinformation-pa-kartan: unknown planets never cross the read-model boundary.
+  planetKnowledge(position: HexCoordinate): Readonly<{
+    name: string;
+    environment: PlanetEnvironmentType | 'Gas';
+    habitability: number;
+  }> | null {
+    if (!this.#explored.has(position.key)) return null;
+    const planet = this.galaxy.systems
+      .flatMap((system) => system.planets)
+      .find((candidate) => candidate.position.key === position.key);
+    return planet
+      ? Object.freeze({
+          name: planet.name,
+          environment: planet.type === 'gas' ? 'Gas' : planet.environment,
+          habitability:
+            this.#colonies.get(planet.id)?.habitability ?? planet.habitability,
+        })
+      : null;
+  }
   planetSnapshot(
     planet: Planet,
     slotIndex?: number,
@@ -1536,6 +1555,18 @@ export class Game {
     return this.#pirates.some(
       (pirate) => pirate.count > 0 && pirate.position.key === position.key,
     );
+  }
+  moveRepair(yardId: string, wreckId: string, index: number): void {
+    this.#requirePlanning();
+    const yard = this.#salvage.yards.find(
+      (candidate) => candidate.id === yardId,
+    );
+    if (
+      !yard ||
+      !this.#ownedPlanets().some((planet) => planet.id === yard.planetId)
+    )
+      throw new Error('Choose your shipyard.');
+    this.#salvage.moveRepair(yardId, wreckId, index);
   }
   #planetName(id: string): string {
     return this.#ownedPlanets().find((planet) => planet.id === id)!.name;

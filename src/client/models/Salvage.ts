@@ -432,6 +432,22 @@ export class Salvage {
     if (index < 0) throw new Error('No wreck is awaiting repair.');
     return this.wrecks.splice(index, 1)[0]!.ship;
   }
+  moveRepair(yardId: string, wreckId: string, index: number): void {
+    const yard = this.yards.find(
+      (candidate) => candidate.id === yardId && !candidate.destroyed,
+    );
+    if (
+      !yard ||
+      !yard.queue.includes(wreckId) ||
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= yard.queue.length
+    )
+      throw new Error('Choose a valid repair queue position.');
+    const previous = yard.queue.indexOf(wreckId);
+    yard.queue.splice(previous, 1);
+    yard.queue.splice(index, 0, wreckId);
+  }
   static components(ship: ShipUnit): Partial<Record<Component, number>> {
     return {
       ...ship.engines,
