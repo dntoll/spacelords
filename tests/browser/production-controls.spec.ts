@@ -4,11 +4,16 @@ import { startFirstSlot, endTurn, chooseResearch } from './save-helpers.js';
 test('forskning-kraver-station / dubbelklick-bygger-pa-kartan / byggknapp-vid-titel: complete a station before queuing research and keep Build beside its title', async ({
   page,
 }, testInfo) => {
+  // Completing a station and prerequisite research spans several narrated years.
+  test.setTimeout(90_000);
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Inspect Rocket engine factory', exact: true })
+    .click();
   const research = page.getByRole('button', {
-    name: 'Research Colony ship factory',
+    name: 'Research Rocket engine factory',
     exact: true,
   });
   await expect(research).toBeDisabled();
@@ -66,9 +71,12 @@ test('forskning-kraver-station / dubbelklick-bygger-pa-kartan / byggknapp-vid-ti
   await expect(research).toBeDisabled();
   await endTurn(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Inspect Rocket engine factory', exact: true })
+    .click();
   await expect(research).toBeEnabled();
   await chooseResearch(page, 'Colony ship factory');
-  await expect(page.locator('.research-queue article')).toHaveCount(3);
+  await expect(page.locator('.research-queue article')).toHaveCount(1);
 });
 
 test('dubbelklick-bygger-pa-kartan: double tap queues one order while single tap only selects', async ({

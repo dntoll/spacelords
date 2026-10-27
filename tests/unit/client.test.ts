@@ -101,10 +101,10 @@ describe('forskningsoversikt', () => {
       'Build a Research station to advance research.',
     );
     expect(root.querySelectorAll('[data-technology]')).toHaveLength(15);
-    click('Research Colony ship factory');
+    click('Inspect Rocket engine factory');
     expect(
       root.querySelector<HTMLButtonElement>(
-        '[aria-label="Research Colony ship factory"]',
+        '[aria-label="Research Rocket engine factory"]',
       )!.disabled,
     ).toBe(true);
     expect(root.textContent).toContain(

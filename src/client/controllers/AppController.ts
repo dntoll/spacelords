@@ -193,6 +193,9 @@ export class AppController {
       case 'research-fit':
         this.#model.fitResearch();
         break;
+      case 'inspect-research':
+        this.#model.inspectResearch(intent.technology);
+        break;
       case 'research-pointer-start':
         this.#researchGesture.start(intent.id, intent.point);
         return;

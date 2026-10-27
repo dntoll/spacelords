@@ -11,6 +11,8 @@ import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 test('utokad-galax / stjarnornas-hexutseende / automatisk-stjarnutforskning: new galaxy and orbit survive reload on mobile', async ({
   page,
 }, testInfo) => {
+  // The three years include the full serial event announcements.
+  test.setTimeout(90_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');
@@ -22,7 +24,7 @@ test('utokad-galax / stjarnornas-hexutseende / automatisk-stjarnutforskning: new
     );
   const initial = await saved();
   expect(initial.state.world.radius).toBe(100);
-  expect(initial.state.world.systems).toHaveLength(300);
+  expect(initial.state.world.systems).toHaveLength(150);
   expect(initial.state.world.systems[0]!.planets[0]!.position).toEqual({
     q: 2,
     r: 0,

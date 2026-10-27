@@ -24,17 +24,19 @@ it('forsknings-tradnavigation: distinguishes completed, active, queued and unava
   const node = (type: string) =>
     view.querySelector<HTMLElement>(`[data-technology="${type}"]`)!;
   expect(node('Exploration ship factory').dataset.state).toBe('completed');
-  expect(node('Exploration ship factory').querySelector('button')).toBeNull();
+  expect(
+    node('Exploration ship factory').querySelector('button')!.disabled,
+  ).toBe(false);
   expect(node('Transport ship factory').dataset.state).toBe('active');
   expect(node('Transport ship factory').querySelector('button')!.disabled).toBe(
-    true,
+    false,
   );
   expect(node('Trade logistics').dataset.state).toBe('queued');
   expect(node('Colony ship factory').dataset.state).toBe('available');
   expect(node('Fighter factory').dataset.state).toBe('locked');
   node('Fighter factory').querySelector('button')!.click();
   expect(emit).toHaveBeenLastCalledWith({
-    type: 'research',
+    type: 'inspect-research',
     technology: 'Fighter factory',
   });
   expect(view.querySelectorAll('.research-edge.unlocked')).toHaveLength(6);
@@ -67,17 +69,22 @@ it('forskning-fran-bargade-delar: shows recovered technology as available while 
     },
     false,
     emit,
+    'Telescope III factory',
   );
   const recovered = view.querySelector<HTMLElement>(
     '[data-technology="Telescope III factory"]',
   )!;
   expect(recovered.dataset.state).toBe('available');
-  expect(recovered.textContent).toContain('Recovered technology');
+  expect(recovered.textContent).toContain('Recovered');
   expect(
     view.querySelector<HTMLElement>('[data-technology="Telescope II factory"]')!
       .dataset.state,
   ).toBe('locked');
-  recovered.querySelector('button')!.click();
+  view
+    .querySelector<HTMLButtonElement>(
+      '[aria-label="Research Telescope III factory"]',
+    )!
+    .click();
   expect(emit).toHaveBeenCalledWith({
     type: 'research',
     technology: 'Telescope III factory',
@@ -139,9 +146,10 @@ it('forskning-kraver-station: explains the missing station and disables queue ac
     new Game(createExampleGalaxy()).research,
     false,
     emit,
+    'Rocket engine factory',
   );
   for (const button of view.querySelectorAll<HTMLButtonElement>(
-    '.research-node button',
+    '.research-details button:not(.research-details-close)',
   )) {
     expect(button.disabled).toBe(true);
     button.click();

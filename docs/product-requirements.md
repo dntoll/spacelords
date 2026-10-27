@@ -2,11 +2,20 @@
 
 ## Utökad galax
 
-`stjarnornas-hexutseende` förtydligas 2026-10-26: stjärnan har en livfull,
-texturerad yta och hålls innanför hexen. Outforskade stjärnors korta spikes
-får nå strax utanför kanten. `utokad-utzoomning` kompletterar `kartnavigation`:
+`stjarnornas-hexutseende` ändras 2026-10-27: stjärnor varierar i färg och storlek,
+har en livfull, texturerad yta i närbild och hålls innanför hexen. Alla spikes
+tas bort. Vid utzoomning förenklas de till glödande kroppar och ljuspunkter.
+`utokad-utzoomning` kompletterar `kartnavigation`:
 spelaren kan zooma ut till 3 procent och se en renare översikt utan tätt
-rutnät eller överlappande namn. Båda kraven är **Fullständigt implementerat**.
+rutnät eller överlappande namn. Outforskade hexars rutnät försvinner under
+50 procent zoom. Nya galaxer får 150 system i oregelbundna spiralarmar.
+Detta ersätter den tidigare spikes-regeln och 300 system i nya galaxer.
+Befintliga sparade galaxer behålls.
+
+`stjarnvariation`, `galaxarmar`, `dragbara-flottorder`,
+`kompakt-forskningstrad`, `forskningens-avslojande`,
+`forskningsdetaljer-vid-val` och `produktionsvalens-statusfarger` beskrivs i
+[varierad galax och kompakta spelvyer](varied-galaxy-compact-views.md).
 
 Kraven för den större galaxen, stjärnor, planetavstånd, asteroidbälten,
 nebulosor och utforskning finns i [galax och terräng](galaxy-terrain.md).
@@ -70,7 +79,10 @@ stilla eller väntar på rivning; köade projekt räknas först när de är fär
 forskningsträd med pilar från förkunskap till beroende teknik. Spelaren kan
 panorera, zooma och få en översikt med mus, touch eller tangentbord. Kameran
 behålls vid köändringar och navigering mellan vyer. Byggnadsbilder och tydliga
-statusar visar valbar, köad, pågående och färdig forskning. Research queue
+statusar visar valbar, köad, pågående och färdig forskning. Senare forskning
+visas anonymt tills dess förkunskaper är klara; köad och återfunnen teknik
+förblir identifierad. Val visar detaljer och en separat Research-knapp.
+Research queue
 behåller omordning och bekräftad borttagning. Detta ersätter den tidigare
 listvyn; forskningsreglerna och teknikernas förkunskaper behålls.
 

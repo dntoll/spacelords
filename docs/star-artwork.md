@@ -3,7 +3,9 @@
 Genererad med den inbyggda imagegen-funktionen 2026-10-26.
 Original: `assets/original/stars/plasma-star.png`.
 Spelasset: `src/client/assets/stars/plasma-star.webp`, optimerad till 512 × 512 med bevarad transparens.
-Stjärnbilden klipps innanför hexen; upptäcktstillståndets spikes ritas separat.
+Stjärnbilden klipps innanför hexen. Beslut 2026-10-27 tar bort alla spikes och
+återanvänder texturen i fem färger med varierad storlek. Vid utzoomning ersätts
+texturen av glödande kroppar och sedan ljuspunkter. Sol är gul.
 
 ## Slutlig bildprompt
 

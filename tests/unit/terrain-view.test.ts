@@ -13,7 +13,7 @@ function drawing() {
     fill: vi.fn(),
     stroke: vi.fn(),
     strokeWeight: vi.fn(),
-    circle: vi.fn(),
+    circle: vi.fn<(x: number, y: number, diameter: number) => void>(),
     line: vi.fn<(x1: number, y1: number, x2: number, y2: number) => void>(),
     push: vi.fn(),
     pop: vi.fn(),
@@ -44,10 +44,34 @@ function drawing() {
 }
 
 describe('stjarnornas-hexutseende', () => {
-  it('clips the star image inside its own hex and keeps spikes close to its edge', () => {
+  it.each([0.03, 0.19])(
+    'stjarnvariation: preserves size differences in point stars at zoom %s',
+    (zoom) => {
+      const large = drawing(),
+        small = drawing();
+      renderStarGlyph(large as unknown as p5, { x: 0, y: 0 }, zoom, {
+        q: 0,
+        r: 0,
+      });
+      renderStarGlyph(small as unknown as p5, { x: 0, y: 0 }, zoom, {
+        q: 7,
+        r: -3,
+      });
+      expect(large.circle.mock.calls.at(-1)![2]).toBeGreaterThan(
+        small.circle.mock.calls.at(-1)![2],
+      );
+    },
+  );
+  it('clips the star image inside its own hex without spikes', () => {
     const sketch = drawing();
     const sprite = {} as p5.Image;
-    renderStarGlyph(sketch as unknown as p5, { x: 0, y: 0 }, 1, false, sprite);
+    renderStarGlyph(
+      sketch as unknown as p5,
+      { x: 0, y: 0 },
+      1,
+      { q: 0, r: 0 },
+      Array.from({ length: 5 }, () => sprite),
+    );
     expect(sketch.drawingContext.clip).toHaveBeenCalledOnce();
     expect(sketch.image).toHaveBeenCalledOnce();
     const [, x, y, width, height] = sketch.image.mock.calls[0]!;
@@ -55,29 +79,27 @@ describe('stjarnornas-hexutseende', () => {
     expect(width).toBeLessThan(Math.sqrt(3) * HexGeometry.size);
     expect(height).toBe(width);
     expect(y).toBe(x);
-    for (const [, , endX, endY] of sketch.line.mock.calls) {
-      expect(Math.hypot(endX, endY)).toBeLessThanOrEqual(
-        HexGeometry.size * 1.12,
-      );
-    }
+    expect(sketch.line).not.toHaveBeenCalled();
   });
   it.each([0.03, 0.35, 1, 2.5])(
-    'keeps a margin inside its hex at zoom %s and removes spikes after discovery',
+    'stjarnvariation: simplifies stars at zoom %s without spikes',
     (zoom) => {
       const sketch = drawing();
       renderStarGlyph(
         sketch as unknown as p5,
         { x: 0, y: 0 },
         zoom,
-        false,
-        {} as p5.Image,
+        { q: 0, r: 0 },
+        Array.from({ length: 5 }, () => ({}) as p5.Image),
       );
-      expect(sketch.image.mock.calls[0]![3]).toBeLessThan(
-        Math.sqrt(3) * HexGeometry.size,
-      );
-      expect(sketch.line).toHaveBeenCalledTimes(4);
-      sketch.line.mockClear();
-      renderStarGlyph(sketch as unknown as p5, { x: 0, y: 0 }, zoom, true);
+      if (zoom >= 0.65)
+        expect(sketch.image.mock.calls[0]![3]).toBeLessThan(
+          Math.sqrt(3) * HexGeometry.size,
+        );
+      else {
+        expect(sketch.image).not.toHaveBeenCalled();
+        expect(sketch.circle).toHaveBeenCalled();
+      }
       expect(sketch.line).not.toHaveBeenCalled();
     },
   );

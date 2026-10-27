@@ -1,22 +1,59 @@
 # Tekniska krav och arbetsregler
 
+## Kompakta vyer och produktionsstatus, 2026-10-27
+
+`dragbara-flottorder`: FleetOrderDrag använder pekarhändelser endast för vänster
+musknapp. Sex pixlars horisontell rörelse startar dragning och pekarfångst;
+efterföljande klick stoppas före orderknappen eller ruttmenyn. Touch använder
+fortsatt webbläsarens inbyggda scroll. AppView bevarar scrollLeft per flott-ID
+vid omrendering. Träffytorna är fortsatt minst 44 × 44 px.
+
+`kompakt-forskningstrad`: ResearchTreeLayout och CSS använder 140 × 64 px,
+44 px horisontellt mellanrum och minst 24 px vertikalt. Layouten undviker
+överlapp även vid delade förkunskaper. Pilar och kameragränser delar måtten.
+`forskningens-avslojande` härleds från färdig, köad och återfunnen forskning
+samt att alla förkunskaper är färdiga. Anonyma rutor visar inga avslöjande
+namn, bilder eller tillgänglighetstexter.
+
+`forskningsdetaljer-vid-val`: AppModel äger sessionsbundet inspectedResearch,
+skilt från aktiv forskning. Intent inspect-research går via AppController.
+Detaljer visas i HTML-överlägg; endast dess Research-knapp köar. Kö och detaljer
+visas en i taget. DiagramNavigation skiljer klick från dragning och pinch.
+AppView bevarar kamera, köläge och relevant fokus genom omrenderingar.
+
+`produktionsvalens-statusfarger`: Game härleder ProductionPresence från fysiska
+byggnader, lager, flottpositioner och projekt. Aktiva leveransvägar från andra
+ägda planeter till vald planet räknas en gång per productionOptions-anrop med
+Logistics.path, inklusive flera led. Frakt räknas inte som lager. ProductionOption
+exponerar oföränderliga presence, networkCount, queuedLocalCount och
+queuedNetworkCount. Lokal förekomst går före nätverk och därefter kö;
+köantal finns även på gröna och blå val. Vyn visar engelska statusetiketter,
+detaljer och en separat vit valmarkering. Byggregler, sortering och reservationer
+ändras inte. Sparformat 12 och lagringsnycklarna behålls.
+
 ## Stjärnbild och utzoomning
 
 `stjarnornas-hexutseende`: StarGlyph använder en transparent WebP med plasmayta,
 512 × 512 px. Bild och reservsymbol klipps två modellenheter innanför hexens
-kant; bildens diameter har ytterligare marginal. Spikes ritas separat före
-klippningen och når högst 1,12 hexradier från centrum. Bilden laddas asynkront
+kant; bildens diameter har ytterligare marginal. Inga spikes ritas.
+`stjarnvariation` härleder fem färger och varierad storlek från hexkoordinater.
+Luminansfärgade texturer cachas per p5-instans; från zoom 0,65 används textur,
+från 0,2 en förenklad glöd och under 0,2 ljuspunkter. Bilden laddas asynkront
 i p5:s instans och används även i sparplatsens förhandsvisning. Original och
 [bildprompt](star-artwork.md) bevaras i repot. Spardata påverkas inte.
 
-`utokad-utzoomning`: Camera tillåter zoom 0,03–2,5. Under 0,18 utelämnas
-okända hexars rutnät; under 0,2 visas enbart den valda himlakroppens namn.
+`utokad-utzoomning`: Camera tillåter zoom 0,03–2,5. Under 0,5 utelämnas
+okända hexars rutnät; under 0,18 utelämnas övriga rutnätslinjer förutom vald
+hex. Under 0,2 visas enbart den valda himlakroppens namn.
 Kända områden, stjärnor, terräng och navigering behålls i översikten.
 
 ## Utökad galax och terräng, 2026-10-26
 
 `utokad-galax`: den publika klientens nyspelsfabrik skapar en oföränderlig,
-reproducerbar värld med radie 100 och 300 system. Små exempelvärldar behålls
+reproducerbar värld med radie 100 och 150 system. `galaxarmar` använder
+SpiralGalaxyLayout med tre diffusa spiralarmar, 22 system mellan armarna,
+minst fem hexstegs avstånd och de tre ursprungliga systemen som ankare.
+Små exempelvärldar behålls
 som isolerade testfixturer. Galaxy indexerar positioner, stjärnor, planeter och
 terräng. p5 ritar endast hexar i skärmytan med marginal.
 

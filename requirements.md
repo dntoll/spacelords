@@ -10,13 +10,20 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Varierad galax och kompakta spelvyer:** `stjarnvariation`, `galaxarmar`,
+  `dragbara-flottorder`, `kompakt-forskningstrad`, `forskningens-avslojande`,
+  `forskningsdetaljer-vid-val` och `produktionsvalens-statusfarger` är
+  **Fullständigt implementerat**. Ändringen omfattar 150 system i nya galaxer, stjärnor
+  utan spikes, kompakta forskningsrutor och färger för lokal förekomst,
+  nätverk och kö. Se [krav och status](docs/varied-galaxy-compact-views.md).
+
 - **Stjärnbild och utzoomning:** `stjarnornas-hexutseende` förtydligas med
-  en genererad, texturerad stjärna innanför hexens kant och korta spikes utanför.
+  varierade, texturerade stjärnor innanför hexens kant, helt utan spikes.
   `utokad-utzoomning` tillåter 3 procent zoom med en avskalad galaxöversikt.
   Kraven är **Fullständigt implementerat**, med verifierade mobilflöden.
   Se [galax och terräng](docs/galaxy-terrain.md).
 
-- **Utökad galax och terräng:** radie 100, 300 system, planeter två hexsteg
+- **Utökad galax och terräng:** radie 100, 150 system i nya galaxer, planeter två hexsteg
   från stjärnorna, större stjärngrafik, ofarbara stjärnor, två asteroidtyper och
   nebulosor som skymmer sikten. Explore fyller ut kartan i lager; Explore stars
   tar ett helt varv för att upptäcka systemets planeter. Kraven är

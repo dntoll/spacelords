@@ -28,6 +28,10 @@ import {
   type SupplyChainSnapshot,
 } from './ProjectSupplyChain.js';
 import type { ProductionOption, ProductionGuidance } from './ProductionMap.js';
+import {
+  ProductionPresence,
+  type ProductionPresenceSource,
+} from './ProductionPresence.js';
 import { ProjectSupply, type ProjectSupplySnapshot } from './ProjectSupply.js';
 import { Galaxy, Star, StarSystem, type MapCell } from './Galaxy.js';
 import { HexCoordinate } from './HexCoordinate.js';
@@ -1824,6 +1828,7 @@ export class Game {
   }
 
   productionOptions(planet: Planet): readonly ProductionOption[] {
+    const presence = this.#productionPresence(planet);
     const snapshot = this.planetSnapshot(planet)!;
     const { prepared, domeSite } = this.#productionSites(snapshot);
     const buildings = snapshot.buildOptions.filter((option) =>
@@ -1910,9 +1915,44 @@ export class Game {
           ? `Missing production factories: ${groups.map((group) => group.join(' or ')).join('; ')}.`
           : null,
         ...counts,
+        ...presence.snapshot(type),
       });
     });
     return prioritizeProduction(options, missing);
+  }
+
+  #productionPresence(planet: Planet): ProductionPresence {
+    const port = this.#logisticsPort();
+    const sources = this.#ownedPlanets().map(
+      (owned): ProductionPresenceSource => {
+        const state = this.#state(owned);
+        const counts = new Map<ProjectType, number>();
+        const queued = new Map<ProjectType, number>();
+        const add = (
+          map: Map<ProjectType, number>,
+          type: ProjectType,
+          amount = 1,
+        ) => map.set(type, (map.get(type) ?? 0) + amount);
+        for (const building of state.buildings) add(counts, building.type);
+        const dome = this.#domeType(owned);
+        if (dome) add(counts, dome, state.domes?.length ?? 0);
+        for (const component of COMPONENTS)
+          add(counts, component, state.stock[component]);
+        for (const fleet of this.#fleets) {
+          if (fleet.position?.key !== owned.position.key) continue;
+          for (const type of Object.keys(SHIPS) as ShipType[])
+            add(counts, type, fleet.ships[type]);
+        }
+        for (const project of state.projects) add(queued, project.type);
+        return { id: owned.id, counts, queued };
+      },
+    );
+    const local = sources.find((source) => source.id === planet.id)!;
+    const network = sources.filter(
+      (source) =>
+        source !== local && this.#logistics.path(source.id, planet.id, port),
+    );
+    return new ProductionPresence(local, network);
   }
 
   #productionCounts(

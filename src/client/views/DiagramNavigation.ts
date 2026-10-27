@@ -15,6 +15,8 @@ export function bindDiagramNavigation(
   input: DiagramInputPort,
   cardSelector: string,
 ): void {
+  const pointers = new Map<number, Point>();
+  let moved = false;
   const adoptScroll = () => {
     const delta = { x: -viewport.scrollLeft, y: -viewport.scrollTop };
     if (!delta.x && !delta.y) return;
@@ -28,28 +30,58 @@ export function bindDiagramNavigation(
   };
   viewport.addEventListener('scroll', adoptScroll);
   viewport.addEventListener('pointerdown', (event) => {
+    const target = event.target as Element;
     if (
       event.button !== 0 ||
-      (event.target as Element).closest(
-        'button, input, select, [draggable="true"]',
-      )
+      (target.closest('button, input, select, [draggable="true"]') &&
+        !target.closest('.research-node-select'))
     )
       return;
-    viewport.focus({ preventScroll: true });
-    viewport.setPointerCapture(event.pointerId);
+    if (!pointers.size) moved = false;
+    pointers.set(event.pointerId, point(event));
+    if (!target.closest('.research-node-select')) {
+      viewport.focus({ preventScroll: true });
+      viewport.setPointerCapture(event.pointerId);
+    }
+    if (pointers.size > 1) {
+      moved = true;
+      for (const id of pointers.keys()) viewport.setPointerCapture(id);
+    }
     input.start(event.pointerId, point(event));
   });
   viewport.addEventListener('pointermove', (event) => {
-    if (viewport.hasPointerCapture(event.pointerId))
-      input.move(event.pointerId, point(event));
+    const start = pointers.get(event.pointerId);
+    if (!start) return;
+    const current = point(event);
+    if (!moved && Math.hypot(current.x - start.x, current.y - start.y) < 6)
+      return;
+    moved = true;
+    if (!viewport.hasPointerCapture(event.pointerId))
+      viewport.setPointerCapture(event.pointerId);
+    input.move(event.pointerId, current);
   });
   viewport.addEventListener('pointerup', (event) => {
     input.end(event.pointerId, point(event));
+    pointers.delete(event.pointerId);
     if (viewport.hasPointerCapture(event.pointerId))
       viewport.releasePointerCapture(event.pointerId);
   });
-  viewport.addEventListener('pointercancel', () => input.cancel());
-  viewport.addEventListener('lostpointercapture', () => input.cancel());
+  const cancel = () => {
+    pointers.clear();
+    input.cancel();
+  };
+  viewport.addEventListener('pointercancel', cancel);
+  viewport.addEventListener('lostpointercapture', cancel);
+  viewport.addEventListener(
+    'click',
+    (event) => {
+      if (!moved) return;
+      moved = false;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    },
+    true,
+  );
   viewport.addEventListener(
     'wheel',
     (event) => {

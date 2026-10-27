@@ -1,6 +1,8 @@
 import { researchStationState } from '../fixtures/research-station.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot } from './save-helpers.js';
+import { Game } from '../../src/client/models/Game.js';
+import { ResearchTreeLayout } from '../../src/client/models/ResearchTree.js';
 
 test('forsknings-tradnavigation: native touch pans and pinches the tree', async ({
   page,
@@ -77,8 +79,11 @@ test('forsknings-tradnavigation: dependency arrows, navigation and research pres
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   const tree = page.getByRole('region', { name: 'Research tree', exact: true });
   const stage = page.locator('.research-tree-stage');
-  await expect(page.locator('.research-node')).toHaveCount(10);
-  await expect(page.locator('.research-edge')).toHaveCount(8);
+  const layout = new ResearchTreeLayout(
+    Game.restore(researchStationState()).research.available,
+  );
+  await expect(page.locator('.research-node')).toHaveCount(layout.nodes.length);
+  await expect(page.locator('.research-edge')).toHaveCount(layout.edges.length);
   await expect(
     page.locator(
       '[data-from="Weapons module factory"][data-to="Fighter factory"]',
@@ -92,20 +97,27 @@ test('forsknings-tradnavigation: dependency arrows, navigation and research pres
   await page.keyboard.press('ArrowRight');
   await expect(stage).not.toHaveAttribute('style', zoomed!);
   const choose = page.getByRole('button', {
-    name: 'Research Fighter factory',
+    name: 'Inspect Rocket engine factory',
     exact: true,
   });
   await choose.focus();
   const camera = await stage.getAttribute('style');
   await choose.click();
-  await expect(page.locator('.research-queue article')).toHaveCount(3);
+  await expect(page.locator('.research-queue article')).toHaveCount(0);
+  await page
+    .getByRole('button', {
+      name: 'Research Rocket engine factory',
+      exact: true,
+    })
+    .click();
+  await expect(page.locator('.research-queue article')).toHaveCount(1);
   await expect(stage).toHaveAttribute('style', camera!);
-  await expect(
-    page.locator('[data-technology="Fighter factory"]'),
-  ).toHaveAttribute('data-state', 'queued');
   await expect(
     page.locator('[data-technology="Rocket engine factory"]'),
   ).toHaveAttribute('data-state', 'active');
+  await expect(
+    page.locator('[data-technology="Fighter factory"]'),
+  ).toHaveAttribute('data-identified', 'false');
   await page.screenshot({ path: testInfo.outputPath('research-tree.png') });
   await tree.press('0');
   const viewport = (await tree.boundingBox())!;
@@ -125,7 +137,7 @@ test('forsknings-tradnavigation: dependency arrows, navigation and research pres
   }
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await page.getByRole('button', { name: 'Research', exact: true }).click();
-  await expect(page.locator('.research-queue article')).toHaveCount(3);
+  await expect(page.locator('.research-queue article')).toHaveCount(1);
   expect(
     await page.evaluate(
       () =>

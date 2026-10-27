@@ -1,6 +1,7 @@
 import type { AppReadModel } from '../models/AppModel.js';
 import type { PlanetGameSnapshot } from '../models/Game.js';
 import type { SupplyStep } from '../models/ProjectSupply.js';
+import type { ProductionOption } from '../models/ProductionMap.js';
 import type { IntentHandler } from './ViewContracts.js';
 import {
   catalogIcon,
@@ -9,6 +10,19 @@ import {
 } from './CatalogControls.js';
 import { renderMapLocationHeading } from './MapLocationHeading.js';
 import { button, element, queueButton } from './dom.js';
+
+function presenceLabel(option: ProductionOption): string {
+  return {
+    local: 'Local',
+    network: 'Network',
+    queued: 'Queued',
+    missing: 'Missing',
+  }[option.presence];
+}
+
+function presenceDescription(option: ProductionOption): string {
+  return `On this planet: ${option.localCount}. In active network: ${option.networkCount}. Empire total: ${option.empireCount}. Queued locally: ${option.queuedLocalCount}. Queued in network: ${option.queuedNetworkCount}.`;
+}
 
 export function renderProductionRing(
   model: AppReadModel,
@@ -52,6 +66,7 @@ export function renderProductionRing(
       'button radial-build-option',
     );
     choice.dataset.productionOption = option.type;
+    choice.dataset.presence = option.presence;
     choice.addEventListener('pointerup', (event) => {
       touchClick = event.pointerType === 'touch';
     });
@@ -70,11 +85,23 @@ export function renderProductionRing(
       catalogIcon(option.type),
       element('span', '', option.type),
     );
-    if (option.category === 'Buildings') {
-      choice.setAttribute(
-        'aria-description',
-        `On this planet: ${option.localCount}. All your planets: ${option.empireCount}.`,
+    const status = element(
+      'small',
+      'production-presence',
+      presenceLabel(option),
+    );
+    choice.append(status);
+    choice.setAttribute('aria-description', presenceDescription(option));
+    if (option.queuedLocalCount + option.queuedNetworkCount > 0) {
+      const queued = element(
+        'small',
+        'production-queued-marker',
+        `Queue ${option.queuedLocalCount + option.queuedNetworkCount}`,
       );
+      queued.title = `Queued locally: ${option.queuedLocalCount}. Queued in network: ${option.queuedNetworkCount}.`;
+      choice.append(queued);
+    }
+    if (option.category === 'Buildings') {
       choice.append(
         element(
           'small',
@@ -166,6 +193,11 @@ export function renderProductionMapPanel(
     heading.append(catalogHeading(option.type), build);
     detail.append(
       heading,
+      element(
+        'p',
+        'production-presence-detail',
+        `${presenceLabel(option)} · ${presenceDescription(option)}`,
+      ),
       element('p', '', option.description),
       element(
         'p',

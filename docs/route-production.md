@@ -27,6 +27,13 @@ använder samma förslag och kan öppna Dome-detaljerna i kartans Production.
 
 ## Ordning och produktionsberoenden
 
+`produktionsvalens-statusfarger` kompletterar ordningen med grönt för färdigt
+lokalt, blått för färdigt i ett aktivt transportnätverk, gult för enbart köat
+och grått för saknat. Gula kömarkeringar finns även på gröna och blå val.
+Byggnader bedöms efter färdiga byggen, varor efter lager och skepp efter position
+vid planeten. Engelska etiketter och antal förklarar statusen; färg ändrar inga
+beställningsregler. Se [sammanhängande krav](varied-galaxy-compact-views.md).
+
 - `produktionsval-efter-forekomst` — **Fullständigt implementerat**: i kartans
   Production kommer först sådant som inte finns någonstans i spelarens rike,
   därefter sådant som finns på andra planeter men saknas här, sist sådant som

@@ -129,6 +129,7 @@ export interface AppReadModel {
   readonly pendingClearSlot: number | null;
   readonly research: ResearchSnapshot;
   readonly researchCamera: ResearchCameraSnapshot;
+  readonly inspectedResearch: Technology | null;
   readonly planetOrders: readonly PlanetOrderSnapshot[];
   readonly constructionSite: number | null;
   readonly screen: Screen;
@@ -200,6 +201,7 @@ export class AppModel {
   #buildingCategory: BuildingCategory = 'All';
   #selectedBuilding: BuildType | null = null;
   readonly #researchCamera = new ResearchTreeCamera();
+  #inspectedResearch: Technology | null = null;
   #mapProductionCategory: MapProductionCategory = 'Buildings';
   #mapProductionPage = 0;
   #mapProductionOption: ProjectType | null = null;
@@ -289,6 +291,7 @@ export class AppModel {
     this.#mapProductionOption = null;
     this.#mapProjectId = null;
     this.#game = game;
+    this.#inspectedResearch = null;
     this.#eventPlayback = null;
     this.#movementPlayback = null;
     this.#movementOrigin = null;
@@ -444,6 +447,7 @@ export class AppModel {
       pendingClearSlot: this.#pendingClearSlot,
       research: this.#game.research,
       researchCamera: this.#researchCamera.snapshot,
+      inspectedResearch: this.#inspectedResearch,
       planetOrders: this.#game.planetOrders(),
       constructionSite: this.#constructionSite,
       screen: this.#eventPlayback ? 'map' : this.#screen,
@@ -781,6 +785,15 @@ export class AppModel {
     this.#expandedProjectIds.add(projectId);
     this.#closedProjectIds.delete(projectId);
     this.#focusedProjectId = projectId;
+  }
+
+  inspectResearch(technology: Technology | null): void {
+    if (
+      technology !== null &&
+      !this.#game.research.available.includes(technology)
+    )
+      return;
+    this.#inspectedResearch = technology;
   }
 
   openResearch(): void {

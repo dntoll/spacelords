@@ -1,8 +1,9 @@
 import { bindDiagramNavigation } from './DiagramNavigation.js';
-import { BUILDINGS, type ResearchSnapshot } from '../models/Game.js';
+import type { ResearchSnapshot, Technology } from '../models/Game.js';
 import { PREREQUISITES } from '../models/Research.js';
 import {
   ResearchTreeLayout,
+  isResearchIdentified,
   type ResearchCameraSnapshot,
 } from '../models/ResearchTree.js';
 import type { IntentHandler } from './ViewContracts.js';
@@ -13,8 +14,8 @@ const svgNamespace = 'http://www.w3.org/2000/svg';
 
 export function renderResearchTree(
   research: ResearchSnapshot,
-  locked: boolean,
   emit: IntentHandler,
+  inspected: Technology | null = null,
 ): HTMLElement {
   const layout = new ResearchTreeLayout(research.available);
   const area = element('section', 'research-tree-area');
@@ -75,11 +76,12 @@ export function renderResearchTree(
     svg.append(path);
   }
   stage.append(svg);
-  for (const node of layout.nodes) {
+  for (const [index, node] of layout.nodes.entries()) {
     const type = node.technology;
     const complete = research.completed.includes(type);
     const queued = research.queue.indexOf(type);
     const recovered = research.recovered?.includes(type) ?? false;
+    const identified = isResearchIdentified(research, type);
     const ready =
       recovered ||
       PREREQUISITES[type].every((p) => research.completed.includes(p));
@@ -95,57 +97,57 @@ export function renderResearchTree(
     const card = element('article', `research-choice research-node ${state}`);
     card.dataset.technology = type;
     card.dataset.state = state;
+    card.dataset.identified = String(identified);
     card.style.left = `${node.x}px`;
     card.style.top = `${node.y}px`;
-    card.title =
-      type === 'Trade logistics'
-        ? 'Connect owned planets with automated transport fleets.'
-        : BUILDINGS[type].description;
+    const label = identified
+      ? `Inspect ${type}`
+      : `Inspect unknown technology ${index + 1}`;
+    const choose = button(
+      label,
+      () => emit({ type: 'inspect-research', technology: type }),
+      'research-node-select',
+    );
+    choose.replaceChildren();
+    choose.id = `research-node-${index}`;
+    choose.setAttribute('aria-pressed', String(inspected === type));
+    choose.title = identified ? type : 'Unknown technology';
     const art =
-      type !== 'Trade logistics' && BUILDING_IMAGES[type]
+      identified && type !== 'Trade logistics' && BUILDING_IMAGES[type]
         ? buildingImage(type)
         : element(
             'div',
             'research-symbol',
-            type === 'Trade logistics'
-              ? '↔'
-              : type === 'Transport ship factory'
-                ? '△'
-                : '⚙',
+            !identified
+              ? '?'
+              : type === 'Trade logistics'
+                ? '↔'
+                : type === 'Transport ship factory'
+                  ? '△'
+                  : '⚙',
           );
-    art.setAttribute(
-      'aria-hidden',
-      art.classList.contains('research-symbol') ? 'true' : 'false',
+    art.setAttribute('aria-hidden', 'true');
+    choose.append(
+      art,
+      element('span', 'research-node-name', identified ? type : 'Unknown'),
     );
-    card.append(art, element('h3', '', type));
-    const status = complete
-      ? 'Researched'
-      : queued === 0
-        ? research.stations
-          ? 'Researching · 0/1 points'
-          : 'Waiting for an operating Research station'
-        : queued > 0
-          ? `Queued · ${queued + 1}`
-          : ready
-            ? 'Available · 1 point'
-            : 'Prerequisites pending · 1 point';
-    card.append(element('span', 'pill', status));
-    const dependencies = element(
-      'p',
-      'research-requires',
-      recovered
-        ? 'Recovered technology · Prerequisites bypassed'
-        : `Requires: ${PREREQUISITES[type].join(', ') || 'No prerequisites'}`,
-    );
-    card.append(dependencies);
-    if (!complete) {
-      const choose = button(`Research ${type}`, () =>
-        emit({ type: 'research', technology: type }),
-      );
-      choose.textContent = queued >= 0 ? 'Queued' : 'Research';
-      choose.disabled = locked || !!research.queueBlockedReason || queued >= 0;
-      card.append(choose);
-    }
+    const status = !identified
+      ? 'Undiscovered'
+      : complete
+        ? 'Researched'
+        : queued === 0
+          ? research.stations
+            ? 'Researching'
+            : 'Waiting for station'
+          : queued > 0
+            ? `Queued · ${queued + 1}`
+            : ready
+              ? recovered
+                ? 'Recovered'
+                : 'Available'
+              : 'Prerequisites pending';
+    choose.append(element('small', 'research-node-status', status));
+    card.append(choose);
     stage.append(card);
   }
   viewport.append(stage);

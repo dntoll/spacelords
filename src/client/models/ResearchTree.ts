@@ -1,9 +1,23 @@
 import { PREREQUISITES, TECHNOLOGIES, type Technology } from './Research.js';
 import type { Point } from './HexCoordinate.js';
+import type { ResearchSnapshot } from './Game.js';
+
+/** forskningens-avslojande: queued and recovered knowledge remains identifiable. */
+export function isResearchIdentified(
+  research: ResearchSnapshot,
+  technology: Technology,
+): boolean {
+  return (
+    research.completed.includes(technology) ||
+    research.queue.includes(technology) ||
+    !!research.recovered?.includes(technology) ||
+    PREREQUISITES[technology].every((type) => research.completed.includes(type))
+  );
+}
 
 export class ResearchTreeLayout {
-  readonly cardWidth = 224;
-  readonly cardHeight = 204;
+  readonly cardWidth = 140;
+  readonly cardHeight = 64;
   readonly edges: readonly Readonly<{ from: Technology; to: Technology }>[];
   readonly nodes: readonly Readonly<{
     technology: Technology;
@@ -42,8 +56,8 @@ export class ResearchTreeLayout {
     const nodes = technologies.map((technology) =>
       Object.freeze({
         technology,
-        x: 32 + depth(technology) * 336,
-        y: 32 + row(technology) * 256,
+        x: 32 + depth(technology) * (this.cardWidth + 44),
+        y: 32 + row(technology) * (this.cardHeight + 24),
       }),
     );
     this.nodes = nodes;
@@ -53,7 +67,7 @@ export class ResearchTreeLayout {
       for (const node of this.nodes
         .filter((node) => node.x === x)
         .toSorted((a, b) => a.y - b.y)) {
-        const y = Math.max(node.y, bottom + 256);
+        const y = Math.max(node.y, bottom + this.cardHeight + 24);
         if (y !== node.y)
           nodes[nodes.indexOf(node)] = Object.freeze({ ...node, y });
         bottom = y;

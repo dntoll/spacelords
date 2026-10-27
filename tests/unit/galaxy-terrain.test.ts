@@ -60,11 +60,11 @@ describe('automatisk-hexutforskning', () => {
 });
 
 describe('utokad-galax / planetavstand-till-stjarna', () => {
-  it('has 300 reproducible systems, 30301 cells, separated planets and clear orbit rings', () => {
+  it('has 150 reproducible systems, 30301 cells, separated planets and clear orbit rings', () => {
     const galaxy = createExpandedGalaxy();
     expect(galaxy.radius).toBe(100);
     expect(galaxy.mapSnapshot()).toHaveLength(30301);
-    expect(galaxy.systems).toHaveLength(300);
+    expect(galaxy.systems).toHaveLength(150);
     expect(createExpandedGalaxy()).toBe(galaxy);
     const occupied = new Set<string>();
     for (const system of galaxy.systems) {

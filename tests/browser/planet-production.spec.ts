@@ -43,7 +43,7 @@ test('gemensam-planetko / delfabriker / automatiska-delorder: research, manufact
     .getByRole('button', { name: 'Research', exact: true })
     .click();
   await chooseResearch(page, 'Fighter factory');
-  await expect(page.locator('.research-queue article')).toHaveCount(3);
+  await expect(page.locator('.research-queue article')).toHaveCount(1);
   for (let year = 0; year < 3; year++) await nextYear(page);
   await home(page);
   for (const [index, type] of [

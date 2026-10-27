@@ -2,7 +2,8 @@ import { renderMapEvent } from './MapEventView.js';
 import { renderMapTradeRoutes } from './MapTradeRoutesView.js';
 import { renderDetectionBoundary } from './DetectionMapView.js';
 import { renderTerrain } from './TerrainMapView.js';
-import { renderStarGlyph } from './StarGlyph.js';
+import { createStarTextures, renderStarGlyph } from './StarGlyph.js';
+import { showMapHex } from '../models/StarAppearance.js';
 import starSprite from '../assets/stars/plasma-star.webp';
 import { salvageMarkers } from '../models/SalvageMapLayout.js';
 import { renderMapOverlays } from './MapOverlayView.js';
@@ -28,7 +29,7 @@ export class GalaxyMapView implements MapPort {
   #canvas: HTMLCanvasElement | null = null;
   #disposed = false;
   #ready = false;
-  #starSprite: p5.Image | null = null;
+  #starTextures: readonly p5.Image[] | null = null;
   #descriptionScreen: AppReadModel['screen'] | null = null;
   #movement: {
     movement: TurnFrame['movements'][number];
@@ -57,7 +58,7 @@ export class GalaxyMapView implements MapPort {
           .loadImage(starSprite)
           .then((sprite) => {
             if (this.#disposed) return;
-            this.#starSprite = sprite;
+            this.#starTextures = createStarTextures(sketch, sprite);
             this.#canvas?.setAttribute('data-star-texture-ready', 'true');
             void sketch.redraw();
           })
@@ -221,7 +222,7 @@ export class GalaxyMapView implements MapPort {
       );
     });
     for (const cell of cells)
-      if (model.camera.zoom >= 0.18 || cell.explored)
+      if (showMapHex(model.camera.zoom, cell.explored))
         this.#hex(sketch, cell, false, model.camera.zoom);
     const selected =
       model.screen === 'fleets' || model.eventPlayback ? null : model.selected;
@@ -296,7 +297,7 @@ export class GalaxyMapView implements MapPort {
             ? '#293e49'
             : '#1e303c',
     );
-    if (zoom < 0.18) sketch.noStroke();
+    if (zoom < 0.18 && !selected) sketch.noStroke();
     else sketch.strokeWeight((selected ? 1.8 : 0.7) / zoom);
     sketch.fill(
       selected
@@ -337,7 +338,7 @@ export class GalaxyMapView implements MapPort {
           : '#b88870';
     sketch.noStroke();
     if (star) {
-      renderStarGlyph(sketch, point, zoom, cell.explored, this.#starSprite);
+      renderStarGlyph(sketch, point, zoom, cell.position, this.#starTextures);
     } else if (object.owned) {
       sketch.noFill();
       sketch.stroke('#476f68');

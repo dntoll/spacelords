@@ -1,11 +1,56 @@
 import { selectMapFleet } from './fleet-helpers.js';
 import { selectMapObject } from './map-helpers.js';
 import { expect, type Page } from '@playwright/test';
+import {
+  PREREQUISITES,
+  TECHNOLOGIES,
+} from '../../src/client/models/Research.js';
+import type { GameState } from '../../src/client/models/Game.js';
 
 export async function chooseResearch(
   page: Page,
   technology: string,
 ): Promise<void> {
+  const target = TECHNOLOGIES.find((type) => type === technology);
+  if (!target) throw new Error(`Unknown research: ${technology}`);
+  const saved = () =>
+    page.evaluate(() => {
+      const slot = JSON.parse(
+        localStorage.getItem('spacelords.save.v2.1')!,
+      ) as { state: GameState };
+      return {
+        completed: slot.state.researched,
+        queue: slot.state.researchQueue,
+        recovered: slot.state.recoveredResearch ?? [],
+      };
+    });
+  const state = await saved();
+  if (state.completed.includes(target) || state.queue.includes(target)) return;
+  // forskningens-avslojande: campaigns research through the visible frontier.
+  if (!state.recovered.includes(target))
+    for (const prerequisite of PREREQUISITES[target]) {
+      if ((await saved()).completed.includes(prerequisite)) continue;
+      await chooseResearch(page, prerequisite);
+      for (
+        let turn = 0;
+        !(await saved()).completed.includes(prerequisite);
+        turn++
+      ) {
+        if (turn >= TECHNOLOGIES.length)
+          throw new Error(`Research stalled: ${prerequisite}`);
+        await endTurn(page);
+      }
+    }
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('button', { name: 'Research', exact: true })
+    .click();
+  const inspect = page.getByRole('button', {
+    name: `Inspect ${technology}`,
+    exact: true,
+  });
+  await inspect.focus();
+  await inspect.click();
   const choose = page.getByRole('button', {
     name: `Research ${technology}`,
     exact: true,

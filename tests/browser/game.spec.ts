@@ -357,11 +357,10 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('button', { name: 'Research', exact: true })
     .click();
-  const factorySource = await page
-    .getByRole('img', { name: 'Colony ship factory', exact: true })
-    .getAttribute('src');
-
   await chooseResearch(page, 'Colony ship factory');
+  const factorySource = await page
+    .locator('[data-technology="Colony ship factory"] img')
+    .getAttribute('src');
   await expect(
     page.getByText('Researching · 0/1 points', { exact: true }),
   ).toBeVisible();

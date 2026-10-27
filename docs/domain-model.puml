@@ -22,6 +22,12 @@ class Galaxy {
   homePlanet
   mapSnapshot()
 }
+note left of Galaxy
+  Nya galaxer: radie 100, 150 system
+  i tre diffusa spiralarmar med
+  en mindre andel system mellan armarna.
+  Sparade galaxer behåller sina system.
+end note
 class StarSystem
 class Star {
   name

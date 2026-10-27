@@ -1,5 +1,6 @@
 import type { BuildType, Cost, ProjectType } from './Game.js';
 import type { Point } from './HexCoordinate.js';
+import type { ProductionPresenceSnapshot } from './ProductionPresence.js';
 
 export type MapScreen = 'map' | 'fleets' | 'route' | 'production';
 export function isMapScreen(screen: string | null): screen is MapScreen {
@@ -13,7 +14,7 @@ export interface ProductionGuidance {
   readonly message: string;
   readonly dome: BuildType | null;
 }
-export interface ProductionOption {
+export interface ProductionOption extends ProductionPresenceSnapshot {
   readonly type: ProjectType;
   readonly category: MapProductionCategory;
   readonly description: string;

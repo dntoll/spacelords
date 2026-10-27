@@ -4,6 +4,8 @@ import { tradeAssignmentIssue } from '../models/TradeAssignment.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element } from './dom.js';
 
+import { bindFleetOrderDrag } from './FleetOrderDrag.js';
+
 export function fleetOrderButton(
   label: string,
   symbol: string,
@@ -28,6 +30,7 @@ export function renderFleetOrders(
   emit: IntentHandler,
 ): HTMLElement {
   const orders = element('div', 'fleet-order-toolbar');
+  bindFleetOrderDrag(orders);
   orders.setAttribute('role', 'group');
   orders.setAttribute('aria-label', `Orders for ${fleet.name}`);
   const locked =

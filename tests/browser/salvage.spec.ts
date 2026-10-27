@@ -72,14 +72,20 @@ test('bargningsorder / automatisk-vrakreparation / forskning-fran-bargade-delar:
   ).toBe(true);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   const card = page.locator('[data-technology="Telescope III factory"]');
-  await expect(card).toContainText('Recovered technology');
+  await expect(card).toContainText('Recovered');
   await card
+    .getByRole('button', { name: 'Inspect Telescope III factory', exact: true })
+    .focus();
+  await card
+    .getByRole('button', { name: 'Inspect Telescope III factory', exact: true })
+    .click();
+  await page
     .getByRole('button', {
       name: 'Research Telescope III factory',
       exact: true,
     })
     .focus();
-  await card
+  await page
     .getByRole('button', {
       name: 'Research Telescope III factory',
       exact: true,

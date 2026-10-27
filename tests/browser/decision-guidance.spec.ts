@@ -40,6 +40,9 @@ test('beslutsvagledning-i-vyn: navigation warnings lead to highlighted controls 
     page.getByRole('region', { name: 'Research tree', exact: true }),
   ).toHaveClass(/decision-target/);
   await page
+    .getByRole('button', { name: 'Inspect Rocket engine factory', exact: true })
+    .click();
+  await page
     .getByRole('button', {
       name: 'Research Rocket engine factory',
       exact: true,

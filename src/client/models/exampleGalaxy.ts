@@ -1,6 +1,7 @@
 import { Galaxy, Star, StarSystem } from './Galaxy.js';
 import { HexCoordinate } from './HexCoordinate.js';
 import { createGalaxyTerrain } from './GalaxyTerrain.js';
+import { SpiralGalaxyLayout } from './SpiralGalaxyLayout.js';
 import {
   Colony,
   Planet,
@@ -34,20 +35,12 @@ export function createExampleGalaxy(expanded = false): Galaxy {
       planets: ['Aster I', 'Aster II', 'Aster III'],
     },
   ];
-  // utokad-galax: stable placement retains the three named systems.
+  // utokad-galax / galaxarmar: only new worlds use the sparse spiral placement.
   if (expanded) {
-    const candidates = [...HexCoordinate.disk(98)].sort(
-      (a, b) => coordinateHash(a) - coordinateHash(b) || a.q - b.q || a.r - b.r,
+    const positions = SpiralGalaxyLayout.positions(
+      definitions.map((system) => new HexCoordinate(system.q, system.r)),
     );
-    for (const point of candidates) {
-      if (definitions.length === 300) break;
-      if (
-        definitions.some(
-          (system) =>
-            point.distanceTo(new HexCoordinate(system.q, system.r)) < 7,
-        )
-      )
-        continue;
+    for (const point of positions.slice(definitions.length)) {
       const number = definitions.length + 1;
       const name = `System ${number}`;
       definitions.push({
@@ -104,13 +97,6 @@ export function createExampleGalaxy(expanded = false): Galaxy {
     expanded ? 100 : 10,
     expanded ? createGalaxyTerrain(systems, 100) : [],
   );
-}
-
-function coordinateHash(point: HexCoordinate): number {
-  let value =
-    Math.imul(point.q + 101, 374761393) ^ Math.imul(point.r + 101, 668265263);
-  value = Math.imul(value ^ (value >>> 13), 1274126177);
-  return (value ^ (value >>> 16)) >>> 0;
 }
 
 let expandedGalaxy: Galaxy | undefined;

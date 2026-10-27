@@ -35,6 +35,7 @@ it('beslut-vantar-pa-paborjad-atgard: updates guidance, counter, map problems an
     root.querySelector('[data-screen="production"] .nav-attention'),
   ).not.toBeNull();
   click('Open research');
+  click('Inspect Desert dome');
   click('Research Desert dome');
   click('Production');
   expect(root.textContent).toContain('Waiting for Desert dome research.');

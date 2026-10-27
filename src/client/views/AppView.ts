@@ -47,6 +47,7 @@ export class AppView implements AppPort {
   #zoom: HTMLOutputElement | null = null;
   #coordinates: HTMLElement | null = null;
   #selectionKey = '';
+  readonly #fleetOrderScroll = new Map<string, number>();
   #cancelSelectionGesture: (() => void) | null = null;
   #previews: { dispose(): void }[] = [];
   #saveKey = '';
@@ -58,6 +59,7 @@ export class AppView implements AppPort {
   #catalogReturnKey: string | null = null;
   #decisionDialog: HTMLDialogElement | null = null;
   #researchKey = '';
+  #inspectedResearch: AppReadModel['inspectedResearch'] = null;
   #researchViewport: HTMLElement | null = null;
   #researchObserver: ResizeObserver | null = null;
   #mapObserver: ResizeObserver | null = null;
@@ -96,6 +98,14 @@ export class AppView implements AppPort {
   }
 
   render(model: AppReadModel): void {
+    if (model.screen === 'saves') this.#fleetOrderScroll.clear();
+    for (const toolbar of this.#root.querySelectorAll<HTMLElement>(
+      '.fleet-order-toolbar',
+    )) {
+      const id =
+        toolbar.closest<HTMLElement>('[data-fleet-id]')?.dataset.fleetId;
+      if (id) this.#fleetOrderScroll.set(id, toolbar.scrollLeft);
+    }
     const previousActions =
       this.#root.querySelector<HTMLElement>('.turn-actions');
     const previousConsole =
@@ -265,6 +275,7 @@ export class AppView implements AppPort {
             model.research,
             model.phase !== 'planning',
             this.#emit,
+            model.inspectedResearch,
           ),
         );
       this.#root.append(main);
@@ -385,7 +396,11 @@ export class AppView implements AppPort {
     const researchQueueScroll =
       previousResearchQueue?.querySelector('.research-queue-content')
         ?.scrollTop ?? 0;
-    const researchKey = JSON.stringify([model.research, model.phase]);
+    const researchKey = JSON.stringify([
+      model.research,
+      model.phase,
+      model.inspectedResearch,
+    ]);
     if (
       !changedScreen &&
       model.screen === 'research' &&
@@ -398,13 +413,15 @@ export class AppView implements AppPort {
             model.research,
             model.phase !== 'planning',
             this.#emit,
+            model.inspectedResearch,
           ),
         );
     if (model.screen === 'research') {
       if (!changedScreen) {
         const queue =
           this.#root.querySelector<HTMLDetailsElement>('.research-queue');
-        if (queue) queue.open = researchQueueOpen;
+        if (queue)
+          queue.open = researchQueueOpen && model.inspectedResearch === null;
         const content = queue?.querySelector('.research-queue-content');
         if (content) content.scrollTop = researchQueueScroll;
         if (
@@ -424,6 +441,32 @@ export class AppView implements AppPort {
       }
       this.#researchKey = researchKey;
       updateResearchCamera(this.#root, model.researchCamera);
+      const changedInspection =
+        this.#inspectedResearch !== model.inspectedResearch;
+      if (changedInspection && model.inspectedResearch !== null)
+        this.#root
+          .querySelector<HTMLElement>('.research-details')
+          ?.focus({ preventScroll: true });
+      else if (changedInspection && this.#inspectedResearch !== null) {
+        const technology = this.#inspectedResearch;
+        [...this.#root.querySelectorAll<HTMLElement>('.research-node')]
+          .find((node) => node.dataset.technology === technology)
+          ?.querySelector<HTMLElement>('button')
+          ?.focus({ preventScroll: true });
+      } else if (
+        active instanceof HTMLElement &&
+        !active.isConnected &&
+        focusLabel
+      ) {
+        [
+          ...this.#root.querySelectorAll<HTMLElement>(
+            '.research-page [aria-label]',
+          ),
+        ]
+          .find((node) => node.getAttribute('aria-label') === focusLabel)
+          ?.focus({ preventScroll: true });
+      }
+      this.#inspectedResearch = model.inspectedResearch;
       const viewport = this.#root.querySelector<HTMLElement>(
         '.research-tree-viewport',
       );
@@ -526,6 +569,13 @@ export class AppView implements AppPort {
       if (key !== this.#selectionKey) {
         this.#selectionKey = key;
         this.#renderSelection(model);
+        for (const toolbar of this.#root.querySelectorAll<HTMLElement>(
+          '.fleet-order-toolbar',
+        )) {
+          const id =
+            toolbar.closest<HTMLElement>('[data-fleet-id]')?.dataset.fleetId;
+          if (id) toolbar.scrollLeft = this.#fleetOrderScroll.get(id) ?? 0;
+        }
         if (this.#panel)
           this.#panel.scrollTop =
             wasChoosingDestination !== !!model.destinationFleetId

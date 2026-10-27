@@ -1,4 +1,5 @@
-import { type ResearchSnapshot } from '../models/Game.js';
+import { type ResearchSnapshot, type Technology } from '../models/Game.js';
+import { renderResearchDetails } from './ResearchDetailsView.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { buildingImage } from './BuildingImage.js';
 import { renderResearchTree } from './ResearchTreeView.js';
@@ -8,6 +9,7 @@ export function renderResearch(
   research: ResearchSnapshot,
   locked: boolean,
   emit: IntentHandler,
+  inspected: Technology | null = null,
 ): HTMLElement {
   const page = element('section', 'research-page');
   const header = element('div', 'screen-header');
@@ -52,6 +54,16 @@ export function renderResearch(
       ),
     );
   const queue = element('details', 'research-queue hud');
+  queue.addEventListener('toggle', () => {
+    if (queue.open && inspected !== null)
+      emit({ type: 'inspect-research', technology: null });
+  });
+  page.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && inspected !== null) {
+      event.preventDefault();
+      emit({ type: 'inspect-research', technology: null });
+    }
+  });
   queue.append(
     element('summary', '', `Research queue · ${research.queue.length}`),
   );
@@ -96,7 +108,9 @@ export function renderResearch(
         research.queueBlockedReason,
       ),
     );
-  panel.append(renderResearchTree(research, locked, emit), queue);
+  panel.append(renderResearchTree(research, emit, inspected), queue);
+  if (inspected !== null && research.available.includes(inspected))
+    panel.append(renderResearchDetails(research, inspected, locked, emit));
   page.append(header, panel);
   return page;
 }

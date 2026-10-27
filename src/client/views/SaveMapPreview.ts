@@ -2,7 +2,7 @@ import p5 from 'p5';
 import type { MapCell } from '../models/Galaxy.js';
 import { HexGeometry } from '../models/HexCoordinate.js';
 import { renderTerrain } from './TerrainMapView.js';
-import { renderStarGlyph } from './StarGlyph.js';
+import { createStarTextures, renderStarGlyph } from './StarGlyph.js';
 import starSprite from '../assets/stars/plasma-star.webp';
 
 /** Read-only p5 instance; hidden cells never reach the preview. */
@@ -10,7 +10,7 @@ export class SaveMapPreview {
   readonly #instance: p5;
   readonly #observer: ResizeObserver;
   #ready = false;
-  #starSprite: p5.Image | null = null;
+  #starTextures: readonly p5.Image[] | null = null;
   #disposed = false;
 
   constructor(container: HTMLElement, cells: readonly MapCell[]) {
@@ -35,7 +35,7 @@ export class SaveMapPreview {
           .loadImage(starSprite)
           .then((sprite) => {
             if (this.#disposed) return;
-            this.#starSprite = sprite;
+            this.#starTextures = createStarTextures(sketch, sprite);
             void sketch.redraw();
           })
           .catch(() => {
@@ -47,12 +47,11 @@ export class SaveMapPreview {
         sketch.background('#091520');
         sketch.push();
         sketch.translate(sketch.width / 2, sketch.height / 2);
-        sketch.scale(
-          Math.min(
-            (sketch.width - 20) / (maxX - minX),
-            (sketch.height - 20) / (maxY - minY),
-          ),
+        const zoom = Math.min(
+          (sketch.width - 20) / (maxX - minX),
+          (sketch.height - 20) / (maxY - minY),
         );
+        sketch.scale(zoom);
         sketch.translate(-(minX + maxX) / 2, -(minY + maxY) / 2);
         visible.forEach((cell, index) => {
           const point = points[index]!;
@@ -77,7 +76,13 @@ export class SaveMapPreview {
                   : '#86adc5',
             );
             if (cell.object.kind === 'star')
-              renderStarGlyph(sketch, point, 1, true, this.#starSprite);
+              renderStarGlyph(
+                sketch,
+                point,
+                zoom,
+                cell.position,
+                this.#starTextures,
+              );
             else sketch.circle(point.x, point.y, 10);
           }
         });

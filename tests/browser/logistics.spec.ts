@@ -94,7 +94,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     'Desert dome',
   ])
     await chooseResearch(page, technology);
-  await expect(page.locator('.research-queue article')).toHaveCount(8);
+  await expect(page.locator('.research-queue article')).toHaveCount(2);
   for (let year = 0; year < 8; year++) await nextYear(page);
   await home(page);
   for (const [index, type] of [
