@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { endTurn, startFirstSlot } from './save-helpers.js';
+import { expectMapFillsGameArea } from './map-helpers.js';
 
 test('snabb-mobilpublicering / viewport-game-layout / sparat-spel: touch navigation and saved progress survive reload', async ({
   page,
@@ -22,11 +23,7 @@ test('snabb-mobilpublicering / viewport-game-layout / sparat-spel: touch navigat
   await startFirstSlot(page);
   const map = page.locator('canvas[data-rendered="true"]');
   await expect(map).toBeVisible();
-  const bounds = (await map.boundingBox())!;
-  expect(
-    (bounds.width * bounds.height) /
-      (page.viewportSize()!.width * page.viewportSize()!.height),
-  ).toBeGreaterThan(0.8);
+  await expectMapFillsGameArea(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).tap();
   await expect(
     page.getByRole('heading', { name: 'Tellus', exact: true }),

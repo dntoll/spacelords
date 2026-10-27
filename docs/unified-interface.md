@@ -26,6 +26,10 @@ inväntar separat beställning.
   `automatisk-vrakreparation`. Takt, kostnader och resurser behålls.
 - `planetinformation-pa-kartan` förtydligar `fokuserat-kartval`: okända rutor
   får etiketten Unexplored, medan okända planeter fortfarande är helt dolda.
+- `viewport-game-layout` behåller skärmfyllnad utan sidscroll. Den gemensamma
+  raden reserverar nu utrymme, så kartan fyller hela återstående ytan mellan
+  navigation och raden. Det ersätter testets tidigare fasta 80 procent av hela
+  skärmen, vilket inte tog hänsyn till en separat nedre rad.
 
 ## Verifiering, 2026-10-27
 

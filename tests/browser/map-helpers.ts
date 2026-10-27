@@ -6,6 +6,28 @@ import type {
 } from '../../src/client/models/HexCoordinate.js';
 import { HexGeometry } from '../../src/client/models/HexCoordinate.js';
 
+// viewport-game-layout / gemensam-events-panel: use every pixel between shared controls.
+export async function expectMapFillsGameArea(page: Page): Promise<void> {
+  await expect
+    .poll(() =>
+      page.locator('canvas[data-rendered="true"]').evaluate((canvas) => {
+        const map = canvas.getBoundingClientRect();
+        const header = document
+          .querySelector('.app-header')!
+          .getBoundingClientRect();
+        const footer = document
+          .querySelector('.game-turn-actions')!
+          .getBoundingClientRect();
+        return Math.max(
+          Math.abs(map.top - header.bottom),
+          Math.abs(map.bottom - footer.top),
+          Math.abs(map.width - innerWidth),
+        );
+      }),
+    )
+    .toBeLessThanOrEqual(2);
+}
+
 export async function selectMapObject(page: Page, name: string): Promise<void> {
   const galaxy = createExampleGalaxy();
   const object = galaxy.systems

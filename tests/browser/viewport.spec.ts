@@ -1,5 +1,6 @@
 import { startFirstSlot } from './save-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
+import { expectMapFillsGameArea } from './map-helpers.js';
 
 async function expectNoScroll(page: Page): Promise<void> {
   const overflow = await page.evaluate(() => ({
@@ -17,11 +18,7 @@ test('viewport-game-layout: the map fills the viewport without page scrolling', 
   const map = page.locator('canvas[data-rendered="true"]');
   await expect(map).toHaveCount(1);
   await expectNoScroll(page);
-  const bounds = await map.boundingBox();
-  const viewport = page.viewportSize()!;
-  expect(
-    (bounds!.width * bounds!.height) / (viewport.width * viewport.height),
-  ).toBeGreaterThan(0.8);
+  await expectMapFillsGameArea(page);
 });
 
 async function expectContentFits(page: Page): Promise<void> {
@@ -63,13 +60,9 @@ test('viewport-game-layout: navigation font changes cannot crowd out the phone m
   expect(navigation.y).toBeGreaterThanOrEqual(brand.y + brand.height);
   const canvas = page.locator('canvas[data-rendered="true"]');
   await expect(canvas).toHaveCount(1);
-  await expect
-    .poll(async () => (await canvas.boundingBox())!.height / 844)
-    .toBeGreaterThan(0.8);
+  await expectMapFillsGameArea(page);
   await page.addStyleTag({ content: ':root { font-size: 20px; }' });
-  await expect
-    .poll(async () => (await canvas.boundingBox())!.height / 844)
-    .toBeGreaterThan(0.8);
+  await expectMapFillsGameArea(page);
   await expectNoScroll(page);
 });
 

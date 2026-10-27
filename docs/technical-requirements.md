@@ -319,8 +319,10 @@ fortsatt av befintlig GitHub CI.
   browsertester kontrollerar alla vyer utan scroll eller klippta kontroller,
   även i stående och liggande format.
   Mobilnavigationen får egen bredd oberoende av logotypens fontmått.
-  Regressionstest kontrollerar att kartan behåller minst 80 procent av
-  telefonens skärmyta även med alternativa fontmått; CI verifierar också Linux/WebKit.
+  Regressionstest kontrollerar att kartan fyller ytan mellan navigationen och
+  den gemensamma Events-raden, även med alternativa fontmått. Det ersätter
+  tidigare 80 procent av hela telefonens skärmyta eftersom raden nu reserverar
+  utrymme enligt `gemensam-events-panel`; CI verifierar också Linux/WebKit.
 - Spelgrundens kravkoppling beskrivs i [first-iteration.md](first-iteration.md).
 - `mvc-arkitektur`: enhetstest verifierar att modellens läsdata inte kan ändras
   utifrån. Typkontrollen begränsar vyn till modellens läsgränssnitt.
