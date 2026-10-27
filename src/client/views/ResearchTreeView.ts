@@ -16,6 +16,7 @@ export function renderResearchTree(
   research: ResearchSnapshot,
   emit: IntentHandler,
   inspected: Technology | null = null,
+  locked = false,
 ): HTMLElement {
   const layout = new ResearchTreeLayout(research.available);
   const area = element('section', 'research-tree-area');
@@ -108,6 +109,33 @@ export function renderResearchTree(
       () => emit({ type: 'inspect-research', technology: type }),
       'research-node-select',
     );
+    let touchClick = false;
+    let lastTouch = -Infinity;
+    const order = () => {
+      if (
+        !locked &&
+        !research.queueBlockedReason &&
+        identified &&
+        !complete &&
+        queued < 0
+      )
+        emit({ type: 'research', technology: type });
+    };
+    choose.addEventListener('pointerup', (event) => {
+      touchClick = event.pointerType === 'touch';
+    });
+    choose.addEventListener('click', () => {
+      if (!touchClick) return;
+      touchClick = false;
+      const now = performance.now();
+      const doubleTap = now - lastTouch <= 500;
+      lastTouch = now;
+      if (doubleTap) order();
+    });
+    choose.addEventListener('dblclick', () => {
+      // dubbelklick-koar-forskning: touch already orders on its second click.
+      if (performance.now() - lastTouch > 750) order();
+    });
     choose.replaceChildren();
     choose.id = `research-node-${index}`;
     choose.setAttribute('aria-pressed', String(inspected === type));

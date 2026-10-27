@@ -56,11 +56,11 @@ export function renderResearch(
     );
   const queue = element('details', 'research-queue hud');
   queue.addEventListener('toggle', () => {
-    if (queue.open && inspected !== null)
+    if (queue.open && panel.querySelector('.research-details'))
       emit({ type: 'inspect-research', technology: null });
   });
   page.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && inspected !== null) {
+    if (event.key === 'Escape' && panel.querySelector('.research-details')) {
       event.preventDefault();
       emit({ type: 'inspect-research', technology: null });
     }
@@ -110,7 +110,7 @@ export function renderResearch(
         research.queueBlockedReason,
       ),
     );
-  panel.append(renderResearchTree(research, emit, inspected), queue);
+  panel.append(renderResearchTree(research, emit, inspected, locked), queue);
   if (inspected !== null && research.available.includes(inspected))
     panel.append(renderResearchDetails(research, inspected, locked, emit));
   page.append(header, panel);

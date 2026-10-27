@@ -1,5 +1,8 @@
 # Produktkrav och status
 
+Mobilens kartpaneler, centrerat Show-fokus och dubbelklick för research beskrivs
+i [mobilens kartval och forskning](mobile-map-interactions.md).
+
 ## Enhetliga spelvyer och bildprompter
 
 Aktuella beteenden och status för Events i alla vyer, dragbara köer,

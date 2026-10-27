@@ -343,6 +343,32 @@ describe('produktions-kartvy / radiella-byggval / kompakt-produktionsko', () => 
   });
 });
 
+it('centrerat-kartfokus: Show centers the planet in the unobscured area after measuring the new screen', () => {
+  const { model, controller } = setup();
+  model.resizeMap({
+    width: 390,
+    height: 700,
+    availableWidth: 390,
+    availableHeight: 700,
+  });
+  model.openProduction('sol-1');
+  model.resizeMap({
+    width: 390,
+    height: 600,
+    availableWidth: 390,
+    availableHeight: 360,
+    ringTop: 150,
+    ringBottom: 35,
+    ringLeft: 60,
+    ringRight: 60,
+  });
+  const camera = model.snapshot.camera;
+  const world = HexGeometry.toPoint(model.snapshot.planet!.position);
+  expect((world.x - camera.center.x) * camera.zoom + 195).toBeCloseTo(195);
+  expect((world.y - camera.center.y) * camera.zoom + 300).toBeCloseTo(180);
+  controller.dispose();
+});
+
 it('radiella-byggval / automatiska-delorder: preview is pure and failed ordering keeps option and reports the cause', () => {
   const state = tradeNetworkState();
   const home = state.colonies[0]![1];

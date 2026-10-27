@@ -116,6 +116,7 @@ export interface AppReadModel {
   readonly productionFleetId: string | null;
   readonly expandedProjectIds: readonly string[];
   readonly focusedProjectId: string | null;
+  readonly mapFocusRevision: number;
   readonly projectSupply: readonly ProjectSupplySnapshot[];
   readonly decisions: readonly Decision[];
   readonly attentionScreens: readonly DecisionScreen[];
@@ -214,6 +215,8 @@ export class AppModel {
   #mapProductionOption: ProjectType | null = null;
   #mapProjectId: string | null = null;
   #mapViewport: MapViewport | null = null;
+  #mapFocusRevision = 0;
+  #pendingMapFocus: HexCoordinate | null = null;
   readonly #mapTrade = new StarMapTrade(
     () => this.#game,
     () => this.#camera,
@@ -317,6 +320,7 @@ export class AppModel {
       game.galaxy.radius,
     );
     this.#selected = game.galaxy.homePlanet.position;
+    this.#requestMapFocus(this.#selected);
     this.#screen = 'map';
     this.#pendingClearSlot = null;
     this.#constructionSite = null;
@@ -416,6 +420,7 @@ export class AppModel {
         })(),
       ]),
       focusedProjectId: this.#focusedProjectId,
+      mapFocusRevision: this.#mapFocusRevision,
       projectSupply,
       decisions,
       attentionScreens: Object.freeze([
@@ -846,13 +851,15 @@ export class AppModel {
       this.openFleets();
       this.#selectedFleetId = id;
       this.#mapFleetId = fleet.position ? id : null;
-      if (fleet.position) this.#camera.focus(fleet.position);
+      if (fleet.position) this.#requestMapFocus(fleet.position);
     }
   }
   pan(delta: Point): void {
+    this.#pendingMapFocus = null;
     this.#camera.panBy(delta);
   }
   zoom(factor: number, anchor: Point): void {
+    this.#pendingMapFocus = null;
     this.#camera.zoomAt(factor, anchor);
   }
 
@@ -860,6 +867,7 @@ export class AppModel {
     this.#mapTrade.clearSelection();
     this.#camera.reset();
     this.#selected = this.#game.galaxy.homePlanet.position;
+    this.#requestMapFocus(this.#selected);
     this.#mapFleetId = null;
     this.#mapProjectId = null;
     this.#mapProductionOption = null;
@@ -923,7 +931,7 @@ export class AppModel {
     if (!route) return;
     this.openRoute();
     this.#selected = route.start;
-    this.#camera.focus(route.start);
+    this.#requestMapFocus(route.start);
     this.selectMapRoute(id);
   }
   moveResearch(type: Technology, index: number): void {
@@ -954,7 +962,12 @@ export class AppModel {
       this.#mapProjectId = null;
     }
     this.#selected = planet.position;
-    this.#camera.focus(planet.position);
+    this.#requestMapFocus(planet.position);
+  }
+  #requestMapFocus(position: HexCoordinate): void {
+    this.#camera.focus(position);
+    this.#pendingMapFocus = position;
+    this.#mapFocusRevision += 1;
   }
   #selectedMapProject(): string | null {
     const projects = this.#game.planetAt(this.#selected)
@@ -1087,6 +1100,18 @@ export class AppModel {
       return;
     this.#mapViewport = Object.freeze({ ...viewport });
     if (this.#eventPlayback?.current?.decision) this.#focusEvent();
+    if (this.#pendingMapFocus) {
+      // centrerat-kartfokus: use the space left by the newly rendered panels.
+      const x = (viewport.availableWidth - viewport.width) / 2;
+      const y = (viewport.availableHeight - viewport.height) / 2;
+      this.#camera.reveal(this.#pendingMapFocus, {
+        left: x,
+        right: x,
+        top: y,
+        bottom: y,
+      });
+      this.#pendingMapFocus = null;
+    }
     this.#fitProduction();
   }
   #fitProduction(): void {

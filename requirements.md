@@ -10,6 +10,13 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Mobilens kartval och forskning:** `kartpanel-till-events`,
+  `centrerat-kartfokus` och `dubbelklick-koar-forskning` är **Fullständigt
+  implementerat**. Kartans detaljpanel använder ytan ned till Events. Show
+  centrerar målet i den fria kartytan, och research kan köas med dubbelklick
+  eller dubbeltryck. Handelsrutter kan dras från en synlig markerad planet.
+  Se [mobilens kartval och forskning](docs/mobile-map-interactions.md).
+
 - **Gemensamt händelseflöde:** `gemensamt-handelseflode` är **Fullständigt
   implementerat**. Upptäckter, piratkontakter och stridsrapporter använder Events
   med ett eget Handle eller Ignore för varje händelse. Året förblir pausat tills

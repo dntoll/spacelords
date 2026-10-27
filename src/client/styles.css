@@ -2994,17 +2994,18 @@ body:has(.discovery-controls) .selection-panel {
   grid-column: 2;
   min-height: 44px;
 }
+/* kartpanel-till-events: the shared footer already reserves the Events area. */
 .map-page .selection-panel,
 .map-page .selection-panel:has(.map-fleet-management),
 .map-page[data-map-screen='production'] .selection-panel {
-  bottom: max(64px, calc(env(safe-area-inset-bottom) + 64px));
-  max-height: calc(100% - 80px);
+  bottom: 8px;
+  max-height: calc(100% - 24px);
 }
 @media (max-width: 900px), (max-height: 500px) {
   .map-page:not([data-map-screen='production']) .selection-panel {
     max-height: min(
-      calc(85% - 72px),
-      calc(50% - 40px + var(--selection-expansion, 0px))
+      calc(85% - 16px),
+      calc(50% + 16px + var(--selection-expansion, 0px))
     );
   }
 }

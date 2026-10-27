@@ -36,9 +36,16 @@ test.beforeEach(async ({ page }) => {
 
 async function screenPoint(page: Page, world: Point) {
   const bounds = (await page.locator('canvas').boundingBox())!;
+  const [x, y] = (await page.getByTestId('camera-position').textContent())!
+    .match(/-?\d+/g)!
+    .map(Number);
+  const zoom =
+    Number(
+      (await page.getByLabel('Map zoom').textContent())!.replace('%', ''),
+    ) / 100;
   return {
-    x: bounds.x + bounds.width / 2 + world.x - start.x,
-    y: bounds.y + bounds.height / 2 + world.y - start.y,
+    x: bounds.x + bounds.width / 2 + (world.x - x!) * zoom,
+    y: bounds.y + bounds.height / 2 + (world.y - y!) * zoom,
   };
 }
 async function drag(page: Page, a: Point, b: Point) {

@@ -16,6 +16,8 @@ alla flottor vid sin verkliga position.
 
 - `handelsrutt-skapande-pa-stjarnkartan` — **Fullständigt implementerat**:
   markera en ägd planet och dra från dess symbol till en annan ägd planets hex.
+  Hemvyns markerade planet ligger i den fria kartytan ovanför detaljpanelen
+  enligt `centrerat-kartfokus`, så att draget kan börja på själva kartan.
   Förhandsvisningen visar ändplaneternas namn och om målet är giltigt. Släpp
   skapar och väljer rutten utan att ändra kameran. Knappen Create route är
   borttagen efter användarens ändring. R med fokus på kartan börjar en rutt

@@ -47,6 +47,9 @@ for (const selection of ['hex', 'fleet'] as const) {
       node.scrollTop = 0;
     });
     const initial = (await panel.boundingBox())!;
+    // kartpanel-till-events: the footer already reserves its own space.
+    const footer = (await page.locator('.game-turn-actions').boundingBox())!;
+    expect(footer.y - initial.y - initial.height).toBeLessThanOrEqual(12);
     const camera = await page.getByTestId('camera-position').textContent();
     const scroll = async (deltaY: number) => {
       if (browserName === 'webkit' && isMobile) {

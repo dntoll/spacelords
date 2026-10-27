@@ -30,6 +30,7 @@ import type {
 import { renderBuildSelection } from './BuildSelectionView.js';
 import { renderPlanet } from './PlanetView.js';
 import { renderResearch } from './ResearchView.js';
+import { renderResearchDetails } from './ResearchDetailsView.js';
 import { updateResearchCamera } from './ResearchTreeView.js';
 import { button, element } from './dom.js';
 import { renderDecisions, renderTurnWarning } from './EmpireView.js';
@@ -66,6 +67,7 @@ export class AppView implements AppPort {
   #ring: HTMLElement | null = null;
   #ringKey = '';
   #viewportKey = '';
+  #mapFocusRevision = 0;
   #resizeFrame = 0;
   #productionDetailType: string | null = null;
   #eventsExpanded = false;
@@ -403,26 +405,47 @@ export class AppView implements AppPort {
     const researchQueueScroll =
       previousResearchQueue?.querySelector('.research-queue-content')
         ?.scrollTop ?? 0;
-    const researchKey = JSON.stringify([
-      model.research,
-      model.phase,
-      model.inspectedResearch,
-    ]);
+    const researchKey = JSON.stringify([model.research, model.phase]);
     if (
       !changedScreen &&
       model.screen === 'research' &&
-      this.#researchKey !== researchKey
-    )
-      this.#root
-        .querySelector('main')
-        ?.replaceChildren(
-          renderResearch(
-            model.research,
-            model.phase !== 'planning',
-            this.#emit,
-            model.inspectedResearch,
-          ),
-        );
+      (this.#researchKey !== researchKey ||
+        this.#inspectedResearch !== model.inspectedResearch)
+    ) {
+      if (this.#researchKey === researchKey) {
+        // dubbelklick-koar-forskning: retain pointer targets through inspection.
+        const panel = this.#root.querySelector('.research-panel')!;
+        panel.querySelector('.research-details')?.remove();
+        if (model.inspectedResearch !== null)
+          panel.append(
+            renderResearchDetails(
+              model.research,
+              model.inspectedResearch,
+              model.phase !== 'planning',
+              this.#emit,
+            ),
+          );
+        for (const node of panel.querySelectorAll<HTMLElement>(
+          '.research-node[data-technology]',
+        ))
+          node
+            .querySelector('button')!
+            .setAttribute(
+              'aria-pressed',
+              String(node.dataset.technology === model.inspectedResearch),
+            );
+      } else
+        this.#root
+          .querySelector('main')
+          ?.replaceChildren(
+            renderResearch(
+              model.research,
+              model.phase !== 'planning',
+              this.#emit,
+              model.inspectedResearch,
+            ),
+          );
+    }
     if (model.screen === 'research') {
       if (!changedScreen) {
         const queue =
@@ -529,7 +552,7 @@ export class AppView implements AppPort {
         this.#ring = null;
         this.#ringKey = '';
       } else this.#renderProductionRing(model);
-      this.#measureMap();
+      this.#mapFocusRevision = model.mapFocusRevision;
       if (this.#zoom)
         this.#zoom.value = `${Math.round(model.camera.zoom * 100)}%`;
       if (this.#coordinates)
@@ -603,6 +626,7 @@ export class AppView implements AppPort {
     if (end) end.disabled = model.phase !== 'planning' || !!model.eventPlayback;
     this.#renderTurnConsole(model);
     updateDecisionGuidance(this.#root, model, this.#emit);
+    if (isMapScreen(model.screen)) this.#measureMap();
     for (const control of this.#root.querySelectorAll<HTMLButtonElement>(
       'header button',
     ))
@@ -1040,6 +1064,7 @@ export class AppView implements AppPort {
     if (typeof ResizeObserver !== 'undefined') {
       this.#mapObserver = new ResizeObserver(() => this.#measureMap());
       this.#mapObserver.observe(this.#container);
+      this.#mapObserver.observe(this.#panel);
     }
     return page;
   }
@@ -1056,6 +1081,11 @@ export class AppView implements AppPort {
       .querySelector<HTMLElement>('.map-page')
       ?.style.setProperty('--production-panel-height', `${panelHeight}px`);
     const origin = this.#ring?.getBoundingClientRect();
+    const mapBounds = this.#container.getBoundingClientRect();
+    const panelBounds =
+      this.#panel && !this.#panel.hidden
+        ? this.#panel.getBoundingClientRect()
+        : null;
     const bounds = this.#ring
       ? [...this.#ring.querySelectorAll('button')].map((node) =>
           node.getBoundingClientRect(),
@@ -1085,10 +1115,19 @@ export class AppView implements AppPort {
           }
         : {}),
       availableWidth:
-        production && wide ? width - Math.min(350, width * 0.4) - 24 : width,
-      availableHeight: production && !wide ? height - panelHeight - 16 : height,
+        production && wide
+          ? width - Math.min(350, width * 0.4) - 24
+          : panelBounds && panelBounds.left > mapBounds.left + width * 0.5
+            ? Math.max(1, panelBounds.left - mapBounds.left - 8)
+            : width,
+      availableHeight:
+        production && !wide
+          ? height - panelHeight - 16
+          : panelBounds && panelBounds.width > width * 0.6
+            ? Math.max(1, panelBounds.top - mapBounds.top - 8)
+            : height,
     };
-    const key = JSON.stringify(viewport);
+    const key = JSON.stringify([viewport, this.#mapFocusRevision]);
     if (key === this.#viewportKey) return;
     this.#viewportKey = key;
     if (typeof cancelAnimationFrame !== 'undefined')
