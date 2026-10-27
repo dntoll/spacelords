@@ -694,3 +694,36 @@ inte automatiskt version 3-sparningar till det äldre formatet.
 - Lokal rapport: `dist/deployments/34a1fa6e0ac3-1793039251932/report.json`.
   Manuell mobiltest följer. Fullständigt sluttest och merge inväntar separat
   beställning respektive godkännande.
+
+## Seriell flottanimation och händelseannonser: 2026-10-27
+
+- Publicerad källrevision: `8e064469542604c81530141c67722e2009ab929a`
+  från den separata branchen `codex/cinematic-turn-events`. En synlig
+  flottmarkör följer sin färd åt gången med kameran i fokus. Dolda
+  förflyttningar ger ingen animation eller väntan. Händelsetext visas centralt
+  och flyttas sedan till Events. Pause/Play, Next och Skip är borttagna.
+- Den tidigare branchen `codex/decisions-pending-actions` ligger kvar på
+  `7f1a24159e4776af374347b444144379f9a0e166`. Den har samma klient som den
+  tidigare publicerade källrevisionen `34a1fa6e0ac32e7f2fec3128214804fcbf526a72`.
+  Den kan återpubliceras enligt normalflödet om användaren vill återgå.
+  Inga sparformat eller rensningsregler ändras av denna leverans.
+- Deploycommit: `abfe6d8b75529ca5dce09dee54e1bb8e51c91388`.
+  Webbplatsrepots tidigare revision: `4536e20b2138c66ea42451e8da63aa1fc6c9c019`.
+  Endast `spacelords/` ändrades. Källrepots `main` är oförändrad.
+- Regressionstestet verifierade den oönskade kontrollmenyn före ändringen.
+  Riktade modell- och vytester skyddar gruppordning, stillastående övriga
+  markörer, dold sikt, kamerafokus, annonseringssteg, sparning före
+  presentation, upptäcktsavbrott och återställning. Tolv riktade mobilfall i
+  Chromium och WebKit passerade, inklusive orienteringsbyte under presentation,
+  textens landning, långa listor, omladdning och minskad rörelse.
+  Skärmbilder av förflyttning och båda textstegen granskades.
+- `deploy:quick` avslutades med `verified`. Formatering, ESLint, typkontroll,
+  520 snabba tester inom 20 sekunder, verktygskontroller, Pages-integration och
+  två mobilkontroller passerade. Ytterligare två mobilkontroller passerade live.
+  [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/40463730361)
+  lyckades. Livefilerna matchade kontrollsummorna, och befintliga
+  webbplatsadresser, omdirigering och innehållstyper verifierades. Ingen
+  navigation, rotfil, DNS- eller Pages-inställning ändrades.
+- Lokal rapport: `dist/deployments/8e0644695426-1793083894287/report.json`.
+  Manuell mobiltest följer. Fullständigt sluttest och merge inväntar separat
+  beställning respektive godkännande.
