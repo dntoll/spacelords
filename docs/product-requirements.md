@@ -582,19 +582,26 @@ inventering och ersatt katalogordning.
 
 ## Events och vägledning i vyerna
 
-| Kravnamn                    | Status                     | Krav                                                                                                                                                                                                                                                                                         |
-| --------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `end-turn-vid-kartval`      | Fullständigt implementerat | End turn syns och har egen plats även när en planet, flotta, handelsrutt eller destination är vald. Informationspanelen kan rullas utan att täcka knappen.                                                                                                                                   |
-| `sekventiella-arshandelser` | Fullständigt implementerat | Efter avslutat år visas händelser i den ordning de inträffade, en i taget med 1,5 sekunders mellanrum. Pause/Play, Next och Skip styr uppspelningen. Aktuell rad och händelseräknare visas. End turn är spärrad under uppspelningen. Upptäckts- och stridsavbrott behålls före årets avslut. |
-| `handelser-pa-kartan`       | Fullständigt implementerat | Kartan visar och markerar platsen för aktuell händelse. Globala händelser saknar kartmarkering. Listan ligger under kartan på stående mobil och bredvid på liggande mobil och bredare skärmar. Efter uppspelningen återställs tidigare vy, giltiga val och kamera.                           |
+| Kravnamn                          | Status                     | Krav                                                                                                                                                                                                                                                                                                            |
+| --------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `end-turn-vid-kartval`            | Fullständigt implementerat | End turn syns och har egen plats även när en planet, flotta, handelsrutt eller destination är vald. Informationspanelen kan rullas utan att täcka knappen.                                                                                                                                                      |
+| `sekventiella-arshandelser`       | Fullständigt implementerat | Efter avslutat år annonseras händelser en i taget i den ordning de inträffade. Varje text flyttas sedan till Events innan nästa visas. Presentationen går automatiskt utan Pause/Play, Next eller Skip. End turn är spärrad medan presentationen pågår. Upptäckts- och stridsavbrott behålls före årets avslut. |
+| `handelser-pa-kartan`             | Fullständigt implementerat | Kartan visar och markerar platsen för aktuell händelse. Globala händelser saknar kartmarkering. Listan ligger under kartan på stående mobil och bredvid på liggande mobil och bredare skärmar. Efter uppspelningen återställs tidigare vy, giltiga val och kamera.                                              |
+| `en-flotta-i-taget`               | Fullständigt implementerat | En synlig flottmarkör åt gången följer sin färd med kameran i fokus. Hela den visade färden slutförs innan nästa flottmarkör rör sig. Spelets förflyttning, upptäckter och strider behåller sina regler.                                                                                                        |
+| `osynliga-flottor-utan-animation` | Fullständigt implementerat | Dolda flottors förflyttningar animeras inte och ger ingen kameraflytt eller animationsväntan. Fientliga steg visas bara när båda ändarna är synliga.                                                                                                                                                            |
+| `handelseannonsering`             | Fullständigt implementerat | Händelser visas som tydlig text mitt på skärmen ovanpå gränssnittet. Efter en kort lästid flyttas texten ned till Events och blir en rad där. Därefter visas nästa händelse. Vid minskad rörelse behålls information och resultat utan förflyttningsanimation.                                                  |
+
+Ändring 2026-10-27: den tidigare menyn med Pause/Play, Next och Skip tas bort
+på uttrycklig beställning. `handelseannonsering` ersätter det tidigare
+1,5-sekunderssteget i `sekventiella-arshandelser`.
 
 Ändring 2026-10-26: `handelser-grupperade-per-ar-och-typ` ersätts av
 `sekventiella-arshandelser`. Events visar bara senaste året i händelseordning,
 även Population changes med +0. Äldre händelser behålls i sparningen. Listans
 storlek följer årets innehåll och tillgänglig plats, med intern rullning när
 det behövs. `end-turn-vid-kartval` ersätter döljandet av End turn i
-`fokuserat-kartval`. Årets resultat bevaras även om uppspelningen hoppas över
-eller sidan laddas om. Äldre sparade spel fungerar fortsatt utan rensning.
+`fokuserat-kartval`. Årets resultat bevaras även om sidan laddas om under
+presentationen. Äldre sparade spel fungerar fortsatt utan rensning.
 
 `senaste-aret-i-events`, `utvikbara-events`, `rundkontroller-pa-fler-vyer` och
 `beslutsvagledning-i-vyn` är **Fullständigt implementerat**. Events visar

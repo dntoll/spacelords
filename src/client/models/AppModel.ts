@@ -1,5 +1,9 @@
 import { EventPlayback, type EventPlaybackSnapshot } from './EventPlayback.js';
 import type {
+  TurnMovementPlayback,
+  TurnMovement,
+} from './TurnMovementPlayback.js';
+import type {
   ExplorationOrder,
   SavedTurnSimulation,
 } from './TurnSimulation.js';
@@ -90,6 +94,7 @@ export interface SaveSlotSnapshot {
 }
 
 export interface AppReadModel {
+  readonly turnMovement: TurnMovement | null;
   readonly eventPlayback: EventPlaybackSnapshot | null;
   readonly wrecks: readonly WreckSnapshot[];
   readonly shipyards: readonly ShipyardSnapshot[];
@@ -163,6 +168,8 @@ export interface AppReadModel {
 }
 
 export class AppModel {
+  #movementPlayback: TurnMovementPlayback | null = null;
+  #movementOrigin: AppReadModel | null = null;
   #eventPlayback: EventPlayback | null = null;
   #eventCamera: Camera | null = null;
   #turnContext: {
@@ -283,6 +290,8 @@ export class AppModel {
     this.#mapProjectId = null;
     this.#game = game;
     this.#eventPlayback = null;
+    this.#movementPlayback = null;
+    this.#movementOrigin = null;
     this.#eventCamera = null;
     this.#turnContext = null;
     this.#salvageSelection = null;
@@ -348,6 +357,20 @@ export class AppModel {
 
   // mvc-arkitektur: no write operations or hidden world data cross into views.
   get snapshot(): AppReadModel {
+    if (this.#movementPlayback && this.#movementOrigin) {
+      return Object.freeze({
+        ...this.#movementOrigin,
+        screen: 'map',
+        phase: 'simulating',
+        turnMovement: this.#movementPlayback.current,
+        camera: this.#eventCamera!.snapshot,
+        selected: null,
+        mapFleetId: this.#movementPlayback.current?.fleetId ?? null,
+        fleets: this.#movementPlayback.fleets,
+        pirates: this.#movementPlayback.pirates,
+        destinationFleetId: null,
+      });
+    }
     const decisions = this.#game.decisions;
     const projectSupply =
       (this.#screen === 'planet' && this.#planetTab === 'queue') ||
@@ -355,6 +378,7 @@ export class AppModel {
         ? this.#game.projectSupply(this.#game.planetAt(this.#selected)?.id)
         : [];
     return Object.freeze({
+      turnMovement: null,
       eventPlayback: this.#eventPlayback?.snapshot ?? null,
       wrecks: this.#game.wrecks,
       shipyards: this.#game.shipyards,
@@ -1091,7 +1115,12 @@ export class AppModel {
     this.#game.unmuteDecision(id);
   }
   requestEndTurn(): boolean {
-    if (this.#eventPlayback || this.#game.phase !== 'planning') return false;
+    if (
+      this.#eventPlayback ||
+      this.#movementPlayback ||
+      this.#game.phase !== 'planning'
+    )
+      return false;
     this.#pendingEndTurn = this.#game.decisions.some(needsAttention);
     return !this.#pendingEndTurn;
   }
@@ -1276,7 +1305,7 @@ export class AppModel {
     this.#game.clearDestination(id);
   }
   startTurn(): void {
-    if (this.#eventPlayback) return;
+    if (this.#eventPlayback || this.#movementPlayback) return;
     this.#turnContext = {
       screen: this.#screen,
       selected: this.#selected,
@@ -1365,13 +1394,9 @@ export class AppModel {
     this.#focusEvent();
   }
 
-  toggleEventPlayback(): void {
-    this.#eventPlayback?.togglePause();
-  }
-
-  advanceEventPlayback(manual = false): void {
+  advanceEventPlayback(): void {
     if (!this.#eventPlayback) return;
-    if (!this.#eventPlayback.advance(manual)) this.finishEventPlayback();
+    if (!this.#eventPlayback.advance()) this.finishEventPlayback();
     else this.#focusEvent();
   }
 
@@ -1414,6 +1439,33 @@ export class AppModel {
         ? context.salvageSelection
         : null;
     this.#camera.restore(context.camera);
+  }
+
+  beginMovementPlayback(
+    playback: TurnMovementPlayback,
+    origin: AppReadModel,
+  ): void {
+    this.#movementPlayback = playback;
+    this.#movementOrigin = origin;
+    this.#eventCamera = new Camera(
+      this.#game.galaxy.homePlanet.position,
+      this.#game.galaxy.radius,
+    );
+  }
+
+  focusTurnMovement(movement: TurnMovement): void {
+    this.#movementPlayback!.begin(movement);
+    this.#eventCamera!.focus(movement.from);
+  }
+
+  completeTurnMovement(): void {
+    this.#movementPlayback!.complete();
+  }
+
+  endMovementPlayback(): void {
+    this.#movementPlayback = null;
+    this.#movementOrigin = null;
+    this.#eventCamera = null;
   }
 
   salvageAtPoint(point: Point): string | null {

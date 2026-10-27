@@ -12,6 +12,8 @@ import { HexGeometry, type Point } from '../models/HexCoordinate.js';
 import type { MapCell } from '../models/Galaxy.js';
 import type { IntentHandler, MapPort } from './ViewContracts.js';
 import type { TurnFrame } from '../models/Game.js';
+import { FleetMapLayout } from '../models/FleetMapLayout.js';
+import { pirateAsFleet } from '../models/PirateFleet.js';
 
 const STAR_MAP_LABEL =
   'Star map. Click a fleet or trade route to select it. Drag a selected owned planet to another owned planet to create a route. Press R to start a route from the selected owned planet, then choose its target. Drag a fleet onto a route to assign it, or elsewhere to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.';
@@ -28,6 +30,12 @@ export class GalaxyMapView implements MapPort {
   #ready = false;
   #starSprite: p5.Image | null = null;
   #descriptionScreen: AppReadModel['screen'] | null = null;
+  #movement: {
+    movement: TurnFrame['movements'][number];
+    progress: number;
+  } | null = null;
+  #movementFrame = 0;
+  #finishMovement: (() => void) | null = null;
 
   constructor(container: HTMLElement, emit: IntentHandler) {
     this.#container = container;
@@ -73,12 +81,20 @@ export class GalaxyMapView implements MapPort {
   }
 
   render(model: AppReadModel): void {
+    if (
+      this.#movement?.movement.fleetId !== model.turnMovement?.fleetId ||
+      this.#movement?.movement.to.key !== model.turnMovement?.to.key
+    )
+      this.#movement = null;
     this.#model = model;
     if (this.#ready && !this.#disposed) void this.#instance.redraw();
   }
 
   dispose(): void {
     this.#disposed = true;
+    window.cancelAnimationFrame(this.#movementFrame);
+    this.#finishMovement?.();
+    this.#finishMovement = null;
     this.#observer.disconnect();
     this.#events.abort();
     this.#instance.remove();
@@ -86,15 +102,72 @@ export class GalaxyMapView implements MapPort {
   }
 
   animateTurnStep(frame: TurnFrame): Promise<void> {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    const movement = frame.movements[0];
+    if (
+      this.#disposed ||
+      !movement ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    )
       return Promise.resolve();
-    void frame;
-    return new Promise((resolve) => window.setTimeout(resolve, 300));
+    return new Promise((resolve) => {
+      this.#finishMovement = resolve;
+      let started: number | null = null;
+      const draw = (now: number) => {
+        if (this.#disposed) {
+          resolve();
+          return;
+        }
+        if (this.#ready) {
+          started ??= now;
+          const progress = Math.min(1, (now - started) / 400);
+          this.#movement = { movement, progress };
+          void this.#instance.redraw();
+          if (progress === 1) {
+            this.#finishMovement = null;
+            resolve();
+            return;
+          }
+        }
+        this.#movementFrame = window.requestAnimationFrame(draw);
+      };
+      this.#movementFrame = window.requestAnimationFrame(draw);
+    });
   }
 
   #draw(sketch: p5): void {
-    const model = this.#model;
-    if (!model || this.#disposed) return;
+    const original = this.#model;
+    if (!original || this.#disposed) return;
+    const movementPoints = new Map<string, Point>();
+    let model = original;
+    if (this.#movement) {
+      const { movement, progress } = this.#movement;
+      const from = HexGeometry.toPoint(movement.from),
+        to = HexGeometry.toPoint(movement.to);
+      const center = {
+        x: from.x + (to.x - from.x) * progress,
+        y: from.y + (to.y - from.y) * progress,
+      };
+      const marker = FleetMapLayout.markers(
+        [...original.fleets, ...original.pirates.map(pirateAsFleet)],
+        [],
+        original.camera.zoom,
+      ).find((candidate) => candidate.fleet.id === movement.fleetId);
+      if (marker)
+        movementPoints.set(movement.fleetId, {
+          x: center.x + marker.point.x - from.x,
+          y: center.y + marker.point.y - from.y,
+        });
+      model = { ...original, camera: { ...original.camera, center } };
+    }
+    if (this.#canvas) {
+      if (this.#movement) {
+        this.#canvas.dataset.movingFleet = this.#movement.movement.fleetId;
+        this.#canvas.dataset.movingProgress = String(this.#movement.progress);
+      } else {
+        delete this.#canvas.dataset.movingFleet;
+        delete this.#canvas.dataset.movingProgress;
+      }
+    }
     if (this.#descriptionScreen !== model.screen) {
       sketch.describe(
         model.screen === 'fleets'
@@ -165,7 +238,7 @@ export class GalaxyMapView implements MapPort {
           model.camera.zoom,
           model.screen === 'fleets',
         );
-    renderMapOverlays(sketch, model);
+    renderMapOverlays(sketch, model, movementPoints);
     for (const marker of salvageMarkers(
       model.wrecks ?? [],
       model.shipyards ?? [],

@@ -19,7 +19,7 @@ import type { SavedGame } from '../../src/client/models/SaveRepository.js';
 afterEach(() => vi.useRealTimers());
 
 describe('sekventiella-arshandelser', () => {
-  it('plays only the completed year in occurrence order and pauses manual steps', () => {
+  it('announces and files only the completed year in occurrence order', () => {
     const events = [
       { id: 'old', round: 1, text: 'Old event' },
       { id: 'build', round: 2, text: 'Build event' },
@@ -37,15 +37,17 @@ describe('sekventiella-arshandelser', () => {
       'arrival',
     ]);
     expect(playback.current?.id).toBe('build');
-    playback.togglePause();
+    expect(playback.snapshot.stage).toBe('announcing');
     playback.advance();
     expect(playback.current?.id).toBe('build');
-    playback.advance(true);
+    expect(playback.snapshot.stage).toBe('filing');
+    playback.advance();
     expect(playback.current?.id).toBe('population');
-    expect(playback.snapshot.paused).toBe(true);
-    playback.togglePause();
-    expect(playback.advance()).toBe(true);
+    expect(playback.snapshot.stage).toBe('announcing');
+    playback.advance();
+    playback.advance();
     expect(playback.current?.id).toBe('arrival');
+    expect(playback.advance()).toBe(true);
     expect(playback.advance()).toBe(false);
     expect(events).toHaveLength(4);
     expect(new EventPlayback(3, events).current).toBeUndefined();
@@ -73,7 +75,7 @@ describe('sekventiella-arshandelser', () => {
     return { model, controller, emit, render };
   }
 
-  it('uses 1500 ms steps, blocks orders, restores the previous screen and stops on disposal', async () => {
+  it('handelseannonsering: holds announcements before filing, blocks orders, restores the screen and stops on disposal', async () => {
     const { model, controller, emit, render } = controlledTurn();
     await vi.advanceTimersByTimeAsync(0);
     expect(model.snapshot.eventPlayback?.index).toBe(0);
@@ -84,14 +86,16 @@ describe('sekventiella-arshandelser', () => {
     emit({ type: 'open-fleets' });
     expect(model.snapshot.round).toBe(round);
     expect(model.snapshot.screen).toBe('map');
-    await vi.advanceTimersByTimeAsync(1499);
+    await vi.advanceTimersByTimeAsync(1399);
+    expect(model.snapshot.eventPlayback?.stage).toBe('announcing');
+    await vi.advanceTimersByTimeAsync(1);
+    expect(model.snapshot.eventPlayback?.stage).toBe('filing');
+    expect(model.snapshot.eventPlayback?.index).toBe(0);
+    await vi.advanceTimersByTimeAsync(449);
     expect(model.snapshot.eventPlayback?.index).toBe(0);
     await vi.advanceTimersByTimeAsync(1);
     expect(model.snapshot.eventPlayback?.index).toBe(1);
-    emit({ type: 'playback-toggle' });
-    await vi.advanceTimersByTimeAsync(5000);
-    expect(model.snapshot.eventPlayback?.index).toBe(1);
-    emit({ type: 'playback-skip' });
+    await vi.advanceTimersByTimeAsync(1850);
     expect(model.snapshot.eventPlayback).toBeNull();
     expect(model.snapshot.screen).toBe('research');
     expect(model.snapshot.events).toEqual(history);
@@ -103,7 +107,7 @@ describe('sekventiella-arshandelser', () => {
     expect(render).toHaveBeenCalledTimes(renders);
   });
 
-  it('Next pauses and natural completion restores the original camera and selection', () => {
+  it('natural completion restores the original camera and selection', () => {
     const model = new AppModel();
     model.pan({ x: 50, y: -30 });
     model.zoom(0.5, { x: 70, y: -20 });
@@ -113,11 +117,6 @@ describe('sekventiella-arshandelser', () => {
     model.beginEventPlayback();
     expect(model.snapshot.eventPlayback).not.toBeNull();
     expect(model.requestEndTurn()).toBe(false);
-    model.advanceEventPlayback(true);
-    if (model.snapshot.eventPlayback) {
-      expect(model.snapshot.eventPlayback.paused).toBe(true);
-      model.toggleEventPlayback();
-    }
     while (model.snapshot.eventPlayback) model.advanceEventPlayback();
     expect(model.snapshot.camera).toEqual(before.camera);
     expect(model.snapshot.selected?.position).toEqual(

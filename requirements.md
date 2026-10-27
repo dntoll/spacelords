@@ -42,9 +42,16 @@ Se [hela visionen](docs/game-vision.md).
   efter varje hexsteg. Enhetstester och mobilflöden i Chromium och WebKit är verifierade.
   Äldre spel får inga pirater. Se [spelreglerna](docs/space-pirates.md).
 
+- **Flottanimation och händelseannonser:** `en-flotta-i-taget`,
+  `osynliga-flottor-utan-animation` och `handelseannonsering` är
+  **Fullständigt implementerat**. Kameran följer en flottas synliga färd åt
+  gången. Dolda rörelser ger ingen animation eller väntan. Händelser annonseras
+  centralt och flyttas till listan automatiskt. Pause/Play, Next och Skip är
+  borttagna på uttrycklig beställning. Se [Events](docs/events-and-guidance.md).
+
 - **Events:** `end-turn-vid-kartval`, `sekventiella-arshandelser` och
   `handelser-pa-kartan` är **Fullständigt implementerat**. End turn syns även
-  med kartval. Årets händelser spelas upp en efter en med paus och kartfokus;
+  med kartval. Årets händelser annonseras centralt och flyttas till Events;
   listan visar bara senaste året i händelseordning. Stående mobil har listan
   under kartan, liggande mobil och bredare skärmar bredvid. Detta ersätter
   `handelser-grupperade-per-ar-och-typ`. Se [Events](docs/events-and-guidance.md).

@@ -1,12 +1,16 @@
 import { pirateAsFleet } from '../models/PirateFleet.js';
 import { decisionScreen, needsAttention } from '../models/Decisions.js';
-import { HexGeometry } from '../models/HexCoordinate.js';
+import { HexGeometry, type Point } from '../models/HexCoordinate.js';
 import type p5 from 'p5';
 import type { AppReadModel } from '../models/AppModel.js';
 import { renderMapFleets } from './FleetMapView.js';
 import { renderPlanetOrders } from './PlanetOrderView.js';
 
-export function renderMapOverlays(sketch: p5, model: AppReadModel): void {
+export function renderMapOverlays(
+  sketch: p5,
+  model: AppReadModel,
+  movementPoints: ReadonlyMap<string, Point> = new Map(),
+): void {
   if (model.screen === 'map')
     renderPlanetOrders(sketch, model.planetOrders, model.camera.zoom);
   if (model.screen === 'route' || model.screen === 'production') {
@@ -57,5 +61,6 @@ export function renderMapOverlays(sketch: p5, model: AppReadModel): void {
           .flatMap((decision) => (decision.fleetId ? [decision.fleetId] : []))
       : [],
     (model.pirates ?? []).map((pirate) => pirate.id),
+    movementPoints,
   );
 }

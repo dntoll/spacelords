@@ -21,6 +21,27 @@ const events: readonly GameEvent[] = Object.freeze([
 ]);
 
 describe('senaste-aret-i-events / sekventiella-arshandelser', () => {
+  it('handelseannonsering: presents events automatically without playback buttons', () => {
+    const { root, model, view } = setup();
+    view.render({
+      ...model.snapshot,
+      screen: 'map',
+      events,
+      eventPlayback: {
+        round: 16,
+        events: events.slice(1),
+        index: 0,
+        stage: 'announcing' as const,
+      },
+    });
+    expect(root.querySelector('.event-playback-controls')).toBeNull();
+    expect(
+      [...root.querySelectorAll('button')].some((button) =>
+        ['Pause', 'Play', 'Next', 'Skip'].includes(button.textContent),
+      ),
+    ).toBe(false);
+    view.dispose();
+  });
   it('waits until the year is finished before presenting its generated events', () => {
     const { root, model, view } = setup();
     view.render({
@@ -57,13 +78,13 @@ describe('senaste-aret-i-events / sekventiella-arshandelser', () => {
     view.dispose();
   });
 
-  it('reveals one event at a time and marks the current row without losing button focus', () => {
+  it('handelseannonsering: files a row only after its announcement and preserves the log during the flight', () => {
     const { root, model, view } = setup();
     const playback = {
       round: 16,
       events: events.slice(1),
       index: 0,
-      paused: false,
+      stage: 'announcing' as const,
     };
     view.render({
       ...model.snapshot,
@@ -71,12 +92,11 @@ describe('senaste-aret-i-events / sekventiella-arshandelser', () => {
       events,
       eventPlayback: playback,
     });
-    expect(root.querySelectorAll('[data-event-id]')).toHaveLength(1);
-    expect(
-      root
-        .querySelector('[aria-current="step"]')
-        ?.getAttribute('data-event-id'),
-    ).toBe('p1');
+    expect(root.querySelectorAll('[data-event-id]')).toHaveLength(0);
+    const announcement = root.querySelector<HTMLElement>(
+      '.event-announcement',
+    )!;
+    expect(announcement.textContent).toBe(events[1]!.text);
     expect(root.querySelector<HTMLDetailsElement>('.turn-console')!.open).toBe(
       true,
     );
@@ -86,31 +106,40 @@ describe('senaste-aret-i-events / sekventiella-arshandelser', () => {
     expect(root.querySelector<HTMLElement>('.selection-panel')!.hidden).toBe(
       true,
     );
-    const next = root.querySelector<HTMLButtonElement>('[aria-label="Next"]')!;
-    next.focus();
     view.render({
       ...model.snapshot,
       screen: 'map',
       events,
-      eventPlayback: { ...playback, index: 1, paused: true },
+      eventPlayback: { ...playback, stage: 'filing' },
     });
-    expect(root.querySelectorAll('[data-event-id]')).toHaveLength(2);
-    expect(
-      root
-        .querySelector('[aria-current="step"]')
-        ?.getAttribute('data-event-id'),
-    ).toBe('b1');
-    expect(document.activeElement).toBe(next);
-    expect(root.querySelector('[aria-label="Play"]')).not.toBeNull();
-    expect(root.querySelector('.event-focus')?.textContent).toBe(
-      'Global event',
+    expect(root.querySelector('.event-announcement')).toBe(announcement);
+    expect(announcement.dataset.stage).toBe('filing');
+    expect(root.querySelectorAll('[data-event-id]')).toHaveLength(0);
+    view.render({
+      ...model.snapshot,
+      screen: 'map',
+      events,
+      eventPlayback: { ...playback, index: 1 },
+    });
+    expect(root.querySelectorAll('[data-event-id]')).toHaveLength(1);
+    expect(root.querySelector('[data-event-id="p1"]')?.textContent).toBe(
+      events[1]!.text,
     );
+    expect(root.querySelector('.event-announcement')?.textContent).toBe(
+      events[2]!.text,
+    );
+    expect(
+      root.querySelector(
+        '[aria-label="Pause"], [aria-label="Next"], [aria-label="Skip"]',
+      ),
+    ).toBeNull();
     view.render({
       ...model.snapshot,
       screen: 'map',
       events,
       eventPlayback: null,
     });
+    expect(root.querySelector('.event-announcement')).toBeNull();
     expect(root.querySelector<HTMLElement>('.selection-panel')!.hidden).toBe(
       false,
     );

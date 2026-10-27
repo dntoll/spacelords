@@ -68,27 +68,19 @@ export async function endTurn(page: Page): Promise<void> {
       .click();
   for (let interruptions = 0; interruptions < 32; interruptions++) {
     await expect
-      .poll(async () => {
-        if (await page.locator('.discovery-dialog[open]').isVisible())
-          return 'discovery';
-        if (
-          await page.getByRole('group', { name: 'Event playback' }).isVisible()
-        )
-          return 'playback';
-        return (await page
-          .getByRole('button', { name: 'End turn', exact: true })
-          .isEnabled())
-          ? 'planning'
-          : 'running';
-      })
+      .poll(
+        async () => {
+          if (await page.locator('.discovery-dialog[open]').isVisible())
+            return 'discovery';
+          return (await page
+            .getByRole('button', { name: 'End turn', exact: true })
+            .isEnabled())
+            ? 'planning'
+            : 'running';
+        },
+        { timeout: 25000 },
+      )
       .not.toBe('running');
-    const skip = page
-      .getByRole('group', { name: 'Event playback' })
-      .getByRole('button', { name: 'Skip', exact: true });
-    if (await skip.isVisible()) {
-      await skip.click();
-      break;
-    }
     const ignore = page
       .locator('.discovery-dialog[open]')
       .getByRole('button', { name: /^(Ignore|Continue)$/, exact: true });

@@ -793,9 +793,10 @@ ingen ersättning har beställts.
 `end-turn-vid-kartval`, `sekventiella-arshandelser`, `handelser-pa-kartan`
 och ändringen av `senaste-aret-i-events` är **Fullständigt implementerat**.
 AppModel äger ett separat EventPlayback med frysta ögonblicksbilder.
-AppController driver 1,5-sekundersstegen och städar timern vid paus,
-överhoppning och dispose. Vyer skickar intents och ändrar aldrig modellen.
-Under uppspelning spärras andra spelhandlingar. Next går framåt och pausar.
+AppController driver de automatiska stegen och städar timern vid dispose.
+Vyer skickar intents och ändrar aldrig modellen. Under presentationen spärras
+andra spelhandlingar. Kontrollmenyn med Pause/Play, Next och Skip är borttagen.
+Detta ersätter den tidigare timern på 1,5 sekunder och dess kontroll-intents.
 
 Simuleringen avslutas och sparas innan uppspelningen börjar. Spelregler,
 årsnummer och ekonomi ändras inte av uppspelningen. Den är sessionsbunden
@@ -812,8 +813,38 @@ ritar ring och etikett från läsmodellen; HTML visar lista och kontroller.
 
 Uppspelningens kamera är separat från planeringskameran. Föregående vy,
 giltiga val och kamerans exakta centrum och zoom återställs vid avslut.
-Orienteringsbyte ändrar layout utan att återställa aktuell händelse eller paus.
+Orienteringsbyte ändrar layout utan att återställa aktuell händelse.
 Listan växer med senaste årets innehåll och rullas internt vid maxhöjd.
 Enhetstester skyddar ordning, timer, spärrar, sparkompatibilitet, positioner
 och återställning. Riktade mobiltester skyddar stående/liggande layout,
 kartmarkering, kontroller, rullning och omladdning i Chromium och WebKit.
+
+## Seriell flottpresentation och händelseannonsering
+
+`en-flotta-i-taget`, `osynliga-flottor-utan-animation` och
+`handelseannonsering` är **Fullständigt implementerat**.
+TurnMovementPlayback samlar synliga förflyttningssteg fram till nästa
+upptäckts-/stridsavbrott eller årets avslut och grupperar dem per flotta.
+Alla steg tillämpas i simuleringens ordning exakt en gång. Resultatet sparas
+innan presentationen börjar. Flottornas visade färder ändrar inga order,
+rörelsebudgetar eller stridsresultat och sparas inte som pågående spelmekanik.
+
+Kontrollern visar hela en flottas inspelade färd före nästa. Endast egna
+flottor eller fientliga steg som finns i siktsnapshoten både före och efter
+steget lämnas till animationen. Dolda steg får ingen timer eller kameraflytt.
+AppModel lämnar en fryst läsmodell för presentationen, och vyerna interpolerar
+en markör samt följer den med en tillfällig kamera. Varje hexsteg tar 400 ms.
+Vid dispose avbryts requestAnimationFrame och väntande animationslöften löses.
+
+EventPlayback har stegen announcing (1 400 ms) och filing (450 ms).
+AppView visar den aktuella texten i ett fast HTML-lager ovanpå gränssnittet,
+beräknar destinationen från en osynlig platshållare i loggen och använder en
+CSS-övergång för att flytta texten dit. Bara redan färdigannonserade händelser
+har synliga rader i loggen. ResizeObserver räknar om landningspunkten vid
+orienterings- och storleksändring. prefers-reduced-motion utelämnar
+markörinterpolation och textförflyttning men behåller lästid och årsresultat.
+
+Arbetet görs på `codex/cinematic-turn-events` från `7f1a241`. Tidigare
+presentation finns kvar på `codex/decisions-pending-actions`; grenbytet
+kräver ingen ändring eller rensning av sparade spel. Detta möjliggör återgång
+om användaren föredrar den tidigare presentationen.

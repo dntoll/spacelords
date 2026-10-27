@@ -157,7 +157,8 @@ GameEvent --> HexCoordinate : plats när händelsen inträffade
 note right of GameEvent
   Publiceras när händelsen inträffar.
   Simulering återgår direkt till planering.
-  Händelser visas därefter en i taget med kartfokus.
+  Synliga flottfärder visas en flotta åt gången.
+  Händelser annonseras därefter centralt och flyttas till loggen.
   Globala och äldre händelser kan sakna position.
 end note
 class Player {

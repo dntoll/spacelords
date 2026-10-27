@@ -4,13 +4,13 @@ export interface EventPlaybackSnapshot {
   readonly round: number;
   readonly events: readonly GameEvent[];
   readonly index: number;
-  readonly paused: boolean;
+  readonly stage: 'announcing' | 'filing';
 }
 
 /** sekventiella-arshandelser: presentation never advances the game simulation. */
 export class EventPlayback {
   #index = 0;
-  #paused = false;
+  #stage: EventPlaybackSnapshot['stage'] = 'announcing';
   readonly #events: readonly GameEvent[];
 
   constructor(
@@ -27,7 +27,7 @@ export class EventPlayback {
       round: this.round,
       events: this.#events,
       index: this.#index,
-      paused: this.#paused,
+      stage: this.#stage,
     });
   }
 
@@ -35,14 +35,13 @@ export class EventPlayback {
     return this.#events[this.#index];
   }
 
-  togglePause(): void {
-    this.#paused = !this.#paused;
-  }
-
-  advance(manual = false): boolean {
-    if (this.#paused && !manual) return true;
-    if (manual) this.#paused = true;
+  advance(): boolean {
+    if (this.#stage === 'announcing') {
+      this.#stage = 'filing';
+      return true;
+    }
     this.#index += 1;
+    this.#stage = 'announcing';
     return this.#index < this.#events.length;
   }
 }

@@ -1,4 +1,5 @@
 import type { AppModel } from '../models/AppModel.js';
+import { TurnMovementPlayback } from '../models/TurnMovementPlayback.js';
 import type { AppIntent, AppPort } from '../views/ViewContracts.js';
 import type { Point } from '../models/HexCoordinate.js';
 import { MapGesture } from './MapGesture.js';
@@ -52,24 +53,15 @@ export class AppController {
       }
     } catch (error) {
       console.warn(error);
+      this.#model.endMovementPlayback();
       this.#model.reportError(error);
       this.#view.render(this.#model.snapshot);
     }
   }
 
   #handleIntent(intent: AppIntent): void {
-    if (intent.type.startsWith('playback-')) {
-      if (!this.#model.snapshot.eventPlayback) return;
-      if (intent.type === 'playback-toggle') this.#model.toggleEventPlayback();
-      else if (intent.type === 'playback-next')
-        this.#model.advanceEventPlayback(true);
-      else if (intent.type === 'playback-skip')
-        this.#model.finishEventPlayback();
-      this.#view.render(this.#model.snapshot);
-      this.#schedulePlayback();
+    if (this.#model.snapshot.eventPlayback || this.#model.snapshot.turnMovement)
       return;
-    }
-    if (this.#model.snapshot.eventPlayback) return;
     let mapOrder = false;
     if (!intent.type.startsWith('research-pointer-'))
       this.#researchGesture.cancel();
@@ -586,13 +578,16 @@ export class AppController {
   #schedulePlayback(): void {
     clearTimeout(this.#playbackTimer);
     const playback = this.#model.snapshot.eventPlayback;
-    if (this.#disposed || !playback || playback.paused) return;
-    this.#playbackTimer = setTimeout(() => {
-      if (this.#disposed) return;
-      this.#model.advanceEventPlayback();
-      this.#view.render(this.#model.snapshot);
-      this.#schedulePlayback();
-    }, 1500);
+    if (this.#disposed || !playback) return;
+    this.#playbackTimer = setTimeout(
+      () => {
+        if (this.#disposed) return;
+        this.#model.advanceEventPlayback();
+        this.#view.render(this.#model.snapshot);
+        this.#schedulePlayback();
+      },
+      playback.stage === 'announcing' ? 1400 : 450,
+    );
   }
 
   async #runTurn(resume = false): Promise<void> {
@@ -607,27 +602,45 @@ export class AppController {
       if (resume) this.#model.continueTurn();
       else this.#model.startTurn();
       this.#view.render(this.#model.snapshot);
+      const origin = this.#model.snapshot;
+      const movementPlayback = new TurnMovementPlayback(origin);
       let frame;
       while (!this.#disposed && (frame = this.#model.nextTurnFrame())) {
-        if (frame.movements.length || frame.combats?.length)
-          await (this.#view.animateTurnStep?.(frame) ?? Promise.resolve());
-        if (this.#disposed) return;
+        const before = this.#model.snapshot;
         this.#model.applyTurnFrame(frame);
-        if (this.#model.snapshot.phase === 'interrupted') {
-          this.#model.save();
-          this.#view.render(this.#model.snapshot);
-          return;
-        }
-        this.#view.render(this.#model.snapshot);
+        const after = this.#model.snapshot;
+        movementPlayback.record(frame, before, after);
+        if (after.phase === 'interrupted') break;
       }
       if (this.#disposed) return;
-      this.#model.finishTurn();
+      if (this.#model.snapshot.phase !== 'interrupted')
+        this.#model.finishTurn();
       this.#model.save();
+      const tracks = movementPlayback.tracks;
+      if (tracks.length) {
+        this.#model.beginMovementPlayback(movementPlayback, origin);
+        for (const track of tracks) {
+          for (const movement of track) {
+            this.#model.focusTurnMovement(movement);
+            this.#view.render(this.#model.snapshot);
+            await (this.#view.animateTurnStep?.({ movements: [movement] }) ??
+              Promise.resolve());
+            if (this.#disposed) return;
+            this.#model.completeTurnMovement();
+          }
+        }
+        this.#model.endMovementPlayback();
+      }
+      if (this.#model.snapshot.phase === 'interrupted') {
+        this.#view.render(this.#model.snapshot);
+        return;
+      }
       this.#model.beginEventPlayback();
       this.#view.render(this.#model.snapshot);
       this.#schedulePlayback();
     } catch (error) {
       console.warn(error);
+      this.#model.endMovementPlayback();
       this.#model.reportError(error);
       this.#view.render(this.#model.snapshot);
     } finally {

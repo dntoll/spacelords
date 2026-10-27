@@ -2868,33 +2868,46 @@ body:has(.discovery-controls) .selection-panel {
     );
   }
 }
-.event-playback-controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
+.event-destination {
+  visibility: hidden;
 }
-.event-playback-controls .button {
-  min-height: 44px;
-  padding: 4px 8px;
-}
-.event-progress {
-  flex-basis: 100%;
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-.event-focus {
-  margin: 4px 0;
-  font-size: 0.7rem;
+/* handelseannonsering: hold above the entire interface, then land in the log. */
+.event-announcement {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  width: min(620px, calc(100vw - 32px));
+  padding: 20px 24px;
+  border: 1px solid #ffdc88;
+  border-radius: 12px;
+  background: #09121bf5;
+  box-shadow: 0 8px 48px #000b;
   color: #ffdc88;
-  flex-shrink: 0;
+  font-size: clamp(1rem, 3vw, 1.4rem);
+  line-height: 1.4;
+  text-align: center;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  transition:
+    transform 450ms ease-in,
+    opacity 450ms ease-in;
 }
-.event-entries [aria-current='step'] {
-  color: #ffdc88;
-  background: #ffdc8812;
-  border-left: 3px solid #ffdc88;
-  padding-left: 4px;
+.event-announcement[data-stage='filing'] {
+  transform: translate(-50%, -50%)
+    translate(var(--event-target-x, 0px), var(--event-target-y, 0px))
+    scale(var(--event-target-scale, 1));
+  opacity: 0.35;
+}
+@media (prefers-reduced-motion: reduce) {
+  .event-announcement {
+    transition: none;
+  }
+  .event-announcement[data-stage='filing'] {
+    transform: translate(-50%, -50%);
+    opacity: 0;
+  }
 }
 /* sekventiella-arshandelser / handelser-pa-kartan: the map and log share space. */
 .map-page.is-event-playback {

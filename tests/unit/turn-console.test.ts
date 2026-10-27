@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { collectTurnFrames, turnFrames } from '../fixtures/turn-steps.js';
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+afterEach(() => vi.useRealTimers());
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
@@ -84,6 +85,7 @@ describe('handelser / arsrundor-och-order', () => {
     expect(restored.events).toEqual(state.events);
   });
   it('shows a persistent console ordered by year instead of a dialog and disables End turn during animation', async () => {
+    vi.useFakeTimers();
     const root = document.createElement('div');
     document.body.replaceChildren(root);
     const model = new AppModel();
@@ -108,16 +110,18 @@ describe('handelser / arsrundor-och-order', () => {
       true,
     );
     resume();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await vi.advanceTimersByTimeAsync(0);
     expect(root.querySelector('[role="dialog"]')).toBeNull();
     expect(root.textContent).not.toContain('Continue');
     const log = root.querySelector('[role="log"]')!;
     expect(log).not.toBeNull();
-    expect(log.textContent).toContain('Vesta');
+    expect(root.querySelector('.event-announcement')?.textContent).toContain(
+      'Vesta',
+    );
     expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
       true,
     );
-    root.querySelector<HTMLButtonElement>('[aria-label="Skip"]')!.click();
+    await vi.advanceTimersByTimeAsync(model.snapshot.events.length * 1850);
     expect(
       [...log.querySelectorAll<HTMLElement>('[data-event-id]')].map(
         (item) => item.dataset.eventId,

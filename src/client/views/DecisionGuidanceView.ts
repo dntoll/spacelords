@@ -27,7 +27,8 @@ export function renderDecisionGuidance(
   model: AppReadModel,
   emit: IntentHandler,
 ): HTMLElement | null {
-  if (model.phase !== 'planning' || model.eventPlayback) return null;
+  if (model.phase !== 'planning' || model.eventPlayback || model.turnMovement)
+    return null;
   const decisions = model.decisions.filter(
     (decision) =>
       needsAttention(decision) && decisionScreen(decision) === model.screen,

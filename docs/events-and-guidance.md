@@ -24,20 +24,34 @@ Kraven nedan är **Fullständigt implementerat**.
   plats för knappen och kan rullas utan att täcka den. Events kan fortfarande
   döljas av ett kartval utanför uppspelningen. Beslutsvarningen behålls.
 - `sekventiella-arshandelser`: efter helt avslutat år visas händelserna en i
-  taget i verklig ordning, första direkt och nästa efter 1,5 sekunder. Aktuell
-  rad markeras och hålls synlig. Pause/Play styr automatiken, Next visar nästa
-  händelse och pausar, Skip visar hela årets lista och avslutar uppspelningen.
-  Räknaren visar aktuell händelse och årets antal. End turn är synlig men
-  spärrad under simulering och uppspelning. Inga nya order utförs under
-  uppspelning. Upptäckts- och stridsavbrott behålls före årets avslut.
+  taget i verklig ordning. End turn är synlig men spärrad under simulering och
+  presentation. Inga nya order utförs medan presentationen pågår.
+  Upptäckts- och stridsavbrott behålls före årets avslut.
+- `en-flotta-i-taget`: varje synlig flottmarkör följer hela sin färd innan
+  nästa flottmarkör animeras. Kameran följer den rörliga flottan. Spelets
+  förflyttning, strider och upptäckter behåller sina befintliga regler.
+- `osynliga-flottor-utan-animation`: dolda flottors rörelser animeras inte,
+  flyttar inte kameran och ger ingen animationsväntan. En fientlig
+  förflyttning visas bara när flottan syns vid båda ändarna av steget.
+- `handelseannonsering`: varje annan händelse annonseras som stor text mitt
+  på skärmen ovanpå gränssnittet. Texten ligger kvar läsbar i 1,4 sekunder
+  och flyttas sedan ned till sin plats i Events under 0,45 sekunder. Först
+  därefter läggs raden i listan och nästa händelse annonseras. Det finns ingen
+  meny med Pause/Play, Next eller Skip. Vid minskad rörelse behålls text och
+  resultat medan rörelseanimationerna utelämnas.
 - `handelser-pa-kartan`: en platsbunden händelse centreras och markeras med
-  ring och etikett på kartan samtidigt som dess rad visas. Globala händelser
-  visas som Global event utan påhittad kartposition. Listan ligger under
+  ring och etikett på kartan medan dess text annonseras. Globala händelser
+  annonseras utan påhittad kartposition. Listan ligger under
   kartan på stående mobil och bredvid på liggande mobil och bredare skärmar.
   Den växer efter årets innehåll upp till tillgängligt utrymme, med intern
   rullning därefter. Tidigare vy, giltiga objektval och kamera återställs när
-  uppspelningen är klar eller hoppas över. Det gäller även Research,
+  presentationen är klar. Det gäller även Research,
   Decisions och planetvyn. Händelser avslöjar ingen dold information.
+
+Ändring 2026-10-27: `handelseannonsering` ersätter kontrollmenyn och det
+fasta 1,5-sekunderssteget i `sekventiella-arshandelser` på uttrycklig beställning.
+`en-flotta-i-taget` ersätter den tidigare samtidiga presentationen av
+flottmarkörer; simuleringens regler ändras inte. Äldre sparningar bevaras.
 
 Ändring 2026-10-26: detta ersätter `handelser-grupperade-per-ar-och-typ`,
 historikfönstret med äldre år i `senaste-aret-i-events` och delen av

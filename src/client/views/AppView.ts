@@ -69,6 +69,7 @@ export class AppView implements AppPort {
   #eventsExpanded = false;
   #playingEvents = false;
   #consoleObserver: ResizeObserver | null = null;
+  #announcementObserver: ResizeObserver | null = null;
 
   constructor(
     root: HTMLElement,
@@ -101,7 +102,7 @@ export class AppView implements AppPort {
       previousActions?.querySelector<HTMLDetailsElement>('.turn-console');
     if (previousConsole && !previousConsole.hidden && !this.#playingEvents)
       this.#eventsExpanded = previousConsole.open;
-    this.#playingEvents = !!model.eventPlayback;
+    this.#playingEvents = !!(model.eventPlayback || model.turnMovement);
     const previousEventScroll =
       previousActions?.querySelector<HTMLElement>('[role="log"]')?.scrollTop ??
       0;
@@ -475,8 +476,11 @@ export class AppView implements AppPort {
       this.#root
         .querySelector('.map-page')
         ?.classList.toggle('is-event-playback', !!model.eventPlayback);
+      this.#root
+        .querySelector('.map-page')
+        ?.classList.toggle('is-turn-movement', !!model.turnMovement);
       this.#map?.render(model);
-      if (model.eventPlayback) {
+      if (model.eventPlayback || model.turnMovement) {
         this.#ring?.remove();
         this.#ring = null;
         this.#ringKey = '';
@@ -488,6 +492,7 @@ export class AppView implements AppPort {
         this.#coordinates.textContent = `X ${model.camera.center.x.toFixed(0)} · Y ${model.camera.center.y.toFixed(0)}`;
       const key = JSON.stringify({
         eventPlayback: !!model.eventPlayback,
+        turnMovement: !!model.turnMovement,
         salvageSelection: model.salvageSelection,
         shipyardPlacement: model.shipyardPlacement,
         wrecks: model.wrecks,
@@ -536,15 +541,16 @@ export class AppView implements AppPort {
             )
             ?.scrollIntoView?.({ block: 'nearest' });
       }
-      const selected = !model.eventPlayback && !this.#panel?.hidden;
-      if (model.eventPlayback && this.#panel) this.#panel.hidden = true;
+      const selected = !this.#playingEvents && !this.#panel?.hidden;
+      if (this.#playingEvents && this.#panel) this.#panel.hidden = true;
       this.#root
         .querySelector('.map-page')
         ?.classList.toggle('has-selection', selected);
       for (const control of this.#root.querySelectorAll<HTMLElement>(
         '.turn-console',
       ))
-        control.hidden = selected && !model.eventPlayback;
+        control.hidden =
+          !!model.turnMovement || (selected && !model.eventPlayback);
     }
     if (
       isMapScreen(model.screen) ||
@@ -559,7 +565,8 @@ export class AppView implements AppPort {
     for (const control of this.#root.querySelectorAll<HTMLButtonElement>(
       'header button',
     ))
-      control.disabled = !!model.eventPlayback;
+      control.disabled = this.#playingEvents;
+    this.#renderEventAnnouncement(model);
     const nameInput =
       this.#root.querySelector<HTMLInputElement>('.fleet-name-input');
     if (nameInput && model.fleetNameEdit) {
@@ -650,27 +657,10 @@ export class AppView implements AppPort {
     if (!log) return;
     const console = log.closest<HTMLDetailsElement>('.turn-console')!;
     const playback = model.eventPlayback;
+    console.dataset.playing = String(!!playback);
     const open = !!playback || this.#eventsExpanded;
     if (console.open !== open) console.open = open;
     if (console.hidden) return;
-    const controls = console.querySelector<HTMLElement>(
-      '.event-playback-controls',
-    )!;
-    controls.hidden = !playback;
-    const focus = console.querySelector<HTMLElement>('.event-focus')!;
-    focus.hidden = !playback;
-    if (playback) {
-      const current = playback.events[playback.index]!;
-      controls.querySelector('.event-progress')!.textContent =
-        `${playback.index + 1} / ${playback.events.length}`;
-      const toggle =
-        controls.querySelector<HTMLButtonElement>('.playback-toggle')!;
-      toggle.textContent = playback.paused ? 'Play' : 'Pause';
-      toggle.setAttribute('aria-label', toggle.textContent);
-      focus.textContent = current.position
-        ? `Event ${playback.index + 1} · HEX ${current.position.q},${current.position.r}`
-        : 'Global event';
-    }
     const layout = () => {
       const pageHeight =
         console.closest<HTMLElement>(
@@ -708,7 +698,7 @@ export class AppView implements AppPort {
         : model.events.filter((event) => event.round < model.round);
     const latestYear = Math.max(model.round - 1, history.at(-1)?.round ?? 0);
     const events = playback
-      ? playback.events.slice(0, playback.index + 1)
+      ? playback.events.slice(0, playback.index)
       : history.filter((event) => event.round === latestYear);
     const activeId = playback?.events[playback.index]?.id;
     const key = `${events.at(-1)?.id ?? 'empty'}:${model.round}:${activeId ?? ''}`;
@@ -721,10 +711,78 @@ export class AppView implements AppPort {
     if (events.length) log.querySelector('.console-empty')?.remove();
     else if (!log.querySelector('.console-empty'))
       log.prepend(element('p', 'console-empty', 'No events yet.'));
-    list.replaceChildren(...renderEvents(events, activeId));
+    list.replaceChildren(
+      ...renderEvents(events, playback?.events[playback.index]),
+    );
+    if (playback) {
+      log.querySelector('.console-empty')?.remove();
+    }
     log.dataset.lastEvent = key;
     log.dataset.round = String(model.round);
     if (follow) log.scrollTop = log.scrollHeight;
+  }
+
+  #renderEventAnnouncement(model: AppReadModel): void {
+    const playback = model.eventPlayback;
+    const current = playback?.events[playback.index];
+    let announcement = this.#root.querySelector<HTMLElement>(
+      '.event-announcement',
+    );
+    if (!playback || !current) {
+      announcement?.remove();
+      this.#announcementObserver?.disconnect();
+      this.#announcementObserver = null;
+      return;
+    }
+    if (announcement?.dataset.announcementId !== current.id) {
+      announcement?.remove();
+      this.#announcementObserver?.disconnect();
+      announcement = element('div', 'event-announcement', current.text);
+      announcement.dataset.announcementId = current.id;
+      announcement.setAttribute('role', 'status');
+      this.#root.append(announcement);
+      if (typeof ResizeObserver !== 'undefined') {
+        this.#announcementObserver = new ResizeObserver(() =>
+          this.#positionAnnouncement(),
+        );
+        this.#announcementObserver.observe(this.#root);
+        const log = this.#root.querySelector('[role="log"]');
+        if (log) this.#announcementObserver.observe(log);
+      }
+    }
+    this.#positionAnnouncement();
+    announcement.dataset.stage = playback.stage;
+  }
+
+  #positionAnnouncement(): void {
+    const announcement = this.#root.querySelector<HTMLElement>(
+      '.event-announcement',
+    );
+    const target = this.#root.querySelector<HTMLElement>('.event-destination');
+    const log = target?.closest('[role="log"]');
+    if (!announcement || !target || !log) return;
+    const row = target.getBoundingClientRect(),
+      bounds = log.getBoundingClientRect();
+    const top = Math.max(row.top, bounds.top),
+      bottom = Math.min(row.bottom, bounds.bottom);
+    announcement.style.setProperty(
+      '--event-target-x',
+      `${row.left + row.width / 2 - window.innerWidth / 2}px`,
+    );
+    announcement.style.setProperty(
+      '--event-target-y',
+      `${(top + bottom) / 2 - window.innerHeight / 2}px`,
+    );
+    announcement.style.setProperty(
+      '--event-target-scale',
+      String(
+        Math.min(
+          1,
+          row.width / (announcement.offsetWidth || 1),
+          Math.max(1, bottom - top) / (announcement.offsetHeight || 1),
+        ),
+      ),
+    );
   }
 
   #renderNotice(model: AppReadModel): void {
@@ -757,6 +815,7 @@ export class AppView implements AppPort {
       cancelAnimationFrame(this.#resizeFrame);
     this.#mapObserver?.disconnect();
     this.#consoleObserver?.disconnect();
+    this.#announcementObserver?.disconnect();
     this.#researchObserver?.disconnect();
     this.#researchViewport = null;
     this.#decisionDialog?.close();

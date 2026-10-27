@@ -33,8 +33,14 @@ export function renderMapFleets(
   routeView: readonly TradeRouteSnapshot[] | null = null,
   attentionFleetIds: readonly string[] = [],
   pirateIds: readonly string[] = [],
+  movementPoints: ReadonlyMap<string, Point> = new Map(),
 ): void {
-  const markers = FleetMapLayout.markers(fleets, routeView ?? [], zoom);
+  const markers = FleetMapLayout.markers(fleets, routeView ?? [], zoom).map(
+    (marker) => ({
+      ...marker,
+      point: movementPoints.get(marker.fleet.id) ?? marker.point,
+    }),
+  );
   const destinationFor = (fleet: FleetSnapshot) =>
     interaction.fleetDragging && interaction.mapFleetId === fleet.id
       ? interaction.fleetDestinationPreview
@@ -124,7 +130,11 @@ export function renderMapFleets(
       sketch.circle(point.x, point.y, FleetMapLayout.hitRadius * 2);
       context?.setLineDash([]);
     }
-    if (hostile || (routeView && (fleet.routeId || availableTransport))) {
+    if (
+      hostile ||
+      movementPoints.has(fleet.id) ||
+      (routeView && (fleet.routeId || availableTransport))
+    ) {
       sketch.noStroke();
       const width = (fleet.name.length * 6.5 + 10) / zoom;
       sketch.fill('#0a1520ed');
