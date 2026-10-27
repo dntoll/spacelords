@@ -407,4 +407,11 @@ Fleet "1" *-- "0..1" StarSurvey
 StarSurvey --> Star
 SavedGame --> TerrainHex
 SavedGame --> StarSurvey
+Discovery --> GameEvent : händelseidentitet
+BattleReport --> GameEvent : händelseidentitet
+note right of TurnSimulation
+  gemensamt-handelseflode:
+  Visade händelser och aktiv hantering bevaras.
+  Alla val från avbrottet avslutas före fortsatt simulering.
+end note
 @enduml

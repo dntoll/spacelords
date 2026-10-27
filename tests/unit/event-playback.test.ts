@@ -151,7 +151,7 @@ describe('sekventiella-arshandelser', () => {
     emit({ type: 'confirm-end-turn' });
     await vi.advanceTimersByTimeAsync(0);
     expect(model.snapshot.phase).toBe('interrupted');
-    expect(model.snapshot.eventPlayback).toBeNull();
+    expect(model.snapshot.eventPlayback?.stage).toBe('awaiting-choice');
     expect(saved.state.phase).toBe('interrupted');
     const discovery = saved.state.events.find((event) =>
       event.text.startsWith('Pirate ship in sight'),
@@ -159,17 +159,18 @@ describe('sekventiella-arshandelser', () => {
     expect(discovery.position).toBeDefined();
     for (
       let attempt = 0;
-      attempt < 10 && model.snapshot.phase === 'interrupted';
+      attempt < 100 && model.snapshot.phase === 'interrupted';
       attempt++
     ) {
-      emit({ type: 'ignore-discoveries' });
-      await vi.advanceTimersByTimeAsync(0);
+      if (model.snapshot.eventPlayback?.stage === 'awaiting-choice')
+        emit({ type: 'ignore-discoveries' });
+      await vi.advanceTimersByTimeAsync(1850);
     }
     expect(
       model.snapshot.eventPlayback?.events.some(
         (event) => event.id === discovery.id,
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(saved.state.phase).toBe('planning');
     expect(saved.state.round).toBe(model.snapshot.round);
     expect(saved.state.events).toEqual(model.snapshot.events);

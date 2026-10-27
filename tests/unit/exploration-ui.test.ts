@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppController } from '../../src/client/controllers/AppController.js';
 import { AppView } from '../../src/client/views/AppView.js';
@@ -11,7 +11,10 @@ import type {
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { discoveryState } from '../fixtures/exploration.js';
 
-it('upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: controller saves before showing discovery and restores edited orders without repeating movement', async () => {
+afterEach(() => vi.useRealTimers());
+
+it('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: controller saves before showing discovery and restores edited orders without repeating movement', async () => {
+  vi.useFakeTimers();
   let saved: SavedGame = {
     lastPlayed: '2026-10-25T00:00:00Z',
     state: discoveryState(),
@@ -43,14 +46,17 @@ it('upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: control
   }
   const first = setup();
   first.emit({ type: 'confirm-end-turn' });
-  await vi.waitFor(() =>
-    expect(root.querySelector('.discovery-dialog[open]')).not.toBeNull(),
-  );
+  await vi.advanceTimersByTimeAsync(0);
+  expect(
+    root.querySelector('.event-announcement[data-stage="awaiting-choice"]'),
+  ).not.toBeNull();
+  expect(root.querySelector('.discovery-dialog')).toBeNull();
   expect(saved.state.phase).toBe('interrupted');
   expect(
     saved.state.events.some((event) => event.text.startsWith('Combat at')),
   ).toBe(false);
   first.emit({ type: 'handle-discoveries' });
+  await vi.advanceTimersByTimeAsync(450);
   expect(first.model.snapshot.mapFleetId).toBe('fleet-home');
   expect(
     first.model.snapshot.fleets.find((fleet) => fleet.id === 'other')!
@@ -73,16 +79,34 @@ it('upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: control
       .remainingMovement,
   ).toBe(2);
   restored.emit({ type: 'continue-turn' });
-  await vi.waitFor(() =>
-    expect(restored.model.snapshot.interruption?.battles?.length).toBe(1),
+  expect(restored.model.snapshot.phase).toBe('interrupted');
+  expect(restored.model.snapshot.eventPlayback?.stage).toBe('awaiting-choice');
+  expect(
+    saved.state.events.some((event) => event.text.startsWith('Combat at')),
+  ).toBe(false);
+  for (
+    let attempt = 0;
+    attempt < 30 && !restored.model.snapshot.interruption?.battles?.length;
+    attempt++
+  ) {
+    if (restored.model.snapshot.eventPlayback?.stage === 'awaiting-choice')
+      restored.emit({ type: 'ignore-discoveries' });
+    await vi.advanceTimersByTimeAsync(1850);
+  }
+  expect(restored.model.snapshot.interruption?.battles).toHaveLength(1);
+  expect(root.querySelector('.event-announcement')?.textContent).toContain(
+    'versus Space pirate',
   );
-  expect(root.querySelector('.discovery-dialog')?.textContent).toContain(
-    'Battle report',
-  );
-  restored.emit({ type: 'continue-turn' });
-  await vi.waitFor(() =>
-    expect(restored.model.snapshot.phase).toBe('planning'),
-  );
+  for (
+    let attempt = 0;
+    attempt < 30 && restored.model.snapshot.phase !== 'planning';
+    attempt++
+  ) {
+    if (restored.model.snapshot.eventPlayback?.stage === 'awaiting-choice')
+      restored.emit({ type: 'ignore-discoveries' });
+    await vi.advanceTimersByTimeAsync(1850);
+  }
+  expect(restored.model.snapshot.phase).toBe('planning');
   expect(saved.state.round).toBe(2);
   expect(
     saved.state.fleets.find((fleet) => fleet.id === 'other')!.position,

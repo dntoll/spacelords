@@ -24,6 +24,10 @@ export function renderMapEvent(sketch: p5, model: AppReadModel): void {
   sketch.fill('#ffdc88');
   sketch.textSize(12);
   sketch.textAlign(sketch.CENTER, sketch.CENTER);
-  sketch.text(`Event ${playback.index + 1}`, 0, 58);
+  sketch.text(
+    `Event ${(playback.history?.length ?? 0) + playback.index + 1}`,
+    0,
+    58,
+  );
   sketch.pop();
 }

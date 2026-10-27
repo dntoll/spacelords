@@ -5,7 +5,7 @@ import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
 import { pirateAsFleet } from '../../src/client/models/PirateFleet.js';
 import { selectMapPoint } from './map-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
-import { endTurn, startFirstSlot } from './save-helpers.js';
+import { endTurn, startFirstSlot, ignoreEventsUntil } from './save-helpers.js';
 import type { SavedGame } from '../../src/client/models/SaveRepository.js';
 
 async function load(page: Page, state: GameState) {
@@ -191,7 +191,7 @@ test('upptacktsavbrott / spara-avbrutet-ar: reload a year-end discovery without 
       .getByRole('button', { name: 'End turn anyway', exact: true })
       .click();
   const dialog = page.getByRole('dialog', {
-    name: 'New discoveries',
+    name: 'Planet discovered',
     exact: true,
   });
   await expect(dialog).toBeVisible();
@@ -201,7 +201,7 @@ test('upptacktsavbrott / spara-avbrutet-ar: reload a year-end discovery without 
   await page.reload();
   await startFirstSlot(page);
   await expect(dialog).toBeVisible();
-  await dialog.getByRole('button', { name: 'Ignore', exact: true }).click();
+  await ignoreEventsUntil(page);
   await expect.poll(async () => (await saved(page)).phase).toBe('planning');
   const after = await saved(page);
   expect(after.round).toBe(2);

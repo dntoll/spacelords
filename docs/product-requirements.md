@@ -608,7 +608,7 @@ inventering och ersatt katalogordning.
 | Kravnamn                          | Status                     | Krav                                                                                                                                                                                                                                                                                                                                                               |
 | --------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `end-turn-vid-kartval`            | Fullständigt implementerat | End turn syns och har egen plats även när en planet, flotta, handelsrutt eller destination är vald. Informationspanelen kan rullas utan att täcka knappen.                                                                                                                                                                                                         |
-| `sekventiella-arshandelser`       | Fullständigt implementerat | Efter avslutat år annonseras händelser en i taget i den ordning de inträffade. Varje text flyttas sedan till Events innan nästa visas. Presentationen går automatiskt utan Pause/Play, Next eller Skip. End turn är spärrad medan presentationen pågår. Upptäckts- och stridsavbrott behålls före årets avslut.                                                    |
+| `sekventiella-arshandelser`       | Fullständigt implementerat | Händelser annonseras en i taget i verklig ordning vid avbrott och efter årets slut. Varje text flyttas sedan till Events innan nästa visas. Presentationen går automatiskt utan Pause/Play, Next eller Skip. End turn är spärrad medan presentationen pågår. Upptäckts- och stridsavbrott behålls före årets avslut.                                               |
 | `handelser-pa-kartan`             | Fullständigt implementerat | Kartan visar och markerar platsen för aktuell händelse. Globala händelser saknar kartmarkering. Listan ligger under kartan på stående mobil och bredvid på liggande mobil och bredare skärmar. Efter uppspelningen återställs tidigare vy, giltiga val och kamera.                                                                                                 |
 | `en-flotta-i-taget`               | Fullständigt implementerat | En synlig flottmarkör åt gången följer sin färd med kameran i fokus. Hela den visade färden slutförs innan nästa flottmarkör rör sig. Spelets förflyttning, upptäckter och strider behåller sina regler.                                                                                                                                                           |
 | `osynliga-flottor-utan-animation` | Fullständigt implementerat | Dolda flottors förflyttningar animeras inte och ger ingen kameraflytt eller animationsväntan. Fientliga steg visas bara när båda ändarna är synliga.                                                                                                                                                                                                               |
@@ -648,6 +648,23 @@ Aktuell sikt ersätter tidigare utforskning som villkor för att se pirater.
 | `rymdpiraters-sparning`     | Fullständigt implementerat | Äldre spel får inga pirater. Nya spel bevarar piraternas position och förluster efter omladdning.                                                                                                       |
 
 Se [Space pirates](space-pirates.md) för stridsregler och exempel.
+
+## Gemensamt händelseflöde
+
+`gemensamt-handelseflode` — **Fullständigt implementerat**: upptäckter,
+piratkontakter och stridsrapporter visas en i taget genom Events, med
+kartmarkering, mer information och Handle eller Ignore. Året väntar på valet.
+Handle öppnar berörd flotta för order; Continue visar nästa obesvarade händelse.
+Ignore fortsätter utan orderändringar. Simuleringen fortsätter först när alla
+händelser från avbrottet är avklarade. Redan visade händelser annonseras inte
+igen efter året. Omladdning bevarar val och pågående hantering. Äldre spel
+bevaras. Se [Events](events-and-guidance.md).
+
+Ändring 2026-10-27: detta ersätter den separata upptäckts- och stridsdialogen
+samt gruppvalet för flera upptäckter. Kravnamnen `upptacktsavbrott`,
+`order-under-upptacktsavbrott`, `spara-avbrutet-ar` och
+`stridsrapport-i-dialog` behålls. `sekventiella-arshandelser` omfattar nu även
+presentation vid avbrott under året.
 
 ## Utforskning och upptäcktsavbrott
 

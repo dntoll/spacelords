@@ -1,5 +1,12 @@
 # Utforskning och upptäckter
 
+Ändring 2026-10-27: [gemensamt händelseflöde](events-and-guidance.md)
+förtydligar `upptacktsavbrott`, `order-under-upptacktsavbrott` och
+`spara-avbrutet-ar`. Varje händelse får eget Handle eller Ignore i Events.
+Continue efter hantering visar nästa obesvarade händelse från samma avbrott;
+först när alla är avklarade fortsätter strid och rörelse. Val och pågående
+hantering återställs vid omladdning.
+
 Ändring 2026-10-26: formuleringarna för `automatisk-hexutforskning` och
 `automatisk-stjarnutforskning` nedan ersätts av
 [områdesvis utforskning och stjärnvarv](galaxy-terrain.md#utforskning).

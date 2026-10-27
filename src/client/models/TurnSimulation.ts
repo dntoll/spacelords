@@ -4,6 +4,7 @@ import type { BattleReport } from './Salvage.js';
 export type ExplorationOrder = 'explore' | 'explore-stars';
 
 export interface Discovery {
+  readonly eventId?: string;
   readonly id: string;
   readonly kind: 'planet' | 'star' | 'pirate' | 'wreck';
   readonly name: string;
@@ -12,6 +13,8 @@ export interface Discovery {
 }
 
 export interface SavedTurnSimulation {
+  readonly presentedEventIds?: readonly string[];
+  readonly activeEventId?: string;
   readonly battles?: readonly BattleReport[];
   readonly economyApplied?: boolean;
   readonly remaining: readonly (readonly [string, number])[];
@@ -23,6 +26,8 @@ export interface SavedTurnSimulation {
 
 /** spara-avbrutet-ar: movement is spent once and survives order changes and reloads. */
 export class TurnSimulation {
+  readonly presentedEventIds = new Set<string>();
+  activeEventId: string | undefined;
   battles: readonly BattleReport[] = [];
   economyApplied = false;
   readonly remaining: Map<string, number>;
@@ -63,13 +68,23 @@ export class TurnSimulation {
     return (
       this.handling &&
       (this.otherFleets ||
-        this.discoveries.some((discovery) => discovery.fleetId === id) ||
-        this.battles.some((battle) => battle.fleetId === id))
+        this.discoveries.some(
+          (discovery) =>
+            discovery.fleetId === id &&
+            (!this.activeEventId || discovery.eventId === this.activeEventId),
+        ) ||
+        this.battles.some(
+          (battle) =>
+            battle.fleetId === id &&
+            (!this.activeEventId || battle.eventId === this.activeEventId),
+        ))
     );
   }
 
   snapshot(): SavedTurnSimulation {
     return Object.freeze({
+      presentedEventIds: Object.freeze([...this.presentedEventIds]),
+      ...(this.activeEventId ? { activeEventId: this.activeEventId } : {}),
       battles: Object.freeze(
         this.battles.map((battle) =>
           Object.freeze({
@@ -106,6 +121,11 @@ export class TurnSimulation {
   ): TurnSimulation {
     if (
       !saved ||
+      (saved.presentedEventIds !== undefined &&
+        (!Array.isArray(saved.presentedEventIds) ||
+          saved.presentedEventIds.some((id) => typeof id !== 'string'))) ||
+      (saved.activeEventId !== undefined &&
+        typeof saved.activeEventId !== 'string') ||
       !Array.isArray(saved.remaining) ||
       !Array.isArray(saved.discoveries) ||
       typeof saved.awaitingCombat !== 'boolean' ||
@@ -123,6 +143,8 @@ export class TurnSimulation {
         (!Array.isArray(saved.battles) ||
           saved.battles.some(
             (battle: BattleReport) =>
+              (battle.eventId !== undefined &&
+                typeof battle.eventId !== 'string') ||
               !contains(battle.position) ||
               !battle.title ||
               !battle.summary ||
@@ -140,6 +162,8 @@ export class TurnSimulation {
       ) ||
       saved.discoveries.some(
         (discovery: Discovery) =>
+          (discovery.eventId !== undefined &&
+            typeof discovery.eventId !== 'string') ||
           !['planet', 'star', 'pirate', 'wreck'].includes(discovery.kind) ||
           !discovery.id ||
           !discovery.name ||
@@ -149,6 +173,9 @@ export class TurnSimulation {
     )
       throw new Error('Invalid interrupted year.');
     const simulation = new TurnSimulation(saved.remaining);
+    for (const id of (saved.presentedEventIds ?? []) as readonly string[])
+      simulation.presentedEventIds.add(id);
+    simulation.activeEventId = saved.activeEventId;
     for (const [
       id,
       count,

@@ -6,7 +6,7 @@ import { salvageState } from '../fixtures/salvage.js';
 import { discoveryState } from '../fixtures/exploration.js';
 import { selectMapPoint } from './map-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
-import { endTurn, startFirstSlot } from './save-helpers.js';
+import { endTurn, startFirstSlot, ignoreEventsUntil } from './save-helpers.js';
 
 async function load(page: Page, state: GameState) {
   await page.addInitScript((state) => {
@@ -173,10 +173,10 @@ test('stridsrapport-i-dialog / spara-bargning-och-stridsavbrott: battle report s
     await warning
       .getByRole('button', { name: 'End turn anyway', exact: true })
       .click();
-  await page
-    .locator('.discovery-dialog[open]')
-    .getByRole('button', { name: 'Ignore', exact: true })
-    .click();
+  await ignoreEventsUntil(
+    page,
+    page.getByRole('dialog', { name: 'Battle report', exact: true }),
+  );
   const report = page.getByRole('dialog', {
     name: 'Battle report',
     exact: true,
@@ -188,10 +188,7 @@ test('stridsrapport-i-dialog / spara-bargning-och-stridsavbrott: battle report s
     page.getByRole('dialog', { name: 'Battle report', exact: true }),
   ).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('battle-report.png') });
-  await page
-    .getByRole('dialog', { name: 'Battle report', exact: true })
-    .getByRole('button', { name: 'Continue', exact: true })
-    .click();
+  await ignoreEventsUntil(page);
   await page.getByRole('button', { name: /^Decisions/ }).click();
   await expect(
     page.getByRole('button', { name: 'End turn', exact: true }),

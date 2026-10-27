@@ -1,10 +1,85 @@
 import { expect, test } from '@playwright/test';
 import { discoveryState } from '../fixtures/exploration.js';
 import type { SavedGame } from '../../src/client/models/SaveRepository.js';
-import { startFirstSlot, endTurn } from './save-helpers.js';
+import { startFirstSlot, endTurn, ignoreEventsUntil } from './save-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
+import { Game } from '../../src/client/models/Game.js';
 
-test('upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: Handle edits another fleet, reload restores the pause and Continue resolves contact once', async ({
+test('gemensamt-handelseflode: event information and keyboard actions fit on small phones across rotation', async ({
+  page,
+}, testInfo) => {
+  const game = Game.restore(discoveryState());
+  game.startTurn();
+  while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
+  await page.addInitScript((state) => {
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({ lastPlayed: '2026-10-27', state }),
+    );
+  }, game.exportState());
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('./');
+  await startFirstSlot(page);
+  const announcement = page.locator('.event-announcement-interactive');
+  await expect(announcement).toHaveAttribute('data-stage', 'awaiting-choice');
+  const eventId = await announcement.getAttribute('data-announcement-id');
+  for (const viewport of [
+    { width: 320, height: 568 },
+    { width: 667, height: 320 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await expect(
+      announcement.getByRole('button', { name: 'Handle', exact: true }),
+    ).toBeInViewport();
+    await expect(
+      announcement.getByRole('button', { name: 'Ignore', exact: true }),
+    ).toBeInViewport();
+    await expect
+      .poll(async () => {
+        const card = (await announcement.boundingBox())!;
+        const end = (await page
+          .getByRole('button', { name: 'End turn', exact: true })
+          .boundingBox())!;
+        return (
+          card.y + card.height <= end.y &&
+          card.x >= 0 &&
+          card.x + card.width <= viewport.width
+        );
+      })
+      .toBe(true);
+    for (const button of await announcement.getByRole('button').all()) {
+      const box = (await button.boundingBox())!;
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.width).toBeGreaterThanOrEqual(44);
+    }
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth > innerWidth ||
+          document.documentElement.scrollHeight > innerHeight,
+      ),
+    ).toBe(false);
+    await page.screenshot({
+      path: testInfo.outputPath(`event-choice-${viewport.width}.png`),
+    });
+  }
+  await expect(announcement).toHaveAttribute('data-announcement-id', eventId!);
+  const ignore = announcement.getByRole('button', {
+    name: 'Ignore',
+    exact: true,
+  });
+  await ignore.focus();
+  await ignore.press('Enter');
+  await expect(announcement).not.toHaveAttribute(
+    'data-announcement-id',
+    eventId!,
+  );
+  const log = page.getByRole('log', { name: 'Game events' });
+  await expect(log.locator(`[data-event-id="${eventId}"]`)).toHaveCount(1);
+});
+
+test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: Handle edits another fleet, reload restores the pause and Continue resolves contact once', async ({
   page,
 }, testInfo) => {
   await page.addInitScript((state) => {
@@ -27,7 +102,7 @@ test('upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: Handl
       .getByRole('button', { name: 'End turn anyway', exact: true })
       .click();
   const dialog = page.getByRole('dialog', {
-    name: 'Pirate ship in sight',
+    name: 'Wreck discovered',
     exact: true,
   });
   await expect(dialog).toBeVisible();
@@ -72,10 +147,14 @@ test('upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: Handl
     path: testInfo.outputPath('discovery-handling.png'),
   });
   await controls.getByRole('button', { name: 'Continue', exact: true }).click();
-  await page
-    .getByRole('dialog', { name: 'Battle report', exact: true })
-    .getByRole('button', { name: 'Continue', exact: true })
-    .click();
+  await ignoreEventsUntil(
+    page,
+    page.getByRole('dialog', { name: 'Battle report', exact: true }),
+  );
+  await expect(
+    page.getByRole('dialog', { name: 'Battle report', exact: true }),
+  ).toContainText('wrecks remain');
+  await ignoreEventsUntil(page);
   await expect
     .poll(async () => {
       const saved = await page.evaluate(

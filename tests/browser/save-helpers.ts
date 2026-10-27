@@ -1,6 +1,6 @@
 import { selectMapFleet } from './fleet-helpers.js';
 import { selectMapObject } from './map-helpers.js';
-import { expect, type Page } from '@playwright/test';
+import { expect, type Page, type Locator } from '@playwright/test';
 import {
   PREREQUISITES,
   TECHNOLOGIES,
@@ -111,30 +111,48 @@ export async function endTurn(page: Page): Promise<void> {
     await warning
       .getByRole('button', { name: 'End turn anyway', exact: true })
       .click();
-  for (let interruptions = 0; interruptions < 32; interruptions++) {
-    await expect
-      .poll(
-        async () => {
-          if (await page.locator('.discovery-dialog[open]').isVisible())
-            return 'discovery';
-          return (await page
-            .getByRole('button', { name: 'End turn', exact: true })
-            .isEnabled())
-            ? 'planning'
-            : 'running';
-        },
-        { timeout: 25000 },
-      )
-      .not.toBe('running');
-    const ignore = page
-      .locator('.discovery-dialog[open]')
-      .getByRole('button', { name: /^(Ignore|Continue)$/, exact: true });
-    if (!(await ignore.isVisible())) break;
-    await ignore.click();
-  }
+  await ignoreEventsUntil(page);
   await expect(
     page.getByRole('button', { name: 'End turn', exact: true }),
   ).toBeEnabled();
   if (onMap && !(await page.locator('.map-page').count()))
     await page.getByRole('button', { name: 'Star map', exact: true }).click();
+}
+
+/** gemensamt-handelseflode: acknowledge individual events until the requested checkpoint. */
+export async function ignoreEventsUntil(
+  page: Page,
+  stop?: Locator,
+): Promise<void> {
+  for (let count = 0; count < 128; count++) {
+    const status = async () => {
+      if (stop && (await stop.isVisible())) return 'stop';
+      if (
+        await page
+          .locator('.event-announcement[data-stage="awaiting-choice"]')
+          .isVisible()
+      )
+        return 'event';
+      return (await page
+        .getByRole('button', { name: 'End turn', exact: true })
+        .isEnabled())
+        ? 'planning'
+        : 'running';
+    };
+    await expect.poll(status, { timeout: 25000 }).not.toBe('running');
+    if ((await status()) !== 'event') return;
+    const announcement = page.locator(
+      '.event-announcement[data-stage="awaiting-choice"]',
+    );
+    const id = await announcement.getAttribute('data-announcement-id');
+    await announcement
+      .getByRole('button', { name: 'Ignore', exact: true })
+      .click();
+    await expect(
+      page.locator(
+        `.event-announcement[data-announcement-id="${id}"][data-stage="awaiting-choice"]`,
+      ),
+    ).toHaveCount(0);
+  }
+  throw new Error('Event review did not complete.');
 }

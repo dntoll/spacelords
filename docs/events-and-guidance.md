@@ -4,6 +4,24 @@ Kraven nedan är **Fullständigt implementerat**.
 
 ## Händelser
 
+- `gemensamt-handelseflode`: upptäckter, piratkontakter och stridsrapporter
+  använder samma kartmarkering, textruta och förflyttning till Events som andra
+  händelser. De visas en i taget i verklig händelseordning, med Handle och Ignore
+  samt HEX, berörd flotta, återstående rörelse och relevanta strids- och
+  vrakuppgifter. Endast information spelaren redan får se visas.
+  Året pausas vid samma tillfällen som tidigare. Rutan väntar tills spelaren
+  väljer. Ignore flyttar händelsen till listan och visar nästa. Handle flyttar
+  den till listan och öppnar berörd flotta för order; saknas en flotta fokuseras
+  platsen. Give orders to other fleets behålls som uttryckligt val. Continue
+  avslutar hanteringen och visar nästa obesvarade händelse. Först när hela
+  avbrottet är avklarat fortsätter simuleringen, med uppskjuten strid före nästa
+  rörelse. Ignore i en stridsrapport fortsätter utan nya order och ändrar inte
+  resultatet. Inget annonseras två gånger. Långa uppgifter rullas internt;
+  knapparna är åtkomliga med touch och tangentbord och har minst 44 px träffyta.
+  End turn är synlig och spärrad under hela flödet. Omladdning återställer nästa
+  obesvarade händelse eller pågående hantering, utan upprepad rörelse, strid
+  eller produktion. Äldre sparningar kan fortsatt läsas.
+
 - `senaste-aret-i-events`: Events visar bara senaste årets händelser, i den
   ordning de inträffade. Äldre år behålls i sparningen men tar ingen plats i
   listan. Alla senaste årets händelser finns kvar, även fler än 100 och
@@ -23,8 +41,8 @@ Kraven nedan är **Fullständigt implementerat**.
   och destinationsval i samtliga kartlägen. Informationspanelen lämnar egen
   plats för knappen och kan rullas utan att täcka den. Events kan fortfarande
   användas vid kartval enligt `gemensam-events-panel`. Beslutsvarningen behålls.
-- `sekventiella-arshandelser`: efter helt avslutat år visas händelserna en i
-  taget i verklig ordning. End turn är synlig men spärrad under simulering och
+- `sekventiella-arshandelser`: nya händelser visas en i taget i verklig
+  ordning fram till varje avbrott och efter årets slut. End turn är synlig men spärrad under simulering och
   presentation. Inga nya order utförs medan presentationen pågår.
   Upptäckts- och stridsavbrott behålls före årets avslut.
 - `en-flotta-i-taget`: varje synlig flottmarkör följer hela sin färd innan
@@ -37,7 +55,7 @@ Kraven nedan är **Fullständigt implementerat**.
   textruta. För platsbundna händelser ligger hela rutan under platsens ring och
   etikett, så att händelseplatsen förblir synlig och i fokus. Rutan följer
   platsen även när skärmen roteras. Globala händelser visas mitt på skärmen.
-  Texten ligger kvar läsbar i 1,4 sekunder
+  Vanliga händelsers text ligger kvar läsbar i 1,4 sekunder
   och flyttas sedan ned till sin plats i Events under 0,45 sekunder. Först
   därefter läggs raden i listan och nästa händelse annonseras. Det finns ingen
   meny med Pause/Play, Next eller Skip. Vid minskad rörelse behålls text och
@@ -50,6 +68,13 @@ Kraven nedan är **Fullständigt implementerat**.
   rullning därefter. Tidigare vy, giltiga objektval och kamera återställs när
   presentationen är klar. Det gäller även Research,
   Decisions och planetvyn. Händelser avslöjar ingen dold information.
+
+Ändring 2026-10-27: `gemensamt-handelseflode` ersätter den separata
+upptäckts- och stridsdialogen, gruppvalet för flera samtidiga upptäckter och
+återannonseringen efter årets slut. Det förtydligar `upptacktsavbrott`,
+`order-under-upptacktsavbrott`, `spara-avbrutet-ar`, `stridsrapport-i-dialog`,
+`sekventiella-arshandelser` och `handelseannonsering`. De stabila kravnamnen
+behålls, inklusive det historiska namnet `stridsrapport-i-dialog`.
 
 Ändring 2026-10-27: `handelseannonsering` ersätter kontrollmenyn och det
 fasta 1,5-sekunderssteget i `sekventiella-arshandelser` på uttrycklig beställning.

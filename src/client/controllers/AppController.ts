@@ -28,6 +28,7 @@ export class AppController {
   start(): void {
     this.#view.bind((intent) => this.#handle(intent));
     this.#view.render(this.#model.snapshot);
+    this.#schedulePlayback();
   }
 
   dispose(): void {
@@ -60,8 +61,25 @@ export class AppController {
   }
 
   #handleIntent(intent: AppIntent): void {
-    if (this.#model.snapshot.eventPlayback || this.#model.snapshot.turnMovement)
+    const playback = this.#model.snapshot.eventPlayback;
+    if (playback) {
+      if (
+        playback.stage === 'awaiting-choice' &&
+        ['handle-discoveries', 'ignore-discoveries'].includes(intent.type)
+      ) {
+        this.#model.chooseEvent(
+          intent.type === 'handle-discoveries' ? 'handle' : 'ignore',
+        );
+        this.#model.save();
+        this.#view.render(this.#model.snapshot);
+        this.#schedulePlayback();
+      } else if (intent.type === 'map-size') {
+        this.#model.resizeMap(intent.viewport);
+        this.#view.render(this.#model.snapshot);
+      }
       return;
+    }
+    if (this.#model.snapshot.turnMovement) return;
     let mapOrder = false;
     if (!intent.type.startsWith('research-pointer-'))
       this.#researchGesture.cancel();
@@ -124,8 +142,17 @@ export class AppController {
       case 'allow-other-fleet-orders':
         this.#model.allowOtherFleetOrders();
         break;
-      case 'ignore-discoveries':
       case 'continue-turn':
+        if (this.#model.snapshot.interruption?.handling) {
+          this.#model.continueEventHandling();
+          this.#model.save();
+          this.#view.render(this.#model.snapshot);
+          this.#schedulePlayback();
+          return;
+        }
+        void this.#runTurn(true);
+        return;
+      case 'ignore-discoveries':
         void this.#runTurn(true);
         return;
       case 'begin-fleet-rename':
@@ -272,6 +299,7 @@ export class AppController {
         break;
       case 'start-slot':
         this.#model.startSlot(intent.id);
+        this.#schedulePlayback();
         break;
       case 'request-clear-slot':
         this.#model.requestClearSlot(intent.id);
@@ -584,11 +612,23 @@ export class AppController {
   #schedulePlayback(): void {
     clearTimeout(this.#playbackTimer);
     const playback = this.#model.snapshot.eventPlayback;
-    if (this.#disposed || !playback) return;
+    if (this.#disposed) return;
+    if (!playback) {
+      if (
+        this.#model.snapshot.phase === 'interrupted' &&
+        !this.#model.snapshot.interruption?.handling
+      )
+        this.#playbackTimer = setTimeout(() => {
+          void this.#runTurn(true);
+        }, 0);
+      return;
+    }
+    if (playback.stage === 'awaiting-choice') return;
     this.#playbackTimer = setTimeout(
       () => {
         if (this.#disposed) return;
         this.#model.advanceEventPlayback();
+        this.#model.save();
         this.#view.render(this.#model.snapshot);
         this.#schedulePlayback();
       },
@@ -636,10 +676,6 @@ export class AppController {
           }
         }
         this.#model.endMovementPlayback();
-      }
-      if (this.#model.snapshot.phase === 'interrupted') {
-        this.#view.render(this.#model.snapshot);
-        return;
       }
       this.#model.beginEventPlayback();
       this.#view.render(this.#model.snapshot);

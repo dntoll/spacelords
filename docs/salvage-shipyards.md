@@ -1,5 +1,9 @@
 # Stridsrapporter, bärgning och varv
 
+Ändring 2026-10-27: `stridsrapport-i-dialog` behåller sitt stabila namn men
+stridsrapporten visas nu genom [gemensamt händelseflöde](events-and-guidance.md),
+med Handle och Ignore i Events. Ignore fortsätter utan orderändringar.
+
 Spelaren ska kunna läsa stridsresultat direkt, rädda vrak och återställa skepp i
 orbitala varv. Hemförda okända komponenter öppnar forskning utan vanliga förkunskaper.
 

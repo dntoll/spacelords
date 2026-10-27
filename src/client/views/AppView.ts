@@ -1,4 +1,4 @@
-import { discoveryDialog, discoveryControls } from './DiscoveryView.js';
+import { discoveryControls } from './DiscoveryView.js';
 import { pirateAsFleet } from '../models/PirateFleet.js';
 import { updateDecisionGuidance } from './DecisionGuidanceView.js';
 import {
@@ -100,6 +100,11 @@ export class AppView implements AppPort {
   }
 
   render(model: AppReadModel): void {
+    const currentEvent = model.eventPlayback?.events[model.eventPlayback.index];
+    this.#root.classList.toggle(
+      'has-interactive-event',
+      !!currentEvent?.decision,
+    );
     if (model.screen === 'saves') this.#fleetOrderScroll.clear();
     for (const toolbar of this.#root.querySelectorAll<HTMLElement>(
       '.fleet-order-toolbar',
@@ -654,9 +659,12 @@ export class AppView implements AppPort {
     if (editingName) delete active.dataset.rendering;
     this.#root.querySelector('.discovery-controls')?.remove();
     if (model.phase === 'interrupted' && model.interruption) {
-      if (model.interruption.handling)
+      if (
+        model.interruption.handling &&
+        !model.eventPlayback &&
+        !model.turnMovement
+      )
         this.#root.append(discoveryControls(model, this.#emit));
-      else this.#decisionDialog = discoveryDialog(model, this.#emit);
     } else if (model.pendingEndTurn) {
       this.#decisionDialog = renderTurnWarning(model, this.#emit);
     } else if (model.pendingResearchRemoval) {
@@ -722,10 +730,17 @@ export class AppView implements AppPort {
     const history =
       model.phase === 'planning'
         ? model.events
-        : model.events.filter((event) => event.round < model.round);
+        : model.events.filter(
+            (event) =>
+              event.round < model.round ||
+              model.presentedEventIds.includes(event.id),
+          );
     const latestYear = Math.max(model.round - 1, history.at(-1)?.round ?? 0);
     const events = playback
-      ? playback.events.slice(0, playback.index)
+      ? [
+          ...(playback.history ?? []),
+          ...playback.events.slice(0, playback.index),
+        ]
       : history.filter((event) => event.round === latestYear);
     const activeId = playback?.events[playback.index]?.id;
     const key = `${events.at(-1)?.id ?? 'empty'}:${model.round}:${activeId ?? ''}`;
@@ -765,10 +780,31 @@ export class AppView implements AppPort {
     if (announcement?.dataset.announcementId !== current.id) {
       announcement?.remove();
       this.#announcementObserver?.disconnect();
-      announcement = element('div', 'event-announcement', current.text);
+      announcement = element('div', 'event-announcement');
+      announcement.append(element('p', 'event-text', current.text));
+      if (current.decision) {
+        announcement.classList.add('event-announcement-interactive');
+        announcement.setAttribute('role', 'dialog');
+        announcement.setAttribute('aria-label', current.decision.title);
+        const details = element('div', 'event-details');
+        details.append(announcement.querySelector('.event-text')!);
+        details.tabIndex = 0;
+        details.setAttribute('aria-label', 'Event details');
+        for (const text of current.decision.details)
+          details.append(element('p', '', text));
+        const actions = element('div', 'event-actions');
+        actions.append(
+          button('Handle', () => this.#emit({ type: 'handle-discoveries' })),
+          button('Ignore', () => this.#emit({ type: 'ignore-discoveries' })),
+        );
+        announcement.append(details, actions);
+      } else announcement.setAttribute('role', 'status');
       announcement.dataset.announcementId = current.id;
-      announcement.setAttribute('role', 'status');
       this.#root.append(announcement);
+      if (current.decision && !model.turnMovement)
+        announcement
+          .querySelector<HTMLButtonElement>('button')
+          ?.focus({ preventScroll: true });
       if (typeof ResizeObserver !== 'undefined') {
         this.#announcementObserver = new ResizeObserver(() =>
           this.#positionAnnouncement(),
@@ -783,6 +819,10 @@ export class AppView implements AppPort {
     }
     this.#positionAnnouncement();
     announcement.dataset.stage = playback.stage;
+    for (const action of announcement.querySelectorAll<HTMLButtonElement>(
+      'button',
+    ))
+      action.disabled = playback.stage !== 'awaiting-choice';
   }
 
   #positionAnnouncement(): void {
@@ -815,6 +855,21 @@ export class AppView implements AppPort {
             .getComputedStyle(announcement)
             .getPropertyValue('--event-marker-gap'),
         ) || 82;
+      if (event.decision) {
+        const end = this.#root
+          .querySelector('.end-turn')
+          ?.getBoundingClientRect();
+        const bottom = Math.min(
+          window.innerHeight - 8,
+          (end?.top ?? window.innerHeight) - 8,
+        );
+        const markerY =
+          map.top +
+          map.height / 2 +
+          (point.y - model.camera.center.y) * model.camera.zoom;
+        const available = Math.max(80, bottom - markerY - markerGap);
+        announcement.style.maxHeight = `${available}px`;
+      }
       originY =
         map.top +
         map.height / 2 +

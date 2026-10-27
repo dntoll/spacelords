@@ -1072,6 +1072,7 @@ export class Game {
         ? copy.visiblePirates
         : game.pirateSnapshots().map((pirate) => pirate.id),
     );
+    game.#linkInterruptionEvents();
     if (game.#phase === 'planning')
       game.#logistics.reserve(game.#logisticsPort());
     // Exercise derived data before accepting a stored record.
@@ -1577,11 +1578,12 @@ export class Game {
       .map((yard) => {
         this.#salvage.destroyYard(yard);
         const summary = `Orbital shipyard at ${this.#planetName(yard.planetId)} was destroyed. The planetary facility survives; waiting wrecks remain in this hex.`;
-        this.#event(summary, yard.position);
+        const eventId = this.#event(summary, yard.position);
         return {
           position: yard.position,
           fleetId: null,
           title: 'Shipyard destroyed',
+          eventId,
           summary,
           wreckIds: [],
         };
@@ -2468,10 +2470,122 @@ export class Game {
     delete fleet.starSurvey;
     this.#updatePatrol(fleet);
   }
+  // gemensamt-handelseflode: retain event identity and review progress at checkpoints.
+  presentEvent(id: string): void {
+    if (
+      this.#simulation &&
+      this.#events.some(
+        (event) => event.id === id && event.round === this.#round,
+      )
+    )
+      this.#simulation.presentedEventIds.add(id);
+  }
+  handleEvent(id: string): void {
+    const pending = [
+      ...(this.#simulation?.discoveries ?? []),
+      ...(this.#simulation?.battles ?? []),
+    ];
+    if (
+      this.#phase !== 'interrupted' ||
+      !pending.some((item) => item.eventId === id)
+    )
+      throw new Error('No event to handle.');
+    this.#simulation!.activeEventId = id;
+    this.handleDiscoveries();
+    this.presentEvent(id);
+  }
+  finishHandlingEvent(): void {
+    if (this.#phase !== 'interrupted' || !this.#simulation!.handling)
+      throw new Error('No event is being handled.');
+    this.#simulation!.handling = false;
+    this.#simulation!.activeEventId = undefined;
+    this.#simulation!.otherFleets = false;
+  }
+  #linkInterruptionEvents(): void {
+    const simulation = this.#simulation;
+    if (!simulation) return;
+    const pending = [...simulation.battles, ...simulation.discoveries];
+    const used = new Set(
+      pending.flatMap((item) => (item.eventId ? [item.eventId] : [])),
+    );
+    // Legacy checkpoints have no links. Associate their trailing events by location
+    // without parsing localized display text or generating new simulation outcomes.
+    const link = <T extends Discovery | BattleReport>(item: T): T => {
+      if (item.eventId) return item;
+      const event = this.#events.findLast(
+        (event) =>
+          event.round === this.#round &&
+          !used.has(event.id) &&
+          (!event.position ||
+            (event.position.q === item.position.q &&
+              event.position.r === item.position.r)),
+      );
+      if (!event) {
+        const description =
+          'kind' in item
+            ? `${item.name} at HEX ${item.position.q},${item.position.r}.`
+            : item.summary;
+        const id = this.#event(
+          String(description),
+          new HexCoordinate(item.position.q, item.position.r),
+        );
+        used.add(id);
+        return { ...item, eventId: id };
+      }
+      used.add(event.id);
+      return { ...item, eventId: event.id };
+    };
+    const discoveryOrder = new Map(
+      this.#visibleDiscoveries().map((item, index) => [item.id, index]),
+    );
+    const linked = new Map(
+      [...simulation.discoveries]
+        .sort(
+          (a, b) =>
+            (discoveryOrder.get(a.id) ?? -1) - (discoveryOrder.get(b.id) ?? -1),
+        )
+        .reverse()
+        .map((item) => [item.id, link(item)]),
+    );
+    simulation.discoveries = simulation.discoveries.map((item) =>
+      linked.get(item.id)!,
+    );
+    simulation.battles = [...simulation.battles].reverse().map(link).reverse();
+    const eventIds = new Set(
+      this.#events
+        .filter((event) => event.round === this.#round)
+        .map((event) => event.id),
+    );
+    if (
+      [...simulation.presentedEventIds].some((id) => !eventIds.has(id)) ||
+      [...simulation.discoveries, ...simulation.battles].some(
+        (item) => !item.eventId || !eventIds.has(item.eventId),
+      ) ||
+      (simulation.activeEventId &&
+        (!simulation.handling ||
+          ![...simulation.discoveries, ...simulation.battles].some(
+            (item) => item.eventId === simulation.activeEventId,
+          )))
+    )
+      throw new Error('Invalid interrupted event review.');
+    if (simulation.handling && !simulation.activeEventId) {
+      simulation.activeEventId =
+        simulation.battles[0]?.eventId ?? simulation.discoveries[0]?.eventId;
+      if (simulation.activeEventId)
+        simulation.presentedEventIds.add(simulation.activeEventId);
+    }
+  }
   handleDiscoveries(): void {
     if (this.#phase !== 'interrupted')
       throw new Error('No discovery to handle.');
     this.#simulation!.handling = true;
+    if (!this.#simulation!.activeEventId) {
+      this.#simulation!.activeEventId =
+        this.#simulation!.battles[0]?.eventId ??
+        this.#simulation!.discoveries[0]?.eventId;
+      if (this.#simulation!.activeEventId)
+        this.presentEvent(this.#simulation!.activeEventId);
+    }
   }
   allowOtherFleetOrders(): void {
     if (this.#phase !== 'interrupted' || !this.#simulation!.handling)
@@ -2482,6 +2596,7 @@ export class Game {
     if (this.#phase !== 'interrupted') throw new Error('No interrupted year.');
     this.#simulation!.discoveries = [];
     this.#simulation!.battles = [];
+    this.#simulation!.activeEventId = undefined;
     this.#simulation!.handling = false;
     this.#simulation!.otherFleets = false;
     this.#phase = 'simulating';
@@ -2644,11 +2759,12 @@ export class Game {
           .filter(([, count]) => count > 0)
           .map(([type, count]) => `${count} ${type}`)
           .join(', ') || 'no ships';
-      this.#event(
+      const eventId = this.#event(
         `Combat at HEX ${combat.position.key}: ${this.#fleetDisplayName(fleet)} versus Space pirate. Lost ${losses}; destroyed ${combat.pirateLosses} pirates. Survivors: ${combat.survivingFighters} Fighters, ${combat.survivingPirates} pirates, ${fleet.ships['Colony ship'] + fleet.ships['Exploration ship'] + fleet.ships['Transport ship']} civilian ships.`,
         combat.position,
       );
       reports.push({
+        eventId,
         position: combat.position,
         fleetId: fleet.id,
         title: `${this.#fleetDisplayName(fleet)} versus Space pirate`,
@@ -4165,10 +4281,11 @@ export class Game {
               ) || a.id.localeCompare(b.id),
         )[0];
       (discovery as { fleetId: string | null }).fleetId = observer?.id ?? null;
-      this.#event(
+      const eventId = this.#event(
         `${discovery.kind === 'wreck' ? 'Wreck discovered' : discovery.kind === 'pirate' ? 'Pirate ship in sight' : discovery.kind === 'star' ? 'Star explored' : 'Planet discovered'}: ${discovery.name} at HEX ${position.key}.`,
         position,
       );
+      (discovery as { eventId: string }).eventId = eventId;
     }
     return Object.freeze(
       discoveries.sort(
@@ -4375,10 +4492,11 @@ export class Game {
       fleet.position,
     );
   }
-  #event(text: string, position?: HexCoordinate): void {
+  #event(text: string, position?: HexCoordinate): string {
+    const id = this.#id('event');
     this.#events.push(
       Object.freeze({
-        id: this.#id('event'),
+        id,
         round: this.#round,
         text,
         ...(position
@@ -4386,6 +4504,7 @@ export class Game {
           : {}),
       }),
     );
+    return id;
   }
   #id(prefix: string): string {
     return `${prefix}-${this.#sequence++}`;

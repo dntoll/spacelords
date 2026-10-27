@@ -1,4 +1,8 @@
-import { EventPlayback, type EventPlaybackSnapshot } from './EventPlayback.js';
+import {
+  EventPlayback,
+  type EventPlaybackSnapshot,
+  type EventDecision,
+} from './EventPlayback.js';
 import type {
   TurnMovementPlayback,
   TurnMovement,
@@ -96,6 +100,7 @@ export interface SaveSlotSnapshot {
 export interface AppReadModel {
   readonly turnMovement: TurnMovement | null;
   readonly eventPlayback: EventPlaybackSnapshot | null;
+  readonly presentedEventIds: readonly string[];
   readonly wrecks: readonly WreckSnapshot[];
   readonly shipyards: readonly ShipyardSnapshot[];
   readonly salvageSelection: string | null;
@@ -173,6 +178,7 @@ export class AppModel {
   #movementPlayback: TurnMovementPlayback | null = null;
   #movementOrigin: AppReadModel | null = null;
   #eventPlayback: EventPlayback | null = null;
+  readonly #presentedEventIds = new Set<string>();
   #eventCamera: Camera | null = null;
   #turnContext: {
     readonly screen: Screen;
@@ -294,6 +300,9 @@ export class AppModel {
     this.#game = game;
     this.#inspectedResearch = null;
     this.#eventPlayback = null;
+    this.#presentedEventIds.clear();
+    for (const eventId of game.interruption?.presentedEventIds ?? [])
+      this.#presentedEventIds.add(eventId);
     this.#movementPlayback = null;
     this.#movementOrigin = null;
     this.#eventCamera = null;
@@ -321,6 +330,7 @@ export class AppModel {
     this.cancelMapPointer();
     this.#productionReceipt = null;
     if (game.interruption?.handling) this.#focusInterruptedFleet();
+    else if (game.phase === 'interrupted') this.beginEventPlayback();
   }
 
   save(): void {
@@ -384,6 +394,12 @@ export class AppModel {
     return Object.freeze({
       turnMovement: null,
       eventPlayback: this.#eventPlayback?.snapshot ?? null,
+      presentedEventIds: Object.freeze([
+        ...new Set([
+          ...this.#presentedEventIds,
+          ...(this.#game.interruption?.presentedEventIds ?? []),
+        ]),
+      ]),
       wrecks: this.#game.wrecks,
       shipyards: this.#game.shipyards,
       salvageSelection: this.#salvageSelection,
@@ -1070,6 +1086,7 @@ export class AppModel {
     if (!Object.values(viewport).every((v) => Number.isFinite(v) && v > 0))
       return;
     this.#mapViewport = Object.freeze({ ...viewport });
+    if (this.#eventPlayback?.current?.decision) this.#focusEvent();
     this.#fitProduction();
   }
   #fitProduction(): void {
@@ -1321,6 +1338,7 @@ export class AppModel {
   }
   startTurn(): void {
     if (this.#eventPlayback || this.#movementPlayback) return;
+    this.#presentedEventIds.clear();
     this.#turnContext = {
       screen: this.#screen,
       selected: this.#selected,
@@ -1355,17 +1373,20 @@ export class AppModel {
   #focusInterruptedFleet(): void {
     this.cancelMapPointer();
     this.#screen = 'map';
-    const id =
-      this.#game.interruption?.battles?.find((battle) => battle.fleetId)
-        ?.fleetId ??
-      this.#game.interruption?.discoveries.find(
-        (discovery) => discovery.fleetId,
-      )?.fleetId;
-    const fleet = id ? this.#game.fleet(id) : null;
+    const interruption = this.#game.interruption;
+    const items = [
+      ...(interruption?.battles ?? []),
+      ...(interruption?.discoveries ?? []),
+    ];
     const discovery =
-      this.#game.interruption?.battles?.[0] ??
-      this.#game.interruption?.discoveries[0];
-    if (!fleet && discovery) {
+      items.find((item) => item.eventId === interruption?.activeEventId) ??
+      items[0];
+    const fleet = discovery?.fleetId
+      ? this.#game.fleet(discovery.fleetId)
+      : null;
+    this.#mapFleetId = null;
+    this.#selectedFleetId = null;
+    if (!fleet?.position && discovery) {
       this.#selected = new HexCoordinate(
         discovery.position.q,
         discovery.position.r,
@@ -1394,10 +1415,31 @@ export class AppModel {
   }
 
   beginEventPlayback(): void {
-    if (this.#game.phase !== 'planning' || this.#eventPlayback) return;
-    const playback = new EventPlayback(this.#game.round - 1, this.#game.events);
+    if (
+      this.#game.phase === 'simulating' ||
+      this.#game.interruption?.handling ||
+      this.#eventPlayback
+    )
+      return;
+    const round =
+      this.#game.phase === 'interrupted'
+        ? this.#game.round
+        : this.#game.round - 1;
+    for (const id of this.#game.interruption?.presentedEventIds ?? [])
+      this.#presentedEventIds.add(id);
+    const events = this.#game.events.filter((event) => event.round === round);
+    const playback = new EventPlayback(
+      round,
+      events
+        .filter((event) => !this.#presentedEventIds.has(event.id))
+        .map((event) => {
+          const decision = this.#eventDecision(event.id);
+          return decision ? Object.freeze({ ...event, decision }) : event;
+        }),
+      events.filter((event) => this.#presentedEventIds.has(event.id)),
+    );
     if (!playback.current) {
-      this.finishEventPlayback();
+      if (this.#game.phase === 'planning') this.finishEventPlayback();
       return;
     }
     this.#eventPlayback = playback;
@@ -1409,10 +1451,93 @@ export class AppModel {
     this.#focusEvent();
   }
 
+  #eventDecision(id: string): EventDecision | undefined {
+    const interruption = this.#game.interruption;
+    const battle = interruption?.battles?.find(
+      (battle) => battle.eventId === id,
+    );
+    const discovery = interruption?.discoveries.find(
+      (discovery) => discovery.eventId === id,
+    );
+    const item = battle ?? discovery;
+    if (!item) return undefined;
+    const fleet = item.fleetId
+      ? this.#game.fleetSnapshots().find((fleet) => fleet.id === item.fleetId)
+      : null;
+    const title = battle
+      ? 'Battle report'
+      : discovery!.kind === 'pirate'
+        ? 'Pirate ship in sight'
+        : discovery!.kind === 'wreck'
+          ? 'Wreck discovered'
+          : discovery!.kind === 'star'
+            ? 'Star explored'
+            : 'Planet discovered';
+    const details = [
+      `HEX ${item.position.q},${item.position.r}${fleet ? ` · ${fleet.name} · ${fleet.remainingMovement ?? 0} hex remaining` : ''}`,
+    ];
+    if (battle)
+      details.push(
+        battle.summary,
+        `${battle.wreckIds.length} wrecks remain in the hex.`,
+      );
+    if (discovery?.kind === 'pirate') {
+      const pirate = this.#game
+        .pirateSnapshots()
+        .find((pirate) => pirate.id === discovery.id);
+      if (pirate)
+        details.push(
+          `${pirate.count} pirate ${pirate.count === 1 ? 'ship' : 'ships'} in sight.`,
+        );
+    }
+    details.push(
+      interruption!.economyApplied
+        ? 'The year is paused after production. No movement remains this year.'
+        : battle
+          ? 'The year is paused after combat. Handle to change orders, or Ignore to continue without changes.'
+          : 'The year is paused. Fleets already sharing a hex will fight before the next movement.',
+    );
+    return Object.freeze({
+      title,
+      details: Object.freeze(details),
+      fleetId: item.fleetId,
+    });
+  }
+
+  chooseEvent(choice: 'handle' | 'ignore'): void {
+    const playback = this.#eventPlayback;
+    if (playback?.snapshot.stage !== 'awaiting-choice' || !playback.current)
+      return;
+    if (choice === 'handle') this.#game.handleEvent(playback.current.id);
+    else this.#game.presentEvent(playback.current.id);
+    playback.choose(choice);
+  }
+
+  continueEventHandling(): void {
+    this.#game.finishHandlingEvent();
+    this.beginEventPlayback();
+  }
+
   advanceEventPlayback(): void {
-    if (!this.#eventPlayback) return;
-    if (!this.#eventPlayback.advance()) this.finishEventPlayback();
-    else this.#focusEvent();
+    const playback = this.#eventPlayback;
+    if (!playback) return;
+    if (playback.snapshot.stage === 'filing' && playback.current) {
+      this.#presentedEventIds.add(playback.current.id);
+      this.#game.presentEvent(playback.current.id);
+      if (playback.snapshot.choice === 'handle') {
+        this.#eventPlayback = null;
+        this.#eventCamera = null;
+        this.#focusInterruptedFleet();
+        return;
+      }
+    }
+    if (!playback.advance()) {
+      if (this.#game.phase === 'planning') this.finishEventPlayback();
+      else {
+        this.#eventPlayback = null;
+        this.#eventCamera = null;
+      }
+    } else this.#focusEvent();
   }
 
   #focusEvent(): void {
@@ -1428,6 +1553,16 @@ export class AppModel {
     if (!this.#game.galaxy.contains(hex)) return;
     this.#eventCamera.restore({ ...this.#eventCamera.snapshot, zoom: 1 });
     this.#eventCamera.focus(hex);
+    if (this.#eventPlayback?.current?.decision && this.#mapViewport) {
+      const center = HexGeometry.toPoint(hex);
+      this.#eventCamera.restore({
+        center: {
+          x: center.x,
+          y: center.y + Math.max(0, this.#mapViewport.height / 2 - 45),
+        },
+        zoom: 1,
+      });
+    }
   }
 
   finishEventPlayback(): void {

@@ -10,6 +10,13 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Gemensamt händelseflöde:** `gemensamt-handelseflode` är **Fullständigt
+  implementerat**. Upptäckter, piratkontakter och stridsrapporter använder Events
+  med ett eget Handle eller Ignore för varje händelse. Året förblir pausat tills
+  avbrottets händelser är avklarade. Redan visade händelser annonseras inte igen;
+  val och pågående hantering bevaras vid omladdning utan rensning av sparningar.
+  Se [Events](docs/events-and-guidance.md).
+
 - **Enhetliga spelvyer och bildprompter:** `gemensam-events-panel`,
   `dragbara-koer`, `omordningsbar-reparationsko`, `bildpromptpaket`,
   `skeppssprites-pa-kartan`, `forskningskamerans-granser` och

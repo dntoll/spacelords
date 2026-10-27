@@ -920,3 +920,24 @@ Arbetet görs på `codex/cinematic-turn-events` från `7f1a241`. Tidigare
 presentation finns kvar på `codex/decisions-pending-actions`; grenbytet
 kräver ingen ändring eller rensning av sparade spel. Detta möjliggör återgång
 om användaren föredrar den tidigare presentationen.
+
+## Gemensamt händelseflöde
+
+`gemensamt-handelseflode` — **Fullständigt implementerat**. EventPlayback
+använder samma kö för vanliga händelser och avbrott. Steget awaiting-choice
+saknar timer; först ett uttryckligt Handle eller Ignore påbörjar filing.
+Avklarade händelser återanvänds som historik i nästa delkö och annonseras inte
+igen efter årets slut. Avslutad presentation återupptar simuleringen bara när
+avbrottet inte längre väntar på hantering eller fler händelseval.
+
+Discovery och BattleReport har valfri eventId. TurnSimulation sparar
+presentedEventIds och valfri activeEventId som tillägg till version 12; äldre
+sparningar utan fälten accepteras. Äldre avbrott kopplas till sina befintliga
+händelser genom deras plats och ursprungliga ordningsföljd. Val sparas före
+filing och hantering återställs även vid omladdning under animationen. Vyerna
+läser frysta presentationer och skickar val till kontrollern.
+
+Interaktiva händelser ramas in högre på kartan för att lämna plats under
+markeringsringen. Information rullas internt, medan Handle och Ignore har
+minst 44 px träffyta och ligger utanför rullningen. Vid högst 360 px höjd döljs
+varumärkesraden tillfälligt; navigation och End turn förblir synliga.
