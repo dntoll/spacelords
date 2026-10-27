@@ -72,6 +72,7 @@ export class AppView implements AppPort {
   #playingEvents = false;
   #consoleObserver: ResizeObserver | null = null;
   #announcementObserver: ResizeObserver | null = null;
+  #announcementModel: AppReadModel | null = null;
 
   constructor(
     root: HTMLElement,
@@ -773,6 +774,7 @@ export class AppView implements AppPort {
   }
 
   #renderEventAnnouncement(model: AppReadModel): void {
+    this.#announcementModel = model.eventPlayback ? model : null;
     const playback = model.eventPlayback;
     const current = playback?.events[playback.index];
     let announcement = this.#root.querySelector<HTMLElement>(
@@ -796,6 +798,9 @@ export class AppView implements AppPort {
           this.#positionAnnouncement(),
         );
         this.#announcementObserver.observe(this.#root);
+        this.#announcementObserver.observe(announcement);
+        if (this.#container)
+          this.#announcementObserver.observe(this.#container);
         const log = this.#root.querySelector('[role="log"]');
         if (log) this.#announcementObserver.observe(log);
       }
@@ -811,17 +816,56 @@ export class AppView implements AppPort {
     const target = this.#root.querySelector<HTMLElement>('.event-destination');
     const log = target?.closest('[role="log"]');
     if (!announcement || !target || !log) return;
+    const model = this.#announcementModel;
+    const event = model?.eventPlayback?.events[model.eventPlayback.index];
+    const map = this.#container?.getBoundingClientRect();
+    let originX = window.innerWidth / 2;
+    let originY = window.innerHeight / 2;
+    if (event?.position && model && map && map.width > 0 && map.height > 0) {
+      const point = HexGeometry.toPoint(
+        new HexCoordinate(event.position.q, event.position.r),
+      );
+      announcement.style.setProperty(
+        '--event-width',
+        `${Math.min(620, map.width - 32)}px`,
+      );
+      originX =
+        map.left +
+        map.width / 2 +
+        (point.x - model.camera.center.x) * model.camera.zoom;
+      const markerGap =
+        Number.parseFloat(
+          window
+            .getComputedStyle(announcement)
+            .getPropertyValue('--event-marker-gap'),
+        ) || 82;
+      originY =
+        map.top +
+        map.height / 2 +
+        (point.y - model.camera.center.y) * model.camera.zoom +
+        markerGap +
+        announcement.offsetHeight / 2;
+      announcement.style.setProperty('--event-origin-x', `${originX}px`);
+      announcement.style.setProperty('--event-origin-y', `${originY}px`);
+    } else {
+      for (const property of [
+        '--event-width',
+        '--event-origin-x',
+        '--event-origin-y',
+      ])
+        announcement.style.removeProperty(property);
+    }
     const row = target.getBoundingClientRect(),
       bounds = log.getBoundingClientRect();
     const top = Math.max(row.top, bounds.top),
       bottom = Math.min(row.bottom, bounds.bottom);
     announcement.style.setProperty(
       '--event-target-x',
-      `${row.left + row.width / 2 - window.innerWidth / 2}px`,
+      `${row.left + row.width / 2 - originX}px`,
     );
     announcement.style.setProperty(
       '--event-target-y',
-      `${(top + bottom) / 2 - window.innerHeight / 2}px`,
+      `${(top + bottom) / 2 - originY}px`,
     );
     announcement.style.setProperty(
       '--event-target-scale',

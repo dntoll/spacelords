@@ -33,8 +33,11 @@ Kraven nedan är **Fullständigt implementerat**.
 - `osynliga-flottor-utan-animation`: dolda flottors rörelser animeras inte,
   flyttar inte kameran och ger ingen animationsväntan. En fientlig
   förflyttning visas bara när flottan syns vid båda ändarna av steget.
-- `handelseannonsering`: varje annan händelse annonseras som stor text mitt
-  på skärmen ovanpå gränssnittet. Texten ligger kvar läsbar i 1,4 sekunder
+- `handelseannonsering`: varje annan händelse annonseras som stor text i en
+  textruta. För platsbundna händelser ligger hela rutan under platsens ring och
+  etikett, så att händelseplatsen förblir synlig och i fokus. Rutan följer
+  platsen även när skärmen roteras. Globala händelser visas mitt på skärmen.
+  Texten ligger kvar läsbar i 1,4 sekunder
   och flyttas sedan ned till sin plats i Events under 0,45 sekunder. Först
   därefter läggs raden i listan och nästa händelse annonseras. Det finns ingen
   meny med Pause/Play, Next eller Skip. Vid minskad rörelse behålls text och
@@ -50,6 +53,8 @@ Kraven nedan är **Fullständigt implementerat**.
 
 Ändring 2026-10-27: `handelseannonsering` ersätter kontrollmenyn och det
 fasta 1,5-sekunderssteget i `sekventiella-arshandelser` på uttrycklig beställning.
+Senare samma dag ersätter placering under händelseplatsen den tidigare
+skärmcentreringen för platsbundna händelser, enligt användarens bildexempel.
 `en-flotta-i-taget` ersätter den tidigare samtidiga presentationen av
 flottmarkörer; simuleringens regler ändras inte. Äldre sparningar bevaras.
 

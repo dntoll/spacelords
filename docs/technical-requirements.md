@@ -875,11 +875,25 @@ Vid dispose avbryts requestAnimationFrame och väntande animationslöften löses
 
 EventPlayback har stegen announcing (1 400 ms) och filing (450 ms).
 AppView visar den aktuella texten i ett fast HTML-lager ovanpå gränssnittet,
-beräknar destinationen från en osynlig platshållare i loggen och använder en
+med platsbundna händelsers textruta 82 px under kartpunktens centrum. Därmed
+lämnas både markeringsring och Event-etikett fria. Kartytans faktiska
+skärmrektangel, händelseposition och aktuell kamera bestämmer placeringen;
+bredden begränsas till kartytan med 16 px sidmarginal. Vid högst 360 px
+skärmhöjd används mindre text och padding samt 74 px avstånd för att rutan
+ska rymmas under etiketten även på en kort liggande mobil. Globala händelser
+behåller skärmcentrum. Detta förtydligar `handelseannonsering` och
+`handelser-pa-kartan` 2026-10-27 och ersätter tidigare central placering av
+alla händelser. AppView beräknar destinationen från en osynlig platshållare i loggen och använder en
 CSS-övergång för att flytta texten dit. Bara redan färdigannonserade händelser
-har synliga rader i loggen. ResizeObserver räknar om landningspunkten vid
+har synliga rader i loggen. ResizeObserver räknar om ursprung och landningspunkt vid
 orienterings- och storleksändring. prefers-reduced-motion utelämnar
 markörinterpolation och textförflyttning men behåller lästid och årsresultat.
+
+Placeringen under händelseplatsen skyddas av ett regressionstest som först
+misslyckades med skärmcentreringen. Riktade tester verifierar kamerakoordinater,
+globala händelser, fortsatt flytt till loggen och minskad rörelse. Webbläsarflödet
+kontrollerar stående, liggande och kort liggande format i telefon Chromium,
+telefon WebKit och desktop Chromium. Sparformat och årsresultat ändras inte.
 
 Arbetet görs på `codex/cinematic-turn-events` från `7f1a241`. Tidigare
 presentation finns kvar på `codex/decisions-pending-actions`; grenbytet

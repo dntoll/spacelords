@@ -2977,14 +2977,15 @@ body:has(.discovery-controls) .selection-panel {
 .event-destination {
   visibility: hidden;
 }
-/* handelseannonsering: hold above the entire interface, then land in the log. */
+/* handelseannonsering: leave the event location unobscured, then land in the log. */
 .event-announcement {
+  --event-marker-gap: 82px;
   position: fixed;
-  top: 50%;
-  left: 50%;
+  top: var(--event-origin-y, 50%);
+  left: var(--event-origin-x, 50%);
   transform: translate(-50%, -50%);
   z-index: 1000;
-  width: min(620px, calc(100vw - 32px));
+  width: var(--event-width, min(620px, calc(100vw - 32px)));
   padding: 20px 24px;
   border: 1px solid #ffdc88;
   border-radius: 12px;
@@ -3005,6 +3006,14 @@ body:has(.discovery-controls) .selection-panel {
     translate(var(--event-target-x, 0px), var(--event-target-y, 0px))
     scale(var(--event-target-scale, 1));
   opacity: 0.35;
+}
+@media (max-height: 360px) {
+  .event-announcement {
+    --event-marker-gap: 74px;
+    padding: 6px 12px;
+    font-size: 0.875rem;
+    line-height: 1.25;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .event-announcement {

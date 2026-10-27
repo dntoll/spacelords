@@ -59,7 +59,7 @@ async function noMenu(page: Page) {
     );
 }
 
-test('handelseannonsering / handelser-pa-kartan: centered announcements fly into the chronological list without a menu and survive orientation changes', async ({
+test('handelseannonsering / handelser-pa-kartan: announcements stay below the event and fly into the list across orientation changes', async ({
   page,
 }, testInfo) => {
   const errors: string[] = [];
@@ -78,9 +78,17 @@ test('handelseannonsering / handelser-pa-kartan: centered announcements fly into
   await expect(announcement).toHaveAttribute('data-stage', 'announcing');
   await expect(log.locator('[data-event-id]')).toHaveCount(0);
   await noMenu(page);
-  const centered = (await announcement.boundingBox())!;
-  expect(Math.abs(centered.x + centered.width / 2 - 393 / 2)).toBeLessThan(2);
-  expect(Math.abs(centered.y + centered.height / 2 - 851 / 2)).toBeLessThan(2);
+  const placed = (await announcement.boundingBox())!;
+  const portraitMap = (await page.getByTestId('map-container').boundingBox())!;
+  expect(
+    Math.abs(
+      placed.x + placed.width / 2 - portraitMap.x - portraitMap.width / 2,
+    ),
+  ).toBeLessThan(2);
+  expect(placed.y).toBeGreaterThanOrEqual(
+    portraitMap.y + portraitMap.height / 2 + 80,
+  );
+  expect(placed.y + placed.height).toBeLessThanOrEqual(851 - 8);
   expect(
     await announcement.evaluate((node) =>
       Number(getComputedStyle(node).zIndex),
@@ -89,17 +97,36 @@ test('handelseannonsering / handelser-pa-kartan: centered announcements fly into
   await page.screenshot({
     path: testInfo.outputPath('announcement-portrait.png'),
   });
+  await page.setViewportSize({ width: 667, height: 320 });
+  await page.clock.runFor(32);
+  const shortMap = (await page.getByTestId('map-container').boundingBox())!;
+  const shortAnnouncement = (await announcement.boundingBox())!;
+  expect(shortAnnouncement.y).toBeGreaterThanOrEqual(
+    shortMap.y + shortMap.height / 2 + 70,
+  );
+  expect(
+    shortAnnouncement.y + shortAnnouncement.height,
+    JSON.stringify({ shortMap, shortAnnouncement }),
+  ).toBeLessThanOrEqual(320);
   await page.setViewportSize({ width: 851, height: 393 });
   await page.clock.runFor(32);
   const mapBox = (await page.getByTestId('map-container').boundingBox())!,
     listBox = (await console.boundingBox())!;
   expect(mapBox.x + mapBox.width).toBeLessThanOrEqual(listBox.x);
+  const landscape = (await announcement.boundingBox())!;
+  expect(
+    Math.abs(landscape.x + landscape.width / 2 - mapBox.x - mapBox.width / 2),
+  ).toBeLessThan(2);
+  expect(landscape.y).toBeGreaterThanOrEqual(mapBox.y + mapBox.height / 2 + 80);
+  expect(landscape.y + landscape.height).toBeLessThanOrEqual(393 - 8);
   await page.clock.runFor(1400);
   await expect(announcement).toHaveAttribute('data-stage', 'filing');
   await expect(log.locator('[data-event-id]')).toHaveCount(0);
   await page.waitForTimeout(220);
   const flying = (await announcement.boundingBox())!;
-  expect(flying.x + flying.width / 2).toBeGreaterThan(851 / 2);
+  expect(flying.x + flying.width / 2).toBeGreaterThan(
+    mapBox.x + mapBox.width / 2,
+  );
   await page.screenshot({
     path: testInfo.outputPath('announcement-filing-landscape.png'),
   });

@@ -4,10 +4,69 @@ import { afterEach, describe, it, expect, vi } from 'vitest';
 afterEach(() => vi.useRealTimers());
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
-import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
+import {
+  HexCoordinate,
+  HexGeometry,
+} from '../../src/client/models/HexCoordinate.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppController } from '../../src/client/controllers/AppController.js';
 import { AppView } from '../../src/client/views/AppView.js';
+
+describe('handelseannonsering / handelser-pa-kartan', () => {
+  it('anchors the announcement below the event and its label using the actual map and camera', () => {
+    const root = document.createElement('div');
+    document.body.replaceChildren(root);
+    const model = new AppModel();
+    const view = new AppView(root, () => ({ render() {}, dispose() {} }));
+    const position = new HexCoordinate(2, -1);
+    const events = [
+      { id: 'local', round: 1, text: 'Local event', position },
+      { id: 'global', round: 1, text: 'Global research' },
+    ];
+    const snapshot = {
+      ...model.snapshot,
+      camera: { ...model.snapshot.camera, center: { x: 0, y: 0 }, zoom: 0.5 },
+      eventPlayback: {
+        round: 1,
+        events,
+        index: 0,
+        stage: 'announcing' as const,
+      },
+    };
+    view.render(snapshot);
+    const map = root.querySelector<HTMLElement>('.map-container')!;
+    vi.spyOn(map, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(20, 50, 520, 340),
+    );
+    const announcement = root.querySelector<HTMLElement>(
+      '.event-announcement',
+    )!;
+    Object.defineProperties(announcement, {
+      offsetWidth: { value: 488 },
+      offsetHeight: { value: 72 },
+    });
+    view.render(snapshot);
+    const point = HexGeometry.toPoint(position);
+    const x = Number.parseFloat(
+      announcement.style.getPropertyValue('--event-origin-x'),
+    );
+    const y = Number.parseFloat(
+      announcement.style.getPropertyValue('--event-origin-y'),
+    );
+    expect(x).toBeCloseTo(280 + point.x * 0.5);
+    expect(y - 36).toBeGreaterThanOrEqual(220 + point.y * 0.5 + 82);
+    view.render({
+      ...snapshot,
+      eventPlayback: { ...snapshot.eventPlayback, index: 1 },
+    });
+    expect(
+      root
+        .querySelector<HTMLElement>('.event-announcement')!
+        .style.getPropertyValue('--event-origin-y'),
+    ).toBe('');
+    view.dispose();
+  });
+});
 
 describe('handelser / arsrundor-och-order', () => {
   it('returns directly to planning and allows another turn without acknowledgement', () => {
