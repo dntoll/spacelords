@@ -165,6 +165,78 @@ for (const mode of ['Star map', 'Route'] as const)
     await expect(routePanel(page)).toHaveCount(0);
   });
 
+test('handelsrutt-skapande-pa-stjarnkartan: missing research is visible before Create route and remains visible after a drag', async ({
+  page,
+}, testInfo) => {
+  const locked = {
+    ...initial,
+    researched: initial.researched.filter(
+      (technology) => technology !== 'Trade logistics',
+    ),
+  };
+  await page.evaluate(
+    (state) =>
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-10-27', state }),
+      ),
+    locked,
+  );
+  await page.reload();
+  await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Route', exact: true }).tap();
+  const create = page.getByRole('button', {
+    name: 'Create route',
+    exact: true,
+  });
+  await expect(create).toBeDisabled();
+  await expect(create).toHaveAccessibleDescription(
+    'Research Trade logistics first.',
+  );
+  await page.getByRole('button', { name: 'Star map', exact: true }).tap();
+  await drag(
+    page,
+    await screenPoint(page, start),
+    await screenPoint(page, end),
+  );
+  const selection = page.getByRole('complementary', {
+    name: 'Trade route selection',
+    exact: true,
+  });
+  await expect(selection).toContainText('Research Trade logistics first.');
+  const target = await screenPoint(page, end);
+  await page.touchscreen.tap(target.x, target.y);
+  await expect(selection).toContainText('Research Trade logistics first.');
+  await expect(routePanel(page)).toHaveCount(0);
+  await page.screenshot({
+    path: testInfo.outputPath('route-research-required.png'),
+  });
+});
+
+test('handelsrutt-skapande-pa-stjarnkartan: Create route and a target tap save a route after Trade logistics is completed', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: 'Route', exact: true }).tap();
+  await page.getByRole('button', { name: 'Create route', exact: true }).tap();
+  const destination = await screenPoint(page, end);
+  await page.touchscreen.tap(destination.x, destination.y);
+  await expect(routePanel(page)).toContainText('Tellus ↔ Vesta');
+  await page.reload();
+  await startFirstSlot(page);
+  const routes = await page.evaluate(
+    () =>
+      (
+        JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as {
+          state: GameState;
+        }
+      ).state.tradeRoutes,
+  );
+  expect(routes).toHaveLength(1);
+  expect([routes[0]!.a, routes[0]!.b].sort()).toEqual(
+    [home!.id, target!.id].sort(),
+  );
+});
+
 test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives retain orders after visiting Route and reloading', async ({
   page,
 }) => {

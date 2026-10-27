@@ -388,8 +388,14 @@ export function renderRoutePlanet(
   const create = button('Create route', () =>
     emit({ type: 'begin-map-route', id: planet.id }),
   );
-  create.disabled = model.phase !== 'planning';
+  create.disabled = model.mapTrade.creationIssue !== null;
   panel.append(create);
+  if (model.mapTrade.creationIssue) {
+    const reason = element('p', 'blocked-reason', model.mapTrade.creationIssue);
+    reason.id = 'route-creation-issue';
+    create.setAttribute('aria-describedby', reason.id);
+    panel.append(reason);
+  }
   for (const route of model.tradeRoutes.filter(
     (r) => r.a === planet.id || r.b === planet.id,
   ))

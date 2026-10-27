@@ -343,6 +343,25 @@ describe('produktions-kartvy / radiella-byggval / kompakt-produktionsko', () => 
   });
 });
 
+it('handelsrutt-skapande-pa-stjarnkartan: Route explains and disables Create route until Trade logistics is completed', () => {
+  const state = { ...tradeNetworkState(false), researched: [] };
+  const { root, emit, controller } = setup(state);
+  emit({ type: 'open-route' });
+  const create = root.querySelector<HTMLButtonElement>(
+    '[aria-label="Create route"]',
+  )!;
+  expect(create.disabled).toBe(true);
+  const reason = root.querySelector(
+    `#${create.getAttribute('aria-describedby')}`,
+  );
+  expect(reason?.textContent).toBe('Research Trade logistics first.');
+  emit({ type: 'begin-map-route', id: 'sol-0' });
+  expect(root.querySelector('.map-route-feedback')?.textContent).toBe(
+    'Research Trade logistics first.',
+  );
+  controller.dispose();
+});
+
 it('centrerat-kartfokus: Show centers the planet in the unobscured area after measuring the new screen', () => {
   const { model, controller } = setup();
   model.resizeMap({

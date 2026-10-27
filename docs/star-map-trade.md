@@ -19,12 +19,16 @@ alla flottor vid sin verkliga position.
   Hemvyns markerade planet ligger i den fria kartytan ovanför detaljpanelen
   enligt `centrerat-kartfokus`, så att draget kan börja på själva kartan.
   Förhandsvisningen visar ändplaneternas namn och om målet är giltigt. Släpp
-  skapar och väljer rutten utan att ändra kameran. Knappen Create route är
-  borttagen efter användarens ändring. R med fokus på kartan börjar en rutt
-  från markerad ägd planet; målet kan väljas genom klick, Known objects eller
+  skapar och väljer rutten utan att ändra kameran. Create route finns i Route
+  och är spärrad med en synlig förklaring innan Trade logistics är färdig.
+  På Star map är knappen borttagen efter användarens ändring. R med fokus på
+  kartan börjar en rutt från markerad ägd planet; målet kan väljas genom klick eller
   kartans tangentbordsnavigering. Cancel och Escape avbryter. Trade logistics
   och planning krävs; samma planet, främmande planeter, tom rymd och dubbla
-  rutter godtas inte. Ogiltiga mål får en förklaring i förhandsvisningen.
+  rutter godtas inte. Forskningskravet visas även när ruttskapandet har börjat.
+  Ett avvisat drag eller målklick behåller startplanet och förklaring tills
+  spelaren väljer ett giltigt mål eller avbryter. Ett försök får inte försvinna
+  utan återkoppling. Befintliga rutter och sparade spel bevaras.
   Detta ersätter panorering från själva den markerade planetsymbolen;
   panorering från tom kartbakgrund behålls.
 - `handelsrutt-val-pa-stjarnkartan` — **Fullständigt implementerat**:

@@ -15,6 +15,9 @@ Se [hela visionen](docs/game-vision.md).
   implementerat**. Kartans detaljpanel använder ytan ned till Events. Show
   centrerar målet i den fria kartytan, och research kan köas med dubbelklick
   eller dubbeltryck. Handelsrutter kan dras från en synlig markerad planet.
+  `handelsrutt-skapande-pa-stjarnkartan` är **Fullständigt implementerat**:
+  Trade logistics krävs och förklaras före ruttskapandet; avvisade försök
+  behåller sin förklaring och startplanet. Se [handelsrutter](docs/star-map-trade.md).
   Se [mobilens kartval och forskning](docs/mobile-map-interactions.md).
 
 - **Gemensamt händelseflöde:** `gemensamt-handelseflode` är **Fullständigt

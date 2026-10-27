@@ -66,6 +66,7 @@ export function renderMapTradeSelection(
         'p',
         'map-route-feedback',
         state.preview?.issue ??
+          state.creationIssue ??
           (state.preview
             ? 'Release to create route'
             : 'Select another owned planet on the map.'),

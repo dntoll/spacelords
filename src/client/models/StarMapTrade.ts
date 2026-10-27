@@ -12,6 +12,7 @@ export interface MapRoutePreview {
   readonly issue: string | null;
 }
 export interface MapTradeSnapshot {
+  readonly creationIssue: string | null;
   readonly routeId: string | null;
   readonly sourcePlanetId: string | null;
   readonly preview: MapRoutePreview | null;
@@ -37,6 +38,7 @@ export class StarMapTrade {
   get snapshot(): MapTradeSnapshot {
     const routes = this.game().tradeRoutes;
     return Object.freeze({
+      creationIssue: this.creationIssue(),
       routeId: routes.some((r) => r.id === this.#routeId)
         ? this.#routeId
         : null,
@@ -112,7 +114,7 @@ export class StarMapTrade {
   commit(): string | null {
     const preview = this.#preview,
       source = this.#sourcePlanetId;
-    this.cancel();
+    // handelsrutt-skapande-pa-stjarnkartan: keep rejected orders explained and editable.
     if (!preview || preview.issue || !preview.targetId || !source) return null;
     const id = this.game().createTradeRoute(source, preview.targetId);
     this.selectRoute(id);

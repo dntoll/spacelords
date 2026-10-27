@@ -143,6 +143,50 @@ it('handelsrutt-skapande-pa-stjarnkartan: click/keyboard creation survives panni
   expect(other.model.snapshot.tradeRoutes).toHaveLength(0);
 });
 
+it('handelsrutt-skapande-pa-stjarnkartan: missing Trade logistics stays explained after both drag and target click', () => {
+  for (const mode of ['drag', 'click'] as const) {
+    const state = { ...tradeNetworkState(false), researched: [] };
+    const { model, emit, point, drag } = session(false, state);
+    const [source, target] = model.snapshot.ownedPlanets;
+    if (mode === 'drag')
+      drag(
+        point(HexGeometry.toPoint(source!.position)),
+        point(HexGeometry.toPoint(target!.position)),
+      );
+    else {
+      emit({ type: 'begin-map-route', id: source!.id });
+      const end = point(HexGeometry.toPoint(target!.position));
+      emit({ type: 'pointer-start', id: 1, point: end });
+      emit({ type: 'pointer-end', id: 1, point: end });
+    }
+    expect(model.snapshot.tradeRoutes).toHaveLength(0);
+    expect(model.snapshot.mapTrade.preview?.issue).toBe(
+      'Research Trade logistics first.',
+    );
+    expect(model.snapshot.mapTrade.sourcePlanetId).toBe(source!.id);
+  }
+});
+
+it('handelsrutt-skapande-pa-stjarnkartan: an invalid destination keeps the source for a corrected target click', () => {
+  const { model, emit, point } = session(false);
+  const [source, target] = model.snapshot.ownedPlanets;
+  emit({ type: 'begin-map-route', id: source!.id });
+  const click = (world: { x: number; y: number }) => {
+    const end = point(world);
+    emit({ type: 'pointer-start', id: 1, point: end });
+    emit({ type: 'pointer-end', id: 1, point: end });
+  };
+  click(HexGeometry.toPoint(source!.position));
+  expect(model.snapshot.mapTrade.preview?.issue).toBe(
+    'Choose a different planet.',
+  );
+  click(HexGeometry.toPoint(target!.position));
+  expect(model.snapshot.tradeRoutes).toHaveLength(1);
+  expect(model.snapshot.mapTrade.routeId).toBe(
+    model.snapshot.tradeRoutes[0]!.id,
+  );
+});
+
 it('handelsrutt-skapande-pa-stjarnkartan: a second pointer cancels creation and cannot commit when the first pointer ends', () => {
   const { model, emit, point } = session(false);
   const [home, target] = model.snapshot.ownedPlanets;
