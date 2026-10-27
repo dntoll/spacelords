@@ -50,3 +50,11 @@ tangentbord, fokus, mobilformat och större typsnitt ingår. Treårstestet har
 90 sekunders tidsbudget för den befintliga seriella händelseannonseringen.
 Snabbsvitens totala tidsgräns är fortsatt 20 sekunder. Sluttest och merge är
 inte beställda.
+
+De riktade webbläsarflödena omfattar 45 godkända scenarier och nio
+plattformsberoende överhopp. Sju riktade utökade forskningskontroller passerade.
+Snabbsviten med 537 tester tog 13,21 sekunder; därefter tillkom två godkända
+regressioner för punktstjärnornas storlek. Den slutliga committade revisionen
+kontrolleras åter av `deploy:quick` före publicering, inklusive hela snabbsviten
+och de två korta mobilkontrollerna. Publiceringsrapporten sparas under
+`dist/deployments/` enligt driftsättningsinstruktionen.
