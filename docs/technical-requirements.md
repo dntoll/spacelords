@@ -933,7 +933,8 @@ avbrottet inte längre väntar på hantering eller fler händelseval.
 Discovery och BattleReport har valfri eventId. TurnSimulation sparar
 presentedEventIds och valfri activeEventId som tillägg till version 12; äldre
 sparningar utan fälten accepteras. Äldre avbrott kopplas till sina befintliga
-händelser genom deras plats och ursprungliga ordningsföljd. Val sparas före
+händelser genom deras plats och ursprungliga ordningsföljd. Saknade
+händelsepositioner kompletteras från det sparade avbrottet. Val sparas före
 filing och hantering återställs även vid omladdning under animationen. Vyerna
 läser frysta presentationer och skickar val till kontrollern.
 

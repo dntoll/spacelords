@@ -2533,6 +2533,12 @@ export class Game {
         return { ...item, eventId: id };
       }
       used.add(event.id);
+      if (!event.position) {
+        this.#events[this.#events.indexOf(event)] = Object.freeze({
+          ...event,
+          position: Object.freeze({ q: item.position.q, r: item.position.r }),
+        });
+      }
       return { ...item, eventId: event.id };
     };
     const discoveryOrder = new Map(

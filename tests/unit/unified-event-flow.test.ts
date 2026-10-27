@@ -169,6 +169,41 @@ describe('gemensamt-handelseflode', () => {
       );
   });
 
+  it('spara-avbrutet-ar: restores map focus for legacy interruption events without saved coordinates', () => {
+    const game = Game.restore(discoveryState());
+    game.startTurn();
+    while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
+    const checkpoint = game.exportState();
+    const restored = Game.restore({
+      ...checkpoint,
+      events: checkpoint.events.map(({ id, round, text }) => ({
+        id,
+        round,
+        text,
+      })),
+      simulation: {
+        ...checkpoint.simulation!,
+        discoveries: checkpoint.simulation!.discoveries.map((discovery) => {
+          const legacy = { ...discovery };
+          delete legacy.eventId;
+          return legacy;
+        }),
+      },
+    });
+    for (const discovery of restored.interruption!.discoveries) {
+      const event = restored.events.find(
+        (event) => event.id === discovery.eventId,
+      )!;
+      expect(event.position).toEqual(discovery.position);
+      expect(event.id).toBe(
+        checkpoint.simulation!.discoveries.find(
+          (item) => item.id === discovery.id,
+        )!.eventId,
+      );
+    }
+    expect(restored.events).toHaveLength(checkpoint.events.length);
+  });
+
   it('order-under-upptacktsavbrott: focuses the battle location when the participating fleet was destroyed', async () => {
     const game = Game.restore(discoveryState(0));
     game.startTurn();
