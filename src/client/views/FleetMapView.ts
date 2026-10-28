@@ -2,7 +2,8 @@ import type p5 from 'p5';
 import type { TradeRouteSnapshot } from '../models/Logistics.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import { FleetMapLayout } from '../models/FleetMapLayout.js';
-import type { FleetSnapshot, ShipType } from '../models/Game.js';
+import type { FleetSnapshot } from '../models/Game.js';
+import type { ShipSpriteType } from './ShipImages.js';
 import { HexGeometry, type Point } from '../models/HexCoordinate.js';
 
 export function renderMapFleets(
@@ -26,7 +27,7 @@ export function renderMapFleets(
   attentionFleetIds: readonly string[] = [],
   pirateIds: readonly string[] = [],
   movementPoints: ReadonlyMap<string, Point> = new Map(),
-  shipImages: ReadonlyMap<ShipType, p5.Image> = new Map(),
+  shipImages: ReadonlyMap<ShipSpriteType, p5.Image> = new Map(),
 ): void {
   const markers = FleetMapLayout.markers(fleets, routeView ?? [], zoom).map(
     (marker) => ({
@@ -160,7 +161,7 @@ export function renderMapFleets(
       const angle = target
         ? Math.atan2(target.y - center.y, target.x - center.x)
         : -Math.PI / 2;
-      const image = shipImages.get(glyph.type);
+      const image = shipImages.get(hostile ? 'Space pirate' : glyph.type);
       if (image) {
         const longest = Math.max(image.width, image.height);
         const width = (glyph.size * image.width) / longest;

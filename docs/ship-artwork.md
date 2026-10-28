@@ -23,3 +23,24 @@ spelmekanik ändras av grafiken.
 ## Prompt för friläggningen
 
 > Use case: background-extraction. Edit target: the attached local ship sprite sheet. Remove only the dark background, haze and ambient glow surrounding the three ships to create genuine alpha transparency. Preserve the exact artwork, colors, mechanical details, outlines, facing direction, ship size and relative placement of all three original spacecraft: top large Colony ship, middle small winged Fighter, bottom medium Exploration ship with round dish. Keep all three completely intact, including thin wing tips and antennae. Keep the same vertical three-row layout and canvas aspect ratio so they can be cropped into separate game sprites. Do not add text, shadows, new ships or any redesign. Transparent background, clean edges suitable for game UI sprites.
+
+## Nya skeppssprites, 2026-10-28
+
+| Krav                       | Status                     | Beteende                                                                                                                                                                                                                                                                         |
+| -------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `genererade-skeppssprites` | Fullständigt implementerat | Transport ship och Salvage ship har egna genererade bilder i flottvyer och på kartan. Space pirate har en separat rost­röd, ockragul och kolgrå bild med slitna, lappade plåtar och provisoriska lagningar. Samtliga visas ovanifrån, med nos åt höger och transparent bakgrund. |
+
+Detta ersätter uttryckligen bildpromptpaketets tidigare avgränsning att inga
+nya bilder skulle genereras eller kopplas in. Colony ship, Fighter och
+Exploration ship behåller sin grafik. Sparade spel påverkas inte.
+
+PNG-originalen sparas som `assets/original/ships/transport-ship.png`,
+`salvage-ship.png` och `pirate-ship.png`. Webbversionerna finns i
+`src/client/assets/ships/` med samma basnamn och ändelsen WebP.
+Transparenta marginaler beskärs och bilderna skalas proportionellt till högst
+384 × 192 px, med WebP-kvalitet 90. Alfa och kompletta silhuetter kontrolleras.
+
+ShipImages delar bildadresser mellan HTML och p5. Piratbilden väljs i vyn
+utifrån befintlig fientlig identitet; den blir ingen ny spelarskeppstyp.
+Kravkopplade enhetstester kontrollerar porträtt, båda kartans bildzoomnivåer
+och att spelarens Fighter inte får piratens bild.

@@ -45,8 +45,7 @@ export function renderMapFleetPanel(
     const card = element('article', 'fleet-card pirate-card');
     card.dataset.pirateId = pirate.id;
     card.setAttribute('aria-label', 'Space pirate');
-    const image = shipImage('Fighter');
-    image.alt = 'Space pirate';
+    const image = shipImage('Space pirate');
     const portrait = element('figure', 'ship-portrait');
     portrait.append(image, element('figcaption', '', 'Space pirate'));
     card.append(

@@ -465,3 +465,40 @@ it('beslutsvagledning-i-vyn: idle fleet decisions have a solid amber ring and Pr
     expect.any(Number),
   );
 });
+
+it('genererade-skeppssprites: pirates use their own sprite at close and medium zoom while Fighters keep theirs', () => {
+  const fighter = { width: 100, height: 50 } as p5.Image;
+  const pirate = { width: 90, height: 70 } as p5.Image;
+  for (const zoom of [1, 0.4]) {
+    const { sketch } = drawing();
+    const image = vi.fn<(sprite: p5.Image) => void>();
+    const platform = {
+      ...sketch,
+      rect: vi.fn(),
+      image,
+      push: vi.fn(),
+      pop: vi.fn(),
+      translate: vi.fn(),
+      rotate: vi.fn(),
+    };
+    renderMapFleets(
+      platform as unknown as p5,
+      [fleet('owned'), fleet('hostile')],
+      zoom,
+      undefined,
+      false,
+      null,
+      [],
+      ['hostile'],
+      new Map(),
+      new Map([
+        ['Fighter', fighter],
+        ['Space pirate', pirate],
+      ]),
+    );
+    expect(image.mock.calls.map((call) => call[0])).toEqual(
+      expect.arrayContaining([fighter, pirate]),
+    );
+    expect(image).toHaveBeenCalledTimes(2);
+  }
+});

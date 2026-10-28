@@ -10,6 +10,8 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Genererade skeppsbilder:** `genererade-skeppssprites` är **Fullständigt implementerat**. Transport ship, Salvage ship och Space pirate har egna transparenta bilder i flottpaneler och på kartan. Piraten har avvikande färger, rost och provisoriska lagningar. Se [skeppsgrafik](docs/ship-artwork.md).
+
 - **Mobilens kartval och forskning:** `kartpanel-till-events`,
   `centrerat-kartfokus` och `dubbelklick-koar-forskning` är **Fullständigt
   implementerat**. Kartans detaljpanel använder ytan ned till Events. Show

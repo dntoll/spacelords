@@ -1,5 +1,23 @@
 # Driftsättning av Spacelords
 
+## GitHub-åtkomst: HTTPS i första hand
+
+Verifierat 2026-10-28: HTTPS fungerar mot GitHub för detta projekt. Använd
+`https://github.com/dntoll/spacelords.git` och
+`https://github.com/dntoll/dntoll.github.io.git` i första hand, även om den
+lokala origin fortfarande är inställd på SSH. Ett SSH-fel innebär inte att
+GitHub-åtkomst saknas. Den anslutna GitHub-integrationen kan också användas
+via HTTPS när dess verktyg stödjer åtgärden och integrationen har rätt behörighet.
+
+HTTPS-läsning är verifierad. Ett skrivförsök via GitHub-integrationen gav
+`403 Resource not accessible by integration` den 2026-10-28. Det är ett
+behörighetsfel för integrationen, inte ett fel i HTTPS-transporten.
+
+Skilj på GitHub-åtkomst och lokala filbehörigheter: nekad skrivning till
+`.git/index.lock` eller `.git/config` är ett lokalt behörighetsfel som ett
+byte av transport inte rättar. Begär inte nya nycklar eller inloggning enbart
+på grund av sådana fel. Lagra aldrig åtkomsttoken i repo, URL:er eller loggar.
+
 Läs instruktionen inför varje driftsättning. Arbetsflödet nedan gäller från
 2026-10-24 och ersätter kravet på fullständigt `check` inför varje publicering.
 Äldre leveransanteckningar längre ned beskriver det dåvarande flödet.

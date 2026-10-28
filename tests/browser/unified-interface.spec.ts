@@ -34,7 +34,7 @@ async function saved(page: Page): Promise<GameState> {
       ).state,
   );
 }
-test('skeppssprites-pa-kartan: mixed fleets load all five existing sprites and remain selectable in each map', async ({
+test('skeppssprites-pa-kartan / genererade-skeppssprites: all six sprites load and mixed fleets remain selectable in each map', async ({
   page,
 }, testInfo) => {
   const state = researchStationState();
@@ -54,7 +54,7 @@ test('skeppssprites-pa-kartan: mixed fleets load all five existing sprites and r
       .click();
     await expect(page.locator('canvas')).toHaveAttribute(
       'data-ship-images-ready',
-      '5',
+      '6',
     );
     await selectMapFleet(page);
     await expect(page.locator('.selected-fleet-card')).toContainText(
@@ -193,7 +193,7 @@ test('gemensam-events-panel / planetinformation-pa-kartan: persistent footer, re
   await expect(page.locator('.planet-map-info')).toHaveCount(0);
   await expect(page.locator('canvas')).toHaveAttribute(
     'data-ship-images-ready',
-    '5',
+    '6',
   );
   await page.screenshot({ path: testInfo.outputPath('shared-footer.png') });
 });

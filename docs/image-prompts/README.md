@@ -1,6 +1,6 @@
 # Bildpromptpaket
 
-Krav: `bildpromptpaket`. Paketet innehåller 53 färdiga engelska prompter och åtta kopierade stilreferenser. Inga bilder har genererats och spelets befintliga bilder behålls.
+Krav: `bildpromptpaket`. Paketet innehåller 54 färdiga engelska prompter och åtta kopierade stilreferenser. Transport ship, Salvage ship och Space pirate har nu genererats och kopplats in enligt `genererade-skeppssprites`. Övriga bilder återstår.
 
 ## Användning i ChatGPT
 
@@ -14,11 +14,13 @@ Krav: `bildpromptpaket`. Paketet innehåller 53 färdiga engelska prompter och �
 
 Skepp: strikt vy ovanifrån, nos åt höger, transparent bakgrund, ljust grå pansarplåt med blågrön struktur och små varma accenter. Byggnader: målade industrimiljöer i isometriskt perspektiv, blågröna toner och varmt ljus. Symboler: förenklade tydliga motiv som fungerar i 24–32 pixlar. Planeter: isolerade sfärer med ljus uppifrån vänster och transparent bakgrund. Orbital Shipyard får både byggnadsporträtt och en separat station för kartan.
 
+Piratskeppet avviker avsiktligt med rost­röd, ockragul och kolgrå lappad plåt samt provisoriska reparationer.
+
 ## Index
 
 | Kategori                 | Antal |
 | ------------------------ | ----: |
-| Saknade skepp            |     2 |
+| Skepp (genererade)       |     3 |
 | Saknade byggnadsporträtt |    20 |
 | Byggnadssymboler         |    24 |
 | Planeter                 |     6 |
@@ -28,6 +30,7 @@ Skepp: strikt vy ovanifrån, nos åt höger, transparent bakgrund, ljust grå pa
 | ----------------------------------------------------------------------- | --------- | ---------------------------------------- |
 | [Transport ship](ships/transport-ship.md)                               | ships     | `transport-ship.png`                     |
 | [Salvage ship](ships/salvage-ship.md)                                   | ships     | `salvage-ship.png`                       |
+| [Space pirate](ships/pirate-ship.md)                                    | ships     | `pirate-ship.png`                        |
 | [Orbital shipyard](buildings/orbital-shipyard.md)                       | buildings | `orbital-shipyard.png`                   |
 | [Orbital shipyard](symbols/orbital-shipyard.md)                         | symbols   | `orbital-shipyard-symbol.png`            |
 | [Salvage ship factory](buildings/salvage-ship-factory.md)               | buildings | `salvage-ship-factory.png`               |

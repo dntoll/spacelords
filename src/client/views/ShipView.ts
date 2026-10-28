@@ -1,12 +1,12 @@
-import { SHIP_IMAGES, SHIP_TYPES } from './ShipImages.js';
+import { SHIP_SPRITES, SHIP_TYPES, type ShipSpriteType } from './ShipImages.js';
 export { SHIP_IMAGES, SHIP_TYPES } from './ShipImages.js';
 import { TELESCOPES } from '../models/Detection.js';
 import { type FleetSnapshot, type ShipType } from '../models/Game.js';
 import { button, element } from './dom.js';
 
-export function shipImage(type: ShipType): HTMLImageElement {
+export function shipImage(type: ShipSpriteType): HTMLImageElement {
   const image = element('img', 'ship-image');
-  image.src = SHIP_IMAGES[type];
+  image.src = SHIP_SPRITES[type];
   image.alt = type;
   image.draggable = false;
   image.decoding = 'async';

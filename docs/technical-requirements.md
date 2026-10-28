@@ -1,5 +1,9 @@
 # Tekniska krav och arbetsregler
 
+## Genererade skeppssprites
+
+`genererade-skeppssprites`: PNG-original bevaras och optimerade WebP importeras via Vite. HTML och p5 delar ShipImages. Piratens sprite är en presentationsnyckel; sparformat och domänens ShipType ändras inte. Se [skeppsgrafik](ship-artwork.md).
+
 ## Enhetliga spelvyer
 
 Krav och status: [enhetliga spelvyer](unified-interface.md).

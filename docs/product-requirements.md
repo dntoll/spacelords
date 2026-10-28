@@ -10,8 +10,8 @@ prioriterade reparationer, befintliga skeppsbilder på kartorna, begränsad
 forskningskamera och känd planetinformation beskrivs i
 [enhetliga spelvyer](unified-interface.md). Där anges vilka tidigare regler
 för layout, gruppering och FIFO som uttryckligen ersätts.
-Bildleveransen är en [katalog med 53 prompter](image-prompts/README.md);
-inga nya bilder genereras eller ersätter befintliga bilder.
+Bildleveransen är en [katalog med 54 prompter](image-prompts/README.md);
+`genererade-skeppssprites` är **Fullständigt implementerat**. Transport ship och Salvage ship har egna bilder. Space pirate har avvikande färger, rostig lappad plåt och provisoriska lagningar. Bilderna visas i flottpaneler och på kartan. Se [skeppsgrafik](ship-artwork.md).
 
 ## Utökad galax
 

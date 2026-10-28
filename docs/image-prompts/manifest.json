@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "imageGenerationPerformed": false,
+  "imageGenerationPerformed": true,
   "assets": [
     {
       "id": "ships-transport-ship",
@@ -14,7 +14,8 @@
         "references/exploration-ship.webp",
         "references/colony-ship.webp"
       ],
-      "usage": "fleet portraits and map sprites"
+      "usage": "fleet portraits and map sprites",
+      "generated": true
     },
     {
       "id": "ships-salvage-ship",
@@ -28,7 +29,23 @@
         "references/exploration-ship.webp",
         "references/colony-ship.webp"
       ],
-      "usage": "fleet portraits and map sprites"
+      "usage": "fleet portraits and map sprites",
+      "generated": true
+    },
+    {
+      "id": "ships-pirate-ship",
+      "category": "ships",
+      "name": "Space pirate",
+      "prompt": "ships/pirate-ship.md",
+      "output": "pirate-ship.png",
+      "transparent": true,
+      "references": [
+        "references/fighter.webp",
+        "references/exploration-ship.webp",
+        "references/colony-ship.webp"
+      ],
+      "usage": "pirate portrait and map sprite",
+      "generated": true
     },
     {
       "id": "buildings-orbital-shipyard",
