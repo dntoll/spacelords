@@ -1,5 +1,14 @@
 # Tekniska krav och arbetsregler
 
+## Genererade symboler och kartbilder
+
+`genererade-symboler-och-kartbilder`: 31 separata transparenta PNG-original
+sparas under `assets/original/` med bildpromptpaketets filnamn. Använda
+prompter bevaras och manifestet uppdateras per fil. Kontrollera antal, filformat,
+alpha, fria kanter och unika filnamn automatiskt; granska motiv, ljusriktning
+och symbolernas läsbarhet visuellt. Ingen spelmekanik, sparning eller publicerad
+klient ändras i denna bildleverans. Se [bildleveransen](generated-map-artwork.md).
+
 ## Genererade skeppssprites
 
 `genererade-skeppssprites`: PNG-original bevaras och optimerade WebP importeras via Vite. HTML och p5 delar ShipImages. Piratens sprite är en presentationsnyckel; sparformat och domänens ShipType ändras inte. Se [skeppsgrafik](ship-artwork.md).

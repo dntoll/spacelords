@@ -1,5 +1,10 @@
 # Produktkrav och status
 
+`genererade-symboler-och-kartbilder` är **Fullständigt implementerat**. De nya
+bilderna omfattar 24 tydliga byggnadssymboler, sex planettyper och Orbital
+shipyard ovanifrån. Samtliga bilder är genererade och granskade.
+Byggnadsporträtten ingår inte. Se [bildleveransen](generated-map-artwork.md).
+
 Mobilens kartpaneler, centrerat Show-fokus och dubbelklick för research beskrivs
 i [mobilens kartval och forskning](mobile-map-interactions.md).
 

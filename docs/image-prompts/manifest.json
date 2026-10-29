@@ -75,7 +75,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/orbital-shipyard-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-salvage-ship-factory",
@@ -105,7 +108,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/salvage-ship-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-telescope-i-factory",
@@ -135,7 +141,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/telescope-i-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-telescope-ii-factory",
@@ -165,7 +174,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/telescope-ii-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-telescope-iii-factory",
@@ -195,7 +207,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/telescope-iii-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-ice-dome",
@@ -225,7 +240,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/ice-dome-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-ice-terraforming-factory",
@@ -255,7 +273,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/ice-terraforming-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-desert-dome",
@@ -285,7 +306,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/desert-dome-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-desert-terraforming-factory",
@@ -315,7 +339,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/desert-terraforming-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-ocean-dome",
@@ -345,7 +372,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/ocean-dome-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-ocean-terraforming-factory",
@@ -375,7 +405,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/ocean-terraforming-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-toxic-dome",
@@ -405,7 +438,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/toxic-dome-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-toxic-terraforming-factory",
@@ -435,7 +471,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/toxic-terraforming-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-iron-mine",
@@ -465,7 +504,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/iron-mine-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-rocket-engine-factory",
@@ -495,7 +537,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/rocket-engine-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-ion-pulse-engine-factory",
@@ -525,7 +570,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/ion-pulse-engine-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-weapons-module-factory",
@@ -555,7 +603,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/weapons-module-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-water-extractor",
@@ -585,7 +636,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/water-extractor-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-oil-extractor",
@@ -615,7 +669,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/oil-extractor-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "buildings-transport-ship-factory",
@@ -645,7 +702,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/transport-ship-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "symbols-research-station",
@@ -660,7 +720,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/research-station-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "symbols-colony-ship-factory",
@@ -675,7 +738,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/colony-ship-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "symbols-exploration-ship-factory",
@@ -690,7 +756,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/exploration-ship-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "symbols-fighter-factory",
@@ -705,7 +774,10 @@
         "references/colony-ship-factory.webp",
         "references/research-station.webp"
       ],
-      "usage": "small building selection icons"
+      "usage": "small building selection icons",
+      "generated": true,
+      "original": "../../assets/original/symbols/fighter-factory-symbol.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "planets-temperate",
@@ -718,7 +790,10 @@
         "references/plasma-star.webp",
         "references/fighter-factory.webp"
       ],
-      "usage": "planet map bodies and detail portraits"
+      "usage": "planet map bodies and detail portraits",
+      "generated": true,
+      "original": "../../assets/original/planets/temperate-planet.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "planets-ice",
@@ -731,7 +806,11 @@
         "references/plasma-star.webp",
         "references/fighter-factory.webp"
       ],
-      "usage": "planet map bodies and detail portraits"
+      "usage": "planet map bodies and detail portraits",
+      "generated": true,
+      "original": "../../assets/original/planets/ice-planet.png",
+      "generationPrompts": "generation-2026-10-29.json",
+      "refinementPrompts": "refinements-2026-10-29.json"
     },
     {
       "id": "planets-desert",
@@ -744,7 +823,11 @@
         "references/plasma-star.webp",
         "references/fighter-factory.webp"
       ],
-      "usage": "planet map bodies and detail portraits"
+      "usage": "planet map bodies and detail portraits",
+      "generated": true,
+      "original": "../../assets/original/planets/desert-planet.png",
+      "generationPrompts": "generation-2026-10-29.json",
+      "refinementPrompts": "refinements-2026-10-29.json"
     },
     {
       "id": "planets-ocean",
@@ -757,7 +840,10 @@
         "references/plasma-star.webp",
         "references/fighter-factory.webp"
       ],
-      "usage": "planet map bodies and detail portraits"
+      "usage": "planet map bodies and detail portraits",
+      "generated": true,
+      "original": "../../assets/original/planets/ocean-planet.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "planets-toxic",
@@ -770,7 +856,10 @@
         "references/plasma-star.webp",
         "references/fighter-factory.webp"
       ],
-      "usage": "planet map bodies and detail portraits"
+      "usage": "planet map bodies and detail portraits",
+      "generated": true,
+      "original": "../../assets/original/planets/toxic-planet.png",
+      "generationPrompts": "generation-2026-10-29.json"
     },
     {
       "id": "planets-gas",
@@ -783,7 +872,11 @@
         "references/plasma-star.webp",
         "references/fighter-factory.webp"
       ],
-      "usage": "planet map bodies and detail portraits"
+      "usage": "planet map bodies and detail portraits",
+      "generated": true,
+      "original": "../../assets/original/planets/gas-planet.png",
+      "generationPrompts": "generation-2026-10-29.json",
+      "refinementPrompts": "refinements-2026-10-29.json"
     },
     {
       "id": "map-orbital-shipyard",
@@ -797,7 +890,10 @@
         "references/exploration-ship.webp",
         "references/colony-ship.webp"
       ],
-      "usage": "orbital station sprite on game maps"
+      "usage": "orbital station sprite on game maps",
+      "generated": true,
+      "original": "../../assets/original/map/orbital-shipyard-sprite.png",
+      "generationPrompts": "generation-2026-10-29.json"
     }
   ]
 }

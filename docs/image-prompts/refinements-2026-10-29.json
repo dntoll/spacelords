@@ -1,0 +1,22 @@
+{
+  "requirement": "genererade-symboler-och-kartbilder",
+  "tool": "built-in image_gen",
+  "basePrompts": "generation-2026-10-29.json",
+  "assets": [
+    {
+      "id": "planets-desert",
+      "prompt": "Use case: precise-object-edit.\nEdit target: the supplied isolated planet sprite. Keep the exact planet type, spherical shape, surface colors and terrain, painterly realistic style, and upper-left lighting. Clean up its silhouette: remove every detached white/cyan/yellow speck, splash, mist, torn fringe and stray pixel outside the circular planetary disk. The planet must have a single smooth circular anti-aliased edge, with at most a very thin continuous atmospheric rim following that edge. No clouds or glow outside the circle. Place the entire complete planet centered in a square canvas, its diameter 72% of the canvas, with 14% completely clear padding on all four sides. Background must be true alpha transparency. Preserve the image's alpha transparency. No stars, other objects, labels, text or watermark.",
+      "output": "desert-planet.png"
+    },
+    {
+      "id": "planets-ice",
+      "prompt": "Use case: precise-object-edit.\nEdit target: the supplied isolated planet sprite. Keep the exact planet type, spherical shape, surface colors and terrain, painterly realistic style, and upper-left lighting. Clean up its silhouette: remove every detached white/cyan/yellow speck, splash, mist, torn fringe and stray pixel outside the circular planetary disk. The planet must have a single smooth circular anti-aliased edge, with at most a very thin continuous atmospheric rim following that edge. No clouds or glow outside the circle. Place the entire complete planet centered in a square canvas, its diameter 72% of the canvas, with 14% completely clear padding on all four sides. Background must be true alpha transparency. Preserve the image's alpha transparency. No stars, other objects, labels, text or watermark.",
+      "output": "ice-planet.png"
+    },
+    {
+      "id": "planets-gas",
+      "prompt": "Use case: precise-object-edit.\nEdit target: the supplied Gas planet sprite. Preserve the gas giant's cream, copper and blue-grey atmospheric bands, large storm, spherical shape and upper-left lighting. Clean up the circular silhouette: remove all white ragged fringe and detached colored pixels outside the planetary circle, particularly the upper-left edge. A single smooth anti-aliased circular edge with no mist or glow outside. Keep the sphere entirely inside a square transparent canvas, centered with generous completely clear padding around every edge. No text or other objects. Preserve true alpha transparency.",
+      "output": "gas-planet.png"
+    }
+  ]
+}

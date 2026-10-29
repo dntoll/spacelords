@@ -1,6 +1,13 @@
 # Bildpromptpaket
 
-Krav: `bildpromptpaket`. Paketet innehåller 54 färdiga engelska prompter och åtta kopierade stilreferenser. Transport ship, Salvage ship och Space pirate har nu genererats och kopplats in enligt `genererade-skeppssprites`. Övriga bilder återstår.
+Krav: `bildpromptpaket`. Paketet innehåller 54 färdiga engelska prompter och åtta kopierade stilreferenser. Transport ship, Salvage ship och Space pirate har genererats och kopplats in enligt `genererade-skeppssprites`. Dessutom har 24 byggnadssymboler, sex planeter och kartstationen genererats enligt `genererade-symboler-och-kartbilder`. Endast de 20 byggnadsporträtten återstår att generera. De 31 nya bilderna väntar på separat optimering och inkoppling i spelet.
+
+Se [bildleverans och granskning](../generated-map-artwork.md),
+[använda prompter](generation-2026-10-29.json),
+[kantförbättringar](refinements-2026-10-29.json) och översikterna för
+[symboler](artwork-review/symbols-overview.jpg),
+[planeter](artwork-review/planets-overview.jpg) och
+[kartstationen](artwork-review/map-overview.jpg).
 
 ## Användning i ChatGPT
 
@@ -18,13 +25,13 @@ Piratskeppet avviker avsiktligt med rost­röd, ockragul och kolgrå lappad plå
 
 ## Index
 
-| Kategori                 | Antal |
-| ------------------------ | ----: |
-| Skepp (genererade)       |     3 |
-| Saknade byggnadsporträtt |    20 |
-| Byggnadssymboler         |    24 |
-| Planeter                 |     6 |
-| Shipyard för kartan      |     1 |
+| Kategori                        | Antal |
+| ------------------------------- | ----: |
+| Skepp (genererade)              |     3 |
+| Saknade byggnadsporträtt        |    20 |
+| Byggnadssymboler (genererade)   |    24 |
+| Planeter (genererade)           |     6 |
+| Shipyard för kartan (genererad) |     1 |
 
 | Motiv                                                                   | Kategori  | Föreslaget filnamn                       |
 | ----------------------------------------------------------------------- | --------- | ---------------------------------------- |
