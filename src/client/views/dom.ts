@@ -1,3 +1,5 @@
+import { PLANET_IMAGES, type PlanetArtwork } from './PlanetImages.js';
+
 export function element<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   className = '',
@@ -41,12 +43,31 @@ export function queueButton(
   return node;
 }
 
-export function planetIllustration(large = false): HTMLElement {
+export function planetIllustration(
+  large = false,
+  type: PlanetArtwork = 'Temperate',
+): HTMLElement {
   const orbit = element(
     'div',
     large ? 'planet-art planet-art-large' : 'planet-art',
   );
   orbit.setAttribute('aria-hidden', 'true');
-  orbit.append(element('div', 'planet-orbit'), element('div', 'planet-sphere'));
+  const image = element('img', 'planet-portrait');
+  image.src = PLANET_IMAGES[type];
+  image.alt = '';
+  image.width = 512;
+  image.height = 512;
+  image.decoding = 'async';
+  image.addEventListener(
+    'error',
+    () => {
+      orbit.replaceChildren(
+        element('div', 'planet-orbit'),
+        element('div', 'planet-sphere'),
+      );
+    },
+    { once: true },
+  );
+  orbit.append(image);
   return orbit;
 }

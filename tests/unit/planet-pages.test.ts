@@ -258,7 +258,7 @@ describe('byggkategorier / symbolbaserade-kataloger', () => {
       '[aria-label="Show Research station"]',
     )!;
     expect(choice.querySelector('span')?.textContent).toBe('Research station');
-    expect(choice.querySelector('svg')).not.toBeNull();
+    expect(choice.querySelector('.catalog-icon')).not.toBeNull();
     expect(initial.querySelector('.catalog-details')).toBeNull();
     choice.click();
     expect(emit).toHaveBeenCalledExactlyOnceWith({

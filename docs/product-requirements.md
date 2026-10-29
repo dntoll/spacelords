@@ -5,6 +5,12 @@ bilderna omfattar 24 tydliga byggnadssymboler, sex planettyper och Orbital
 shipyard ovanifrån. Samtliga bilder är genererade och granskade.
 Byggnadsporträtten ingår inte. Se [bildleveransen](generated-map-artwork.md).
 
+`spelgrafik-symboler`, `spelgrafik-planeter` och `spelgrafik-kartstation` är
+**Fullständigt implementerat**. Byggval, byggnadsköer och
+identifierad forskning visar byggnadssymbolerna. Byggnader utan målat porträtt
+visar sin symbol i detaljvyn. Planettypen styr bilden på kartorna och i
+planetvyn. Orbital shipyard har en egen kartbild med bibehållet urval.
+
 Mobilens kartpaneler, centrerat Show-fokus och dubbelklick för research beskrivs
 i [mobilens kartval och forskning](mobile-map-interactions.md).
 

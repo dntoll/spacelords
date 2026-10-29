@@ -16,6 +16,8 @@ import type { TurnFrame } from '../models/Game.js';
 import { SHIP_SPRITES, type ShipSpriteType } from './ShipImages.js';
 import { FleetMapLayout } from '../models/FleetMapLayout.js';
 import { pirateAsFleet } from '../models/PirateFleet.js';
+import { MapArtwork } from './MapArtwork.js';
+import { renderPlanetGlyph, renderShipyardGlyph } from './PlanetGlyph.js';
 
 const STAR_MAP_LABEL =
   'Star map. Click a fleet or trade route to select it. Drag a selected owned planet to another owned planet to create a route. Press R to start a route from the selected owned planet, then choose its target. Drag a fleet onto a route to assign it, or elsewhere to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.';
@@ -32,6 +34,7 @@ export class GalaxyMapView implements MapPort {
   #ready = false;
   #starTextures: readonly p5.Image[] | null = null;
   readonly #shipImages = new Map<ShipSpriteType, p5.Image>();
+  readonly #artwork = new MapArtwork();
   #descriptionScreen: AppReadModel['screen'] | null = null;
   #movement: {
     movement: TurnFrame['movements'][number];
@@ -56,6 +59,17 @@ export class GalaxyMapView implements MapPort {
         this.#canvas = container.querySelector('canvas');
         if (this.#canvas) this.#bindInput(this.#canvas);
         this.#ready = true;
+        this.#artwork.load(sketch, () => {
+          this.#canvas?.setAttribute(
+            'data-planet-images-ready',
+            String(this.#artwork.planetCount),
+          );
+          this.#canvas?.setAttribute(
+            'data-shipyard-image-ready',
+            String(!!this.#artwork.station),
+          );
+          void sketch.redraw();
+        });
         for (const type of Object.keys(SHIP_SPRITES) as ShipSpriteType[]) {
           void sketch
             .loadImage(SHIP_SPRITES[type])
@@ -111,6 +125,7 @@ export class GalaxyMapView implements MapPort {
 
   dispose(): void {
     this.#disposed = true;
+    this.#artwork.dispose();
     window.cancelAnimationFrame(this.#movementFrame);
     this.#finishMovement?.();
     this.#finishMovement = null;
@@ -271,7 +286,12 @@ export class GalaxyMapView implements MapPort {
       );
       sketch.strokeWeight(2);
       sketch.fill('#152936');
-      if (marker.kind === 'yard') sketch.rect(-10, -8, 20, 16);
+      if (marker.kind === 'yard')
+        renderShipyardGlyph(
+          sketch,
+          marker.id === model.salvageSelection,
+          this.#artwork.station,
+        );
       else {
         sketch.line(-8, -7, 8, 7);
         sketch.line(-8, 7, 8, -7);
@@ -365,12 +385,16 @@ export class GalaxyMapView implements MapPort {
     }
     sketch.noStroke();
     sketch.fill(color);
-    if (!star) sketch.circle(point.x, point.y, 17);
     if (!star) {
-      sketch.fill(20, 52, 54, 100);
-      sketch.ellipse(point.x + 3, point.y + 1, 8, 15);
-      sketch.fill(230, 245, 230, 80);
-      sketch.circle(point.x - 4, point.y - 4, 4);
+      renderPlanetGlyph(
+        sketch,
+        point,
+        26,
+        color,
+        this.#artwork.planet(
+          object.type === 'gas' ? 'Gas' : (object.environment ?? 'Temperate'),
+        ),
+      );
     }
     sketch.pop();
     if (zoom < 0.2 && cell.position.key !== this.#model?.selected?.position.key)

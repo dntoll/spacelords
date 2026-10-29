@@ -126,7 +126,7 @@ describe('gemensamma-byggnadsbilder', () => {
       () => {},
     );
     expect(
-      [...view.querySelectorAll('.pill')].filter((node) =>
+      [...view.querySelectorAll('.research-node-status')].filter((node) =>
         node.textContent?.startsWith('Researching'),
       ),
     ).toHaveLength(1);
@@ -136,9 +136,15 @@ describe('gemensamma-byggnadsbilder', () => {
     click('Building sites');
     click('Build building');
     click('Show Research station');
-    const label = root.querySelector('img')?.getAttribute('src');
+    const label = root
+      .querySelector('.catalog-details .building-image img')
+      ?.getAttribute('src');
     click('Build Research station');
-    expect(root.querySelector('img')?.getAttribute('src')).toBe(label);
+    expect(
+      root
+        .querySelector('.site-details .building-image img')
+        ?.getAttribute('src'),
+    ).toBe(label);
   });
 });
 
@@ -307,7 +313,7 @@ describe('gemensamma-byggnadsbilder', () => {
     const research = renderResearch(
       {
         available: TECHNOLOGIES,
-        completed: [],
+        completed: TECHNOLOGIES,
         selected: null,
         queueBlockedReason: null,
         stations: 0,

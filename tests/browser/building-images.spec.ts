@@ -1,16 +1,31 @@
 import { startFirstSlot, endTurn } from './save-helpers.js';
 import { expect, test } from '@playwright/test';
+import { Game, TECHNOLOGIES } from '../../src/client/models/Game.js';
+import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 
 test('gemensamma-byggnadsbilder: supplied images load in Research, selection and building sites', async ({
   page,
 }, testInfo) => {
+  const state = {
+    ...new Game(createExampleGalaxy()).exportState(),
+    researched: TECHNOLOGIES,
+  };
+  state.colonies[0]![1].buildings = [];
+  await page.addInitScript((state) => {
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+    if (!localStorage.getItem('spacelords.save.v2.1'))
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-10-29T09:00:00Z', state }),
+      );
+  }, state);
   await page.goto('./');
   await startFirstSlot(page);
   await page
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('button', { name: 'Research', exact: true })
     .click();
-  const images = page.locator('.research-page img');
+  const images = page.locator('.research-page .building-image img');
   await expect(images).toHaveCount(4);
   const sources: string[] = [];
   for (const image of await images.all()) {

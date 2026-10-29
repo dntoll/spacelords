@@ -15,6 +15,7 @@ import type { IntentHandler } from './ViewContracts.js';
 import { button, element, planetIllustration, queueButton } from './dom.js';
 import { buildingImage } from './BuildingImage.js';
 import { bindQueueOrder, decorateQueueRow } from './QueueView.js';
+import { catalogIcon } from './CatalogControls.js';
 
 type PlanetMenus = Pick<AppReadModel, 'phase'> &
   Partial<
@@ -95,8 +96,11 @@ export function renderPlanet(
     const counts = new Map<string, number>();
     for (const building of planet.buildings)
       counts.set(building.type, (counts.get(building.type) ?? 0) + 1);
-    for (const [type, count] of counts)
-      inventory.append(element('p', '', `${type} ×${count}`));
+    for (const [type, count] of counts) {
+      const row = element('p', 'planet-building-count');
+      row.append(catalogIcon(type), element('span', '', `${type} ×${count}`));
+      inventory.append(row);
+    }
     if (!counts.size)
       inventory.append(element('p', 'muted-note', 'No buildings yet.'));
     panel.append(inventory);
@@ -132,7 +136,7 @@ function overview(planet: PlanetGameSnapshot, owner: string): HTMLElement {
     );
     stats.append(pair);
   }
-  section.append(planetIllustration(true), stats);
+  section.append(planetIllustration(true, planet.environment), stats);
   return section;
 }
 

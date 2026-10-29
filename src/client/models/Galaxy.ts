@@ -1,5 +1,5 @@
 import { HexCoordinate } from './HexCoordinate.js';
-import type { Planet, Player } from './Planet.js';
+import type { Planet, Player, PlanetEnvironmentType } from './Planet.js';
 
 export class Star {
   constructor(
@@ -38,6 +38,7 @@ export interface MapObject {
   readonly name: string;
   readonly type: 'star' | 'solid' | 'gas';
   readonly owned: boolean;
+  readonly environment?: PlanetEnvironmentType | 'Gas';
 }
 
 export interface MapCell {
@@ -132,6 +133,7 @@ export class Galaxy {
             ? Object.freeze({
                 kind: 'planet',
                 type: planet.type,
+                environment: planet.type === 'gas' ? 'Gas' : planet.environment,
                 name: planet.name,
                 owned: planet.colony?.ownerId === player.id,
               })
@@ -175,6 +177,7 @@ export class Galaxy {
             ? Object.freeze({
                 kind: 'planet' as const,
                 type: planet.type,
+                environment: planet.type === 'gas' ? 'Gas' : planet.environment,
                 name: planet.name,
                 owned:
                   ownedPlanetIds?.has(planet.id) ??

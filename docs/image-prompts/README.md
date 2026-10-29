@@ -1,6 +1,6 @@
 # Bildpromptpaket
 
-Krav: `bildpromptpaket`. Paketet innehåller 54 färdiga engelska prompter och åtta kopierade stilreferenser. Transport ship, Salvage ship och Space pirate har genererats och kopplats in enligt `genererade-skeppssprites`. Dessutom har 24 byggnadssymboler, sex planeter och kartstationen genererats enligt `genererade-symboler-och-kartbilder`. Endast de 20 byggnadsporträtten återstår att generera. De 31 nya bilderna väntar på separat optimering och inkoppling i spelet.
+Krav: `bildpromptpaket`. Paketet innehåller 54 färdiga engelska prompter och åtta kopierade stilreferenser. Transport ship, Salvage ship och Space pirate har genererats och kopplats in enligt `genererade-skeppssprites`. Dessutom har 24 byggnadssymboler, sex planeter och kartstationen genererats enligt `genererade-symboler-och-kartbilder`. Endast de 20 byggnadsporträtten återstår att generera. De 31 nya bilderna är optimerade och inkopplade i spelet enligt `spelgrafik-symboler`, `spelgrafik-planeter` och `spelgrafik-kartstation`.
 
 Se [bildleverans och granskning](../generated-map-artwork.md),
 [använda prompter](generation-2026-10-29.json),

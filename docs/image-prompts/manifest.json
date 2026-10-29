@@ -78,7 +78,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/orbital-shipyard-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/orbital-shipyard-symbol.webp"
     },
     {
       "id": "buildings-salvage-ship-factory",
@@ -111,7 +112,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/salvage-ship-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/salvage-ship-factory-symbol.webp"
     },
     {
       "id": "buildings-telescope-i-factory",
@@ -144,7 +146,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/telescope-i-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/telescope-i-factory-symbol.webp"
     },
     {
       "id": "buildings-telescope-ii-factory",
@@ -177,7 +180,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/telescope-ii-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/telescope-ii-factory-symbol.webp"
     },
     {
       "id": "buildings-telescope-iii-factory",
@@ -210,7 +214,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/telescope-iii-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/telescope-iii-factory-symbol.webp"
     },
     {
       "id": "buildings-ice-dome",
@@ -243,7 +248,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/ice-dome-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/ice-dome-symbol.webp"
     },
     {
       "id": "buildings-ice-terraforming-factory",
@@ -276,7 +282,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/ice-terraforming-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/ice-terraforming-factory-symbol.webp"
     },
     {
       "id": "buildings-desert-dome",
@@ -309,7 +316,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/desert-dome-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/desert-dome-symbol.webp"
     },
     {
       "id": "buildings-desert-terraforming-factory",
@@ -342,7 +350,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/desert-terraforming-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/desert-terraforming-factory-symbol.webp"
     },
     {
       "id": "buildings-ocean-dome",
@@ -375,7 +384,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/ocean-dome-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/ocean-dome-symbol.webp"
     },
     {
       "id": "buildings-ocean-terraforming-factory",
@@ -408,7 +418,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/ocean-terraforming-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/ocean-terraforming-factory-symbol.webp"
     },
     {
       "id": "buildings-toxic-dome",
@@ -441,7 +452,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/toxic-dome-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/toxic-dome-symbol.webp"
     },
     {
       "id": "buildings-toxic-terraforming-factory",
@@ -474,7 +486,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/toxic-terraforming-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/toxic-terraforming-factory-symbol.webp"
     },
     {
       "id": "buildings-iron-mine",
@@ -507,7 +520,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/iron-mine-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/iron-mine-symbol.webp"
     },
     {
       "id": "buildings-rocket-engine-factory",
@@ -540,7 +554,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/rocket-engine-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/rocket-engine-factory-symbol.webp"
     },
     {
       "id": "buildings-ion-pulse-engine-factory",
@@ -573,7 +588,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/ion-pulse-engine-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/ion-pulse-engine-factory-symbol.webp"
     },
     {
       "id": "buildings-weapons-module-factory",
@@ -606,7 +622,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/weapons-module-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/weapons-module-factory-symbol.webp"
     },
     {
       "id": "buildings-water-extractor",
@@ -639,7 +656,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/water-extractor-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/water-extractor-symbol.webp"
     },
     {
       "id": "buildings-oil-extractor",
@@ -672,7 +690,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/oil-extractor-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/oil-extractor-symbol.webp"
     },
     {
       "id": "buildings-transport-ship-factory",
@@ -705,7 +724,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/transport-ship-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/transport-ship-factory-symbol.webp"
     },
     {
       "id": "symbols-research-station",
@@ -723,7 +743,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/research-station-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/research-station-symbol.webp"
     },
     {
       "id": "symbols-colony-ship-factory",
@@ -741,7 +762,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/colony-ship-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/colony-ship-factory-symbol.webp"
     },
     {
       "id": "symbols-exploration-ship-factory",
@@ -759,7 +781,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/exploration-ship-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/exploration-ship-factory-symbol.webp"
     },
     {
       "id": "symbols-fighter-factory",
@@ -777,7 +800,8 @@
       "usage": "small building selection icons",
       "generated": true,
       "original": "../../assets/original/symbols/fighter-factory-symbol.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/symbols/fighter-factory-symbol.webp"
     },
     {
       "id": "planets-temperate",
@@ -793,7 +817,8 @@
       "usage": "planet map bodies and detail portraits",
       "generated": true,
       "original": "../../assets/original/planets/temperate-planet.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/planets/temperate-planet.webp"
     },
     {
       "id": "planets-ice",
@@ -810,7 +835,8 @@
       "generated": true,
       "original": "../../assets/original/planets/ice-planet.png",
       "generationPrompts": "generation-2026-10-29.json",
-      "refinementPrompts": "refinements-2026-10-29.json"
+      "refinementPrompts": "refinements-2026-10-29.json",
+      "client": "../../src/client/assets/planets/ice-planet.webp"
     },
     {
       "id": "planets-desert",
@@ -827,7 +853,8 @@
       "generated": true,
       "original": "../../assets/original/planets/desert-planet.png",
       "generationPrompts": "generation-2026-10-29.json",
-      "refinementPrompts": "refinements-2026-10-29.json"
+      "refinementPrompts": "refinements-2026-10-29.json",
+      "client": "../../src/client/assets/planets/desert-planet.webp"
     },
     {
       "id": "planets-ocean",
@@ -843,7 +870,8 @@
       "usage": "planet map bodies and detail portraits",
       "generated": true,
       "original": "../../assets/original/planets/ocean-planet.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/planets/ocean-planet.webp"
     },
     {
       "id": "planets-toxic",
@@ -859,7 +887,8 @@
       "usage": "planet map bodies and detail portraits",
       "generated": true,
       "original": "../../assets/original/planets/toxic-planet.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/planets/toxic-planet.webp"
     },
     {
       "id": "planets-gas",
@@ -876,7 +905,8 @@
       "generated": true,
       "original": "../../assets/original/planets/gas-planet.png",
       "generationPrompts": "generation-2026-10-29.json",
-      "refinementPrompts": "refinements-2026-10-29.json"
+      "refinementPrompts": "refinements-2026-10-29.json",
+      "client": "../../src/client/assets/planets/gas-planet.webp"
     },
     {
       "id": "map-orbital-shipyard",
@@ -893,7 +923,8 @@
       "usage": "orbital station sprite on game maps",
       "generated": true,
       "original": "../../assets/original/map/orbital-shipyard-sprite.png",
-      "generationPrompts": "generation-2026-10-29.json"
+      "generationPrompts": "generation-2026-10-29.json",
+      "client": "../../src/client/assets/map/orbital-shipyard-sprite.webp"
     }
   ]
 }

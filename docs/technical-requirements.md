@@ -6,8 +6,27 @@
 sparas under `assets/original/` med bildpromptpaketets filnamn. Använda
 prompter bevaras och manifestet uppdateras per fil. Kontrollera antal, filformat,
 alpha, fria kanter och unika filnamn automatiskt; granska motiv, ljusriktning
-och symbolernas läsbarhet visuellt. Ingen spelmekanik, sparning eller publicerad
-klient ändras i denna bildleverans. Se [bildleveransen](generated-map-artwork.md).
+och symbolernas läsbarhet visuellt. Se [bildleveransen](generated-map-artwork.md).
+
+`spelgrafik-symboler`: BuildingSymbols delar de 24 symbolerna mellan kataloger,
+byggnadsköer och identifierad forskning. Fyra befintliga porträtt behålls;
+övriga detaljvyer använder symbolen. Bilder är dekorativa vid namngivna val
+och ersätts av befintlig SVG-symbol vid laddningsfel.
+
+`spelgrafik-planeter`: Galaxy lämnar planetens miljö i frysta, utforskade
+kartobjekt. Okända planeter lämnas fortsatt bort. PlanetImages delas av
+HTML-illustrationer, alla fyra kartvyer och sparförhandsvisning. MapArtwork
+laddar bilder en gång per kartinstans och ignorerar svar efter dispose.
+
+`spelgrafik-kartstation`: Orbital shipyard använder den genererade bilden i
+befintlig markörposition, med urvalsring och samma träffyta. Förstörda stationer
+filtreras fortsatt bort. Laddningsfel behåller tidigare kartglyfer.
+
+`python scripts/prepare-game-artwork.py` (Pillow) skapar WebP i klientens
+symbol-, planet- och kartkataloger. Alla bilder är högst 512 px, kvalitet 90,
+så även detaljvyer för symbolerna förblir skarpa på mobil. Alpha bevaras och PNG-originalen
+ändras inte. Vite importerar resurserna med rätt basadress och innehållshash.
+Sparformat, MVC-gränser och domänens spelregler ändras inte.
 
 ## Genererade skeppssprites
 

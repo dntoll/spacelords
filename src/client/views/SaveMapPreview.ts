@@ -4,6 +4,8 @@ import { HexGeometry } from '../models/HexCoordinate.js';
 import { renderTerrain } from './TerrainMapView.js';
 import { createStarTextures, renderStarGlyph } from './StarGlyph.js';
 import starSprite from '../assets/stars/plasma-star.webp';
+import { MapArtwork } from './MapArtwork.js';
+import { renderPlanetGlyph } from './PlanetGlyph.js';
 
 /** Read-only p5 instance; hidden cells never reach the preview. */
 export class SaveMapPreview {
@@ -12,6 +14,7 @@ export class SaveMapPreview {
   #ready = false;
   #starTextures: readonly p5.Image[] | null = null;
   #disposed = false;
+  readonly #artwork = new MapArtwork();
 
   constructor(container: HTMLElement, cells: readonly MapCell[]) {
     const visible = cells.filter((cell) => cell.explored);
@@ -31,6 +34,13 @@ export class SaveMapPreview {
         sketch.noLoop();
         sketch.describe('Overview of explored space.');
         this.#ready = true;
+        this.#artwork.load(
+          sketch,
+          () => {
+            void sketch.redraw();
+          },
+          false,
+        );
         void sketch
           .loadImage(starSprite)
           .then((sprite) => {
@@ -83,7 +93,18 @@ export class SaveMapPreview {
                 cell.position,
                 this.#starTextures,
               );
-            else sketch.circle(point.x, point.y, 10);
+            else
+              renderPlanetGlyph(
+                sketch,
+                point,
+                18,
+                cell.object.owned ? '#b0e5ce' : '#86adc5',
+                this.#artwork.planet(
+                  cell.object.type === 'gas'
+                    ? 'Gas'
+                    : (cell.object.environment ?? 'Temperate'),
+                ),
+              );
           }
         });
         renderTerrain(sketch, visible);
@@ -104,6 +125,7 @@ export class SaveMapPreview {
   }
   dispose(): void {
     this.#disposed = true;
+    this.#artwork.dispose();
     this.#observer.disconnect();
     this.#instance.remove();
   }

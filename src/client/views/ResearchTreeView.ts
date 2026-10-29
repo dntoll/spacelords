@@ -9,6 +9,7 @@ import {
 import type { IntentHandler } from './ViewContracts.js';
 import { BUILDING_IMAGES, buildingImage } from './BuildingImage.js';
 import { button, element } from './dom.js';
+import { catalogIcon } from './CatalogControls.js';
 
 const svgNamespace = 'http://www.w3.org/2000/svg';
 
@@ -141,8 +142,10 @@ export function renderResearchTree(
     choose.setAttribute('aria-pressed', String(inspected === type));
     choose.title = identified ? type : 'Unknown technology';
     const art =
-      identified && type !== 'Trade logistics' && BUILDING_IMAGES[type]
-        ? buildingImage(type)
+      identified && type !== 'Trade logistics'
+        ? BUILDING_IMAGES[type]
+          ? buildingImage(type)
+          : catalogIcon(type)
         : element(
             'div',
             'research-symbol',

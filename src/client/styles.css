@@ -2340,6 +2340,41 @@ p {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+.catalog-artwork,
+.planet-portrait {
+  object-fit: contain;
+}
+.planet-portrait {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.planet-selection-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.planet-overview .planet-art {
+  display: block;
+  width: 84px;
+}
+.planet-building-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.planet-selection-summary .planet-art {
+  display: block;
+  width: 64px;
+  flex: 0 0 64px;
+}
+.research-tree-stage .research-node-select > .catalog-artwork {
+  grid-column: 1;
+  grid-row: 1;
+  width: 26px;
+  height: 26px;
+  pointer-events: none;
+}
 .catalog-categories {
   display: flex;
   flex-wrap: wrap;

@@ -4,6 +4,7 @@ import fighterFactory from '../assets/buildings/fighter-factory.webp';
 import researchStation from '../assets/buildings/research-station.webp';
 import type { BuildType } from '../models/Game.js';
 import { element } from './dom.js';
+import { BUILDING_SYMBOLS } from './BuildingSymbols.js';
 
 // gemensamma-byggnadsbilder: Vite resolves shared image URLs under the app base.
 export const BUILDING_IMAGES: Readonly<Partial<Record<BuildType, string>>> =
@@ -16,7 +17,7 @@ export const BUILDING_IMAGES: Readonly<Partial<Record<BuildType, string>>> =
 
 export function buildingImage(
   type: BuildType,
-  source = BUILDING_IMAGES[type],
+  source = BUILDING_IMAGES[type] ?? BUILDING_SYMBOLS[type],
 ): HTMLElement {
   const placeholder = () => {
     const node = element('div', 'building-placeholder', 'Image pending');

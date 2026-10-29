@@ -14,7 +14,9 @@ Se [hela visionen](docs/game-vision.md).
   är **Fullständigt implementerat**. 24 byggnadssymboler, sex planeter och
   en kartbild för Orbital shipyard är genererade, granskade och sparade som
   transparenta PNG-original. De 20 byggnadsporträtten ingår inte;
-  inkoppling i spelet är separat.
+  `spelgrafik-symboler`, `spelgrafik-planeter` och `spelgrafik-kartstation`
+  är **Fullständigt implementerat**: bilderna används i spelet och riktade
+  mobilkontroller är godkända. Leveransen följer snabbpublicering för mobiltest.
   Se [bildleveransen](docs/generated-map-artwork.md).
 
 - **Genererade skeppsbilder:** `genererade-skeppssprites` är **Fullständigt implementerat**. Transport ship, Salvage ship och Space pirate har egna transparenta bilder i flottpaneler och på kartan. Piraten har avvikande färger, rost och provisoriska lagningar. Se [skeppsgrafik](docs/ship-artwork.md).

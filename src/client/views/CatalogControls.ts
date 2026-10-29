@@ -1,6 +1,7 @@
 import type { BuildingCategory } from '../models/AppModel.js';
 import { BUILDINGS, type BuildType } from '../models/Game.js';
 import { button, element } from './dom.js';
+import { BUILDING_SYMBOLS } from './BuildingSymbols.js';
 
 const paths = {
   All: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
@@ -42,7 +43,29 @@ function symbolFor(name: string): SymbolName {
 }
 
 // symbolbaserade-kataloger: symbols are decorative; accessible names remain explicit.
-export function catalogIcon(name: string): SVGSVGElement {
+export function catalogIcon(name: string): SVGSVGElement | HTMLImageElement {
+  const source = Object.hasOwn(BUILDING_SYMBOLS, name)
+    ? BUILDING_SYMBOLS[name as BuildType]
+    : undefined;
+  if (source) {
+    const image = element('img', 'catalog-icon catalog-artwork');
+    image.src = source;
+    image.alt = '';
+    image.width = 24;
+    image.height = 24;
+    image.decoding = 'async';
+    image.setAttribute('aria-hidden', 'true');
+    image.addEventListener(
+      'error',
+      () => image.replaceWith(catalogFallback(name)),
+      { once: true },
+    );
+    return image;
+  }
+  return catalogFallback(name);
+}
+
+function catalogFallback(name: string): SVGSVGElement {
   const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   icon.setAttribute('viewBox', '0 0 24 24');
   icon.setAttribute('class', 'catalog-icon');

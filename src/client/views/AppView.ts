@@ -32,7 +32,7 @@ import { renderPlanet } from './PlanetView.js';
 import { renderResearch } from './ResearchView.js';
 import { renderResearchDetails } from './ResearchDetailsView.js';
 import { updateResearchCamera } from './ResearchTreeView.js';
-import { button, element } from './dom.js';
+import { button, element, planetIllustration } from './dom.js';
 import { renderDecisions, renderTurnWarning } from './EmpireView.js';
 import { renderTurnActions } from './TurnActionsView.js';
 import { renderEvents } from './EventsView.js';
@@ -1344,13 +1344,16 @@ export class AppView implements AppPort {
       ? model.fleets.find((fleet) => fleet.id === model.destinationFleetId)
       : null;
     if (model.screen === 'map' && model.selectedPlanetInfo) {
-      contents.push(
+      const summary = element('div', 'planet-selection-summary');
+      summary.append(
+        planetIllustration(false, model.selectedPlanetInfo.environment),
         element(
           'p',
           'planet-map-info',
           `Type: ${model.selectedPlanetInfo.environment} · Habitability: ${model.selectedPlanetInfo.habitability}%`,
         ),
       );
+      contents.push(summary);
     } else if (model.screen === 'map' && cell && !cell.explored && !object) {
       contents.push(
         renderMapLocationHeading(
