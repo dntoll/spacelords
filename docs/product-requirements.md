@@ -619,6 +619,16 @@ inventering och ersatt katalogordning.
 
 ## Events och vägledning i vyerna
 
+`grupperade-transporthandelser` är **Fullständigt implementerat**: en
+transportflottas ankomst och hela leverans visas i ett besked med flottans
+namn, planet och summerade materialmängder. Olika flottor får egna besked.
+En tom ankomst ger fortsatt ett ankomstbesked.
+
+`ett-meddelande-per-skeppsbygge` är **Fullständigt implementerat**: ett
+färdigbyggt skepp ger ett produktionsbesked med skeppstyp och planet.
+Kraven förtydligar `handelser` och ersätter tidigare separata besked för
+samma leverans respektive dubbla besked för samma skeppsbygge.
+
 | Kravnamn                          | Status                     | Krav                                                                                                                                                                                                                                                                                                                                                               |
 | --------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `end-turn-vid-kartval`            | Fullständigt implementerat | End turn syns och har egen plats även när en planet, flotta, handelsrutt eller destination är vald. Informationspanelen kan rullas utan att täcka knappen.                                                                                                                                                                                                         |

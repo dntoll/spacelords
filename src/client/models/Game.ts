@@ -2956,10 +2956,6 @@ export class Game {
         project.destinationFleetId,
         project.parts,
       );
-      this.#event(
-        `${project.type} completed on ${planet.name}.`,
-        planet.position,
-      );
     }
   }
   #createShip(
@@ -4493,6 +4489,14 @@ export class Game {
       )?.object?.name ?? `HEX ${fleet.position.key}`;
     fleet.destination = null;
     delete fleet.courseOrigin;
+    // grupperade-transporthandelser: loaded arrivals are announced with the actual unloading.
+    if (
+      fleet.routeId &&
+      this.#logistics.shipments.some(
+        (shipment) => shipment.fleetId === fleet.id,
+      )
+    )
+      return;
     this.#event(
       `${this.#fleetDisplayName(fleet)} arrived at ${place}.`,
       fleet.position,

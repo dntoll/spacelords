@@ -142,6 +142,35 @@ describe('forska-fram-fabriker / bygga-forskningsstation', () => {
 });
 
 describe('gemensam-planetko / fabrikskoer / skepp-i-byggko', () => {
+  it.each([
+    'Colony ship',
+    'Exploration ship',
+    'Transport ship',
+    'Fighter',
+    'Salvage ship',
+  ] as const)(
+    'ett-meddelande-per-skeppsbygge: reports a completed %s only once',
+    (ship) => {
+      const { game: original, planet, factory } = setup();
+      const yard = factory(`${ship} factory`);
+      const state = original.exportState();
+      state.colonies[0]![1].stock['Weapons module'] = 100;
+      const game = Game.restore(state);
+      game.scheduleShip(planet, ship, null, yard.id);
+      const year = game.round;
+      const before = game.fleet('fleet-home')!.ships[ship];
+      for (const frame of turnFrames(game)) game.applyFrame(frame);
+      game.finishTurn();
+      expect(game.fleet('fleet-home')!.ships[ship]).toBe(before + 1);
+      const events = game.events.filter(
+        (event) => event.round === year && event.text.startsWith(`${ship} `),
+      );
+      expect(events).toHaveLength(1);
+      expect(events[0]!.text).toBe(`${ship} was produced at ${planet.name}.`);
+      expect(events[0]!.position).toEqual(planet.position);
+    },
+  );
+
   it('requires a matching completed shipyard and appends all orders to one uncapped planet queue', () => {
     const { game, planet, snapshot, factory } = setup();
     expect(() => game.scheduleShip(planet, 'Colony ship')).toThrow('shipyard');

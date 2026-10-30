@@ -4,6 +4,20 @@ Kraven nedan är **Fullständigt implementerat**.
 
 ## Händelser
 
+- `grupperade-transporthandelser`: en transportflottas ankomst och hela
+  lossade last visas som ett enda besked med flottans namn, planet och mängd
+  per råvara eller komponent. Flera lastposter av samma material summeras.
+  Olika flottor får egna besked även vid samma planet och år. Beskedet kommer
+  när lasten faktiskt lossas; en tom ankomst behåller sitt vanliga besked.
+- `ett-meddelande-per-skeppsbygge`: varje färdigbyggt skepp ger ett enda
+  produktionsbesked med skeppstyp och planet. Det gäller alla skeppstyper.
+
+Ändring 2026-10-30: dessa krav förtydligar `handelser` och ersätter separata
+ankomst- och lastbesked för samma leverans samt dubbla besked för samma
+skeppsbygge. Samma samlade besked används i annonseringen och Events.
+Lossning, produktion och sparformat behåller sina regler. Äldre sparade
+händelsetexter bevaras.
+
 - `gemensamt-handelseflode`: upptäckter, piratkontakter och stridsrapporter
   använder samma kartmarkering, textruta och förflyttning till Events som andra
   händelser. De visas en i taget i verklig händelseordning, med Handle och Ignore

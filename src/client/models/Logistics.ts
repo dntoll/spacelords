@@ -60,6 +60,7 @@ export interface ShipmentSnapshot {
 }
 export interface TransportFleet {
   id: string;
+  readonly name?: string;
   position: HexCoordinate | null;
   destination: HexCoordinate | null;
   courseOrigin?: HexCoordinate;
@@ -663,6 +664,7 @@ export class Logistics {
   unload(port: LogisticsPort): void {
     for (const fleet of port.fleets) {
       if (!fleet.routeId || fleet.destination) continue;
+      const deliveries = new Map<LogisticsPlanet, Stock>();
       for (const shipment of this.shipments.filter(
         (s) => s.fleetId === fleet.id,
       )) {
@@ -671,6 +673,9 @@ export class Logistics {
         )!;
         if (target.position.key !== fleet.position?.key) continue;
         target.stock[shipment.resource] += shipment.amount;
+        const cargo = deliveries.get(target) ?? emptyStock();
+        cargo[shipment.resource] += shipment.amount;
+        deliveries.set(target, cargo);
         shipment.stage += 1;
         shipment.fleetId = null;
         const order = this.componentOrders.find(
@@ -682,8 +687,14 @@ export class Logistics {
           order.delivered = shipment.stage === shipment.path.length - 1;
           order.shipmentId = null;
         }
+      }
+      // grupperade-transporthandelser: one arrival contains every delivered material.
+      for (const [target, cargo] of deliveries) {
+        const summary = MATERIALS.filter((material) => cargo[material] > 0)
+          .map((material) => `${cargo[material]} ${material}`)
+          .join(', ');
         port.event(
-          `${fleet.id} delivered ${shipment.amount} ${shipment.resource} to ${target.name}.`,
+          `${fleet.name ?? fleet.id} arrived at ${target.name} and delivered ${summary}.`,
           target.position,
         );
       }

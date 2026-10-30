@@ -239,6 +239,9 @@ Se [hela visionen](docs/game-vision.md).
   samlat och låter spelaren fortsätta ändå. Händelsekonsolen (`handelser`) är
   fullständigt implementerad: Events är fällbar och visar hela senaste året
   när utrymmet räcker, med intern rullning för resten.
+  `grupperade-transporthandelser` och `ett-meddelande-per-skeppsbygge` är
+  **Fullständigt implementerat**: ankomst och hela transportlasten visas i
+  ett besked per flotta; varje färdigbyggt skepp ger ett produktionsbesked.
   Events och End turn är alltid tillgängliga enligt `gemensam-events-panel`.
   `rundkontroller-i-decisions` är **Fullständigt implementerat**: båda finns
   även i Decisions.
