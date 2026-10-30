@@ -18,16 +18,5 @@ export function renderMapEvent(sketch: p5, model: AppReadModel): void {
   sketch.circle(0, 0, 70);
   sketch.strokeWeight(1);
   sketch.circle(0, 0, 82);
-  sketch.noStroke();
-  sketch.fill('#0a1520');
-  sketch.rect(-58, 46, 116, 24, 4);
-  sketch.fill('#ffdc88');
-  sketch.textSize(12);
-  sketch.textAlign(sketch.CENTER, sketch.CENTER);
-  sketch.text(
-    `Event ${(playback.history?.length ?? 0) + playback.index + 1}`,
-    0,
-    58,
-  );
   sketch.pop();
 }

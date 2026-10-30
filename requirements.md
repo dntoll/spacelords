@@ -15,6 +15,8 @@ Se [hela visionen](docs/game-vision.md).
   villkorad ! Needs attention vid titeln och forskningsinformation i trädet är
   **Fullständigt implementerat**. Colony ship factory följer direkt efter
   Rocket engine factory. Se [krav och ersatta beteenden](docs/compact-interface.md).
+  `handelsemarkering-utan-numrering` är **Fullständigt implementerat**:
+  etiketter som Event 1 tas bort från kartans händelsemarkering.
 
 - **Civiltrafik och arbetskraft:** `civil-skyttelforskning`,
   `civil-skytteltillverkning`, `automatisk-arbetskraftstrafik`,

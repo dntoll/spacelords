@@ -15,8 +15,65 @@ import {
 import { collectTurnFrames, turnFrames } from '../fixtures/turn-steps.js';
 import { discoveryState } from '../fixtures/exploration.js';
 import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import type p5 from 'p5';
+import { renderMapEvent } from '../../src/client/views/MapEventView.js';
 
 afterEach(() => vi.useRealTimers());
+
+it.each([0, 1])(
+  'handelsemarkering-utan-numrering: retains the location rings without an Event label or label background (index %s)',
+  (index) => {
+    const playback = new EventPlayback(1, [
+      {
+        id: 'first',
+        round: 1,
+        text: 'First discovery',
+        position: { q: 1, r: 0 },
+      },
+      {
+        id: 'second',
+        round: 1,
+        text: 'Second discovery',
+        position: { q: 0, r: 1 },
+      },
+    ]);
+    if (index) {
+      playback.advance();
+      playback.advance();
+    }
+    const sketch = {
+      push: vi.fn(),
+      pop: vi.fn(),
+      translate: vi.fn(),
+      scale: vi.fn(),
+      noFill: vi.fn(),
+      stroke: vi.fn(),
+      strokeWeight: vi.fn(),
+      circle: vi.fn(),
+      noStroke: vi.fn(),
+      fill: vi.fn(),
+      rect: vi.fn(),
+      textSize: vi.fn(),
+      textAlign: vi.fn(),
+      text: vi.fn(),
+      CENTER: 'center',
+    };
+    const model = new AppModel().snapshot;
+    renderMapEvent(sketch as unknown as p5, {
+      ...model,
+      eventPlayback: playback.snapshot,
+    });
+    const position = index ? new HexCoordinate(0, 1) : new HexCoordinate(1, 0);
+    const point = HexGeometry.toPoint(position);
+    expect(sketch.translate).toHaveBeenCalledWith(point.x, point.y);
+    expect(sketch.circle.mock.calls).toEqual([
+      [0, 0, 70],
+      [0, 0, 82],
+    ]);
+    expect(sketch.text).not.toHaveBeenCalled();
+    expect(sketch.rect).not.toHaveBeenCalled();
+  },
+);
 
 it('centrerade-handelseval-pa-dator: centers desktop choices while retaining compact placement after resizing to a phone', () => {
   const game = Game.restore(discoveryState());

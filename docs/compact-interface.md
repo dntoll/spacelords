@@ -2,6 +2,11 @@
 
 Alla krav nedan är **Fullständigt implementerat**.
 
+`handelsemarkering-utan-numrering` — **Fullständigt implementerat**:
+Kartans händelsemarkering visar inga etiketter som Event 1 eller Event 2.
+Ringarna runt händelsens plats och själva händelsetexten finns kvar.
+Detta ersätter numreringen i kartmarkeringen under `handelser-pa-kartan`.
+
 | Kravnamn                              | Beteende                                                                                                                                                                               |
 | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `kartorderstatus`                     | S/Q-texten vid planeter på Star map tas bort. Vald planets orderstatus finns kvar i klartext.                                                                                          |
