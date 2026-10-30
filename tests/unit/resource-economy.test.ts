@@ -54,17 +54,13 @@ describe('utvinningsbara-resurser / utvinningsbyggnader / planetlager / planetby
   });
 });
 
-describe('forskningsko / forskningsberoenden', () => {
+describe('forskningsko / forskningsberoenden / transport-ship-efter-rocket-engine', () => {
   it('rejects invalid reorder and removes dependent queued technologies together', () => {
     const research = new ResearchPlan();
     research.add('Trade logistics');
     expect(() => research.move('Trade logistics', 0)).toThrow('Prerequisites');
     research.remove('Transport ship factory');
-    expect(research.queue).toEqual([
-      'Rocket engine factory',
-      'Telescope I factory',
-      'Exploration ship factory',
-    ]);
+    expect(research.queue).toEqual(['Rocket engine factory']);
   });
   it('adds prerequisites once and researches in dependency order', () => {
     const game = new Game(createExampleGalaxy());
@@ -75,20 +71,19 @@ describe('forskningsko / forskningsberoenden', () => {
     game.selectResearch('Trade logistics');
     expect(game.research.queue).toEqual([
       'Rocket engine factory',
-      'Telescope I factory',
-      'Exploration ship factory',
       'Transport ship factory',
       'Trade logistics',
     ]);
     turn(game);
-    turn(game);
-    turn(game);
-    turn(game);
+    expect(game.research.completed).toEqual(['Rocket engine factory']);
     turn(game);
     expect(game.research.completed).toEqual([
       'Rocket engine factory',
-      'Telescope I factory',
-      'Exploration ship factory',
+      'Transport ship factory',
+    ]);
+    turn(game);
+    expect(game.research.completed).toEqual([
+      'Rocket engine factory',
       'Transport ship factory',
       'Trade logistics',
     ]);
@@ -109,6 +104,7 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
       game.scheduleBuild(home, building);
     for (let year = 0; year < 4; year++) turn(game);
     game.selectResearch('Trade logistics');
+    game.selectResearch('Exploration ship factory');
     game.selectResearch('Colony ship factory');
     game.selectResearch('Fighter factory');
     game.selectResearch('Desert dome');
