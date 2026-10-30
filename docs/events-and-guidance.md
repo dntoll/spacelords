@@ -4,6 +4,12 @@ Kraven nedan är **Fullständigt implementerat**.
 
 ## Händelser
 
+- `upptacktsbesked-utan-pausmening`: upptäcktsrutan visar inte längre
+  meningen “The year is paused. Fleets already sharing a hex will fight
+  before the next movement.” Plats, flotta, återstående rörelse och
+  Handle/Ignore behålls. Kravet är **Fullständigt implementerat** och
+  förtydligar textinnehållet i `gemensamt-handelseflode`.
+
 - `centrerade-handelseval-pa-dator`: på stora datorskärmar ligger händelsens
   plats och valruta tillsammans kring kartans mitt i stället för vid
   överkanten. Platsen, ringen och etiketten ligger fortsatt ovanför textrutan.

@@ -5,7 +5,7 @@ import { startFirstSlot, endTurn, ignoreEventsUntil } from './save-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import { Game } from '../../src/client/models/Game.js';
 
-test('centrerade-handelseval-pa-dator: event choices stay near the desktop map center when resized', async ({
+test('centrerade-handelseval-pa-dator / upptacktsbesked-utan-pausmening: event choices stay near the desktop map center when resized', async ({
   page,
 }, testInfo) => {
   test.skip(
@@ -27,6 +27,9 @@ test('centrerade-handelseval-pa-dator: event choices stay near the desktop map c
   await startFirstSlot(page);
   const announcement = page.locator('.event-announcement-interactive');
   await expect(announcement).toHaveAttribute('data-stage', 'awaiting-choice');
+  await expect(announcement).not.toContainText(
+    'The year is paused. Fleets already sharing a hex will fight before the next movement.',
+  );
   const eventId = await announcement.getAttribute('data-announcement-id');
   for (const viewport of [
     { width: 1920, height: 1200 },

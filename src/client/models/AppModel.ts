@@ -1516,13 +1516,14 @@ export class AppModel {
           `${pirate.count} pirate ${pirate.count === 1 ? 'ship' : 'ships'} in sight.`,
         );
     }
-    details.push(
-      interruption!.economyApplied
-        ? 'The year is paused after production. No movement remains this year.'
-        : battle
-          ? 'The year is paused after combat. Handle to change orders, or Ignore to continue without changes.'
-          : 'The year is paused. Fleets already sharing a hex will fight before the next movement.',
-    );
+    if (interruption!.economyApplied)
+      details.push(
+        'The year is paused after production. No movement remains this year.',
+      );
+    else if (battle)
+      details.push(
+        'The year is paused after combat. Handle to change orders, or Ignore to continue without changes.',
+      );
     return Object.freeze({
       title,
       details: Object.freeze(details),

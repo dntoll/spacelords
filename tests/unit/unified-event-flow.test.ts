@@ -37,6 +37,23 @@ function session(initial: GameState = discoveryState()) {
 }
 
 describe('gemensamt-handelseflode', () => {
+  it('upptacktsbesked-utan-pausmening: discoveries retain location and fleet details without the generic pause sentence', () => {
+    const game = Game.restore(discoveryState());
+    game.startTurn();
+    while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
+    const model = new AppModel(undefined, {
+      load: () => ({ lastPlayed: '2026-10-30', state: game.exportState() }),
+      save() {},
+      clear() {},
+    });
+    model.startSlot(1);
+    const event = model.snapshot.eventPlayback!.events[0]!;
+    expect(event.decision!.details).toHaveLength(1);
+    expect(event.decision!.details[0]).toMatch(
+      /^HEX .+ · Home Fleet · \d+ hex remaining$/,
+    );
+  });
+
   it('waits for an explicit choice and files each interactive event once', () => {
     const playback = new EventPlayback(1, [
       {

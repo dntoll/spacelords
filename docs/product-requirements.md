@@ -619,6 +619,11 @@ inventering och ersatt katalogordning.
 
 ## Events och vägledning i vyerna
 
+`upptacktsbesked-utan-pausmening` är **Fullständigt implementerat**:
+meningen “The year is paused. Fleets already sharing a hex will fight before
+the next movement.” visas inte i upptäcktsrutan. Händelsen, platsen, flottan,
+återstående rörelse och Handle/Ignore visas fortsatt.
+
 `centrerade-handelseval-pa-dator` är **Fullständigt implementerat**:
 händelsens plats och valruta visas tillsammans kring kartans mitt på stora
 datorskärmar. Platsen syns ovanför texten och Handle/Ignore förblir åtkomliga
