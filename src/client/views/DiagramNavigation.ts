@@ -31,13 +31,14 @@ export function bindDiagramNavigation(
   viewport.addEventListener('scroll', adoptScroll);
   viewport.addEventListener('pointerdown', (event) => {
     const target = event.target as Element;
+    if (event.button !== 0) return;
+    // research-med-ett-tryck: a new control press must not inherit the last pan.
+    if (!pointers.size) moved = false;
     if (
-      event.button !== 0 ||
-      (target.closest('button, input, select, [draggable="true"]') &&
-        !target.closest('.research-node-select'))
+      target.closest('button, input, select, [draggable="true"]') &&
+      !target.closest('.research-node-select')
     )
       return;
-    if (!pointers.size) moved = false;
     pointers.set(event.pointerId, point(event));
     if (!target.closest('.research-node-select')) {
       viewport.focus({ preventScroll: true });

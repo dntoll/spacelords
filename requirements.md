@@ -17,6 +17,8 @@ Se [hela visionen](docs/game-vision.md).
   Rocket engine factory. Se [krav och ersatta beteenden](docs/compact-interface.md).
   `handelsemarkering-utan-numrering` är **Fullständigt implementerat**:
   etiketter som Event 1 tas bort från kartans händelsemarkering.
+  `research-med-ett-tryck` är **Fullständigt implementerat**: Research-knappen
+  köar med ett tryck även direkt efter panorering av trädet.
 
 - **Civiltrafik och arbetskraft:** `civil-skyttelforskning`,
   `civil-skytteltillverkning`, `automatisk-arbetskraftstrafik`,

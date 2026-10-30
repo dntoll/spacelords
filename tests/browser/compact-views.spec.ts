@@ -106,6 +106,52 @@ test('kompakt-forskningstrad / forskningsdetaljer-vid-val: compact tree tiles co
   await expect(rocket).toBeFocused();
 });
 
+test('research-med-ett-tryck: one native tap queues without inspection, including after touch panning', async ({
+  page,
+  context,
+  browserName,
+  isMobile,
+}) => {
+  test.skip(!isMobile, 'This regression targets native mobile taps.');
+  await seed(page, researchStationState());
+  await page.getByRole('button', { name: 'Research', exact: true }).tap();
+  const header = page.getByRole('button', {
+    name: 'Inspect Rocket engine factory',
+    exact: true,
+  });
+  await header.focus();
+  if (browserName === 'chromium') {
+    const bounds = (await header.boundingBox())!;
+    const x = bounds.x + bounds.width / 2;
+    const y = bounds.y + bounds.height / 2;
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x, y, id: 1 }],
+    });
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: x + 25, y: y + 12, id: 1 }],
+    });
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+    });
+    await cdp.detach();
+  }
+  await expect(page.locator('.research-queue article')).toHaveCount(0);
+  await page
+    .getByRole('button', {
+      name: 'Research Rocket engine factory',
+      exact: true,
+    })
+    .tap();
+  await expect(page.locator('.research-queue article')).toHaveCount(1);
+  await expect(page.locator('.research-queue article')).toContainText(
+    'Rocket engine factory',
+  );
+});
+
 test('forskningsdetaljer-vid-val: dragging from a research tile pans without inspecting or queueing', async ({
   page,
   isMobile,

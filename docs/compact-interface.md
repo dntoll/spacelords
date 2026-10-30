@@ -2,6 +2,11 @@
 
 Alla krav nedan är **Fullständigt implementerat**.
 
+`research-med-ett-tryck` — **Fullständigt implementerat**: Ett enda tryck på
+Research-knappen köar forskningen, även direkt efter att trädet har dragits.
+Ett extra tryck för att aktivera knappen eller välja rutan krävs inte.
+Dubbeltryck på själva forskningsrutans rubrik finns kvar som genväg.
+
 `handelsemarkering-utan-numrering` — **Fullständigt implementerat**:
 Kartans händelsemarkering visar inga etiketter som Event 1 eller Event 2.
 Ringarna runt händelsens plats och själva händelsetexten finns kvar.

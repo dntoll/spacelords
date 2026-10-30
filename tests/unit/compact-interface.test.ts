@@ -7,8 +7,93 @@ import { renderProductionMapPanel } from '../../src/client/views/ProductionMapVi
 import { renderResearch } from '../../src/client/views/ResearchView.js';
 import { isResearchIdentified } from '../../src/client/models/ResearchTree.js';
 import { gameText } from '../../src/client/views/GameText.js';
+import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 
 describe('kompakt-spelgranssnitt', () => {
+  it.each(['tap', 'drag', 'cancel'] as const)(
+    'research-med-ett-tryck: touch activation works without a synthetic click and cannot order after a drag or cancellation (%s)',
+    (action) => {
+      const model = researchStationModel();
+      const emit = vi.fn<IntentHandler>();
+      const page = renderResearch(model.snapshot.research, false, emit);
+      Object.assign(page.querySelector('.research-tree-viewport')!, {
+        hasPointerCapture: () => false,
+        setPointerCapture: vi.fn(),
+        releasePointerCapture: vi.fn(),
+      });
+      const choose = page.querySelector<HTMLButtonElement>(
+        '[aria-label="Research Rocket engine factory"]',
+      )!;
+      const pointer = (type: string, x = 30) => {
+        const event = new MouseEvent(type, {
+          bubbles: true,
+          clientX: x,
+          clientY: 30,
+        });
+        Object.defineProperties(event, {
+          pointerType: { value: 'touch' },
+          pointerId: { value: 1 },
+          isPrimary: { value: true },
+        });
+        choose.dispatchEvent(event);
+      };
+      pointer('pointerdown');
+      if (action === 'drag') pointer('pointermove', 60);
+      if (action === 'cancel') pointer('pointercancel');
+      pointer('pointerup', action === 'drag' ? 60 : 30);
+      const orders = () =>
+        emit.mock.calls.filter(([intent]) => intent.type === 'research');
+      expect(orders()).toHaveLength(action === 'tap' ? 1 : 0);
+      choose.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, detail: 1 }),
+      );
+      expect(orders()).toHaveLength(action === 'tap' ? 1 : 0);
+    },
+  );
+
+  it.each(['mouse', 'touch'])(
+    'research-med-ett-tryck: the first button press after panning queues once (%s)',
+    (pointerType) => {
+      const model = researchStationModel();
+      const emit = vi.fn<IntentHandler>();
+      const page = renderResearch(model.snapshot.research, false, emit);
+      const viewport = page.querySelector<HTMLElement>(
+        '.research-tree-viewport',
+      )!;
+      Object.assign(viewport, {
+        hasPointerCapture: () => false,
+        setPointerCapture: vi.fn(),
+        releasePointerCapture: vi.fn(),
+      });
+      const pointer = (target: Element, type: string, x: number) => {
+        const event = new Event(type, { bubbles: true });
+        Object.defineProperties(event, {
+          button: { value: 0 },
+          pointerId: { value: 1 },
+          clientX: { value: x },
+          clientY: { value: 30 },
+          pointerType: { value: pointerType },
+        });
+        target.dispatchEvent(event);
+      };
+      pointer(viewport, 'pointerdown', 30);
+      pointer(viewport, 'pointermove', 70);
+      pointer(viewport, 'pointerup', 70);
+      const choose = page.querySelector<HTMLButtonElement>(
+        '[aria-label="Research Rocket engine factory"]',
+      )!;
+      emit.mockClear();
+      pointer(choose, 'pointerdown', 70);
+      pointer(choose, 'pointerup', 70);
+      choose.dispatchEvent(
+        new MouseEvent('click', { bubbles: true, detail: 1 }),
+      );
+      expect(
+        emit.mock.calls.filter(([intent]) => intent.type === 'research'),
+      ).toEqual([[{ type: 'research', technology: 'Rocket engine factory' }]]);
+    },
+  );
+
   it('korta-beslutsinstruktioner: retains the decision and action without repetitive instructions', () => {
     const model = researchStationModel();
     for (const open of [
