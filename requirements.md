@@ -261,6 +261,8 @@ Se [hela visionen](docs/game-vision.md).
   `snabb-testsvit` är **Fullständigt implementerat**: om tiden överskrids flyttas
   mindre prioriterade tester till den utökade sviten vid begärt sluttest.
   Detaljerade vy-, rit- och layoutkontroller ligger där; centrala spelregler behålls snabba.
+  Även 23 vytester för spelgrafik, planetundersidor och forskningsdetaljer
+  ligger i den utökade sviten efter ett uppmätt tidsöverskridande.
   `utokad-testsvit` har en jobbtidsgräns på 20 minuter inklusive installation
   av webbläsare; snabbsvitens gräns är oförändrad.
   `snabb-mobilpublicering` är **Fullständigt implementerat** och provpublicerat:

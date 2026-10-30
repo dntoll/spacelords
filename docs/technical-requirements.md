@@ -974,3 +974,14 @@ Interaktiva händelser ramas in högre på kartan för att lämna plats under
 markeringsringen. Information rullas internt, medan Handle och Ignore har
 minst 44 px träffyta och ligger utanför rullningen. Vid högst 360 px höjd döljs
 varumärkesraden tillfälligt; navigation och End turn förblir synliga.
+
+## Snabbsvitens utrymme 2026-10-30
+
+`snabb-testsvit`: en diagnostisk körning godkände alla 579 tester men tog
+23,22 sekunder. 23 detaljerade vytester för spelgrafik, planetundersidor och
+forskningsdetaljer flyttas därför till `tests/extended/`, utan borttagning
+eller ändrade testfall. De ingår fortsatt i CI:s begärda sluttest.
+Spelregler, centrala användarflöden och de nya regressionstesterna för
+`grupperade-transporthandelser` och `ett-meddelande-per-skeppsbygge` behålls
+snabba. Därefter passerade 556 tester på 19,25 sekunder inklusive start.
+20-sekundersgränsen är oförändrad.
