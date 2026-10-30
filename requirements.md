@@ -10,6 +10,11 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Händelseval på dator:** `centrerade-handelseval-pa-dator` är
+  **Fullständigt implementerat**. Händelsens plats och Handle/Ignore-ruta
+  ligger kring kartans mitt på stora skärmar och följer ändrad fönsterstorlek.
+  Se [Events och beslutsguidning](docs/events-and-guidance.md).
+
 - **Sikt under rörelse och nya skepp:** `sikt-under-forflyttning` och
   `nybyggda-skepp-utan-ruttflotta` är **Fullständigt implementerat**.
   Synfält och synliga pirater uppdateras under skeppens rörelse; lämnade

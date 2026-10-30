@@ -5,6 +5,60 @@ import { startFirstSlot, endTurn, ignoreEventsUntil } from './save-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import { Game } from '../../src/client/models/Game.js';
 
+test('centrerade-handelseval-pa-dator: event choices stay near the desktop map center when resized', async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== 'desktop-chromium',
+    'Desktop positioning has a dedicated viewport check.',
+  );
+  const game = Game.restore(discoveryState());
+  game.startTurn();
+  while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
+  await page.addInitScript((state) => {
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({ lastPlayed: '2026-10-30', state }),
+    );
+  }, game.exportState());
+  await page.setViewportSize({ width: 1920, height: 1200 });
+  await page.goto('./');
+  await startFirstSlot(page);
+  const announcement = page.locator('.event-announcement-interactive');
+  await expect(announcement).toHaveAttribute('data-stage', 'awaiting-choice');
+  const eventId = await announcement.getAttribute('data-announcement-id');
+  for (const viewport of [
+    { width: 1920, height: 1200 },
+    { width: 1440, height: 900 },
+    { width: 1280, height: 720 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await expect
+      .poll(async () => {
+        const card = (await announcement.boundingBox())!;
+        const map = (await page.getByTestId('map-container').boundingBox())!;
+        const center = (card.y + card.height / 2 - map.y) / map.height;
+        return (
+          center > 0.35 &&
+          center < 0.65 &&
+          card.y + card.height <= map.y + map.height
+        );
+      })
+      .toBe(true);
+    await expect(
+      announcement.getByRole('button', { name: 'Handle', exact: true }),
+    ).toBeInViewport();
+    await expect(
+      announcement.getByRole('button', { name: 'Ignore', exact: true }),
+    ).toBeInViewport();
+  }
+  await expect(announcement).toHaveAttribute('data-announcement-id', eventId!);
+  await page.screenshot({
+    path: testInfo.outputPath('centered-desktop-event.png'),
+  });
+});
+
 test('gemensamt-handelseflode: event information and keyboard actions fit on small phones across rotation', async ({
   page,
 }, testInfo) => {

@@ -619,6 +619,13 @@ inventering och ersatt katalogordning.
 
 ## Events och vägledning i vyerna
 
+`centrerade-handelseval-pa-dator` är **Fullständigt implementerat**:
+händelsens plats och valruta visas tillsammans kring kartans mitt på stora
+datorskärmar. Platsen syns ovanför texten och Handle/Ignore förblir åtkomliga
+vid ändrad fönsterstorlek. Små skärmar behåller sin kompakta placering.
+Detta ersätter den överkantnära placeringen på stora skärmar i
+`gemensamt-handelseflode` och förtydligar `handelseannonsering`.
+
 `grupperade-transporthandelser` är **Fullständigt implementerat**: en
 transportflottas ankomst och hela leverans visas i ett besked med flottans
 namn, planet och summerade materialmängder. Olika flottor får egna besked.

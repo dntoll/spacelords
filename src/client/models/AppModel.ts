@@ -1581,10 +1581,15 @@ export class AppModel {
     this.#eventCamera.focus(hex);
     if (this.#eventPlayback?.current?.decision && this.#mapViewport) {
       const center = HexGeometry.toPoint(hex);
+      // centrerade-handelseval-pa-dator: center the marker and choices together on large maps.
+      const offset =
+        this.#mapViewport.width > 900 && this.#mapViewport.height > 500
+          ? 120
+          : Math.max(0, this.#mapViewport.height / 2 - 45);
       this.#eventCamera.restore({
         center: {
           x: center.x,
-          y: center.y + Math.max(0, this.#mapViewport.height / 2 - 45),
+          y: center.y + offset,
         },
         zoom: 1,
       });

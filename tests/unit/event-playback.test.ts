@@ -18,6 +18,47 @@ import type { SavedGame } from '../../src/client/models/SaveRepository.js';
 
 afterEach(() => vi.useRealTimers());
 
+it('centrerade-handelseval-pa-dator: centers desktop choices while retaining compact placement after resizing to a phone', () => {
+  const game = Game.restore(discoveryState());
+  game.startTurn();
+  while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
+  const model = new AppModel(undefined, {
+    load: () => ({ lastPlayed: '2026-10-30', state: game.exportState() }),
+    save() {},
+    clear() {},
+  });
+  model.startSlot(1);
+  for (const [width, height] of [
+    [1920, 1100],
+    [1440, 800],
+    [1280, 600],
+    [393, 650],
+    [667, 250],
+    [1920, 1100],
+  ] as const) {
+    model.resizeMap({
+      width,
+      height,
+      availableWidth: width,
+      availableHeight: height,
+    });
+    const snapshot = model.snapshot;
+    const event =
+      snapshot.eventPlayback!.events[snapshot.eventPlayback!.index]!;
+    expect(event.decision).toBeDefined();
+    const point = HexGeometry.toPoint(
+      new HexCoordinate(event.position!.q, event.position!.r),
+    );
+    const markerY =
+      height / 2 + (point.y - snapshot.camera.center.y) * snapshot.camera.zoom;
+    expect(point.x - snapshot.camera.center.x).toBe(0);
+    if (width > 900 && height > 500) {
+      expect(markerY).toBeGreaterThan(height * 0.25);
+      expect(markerY).toBeLessThan(height / 2);
+    } else expect(markerY).toBe(45);
+  }
+});
+
 describe('sekventiella-arshandelser', () => {
   it('announces and files only the completed year in occurrence order', () => {
     const events = [

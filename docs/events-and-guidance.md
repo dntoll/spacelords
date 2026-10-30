@@ -4,6 +4,15 @@ Kraven nedan är **Fullständigt implementerat**.
 
 ## Händelser
 
+- `centrerade-handelseval-pa-dator`: på stora datorskärmar ligger händelsens
+  plats och valruta tillsammans kring kartans mitt i stället för vid
+  överkanten. Platsen, ringen och etiketten ligger fortsatt ovanför textrutan.
+  Handle och Ignore är synliga även när fönstret ändrar storlek. Små skärmar
+  behåller sin kompakta placering med plats för knappar och End turn.
+  Kravet är **Fullständigt implementerat** och förtydligar
+  `gemensamt-handelseflode` och `handelseannonsering`; det ersätter den
+  överkantnära placeringen på stora skärmar från 2026-10-27.
+
 - `grupperade-transporthandelser`: en transportflottas ankomst och hela
   lossade last visas som ett enda besked med flottans namn, planet och mängd
   per råvara eller komponent. Flera lastposter av samma material summeras.
