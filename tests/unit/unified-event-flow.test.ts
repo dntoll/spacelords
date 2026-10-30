@@ -37,6 +37,39 @@ function session(initial: GameState = discoveryState()) {
 }
 
 describe('gemensamt-handelseflode', () => {
+  it.each([0, 1])(
+    'stridsresultat-utan-upprepning: shows losses and survivors once while retaining wrecks and saved history (%s Fighters)',
+    (fighters) => {
+      const game = Game.restore(discoveryState(fighters));
+      game.startTurn();
+      while (!game.interruption?.battles?.length) {
+        if (game.phase === 'interrupted') game.continueTurn();
+        game.applyFrame(game.nextTurnFrame()!);
+      }
+      const saved = game.exportState();
+      const model = new AppModel(undefined, {
+        load: () => ({ lastPlayed: '2026-10-30', state: saved }),
+        save() {},
+        clear() {},
+      });
+      model.startSlot(1);
+      const event = model.snapshot.eventPlayback!.events.find(
+        (item) => item.decision?.title === 'Battle report',
+      )!;
+      const text = [event.text, ...event.decision!.details].join('\n');
+      expect(text.match(/Lost /g)).toHaveLength(1);
+      expect(text.match(/Survivors:/g)).toHaveLength(1);
+      expect(event.text).toContain('civilian ships.');
+      expect(event.decision!.details[0]).toMatch(
+        /^HEX .+ · Home Fleet · \d+ hex remaining$/,
+      );
+      expect(event.decision!.details).toContain(
+        `${saved.simulation!.battles![0]!.wreckIds.length} wrecks remain in the hex.`,
+      );
+      expect(model.snapshot.events).toEqual(saved.events);
+    },
+  );
+
   it('upptacktsbesked-utan-pausmening: discoveries retain location and fleet details without the generic pause sentence', () => {
     const game = Game.restore(discoveryState());
     game.startTurn();

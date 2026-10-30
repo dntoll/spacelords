@@ -16,6 +16,9 @@ Se [hela visionen](docs/game-vision.md).
   `upptacktsbesked-utan-pausmening` är **Fullständigt implementerat**:
   den generella meningen om paus och kommande strid har tagits bort ur
   upptäcktsrutan.
+  `stridsresultat-utan-upprepning` är **Fullständigt implementerat**:
+  stridsresultatet visas en gång, med plats och vrakantal som kompletterande
+  detaljer.
   Se [Events och beslutsguidning](docs/events-and-guidance.md).
 
 - **Sikt under rörelse och nya skepp:** `sikt-under-forflyttning` och

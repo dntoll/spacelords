@@ -619,6 +619,10 @@ inventering och ersatt katalogordning.
 
 ## Events och vägledning i vyerna
 
+`stridsresultat-utan-upprepning` är **Fullständigt implementerat**:
+förluster och överlevande visas en gång i stridsrutan. Plats, flotta,
+återstående rörelse och antal vrak finns fortsatt med.
+
 `upptacktsbesked-utan-pausmening` är **Fullständigt implementerat**:
 meningen “The year is paused. Fleets already sharing a hex will fight before
 the next movement.” visas inte i upptäcktsrutan. Händelsen, platsen, flottan,

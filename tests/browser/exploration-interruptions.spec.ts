@@ -136,7 +136,7 @@ test('gemensamt-handelseflode: event information and keyboard actions fit on sma
   await expect(log.locator(`[data-event-id="${eventId}"]`)).toHaveCount(1);
 });
 
-test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: Handle edits another fleet, reload restores the pause and Continue resolves contact once', async ({
+test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar / stridsresultat-utan-upprepning: Handle edits another fleet, reload restores the pause and Continue resolves contact once', async ({
   page,
 }, testInfo) => {
   await page.addInitScript((state) => {
@@ -211,6 +211,11 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
   await expect(
     page.getByRole('dialog', { name: 'Battle report', exact: true }),
   ).toContainText('wrecks remain');
+  const combatText = await page
+    .getByRole('dialog', { name: 'Battle report', exact: true })
+    .innerText();
+  expect(combatText.match(/Lost /g)).toHaveLength(1);
+  expect(combatText.match(/Survivors:/g)).toHaveLength(1);
   await ignoreEventsUntil(page);
   await expect
     .poll(async () => {

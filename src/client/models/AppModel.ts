@@ -1503,10 +1503,7 @@ export class AppModel {
       `HEX ${item.position.q},${item.position.r}${fleet ? ` · ${fleet.name} · ${fleet.remainingMovement ?? 0} hex remaining` : ''}`,
     ];
     if (battle)
-      details.push(
-        battle.summary,
-        `${battle.wreckIds.length} wrecks remain in the hex.`,
-      );
+      details.push(`${battle.wreckIds.length} wrecks remain in the hex.`);
     if (discovery?.kind === 'pirate') {
       const pirate = this.#game
         .pirateSnapshots()

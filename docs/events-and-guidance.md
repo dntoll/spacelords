@@ -4,6 +4,13 @@ Kraven nedan är **Fullständigt implementerat**.
 
 ## Händelser
 
+- `stridsresultat-utan-upprepning`: stridsrutans huvudtext visar förluster,
+  förstörda pirater och överlevande en gång. Detaljerna behåller plats,
+  flotta, återstående rörelse och antal vrak men upprepar inte resultatet.
+  Kravet är **Fullständigt implementerat** och förtydligar
+  `gemensamt-handelseflode` och `stridsrapport-i-dialog`. Sparad historik och
+  stridsresultat bevaras.
+
 - `upptacktsbesked-utan-pausmening`: upptäcktsrutan visar inte längre
   meningen “The year is paused. Fleets already sharing a hex will fight
   before the next movement.” Plats, flotta, återstående rörelse och
