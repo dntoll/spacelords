@@ -155,7 +155,7 @@ describe('flottadministration / skepp-till-rorlig-flotta', () => {
     const select = view.querySelector<HTMLSelectElement>(
       '[aria-label="Receiving fleet"]',
     )!;
-    expect(select.textContent).toContain('Fleet 1 · HEX 2,0 · En route');
+    expect(select.textContent).toContain('Fleet 1 · En route');
     select.value = fleets[1]!.id;
     select.dispatchEvent(new Event('change'));
     expect(intents).toContainEqual({

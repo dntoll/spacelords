@@ -1,45 +1,19 @@
-import { describe, expect, it, vi } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import type p5 from 'p5';
-import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
-import { renderPlanetOrders } from '../../src/client/views/PlanetOrderView.js';
+import { AppModel } from '../../src/client/models/AppModel.js';
+import { renderMapOverlays } from '../../src/client/views/MapOverlayView.js';
 
-describe('kartorderstatus', () => {
-  it('labels planets with empty sites and an idle planet queue and omits planets with no free orders', () => {
-    const text = vi.fn<(label: string, x: number, y: number) => void>();
-    const sketch = {
-      textAlign: vi.fn(),
-      textSize: vi.fn(),
-      noStroke: vi.fn(),
-      fill: vi.fn(),
-      rect: vi.fn(),
-      text,
-      LEFT: 'left',
-      CENTER: 'center',
-    };
-    renderPlanetOrders(
-      sketch as unknown as p5,
-      [
-        {
-          planetId: 'one',
-          position: new HexCoordinate(0, 0),
-          emptySites: 3,
-          emptyQueues: 1,
-        },
-        {
-          planetId: 'two',
-          position: new HexCoordinate(1, 0),
-          emptySites: 0,
-          emptyQueues: 2,
-        },
-        {
-          planetId: 'three',
-          position: new HexCoordinate(0, 1),
-          emptySites: 0,
-          emptyQueues: 0,
-        },
-      ],
-      1,
-    );
-    expect(text.mock.calls.map(([label]) => label)).toEqual(['S3 Q1', 'Q2']);
+it('kartorderstatus: Star map omits S/Q labels while preserving planet order information', () => {
+  const model = new AppModel();
+  model.startSlot(1);
+  const text = vi.fn();
+  expect(
+    model.snapshot.planetOrders.some((order) => order.emptySites > 0),
+  ).toBe(true);
+  renderMapOverlays({ text } as unknown as p5, {
+    ...model.snapshot,
+    fleets: [],
+    pirates: [],
   });
+  expect(text).not.toHaveBeenCalled();
 });

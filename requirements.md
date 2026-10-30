@@ -10,6 +10,12 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,
+  korta instruktioner, färre upprepningar i Production, mindre New fleet-ruta,
+  villkorad ! Needs attention vid titeln och forskningsinformation i trädet är
+  **Fullständigt implementerat**. Colony ship factory följer direkt efter
+  Rocket engine factory. Se [krav och ersatta beteenden](docs/compact-interface.md).
+
 - **Civiltrafik och arbetskraft:** `civil-skyttelforskning`,
   `civil-skytteltillverkning`, `automatisk-arbetskraftstrafik`,
   `civiltrafik-pa-handelsnatet` och `civiltrafik-sparning` är

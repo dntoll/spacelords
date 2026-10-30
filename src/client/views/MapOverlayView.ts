@@ -5,7 +5,6 @@ import type p5 from 'p5';
 import type { AppReadModel } from '../models/AppModel.js';
 import type { ShipSpriteType } from './ShipImages.js';
 import { renderMapFleets } from './FleetMapView.js';
-import { renderPlanetOrders } from './PlanetOrderView.js';
 
 export function renderMapOverlays(
   sketch: p5,
@@ -13,8 +12,6 @@ export function renderMapOverlays(
   movementPoints: ReadonlyMap<string, Point> = new Map(),
   shipImages: ReadonlyMap<ShipSpriteType, p5.Image> = new Map(),
 ): void {
-  if (model.screen === 'map')
-    renderPlanetOrders(sketch, model.planetOrders, model.camera.zoom);
   if (model.screen === 'route' || model.screen === 'production') {
     for (const planet of model.ownedPlanets) {
       const point = HexGeometry.toPoint(planet.position);

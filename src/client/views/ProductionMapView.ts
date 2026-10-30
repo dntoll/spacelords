@@ -132,9 +132,7 @@ export function renderProductionMapPanel(
 ): HTMLElement {
   const planet = model.planet!;
   const panel = element('div', 'production-map-controls');
-  panel.append(
-    renderMapLocationHeading(planet.name, planet.position, planet.id, emit),
-  );
+  panel.append(renderMapLocationHeading(planet.name, planet.id, emit));
   const map = model.productionMap;
   if (map.categorized)
     panel.append(
@@ -194,11 +192,6 @@ export function renderProductionMapPanel(
     heading.append(catalogHeading(option.type), build);
     detail.append(
       heading,
-      element(
-        'p',
-        'production-presence-detail',
-        `${presenceLabel(option)} · ${presenceDescription(option)}`,
-      ),
       element('p', '', option.description),
       element(
         'p',
@@ -230,14 +223,6 @@ export function renderProductionMapPanel(
           'p',
           '',
           `Requires ${parts.join(', ')}. Missing parts are ordered automatically; available Ion pulse engines are fitted first.`,
-        ),
-      );
-    if (option.category === 'Buildings')
-      detail.append(
-        element(
-          'p',
-          '',
-          `On ${planet.name}: ${option.localCount} · All your planets: ${option.empireCount}`,
         ),
       );
     if (planet.budget.availableWorkers < option.workers + option.crew)
@@ -334,14 +319,6 @@ export function renderProductionMapPanel(
   if (selected) {
     const chain = element('section', 'map-supply-chain');
     chain.setAttribute('aria-label', 'Selected project supply chain');
-    chain.append(
-      element('h3', '', 'Supply chain'),
-      element(
-        'p',
-        'muted-note',
-        'Map highlights: project, suppliers, producers and transfer planets.',
-      ),
-    );
     const renderSteps = (steps: readonly SupplyStep[]): HTMLElement => {
       const list = element('ul');
       for (const step of steps) {
@@ -364,9 +341,7 @@ export function renderRoutePlanet(
   emit: IntentHandler,
 ): HTMLElement {
   const panel = element('div', 'route-planet-controls');
-  panel.append(
-    renderMapLocationHeading(planet.name, planet.position, planet.id, emit),
-  );
+  panel.append(renderMapLocationHeading(planet.name, planet.id, emit));
   const supply = model.supply.planets.find((p) => p.id === planet.id);
   if (supply)
     panel.append(

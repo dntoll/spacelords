@@ -108,8 +108,6 @@ describe('forska-fram-fabriker / bygga-forskningsstation', () => {
     turn();
     expect(game.research.completed).toEqual([
       'Rocket engine factory',
-      'Telescope I factory',
-      'Exploration ship factory',
       'Colony ship factory',
     ]);
     expect(game.research.selected).toBeNull();

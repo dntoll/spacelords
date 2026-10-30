@@ -1,3 +1,5 @@
+import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
+import { selectMapHex } from './map-helpers.js';
 import { expect, test } from '@playwright/test';
 import { discoveryState } from '../fixtures/exploration.js';
 import type { SavedGame } from '../../src/client/models/SaveRepository.js';
@@ -190,9 +192,7 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
   await page
     .getByRole('button', { name: 'Choose destination for Other', exact: true })
     .click();
-  await page
-    .getByRole('combobox', { name: 'Destination hex', exact: true })
-    .selectOption('2,0');
+  await selectMapHex(page, new HexCoordinate(2, 0));
   await expect(
     controls.getByRole('button', { name: 'Continue', exact: true }),
   ).toBeInViewport();

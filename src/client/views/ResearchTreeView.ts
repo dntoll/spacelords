@@ -1,3 +1,4 @@
+import { renderResearchDetails } from './ResearchDetailsView.js';
 import { bindDiagramNavigation } from './DiagramNavigation.js';
 import type {
   ResearchSnapshot,
@@ -183,6 +184,8 @@ export function renderResearchTree(
               : 'Prerequisites pending';
     choose.append(element('small', 'research-node-status', status));
     card.append(choose);
+    if (identified)
+      card.append(renderResearchDetails(research, type, locked, emit));
     stage.append(card);
   }
   viewport.append(stage);

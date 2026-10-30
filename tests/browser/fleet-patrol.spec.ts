@@ -36,7 +36,7 @@ for (const screen of ['Star map', 'Fleets']) {
     await expect(patrol).toHaveAttribute('aria-pressed', 'true');
     await expect(card).toHaveAttribute(
       'aria-description',
-      /Patrol: HEX 1,0, range 3 hex/,
+      /Patrol: range 3 hex/,
     );
     await expect(card.locator('.fleet-patrol-status')).toHaveText(
       'Patrol · R: 3',

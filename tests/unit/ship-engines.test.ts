@@ -77,7 +77,7 @@ describe('motorbehov-for-alla-skepp', () => {
     plan.add('Colony ship factory');
     expect(plan.queue[0]).toBe('Rocket engine factory');
     expect(plan.queue.indexOf('Rocket engine factory')).toBeLessThan(
-      plan.queue.indexOf('Exploration ship factory'),
+      plan.queue.indexOf('Colony ship factory'),
     );
   });
   it('rejects an uncovered order without consuming stock or sequence IDs', () => {

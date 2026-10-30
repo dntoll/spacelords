@@ -156,7 +156,9 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   await advanceUntil(page, () => announcement.isVisible());
   const log = page.getByRole('log', { name: 'Game events' });
   const console = page.getByRole('region', { name: 'Turn console' });
-  await expect(announcement).toContainText('Home Fleet arrived at HEX 3,0.');
+  await expect(announcement).toContainText(
+    'Home Fleet arrived at selected location.',
+  );
   await expect(announcement).toHaveAttribute('data-stage', 'announcing');
   await expect(log.locator('[data-event-id]')).toHaveCount(0);
   await noMenu(page);

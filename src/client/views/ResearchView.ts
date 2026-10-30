@@ -1,5 +1,4 @@
 import { type ResearchSnapshot, type Technology } from '../models/Game.js';
-import { renderResearchDetails } from './ResearchDetailsView.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { buildingImage } from './BuildingImage.js';
 import { renderResearchTree } from './ResearchTreeView.js';
@@ -55,12 +54,8 @@ export function renderResearch(
       ),
     );
   const queue = element('details', 'research-queue hud');
-  queue.addEventListener('toggle', () => {
-    if (queue.open && panel.querySelector('.research-details'))
-      emit({ type: 'inspect-research', technology: null });
-  });
   page.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && panel.querySelector('.research-details')) {
+    if (event.key === 'Escape') {
       event.preventDefault();
       emit({ type: 'inspect-research', technology: null });
     }
@@ -111,8 +106,6 @@ export function renderResearch(
       ),
     );
   panel.append(renderResearchTree(research, emit, inspected, locked), queue);
-  if (inspected !== null && research.available.includes(inspected))
-    panel.append(renderResearchDetails(research, inspected, locked, emit));
   page.append(header, panel);
   return page;
 }

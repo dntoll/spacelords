@@ -39,7 +39,7 @@ test('flottval-pa-kartan / dra-flottdestination: selects a fleet, previews a sna
   await page.mouse.move(x + Math.sqrt(3) * 36, y, { steps: 8 });
   await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
     'aria-description',
-    /Destination preview: HEX 2,0/,
+    /Destination preview on map/,
   );
   await expect(canvas).toHaveCSS('cursor', 'grabbing');
   await expect(page.getByTestId('camera-position')).toHaveText(camera!);
@@ -49,20 +49,20 @@ test('flottval-pa-kartan / dra-flottdestination: selects a fleet, previews a sna
   await page.mouse.up();
   await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
     'aria-description',
-    /Destination: HEX 2,0/,
+    /Destination: selected location on map/,
   );
   await page.mouse.move(x, y - 18);
   await page.mouse.down();
   await page.mouse.move(x - Math.sqrt(3) * 36, y, { steps: 8 });
   await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
     'aria-description',
-    /Destination preview: HEX 0,0/,
+    /Destination preview on map/,
   );
   await canvas.press('Escape');
   await page.mouse.up();
   await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
     'aria-description',
-    /Destination: HEX 2,0/,
+    /Destination: selected location on map/,
   );
   expect(errors).toEqual([]);
 });

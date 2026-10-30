@@ -20,8 +20,7 @@
 /* viewport-game-layout: keep navigation independent of brand font metrics. */
 @media (max-width: 700px) {
   #app > .app-header {
-    flex-direction: column;
-    align-items: stretch;
+    align-items: center;
   }
   .app-header > .brand {
     align-self: flex-start;
@@ -1720,11 +1719,11 @@ p {
 }
 .research-tree-stage .research-node {
   position: absolute;
-  width: 140px;
-  height: 64px;
+  width: 224px;
+  height: 200px;
   padding: 0;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
+  grid-template-rows: 48px minmax(0, 1fr);
   gap: 0;
   border: 1px solid #426170;
   border-radius: 6px;
@@ -1783,44 +1782,26 @@ p {
   outline: 2px solid #ffffff;
   outline-offset: 2px;
 }
-.research-details {
-  position: absolute;
-  z-index: 7;
-  top: 8px;
-  right: 8px;
-  width: min(320px, calc(100% - 16px));
-  max-height: calc(100% - 70px);
-  overflow: auto;
-  padding: 12px;
-  background: #10232ff5;
-}
-.research-details-heading {
+.research-tree-stage .research-node > .research-node-details {
+  grid-column: 1 / -1;
+  grid-row: 2;
   display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  padding: 4px 8px 8px;
+  overflow: auto;
 }
-.research-details-heading h2 {
-  margin: 0;
-  font-size: 1rem;
+.research-node-details p {
+  font-size: 0.68rem;
+  line-height: 1.2;
 }
-.research-details-close {
-  flex: 0 0 44px;
-  width: 44px;
+.research-node-details > .button {
+  width: 100%;
   min-height: 44px;
-  padding: 0;
-}
-.research-details p {
-  font-size: 0.8rem;
-}
-@media (max-width: 900px), (max-height: 500px) {
-  .research-details {
-    top: auto;
-    bottom: 60px;
-    left: 8px;
-    width: auto;
-    max-height: min(48%, 320px);
-  }
+  padding: 4px;
+  margin-top: auto;
+  font-size: 0.75rem;
 }
 .research-tree-stage .research-node h3 {
   grid-row: 1;
@@ -2132,7 +2113,14 @@ p {
   overflow-wrap: anywhere;
 }
 .new-fleet-drop {
+  min-height: 62px;
+  gap: 2px;
+  padding: 6px 10px;
   align-content: center;
+}
+.new-fleet-drop h3 {
+  margin: 0;
+  font-size: 0.9rem;
 }
 .fleet-orders summary,
 .map-fleet-route-options summary {
@@ -2509,7 +2497,7 @@ p {
   margin-left: 5px;
   font-weight: 800;
 }
-.map-attention-legend {
+.map-route-legend {
   position: absolute;
   right: 10px;
   width: fit-content;
@@ -3301,4 +3289,23 @@ body:has(.discovery-controls) .selection-panel {
   max-height: 40dvh;
   width: 100%;
   padding: 0 8px;
+}
+
+/* uppmarksamhet-vid-titel: share the brand row above navigation. */
+.app-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 12px;
+}
+.app-header > .brand {
+  flex: 0 1 auto;
+}
+.app-header > .main-nav {
+  grid-column: 1 / -1;
+}
+.map-attention-legend {
+  margin: 0 0 0 auto;
+  color: #ffaaa2;
+  font-size: 0.7rem;
+  white-space: nowrap;
 }

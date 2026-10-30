@@ -24,7 +24,6 @@ export function renderMapFleetPanel(
   );
   const place = renderMapLocationHeading(
     cell?.object?.name ?? 'Fleets',
-    position,
     planet?.id,
     emit,
   );
@@ -118,7 +117,7 @@ export function renderMapFleetPanel(
       const option = element(
         'option',
         '',
-        `${fleet.name} · ${fleet.position ? `HEX ${fleet.position.key}${fleet.position.key !== position.key ? ' · En route' : ''}` : 'No position'}`,
+        `${fleet.name} · ${fleet.position ? (fleet.position.key !== position.key ? 'En route' : 'Here') : 'No position'}`,
       );
       option.value = fleet.id;
       select.append(option);

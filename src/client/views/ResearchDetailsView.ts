@@ -15,23 +15,8 @@ export function renderResearchDetails(
   locked: boolean,
   emit: IntentHandler,
 ): HTMLElement {
-  const detail = element('section', 'research-details hud');
-  detail.setAttribute('role', 'region');
-  detail.setAttribute('aria-label', 'Research details');
-  detail.tabIndex = -1;
+  const detail = element('div', 'research-node-details');
   const identified = isResearchIdentified(research, technology);
-  const heading = element('div', 'research-details-heading');
-  const close = button(
-    'Close research details',
-    () => emit({ type: 'inspect-research', technology: null }),
-    'button research-details-close',
-  );
-  close.textContent = '×';
-  heading.append(
-    element('h2', '', identified ? technology : 'Unknown technology'),
-    close,
-  );
-  detail.append(heading);
   if (!identified) {
     detail.append(
       element(
@@ -83,8 +68,6 @@ export function renderResearchDetails(
     choose.textContent = queue >= 0 ? 'Queued' : 'Research';
     choose.disabled = locked || !!research.queueBlockedReason || queue >= 0;
     detail.append(choose);
-    if (research.queueBlockedReason)
-      detail.append(element('p', 'muted-note', research.queueBlockedReason));
   }
   return detail;
 }

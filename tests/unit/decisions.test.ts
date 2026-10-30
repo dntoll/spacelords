@@ -349,7 +349,7 @@ it('beslutsvagledning-i-vyn: explains the missing order and highlights its inter
   view.render(model.snapshot);
   expect(
     root.querySelector('[aria-label="Decisions in this view"]')?.textContent,
-  ).toContain('Choose a technology');
+  ).toContain('Choose research.');
   expect(
     root.querySelector('.research-tree-viewport.decision-target'),
   ).not.toBeNull();
@@ -357,7 +357,7 @@ it('beslutsvagledning-i-vyn: explains the missing order and highlights its inter
   view.render(model.snapshot);
   expect(
     root.querySelector('[aria-label="Decisions in this view"]')?.textContent,
-  ).toContain('queue a build');
+  ).toContain('Tellus: choose production.');
   model.muteDecision('building-empty-sol-0');
   view.render(model.snapshot);
   expect(

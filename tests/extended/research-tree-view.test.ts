@@ -39,7 +39,7 @@ it('forsknings-tradnavigation: distinguishes completed, active, queued and unava
     type: 'inspect-research',
     technology: 'Fighter factory',
   });
-  expect(view.querySelectorAll('.research-edge.unlocked')).toHaveLength(6);
+  expect(view.querySelectorAll('.research-edge.unlocked')).toHaveLength(7);
   expect(
     view
       .querySelector(
@@ -149,7 +149,7 @@ it('forskning-kraver-station: explains the missing station and disables queue ac
     'Rocket engine factory',
   );
   for (const button of view.querySelectorAll<HTMLButtonElement>(
-    '.research-details button:not(.research-details-close)',
+    '.research-node-details button',
   )) {
     expect(button.disabled).toBe(true);
     button.click();

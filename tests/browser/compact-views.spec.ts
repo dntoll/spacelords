@@ -60,66 +60,49 @@ test('dragbara-flottorder: mouse swipe reveals orders without issuing one and ke
   await page.screenshot({ path: testInfo.outputPath('dragged-orders.png') });
 });
 
-test('kompakt-forskningstrad / forskningens-avslojande / forskningsdetaljer-vid-val: compact tiles inspect before ordering and close with focus restored', async ({
+test('kompakt-forskningstrad / forskningsdetaljer-vid-val: compact tree tiles contain all information and actions without an overlay', async ({
   page,
-  isMobile,
 }, testInfo) => {
   await seed(page, researchStationState());
   await page.getByRole('button', { name: 'Research', exact: true }).click();
-  const stage = page.locator('.research-tree-stage');
   const rocket = page.getByRole('button', {
     name: 'Inspect Rocket engine factory',
     exact: true,
   });
   await rocket.focus();
-  const size = await rocket.evaluate((node) => ({
-    width: node.parentElement!.offsetWidth,
-    height: node.parentElement!.offsetHeight,
+  const card = page.locator('[data-technology="Rocket engine factory"]');
+  const size = await card.evaluate((node) => ({
+    width: (node as HTMLElement).offsetWidth,
+    height: (node as HTMLElement).offsetHeight,
   }));
-  expect(size).toEqual({ width: 140, height: 64 });
+  expect(size).toEqual({ width: 224, height: 200 });
+  await expect(card).toContainText('Produces Rocket engines');
+  await expect(card).toContainText('1 research point');
+  await expect(card).toContainText('Requires: No prerequisites');
   await expect(
     page.getByRole('button', { name: 'Inspect Fighter factory', exact: true }),
   ).toHaveCount(0);
-  const camera = await stage.getAttribute('style');
   await rocket.click();
-  const detail = page.getByRole('region', {
-    name: 'Research details',
-    exact: true,
-  });
-  await expect(detail).toContainText('Rocket engine factory');
-  await expect(page.locator('.research-queue article')).toHaveCount(0);
-  await expect(stage).toHaveAttribute('style', camera!);
-  const treeBounds = (await page
-    .locator('.research-tree-viewport')
-    .boundingBox())!;
-  const detailBounds = (await detail.boundingBox())!;
-  expect(detailBounds.x).toBeGreaterThanOrEqual(treeBounds.x);
-  expect(detailBounds.y).toBeGreaterThanOrEqual(treeBounds.y);
-  if (isMobile) {
-    expect(detailBounds.height).toBeLessThanOrEqual(treeBounds.height * 0.5);
-    const bottomGap =
-      treeBounds.y + treeBounds.height - detailBounds.y - detailBounds.height;
-    expect(bottomGap).toBeGreaterThanOrEqual(58);
-    expect(bottomGap).toBeLessThanOrEqual(62);
-  }
+  await expect(page.locator('.research-details')).toHaveCount(0);
+  const details = card.locator('.research-node-details');
+  expect(
+    await details.evaluate(
+      (node) => node.scrollHeight <= node.clientHeight + 1,
+    ),
+  ).toBe(true);
   await page.screenshot({
-    path: testInfo.outputPath('compact-research-detail.png'),
+    path: testInfo.outputPath('research-information-in-tree.png'),
   });
-  await page
+  await card
     .getByRole('button', {
       name: 'Research Rocket engine factory',
       exact: true,
     })
     .click();
   await expect(page.locator('.research-queue article')).toHaveCount(1);
-  await page
-    .getByRole('button', { name: 'Close research details', exact: true })
-    .click();
-  await expect(detail).toHaveCount(0);
-  await expect(rocket).toBeFocused();
-  await rocket.click();
+  // Touch ordering does not give keyboard focus to its disabled queued button.
+  await rocket.focus();
   await page.keyboard.press('Escape');
-  await expect(detail).toHaveCount(0);
   await expect(rocket).toBeFocused();
 });
 
@@ -224,10 +207,57 @@ test('produktionsvalens-statusfarger: all four statuses stay distinct, readable 
   await page
     .getByRole('button', { name: 'Show Water extractor', exact: true })
     .click();
-  await expect(page.locator('.production-presence-detail')).toContainText(
-    'In active network: 1',
-  );
+  await expect(page.locator('.production-presence-detail')).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Show Water extractor', exact: true }),
+  ).toHaveAttribute('aria-description', /In active network: 1/);
   await page.screenshot({
     path: testInfo.outputPath('production-status-colors.png'),
   });
+});
+
+test('uppmarksamhet-vid-titel / kompakt-ny-flotta / flyttmal-pa-kartan / inga-hexkoordinater: header and fleet controls save mobile space', async ({
+  page,
+}, testInfo) => {
+  await seed(page, researchStationState());
+  const header = page.locator('.app-header');
+  const warning = header.locator('.map-attention-legend');
+  await expect(warning).toHaveText('! Needs attention');
+  const brand = (await header.locator('.brand').boundingBox())!;
+  const badge = (await warning.boundingBox())!;
+  const nav = (await header.locator('.main-nav').boundingBox())!;
+  expect(
+    Math.abs(brand.y + brand.height / 2 - badge.y - badge.height / 2),
+  ).toBeLessThan(3);
+  expect(badge.x).toBeGreaterThanOrEqual(brand.x + brand.width);
+  expect(nav.y).toBeGreaterThanOrEqual(badge.y + badge.height);
+  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+  await page
+    .getByRole('button', {
+      name: 'Show decision: Home Fleet: choose an assignment',
+      exact: true,
+    })
+    .click();
+  const create = page.getByRole('group', { name: 'New fleet', exact: true });
+  await expect(create).toBeVisible();
+  expect((await create.boundingBox())!.height).toBeLessThanOrEqual(76);
+  await expect(page.locator('.coordinate-label')).toHaveCount(0);
+  await page.screenshot({
+    path: testInfo.outputPath('compact-fleet-header.png'),
+  });
+  await page
+    .getByRole('button', {
+      name: 'Choose destination for Home Fleet',
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByRole('combobox', { name: 'Destination hex', exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator('.destination-mode')).toContainText(
+    'Choose a destination',
+  );
+  await expect(page.locator('body')).not.toContainText(
+    'Choose destination hex',
+  );
 });

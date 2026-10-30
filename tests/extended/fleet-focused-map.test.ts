@@ -125,7 +125,7 @@ describe('flottfokuserad-kartvy', () => {
     expect(model.snapshot.screen).toBe('fleets');
   });
 
-  it('keeps destination picker, cancellation, local and distant transfers on Fleets', () => {
+  it('keeps map destinations, cancellation, local and distant transfers on Fleets', () => {
     const { model, root, emit, click } = setup();
     emit({ type: 'open-fleets' });
     emit({ type: 'map-select-fleet', id: 'fleet-home' });
@@ -135,11 +135,8 @@ describe('flottfokuserad-kartvy', () => {
     expect(model.snapshot.screen).toBe('fleets');
     expect(model.snapshot.destinationFleetId).toBeNull();
     click('Choose destination for Home Fleet');
-    const picker = root.querySelector<HTMLSelectElement>(
-      '[aria-label="Destination hex"]',
-    )!;
-    picker.value = '0,1';
-    picker.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(root.querySelector('[aria-label="Destination hex"]')).toBeNull();
+    emit({ type: 'select', position: new HexCoordinate(0, 1) });
     expect(model.snapshot.fleets[0]!.destination?.key).toBe('0,1');
     expect(model.snapshot.screen).toBe('fleets');
     click('Fighter 1 in Home Fleet');

@@ -222,6 +222,8 @@ note right of Research
   Nya köposter kräver en färdig, ägd Research station utan rivningsorder.
   Endast stationer i drift ger framsteg.
   Befintliga köposter väntar när stationer saknas.
+  colony-ship-efter-rocket-engine:
+  Colony ship factory kräver direkt Rocket engine factory.
 end note
 Technology --> Building : unlocks
 Technology --> Technology : prerequisites

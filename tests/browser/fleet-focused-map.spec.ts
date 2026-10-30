@@ -52,7 +52,7 @@ test('flottfokuserad-kartvy: background is inert, route crossings set destinatio
   });
   await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
     'aria-description',
-    /Destination preview: HEX 0,1/,
+    /Destination preview on map/,
   );
   await page.mouse.up();
   await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
@@ -61,16 +61,14 @@ test('flottfokuserad-kartvy: background is inert, route crossings set destinatio
   );
   await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
     'aria-description',
-    /Destination: HEX 0,1/,
+    /Destination: selected location on map/,
   );
   await expect(panel.locator('.selected-fleet-card')).not.toContainText(
     'Trade route:',
   );
   await expect(page.getByTestId('camera-position')).toHaveText(camera!);
   await chooseFleetDestination(page, 'Freighters');
-  await page
-    .getByRole('combobox', { name: 'Destination hex', exact: true })
-    .press('Escape');
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(page.locator('.map-page')).toHaveAttribute(
     'data-map-screen',
     'fleets',

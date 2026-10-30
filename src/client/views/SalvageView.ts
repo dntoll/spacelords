@@ -19,7 +19,11 @@ export function renderSalvageSelection(
     const select = element('select');
     select.setAttribute('aria-label', 'Shipyard hex');
     for (const position of model.shipyardPlacement.choices) {
-      const option = element('option', '', `HEX ${position.key}`);
+      const option = element(
+        'option',
+        '',
+        `Location ${select.options.length + 1}`,
+      );
       option.value = position.key;
       select.append(option);
     }
@@ -43,7 +47,7 @@ export function renderSalvageSelection(
       element(
         'p',
         '',
-        `HEX ${wreck.position.key} · Engines: ${wreck.ship.engines['Rocket engine']} Rocket, ${wreck.ship.engines['Ion pulse engine']} Ion${wreck.ship.telescope ? ` · Telescope ${wreck.ship.telescope}` : ''}`,
+        `Engines: ${wreck.ship.engines['Rocket engine']} Rocket, ${wreck.ship.engines['Ion pulse engine']} Ion${wreck.ship.telescope ? ` · Telescope ${wreck.ship.telescope}` : ''}`,
       ),
     );
     if (wreck.reservedBy || wreck.towedBy || wreck.yardId)

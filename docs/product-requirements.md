@@ -1,5 +1,9 @@
 # Produktkrav och status
 
+Gränssnittets förenklingar och den kortare forskningsvägen till Colony ship
+beskrivs i [renare spelgränssnitt](compact-interface.md). Där anges vilka äldre
+krav på S/Q-text, forskningsdetaljer och upprepade produktionsantal som ersätts.
+
 `genererade-symboler-och-kartbilder` är **Fullständigt implementerat**. De nya
 bilderna omfattar 24 tydliga byggnadssymboler, sex planettyper och Orbital
 shipyard ovanifrån. Samtliga bilder är genererade och granskade.

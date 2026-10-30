@@ -94,7 +94,7 @@ test('ruttflotta-till-narmaste-andplanet: remote assignment saves an approach wi
   await expect(panel).toContainText('Assigned fleets · 1');
   await expect(
     panel.locator('.fleet-card[data-fleet-id="freighters"]'),
-  ).toHaveAttribute('aria-description', /Destination: HEX 1,0/);
+  ).toHaveAttribute('aria-description', /Destination: Tellus/);
   await page.reload();
   await startFirstSlot(page);
   const fleet = await page.evaluate(() => {
@@ -148,7 +148,7 @@ for (const mode of ['Star map', 'Route'] as const)
       name: 'Selected fleet',
       exact: true,
     });
-    await expect(fleetPanel).toContainText('HEX 1,0');
+    await expect(fleetPanel).not.toContainText('HEX 1,0');
     await fleetPanel
       .getByRole('button', {
         name: 'Select route Tellus to Vesta',

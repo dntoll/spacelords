@@ -122,56 +122,50 @@ describe('kompakt-forskningstrad / forskningens-avslojande / forskningsdetaljer-
       ),
     ).toBe(true);
   });
-  it('opens details on a single click without placing an order and retains the separate Research button', () => {
+  it('forskningsdetaljer-vid-val: inspection preserves the tile and camera, with Research inside the tile', () => {
     const { model, root, click, controller } = setup();
     const camera = model.snapshot.researchCamera;
+    const tile = root.querySelector(
+      '[data-technology="Rocket engine factory"]',
+    )!;
     click('Inspect Rocket engine factory');
     expect(model.snapshot.inspectedResearch).toBe('Rocket engine factory');
     expect(model.snapshot.research.queue).toEqual([]);
-    expect(model.snapshot.research.selected).toBeNull();
-    expect(document.activeElement).toBe(
-      root.querySelector('.research-details'),
+    expect(root.querySelector('.research-details')).toBeNull();
+    expect(tile.querySelector('.research-node-details')!.textContent).toContain(
+      'Produces Rocket engines',
     );
     click('Research Rocket engine factory');
     expect(model.snapshot.research.queue).toEqual(['Rocket engine factory']);
     expect(model.snapshot.researchCamera).toEqual(camera);
-    click('Close research details');
-    expect(root.querySelector('.research-details')).toBeNull();
+    root
+      .querySelector('.research-page')!
+      .dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+      );
+    expect(model.snapshot.inspectedResearch).toBeNull();
     expect(document.activeElement?.getAttribute('aria-label')).toBe(
       'Inspect Rocket engine factory',
     );
     controller.dispose();
   });
-  it('anonymous tiles and their details expose no future name, image, description or research action', () => {
+  it('anonymous tiles expose no future name, image, description or research action', () => {
     const { root, model, controller } = setup();
     const tile = root.querySelector<HTMLElement>(
       '[data-technology="Fighter factory"]',
     )!;
+    tile.querySelector('button')!.click();
     expect(tile.textContent).not.toContain('Fighter');
     expect(tile.querySelector('img')).toBeNull();
-    expect(tile.querySelector('button')!.title).toBe('Unknown technology');
-    tile.querySelector('button')!.click();
-    const details = root.querySelector('.research-details')!;
-    expect(details.textContent).not.toContain('Fighter');
-    expect(details.querySelectorAll('button')).toHaveLength(1);
+    expect(tile.querySelector('.research-node-details')).toBeNull();
+    expect(tile.querySelectorAll('button')).toHaveLength(1);
     expect(model.snapshot.research.queue).toEqual([]);
-    details.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
-    );
-    expect(root.querySelector('.research-details')).toBeNull();
     controller.dispose();
   });
-  it('makes the queue and details mutually exclusive and retains an open queue on updates', () => {
+  it('retains an open queue during inspection and order updates', () => {
     const { root, model, click, controller } = setup();
     root.querySelector<HTMLDetailsElement>('.research-queue')!.open = true;
     click('Inspect Rocket engine factory');
-    expect(
-      root.querySelector<HTMLDetailsElement>('.research-queue')!.open,
-    ).toBe(false);
-    const queue = root.querySelector<HTMLDetailsElement>('.research-queue')!;
-    queue.open = true;
-    queue.dispatchEvent(new Event('toggle'));
-    expect(model.snapshot.inspectedResearch).toBeNull();
     expect(
       root.querySelector<HTMLDetailsElement>('.research-queue')!.open,
     ).toBe(true);

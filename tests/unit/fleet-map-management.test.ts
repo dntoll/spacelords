@@ -149,7 +149,7 @@ it('bargningsorder-fran-flotta: Salvage opens a wreck picker, commits the missio
 });
 
 describe('flottadministration / flottval-pa-kartan', () => {
-  it('planetoppning-i-kartrubrik: places Open planet beside the displayed planet name and coordinates without Create route', () => {
+  it('planetoppning-i-kartrubrik: places Open planet beside the displayed planet name without coordinates without Create route', () => {
     const { model, root, view, click } = setup();
     model.select(new HexCoordinate(0, 1));
     model.selectMapFleet('fleet-home');
@@ -159,9 +159,7 @@ describe('flottadministration / flottval-pa-kartan', () => {
     )!;
     expect(heading).not.toBeNull();
     expect(heading.textContent).toContain('Tellus');
-    expect(heading.querySelector('.coordinate-label')?.textContent).toContain(
-      '1,0',
-    );
+    expect(heading.querySelector('.coordinate-label')).toBeNull();
     expect(heading.querySelector('[aria-label="Open planet"]')).not.toBeNull();
     expect(root.querySelector('[aria-label="Create route"]')).toBeNull();
     click('Open planet');
@@ -193,7 +191,9 @@ describe('flottadministration / flottval-pa-kartan', () => {
       2,
     );
     expect(root.querySelector('.fleet-place')?.textContent).toContain('Tellus');
-    expect(root.querySelector('.fleet-place')?.textContent).toContain('1,0');
+    expect(root.querySelector('.fleet-place')?.textContent).not.toContain(
+      '1,0',
+    );
     expect(
       root.querySelector('.selected-fleet-card')?.getAttribute('data-fleet-id'),
     ).toBe(other.id);
@@ -320,15 +320,13 @@ describe('flottnamn-direktredigering', () => {
 
 describe('flottknappar-pa-kartan / flottadministration', () => {
   it('provides destination selection without drag and removes the old map buttons', () => {
-    const { model, root, click } = setup();
+    const { model, root, click, view } = setup();
     expect(root.querySelector('[aria-label="Set destination"]')).toBeNull();
     expect(root.querySelector('[aria-label="Edit fleet"]')).toBeNull();
     click('Choose destination for Home Fleet');
-    const select = root.querySelector<HTMLSelectElement>(
-      '[aria-label="Destination hex"]',
-    )!;
-    select.value = '0,1';
-    select.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(root.querySelector('[aria-label="Destination hex"]')).toBeNull();
+    model.select(new HexCoordinate(0, 1));
+    view.render(model.snapshot);
     expect(model.snapshot.fleets[0]!.destination?.key).toBe('0,1');
     click('Clear destination');
     expect(model.snapshot.fleets[0]!.destination).toBeNull();
@@ -345,7 +343,7 @@ describe('flottknappar-pa-kartan / flottadministration', () => {
       root
         .querySelector('.selected-fleet-card')!
         .getAttribute('aria-description'),
-    ).toContain('Destination: HEX 0,1');
+    ).toContain('Destination: Vesta');
     expect(model.snapshot.screen).toBe('fleets');
     expect(model.snapshot.mapFleetId).toBe('fleet-home');
     expect(model.snapshot.camera.center).toEqual(
@@ -373,7 +371,7 @@ describe('flottadministration / skepp-till-rorlig-flotta / forstarka-ruttflotta'
     const receiving = root.querySelector<HTMLSelectElement>(
       '[aria-label="Receiving fleet"]',
     )!;
-    expect(receiving.textContent).toContain('Travellers · HEX 0,0 · En route');
+    expect(receiving.textContent).toContain('Travellers · En route');
     receiving.value = 'travellers';
     receiving.dispatchEvent(new Event('change', { bubbles: true }));
     const reinforcement = model.snapshot.fleets.find(
@@ -571,7 +569,7 @@ describe('flottpatrullering', () => {
       'Patrol · R: 3',
     );
     expect(active.getAttribute('aria-description')).toContain(
-      'Patrol: HEX 1,0, range 3 hex',
+      'Patrol: range 3 hex',
     );
     expect(
       active

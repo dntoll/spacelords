@@ -1,3 +1,5 @@
+import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
+import { selectMapHex } from './map-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 import { Game, type GameState } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
@@ -55,9 +57,7 @@ test('aktuell-detektionssikt / kartans-sikttillstand: losing sight removes pirat
       exact: true,
     })
     .click();
-  await page
-    .getByRole('combobox', { name: 'Destination hex', exact: true })
-    .selectOption('10,-4');
+  await selectMapHex(page, new HexCoordinate(10, -4));
   await endTurn(page);
   await selectMapPoint(page, marker.point);
   await expect(

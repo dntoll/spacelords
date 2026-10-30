@@ -19,7 +19,7 @@ test('beslutsvagledning-i-vyn: navigation warnings lead to highlighted controls 
     name: 'Decisions in this view',
   });
   await expect(guidance).toContainText('Home Fleet');
-  await expect(guidance).toContainText('Orders');
+  await expect(guidance).toContainText('Home Fleet: choose an assignment.');
   await guidance
     .getByRole('button', {
       name: 'Show decision: Home Fleet: choose an assignment',
@@ -35,7 +35,7 @@ test('beslutsvagledning-i-vyn: navigation warnings lead to highlighted controls 
     path: testInfo.outputPath('fleet-decision-guidance.png'),
   });
   await page.getByRole('button', { name: 'Research', exact: true }).click();
-  await expect(guidance).toContainText('Choose a technology');
+  await expect(guidance).toContainText('Choose research.');
   await expect(
     page.getByRole('region', { name: 'Research tree', exact: true }),
   ).toHaveClass(/decision-target/);
@@ -53,7 +53,7 @@ test('beslutsvagledning-i-vyn: navigation warnings lead to highlighted controls 
     page.locator('[data-screen="research"] .nav-attention'),
   ).toHaveCount(0);
   await page.getByRole('button', { name: 'Production', exact: true }).click();
-  await expect(guidance).toContainText('queue a build');
+  await expect(guidance).toContainText('Tellus: choose production.');
   await expect(
     page.getByRole('button', { name: 'Show Iron mine', exact: true }),
   ).toHaveClass(/decision-target/);

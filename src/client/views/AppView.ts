@@ -1,3 +1,4 @@
+import { gameText } from './GameText.js';
 import { discoveryControls } from './DiscoveryView.js';
 import { pirateAsFleet } from '../models/PirateFleet.js';
 import { updateDecisionGuidance } from './DecisionGuidanceView.js';
@@ -30,7 +31,6 @@ import type {
 import { renderBuildSelection } from './BuildSelectionView.js';
 import { renderPlanet } from './PlanetView.js';
 import { renderResearch } from './ResearchView.js';
-import { renderResearchDetails } from './ResearchDetailsView.js';
 import { updateResearchCamera } from './ResearchTreeView.js';
 import { button, element, planetIllustration } from './dom.js';
 import { renderDecisions, renderTurnWarning } from './EmpireView.js';
@@ -205,9 +205,8 @@ export class AppView implements AppPort {
     const previousMapFleet = this.#panel
       ?.querySelector('.selected-fleet-card')
       ?.getAttribute('data-fleet-id');
-    const wasChoosingDestination = !!this.#panel?.querySelector(
-      '[aria-label="Destination hex"]',
-    );
+    const wasChoosingDestination =
+      !!this.#panel?.querySelector('.destination-mode');
     const focusLabel = active?.getAttribute('aria-label');
     const focusKey =
       active instanceof HTMLElement ? active.dataset.focusKey : undefined;
@@ -418,16 +417,6 @@ export class AppView implements AppPort {
       if (this.#researchKey === researchKey) {
         // dubbelklick-koar-forskning: retain pointer targets through inspection.
         const panel = this.#root.querySelector('.research-panel')!;
-        panel.querySelector('.research-details')?.remove();
-        if (model.inspectedResearch !== null)
-          panel.append(
-            renderResearchDetails(
-              model.research,
-              model.inspectedResearch,
-              model.phase !== 'planning',
-              this.#emit,
-            ),
-          );
         for (const node of panel.querySelectorAll<HTMLElement>(
           '.research-node[data-technology]',
         ))
@@ -453,8 +442,7 @@ export class AppView implements AppPort {
       if (!changedScreen) {
         const queue =
           this.#root.querySelector<HTMLDetailsElement>('.research-queue');
-        if (queue)
-          queue.open = researchQueueOpen && model.inspectedResearch === null;
+        if (queue) queue.open = researchQueueOpen;
         const content = queue?.querySelector('.research-queue-content');
         if (content) content.scrollTop = researchQueueScroll;
         if (
@@ -476,11 +464,11 @@ export class AppView implements AppPort {
       updateResearchCamera(this.#root, model.researchCamera);
       const changedInspection =
         this.#inspectedResearch !== model.inspectedResearch;
-      if (changedInspection && model.inspectedResearch !== null)
-        this.#root
-          .querySelector<HTMLElement>('.research-details')
-          ?.focus({ preventScroll: true });
-      else if (changedInspection && this.#inspectedResearch !== null) {
+      if (
+        changedInspection &&
+        model.inspectedResearch === null &&
+        this.#inspectedResearch !== null
+      ) {
         const technology = this.#inspectedResearch;
         [...this.#root.querySelectorAll<HTMLElement>('.research-node')]
           .find((node) => node.dataset.technology === technology)
@@ -809,7 +797,7 @@ export class AppView implements AppPort {
       announcement?.remove();
       this.#announcementObserver?.disconnect();
       announcement = element('div', 'event-announcement');
-      announcement.append(element('p', 'event-text', current.text));
+      announcement.append(element('p', 'event-text', gameText(current.text)));
       if (current.decision) {
         announcement.classList.add('event-announcement-interactive');
         announcement.setAttribute('role', 'dialog');
@@ -819,7 +807,7 @@ export class AppView implements AppPort {
         details.tabIndex = 0;
         details.setAttribute('aria-label', 'Event details');
         for (const text of current.decision.details)
-          details.append(element('p', '', text));
+          details.append(element('p', '', gameText(text)));
         const actions = element('div', 'event-actions');
         actions.append(
           button('Handle', () => this.#emit({ type: 'handle-discoveries' })),
@@ -1166,22 +1154,24 @@ export class AppView implements AppPort {
       );
     }
     let legend = this.#root.querySelector<HTMLElement>('.map-attention-legend');
-    const show = model.screen === 'route' || model.screen === 'production';
+    const show = model.attentionScreens.length > 0;
     if (show && !legend) {
       legend = element('p', 'map-attention-legend', '! Needs attention');
-      this.#container?.append(legend);
-    }
-    if (legend) {
-      legend.replaceChildren(element('span', '', '! Needs attention'));
-      if (model.screen === 'route')
-        legend.append(
-          document.createTextNode(' · '),
-          element('span', 'route-available-legend', '● Available transports'),
-          document.createTextNode(' · '),
-          element('span', 'route-assigned-legend', '● Route fleets'),
-        );
+      this.#root
+        .querySelector('.app-header')
+        ?.insertBefore(legend, this.#root.querySelector('.main-nav'));
     }
     if (!show) legend?.remove();
+    this.#root.querySelector('.map-route-legend')?.remove();
+    if (model.screen === 'route') {
+      const routes = element('p', 'map-route-legend');
+      routes.append(
+        element('span', 'route-available-legend', '● Available transports'),
+        document.createTextNode(' · '),
+        element('span', 'route-assigned-legend', '● Route fleets'),
+      );
+      this.#container?.append(routes);
+    }
   }
 
   #renderProductionRing(model: AppReadModel): void {
@@ -1318,7 +1308,6 @@ export class AppView implements AppPort {
             : null;
     const title = renderMapLocationHeading(
       object?.name ?? terrainName ?? 'Fleets',
-      cell?.position,
       source?.id,
       this.#emit,
     );
@@ -1365,12 +1354,7 @@ export class AppView implements AppPort {
       contents.push(summary);
     } else if (model.screen === 'map' && cell && !cell.explored && !object) {
       contents.push(
-        renderMapLocationHeading(
-          'Unexplored',
-          cell.position,
-          undefined,
-          this.#emit,
-        ),
+        renderMapLocationHeading('Unexplored', undefined, this.#emit),
       );
     }
     if (destinationFleet) {
@@ -1395,76 +1379,70 @@ export class AppView implements AppPort {
           'button',
         ),
       );
-      const picker = element('select');
-      picker.setAttribute(
-        'aria-label',
-        salvage
-          ? 'Salvage wreck'
-          : colonization
-            ? 'Colonization planet'
-            : 'Destination hex',
-      );
-      const placeholder = element(
-        'option',
-        '',
-        salvage
-          ? 'Choose a wreck to salvage'
-          : colonization
-            ? 'Choose a planet to colonize'
-            : 'Choose destination hex',
-      );
-      placeholder.value = '';
-      picker.append(placeholder);
-      if (salvage) {
-        for (const wreck of model.wrecks.filter(
-          (wreck) => !wreck.reservedBy && !wreck.towedBy && !wreck.yardId,
-        )) {
-          const option = element(
-            'option',
-            '',
-            `${wreck.ship.type} wreck · HEX ${wreck.position.key} · ${wreck.ship.engines['Rocket engine']} Rocket / ${wreck.ship.engines['Ion pulse engine']} Ion${wreck.ship.telescope ? ` · Telescope ${wreck.ship.telescope}` : ''}`,
-          );
-          option.value = wreck.id;
-          picker.append(option);
-        }
-      } else
-        for (const target of model.cells) {
-          if (
-            colonization &&
-            (!target.explored ||
-              target.object?.kind !== 'planet' ||
-              target.object.owned)
-          )
-            continue;
-          if (target.passable === false) continue;
-          const option = element(
-            'option',
-            '',
-            `${target.object?.name ?? 'HEX'} ${target.position.key}`,
-          );
-          option.value = target.position.key;
-          picker.append(option);
-        }
-      picker.addEventListener('change', () => {
-        if (!picker.value) return;
-        if (salvage) {
-          this.#emit({ type: 'select-salvage', id: picker.value });
-          return;
-        }
-        const [q, r] = picker.value.split(',').map(Number);
-        this.#emit({ type: 'select', position: new HexCoordinate(q!, r!) });
-      });
-      picker.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape')
-          this.#emit({
-            type: model.screen === 'fleets' ? 'open-fleets' : 'open-map',
-          });
-      });
-      contents.push(picker);
-      if (salvage && picker.options.length === 1)
-        contents.push(
-          element('p', 'muted-note', 'No available wrecks are known.'),
+      if (salvage || colonization) {
+        const picker = element('select');
+        picker.setAttribute(
+          'aria-label',
+          salvage ? 'Salvage wreck' : 'Colonization planet',
         );
+        const placeholder = element(
+          'option',
+          '',
+          salvage ? 'Choose a wreck to salvage' : 'Choose a planet to colonize',
+        );
+        placeholder.value = '';
+        picker.append(placeholder);
+        if (salvage) {
+          for (const wreck of model.wrecks.filter(
+            (wreck) => !wreck.reservedBy && !wreck.towedBy && !wreck.yardId,
+          )) {
+            const option = element(
+              'option',
+              '',
+              `${wreck.ship.type} wreck · ${wreck.ship.engines['Rocket engine']} Rocket / ${wreck.ship.engines['Ion pulse engine']} Ion${wreck.ship.telescope ? ` · Telescope ${wreck.ship.telescope}` : ''}`,
+            );
+            option.value = wreck.id;
+            picker.append(option);
+          }
+        } else
+          for (const target of model.cells) {
+            if (
+              colonization &&
+              (!target.explored ||
+                target.object?.kind !== 'planet' ||
+                target.object.owned)
+            )
+              continue;
+            if (target.passable === false) continue;
+            const option = element(
+              'option',
+              '',
+              target.object?.name ?? 'Empty space',
+            );
+            option.value = target.position.key;
+            picker.append(option);
+          }
+        picker.addEventListener('change', () => {
+          if (!picker.value) return;
+          if (salvage) {
+            this.#emit({ type: 'select-salvage', id: picker.value });
+            return;
+          }
+          const [q, r] = picker.value.split(',').map(Number);
+          this.#emit({ type: 'select', position: new HexCoordinate(q!, r!) });
+        });
+        picker.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape')
+            this.#emit({
+              type: model.screen === 'fleets' ? 'open-fleets' : 'open-map',
+            });
+        });
+        contents.push(picker);
+        if (salvage && picker.options.length === 1)
+          contents.push(
+            element('p', 'muted-note', 'No available wrecks are known.'),
+          );
+      }
     }
     if (
       (model.screen === 'map' || model.screen === 'route') &&

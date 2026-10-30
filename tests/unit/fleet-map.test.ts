@@ -279,7 +279,7 @@ describe('flottval-pa-kartan / dra-flottdestination', () => {
 
 describe('kartflottor', () => {
   it.each(['map', 'fleets'] as const)(
-    'kartflottor / flottfokuserad-kartvy: keeps fleet markers prominent and shows planet badges only on Star map (%s)',
+    'kartflottor / flottfokuserad-kartvy: kartorderstatus: keeps fleet markers prominent without S/Q planet badges (%s)',
     (screen) => {
       const model = new AppModel().snapshot;
       const { sketch } = drawing();
@@ -293,16 +293,8 @@ describe('kartflottor', () => {
         CENTER: 'center',
       };
       renderMapOverlays(platform as unknown as p5, { ...model, screen });
-      if (screen === 'fleets') {
-        expect(platform.rect).not.toHaveBeenCalled();
-        expect(sketch.triangle).toHaveBeenCalled();
-        return;
-      }
-      expect(platform.rect).toHaveBeenCalled();
+      expect(platform.rect).not.toHaveBeenCalled();
       expect(sketch.triangle).toHaveBeenCalled();
-      expect(Math.max(...platform.rect.mock.invocationCallOrder)).toBeLessThan(
-        Math.min(...sketch.triangle.mock.invocationCallOrder),
-      );
     },
   );
 });

@@ -201,10 +201,10 @@ export function renderFleetCard(
     fleetAssignmentLabel(fleet, model),
     model.fleetDragging && model.mapFleetId === fleet.id
       ? model.fleetDestinationPreview
-        ? `Destination preview: HEX ${model.fleetDestinationPreview.key}`
+        ? 'Destination preview on map'
         : 'Choose a destination on the map.'
       : fleet.destination
-        ? `Destination: HEX ${fleet.destination.key}`
+        ? `Destination: ${model.cells.find((cell) => cell.position.key === fleet.destination?.key)?.object?.name ?? 'selected location on map'}`
         : 'No destination',
     shipTransferIssue(fleet),
   ]
@@ -235,7 +235,7 @@ export function fleetAssignmentLabel(
   if (fleet.salvage?.targets.length)
     return `Salvage: ${fleet.salvage.targets.length} wreck(s) assigned`;
   if (fleet.patrol) {
-    return `Patrol: HEX ${fleet.patrol.center.key}, range ${fleet.patrol.range} hex${fleet.patrol.targetPirateId ? ', pursuing Space pirate' : ''}`;
+    return `Patrol: range ${fleet.patrol.range} hex${fleet.patrol.targetPirateId ? ', pursuing Space pirate' : ''}`;
   }
   if (fleet.joinFleetId) {
     const target = model.fleets.find(

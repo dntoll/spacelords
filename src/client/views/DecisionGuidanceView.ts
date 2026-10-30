@@ -8,19 +8,15 @@ import type { IntentHandler } from './ViewContracts.js';
 import { button, element } from './dom.js';
 
 function nextStep(decision: Decision): string {
-  if (decision.kind === 'research')
-    return 'Choose a technology in the highlighted tree to queue research.';
-  if (decision.kind === 'fleet')
-    return 'Use the highlighted Move button in Orders, transfer ships, or assign a transport to a route.';
   if (decision.kind === 'route')
-    return 'Use Research or Production to prepare transport. Select an available purple transport fleet and assign it via Trade routes.';
+    return ' Use Research or Production to prepare transport. Select an available purple transport fleet and assign it via Trade routes.';
   if (decision.id.startsWith('supply-'))
-    return 'Inspect the marked planet and its project. Connect suppliers with a route and assign transport for missing deliveries.';
+    return ' Inspect the marked planet and its project. Connect suppliers with a route and assign transport for missing deliveries.';
   if (decision.id.startsWith('staff-'))
-    return 'Inspect workers and crew. Free workers or wait for population growth.';
+    return ' Inspect workers and crew. Free workers or wait for population growth.';
   if (decision.id.startsWith('production-'))
-    return 'Inspect the blocked project. Build its required factory or move the queued factory before the project.';
-  return 'Choose an option around the marked planet and queue a build.';
+    return ' Inspect the blocked project. Build its required factory or move the queued factory before the project.';
+  return '';
 }
 
 export function renderDecisionGuidance(
@@ -39,7 +35,7 @@ export function renderDecisionGuidance(
   panel.setAttribute('aria-label', 'Decisions in this view');
   for (const decision of decisions) {
     const row = element('div', 'decision-guidance-row');
-    row.append(element('p', '', `${decision.label}. ${nextStep(decision)}`));
+    row.append(element('p', '', `${decision.label}.${nextStep(decision)}`));
     if (decision.kind !== 'research') {
       const show = button(
         `Show decision: ${decision.label}`,

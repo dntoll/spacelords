@@ -241,7 +241,7 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
     click('Show Colony ship factory');
     const menu = root.querySelector('.building-menu')!;
     expect(menu.textContent).toContain('Colony ship factory');
-    expect(menu.textContent).toContain('Exploration ship factory');
+    expect(menu.textContent).not.toContain('Exploration ship factory');
     expect(menu.textContent).not.toContain('Queue Colony ship');
     expect(menu.textContent).toContain('Iron 18 units at build start');
     expect(menu.textContent).toContain('Water 10 units at build start');

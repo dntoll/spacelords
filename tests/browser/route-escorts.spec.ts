@@ -42,7 +42,7 @@ test('unika-flottnamn / rutt-eskortfordelning / ruttflottor-pa-kartan: assign fi
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Route', exact: true }).click();
-  await expect(page.locator('.map-attention-legend')).toContainText(
+  await expect(page.locator('.map-route-legend')).toContainText(
     'Available transports',
   );
   await selectMapFleet(page, 'Fighters');

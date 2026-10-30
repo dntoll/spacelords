@@ -1,3 +1,5 @@
+import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
+import { selectMapHex } from './map-helpers.js';
 import type { SavedGame } from '../../src/client/models/SaveRepository.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot } from './save-helpers.js';
@@ -81,12 +83,10 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
   await expect(panel.locator('.fleet-card')).toHaveCount(1);
   await expect(page.getByTestId('camera-position')).toHaveText(camera!);
   await chooseFleetDestination(page, 'Vanguard');
-  await page
-    .getByRole('combobox', { name: 'Destination hex', exact: true })
-    .selectOption('0,1');
+  await selectMapHex(page, new HexCoordinate(0, 1));
   await expect(panel.locator('.fleet-card')).toHaveAttribute(
     'aria-description',
-    /Destination: HEX 0,1/,
+    /Destination: selected location on map/,
   );
   const dimensions = await page.evaluate(() => ({
     overflow:
@@ -112,7 +112,7 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
   ).toBeVisible();
   await expect(panel.locator('.fleet-card')).toHaveAttribute(
     'aria-description',
-    /Destination: HEX 0,1/,
+    /Destination: selected location on map/,
   );
   await selectMapFleet(page, 'Vanguard');
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();

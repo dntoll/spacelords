@@ -16,8 +16,8 @@ export function isResearchIdentified(
 }
 
 export class ResearchTreeLayout {
-  readonly cardWidth = 140;
-  readonly cardHeight = 64;
+  readonly cardWidth = 224;
+  readonly cardHeight = 200;
   readonly edges: readonly Readonly<{ from: Technology; to: Technology }>[];
   readonly nodes: readonly Readonly<{
     technology: Technology;
