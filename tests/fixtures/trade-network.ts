@@ -16,6 +16,8 @@ export function tradeNetworkState(withRoute = true): GameState {
   return {
     ...state,
     researched: [
+      'Fleet patrol',
+      'Automated exploration',
       'Exploration ship factory',
       'Transport ship factory',
       'Trade logistics',

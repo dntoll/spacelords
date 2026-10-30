@@ -1367,13 +1367,16 @@ export class AppView implements AppPort {
     }
     if (destinationFleet) {
       const colonization = model.destinationOrder === 'colonize';
+      const salvage = model.destinationOrder === 'salvage';
       contents.push(
         element(
           'p',
           'destination-mode',
-          colonization
-            ? `Choose a planet to colonize with ${destinationFleet.name}.`
-            : `Choose a destination for ${destinationFleet.name}.`,
+          salvage
+            ? `Choose a wreck to salvage with ${destinationFleet.name}.`
+            : colonization
+              ? `Choose a planet to colonize with ${destinationFleet.name}.`
+              : `Choose a destination for ${destinationFleet.name}.`,
         ),
         button(
           'Cancel',
@@ -1387,34 +1390,59 @@ export class AppView implements AppPort {
       const picker = element('select');
       picker.setAttribute(
         'aria-label',
-        colonization ? 'Colonization planet' : 'Destination hex',
+        salvage
+          ? 'Salvage wreck'
+          : colonization
+            ? 'Colonization planet'
+            : 'Destination hex',
       );
       const placeholder = element(
         'option',
         '',
-        colonization ? 'Choose a planet to colonize' : 'Choose destination hex',
+        salvage
+          ? 'Choose a wreck to salvage'
+          : colonization
+            ? 'Choose a planet to colonize'
+            : 'Choose destination hex',
       );
       placeholder.value = '';
       picker.append(placeholder);
-      for (const target of model.cells) {
-        if (
-          colonization &&
-          (!target.explored ||
-            target.object?.kind !== 'planet' ||
-            target.object.owned)
-        )
-          continue;
-        if (target.passable === false) continue;
-        const option = element(
-          'option',
-          '',
-          `${target.object?.name ?? 'HEX'} ${target.position.key}`,
-        );
-        option.value = target.position.key;
-        picker.append(option);
-      }
+      if (salvage) {
+        for (const wreck of model.wrecks.filter(
+          (wreck) => !wreck.reservedBy && !wreck.towedBy && !wreck.yardId,
+        )) {
+          const option = element(
+            'option',
+            '',
+            `${wreck.ship.type} wreck · HEX ${wreck.position.key} · ${wreck.ship.engines['Rocket engine']} Rocket / ${wreck.ship.engines['Ion pulse engine']} Ion${wreck.ship.telescope ? ` · Telescope ${wreck.ship.telescope}` : ''}`,
+          );
+          option.value = wreck.id;
+          picker.append(option);
+        }
+      } else
+        for (const target of model.cells) {
+          if (
+            colonization &&
+            (!target.explored ||
+              target.object?.kind !== 'planet' ||
+              target.object.owned)
+          )
+            continue;
+          if (target.passable === false) continue;
+          const option = element(
+            'option',
+            '',
+            `${target.object?.name ?? 'HEX'} ${target.position.key}`,
+          );
+          option.value = target.position.key;
+          picker.append(option);
+        }
       picker.addEventListener('change', () => {
         if (!picker.value) return;
+        if (salvage) {
+          this.#emit({ type: 'select-salvage', id: picker.value });
+          return;
+        }
         const [q, r] = picker.value.split(',').map(Number);
         this.#emit({ type: 'select', position: new HexCoordinate(q!, r!) });
       });
@@ -1425,6 +1453,10 @@ export class AppView implements AppPort {
           });
       });
       contents.push(picker);
+      if (salvage && picker.options.length === 1)
+        contents.push(
+          element('p', 'muted-note', 'No available wrecks are known.'),
+        );
     }
     if (
       (model.screen === 'map' || model.screen === 'route') &&

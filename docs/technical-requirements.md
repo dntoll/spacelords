@@ -975,6 +975,14 @@ markeringsringen. Information rullas internt, medan Handle och Ignore har
 minst 44 px träffyta och ligger utanför rullningen. Vid högst 360 px höjd döljs
 varumärkesraden tillfälligt; navigation och End turn förblir synliga.
 
+## Bärgningsval från flottan
+
+`bargningsorder-fran-flotta` använder befintlig SalvageOrder och samma
+kapacitetsbedömning för flottans knapp, vrakpanelen och dragning. Vrakets
+identitet väljs vid avslutat klick, så flera vrak i samma hex inte blandas
+ihop eller ersätts av en vanlig flyttorder. Valet går via controller och
+order sparas efter målvalet. Sparformatet ändras inte.
+
 ## Sparad koloniseringsorder
 
 `koloniseringsorder`: Fleet har det valfria fältet colonizationTargetId i
@@ -995,3 +1003,19 @@ Spelregler, centrala användarflöden och de nya regressionstesterna för
 `grupperade-transporthandelser` och `ett-meddelande-per-skeppsbygge` behålls
 snabba. Därefter passerade 556 tester på 19,25 sekunder inklusive start.
 20-sekundersgränsen är oförändrad.
+
+## Sparade automatiska uppdrag
+
+`automatisk-bargning`, `automatisk-rutttilldelning` och
+`forskade-automatiska-order`: Fleet har ett valfritt automation-fält med
+värdet salvage eller transport i befintlig sparversion 12. Saknat fält
+behåller äldre beteende. Återläsningen validerar skeppstyp och oförenliga
+uppdrag. Ingen sparning rensas. Tidigare aktiva Patrol- och Explore-order
+får fortsätta; forskningskontrollen gäller nya order.
+
+Game samordnar målval, SalvageOrder och vanlig Logistics-tilldelning.
+Forskning kontrolleras i modellen samt visas i vyerna. Vyerna läser
+ögonblicksbilder och skickar order genom controller. Order sparas efter
+knapptryck. Nya ordertekniker är inga byggnadsalternativ. Den befintliga
+rörelsebudgeten återanvänds utan extra steg vid byte mellan hämtning och
+leverans.

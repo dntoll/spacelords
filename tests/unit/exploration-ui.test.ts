@@ -1,3 +1,5 @@
+import { Game } from '../../src/client/models/Game.js';
+import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
@@ -118,7 +120,18 @@ it('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / 
 });
 
 it('flottorder-som-symboler / kompakta-flottkort: exposes explorer controls and actual fleet speed without position or engine rows', () => {
-  const model = new AppModel();
+  const model = new AppModel(undefined, {
+    load: () => ({
+      lastPlayed: '2026-10-30',
+      state: {
+        ...new Game(createExampleGalaxy()).exportState(),
+        researched: ['Automated exploration'],
+      },
+    }),
+    save() {},
+    clear() {},
+  });
+  model.startSlot(1);
   model.selectMapFleet('fleet-home');
   const root = document.createElement('div');
   document.body.replaceChildren(root);

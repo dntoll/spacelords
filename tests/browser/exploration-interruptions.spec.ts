@@ -248,6 +248,21 @@ test('automatisk-stjarnutforskning / flottorder-som-symboler: explores persisten
 }) => {
   await page.goto('./');
   await startFirstSlot(page);
+  await page.evaluate(() => {
+    const saved = JSON.parse(
+      localStorage.getItem('spacelords.save.v2.1')!,
+    ) as SavedGame;
+    const next = {
+      ...saved,
+      state: {
+        ...saved.state,
+        researched: [...saved.state.researched, 'Automated exploration'],
+      },
+    };
+    localStorage.setItem('spacelords.save.v2.1', JSON.stringify(next));
+  });
+  await page.reload();
+  await startFirstSlot(page);
   await selectMapFleet(page);
   const explore = page.getByRole('button', {
     name: 'Explore stars',

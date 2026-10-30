@@ -14,6 +14,131 @@ import {
   salvageState,
 } from '../fixtures/salvage.js';
 import { discoveryState } from '../fixtures/exploration.js';
+import { AppModel } from '../../src/client/models/AppModel.js';
+import { AppController } from '../../src/client/controllers/AppController.js';
+import { salvageMarkers } from '../../src/client/models/SalvageMapLayout.js';
+import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
+
+describe('bargningsorder-fran-flotta', () => {
+  it('selects a wreck from the fleet, saves the mission and resumes pickup and return automatically', () => {
+    let saved = {
+      lastPlayed: '2026-10-30',
+      state: Game.restore(salvageState()).exportState(),
+    };
+    const model = new AppModel(undefined, {
+      load: () => saved,
+      save(_id, next) {
+        saved = structuredClone(next);
+      },
+      clear() {},
+    });
+    model.startSlot(1);
+    model.beginSalvage('fleet-home');
+    expect(model.snapshot.destinationOrder).toBe('salvage');
+    expect(model.snapshot.destinationFleetId).toBe('fleet-home');
+    expect(model.snapshot.wrecks[0]!.reservedBy).toBeNull();
+    model.selectSalvage('advanced-wreck');
+    expect(model.snapshot.destinationFleetId).toBeNull();
+    expect(model.snapshot.fleets[0]!.salvage!.targets).toEqual([
+      'advanced-wreck',
+    ]);
+    model.save();
+    const game = Game.restore(saved.state);
+    finishYear(game);
+    expect(game.wrecks[0]!.towedBy).toBe('fleet-home');
+    expect(game.fleet('fleet-home')!.destination?.key).toBe('2,0');
+    for (let year = 0; year < 5 && game.wrecks.length; year++) finishYear(game);
+    expect(game.wrecks).toHaveLength(0);
+    expect(
+      game
+        .fleetSnapshots()
+        .some((fleet) =>
+          fleet.shipUnits!.some((ship) => ship.id === advancedExplorer.id),
+        ),
+    ).toBe(true);
+  });
+
+  it('chooses the exact wreck marker on pointer release and saves without replacing salvage with a move order', () => {
+    const state = salvageState();
+    state.salvage.wrecks.push({
+      ...state.salvage.wrecks[0]!,
+      id: 'second-wreck',
+      ship: { ...advancedExplorer, id: 'second-ship' },
+    });
+    let saved = {
+      lastPlayed: '2026-10-30',
+      state: Game.restore(state).exportState(),
+    };
+    const model = new AppModel(undefined, {
+      load: () => saved,
+      save(_id, next) {
+        saved = structuredClone(next);
+      },
+      clear() {},
+    });
+    model.startSlot(1);
+    let emit!: IntentHandler;
+    const controller = new AppController(model, {
+      bind(handler) {
+        emit = handler;
+      },
+      render() {},
+      dispose() {},
+    });
+    controller.start();
+    emit({ type: 'begin-salvage', id: 'fleet-home' });
+    const snapshot = model.snapshot;
+    const marker = salvageMarkers(
+      snapshot.wrecks,
+      snapshot.shipyards,
+      snapshot.camera.zoom,
+    ).find((marker) => marker.id === 'second-wreck')!;
+    const point = {
+      x: (marker.point.x - snapshot.camera.center.x) * snapshot.camera.zoom,
+      y: (marker.point.y - snapshot.camera.center.y) * snapshot.camera.zoom,
+    };
+    emit({ type: 'pointer-start', id: 1, point });
+    expect(model.snapshot.wrecks.every((wreck) => !wreck.reservedBy)).toBe(
+      true,
+    );
+    emit({ type: 'pointer-end', id: 1, point });
+    expect(model.snapshot.fleets[0]!.salvage!.targets).toEqual([
+      'second-wreck',
+    ]);
+    expect(
+      saved.state.salvage!.wrecks.find((wreck) => wreck.id === 'second-wreck')!
+        .reservedBy,
+    ).toBe('fleet-home');
+    expect(
+      model.snapshot.wrecks.find((wreck) => wreck.id === 'advanced-wreck')!
+        .reservedBy,
+    ).toBeNull();
+    expect(model.snapshot.destinationFleetId).toBeNull();
+    controller.dispose();
+  });
+
+  it('picks up a selected wreck in the current hex immediately and keeps the tow when a full fleet rejects another target', () => {
+    const state = salvageState();
+    state.salvage.wrecks[0]!.position = new HexCoordinate(3, 0);
+    const model = new AppModel(undefined, {
+      load: () => ({
+        lastPlayed: '2026-10-30',
+        state: Game.restore(state).exportState(),
+      }),
+      save() {},
+      clear() {},
+    });
+    model.startSlot(1);
+    model.beginSalvage('fleet-home');
+    model.openMap();
+    expect(model.snapshot.wrecks[0]!.reservedBy).toBeNull();
+    model.beginSalvage('fleet-home');
+    model.selectSalvage('advanced-wreck');
+    expect(model.snapshot.wrecks[0]!.towedBy).toBe('fleet-home');
+    expect(() => model.beginSalvage('fleet-home')).toThrow('Salvage ship');
+    expect(model.snapshot.wrecks[0]!.towedBy).toBe('fleet-home');
+  });
+});
 
 describe('stridsrapport-i-dialog / vrak-efter-strid', () => {
   it('pauses after resolving combat so the player can read the result before further movement', () => {

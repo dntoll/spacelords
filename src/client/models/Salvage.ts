@@ -274,16 +274,22 @@ export class Salvage {
   order(fleetId: string): SalvageOrder | undefined {
     return this.orders.find((order) => order.fleetId === fleetId);
   }
+  static availableCapacity(
+    fleet: Pick<SalvageFleet, 'id' | 'ships'>,
+    wrecks: readonly Pick<Wreck, 'reservedBy' | 'towedBy'>[],
+  ): number {
+    const assigned = wrecks.filter(
+      (wreck) => wreck.reservedBy === fleet.id || wreck.towedBy === fleet.id,
+    ).length;
+    return Math.max(0, fleet.ships['Salvage ship'] - assigned);
+  }
   assign(fleet: SalvageFleet, id: string): void {
     const wreck = this.wrecks.find((wreck) => wreck.id === id && wreck.known);
     if (!fleet.position || !fleet.ships['Salvage ship'])
       throw new Error('Choose a fleet with a Salvage ship.');
     if (!wreck || wreck.reservedBy || wreck.towedBy || wreck.yardId)
       throw new Error('This wreck is not available for salvage.');
-    const assigned = this.wrecks.filter(
-      (item) => item.reservedBy === fleet.id || item.towedBy === fleet.id,
-    ).length;
-    if (assigned >= fleet.ships['Salvage ship'])
+    if (Salvage.availableCapacity(fleet, this.wrecks) === 0)
       throw new Error('One Salvage ship is required for each assigned wreck.');
     wreck.reservedBy = fleet.id;
     const order = this.order(fleet.id) ?? {

@@ -2,8 +2,9 @@ import {
   BUILDINGS,
   type ResearchSnapshot,
   type Technology,
+  type BuildType,
 } from '../models/Game.js';
-import { PREREQUISITES } from '../models/Research.js';
+import { PREREQUISITES, ORDER_RESEARCH } from '../models/Research.js';
 import { isResearchIdentified } from '../models/ResearchTree.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element } from './dom.js';
@@ -50,7 +51,9 @@ export function renderResearchDetails(
       '',
       technology === 'Trade logistics'
         ? 'Connect owned planets with automated transport fleets.'
-        : BUILDINGS[technology].description,
+        : technology in ORDER_RESEARCH
+          ? ORDER_RESEARCH[technology as keyof typeof ORDER_RESEARCH]
+          : BUILDINGS[technology as BuildType].description,
     ),
     element(
       'p',

@@ -29,6 +29,21 @@ test('utokad-galax / stjarnornas-hexutseende / automatisk-stjarnutforskning: new
     q: 2,
     r: 0,
   });
+  await page.evaluate(() => {
+    const saved = JSON.parse(
+      localStorage.getItem('spacelords.save.v2.1')!,
+    ) as SavedGame;
+    const next = {
+      ...saved,
+      state: {
+        ...saved.state,
+        researched: [...saved.state.researched, 'Automated exploration'],
+      },
+    };
+    localStorage.setItem('spacelords.save.v2.1', JSON.stringify(next));
+  });
+  await page.reload();
+  await startFirstSlot(page);
   await page.screenshot({ path: testInfo.outputPath('large-stars.png') });
   await selectMapFleet(page, 'Home Fleet');
   await page

@@ -211,6 +211,10 @@ export function fleetAssignmentLabel(
   fleet: FleetSnapshot,
   model: AppReadModel,
 ): string {
+  if (fleet.automation === 'salvage')
+    return `Auto salvage: ${fleet.towing?.length ? 'returning to shipyard' : fleet.salvage?.targets.length ? 'collecting a wreck' : 'waiting for an available wreck'}`;
+  if (fleet.automation === 'transport')
+    return 'Auto assign route: waiting for an unassigned route';
   if (fleet.colonizationTargetId) {
     const position = fleet.destination ?? fleet.position;
     const target = model.cells.find(
@@ -218,6 +222,8 @@ export function fleetAssignmentLabel(
     )?.object?.name;
     return `Colonize: ${target ?? 'selected planet'}`;
   }
+  if (fleet.salvage?.targets.length)
+    return `Salvage: ${fleet.salvage.targets.length} wreck(s) assigned`;
   if (fleet.patrol) {
     return `Patrol: HEX ${fleet.patrol.center.key}, range ${fleet.patrol.range} hex${fleet.patrol.targetPirateId ? ', pursuing Space pirate' : ''}`;
   }

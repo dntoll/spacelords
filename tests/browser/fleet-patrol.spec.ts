@@ -9,7 +9,10 @@ for (const screen of ['Star map', 'Fleets']) {
   test(`flottpatrullering: ${screen} patrols, persists and cancels with compact accessible controls`, async ({
     page,
   }, testInfo) => {
-    const state = new Game(createExampleGalaxy()).exportState();
+    const state = {
+      ...new Game(createExampleGalaxy()).exportState(),
+      researched: ['Fleet patrol'] as const,
+    };
     await page.addInitScript(
       (state) => {
         localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
@@ -72,7 +75,10 @@ for (const screen of ['Star map', 'Fleets']) {
 test('flottpatrullering: uses shared sight to catch a pirate, resumes its ring, and persists combat', async ({
   page,
 }) => {
-  const state = new Game(createExampleGalaxy()).exportState();
+  const state = {
+    ...new Game(createExampleGalaxy()).exportState(),
+    researched: ['Fleet patrol'] as const,
+  };
   const fighter = {
     ...state.fleets[0]!,
     position: { q: 5, r: -3 },

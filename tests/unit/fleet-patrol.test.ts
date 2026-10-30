@@ -21,6 +21,7 @@ function setup(position = hex(1, 0), ion = false, transport = false) {
   const state = new Game(createExampleGalaxy()).exportState();
   return Game.restore({
     ...state,
+    researched: ['Fleet patrol', 'Automated exploration'],
     pirates: [],
     fleets: [
       {

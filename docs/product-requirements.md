@@ -741,6 +741,13 @@ Den sammanhängande kravlistan anger status för `flottorder-som-symboler`,
 
 ## Bärgning och varv
 
+`bargningsorder-fran-flotta` är **Fullständigt implementerat**: välj Salvage
+på en flotta och därefter ett känt ledigt vrak. Flottan reser dit, hämtar det
+och återvänder till eget varv. Vrak vid flottans egen position hämtas direkt
+om inga pirater hindrar. Uppdraget bevaras efter omladdning och kan avbrytas.
+Flottans order finns på Star map och i Fleets. Detta kompletterar
+`bargningsorder`; befintliga sätt att ge order behålls.
+
 Kraven `stridsrapport-i-dialog`, `vrak-efter-strid`, `bargningsskepp`,
 `bargningsorder`, `bogsering-av-vrak`, `orbitalt-varv`, `automatisk-vrakreparation`,
 `forstort-varv`, `forskning-fran-bargade-delar`, `upptackbara-vrak` och
@@ -756,3 +763,25 @@ Hemförda okända komponenter öppnar forskning på motsvarande fabrik utan de
 vanliga förkunskaperna. Tekniken måste fortfarande forskas fram. Nya spel har
 avancerade explorer-vrak att hitta; befintliga sparningar bevaras.
 Se [krav och balansvärden](salvage-shipyards.md).
+
+## Automatiska flottuppdrag
+
+`automatisk-bargning` — **Fullständigt implementerat**: Auto salvage låter
+flottor med Salvage ship hämta närmaste kända lediga vrak, leverera det till
+närmaste egna Shipyard och fortsätta med nästa. Uppdraget väntar om mål
+saknas och kan avbrytas.
+
+`automatisk-rutttilldelning` — **Fullständigt implementerat**: Auto assign
+route låter flottor med Transport ship söka närmaste öppna handelsrutt utan
+tilldelad transport. Flottan reser till närmaste ändplanet och arbetar på
+rutten. Den väntar om alla rutter är bemannade.
+
+`forskade-automatiska-order` — **Fullständigt implementerat**: Patrol kräver
+Fleet patrol; Explore och Explore stars kräver Automated exploration;
+Auto salvage kräver Automated salvage; Auto assign route kräver Automated
+transport. Detta ersätter tidigare fri tillgång till nya Patrol- och
+Explore-order. Befintliga aktiva order i sparade spel fortsätter.
+
+`flottval-vid-varv` — **Fullständigt implementerat**: flottor vid ett varv
+kan väljas direkt från varvspanelen så att deras order kan ändras även när
+flera kartmarkörer överlappar.

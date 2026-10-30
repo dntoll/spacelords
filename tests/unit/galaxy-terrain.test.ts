@@ -48,6 +48,7 @@ describe('automatisk-hexutforskning', () => {
     for (let q = -5; q <= 0; q++) explored.add(`${q},0`);
     const game = Game.restore({
       ...state,
+      researched: [...state.researched, 'Automated exploration'],
       explored: [...explored],
       fleets: state.fleets.map((fleet) => ({
         ...fleet,
@@ -314,6 +315,7 @@ describe('automatisk-stjarnutforskning', () => {
     const approach = star.position.neighbors()[0]!;
     let game = Game.restore({
       ...state,
+      researched: [...state.researched, 'Automated exploration'],
       pirates: [],
       fleets: state.fleets.map((fleet) => ({
         ...fleet,

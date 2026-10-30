@@ -1,3 +1,5 @@
+import { Game } from '../../src/client/models/Game.js';
+import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderFleetCard } from '../../src/client/views/FleetCard.js';
@@ -7,6 +9,7 @@ import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppController } from '../../src/client/controllers/AppController.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
+import { salvageState } from '../fixtures/salvage.js';
 import { BrowserSaveRepository } from '../../src/client/storage/BrowserSaveRepository.js';
 import {
   HexCoordinate,
@@ -14,6 +17,88 @@ import {
 } from '../../src/client/models/HexCoordinate.js';
 
 beforeEach(() => document.body.replaceChildren());
+
+it('flottval-vid-varv: the shipyard panel opens a co-located fleet so its automatic order can be cancelled', () => {
+  const initial = salvageState();
+  const state = {
+    ...initial,
+    researched: [...initial.researched, 'Automated salvage'] as const,
+    fleets: initial.fleets.map((f) => ({
+      ...f,
+      automation: 'salvage' as const,
+      position: { q: 2, r: 0 },
+    })),
+  };
+  const model = new AppModel(undefined, {
+    load: () => ({ lastPlayed: '2026-10-30', state }),
+    save() {},
+    clear() {},
+  });
+  model.startSlot(1);
+  model.selectSalvage('yard');
+  const { root, click, view } = setup(model);
+  click('Show fleet Home Fleet');
+  expect(root.querySelector('.selected-fleet-card')).not.toBeNull();
+  click('Cancel automatic order');
+  expect(model.snapshot.fleets[0]!.automation).toBeUndefined();
+  view.dispose();
+});
+
+it.each([
+  ['Auto salvage', 'Automated salvage', 'fleet-home', 'salvage'],
+  ['Auto assign route', 'Automated transport', 'freighters', 'transport'],
+] as const)(
+  'forskade-automatiska-order: %s is visible but locked before research and saves its order after unlocking',
+  (label, technology, fleetId, automation) => {
+    const initial =
+      automation === 'salvage' ? salvageState() : tradeNetworkState(false);
+    let saved = { ...initial, researched: [...initial.researched] };
+    const model = new AppModel(undefined, {
+      load: () => ({ lastPlayed: '2026-10-30', state: saved }),
+      save(_slot, next) {
+        saved = { ...next.state, researched: [...next.state.researched] };
+      },
+      clear() {},
+    });
+    model.startSlot(1);
+    model.openFleet(fleetId);
+    const first = setup(model);
+    const locked = first.root.querySelector<HTMLButtonElement>(
+      `[aria-label="${label}"]`,
+    )!;
+    expect(locked.disabled).toBe(true);
+    expect(locked.title).toBe(`Research ${technology} first.`);
+    first.view.dispose();
+    saved = { ...saved, researched: [...saved.researched, technology] };
+    const unlocked = new AppModel(undefined, {
+      load: () => ({ lastPlayed: '2026-10-30', state: saved }),
+      save(_slot, next) {
+        saved = { ...next.state, researched: [...next.state.researched] };
+      },
+      clear() {},
+    });
+    unlocked.startSlot(1);
+    unlocked.openFleet(fleetId);
+    const second = setup(unlocked);
+    second.click(label);
+    expect(
+      unlocked.snapshot.fleets.find((f) => f.id === fleetId)!.automation,
+    ).toBe(automation);
+    expect(saved.fleets.find((f) => f.id === fleetId)!.automation).toBe(
+      automation,
+    );
+    expect(
+      second.root
+        .querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+    second.click('Cancel automatic order');
+    expect(
+      saved.fleets.find((f) => f.id === fleetId)!.automation,
+    ).toBeUndefined();
+    second.view.dispose();
+  },
+);
 
 function setup(model = new AppModel()) {
   const root = document.createElement('div');
@@ -30,6 +115,38 @@ function setup(model = new AppModel()) {
   };
   return { model, root, view, click };
 }
+
+it('bargningsorder-fran-flotta: Salvage opens a wreck picker, commits the mission and lets Stop release its reservation', () => {
+  const model = new AppModel(undefined, {
+    load: () => ({ lastPlayed: '2026-10-30', state: salvageState() }),
+    save() {},
+    clear() {},
+  });
+  model.startSlot(1);
+  model.openFleet('fleet-home');
+  const { root, click, view } = setup(model);
+  click('Salvage');
+  const picker = root.querySelector<HTMLSelectElement>(
+    '[aria-label="Salvage wreck"]',
+  )!;
+  expect(picker).not.toBeNull();
+  expect([...picker.options].map((option) => option.value)).toEqual([
+    '',
+    'advanced-wreck',
+  ]);
+  picker.value = 'advanced-wreck';
+  picker.dispatchEvent(new Event('change', { bubbles: true }));
+  expect(model.snapshot.fleets[0]!.salvage!.targets).toEqual([
+    'advanced-wreck',
+  ]);
+  expect(
+    root.querySelector<HTMLButtonElement>('[aria-label="Salvage"]')!.disabled,
+  ).toBe(true);
+  click('Cancel salvage');
+  expect(model.snapshot.fleets[0]!.salvage).toBeNull();
+  expect(model.snapshot.wrecks[0]!.reservedBy).toBeNull();
+  view.dispose();
+});
 
 describe('flottadministration / flottval-pa-kartan', () => {
   it('planetoppning-i-kartrubrik: places Open planet beside the displayed planet name and coordinates without Create route', () => {
@@ -411,7 +528,18 @@ describe('skepp-ur-olastad-ruttflotta', () => {
 
 describe('flottpatrullering', () => {
   it('routes Patrol and Cancel patrol through the controller and exposes a frozen readable status', () => {
-    const model = new AppModel();
+    const model = new AppModel(undefined, {
+      load: () => ({
+        lastPlayed: '2026-10-30',
+        state: {
+          ...new Game(createExampleGalaxy()).exportState(),
+          researched: ['Fleet patrol'],
+        },
+      }),
+      save() {},
+      clear() {},
+    });
+    model.startSlot(1);
     let emit: IntentHandler = () => {};
     const controller = new AppController(model, {
       bind(handler) {

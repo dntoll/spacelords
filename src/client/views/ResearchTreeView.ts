@@ -1,5 +1,9 @@
 import { bindDiagramNavigation } from './DiagramNavigation.js';
-import type { ResearchSnapshot, Technology } from '../models/Game.js';
+import type {
+  ResearchSnapshot,
+  Technology,
+  BuildType,
+} from '../models/Game.js';
 import { PREREQUISITES } from '../models/Research.js';
 import {
   ResearchTreeLayout,
@@ -143,8 +147,8 @@ export function renderResearchTree(
     choose.title = identified ? type : 'Unknown technology';
     const art =
       identified && type !== 'Trade logistics'
-        ? BUILDING_IMAGES[type]
-          ? buildingImage(type)
+        ? BUILDING_IMAGES[type as BuildType]
+          ? buildingImage(type as BuildType)
           : catalogIcon(type)
         : element(
             'div',

@@ -5,6 +5,11 @@ export function colonizationState(colonyShips = 2): GameState {
   const state = new Game(createExampleGalaxy()).exportState();
   return {
     ...state,
+    researched: [
+      ...state.researched,
+      'Fleet patrol',
+      'Automated exploration',
+    ] as const,
     world: { ...state.world, terrain: [] },
     explored: [
       ...new Set([

@@ -17,7 +17,8 @@ export class AppController {
     id: number;
     start: Point;
     dragged: boolean;
-    kind: 'fleet' | 'route' | 'wreck';
+    kind: 'fleet' | 'route' | 'wreck' | 'salvage-target';
+    wreckId?: string;
   } | null = null;
 
   constructor(model: AppModel, view: AppPort) {
@@ -96,6 +97,7 @@ export class AppController {
         'zoom',
         'begin-destination',
         'begin-colonization',
+        'begin-salvage',
         'end-turn',
       ].includes(intent.type)
     )
@@ -137,6 +139,12 @@ export class AppController {
         break;
       case 'explore-fleet':
         this.#model.exploreFleet(intent.id, intent.order);
+        break;
+      case 'auto-salvage':
+        this.#model.automateSalvage(intent.id);
+        break;
+      case 'auto-transport':
+        this.#model.automateTransport(intent.id);
         break;
       case 'patrol-fleet':
         this.#model.patrolFleet(intent.id);
@@ -437,6 +445,9 @@ export class AppController {
       case 'begin-colonization':
         this.#model.beginColonization(intent.id);
         break;
+      case 'begin-salvage':
+        this.#model.beginSalvage(intent.id);
+        break;
       case 'clear-destination':
         this.#model.clearDestination(intent.id);
         break;
@@ -460,6 +471,19 @@ export class AppController {
         } else {
           const salvageId = this.#model.salvageAtPoint(intent.point);
           if (salvageId) {
+            if (
+              this.#model.snapshot.destinationFleetId &&
+              this.#model.snapshot.destinationOrder === 'salvage'
+            ) {
+              this.#fleetPointer = {
+                id: intent.id,
+                start: intent.point,
+                dragged: false,
+                kind: 'salvage-target',
+                wreckId: salvageId,
+              };
+              break;
+            }
             this.#model.selectSalvage(salvageId);
             this.#fleetPointer = {
               id: intent.id,
@@ -503,6 +527,7 @@ export class AppController {
           )
             this.#fleetPointer.dragged = true;
           if (this.#fleetPointer.dragged) {
+            if (this.#fleetPointer.kind === 'salvage-target') break;
             if (this.#fleetPointer.kind === 'wreck') {
               this.#model.previewSalvage(intent.point);
               break;
@@ -545,6 +570,13 @@ export class AppController {
           this.#gesture.end(intent.id);
           const pointer = this.#fleetPointer;
           this.#fleetPointer = null;
+          if (pointer.kind === 'salvage-target') {
+            if (!dragged) {
+              this.#model.selectSalvage(pointer.wreckId!);
+              mapOrder = true;
+            }
+            break;
+          }
           if (dragged) {
             mapOrder = true;
             if (pointer.kind === 'wreck') {

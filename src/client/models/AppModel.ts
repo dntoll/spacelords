@@ -36,7 +36,11 @@ import {
   type ResearchCameraSnapshot,
 } from './ResearchTree.js';
 import type { Component } from './Economy.js';
-import type { WreckSnapshot, ShipyardSnapshot } from './Salvage.js';
+import {
+  Salvage,
+  type WreckSnapshot,
+  type ShipyardSnapshot,
+} from './Salvage.js';
 import { hitSalvageMarker } from './SalvageMapLayout.js';
 import {
   decisionScreen,
@@ -170,7 +174,7 @@ export interface AppReadModel {
   readonly fleetDestinationPreview: HexCoordinate | null;
   readonly fleetDragging: boolean;
   readonly destinationFleetId: string | null;
-  readonly destinationOrder: 'move' | 'colonize';
+  readonly destinationOrder: 'move' | 'colonize' | 'salvage';
   readonly events: readonly GameEvent[];
   readonly notice: string | null;
   readonly productionReceipt: ProductionReceipt | null;
@@ -235,7 +239,7 @@ export class AppModel {
   #fleetDestinationPreview: HexCoordinate | null = null;
   #fleetDragging = false;
   #destinationFleetId: string | null = null;
-  #destinationOrder: 'move' | 'colonize' = 'move';
+  #destinationOrder: 'move' | 'colonize' | 'salvage' = 'move';
   #notice: string | null = null;
   #productionReceipt: ProductionReceipt | null = null;
 
@@ -547,7 +551,20 @@ export class AppModel {
       return;
     }
     if (this.#destinationFleetId) {
-      if (this.#destinationOrder === 'colonize')
+      if (this.#destinationOrder === 'salvage') {
+        const wrecks = this.#game.wrecks.filter(
+          (wreck) =>
+            wreck.position.key === position.key &&
+            !wreck.reservedBy &&
+            !wreck.towedBy &&
+            !wreck.yardId,
+        );
+        if (wrecks.length !== 1)
+          throw new Error(
+            'Choose a specific available wreck marker or select a wreck from the list.',
+          );
+        this.selectSalvage(wrecks[0]!.id);
+      } else if (this.#destinationOrder === 'colonize')
         this.#game.setColonization(this.#destinationFleetId, position);
       else this.#game.setDestination(this.#destinationFleetId, position);
       this.#destinationFleetId = null;
@@ -1375,6 +1392,17 @@ export class AppModel {
     this.beginDestination(id);
     if (this.#destinationFleetId === id) this.#destinationOrder = 'colonize';
   }
+  beginSalvage(id: string): void {
+    const fleet = this.#game.fleet(id);
+    if (!fleet || !this.#game.canIssueFleetOrders(id))
+      throw new Error('This fleet cannot receive salvage orders now.');
+    if (Salvage.availableCapacity(fleet, this.#game.wrecks) === 0)
+      throw new Error('One Salvage ship is required for each assigned wreck.');
+    this.beginDestination(id);
+    this.#salvageSelection = null;
+    this.#shipyardPlacement = null;
+    this.#destinationOrder = 'salvage';
+  }
   clearDestination(id: string): void {
     this.#game.clearDestination(id);
   }
@@ -1404,6 +1432,16 @@ export class AppModel {
   }
   exploreFleet(id: string, order: ExplorationOrder): void {
     this.#game.setExploration(id, order);
+  }
+  automateSalvage(id: string): void {
+    this.#destinationFleetId = null;
+    this.#destinationOrder = 'move';
+    this.#game.setAutomaticSalvage(id);
+  }
+  automateTransport(id: string): void {
+    this.#destinationFleetId = null;
+    this.#destinationOrder = 'move';
+    this.#game.setAutomaticTransport(id);
   }
   patrolFleet(id: string): void {
     this.#game.setPatrol(id);
@@ -1670,7 +1708,7 @@ export class AppModel {
   salvageAtPoint(point: Point): string | null {
     if (
       !this.#isMapScreen() ||
-      this.#destinationFleetId ||
+      (this.#destinationFleetId && this.#destinationOrder !== 'salvage') ||
       this.#shipyardPlacement
     )
       return null;
@@ -1684,6 +1722,12 @@ export class AppModel {
     );
   }
   selectSalvage(id: string): void {
+    if (this.#destinationFleetId && this.#destinationOrder === 'salvage') {
+      this.orderSalvage(this.#destinationFleetId, id);
+      this.#destinationFleetId = null;
+      this.#destinationOrder = 'move';
+      return;
+    }
     this.#shipyardPlacement = null;
     this.#screen = 'map';
     this.#salvageSelection = id;
@@ -1715,11 +1759,7 @@ export class AppModel {
         .filter(
           ({ fleet }) =>
             this.#game.canIssueFleetOrders(fleet.id) &&
-            fleet.ships['Salvage ship'] >
-              this.#game.wrecks.filter(
-                (wreck) =>
-                  wreck.reservedBy === fleet.id || wreck.towedBy === fleet.id,
-              ).length,
+            Salvage.availableCapacity(fleet, this.#game.wrecks) > 0,
         )
         .map((marker) => ({
           id: marker.fleet.id,

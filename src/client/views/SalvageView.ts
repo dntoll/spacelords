@@ -62,11 +62,7 @@ export function renderSalvageSelection(
           fleet.position &&
           !fleet.routeId &&
           (fleet.canIssueOrders ?? model.phase === 'planning') &&
-          fleet.ships['Salvage ship'] >
-            model.wrecks.filter(
-              (item) =>
-                item.reservedBy === fleet.id || item.towedBy === fleet.id,
-            ).length,
+          Salvage.availableCapacity(fleet, model.wrecks) > 0,
       );
       const select = element('select');
       select.setAttribute('aria-label', 'Salvage fleet');
@@ -176,5 +172,16 @@ export function renderSalvageSelection(
       emit({ type: 'open-planet', id: yard.planetId }),
     ),
   );
+  // flottval-vid-varv: the station marker can overlap a repaired or towing fleet.
+  const fleets = element('div', 'salvage-actions');
+  for (const fleet of model.fleets.filter(
+    (fleet) => fleet.position?.key === yard.position.key,
+  ))
+    fleets.append(
+      button(`Show fleet ${fleet.name}`, () =>
+        emit({ type: 'map-select-fleet', id: fleet.id }),
+      ),
+    );
+  panel.append(fleets);
   return panel;
 }

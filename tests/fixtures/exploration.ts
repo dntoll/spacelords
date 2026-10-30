@@ -12,6 +12,11 @@ export function discoveryState(fighters = 1) {
   };
   return {
     ...state,
+    researched: [
+      ...state.researched,
+      'Fleet patrol',
+      'Automated exploration',
+    ] as const,
     pirates: [state.pirates![0]!],
     fleets: [
       {

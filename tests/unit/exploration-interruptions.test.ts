@@ -6,6 +6,14 @@ import { nearestUnexplored } from '../../src/client/models/TurnSimulation.js';
 import { collectTurnFrames } from '../fixtures/turn-steps.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 
+function explorationGame() {
+  const state = new Game(createExampleGalaxy()).exportState();
+  return Game.restore({
+    ...state,
+    researched: [...state.researched, 'Automated exploration'],
+  });
+}
+
 const empty = {
   Fighter: 0,
   'Exploration ship': 0,
@@ -79,7 +87,7 @@ describe('automatisk-hexutforskning / automatisk-stjarnutforskning', () => {
     ).toBe('1,0');
   });
   it('retargets within the year and persists Explore until a manual order replaces it', () => {
-    const game = new Game(createExampleGalaxy());
+    const game = explorationGame();
     game.setExploration('fleet-home', 'explore');
     const before = game.fleet('fleet-home')!;
     expect(before.destination).not.toBeNull();
@@ -100,7 +108,7 @@ describe('automatisk-hexutforskning / automatisk-stjarnutforskning', () => {
     expect(loaded.fleet(before.id)!.exploration).toBeUndefined();
   });
   it('targets a known star position without exposing hidden planet details and stops when all stars are explored', () => {
-    const game = new Game(createExampleGalaxy());
+    const game = explorationGame();
     game.setExploration('fleet-home', 'explore-stars');
     const destination = game.fleet('fleet-home')!.destination!;
     expect(
@@ -131,7 +139,7 @@ describe('automatisk-hexutforskning / automatisk-stjarnutforskning', () => {
     ).toBe(true);
   });
   it('rejects ships without explorers and stops an existing order when its explorer leaves', () => {
-    const game = new Game(createExampleGalaxy());
+    const game = explorationGame();
     game.setExploration('fleet-home', 'explore');
     game.transferShips('fleet-home', 'Exploration ship', 1, null);
     expect(game.fleet('fleet-home')!.destination).toBeNull();
@@ -197,7 +205,7 @@ describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
     ).toHaveLength(1);
   });
   it('does not interrupt for empty space or start-area knowledge', () => {
-    const game = new Game(createExampleGalaxy());
+    const game = explorationGame();
     game.setDestination('fleet-home', new HexCoordinate(3, 0));
     game.startTurn();
     for (let count = 0; count < 20; count++) {

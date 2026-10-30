@@ -1,6 +1,8 @@
 import type { AppReadModel } from '../models/AppModel.js';
 import type { FleetSnapshot } from '../models/Game.js';
 import { tradeAssignmentIssue } from '../models/TradeAssignment.js';
+import type { Technology } from '../models/Research.js';
+import { Salvage } from '../models/Salvage.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element } from './dom.js';
 
@@ -35,6 +37,16 @@ export function renderFleetOrders(
   orders.setAttribute('aria-label', `Orders for ${fleet.name}`);
   const locked =
     !(fleet.canIssueOrders ?? model.phase === 'planning') || !fleet.position;
+  const researchRequired = (
+    control: HTMLButtonElement,
+    technology: Technology,
+  ) => {
+    if (!model.research.completed.includes(technology)) {
+      control.disabled = true;
+      control.title = `Research ${technology} first.`;
+    }
+    return control;
+  };
   if (!fleet.routeId) {
     if (fleet.towing?.length)
       orders.append(
@@ -56,21 +68,62 @@ export function renderFleetOrders(
           !fleet.exploration &&
           !fleet.joinFleetId &&
           !fleet.colonizationTargetId &&
+          !fleet.salvage &&
+          !fleet.automation &&
           !fleet.patrol,
       ),
       fleetOrderButton(
-        fleet.colonizationTargetId
-          ? 'Cancel colonization'
-          : fleet.patrol
-            ? 'Cancel patrol'
-            : fleet.joinFleetId
-              ? 'Cancel reinforcement'
-              : 'Clear destination',
+        fleet.automation
+          ? 'Cancel automatic order'
+          : fleet.salvage
+            ? 'Cancel salvage'
+            : fleet.colonizationTargetId
+              ? 'Cancel colonization'
+              : fleet.patrol
+                ? 'Cancel patrol'
+                : fleet.joinFleetId
+                  ? 'Cancel reinforcement'
+                  : 'Clear destination',
         '■',
         () => emit({ type: 'clear-destination', id: fleet.id }),
         locked,
       ),
     );
+    if (fleet.ships['Salvage ship'])
+      orders.append(
+        fleetOrderButton(
+          'Salvage',
+          '⚒',
+          () => emit({ type: 'begin-salvage', id: fleet.id }),
+          locked || Salvage.availableCapacity(fleet, model.wrecks) === 0,
+          !!fleet.salvage ||
+            (model.destinationFleetId === fleet.id &&
+              model.destinationOrder === 'salvage'),
+        ),
+        researchRequired(
+          fleetOrderButton(
+            'Auto salvage',
+            '⚒↻',
+            () => emit({ type: 'auto-salvage', id: fleet.id }),
+            locked,
+            fleet.automation === 'salvage',
+          ),
+          'Automated salvage',
+        ),
+      );
+    if (fleet.ships['Transport ship'])
+      orders.append(
+        researchRequired(
+          fleetOrderButton(
+            'Auto assign route',
+            '↔↻',
+            () => emit({ type: 'auto-transport', id: fleet.id }),
+            locked || model.phase !== 'planning' || !!fleet.towing?.length,
+            fleet.automation === 'transport',
+          ),
+          'Automated transport',
+        ),
+      );
     if (fleet.ships.Fighter) {
       const patrol = fleetOrderButton(
         'Patrol',
@@ -80,28 +133,35 @@ export function renderFleetOrders(
         !!fleet.patrol,
       );
       patrol.title = `Patrol around the current hex. Pursue visible pirates within ${fleet.speed} hexes of this fleet, using shared detection.`;
-      orders.append(patrol);
+      orders.append(researchRequired(patrol, 'Fleet patrol'));
     }
     if (fleet.ships['Exploration ship'])
       orders.append(
-        fleetOrderButton(
-          'Explore',
-          '⌖',
-          () => emit({ type: 'explore-fleet', id: fleet.id, order: 'explore' }),
-          locked,
-          fleet.exploration === 'explore',
+        researchRequired(
+          fleetOrderButton(
+            'Explore',
+            '⌖',
+            () =>
+              emit({ type: 'explore-fleet', id: fleet.id, order: 'explore' }),
+            locked,
+            fleet.exploration === 'explore',
+          ),
+          'Automated exploration',
         ),
-        fleetOrderButton(
-          'Explore stars',
-          '✦',
-          () =>
-            emit({
-              type: 'explore-fleet',
-              id: fleet.id,
-              order: 'explore-stars',
-            }),
-          locked,
-          fleet.exploration === 'explore-stars',
+        researchRequired(
+          fleetOrderButton(
+            'Explore stars',
+            '✦',
+            () =>
+              emit({
+                type: 'explore-fleet',
+                id: fleet.id,
+                order: 'explore-stars',
+              }),
+            locked,
+            fleet.exploration === 'explore-stars',
+          ),
+          'Automated exploration',
         ),
       );
     if (fleet.ships['Colony ship'])

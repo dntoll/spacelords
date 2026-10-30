@@ -10,6 +10,22 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Automatiska flottorder:** `automatisk-bargning`,
+  `automatisk-rutttilldelning` och `forskade-automatiska-order` är
+  **Fullständigt implementerat**. Auto salvage hämtar och levererar ett vrak
+  i taget och fortsätter med nästa. Auto assign route hittar närmaste rutt
+  utan transport. Båda kan vänta på nya mål. Även Patrol och Explore kräver
+  forskning för nya order; äldre aktiva order bevaras. Se
+  [automatiska flottorder](docs/automated-fleet-orders.md).
+  `flottval-vid-varv` är **Fullständigt implementerat**: flottor på varvets
+  hex kan öppnas från varvspanelen även när kartmarkörerna överlappar.
+
+- **Bärgningsorder från flottan:** `bargningsorder-fran-flotta` är
+  **Fullständigt implementerat**. Salvage följt av vrakval ger flottan en
+  sparad order att resa dit, hämta vraket och återvända till eget varv.
+  Det fungerar även för vrak i den egna hexen. Se
+  [bärgning och varv](docs/salvage-shipyards.md).
+
 - **Koloniseringsorder:** `koloniseringsorder` är **Fullständigt implementerat**.
   Colonize följt av planetval ger en sparad order att resa dit och kolonisera
   automatiskt vid ankomst, efter eventuell strid. Ordern kan avbrytas eller

@@ -22,7 +22,10 @@ test('dragbara-flottorder: mouse swipe reveals orders without issuing one and ke
   isMobile,
 }, testInfo) => {
   test.skip(isMobile, 'Mouse swipe is a desktop interaction.');
-  await seed(page, researchStationState());
+  await seed(page, {
+    ...researchStationState(),
+    researched: ['Automated exploration'],
+  });
   const card = page.locator('.fleet-card').first();
   const toolbar = card.locator('.fleet-order-toolbar');
   const before = await page.evaluate(() =>

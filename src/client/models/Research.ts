@@ -9,6 +9,10 @@ export const TECHNOLOGIES = [
   'Fighter factory',
   'Transport ship factory',
   'Trade logistics',
+  'Automated salvage',
+  'Automated transport',
+  'Fleet patrol',
+  'Automated exploration',
   'Rocket engine factory',
   'Ion pulse engine factory',
   'Weapons module factory',
@@ -35,6 +39,10 @@ export const PREREQUISITES: Readonly<
   'Fighter factory': ['Weapons module factory'],
   'Transport ship factory': ['Exploration ship factory'],
   'Trade logistics': ['Transport ship factory'],
+  'Automated salvage': ['Salvage ship factory'],
+  'Automated transport': ['Trade logistics'],
+  'Fleet patrol': ['Fighter factory'],
+  'Automated exploration': ['Exploration ship factory'],
   'Rocket engine factory': [],
   'Ion pulse engine factory': ['Rocket engine factory'],
   'Weapons module factory': ['Rocket engine factory'],
@@ -103,3 +111,14 @@ export class ResearchPlan {
     return item;
   }
 }
+
+export const ORDER_RESEARCH = {
+  'Automated salvage':
+    'Unlock Auto salvage: repeatedly collect the nearest known available wreck and tow it to the nearest surviving shipyard.',
+  'Automated transport':
+    'Unlock Auto assign route: find the nearest trade route without an assigned transport fleet, then serve that route.',
+  'Fleet patrol':
+    'Unlock Patrol: circle a fixed area and pursue visible Space pirates within range.',
+  'Automated exploration':
+    'Unlock Explore and Explore stars: automatically explore unknown space or survey known stars.',
+} as const;

@@ -7,6 +7,25 @@ med Handle och Ignore i Events. Ignore fortsätter utan orderändringar.
 Spelaren ska kunna läsa stridsresultat direkt, rädda vrak och återställa skepp i
 orbitala varv. Hemförda okända komponenter öppnar forskning utan vanliga förkunskaper.
 
+## Bärgningsorder från flottan
+
+`bargningsorder-fran-flotta` är **Fullständigt implementerat**: en flotta
+med ledig kapacitet i Salvage ship kan välja Salvage och därefter ett känt,
+ledigt vrak på kartan eller i Salvage wreck. Detta fungerar från både Star map
+och Fleets. Flera vrak i samma hex kan väljas med sina separata markörer.
+Ligger vraket redan vid flottan hämtas det direkt när inga pirater hindrar.
+
+Flottan reser annars dit, hämtar vraket och återvänder automatiskt till
+närmaste egna varv enligt `bargningsorder`. Uppdraget sparas
+vid målval och fortsätter efter omladdning. Cancel lämnar planet- eller
+vrakvalet utan ny reservation; Cancel salvage frigör ej hämtade reservationer
+men behåller släp. En ersättande rörelseorder följer samma tidigare regler.
+Varje Salvage ship kan fortsatt ha högst ett tilldelat eller bogserat vrak.
+
+Detta kompletterar `bargningsorder` med ett val från flottans orderrad.
+Dragning av vrak och Salvage with selected fleet behålls. Sparade spel
+bevaras och sparformatet ändras inte.
+
 | Krav                               | Status                     | Beteende                                                                                                                                    |
 | ---------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `stridsrapport-i-dialog`           | Fullständigt implementerat | Året pausar efter stridssteget med resultat, Handle och Continue.                                                                           |

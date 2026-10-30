@@ -519,6 +519,7 @@ export interface PlanetOrderSnapshot {
   readonly emptyQueues: number;
 }
 export interface FleetSnapshot {
+  readonly automation?: 'salvage' | 'transport';
   readonly colonizationTargetId?: string;
   readonly navigationIssue?: string | undefined;
   readonly patrol?: Readonly<{
@@ -593,6 +594,7 @@ interface Project {
   destinationFleetId: string | null;
 }
 interface Fleet {
+  automation?: 'salvage' | 'transport';
   colonizationTargetId?: string;
   navigationIssue?: string;
   starSurvey?: {
@@ -922,6 +924,20 @@ export class Game {
       ({ position: current, destination, courseOrigin, ...fleet }) => {
         const empty = game.#shipCount(fleet.ships) === 0;
         if (
+          fleet.automation !== undefined &&
+          (!['salvage', 'transport'].includes(fleet.automation) ||
+            empty ||
+            !fleet.ships[
+              fleet.automation === 'salvage' ? 'Salvage ship' : 'Transport ship'
+            ] ||
+            fleet.routeId ||
+            fleet.patrol ||
+            fleet.exploration ||
+            fleet.joinFleetId ||
+            fleet.colonizationTargetId)
+        )
+          throw new Error('Invalid saved automatic fleet order.');
+        if (
           fleet.colonizationTargetId !== undefined &&
           (typeof fleet.colonizationTargetId !== 'string' ||
             !galaxy.systems.some((system) =>
@@ -1223,11 +1239,12 @@ export class Game {
             'Oil extractor',
             ...TECHNOLOGIES.filter(
               (type) =>
-                type !== 'Trade logistics' &&
+                type in BUILDINGS &&
                 this.#research.completed.has(type) &&
-                (!BUILDINGS[type].environment ||
+                (!BUILDINGS[type as BuildType].environment ||
                   (planet.type === 'solid' &&
-                    BUILDINGS[type].environment === planet.environment)),
+                    BUILDINGS[type as BuildType].environment ===
+                      planet.environment)),
             ),
           ] as BuildType[]
         ).map((type) =>
@@ -1443,6 +1460,7 @@ export class Game {
           ...(fleet.colonizationTargetId
             ? { colonizationTargetId: fleet.colonizationTargetId }
             : {}),
+          ...(fleet.automation ? { automation: fleet.automation } : {}),
           salvage: this.#salvage.order(fleet.id)
             ? Object.freeze({
                 ...this.#salvage.order(fleet.id)!,
@@ -1543,10 +1561,94 @@ export class Game {
         ),
     );
   }
+  #requireOrderResearch(technology: Technology): void {
+    if (!this.#research.completed.has(technology))
+      throw new Error(`Research ${technology} first.`);
+  }
+  setAutomaticSalvage(fleetId: string): void {
+    this.#requireFleetOrders(fleetId);
+    this.#requireOrderResearch('Automated salvage');
+    const fleet = this.#fleetState(fleetId);
+    if (!fleet.ships['Salvage ship'])
+      throw new Error('A Salvage ship is required.');
+    this.clearDestination(fleetId);
+    fleet.automation = 'salvage';
+    this.#updateSalvage();
+  }
+  // automatisk-bargning: one wreck per trip; delivery finishes before the next reservation.
+  #updateAutomaticSalvage(): void {
+    for (const fleet of this.#fleets) {
+      if (
+        fleet.automation !== 'salvage' ||
+        !fleet.position ||
+        !fleet.ships['Salvage ship'] ||
+        this.#salvage.order(fleet.id)
+      )
+        continue;
+      if (this.#salvage.towing(fleet.id).length) {
+        this.#salvage.returnHome(fleet);
+        continue;
+      }
+      const target = this.#salvage.wrecks
+        .filter((w) => w.known && !w.reservedBy && !w.towedBy && !w.yardId)
+        .sort(
+          (a, b) =>
+            fleet.position!.distanceTo(a.position) -
+              fleet.position!.distanceTo(b.position) ||
+            a.id.localeCompare(b.id),
+        )[0];
+      if (target) this.#salvage.assign(fleet, target.id);
+    }
+  }
+  setAutomaticTransport(fleetId: string): void {
+    this.#requirePlanning();
+    this.#requireFleetOrders(fleetId);
+    this.#requireOrderResearch('Automated transport');
+    const fleet = this.#fleetState(fleetId);
+    if (!fleet.ships['Transport ship'])
+      throw new Error('A Transport ship is required.');
+    if (this.#salvage.towing(fleetId).length)
+      throw new Error('Deliver towed wrecks first.');
+    this.clearDestination(fleetId);
+    fleet.automation = 'transport';
+    this.#updateAutomaticTransport();
+  }
+  // automatisk-rutttilldelning: each assignment removes the route from the next fleet's candidates.
+  #updateAutomaticTransport(): void {
+    for (const fleet of this.#fleets) {
+      if (
+        fleet.automation !== 'transport' ||
+        !fleet.position ||
+        !fleet.ships['Transport ship']
+      )
+        continue;
+      const distance = (route: TradeRouteSnapshot) =>
+        Math.min(
+          fleet.position!.distanceTo(route.start),
+          fleet.position!.distanceTo(route.end),
+        );
+      const route = this.tradeRoutes
+        .filter(
+          (r) =>
+            !r.closing &&
+            !r.fleetIds.some((id) => {
+              const carrier = this.#fleetState(id);
+              return (
+                !carrier.releaseRequested && carrier.ships['Transport ship'] > 0
+              );
+            }),
+        )
+        .sort(
+          (a, b) => distance(a) - distance(b) || a.id.localeCompare(b.id),
+        )[0];
+      if (route) this.assignTradeFleet(route.id, fleet.id);
+    }
+  }
   orderSalvage(fleetId: string, wreckId: string): void {
     this.#requireFleetOrders(fleetId);
     const fleet = this.#fleetState(fleetId);
     this.#salvage.assign(fleet, wreckId);
+    delete fleet.automation;
     delete fleet.colonizationTargetId;
     delete fleet.patrol;
     delete fleet.exploration;
@@ -1558,6 +1660,7 @@ export class Game {
     this.#requireFleetOrders(fleetId);
     const fleet = this.#fleetState(fleetId);
     this.#salvage.returnHome(fleet);
+    delete fleet.automation;
     delete fleet.colonizationTargetId;
     delete fleet.patrol;
     delete fleet.exploration;
@@ -1568,6 +1671,7 @@ export class Game {
   releaseWreck(fleetId: string, wreckId: string): void {
     this.#requireFleetOrders(fleetId);
     this.#salvage.release(this.#fleetState(fleetId), wreckId);
+    delete this.#fleetState(fleetId).automation;
     this.#updateSalvage();
   }
   scheduleRebuildShipyard(
@@ -1609,7 +1713,8 @@ export class Game {
     });
   }
   #updateSalvage(): void {
-    for (let pass = 0; pass < 2; pass++)
+    for (let pass = 0; pass < 2; pass++) {
+      this.#updateAutomaticSalvage();
       this.#salvage.update(
         this.#fleets,
         (position) => this.#hostileAt(position),
@@ -1636,6 +1741,7 @@ export class Game {
           );
         },
       );
+    }
   }
   #hostileAt(position: HexCoordinate): boolean {
     return this.#pirates.some(
@@ -2492,6 +2598,7 @@ export class Game {
     delete fleet.joinFleetId;
     delete fleet.exploration;
     delete fleet.starSurvey;
+    delete fleet.automation;
     delete fleet.colonizationTargetId;
     fleet.destination = destination;
     delete fleet.navigationIssue;
@@ -2501,6 +2608,7 @@ export class Game {
   clearDestination(id: string): void {
     this.#requireFleetOrders(id);
     this.#salvage.stop(id);
+    delete this.#fleetState(id).automation;
     delete this.#fleetState(id).colonizationTargetId;
     delete this.#fleetState(id).exploration;
     delete this.#fleetState(id).starSurvey;
@@ -2534,6 +2642,7 @@ export class Game {
   }
   setExploration(id: string, order: ExplorationOrder): void {
     this.#requireFleetOrders(id);
+    this.#requireOrderResearch('Automated exploration');
     if (!['explore', 'explore-stars'].includes(order))
       throw new Error('Unknown exploration order.');
     const fleet = this.#fleetState(id);
@@ -2543,12 +2652,14 @@ export class Game {
     delete fleet.patrol;
     delete fleet.joinFleetId;
     fleet.exploration = order;
+    delete fleet.automation;
     delete fleet.colonizationTargetId;
     delete fleet.starSurvey;
     this.#updateExploration(fleet);
   }
   setPatrol(id: string): void {
     this.#requireFleetOrders(id);
+    this.#requireOrderResearch('Fleet patrol');
     const fleet = this.#fleetState(id);
     if (!fleet.ships.Fighter)
       throw new Error('A Fighter is required for Patrol.');
@@ -2557,6 +2668,7 @@ export class Game {
     delete fleet.exploration;
     delete fleet.joinFleetId;
     fleet.patrol = { center: fleet.position!, nextIndex: 0 };
+    delete fleet.automation;
     delete fleet.colonizationTargetId;
     delete fleet.starSurvey;
     this.#updatePatrol(fleet);
@@ -2701,6 +2813,8 @@ export class Game {
   }
   startTurn(): void {
     this.#requirePlanning();
+    this.#updateAutomaticTransport();
+    this.#updateSalvage();
     this.#logistics.prepare(this.#logisticsPort());
     this.#refreshReinforcements();
     this.#mergeReinforcements();
@@ -3141,7 +3255,9 @@ export class Game {
     this.#requirePlanning();
     if (!this.#research.completed.has('Trade logistics'))
       throw new Error('Research Trade logistics first.');
-    return this.#logistics.create(a, b, this.#logisticsPort());
+    const id = this.#logistics.create(a, b, this.#logisticsPort());
+    this.#updateAutomaticTransport();
+    return id;
   }
   assignTradeFleet(routeId: string, fleetId: string): void {
     this.#requirePlanning();
@@ -3157,6 +3273,7 @@ export class Game {
         delete source.courseOrigin;
       }
       this.#logistics.assign(routeId, source, this.#logisticsPort());
+      delete source.automation;
       delete source.colonizationTargetId;
       delete source.patrol;
       delete source.exploration;
@@ -3304,6 +3421,7 @@ export class Game {
         !f.routeId &&
         !f.joinFleetId &&
         !f.patrol &&
+        !f.automation &&
         !f.destination &&
         this.#shipCount(f.ships),
     ))
@@ -4452,6 +4570,17 @@ export class Game {
   }
   // tomma-flottor-utan-position: the last ship releases both location and course.
   #releaseEmptyFleet(fleet: Fleet): void {
+    if (
+      fleet.automation &&
+      !fleet.ships[
+        fleet.automation === 'salvage' ? 'Salvage ship' : 'Transport ship'
+      ]
+    ) {
+      delete fleet.automation;
+      this.#salvage.stop(fleet.id);
+      fleet.destination = null;
+      delete fleet.courseOrigin;
+    }
     if (fleet.colonizationTargetId && !fleet.ships['Colony ship']) {
       delete fleet.colonizationTargetId;
       fleet.destination = null;
@@ -4677,9 +4806,9 @@ export class Game {
     );
     return TECHNOLOGIES.filter(
       (type) =>
-        type === 'Trade logistics' ||
-        !BUILDINGS[type].environment ||
-        discovered.has(BUILDINGS[type].environment),
+        !(type in BUILDINGS) ||
+        !BUILDINGS[type as BuildType].environment ||
+        discovered.has(BUILDINGS[type as BuildType].environment!),
     );
   }
   #requirePlanning(): void {

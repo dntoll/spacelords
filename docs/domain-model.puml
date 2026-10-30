@@ -127,6 +127,7 @@ class Fleet {
   name
   courseOrigin
   destination
+  automation : salvage | transport [0..1]
   colonizationTargetId : optional planet target
   joinFleetId : optional reinforcement target
   ships: 0..*
@@ -136,6 +137,16 @@ note on link
   koloniseringsorder: fysisk färd följs av grundning efter strid.
   Exakt ett Colony ship förbrukas; ordern sparas och kan avbrytas.
 end note
+class AutomaticFleetOrder {
+  mode: Auto salvage | Auto assign route
+  waitingForTarget
+}
+Fleet "1" o-- "0..1" AutomaticFleetOrder
+AutomaticFleetOrder --> Technology : requires research
+AutomaticFleetOrder --> SalvageOrder : repeats after delivery
+AutomaticFleetOrder --> TradeRoute : nearest unassigned route
+PatrolOrder --> Technology : Fleet patrol
+ExplorationOrder --> Technology : Automated exploration
 class ExplorationOrder {
   mode: Explore | Explore stars
 }
