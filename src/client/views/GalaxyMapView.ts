@@ -178,7 +178,7 @@ export class GalaxyMapView implements MapPort {
     const original = this.#model;
     if (!original || this.#disposed) return;
     const movementPoints = new Map<string, Point>();
-    let model = original;
+    const model = original;
     if (this.#movement) {
       const { movement, progress } = this.#movement;
       const from = HexGeometry.toPoint(movement.from),
@@ -199,9 +199,12 @@ export class GalaxyMapView implements MapPort {
           y: center.y + marker.point.y - anchor.y,
         });
       }
-      model = { ...original, camera: { ...original.camera, center } };
+      // stillastaende-kamera-vid-forflyttning: only the ship marker moves.
     }
     if (this.#canvas) {
+      this.#canvas.dataset.cameraX = String(model.camera.center.x);
+      this.#canvas.dataset.cameraY = String(model.camera.center.y);
+      this.#canvas.dataset.cameraZoom = String(model.camera.zoom);
       if (this.#movement) {
         this.#canvas.dataset.movingFleet = this.#movement.movement.fleetId;
         this.#canvas.dataset.movingProgress = String(this.#movement.progress);

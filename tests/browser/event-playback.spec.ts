@@ -46,6 +46,30 @@ async function requestTurn(page: Page) {
       .click();
 }
 
+async function advanceUntil(page: Page, ready: () => Promise<boolean>) {
+  for (let step = 0; step < 320; step++) {
+    if (await ready()) return;
+    await page.clock.runFor(50);
+  }
+  throw new Error('Playback did not reach the expected stage.');
+}
+
+async function eventScreenY(page: Page, q = 3, r = 0) {
+  return page.locator('canvas[data-rendered="true"]').evaluate(
+    (node, point) => {
+      const canvas = node as HTMLCanvasElement;
+      const rect = canvas.getBoundingClientRect();
+      return (
+        rect.y +
+        rect.height / 2 +
+        (point.y - Number(canvas.dataset.cameraY)) *
+          Number(canvas.dataset.cameraZoom)
+      );
+    },
+    HexGeometry.toPoint(new HexCoordinate(q, r)),
+  );
+}
+
 test('sikt-under-forflyttning: a newly observed hex brightens before the moving ship finishes its step', async ({
   page,
 }, testInfo) => {
@@ -53,30 +77,23 @@ test('sikt-under-forflyttning: a newly observed hex brightens before the moving 
   await seed(page);
   await page.clock.pauseAt(new Date('2026-10-30T01:00:00Z'));
   const canvas = page.locator('canvas[data-rendered="true"]');
-  const zoom =
-    Number(
-      (await page.getByLabel('Map zoom').textContent())!.replace('%', ''),
-    ) / 100;
-  const from = HexGeometry.toPoint(new HexCoordinate(1, 0));
-  const to = HexGeometry.toPoint(new HexCoordinate(2, 0));
   const target = HexGeometry.toPoint(new HexCoordinate(3, 0));
   const color = () =>
     canvas.evaluate(
       (node, points) => {
         const surface = node as HTMLCanvasElement;
-        const progress = Number(surface.dataset.movingProgress);
         const center = {
-          x: points.from.x + (points.to.x - points.from.x) * progress,
-          y: points.from.y + (points.to.y - points.from.y) * progress,
+          x: Number(surface.dataset.cameraX),
+          y: Number(surface.dataset.cameraY),
         };
+        const zoom = Number(surface.dataset.cameraZoom);
         const bounds = surface.getBoundingClientRect();
         const x =
-          ((bounds.width / 2 + (points.target.x - center.x) * points.zoom) *
+          ((bounds.width / 2 + (points.target.x - center.x) * zoom) *
             surface.width) /
           bounds.width;
         const y =
-          ((bounds.height / 2 +
-            (points.target.y + 8 - center.y) * points.zoom) *
+          ((bounds.height / 2 + (points.target.y + 8 - center.y) * zoom) *
             surface.height) /
           bounds.height;
         return [
@@ -85,9 +102,14 @@ test('sikt-under-forflyttning: a newly observed hex brightens before the moving 
             .getImageData(Math.round(x), Math.round(y), 1, 1).data,
         ].slice(0, 3);
       },
-      { from, to, target, zoom },
+      { target },
     );
   await requestTurn(page);
+  await advanceUntil(
+    page,
+    async () =>
+      (await canvas.getAttribute('data-moving-fleet')) === 'fleet-home',
+  );
   await page.clock.runFor(100);
   expect(
     Number(await canvas.getAttribute('data-moving-progress')),
@@ -130,8 +152,8 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   await page.clock.pauseAt(new Date('2026-10-27T01:00:00Z'));
   await requestTurn(page);
-  await page.clock.runFor(1000);
   const announcement = page.locator('.event-announcement');
+  await advanceUntil(page, () => announcement.isVisible());
   const log = page.getByRole('log', { name: 'Game events' });
   const console = page.getByRole('region', { name: 'Turn console' });
   await expect(announcement).toContainText('Home Fleet arrived at HEX 3,0.');
@@ -145,9 +167,7 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
       placed.x + placed.width / 2 - portraitMap.x - portraitMap.width / 2,
     ),
   ).toBeLessThan(2);
-  expect(placed.y).toBeGreaterThanOrEqual(
-    portraitMap.y + portraitMap.height / 2 + 80,
-  );
+  expect(placed.y).toBeGreaterThanOrEqual((await eventScreenY(page)) + 80);
   expect(placed.y + placed.height).toBeLessThanOrEqual(851 - 8);
   expect(
     await announcement.evaluate((node) =>
@@ -162,7 +182,7 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   const shortMap = (await page.getByTestId('map-container').boundingBox())!;
   const shortAnnouncement = (await announcement.boundingBox())!;
   expect(shortAnnouncement.y).toBeGreaterThanOrEqual(
-    shortMap.y + shortMap.height / 2 + 70,
+    (await eventScreenY(page)) + 70,
   );
   expect(
     shortAnnouncement.y + shortAnnouncement.height,
@@ -177,7 +197,7 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   expect(
     Math.abs(landscape.x + landscape.width / 2 - mapBox.x - mapBox.width / 2),
   ).toBeLessThan(2);
-  expect(landscape.y).toBeGreaterThanOrEqual(mapBox.y + mapBox.height / 2 + 80);
+  expect(landscape.y).toBeGreaterThanOrEqual((await eventScreenY(page)) + 80);
   expect(landscape.y + landscape.height).toBeLessThanOrEqual(393 - 8);
   await page.clock.runFor(1400);
   await expect(announcement).toHaveAttribute('data-stage', 'filing');
@@ -190,10 +210,17 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   });
   await page.clock.runFor(500);
   await expect(log.locator('[data-event-id]')).toHaveCount(1);
+  await advanceUntil(page, async () =>
+    (await announcement.allTextContents())
+      .join('')
+      .includes('Iron mine was completed on Tellus.'),
+  );
   await expect(announcement).toContainText(
     'Iron mine was completed on Tellus.',
   );
-  await page.clock.runFor(6000);
+  await advanceUntil(page, () =>
+    page.getByRole('heading', { name: 'Research', exact: true }).isVisible(),
+  );
   await expect(announcement).toHaveCount(0);
   await expect(
     page.getByRole('heading', { name: 'Research', exact: true }),
@@ -213,7 +240,7 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   expect(errors).toEqual([]);
 });
 
-test('en-flotta-i-taget / osynliga-flottor-utan-animation: focus follows full fleet routes, unseen pirates are omitted and the original camera returns', async ({
+test('en-flotta-i-taget / osynliga-flottor-utan-animation: full fleet routes are framed, unseen pirates are omitted and the original camera returns', async ({
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 393, height: 851 });
@@ -268,6 +295,78 @@ test('en-flotta-i-taget / osynliga-flottor-utan-animation: focus follows full fl
   await expect(page.getByTestId('camera-position')).toHaveText(camera!);
   await noOverflow(page);
 });
+
+for (const size of [
+  { width: 393, height: 851 },
+  { width: 851, height: 393 },
+]) {
+  test(`handelseanpassad-kartkamera / stillastaende-kamera-vid-forflyttning: zooms out from the player's view then holds the full route (${size.width}x${size.height})`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize(size);
+    await page.clock.install({ time: new Date('2026-10-30T00:00:00Z') });
+    await seed(page);
+    const canvas = page.locator('canvas[data-rendered="true"]');
+    await canvas.focus();
+    for (let step = 0; step < 12; step++)
+      await page.keyboard.press('ArrowRight');
+    await page.clock.pauseAt(new Date('2026-10-30T01:00:00Z'));
+    const camera = () =>
+      canvas.evaluate((node) => {
+        const data = (node as HTMLCanvasElement).dataset;
+        return {
+          x: Number(data.cameraX),
+          y: Number(data.cameraY),
+          zoom: Number(data.cameraZoom),
+        };
+      });
+    const initial = await camera();
+    await requestTurn(page);
+    await advanceUntil(page, async () => (await camera()).zoom < initial.zoom);
+    const overview = await camera();
+    expect(overview.x).toBeCloseTo(initial.x);
+    expect(overview.y).toBeCloseTo(initial.y);
+    expect(overview.zoom).toBeLessThan(initial.zoom);
+    await expect(canvas).not.toHaveAttribute('data-moving-fleet');
+    await advanceUntil(
+      page,
+      async () =>
+        (await canvas.getAttribute('data-moving-fleet')) === 'fleet-home',
+    );
+    const framed = await camera();
+    const map = (await canvas.boundingBox())!;
+    for (const hex of [
+      new HexCoordinate(1, 0),
+      new HexCoordinate(2, 0),
+      new HexCoordinate(3, 0),
+    ]) {
+      const point = HexGeometry.toPoint(hex);
+      const x = map.width / 2 + (point.x - framed.x) * framed.zoom;
+      const y = map.height / 2 + (point.y - framed.y) * framed.zoom;
+      expect(x - 36 * framed.zoom).toBeGreaterThanOrEqual(24 - 0.01);
+      expect(x + 36 * framed.zoom).toBeLessThanOrEqual(map.width - 24 + 0.01);
+      expect(y - 36 * framed.zoom).toBeGreaterThanOrEqual(24 - 0.01);
+      expect(y + 36 * framed.zoom).toBeLessThanOrEqual(map.height - 24 + 0.01);
+    }
+    for (let sample = 0; sample < 6; sample++) {
+      await page.clock.runFor(100);
+      await expect(canvas).toHaveAttribute('data-moving-fleet', 'fleet-home');
+      expect(await camera()).toEqual(framed);
+    }
+    await page.screenshot({
+      path: testInfo.outputPath('stationary-route-camera.png'),
+    });
+    await advanceUntil(
+      page,
+      async () =>
+        !(await page
+          .getByRole('button', { name: 'End turn', exact: true })
+          .isDisabled()),
+    );
+    expect(await camera()).toEqual(initial);
+    await noOverflow(page);
+  });
+}
 
 test('senaste-aret-i-events / handelseannonsering: long yearly lists scroll internally and shrink after automatic announcements', async ({
   page,

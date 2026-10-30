@@ -132,11 +132,19 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Flottanimation och händelseannonser:** `en-flotta-i-taget`,
   `osynliga-flottor-utan-animation` och `handelseannonsering` är
-  **Fullständigt implementerat**. Kameran följer en flottas synliga färd åt
-  gången. Dolda rörelser ger ingen animation eller väntan. Platsbundna händelser
+  **Fullständigt implementerat**. En flottas synliga färd visas åt gången.
+  Dolda rörelser ger ingen animation eller väntan. Platsbundna händelser
   annonseras under den markerade platsen och globala händelser centralt;
   texten flyttas sedan till listan automatiskt. Pause/Play, Next och Skip är
   borttagna på uttrycklig beställning. Se [Events](docs/events-and-guidance.md).
+
+- **Händelsekamera:** `handelseanpassad-kartkamera` och
+  `stillastaende-kamera-vid-forflyttning` är **Fullständigt implementerat**.
+  Kameran utgår från spelarens läge vid End turn,
+  zoomar ut vid behov och ramar sedan mjukt in hela nästa färd eller händelse.
+  Normalzoom är högsta fokuszoom. Kameran står stilla medan skeppet färdas och
+  spelarens kartläge återställs efter uppspelningen. Detta ersätter tidigare
+  kameraföljning. Se [produktkraven](docs/product-requirements.md).
 
 - **Events:** `end-turn-vid-kartval`, `sekventiella-arshandelser` och
   `handelser-pa-kartan` är **Fullständigt implementerat**. End turn syns även

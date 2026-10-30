@@ -7,10 +7,7 @@ import { Game, type TurnFrame } from '../../src/client/models/Game.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppController } from '../../src/client/controllers/AppController.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
-import {
-  HexCoordinate,
-  HexGeometry,
-} from '../../src/client/models/HexCoordinate.js';
+import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { Detection } from '../../src/client/models/Detection.js';
 
@@ -289,7 +286,7 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     expect(playback.tracks).toHaveLength(1);
   });
 
-  it('focuses each fleet for its full route and never animates hidden pirates', async () => {
+  it('stillastaende-kamera-vid-forflyttning: frames each full route and keeps its camera fixed while ships move', async () => {
     vi.useFakeTimers();
     const model = new AppModel();
     model.transferShips('fleet-home', 'Fighter', 1, null);
@@ -298,6 +295,7 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     model.setDestination(other.id, 0, 3);
     let emit!: IntentHandler;
     const order: string[] = [];
+    const cameras = new Map<string, typeof model.snapshot.camera>();
     const controller = new AppController(model, {
       bind(handler) {
         emit = handler;
@@ -305,14 +303,16 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
       render(snapshot) {
         if (snapshot.turnMovement) {
           expect(snapshot.phase).toBe('simulating');
-          expect(snapshot.camera.center).toEqual(
-            HexGeometry.toPoint(snapshot.turnMovement.from),
-          );
         }
       },
       animateTurnStep(frame: TurnFrame) {
         expect(frame.movements).toHaveLength(1);
-        order.push(frame.movements[0]!.fleetId);
+        const movement = frame.movements[0]!;
+        const camera = model.snapshot.camera;
+        if (cameras.has(movement.fleetId))
+          expect(camera).toEqual(cameras.get(movement.fleetId));
+        cameras.set(movement.fleetId, camera);
+        order.push(movement.fleetId);
         return Promise.resolve();
       },
       dispose() {},

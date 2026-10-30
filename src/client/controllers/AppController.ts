@@ -11,6 +11,7 @@ export class AppController {
   readonly #researchGesture = new MapGesture();
   #runningTurn = false;
   #disposed = false;
+  #framingEvent = false;
   #receiptTimer: ReturnType<typeof setTimeout> | undefined;
   #playbackTimer: ReturnType<typeof setTimeout> | undefined;
   #fleetPointer: {
@@ -62,6 +63,11 @@ export class AppController {
   }
 
   #handleIntent(intent: AppIntent): void {
+    if (intent.type === 'map-size') {
+      this.#model.resizeMap(intent.viewport);
+      this.#view.render(this.#model.snapshot);
+      return;
+    }
     const playback = this.#model.snapshot.eventPlayback;
     if (playback) {
       if (
@@ -74,9 +80,6 @@ export class AppController {
         this.#model.save();
         this.#view.render(this.#model.snapshot);
         this.#schedulePlayback();
-      } else if (intent.type === 'map-size') {
-        this.#model.resizeMap(intent.viewport);
-        this.#view.render(this.#model.snapshot);
       }
       return;
     }
@@ -214,9 +217,6 @@ export class AppController {
         break;
       case 'map-production-build':
         this.#model.orderMapProduction(intent.option);
-        break;
-      case 'map-size':
-        this.#model.resizeMap(intent.viewport);
         break;
       case 'supply-open-planet':
         this.#model.openSupplyPlanet(intent.id);
@@ -653,6 +653,10 @@ export class AppController {
     clearTimeout(this.#playbackTimer);
     const playback = this.#model.snapshot.eventPlayback;
     if (this.#disposed) return;
+    if (playback?.stage === 'framing') {
+      if (!this.#framingEvent) void this.#frameEvent();
+      return;
+    }
     if (!playback) {
       if (
         this.#model.snapshot.phase === 'interrupted' &&
@@ -674,6 +678,53 @@ export class AppController {
       },
       playback.stage === 'announcing' ? 1400 : 450,
     );
+  }
+
+  async #frameEvent(): Promise<void> {
+    this.#framingEvent = true;
+    try {
+      await this.#animateCamera();
+      if (!this.#disposed) {
+        this.#view.render(this.#model.snapshot);
+        this.#schedulePlayback();
+      }
+    } catch (error) {
+      if (!this.#disposed) {
+        this.#model.finishCameraFraming();
+        this.#model.reportError(error);
+        this.#view.render(this.#model.snapshot);
+        this.#schedulePlayback();
+      }
+    } finally {
+      this.#framingEvent = false;
+    }
+  }
+
+  async #animateCamera(): Promise<void> {
+    while (!this.#disposed && this.#model.cameraFraming) {
+      const framing = this.#model.cameraFraming;
+      for (let index = 0; index < framing.transitions.length; index++) {
+        const onProgress = (progress: number) => {
+          if (
+            !this.#disposed &&
+            this.#model.advanceCameraFraming(framing, index, progress)
+          ) {
+            const snapshot = this.#model.snapshot;
+            if (this.#view.renderCamera) this.#view.renderCamera(snapshot);
+            else this.#view.render(snapshot);
+            return true;
+          }
+          return false;
+        };
+        if (this.#view.animatePresentation)
+          await this.#view.animatePresentation(
+            framing.transitions[index]!.duration,
+            onProgress,
+          );
+        else onProgress(1);
+        if (this.#disposed || this.#model.cameraFraming !== framing) break;
+      }
+    }
   }
 
   async #runTurn(resume = false): Promise<void> {
@@ -706,6 +757,11 @@ export class AppController {
       if (tracks.length) {
         this.#model.beginMovementPlayback(movementPlayback, origin);
         for (const track of tracks) {
+          this.#model.focusTurnMovement(track[0]!);
+          this.#model.frameTurnTrack(track);
+          this.#view.render(this.#model.snapshot);
+          await this.#animateCamera();
+          if (this.#disposed) return;
           for (const movement of track) {
             this.#model.focusTurnMovement(movement);
             this.#view.render(this.#model.snapshot);
@@ -723,7 +779,7 @@ export class AppController {
             this.#model.completeTurnMovement();
           }
         }
-        this.#model.endMovementPlayback();
+        this.#model.endMovementPlayback(true);
       }
       this.#model.beginEventPlayback();
       this.#view.render(this.#model.snapshot);

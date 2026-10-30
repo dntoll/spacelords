@@ -675,9 +675,26 @@ behålls enligt `forstarka-ruttflotta`.
 | `end-turn-vid-kartval`            | Fullständigt implementerat | End turn syns och har egen plats även när en planet, flotta, handelsrutt eller destination är vald. Informationspanelen kan rullas utan att täcka knappen.                                                                                                                                                                                                         |
 | `sekventiella-arshandelser`       | Fullständigt implementerat | Händelser annonseras en i taget i verklig ordning vid avbrott och efter årets slut. Varje text flyttas sedan till Events innan nästa visas. Presentationen går automatiskt utan Pause/Play, Next eller Skip. End turn är spärrad medan presentationen pågår. Upptäckts- och stridsavbrott behålls före årets avslut.                                               |
 | `handelser-pa-kartan`             | Fullständigt implementerat | Kartan visar och markerar platsen för aktuell händelse. Globala händelser saknar kartmarkering. Listan ligger under kartan på stående mobil och bredvid på liggande mobil och bredare skärmar. Efter uppspelningen återställs tidigare vy, giltiga val och kamera.                                                                                                 |
-| `en-flotta-i-taget`               | Fullständigt implementerat | En synlig flottmarkör åt gången följer sin färd med kameran i fokus. Hela den visade färden slutförs innan nästa flottmarkör rör sig. Spelets förflyttning, upptäckter och strider behåller sina regler.                                                                                                                                                           |
+| `en-flotta-i-taget`               | Fullständigt implementerat | En synlig flottmarkör åt gången följer sin färd inom en stillastående kartbild. Hela den visade färden slutförs innan nästa flottmarkör rör sig. Spelets förflyttning, upptäckter och strider behåller sina regler.                                                                                                                                                |
 | `osynliga-flottor-utan-animation` | Fullständigt implementerat | Dolda flottors förflyttningar animeras inte och ger ingen kameraflytt eller animationsväntan. Fientliga steg visas bara när båda ändarna är synliga.                                                                                                                                                                                                               |
 | `handelseannonsering`             | Fullständigt implementerat | Platsbundna händelsers text och textruta visas under den markerade platsen så att platsen förblir synlig, även efter skärmrotation. Globala händelser visas mitt på skärmen. Efter en kort lästid flyttas texten till Events och blir en rad där. Därefter visas nästa händelse. Vid minskad rörelse behålls information och resultat utan förflyttningsanimation. |
+
+`handelseanpassad-kartkamera` — **Fullständigt implementerat**.
+Kameran börjar i spelarens kartläge vid End turn. Inför nästa
+platsbundna händelse eller flottfärd zoomar den först ut om berörda positioner
+inte syns och ramar sedan mjukt in dem. Hela den visade färden ryms, även när
+den svänger. Längre färder får lägre zoom; högsta fokuszoom är normalzoom.
+Händelsetext och val visas när kameran har stannat. Globala händelser ändrar
+inte kameran. Tidigare vy, giltiga val och exakt kartläge återställs efteråt.
+
+`stillastaende-kamera-vid-forflyttning` — **Fullständigt implementerat**.
+Kameran står stilla genom hela flottans visade färd.
+Nästa kamerarörelse sker inför nästa flotta eller händelse. Skärmrotation
+anpassar inramningen utan att börja om färden.
+
+Ändring 2026-10-30: detta ersätter tidigare kameraföljning i
+`en-flotta-i-taget`. Händelsernas inramning anpassas till den fria kartytan
+med plats för markörer och text. Vid minskad rörelse visas inramningen direkt.
 
 Ändring 2026-10-27: den tidigare menyn med Pause/Play, Next och Skip tas bort
 på uttrycklig beställning. `handelseannonsering` ersätter det tidigare

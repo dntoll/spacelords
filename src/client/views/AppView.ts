@@ -76,6 +76,9 @@ export class AppView implements AppPort {
   #consoleObserver: ResizeObserver | null = null;
   #announcementObserver: ResizeObserver | null = null;
   #announcementModel: AppReadModel | null = null;
+  #presentationFrame = 0;
+  #finishPresentation: (() => void) | null = null;
+  #disposed = false;
 
   constructor(
     root: HTMLElement,
@@ -796,7 +799,7 @@ export class AppView implements AppPort {
     let announcement = this.#root.querySelector<HTMLElement>(
       '.event-announcement',
     );
-    if (!playback || !current) {
+    if (!playback || !current || playback.stage === 'framing') {
       announcement?.remove();
       this.#announcementObserver?.disconnect();
       this.#announcementObserver = null;
@@ -961,6 +964,11 @@ export class AppView implements AppPort {
   }
 
   dispose(): void {
+    this.#disposed = true;
+    if (typeof cancelAnimationFrame !== 'undefined')
+      cancelAnimationFrame(this.#presentationFrame);
+    this.#finishPresentation?.();
+    this.#finishPresentation = null;
     if (typeof cancelAnimationFrame !== 'undefined')
       cancelAnimationFrame(this.#resizeFrame);
     this.#mapObserver?.disconnect();
@@ -1527,6 +1535,48 @@ export class AppView implements AppPort {
     onProgress?: (progress: number) => void,
   ): Promise<void> {
     return this.#map?.animateTurnStep?.(frame, onProgress) ?? Promise.resolve();
+  }
+
+  renderCamera(model: AppReadModel): void {
+    this.#map?.render(model);
+    this.#announcementModel = model.eventPlayback ? model : null;
+    this.#positionAnnouncement();
+    if (this.#zoom)
+      this.#zoom.value = `${Math.round(model.camera.zoom * 100)}%`;
+    if (this.#coordinates)
+      this.#coordinates.textContent = `X ${model.camera.center.x.toFixed(0)} · Y ${model.camera.center.y.toFixed(0)}`;
+  }
+
+  animatePresentation(
+    duration: number,
+    onProgress: (progress: number) => boolean | void,
+  ): Promise<void> {
+    if (this.#disposed) return Promise.resolve();
+    if (
+      typeof requestAnimationFrame === 'undefined' ||
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    ) {
+      onProgress(1);
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      this.#finishPresentation = resolve;
+      let started: number | null = null;
+      const draw = (now: number) => {
+        if (this.#disposed) {
+          resolve();
+          return;
+        }
+        started ??= now;
+        const progress = Math.min(1, (now - started) / duration);
+        const active = onProgress(progress);
+        if (progress === 1 || active === false) {
+          this.#finishPresentation = null;
+          resolve();
+        } else this.#presentationFrame = requestAnimationFrame(draw);
+      };
+      this.#presentationFrame = requestAnimationFrame(draw);
+    });
   }
 }
 import { renderSalvageSelection } from './SalvageView.js';

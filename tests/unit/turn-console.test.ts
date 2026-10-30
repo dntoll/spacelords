@@ -258,6 +258,13 @@ describe('handelser / arsrundor-och-order', () => {
     );
     resume();
     await vi.advanceTimersByTimeAsync(0);
+    // handelseanpassad-kartkamera: announcements follow the camera framing.
+    for (
+      let step = 0;
+      step < 40 && !root.querySelector('.event-announcement');
+      step++
+    )
+      await vi.advanceTimersByTimeAsync(50);
     expect(root.querySelector('[role="dialog"]')).toBeNull();
     expect(root.textContent).not.toContain('Continue');
     const log = root.querySelector('[role="log"]')!;
@@ -268,7 +275,7 @@ describe('handelser / arsrundor-och-order', () => {
     expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
       true,
     );
-    await vi.advanceTimersByTimeAsync(model.snapshot.events.length * 1850);
+    await vi.advanceTimersByTimeAsync(model.snapshot.events.length * 2600);
     expect(
       [...log.querySelectorAll<HTMLElement>('[data-event-id]')].map(
         (item) => item.dataset.eventId,

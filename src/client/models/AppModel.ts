@@ -51,6 +51,7 @@ import {
 import type { ShipmentSnapshot, TradeRouteSnapshot } from './Logistics.js';
 import { FleetMapLayout } from './FleetMapLayout.js';
 import { Camera, type CameraSnapshot } from './Camera.js';
+import { CameraFraming } from './CameraFraming.js';
 import { createExampleGalaxy } from './exampleGalaxy.js';
 import {
   Game,
@@ -186,6 +187,8 @@ export class AppModel {
   #eventPlayback: EventPlayback | null = null;
   readonly #presentedEventIds = new Set<string>();
   #eventCamera: Camera | null = null;
+  #cameraFraming: CameraFraming | null = null;
+  #playbackPositions: readonly Point[] = [];
   #turnContext: {
     readonly screen: Screen;
     readonly selected: HexCoordinate;
@@ -315,6 +318,8 @@ export class AppModel {
     this.#movementPlayback = null;
     this.#movementOrigin = null;
     this.#eventCamera = null;
+    this.#cameraFraming = null;
+    this.#playbackPositions = [];
     this.#turnContext = null;
     this.#salvageSelection = null;
     this.#shipyardPlacement = null;
@@ -480,7 +485,7 @@ export class AppModel {
       inspectedResearch: this.#inspectedResearch,
       planetOrders: this.#game.planetOrders(),
       constructionSite: this.#constructionSite,
-      screen: this.#eventPlayback ? 'map' : this.#screen,
+      screen: this.#eventCamera ? 'map' : this.#screen,
       buildSearch: this.#buildSearch,
       buildingCategory: this.#buildingCategory,
       selectedBuilding: this.#selectedBuilding,
@@ -1125,8 +1130,21 @@ export class AppModel {
   resizeMap(viewport: MapViewport): void {
     if (!Object.values(viewport).every((v) => Number.isFinite(v) && v > 0))
       return;
+    const previous = this.#mapViewport;
     this.#mapViewport = Object.freeze({ ...viewport });
-    if (this.#eventPlayback?.current?.decision) this.#focusEvent();
+    if (
+      this.#eventCamera &&
+      this.#playbackPositions.length &&
+      (!previous ||
+        previous.width !== viewport.width ||
+        previous.height !== viewport.height ||
+        previous.availableWidth !== viewport.availableWidth ||
+        previous.availableHeight !== viewport.availableHeight)
+    ) {
+      const animating = !!this.#cameraFraming;
+      this.#prepareCameraFraming();
+      if (!animating) this.finishCameraFraming();
+    }
     if (this.#pendingMapFocus) {
       // centrerat-kartfokus: use the space left by the newly rendered panels.
       const x = (viewport.availableWidth - viewport.width) / 2;
@@ -1523,11 +1541,13 @@ export class AppModel {
       return;
     }
     this.#eventPlayback = playback;
-    this.#eventCamera = new Camera(
-      this.#game.galaxy.homePlanet.position,
-      this.#game.galaxy.radius,
-    );
-    this.#eventCamera.restore(this.#camera.snapshot);
+    if (!this.#eventCamera) {
+      this.#eventCamera = new Camera(
+        this.#game.galaxy.homePlanet.position,
+        this.#game.galaxy.radius,
+      );
+      this.#eventCamera.restore(this.#camera.snapshot);
+    }
     this.#focusEvent();
   }
 
@@ -1599,12 +1619,19 @@ export class AppModel {
   advanceEventPlayback(): void {
     const playback = this.#eventPlayback;
     if (!playback) return;
+    if (playback.snapshot.stage === 'framing') {
+      this.finishCameraFraming();
+      return;
+    }
+    const previousEvent = playback.current;
     if (playback.snapshot.stage === 'filing' && playback.current) {
       this.#presentedEventIds.add(playback.current.id);
       this.#game.presentEvent(playback.current.id);
       if (playback.snapshot.choice === 'handle') {
         this.#eventPlayback = null;
         this.#eventCamera = null;
+        this.#cameraFraming = null;
+        this.#playbackPositions = [];
         this.#focusInterruptedFleet();
         return;
       }
@@ -1613,13 +1640,16 @@ export class AppModel {
       if (this.#game.phase === 'planning') this.finishEventPlayback();
       else {
         this.#eventPlayback = null;
-        this.#eventCamera = null;
+        this.#cameraFraming = null;
+        this.#playbackPositions = [];
       }
-    } else this.#focusEvent();
+    } else if (previousEvent !== playback.current) this.#focusEvent();
   }
 
   #focusEvent(): void {
     const position = this.#eventPlayback?.current?.position;
+    this.#cameraFraming = null;
+    this.#playbackPositions = [];
     if (
       !position ||
       !this.#eventCamera ||
@@ -1629,28 +1659,92 @@ export class AppModel {
       return;
     const hex = new HexCoordinate(position.q, position.r);
     if (!this.#game.galaxy.contains(hex)) return;
-    this.#eventCamera.restore({ ...this.#eventCamera.snapshot, zoom: 1 });
-    this.#eventCamera.focus(hex);
-    if (this.#eventPlayback?.current?.decision && this.#mapViewport) {
-      const center = HexGeometry.toPoint(hex);
-      // centrerade-handelseval-pa-dator: center the marker and choices together on large maps.
-      const offset =
-        this.#mapViewport.width > 900 && this.#mapViewport.height > 500
-          ? 120
-          : Math.max(0, this.#mapViewport.height / 2 - 45);
-      this.#eventCamera.restore({
-        center: {
-          x: center.x,
-          y: center.y + offset,
-        },
-        zoom: 1,
-      });
-    }
+    this.#playbackPositions = [HexGeometry.toPoint(hex)];
+    this.#eventPlayback?.beginFraming();
+    this.#prepareCameraFraming();
+  }
+
+  get cameraFraming(): CameraFraming | null {
+    return this.#cameraFraming;
+  }
+
+  #prepareCameraFraming(): void {
+    if (!this.#eventCamera || !this.#playbackPositions.length) return;
+    const viewport = this.#mapViewport ?? {
+      width: 800,
+      height: 600,
+      availableWidth: 800,
+      availableHeight: 600,
+    };
+    const width = Math.max(
+      1,
+      Math.min(viewport.width, viewport.availableWidth),
+    );
+    const height = Math.max(
+      1,
+      Math.min(viewport.height, viewport.availableHeight),
+    );
+    const marginX = Math.min(24, width / 4);
+    const marginY = Math.min(24, height / 4);
+    const bounds = {
+      left: -viewport.width / 2 + marginX,
+      right: width - viewport.width / 2 - marginX,
+      top: -viewport.height / 2 + marginY,
+      bottom: height - viewport.height / 2 - marginY,
+    };
+    const isEvent = !!this.#eventPlayback;
+    const clearance = marginY + Math.min(36, (height - marginY * 2) / 2);
+    const markerY = Math.max(
+      clearance,
+      Math.min(height - clearance, Math.max(60, height / 2 - 120)),
+    );
+    const framing = new CameraFraming(
+      this.#eventCamera.snapshot,
+      this.#playbackPositions,
+      bounds,
+      isEvent
+        ? {
+            x: (bounds.left + bounds.right) / 2,
+            y: markerY - viewport.height / 2,
+          }
+        : undefined,
+      {
+        left: -viewport.width / 2 + Math.min(24, viewport.width / 4),
+        right: viewport.width / 2 - Math.min(24, viewport.width / 4),
+        top: -viewport.height / 2 + Math.min(24, viewport.height / 4),
+        bottom: viewport.height / 2 - Math.min(24, viewport.height / 4),
+      },
+    );
+    this.#cameraFraming = framing;
+    if (!framing.transitions.length) this.finishCameraFraming();
+  }
+
+  advanceCameraFraming(
+    framing: CameraFraming,
+    index: number,
+    progress: number,
+  ): boolean {
+    if (this.#cameraFraming !== framing || !this.#eventCamera) return false;
+    this.#eventCamera.restore(
+      CameraFraming.sample(framing.transitions[index]!, progress),
+    );
+    if (progress >= 1 && index === framing.transitions.length - 1)
+      this.finishCameraFraming();
+    return true;
+  }
+
+  finishCameraFraming(): void {
+    if (this.#cameraFraming && this.#eventCamera)
+      this.#eventCamera.restore(this.#cameraFraming.target);
+    this.#cameraFraming = null;
+    this.#eventPlayback?.finishFraming();
   }
 
   finishEventPlayback(): void {
     this.#eventPlayback = null;
     this.#eventCamera = null;
+    this.#cameraFraming = null;
+    this.#playbackPositions = [];
     const context = this.#turnContext;
     this.#turnContext = null;
     if (!context) return;
@@ -1680,15 +1774,25 @@ export class AppModel {
   ): void {
     this.#movementPlayback = playback;
     this.#movementOrigin = origin;
-    this.#eventCamera = new Camera(
-      this.#game.galaxy.homePlanet.position,
-      this.#game.galaxy.radius,
-    );
+    if (!this.#eventCamera) {
+      this.#eventCamera = new Camera(
+        this.#game.galaxy.homePlanet.position,
+        this.#game.galaxy.radius,
+      );
+      this.#eventCamera.restore(this.#camera.snapshot);
+    }
+  }
+
+  frameTurnTrack(track: readonly TurnMovement[]): void {
+    this.#playbackPositions = track.flatMap((movement) => [
+      HexGeometry.toPoint(movement.from),
+      HexGeometry.toPoint(movement.to),
+    ]);
+    this.#prepareCameraFraming();
   }
 
   focusTurnMovement(movement: TurnMovement): void {
     this.#movementPlayback!.begin(movement);
-    this.#eventCamera!.focus(movement.from);
   }
 
   completeTurnMovement(): void {
@@ -1699,10 +1803,12 @@ export class AppModel {
     return this.#movementPlayback?.advance(progress) ?? false;
   }
 
-  endMovementPlayback(): void {
+  endMovementPlayback(preserveCamera = false): void {
     this.#movementPlayback = null;
     this.#movementOrigin = null;
-    this.#eventCamera = null;
+    if (!preserveCamera) this.#eventCamera = null;
+    this.#cameraFraming = null;
+    this.#playbackPositions = [];
   }
 
   salvageAtPoint(point: Point): string | null {

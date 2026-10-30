@@ -261,6 +261,11 @@ export type IntentHandler = (intent: AppIntent) => void;
 export interface AppPort {
   bind(handler: IntentHandler): void;
   render(model: AppReadModel): void;
+  renderCamera?(model: AppReadModel): void;
+  animatePresentation?(
+    duration: number,
+    onProgress: (progress: number) => boolean | void,
+  ): Promise<void>;
   animateTurnStep?(
     frame: TurnFrame,
     onProgress?: (progress: number) => void,

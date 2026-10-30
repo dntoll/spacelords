@@ -923,8 +923,45 @@ Kontrollern visar hela en flottas inspelade färd före nästa. Endast egna
 flottor eller fientliga steg som finns i siktsnapshoten både före och efter
 steget lämnas till animationen. Dolda steg får ingen timer eller kameraflytt.
 AppModel lämnar en fryst läsmodell för presentationen, och vyerna interpolerar
-en markör samt följer den med en tillfällig kamera. Varje hexsteg tar 400 ms.
+en markör med stillastående tillfällig kamera. Varje hexsteg tar 400 ms.
 Vid dispose avbryts requestAnimationFrame och väntande animationslöften löses.
+
+### Händelseanpassad kamera
+
+`handelseanpassad-kartkamera` och `stillastaende-kamera-vid-forflyttning`
+är **Fullständigt implementerat**.
+Detta ersätter kameraföljningen i `en-flotta-i-taget` från 2026-10-30.
+CameraFraming beräknar oföränderliga kamerafaser från världspunkter och fri
+kartrektangel, oberoende av p5. En färds samtliga inspelade synliga ändpunkter
+ingår, så även mellanliggande svängar ryms. Dolda rörelser ingår aldrig.
+
+Utzoomning kring aktuellt centrum tar 300 ms och hoppas över när målen redan
+syns. Därefter panoreras och zoomas kameran samtidigt under 450 ms till
+största inramning upp till zoom 1. Hexarnas utbredning och 24 skärmpixlars
+marginal ingår; på extremt små ytor minskas marginalen till en fjärdedel av
+ytans mått. Zoom interpoleras logaritmiskt och båda faserna använder mjuk
+acceleration och inbromsning. Målområdets skärmläge interpoleras så att målen
+förblir synliga även under en stor samtidig panorering och inzoomning.
+Uppspelningskameran får underskrida den manuella
+minzoomen för att hela färden ska rymmas. Spelarens zoomgränser ändras inte.
+
+AppController inväntar kamerafaserna före skeppets första rörelsesteg.
+Vyns animationsklocka rapporterar progression; controllern uppdaterar modellen
+och vyn renderar dess läsmodell. GalaxyMapView ändrar enbart skeppsmarkörens
+position under färden. Kameran är gemensam genom rörelser och efterföljande
+händelser och är separat från planeringskameran. EventPlayback får den
+sessionsbundna fasen framing före announcing eller awaiting-choice; lästid
+och beslut börjar efter inramningen. Globala och äldre positionslösa
+händelser får ingen kamerafas.
+
+Storleksändring räknar om aktuell inramning. Under pågående kamerarörelse
+avvisas gamla callbacks och den gamla kamerafasen avslutas; under
+skeppsrörelse eller annonsering tillämpas den
+nya inramningen direkt utan att uppspelningen startas om. Vid minskad rörelse
+tillämpas slutläget direkt. Dispose avbryter animationsklockan och löser dess
+väntande löfte utan fortsatt modelluppdatering. Sparformat och domänmodell
+ändras inte. Enhets- och riktade mobiltester skyddar inramning, stillastående
+kamera, kontinuitet, rotation, minskad rörelse, beslut och återställning.
 
 EventPlayback har stegen announcing (1 400 ms) och filing (450 ms).
 AppView visar den aktuella texten i ett fast HTML-lager ovanpå gränssnittet,

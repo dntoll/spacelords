@@ -15,7 +15,7 @@ export interface EventPlaybackSnapshot {
   readonly events: readonly PlaybackEvent[];
   readonly history?: readonly GameEvent[];
   readonly index: number;
-  readonly stage: 'announcing' | 'awaiting-choice' | 'filing';
+  readonly stage: 'framing' | 'announcing' | 'awaiting-choice' | 'filing';
   readonly choice?: 'handle' | 'ignore' | null;
 }
 
@@ -53,6 +53,15 @@ export class EventPlayback {
     return this.#events[this.#index];
   }
 
+  beginFraming(): void {
+    this.#stage = 'framing';
+  }
+
+  finishFraming(): void {
+    if (this.#stage === 'framing')
+      this.#stage = this.current?.decision ? 'awaiting-choice' : 'announcing';
+  }
+
   choose(choice: 'handle' | 'ignore'): void {
     if (this.#stage !== 'awaiting-choice') return;
     this.#choice = choice;
@@ -60,7 +69,8 @@ export class EventPlayback {
   }
 
   advance(): boolean {
-    if (this.#stage === 'awaiting-choice') return true;
+    if (this.#stage === 'framing' || this.#stage === 'awaiting-choice')
+      return true;
     if (this.#stage === 'announcing') {
       this.#stage = 'filing';
       return true;

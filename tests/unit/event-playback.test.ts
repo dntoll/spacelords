@@ -42,6 +42,7 @@ it('centrerade-handelseval-pa-dator: centers desktop choices while retaining com
       availableWidth: width,
       availableHeight: height,
     });
+    model.finishCameraFraming();
     const snapshot = model.snapshot;
     const event =
       snapshot.eventPlayback!.events[snapshot.eventPlayback!.index]!;
@@ -55,7 +56,7 @@ it('centrerade-handelseval-pa-dator: centers desktop choices while retaining com
     if (width > 900 && height > 500) {
       expect(markerY).toBeGreaterThan(height * 0.25);
       expect(markerY).toBeLessThan(height / 2);
-    } else expect(markerY).toBe(45);
+    } else expect(markerY).toBe(height > 360 ? height / 2 - 120 : 60);
   }
 });
 
@@ -286,9 +287,13 @@ describe('handelser-pa-kartan', () => {
     for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
     model.finishTurn();
     model.beginEventPlayback();
-    expect(model.snapshot.camera.center).toEqual(
-      HexGeometry.toPoint(new HexCoordinate(3, 0)),
+    expect(model.snapshot.camera).toEqual(before);
+    expect(model.snapshot.eventPlayback?.stage).toBe('framing');
+    model.finishCameraFraming();
+    expect(model.snapshot.camera.center.x).toBe(
+      HexGeometry.toPoint(new HexCoordinate(3, 0)).x,
     );
+    expect(model.snapshot.camera.zoom).toBe(1);
     model.finishEventPlayback();
     expect(model.snapshot.camera).toEqual(before);
   });
