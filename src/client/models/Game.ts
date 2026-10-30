@@ -519,6 +519,7 @@ export interface PlanetOrderSnapshot {
   readonly emptyQueues: number;
 }
 export interface FleetSnapshot {
+  readonly colonizationTargetId?: string;
   readonly navigationIssue?: string | undefined;
   readonly patrol?: Readonly<{
     center: HexCoordinate;
@@ -592,6 +593,7 @@ interface Project {
   destinationFleetId: string | null;
 }
 interface Fleet {
+  colonizationTargetId?: string;
   navigationIssue?: string;
   starSurvey?: {
     starId: string;
@@ -919,6 +921,21 @@ export class Game {
     game.#fleets = copy.fleets.map(
       ({ position: current, destination, courseOrigin, ...fleet }) => {
         const empty = game.#shipCount(fleet.ships) === 0;
+        if (
+          fleet.colonizationTargetId !== undefined &&
+          (typeof fleet.colonizationTargetId !== 'string' ||
+            !galaxy.systems.some((system) =>
+              system.planets.some(
+                (planet) => planet.id === fleet.colonizationTargetId,
+              ),
+            ) ||
+            !fleet.ships['Colony ship'] ||
+            fleet.routeId ||
+            fleet.patrol ||
+            fleet.exploration ||
+            fleet.joinFleetId)
+        )
+          throw new Error('Invalid saved colonization order.');
         if (fleet.patrol !== undefined) {
           FleetPatrol.validate(fleet.patrol, (point) => !!galaxy.cellAt(point));
           if (
@@ -1313,6 +1330,38 @@ export class Game {
     const planet = this.galaxy.systems
       .flatMap((system) => system.planets)
       .find((p) => p.position.key === fleet.position?.key)!;
+    return this.#foundColony(fleet, planet);
+  }
+  setColonization(fleetId: string, position: HexCoordinate): void {
+    this.#requireFleetOrders(fleetId);
+    const fleet = this.#fleetState(fleetId);
+    if (!fleet.ships['Colony ship'])
+      throw new Error('A Colony ship is required.');
+    const planet = this.galaxy.systems
+      .flatMap((system) => system.planets)
+      .find((planet) => planet.position.key === position.key);
+    if (
+      !planet ||
+      !this.#explored.has(position.key) ||
+      planet.colony ||
+      this.#colonies.has(planet.id)
+    )
+      throw new Error('Choose a discovered uninhabited planet.');
+    this.setDestination(fleetId, position);
+    fleet.colonizationTargetId = planet.id;
+    if (
+      this.#phase === 'planning' &&
+      fleet.position?.key === position.key &&
+      !this.#hostileAt(position)
+    )
+      this.#foundColony(fleet, planet);
+  }
+  #foundColony(fleet: Fleet, planet: Planet): readonly Discovery[] {
+    delete fleet.colonizationTargetId;
+    if (fleet.destination?.key === planet.position.key) {
+      fleet.destination = null;
+      delete fleet.courseOrigin;
+    }
     const coloniser = fleet
       .shipUnits!.toSorted((a, b) => a.id.localeCompare(b.id))
       .find((unit) => unit.type === 'Colony ship')!;
@@ -1333,7 +1382,9 @@ export class Game {
     });
     this.#refreshReinforcements();
     this.#reveal(planet.position);
-    const discoveries = this.#newDiscoveries({ movements: [] });
+    this.#updateSight();
+    const discoveries =
+      this.#phase === 'planning' ? this.#newDiscoveries({ movements: [] }) : [];
     this.#mapCells = null;
     this.#events.push(
       Object.freeze({
@@ -1344,6 +1395,35 @@ export class Game {
       }),
     );
     return discoveries;
+  }
+  // koloniseringsorder: settle only after arrival combat has resolved.
+  #completeColonizations(): boolean {
+    let colonized = false;
+    for (const fleet of this.#fleets) {
+      if (!fleet.colonizationTargetId) continue;
+      const planet = this.galaxy.systems
+        .flatMap((system) => system.planets)
+        .find((planet) => planet.id === fleet.colonizationTargetId)!;
+      if (
+        fleet.position?.key !== planet.position.key ||
+        this.#hostileAt(planet.position)
+      )
+        continue;
+      if (planet.colony || this.#colonies.has(planet.id)) {
+        delete fleet.colonizationTargetId;
+        fleet.destination = null;
+        delete fleet.courseOrigin;
+        this.#event(
+          `${fleet.name}: colonization cancelled; ${planet.name} is already inhabited.`,
+          planet.position,
+        );
+        continue;
+      }
+      if (!fleet.ships['Colony ship']) continue;
+      this.#foundColony(fleet, planet);
+      colonized = true;
+    }
+    return colonized;
   }
   pirateSnapshots(): readonly PirateSnapshot[] {
     return Object.freeze(
@@ -1360,6 +1440,9 @@ export class Game {
           id: fleet.id,
           name: this.#fleetDisplayName(fleet),
           ownName: fleet.name,
+          ...(fleet.colonizationTargetId
+            ? { colonizationTargetId: fleet.colonizationTargetId }
+            : {}),
           salvage: this.#salvage.order(fleet.id)
             ? Object.freeze({
                 ...this.#salvage.order(fleet.id)!,
@@ -1464,6 +1547,7 @@ export class Game {
     this.#requireFleetOrders(fleetId);
     const fleet = this.#fleetState(fleetId);
     this.#salvage.assign(fleet, wreckId);
+    delete fleet.colonizationTargetId;
     delete fleet.patrol;
     delete fleet.exploration;
     delete fleet.starSurvey;
@@ -1474,6 +1558,7 @@ export class Game {
     this.#requireFleetOrders(fleetId);
     const fleet = this.#fleetState(fleetId);
     this.#salvage.returnHome(fleet);
+    delete fleet.colonizationTargetId;
     delete fleet.patrol;
     delete fleet.exploration;
     delete fleet.starSurvey;
@@ -2407,6 +2492,7 @@ export class Game {
     delete fleet.joinFleetId;
     delete fleet.exploration;
     delete fleet.starSurvey;
+    delete fleet.colonizationTargetId;
     fleet.destination = destination;
     delete fleet.navigationIssue;
     delete fleet.patrol;
@@ -2415,6 +2501,7 @@ export class Game {
   clearDestination(id: string): void {
     this.#requireFleetOrders(id);
     this.#salvage.stop(id);
+    delete this.#fleetState(id).colonizationTargetId;
     delete this.#fleetState(id).exploration;
     delete this.#fleetState(id).starSurvey;
     this.#requireManualFleet(this.#fleetState(id));
@@ -2456,6 +2543,7 @@ export class Game {
     delete fleet.patrol;
     delete fleet.joinFleetId;
     fleet.exploration = order;
+    delete fleet.colonizationTargetId;
     delete fleet.starSurvey;
     this.#updateExploration(fleet);
   }
@@ -2469,6 +2557,7 @@ export class Game {
     delete fleet.exploration;
     delete fleet.joinFleetId;
     fleet.patrol = { center: fleet.position!, nextIndex: 0 };
+    delete fleet.colonizationTargetId;
     delete fleet.starSurvey;
     this.#updatePatrol(fleet);
   }
@@ -2786,6 +2875,10 @@ export class Game {
     this.#mergeReinforcements();
     this.#refreshReinforcements();
     this.#updateSight();
+    const colonized = this.#completeColonizations();
+    const discoveries = colonized
+      ? this.#newDiscoveries({ movements: [] })
+      : [];
     this.#visiblePirates = new Set(
       this.pirateSnapshots()
         .map((pirate) => pirate.id)
@@ -2795,8 +2888,9 @@ export class Game {
     for (const fleet of this.#fleets) this.#updatePatrol(fleet);
     reports.push(...this.#destroyHostileShipyards());
     this.#updateSalvage();
-    if (reports.length) {
+    if (reports.length || discoveries.length) {
       this.#simulation!.battles = reports;
+      this.#simulation!.discoveries = discoveries;
       this.#phase = 'interrupted';
     }
   }
@@ -2813,6 +2907,7 @@ export class Game {
   }
   #settleYear(): void {
     for (const fleet of this.#fleets) this.#recordArrival(fleet);
+    this.#completeColonizations();
     this.#logistics.unload(this.#logisticsPort());
     const researchStations = this.research.stations;
     for (const planet of this.#ownedPlanets()) {
@@ -3062,6 +3157,7 @@ export class Game {
         delete source.courseOrigin;
       }
       this.#logistics.assign(routeId, source, this.#logisticsPort());
+      delete source.colonizationTargetId;
       delete source.patrol;
       delete source.exploration;
       delete source.starSurvey;
@@ -4356,6 +4452,15 @@ export class Game {
   }
   // tomma-flottor-utan-position: the last ship releases both location and course.
   #releaseEmptyFleet(fleet: Fleet): void {
+    if (fleet.colonizationTargetId && !fleet.ships['Colony ship']) {
+      delete fleet.colonizationTargetId;
+      fleet.destination = null;
+      delete fleet.courseOrigin;
+      this.#event(
+        `${fleet.name}: colonization cancelled; no Colony ship remains.`,
+        fleet.position ?? undefined,
+      );
+    }
     if (fleet.patrol && !fleet.ships.Fighter) this.#updatePatrol(fleet);
     if (fleet.exploration && !fleet.ships['Exploration ship'])
       this.#updateExploration(fleet);
@@ -4494,6 +4599,7 @@ export class Game {
       )?.object?.name ?? `HEX ${fleet.position.key}`;
     fleet.destination = null;
     delete fleet.courseOrigin;
+    if (fleet.colonizationTargetId) return;
     // grupperade-transporthandelser: loaded arrivals are announced with the actual unloading.
     if (
       fleet.routeId &&

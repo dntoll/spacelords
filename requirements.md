@@ -10,6 +10,12 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Koloniseringsorder:** `koloniseringsorder` är **Fullständigt implementerat**.
+  Colonize följt av planetval ger en sparad order att resa dit och kolonisera
+  automatiskt vid ankomst, efter eventuell strid. Ordern kan avbrytas eller
+  ersättas. Exakt ett Colony ship förbrukas och äldre sparningar bevaras.
+  Se [koloniseringsorder](docs/colonization-orders.md).
+
 - **Direkta beslut från rundvarningen:** `direkt-atgard-fran-rundvarning`
   är **Fullständigt implementerat**. Varje beslut i Decisions remaining har
   en egen Review-knapp som öppnar rätt vy och objekt utan omväg via Decisions.

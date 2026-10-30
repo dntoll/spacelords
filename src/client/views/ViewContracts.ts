@@ -228,6 +228,7 @@ export type AppIntent =
         | 'select-fleet'
         | 'open-fleet'
         | 'begin-destination'
+        | 'begin-colonization'
         | 'clear-destination'
         | 'delete-fleet';
       readonly id: string;

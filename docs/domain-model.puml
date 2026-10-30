@@ -127,9 +127,15 @@ class Fleet {
   name
   courseOrigin
   destination
+  colonizationTargetId : optional planet target
   joinFleetId : optional reinforcement target
   ships: 0..*
 }
+Fleet "0..*" --> "0..1" Planet : colonization target
+note on link
+  koloniseringsorder: fysisk färd följs av grundning efter strid.
+  Exakt ett Colony ship förbrukas; ordern sparas och kan avbrytas.
+end note
 class ExplorationOrder {
   mode: Explore | Explore stars
 }

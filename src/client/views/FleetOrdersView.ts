@@ -55,14 +55,17 @@ export function renderFleetOrders(
         !!fleet.destination &&
           !fleet.exploration &&
           !fleet.joinFleetId &&
+          !fleet.colonizationTargetId &&
           !fleet.patrol,
       ),
       fleetOrderButton(
-        fleet.patrol
-          ? 'Cancel patrol'
-          : fleet.joinFleetId
-            ? 'Cancel reinforcement'
-            : 'Clear destination',
+        fleet.colonizationTargetId
+          ? 'Cancel colonization'
+          : fleet.patrol
+            ? 'Cancel patrol'
+            : fleet.joinFleetId
+              ? 'Cancel reinforcement'
+              : 'Clear destination',
         '■',
         () => emit({ type: 'clear-destination', id: fleet.id }),
         locked,
@@ -101,20 +104,16 @@ export function renderFleetOrders(
           fleet.exploration === 'explore-stars',
         ),
       );
-    const planet = model.cells.find(
-      (cell) => cell.position.key === fleet.position?.key,
-    )?.object;
-    if (
-      planet?.kind === 'planet' &&
-      !planet.owned &&
-      fleet.ships['Colony ship']
-    )
+    if (fleet.ships['Colony ship'])
       orders.append(
         fleetOrderButton(
           'Colonize',
           '⚑',
-          () => emit({ type: 'colonize', id: fleet.id }),
-          model.phase !== 'planning',
+          () => emit({ type: 'begin-colonization', id: fleet.id }),
+          locked,
+          !!fleet.colonizationTargetId ||
+            (model.destinationFleetId === fleet.id &&
+              model.destinationOrder === 'colonize'),
         ),
       );
   } else {

@@ -507,6 +507,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await nextYear();
   await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Colonize', exact: true }).click();
+  await selectMapObject(page, 'Vesta');
   await expect(page.locator('.order-status')).toContainText(
     '1 empty building sites',
   );

@@ -90,9 +90,14 @@ export class AppController {
     }
     if (
       intent.type.startsWith('open-') ||
-      ['home', 'pan', 'zoom', 'begin-destination', 'end-turn'].includes(
-        intent.type,
-      )
+      [
+        'home',
+        'pan',
+        'zoom',
+        'begin-destination',
+        'begin-colonization',
+        'end-turn',
+      ].includes(intent.type)
     )
       this.#cancelPointer(['pan', 'zoom'].includes(intent.type));
     if (
@@ -428,6 +433,9 @@ export class AppController {
         break;
       case 'begin-destination':
         this.#model.beginDestination(intent.id);
+        break;
+      case 'begin-colonization':
+        this.#model.beginColonization(intent.id);
         break;
       case 'clear-destination':
         this.#model.clearDestination(intent.id);

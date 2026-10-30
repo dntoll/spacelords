@@ -211,6 +211,13 @@ export function fleetAssignmentLabel(
   fleet: FleetSnapshot,
   model: AppReadModel,
 ): string {
+  if (fleet.colonizationTargetId) {
+    const position = fleet.destination ?? fleet.position;
+    const target = model.cells.find(
+      (cell) => cell.position.key === position?.key,
+    )?.object?.name;
+    return `Colonize: ${target ?? 'selected planet'}`;
+  }
   if (fleet.patrol) {
     return `Patrol: HEX ${fleet.patrol.center.key}, range ${fleet.patrol.range} hex${fleet.patrol.targetPirateId ? ', pursuing Space pirate' : ''}`;
   }

@@ -588,6 +588,7 @@ export class AppView implements AppPort {
           (fleet) => fleet.position?.key === model.selected?.position.key,
         ),
         destination: model.destinationFleetId,
+        destinationOrder: model.destinationOrder,
         shipTransfer: model.shipTransfer,
         fleetNameEdit: model.fleetNameEdit,
       });
@@ -1365,11 +1366,14 @@ export class AppView implements AppPort {
       );
     }
     if (destinationFleet) {
+      const colonization = model.destinationOrder === 'colonize';
       contents.push(
         element(
           'p',
           'destination-mode',
-          `Choose a destination for ${destinationFleet.name}.`,
+          colonization
+            ? `Choose a planet to colonize with ${destinationFleet.name}.`
+            : `Choose a destination for ${destinationFleet.name}.`,
         ),
         button(
           'Cancel',
@@ -1381,11 +1385,25 @@ export class AppView implements AppPort {
         ),
       );
       const picker = element('select');
-      picker.setAttribute('aria-label', 'Destination hex');
-      const placeholder = element('option', '', 'Choose destination hex');
+      picker.setAttribute(
+        'aria-label',
+        colonization ? 'Colonization planet' : 'Destination hex',
+      );
+      const placeholder = element(
+        'option',
+        '',
+        colonization ? 'Choose a planet to colonize' : 'Choose destination hex',
+      );
       placeholder.value = '';
       picker.append(placeholder);
       for (const target of model.cells) {
+        if (
+          colonization &&
+          (!target.explored ||
+            target.object?.kind !== 'planet' ||
+            target.object.owned)
+        )
+          continue;
         if (target.passable === false) continue;
         const option = element(
           'option',

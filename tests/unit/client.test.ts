@@ -337,6 +337,12 @@ describe('kolonisation / kartorderstatus', () => {
     model.select(new HexCoordinate(0, 1));
     new AppController(model, new AppView(root, mapFactory)).start();
     click('Colonize');
+    const picker = root.querySelector<HTMLSelectElement>(
+      '[aria-label="Colonization planet"]',
+    )!;
+    expect(picker).not.toBeNull();
+    picker.value = '0,1';
+    picker.dispatchEvent(new Event('change', { bubbles: true }));
     expect(root.textContent).toContain('1 empty building sites');
     click('Open planet');
     expect(root.querySelector('h1')!.textContent).toBe('Vesta');

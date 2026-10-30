@@ -975,6 +975,16 @@ markeringsringen. Information rullas internt, medan Handle och Ignore har
 minst 44 px träffyta och ligger utanför rullningen. Vid högst 360 px höjd döljs
 varumärkesraden tillfälligt; navigation och End turn förblir synliga.
 
+## Sparad koloniseringsorder
+
+`koloniseringsorder`: Fleet har det valfria fältet colonizationTargetId i
+befintligt sparformat version 12. Äldre sparningar utan fältet läses som
+tidigare; ingen rensning eller inkompatibel migrering görs. Återläsningen
+validerar planet, Colony ship och oförenliga uppdrag. Game samordnar färd,
+strid och grundning; vyerna väljer planet och skickar avsikter via controller.
+Den befintliga metoden för kolonigrundning återanvänds för skeppsförbrukning,
+befolkning, lager och kartminne. Nya kolonier bidrar direkt till aktuell sikt.
+
 ## Snabbsvitens utrymme 2026-10-30
 
 `snabb-testsvit`: en diagnostisk körning godkände alla 579 tester men tog

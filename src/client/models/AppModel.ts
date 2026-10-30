@@ -170,6 +170,7 @@ export interface AppReadModel {
   readonly fleetDestinationPreview: HexCoordinate | null;
   readonly fleetDragging: boolean;
   readonly destinationFleetId: string | null;
+  readonly destinationOrder: 'move' | 'colonize';
   readonly events: readonly GameEvent[];
   readonly notice: string | null;
   readonly productionReceipt: ProductionReceipt | null;
@@ -234,6 +235,7 @@ export class AppModel {
   #fleetDestinationPreview: HexCoordinate | null = null;
   #fleetDragging = false;
   #destinationFleetId: string | null = null;
+  #destinationOrder: 'move' | 'colonize' = 'move';
   #notice: string | null = null;
   #productionReceipt: ProductionReceipt | null = null;
 
@@ -388,6 +390,7 @@ export class AppModel {
         pirates: this.#movementPlayback.pirates,
         cells: this.#movementPlayback.cells,
         destinationFleetId: null,
+        destinationOrder: 'move',
       });
     }
     const decisions = this.#game.decisions;
@@ -513,6 +516,9 @@ export class AppModel {
       fleetDestinationPreview: this.#fleetDestinationPreview,
       fleetDragging: this.#fleetDragging,
       destinationFleetId: this.#destinationFleetId,
+      destinationOrder: this.#destinationFleetId
+        ? this.#destinationOrder
+        : 'move',
       events: this.#game.events,
       notice: this.#notice,
       productionReceipt: this.#productionReceipt,
@@ -541,8 +547,11 @@ export class AppModel {
       return;
     }
     if (this.#destinationFleetId) {
-      this.#game.setDestination(this.#destinationFleetId, position);
+      if (this.#destinationOrder === 'colonize')
+        this.#game.setColonization(this.#destinationFleetId, position);
+      else this.#game.setDestination(this.#destinationFleetId, position);
       this.#destinationFleetId = null;
+      this.#destinationOrder = 'move';
     } else if (this.#mapTrade.snapshot.sourcePlanetId) {
       const world = HexGeometry.toPoint(position);
       const camera = this.#camera.snapshot;
@@ -1343,6 +1352,7 @@ export class AppModel {
       this.#selectedFleetId = this.#game.fleetSnapshots()[0]?.id ?? null;
   }
   beginDestination(id: string): void {
+    this.#destinationOrder = 'move';
     this.cancelShipTransfer();
     this.cancelFleetRename();
     if (this.#game.fleet(id)?.routeId) {
@@ -1358,6 +1368,12 @@ export class AppModel {
   }
   setDestination(id: string, q: number, r: number): void {
     this.#game.setDestination(id, new HexCoordinate(q, r));
+  }
+  beginColonization(id: string): void {
+    if (!this.#game.fleet(id)?.ships['Colony ship'])
+      throw new Error('A Colony ship is required.');
+    this.beginDestination(id);
+    if (this.#destinationFleetId === id) this.#destinationOrder = 'colonize';
   }
   clearDestination(id: string): void {
     this.#game.clearDestination(id);
