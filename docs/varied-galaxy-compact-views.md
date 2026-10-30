@@ -24,9 +24,9 @@ markeras även när färdiga finns. Varor bedöms efter lager och skepp efter fa
 position vid planeten. Frakt är inte planetlager. Flera aktiva handelsled kan
 koppla samman planeter; enbart skapade eller stängande rutter räcker inte.
 
-Ändring 2026-10-30: forskningsdetaljer finns direkt i trädrutorna enligt
-[renare spelgränssnitt](compact-interface.md). Detta ersätter den separata
-detaljrutan och regeln att den och Research queue visas en i taget.
+Senaste ändring 2026-10-30: trädet visas samtidigt med en mindre, fast detaljdel
+för valet enligt [renare spelgränssnitt](compact-interface.md). Det ersätter
+informationen i varje trädruta. Research queue och detaljer kan visas samtidigt.
 Detta kompletterar `forsknings-tradnavigation` och `forskningstradets-utrymme`.
 Alla förkunskaper behöver vara klara för att nästa nivå ska identifieras;
 grundtekniker, befintliga köposter och återfunna tekniker är också identifierade.

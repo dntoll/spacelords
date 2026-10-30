@@ -12,13 +12,20 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,
   korta instruktioner, färre upprepningar i Production, mindre New fleet-ruta,
-  villkorad ! Needs attention vid titeln och forskningsinformation i trädet är
+  villkorad ! Needs attention vid titeln och kompakt forskningsvy är
   **Fullständigt implementerat**. Colony ship factory följer direkt efter
   Rocket engine factory. Se [krav och ersatta beteenden](docs/compact-interface.md).
   `handelsemarkering-utan-numrering` är **Fullständigt implementerat**:
   etiketter som Event 1 tas bort från kartans händelsemarkering.
   `research-med-ett-tryck` är **Fullständigt implementerat**: Research-knappen
   köar med ett tryck även direkt efter panorering av trädet.
+  `forskningsdetaljer-vid-val` och `forskningstradets-utrymme` är
+  **Fullständigt implementerat** med samtidig visning av träd och en mindre,
+  fast detaljdel. På stående mobil ligger detaljerna under trädet; på bredare
+  skärmar bredvid. Detta ersätter informationen i varje trädruta.
+  `kompakt-forskningstrad` har halverad nodhöjd och tätare grenar.
+  Detaljdelen använder en liten Research-knapp bredvid tekniknamnet och
+  samlar beskrivning, kostnad och förkrav direkt under utan tom handlingsyta.
 
 - **Civiltrafik och arbetskraft:** `civil-skyttelforskning`,
   `civil-skytteltillverkning`, `automatisk-arbetskraftstrafik`,

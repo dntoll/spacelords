@@ -308,6 +308,8 @@ test('forskningskamerans-granser: Fit stops zoom and pan at content, including a
       );
     }
   }
-  await expect(page.locator('.research-details')).toHaveCount(0);
+  await expect(page.locator('.research-details')).toContainText(
+    'Select a technology',
+  );
   await page.screenshot({ path: testInfo.outputPath('bounded-research.png') });
 });

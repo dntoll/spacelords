@@ -15,7 +15,12 @@ describe('kompakt-spelgranssnitt', () => {
     (action) => {
       const model = researchStationModel();
       const emit = vi.fn<IntentHandler>();
-      const page = renderResearch(model.snapshot.research, false, emit);
+      const page = renderResearch(
+        model.snapshot.research,
+        false,
+        emit,
+        'Rocket engine factory',
+      );
       Object.assign(page.querySelector('.research-tree-viewport')!, {
         hasPointerCapture: () => false,
         setPointerCapture: vi.fn(),
@@ -56,7 +61,12 @@ describe('kompakt-spelgranssnitt', () => {
     (pointerType) => {
       const model = researchStationModel();
       const emit = vi.fn<IntentHandler>();
-      const page = renderResearch(model.snapshot.research, false, emit);
+      const page = renderResearch(
+        model.snapshot.research,
+        false,
+        emit,
+        'Rocket engine factory',
+      );
       const viewport = page.querySelector<HTMLElement>(
         '.research-tree-viewport',
       )!;
@@ -184,7 +194,7 @@ describe('kompakt-spelgranssnitt', () => {
     ).toBe(true);
   });
 
-  it('forskningsdetaljer-vid-val: information and the explicit Research action live in the tree without revealing unknown technology', () => {
+  it('forskningsdetaljer-vid-val: only the selected technology has details and an explicit Research action outside the tree', () => {
     const model = researchStationModel();
     const emit = vi.fn();
     const page = renderResearch(
@@ -193,16 +203,17 @@ describe('kompakt-spelgranssnitt', () => {
       emit,
       'Rocket engine factory',
     );
-    expect(
-      page.querySelector('.research-panel > .research-details'),
-    ).toBeNull();
+    const details = page.querySelector('.research-panel > .research-details')!;
     const rocket = page.querySelector(
       '[data-technology="Rocket engine factory"]',
     )!;
-    expect(rocket.textContent).toContain('Produces Rocket engines');
-    expect(rocket.textContent).toContain('1 research point');
-    expect(rocket.textContent).toContain('Requires:');
-    rocket
+    expect(rocket.querySelector('.research-node-details')).toBeNull();
+    expect(details.textContent).toContain('Rocket engine factory');
+    expect(details.textContent).toContain('Produces Rocket engines');
+    expect(details.textContent).toContain('1 research point');
+    expect(details.textContent).toContain('Requires:');
+    expect(page.querySelectorAll('.research-node-details')).toHaveLength(1);
+    details
       .querySelector<HTMLButtonElement>(
         '[aria-label="Research Rocket engine factory"]',
       )!
@@ -214,5 +225,19 @@ describe('kompakt-spelgranssnitt', () => {
     const unknown = page.querySelector('[data-technology="Fighter factory"]')!;
     expect(unknown.textContent).not.toContain('Fighter');
     expect(unknown.querySelector('.research-node-details')).toBeNull();
+  });
+
+  it('forskningsdetaljer-vid-val: keeps an empty selection area and hides the name and action of unknown research', () => {
+    const research = researchStationModel().snapshot.research;
+    const empty = renderResearch(research, false, vi.fn());
+    expect(empty.querySelector('.research-details')!.textContent).toContain(
+      'Select a technology',
+    );
+    expect(empty.querySelectorAll('.research-node-details')).toHaveLength(0);
+    const unknown = renderResearch(research, false, vi.fn(), 'Fighter factory');
+    const details = unknown.querySelector('.research-details')!;
+    expect(details.textContent).toContain('Unknown technology');
+    expect(details.textContent).not.toContain('Fighter');
+    expect(details.querySelector('button')).toBeNull();
   });
 });

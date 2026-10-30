@@ -60,7 +60,7 @@ test('dragbara-flottorder: mouse swipe reveals orders without issuing one and ke
   await page.screenshot({ path: testInfo.outputPath('dragged-orders.png') });
 });
 
-test('kompakt-forskningstrad / forskningsdetaljer-vid-val: compact tree tiles contain all information and actions without an overlay', async ({
+test('kompakt-forskningstrad / forskningsdetaljer-vid-val: compact tree tiles share the screen with readable selection details', async ({
   page,
 }, testInfo) => {
   await seed(page, researchStationState());
@@ -75,25 +75,24 @@ test('kompakt-forskningstrad / forskningsdetaljer-vid-val: compact tree tiles co
     width: (node as HTMLElement).offsetWidth,
     height: (node as HTMLElement).offsetHeight,
   }));
-  expect(size).toEqual({ width: 224, height: 200 });
-  await expect(card).toContainText('Produces Rocket engines');
-  await expect(card).toContainText('1 research point');
-  await expect(card).toContainText('Requires: No prerequisites');
+  expect(size.width).toBeLessThanOrEqual(160);
+  expect(size.height).toBe(36);
+  await expect(card.locator('.research-node-details')).toHaveCount(0);
   await expect(
     page.getByRole('button', { name: 'Inspect Fighter factory', exact: true }),
   ).toHaveCount(0);
   await rocket.click();
-  await expect(page.locator('.research-details')).toHaveCount(0);
-  const details = card.locator('.research-node-details');
-  expect(
-    await details.evaluate(
-      (node) => node.scrollHeight <= node.clientHeight + 1,
-    ),
-  ).toBe(true);
-  await page.screenshot({
-    path: testInfo.outputPath('research-information-in-tree.png'),
+  const details = page.getByRole('region', {
+    name: 'Selected research',
+    exact: true,
   });
-  await card
+  await expect(details).toContainText('Produces Rocket engines');
+  await expect(details).toContainText('1 research point');
+  await expect(details).toContainText('Requires: No prerequisites');
+  await page.screenshot({
+    path: testInfo.outputPath('research-selection-details.png'),
+  });
+  await details
     .getByRole('button', {
       name: 'Research Rocket engine factory',
       exact: true,
@@ -106,7 +105,7 @@ test('kompakt-forskningstrad / forskningsdetaljer-vid-val: compact tree tiles co
   await expect(rocket).toBeFocused();
 });
 
-test('research-med-ett-tryck: one native tap queues without inspection, including after touch panning', async ({
+test('research-med-ett-tryck: one native tap on Research queues the selection after touch panning', async ({
   page,
   context,
   browserName,
@@ -120,6 +119,7 @@ test('research-med-ett-tryck: one native tap queues without inspection, includin
     exact: true,
   });
   await header.focus();
+  await header.tap();
   if (browserName === 'chromium') {
     const bounds = (await header.boundingBox())!;
     const x = bounds.x + bounds.width / 2;
@@ -179,7 +179,9 @@ test('forskningsdetaljer-vid-val: dragging from a research tile pans without ins
   );
   await page.mouse.up();
   await expect(stage).not.toHaveAttribute('style', initial!);
-  await expect(page.locator('.research-details')).toHaveCount(0);
+  await expect(page.locator('.research-details')).toContainText(
+    'Select a technology',
+  );
   await expect(page.locator('.research-queue article')).toHaveCount(0);
 });
 

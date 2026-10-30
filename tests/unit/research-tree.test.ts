@@ -5,6 +5,7 @@ import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import {
   RESEARCH_TREE,
   ResearchTreeCamera,
+  ResearchTreeLayout,
 } from '../../src/client/models/ResearchTree.js';
 import {
   PREREQUISITES,
@@ -12,6 +13,16 @@ import {
 } from '../../src/client/models/Research.js';
 
 describe('forsknings-tradnavigation', () => {
+  it('kompakt-forskningstrad: halves tile height and packs independent branches without overlap', () => {
+    const layout = new ResearchTreeLayout([
+      'Rocket engine factory',
+      'Telescope I factory',
+    ]);
+    expect(layout.cardHeight).toBe(36);
+    const [first, second] = layout.nodes;
+    expect(second!.y - first!.y).toBe(layout.cardHeight + 12);
+    expect(layout.height).toBeLessThanOrEqual(148);
+  });
   it('forskningskamerans-granser: stops at the complete tree and cannot pan it into empty space', () => {
     const camera = new ResearchTreeCamera();
     camera.resize(800, 600);

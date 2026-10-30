@@ -1664,7 +1664,7 @@ p {
 }
 .research-page .research-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
   grid-template-rows: minmax(0, 1fr);
   max-width: none;
   width: 100%;
@@ -1673,7 +1673,7 @@ p {
   border: 0;
   background: transparent;
   overflow: hidden;
-  gap: 0;
+  gap: 4px;
 }
 .research-tree-area {
   position: relative;
@@ -1681,7 +1681,7 @@ p {
   min-height: 0;
   overflow: hidden;
   border: 1px solid #304c59;
-  border-radius: 12px;
+  border-radius: 4px;
   background:
     radial-gradient(ellipse at center, #19333e66, transparent 70%), #09151f;
 }
@@ -1719,46 +1719,46 @@ p {
 }
 .research-tree-stage .research-node {
   position: absolute;
-  width: 224px;
-  height: 200px;
+  width: 160px;
+  height: 36px;
   padding: 0;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 48px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 0;
   border: 1px solid #426170;
-  border-radius: 6px;
+  border-radius: 3px;
   background: linear-gradient(145deg, #1b3442, #0e202c);
-  box-shadow: 0 8px 24px #0006;
+  box-shadow: 0 2px 4px #0006;
   user-select: none;
 }
 .research-tree-stage .research-node .building-image,
 .research-tree-stage .research-symbol {
   grid-column: 1;
-  grid-row: 1;
-  width: 26px;
-  height: 26px;
+  grid-row: 1 / -1;
+  width: 20px;
+  height: 20px;
   min-height: 0;
   pointer-events: none;
 }
 .research-symbol {
   display: grid;
   place-items: center;
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: #9bd8e4;
   background: #0a1b27;
-  border-radius: 8px;
+  border-radius: 3px;
 }
 .research-tree-stage .research-node-select {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 26px minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-columns: 20px minmax(0, 1fr);
+  grid-template-rows: auto auto;
   align-items: center;
-  gap: 2px 5px;
+  gap: 1px 5px;
   width: 100%;
   height: 100%;
   min-height: 0;
-  padding: 5px;
+  padding: 3px 5px;
   border: 0;
   border-radius: inherit;
   background: transparent;
@@ -1769,66 +1769,25 @@ p {
 .research-node-name {
   grid-column: 2;
   grid-row: 1;
-  font-size: 0.7rem;
-  overflow-wrap: anywhere;
+  font-size: 0.68rem;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .research-node-status {
-  grid-column: 1 / -1;
+  grid-column: 2;
   grid-row: 2;
   color: var(--muted);
-  font-size: 0.6rem;
+  font-size: 0.56rem;
 }
 .research-node-select[aria-pressed='true'] {
   outline: 2px solid #ffffff;
   outline-offset: 2px;
 }
-.research-tree-stage .research-node > .research-node-details {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-height: 0;
-  padding: 4px 8px 8px;
-  overflow: auto;
-}
-.research-node-details p {
-  font-size: 0.68rem;
-  line-height: 1.2;
-}
-.research-node-details > .button {
-  width: 100%;
-  min-height: 44px;
-  padding: 4px;
-  margin-top: auto;
-  font-size: 0.75rem;
-}
-.research-tree-stage .research-node h3 {
-  grid-row: 1;
-  align-self: center;
-  font-size: 0.95rem;
-  line-height: 1.2;
-}
-.research-tree-stage .research-node > .pill {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  justify-self: start;
-  font-size: 0.65rem;
-}
-.research-tree-stage .research-node .research-requires {
-  grid-column: 1 / -1;
-  grid-row: 3;
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.65rem;
-  line-height: 1.2;
-}
-.research-tree-stage .research-node > .button {
-  grid-column: 1 / -1;
-  grid-row: 4;
-  width: 100%;
-  min-height: 36px;
-  padding: 4px 10px;
+.research-tree-stage .research-node-select[aria-pressed='true'] {
+  background: #284653;
+  box-shadow: inset 3px 0 #e5e8e6;
 }
 .research-tree-stage .research-node.completed {
   border-color: #88c6a6;
@@ -1844,9 +1803,90 @@ p {
 .research-tree-stage .research-node.locked {
   border-color: #3b505d;
 }
-/* forskningstradets-utrymme: auxiliary information never reserves tree space. */
+/* forskningsdetaljer-vid-val: selection stays readable outside the tree camera. */
+.research-details {
+  min-width: 0;
+  min-height: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #10232e;
+  overflow: hidden;
+}
+.research-node-details {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 4px;
+  height: 100%;
+  min-height: 0;
+}
+.research-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.research-detail-content {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.research-details h2 {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.research-details p {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+.research-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin-top: 4px;
+}
+.research-detail-meta p {
+  font-size: 0.68rem;
+}
+.research-details .research-requires {
+  color: var(--muted);
+}
+.research-detail-heading > .button {
+  flex: 0 0 auto;
+  width: auto;
+  min-height: 32px;
+  padding: 4px 12px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+}
+@media (max-width: 640px) {
+  .research-page .research-panel {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, min(32%, 88px));
+  }
+}
+/* forskningstradets-utrymme: station and queue information stay compact. */
 .research-page > .screen-header {
   flex-wrap: wrap;
+}
+.research-heading h1 {
+  font-size: 1.1rem;
+}
+.research-page > .screen-header .back-button {
+  min-height: 32px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+.research-page .decision-guidance {
+  padding: 5px 8px;
+  font-size: 0.7rem;
+}
+.research-page .decision-guidance-row p {
+  margin: 0;
 }
 .research-heading {
   position: relative;
@@ -1926,9 +1966,6 @@ p {
 }
 
 @media (max-width: 400px) {
-  .research-heading h1 {
-    font-size: 1.25rem;
-  }
   .research-introduction summary {
     font-size: 0.7rem;
   }
@@ -2376,9 +2413,9 @@ p {
 }
 .research-tree-stage .research-node-select > .catalog-artwork {
   grid-column: 1;
-  grid-row: 1;
-  width: 26px;
-  height: 26px;
+  grid-row: 1 / -1;
+  width: 20px;
+  height: 20px;
   pointer-events: none;
 }
 .catalog-categories {
@@ -2811,6 +2848,9 @@ p {
 }
 .research-page.has-decision-guidance {
   grid-template-rows: auto auto minmax(0, 1fr);
+}
+.research-page.has-decision-guidance.has-turn-actions {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
 }
 @media (max-height: 500px) {
   .page > .decision-guidance {

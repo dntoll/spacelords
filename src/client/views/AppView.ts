@@ -31,6 +31,7 @@ import type {
 import { renderBuildSelection } from './BuildSelectionView.js';
 import { renderPlanet } from './PlanetView.js';
 import { renderResearch } from './ResearchView.js';
+import { renderResearchSelection } from './ResearchDetailsView.js';
 import { updateResearchCamera } from './ResearchTreeView.js';
 import { button, element, planetIllustration } from './dom.js';
 import { renderDecisions, renderTurnWarning } from './EmpireView.js';
@@ -426,6 +427,16 @@ export class AppView implements AppPort {
               'aria-pressed',
               String(node.dataset.technology === model.inspectedResearch),
             );
+        panel
+          .querySelector('.research-details')!
+          .replaceWith(
+            renderResearchSelection(
+              model.research,
+              model.inspectedResearch,
+              model.phase !== 'planning',
+              this.#emit,
+            ),
+          );
       } else
         this.#root
           .querySelector('main')

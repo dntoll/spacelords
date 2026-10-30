@@ -122,19 +122,29 @@ describe('kompakt-forskningstrad / forskningens-avslojande / forskningsdetaljer-
       ),
     ).toBe(true);
   });
-  it('forskningsdetaljer-vid-val: inspection preserves the tile and camera, with Research inside the tile', () => {
+  it('forskningsdetaljer-vid-val: selection updates the separate details while preserving the tile, viewport and camera', () => {
     const { model, root, click, controller } = setup();
     const camera = model.snapshot.researchCamera;
     const tile = root.querySelector(
       '[data-technology="Rocket engine factory"]',
     )!;
+    const viewport = root.querySelector('.research-tree-viewport');
     click('Inspect Rocket engine factory');
     expect(model.snapshot.inspectedResearch).toBe('Rocket engine factory');
     expect(model.snapshot.research.queue).toEqual([]);
-    expect(root.querySelector('.research-details')).toBeNull();
-    expect(tile.querySelector('.research-node-details')!.textContent).toContain(
+    expect(root.querySelector('.research-tree-viewport')).toBe(viewport);
+    expect(tile.isConnected).toBe(true);
+    expect(tile.querySelector('.research-node-details')).toBeNull();
+    expect(root.querySelector('.research-details')!.textContent).toContain(
       'Produces Rocket engines',
     );
+    click('Inspect Telescope I factory');
+    expect(root.querySelector('.research-details')!.textContent).toContain(
+      'Telescope I factory',
+    );
+    expect(root.querySelectorAll('.research-node-details')).toHaveLength(1);
+    expect(model.snapshot.researchCamera).toEqual(camera);
+    click('Inspect Rocket engine factory');
     click('Research Rocket engine factory');
     expect(model.snapshot.research.queue).toEqual(['Rocket engine factory']);
     expect(model.snapshot.researchCamera).toEqual(camera);

@@ -9,6 +9,29 @@ import { isResearchIdentified } from '../models/ResearchTree.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element } from './dom.js';
 
+export function renderResearchSelection(
+  research: ResearchSnapshot,
+  technology: Technology | null,
+  locked: boolean,
+  emit: IntentHandler,
+): HTMLElement {
+  const panel = element('section', 'research-details');
+  panel.setAttribute('aria-label', 'Selected research');
+  if (technology) {
+    panel.append(renderResearchDetails(research, technology, locked, emit));
+  } else {
+    panel.append(
+      element('h2', '', 'Select a technology'),
+      element(
+        'p',
+        'muted-note',
+        'Tap a node to see its details and research it.',
+      ),
+    );
+  }
+  return panel;
+}
+
 export function renderResearchDetails(
   research: ResearchSnapshot,
   technology: Technology,
@@ -17,8 +40,17 @@ export function renderResearchDetails(
 ): HTMLElement {
   const detail = element('div', 'research-node-details');
   const identified = isResearchIdentified(research, technology);
+  const heading = element('div', 'research-detail-heading');
+  heading.append(
+    element('h2', '', identified ? technology : 'Unknown technology'),
+  );
+  const content = element('div', 'research-detail-content');
+  content.tabIndex = 0;
+  content.setAttribute('role', 'region');
+  content.setAttribute('aria-label', 'Technology information');
+  detail.append(heading, content);
   if (!identified) {
-    detail.append(
+    content.append(
       element(
         'p',
         '',
@@ -30,7 +62,7 @@ export function renderResearchDetails(
   const completed = research.completed.includes(technology);
   const queue = research.queue.indexOf(technology);
   const recovered = research.recovered?.includes(technology);
-  detail.append(
+  content.append(
     element(
       'p',
       '',
@@ -40,6 +72,9 @@ export function renderResearchDetails(
           ? ORDER_RESEARCH[technology as keyof typeof ORDER_RESEARCH]
           : BUILDINGS[technology as BuildType].description,
     ),
+  );
+  const metadata = element('div', 'research-detail-meta');
+  metadata.append(
     element(
       'p',
       '',
@@ -61,6 +96,7 @@ export function renderResearchDetails(
         : `Requires: ${PREREQUISITES[technology].join(', ') || 'No prerequisites'}`,
     ),
   );
+  content.append(metadata);
   if (!completed) {
     const order = () => {
       if (!choose.disabled) emit({ type: 'research', technology });
@@ -69,7 +105,7 @@ export function renderResearchDetails(
     choose.textContent = queue >= 0 ? 'Queued' : 'Research';
     choose.disabled = locked || !!research.queueBlockedReason || queue >= 0;
     bindResearchTouch(choose, order);
-    detail.append(choose);
+    heading.append(choose);
   }
   return detail;
 }

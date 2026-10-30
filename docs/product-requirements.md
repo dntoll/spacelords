@@ -115,12 +115,22 @@ behåller omordning och bekräftad borttagning. Detta ersätter den tidigare
 listvyn; forskningsreglerna och teknikernas förkunskaper behålls.
 
 `forskningstradets-utrymme` — **Fullständigt implementerat**: Forskningsträdet
-fyller återstående Research-yta efter rubrik, eventuell beslutshjälp och rundkontroller. Antal Research stations visas bredvid rubriken
+delar återstående Research-yta med en mindre, fast detaljdel för vald teknik
+efter rubrik, eventuell beslutshjälp och rundkontroller. På stående mobil ligger
+detaljerna under trädet, på bredare skärmar bredvid. Trädet får huvuddelen av
+ytan. Antal Research stations visas bredvid rubriken
 även på smala telefoner med bredare systemtypsnitt,
-med stationsinformation tillgänglig vid behov. Inga sidopaneler reserverar utrymme; Events och End turn använder en nedre rad enligt `rundkontroller-pa-fler-vyer`. Research queue visar sitt antal och öppnas vid
+med stationsinformation tillgänglig vid behov. Events och End turn använder en nedre rad enligt `rundkontroller-pa-fler-vyer`. Research queue visar sitt antal och öppnas vid
 behov ovanpå trädet; en öppen kö ligger kvar under omordning och borttagning.
 Zoomrutan med plus, minus, procent och anpassning tas bort. Pinch, mushjul och
 tangentbordets zoom, panorering och översikt finns kvar.
+
+- 2026-10-30: Den mindre, fasta detaljdelen enligt `forskningsdetaljer-vid-val`
+  ersätter kravet att hela ytan går till trädet. Trädrutorna visar enbart
+  symbol, namn och kort status. Research-knappen är åtkomlig utan att rulla
+  detaljtexten; köpanelen täcker inte detaljdelen. Noderna har halverad höjd
+  och tätare grenar enligt `kompakt-forskningstrad`. En liten Research-knapp
+  ligger bredvid tekniknamnet, med informationen direkt under.
 
 - 2026-10-21: `forskningstradets-utrymme` ersätter den fasta stations- och
   köpanelen samt zoomrutan i Research. Reglerna i `forskningsoversikt` och

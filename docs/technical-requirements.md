@@ -59,8 +59,8 @@ efterföljande klick stoppas före orderknappen eller ruttmenyn. Touch använder
 fortsatt webbläsarens inbyggda scroll. AppView bevarar scrollLeft per flott-ID
 vid omrendering. Träffytorna är fortsatt minst 44 × 44 px.
 
-`kompakt-forskningstrad`: ResearchTreeLayout och CSS använder 140 × 64 px,
-44 px horisontellt mellanrum och minst 24 px vertikalt. Layouten undviker
+`kompakt-forskningstrad`: ResearchTreeLayout och CSS använder 160 × 36 px,
+32 px horisontellt mellanrum och minst 12 px vertikalt. Layouten undviker
 överlapp även vid delade förkunskaper. Pilar och kameragränser delar måtten.
 `forskningens-avslojande` härleds från färdig, köad och återfunnen forskning
 samt att alla förkunskaper är färdiga. Anonyma rutor visar inga avslöjande
@@ -68,8 +68,14 @@ namn, bilder eller tillgänglighetstexter.
 
 `forskningsdetaljer-vid-val`: AppModel äger sessionsbundet inspectedResearch,
 skilt från aktiv forskning. Intent inspect-research går via AppController.
-Detaljer visas i HTML-överlägg; endast dess Research-knapp köar. Kö och detaljer
-visas en i taget. DiagramNavigation skiljer klick från dragning och pinch.
+Detaljer visas i en fast HTML-del utanför trädets kamera. Vid högst 640 px bredd
+ligger den under trädet och använder högst 32 procent av panelhöjden och 88 px;
+annars ligger den bredvid. En 32 px hög Research-knapp med innehållsbredd ligger
+bredvid rubriken. Beskrivning och samlad metadata följer direkt under och rullas
+separat vid behov. En tom detaljdel behåller samma yta utan val. AppView uppdaterar
+detaljer och valmarkering utan att ersätta trädets pekarmål. Research queue
+ligger ovanpå trädytan och kan visas samtidigt. DiagramNavigation skiljer klick
+från dragning och pinch.
 AppView bevarar kamera, köläge och relevant fokus genom omrenderingar.
 
 `produktionsvalens-statusfarger`: Game härleder ProductionPresence från fysiska

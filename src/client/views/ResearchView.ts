@@ -2,6 +2,7 @@ import { type ResearchSnapshot, type Technology } from '../models/Game.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { buildingImage } from './BuildingImage.js';
 import { renderResearchTree } from './ResearchTreeView.js';
+import { renderResearchSelection } from './ResearchDetailsView.js';
 import { button, element, queueButton } from './dom.js';
 import { bindQueueOrder, decorateQueueRow } from './QueueView.js';
 
@@ -97,15 +98,20 @@ export function renderResearch(
     locked,
   );
   queue.append(orders);
+  const tree = renderResearchTree(research, emit, inspected, locked);
   if (research.queueBlockedReason)
-    panel.append(
+    tree.append(
       element(
         'p',
         'research-station-required muted-note',
         research.queueBlockedReason,
       ),
     );
-  panel.append(renderResearchTree(research, emit, inspected, locked), queue);
+  tree.append(queue);
+  panel.append(
+    tree,
+    renderResearchSelection(research, inspected, locked, emit),
+  );
   page.append(header, panel);
   return page;
 }

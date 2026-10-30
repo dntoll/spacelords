@@ -196,12 +196,15 @@ for (const size of [
       .locator('.research-page .screen-header')
       .boundingBox())!;
     const bounds = (await tree.boundingBox())!;
-    expect(bounds.width).toBeGreaterThanOrEqual(pageBounds.width - 26);
-    const turnActions = (await page
-      .locator('.research-page .turn-actions')
-      .boundingBox())!;
+    const details = (await page.locator('.research-details').boundingBox())!;
+    expect(bounds.width).toBeGreaterThanOrEqual(
+      pageBounds.width - (size.width > 640 ? details.width + 8 : 0) - 26,
+    );
     expect(bounds.height).toBeGreaterThanOrEqual(
-      pageBounds.height - header.height - turnActions.height - 50,
+      pageBounds.height -
+        header.height -
+        (size.width <= 640 ? details.height + 8 : 0) -
+        50,
     );
     const count = page.locator('.research-introduction summary');
     await expect(count).toHaveAttribute('aria-label', 'Research stations · 0');
