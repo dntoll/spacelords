@@ -54,15 +54,20 @@ export function renderTurnWarning(
   const dialog = element('dialog', 'decision-dialog');
   dialog.setAttribute('aria-label', 'Decisions remaining');
   dialog.append(element('h2', '', 'Decisions remaining'));
-  const list = element('ul');
-  for (const decision of model.decisions.filter(needsAttention))
-    list.append(element('li', '', decision.label));
+  const list = element('ul', 'decision-warning-list');
+  for (const decision of model.decisions.filter(needsAttention)) {
+    const row = element('li');
+    row.dataset.decisionId = decision.id;
+    const review = button('Review', () => {
+      emit({ type: 'cancel-end-turn' });
+      emit({ type: 'open-decision', id: decision.id });
+    });
+    review.setAttribute('aria-label', `Review ${decision.label}`);
+    row.append(element('span', '', decision.label), review);
+    list.append(row);
+  }
   dialog.append(
     list,
-    button('Review decisions', () => {
-      emit({ type: 'cancel-end-turn' });
-      emit({ type: 'open-decisions' });
-    }),
     button('End turn anyway', () => emit({ type: 'confirm-end-turn' })),
     button('Cancel', () => emit({ type: 'cancel-end-turn' })),
   );

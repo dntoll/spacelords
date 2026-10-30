@@ -136,6 +136,20 @@ läsas. Sparade spel rensas inte.
 
 ## Vägledning vid beslut
 
+`direkt-atgard-fran-rundvarning` — **Fullständigt implementerat**:
+varje aktivt beslut i Decisions remaining har en egen Review-knapp efter
+beskrivningen. Den stänger varningen och öppnar beslutets relevanta vy och
+objekt direkt: exempelvis Choose research till forskningsträdet, byggval till
+Production, flottorder till Fleets och ruttproblem till Route. Samma
+beslutsmål används som i Decisions. Året avslutas inte av Review.
+End turn anyway och Cancel behålls. Tystade och överhoppade beslut tas
+fortsatt inte med. Knapparna har tydliga tillgänglighetsnamn och minst 44 px
+träffyta; längre beskrivningar radbryts.
+
+Ändring 2026-10-30: detta ersätter den gemensamma knappen Review decisions
+som tidigare skickade spelaren via Decisions, och förtydligar `rundvarning`
+och `beslutslista`.
+
 `beslutsvagledning-i-vyn` kompletterar `beslutsmarkering-pa-flikar`:
 
 - Hjälpen har egen plats ovanför kartan så att den inte täcker byggval eller

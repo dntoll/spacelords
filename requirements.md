@@ -10,6 +10,12 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Direkta beslut från rundvarningen:** `direkt-atgard-fran-rundvarning`
+  är **Fullständigt implementerat**. Varje beslut i Decisions remaining har
+  en egen Review-knapp som öppnar rätt vy och objekt utan omväg via Decisions.
+  Exempelvis öppnar Choose research forskningsträdet. Året förblir oförändrat.
+  Se [beslutsguidning](docs/events-and-guidance.md).
+
 - **Händelseval på dator:** `centrerade-handelseval-pa-dator` är
   **Fullständigt implementerat**. Händelsens plats och Handle/Ignore-ruta
   ligger kring kartans mitt på stora skärmar och följer ändrad fönsterstorlek.

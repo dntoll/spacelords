@@ -619,6 +619,13 @@ inventering och ersatt katalogordning.
 
 ## Events och vägledning i vyerna
 
+`direkt-atgard-fran-rundvarning` är **Fullständigt implementerat**:
+varje beslut i Decisions remaining har en egen Review-knapp som öppnar rätt
+vy och berört objekt direkt. Choose research öppnar forskningsträdet;
+övriga beslut öppnar sitt relevanta mål. Review avslutar inte året.
+Detta ersätter den gemensamma knappen Review decisions och omvägen via
+Decisions. End turn anyway och Cancel behålls.
+
 `stridsresultat-utan-upprepning` är **Fullständigt implementerat**:
 förluster och överlevande visas en gång i stridsrutan. Plats, flotta,
 återstående rörelse och antal vrak finns fortsatt med.

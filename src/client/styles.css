@@ -78,6 +78,24 @@
 .decision-dialog button {
   margin: 6px;
 }
+.decision-warning-list {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+.decision-warning-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  overflow-wrap: anywhere;
+}
+.decision-warning-list button {
+  min-width: 88px;
+  min-height: 44px;
+  margin: 0;
+}
 .planet-building-queue {
   margin-bottom: 16px;
 }

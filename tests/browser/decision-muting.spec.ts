@@ -2,6 +2,60 @@ import { researchStationState } from '../fixtures/research-station.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot } from './save-helpers.js';
 
+test('direkt-atgard-fran-rundvarning: reviews open Research, Production and Fleets directly without ending the year', async ({
+  page,
+}, testInfo) => {
+  await page.addInitScript((state) => {
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({ lastPlayed: '2026-10-30', state }),
+    );
+  }, researchStationState());
+  await page.goto('./');
+  await startFirstSlot(page);
+  for (const [id, screen] of [
+    ['research-empty', 'research'],
+    ['building-empty-sol-0', 'production'],
+    ['fleet-idle-fleet-home', 'fleets'],
+  ] as const) {
+    await page.getByRole('button', { name: 'End turn', exact: true }).click();
+    const warning = page.getByRole('dialog', { name: 'Decisions remaining' });
+    await expect(
+      warning.getByRole('button', { name: 'Review decisions', exact: true }),
+    ).toHaveCount(0);
+    const row = warning.locator(`[data-decision-id="${id}"]`);
+    const review = row.getByRole('button', { name: /^Review / });
+    await expect(review).toBeInViewport();
+    const box = (await review.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    if (screen === 'research')
+      await page.screenshot({
+        path: testInfo.outputPath('direct-decision-actions.png'),
+      });
+    await review.click();
+    await expect(warning).toHaveCount(0);
+    if (screen === 'research')
+      await expect(page.locator('.research-tree-viewport')).toBeVisible();
+    else
+      await expect(page.locator('canvas')).toHaveAttribute(
+        'aria-label',
+        screen === 'production' ? /^Production map\./ : /^Fleets map\./,
+      );
+    expect(
+      await page.evaluate(
+        () =>
+          (
+            JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as {
+              state: { round: number };
+            }
+          ).state.round,
+      ),
+    ).toBe(1);
+  }
+});
+
 test('tysta-beslut / beslutsmarkering-pa-flikar / tystade-beslut-sist: Mute persists across turns and reload, Unmute restores warnings', async ({
   page,
 }, testInfo) => {

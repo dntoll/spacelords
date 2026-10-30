@@ -11,8 +11,60 @@ import {
   researchStationState,
   researchStationModel,
 } from '../fixtures/research-station.js';
+import { tradeNetworkState } from '../fixtures/trade-network.js';
 
 describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
+  it.each([
+    ['research-empty', 'research'],
+    ['building-empty-sol-0', 'production'],
+    ['fleet-idle-fleet-home', 'fleets'],
+    ['route-idle-route-test', 'route'],
+  ] as const)(
+    'direkt-atgard-fran-rundvarning: %s opens %s without advancing the year',
+    (id, screen) => {
+      const state =
+        screen === 'route' ? tradeNetworkState() : researchStationState();
+      const model = new AppModel(undefined, {
+        load: () => ({ lastPlayed: '2026-10-30', state }),
+        save() {},
+        clear() {},
+      });
+      model.startSlot(1);
+      const root = document.createElement('div');
+      document.body.replaceChildren(root);
+      const controller = new AppController(
+        model,
+        new AppView(root, () => ({ render() {}, dispose() {} })),
+      );
+      controller.start();
+      root.querySelector<HTMLButtonElement>('.end-turn')!.click();
+      const warning = root.querySelector<HTMLDialogElement>(
+        'dialog[aria-label="Decisions remaining"]',
+      )!;
+      const row = [...warning.querySelectorAll('li')].find((item) =>
+        item.textContent?.includes(
+          model.snapshot.decisions.find((item) => item.id === id)!.label,
+        ),
+      )!;
+      expect(row.querySelector('button')).not.toBeNull();
+      row.querySelector<HTMLButtonElement>('button')!.click();
+      expect(model.snapshot.pendingEndTurn).toBe(false);
+      expect(model.snapshot.screen).toBe(screen);
+      expect(model.snapshot.round).toBe(state.round);
+      expect(root.querySelector('dialog')).toBeNull();
+      if (screen === 'research')
+        expect(root.querySelector('.research-tree-viewport')).not.toBeNull();
+      if (screen === 'fleets')
+        expect(model.snapshot.mapFleetId).toBe('fleet-home');
+      if (screen === 'production')
+        expect(model.snapshot.planet?.id).toBe('sol-0');
+      expect(model.snapshot.decisions.some((item) => item.id === id)).toBe(
+        true,
+      );
+      controller.dispose();
+    },
+  );
+
   it('opens the selected context and skips only until the next turn, including after saving', () => {
     const model = researchStationModel();
     expect(model.snapshot.decisions).toHaveLength(3);
