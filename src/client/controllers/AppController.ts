@@ -146,6 +146,9 @@ export class AppController {
       case 'auto-salvage':
         this.#model.automateSalvage(intent.id);
         break;
+      case 'civilian-transport':
+        this.#model.civilianTransport(intent.id);
+        break;
       case 'auto-transport':
         this.#model.automateTransport(intent.id);
         break;

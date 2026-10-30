@@ -19,6 +19,7 @@ const empty = {
   'Exploration ship': 0,
   'Colony ship': 0,
   'Transport ship': 0,
+  'Civilian shuttle': 0,
   'Salvage ship': 0,
 };
 function contact(fighters = 1) {

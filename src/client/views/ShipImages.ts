@@ -11,6 +11,7 @@ export const SHIP_IMAGES: Readonly<Record<ShipType, string>> = Object.freeze({
   'Exploration ship': explorationShip,
   Fighter: fighter,
   'Transport ship': transportShip,
+  'Civilian shuttle': transportShip,
   'Salvage ship': salvageShip,
 });
 export type ShipSpriteType = ShipType | 'Space pirate';

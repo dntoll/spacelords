@@ -441,4 +441,23 @@ note right of TurnSimulation
   Visade händelser och aktiv hantering bevaras.
   Alla val från avbrottet avslutas före fortsatt simulering.
 end note
+class CivilianTraffic {
+  prepare()
+  arrive()
+  stop()
+}
+class CivilianOrder {
+  passengers
+  reserved
+  sourceId
+  targetId
+  nextPlanetId
+  path
+  stopping
+}
+Game *-- CivilianTraffic
+Fleet "1" o-- "0..1" CivilianOrder
+CivilianTraffic ..> CivilianOrder
+CivilianTraffic ..> TradeRoute
+CivilianTraffic ..> Colony
 @enduml

@@ -9,6 +9,7 @@ export const TECHNOLOGIES = [
   'Fighter factory',
   'Transport ship factory',
   'Trade logistics',
+  'Civilian transport',
   'Automated salvage',
   'Automated transport',
   'Fleet patrol',
@@ -39,6 +40,7 @@ export const PREREQUISITES: Readonly<
   'Fighter factory': ['Weapons module factory'],
   'Transport ship factory': ['Exploration ship factory'],
   'Trade logistics': ['Transport ship factory'],
+  'Civilian transport': ['Trade logistics'],
   'Automated salvage': ['Salvage ship factory'],
   'Automated transport': ['Trade logistics'],
   'Fleet patrol': ['Fighter factory'],
@@ -113,6 +115,8 @@ export class ResearchPlan {
 }
 
 export const ORDER_RESEARCH = {
+  'Civilian transport':
+    'Unlock Civilian shuttle production in Transport ship factory. New shuttles automatically move up to 500 passengers per ship to available jobs through open Trade routes.',
   'Automated salvage':
     'Unlock Auto salvage: repeatedly collect the nearest known available wreck and tow it to the nearest surviving shipyard.',
   'Automated transport':

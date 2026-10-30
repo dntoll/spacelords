@@ -291,6 +291,7 @@ describe('skeppsdelar / automatisk-resursforsorjning', () => {
             'Exploration ship': 0,
             'Colony ship': 0,
             'Transport ship': 1,
+            'Civilian shuttle': 0,
             'Salvage ship': 0,
           },
         },

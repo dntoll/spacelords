@@ -1,6 +1,7 @@
 import type { AppReadModel } from '../models/AppModel.js';
 import {
   BUILDINGS,
+  factoryShips,
   projectDefinition,
   type PlanetGameSnapshot,
   type FleetSnapshot,
@@ -21,6 +22,7 @@ type Menus = Pick<AppReadModel, 'phase'> &
   Partial<
     Pick<
       AppReadModel,
+      | 'research'
       | 'productionCategory'
       | 'productionProduct'
       | 'productionFleetId'
@@ -38,11 +40,13 @@ export function renderProduction(
   const category = menus.productionCategory ?? 'Ships';
   const products = [
     ...new Set(
-      planet.buildings.flatMap((building) => {
+      planet.buildings.flatMap<ShipType | Component>((building) => {
         const definition = BUILDINGS[building.type];
-        const product =
-          category === 'Ships' ? definition.ship : definition.component;
-        return product ? [product] : [];
+        return category === 'Ships'
+          ? factoryShips(building.type)
+          : definition.component
+            ? [definition.component]
+            : [];
       }),
     ),
   ];
@@ -75,16 +79,19 @@ export function renderProduction(
     detail.append(element('p', '', definition.description));
     const matches = planet.buildings.filter(
       (b) =>
-        BUILDINGS[b.type].ship === product ||
+        factoryShips(b.type).includes(product as ShipType) ||
         BUILDINGS[b.type].component === product,
     );
     const active = matches.filter((b) => !b.scheduledForDemolition);
     const reason =
       menus.phase !== 'planning'
         ? 'Orders are locked during simulation.'
-        : !active.length
-          ? 'Factory is scheduled for demolition.'
-          : null;
+        : product === 'Civilian shuttle' &&
+            !menus.research?.completed.includes('Civilian transport')
+          ? 'Research Civilian transport first.'
+          : !active.length
+            ? 'Factory is scheduled for demolition.'
+            : null;
     detail.append(
       element(
         'p',
@@ -128,7 +135,7 @@ export function renderProduction(
     destination.addEventListener('change', () =>
       emit({ type: 'production-fleet', id: destination.value || null }),
     );
-    if (definition.ship) {
+    if (definition.ship && product !== 'Civilian shuttle') {
       const destinationLabel = element(
         'label',
         'production-field',
@@ -142,7 +149,8 @@ export function renderProduction(
         ? emit({
             type: 'queue-ship',
             ship: product as ShipType,
-            fleetId: destination.value || null,
+            fleetId:
+              product === 'Civilian shuttle' ? null : destination.value || null,
           })
         : emit({ type: 'queue-component', component: product as Component }),
     );
@@ -230,7 +238,9 @@ export function renderProduction(
     const fleet = first.destinationFleetId
       ? (fleets.find((f) => f.id === first.destinationFleetId)?.name ??
         'Unknown fleet')
-      : 'Planet home fleet';
+      : first.type === 'Civilian shuttle'
+        ? 'New Civilian transport fleet'
+        : 'Planet home fleet';
     const item = element('li');
     item.append(
       button(
@@ -272,6 +282,7 @@ export function fleetSelect(
   for (const fleet of fleets.filter(
     (fleet) =>
       !fleet.routeId &&
+      !fleet.civilian &&
       (!fleet.position || fleet.position.key === planet.position.key),
   )) {
     const option = element('option', '', fleet.name);

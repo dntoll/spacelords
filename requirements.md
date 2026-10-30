@@ -10,6 +10,15 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Civiltrafik och arbetskraft:** `civil-skyttelforskning`,
+  `civil-skytteltillverkning`, `automatisk-arbetskraftstrafik`,
+  `civiltrafik-pa-handelsnatet` och `civiltrafik-sparning` är
+  **Fullständigt implementerat**. Civilian transport låser upp Civilian shuttle
+  i Transport ship factory. Skyttlar startar automatiskt, fraktar 500 personer
+  per skepp genom öppna Trade routes och omprövar arbetskraftsbehov vid
+  mellanlandningar. Minst 1 000 invånare och lokal bemanning skyddas.
+  Äldre sparningar bevaras. Se [civiltrafik](docs/civilian-transport.md).
+
 - **Automatiska flottorder:** `automatisk-bargning`,
   `automatisk-rutttilldelning` och `forskade-automatiska-order` är
   **Fullständigt implementerat**. Auto salvage hämtar och levererar ett vrak

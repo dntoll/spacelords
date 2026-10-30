@@ -131,6 +131,7 @@ export class Salvage {
           'Colony ship',
           'Transport ship',
           'Salvage ship',
+          'Civilian shuttle',
         ].includes(wreck.ship.type) ||
         !Number.isInteger(wreck.ship.engines?.['Rocket engine']) ||
         !Number.isInteger(wreck.ship.engines?.['Ion pulse engine']) ||

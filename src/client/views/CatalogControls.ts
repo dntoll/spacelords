@@ -37,7 +37,8 @@ function symbolFor(name: string): SymbolName {
   if (name === 'Weapons module') return 'Weapons';
   if (name === 'Colony ship') return 'Colony';
   if (name === 'Exploration ship') return 'Exploration';
-  if (name === 'Transport ship') return 'Transport';
+  if (name === 'Transport ship' || name === 'Civilian shuttle')
+    return 'Transport';
   if (name === 'Fighter') return 'Ships';
   return name in paths ? (name as SymbolName) : 'Components';
 }

@@ -802,3 +802,27 @@ Explore-order. Befintliga aktiva order i sparade spel fortsätter.
 `flottval-vid-varv` — **Fullständigt implementerat**: flottor vid ett varv
 kan väljas direkt från varvspanelen så att deras order kan ändras även när
 flera kartmarkörer överlappar.
+
+## Civilian transport
+
+- `civil-skyttelforskning` — **Fullständigt implementerat**: Civilian transport
+  kräver Trade logistics och låser upp Civilian shuttle i Transport ship factory.
+- `civil-skytteltillverkning` — **Fullständigt implementerat**: varje skyttel
+  rymmer 500 passagerare, kräver 50 besättning och en motor, har fart 2 och
+  kostar 4 Iron, 2 Water samt 1 Oil. Nybyggen får en egen flotta som automatiskt
+  börjar med Civilian transport. Transport ships byggs fortsatt i samma fabrik.
+- `automatisk-arbetskraftstrafik` — **Fullständigt implementerat**: invånare
+  flyttar från arbetskraftsöverskott till brist i färdiga byggnader och första
+  projektet i Build queue. Avreseplaneten behåller minst 1 000 invånare och
+  nödvändig personal. Bokningar skyddar mot överflyttning; befolkningstak gäller.
+- `civiltrafik-pa-handelsnatet` — **Fullständigt implementerat**: skyttlar söker
+  automatiskt uppdrag i hela nätverket av öppna Trade routes, även utan
+  godstransportflottor. De färdas fysiskt, kan angripas av pirater och omprövar
+  mottagarens behov vid mellanlandningar. Stop avslutar efter säker avstigning.
+- `civiltrafik-sparning` — **Fullständigt implementerat**: passagerare, bokningar,
+  färd och trafikorder bevaras vid omladdning. Äldre spel behålls utan rensning.
+
+Se [spelregler för civiltrafik](civilian-transport.md). Ändring 2026-10-30:
+`skeppstyper`, `skepp-i-byggko`, `skeppsdelar` och `transportfabrik`
+utökas med Civilian shuttle. `skepp-till-destinationsflotta` får undantaget
+att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.

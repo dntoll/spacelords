@@ -47,6 +47,19 @@ export function renderFleetOrders(
     }
     return control;
   };
+  if (fleet.civilian?.passengers) {
+    orders.append(
+      fleetOrderButton(
+        fleet.civilian.stopping
+          ? 'Stopping after passenger delivery'
+          : 'Stop Civilian transport after delivery',
+        '■',
+        () => emit({ type: 'clear-destination', id: fleet.id }),
+        locked || fleet.civilian.stopping,
+      ),
+    );
+    return orders;
+  }
   if (!fleet.routeId) {
     if (fleet.towing?.length)
       orders.append(
@@ -73,17 +86,19 @@ export function renderFleetOrders(
           !fleet.patrol,
       ),
       fleetOrderButton(
-        fleet.automation
-          ? 'Cancel automatic order'
-          : fleet.salvage
-            ? 'Cancel salvage'
-            : fleet.colonizationTargetId
-              ? 'Cancel colonization'
-              : fleet.patrol
-                ? 'Cancel patrol'
-                : fleet.joinFleetId
-                  ? 'Cancel reinforcement'
-                  : 'Clear destination',
+        fleet.civilian
+          ? 'Stop Civilian transport'
+          : fleet.automation
+            ? 'Cancel automatic order'
+            : fleet.salvage
+              ? 'Cancel salvage'
+              : fleet.colonizationTargetId
+                ? 'Cancel colonization'
+                : fleet.patrol
+                  ? 'Cancel patrol'
+                  : fleet.joinFleetId
+                    ? 'Cancel reinforcement'
+                    : 'Clear destination',
         '■',
         () => emit({ type: 'clear-destination', id: fleet.id }),
         locked,
@@ -109,6 +124,19 @@ export function renderFleetOrders(
             fleet.automation === 'salvage',
           ),
           'Automated salvage',
+        ),
+      );
+    if (fleet.ships['Civilian shuttle'])
+      orders.append(
+        researchRequired(
+          fleetOrderButton(
+            'Civilian transport',
+            '♟↻',
+            () => emit({ type: 'civilian-transport', id: fleet.id }),
+            locked || model.phase !== 'planning' || !!fleet.towing?.length,
+            !!fleet.civilian,
+          ),
+          'Civilian transport',
         ),
       );
     if (fleet.ships['Transport ship'])

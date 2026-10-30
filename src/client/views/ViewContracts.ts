@@ -232,6 +232,7 @@ export type AppIntent =
         | 'begin-salvage'
         | 'auto-salvage'
         | 'auto-transport'
+        | 'civilian-transport'
         | 'clear-destination'
         | 'delete-fleet';
       readonly id: string;

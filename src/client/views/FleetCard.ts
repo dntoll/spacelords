@@ -150,6 +150,14 @@ export function renderFleetCard(
   const speed = element('small', 'fleet-speed', `S: ${fleet.speed} hex`);
   speed.title = `Fleet speed: ${fleet.speed} hexes/year${fleet.remainingMovement === undefined ? '' : ` · ${fleet.remainingMovement} hex remaining this year`}`;
   footer.append(speed);
+  if (fleet.civilian)
+    footer.append(
+      element(
+        'small',
+        'fleet-civilian-status',
+        `${fleet.civilian.passengers} passengers aboard · ${fleet.civilian.status}`,
+      ),
+    );
   if (fleet.navigationIssue)
     footer.append(element('small', 'muted-note', fleet.navigationIssue));
   if (fleet.detectionRange !== undefined) {
@@ -211,6 +219,8 @@ export function fleetAssignmentLabel(
   fleet: FleetSnapshot,
   model: AppReadModel,
 ): string {
+  if (fleet.civilian)
+    return `Civilian transport: ${fleet.civilian.status} · ${fleet.civilian.passengers} passengers aboard`;
   if (fleet.automation === 'salvage')
     return `Auto salvage: ${fleet.towing?.length ? 'returning to shipyard' : fleet.salvage?.targets.length ? 'collecting a wreck' : 'waiting for an available wreck'}`;
   if (fleet.automation === 'transport')

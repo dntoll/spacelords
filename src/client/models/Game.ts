@@ -1,3 +1,9 @@
+import {
+  CivilianTraffic,
+  SHUTTLE_CAPACITY,
+  type CivilianOrder,
+  type CivilianPort,
+} from './CivilianTraffic.js';
 import { engineCount } from './ShipEquipment.js';
 import { FleetPatrol, type PatrolOrder } from './FleetPatrol.js';
 export { engineCount } from './ShipEquipment.js';
@@ -88,7 +94,8 @@ export type ShipType =
   | 'Exploration ship'
   | 'Fighter'
   | 'Transport ship'
-  | 'Salvage ship';
+  | 'Salvage ship'
+  | 'Civilian shuttle';
 export type BuildType =
   | 'Orbital shipyard'
   | 'Salvage ship factory'
@@ -126,6 +133,7 @@ export interface BuildDefinition {
   readonly cost: Cost;
   readonly crew: number;
   readonly ship?: ShipType;
+  readonly ships?: readonly ShipType[];
   readonly component?: Component;
   readonly parts?: Readonly<Partial<Record<Component, number>>>;
   readonly extraction?: Resource;
@@ -302,7 +310,8 @@ export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
     },
     'Transport ship factory': {
       permanent: true,
-      description: 'Builds Transport ships for automated trade routes.',
+      description: 'Builds Transport ships and researched Civilian shuttles.',
+      ships: ['Transport ship', 'Civilian shuttle'],
       workers: 400,
       cost: { Iron: 12, Water: 6, Oil: 3 },
       crew: 0,
@@ -351,6 +360,7 @@ export const SHIPS: Readonly<
   'Exploration ship': { crew: 200, speed: 4 },
   Fighter: { crew: 50, speed: 3 },
   'Transport ship': { crew: 50, speed: 2 },
+  'Civilian shuttle': { crew: 50, speed: 2 },
 });
 
 export interface ShipUnit {
@@ -394,11 +404,14 @@ export function projectDefinition(type: ProjectType): BuildDefinition {
     };
   return {
     permanent: false,
-    description: `Produces one ${type}. Factory staff operate the shipyard.`,
+    description:
+      type === 'Civilian shuttle'
+        ? 'Carries up to 500 passengers to available jobs through open Trade routes. Starts Civilian transport automatically in its own fleet.'
+        : `Produces one ${type}. Factory staff operate the shipyard.`,
     cost:
       type === 'Salvage ship'
         ? { Iron: 5, Water: 3, Oil: 2 }
-        : type === 'Transport ship'
+        : type === 'Transport ship' || type === 'Civilian shuttle'
           ? { Iron: 4, Water: 2, Oil: 1 }
           : type === 'Colony ship'
             ? { Iron: 6, Water: 3, Oil: 1 }
@@ -415,6 +428,13 @@ export function projectDefinition(type: ProjectType): BuildDefinition {
     },
   };
 }
+export function factoryShips(type: BuildType): readonly ShipType[] {
+  return (
+    BUILDINGS[type].ships ??
+    (BUILDINGS[type].ship ? [BUILDINGS[type].ship] : [])
+  );
+}
+
 export function projectCost(type: ProjectType): Stock {
   const definition = projectDefinition(type);
   return { ...emptyStock(), ...definition.cost, ...definition.parts };
@@ -519,6 +539,9 @@ export interface PlanetOrderSnapshot {
   readonly emptyQueues: number;
 }
 export interface FleetSnapshot {
+  readonly civilian?: Readonly<
+    Omit<CivilianOrder, 'path'> & { readonly path: readonly string[] }
+  >;
   readonly automation?: 'salvage' | 'transport';
   readonly colonizationTargetId?: string;
   readonly navigationIssue?: string | undefined;
@@ -594,6 +617,7 @@ interface Project {
   destinationFleetId: string | null;
 }
 interface Fleet {
+  civilian?: CivilianOrder;
   automation?: 'salvage' | 'transport';
   colonizationTargetId?: string;
   navigationIssue?: string;
@@ -622,6 +646,7 @@ const zeroShips = (): Record<ShipType, number> => ({
   Fighter: 0,
   'Transport ship': 0,
   'Salvage ship': 0,
+  'Civilian shuttle': 0,
 });
 
 interface SavedCoordinate {
@@ -687,6 +712,7 @@ export interface GameState {
 
 /** Private mutable game state; views receive only immutable snapshots. */
 export class Game {
+  readonly #civilianTraffic = new CivilianTraffic();
   #logistics = new Logistics();
   #salvage: Salvage;
   #decisions = new DecisionBoard();
@@ -922,7 +948,26 @@ export class Game {
     }
     game.#fleets = copy.fleets.map(
       ({ position: current, destination, courseOrigin, ...fleet }) => {
+        fleet.ships = { ...zeroShips(), ...fleet.ships };
         const empty = game.#shipCount(fleet.ships) === 0;
+        if (fleet.civilian !== undefined) {
+          CivilianTraffic.validate(
+            fleet.civilian,
+            fleet.ships['Civilian shuttle'] * SHUTTLE_CAPACITY,
+            (id) => game.#colonies.has(id),
+          );
+          if (
+            empty ||
+            !fleet.ships['Civilian shuttle'] ||
+            fleet.routeId ||
+            fleet.automation ||
+            fleet.patrol ||
+            fleet.exploration ||
+            fleet.joinFleetId ||
+            fleet.colonizationTargetId
+          )
+            throw new Error('Invalid saved civilian fleet.');
+        }
         if (
           fleet.automation !== undefined &&
           (!['salvage', 'transport'].includes(fleet.automation) ||
@@ -1519,6 +1564,14 @@ export class Game {
           joinFleetId: fleet.joinFleetId,
           releaseRequested: fleet.releaseRequested,
           cargo: Object.freeze(this.#cargo(fleet.id)),
+          ...(fleet.civilian
+            ? {
+                civilian: Object.freeze({
+                  ...fleet.civilian,
+                  path: Object.freeze([...fleet.civilian.path]),
+                }),
+              }
+            : {}),
         }),
       ),
     );
@@ -1565,6 +1618,59 @@ export class Game {
     if (!this.#research.completed.has(technology))
       throw new Error(`Research ${technology} first.`);
   }
+  setCivilianTransport(fleetId: string): void {
+    this.#requirePlanning();
+    this.#requireFleetOrders(fleetId);
+    this.#requireOrderResearch('Civilian transport');
+    const fleet = this.#fleetState(fleetId);
+    if (!fleet.ships['Civilian shuttle'])
+      throw new Error('A Civilian shuttle is required.');
+    if (this.#salvage.towing(fleetId).length)
+      throw new Error('Release towed wrecks first.');
+    this.clearDestination(fleetId);
+    fleet.civilian = CivilianTraffic.order();
+  }
+
+  #civilianPort(): CivilianPort {
+    return {
+      planets: this.#ownedPlanets().map((planet) => {
+        const state = this.#state(planet);
+        const head = state.projects[0];
+        const definition = head && projectDefinition(head.type);
+        return {
+          id: planet.id,
+          name: planet.name,
+          position: planet.position,
+          get population() {
+            return state.population;
+          },
+          set population(value: number) {
+            state.population = value;
+          },
+          capacity: this.#environment(planet, state).populationCapacity,
+          workforce:
+            state.buildings
+              .filter((b) => !b.demolition)
+              .reduce((n, b) => n + BUILDINGS[b.type].workers, 0) +
+            (definition?.workers ?? 0) +
+            (definition?.crew ?? 0),
+        };
+      }),
+      fleets: this.#fleets,
+      routes: this.#logistics.routes,
+      travelYears: (fleet, from, to) => {
+        const actual = this.#fleetState(fleet.id);
+        if (from.key === to.key) return 0;
+        const speed = this.#speed(actual);
+        const path = this.#navigation.path(from, to, speed, this.#knownTerrain);
+        return path.length
+          ? this.#navigation.years(path, from, speed, this.#knownTerrain)
+          : Infinity;
+      },
+      event: (message, position) => this.#event(message, position),
+    };
+  }
+
   setAutomaticSalvage(fleetId: string): void {
     this.#requireFleetOrders(fleetId);
     this.#requireOrderResearch('Automated salvage');
@@ -1649,6 +1755,7 @@ export class Game {
     const fleet = this.#fleetState(fleetId);
     this.#salvage.assign(fleet, wreckId);
     delete fleet.automation;
+    delete fleet.civilian;
     delete fleet.colonizationTargetId;
     delete fleet.patrol;
     delete fleet.exploration;
@@ -1661,6 +1768,7 @@ export class Game {
     const fleet = this.#fleetState(fleetId);
     this.#salvage.returnHome(fleet);
     delete fleet.automation;
+    delete fleet.civilian;
     delete fleet.colonizationTargetId;
     delete fleet.patrol;
     delete fleet.exploration;
@@ -1964,6 +2072,8 @@ export class Game {
   productionIssue(planet: Planet, type: ProjectType): string | null {
     try {
       this.#requirePlanning();
+      if (type === 'Civilian shuttle')
+        this.#requireOrderResearch('Civilian transport');
       const state = this.#state(planet);
       if (Object.hasOwn(BUILDINGS, type)) {
         const issue = this.canBuild(planet, type as BuildType);
@@ -1975,7 +2085,7 @@ export class Game {
             (b) =>
               !b.demolition &&
               (definition.ship
-                ? BUILDINGS[b.type].ship === type
+                ? factoryShips(b.type).includes(type as ShipType)
                 : BUILDINGS[b.type].component === type),
           )
         )
@@ -2066,10 +2176,10 @@ export class Game {
     const types: ProjectType[] = [
       ...buildings.map((o) => o.type),
       ...new Set(
-        snapshot.buildings.flatMap((b) => {
+        snapshot.buildings.flatMap<ProjectType>((b) => {
           const definition = BUILDINGS[b.type];
           return definition.ship
-            ? [definition.ship]
+            ? factoryShips(b.type)
             : definition.component
               ? [definition.component]
               : [];
@@ -2261,11 +2371,15 @@ export class Game {
   ): ProductionReceipt {
     this.#requirePlanning();
     if (!Object.hasOwn(SHIPS, type)) throw new Error('Unknown ship type.');
+    if (type === 'Civilian shuttle') {
+      this.#requireOrderResearch('Civilian transport');
+      destinationFleetId = null;
+    }
     this.#validateProjectFleet(planet, destinationFleetId);
     const building = this.#state(planet).buildings.find(
       (b) =>
         (!factoryId || b.id === factoryId) &&
-        BUILDINGS[b.type].ship === type &&
+        factoryShips(b.type).includes(type) &&
         !b.demolition,
     );
     if (!building)
@@ -2438,6 +2552,8 @@ export class Game {
     this.#requirePlanning();
     this.#validateProjectFleet(planet, fleetId);
     const project = this.#state(planet).projects.find((p) => p.id === id);
+    if (project?.type === 'Civilian shuttle')
+      throw new Error('Civilian shuttles start in their own automatic fleet.');
     if (!project || !projectDefinition(project.type).ship)
       throw new Error('Choose a ship production order.');
     project.destinationFleetId = fleetId;
@@ -2461,6 +2577,10 @@ export class Game {
   }
   #validateProjectFleet(planet: Planet, id: string | null): void {
     const fleet = id ? this.#fleetState(id) : null;
+    if (fleet?.civilian)
+      throw new Error(
+        'Choose a fleet without Civilian transport for new ships.',
+      );
     if (fleet?.routeId)
       throw new Error('Choose a fleet without a trade route for new ships.');
     if (fleet?.position && fleet.position.key !== planet.position.key)
@@ -2498,6 +2618,7 @@ export class Game {
         'Release towed wrecks before transferring a Salvage ship.',
       );
     const issue = shipTransferIssue({
+      ...(source.civilian ? { civilian: source.civilian } : {}),
       routeId: source.routeId,
       cargo: this.#cargo(source.id),
     });
@@ -2521,6 +2642,8 @@ export class Game {
     let target: Fleet;
     if (targetId) {
       target = this.#fleetState(targetId);
+      if (target.civilian?.passengers)
+        throw new Error('Wait until passengers have disembarked.');
       if (target.id === source.id) throw new Error('Choose another fleet.');
       if (target.position && target.position.key !== source.position?.key) {
         const group: Fleet = {
@@ -2599,6 +2722,7 @@ export class Game {
     delete fleet.exploration;
     delete fleet.starSurvey;
     delete fleet.automation;
+    delete fleet.civilian;
     delete fleet.colonizationTargetId;
     fleet.destination = destination;
     delete fleet.navigationIssue;
@@ -2606,6 +2730,13 @@ export class Game {
     fleet.courseOrigin = fleet.position!;
   }
   clearDestination(id: string): void {
+    const civilFleet = this.#fleetState(id);
+    if (civilFleet.civilian) {
+      if (!this.canIssueFleetOrders(id))
+        throw new Error('Orders are locked during simulation.');
+      this.#civilianTraffic.stop(civilFleet);
+      return;
+    }
     this.#requireFleetOrders(id);
     this.#salvage.stop(id);
     delete this.#fleetState(id).automation;
@@ -2635,6 +2766,8 @@ export class Game {
     if (!fleet.position)
       throw new Error('Empty fleets cannot receive destinations.');
     this.#requireManualFleet(fleet);
+    if (fleet.civilian?.passengers)
+      throw new Error('Wait until passengers have disembarked.');
     if (!this.canIssueFleetOrders(id))
       throw new Error(
         'Orders are only available while planning or handling a discovery.',
@@ -2653,6 +2786,7 @@ export class Game {
     delete fleet.joinFleetId;
     fleet.exploration = order;
     delete fleet.automation;
+    delete fleet.civilian;
     delete fleet.colonizationTargetId;
     delete fleet.starSurvey;
     this.#updateExploration(fleet);
@@ -2669,6 +2803,7 @@ export class Game {
     delete fleet.joinFleetId;
     fleet.patrol = { center: fleet.position!, nextIndex: 0 };
     delete fleet.automation;
+    delete fleet.civilian;
     delete fleet.colonizationTargetId;
     delete fleet.starSurvey;
     this.#updatePatrol(fleet);
@@ -2816,6 +2951,7 @@ export class Game {
     this.#updateAutomaticTransport();
     this.#updateSalvage();
     this.#logistics.prepare(this.#logisticsPort());
+    this.#civilianTraffic.prepare(this.#civilianPort());
     this.#refreshReinforcements();
     this.#mergeReinforcements();
     this.#simulation = new TurnSimulation([
@@ -2962,6 +3098,15 @@ export class Game {
       FleetCombat.applyLosses(fleet, combat.losses);
       this.#salvage.releaseLostCapacity(fleet, combat.position);
       pirate.count = combat.survivingPirates;
+      if (combat.losses['Civilian shuttle'] > 0 && fleet.civilian) {
+        const passengers = fleet.civilian.passengers;
+        delete fleet.civilian;
+        if (passengers)
+          this.#event(
+            `${fleet.name} lost ${passengers} passengers in combat.`,
+            combat.position,
+          );
+      }
       if (combat.losses['Transport ship'] > 0)
         this.#logistics.destroyCargo(fleet.id);
       this.#releaseEmptyFleet(fleet);
@@ -2971,7 +3116,7 @@ export class Game {
           .map(([type, count]) => `${count} ${type}`)
           .join(', ') || 'no ships';
       const eventId = this.#event(
-        `Combat at HEX ${combat.position.key}: ${this.#fleetDisplayName(fleet)} versus Space pirate. Lost ${losses}; destroyed ${combat.pirateLosses} pirates. Survivors: ${combat.survivingFighters} Fighters, ${combat.survivingPirates} pirates, ${fleet.ships['Colony ship'] + fleet.ships['Exploration ship'] + fleet.ships['Transport ship']} civilian ships.`,
+        `Combat at HEX ${combat.position.key}: ${this.#fleetDisplayName(fleet)} versus Space pirate. Lost ${losses}; destroyed ${combat.pirateLosses} pirates. Survivors: ${combat.survivingFighters} Fighters, ${combat.survivingPirates} pirates, ${fleet.ships['Colony ship'] + fleet.ships['Exploration ship'] + fleet.ships['Transport ship'] + fleet.ships['Civilian shuttle']} civilian ships.`,
         combat.position,
       );
       reports.push({
@@ -3023,6 +3168,7 @@ export class Game {
     for (const fleet of this.#fleets) this.#recordArrival(fleet);
     this.#completeColonizations();
     this.#logistics.unload(this.#logisticsPort());
+    this.#civilianTraffic.arrive(this.#civilianPort());
     const researchStations = this.research.stations;
     for (const planet of this.#ownedPlanets()) {
       const state = this.#state(planet);
@@ -3177,18 +3323,46 @@ export class Game {
     parts: Partial<Record<Component, number>> = {},
   ): void {
     state.population -= SHIPS[ship].crew;
+    if (ship === 'Civilian shuttle') {
+      const fleet: Fleet = {
+        id: this.#id('fleet'),
+        name: this.#uniqueFleetName(`${planet.name} Civilian transport`),
+        position: planet.position,
+        destination: null,
+        ships: { ...zeroShips(), [ship]: 1 },
+        shipUnits: [
+          {
+            id: this.#id('ship'),
+            type: ship,
+            engines: {
+              'Rocket engine': parts['Rocket engine'] ?? engineCount(ship),
+              'Ion pulse engine': parts['Ion pulse engine'] ?? 0,
+            },
+          },
+        ],
+        civilian: CivilianTraffic.order(),
+      };
+      this.#fleets.push(fleet);
+      this.#event(
+        `${ship} was produced at ${planet.name} and started Civilian transport.`,
+        planet.position,
+      );
+      return;
+    }
     // nybyggda-skepp-utan-ruttflotta: recheck assignments made after the order was queued.
     let reserve =
       this.#fleets.find(
         (fleet) =>
           fleet.id === destinationFleetId &&
           !fleet.routeId &&
+          !fleet.civilian &&
           (!fleet.position || fleet.position.key === planet.position.key),
       ) ??
       this.#fleets.find(
         (fleet) =>
           fleet.id === state.homeFleetId &&
           !fleet.routeId &&
+          !fleet.civilian &&
           (!fleet.position || fleet.position.key === planet.position.key),
       );
     if (!reserve) {
@@ -3422,6 +3596,7 @@ export class Game {
         !f.joinFleetId &&
         !f.patrol &&
         !f.automation &&
+        !f.civilian &&
         !f.destination &&
         this.#shipCount(f.ships),
     ))
@@ -3541,12 +3716,12 @@ export class Game {
         state.population;
       const products = [
         ...new Set(
-          state.buildings.flatMap((b) => {
+          state.buildings.flatMap<ProjectType>((b) => {
             const definition = BUILDINGS[b.type];
             return definition.component
               ? [definition.component]
               : definition.ship
-                ? [definition.ship]
+                ? factoryShips(b.type)
                 : [];
           }),
         ),
@@ -3571,7 +3746,7 @@ export class Game {
             (b) =>
               !b.demolition &&
               (BUILDINGS[b.type].component === product ||
-                BUILDINGS[b.type].ship === product),
+                factoryShips(b.type).includes(product as ShipType)),
           );
           return {
             product,
@@ -3955,7 +4130,7 @@ export class Game {
         ? building.type === 'Orbital shipyard' &&
           building.id === project.factoryId
         : definition.ship
-          ? BUILDINGS[building.type].ship === definition.ship
+          ? factoryShips(building.type).includes(definition.ship)
           : !!definition.component &&
             BUILDINGS[building.type].component === definition.component;
     if (
@@ -4570,6 +4745,16 @@ export class Game {
   }
   // tomma-flottor-utan-position: the last ship releases both location and course.
   #releaseEmptyFleet(fleet: Fleet): void {
+    if (fleet.civilian)
+      fleet.civilian.reserved = Math.min(
+        fleet.civilian.reserved,
+        fleet.ships['Civilian shuttle'] * SHUTTLE_CAPACITY,
+      );
+    if (fleet.civilian && !fleet.ships['Civilian shuttle']) {
+      delete fleet.civilian;
+      fleet.destination = null;
+      delete fleet.courseOrigin;
+    }
     if (
       fleet.automation &&
       !fleet.ships[
@@ -4577,6 +4762,7 @@ export class Game {
       ]
     ) {
       delete fleet.automation;
+      delete fleet.civilian;
       this.#salvage.stop(fleet.id);
       fleet.destination = null;
       delete fleet.courseOrigin;
@@ -4729,6 +4915,7 @@ export class Game {
     fleet.destination = null;
     delete fleet.courseOrigin;
     if (fleet.colonizationTargetId) return;
+    if (fleet.civilian?.passengers) return;
     // grupperade-transporthandelser: loaded arrivals are announced with the actual unloading.
     if (
       fleet.routeId &&

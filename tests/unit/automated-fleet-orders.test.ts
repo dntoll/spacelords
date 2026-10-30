@@ -337,7 +337,7 @@ it.each(['salvage', 'transport'] as const)(
         fleets: state.fleets.map((f) => ({
           ...f,
           automation,
-          ships: { ...f.ships, 'Salvage ship': 0 },
+          ships: { ...f.ships, 'Civilian shuttle': 0, 'Salvage ship': 0 },
         })),
       }),
     ).toThrow('Invalid saved automatic fleet order');

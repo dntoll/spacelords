@@ -35,6 +35,9 @@ export class FleetCombat {
         const pirateLosses = Math.min(pirates, 2 * fighters);
         const survivingPirates = pirates - pirateLosses;
         const losses = {
+          'Civilian shuttle': survivingPirates
+            ? fleet.ships['Civilian shuttle']
+            : 0,
           'Salvage ship': survivingPirates ? fleet.ships['Salvage ship'] : 0,
           Fighter: Math.min(fighters, Math.floor(pirates / 2)),
           'Colony ship': survivingPirates ? fleet.ships['Colony ship'] : 0,
@@ -57,6 +60,7 @@ export class FleetCombat {
         this.applyLosses(fleet, result.losses);
         this.applyLosses(pirate, {
           Fighter: pirateLosses,
+          'Civilian shuttle': 0,
           'Colony ship': 0,
           'Exploration ship': 0,
           'Transport ship': 0,

@@ -1056,3 +1056,14 @@ Forskning kontrolleras i modellen samt visas i vyerna. Vyerna läser
 knapptryck. Nya ordertekniker är inga byggnadsalternativ. Den befintliga
 rörelsebudgeten återanvänds utan extra steg vid byte mellan hämtning och
 leverans.
+
+## Civiltrafik
+
+Civiltrafikens beteendekrav finns i [civiltrafik](civilian-transport.md).
+CivilianTraffic håller bokningar, vägval och passagerare oberoende av p5 och DOM.
+Game samordnar trafik med fysisk flottförflyttning, strid och årsekonomi.
+En fabrik kan erbjuda flera skeppstyper; Transport ship factory erbjuder även
+Civilian shuttle, med separat kontroll av forskningen Civilian transport.
+Vyer får oföränderliga snapshots. Flottans tilläggsfält sparas i befintligt
+sparformat; äldre flottor normaliseras med noll Civilian shuttles. Ingen
+sparplats rensas och inga befintliga order aktiveras automatiskt.

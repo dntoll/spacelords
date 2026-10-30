@@ -464,7 +464,10 @@ function renderQueueOrder(
   );
   if (project.blockedReason)
     details.append(element('p', 'muted-note', project.blockedReason));
-  if (projectDefinition(project.type).ship) {
+  if (
+    projectDefinition(project.type).ship &&
+    project.type !== 'Civilian shuttle'
+  ) {
     const select = fleetSelect(planet, fleets, project.destinationFleetId);
     select.disabled = locked;
     select.addEventListener('change', () =>

@@ -1456,6 +1456,11 @@ export class AppModel {
     this.#destinationOrder = 'move';
     this.#game.setAutomaticSalvage(id);
   }
+  civilianTransport(id: string): void {
+    this.#destinationFleetId = null;
+    this.#destinationOrder = 'move';
+    this.#game.setCivilianTransport(id);
+  }
   automateTransport(id: string): void {
     this.#destinationFleetId = null;
     this.#destinationOrder = 'move';

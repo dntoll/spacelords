@@ -124,6 +124,7 @@ describe('skeppsbilder', () => {
         'Colony ship': 1,
         'Exploration ship': 1,
         'Transport ship': 1,
+        'Civilian shuttle': 1,
         'Salvage ship': 1,
       },
     };
@@ -308,7 +309,7 @@ it('genererade-skeppssprites: renders dedicated cargo, salvage and pirate portra
       ?.getAttribute('src'),
   ).toBe(SHIP_SPRITES['Space pirate']);
   expect(SHIP_SPRITES['Space pirate']).not.toBe(SHIP_IMAGES.Fighter);
-  expect(Object.keys(SHIP_IMAGES)).toHaveLength(5);
+  expect(Object.keys(SHIP_IMAGES)).toHaveLength(6);
   const view = renderFleetShips({
     ...model.snapshot.fleets[0]!,
     ships: {
@@ -316,6 +317,7 @@ it('genererade-skeppssprites: renders dedicated cargo, salvage and pirate portra
       'Colony ship': 0,
       'Exploration ship': 0,
       'Transport ship': 1,
+      'Civilian shuttle': 0,
       'Salvage ship': 1,
     },
   });
