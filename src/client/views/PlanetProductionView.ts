@@ -270,7 +270,9 @@ export function fleetSelect(
   home.value = '';
   select.append(home);
   for (const fleet of fleets.filter(
-    (fleet) => !fleet.position || fleet.position.key === planet.position.key,
+    (fleet) =>
+      !fleet.routeId &&
+      (!fleet.position || fleet.position.key === planet.position.key),
   )) {
     const option = element('option', '', fleet.name);
     option.value = fleet.id;

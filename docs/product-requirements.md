@@ -211,12 +211,12 @@ möjligheten att rensa en destination behålls.
 
 ## Byggnader och byggkö
 
-| Kravnamn                        | Status                     | Krav                                                                                                                                                                                                                                                                                 |
-| ------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `byggnaders-resursanvandning`   | Fullständigt implementerat | Byggnader visar personalbehov. Material betalas en gång vid byggstart; färdiga byggnader har ingen årlig materialkostnad.                                                                                                                                                            |
-| `flera-byggnader-av-samma-typ`  | Fullständigt implementerat | Flera byggnader av samma typ får beställas och finnas på en planet inom antalet byggplatser. Även `Research station` får finnas i flera exemplar.                                                                                                                                    |
-| `skepp-i-byggko`                | Fullständigt implementerat | Colony ship, Exploration ship, Fighter och Transport ship kräver motsvarande färdiga fabrik. Skepp delar planetens kö med byggnader och delar. Fabriksbyggen skapar inga automatiska produkter.                                                                                      |
-| `skepp-till-destinationsflotta` | Fullständigt implementerat | Varje skeppsorder kan få en tom mottagande flotta eller en flotta vid planeten, både vid beställning och senare i kön. Utan val används planetens hemflotta. Om mottagaren har lämnat planeten eller tagits bort används hemflottan; saknas en hemflotta vid planeten skapas en där. |
+| Kravnamn                        | Status                     | Krav                                                                                                                                                                                                                                                                                                      |
+| ------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `byggnaders-resursanvandning`   | Fullständigt implementerat | Byggnader visar personalbehov. Material betalas en gång vid byggstart; färdiga byggnader har ingen årlig materialkostnad.                                                                                                                                                                                 |
+| `flera-byggnader-av-samma-typ`  | Fullständigt implementerat | Flera byggnader av samma typ får beställas och finnas på en planet inom antalet byggplatser. Även `Research station` får finnas i flera exemplar.                                                                                                                                                         |
+| `skepp-i-byggko`                | Fullständigt implementerat | Colony ship, Exploration ship, Fighter och Transport ship kräver motsvarande färdiga fabrik. Skepp delar planetens kö med byggnader och delar. Fabriksbyggen skapar inga automatiska produkter.                                                                                                           |
+| `skepp-till-destinationsflotta` | Fullständigt implementerat | Varje skeppsorder kan få en tom mottagande flotta eller en flotta vid planeten, både vid beställning och senare i kön. Mottagaren måste sakna ruttuppdrag enligt `nybyggda-skepp-utan-ruttflotta`. Utan giltig mottagare används planetens vanliga hemflotta; saknas en sådan vid planeten skapas en där. |
 
 | `planetbyggplatser` | Fullständigt implementerat | Varje planet har fasta numrerade byggplatser. Kölagda byggnader reserverar en plats och färdigställs i planetens köordning, högst en per år. Avbrott och rivning ändrar inte andra byggnaders platser. |
 | `fabrikskoer` | Fullständigt implementerat | Production samlar fabrikernas produktval per planet, med kostnad, Queue-knapp och destinationsflotta för skepp. Varje produkt visas en gång. Alla order hamnar i planetens gemensamma Build queue. Om alla matchande fabriker ska rivas, eller under simulering, spärras beställning. Personalbrist visas men tillåter köläggning. Befintliga order väntar om nödvändig fabrik saknas. |
@@ -628,6 +628,18 @@ En tom ankomst ger fortsatt ett ankomstbesked.
 färdigbyggt skepp ger ett produktionsbesked med skeppstyp och planet.
 Kraven förtydligar `handelser` och ersätter tidigare separata besked för
 samma leverans respektive dubbla besked för samma skeppsbygge.
+
+`sikt-under-forflyttning` är **Fullständigt implementerat**: synfältet följer
+skeppets position även under rörelsen. Synliga rutor och pirater uppdateras
+när nästa hex nås, lämnade områden blir kartminne och övriga observatörer
+fortsätter bidra. Teleskop och nebulosor behåller sina siktregler.
+
+`nybyggda-skepp-utan-ruttflotta` är **Fullständigt implementerat**: nya skepp
+tas emot av en vanlig lokal eller tom flotta. En ruttflotta kan inte väljas
+och används inte som hemflotta vid färdigställandet. Saknas en giltig lokal
+hemflotta skapas en. Detta begränsar mottagarvalet i
+`skepp-till-destinationsflotta`; manuell förstärkning med befintliga skepp
+behålls enligt `forstarka-ruttflotta`.
 
 | Kravnamn                          | Status                     | Krav                                                                                                                                                                                                                                                                                                                                                               |
 | --------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

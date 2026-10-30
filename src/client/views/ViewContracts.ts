@@ -257,13 +257,19 @@ export type IntentHandler = (intent: AppIntent) => void;
 export interface AppPort {
   bind(handler: IntentHandler): void;
   render(model: AppReadModel): void;
-  animateTurnStep?(frame: TurnFrame): Promise<void>;
+  animateTurnStep?(
+    frame: TurnFrame,
+    onProgress?: (progress: number) => void,
+  ): Promise<void>;
   dispose(): void;
 }
 
 export interface MapPort {
   render(model: AppReadModel): void;
-  animateTurnStep?(frame: TurnFrame): Promise<void>;
+  animateTurnStep?(
+    frame: TurnFrame,
+    onProgress?: (progress: number) => void,
+  ): Promise<void>;
   dispose(): void;
 }
 

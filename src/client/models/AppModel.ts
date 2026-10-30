@@ -386,6 +386,7 @@ export class AppModel {
         mapFleetId: this.#movementPlayback.current?.fleetId ?? null,
         fleets: this.#movementPlayback.fleets,
         pirates: this.#movementPlayback.pirates,
+        cells: this.#movementPlayback.cells,
         destinationFleetId: null,
       });
     }
@@ -1635,6 +1636,10 @@ export class AppModel {
 
   completeTurnMovement(): void {
     this.#movementPlayback!.complete();
+  }
+
+  advanceTurnMovement(progress: number): boolean {
+    return this.#movementPlayback?.advance(progress) ?? false;
   }
 
   endMovementPlayback(): void {

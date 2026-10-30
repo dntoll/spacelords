@@ -135,14 +135,19 @@ export class GalaxyMapView implements MapPort {
     this.#container.replaceChildren();
   }
 
-  animateTurnStep(frame: TurnFrame): Promise<void> {
+  animateTurnStep(
+    frame: TurnFrame,
+    onProgress?: (progress: number) => void,
+  ): Promise<void> {
     const movement = frame.movements[0];
     if (
       this.#disposed ||
       !movement ||
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    )
+    ) {
+      onProgress?.(1);
       return Promise.resolve();
+    }
     return new Promise((resolve) => {
       this.#finishMovement = resolve;
       let started: number | null = null;
@@ -155,6 +160,7 @@ export class GalaxyMapView implements MapPort {
           started ??= now;
           const progress = Math.min(1, (now - started) / 400);
           this.#movement = { movement, progress };
+          onProgress?.(progress);
           void this.#instance.redraw();
           if (progress === 1) {
             this.#finishMovement = null;
@@ -186,11 +192,13 @@ export class GalaxyMapView implements MapPort {
         [],
         original.camera.zoom,
       ).find((candidate) => candidate.fleet.id === movement.fleetId);
-      if (marker)
+      if (marker) {
+        const anchor = HexGeometry.toPoint(marker.fleet.position!);
         movementPoints.set(movement.fleetId, {
-          x: center.x + marker.point.x - from.x,
-          y: center.y + marker.point.y - from.y,
+          x: center.x + marker.point.x - anchor.x,
+          y: center.y + marker.point.y - anchor.y,
         });
+      }
       model = { ...original, camera: { ...original.camera, center } };
     }
     if (this.#canvas) {

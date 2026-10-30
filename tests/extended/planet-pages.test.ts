@@ -7,6 +7,28 @@ import { AppModel } from '../../src/client/models/AppModel.js';
 import { renderBuildSelection } from '../../src/client/views/BuildSelectionView.js';
 import { renderPlanet } from '../../src/client/views/PlanetView.js';
 import type { ConstructionProjectSnapshot } from '../../src/client/models/Game.js';
+import { fleetSelect } from '../../src/client/views/PlanetProductionView.js';
+
+it('nybyggda-skepp-utan-ruttflotta: destination menus omit route fleets and retain ordinary local and empty fleets', () => {
+  const model = new AppModel();
+  const planet = model.snapshot.ownedPlanets[0]!;
+  const fleet = model.snapshot.fleets[0]!;
+  const menu = fleetSelect(
+    planet,
+    [
+      fleet,
+      { ...fleet, id: 'route', routeId: 'trade-route' },
+      { ...fleet, id: 'empty', position: null },
+    ],
+    'route',
+  );
+  expect([...menu.options].map((option) => option.value)).toEqual([
+    '',
+    fleet.id,
+    'empty',
+  ]);
+  expect(menu.value).toBe('');
+});
 
 const project = (
   id: string,

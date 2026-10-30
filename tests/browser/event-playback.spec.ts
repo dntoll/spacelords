@@ -1,6 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 import { Game } from '../../src/client/models/Game.js';
-import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
+import {
+  HexCoordinate,
+  HexGeometry,
+} from '../../src/client/models/HexCoordinate.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { collectTurnFrames } from '../fixtures/turn-steps.js';
 import { startFirstSlot } from './save-helpers.js';
@@ -42,6 +45,63 @@ async function requestTurn(page: Page) {
       .getByRole('button', { name: 'End turn anyway', exact: true })
       .click();
 }
+
+test('sikt-under-forflyttning: a newly observed hex brightens before the moving ship finishes its step', async ({
+  page,
+}, testInfo) => {
+  await page.clock.install({ time: new Date('2026-10-30T00:00:00Z') });
+  await seed(page);
+  await page.clock.pauseAt(new Date('2026-10-30T01:00:00Z'));
+  const canvas = page.locator('canvas[data-rendered="true"]');
+  const zoom =
+    Number(
+      (await page.getByLabel('Map zoom').textContent())!.replace('%', ''),
+    ) / 100;
+  const from = HexGeometry.toPoint(new HexCoordinate(1, 0));
+  const to = HexGeometry.toPoint(new HexCoordinate(2, 0));
+  const target = HexGeometry.toPoint(new HexCoordinate(3, 0));
+  const color = () =>
+    canvas.evaluate(
+      (node, points) => {
+        const surface = node as HTMLCanvasElement;
+        const progress = Number(surface.dataset.movingProgress);
+        const center = {
+          x: points.from.x + (points.to.x - points.from.x) * progress,
+          y: points.from.y + (points.to.y - points.from.y) * progress,
+        };
+        const bounds = surface.getBoundingClientRect();
+        const x =
+          ((bounds.width / 2 + (points.target.x - center.x) * points.zoom) *
+            surface.width) /
+          bounds.width;
+        const y =
+          ((bounds.height / 2 +
+            (points.target.y + 8 - center.y) * points.zoom) *
+            surface.height) /
+          bounds.height;
+        return [
+          ...surface
+            .getContext('2d')!
+            .getImageData(Math.round(x), Math.round(y), 1, 1).data,
+        ].slice(0, 3);
+      },
+      { from, to, target, zoom },
+    );
+  await requestTurn(page);
+  await page.clock.runFor(100);
+  expect(
+    Number(await canvas.getAttribute('data-moving-progress')),
+  ).toBeLessThan(0.5);
+  expect(await color()).not.toEqual([17, 45, 52]);
+  await page.clock.runFor(200);
+  const progress = Number(await canvas.getAttribute('data-moving-progress'));
+  expect(progress).toBeGreaterThan(0.5);
+  expect(progress).toBeLessThan(1);
+  expect(await color()).toEqual([17, 45, 52]);
+  await page.screenshot({
+    path: testInfo.outputPath('sight-during-movement.png'),
+  });
+});
 
 async function noOverflow(page: Page) {
   expect(

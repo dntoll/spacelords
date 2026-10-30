@@ -669,8 +669,16 @@ export class AppController {
           for (const movement of track) {
             this.#model.focusTurnMovement(movement);
             this.#view.render(this.#model.snapshot);
-            await (this.#view.animateTurnStep?.({ movements: [movement] }) ??
-              Promise.resolve());
+            await (this.#view.animateTurnStep?.(
+              { movements: [movement] },
+              (progress) => {
+                if (
+                  !this.#disposed &&
+                  this.#model.advanceTurnMovement(progress)
+                )
+                  this.#view.render(this.#model.snapshot);
+              },
+            ) ?? Promise.resolve());
             if (this.#disposed) return;
             this.#model.completeTurnMovement();
           }

@@ -2270,6 +2270,8 @@ export class Game {
   }
   #validateProjectFleet(planet: Planet, id: string | null): void {
     const fleet = id ? this.#fleetState(id) : null;
+    if (fleet?.routeId)
+      throw new Error('Choose a fleet without a trade route for new ships.');
     if (fleet?.position && fleet.position.key !== planet.position.key)
       throw new Error('Choose an empty fleet or a fleet at this planet.');
   }
@@ -2966,15 +2968,18 @@ export class Game {
     parts: Partial<Record<Component, number>> = {},
   ): void {
     state.population -= SHIPS[ship].crew;
+    // nybyggda-skepp-utan-ruttflotta: recheck assignments made after the order was queued.
     let reserve =
       this.#fleets.find(
         (fleet) =>
           fleet.id === destinationFleetId &&
+          !fleet.routeId &&
           (!fleet.position || fleet.position.key === planet.position.key),
       ) ??
       this.#fleets.find(
         (fleet) =>
           fleet.id === state.homeFleetId &&
+          !fleet.routeId &&
           (!fleet.position || fleet.position.key === planet.position.key),
       );
     if (!reserve) {

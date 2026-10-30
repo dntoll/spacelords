@@ -1472,8 +1472,11 @@ export class AppView implements AppPort {
     this.#panel.hidden = contents.length === 0;
   }
 
-  animateTurnStep(frame: TurnFrame): Promise<void> {
-    return this.#map?.animateTurnStep?.(frame) ?? Promise.resolve();
+  animateTurnStep(
+    frame: TurnFrame,
+    onProgress?: (progress: number) => void,
+  ): Promise<void> {
+    return this.#map?.animateTurnStep?.(frame, onProgress) ?? Promise.resolve();
   }
 }
 import { renderSalvageSelection } from './SalvageView.js';

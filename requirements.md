@@ -10,6 +10,13 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Sikt under rörelse och nya skepp:** `sikt-under-forflyttning` och
+  `nybyggda-skepp-utan-ruttflotta` är **Fullständigt implementerat**.
+  Synfält och synliga pirater uppdateras under skeppens rörelse; lämnade
+  områden behålls som kartminne. Nybyggda skepp får en vanlig lokal flotta
+  och hamnar inte direkt i en flotta med ruttuppdrag. Se
+  [sikt](docs/detection-telescopes.md) och [logistik](docs/economy-logistics.md).
+
 - **Genererade symboler och kartbilder:** `genererade-symboler-och-kartbilder`
   är **Fullständigt implementerat**. 24 byggnadssymboler, sex planeter och
   en kartbild för Orbital shipyard är genererade, granskade och sparade som

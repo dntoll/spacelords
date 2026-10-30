@@ -266,6 +266,69 @@ describe('gemensam-planetko / fabrikskoer / skepp-i-byggko', () => {
 });
 
 describe('skepp-till-destinationsflotta', () => {
+  it.each([false, true])(
+    'nybyggda-skepp-utan-ruttflotta: excludes a route-assigned home fleet (explicit target: %s)',
+    (explicit) => {
+      const { game: original, planet, factory } = setup();
+      factory('Transport ship factory');
+      original.scheduleShip(
+        planet,
+        'Transport ship',
+        explicit ? 'fleet-home' : null,
+      );
+      const state = original.exportState();
+      const target = state.world.systems[0]!.planets.find(
+        (item) => item.id !== planet.id,
+      )!;
+      const game = Game.restore({
+        ...state,
+        tradeRoutes: [
+          { id: 'home-route', a: planet.id, b: target.id, closing: false },
+        ],
+        fleets: state.fleets.map((fleet) => ({
+          ...fleet,
+          routeId: 'home-route',
+          ships: { ...fleet.ships, 'Transport ship': 1 },
+        })),
+        colonies: [
+          ...state.colonies,
+          [
+            target.id,
+            {
+              ...structuredClone(state.colonies[0]![1]),
+              projects: [],
+              buildings: [],
+              homeFleetId: null,
+            },
+          ],
+        ],
+      });
+      for (const frame of turnFrames(game)) game.applyFrame(frame);
+      game.finishTurn();
+      expect(game.fleet('fleet-home')!.ships['Transport ship']).toBe(1);
+      const receiver = game
+        .fleetSnapshots()
+        .find((fleet) => !fleet.routeId && fleet.ships['Transport ship'] === 1);
+      expect(receiver?.position).toEqual(planet.position);
+      expect(
+        game.exportState().colonies.find(([id]) => id === planet.id)![1]
+          .homeFleetId,
+      ).toBe(receiver?.id);
+      expect(() =>
+        game.scheduleShip(planet, 'Transport ship', 'fleet-home'),
+      ).toThrow('without a trade route');
+      game.scheduleShip(planet, 'Transport ship');
+      const project = game.planetSnapshot(planet)!.projects[0]!;
+      expect(() =>
+        game.setProjectFleet(planet, project.id, 'fleet-home'),
+      ).toThrow('without a trade route');
+      for (const frame of turnFrames(game)) game.applyFrame(frame);
+      game.finishTurn();
+      expect(game.fleet(receiver!.id)!.ships['Transport ship']).toBe(2);
+      expect(game.fleet('fleet-home')!.ships['Transport ship']).toBe(1);
+    },
+  );
+
   it('delivers each queued ship to its chosen local fleet and permits destination changes', () => {
     const { game, planet, snapshot, turn, factory } = setup();
     const yard = factory('Colony ship factory');

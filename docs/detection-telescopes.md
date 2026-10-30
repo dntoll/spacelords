@@ -3,6 +3,16 @@
 Aktuell sikt skiljs från kartminnet. En utforskad ruta förblir känd även när
 ingen observerar den. Det är bara aktuell sikt som avslöjar pirater.
 
+`sikt-under-forflyttning` — **Fullständigt implementerat**: synfältet följer
+skeppets visade position även under årets rörelseanimation. När skeppet går
+över till nästa hex uppdateras ljusa rutor, siktgräns, nya upptäckter och
+synliga pirater direkt. Rutor som lämnas behålls som mörkare kartminne.
+Övriga flottor och ägda planeter bidrar fortsatt från sina visade positioner;
+en annan flottas kommande resa avslöjas inte i förväg. Teleskopens räckvidd
+och nebulosornas sikthinder gäller också under rörelsen. Utan animation visas
+samma uppdaterade resultat. Kravet förtydligar `aktuell-detektionssikt`,
+`kartans-sikttillstand` och `en-flotta-i-taget`; sparade spel bevaras.
+
 | Krav                           | Status                     | Spelarens beteende                                                                                                                                              |
 | ------------------------------ | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `aktuell-detektionssikt`       | Fullständigt implementerat | Ägda planeter och flottor bidrar med ett gemensamt synfält. Pirater kan bara ses och inspekteras inom det.                                                      |

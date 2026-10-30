@@ -114,6 +114,11 @@ TelescopeFactory --|> Building
 TelescopeFactory --> Component : produces matching telescope
 Detection --> Colony : highest completed telescope factory
 Detection --> Fleet : best installed telescope
+note on link
+  sikt-under-forflyttning:
+  Synfältet följer visad position under rörelsen.
+  Övriga observatörer och kartminnet behålls.
+end note
 SavedGame --> Detection : pirate contacts
 Ship "1" *-- "1..3" Component : installed engines
 
@@ -205,6 +210,11 @@ Technology --> Building : unlocks
 Technology --> Technology : prerequisites
 Building --> Research : Research station contributes
 ConstructionProject --> Fleet : ship recipient
+note on link
+  nybyggda-skepp-utan-ruttflotta:
+  Mottagaren saknar ruttuppdrag vid färdigställandet.
+  Annars används eller skapas en vanlig lokal hemflotta.
+end note
 Colony --> Fleet : home fleet
 Fleet "1" o-- "0..*" Ship
 note right of Fleet

@@ -85,6 +85,18 @@ också vanliga mottagarflottor. Avstånd och fart gäller även under förfölje
 en långsammare grupp kan behöva att målflottan stannar för att hinna ikapp.
 Anslutningen ger inga extra förflyttningssteg under året.
 
+`nybyggda-skepp-utan-ruttflotta` — **Fullständigt implementerat**: nybyggda
+skepp placeras aldrig direkt i en flotta knuten till en Trade route.
+Destination fleet erbjuder bara vanliga lokala eller tomma flottor. Om
+planetens hemflotta har ett ruttuppdrag skapas en vanlig lokal hemflotta som
+tar emot skeppet och kommande byggen. Om en vald mottagare får ett ruttuppdrag
+innan skeppet blir klart används en giltig hemflotta i stället.
+
+Ändring 2026-10-30: detta begränsar mottagarvalet i
+`skepp-till-destinationsflotta`; det ersätter tidigare möjlighet att låta en
+ruttflotta vid planeten ta emot nybyggen. Spelarens uttryckliga överföring av
+redan byggda skepp till en ruttflotta enligt `forstarka-ruttflotta` behålls.
+
 Förstärkningsordern sparas, kan avbrytas på Star map eller i Fleets eller ersättas med en ny
 destination. Om målet blir tomt eller försvinner stannar skeppen där de är och
 blir ett nytt beslut. När en förstärkningsgrupp ansluter försvinner dess
