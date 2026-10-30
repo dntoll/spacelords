@@ -23,7 +23,9 @@ Se [hela visionen](docs/game-vision.md).
   **Fullständigt implementerat** med samtidig visning av träd och en mindre,
   fast detaljdel. På stående mobil ligger detaljerna under trädet; på bredare
   skärmar bredvid. Detta ersätter informationen i varje trädruta.
-  `kompakt-forskningstrad` har halverad nodhöjd och tätare grenar.
+  `kompakt-forskningstrad` har halverad nodhöjd och cirka en tredjedel smalare
+  noder med tätare grenar. Namnen i trädet utelämnar factory och ryms på två
+  rader. Färg och små markörer ersätter statusraden.
   Detaljdelen använder en liten Research-knapp bredvid tekniknamnet och
   samlar beskrivning, kostnad och förkrav direkt under utan tom handlingsyta.
 

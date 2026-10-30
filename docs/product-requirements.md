@@ -131,6 +131,9 @@ tangentbordets zoom, panorering och översikt finns kvar.
   detaljtexten; köpanelen täcker inte detaljdelen. Noderna har halverad höjd
   och tätare grenar enligt `kompakt-forskningstrad`. En liten Research-knapp
   ligger bredvid tekniknamnet, med informationen direkt under.
+  Noderna är även cirka en tredjedel smalare. factory utelämnas ur trädets
+  namn, som får brytas på två rader. Färg och små markörer ersätter
+  statusraden; fullständigt namn och status finns vid val.
 
 - 2026-10-21: `forskningstradets-utrymme` ersätter den fasta stations- och
   köpanelen samt zoomrutan i Research. Reglerna i `forskningsoversikt` och

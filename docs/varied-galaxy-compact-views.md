@@ -7,7 +7,7 @@ Beslut 2026-10-27. Befintliga sparade spel bevaras.
 | `stjarnvariation`                | Fullständigt implementerat | Stjärnor har stabila olika färger och storlekar, utan spikes. Detaljnivån minskar med utzoomningen.             |
 | `galaxarmar`                     | Fullständigt implementerat | Nya galaxer har 150 system i tre oregelbundna spiralarmar med tomrum och en mindre andel system mellan armarna. |
 | `dragbara-flottorder`            | Fullständigt implementerat | Orderraden kan dras med vänster musknapp utan att en order aktiveras.                                           |
-| `kompakt-forskningstrad`         | Fullständigt implementerat | Små forskningsrutor visar symbol, namn och kort status.                                                         |
+| `kompakt-forskningstrad`         | Fullständigt implementerat | Små forskningsrutor visar symbol och namn utan factory på högst två rader. Färg och små markörer visar status.  |
 | `forskningens-avslojande`        | Fullständigt implementerat | Färdig, köad, återfunnen och nästa tillgängliga forskning identifieras. Senare nivåer visas anonymt.            |
 | `forskningsdetaljer-vid-val`     | Fullständigt implementerat | Val öppnar en kompakt detaljpanel med separat Research-knapp.                                                   |
 | `produktionsvalens-statusfarger` | Fullständigt implementerat | Byggnader, varor och skepp visar färger för lokal förekomst, aktivt nätverk, byggkö och avsaknad.               |

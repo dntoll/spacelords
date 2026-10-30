@@ -56,3 +56,11 @@ tekniknamnet, med beskrivning, kostnad och förkrav direkt under. Detta ersätte
 förslagets breda knapp längst ned och dess tomma yta ovanför. Detaljdelen tar
 mindre plats så att mer av trädet syns. Research-rubriken och beslutshjälpen
 är också kompaktare.
+
+Smalare noder 2026-10-30: `kompakt-forskningstrad` minskar även bredden med
+cirka en tredjedel. factory utelämnas i trädets namn och namnen får brytas på
+två rader. Den synliga statusraden, bland annat Available, ersätts av färger
+och små markörer för pågående, köad och färdig forskning. Fullständiga namn
+och status finns i hjälptext, tillgänglighetsinformation och vald tekniks
+detaljer. Okända tekniker förblir anonyma. Detta ersätter den korta statusraden
+i tidigare formuleringar av `kompakt-forskningstrad`.

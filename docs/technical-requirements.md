@@ -59,9 +59,13 @@ efterföljande klick stoppas före orderknappen eller ruttmenyn. Touch använder
 fortsatt webbläsarens inbyggda scroll. AppView bevarar scrollLeft per flott-ID
 vid omrendering. Träffytorna är fortsatt minst 44 × 44 px.
 
-`kompakt-forskningstrad`: ResearchTreeLayout och CSS använder 160 × 36 px,
-32 px horisontellt mellanrum och minst 12 px vertikalt. Layouten undviker
+`kompakt-forskningstrad`: ResearchTreeLayout och CSS använder 108 × 36 px,
+24 px horisontellt mellanrum och minst 12 px vertikalt. Layouten undviker
 överlapp även vid delade förkunskaper. Pilar och kameragränser delar måtten.
+Endast den synliga nodtiteln utelämnar suffixet factory och använder högst två
+rader. Full teknikidentitet behålls i intent, dataattribut, aria-label och
+detaljpanelen. aria-description och title visar status. Noderna använder olika
+bakgrundsfärger; färdiga visar ✓, pågående ▶ och köade sin köposition.
 `forskningens-avslojande` härleds från färdig, köad och återfunnen forskning
 samt att alla förkunskaper är färdiga. Anonyma rutor visar inga avslöjande
 namn, bilder eller tillgänglighetstexter.

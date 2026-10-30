@@ -10,6 +10,38 @@ import { gameText } from '../../src/client/views/GameText.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 
 describe('kompakt-spelgranssnitt', () => {
+  it('kompakt-forskningstrad: shortens only tile titles and exposes status without a visible status row', () => {
+    const model = researchStationModel();
+    const emit = vi.fn();
+    const page = renderResearch(
+      model.snapshot.research,
+      false,
+      emit,
+      'Rocket engine factory',
+    );
+    const tile = page.querySelector(
+      '[data-technology="Rocket engine factory"]',
+    )!;
+    const choose = tile.querySelector<HTMLButtonElement>('button')!;
+    expect(tile.querySelector('.research-node-name')!.textContent).toBe(
+      'Rocket engine',
+    );
+    expect(tile.textContent).not.toContain('Available');
+    expect(choose.getAttribute('aria-label')).toBe(
+      'Inspect Rocket engine factory',
+    );
+    expect(choose.getAttribute('aria-description')).toBe('Available');
+    expect(choose.title).toContain('Rocket engine factory');
+    choose.click();
+    expect(emit).toHaveBeenCalledWith({
+      type: 'inspect-research',
+      technology: 'Rocket engine factory',
+    });
+    expect(page.querySelector('.research-details h2')!.textContent).toBe(
+      'Rocket engine factory',
+    );
+  });
+
   it.each(['tap', 'drag', 'cancel'] as const)(
     'research-med-ett-tryck: touch activation works without a synthetic click and cannot order after a drag or cancellation (%s)',
     (action) => {

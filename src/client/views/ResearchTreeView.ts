@@ -144,7 +144,6 @@ export function renderResearchTree(
     choose.replaceChildren();
     choose.id = `research-node-${index}`;
     choose.setAttribute('aria-pressed', String(inspected === type));
-    choose.title = identified ? type : 'Unknown technology';
     const art =
       identified && type !== 'Trade logistics'
         ? BUILDING_IMAGES[type as BuildType]
@@ -164,7 +163,11 @@ export function renderResearchTree(
     art.setAttribute('aria-hidden', 'true');
     choose.append(
       art,
-      element('span', 'research-node-name', identified ? type : 'Unknown'),
+      element(
+        'span',
+        'research-node-name',
+        identified ? type.replace(/ factory$/, '') : 'Unknown',
+      ),
     );
     const status = !identified
       ? 'Undiscovered'
@@ -181,7 +184,20 @@ export function renderResearchTree(
                 ? 'Recovered'
                 : 'Available'
               : 'Prerequisites pending';
-    choose.append(element('small', 'research-node-status', status));
+    choose.setAttribute('aria-description', status);
+    choose.title = `${identified ? type : 'Unknown technology'} · ${status}`;
+    const marker = complete
+      ? '✓'
+      : queued === 0
+        ? '▶'
+        : queued > 0
+          ? String(queued + 1)
+          : null;
+    if (marker) {
+      const badge = element('small', 'research-node-marker', marker);
+      badge.setAttribute('aria-hidden', 'true');
+      choose.append(badge);
+    }
     card.append(choose);
     stage.append(card);
   }

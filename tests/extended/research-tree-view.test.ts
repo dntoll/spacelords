@@ -75,7 +75,9 @@ it('forskning-fran-bargade-delar: shows recovered technology as available while 
     '[data-technology="Telescope III factory"]',
   )!;
   expect(recovered.dataset.state).toBe('available');
-  expect(recovered.textContent).toContain('Recovered');
+  expect(
+    recovered.querySelector('button')!.getAttribute('aria-description'),
+  ).toBe('Recovered');
   expect(
     view.querySelector<HTMLElement>('[data-technology="Telescope II factory"]')!
       .dataset.state,

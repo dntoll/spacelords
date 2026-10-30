@@ -1,6 +1,49 @@
 import { expect, test } from '@playwright/test';
 import { researchStationState } from '../fixtures/research-station.js';
 import { startFirstSlot } from './save-helpers.js';
+import { TECHNOLOGIES } from '../../src/client/models/Research.js';
+
+test('kompakt-forskningstrad: shortened technology names fit two lines in narrow tiles', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.addInitScript(
+    (state) => {
+      localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-10-30T00:00:00Z', state }),
+      );
+    },
+    { ...researchStationState(), researched: [...TECHNOLOGIES] },
+  );
+  await page.goto('./');
+  await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Research', exact: true }).click();
+  const labels = await page.locator('.research-node').evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const label = node.querySelector<HTMLElement>('.research-node-name')!;
+      const style = getComputedStyle(label);
+      return {
+        technology: (node as HTMLElement).dataset.technology!,
+        name: label.textContent,
+        width: (node as HTMLElement).offsetWidth,
+        fits:
+          label.scrollHeight <= label.clientHeight + 1 &&
+          label.clientHeight <= 2 * Number.parseFloat(style.lineHeight) + 1,
+      };
+    }),
+  );
+  expect(labels.length).toBeGreaterThan(15);
+  for (const label of labels) {
+    expect(label.name).toBe(label.technology.replace(/ factory$/, ''));
+    expect(label.width).toBeLessThanOrEqual(108);
+    expect(label.fits, label.technology).toBe(true);
+  }
+  await page.screenshot({
+    path: testInfo.outputPath('research-narrow-labels.png'),
+  });
+});
 
 for (const size of [
   { width: 320, height: 568 },

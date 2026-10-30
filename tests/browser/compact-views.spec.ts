@@ -75,8 +75,11 @@ test('kompakt-forskningstrad / forskningsdetaljer-vid-val: compact tree tiles sh
     width: (node as HTMLElement).offsetWidth,
     height: (node as HTMLElement).offsetHeight,
   }));
-  expect(size.width).toBeLessThanOrEqual(160);
+  expect(size.width).toBeLessThanOrEqual(108);
   expect(size.height).toBe(36);
+  await expect(card.locator('.research-node-name')).toHaveText('Rocket engine');
+  await expect(card).not.toContainText('Available');
+  await expect(rocket).toHaveAttribute('aria-description', 'Available');
   await expect(card.locator('.research-node-details')).toHaveCount(0);
   await expect(
     page.getByRole('button', { name: 'Inspect Fighter factory', exact: true }),

@@ -19,6 +19,7 @@ describe('forsknings-tradnavigation', () => {
       'Telescope I factory',
     ]);
     expect(layout.cardHeight).toBe(36);
+    expect(layout.cardWidth).toBeLessThanOrEqual(108);
     const [first, second] = layout.nodes;
     expect(second!.y - first!.y).toBe(layout.cardHeight + 12);
     expect(layout.height).toBeLessThanOrEqual(148);

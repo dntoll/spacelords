@@ -16,7 +16,7 @@ export function isResearchIdentified(
 }
 
 export class ResearchTreeLayout {
-  readonly cardWidth = 160;
+  readonly cardWidth = 108;
   readonly cardHeight = 36;
   readonly edges: readonly Readonly<{ from: Technology; to: Technology }>[];
   readonly nodes: readonly Readonly<{
@@ -56,7 +56,7 @@ export class ResearchTreeLayout {
     const nodes = technologies.map((technology) =>
       Object.freeze({
         technology,
-        x: 32 + depth(technology) * (this.cardWidth + 32),
+        x: 32 + depth(technology) * (this.cardWidth + 24),
         y: 32 + row(technology) * (this.cardHeight + 12),
       }),
     );
