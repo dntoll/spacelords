@@ -28,6 +28,9 @@ Se [hela visionen](docs/game-vision.md).
   rader. Färg och små markörer ersätter statusraden.
   Detaljdelen använder en liten Research-knapp bredvid tekniknamnet och
   samlar beskrivning, kostnad och förkrav direkt under utan tom handlingsyta.
+  `transport-ship-efter-rocket-engine` är **Fullständigt implementerat**:
+  Transport ship factory har samma förkunskap som Colony ship factory,
+  Rocket engine factory. Exploration ship factory krävs inte.
 
 - **Civiltrafik och arbetskraft:** `civil-skyttelforskning`,
   `civil-skytteltillverkning`, `automatisk-arbetskraftstrafik`,

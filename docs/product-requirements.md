@@ -765,6 +765,12 @@ samt gruppvalet för flera upptäckter. Kravnamnen `upptacktsavbrott`,
 `stridsrapport-i-dialog` behålls. `sekventiella-arshandelser` omfattar nu även
 presentation vid avbrott under året.
 
+`transport-ship-efter-rocket-engine` — **Fullständigt implementerat**:
+Transport ship factory kräver enbart Rocket engine factory, samma förkunskap
+som Colony ship factory. Detta ersätter Exploration ship factory som
+förkunskap under `forskningsberoenden` och `transportfabrik`. Äldre sparningar
+och befintliga forskningsköer bevaras.
+
 ## Utforskning och upptäcktsavbrott
 
 De nya kraven och förtydligandena finns i [utforskning och upptäckter](exploration-interruptions.md).

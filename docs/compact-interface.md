@@ -38,6 +38,15 @@ Forskningsvägen till Colony ship factory ersätter det tidigare förkravet
 Exploration ship factory i `forska-fram-fabriker` och `forskningsko`.
 Befintliga sparade spel och redan köad forskning bevaras.
 
+`transport-ship-efter-rocket-engine` — **Fullständigt implementerat**:
+Transport ship factory kräver Rocket engine factory, precis som Colony ship
+factory. Exploration ship factory och Telescope I factory krävs inte.
+Detta ersätter det tidigare förkravet Exploration ship factory under
+`forskningsberoenden` och `transportfabrik`. Forskningsträdet visar den nya
+vägen. Befintliga sparningar och redan köade tekniker behålls; Exploration ship
+factory kan tas ur kön utan att Transport ship factory och Trade logistics
+tas bort. Rocket engine factory krävs fortfarande.
+
 Senare ändring 2026-10-30: `forskningsdetaljer-vid-val` ersätter den tidigare
 informationen och Research-knappen i varje trädruta med en gemensam detaljdel
 för valet. Detaljerna ligger under trädet på stående mobil och bredvid på bredare

@@ -4,6 +4,59 @@ import { startFirstSlot } from './save-helpers.js';
 import { Game } from '../../src/client/models/Game.js';
 import { ResearchTreeLayout } from '../../src/client/models/ResearchTree.js';
 
+test('transport-ship-efter-rocket-engine: transport shares the engine prerequisite with Colony ship and can be researched before exploration', async ({
+  page,
+}) => {
+  await page.addInitScript(
+    (state) => {
+      localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-10-30T00:00:00Z', state }),
+      );
+    },
+    { ...researchStationState(), researched: ['Rocket engine factory'] },
+  );
+  await page.goto('./');
+  await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Research', exact: true }).click();
+  await expect(
+    page.locator(
+      '[data-from="Rocket engine factory"][data-to="Transport ship factory"]',
+    ),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(
+      '[data-from="Exploration ship factory"][data-to="Transport ship factory"]',
+    ),
+  ).toHaveCount(0);
+  const transport = page.getByRole('button', {
+    name: 'Inspect Transport ship factory',
+    exact: true,
+  });
+  await transport.focus();
+  await transport.click();
+  await expect(page.locator('.research-details .research-requires')).toHaveText(
+    'Requires: Rocket engine factory',
+  );
+  await page
+    .getByRole('button', {
+      name: 'Research Transport ship factory',
+      exact: true,
+    })
+    .click();
+  await expect(page.locator('.research-queue article')).toHaveCount(1);
+  await expect(page.locator('.research-queue article')).toContainText(
+    'Transport ship factory',
+  );
+  await expect(
+    page.getByRole('button', {
+      name: 'Inspect Exploration ship factory',
+      exact: true,
+    }),
+  ).toHaveCount(0);
+});
+
 test('forsknings-tradnavigation: native touch pans and pinches the tree', async ({
   page,
   context,

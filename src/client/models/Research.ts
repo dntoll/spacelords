@@ -38,7 +38,7 @@ export const PREREQUISITES: Readonly<
   'Exploration ship factory': ['Rocket engine factory', 'Telescope I factory'],
   'Colony ship factory': ['Rocket engine factory'],
   'Fighter factory': ['Weapons module factory'],
-  'Transport ship factory': ['Exploration ship factory'],
+  'Transport ship factory': ['Rocket engine factory'],
   'Trade logistics': ['Transport ship factory'],
   'Civilian transport': ['Trade logistics'],
   'Automated salvage': ['Salvage ship factory'],
