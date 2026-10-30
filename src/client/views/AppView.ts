@@ -882,6 +882,10 @@ export class AppView implements AppPort {
             .getComputedStyle(announcement)
             .getPropertyValue('--event-marker-gap'),
         ) || 82;
+      const markerY =
+        map.top +
+        map.height / 2 +
+        (point.y - model.camera.center.y) * model.camera.zoom;
       if (event.decision) {
         const end = this.#root
           .querySelector('.end-turn')
@@ -890,19 +894,14 @@ export class AppView implements AppPort {
           window.innerHeight - 8,
           (end?.top ?? window.innerHeight) - 8,
         );
-        const markerY =
-          map.top +
-          map.height / 2 +
-          (point.y - model.camera.center.y) * model.camera.zoom;
         const available = Math.max(80, bottom - markerY - markerGap);
         announcement.style.maxHeight = `${available}px`;
-      }
-      originY =
-        map.top +
-        map.height / 2 +
-        (point.y - model.camera.center.y) * model.camera.zoom +
-        markerGap +
-        announcement.offsetHeight / 2;
+        // gemensamt-handelseflode: preserve End turn when marker spacing cannot fit.
+        originY = Math.min(
+          markerY + markerGap + announcement.offsetHeight / 2,
+          bottom - announcement.offsetHeight / 2,
+        );
+      } else originY = markerY + markerGap + announcement.offsetHeight / 2;
       announcement.style.setProperty('--event-origin-x', `${originX}px`);
       announcement.style.setProperty('--event-origin-y', `${originY}px`);
     } else {

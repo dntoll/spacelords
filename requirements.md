@@ -78,6 +78,9 @@ Se [hela visionen](docs/game-vision.md).
   `stridsresultat-utan-upprepning` är **Fullständigt implementerat**:
   stridsresultatet visas en gång, med plats och vrakantal som kompletterande
   detaljer.
+  `gemensamt-handelseflode` håller även händelserutan ovanför End turn på
+  låga, liggande telefoner. Det är **Fullständigt implementerat** och skyddas
+  av ett regressionstest för begränsad höjd.
   Se [Events och beslutsguidning](docs/events-and-guidance.md).
 
 - **Sikt under rörelse och nya skepp:** `sikt-under-forflyttning` och

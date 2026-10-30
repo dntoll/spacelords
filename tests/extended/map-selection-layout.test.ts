@@ -48,7 +48,7 @@ function expectSelection(active: boolean) {
   expect(root.querySelector<HTMLElement>('.selection-panel')!.hidden).toBe(
     !active,
   );
-  expect(root.querySelector<HTMLElement>('.turn-console')!.hidden).toBe(active);
+  expect(root.querySelector<HTMLElement>('.turn-console')!.hidden).toBe(false);
   expect(root.querySelector<HTMLButtonElement>('.end-turn')!.hidden).toBe(
     false,
   );
@@ -62,14 +62,14 @@ describe('fokuserat-kartval', () => {
     ).toBeNull();
   });
 
-  it('uses the lower area for the planet and restores turn actions for empty explored and unexplored hexes', () => {
+  it('gemensam-events-panel: keeps turn controls available while selecting planets and empty hexes', () => {
     view.render(model.snapshot);
     expectSelection(true);
-    for (const visible of [true, false]) {
+    for (const explored of [true, false]) {
       const cell = model.snapshot.cells.find(
         (cell) =>
           !cell.object &&
-          cell.visible === visible &&
+          cell.explored === explored &&
           !model.snapshot.fleets.some(
             (fleet) => fleet.position?.key === cell.position.key,
           ),
@@ -77,21 +77,25 @@ describe('fokuserat-kartval', () => {
       expect(cell).toBeDefined();
       model.select(cell.position);
       view.render(model.snapshot);
-      expectSelection(false);
-      expect(root.querySelector('.selection-panel')!.textContent).toBe('');
+      expectSelection(!explored);
+      expect(root.querySelector('.selection-panel')!.textContent).toBe(
+        explored ? '' : 'Unexplored',
+      );
     }
     model.home();
     view.render(model.snapshot);
     expectSelection(true);
   });
 
-  it('follows the latest events when the hidden console first becomes visible', () => {
+  it('gemensam-events-panel: preserves the open Events log and its reading position when the map selection changes', () => {
     const events = Array.from({ length: 120 }, (_, index) => ({
       id: `event-${index}`,
-      round: index + 1,
+      round: 1,
       text: `Event ${index}`,
     }));
     view.render({ ...model.snapshot, events });
+    const console = root.querySelector<HTMLDetailsElement>('.turn-console')!;
+    console.open = true;
     const log = root.querySelector<HTMLElement>('[role="log"]')!;
     Object.defineProperties(log, {
       scrollHeight: {
@@ -99,10 +103,14 @@ describe('fokuserat-kartval', () => {
       },
       clientHeight: { value: 60 },
     });
+    log.scrollTop = 40;
     model.select(new HexCoordinate(-2, 0));
     view.render({ ...model.snapshot, events });
-    expect(log.querySelectorAll('[data-event-id]')).toHaveLength(1);
-    expect(log.scrollTop).toBe(10);
+    expect(root.querySelector('[role="log"]')).toBe(log);
+    expect(log.querySelectorAll('[data-event-id]')).toHaveLength(120);
+    expect(console.hidden).toBe(false);
+    expect(console.open).toBe(true);
+    expect(log.scrollTop).toBe(40);
   });
 
   it('retains fleet orders in empty space without empty-space descriptions', () => {
@@ -120,7 +128,7 @@ describe('fokuserat-kartval', () => {
     );
   });
 
-  it('gives a selected trade route the lower area and restores Events after leaving it', () => {
+  it('gemensam-events-panel: keeps Events available while entering and leaving a selected trade route', () => {
     const state = tradeNetworkState();
     model = new AppModel(undefined, {
       load: () => ({ lastPlayed: '2026-10-21T10:00:00Z', state }),
@@ -132,7 +140,15 @@ describe('fokuserat-kartval', () => {
     view.render(model.snapshot);
     expectSelection(true);
     expect(root.querySelector('[aria-label="Selected route"]')).not.toBeNull();
-    model.select(new HexCoordinate(-2, 0));
+    const empty = model.snapshot.cells.find(
+      (cell) =>
+        cell.explored &&
+        !cell.object &&
+        !model.snapshot.fleets.some(
+          (fleet) => fleet.position?.key === cell.position.key,
+        ),
+    )!;
+    model.select(empty.position);
     view.render(model.snapshot);
     expectSelection(false);
   });

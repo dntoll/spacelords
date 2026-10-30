@@ -36,6 +36,7 @@ test('automatiska-delorder: orders remote production through the UI and preserve
   test.setTimeout(120_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  const initial = initialState();
   await page.addInitScript((state) => {
     if (localStorage.getItem('components-seeded')) return;
     localStorage.setItem('spacelords.economy-v2-reset', 'done');
@@ -45,7 +46,7 @@ test('automatiska-delorder: orders remote production through the UI and preserve
       JSON.stringify({ lastPlayed: '2026-10-23T10:00:00Z', state }),
     );
     localStorage.setItem('components-seeded', 'yes');
-  }, initialState());
+  }, initial);
   await page.goto('./');
   await startFirstSlot(page);
   await selectMapObject(page, 'Vesta');
@@ -107,7 +108,7 @@ test('automatiska-delorder: orders remote production through the UI and preserve
         }
       ).state,
   );
-  expect(saved.version).toBe(8);
+  expect(saved.version).toBe(initial.version);
   expect(saved.componentOrders).toEqual([]);
   expect(saved.colonies[0]![1].projects).toEqual([]);
   expect(saved.fleets.reduce((n, fleet) => n + fleet.ships.Fighter, 0)).toBe(3);

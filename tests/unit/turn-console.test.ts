@@ -13,6 +13,57 @@ import { AppController } from '../../src/client/controllers/AppController.js';
 import { AppView } from '../../src/client/views/AppView.js';
 
 describe('handelseannonsering / handelser-pa-kartan', () => {
+  it('gemensamt-handelseflode: keeps interactive event choices above End turn when marker spacing exceeds the available height', () => {
+    const root = document.createElement('div');
+    document.body.replaceChildren(root);
+    const model = new AppModel();
+    const view = new AppView(root, () => ({ render() {}, dispose() {} }));
+    const snapshot = {
+      ...model.snapshot,
+      camera: { ...model.snapshot.camera, center: { x: 0, y: 0 }, zoom: 1 },
+      eventPlayback: {
+        round: 1,
+        events: [
+          {
+            id: 'interactive',
+            round: 1,
+            text: 'Wreck discovered.',
+            position: new HexCoordinate(0, 0),
+            decision: {
+              title: 'Wreck discovered',
+              details: ['A wreck is in sight.'],
+              fleetId: 'fleet-home',
+            },
+          },
+        ],
+        index: 0,
+        stage: 'awaiting-choice' as const,
+      },
+    };
+    view.render(snapshot);
+    vi.spyOn(
+      root.querySelector<HTMLElement>('.map-container')!,
+      'getBoundingClientRect',
+    ).mockReturnValue(new DOMRect(0, 70, 667, 140));
+    vi.spyOn(
+      root.querySelector<HTMLButtonElement>('.end-turn')!,
+      'getBoundingClientRect',
+    ).mockReturnValue(new DOMRect(580, 270, 80, 44));
+    const announcement = root.querySelector<HTMLElement>(
+      '.event-announcement',
+    )!;
+    Object.defineProperties(announcement, {
+      offsetWidth: { value: 635 },
+      offsetHeight: { value: 80 },
+    });
+    view.render(snapshot);
+    const center = Number.parseFloat(
+      announcement.style.getPropertyValue('--event-origin-y'),
+    );
+    expect(center + announcement.offsetHeight / 2).toBeLessThanOrEqual(262);
+    expect(announcement.querySelectorAll('button')).toHaveLength(2);
+    view.dispose();
+  });
   it('planetinformation-pa-kartan: returns immutable current, basic and hidden planet knowledge', () => {
     const state = new Game(createExampleGalaxy()).exportState();
     state.colonies[0]![1].habitability = 73;

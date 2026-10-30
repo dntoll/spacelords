@@ -2,6 +2,11 @@
 
 Kraven nedan är **Fullständigt implementerat**.
 
+Förtydligande efter sluttest 2026-10-30: `gemensamt-handelseflode` behåller
+händelserutans Handle och Ignore ovanför End turn även på låga, liggande
+telefoner. När avståndet till kartmarkeringen inte ryms flyttas rutan uppåt;
+informationen kan rullas inom rutan. End turn får inte täckas.
+
 ## Händelser
 
 - `stridsresultat-utan-upprepning`: stridsrutans huvudtext visar förluster,

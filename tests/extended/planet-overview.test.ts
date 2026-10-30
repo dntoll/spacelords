@@ -108,7 +108,7 @@ describe('planetbudgetoversikt', () => {
 });
 
 describe('gemensamma-byggnadsbilder', () => {
-  it('labels only the research queue head as actively researching', () => {
+  it('kompakt-forskningstrad: marks only the research queue head as actively researching and exposes status accessibly', () => {
     const view = renderResearch(
       {
         available: TECHNOLOGIES,
@@ -126,10 +126,15 @@ describe('gemensamma-byggnadsbilder', () => {
       () => {},
     );
     expect(
-      [...view.querySelectorAll('.research-node-status')].filter((node) =>
-        node.textContent?.startsWith('Researching'),
-      ),
+      view.querySelectorAll('.research-node [aria-description="Researching"]'),
     ).toHaveLength(1);
+    const active = view.querySelector<HTMLElement>('.research-node.active')!;
+    expect(active.dataset.technology).toBe('Exploration ship factory');
+    expect(active.querySelector('.research-node-marker')!.textContent).toBe(
+      '▶',
+    );
+    expect(view.querySelectorAll('.research-node.queued')).toHaveLength(2);
+    expect(view.querySelectorAll('.research-node-status')).toHaveLength(0);
   });
   it('uses the same supplied image for selection and construction', () => {
     const { root, click } = setup();
