@@ -5359,14 +5359,8 @@ export class Game {
     delete fleet.courseOrigin;
     if (fleet.colonizationTargetId) return;
     if (fleet.civilian?.passengers) return;
-    // grupperade-transporthandelser: loaded arrivals are announced with the actual unloading.
-    if (
-      fleet.routeId &&
-      this.#logistics.shipments.some(
-        (shipment) => shipment.fleetId === fleet.id,
-      )
-    )
-      return;
+    // ruttflottor-utan-ankomstbesked: reaching an endpoint does not finish a route order.
+    if (fleet.routeId) return;
     this.#event(
       `${this.#fleetDisplayName(fleet)} arrived at ${place}.`,
       fleet.position,

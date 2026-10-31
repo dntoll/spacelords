@@ -9,6 +9,14 @@ informationen kan rullas inom rutan. End turn får inte täckas.
 
 ## Händelser
 
+- `ruttflottor-utan-ankomstbesked`: en flotta på Route ger inget ankomstbesked
+  när den når en ändplanet, vare sig med last eller utan. Uppdraget fortsätter.
+  Verklig lossning redovisas som levererat material i planetens årsbesked,
+  med flottans namn och mängder. Vanliga flottor med avslutad reseorder
+  behåller sina ankomstbesked. Kravet är **Fullständigt implementerat**.
+  Ändring 2026-10-31: detta ersätter ankomsttexten och undantaget för tomma
+  ruttankomster i `grupperade-transporthandelser`.
+
 - `grupperade-planethandelser`: material som lossats, färdig produktion,
   Population och ändrad Habitability samlas i ett enda årsbesked per planet.
   Alla levererande flottors namn och materialmängder behålls. Även färdiga
@@ -50,12 +58,12 @@ sparade spel behöver inte rensas.
   `gemensamt-handelseflode` och `handelseannonsering`; det ersätter den
   överkantnära placeringen på stora skärmar från 2026-10-27.
 
-- `grupperade-transporthandelser`: en transportflottas ankomst och hela
-  lossade last visas som ett enda besked med flottans namn, planet och mängd
+- `grupperade-transporthandelser`: en transportflottas hela
+  lossade last visas samlat med flottans namn, planet och mängd
   per råvara eller komponent. Flera lastposter av samma material summeras.
   Från 2026-10-31 ingår flottornas leveranser i samma planetbesked enligt
   `grupperade-planethandelser`. Uppgifterna kommer
-  när lasten faktiskt lossas; en tom ankomst behåller sitt vanliga besked.
+  när lasten faktiskt lossas. Ruttankomster utan last ger inget besked.
 - `ett-meddelande-per-skeppsbygge`: varje färdigbyggt skepp omnämns en gång
   med skeppstyp och planet i planetbeskedet. Det gäller alla skeppstyper.
 

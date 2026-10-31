@@ -15,6 +15,9 @@ Se [hela visionen](docs/game-vision.md).
   för anlänt material, färdig produktion, Population och Habitability.
   Leveranser från flera flottor finns i samma besked. Se
   [Events och beslutsguidning](docs/events-and-guidance.md).
+  `ruttflottor-utan-ankomstbesked` är **Fullständigt implementerat**:
+  flottor på Route ger inga ankomstbesked vid ändplaneterna eftersom
+  ruttuppdraget fortsätter. Lossade material ingår fortsatt i planetbeskedet.
 
 - **Direkta stridsorder:** `skeppsval-startar-stridstur` och
   `stridsorder-utan-mobilscroll` är **Fullständigt implementerat**. Val av ett

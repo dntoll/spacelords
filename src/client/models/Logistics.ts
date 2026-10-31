@@ -699,13 +699,13 @@ export class Logistics {
           order.shipmentId = null;
         }
       }
-      // grupperade-transporthandelser: one arrival contains every delivered material.
+      // grupperade-transporthandelser: report actual cargo, not arrival of the ongoing route.
       for (const [target, cargo] of deliveries) {
         const summary = MATERIALS.filter((material) => cargo[material] > 0)
           .map((material) => `${cargo[material]} ${material}`)
           .join(', ');
         port.event(
-          `${fleet.name ?? fleet.id} arrived at ${target.name} and delivered ${summary}.`,
+          `${fleet.name ?? fleet.id} delivered ${summary} to ${target.name}.`,
           target.position,
           target.id,
         );

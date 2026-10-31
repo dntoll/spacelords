@@ -54,12 +54,11 @@ describe('grupperade-planethandelser / grupperade-transporthandelser', () => {
     );
     expect(events).toHaveLength(1);
     expect(events[0]!.text).toContain(
-      'Freighters arrived at Vesta and delivered 10 Iron, 3 Water, 2 Oil, 1 Rocket engine.',
+      'Freighters delivered 10 Iron, 3 Water, 2 Oil, 1 Rocket engine to Vesta.',
     );
-    expect(events[0]!.text).toContain(
-      'Travellers arrived at Vesta and delivered 5 Iron.',
-    );
+    expect(events[0]!.text).toContain('Travellers delivered 5 Iron to Vesta.');
     expect(events[0]!.text).toContain('Population on Vesta changed by');
+    expect(events[0]!.text).not.toContain('arrived');
     expect(events.every((event) => event.round === 1)).toBe(true);
     const target = game.galaxy.systems
       .flatMap((system) => system.planets)
@@ -118,7 +117,7 @@ describe('grupperade-planethandelser / grupperade-transporthandelser', () => {
     expect(resumed.exportState().shipments).toHaveLength(0);
   });
 
-  it('keeps an empty route approach as one ordinary arrival', () => {
+  it('ruttflottor-utan-ankomstbesked: reaches route endpoints silently while its route order continues', () => {
     const state = loadedTransports();
     const game = Game.restore({ ...state, shipments: [] });
     collectTurnFrames(game);
@@ -126,10 +125,9 @@ describe('grupperade-planethandelser / grupperade-transporthandelser', () => {
     const events = game.events.filter((event) =>
       event.text.includes('arrived'),
     );
-    expect(events).toHaveLength(2);
-    expect(events.every((event) => !event.text.includes('delivered'))).toBe(
-      true,
-    );
+    expect(events).toHaveLength(0);
+    expect(game.fleet('travellers')!.routeId).toBe('route-test');
+    expect(game.fleet('travellers')!.destination).toBeNull();
   });
 
   it('keeps +0 reports separate for identically named planets and preserves legacy history', () => {

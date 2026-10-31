@@ -692,10 +692,16 @@ Detta ersätter den överkantnära placeringen på stora skärmar i
 `gemensamt-handelseflode` och förtydligar `handelseannonsering`.
 
 `grupperade-transporthandelser` är **Fullständigt implementerat**: en
-transportflottas ankomst och hela leverans visas i ett besked med flottans
+transportflottas hela leverans visas samlat med flottans
 namn, planet och summerade materialmängder. Alla flottors leveranser till
 samma planet ingår i planetens gemensamma årsbesked.
-En tom ankomst ger fortsatt ett ankomstbesked.
+Ruttankomster utan last ger inget besked.
+
+`ruttflottor-utan-ankomstbesked` är **Fullständigt implementerat**: flottor
+på Route ger inga ankomstbesked vid ändplaneterna eftersom deras uppdrag
+fortsätter. Levererat material finns kvar i planetens årsbesked med flottans
+namn och mängder. Vanliga reseorder behåller sina ankomstbesked. Detta
+ersätter ankomstbeskeden i `grupperade-transporthandelser` från 2026-10-31.
 
 `ett-meddelande-per-skeppsbygge` är **Fullständigt implementerat**: ett
 färdigbyggt skepp omnämns en gång med skeppstyp och planet i årsbeskedet.
