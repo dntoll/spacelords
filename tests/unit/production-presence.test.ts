@@ -88,7 +88,13 @@ describe('produktionsvalens-statusfarger', () => {
     },
   );
   it('distinguishes physical goods from factories and cargo, and retains queued counts alongside existing stock', () => {
-    const state = networkState();
+    const initial = networkState();
+    const state = {
+      ...initial,
+      researched: initial.researched.filter(
+        (type) => type !== 'Ion pulse engine factory',
+      ),
+    };
     state.colonies[0]![1].stock['Rocket engine'] = 0;
     state.colonies[2]![1].stock['Rocket engine'] = 7;
     state.colonies[0]![1].projects = [
