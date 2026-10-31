@@ -61,9 +61,6 @@ export class Salvage {
 
   static seed(galaxy: Galaxy): Salvage {
     const salvage = new Salvage();
-    const positions = HexCoordinate.disk(galaxy.radius).filter((position) =>
-      galaxy.isPassable(position),
-    );
     for (const [name, level, ion] of [
       ['nadir', 2, 0],
       ['aster', 3, 2],
@@ -73,16 +70,16 @@ export class Salvage {
       )?.star;
       if (!star) continue;
       // vrak-utanfor-stjarnor: derelicts must be reachable by salvage fleets.
-      const position = positions
-        .toSorted(
-          (a, b) => a.distanceTo(star.position) - b.distanceTo(star.position),
-        )
-        .find(
-          (position) =>
-            !salvage.wrecks.some(
-              (wreck) => wreck.position.key === position.key,
-            ),
-        );
+      const available = (position: HexCoordinate) =>
+        galaxy.isPassable(position) &&
+        !salvage.wrecks.some((wreck) => wreck.position.key === position.key);
+      const position =
+        star.position.neighbors().find(available) ??
+        HexCoordinate.disk(galaxy.radius)
+          .filter(available)
+          .toSorted(
+            (a, b) => a.distanceTo(star.position) - b.distanceTo(star.position),
+          )[0];
       if (!position) continue;
       salvage.addWreck(
         `wreck-${name}-explorer`,
