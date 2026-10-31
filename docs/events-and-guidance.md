@@ -21,11 +21,18 @@ informationen kan rullas inom rutan. End turn får inte täckas.
   Population och ändrad Habitability samlas i ett enda årsbesked per planet.
   Alla levererande flottors namn och materialmängder behålls. Även färdiga
   fabriksuppgraderingar, rivningar och väntande produktion ingår. Population
-  visas också vid +0. Olika planeter och år hålls isär. Samma besked annonseras
+  visas bara när antalet ändras. Olika planeter och år hålls isär. Samma besked annonseras
   på kartan och visas som en post i Events, med planetens namn och position.
   Raderna behåller sin inbördes händelseordning. Långa besked kan rullas och
   ligger ovanför End turn även på liggande mobil. Kravet är
   **Fullständigt implementerat**.
+
+- `population-besked-endast-vid-andring` — **Fullständigt implementerat**:
+  oförändrad Population ger varken en rad i planetbeskedet eller ett eget
+  besked. Andra planetändringar visas fortfarande. Om ingenting behöver
+  rapporteras skapas inget tomt planetbesked. Tidigare sparad historik bevaras.
+  Ändring 2026-10-31: detta ersätter regeln om Population vid +0 i
+  `grupperade-planethandelser` och `senaste-aret-i-events`.
 
 Ändring 2026-10-31: `grupperade-planethandelser` ersätter separata besked per
 flotta i `grupperade-transporthandelser` och separata produktionsbesked i
@@ -93,8 +100,8 @@ händelsetexter bevaras.
 
 - `senaste-aret-i-events`: Events visar bara senaste årets händelser, i den
   ordning de inträffade. Äldre år behålls i sparningen men tar ingen plats i
-  listan. Alla senaste årets händelser finns kvar, även fler än 100 och
-  Population changes med +0. Vanliga uppdateringar inom året bevarar manuellt
+  listan. Alla senaste årets händelser finns kvar, även fler än 100.
+  Population rapporteras bara vid ändring. Vanliga uppdateringar inom året bevarar manuellt
   vald läsposition. Nytt år och utfällning visar senaste händelserna.
 - `utvikbara-events`: Events kan fällas ut och in via rubriken med touch eller
   tangentbord. Rubriken har minst 44 px träffyta. Infällt läge visar bara

@@ -39,6 +39,10 @@ Se [hela visionen](docs/game-vision.md).
   för anlänt material, färdig produktion, Population och Habitability.
   Leveranser från flera flottor finns i samma besked. Se
   [Events och beslutsguidning](docs/events-and-guidance.md).
+  `population-besked-endast-vid-andring` är **Fullständigt implementerat**:
+  Population ger besked endast när antalet ändras. +0 och tomma planetbesked
+  utgår; andra planetändringar visas fortfarande. Detta ersätter den tidigare
+  +0-regeln i `grupperade-planethandelser` och `senaste-aret-i-events`.
   `ruttflottor-utan-ankomstbesked` är **Fullständigt implementerat**:
   flottor på Route ger inga ankomstbesked vid ändplaneterna eftersom
   ruttuppdraget fortsätter. Lossade material ingår fortsatt i planetbeskedet.

@@ -760,9 +760,14 @@ samma leverans respektive dubbla besked för samma skeppsbygge.
 material, färdig produktion, Population och ändrad Habitability samlas i
 ett meddelande per planet och år, både på kartan och i Events. Flottornas
 namn och materialmängder finns kvar. Även rivningar, fabriksuppgraderingar
-och väntande produktion ingår. Population visas även vid +0. Planeter och år
+och väntande produktion ingår. Population visas bara vid ändring. Planeter och år
 hålls isär. Detta ersätter separata leverans- och produktionsbesked i
 kraven ovan från 2026-10-31.
+
+`population-besked-endast-vid-andring` är **Fullständigt implementerat**:
+oförändrad Population ger inget besked. Andra planetändringar visas som
+vanligt, men ett tomt planetbesked utelämnas. Detta ersätter tidigare +0-besked
+i `grupperade-planethandelser` och `senaste-aret-i-events` från 2026-10-31.
 
 `sikt-under-forflyttning` är **Fullständigt implementerat**: synfältet följer
 skeppets position även under rörelsen. Synliga rutor och pirater uppdateras
@@ -808,7 +813,7 @@ på uttrycklig beställning. `handelseannonsering` ersätter det tidigare
 
 Ändring 2026-10-26: `handelser-grupperade-per-ar-och-typ` ersätts av
 `sekventiella-arshandelser`. Events visar bara senaste året i händelseordning,
-även Population changes med +0. Äldre händelser behålls i sparningen. Listans
+med Population changes endast vid ändring. Äldre händelser behålls i sparningen. Listans
 storlek följer årets innehåll och tillgänglig plats, med intern rullning när
 det behövs. `end-turn-vid-kartval` ersätter döljandet av End turn i
 `fokuserat-kartval`. Årets resultat bevaras även om sidan laddas om under

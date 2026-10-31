@@ -4177,10 +4177,11 @@ export class Game {
         ),
       );
       state.population += growth;
-      this.#planetEvent(
-        `Population on ${planet.name} changed by +${growth}.`,
-        planet,
-      );
+      if (growth !== 0)
+        this.#planetEvent(
+          `Population on ${planet.name} changed by +${growth}.`,
+          planet,
+        );
     }
     const researched = this.#research.advance(researchStations);
     if (researched) this.#event(`Research completed: ${researched}.`);

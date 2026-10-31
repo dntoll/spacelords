@@ -45,6 +45,49 @@ function loadedTransports() {
 }
 
 describe('grupperade-planethandelser / grupperade-transporthandelser', () => {
+  it.each([
+    [20_000, 100],
+    [25_000, 100],
+    [1_000, 0],
+  ])(
+    'population-besked-endast-vid-andring: emits no empty report for %s people at %s habitability',
+    (population, habitability) => {
+      const state = tradeNetworkState(false);
+      const game = Game.restore({
+        ...state,
+        fleets: [],
+        colonies: state.colonies.map(([id, colony]) => [
+          id,
+          { ...colony, population, habitability, buildings: [], projects: [] },
+        ]),
+      });
+      collectTurnFrames(game);
+      game.finishTurn();
+      expect(game.events.filter((event) => event.round === 1)).toEqual([]);
+      expect(
+        game
+          .ownedPlanetSnapshots()
+          .every((planet) => planet.population === population),
+      ).toBe(true);
+    },
+  );
+
+  it('population-besked-endast-vid-andring: retains deliveries and production when population is unchanged', () => {
+    const state = loadedTransports();
+    const game = Game.restore({
+      ...state,
+      colonies: state.colonies.map(([id, colony]) => [
+        id,
+        { ...colony, population: 20_000, habitability: 100 },
+      ]),
+    });
+    collectTurnFrames(game);
+    game.finishTurn();
+    const report = game.events.find((event) => event.planetId === 'sol-1')!;
+    expect(report.text).toContain('delivered 10 Iron');
+    expect(report.text).toContain('Iron mine was completed');
+    expect(report.text).not.toContain('Population');
+  });
   it('includes every fleet and repeated material in a single planet report', () => {
     const game = Game.restore(loadedTransports());
     collectTurnFrames(game);
@@ -130,7 +173,7 @@ describe('grupperade-planethandelser / grupperade-transporthandelser', () => {
     expect(game.fleet('travellers')!.destination).toBeNull();
   });
 
-  it('keeps +0 reports separate for identically named planets and preserves legacy history', () => {
+  it('keeps reports separate for identically named planets and preserves legacy history', () => {
     const state = loadedTransports();
     const legacy = {
       id: 'legacy',
@@ -146,7 +189,7 @@ describe('grupperade-planethandelser / grupperade-transporthandelser', () => {
         id,
         {
           ...colony,
-          population: 20_000,
+          population: 1_000,
           habitability: 100,
           projects: [],
         },
@@ -169,7 +212,7 @@ describe('grupperade-planethandelser / grupperade-transporthandelser', () => {
     expect(new Set(reports.map((event) => event.planetId)).size).toBe(2);
     expect(
       reports.every(
-        (event) => event.text === 'Twin:\nPopulation on Twin changed by +0.',
+        (event) => event.text === 'Twin:\nPopulation on Twin changed by +100.',
       ),
     ).toBe(true);
     expect(Game.restore(game.exportState()).events[0]).toEqual(legacy);
