@@ -40,6 +40,7 @@ export class ComponentPlanner {
     projectId: string,
     recipient: string,
     parts: Readonly<Partial<Record<Component, number>>>,
+    options: { readonly exactEngines?: boolean } = {},
   ): {
     production: readonly PlannedComponentProduction[];
     orders: readonly ComponentOrder[];
@@ -48,11 +49,14 @@ export class ComponentPlanner {
     const selected = { ...parts };
     const engines =
       (parts['Rocket engine'] ?? 0) + (parts['Ion pulse engine'] ?? 0);
-    if (engines)
+    if (engines && !options.exactEngines)
       Object.assign(selected, this.#planEngines(projectId, recipient, engines));
     const local = this.sites.find((site) => site.id === recipient)!;
     for (const component of COMPONENTS) {
-      if (component === 'Rocket engine' || component === 'Ion pulse engine')
+      if (
+        !options.exactEngines &&
+        (component === 'Rocket engine' || component === 'Ion pulse engine')
+      )
         continue;
       let missing = parts[component] ?? 0;
       if (!missing) continue;

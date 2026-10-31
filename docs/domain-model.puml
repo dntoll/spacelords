@@ -448,6 +448,28 @@ class Shipyard {
   destroyed
   repairQueue
 }
+class FleetUpgradeOrder {
+  id
+  issue
+  productionIds
+}
+class ShipUpgradeTarget {
+  shipId
+  ionEngines
+  telescope
+}
+Fleet "1" o-- "0..1" FleetUpgradeOrder : Upgrade
+FleetUpgradeOrder "1" *-- "1..*" ShipUpgradeTarget
+ShipUpgradeTarget --> ShipUnit : preserve identity and crew
+FleetUpgradeOrder --> Shipyard : nearest reachable suitable station
+FleetUpgradeOrder --> Planet : components ordered at yard planet
+FleetUpgradeOrder --> ComponentOrder : reserved supply
+SavedGame --> FleetUpgradeOrder
+note right of FleetUpgradeOrder
+  flottorder-upgrade / automatisk-uppgraderingsforsorjning:
+  Resan fortsätter tills alla beställda delar kan monteras.
+  Äldre komponenter återgår till planetens lager.
+end note
 class SalvageOrder {
   targets
   destinationShipyard

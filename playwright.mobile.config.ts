@@ -12,6 +12,7 @@ export default defineConfig({
     '**/tactical-combat.spec.ts',
     '**/factory-upgrades.spec.ts',
     '**/research-status.spec.ts',
+    '**/fleet-upgrades.spec.ts',
   ],
   projects: base.projects!.filter((project) =>
     ['phone-chromium', 'phone-webkit'].includes(project.name!),

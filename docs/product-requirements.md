@@ -602,10 +602,32 @@ byggplanetens tillgängliga lager vid byggstart. Ion väljs först och blandning
 är tillåten. Saknade motorer ordnas från tillgängliga lager och därefter
 fabriker med kortast beräknad transporttid, oavsett motortyp. Ion har företräde
 vid lika tid. Redan reserverade delar skyddas. Installerade motorer följer
-skeppet vid flottflytt och sparning; befintliga skepp uppgraderas inte.
+skeppet vid flottflytt och sparning. Befintliga skepp kan uppgraderas med
+Upgrade enligt kraven nedan.
 
 2026-10-24: Motorreglerna ersätter tidigare oförändrade recept för andra skepp
 än Fighter samt företrädet för lokal motorproduktion framför fjärrlager.
+
+## Flottuppgradering
+
+`flottorder-upgrade` — **Fullständigt implementerat**: Upgrade finns för
+flottor med äldre motorer eller teleskop som kan ersättas med bättre
+utforskad utrustning. Flottan reser till närmaste lämpliga egna Orbital
+shipyard och uppgraderas när delar och personal finns. Skeppen behåller
+identitet, typ och besättning. Bättre befintlig utrustning byts inte ned.
+
+`automatisk-uppgraderingsforsorjning` — **Fullständigt implementerat**:
+varvets planet beställer saknade delar genom vanlig produktion och
+transport. Delar förbrukas en gång vid installation och demonterade delar
+lagras på planeten. Ordern väntar tills allt är klart, kan avbrytas och
+söker nytt varv om målet förstörs. Ankomst räknas inte som slutförd order.
+
+`spara-flottuppgradering` — **Fullständigt implementerat**: resa, väntan,
+beställda delar och målutrustning finns kvar efter omladdning utan upprepad
+förbrukning. Äldre spel bevaras. Se [regler för Upgrade](fleet-upgrades.md).
+
+Ändring 2026-10-31: detta ersätter begränsningen att befintliga skepp inte
+uppgraderas i `automatisk-motormontering` och `teleskop-i-exploration-ships`.
 
 ## Kartbaserade Route och Production
 

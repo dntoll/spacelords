@@ -158,6 +158,9 @@ export class AppController {
       case 'auto-transport':
         this.#model.automateTransport(intent.id);
         break;
+      case 'upgrade-fleet':
+        this.#model.upgradeFleet(intent.id);
+        break;
       case 'patrol-fleet':
         this.#model.patrolFleet(intent.id);
         break;

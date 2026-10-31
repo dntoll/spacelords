@@ -1408,6 +1408,10 @@ export class AppModel {
         this.#screen = 'map';
     }
   }
+  upgradeFleet(id: string): void {
+    this.#game.upgradeFleet(id);
+    this.#notice = 'Upgrade ordered.';
+  }
   setDestination(id: string, q: number, r: number): void {
     this.#game.setDestination(id, new HexCoordinate(q, r));
   }

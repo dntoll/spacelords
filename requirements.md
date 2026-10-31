@@ -10,6 +10,14 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Flottuppgradering:** `flottorder-upgrade`,
+  `automatisk-uppgraderingsforsorjning` och `spara-flottuppgradering` är
+  **Fullständigt implementerat**. Upgrade reser till närmaste lämpliga egna
+  Orbital shipyard och byter äldre motorer och teleskop mot bättre utforskade
+  delar. Varvets planet beställer saknade delar genom befintlig produktion
+  och transport. Ordern väntar tills uppgraderingen kan genomföras och
+  bevaras vid omladdning. Se [flottuppgradering](docs/fleet-upgrades.md).
+
 - **Samlade planetbesked:** `grupperade-planethandelser` är
   **Fullständigt implementerat**. Varje planet får ett gemensamt årsbesked
   för anlänt material, färdig produktion, Population och Habitability.

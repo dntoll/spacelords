@@ -91,22 +91,25 @@ export function renderFleetOrders(
           !fleet.colonizationTargetId &&
           !fleet.salvage &&
           !fleet.automation &&
+          !fleet.upgrade &&
           !fleet.patrol,
       ),
       fleetOrderButton(
-        fleet.civilian
-          ? 'Stop Civilian transport'
-          : fleet.automation
-            ? 'Cancel automatic order'
-            : fleet.salvage
-              ? 'Cancel salvage'
-              : fleet.colonizationTargetId
-                ? 'Cancel colonization'
-                : fleet.patrol
-                  ? 'Cancel patrol'
-                  : fleet.joinFleetId
-                    ? 'Cancel reinforcement'
-                    : 'Clear destination',
+        fleet.upgrade
+          ? 'Cancel Upgrade'
+          : fleet.civilian
+            ? 'Stop Civilian transport'
+            : fleet.automation
+              ? 'Cancel automatic order'
+              : fleet.salvage
+                ? 'Cancel salvage'
+                : fleet.colonizationTargetId
+                  ? 'Cancel colonization'
+                  : fleet.patrol
+                    ? 'Cancel patrol'
+                    : fleet.joinFleetId
+                      ? 'Cancel reinforcement'
+                      : 'Clear destination',
         '■',
         () => emit({ type: 'clear-destination', id: fleet.id }),
         locked,
@@ -232,6 +235,24 @@ export function renderFleetOrders(
         model.phase !== 'planning' || !!fleet.releaseRequested,
       ),
     );
+  }
+  if (fleet.upgradeable || fleet.upgrade) {
+    const upgrade = fleetOrderButton(
+      'Upgrade',
+      '⇧',
+      () => emit({ type: 'upgrade-fleet', id: fleet.id }),
+      locked ||
+        model.phase !== 'planning' ||
+        !!fleet.upgrade ||
+        !!fleet.towing?.length,
+      !!fleet.upgrade,
+    );
+    upgrade.title = fleet.routeId
+      ? 'Release from the trade route before Upgrade.'
+      : fleet.towing?.length
+        ? 'Deliver or release towed wrecks before Upgrade.'
+        : 'Upgrade researched engines and telescopes at the nearest suitable shipyard. Required components are ordered automatically.';
+    orders.append(upgrade);
   }
   return orders;
 }

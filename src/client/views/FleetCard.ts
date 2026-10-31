@@ -160,6 +160,14 @@ export function renderFleetCard(
     );
   if (fleet.navigationIssue)
     footer.append(element('small', 'muted-note', fleet.navigationIssue));
+  if (fleet.upgrade)
+    footer.append(
+      element(
+        'small',
+        'fleet-upgrade-status',
+        fleetAssignmentLabel(fleet, model),
+      ),
+    );
   if (fleet.detectionRange !== undefined) {
     const detection = element(
       'small',
@@ -219,6 +227,12 @@ export function fleetAssignmentLabel(
   fleet: FleetSnapshot,
   model: AppReadModel,
 ): string {
+  if (fleet.upgrade) {
+    const planet =
+      model.ownedPlanets.find((planet) => planet.id === fleet.upgrade!.planetId)
+        ?.name ?? 'shipyard';
+    return `Upgrade: ${fleet.upgrade.issue ?? (fleet.destination ? `travelling to ${planet}` : `awaiting components at ${planet}`)}`;
+  }
   if (fleet.civilian)
     return `Civilian transport: ${fleet.civilian.status} · ${fleet.civilian.passengers} passengers aboard`;
   if (fleet.automation === 'salvage')

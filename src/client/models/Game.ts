@@ -1,4 +1,9 @@
 import {
+  ShipUpgrades,
+  type FleetUpgradeOrder,
+  type ShipUpgradeTarget,
+} from './ShipUpgrades.js';
+import {
   CivilianTraffic,
   SHUTTLE_CAPACITY,
   type CivilianOrder,
@@ -32,6 +37,7 @@ import {
   Salvage,
   type WreckSnapshot,
   type ShipyardSnapshot,
+  type Shipyard,
   type BattleReport,
 } from './Salvage.js';
 import { prioritizeProduction } from './ProductionPriorities.js';
@@ -552,6 +558,9 @@ export interface PlanetOrderSnapshot {
   readonly emptyQueues: number;
 }
 export interface FleetSnapshot {
+  readonly upgradeable?: boolean;
+  readonly upgrade?: Readonly<FleetUpgradeOrder>;
+
   readonly ordersPaused?: boolean;
   readonly civilian?: Readonly<
     Omit<CivilianOrder, 'path'> & { readonly path: readonly string[] }
@@ -624,6 +633,12 @@ interface Building {
   queue?: Project[];
   demolition: boolean;
 }
+interface FleetUpgradePlan {
+  readonly yard: Shipyard;
+  readonly projectId: string;
+  readonly sequence: number;
+  readonly plan: ReturnType<ComponentPlanner['plan']>;
+}
 interface Project {
   upgradeBuildingId?: string;
   stationPosition?: { readonly q: number; readonly r: number };
@@ -635,6 +650,7 @@ interface Project {
   destinationFleetId: string | null;
 }
 interface Fleet {
+  upgrade?: FleetUpgradeOrder;
   ordersPaused?: boolean;
   civilian?: CivilianOrder;
   automation?: 'salvage' | 'transport';
@@ -1132,6 +1148,26 @@ export class Game {
             ),
           )
         : new Salvage();
+    for (const fleet of game.#fleets)
+      if (fleet.upgrade) {
+        ShipUpgrades.validate(
+          fleet.upgrade,
+          fleet.shipUnits!,
+          game.#research.completed,
+        );
+        if (
+          fleet.routeId ||
+          fleet.civilian ||
+          fleet.automation ||
+          fleet.patrol ||
+          fleet.exploration ||
+          fleet.joinFleetId ||
+          fleet.colonizationTargetId ||
+          !fleet.position ||
+          !game.#colonies.has(fleet.upgrade.planetId)
+        )
+          throw new Error('Invalid saved fleet upgrade.');
+      }
     game.#refreshReinforcements();
     game.#updateSight();
     if (state.version >= 8 && !Array.isArray(copy.knownObjects))
@@ -1579,6 +1615,24 @@ export class Game {
           id: fleet.id,
           name: this.#fleetDisplayName(fleet),
           ownName: fleet.name,
+          upgradeable:
+            ShipUpgrades.targets(fleet.shipUnits!, this.#research.completed)
+              .length > 0,
+          ...(fleet.upgrade
+            ? {
+                upgrade: Object.freeze({
+                  ...fleet.upgrade,
+                  targets: Object.freeze(
+                    fleet.upgrade.targets.map((target) =>
+                      Object.freeze({ ...target }),
+                    ),
+                  ),
+                  productionIds: Object.freeze([
+                    ...fleet.upgrade.productionIds,
+                  ]),
+                }),
+              }
+            : {}),
           ...(fleet.colonizationTargetId
             ? { colonizationTargetId: fleet.colonizationTargetId }
             : {}),
@@ -1696,6 +1750,226 @@ export class Game {
     if (!this.#research.completed.has(technology))
       throw new Error(`Research ${technology} first.`);
   }
+  upgradeFleet(fleetId: string): void {
+    this.#requirePlanning();
+    this.#requireFleetOrders(fleetId);
+    const fleet = this.#fleetState(fleetId);
+    if (fleet.upgrade) throw new Error('An Upgrade order is already active.');
+    if (this.#salvage.towing(fleetId).length)
+      throw new Error('Deliver or release towed wrecks first.');
+    const targets = ShipUpgrades.targets(
+      fleet.shipUnits!,
+      this.#research.completed,
+    );
+    if (!targets.length)
+      throw new Error('No researched equipment upgrade is available.');
+    const selected = this.#planFleetUpgrade(fleet, targets);
+    if (!selected)
+      throw new Error(
+        'No reachable working shipyard can obtain the upgrade components.',
+      );
+    this.clearDestination(fleetId);
+    this.#commitFleetUpgrade(fleet, targets, selected);
+  }
+
+  #planFleetUpgrade(fleet: Fleet, targets: readonly ShipUpgradeTarget[]) {
+    if (!fleet.position) return null;
+    const candidates = this.#salvage.yards
+      .filter((yard) => {
+        const state = this.#colonies.get(yard.planetId);
+        return (
+          !yard.destroyed &&
+          state?.buildings.some(
+            (building) =>
+              building.id === yard.facilityId && !building.demolition,
+          )
+        );
+      })
+      .flatMap((yard) => {
+        const path = this.#navigation.path(
+          fleet.position!,
+          yard.position,
+          this.#speed(fleet),
+          this.#knownTerrain,
+        );
+        return fleet.position!.key === yard.position.key || path.length
+          ? [{ yard, distance: path.length }]
+          : [];
+      })
+      .sort(
+        (a, b) => a.distance - b.distance || a.yard.id.localeCompare(b.yard.id),
+      );
+    for (const { yard } of candidates) {
+      let sequence = this.#sequence;
+      const id = (prefix: string) => `${prefix}-${sequence++}`;
+      const projectId = id('upgrade');
+      try {
+        const plan = new ComponentPlanner(
+          this.#componentSites(),
+          this.#logistics,
+          this.#logisticsPort(),
+          id,
+        ).plan(projectId, yard.planetId, ShipUpgrades.cost(targets), {
+          exactEngines: true,
+        });
+        return { yard, projectId, plan, sequence };
+      } catch {
+        // automatisk-uppgraderingsforsorjning: another yard may have a usable supply network.
+      }
+    }
+    return null;
+  }
+
+  #commitFleetUpgrade(
+    fleet: Fleet,
+    targets: readonly ShipUpgradeTarget[],
+    selected: FleetUpgradePlan,
+  ) {
+    for (const production of selected.plan.production)
+      this.#colonies.get(production.planetId)!.projects.push({
+        id: production.id,
+        type: production.component,
+        factoryId: production.factoryId,
+        slotIndex: null,
+        destinationFleetId: null,
+      });
+    fleet.upgrade = {
+      id: selected.projectId,
+      yardId: selected.yard.id,
+      planetId: selected.yard.planetId,
+      targets,
+      productionIds: selected.plan.production.map(
+        (production) => production.id,
+      ),
+      issue: null,
+    };
+    this.#sequence = selected.sequence;
+    this.#logistics.componentOrders.push(...selected.plan.orders);
+    fleet.destination =
+      fleet.position!.key === selected.yard.position.key
+        ? null
+        : selected.yard.position;
+    if (fleet.destination) fleet.courseOrigin = fleet.position!;
+    this.#logistics.reserve(this.#logisticsPort());
+  }
+
+  #cancelFleetUpgrade(fleet: Fleet): void {
+    const order = fleet.upgrade;
+    if (!order) return;
+    delete fleet.upgrade;
+    for (const state of this.#colonies.values())
+      state.projects = state.projects.filter(
+        (project) => !order.productionIds.includes(project.id),
+      );
+    this.#logistics.reserve(this.#logisticsPort());
+  }
+
+  #updateFleetUpgrades(): void {
+    for (const fleet of this.#fleets) {
+      const order = fleet.upgrade;
+      if (!order) continue;
+      const targets = order.targets.filter((target) =>
+        fleet.shipUnits!.some((ship) => ship.id === target.shipId),
+      );
+      if (!fleet.position || !targets.length) {
+        this.#cancelFleetUpgrade(fleet);
+        fleet.destination = null;
+        continue;
+      }
+      const yard = this.#salvage.yards.find(
+        (yard) => yard.id === order.yardId && !yard.destroyed,
+      );
+      const facility = this.#colonies
+        .get(order.planetId)
+        ?.buildings.find(
+          (building) =>
+            building.id === yard?.facilityId && !building.demolition,
+        );
+      if (
+        !yard ||
+        !facility ||
+        targets.length !== order.targets.length ||
+        order.issue === 'No working shipyard can obtain upgrade components.'
+      ) {
+        this.#cancelFleetUpgrade(fleet);
+        const selected = this.#planFleetUpgrade(fleet, targets);
+        if (selected) this.#commitFleetUpgrade(fleet, targets, selected);
+        else {
+          fleet.upgrade = {
+            ...order,
+            targets,
+            productionIds: [],
+            issue: 'No working shipyard can obtain upgrade components.',
+          };
+          fleet.destination = null;
+          delete fleet.courseOrigin;
+        }
+      }
+    }
+  }
+
+  #completeFleetUpgrades(): void {
+    this.#updateFleetUpgrades();
+    for (const fleet of this.#fleets) {
+      const order = fleet.upgrade;
+      if (!order) continue;
+      const yard = this.#salvage.yards.find(
+        (yard) =>
+          yard.id === order.yardId &&
+          !yard.destroyed &&
+          yard.builtRound < this.#round,
+      );
+      if (
+        !yard ||
+        fleet.position?.key !== yard.position.key ||
+        this.#hostileAt(yard.position)
+      )
+        continue;
+      const planet = this.#ownedPlanets().find(
+        (planet) => planet.id === yard.planetId,
+      )!;
+      const state = this.#state(planet);
+      const cost = ShipUpgrades.cost(order.targets);
+      const held = this.#logistics.reserved(planet.id, order.id);
+      const workers = state.buildings
+        .filter((building) => !building.demolition)
+        .reduce(
+          (total, building) => total + BUILDINGS[building.type].workers,
+          0,
+        );
+      order.issue =
+        workers > state.population
+          ? 'Waiting for shipyard workers.'
+          : MATERIALS.some(
+                (material) =>
+                  state.stock[material] - held[material] < cost[material],
+              )
+            ? (this.#componentProduction(order.id).find((item) => item.issue)
+                ?.issue ??
+              this.shipments.find(
+                (shipment) => shipment.projectId === order.id && shipment.issue,
+              )?.issue ??
+              'Waiting for upgrade components.')
+            : null;
+      if (order.issue) continue;
+      for (const material of MATERIALS) state.stock[material] -= cost[material];
+      fleet.shipUnits = fleet.shipUnits!.map((ship) => {
+        const target = order.targets.find(
+          (target) => target.shipId === ship.id,
+        );
+        return target ? ShipUpgrades.install(ship, target, state.stock) : ship;
+      });
+      const count = order.targets.length;
+      this.#cancelFleetUpgrade(fleet);
+      fleet.destination = null;
+      delete fleet.courseOrigin;
+      this.#planetEvent(
+        `${fleet.name} upgraded ${count} ship${count === 1 ? '' : 's'} at ${planet.name}.`,
+        planet,
+      );
+    }
+  }
+
   setCivilianTransport(fleetId: string): void {
     this.#requirePlanning();
     this.#requireFleetOrders(fleetId);
@@ -1832,6 +2106,7 @@ export class Game {
     this.#requireFleetOrders(fleetId);
     const fleet = this.#fleetState(fleetId);
     this.#salvage.assign(fleet, wreckId);
+    this.#cancelFleetUpgrade(fleet);
     delete fleet.automation;
     delete fleet.civilian;
     delete fleet.colonizationTargetId;
@@ -1845,6 +2120,7 @@ export class Game {
     this.#requireFleetOrders(fleetId);
     const fleet = this.#fleetState(fleetId);
     this.#salvage.returnHome(fleet);
+    this.#cancelFleetUpgrade(fleet);
     delete fleet.automation;
     delete fleet.civilian;
     delete fleet.colonizationTargetId;
@@ -1899,6 +2175,7 @@ export class Game {
     });
   }
   #updateSalvage(): void {
+    this.#updateFleetUpgrades();
     for (let pass = 0; pass < 2; pass++) {
       this.#updateAutomaticSalvage();
       this.#salvage.update(
@@ -2523,16 +2800,8 @@ export class Game {
     });
   }
 
-  #planProject(
-    planet: Planet,
-    type: ProjectType,
-    existingId?: string,
-    telescopeOnly = false,
-  ) {
-    let sequence = this.#sequence;
-    const id = (prefix: string) => `${prefix}-${sequence++}`;
-    const projectId = existingId ?? id('project');
-    const sites = this.#ownedPlanets().map((site) => {
+  #componentSites() {
+    return this.#ownedPlanets().map((site) => {
       const state = this.#state(site);
       const factories: Partial<Record<Component, string>> = {};
       for (const building of state.buildings) {
@@ -2544,16 +2813,39 @@ export class Game {
         id: site.id,
         stock: state.stock,
         factories,
-        projects: state.projects.map((project) => {
-          const definition = projectDefinition(project.type);
-          return {
-            id: project.id,
-            parts: project.parts ?? definition.parts,
-            component: definition.permanent ? undefined : definition.component,
-          };
-        }),
+        projects: [
+          ...state.projects.map((project) => {
+            const definition = projectDefinition(project.type);
+            return {
+              id: project.id,
+              parts: project.parts ?? definition.parts,
+              component: definition.permanent
+                ? undefined
+                : definition.component,
+            };
+          }),
+          ...this.#fleets
+            .filter((fleet) => fleet.upgrade?.planetId === site.id)
+            .map((fleet) => ({
+              id: fleet.upgrade!.id,
+              parts: ShipUpgrades.cost(fleet.upgrade!.targets),
+              component: undefined,
+            })),
+        ],
       };
     });
+  }
+
+  #planProject(
+    planet: Planet,
+    type: ProjectType,
+    existingId?: string,
+    telescopeOnly = false,
+  ) {
+    let sequence = this.#sequence;
+    const id = (prefix: string) => `${prefix}-${sequence++}`;
+    const projectId = existingId ?? id('project');
+    const sites = this.#componentSites();
     const start = sequence;
     const parts = telescopeOnly ? {} : (projectDefinition(type).parts ?? {});
     let lastError: unknown;
@@ -2734,6 +3026,7 @@ export class Game {
         'Release towed wrecks before transferring a Salvage ship.',
       );
     const issue = shipTransferIssue({
+      ...(source.upgrade ? { upgrade: source.upgrade } : {}),
       ...(source.civilian ? { civilian: source.civilian } : {}),
       routeId: source.routeId,
       cargo: this.#cargo(source.id),
@@ -2758,6 +3051,8 @@ export class Game {
     let target: Fleet;
     if (targetId) {
       target = this.#fleetState(targetId);
+      if (target.upgrade)
+        throw new Error('Cancel Upgrade before transferring ships.');
       if (target.civilian?.passengers)
         throw new Error('Wait until passengers have disembarked.');
       if (target.id === source.id) throw new Error('Choose another fleet.');
@@ -2837,6 +3132,7 @@ export class Game {
     delete fleet.joinFleetId;
     delete fleet.exploration;
     delete fleet.starSurvey;
+    this.#cancelFleetUpgrade(fleet);
     delete fleet.automation;
     delete fleet.civilian;
     delete fleet.colonizationTargetId;
@@ -2855,6 +3151,7 @@ export class Game {
     }
     this.#requireFleetOrders(id);
     this.#salvage.stop(id);
+    this.#cancelFleetUpgrade(this.#fleetState(id));
     delete this.#fleetState(id).automation;
     delete this.#fleetState(id).colonizationTargetId;
     delete this.#fleetState(id).exploration;
@@ -3130,6 +3427,7 @@ export class Game {
         delete fleet.patrol;
         delete fleet.exploration;
         delete fleet.starSurvey;
+        this.#cancelFleetUpgrade(fleet);
         delete fleet.automation;
         delete fleet.colonizationTargetId;
         this.#salvage.stop(fleet.id);
@@ -3141,6 +3439,7 @@ export class Game {
       }
       this.#releaseEmptyFleet(fleet);
     }
+    this.#updateFleetUpgrades();
     for (const id of wreckIds) this.#knownObjects.add(id);
     for (const pirate of this.#pirates)
       if (pirate.count <= 0) {
@@ -3263,6 +3562,7 @@ export class Game {
     delete fleet.patrol;
     delete fleet.joinFleetId;
     fleet.exploration = order;
+    this.#cancelFleetUpgrade(fleet);
     delete fleet.automation;
     delete fleet.civilian;
     delete fleet.colonizationTargetId;
@@ -3280,6 +3580,7 @@ export class Game {
     delete fleet.exploration;
     delete fleet.joinFleetId;
     fleet.patrol = { center: fleet.position!, nextIndex: 0 };
+    this.#cancelFleetUpgrade(fleet);
     delete fleet.automation;
     delete fleet.civilian;
     delete fleet.colonizationTargetId;
@@ -3654,6 +3955,7 @@ export class Game {
     }
     const researched = this.#research.advance(researchStations);
     if (researched) this.#event(`Research completed: ${researched}.`);
+    this.#completeFleetUpgrades();
     this.#repairShipyards();
     this.#logistics.cleanup(this.#logisticsPort());
     this.#refreshReinforcements();
@@ -3938,6 +4240,16 @@ export class Game {
         kind: 'fleet',
         fleetId: order.fleetId,
       });
+    for (const fleet of this.#fleets.filter(
+      (fleet) =>
+        fleet.upgrade?.issue && !fleet.upgrade.issue.startsWith('Waiting for '),
+    ))
+      items.push({
+        id: `upgrade-${fleet.id}`,
+        label: `${fleet.name}: ${fleet.upgrade!.issue}`,
+        kind: 'fleet',
+        fleetId: fleet.id,
+      });
     for (const yard of this.#salvage.yards.filter(
       (yard) => yard.destroyed || yard.issue,
     ))
@@ -4000,6 +4312,7 @@ export class Game {
         !f.joinFleetId &&
         !f.patrol &&
         !f.automation &&
+        !f.upgrade &&
         !f.civilian &&
         !f.destination &&
         this.#shipCount(f.ships),
@@ -4022,11 +4335,14 @@ export class Game {
     return this.#decisions.snapshot(items);
   }
   get shipments() {
-    const projects = new Map(
+    const projects = new Map<string, string>(
       [...this.#colonies.values()].flatMap((state) =>
         state.projects.map((p) => [p.id, p.type] as const),
       ),
     );
+    for (const fleet of this.#fleets)
+      if (fleet.upgrade)
+        projects.set(fleet.upgrade.id, `Upgrade ${fleet.name}`);
     return Object.freeze(
       this.#logistics.shipmentSnapshots(this.#logisticsPort()).map((shipment) =>
         Object.freeze({
@@ -4338,13 +4654,14 @@ export class Game {
               state.stock[resource] - held[resource] + incoming + local
             );
           });
+        const recipientIndex = state.projects.findIndex(
+          (project) => project.id === order.projectId,
+        );
         const behindRecipient =
           producer &&
           order.source === order.recipient &&
-          state.projects.indexOf(producer) >
-            state.projects.findIndex(
-              (project) => project.id === order.projectId,
-            );
+          recipientIndex >= 0 &&
+          state.projects.indexOf(producer) > recipientIndex;
         const issue = !route
           ? `No active transport path for ${order.component}`
           : order.productionProjectId && !producer
@@ -4373,6 +4690,12 @@ export class Game {
         const projects = state.projects
           .slice(0, 1)
           .map((p) => ({ id: p.id, cost: this.#projectCost(planet, p) }));
+        for (const fleet of this.#fleets)
+          if (fleet.upgrade?.planetId === planet.id)
+            projects.push({
+              id: fleet.upgrade.id,
+              cost: ShipUpgrades.cost(fleet.upgrade.targets),
+            });
         const demand = emptyStock();
         for (const project of projects)
           for (const material of MATERIALS)
@@ -4414,6 +4737,7 @@ export class Game {
         else this.#event(message, position);
       },
       projectExists: (id: string) =>
+        this.#fleets.some((fleet) => fleet.upgrade?.id === id) ||
         [...this.#colonies.values()].some((s) =>
           s.projects.some((p) => p.id === id),
         ),
@@ -4467,6 +4791,12 @@ export class Game {
   }
   #economySnapshot(planet: Planet, state: ColonyState): EconomySnapshot {
     const demand = emptyStock();
+    for (const fleet of this.#fleets)
+      if (fleet.upgrade?.planetId === planet.id)
+        for (const material of MATERIALS)
+          demand[material] += ShipUpgrades.cost(fleet.upgrade.targets)[
+            material
+          ];
     for (const project of state.projects.slice(0, 1))
       for (const material of MATERIALS)
         demand[material] += this.#projectCost(planet, project)[material];
@@ -5188,6 +5518,7 @@ export class Game {
         fleet.automation === 'salvage' ? 'Salvage ship' : 'Transport ship'
       ]
     ) {
+      this.#cancelFleetUpgrade(fleet);
       delete fleet.automation;
       delete fleet.civilian;
       this.#salvage.stop(fleet.id);
@@ -5359,8 +5690,8 @@ export class Game {
     delete fleet.courseOrigin;
     if (fleet.colonizationTargetId) return;
     if (fleet.civilian?.passengers) return;
-    // ruttflottor-utan-ankomstbesked: reaching an endpoint does not finish a route order.
-    if (fleet.routeId) return;
+    // ruttflottor-utan-ankomstbesked / flottorder-upgrade: arrival does not finish these orders.
+    if (fleet.routeId || fleet.upgrade) return;
     this.#event(
       `${this.#fleetDisplayName(fleet)} arrived at ${place}.`,
       fleet.position,

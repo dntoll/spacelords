@@ -6,6 +6,7 @@ export function tradeAssignmentIssue(
   route: TradeRouteSnapshot,
   fleets: readonly FleetSnapshot[] = [],
 ): string | null {
+  if (fleet.upgrade) return 'Cancel Upgrade before assigning a trade route';
   if (fleet.civilian)
     return 'Stop Civilian transport before assigning a trade route';
   if (route.closing) return 'Route is closing';

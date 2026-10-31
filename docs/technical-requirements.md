@@ -1,5 +1,25 @@
 # Tekniska krav och arbetsregler
 
+## Flottuppgradering
+
+`flottorder-upgrade`, `automatisk-uppgraderingsforsorjning` och
+`spara-flottuppgradering`: ShipUpgrades beräknar målutrustning, komponentbehov
+och installation per ShipUnit. Game samordnar fysisk navigation, varv,
+bemanning och försörjning. FleetUpgradeOrder använder en separat
+beställningsidentitet i samma Logistics- och ComponentPlanner-flöde som
+vanlig produktion. Exakta motortyper krävs vid Upgrade; nybyggens vanliga
+motoralternativ behålls. Vyer får frysta order, mål och listor och skickar
+avsikter genom AppController och AppModel. Sparning sker omedelbart.
+
+Fleet har ett valfritt `upgrade`-fält; äldre sparningar saknar det och kräver
+ingen migrering eller rensning. Sparade mål valideras mot skeppsidentitet,
+monterad utrustning och färdig forskning. Ordern kan inte kombineras med
+Route, Patrol eller andra samtidiga uppdrag. Tester skyddar alla
+skeppstyper, fjärrproduktion och fysisk frakt, konkurrerande reservationer,
+avbrott, förstört varv, underbemanning, förbjuden nedgradering och
+omladdning. Riktat mobiltest verifierar order, sparning och slutförande i
+Chromium och WebKit och ingår i snabbpubliceringen.
+
 ## Direkta stridsorder
 
 `skeppsval-startar-stridstur`: BattleView skickar aktiveringsavsikten från

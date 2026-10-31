@@ -86,6 +86,7 @@ export function renderMapFleets(
     const availableTransport =
       routeView !== null &&
       !fleet.routeId &&
+      !fleet.upgrade &&
       !fleet.destination &&
       !fleet.joinFleetId &&
       fleet.ships['Transport ship'] > 0;

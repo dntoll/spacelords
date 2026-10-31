@@ -25,8 +25,10 @@ samma uppdaterade resultat. Kravet förtydligar `aktuell-detektionssikt`,
 ## Räckvidd och tillverkning
 
 Räckvidd gäller hexavstånd åt alla håll. Flottans bästa monterade teleskop avgör
-dess räckvidd. Andra skepp ser bara sin egen ruta. Inget uppgraderingssystem för
-befintliga skepp införs; startskeppet och äldre skepp har Telescope I.
+dess räckvidd. Andra skepp ser bara sin egen ruta. Startskeppet och äldre
+skepp börjar med Telescope I. Från 2026-10-31 kan befintliga skepp byta till
+bättre utforskade teleskop genom [Upgrade](fleet-upgrades.md); detta ersätter
+den tidigare avgränsningen utan uppgraderingssystem.
 
 Research har stegen Telescope I factory → Telescope II factory → Telescope III
 factory. Exploration ship factory kräver både Rocket engine factory och

@@ -236,6 +236,7 @@ export type AppIntent =
         | 'begin-salvage'
         | 'auto-salvage'
         | 'auto-transport'
+        | 'upgrade-fleet'
         | 'civilian-transport'
         | 'clear-destination'
         | 'delete-fleet';
