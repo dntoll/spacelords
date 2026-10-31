@@ -2906,6 +2906,60 @@ p {
   overflow-x: auto;
   scrollbar-width: none;
 }
+.fleet-primary-orders .fleet-order-button {
+  width: auto;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  font-size: 0.875rem;
+}
+.orders-view {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.orders-view h3,
+.orders-view p {
+  margin: 0;
+}
+.orders-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.orders-heading h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+.order-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 10px;
+}
+.order-choice {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-height: 64px;
+  text-align: left;
+  white-space: normal;
+}
+.order-choice small {
+  font-weight: 400;
+  font-size: 0.875rem;
+}
+.map-page[data-map-screen='orders'][data-order-page='menu'] .selection-panel,
+.map-page[data-map-screen='orders'][data-order-page='routes'] .selection-panel {
+  inset: 12px;
+  width: auto;
+  max-height: none;
+  align-content: start;
+}
+.map-page[data-map-screen='orders'] .selection-panel {
+  width: min(460px, calc(100% - 24px));
+}
 .fleet-order-toolbar.dragging-orders,
 .fleet-order-toolbar.dragging-orders * {
   cursor: grabbing;

@@ -13,6 +13,7 @@ export default defineConfig({
     '**/factory-upgrades.spec.ts',
     '**/research-status.spec.ts',
     '**/fleet-upgrades.spec.ts',
+    '**/orders.spec.ts',
   ],
   projects: base.projects!.filter((project) =>
     ['phone-chromium', 'phone-webkit'].includes(project.name!),

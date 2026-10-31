@@ -1,3 +1,4 @@
+import { chooseFleetOrder } from './fleet-helpers.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { selectMapHex } from './map-helpers.js';
 import { expect, test } from '@playwright/test';
@@ -265,12 +266,7 @@ test('automatisk-stjarnutforskning / flottorder-som-symboler: explores persisten
   await page.reload();
   await startFirstSlot(page);
   await selectMapFleet(page);
-  const explore = page.getByRole('button', {
-    name: 'Explore stars',
-    exact: true,
-  });
-  await explore.click();
-  await expect(explore).toHaveAttribute('aria-pressed', 'true');
+  await chooseFleetOrder(page, 'Explore stars');
   await endTurn(page);
   const saved = await page.evaluate(
     () =>
@@ -281,7 +277,11 @@ test('automatisk-stjarnutforskning / flottorder-som-symboler: explores persisten
   await page.reload();
   await startFirstSlot(page);
   await selectMapFleet(page);
-  await expect(explore).toHaveAttribute('aria-pressed', 'true');
+  await expect(
+    page
+      .locator('.selected-fleet-card')
+      .getByRole('button', { name: 'Orders', exact: true }),
+  ).toBeVisible();
 });
 
 test('produktionsorder-aterkoppling: double-click gives a visible receipt while the queue is below the selected details', async ({

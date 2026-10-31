@@ -1,4 +1,4 @@
-import { renderFleetOrders, renderFleetRouteMenu } from './FleetOrdersView.js';
+import { renderFleetOrders } from './FleetOrdersView.js';
 import { shipTransferIssue } from '../models/FleetTransfer.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import type { FleetSnapshot } from '../models/Game.js';
@@ -145,7 +145,6 @@ export function renderFleetCard(
   });
   const orders = renderFleetOrders(fleet, model, emit);
   header.insertBefore(orders, rename.parentElement === header ? rename : null);
-  const routeMenu = renderFleetRouteMenu(fleet, model, emit);
   const footer = element('div', 'fleet-card-footer');
   const speed = element('small', 'fleet-speed', `S: ${fleet.speed} hex`);
   speed.title = `Fleet speed: ${fleet.speed} hexes/year${fleet.remainingMovement === undefined ? '' : ` · ${fleet.remainingMovement} hex remaining this year`}`;
@@ -177,7 +176,6 @@ export function renderFleetCard(
     detection.title = `Detection range: ${fleet.detectionRange} hexes`;
     footer.append(detection);
   }
-  if (routeMenu) orders.append(routeMenu);
   if (fleet.patrol) {
     const status = element(
       'small',

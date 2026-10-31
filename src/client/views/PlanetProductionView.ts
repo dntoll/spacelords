@@ -1,3 +1,4 @@
+import { ShipOrders } from '../models/ShipOrders.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import {
   BUILDINGS,
@@ -26,6 +27,7 @@ type Menus = Pick<AppReadModel, 'phase'> &
       | 'productionCategory'
       | 'productionProduct'
       | 'productionFleetId'
+      | 'productionStartOrder'
       | 'productionGuidance'
     >
   >;
@@ -138,14 +140,19 @@ export function renderProduction(
     destination.addEventListener('change', () =>
       emit({ type: 'production-fleet', id: destination.value || null }),
     );
-    if (definition.ship && product !== 'Civilian shuttle') {
-      const destinationLabel = element(
-        'label',
-        'production-field',
-        'Destination fleet',
+    if (definition.ship) {
+      detail.append(
+        element(
+          'p',
+          'muted-note',
+          `Start order: ${menus.productionStartOrder ? ShipOrders.label(menus.productionStartOrder) : product === 'Civilian shuttle' ? 'Civilian transport (default)' : 'Planet home fleet (default)'}.`,
+        ),
       );
-      destinationLabel.append(destination);
-      detail.append(destinationLabel);
+      const orders = button('Orders', () =>
+        emit({ type: 'open-ship-orders', ship: product as ShipType }),
+      );
+      orders.disabled = !!reason;
+      detail.append(orders);
     }
     const queue = button(`Queue ${product}`, () =>
       definition.ship

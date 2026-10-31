@@ -89,7 +89,8 @@ För delvisa krav anges vad som återstår. Exempelvärden är inte beslut om ba
 ## Första spelgrunden
 
 `flottpatrullering` — **Fullständigt implementerat**: Flottor med minst en
-Fighter kan få ordern Patrol. Hela flottan cirklar runt orderhexens sex
+Fighter kan få ordern Patrol i Orders efter val av centrum på kartan.
+Flottan reser först dit och cirklar därefter runt centrumets sex
 grannhexar och jagar pirater som syns genom spelarens gemensamma sikt, inom
 flottans aktuella fart i hex från dess nuvarande position. Motorer och
 långsammare medföljande skepp påverkar räckvidden. När ingen giltig pirat finns
@@ -607,6 +608,24 @@ Upgrade enligt kraven nedan.
 
 2026-10-24: Motorreglerna ersätter tidigare oförändrade recept för andra skepp
 än Fighter samt företrädet för lokal motorproduktion framför fjärrlager.
+
+## Orders och startorder
+
+Orders samlar specialorder för flottans skepp med namn och förklaringar.
+Flottvyn behåller Move, Stop och Orders. Join route visar befintliga skepp
+och avstånd och prioriterar rutter som saknar samma skeppstyp, därefter
+närmaste rutt. Join fleet väljer en mottagande flotta på kartan utan
+ruttflottor. Salvage ships har Auto salvage och Deliberate salvage;
+Exploration ships har Explore och Explore stars. Fighters får Patrol efter
+val av centrum och reser dit innan patrulleringen börjar.
+
+Samma Orders-vy väljer startorder när ett nytt skepp beställs eller ändrar
+ett köat skepps startorder. Ordern börjar efter färdigställandet och gäller
+bara det nya skeppet. Äldre byggen och sparningar bevaras. Kraven
+`egen-ordervy`, `ruttval-for-order`, `flottval-pa-orderkarta`,
+`skeppsanpassade-specialorder`, `patrullcentrum-vid-order` och
+`startorder-for-nybyggda-skepp` är **Fullständigt implementerat**.
+Se [Orders](fleet-orders.md) för regler och ersatta beteenden.
 
 ## Flottuppgradering
 

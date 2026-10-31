@@ -1,3 +1,5 @@
+import { ShipOrders } from '../models/ShipOrders.js';
+import type { ShipType } from '../models/Game.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import {
   BUILDINGS,
@@ -10,7 +12,7 @@ import {
 } from '../models/Game.js';
 import { COMPONENTS } from '../models/Economy.js';
 import type { SupplyStep } from '../models/ProjectSupply.js';
-import { renderProduction, fleetSelect } from './PlanetProductionView.js';
+import { renderProduction } from './PlanetProductionView.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element, planetIllustration, queueButton } from './dom.js';
 import { buildingImage } from './BuildingImage.js';
@@ -256,7 +258,6 @@ function buildQueue(
       row,
       project,
       index,
-      planet,
       fleets,
       emit,
       menus.phase !== 'planning',
@@ -486,7 +487,6 @@ function renderQueueOrder(
   row: HTMLElement,
   project: ConstructionProjectSnapshot,
   index: number,
-  planet: PlanetGameSnapshot,
   fleets: readonly FleetSnapshot[],
   emit: IntentHandler,
   locked: boolean,
@@ -502,20 +502,23 @@ function renderQueueOrder(
   );
   if (project.blockedReason)
     details.append(element('p', 'muted-note', project.blockedReason));
-  if (
-    projectDefinition(project.type).ship &&
-    project.type !== 'Civilian shuttle'
-  ) {
-    const select = fleetSelect(planet, fleets, project.destinationFleetId);
-    select.disabled = locked;
-    select.addEventListener('change', () =>
+  if (projectDefinition(project.type).ship) {
+    details.append(
+      element(
+        'p',
+        '',
+        `Start order: ${project.initialOrder ? ShipOrders.label(project.initialOrder) : project.destinationFleetId ? (fleets.find((fleet) => fleet.id === project.destinationFleetId)?.name ?? 'Unknown fleet') : project.type === 'Civilian shuttle' ? 'Civilian transport' : 'Planet home fleet'}`,
+      ),
+    );
+    const orders = button(`Orders for queued ${project.type}`, () =>
       emit({
-        type: 'project-fleet',
-        id: project.id,
-        fleetId: select.value || null,
+        type: 'open-ship-orders',
+        ship: project.type as ShipType,
+        projectId: project.id,
       }),
     );
-    details.append(select);
+    orders.disabled = locked;
+    details.append(orders);
   }
   const actions = element('div', 'queue-actions');
   const cancel = queueButton(

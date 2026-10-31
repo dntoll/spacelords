@@ -155,6 +155,24 @@ export class AppController {
       case 'civilian-transport':
         this.#model.civilianTransport(intent.id);
         break;
+      case 'open-fleet-orders':
+        this.#model.openFleetOrders(intent.id);
+        break;
+      case 'open-ship-orders':
+        this.#model.openShipOrders(intent.ship, intent.projectId);
+        break;
+      case 'order-kind':
+        this.#model.chooseOrder(intent.kind);
+        break;
+      case 'apply-ship-order':
+        this.#model.completeOrder(intent.order);
+        break;
+      case 'order-back':
+        this.#model.orderBack();
+        break;
+      case 'clear-start-order':
+        this.#model.clearStartOrder();
+        break;
       case 'auto-transport':
         this.#model.automateTransport(intent.id);
         break;
@@ -366,7 +384,10 @@ export class AppController {
       case 'select': {
         const snapshot = this.#model.snapshot;
         mapOrder =
-          !!snapshot.destinationFleetId || !!snapshot.mapTrade.sourcePlanetId;
+          !!snapshot.destinationFleetId ||
+          !!snapshot.mapTrade.sourcePlanetId ||
+          snapshot.orderView?.page === 'patrol' ||
+          snapshot.orderView?.page === 'colonize';
         this.#model.select(intent.position);
         break;
       }
@@ -491,8 +512,9 @@ export class AppController {
           const salvageId = this.#model.salvageAtPoint(intent.point);
           if (salvageId) {
             if (
-              this.#model.snapshot.destinationFleetId &&
-              this.#model.snapshot.destinationOrder === 'salvage'
+              (this.#model.snapshot.destinationFleetId &&
+                this.#model.snapshot.destinationOrder === 'salvage') ||
+              this.#model.snapshot.orderView?.page === 'salvage'
             ) {
               this.#fleetPointer = {
                 id: intent.id,
@@ -617,7 +639,10 @@ export class AppController {
         if (selected) {
           const snapshot = this.#model.snapshot;
           mapOrder =
-            !!snapshot.destinationFleetId || !!snapshot.mapTrade.sourcePlanetId;
+            !!snapshot.destinationFleetId ||
+            !!snapshot.mapTrade.sourcePlanetId ||
+            snapshot.orderView?.page === 'patrol' ||
+            snapshot.orderView?.page === 'colonize';
           this.#model.selectPoint(selected);
         }
         break;

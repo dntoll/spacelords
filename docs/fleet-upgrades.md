@@ -4,7 +4,7 @@
 
 `flottorder-upgrade` — **Fullständigt implementerat**.
 
-Upgrade finns i flottans orderrad på Star map och Fleets när minst ett
+Upgrade finns i Orders från flottvyn på Star map och Fleets när minst ett
 skepp har utrustning som kan förbättras med färdig forskning. Alla
 skeppstyper kan byta Rocket engines mot Ion pulse engines. Exploration
 ships kan dessutom byta teleskop till högsta utforskade nivå. Redan bättre

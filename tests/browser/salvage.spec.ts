@@ -1,3 +1,4 @@
+import { chooseFleetOrder } from './fleet-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 import { Game, type GameState } from '../../src/client/models/Game.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
@@ -56,7 +57,7 @@ test('automatisk-bargning: Auto salvage persists, delivers a wreck and then rese
   };
   await load(page, state);
   await selectMapFleet(page);
-  await page.getByRole('button', { name: 'Auto salvage', exact: true }).click();
+  await chooseFleetOrder(page, 'Auto salvage');
   expect((await saved(page)).fleets[0]!.automation).toBe('salvage');
   await page.reload();
   await startFirstSlot(page);
@@ -107,9 +108,7 @@ test('automatisk-rutttilldelning: Auto assign route selects an empty route and p
   });
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page, 'Freighters');
-  await page
-    .getByRole('button', { name: 'Auto assign route', exact: true })
-    .click();
+  await chooseFleetOrder(page, 'Auto assign route');
   expect(
     (await saved(page)).fleets.find((f) => f.id === 'freighters')!.routeId,
   ).toBe('route-test');
@@ -130,18 +129,21 @@ test('bargningsorder-fran-flotta: choose Salvage and a wreck, reload and pick it
   const game = Game.restore(state);
   await load(page, state);
   await selectMapFleet(page);
-  await page.getByRole('button', { name: 'Salvage', exact: true }).click();
+  await chooseFleetOrder(page, 'Salvage');
   const picker = page.getByRole('combobox', {
     name: 'Salvage wreck',
     exact: true,
   });
   await expect(picker).toBeVisible();
-  await expect(picker).toContainText('Exploration ship wreck');
-  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(picker).toContainText('Exploration ship');
+  await page
+    .getByRole('button', { name: 'Back to orders', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
   expect((await saved(page)).salvage!.orders).toHaveLength(0);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page);
-  await page.getByRole('button', { name: 'Salvage', exact: true }).click();
+  await chooseFleetOrder(page, 'Salvage');
   await page.screenshot({
     path: testInfo.outputPath('choose-salvage-wreck.png'),
   });

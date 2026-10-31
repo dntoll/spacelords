@@ -1,5 +1,32 @@
 # Tekniska krav och arbetsregler
 
+## Orders och startorder
+
+`egen-ordervy`, `ruttval-for-order`, `flottval-pa-orderkarta`,
+`skeppsanpassade-specialorder`, `patrullcentrum-vid-order` och
+`startorder-for-nybyggda-skepp`: ShipOrders delar typade order, namn,
+kapabiliteter och ruttsortering mellan befintliga flottor och nyproduktion.
+OrdersView renderar HTML-val; AppController och AppModel samordnar meny och
+kartval. Domänorder går genom Game. Move ligger kvar som separat kartval.
+OrderSelection är tillfälligt presentationsläge; mål- och startorder i spelet
+sparas direkt. Ruttflottor filtreras från mottagarkartan och dess träffytor.
+
+Project.initialOrder är ett valfritt tillägg. Ett skepp med uttrycklig order
+bildar en egen flotta och lagrar pendingOrder tills årsavräkningen är klar.
+Game validerar då målet igen och aktiverar ordern i planeringsfasen utan att
+ge ny rörelse samma år. Ett ogiltigt mål lämnar skeppet säkert och ger ett
+besked. Avbrott efter produktion sparar pendingOrder och återupptar den en
+gång. Äldre projekt använder tidigare destinationFleetId och standardflotta.
+PatrolOrder.approaching skiljer resan till nytt centrum från patrulleringen;
+äldre patruller saknar fältet och fortsätter på sitt ursprungliga sätt.
+Inga sparningar, versionsnummer eller lagringsnycklar rensas.
+
+Tester skyddar kapabiliteter, ruttgruppering och avstånd, uteslutna ruttmål,
+fysisk anslutning, nya skepps separata uppdrag, alla automatiska startorder,
+mål som försvinner under bygget samt sparning från pekar- och tangentbordsval.
+Mobilflöden för Orders, Join fleet, Patrol och startorder ingår i
+snabbpubliceringen. Samma nya väg används i befintliga UI-regressioner.
+
 ## Flottuppgradering
 
 `flottorder-upgrade`, `automatisk-uppgraderingsforsorjning` och

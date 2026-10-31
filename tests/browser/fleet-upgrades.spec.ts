@@ -21,17 +21,21 @@ test('flottorder-upgrade / spara-flottuppgradering: orders on touch, reloads dur
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page);
+  await page
+    .locator('.selected-fleet-card')
+    .getByRole('button', { name: 'Orders', exact: true })
+    .click();
   const upgrade = page.getByRole('button', { name: 'Upgrade', exact: true });
   await expect(upgrade).toBeEnabled();
+  const box = (await upgrade.boundingBox())!;
+  expect(box.height).toBeGreaterThanOrEqual(44);
+  expect(box.width).toBeGreaterThanOrEqual(44);
   if (testInfo.project.use.hasTouch) await upgrade.tap();
   else await upgrade.click();
   await expect(
     page.getByRole('button', { name: 'Cancel Upgrade', exact: true }),
   ).toBeVisible();
   await expect(page.locator('.fleet-upgrade-status')).toContainText('Tellus');
-  const box = (await upgrade.boundingBox())!;
-  expect(box.height).toBeGreaterThanOrEqual(44);
-  expect(box.width).toBeGreaterThanOrEqual(44);
   await page.screenshot({
     path: testInfo.outputPath('upgrade-order-mobile.png'),
   });

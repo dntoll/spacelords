@@ -1,3 +1,4 @@
+import { chooseShipStartFleet } from './fleet-helpers.js';
 import { formFleet, selectMapFleet } from './fleet-helpers.js';
 import { selectMapObject } from './map-helpers.js';
 import { chooseFleetDestination } from './fleet-helpers.js';
@@ -457,12 +458,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await page
     .getByRole('button', { name: 'Show Colony ship', exact: true })
     .click();
-  await page
-    .getByRole('combobox', {
-      name: 'Destination fleet for Colony ship',
-      exact: true,
-    })
-    .selectOption({ label: 'Fleet 1' });
+  await chooseShipStartFleet(page, 'Fleet 1');
   await page
     .getByRole('button', { name: 'Show Colony ship', exact: true })
     .click();

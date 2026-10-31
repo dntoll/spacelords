@@ -1,3 +1,4 @@
+import { chooseShipStartFleet } from './fleet-helpers.js';
 import { selectMapObject } from './map-helpers.js';
 import {
   chooseFleetDestination,
@@ -117,12 +118,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await page
     .getByRole('button', { name: 'Show Transport ship', exact: true })
     .click();
-  await page
-    .getByRole('combobox', {
-      name: 'Destination fleet for Transport ship',
-      exact: true,
-    })
-    .selectOption({ label: 'Freighters' });
+  await chooseShipStartFleet(page, 'Freighters');
   await page
     .getByRole('navigation', { name: 'Planet pages' })
     .getByRole('button', { name: 'Production', exact: true })
@@ -140,12 +136,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await page
     .getByRole('button', { name: 'Show Colony ship', exact: true })
     .click();
-  await page
-    .getByRole('combobox', {
-      name: 'Destination fleet for Colony ship',
-      exact: true,
-    })
-    .selectOption({ label: 'Settlers' });
+  await chooseShipStartFleet(page, 'Settlers');
   await page
     .getByRole('navigation', { name: 'Planet pages' })
     .getByRole('button', { name: 'Production', exact: true })

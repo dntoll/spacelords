@@ -22,17 +22,17 @@ describe('flottorder-upgrade / spara-flottuppgradering', () => {
     controller.start();
     const button = (label: string) =>
       root.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;
+    button('Orders').click();
     expect(button('Upgrade').disabled).toBe(false);
     button('Upgrade').click();
     expect(model.snapshot.fleets[0]!.upgrade).toBeDefined();
     expect(root.querySelector('.fleet-upgrade-status')!.textContent).toContain(
       'Tellus',
     );
-    expect(button('Upgrade').getAttribute('aria-pressed')).toBe('true');
-    expect(button('Upgrade').disabled).toBe(true);
     expect(save).toHaveBeenCalled();
     button('Cancel Upgrade').click();
     expect(model.snapshot.fleets[0]!.upgrade).toBeUndefined();
+    button('Orders').click();
     expect(button('Upgrade').disabled).toBe(false);
     expect(save.mock.calls.length).toBeGreaterThan(1);
     controller.dispose();

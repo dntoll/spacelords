@@ -2,10 +2,11 @@ import type { BuildType, Cost, ProjectType } from './Game.js';
 import type { Point } from './HexCoordinate.js';
 import type { ProductionPresenceSnapshot } from './ProductionPresence.js';
 
-export type MapScreen = 'map' | 'fleets' | 'route' | 'production';
+export type MapScreen = 'map' | 'fleets' | 'route' | 'production' | 'orders';
 export function isMapScreen(screen: string | null): screen is MapScreen {
   return (
-    screen !== null && ['map', 'fleets', 'route', 'production'].includes(screen)
+    screen !== null &&
+    ['map', 'fleets', 'route', 'production', 'orders'].includes(screen)
   );
 }
 export type MapProductionCategory = 'Buildings' | 'Components' | 'Ships';

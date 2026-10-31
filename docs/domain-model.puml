@@ -159,6 +159,7 @@ class ExplorationOrder {
   mode: Explore | Explore stars
 }
 class PatrolOrder {
+  approaching : optional journey to chosen center
   center : HexCoordinate
   nextNeighborIndex
   targetPirateId
@@ -184,6 +185,23 @@ TurnSimulation "1" o-- "0..*" Discovery
 TurnSimulation --> Fleet : remaining movement
 SavedGame "1" o-- "0..1" TurnSimulation
 class TurnOrder
+class ShipOrder {
+  kind
+  recipientFleetOrRoute
+  targetPositionOrWreck
+}
+ConstructionProject "1" o-- "0..1" ShipOrder : initialOrder
+Fleet "1" o-- "0..1" ShipOrder : pendingOrder after construction
+ShipOrder --> Fleet : join recipient
+ShipOrder --> TradeRoute : join route
+ShipOrder --> HexCoordinate : Patrol center
+ShipOrder --> Wreck : deliberate salvage
+SavedGame --> ShipOrder
+note right of ShipOrder
+  startorder-for-nybyggda-skepp:
+  Nytt skepp får egen avgående flotta.
+  Målet valideras igen efter färdigställandet.
+end note
 class GameEvent {
   round
   text

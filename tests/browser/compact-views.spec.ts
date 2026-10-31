@@ -17,47 +17,30 @@ async function seed(page: Page, state: GameState) {
   await startFirstSlot(page);
 }
 
-test('dragbara-flottorder: mouse swipe reveals orders without issuing one and keeps its scroll after an order', async ({
+test('egen-ordervy: compact fleet controls remain readable and named special orders open separately', async ({
   page,
-  isMobile,
 }, testInfo) => {
-  test.skip(isMobile, 'Mouse swipe is a desktop interaction.');
   await seed(page, {
     ...researchStationState(),
     researched: ['Automated exploration'],
   });
   const card = page.locator('.fleet-card').first();
-  const toolbar = card.locator('.fleet-order-toolbar');
-  const before = await page.evaluate(() =>
-    localStorage.getItem('spacelords.save.v2.1'),
-  );
-  const bounds = (await toolbar.boundingBox())!;
-  const left = await toolbar.evaluate((node) => node.scrollLeft);
-  await page.mouse.move(bounds.x + bounds.width - 10, bounds.y + 22);
-  await page.mouse.down();
-  await page.mouse.move(bounds.x - 150, bounds.y + 22, { steps: 12 });
-  await page.mouse.up();
-  expect(await toolbar.evaluate((node) => node.scrollLeft)).toBeGreaterThan(
-    left,
-  );
-  expect(
-    await page.evaluate(() => localStorage.getItem('spacelords.save.v2.1')),
-  ).toBe(before);
-  const explore = card.getByRole('button', {
-    name: 'Explore stars',
-    exact: true,
-  });
-  await explore.focus();
-  const scrolled = await toolbar.evaluate((node) => node.scrollLeft);
-  await explore.click();
+  await expect(card.locator('.fleet-primary-orders button')).toHaveText([
+    'Move',
+    'Stop',
+    'Orders',
+  ]);
+  await card.getByRole('button', { name: 'Orders', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Explore stars', exact: true })
+    .click();
+  await expect(
+    card.getByRole('button', { name: 'Orders', exact: true }),
+  ).toBeVisible();
   await expect(
     card.getByRole('button', { name: 'Explore stars', exact: true }),
-  ).toHaveAttribute('aria-pressed', 'true');
-  expect(await toolbar.evaluate((node) => node.scrollLeft)).toBeCloseTo(
-    scrolled,
-    0,
-  );
-  await page.screenshot({ path: testInfo.outputPath('dragged-orders.png') });
+  ).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath('readable-orders.png') });
 });
 
 test('kompakt-forskningstrad / forskningsdetaljer-vid-val: compact tree tiles share the screen with readable selection details', async ({

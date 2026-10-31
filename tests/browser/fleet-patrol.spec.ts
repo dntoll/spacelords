@@ -1,3 +1,4 @@
+import { chooseFleetOrder } from './fleet-helpers.js';
 import { expect, test } from '@playwright/test';
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
@@ -31,9 +32,8 @@ for (const screen of ['Star map', 'Fleets']) {
     await page.getByRole('button', { name: screen, exact: true }).click();
     await selectMapFleet(page);
     const card = page.locator('.selected-fleet-card');
-    const patrol = card.getByRole('button', { name: 'Patrol', exact: true });
-    await patrol.click();
-    await expect(patrol).toHaveAttribute('aria-pressed', 'true');
+    const patrol = card.getByRole('button', { name: 'Orders', exact: true });
+    await chooseFleetOrder(page, 'Patrol');
     await expect(card).toHaveAttribute(
       'aria-description',
       /Patrol: range 3 hex/,
@@ -56,12 +56,12 @@ for (const screen of ['Star map', 'Fleets']) {
     await startFirstSlot(page);
     await page.getByRole('button', { name: screen, exact: true }).click();
     await selectMapFleet(page);
-    await expect(patrol).toHaveAttribute('aria-pressed', 'true');
+    await expect(card.locator('.fleet-patrol-status')).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath('fleet-patrol.png') });
     await card
       .getByRole('button', { name: 'Cancel patrol', exact: true })
       .click();
-    await expect(patrol).toHaveAttribute('aria-pressed', 'false');
+    await expect(card.locator('.fleet-patrol-status')).toHaveCount(0);
     const stopped = await page.evaluate(
       () =>
         JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
@@ -139,10 +139,7 @@ test('flottpatrullering: uses shared sight to catch a pirate, resumes its ring, 
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page);
-  await page
-    .locator('.selected-fleet-card')
-    .getByRole('button', { name: 'Patrol', exact: true })
-    .click();
+  await chooseFleetOrder(page, 'Patrol');
   await expect(page.locator('.selected-fleet-card')).toHaveAttribute(
     'aria-description',
     /pursuing Space pirate/,
@@ -164,8 +161,6 @@ test('flottpatrullering: uses shared sight to catch a pirate, resumes its ring, 
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page);
   await expect(
-    page
-      .locator('.selected-fleet-card')
-      .getByRole('button', { name: 'Patrol', exact: true }),
-  ).toHaveAttribute('aria-pressed', 'true');
+    page.locator('.selected-fleet-card .fleet-patrol-status'),
+  ).toBeVisible();
 });

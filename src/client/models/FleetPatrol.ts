@@ -1,6 +1,7 @@
 import { HexCoordinate } from './HexCoordinate.js';
 
 export interface PatrolOrder {
+  approaching?: boolean;
   readonly center: { readonly q: number; readonly r: number };
   nextIndex: number;
   targetPirateId?: string;
@@ -69,6 +70,8 @@ export class FleetPatrol {
       order.nextIndex < 0 ||
       order.nextIndex > 5 ||
       !contains(new HexCoordinate(order.center.q, order.center.r)) ||
+      (order.approaching !== undefined &&
+        typeof order.approaching !== 'boolean') ||
       (order.targetPirateId !== undefined &&
         (typeof order.targetPirateId !== 'string' || !order.targetPirateId))
     )

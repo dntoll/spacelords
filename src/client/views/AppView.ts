@@ -1,3 +1,4 @@
+import { renderOrders } from './OrdersView.js';
 import { gameText } from './GameText.js';
 import { BattleView, type BattleMapFactory } from './BattleView.js';
 import { discoveryControls } from './DiscoveryView.js';
@@ -268,7 +269,9 @@ export class AppView implements AppPort {
               ? 'Fleets'
               : model.screen === 'route'
                 ? 'Route'
-                : 'Production';
+                : model.screen === 'orders'
+                  ? 'Orders'
+                  : 'Production';
       this.#selectionKey = '';
       this.#ringKey = '';
       this.#screen = model.screen;
@@ -585,6 +588,8 @@ export class AppView implements AppPort {
         wrecks: model.wrecks,
         shipyards: model.shipyards,
         screen: model.screen,
+        orderView: model.orderView,
+        productionStartOrder: model.productionStartOrder,
         productionMap: model.productionMap,
         productionGuidance: model.productionGuidance,
         projectSupply: model.projectSupply,
@@ -1084,9 +1089,11 @@ export class AppView implements AppPort {
           ? 'Fleets'
           : screen === 'route'
             ? 'Route'
-            : screen === 'production'
-              ? 'Production'
-              : 'Star map',
+            : screen === 'orders'
+              ? 'Orders'
+              : screen === 'production'
+                ? 'Production'
+                : 'Star map',
       ),
     );
     this.#container = element('div', 'map-container');
@@ -1273,6 +1280,13 @@ export class AppView implements AppPort {
     if (!this.#panel) return;
     this.#cancelSelectionGesture?.();
     this.#panel.hidden = false;
+    if (model.screen === 'orders') {
+      const page = this.#root.querySelector<HTMLElement>('.map-page');
+      if (page) page.dataset.orderPage = model.orderView?.page ?? 'menu';
+      this.#panel.setAttribute('aria-label', 'Orders');
+      this.#panel.replaceChildren(renderOrders(model, this.#emit));
+      return;
+    }
     const salvage = renderSalvageSelection(model, this.#emit);
     if (salvage) {
       this.#panel.setAttribute('aria-label', 'Salvage and shipyard');

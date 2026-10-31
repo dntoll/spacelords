@@ -10,9 +10,17 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Orders och startorder:** `egen-ordervy`, `ruttval-for-order`,
+  `flottval-pa-orderkarta`, `skeppsanpassade-specialorder`,
+  `patrullcentrum-vid-order` och `startorder-for-nybyggda-skepp` är
+  **Fullständigt implementerat**. Orders samlar
+  specialorder med tydliga namn, ruttlista och val av mottagande flotta på
+  kartan. Move och Stop behålls i flottvyn. Samma val kan göras för
+  skepp som beställs. Se [Orders](docs/fleet-orders.md).
+
 - **Flottuppgradering:** `flottorder-upgrade`,
   `automatisk-uppgraderingsforsorjning` och `spara-flottuppgradering` är
-  **Fullständigt implementerat**. Upgrade reser till närmaste lämpliga egna
+  **Fullständigt implementerat**. Upgrade i Orders reser till närmaste lämpliga egna
   Orbital shipyard och byter äldre motorer och teleskop mot bättre utforskade
   delar. Varvets planet beställer saknade delar genom befintlig produktion
   och transport. Ordern väntar tills uppgraderingen kan genomföras och
@@ -193,7 +201,7 @@ Se [hela visionen](docs/game-vision.md).
   leverans. Se [krav och status](docs/galaxy-terrain.md).
 
 - **Patrol:** `flottpatrullering` är **Fullständigt implementerat**. Flottor med
-  Fighters cirklar runt orderhexen och jagar synliga pirater inom sin effektiva
+  Fighters reser till valt patrullcentrum och cirklar sedan runt det. De jagar synliga pirater inom sin effektiva
   flottfart, mätt från flottans aktuella position. Gemensam sikt används;
   tappad kontakt eller räckvidd ger återgång till patrullvarvet. Ordern och
   avbrutna år bevaras utan rensning av äldre sparningar. Se [spelreglerna](docs/space-pirates.md).

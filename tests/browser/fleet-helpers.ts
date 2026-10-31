@@ -1,8 +1,46 @@
 import { Game } from '../../src/client/models/Game.js';
+import { HexGeometry } from '../../src/client/models/HexCoordinate.js';
 import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
 import type { SavedGame } from '../../src/client/models/SaveRepository.js';
 import { selectMapPoint } from './map-helpers.js';
 import { expect, type Page } from '@playwright/test';
+
+export async function chooseFleetOrder(
+  page: Page,
+  label: string,
+): Promise<void> {
+  const selected = page.locator('.selected-fleet-card');
+  const card = (await selected.count())
+    ? selected
+    : page.locator('.fleet-card').first();
+  const fleetId = await card.getAttribute('data-fleet-id');
+  const record = await page.evaluate(
+    () =>
+      JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
+  );
+  const fleet = Game.restore(record.state).fleet(fleetId!)!;
+  await card.getByRole('button', { name: 'Orders', exact: true }).click();
+  await page
+    .getByRole('button', {
+      name: label === 'Salvage' ? 'Deliberate salvage' : label,
+      exact: true,
+    })
+    .click();
+  if (label === 'Patrol')
+    await selectMapPoint(page, HexGeometry.toPoint(fleet.position!));
+}
+
+export async function chooseShipStartFleet(
+  page: Page,
+  name: string,
+): Promise<void> {
+  await page.getByRole('button', { name: 'Orders', exact: true }).click();
+  await page.getByRole('button', { name: 'Join fleet', exact: true }).click();
+  await page
+    .getByRole('combobox', { name: 'Fleet target' })
+    .selectOption({ label: name });
+  await page.getByRole('button', { name: `Join ${name}`, exact: true }).click();
+}
 
 export async function chooseFleetDestination(
   page: Page,

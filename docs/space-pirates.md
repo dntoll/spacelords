@@ -13,8 +13,9 @@ varandra. Spelaren kan läsa information om dem men inte ge dem order.
 ## Spelarens Patrol
 
 `flottpatrullering` — **Fullständigt implementerat**: Patrol ges från flottans
-orderrad på Star map eller Fleets och kräver minst en Fighter. Hela flottan
-hålls samlad. Hexen där ordern ges blir fast centrum; flottan går först till
+Orders-vy från Star map eller Fleets och kräver minst en Fighter. Hela flottan
+hålls samlad. Spelaren väljer centrum på kartan och flottan reser dit före
+patrulleringen enligt `patrullcentrum-vid-order` från 2026-10-31. Därefter går flottan till
 dess första grannhex och fortsätter runt de sex grannhexarna i fast ordning
 med sin vanliga fart. Vid kartkanten utelämnas grannhexar utanför kartan och
 flottan tar en vanlig väg mellan återstående patrullpunkter.

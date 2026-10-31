@@ -269,6 +269,7 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
     const home = model.snapshot.fleets[0]!;
     model.createFleet(home.id);
     const target = model.snapshot.fleets[1]!;
+    model.transferShips(home.id, 'Fighter', 1, target.id);
     model.openPlanet();
     new AppController(model, new AppView(root, mapFactory)).start();
     root
@@ -280,16 +281,22 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
     expect(root.querySelectorAll('.compact-build-queue')).toHaveLength(1);
     expect(root.querySelector('.building-site')).toBeNull();
     click('Show Colony ship');
+    click('Orders');
+    click('Join fleet');
     const select = root.querySelector<HTMLSelectElement>(
-      '[aria-label="Destination fleet for Colony ship"]',
+      '[aria-label="Fleet target"]',
     )!;
     select.value = target.id;
     select.dispatchEvent(new Event('change'));
+    click(`Join ${target.name}`);
     click('Queue Colony ship');
     click('Queue Colony ship');
     click('Build queue');
     const queue = () => model.snapshot.planet!.projects;
-    expect(queue()[0]!.destinationFleetId).toBe(target.id);
+    expect(queue()[0]!.initialOrder).toEqual({
+      kind: 'join-fleet',
+      fleetId: target.id,
+    });
     expect(production().querySelectorAll('.queue-order')).toHaveLength(2);
     const second = queue()[1]!.id;
     production()
@@ -306,12 +313,18 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
       new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
     );
     expect(queue()[0]!.id).toBe(second);
-    const queuedFleet = production().querySelector<HTMLSelectElement>(
-      '.queue-order select',
+    click('Orders for queued Colony ship');
+    click('Join fleet');
+    const queuedFleet = root.querySelector<HTMLSelectElement>(
+      '[aria-label="Fleet target"]',
     )!;
     queuedFleet.value = target.id;
     queuedFleet.dispatchEvent(new Event('change'));
-    expect(queue()[0]!.destinationFleetId).toBe(target.id);
+    click(`Join ${target.name}`);
+    expect(queue()[0]!.initialOrder).toEqual({
+      kind: 'join-fleet',
+      fleetId: target.id,
+    });
     const firstHandle =
       production().querySelector<HTMLButtonElement>('.queue-drag-handle')!;
     for (const key of [' ', 'ArrowDown', 'Enter'])
@@ -336,14 +349,14 @@ describe('kolonisation / kartorderstatus', () => {
     advance(model);
     model.select(new HexCoordinate(0, 1));
     new AppController(model, new AppView(root, mapFactory)).start();
+    click('Orders');
     click('Colonize');
-    const picker = root.querySelector<HTMLSelectElement>(
-      '[aria-label="Colonization planet"]',
-    )!;
-    expect(picker).not.toBeNull();
-    picker.value = '0,1';
-    picker.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(root.textContent).toContain('1 empty building sites');
+    model.select(new HexCoordinate(0, 1));
+    new AppController(model, new AppView(root, mapFactory)).start();
+    expect(
+      model.snapshot.cells.find((cell) => cell.position.key === '0,1')!.object!
+        .owned,
+    ).toBe(true);
     click('Open planet');
     expect(root.querySelector('h1')!.textContent).toBe('Vesta');
     expect(root.textContent).toContain('1,000');

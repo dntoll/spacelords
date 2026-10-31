@@ -63,6 +63,7 @@ it.each([
     model.startSlot(1);
     model.openFleet(fleetId);
     const first = setup(model);
+    first.click('Orders');
     const locked = first.root.querySelector<HTMLButtonElement>(
       `[aria-label="${label}"]`,
     )!;
@@ -80,6 +81,7 @@ it.each([
     unlocked.startSlot(1);
     unlocked.openFleet(fleetId);
     const second = setup(unlocked);
+    second.click('Orders');
     second.click(label);
     expect(
       unlocked.snapshot.fleets.find((f) => f.id === fleetId)!.automation,
@@ -87,11 +89,6 @@ it.each([
     expect(saved.fleets.find((f) => f.id === fleetId)!.automation).toBe(
       automation,
     );
-    expect(
-      second.root
-        .querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!
-        .getAttribute('aria-pressed'),
-    ).toBe('true');
     second.click('Cancel automatic order');
     expect(
       saved.fleets.find((f) => f.id === fleetId)!.automation,
@@ -107,9 +104,11 @@ function setup(model = new AppModel()) {
   const controller = new AppController(model, view);
   controller.start();
   const click = (label: string) => {
-    const target = root.querySelector<HTMLButtonElement>(
-      `[aria-label="${label}"]`,
-    );
+    const target = (
+      label === 'Orders'
+        ? (root.querySelector('.selected-fleet-card') ?? root)
+        : root
+    ).querySelector<HTMLButtonElement>(`[aria-label="${label}"]`);
     expect(target, label).not.toBeNull();
     target!.click();
   };
@@ -125,7 +124,8 @@ it('bargningsorder-fran-flotta: Salvage opens a wreck picker, commits the missio
   model.startSlot(1);
   model.openFleet('fleet-home');
   const { root, click, view } = setup(model);
-  click('Salvage');
+  click('Orders');
+  click('Deliberate salvage');
   const picker = root.querySelector<HTMLSelectElement>(
     '[aria-label="Salvage wreck"]',
   )!;
@@ -139,9 +139,12 @@ it('bargningsorder-fran-flotta: Salvage opens a wreck picker, commits the missio
   expect(model.snapshot.fleets[0]!.salvage!.targets).toEqual([
     'advanced-wreck',
   ]);
+  click('Orders');
   expect(
-    root.querySelector<HTMLButtonElement>('[aria-label="Salvage"]')!.disabled,
+    root.querySelector<HTMLButtonElement>('[aria-label="Deliberate salvage"]')!
+      .disabled,
   ).toBe(true);
+  click('Back');
   click('Cancel salvage');
   expect(model.snapshot.fleets[0]!.salvage).toBeNull();
   expect(model.snapshot.wrecks[0]!.reservedBy).toBeNull();
@@ -550,21 +553,18 @@ describe('flottpatrullering', () => {
     const card = () =>
       renderFleetCard(model.snapshot.fleets[0]!, model.snapshot, emit);
     const control = card().querySelector<HTMLButtonElement>(
-      '[aria-label="Patrol"]',
+      '[aria-label="Orders"]',
     )!;
     expect(control.disabled).toBe(false);
-    expect(control.title).toContain('3 hexes');
     control.click();
+    emit({ type: 'order-kind', kind: 'patrol' });
+    emit({ type: 'select', position: model.snapshot.fleets[0]!.position! });
     const fleet = model.snapshot.fleets[0]!;
     expect(fleet.patrol?.center).toEqual(fleet.position);
     expect(Object.isFrozen(fleet.patrol)).toBe(true);
     expect(Object.isFrozen(fleet.patrol!.center)).toBe(true);
     const active = card();
-    expect(
-      active
-        .querySelector('[aria-label="Patrol"]')
-        ?.getAttribute('aria-pressed'),
-    ).toBe('true');
+    expect(active.querySelector('[aria-label="Patrol"]')).toBeNull();
     expect(active.querySelector('.fleet-patrol-status')?.textContent).toBe(
       'Patrol · R: 3',
     );
@@ -603,7 +603,7 @@ describe('flottpatrullering', () => {
       () => {},
     );
     expect(
-      locked.querySelector<HTMLButtonElement>('[aria-label="Patrol"]')!
+      locked.querySelector<HTMLButtonElement>('[aria-label="Orders"]')!
         .disabled,
     ).toBe(true);
   });

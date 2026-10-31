@@ -1,3 +1,5 @@
+import { ShipOrders } from '../models/ShipOrders.js';
+import type { ShipType } from '../models/Game.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import type { PlanetGameSnapshot } from '../models/Game.js';
 import type { SupplyStep } from '../models/ProjectSupply.js';
@@ -247,10 +249,20 @@ export function renderProductionMapPanel(
           'Waiting for resources. Orders can be queued.',
         ),
       );
-    if (option.category === 'Ships')
+    if (option.category === 'Ships') {
       detail.append(
-        element('p', 'muted-note', 'Destination: Planet home fleet (default).'),
+        element(
+          'p',
+          'muted-note',
+          `Start order: ${model.productionStartOrder ? ShipOrders.label(model.productionStartOrder) : option.type === 'Civilian shuttle' ? 'Civilian transport (default)' : 'Planet home fleet (default)'}.`,
+        ),
       );
+      const orders = button('Orders', () =>
+        emit({ type: 'open-ship-orders', ship: option.type as ShipType }),
+      );
+      orders.disabled = model.phase !== 'planning';
+      detail.append(orders);
+    }
     if (option.blockedReason)
       detail.append(element('p', 'blocked-reason', option.blockedReason));
 
@@ -316,6 +328,37 @@ export function renderProductionMapPanel(
   const selected = model.projectSupply.find(
     (p) => p.projectId === map.selectedProjectId,
   );
+  const selectedProject = planet.projects.find(
+    (project) => project.id === map.selectedProjectId,
+  );
+  if (
+    selectedProject &&
+    [
+      'Colony ship',
+      'Exploration ship',
+      'Fighter',
+      'Transport ship',
+      'Civilian shuttle',
+      'Salvage ship',
+    ].includes(selectedProject.type)
+  ) {
+    queue.append(
+      element(
+        'p',
+        '',
+        `Start order: ${selectedProject.initialOrder ? ShipOrders.label(selectedProject.initialOrder) : 'Default'}`,
+      ),
+    );
+    const orders = button(`Orders for queued ${selectedProject.type}`, () =>
+      emit({
+        type: 'open-ship-orders',
+        ship: selectedProject.type as ShipType,
+        projectId: selectedProject.id,
+      }),
+    );
+    orders.disabled = model.phase !== 'planning';
+    queue.append(orders);
+  }
   if (selected) {
     const chain = element('section', 'map-supply-chain');
     chain.setAttribute('aria-label', 'Selected project supply chain');

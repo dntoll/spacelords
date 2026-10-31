@@ -1,3 +1,8 @@
+import { ShipOrders, type ShipOrder, type OrderKind } from './ShipOrders.js';
+import type {
+  OrderSelection,
+  OrderSelectionSnapshot,
+} from './OrderSelection.js';
 import {
   EventPlayback,
   type EventPlaybackSnapshot,
@@ -93,7 +98,8 @@ export type Screen =
   | 'fleets'
   | 'route'
   | 'production'
-  | 'decisions';
+  | 'decisions'
+  | 'orders';
 
 export interface SaveSlotSnapshot {
   readonly id: number;
@@ -104,6 +110,8 @@ export interface SaveSlotSnapshot {
 }
 
 export interface AppReadModel {
+  readonly orderView?: OrderSelectionSnapshot | null;
+  readonly productionStartOrder?: ShipOrder | null;
   readonly tacticalBattle: BattleState | null;
   readonly turnMovement: TurnMovement | null;
   readonly eventPlayback: EventPlaybackSnapshot | null;
@@ -184,6 +192,11 @@ export interface AppReadModel {
 }
 
 export class AppModel {
+  #orderSelection: OrderSelection | null = null;
+  #shipStartOrder: {
+    readonly ship: ShipType;
+    readonly order: ShipOrder;
+  } | null = null;
   #movementPlayback: TurnMovementPlayback | null = null;
   #movementOrigin: AppReadModel | null = null;
   #eventPlayback: EventPlayback | null = null;
@@ -312,6 +325,8 @@ export class AppModel {
     this.#mapProductionOption = null;
     this.#mapProjectId = null;
     this.#game = game;
+    this.#orderSelection = null;
+    this.#shipStartOrder = null;
     this.#inspectedResearch = null;
     this.#eventPlayback = null;
     this.#presentedEventIds.clear();
@@ -428,6 +443,14 @@ export class AppModel {
       productionCategory: this.#productionCategory,
       productionProduct: this.#productionProduct,
       productionFleetId: this.#productionFleetId,
+      orderView: this.#orderSnapshot(),
+      productionStartOrder:
+        this.#shipStartOrder?.ship ===
+        (this.#screen === 'production'
+          ? this.#mapProductionOption
+          : this.#productionProduct)
+          ? this.#shipStartOrder.order
+          : null,
       expandedProjectIds: Object.freeze([
         ...this.#expandedProjectIds,
         ...(() => {
@@ -516,7 +539,14 @@ export class AppModel {
       round: this.#game.round,
       phase: this.#game.phase,
       interruption: this.#game.interruption,
-      fleets: this.#game.fleetSnapshots(),
+      fleets: this.#game
+        .fleetSnapshots()
+        .filter(
+          (fleet) =>
+            this.#screen !== 'orders' ||
+            this.#orderSelection?.page !== 'fleets' ||
+            !fleet.routeId,
+        ),
       pirates: this.#game.pirateSnapshots(),
       selectedFleet: this.#selectedFleetId
         ? this.#game.fleet(this.#selectedFleetId)
@@ -539,6 +569,23 @@ export class AppModel {
 
   select(position: HexCoordinate): void {
     if (!this.#isMapScreen()) return;
+    if (this.#screen === 'orders' && this.#orderSelection) {
+      if (this.#orderSelection.page === 'patrol')
+        this.completeOrder({
+          kind: 'patrol',
+          position: { q: position.q, r: position.r },
+        });
+      else if (this.#orderSelection.page === 'colonize') {
+        const planet = this.#game.planetKnowledge(position)
+          ? this.#game.galaxy.systems
+              .flatMap((system) => system.planets)
+              .find((planet) => planet.position.key === position.key)
+          : null;
+        if (planet)
+          this.completeOrder({ kind: 'colonize', planetId: planet.id });
+      }
+      return;
+    }
     if (this.#shipyardPlacement) {
       this.placeShipyard(position);
       return;
@@ -610,6 +657,8 @@ export class AppModel {
   }
 
   fleetAtPoint(point: Point): string | null {
+    if (this.#screen === 'orders' && this.#orderSelection?.page !== 'fleets')
+      return null;
     if (
       !this.#isMapScreen() ||
       this.#screen === 'production' ||
@@ -619,8 +668,17 @@ export class AppModel {
       return null;
     return FleetMapLayout.hit(
       [
-        ...this.#game.fleetSnapshots(),
-        ...this.#game.pirateSnapshots().map(pirateAsFleet),
+        ...this.#game
+          .fleetSnapshots()
+          .filter(
+            (fleet) =>
+              this.#screen !== 'orders' ||
+              this.#orderSelection?.page !== 'fleets' ||
+              !fleet.routeId,
+          ),
+        ...(this.#screen === 'orders'
+          ? []
+          : this.#game.pirateSnapshots().map(pirateAsFleet)),
       ],
       this.#camera.screenToWorld(point),
       this.#screen === 'route' ? this.#game.tradeRoutes : [],
@@ -628,6 +686,16 @@ export class AppModel {
     );
   }
   selectMapFleet(id: string): void {
+    if (this.#screen === 'orders') {
+      if (
+        this.#orderSelection?.page === 'fleets' &&
+        this.#orderSnapshot()?.fleetTargets.some((fleet) => fleet.id === id)
+      ) {
+        this.#orderSelection = { ...this.#orderSelection, selectedFleetId: id };
+        this.#mapFleetId = id;
+      }
+      return;
+    }
     this.#salvageSelection = null;
     if (!this.#isMapScreen() || this.#screen === 'production') return;
     const pirate = this.#game
@@ -652,6 +720,7 @@ export class AppModel {
     return true;
   }
   previewFleetDestination(point: Point): void {
+    if (this.#screen === 'orders') return;
     if (
       !this.#isMapScreen() ||
       this.#screen === 'production' ||
@@ -868,6 +937,7 @@ export class AppModel {
       this.#mapTrade.clearSelection();
     this.#destinationFleetId = null;
     this.#screen = screen;
+    if (screen !== 'orders') this.#orderSelection = null;
     if (screen === 'production') {
       this.#mapFleetId = null;
       this.#mapTrade.clearSelection();
@@ -879,6 +949,186 @@ export class AppModel {
   }
   openFleets(): void {
     this.#openMapScreen('fleets');
+  }
+  #orderSnapshot(): OrderSelectionSnapshot | null {
+    const selection = this.#screen === 'orders' ? this.#orderSelection : null;
+    if (!selection) return null;
+    const fleet = selection.fleetId
+      ? this.#game.fleet(selection.fleetId)
+      : null;
+    const ships =
+      fleet?.ships ?? (selection.ship ? { [selection.ship]: 1 } : {});
+    const type = ships['Transport ship'] ? 'Transport ship' : 'Fighter';
+    const planets = this.#game.ownedPlanetSnapshots();
+    return Object.freeze({
+      ...selection,
+      options: Object.freeze(
+        ShipOrders.options(
+          ships,
+          this.#game.research.completed,
+          !!fleet?.upgradeable,
+          !!fleet?.towing?.length,
+        ).map((option) =>
+          Object.freeze({
+            ...option,
+            blockedReason:
+              option.kind === 'upgrade' && fleet?.upgrade
+                ? 'An Upgrade order is already active.'
+                : option.kind === 'salvage' &&
+                    fleet &&
+                    Salvage.availableCapacity(fleet, this.#game.wrecks) === 0
+                  ? 'No free Salvage ship is available.'
+                  : option.blockedReason,
+          }),
+        ),
+      ),
+      routes: ShipOrders.routes(
+        type,
+        selection.origin,
+        this.#game.tradeRoutes,
+        this.#game.fleetSnapshots(),
+        (route, origin) =>
+          Math.min(
+            ...[route.a, route.b].map((id) => {
+              const planet = planets.find((planet) => planet.id === id);
+              return planet ? origin.distanceTo(planet.position) : Infinity;
+            }),
+          ),
+      ),
+      fleetTargets: Object.freeze(
+        this.#game
+          .fleetSnapshots()
+          .filter(
+            (target) =>
+              target.id !== selection.fleetId &&
+              !target.routeId &&
+              !target.upgrade &&
+              !target.civilian?.passengers &&
+              target.position,
+          ),
+      ),
+    });
+  }
+  openFleetOrders(id: string): void {
+    const fleet = this.#game.fleet(id);
+    if (!fleet?.position) throw new Error('Choose a positioned fleet.');
+    const returnScreen = this.#screen;
+    this.#openMapScreen('orders');
+    this.#salvageSelection = null;
+    this.#orderSelection = {
+      fleetId: id,
+      planetId: null,
+      projectId: null,
+      ship: null,
+      origin: fleet.position,
+      title: `Orders · ${fleet.name}`,
+      returnScreen,
+      page: 'menu',
+      selectedFleetId: null,
+    };
+  }
+  openShipOrders(ship: ShipType, projectId?: string): void {
+    const planet = this.#game.planetAt(this.#selected);
+    if (!planet) throw new Error('Choose a production planet.');
+    const returnScreen = this.#screen;
+    this.#openMapScreen('orders');
+    this.#salvageSelection = null;
+    this.#mapFleetId = null;
+    this.#orderSelection = {
+      fleetId: null,
+      planetId: planet.id,
+      projectId: projectId ?? null,
+      ship,
+      origin: planet.position,
+      title: `Start order · ${ship}`,
+      returnScreen,
+      page: 'menu',
+      selectedFleetId: null,
+    };
+  }
+  chooseOrder(kind: OrderKind): void {
+    const view = this.#orderSnapshot();
+    const option = view?.options.find((option) => option.kind === kind);
+    if (!view || !option) throw new Error('Choose an available order.');
+    if (option.blockedReason) throw new Error(option.blockedReason);
+    const page =
+      kind === 'join-route'
+        ? 'routes'
+        : kind === 'join-fleet'
+          ? 'fleets'
+          : ['patrol', 'salvage', 'colonize'].includes(kind)
+            ? (kind as 'patrol' | 'salvage' | 'colonize')
+            : null;
+    if (page) {
+      this.#orderSelection = { ...view, page, selectedFleetId: null };
+      this.#mapFleetId = null;
+      return;
+    }
+    if (kind === 'upgrade' || kind === 'return-shipyard') {
+      if (!view.fleetId) throw new Error('Choose an existing fleet.');
+      if (kind === 'upgrade') this.#game.upgradeFleet(view.fleetId);
+      else this.#game.returnToShipyard(view.fleetId);
+      this.#closeOrders();
+    } else if (
+      kind === 'auto-salvage' ||
+      kind === 'auto-transport' ||
+      kind === 'civilian-transport' ||
+      kind === 'explore' ||
+      kind === 'explore-stars'
+    )
+      this.completeOrder({ kind });
+  }
+  completeOrder(order: ShipOrder): void {
+    const selection = this.#orderSelection;
+    if (!selection) return;
+    if (selection.fleetId) this.#game.issueFleetOrder(selection.fleetId, order);
+    else if (selection.ship && selection.planetId) {
+      if (selection.projectId) {
+        const planet = this.#game.galaxy.systems
+          .flatMap((system) => system.planets)
+          .find((planet) => planet.id === selection.planetId)!;
+        this.#game.setProjectInitialOrder(planet, selection.projectId, order);
+      } else
+        this.#shipStartOrder = {
+          ship: selection.ship,
+          order: structuredClone(order),
+        };
+    }
+    this.#closeOrders(order.kind === 'join-fleet' ? order.fleetId : undefined);
+  }
+  orderBack(): void {
+    if (this.#orderSelection?.page !== 'menu' && this.#orderSelection)
+      this.#orderSelection = {
+        ...this.#orderSelection,
+        page: 'menu',
+        selectedFleetId: null,
+      };
+    else this.#closeOrders();
+  }
+  clearStartOrder(): void {
+    const selection = this.#orderSelection;
+    if (selection?.projectId && selection.planetId) {
+      const planet = this.#game.galaxy.systems
+        .flatMap((system) => system.planets)
+        .find((planet) => planet.id === selection.planetId)!;
+      this.#game.setProjectInitialOrder(planet, selection.projectId, null);
+    } else this.#shipStartOrder = null;
+    this.#closeOrders();
+  }
+  #closeOrders(joinedFleetId?: string): void {
+    const selection = this.#orderSelection;
+    if (!selection) return;
+    this.#orderSelection = null;
+    this.#screen =
+      selection.returnScreen === 'orders' ? 'fleets' : selection.returnScreen;
+    if (selection.fleetId) {
+      const fleet =
+        this.#game.fleet(selection.fleetId) ??
+        (joinedFleetId ? this.#game.fleet(joinedFleetId) : null);
+      this.#mapFleetId = fleet?.id ?? null;
+      if (fleet?.position) this.#selected = fleet.position;
+    } else this.#selected = selection.origin;
+    this.#fitProduction();
   }
   openFleet(id: string): void {
     const fleet = this.#game.fleet(id);
@@ -1124,7 +1374,15 @@ export class AppModel {
     this.#productionReceipt = Object.hasOwn(BUILDINGS, type)
       ? this.#game.scheduleBuild(planet, type as BuildType)
       : projectDefinition(type).ship
-        ? this.#game.scheduleShip(planet, type as ShipType)
+        ? this.#game.scheduleShip(
+            planet,
+            type as ShipType,
+            null,
+            undefined,
+            this.#shipStartOrder?.ship === type
+              ? this.#shipStartOrder.order
+              : undefined,
+          )
         : this.#game.scheduleComponent(planet, type as Component);
   }
   clearProductionReceipt(): void {
@@ -1276,7 +1534,16 @@ export class AppModel {
     factoryId?: string,
   ): void {
     const planet = this.#game.planetAt(this.#selected);
-    if (planet) this.#game.scheduleShip(planet, ship, fleetId, factoryId);
+    if (planet)
+      this.#game.scheduleShip(
+        planet,
+        ship,
+        fleetId,
+        factoryId,
+        this.#shipStartOrder?.ship === ship
+          ? this.#shipStartOrder.order
+          : undefined,
+      );
   }
   moveProject(id: string, index: number): void {
     const planet = this.#game.planetAt(this.#selected);
@@ -1436,6 +1703,7 @@ export class AppModel {
     this.#game.clearDestination(id);
   }
   startTurn(): void {
+    if (this.#screen === 'orders') this.#closeOrders();
     if (this.#eventPlayback || this.#movementPlayback) return;
     this.#presentedEventIds.clear();
     this.#turnContext = {
@@ -1842,6 +2110,8 @@ export class AppModel {
   }
 
   salvageAtPoint(point: Point): string | null {
+    if (this.#screen === 'orders' && this.#orderSelection?.page !== 'salvage')
+      return null;
     if (
       !this.#isMapScreen() ||
       (this.#destinationFleetId && this.#destinationOrder !== 'salvage') ||
@@ -1858,6 +2128,11 @@ export class AppModel {
     );
   }
   selectSalvage(id: string): void {
+    if (this.#screen === 'orders') {
+      if (this.#orderSelection?.page === 'salvage')
+        this.completeOrder({ kind: 'salvage', wreckId: id });
+      return;
+    }
     if (this.#destinationFleetId && this.#destinationOrder === 'salvage') {
       this.orderSalvage(this.#destinationFleetId, id);
       this.#destinationFleetId = null;

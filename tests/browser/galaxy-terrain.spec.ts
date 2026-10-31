@@ -1,3 +1,4 @@
+import { chooseFleetOrder } from './fleet-helpers.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot, endTurn } from './save-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
@@ -46,9 +47,7 @@ test('utokad-galax / stjarnornas-hexutseende / automatisk-stjarnutforskning: new
   await startFirstSlot(page);
   await page.screenshot({ path: testInfo.outputPath('large-stars.png') });
   await selectMapFleet(page, 'Home Fleet');
-  await page
-    .getByRole('button', { name: 'Explore stars', exact: true })
-    .click();
+  await chooseFleetOrder(page, 'Explore stars');
   await endTurn(page);
   const checkpoint = (await saved()).state.fleets.find(
     (fleet) => fleet.id === 'fleet-home',

@@ -1,3 +1,4 @@
+import { ShipOrders, type ShipOrder } from './ShipOrders.js';
 import {
   ShipUpgrades,
   type FleetUpgradeOrder,
@@ -495,6 +496,7 @@ export interface ProductionReceipt {
 }
 
 export interface ConstructionProjectSnapshot {
+  readonly initialOrder?: ShipOrder;
   readonly upgradeBuildingId?: string;
   readonly parts?: Readonly<Partial<Record<Component, number>>>;
   readonly id: string;
@@ -558,6 +560,7 @@ export interface PlanetOrderSnapshot {
   readonly emptyQueues: number;
 }
 export interface FleetSnapshot {
+  readonly pendingOrder?: ShipOrder;
   readonly upgradeable?: boolean;
   readonly upgrade?: Readonly<FleetUpgradeOrder>;
 
@@ -640,6 +643,7 @@ interface FleetUpgradePlan {
   readonly plan: ReturnType<ComponentPlanner['plan']>;
 }
 interface Project {
+  initialOrder?: ShipOrder;
   upgradeBuildingId?: string;
   stationPosition?: { readonly q: number; readonly r: number };
   parts?: Partial<Record<Component, number>>;
@@ -650,6 +654,7 @@ interface Project {
   destinationFleetId: string | null;
 }
 interface Fleet {
+  pendingOrder?: ShipOrder;
   upgrade?: FleetUpgradeOrder;
   ordersPaused?: boolean;
   civilian?: CivilianOrder;
@@ -980,6 +985,12 @@ export class Game {
         }
       }
       for (const building of colony.buildings) delete building.queue;
+      for (const project of colony.projects)
+        if (project.initialOrder) {
+          ShipOrders.validate(project.initialOrder);
+          if (!projectDefinition(project.type).ship)
+            throw new Error('Invalid saved ship order.');
+        }
       const upgradeTargets = new Set<string>();
       for (const project of colony.projects) {
         if (project.upgradeBuildingId === undefined) continue;
@@ -1149,6 +1160,8 @@ export class Game {
           )
         : new Salvage();
     for (const fleet of game.#fleets)
+      if (fleet.pendingOrder) ShipOrders.validate(fleet.pendingOrder);
+    for (const fleet of game.#fleets)
       if (fleet.upgrade) {
         ShipUpgrades.validate(
           fleet.upgrade,
@@ -1293,6 +1306,13 @@ export class Game {
     const projectSnapshot = (project: Project): ConstructionProjectSnapshot =>
       Object.freeze({
         ...project,
+        ...(project.initialOrder
+          ? {
+              initialOrder: Object.freeze(
+                structuredClone(project.initialOrder),
+              ),
+            }
+          : {}),
         ...(project.parts
           ? { parts: Object.freeze({ ...project.parts }) }
           : {}),
@@ -1615,6 +1635,13 @@ export class Game {
           id: fleet.id,
           name: this.#fleetDisplayName(fleet),
           ownName: fleet.name,
+          ...(fleet.pendingOrder
+            ? {
+                pendingOrder: Object.freeze(
+                  structuredClone(fleet.pendingOrder),
+                ),
+              }
+            : {}),
           upgradeable:
             ShipUpgrades.targets(fleet.shipUnits!, this.#research.completed)
               .length > 0,
@@ -1750,6 +1777,136 @@ export class Game {
     if (!this.#research.completed.has(technology))
       throw new Error(`Research ${technology} first.`);
   }
+  #validateShipOrder(
+    order: ShipOrder,
+    ships: Readonly<Partial<Record<ShipType, number>>>,
+  ): void {
+    ShipOrders.validate(order);
+    const option = ShipOrders.options(ships, [
+      ...this.#research.completed,
+    ]).find((option) => option.kind === order.kind);
+    if (!option) throw new Error('This ship cannot receive that order.');
+    if (option.blockedReason) throw new Error(option.blockedReason);
+    if (order.kind === 'join-fleet') {
+      const target = this.#fleets.find((fleet) => fleet.id === order.fleetId);
+      if (
+        !target?.position ||
+        target.routeId ||
+        target.upgrade ||
+        target.civilian?.passengers
+      )
+        throw new Error(
+          'Choose a positioned fleet without a trade route, Upgrade or passengers.',
+        );
+    } else if (order.kind === 'join-route') {
+      const route = this.#logistics.routes.find(
+        (route) => route.id === order.routeId && !route.closing,
+      );
+      if (!route) throw new Error('Choose an open trade route.');
+      if (
+        !ships['Transport ship'] &&
+        !routeEscortTargets(route.id, this.fleetSnapshots()).length
+      )
+        throw new Error(
+          'Assign a transport to this route before adding Fighters.',
+        );
+    } else if (order.kind === 'patrol') {
+      const center = new HexCoordinate(order.position.q, order.position.r);
+      if (!this.galaxy.cellAt(center) || !this.galaxy.isPassable(center))
+        throw new Error('Choose a passable Patrol center.');
+    } else if (order.kind === 'salvage') {
+      if (
+        !this.#salvage.wrecks.some(
+          (wreck) =>
+            wreck.id === order.wreckId &&
+            wreck.known &&
+            !wreck.reservedBy &&
+            !wreck.towedBy &&
+            !wreck.yardId,
+        )
+      )
+        throw new Error('Choose an available wreck.');
+    } else if (order.kind === 'colonize') {
+      if (
+        !this.#ownedPlanets().length ||
+        !this.galaxy.systems.some((system) =>
+          system.planets.some(
+            (planet) =>
+              planet.id === order.planetId &&
+              this.#knownObjects.has(planet.id) &&
+              !planet.colony &&
+              !this.#colonies.has(planet.id),
+          ),
+        )
+      )
+        throw new Error('Choose a known uninhabited planet.');
+    }
+  }
+
+  issueFleetOrder(id: string, order: ShipOrder): void {
+    this.#requireFleetOrders(id);
+    const fleet = this.#fleetState(id);
+    this.#validateShipOrder(order, fleet.ships);
+    if (order.kind === 'join-fleet') {
+      if (order.fleetId === id) throw new Error('Choose another fleet.');
+      if (this.#salvage.towing(id).length)
+        throw new Error('Deliver or release towed wrecks first.');
+      const target = this.#fleetState(order.fleetId);
+      // Validate the chain before replacing the current order.
+      for (
+        let cursor: Fleet | undefined = target;
+        cursor;
+        cursor = cursor.joinFleetId
+          ? this.#fleets.find((fleet) => fleet.id === cursor.joinFleetId)
+          : undefined
+      )
+        if (cursor.id === id)
+          throw new Error('Reinforcement orders cannot form a cycle.');
+      this.clearDestination(id);
+      fleet.joinFleetId = target.id;
+      fleet.destination = target.position;
+      fleet.courseOrigin = fleet.position!;
+      this.#refreshReinforcements();
+      this.#mergeReinforcements();
+    } else if (order.kind === 'join-route') {
+      if (this.#salvage.towing(id).length)
+        throw new Error('Deliver or release towed wrecks first.');
+      this.clearDestination(id);
+      this.assignTradeFleet(order.routeId, id);
+    } else if (order.kind === 'patrol')
+      this.setPatrol(id, new HexCoordinate(order.position.q, order.position.r));
+    else if (order.kind === 'salvage') this.orderSalvage(id, order.wreckId);
+    else if (order.kind === 'colonize') {
+      const planet = this.galaxy.systems
+        .flatMap((system) => system.planets)
+        .find((planet) => planet.id === order.planetId)!;
+      this.setColonization(id, planet.position);
+    } else if (order.kind === 'auto-salvage') this.setAutomaticSalvage(id);
+    else if (order.kind === 'auto-transport') this.setAutomaticTransport(id);
+    else if (order.kind === 'civilian-transport') this.setCivilianTransport(id);
+    else this.setExploration(id, order.kind);
+  }
+
+  #activateShipOrders(): void {
+    for (const fleet of [...this.#fleets]) {
+      const order = fleet.pendingOrder;
+      if (!order) continue;
+      delete fleet.pendingOrder;
+      try {
+        this.issueFleetOrder(fleet.id, order);
+      } catch (error) {
+        fleet.navigationIssue = `Start order could not begin: ${error instanceof Error ? error.message : 'Choose another order.'}`;
+        this.#event(
+          `${fleet.name}: ${fleet.navigationIssue}`,
+          fleet.position ?? undefined,
+          undefined,
+          undefined,
+          this.#round - 1,
+        );
+      }
+    }
+  }
+
   upgradeFleet(fleetId: string): void {
     this.#requirePlanning();
     this.#requireFleetOrders(fleetId);
@@ -2107,6 +2264,7 @@ export class Game {
     const fleet = this.#fleetState(fleetId);
     this.#salvage.assign(fleet, wreckId);
     this.#cancelFleetUpgrade(fleet);
+    delete fleet.pendingOrder;
     delete fleet.automation;
     delete fleet.civilian;
     delete fleet.colonizationTargetId;
@@ -2121,6 +2279,7 @@ export class Game {
     const fleet = this.#fleetState(fleetId);
     this.#salvage.returnHome(fleet);
     this.#cancelFleetUpgrade(fleet);
+    delete fleet.pendingOrder;
     delete fleet.automation;
     delete fleet.civilian;
     delete fleet.colonizationTargetId;
@@ -2761,11 +2920,16 @@ export class Game {
     type: ShipType,
     destinationFleetId: string | null = null,
     factoryId?: string,
+    initialOrder?: ShipOrder,
   ): ProductionReceipt {
     this.#requirePlanning();
     if (!Object.hasOwn(SHIPS, type)) throw new Error('Unknown ship type.');
     if (type === 'Civilian shuttle') {
       this.#requireOrderResearch('Civilian transport');
+      destinationFleetId = null;
+    }
+    if (initialOrder) {
+      this.#validateShipOrder(initialOrder, { [type]: 1 });
       destinationFleetId = null;
     }
     this.#validateProjectFleet(planet, destinationFleetId);
@@ -2781,6 +2945,12 @@ export class Game {
       destinationFleetId,
       slotIndex: null,
       factoryId: building.id,
+      ...(initialOrder
+        ? {
+            initialOrder: structuredClone(initialOrder),
+            destinationFleetId: null,
+          }
+        : {}),
     });
   }
   scheduleComponent(planet: Planet, component: Component): ProductionReceipt {
@@ -2965,6 +3135,24 @@ export class Game {
     if (!project || !projectDefinition(project.type).ship)
       throw new Error('Choose a ship production order.');
     project.destinationFleetId = fleetId;
+    delete project.initialOrder;
+  }
+  setProjectInitialOrder(
+    planet: Planet,
+    id: string,
+    order: ShipOrder | null,
+  ): void {
+    this.#requirePlanning();
+    const project = this.#state(planet).projects.find(
+      (project) => project.id === id,
+    );
+    const ship = project && projectDefinition(project.type).ship;
+    if (!project || !ship) throw new Error('Choose a queued ship.');
+    if (order) {
+      this.#validateShipOrder(order, { [ship]: 1 });
+      project.initialOrder = structuredClone(order);
+      project.destinationFleetId = null;
+    } else delete project.initialOrder;
   }
   #emptySlot(planet: Planet, state: ColonyState, type?: BuildType): number {
     const environment = this.#environment(planet, state);
@@ -3133,6 +3321,7 @@ export class Game {
     delete fleet.exploration;
     delete fleet.starSurvey;
     this.#cancelFleetUpgrade(fleet);
+    delete fleet.pendingOrder;
     delete fleet.automation;
     delete fleet.civilian;
     delete fleet.colonizationTargetId;
@@ -3152,6 +3341,7 @@ export class Game {
     this.#requireFleetOrders(id);
     this.#salvage.stop(id);
     this.#cancelFleetUpgrade(this.#fleetState(id));
+    delete this.#fleetState(id).pendingOrder;
     delete this.#fleetState(id).automation;
     delete this.#fleetState(id).colonizationTargetId;
     delete this.#fleetState(id).exploration;
@@ -3428,6 +3618,7 @@ export class Game {
         delete fleet.exploration;
         delete fleet.starSurvey;
         this.#cancelFleetUpgrade(fleet);
+        delete fleet.pendingOrder;
         delete fleet.automation;
         delete fleet.colonizationTargetId;
         this.#salvage.stop(fleet.id);
@@ -3563,24 +3754,37 @@ export class Game {
     delete fleet.joinFleetId;
     fleet.exploration = order;
     this.#cancelFleetUpgrade(fleet);
+    delete fleet.pendingOrder;
     delete fleet.automation;
     delete fleet.civilian;
     delete fleet.colonizationTargetId;
     delete fleet.starSurvey;
     this.#updateExploration(fleet);
   }
-  setPatrol(id: string): void {
+  setPatrol(id: string, center?: HexCoordinate): void {
     this.#requireFleetOrders(id);
     this.#requireOrderResearch('Fleet patrol');
     const fleet = this.#fleetState(id);
     if (!fleet.ships.Fighter)
       throw new Error('A Fighter is required for Patrol.');
-    if (fleet.patrol) return;
+    if (
+      center &&
+      (!this.galaxy.cellAt(center) || !this.galaxy.isPassable(center))
+    )
+      throw new Error('Choose a passable Patrol center.');
+    if (fleet.patrol && !center) return;
     this.#salvage.stop(id);
     delete fleet.exploration;
     delete fleet.joinFleetId;
-    fleet.patrol = { center: fleet.position!, nextIndex: 0 };
+    fleet.patrol = {
+      center: center ?? fleet.position!,
+      nextIndex: 0,
+      ...(center && center.key !== fleet.position!.key
+        ? { approaching: true }
+        : {}),
+    };
     this.#cancelFleetUpgrade(fleet);
+    delete fleet.pendingOrder;
     delete fleet.automation;
     delete fleet.civilian;
     delete fleet.colonizationTargetId;
@@ -3861,6 +4065,7 @@ export class Game {
     this.#decisions.skipped.clear();
     this.#phase = 'planning';
     this.#simulation = null;
+    this.#activateShipOrders();
     this.#logistics.reserve(this.#logisticsPort());
   }
   #settleYear(): void {
@@ -4018,6 +4223,7 @@ export class Game {
         d.ship,
         project.destinationFleetId,
         project.parts,
+        project.initialOrder,
       );
     }
   }
@@ -4027,9 +4233,10 @@ export class Game {
     ship: ShipType,
     destinationFleetId: string | null,
     parts: Partial<Record<Component, number>> = {},
+    initialOrder?: ShipOrder,
   ): void {
     state.population -= SHIPS[ship].crew;
-    if (ship === 'Civilian shuttle') {
+    if (ship === 'Civilian shuttle' && !initialOrder) {
       const fleet: Fleet = {
         id: this.#id('fleet'),
         name: this.#uniqueFleetName(`${planet.name} Civilian transport`),
@@ -4056,32 +4263,36 @@ export class Game {
       return;
     }
     // nybyggda-skepp-utan-ruttflotta: recheck assignments made after the order was queued.
-    let reserve =
-      this.#fleets.find(
-        (fleet) =>
-          fleet.id === destinationFleetId &&
-          !fleet.routeId &&
-          !fleet.civilian &&
-          (!fleet.position || fleet.position.key === planet.position.key),
-      ) ??
-      this.#fleets.find(
-        (fleet) =>
-          fleet.id === state.homeFleetId &&
-          !fleet.routeId &&
-          !fleet.civilian &&
-          (!fleet.position || fleet.position.key === planet.position.key),
-      );
+    let reserve = initialOrder
+      ? undefined
+      : (this.#fleets.find(
+          (fleet) =>
+            fleet.id === destinationFleetId &&
+            !fleet.routeId &&
+            !fleet.civilian &&
+            (!fleet.position || fleet.position.key === planet.position.key),
+        ) ??
+        this.#fleets.find(
+          (fleet) =>
+            fleet.id === state.homeFleetId &&
+            !fleet.routeId &&
+            !fleet.civilian &&
+            (!fleet.position || fleet.position.key === planet.position.key),
+        ));
     if (!reserve) {
       reserve = {
         id: this.#id('fleet'),
-        name: this.#uniqueFleetName(`${planet.name} Home Fleet`),
+        name: this.#uniqueFleetName(
+          initialOrder ? `${planet.name} ${ship}` : `${planet.name} Home Fleet`,
+        ),
         position: planet.position,
         destination: null,
         ships: zeroShips(),
       };
       this.#fleets.push(reserve);
-      state.homeFleetId = reserve.id;
+      if (!initialOrder) state.homeFleetId = reserve.id;
     }
+    if (initialOrder) reserve.pendingOrder = structuredClone(initialOrder);
     reserve.position = planet.position;
     reserve.ships[ship] += 1;
     (reserve.shipUnits ??= []).push({
@@ -5342,6 +5553,18 @@ export class Game {
       );
       return;
     }
+    if (fleet.patrol.approaching) {
+      const center = new HexCoordinate(
+        fleet.patrol.center.q,
+        fleet.patrol.center.r,
+      );
+      if (fleet.position.key !== center.key) {
+        fleet.destination = center;
+        fleet.courseOrigin ??= fleet.position;
+        return;
+      }
+      delete fleet.patrol.approaching;
+    }
     const destination = FleetPatrol.destination(
       fleet.patrol,
       fleet.position,
@@ -5519,6 +5742,7 @@ export class Game {
       ]
     ) {
       this.#cancelFleetUpgrade(fleet);
+      delete fleet.pendingOrder;
       delete fleet.automation;
       delete fleet.civilian;
       this.#salvage.stop(fleet.id);
@@ -5722,12 +5946,13 @@ export class Game {
     position?: HexCoordinate,
     combatLog?: readonly string[],
     planetId?: string,
+    round = this.#round,
   ): string {
     const id = this.#id('event');
     this.#events.push(
       Object.freeze({
         id,
-        round: this.#round,
+        round,
         text,
         ...(planetId ? { planetId } : {}),
         ...(combatLog ? { combatLog: Object.freeze([...combatLog]) } : {}),

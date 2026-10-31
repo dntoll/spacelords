@@ -157,15 +157,13 @@ it('flottorder-som-symboler / kompakta-flottkort: exposes explorer controls and 
     ),
   ).toBeNull();
   expect(card().querySelector('.fleet-speed')!.textContent).toBe('S: 3 hex');
-  card()
+  card().querySelector<HTMLButtonElement>('[aria-label="Orders"]')!.click();
+  root
     .querySelector<HTMLButtonElement>('[aria-label="Explore stars"]')!
     .click();
   expect(model.snapshot.fleets[0]!.exploration).toBe('explore-stars');
-  expect(
-    card()
-      .querySelector('[aria-label="Explore stars"]')!
-      .getAttribute('aria-pressed'),
-  ).toBe('true');
+  expect(card().querySelector('[aria-label="Explore stars"]')).toBeNull();
+  expect(card().querySelector('[aria-label="Orders"]')).not.toBeNull();
   controller.dispose();
 });
 

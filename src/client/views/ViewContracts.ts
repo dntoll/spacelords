@@ -1,4 +1,5 @@
 import type { ExplorationOrder } from '../models/TurnSimulation.js';
+import type { ShipOrder, OrderKind } from '../models/ShipOrders.js';
 import type { BattleCommand } from '../models/TacticalBattle.js';
 import type {
   MapProductionCategory,
@@ -21,6 +22,15 @@ import type {
 import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 
 export type AppIntent =
+  | { readonly type: 'open-fleet-orders'; readonly id: string }
+  | {
+      readonly type: 'open-ship-orders';
+      readonly ship: ShipType;
+      readonly projectId?: string;
+    }
+  | { readonly type: 'order-kind'; readonly kind: OrderKind }
+  | { readonly type: 'apply-ship-order'; readonly order: ShipOrder }
+  | { readonly type: 'order-back' | 'clear-start-order' }
   | { readonly type: 'battle-command'; readonly command: BattleCommand }
   | { readonly type: 'resume-fleet-orders'; readonly id: string }
   | {
