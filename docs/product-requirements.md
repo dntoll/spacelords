@@ -21,6 +21,9 @@ i `upptackbara-vrak`.
 Fleets, Orders, Route och Production ska reagera snabbt när spelaren
 panorerar eller zoomar, även i den stora galaxen. Världens storlek,
 upptäckter och befintliga sparningar behålls.
+Det gäller från första fingertrycket, när ett andra finger startar
+nypzoomning och fram till att fingrarna släpps. Tryck för val och
+dragning av flottorder behåller sina befintliga beteenden.
 
 `synligt-stridsresultat`, `synligt-stridsslut`, `automatiskt-skeppsval-i-strid`,
 `synliga-fiendemanovrer` och `fuskknapp-for-teststrid` är

@@ -19,6 +19,10 @@ export class MapGesture {
     return this.#pointers.size;
   }
 
+  get consumed(): boolean {
+    return this.#consumed;
+  }
+
   start(id: number, point: Point): void {
     if (this.#pointers.size === 0) {
       this.#start = point;

@@ -851,9 +851,7 @@ export class AppModel {
     )
       return null;
     const world = this.#camera.screenToWorld(point);
-    const planet = this.#game
-      .ownedPlanetSnapshots()
-      .find((p) => p.position.key === this.#selected.key);
+    const planet = this.#game.planetAt(this.#selected);
     if (!planet) return null;
     const center = HexGeometry.toPoint(planet.position);
     return Math.hypot(world.x - center.x, world.y - center.y) <=

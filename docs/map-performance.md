@@ -5,7 +5,8 @@
 - `responsiv-stjarnkarta` — **Fullständigt implementerat**. Panorering,
   nypzoomning, mushjul och tangentbordsnavigation ska reagera direkt även i
   den stora galaxen. Oförändrade speldata och övriga kontroller återanvänds
-  under kamerarörelse. Flera inkommande uppdateringar ger högst en begärd
+  under hela gesten, även första fingertrycket, andra fingret vid nypzoomning
+  och släpp efter panorering eller nypzoomning. Flera inkommande uppdateringar ger högst en begärd
   omritning per bildruta.
 - `rumsligt-kartindex` — **Fullständigt implementerat**. Kartvyn ska hitta
   innehållet i kamerans utsnitt utan att gå igenom hela världen vid varje
@@ -20,6 +21,17 @@ världskoordinater vid varje omritning, även när nästan hela världen låg
 utanför skärmen. AppController begärde dessutom flera fullständiga
 AppReadModel för varje pekarhändelse och skickade kamerarörelser genom
 hela AppView, inklusive Events och beslutsvägledning.
+
+Uppföljning 2026-10-31: kamerans rörelsesteg använde den snabba vägen,
+men första fingertrycket hämtade fortfarande fem fullständiga
+spelögonblicksbilder. Ett andra finger samt avslutade gester gick också
+genom den fullständiga uppdateringen. Dessutom beräknade träffkontrollen
+för ruttstart alla koloniers ekonomiska ögonblicksbilder.
+Nu registreras tryck i kartbakgrunden direkt, nypzoomning avbryter
+eventuell orderdragning med enbart ändrat presentationstillstånd och
+släpp efter kameragester bygger inte om gränssnittet. Ruttstart kontrollerar
+bara planeten vid den valda hexen. Vanliga tryck väljer fortsatt objekt
+och orderdragning behåller sina regler.
 
 MapViewport indexerar en oföränderlig kartögonblicksbild i sorterade
 hexrader. Binärsökning i höjdled och därefter i varje berörd rad ger
@@ -61,11 +73,17 @@ nuvarande kod, med 200 steg, finns i:
 node --import tsx scripts/benchmark-map.mjs
 ```
 
+Efter uppföljningen tar en hel panoreringsgest med tryck, rörelse och
+släpp cirka 0,70 ms i controllern utan rendering på utvecklingsdatorn.
+Detta är inte en mätning av gestlatens eller FPS på spelarens telefon.
+
 Regressionstester reproducerade fullständig gränssnittsuppdatering vid
 dragning, 30 301 projektioner per utsnitt och omedelbar omritning av varje
 inkommande uppdatering före rättning. Automatiska tester skyddar även
 nypzoomning, kameraankare, oförändrad hover, avbruten rendering, kartkanter,
 utzoomning, utbytt kartminne och lagerordning. Mobiltestet kontrollerar
 att upprepade kameraändringar inte bygger om Turn console och att
-slutlig position och zoom når canvas. Tidsmätningar används inte som
+slutlig position och zoom når canvas. Även ett verkligt pekartryck,
+dragning och släpp kontrolleras från början till slut utan ändringar
+i Turn console. Tidsmätningar används inte som
 instabila godkännandegränser i CI.

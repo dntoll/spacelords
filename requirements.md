@@ -20,7 +20,9 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Kartans prestanda:** `responsiv-stjarnkarta` och `rumsligt-kartindex` är
   **Fullständigt implementerat**. Panorering och zoom återanvänder speldata
-  och uppdaterar bara kamerabundna vyer. Kartan väljer innehåll genom ett
+  och uppdaterar bara kamerabundna vyer, även från första fingertrycket,
+  vid andra fingrets nypzoomning och vid avslut av kameragesten.
+  Kartan väljer innehåll genom ett
   rumsligt index och samlar omritningar per bildruta. Galax och sparningar
   behålls. Se [kartans prestanda](docs/map-performance.md).
 

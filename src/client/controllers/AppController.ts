@@ -74,6 +74,8 @@ export class AppController {
   // responsiv-stjarnkarta: camera gestures reuse the last immutable empire snapshot.
   #navigate(intent: AppIntent): boolean {
     const previous = this.#presented;
+    const startingPinch =
+      intent.type === 'pointer-start' && this.#gesture.pointerCount > 0;
     if (
       !previous ||
       !isMapScreen(previous.screen) ||
@@ -83,15 +85,37 @@ export class AppController {
       previous.battleFeedback ||
       previous.notice ||
       this.#runningTurn ||
-      this.#fleetPointer ||
-      previous.fleetDragging ||
-      previous.fleetDestinationPreview ||
-      previous.mapTrade.preview ||
-      previous.mapTrade.candidateRouteIds.length ||
-      previous.mapTrade.assignmentFleetId
+      (!startingPinch &&
+        (this.#fleetPointer ||
+          previous.fleetDragging ||
+          previous.fleetDestinationPreview ||
+          previous.mapTrade.preview ||
+          previous.mapTrade.candidateRouteIds.length ||
+          previous.mapTrade.assignmentFleetId))
     )
       return false;
-    if (intent.type === 'pan' || intent.type === 'zoom') {
+    if (intent.type === 'pointer-start') {
+      if (!startingPinch) {
+        if (
+          this.#model.salvageAtPoint(intent.point) ||
+          this.#model.fleetAtPoint(intent.point) ||
+          this.#model.mapRouteDragSource(intent.point)
+        )
+          return false;
+        this.#gesture.start(intent.id, intent.point);
+        return true;
+      }
+      this.#gesture.start(intent.id, intent.point);
+      this.#fleetPointer = null;
+      this.#model.cancelMapPointer();
+    } else if (
+      intent.type === 'pointer-end' &&
+      this.#gesture.pointerCount > 0 &&
+      this.#gesture.consumed
+    ) {
+      this.#gesture.end(intent.id);
+      return true;
+    } else if (intent.type === 'pan' || intent.type === 'zoom') {
       this.#cancelPointer(true);
       if (intent.type === 'pan') this.#model.pan(intent.delta);
       else this.#model.zoom(intent.factor, intent.anchor);

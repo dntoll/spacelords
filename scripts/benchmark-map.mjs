@@ -44,6 +44,12 @@ console.log(
         panControllerWithoutRendering: measure((i) =>
           emit({ type: 'pan', delta: { x: i % 2 ? -1 : 1, y: 0 } }),
         ),
+        panGestureControllerWithoutRendering: measure((i) => {
+          emit({ type: 'pointer-start', id: 1, point: { x: 180, y: 150 } });
+          const point = { x: 180 + (i % 2 ? -20 : 20), y: 150 };
+          emit({ type: 'pointer-move', id: 1, point });
+          emit({ type: 'pointer-end', id: 1, point });
+        }),
       },
     },
     null,

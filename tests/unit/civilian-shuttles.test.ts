@@ -90,6 +90,54 @@ describe('civil-skytteltillverkning', () => {
 });
 
 describe('automatisk-arbetskraftstrafik', () => {
+  it('civiltrafik-pa-handelsnatet / civiltrafik-sparning: a newly built shuttle boards, travels and delivers after reload without a goods carrier', () => {
+    const state = shuttleState();
+    state.fleets = state.fleets.filter(
+      (fleet) => !fleet.ships['Transport ship'],
+    );
+    let game = Game.restore(state);
+    const home = game.galaxy.homePlanet;
+    game.scheduleShip(home, 'Civilian shuttle');
+    finishYear(game);
+    const shuttle = game
+      .fleetSnapshots()
+      .find((fleet) => fleet.ships['Civilian shuttle'])!;
+    expect(shuttle.civilian).toBeDefined();
+    const target = game
+      .exportState()
+      .colonies.find(([id]) => id === 'sol-1')![1];
+    const population = target.population;
+    for (
+      let year = 0;
+      year < 8 &&
+      !game.events.some(
+        (event) =>
+          event.text.includes('delivered') && event.text.includes('passengers'),
+      );
+      year++
+    ) {
+      game = Game.restore(game.exportState());
+      finishYear(game);
+    }
+    expect(
+      game.events.some(
+        (event) =>
+          event.text.includes('boarded') && event.text.includes('passengers'),
+      ),
+    ).toBe(true);
+    expect(
+      game.events.some(
+        (event) =>
+          event.text.includes('delivered') && event.text.includes('passengers'),
+      ),
+    ).toBe(true);
+    expect(
+      game.exportState().colonies.find(([id]) => id === 'sol-1')![1].population,
+    ).toBeGreaterThan(population);
+    expect(game.fleet(shuttle.id)!.civilian).toBeDefined();
+    expect(game.fleet(shuttle.id)!.civilian!.passengers).toBe(0);
+  });
+
   it('counts existing buildings plus only the first queue item and preserves crew at the source', () => {
     const state = shuttleState();
     state.colonies[1]![1].projects.push({

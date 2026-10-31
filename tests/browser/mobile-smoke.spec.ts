@@ -94,4 +94,30 @@ test('responsiv-stjarnkarta / rumsligt-kartindex: camera updates preserve the tu
     expect(camera.x).toBeLessThan(-300);
     await expect(page.getByLabel('Map zoom')).toHaveText('143%');
   }).toPass();
+
+  // responsiv-stjarnkarta: audit the real pointer gesture from initial press through release.
+  const box = (await canvas.boundingBox())!;
+  const start = { x: box.x + 25, y: box.y + 25 };
+  await page.mouse.move(start.x, start.y);
+  const audit = await page.evaluateHandle(() => {
+    const footer = document.querySelector('.game-turn-actions')!;
+    const records: MutationRecord[] = [];
+    const observer = new MutationObserver((mutations) =>
+      records.push(...mutations),
+    );
+    observer.observe(footer, { subtree: true, childList: true });
+    return { footer, observer, records };
+  });
+  const previousX = await canvas.getAttribute('data-camera-x');
+  await page.mouse.down();
+  await page.mouse.move(start.x + 35, start.y + 20, { steps: 3 });
+  await page.mouse.up();
+  const gesture = await audit.evaluate(({ footer, observer, records }) => {
+    const mutations = records.length + observer.takeRecords().length;
+    observer.disconnect();
+    return { mutations, connected: footer.isConnected };
+  });
+  await audit.dispose();
+  expect(gesture).toEqual({ mutations: 0, connected: true });
+  await expect(canvas).not.toHaveAttribute('data-camera-x', previousX!);
 });

@@ -61,3 +61,13 @@ Skeppets bild återanvänder Transport ship med egen Civilian shuttle-etikett.
 Ändring 2026-10-30: nybyggda skyttlars egna automatiska flottor ersätter
 mottagarvalet för just Civilian shuttle i `skepp-till-destinationsflotta`.
 Övriga nybyggen följer `nybyggda-skepp-utan-ruttflotta`.
+
+## Verifiering av automatiken
+
+Uppföljning 2026-10-31: `automatisk-arbetskraftstrafik`,
+`civiltrafik-pa-handelsnatet` och `civiltrafik-sparning` verifieras även
+med ett sammanhängande speltest där en nybyggd Civilian shuttle hämtar
+passagerare, färdas och lämnar dem vid personalbrist. Spelet laddas om
+mellan åren och rutten saknar Transport ship. Testet passerar utan ändring
+av civiltrafikens regler. Detta visar att kedjan fungerar för testfallet;
+det fastställer inte varför en viss färja väntar i spelarens sparning.

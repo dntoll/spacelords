@@ -89,7 +89,7 @@ test('civil-skyttelforskning / civil-skytteltillverkning / civiltrafik-sparning:
   await expect(card).toContainText('Civilian transport');
   await expect(card).toContainText('0 passengers aboard');
   await expect(
-    card.getByRole('button', { name: 'Civilian transport', exact: true }),
+    card.getByRole('button', { name: 'Stop Civilian transport', exact: true }),
   ).toBeVisible();
   await endTurn(page);
   const saved = await page.evaluate(

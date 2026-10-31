@@ -9,6 +9,36 @@ import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 
 describe('responsiv-stjarnkarta', () => {
+  it('starts and finishes pan and pinch gestures without rebuilding empire data or controls', () => {
+    const model = new AppModel(createExampleGalaxy(true));
+    let emit: IntentHandler = () => {};
+    const render = vi.fn();
+    const renderCamera = vi.fn();
+    const controller = new AppController(model, {
+      bind: (handler) => {
+        emit = handler;
+      },
+      render,
+      renderCamera,
+      dispose() {},
+    });
+    controller.start();
+    const snapshots = vi.spyOn(model, 'snapshot', 'get');
+    render.mockClear();
+    emit({ type: 'pointer-start', id: 1, point: { x: 180, y: 150 } });
+    expect(snapshots).not.toHaveBeenCalled();
+    expect(render).not.toHaveBeenCalled();
+    emit({ type: 'pointer-move', id: 1, point: { x: 200, y: 150 } });
+    emit({ type: 'pointer-start', id: 2, point: { x: -100, y: 150 } });
+    emit({ type: 'pointer-move', id: 2, point: { x: -160, y: 150 } });
+    emit({ type: 'pointer-end', id: 1, point: { x: 200, y: 150 } });
+    emit({ type: 'pointer-end', id: 2, point: { x: -160, y: 150 } });
+    expect(snapshots).not.toHaveBeenCalled();
+    expect(render).not.toHaveBeenCalled();
+    expect(renderCamera).toHaveBeenCalled();
+    controller.dispose();
+  });
+
   it('refreshes reused presentation data after selection and screen changes', () => {
     const model = new AppModel();
     let emit: IntentHandler = () => {};
