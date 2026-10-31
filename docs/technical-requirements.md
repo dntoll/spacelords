@@ -1,5 +1,13 @@
 # Tekniska krav och arbetsregler
 
+## Färger för forskningsstatus
+
+`forskningsstatus-med-tydliga-farger`: befintlig status i forskningsträdets
+läsmodell styr CSS-färgerna. Valets genomskinliga knapp bevarar nodens
+statusfärg. Enhetstest skyddar skillnaden mellan färdig forskning, köstatus
+och okänd teknik. Riktade mobiltester kontrollerar verkliga renderade färger
+före och efter val i Chromium och WebKit. Inga modell- eller sparändringar.
+
 ## Fabriksuppgraderingar
 
 `senaste-teknik-i-byggval` och `uppgradera-obsoleta-fabriker`:

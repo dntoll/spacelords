@@ -1,5 +1,11 @@
 # Produktkrav och status
 
+`forskningsstatus-med-tydliga-farger` är **Fullständigt implementerat**:
+Research visar outforskad tillgänglig teknik blå och färdig teknik grön med ✓.
+Pågående forskning är gul, köad lila och låst grå. Även vald teknik behåller
+sin statusfärg. Detta förtydligar `kompakt-forskningstrad`; se
+[renare spelgränssnitt](compact-interface.md).
+
 `senaste-teknik-i-byggval` och `uppgradera-obsoleta-fabriker` är
 **Fullständigt implementerat**: byggval visar endast högsta utforskade
 teleskop och motorer samt deras fabriker. Äldre fabriker kan uppgraderas till senaste

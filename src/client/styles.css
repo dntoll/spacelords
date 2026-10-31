@@ -1794,16 +1794,17 @@ p {
   outline-offset: 2px;
 }
 .research-tree-stage .research-node-select[aria-pressed='true'] {
-  background: #284653;
+  background: transparent;
   box-shadow: inset 3px 0 #e5e8e6;
 }
+/* forskningsstatus-med-tydliga-farger: green is reserved for completed research. */
 .research-tree-stage .research-node.available {
-  border-color: #79b998;
-  background: #19392d;
+  border-color: #79b6df;
+  background: #17384f;
 }
 .research-tree-stage .research-node.completed {
-  border-color: #527566;
-  background: #12312a;
+  border-color: #8bd0a0;
+  background: #1d4834;
 }
 .research-tree-stage .research-node.active {
   border-color: #f3d28e;
@@ -1811,8 +1812,8 @@ p {
   box-shadow: 0 0 18px #dab26733;
 }
 .research-tree-stage .research-node.queued {
-  border-color: #83b9ce;
-  background: #183d50;
+  border-color: #be9fde;
+  background: #493050;
 }
 .research-tree-stage .research-node.locked {
   border-color: #3b505d;

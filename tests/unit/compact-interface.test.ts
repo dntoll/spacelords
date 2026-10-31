@@ -10,6 +10,40 @@ import { gameText } from '../../src/client/views/GameText.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 
 describe('kompakt-spelgranssnitt', () => {
+  it('forskningsstatus-med-tydliga-farger: reserves the completion marker for researched technology while retaining queue and unknown states', () => {
+    const research = {
+      ...researchStationModel().snapshot.research,
+      completed: ['Rocket engine factory', 'Telescope I factory'] as const,
+      queue: ['Telescope II factory', 'Telescope III factory'] as const,
+    };
+    const page = renderResearch(
+      research,
+      false,
+      vi.fn(),
+      'Colony ship factory',
+    );
+    for (const [type, state, marker, description] of [
+      ['Rocket engine factory', 'completed', '✓', 'Researched'],
+      ['Colony ship factory', 'available', null, 'Available'],
+      ['Telescope II factory', 'active', '▶', 'Researching'],
+      ['Telescope III factory', 'queued', '2', 'Queued · 2'],
+      ['Fighter factory', 'locked', null, 'Undiscovered'],
+    ] as const) {
+      const node = page.querySelector(`[data-technology="${type}"]`)!;
+      expect(node.getAttribute('data-state')).toBe(state);
+      expect(
+        node.querySelector('.research-node-marker')?.textContent ?? null,
+      ).toBe(marker);
+      expect(
+        node.querySelector('button')!.getAttribute('aria-description'),
+      ).toBe(description);
+    }
+    expect(
+      page.querySelector(
+        '[data-technology="Fighter factory"] .research-node-name',
+      )!.textContent,
+    ).toBe('Unknown');
+  });
   it('kompakt-forskningstrad: shortens only tile titles and exposes status without a visible status row', () => {
     const model = researchStationModel();
     const emit = vi.fn();

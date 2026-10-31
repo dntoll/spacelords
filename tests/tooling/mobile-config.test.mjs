@@ -20,5 +20,6 @@ test('snabb-mobilpublicering: the mobile CLI selects exactly the two phone profi
   assert.match(output, /mobile-smoke\.spec\.ts/);
   assert.match(output, /tactical-combat\.spec\.ts/);
   assert.match(output, /factory-upgrades\.spec\.ts/);
-  assert.match(output, /Total: 10 tests in 3 files/);
+  assert.match(output, /research-status\.spec\.ts/);
+  assert.match(output, /Total: 12 tests in 4 files/);
 });

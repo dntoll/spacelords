@@ -2,6 +2,16 @@
 
 Alla krav nedan är **Fullständigt implementerat**.
 
+`forskningsstatus-med-tydliga-farger` — **Fullständigt implementerat**:
+Research använder tydligt olika färger för forskningens status. Tillgänglig
+men outforskad teknik är blå, färdig teknik grön med ✓, pågående gul med ▶,
+köad lila med köplats och låst grå. Vald ruta behåller statusfärgen och får
+en ljus ram. Fullständig status finns fortsatt i hjälptext och för skärmläsare.
+Det är forskningsframsteg som avgör färgen, oberoende av byggda fabriker.
+Ändringen 2026-10-31 ersätter den likartade gröna färgen för tillgänglig och
+färdig forskning samt den gemensamma bakgrunden för valda rutor under
+`kompakt-forskningstrad`. Okända tekniker förblir anonyma.
+
 `research-med-ett-tryck` — **Fullständigt implementerat**: Ett enda tryck på
 Research-knappen köar forskningen, även direkt efter att trädet har dragits.
 Ett extra tryck för att aktivera knappen eller välja rutan krävs inte.

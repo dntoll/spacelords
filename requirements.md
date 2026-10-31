@@ -10,6 +10,11 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Tydlig forskningsstatus:** `forskningsstatus-med-tydliga-farger` är
+  **Fullständigt implementerat**. Research skiljer blå tillgänglig forskning
+  från grön färdig forskning med ✓. Pågående är gul, köad lila och låst grå.
+  Valmarkeringen bevarar statusfärgen. Se [renare spelgränssnitt](docs/compact-interface.md).
+
 - **Senaste fabriksteknik:** `senaste-teknik-i-byggval` och
   `uppgradera-obsoleta-fabriker` är **Fullständigt implementerat**. Byggval
   visar högsta utforskade teleskop och motorer samt deras fabriker. Äldre fabriker kan
