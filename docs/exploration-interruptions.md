@@ -1,5 +1,9 @@
 # Utforskning och upptäckter
 
+Ändring 2026-10-31: `stjarnupptackt-utan-avbrott` ersätter pausen för
+utforskade stjärnor i `upptacktsavbrott`. Händelsen Star explored behålls.
+Planeter, vrak och pirater pausar fortfarande.
+
 Ändring 2026-10-27: [gemensamt händelseflöde](events-and-guidance.md)
 förtydligar `upptacktsavbrott`, `order-under-upptacktsavbrott` och
 `spara-avbrutet-ar`. Varje händelse får eget Handle eller Ignore i Events.
@@ -13,17 +17,18 @@ hantering återställs vid omladdning.
 
 Beslutat och verifierat 2026-10-25. Status avser hela det beskrivna beteendet.
 
-| Kravnamn                        | Status                     | Krav                                                                                                                                                                                      |
-| ------------------------------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `kompakta-flottkort`            | Fullständigt implementerat | Standardkort med fyra skepp är högst 140 px höga vid minst 220 px kortbredd. Position och motorinformation tas bort. Flottans faktiska fart visas som S: 2 hex. Träffytor är minst 44 px. |
-| `flottorder-som-symboler`       | Fullständigt implementerat | Move, Stop och Orders finns vid flottans namn. Specialorder väljs med namn och förklaringar i Orders enligt `egen-ordervy` från 2026-10-31.                                               |
-| `flottans-handelsrutt`          | Fullständigt implementerat | En tilldelad flotta visas som Route Terra <> Vesta. Det egna namnet återkommer när ruttuppdraget upphör.                                                                                  |
-| `produktionsorder-aterkoppling` | Fullständigt implementerat | Lyckad beställning ger ett synligt kvitto i tre sekunder även när kön är dold. Dubbelklick och dubbeltryck beställer en gång. Avslag visar orsaken.                                       |
-| `automatisk-hexutforskning`     | Fullständigt implementerat | Explore väljer närmaste outforskade hex och fortsätter tills relevanta mål eller Exploration ship saknas, eller ordern ersätts.                                                           |
-| `automatisk-stjarnutforskning`  | Fullständigt implementerat | Explore stars fortsätter mot närmaste stjärna vars hex ännu inte utforskats.                                                                                                              |
-| `upptacktsavbrott`              | Fullständigt implementerat | Nya planeter, utforskade stjärnor och piratflottor som blir synliga efter förlorad sikt pausar året före strid med Handle och Ignore. Tomma hexar pausar inte.                            |
-| `order-under-upptacktsavbrott`  | Fullständigt implementerat | Handle öppnar berörd flotta. Ett aktivt val tillåter rörelseorder för andra flottor. Continue avgör redan uppkommen strid före fortsatt förflyttning. Ruttreglerna gäller fortsatt.       |
-| `spara-avbrutet-ar`             | Fullständigt implementerat | Upptäckter, avbrottets läge, ändrade order, uppskjuten strid och återstående förflyttning återställs efter omladdning.                                                                    |
+| Kravnamn                        | Status                     | Krav                                                                                                                                                                                                                  |
+| ------------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kompakta-flottkort`            | Fullständigt implementerat | Standardkort med fyra skepp är högst 140 px höga vid minst 220 px kortbredd. Position och motorinformation tas bort. Flottans faktiska fart visas som S: 2 hex. Träffytor är minst 44 px.                             |
+| `flottorder-som-symboler`       | Fullständigt implementerat | Move, Stop och Orders finns vid flottans namn. Specialorder väljs med namn och förklaringar i Orders enligt `egen-ordervy` från 2026-10-31.                                                                           |
+| `flottans-handelsrutt`          | Fullständigt implementerat | En tilldelad flotta visas som Route Terra <> Vesta. Det egna namnet återkommer när ruttuppdraget upphör.                                                                                                              |
+| `produktionsorder-aterkoppling` | Fullständigt implementerat | Lyckad beställning ger ett synligt kvitto i tre sekunder även när kön är dold. Dubbelklick och dubbeltryck beställer en gång. Avslag visar orsaken.                                                                   |
+| `automatisk-hexutforskning`     | Fullständigt implementerat | Explore väljer närmaste outforskade hex och fortsätter tills relevanta mål eller Exploration ship saknas, eller ordern ersätts.                                                                                       |
+| `automatisk-stjarnutforskning`  | Fullständigt implementerat | Explore stars fortsätter mot närmaste stjärna vars hex ännu inte utforskats.                                                                                                                                          |
+| `upptacktsavbrott`              | Fullständigt implementerat | Nya planeter, vrak och piratflottor som blir synliga efter förlorad sikt pausar året före strid med Handle och Ignore. Tomma hexar pausar inte. Utforskade stjärnor pausar inte enligt `stjarnupptackt-utan-avbrott`. |
+| `stjarnupptackt-utan-avbrott`   | Fullständigt implementerat | Utforskad stjärna ger händelsen Star explored utan Handle eller Ignore och avbryter inte året. Planeter, vrak och pirater behåller avbrott.                                                                           |
+| `order-under-upptacktsavbrott`  | Fullständigt implementerat | Handle öppnar berörd flotta. Ett aktivt val tillåter rörelseorder för andra flottor. Continue avgör redan uppkommen strid före fortsatt förflyttning. Ruttreglerna gäller fortsatt.                                   |
+| `spara-avbrutet-ar`             | Fullständigt implementerat | Upptäckter, avbrottets läge, ändrade order, uppskjuten strid och återstående förflyttning återställs efter omladdning.                                                                                                |
 
 Detta förtydligar `kompakta-flottkort`, `flottans-handelsrutt`, `handelser`
 och `sparat-spel`. Det ersätter kravet på åtkomligt Engines & speed i flottkort

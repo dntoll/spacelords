@@ -3718,8 +3718,11 @@ export class Game {
     this.#refreshReinforcements();
     this.#updateSight();
     const colonized = this.#completeColonizations();
-    if (colonized)
-      this.#simulation!.discoveries = this.#newDiscoveries({ movements: [] });
+    if (colonized) {
+      const discoveries = this.#newDiscoveries({ movements: [] });
+      if (this.#pausingDiscoveries(discoveries).length)
+        this.#simulation!.discoveries = discoveries;
+    }
     this.#visiblePirates = new Set(
       this.pirateSnapshots()
         .map((p) => p.id)
@@ -3912,7 +3915,8 @@ export class Game {
       throw new Error('Invalid interrupted event review.');
     if (simulation.handling && !simulation.activeEventId) {
       simulation.activeEventId =
-        simulation.battles[0]?.eventId ?? simulation.discoveries[0]?.eventId;
+        simulation.battles[0]?.eventId ??
+        this.#pausingDiscoveries(simulation.discoveries)[0]?.eventId;
       if (simulation.activeEventId)
         simulation.presentedEventIds.add(simulation.activeEventId);
     }
@@ -3924,7 +3928,7 @@ export class Game {
     if (!this.#simulation!.activeEventId) {
       this.#simulation!.activeEventId =
         this.#simulation!.battles[0]?.eventId ??
-        this.#simulation!.discoveries[0]?.eventId;
+        this.#pausingDiscoveries(this.#simulation!.discoveries)[0]?.eventId;
       if (this.#simulation!.activeEventId)
         this.presentEvent(this.#simulation!.activeEventId);
     }
@@ -4014,7 +4018,7 @@ export class Game {
       const battles = this.#destroyHostileShipyards();
       this.#updateSalvage();
       const discoveries = this.#newDiscoveries(frame);
-      if (discoveries.length || battles.length) {
+      if (this.#pausingDiscoveries(discoveries).length || battles.length) {
         this.#simulation!.battles = battles;
         this.#simulation!.discoveries = discoveries;
         this.#phase = 'interrupted';
@@ -4050,7 +4054,7 @@ export class Game {
     if (frame.combats === undefined) {
       this.#simulation!.awaitingCombat = true;
       const discoveries = this.#newDiscoveries(frame);
-      if (discoveries.length) {
+      if (this.#pausingDiscoveries(discoveries).length) {
         this.#simulation!.discoveries = discoveries;
         this.#phase = 'interrupted';
       }
@@ -4067,7 +4071,7 @@ export class Game {
     this.#afterCombat();
     if (
       this.#simulation!.battles.length ||
-      this.#simulation!.discoveries.length
+      this.#pausingDiscoveries(this.#simulation!.discoveries).length
     )
       this.#phase = 'interrupted';
   }
@@ -5708,6 +5712,10 @@ export class Game {
           a.id.localeCompare(b.id),
       ),
     );
+  }
+  // stjarnupptackt-utan-avbrott: stars are logged, not Handle/Ignore pauses.
+  #pausingDiscoveries(discoveries: readonly Discovery[]): readonly Discovery[] {
+    return discoveries.filter((discovery) => discovery.kind !== 'star');
   }
   #fleetDetectionRange(fleet: Fleet): number {
     return Math.max(

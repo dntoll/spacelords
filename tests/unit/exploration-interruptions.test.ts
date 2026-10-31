@@ -221,6 +221,43 @@ describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
     }
     game.finishTurn();
   });
+
+  it('stjarnupptackt-utan-avbrott: logs an explored star without pausing for Handle or Ignore', () => {
+    const state = new Game(createExampleGalaxy()).exportState();
+    const game = Game.restore({
+      ...state,
+      pirates: [],
+      knownObjects: [
+        ...state.knownObjects!,
+        'nadir-0',
+        'nadir-1',
+        'nadir-2',
+        'wreck-nadir-explorer',
+      ],
+      fleets: [
+        {
+          ...state.fleets[0]!,
+          position: { q: 5, r: -4 },
+          destination: { q: 7, r: -4 },
+        },
+      ],
+    });
+    game.startTurn();
+    for (let count = 0; count < 20 && game.phase === 'simulating'; count++) {
+      const frame = game.nextTurnFrame();
+      if (!frame) break;
+      game.applyFrame(frame);
+      expect(game.phase).not.toBe('interrupted');
+      expect(game.interruption).toBeNull();
+    }
+    expect(
+      game.events.some((event) =>
+        event.text.startsWith('Star explored: Nadir'),
+      ),
+    ).toBe(true);
+    expect(game.phase).toBe('simulating');
+    game.finishTurn();
+  });
 });
 
 describe('spara-avbrutet-ar', () => {

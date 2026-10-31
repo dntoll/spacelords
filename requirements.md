@@ -10,11 +10,19 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Vald flotta och stjärnupptäckt:** `vald-flotta-visar-destinationspil` och
+  `stjarnupptackt-utan-avbrott` är **Fullständigt implementerat**. En vald
+  flotta utan Route visar sin destinationspil även på Star map. Utforskad
+  stjärna ger ett händelsebesked utan Handle/Ignore och pausar inte året.
+  Se [produktkraven](docs/product-requirements.md) och
+  [utforskning](docs/exploration-interruptions.md).
+
 - **Vrakplacering och destinationspilar:** `vrak-utanfor-stjarnor`,
   `destinationspilar-endast-i-flottvyn` och `ruttflottor-utan-destinationspilar`
   är **Fullständigt implementerat**. Nya startvrak ligger på närmaste
-  framkomliga hex vid sin stjärna. Star map visar inga destinationspilar;
-  Fleets visar dem för flottor utan Route. Route-flottor visar aldrig
+  framkomliga hex vid sin stjärna. Star map visar destinationspilar bara för
+  vald flotta utan Route enligt `vald-flotta-visar-destinationspil`; Fleets
+  visar dem för flottor utan Route. Route-flottor visar aldrig
   destinationspilar. Befintliga sparningar bevaras. Se
   [produktkraven](docs/product-requirements.md) och [bärgning](docs/salvage-shipyards.md).
 
@@ -251,8 +259,10 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Utforskning och kompakta order:** ytterligare komprimerade flottkort,
   ordersymboler, tillfälliga ruttnamn, produktionskvitton och bestående
-  utforskningsuppdrag. Året ska kunna avbrytas vid upptäckter och återupptas
-  med bevarad förflyttning, även efter omladdning. Kraven är **Fullständigt implementerat**;
+  utforskningsuppdrag. Året avbryts vid nya planeter, pirater och vrak, men
+  inte vid utforskad stjärna enligt `stjarnupptackt-utan-avbrott`. Avbrutna
+  år återupptas med bevarad förflyttning, även efter omladdning. Kraven är
+  **Fullständigt implementerat**;
   se [utforskning och upptäckter](docs/exploration-interruptions.md).
 
 - **Space pirates:** `rymdpirater-per-stjarna`, `rymdpiraters-patrullering`,
@@ -274,8 +284,9 @@ Se [hela visionen](docs/game-vision.md).
   `destinationer-for-aktiva-skepp` och `geografisk-arsuppspelning` är
   **Fullständigt implementerat**. Synliga farledsskepp och Civilian shuttles
   animeras först tillsammans med alla deras färder i samma stillastående vy.
-  Destinationspilar begränsas nu till Fleets och flottor utan Route enligt
-  `destinationspilar-endast-i-flottvyn` och `ruttflottor-utan-destinationspilar`.
+  Destinationspilar begränsas till Fleets och vald flotta utan Route enligt
+  `destinationspilar-endast-i-flottvyn`, `vald-flotta-visar-destinationspil`
+  och `ruttflottor-utan-destinationspilar`.
   Under uppspelning kan bara aktuellt rörelsesteg visa pilar där. Därefter visas övriga
   färder och sedan händelser från vänster till höger, vid samma horisontella
   läge nerifrån och upp. Avbrott och sparad kronologi behålls.

@@ -132,9 +132,10 @@ händelsetexter bevaras.
   **Fullständigt implementerat**.
 - `destinationer-for-aktiva-skepp`: under årets presentation kan bara
   flottorna som rör sig i det aktuella steget visa destinationspilar.
-  Pilar visas endast i Fleets för flottor utan Route, även under planering,
-  enligt `destinationspilar-endast-i-flottvyn` och
-  `ruttflottor-utan-destinationspilar`. Star map visar inga destinationspilar.
+  Pilar visas i Fleets för flottor utan Route, och för vald flotta utan
+  Route även på Star map, enligt `destinationspilar-endast-i-flottvyn`,
+  `vald-flotta-visar-destinationspil` och
+  `ruttflottor-utan-destinationspilar`.
   Stillastående flottors pilar döljs under uppspelning och händelseannonsering. Kravet är
   **Fullständigt implementerat**.
 - `geografisk-arsuppspelning`: efter den samtidiga farledstrafiken visas
@@ -172,7 +173,8 @@ för farledstrafiken. `geografisk-arsuppspelning` ersätter kravet på verklig
 presentationsordning i `sekventiella-arshandelser` och
 `gemensamt-handelseflode`. Sparad kronologi i `senaste-aret-i-events` behålls.
 `destinationer-for-aktiva-skepp` begränsar `kartflottor` under uppspelningen.
-Detta är en uttrycklig ändring av tidigare presentationskrav.
+`vald-flotta-visar-destinationspil` visar den valda flottans pil även på
+Star map. Detta är en uttrycklig ändring av tidigare presentationskrav.
 
 Ändring 2026-10-27: `gemensamt-handelseflode` ersätter den separata
 upptäckts- och stridsdialogen, gruppvalet för flera samtidiga upptäckter och

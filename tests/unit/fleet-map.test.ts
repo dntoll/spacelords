@@ -91,29 +91,71 @@ it('destinationer-for-aktiva-skepp: hides idle fleet arrows during movement and 
 
 describe('destinationspilar-endast-i-flottvyn', () => {
   it.each(['map', 'fleets'] as const)(
-    'shows destination arrows only in Fleets, including selection and drag previews (%s)',
+    'shows unselected fleet arrows only in Fleets (%s)',
     (screen) => {
       const ship = fleet('moving');
+      const { sketch } = drawing();
+      renderMapOverlays(sketch as unknown as p5, {
+        ...new AppModel().snapshot,
+        screen,
+        fleets: [ship],
+        pirates: [],
+        mapFleetId: null,
+      });
+      expect(sketch.line).toHaveBeenCalledTimes(screen === 'fleets' ? 1 : 0);
+      expect(sketch.triangle).toHaveBeenCalledTimes(
+        screen === 'fleets' ? 2 : 1,
+      );
+    },
+  );
+});
+
+describe('vald-flotta-visar-destinationspil', () => {
+  it.each(['map', 'fleets'] as const)(
+    'shows the selected fleet destination, including drag preview (%s)',
+    (screen) => {
+      const selected = fleet('selected');
+      const idle = fleet('idle');
       const model = new AppModel().snapshot;
       for (const dragging of [false, true]) {
         const { sketch } = drawing();
         renderMapOverlays(sketch as unknown as p5, {
           ...model,
           screen,
-          fleets: [ship],
+          fleets: [selected, idle],
           pirates: [],
-          mapFleetId: ship.id,
+          mapFleetId: selected.id,
           fleetDragging: dragging,
           fleetDestinationPreview: new HexCoordinate(-2, 0),
         });
-        expect(sketch.line).toHaveBeenCalledTimes(screen === 'fleets' ? 1 : 0);
-        expect(sketch.triangle).toHaveBeenCalledTimes(
-          screen === 'fleets' ? 2 : 1,
+        expect(sketch.line).toHaveBeenCalledTimes(screen === 'fleets' ? 2 : 1);
+        const target = HexGeometry.toPoint(
+          dragging ? new HexCoordinate(-2, 0) : selected.destination!,
         );
-        expect(ship.destination!.key).toBe('2,0');
+        expect(
+          sketch.line.mock.calls.filter(
+            (call) => call[2] === target.x && call[3] === target.y,
+          ),
+        ).toHaveLength(dragging || screen === 'map' ? 1 : 2);
+        expect(selected.destination!.key).toBe('2,0');
       }
     },
   );
+
+  it('omits the destination arrow of a selected route fleet', () => {
+    const ship = { ...fleet('transport'), routeId: 'route-test' };
+    const { sketch } = drawing();
+    renderMapOverlays({ ...sketch, rect: vi.fn() } as unknown as p5, {
+      ...new AppModel().snapshot,
+      screen: 'map',
+      fleets: [ship],
+      pirates: [],
+      ownedPlanets: [],
+      tradeRoutes: [],
+      mapFleetId: ship.id,
+    });
+    expect(sketch.line).not.toHaveBeenCalled();
+  });
 });
 
 describe('ruttflottor-utan-destinationspilar', () => {

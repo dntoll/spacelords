@@ -56,7 +56,12 @@ export function renderMapFleets(
       continue;
     }
     // ruttflottor-utan-destinationspilar / destinationspilar-endast-i-flottvyn
-    if (fleet.routeId || !showDestinationArrows) continue;
+    // vald-flotta-visar-destinationspil: the selected fleet keeps its arrow.
+    if (
+      fleet.routeId ||
+      (!showDestinationArrows && interaction.mapFleetId !== fleet.id)
+    )
+      continue;
     const target = destinationFor(fleet);
     if (!target) continue;
     const destination = HexGeometry.toPoint(target);

@@ -501,7 +501,8 @@ fortsatt av befintlig GitHub CI.
   Bildkopplingar ligger i vylagret; inga nya
   domänbegrepp eller domänrelationer tillkommer.
 
-- `kartflottor`, `flottval-pa-kartan` och `dra-flottdestination`: gemensam
+- `kartflottor`, `flottval-pa-kartan`, `dra-flottdestination` och
+  `vald-flotta-visar-destinationspil`: gemensam
   p5-oberoende geometri används för ritning och träfftestning. Modellens
   skrivskyddade ögonblicksbild skiljer hovring, vald flotta och tillfällig
   destination från sparad order. Controllers skiljer flottgest från panorering
@@ -906,9 +907,11 @@ beteendetesterna. Inga tester tas bort. Den utökade sviten upptäcker dem via
 
 ## Stegvis simulering och upptäcktsavbrott
 
-`upptacktsavbrott`, `order-under-upptacktsavbrott` och `spara-avbrutet-ar`:
+`upptacktsavbrott`, `stjarnupptackt-utan-avbrott`,
+`order-under-upptacktsavbrott` och `spara-avbrutet-ar`:
 Game äger en TurnSimulation med återstående rörelse, upptäckter och en markering
-för uppskjuten stridsbehandling. Controller begär nästa TurnFrame, animerar
+för uppskjuten stridsbehandling. Utforskade stjärnor loggas men ingår inte i
+avbrottets Handle/Ignore. Controller begär nästa TurnFrame, animerar
 steget och lämnar tillbaka det till modellen exakt en gång. Rörelse och strid
 är separata steg. Nya objekt upptäcks efter samtidig rörelse, före strid.
 Continue behandlar redan uppkommen strid innan nya order kan flytta flottorna.
@@ -1054,7 +1057,7 @@ animerar ett steg per kvarvarande spår samtidigt. Kortare spår stannar när
 de är klara. AppModel lämnar frysta turnMovements till vyerna; sikt uppdateras
 gemensamt när markörerna passerar hexkanten. GalaxyMapView interpolerar alla
 aktuella markörer med samma klocka. Destinationspilar begränsas till dessa
-flottor och döljs under händelser. Kameran förblir stilla under gruppens färd;
+flottor och till vald flotta utan Route, och döljs under händelser. Kameran förblir stilla under gruppens färd;
 befintlig storleksanpassning och minskad rörelse återanvänds.
 
 Detta ersätter den seriella presentationen nedan för farledstrafik och tidigare

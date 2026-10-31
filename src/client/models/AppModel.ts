@@ -1917,7 +1917,10 @@ export class AppModel {
         .map((event) => {
           const decision = this.#eventDecision(event.id);
           return decision ? Object.freeze({ ...event, decision }) : event;
-        }),
+        })
+        .filter(
+          (event) => this.#game.phase !== 'interrupted' || event.decision,
+        ),
       events.filter((event) => this.#presentedEventIds.has(event.id)),
     );
     if (!playback.current) {
@@ -1941,7 +1944,7 @@ export class AppModel {
       (discovery) => discovery.eventId === id,
     );
     const item = discovery;
-    if (!item) return undefined;
+    if (!item || discovery.kind === 'star') return undefined;
     const fleet = item.fleetId
       ? this.#game.fleetSnapshots().find((fleet) => fleet.id === item.fleetId)
       : null;

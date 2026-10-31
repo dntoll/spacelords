@@ -1,21 +1,35 @@
 # Produktkrav och status
 
+`vald-flotta-visar-destinationspil` — **Fullständigt implementerat**. En vald
+flotta utan Route visar sin destinationspil på Star map och i Fleets, även
+under destinationsdrag. Ej valda flottor på Star map saknar pil. En flotta på
+Route visar aldrig destinationspil.
+
+`stjarnupptackt-utan-avbrott` — **Fullständigt implementerat**. När en stjärna
+utforskas skapas händelsen Star explored utan Handle eller Ignore. Året
+pausas inte. Nya planeter, vrak och pirater behåller upptäcktsavbrott.
+
+Ändring 2026-10-31: `vald-flotta-visar-destinationspil` ersätter förbudet mot
+pilar vid flottval på Star map i `destinationspilar-endast-i-flottvyn`.
+`stjarnupptackt-utan-avbrott` ersätter pausen för utforskade stjärnor i
+`upptacktsavbrott`.
+
 `vrak-utanfor-stjarnor` — **Fullständigt implementerat**. Nya spels
 upptäckbara vrak ligger på närmaste framkomliga hex vid Nadir och Aster,
 aldrig i en stjärna eller utanför kartan. Befintliga sparningar bevaras.
 
 `destinationspilar-endast-i-flottvyn` och `ruttflottor-utan-destinationspilar`
-— **Fullständigt implementerat**. Star map visar inga destinationspilar,
-även vid flottval, destinationsdrag och årsuppspelning. Fleets visar pilar
-för flottor utan Route. En flotta på Route visar aldrig destinationspil,
-oavsett vy och även under årsuppspelning. Destinationsorder och skeppens
-riktning behålls.
+— **Fullständigt implementerat**. Star map visar destinationspilar bara för
+vald flotta utan Route enligt `vald-flotta-visar-destinationspil`. Fleets
+visar pilar för flottor utan Route. En flotta på Route visar aldrig
+destinationspil, oavsett vy och även under årsuppspelning. Destinationsorder
+och skeppens riktning behålls.
 
 Ändring 2026-10-31: detta ersätter destinationspilarna på Star map i
 `kartflottor` och `dra-flottdestination` och begränsar
-`destinationer-for-aktiva-skepp` till Fleets och flottor utan Route.
-`vrak-utanfor-stjarnor` ersätter startplaceringen i stjärnornas egna hexar
-i `upptackbara-vrak`.
+`destinationer-for-aktiva-skepp` till Fleets, vald flotta och flottor utan
+Route. `vrak-utanfor-stjarnor` ersätter startplaceringen i stjärnornas egna
+hexar i `upptackbara-vrak`.
 
 `responsiv-stjarnkarta` är **Fullständigt implementerat**. Star map,
 Fleets, Orders, Route och Production ska reagera snabbt när spelaren
@@ -850,8 +864,9 @@ Farledsflottor och Civilian shuttles animeras först samtidigt i en gemensam
 vy där hela de visade färderna ryms. Övriga färder visas sedan från vänster
 till höger utifrån startplatsen, vid samma horisontella läge nerifrån och upp.
 Händelser visas därefter i samma geografiska ordning, med globala händelser
-sist. Destinationspilar visas endast i Fleets för flottor utan Route som
-flyttas i det aktuella steget, enligt `destinationspilar-endast-i-flottvyn`
+sist. Destinationspilar visas i Fleets för flottor utan Route som flyttas i
+det aktuella steget, och för vald flotta utan Route även på Star map, enligt
+`destinationspilar-endast-i-flottvyn`, `vald-flotta-visar-destinationspil`
 och `ruttflottor-utan-destinationspilar`.
 Avbrott och händelsernas sparade kronologi behålls. Se
 [Events](events-and-guidance.md).
@@ -939,7 +954,8 @@ De nya kraven och förtydligandena finns i [utforskning och upptäckter](explora
 Den sammanhängande kravlistan anger status för `flottorder-som-symboler`,
 `produktionsorder-aterkoppling`, `automatisk-hexutforskning`,
 `automatisk-stjarnutforskning`, `upptacktsavbrott`,
-`order-under-upptacktsavbrott` och `spara-avbrutet-ar`.
+`stjarnupptackt-utan-avbrott`, `order-under-upptacktsavbrott` och
+`spara-avbrutet-ar`.
 
 ## Bärgning och varv
 

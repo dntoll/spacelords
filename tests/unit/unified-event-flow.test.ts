@@ -87,13 +87,21 @@ describe('gemensamt-handelseflode', () => {
       clear() {},
     });
     model.startSlot(1);
-    const event = model.snapshot.eventPlayback!.events.find(
-      (event) => event.decision?.fleetId === 'fleet-home',
-    )!;
-    expect(event.decision!.details).toHaveLength(1);
-    expect(event.decision!.details[0]).toMatch(
-      /^HEX .+ · Home Fleet · \d+ hex remaining$/,
+    const events = model.snapshot.eventPlayback!.events.filter(
+      (event) => event.decision,
     );
+    expect(events.length).toBeGreaterThan(0);
+    for (const event of events)
+      expect(event.decision!.details.join('\n')).not.toContain(
+        'The year is paused',
+      );
+    expect(
+      events.some((event) =>
+        /^HEX .+ · Home Fleet · \d+ hex remaining$/.test(
+          event.decision!.details[0] ?? '',
+        ),
+      ),
+    ).toBe(true);
   });
 
   it('waits for an explicit choice and files each interactive event once', () => {
