@@ -3403,18 +3403,21 @@ body:has(.discovery-controls) .selection-panel {
   font-size: 0.85rem;
 }
 .battle-status {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   margin: 0;
-  min-height: 2.5em;
+  min-height: 1.2em;
 }
 .battle-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-rows: auto minmax(0, 1fr);
   flex: 1;
   min-height: 0;
   gap: 12px;
 }
 .battle-board {
+  grid-column: 1;
+  grid-row: 1 / -1;
   position: relative;
   min-height: 0;
   overflow: hidden;
@@ -3443,33 +3446,69 @@ body:has(.discovery-controls) .selection-panel {
   min-height: 32px;
 }
 .battle-controls {
-  overflow: auto;
+  grid-column: 2;
+  grid-row: 1;
   min-height: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.battle-controls [data-field='Your ship'],
+.battle-controls [aria-label='Start combat'],
+.battle-maneuvers {
+  grid-column: 1 / -1;
+}
+.battle-details {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: start;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+  border: 1px solid #30495e;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  background: #102334;
+}
+.battle-details > summary {
+  padding: 6px 8px;
+  cursor: pointer;
+}
+.battle-information {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 0 4px 12px;
+  padding: 4px 8px 8px;
+}
+.battle-information p {
+  margin: 0;
 }
 .battle-controls p {
   margin: 0;
 }
 .battle-controls .button {
-  min-height: 42px;
+  min-height: 44px;
+  padding: 5px;
+  font-size: 0.75rem;
 }
 .battle-field {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  font-size: 0.8rem;
+  gap: 2px;
+  min-width: 0;
+  font-size: 0.75rem;
+  line-height: 1.2;
 }
 .battle-field select {
   width: 100%;
-  min-height: 40px;
+  min-height: 44px;
   background: #152b40;
   color: #eef5fb;
   border: 1px solid #486079;
   border-radius: 4px;
-  padding: 6px;
+  padding: 4px;
+  min-width: 0;
 }
 .battle-maneuvers {
   display: grid;
@@ -3507,8 +3546,22 @@ body:has(.discovery-controls) .selection-panel {
   }
   .battle-layout {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(180px, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
     gap: 8px;
+  }
+  /* stridsorder-utan-mobilscroll: commands remain above the flexible map. */
+  .battle-controls {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .battle-board {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .battle-details {
+    grid-column: 1;
+    grid-row: 3;
+    max-height: 30dvh;
   }
 }
 @media (max-height: 500px) and (orientation: landscape) {

@@ -405,6 +405,11 @@ class BattleActivation {
   fired
   movementClosed
 }
+note right of BattleActivation
+  skeppsval-startar-stridstur:
+  Val av ett oanvänt eget skepp startar dess tur.
+  Skeppet spelar klart innan nästa kan väljas.
+end note
 class Weapon {
   range
   firingArc

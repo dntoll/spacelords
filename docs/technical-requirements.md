@@ -1,5 +1,20 @@
 # Tekniska krav och arbetsregler
 
+## Direkta stridsorder
+
+`skeppsval-startar-stridstur`: BattleView skickar aktiveringsavsikten från
+ett uttryckligt skeppsval. AppController samordnar modelländring och ny vy,
+och AppModel sparar omedelbart. Rendering startar aldrig en aktivering.
+Behöriga val kräver egen tur, oanvänt eget skepp och ingen pågående
+aktivering. Domänens aktiveringsregler och sparformat är oförändrade.
+
+`stridsorder-utan-mobilscroll`: primära kontroller ligger före kartan i DOM.
+CSS placerar dem över kartan på stående mobil och bredvid på bredare skärmar.
+Utfällbar information har separat rullning; orderpanelen behöver ingen
+rullning. Regressionstester skyddar kart- och listval, spärrade val, omedelbar
+sparning och återupptagen tur. Mobiltester mäter att alla order ryms i
+320 × 568, 393 × 851 och 844 × 390 och att kartan fortfarande är synlig.
+
 ## Skeppsbildernas riktning i strid
 
 `skeppets-framat-foljer-spriten`: BattleMapView utgår från att samtliga

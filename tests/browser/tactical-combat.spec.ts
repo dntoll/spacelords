@@ -67,10 +67,7 @@ test('stridsutplacering / sparad-taktisk-strid: deploys all ships and resumes an
     .selectOption(fighter.id);
   await expect(
     dialog.getByRole('button', { name: 'Activate ship', exact: true }),
-  ).toBeEnabled();
-  await dialog
-    .getByRole('button', { name: 'Activate ship', exact: true })
-    .click();
+  ).toHaveCount(0);
   await dialog
     .getByRole('button', { name: 'Turn left 60°', exact: true })
     .click();
@@ -82,7 +79,7 @@ test('stridsutplacering / sparad-taktisk-strid: deploys all ships and resumes an
     checkpoint,
   );
   await expect(
-    dialog.getByRole('button', { name: 'End activation', exact: true }),
+    dialog.getByRole('button', { name: 'End ship turn', exact: true }),
   ).toBeVisible();
   await page.setViewportSize({ width: 844, height: 390 });
   await dialog
@@ -98,7 +95,7 @@ test('stridsutplacering / sparad-taktisk-strid: deploys all ships and resumes an
   expect(errors).toEqual([]);
 });
 
-test('skeppets-framat-foljer-spriten / riktning-och-vapen / oppna-stridstarningar: shows a valid attack, records its dice and permits movement after firing', async ({
+test('skeppsval-startar-stridstur / stridsorder-utan-mobilscroll / skeppets-framat-foljer-spriten / riktning-och-vapen / oppna-stridstarningar: selects, fires and moves without scrolling for ship orders', async ({
   page,
 }, testInfo) => {
   const game = arrangeBattle(encounterGame(), (state) => ({
@@ -128,9 +125,48 @@ test('skeppets-framat-foljer-spriten / riktning-och-vapen / oppna-stridstarninga
   await dialog
     .getByLabel('Your ship', { exact: true })
     .selectOption(fighter.id);
-  await dialog
-    .getByRole('button', { name: 'Activate ship', exact: true })
-    .click();
+  expect(
+    (await saved(page)).state.simulation!.tacticalBattles![0]!.activation?.id,
+  ).toBe(fighter.id);
+  for (const size of [
+    { width: 320, height: 568 },
+    { width: 844, height: 390 },
+    { width: 393, height: 851 },
+  ]) {
+    await page.setViewportSize(size);
+    await dialog
+      .getByRole('button', { name: 'Fit battle map', exact: true })
+      .click();
+    const orders = dialog.getByRole('region', { name: 'Ship orders' });
+    for (const label of [
+      'Your ship',
+      'Turn left 60°',
+      'Forward / escape',
+      'Turn right 60°',
+      'Weapon',
+      'Target',
+      'Fire weapon',
+      'End ship turn',
+    ]) {
+      const control = orders.getByLabel(label, { exact: true });
+      const bounds = (await control.boundingBox())!;
+      expect(bounds.y, label).toBeGreaterThanOrEqual(0);
+      expect(bounds.y + bounds.height, label).toBeLessThanOrEqual(size.height);
+      expect(bounds.x, label).toBeGreaterThanOrEqual(0);
+      expect(bounds.x + bounds.width, label).toBeLessThanOrEqual(size.width);
+      expect(bounds.height, label).toBeGreaterThanOrEqual(44);
+    }
+    const board = (await page.getByLabel(/^Battle hex map/).boundingBox())!;
+    expect(board.height).toBeGreaterThan(120);
+    if (size.width === 320)
+      expect(
+        (await orders.boundingBox())!.y + (await orders.boundingBox())!.height,
+      ).toBeLessThanOrEqual(board.y);
+    expect(await orders.evaluate((node) => node.scrollTop)).toBe(0);
+    await page.screenshot({
+      path: testInfo.outputPath(`battle-orders-${size.width}.png`),
+    });
+  }
   await expect(
     dialog.getByRole('button', { name: 'Fire weapon', exact: true }),
   ).toBeEnabled();
@@ -191,12 +227,6 @@ test('skeppsvis-retratt / gemensamt-handelseflode: escapes each ship, regroups t
   const initial = game.tacticalBattle!;
   for (const ship of initial.pieces.filter((p) => p.side === 'player')) {
     await dialog.getByLabel('Your ship', { exact: true }).selectOption(ship.id);
-    await expect(
-      dialog.getByRole('button', { name: 'Activate ship', exact: true }),
-    ).toBeEnabled();
-    await dialog
-      .getByRole('button', { name: 'Activate ship', exact: true })
-      .click();
     await dialog
       .getByRole('button', { name: 'Forward / escape', exact: true })
       .click();

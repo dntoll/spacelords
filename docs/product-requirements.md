@@ -1,5 +1,12 @@
 # Produktkrav och status
 
+`skeppsval-startar-stridstur` och `stridsorder-utan-mobilscroll` är
+**Fullständigt implementerat**: val av ett tillgängligt skepp, på kartan eller
+i Your ship, startar dess tur direkt. Turn, Forward, Weapon, Target, Fire weapon
+och End ship turn är åtkomliga utan rullning på mobilen. Order ligger över
+kartan på stående telefon och bredvid på bredare skärmar. Combat details
+samlar logg och längre regler. Se [taktisk strid](tactical-combat.md).
+
 `skeppets-framat-foljer-spriten` är **Fullständigt implementerat**:
 i strid pekar bilden och framåtmarkeringen i samma riktning som skeppets
 förflyttning och främre eldbåge. Detta gäller alla skepp och pirater i alla

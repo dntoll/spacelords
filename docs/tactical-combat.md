@@ -4,6 +4,25 @@ Spelaren leder varje skepp i en turbaserad strid på en egen hexkarta.
 Vapen, manövrering, riktning, skydd och synliga D6-slag avgör utfallet.
 Alla flottor på samma Star map-hex deltar tillsammans.
 
+`skeppsval-startar-stridstur` — **Fullständigt implementerat**: under egen
+stridstur startar val av ett oanvänt eget skepp dess tur direkt, både på kartan
+och i Your ship. Ingen Activate ship-knapp visas. End ship turn avslutar
+skeppets tur. Ett valt skepp spelar klart före nästa val, och varje skepp får
+fortsatt bara agera en gång per runda. Under fiendens tur eller vid val av
+ett redan använt skepp startar ingen ny tur. Utplaceringsval är fria och
+pågående sparade skeppsturer återupptas direkt utan ny aktivering.
+
+`stridsorder-utan-mobilscroll` — **Fullständigt implementerat**: Your ship,
+svängar, Forward / escape, Weapon, Target, Fire weapon och End ship turn
+ligger samlat över kartan på stående mobil. På bredare skärmar ligger de
+synligt bredvid kartan. De går att använda utan att rulla till orderpanelen,
+även på 320 × 568 och liggande 844 × 390. Kartan använder återstående yta.
+Combat details samlar skeppsdata, skottförklaring, tärningslogg och längre regler.
+
+Beställningen 2026-10-31 ersätter den separata aktiveringsknappen och den
+rullande orderpanelen under kartan i `vaxelvisa-skeppsaktiveringar` och
+`taktisk-stridskarta`. Turordning och stridsregler behålls; sparade spel bevaras.
+
 `skeppets-framat-foljer-spriten` — **Fullständigt implementerat**:
 skeppsbildens nos, kartans framåtmarkering, Forward och den främre eldbågen
 har samma riktning i alla sex lägen. Det gäller egna skepp och Space pirates,

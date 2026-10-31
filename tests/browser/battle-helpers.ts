@@ -65,9 +65,6 @@ export async function finishTacticalCombat(page: Page): Promise<void> {
           await dialog
             .getByLabel('Your ship', { exact: true })
             .selectOption(command.id);
-          await dialog
-            .getByRole('button', { name: 'Activate ship', exact: true })
-            .click();
           break;
         case 'turn':
           await dialog
@@ -96,7 +93,7 @@ export async function finishTacticalCombat(page: Page): Promise<void> {
           break;
         case 'end-activation':
           await dialog
-            .getByRole('button', { name: 'End activation', exact: true })
+            .getByRole('button', { name: 'End ship turn', exact: true })
             .click();
           break;
         default:

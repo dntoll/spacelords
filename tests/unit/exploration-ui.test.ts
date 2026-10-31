@@ -169,7 +169,7 @@ it('flottorder-som-symboler / kompakta-flottkort: exposes explorer controls and 
   controller.dispose();
 });
 
-it('vaxelvisa-skeppsaktiveringar / riktning-och-vapen: controller saves a left turn and restores the same unfinished activation', () => {
+it('skeppsval-startar-stridstur / vaxelvisa-skeppsaktiveringar / riktning-och-vapen: controller saves selection immediately and restores the same unfinished ship turn', () => {
   vi.useFakeTimers();
   const game = arrangeBattle(encounterGame(), (state) => ({
     ...state,
@@ -208,9 +208,9 @@ it('vaxelvisa-skeppsaktiveringar / riktning-och-vapen: controller saves a left t
   )!;
   select.value = fighter.id;
   select.dispatchEvent(new Event('change'));
-  root
-    .querySelector<HTMLButtonElement>('button[aria-label="Activate ship"]')!
-    .click();
+  expect(saved.state.simulation!.tacticalBattles![0]!.activation?.id).toBe(
+    fighter.id,
+  );
   root
     .querySelector<HTMLButtonElement>('button[aria-label="Turn left 60°"]')!
     .click();

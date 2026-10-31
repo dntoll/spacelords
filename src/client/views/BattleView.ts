@@ -33,6 +33,8 @@ export class BattleView {
   readonly #heading = element('h1');
   readonly #status = element('p', 'battle-status');
   readonly #panel = element('section', 'battle-controls');
+  readonly #details = element('details', 'battle-details');
+  readonly #information = element('div', 'battle-information');
   readonly #map: BattleMapPort | undefined;
   #state: BattleState | null = null;
   #selected: string | null = null;
@@ -61,7 +63,12 @@ export class BattleView {
       button('Fit battle map', () => this.#map?.fit()),
     );
     board.append(canvas, zoom);
-    layout.append(board, this.#panel);
+    this.#panel.setAttribute('aria-label', 'Ship orders');
+    this.#details.append(
+      element('summary', '', 'Combat details'),
+      this.#information,
+    );
+    layout.append(this.#panel, board, this.#details);
     this.#dialog.append(header, this.#status, layout);
     root.append(this.#dialog);
     this.#dialog.showModal();
@@ -70,6 +77,27 @@ export class BattleView {
 
   #command(command: Parameters<TacticalBattle['command']>[0]): void {
     this.emit({ type: 'battle-command', command });
+  }
+  // skeppsval-startar-stridstur: rendering never begins a ship turn; explicit input does.
+  #selectFriendly(id: string): void {
+    const state = this.#state;
+    const ship = state?.pieces.find(
+      (piece) =>
+        piece.id === id && piece.side === 'player' && piece.status === 'active',
+    );
+    if (!state || !ship) return;
+    if (
+      state.phase === 'fighting' &&
+      (state.turn !== 'player' || state.activation || ship.activated)
+    )
+      return;
+    this.#selected = id;
+    this.#facing = ship.facing;
+    if (state.phase === 'fighting') {
+      this.#command({ type: 'activate', id });
+      return;
+    }
+    this.render(state);
   }
   #selectHex(position: BattleHex): void {
     const state = this.#state;
@@ -81,9 +109,7 @@ export class BattleView {
         p.position.r === position.r,
     );
     if (piece?.side === 'player') {
-      this.#selected = piece.id;
-      this.#facing = piece.facing;
-      this.render(state);
+      this.#selectFriendly(piece.id);
     } else if (state.phase === 'deployment' && this.#selected)
       this.#command({
         type: 'place',
@@ -98,16 +124,18 @@ export class BattleView {
   }
   #select(
     label: string,
-    entries: readonly { value: string; text: string }[],
+    entries: readonly { value: string; text: string; disabled?: boolean }[],
     value: string | null,
     change: (value: string) => void,
   ): HTMLSelectElement {
     const wrapper = element('label', 'battle-field', label);
+    wrapper.dataset.field = label;
     const select = element('select');
     select.setAttribute('aria-label', label);
     for (const entry of entries) {
       const option = element('option', '', entry.text);
       option.value = entry.value;
+      option.disabled = entry.disabled ?? false;
       select.append(option);
     }
     select.value = value ?? entries[0]?.value ?? '';
@@ -128,14 +156,20 @@ export class BattleView {
     const friendly = state.pieces.filter(
       (p) => p.side === 'player' && p.status === 'active',
     );
-    if (!friendly.some((p) => p.id === this.#selected))
+    if (state.phase === 'fighting')
+      this.#selected =
+        state.turn === 'player' ? (state.activation?.id ?? null) : null;
+    else if (!friendly.some((p) => p.id === this.#selected))
       this.#selected =
         friendly.find((p) => !p.position || !p.activated)?.id ??
         friendly[0]?.id ??
         null;
     if (state.activation && state.turn === 'player')
       this.#selected = state.activation.id;
-    const selected = friendly.find((p) => p.id === this.#selected);
+    const selected =
+      friendly.find((p) => p.id === this.#selected) ??
+      friendly.find((p) => !p.activated) ??
+      friendly[0];
     if (selected?.position) this.#facing = selected.facing;
     const enemies = state.pieces.filter(
       (p) => p.side === 'enemy' && p.status === 'active',
@@ -151,28 +185,35 @@ export class BattleView {
       (state.phase === 'deployment'
         ? 'Place every ship in the blue zone, choose its facing, then start combat.'
         : state.turn === 'enemy'
-          ? 'Enemy activation…'
+          ? 'Enemy turn…'
           : state.activation
-            ? 'Move and fire in either order. Each step or 60° turn costs 1 movement.'
-            : 'Choose a ship that has not activated this round.');
+            ? `${selected ? battlePieceLabel(selected, state.pieces) : 'Ship'} · Hull ${selected?.hull}/${selected ? SHIP_PROFILES[selected.type].hull : 0} · Movement ${state.activation.remaining}`
+            : 'Select a ship to take its turn.');
     this.#status.setAttribute('role', 'status');
     const focusedLabel = document.activeElement?.getAttribute('aria-label');
     const scroll = this.#panel.scrollTop;
     this.#panel.replaceChildren();
+    this.#information.replaceChildren();
     const shipSelect = this.#select(
       'Your ship',
-      friendly.map((p) => ({
-        value: p.id,
-        text: `${battlePieceLabel(p, state.pieces)} · ${p.hull}/${SHIP_PROFILES[p.type].hull}${p.activated ? ' · activated' : ''}${p.position ? '' : ' · undeployed'}`,
-      })),
+      [
+        ...(state.phase === 'fighting'
+          ? [{ value: '', text: 'Choose a ship', disabled: true }]
+          : []),
+        ...friendly.map((p) => ({
+          value: p.id,
+          text: `${battlePieceLabel(p, state.pieces)} · ${p.hull}/${SHIP_PROFILES[p.type].hull}${p.activated ? ' · done' : ''}${p.position ? '' : ' · undeployed'}`,
+          disabled: state.phase === 'fighting' && p.activated,
+        })),
+      ],
       this.#selected,
-      (id) => {
-        this.#selected = id;
-        this.#facing = friendly.find((p) => p.id === id)!.facing;
-        this.render(state);
-      },
+      (id) => this.#selectFriendly(id),
     );
-    shipSelect.disabled = !!state.activation;
+    shipSelect.disabled =
+      state.phase === 'fighting' &&
+      (!!state.activation ||
+        state.turn !== 'player' ||
+        !friendly.some((p) => !p.activated));
     if (state.phase === 'deployment') {
       this.#select(
         'Facing',
@@ -210,7 +251,7 @@ export class BattleView {
       const blocked = state.fleets.filter(
         (f) => f.side === 'player' && !f.retreat,
       ).length;
-      this.#panel.append(
+      this.#information.append(
         element(
           'p',
           'help-text',
@@ -222,16 +263,9 @@ export class BattleView {
     } else if (selected) {
       const active =
         state.activation?.id === selected.id && state.turn === 'player';
-      if (!state.activation) {
-        const activate = button('Activate ship', () =>
-          this.#command({ type: 'activate', id: selected.id }),
-        );
-        activate.disabled = state.turn !== 'player' || selected.activated;
-        this.#panel.append(activate);
-      }
       const rules = TacticalBattle.restore(state);
       const remaining = active ? state.activation.remaining : selected.movement;
-      this.#panel.append(
+      this.#information.append(
         element(
           'p',
           'battle-ship-stats',
@@ -290,7 +324,7 @@ export class BattleView {
         const preview = this.#target
           ? rules.shot(selected.id, this.#target, this.#weapon)
           : null;
-        this.#panel.append(
+        this.#information.append(
           element(
             'p',
             'battle-shot-preview',
@@ -298,7 +332,7 @@ export class BattleView {
           ),
         );
         if (preview?.reason)
-          this.#panel.append(element('p', 'help-text', preview.reason));
+          this.#information.append(element('p', 'help-text', preview.reason));
         const fire = button('Fire weapon', () => {
           if (this.#target)
             this.#command({
@@ -309,41 +343,42 @@ export class BattleView {
         });
         fire.disabled =
           !active || !!state.activation?.fired || !preview || !!preview.reason;
+        fire.title =
+          preview?.reason ?? 'Fire the selected weapon at the selected target.';
         this.#panel.append(fire);
       } else
-        this.#panel.append(
+        this.#information.append(
           element(
             'p',
             'help-text',
             'Unarmed. Manoeuvre, provide cover, or escape.',
           ),
         );
-      if (active)
-        this.#panel.append(
-          button('End activation', () =>
-            this.#command({ type: 'end-activation' }),
-          ),
-        );
+      const end = button('End ship turn', () =>
+        this.#command({ type: 'end-activation' }),
+      );
+      end.disabled = !active;
+      this.#panel.append(end);
     }
     const log = element('details', 'battle-log');
     log.append(element('summary', '', 'Dice and combat log'));
     const entries = element('ol');
     for (const line of state.log) entries.append(element('li', '', line));
     log.append(entries);
-    this.#panel.append(log);
+    this.#information.append(log);
     const latest = element('p', 'battle-latest-roll', state.log.at(-1));
     latest.setAttribute('role', 'log');
-    this.#panel.append(latest);
+    this.#information.append(latest);
     const help = element('details', 'battle-help');
     help.append(
       element('summary', '', 'Combat rules'),
       element(
         'p',
         '',
-        'Activate each ship once per round. Move then fire, or fire then move. Turning and moving each cost 1 movement. Each successful D6 causes 1 hull damage. Rear attacks reduce the required roll by 1. Asteroids and larger ships block fire completely. Destroyed ships leave wrecks; surviving ships recover hull and ammunition after combat.',
+        'Select a ship to take its turn once per round. Move then fire, or fire then move. Turning and moving each cost 1 movement. Each successful D6 causes 1 hull damage. Rear attacks reduce the required roll by 1. Asteroids and larger ships block fire completely. Destroyed ships leave wrecks; surviving ships recover hull and ammunition after combat.',
       ),
     );
-    this.#panel.append(help);
+    this.#information.append(help);
     this.#panel.scrollTop = scroll;
     if (focusedLabel)
       [...this.#panel.querySelectorAll<HTMLElement>('[aria-label]')]
@@ -352,7 +387,10 @@ export class BattleView {
     const rules =
       state.phase === 'fighting' ? TacticalBattle.restore(state) : null;
     const targets =
-      rules && selected && battleWeapons(selected.type).includes(this.#weapon)
+      rules &&
+      this.#selected &&
+      selected &&
+      battleWeapons(selected.type).includes(this.#weapon)
         ? enemies
             .filter((p) => !rules.shot(selected.id, p.id, this.#weapon).reason)
             .map((p) => p.id)

@@ -10,6 +10,13 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Direkta stridsorder:** `skeppsval-startar-stridstur` och
+  `stridsorder-utan-mobilscroll` är **Fullständigt implementerat**. Val av ett
+  spelbart skepp startar dess tur direkt. Skeppsorder ligger ovanför kartan på
+  stående mobil och synligt bredvid på bredare skärmar; ingen separat Activate
+  ship-knapp behövs. Logg och regler finns under Combat details.
+  Se [taktisk strid](docs/tactical-combat.md).
+
 - **Skeppens riktning i strid:** `skeppets-framat-foljer-spriten` är
   **Fullständigt implementerat**. Skeppsbildens nos, framåtmarkering,
   framåtförflyttning och eldbåge följer samma riktning i alla sex lägen.
