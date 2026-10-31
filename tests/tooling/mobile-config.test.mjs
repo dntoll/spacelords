@@ -17,5 +17,7 @@ test('snabb-mobilpublicering: the mobile CLI selects exactly the two phone profi
   assert.match(output, /phone-chromium/);
   assert.match(output, /phone-webkit/);
   assert.doesNotMatch(output, /desktop-chromium|tablet-webkit/);
-  assert.match(output, /Total: 2 tests/);
+  assert.match(output, /mobile-smoke\.spec\.ts/);
+  assert.match(output, /tactical-combat\.spec\.ts/);
+  assert.match(output, /Total: 8 tests in 2 files/);
 });
