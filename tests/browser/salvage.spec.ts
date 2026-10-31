@@ -298,7 +298,7 @@ test('orbitalt-varv: choose a neighboring station hex before queuing constructio
   await page.screenshot({ path: testInfo.outputPath('orbital-shipyard.png') });
 });
 
-test('stridsrapport-i-dialog / spara-bargning-och-stridsavbrott: battle report survives reload and Continue completes the year', async ({
+test('stridsrapport-i-dialog / spara-bargning-och-stridsavbrott: combat history survives reload without a report dialog', async ({
   page,
 }, testInfo) => {
   await load(page, discoveryState());
@@ -309,20 +309,24 @@ test('stridsrapport-i-dialog / spara-bargning-och-stridsavbrott: battle report s
     await warning
       .getByRole('button', { name: 'End turn anyway', exact: true })
       .click();
-  await ignoreEventsUntil(
-    page,
-    page.getByRole('dialog', { name: 'Battle report', exact: true }),
-  );
+  await ignoreEventsUntil(page);
   const report = page.getByRole('dialog', {
     name: 'Battle report',
     exact: true,
   });
-  await expect(report).toContainText('wrecks remain');
+  await expect(report).toHaveCount(0);
+  const beforeReload = (await saved(page)).events.find((event) =>
+    event.text.startsWith('Combat at'),
+  )!;
+  expect(beforeReload.text).toContain('Survivors:');
   await page.reload();
   await startFirstSlot(page);
   await expect(
     page.getByRole('dialog', { name: 'Battle report', exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  expect(
+    (await saved(page)).events.find((event) => event.id === beforeReload.id),
+  ).toEqual(beforeReload);
   await page.screenshot({ path: testInfo.outputPath('battle-report.png') });
   await ignoreEventsUntil(page);
   await page.getByRole('button', { name: /^Decisions/ }).click();

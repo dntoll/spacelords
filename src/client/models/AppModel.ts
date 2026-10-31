@@ -35,7 +35,13 @@ import type { ProjectSupplySnapshot } from './ProjectSupply.js';
 import { shipTransferIssue } from './FleetTransfer.js';
 import { StarMapTrade, type MapTradeSnapshot } from './StarMapTrade.js';
 import type { SaveRepository } from './SaveRepository.js';
-import type { BattleState, BattleCommand } from './TacticalBattle.js';
+import {
+  type TacticalBattle,
+  battleWeapons,
+  type BattleState,
+  type BattleCommand,
+} from './TacticalBattle.js';
+import { createTestBattle } from './TestBattle.js';
 import type { SupplyOverview } from './SupplyOverview.js';
 import {
   ResearchTreeCamera,
@@ -113,6 +119,7 @@ export interface AppReadModel {
   readonly orderView?: OrderSelectionSnapshot | null;
   readonly productionStartOrder?: ShipOrder | null;
   readonly tacticalBattle: BattleState | null;
+  readonly battleFeedback: BattleState | null;
   readonly turnMovement: TurnMovement | null;
   readonly eventPlayback: EventPlaybackSnapshot | null;
   readonly presentedEventIds: readonly string[];
@@ -224,6 +231,8 @@ export class AppModel {
   #pendingEndTurn = false;
   #pendingResearchRemoval: Technology | null = null;
   #game: Game;
+  #testBattle: TacticalBattle | null = null;
+  #battleFeedback: BattleState | null = null;
   #camera: Camera;
   #selected: HexCoordinate;
   #constructionSite: number | null = null;
@@ -325,6 +334,8 @@ export class AppModel {
     this.#mapProductionOption = null;
     this.#mapProjectId = null;
     this.#game = game;
+    this.#testBattle = null;
+    this.#battleFeedback = null;
     this.#orderSelection = null;
     this.#shipStartOrder = null;
     this.#inspectedResearch = null;
@@ -368,6 +379,7 @@ export class AppModel {
   save(): void {
     if (
       this.saves &&
+      !this.#testBattle &&
       this.#activeSlot !== null &&
       this.#screen !== 'saves' &&
       this.#game.phase !== 'simulating'
@@ -381,6 +393,8 @@ export class AppModel {
   openSaves(): void {
     if (!this.saves || this.#game.phase === 'simulating') return;
     this.save();
+    this.#testBattle = null;
+    this.#battleFeedback = null;
     this.cancelMapPointer();
     this.#screen = 'saves';
     this.#pendingClearSlot = null;
@@ -427,7 +441,9 @@ export class AppModel {
         : [];
     return Object.freeze({
       turnMovement: null,
-      tacticalBattle: this.#game.tacticalBattle,
+      tacticalBattle:
+        this.#testBattle?.visibleSnapshot ?? this.#game.tacticalBattle,
+      battleFeedback: this.#battleFeedback,
       eventPlayback: this.#eventPlayback?.snapshot ?? null,
       presentedEventIds: Object.freeze([
         ...new Set([
@@ -1790,14 +1806,64 @@ export class AppModel {
     this.#game.continueTurn();
   }
   commandBattle(command: BattleCommand): void {
-    this.#game.commandBattle(command);
-    this.save();
-    if (!this.#game.tacticalBattle) this.beginEventPlayback();
+    if (this.#battleFeedback) return;
+    let result: BattleState;
+    if (this.#testBattle) {
+      this.#testBattle.command(command);
+      result = this.#testBattle.snapshot;
+    } else result = this.#game.commandBattle(command);
+    this.#afterBattleAction(result);
   }
-  playBattleActivation(): void {
-    this.#game.playBattleActivation();
+  startTestBattle(): void {
+    if (this.#screen !== 'saves') return;
+    this.#testBattle = createTestBattle();
+    this.#battleFeedback = null;
+    this.#eventPlayback = null;
+    this.#movementPlayback = null;
+    this.#screen = 'map';
+  }
+  autoSelectBattleShip(): boolean {
+    if (this.#screen === 'saves') return false;
+    const battle =
+      this.#testBattle?.visibleSnapshot ?? this.#game.tacticalBattle;
+    if (
+      this.#battleFeedback ||
+      battle?.phase !== 'fighting' ||
+      battle.turn !== 'player' ||
+      battle.activation
+    )
+      return false;
+    const eligible = battle.pieces.filter(
+      (p) => p.side === 'player' && p.status === 'active' && !p.activated,
+    );
+    const ship =
+      eligible.find((p) => battleWeapons(p.type).length) ?? eligible[0];
+    if (!ship) return false;
+    this.commandBattle({ type: 'activate', id: ship.id });
+    return true;
+  }
+  #afterBattleAction(result: BattleState): void {
+    if (result.phase === 'complete') this.#battleFeedback = result;
     this.save();
-    if (!this.#game.tacticalBattle) this.beginEventPlayback();
+    if (
+      !this.#game.tacticalBattle &&
+      !this.#battleFeedback &&
+      !this.#testBattle
+    )
+      this.beginEventPlayback();
+  }
+  playBattleActivation(singleStep = false): void {
+    let result: BattleState;
+    if (this.#testBattle) {
+      this.#testBattle.actAutomatically(singleStep);
+      result = this.#testBattle.snapshot;
+    } else result = this.#game.playBattleActivation(singleStep);
+    this.#afterBattleAction(result);
+  }
+  finishBattleFeedback(): void {
+    this.#battleFeedback = null;
+    if (this.#testBattle) this.openSaves();
+    else this.beginEventPlayback();
   }
   resumeFleetOrders(id: string): void {
     this.#game.resumeFleetOrders(id);
@@ -1812,6 +1878,7 @@ export class AppModel {
   beginEventPlayback(): void {
     if (
       this.#game.tacticalBattle ||
+      this.#battleFeedback ||
       this.#game.phase === 'simulating' ||
       this.#game.interruption?.handling ||
       this.#eventPlayback
@@ -1823,6 +1890,12 @@ export class AppModel {
         : this.#game.round - 1;
     for (const id of this.#game.interruption?.presentedEventIds ?? [])
       this.#presentedEventIds.add(id);
+    // stridsrapport-i-dialog: combat now presents its outcome on the battle board.
+    for (const report of this.#game.interruption?.battles ?? []) {
+      if (!report.eventId) continue;
+      this.#presentedEventIds.add(report.eventId);
+      this.#game.presentEvent(report.eventId);
+    }
     const events = this.#game.events.filter((event) => event.round === round);
     const playback = new EventPlayback(
       round,
@@ -1851,31 +1924,25 @@ export class AppModel {
 
   #eventDecision(id: string): EventDecision | undefined {
     const interruption = this.#game.interruption;
-    const battle = interruption?.battles?.find(
-      (battle) => battle.eventId === id,
-    );
     const discovery = interruption?.discoveries.find(
       (discovery) => discovery.eventId === id,
     );
-    const item = battle ?? discovery;
+    const item = discovery;
     if (!item) return undefined;
     const fleet = item.fleetId
       ? this.#game.fleetSnapshots().find((fleet) => fleet.id === item.fleetId)
       : null;
-    const title = battle
-      ? 'Battle report'
-      : discovery!.kind === 'pirate'
+    const title =
+      discovery.kind === 'pirate'
         ? 'Pirate ship in sight'
-        : discovery!.kind === 'wreck'
+        : discovery.kind === 'wreck'
           ? 'Wreck discovered'
-          : discovery!.kind === 'star'
+          : discovery.kind === 'star'
             ? 'Star explored'
             : 'Planet discovered';
     const details = [
       `HEX ${item.position.q},${item.position.r}${fleet ? ` · ${fleet.name} · ${fleet.remainingMovement ?? 0} hex remaining` : ''}`,
     ];
-    if (battle)
-      details.push(`${battle.wreckIds.length} wrecks remain in the hex.`);
     if (discovery?.kind === 'pirate') {
       const pirate = this.#game
         .pirateSnapshots()
@@ -1888,10 +1955,6 @@ export class AppModel {
     if (interruption!.economyApplied)
       details.push(
         'The year is paused after production. No movement remains this year.',
-      );
-    else if (battle)
-      details.push(
-        'The year is paused after combat. Handle to change orders, or Ignore to continue without changes.',
       );
     return Object.freeze({
       title,

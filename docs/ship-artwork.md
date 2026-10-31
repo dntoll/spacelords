@@ -1,5 +1,19 @@
 # Skeppsgrafik
 
+`unik-bild-for-civila-transporter` — **Fullständigt implementerat**, 2026-10-31:
+Civilian shuttle har en egen transparent bild med passagerarfönster,
+avrundad ljus kabin, blå motorer och gula markeringar. Den används i samtliga
+skeppsvyer och på både Star map och stridskartan. Originalet finns i
+`assets/original/ships/civilian-shuttle.png`; webbversionen i
+`src/client/assets/ships/civilian-shuttle.webp`, proportionellt skalad till
+384 × 192 px med bibehållen alfa och WebP-kvalitet 90. Den inbyggda imagegen
+användes. [Den fullständiga prompten](image-prompts/ships/civilian-shuttle.md)
+bevaras för framtida ändringar.
+
+`bargat-piratskepp-behaller-typ` gör även Space pirate till en spelarskeppstyp
+efter reparation. Piratbilden väljs därför efter skeppstyp och används för båda
+sidor. Detta ersätter den tidigare avgränsningen nedan om enbart fientliga pirater.
+
 Originalet är `assets/original/ships/ships.png`. De tre skeppen kopplas till
 Colony ship (överst), Fighter (mitten) och Exploration ship (nederst).
 

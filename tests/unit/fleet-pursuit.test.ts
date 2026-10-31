@@ -16,6 +16,7 @@ function setup(
     'Colony ship': 0,
     'Transport ship': 0,
     'Civilian shuttle': 0,
+    'Space pirate': 0,
     'Salvage ship': 0,
   };
   return Game.restore({
@@ -217,6 +218,7 @@ describe('skepp-till-rorlig-flotta', () => {
       'Exploration ship': 1,
       'Transport ship': 1,
       'Civilian shuttle': 0,
+      'Space pirate': 0,
       'Salvage ship': 0,
     });
   });

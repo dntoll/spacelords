@@ -44,6 +44,7 @@ test('skeppssprites-pa-kartan / genererade-skeppssprites: all six sprites load a
     'Colony ship': 1,
     'Transport ship': 1,
     'Civilian shuttle': 0,
+    'Space pirate': 0,
     'Salvage ship': 1,
   };
   delete state.fleets[0]!.shipUnits;

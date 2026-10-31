@@ -8,6 +8,8 @@ export function completeTacticalBattles(subject: Game | AppModel): void {
       ? subject.snapshot.tacticalBattle
       : subject.tacticalBattle;
   for (let attempts = 0; attempts < 1000; attempts++) {
+    if ('snapshot' in subject && subject.snapshot.battleFeedback)
+      subject.finishBattleFeedback();
     const state = snapshot();
     if (!state) return;
     if (state.phase === 'deployment') {

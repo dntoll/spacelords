@@ -62,9 +62,9 @@ test('stridsutplacering / sparad-taktisk-strid: deploys all ships and resumes an
     .getByRole('button', { name: 'Start combat', exact: true })
     .click();
   const fighter = deployment.pieces.find((p) => p.type === 'Fighter')!;
-  await dialog
-    .getByLabel('Your ship', { exact: true })
-    .selectOption(fighter.id);
+  await expect(dialog.getByLabel('Your ship', { exact: true })).toHaveValue(
+    fighter.id,
+  );
   await expect(
     dialog.getByRole('button', { name: 'Activate ship', exact: true }),
   ).toHaveCount(0);
@@ -95,7 +95,7 @@ test('stridsutplacering / sparad-taktisk-strid: deploys all ships and resumes an
   expect(errors).toEqual([]);
 });
 
-test('skeppsval-startar-stridstur / stridsorder-utan-mobilscroll / skeppets-framat-foljer-spriten / riktning-och-vapen / oppna-stridstarningar: selects, fires and moves without scrolling for ship orders', async ({
+test('automatiskt-skeppsval-i-strid / synligt-stridsresultat / stridsorder-utan-mobilscroll / skeppets-framat-foljer-spriten / riktning-och-vapen / oppna-stridstarningar: selects, fires and moves without scrolling for ship orders', async ({
   page,
 }, testInfo) => {
   const game = arrangeBattle(encounterGame(), (state) => ({
@@ -122,9 +122,9 @@ test('skeppsval-startar-stridstur / stridsorder-utan-mobilscroll / skeppets-fram
   const fighter = game.tacticalBattle!.pieces.find(
     (p) => p.type === 'Fighter',
   )!;
-  await dialog
-    .getByLabel('Your ship', { exact: true })
-    .selectOption(fighter.id);
+  await expect(dialog.getByLabel('Your ship', { exact: true })).toHaveValue(
+    fighter.id,
+  );
   expect(
     (await saved(page)).state.simulation!.tacticalBattles![0]!.activation?.id,
   ).toBe(fighter.id);
@@ -179,6 +179,10 @@ test('skeppsval-startar-stridstur / stridsorder-utan-mobilscroll / skeppets-fram
   await expect(dialog.locator('.battle-latest-roll')).toContainText(
     '2D6 [1, 1]',
   );
+  await expect(dialog.locator('.battle-feedback')).toBeVisible();
+  await expect(dialog.locator('.battle-feedback')).toContainText(
+    'Miss · 0 damage',
+  );
   await expect(
     dialog.getByRole('button', { name: 'Fire weapon', exact: true }),
   ).toBeDisabled();
@@ -225,12 +229,21 @@ test('skeppsvis-retratt / gemensamt-handelseflode: escapes each ship, regroups t
   const errors = await prepare(page, game.exportState());
   const dialog = page.getByRole('dialog', { name: 'Tactical combat' });
   const initial = game.tacticalBattle!;
-  for (const ship of initial.pieces.filter((p) => p.side === 'player')) {
-    await dialog.getByLabel('Your ship', { exact: true }).selectOption(ship.id);
+  for (
+    let i = 0;
+    i < initial.pieces.filter((p) => p.side === 'player').length;
+    i++
+  ) {
+    await expect(
+      dialog.getByRole('button', { name: 'Forward / escape', exact: true }),
+    ).toBeEnabled();
     await dialog
       .getByRole('button', { name: 'Forward / escape', exact: true })
       .click();
   }
+  await expect(dialog.locator('.battle-outcome')).toContainText(
+    'Retreat complete',
+  );
   await expect(dialog).toHaveCount(0);
   const result = (await saved(page)).state;
   expect(
@@ -246,4 +259,32 @@ test('skeppsvis-retratt / gemensamt-handelseflode: escapes each ship, regroups t
   await expect.poll(async () => (await saved(page)).state.round).toBe(2);
   await page.screenshot({ path: testInfo.outputPath('battle-result.png') });
   expect(errors).toEqual([]);
+});
+
+test('fuskknapp-for-teststrid: opens combat from the main menu and leaves save slots untouched', async ({
+  page,
+}, testInfo) => {
+  await page.goto('./');
+  const before = await page.evaluate(() => ({ ...localStorage }));
+  await page
+    .getByRole('button', { name: 'Test battle (cheat)', exact: true })
+    .click();
+  const dialog = page.getByRole('dialog', { name: 'Tactical combat' });
+  await expect(
+    dialog.getByRole('button', { name: 'Fire weapon', exact: true }),
+  ).toBeEnabled();
+  await dialog
+    .getByRole('button', { name: 'Fire weapon', exact: true })
+    .click();
+  await expect(dialog.locator('.battle-feedback')).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath('test-battle-feedback.png'),
+  });
+  await dialog
+    .getByRole('button', { name: 'Save and close', exact: true })
+    .click();
+  await expect(
+    page.getByRole('heading', { name: 'Saved games', exact: true }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => ({ ...localStorage }))).toEqual(before);
 });

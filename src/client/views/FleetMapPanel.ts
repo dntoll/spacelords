@@ -58,7 +58,7 @@ export function renderMapFleetPanel(
       element(
         'p',
         'muted-note',
-        'Patrols this star system. Combat occurs on a shared hex after movement. One Fighter destroys up to two pirates; each pair of pirates destroys one Fighter.',
+        'Patrols this star system. Combat begins when fleets share a hex after movement. Ships manoeuvre and fire in tactical combat.',
       ),
     );
     cards.append(card);

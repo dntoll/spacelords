@@ -125,13 +125,14 @@ describe('skeppsbilder', () => {
         'Exploration ship': 1,
         'Transport ship': 1,
         'Civilian shuttle': 1,
+        'Space pirate': 1,
         'Salvage ship': 1,
       },
     };
     const view = renderFleetShips(fleet);
     expect(view.querySelectorAll('img').length).toBeLessThan(20);
     expect(view.textContent).toContain('+999988 Fighter');
-    expect(new Set(Object.values(SHIP_IMAGES)).size).toBe(5);
+    expect(new Set(Object.values(SHIP_IMAGES)).size).toBe(7);
     for (const ship of Object.keys(SHIP_IMAGES))
       expect(view.querySelector(`img[alt="${ship}"]`)).not.toBeNull();
   });
@@ -292,7 +293,7 @@ describe('forstarka-ruttflotta / flottans-handelsrutt', () => {
   });
 });
 
-it('genererade-skeppssprites: renders dedicated cargo, salvage and pirate portraits without adding a player ship type', () => {
+it('genererade-skeppssprites / bargat-piratskepp-behaller-typ: renders dedicated cargo, salvage and pirate portraits', () => {
   const model = new AppModel();
   const position = model.snapshot.fleets[0]!.position!;
   const panel = renderMapFleetPanel(
@@ -309,7 +310,7 @@ it('genererade-skeppssprites: renders dedicated cargo, salvage and pirate portra
       ?.getAttribute('src'),
   ).toBe(SHIP_SPRITES['Space pirate']);
   expect(SHIP_SPRITES['Space pirate']).not.toBe(SHIP_IMAGES.Fighter);
-  expect(Object.keys(SHIP_IMAGES)).toHaveLength(6);
+  expect(Object.keys(SHIP_IMAGES)).toHaveLength(7);
   const view = renderFleetShips({
     ...model.snapshot.fleets[0]!,
     ships: {
@@ -318,6 +319,7 @@ it('genererade-skeppssprites: renders dedicated cargo, salvage and pirate portra
       'Exploration ship': 0,
       'Transport ship': 1,
       'Civilian shuttle': 0,
+      'Space pirate': 0,
       'Salvage ship': 1,
     },
   });

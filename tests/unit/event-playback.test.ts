@@ -274,8 +274,9 @@ describe('sekventiella-arshandelser', () => {
       model.snapshot.eventPlayback?.events.some(
         (event) => event.id === discovery.id,
       ),
-    ).toBe(false);
+    ).not.toBe(true);
     expect(saved.state.phase).toBe('planning');
+    await vi.advanceTimersByTimeAsync(1850);
     expect(saved.state.round).toBe(model.snapshot.round);
     expect(saved.state.events).toEqual(model.snapshot.events);
     const restored = new AppModel(undefined, {

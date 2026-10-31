@@ -83,7 +83,8 @@ export class PirateFleet {
       position: this.position,
       destination: null,
       ships: {
-        Fighter: this.count,
+        Fighter: 0,
+        'Space pirate': this.count,
         'Colony ship': 0,
         'Exploration ship': 0,
         'Transport ship': 0,
@@ -101,7 +102,8 @@ export function pirateAsFleet(pirate: PirateSnapshot): FleetSnapshot {
     position: pirate.position,
     destination: null,
     ships: Object.freeze({
-      Fighter: pirate.count,
+      Fighter: 0,
+      'Space pirate': pirate.count,
       'Colony ship': 0,
       'Exploration ship': 0,
       'Transport ship': 0,

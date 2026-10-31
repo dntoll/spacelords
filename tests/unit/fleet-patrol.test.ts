@@ -18,6 +18,7 @@ const empty = {
   'Transport ship': 0,
   'Colony ship': 0,
   'Civilian shuttle': 0,
+  'Space pirate': 0,
   'Salvage ship': 0,
 };
 function setup(position = hex(1, 0), ion = false, transport = false) {
@@ -205,7 +206,7 @@ describe('flottpatrullering', () => {
     expect(group.patrol).toBeUndefined();
     expect(game.fleet('fleet-home')!.patrol).toBeUndefined();
     expect(game.fleet('fleet-home')!.destination).toBeNull();
-    expect(() => game.setPatrol('fleet-home')).toThrow('Fighter');
+    expect(() => game.setPatrol('fleet-home')).toThrow('armed ship');
   });
 
   it('keeps all steps on the map at the boundary and preserves older saves', () => {

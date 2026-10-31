@@ -39,7 +39,7 @@ function symbolFor(name: string): SymbolName {
   if (name === 'Exploration ship') return 'Exploration';
   if (name === 'Transport ship' || name === 'Civilian shuttle')
     return 'Transport';
-  if (name === 'Fighter') return 'Ships';
+  if (name === 'Fighter' || name === 'Space pirate') return 'Ships';
   return name in paths ? (name as SymbolName) : 'Components';
 }
 

@@ -206,19 +206,10 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
     path: testInfo.outputPath('discovery-handling.png'),
   });
   await controls.getByRole('button', { name: 'Continue', exact: true }).click();
-  await ignoreEventsUntil(
-    page,
-    page.getByRole('dialog', { name: 'Battle report', exact: true }),
-  );
+  await ignoreEventsUntil(page);
   await expect(
     page.getByRole('dialog', { name: 'Battle report', exact: true }),
-  ).toContainText('wrecks remain');
-  const combatText = await page
-    .getByRole('dialog', { name: 'Battle report', exact: true })
-    .innerText();
-  expect(combatText.match(/Lost /g)).toHaveLength(1);
-  expect(combatText.match(/Survivors:/g)).toHaveLength(1);
-  await ignoreEventsUntil(page);
+  ).toHaveCount(0);
   await expect
     .poll(async () => {
       const saved = await page.evaluate(
@@ -234,6 +225,11 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
     () =>
       JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
   );
+  const combatText = completed.state.events.find((event) =>
+    event.text.startsWith('Combat at'),
+  )!.text;
+  expect(combatText.match(/Lost /g)).toHaveLength(1);
+  expect(combatText.match(/Survivors:/g)).toHaveLength(1);
   expect(
     completed.state.fleets.find((fleet) => fleet.id === 'other')!.position,
   ).toEqual({ q: 2, r: 0 });

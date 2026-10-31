@@ -25,7 +25,7 @@ describe('startorder-for-nybyggda-skepp / flottval-pa-orderkarta', () => {
     finishYear(game);
     expect(game.fleet('fleet-home')!.exploration).toBeUndefined();
   });
-  it.each<{ ship: ShipType; order: ShipOrder }>([
+  it.each<{ ship: Exclude<ShipType, 'Space pirate'>; order: ShipOrder }>([
     { ship: 'Salvage ship', order: { kind: 'auto-salvage' } },
     { ship: 'Transport ship', order: { kind: 'auto-transport' } },
     { ship: 'Exploration ship', order: { kind: 'explore' } },

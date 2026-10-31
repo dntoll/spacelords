@@ -80,7 +80,7 @@ skeppsbygge. Samma samlade besked används i annonseringen och Events.
 Lossning, produktion och sparformat behåller sina regler. Äldre sparade
 händelsetexter bevaras.
 
-- `gemensamt-handelseflode`: upptäckter, piratkontakter och stridsrapporter
+- `gemensamt-handelseflode`: upptäckter och piratkontakter
   använder samma kartmarkering, textruta och förflyttning till Events som andra
   händelser. De visas en i taget i verklig händelseordning, med Handle och Ignore
   samt HEX, berörd flotta, återstående rörelse och relevanta strids- och
@@ -91,8 +91,9 @@ händelsetexter bevaras.
   platsen. Give orders to other fleets behålls som uttryckligt val. Continue
   avslutar hanteringen och visar nästa obesvarade händelse. Först när hela
   avbrottet är avklarat fortsätter simuleringen, med uppskjuten strid före nästa
-  rörelse. Ignore i en stridsrapport fortsätter utan nya order och ändrar inte
-  resultatet. Inget annonseras två gånger. Långa uppgifter rullas internt;
+  rörelse. Ändring 2026-10-31: stridsresultat visas direkt på stridskartan;
+  rapporten sparas i Events utan informationsruta eller Handle/Ignore efteråt
+  enligt `stridsrapport-i-dialog`. Inget annonseras två gånger. Långa uppgifter rullas internt;
   knapparna är åtkomliga med touch och tangentbord och har minst 44 px träffyta.
   End turn är synlig och spärrad under hela flödet. Omladdning återställer nästa
   obesvarade händelse eller pågående hantering, utan upprepad rörelse, strid

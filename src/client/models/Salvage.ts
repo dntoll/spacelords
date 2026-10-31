@@ -128,6 +128,7 @@ export class Salvage {
         !wreck.ship?.id ||
         ![
           'Fighter',
+          'Space pirate',
           'Exploration ship',
           'Colony ship',
           'Transport ship',
@@ -460,7 +461,9 @@ export class Salvage {
   static components(ship: ShipUnit): Partial<Record<Component, number>> {
     return {
       ...ship.engines,
-      ...(ship.type === 'Fighter' ? { 'Weapons module': 1 } : {}),
+      ...(ship.type === 'Fighter' || ship.type === 'Space pirate'
+        ? { 'Weapons module': 1 }
+        : {}),
       ...(ship.telescope
         ? {
             [(['Telescope I', 'Telescope II', 'Telescope III'] as const)[

@@ -418,6 +418,7 @@ class TacticalBattle {
   turn
   randomState
   command()
+  actAutomatically(singleStep)
 }
 class BattlePiece {
   position: HexCoordinate
@@ -435,8 +436,14 @@ class BattleActivation {
 }
 note right of BattleActivation
   skeppsval-startar-stridstur:
-  Val av ett oanvänt eget skepp startar dess tur.
+  automatiskt-skeppsval-i-strid väljer och aktiverar
+  ett oanvänt eget skepp när spelarsidan får turen.
   Skeppet spelar klart innan nästa kan väljas.
+end note
+note right of BattlePiece
+  bargat-piratskepp-behaller-typ:
+  Space pirate kan tillhöra spelaren efter bärgning.
+  Typ, bild och Raider cannon följer skeppet.
 end note
 class Weapon {
   range

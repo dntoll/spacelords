@@ -10,7 +10,7 @@ import {
   type CivilianOrder,
   type CivilianPort,
 } from './CivilianTraffic.js';
-import { engineCount } from './ShipEquipment.js';
+import { engineCount, armedShipCount } from './ShipEquipment.js';
 import { FactoryTechnology } from './FactoryTechnology.js';
 import { FleetPatrol, type PatrolOrder } from './FleetPatrol.js';
 export { engineCount } from './ShipEquipment.js';
@@ -107,6 +107,7 @@ export type ShipType =
   | 'Colony ship'
   | 'Exploration ship'
   | 'Fighter'
+  | 'Space pirate'
   | 'Transport ship'
   | 'Salvage ship'
   | 'Civilian shuttle';
@@ -373,6 +374,7 @@ export const SHIPS: Readonly<
   'Colony ship': { crew: 1000, speed: 2 },
   'Exploration ship': { crew: 200, speed: 4 },
   Fighter: { crew: 50, speed: 3 },
+  'Space pirate': { crew: 50, speed: 1 },
   'Transport ship': { crew: 50, speed: 2 },
   'Civilian shuttle': { crew: 50, speed: 2 },
 });
@@ -437,7 +439,9 @@ export function projectDefinition(type: ProjectType): BuildDefinition {
     ship: type as ShipType,
     parts: {
       'Rocket engine': engineCount(type as ShipType),
-      ...(type === 'Fighter' ? { 'Weapons module': 1 } : {}),
+      ...(type === 'Fighter' || type === 'Space pirate'
+        ? { 'Weapons module': 1 }
+        : {}),
       ...(type === 'Exploration ship' ? { 'Telescope I': 1 } : {}),
     },
   };
@@ -684,6 +688,7 @@ const zeroShips = (): Record<ShipType, number> => ({
   'Colony ship': 0,
   'Exploration ship': 0,
   Fighter: 0,
+  'Space pirate': 0,
   'Transport ship': 0,
   'Salvage ship': 0,
   'Civilian shuttle': 0,
@@ -1067,7 +1072,7 @@ export class Game {
           FleetPatrol.validate(fleet.patrol, (point) => !!galaxy.cellAt(point));
           if (
             empty ||
-            !fleet.ships.Fighter ||
+            !armedShipCount(fleet.ships) ||
             fleet.routeId ||
             fleet.joinFleetId ||
             fleet.exploration
@@ -3414,12 +3419,14 @@ export class Game {
       }
     }
   }
-  commandBattle(command: BattleCommand): void {
+  commandBattle(command: BattleCommand): BattleState {
     const battle = this.#simulation?.tacticalBattles[0];
     if (this.#phase !== 'interrupted' || !battle)
       throw new Error('No tactical battle is active.');
     battle.command(command);
+    const result = battle.snapshot;
     this.#finishTacticalBattle();
+    return result;
   }
   resumeFleetOrders(id: string): void {
     const fleet = this.#fleetState(id);
@@ -3447,12 +3454,14 @@ export class Game {
       }
     }
   }
-  playBattleActivation(): void {
+  playBattleActivation(singleStep = false): BattleState {
     const battle = this.#simulation?.tacticalBattles[0];
     if (this.#phase !== 'interrupted' || !battle)
       throw new Error('No tactical battle is active.');
-    battle.actAutomatically();
+    battle.actAutomatically(singleStep);
+    const result = battle.snapshot;
     this.#finishTacticalBattle();
+    return result;
   }
   #createTacticalBattles(): TacticalBattle[] {
     const positions = [
@@ -3568,7 +3577,7 @@ export class Game {
               this.#id('wreck'),
               {
                 id,
-                type: 'Fighter',
+                type: 'Space pirate',
                 engines: { 'Rocket engine': 1, 'Ion pulse engine': 0 },
               },
               position,
@@ -3666,7 +3675,8 @@ export class Game {
     const surviving = state.pieces.filter(
       (p) => p.side === 'player' && p.status !== 'destroyed',
     );
-    const summary = `Lost ${losses}; destroyed ${pirateLosses} pirates. Survivors: ${surviving.filter((p) => p.type === 'Fighter').length} Fighters, ${state.pieces.filter((p) => p.side === 'enemy' && p.status !== 'destroyed').length} pirates, ${surviving.filter((p) => p.type !== 'Fighter').length} civilian ships. ${state.pieces.filter((p) => p.status === 'escaped').length} ships escaped.`;
+    const captured = surviving.filter((p) => p.type === 'Space pirate').length;
+    const summary = `Lost ${losses}; destroyed ${pirateLosses} pirates. Survivors: ${surviving.filter((p) => p.type === 'Fighter').length} Fighters, ${captured ? `${captured} captured pirates, ` : ''}${state.pieces.filter((p) => p.side === 'enemy' && p.status !== 'destroyed').length} pirates, ${surviving.filter((p) => p.type !== 'Fighter' && p.type !== 'Space pirate').length} civilian ships. ${state.pieces.filter((p) => p.status === 'escaped').length} ships escaped.`;
     const names = playerIds
       .map((id) => this.#fleetDisplayName(this.#fleetState(id)))
       .join(', ');
@@ -3770,8 +3780,8 @@ export class Game {
     this.#requireFleetOrders(id);
     this.#requireOrderResearch('Fleet patrol');
     const fleet = this.#fleetState(id);
-    if (!fleet.ships.Fighter)
-      throw new Error('A Fighter is required for Patrol.');
+    if (!armedShipCount(fleet.ships))
+      throw new Error('An armed ship is required for Patrol.');
     if (
       center &&
       (!this.galaxy.cellAt(center) || !this.galaxy.isPassable(center))
@@ -4399,22 +4409,25 @@ export class Game {
       const targets = routeEscortTargets(routeId, snapshots).map((fleet) => ({
         id: fleet.id,
         fighters:
-          fleet.ships.Fighter +
+          armedShipCount(fleet.ships) +
           snapshots
             .filter((group) => group.joinFleetId === fleet.id)
-            .reduce((total, group) => total + group.ships.Fighter, 0),
-        amount: 0,
+            .reduce((total, group) => total + armedShipCount(group.ships), 0),
+        ships: { Fighter: 0, 'Space pirate': 0 },
       }));
-      for (let count = source.ships.Fighter; count > 0; count--) {
-        targets.sort(
-          (a, b) => a.fighters - b.fighters || a.id.localeCompare(b.id),
-        );
-        targets[0]!.fighters++;
-        targets[0]!.amount++;
+      for (const type of ['Fighter', 'Space pirate'] as const) {
+        for (let count = source.ships[type]; count > 0; count--) {
+          targets.sort(
+            (a, b) => a.fighters - b.fighters || a.id.localeCompare(b.id),
+          );
+          targets[0]!.fighters++;
+          targets[0]!.ships[type]++;
+        }
       }
       for (const target of targets) {
-        if (target.amount)
-          this.transferShips(fleetId, 'Fighter', target.amount, target.id);
+        for (const type of ['Fighter', 'Space pirate'] as const)
+          if (target.ships[type])
+            this.transferShips(fleetId, type, target.ships[type], target.id);
       }
     }
     this.#logistics.reserve(this.#logisticsPort());
@@ -5568,12 +5581,12 @@ export class Game {
   }
   #updatePatrol(fleet: Fleet): void {
     if (!fleet.patrol) return;
-    if (!fleet.ships.Fighter || !fleet.position) {
+    if (!armedShipCount(fleet.ships) || !fleet.position) {
       delete fleet.patrol;
       fleet.destination = null;
       delete fleet.courseOrigin;
       this.#event(
-        `${this.#fleetDisplayName(fleet)}: Patrol stopped; no Fighter available.`,
+        `${this.#fleetDisplayName(fleet)}: Patrol stopped; no armed ship available.`,
         fleet.position ?? undefined,
       );
       return;
@@ -5783,7 +5796,7 @@ export class Game {
         fleet.position ?? undefined,
       );
     }
-    if (fleet.patrol && !fleet.ships.Fighter) this.#updatePatrol(fleet);
+    if (fleet.patrol && !armedShipCount(fleet.ships)) this.#updatePatrol(fleet);
     if (fleet.exploration && !fleet.ships['Exploration ship'])
       this.#updateExploration(fleet);
     // skepp-ur-olastad-ruttflotta: a route needs at least one transport ship.

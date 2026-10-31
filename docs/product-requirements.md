@@ -1,5 +1,21 @@
 # Produktkrav och status
 
+`synligt-stridsresultat`, `synligt-stridsslut`, `automatiskt-skeppsval-i-strid`,
+`synliga-fiendemanovrer` och `fuskknapp-for-teststrid` är
+**Fullständigt implementerat**. Träff, miss, skada och slutresultat visas på
+stridskartan. Eget spelbart skepp väljs automatiskt och fiendens steg visas var
+för sig. Test battle (cheat) startar direkt från huvudmenyn utan att påverka
+sparade spel. `stridsrapport-i-dialog` är **Fullständigt implementerat** med
+ändrat beteende: informationsrutan efter strid ersätts av resultat på kartan;
+året fortsätter automatiskt och rapporten finns i Events.
+Se [taktisk strid](tactical-combat.md).
+
+`bargat-piratskepp-behaller-typ` och `unik-bild-for-civila-transporter` är
+**Fullständigt implementerat**. Ett nyförstört piratskepp kan bärgas och
+repareras till ett eget Space pirate med samma skrov, vapen och bild.
+Detta ersätter att piratvrak blir Fighters. Civilian shuttle har en egen bild
+som skiljer passagerarskeppet från Transport ship.
+
 `skeppsval-startar-stridstur` och `stridsorder-utan-mobilscroll` är
 **Fullständigt implementerat**: val av ett tillgängligt skepp, på kartan eller
 i Your ship, startar dess tur direkt. Turn, Forward, Weapon, Target, Fire weapon
@@ -863,7 +879,7 @@ händelser från avbrottet är avklarade. Redan visade händelser annonseras int
 igen efter året. Omladdning bevarar val och pågående hantering. Äldre spel
 bevaras. Se [Events](events-and-guidance.md).
 
-Ändring 2026-10-27: detta ersätter den separata upptäckts- och stridsdialogen
+Historik 2026-10-27 (stridsrapportens val ersattes 2026-10-31 enligt ovan): detta ersätter den separata upptäckts- och stridsdialogen
 samt gruppvalet för flera upptäckter. Kravnamnen `upptacktsavbrott`,
 `order-under-upptacktsavbrott`, `spara-avbrutet-ar` och
 `stridsrapport-i-dialog` behålls. `sekventiella-arshandelser` omfattar nu även

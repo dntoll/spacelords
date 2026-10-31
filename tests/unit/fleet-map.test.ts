@@ -22,6 +22,7 @@ function fleet(id: string, count = 3): FleetSnapshot {
       'Exploration ship': 0,
       'Transport ship': 0,
       'Civilian shuttle': 0,
+      'Space pirate': 0,
       'Salvage ship': 0,
     },
     speed: 1,
@@ -73,6 +74,7 @@ describe('kartflottor', () => {
         'Exploration ship': 3,
         'Transport ship': 4,
         'Civilian shuttle': 0,
+        'Space pirate': 0,
         'Salvage ship': 5,
       },
     };
@@ -211,6 +213,7 @@ describe('kartflottor', () => {
         'Exploration ship': 1,
         'Transport ship': 0,
         'Civilian shuttle': 0,
+        'Space pirate': 0,
         'Salvage ship': 0,
       },
     };

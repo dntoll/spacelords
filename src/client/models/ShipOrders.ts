@@ -1,6 +1,7 @@
 import type { FleetSnapshot, ShipType, Technology } from './Game.js';
 import type { TradeRouteSnapshot } from './Logistics.js';
 import type { HexCoordinate } from './HexCoordinate.js';
+import { armedShipCount } from './ShipEquipment.js';
 
 export type ShipOrder =
   | { readonly kind: 'join-route'; readonly routeId: string }
@@ -64,7 +65,7 @@ export class ShipOrders {
       'Join fleet',
       'Choose a fleet on the map. Travel to it and join when you meet.',
     );
-    if (ships['Transport ship'] || ships.Fighter)
+    if (ships['Transport ship'] || armedShipCount(ships))
       add(
         'join-route',
         'Join route',
@@ -110,7 +111,7 @@ export class ShipOrders {
         'Automated exploration',
       );
     }
-    if (ships.Fighter)
+    if (armedShipCount(ships))
       add(
         'patrol',
         'Patrol',

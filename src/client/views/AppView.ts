@@ -111,7 +111,7 @@ export class AppView implements AppPort {
 
   render(model: AppReadModel): void {
     if (
-      model.tacticalBattle &&
+      (model.battleFeedback || model.tacticalBattle) &&
       !model.turnMovement &&
       model.screen !== 'saves'
     ) {
@@ -120,7 +120,10 @@ export class AppView implements AppPort {
         (intent) => this.#emit(intent),
         this.battleMapFactory,
       );
-      this.#battleView.render(model.tacticalBattle, model.notice);
+      this.#battleView.render(
+        (model.battleFeedback ?? model.tacticalBattle)!,
+        model.notice,
+      );
       return;
     }
     this.#battleView?.dispose();

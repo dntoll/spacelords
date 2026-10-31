@@ -21,6 +21,7 @@ export function renderSaveSlots(
       'save-storage-note',
       'Progress is saved automatically in this browser.',
     ),
+    button('Test battle (cheat)', () => emit({ type: 'test-battle' })),
   );
   const grid = element('div', 'save-grid');
   for (const slot of model.saveSlots) {

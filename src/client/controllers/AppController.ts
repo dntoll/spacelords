@@ -29,6 +29,7 @@ export class AppController {
 
   start(): void {
     this.#view.bind((intent) => this.#handle(intent));
+    this.#model.autoSelectBattleShip();
     this.#view.render(this.#model.snapshot);
     this.#schedulePlayback();
   }
@@ -65,6 +66,7 @@ export class AppController {
   #handleIntent(intent: AppIntent): void {
     if (intent.type === 'battle-command') {
       this.#model.commandBattle(intent.command);
+      this.#model.autoSelectBattleShip();
       this.#view.render(this.#model.snapshot);
       this.#schedulePlayback();
       return;
@@ -115,6 +117,7 @@ export class AppController {
       this.#model.snapshot.screen === 'saves' &&
       ![
         'start-slot',
+        'test-battle',
         'request-clear-slot',
         'cancel-clear-slot',
         'confirm-clear-slot',
@@ -122,6 +125,11 @@ export class AppController {
     )
       return;
     switch (intent.type) {
+      case 'test-battle':
+        this.#model.startTestBattle();
+        this.#model.autoSelectBattleShip();
+        this.#schedulePlayback();
+        break;
       case 'salvage-wreck':
         this.#model.orderSalvage(intent.fleetId, intent.wreckId);
         break;
@@ -685,6 +693,7 @@ export class AppController {
     )
       this.#model.save();
     this.#view.render(this.#model.snapshot);
+    this.#schedulePlayback();
   }
 
   #cancelPointer(keepRouteSource = false): void {
@@ -695,14 +704,29 @@ export class AppController {
 
   #schedulePlayback(): void {
     clearTimeout(this.#playbackTimer);
-    const playback = this.#model.snapshot.eventPlayback;
-    if (this.#disposed || this.#model.snapshot.screen === 'saves') return;
-    const battle = this.#model.snapshot.tacticalBattle;
+    if (this.#disposed) return;
+    const activated = this.#model.autoSelectBattleShip();
+    const snapshot = this.#model.snapshot;
+    const playback = snapshot.eventPlayback;
+    if (snapshot.screen === 'saves') return;
+    if (snapshot.battleFeedback) {
+      this.#playbackTimer = setTimeout(() => {
+        this.#model.finishBattleFeedback();
+        this.#model.autoSelectBattleShip();
+        this.#model.save();
+        this.#view.render(this.#model.snapshot);
+        this.#schedulePlayback();
+      }, 2800);
+      return;
+    }
+    const battle = snapshot.tacticalBattle;
+    if (activated) this.#view.render(snapshot);
     if (battle) {
       if (battle.phase === 'fighting' && battle.turn === 'enemy')
         this.#playbackTimer = setTimeout(() => {
           try {
-            this.#model.playBattleActivation();
+            this.#model.playBattleActivation(true);
+            this.#model.autoSelectBattleShip();
           } catch (error) {
             this.#model.reportError(error);
           }
@@ -716,10 +740,7 @@ export class AppController {
       return;
     }
     if (!playback) {
-      if (
-        this.#model.snapshot.phase === 'interrupted' &&
-        !this.#model.snapshot.interruption?.handling
-      )
+      if (snapshot.phase === 'interrupted' && !snapshot.interruption?.handling)
         this.#playbackTimer = setTimeout(() => {
           void this.#runTurn(true);
         }, 0);

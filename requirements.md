@@ -10,6 +10,21 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Stridsfeedback och snabbtest:** `synligt-stridsresultat`, `synligt-stridsslut`,
+  `automatiskt-skeppsval-i-strid`, `synliga-fiendemanovrer` och
+  `fuskknapp-for-teststrid` är **Fullständigt implementerat**. Träff, miss och
+  skada visas på kartan, egna skepp väljs automatiskt och fienden visar varje
+  manöver. Huvudmenyn har Test battle (cheat) utan påverkan på sparplatserna.
+  `stridsrapport-i-dialog` är **Fullständigt implementerat** med ändrat beteende:
+  slutresultatet visas på stridskartan, året fortsätter utan rapportdialog och
+  rapporten finns i Events. Se [taktisk strid](docs/tactical-combat.md).
+
+- **Bärgade pirater och civila skeppsbilder:** `bargat-piratskepp-behaller-typ`
+  och `unik-bild-for-civila-transporter` är **Fullständigt implementerat**.
+  Nyförstörda pirater ger Space pirate-vrak som behåller typ, Raider cannon och
+  piratbild efter reparation. Civilian shuttle har en egen passagerarskeppsbild.
+  Se [bärgning](docs/salvage-shipyards.md) och [skeppsgrafik](docs/ship-artwork.md).
+
 - **Färdig terraforming:** `fardig-terraformning-till-temperate` är
   **Fullständigt implementerat**. Vid 100% habitability blir stenplaneten
   `Temperate` som Tellus och får samma planetbild. Terraformingfabriker

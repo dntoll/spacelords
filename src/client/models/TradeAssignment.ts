@@ -1,5 +1,6 @@
 import type { FleetSnapshot } from './Game.js';
 import type { TradeRouteSnapshot } from './Logistics.js';
+import { armedShipCount } from './ShipEquipment.js';
 
 export function tradeAssignmentIssue(
   fleet: FleetSnapshot,
@@ -16,9 +17,10 @@ export function tradeAssignmentIssue(
   if (fleet.joinFleetId) return 'Reinforcement order active';
   if (fleet.destination && !fleet.patrol) return 'Fleet is travelling';
   if (!fleet.ships['Transport ship']) {
-    if (!fleet.ships.Fighter) return 'Needs a Transport ship or Fighter';
+    if (!armedShipCount(fleet.ships))
+      return 'Needs a Transport ship or armed ship';
     if (!routeEscortTargets(route.id, fleets).length)
-      return 'Assign a transport fleet to this route before adding Fighters';
+      return 'Assign a transport fleet to this route before adding escorts';
   }
   if (!fleet.position) return 'Fleet has no position';
   return null;

@@ -32,6 +32,8 @@ export class BattleView {
   readonly #dialog = element('dialog', 'battle-dialog');
   readonly #heading = element('h1');
   readonly #status = element('p', 'battle-status');
+  readonly #feedback = element('p', 'battle-feedback');
+  readonly #outcome = element('p', 'battle-outcome');
   readonly #panel = element('section', 'battle-controls');
   readonly #details = element('details', 'battle-details');
   readonly #information = element('div', 'battle-information');
@@ -62,7 +64,11 @@ export class BattleView {
       button('Zoom out', () => this.#map?.zoom(0.8)),
       button('Fit battle map', () => this.#map?.fit()),
     );
-    board.append(canvas, zoom);
+    this.#feedback.setAttribute('role', 'status');
+    this.#feedback.setAttribute('aria-live', 'polite');
+    this.#feedback.setAttribute('aria-atomic', 'true');
+    this.#outcome.setAttribute('role', 'status');
+    board.append(canvas, this.#outcome, this.#feedback, zoom);
     this.#panel.setAttribute('aria-label', 'Ship orders');
     this.#details.append(
       element('summary', '', 'Combat details'),
@@ -177,9 +183,11 @@ export class BattleView {
     if (!enemies.some((p) => p.id === this.#target))
       this.#target = enemies[0]?.id ?? null;
     this.#heading.textContent =
-      state.phase === 'deployment'
-        ? 'Deploy fleet'
-        : `Combat · Round ${state.round}`;
+      state.phase === 'complete'
+        ? 'Battle complete'
+        : state.phase === 'deployment'
+          ? 'Deploy fleet'
+          : `Combat · Round ${state.round}`;
     this.#status.textContent =
       notice ??
       (state.phase === 'deployment'
@@ -190,6 +198,40 @@ export class BattleView {
             ? `${selected ? battlePieceLabel(selected, state.pieces) : 'Ship'} · Hull ${selected?.hull}/${selected ? SHIP_PROFILES[selected.type].hull : 0} · Movement ${state.activation.remaining}`
             : 'Select a ship to take its turn.');
     this.#status.setAttribute('role', 'status');
+    const shot = state.log.findLast((line) => /: \d+ damage/.test(line));
+    const damage = shot?.match(/: (\d+) damage(.*)$/);
+    this.#feedback.hidden = !shot;
+    if (shot && damage) {
+      const result = Number(damage[1]) > 0 ? 'Hit' : 'Miss';
+      this.#feedback.dataset.result = result.toLowerCase();
+      const text = `${result} · ${damage[1]} damage${damage[2]} ${shot.split('. ')[0]}.`;
+      if (this.#feedback.textContent !== text)
+        this.#feedback.textContent = text;
+    }
+    const complete = state.phase === 'complete';
+    this.#outcome.hidden = !complete;
+    this.#panel.hidden = this.#details.hidden = complete;
+    this.#dialog
+      .querySelector('.battle-layout')!
+      .classList.toggle('is-complete', complete);
+    if (complete) {
+      const active = state.pieces.filter((p) => p.status === 'active');
+      const escaped = state.pieces.filter(
+        (p) => p.side === 'player' && p.status === 'escaped',
+      ).length;
+      const lost = state.pieces.filter(
+        (p) => p.side === 'player' && p.status === 'destroyed',
+      ).length;
+      const result = active.some((p) => p.side === 'player')
+        ? 'Victory'
+        : escaped
+          ? 'Retreat complete'
+          : 'Defeat';
+      this.#outcome.textContent = `Battle complete · ${result} · ${lost} ships lost · ${escaped} escaped`;
+      this.#status.textContent = 'Surviving ships regroup. Continuing…';
+      this.#map?.render(state, null, [], this.#weapon);
+      return;
+    }
     const focusedLabel = document.activeElement?.getAttribute('aria-label');
     const scroll = this.#panel.scrollTop;
     this.#panel.replaceChildren();

@@ -22,6 +22,7 @@ import type {
 import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 
 export type AppIntent =
+  | { readonly type: 'test-battle' }
   | { readonly type: 'open-fleet-orders'; readonly id: string }
   | {
       readonly type: 'open-ship-orders';

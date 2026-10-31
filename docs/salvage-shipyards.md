@@ -1,8 +1,19 @@
 # Stridsrapporter, bärgning och varv
 
-Ändring 2026-10-27: `stridsrapport-i-dialog` behåller sitt stabila namn men
-stridsrapporten visas nu genom [gemensamt händelseflöde](events-and-guidance.md),
-med Handle och Ignore i Events. Ignore fortsätter utan orderändringar.
+Ändring 2026-10-31: `stridsrapport-i-dialog` behåller sitt stabila namn men
+resultatet visas på stridskartan. Informationsrutan med Handle/Ignore efter
+strid tas bort. Året fortsätter automatiskt; rapport och slag sparas i Events.
+Se [taktisk strid](tactical-combat.md).
+
+`bargat-piratskepp-behaller-typ` — **Fullständigt implementerat**:
+nyförstörda pirater ger Space pirate-vrak. Reparation återställer samma
+skeppsidentitet och utrustning, piratens bild, skrov 2, rörelse 4 och Raider
+cannon; inga missiler tillkommer. Eget piratskepp har strategisk fart 1 och
+50 besättning och kan flyttas mellan flottor, delta i strid, Patrol och eskort.
+Ingen piratfabrik införs. Vanliga reparationskostnader gäller med samma baspris
+som Fighter och ett Weapons module. Detta ersätter tidigare omvandling av
+piratvrak till Fighters i `vrak-efter-strid` och `automatisk-vrakreparation`.
+Befintliga sparningar och redan sparade Fighter-vrak behålls utan rensning.
 
 Spelaren ska kunna läsa stridsresultat direkt, rädda vrak och återställa skepp i
 orbitala varv. Hemförda okända komponenter öppnar forskning utan vanliga förkunskaper.
@@ -26,19 +37,19 @@ Detta kompletterar `bargningsorder` med ett val från flottans orderrad.
 Dragning av vrak och Salvage with selected fleet behålls. Sparade spel
 bevaras och sparformatet ändras inte.
 
-| Krav                               | Status                     | Beteende                                                                                                                                    |
-| ---------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `stridsrapport-i-dialog`           | Fullständigt implementerat | Året pausar efter stridssteget med resultat, Handle och Continue.                                                                           |
-| `vrak-efter-strid`                 | Fullständigt implementerat | Förlorade skepp lämnar beständiga vrak med sin monterade utrustning. Besättning och last förloras. Piratvrak kan återställas till Fighters. |
-| `bargningsskepp`                   | Fullständigt implementerat | Salvage ship och dess egen fabrik forskas fram. Varje skepp kan bogsera ett vrak.                                                           |
-| `bargningsorder`                   | Fullständigt implementerat | Dra vrak till flottan eller använd Salvage with. Närmaste tilldelade vrak hämtas först, därefter närmaste egna varv.                        |
-| `bogsering-av-vrak`                | Fullständigt implementerat | Grundfart 5 utan släp och 1 med släp; vanlig Ion-bonus gäller. Stop och rörelseorder behåller släp. Release wreck lossar.                   |
-| `orbitalt-varv`                    | Fullständigt implementerat | Planetens anläggning med skyttlar och stationen i vald grannhex skapas tillsammans.                                                         |
-| `automatisk-vrakreparation`        | Fullständigt implementerat | Varvets separata kö reparerar ett skepp per år med nya personer och en tredjedel av hela skeppets råvarukostnad.                            |
-| `forstort-varv`                    | Fullständigt implementerat | Överlevande pirater förstör stationen; anläggningen finns kvar och vrak frigörs. Ersättningsstation beställs manuellt.                      |
-| `forskning-fran-bargade-delar`     | Fullständigt implementerat | Hemförda komponenter öppnar direkt forskning på motsvarande fabrik. Research station och vanlig forskning krävs fortfarande.                |
-| `upptackbara-vrak`                 | Fullständigt implementerat | Nya spel har två upptäckbara explorer-vrak med avancerade komponenter vid Nadir och Aster.                                                  |
-| `spara-bargning-och-stridsavbrott` | Fullständigt implementerat | Vrak, släp, varv, köer, fynd och stridsavbrott bevaras utan att äldre sparningar rensas.                                                    |
+| Krav                               | Status                     | Beteende                                                                                                                                       |
+| ---------------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `stridsrapport-i-dialog`           | Fullständigt implementerat | Resultat på stridskartan, automatisk fortsättning utan rapportdialog och beständig rapport i Events.                                           |
+| `vrak-efter-strid`                 | Fullständigt implementerat | Förlorade skepp lämnar beständiga vrak med sin monterade utrustning. Besättning och last förloras. Nya piratvrak återställs till Space pirate. |
+| `bargningsskepp`                   | Fullständigt implementerat | Salvage ship och dess egen fabrik forskas fram. Varje skepp kan bogsera ett vrak.                                                              |
+| `bargningsorder`                   | Fullständigt implementerat | Dra vrak till flottan eller använd Salvage with. Närmaste tilldelade vrak hämtas först, därefter närmaste egna varv.                           |
+| `bogsering-av-vrak`                | Fullständigt implementerat | Grundfart 5 utan släp och 1 med släp; vanlig Ion-bonus gäller. Stop och rörelseorder behåller släp. Release wreck lossar.                      |
+| `orbitalt-varv`                    | Fullständigt implementerat | Planetens anläggning med skyttlar och stationen i vald grannhex skapas tillsammans.                                                            |
+| `automatisk-vrakreparation`        | Fullständigt implementerat | Varvets separata kö reparerar ett skepp per år med nya personer och en tredjedel av hela skeppets råvarukostnad.                               |
+| `forstort-varv`                    | Fullständigt implementerat | Överlevande pirater förstör stationen; anläggningen finns kvar och vrak frigörs. Ersättningsstation beställs manuellt.                         |
+| `forskning-fran-bargade-delar`     | Fullständigt implementerat | Hemförda komponenter öppnar direkt forskning på motsvarande fabrik. Research station och vanlig forskning krävs fortfarande.                   |
+| `upptackbara-vrak`                 | Fullständigt implementerat | Nya spel har två upptäckbara explorer-vrak med avancerade komponenter vid Nadir och Aster.                                                     |
+| `spara-bargning-och-stridsavbrott` | Fullständigt implementerat | Vrak, släp, varv, köer, fynd och stridsavbrott bevaras utan att äldre sparningar rensas.                                                       |
 
 Detta utökar `flottstrid-per-hex`, `upptacktsavbrott`, `skeppstyper`,
 `forska-fram-fabriker`, `forskningsberoenden` och `sparat-spel`. Separata

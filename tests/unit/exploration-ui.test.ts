@@ -99,13 +99,19 @@ it('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / 
     if (restored.model.snapshot.tacticalBattle) {
       completeTacticalBattles(restored.model);
       restored.model.finishCameraFraming();
+      restored.emit({ type: 'open-map' });
       restored.view.render(restored.model.snapshot);
     }
   }
   expect(restored.model.snapshot.interruption?.battles).toHaveLength(1);
-  expect(root.querySelector('.event-announcement')?.textContent).toContain(
-    'versus Space pirate',
-  );
+  expect(
+    restored.model.snapshot.events.some((event) =>
+      event.text.includes('versus Space pirate'),
+    ),
+  ).toBe(true);
+  expect(
+    root.querySelector('.event-announcement')?.textContent ?? '',
+  ).not.toContain('Battle report');
   for (
     let attempt = 0;
     attempt < 30 && restored.model.snapshot.phase !== 'planning';

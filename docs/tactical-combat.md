@@ -4,7 +4,35 @@ Spelaren leder varje skepp i en turbaserad strid på en egen hexkarta.
 Vapen, manövrering, riktning, skydd och synliga D6-slag avgör utfallet.
 Alla flottor på samma Star map-hex deltar tillsammans.
 
-`skeppsval-startar-stridstur` — **Fullständigt implementerat**: under egen
+## Tydlig återkoppling och teststrid, 2026-10-31
+
+- `synligt-stridsresultat` — **Fullständigt implementerat**: senaste salvan visar
+  Hit eller Miss, skada, skytt, vapen, mål och återstående skrov eller destroyed
+  direkt på kartan. Även den sista salvan visas; Combat details behöver inte öppnas.
+- `synligt-stridsslut` — **Fullständigt implementerat**: Battle complete visar
+  Victory, Defeat eller Retreat complete samt egna förluster och flydda skepp
+  på stridskartan i 2,8 sekunder innan spelet fortsätter automatiskt.
+- `automatiskt-skeppsval-i-strid` — **Fullständigt implementerat**: när spelarens
+  sida får turen väljs och aktiveras ett tillgängligt eget skepp, beväpnade först.
+  En redan påbörjad sparad aktivering fortsätter utan nytt val eller nya slag.
+  Detta ersätter kravet på ett manuellt första val i `skeppsval-startar-stridstur`.
+  End ship turn behålls och varje skepp agerar fortsatt högst en gång per runda.
+- `synliga-fiendemanovrer` — **Fullständigt implementerat**: fiendens aktivering,
+  varje enskild sväng, hexsteg, salva och turavslut visas separat med paus mellan
+  stegen. Samma rörelseregler gäller båda sidor, även efter omladdning.
+- `fuskknapp-for-teststrid` — **Fullständigt implementerat**: Test battle (cheat)
+  i huvudmenyn öppnar en färdig strid med mål inom skotthåll. Den kan upprepas,
+  avslutas till menyn och ändrar inga sparplatser.
+- `stridsrapport-i-dialog` — **Fullständigt implementerat**, ändrat krav:
+  rapportens informationsruta och Handle/Ignore-val efter striden tas bort.
+  Resultatet visas på stridskartan och rapport med tärningslogg bevaras i Events.
+  Året fortsätter automatiskt när övriga upptäckter är hanterade. Detta ersätter
+  rapportdialogen i `gemensamt-handelseflode` och tidigare rapportval i detta krav.
+
+Sparformat och befintliga sparningar bevaras.
+
+`skeppsval-startar-stridstur` — **Fullständigt implementerat**, med automatiskt
+förstaval enligt `automatiskt-skeppsval-i-strid` ovan: under egen
 stridstur startar val av ett oanvänt eget skepp dess tur direkt, både på kartan
 och i Your ship. Ingen Activate ship-knapp visas. End ship turn avslutar
 skeppets tur. Ett valt skepp spelar klart före nästa val, och varje skepp får
@@ -48,7 +76,7 @@ Stridsregler och sparade riktningar bevaras.
 Efter ett gemensamt hexsteg börjar strid när egna skepp och pirater finns på
 samma galaxhex. Flottor som byter hex med varandra möts inte. Förstärkningar
 förenas efter striden. Möten på olika hexar hanteras ett i taget och året
-väntar tills striderna och deras rapporter är färdiga.
+väntar tills striderna och slutåterkopplingen är färdiga.
 
 Varje skepp är en egen pjäs på en hex. Båda sidor placerar i motsatta ändar.
 Spelaren väljer position och riktning eller använder Auto deploy. Fiendens

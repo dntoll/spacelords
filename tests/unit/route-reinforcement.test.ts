@@ -42,6 +42,7 @@ function setup() {
           'Exploration ship': 0,
           'Transport ship': 1,
           'Civilian shuttle': 0,
+          'Space pirate': 0,
           'Salvage ship': 0,
         },
       },

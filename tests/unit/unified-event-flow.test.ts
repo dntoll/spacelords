@@ -58,18 +58,20 @@ describe('gemensamt-handelseflode', () => {
         clear() {},
       });
       model.startSlot(1);
-      const event = model.snapshot.eventPlayback!.events.find(
-        (item) => item.decision?.title === 'Battle report',
+      const event = model.snapshot.events.find(
+        (item) => item.id === saved.simulation!.battles![0]!.eventId,
       )!;
-      const text = [event.text, ...event.decision!.details].join('\n');
+      const text = event.text;
       expect(text.match(/Lost /g)).toHaveLength(1);
       expect(text.match(/Survivors:/g)).toHaveLength(1);
       expect(event.text).toContain('civilian ships.');
-      expect(event.decision!.details[0]).toMatch(
-        /^HEX .+ · Home Fleet · \d+ hex remaining$/,
-      );
-      expect(event.decision!.details).toContain(
-        `${saved.simulation!.battles![0]!.wreckIds.length} wrecks remain in the hex.`,
+      expect(
+        model.snapshot.eventPlayback?.events.some(
+          (item) => item.decision?.title === 'Battle report',
+        ),
+      ).not.toBe(true);
+      expect(model.snapshot.wrecks.map((w) => w.id)).toEqual(
+        expect.arrayContaining([...saved.simulation!.battles![0]!.wreckIds]),
       );
       expect(model.snapshot.events).toEqual(saved.events);
     },
@@ -264,7 +266,7 @@ describe('gemensamt-handelseflode', () => {
     expect(restored.events).toHaveLength(checkpoint.events.length);
   });
 
-  it('order-under-upptacktsavbrott: focuses the battle location when the participating fleet was destroyed', async () => {
+  it('stridsrapport-i-dialog: continues without a report decision when the participating fleet was destroyed', async () => {
     const game = Game.restore(discoveryState(0));
     game.startTurn();
     while (!game.interruption?.battles?.length) {
@@ -277,19 +279,15 @@ describe('gemensamt-handelseflode', () => {
     }
     expect(game.fleet('fleet-home')?.position).toBeNull();
     const slot = session(game.exportState());
-    const { model, controller, emit } = slot.open();
+    const { model, controller } = slot.open();
     await vi.advanceTimersByTimeAsync(20000);
-    expect(model.snapshot.eventPlayback?.stage).toBe('awaiting-choice');
     expect(
-      model.snapshot.eventPlayback?.events[model.snapshot.eventPlayback.index]
-        ?.decision?.title,
-    ).toBe('Battle report');
-    emit({ type: 'handle-discoveries' });
-    await vi.advanceTimersByTimeAsync(450);
+      model.snapshot.eventPlayback?.events.some(
+        (event) => event.decision?.title === 'Battle report',
+      ),
+    ).not.toBe(true);
+    expect(model.snapshot.phase).toBe('planning');
     expect(model.snapshot.mapFleetId).toBeNull();
-    expect(model.snapshot.selected?.position).toEqual(
-      game.interruption.battles[0]!.position,
-    );
     expect(
       model.snapshot.fleets.find((fleet) => fleet.id === 'fleet-home')!
         .canIssueOrders,

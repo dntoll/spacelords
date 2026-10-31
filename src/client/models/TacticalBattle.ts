@@ -735,7 +735,7 @@ export class TacticalBattle {
   }
 
   /** Same public commands drive AI and tests; no hidden positions or privileged attacks. */
-  actAutomatically(): void {
+  actAutomatically(singleStep = false): void {
     if (this.#phase === 'deployment') {
       this.command({ type: 'auto-deploy' });
       this.command({ type: 'start' });
@@ -762,11 +762,14 @@ export class TacticalBattle {
     );
     const plan = candidates[0] ? this.#plan(candidates[0]) : null;
     if (!plan) throw new Error('No ship can activate.');
-    if (!this.#activation)
+    if (!this.#activation) {
       this.command({ type: 'activate', id: plan.id }, side);
+      if (singleStep) return;
+    }
     for (const action of plan.actions) {
       if (this.#phase !== 'fighting' || !this.#activation) return;
       this.command(action, side);
+      if (singleStep) return;
     }
     if (this.#activation) this.command({ type: 'end-activation' }, side);
   }

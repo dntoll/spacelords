@@ -193,7 +193,7 @@ describe('route-kartvy / delad-kartkamera', () => {
     const id = model.snapshot.tradeRoutes[0]!.id;
     emit({ type: 'assign-trade-fleet', routeId: id, fleetId: 'fleet-home' });
     expect(model.snapshot.notice).toContain(
-      'Assign a transport fleet to this route before adding Fighters',
+      'Assign a transport fleet to this route before adding escorts',
     );
     emit({ type: 'assign-trade-fleet', routeId: id, fleetId: 'freighters' });
     expect(model.snapshot.tradeRoutes[0]!.hasActiveTransport).toBe(true);

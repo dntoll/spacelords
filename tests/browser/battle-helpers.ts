@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import {
   TacticalBattle,
+  battleWeapons,
   type BattleCommand,
 } from '../../src/client/models/TacticalBattle.js';
 import type { SavedGame } from '../../src/client/models/SaveRepository.js';
@@ -18,8 +19,12 @@ export async function finishTacticalCombat(page: Page): Promise<void> {
     ).state.simulation?.tacticalBattles?.[0];
   const dialog = page.getByRole('dialog', { name: 'Tactical combat' });
   for (let activation = 0; activation < 200; activation++) {
+    await expect(dialog.locator('.battle-outcome')).toBeHidden();
     const state = await current();
-    if (!state) return;
+    if (!state) {
+      await expect(dialog).toHaveCount(0);
+      return;
+    }
     if (state.phase === 'deployment') {
       await dialog
         .getByRole('button', { name: 'Auto deploy', exact: true })
@@ -57,7 +62,7 @@ export async function finishTacticalCombat(page: Page): Promise<void> {
           (p) => p.side === 'player' && p.status === 'active' && !p.activated,
         )!);
     if (!state.activation) battle.command({ type: 'activate', id: piece.id });
-    if (piece.type === 'Fighter') battle.actAutomatically();
+    if (battleWeapons(piece.type).length) battle.actAutomatically();
     else battle.command({ type: 'end-activation' });
     for (const command of commands) {
       switch (command.type) {
