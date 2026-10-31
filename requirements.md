@@ -10,6 +10,12 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Taktisk strid:** Ny separat hexkarta med alla deltagande skepp,
+  utplacering, växelvisa aktiveringar, eldbågar, skydd, öppna D6-slag och
+  skeppsvis reträtt är **Delvis implementerat**. Integration, mobilflöde
+  och sparkompatibilitet återstår att verifiera. Detta ersätter den fasta
+  förlustformeln i `flottstrid-per-hex`. Se [taktisk strid](docs/tactical-combat.md).
+
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,
   korta instruktioner, färre upprepningar i Production, mindre New fleet-ruta,
   villkorad ! Needs attention vid titeln och kompakt forskningsvy är
