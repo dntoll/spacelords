@@ -10,6 +10,14 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Vrakplacering och destinationspilar:** `vrak-utanfor-stjarnor`,
+  `destinationspilar-endast-i-flottvyn` och `ruttflottor-utan-destinationspilar`
+  är **Fullständigt implementerat**. Nya startvrak ligger på närmaste
+  framkomliga hex vid sin stjärna. Star map visar inga destinationspilar;
+  Fleets visar dem för flottor utan Route. Route-flottor visar aldrig
+  destinationspilar. Befintliga sparningar bevaras. Se
+  [produktkraven](docs/product-requirements.md) och [bärgning](docs/salvage-shipyards.md).
+
 - **Kartans prestanda:** `responsiv-stjarnkarta` och `rumsligt-kartindex` är
   **Fullständigt implementerat**. Panorering och zoom återanvänder speldata
   och uppdaterar bara kamerabundna vyer. Kartan väljer innehåll genom ett
@@ -264,7 +272,9 @@ Se [hela visionen](docs/game-vision.md).
   `destinationer-for-aktiva-skepp` och `geografisk-arsuppspelning` är
   **Fullständigt implementerat**. Synliga farledsskepp och Civilian shuttles
   animeras först tillsammans med alla deras färder i samma stillastående vy.
-  Bara flottor i aktuellt rörelsesteg visar destination. Därefter visas övriga
+  Destinationspilar begränsas nu till Fleets och flottor utan Route enligt
+  `destinationspilar-endast-i-flottvyn` och `ruttflottor-utan-destinationspilar`.
+  Under uppspelning kan bara aktuellt rörelsesteg visa pilar där. Därefter visas övriga
   färder och sedan händelser från vänster till höger, vid samma horisontella
   läge nerifrån och upp. Avbrott och sparad kronologi behålls.
   Se [Events](docs/events-and-guidance.md).

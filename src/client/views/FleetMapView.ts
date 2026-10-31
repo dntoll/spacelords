@@ -28,6 +28,7 @@ export function renderMapFleets(
   pirateIds: readonly string[] = [],
   movementPoints: ReadonlyMap<string, Point> = new Map(),
   shipImages: ReadonlyMap<ShipSpriteType, p5.Image> = new Map(),
+  showDestinationArrows = true,
 ): void {
   const markers = FleetMapLayout.markers(fleets, routeView ?? [], zoom).map(
     (marker) => ({
@@ -54,6 +55,8 @@ export function renderMapFleets(
       }
       continue;
     }
+    // ruttflottor-utan-destinationspilar / destinationspilar-endast-i-flottvyn
+    if (fleet.routeId || !showDestinationArrows) continue;
     const target = destinationFor(fleet);
     if (!target) continue;
     const destination = HexGeometry.toPoint(target);

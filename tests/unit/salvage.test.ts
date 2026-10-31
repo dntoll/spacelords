@@ -494,6 +494,66 @@ describe('orbitalt-varv / forstort-varv / bargningsskepp', () => {
 });
 
 describe('spara-bargning-och-stridsavbrott / upptackbara-vrak', () => {
+  it('vrak-utanfor-stjarnor: seeds distinct derelicts on the nearest passable map hexes', () => {
+    const original = Game.restore(salvageState()).galaxy;
+    const occupied = new Set(
+      original.systems.flatMap((system) => [
+        system.star.position.key,
+        ...system.planets.map((planet) => planet.position.key),
+      ]),
+    );
+    const nadir = original.systems.find(
+      (system) => system.star.id === 'nadir',
+    )!.star;
+    const blocked = nadir.position
+      .neighbors()
+      .filter(
+        (position) =>
+          original.contains(position) && !occupied.has(position.key),
+      );
+    const obstructed = new Galaxy(
+      original.player,
+      original.systems,
+      original.radius,
+      blocked.map((position) => ({
+        position,
+        type: 'dense-asteroids' as const,
+      })),
+    );
+    for (const galaxy of [original, obstructed]) {
+      const wrecks = new Game(galaxy)
+        .exportState()
+        .salvage!.wrecks.map((wreck) => ({
+          ...wreck,
+          position: new HexCoordinate(wreck.position.q, wreck.position.r),
+        }));
+      expect(wrecks).toHaveLength(2);
+      expect(new Set(wrecks.map((wreck) => wreck.position.key)).size).toBe(2);
+      for (const wreck of wrecks) {
+        expect(galaxy.isPassable(wreck.position)).toBe(true);
+        const star = galaxy.systems.find((system) =>
+          wreck.id.includes(system.star.id),
+        )!.star;
+        const nearest = Math.min(
+          ...HexCoordinate.disk(galaxy.radius)
+            .filter((position) => galaxy.isPassable(position))
+            .map((position) => position.distanceTo(star.position)),
+        );
+        expect(wreck.position.distanceTo(star.position)).toBe(nearest);
+      }
+    }
+  });
+  it('vrak-utanfor-stjarnor: preserves existing saved wreck positions and equipment', () => {
+    const state = salvageState();
+    const star = Game.restore(state).galaxy.systems[0]!.star;
+    state.salvage.wrecks[0]!.position = new HexCoordinate(
+      star.position.q,
+      star.position.r,
+    );
+    expect(Game.restore(state).exportState().salvage!.wrecks).toEqual(
+      JSON.parse(JSON.stringify(state.salvage.wrecks)),
+    );
+  });
   it('seeds no derelicts outside a smaller galaxy without those systems', () => {
     const galaxy = Game.restore(salvageState()).galaxy;
     const game = new Game(new Galaxy(galaxy.player, [galaxy.systems[0]!], 3));

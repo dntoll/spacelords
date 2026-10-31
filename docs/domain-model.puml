@@ -513,6 +513,11 @@ class BattleReport {
 }
 Fleet "0..1" <-- "0..*" Wreck : tows with Salvage ships
 Wreck "1" *-- "1" ShipUnit : retains installed equipment
+note right of Wreck
+  vrak-utanfor-stjarnor:
+  Startvrak placeras på närmaste framkomliga hex vid sin stjärna.
+  Befintliga sparade vraks positioner behålls.
+end note
 Shipyard "1" --> "1" Building : planetary facility and shuttles
 Shipyard "1" --> "1" Planet : resources and fresh crew
 Shipyard "1" o-- "0..*" Wreck : ordered repair queue

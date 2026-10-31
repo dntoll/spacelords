@@ -68,5 +68,6 @@ export function renderMapOverlays(
     (model.pirates ?? []).map((pirate) => pirate.id),
     movementPoints,
     shipImages,
+    model.screen === 'fleets',
   );
 }

@@ -2,7 +2,7 @@ import type { Cost, ShipType, ShipUnit } from './Game.js';
 import { HexCoordinate } from './HexCoordinate.js';
 import type { Component } from './Economy.js';
 import { engineCount as requiredEngines } from './ShipEquipment.js';
-import type { Star } from './Galaxy.js';
+import type { Galaxy } from './Galaxy.js';
 
 export interface Wreck {
   readonly id: string;
@@ -59,14 +59,31 @@ export class Salvage {
   readonly yards: Shipyard[] = [];
   readonly orders: SalvageOrder[] = [];
 
-  static seed(stars: readonly Star[]): Salvage {
+  static seed(galaxy: Galaxy): Salvage {
     const salvage = new Salvage();
+    const positions = HexCoordinate.disk(galaxy.radius).filter((position) =>
+      galaxy.isPassable(position),
+    );
     for (const [name, level, ion] of [
       ['nadir', 2, 0],
       ['aster', 3, 2],
     ] as const) {
-      const star = stars.find((star) => star.id === name);
+      const star = galaxy.systems.find(
+        (system) => system.star.id === name,
+      )?.star;
       if (!star) continue;
+      // vrak-utanfor-stjarnor: derelicts must be reachable by salvage fleets.
+      const position = positions
+        .toSorted(
+          (a, b) => a.distanceTo(star.position) - b.distanceTo(star.position),
+        )
+        .find(
+          (position) =>
+            !salvage.wrecks.some(
+              (wreck) => wreck.position.key === position.key,
+            ),
+        );
+      if (!position) continue;
       salvage.addWreck(
         `wreck-${name}-explorer`,
         {
@@ -75,7 +92,7 @@ export class Salvage {
           telescope: level,
           engines: { 'Rocket engine': 2 - ion, 'Ion pulse engine': ion },
         },
-        star.position,
+        position,
         false,
       );
     }

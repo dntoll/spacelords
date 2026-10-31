@@ -781,7 +781,7 @@ export class Game {
 
   constructor(readonly galaxy: Galaxy) {
     this.#navigation = new HexNavigation(galaxy);
-    this.#salvage = Salvage.seed(galaxy.systems.map((system) => system.star));
+    this.#salvage = Salvage.seed(galaxy);
     this.#pirates = PirateFleet.seed(galaxy);
     for (const planet of galaxy.systems.flatMap((system) => system.planets)) {
       if (planet.colony?.ownerId === galaxy.player.id)

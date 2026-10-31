@@ -76,6 +76,7 @@ it('destinationer-for-aktiva-skepp: hides idle fleet arrows during movement and 
     const { sketch } = drawing();
     renderMapOverlays(sketch as unknown as p5, {
       ...model,
+      screen: 'fleets',
       fleets: [first, second],
       pirates: [],
       turnMovement: moving ? move : null,
@@ -86,6 +87,66 @@ it('destinationer-for-aktiva-skepp: hides idle fleet arrows during movement and 
     });
     expect(sketch.line).toHaveBeenCalledTimes(moving ? 1 : 0);
   }
+});
+
+describe('destinationspilar-endast-i-flottvyn', () => {
+  it.each(['map', 'fleets'] as const)(
+    'shows destination arrows only in Fleets, including selection and drag previews (%s)',
+    (screen) => {
+      const ship = fleet('moving');
+      const model = new AppModel().snapshot;
+      for (const dragging of [false, true]) {
+        const { sketch } = drawing();
+        renderMapOverlays(sketch as unknown as p5, {
+          ...model,
+          screen,
+          fleets: [ship],
+          pirates: [],
+          mapFleetId: ship.id,
+          fleetDragging: dragging,
+          fleetDestinationPreview: new HexCoordinate(-2, 0),
+        });
+        expect(sketch.line).toHaveBeenCalledTimes(screen === 'fleets' ? 1 : 0);
+        expect(sketch.triangle).toHaveBeenCalledTimes(
+          screen === 'fleets' ? 2 : 1,
+        );
+        expect(ship.destination!.key).toBe('2,0');
+      }
+    },
+  );
+});
+
+describe('ruttflottor-utan-destinationspilar', () => {
+  it.each(['map', 'fleets', 'route'] as const)(
+    'omits route fleet arrows during planning, movement and event playback (%s)',
+    (screen) => {
+      const ship = { ...fleet('transport'), routeId: 'route-test' };
+      const move = {
+        fleetId: ship.id,
+        from: ship.position!,
+        to: ship.destination!,
+      };
+      for (const stage of ['planning', 'movement', 'events']) {
+        const { sketch } = drawing();
+        renderMapOverlays({ ...sketch, rect: vi.fn() } as unknown as p5, {
+          ...new AppModel().snapshot,
+          screen,
+          fleets: [ship],
+          pirates: [],
+          ownedPlanets: [],
+          tradeRoutes: [],
+          turnMovement: stage === 'movement' ? move : null,
+          turnMovements: stage === 'movement' ? [move] : [],
+          eventPlayback:
+            stage === 'events'
+              ? { round: 1, events: [], index: 0, stage: 'announcing' }
+              : null,
+        });
+        expect(sketch.line).not.toHaveBeenCalled();
+        expect(sketch.triangle).toHaveBeenCalledTimes(1);
+      }
+    },
+  );
 });
 
 describe('kartflottor', () => {

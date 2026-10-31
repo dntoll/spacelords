@@ -130,10 +130,12 @@ händelsetexter bevaras.
   färder ryms, även deras svängar, och står sedan stilla. En flotta som når
   slutet av sin färd stannar medan de andra fortsätter. Kravet är
   **Fullständigt implementerat**.
-- `destinationer-for-aktiva-skepp`: under årets presentation visas bara
-  destinationer för flottorna som rör sig i det aktuella steget. Stillastående
-  flottors destinationspilar döljs, även under händelseannonseringen. Under
-  planering visas destinationer som tidigare. Kravet är
+- `destinationer-for-aktiva-skepp`: under årets presentation kan bara
+  flottorna som rör sig i det aktuella steget visa destinationspilar.
+  Pilar visas endast i Fleets för flottor utan Route, även under planering,
+  enligt `destinationspilar-endast-i-flottvyn` och
+  `ruttflottor-utan-destinationspilar`. Star map visar inga destinationspilar.
+  Stillastående flottors pilar döljs under uppspelning och händelseannonsering. Kravet är
   **Fullständigt implementerat**.
 - `geografisk-arsuppspelning`: efter den samtidiga farledstrafiken visas
   övriga färder från vänster till höger utifrån startplatsen. Vid samma

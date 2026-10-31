@@ -1,5 +1,11 @@
 # Stridsrapporter, bärgning och varv
 
+`vrak-utanfor-stjarnor` — **Fullständigt implementerat**. Nya startvrak
+placeras på skilda, närmaste framkomliga hexar vid Nadir och Aster.
+Stjärnor, täta asteroidfält och platser utanför kartan undviks.
+Detta ersätter placeringen i själva stjärnhexen i `upptackbara-vrak`.
+Befintliga sparade vraks positioner, utrustning och order bevaras.
+
 Ändring 2026-10-31: `stridsrapport-i-dialog` behåller sitt stabila namn men
 resultatet visas på stridskartan. Informationsrutan med Handle/Ignore efter
 strid tas bort. Året fortsätter automatiskt; rapport och slag sparas i Events.
