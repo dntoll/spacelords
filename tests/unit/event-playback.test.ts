@@ -21,6 +21,28 @@ import { renderMapEvent } from '../../src/client/views/MapEventView.js';
 
 afterEach(() => vi.useRealTimers());
 
+it('geografisk-arsuppspelning: sorts located events west to east and south to north, retaining ties and global event order', () => {
+  const events = [
+    { id: 'global-a', round: 2, text: 'Research' },
+    { id: 'east', round: 2, text: 'East', position: { q: 4, r: 0 } },
+    { id: 'north', round: 2, text: 'North', position: { q: 0, r: -2 } },
+    { id: 'south-a', round: 2, text: 'South A', position: { q: -2, r: 2 } },
+    { id: 'south-b', round: 2, text: 'South B', position: { q: -2, r: 2 } },
+    { id: 'global-b', round: 2, text: 'Legacy' },
+  ];
+  const original = [...events];
+  const playback = new EventPlayback(2, events);
+  expect(playback.snapshot.events.map((event) => event.id)).toEqual([
+    'south-a',
+    'south-b',
+    'north',
+    'east',
+    'global-a',
+    'global-b',
+  ]);
+  expect(events).toEqual(original);
+});
+
 it.each([0, 1])(
   'handelsemarkering-utan-numrering: retains the location rings without an Event label or label background (index %s)',
   (index) => {
@@ -64,7 +86,7 @@ it.each([0, 1])(
       ...model,
       eventPlayback: playback.snapshot,
     });
-    const position = index ? new HexCoordinate(0, 1) : new HexCoordinate(1, 0);
+    const position = index ? new HexCoordinate(1, 0) : new HexCoordinate(0, 1);
     const point = HexGeometry.toPoint(position);
     expect(sketch.translate).toHaveBeenCalledWith(point.x, point.y);
     expect(sketch.circle.mock.calls).toEqual([
@@ -353,9 +375,11 @@ describe('handelser-pa-kartan', () => {
     expect(model.snapshot.camera).toEqual(before);
     expect(model.snapshot.eventPlayback?.stage).toBe('framing');
     model.finishCameraFraming();
-    expect(model.snapshot.camera.center.x).toBe(
-      HexGeometry.toPoint(new HexCoordinate(3, 0)).x,
+    const event = model.snapshot.eventPlayback!.events[0]!;
+    const point = HexGeometry.toPoint(
+      new HexCoordinate(event.position!.q, event.position!.r),
     );
+    expect(model.snapshot.camera.center.x).toBeCloseTo(point.x);
     expect(model.snapshot.camera.zoom).toBe(1);
     model.finishEventPlayback();
     expect(model.snapshot.camera).toEqual(before);

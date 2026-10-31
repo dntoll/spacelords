@@ -896,28 +896,26 @@ export class AppController {
       if (this.#model.snapshot.phase !== 'interrupted')
         this.#model.finishTurn();
       this.#model.save();
-      const tracks = movementPlayback.tracks;
-      if (tracks.length) {
+      const batches = movementPlayback.batches;
+      if (batches.length) {
         this.#model.beginMovementPlayback(movementPlayback, origin);
-        for (const track of tracks) {
-          this.#model.focusTurnMovement(track[0]!);
-          this.#model.frameTurnTrack(track);
+        for (const batch of batches) {
+          this.#model.focusTurnMovement(batch.map((track) => track[0]!));
+          this.#model.frameTurnTrack(batch.flat());
           this.#render();
           await this.#animateCamera();
           if (this.#disposed) return;
-          for (const movement of track) {
-            this.#model.focusTurnMovement(movement);
+          const steps = Math.max(...batch.map((track) => track.length));
+          for (let index = 0; index < steps; index++) {
+            const movements = batch.flatMap((track) =>
+              track[index] ? [track[index]!] : [],
+            );
+            this.#model.focusTurnMovement(movements);
             this.#render();
-            await (this.#view.animateTurnStep?.(
-              { movements: [movement] },
-              (progress) => {
-                if (
-                  !this.#disposed &&
-                  this.#model.advanceTurnMovement(progress)
-                )
-                  this.#render();
-              },
-            ) ?? Promise.resolve());
+            await (this.#view.animateTurnStep?.({ movements }, (progress) => {
+              if (!this.#disposed && this.#model.advanceTurnMovement(progress))
+                this.#render();
+            }) ?? Promise.resolve());
             if (this.#disposed) return;
             this.#model.completeTurnMovement();
           }

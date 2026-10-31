@@ -82,7 +82,7 @@ händelsetexter bevaras.
 
 - `gemensamt-handelseflode`: upptäckter och piratkontakter
   använder samma kartmarkering, textruta och förflyttning till Events som andra
-  händelser. De visas en i taget i verklig händelseordning, med Handle och Ignore
+  händelser. De visas en i taget i geografisk presentationsordning, med Handle och Ignore
   samt HEX, berörd flotta, återstående rörelse och relevanta strids- och
   vrakuppgifter. Endast information spelaren redan får se visas.
   Året pausas vid samma tillfällen som tidigare. Rutan väntar tills spelaren
@@ -118,13 +118,32 @@ händelsetexter bevaras.
   och destinationsval i samtliga kartlägen. Informationspanelen lämnar egen
   plats för knappen och kan rullas utan att täcka den. Events kan fortfarande
   användas vid kartval enligt `gemensam-events-panel`. Beslutsvarningen behålls.
-- `sekventiella-arshandelser`: nya händelser visas en i taget i verklig
-  ordning fram till varje avbrott och efter årets slut. End turn är synlig men spärrad under simulering och
+- `sekventiella-arshandelser`: nya händelser visas en i taget enligt
+  `geografisk-arsuppspelning` fram till varje avbrott och efter årets slut. End turn är synlig men spärrad under simulering och
   presentation. Inga nya order utförs medan presentationen pågår.
   Upptäckts- och stridsavbrott behålls före årets avslut.
-- `en-flotta-i-taget`: varje synlig flottmarkör följer hela sin färd innan
-  nästa flottmarkör animeras. Kameran följer den rörliga flottan. Spelets
+- `en-flotta-i-taget`: utanför farledstrafiken följer varje synlig flottmarkör
+  hela sin färd innan nästa flottmarkör animeras. Kameran står stilla under färden. Spelets
   förflyttning, strider och upptäckter behåller sina befintliga regler.
+- `samtidig-farledsanimation`: synliga flottor på Route och Civilian shuttles
+  animeras först tillsammans. Kameran zoomar ut vid behov så samtliga visade
+  färder ryms, även deras svängar, och står sedan stilla. En flotta som når
+  slutet av sin färd stannar medan de andra fortsätter. Kravet är
+  **Fullständigt implementerat**.
+- `destinationer-for-aktiva-skepp`: under årets presentation visas bara
+  destinationer för flottorna som rör sig i det aktuella steget. Stillastående
+  flottors destinationspilar döljs, även under händelseannonseringen. Under
+  planering visas destinationer som tidigare. Kravet är
+  **Fullständigt implementerat**.
+- `geografisk-arsuppspelning`: efter den samtidiga farledstrafiken visas
+  övriga färder från vänster till höger utifrån startplatsen. Vid samma
+  horisontella läge visas den nedre först. Därefter annonseras platsbundna
+  händelser i samma geografiska ordning; händelser på samma plats behåller
+  sin inbördes ordning. Globala och äldre positionslösa händelser visas sist
+  i sin ursprungliga ordning, utan kameraflytt. Varje avbrott avslutar den
+  aktuella gruppen innan nästa del av året simuleras. Sparad händelsekronologi,
+  spelregler och tidigare kartläges återställning behålls. Kravet är
+  **Fullständigt implementerat**.
 - `osynliga-flottor-utan-animation`: dolda flottors rörelser animeras inte,
   flyttar inte kameran och ger ingen animationsväntan. En fientlig
   förflyttning visas bara när flottan syns vid båda ändarna av steget.
@@ -145,6 +164,13 @@ händelsetexter bevaras.
   rullning därefter. Tidigare vy, giltiga objektval och kamera återställs när
   presentationen är klar. Det gäller även Research,
   Decisions och planetvyn. Händelser avslöjar ingen dold information.
+
+Ändring 2026-10-31: `samtidig-farledsanimation` ersätter `en-flotta-i-taget`
+för farledstrafiken. `geografisk-arsuppspelning` ersätter kravet på verklig
+presentationsordning i `sekventiella-arshandelser` och
+`gemensamt-handelseflode`. Sparad kronologi i `senaste-aret-i-events` behålls.
+`destinationer-for-aktiva-skepp` begränsar `kartflottor` under uppspelningen.
+Detta är en uttrycklig ändring av tidigare presentationskrav.
 
 Ändring 2026-10-27: `gemensamt-handelseflode` ersätter den separata
 upptäckts- och stridsdialogen, gruppvalet för flera samtidiga upptäckter och

@@ -1038,6 +1038,32 @@ kartmarkering, kontroller, rullning och omladdning i Chromium och WebKit.
 
 ## Seriell flottpresentation och händelseannonsering
 
+### Gemensam farledspresentation och geografisk ordning 2026-10-31
+
+`samtidig-farledsanimation`, `destinationer-for-aktiva-skepp` och
+`geografisk-arsuppspelning` är **Fullständigt implementerat**.
+TurnMovementPlayback grupperar Route-flottor och Civilian shuttles i en
+gemensam första grupp. Övriga flottspår sorteras efter sin första synliga
+världsposition: stigande x, sedan fallande y. EventPlayback använder samma
+ordning för platsbundna händelser och lägger positionslösa sist, med stabil
+ordning för lika positioner. Simulering och sparad logg sorteras aldrig om;
+upptäckts- och stridsavbrott delar fortfarande upp presentationen.
+
+Controller ramar in gruppens alla synliga ändpunkter före första steget och
+animerar ett steg per kvarvarande spår samtidigt. Kortare spår stannar när
+de är klara. AppModel lämnar frysta turnMovements till vyerna; sikt uppdateras
+gemensamt när markörerna passerar hexkanten. GalaxyMapView interpolerar alla
+aktuella markörer med samma klocka. Destinationspilar begränsas till dessa
+flottor och döljs under händelser. Kameran förblir stilla under gruppens färd;
+befintlig storleksanpassning och minskad rörelse återanvänds.
+
+Detta ersätter den seriella presentationen nedan för farledstrafik och tidigare
+krav på kronologisk annonsering. Domänmodell och sparformat ändras inte.
+Kravkopplade regressionstester skyddar samtidighet, geografisk ordning,
+destinationspilar, mobil inramning, sikt och kameraåterställning.
+
+### Tidigare seriell presentation
+
 `en-flotta-i-taget`, `osynliga-flottor-utan-animation` och
 `handelseannonsering` är **Fullständigt implementerat**.
 TurnMovementPlayback samlar synliga förflyttningssteg fram till nästa

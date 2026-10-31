@@ -40,7 +40,7 @@ export class GalaxyMapView implements MapPort {
   readonly #artwork = new MapArtwork();
   #descriptionScreen: AppReadModel['screen'] | null = null;
   #movement: {
-    movement: TurnFrame['movements'][number];
+    movements: TurnFrame['movements'];
     progress: number;
   } | null = null;
   #movementFrame = 0;
@@ -118,8 +118,13 @@ export class GalaxyMapView implements MapPort {
 
   render(model: AppReadModel): void {
     if (
-      this.#movement?.movement.fleetId !== model.turnMovement?.fleetId ||
-      this.#movement?.movement.to.key !== model.turnMovement?.to.key
+      this.#movement &&
+      (this.#movement.movements.length !== model.turnMovements.length ||
+        this.#movement.movements.some(
+          (movement, index) =>
+            movement.fleetId !== model.turnMovements[index]?.fleetId ||
+            movement.to.key !== model.turnMovements[index]?.to.key,
+        ))
     )
       this.#movement = null;
     if (this.#viewport?.cells !== model.cells)
@@ -145,10 +150,9 @@ export class GalaxyMapView implements MapPort {
     frame: TurnFrame,
     onProgress?: (progress: number) => void,
   ): Promise<void> {
-    const movement = frame.movements[0];
     if (
       this.#disposed ||
-      !movement ||
+      !frame.movements.length ||
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
       onProgress?.(1);
@@ -165,7 +169,7 @@ export class GalaxyMapView implements MapPort {
         if (this.#ready) {
           started ??= now;
           const progress = Math.min(1, (now - started) / 400);
-          this.#movement = { movement, progress };
+          this.#movement = { movements: frame.movements, progress };
           onProgress?.(progress);
           this.#requestDraw();
           if (progress === 1) {
@@ -195,24 +199,29 @@ export class GalaxyMapView implements MapPort {
     const movementPoints = new Map<string, Point>();
     const model = original;
     if (this.#movement) {
-      const { movement, progress } = this.#movement;
-      const from = HexGeometry.toPoint(movement.from),
-        to = HexGeometry.toPoint(movement.to);
-      const center = {
-        x: from.x + (to.x - from.x) * progress,
-        y: from.y + (to.y - from.y) * progress,
-      };
-      const marker = FleetMapLayout.markers(
+      const { movements, progress } = this.#movement;
+      const markers = FleetMapLayout.markers(
         [...original.fleets, ...original.pirates.map(pirateAsFleet)],
         [],
         original.camera.zoom,
-      ).find((candidate) => candidate.fleet.id === movement.fleetId);
-      if (marker) {
-        const anchor = HexGeometry.toPoint(marker.fleet.position!);
-        movementPoints.set(movement.fleetId, {
-          x: center.x + marker.point.x - anchor.x,
-          y: center.y + marker.point.y - anchor.y,
-        });
+      );
+      for (const movement of movements) {
+        const from = HexGeometry.toPoint(movement.from),
+          to = HexGeometry.toPoint(movement.to);
+        const center = {
+          x: from.x + (to.x - from.x) * progress,
+          y: from.y + (to.y - from.y) * progress,
+        };
+        const marker = markers.find(
+          (candidate) => candidate.fleet.id === movement.fleetId,
+        );
+        if (marker) {
+          const anchor = HexGeometry.toPoint(marker.fleet.position!);
+          movementPoints.set(movement.fleetId, {
+            x: center.x + marker.point.x - anchor.x,
+            y: center.y + marker.point.y - anchor.y,
+          });
+        }
       }
       // stillastaende-kamera-vid-forflyttning: only the ship marker moves.
     }
@@ -221,10 +230,14 @@ export class GalaxyMapView implements MapPort {
       this.#canvas.dataset.cameraY = String(model.camera.center.y);
       this.#canvas.dataset.cameraZoom = String(model.camera.zoom);
       if (this.#movement) {
-        this.#canvas.dataset.movingFleet = this.#movement.movement.fleetId;
+        this.#canvas.dataset.movingFleet = this.#movement.movements[0]!.fleetId;
+        this.#canvas.dataset.movingFleets = JSON.stringify(
+          this.#movement.movements.map((movement) => movement.fleetId),
+        );
         this.#canvas.dataset.movingProgress = String(this.#movement.progress);
       } else {
         delete this.#canvas.dataset.movingFleet;
+        delete this.#canvas.dataset.movingFleets;
         delete this.#canvas.dataset.movingProgress;
       }
     }

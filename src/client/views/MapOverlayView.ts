@@ -49,7 +49,13 @@ export function renderMapOverlays(
   // kartflottor: colony badges must not hide selectable fleet markers.
   renderMapFleets(
     sketch,
-    [...model.fleets, ...(model.pirates ?? []).map(pirateAsFleet)],
+    [...model.fleets, ...(model.pirates ?? []).map(pirateAsFleet)].map(
+      (fleet) =>
+        (model.turnMovement || model.eventPlayback) &&
+        !model.turnMovements.some((movement) => movement.fleetId === fleet.id)
+          ? { ...fleet, destination: null }
+          : fleet,
+    ),
     model.camera.zoom,
     model,
     model.screen === 'fleets',

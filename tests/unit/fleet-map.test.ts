@@ -63,6 +63,31 @@ function drawing() {
   };
 }
 
+it('destinationer-for-aktiva-skepp: hides idle fleet arrows during movement and all arrows during event playback', () => {
+  const first = fleet('moving'),
+    second = fleet('idle');
+  const model = new AppModel().snapshot;
+  const move = {
+    fleetId: first.id,
+    from: first.position!,
+    to: first.destination!,
+  };
+  for (const moving of [true, false]) {
+    const { sketch } = drawing();
+    renderMapOverlays(sketch as unknown as p5, {
+      ...model,
+      fleets: [first, second],
+      pirates: [],
+      turnMovement: moving ? move : null,
+      turnMovements: moving ? [move] : [],
+      eventPlayback: moving
+        ? null
+        : { round: 1, events: [], index: 0, stage: 'announcing' },
+    });
+    expect(sketch.line).toHaveBeenCalledTimes(moving ? 1 : 0);
+  }
+});
+
 describe('kartflottor', () => {
   it('skeppssprites-pa-kartan: uses each type once, shared hit geometry and progressively simpler sprites', () => {
     const mixed = {

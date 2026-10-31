@@ -1,4 +1,5 @@
 import type { GameEvent } from './Game.js';
+import { comparePlaybackPositions } from './PlaybackOrder.js';
 
 export interface EventDecision {
   readonly title: string;
@@ -32,7 +33,9 @@ export class EventPlayback {
     readonly history: readonly GameEvent[] = [],
   ) {
     this.#events = Object.freeze(
-      events.filter((event) => event.round === round),
+      events
+        .filter((event) => event.round === round)
+        .sort((a, b) => comparePlaybackPositions(a.position, b.position)),
     );
     this.history = Object.freeze([...history]);
     this.#stage = this.current?.decision ? 'awaiting-choice' : 'announcing';

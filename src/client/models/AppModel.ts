@@ -121,6 +121,7 @@ export interface AppReadModel {
   readonly tacticalBattle: BattleState | null;
   readonly battleFeedback: BattleState | null;
   readonly turnMovement: TurnMovement | null;
+  readonly turnMovements: readonly TurnMovement[];
   readonly eventPlayback: EventPlaybackSnapshot | null;
   readonly presentedEventIds: readonly string[];
   readonly wrecks: readonly WreckSnapshot[];
@@ -423,6 +424,7 @@ export class AppModel {
         screen: 'map',
         phase: 'simulating',
         turnMovement: this.#movementPlayback.current,
+        turnMovements: this.#movementPlayback.currents,
         camera: this.#eventCamera!.snapshot,
         selected: null,
         mapFleetId: this.#movementPlayback.current?.fleetId ?? null,
@@ -441,6 +443,7 @@ export class AppModel {
         : [];
     return Object.freeze({
       turnMovement: null,
+      turnMovements: Object.freeze([]),
       tacticalBattle:
         this.#testBattle?.visibleSnapshot ?? this.#game.tacticalBattle,
       battleFeedback: this.#battleFeedback,
@@ -2164,7 +2167,7 @@ export class AppModel {
     this.#prepareCameraFraming();
   }
 
-  focusTurnMovement(movement: TurnMovement): void {
+  focusTurnMovement(movement: TurnMovement | readonly TurnMovement[]): void {
     this.#movementPlayback!.begin(movement);
   }
 

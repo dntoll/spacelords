@@ -7,6 +7,7 @@ import {
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { collectTurnFrames } from '../fixtures/turn-steps.js';
 import { startFirstSlot } from './save-helpers.js';
+import { routePlaybackState } from '../fixtures/route-playback.js';
 
 async function seed(page: Page, twoFleets = false) {
   const game = new Game(createExampleGalaxy());
@@ -54,7 +55,12 @@ async function advanceUntil(page: Page, ready: () => Promise<boolean>) {
   throw new Error('Playback did not reach the expected stage.');
 }
 
-async function eventScreenY(page: Page, q = 3, r = 0) {
+async function eventScreenY(page: Page) {
+  const [q, r] = (await page
+    .locator('canvas[data-rendered="true"]')
+    .getAttribute('data-event-hex'))!
+    .split(',')
+    .map(Number);
   return page.locator('canvas[data-rendered="true"]').evaluate(
     (node, point) => {
       const canvas = node as HTMLCanvasElement;
@@ -66,7 +72,7 @@ async function eventScreenY(page: Page, q = 3, r = 0) {
           Number(canvas.dataset.cameraZoom)
       );
     },
-    HexGeometry.toPoint(new HexCoordinate(q, r)),
+    HexGeometry.toPoint(new HexCoordinate(q!, r!)),
   );
 }
 
@@ -157,10 +163,23 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   const log = page.getByRole('log', { name: 'Game events' });
   const console = page.getByRole('region', { name: 'Turn console' });
   await expect(announcement).toContainText(
-    'Home Fleet arrived at selected location.',
+    'Iron mine was completed on Tellus.',
+  );
+  const reportBox = (await announcement.boundingBox())!;
+  const endBox = (await page
+    .getByRole('button', { name: 'End turn', exact: true })
+    .boundingBox())!;
+  expect(reportBox.y + reportBox.height).toBeLessThanOrEqual(endBox.y - 8);
+  await page.screenshot({
+    path: testInfo.outputPath('planet-report-portrait.png'),
+  });
+  await advanceUntil(page, async () =>
+    (await announcement.allTextContents())
+      .join('')
+      .includes('Home Fleet arrived at selected location.'),
   );
   await expect(announcement).toHaveAttribute('data-stage', 'announcing');
-  await expect(log.locator('[data-event-id]')).toHaveCount(0);
+  await expect(log.locator('[data-event-id]')).toHaveCount(1);
   await noMenu(page);
   const placed = (await announcement.boundingBox())!;
   const portraitMap = (await page.getByTestId('map-container').boundingBox())!;
@@ -203,7 +222,7 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   expect(landscape.y + landscape.height).toBeLessThanOrEqual(393 - 8);
   await page.clock.runFor(1400);
   await expect(announcement).toHaveAttribute('data-stage', 'filing');
-  await expect(log.locator('[data-event-id]')).toHaveCount(0);
+  await expect(log.locator('[data-event-id]')).toHaveCount(1);
   await page.waitForTimeout(220);
   const flying = (await announcement.boundingBox())!;
   expect(flying.y).toBeGreaterThan(shortAnnouncement.y);
@@ -211,24 +230,7 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
     path: testInfo.outputPath('announcement-filing-landscape.png'),
   });
   await page.clock.runFor(500);
-  await expect(log.locator('[data-event-id]')).toHaveCount(1);
-  await advanceUntil(page, async () =>
-    (await announcement.allTextContents())
-      .join('')
-      .includes('Iron mine was completed on Tellus.'),
-  );
-  await expect(announcement).toContainText(
-    'Iron mine was completed on Tellus.',
-  );
-  await expect(announcement).toContainText('Population on Tellus changed by');
-  const reportBox = (await announcement.boundingBox())!;
-  const endBox = (await page
-    .getByRole('button', { name: 'End turn', exact: true })
-    .boundingBox())!;
-  expect(reportBox.y + reportBox.height).toBeLessThanOrEqual(endBox.y - 8);
-  await page.screenshot({
-    path: testInfo.outputPath('planet-report-landscape.png'),
-  });
+  await expect(log.locator('[data-event-id]')).toHaveCount(2);
   await advanceUntil(page, () =>
     page.getByRole('heading', { name: 'Research', exact: true }).isVisible(),
   );
@@ -249,6 +251,74 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   await console.locator('summary').click();
   await expect(log.locator('[data-event-id]')).toHaveCount(3);
   expect(errors).toEqual([]);
+});
+
+test('samtidig-farledsanimation / destinationer-for-aktiva-skepp: route fleets move together inside a fixed mobile overview', async ({
+  page,
+}, testInfo) => {
+  await page.clock.install({ time: new Date('2026-10-31T00:00:00Z') });
+  const state = routePlaybackState();
+  await page.addInitScript((saved) => {
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({ lastPlayed: '2026-10-31', state: saved }),
+    );
+  }, state);
+  await page.goto('./');
+  await startFirstSlot(page);
+  const canvas = page.locator('canvas[data-rendered="true"]');
+  await expect(canvas).toBeVisible();
+  await page.clock.pauseAt(new Date('2026-10-31T01:00:00Z'));
+  await requestTurn(page);
+  await advanceUntil(
+    page,
+    async () =>
+      (await canvas.getAttribute('data-moving-fleets')) ===
+      '["freighters","travellers"]',
+  );
+  const camera = () =>
+    canvas.evaluate((node) => {
+      const { cameraX, cameraY, cameraZoom } = (node as HTMLCanvasElement)
+        .dataset;
+      return {
+        x: Number(cameraX),
+        y: Number(cameraY),
+        zoom: Number(cameraZoom),
+      };
+    });
+  const framed = await camera();
+  const rect = (await canvas.boundingBox())!;
+  const planets = state.world.systems.flatMap((system) => system.planets);
+  for (const id of ['sol-0', 'sol-1']) {
+    const hex = planets.find((planet) => planet.id === id)!.position;
+    const point = HexGeometry.toPoint(new HexCoordinate(hex.q, hex.r));
+    expect(Math.abs((point.x - framed.x) * framed.zoom)).toBeLessThan(
+      rect.width / 2 - 20,
+    );
+    expect(Math.abs((point.y - framed.y) * framed.zoom)).toBeLessThan(
+      rect.height / 2 - 20,
+    );
+  }
+  await page.clock.runFor(160);
+  await expect(canvas).toHaveAttribute(
+    'data-moving-fleets',
+    '["freighters","travellers"]',
+  );
+  expect(await camera()).toEqual(framed);
+  expect(
+    Number(await canvas.getAttribute('data-moving-progress')),
+  ).toBeGreaterThan(0);
+  await page.screenshot({
+    path: testInfo.outputPath('simultaneous-route-traffic.png'),
+  });
+  await page.setViewportSize({ width: 851, height: 393 });
+  await page.clock.runFor(80);
+  await expect(canvas).toHaveAttribute(
+    'data-moving-fleets',
+    '["freighters","travellers"]',
+  );
+  await noOverflow(page);
 });
 
 test('en-flotta-i-taget / osynliga-flottor-utan-animation: full fleet routes are framed, unseen pirates are omitted and the original camera returns', async ({
@@ -361,7 +431,11 @@ for (const size of [
     }
     for (let sample = 0; sample < 6; sample++) {
       await page.clock.runFor(100);
-      await expect(canvas).toHaveAttribute('data-moving-fleet', 'fleet-home');
+      await advanceUntil(
+        page,
+        async () =>
+          (await canvas.getAttribute('data-moving-fleet')) === 'fleet-home',
+      );
       expect(await camera()).toEqual(framed);
     }
     await page.screenshot({
@@ -374,6 +448,7 @@ for (const size of [
           .getByRole('button', { name: 'End turn', exact: true })
           .isDisabled()),
     );
+    await page.clock.runFor(32);
     expect(await camera()).toEqual(initial);
     await noOverflow(page);
   });

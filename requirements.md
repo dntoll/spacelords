@@ -253,11 +253,21 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Flottanimation och händelseannonser:** `en-flotta-i-taget`,
   `osynliga-flottor-utan-animation` och `handelseannonsering` är
-  **Fullständigt implementerat**. En flottas synliga färd visas åt gången.
+  **Fullständigt implementerat**. Farledstrafik visas samtidigt enligt
+  `samtidig-farledsanimation`; övriga flottors synliga färder visas en åt gången.
   Dolda rörelser ger ingen animation eller väntan. Platsbundna händelser
   annonseras under den markerade platsen och globala händelser centralt;
   texten flyttas sedan till listan automatiskt. Pause/Play, Next och Skip är
   borttagna på uttrycklig beställning. Se [Events](docs/events-and-guidance.md).
+
+- **Lugnare årspresentation:** `samtidig-farledsanimation`,
+  `destinationer-for-aktiva-skepp` och `geografisk-arsuppspelning` är
+  **Fullständigt implementerat**. Synliga farledsskepp och Civilian shuttles
+  animeras först tillsammans med alla deras färder i samma stillastående vy.
+  Bara flottor i aktuellt rörelsesteg visar destination. Därefter visas övriga
+  färder och sedan händelser från vänster till höger, vid samma horisontella
+  läge nerifrån och upp. Avbrott och sparad kronologi behålls.
+  Se [Events](docs/events-and-guidance.md).
 
 - **Händelsekamera:** `handelseanpassad-kartkamera` och
   `stillastaende-kamera-vid-forflyttning` är **Fullständigt implementerat**.
