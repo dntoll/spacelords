@@ -65,6 +65,7 @@ class BuildingSite {
   domePrepared
 }
 class PlanetEnvironment {
+  currentType: Temperate at habitability 100
   habitability
   breathable: habitability >= 80
   populationCapacity
@@ -81,6 +82,11 @@ BuildingSite "1" o-- "0..1" DomePreparation
 TerraformingFactory --|> Building
 DomePreparation --> Technology
 TerraformingFactory --> Technology
+note right of TerraformingFactory
+  fardig-terraformning-till-temperate:
+  Vid 100% blir stenplaneten Temperate.
+  Fabriker avvecklas och köade sådana avbeställs.
+end note
 class Technology {
   researched
 }

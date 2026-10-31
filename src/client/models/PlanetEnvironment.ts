@@ -1,4 +1,4 @@
-import type { Planet } from './Planet.js';
+import type { Planet, PlanetEnvironmentType } from './Planet.js';
 
 /** habitability-kapacitet: physical potential is fixed; usable capacity develops. */
 export class PlanetEnvironment {
@@ -13,6 +13,12 @@ export class PlanetEnvironment {
     )
       throw new RangeError('Habitability must be between 0 and 100.');
     Object.freeze(this);
+  }
+
+  // fardig-terraformning-till-temperate: saved habitability defines the current type.
+  get type(): PlanetEnvironmentType | 'Gas' {
+    if (this.planet.type === 'gas') return 'Gas';
+    return this.habitability === 100 ? 'Temperate' : this.planet.environment;
   }
 
   get breathable(): boolean {

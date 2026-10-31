@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { Game } from '../../src/client/models/Game.js';
+import { Game, type GameState } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { selectMapObject } from './map-helpers.js';
 import { chooseResearch, endTurn, startFirstSlot } from './save-helpers.js';
 
-function initialState() {
+function initialState(): GameState {
   const state = new Game(createExampleGalaxy()).exportState();
   const home = state.colonies[0]![1];
   home.buildings = [
@@ -32,6 +32,78 @@ function initialState() {
     ],
   };
 }
+
+test('fardig-terraformning-till-temperate: changes the planet portrait, frees the site and persists after reload', async ({
+  page,
+}, testInfo) => {
+  const state = initialState();
+  const colony = state.colonies.find(([id]) => id === 'sol-1')![1];
+  colony.habitability = 95;
+  colony.buildings = [
+    {
+      id: 'terraformer',
+      type: 'Desert terraforming factory',
+      slotIndex: 0,
+      demolition: false,
+    },
+  ];
+  await page.addInitScript((state) => {
+    if (localStorage.getItem('terraforming-completion-seeded')) return;
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({ lastPlayed: '2026-10-31T10:00:00Z', state }),
+    );
+    localStorage.setItem('terraforming-completion-seeded', 'yes');
+  }, state);
+  await page.goto('./');
+  await startFirstSlot(page);
+  const openColony = async () => {
+    await page.getByRole('button', { name: 'Star map', exact: true }).click();
+    await selectMapObject(page, 'Vesta');
+    await page
+      .getByRole('button', { name: 'Open planet', exact: true })
+      .click();
+  };
+  await openColony();
+  await expect(page.locator('.planet-stats')).toContainText('Desert');
+  await expect(page.locator('.planet-art-large img')).toHaveAttribute(
+    'src',
+    /desert-planet/,
+  );
+  await page.getByRole('button', { name: 'Star map', exact: true }).click();
+  await endTurn(page);
+  await openColony();
+  await expect(page.locator('.planet-stats')).toContainText('Temperate');
+  await expect(page.locator('.planet-stats')).toContainText('100%');
+  await expect(page.locator('.planet-art-large img')).toHaveAttribute(
+    'src',
+    /temperate-planet/,
+  );
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
+  const site = page.getByRole('article', {
+    name: 'Building site 1',
+    exact: true,
+  });
+  await expect(
+    site.getByRole('button', { name: 'Build building at site 1', exact: true }),
+  ).toBeEnabled();
+  await expect(site).not.toContainText('Desert terraforming factory');
+  await page.screenshot({
+    path: testInfo.outputPath('completed-terraforming.png'),
+    fullPage: true,
+  });
+  await page.reload();
+  await startFirstSlot(page);
+  await openColony();
+  await expect(page.locator('.planet-stats')).toContainText('Temperate');
+  await expect(page.locator('.planet-art-large img')).toHaveAttribute(
+    'src',
+    /temperate-planet/,
+  );
+});
 
 test('planettypsforskning / domes-per-byggplats / terraformning / andningsbar-atmosfar: discovers, researches and develops a colony', async ({
   page,

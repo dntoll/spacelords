@@ -671,6 +671,18 @@ väntan och fel, sparning och hela produktionskedjan. Snabbsviten behåller
 
 ## Terraforming och engångsrensning
 
+- `fardig-terraformning-till-temperate` — **Fullständigt implementerat**:
+  PlanetEnvironment härleder aktuell planettyp från befintligt sparad
+  habitability: stenplaneter vid 100% är Temperate. Grundtypen i galaxen
+  bevarar tidigare upptäckta forskningskedjor och Dome-förberedelser.
+  Game använder aktuell typ för byggvalidering och alla bilders snapshots,
+  ogiltigförklarar kartcachen vid färdigställande och avvecklar fabriker samt
+  köade terraformingfabriker före årsproduktionen. Befintlig logistikstädning
+  släpper reservationer för avbeställda projekt. Sparformat och version är
+  oförändrade; inga sparplatser rensas. Modelltester och mobiltest under samma
+  kravnamn skyddar färdigställande, material, övriga byggnader, bildval,
+  kartcache och omladdning.
+
 - `engangsreset-terraformning` — **Fullständigt implementerat**: efter uttryckligt
   användarbeslut 2026-10-24 töms de tre befintliga testsparplatserna en gång.
   Markören `spacelords.terraforming-v5-reset` förhindrar upprepad rensning.

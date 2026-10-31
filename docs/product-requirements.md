@@ -544,6 +544,13 @@ med pekytor på minst 44 pixlar i höjd.
 
 Se [Terraforming och Domes](terraforming.md) för sammanhängande spelregler.
 
+`fardig-terraformning-till-temperate` — **Fullständigt implementerat**:
+vid 100% habitability blir stenplaneten `Temperate` som Tellus och får samma
+planetbild. Terraformingfabriker försvinner automatiskt och köade sådana
+fabriker avbeställs, vilket frigör platser och arbetare. Övriga byggnader och
+material bevaras. Detta ersätter den tidigare regeln i `terraformning` om
+oförändrad grundtyp och bestående fabriker när omformningen är klar.
+
 | Krav                     | Status                     | Beskrivning                                                                                                                                                                  |
 | ------------------------ | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `planettypsforskning`    | Fullständigt implementerat | Ice, Desert, Ocean och Toxic har varsin Dome-teknik följd av en terraformingteknik. Båda visas när en planet av typen blir synlig.                                           |

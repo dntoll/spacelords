@@ -1268,6 +1268,11 @@ export class Game {
       new Set(this.#colonies.keys()),
       this.#visible,
       this.#knownTerrain,
+      new Map(
+        this.galaxy.systems
+          .flatMap((system) => system.planets)
+          .map((planet) => [planet.id, this.#environment(planet).type]),
+      ),
     );
     return this.#mapCells;
   }
@@ -1289,7 +1294,7 @@ export class Game {
     return planet
       ? Object.freeze({
           name: planet.name,
-          environment: planet.type === 'gas' ? 'Gas' : planet.environment,
+          environment: this.#environment(planet).type,
           habitability:
             this.#colonies.get(planet.id)?.habitability ?? planet.habitability,
         })
@@ -1357,7 +1362,7 @@ export class Game {
       detectionRange: Detection.planetRange(state.buildings),
       name: planet.name,
       population: state.population,
-      environment: planet.type === 'gas' ? 'Gas' : planet.environment,
+      environment: environment.type,
       breathable: environment.breathable,
       populationCapacity: environment.populationCapacity,
       potentialBuildSlots: planet.buildSlots,
@@ -1420,7 +1425,7 @@ export class Game {
                 (!BUILDINGS[type as BuildType].environment ||
                   (planet.type === 'solid' &&
                     BUILDINGS[type as BuildType].environment ===
-                      planet.environment)),
+                      environment.type)),
             ),
           ] as BuildType[]
         ).map((type) =>
@@ -2510,7 +2515,7 @@ export class Game {
     const environment = this.#environment(planet, state);
     if (
       definition.environment &&
-      (planet.type !== 'solid' || definition.environment !== planet.environment)
+      (planet.type !== 'solid' || definition.environment !== environment.type)
     )
       return 'This building requires a matching solid planet type.';
     const slot = slotIndex ?? this.#emptySlot(planet, state, type);
@@ -4101,27 +4106,46 @@ export class Game {
           (total, b) => total + BUILDINGS[b.type].workers,
           0,
         ) <= state.population;
+      const previousEnvironment = this.#environment(planet, state);
       const improvement =
         planet.type === 'solid' && staffed
           ? state.buildings.reduce(
               (total, b) =>
                 total +
-                (BUILDINGS[b.type].environment === planet.environment
+                (BUILDINGS[b.type].environment === previousEnvironment.type
                   ? (BUILDINGS[b.type].terraforming ?? 0)
                   : 0),
               0,
             )
           : 0;
-      const previousHabitability = this.#environment(
-        planet,
-        state,
-      ).habitability;
+      const previousHabitability = previousEnvironment.habitability;
       state.habitability = Math.min(100, previousHabitability + improvement);
       if (state.habitability !== previousHabitability)
         this.#planetEvent(
           `Habitability on ${planet.name} increased to ${state.habitability}%.`,
           planet,
         );
+      // fardig-terraformning-till-temperate: retire completed infrastructure before production.
+      if (planet.type === 'solid' && state.habitability === 100) {
+        const isTerraformer = (type: ProjectType) =>
+          !!BUILDINGS[type as BuildType]?.terraforming;
+        const obsolete =
+          state.buildings.some((building) => isTerraformer(building.type)) ||
+          state.projects.some((project) => isTerraformer(project.type));
+        if (previousEnvironment.type !== 'Temperate' || obsolete) {
+          state.buildings = state.buildings.filter(
+            (building) => !isTerraformer(building.type),
+          );
+          state.projects = state.projects.filter(
+            (project) => !isTerraformer(project.type),
+          );
+          this.#mapCells = null;
+          this.#planetEvent(
+            `Terraforming completed on ${planet.name}: now Temperate. Terraforming factories were removed.`,
+            planet,
+          );
+        }
+      }
       const { blocks } = this.#allocation(planet, state);
       const active = state.projects.slice(0, 1);
       for (const project of active) {
@@ -5988,10 +6012,13 @@ export class Game {
       number += 1;
     return `Fleet ${number}`;
   }
-  #environment(planet: Planet, state: ColonyState): PlanetEnvironment {
+  #environment(
+    planet: Planet,
+    state = this.#colonies.get(planet.id),
+  ): PlanetEnvironment {
     return new PlanetEnvironment(
       planet,
-      state.habitability ?? planet.habitability,
+      state?.habitability ?? planet.habitability,
     );
   }
   #domeType(planet: Planet): BuildType | null {

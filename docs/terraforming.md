@@ -1,9 +1,10 @@
 # Terraforming och Domes
 
 Reglerna hör till `terraformning`, `planettypsforskning`,
-`domes-per-byggplats`, `andningsbar-atmosfar` och `habitability-kapacitet`.
+`domes-per-byggplats`, `andningsbar-atmosfar`, `habitability-kapacitet`
+och `fardig-terraformning-till-temperate`.
 
-Stenplaneter har en fast grundtyp: `Temperate`, `Ice`, `Desert`, `Ocean`
+Stenplaneter börjar som `Temperate`, `Ice`, `Desert`, `Ocean`
 eller `Toxic`. Gasplaneter kan inte terraformeras. Tellus är `Temperate` med
 100% habitability. Övriga stenplaneter i exempelvärlden täcker alla fyra specialtyperna.
 
@@ -41,7 +42,26 @@ Befintliga bemanningsregler gäller: om planetens byggnader tillsammans saknar
 arbetare arbetar inte terraformingfabrikerna.
 
 Rivning sker före årets terraforming. En ny fabrik börjar arbeta året efter
-färdigställandet. Förbättringen består efter rivning och grundtypen ändras inte.
+färdigställandet. Förbättringen består efter rivning.
+
+## Färdig terraforming
+
+`fardig-terraformning-till-temperate` — **Fullständigt implementerat**:
+vid 100% habitability blir stenplaneten `Temperate`, samma planettyp som
+Tellus. Planetbilden ändras i planetvyn, kartan och kartans planetinformation.
+Alla terraformingfabriker tas automatiskt bort; platser och arbetare frigörs.
+Köade terraformingfabriker avbeställs innan material förbrukas. Övriga byggnader,
+material och befintliga Domes behålls. Nya terraformingfabriker erbjuds inte.
+Färdigställandet ingår i planetens samlade årsbesked.
+
+Sparade spel bevaras. En redan färdig planet visas som `Temperate` vid
+omladdning; kvarvarande fabriker och köade terraformingfabriker tas bort vid
+nästa årsskifte. Ingen ny rensning av sparplatser görs.
+
+Detta ersätter efter användarens uttryckliga ändring 2026-10-31 den tidigare
+delen av `terraformning` där grundtypen bestod och fabriker behölls vid 100%.
+
+## Befolkningskapacitet
 
 Befolkningstaket på stenplaneter är heltalsdelen av 20 000 gånger
 habitability/100, men minst 1 000. Årets förbättrade habitability används

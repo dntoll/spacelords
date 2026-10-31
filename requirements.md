@@ -10,6 +10,14 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Färdig terraforming:** `fardig-terraformning-till-temperate` är
+  **Fullständigt implementerat**. Vid 100% habitability blir stenplaneten
+  `Temperate` som Tellus och får samma planetbild. Terraformingfabriker
+  tas bort och köade sådana fabriker avbeställs. Platser och arbetare frigörs.
+  Äldre sparningar bevaras. Detta ersätter den tidigare regeln i
+  `terraformning` om bestående grundtyp och fabriker vid 100%.
+  Se [Terraforming och Domes](docs/terraforming.md).
+
 - **Orders och startorder:** `egen-ordervy`, `ruttval-for-order`,
   `flottval-pa-orderkarta`, `skeppsanpassade-specialorder`,
   `patrullcentrum-vid-order` och `startorder-for-nybyggda-skepp` är

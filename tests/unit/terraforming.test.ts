@@ -9,6 +9,7 @@ import {
 } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { BrowserSaveRepository } from '../../src/client/storage/BrowserSaveRepository.js';
+import type { TerraformEnvironment } from '../../src/client/models/Planet.js';
 
 function setup(habitability = 25, environment = 'Desert', potential = 6) {
   const state = new Game(createExampleGalaxy()).exportState();
@@ -43,6 +44,147 @@ function turn(game: Game) {
   for (const frame of turnFrames(game)) game.applyFrame(frame);
   game.finishTurn();
 }
+
+describe('fardig-terraformning-till-temperate', () => {
+  function prepared(habitability: number, environment: TerraformEnvironment) {
+    const { game } = setup(habitability, environment);
+    const state = game.exportState();
+    return Game.restore({
+      ...state,
+      researched: [
+        `${environment} dome`,
+        `${environment} terraforming factory`,
+      ],
+      colonies: state.colonies.map(([id, colony]) => [
+        id,
+        {
+          ...colony,
+          domes: [0],
+          buildings: [
+            {
+              id: 'terraformer',
+              type: `${environment} terraforming factory`,
+              slotIndex: 0,
+              demolition: false,
+            },
+            { id: 'mine', type: 'Iron mine', slotIndex: 1, demolition: false },
+          ],
+        },
+      ]),
+    });
+  }
+
+  it.each(['Ice', 'Desert', 'Ocean', 'Toxic'] as const)(
+    'converts %s at full habitability, releases factories and updates cached artwork inputs and saved games',
+    (environment) => {
+      const game = prepared(95, environment);
+      const planet = game.galaxy.homePlanet;
+      const mapPlanet = () =>
+        game
+          .mapSnapshot()
+          .find((cell) => cell.position.key === planet.position.key)!.object;
+      expect(mapPlanet()!.environment).toBe(environment);
+      turn(game);
+      const snapshot = game.planetSnapshot(planet)!;
+      expect(snapshot).toMatchObject({
+        environment: 'Temperate',
+        habitability: 100,
+        populationCapacity: 20_000,
+        buildSlots: 6,
+      });
+      expect(snapshot.buildings.map((building) => building.id)).toEqual([
+        'mine',
+      ]);
+      expect(snapshot.sites[0]!.building).toBeNull();
+      expect(snapshot.sites[0]!.hasDome).toBe(true);
+      expect(
+        snapshot.buildOptions.some(
+          (option) => option.type === `${environment} terraforming factory`,
+        ),
+      ).toBe(false);
+      expect(
+        game.canBuild(
+          planet,
+          `${environment} terraforming factory` as BuildType,
+          0,
+        ),
+      ).toContain('matching solid planet type');
+      expect(game.canBuild(planet, 'Research station', 0)).toBeNull();
+      expect(mapPlanet()!.environment).toBe('Temperate');
+      expect(game.planetKnowledge(planet.position)!.environment).toBe(
+        'Temperate',
+      );
+      expect(
+        game.events.filter((event) => event.planetId === planet.id).at(-1)!
+          .text,
+      ).toContain('Terraforming');
+      const restored = Game.restore(game.exportState());
+      expect(restored.planetSnapshot(restored.galaxy.homePlanet)).toEqual(
+        snapshot,
+      );
+      expect(restored.planetKnowledge(planet.position)!.environment).toBe(
+        'Temperate',
+      );
+      turn(restored);
+      expect(
+        restored.planetSnapshot(restored.galaxy.homePlanet)!.environment,
+      ).toBe('Temperate');
+      expect(restored.events.at(-1)!.text).not.toContain('Terraforming');
+    },
+  );
+
+  it('cleans up factories and obsolete construction in existing completed colonies without consuming their materials', () => {
+    const initial = prepared(100, 'Desert');
+    const state = initial.exportState();
+    const game = Game.restore({
+      ...state,
+      colonies: state.colonies.map(([id, colony]) => [
+        id,
+        {
+          ...colony,
+          buildings: [
+            ...colony.buildings,
+            {
+              id: 'second',
+              type: 'Desert terraforming factory',
+              slotIndex: 2,
+              demolition: false,
+            },
+          ],
+          projects: [
+            {
+              id: 'obsolete',
+              type: 'Desert terraforming factory',
+              slotIndex: 3,
+              factoryId: null,
+              destinationFleetId: null,
+            },
+          ],
+        },
+      ]),
+    });
+    const before = game.planetSnapshot(game.galaxy.homePlanet)!.economy.stock;
+    turn(game);
+    const after = game.planetSnapshot(game.galaxy.homePlanet)!;
+    expect(after.buildings.map((building) => building.id)).toEqual(['mine']);
+    expect(after.projects).toEqual([]);
+    expect(after.economy.stock.Water).toBe(before.Water);
+    expect(after.economy.stock.Oil).toBe(before.Oil);
+    expect(after.environment).toBe('Temperate');
+  });
+
+  it('keeps the original type and factory while terraforming remains unfinished', () => {
+    const game = prepared(85, 'Desert');
+    turn(game);
+    expect(game.planetSnapshot(game.galaxy.homePlanet)).toMatchObject({
+      environment: 'Desert',
+      habitability: 90,
+    });
+    expect(game.planetSnapshot(game.galaxy.homePlanet)!.buildings).toHaveLength(
+      2,
+    );
+  });
+});
 
 describe('befolkningsutveckling / gastvanlighet / habitability-kapacitet / andningsbar-atmosfar', () => {
   it.each([
