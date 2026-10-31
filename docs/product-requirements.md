@@ -693,13 +693,22 @@ Detta ersätter den överkantnära placeringen på stora skärmar i
 
 `grupperade-transporthandelser` är **Fullständigt implementerat**: en
 transportflottas ankomst och hela leverans visas i ett besked med flottans
-namn, planet och summerade materialmängder. Olika flottor får egna besked.
+namn, planet och summerade materialmängder. Alla flottors leveranser till
+samma planet ingår i planetens gemensamma årsbesked.
 En tom ankomst ger fortsatt ett ankomstbesked.
 
 `ett-meddelande-per-skeppsbygge` är **Fullständigt implementerat**: ett
-färdigbyggt skepp ger ett produktionsbesked med skeppstyp och planet.
+färdigbyggt skepp omnämns en gång med skeppstyp och planet i årsbeskedet.
 Kraven förtydligar `handelser` och ersätter tidigare separata besked för
 samma leverans respektive dubbla besked för samma skeppsbygge.
+
+`grupperade-planethandelser` är **Fullständigt implementerat**: anlänt
+material, färdig produktion, Population och ändrad Habitability samlas i
+ett meddelande per planet och år, både på kartan och i Events. Flottornas
+namn och materialmängder finns kvar. Även rivningar, fabriksuppgraderingar
+och väntande produktion ingår. Population visas även vid +0. Planeter och år
+hålls isär. Detta ersätter separata leverans- och produktionsbesked i
+kraven ovan från 2026-10-31.
 
 `sikt-under-forflyttning` är **Fullständigt implementerat**: synfältet följer
 skeppets position även under rörelsen. Synliga rutor och pirater uppdateras

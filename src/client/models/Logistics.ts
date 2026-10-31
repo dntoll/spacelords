@@ -88,7 +88,7 @@ export interface LogisticsPort {
     to: HexCoordinate,
   ): number;
   id(prefix: string): string;
-  event(message: string, position?: HexCoordinate): void;
+  event(message: string, position?: HexCoordinate, planetId?: string): void;
   projectExists(id: string): boolean;
 }
 export interface TradeRouteSnapshot {
@@ -707,6 +707,7 @@ export class Logistics {
         port.event(
           `${fleet.name ?? fleet.id} arrived at ${target.name} and delivered ${summary}.`,
           target.position,
+          target.id,
         );
       }
       if (fleet.releaseRequested) this.release(fleet);

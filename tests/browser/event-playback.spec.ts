@@ -220,6 +220,15 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   await expect(announcement).toContainText(
     'Iron mine was completed on Tellus.',
   );
+  await expect(announcement).toContainText('Population on Tellus changed by');
+  const reportBox = (await announcement.boundingBox())!;
+  const endBox = (await page
+    .getByRole('button', { name: 'End turn', exact: true })
+    .boundingBox())!;
+  expect(reportBox.y + reportBox.height).toBeLessThanOrEqual(endBox.y - 8);
+  await page.screenshot({
+    path: testInfo.outputPath('planet-report-landscape.png'),
+  });
   await advanceUntil(page, () =>
     page.getByRole('heading', { name: 'Research', exact: true }).isVisible(),
   );
@@ -228,7 +237,7 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
     page.getByRole('heading', { name: 'Research', exact: true }),
   ).toBeVisible();
   await console.locator('summary').click();
-  await expect(log.locator('[data-event-id]')).toHaveCount(4);
+  await expect(log.locator('[data-event-id]')).toHaveCount(3);
   await expect(log).not.toContainText('Year 1');
   await expect(log).toContainText('Year 2');
   await noOverflow(page);
@@ -238,7 +247,7 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   await expect(announcement).toHaveCount(0);
   await page.getByRole('button', { name: 'Decisions', exact: true }).click();
   await console.locator('summary').click();
-  await expect(log.locator('[data-event-id]')).toHaveCount(4);
+  await expect(log.locator('[data-event-id]')).toHaveCount(3);
   expect(errors).toEqual([]);
 });
 

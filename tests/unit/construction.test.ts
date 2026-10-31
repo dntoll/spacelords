@@ -161,10 +161,14 @@ describe('gemensam-planetko / fabrikskoer / skepp-i-byggko', () => {
       game.finishTurn();
       expect(game.fleet('fleet-home')!.ships[ship]).toBe(before + 1);
       const events = game.events.filter(
-        (event) => event.round === year && event.text.startsWith(`${ship} `),
+        (event) =>
+          event.round === year && event.text.includes(`${ship} was produced`),
       );
       expect(events).toHaveLength(1);
-      expect(events[0]!.text).toBe(`${ship} was produced at ${planet.name}.`);
+      expect(
+        events[0]!.text.split(`${ship} was produced at ${planet.name}.`),
+      ).toHaveLength(2);
+      expect(events[0]!.text).toContain(`Population on ${planet.name}`);
       expect(events[0]!.position).toEqual(planet.position);
     },
   );

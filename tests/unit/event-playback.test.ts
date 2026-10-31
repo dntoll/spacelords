@@ -194,8 +194,7 @@ describe('sekventiella-arshandelser', () => {
     await vi.advanceTimersByTimeAsync(449);
     expect(model.snapshot.eventPlayback?.index).toBe(0);
     await vi.advanceTimersByTimeAsync(1);
-    expect(model.snapshot.eventPlayback?.index).toBe(1);
-    await vi.advanceTimersByTimeAsync(1850);
+    // grupperade-planethandelser: construction and population file together.
     expect(model.snapshot.eventPlayback).toBeNull();
     expect(model.snapshot.screen).toBe('research');
     expect(model.snapshot.events).toEqual(history);

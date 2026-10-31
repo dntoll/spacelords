@@ -589,6 +589,7 @@ export interface FleetSnapshot {
   readonly crew: number;
 }
 export interface GameEvent {
+  readonly planetId?: string;
   readonly combatLog?: readonly string[];
   readonly id: string;
   readonly round: number;
@@ -3576,9 +3577,9 @@ export class Game {
     for (const planet of this.#ownedPlanets()) {
       const state = this.#state(planet);
       for (const building of state.buildings.filter((b) => b.demolition))
-        this.#event(
+        this.#planetEvent(
           `${building.type} was demolished on ${planet.name}.`,
-          planet.position,
+          planet,
         );
       state.buildings = state.buildings.filter((b) => !b.demolition);
       for (const yard of [...this.#salvage.yards].filter(
@@ -3611,18 +3612,18 @@ export class Game {
       ).habitability;
       state.habitability = Math.min(100, previousHabitability + improvement);
       if (state.habitability !== previousHabitability)
-        this.#event(
+        this.#planetEvent(
           `Habitability on ${planet.name} increased to ${state.habitability}%.`,
-          planet.position,
+          planet,
         );
       const { blocks } = this.#allocation(planet, state);
       const active = state.projects.slice(0, 1);
       for (const project of active) {
         const blocked = blocks.get(project.id);
         if (blocked)
-          this.#event(
+          this.#planetEvent(
             `${project.type} is waiting on ${planet.name}: ${blocked}`,
-            planet.position,
+            planet,
           );
         else {
           const cost = this.#projectCost(planet, project);
@@ -3646,9 +3647,9 @@ export class Game {
         ),
       );
       state.population += growth;
-      this.#event(
+      this.#planetEvent(
         `Population on ${planet.name} changed by +${growth}.`,
-        planet.position,
+        planet,
       );
     }
     const researched = this.#research.advance(researchStations);
@@ -3664,9 +3665,9 @@ export class Game {
       )!;
       const previous = building.type;
       building.type = project.type as BuildType;
-      this.#event(
+      this.#planetEvent(
         `${previous} was upgraded to ${project.type} on ${planet.name}.`,
-        planet.position,
+        planet,
       );
       return;
     }
@@ -3676,22 +3677,16 @@ export class Game {
         project.factoryId!,
         project.stationPosition!,
       );
-      this.#event(
-        `Orbital shipyard rebuilt at ${planet.name}.`,
-        new HexCoordinate(
-          project.stationPosition!.q,
-          project.stationPosition!.r,
-        ),
-      );
+      this.#planetEvent(`Orbital shipyard rebuilt at ${planet.name}.`, planet);
       return;
     }
     const d = projectDefinition(project.type);
     if (d.sitePreparation) {
       state.domes ??= [];
       state.domes.push(project.slotIndex!);
-      this.#event(
+      this.#planetEvent(
         `${project.type} was completed at site ${project.slotIndex! + 1} on ${planet.name}.`,
-        planet.position,
+        planet,
       );
     } else if (d.permanent) {
       const buildingId = this.#id('building');
@@ -3703,16 +3698,16 @@ export class Game {
       });
       if (project.type === 'Orbital shipyard')
         this.#createShipyard(planet, buildingId, project.stationPosition!);
-      this.#event(
+      this.#planetEvent(
         `${project.type} was completed on ${planet.name}.`,
-        planet.position,
+        planet,
       );
     } else if (d.component) {
       state.stock[d.component] += 1;
       this.#logistics.completeComponent(project.id);
-      this.#event(
+      this.#planetEvent(
         `${d.component} was produced at ${planet.name}.`,
-        planet.position,
+        planet,
       );
     } else if (d.ship) {
       this.#createShip(
@@ -3752,9 +3747,9 @@ export class Game {
         civilian: CivilianTraffic.order(),
       };
       this.#fleets.push(fleet);
-      this.#event(
+      this.#planetEvent(
         `${ship} was produced at ${planet.name} and started Civilian transport.`,
-        planet.position,
+        planet,
       );
       return;
     }
@@ -3801,7 +3796,7 @@ export class Game {
         'Ion pulse engine': parts['Ion pulse engine'] ?? 0,
       },
     });
-    this.#event(`${ship} was produced at ${planet.name}.`, planet.position);
+    this.#planetEvent(`${ship} was produced at ${planet.name}.`, planet);
   }
   #budget(planet: Planet, state: ColonyState): BudgetSnapshot {
     return this.#allocation(planet, state).budget;
@@ -4411,8 +4406,13 @@ export class Game {
           : Infinity;
       },
       id: (prefix: string) => this.#id(prefix),
-      event: (message: string, position?: HexCoordinate) =>
-        this.#event(message, position),
+      event: (message: string, position?: HexCoordinate, planetId?: string) => {
+        const planet = this.#ownedPlanets().find(
+          (item) => item.id === planetId,
+        );
+        if (planet) this.#planetEvent(message, planet);
+        else this.#event(message, position);
+      },
       projectExists: (id: string) =>
         [...this.#colonies.values()].some((s) =>
           s.projects.some((p) => p.id === id),
@@ -5372,10 +5372,31 @@ export class Game {
       fleet.position,
     );
   }
+  /** grupperade-planethandelser: settle one immutable report per planet and year. */
+  #planetEvent(text: string, planet: Planet): void {
+    const index = this.#events.findIndex(
+      (event) => event.round === this.#round && event.planetId === planet.id,
+    );
+    if (index < 0) {
+      this.#event(
+        `${planet.name}:\n${text}`,
+        planet.position,
+        undefined,
+        planet.id,
+      );
+      return;
+    }
+    const previous = this.#events[index]!;
+    this.#events[index] = Object.freeze({
+      ...previous,
+      text: `${previous.text}\n${text}`,
+    });
+  }
   #event(
     text: string,
     position?: HexCoordinate,
     combatLog?: readonly string[],
+    planetId?: string,
   ): string {
     const id = this.#id('event');
     this.#events.push(
@@ -5383,6 +5404,7 @@ export class Game {
         id,
         round: this.#round,
         text,
+        ...(planetId ? { planetId } : {}),
         ...(combatLog ? { combatLog: Object.freeze([...combatLog]) } : {}),
         ...(position
           ? { position: Object.freeze({ q: position.q, r: position.r }) }

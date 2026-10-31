@@ -187,10 +187,14 @@ class TurnOrder
 class GameEvent {
   round
   text
+  planetId [0..1]
   position : HexCoordinate [0..1]
 }
 GameEvent --> HexCoordinate : plats när händelsen inträffade
+GameEvent --> "0..1" Planet : samlat årsbesked
 note right of GameEvent
+  grupperade-planethandelser: leveranser, produktion,
+  population och habitability samlas per planet och år.
   Publiceras när händelsen inträffar.
   Simulering återgår direkt till planering.
   Synliga flottfärder visas en flotta åt gången.

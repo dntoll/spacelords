@@ -10,6 +10,12 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Samlade planetbesked:** `grupperade-planethandelser` är
+  **Fullständigt implementerat**. Varje planet får ett gemensamt årsbesked
+  för anlänt material, färdig produktion, Population och Habitability.
+  Leveranser från flera flottor finns i samma besked. Se
+  [Events och beslutsguidning](docs/events-and-guidance.md).
+
 - **Direkta stridsorder:** `skeppsval-startar-stridstur` och
   `stridsorder-utan-mobilscroll` är **Fullständigt implementerat**. Val av ett
   spelbart skepp startar dess tur direkt. Skeppsorder ligger ovanför kartan på

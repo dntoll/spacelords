@@ -827,6 +827,10 @@ export class AppView implements AppPort {
       this.#announcementObserver?.disconnect();
       announcement = element('div', 'event-announcement');
       announcement.append(element('p', 'event-text', gameText(current.text)));
+      if (current.planetId) {
+        announcement.classList.add('event-announcement-planet');
+        announcement.tabIndex = 0;
+      }
       if (current.decision) {
         announcement.classList.add('event-announcement-interactive');
         announcement.setAttribute('role', 'dialog');
@@ -912,7 +916,7 @@ export class AppView implements AppPort {
         map.top +
         map.height / 2 +
         (point.y - model.camera.center.y) * model.camera.zoom;
-      if (event.decision) {
+      if (event.decision || event.planetId) {
         const end = this.#root
           .querySelector('.end-turn')
           ?.getBoundingClientRect();

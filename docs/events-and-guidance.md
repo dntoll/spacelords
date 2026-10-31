@@ -9,6 +9,25 @@ informationen kan rullas inom rutan. End turn får inte täckas.
 
 ## Händelser
 
+- `grupperade-planethandelser`: material som lossats, färdig produktion,
+  Population och ändrad Habitability samlas i ett enda årsbesked per planet.
+  Alla levererande flottors namn och materialmängder behålls. Även färdiga
+  fabriksuppgraderingar, rivningar och väntande produktion ingår. Population
+  visas också vid +0. Olika planeter och år hålls isär. Samma besked annonseras
+  på kartan och visas som en post i Events, med planetens namn och position.
+  Raderna behåller sin inbördes händelseordning. Långa besked kan rullas och
+  ligger ovanför End turn även på liggande mobil. Kravet är
+  **Fullständigt implementerat**.
+
+Ändring 2026-10-31: `grupperade-planethandelser` ersätter separata besked per
+flotta i `grupperade-transporthandelser` och separata produktionsbesked i
+`ett-meddelande-per-skeppsbygge`. Varje skeppsbygge omnämns fortfarande exakt
+en gång. `senaste-aret-i-events`, `sekventiella-arshandelser` och
+`gemensamt-handelseflode` förtydligas: årets planetuppdateringar samlas vid
+årets avräkning; övriga händelser, upptäckter och strider behåller sin ordning
+och sina avbrott. Äldre sparade händelser bevaras utan omgruppering och
+sparade spel behöver inte rensas.
+
 - `stridsresultat-utan-upprepning`: stridsrutans huvudtext visar förluster,
   förstörda pirater och överlevande en gång. Detaljerna behåller plats,
   flotta, återstående rörelse och antal vrak men upprepar inte resultatet.
@@ -34,10 +53,11 @@ informationen kan rullas inom rutan. End turn får inte täckas.
 - `grupperade-transporthandelser`: en transportflottas ankomst och hela
   lossade last visas som ett enda besked med flottans namn, planet och mängd
   per råvara eller komponent. Flera lastposter av samma material summeras.
-  Olika flottor får egna besked även vid samma planet och år. Beskedet kommer
+  Från 2026-10-31 ingår flottornas leveranser i samma planetbesked enligt
+  `grupperade-planethandelser`. Uppgifterna kommer
   när lasten faktiskt lossas; en tom ankomst behåller sitt vanliga besked.
-- `ett-meddelande-per-skeppsbygge`: varje färdigbyggt skepp ger ett enda
-  produktionsbesked med skeppstyp och planet. Det gäller alla skeppstyper.
+- `ett-meddelande-per-skeppsbygge`: varje färdigbyggt skepp omnämns en gång
+  med skeppstyp och planet i planetbeskedet. Det gäller alla skeppstyper.
 
 Ändring 2026-10-30: dessa krav förtydligar `handelser` och ersätter separata
 ankomst- och lastbesked för samma leverans samt dubbla besked för samma

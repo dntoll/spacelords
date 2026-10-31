@@ -3142,6 +3142,16 @@ body:has(.discovery-controls) .selection-panel {
 .event-announcement p {
   margin: 0;
 }
+.event-announcement-planet {
+  overflow-y: auto;
+  pointer-events: auto;
+  font-size: 1rem;
+  text-align: left;
+}
+.event-announcement-planet .event-text,
+.event-entries > li {
+  white-space: pre-line;
+}
 .event-announcement-interactive {
   display: flex;
   flex-direction: column;

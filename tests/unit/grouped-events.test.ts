@@ -44,19 +44,22 @@ function loadedTransports() {
   };
 }
 
-describe('grupperade-transporthandelser', () => {
-  it('announces arrival and all unloaded cargo once per fleet, including repeated materials', () => {
+describe('grupperade-planethandelser / grupperade-transporthandelser', () => {
+  it('includes every fleet and repeated material in a single planet report', () => {
     const game = Game.restore(loadedTransports());
     collectTurnFrames(game);
     game.finishTurn();
     const events = game.events.filter((event) =>
       /arrived|delivered/.test(event.text),
     );
-    expect(events).toHaveLength(2);
-    expect(events.map((event) => event.text)).toEqual([
+    expect(events).toHaveLength(1);
+    expect(events[0]!.text).toContain(
       'Freighters arrived at Vesta and delivered 10 Iron, 3 Water, 2 Oil, 1 Rocket engine.',
+    );
+    expect(events[0]!.text).toContain(
       'Travellers arrived at Vesta and delivered 5 Iron.',
-    ]);
+    );
+    expect(events[0]!.text).toContain('Population on Vesta changed by');
     expect(events.every((event) => event.round === 1)).toBe(true);
     const target = game.galaxy.systems
       .flatMap((system) => system.planets)
@@ -111,7 +114,7 @@ describe('grupperade-transporthandelser', () => {
     }
     expect(
       resumed.events.filter((event) => /arrived|delivered/.test(event.text)),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
     expect(resumed.exportState().shipments).toHaveLength(0);
   });
 
@@ -126,6 +129,105 @@ describe('grupperade-transporthandelser', () => {
     expect(events).toHaveLength(2);
     expect(events.every((event) => !event.text.includes('delivered'))).toBe(
       true,
+    );
+  });
+
+  it('keeps +0 reports separate for identically named planets and preserves legacy history', () => {
+    const state = loadedTransports();
+    const legacy = {
+      id: 'legacy',
+      round: 0,
+      text: 'Population on Vesta changed by +0.',
+    };
+    const game = Game.restore({
+      ...state,
+      events: [legacy],
+      fleets: [],
+      shipments: [],
+      colonies: state.colonies.map(([id, colony]) => [
+        id,
+        {
+          ...colony,
+          population: 20_000,
+          habitability: 100,
+          projects: [],
+        },
+      ]),
+      world: {
+        ...state.world,
+        systems: state.world.systems.map((system) => ({
+          ...system,
+          planets: system.planets.map((planet) => ({
+            ...planet,
+            name: 'Twin',
+          })),
+        })),
+      },
+    });
+    collectTurnFrames(game);
+    game.finishTurn();
+    const reports = game.events.filter((event) => event.round === 1);
+    expect(reports).toHaveLength(2);
+    expect(new Set(reports.map((event) => event.planetId)).size).toBe(2);
+    expect(
+      reports.every(
+        (event) => event.text === 'Twin:\nPopulation on Twin changed by +0.',
+      ),
+    ).toBe(true);
+    expect(Game.restore(game.exportState()).events[0]).toEqual(legacy);
+  });
+
+  it('combines deliveries, completed production, population and habitability without mixing planets or years', () => {
+    const state = loadedTransports();
+    const target = state.world.systems[0]!.planets[1]!;
+    const colony = state.colonies.find(([id]) => id === target.id)![1];
+    colony.habitability = 50;
+    colony.domes = [0, 1];
+    colony.buildings = [
+      {
+        id: 'terraformer',
+        type: 'Desert terraforming factory',
+        slotIndex: 1,
+        demolition: false,
+      },
+    ];
+    const game = Game.restore({
+      ...state,
+      world: {
+        ...state.world,
+        systems: state.world.systems.map((system) => ({
+          ...system,
+          planets: system.planets.map((planet) =>
+            planet.id === target.id
+              ? { ...planet, environment: 'Desert', habitability: 50 }
+              : planet,
+          ),
+        })),
+      },
+    });
+    collectTurnFrames(game);
+    game.finishTurn();
+    const events = game.events.filter((event) => event.text.includes('Vesta'));
+    expect(events).toHaveLength(1);
+    const report = events[0]!;
+    expect(report.text).toContain('delivered 10 Iron');
+    expect(report.text).toContain('Iron mine was completed on Vesta.');
+    expect(report.text).toContain('Population on Vesta changed by +55.');
+    expect(report.text).toContain('Habitability on Vesta increased to 55%.');
+    expect(report.text).not.toContain('Tellus');
+    expect(report.position).toEqual(target.position);
+    expect(Object.isFrozen(report)).toBe(true);
+    const restored = Game.restore(game.exportState());
+    expect(restored.events).toEqual(game.events);
+    collectTurnFrames(restored);
+    restored.finishTurn();
+    expect(
+      restored.events.filter((event) =>
+        event.text.includes('Population on Vesta'),
+      ),
+    ).toHaveLength(2);
+    expect(restored.events.find((event) => event.id === report.id)).toEqual(
+      report,
     );
   });
 });
