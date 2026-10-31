@@ -1,3 +1,4 @@
+import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/client/models/Game.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
@@ -53,6 +54,7 @@ describe('koloniseringsorder', () => {
       ) {
         if (game.phase === 'interrupted') {
           game = Game.restore(game.exportState());
+          completeTacticalBattles(game);
           game.continueTurn();
         }
         game.applyFrame(game.nextTurnFrame()!);
@@ -61,14 +63,12 @@ describe('koloniseringsorder', () => {
       expect(game.planetAt(target.position)).toBeUndefined();
       expect(game.phase).toBe('interrupted');
       game = Game.restore(game.exportState());
-      for (
-        let step = 0;
-        step < 50 && !game.interruption?.battles?.length;
-        step++
-      ) {
+      for (let step = 0; !game.tacticalBattle && step < 50; step++) {
         if (game.phase === 'interrupted') game.continueTurn();
         game.applyFrame(game.nextTurnFrame()!);
       }
+      expect(game.planetAt(target.position)).toBeUndefined();
+      completeTacticalBattles(game);
       expect(game.interruption?.battles).toHaveLength(1);
       expect(!!game.planetAt(target.position)).toBe(fighters > 0);
       expect(game.fleet('fleet-home')!.colonizationTargetId).toBeUndefined();
@@ -174,7 +174,10 @@ describe('koloniseringsorder', () => {
     game.setColonization('fleet-home', target.position);
     game.startTurn();
     for (let step = 0; step < 50 && !game.planetAt(target.position); step++) {
-      if (game.phase === 'interrupted') game.continueTurn();
+      if (game.phase === 'interrupted') {
+        completeTacticalBattles(game);
+        game.continueTurn();
+      }
       const frame = game.nextTurnFrame();
       expect(frame?.settlement).not.toBe(true);
       game.applyFrame(frame!);

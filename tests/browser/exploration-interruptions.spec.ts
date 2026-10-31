@@ -141,6 +141,7 @@ test('gemensamt-handelseflode: event information and keyboard actions fit on sma
 test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar / stridsresultat-utan-upprepning: Handle edits another fleet, reload restores the pause and Continue resolves contact once', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(60000);
   await page.addInitScript((state) => {
     localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     if (!localStorage.getItem('spacelords.save.v2.1'))

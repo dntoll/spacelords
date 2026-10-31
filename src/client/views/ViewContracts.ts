@@ -1,4 +1,5 @@
 import type { ExplorationOrder } from '../models/TurnSimulation.js';
+import type { BattleCommand } from '../models/TacticalBattle.js';
 import type {
   MapProductionCategory,
   MapViewport,
@@ -20,6 +21,8 @@ import type {
 import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 
 export type AppIntent =
+  | { readonly type: 'battle-command'; readonly command: BattleCommand }
+  | { readonly type: 'resume-fleet-orders'; readonly id: string }
   | {
       readonly type: 'move-repair';
       readonly yardId: string;

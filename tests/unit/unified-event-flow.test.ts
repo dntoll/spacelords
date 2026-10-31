@@ -1,3 +1,4 @@
+import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EventPlayback } from '../../src/client/models/EventPlayback.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
@@ -43,7 +44,11 @@ describe('gemensamt-handelseflode', () => {
       const game = Game.restore(discoveryState(fighters));
       game.startTurn();
       while (!game.interruption?.battles?.length) {
-        if (game.phase === 'interrupted') game.continueTurn();
+        if (game.phase === 'interrupted') {
+          completeTacticalBattles(game);
+          if (game.interruption?.battles?.length) break;
+          game.continueTurn();
+        }
         game.applyFrame(game.nextTurnFrame()!);
       }
       const saved = game.exportState();
@@ -156,6 +161,11 @@ describe('gemensamt-handelseflode', () => {
     ).toBe(false);
     const seen = [first.events[0]!.id, handled.id];
     for (let attempt = 0; attempt < 100; attempt++) {
+      if (current.model.snapshot.tacticalBattle) {
+        completeTacticalBattles(current.model);
+        current.controller.dispose();
+        current = slot.open();
+      }
       const playback = current.model.snapshot.eventPlayback;
       if (playback?.stage === 'awaiting-choice') {
         seen.push(playback.events[playback.index]!.id);
@@ -258,7 +268,11 @@ describe('gemensamt-handelseflode', () => {
     const game = Game.restore(discoveryState(0));
     game.startTurn();
     while (!game.interruption?.battles?.length) {
-      if (game.phase === 'interrupted') game.continueTurn();
+      if (game.phase === 'interrupted') {
+        completeTacticalBattles(game);
+        if (game.interruption?.battles?.length) break;
+        game.continueTurn();
+      }
       game.applyFrame(game.nextTurnFrame()!);
     }
     expect(game.fleet('fleet-home')?.position).toBeNull();

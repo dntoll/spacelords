@@ -12,8 +12,8 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Taktisk strid:** Ny separat hexkarta med alla deltagande skepp,
   utplacering, växelvisa aktiveringar, eldbågar, skydd, öppna D6-slag och
-  skeppsvis reträtt är **Delvis implementerat**. Integration, mobilflöde
-  och sparkompatibilitet återstår att verifiera. Detta ersätter den fasta
+  skeppsvis reträtt är **Fullständigt implementerat**. Sparade strider
+  återupptas utan nya tärningsslag och äldre spel bevaras. Detta ersätter den fasta
   förlustformeln i `flottstrid-per-hex`. Se [taktisk strid](docs/tactical-combat.md).
 
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,

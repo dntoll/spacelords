@@ -59,6 +59,7 @@ export interface ShipmentSnapshot {
   readonly issue: string | null;
 }
 export interface TransportFleet {
+  ordersPaused?: boolean;
   id: string;
   readonly name?: string;
   position: HexCoordinate | null;
@@ -599,7 +600,12 @@ export class Logistics {
     for (const fleet of [...port.fleets].sort((a, b) =>
       a.id.localeCompare(b.id),
     )) {
-      if (!fleet.routeId || fleet.destination || fleet.releaseRequested)
+      if (
+        fleet.ordersPaused ||
+        !fleet.routeId ||
+        fleet.destination ||
+        fleet.releaseRequested
+      )
         continue;
       const route = this.routes.find(
         (r) => r.id === fleet.routeId && !r.closing,

@@ -16,6 +16,7 @@ export interface CivilianOrder {
 }
 
 export interface CivilianFleet {
+  ordersPaused?: boolean;
   id: string;
   name: string;
   ships: { readonly 'Civilian shuttle': number };
@@ -101,6 +102,7 @@ export class CivilianTraffic {
 
   prepare(port: CivilianPort): void {
     for (const fleet of this.#fleets(port)) {
+      if (fleet.ordersPaused) continue;
       const order = fleet.civilian!;
       if (fleet.destination || !fleet.position) continue;
       if (!fleet.ships['Civilian shuttle']) {

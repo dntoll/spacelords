@@ -1,3 +1,4 @@
+import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EventPlayback } from '../../src/client/models/EventPlayback.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
@@ -264,6 +265,11 @@ describe('sekventiella-arshandelser', () => {
       if (model.snapshot.eventPlayback?.stage === 'awaiting-choice')
         emit({ type: 'ignore-discoveries' });
       await vi.advanceTimersByTimeAsync(1850);
+      if (model.snapshot.tacticalBattle) {
+        completeTacticalBattles(model);
+        model.finishCameraFraming();
+        emit({ type: 'ignore-discoveries' });
+      }
     }
     expect(
       model.snapshot.eventPlayback?.events.some(

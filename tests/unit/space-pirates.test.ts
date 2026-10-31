@@ -1,3 +1,4 @@
+import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { collectTurnFrames, turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { Logistics } from '../../src/client/models/Logistics.js';
@@ -80,44 +81,49 @@ describe('rymdpirater-per-stjarna / rymdpiraters-patrullering', () => {
 
 describe('flottstrid-per-hex', () => {
   it.each([
-    [1, 1, 1, 0],
-    [1, 2, 0, 0],
-    [2, 2, 1, 0],
-    [2, 3, 1, 0],
-    [2, 5, 0, 1],
-    [3, 4, 1, 0],
+    [1, 1],
+    [1, 2],
+    [2, 2],
+    [2, 3],
+    [2, 5],
+    [3, 4],
   ])(
-    '%i Fighters versus %i pirates leaves %i Fighters and %i pirates',
-    (fighters, pirates, survivingFighters, survivingPirates) => {
+    'gemensamt-stridsdeltagande: %i Fighters versus %i pirates preserves every survivor and wreck',
+    (fighters, pirates) => {
       const game = battle(fighters, pirates);
       turn(game);
-      expect(game.fleet('fleet-home')!.ships.Fighter).toBe(survivingFighters);
-      expect(
-        game.exportState().pirates?.reduce((sum, p) => sum + p.count, 0),
-      ).toBe(survivingPirates);
-      expect(game.fleet('fleet-home')!.shipUnits).toHaveLength(
-        survivingFighters,
+      const survivors = game.fleet('fleet-home')!.ships.Fighter;
+      const enemySurvivors = game
+        .exportState()
+        .pirates!.reduce((sum, p) => sum + p.count, 0);
+      expect(survivors === 0 || enemySurvivors === 0).toBe(true);
+      expect(survivors + enemySurvivors + game.wrecks.length).toBe(
+        fighters + pirates,
       );
+      expect(game.fleet('fleet-home')!.shipUnits).toHaveLength(survivors);
       expect(
         game.events.filter((e) => e.text.startsWith('Combat at HEX')),
       ).toHaveLength(1);
-    },
-  );
-  it.each([
-    [0, 1, 0],
-    [1, 1, 1],
-    [1, 2, 1],
-    [1, 3, 0],
-  ])(
-    'shields civilians only when all pirates die (%i versus %i)',
-    (fighters, pirates, survivors) => {
-      const game = battle(fighters, pirates, 1);
-      turn(game);
-      expect(game.fleet('fleet-home')!.ships['Exploration ship']).toBe(
-        survivors,
+      expect(Game.restore(game.exportState()).exportState()).toEqual(
+        game.exportState(),
       );
     },
   );
+  it('riktning-och-vapen: civilians participate as individual targets rather than automatic losses', () => {
+    const game = battle(1, 2, 1);
+    game.startTurn();
+    for (let step = 0; !game.tacticalBattle && step < 20; step++) {
+      if (game.phase === 'interrupted') game.continueTurn();
+      game.applyFrame(game.nextTurnFrame()!);
+    }
+    expect(game.tacticalBattle).not.toBeNull();
+    expect(game.fleet('fleet-home')!.ships['Exploration ship']).toBe(1);
+    expect(
+      game.tacticalBattle!.pieces.filter((p) => p.type === 'Exploration ship'),
+    ).toHaveLength(1);
+    completeTacticalBattles(game);
+    expect(game.interruption!.battles).toHaveLength(1);
+  });
   it('stops a destroyed fleet before subsequent planned steps and preserves its empty identity', () => {
     const game = battle(0, 1, 1);
     game.setDestination('fleet-home', new HexCoordinate(9, -4));
@@ -145,7 +151,7 @@ describe('flottstrid-per-hex', () => {
     });
     expect(moving.fleet('fleet-home')!.ships['Exploration ship']).toBe(0);
   });
-  it('resolves separate fleets in stable ID order without pooling escorts', () => {
+  it('gemensamt-stridsdeltagande: pools escorts while retaining both fleet identities', () => {
     const state = battle(1, 3, 1).exportState();
     const first = state.fleets[0]!;
     const game = Game.restore({
@@ -156,16 +162,15 @@ describe('flottstrid-per-hex', () => {
       ],
     });
     turn(game);
-    expect(game.fleet('a')!.ships).toEqual(empty);
-    expect(game.fleet('b')!.ships).toMatchObject({
-      Fighter: 1,
-      'Exploration ship': 1,
-    });
-    expect(
-      game.events
-        .filter((e) => e.text.startsWith('Combat at HEX'))
-        .map((e) => e.text),
-    ).toEqual([expect.stringContaining('A'), expect.stringContaining('B')]);
+    expect(game.fleet('a')).not.toBeNull();
+    expect(game.fleet('b')).not.toBeNull();
+    expect(game.exportState().pirates).toEqual([]);
+    const reports = game.events.filter((e) =>
+      e.text.startsWith('Combat at HEX'),
+    );
+    expect(reports).toHaveLength(1);
+    expect(reports[0]!.text).toContain('A');
+    expect(reports[0]!.text).toContain('B');
   });
   it('does not fight fleets that swap hexes in the same movement step', () => {
     const state = battle(0, 1, 1).exportState();
@@ -284,7 +289,7 @@ describe('flottstrid-per-hex / handelsnatverk', () => {
     ).toBe(true);
     expect(replacement.fleet('replacement')!.ships['Transport ship']).toBe(1);
   });
-  it('fights separate reinforcements before merging survivors at their meeting hex', () => {
+  it('gemensamt-stridsdeltagande: fights together before merging reinforcements at their meeting hex', () => {
     const state = battle(1, 3).exportState();
     const fleet = state.fleets[0]!;
     const game = Game.restore({
@@ -294,6 +299,7 @@ describe('flottstrid-per-hex / handelsnatverk', () => {
           ...fleet,
           id: 'a',
           name: 'Incoming',
+          shipUnits: [],
           position: { q: 7, r: -4 },
           destination: { q: 8, r: -4 },
           joinFleetId: 'b',
@@ -302,17 +308,17 @@ describe('flottstrid-per-hex / handelsnatverk', () => {
       ],
     });
     turn(game);
-    expect(game.fleet('a')!.ships.Fighter).toBe(0);
-    expect(game.fleet('b')!.ships.Fighter).toBe(1);
+    expect(game.fleet('a')).toBeNull();
+    expect(game.fleet('b')!.ships.Fighter).toBeGreaterThan(0);
     expect(game.exportState().pirates).toEqual([]);
     expect(
       game.events.filter((event) => event.text.startsWith('Combat at HEX')),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
   });
 });
 
 describe('flottstrid-per-hex / motorbehov-for-alla-skepp', () => {
-  it('removes the lowest-ID Fighter with its engines and retains the original travel budget', () => {
+  it('retains surviving ship equipment and the original strategic travel budget', () => {
     const state = battle(2, 2).exportState();
     const game = Game.restore({
       ...state,
@@ -352,9 +358,8 @@ describe('flottstrid-per-hex / motorbehov-for-alla-skepp', () => {
     for (const frame of frames) game.applyFrame(frame);
     game.finishTurn();
     expect(game.fleet('fleet-home')!.position?.key).toBe('9,-4');
-    expect(game.fleet('fleet-home')!.shipUnits!.map((unit) => unit.id)).toEqual(
-      ['b', 't'],
-    );
+    for (const unit of game.fleet('fleet-home')!.shipUnits!)
+      expect(before.fleets[0]!.shipUnits).toContainEqual(unit);
   });
 });
 

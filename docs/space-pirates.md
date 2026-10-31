@@ -48,27 +48,18 @@ rörelse bevaras vid omladdning, även under upptäckts- och stridsavbrott.
 
 ## Strid
 
-Alla flottor flyttar samtidigt ett hexsteg. Därefter avgörs strider mellan
-flottor på samma hex, före anslutning av förstärkningar. Flottor som byter hex
-med varandra möts inte. Skilda spelarflottor strider var för sig i stabil
-flottordning; deras Fighters räknas inte ihop.
+Alla flottor flyttar samtidigt ett hexsteg. Därefter börjar taktisk strid
+mellan egna och fientliga flottor på samma hex, före anslutning av förstärkningar.
+Flottor som byter hex med varandra möts inte. Alla skepp på samma galaxhex
+deltar tillsammans på en separat stridskarta.
 
-Varje Fighter förstör upp till två pirater. Varje helt par pirater förstör en
-Fighter. Förlusterna beräknas samtidigt från antalen före respektive strid.
+Spelaren placerar sina skepp, aktiverar dem växelvis med fienden och använder
+riktning, vapen och skydd. Öppna D6-slag avgör träffar. Civila skepp är
+obeväpnade men kan skyddas och fly. Förstörda skepp lämnar vrak. Se
+[taktisk strid](tactical-combat.md) för hela regeluppsättningen.
 
-| Fighters | Pirater | Överlevande Fighters | Överlevande pirater |
-| -------- | ------- | -------------------- | ------------------- |
-| 1        | 1       | 1                    | 0                   |
-| 1        | 2       | 0                    | 0                   |
-| 2        | 2       | 1                    | 0                   |
-| 2        | 3       | 1                    | 0                   |
-| 2        | 5       | 0                    | 1                   |
-
-Kvarvarande pirater förstör flottans Colony ships, Exploration ships och
-Transport ships. Om alla pirater förstörs överlever de civila skeppen, även om
-alla Fighters också har förstörts. Förstörd last förloras och kan inte levereras.
-Besegrade spelarflottor finns kvar som tomma flottor utan position.
-Striden redovisas i Events under Combat med plats, deltagare och förluster.
+Detta ersätter den tidigare fasta förlustformeln och separata strider för
+spelarflottorna i `flottstrid-per-hex`. Kravnamnet behålls.
 
 Sikt, teleskop och avbrott vid återupptäckt beskrivs i
 [sikt och teleskop](detection-telescopes.md).

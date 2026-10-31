@@ -63,6 +63,12 @@ export class AppController {
   }
 
   #handleIntent(intent: AppIntent): void {
+    if (intent.type === 'battle-command') {
+      this.#model.commandBattle(intent.command);
+      this.#view.render(this.#model.snapshot);
+      this.#schedulePlayback();
+      return;
+    }
     if (intent.type === 'map-size') {
       this.#model.resizeMap(intent.viewport);
       this.#view.render(this.#model.snapshot);
@@ -285,6 +291,9 @@ export class AppController {
       case 'assign-trade-fleet':
         this.#model.assignTradeFleet(intent.routeId, intent.fleetId);
         break;
+      case 'resume-fleet-orders':
+        this.#model.resumeFleetOrders(intent.id);
+        break;
       case 'release-trade-fleet':
         this.#model.releaseTradeFleet(intent.id);
         break;
@@ -312,6 +321,7 @@ export class AppController {
       case 'open-saves':
         this.#cancelPointer();
         this.#model.openSaves();
+        this.#schedulePlayback();
         break;
       case 'start-slot':
         this.#model.startSlot(intent.id);
@@ -655,7 +665,21 @@ export class AppController {
   #schedulePlayback(): void {
     clearTimeout(this.#playbackTimer);
     const playback = this.#model.snapshot.eventPlayback;
-    if (this.#disposed) return;
+    if (this.#disposed || this.#model.snapshot.screen === 'saves') return;
+    const battle = this.#model.snapshot.tacticalBattle;
+    if (battle) {
+      if (battle.phase === 'fighting' && battle.turn === 'enemy')
+        this.#playbackTimer = setTimeout(() => {
+          try {
+            this.#model.playBattleActivation();
+          } catch (error) {
+            this.#model.reportError(error);
+          }
+          this.#view.render(this.#model.snapshot);
+          this.#schedulePlayback();
+        }, 450);
+      return;
+    }
     if (playback?.stage === 'framing') {
       if (!this.#framingEvent) void this.#frameEvent();
       return;

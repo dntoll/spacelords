@@ -376,14 +376,48 @@ class PirateFleet {
   count
   nextPosition()
 }
-class FleetCombat {
-  resolve()
+class TacticalBattle {
+  phase: deployment | fighting | complete
+  round
+  turn
+  randomState
+  command()
 }
+class BattlePiece {
+  position: HexCoordinate
+  facing
+  hull
+  missiles
+  movement
+  status: active | destroyed | escaped
+  activated
+}
+class BattleActivation {
+  remainingMovement
+  fired
+  movementClosed
+}
+class Weapon {
+  range
+  firingArc
+  dice
+  hitThreshold
+}
+class BattleAsteroid
+TurnSimulation "1" *-- "0..*" TacticalBattle : ordered encounters
+TacticalBattle "1" *-- "1..*" BattlePiece
+TacticalBattle "1" *-- "0..1" BattleActivation
+TacticalBattle "1" *-- "0..*" BattleAsteroid
+BattlePiece --> Fleet : origin and retreat destination
+BattlePiece --> "0..1" ShipUnit : strategic identity
+BattlePiece --> Weapon : fixed by ship type
+TacticalBattle --> HexCoordinate : distinct tactical map
+BattleReport --> Fleet : participating fleets
 SavedGame --> PirateFleet
 StarSystem "1" <-- "0..*" PirateFleet : patrols
-FleetCombat --> Fleet
-FleetCombat --> PirateFleet
-FleetCombat --> GameEvent : combat outcome
+TacticalBattle --> Fleet
+TacticalBattle --> PirateFleet
+TacticalBattle --> GameEvent : combat outcome
 class Wreck {
   ship : ShipUnit
   position : HexCoordinate
@@ -416,8 +450,8 @@ Fleet "1" -- "0..1" SalvageOrder
 SalvageOrder --> Wreck : exclusive reservation
 SalvageOrder --> Shipyard : nearest home station
 Wreck --> Research : recovered component unlocks prerequisites exception
-FleetCombat --> Wreck : lost ships
-FleetCombat --> BattleReport
+TacticalBattle --> Wreck : lost ships
+TacticalBattle --> BattleReport
 SavedGame --> Wreck
 SavedGame --> Shipyard
 SavedGame --> SalvageOrder

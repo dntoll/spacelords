@@ -35,6 +35,14 @@ export function renderFleetOrders(
   bindFleetOrderDrag(orders);
   orders.setAttribute('role', 'group');
   orders.setAttribute('aria-label', `Orders for ${fleet.name}`);
+  if (fleet.ordersPaused) {
+    const resume = button('Resume orders after retreat', () =>
+      emit({ type: 'resume-fleet-orders', id: fleet.id }),
+    );
+    resume.disabled = model.phase !== 'planning';
+    orders.append(resume);
+    return orders;
+  }
   const locked =
     !(fleet.canIssueOrders ?? model.phase === 'planning') || !fleet.position;
   const researchRequired = (

@@ -1,3 +1,4 @@
+import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { describe, expect, it } from 'vitest';
 import { Game, projectCost, SHIPS } from '../../src/client/models/Game.js';
 import { ResearchPlan } from '../../src/client/models/Research.js';
@@ -164,6 +165,8 @@ describe('civiltrafik-sparning', () => {
         if (game.phase === 'interrupted') {
           if (game.interruption?.battles?.length) break;
           game = Game.restore(game.exportState());
+          completeTacticalBattles(game);
+          if (game.interruption?.battles?.length) break;
           game.continueTurn();
         }
         const frame = game.nextTurnFrame();

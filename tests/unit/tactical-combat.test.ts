@@ -48,6 +48,97 @@ function positioned(overrides: Partial<BattleState> = {}): TacticalBattle {
 }
 
 describe('tactical combat', () => {
+  it('skyddande-stridshinder: asteroid edge touches block fire, while a nearby asteroid does not', () => {
+    const state = positioned().snapshot;
+    const pieces = state.pieces
+      .filter((p) => p.id !== 'transport')
+      .map((p) => (p.id === 'pirate' ? { ...p, position: { q: 3, r: 3 } } : p));
+    const clear = TacticalBattle.restore({
+      ...state,
+      pieces,
+      asteroids: [{ q: 2, r: 5 }],
+    });
+    expect(clear.shot('fighter', 'pirate', 'Missiles').reason).toBeNull();
+    const touching = TacticalBattle.restore({
+      ...state,
+      pieces,
+      asteroids: [{ q: 2, r: 4 }],
+    });
+    expect(touching.shot('fighter', 'pirate', 'Missiles').reason).toContain(
+      'blocked',
+    );
+  });
+
+  it('riktning-och-vapen: spends one missile salvo and rejects an empty launcher without consuming random state', () => {
+    const state = positioned().snapshot;
+    const pieces = state.pieces
+      .filter((p) => p.id !== 'transport')
+      .map((p) =>
+        p.id === 'pirate'
+          ? { ...p, type: 'Colony ship' as const, hull: 8, movement: 2 }
+          : p,
+      );
+    const game = TacticalBattle.restore({ ...state, pieces });
+    game.command({ type: 'activate', id: 'fighter' });
+    game.command({ type: 'fire', weapon: 'Missiles', targetId: 'pirate' });
+    expect(game.snapshot.pieces.find((p) => p.id === 'fighter')!.missiles).toBe(
+      1,
+    );
+    const empty = TacticalBattle.restore({
+      ...state,
+      pieces: pieces.map((p) =>
+        p.id === 'fighter' ? { ...p, missiles: 0 } : p,
+      ),
+    });
+    empty.command({ type: 'activate', id: 'fighter' });
+    const checkpoint = empty.snapshot;
+    expect(() =>
+      empty.command({ type: 'fire', weapon: 'Missiles', targetId: 'pirate' }),
+    ).toThrow('salvos');
+    expect(empty.snapshot).toEqual(checkpoint);
+  });
+
+  it('skeppsvis-retratt: rejects round-one exits and unavailable strategic retreat destinations', () => {
+    const state = positioned().snapshot;
+    const pieces = state.pieces.map((p) =>
+      p.id === 'fighter' ? { ...p, position: { q: -2, r: 4 }, facing: 3 } : p,
+    );
+    const early = TacticalBattle.restore({ ...state, pieces, round: 1 });
+    early.command({ type: 'activate', id: 'fighter' });
+    expect(() => early.command({ type: 'forward' })).toThrow('round two');
+    const blocked = TacticalBattle.restore({
+      ...state,
+      pieces,
+      fleets: state.fleets.map((f) => ({ ...f, retreat: null })),
+    });
+    blocked.command({ type: 'activate', id: 'fighter' });
+    expect(() => blocked.command({ type: 'forward' })).toThrow('safe retreat');
+  });
+
+  it('stridsutplacering: rejects overlap and out-of-zone placement without moving a deployed ship', () => {
+    const game = battle();
+    game.command({ type: 'auto-deploy' });
+    const before = game.snapshot;
+    const occupied = before.pieces.find((p) => p.id === 'transport')!.position!;
+    expect(() =>
+      game.command({
+        type: 'place',
+        id: 'fighter',
+        position: occupied,
+        facing: 0,
+      }),
+    ).toThrow();
+    expect(() =>
+      game.command({
+        type: 'place',
+        id: 'fighter',
+        position: { q: 7, r: 0 },
+        facing: 0,
+      }),
+    ).toThrow();
+    expect(game.snapshot).toEqual(before);
+  });
+
   it('taktisk-stridskarta / stridsutplacering: fits every individual ship and keeps connected clear deployment zones', () => {
     const game = battle();
     expect(game.snapshot.pieces).toHaveLength(3);

@@ -1,3 +1,4 @@
+import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   TurnMovementPlayback,
@@ -219,7 +220,10 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
       playback = new TurnMovementPlayback(origin);
     const hiddenIds = new Set<string>();
     for (let index = 0; index < 50; index++) {
-      if (game.phase === 'interrupted') game.continueTurn();
+      if (game.phase === 'interrupted') {
+        completeTacticalBattles(game);
+        game.continueTurn();
+      }
       const frame = game.nextTurnFrame();
       if (!frame) break;
       const before = scene(game);

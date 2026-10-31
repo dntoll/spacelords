@@ -30,6 +30,7 @@ import type { ProjectSupplySnapshot } from './ProjectSupply.js';
 import { shipTransferIssue } from './FleetTransfer.js';
 import { StarMapTrade, type MapTradeSnapshot } from './StarMapTrade.js';
 import type { SaveRepository } from './SaveRepository.js';
+import type { BattleState, BattleCommand } from './TacticalBattle.js';
 import type { SupplyOverview } from './SupplyOverview.js';
 import {
   ResearchTreeCamera,
@@ -103,6 +104,7 @@ export interface SaveSlotSnapshot {
 }
 
 export interface AppReadModel {
+  readonly tacticalBattle: BattleState | null;
   readonly turnMovement: TurnMovement | null;
   readonly eventPlayback: EventPlaybackSnapshot | null;
   readonly presentedEventIds: readonly string[];
@@ -410,6 +412,7 @@ export class AppModel {
         : [];
     return Object.freeze({
       turnMovement: null,
+      tacticalBattle: this.#game.tacticalBattle,
       eventPlayback: this.#eventPlayback?.snapshot ?? null,
       presentedEventIds: Object.freeze([
         ...new Set([
@@ -1510,6 +1513,19 @@ export class AppModel {
     this.cancelMapPointer();
     this.#game.continueTurn();
   }
+  commandBattle(command: BattleCommand): void {
+    this.#game.commandBattle(command);
+    this.save();
+    if (!this.#game.tacticalBattle) this.beginEventPlayback();
+  }
+  playBattleActivation(): void {
+    this.#game.playBattleActivation();
+    this.save();
+    if (!this.#game.tacticalBattle) this.beginEventPlayback();
+  }
+  resumeFleetOrders(id: string): void {
+    this.#game.resumeFleetOrders(id);
+  }
   applyTurnFrame(frame: TurnFrame): void {
     this.#game.applyFrame(frame);
   }
@@ -1519,6 +1535,7 @@ export class AppModel {
 
   beginEventPlayback(): void {
     if (
+      this.#game.tacticalBattle ||
       this.#game.phase === 'simulating' ||
       this.#game.interruption?.handling ||
       this.#eventPlayback

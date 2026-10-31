@@ -1,4 +1,5 @@
 import { gameText } from './GameText.js';
+import { BattleView, type BattleMapFactory } from './BattleView.js';
 import { discoveryControls } from './DiscoveryView.js';
 import { pirateAsFleet } from '../models/PirateFleet.js';
 import { updateDecisionGuidance } from './DecisionGuidanceView.js';
@@ -36,9 +37,10 @@ import { updateResearchCamera } from './ResearchTreeView.js';
 import { button, element, planetIllustration } from './dom.js';
 import { renderDecisions, renderTurnWarning } from './EmpireView.js';
 import { renderTurnActions } from './TurnActionsView.js';
-import { renderEvents } from './EventsView.js';
+import { renderEvents, renderCombatLog } from './EventsView.js';
 
 export class AppView implements AppPort {
+  #battleView: BattleView | null = null;
   readonly #root: HTMLElement;
   readonly #mapFactory: MapFactory;
   #emit: IntentHandler = () => undefined;
@@ -88,6 +90,7 @@ export class AppView implements AppPort {
       container: HTMLElement,
       cells: readonly MapCell[],
     ) => { dispose(): void },
+    private readonly battleMapFactory?: BattleMapFactory,
   ) {
     this.#root = root;
     this.#mapFactory = mapFactory;
@@ -106,6 +109,21 @@ export class AppView implements AppPort {
   }
 
   render(model: AppReadModel): void {
+    if (
+      model.tacticalBattle &&
+      !model.turnMovement &&
+      model.screen !== 'saves'
+    ) {
+      this.#battleView ??= new BattleView(
+        this.#root,
+        (intent) => this.#emit(intent),
+        this.battleMapFactory,
+      );
+      this.#battleView.render(model.tacticalBattle, model.notice);
+      return;
+    }
+    this.#battleView?.dispose();
+    this.#battleView = null;
     const currentEvent = model.eventPlayback?.events[model.eventPlayback.index];
     this.#root.classList.toggle(
       'has-interactive-event',
@@ -819,6 +837,14 @@ export class AppView implements AppPort {
         details.setAttribute('aria-label', 'Event details');
         for (const text of current.decision.details)
           details.append(element('p', '', gameText(text)));
+        if (current.combatLog) {
+          const lastRoll = current.combatLog.findLast((line) =>
+            line.includes('D6 ['),
+          );
+          if (lastRoll)
+            details.append(element('p', 'battle-latest-roll', lastRoll));
+          details.append(renderCombatLog(current.combatLog));
+        }
         const actions = element('div', 'event-actions');
         actions.append(
           button('Handle', () => this.#emit({ type: 'handle-discoveries' })),
@@ -962,6 +988,7 @@ export class AppView implements AppPort {
   }
 
   dispose(): void {
+    this.#battleView?.dispose();
     this.#disposed = true;
     if (typeof cancelAnimationFrame !== 'undefined')
       cancelAnimationFrame(this.#presentationFrame);

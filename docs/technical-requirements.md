@@ -1077,3 +1077,24 @@ Civilian shuttle, med separat kontroll av forskningen Civilian transport.
 Vyer får oföränderliga snapshots. Flottans tilläggsfält sparas i befintligt
 sparformat; äldre flottor normaliseras med noll Civilian shuttles. Ingen
 sparplats rensas och inga befintliga order aktiveras automatiskt.
+
+## Taktisk strid och sparkompatibilitet
+
+`taktisk-stridskarta`, `gemensamt-stridsdeltagande` och
+`sparad-taktisk-strid`: TacticalBattle håller regler, individuella skepp,
+D6-slump och fiendebeslut oberoende av p5 och DOM. Game upptäcker samtidiga
+möten och tillämpar varje resultat exakt en gång före fortsatt årssimulering.
+Controller samordnar sparning och fiendens aktivering. BattleView använder
+frysta läsmodeller och skickar kommandon; BattleMapView använder p5 i instance mode.
+
+Sparversion 13 utökar tidigare format med strider, möteskö, tidigare
+flottpositioner och pausade transportorder. Utplacering, skrov, ammunition,
+riktning, använd aktivering, logg och slumpgeneratorns tillstånd bevaras.
+Äldre sparningar och redan avgjorda rapporter läses utan rensning. Skeppens
+identiteter stäms av mot deltagande flottor före återupptagning.
+
+`snabb-testsvit`: testprocesser återanvänds per miljö med isolate: false.
+Befintlig rensning av mocks och testernas återställning av klockor och DOM
+behålls. Detta minskar startkostnaden per testfil utan att flytta bort
+beteendetester. Den samlade 20-sekundersgränsen behålls. Riktade stridstester
+på telefon ingår i snabbpublicering för Chromium och WebKit.

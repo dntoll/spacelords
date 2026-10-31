@@ -2,6 +2,7 @@ import { AppController } from './controllers/AppController.js';
 import { AppModel } from './models/AppModel.js';
 import { AppView } from './views/AppView.js';
 import { GalaxyMapView } from './views/GalaxyMapView.js';
+import { BattleMapView } from './views/BattleMapView.js';
 import './styles.css';
 import { SaveMapPreview } from './views/SaveMapPreview.js';
 import { BrowserSaveRepository } from './storage/BrowserSaveRepository.js';
@@ -25,6 +26,7 @@ const controller = new AppController(
     root,
     (container, emit) => new GalaxyMapView(container, emit),
     (container, cells) => new SaveMapPreview(container, cells),
+    (container, select) => new BattleMapView(container, select),
   ),
 );
 controller.start();

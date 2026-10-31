@@ -1,3 +1,4 @@
+import { finishTacticalCombat } from './battle-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import { selectMapObject } from './map-helpers.js';
 import { expect, type Page, type Locator } from '@playwright/test';
@@ -128,6 +129,10 @@ export async function ignoreEventsUntil(
     const status = async () => {
       if (stop && (await stop.isVisible())) return 'stop';
       if (
+        await page.getByRole('dialog', { name: 'Tactical combat' }).isVisible()
+      )
+        return 'battle';
+      if (
         await page
           .locator('.event-announcement[data-stage="awaiting-choice"]')
           .isVisible()
@@ -140,6 +145,10 @@ export async function ignoreEventsUntil(
         : 'running';
     };
     await expect.poll(status, { timeout: 25000 }).not.toBe('running');
+    if ((await status()) === 'battle') {
+      await finishTacticalCombat(page);
+      continue;
+    }
     if ((await status()) !== 'event') return;
     const announcement = page.locator(
       '.event-announcement[data-stage="awaiting-choice"]',

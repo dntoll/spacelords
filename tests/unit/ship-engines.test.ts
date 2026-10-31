@@ -276,7 +276,7 @@ describe('avstamning-sparkompatibilitet / motorbehov-for-alla-skepp', () => {
       expect(
         game.planetSnapshot(game.galaxy.homePlanet)!.projects[0]!.blockedReason,
       ).not.toBeNull();
-      expect(game.exportState().version).toBe(12);
+      expect(game.exportState().version).toBe(13);
     },
   );
 

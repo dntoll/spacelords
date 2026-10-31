@@ -1,3 +1,4 @@
+import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/client/models/Game.js';
 import {
@@ -201,6 +202,7 @@ describe('asteroidbalten / spara-avbrutet-ar', () => {
     game = Game.restore(game.exportState());
     game.handleDiscoveries();
     game.setDestination('fleet-home', new HexCoordinate(6, -5));
+    completeTacticalBattles(game);
     game.continueTurn();
     expect(
       collectTurnFrames(game, false).flatMap((frame) => frame.movements),

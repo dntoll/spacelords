@@ -1,3 +1,4 @@
+import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { describe, expect, it } from 'vitest';
 import {
   Game,
@@ -145,10 +146,14 @@ describe('stridsrapport-i-dialog / vrak-efter-strid', () => {
     const game = Game.restore(discoveryState());
     game.startTurn();
     for (let step = 0; step < 10; step++) {
-      if (game.phase === 'interrupted') game.continueTurn();
+      if (game.phase === 'interrupted') {
+        completeTacticalBattles(game);
+        game.continueTurn();
+      }
       const frame = game.nextTurnFrame()!;
       game.applyFrame(frame);
-      if (frame.combats?.length) {
+      if (game.tacticalBattle) {
+        completeTacticalBattles(game);
         expect(game.phase).toBe('interrupted');
         expect(game.interruption!.battles).not.toHaveLength(0);
         expect(game.wrecks.length).toBeGreaterThan(0);

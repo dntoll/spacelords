@@ -1,3 +1,4 @@
+import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { describe, expect, it } from 'vitest';
 import { Game, type GameState } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
@@ -179,11 +180,13 @@ describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
     expect(() =>
       game.scheduleBuild(game.galaxy.homePlanet, 'Research station'),
     ).toThrow();
+    completeTacticalBattles(game);
     game.continueTurn();
     const combat = game.nextTurnFrame()!;
     expect(combat.movements).toHaveLength(0);
-    expect(combat.combats).toHaveLength(1);
+    expect(combat.encounters).toBe(true);
     game.applyFrame(combat);
+    completeTacticalBattles(game);
     expect(game.fleet('fleet-home')!.position).toBeNull();
     finish(game, false);
     expect(game.round).toBe(2);

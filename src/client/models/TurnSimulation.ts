@@ -1,5 +1,6 @@
 import type { HexCoordinate } from './HexCoordinate.js';
 import type { BattleReport } from './Salvage.js';
+import { TacticalBattle, type BattleState } from './TacticalBattle.js';
 
 export type ExplorationOrder = 'explore' | 'explore-stars';
 
@@ -13,6 +14,11 @@ export interface Discovery {
 }
 
 export interface SavedTurnSimulation {
+  readonly tacticalBattles?: readonly BattleState[];
+  readonly previousPositions?: readonly (readonly [
+    string,
+    { readonly q: number; readonly r: number },
+  ])[];
   readonly presentedEventIds?: readonly string[];
   readonly activeEventId?: string;
   readonly battles?: readonly BattleReport[];
@@ -26,6 +32,11 @@ export interface SavedTurnSimulation {
 
 /** spara-avbrutet-ar: movement is spent once and survives order changes and reloads. */
 export class TurnSimulation {
+  tacticalBattles: TacticalBattle[] = [];
+  readonly previousPositions = new Map<
+    string,
+    { readonly q: number; readonly r: number }
+  >();
   readonly presentedEventIds = new Set<string>();
   activeEventId: string | undefined;
   battles: readonly BattleReport[] = [];
@@ -62,10 +73,12 @@ export class TurnSimulation {
       ),
     );
     this.remaining.delete(source);
+    this.previousPositions.delete(source);
   }
 
   permits(id: string): boolean {
     return (
+      !this.tacticalBattles.length &&
       this.handling &&
       (this.otherFleets ||
         this.discoveries.some(
@@ -75,7 +88,7 @@ export class TurnSimulation {
         ) ||
         this.battles.some(
           (battle) =>
-            battle.fleetId === id &&
+            (battle.fleetId === id || battle.fleetIds?.includes(id)) &&
             (!this.activeEventId || battle.eventId === this.activeEventId),
         ))
     );
@@ -83,6 +96,14 @@ export class TurnSimulation {
 
   snapshot(): SavedTurnSimulation {
     return Object.freeze({
+      tacticalBattles: Object.freeze(
+        this.tacticalBattles.map((b) => b.snapshot),
+      ),
+      previousPositions: Object.freeze(
+        [...this.previousPositions].map(([id, position]) =>
+          Object.freeze([id, Object.freeze({ ...position })] as const),
+        ),
+      ),
       presentedEventIds: Object.freeze([...this.presentedEventIds]),
       ...(this.activeEventId ? { activeEventId: this.activeEventId } : {}),
       battles: Object.freeze(
@@ -91,6 +112,9 @@ export class TurnSimulation {
             ...battle,
             position: Object.freeze({ ...battle.position }),
             wreckIds: Object.freeze([...battle.wreckIds]),
+            ...(battle.fleetIds
+              ? { fleetIds: Object.freeze([...battle.fleetIds]) }
+              : {}),
           }),
         ),
       ),
@@ -137,6 +161,7 @@ export class TurnSimulation {
       (saved.economyApplied !== undefined &&
         typeof saved.economyApplied !== 'boolean') ||
       (!saved.discoveries.length &&
+        !saved.tacticalBattles?.length &&
         !saved.handling &&
         !saved.battles?.length) ||
       (saved.battles !== undefined &&
@@ -173,6 +198,37 @@ export class TurnSimulation {
     )
       throw new Error('Invalid interrupted year.');
     const simulation = new TurnSimulation(saved.remaining);
+    if (
+      saved.tacticalBattles !== undefined &&
+      (!Array.isArray(saved.tacticalBattles) ||
+        (saved.tacticalBattles.length > 0 && !saved.awaitingCombat) ||
+        saved.tacticalBattles.some(
+          (b: BattleState) =>
+            !contains(b.position) ||
+            b.fleets.some(
+              (f) =>
+                !ids.has(f.id) || (f.retreat !== null && !contains(f.retreat)),
+            ),
+        ))
+    )
+      throw new Error('Invalid saved tactical encounters.');
+    simulation.tacticalBattles = (saved.tacticalBattles ?? []).map(
+      (b: BattleState) => TacticalBattle.restore(b),
+    );
+    if (
+      saved.previousPositions !== undefined &&
+      (!Array.isArray(saved.previousPositions) ||
+        saved.previousPositions.some(
+          ([id, p]: NonNullable<
+            SavedTurnSimulation['previousPositions']
+          >[number]) => !ids.has(id) || !contains(p),
+        ))
+    )
+      throw new Error('Invalid previous fleet positions.');
+    for (const [id, position] of (saved.previousPositions ?? []) as NonNullable<
+      SavedTurnSimulation['previousPositions']
+    >)
+      simulation.previousPositions.set(id, { ...position });
     for (const id of (saved.presentedEventIds ?? []) as readonly string[])
       simulation.presentedEventIds.add(id);
     simulation.activeEventId = saved.activeEventId;

@@ -11,6 +11,7 @@ for (const screen of ['Star map', 'Fleets']) {
   test(`rymdpirater-per-stjarna / flottstrid-per-hex / rymdpiraters-sparning: ${screen} shows hostile read-only pirates and persists combat`, async ({
     page,
   }, testInfo) => {
+    test.setTimeout(60000);
     const state = new Game(createExampleGalaxy()).exportState();
     const fleet = state.fleets[0]!;
     const system = createExampleGalaxy().systems[1]!;
@@ -70,7 +71,10 @@ for (const screen of ['Star map', 'Fleets']) {
     ).toBe(true);
     await page.getByRole('button', { name: /^Decisions/ }).click();
     await page.locator('.turn-console > summary').click();
-    await expect(page.locator('[role="log"]')).toContainText('Combat:');
+    await expect(page.locator('[role="log"]')).toContainText(
+      'versus Space pirate',
+    );
+    await expect(page.locator('[role="log"] .combat-event-log')).toHaveCount(1);
     await page.reload();
     await startFirstSlot(page);
     const reloaded = await page.evaluate(

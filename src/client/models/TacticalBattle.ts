@@ -54,6 +54,15 @@ export interface BattlePiece {
   readonly activated: boolean;
   readonly status: 'active' | 'destroyed' | 'escaped';
 }
+export function battlePieceLabel(
+  piece: BattlePiece,
+  pieces: readonly BattlePiece[],
+): string {
+  const index = pieces
+    .filter((p) => p.side === piece.side && p.type === piece.type)
+    .findIndex((p) => p.id === piece.id);
+  return `${piece.type} ${index + 1}`;
+}
 export interface BattleActivation {
   readonly id: string;
   readonly remaining: number;
@@ -335,7 +344,10 @@ export class TacticalBattle {
         !p.id ||
         ids.has(p.id) ||
         !profile ||
-        !state.fleets.some((f) => f.id === p.fleetId && f.side === p.side) ||
+        !state.fleets.some(
+          (f: BattleState['fleets'][number]) =>
+            f.id === p.fleetId && f.side === p.side,
+        ) ||
         !['active', 'destroyed', 'escaped'].includes(p.status) ||
         !Number.isSafeInteger(p.hull) ||
         p.hull < 0 ||
@@ -666,7 +678,7 @@ export class TacticalBattle {
         if (!this.contains(next)) {
           p.position = null;
           p.status = 'escaped';
-          this.#log.push(`${p.type} ${p.id} escaped.`);
+          this.#log.push(`${battlePieceLabel(p, this.#pieces)} escaped.`);
         }
       } else if (command.type === 'turn') {
         if (command.direction !== 1 && command.direction !== -1)
@@ -692,7 +704,7 @@ export class TacticalBattle {
     activation.fired = true;
     activation.movementClosed = activation.moved;
     this.#log.push(
-      `${p.type} ${p.id}: ${command.weapon} → ${target.type} ${target.id}. ${preview.dice}D6 [${dice.join(', ')}], hit ${preview.threshold}+${preview.rear ? ' (rear)' : ''}: ${damage} damage${target.hull === 0 ? ', destroyed' : `, ${target.hull} hull remaining`}.`,
+      `${battlePieceLabel(p, this.#pieces)}: ${command.weapon} → ${battlePieceLabel(target, this.#pieces)}. ${preview.dice}D6 [${dice.join(', ')}], hit ${preview.threshold}+${preview.rear ? ' (rear)' : ''}: ${damage} damage${target.hull === 0 ? ', destroyed' : `, ${target.hull} hull remaining`}.`,
     );
     this.#checkComplete();
   }
@@ -736,9 +748,19 @@ export class TacticalBattle {
       : this.#pieces.filter(
           (p) => p.side === side && p.status === 'active' && !p.activated,
         );
-    const plans = candidates.map((piece) => this.#plan(piece));
-    plans.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
-    const plan = plans[0];
+    const enemies = this.#pieces.filter(
+      (p) => p.side !== side && p.status === 'active',
+    );
+    const distance = (piece: Piece) =>
+      Math.min(
+        ...enemies.map((enemy) =>
+          hex(piece.position!).distanceTo(hex(enemy.position!)),
+        ),
+      );
+    candidates.sort(
+      (a, b) => distance(a) - distance(b) || a.id.localeCompare(b.id),
+    );
+    const plan = candidates[0] ? this.#plan(candidates[0]) : null;
     if (!plan) throw new Error('No ship can activate.');
     if (!this.#activation)
       this.command({ type: 'activate', id: plan.id }, side);
@@ -805,7 +827,7 @@ export class TacticalBattle {
       let risk = 0;
       for (const enemy of enemies)
         for (const weapon of battleWeapons(enemy.type)) {
-          // Assess the proposed position without mutating the live ship.
+          // Score incoming fire against the proposed position and facing.
           const old = p.position,
             oldFacing = p.facing;
           p.position = node.position;

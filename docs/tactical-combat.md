@@ -4,17 +4,17 @@ Spelaren leder varje skepp i en turbaserad strid på en egen hexkarta.
 Vapen, manövrering, riktning, skydd och synliga D6-slag avgör utfallet.
 Alla flottor på samma Star map-hex deltar tillsammans.
 
-| Krav                           | Status               | Innehåll                                                                                                              |
-| ------------------------------ | -------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `taktisk-stridskarta`          | Delvis implementerat | Separat karta, minst 13 × 9 hexar, växer tills alla skepp ryms. Mobilflöde och publicering återstår att verifiera.    |
-| `gemensamt-stridsdeltagande`   | Delvis implementerat | Alla skepp från båda sidors flottor på samma galaxhex deltar; integrationstester återstår.                            |
-| `stridsutplacering`            | Delvis implementerat | Egen startzon, sex riktningar och Auto deploy. Fiendens placering avslöjas vid start; mobiltest återstår.             |
-| `vaxelvisa-skeppsaktiveringar` | Delvis implementerat | Växelvis ett skepp, ett rörelsemoment och en salva i valfri ordning. Integrationstester återstår.                     |
-| `riktning-och-vapen`           | Delvis implementerat | Fasta vapen, eldbågar, ammunition och svag akter. Utökade gränsfall återstår.                                         |
-| `skyddande-stridshinder`       | Delvis implementerat | Asteroider och större skepp blockerar skott helt. Kantfall återstår att verifiera.                                    |
-| `oppna-stridstarningar`        | Delvis implementerat | Initiativ och vapensalvor visar D6-slag; mobilpresentation återstår att verifiera.                                    |
-| `skeppsvis-retratt`            | Delvis implementerat | Enskilda skepp lämnar egen kortsida från runda två. Flottan samlas efteråt; lastade flottor återstår att verifiera.   |
-| `sparad-taktisk-strid`         | Delvis implementerat | Utplacering, skador, ammunition, aktivering och slump sparas; äldre sparningar och omladdning återstår att verifiera. |
+| Krav                           | Status                     | Innehåll                                                                              |
+| ------------------------------ | -------------------------- | ------------------------------------------------------------------------------------- |
+| `taktisk-stridskarta`          | Fullständigt implementerat | Separat karta, minst 13 × 9 hexar, växer tills alla skepp ryms.                       |
+| `gemensamt-stridsdeltagande`   | Fullständigt implementerat | Alla skepp från båda sidors flottor på samma galaxhex deltar.                         |
+| `stridsutplacering`            | Fullständigt implementerat | Egen startzon, sex riktningar och Auto deploy. Fiendens placering avslöjas vid start. |
+| `vaxelvisa-skeppsaktiveringar` | Fullständigt implementerat | Växelvis ett skepp, ett rörelsemoment och en salva i valfri ordning.                  |
+| `riktning-och-vapen`           | Fullständigt implementerat | Fasta vapen, eldbågar, ammunition och svag akter.                                     |
+| `skyddande-stridshinder`       | Fullständigt implementerat | Asteroider och större skepp blockerar skott helt.                                     |
+| `oppna-stridstarningar`        | Fullständigt implementerat | Initiativ och vapensalvor visar D6-slag.                                              |
+| `skeppsvis-retratt`            | Fullständigt implementerat | Enskilda skepp lämnar egen kortsida från runda två. Flottan samlas efteråt.           |
+| `sparad-taktisk-strid`         | Fullständigt implementerat | Utplacering, skador, ammunition, aktivering och slump sparas.                         |
 
 ## Möte och utplacering
 
@@ -101,3 +101,12 @@ förstörs inte automatiskt när pirater överlever. De kan skyddas eller fly.
 Inga byggbara vapen, nya skeppstyper, beständiga skrovskador eller nya
 reparationsregler ingår. Befintliga sparningar och redan avgjorda rapporter
 bevaras utan rensning.
+
+## Verifiering
+
+Kravkopplade modell- och integrationstester skyddar reglerna, individuell
+skeppsidentitet, last, köade möten och bakåtkompatibel sparning. Riktade
+mobiltester i Chromium och WebKit verifierar utplacering, eld före rörelse,
+omladdning mitt i en aktivering och reträtt med fortsatt årssimulering.
+Tärningsloggen bevaras även efter striden och kan öppnas i Events.
+Manuell mobiltest följer normal snabbpublicering; sluttest och merge beställs separat.

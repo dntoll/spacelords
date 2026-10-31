@@ -341,7 +341,7 @@ describe('automatiska-delorder', () => {
         .status,
     ).toBe('Waiting');
     const saved = game.exportState();
-    expect(saved.version).toBe(12);
+    expect(saved.version).toBe(13);
     expect(
       Game.restore(
         JSON.parse(JSON.stringify(saved)) as typeof saved,

@@ -31,6 +31,7 @@ export interface SalvageOrder {
   issue: string | null;
 }
 export interface BattleReport {
+  readonly fleetIds?: readonly string[];
   readonly eventId?: string;
   readonly position: { readonly q: number; readonly r: number };
   readonly fleetId: string | null;

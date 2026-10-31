@@ -1,3 +1,4 @@
+import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { describe, expect, it } from 'vitest';
 import { Game, type BuildType } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
@@ -199,6 +200,7 @@ describe('aktuell-detektionssikt', () => {
             expect(restored.interruption).toEqual(game.interruption);
             game = restored;
           }
+          completeTacticalBattles(game);
           game.continueTurn();
         }
         const frame = game.nextTurnFrame();
@@ -233,6 +235,7 @@ describe('aktuell-detektionssikt', () => {
     game = Game.restore(game.exportState());
     game.handleDiscoveries();
     expect(game.fleet('fleet-home')!.remainingMovement).toBe(0);
+    completeTacticalBattles(game);
     game.continueTurn();
     expect(game.nextTurnFrame()).toBeNull();
     game.finishTurn();
@@ -429,7 +432,7 @@ describe('teleskop-i-exploration-ships', () => {
   });
 
   it.each([2, 3, 4, 5, 6, 7, 8] as const)(
-    'saves version %i as version 12 without resetting explored memory or charging existing ships',
+    'saves version %i as version 13 without resetting explored memory or charging existing ships',
     (version) => {
       const state = shipyard();
       const game = Game.restore({
@@ -441,7 +444,7 @@ describe('teleskop-i-exploration-ships', () => {
           shipUnits: [],
         })),
       });
-      expect(game.exportState().version).toBe(12);
+      expect(game.exportState().version).toBe(13);
       expect(game.exportState().explored).toContain('-6,6');
       expect(
         game.planetSnapshot(game.galaxy.homePlanet)!.economy.stock.Iron,

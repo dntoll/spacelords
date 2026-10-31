@@ -1,5 +1,6 @@
 import type { AppModel } from '../../src/client/models/AppModel.js';
 import type { Game, TurnFrame } from '../../src/client/models/Game.js';
+import { completeTacticalBattles } from './tactical-combat.js';
 
 type Subject = Game | AppModel;
 const phase = (subject: Subject) =>
@@ -16,7 +17,10 @@ export function* turnFrames(
 ): Generator<TurnFrame> {
   if (start) subject.startTurn();
   for (let steps = 0; steps < 100; steps++) {
-    if (phase(subject) === 'interrupted') subject.continueTurn();
+    if (phase(subject) === 'interrupted') {
+      completeTacticalBattles(subject);
+      subject.continueTurn();
+    }
     const frame = subject.nextTurnFrame();
     if (!frame) return;
     if (frame.combats !== undefined || frame.settlement) apply(subject, frame);

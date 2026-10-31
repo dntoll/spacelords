@@ -1,3 +1,4 @@
+import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 // @vitest-environment jsdom
@@ -12,6 +13,7 @@ import type {
 } from '../../src/client/models/SaveRepository.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { discoveryState } from '../fixtures/exploration.js';
+import { encounterGame, arrangeBattle } from '../fixtures/battle-checkpoint.js';
 
 afterEach(() => vi.useRealTimers());
 
@@ -44,7 +46,7 @@ it('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / 
       dispose: () => view.dispose(),
     });
     controller.start();
-    return { model, controller, emit };
+    return { model, controller, emit, view };
   }
   const first = setup();
   first.emit({ type: 'confirm-end-turn' });
@@ -94,6 +96,11 @@ it('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / 
     if (restored.model.snapshot.eventPlayback?.stage === 'awaiting-choice')
       restored.emit({ type: 'ignore-discoveries' });
     await vi.advanceTimersByTimeAsync(1850);
+    if (restored.model.snapshot.tacticalBattle) {
+      completeTacticalBattles(restored.model);
+      restored.model.finishCameraFraming();
+      restored.view.render(restored.model.snapshot);
+    }
   }
   expect(restored.model.snapshot.interruption?.battles).toHaveLength(1);
   expect(root.querySelector('.event-announcement')?.textContent).toContain(
@@ -107,6 +114,11 @@ it('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / 
     if (restored.model.snapshot.eventPlayback?.stage === 'awaiting-choice')
       restored.emit({ type: 'ignore-discoveries' });
     await vi.advanceTimersByTimeAsync(1850);
+    if (restored.model.snapshot.tacticalBattle) {
+      completeTacticalBattles(restored.model);
+      restored.emit({ type: 'open-map' });
+      await vi.advanceTimersByTimeAsync(0);
+    }
   }
   expect(restored.model.snapshot.phase).toBe('planning');
   expect(saved.state.round).toBe(2);
@@ -154,5 +166,108 @@ it('flottorder-som-symboler / kompakta-flottkort: exposes explorer controls and 
       .querySelector('[aria-label="Explore stars"]')!
       .getAttribute('aria-pressed'),
   ).toBe('true');
+  controller.dispose();
+});
+
+it('vaxelvisa-skeppsaktiveringar / riktning-och-vapen: controller saves a left turn and restores the same unfinished activation', () => {
+  vi.useFakeTimers();
+  const game = arrangeBattle(encounterGame(), (state) => ({
+    ...state,
+    asteroids: [],
+    phase: 'fighting',
+    round: 2,
+    turn: 'player',
+    pieces: state.pieces.map((p, i) => ({
+      ...p,
+      position: { q: i + 1, r: i + 1 },
+      facing: p.side === 'player' ? 0 : 3,
+    })),
+  }));
+  let saved: SavedGame = {
+    lastPlayed: '2026-10-31',
+    state: game.exportState(),
+  };
+  const root = document.createElement('div');
+  document.body.replaceChildren(root);
+  const model = new AppModel(undefined, {
+    load: () => saved,
+    save: (_id, next) => {
+      saved = structuredClone(next);
+    },
+    clear() {},
+  });
+  model.startSlot(1);
+  const view = new AppView(root, () => ({ render() {}, dispose() {} }));
+  const controller = new AppController(model, view);
+  controller.start();
+  const fighter = model.snapshot.tacticalBattle!.pieces.find(
+    (p) => p.type === 'Fighter',
+  )!;
+  const select = root.querySelector<HTMLSelectElement>(
+    'select[aria-label="Your ship"]',
+  )!;
+  select.value = fighter.id;
+  select.dispatchEvent(new Event('change'));
+  root
+    .querySelector<HTMLButtonElement>('button[aria-label="Activate ship"]')!
+    .click();
+  root
+    .querySelector<HTMLButtonElement>('button[aria-label="Turn left 60°"]')!
+    .click();
+  const checkpoint = saved.state.simulation!.tacticalBattles![0]!;
+  expect(checkpoint.pieces.find((p) => p.id === fighter.id)!.facing).toBe(1);
+  expect(checkpoint.activation!.remaining).toBe(3);
+  expect(Game.restore(saved.state).tacticalBattle).toEqual(
+    model.snapshot.tacticalBattle,
+  );
+  expect(
+    root.querySelector('dialog[aria-label="Tactical combat"][open]'),
+  ).not.toBeNull();
+  controller.dispose();
+});
+
+it('stridsutplacering / sparad-taktisk-strid: the facing control reflects a saved deployment and Auto deploy resets it', () => {
+  const game = encounterGame();
+  game.commandBattle({ type: 'auto-deploy' });
+  const first = game.tacticalBattle!.pieces[0]!;
+  game.commandBattle({
+    type: 'place',
+    id: first.id,
+    position: first.position!,
+    facing: 3,
+  });
+  let saved: SavedGame = {
+    lastPlayed: '2026-10-31',
+    state: game.exportState(),
+  };
+  const root = document.createElement('div');
+  document.body.replaceChildren(root);
+  const model = new AppModel(undefined, {
+    load: () => saved,
+    save: (_id, next) => {
+      saved = structuredClone(next);
+    },
+    clear() {},
+  });
+  model.startSlot(1);
+  const controller = new AppController(
+    model,
+    new AppView(root, () => ({ render() {}, dispose() {} })),
+  );
+  controller.start();
+  expect(
+    root.querySelector<HTMLSelectElement>('select[aria-label="Facing"]')!.value,
+  ).toBe('3');
+  root
+    .querySelector<HTMLButtonElement>('button[aria-label="Auto deploy"]')!
+    .click();
+  expect(
+    root.querySelector<HTMLSelectElement>('select[aria-label="Facing"]')!.value,
+  ).toBe('0');
+  expect(
+    saved.state.simulation!.tacticalBattles![0]!.pieces.find(
+      (p) => p.id === first.id,
+    )!.facing,
+  ).toBe(0);
   controller.dispose();
 });

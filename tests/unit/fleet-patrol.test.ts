@@ -1,3 +1,5 @@
+import { arrangeBattle } from '../fixtures/battle-checkpoint.js';
+import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { describe, expect, it } from 'vitest';
 import { Game, type GameState } from '../../src/client/models/Game.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
@@ -179,6 +181,7 @@ describe('flottpatrullering', () => {
     );
     expect(restored.fleet('fleet-home')!.remainingMovement).toBe(2);
     restored.continueTurn();
+    completeTacticalBattles(game);
     game.continueTurn();
     expect(collectTurnFrames(restored, false)).toEqual(
       collectTurnFrames(game, false),
@@ -242,12 +245,28 @@ describe('flottpatrullering', () => {
   it('ends Patrol after combat removes its last Fighter while civilians survive', () => {
     const first = withPirate(setup(hex(5, -3), false, true), hex(7, -4));
     const state = first.exportState();
-    const game = Game.restore({
+    let game = Game.restore({
       ...state,
       pirates: state.pirates!.map((pirate) => ({ ...pirate, count: 2 })),
     });
     game.setPatrol('fleet-home');
-    turn(game);
+    game.startTurn();
+    for (let step = 0; !game.tacticalBattle && step < 20; step++) {
+      if (game.phase === 'interrupted') game.continueTurn();
+      game.applyFrame(game.nextTurnFrame()!);
+    }
+    game.commandBattle({ type: 'auto-deploy' });
+    game = arrangeBattle(game, (state) => ({
+      ...state,
+      phase: 'complete',
+      round: 2,
+      pieces: state.pieces.map((p) =>
+        p.type === 'Fighter' || p.side === 'enemy'
+          ? { ...p, status: 'destroyed', hull: 0 }
+          : p,
+      ),
+    }));
+    game.playBattleActivation();
     expect(game.fleet('fleet-home')!.ships).toMatchObject({
       Fighter: 0,
       'Transport ship': 1,
@@ -315,6 +334,7 @@ describe('flottpatrullering', () => {
     game.setPatrol('fleet-home');
     expect(game.fleet('fleet-home')!.patrol?.center).toEqual(hex(2, 0));
     expect(game.fleet('fleet-home')!.remainingMovement).toBe(2);
+    completeTacticalBattles(game);
     game.continueTurn();
     const combat = game.nextTurnFrame()!;
     expect(combat.movements).toEqual([]);
@@ -334,6 +354,7 @@ describe('flottpatrullering', () => {
     for (let step = 0; step < 12; step++) {
       game.applyFrame(game.nextTurnFrame()!);
       if (game.phase === 'interrupted') {
+        completeTacticalBattles(game);
         if (game.interruption!.battles?.length) break;
         game.continueTurn();
       }
@@ -347,6 +368,7 @@ describe('flottpatrullering', () => {
     ).toBeUndefined();
     expect(restored.fleet('fleet-home')!.remainingMovement).toBe(2);
     restored.continueTurn();
+    completeTacticalBattles(game);
     game.continueTurn();
     expect(collectTurnFrames(restored, false)).toEqual(
       collectTurnFrames(game, false),
