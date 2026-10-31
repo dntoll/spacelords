@@ -121,6 +121,14 @@ it.each(
         disconnect() {}
       },
     );
+    let nextFrame: FrameRequestCallback | null = null;
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      nextFrame = callback;
+      return 1;
+    });
+    vi.stubGlobal('cancelAnimationFrame', () => {
+      nextFrame = null;
+    });
     const view = new GalaxyMapView(container, noop);
     sketch.setup();
     const model = new AppModel().snapshot;
@@ -149,6 +157,9 @@ it.each(
           },
         ],
       });
+      const paint = nextFrame;
+      nextFrame = null;
+      (paint as FrameRequestCallback | null)?.(0);
       expect(sketch.describe).toHaveBeenLastCalledWith(
         screen === 'fleets'
           ? 'Fleets map. Fleet positions and destinations are highlighted; planets and trade routes are background landmarks.'

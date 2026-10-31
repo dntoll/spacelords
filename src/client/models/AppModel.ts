@@ -583,6 +583,18 @@ export class AppModel {
     });
   }
 
+  /** responsiv-stjarnkarta: only presentation state changes during camera gestures. */
+  navigationSnapshot(previous: AppReadModel): AppReadModel {
+    return Object.freeze({
+      ...previous,
+      camera: this.#camera.snapshot,
+      hoveredFleetId: this.#hoveredFleetId,
+      mapTrade: this.#mapTrade.snapshot,
+      fleetDestinationPreview: this.#fleetDestinationPreview,
+      fleetDragging: this.#fleetDragging,
+    });
+  }
+
   select(position: HexCoordinate): void {
     if (!this.#isMapScreen()) return;
     if (this.#screen === 'orders' && this.#orderSelection) {

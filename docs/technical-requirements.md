@@ -1,5 +1,17 @@
 # Tekniska krav och arbetsregler
 
+## Kartans prestanda
+
+`responsiv-stjarnkarta` och `rumsligt-kartindex` är **Fullständigt implementerat**.
+AppController återanvänder senast presenterade läsmodell under ren navigation.
+AppModel levererar en ny oföränderlig presentation utan att beräkna om
+imperiets ekonomi. AppView uppdaterar kamera och byggvalens position;
+GalaxyMapView samlar omritningar per bildruta och använder MapViewport
+med binärsökning i sorterade hexrader. Indexet följer kartögonblicksbildens
+identitet och innehåller bara redan tillåten kartkunskap. Domänmodellen
+är oberoende av p5. Sparformat och galaxstorlek ändras inte.
+Se [orsak, mätning och tester](map-performance.md).
+
 ## Orders och startorder
 
 `egen-ordervy`, `ruttval-for-order`, `flottval-pa-orderkarta`,

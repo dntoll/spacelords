@@ -1,14 +1,16 @@
-import type { AppModel } from '../models/AppModel.js';
+import type { AppModel, AppReadModel } from '../models/AppModel.js';
 import { TurnMovementPlayback } from '../models/TurnMovementPlayback.js';
 import type { AppIntent, AppPort } from '../views/ViewContracts.js';
 import type { Point } from '../models/HexCoordinate.js';
 import { MapGesture } from './MapGesture.js';
+import { isMapScreen } from '../models/ProductionMap.js';
 
 export class AppController {
   readonly #model: AppModel;
   readonly #view: AppPort;
   readonly #gesture = new MapGesture();
   readonly #researchGesture = new MapGesture();
+  #presented: AppReadModel | null = null;
   #runningTurn = false;
   #disposed = false;
   #framingEvent = false;
@@ -30,7 +32,7 @@ export class AppController {
   start(): void {
     this.#view.bind((intent) => this.#handle(intent));
     this.#model.autoSelectBattleShip();
-    this.#view.render(this.#model.snapshot);
+    this.#render();
     this.#schedulePlayback();
   }
 
@@ -44,6 +46,7 @@ export class AppController {
 
   #handle(intent: AppIntent): void {
     try {
+      if (this.#navigate(intent)) return;
       if (intent.type !== 'map-size') this.#model.clearNotice();
       const receipt = this.#model.snapshot.productionReceipt;
       this.#handleIntent(intent);
@@ -52,28 +55,89 @@ export class AppController {
         if (this.#model.snapshot.productionReceipt)
           this.#receiptTimer = setTimeout(() => {
             this.#model.clearProductionReceipt();
-            this.#view.render(this.#model.snapshot);
+            this.#render();
           }, 3000);
       }
     } catch (error) {
       console.warn(error);
       this.#model.endMovementPlayback();
       this.#model.reportError(error);
-      this.#view.render(this.#model.snapshot);
+      this.#render();
     }
+  }
+
+  #render(snapshot = this.#model.snapshot): void {
+    this.#presented = snapshot;
+    this.#view.render(snapshot);
+  }
+
+  // responsiv-stjarnkarta: camera gestures reuse the last immutable empire snapshot.
+  #navigate(intent: AppIntent): boolean {
+    const previous = this.#presented;
+    if (
+      !previous ||
+      !isMapScreen(previous.screen) ||
+      previous.eventPlayback ||
+      previous.turnMovement ||
+      previous.tacticalBattle ||
+      previous.battleFeedback ||
+      previous.notice ||
+      this.#runningTurn ||
+      this.#fleetPointer ||
+      previous.fleetDragging ||
+      previous.fleetDestinationPreview ||
+      previous.mapTrade.preview ||
+      previous.mapTrade.candidateRouteIds.length ||
+      previous.mapTrade.assignmentFleetId
+    )
+      return false;
+    if (intent.type === 'pan' || intent.type === 'zoom') {
+      this.#cancelPointer(true);
+      if (intent.type === 'pan') this.#model.pan(intent.delta);
+      else this.#model.zoom(intent.factor, intent.anchor);
+    } else if (
+      intent.type === 'pointer-move' &&
+      this.#gesture.pointerCount > 0
+    ) {
+      const action = this.#gesture.move(intent.id, intent.point);
+      if (action.type === 'none') return true;
+      this.#model.hoverMapFleet(null);
+      if (action.type === 'pan') this.#model.pan(action.delta);
+      else {
+        this.#model.zoom(action.factor, action.previousCenter);
+        this.#model.pan({
+          x: action.center.x - action.previousCenter.x,
+          y: action.center.y - action.previousCenter.y,
+        });
+      }
+    } else if (
+      intent.type === 'pointer-move' &&
+      this.#gesture.pointerCount === 0
+    ) {
+      if (this.#model.hoverMapFleet(intent.point)) this.#render();
+      return true;
+    } else if (intent.type === 'map-leave') {
+      if (this.#model.hoverMapFleet(null)) this.#render();
+      return true;
+    } else return false;
+    const snapshot = this.#model.navigationSnapshot(previous);
+    this.#presented = snapshot;
+    if (this.#view.renderCamera) this.#view.renderCamera(snapshot);
+    else this.#view.render(snapshot);
+    return true;
   }
 
   #handleIntent(intent: AppIntent): void {
     if (intent.type === 'battle-command') {
       this.#model.commandBattle(intent.command);
       this.#model.autoSelectBattleShip();
-      this.#view.render(this.#model.snapshot);
+      this.#render();
       this.#schedulePlayback();
       return;
     }
     if (intent.type === 'map-size') {
       this.#model.resizeMap(intent.viewport);
-      this.#view.render(this.#model.snapshot);
+      this.#render();
       return;
     }
     const playback = this.#model.snapshot.eventPlayback;
@@ -86,7 +150,7 @@ export class AppController {
           intent.type === 'handle-discoveries' ? 'handle' : 'ignore',
         );
         this.#model.save();
-        this.#view.render(this.#model.snapshot);
+        this.#render();
         this.#schedulePlayback();
       }
       return;
@@ -200,7 +264,7 @@ export class AppController {
         if (this.#model.snapshot.interruption?.handling) {
           this.#model.continueEventHandling();
           this.#model.save();
-          this.#view.render(this.#model.snapshot);
+          this.#render();
           this.#schedulePlayback();
           return;
         }
@@ -692,7 +756,7 @@ export class AppController {
       ].includes(intent.type)
     )
       this.#model.save();
-    this.#view.render(this.#model.snapshot);
+    this.#render();
     this.#schedulePlayback();
   }
 
@@ -714,13 +778,13 @@ export class AppController {
         this.#model.finishBattleFeedback();
         this.#model.autoSelectBattleShip();
         this.#model.save();
-        this.#view.render(this.#model.snapshot);
+        this.#render();
         this.#schedulePlayback();
       }, 2800);
       return;
     }
     const battle = snapshot.tacticalBattle;
-    if (activated) this.#view.render(snapshot);
+    if (activated) this.#render(snapshot);
     if (battle) {
       if (battle.phase === 'fighting' && battle.turn === 'enemy')
         this.#playbackTimer = setTimeout(() => {
@@ -730,7 +794,7 @@ export class AppController {
           } catch (error) {
             this.#model.reportError(error);
           }
-          this.#view.render(this.#model.snapshot);
+          this.#render();
           this.#schedulePlayback();
         }, 450);
       return;
@@ -752,7 +816,7 @@ export class AppController {
         if (this.#disposed) return;
         this.#model.advanceEventPlayback();
         this.#model.save();
-        this.#view.render(this.#model.snapshot);
+        this.#render();
         this.#schedulePlayback();
       },
       playback.stage === 'announcing' ? 1400 : 450,
@@ -764,14 +828,14 @@ export class AppController {
     try {
       await this.#animateCamera();
       if (!this.#disposed) {
-        this.#view.render(this.#model.snapshot);
+        this.#render();
         this.#schedulePlayback();
       }
     } catch (error) {
       if (!this.#disposed) {
         this.#model.finishCameraFraming();
         this.#model.reportError(error);
-        this.#view.render(this.#model.snapshot);
+        this.#render();
         this.#schedulePlayback();
       }
     } finally {
@@ -790,7 +854,7 @@ export class AppController {
           ) {
             const snapshot = this.#model.snapshot;
             if (this.#view.renderCamera) this.#view.renderCamera(snapshot);
-            else this.#view.render(snapshot);
+            else this.#render(snapshot);
             return true;
           }
           return false;
@@ -817,7 +881,7 @@ export class AppController {
     try {
       if (resume) this.#model.continueTurn();
       else this.#model.startTurn();
-      this.#view.render(this.#model.snapshot);
+      this.#render();
       const origin = this.#model.snapshot;
       const movementPlayback = new TurnMovementPlayback(origin);
       let frame;
@@ -838,12 +902,12 @@ export class AppController {
         for (const track of tracks) {
           this.#model.focusTurnMovement(track[0]!);
           this.#model.frameTurnTrack(track);
-          this.#view.render(this.#model.snapshot);
+          this.#render();
           await this.#animateCamera();
           if (this.#disposed) return;
           for (const movement of track) {
             this.#model.focusTurnMovement(movement);
-            this.#view.render(this.#model.snapshot);
+            this.#render();
             await (this.#view.animateTurnStep?.(
               { movements: [movement] },
               (progress) => {
@@ -851,7 +915,7 @@ export class AppController {
                   !this.#disposed &&
                   this.#model.advanceTurnMovement(progress)
                 )
-                  this.#view.render(this.#model.snapshot);
+                  this.#render();
               },
             ) ?? Promise.resolve());
             if (this.#disposed) return;
@@ -861,13 +925,13 @@ export class AppController {
         this.#model.endMovementPlayback(true);
       }
       this.#model.beginEventPlayback();
-      this.#view.render(this.#model.snapshot);
+      this.#render();
       this.#schedulePlayback();
     } catch (error) {
       console.warn(error);
       this.#model.endMovementPlayback();
       this.#model.reportError(error);
-      this.#view.render(this.#model.snapshot);
+      this.#render();
     } finally {
       this.#runningTurn = false;
     }

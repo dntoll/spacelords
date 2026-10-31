@@ -1,3 +1,4 @@
+import { MapViewport } from '../models/MapViewport.js';
 import { renderMapEvent } from './MapEventView.js';
 import { renderMapTradeRoutes } from './MapTradeRoutesView.js';
 import { renderDetectionBoundary } from './DetectionMapView.js';
@@ -29,6 +30,8 @@ export class GalaxyMapView implements MapPort {
   readonly #observer: ResizeObserver;
   readonly #events = new AbortController();
   #model: AppReadModel | null = null;
+  #viewport: MapViewport | null = null;
+  #drawFrame = 0;
   #canvas: HTMLCanvasElement | null = null;
   #disposed = false;
   #ready = false;
@@ -68,7 +71,7 @@ export class GalaxyMapView implements MapPort {
             'data-shipyard-image-ready',
             String(!!this.#artwork.station),
           );
-          void sketch.redraw();
+          this.#requestDraw();
         });
         for (const type of Object.keys(SHIP_SPRITES) as ShipSpriteType[]) {
           void sketch
@@ -80,7 +83,7 @@ export class GalaxyMapView implements MapPort {
                 'data-ship-images-ready',
                 String(this.#shipImages.size),
               );
-              void sketch.redraw();
+              this.#requestDraw();
             })
             .catch(() => {
               /* Retain the loading glyph if a sprite is unavailable. */
@@ -92,7 +95,7 @@ export class GalaxyMapView implements MapPort {
             if (this.#disposed) return;
             this.#starTextures = createStarTextures(sketch, sprite);
             this.#canvas?.setAttribute('data-star-texture-ready', 'true');
-            void sketch.redraw();
+            this.#requestDraw();
           })
           .catch(() => {
             /* Keep the bounded loading glyph if the asset is unavailable. */
@@ -107,7 +110,7 @@ export class GalaxyMapView implements MapPort {
           Math.max(1, container.clientHeight),
           true,
         );
-        void this.#instance.redraw();
+        this.#requestDraw();
       }
     });
     this.#observer.observe(container);
@@ -119,14 +122,17 @@ export class GalaxyMapView implements MapPort {
       this.#movement?.movement.to.key !== model.turnMovement?.to.key
     )
       this.#movement = null;
+    if (this.#viewport?.cells !== model.cells)
+      this.#viewport = new MapViewport(model.cells);
     this.#model = model;
-    if (this.#ready && !this.#disposed) void this.#instance.redraw();
+    if (this.#ready && !this.#disposed) this.#requestDraw();
   }
 
   dispose(): void {
     this.#disposed = true;
     this.#artwork.dispose();
     window.cancelAnimationFrame(this.#movementFrame);
+    window.cancelAnimationFrame(this.#drawFrame);
     this.#finishMovement?.();
     this.#finishMovement = null;
     this.#observer.disconnect();
@@ -161,7 +167,7 @@ export class GalaxyMapView implements MapPort {
           const progress = Math.min(1, (now - started) / 400);
           this.#movement = { movement, progress };
           onProgress?.(progress);
-          void this.#instance.redraw();
+          this.#requestDraw();
           if (progress === 1) {
             this.#finishMovement = null;
             resolve();
@@ -171,6 +177,15 @@ export class GalaxyMapView implements MapPort {
         this.#movementFrame = window.requestAnimationFrame(draw);
       };
       this.#movementFrame = window.requestAnimationFrame(draw);
+    });
+  }
+
+  // responsiv-stjarnkarta: coalesce pointer and asset updates into one paint per frame.
+  #requestDraw(): void {
+    if (!this.#ready || this.#disposed || this.#drawFrame) return;
+    this.#drawFrame = window.requestAnimationFrame(() => {
+      this.#drawFrame = 0;
+      if (!this.#disposed) void this.#instance.redraw();
     });
   }
 
@@ -259,16 +274,8 @@ export class GalaxyMapView implements MapPort {
     sketch.translate(sketch.width / 2, sketch.height / 2);
     sketch.scale(model.camera.zoom);
     sketch.translate(-model.camera.center.x, -model.camera.center.y);
-    const margin = HexGeometry.size * 3;
-    const cells = model.cells.filter((cell) => {
-      const point = HexGeometry.toPoint(cell.position);
-      return (
-        Math.abs(point.x - model.camera.center.x) <=
-          sketch.width / (2 * model.camera.zoom) + margin &&
-        Math.abs(point.y - model.camera.center.y) <=
-          sketch.height / (2 * model.camera.zoom) + margin
-      );
-    });
+    const cells =
+      this.#viewport?.query(model.camera, sketch.width, sketch.height) ?? [];
     for (const cell of cells)
       if (showMapHex(model.camera.zoom, cell.explored))
         this.#hex(sketch, cell, false, model.camera.zoom);

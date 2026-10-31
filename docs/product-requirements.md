@@ -1,5 +1,10 @@
 # Produktkrav och status
 
+`responsiv-stjarnkarta` är **Fullständigt implementerat**. Star map,
+Fleets, Orders, Route och Production ska reagera snabbt när spelaren
+panorerar eller zoomar, även i den stora galaxen. Världens storlek,
+upptäckter och befintliga sparningar behålls.
+
 `synligt-stridsresultat`, `synligt-stridsslut`, `automatiskt-skeppsval-i-strid`,
 `synliga-fiendemanovrer` och `fuskknapp-for-teststrid` är
 **Fullständigt implementerat**. Träff, miss, skada och slutresultat visas på

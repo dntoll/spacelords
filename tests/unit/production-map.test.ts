@@ -37,6 +37,7 @@ function setup(state = tradeNetworkState()) {
       view.bind(handler);
     },
     render: (snapshot) => view.render(snapshot),
+    renderCamera: (snapshot) => view.renderCamera(snapshot),
     dispose: () => view.dispose(),
   });
   controller.start();

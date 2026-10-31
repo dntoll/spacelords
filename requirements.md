@@ -10,6 +10,12 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Kartans prestanda:** `responsiv-stjarnkarta` och `rumsligt-kartindex` är
+  **Fullständigt implementerat**. Panorering och zoom återanvänder speldata
+  och uppdaterar bara kamerabundna vyer. Kartan väljer innehåll genom ett
+  rumsligt index och samlar omritningar per bildruta. Galax och sparningar
+  behålls. Se [kartans prestanda](docs/map-performance.md).
+
 - **Stridsfeedback och snabbtest:** `synligt-stridsresultat`, `synligt-stridsslut`,
   `automatiskt-skeppsval-i-strid`, `synliga-fiendemanovrer` och
   `fuskknapp-for-teststrid` är **Fullständigt implementerat**. Träff, miss och

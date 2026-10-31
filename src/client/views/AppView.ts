@@ -1575,6 +1575,8 @@ export class AppView implements AppPort {
 
   renderCamera(model: AppReadModel): void {
     this.#map?.render(model);
+    if (!model.eventPlayback && !model.turnMovement)
+      this.#renderProductionRing(model);
     this.#announcementModel = model.eventPlayback ? model : null;
     this.#positionAnnouncement();
     if (this.#zoom)

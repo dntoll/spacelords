@@ -58,3 +58,40 @@ test('snabb-mobilpublicering / viewport-game-layout / sparat-spel: touch navigat
   await expect(map).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('responsiv-stjarnkarta / rumsligt-kartindex: camera updates preserve the turn console and reach the canvas', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await startFirstSlot(page);
+  const canvas = page.locator('canvas[data-rendered="true"]');
+  await expect(canvas).toBeVisible();
+  const result = await canvas.evaluate((canvas) => {
+    const footer = document.querySelector('.game-turn-actions')!;
+    const observer = new MutationObserver(() => {});
+    observer.observe(footer, { subtree: true, childList: true });
+    const started = performance.now();
+    for (let i = 0; i < 12; i++) {
+      canvas.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }),
+      );
+      canvas.dispatchEvent(
+        new WheelEvent('wheel', { deltaY: -10, cancelable: true }),
+      );
+    }
+    const elapsed = performance.now() - started;
+    const mutations = observer.takeRecords().length;
+    observer.disconnect();
+    return { mutations, elapsed };
+  });
+  expect(result.mutations).toBe(0);
+  await expect(async () => {
+    const camera = await canvas.evaluate((canvas) => ({
+      x: Number((canvas as HTMLCanvasElement).dataset.cameraX),
+      zoom: Number((canvas as HTMLCanvasElement).dataset.cameraZoom),
+    }));
+    expect(camera.zoom).toBeCloseTo(Math.exp(0.36), 5);
+    expect(camera.x).toBeLessThan(-300);
+    await expect(page.getByLabel('Map zoom')).toHaveText('143%');
+  }).toPass();
+});
