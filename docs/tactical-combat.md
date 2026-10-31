@@ -41,10 +41,11 @@ ett redan använt skepp startar ingen ny tur. Utplaceringsval är fria och
 pågående sparade skeppsturer återupptas direkt utan ny aktivering.
 
 `stridsorder-utan-mobilscroll` — **Fullständigt implementerat**: Your ship,
-svängar, Forward / escape, Weapon, Target, Fire weapon och End ship turn
+svängar, Forward / escape, Weapon, Fire weapon och End ship turn
 ligger samlat över kartan på stående mobil. På bredare skärmar ligger de
 synligt bredvid kartan. De går att använda utan att rulla till orderpanelen,
 även på 320 × 568 och liggande 844 × 390. Kartan använder återstående yta.
+Träffplatsen väljs på kartan, inte i en mållista.
 Combat details samlar skeppsdata, skottförklaring, tärningslogg och längre regler.
 
 Beställningen 2026-10-31 ersätter den separata aktiveringsknappen och den
@@ -70,6 +71,9 @@ Stridsregler och sparade riktningar bevaras.
 | `oppna-stridstarningar`        | Fullständigt implementerat | Initiativ och vapensalvor visar D6-slag.                                              |
 | `skeppsvis-retratt`            | Fullständigt implementerat | Enskilda skepp lämnar egen kortsida från runda två. Flottan samlas efteråt.           |
 | `sparad-taktisk-strid`         | Fullständigt implementerat | Utplacering, skador, ammunition, aktivering och slump sparas.                         |
+| `utforskade-stridsuppgraderingar` | Fullständigt implementerat | Missiler och pansarskrov forskas fram och monteras med Upgrade.                    |
+| `missilernas-omradeseffekt`    | Fullständigt implementerat | Missiler träffar vald hex och alla grannhexar. En Fighter har två salvor.             |
+| `traffhex-istallet-for-mallista` | Fullständigt implementerat | Skott siktas mot en hex på kartan. Ingen mållista.                                  |
 
 ## Möte och utplacering
 
@@ -98,26 +102,44 @@ försvinner. Ingen tröghet, energi eller överreaktionseld ingår.
 
 | Skepp            | Storlek | Skrov | Rörelse |
 | ---------------- | ------- | ----: | ------: |
-| Fighter          | Small   |     3 |       4 |
-| Space pirate     | Small   |     2 |       4 |
+| Fighter            | Small   |     3 |       4 |
+| Armored Fighter    | Small   |     5 |       4 |
+| Space pirate       | Small   |     2 |       4 |
 | Civilian shuttle | Small   |     3 |       3 |
 | Exploration ship | Medium  |     4 |       3 |
 | Salvage ship     | Medium  |     5 |       3 |
-| Transport ship   | Large   |     6 |       2 |
-| Colony ship      | Large   |     8 |       2 |
+| Transport ship     | Large   |     6 |       2 |
+| Armored Transport  | Large   |     9 |       2 |
+| Colony ship        | Large   |     8 |       2 |
 
 Minst en Ion pulse engine ger +1 rörelse. Bogsering ger grundrörelse 1 före
 motorbonusen. Släp är ingen egen aktiverbar pjäs.
 
 ## Vapen, skydd och tärningar
 
-| Vapen         | Bärare       | Räckvidd | Främre båge | Salva                     | Träff |
-| ------------- | ------------ | -------- | ----------- | ------------------------- | ----- |
-| Cannon        | Fighter      | 1–3 hex  | 120°        | 2D6, obegränsat           | 4+    |
-| Missiles      | Fighter      | 2–6 hex  | 60°         | 3D6, två salvor per strid | 4+    |
-| Raider cannon | Space pirate | 1–3 hex  | 120°        | 2D6, obegränsat           | 5+    |
+| Vapen         | Bärare                         | Räckvidd | Främre båge | Salva                                      | Träff |
+| ------------- | ------------------------------ | -------- | ----------- | ------------------------------------------ | ----- |
+| Cannon        | Fighter, Armored Fighter       | 1–3 hex  | 120°        | 2D6, obegränsat                            | 4+    |
+| Missiles      | Fighter med uppgraderingen     | 2–6 hex  | 60°         | 3D6 per skepp i området, två salvor        | 4+    |
+| Raider cannon | Space pirate                   | 1–3 hex  | 120°        | 2D6, obegränsat                            | 5+    |
 
-Civila skepp är obeväpnade. Varje lyckad tärning ger en skrovskada.
+Civila skepp är obeväpnade. Armored Fighter och Armored Transport är samma
+skeppstyper med pansarskrov. Last, storlek och fart är oförändrade. Pansaret
+och missilerna monteras med Upgrade efter forskning. En ny Fighter börjar utan
+missiler. En Fighter i ett äldre sparat spel, där fältet saknas, behåller två
+salvor.
+
+`traffhex-istallet-for-mallista`: spelaren väljer träffhex på kartan och
+bekräftar med Fire weapon. Det finns ingen mållista. Cannon och Raider cannon
+kräver ett fientligt skepp på hexen. Missiler kan sikta på en tom hex.
+
+`missilernas-omradeseffekt`: en missilsalva träffar alla aktiva skepp på
+träffhexen och de sex grannhexarna, även egna. Varje träffat skepp slås för
+sig. En tom yta förbrukar salvan utan tärningsslag. Fri skottlinje krävs till
+träffhexen. Skepp i området träffas även om de ligger utanför vapnets båge
+eller en hex bortom maxräckvidden.
+
+Varje lyckad tärning ger en skrovskada.
 Anfall från målets bakre 120° sänker träffkravet med ett. Bågarnas gränser
 ingår. Slagen visas tillsammans med träffkrav, skada och återstående skrov.
 
@@ -153,9 +175,10 @@ förstörs inte automatiskt när pirater överlever. De kan skyddas eller fly.
 `stridsrapport-i-dialog`, `vrak-efter-strid` och
 `spara-bargning-och-stridsavbrott` behåller sina namn och omfattar det nya flödet.
 
-Inga byggbara vapen, nya skeppstyper, beständiga skrovskador eller nya
-reparationsregler ingår. Befintliga sparningar och redan avgjorda rapporter
-bevaras utan rensning.
+Inga nya skeppstyper, beständiga skrovskador eller nya reparationsregler ingår.
+Missiler och pansarskrov är uppgraderingar av Fighter och Transport ship.
+Befintliga sparningar och redan avgjorda rapporter bevaras utan rensning.
+Test battle behåller två missilsalvor på sina Fighters så att vapnet kan prövas.
 
 ## Verifiering
 

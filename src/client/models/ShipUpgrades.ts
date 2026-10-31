@@ -6,6 +6,8 @@ export interface ShipUpgradeTarget {
   readonly shipId: string;
   readonly ionEngines: number;
   readonly telescope: TelescopeLevel | null;
+  readonly missiles: boolean;
+  readonly armored: boolean;
 }
 
 export interface FleetUpgradeOrder {
@@ -33,14 +35,34 @@ export class ShipUpgrades {
       const ionEngines = researched.has('Ion pulse engine factory')
         ? ship.engines['Rocket engine']
         : 0;
-      const target =
+      const telescope =
         ship.type === 'Exploration ship' &&
         level &&
         level > (ship.telescope ?? 1)
           ? level
           : null;
-      return ionEngines || target
-        ? [{ shipId: ship.id, ionEngines, telescope: target }]
+      // utforskade-stridsuppgraderingar: absent fighter missiles are the legacy pair.
+      const missiles =
+        researched.has('Missiles') &&
+        ship.type === 'Fighter' &&
+        (ship.missiles ?? 2) === 0;
+      const armored =
+        (ship.type === 'Fighter' &&
+          researched.has('Armored Fighter') &&
+          ship.armored !== true) ||
+        (ship.type === 'Transport ship' &&
+          researched.has('Armored Transport') &&
+          ship.armored !== true);
+      return ionEngines || telescope || missiles || armored
+        ? [
+            {
+              shipId: ship.id,
+              ionEngines,
+              telescope,
+              missiles,
+              armored,
+            },
+          ]
         : [];
     });
   }
@@ -70,6 +92,8 @@ export class ShipUpgrades {
           ship.engines['Ion pulse engine'] + target.ionEngines,
       },
       ...(target.telescope ? { telescope: target.telescope } : {}),
+      ...(target.missiles ? { missiles: 2 } : {}),
+      ...(target.armored ? { armored: true } : {}),
     };
   }
 
@@ -107,7 +131,12 @@ export class ShipUpgrades {
                     (ships.find((ship) => ship.id === target.shipId)
                       ?.telescope ?? 1) &&
                   target.telescope <= candidate.telescope)) &&
-              (target.ionEngines > 0 || target.telescope !== null),
+              (target.missiles !== true || candidate.missiles) &&
+              (target.armored !== true || candidate.armored) &&
+              (target.ionEngines > 0 ||
+                target.telescope !== null ||
+                target.missiles === true ||
+                target.armored === true),
           ),
       )
     )

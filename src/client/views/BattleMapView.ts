@@ -5,7 +5,10 @@ import {
   type Point,
 } from '../models/HexCoordinate.js';
 import {
+  battleCamera,
   battleHex,
+  maxHull,
+  missileArea,
   SHIP_PROFILES,
   WEAPONS,
   type BattleState,
@@ -22,7 +25,7 @@ export class BattleMapView implements BattleMapPort {
   readonly #images = new Map<string, p5.Image>();
   #state: BattleState | null = null;
   #selected: string | null = null;
-  #targets: readonly string[] = [];
+  #aim: BattleHex | null = null;
   #weapon: WeaponName = 'Cannon';
   #scale = 1;
   #offset: Point = { x: 0, y: 0 };
@@ -50,7 +53,7 @@ export class BattleMapView implements BattleMapPort {
         canvas.tabIndex = 0;
         canvas.setAttribute(
           'aria-label',
-          'Battle hex map. Tap a friendly ship to select it or an enemy to target it. Drag to pan, pinch or scroll to zoom. Use the ship and target controls for keyboard access.',
+          'Battle hex map. Tap a friendly ship to select it. During its turn, tap the hex where the shot should land. Drag to pan, pinch or scroll to zoom.',
         );
         this.#bind(canvas, select);
         this.#ready = true;
@@ -82,13 +85,13 @@ export class BattleMapView implements BattleMapPort {
   render(
     state: BattleState,
     selected: string | null,
-    targets: readonly string[],
+    aim: BattleHex | null,
     weapon: WeaponName,
   ): void {
     const changed = this.#state?.id !== state.id;
     this.#state = state;
     this.#selected = selected;
-    this.#targets = targets;
+    this.#aim = aim;
     this.#weapon = weapon;
     if (changed || this.#fitPending) this.fit();
     if (this.#ready) void this.#p5.redraw();
@@ -99,23 +102,12 @@ export class BattleMapView implements BattleMapPort {
       return;
     }
     const s = this.#state;
-    const width = (s.width + 0.5) * Math.sqrt(3) * HexGeometry.size;
-    const height =
-      (s.height - 1) * 1.5 * HexGeometry.size + HexGeometry.size * 2;
-    this.#scale = Math.min(
-      (this.#p5.width - 24) / width,
-      (this.#p5.height - 24) / height,
-    );
-    this.#offset = {
-      x:
-        (this.#p5.width -
-          (s.width - 0.5) * Math.sqrt(3) * HexGeometry.size * this.#scale) /
-        2,
-      y:
-        (this.#p5.height -
-          (s.height - 1) * 1.5 * HexGeometry.size * this.#scale) /
-        2,
-    };
+    const camera = battleCamera(s, {
+      width: this.#p5.width,
+      height: this.#p5.height,
+    });
+    this.#scale = camera.scale;
+    this.#offset = camera.offset;
     this.#fitPending = false;
     void this.#p5.redraw();
   }
@@ -299,6 +291,28 @@ export class BattleMapView implements BattleMapPort {
       p.circle(center.x - 8, center.y + 5, 14);
       p.circle(center.x + 9, center.y - 10, 10);
     }
+    const aim = this.#aim;
+    if (aim && state.phase === 'fighting') {
+      const area =
+        WEAPONS[this.#weapon].area > 0 ? missileArea(aim) : [aim];
+      for (const hex of area) {
+        if (
+          hex.r < 0 ||
+          hex.r >= state.height ||
+          hex.q + Math.floor(hex.r / 2) < 0 ||
+          hex.q + Math.floor(hex.r / 2) >= state.width
+        )
+          continue;
+        p.stroke(hex.q === aim.q && hex.r === aim.r ? '#ffda7a' : '#8d7344');
+        p.strokeWeight(2 / this.#scale);
+        p.fill(
+          hex.q === aim.q && hex.r === aim.r
+            ? 'rgba(255, 218, 122, 0.35)'
+            : 'rgba(255, 218, 122, 0.16)',
+        );
+        polygon(hex, HexGeometry.size - 2);
+      }
+    }
     const selected = state.pieces.find((s) => s.id === this.#selected);
     if (
       selected?.position &&
@@ -330,12 +344,20 @@ export class BattleMapView implements BattleMapPort {
       );
       const profile = SHIP_PROFILES[ship.type],
         radius = 13 + profile.size * 4;
+      const aimed =
+        !!this.#aim &&
+        !!ship.position &&
+        (WEAPONS[this.#weapon].area > 0
+          ? missileArea(this.#aim).some(
+              (hex) => hex.q === ship.position!.q && hex.r === ship.position!.r,
+            )
+          : ship.position.q === this.#aim.q && ship.position.r === this.#aim.r);
       p.push();
       p.translate(center.x, center.y);
       p.stroke(
         ship.id === this.#selected
           ? '#ffffff'
-          : this.#targets.includes(ship.id)
+          : aimed
             ? '#ffda7a'
             : ship.side === 'player'
               ? '#64d7ff'
@@ -373,7 +395,7 @@ export class BattleMapView implements BattleMapPort {
       p.fill('#112331');
       p.rect(-23, 23, 46, 5);
       p.fill(ship.side === 'player' ? '#64d7ff' : '#fa867a');
-      p.rect(-23, 23, (46 * ship.hull) / profile.hull, 5);
+      p.rect(-23, 23, (46 * ship.hull) / maxHull(ship), 5);
       p.fill('#eef5fb');
       p.textAlign(p.CENTER);
       p.textSize(11);

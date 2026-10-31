@@ -163,7 +163,6 @@ it('stridsorder-utan-mobilscroll: puts all combat commands ahead of the board an
     'Turn right 60°',
     'Forward / escape',
     'Weapon',
-    'Target',
     'Fire weapon',
     'End ship turn',
   ])
@@ -171,7 +170,41 @@ it('stridsorder-utan-mobilscroll: puts all combat commands ahead of the board an
       orders.querySelector(`[aria-label="${label}"]`),
       label,
     ).not.toBeNull();
-  expect(orders.querySelector('.battle-log')).toBeNull();
+    expect(orders.querySelector('[aria-label="Target"]')).toBeNull();
+    expect(orders.querySelector('.battle-log')).toBeNull();
   expect(document.querySelector('.battle-details .battle-log')).not.toBeNull();
+  view.dispose();
+});
+
+it('traffhex-istallet-for-mallista: fires at the hex chosen on the map and has no target list', () => {
+  const initial = state();
+  const { view, emit, selectHex } = setup({
+    ...initial,
+    activation: {
+      id: 'first',
+      remaining: 4,
+      fired: false,
+      moved: false,
+      movementClosed: false,
+    },
+  });
+  expect(document.querySelector('[aria-label="Target"]')).toBeNull();
+  const fire = () =>
+    document.querySelector<HTMLButtonElement>('[aria-label="Fire weapon"]')!;
+  expect(fire().disabled).toBe(true);
+  selectHex({ q: 8, r: 4 });
+  expect(fire().disabled).toBe(true);
+  expect(document.body.textContent).toContain('enemy ship');
+  selectHex({ q: 3, r: 4 });
+  expect(fire().disabled).toBe(false);
+  expect(document.body.textContent).toContain('Impact hex 3,4');
+  expect(
+    document.querySelector('.battle-controls')!.textContent,
+  ).toContain('Impact hex 3,4');
+  fire().click();
+  expect(emit).toHaveBeenCalledWith({
+    type: 'battle-command',
+    command: { type: 'fire', at: { q: 3, r: 4 }, weapon: 'Cannon' },
+  });
   view.dispose();
 });

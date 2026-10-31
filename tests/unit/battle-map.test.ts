@@ -152,7 +152,7 @@ it.each(Object.keys(SHIP_SPRITES) as ShipSpriteType[])(
       noses.length = 0;
       markers.length = 0;
       arcs.length = 0;
-      view.render(state, 'ship', [], 'Cannon');
+      view.render(state, 'ship', null, 'Cannon');
       battle.command({ type: 'activate', id: 'ship' });
       battle.command({ type: 'forward' });
       const destination = battle.snapshot.pieces.find(
@@ -213,7 +213,7 @@ it('skeppets-framat-foljer-spriten: the fallback triangle points toward the same
         ],
       },
       'ship',
-      [],
+      null,
       'Cannon',
     );
     const nose = noses.at(-1)!;

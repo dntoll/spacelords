@@ -383,6 +383,9 @@ export interface ShipUnit {
   readonly telescope?: TelescopeLevel;
   readonly id: string;
   readonly type: ShipType;
+  /** Fighter missile salvos. Absent means the legacy pair of two. */
+  readonly missiles?: number;
+  readonly armored?: boolean;
   readonly engines: Readonly<{
     'Rocket engine': number;
     'Ion pulse engine': number;
@@ -807,6 +810,13 @@ export class Game {
       },
     ];
     this.#normalizeShips();
+    for (const fleet of this.#fleets)
+      if (fleet.shipUnits)
+        fleet.shipUnits = fleet.shipUnits.map((unit) =>
+          unit.type === 'Fighter' && unit.missiles === undefined
+            ? { ...unit, missiles: 0 }
+            : unit,
+        );
     this.#updateSight();
     this.#updateSight();
     this.#visiblePirates = new Set(
@@ -3496,6 +3506,8 @@ export class Game {
               type: unit.type,
               ion: unit.engines['Ion pulse engine'] > 0,
               towing: towing.has(unit.id),
+              missiles: unit.type === 'Fighter' ? (unit.missiles ?? 2) : 0,
+              armored: unit.armored === true,
             })),
           };
         });
@@ -4347,6 +4359,7 @@ export class Game {
         'Rocket engine': parts['Rocket engine'] ?? engineCount(ship),
         'Ion pulse engine': parts['Ion pulse engine'] ?? 0,
       },
+      ...(ship === 'Fighter' ? { missiles: 0 } : {}),
     });
     this.#planetEvent(`${ship} was produced at ${planet.name}.`, planet);
   }
@@ -5874,6 +5887,18 @@ export class Game {
       );
       for (let index = 0; index < units.length; index++) {
         const unit = units[index]!;
+        if (
+          (unit.missiles !== undefined &&
+            (!Number.isInteger(unit.missiles) ||
+              (unit.type === 'Fighter'
+                ? unit.missiles !== 0 && unit.missiles !== 2
+                : unit.missiles !== 0))) ||
+          (unit.armored !== undefined && typeof unit.armored !== 'boolean') ||
+          (unit.armored === true &&
+            unit.type !== 'Fighter' &&
+            unit.type !== 'Transport ship')
+        )
+          throw new Error('Invalid ship combat upgrade.');
         if (unit.type === 'Exploration ship') {
           if (
             unit.telescope !== undefined &&

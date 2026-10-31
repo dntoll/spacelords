@@ -4,6 +4,7 @@ import {
   WEAPONS,
   battleWeapons,
   battlePieceLabel,
+  maxHull,
   type BattleState,
   type BattleHex,
   type WeaponName,
@@ -15,7 +16,7 @@ export interface BattleMapPort {
   render(
     state: BattleState,
     selected: string | null,
-    targets: readonly string[],
+    aim: BattleHex | null,
     weapon: WeaponName,
   ): void;
   zoom(factor: number): void;
@@ -40,7 +41,8 @@ export class BattleView {
   readonly #map: BattleMapPort | undefined;
   #state: BattleState | null = null;
   #selected: string | null = null;
-  #target: string | null = null;
+  #aim: BattleHex | null = null;
+  #activationId: string | null = null;
   #weapon: WeaponName = 'Cannon';
   #facing = 0;
   #battleId = '';
@@ -114,17 +116,25 @@ export class BattleView {
         p.position?.q === position.q &&
         p.position.r === position.r,
     );
-    if (piece?.side === 'player') {
+    const aiming =
+      state.phase === 'fighting' &&
+      state.turn === 'player' &&
+      !!state.activation &&
+      !state.activation.fired;
+    if (piece?.side === 'player' && piece.id === state.activation?.id) return;
+    if (piece?.side === 'player' && !aiming) {
       this.#selectFriendly(piece.id);
-    } else if (state.phase === 'deployment' && this.#selected)
+      return;
+    }
+    if (state.phase === 'deployment' && this.#selected)
       this.#command({
         type: 'place',
         id: this.#selected,
         position,
         facing: this.#facing,
       });
-    else if (piece) {
-      this.#target = piece.id;
+    else if (aiming) {
+      this.#aim = position;
       this.render(state);
     }
   }
@@ -155,9 +165,15 @@ export class BattleView {
     this.#state = state;
     if (this.#battleId !== state.id) {
       this.#selected = null;
-      this.#target = null;
+      this.#aim = null;
+      this.#activationId = null;
       this.#battleId = state.id;
       this.#map?.fit();
+    }
+    const activationId = state.activation?.id ?? null;
+    if (this.#activationId !== activationId) {
+      this.#aim = null;
+      this.#activationId = activationId;
     }
     const friendly = state.pieces.filter(
       (p) => p.side === 'player' && p.status === 'active',
@@ -177,11 +193,6 @@ export class BattleView {
       friendly.find((p) => !p.activated) ??
       friendly[0];
     if (selected?.position) this.#facing = selected.facing;
-    const enemies = state.pieces.filter(
-      (p) => p.side === 'enemy' && p.status === 'active',
-    );
-    if (!enemies.some((p) => p.id === this.#target))
-      this.#target = enemies[0]?.id ?? null;
     this.#heading.textContent =
       state.phase === 'complete'
         ? 'Battle complete'
@@ -195,7 +206,7 @@ export class BattleView {
         : state.turn === 'enemy'
           ? 'Enemy turn…'
           : state.activation
-            ? `${selected ? battlePieceLabel(selected, state.pieces) : 'Ship'} · Hull ${selected?.hull}/${selected ? SHIP_PROFILES[selected.type].hull : 0} · Movement ${state.activation.remaining}`
+            ? `${selected ? battlePieceLabel(selected, state.pieces) : 'Ship'} · Hull ${selected?.hull}/${selected ? maxHull(selected) : 0} · Movement ${state.activation.remaining}`
             : 'Select a ship to take its turn.');
     this.#status.setAttribute('role', 'status');
     const shot = state.log.findLast((line) => /: \d+ damage/.test(line));
@@ -229,7 +240,7 @@ export class BattleView {
           : 'Defeat';
       this.#outcome.textContent = `Battle complete · ${result} · ${lost} ships lost · ${escaped} escaped`;
       this.#status.textContent = 'Surviving ships regroup. Continuing…';
-      this.#map?.render(state, null, [], this.#weapon);
+      this.#map?.render(state, null, null, this.#weapon);
       return;
     }
     const focusedLabel = document.activeElement?.getAttribute('aria-label');
@@ -244,7 +255,7 @@ export class BattleView {
           : []),
         ...friendly.map((p) => ({
           value: p.id,
-          text: `${battlePieceLabel(p, state.pieces)} · ${p.hull}/${SHIP_PROFILES[p.type].hull}${p.activated ? ' · done' : ''}${p.position ? '' : ' · undeployed'}`,
+          text: `${battlePieceLabel(p, state.pieces)} · ${p.hull}/${maxHull(p)}${p.activated ? ' · done' : ''}${p.position ? '' : ' · undeployed'}`,
           disabled: state.phase === 'fighting' && p.activated,
         })),
       ],
@@ -311,7 +322,7 @@ export class BattleView {
         element(
           'p',
           'battle-ship-stats',
-          `Hull ${selected.hull}/${SHIP_PROFILES[selected.type].hull} · Movement ${remaining} · ${['Small', 'Medium', 'Large'][SHIP_PROFILES[selected.type].size - 1]}`,
+          `Hull ${selected.hull}/${maxHull(selected)} · Movement ${remaining} · ${['Small', 'Medium', 'Large'][SHIP_PROFILES[selected.type].size - 1]}`,
         ),
       );
       const maneuvers = element('div', 'battle-maneuvers');
@@ -334,7 +345,7 @@ export class BattleView {
         'Move one hex forward, or escape through your own edge.';
       maneuvers.append(left, forward, right);
       this.#panel.append(maneuvers);
-      const weapons = battleWeapons(selected.type);
+      const weapons = battleWeapons(selected.type, selected.hasMissiles);
       if (!weapons.includes(this.#weapon))
         this.#weapon = weapons[0] ?? 'Cannon';
       if (weapons.length) {
@@ -342,7 +353,7 @@ export class BattleView {
           'Weapon',
           weapons.map((name) => ({
             value: name,
-            text: `${name}${name === 'Missiles' ? ` · ${selected.missiles} salvos` : ''}`,
+            text: `${name}${name === 'Missiles' ? ` · ${selected.missiles} ${selected.missiles === 1 ? 'salvo' : 'salvos'}` : ''}`,
           })),
           this.#weapon,
           (value) => {
@@ -350,43 +361,48 @@ export class BattleView {
             this.render(state);
           },
         );
-        this.#select(
-          'Target',
-          enemies.map((p) => ({
-            value: p.id,
-            text: `${battlePieceLabel(p, state.pieces)} · ${p.hull}/${SHIP_PROFILES[p.type].hull}`,
-          })),
-          this.#target,
-          (value) => {
-            this.#target = value;
-            this.render(state);
-          },
-        );
         const weapon = WEAPONS[this.#weapon];
-        const preview = this.#target
-          ? rules.shot(selected.id, this.#target, this.#weapon)
+        const preview = this.#aim
+          ? rules.impact(selected.id, this.#aim, this.#weapon)
           : null;
+        const aimText = this.#aim
+          ? `Impact hex ${this.#aim.q},${this.#aim.r}${weapon.area ? ' · adjacent hexes included' : ''}`
+          : 'Choose the impact hex on the map.';
+        this.#panel.append(element('p', 'battle-aim', aimText));
         this.#information.append(
           element(
             'p',
             'battle-shot-preview',
-            `${weapon.min}–${weapon.max} hex · ${weapon.arc}° front arc · ${preview?.dice ?? weapon.dice}D6, hit ${preview?.threshold ?? weapon.threshold}+${preview?.rear ? ' · rear attack' : ''}`,
+            `${weapon.min}–${weapon.max} hex · ${weapon.arc}° front arc · ${weapon.dice}D6, hit ${preview?.hits[0]?.threshold ?? weapon.threshold}+${preview?.hits.some((hit) => hit.rear) ? ' · rear attack' : ''}`,
           ),
         );
         if (preview?.reason)
           this.#information.append(element('p', 'help-text', preview.reason));
+        else if (preview && weapon.area)
+          this.#information.append(
+            element(
+              'p',
+              'help-text',
+              preview.hits.length
+                ? `Area hits ${preview.hits.length} ${preview.hits.length === 1 ? 'ship' : 'ships'}.`
+                : 'No ships are in the area. The salvo is still spent.',
+            ),
+          );
         const fire = button('Fire weapon', () => {
-          if (this.#target)
+          if (this.#aim)
             this.#command({
               type: 'fire',
-              targetId: this.#target,
+              at: this.#aim,
               weapon: this.#weapon,
             });
         });
         fire.disabled =
           !active || !!state.activation?.fired || !preview || !!preview.reason;
         fire.title =
-          preview?.reason ?? 'Fire the selected weapon at the selected target.';
+          preview?.reason ??
+          (this.#aim
+            ? 'Fire the selected weapon at the chosen hex.'
+            : 'Choose the impact hex on the map.');
         this.#panel.append(fire);
       } else
         this.#information.append(
@@ -417,7 +433,7 @@ export class BattleView {
       element(
         'p',
         '',
-        'Select a ship to take its turn once per round. Move then fire, or fire then move. Turning and moving each cost 1 movement. Each successful D6 causes 1 hull damage. Rear attacks reduce the required roll by 1. Asteroids and larger ships block fire completely. Destroyed ships leave wrecks; surviving ships recover hull and ammunition after combat.',
+        'Select a ship to take its turn once per round. Choose the impact hex on the map, then fire. Missiles also hit every adjacent hex, including your own ships. Move then fire, or fire then move. Turning and moving each cost 1 movement. Each successful D6 causes 1 hull damage. Rear attacks reduce the required roll by 1. Asteroids and larger ships block fire completely. Destroyed ships leave wrecks; surviving ships recover hull and ammunition after combat.',
       ),
     );
     this.#information.append(help);
@@ -426,18 +442,7 @@ export class BattleView {
       [...this.#panel.querySelectorAll<HTMLElement>('[aria-label]')]
         .find((node) => node.getAttribute('aria-label') === focusedLabel)
         ?.focus({ preventScroll: true });
-    const rules =
-      state.phase === 'fighting' ? TacticalBattle.restore(state) : null;
-    const targets =
-      rules &&
-      this.#selected &&
-      selected &&
-      battleWeapons(selected.type).includes(this.#weapon)
-        ? enemies
-            .filter((p) => !rules.shot(selected.id, p.id, this.#weapon).reason)
-            .map((p) => p.id)
-        : [];
-    this.#map?.render(state, this.#selected, targets, this.#weapon);
+    this.#map?.render(state, this.#selected, this.#aim, this.#weapon);
   }
   dispose(): void {
     this.#map?.dispose();

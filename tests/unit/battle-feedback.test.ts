@@ -145,7 +145,7 @@ it('stridsrapport-i-dialog / synligt-stridsslut: shows the completed board befor
     command: {
       type: 'fire',
       weapon: 'Cannon',
-      targetId: state.pieces.find((p) => p.side === 'enemy')!.id,
+      at: state.pieces.find((p) => p.side === 'enemy')!.position!,
     },
   });
   expect(model.snapshot.battleFeedback?.phase).toBe('complete');

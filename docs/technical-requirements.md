@@ -1239,6 +1239,14 @@ riktning, använd aktivering, logg och slumpgeneratorns tillstånd bevaras.
 Äldre sparningar och redan avgjorda rapporter läses utan rensning. Skeppens
 identiteter stäms av mot deltagande flottor före återupptagning.
 
+`utforskade-stridsuppgraderingar`, `missilernas-omradeseffekt` och
+`traffhex-istallet-for-mallista`: skeppsenheten kan bära `missiles` 0 eller 2
+och `armored`. Saknat missilfält på en Fighter betyder de två salvor som gällde
+tidigare. Nya Fighters sparas med 0 tills Upgrade sätter 2. Stridspjäsen kan
+bära `hasMissiles` och `armored`. Saknade fält i en pågående strid betyder att
+en Fighter har avfyrare och att skrovet är opansrat. Eldkommandot siktar mot
+en hex. Sparversionen är oförändrad och inga sparningar rensas.
+
 `snabb-testsvit`: testprocesser återanvänds per miljö med isolate: false.
 Befintlig rensning av mocks och testernas återställning av klockor och DOM
 behålls. Detta minskar startkostnaden per testfil utan att flytta bort

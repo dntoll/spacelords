@@ -109,6 +109,15 @@ Se [hela visionen](docs/game-vision.md).
   uppgraderas direkt till senaste versionen på samma byggplats via Build queue.
   Äldre spel bevaras. Se [fabriksuppgraderingar](docs/factory-upgrades.md).
 
+- **Stridsuppgraderingar:** `utforskade-stridsuppgraderingar`,
+  `missilernas-omradeseffekt` och `traffhex-istallet-for-mallista` är
+  **Fullständigt implementerat**. Missiles, Armor, Armored Transport och
+  Armored Fighter forskas fram och monteras med Upgrade. En Fighter bär två
+  missilsalvor. Missiler träffar vald hex och alla grannhexar, även egna skepp.
+  Skott siktas på stridskartan. Äldre sparade Fighters behåller sina salvor.
+  Se [taktisk strid](docs/tactical-combat.md) och
+  [flottuppgradering](docs/fleet-upgrades.md).
+
 - **Taktisk strid:** Ny separat hexkarta med alla deltagande skepp,
   utplacering, växelvisa aktiveringar, eldbågar, skydd, öppna D6-slag och
   skeppsvis reträtt är **Fullständigt implementerat**. Sparade strider

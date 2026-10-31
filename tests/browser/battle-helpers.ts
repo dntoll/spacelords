@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import {
   TacticalBattle,
+  battleHexPoint,
   battleWeapons,
   type BattleCommand,
 } from '../../src/client/models/TacticalBattle.js';
@@ -62,7 +63,8 @@ export async function finishTacticalCombat(page: Page): Promise<void> {
           (p) => p.side === 'player' && p.status === 'active' && !p.activated,
         )!);
     if (!state.activation) battle.command({ type: 'activate', id: piece.id });
-    if (battleWeapons(piece.type).length) battle.actAutomatically();
+    if (battleWeapons(piece.type, piece.hasMissiles).length)
+      battle.actAutomatically();
     else battle.command({ type: 'end-activation' });
     for (const command of commands) {
       switch (command.type) {
@@ -85,17 +87,22 @@ export async function finishTacticalCombat(page: Page): Promise<void> {
             .getByRole('button', { name: 'Forward / escape', exact: true })
             .click();
           break;
-        case 'fire':
+        case 'fire': {
           await dialog
             .getByLabel('Weapon', { exact: true })
             .selectOption(command.weapon);
-          await dialog
-            .getByLabel('Target', { exact: true })
-            .selectOption(command.targetId);
+          const canvas = dialog.locator('.battle-canvas canvas');
+          const size = await canvas.evaluate((node) => ({
+            width: node.clientWidth,
+            height: node.clientHeight,
+          }));
+          const point = battleHexPoint(state, size, command.at);
+          await canvas.click({ position: { x: point.x, y: point.y } });
           await dialog
             .getByRole('button', { name: 'Fire weapon', exact: true })
             .click();
           break;
+        }
         case 'end-activation':
           await dialog
             .getByRole('button', { name: 'End ship turn', exact: true })

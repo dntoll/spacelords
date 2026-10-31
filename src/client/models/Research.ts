@@ -17,6 +17,10 @@ export const TECHNOLOGIES = [
   'Rocket engine factory',
   'Ion pulse engine factory',
   'Weapons module factory',
+  'Missiles',
+  'Armor',
+  'Armored Transport',
+  'Armored Fighter',
   'Ice dome',
   'Ice terraforming factory',
   'Desert dome',
@@ -48,6 +52,10 @@ export const PREREQUISITES: Readonly<
   'Rocket engine factory': [],
   'Ion pulse engine factory': ['Rocket engine factory'],
   'Weapons module factory': ['Rocket engine factory'],
+  Missiles: ['Fighter factory'],
+  Armor: ['Weapons module factory'],
+  'Armored Transport': ['Armor', 'Transport ship factory'],
+  'Armored Fighter': ['Armor', 'Fighter factory'],
   'Ice dome': [],
   'Ice terraforming factory': ['Ice dome'],
   'Desert dome': [],
@@ -113,6 +121,16 @@ export class ResearchPlan {
     return item;
   }
 }
+
+export const COMBAT_RESEARCH = {
+  Missiles:
+    'Upgrade a Fighter with two missile salvos. In combat, choose the impact hex. Every ship on that hex and its adjacent hexes is attacked, including your own.',
+  Armor: 'Opens armored hulls for Transport ships and Fighters.',
+  'Armored Transport':
+    'Upgrade a Transport ship into an Armored Transport. Hull becomes 9. Cargo, size and speed stay the same.',
+  'Armored Fighter':
+    'Upgrade a Fighter into an Armored Fighter. Hull becomes 5. Weapons, size and movement stay the same.',
+} as const;
 
 export const ORDER_RESEARCH = {
   'Civilian transport':

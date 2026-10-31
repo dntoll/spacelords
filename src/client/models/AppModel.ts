@@ -1850,7 +1850,7 @@ export class AppModel {
       (p) => p.side === 'player' && p.status === 'active' && !p.activated,
     );
     const ship =
-      eligible.find((p) => battleWeapons(p.type).length) ?? eligible[0];
+      eligible.find((p) => battleWeapons(p.type, p.hasMissiles).length) ?? eligible[0];
     if (!ship) return false;
     this.commandBattle({ type: 'activate', id: ship.id });
     return true;

@@ -1,4 +1,9 @@
-import { SHIP_SPRITES, SHIP_TYPES, type ShipSpriteType } from './ShipImages.js';
+import { combatDesignName } from '../models/TacticalBattle.js';
+import {
+  SHIP_SPRITES,
+  SHIP_TYPES,
+  type ShipSpriteType,
+} from './ShipImages.js';
 export { SHIP_IMAGES, SHIP_TYPES } from './ShipImages.js';
 import { TELESCOPES } from '../models/Detection.js';
 import { type FleetSnapshot, type ShipType } from '../models/Game.js';
@@ -27,24 +32,35 @@ export function renderFleetShips(
       .toSorted((a, b) => a.id.localeCompare(b.id));
     for (let index = 0; index < Math.min(count, previewLimit); index++) {
       const unit = units?.[index];
+      const design = unit ? combatDesignName(unit) : type;
       const token = choose
         ? button(
-            `${type} ${index + 1} in ${fleet.name}`,
+            `${design} ${index + 1} in ${fleet.name}`,
             () => choose(type, unit?.id),
             'ship-token',
           )
         : element('figure', 'ship-portrait');
       if (unit) {
         token.dataset.shipId = unit.id;
-        token.title = unit.telescope
-          ? `${type} · ${TELESCOPES[unit.telescope - 1]} · Detection ${unit.telescope} hex`
-          : type;
+        token.title = [
+          combatDesignName(unit),
+          unit.telescope
+            ? `${TELESCOPES[unit.telescope - 1]} · Detection ${unit.telescope} hex`
+            : '',
+          unit.missiles ? `${unit.missiles} missiles` : '',
+        ]
+          .filter(Boolean)
+          .join(' · ');
       }
       token.dataset.ship = type;
       token.dataset.fleetId = fleet.id;
       token.replaceChildren(
         shipImage(type),
-        element('span', 'ship-token-label', type),
+        element(
+          'span',
+          'ship-token-label',
+          unit ? design : type,
+        ),
       );
       manifest.append(token);
     }

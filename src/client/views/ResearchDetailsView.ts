@@ -4,7 +4,11 @@ import {
   type Technology,
   type BuildType,
 } from '../models/Game.js';
-import { PREREQUISITES, ORDER_RESEARCH } from '../models/Research.js';
+import {
+  COMBAT_RESEARCH,
+  PREREQUISITES,
+  ORDER_RESEARCH,
+} from '../models/Research.js';
 import { isResearchIdentified } from '../models/ResearchTree.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element } from './dom.js';
@@ -66,11 +70,13 @@ export function renderResearchDetails(
     element(
       'p',
       '',
-      technology === 'Trade logistics'
-        ? 'Connect owned planets with automated transport fleets.'
-        : technology in ORDER_RESEARCH
-          ? ORDER_RESEARCH[technology as keyof typeof ORDER_RESEARCH]
-          : BUILDINGS[technology as BuildType].description,
+      technology in COMBAT_RESEARCH
+        ? COMBAT_RESEARCH[technology as keyof typeof COMBAT_RESEARCH]
+        : technology === 'Trade logistics'
+          ? 'Connect owned planets with automated transport fleets.'
+          : technology in ORDER_RESEARCH
+            ? ORDER_RESEARCH[technology as keyof typeof ORDER_RESEARCH]
+            : BUILDINGS[technology as BuildType].description,
     ),
   );
   const metadata = element('div', 'research-detail-meta');

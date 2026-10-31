@@ -80,7 +80,7 @@ describe('tactical combat', () => {
       );
     const game = TacticalBattle.restore({ ...state, pieces });
     game.command({ type: 'activate', id: 'fighter' });
-    game.command({ type: 'fire', weapon: 'Missiles', targetId: 'pirate' });
+    game.command({ type: 'fire', weapon: 'Missiles', at: { q: 5, r: 4 } });
     expect(game.snapshot.pieces.find((p) => p.id === 'fighter')!.missiles).toBe(
       1,
     );
@@ -93,7 +93,7 @@ describe('tactical combat', () => {
     empty.command({ type: 'activate', id: 'fighter' });
     const checkpoint = empty.snapshot;
     expect(() =>
-      empty.command({ type: 'fire', weapon: 'Missiles', targetId: 'pirate' }),
+      empty.command({ type: 'fire', weapon: 'Missiles', at: { q: 5, r: 4 } }),
     ).toThrow('salvos');
     expect(empty.snapshot).toEqual(checkpoint);
   });
@@ -228,7 +228,7 @@ describe('tactical combat', () => {
       JSON.parse(JSON.stringify(game.snapshot)) as BattleState,
     );
     for (const subject of [game, restored]) {
-      subject.command({ type: 'fire', targetId: 'pirate', weapon: 'Cannon' });
+      subject.command({ type: 'fire', at: { q: 4, r: 4 }, weapon: 'Cannon' });
       if (subject.snapshot.phase === 'fighting')
         subject.command({ type: 'forward' });
     }
@@ -251,11 +251,11 @@ describe('tactical combat', () => {
     });
     game.command({ type: 'activate', id: 'fighter' });
     game.command({ type: 'forward' });
-    game.command({ type: 'fire', targetId: 'pirate', weapon: 'Cannon' });
+    game.command({ type: 'fire', at: { q: 5, r: 4 }, weapon: 'Cannon' });
     expect(() => game.command({ type: 'forward' })).toThrow();
     const rng = game.snapshot.random;
     expect(() =>
-      game.command({ type: 'fire', targetId: 'pirate', weapon: 'Cannon' }),
+      game.command({ type: 'fire', at: { q: 5, r: 4 }, weapon: 'Cannon' }),
     ).toThrow();
     expect(game.snapshot.random).toBe(rng);
   });

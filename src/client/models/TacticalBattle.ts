@@ -25,9 +25,9 @@ export const SHIP_PROFILES: Readonly<Record<CombatShipType, ShipProfile>> =
     'Colony ship': { size: 3, hull: 8, movement: 2 },
   });
 export const WEAPONS = Object.freeze({
-  Cannon: { min: 1, max: 3, arc: 120, dice: 2, threshold: 4 },
-  Missiles: { min: 2, max: 6, arc: 60, dice: 3, threshold: 4 },
-  'Raider cannon': { min: 1, max: 3, arc: 120, dice: 2, threshold: 5 },
+  Cannon: { min: 1, max: 3, arc: 120, dice: 2, threshold: 4, area: 0 },
+  Missiles: { min: 2, max: 6, arc: 60, dice: 3, threshold: 4, area: 1 },
+  'Raider cannon': { min: 1, max: 3, arc: 120, dice: 2, threshold: 5, area: 0 },
 });
 
 export interface BattleFleet {
@@ -39,6 +39,8 @@ export interface BattleFleet {
     readonly type: CombatShipType;
     readonly ion: boolean;
     readonly towing?: boolean;
+    readonly missiles?: number;
+    readonly armored?: boolean;
   }[];
 }
 export interface BattlePiece {
@@ -49,19 +51,86 @@ export interface BattlePiece {
   readonly movement: number;
   readonly hull: number;
   readonly missiles: number;
+  readonly hasMissiles?: boolean;
+  readonly armored?: boolean;
   readonly position: BattleHex | null;
   readonly facing: number;
   readonly activated: boolean;
   readonly status: 'active' | 'destroyed' | 'escaped';
 }
+export function combatDesignName(
+  piece: Pick<BattlePiece, 'type' | 'armored'>,
+): string {
+  if (piece.armored && piece.type === 'Fighter') return 'Armored Fighter';
+  if (piece.armored && piece.type === 'Transport ship')
+    return 'Armored Transport';
+  return piece.type;
+}
+export function maxHull(
+  piece: Pick<BattlePiece, 'type' | 'armored'>,
+): number {
+  const base = SHIP_PROFILES[piece.type].hull;
+  if (!piece.armored) return base;
+  if (piece.type === 'Fighter') return base + 2;
+  if (piece.type === 'Transport ship') return base + 3;
+  return base;
+}
+export function missileArea(at: BattleHex): BattleHex[] {
+  return [
+    { q: at.q, r: at.r },
+    ...new HexCoordinate(at.q, at.r)
+      .neighbors()
+      .map((point) => ({ q: point.q, r: point.r })),
+  ];
+}
+export function battleCamera(
+  map: { readonly width: number; readonly height: number },
+  view: { readonly width: number; readonly height: number },
+): { readonly scale: number; readonly offset: { x: number; y: number } } {
+  const width = (map.width + 0.5) * Math.sqrt(3) * HexGeometry.size;
+  const height =
+    (map.height - 1) * 1.5 * HexGeometry.size + HexGeometry.size * 2;
+  const scale = Math.min(
+    (view.width - 24) / width,
+    (view.height - 24) / height,
+  );
+  return {
+    scale,
+    offset: {
+      x:
+        (view.width -
+          (map.width - 0.5) * Math.sqrt(3) * HexGeometry.size * scale) /
+        2,
+      y:
+        (view.height -
+          (map.height - 1) * 1.5 * HexGeometry.size * scale) /
+        2,
+    },
+  };
+}
+export function battleHexPoint(
+  map: { readonly width: number; readonly height: number },
+  view: { readonly width: number; readonly height: number },
+  at: BattleHex,
+): { x: number; y: number } {
+  const camera = battleCamera(map, view);
+  const center = HexGeometry.toPoint(new HexCoordinate(at.q, at.r));
+  return {
+    x: camera.offset.x + center.x * camera.scale,
+    y: camera.offset.y + center.y * camera.scale,
+  };
+}
 export function battlePieceLabel(
   piece: BattlePiece,
   pieces: readonly BattlePiece[],
 ): string {
+  const name = combatDesignName(piece);
   const index = pieces
-    .filter((p) => p.side === piece.side && p.type === piece.type)
+    .filter(
+      (p) => p.side === piece.side && combatDesignName(p) === name,
+    )
     .findIndex((p) => p.id === piece.id);
-  return `${piece.type} ${index + 1}`;
+  return `${name} ${index + 1}`;
 }
 export interface BattleActivation {
   readonly id: string;
@@ -102,7 +171,7 @@ export type BattleCommand =
   | { readonly type: 'turn'; readonly direction: -1 | 1 }
   | {
       readonly type: 'fire';
-      readonly targetId: string;
+      readonly at: BattleHex;
       readonly weapon: WeaponName;
     };
 export interface ShotPreview {
@@ -110,6 +179,16 @@ export interface ShotPreview {
   readonly dice: number;
   readonly threshold: number;
   readonly rear: boolean;
+}
+export interface ImpactHit {
+  readonly id: string;
+  readonly dice: number;
+  readonly threshold: number;
+  readonly rear: boolean;
+}
+export interface ImpactPreview {
+  readonly reason: string | null;
+  readonly hits: readonly ImpactHit[];
 }
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 type Piece = Mutable<BattlePiece>;
@@ -123,9 +202,14 @@ export const battleHex = (col: number, row: number): BattleHex => ({
   q: col - Math.floor(row / 2),
   r: row,
 });
-export const battleWeapons = (type: CombatShipType): readonly WeaponName[] =>
+export const battleWeapons = (
+  type: CombatShipType,
+  hasMissiles = type === 'Fighter',
+): readonly WeaponName[] =>
   type === 'Fighter'
-    ? ['Cannon', 'Missiles']
+    ? hasMissiles
+      ? ['Cannon', 'Missiles']
+      : ['Cannon']
     : type === 'Space pirate'
       ? ['Raider cannon']
       : [];
@@ -245,21 +329,30 @@ export class TacticalBattle {
       deploymentDepth,
       fleets: fleets.map(({ id, side, retreat }) => ({ id, side, retreat })),
       pieces: fleets.flatMap((f) =>
-        f.ships.map((ship) => ({
-          id: ship.id,
-          fleetId: f.id,
-          side: f.side,
-          type: ship.type,
-          movement:
-            (ship.towing ? 1 : SHIP_PROFILES[ship.type].movement) +
-            Number(ship.ion),
-          hull: SHIP_PROFILES[ship.type].hull,
-          missiles: ship.type === 'Fighter' ? 2 : 0,
-          position: null,
-          facing: f.side === 'player' ? 0 : 3,
-          activated: false,
-          status: 'active' as const,
-        })),
+        f.ships.map((ship) => {
+          const armored =
+            ship.armored === true &&
+            (ship.type === 'Fighter' || ship.type === 'Transport ship');
+          const missiles =
+            ship.type === 'Fighter' ? (ship.missiles ?? 2) : 0;
+          return {
+            id: ship.id,
+            fleetId: f.id,
+            side: f.side,
+            type: ship.type,
+            movement:
+              (ship.towing ? 1 : SHIP_PROFILES[ship.type].movement) +
+              Number(ship.ion),
+            hull: maxHull({ type: ship.type, armored }),
+            missiles,
+            hasMissiles: missiles > 0,
+            armored,
+            position: null,
+            facing: f.side === 'player' ? 0 : 3,
+            activated: false,
+            status: 'active' as const,
+          };
+        }),
       ),
       asteroids: [],
       phase: 'deployment',
@@ -340,6 +433,10 @@ export class TacticalBattle {
     }
     for (const p of result.#pieces) {
       const profile = SHIP_PROFILES[p.type];
+      const armored =
+        p.armored === true &&
+        (p.type === 'Fighter' || p.type === 'Transport ship');
+      const launchers = p.hasMissiles ?? p.type === 'Fighter';
       if (
         !p.id ||
         ids.has(p.id) ||
@@ -349,9 +446,13 @@ export class TacticalBattle {
             f.id === p.fleetId && f.side === p.side,
         ) ||
         !['active', 'destroyed', 'escaped'].includes(p.status) ||
+        (p.armored !== undefined && typeof p.armored !== 'boolean') ||
+        (p.armored === true && !armored) ||
+        (p.hasMissiles !== undefined && typeof p.hasMissiles !== 'boolean') ||
+        (launchers && p.type !== 'Fighter') ||
         !Number.isSafeInteger(p.hull) ||
         p.hull < 0 ||
-        p.hull > profile.hull ||
+        p.hull > maxHull({ type: p.type, armored }) ||
         (p.status === 'destroyed') !== (p.hull === 0) ||
         !Number.isSafeInteger(p.movement) ||
         p.movement < 1 ||
@@ -361,10 +462,12 @@ export class TacticalBattle {
         p.facing > 5 ||
         !Number.isSafeInteger(p.missiles) ||
         p.missiles < 0 ||
-        p.missiles > (p.type === 'Fighter' ? 2 : 0) ||
+        p.missiles > (launchers ? 2 : 0) ||
         typeof p.activated !== 'boolean'
       )
         throw new Error('Invalid saved combat ship.');
+      p.armored = armored;
+      p.hasMissiles = launchers;
       ids.add(p.id);
       if (p.position) {
         if (
@@ -539,7 +642,10 @@ export class TacticalBattle {
       !!origin &&
       !!target.position &&
       inArc(target.position, origin, (target.facing + 3) % 6, 120);
-    if (!profile || !battleWeapons(source.type).includes(weapon))
+    if (
+      !profile ||
+      !battleWeapons(source.type, source.hasMissiles).includes(weapon)
+    )
       reason = 'This ship has no such weapon.';
     else if (
       source.status !== 'active' ||
@@ -587,6 +693,122 @@ export class TacticalBattle {
       threshold: (profile?.threshold ?? 4) - Number(rear),
       rear,
     });
+  }
+
+  /** missilernas-omradeseffekt / traffhex-istallet-for-mallista: aim at a hex. */
+  impact(
+    sourceId: string,
+    at: BattleHex,
+    weapon: WeaponName,
+    from?: BattleHex,
+    facing?: number,
+  ): ImpactPreview {
+    const source = this.#piece(sourceId);
+    const profile = WEAPONS[weapon];
+    const origin = from ?? source.position;
+    const armed = battleWeapons(source.type, source.hasMissiles).includes(
+      weapon,
+    );
+    let reason: string | null = null;
+    if (!profile || !armed) reason = 'This ship has no such weapon.';
+    else if (source.status !== 'active' || !origin)
+      reason = 'Choose an active enemy ship.';
+    else if (weapon === 'Missiles' && source.missiles === 0)
+      reason = 'No missile salvos remain.';
+    else if (
+      !Number.isSafeInteger(at?.q) ||
+      !Number.isSafeInteger(at?.r) ||
+      !this.contains(at)
+    )
+      reason = 'Choose a hex on the battle map.';
+    else if (profile.area > 0) {
+      const distance = hex(origin).distanceTo(hex(at));
+      if (distance < profile.min || distance > profile.max)
+        reason = 'Impact hex is outside weapon range.';
+      else if (!inArc(origin, at, facing ?? source.facing, profile.arc))
+        reason = 'Impact hex is outside the firing arc.';
+      else if (this.#blocked(origin, at, source, 1))
+        reason = 'Line of fire is blocked.';
+    }
+    if (reason || !profile || profile.area === 0) {
+      if (reason)
+        return Object.freeze({ reason, hits: Object.freeze([]) });
+      const target = this.#pieces.find(
+        (piece) =>
+          piece.id !== source.id &&
+          piece.status === 'active' &&
+          piece.position &&
+          same(piece.position, at),
+      );
+      if (!target || target.side === source.side)
+        return Object.freeze({
+          reason: 'Choose a hex with an enemy ship.',
+          hits: Object.freeze([]),
+        });
+      const preview = this.shot(sourceId, target.id, weapon, from, facing);
+      return Object.freeze({
+        reason: preview.reason,
+        hits: Object.freeze(
+          preview.reason
+            ? []
+            : [
+                {
+                  id: target.id,
+                  dice: preview.dice,
+                  threshold: preview.threshold,
+                  rear: preview.rear,
+                },
+              ],
+        ),
+      });
+    }
+    const hits = this.#pieces
+      .filter(
+        (piece) =>
+          piece.id !== source.id &&
+          piece.status === 'active' &&
+          piece.position &&
+          hex(piece.position).distanceTo(hex(at)) <= profile.area,
+      )
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .map((piece) => {
+        const rear = inArc(
+          piece.position!,
+          origin!,
+          (piece.facing + 3) % 6,
+          120,
+        );
+        return {
+          id: piece.id,
+          dice: profile.dice,
+          threshold: profile.threshold - Number(rear),
+          rear,
+        };
+      });
+    return Object.freeze({ reason: null, hits: Object.freeze(hits) });
+  }
+
+  #blocked(
+    origin: BattleHex,
+    at: BattleHex,
+    source: Piece,
+    targetSize: number,
+  ): boolean {
+    const size = Math.min(SHIP_PROFILES[source.type].size, targetSize);
+    const obstacles = [
+      ...this.#asteroids,
+      ...this.#pieces
+        .filter(
+          (piece) =>
+            piece.id !== source.id &&
+            piece.status === 'active' &&
+            piece.position &&
+            !same(piece.position, at) &&
+            SHIP_PROFILES[piece.type].size > size,
+        )
+        .map((piece) => piece.position!),
+    ];
+    return obstacles.some((obstacle) => crossesHex(origin, at, obstacle));
   }
 
   forwardIssue(
@@ -693,18 +915,31 @@ export class TacticalBattle {
     if (command.type !== 'fire') throw new Error('Choose a combat action.');
     if (activation.fired)
       throw new Error('This ship already fired this activation.');
-    const preview = this.shot(p.id, command.targetId, command.weapon);
+    const preview = this.impact(p.id, command.at, command.weapon);
     if (preview.reason) throw new Error(preview.reason);
-    const target = this.#piece(command.targetId);
-    const dice = Array.from({ length: preview.dice }, () => this.#die());
-    const damage = dice.filter((die) => die >= preview.threshold).length;
-    target.hull = Math.max(0, target.hull - damage);
-    if (target.hull === 0) target.status = 'destroyed';
     if (command.weapon === 'Missiles') p.missiles--;
+    const notes: string[] = [];
+    let total = 0;
+    for (const hit of preview.hits) {
+      const dice = Array.from({ length: hit.dice }, () => this.#die());
+      const damage = dice.filter((die) => die >= hit.threshold).length;
+      total += damage;
+      const target = this.#piece(hit.id);
+      target.hull = Math.max(0, target.hull - damage);
+      if (target.hull === 0) target.status = 'destroyed';
+      const outcome = `${hit.dice}D6 [${dice.join(', ')}], hit ${hit.threshold}+${hit.rear ? ' (rear)' : ''}: ${damage} damage${target.hull === 0 ? ', destroyed' : `, ${target.hull} hull remaining`}`;
+      notes.push(
+        command.weapon === 'Missiles'
+          ? `${battlePieceLabel(target, this.#pieces)} ${hit.dice}D6 [${dice.join(', ')}], hit ${hit.threshold}+${hit.rear ? ' (rear)' : ''}, ${damage} hits${target.hull === 0 ? ', destroyed' : `, ${target.hull} hull remaining`}`
+          : outcome,
+      );
+    }
     activation.fired = true;
     activation.movementClosed = activation.moved;
     this.#log.push(
-      `${battlePieceLabel(p, this.#pieces)}: ${command.weapon} → ${battlePieceLabel(target, this.#pieces)}. ${preview.dice}D6 [${dice.join(', ')}], hit ${preview.threshold}+${preview.rear ? ' (rear)' : ''}: ${damage} damage${target.hull === 0 ? ', destroyed' : `, ${target.hull} hull remaining`}.`,
+      command.weapon === 'Missiles'
+        ? `${battlePieceLabel(p, this.#pieces)}: Missiles → ${command.at.q},${command.at.r}. ${notes.join(' ') || 'No ships in the area.'} Area: ${total} damage.`
+        : `${battlePieceLabel(p, this.#pieces)}: ${command.weapon} → ${command.at.q},${command.at.r} ${battlePieceLabel(this.#piece(preview.hits[0]!.id), this.#pieces)}. ${notes[0]}`,
     );
     this.#checkComplete();
   }
@@ -782,7 +1017,7 @@ export class TacticalBattle {
     const moves = activation?.movementClosed
       ? 0
       : (activation?.remaining ?? p.movement);
-    const armed = battleWeapons(p.type).length > 0;
+    const armed = battleWeapons(p.type, p.hasMissiles).length > 0;
     type Node = {
       position: BattleHex;
       facing: number;
@@ -796,18 +1031,44 @@ export class TacticalBattle {
     const shotAt = (position: BattleHex, facing: number) => {
       let bestShot: { score: number; action: BattleCommand } | null = null;
       if (activation?.fired) return bestShot;
-      for (const enemy of enemies)
-        for (const weapon of battleWeapons(p.type)) {
-          const preview = this.shot(p.id, enemy.id, weapon, position, facing);
-          if (preview.reason) continue;
-          const expected = (preview.dice * (7 - preview.threshold)) / 6;
-          const kill = Math.max(0, preview.dice - enemy.hull + 1) * 12;
-          const score = expected * 10 + kill - (weapon === 'Missiles' ? 1 : 0);
-          if (!bestShot || score > bestShot.score)
-            bestShot = {
-              score,
-              action: { type: 'fire', targetId: enemy.id, weapon },
-            };
+      for (const weapon of battleWeapons(p.type, p.hasMissiles)) {
+          if (weapon === 'Missiles') {
+            const hexes = new Map<string, BattleHex>();
+            for (const enemy of enemies) {
+              if (!enemy.position) continue;
+              for (const point of missileArea(enemy.position))
+                hexes.set(`${point.q},${point.r}`, point);
+            }
+            for (const at of hexes.values()) {
+              const preview = this.impact(p.id, at, weapon, position, facing);
+              if (preview.reason) continue;
+              let score = -1;
+              for (const hit of preview.hits) {
+                const ship = this.#piece(hit.id);
+                const expected = (hit.dice * (7 - hit.threshold)) / 6;
+                const kill = Math.max(0, hit.dice - ship.hull + 1) * 12;
+                const value = expected * 10 + kill;
+                score += ship.side === p.side ? -value : value;
+              }
+              if (score <= 0) continue;
+              if (!bestShot || score > bestShot.score)
+                bestShot = { score, action: { type: 'fire', at, weapon } };
+            }
+            continue;
+          }
+          for (const enemy of enemies) {
+            if (!enemy.position) continue;
+            const preview = this.shot(p.id, enemy.id, weapon, position, facing);
+            if (preview.reason) continue;
+            const expected = (preview.dice * (7 - preview.threshold)) / 6;
+            const kill = Math.max(0, preview.dice - enemy.hull + 1) * 12;
+            const score = expected * 10 + kill;
+            if (!bestShot || score > bestShot.score)
+              bestShot = {
+                score,
+                action: { type: 'fire', at: enemy.position, weapon },
+              };
+          }
         }
       return bestShot;
     };
@@ -829,7 +1090,7 @@ export class TacticalBattle {
           : this.#base.width - 1 - column(node.position);
       let risk = 0;
       for (const enemy of enemies)
-        for (const weapon of battleWeapons(enemy.type)) {
+        for (const weapon of battleWeapons(enemy.type, enemy.hasMissiles)) {
           // Score incoming fire against the proposed position and facing.
           const old = p.position,
             oldFacing = p.facing;
@@ -913,7 +1174,7 @@ export class TacticalBattle {
       const node = queue[index]!;
       if (
         enemies.some((enemy) =>
-          battleWeapons(p.type).some(
+          battleWeapons(p.type, p.hasMissiles).some(
             (weapon) =>
               !this.shot(p.id, enemy.id, weapon, node.position, node.facing)
                 .reason,

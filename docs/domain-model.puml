@@ -109,6 +109,8 @@ class Ship {
   id
   installedEngines
   installedTelescope: I | II | III [0..1]
+  missiles: 0 | 2 [0..1]
+  armored [0..1]
   type
   speed
   crew
@@ -135,6 +137,11 @@ note on link
 end note
 SavedGame --> Detection : pirate contacts
 Ship "1" *-- "1..3" Component : installed engines
+note right of Ship
+  utforskade-stridsuppgraderingar:
+  Missiles och pansar forskas fram.
+  Saknat missilfält på Fighter är två salvor.
+end note
 
 class Fleet {
   position : HexCoordinate [0..1]
@@ -488,6 +495,8 @@ class ShipUpgradeTarget {
   shipId
   ionEngines
   telescope
+  missiles
+  armored
 }
 Fleet "1" o-- "0..1" FleetUpgradeOrder : Upgrade
 FleetUpgradeOrder "1" *-- "1..*" ShipUpgradeTarget

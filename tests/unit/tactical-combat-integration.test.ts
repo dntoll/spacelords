@@ -254,7 +254,7 @@ describe('tactical combat integration', () => {
     game.commandBattle({ type: 'activate', id: fighters[0]!.id });
     game.commandBattle({
       type: 'fire',
-      targetId: game.tacticalBattle!.pieces.find((p) => p.side === 'enemy')!.id,
+      at: game.tacticalBattle!.pieces.find((p) => p.side === 'enemy')!.position!,
       weapon: 'Cannon',
     });
     expect(game.tacticalBattle).toBeNull();

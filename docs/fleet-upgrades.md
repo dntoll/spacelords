@@ -71,3 +71,18 @@ av dem finns kvar avslutas ordern. Äldre sparningar kan läsas utan rensning.
 inte kan uppgraderas under `automatisk-motormontering` och
 `teleskop-i-exploration-ships`. Ordinarie nyproduktion, motorbonus,
 teleskopräckvidder och varvens reparationsköer behåller sina regler.
+
+## Stridsuppgraderingar
+
+`utforskade-stridsuppgraderingar` — **Fullständigt implementerat**.
+
+Missiles kräver Fighter factory. Armor kräver Weapons module factory.
+Armored Fighter kräver Armor och Fighter factory. Armored Transport kräver
+Armor och Transport ship factory. Armor ensamt ger inget skrov.
+
+Upgrade i Orders monterar färdig forskning vid samma varvsbesök som motorer
+och teleskop. En Fighter med noll salvor får två. En Fighter blir Armored
+Fighter, skrov 5. En Transport ship blir Armored Transport, skrov 9. Identitet,
+typ, last, besättning, storlek och fart behålls. Inga extra komponenter
+förbrukas. En Fighter som redan har salvor, inklusive äldre sparade skepp utan
+fältet, får inte nya missiler. Redan pansrade skepp behåller skrovet.

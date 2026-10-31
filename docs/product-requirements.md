@@ -57,8 +57,9 @@ som skiljer passagerarskeppet från Transport ship.
 
 `skeppsval-startar-stridstur` och `stridsorder-utan-mobilscroll` är
 **Fullständigt implementerat**: val av ett tillgängligt skepp, på kartan eller
-i Your ship, startar dess tur direkt. Turn, Forward, Weapon, Target, Fire weapon
-och End ship turn är åtkomliga utan rullning på mobilen. Order ligger över
+i Your ship, startar dess tur direkt. Turn, Forward, Weapon, Fire weapon
+och End ship turn är åtkomliga utan rullning på mobilen. Träffplatsen väljs
+på kartan enligt `traffhex-istallet-for-mallista`. Order ligger över
 kartan på stående telefon och bredvid på bredare skärmar. Combat details
 samlar logg och längre regler. Se [taktisk strid](tactical-combat.md).
 
@@ -922,6 +923,11 @@ Stora skepp och asteroider blockerar eld. Vapen har olika räckvidd, eldbågar
 och ammunition; attacker mot aktern träffar lättare. Synliga D6-slag avgör
 träffar och skrovskador. Civila skepp är obeväpnade men kan skyddas och fly.
 Flottan samlas efter reträtt och överlevande återställs efter striden.
+
+`utforskade-stridsuppgraderingar`, `missilernas-omradeseffekt` och
+`traffhex-istallet-for-mallista` är **Fullständigt implementerat**.
+Missiler och pansarskrov forskas fram och monteras på befintliga skepp.
+Skott siktas mot en hex på stridskartan. Äldre sparade spel behålls.
 
 Kraven och deras status finns i [taktisk strid](tactical-combat.md).
 
