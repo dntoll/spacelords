@@ -17,7 +17,7 @@ import { encounterGame, arrangeBattle } from '../fixtures/battle-checkpoint.js';
 
 afterEach(() => vi.useRealTimers());
 
-it('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: controller saves before showing discovery and restores edited orders without repeating movement', async () => {
+it('geografisk-arsuppspelning / gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar: controller saves before showing discovery and restores edited orders without repeating movement', async () => {
   vi.useFakeTimers();
   let saved: SavedGame = {
     lastPlayed: '2026-10-25T00:00:00Z',
@@ -59,6 +59,13 @@ it('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / 
   expect(
     saved.state.events.some((event) => event.text.startsWith('Combat at')),
   ).toBe(false);
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const playback = first.model.snapshot.eventPlayback!;
+    if (playback.events[playback.index]!.decision?.fleetId === 'fleet-home')
+      break;
+    first.emit({ type: 'ignore-discoveries' });
+    await vi.advanceTimersByTimeAsync(450);
+  }
   first.emit({ type: 'handle-discoveries' });
   await vi.advanceTimersByTimeAsync(450);
   expect(first.model.snapshot.mapFleetId).toBe('fleet-home');

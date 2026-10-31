@@ -77,7 +77,7 @@ describe('gemensamt-handelseflode', () => {
     },
   );
 
-  it('upptacktsbesked-utan-pausmening: discoveries retain location and fleet details without the generic pause sentence', () => {
+  it('geografisk-arsuppspelning / upptacktsbesked-utan-pausmening: discoveries retain location and fleet details without the generic pause sentence', () => {
     const game = Game.restore(discoveryState());
     game.startTurn();
     while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
@@ -87,7 +87,9 @@ describe('gemensamt-handelseflode', () => {
       clear() {},
     });
     model.startSlot(1);
-    const event = model.snapshot.eventPlayback!.events[0]!;
+    const event = model.snapshot.eventPlayback!.events.find(
+      (event) => event.decision?.fleetId === 'fleet-home',
+    )!;
     expect(event.decision!.details).toHaveLength(1);
     expect(event.decision!.details[0]).toMatch(
       /^HEX .+ · Home Fleet · \d+ hex remaining$/,
@@ -189,9 +191,9 @@ describe('gemensamt-handelseflode', () => {
         .saved()
         .state.events.filter((event) => event.text.startsWith('Combat at')),
     ).toHaveLength(1);
-    expect(current.model.snapshot.events.map((event) => event.id)).toEqual(
-      current.model.snapshot.presentedEventIds,
-    );
+    expect(
+      current.model.snapshot.events.map((event) => event.id).sort(),
+    ).toEqual([...current.model.snapshot.presentedEventIds].sort());
     current.controller.dispose();
     current = slot.open();
     expect(current.model.snapshot.eventPlayback).toBeNull();
