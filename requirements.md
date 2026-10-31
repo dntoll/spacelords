@@ -10,6 +10,11 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Skeppens riktning i strid:** `skeppets-framat-foljer-spriten` är
+  **Fullständigt implementerat**. Skeppsbildens nos, framåtmarkering,
+  framåtförflyttning och eldbåge följer samma riktning i alla sex lägen.
+  Se [taktisk strid](docs/tactical-combat.md).
+
 - **Tydlig forskningsstatus:** `forskningsstatus-med-tydliga-farger` är
   **Fullständigt implementerat**. Research skiljer blå tillgänglig forskning
   från grön färdig forskning med ✓. Pågående är gul, köad lila och låst grå.

@@ -1,5 +1,15 @@
 # Tekniska krav och arbetsregler
 
+## Skeppsbildernas riktning i strid
+
+`skeppets-framat-foljer-spriten`: BattleMapView utgår från att samtliga
+skeppsbilder har nosen åt höger, precis som på Star map. Samma rotation
+används för bild, framåtmarkering och reservtriangel. Regressionstest av
+ritanrop jämför nos och markering med faktisk Forward-förflyttning för varje
+skeppstyp i sex riktningar samt kontrollerar eldbågens mittlinje.
+Riktat mobilflöde verifierar skott, framåtförflyttning och omladdning.
+Modellens riktningar och sparformat ändras inte.
+
 ## Färger för forskningsstatus
 
 `forskningsstatus-med-tydliga-farger`: befintlig status i forskningsträdets

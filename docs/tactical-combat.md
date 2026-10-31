@@ -4,6 +4,14 @@ Spelaren leder varje skepp i en turbaserad strid på en egen hexkarta.
 Vapen, manövrering, riktning, skydd och synliga D6-slag avgör utfallet.
 Alla flottor på samma Star map-hex deltar tillsammans.
 
+`skeppets-framat-foljer-spriten` — **Fullständigt implementerat**:
+skeppsbildens nos, kartans framåtmarkering, Forward och den främre eldbågen
+har samma riktning i alla sex lägen. Det gäller egna skepp och Space pirates,
+både vid utplacering och under strid. Reservsymbolen före bildladdning följer
+samma riktning. Förtydligandet 2026-10-31 av `stridsutplacering` och
+`riktning-och-vapen` rättar den tidigare 90° vridningen av skeppsbilderna.
+Stridsregler och sparade riktningar bevaras.
+
 | Krav                           | Status                     | Innehåll                                                                              |
 | ------------------------------ | -------------------------- | ------------------------------------------------------------------------------------- |
 | `taktisk-stridskarta`          | Fullständigt implementerat | Separat karta, minst 13 × 9 hexar, växer tills alla skepp ryms.                       |

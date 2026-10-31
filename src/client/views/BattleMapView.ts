@@ -345,7 +345,8 @@ export class BattleMapView implements BattleMapPort {
       p.fill(ship.side === 'player' ? '#15425b' : '#5c2c36');
       p.circle(0, 0, radius * 2.3);
       p.push();
-      p.rotate((-ship.facing * Math.PI) / 3 + Math.PI / 2);
+      // skeppets-framat-foljer-spriten: every ship asset has its nose pointing right.
+      p.rotate((-ship.facing * Math.PI) / 3);
       const image = this.#images.get(
         ship.type === 'Space pirate' ? 'Space pirate' : ship.type,
       );
@@ -356,17 +357,17 @@ export class BattleMapView implements BattleMapPort {
         p.fill(ship.side === 'player' ? '#b0e9f9' : '#ffb2a3');
         p.noStroke();
         p.triangle(
+          radius,
           0,
-          -radius,
+          -radius * 0.7,
           -radius * 0.55,
-          radius * 0.7,
+          -radius * 0.7,
           radius * 0.55,
-          radius * 0.7,
         );
       }
       p.stroke('#f3f6fc');
       p.strokeWeight(2);
-      p.line(0, -radius - 2, 0, -radius - 9);
+      p.line(radius + 2, 0, radius + 9, 0);
       p.pop();
       p.noStroke();
       p.fill('#112331');

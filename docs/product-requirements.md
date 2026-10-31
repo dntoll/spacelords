@@ -1,5 +1,11 @@
 # Produktkrav och status
 
+`skeppets-framat-foljer-spriten` är **Fullständigt implementerat**:
+i strid pekar bilden och framåtmarkeringen i samma riktning som skeppets
+förflyttning och främre eldbåge. Detta gäller alla skepp och pirater i alla
+sex riktningar, även när bilden ännu inte har laddats. Se
+[taktisk strid](tactical-combat.md).
+
 `forskningsstatus-med-tydliga-farger` är **Fullständigt implementerat**:
 Research visar outforskad tillgänglig teknik blå och färdig teknik grön med ✓.
 Pågående forskning är gul, köad lila och låst grå. Även vald teknik behåller

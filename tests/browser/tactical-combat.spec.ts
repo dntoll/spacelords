@@ -98,9 +98,9 @@ test('stridsutplacering / sparad-taktisk-strid: deploys all ships and resumes an
   expect(errors).toEqual([]);
 });
 
-test('riktning-och-vapen / oppna-stridstarningar: shows a valid attack, records its dice and permits movement after firing', async ({
+test('skeppets-framat-foljer-spriten / riktning-och-vapen / oppna-stridstarningar: shows a valid attack, records its dice and permits movement after firing', async ({
   page,
-}) => {
+}, testInfo) => {
   const game = arrangeBattle(encounterGame(), (state) => ({
     ...state,
     asteroids: [],
@@ -146,6 +146,9 @@ test('riktning-och-vapen / oppna-stridstarningar: shows a valid attack, records 
   await expect(
     dialog.getByRole('button', { name: 'Fire weapon', exact: true }),
   ).toBeDisabled();
+  await page.screenshot({
+    path: testInfo.outputPath('battle-forward-before.png'),
+  });
   await dialog
     .getByRole('button', { name: 'Forward / escape', exact: true })
     .click();
@@ -153,6 +156,9 @@ test('riktning-och-vapen / oppna-stridstarningar: shows a valid attack, records 
   expect(checkpoint.pieces.find((p) => p.id === fighter.id)!.position).toEqual({
     q: 2,
     r: 4,
+  });
+  await page.screenshot({
+    path: testInfo.outputPath('battle-forward-after.png'),
   });
   await page.reload();
   await startFirstSlot(page);
