@@ -418,6 +418,9 @@ export class AppController {
       case 'toggle-demolition':
         this.#model.toggleDemolition(intent.id);
         break;
+      case 'upgrade-building':
+        this.#model.upgradeBuilding(intent.id);
+        break;
       case 'produce-fighter':
         this.#model.produceFighter();
         break;

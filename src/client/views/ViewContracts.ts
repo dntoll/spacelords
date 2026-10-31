@@ -223,7 +223,8 @@ export type AppIntent =
   | { readonly type: 'research'; readonly technology: Technology | null }
   | { readonly type: 'colonize'; readonly id: string }
   | {
-      readonly type: 'cancel-project' | 'toggle-demolition';
+      readonly type:
+        'cancel-project' | 'toggle-demolition' | 'upgrade-building';
       readonly id: string;
     }
   | {

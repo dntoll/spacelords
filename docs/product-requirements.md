@@ -1,5 +1,12 @@
 # Produktkrav och status
 
+`senaste-teknik-i-byggval` och `uppgradera-obsoleta-fabriker` är
+**Fullständigt implementerat**: byggval visar endast högsta utforskade
+teleskop och motorer samt deras fabriker. Äldre fabriker kan uppgraderas till senaste
+versionen på samma byggplats med befintlig bemanning. Uppgraderingar följer
+Build queue och kan avbrytas; sparade spel bevaras. Se
+[fabriksuppgraderingar](factory-upgrades.md) för regler och ersatta beteenden.
+
 Gränssnittets förenklingar och den kortare forskningsvägen till Colony ship
 beskrivs i [renare spelgränssnitt](compact-interface.md). Där anges vilka äldre
 krav på S/Q-text, forskningsdetaljer och upprepade produktionsantal som ersätts.

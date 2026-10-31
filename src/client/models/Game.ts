@@ -5,6 +5,7 @@ import {
   type CivilianPort,
 } from './CivilianTraffic.js';
 import { engineCount } from './ShipEquipment.js';
+import { FactoryTechnology } from './FactoryTechnology.js';
 import { FleetPatrol, type PatrolOrder } from './FleetPatrol.js';
 export { engineCount } from './ShipEquipment.js';
 import {
@@ -470,6 +471,10 @@ const addCost = (
 };
 
 export interface BuildingSnapshot {
+  readonly upgrade?: Readonly<{
+    type: BuildType;
+    blockedReason: string | null;
+  }>;
   readonly operational?: boolean;
   readonly id: string;
   readonly type: BuildType;
@@ -484,6 +489,7 @@ export interface ProductionReceipt {
 }
 
 export interface ConstructionProjectSnapshot {
+  readonly upgradeBuildingId?: string;
   readonly parts?: Readonly<Partial<Record<Component, number>>>;
   readonly id: string;
   readonly type: ProjectType;
@@ -506,6 +512,7 @@ export interface BudgetSnapshot {
   readonly availableSlots: number;
 }
 export interface PlanetGameSnapshot {
+  readonly availableComponents?: readonly Component[];
   readonly detectionRange?: number;
   readonly environment: PlanetEnvironmentType | 'Gas';
   readonly breathable: boolean;
@@ -617,6 +624,7 @@ interface Building {
   demolition: boolean;
 }
 interface Project {
+  upgradeBuildingId?: string;
   stationPosition?: { readonly q: number; readonly r: number };
   parts?: Partial<Record<Component, number>>;
   id: string;
@@ -955,6 +963,26 @@ export class Game {
         }
       }
       for (const building of colony.buildings) delete building.queue;
+      const upgradeTargets = new Set<string>();
+      for (const project of colony.projects) {
+        if (project.upgradeBuildingId === undefined) continue;
+        const building = colony.buildings.find(
+          (item) => item.id === project.upgradeBuildingId,
+        );
+        if (
+          !building ||
+          building.demolition ||
+          building.slotIndex !== project.slotIndex ||
+          !FactoryTechnology.canUpgrade(
+            building.type,
+            project.type as BuildType,
+          ) ||
+          !game.#research.completed.has(project.type as Technology) ||
+          upgradeTargets.has(building.id)
+        )
+          throw new Error('Invalid saved factory upgrade.');
+        upgradeTargets.add(building.id);
+      }
     }
     game.#fleets = copy.fleets.map(
       ({ position: current, destination, courseOrigin, ...fleet }) => {
@@ -1243,6 +1271,20 @@ export class Game {
           type: building.type,
           slotIndex: building.slotIndex,
           scheduledForDemolition: building.demolition,
+          ...(FactoryTechnology.successor(
+            building.type,
+            this.#research.completed,
+          )
+            ? {
+                upgrade: Object.freeze({
+                  type: FactoryTechnology.successor(
+                    building.type,
+                    this.#research.completed,
+                  )!,
+                  blockedReason: this.canUpgrade(planet, building.id),
+                }),
+              }
+            : {}),
           operational:
             !building.demolition &&
             state.buildings
@@ -1268,6 +1310,20 @@ export class Game {
       economy: this.#economySnapshot(planet, state),
       buildings,
       projects,
+      availableComponents: Object.freeze([
+        ...new Set(
+          state.buildings.flatMap((building) => {
+            const component = BUILDINGS[building.type].component;
+            return component &&
+              !FactoryTechnology.isObsoleteComponent(
+                component,
+                this.#research.completed,
+              )
+              ? [component]
+              : [];
+          }),
+        ),
+      ]),
       position: planet.position,
       sites: Object.freeze(
         Array.from({ length: planet.buildSlots }, (_, index) =>
@@ -1300,6 +1356,10 @@ export class Game {
               (type) =>
                 type in BUILDINGS &&
                 this.#research.completed.has(type) &&
+                !FactoryTechnology.successor(
+                  type as BuildType,
+                  this.#research.completed,
+                ) &&
                 (!BUILDINGS[type as BuildType].environment ||
                   (planet.type === 'solid' &&
                     BUILDINGS[type as BuildType].environment ===
@@ -1376,7 +1436,9 @@ export class Game {
           emptySites:
             this.#environment(planet, state).buildSlots -
             state.buildings.length -
-            state.projects.filter((p) => p.slotIndex !== null).length,
+            state.projects.filter(
+              (p) => p.slotIndex !== null && !p.upgradeBuildingId,
+            ).length,
           emptyQueues:
             !state.projects.length && this.#canChooseProduction(planet, state)
               ? 1
@@ -1651,7 +1713,7 @@ export class Game {
       planets: this.#ownedPlanets().map((planet) => {
         const state = this.#state(planet);
         const head = state.projects[0];
-        const definition = head && projectDefinition(head.type);
+        const definition = head && this.#projectDefinition(state, head);
         return {
           id: planet.id,
           name: planet.name,
@@ -2076,12 +2138,53 @@ export class Game {
     state.projects = state.projects.filter((p) => p.id !== projectId);
     this.#logistics.reserve(this.#logisticsPort());
   }
+  canUpgrade(planet: Planet, buildingId: string): string | null {
+    if (this.#phase !== 'planning')
+      return 'Orders are locked during simulation.';
+    const state = this.#colonies.get(planet.id);
+    if (!state) return 'This planet is not owned.';
+    const building = state.buildings.find((item) => item.id === buildingId);
+    if (!building) return 'Building was not found.';
+    if (building.demolition) return 'This factory is scheduled for demolition.';
+    if (
+      state.projects.some((project) => project.upgradeBuildingId === buildingId)
+    )
+      return 'An upgrade is already queued for this factory.';
+    if (!FactoryTechnology.successor(building.type, this.#research.completed))
+      return 'No newer factory technology has been researched.';
+    return null;
+  }
+  scheduleUpgrade(planet: Planet, buildingId: string): ProductionReceipt {
+    const why = this.canUpgrade(planet, buildingId);
+    if (why) throw new Error(why);
+    const building = this.#state(planet).buildings.find(
+      (item) => item.id === buildingId,
+    )!;
+    const type = FactoryTechnology.successor(
+      building.type,
+      this.#research.completed,
+    )!;
+    return this.#scheduleProject(planet, type, {
+      upgradeBuildingId: building.id,
+      slotIndex: building.slotIndex,
+      factoryId: null,
+      destinationFleetId: null,
+    });
+  }
   toggleDemolition(planet: Planet, buildingId: string): void {
     this.#requirePlanning();
     const building = this.#state(planet).buildings.find(
       (item) => item.id === buildingId,
     );
     if (!building) throw new Error('Building was not found.');
+    if (
+      this.#state(planet).projects.some(
+        (project) => project.upgradeBuildingId === buildingId,
+      )
+    )
+      throw new Error(
+        'Cancel the queued upgrade before demolishing this factory.',
+      );
     building.demolition = !building.demolition;
   }
   productionIssue(planet: Planet, type: ProjectType): string | null {
@@ -2193,13 +2296,10 @@ export class Game {
       ...new Set(
         snapshot.buildings.flatMap<ProjectType>((b) => {
           const definition = BUILDINGS[b.type];
-          return definition.ship
-            ? factoryShips(b.type)
-            : definition.component
-              ? [definition.component]
-              : [];
+          return definition.ship ? factoryShips(b.type) : [];
         }),
       ),
+      ...(snapshot.availableComponents ?? []),
     ];
     const missing = new Map<ProjectType, readonly BuildType[]>();
     const factoryTypes = Object.keys(BUILDINGS) as BuildType[];
@@ -3558,6 +3658,18 @@ export class Game {
     this.#refreshReinforcements();
   }
   #completeProject(planet: Planet, state: ColonyState, project: Project): void {
+    if (project.upgradeBuildingId) {
+      const building = state.buildings.find(
+        (item) => item.id === project.upgradeBuildingId,
+      )!;
+      const previous = building.type;
+      building.type = project.type as BuildType;
+      this.#event(
+        `${previous} was upgraded to ${project.type} on ${planet.name}.`,
+        planet.position,
+      );
+      return;
+    }
     if (project.type === 'Shipyard station') {
       this.#createShipyard(
         planet,
@@ -3949,7 +4061,7 @@ export class Game {
         extraction: this.#extraction(planet, state),
         deposits: state.deposits,
         projects: state.projects.map((project) => {
-          const definition = projectDefinition(project.type);
+          const definition = this.#projectDefinition(state, project);
           const factory = this.#factoryRequirement(planet, state, project);
           const issue =
             factory.status === 'Needs attention'
@@ -4421,6 +4533,20 @@ export class Game {
     status: 'Ready' | 'Waiting' | 'Needs attention';
     message: string;
   } {
+    if (project.upgradeBuildingId) {
+      const building = state.buildings.find(
+        (item) => item.id === project.upgradeBuildingId,
+      );
+      return building &&
+        !building.demolition &&
+        building.slotIndex === project.slotIndex &&
+        FactoryTechnology.canUpgrade(building.type, project.type as BuildType)
+        ? { status: 'Ready', message: '' }
+        : {
+            status: 'Needs attention',
+            message: 'The original factory is required for this upgrade.',
+          };
+    }
     const definition = projectDefinition(project.type);
     const matching = (building: { type: BuildType; id?: string }) =>
       project.type === 'Shipyard station'
@@ -4659,18 +4785,22 @@ export class Game {
       slots: this.#environment(planet, state).buildSlots,
       reservedSlots:
         state.buildings.length +
-        state.projects.filter((p) => p.slotIndex !== null).length,
+        state.projects.filter(
+          (p) => p.slotIndex !== null && !p.upgradeBuildingId,
+        ).length,
       availableSlots:
         this.#environment(planet, state).buildSlots -
         state.buildings.length -
-        state.projects.filter((p) => p.slotIndex !== null).length,
+        state.projects.filter(
+          (p) => p.slotIndex !== null && !p.upgradeBuildingId,
+        ).length,
     });
     for (const [index, project] of state.projects.entries()) {
       if (index > 0) {
         blocks.set(project.id, 'Waiting for the previous project.');
         continue;
       }
-      const definition = projectDefinition(project.type);
+      const definition = this.#projectDefinition(state, project);
       const factory = this.#factoryRequirement(planet, state, project);
       const why =
         factory.status !== 'Ready'
@@ -5087,6 +5217,22 @@ export class Game {
     fleet.destination = null;
     delete fleet.courseOrigin;
     delete fleet.joinFleetId;
+  }
+  // uppgradera-obsoleta-fabriker: existing staff also operate the replacement factory.
+  #projectDefinition(state: ColonyState, project: Project): BuildDefinition {
+    const definition = projectDefinition(project.type);
+    const original = state.buildings.find(
+      (building) => building.id === project.upgradeBuildingId,
+    );
+    return original
+      ? {
+          ...definition,
+          workers: Math.max(
+            0,
+            definition.workers - BUILDINGS[original.type].workers,
+          ),
+        }
+      : definition;
   }
   // automatisk-motormontering: one projection drives consumption, blocking and supply.
   #projectCost(planet: Planet, project: Project): Stock {

@@ -10,6 +10,12 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Senaste fabriksteknik:** `senaste-teknik-i-byggval` och
+  `uppgradera-obsoleta-fabriker` är **Fullständigt implementerat**. Byggval
+  visar högsta utforskade teleskop och motorer samt deras fabriker. Äldre fabriker kan
+  uppgraderas direkt till senaste versionen på samma byggplats via Build queue.
+  Äldre spel bevaras. Se [fabriksuppgraderingar](docs/factory-upgrades.md).
+
 - **Taktisk strid:** Ny separat hexkarta med alla deltagande skepp,
   utplacering, växelvisa aktiveringar, eldbågar, skydd, öppna D6-slag och
   skeppsvis reträtt är **Fullständigt implementerat**. Sparade strider

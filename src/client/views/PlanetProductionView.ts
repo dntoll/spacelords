@@ -38,18 +38,21 @@ export function renderProduction(
 ): HTMLElement {
   const section = element('section', 'planet-production');
   const category = menus.productionCategory ?? 'Ships';
-  const products = [
-    ...new Set(
-      planet.buildings.flatMap<ShipType | Component>((building) => {
-        const definition = BUILDINGS[building.type];
-        return category === 'Ships'
-          ? factoryShips(building.type)
-          : definition.component
-            ? [definition.component]
-            : [];
-      }),
-    ),
-  ];
+  const products =
+    category === 'Components' && planet.availableComponents
+      ? [...planet.availableComponents]
+      : [
+          ...new Set(
+            planet.buildings.flatMap<ShipType | Component>((building) => {
+              const definition = BUILDINGS[building.type];
+              return category === 'Ships'
+                ? factoryShips(building.type)
+                : definition.component
+                  ? [definition.component]
+                  : [];
+            }),
+          ),
+        ];
   const product = products.find((p) => p === menus.productionProduct) ?? null;
   const order = element('section', 'production-order');
   order.append(

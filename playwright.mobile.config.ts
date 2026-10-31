@@ -7,7 +7,11 @@ if (liveURL && liveURL !== 'https://curiousengineerstudio.se/spacelords/')
 
 export default defineConfig({
   ...base,
-  testMatch: ['**/mobile-smoke.spec.ts', '**/tactical-combat.spec.ts'],
+  testMatch: [
+    '**/mobile-smoke.spec.ts',
+    '**/tactical-combat.spec.ts',
+    '**/factory-upgrades.spec.ts',
+  ],
   projects: base.projects!.filter((project) =>
     ['phone-chromium', 'phone-webkit'].includes(project.name!),
   ),

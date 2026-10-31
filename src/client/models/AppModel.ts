@@ -1298,6 +1298,10 @@ export class AppModel {
     const planet = this.#game.planetAt(this.#selected);
     if (planet) this.#game.toggleDemolition(planet, id);
   }
+  upgradeBuilding(id: string): void {
+    const planet = this.#game.planetAt(this.#selected);
+    if (planet) this.#game.scheduleUpgrade(planet, id);
+  }
   produceFighter(): void {
     const planet = this.#game.planetAt(this.#selected);
     if (planet) this.#game.produceFighter(planet);

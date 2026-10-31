@@ -349,7 +349,45 @@ function buildingSites(
         () => emit({ type: 'toggle-demolition', id: building.id }),
         'button secondary-button destructive-button',
       );
-      demolish.disabled = menus.phase !== 'planning';
+      const upgradeProject =
+        site.project?.upgradeBuildingId === building.id ? site.project : null;
+      if (upgradeProject) {
+        details.append(
+          element('p', 'muted-note', `Upgrade queued: ${upgradeProject.type}`),
+        );
+        if (upgradeProject.blockedReason)
+          details.append(
+            element('p', 'muted-note', upgradeProject.blockedReason),
+          );
+        const cancel = button(
+          'Cancel upgrade',
+          () => emit({ type: 'cancel-project', id: upgradeProject.id }),
+          'button secondary-button',
+        );
+        cancel.disabled = menus.phase !== 'planning';
+        actions.append(cancel);
+      } else if (building.upgrade) {
+        const target = building.upgrade.type;
+        const cost = BUILDINGS[target].cost;
+        details.append(
+          element(
+            'p',
+            'muted-note',
+            `Upgrade: Iron ${cost.Iron}, Water ${cost.Water}, Oil ${cost.Oil} · Uses the same site`,
+          ),
+        );
+        const upgrade = button(`Upgrade to ${target}`, () =>
+          emit({ type: 'upgrade-building', id: building.id }),
+        );
+        upgrade.disabled =
+          menus.phase !== 'planning' || !!building.upgrade.blockedReason;
+        if (building.upgrade.blockedReason)
+          upgrade.title = building.upgrade.blockedReason;
+        actions.append(upgrade);
+      }
+      demolish.disabled = menus.phase !== 'planning' || !!upgradeProject;
+      if (upgradeProject)
+        demolish.title = 'Cancel the queued upgrade before demolition.';
       actions.append(demolish);
     } else if (site.project) {
       details.append(

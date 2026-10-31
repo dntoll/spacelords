@@ -256,7 +256,9 @@ describe('produktions-kartvy / radiella-byggval / kompakt-produktionsko', () => 
     state.colonies[0]![1].stock.Iron = 0;
     const { model, click, root, emit, save, controller } = setup({
       ...state,
-      researched: TECHNOLOGIES,
+      researched: TECHNOLOGIES.filter(
+        (type) => type !== 'Ion pulse engine factory',
+      ),
     });
     click('Production');
     expect(
@@ -772,7 +774,12 @@ it('produktionsval-efter-forekomst: counts completed Domes, current parts and fl
       demolition: false,
     },
   ];
-  const game = Game.restore({ ...state, researched: TECHNOLOGIES });
+  const game = Game.restore({
+    ...state,
+    researched: TECHNOLOGIES.filter(
+      (type) => type !== 'Ion pulse engine factory',
+    ),
+  });
   const options = game.productionOptions(game.galaxy.homePlanet);
   expect(options.find((option) => option.type === 'Desert dome')).toMatchObject(
     { localCount: 2, empireCount: 2 },
@@ -798,18 +805,18 @@ it('produktionsberoenden-i-byggval: orders transitive missing dependencies and r
       [
         'Colony ship factory',
         'Exploration ship factory',
-        'Rocket engine factory',
+        'Ion pulse engine factory',
       ].includes(option.type),
     );
   const ordered = prioritizeProduction(
     options,
     new Map([
       ['Colony ship factory', ['Exploration ship factory']],
-      ['Exploration ship factory', ['Rocket engine factory']],
+      ['Exploration ship factory', ['Ion pulse engine factory']],
     ]),
   );
   expect(ordered.map((option) => option.type)).toEqual([
-    'Rocket engine factory',
+    'Ion pulse engine factory',
     'Exploration ship factory',
     'Colony ship factory',
   ]);

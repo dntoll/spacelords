@@ -1,5 +1,18 @@
 # Tekniska krav och arbetsregler
 
+## Fabriksuppgraderingar
+
+`senaste-teknik-i-byggval` och `uppgradera-obsoleta-fabriker`:
+FactoryTechnology definierar versionskedjorna gemensamt för byggfilter,
+komponentfilter och uppgraderingar. Game lämnar frysta komponentval och
+uppgraderingsalternativ; vyn skickar en
+avsikt via AppController och AppModel. Projektets valfria `upgradeBuildingId`
+knyter uppgraderingen till befintlig fabrik. Fabrikens id och plats bevaras;
+byggplats och befintliga arbetare reserveras inte en gång till. Samma
+personalberäkning används för genomförande, försörjningsvy och civiltrafik.
+Sparade uppgraderingar valideras; äldre sparningar kräver ingen migrering
+eller rensning. Modell- och gränssnittstester använder kravnamnen.
+
 ## Genererade symboler och kartbilder
 
 `genererade-symboler-och-kartbilder`: 31 separata transparenta PNG-original

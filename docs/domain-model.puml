@@ -56,7 +56,9 @@ class ConstructionProject {
   type
   reservedCrew
   destinationFleetId
+  upgradeBuildingId : optional
 }
+ConstructionProject "0..1" --> "0..1" Building : upgrades in place
 class BuildingSite {
   index
   requiredHabitability
@@ -82,6 +84,12 @@ TerraformingFactory --> Technology
 class Technology {
   researched
 }
+Technology --> Technology : newer factory version
+note on link
+  senaste-teknik-i-byggval / uppgradera-obsoleta-fabriker:
+  Endast högsta utforskade komponent och fabrik erbjuds vid nybygge.
+  Äldre fabrik kan uppgraderas direkt med bevarad plats och personal.
+end note
 class Research {
   technologyQueue
   completeSelectedPerYear()
