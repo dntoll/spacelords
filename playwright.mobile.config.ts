@@ -11,6 +11,7 @@ export default defineConfig({
     '**/mobile-smoke.spec.ts',
     '**/event-presentation.spec.ts',
     '**/tactical-combat.spec.ts',
+    '**/boarding-combat.spec.ts',
     '**/factory-upgrades.spec.ts',
     '**/research-status.spec.ts',
     '**/fleet-upgrades.spec.ts',

@@ -43,6 +43,13 @@ import {
   type BattleCommand,
 } from './TacticalBattle.js';
 import { createTestBattle } from './TestBattle.js';
+import {
+  type BoardingBattle,
+  type BoardingBattleState,
+  type BoardingCommand,
+  type BoardingShot,
+} from './BoardingBattle.js';
+import { createTestBoardingBattle } from './TestBoarding.js';
 import type { SupplyOverview } from './SupplyOverview.js';
 import {
   ResearchTreeCamera,
@@ -119,6 +126,9 @@ export interface SaveSlotSnapshot {
 export interface AppReadModel {
   readonly orderView?: OrderSelectionSnapshot | null;
   readonly productionStartOrder?: ShipOrder | null;
+  readonly boardingBattle?: BoardingBattleState | null;
+  readonly boardingPresentation?: readonly BoardingBattleState[];
+  readonly boardingShot?: BoardingShot | null;
   readonly tacticalBattle: BattleState | null;
   readonly battleFeedback: BattleState | null;
   readonly turnMovement: TurnMovement | null;
@@ -234,6 +244,7 @@ export class AppModel {
   #pendingResearchRemoval: Technology | null = null;
   #game: Game;
   #testBattle: TacticalBattle | null = null;
+  #testBoarding: BoardingBattle | null = null;
   #battleFeedback: BattleState | null = null;
   #camera: Camera;
   #selected: HexCoordinate;
@@ -337,6 +348,7 @@ export class AppModel {
     this.#mapProjectId = null;
     this.#game = game;
     this.#testBattle = null;
+    this.#testBoarding = null;
     this.#battleFeedback = null;
     this.#orderSelection = null;
     this.#shipStartOrder = null;
@@ -396,6 +408,7 @@ export class AppModel {
     if (!this.saves || this.#game.phase === 'simulating') return;
     this.save();
     this.#testBattle = null;
+    this.#testBoarding = null;
     this.#battleFeedback = null;
     this.cancelMapPointer();
     this.#screen = 'saves';
@@ -445,6 +458,11 @@ export class AppModel {
     return Object.freeze({
       turnMovement: null,
       turnMovements: Object.freeze([]),
+      boardingBattle: this.#testBoarding?.visibleSnapshot ?? null,
+      boardingPresentation: Object.freeze([
+        ...(this.#testBoarding?.presentation ?? []),
+      ]),
+      boardingShot: this.#testBoarding?.shot ?? null,
       tacticalBattle:
         this.#testBattle?.visibleSnapshot ?? this.#game.tacticalBattle,
       battleFeedback: this.#battleFeedback,
@@ -1827,6 +1845,31 @@ export class AppModel {
       result = this.#testBattle.snapshot;
     } else result = this.#game.commandBattle(command);
     this.#afterBattleAction(result);
+  }
+  startTestBoarding(): void {
+    if (this.#screen !== 'saves') return;
+    this.#testBoarding = createTestBoardingBattle();
+    this.#notice = null;
+  }
+  closeTestBoarding(): void {
+    this.#testBoarding = null;
+  }
+  commandBoarding(command: BoardingCommand): void {
+    this.#testBoarding?.command(command);
+  }
+  shouldPlayBoardingStep(): boolean {
+    const boarding = this.#testBoarding?.snapshot;
+    const actor = boarding?.people.find(
+      (person) => person.id === boarding.currentActorId,
+    );
+    return (
+      boarding?.phase === 'fighting' &&
+      actor?.side === 'defender' &&
+      actor.status === 'active'
+    );
+  }
+  playBoardingStep(): boolean {
+    return this.#testBoarding?.actAutomatically(true) ?? false;
   }
   startTestBattle(): void {
     if (this.#screen !== 'saves') return;

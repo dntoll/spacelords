@@ -155,6 +155,30 @@ Se [hela visionen](docs/game-vision.md).
   återupptas utan nya tärningsslag och äldre spel bevaras. Detta ersätter den fasta
   förlustformeln i `flottstrid-per-hex`. Se [taktisk strid](docs/tactical-combat.md).
 
+- **Fristående bordningsstrid:** `fristaende-bordningsprototyp`,
+  `datadriven-bordningskarta`, `individuellt-bordningsinitiativ`,
+  `actionpoints-och-riktad-forflyttning`, `sikt-minne-och-ljudmarkorer`,
+  `d20-bordningsstrid`, `miljomal-och-forstorelse`,
+  `overwatch-och-skydd`, `granater-och-rok`, `utslagning-och-medic`,
+  `bordningsmal-reaktor-och-evakuering` och
+  `forsvarare-och-civilister`, `tydlig-bordningsstatus`,
+  `isometrisk-bordningsvy`, `spelmassigt-bordningsgranssnitt`,
+  `ap-fargad-bordningsvag`, `animerad-bordningsforflyttning`,
+  `avbrott-vid-ny-fiende`, `animerat-bordningsskott`,
+  `valbar-bordningssoldat`, `klickskott-pa-vald-fiende`,
+  `isometriska-golvtiles` samt `isometriska-vaggtexturer` är
+  **Fullständigt implementerat**. Den första versionen är ett separat testspel
+  från huvudmenyn på en handredigerbar transportkarta och påverkar inte
+  kampanj eller sparplatser. Kartan använder klassiska kvadratiska
+  2:1-diamantrutor där väggar och ytterskrov fyller hela rutan, fyra riktningar
+  och 90-gradersvändningar; detta ersätter uttryckligen den tidigare hexkartan.
+  En vald väg färgas efter kvarvarande AP och förflyttning animeras stegvis med
+  uppdaterad sikt. Kända golvrutor använder en kvadratisk yttextur som vyn
+  projicerar på rutans exakta 2:1-diamant. Väggar tar utklipp ur en lång
+  fasadtextur så att en längre sträcka blir sammanhängande. `Half cover` är
+  hälften så hög som en vägg. Se
+  [bordningsstrid](docs/boarding-combat.md).
+
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,
   korta instruktioner, färre upprepningar i Production, mindre New fleet-ruta,
   villkorad ! Needs attention vid titeln och kompakt forskningsvy är

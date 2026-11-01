@@ -129,6 +129,34 @@ sparade spel. `stridsrapport-i-dialog` är **Fullständigt implementerat** med
 året fortsätter automatiskt och rapporten finns i Events.
 Se [taktisk strid](tactical-combat.md).
 
+## Fristående bordningsstrid
+
+`fristaende-bordningsprototyp` och den tillhörande kravfamiljen är
+**Fullständigt implementerat**. Huvudmenyn kan starta en separat taktisk
+bordningsstrid på en kvadratisk 2:1-isometrisk karta inuti ett `Transport ship`.
+Fyra soldater möter tre försvarare medan tre civilister försöker överleva och
+fly. Spelaren använder riktning, action points, vapen, riktat skydd, overwatch,
+granater, rök och medicinsk utrustning. Seger nås genom att neutralisera
+försvararna eller hålla både `Bridge` och `Engineering`. Reaktorn och dörrar kan
+beskjutas.
+Aktiv soldat, hälsa, riktning, `Half cover` och pågående försvararhandlingar
+ska framgå tydligt utan att dolda positioner avslöjas.
+Kända golvrutor ska visas med en isometrisk golvbild. Väggar ska se ut som
+sammanhängande skeppsväggar utan prickmarkering, och `Half cover` ska vara
+tydligt lägre än en vägg.
+Kartan ska visas isometriskt och uppta huvuddelen av ett spelmässigt gränssnitt
+med kompakta handlingsknappar. Varje bordningssoldat ska ha en egen
+hälsomätare. En vald väg ska visa hur långt soldaten når med kvarvarande AP
+och vilka rutor som fortfarande lämnar AP till ett skott. När soldaten går ska
+varje steg och vändning animeras så att sikt uppdateras längs vägen. Om en ny
+fiende upptäcks avbryts resten av förflyttningen. Skott animeras. Spelaren kan
+klicka fram en annan egen soldat för att flytta undan någon som står i vägen,
+och klicka igen på en redan vald fiende för att skjuta.
+
+Prototypen påverkar inga sparade spel och ger ännu inga skepp,
+besättningsmedlemmar, forskningsresultat eller kartupplysningar till kampanjen.
+Se [bordningsstrid](boarding-combat.md).
+
 `bargat-piratskepp-behaller-typ` och `unik-bild-for-civila-transporter` är
 **Fullständigt implementerat**. Ett nyförstört piratskepp kan bärgas och
 repareras till ett eget Space pirate med samma skrov, vapen och bild.

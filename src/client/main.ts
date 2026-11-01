@@ -3,10 +3,12 @@ import { AppModel } from './models/AppModel.js';
 import { AppView } from './views/AppView.js';
 import { GalaxyMapView } from './views/GalaxyMapView.js';
 import { BattleMapView } from './views/BattleMapView.js';
+import { BoardingMapView } from './views/BoardingMapView.js';
 import './styles.css';
 import { SaveMapPreview } from './views/SaveMapPreview.js';
 import { BrowserSaveRepository } from './storage/BrowserSaveRepository.js';
 import { createExpandedGalaxy } from './models/exampleGalaxy.js';
+import { testBoardingMap } from './models/TestBoarding.js';
 
 const root = document.querySelector<HTMLElement>('#app');
 if (!root) {
@@ -28,6 +30,8 @@ const controller = new AppController(
     (container, cells) => new SaveMapPreview(container, cells),
     (container, select, viewport) =>
       new BattleMapView(container, select, viewport),
+    (container, select) =>
+      new BoardingMapView(container, testBoardingMap, select),
   ),
 );
 controller.start();

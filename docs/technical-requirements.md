@@ -141,6 +141,38 @@ rullning. Regressionstester skyddar kart- och listval, spärrade val, omedelbar
 sparning och återupptagen tur. Mobiltester mäter att alla order ryms i
 320 × 568, 393 × 851 och 844 × 390 och att kartan fortfarande är synlig.
 
+## Fristående bordningsstrid
+
+Boardingmodellen är skild från `TacticalBattle` och kampanjens `Game`.
+Den får återanvända `HexCoordinate` och `HexGeometry`, men har egna frysta
+snapshots, typade kommandon, deterministiskt slumptillstånd, kartparser,
+siktberäkning, pathfinding och AI. Kartdefinitionen är en rå lagerindelad
+textresurs; runtime-tillstånd som dörrskada, rök och upptäckt blandas inte in i
+den statiska definitionen.
+
+AppModel äger en tillfällig boarding-session medan huvudmenyn är den underliggande
+skärmen. `boarding-command` samordnas av AppController och en separat
+`BoardingView`; vyn får bara läsa snapshot och skicka intents. AP-färgad
+vägvisning beräknas ur pathfinding utan att mutera striden. Stegvis gång är
+presentation: modellen samlar synliga rutor efter varje vändning och steg, och
+vyn animerar mellan dem. En ny fiende i sidans sikt avbryter resterande
+steg i samma kommando. Skottanimation är presentation separat från snapshot.
+Byte av egen soldat sker med kommandot `select` och sparar kvarvarande AP. P5-kartan använder
+instance mode och innehåller ingen domänmutation. Golvgrafik är kvadratiska
+yttexturer; vyn äger den klassiska 2:1-projektionen och lägger texturen affint
+på rutans exakta diamant. Genererad eller målad grafik ska därför vara
+ovanifrån-ytor, inte färdiga isometriska diamanter. Väggar använder en lång
+fasadtextur; vyn klipper ut en ruta i taget längs en sammanhängande q- eller
+r-sträcka och lägger utklippet affint på blockets synliga sidor. `Half cover`
+är visuellt hälften så hög som en vägg. Sessionen får inte anropa
+SaveRepository eller ändra `TacticalBattle`, `TurnSimulation` eller sparformat.
+
+Snabba kravnamngivna tester skyddar parser, AP, initiativ, sikt, strid,
+miljöobjekt, effekter och AI med deterministisk slump. Jsdom-tester skyddar
+intentgränsen. Ett riktat Playwright-scenario ingår i snabb mobilkontroll och
+verifierar även att localStorage förblir oförändrad. Se
+[bordningsstrid](boarding-combat.md).
+
 ## Skeppsbildernas riktning i strid
 
 `skeppets-framat-foljer-spriten`: BattleMapView utgår från att samtliga

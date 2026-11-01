@@ -7,10 +7,8 @@ import { AppView } from '../../src/client/views/AppView.js';
 import { AppController } from '../../src/client/controllers/AppController.js';
 import { BrowserSaveRepository } from '../../src/client/storage/BrowserSaveRepository.js';
 import { Game } from '../../src/client/models/Game.js';
-import {
-  researchStationState,
-  researchStationModel,
-} from '../fixtures/research-station.js';
+import { researchStationState } from '../fixtures/research-station.js';
+import { researchStationModel } from '../fixtures/research-station-model.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 
 describe('beslutslista / rundvarning / hoppa-over-beslut', () => {

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { AppController } from '../../src/client/controllers/AppController.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import { isResearchIdentified } from '../../src/client/models/ResearchTree.js';
-import { researchStationModel } from '../fixtures/research-station.js';
+import { researchStationModel } from '../fixtures/research-station-model.js';
 import { renderResearchTree } from '../../src/client/views/ResearchTreeView.js';
 
 function setup() {
