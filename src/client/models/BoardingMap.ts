@@ -2,12 +2,7 @@ export type BoardingHex = Readonly<{ q: number; r: number }>;
 export type BoardingRoom = 'bridge' | 'engineering';
 export type BoardingTerrain = 'floor' | 'wall' | 'hull';
 export type BoardingFeatureKind =
-  | 'door'
-  | 'reactor'
-  | 'cover'
-  | 'exit'
-  | 'wall'
-  | 'hull';
+  'door' | 'reactor' | 'cover' | 'exit' | 'wall' | 'hull';
 
 export interface BoardingFeatureDefinition {
   readonly id: string;

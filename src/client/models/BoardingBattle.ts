@@ -3,7 +3,7 @@ import {
   type BoardingFeatureDefinition,
   type BoardingFeatureKind,
   type BoardingHex,
-  BoardingMap,
+  type BoardingMap,
 } from './BoardingMap.js';
 import { chooseDefenderCommand } from './BoardingAI.js';
 

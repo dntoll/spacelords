@@ -22,6 +22,7 @@ export function renderSaveSlots(
       'Progress is saved automatically in this browser.',
     ),
     button('Test battle (cheat)', () => emit({ type: 'test-battle' })),
+    button('Test boarding (cheat)', () => emit({ type: 'test-boarding' })),
   );
   const grid = element('div', 'save-grid');
   for (const slot of model.saveSlots) {

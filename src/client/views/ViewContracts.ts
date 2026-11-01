@@ -1,6 +1,7 @@
 import type { ExplorationOrder } from '../models/TurnSimulation.js';
 import type { ShipOrder, OrderKind } from '../models/ShipOrders.js';
 import type { BattleCommand } from '../models/TacticalBattle.js';
+import type { BoardingCommand } from '../models/BoardingBattle.js';
 import type {
   MapProductionCategory,
   MapViewport,
@@ -23,6 +24,8 @@ import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 
 export type AppIntent =
   | { readonly type: 'test-battle' }
+  | { readonly type: 'test-boarding' | 'close-boarding' }
+  | { readonly type: 'boarding-command'; readonly command: BoardingCommand }
   | { readonly type: 'open-fleet-orders'; readonly id: string }
   | {
       readonly type: 'open-ship-orders';

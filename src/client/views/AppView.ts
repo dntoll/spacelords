@@ -1,6 +1,7 @@
 import { renderOrders } from './OrdersView.js';
 import { gameText } from './GameText.js';
 import { BattleView, type BattleMapFactory } from './BattleView.js';
+import { BoardingView, type BoardingMapFactory } from './BoardingView.js';
 import { discoveryControls } from './DiscoveryView.js';
 import { pirateAsFleet } from '../models/PirateFleet.js';
 import { updateDecisionGuidance } from './DecisionGuidanceView.js';
@@ -42,6 +43,7 @@ import { renderEvents, renderCombatLog } from './EventsView.js';
 
 export class AppView implements AppPort {
   #battleView: BattleView | null = null;
+  #boardingView: BoardingView | null = null;
   readonly #root: HTMLElement;
   readonly #mapFactory: MapFactory;
   #emit: IntentHandler = () => undefined;
@@ -92,6 +94,7 @@ export class AppView implements AppPort {
       cells: readonly MapCell[],
     ) => { dispose(): void },
     private readonly battleMapFactory?: BattleMapFactory,
+    private readonly boardingMapFactory?: BoardingMapFactory,
   ) {
     this.#root = root;
     this.#mapFactory = mapFactory;
@@ -110,6 +113,19 @@ export class AppView implements AppPort {
   }
 
   render(model: AppReadModel): void {
+    if (model.boardingBattle) {
+      this.#battleView?.dispose();
+      this.#battleView = null;
+      this.#boardingView ??= new BoardingView(
+        this.#root,
+        (intent) => this.#emit(intent),
+        this.boardingMapFactory,
+      );
+      this.#boardingView.render(model.boardingBattle, model.notice);
+      return;
+    }
+    this.#boardingView?.dispose();
+    this.#boardingView = null;
     if (
       (model.battleFeedback || model.tacticalBattle) &&
       !model.turnMovement &&
@@ -1000,6 +1016,7 @@ export class AppView implements AppPort {
   }
 
   dispose(): void {
+    this.#boardingView?.dispose();
     this.#battleView?.dispose();
     this.#disposed = true;
     if (typeof cancelAnimationFrame !== 'undefined')

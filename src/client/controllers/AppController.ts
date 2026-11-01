@@ -81,6 +81,7 @@ export class AppController {
       !isMapScreen(previous.screen) ||
       previous.eventPlayback ||
       previous.turnMovement ||
+      previous.boardingBattle ||
       previous.tacticalBattle ||
       previous.battleFeedback ||
       previous.notice ||
@@ -152,6 +153,17 @@ export class AppController {
   }
 
   #handleIntent(intent: AppIntent): void {
+    if (intent.type === 'boarding-command') {
+      this.#model.commandBoarding(intent.command);
+      this.#render();
+      this.#schedulePlayback();
+      return;
+    }
+    if (intent.type === 'close-boarding') {
+      this.#model.closeTestBoarding();
+      this.#render();
+      return;
+    }
     if (intent.type === 'battle-command') {
       this.#model.commandBattle(intent.command);
       this.#model.autoSelectBattleShip();
@@ -206,6 +218,9 @@ export class AppController {
       ![
         'start-slot',
         'test-battle',
+        'test-boarding',
+        'boarding-command',
+        'close-boarding',
         'request-clear-slot',
         'cancel-clear-slot',
         'confirm-clear-slot',
@@ -216,6 +231,10 @@ export class AppController {
       case 'test-battle':
         this.#model.startTestBattle();
         this.#model.autoSelectBattleShip();
+        this.#schedulePlayback();
+        break;
+      case 'test-boarding':
+        this.#model.startTestBoarding();
         this.#schedulePlayback();
         break;
       case 'salvage-wreck':
@@ -796,6 +815,23 @@ export class AppController {
     const activated = this.#model.autoSelectBattleShip();
     const snapshot = this.#model.snapshot;
     const playback = snapshot.eventPlayback;
+    const boarding = snapshot.boardingBattle;
+    if (
+      boarding?.phase === 'fighting' &&
+      boarding.people.find((person) => person.id === boarding.currentActorId)
+        ?.side === 'defender'
+    ) {
+      this.#playbackTimer = setTimeout(() => {
+        try {
+          this.#model.playBoardingStep();
+        } catch (error) {
+          this.#model.reportError(error);
+        }
+        this.#render();
+        this.#schedulePlayback();
+      }, 450);
+      return;
+    }
     if (snapshot.screen === 'saves') return;
     if (snapshot.battleFeedback) {
       this.#playbackTimer = setTimeout(() => {

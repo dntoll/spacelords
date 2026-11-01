@@ -42,6 +42,12 @@ import {
   type BattleCommand,
 } from './TacticalBattle.js';
 import { createTestBattle } from './TestBattle.js';
+import {
+  type BoardingBattle,
+  type BoardingBattleState,
+  type BoardingCommand,
+} from './BoardingBattle.js';
+import { createTestBoardingBattle } from './TestBoarding.js';
 import type { SupplyOverview } from './SupplyOverview.js';
 import {
   ResearchTreeCamera,
@@ -118,6 +124,7 @@ export interface SaveSlotSnapshot {
 export interface AppReadModel {
   readonly orderView?: OrderSelectionSnapshot | null;
   readonly productionStartOrder?: ShipOrder | null;
+  readonly boardingBattle?: BoardingBattleState | null;
   readonly tacticalBattle: BattleState | null;
   readonly battleFeedback: BattleState | null;
   readonly turnMovement: TurnMovement | null;
@@ -233,6 +240,7 @@ export class AppModel {
   #pendingResearchRemoval: Technology | null = null;
   #game: Game;
   #testBattle: TacticalBattle | null = null;
+  #testBoarding: BoardingBattle | null = null;
   #battleFeedback: BattleState | null = null;
   #camera: Camera;
   #selected: HexCoordinate;
@@ -336,6 +344,7 @@ export class AppModel {
     this.#mapProjectId = null;
     this.#game = game;
     this.#testBattle = null;
+    this.#testBoarding = null;
     this.#battleFeedback = null;
     this.#orderSelection = null;
     this.#shipStartOrder = null;
@@ -395,6 +404,7 @@ export class AppModel {
     if (!this.saves || this.#game.phase === 'simulating') return;
     this.save();
     this.#testBattle = null;
+    this.#testBoarding = null;
     this.#battleFeedback = null;
     this.cancelMapPointer();
     this.#screen = 'saves';
@@ -444,6 +454,7 @@ export class AppModel {
     return Object.freeze({
       turnMovement: null,
       turnMovements: Object.freeze([]),
+      boardingBattle: this.#testBoarding?.visibleSnapshot ?? null,
       tacticalBattle:
         this.#testBattle?.visibleSnapshot ?? this.#game.tacticalBattle,
       battleFeedback: this.#battleFeedback,
@@ -1827,6 +1838,20 @@ export class AppModel {
     } else result = this.#game.commandBattle(command);
     this.#afterBattleAction(result);
   }
+  startTestBoarding(): void {
+    if (this.#screen !== 'saves') return;
+    this.#testBoarding = createTestBoardingBattle();
+    this.#notice = null;
+  }
+  closeTestBoarding(): void {
+    this.#testBoarding = null;
+  }
+  commandBoarding(command: BoardingCommand): void {
+    this.#testBoarding?.command(command);
+  }
+  playBoardingStep(): boolean {
+    return this.#testBoarding?.actAutomatically(true) ?? false;
+  }
   startTestBattle(): void {
     if (this.#screen !== 'saves') return;
     this.#testBattle = createTestBattle();
@@ -1850,7 +1875,8 @@ export class AppModel {
       (p) => p.side === 'player' && p.status === 'active' && !p.activated,
     );
     const ship =
-      eligible.find((p) => battleWeapons(p.type, p.hasMissiles).length) ?? eligible[0];
+      eligible.find((p) => battleWeapons(p.type, p.hasMissiles).length) ??
+      eligible[0];
     if (!ship) return false;
     this.commandBattle({ type: 'activate', id: ship.id });
     return true;

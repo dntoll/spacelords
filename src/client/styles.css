@@ -3680,3 +3680,166 @@ body:has(.discovery-controls) .selection-panel {
     gap: 5px;
   }
 }
+
+.boarding-dialog {
+  width: min(1180px, 100vw);
+  height: min(820px, 100dvh);
+  max-width: none;
+  max-height: none;
+  padding: 12px;
+  border: 1px solid #40516b;
+  border-radius: 12px;
+  color: #eaf2ff;
+  background: #0b1220;
+}
+
+.boarding-dialog::backdrop {
+  background: rgb(1 5 12 / 88%);
+}
+
+.boarding-heading,
+.boarding-zoom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.boarding-heading h1 {
+  margin: 0;
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+}
+
+.boarding-status {
+  min-height: 1.5em;
+  margin: 6px 0;
+}
+
+.boarding-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: calc(100% - 66px);
+  gap: 10px;
+}
+
+.boarding-controls {
+  display: flex;
+  flex-flow: row wrap;
+  align-content: flex-start;
+  gap: 6px;
+  overflow: auto;
+}
+
+.boarding-controls .button {
+  min-height: 40px;
+  width: auto;
+}
+
+.boarding-selection {
+  flex: 1 0 100%;
+  margin: 0 0 4px;
+  color: #c6d8ee;
+}
+
+.boarding-board {
+  position: relative;
+  min-width: 0;
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid #34455f;
+  border-radius: 8px;
+  background: #060914;
+}
+
+.boarding-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.boarding-canvas canvas {
+  display: block;
+  touch-action: none;
+}
+
+.boarding-zoom {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  justify-content: flex-end;
+}
+
+.boarding-zoom .button {
+  min-height: 36px;
+  padding: 4px 8px;
+}
+
+.boarding-details {
+  grid-column: 1 / -1;
+  max-height: 180px;
+  overflow: auto;
+}
+
+.boarding-log {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  font:
+    0.75rem/1.35 ui-monospace,
+    monospace;
+}
+
+@media (max-width: 680px) {
+  .boarding-dialog {
+    width: 100vw;
+    height: 100dvh;
+    margin: 0;
+    padding: 8px;
+    border-radius: 0;
+  }
+
+  .boarding-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 7px;
+  }
+
+  .boarding-controls {
+    max-height: 164px;
+  }
+
+  .boarding-board {
+    min-height: 180px;
+  }
+
+  .boarding-details {
+    max-height: 24dvh;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .boarding-dialog {
+    padding: 6px;
+  }
+
+  .boarding-layout {
+    grid-template-columns: minmax(0, 1fr) 290px;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .boarding-controls {
+    grid-column: 2;
+    grid-row: 1;
+    max-height: none;
+  }
+
+  .boarding-board {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .boarding-details {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    max-height: 90px;
+  }
+}
