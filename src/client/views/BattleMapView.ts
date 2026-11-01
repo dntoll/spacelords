@@ -19,6 +19,7 @@ import {
 import type { BattleMapPort } from './BattleView.js';
 import { SHIP_SPRITES, type ShipSpriteType } from './ShipImages.js';
 import { BattleEffects, type BattleEffectFrame } from './BattleEffects.js';
+import { ShipFootprint } from '../models/ShipFootprint.js';
 
 export class BattleMapView implements BattleMapPort {
   readonly #p5: p5;
@@ -413,14 +414,35 @@ export class BattleMapView implements BattleMapPort {
       );
       const profile = SHIP_PROFILES[ship.type],
         radius = 13 + profile.size * 4;
+      const footprint = ShipFootprint.cells(
+        ship,
+        state.largeShipFootprints === true,
+      );
+      const large = footprint.length > 1;
       const aimed =
         !!this.#aim &&
         !!ship.position &&
         (WEAPONS[this.#weapon].area > 0
-          ? missileArea(this.#aim).some(
-              (hex) => hex.q === ship.position!.q && hex.r === ship.position!.r,
+          ? missileArea(this.#aim).some((hex) =>
+              footprint.some((cell) => cell.q === hex.q && cell.r === hex.r),
             )
-          : ship.position.q === this.#aim.q && ship.position.r === this.#aim.r);
+          : footprint.some(
+              (cell) => cell.q === this.#aim!.q && cell.r === this.#aim!.r,
+            ));
+      if (large) {
+        p.stroke(
+          ship.id === this.#selected
+            ? '#ffffff'
+            : aimed
+              ? '#ffda7a'
+              : ship.side === 'player'
+                ? '#64d7ff'
+                : '#fa867a',
+        );
+        p.strokeWeight(2);
+        p.fill(ship.side === 'player' ? '#15425b' : '#5c2c36');
+        for (const cell of footprint) polygon(cell, HexGeometry.size - 3);
+      }
       p.push();
       p.translate(center.x, center.y);
       p.stroke(
@@ -434,7 +456,7 @@ export class BattleMapView implements BattleMapPort {
       );
       p.strokeWeight(ship.id === this.#selected ? 3 : 1.8);
       p.fill(ship.side === 'player' ? '#15425b' : '#5c2c36');
-      p.circle(0, 0, radius * 2.3);
+      if (!large) p.circle(0, 0, radius * 2.3);
       p.push();
       // skeppets-framat-foljer-spriten: every ship asset has its nose pointing right.
       p.rotate((-ship.facing * Math.PI) / 3);
@@ -443,22 +465,29 @@ export class BattleMapView implements BattleMapPort {
       );
       if (image) {
         p.imageMode(p.CENTER);
-        p.image(image, 0, 0, radius * 1.7, radius * 1.7);
+        p.image(
+          image,
+          0,
+          0,
+          large ? Math.sqrt(3) * HexGeometry.size * 2.7 : radius * 1.7,
+          large ? HexGeometry.size * 1.2 : radius * 1.7,
+        );
       } else {
         p.fill(ship.side === 'player' ? '#b0e9f9' : '#ffb2a3');
         p.noStroke();
         p.triangle(
-          radius,
+          large ? HexGeometry.size * 2.2 : radius,
           0,
-          -radius * 0.7,
+          large ? -HexGeometry.size * 2.2 : -radius * 0.7,
           -radius * 0.55,
-          -radius * 0.7,
+          large ? -HexGeometry.size * 2.2 : -radius * 0.7,
           radius * 0.55,
         );
       }
       p.stroke('#f3f6fc');
       p.strokeWeight(2);
-      p.line(radius + 2, 0, radius + 9, 0);
+      const nose = large ? Math.sqrt(3) * HexGeometry.size * 1.4 : radius;
+      p.line(nose + 2, 0, nose + 9, 0);
       p.pop();
       p.noStroke();
       p.fill('#112331');

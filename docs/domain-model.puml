@@ -420,6 +420,7 @@ class PirateFleet {
   nextPosition()
 }
 class TacticalBattle {
+  largeShipFootprints
   phase: deployment | fighting | complete
   round
   turn
@@ -436,6 +437,13 @@ class BattlePiece {
   status: active | destroyed | escaped
   activated
 }
+class ShipFootprint {
+  cells()
+  length()
+  contains()
+}
+BattlePiece ..> ShipFootprint : skrovets upptagna hex
+TacticalBattle ..> ShipFootprint : placering, rörelse och träffyta
 class BattleActivation {
   remainingMovement
   fired

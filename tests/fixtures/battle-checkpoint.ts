@@ -2,12 +2,12 @@ import { Game, type GameState } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import type { BattleState } from '../../src/client/models/TacticalBattle.js';
 
-export function encounterGame(): Game {
+export function encounterGame(pirateCount = 1): Game {
   const state = new Game(createExampleGalaxy()).exportState();
   const first = state.fleets[0]!;
   const game = Game.restore({
     ...state,
-    pirates: [state.pirates![0]!],
+    pirates: [{ ...state.pirates![0]!, count: pirateCount }],
     fleets: [
       {
         ...first,

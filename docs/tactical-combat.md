@@ -1,5 +1,27 @@
 # Taktisk strid
 
+## Autoaim och stora skrov, 2026-11-01
+
+`autoaim-med-manuellt-mal` — **Fullständigt implementerat**. När siktet saknar
+mållåsning väljer Autoaim närmaste träffbara fiende inom vapnets främre båge.
+Lika avstånd avgörs av hur rakt framför målet ligger. Spelaren kan klicka på
+andra mål eller justera missilernas träffhex. Ett giltigt valt mål behålls.
+En låsning tappas när målet inte längre kan träffas; nästa giltiga mål väljs
+automatiskt, eller siktet blir utan mål om inget finns.
+
+`stora-skepp-over-flera-hex` — **Fullständigt implementerat**. I nya strider
+upptar Transport ship och Colony ship tre hex: mitthexen och en hex framför
+respektive bakom. Armored Transport har samma form. Resten upptar en hex.
+Alla skrovhex räknas för klick, kollision, räckvidd, träff och befintliga
+regler om större skepps skydd. Missiler slår bara en gång per skepp även om
+flera av dess hex ingår i området. Automatisk utplacering tar hänsyn till
+hela skrovet. Svängar till en överlappande eller ogiltig placering tillåts inte.
+Reträtt sker när skrovet korsar den egna kortsidan, från runda två.
+
+Detta ersätter en hex per skepp i `taktisk-stridskarta` och
+`stridsutplacering` för nya strider. Äldre pågående strider behåller sina
+placeringar och tidigare storlek och går att spela färdigt utan rensning.
+
 ## Skott och partiklar, 2026-11-01
 
 `animerade-stridsskott` och `skadepartiklar-i-strid` är **Fullständigt
@@ -35,8 +57,9 @@ Alla flottor på samma Star map-hex deltar tillsammans.
   varje enskild sväng, hexsteg, salva och turavslut visas separat med paus mellan
   stegen. Samma rörelseregler gäller båda sidor, även efter omladdning.
 - `fuskknapp-for-teststrid` — **Fullständigt implementerat**: Test battle (cheat)
-  i huvudmenyn öppnar en färdig strid med mål inom skotthåll. Den kan upprepas,
-  avslutas till menyn och ändrar inga sparplatser.
+  i huvudmenyn börjar med utplacering av små skepp samt Transport ship och
+  Colony ship. Den kan upprepas, avslutas till menyn och ändrar inga sparplatser.
+  Detta ersätter färdig placering och omedelbar stridsstart.
 - `stridsrapport-i-dialog` — **Fullständigt implementerat**, ändrat krav:
   rapportens informationsruta och Handle/Ignore-val efter striden tas bort.
   Resultatet visas på stridskartan och rapport med tärningslogg bevaras i Events.
@@ -96,7 +119,8 @@ samma galaxhex. Flottor som byter hex med varandra möts inte. Förstärkningar
 förenas efter striden. Möten på olika hexar hanteras ett i taget och året
 väntar tills striderna och slutåterkopplingen är färdiga.
 
-Varje skepp är en egen pjäs på en hex. Båda sidor placerar i motsatta ändar.
+Varje skepp är en egen pjäs; stora skrov upptar tre hex i nya strider.
+Båda sidor placerar i motsatta ändar.
 Spelaren väljer position och riktning eller använder Auto deploy. Fiendens
 placering visas när striden börjar. Startzoner och karta växer med flottorna;
 inga skepp hålls i reserv. Asteroidgrupper täcker cirka 12 procent av ytan
@@ -143,7 +167,8 @@ och missilerna monteras med Upgrade efter forskning. En ny Fighter börjar utan
 missiler. En Fighter i ett äldre sparat spel, där fältet saknas, behåller två
 salvor.
 
-`traffhex-istallet-for-mallista`: spelaren väljer träffhex på kartan och
+`traffhex-istallet-for-mallista`: Autoaim föreslår mål och spelaren kan ändra
+träffhex på kartan och
 bekräftar med Fire weapon. Det finns ingen mållista. Cannon och Raider cannon
 kräver ett fientligt skepp på hexen. Missiler kan sikta på en tom hex.
 

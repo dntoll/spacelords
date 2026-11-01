@@ -12,6 +12,7 @@ import {
 } from '../models/TacticalBattle.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element } from './dom.js';
+import { ShipFootprint } from '../models/ShipFootprint.js';
 
 export interface BattleMapPort {
   animateShot?(shot: BattleShot): Promise<void>;
@@ -44,6 +45,9 @@ export class BattleView {
   #state: BattleState | null = null;
   #selected: string | null = null;
   #aim: BattleHex | null = null;
+  #aimTargetId: string | null = null;
+  readonly #targets = new Map<string, string>();
+  #aimPose = '';
   #activationId: string | null = null;
   #weapon: WeaponName = 'Cannon';
   #facing = 0;
@@ -118,8 +122,7 @@ export class BattleView {
     const piece = state.pieces.find(
       (p) =>
         p.status === 'active' &&
-        p.position?.q === position.q &&
-        p.position.r === position.r,
+        ShipFootprint.contains(p, state.largeShipFootprints === true, position),
     );
     const aiming =
       state.phase === 'fighting' &&
@@ -140,6 +143,10 @@ export class BattleView {
       });
     else if (aiming) {
       this.#aim = position;
+      const source = state.activation.id;
+      this.#aimTargetId = piece?.side === 'enemy' ? piece.id : null;
+      if (this.#aimTargetId) this.#targets.set(source, this.#aimTargetId);
+      else this.#targets.delete(source);
       this.render(state);
     }
   }
@@ -188,6 +195,8 @@ export class BattleView {
     if (this.#battleId !== state.id) {
       this.#selected = null;
       this.#aim = null;
+      this.#aimTargetId = null;
+      this.#targets.clear();
       this.#activationId = null;
       this.#battleId = state.id;
       this.#map?.fit();
@@ -195,6 +204,7 @@ export class BattleView {
     const activationId = state.activation?.id ?? null;
     if (this.#activationId !== activationId) {
       this.#aim = null;
+      this.#aimTargetId = null;
       this.#activationId = activationId;
     }
     const friendly = state.pieces.filter(
@@ -224,7 +234,7 @@ export class BattleView {
     this.#status.textContent =
       notice ??
       (state.phase === 'deployment'
-        ? 'Place every ship in the blue zone, choose its facing, then start combat.'
+        ? 'Place each hull inside the blue zone. Large ships occupy three hexes. Choose facing, then start combat.'
         : state.turn === 'enemy'
           ? 'Enemy turn…'
           : state.activation
@@ -344,7 +354,7 @@ export class BattleView {
         element(
           'p',
           'battle-ship-stats',
-          `Hull ${selected.hull}/${maxHull(selected)} · Movement ${remaining} · ${['Small', 'Medium', 'Large'][SHIP_PROFILES[selected.type].size - 1]}`,
+          `Hull ${selected.hull}/${maxHull(selected)} · Movement ${remaining} · ${['Small', 'Medium', 'Large'][SHIP_PROFILES[selected.type].size - 1]} · ${ShipFootprint.length(selected.type, state.largeShipFootprints === true)} hex hull`,
         ),
       );
       const maneuvers = element('div', 'battle-maneuvers');
@@ -360,6 +370,8 @@ export class BattleView {
       const movementLocked =
         !active || remaining < 1 || !!state.activation?.movementClosed;
       left.disabled = right.disabled = movementLocked;
+      left.disabled ||= !!rules.turnIssue(selected.id, 1);
+      right.disabled ||= !!rules.turnIssue(selected.id, -1);
       forward.disabled =
         movementLocked || rules.forwardIssue(selected.id) !== null;
       forward.title =
@@ -371,6 +383,45 @@ export class BattleView {
       if (!weapons.includes(this.#weapon))
         this.#weapon = weapons[0] ?? 'Cannon';
       if (weapons.length) {
+        const pose = `${selected.id}:${selected.position?.q},${selected.position?.r}:${selected.facing}:${this.#weapon}`;
+        const preferred = this.#targets.get(selected.id);
+        if (preferred) {
+          const at = rules.aimAt(selected.id, preferred, this.#weapon);
+          if (at) {
+            const target = state.pieces.find(
+              (piece) => piece.id === preferred,
+            )!;
+            if (
+              !this.#aim ||
+              !ShipFootprint.contains(
+                target,
+                state.largeShipFootprints === true,
+                this.#aim,
+              ) ||
+              rules.impact(selected.id, this.#aim, this.#weapon).reason
+            )
+              this.#aim = at;
+            this.#aimTargetId = preferred;
+          } else {
+            this.#targets.delete(selected.id);
+            this.#aimTargetId = null;
+            this.#aim = null;
+          }
+        } else if (
+          this.#aim &&
+          this.#aimPose !== pose &&
+          rules.impact(selected.id, this.#aim, this.#weapon).reason
+        )
+          this.#aim = null;
+        if (!this.#aim && active && !state.activation.fired) {
+          const target = rules.autoTarget(selected.id, this.#weapon);
+          if (target) {
+            this.#targets.set(selected.id, target.id);
+            this.#aimTargetId = target.id;
+            this.#aim = target.at;
+          }
+        }
+        this.#aimPose = pose;
         this.#select(
           'Weapon',
           weapons.map((name) => ({
@@ -388,8 +439,17 @@ export class BattleView {
           ? rules.impact(selected.id, this.#aim, this.#weapon)
           : null;
         const aimText = this.#aim
-          ? `Impact hex ${this.#aim.q},${this.#aim.r}${weapon.area ? ' · adjacent hexes included' : ''}`
-          : 'Choose the impact hex on the map.';
+          ? `${
+              this.#aimTargetId
+                ? `Target: ${battlePieceLabel(
+                    state.pieces.find(
+                      (piece) => piece.id === this.#aimTargetId,
+                    )!,
+                    state.pieces,
+                  )} · `
+                : ''
+            }Impact hex ${this.#aim.q},${this.#aim.r}${weapon.area ? ' · adjacent hexes included' : ''}`
+          : 'No target in range. Tap the map to aim.';
         this.#panel.append(element('p', 'battle-aim', aimText));
         this.#information.append(
           element(
@@ -455,7 +515,7 @@ export class BattleView {
       element(
         'p',
         '',
-        'Select a ship to take its turn once per round. Choose the impact hex on the map, then fire. Missiles also hit every adjacent hex, including your own ships. Move then fire, or fire then move. Turning and moving each cost 1 movement. Each successful D6 causes 1 hull damage. Rear attacks reduce the required roll by 1. Asteroids and larger ships block fire completely. Destroyed ships leave wrecks; surviving ships recover hull and ammunition after combat.',
+        'Select a ship to take its turn once per round. Autoaim selects the nearest hittable enemy in the front arc, preferring straight ahead at equal distance. Tap the map to change target or adjust missile impact. A valid chosen target stays selected until it cannot be hit. Large ships occupy three hexes; their entire hull blocks movement and can be hit. Missiles hit each ship once, including your own ships. Move then fire, or fire then move. Turning and moving each cost 1 movement. Each successful D6 causes 1 hull damage. Rear attacks reduce the required roll by 1. Asteroids and larger ships block fire completely. Destroyed ships leave wrecks; surviving ships recover hull and ammunition after combat.',
       ),
     );
     this.#information.append(help);

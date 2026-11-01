@@ -1,6 +1,6 @@
 import { TacticalBattle } from './TacticalBattle.js';
 
-/** fuskknapp-for-teststrid: isolated combat with targets already in weapon range. */
+/** fuskknapp-for-teststrid: isolated deployment with both small and large ships. */
 export function createTestBattle(): TacticalBattle {
   const battle = TacticalBattle.create(
     'test-battle',
@@ -14,6 +14,8 @@ export function createTestBattle(): TacticalBattle {
           { id: 'test-fighter-1', type: 'Fighter', ion: false },
           { id: 'test-fighter-2', type: 'Fighter', ion: false },
           { id: 'test-explorer', type: 'Exploration ship', ion: false },
+          { id: 'test-transport', type: 'Transport ship', ion: false },
+          { id: 'test-colonizer', type: 'Colony ship', ion: false },
         ],
       },
       {
@@ -28,24 +30,11 @@ export function createTestBattle(): TacticalBattle {
     ],
     Date.now() >>> 0,
   );
-  const positions = [
-    { q: 1, r: 3 },
-    { q: 1, r: 5 },
-    { q: 0, r: 7 },
-    { q: 4, r: 3 },
-    { q: 4, r: 5 },
-  ];
   return TacticalBattle.restore({
     ...battle.snapshot,
-    phase: 'fighting',
-    round: 1,
-    turn: 'player',
     asteroids: [],
-    pieces: battle.snapshot.pieces.map((piece, index) => ({
-      ...piece,
-      position: positions[index]!,
-      facing: piece.side === 'player' ? 0 : 3,
-    })),
-    log: ['Test battle. Saved games are unchanged.'],
+    log: [
+      'Test battle. Deploy every ship, including the large Transport ship and Colony ship. Saved games are unchanged.',
+    ],
   });
 }

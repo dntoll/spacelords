@@ -295,7 +295,7 @@ describe('tactical combat integration', () => {
         ...p,
         position:
           p.type === 'Transport ship'
-            ? battleHex(0, 4)
+            ? battleHex(1, 4)
             : battleHex(index + 5, 4),
         facing: p.type === 'Transport ship' ? 3 : p.side === 'player' ? 0 : 3,
       })),

@@ -1,5 +1,25 @@
 # Tekniska krav och arbetsregler
 
+## Autoaim och flerrutiga skrov, 2026-11-01
+
+- `autoaim-med-manuellt-mal`: TacticalBattle lämnar läsfrågor för giltig
+  träffhex och automatiskt målval. Befintliga regler för vapen, ammunition,
+  räckvidd, båge och skottlinje avgör kandidaterna. Avstånd till närmaste
+  träffbara skrovhex kommer först, därefter riktning och stabil skeppsidentitet.
+  Vyn behåller endast tillfälligt sikte och målval och ändrar inte spelmodellen.
+- `stora-skepp-over-flera-hex`: ShipFootprint är oberoende av p5 och beräknar
+  alla skrovhex från mittposition, riktning och stridens storleksregel. Samma
+  geometri används av utplacering, återläsning, förflyttning, sväng, AI,
+  räckvidd, skydd, missilområde, klickval och rendering. Missilområdet
+  grupperas per skeppsidentitet så att ett skrov inte skadas flera gånger.
+- Nya BattleState sparar det valfria fältet largeShipFootprints: true.
+  Saknat fält behåller den tidigare enhexgeometrin för pågående strider.
+  Mittposition och sex riktningar behålls. Sparversionen ändras inte och
+  inga sparningar rensas. Nya strider använder alltid den nya geometrin.
+- `fuskknapp-for-teststrid`: teststriden använder samma utplaceringsfas och
+  geometri som ordinarie strider. Transport ship och Colony ship ingår;
+  inga sparplatser skrivs.
+
 ## Händelsebilder och stridspresentation, 2026-11-01
 
 - `bilder-i-events`: GameEvent får valfria oföränderliga EventLine-rader och

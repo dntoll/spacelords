@@ -8,17 +8,21 @@ import {
   type BattleState,
 } from '../../src/client/models/TacticalBattle.js';
 import { createTestBattle } from '../../src/client/models/TestBattle.js';
+import { ShipFootprint } from '../../src/client/models/ShipFootprint.js';
 
-async function aimAtPirate(page: Page, state: BattleState) {
+async function aimAtPirate(
+  page: Page,
+  state: BattleState,
+  at?: { q: number; r: number },
+) {
   const canvas = page.locator('.battle-canvas canvas');
   await expect(canvas).toBeVisible();
   const size = await canvas.evaluate((node) => ({
     width: node.clientWidth,
     height: node.clientHeight,
   }));
-  const target = state.pieces.find(
-    (piece) => piece.side === 'enemy',
-  )!.position!;
+  const target =
+    at ?? state.pieces.find((piece) => piece.side === 'enemy')!.position!;
   await canvas.click({ position: battleHexPoint(state, size, target) });
 }
 
@@ -239,7 +243,10 @@ test('skeppsvis-retratt / gemensamt-handelseflode: escapes each ship, regroups t
       ...p,
       position:
         p.side === 'player'
-          ? battleHex(0, i + 1)
+          ? battleHex(
+              p.type === 'Transport ship' || p.type === 'Colony ship' ? 1 : 0,
+              i + 1,
+            )
           : battleHex(state.width - 1, state.height - 1),
       facing: 3,
     })),
@@ -288,17 +295,46 @@ test('fuskknapp-for-teststrid: opens combat from the main menu and leaves save s
     .getByRole('button', { name: 'Test battle (cheat)', exact: true })
     .click();
   const dialog = page.getByRole('dialog', { name: 'Tactical combat' });
-  await aimAtPirate(page, createTestBattle().snapshot);
   await expect(
-    dialog.getByRole('button', { name: 'Fire weapon', exact: true }),
-  ).toBeEnabled();
-  await dialog
-    .getByRole('button', { name: 'Fire weapon', exact: true })
-    .click();
-  await expect(dialog.locator('.battle-feedback')).toBeVisible();
-  await page.screenshot({
-    path: testInfo.outputPath('test-battle-feedback.png'),
+    dialog.getByRole('heading', { name: 'Deploy fleet', exact: true }),
+  ).toBeVisible();
+  const start = dialog.getByRole('button', {
+    name: 'Start combat',
+    exact: true,
   });
+  await expect(start).toBeDisabled();
+  await expect(dialog.getByLabel('Your ship', { exact: true })).toContainText(
+    'Transport ship',
+  );
+  await expect(dialog.getByLabel('Your ship', { exact: true })).toContainText(
+    'Colony ship',
+  );
+  await dialog
+    .getByRole('button', { name: 'Auto deploy', exact: true })
+    .click();
+  const checkpoint = createTestBattle();
+  checkpoint.command({ type: 'auto-deploy' });
+  const large = checkpoint.snapshot.pieces.find(
+    (piece) => piece.type === 'Transport ship',
+  )!;
+  const stern = ShipFootprint.cells(large, true)[0]!;
+  const canvas = dialog.locator('.battle-canvas canvas');
+  const size = await canvas.evaluate((node) => ({
+    width: node.clientWidth,
+    height: node.clientHeight,
+  }));
+  await canvas.click({
+    position: battleHexPoint(checkpoint.snapshot, size, stern),
+  });
+  await expect(dialog.getByLabel('Your ship', { exact: true })).toHaveValue(
+    large.id,
+  );
+  await page.screenshot({
+    path: testInfo.outputPath('test-battle-large-setup.png'),
+  });
+  await expect(start).toBeEnabled();
+  await start.click();
+  await expect(dialog.getByRole('heading', { name: /^Combat/ })).toBeVisible();
   await dialog
     .getByRole('button', { name: 'Save and close', exact: true })
     .click();
@@ -306,4 +342,61 @@ test('fuskknapp-for-teststrid: opens combat from the main menu and leaves save s
     page.getByRole('heading', { name: 'Saved games', exact: true }),
   ).toBeVisible();
   expect(await page.evaluate(() => ({ ...localStorage }))).toEqual(before);
+});
+
+test('autoaim-med-manuellt-mal: acquires, loses and reacquires a target and respects manual aim through rotation', async ({
+  page,
+}, testInfo) => {
+  const game = arrangeBattle(encounterGame(2), (state) => {
+    const enemies = state.pieces.filter((piece) => piece.side === 'enemy');
+    const fighter = state.pieces.find((piece) => piece.type === 'Fighter')!;
+    return {
+      ...state,
+      phase: 'fighting',
+      round: 2,
+      turn: 'player',
+      asteroids: [],
+      pieces: state.pieces.map((piece, index) => ({
+        ...piece,
+        position:
+          piece.id === fighter.id
+            ? { q: 1, r: 4 }
+            : piece.id === enemies[0]!.id
+              ? { q: 4, r: 4 }
+              : piece.id === enemies[1]!.id
+                ? { q: 3, r: 3 }
+                : { q: 7, r: index },
+        facing: piece.side === 'player' ? 0 : 3,
+      })),
+    };
+  });
+  const errors = await prepare(page, game.exportState());
+  const dialog = page.getByRole('dialog', { name: 'Tactical combat' });
+  const aim = dialog.locator('.battle-aim');
+  const fire = dialog.getByRole('button', { name: 'Fire weapon', exact: true });
+  await expect(aim).toContainText('Impact hex 3,3');
+  await expect(fire).toBeEnabled();
+  for (let turn = 0; turn < 2; turn++)
+    await dialog
+      .getByRole('button', { name: 'Turn right 60°', exact: true })
+      .click();
+  await expect(aim).toContainText('No target');
+  await expect(fire).toBeDisabled();
+  for (let turn = 0; turn < 2; turn++)
+    await dialog
+      .getByRole('button', { name: 'Turn left 60°', exact: true })
+      .click();
+  await expect(aim).toContainText('Impact hex 4,4');
+  await aimAtPirate(page, game.tacticalBattle!, { q: 3, r: 3 });
+  await expect(aim).toContainText('Impact hex 3,3');
+  await page.setViewportSize({ width: 844, height: 390 });
+  await expect(aim).toContainText('Impact hex 3,3');
+  await page.screenshot({
+    path: testInfo.outputPath('manual-autoaim-large-ships.png'),
+  });
+  await fire.click();
+  expect(
+    (await saved(page)).state.simulation!.tacticalBattles![0]!.lastShot!.at,
+  ).toEqual({ q: 3, r: 3 });
+  expect(errors).toEqual([]);
 });

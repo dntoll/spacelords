@@ -62,7 +62,25 @@ it('animerade-stridsskott / skadepartiklar-i-strid: separates flight, impact and
 it.each(['player', 'enemy'] as const)(
   'animerade-stridsskott: exposes immutable shot facts for %s without changing dice or combat results',
   (side) => {
-    const initial = createTestBattle().snapshot;
+    const setup = createTestBattle().snapshot;
+    const positions: Record<string, { q: number; r: number }> = {
+      'test-fighter-1': { q: 1, r: 3 },
+      'test-fighter-2': { q: 1, r: 5 },
+      'test-explorer': { q: 1, r: 7 },
+      'test-transport': { q: 7, r: 5 },
+      'test-colonizer': { q: 7, r: 7 },
+      'test-pirate-1': { q: 4, r: 3 },
+      'test-pirate-2': { q: 4, r: 5 },
+    };
+    const initial = {
+      ...setup,
+      phase: 'fighting' as const,
+      round: 1,
+      pieces: setup.pieces.map((piece) => ({
+        ...piece,
+        position: positions[piece.id]!,
+      })),
+    };
     const battle = TacticalBattle.restore({
       ...initial,
       turn: side,

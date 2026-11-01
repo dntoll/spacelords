@@ -191,7 +191,7 @@ it('traffhex-istallet-for-mallista: fires at the hex chosen on the map and has n
   expect(document.querySelector('[aria-label="Target"]')).toBeNull();
   const fire = () =>
     document.querySelector<HTMLButtonElement>('[aria-label="Fire weapon"]')!;
-  expect(fire().disabled).toBe(true);
+  expect(fire().disabled).toBe(false);
   selectHex({ q: 8, r: 4 });
   expect(fire().disabled).toBe(true);
   expect(document.body.textContent).toContain('enemy ship');
@@ -206,5 +206,54 @@ it('traffhex-istallet-for-mallista: fires at the hex chosen on the map and has n
     type: 'battle-command',
     command: { type: 'fire', at: { q: 3, r: 4 }, weapon: 'Cannon' },
   });
+  view.dispose();
+});
+
+it('autoaim-med-manuellt-mal: keeps a manually selected farther target, loses it outside the front arc and reacquires the closest', () => {
+  const first = state();
+  const initial: BattleState = {
+    ...first,
+    activation: {
+      id: 'first',
+      remaining: 4,
+      moved: false,
+      fired: false,
+      movementClosed: false,
+    },
+    pieces: [
+      ...first.pieces,
+      { ...first.pieces[2]!, id: 'farther', position: { q: 4, r: 4 } },
+    ],
+  };
+  const { view, emit, selectHex } = setup(initial);
+  expect(document.querySelector('.battle-aim')!.textContent).toContain(
+    'Impact hex 3,4',
+  );
+  selectHex({ q: 4, r: 4 });
+  view.render(initial);
+  document
+    .querySelector<HTMLButtonElement>('[aria-label="Fire weapon"]')!
+    .click();
+  expect(emit).toHaveBeenLastCalledWith({
+    type: 'battle-command',
+    command: { type: 'fire', at: { q: 4, r: 4 }, weapon: 'Cannon' },
+  });
+  view.render({
+    ...initial,
+    pieces: initial.pieces.map((piece) =>
+      piece.id === 'first' ? { ...piece, facing: 3 } : piece,
+    ),
+  });
+  expect(document.querySelector('.battle-aim')!.textContent).toContain(
+    'No target',
+  );
+  expect(
+    document.querySelector<HTMLButtonElement>('[aria-label="Fire weapon"]')!
+      .disabled,
+  ).toBe(true);
+  view.render(initial);
+  expect(document.querySelector('.battle-aim')!.textContent).toContain(
+    'Impact hex 3,4',
+  );
   view.dispose();
 });

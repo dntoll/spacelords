@@ -28,11 +28,13 @@ function setup() {
     pieces: state.pieces.map((p, i) => ({
       ...p,
       position:
-        p.side === 'enemy'
-          ? { q: 3, r: 4 }
-          : i === 1
-            ? { q: 1, r: 4 }
-            : { q: i + 1, r: 6 },
+        p.type === 'Transport ship'
+          ? { q: 7, r: 6 }
+          : p.side === 'enemy'
+            ? { q: 3, r: 4 }
+            : i === 1
+              ? { q: 1, r: 4 }
+              : { q: i + 1, r: 6 },
       facing: p.side === 'player' ? 0 : 3,
       hull: p.side === 'enemy' ? 1 : p.hull,
     })),
@@ -222,13 +224,16 @@ it('fuskknapp-for-teststrid: starts repeatable combat from the menu without writ
   );
   expect(button).toBeDefined();
   button!.click();
-  expect(model.snapshot.tacticalBattle?.phase).toBe('fighting');
+  expect(model.snapshot.tacticalBattle?.phase).toBe('deployment');
+  expect(
+    model.snapshot.tacticalBattle!.pieces.map((piece) => piece.type),
+  ).toEqual(expect.arrayContaining(['Transport ship', 'Colony ship']));
   model.save();
   emit({ type: 'open-saves' });
   expect(model.snapshot.screen).toBe('saves');
   expect(model.snapshot.tacticalBattle).toBeNull();
   button!.click();
-  expect(model.snapshot.tacticalBattle?.phase).toBe('fighting');
+  expect(model.snapshot.tacticalBattle?.phase).toBe('deployment');
   expect(save).not.toHaveBeenCalled();
   controller.dispose();
 });

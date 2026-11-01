@@ -10,6 +10,15 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Autoaim och stora stridsskepp:** `autoaim-med-manuellt-mal` och
+  `stora-skepp-over-flera-hex` är **Fullständigt implementerat**. Autoaim
+  väljer närmaste träffbara fiende i främre eldbågen och prioriterar rakt
+  framför vid lika avstånd. Spelarens giltiga målval behålls. Transport ship
+  och Colony ship upptar tre hex med verklig kollision, träffyta och skydd.
+  `fuskknapp-for-teststrid` omfattar nu utplacering och båda stora typerna.
+  Äldre pågående strider behåller sin tidigare geometri utan rensning.
+  Se [taktisk strid](docs/tactical-combat.md).
+
 - **Illustrerade händelser och stridseffekter:** `bilder-i-events`,
   `delproduktion-med-sammanhang`, `flottor-fore-planetdetaljer`,
   `animerade-stridsskott` och `skadepartiklar-i-strid` är

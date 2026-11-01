@@ -1,5 +1,6 @@
 import type { ShipType } from './Game.js';
 import { HexCoordinate, HexGeometry } from './HexCoordinate.js';
+import { ShipFootprint } from './ShipFootprint.js';
 
 export type BattleSide = 'player' | 'enemy';
 export type CombatShipType = ShipType | 'Space pirate';
@@ -133,6 +134,7 @@ export interface BattleActivation {
   readonly movementClosed: boolean;
 }
 export interface BattleState {
+  readonly largeShipFootprints?: boolean;
   readonly lastShot?: BattleShot;
   readonly id: string;
   readonly position: BattleHex;
@@ -282,7 +284,13 @@ function crossesHex(
 export class TacticalBattle {
   readonly #base: Pick<
     BattleState,
-    'id' | 'position' | 'width' | 'height' | 'deploymentDepth' | 'fleets'
+    | 'id'
+    | 'position'
+    | 'width'
+    | 'height'
+    | 'deploymentDepth'
+    | 'fleets'
+    | 'largeShipFootprints'
   >;
   readonly #asteroids: BattleHex[];
   readonly #pieces: Piece[];
@@ -303,6 +311,9 @@ export class TacticalBattle {
       height: copy.height,
       deploymentDepth: copy.deploymentDepth,
       fleets: copy.fleets,
+      ...(copy.largeShipFootprints !== undefined
+        ? { largeShipFootprints: copy.largeShipFootprints }
+        : {}),
     };
     this.#asteroids = [...copy.asteroids];
     this.#pieces = copy.pieces.map((p) => ({ ...p }));
@@ -329,7 +340,16 @@ export class TacticalBattle {
       ),
     );
     const height = Math.max(9, Math.ceil(Math.sqrt(largest * 2)));
-    const deploymentDepth = Math.max(2, Math.ceil(largest / height));
+    const berthWidth = Math.max(
+      1,
+      ...fleets.flatMap((fleet) =>
+        fleet.ships.map((ship) => ShipFootprint.length(ship.type, true)),
+      ),
+    );
+    const deploymentDepth = Math.max(
+      2,
+      berthWidth * Math.ceil(largest / height),
+    );
     const width = Math.max(13, deploymentDepth * 2 + 9);
     const result = new TacticalBattle({
       id,
@@ -337,6 +357,7 @@ export class TacticalBattle {
       width,
       height,
       deploymentDepth,
+      largeShipFootprints: true,
       fleets: fleets.map(({ id, side, retreat }) => ({ id, side, retreat })),
       pieces: fleets.flatMap((f) =>
         f.ships.map((ship) => {
@@ -369,7 +390,9 @@ export class TacticalBattle {
       turn: 'player',
       activation: null,
       random: seed >>> 0 || 1,
-      log: ['Deploy your fleet. Each ship occupies one hex.'],
+      log: [
+        'Deploy your fleet. Transport ships and Colony ships occupy three hexes.',
+      ],
     });
     const candidates = result
       .cells()
@@ -406,6 +429,8 @@ export class TacticalBattle {
     if (
       !state ||
       !state.id ||
+      (state.largeShipFootprints !== undefined &&
+        typeof state.largeShipFootprints !== 'boolean') ||
       !Number.isSafeInteger(state.width) ||
       state.width < 13 ||
       !Number.isSafeInteger(state.height) ||
@@ -486,9 +511,13 @@ export class TacticalBattle {
         )
           throw new Error('Invalid saved combat position.');
         if (p.status === 'active') {
-          if (occupied.has(hex(p.position).key))
-            throw new Error('Overlapping saved combat ships.');
-          occupied.add(hex(p.position).key);
+          for (const cell of result.occupiedHexes(p.id)) {
+            if (!result.contains(cell) || occupied.has(hex(cell).key))
+              throw new Error(
+                'Overlapping or out-of-bounds saved combat ships.',
+              );
+            occupied.add(hex(cell).key);
+          }
         }
       } else if (p.status === 'active' && state.phase !== 'deployment')
         throw new Error('Missing combat position.');
@@ -601,8 +630,60 @@ export class TacticalBattle {
       this.#asteroids.some((a) => same(a, p)) ||
       this.#pieces.some(
         (a) =>
-          a.id !== ignoreId && a.status === 'active' && same(a.position, p),
+          a.id !== ignoreId &&
+          a.status === 'active' &&
+          ShipFootprint.contains(a, this.#base.largeShipFootprints === true, p),
       )
+    );
+  }
+  occupiedHexes(
+    id: string,
+    position?: BattleHex,
+    facing?: number,
+  ): readonly BattleHex[] {
+    const piece = this.#piece(id);
+    return ShipFootprint.cells(
+      piece,
+      this.#base.largeShipFootprints === true,
+      position ?? piece.position,
+      facing ?? piece.facing,
+    );
+  }
+  placementIssue(
+    id: string,
+    position: BattleHex,
+    facing: number,
+    deployment = false,
+  ): string | null {
+    const piece = this.#piece(id);
+    const cells = this.occupiedHexes(id, position, facing);
+    if (
+      cells.some(
+        (cell) =>
+          !this.contains(cell) ||
+          (deployment && !this.isDeployment(cell, piece.side)),
+      )
+    )
+      return deployment
+        ? 'The whole ship must fit inside its deployment zone.'
+        : 'The whole ship must stay on the battle map.';
+    return cells.some((cell) => this.#occupied(cell, id))
+      ? 'The ship footprint is occupied.'
+      : null;
+  }
+  turnIssue(
+    id: string,
+    direction: -1 | 1,
+    position?: BattleHex,
+    facing?: number,
+  ): string | null {
+    const piece = this.#piece(id);
+    const origin = position ?? piece.position;
+    if (!origin) return 'Deploy the ship first.';
+    return this.placementIssue(
+      id,
+      origin,
+      ((facing ?? piece.facing) + direction + 6) % 6,
     );
   }
   #deploy(side: BattleSide): void {
@@ -615,12 +696,26 @@ export class TacticalBattle {
             Math.abs(b.r - this.#base.height / 2) ||
           a.r - b.r,
       );
-    this.#pieces
-      .filter((p) => p.side === side)
-      .forEach((p, index) => {
-        p.position = cells[index]!;
-        p.facing = side === 'player' ? 0 : 3;
-      });
+    const ships = this.#pieces
+      .filter((piece) => piece.side === side)
+      .sort(
+        (a, b) =>
+          ShipFootprint.length(
+            b.type,
+            this.#base.largeShipFootprints === true,
+          ) -
+          ShipFootprint.length(a.type, this.#base.largeShipFootprints === true),
+      );
+    for (const piece of ships) piece.position = null;
+    for (const piece of ships) {
+      piece.facing = side === 'player' ? 0 : 3;
+      const position = cells.find(
+        (cell) => !this.placementIssue(piece.id, cell, piece.facing, true),
+      );
+      if (!position)
+        throw new Error('The deployment zone cannot fit every ship.');
+      piece.position = { ...position };
+    }
   }
   #beginRound(): void {
     this.#round++;
@@ -643,6 +738,87 @@ export class TacticalBattle {
     from?: BattleHex,
     facing?: number,
   ): ShotPreview {
+    const target = this.#piece(targetId);
+    const at =
+      this.aimAt(sourceId, targetId, weapon, from, facing) ?? target.position;
+    return this.#shotAt(sourceId, targetId, weapon, at, from, facing);
+  }
+
+  /** autoaim-med-manuellt-mal: queries never spend ammunition, movement or randomness. */
+  aimAt(
+    sourceId: string,
+    targetId: string,
+    weapon: WeaponName,
+    from?: BattleHex,
+    facing?: number,
+  ): BattleHex | null {
+    const source = this.#piece(sourceId);
+    const target = this.#piece(targetId);
+    const origin = from ?? source.position;
+    if (!origin || source.side === target.side || target.status !== 'active')
+      return null;
+    const cells = [...this.occupiedHexes(targetId)].sort(
+      (a, b) =>
+        hex(origin).distanceTo(hex(a)) - hex(origin).distanceTo(hex(b)) ||
+        this.#aimAngle(origin, a, facing ?? source.facing) -
+          this.#aimAngle(origin, b, facing ?? source.facing),
+    );
+    return (
+      cells.find((at) => {
+        const preview = this.impact(sourceId, at, weapon, from, facing);
+        return (
+          !preview.reason && preview.hits.some((hit) => hit.id === targetId)
+        );
+      }) ?? null
+    );
+  }
+
+  autoTarget(
+    sourceId: string,
+    weapon: WeaponName,
+    preferredId?: string,
+  ): { readonly id: string; readonly at: BattleHex } | null {
+    const source = this.#piece(sourceId);
+    if (!source.position || source.status !== 'active') return null;
+    const targets = this.#pieces
+      .filter(
+        (piece) => piece.side !== source.side && piece.status === 'active',
+      )
+      .flatMap((piece) => {
+        const at = this.aimAt(sourceId, piece.id, weapon);
+        return at ? [{ id: piece.id, at }] : [];
+      });
+    const preferred = targets.find((target) => target.id === preferredId);
+    if (preferred) return freeze(preferred);
+    targets.sort(
+      (a, b) =>
+        hex(source.position!).distanceTo(hex(a.at)) -
+          hex(source.position!).distanceTo(hex(b.at)) ||
+        this.#aimAngle(source.position!, a.at, source.facing) -
+          this.#aimAngle(source.position!, b.at, source.facing) ||
+        a.id.localeCompare(b.id),
+    );
+    return targets[0] ? freeze(targets[0]) : null;
+  }
+
+  #aimAngle(origin: BattleHex, at: BattleHex, facing: number): number {
+    const a = HexGeometry.toPoint(hex(origin));
+    const b = HexGeometry.toPoint(hex(at));
+    const forward = HexGeometry.toPoint(hex(origin).neighbors()[facing]!);
+    return (
+      -((b.x - a.x) * (forward.x - a.x) + (b.y - a.y) * (forward.y - a.y)) /
+      Math.hypot(b.x - a.x, b.y - a.y)
+    );
+  }
+
+  #shotAt(
+    sourceId: string,
+    targetId: string,
+    weapon: WeaponName,
+    at: BattleHex | null,
+    from?: BattleHex,
+    facing?: number,
+  ): ShotPreview {
     const source = this.#piece(sourceId),
       target = this.#piece(targetId),
       profile = WEAPONS[weapon];
@@ -662,18 +838,17 @@ export class TacticalBattle {
       target.status !== 'active' ||
       source.side === target.side ||
       !origin ||
-      !target.position
+      !target.position ||
+      !at
     )
       reason = 'Choose an active enemy ship.';
     else if (weapon === 'Missiles' && source.missiles === 0)
       reason = 'No missile salvos remain.';
     else {
-      const distance = hex(origin).distanceTo(hex(target.position));
+      const distance = hex(origin).distanceTo(hex(at));
       if (distance < profile.min || distance > profile.max)
         reason = 'Target is outside weapon range.';
-      else if (
-        !inArc(origin, target.position, facing ?? source.facing, profile.arc)
-      )
+      else if (!inArc(origin, at, facing ?? source.facing, profile.arc))
         reason = 'Target is outside the firing arc.';
       else {
         const size = Math.min(
@@ -691,9 +866,9 @@ export class TacticalBattle {
                 p.position &&
                 SHIP_PROFILES[p.type].size > size,
             )
-            .map((p) => p.position!),
+            .flatMap((p) => this.occupiedHexes(p.id)),
         ];
-        if (obstacles.some((p) => crossesHex(origin, target.position!, p)))
+        if (obstacles.some((p) => crossesHex(origin, at, p)))
           reason = 'Line of fire is blocked.';
       }
     }
@@ -747,14 +922,25 @@ export class TacticalBattle {
           piece.id !== source.id &&
           piece.status === 'active' &&
           piece.position &&
-          same(piece.position, at),
+          ShipFootprint.contains(
+            piece,
+            this.#base.largeShipFootprints === true,
+            at,
+          ),
       );
       if (!target || target.side === source.side)
         return Object.freeze({
           reason: 'Choose a hex with an enemy ship.',
           hits: Object.freeze([]),
         });
-      const preview = this.shot(sourceId, target.id, weapon, from, facing);
+      const preview = this.#shotAt(
+        sourceId,
+        target.id,
+        weapon,
+        at,
+        from,
+        facing,
+      );
       return Object.freeze({
         reason: preview.reason,
         hits: Object.freeze(
@@ -777,7 +963,9 @@ export class TacticalBattle {
           piece.id !== source.id &&
           piece.status === 'active' &&
           piece.position &&
-          hex(piece.position).distanceTo(hex(at)) <= profile.area,
+          this.occupiedHexes(piece.id).some(
+            (cell) => hex(cell).distanceTo(hex(at)) <= profile.area,
+          ),
       )
       .sort((a, b) => a.id.localeCompare(b.id))
       .map((piece) => {
@@ -812,10 +1000,14 @@ export class TacticalBattle {
             piece.id !== source.id &&
             piece.status === 'active' &&
             piece.position &&
-            !same(piece.position, at) &&
+            !ShipFootprint.contains(
+              piece,
+              this.#base.largeShipFootprints === true,
+              at,
+            ) &&
             SHIP_PROFILES[piece.type].size > size,
         )
-        .map((piece) => piece.position!),
+        .flatMap((piece) => this.occupiedHexes(piece.id)),
     ];
     return obstacles.some((obstacle) => crossesHex(origin, at, obstacle));
   }
@@ -829,11 +1021,18 @@ export class TacticalBattle {
       origin = position ?? p.position;
     if (!origin) return 'Deploy the ship first.';
     const next = hex(origin).neighbors()[facing ?? p.facing]!;
-    if (this.contains(next))
-      return this.#occupied(next, id) ? 'The next hex is occupied.' : null;
-    const ownEdge =
-      p.side === 'player' ? column(next) < 0 : column(next) >= this.#base.width;
-    if (!ownEdge || next.r < 0 || next.r >= this.#base.height)
+    const cells = this.occupiedHexes(id, next, facing);
+    if (cells.some((cell) => this.#occupied(cell, id)))
+      return 'The next hex is occupied.';
+    if (cells.every((cell) => this.contains(cell))) return null;
+    const outside = cells.filter((cell) => !this.contains(cell));
+    const ownEdge = outside.every((cell) =>
+      p.side === 'player' ? column(cell) < 0 : column(cell) >= this.#base.width,
+    );
+    if (
+      !ownEdge ||
+      outside.some((cell) => cell.r < 0 || cell.r >= this.#base.height)
+    )
       return 'Ships can only exit their own short edge.';
     if (this.#round < 2) return 'Retreat is available from round two.';
     return this.#base.fleets.find((f) => f.id === p.fleetId)?.retreat
@@ -853,11 +1052,10 @@ export class TacticalBattle {
         const p = this.#piece(command.id);
         if (
           p.side !== side ||
-          !this.isDeployment(command.position, side) ||
-          this.#occupied(command.position, p.id) ||
           !Number.isInteger(command.facing) ||
           command.facing < 0 ||
-          command.facing > 5
+          command.facing > 5 ||
+          this.placementIssue(p.id, command.position, command.facing, true)
         )
           throw new Error(
             'Choose a free hex in your deployment zone and a facing.',
@@ -906,7 +1104,9 @@ export class TacticalBattle {
         if (issue) throw new Error(issue);
         const next = hex(p.position!).neighbors()[p.facing]!;
         p.position = next;
-        if (!this.contains(next)) {
+        if (
+          this.occupiedHexes(p.id, next).some((cell) => !this.contains(cell))
+        ) {
           p.position = null;
           p.status = 'escaped';
           this.#log.push(`${battlePieceLabel(p, this.#pieces)} escaped.`);
@@ -914,6 +1114,8 @@ export class TacticalBattle {
       } else if (command.type === 'turn') {
         if (command.direction !== 1 && command.direction !== -1)
           throw new Error('Choose a 60 degree turn.');
+        const issue = this.turnIssue(p.id, command.direction);
+        if (issue) throw new Error(issue);
         p.facing = (p.facing + command.direction + 6) % 6;
       }
       activation.remaining--;
@@ -940,7 +1142,13 @@ export class TacticalBattle {
       if (target.hull === 0) target.status = 'destroyed';
       impacts.push({
         id: target.id,
-        position: { ...target.position! },
+        position: {
+          ...[...this.occupiedHexes(target.id)].sort(
+            (a, b) =>
+              hex(a).distanceTo(hex(command.at)) -
+              hex(b).distanceTo(hex(command.at)),
+          )[0]!,
+        },
         damage,
         previousHull,
         destroyed: target.hull === 0,
@@ -1061,7 +1269,9 @@ export class TacticalBattle {
           const hexes = new Map<string, BattleHex>();
           for (const enemy of enemies) {
             if (!enemy.position) continue;
-            for (const point of missileArea(enemy.position))
+            for (const point of this.occupiedHexes(enemy.id).flatMap(
+              missileArea,
+            ))
               hexes.set(`${point.q},${point.r}`, point);
           }
           for (const at of hexes.values()) {
@@ -1083,6 +1293,8 @@ export class TacticalBattle {
         }
         for (const enemy of enemies) {
           if (!enemy.position) continue;
+          const at = this.aimAt(p.id, enemy.id, weapon, position, facing);
+          if (!at) continue;
           const preview = this.shot(p.id, enemy.id, weapon, position, facing);
           if (preview.reason) continue;
           const expected = (preview.dice * (7 - preview.threshold)) / 6;
@@ -1091,7 +1303,7 @@ export class TacticalBattle {
           if (!bestShot || score > bestShot.score)
             bestShot = {
               score,
-              action: { type: 'fire', at: enemy.position, weapon },
+              action: { type: 'fire', at, weapon },
             };
         }
       }
@@ -1141,18 +1353,18 @@ export class TacticalBattle {
           : [...node.actions, ...(after ? [after.action] : [])];
       if (score > best.score) best = { id: p.id, score, actions };
       if (node.actions.length >= moves) continue;
-      queue.push(
-        {
+      if (!this.turnIssue(p.id, -1, node.position, node.facing))
+        queue.push({
           ...node,
           facing: (node.facing + 5) % 6,
           actions: [...node.actions, { type: 'turn', direction: -1 }],
-        },
-        {
+        });
+      if (!this.turnIssue(p.id, 1, node.position, node.facing))
+        queue.push({
           ...node,
           facing: (node.facing + 1) % 6,
           actions: [...node.actions, { type: 'turn', direction: 1 }],
-        },
-      );
+        });
       if (this.forwardIssue(p.id, node.position, node.facing) === null) {
         const next = hex(node.position).neighbors()[node.facing]!;
         if (this.contains(next))
@@ -1222,11 +1434,16 @@ export class TacticalBattle {
         const next = hex(node.position).neighbors()[node.facing]!;
         if (this.contains(next)) add(next, node.facing, { type: 'forward' });
       }
-      add(node.position, (node.facing + 5) % 6, {
-        type: 'turn',
-        direction: -1,
-      });
-      add(node.position, (node.facing + 1) % 6, { type: 'turn', direction: 1 });
+      if (!this.turnIssue(p.id, -1, node.position, node.facing))
+        add(node.position, (node.facing + 5) % 6, {
+          type: 'turn',
+          direction: -1,
+        });
+      if (!this.turnIssue(p.id, 1, node.position, node.facing))
+        add(node.position, (node.facing + 1) % 6, {
+          type: 'turn',
+          direction: 1,
+        });
     }
     return null;
   }

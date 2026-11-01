@@ -1,5 +1,29 @@
 # Produktkrav och status
 
+## Autoaim och stora skepp, 2026-11-01
+
+- `autoaim-med-manuellt-mal` — **Fullständigt implementerat**: saknas ett mål
+  väljs närmaste träffbara fiende i vapnets främre eldbåge. Vid lika avstånd
+  prioriteras målet rakast framför. Spelaren byter mål på kartan och ett
+  giltigt valt mål behålls. Mål som förstörs, flyr, blockeras eller hamnar
+  utanför räckvidd eller eldbåge tappas. Finns inget träffbart mål är siktet
+  utan mållåsning. Missilernas träffhex kan fortfarande justeras manuellt.
+- `stora-skepp-over-flera-hex` — **Fullständigt implementerat**: Transport ship,
+  Armored Transport och Colony ship upptar tre hex längs skeppets riktning.
+  Alla tre hex blockerar förflyttning och ger träffyta och befintligt
+  skottskydd. Hela skrovet måste få plats vid utplacering och sväng.
+  Ett skepp skadas bara en gång per missilsalva även om flera delar träffas.
+  Övriga skepp upptar fortsatt en hex. Äldre pågående strider behåller
+  sin tidigare geometri; nya strider använder de större skroven.
+- `fuskknapp-for-teststrid` — **Fullständigt implementerat**, ändrat krav:
+  Test battle (cheat) börjar med utplacering och innehåller både Transport ship
+  och Colony ship tillsammans med mindre skepp. Sparplatser påverkas inte.
+  Detta ersätter den tidigare starten direkt i strid med färdig placering.
+
+Autoaim utökar `traffhex-istallet-for-mallista` utan att lägga till en mållista.
+De stora skroven ersätter regeln om en hex per skepp i `taktisk-stridskarta`
+och `stridsutplacering` för nya strider.
+
 ## Illustrerade besked och strid, 2026-11-01
 
 - `bilder-i-events` — **Fullständigt implementerat**: Events och årets
