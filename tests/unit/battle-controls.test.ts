@@ -9,9 +9,28 @@ import {
   type BattleState,
   type BattleHex,
 } from '../../src/client/models/TacticalBattle.js';
+import { AppController } from '../../src/client/controllers/AppController.js';
+import { AppModel } from '../../src/client/models/AppModel.js';
+import type { SaveRepository } from '../../src/client/models/SaveRepository.js';
+import {
+  BoardingBattle,
+  type BoardingBattleState,
+} from '../../src/client/models/BoardingBattle.js';
+import {
+  createTestBoardingBattle,
+  testBoardingMap,
+} from '../../src/client/models/TestBoarding.js';
+import {
+  BoardingView,
+  type BoardingMapFactory,
+} from '../../src/client/views/BoardingView.js';
+import { renderSaveSlots } from '../../src/client/views/SaveSlotsView.js';
 import type { AppIntent } from '../../src/client/views/ViewContracts.js';
 
-afterEach(() => document.body.replaceChildren());
+afterEach(() => {
+  vi.useRealTimers();
+  document.body.replaceChildren();
+});
 
 function state(phase: BattleState['phase'] = 'fighting'): BattleState {
   const initial = TacticalBattle.create(
@@ -207,4 +226,127 @@ it('traffhex-istallet-for-mallista: fires at the hex chosen on the map and has n
     command: { type: 'fire', at: { q: 3, r: 4 }, weapon: 'Cannon' },
   });
   view.dispose();
+});
+
+it('actionpoints-och-riktad-forflyttning: exposes turn buttons and a destination path without mutating during render', () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.findLast(
+    (person) => person.side === 'player',
+  )!;
+  const boardingState: BoardingBattleState = {
+    ...created.snapshot,
+    initiativeOrder: [player.id],
+    initiativeIndex: 0,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 12 },
+  };
+  const battle = BoardingBattle.restore(testBoardingMap, boardingState);
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const map: BoardingMapFactory = (_container, select) => {
+    selectHex = select;
+    return { render() {}, zoom() {}, fit() {}, dispose() {} };
+  };
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new BoardingView(document.body, emit, map);
+  view.render(battle.visibleSnapshot);
+  const left = document.querySelector<HTMLButtonElement>(
+    '[aria-label="Turn left 60°"]',
+  )!;
+  const right = document.querySelector<HTMLButtonElement>(
+    '[aria-label="Turn right 60°"]',
+  )!;
+  expect(left).not.toBeNull();
+  expect(right).not.toBeNull();
+  left.click();
+  expect(emit).toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'turn', direction: -1 },
+  });
+  selectHex({ q: player.position.q + 1, r: player.position.r - 1 });
+  expect(document.body.textContent).toContain('Destination');
+  expect(battle.snapshot).toStrictEqual(boardingState);
+  view.dispose();
+});
+
+it('miljomal-och-forstorelse: selects a door as a direct rifle target', () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) => person.side === 'player',
+  )!;
+  const door = created.snapshot.features.find(
+    (feature) => feature.kind === 'door',
+  )!;
+  const boardingState: BoardingBattleState = {
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player.id
+        ? {
+            ...person,
+            position: { q: door.position.q - 1, r: door.position.r },
+            facing: 0,
+          }
+        : person,
+    ),
+    initiativeOrder: [player.id],
+    initiativeIndex: 0,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 12 },
+  };
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new BoardingView(document.body, emit, (_container, select) => {
+    selectHex = select;
+    return { render() {}, zoom() {}, fit() {}, dispose() {} };
+  });
+  view.render(BoardingBattle.restore(testBoardingMap, boardingState).snapshot);
+  selectHex(door.position);
+  const shoot = document.querySelector<HTMLButtonElement>(
+    '[aria-label^="Shoot"]',
+  )!;
+  expect(shoot.disabled).toBe(false);
+  shoot.click();
+  expect(emit).toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'shoot', targetId: door.id },
+  });
+  view.dispose();
+});
+
+it('fristaende-bordningsprototyp: starts and closes from the menu without writing a save slot', () => {
+  vi.useFakeTimers();
+  const save = vi.fn();
+  const repo: SaveRepository = {
+    load: () => null,
+    save,
+    clear: vi.fn(),
+  };
+  const model = new AppModel(undefined, repo);
+  model.startSlot(1);
+  model.openSaves();
+  save.mockClear();
+  let emit: (intent: AppIntent) => void = () => {};
+  const render = vi.fn();
+  const controller = new AppController(model, {
+    bind: (handler) => {
+      emit = handler;
+    },
+    render,
+    dispose() {},
+  });
+  controller.start();
+  const menu = renderSaveSlots(model.snapshot, emit);
+  document.body.append(menu);
+  const control = [...menu.querySelectorAll('button')].find(
+    (node) => node.textContent === 'Test boarding (cheat)',
+  );
+  expect(control).toBeDefined();
+  control!.click();
+  expect(model.snapshot.screen).toBe('saves');
+  expect(model.snapshot.boardingBattle?.phase).toBe('fighting');
+  model.save();
+  emit({ type: 'close-boarding' });
+  expect(model.snapshot.boardingBattle).toBeNull();
+  expect(save).not.toHaveBeenCalled();
+  expect(render).toHaveBeenCalled();
+  controller.dispose();
 });

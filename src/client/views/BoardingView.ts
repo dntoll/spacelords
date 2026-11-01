@@ -173,32 +173,33 @@ export class BoardingView {
         () => this.#command({ type: 'shoot', targetId: this.#selectedId! }),
         !preview || preview.reason !== null,
       );
-      this.#action(
-        'Melee',
-        () => this.#command({ type: 'melee', targetId: this.#selectedId! }),
-        !selectedPerson || selectedPerson.side === 'civilian',
-      );
-      this.#action(
-        'Frag grenade',
-        () =>
-          this.#command({
-            type: 'grenade',
-            grenade: 'frag',
-            at: this.#destination!,
-          }),
-        !this.#destination || actor.fragGrenades < 1,
-      );
-      this.#action(
-        'Smoke grenade',
-        () =>
-          this.#command({
-            type: 'grenade',
-            grenade: 'smoke',
-            at: this.#destination!,
-          }),
-        !this.#destination || actor.smokeGrenades < 1,
-      );
-      if (selectedFeature?.kind === 'door') {
+      if (selectedPerson && selectedPerson.side !== 'civilian')
+        this.#action('Melee', () =>
+          this.#command({ type: 'melee', targetId: this.#selectedId! }),
+        );
+      if (this.#destination) {
+        this.#action(
+          'Frag grenade',
+          () =>
+            this.#command({
+              type: 'grenade',
+              grenade: 'frag',
+              at: this.#destination!,
+            }),
+          actor.fragGrenades < 1,
+        );
+        this.#action(
+          'Smoke grenade',
+          () =>
+            this.#command({
+              type: 'grenade',
+              grenade: 'smoke',
+              at: this.#destination!,
+            }),
+          actor.smokeGrenades < 1,
+        );
+      }
+      if (selectedFeature?.kind === 'door' && !selectedFeature.destroyed) {
         this.#action(
           selectedFeature.open ? 'Close door' : 'Open door',
           () =>
@@ -215,13 +216,23 @@ export class BoardingView {
           !selectedFeature.locked,
         );
       }
-      this.#action(
-        'Use Med-pack',
-        () => this.#command({ type: 'med-pack', targetId: selectedPerson!.id }),
-        selectedPerson?.status !== 'incapacitated' || actor.medPacks < 1,
-      );
+      if (selectedPerson?.status === 'incapacitated')
+        this.#action(
+          'Use Med-pack',
+          () =>
+            this.#command({ type: 'med-pack', targetId: selectedPerson.id }),
+          actor.medPacks < 1,
+        );
       this.#action('Overwatch', () => this.#command({ type: 'overwatch' }));
-      this.#action('Evacuate', () => this.#command({ type: 'evacuate' }));
+      if (
+        state.features.some(
+          (feature) =>
+            feature.kind === 'exit' &&
+            feature.position.q === actor.position.q &&
+            feature.position.r === actor.position.r,
+        )
+      )
+        this.#action('Evacuate', () => this.#command({ type: 'evacuate' }));
       this.#action('End soldier turn', () =>
         this.#command({ type: 'end-activation' }),
       );

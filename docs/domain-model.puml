@@ -410,20 +410,20 @@ package "Framtida domän – ej implementerad" {
   Fleet --> Civilization : encounter orders
 }
 
-package "Fristående bordningsprototyp – ej implementerad" {
-  class BoardingBattle <<planned>> {
+package "Fristående bordningsprototyp" {
+  class BoardingBattle {
     round
     initiativeOrder
     randomState
     reactorCountdown
     command()
   }
-  class BoardingMap <<planned>> {
+  class BoardingMap {
     terrain
     rooms
     spawnPoints
   }
-  class BoardingPerson <<planned>> {
+  class BoardingPerson {
     side: player | defender | civilian
     position: HexCoordinate
     facing
@@ -431,14 +431,14 @@ package "Fristående bordningsprototyp – ej implementerad" {
     actionPoints
     status: active | incapacitated | dead | evacuated
   }
-  class BoardingFeature <<planned>> {
+  class BoardingFeature {
     kind: door | wall | reactor | cover | exit
     position: HexCoordinate
     hitPoints
     open
     locked
   }
-  class BoardingKnowledge <<planned>> {
+  class BoardingKnowledge {
     visibleHexes
     exploredHexes
     lastKnownEnemies

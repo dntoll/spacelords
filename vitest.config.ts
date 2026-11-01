@@ -8,7 +8,7 @@ export default defineConfig({
     pool: 'threads',
     // snabb-testsvit: reuse workers within each environment instead of restarting per file.
     isolate: false,
-    maxWorkers: 3,
+    maxWorkers: 6,
     testTimeout: 2_000,
     hookTimeout: 2_000,
     clearMocks: true,

@@ -93,6 +93,7 @@ export interface BoardingBattleState {
   readonly visibleHexes: readonly BoardingHex[];
   readonly exploredHexes: readonly BoardingHex[];
   readonly lastKnownEnemies: readonly BoardingLastKnown[];
+  readonly defenderLastKnownEnemies: readonly BoardingLastKnown[];
   readonly noiseMarkers: readonly BoardingNoise[];
   readonly reactorCountdown: number | null;
   readonly savedCivilians: number;
@@ -195,6 +196,11 @@ function freezeState(state: BoardingBattleState): BoardingBattleState {
     exploredHexes: Object.freeze(state.exploredHexes.map(frozenHex)),
     lastKnownEnemies: Object.freeze(
       state.lastKnownEnemies.map((entry) =>
+        Object.freeze({ ...entry, position: frozenHex(entry.position) }),
+      ),
+    ),
+    defenderLastKnownEnemies: Object.freeze(
+      state.defenderLastKnownEnemies.map((entry) =>
         Object.freeze({ ...entry, position: frozenHex(entry.position) }),
       ),
     ),
@@ -306,6 +312,7 @@ export class BoardingBattle {
       visibleHexes: [],
       exploredHexes: [],
       lastKnownEnemies: [],
+      defenderLastKnownEnemies: [],
       noiseMarkers: [],
       reactorCountdown: null,
       savedCivilians: 0,
@@ -699,7 +706,9 @@ export class BoardingBattle {
 
   #refreshKnowledge(): void {
     const visible = this.#visibleFor('player');
+    const defenderVisible = this.#visibleFor('defender');
     const visibleKeys = new Set(visible.map(positionKey));
+    const defenderVisibleKeys = new Set(defenderVisible.map(positionKey));
     const explored = new Map(
       this.#state.exploredHexes.map((position) => [
         positionKey(position),
@@ -719,10 +728,25 @@ export class BoardingBattle {
         visibleKeys.has(positionKey(entry.position)),
     ))
       lastKnown.set(enemy.id, { id: enemy.id, position: enemy.position });
+    const defenderLastKnown = new Map(
+      this.#state.defenderLastKnownEnemies.map((entry) => [entry.id, entry]),
+    );
+    for (const enemy of this.#state.people.filter(
+      (entry) =>
+        entry.side === 'player' &&
+        entry.status !== 'dead' &&
+        entry.status !== 'evacuated' &&
+        defenderVisibleKeys.has(positionKey(entry.position)),
+    ))
+      defenderLastKnown.set(enemy.id, {
+        id: enemy.id,
+        position: enemy.position,
+      });
     this.#replace({
       visibleHexes: visible,
       exploredHexes: [...explored.values()],
       lastKnownEnemies: [...lastKnown.values()],
+      defenderLastKnownEnemies: [...defenderLastKnown.values()],
       smokeHexes: this.#state.smoke
         .filter((entry) => entry.amount > 0)
         .map((entry) => entry.position),
@@ -1366,6 +1390,7 @@ export class BoardingBattle {
 
   synchronize(): void {
     if (this.#state.phase === 'complete') return;
+    this.#refreshKnowledge();
     const reactor = this.#state.features.find(
       (entry) => entry.kind === 'reactor',
     );

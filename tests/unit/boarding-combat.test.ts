@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import transportMap from '../../src/client/maps/transport-boarding.txt?raw';
-import { parseBoardingMap } from '../../src/client/models/BoardingMap.js';
+import {
+  BoardingMap,
+  parseBoardingMap,
+} from '../../src/client/models/BoardingMap.js';
 import {
   BoardingBattle,
   type BoardingBattleState,
@@ -29,6 +32,50 @@ function activate(id: string, remaining = 12) {
   }));
 }
 
+describe('datadriven-bordningskarta', () => {
+  it('parses the editable transport layers into immutable domain data', () => {
+    expect(map).toBeInstanceOf(BoardingMap);
+    expect(map.name).toBe('Transport boarding');
+    expect(map.width).toBe(17);
+    expect(map.height).toBe(11);
+    expect(map.spawns.player).toHaveLength(4);
+    expect(map.spawns.defender).toHaveLength(3);
+    expect(map.spawns.civilian).toHaveLength(3);
+    expect(
+      map.features.filter((feature) => feature.kind === 'door'),
+    ).toHaveLength(3);
+    expect(map.features.some((feature) => feature.kind === 'reactor')).toBe(
+      true,
+    );
+    expect(
+      map.features.filter((feature) => feature.kind === 'exit'),
+    ).toHaveLength(3);
+    expect(map.roomAt({ q: 1, r: 1 })).toBe('bridge');
+    expect(map.roomAt({ q: 11, r: 1 })).toBe('engineering');
+    expect(Object.isFrozen(map.features)).toBe(true);
+  });
+
+  it('reports the layer and row when a hand-edited map has the wrong width', () => {
+    const broken = transportMap.replace(
+      'H.......#.......H',
+      'H......#.......H',
+    );
+    expect(() => parseBoardingMap(broken)).toThrow(
+      /terrain row 2.*expected 17/i,
+    );
+  });
+
+  it('rejects unknown symbols with an exact location', () => {
+    const broken = transportMap.replace(
+      '-------------R---',
+      '-------------?---',
+    );
+    expect(() => parseBoardingMap(broken)).toThrow(
+      /objects.*row 3.*column 14/i,
+    );
+  });
+});
+
 describe('individuellt-bordningsinitiativ', () => {
   it('rolls an open D20 plus modifier for every soldier, but not civilians', () => {
     expect(battle.snapshot.initiativeOrder).toHaveLength(7);
@@ -45,8 +92,11 @@ describe('individuellt-bordningsinitiativ', () => {
 
 describe('actionpoints-och-riktad-forflyttning', () => {
   it('finds a facing-aware route and charges two AP per standing forward step', () => {
-    const player = battle.snapshot.people.findLast(
-      (person) => person.side === 'player',
+    const player = battle.snapshot.people.find(
+      (person) =>
+        person.side === 'player' &&
+        person.position.q === 2 &&
+        person.position.r === 8,
     )!;
     activate(player.id);
     const start = battle.snapshot.people.find(
@@ -205,7 +255,13 @@ describe('bordningsmal-reaktor-och-evakuering', () => {
         if (person.id === players[1]!.id)
           return { ...person, position: { q: 11, r: 1 } };
         if (person.side === 'defender')
-          return { ...person, status: 'incapacitated', hitPoints: 0 };
+          return {
+            ...person,
+            position: {
+              q: 7 + Number(person.id.at(-1)),
+              r: 7,
+            },
+          };
         return person;
       }),
     }));
@@ -229,5 +285,116 @@ describe('bordningsmal-reaktor-och-evakuering', () => {
     }));
     battle.synchronize();
     expect(battle.snapshot.reactorCountdown).toBe(3);
+  });
+});
+
+describe('forsvarare-och-civilister', () => {
+  it('never runs AI for the player actor', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    withState((state) => ({
+      ...state,
+      currentActorId: player.id,
+      activation: { id: player.id, remaining: 12 },
+    }));
+    const before = battle.snapshot;
+    expect(battle.actAutomatically(true)).toBe(false);
+    expect(battle.snapshot).toBe(before);
+  });
+
+  it('uses shared current sight to shoot a boarder through the public command path', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    withState((state) => ({
+      ...state,
+      randomState: 10_000,
+      people: state.people.map((person) => {
+        if (person.id === defender.id)
+          return { ...person, position: { q: 4, r: 5 }, facing: 0 };
+        if (person.id === player.id)
+          return { ...person, position: { q: 6, r: 5 }, facing: 3 };
+        return person;
+      }),
+      initiativeOrder: [defender.id],
+      initiativeIndex: 0,
+      currentActorId: defender.id,
+      activation: { id: defender.id, remaining: 12 },
+    }));
+    expect(battle.actAutomatically(true)).toBe(true);
+    expect(battle.snapshot.log.join(' ')).toMatch(/Rifle by Defender.*D20/i);
+  });
+
+  it('pursues only the last shared position after sight is broken', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    withState((state) => ({
+      ...state,
+      people: state.people.map((person) => {
+        if (person.id === defender.id)
+          return { ...person, position: { q: 4, r: 5 }, facing: 0 };
+        if (person.side === 'defender')
+          return { ...person, status: 'incapacitated', hitPoints: 0 };
+        if (person.id === player.id)
+          return { ...person, position: { q: 6, r: 5 } };
+        return person;
+      }),
+      initiativeOrder: [defender.id],
+      initiativeIndex: 0,
+      currentActorId: defender.id,
+      activation: { id: defender.id, remaining: 12 },
+    }));
+    battle.synchronize();
+    expect(
+      battle.snapshot.defenderLastKnownEnemies.find(
+        (entry) => entry.id === player.id,
+      )?.position,
+    ).toEqual({ q: 6, r: 5 });
+    withState((state) => ({
+      ...state,
+      people: state.people.map((person, index) =>
+        person.side === 'player'
+          ? {
+              ...person,
+              position: { q: 1 + (index % 2), r: 1 + (index % 2) },
+            }
+          : person,
+      ),
+    }));
+    expect(battle.visibleOpponents('defender')).toHaveLength(0);
+    expect(battle.actAutomatically(true)).toBe(true);
+    expect(
+      battle.snapshot.people.find((person) => person.id === defender.id)
+        ?.position,
+    ).not.toEqual({ q: 4, r: 5 });
+  });
+
+  it('moves civilians toward escape pods after all soldiers have acted', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const before = battle.snapshot.people
+      .filter((person) => person.side === 'civilian')
+      .map((person) => `${person.position.q},${person.position.r}`);
+    withState((state) => ({
+      ...state,
+      initiativeOrder: [player.id],
+      initiativeIndex: 0,
+      currentActorId: player.id,
+      activation: { id: player.id, remaining: 12 },
+    }));
+    battle.command({ type: 'end-activation' });
+    const after = battle.snapshot.people
+      .filter((person) => person.side === 'civilian')
+      .map((person) => `${person.position.q},${person.position.r}`);
+    expect(after).not.toEqual(before);
   });
 });

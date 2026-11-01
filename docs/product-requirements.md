@@ -52,7 +52,7 @@ Se [taktisk strid](tactical-combat.md).
 ## Fristående bordningsstrid
 
 `fristaende-bordningsprototyp` och den tillhörande kravfamiljen är
-**Ej implementerat**. Huvudmenyn ska kunna starta en separat taktisk
+**Fullständigt implementerat**. Huvudmenyn kan starta en separat taktisk
 bordningsstrid på en hexkarta inuti ett `Transport ship`. Fyra soldater möter
 tre försvarare medan tre civilister försöker överleva och fly. Spelaren använder
 riktning, action points, vapen, skydd, overwatch, granater, rök och medicinsk

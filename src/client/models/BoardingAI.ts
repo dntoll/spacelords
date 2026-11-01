@@ -51,10 +51,11 @@ export function chooseDefenderCommand(
   const heard = state.noiseMarkers.find(
     (marker) => marker.audience === 'defender',
   )?.position;
+  const remembered = state.defenderLastKnownEnemies[0]?.position;
   const breach = state.features.find(
     (feature) => feature.exit === 'breach',
   )?.position;
-  const target = visible[0]?.position ?? heard ?? breach;
+  const target = visible[0]?.position ?? remembered ?? heard ?? breach;
   if (target) {
     const route = destinations(target)
       .map((destination) => ({
