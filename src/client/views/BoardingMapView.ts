@@ -8,6 +8,7 @@ import {
 import type { BoardingMapPort } from './BoardingView.js';
 import {
   boardingCellFromIsoPoint,
+  boardingFeatureFootprint,
   boardingIsoCamera,
   boardingIsoCenter,
   boardingIsoCorners,
@@ -344,12 +345,13 @@ export class BoardingMapView implements BoardingMapPort {
           feature.kind === 'wall' ||
           (feature.kind === 'door' && !feature.open) ||
           feature.kind === 'cover');
+      const footprint = boardingFeatureFootprint(feature.kind);
       const center = raised
         ? this.#block(
             sketch,
             floor,
-            feature.kind === 'door' ? 9 : feature.kind === 'cover' ? 13 : 16,
-            feature.kind === 'door' ? 4 : feature.kind === 'cover' ? 5 : 7,
+            footprint.width,
+            footprint.depth,
             feature.kind === 'door' ? 13 : feature.kind === 'cover' ? 5 : 18,
             feature.kind === 'cover'
               ? '#9c7448'

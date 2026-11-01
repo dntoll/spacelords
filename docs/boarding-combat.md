@@ -31,7 +31,7 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   avslöja positionen.
 - `isometrisk-bordningsvy` — **Fullständigt implementerat**. Den regelstyrda
   kvadratkartan visas med klassiska 2:1-diamantrutor och upphöjda barriärer,
-  skydd och spelpjäser.
+  skydd och spelpjäser. Väggar och ytterskrov fyller hela sina rutor.
 - `spelmassigt-bordningsgranssnitt` — **Fullständigt implementerat**. Kartan
   upptar huvuddelen av skärmen. Truppstatus, handlingar, zoom,
   kartförklaring och stridslogg ligger som kompakta HUD-lager ovanpå kartan.

@@ -1,4 +1,7 @@
-import type { BoardingCell } from '../models/BoardingMap.js';
+import type {
+  BoardingCell,
+  BoardingFeatureKind,
+} from '../models/BoardingMap.js';
 
 const TILE_WIDTH = 64;
 const TILE_HEIGHT = 32;
@@ -15,6 +18,16 @@ export interface BoardingPoint {
 export interface BoardingMapSize {
   readonly width: number;
   readonly height: number;
+}
+
+export function boardingFeatureFootprint(
+  kind: BoardingFeatureKind,
+): Readonly<{ width: number; depth: number }> {
+  if (kind === 'wall' || kind === 'hull')
+    return { width: HALF_WIDTH, depth: HALF_HEIGHT };
+  if (kind === 'door') return { width: 9, depth: 4 };
+  if (kind === 'cover') return { width: 13, depth: 5 };
+  return { width: 0, depth: 0 };
 }
 
 export function boardingIsoCenter(position: BoardingCell): BoardingPoint {

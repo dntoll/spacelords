@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   boardingCellFromIsoPoint,
+  boardingFeatureFootprint,
   boardingIsoCamera,
   boardingIsoCenter,
   boardingIsoCorners,
@@ -26,6 +27,14 @@ describe('isometrisk-bordningsvy', () => {
       Math.max(...corners.map((point) => point.y)) -
       Math.min(...corners.map((point) => point.y));
     expect(width / height).toBe(2);
+    expect(boardingFeatureFootprint('wall')).toEqual({
+      width: width / 2,
+      depth: height / 2,
+    });
+    expect(boardingFeatureFootprint('hull')).toEqual({
+      width: width / 2,
+      depth: height / 2,
+    });
 
     const map = { width: 17, height: 11 };
     const view = { width: 390, height: 600 };
