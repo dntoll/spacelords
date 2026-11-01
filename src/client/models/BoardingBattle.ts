@@ -150,7 +150,8 @@ const ADJACENT_DIRECTIONS: readonly BoardingCell[] = Object.freeze([
   Object.freeze({ q: -1, r: 1 }),
   Object.freeze({ q: 1, r: 1 }),
 ]);
-const RIFLE_AP = 4;
+export const BOARDING_RIFLE_AP = 4;
+const RIFLE_AP = BOARDING_RIFLE_AP;
 const GRENADE_AP = 4;
 const MED_PACK_AP = 4;
 const HACK_AP = 4;
@@ -296,6 +297,7 @@ function person(
 export class BoardingBattle {
   readonly #map: BoardingMap;
   #state: BoardingBattleState;
+  #presentation: BoardingBattleState[] = [];
 
   private constructor(map: BoardingMap, state: BoardingBattleState) {
     this.#map = map;
@@ -361,6 +363,10 @@ export class BoardingBattle {
 
   get snapshot(): BoardingBattleState {
     return this.#state;
+  }
+
+  get presentation(): readonly BoardingBattleState[] {
+    return this.#presentation;
   }
 
   get visibleSnapshot(): BoardingBattleState {
@@ -976,12 +982,24 @@ export class BoardingBattle {
     }
   }
 
+  #hostileIdsInSight(side: 'player' | 'defender'): ReadonlySet<string> {
+    return new Set(
+      this.visibleOpponents(side)
+        .filter((entry) => entry.status === 'active')
+        .map((entry) => entry.id),
+    );
+  }
+
   #move(destination: BoardingCell): void {
     const actor = this.#actor();
     const path = this.pathTo(actor.id, destination);
     if (!path) throw new Error('No route to that tile.');
     if (path.cost > this.#state.activation!.remaining)
       throw new Error('The route needs more AP.');
+    const knownHostiles =
+      actor.side === 'civilian'
+        ? new Set<string>()
+        : this.#hostileIdsInSight(actor.side);
     for (const step of path.steps) {
       const current = this.#state.people.find(
         (entry) => entry.id === actor.id,
@@ -993,6 +1011,8 @@ export class BoardingBattle {
           ...entry,
           facing: normalizeFacing(entry.facing + step.direction),
         }));
+        this.#refreshKnowledge();
+        this.#recordPresentation(actor.side);
       } else {
         const cost = current.crouched ? 3 : 2;
         this.#spend(cost);
@@ -1005,8 +1025,26 @@ export class BoardingBattle {
           (entry) => entry.id === actor.id,
         )!;
         this.#triggerOverwatch(moved);
+        this.#recordPresentation(actor.side);
       }
+      if (actor.side === 'civilian') continue;
+      const spotted = [...this.#hostileIdsInSight(actor.side)].some(
+        (id) => !knownHostiles.has(id),
+      );
+      if (!spotted) continue;
+      if (actor.side === 'player')
+        this.#replace({
+          log: [
+            ...this.#state.log,
+            `${actor.label} spots a new enemy and stops.`,
+          ],
+        });
+      break;
     }
+  }
+
+  #recordPresentation(side: BoardingSide): void {
+    if (side === 'player') this.#presentation.push(this.visibleSnapshot);
   }
 
   #door(id: string, action: 'open' | 'close'): void {
@@ -1171,6 +1209,7 @@ export class BoardingBattle {
   }
 
   command(command: BoardingCommand): void {
+    this.#presentation = [];
     const actor = this.#actor();
     if (command.type === 'turn') {
       this.#spend(1);

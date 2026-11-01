@@ -126,6 +126,7 @@ export interface AppReadModel {
   readonly orderView?: OrderSelectionSnapshot | null;
   readonly productionStartOrder?: ShipOrder | null;
   readonly boardingBattle?: BoardingBattleState | null;
+  readonly boardingPresentation?: readonly BoardingBattleState[];
   readonly tacticalBattle: BattleState | null;
   readonly battleFeedback: BattleState | null;
   readonly turnMovement: TurnMovement | null;
@@ -456,6 +457,9 @@ export class AppModel {
       turnMovement: null,
       turnMovements: Object.freeze([]),
       boardingBattle: this.#testBoarding?.visibleSnapshot ?? null,
+      boardingPresentation: Object.freeze([
+        ...(this.#testBoarding?.presentation ?? []),
+      ]),
       tacticalBattle:
         this.#testBattle?.visibleSnapshot ?? this.#game.tacticalBattle,
       battleFeedback: this.#battleFeedback,

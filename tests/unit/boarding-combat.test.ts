@@ -148,6 +148,77 @@ describe('actionpoints-och-riktad-forflyttning', () => {
   });
 });
 
+describe('animerad-bordningsforflyttning', () => {
+  it('records a visible frame after each path turn and step', () => {
+    const player = battle.snapshot.people.find(
+      (person) =>
+        person.side === 'player' &&
+        person.position.q === 1 &&
+        person.position.r === 8,
+    )!;
+    withState((state) => ({
+      ...state,
+      people: state.people.map((person) =>
+        person.id === player.id ? { ...person, facing: 0 } : person,
+      ),
+    }));
+    activate(player.id);
+    const start = battle.snapshot.people.find(
+      (person) => person.id === player.id,
+    )!;
+    const startVisible = battle.snapshot.visibleCells;
+    const destination = { q: 1, r: 7 };
+    const path = battle.pathTo(player.id, destination);
+    expect(path?.steps.some((step) => step.type === 'turn')).toBe(true);
+    battle.command({ type: 'move', to: destination });
+    expect(battle.presentation).toHaveLength(path!.steps.length);
+    const turnIndex = path!.steps.findIndex((step) => step.type === 'turn');
+    const turnFrame = battle.presentation[turnIndex]!;
+    const turned = turnFrame.people.find((person) => person.id === player.id)!;
+    expect(turned.facing).not.toBe(start.facing);
+    expect(turned.position).toEqual(start.position);
+    expect(turnFrame.visibleCells).not.toEqual(startVisible);
+    expect(battle.snapshot).not.toHaveProperty('presentation');
+  });
+});
+
+describe('avbrott-vid-ny-fiende', () => {
+  it('stops the remaining path as soon as a new enemy enters sight', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    withState((state) => ({
+      ...state,
+      people: state.people.map((person) => {
+        if (person.id === player.id)
+          return { ...person, position: { q: 3, r: 5 }, facing: 2 };
+        if (person.id === defender.id)
+          return { ...person, position: { q: 6, r: 5 }, facing: 2 };
+        if (person.side === 'player')
+          return { ...person, position: { q: 1, r: 9 }, facing: 2 };
+        return { ...person, position: { q: 14, r: 1 }, facing: 0 };
+      }),
+    }));
+    activate(player.id);
+    const destination = { q: 5, r: 5 };
+    const path = battle.pathTo(player.id, destination);
+    expect(path?.steps.filter((step) => step.type === 'forward').length).toBe(
+      2,
+    );
+    battle.command({ type: 'move', to: destination });
+    const moved = battle.snapshot.people.find(
+      (person) => person.id === player.id,
+    )!;
+    expect(moved.position).toEqual({ q: 3, r: 5 });
+    expect(moved.facing).toBe(0);
+    expect(battle.snapshot.activation?.remaining).toBe(10);
+    expect(battle.snapshot.log.at(-1)).toMatch(/spots a new enemy and stops/i);
+  });
+});
+
 describe('d20-bordningsstrid / miljomal-och-forstorelse', () => {
   it('uses geometric shooting distance on the square grid', () => {
     const player = battle.snapshot.people.find(

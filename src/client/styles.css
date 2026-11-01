@@ -3887,6 +3887,14 @@ body:has(.discovery-controls) .selection-panel {
   color: #fff;
 }
 
+.boarding-legend-fire {
+  color: #62d48a;
+}
+
+.boarding-legend-reach {
+  color: #f0b35a;
+}
+
 .boarding-details {
   position: absolute;
   z-index: 4;

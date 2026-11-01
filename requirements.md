@@ -131,12 +131,16 @@ Se [hela visionen](docs/game-vision.md).
   `overwatch-och-skydd`, `granater-och-rok`, `utslagning-och-medic`,
   `bordningsmal-reaktor-och-evakuering` och
   `forsvarare-och-civilister`, `tydlig-bordningsstatus`,
-  `isometrisk-bordningsvy` samt `spelmassigt-bordningsgranssnitt` är
+  `isometrisk-bordningsvy`, `spelmassigt-bordningsgranssnitt`,
+  `ap-fargad-bordningsvag`, `animerad-bordningsforflyttning` samt
+  `avbrott-vid-ny-fiende` är
   **Fullständigt implementerat**. Den första versionen är ett separat testspel
   från huvudmenyn på en handredigerbar transportkarta och påverkar inte
   kampanj eller sparplatser. Kartan använder klassiska kvadratiska
   2:1-diamantrutor där väggar och ytterskrov fyller hela rutan, fyra riktningar
-  och 90-gradersvändningar; detta ersätter uttryckligen den tidigare hexkartan. Se
+  och 90-gradersvändningar; detta ersätter uttryckligen den tidigare hexkartan.
+  En vald väg färgas efter kvarvarande AP och förflyttning animeras stegvis med
+  uppdaterad sikt. Se
   [bordningsstrid](docs/boarding-combat.md).
 
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,

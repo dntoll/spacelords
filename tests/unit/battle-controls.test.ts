@@ -228,23 +228,31 @@ it('traffhex-istallet-for-mallista: fires at the hex chosen on the map and has n
   view.dispose();
 });
 
-it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus: exposes correct turns, selected soldier health and a map legend without mutating during render', () => {
+it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bordningsvag / animerad-bordningsforflyttning: exposes correct turns, selected soldier health and a map legend without mutating during render', async () => {
   const created = createTestBoardingBattle();
-  const player = created.snapshot.people.findLast(
-    (person) => person.side === 'player',
+  const player = created.snapshot.people.find(
+    (person) =>
+      person.side === 'player' &&
+      person.position.q === 2 &&
+      person.position.r === 8,
   )!;
   const boardingState: BoardingBattleState = {
     ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player.id ? { ...person, facing: 0 } : person,
+    ),
     initiativeOrder: [player.id],
     initiativeIndex: 0,
     currentActorId: player.id,
-    activation: { id: player.id, remaining: 12 },
+    activation: { id: player.id, remaining: 7 },
   };
   const battle = BoardingBattle.restore(testBoardingMap, boardingState);
   let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const rendered = vi.fn();
+  const playMotion = vi.fn(() => Promise.resolve());
   const map: BoardingMapFactory = (_container, select) => {
     selectHex = select;
-    return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    return { render: rendered, zoom() {}, fit() {}, dispose() {}, playMotion };
   };
   const emit = vi.fn<(intent: AppIntent) => void>();
   const view = new BoardingView(document.body, emit, map);
@@ -281,9 +289,40 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus: exposes corre
   expect(document.querySelector('.boarding-legend')!.textContent).toContain(
     'Facing',
   );
-  selectHex({ q: player.position.q + 1, r: player.position.r - 1 });
+  selectHex({ q: player.position.q + 3, r: player.position.r });
   expect(document.body.textContent).toContain('Destination');
+  expect(document.querySelector('.boarding-legend')!.textContent).toMatch(
+    /Fire after move|Move only/,
+  );
+  expect(rendered.mock.calls.at(-1)?.[3]).toEqual([
+    {
+      position: { q: player.position.q + 1, r: player.position.r },
+      kind: 'fire',
+    },
+    {
+      position: { q: player.position.q + 2, r: player.position.r },
+      kind: 'reach',
+    },
+    {
+      position: { q: player.position.q + 3, r: player.position.r },
+      kind: 'reach',
+    },
+  ]);
   expect(battle.snapshot).toStrictEqual(boardingState);
+  const stepped = {
+    ...battle.visibleSnapshot,
+    people: battle.visibleSnapshot.people.map((person) =>
+      person.id === player.id
+        ? {
+            ...person,
+            position: { q: player.position.q + 1, r: player.position.r },
+          }
+        : person,
+    ),
+  };
+  view.render(stepped, null, [stepped]);
+  await Promise.resolve();
+  expect(playMotion).toHaveBeenCalled();
   const defender = created.snapshot.people.find(
     (person) => person.side === 'defender',
   )!;

@@ -121,7 +121,11 @@ export class AppView implements AppPort {
         (intent) => this.#emit(intent),
         this.boardingMapFactory,
       );
-      this.#boardingView.render(model.boardingBattle, model.notice);
+      this.#boardingView.render(
+        model.boardingBattle,
+        model.notice,
+        model.boardingPresentation ?? [],
+      );
       return;
     }
     this.#boardingView?.dispose();

@@ -63,7 +63,10 @@ Aktiv soldat, hälsa, riktning, `Half cover` och pågående försvararhandlingar
 ska framgå tydligt utan att dolda positioner avslöjas.
 Kartan ska visas isometriskt och uppta huvuddelen av ett spelmässigt gränssnitt
 med kompakta handlingsknappar. Varje bordningssoldat ska ha en egen
-hälsomätare.
+hälsomätare. En vald väg ska visa hur långt soldaten når med kvarvarande AP
+och vilka rutor som fortfarande lämnar AP till ett skott. När soldaten går ska
+varje steg och vändning animeras så att sikt uppdateras längs vägen. Om en ny
+fiende upptäcks avbryts resten av förflyttningen.
 
 Prototypen påverkar inga sparade spel och ger ännu inga skepp,
 besättningsmedlemmar, forskningsresultat eller kartupplysningar till kampanjen.

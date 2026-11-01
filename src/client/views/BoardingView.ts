@@ -1,9 +1,12 @@
 import {
   BoardingBattle,
   type BoardingBattleState,
-  type BoardingPath,
 } from '../models/BoardingBattle.js';
 import type { BoardingCell } from '../models/BoardingMap.js';
+import {
+  boardingPathMarks,
+  type BoardingPathMark,
+} from '../models/BoardingPathPreview.js';
 import { testBoardingMap } from '../models/TestBoarding.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element } from './dom.js';
@@ -25,8 +28,12 @@ export interface BoardingMapPort {
     state: BoardingBattleState,
     selectedId: string | null,
     destination: BoardingCell | null,
-    path: BoardingPath | null,
+    path: readonly BoardingPathMark[],
   ): void;
+  playMotion?(
+    from: BoardingBattleState,
+    to: BoardingBattleState,
+  ): Promise<void>;
   zoom(factor: number): void;
   fit(): void;
   dispose(): void;
@@ -50,6 +57,8 @@ export class BoardingView {
   #selectedId: string | null = null;
   #destination: BoardingCell | null = null;
   #actorId: string | null = null;
+  #busy = false;
+  #playToken = 0;
 
   constructor(
     root: HTMLElement,
@@ -71,6 +80,8 @@ export class BoardingView {
       element('span', 'boarding-legend-selected', '○ Selected soldier'),
       element('span', 'boarding-legend-cover', '▰ Half cover'),
       element('span', 'boarding-legend-facing', '— Facing'),
+      element('span', 'boarding-legend-fire', '▣ Fire after move'),
+      element('span', 'boarding-legend-reach', '▣ Move only'),
     );
     const zoom = element('div', 'boarding-zoom');
     zoom.append(
@@ -97,6 +108,7 @@ export class BoardingView {
   }
 
   #command(command: Parameters<BoardingBattle['command']>[0]): void {
+    if (this.#busy) return;
     this.emit({ type: 'boarding-command', command });
   }
 
@@ -113,7 +125,7 @@ export class BoardingView {
 
   #selectCell(position: BoardingCell): void {
     const state = this.#state;
-    if (!state || state.phase === 'complete') return;
+    if (!state || state.phase === 'complete' || this.#busy) return;
     const person = state.people.find(
       (entry) =>
         entry.status !== 'dead' &&
@@ -138,7 +150,49 @@ export class BoardingView {
     this.render(state);
   }
 
-  render(state: BoardingBattleState, notice?: string | null): void {
+  render(
+    state: BoardingBattleState,
+    notice?: string | null,
+    presentation: readonly BoardingBattleState[] = [],
+  ): void {
+    const previous = this.#state;
+    if (
+      !this.#busy &&
+      previous &&
+      presentation.length > 0 &&
+      this.#map?.playMotion
+    ) {
+      const token = ++this.#playToken;
+      void this.#play(previous, presentation, state, notice, token);
+      return;
+    }
+    this.#paint(state, notice);
+  }
+
+  async #play(
+    previous: BoardingBattleState,
+    frames: readonly BoardingBattleState[],
+    final: BoardingBattleState,
+    notice: string | null | undefined,
+    token: number,
+  ): Promise<void> {
+    this.#busy = true;
+    this.#destination = null;
+    this.#selectedId = null;
+    this.#paint(previous, 'Moving…');
+    let current = previous;
+    for (const frame of frames) {
+      if (token !== this.#playToken) return;
+      await this.#map?.playMotion?.(current, frame);
+      current = frame;
+      this.#paint(frame, 'Moving…');
+    }
+    if (token !== this.#playToken) return;
+    this.#busy = false;
+    this.#paint(final, notice);
+  }
+
+  #paint(state: BoardingBattleState, notice?: string | null): void {
     this.#state = state;
     if (this.#actorId !== state.currentActorId) {
       this.#actorId = state.currentActorId;
@@ -149,6 +203,7 @@ export class BoardingView {
       (entry) => entry.id === state.currentActorId,
     );
     const playerTurn =
+      !this.#busy &&
       state.phase === 'fighting' &&
       actor?.side === 'player' &&
       actor.status === 'active';
@@ -196,9 +251,13 @@ export class BoardingView {
     }
     this.#controls.replaceChildren();
 
-    let path: BoardingPath | null = null;
-    if (playerTurn && this.#destination)
-      path = this.#battle().pathTo(actor.id, this.#destination);
+    const route =
+      playerTurn && actor && this.#destination
+        ? this.#battle().pathTo(actor.id, this.#destination)
+        : null;
+    const path = route
+      ? boardingPathMarks(route, state.activation?.remaining ?? 0)
+      : [];
     if (playerTurn) {
       this.#action('Turn left 90°', '↶', () =>
         this.#command({ type: 'turn', direction: 1 }),
@@ -207,10 +266,10 @@ export class BoardingView {
         this.#command({ type: 'turn', direction: -1 }),
       );
       this.#action(
-        `Move${path ? ` · ${path.cost} AP` : ''}`,
+        `Move${route ? ` · ${route.cost} AP` : ''}`,
         '↑',
         () => this.#command({ type: 'move', to: this.#destination! }),
-        !path || path.cost > (state.activation?.remaining ?? 0),
+        !route || route.cost > (state.activation?.remaining ?? 0),
       );
       this.#action(
         actor.crouched ? 'Stand' : 'Crouch',
@@ -313,7 +372,7 @@ export class BoardingView {
         this.#selectedId
           ? `Target: ${selectedPerson?.label ?? selectedFeature?.kind ?? this.#selectedId}${preview?.reason ? ` · ${preview.reason}` : ''}`
           : this.#destination
-            ? `Destination ${this.#destination.q},${this.#destination.r}${path ? ` · ${path.cost} AP` : ' · unreachable'}`
+            ? `Destination ${this.#destination.q},${this.#destination.r}${route ? ` · ${route.cost} AP` : ' · unreachable'}`
             : 'Select a destination or target on the map.',
       );
       this.#controls.prepend(selection);
@@ -344,6 +403,8 @@ export class BoardingView {
   }
 
   dispose(): void {
+    this.#playToken += 1;
+    this.#busy = false;
     this.#map?.dispose();
     this.#dialog.close();
     this.#dialog.remove();

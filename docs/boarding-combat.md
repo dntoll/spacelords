@@ -22,6 +22,15 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   mellan stående och hukad ställning 1 AP. Handlingar får blandas fritt och
   förflyttning sker i fyra riktningar utan diagonala steg. Detta ersätter
   uttryckligen den tidigare hexkartan med sex riktningar och 60-gradersvändning.
+- `ap-fargad-bordningsvag` — **Fullständigt implementerat**. En vald väg visar
+  bara rutor som ryms inom kvarvarande AP. Rutor där ett gevärsskott fortfarande
+  ryms efter ankomst har en färg; övriga rutor man just når har en annan.
+- `animerad-bordningsforflyttning` — **Fullständigt implementerat**. Utförd
+  förflyttning animerar varje vändning och steg. Sikt och kartminne uppdateras
+  efter varje del så att spelaren ser vad soldaten ser på vägen.
+- `avbrott-vid-ny-fiende` — **Fullständigt implementerat**. Om en ny fientlig
+  soldat kommer in i sidans sikt under en förflyttning stannar den aktiva
+  soldaten efter den del som avslöjade fienden och resten av ordern stryks.
 - `tydlig-bordningsstatus` — **Fullständigt implementerat**. Den aktiva soldaten
   namnges uttryckligen och markeras på kartan. Varje bordningssoldat visas med
   en egen HP-bar och numeriskt HP-värde. Kartans förklaring identifierar aktiv

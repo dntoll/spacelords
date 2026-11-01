@@ -85,7 +85,11 @@ den statiska definitionen.
 
 AppModel äger en tillfällig boarding-session medan huvudmenyn är den underliggande
 skärmen. `boarding-command` samordnas av AppController och en separat
-`BoardingView`; vyn får bara läsa snapshot och skicka intents. P5-kartan använder
+`BoardingView`; vyn får bara läsa snapshot och skicka intents. AP-färgad
+vägvisning beräknas ur pathfinding utan att mutera striden. Stegvis gång är
+presentation: modellen samlar synliga rutor efter varje vändning och steg, och
+vyn animerar mellan dem. En ny fiende i sidans sikt avbryter resterande
+steg i samma kommando. P5-kartan använder
 instance mode och innehåller ingen domänmutation. Sessionen får inte anropa
 SaveRepository eller ändra `TacticalBattle`, `TurnSimulation` eller sparformat.
 

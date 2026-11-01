@@ -3,8 +3,8 @@ import type { BoardingMap, BoardingCell } from '../models/BoardingMap.js';
 import {
   BoardingBattle,
   type BoardingBattleState,
-  type BoardingPath,
 } from '../models/BoardingBattle.js';
+import type { BoardingPathMark } from '../models/BoardingPathPreview.js';
 import type { BoardingMapPort } from './BoardingView.js';
 import {
   boardingCellFromIsoPoint,
@@ -24,7 +24,14 @@ export class BoardingMapView implements BoardingMapPort {
   #state: BoardingBattleState | null = null;
   #selectedId: string | null = null;
   #destination: BoardingCell | null = null;
-  #path: BoardingPath | null = null;
+  #path: readonly BoardingPathMark[] = [];
+  #motion: {
+    from: BoardingBattleState;
+    to: BoardingBattleState;
+    started: number;
+    duration: number;
+    resolve: () => void;
+  } | null = null;
   #scale = 1;
   #offset: Point = { x: 0, y: 0 };
   #ready = false;
@@ -76,7 +83,7 @@ export class BoardingMapView implements BoardingMapPort {
     state: BoardingBattleState,
     selectedId: string | null,
     destination: BoardingCell | null,
-    path: BoardingPath | null,
+    path: readonly BoardingPathMark[],
   ): void {
     const changed = this.#state?.id !== state.id;
     this.#state = state;
@@ -118,6 +125,35 @@ export class BoardingMapView implements BoardingMapPort {
     };
     this.#scale = next;
     if (this.#ready) void this.#p5.redraw();
+  }
+
+  playMotion(
+    from: BoardingBattleState,
+    to: BoardingBattleState,
+  ): Promise<void> {
+    this.#finishMotion();
+    this.#state = to;
+    return new Promise((resolve) => {
+      if (!this.#ready) {
+        resolve();
+        return;
+      }
+      this.#motion = {
+        from,
+        to,
+        started: performance.now(),
+        duration: 260,
+        resolve,
+      };
+      this.#p5.loop();
+    });
+  }
+
+  #finishMotion(): void {
+    const motion = this.#motion;
+    this.#motion = null;
+    if (this.#ready && !this.#disposed) this.#p5.noLoop();
+    motion?.resolve();
   }
 
   #bind(canvas: HTMLCanvasElement, select: (cell: BoardingCell) => void): void {
@@ -182,7 +218,7 @@ export class BoardingMapView implements BoardingMapPort {
       'pointerup',
       (event) => {
         if (!this.#pointers.has(event.pointerId)) return;
-        if (!this.#dragged) {
+        if (!this.#dragged && !this.#motion) {
           const position = point(event);
           const cell = boardingCellFromIsoPoint({
             x: (position.x - this.#offset.x) / this.#scale,
@@ -290,10 +326,25 @@ export class BoardingMapView implements BoardingMapPort {
     sketch.push();
     sketch.translate(this.#offset.x, this.#offset.y);
     sketch.scale(this.#scale);
+    const motion = this.#motion;
+    const raw = motion
+      ? Math.min(1, (performance.now() - motion.started) / motion.duration)
+      : 1;
+    const progress = raw * raw * (3 - 2 * raw);
+    if (motion && raw >= 1) this.#finishMotion();
     const visible = new Set(state.visibleCells.map(key));
     const explored = new Set(state.exploredCells.map(key));
     const smoke = new Set(state.smokeCells.map(key));
-    const path = new Set(this.#path?.positions.map(key) ?? []);
+    const fire = new Set(
+      this.#path
+        .filter((mark) => mark.kind === 'fire')
+        .map((mark) => key(mark.position)),
+    );
+    const reach = new Set(
+      this.#path
+        .filter((mark) => mark.kind === 'reach')
+        .map((mark) => key(mark.position)),
+    );
     for (let r = 0; r < this.map.height; r++) {
       for (let q = 0; q < this.map.width; q++) {
         const position = { q, r };
@@ -309,8 +360,11 @@ export class BoardingMapView implements BoardingMapPort {
         else if (knownHull) sketch.fill('#343d4c');
         else sketch.fill('#080c15');
         this.#tile(sketch, position);
-        if (path.has(key(position))) {
-          sketch.fill(80, 196, 255, 90);
+        if (fire.has(key(position))) {
+          sketch.fill(98, 212, 138, 115);
+          this.#tile(sketch, position);
+        } else if (reach.has(key(position))) {
+          sketch.fill(240, 179, 90, 115);
           this.#tile(sketch, position);
         }
         if (this.#destination && key(this.#destination) === key(position)) {
@@ -410,12 +464,34 @@ export class BoardingMapView implements BoardingMapPort {
       sketch.circle(center.x, center.y, 30);
       sketch.circle(center.x, center.y, 20);
     }
+    const mover = motion
+      ? motion.from.people.find((person) => {
+          const next = motion.to.people.find((entry) => entry.id === person.id);
+          return (
+            !!next &&
+            (next.position.q !== person.position.q ||
+              next.position.r !== person.position.r ||
+              next.facing !== person.facing)
+          );
+        })
+      : null;
     for (const person of [...state.people].sort(
       (a, b) =>
         boardingIsoCenter(a.position).y - boardingIsoCenter(b.position).y,
     )) {
       if (person.status === 'evacuated') continue;
-      const center = boardingIsoCenter(person.position);
+      const origin = mover && person.id === mover.id ? mover : person;
+      const target =
+        mover && person.id === mover.id
+          ? (motion!.to.people.find((entry) => entry.id === person.id) ??
+            person)
+          : person;
+      const fromCenter = boardingIsoCenter(origin.position);
+      const toCenter = boardingIsoCenter(target.position);
+      const center = {
+        x: fromCenter.x + (toCenter.x - fromCenter.x) * progress,
+        y: fromCenter.y + (toCenter.y - fromCenter.y) * progress,
+      };
       const bodyY = center.y - (person.crouched ? 7 : 11);
       sketch.noStroke();
       sketch.fill(0, 0, 0, 95);
@@ -457,10 +533,17 @@ export class BoardingMapView implements BoardingMapPort {
         3,
         1,
       );
-      const forward = BoardingBattle.forward(person.position, person.facing);
-      const direction = boardingIsoCenter(forward);
-      const dx = direction.x - center.x;
-      const dy = direction.y - center.y;
+      const fromFacing = boardingIsoCenter(
+        BoardingBattle.forward({ q: 0, r: 0 }, origin.facing),
+      );
+      const toFacing = boardingIsoCenter(
+        BoardingBattle.forward({ q: 0, r: 0 }, target.facing),
+      );
+      const originIso = boardingIsoCenter({ q: 0, r: 0 });
+      const dx =
+        fromFacing.x + (toFacing.x - fromFacing.x) * progress - originIso.x;
+      const dy =
+        fromFacing.y + (toFacing.y - fromFacing.y) * progress - originIso.y;
       const length = Math.max(1, Math.hypot(dx, dy));
       sketch.stroke('#ffffff');
       sketch.strokeWeight(2.5);
@@ -476,6 +559,7 @@ export class BoardingMapView implements BoardingMapPort {
 
   dispose(): void {
     this.#disposed = true;
+    this.#finishMotion();
     this.#events.abort();
     this.#observer.disconnect();
     this.#p5.remove();
