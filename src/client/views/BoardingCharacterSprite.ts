@@ -16,6 +16,16 @@ const sources: Record<BoardingCharacterSide, Rectangle> = {
   civilian: { x: 105, y: 760, width: 49, height: 83 },
 };
 
+/** bordningsfigurer-fran-spritesheet: plant feet slightly below the tile center. */
+export const BOARDING_FOOT_PLANT = 8;
+
+export interface BoardingCharacterPick {
+  readonly id: string;
+  readonly side: BoardingCharacterSide;
+  readonly floorCenter: Point;
+  readonly crouched: boolean;
+}
+
 export function boardingCharacterSprite(
   side: BoardingCharacterSide,
   floorCenter: Point,
@@ -28,9 +38,31 @@ export function boardingCharacterSprite(
     source,
     destination: {
       x: floorCenter.x - width / 2,
-      y: floorCenter.y - height + 2,
+      y: floorCenter.y - height + BOARDING_FOOT_PLANT,
       width,
       height,
     },
   };
+}
+
+/** valbar-bordningssoldat: prefer the front-most sprite under the pointer. */
+export function boardingCharacterAtPoint(
+  people: readonly BoardingCharacterPick[],
+  point: Point,
+): BoardingCharacterPick | null {
+  const hits = people.filter((person) => {
+    const box = boardingCharacterSprite(
+      person.side,
+      person.floorCenter,
+      person.crouched,
+    ).destination;
+    return (
+      point.x >= box.x &&
+      point.x <= box.x + box.width &&
+      point.y >= box.y &&
+      point.y <= box.y + box.height
+    );
+  });
+  hits.sort((a, b) => b.floorCenter.y - a.floorCenter.y);
+  return hits[0] ?? null;
 }

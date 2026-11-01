@@ -3991,6 +3991,14 @@ body:has(.discovery-controls) .selection-panel {
   color: #fff;
 }
 
+.boarding-legend-sight {
+  color: #5ac8fa;
+}
+
+.boarding-legend-shot {
+  color: #ef6461;
+}
+
 .boarding-legend-fire {
   color: #62d48a;
 }

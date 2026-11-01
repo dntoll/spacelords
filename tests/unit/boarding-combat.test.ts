@@ -6,6 +6,7 @@ import {
 } from '../../src/client/models/BoardingMap.js';
 import {
   BoardingBattle,
+  boardingActionPointsRemaining,
   type BoardingBattleState,
 } from '../../src/client/models/BoardingBattle.js';
 
@@ -337,6 +338,198 @@ describe('sikt-minne-och-ljudmarkorer', () => {
     expect(battle.attackPreview(player.id, defender.id).reason).not.toBe(
       'The target is outside the 180° field of fire.',
     );
+  });
+});
+
+describe('personer-blockerar-inte-sikt', () => {
+  function openCorridor(
+    playerId: string,
+    blockerId: string,
+    defenderId: string,
+    blocker: 'civilian' | 'defender',
+  ) {
+    withState((state) => ({
+      ...state,
+      features: state.features.map((feature) => ({
+        ...feature,
+        destroyed: true,
+      })),
+      people: state.people.map((person) => {
+        if (person.id === playerId)
+          return { ...person, position: { q: 2, r: 5 }, facing: 0 };
+        if (person.id === blockerId)
+          return {
+            ...person,
+            position: { q: 3, r: 5 },
+            side: blocker,
+            status: 'active',
+          };
+        if (person.id === defenderId)
+          return { ...person, position: { q: 4, r: 5 }, facing: 2 };
+        return { ...person, status: 'dead' };
+      }),
+    }));
+    battle.synchronize();
+  }
+
+  it('sees a soldier behind a person but cannot shoot through them', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const civilian = battle.snapshot.people.find(
+      (person) => person.side === 'civilian',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    openCorridor(player.id, civilian.id, defender.id, 'civilian');
+    const visible = new Set(
+      battle.snapshot.visibleCells.map((cell) => `${cell.q},${cell.r}`),
+    );
+    expect(visible.has('4,5')).toBe(true);
+    expect(battle.attackPreview(player.id, defender.id).reason).toBe(
+      'The shot is blocked.',
+    );
+  });
+
+  it('lets a soldier block fire the same way a civilian does', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const [blocker, target] = battle.snapshot.people.filter(
+      (person) => person.side === 'defender',
+    );
+    openCorridor(player.id, blocker!.id, target!.id, 'defender');
+    expect(battle.attackPreview(player.id, target!.id).reason).toBe(
+      'The shot is blocked.',
+    );
+    expect(
+      battle.snapshot.visibleCells.some((cell) => cell.q === 4 && cell.r === 5),
+    ).toBe(true);
+  });
+
+  it('still hides tiles behind walls from both sight and fire', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    const wall = battle.snapshot.features.find(
+      (feature) => feature.kind === 'wall',
+    )!;
+    withState((state) => ({
+      ...state,
+      features: state.features.map((feature) =>
+        feature.id === wall.id
+          ? { ...feature, position: { q: 3, r: 5 }, destroyed: false }
+          : { ...feature, destroyed: true },
+      ),
+      people: state.people.map((person) =>
+        person.id === player.id
+          ? { ...person, position: { q: 2, r: 5 }, facing: 0 }
+          : person.id === defender.id
+            ? { ...person, position: { q: 4, r: 5 } }
+            : { ...person, status: 'dead' },
+      ),
+    }));
+    battle.synchronize();
+    expect(
+      battle.snapshot.visibleCells.some((cell) => cell.q === 4 && cell.r === 5),
+    ).toBe(false);
+    expect(battle.attackPreview(player.id, defender.id).reason).toBe(
+      'The shot is blocked.',
+    );
+  });
+
+  it('keeps overwatch when a person blocks the shot', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const civilian = battle.snapshot.people.find(
+      (person) => person.side === 'civilian',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    withState((state) => ({
+      ...state,
+      features: state.features.map((feature) => ({
+        ...feature,
+        destroyed: true,
+      })),
+      people: state.people.map((person) => {
+        if (person.id === defender.id)
+          return {
+            ...person,
+            position: { q: 2, r: 5 },
+            facing: 0,
+            overwatch: true,
+          };
+        if (person.id === civilian.id)
+          return { ...person, position: { q: 4, r: 5 } };
+        if (person.id === player.id)
+          return { ...person, position: { q: 5, r: 5 }, facing: 0 };
+        return { ...person, status: 'dead' };
+      }),
+    }));
+    activate(player.id);
+    battle.command({ type: 'move', to: { q: 6, r: 5 } });
+    expect(
+      battle.snapshot.people.find((person) => person.id === defender.id)
+        ?.overwatch,
+    ).toBe(true);
+    expect(battle.snapshot.log.join(' ')).not.toMatch(/Overwatch.*D20/i);
+  });
+});
+
+describe('sikt-och-eld-fran-vald-soldat', () => {
+  it('marks tiles behind a person as visible but not fireable', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const civilian = battle.snapshot.people.find(
+      (person) => person.side === 'civilian',
+    )!;
+    withState((state) => ({
+      ...state,
+      features: state.features.map((feature) => ({
+        ...feature,
+        destroyed: true,
+      })),
+      people: state.people.map((person) => {
+        if (person.id === player.id)
+          return { ...person, position: { q: 2, r: 5 }, facing: 0 };
+        if (person.id === civilian.id)
+          return { ...person, position: { q: 3, r: 5 } };
+        return { ...person, status: 'dead' };
+      }),
+    }));
+    const key = (cell: { q: number; r: number }) => `${cell.q},${cell.r}`;
+    const sight = new Set(battle.sightFrom(player.id).map(key));
+    const fire = new Set(battle.fireFrom(player.id).map(key));
+    expect(sight.has('3,5')).toBe(true);
+    expect(sight.has('4,5')).toBe(true);
+    expect(fire.has('3,5')).toBe(true);
+    expect(fire.has('4,5')).toBe(false);
+    expect(sight.has('2,5')).toBe(false);
+  });
+});
+
+describe('hp-och-ap-ovanfor-soldater', () => {
+  it('reports remaining AP for the active, postponed, finished and waiting soldiers', () => {
+    const [first, second, third] = battle.snapshot.people.filter(
+      (person) => person.side === 'player',
+    );
+    activate(first!.id, 7);
+    battle.command({ type: 'select', id: second!.id });
+    withState((state) => ({
+      ...state,
+      finishedActors: [third!.id],
+    }));
+    expect(boardingActionPointsRemaining(battle.snapshot, first!.id)).toBe(7);
+    expect(battle.actionPointsRemaining(second!.id)).toBe(12);
+    expect(boardingActionPointsRemaining(battle.snapshot, third!.id)).toBe(0);
   });
 });
 

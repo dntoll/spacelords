@@ -401,6 +401,12 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
   expect(document.querySelector('.boarding-legend')!.textContent).toContain(
     'Facing',
   );
+  expect(document.querySelector('.boarding-legend')!.textContent).toContain(
+    'Sight',
+  );
+  expect(document.querySelector('.boarding-legend')!.textContent).toContain(
+    'Fire',
+  );
   selectHex({ q: player.position.q + 3, r: player.position.r });
   expect(document.body.textContent).toContain('Destination');
   expect(document.querySelector('.boarding-legend')!.textContent).toMatch(

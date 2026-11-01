@@ -182,6 +182,19 @@ const sharesEdge = (a: BoardingCell, b: BoardingCell): boolean =>
   Math.abs(a.q - b.q) + Math.abs(a.r - b.r) === 1;
 const normalizeFacing = (facing: number): number => ((facing % 4) + 4) % 4;
 
+export function boardingActionPointsRemaining(
+  state: BoardingBattleState,
+  id: string,
+): number {
+  const person = state.people.find((entry) => entry.id === id);
+  if (!person || person.status !== 'active') return 0;
+  if (state.finishedActors.includes(id)) return 0;
+  if (state.activation?.id === id) return state.activation.remaining;
+  const postponed = state.postponed.find((entry) => entry.id === id);
+  if (postponed) return postponed.remaining;
+  return Math.max(1, person.agility + person.equipmentApModifier);
+}
+
 function hiddenDefenderActivity(command: BoardingCommand): string {
   if (command.type === 'turn') return 'A defender turns.';
   if (command.type === 'move') return 'A defender moves.';
@@ -686,10 +699,7 @@ export class BoardingBattle {
     );
   }
 
-  #blocksSight(
-    position: BoardingCell,
-    ignoreIds: readonly string[] = [],
-  ): boolean {
+  #blocksVision(position: BoardingCell): boolean {
     const feature = this.#featureAt(position);
     if (
       feature &&
@@ -698,12 +708,16 @@ export class BoardingBattle {
         (feature.kind === 'door' && !feature.open))
     )
       return true;
-    if (
-      this.#state.smoke.some(
-        (entry) => entry.amount > 0 && same(entry.position, position),
-      )
-    )
-      return true;
+    return this.#state.smoke.some(
+      (entry) => entry.amount > 0 && same(entry.position, position),
+    );
+  }
+
+  #blocksFire(
+    position: BoardingCell,
+    ignoreIds: readonly string[] = [],
+  ): boolean {
+    if (this.#blocksVision(position)) return true;
     return this.#state.people.some(
       (entry) =>
         !ignoreIds.includes(entry.id) &&
@@ -713,17 +727,69 @@ export class BoardingBattle {
     );
   }
 
-  #canSee(observer: BoardingPerson, target: BoardingCell): boolean {
+  #lineClear(
+    observer: BoardingPerson,
+    target: BoardingCell,
+    blocked: (position: BoardingCell) => boolean,
+  ): boolean {
     if (
       observer.status !== 'active' ||
       distance(observer.position, target) > 8 ||
       !this.#inFieldOfView(observer, target)
     )
       return false;
-    const line = this.#line(observer.position, target);
-    return !line
-      .slice(1, -1)
-      .some((position) => this.#blocksSight(position, [observer.id]));
+    return !this.#line(observer.position, target).slice(1, -1).some(blocked);
+  }
+
+  #canSee(observer: BoardingPerson, target: BoardingCell): boolean {
+    return this.#lineClear(observer, target, (position) =>
+      this.#blocksVision(position),
+    );
+  }
+
+  #canFire(observer: BoardingPerson, target: BoardingCell): boolean {
+    return this.#lineClear(observer, target, (position) =>
+      this.#blocksFire(position, [observer.id]),
+    );
+  }
+
+  #observerCells(
+    observer: BoardingPerson,
+    reachable: (position: BoardingCell) => boolean,
+  ): readonly BoardingCell[] {
+    if (observer.status !== 'active') return Object.freeze([]);
+    const result: BoardingCell[] = [];
+    for (let r = 0; r < this.#map.height; r++) {
+      for (let q = 0; q < this.#map.width; q++) {
+        const position = { q, r };
+        if (same(observer.position, position)) continue;
+        if (reachable(position)) result.push(frozenCell(position));
+      }
+    }
+    return Object.freeze(result);
+  }
+
+  /** personer-blockerar-inte-sikt / sikt-och-eld-fran-vald-soldat */
+  sightFrom(id: string): readonly BoardingCell[] {
+    const observer = this.#state.people.find((entry) => entry.id === id);
+    if (!observer) return Object.freeze([]);
+    return this.#observerCells(observer, (position) =>
+      this.#canSee(observer, position),
+    );
+  }
+
+  /** sikt-och-eld-fran-vald-soldat: tiles a rifle shot could reach. */
+  fireFrom(id: string): readonly BoardingCell[] {
+    const observer = this.#state.people.find((entry) => entry.id === id);
+    if (!observer) return Object.freeze([]);
+    return this.#observerCells(observer, (position) =>
+      this.#canFire(observer, position),
+    );
+  }
+
+  /** hp-och-ap-ovanfor-soldater */
+  actionPointsRemaining(id: string): number {
+    return boardingActionPointsRemaining(this.#state, id);
   }
 
   #visibleFor(side: 'player' | 'defender'): readonly BoardingCell[] {
@@ -879,7 +945,7 @@ export class BoardingBattle {
         line
           .slice(1, -1)
           .some((position) =>
-            this.#blocksSight(position, [
+            this.#blocksFire(position, [
               source.id,
               'side' in target ? target.id : '',
             ]),
@@ -1003,7 +1069,8 @@ export class BoardingBattle {
         mover.side === 'civilian' ||
         watcher.status !== 'active' ||
         !watcher.overwatch ||
-        !this.#canSee(watcher, mover.position)
+        !this.#canSee(watcher, mover.position) ||
+        this.attackPreview(watcher.id, mover.id).reason
       )
         continue;
       this.#updatePerson(watcher.id, (entry) => ({
@@ -1168,7 +1235,7 @@ export class BoardingBattle {
       ];
       for (const position of area) {
         const line = this.#line(impact, position);
-        if (line.slice(1, -1).some((entry) => this.#blocksSight(entry)))
+        if (line.slice(1, -1).some((entry) => this.#blocksVision(entry)))
           continue;
         const damage = this.#rollDamage(6, 2, 0);
         for (const victim of this.#state.people.filter(

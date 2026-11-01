@@ -167,8 +167,9 @@ Se [hela visionen](docs/game-vision.md).
   `avbrott-vid-ny-fiende`, `animerat-bordningsskott`,
   `valbar-bordningssoldat`, `klickskott-pa-vald-fiende`,
   `klickgang-pa-vald-destination`, `klickdorr-pa-vald-dorr`,
-  `isometriska-golvtiles`, `isometriska-vaggtexturer` samt
-  `bordningsfigurer-fran-spritesheet` är
+  `isometriska-golvtiles`, `isometriska-vaggtexturer`,
+  `bordningsfigurer-fran-spritesheet`, `hp-och-ap-ovanfor-soldater`,
+  `personer-blockerar-inte-sikt` samt `sikt-och-eld-fran-vald-soldat` är
   **Fullständigt implementerat**. Den första versionen är ett separat testspel
   från huvudmenyn på en handredigerbar transportkarta och påverkar inte
   kampanj eller sparplatser. Kartan använder klassiska kvadratiska
@@ -179,8 +180,11 @@ Se [hela visionen](docs/game-vision.md).
   projicerar på rutans exakta 2:1-diamant. Väggar tar utklipp ur en lång
   fasadtextur så att en längre sträcka blir sammanhängande. `Half cover` är
   hälften så hög som en vägg. Soldater, försvarare och civilister använder var
-  sin isolerade stillbild ur fraktionsarket, står med fötterna på rutans centrum
-  och behåller en separat riktningspil. Se
+  sin isolerade stillbild ur fraktionsarket, står med fötterna lite under
+  rutans centrum och behåller en separat riktningspil. Personer blockerar inte
+  sikt men kan blockera skott. Den aktiva soldaten visar synliga och skjutbara
+  rutor med två kantfärger, och egna soldater har HP- och AP-staplar ovanför
+  figuren. Se
   [bordningsstrid](docs/boarding-combat.md).
 
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,

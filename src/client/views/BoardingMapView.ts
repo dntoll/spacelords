@@ -2,6 +2,7 @@ import p5 from 'p5';
 import type { BoardingMap, BoardingCell } from '../models/BoardingMap.js';
 import {
   BoardingBattle,
+  boardingActionPointsRemaining,
   type BoardingBattleState,
 } from '../models/BoardingBattle.js';
 import type { BoardingPathMark } from '../models/BoardingPathPreview.js';
@@ -9,7 +10,11 @@ import type { BoardingMapPort } from './BoardingView.js';
 import floorTileUrl from '../assets/boarding/floor-tile.png';
 import wallTileUrl from '../assets/boarding/wall-tile.png';
 import factionSpritesUrl from '../assets/boarding/faction-sprites.png';
-import { boardingCharacterSprite } from './BoardingCharacterSprite.js';
+import {
+  BOARDING_FOOT_PLANT,
+  boardingCharacterAtPoint,
+  boardingCharacterSprite,
+} from './BoardingCharacterSprite.js';
 import {
   boardingAnimTick,
   boardingCellFromIsoPoint,
@@ -37,6 +42,8 @@ export class BoardingMapView implements BoardingMapPort {
   #selectedId: string | null = null;
   #destination: BoardingCell | null = null;
   #path: readonly BoardingPathMark[] = [];
+  #sight: readonly BoardingCell[] = [];
+  #fire: readonly BoardingCell[] = [];
   #motion: {
     from: BoardingBattleState;
     to: BoardingBattleState;
@@ -122,12 +129,16 @@ export class BoardingMapView implements BoardingMapPort {
     selectedId: string | null,
     destination: BoardingCell | null,
     path: readonly BoardingPathMark[],
+    sight: readonly BoardingCell[] = [],
+    fire: readonly BoardingCell[] = [],
   ): void {
     const changed = this.#state?.id !== state.id;
     this.#state = state;
     this.#selectedId = selectedId;
     this.#destination = destination;
     this.#path = path;
+    this.#sight = sight;
+    this.#fire = fire;
     if (changed || this.#fitPending) this.fit();
     if (this.#ready) void this.#p5.redraw();
   }
@@ -281,10 +292,28 @@ export class BoardingMapView implements BoardingMapPort {
         if (!this.#pointers.has(event.pointerId)) return;
         if (!this.#dragged && !this.#motion) {
           const position = point(event);
-          const cell = boardingCellFromIsoPoint({
+          const iso = {
             x: (position.x - this.#offset.x) / this.#scale,
             y: (position.y - this.#offset.y) / this.#scale,
-          });
+          };
+          const sprite = boardingCharacterAtPoint(
+            (this.#state?.people ?? [])
+              .filter(
+                (person) =>
+                  person.status !== 'dead' && person.status !== 'evacuated',
+              )
+              .map((person) => ({
+                id: person.id,
+                side: person.side,
+                floorCenter: boardingIsoCenter(person.position),
+                crouched: person.crouched,
+              })),
+            iso,
+          );
+          const cell = sprite
+            ? this.#state!.people.find((person) => person.id === sprite.id)!
+                .position
+            : boardingCellFromIsoPoint(iso);
           if (this.map.contains(cell)) select(cell);
         }
         this.#pointers.delete(event.pointerId);
@@ -597,6 +626,8 @@ export class BoardingMapView implements BoardingMapPort {
         .filter((mark) => mark.kind === 'reach')
         .map((mark) => key(mark.position)),
     );
+    const sightEdges = new Set(this.#sight.map(key));
+    const fireEdges = new Set(this.#fire.map(key));
     for (let r = 0; r < this.map.height; r++) {
       for (let q = 0; q < this.map.width; q++) {
         const position = { q, r };
@@ -623,6 +654,17 @@ export class BoardingMapView implements BoardingMapPort {
           this.#tile(sketch, position);
         } else if (reach.has(key(position))) {
           sketch.fill(240, 179, 90, 115);
+          this.#tile(sketch, position);
+        }
+        if (fireEdges.has(key(position))) {
+          sketch.noFill();
+          sketch.stroke('#ef6461');
+          sketch.strokeWeight(2.5);
+          this.#tile(sketch, position);
+        } else if (sightEdges.has(key(position))) {
+          sketch.noFill();
+          sketch.stroke('#5ac8fa');
+          sketch.strokeWeight(2);
           this.#tile(sketch, position);
         }
         if (this.#destination && key(this.#destination) === key(position)) {
@@ -753,15 +795,15 @@ export class BoardingMapView implements BoardingMapPort {
         x: fromCenter.x + (toCenter.x - fromCenter.x) * progress,
         y: fromCenter.y + (toCenter.y - fromCenter.y) * progress,
       };
-      const bodyY = center.y - (person.crouched ? 7 : 11);
+      const bodyY = center.y + BOARDING_FOOT_PLANT - (person.crouched ? 9 : 13);
       sketch.noStroke();
       sketch.fill(0, 0, 0, 95);
-      sketch.ellipse(center.x, center.y + 2, 25, 9);
+      sketch.ellipse(center.x, center.y + BOARDING_FOOT_PLANT, 25, 9);
       if (person.id === state.currentActorId && person.status === 'active') {
         sketch.noFill();
         sketch.stroke('#f4cf5a');
         sketch.strokeWeight(2.5);
-        sketch.ellipse(center.x, center.y + 1, 32, 13);
+        sketch.ellipse(center.x, center.y + BOARDING_FOOT_PLANT - 1, 32, 13);
       }
       if (this.#factionSprites) {
         const sprite = boardingCharacterSprite(
@@ -795,11 +837,21 @@ export class BoardingMapView implements BoardingMapPort {
         );
         sketch.circle(center.x, bodyY, person.crouched ? 17 : 21);
       }
-      sketch.fill('#111827');
+      sketch.noStroke();
       const healthY = this.#factionSprites
         ? boardingCharacterSprite(person.side, center, person.crouched)
             .destination.y - 6
         : bodyY - 18;
+      const showAp = person.side === 'player' && person.status === 'active';
+      if (showAp) {
+        const maxAp = Math.max(1, person.agility + person.equipmentApModifier);
+        const remaining = boardingActionPointsRemaining(state, person.id);
+        sketch.fill('#111827');
+        sketch.rect(center.x - 15, healthY - 7, 30, 5, 2);
+        sketch.fill('#f4cf5a');
+        sketch.rect(center.x - 14, healthY - 6, (28 * remaining) / maxAp, 3, 1);
+      }
+      sketch.fill('#111827');
       sketch.rect(center.x - 15, healthY, 30, 5, 2);
       sketch.fill(
         person.side === 'player'

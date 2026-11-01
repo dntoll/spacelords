@@ -26,7 +26,7 @@ test('fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordnings
     /^Boarder \d/,
   );
   await expect(dialog.getByLabel('Map legend')).toContainText(
-    /Half cover.*Facing/,
+    /Half cover.*Facing.*Sight.*Fire/,
   );
   const turnLeft = dialog.getByRole('button', {
     name: 'Turn left 90°',

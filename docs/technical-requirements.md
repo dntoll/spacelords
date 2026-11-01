@@ -158,7 +158,10 @@ presentation: modellen samlar synliga rutor efter varje vändning och steg för
 spelaren och för synliga försvarare och civilister, och vyn animerar mellan
 dem. Vyn köar en ny presentation medan en animation pågår så att AI-steg inte
 avbryter den. En ny fiende i sidans sikt avbryter resterande steg i samma
-kommando. Synfältet är 180 grader (cosinus 0 mot siktlinjen). Skottanimation
+kommando. Synfältet är 180 grader (cosinus 0 mot siktlinjen). Personer
+blockerar inte sikt men blockerar skottlinjer; overwatch avfyras bara när
+skottet är fritt. Sikt- och eldrutor för den aktiva spelarsoldaten beräknas i
+modellen och ritas som kanter i vyn. Skottanimation
 är presentation separat från snapshot. Andra klicket på vald destination
 skickar `move`; andra klicket på en angränsande vald dörr skickar `door` eller
 `hack`.

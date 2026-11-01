@@ -36,9 +36,11 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   overwatchskott visas som en kort projektil från skytt till mål. Spåret
   försvinner när det når målet, innan skadan syns.
 - `valbar-bordningssoldat` — **Fullständigt implementerat**. Under spelarens
-  tur kan en annan egen aktiv soldat som inte är färdig väljas med klick. Den
-  förra soldaten sparar sin kvarvarande AP och återupptas när den valda är
-  klar, så att någon som står i vägen kan flyttas undan.
+  tur kan en annan egen aktiv soldat som inte är färdig väljas med klick på
+  figuren eller golvrutan. Ett klick på spriten väljer soldaten även när
+  kroppen täcker rutan bakom. Den förra soldaten sparar sin kvarvarande AP och
+  återupptas när den valda är klar, så att någon som står i vägen kan flyttas
+  undan.
 - `klickskott-pa-vald-fiende` — **Fullständigt implementerat**. Första klicket
   på en fiende väljer målet. Ett andra klick på samma valda fiende avfyrar
   geväret om skottet är lagligt.
@@ -50,11 +52,11 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   öppna eller stänga den, eller hacka den om den är låst.
 - `tydlig-bordningsstatus` — **Fullständigt implementerat**. Den aktiva soldaten
   namnges uttryckligen och markeras på kartan. Varje bordningssoldat visas med
-  en egen HP-bar och numeriskt HP-värde. Kartans förklaring identifierar aktiv
-  soldat, riktning och
-  `Half cover`, som har en egen färg. Under en dold försvarares tur visar
-  `Combat details` att försvararen agerar och loggar handlingens typ utan att
-  avslöja positionen. Den öppna stridsloggen följer senaste raden.
+  en egen HP-bar och numeriskt HP-värde i HUD. Kartans förklaring identifierar
+  aktiv soldat, riktning, sikt, eld och `Half cover`, som har en egen färg.
+  Under en dold försvarares tur visar `Combat details` att försvararen agerar
+  och loggar handlingens typ utan att avslöja positionen. Den öppna
+  stridsloggen följer senaste raden.
 - `isometrisk-bordningsvy` — **Fullständigt implementerat**. Den regelstyrda
   kvadratkartan visas med klassiska 2:1-diamantrutor och upphöjda barriärer,
   skydd och spelpjäser. Väggar och ytterskrov fyller hela sina rutor och har
@@ -70,19 +72,30 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
 - `bordningsfigurer-fran-spritesheet` — **Fullständigt implementerat**. Spelarens
   soldater, försvarare och civilister visas med var sitt utklipp ur det gemensamma
   fraktionsarket. Varje utklipp innehåller bara den avsedda figuren och
-  förankras med fötterna på rutans centrum. Riktningspilen, HP, aktiv markering
-  och statusmarkeringar behålls. Samma stillbild används i alla riktningar tills
-  separata riktningar och animationer införs.
+  förankras med fötterna lite under rutans centrum så att figurerna står närmare
+  golvet. Riktningspilen, HP, aktiv markering och statusmarkeringar behålls.
+  Samma stillbild används i alla riktningar tills separata riktningar och
+  animationer införs.
+- `hp-och-ap-ovanfor-soldater` — **Fullständigt implementerat**. Ovanför varje
+  egen soldat visas HP och kvarvarande AP som två korta staplar. Försvarare och
+  civilister visar bara HP.
+- `personer-blockerar-inte-sikt` — **Fullständigt implementerat**. En person,
+  civil eller stridande, blockerar inte siktlinjen. Samma person blockerar
+  skott mot rutor bakom. Väggar, skrov, stängda dörrar och rök blockerar
+  fortfarande både sikt och skott.
+- `sikt-och-eld-fran-vald-soldat` — **Fullständigt implementerat**. Under
+  spelarens tur visar kartan den aktiva soldatens synliga rutor med cyan kant
+  och de rutor ett gevärsskott kan nå med röd kant.
 - `spelmassigt-bordningsgranssnitt` — **Fullständigt implementerat**. Kartan
   upptar huvuddelen av skärmen. Truppstatus, handlingar, zoom,
   kartförklaring och stridslogg ligger som kompakta HUD-lager ovanpå kartan.
   Handlingar använder små symbolknappar med fullständiga namn för
   tillgänglighet och framtida utbyte mot bildsymboler.
 - `sikt-minne-och-ljudmarkorer` — **Fullständigt implementerat**. Soldater ser 180 grader.
-  Sidorna delar aktuell sikt och senast kända fiendeposition. Skeppets yttre
-  form är känd, interiören utforskas och aktuell sikt skiljs tydligt från
-  kartminne. Våld visar sin exakta ruta som ljudmarkör för motståndarsidan till
-  rundans slut.
+  Sidorna delar aktuell sikt och senast kända fiendeposition. Personer blockerar
+  inte den delade sikten. Skeppets yttre form är känd, interiören utforskas och
+  aktuell sikt skiljs tydligt från kartminne. Våld visar sin exakta ruta som
+  ljudmarkör för motståndarsidan till rundans slut.
 - `d20-bordningsstrid` — **Fullständigt implementerat**. Skott använder öppet D20 plus
   Accuracy mot försvar, men visar även träffchans i procent. Naturlig 1 missar
   och naturlig 20 dubblar vapnets skadetärningar.

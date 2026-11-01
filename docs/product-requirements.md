@@ -145,20 +145,22 @@ Kända golvrutor ska visas med en isometrisk golvbild. Väggar ska se ut som
 sammanhängande skeppsväggar utan prickmarkering, och `Half cover` ska vara
 tydligt lägre än en vägg.
 Soldater, försvarare och civilister ska visas med skilda figurer från spelets
-fraktionsark, stå med fötterna på sin ruta och visas utan delar av angränsande
-figurer. En separat riktningspil behålls. En stillbild per grupp används i denna
-första version.
+fraktionsark, stå med fötterna nära golvet på sin ruta och visas utan delar av
+angränsande figurer. En separat riktningspil behålls. En stillbild per grupp
+används i denna första version. Ovanför egna soldater syns både HP och AP.
 Kartan ska visas isometriskt och uppta huvuddelen av ett spelmässigt gränssnitt
 med kompakta handlingsknappar. Varje bordningssoldat ska ha en egen
 hälsomätare. En vald väg ska visa hur långt soldaten når med kvarvarande AP
-och vilka rutor som fortfarande lämnar AP till ett skott. När soldaten går ska
-varje steg och vändning animeras så att sikt uppdateras längs vägen. Synliga
-försvarare och civilister animeras på samma sätt. Om en ny fiende upptäcks
-avbryts resten av förflyttningen. Skott animeras. Spelaren kan klicka fram en
-annan egen soldat för att flytta undan någon som står i vägen, klicka igen på
-en redan vald fiende för att skjuta, klicka igen på en vald destination för
-att gå dit, och klicka igen på en angränsande vald dörr för att öppna, stänga
-eller hacka den. Soldater ser 180 grader framåt.
+och vilka rutor som fortfarande lämnar AP till ett skott. Den aktiva soldatens
+synliga rutor och de rutor ett skott kan nå ska markeras med två olika
+kantfärger. När soldaten går ska varje steg och vändning animeras så att sikt
+uppdateras längs vägen. Synliga försvarare och civilister animeras på samma
+sätt. Om en ny fiende upptäcks avbryts resten av förflyttningen. Skott
+animeras. Spelaren kan klicka på en annan egen soldat för att flytta undan
+någon som står i vägen, klicka igen på en redan vald fiende för att skjuta,
+klicka igen på en vald destination för att gå dit, och klicka igen på en
+angränsande vald dörr för att öppna, stänga eller hacka den. Soldater ser 180
+grader framåt. En person blockerar inte sikt men kan stå i vägen för skott.
 
 Prototypen påverkar inga sparade spel och ger ännu inga skepp,
 besättningsmedlemmar, forskningsresultat eller kartupplysningar till kampanjen.

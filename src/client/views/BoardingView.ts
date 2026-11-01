@@ -30,6 +30,8 @@ export interface BoardingMapPort {
     selectedId: string | null,
     destination: BoardingCell | null,
     path: readonly BoardingPathMark[],
+    sight?: readonly BoardingCell[],
+    fire?: readonly BoardingCell[],
   ): void;
   playMotion?(
     from: BoardingBattleState,
@@ -88,6 +90,8 @@ export class BoardingView {
       element('span', 'boarding-legend-selected', '○ Selected soldier'),
       element('span', 'boarding-legend-cover', '▰ Half cover'),
       element('span', 'boarding-legend-facing', '— Facing'),
+      element('span', 'boarding-legend-sight', '◇ Sight'),
+      element('span', 'boarding-legend-shot', '◇ Fire'),
       element('span', 'boarding-legend-fire', '▣ Fire after move'),
       element('span', 'boarding-legend-reach', '▣ Move only'),
     );
@@ -503,7 +507,20 @@ export class BoardingView {
     );
     if (this.#details.open)
       this.#details.scrollTop = this.#details.scrollHeight;
-    this.#map?.render(state, this.#selectedId, this.#destination, path);
+    const overlayActor =
+      playerTurn && actor?.status === 'active' ? actor : null;
+    const sight = overlayActor ? this.#battle().sightFrom(overlayActor.id) : [];
+    const fireTiles = overlayActor
+      ? this.#battle().fireFrom(overlayActor.id)
+      : [];
+    this.#map?.render(
+      state,
+      this.#selectedId,
+      this.#destination,
+      path,
+      sight,
+      fireTiles,
+    );
   }
 
   dispose(): void {
