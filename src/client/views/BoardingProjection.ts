@@ -3,8 +3,10 @@ import type {
   BoardingFeatureKind,
 } from '../models/BoardingMap.js';
 
-const TILE_WIDTH = 64;
-const TILE_HEIGHT = 32;
+export const BOARDING_TILE_WIDTH = 64;
+export const BOARDING_TILE_HEIGHT = 32;
+const TILE_WIDTH = BOARDING_TILE_WIDTH;
+const TILE_HEIGHT = BOARDING_TILE_HEIGHT;
 const HALF_WIDTH = TILE_WIDTH / 2;
 const HALF_HEIGHT = TILE_HEIGHT / 2;
 const PADDING = 18;

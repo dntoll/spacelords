@@ -134,14 +134,15 @@ Se [hela visionen](docs/game-vision.md).
   `isometrisk-bordningsvy`, `spelmassigt-bordningsgranssnitt`,
   `ap-fargad-bordningsvag`, `animerad-bordningsforflyttning`,
   `avbrott-vid-ny-fiende`, `animerat-bordningsskott`,
-  `valbar-bordningssoldat` samt `klickskott-pa-vald-fiende` är
+  `valbar-bordningssoldat`, `klickskott-pa-vald-fiende` samt
+  `isometriska-golvtiles` är
   **Fullständigt implementerat**. Den första versionen är ett separat testspel
   från huvudmenyn på en handredigerbar transportkarta och påverkar inte
   kampanj eller sparplatser. Kartan använder klassiska kvadratiska
   2:1-diamantrutor där väggar och ytterskrov fyller hela rutan, fyra riktningar
   och 90-gradersvändningar; detta ersätter uttryckligen den tidigare hexkartan.
   En vald väg färgas efter kvarvarande AP och förflyttning animeras stegvis med
-  uppdaterad sikt. Se
+  uppdaterad sikt. Kända golvrutor använder en genomskinlig 2:1-sprite. Se
   [bordningsstrid](docs/boarding-combat.md).
 
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,

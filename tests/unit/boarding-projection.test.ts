@@ -1,5 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+  BOARDING_TILE_HEIGHT,
+  BOARDING_TILE_WIDTH,
   boardingCellFromIsoPoint,
   boardingFeatureFootprint,
   boardingIsoCamera,
@@ -7,6 +12,13 @@ import {
   boardingIsoCorners,
   boardingIsoCellPoint,
 } from '../../src/client/views/BoardingProjection.js';
+
+const floorTile = readFileSync(
+  join(
+    dirname(fileURLToPath(import.meta.url)),
+    '../../src/client/assets/boarding/floor-tile.png',
+  ),
+);
 
 describe('isometrisk-bordningsvy', () => {
   it('uses classic 2:1 diamond tiles and maps a screen point back to its square cell', () => {
@@ -27,6 +39,8 @@ describe('isometrisk-bordningsvy', () => {
       Math.max(...corners.map((point) => point.y)) -
       Math.min(...corners.map((point) => point.y));
     expect(width / height).toBe(2);
+    expect(width).toBe(BOARDING_TILE_WIDTH);
+    expect(height).toBe(BOARDING_TILE_HEIGHT);
     expect(boardingFeatureFootprint('wall')).toEqual({
       width: width / 2,
       depth: height / 2,
@@ -51,5 +65,15 @@ describe('isometrisk-bordningsvy', () => {
         y: (screen.y - camera.offset.y) / camera.scale,
       }),
     ).toEqual(at);
+  });
+});
+
+describe('isometriska-golvtiles', () => {
+  it('uses a 2:1 floor sprite with a transparent diamond outside', () => {
+    expect([...floorTile.subarray(0, 8)]).toEqual([
+      137, 80, 78, 71, 13, 10, 26, 10,
+    ]);
+    expect(floorTile.readUInt32BE(16) / floorTile.readUInt32BE(20)).toBe(2);
+    expect(floorTile[25]).toBe(6);
   });
 });

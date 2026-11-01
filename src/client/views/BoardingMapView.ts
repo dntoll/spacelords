@@ -6,7 +6,10 @@ import {
 } from '../models/BoardingBattle.js';
 import type { BoardingPathMark } from '../models/BoardingPathPreview.js';
 import type { BoardingMapPort } from './BoardingView.js';
+import floorTileUrl from '../assets/boarding/floor-tile.png';
 import {
+  BOARDING_TILE_HEIGHT,
+  BOARDING_TILE_WIDTH,
   boardingCellFromIsoPoint,
   boardingFeatureFootprint,
   boardingIsoCamera,
@@ -41,6 +44,7 @@ export class BoardingMapView implements BoardingMapPort {
   } | null = null;
   #scale = 1;
   #offset: Point = { x: 0, y: 0 };
+  #floorTile: p5.Image | null = null;
   #ready = false;
   #disposed = false;
   #fitPending = true;
@@ -68,6 +72,10 @@ export class BoardingMapView implements BoardingMapPort {
           'aria-label',
           'Isometric boarding map. Tap a tile to choose a destination or target. Drag to pan, pinch or scroll to zoom.',
         );
+        void sketch.loadImage(floorTileUrl).then((image) => {
+          this.#floorTile = image;
+          if (!this.#disposed && this.#ready) void this.#p5.redraw();
+        });
         this.#bind(canvas, select);
         this.#ready = true;
         this.fit();
@@ -395,13 +403,33 @@ export class BoardingMapView implements BoardingMapPort {
         const current = visible.has(key(position));
         const remembered = explored.has(key(position));
         const knownHull = terrain === 'hull';
-        sketch.stroke('#3c4b65');
-        sketch.strokeWeight(1.2);
-        if (current) sketch.fill('#24334a');
-        else if (remembered) sketch.fill('#141d2c');
-        else if (knownHull) sketch.fill('#343d4c');
-        else sketch.fill('#080c15');
-        this.#tile(sketch, position);
+        const paintedFloor =
+          terrain === 'floor' &&
+          (current || remembered) &&
+          !!this.#floorTile &&
+          this.#floorTile.width > 1;
+        if (paintedFloor) {
+          sketch.push();
+          sketch.imageMode(sketch.CENTER);
+          if (current) sketch.tint(255);
+          else sketch.tint(70, 82, 102, 230);
+          sketch.image(
+            this.#floorTile!,
+            center.x,
+            center.y,
+            BOARDING_TILE_WIDTH,
+            BOARDING_TILE_HEIGHT,
+          );
+          sketch.pop();
+        } else {
+          sketch.stroke('#3c4b65');
+          sketch.strokeWeight(1.2);
+          if (current) sketch.fill('#24334a');
+          else if (remembered) sketch.fill('#141d2c');
+          else if (knownHull) sketch.fill('#343d4c');
+          else sketch.fill('#080c15');
+          this.#tile(sketch, position);
+        }
         if (fire.has(key(position))) {
           sketch.fill(98, 212, 138, 115);
           this.#tile(sketch, position);

@@ -91,7 +91,8 @@ presentation: modellen samlar synliga rutor efter varje vändning och steg, och
 vyn animerar mellan dem. En ny fiende i sidans sikt avbryter resterande
 steg i samma kommando. Skottanimation är presentation separat från snapshot.
 Byte av egen soldat sker med kommandot `select` och sparar kvarvarande AP. P5-kartan använder
-instance mode och innehåller ingen domänmutation. Sessionen får inte anropa
+instance mode och innehåller ingen domänmutation. En genomskinlig 2:1-golvsprite
+ritas bara i vyn. Sessionen får inte anropa
 SaveRepository eller ändra `TacticalBattle`, `TurnSimulation` eller sparformat.
 
 Snabba kravnamngivna tester skyddar parser, AP, initiativ, sikt, strid,

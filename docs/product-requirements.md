@@ -61,6 +61,7 @@ försvararna eller hålla både `Bridge` och `Engineering`. Reaktorn och dörrar
 beskjutas.
 Aktiv soldat, hälsa, riktning, `Half cover` och pågående försvararhandlingar
 ska framgå tydligt utan att dolda positioner avslöjas.
+Kända golvrutor ska visas med en isometrisk golvbild.
 Kartan ska visas isometriskt och uppta huvuddelen av ett spelmässigt gränssnitt
 med kompakta handlingsknappar. Varje bordningssoldat ska ha en egen
 hälsomätare. En vald väg ska visa hur långt soldaten når med kvarvarande AP
