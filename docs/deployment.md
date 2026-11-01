@@ -855,3 +855,33 @@ inte automatiskt version 3-sparningar till det äldre formatet.
 - Rapport: `dist/deployments/59aeb1480dec-1793534304068/report.json`.
   Manuell mobiltest följer. Fullständigt sluttest och merge inväntar separat
   beställning respektive godkännande.
+
+## Utzoomning till hela stridskartan: 2026-11-01
+
+- Publicerad källrevision: `d51e949223cf1affaecff1e4e719180118f62e27`
+  från `codex/selected-fleet-arrow`. Minsta zoom visar hela spelplanen och
+  fyller skärmen i minst en riktning. Överbliven rymd centreras i den andra.
+  Detta ersätter kravet att fylla både bredd och höjd. Stående mobil kan
+  visa hela bredden utan att tillåta utzoomning till rymd på alla fyra sidor.
+- Skeppskontrollerna undviker andra synliga skrovs tryckytor där plats finns.
+  Regressionstester reproducerade den tidigare zoomgränsen och att Forward
+  täckte ett mål vid maximal utzoomning före rättningarna. Mobiltester
+  verifierar hela kartan, zoomgräns, skärmrotation och avfyrning i samma läge.
+  Skärmbilder granskades. Sparformat och befintliga strider bevaras.
+- Deploycommit: `f1959c5f59c7e3a9e75623f14fda8a422c2891a4`.
+  Webbplatsrepots tidigare revision: `c4c75dcfa6548f403ba77da61d6dd90a9e80d9ab`.
+  Endast `spacelords/` ändrades. Källrepots `main` är oförändrad.
+- `deploy:quick` avslutades med `verified`. Formatering, ESLint, typkontroll,
+  Pages-bygge, verktygskontroller och Pages-integration passerade.
+  830 snabbtester tog 13,90 sekunder. Alla 30 mobiltester passerade både
+  lokalt och mot liveadressen i Chromium och WebKit.
+- HTTPS och processlokal Git-konfiguration användes enligt föregående
+  leveransantecknings granskning av p5:s strängblanksteg. Bygget bevarades
+  exakt; strikt blankstegskontroll utanför genererade JavaScript-filer passerade.
+  Inga bestående Git-inställningar ändrades och publiceringsskydden behölls.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/41312844793)
+  lyckades. Livefilerna matchade kontrollsummorna, innehållstyper och
+  omdirigering verifierades och befintliga webbplatsadresser var oförändrade.
+- Rapport: `dist/deployments/d51e949223cf-1793540553282/report.json`.
+  Manuell mobiltest följer. Fullständigt sluttest och merge inväntar separat
+  beställning respektive godkännande.
