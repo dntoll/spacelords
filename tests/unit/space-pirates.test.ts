@@ -291,7 +291,7 @@ describe('flottstrid-per-hex / handelsnatverk', () => {
     expect(replacement.fleet('replacement')!.ships['Transport ship']).toBe(1);
   });
   it('gemensamt-stridsdeltagande: fights together before merging reinforcements at their meeting hex', () => {
-    const state = battle(1, 3).exportState();
+    const state = battle(3, 1).exportState();
     const fleet = state.fleets[0]!;
     const game = Game.restore({
       ...state,
