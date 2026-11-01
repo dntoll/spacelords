@@ -5,6 +5,10 @@ import type {
 
 export const BOARDING_TILE_WIDTH = 64;
 export const BOARDING_TILE_HEIGHT = 32;
+export const BOARDING_WALL_HEIGHT = 18;
+export const BOARDING_COVER_HEIGHT = BOARDING_WALL_HEIGHT / 2;
+export const BOARDING_DOOR_HEIGHT = 13;
+export const BOARDING_WALL_SLICES = 8;
 const TILE_WIDTH = BOARDING_TILE_WIDTH;
 const TILE_HEIGHT = BOARDING_TILE_HEIGHT;
 const HALF_WIDTH = TILE_WIDTH / 2;
@@ -32,6 +36,76 @@ export function boardingFeatureFootprint(
   return { width: 0, depth: 0 };
 }
 
+export function boardingFeatureHeight(kind: BoardingFeatureKind): number {
+  if (kind === 'cover') return BOARDING_COVER_HEIGHT;
+  if (kind === 'door') return BOARDING_DOOR_HEIGHT;
+  if (kind === 'wall' || kind === 'hull') return BOARDING_WALL_HEIGHT;
+  return 0;
+}
+
+export function boardingFeatureGlyph(feature: {
+  readonly kind: BoardingFeatureKind;
+  readonly destroyed?: boolean;
+  readonly open?: boolean;
+  readonly locked?: boolean;
+  readonly exit?: string | null;
+}): string | null {
+  if (feature.kind === 'wall' || feature.kind === 'hull') return null;
+  if (feature.kind === 'door') {
+    if (feature.destroyed) return '×';
+    if (feature.open) return '╱';
+    if (feature.locked) return '▣';
+    return '▮';
+  }
+  if (feature.kind === 'reactor') return 'R';
+  if (feature.kind === 'cover') return '▰';
+  if (feature.kind === 'exit') return feature.exit === 'breach' ? 'B' : 'E';
+  return null;
+}
+
+export function boardingWallKey(position: BoardingCell): string {
+  return `${position.q},${position.r}`;
+}
+
+export function boardingWallRun(
+  walls: ReadonlySet<string>,
+  position: BoardingCell,
+  axis: 'q' | 'r',
+): Readonly<{ index: number; length: number }> {
+  const stepQ = axis === 'q' ? 1 : 0;
+  const stepR = axis === 'r' ? 1 : 0;
+  let startQ = position.q;
+  let startR = position.r;
+  while (walls.has(boardingWallKey({ q: startQ - stepQ, r: startR - stepR }))) {
+    startQ -= stepQ;
+    startR -= stepR;
+  }
+  let length = 0;
+  let q = startQ;
+  let r = startR;
+  while (walls.has(boardingWallKey({ q, r }))) {
+    length += 1;
+    q += stepQ;
+    r += stepR;
+  }
+  return Object.freeze({
+    index: axis === 'q' ? position.q - startQ : position.r - startR,
+    length: Math.max(1, length),
+  });
+}
+
+export function boardingWallSlice(
+  textureWidth: number,
+  index: number,
+): Readonly<{ x: number; width: number }> {
+  const width = Math.max(1, Math.floor(textureWidth / BOARDING_WALL_SLICES));
+  const count = Math.max(1, Math.floor(textureWidth / width));
+  return Object.freeze({
+    x: (((index % count) + count) % count) * width,
+    width,
+  });
+}
+
 export function boardingIsoCenter(position: BoardingCell): BoardingPoint {
   return {
     x: (position.q - position.r) * HALF_WIDTH,
@@ -51,6 +125,23 @@ export function boardingIsoCorners(
   ]);
 }
 
+export function boardingQuadTextureTransform(
+  textureWidth: number,
+  textureHeight: number,
+  origin: BoardingPoint,
+  alongU: BoardingPoint,
+  alongV: BoardingPoint,
+): readonly [number, number, number, number, number, number] {
+  return Object.freeze([
+    (alongU.x - origin.x) / textureWidth,
+    (alongU.y - origin.y) / textureWidth,
+    (alongV.x - origin.x) / textureHeight,
+    (alongV.y - origin.y) / textureHeight,
+    origin.x,
+    origin.y,
+  ]);
+}
+
 /** Maps a square surface texture onto the cell's exact 2:1 diamond. */
 export function boardingIsoTextureTransform(
   textureWidth: number,
@@ -58,17 +149,49 @@ export function boardingIsoTextureTransform(
   position: BoardingCell,
 ): readonly [number, number, number, number, number, number] {
   const corners = boardingIsoCorners(position);
-  const north = corners[0]!;
-  const east = corners[1]!;
-  const west = corners[3]!;
-  return Object.freeze([
-    (east.x - north.x) / textureWidth,
-    (east.y - north.y) / textureWidth,
-    (west.x - north.x) / textureHeight,
-    (west.y - north.y) / textureHeight,
-    north.x,
-    north.y,
-  ]);
+  return boardingQuadTextureTransform(
+    textureWidth,
+    textureHeight,
+    corners[0]!,
+    corners[1]!,
+    corners[3]!,
+  );
+}
+
+export function boardingIsoBlockFaces(
+  center: BoardingPoint,
+  width: number,
+  depth: number,
+  height: number,
+): Readonly<{
+  top: readonly [BoardingPoint, BoardingPoint, BoardingPoint, BoardingPoint];
+  southEast: readonly [
+    BoardingPoint,
+    BoardingPoint,
+    BoardingPoint,
+    BoardingPoint,
+  ];
+  southWest: readonly [
+    BoardingPoint,
+    BoardingPoint,
+    BoardingPoint,
+    BoardingPoint,
+  ];
+  apex: BoardingPoint;
+}> {
+  const topNorth = { x: center.x, y: center.y - height - depth };
+  const topEast = { x: center.x + width, y: center.y - height };
+  const topSouth = { x: center.x, y: center.y - height + depth };
+  const topWest = { x: center.x - width, y: center.y - height };
+  const baseEast = { x: center.x + width, y: center.y };
+  const baseSouth = { x: center.x, y: center.y + depth };
+  const baseWest = { x: center.x - width, y: center.y };
+  return {
+    top: [topNorth, topEast, topSouth, topWest],
+    southEast: [topEast, topSouth, baseSouth, baseEast],
+    southWest: [topSouth, topWest, baseWest, baseSouth],
+    apex: { x: center.x, y: center.y - height },
+  };
 }
 
 export function boardingCellFromIsoPoint(point: BoardingPoint): BoardingCell {

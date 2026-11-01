@@ -94,8 +94,10 @@ Byte av egen soldat sker med kommandot `select` och sparar kvarvarande AP. P5-ka
 instance mode och innehåller ingen domänmutation. Golvgrafik är kvadratiska
 yttexturer; vyn äger den klassiska 2:1-projektionen och lägger texturen affint
 på rutans exakta diamant. Genererad eller målad grafik ska därför vara
-ovanifrån-ytor, inte färdiga isometriska diamanter; väggar och props får
-rektangulära fasadtexturer på blockets synliga sidor. Sessionen får inte anropa
+ovanifrån-ytor, inte färdiga isometriska diamanter. Väggar använder en lång
+fasadtextur; vyn klipper ut en ruta i taget längs en sammanhängande q- eller
+r-sträcka och lägger utklippet affint på blockets synliga sidor. `Half cover`
+är visuellt hälften så hög som en vägg. Sessionen får inte anropa
 SaveRepository eller ändra `TacticalBattle`, `TurnSimulation` eller sparformat.
 
 Snabba kravnamngivna tester skyddar parser, AP, initiativ, sikt, strid,

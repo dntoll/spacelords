@@ -7,13 +7,20 @@ import {
 import type { BoardingPathMark } from '../models/BoardingPathPreview.js';
 import type { BoardingMapPort } from './BoardingView.js';
 import floorTileUrl from '../assets/boarding/floor-tile.png';
+import wallTileUrl from '../assets/boarding/wall-tile.png';
 import {
   boardingCellFromIsoPoint,
   boardingFeatureFootprint,
+  boardingFeatureGlyph,
+  boardingFeatureHeight,
+  boardingIsoBlockFaces,
   boardingIsoCamera,
   boardingIsoCenter,
   boardingIsoCorners,
   boardingIsoTextureTransform,
+  boardingQuadTextureTransform,
+  boardingWallRun,
+  boardingWallSlice,
   type BoardingPoint as Point,
 } from './BoardingProjection.js';
 
@@ -45,6 +52,8 @@ export class BoardingMapView implements BoardingMapPort {
   #offset: Point = { x: 0, y: 0 };
   #floorTile: p5.Image | null = null;
   #floorSource: CanvasImageSource | null = null;
+  #wallTile: p5.Image | null = null;
+  #wallSource: CanvasImageSource | null = null;
   #ready = false;
   #disposed = false;
   #fitPending = true;
@@ -75,6 +84,11 @@ export class BoardingMapView implements BoardingMapPort {
         void sketch.loadImage(floorTileUrl).then((image) => {
           this.#floorTile = image;
           this.#floorSource = null;
+          if (!this.#disposed && this.#ready) void this.#p5.redraw();
+        });
+        void sketch.loadImage(wallTileUrl).then((image) => {
+          this.#wallTile = image;
+          this.#wallSource = null;
           if (!this.#disposed && this.#ready) void this.#p5.redraw();
         });
         this.#bind(canvas, select);
@@ -300,7 +314,7 @@ export class BoardingMapView implements BoardingMapPort {
   #paintFloor(sketch: p5, position: BoardingCell, current: boolean): boolean {
     const tile = this.#floorTile;
     if (!tile || tile.width < 2 || tile.height < 2) return false;
-    const source = this.#floorImageSource(tile);
+    const source = this.#imageSource(tile, 'floor');
     if (!source) return false;
     const corners = boardingIsoCorners(position);
     const [a, b, c, d, e, f] = boardingIsoTextureTransform(
@@ -325,19 +339,74 @@ export class BoardingMapView implements BoardingMapPort {
     return true;
   }
 
-  #floorImageSource(tile: p5.Image): CanvasImageSource | null {
-    if (this.#floorSource) return this.#floorSource;
+  #tile(sketch: p5, position: BoardingCell, yOffset = 0): void {
+    sketch.beginShape();
+    for (const corner of boardingIsoCorners(position))
+      sketch.vertex(corner.x, corner.y - yOffset);
+    sketch.endShape(sketch.CLOSE);
+  }
+
+  #block(
+    sketch: p5,
+    center: Point,
+    width: number,
+    depth: number,
+    height: number,
+    top: string,
+  ): Point {
+    const faces = boardingIsoBlockFaces(center, width, depth, height);
+    sketch.noStroke();
+    sketch.fill('#263247');
+    sketch.quad(
+      faces.southEast[0].x,
+      faces.southEast[0].y,
+      faces.southEast[1].x,
+      faces.southEast[1].y,
+      faces.southEast[2].x,
+      faces.southEast[2].y,
+      faces.southEast[3].x,
+      faces.southEast[3].y,
+    );
+    sketch.fill('#1a2436');
+    sketch.quad(
+      faces.southWest[0].x,
+      faces.southWest[0].y,
+      faces.southWest[1].x,
+      faces.southWest[1].y,
+      faces.southWest[2].x,
+      faces.southWest[2].y,
+      faces.southWest[3].x,
+      faces.southWest[3].y,
+    );
+    sketch.fill(top);
+    sketch.quad(
+      faces.top[0].x,
+      faces.top[0].y,
+      faces.top[1].x,
+      faces.top[1].y,
+      faces.top[2].x,
+      faces.top[2].y,
+      faces.top[3].x,
+      faces.top[3].y,
+    );
+    return faces.apex;
+  }
+
+  #imageSource(
+    tile: p5.Image,
+    cache: 'floor' | 'wall',
+  ): CanvasImageSource | null {
+    const current = cache === 'floor' ? this.#floorSource : this.#wallSource;
+    if (current) return current;
     const image = tile as p5.Image & {
       canvas?: CanvasImageSource;
       elt?: CanvasImageSource;
     };
-    if (image.canvas) {
-      this.#floorSource = image.canvas;
-      return this.#floorSource;
-    }
-    if (image.elt) {
-      this.#floorSource = image.elt;
-      return this.#floorSource;
+    const found = image.canvas ?? image.elt ?? null;
+    if (found) {
+      if (cache === 'floor') this.#floorSource = found;
+      else this.#wallSource = found;
+      return found;
     }
     tile.loadPixels();
     if (tile.pixels.length < 4) return null;
@@ -355,67 +424,126 @@ export class BoardingMapView implements BoardingMapPort {
       0,
       0,
     );
-    this.#floorSource = canvas;
+    if (cache === 'floor') this.#floorSource = canvas;
+    else this.#wallSource = canvas;
     return canvas;
   }
 
-  #tile(sketch: p5, position: BoardingCell, yOffset = 0): void {
-    sketch.beginShape();
-    for (const corner of boardingIsoCorners(position))
-      sketch.vertex(corner.x, corner.y - yOffset);
-    sketch.endShape(sketch.CLOSE);
+  #paintTexturedQuad(
+    sketch: p5,
+    source: CanvasImageSource,
+    slice: { readonly x: number; readonly width: number },
+    textureHeight: number,
+    origin: Point,
+    alongU: Point,
+    alongV: Point,
+    clip: readonly Point[],
+    filter?: string,
+  ): void {
+    const first = clip[0];
+    if (!first) return;
+    const [a, b, c, d, e, f] = boardingQuadTextureTransform(
+      slice.width,
+      textureHeight,
+      origin,
+      alongU,
+      alongV,
+    );
+    const ctx = sketch.drawingContext as CanvasRenderingContext2D;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(first.x, first.y);
+    for (const corner of clip.slice(1)) ctx.lineTo(corner.x, corner.y);
+    ctx.closePath();
+    ctx.clip();
+    if (filter) ctx.filter = filter;
+    ctx.transform(a, b, c, d, e, f);
+    ctx.drawImage(
+      source,
+      slice.x,
+      0,
+      slice.width,
+      textureHeight,
+      0,
+      0,
+      slice.width,
+      textureHeight,
+    );
+    ctx.restore();
   }
 
-  #block(
+  #paintWall(
     sketch: p5,
-    center: Point,
-    width: number,
-    depth: number,
-    height: number,
-    top: string,
-  ): Point {
-    const topNorth = { x: center.x, y: center.y - height - depth };
-    const topEast = { x: center.x + width, y: center.y - height };
-    const topSouth = { x: center.x, y: center.y - height + depth };
-    const topWest = { x: center.x - width, y: center.y - height };
-    const baseEast = { x: center.x + width, y: center.y };
-    const baseSouth = { x: center.x, y: center.y + depth };
-    const baseWest = { x: center.x - width, y: center.y };
-    sketch.noStroke();
-    sketch.fill('#263247');
-    sketch.quad(
-      topEast.x,
-      topEast.y,
-      topSouth.x,
-      topSouth.y,
-      baseSouth.x,
-      baseSouth.y,
-      baseEast.x,
-      baseEast.y,
+    position: BoardingCell,
+    current: boolean,
+    selected: boolean,
+    walls: ReadonlySet<string>,
+  ): boolean {
+    const tile = this.#wallTile;
+    if (!tile || tile.width < 8 || tile.height < 2) return false;
+    const source = this.#imageSource(tile, 'wall');
+    if (!source) return false;
+    const footprint = boardingFeatureFootprint('wall');
+    const faces = boardingIsoBlockFaces(
+      boardingIsoCenter(position),
+      footprint.width,
+      footprint.depth,
+      boardingFeatureHeight('wall'),
     );
-    sketch.fill('#1a2436');
-    sketch.quad(
-      topSouth.x,
-      topSouth.y,
-      topWest.x,
-      topWest.y,
-      baseWest.x,
-      baseWest.y,
-      baseSouth.x,
-      baseSouth.y,
+    const alongQ = boardingWallRun(walls, position, 'q');
+    const alongR = boardingWallRun(walls, position, 'r');
+    const qSlice = boardingWallSlice(tile.width, alongQ.index);
+    const rSlice = boardingWallSlice(tile.width, alongR.index);
+    const topSlice = alongQ.length >= alongR.length ? qSlice : rSlice;
+    const remembered = current ? undefined : 'brightness(0.42) saturate(0.7)';
+    this.#paintTexturedQuad(
+      sketch,
+      source,
+      rSlice,
+      tile.height,
+      faces.southEast[0],
+      faces.southEast[1],
+      faces.southEast[3],
+      faces.southEast,
+      remembered ?? 'brightness(1.08)',
     );
-    sketch.fill(top);
-    sketch.quad(
-      topNorth.x,
-      topNorth.y,
-      topEast.x,
-      topEast.y,
-      topSouth.x,
-      topSouth.y,
-      topWest.x,
-      topWest.y,
+    this.#paintTexturedQuad(
+      sketch,
+      source,
+      qSlice,
+      tile.height,
+      faces.southWest[1],
+      faces.southWest[0],
+      faces.southWest[2],
+      faces.southWest,
+      remembered ?? 'brightness(0.72)',
     );
-    return { x: center.x, y: center.y - height };
+    this.#paintTexturedQuad(
+      sketch,
+      source,
+      topSlice,
+      tile.height,
+      faces.top[0],
+      alongQ.length >= alongR.length ? faces.top[1] : faces.top[3],
+      alongQ.length >= alongR.length ? faces.top[3] : faces.top[1],
+      faces.top,
+      remembered ?? 'brightness(1.18) saturate(0.85)',
+    );
+    if (selected) {
+      sketch.noStroke();
+      sketch.fill(244, 207, 90, 72);
+      sketch.quad(
+        faces.top[0].x,
+        faces.top[0].y,
+        faces.top[1].x,
+        faces.top[1].y,
+        faces.top[2].x,
+        faces.top[2].y,
+        faces.top[3].x,
+        faces.top[3].y,
+      );
+    }
+    return true;
   }
 
   #draw(sketch: p5): void {
@@ -501,6 +629,15 @@ export class BoardingMapView implements BoardingMapPort {
     }
     const known = (position: BoardingCell) =>
       visible.has(key(position)) || explored.has(key(position));
+    const walls = new Set(
+      state.features
+        .filter(
+          (feature) =>
+            (feature.kind === 'wall' || feature.kind === 'hull') &&
+            !feature.destroyed,
+        )
+        .map((feature) => key(feature.position)),
+    );
     for (const feature of [...state.features].sort(
       (a, b) =>
         boardingIsoCenter(a.position).y - boardingIsoCenter(b.position).y,
@@ -518,6 +655,18 @@ export class BoardingMapView implements BoardingMapPort {
           feature.kind === 'wall' ||
           (feature.kind === 'door' && !feature.open) ||
           feature.kind === 'cover');
+      if (
+        raised &&
+        (feature.kind === 'wall' || feature.kind === 'hull') &&
+        this.#paintWall(
+          sketch,
+          feature.position,
+          visible.has(key(feature.position)),
+          feature.id === this.#selectedId,
+          walls,
+        )
+      )
+        continue;
       const footprint = boardingFeatureFootprint(feature.kind);
       const center = raised
         ? this.#block(
@@ -525,7 +674,7 @@ export class BoardingMapView implements BoardingMapPort {
             floor,
             footprint.width,
             footprint.depth,
-            feature.kind === 'door' ? 13 : feature.kind === 'cover' ? 5 : 18,
+            boardingFeatureHeight(feature.kind),
             feature.kind === 'cover'
               ? '#9c7448'
               : feature.kind === 'door'
@@ -533,6 +682,8 @@ export class BoardingMapView implements BoardingMapPort {
                 : '#52657f',
           )
         : floor;
+      const glyph = boardingFeatureGlyph(feature);
+      if (!glyph) continue;
       sketch.textAlign(sketch.CENTER, sketch.CENTER);
       sketch.textSize(16);
       sketch.noStroke();
@@ -545,26 +696,6 @@ export class BoardingMapView implements BoardingMapPort {
               ? '#d5a86e'
               : '#dce7f7',
       );
-      const glyph =
-        feature.kind === 'door'
-          ? feature.destroyed
-            ? '×'
-            : feature.open
-              ? '╱'
-              : feature.locked
-                ? '▣'
-                : '▮'
-          : feature.kind === 'reactor'
-            ? 'R'
-            : feature.kind === 'cover'
-              ? '▰'
-              : feature.kind === 'exit'
-                ? feature.exit === 'breach'
-                  ? 'B'
-                  : 'E'
-                : feature.kind === 'wall'
-                  ? '■'
-                  : '⬢';
       sketch.text(glyph, center.x, center.y);
     }
     for (const marker of state.lastKnownEnemies) {

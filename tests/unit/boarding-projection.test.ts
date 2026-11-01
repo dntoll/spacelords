@@ -3,15 +3,23 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+  BOARDING_COVER_HEIGHT,
   BOARDING_TILE_HEIGHT,
   BOARDING_TILE_WIDTH,
+  BOARDING_WALL_HEIGHT,
+  BOARDING_WALL_SLICES,
   boardingCellFromIsoPoint,
   boardingFeatureFootprint,
+  boardingFeatureGlyph,
+  boardingFeatureHeight,
   boardingIsoCamera,
   boardingIsoCenter,
   boardingIsoCorners,
   boardingIsoCellPoint,
   boardingIsoTextureTransform,
+  boardingQuadTextureTransform,
+  boardingWallRun,
+  boardingWallSlice,
 } from '../../src/client/views/BoardingProjection.js';
 
 const floorTile = readFileSync(
@@ -50,6 +58,14 @@ describe('isometrisk-bordningsvy', () => {
       width: width / 2,
       depth: height / 2,
     });
+    expect(boardingFeatureHeight('cover')).toBe(BOARDING_WALL_HEIGHT / 2);
+    expect(BOARDING_COVER_HEIGHT).toBe(BOARDING_WALL_HEIGHT / 2);
+    expect(boardingFeatureGlyph({ kind: 'wall' })).toBeNull();
+    expect(boardingFeatureGlyph({ kind: 'hull' })).toBeNull();
+    expect(boardingFeatureGlyph({ kind: 'cover' })).toBe('▰');
+    expect(
+      boardingFeatureGlyph({ kind: 'door', open: false, locked: false }),
+    ).toBe('▮');
 
     const map = { width: 17, height: 11 };
     const view = { width: 390, height: 600 };
@@ -91,5 +107,67 @@ describe('isometriska-golvtiles', () => {
     expect(map(size, 0)).toEqual(east);
     expect(map(size, size)).toEqual(south);
     expect(map(0, size)).toEqual(west);
+  });
+});
+
+const wallTile = readFileSync(
+  join(
+    dirname(fileURLToPath(import.meta.url)),
+    '../../src/client/assets/boarding/wall-tile.png',
+  ),
+);
+
+describe('isometriska-vaggtexturer', () => {
+  it('clips consecutive tiles from a long wall facade onto each run', () => {
+    expect([...wallTile.subarray(0, 8)]).toEqual([
+      137, 80, 78, 71, 13, 10, 26, 10,
+    ]);
+    expect(wallTile.readUInt32BE(16)).toBeGreaterThan(
+      wallTile.readUInt32BE(20),
+    );
+    expect(wallTile[25]).toBe(6);
+
+    const walls = new Set(['2,3', '3,3', '4,3']);
+    expect(boardingWallRun(walls, { q: 2, r: 3 }, 'q')).toEqual({
+      index: 0,
+      length: 3,
+    });
+    expect(boardingWallRun(walls, { q: 3, r: 3 }, 'q')).toEqual({
+      index: 1,
+      length: 3,
+    });
+    expect(boardingWallRun(walls, { q: 4, r: 3 }, 'q')).toEqual({
+      index: 2,
+      length: 3,
+    });
+    expect(boardingWallRun(walls, { q: 3, r: 3 }, 'r')).toEqual({
+      index: 0,
+      length: 1,
+    });
+
+    const first = boardingWallSlice(800, 0);
+    const second = boardingWallSlice(800, 1);
+    const wrapped = boardingWallSlice(800, BOARDING_WALL_SLICES);
+    expect(first).toEqual({ x: 0, width: 800 / BOARDING_WALL_SLICES });
+    expect(second.x).toBe(first.x + first.width);
+    expect(wrapped).toEqual(first);
+
+    const origin = { x: 10, y: 20 };
+    const alongU = { x: 40, y: 30 };
+    const alongV = { x: 5, y: 50 };
+    const [a, b, c, d, e, f] = boardingQuadTextureTransform(
+      8,
+      4,
+      origin,
+      alongU,
+      alongV,
+    );
+    const map = (x: number, y: number) => ({
+      x: a * x + c * y + e,
+      y: b * x + d * y + f,
+    });
+    expect(map(0, 0)).toEqual(origin);
+    expect(map(8, 0)).toEqual(alongU);
+    expect(map(0, 4)).toEqual(alongV);
   });
 });

@@ -50,11 +50,16 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   avslöja positionen.
 - `isometrisk-bordningsvy` — **Fullständigt implementerat**. Den regelstyrda
   kvadratkartan visas med klassiska 2:1-diamantrutor och upphöjda barriärer,
-  skydd och spelpjäser. Väggar och ytterskrov fyller hela sina rutor.
+  skydd och spelpjäser. Väggar och ytterskrov fyller hela sina rutor och har
+  inga identitetsmarkörer. `Half cover` är hälften så hög som en vägg.
 - `isometriska-golvtiles` — **Fullständigt implementerat**. Synliga och minneslagda
   golvrutor ritas med en kvadratisk yttextur som vyn projicerar på rutans
   exakta 2:1-diamant. Okända rutor behåller den ifyllda diamanten.
   Kartreglerna ändras inte.
+- `isometriska-vaggtexturer` — **Fullständigt implementerat**. Väggar och
+  ytterskrov ritas med utklipp ur en lång fasadtextur. En sammanhängande
+  väggsträcka längs q eller r får på varandra följande utklipp så att sidan
+  läses som en enda vägg. Kartreglerna ändras inte.
 - `spelmassigt-bordningsgranssnitt` — **Fullständigt implementerat**. Kartan
   upptar huvuddelen av skärmen. Truppstatus, handlingar, zoom,
   kartförklaring och stridslogg ligger som kompakta HUD-lager ovanpå kartan.
