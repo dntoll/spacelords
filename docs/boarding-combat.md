@@ -60,6 +60,11 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   ytterskrov ritas med utklipp ur en lång fasadtextur. En sammanhängande
   väggsträcka längs q eller r får på varandra följande utklipp så att sidan
   läses som en enda vägg. Kartreglerna ändras inte.
+- `bordningsfigurer-fran-spritesheet` — **Fullständigt implementerat**. Spelarens
+  soldater, försvarare och civilister visas med var sitt utklipp ur det gemensamma
+  fraktionsarket. Riktningspilen, HP, aktiv markering och statusmarkeringar
+  behålls. Samma stillbild används i alla riktningar tills separata riktningar
+  och animationer införs.
 - `spelmassigt-bordningsgranssnitt` — **Fullständigt implementerat**. Kartan
   upptar huvuddelen av skärmen. Truppstatus, handlingar, zoom,
   kartförklaring och stridslogg ligger som kompakta HUD-lager ovanpå kartan.

@@ -144,6 +144,9 @@ ska framgå tydligt utan att dolda positioner avslöjas.
 Kända golvrutor ska visas med en isometrisk golvbild. Väggar ska se ut som
 sammanhängande skeppsväggar utan prickmarkering, och `Half cover` ska vara
 tydligt lägre än en vägg.
+Soldater, försvarare och civilister ska visas med skilda figurer från spelets
+fraktionsark, tillsammans med en separat riktningspil. En stillbild per grupp
+används i denna första version.
 Kartan ska visas isometriskt och uppta huvuddelen av ett spelmässigt gränssnitt
 med kompakta handlingsknappar. Varje bordningssoldat ska ha en egen
 hälsomätare. En vald väg ska visa hur långt soldaten når med kvarvarande AP

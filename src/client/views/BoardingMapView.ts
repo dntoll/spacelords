@@ -8,6 +8,7 @@ import type { BoardingPathMark } from '../models/BoardingPathPreview.js';
 import type { BoardingMapPort } from './BoardingView.js';
 import floorTileUrl from '../assets/boarding/floor-tile.png';
 import wallTileUrl from '../assets/boarding/wall-tile.png';
+import factionSpritesUrl from '../assets/boarding/faction-sprites.png';
 import {
   boardingCellFromIsoPoint,
   boardingFeatureFootprint,
@@ -25,6 +26,12 @@ import {
 } from './BoardingProjection.js';
 
 const key = (position: BoardingCell): string => `${position.q},${position.r}`;
+
+const personSprites = {
+  player: { x: 48, y: 0, width: 124, height: 108 },
+  defender: { x: 48, y: 410, width: 124, height: 110 },
+  civilian: { x: 48, y: 755, width: 124, height: 116 },
+} as const;
 
 export class BoardingMapView implements BoardingMapPort {
   readonly #p5: p5;
@@ -54,6 +61,7 @@ export class BoardingMapView implements BoardingMapPort {
   #floorSource: CanvasImageSource | null = null;
   #wallTile: p5.Image | null = null;
   #wallSource: CanvasImageSource | null = null;
+  #factionSprites: p5.Image | null = null;
   #ready = false;
   #disposed = false;
   #fitPending = true;
@@ -89,6 +97,10 @@ export class BoardingMapView implements BoardingMapPort {
         void sketch.loadImage(wallTileUrl).then((image) => {
           this.#wallTile = image;
           this.#wallSource = null;
+          if (!this.#disposed && this.#ready) void this.#p5.redraw();
+        });
+        void sketch.loadImage(factionSpritesUrl).then((image) => {
+          this.#factionSprites = image;
           if (!this.#disposed && this.#ready) void this.#p5.redraw();
         });
         this.#bind(canvas, select);
@@ -752,23 +764,37 @@ export class BoardingMapView implements BoardingMapPort {
         sketch.strokeWeight(2.5);
         sketch.ellipse(center.x, center.y + 1, 32, 13);
       }
-      sketch.noStroke();
-      sketch.fill(
-        person.status === 'dead'
-          ? '#333943'
-          : person.status === 'incapacitated'
-            ? '#805d67'
-            : person.id === this.#selectedId
-              ? '#f4cf5a'
-              : person.side === 'player'
-                ? '#5ac8fa'
-                : person.side === 'defender'
-                  ? '#ef6461'
-                  : '#8bd17c',
-      );
-      sketch.circle(center.x, bodyY, person.crouched ? 17 : 21);
+      if (this.#factionSprites) {
+        const sprite = personSprites[person.side];
+        sketch.push();
+        sketch.imageMode(sketch.CENTER);
+        if (person.status === 'dead') sketch.tint(100, 115);
+        else if (person.status === 'incapacitated') sketch.tint(190, 175);
+        sketch.image(
+          this.#factionSprites,
+          center.x,
+          center.y - (person.crouched ? 16 : 23),
+          person.crouched ? 41 : 47,
+          person.crouched ? 41 : 53,
+          sprite.x,
+          sprite.y,
+          sprite.width,
+          sprite.height,
+        );
+        sketch.pop();
+      } else {
+        sketch.noStroke();
+        sketch.fill(
+          person.side === 'player'
+            ? '#5ac8fa'
+            : person.side === 'defender'
+              ? '#ef6461'
+              : '#8bd17c',
+        );
+        sketch.circle(center.x, bodyY, person.crouched ? 17 : 21);
+      }
       sketch.fill('#111827');
-      sketch.rect(center.x - 15, bodyY - 18, 30, 5, 2);
+      sketch.rect(center.x - 15, center.y - 57, 30, 5, 2);
       sketch.fill(
         person.side === 'player'
           ? '#5ac8fa'
@@ -778,7 +804,7 @@ export class BoardingMapView implements BoardingMapPort {
       );
       sketch.rect(
         center.x - 14,
-        bodyY - 17,
+        center.y - 56,
         (28 * person.hitPoints) / person.maxHitPoints,
         3,
         1,
@@ -795,6 +821,14 @@ export class BoardingMapView implements BoardingMapPort {
       const dy =
         fromFacing.y + (toFacing.y - fromFacing.y) * progress - originIso.y;
       const length = Math.max(1, Math.hypot(dx, dy));
+      sketch.stroke('#111827');
+      sketch.strokeWeight(5);
+      sketch.line(
+        center.x,
+        bodyY,
+        center.x + (dx / length) * 17,
+        bodyY + (dy / length) * 17,
+      );
       sketch.stroke('#ffffff');
       sketch.strokeWeight(2.5);
       sketch.line(
