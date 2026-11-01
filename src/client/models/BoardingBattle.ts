@@ -5,6 +5,7 @@ import {
   type BoardingHex,
   BoardingMap,
 } from './BoardingMap.js';
+import { chooseDefenderCommand } from './BoardingAI.js';
 
 export type BoardingSide = 'player' | 'defender' | 'civilian';
 export type BoardingPersonStatus =
@@ -343,6 +344,20 @@ export class BoardingBattle {
           entry.status === 'evacuated',
       ),
     });
+  }
+
+  visibleOpponents(side: 'player' | 'defender'): readonly BoardingPerson[] {
+    const visible = new Set(this.#visibleFor(side).map(positionKey));
+    const opponent = side === 'player' ? 'defender' : 'player';
+    return Object.freeze(
+      this.#state.people.filter(
+        (entry) =>
+          entry.side === opponent &&
+          entry.status !== 'dead' &&
+          entry.status !== 'evacuated' &&
+          visible.has(positionKey(entry.position)),
+      ),
+    );
   }
 
   #replace(change: Partial<BoardingBattleState>): void {
@@ -1195,7 +1210,124 @@ export class BoardingBattle {
     );
   }
 
+  #runCivilianPhase(): void {
+    const exits = this.#state.features.filter(
+      (feature) =>
+        feature.kind === 'exit' &&
+        feature.exit === 'escape-pod' &&
+        !feature.destroyed,
+    );
+    for (const initial of this.#state.people.filter(
+      (entry) => entry.side === 'civilian' && entry.status === 'active',
+    )) {
+      let actor = this.#state.people.find((entry) => entry.id === initial.id)!;
+      let remaining = this.#maxActionPoints(actor);
+      const adjacentDoor = this.#state.features.find(
+        (feature) =>
+          feature.kind === 'door' &&
+          !feature.destroyed &&
+          !feature.open &&
+          !feature.locked &&
+          distance(feature.position, actor.position) === 1,
+      );
+      if (adjacentDoor && remaining >= 1) {
+        this.#updateFeature(adjacentDoor.id, (entry) => ({
+          ...entry,
+          open: true,
+        }));
+        remaining--;
+      }
+      const routes = exits
+        .map((exit) => ({
+          exit,
+          path: this.pathTo(actor.id, exit.position),
+        }))
+        .filter(
+          (
+            candidate,
+          ): candidate is {
+            exit: BoardingFeature;
+            path: BoardingPath;
+          } => !!candidate.path,
+        )
+        .sort((a, b) => a.path.cost - b.path.cost);
+      let route = routes[0]?.path ?? null;
+      if (!route) {
+        const threats = [
+          ...this.#state.people
+            .filter(
+              (entry) =>
+                entry.side !== 'civilian' &&
+                entry.status !== 'dead' &&
+                entry.status !== 'evacuated',
+            )
+            .map((entry) => entry.position),
+          ...this.#state.noiseMarkers.map((entry) => entry.position),
+        ];
+        route =
+          Array.from({ length: this.#map.height }, (_, r) =>
+            Array.from({ length: this.#map.width }, (_, q) => ({ q, r })),
+          )
+            .flat()
+            .map((destination) => ({
+              destination,
+              path: this.pathTo(actor.id, destination),
+              safety:
+                threats.length === 0
+                  ? 0
+                  : Math.min(
+                      ...threats.map((threat) => distance(destination, threat)),
+                    ),
+            }))
+            .filter(
+              (
+                candidate,
+              ): candidate is {
+                destination: BoardingHex;
+                path: BoardingPath;
+                safety: number;
+              } =>
+                !!candidate.path &&
+                candidate.path.cost > 0 &&
+                candidate.path.cost <= remaining,
+            )
+            .sort((a, b) => b.safety - a.safety || b.path.cost - a.path.cost)[0]
+            ?.path ?? null;
+      }
+      if (route) {
+        for (const step of route.steps) {
+          actor = this.#state.people.find((entry) => entry.id === initial.id)!;
+          const cost = step.type === 'turn' ? 1 : actor.crouched ? 3 : 2;
+          if (cost > remaining) break;
+          remaining -= cost;
+          if (step.type === 'turn')
+            this.#updatePerson(actor.id, (entry) => ({
+              ...entry,
+              facing: normalizeFacing(entry.facing + step.direction),
+            }));
+          else
+            this.#updatePerson(actor.id, (entry) => ({
+              ...entry,
+              position: frozenHex(step.position),
+            }));
+        }
+      }
+      actor = this.#state.people.find((entry) => entry.id === initial.id)!;
+      if (
+        remaining >= EVACUATE_AP &&
+        exits.some((exit) => same(exit.position, actor.position))
+      ) {
+        this.#updatePerson(actor.id, (entry) => ({
+          ...entry,
+          status: 'evacuated',
+        }));
+        this.#replace({ savedCivilians: this.#state.savedCivilians + 1 });
+      }
+    }
+  }
+
   #endRound(): void {
+    this.#runCivilianPhase();
     this.#updateSmoke();
     let countdown = this.#state.reactorCountdown;
     if (countdown !== null) countdown--;
@@ -1263,5 +1395,20 @@ export class BoardingBattle {
       );
     } else if (!activeDefenders)
       this.#complete('victory', 'All defenders are neutralized.');
+  }
+
+  actAutomatically(singleStep = false): boolean {
+    let acted = false;
+    while (this.#state.phase === 'fighting') {
+      const actor = this.#state.people.find(
+        (entry) => entry.id === this.#state.currentActorId,
+      );
+      if (!actor || actor.side !== 'defender' || actor.status !== 'active')
+        return acted;
+      this.command(chooseDefenderCommand(this, actor));
+      acted = true;
+      if (singleStep) return true;
+    }
+    return acted;
   }
 }
