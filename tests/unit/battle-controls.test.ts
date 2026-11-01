@@ -170,8 +170,8 @@ it('stridsorder-utan-mobilscroll: puts all combat commands ahead of the board an
       orders.querySelector(`[aria-label="${label}"]`),
       label,
     ).not.toBeNull();
-    expect(orders.querySelector('[aria-label="Target"]')).toBeNull();
-    expect(orders.querySelector('.battle-log')).toBeNull();
+  expect(orders.querySelector('[aria-label="Target"]')).toBeNull();
+  expect(orders.querySelector('.battle-log')).toBeNull();
   expect(document.querySelector('.battle-details .battle-log')).not.toBeNull();
   view.dispose();
 });
@@ -198,9 +198,9 @@ it('traffhex-istallet-for-mallista: fires at the hex chosen on the map and has n
   selectHex({ q: 3, r: 4 });
   expect(fire().disabled).toBe(false);
   expect(document.body.textContent).toContain('Impact hex 3,4');
-  expect(
-    document.querySelector('.battle-controls')!.textContent,
-  ).toContain('Impact hex 3,4');
+  expect(document.querySelector('.battle-controls')!.textContent).toContain(
+    'Impact hex 3,4',
+  );
   fire().click();
   expect(emit).toHaveBeenCalledWith({
     type: 'battle-command',

@@ -293,8 +293,7 @@ export class BattleMapView implements BattleMapPort {
     }
     const aim = this.#aim;
     if (aim && state.phase === 'fighting') {
-      const area =
-        WEAPONS[this.#weapon].area > 0 ? missileArea(aim) : [aim];
+      const area = WEAPONS[this.#weapon].area > 0 ? missileArea(aim) : [aim];
       for (const hex of area) {
         if (
           hex.r < 0 ||

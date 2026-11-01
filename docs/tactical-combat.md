@@ -60,20 +60,20 @@ samma riktning. Förtydligandet 2026-10-31 av `stridsutplacering` och
 `riktning-och-vapen` rättar den tidigare 90° vridningen av skeppsbilderna.
 Stridsregler och sparade riktningar bevaras.
 
-| Krav                           | Status                     | Innehåll                                                                              |
-| ------------------------------ | -------------------------- | ------------------------------------------------------------------------------------- |
-| `taktisk-stridskarta`          | Fullständigt implementerat | Separat karta, minst 13 × 9 hexar, växer tills alla skepp ryms.                       |
-| `gemensamt-stridsdeltagande`   | Fullständigt implementerat | Alla skepp från båda sidors flottor på samma galaxhex deltar.                         |
-| `stridsutplacering`            | Fullständigt implementerat | Egen startzon, sex riktningar och Auto deploy. Fiendens placering avslöjas vid start. |
-| `vaxelvisa-skeppsaktiveringar` | Fullständigt implementerat | Växelvis ett skepp, ett rörelsemoment och en salva i valfri ordning.                  |
-| `riktning-och-vapen`           | Fullständigt implementerat | Fasta vapen, eldbågar, ammunition och svag akter.                                     |
-| `skyddande-stridshinder`       | Fullständigt implementerat | Asteroider och större skepp blockerar skott helt.                                     |
-| `oppna-stridstarningar`        | Fullständigt implementerat | Initiativ och vapensalvor visar D6-slag.                                              |
-| `skeppsvis-retratt`            | Fullständigt implementerat | Enskilda skepp lämnar egen kortsida från runda två. Flottan samlas efteråt.           |
-| `sparad-taktisk-strid`         | Fullständigt implementerat | Utplacering, skador, ammunition, aktivering och slump sparas.                         |
-| `utforskade-stridsuppgraderingar` | Fullständigt implementerat | Missiler och pansarskrov forskas fram och monteras med Upgrade.                    |
-| `missilernas-omradeseffekt`    | Fullständigt implementerat | Missiler träffar vald hex och alla grannhexar. En Fighter har två salvor.             |
-| `traffhex-istallet-for-mallista` | Fullständigt implementerat | Skott siktas mot en hex på kartan. Ingen mållista.                                  |
+| Krav                              | Status                     | Innehåll                                                                              |
+| --------------------------------- | -------------------------- | ------------------------------------------------------------------------------------- |
+| `taktisk-stridskarta`             | Fullständigt implementerat | Separat karta, minst 13 × 9 hexar, växer tills alla skepp ryms.                       |
+| `gemensamt-stridsdeltagande`      | Fullständigt implementerat | Alla skepp från båda sidors flottor på samma galaxhex deltar.                         |
+| `stridsutplacering`               | Fullständigt implementerat | Egen startzon, sex riktningar och Auto deploy. Fiendens placering avslöjas vid start. |
+| `vaxelvisa-skeppsaktiveringar`    | Fullständigt implementerat | Växelvis ett skepp, ett rörelsemoment och en salva i valfri ordning.                  |
+| `riktning-och-vapen`              | Fullständigt implementerat | Fasta vapen, eldbågar, ammunition och svag akter.                                     |
+| `skyddande-stridshinder`          | Fullständigt implementerat | Asteroider och större skepp blockerar skott helt.                                     |
+| `oppna-stridstarningar`           | Fullständigt implementerat | Initiativ och vapensalvor visar D6-slag.                                              |
+| `skeppsvis-retratt`               | Fullständigt implementerat | Enskilda skepp lämnar egen kortsida från runda två. Flottan samlas efteråt.           |
+| `sparad-taktisk-strid`            | Fullständigt implementerat | Utplacering, skador, ammunition, aktivering och slump sparas.                         |
+| `utforskade-stridsuppgraderingar` | Fullständigt implementerat | Missiler och pansarskrov forskas fram och monteras med Upgrade.                       |
+| `missilernas-omradeseffekt`       | Fullständigt implementerat | Missiler träffar vald hex och alla grannhexar. En Fighter har två salvor.             |
+| `traffhex-istallet-for-mallista`  | Fullständigt implementerat | Skott siktas mot en hex på kartan. Ingen mållista.                                    |
 
 ## Möte och utplacering
 
@@ -100,28 +100,28 @@ i valfri ordning. Ett steg framåt eller en sväng på 60° kostar en rörelsepo
 Efter rörelse följd av eld får skeppet inte röra sig igen. Oanvänd rörelse
 försvinner. Ingen tröghet, energi eller överreaktionseld ingår.
 
-| Skepp            | Storlek | Skrov | Rörelse |
-| ---------------- | ------- | ----: | ------: |
-| Fighter            | Small   |     3 |       4 |
-| Armored Fighter    | Small   |     5 |       4 |
-| Space pirate       | Small   |     2 |       4 |
-| Civilian shuttle | Small   |     3 |       3 |
-| Exploration ship | Medium  |     4 |       3 |
-| Salvage ship     | Medium  |     5 |       3 |
-| Transport ship     | Large   |     6 |       2 |
-| Armored Transport  | Large   |     9 |       2 |
-| Colony ship        | Large   |     8 |       2 |
+| Skepp             | Storlek | Skrov | Rörelse |
+| ----------------- | ------- | ----: | ------: |
+| Fighter           | Small   |     3 |       4 |
+| Armored Fighter   | Small   |     5 |       4 |
+| Space pirate      | Small   |     2 |       4 |
+| Civilian shuttle  | Small   |     3 |       3 |
+| Exploration ship  | Medium  |     4 |       3 |
+| Salvage ship      | Medium  |     5 |       3 |
+| Transport ship    | Large   |     6 |       2 |
+| Armored Transport | Large   |     9 |       2 |
+| Colony ship       | Large   |     8 |       2 |
 
 Minst en Ion pulse engine ger +1 rörelse. Bogsering ger grundrörelse 1 före
 motorbonusen. Släp är ingen egen aktiverbar pjäs.
 
 ## Vapen, skydd och tärningar
 
-| Vapen         | Bärare                         | Räckvidd | Främre båge | Salva                                      | Träff |
-| ------------- | ------------------------------ | -------- | ----------- | ------------------------------------------ | ----- |
-| Cannon        | Fighter, Armored Fighter       | 1–3 hex  | 120°        | 2D6, obegränsat                            | 4+    |
-| Missiles      | Fighter med uppgraderingen     | 2–6 hex  | 60°         | 3D6 per skepp i området, två salvor        | 4+    |
-| Raider cannon | Space pirate                   | 1–3 hex  | 120°        | 2D6, obegränsat                            | 5+    |
+| Vapen         | Bärare                     | Räckvidd | Främre båge | Salva                               | Träff |
+| ------------- | -------------------------- | -------- | ----------- | ----------------------------------- | ----- |
+| Cannon        | Fighter, Armored Fighter   | 1–3 hex  | 120°        | 2D6, obegränsat                     | 4+    |
+| Missiles      | Fighter med uppgraderingen | 2–6 hex  | 60°         | 3D6 per skepp i området, två salvor | 4+    |
+| Raider cannon | Space pirate               | 1–3 hex  | 120°        | 2D6, obegränsat                     | 5+    |
 
 Civila skepp är obeväpnade. Armored Fighter och Armored Transport är samma
 skeppstyper med pansarskrov. Last, storlek och fart är oförändrade. Pansaret
