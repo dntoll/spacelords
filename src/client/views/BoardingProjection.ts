@@ -1,59 +1,50 @@
-import {
-  HexCoordinate,
-  HexGeometry,
-  type Point,
-} from '../models/HexCoordinate.js';
-import type { BoardingHex } from '../models/BoardingMap.js';
+import type { BoardingCell } from '../models/BoardingMap.js';
 
-const ISO_X = 0.86;
-const ISO_Y = 0.42;
+const TILE_WIDTH = 64;
+const TILE_HEIGHT = 32;
+const HALF_WIDTH = TILE_WIDTH / 2;
+const HALF_HEIGHT = TILE_HEIGHT / 2;
 const PADDING = 18;
 const HEIGHT_HEADROOM = 24;
+
+export interface BoardingPoint {
+  readonly x: number;
+  readonly y: number;
+}
 
 export interface BoardingMapSize {
   readonly width: number;
   readonly height: number;
 }
 
-export function boardingIsoPoint(point: Point): Point {
+export function boardingIsoCenter(position: BoardingCell): BoardingPoint {
   return {
-    x: (point.x - point.y) * ISO_X,
-    y: (point.x + point.y) * ISO_Y,
+    x: (position.q - position.r) * HALF_WIDTH,
+    y: (position.q + position.r) * HALF_HEIGHT,
   };
 }
 
-export function boardingWorldPoint(point: Point): Point {
+export function boardingIsoCorners(
+  position: BoardingCell,
+): readonly BoardingPoint[] {
+  const center = boardingIsoCenter(position);
+  return Object.freeze([
+    Object.freeze({ x: center.x, y: center.y - HALF_HEIGHT }),
+    Object.freeze({ x: center.x + HALF_WIDTH, y: center.y }),
+    Object.freeze({ x: center.x, y: center.y + HALF_HEIGHT }),
+    Object.freeze({ x: center.x - HALF_WIDTH, y: center.y }),
+  ]);
+}
+
+export function boardingCellFromIsoPoint(point: BoardingPoint): BoardingCell {
   return {
-    x: point.x / (2 * ISO_X) + point.y / (2 * ISO_Y),
-    y: point.y / (2 * ISO_Y) - point.x / (2 * ISO_X),
+    q: Math.round((point.x / HALF_WIDTH + point.y / HALF_HEIGHT) / 2),
+    r: Math.round((point.y / HALF_HEIGHT - point.x / HALF_WIDTH) / 2),
   };
-}
-
-export function boardingIsoCenter(position: BoardingHex): Point {
-  return boardingIsoPoint(
-    HexGeometry.toPoint(new HexCoordinate(position.q, position.r)),
-  );
-}
-
-export function boardingIsoCorners(position: BoardingHex): readonly Point[] {
-  const center = HexGeometry.toPoint(new HexCoordinate(position.q, position.r));
-  return Array.from({ length: 6 }, (_, index) => {
-    const angle = (Math.PI / 180) * (60 * index - 30);
-    return boardingIsoPoint({
-      x: center.x + HexGeometry.size * Math.cos(angle),
-      y: center.y + HexGeometry.size * Math.sin(angle),
-    });
-  });
-}
-
-export function boardingHexFromIsoPoint(point: Point): BoardingHex {
-  const world = boardingWorldPoint(point);
-  const hex = HexGeometry.fromPoint(world);
-  return { q: hex.q, r: hex.r };
 }
 
 function bounds(map: BoardingMapSize) {
-  const points: Point[] = [];
+  const points: BoardingPoint[] = [];
   for (let r = 0; r < map.height; r++)
     for (let q = 0; q < map.width; q++)
       points.push(...boardingIsoCorners({ q, r }));
@@ -68,7 +59,7 @@ function bounds(map: BoardingMapSize) {
 export function boardingIsoCamera(
   map: BoardingMapSize,
   view: { readonly width: number; readonly height: number },
-): { readonly scale: number; readonly offset: Point } {
+): { readonly scale: number; readonly offset: BoardingPoint } {
   const area = bounds(map);
   const scale = Math.max(
     0.08,
@@ -87,11 +78,11 @@ export function boardingIsoCamera(
   };
 }
 
-export function boardingIsoHexPoint(
+export function boardingIsoCellPoint(
   map: BoardingMapSize,
   view: { readonly width: number; readonly height: number },
-  position: BoardingHex,
-): Point {
+  position: BoardingCell,
+): BoardingPoint {
   const camera = boardingIsoCamera(map, view);
   const center = boardingIsoCenter(position);
   return {

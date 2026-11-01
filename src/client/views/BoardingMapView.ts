@@ -1,6 +1,5 @@
 import p5 from 'p5';
-import { HexGeometry, type Point } from '../models/HexCoordinate.js';
-import type { BoardingMap, BoardingHex } from '../models/BoardingMap.js';
+import type { BoardingMap, BoardingCell } from '../models/BoardingMap.js';
 import {
   BoardingBattle,
   type BoardingBattleState,
@@ -8,13 +7,14 @@ import {
 } from '../models/BoardingBattle.js';
 import type { BoardingMapPort } from './BoardingView.js';
 import {
-  boardingHexFromIsoPoint,
+  boardingCellFromIsoPoint,
   boardingIsoCamera,
   boardingIsoCenter,
   boardingIsoCorners,
+  type BoardingPoint as Point,
 } from './BoardingProjection.js';
 
-const key = (position: BoardingHex): string => `${position.q},${position.r}`;
+const key = (position: BoardingCell): string => `${position.q},${position.r}`;
 
 export class BoardingMapView implements BoardingMapPort {
   readonly #p5: p5;
@@ -22,7 +22,7 @@ export class BoardingMapView implements BoardingMapPort {
   readonly #events = new AbortController();
   #state: BoardingBattleState | null = null;
   #selectedId: string | null = null;
-  #destination: BoardingHex | null = null;
+  #destination: BoardingCell | null = null;
   #path: BoardingPath | null = null;
   #scale = 1;
   #offset: Point = { x: 0, y: 0 };
@@ -36,7 +36,7 @@ export class BoardingMapView implements BoardingMapPort {
   constructor(
     private readonly container: HTMLElement,
     private readonly map: BoardingMap,
-    select: (hex: BoardingHex) => void,
+    select: (cell: BoardingCell) => void,
   ) {
     this.#p5 = new p5((sketch) => {
       sketch.setup = () => {
@@ -51,7 +51,7 @@ export class BoardingMapView implements BoardingMapPort {
         canvas.tabIndex = 0;
         canvas.setAttribute(
           'aria-label',
-          'Boarding hex map. Tap a hex to choose a destination or target. Drag to pan, pinch or scroll to zoom.',
+          'Isometric boarding map. Tap a tile to choose a destination or target. Drag to pan, pinch or scroll to zoom.',
         );
         this.#bind(canvas, select);
         this.#ready = true;
@@ -74,7 +74,7 @@ export class BoardingMapView implements BoardingMapPort {
   render(
     state: BoardingBattleState,
     selectedId: string | null,
-    destination: BoardingHex | null,
+    destination: BoardingCell | null,
     path: BoardingPath | null,
   ): void {
     const changed = this.#state?.id !== state.id;
@@ -119,7 +119,7 @@ export class BoardingMapView implements BoardingMapPort {
     if (this.#ready) void this.#p5.redraw();
   }
 
-  #bind(canvas: HTMLCanvasElement, select: (hex: BoardingHex) => void): void {
+  #bind(canvas: HTMLCanvasElement, select: (cell: BoardingCell) => void): void {
     const options = { signal: this.#events.signal };
     const point = (event: PointerEvent | WheelEvent): Point => {
       const bounds = canvas.getBoundingClientRect();
@@ -183,11 +183,11 @@ export class BoardingMapView implements BoardingMapPort {
         if (!this.#pointers.has(event.pointerId)) return;
         if (!this.#dragged) {
           const position = point(event);
-          const hex = boardingHexFromIsoPoint({
+          const cell = boardingCellFromIsoPoint({
             x: (position.x - this.#offset.x) / this.#scale,
             y: (position.y - this.#offset.y) / this.#scale,
           });
-          if (this.map.contains(hex)) select({ q: hex.q, r: hex.r });
+          if (this.map.contains(cell)) select(cell);
         }
         this.#pointers.delete(event.pointerId);
         this.#start = null;
@@ -223,7 +223,7 @@ export class BoardingMapView implements BoardingMapPort {
     );
   }
 
-  #hex(sketch: p5, position: BoardingHex, yOffset = 0): void {
+  #tile(sketch: p5, position: BoardingCell, yOffset = 0): void {
     sketch.beginShape();
     for (const corner of boardingIsoCorners(position))
       sketch.vertex(corner.x, corner.y - yOffset);
@@ -289,9 +289,9 @@ export class BoardingMapView implements BoardingMapPort {
     sketch.push();
     sketch.translate(this.#offset.x, this.#offset.y);
     sketch.scale(this.#scale);
-    const visible = new Set(state.visibleHexes.map(key));
-    const explored = new Set(state.exploredHexes.map(key));
-    const smoke = new Set(state.smokeHexes.map(key));
+    const visible = new Set(state.visibleCells.map(key));
+    const explored = new Set(state.exploredCells.map(key));
+    const smoke = new Set(state.smokeCells.map(key));
     const path = new Set(this.#path?.positions.map(key) ?? []);
     for (let r = 0; r < this.map.height; r++) {
       for (let q = 0; q < this.map.width; q++) {
@@ -307,25 +307,25 @@ export class BoardingMapView implements BoardingMapPort {
         else if (remembered) sketch.fill('#141d2c');
         else if (knownHull) sketch.fill('#343d4c');
         else sketch.fill('#080c15');
-        this.#hex(sketch, position);
+        this.#tile(sketch, position);
         if (path.has(key(position))) {
           sketch.fill(80, 196, 255, 90);
-          this.#hex(sketch, position);
+          this.#tile(sketch, position);
         }
         if (this.#destination && key(this.#destination) === key(position)) {
           sketch.noFill();
           sketch.stroke('#f4cf5a');
           sketch.strokeWeight(4);
-          this.#hex(sketch, position);
+          this.#tile(sketch, position);
         }
         if (smoke.has(key(position)) && (current || remembered)) {
           sketch.noStroke();
           sketch.fill(170, 180, 190, 125);
-          sketch.circle(center.x, center.y, HexGeometry.size * 1.3);
+          sketch.ellipse(center.x, center.y, 42, 20);
         }
       }
     }
-    const known = (position: BoardingHex) =>
+    const known = (position: BoardingCell) =>
       visible.has(key(position)) || explored.has(key(position));
     for (const feature of [...state.features].sort(
       (a, b) =>

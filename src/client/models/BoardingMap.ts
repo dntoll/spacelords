@@ -1,4 +1,4 @@
-export type BoardingHex = Readonly<{ q: number; r: number }>;
+export type BoardingCell = Readonly<{ q: number; r: number }>;
 export type BoardingRoom = 'bridge' | 'engineering';
 export type BoardingTerrain = 'floor' | 'wall' | 'hull';
 export type BoardingFeatureKind =
@@ -7,15 +7,15 @@ export type BoardingFeatureKind =
 export interface BoardingFeatureDefinition {
   readonly id: string;
   readonly kind: BoardingFeatureKind;
-  readonly position: BoardingHex;
+  readonly position: BoardingCell;
   readonly locked?: boolean;
   readonly exit?: 'breach' | 'escape-pod';
 }
 
 export interface BoardingSpawns {
-  readonly player: readonly BoardingHex[];
-  readonly defender: readonly BoardingHex[];
-  readonly civilian: readonly BoardingHex[];
+  readonly player: readonly BoardingCell[];
+  readonly defender: readonly BoardingCell[];
+  readonly civilian: readonly BoardingCell[];
 }
 
 interface ParsedLayers {
@@ -26,8 +26,8 @@ interface ParsedLayers {
   readonly spawns: readonly string[];
 }
 
-const key = (position: BoardingHex): string => `${position.q},${position.r}`;
-const freezeHex = (q: number, r: number): BoardingHex =>
+const key = (position: BoardingCell): string => `${position.q},${position.r}`;
+const freezeCell = (q: number, r: number): BoardingCell =>
   Object.freeze({ q, r });
 
 export class BoardingMap {
@@ -62,15 +62,15 @@ export class BoardingMap {
     Object.freeze(this);
   }
 
-  terrainAt(position: BoardingHex): BoardingTerrain | null {
+  terrainAt(position: BoardingCell): BoardingTerrain | null {
     return this.#terrain.get(key(position)) ?? null;
   }
 
-  roomAt(position: BoardingHex): BoardingRoom | null {
+  roomAt(position: BoardingCell): BoardingRoom | null {
     return this.#rooms.get(key(position)) ?? null;
   }
 
-  contains(position: BoardingHex): boolean {
+  contains(position: BoardingCell): boolean {
     return (
       position.q >= 0 &&
       position.q < this.width &&
@@ -159,14 +159,14 @@ export function parseBoardingMap(source: string): BoardingMap {
   const terrain = new Map<string, BoardingTerrain>();
   const rooms = new Map<string, BoardingRoom>();
   const features: BoardingFeatureDefinition[] = [];
-  const spawns: Record<keyof BoardingSpawns, BoardingHex[]> = {
+  const spawns: Record<keyof BoardingSpawns, BoardingCell[]> = {
     player: [],
     defender: [],
     civilian: [],
   };
   for (let r = 0; r < height; r++) {
     for (let q = 0; q < width; q++) {
-      const position = freezeHex(q, r);
+      const position = freezeCell(q, r);
       const terrainSymbol = symbol('terrain', layers.terrain, '.#H', q, r);
       const terrainKind: BoardingTerrain =
         terrainSymbol === '.'

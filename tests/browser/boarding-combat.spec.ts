@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { boardingIsoHexPoint } from '../../src/client/views/BoardingProjection.js';
+import { boardingIsoCellPoint } from '../../src/client/views/BoardingProjection.js';
 
 test('fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordningsstatus / isometrisk-bordningsvy / spelmassigt-bordningsgranssnitt: uses the tactical HUD, targets a door and advances a hidden defender without changing saves', async ({
   page,
@@ -20,7 +20,7 @@ test('fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordnings
     /Half cover.*Facing/,
   );
   const turnLeft = dialog.getByRole('button', {
-    name: 'Turn left 60°',
+    name: 'Turn left 90°',
     exact: true,
   });
   await expect(turnLeft).toBeVisible();
@@ -35,7 +35,7 @@ test('fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordnings
   const box = await canvas.boundingBox();
   expect(box).not.toBeNull();
   await canvas.click({
-    position: boardingIsoHexPoint(
+    position: boardingIsoCellPoint(
       { width: 17, height: 11 },
       { width: box!.width, height: box!.height },
       { q: 3, r: 9 },

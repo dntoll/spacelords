@@ -53,11 +53,12 @@ Se [taktisk strid](tactical-combat.md).
 
 `fristaende-bordningsprototyp` och den tillhörande kravfamiljen är
 **Fullständigt implementerat**. Huvudmenyn kan starta en separat taktisk
-bordningsstrid på en hexkarta inuti ett `Transport ship`. Fyra soldater möter
-tre försvarare medan tre civilister försöker överleva och fly. Spelaren använder
-riktning, action points, vapen, skydd, overwatch, granater, rök och medicinsk
-utrustning. Seger nås genom att neutralisera försvararna eller hålla både
-`Bridge` och `Engineering`. Reaktorn och dörrar kan beskjutas.
+bordningsstrid på en kvadratisk 2:1-isometrisk karta inuti ett `Transport ship`.
+Fyra soldater möter tre försvarare medan tre civilister försöker överleva och
+fly. Spelaren använder riktning, action points, vapen, riktat skydd, overwatch,
+granater, rök och medicinsk utrustning. Seger nås genom att neutralisera
+försvararna eller hålla både `Bridge` och `Engineering`. Reaktorn och dörrar kan
+beskjutas.
 Aktiv soldat, hälsa, riktning, `Half cover` och pågående försvararhandlingar
 ska framgå tydligt utan att dolda positioner avslöjas.
 Kartan ska visas isometriskt och uppta huvuddelen av ett spelmässigt gränssnitt

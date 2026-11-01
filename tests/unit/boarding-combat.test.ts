@@ -91,6 +91,18 @@ describe('individuellt-bordningsinitiativ', () => {
 });
 
 describe('actionpoints-och-riktad-forflyttning', () => {
+  it('uses four edge-sharing directions for the square grid', () => {
+    const origin = { q: 5, r: 5 };
+    expect(
+      [0, 1, 2, 3].map((facing) => BoardingBattle.forward(origin, facing)),
+    ).toEqual([
+      { q: 6, r: 5 },
+      { q: 5, r: 4 },
+      { q: 4, r: 5 },
+      { q: 5, r: 6 },
+    ]);
+  });
+
   it('finds a facing-aware route and charges two AP per standing forward step', () => {
     const player = battle.snapshot.people.find(
       (person) =>
@@ -116,6 +128,14 @@ describe('actionpoints-och-riktad-forflyttning', () => {
     const player = battle.snapshot.people.findLast(
       (person) => person.side === 'player',
     )!;
+    withState((state) => ({
+      ...state,
+      people: state.people.map((person) =>
+        person.id === player.id
+          ? { ...person, position: { q: 5, r: 5 }, facing: 0 }
+          : person,
+      ),
+    }));
     activate(player.id);
     battle.command({ type: 'turn', direction: 1 });
     battle.command({ type: 'crouch' });
@@ -129,6 +149,32 @@ describe('actionpoints-och-riktad-forflyttning', () => {
 });
 
 describe('d20-bordningsstrid / miljomal-och-forstorelse', () => {
+  it('uses geometric shooting distance on the square grid', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    withState((state) => ({
+      ...state,
+      features: state.features.map((feature) => ({
+        ...feature,
+        destroyed: true,
+      })),
+      people: state.people.map((person) =>
+        person.id === player.id
+          ? { ...person, position: { q: 2, r: 2 }, facing: 0 }
+          : person.id === defender.id
+            ? { ...person, position: { q: 7, r: 6 } }
+            : { ...person, status: 'dead' },
+      ),
+    }));
+    expect(battle.attackPreview(player.id, defender.id).reason).not.toBe(
+      'The target is outside rifle range.',
+    );
+  });
+
   it('shows a percentage preview and can target and destroy a door with a rifle', () => {
     const player = battle.snapshot.people.find(
       (person) => person.side === 'player',
@@ -194,6 +240,42 @@ describe('d20-bordningsstrid / miljomal-och-forstorelse', () => {
 });
 
 describe('overwatch-och-skydd', () => {
+  it('grants cover only when the obstacle is between shooter and target', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    const cover = battle.snapshot.features.find(
+      (feature) => feature.kind === 'cover',
+    )!;
+    const arrange = (coverPosition: { q: number; r: number }) =>
+      withState((state) => ({
+        ...state,
+        features: state.features.map((feature) =>
+          feature.id === cover.id
+            ? { ...feature, position: coverPosition, destroyed: false }
+            : { ...feature, destroyed: true },
+        ),
+        people: state.people.map((person) =>
+          person.id === player.id
+            ? { ...person, position: { q: 2, r: 5 }, facing: 0 }
+            : person.id === defender.id
+              ? { ...person, position: { q: 4, r: 5 }, crouched: false }
+              : { ...person, status: 'dead' },
+        ),
+      }));
+    arrange({ q: 3, r: 5 });
+    const protectedDefense = battle.attackPreview(
+      player.id,
+      defender.id,
+    ).defense;
+    arrange({ q: 4, r: 4 });
+    const exposedDefense = battle.attackPreview(player.id, defender.id).defense;
+    expect(protectedDefense).toBe(exposedDefense + 2);
+  });
+
   it('reserves one shot and automatically fires at a moving enemy, never a civilian', () => {
     const player = battle.snapshot.people.find(
       (person) => person.side === 'player',
@@ -238,7 +320,7 @@ describe('granater-och-rok', () => {
       at: { ...player.position },
     });
     expect(battle.snapshot.smoke.some((smoke) => smoke.amount > 0)).toBe(true);
-    expect(battle.snapshot.smokeHexes.length).toBeGreaterThan(0);
+    expect(battle.snapshot.smokeCells).toHaveLength(9);
   });
 });
 

@@ -250,10 +250,10 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus: exposes corre
   const view = new BoardingView(document.body, emit, map);
   view.render(battle.visibleSnapshot);
   const left = document.querySelector<HTMLButtonElement>(
-    '[aria-label="Turn left 60°"]',
+    '[aria-label="Turn left 90°"]',
   )!;
   const right = document.querySelector<HTMLButtonElement>(
-    '[aria-label="Turn right 60°"]',
+    '[aria-label="Turn right 90°"]',
   )!;
   expect(left).not.toBeNull();
   expect(right).not.toBeNull();

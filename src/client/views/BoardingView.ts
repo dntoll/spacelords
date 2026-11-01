@@ -3,7 +3,7 @@ import {
   type BoardingBattleState,
   type BoardingPath,
 } from '../models/BoardingBattle.js';
-import type { BoardingHex } from '../models/BoardingMap.js';
+import type { BoardingCell } from '../models/BoardingMap.js';
 import { testBoardingMap } from '../models/TestBoarding.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element } from './dom.js';
@@ -24,7 +24,7 @@ export interface BoardingMapPort {
   render(
     state: BoardingBattleState,
     selectedId: string | null,
-    destination: BoardingHex | null,
+    destination: BoardingCell | null,
     path: BoardingPath | null,
   ): void;
   zoom(factor: number): void;
@@ -34,7 +34,7 @@ export interface BoardingMapPort {
 
 export type BoardingMapFactory = (
   container: HTMLElement,
-  select: (hex: BoardingHex) => void,
+  select: (cell: BoardingCell) => void,
 ) => BoardingMapPort;
 
 /** The view owns selection only; every game change is a typed controller intent. */
@@ -48,7 +48,7 @@ export class BoardingView {
   readonly #map: BoardingMapPort | undefined;
   #state: BoardingBattleState | null = null;
   #selectedId: string | null = null;
-  #destination: BoardingHex | null = null;
+  #destination: BoardingCell | null = null;
   #actorId: string | null = null;
 
   constructor(
@@ -89,7 +89,7 @@ export class BoardingView {
     this.#dialog.append(header, layout);
     root.append(this.#dialog);
     this.#dialog.showModal();
-    this.#map = mapFactory?.(canvas, (position) => this.#selectHex(position));
+    this.#map = mapFactory?.(canvas, (position) => this.#selectCell(position));
   }
 
   #battle(): BoardingBattle {
@@ -111,7 +111,7 @@ export class BoardingView {
     this.#controls.append(control);
   }
 
-  #selectHex(position: BoardingHex): void {
+  #selectCell(position: BoardingCell): void {
     const state = this.#state;
     if (!state || state.phase === 'complete') return;
     const person = state.people.find(
@@ -200,10 +200,10 @@ export class BoardingView {
     if (playerTurn && this.#destination)
       path = this.#battle().pathTo(actor.id, this.#destination);
     if (playerTurn) {
-      this.#action('Turn left 60°', '↶', () =>
+      this.#action('Turn left 90°', '↶', () =>
         this.#command({ type: 'turn', direction: 1 }),
       );
-      this.#action('Turn right 60°', '↷', () =>
+      this.#action('Turn right 90°', '↷', () =>
         this.#command({ type: 'turn', direction: -1 }),
       );
       this.#action(

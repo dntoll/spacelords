@@ -1,8 +1,7 @@
-import { HexCoordinate, HexGeometry } from './HexCoordinate.js';
 import {
   type BoardingFeatureDefinition,
   type BoardingFeatureKind,
-  type BoardingHex,
+  type BoardingCell,
   type BoardingMap,
 } from './BoardingMap.js';
 import { chooseDefenderCommand } from './BoardingAI.js';
@@ -16,7 +15,7 @@ export interface BoardingPerson {
   readonly id: string;
   readonly label: string;
   readonly side: BoardingSide;
-  readonly position: BoardingHex;
+  readonly position: BoardingCell;
   readonly facing: number;
   readonly hitPoints: number;
   readonly maxHitPoints: number;
@@ -36,7 +35,7 @@ export interface BoardingPerson {
 export interface BoardingFeature {
   readonly id: string;
   readonly kind: BoardingFeatureKind;
-  readonly position: BoardingHex;
+  readonly position: BoardingCell;
   readonly hitPoints: number;
   readonly maxHitPoints: number;
   readonly open: boolean;
@@ -58,17 +57,17 @@ export interface BoardingInitiative {
 }
 
 export interface BoardingSmoke {
-  readonly position: BoardingHex;
+  readonly position: BoardingCell;
   readonly amount: number;
 }
 
 export interface BoardingLastKnown {
   readonly id: string;
-  readonly position: BoardingHex;
+  readonly position: BoardingCell;
 }
 
 export interface BoardingNoise {
-  readonly position: BoardingHex;
+  readonly position: BoardingCell;
   readonly audience: 'player' | 'defender';
 }
 
@@ -89,9 +88,9 @@ export interface BoardingBattleState {
   readonly currentActorId: string | null;
   readonly activation: BoardingActivation | null;
   readonly smoke: readonly BoardingSmoke[];
-  readonly smokeHexes: readonly BoardingHex[];
-  readonly visibleHexes: readonly BoardingHex[];
-  readonly exploredHexes: readonly BoardingHex[];
+  readonly smokeCells: readonly BoardingCell[];
+  readonly visibleCells: readonly BoardingCell[];
+  readonly exploredCells: readonly BoardingCell[];
   readonly lastKnownEnemies: readonly BoardingLastKnown[];
   readonly defenderLastKnownEnemies: readonly BoardingLastKnown[];
   readonly noiseMarkers: readonly BoardingNoise[];
@@ -102,7 +101,7 @@ export interface BoardingBattleState {
 
 export type BoardingCommand =
   | { readonly type: 'turn'; readonly direction: -1 | 1 }
-  | { readonly type: 'move'; readonly to: BoardingHex }
+  | { readonly type: 'move'; readonly to: BoardingCell }
   | { readonly type: 'crouch' | 'stand' }
   | {
       readonly type: 'door';
@@ -114,7 +113,7 @@ export type BoardingCommand =
   | {
       readonly type: 'grenade';
       readonly grenade: 'frag' | 'smoke';
-      readonly at: BoardingHex;
+      readonly at: BoardingCell;
     }
   | { readonly type: 'overwatch' }
   | { readonly type: 'med-pack'; readonly targetId: string }
@@ -124,11 +123,11 @@ export type BoardingCommand =
 export interface BoardingPath {
   readonly cost: number;
   readonly turns: number;
-  readonly positions: readonly BoardingHex[];
+  readonly positions: readonly BoardingCell[];
   readonly finalFacing: number;
   readonly steps: readonly (
     | { readonly type: 'turn'; readonly direction: -1 | 1 }
-    | { readonly type: 'forward'; readonly position: BoardingHex }
+    | { readonly type: 'forward'; readonly position: BoardingCell }
   )[];
 }
 
@@ -138,13 +137,18 @@ export interface BoardingAttackPreview {
   readonly reason: string | null;
 }
 
-const DIRECTIONS: readonly BoardingHex[] = Object.freeze([
+const CARDINAL_DIRECTIONS: readonly BoardingCell[] = Object.freeze([
   Object.freeze({ q: 1, r: 0 }),
-  Object.freeze({ q: 1, r: -1 }),
   Object.freeze({ q: 0, r: -1 }),
   Object.freeze({ q: -1, r: 0 }),
-  Object.freeze({ q: -1, r: 1 }),
   Object.freeze({ q: 0, r: 1 }),
+]);
+const ADJACENT_DIRECTIONS: readonly BoardingCell[] = Object.freeze([
+  ...CARDINAL_DIRECTIONS,
+  Object.freeze({ q: 1, r: -1 }),
+  Object.freeze({ q: -1, r: -1 }),
+  Object.freeze({ q: -1, r: 1 }),
+  Object.freeze({ q: 1, r: 1 }),
 ]);
 const RIFLE_AP = 4;
 const GRENADE_AP = 4;
@@ -154,15 +158,17 @@ const EVACUATE_AP = 2;
 const MELEE_AP = 3;
 const REACTOR_ROUNDS = 3;
 
-const positionKey = (position: BoardingHex): string =>
+const positionKey = (position: BoardingCell): string =>
   `${position.q},${position.r}`;
-const same = (a: BoardingHex, b: BoardingHex): boolean =>
+const same = (a: BoardingCell, b: BoardingCell): boolean =>
   a.q === b.q && a.r === b.r;
-const frozenHex = (position: BoardingHex): BoardingHex =>
+const frozenCell = (position: BoardingCell): BoardingCell =>
   Object.freeze({ q: position.q, r: position.r });
-const distance = (a: BoardingHex, b: BoardingHex): number =>
-  new HexCoordinate(a.q, a.r).distanceTo(new HexCoordinate(b.q, b.r));
-const normalizeFacing = (facing: number): number => ((facing % 6) + 6) % 6;
+const distance = (a: BoardingCell, b: BoardingCell): number =>
+  Math.hypot(a.q - b.q, a.r - b.r);
+const sharesEdge = (a: BoardingCell, b: BoardingCell): boolean =>
+  Math.abs(a.q - b.q) + Math.abs(a.r - b.r) === 1;
+const normalizeFacing = (facing: number): number => ((facing % 4) + 4) % 4;
 
 function hiddenDefenderActivity(command: BoardingCommand): string {
   if (command.type === 'turn') return 'A defender turns.';
@@ -184,12 +190,12 @@ function hiddenDefenderActivity(command: BoardingCommand): string {
 function freezeState(state: BoardingBattleState): BoardingBattleState {
   const people = Object.freeze(
     state.people.map((person) =>
-      Object.freeze({ ...person, position: frozenHex(person.position) }),
+      Object.freeze({ ...person, position: frozenCell(person.position) }),
     ),
   );
   const features = Object.freeze(
     state.features.map((feature) =>
-      Object.freeze({ ...feature, position: frozenHex(feature.position) }),
+      Object.freeze({ ...feature, position: frozenCell(feature.position) }),
     ),
   );
   return Object.freeze({
@@ -205,25 +211,25 @@ function freezeState(state: BoardingBattleState): BoardingBattleState {
       : null,
     smoke: Object.freeze(
       state.smoke.map((entry) =>
-        Object.freeze({ ...entry, position: frozenHex(entry.position) }),
+        Object.freeze({ ...entry, position: frozenCell(entry.position) }),
       ),
     ),
-    smokeHexes: Object.freeze(state.smokeHexes.map(frozenHex)),
-    visibleHexes: Object.freeze(state.visibleHexes.map(frozenHex)),
-    exploredHexes: Object.freeze(state.exploredHexes.map(frozenHex)),
+    smokeCells: Object.freeze(state.smokeCells.map(frozenCell)),
+    visibleCells: Object.freeze(state.visibleCells.map(frozenCell)),
+    exploredCells: Object.freeze(state.exploredCells.map(frozenCell)),
     lastKnownEnemies: Object.freeze(
       state.lastKnownEnemies.map((entry) =>
-        Object.freeze({ ...entry, position: frozenHex(entry.position) }),
+        Object.freeze({ ...entry, position: frozenCell(entry.position) }),
       ),
     ),
     defenderLastKnownEnemies: Object.freeze(
       state.defenderLastKnownEnemies.map((entry) =>
-        Object.freeze({ ...entry, position: frozenHex(entry.position) }),
+        Object.freeze({ ...entry, position: frozenCell(entry.position) }),
       ),
     ),
     noiseMarkers: Object.freeze(
       state.noiseMarkers.map((entry) =>
-        Object.freeze({ ...entry, position: frozenHex(entry.position) }),
+        Object.freeze({ ...entry, position: frozenCell(entry.position) }),
       ),
     ),
     log: Object.freeze([...state.log]),
@@ -243,7 +249,7 @@ function runtimeFeature(feature: BoardingFeatureDefinition): BoardingFeature {
   return Object.freeze({
     id: feature.id,
     kind: feature.kind,
-    position: frozenHex(feature.position),
+    position: frozenCell(feature.position),
     hitPoints,
     maxHitPoints: hitPoints,
     open: feature.kind === 'exit',
@@ -256,7 +262,7 @@ function runtimeFeature(feature: BoardingFeatureDefinition): BoardingFeature {
 function person(
   side: BoardingSide,
   index: number,
-  position: BoardingHex,
+  position: BoardingCell,
 ): BoardingPerson {
   const label =
     side === 'player'
@@ -268,8 +274,8 @@ function person(
     id: `${side}-${index + 1}`,
     label,
     side,
-    position: frozenHex(position),
-    facing: side === 'defender' ? 3 : 0,
+    position: frozenCell(position),
+    facing: side === 'defender' ? 2 : 0,
     hitPoints: side === 'civilian' ? 6 : 10,
     maxHitPoints: side === 'civilian' ? 6 : 10,
     agility: side === 'civilian' ? 8 : 12,
@@ -325,9 +331,9 @@ export class BoardingBattle {
       currentActorId: null,
       activation: null,
       smoke: [],
-      smokeHexes: [],
-      visibleHexes: [],
-      exploredHexes: [],
+      smokeCells: [],
+      visibleCells: [],
+      exploredCells: [],
       lastKnownEnemies: [],
       defenderLastKnownEnemies: [],
       noiseMarkers: [],
@@ -345,8 +351,8 @@ export class BoardingBattle {
     return new BoardingBattle(map, state);
   }
 
-  static forward(position: BoardingHex, facing: number): BoardingHex {
-    const direction = DIRECTIONS[normalizeFacing(facing)]!;
+  static forward(position: BoardingCell, facing: number): BoardingCell {
+    const direction = CARDINAL_DIRECTIONS[normalizeFacing(facing)]!;
     return Object.freeze({
       q: position.q + direction.q,
       r: position.r + direction.r,
@@ -358,7 +364,7 @@ export class BoardingBattle {
   }
 
   get visibleSnapshot(): BoardingBattleState {
-    const visible = new Set(this.#state.visibleHexes.map(positionKey));
+    const visible = new Set(this.#state.visibleCells.map(positionKey));
     return freezeState({
       ...this.#state,
       people: this.#state.people.filter(
@@ -516,14 +522,14 @@ export class BoardingBattle {
     });
   }
 
-  #featureAt(position: BoardingHex): BoardingFeature | undefined {
+  #featureAt(position: BoardingCell): BoardingFeature | undefined {
     return this.#state.features.find(
       (entry) => !entry.destroyed && same(entry.position, position),
     );
   }
 
   #personAt(
-    position: BoardingHex,
+    position: BoardingCell,
     ignoreId?: string,
   ): BoardingPerson | undefined {
     return this.#state.people.find(
@@ -535,7 +541,7 @@ export class BoardingBattle {
     );
   }
 
-  #passable(position: BoardingHex, moverId: string): boolean {
+  #passable(position: BoardingCell, moverId: string): boolean {
     if (!this.#map.contains(position)) return false;
     const feature = this.#featureAt(position);
     if (
@@ -550,18 +556,18 @@ export class BoardingBattle {
     return !this.#personAt(position, moverId);
   }
 
-  pathTo(id: string, destination: BoardingHex): BoardingPath | null {
+  pathTo(id: string, destination: BoardingCell): BoardingPath | null {
     const entry = this.#state.people.find(
       (candidate) => candidate.id === id && candidate.status === 'active',
     );
     if (!entry || !this.#map.contains(destination)) return null;
     type Node = {
-      position: BoardingHex;
+      position: BoardingCell;
       facing: number;
       cost: number;
       turns: number;
       steps: BoardingPath['steps'];
-      positions: readonly BoardingHex[];
+      positions: readonly BoardingCell[];
     };
     const start: Node = {
       position: entry.position,
@@ -621,52 +627,34 @@ export class BoardingBattle {
     return null;
   }
 
-  #line(a: BoardingHex, b: BoardingHex): readonly BoardingHex[] {
-    const count = distance(a, b);
-    if (count === 0) return Object.freeze([frozenHex(a)]);
-    const result: BoardingHex[] = [];
-    for (let index = 0; index <= count; index++) {
-      const t = index / count;
-      const q = a.q + (b.q - a.q) * t;
-      const r = a.r + (b.r - a.r) * t;
-      const s = -q - r;
-      let roundedQ = Math.round(q);
-      let roundedR = Math.round(r);
-      const roundedS = Math.round(s);
-      const qError = Math.abs(roundedQ - q);
-      const rError = Math.abs(roundedR - r);
-      const sError = Math.abs(roundedS - s);
-      if (qError > rError && qError > sError) roundedQ = -roundedR - roundedS;
-      else if (rError > sError) roundedR = -roundedQ - roundedS;
-      const position = frozenHex({ q: roundedQ, r: roundedR });
+  #line(a: BoardingCell, b: BoardingCell): readonly BoardingCell[] {
+    const steps = Math.max(Math.abs(b.q - a.q), Math.abs(b.r - a.r));
+    if (steps === 0) return Object.freeze([frozenCell(a)]);
+    const result: BoardingCell[] = [];
+    for (let index = 0; index <= steps; index++) {
+      const t = index / steps;
+      const position = frozenCell({
+        q: Math.round(a.q + (b.q - a.q) * t),
+        r: Math.round(a.r + (b.r - a.r) * t),
+      });
       if (!result.some((entry) => same(entry, position))) result.push(position);
     }
     return Object.freeze(result);
   }
 
-  #inFieldOfView(observer: BoardingPerson, target: BoardingHex): boolean {
+  #inFieldOfView(observer: BoardingPerson, target: BoardingCell): boolean {
     if (same(observer.position, target)) return true;
-    const origin = HexGeometry.toPoint(
-      new HexCoordinate(observer.position.q, observer.position.r),
-    );
-    const forwardHex = BoardingBattle.forward(
-      observer.position,
-      observer.facing,
-    );
-    const forward = HexGeometry.toPoint(
-      new HexCoordinate(forwardHex.q, forwardHex.r),
-    );
-    const point = HexGeometry.toPoint(new HexCoordinate(target.q, target.r));
-    const ax = forward.x - origin.x;
-    const ay = forward.y - origin.y;
-    const bx = point.x - origin.x;
-    const by = point.y - origin.y;
+    const forward = BoardingBattle.forward(observer.position, observer.facing);
+    const ax = forward.q - observer.position.q;
+    const ay = forward.r - observer.position.r;
+    const bx = target.q - observer.position.q;
+    const by = target.r - observer.position.r;
     const denominator = Math.hypot(ax, ay) * Math.hypot(bx, by);
     return denominator > 0 && (ax * bx + ay * by) / denominator >= 0.5 - 1e-9;
   }
 
   #blocksSight(
-    position: BoardingHex,
+    position: BoardingCell,
     ignoreIds: readonly string[] = [],
   ): boolean {
     const feature = this.#featureAt(position);
@@ -692,7 +680,7 @@ export class BoardingBattle {
     );
   }
 
-  #canSee(observer: BoardingPerson, target: BoardingHex): boolean {
+  #canSee(observer: BoardingPerson, target: BoardingCell): boolean {
     if (
       observer.status !== 'active' ||
       distance(observer.position, target) > 8 ||
@@ -705,8 +693,8 @@ export class BoardingBattle {
       .some((position) => this.#blocksSight(position, [observer.id]));
   }
 
-  #visibleFor(side: 'player' | 'defender'): readonly BoardingHex[] {
-    const result = new Map<string, BoardingHex>();
+  #visibleFor(side: 'player' | 'defender'): readonly BoardingCell[] {
+    const result = new Map<string, BoardingCell>();
     for (const observer of this.#state.people.filter(
       (entry) => entry.side === side && entry.status === 'active',
     )) {
@@ -714,7 +702,7 @@ export class BoardingBattle {
         for (let q = 0; q < this.#map.width; q++) {
           const position = { q, r };
           if (this.#canSee(observer, position))
-            result.set(positionKey(position), frozenHex(position));
+            result.set(positionKey(position), frozenCell(position));
         }
       }
     }
@@ -727,7 +715,7 @@ export class BoardingBattle {
     const visibleKeys = new Set(visible.map(positionKey));
     const defenderVisibleKeys = new Set(defenderVisible.map(positionKey));
     const explored = new Map(
-      this.#state.exploredHexes.map((position) => [
+      this.#state.exploredCells.map((position) => [
         positionKey(position),
         position,
       ]),
@@ -760,11 +748,11 @@ export class BoardingBattle {
         position: enemy.position,
       });
     this.#replace({
-      visibleHexes: visible,
-      exploredHexes: [...explored.values()],
+      visibleCells: visible,
+      exploredCells: [...explored.values()],
       lastKnownEnemies: [...lastKnown.values()],
       defenderLastKnownEnemies: [...defenderLastKnown.values()],
-      smokeHexes: this.#state.smoke
+      smokeCells: this.#state.smoke
         .filter((entry) => entry.amount > 0)
         .map((entry) => entry.position),
     });
@@ -778,23 +766,55 @@ export class BoardingBattle {
     );
   }
 
-  #targetPosition(target: BoardingPerson | BoardingFeature): BoardingHex {
+  #targetPosition(target: BoardingPerson | BoardingFeature): BoardingCell {
     return target.position;
   }
 
-  #targetDefense(target: BoardingPerson | BoardingFeature): number {
+  #coverBetween(source: BoardingCell, target: BoardingCell): boolean {
+    const dx = target.q - source.q;
+    const dy = target.r - source.r;
+    const lengthSquared = dx * dx + dy * dy;
+    if (lengthSquared === 0) return false;
+    return this.#state.features.some((feature) => {
+      if (
+        feature.kind !== 'cover' ||
+        feature.destroyed ||
+        Math.max(
+          Math.abs(feature.position.q - target.q),
+          Math.abs(feature.position.r - target.r),
+        ) > 1
+      )
+        return false;
+      const fromSource = {
+        q: feature.position.q - source.q,
+        r: feature.position.r - source.r,
+      };
+      const t = (fromSource.q * dx + fromSource.r * dy) / lengthSquared;
+      if (t <= 0 || t >= 1) return false;
+      const closest = {
+        q: source.q + dx * t,
+        r: source.r + dy * t,
+      };
+      return (
+        Math.hypot(
+          feature.position.q - closest.q,
+          feature.position.r - closest.r,
+        ) <= 0.75
+      );
+    });
+  }
+
+  #targetDefense(
+    target: BoardingPerson | BoardingFeature,
+    source?: BoardingCell,
+  ): number {
     if ('side' in target) {
       let result = target.defense;
       const smoked = this.#state.smoke.some(
         (entry) => entry.amount > 0 && same(entry.position, target.position),
       );
       if (smoked) result += 2;
-      const hasCover = this.#state.features.some(
-        (feature) =>
-          feature.kind === 'cover' &&
-          !feature.destroyed &&
-          distance(feature.position, target.position) === 1,
-      );
+      const hasCover = source && this.#coverBetween(source, target.position);
       if (hasCover) result += target.crouched ? 5 : 2;
       return result;
     }
@@ -834,7 +854,7 @@ export class BoardingBattle {
       )
         reason = 'The shot is blocked.';
     }
-    const defense = target ? this.#targetDefense(target) : 99;
+    const defense = target ? this.#targetDefense(target, source?.position) : 99;
     const needed = defense - (source?.accuracy ?? 0);
     const chance = reason
       ? 0
@@ -842,7 +862,7 @@ export class BoardingBattle {
     return Object.freeze({ chance, defense, reason });
   }
 
-  #addNoise(position: BoardingHex, actorSide: BoardingSide): void {
+  #addNoise(position: BoardingCell, actorSide: BoardingSide): void {
     const audience =
       actorSide === 'defender' ? 'player' : ('defender' as const);
     const existing = this.#state.noiseMarkers.some(
@@ -852,7 +872,7 @@ export class BoardingBattle {
       this.#replace({
         noiseMarkers: [
           ...this.#state.noiseMarkers,
-          { position: frozenHex(position), audience },
+          { position: frozenCell(position), audience },
         ],
       });
   }
@@ -907,12 +927,11 @@ export class BoardingBattle {
     const preview =
       kind === 'Melee'
         ? {
-            chance: distance(source.position, target.position) === 1 ? 75 : 0,
-            defense: this.#targetDefense(target),
-            reason:
-              distance(source.position, target.position) === 1
-                ? null
-                : 'Melee requires an adjacent target.',
+            chance: sharesEdge(source.position, target.position) ? 75 : 0,
+            defense: this.#targetDefense(target, source.position),
+            reason: sharesEdge(source.position, target.position)
+              ? null
+              : 'Melee requires an adjacent target.',
           }
         : this.attackPreview(sourceId, targetId);
     if (preview.reason) throw new Error(preview.reason);
@@ -957,10 +976,10 @@ export class BoardingBattle {
     }
   }
 
-  #move(destination: BoardingHex): void {
+  #move(destination: BoardingCell): void {
     const actor = this.#actor();
     const path = this.pathTo(actor.id, destination);
-    if (!path) throw new Error('No route to that hex.');
+    if (!path) throw new Error('No route to that tile.');
     if (path.cost > this.#state.activation!.remaining)
       throw new Error('The route needs more AP.');
     for (const step of path.steps) {
@@ -979,7 +998,7 @@ export class BoardingBattle {
         this.#spend(cost);
         this.#updatePerson(actor.id, (entry) => ({
           ...entry,
-          position: frozenHex(step.position),
+          position: frozenCell(step.position),
         }));
         this.#refreshKnowledge();
         const moved = this.#state.people.find(
@@ -995,7 +1014,7 @@ export class BoardingBattle {
     const door = this.#state.features.find(
       (entry) => entry.id === id && entry.kind === 'door' && !entry.destroyed,
     );
-    if (!door || distance(actor.position, door.position) !== 1)
+    if (!door || !sharesEdge(actor.position, door.position))
       throw new Error('Choose an adjacent door.');
     if (action === 'open' && door.locked)
       throw new Error('The door is locked.');
@@ -1010,7 +1029,7 @@ export class BoardingBattle {
     const door = this.#state.features.find(
       (entry) => entry.id === id && entry.kind === 'door' && !entry.destroyed,
     );
-    if (!door || distance(actor.position, door.position) !== 1 || !door.locked)
+    if (!door || !sharesEdge(actor.position, door.position) || !door.locked)
       throw new Error('Choose an adjacent locked door.');
     const die = this.#die(20);
     const success = die + 2 >= 12;
@@ -1028,42 +1047,45 @@ export class BoardingBattle {
     });
   }
 
-  #grenade(grenade: 'frag' | 'smoke', target: BoardingHex): void {
+  #grenade(grenade: 'frag' | 'smoke', target: BoardingCell): void {
     const actor = this.#spend(GRENADE_AP);
     if (distance(actor.position, target) > 6)
-      throw new Error('The target hex is outside throwing range.');
+      throw new Error('The target tile is outside throwing range.');
     const die = this.#die(20);
-    const difficulty = 8 + distance(actor.position, target);
-    let impact = frozenHex(target);
+    const difficulty = 8 + Math.ceil(distance(actor.position, target));
+    let impact = frozenCell(target);
     if (die + actor.accuracy < difficulty) {
       const margin = difficulty - (die + actor.accuracy);
       const deviation = Math.min(3, Math.max(1, Math.ceil(margin / 5)));
-      const facing = this.#die(6) - 1;
+      const direction = ADJACENT_DIRECTIONS[this.#die(8) - 1]!;
       for (let index = 0; index < deviation; index++)
-        impact = BoardingBattle.forward(impact, facing);
-      if (!this.#map.contains(impact)) impact = frozenHex(target);
+        impact = frozenCell({
+          q: impact.q + direction.q,
+          r: impact.r + direction.r,
+        });
+      if (!this.#map.contains(impact)) impact = frozenCell(target);
     }
     this.#addNoise(impact, actor.side);
     if (grenade === 'smoke') {
       const amounts = new Map(
         this.#state.smoke.map((entry) => [positionKey(entry.position), entry]),
       );
-      const add = (position: BoardingHex, amount: number) => {
+      const add = (position: BoardingCell, amount: number) => {
         if (!this.#map.contains(position)) return;
         const old = amounts.get(positionKey(position));
         amounts.set(positionKey(position), {
-          position: frozenHex(position),
+          position: frozenCell(position),
           amount: (old?.amount ?? 0) + amount,
         });
       };
       add(impact, 4);
-      for (const direction of DIRECTIONS)
+      for (const direction of ADJACENT_DIRECTIONS)
         add({ q: impact.q + direction.q, r: impact.r + direction.r }, 2);
       this.#replace({ smoke: [...amounts.values()] });
     } else {
       const area = [
         impact,
-        ...DIRECTIONS.map((direction) => ({
+        ...ADJACENT_DIRECTIONS.map((direction) => ({
           q: impact.q + direction.q,
           r: impact.r + direction.r,
         })),
@@ -1112,7 +1134,7 @@ export class BoardingBattle {
     if (
       !target ||
       target.status !== 'incapacitated' ||
-      distance(actor.position, target.position) !== 1
+      !sharesEdge(actor.position, target.position)
     )
       throw new Error('Choose an adjacent incapacitated person.');
     if (actor.medPacks < 1) throw new Error('No Med-pack remains.');
@@ -1217,7 +1239,7 @@ export class BoardingBattle {
     for (const entry of this.#state.smoke) {
       let amount = Math.max(0, entry.amount - (this.#die(3) - 1));
       if (amount >= 3) {
-        const direction = DIRECTIONS[this.#die(6) - 1]!;
+        const direction = ADJACENT_DIRECTIONS[this.#die(8) - 1]!;
         const spread = {
           q: entry.position.q + direction.q,
           r: entry.position.r + direction.r,
@@ -1225,7 +1247,7 @@ export class BoardingBattle {
         if (this.#map.contains(spread) && this.#passable(spread, 'smoke')) {
           const old = values.get(positionKey(spread));
           values.set(positionKey(spread), {
-            position: frozenHex(spread),
+            position: frozenCell(spread),
             amount: (old?.amount ?? 0) + 1,
           });
           amount--;
@@ -1269,7 +1291,7 @@ export class BoardingBattle {
           !feature.destroyed &&
           !feature.open &&
           !feature.locked &&
-          distance(feature.position, actor.position) === 1,
+          sharesEdge(feature.position, actor.position),
       );
       if (adjacentDoor && remaining >= 1) {
         this.#updateFeature(adjacentDoor.id, (entry) => ({
@@ -1324,7 +1346,7 @@ export class BoardingBattle {
               (
                 candidate,
               ): candidate is {
-                destination: BoardingHex;
+                destination: BoardingCell;
                 path: BoardingPath;
                 safety: number;
               } =>
@@ -1349,7 +1371,7 @@ export class BoardingBattle {
           else
             this.#updatePerson(actor.id, (entry) => ({
               ...entry,
-              position: frozenHex(step.position),
+              position: frozenCell(step.position),
             }));
         }
       }

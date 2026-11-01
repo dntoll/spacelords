@@ -3,18 +3,16 @@ import type {
   BoardingCommand,
   BoardingPerson,
 } from './BoardingBattle.js';
-import type { BoardingHex } from './BoardingMap.js';
+import type { BoardingCell } from './BoardingMap.js';
 
-const DIRECTIONS: readonly BoardingHex[] = [
+const DIRECTIONS: readonly BoardingCell[] = [
   { q: 1, r: 0 },
-  { q: 1, r: -1 },
   { q: 0, r: -1 },
   { q: -1, r: 0 },
-  { q: -1, r: 1 },
   { q: 0, r: 1 },
 ];
 
-function destinations(target: BoardingHex): readonly BoardingHex[] {
+function destinations(target: BoardingCell): readonly BoardingCell[] {
   return [
     target,
     ...DIRECTIONS.map((direction) => ({
@@ -66,7 +64,7 @@ export function chooseDefenderCommand(
         (
           candidate,
         ): candidate is {
-          destination: BoardingHex;
+          destination: BoardingCell;
           path: NonNullable<typeof candidate.path>;
         } =>
           !!candidate.path &&

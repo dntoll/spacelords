@@ -134,7 +134,9 @@ Se [hela visionen](docs/game-vision.md).
   `isometrisk-bordningsvy` samt `spelmassigt-bordningsgranssnitt` är
   **Fullständigt implementerat**. Den första versionen är ett separat testspel
   från huvudmenyn på en handredigerbar transportkarta och påverkar inte
-  kampanj eller sparplatser. Se
+  kampanj eller sparplatser. Kartan använder klassiska kvadratiska
+  2:1-diamantrutor, fyra riktningar och 90-gradersvändningar; detta ersätter
+  uttryckligen den tidigare hexkartan. Se
   [bordningsstrid](docs/boarding-combat.md).
 
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,

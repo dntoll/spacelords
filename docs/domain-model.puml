@@ -425,7 +425,7 @@ package "Fristående bordningsprototyp" {
   }
   class BoardingPerson {
     side: player | defender | civilian
-    position: HexCoordinate
+    position: BoardingCell
     facing
     hitPoints
     actionPoints
@@ -433,22 +433,26 @@ package "Fristående bordningsprototyp" {
   }
   class BoardingFeature {
     kind: door | wall | reactor | cover | exit
-    position: HexCoordinate
+    position: BoardingCell
     hitPoints
     open
     locked
   }
   class BoardingKnowledge {
-    visibleHexes
-    exploredHexes
+    visibleCells
+    exploredCells
     lastKnownEnemies
     noiseMarkers
+  }
+  class BoardingCell {
+    column
+    row
   }
   BoardingBattle *-- BoardingMap
   BoardingBattle *-- BoardingPerson
   BoardingBattle *-- BoardingFeature
   BoardingBattle *-- BoardingKnowledge
-  BoardingMap --> HexCoordinate
+  BoardingMap --> BoardingCell
 }
 
 note "Kamera, controllers och p5-vyer är tekniska begrepp\noch ingår inte i problemdomänen." as Scope

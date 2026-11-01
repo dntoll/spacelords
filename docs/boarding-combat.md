@@ -18,9 +18,10 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   fortsatt lika resultat slås om. Civilister agerar sist.
 - `actionpoints-och-riktad-forflyttning` — **Fullständigt implementerat**. Egenskaper och
   fasta utrustningsmodifierare ger AP. Soldater går endast framåt. Ett stående
-  hexsteg kostar 2 AP, ett hukat steg 3 AP, en 60-gradersvändning 1 AP och byte
-  mellan stående och hukad ställning 1 AP. Handlingar får blandas fritt.
-  Vänster- och högervändning följer kartans visuella riktning.
+  rutsteg kostar 2 AP, ett hukat steg 3 AP, en 90-gradersvändning 1 AP och byte
+  mellan stående och hukad ställning 1 AP. Handlingar får blandas fritt och
+  förflyttning sker i fyra riktningar utan diagonala steg. Detta ersätter
+  uttryckligen den tidigare hexkartan med sex riktningar och 60-gradersvändning.
 - `tydlig-bordningsstatus` — **Fullständigt implementerat**. Den aktiva soldaten
   namnges uttryckligen och markeras på kartan. Varje bordningssoldat visas med
   en egen HP-bar och numeriskt HP-värde. Kartans förklaring identifierar aktiv
@@ -29,9 +30,8 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   `Combat details` att försvararen agerar och loggar handlingens typ utan att
   avslöja positionen.
 - `isometrisk-bordningsvy` — **Fullständigt implementerat**. Den regelstyrda
-  hexkartan visas med en isometrisk projektion och upphöjda barriärer, skydd och
-  spelpjäser. Projektionen påverkar inte hexkoordinater, sikt eller övriga
-  stridsregler.
+  kvadratkartan visas med klassiska 2:1-diamantrutor och upphöjda barriärer,
+  skydd och spelpjäser.
 - `spelmassigt-bordningsgranssnitt` — **Fullständigt implementerat**. Kartan
   upptar huvuddelen av skärmen. Truppstatus, handlingar, zoom,
   kartförklaring och stridslogg ligger som kompakta HUD-lager ovanpå kartan.
@@ -40,7 +40,7 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
 - `sikt-minne-och-ljudmarkorer` — **Fullständigt implementerat**. Soldater ser 120 grader.
   Sidorna delar aktuell sikt och senast kända fiendeposition. Skeppets yttre
   form är känd, interiören utforskas och aktuell sikt skiljs tydligt från
-  kartminne. Våld visar sin exakta hex som ljudmarkör för motståndarsidan till
+  kartminne. Våld visar sin exakta ruta som ljudmarkör för motståndarsidan till
   rundans slut.
 - `d20-bordningsstrid` — **Fullständigt implementerat**. Skott använder öppet D20 plus
   Accuracy mot försvar, men visar även träffchans i procent. Naturlig 1 missar
@@ -49,14 +49,16 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   väljas som direkta mål. Explosioner kan skada väggar och dörrar. En förstörd
   barriär blir en permanent passage; ytterskrovet kan inte förstöras.
 - `overwatch-och-skydd` — **Fullständigt implementerat**. Låga objekt ger `Half cover`.
-  Hukning bakom dem ger starkare skydd. Overwatch reserverar AP för ett
+  De skyddar bara när de ligger mellan skytt och mål; hukning bakom dem ger
+  starkare skydd. Overwatch reserverar AP för ett
   automatiskt skott mot den första fientliga soldat som rör sig i det
   120-gradiga synfältet; civilister är aldrig mål.
-- `granater-och-rok` — **Fullständigt implementerat**. Granater kastas mot en hex med D20.
+- `granater-och-rok` — **Fullständigt implementerat**. Granater kastas mot en ruta med D20.
   Missmarginal styr avståndet och slumpen riktningen. Barriärer stoppar
   explosioner men tar skada. Rök har intern mängd, sprids och avtar slumpmässigt
-  vid rundslut, men visas binärt. Man ser in i en rökhex men inte bakom den;
-  mål i rök har `Half cover`.
+  till någon av åtta omgivande rutor vid rundslut, men visas binärt. Explosioner
+  påverkar mål­rutan och alla åtta omgivande rutor. Man ser in i en rökruta men
+  inte bakom den; mål i rök har `Half cover`.
 - `utslagning-och-medic` — **Fullständigt implementerat**. Vid 0 HP blir alla personer
   utslagna. Nästa träff dödar. `Med-pack` kan återuppliva. En sida utan
   stridsdugliga soldater är neutraliserad; utslagna överlevande tas till fånga.
@@ -83,7 +85,7 @@ stänga. En låst dörr kan hackas tyst eller förstöras med skott och explosio
 Initiativordningen omfattar alla stridande soldater. Varje aktivering tillhör
 en bestämd soldat. Efter den sista soldaten agerar civilisterna, därefter
 uppdateras reaktor, rök och tillfälliga ljudmarkörer innan nästa initiativslag.
-Spelaren väljer en destinationshex och ser den billigaste vägen innan den
+Spelaren väljer en destinationsruta och ser den billigaste vägen innan den
 utförs stegvis. Vändning vänster och höger kan även göras separat.
 
 ## Avgränsning
