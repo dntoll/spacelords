@@ -178,7 +178,8 @@ Se [hela visionen](docs/game-vision.md).
   projicerar på rutans exakta 2:1-diamant. Väggar tar utklipp ur en lång
   fasadtextur så att en längre sträcka blir sammanhängande. `Half cover` är
   hälften så hög som en vägg. Soldater, försvarare och civilister använder var
-  sin stillbild ur fraktionsarket och behåller en separat riktningspil. Se
+  sin isolerade stillbild ur fraktionsarket, står med fötterna på rutans centrum
+  och behåller en separat riktningspil. Se
   [bordningsstrid](docs/boarding-combat.md).
 
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,

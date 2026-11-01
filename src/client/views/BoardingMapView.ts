@@ -9,6 +9,7 @@ import type { BoardingMapPort } from './BoardingView.js';
 import floorTileUrl from '../assets/boarding/floor-tile.png';
 import wallTileUrl from '../assets/boarding/wall-tile.png';
 import factionSpritesUrl from '../assets/boarding/faction-sprites.png';
+import { boardingCharacterSprite } from './BoardingCharacterSprite.js';
 import {
   boardingCellFromIsoPoint,
   boardingFeatureFootprint,
@@ -26,12 +27,6 @@ import {
 } from './BoardingProjection.js';
 
 const key = (position: BoardingCell): string => `${position.q},${position.r}`;
-
-const personSprites = {
-  player: { x: 48, y: 0, width: 124, height: 108 },
-  defender: { x: 48, y: 410, width: 124, height: 110 },
-  civilian: { x: 48, y: 755, width: 124, height: 116 },
-} as const;
 
 export class BoardingMapView implements BoardingMapPort {
   readonly #p5: p5;
@@ -765,21 +760,24 @@ export class BoardingMapView implements BoardingMapPort {
         sketch.ellipse(center.x, center.y + 1, 32, 13);
       }
       if (this.#factionSprites) {
-        const sprite = personSprites[person.side];
+        const sprite = boardingCharacterSprite(
+          person.side,
+          center,
+          person.crouched,
+        );
         sketch.push();
-        sketch.imageMode(sketch.CENTER);
         if (person.status === 'dead') sketch.tint(100, 115);
         else if (person.status === 'incapacitated') sketch.tint(190, 175);
         sketch.image(
           this.#factionSprites,
-          center.x,
-          center.y - (person.crouched ? 16 : 23),
-          person.crouched ? 41 : 47,
-          person.crouched ? 41 : 53,
-          sprite.x,
-          sprite.y,
-          sprite.width,
-          sprite.height,
+          sprite.destination.x,
+          sprite.destination.y,
+          sprite.destination.width,
+          sprite.destination.height,
+          sprite.source.x,
+          sprite.source.y,
+          sprite.source.width,
+          sprite.source.height,
         );
         sketch.pop();
       } else {
@@ -794,7 +792,11 @@ export class BoardingMapView implements BoardingMapPort {
         sketch.circle(center.x, bodyY, person.crouched ? 17 : 21);
       }
       sketch.fill('#111827');
-      sketch.rect(center.x - 15, center.y - 57, 30, 5, 2);
+      const healthY = this.#factionSprites
+        ? boardingCharacterSprite(person.side, center, person.crouched)
+            .destination.y - 6
+        : bodyY - 18;
+      sketch.rect(center.x - 15, healthY, 30, 5, 2);
       sketch.fill(
         person.side === 'player'
           ? '#5ac8fa'
@@ -804,7 +806,7 @@ export class BoardingMapView implements BoardingMapPort {
       );
       sketch.rect(
         center.x - 14,
-        center.y - 56,
+        healthY + 1,
         (28 * person.hitPoints) / person.maxHitPoints,
         3,
         1,

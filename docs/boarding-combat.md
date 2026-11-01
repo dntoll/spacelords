@@ -62,9 +62,10 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   läses som en enda vägg. Kartreglerna ändras inte.
 - `bordningsfigurer-fran-spritesheet` — **Fullständigt implementerat**. Spelarens
   soldater, försvarare och civilister visas med var sitt utklipp ur det gemensamma
-  fraktionsarket. Riktningspilen, HP, aktiv markering och statusmarkeringar
-  behålls. Samma stillbild används i alla riktningar tills separata riktningar
-  och animationer införs.
+  fraktionsarket. Varje utklipp innehåller bara den avsedda figuren och
+  förankras med fötterna på rutans centrum. Riktningspilen, HP, aktiv markering
+  och statusmarkeringar behålls. Samma stillbild används i alla riktningar tills
+  separata riktningar och animationer införs.
 - `spelmassigt-bordningsgranssnitt` — **Fullständigt implementerat**. Kartan
   upptar huvuddelen av skärmen. Truppstatus, handlingar, zoom,
   kartförklaring och stridslogg ligger som kompakta HUD-lager ovanpå kartan.
