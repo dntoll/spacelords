@@ -37,7 +37,7 @@ function hexPoint(
   };
 }
 
-test('fristaende-bordningsprototyp / miljomal-och-forstorelse: targets a door without changing saves', async ({
+test('fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordningsstatus: targets a door and advances a hidden defender without changing saves', async ({
   page,
 }) => {
   await page.goto('./');
@@ -73,6 +73,21 @@ test('fristaende-bordningsprototyp / miljomal-och-forstorelse: targets a door wi
   await expect(
     dialog.getByRole('button', { name: 'Shoot', exact: true }),
   ).toBeDisabled();
+  const defendersActing = dialog.getByText('Defenders are acting…', {
+    exact: true,
+  });
+  for (let index = 0; index < 4; index++) {
+    if (await defendersActing.isVisible()) break;
+    await dialog
+      .getByRole('button', { name: 'End soldier turn', exact: true })
+      .click();
+  }
+  await expect(defendersActing).toBeVisible();
+  await dialog.getByText('Combat details', { exact: true }).click();
+  await expect(dialog.locator('.boarding-activity')).toContainText(
+    'A defender is acting',
+  );
+  await expect(dialog.locator('.boarding-log')).toContainText(/A defender /);
 
   await dialog
     .getByRole('button', { name: 'Close boarding', exact: true })

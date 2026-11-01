@@ -284,8 +284,15 @@ export class BoardingView {
         ),
       );
 
+    const defenderActing =
+      state.phase === 'fighting' &&
+      state.currentActorId !== null &&
+      (!actor || actor.side === 'defender');
     this.#details.replaceChildren(
       element('summary', '', 'Combat details'),
+      ...(defenderActing
+        ? [element('p', 'boarding-activity', 'A defender is acting…')]
+        : []),
       element('p', '', 'D20 rolls and modifiers are shown openly.'),
       element('pre', 'boarding-log', state.log.join('\n')),
     );

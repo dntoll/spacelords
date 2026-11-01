@@ -375,6 +375,7 @@ describe('forsvarare-och-civilister', () => {
       battle.snapshot.people.find((person) => person.id === defender.id)
         ?.position,
     ).not.toEqual({ q: 4, r: 5 });
+    expect(battle.snapshot.log.at(-1)).toBe('A defender moves.');
   });
 
   it('moves civilians toward escape pods after all soldiers have acted', () => {

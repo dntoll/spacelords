@@ -164,6 +164,23 @@ const distance = (a: BoardingHex, b: BoardingHex): number =>
   new HexCoordinate(a.q, a.r).distanceTo(new HexCoordinate(b.q, b.r));
 const normalizeFacing = (facing: number): number => ((facing % 6) + 6) % 6;
 
+function hiddenDefenderActivity(command: BoardingCommand): string {
+  if (command.type === 'turn') return 'A defender turns.';
+  if (command.type === 'move') return 'A defender moves.';
+  if (command.type === 'crouch' || command.type === 'stand')
+    return 'A defender changes stance.';
+  if (command.type === 'door' || command.type === 'hack')
+    return 'A defender interacts with a door.';
+  if (command.type === 'shoot') return 'A defender fires.';
+  if (command.type === 'melee') return 'A defender attacks.';
+  if (command.type === 'grenade') return 'A defender throws a grenade.';
+  if (command.type === 'overwatch')
+    return 'A defender takes a prepared position.';
+  if (command.type === 'med-pack') return 'A defender uses equipment.';
+  if (command.type === 'evacuate') return 'A defender evacuates.';
+  return 'A defender finishes acting.';
+}
+
 function freezeState(state: BoardingBattleState): BoardingBattleState {
   const people = Object.freeze(
     state.people.map((person) =>
@@ -1430,7 +1447,11 @@ export class BoardingBattle {
       );
       if (!actor || actor.side !== 'defender' || actor.status !== 'active')
         return acted;
-      this.command(chooseDefenderCommand(this, actor));
+      const command = chooseDefenderCommand(this, actor);
+      this.#replace({
+        log: [...this.#state.log, hiddenDefenderActivity(command)],
+      });
+      this.command(command);
       acted = true;
       if (singleStep) return true;
     }

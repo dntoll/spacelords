@@ -279,6 +279,17 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus: exposes corre
   selectHex({ q: player.position.q + 1, r: player.position.r - 1 });
   expect(document.body.textContent).toContain('Destination');
   expect(battle.snapshot).toStrictEqual(boardingState);
+  const defender = created.snapshot.people.find(
+    (person) => person.side === 'defender',
+  )!;
+  view.render({
+    ...battle.visibleSnapshot,
+    currentActorId: defender.id,
+    activation: { id: defender.id, remaining: 12 },
+  });
+  expect(document.querySelector('.boarding-activity')!.textContent).toBe(
+    'A defender is acting…',
+  );
   view.dispose();
 });
 
@@ -326,7 +337,7 @@ it('miljomal-och-forstorelse: selects a door as a direct rifle target', () => {
   view.dispose();
 });
 
-it('fristaende-bordningsprototyp: starts and closes from the menu without writing a save slot', () => {
+it('fristaende-bordningsprototyp / forsvarare-och-civilister / tydlig-bordningsstatus: starts, advances a hidden defender and closes without writing a save slot', async () => {
   vi.useFakeTimers();
   const save = vi.fn();
   const repo: SaveRepository = {
@@ -357,6 +368,23 @@ it('fristaende-bordningsprototyp: starts and closes from the menu without writin
   control!.click();
   expect(model.snapshot.screen).toBe('saves');
   expect(model.snapshot.boardingBattle?.phase).toBe('fighting');
+  for (let index = 0; index < 4; index++) {
+    const boarding = model.snapshot.boardingBattle!;
+    const actor = boarding.people.find(
+      (person) => person.id === boarding.currentActorId,
+    );
+    if (!actor || actor.side !== 'player') break;
+    emit({ type: 'boarding-command', command: { type: 'end-activation' } });
+  }
+  const hiddenDefender = model.snapshot.boardingBattle!;
+  expect(
+    hiddenDefender.people.find(
+      (person) => person.id === hiddenDefender.currentActorId,
+    ),
+  ).toBeUndefined();
+  const logLength = hiddenDefender.log.length;
+  await vi.advanceTimersByTimeAsync(500);
+  expect(model.snapshot.boardingBattle!.log.length).toBeGreaterThan(logLength);
   model.save();
   emit({ type: 'close-boarding' });
   expect(model.snapshot.boardingBattle).toBeNull();

@@ -1850,6 +1850,17 @@ export class AppModel {
   commandBoarding(command: BoardingCommand): void {
     this.#testBoarding?.command(command);
   }
+  shouldPlayBoardingStep(): boolean {
+    const boarding = this.#testBoarding?.snapshot;
+    const actor = boarding?.people.find(
+      (person) => person.id === boarding.currentActorId,
+    );
+    return (
+      boarding?.phase === 'fighting' &&
+      actor?.side === 'defender' &&
+      actor.status === 'active'
+    );
+  }
   playBoardingStep(): boolean {
     return this.#testBoarding?.actAutomatically(true) ?? false;
   }

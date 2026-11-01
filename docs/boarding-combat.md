@@ -24,7 +24,9 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
 - `tydlig-bordningsstatus` — **Fullständigt implementerat**. Den aktiva soldaten
   namnges uttryckligen, markeras på kartan och visas med en HP-bar och numeriskt
   HP-värde. Kartans förklaring identifierar aktiv soldat, riktning och
-  `Half cover`, som har en egen färg.
+  `Half cover`, som har en egen färg. Under en dold försvarares tur visar
+  `Combat details` att försvararen agerar och loggar handlingens typ utan att
+  avslöja positionen.
 - `sikt-minne-och-ljudmarkorer` — **Fullständigt implementerat**. Soldater ser 120 grader.
   Sidorna delar aktuell sikt och senast kända fiendeposition. Skeppets yttre
   form är känd, interiören utforskas och aktuell sikt skiljs tydligt från

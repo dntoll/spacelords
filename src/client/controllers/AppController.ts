@@ -815,12 +815,7 @@ export class AppController {
     const activated = this.#model.autoSelectBattleShip();
     const snapshot = this.#model.snapshot;
     const playback = snapshot.eventPlayback;
-    const boarding = snapshot.boardingBattle;
-    if (
-      boarding?.phase === 'fighting' &&
-      boarding.people.find((person) => person.id === boarding.currentActorId)
-        ?.side === 'defender'
-    ) {
+    if (this.#model.shouldPlayBoardingStep()) {
       this.#playbackTimer = setTimeout(() => {
         try {
           this.#model.playBoardingStep();
