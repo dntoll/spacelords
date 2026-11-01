@@ -54,8 +54,41 @@ function setup() {
   };
   const controller = new AppController(model, view);
   controller.start();
-  return { model, controller, emit, repo };
+  return { model, controller, emit, repo, view };
 }
+
+it('animerade-stridsskott: waits for the final shot before timing the outcome and ignores commands during effects', async () => {
+  vi.useFakeTimers();
+  const { model, controller, emit, view } = setup();
+  let finish = () => {};
+  const animate = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  view.animateBattleShot = animate;
+  const target = model.snapshot.tacticalBattle!.pieces.find(
+    (piece) => piece.side === 'enemy',
+  )!;
+  emit({
+    type: 'battle-command',
+    command: { type: 'fire', weapon: 'Cannon', at: target.position! },
+  });
+  expect(animate).toHaveBeenCalledOnce();
+  const result = model.snapshot.battleFeedback!;
+  expect(result.phase).toBe('complete');
+  emit({ type: 'battle-command', command: { type: 'end-activation' } });
+  await vi.advanceTimersByTimeAsync(4000);
+  expect(model.snapshot.battleFeedback).toEqual(result);
+  finish();
+  await Promise.resolve();
+  await vi.advanceTimersByTimeAsync(2799);
+  expect(model.snapshot.battleFeedback).not.toBeNull();
+  await vi.advanceTimersByTimeAsync(1);
+  expect(model.snapshot.battleFeedback).toBeNull();
+  controller.dispose();
+});
 
 it('automatiskt-skeppsval-i-strid: activates an available player ship on entry and preserves a resumed activation', () => {
   const { model, controller, emit } = setup();

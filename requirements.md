@@ -10,6 +10,16 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Illustrerade händelser och stridseffekter:** `bilder-i-events`,
+  `delproduktion-med-sammanhang`, `flottor-fore-planetdetaljer`,
+  `animerade-stridsskott` och `skadepartiklar-i-strid` är
+  **Fullständigt implementerat**. Events visar bilder och symboler per rad.
+  Delproduktion anger mottagande beställning och färdiga reserverade delar
+  av totalt behov. Hexdetaljer visar flottor före hela planetdelen.
+  Strid visar projektiler, träffpartiklar och explosioner före nästa handling.
+  Äldre sparningar bevaras. Se [Events](docs/events-and-guidance.md) och
+  [taktisk strid](docs/tactical-combat.md).
+
 - **Vald flotta och stjärnupptäckt:** `vald-flotta-visar-destinationspil` och
   `stjarnupptackt-utan-avbrott` är **Fullständigt implementerat**. En vald
   flotta utan Route visar sin destinationspil även på Star map. Utforskad

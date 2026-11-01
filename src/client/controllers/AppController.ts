@@ -14,6 +14,7 @@ export class AppController {
   #runningTurn = false;
   #disposed = false;
   #framingEvent = false;
+  #battleAnimating = false;
   #receiptTimer: ReturnType<typeof setTimeout> | undefined;
   #playbackTimer: ReturnType<typeof setTimeout> | undefined;
   #fleetPointer: {
@@ -67,8 +68,34 @@ export class AppController {
   }
 
   #render(snapshot = this.#model.snapshot): void {
+    const previous =
+      this.#presented?.battleFeedback ?? this.#presented?.tacticalBattle;
+    const battle = snapshot.battleFeedback ?? snapshot.tacticalBattle;
     this.#presented = snapshot;
     this.#view.render(snapshot);
+    const shot = battle?.lastShot;
+    if (
+      !this.#battleAnimating &&
+      shot &&
+      previous?.id === battle.id &&
+      previous.lastShot?.id !== shot.id &&
+      snapshot.screen !== 'saves' &&
+      this.#view.animateBattleShot
+    ) {
+      this.#battleAnimating = true;
+      clearTimeout(this.#playbackTimer);
+      const finish = () => {
+        this.#battleAnimating = false;
+        if (this.#disposed) return;
+        this.#model.autoSelectBattleShip();
+        this.#render();
+        this.#schedulePlayback();
+      };
+      void this.#view.animateBattleShot(shot).then(finish, (error) => {
+        this.#model.reportError(error);
+        finish();
+      });
+    }
   }
 
   // responsiv-stjarnkarta: camera gestures reuse the last immutable empire snapshot.
@@ -153,6 +180,7 @@ export class AppController {
 
   #handleIntent(intent: AppIntent): void {
     if (intent.type === 'battle-command') {
+      if (this.#battleAnimating) return;
       this.#model.commandBattle(intent.command);
       this.#model.autoSelectBattleShip();
       this.#render();
@@ -792,7 +820,7 @@ export class AppController {
 
   #schedulePlayback(): void {
     clearTimeout(this.#playbackTimer);
-    if (this.#disposed) return;
+    if (this.#disposed || this.#battleAnimating) return;
     const activated = this.#model.autoSelectBattleShip();
     const snapshot = this.#model.snapshot;
     const playback = snapshot.eventPlayback;

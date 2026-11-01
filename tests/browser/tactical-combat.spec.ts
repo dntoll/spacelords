@@ -2,7 +2,25 @@ import { expect, test, type Page } from '@playwright/test';
 import { encounterGame, arrangeBattle } from '../fixtures/battle-checkpoint.js';
 import { startFirstSlot, ignoreEventsUntil } from './save-helpers.js';
 import type { SavedGame } from '../../src/client/models/SaveRepository.js';
-import { battleHex } from '../../src/client/models/TacticalBattle.js';
+import {
+  battleHex,
+  battleHexPoint,
+  type BattleState,
+} from '../../src/client/models/TacticalBattle.js';
+import { createTestBattle } from '../../src/client/models/TestBattle.js';
+
+async function aimAtPirate(page: Page, state: BattleState) {
+  const canvas = page.locator('.battle-canvas canvas');
+  await expect(canvas).toBeVisible();
+  const size = await canvas.evaluate((node) => ({
+    width: node.clientWidth,
+    height: node.clientHeight,
+  }));
+  const target = state.pieces.find(
+    (piece) => piece.side === 'enemy',
+  )!.position!;
+  await canvas.click({ position: battleHexPoint(state, size, target) });
+}
 
 async function saved(page: Page): Promise<SavedGame> {
   return page.evaluate(
@@ -144,7 +162,6 @@ test('automatiskt-skeppsval-i-strid / synligt-stridsresultat / stridsorder-utan-
       'Forward / escape',
       'Turn right 60°',
       'Weapon',
-      'Target',
       'Fire weapon',
       'End ship turn',
     ]) {
@@ -167,6 +184,7 @@ test('automatiskt-skeppsval-i-strid / synligt-stridsresultat / stridsorder-utan-
       path: testInfo.outputPath(`battle-orders-${size.width}.png`),
     });
   }
+  await aimAtPirate(page, game.tacticalBattle!);
   await expect(
     dialog.getByRole('button', { name: 'Fire weapon', exact: true }),
   ).toBeEnabled();
@@ -270,6 +288,7 @@ test('fuskknapp-for-teststrid: opens combat from the main menu and leaves save s
     .getByRole('button', { name: 'Test battle (cheat)', exact: true })
     .click();
   const dialog = page.getByRole('dialog', { name: 'Tactical combat' });
+  await aimAtPirate(page, createTestBattle().snapshot);
   await expect(
     dialog.getByRole('button', { name: 'Fire weapon', exact: true }),
   ).toBeEnabled();

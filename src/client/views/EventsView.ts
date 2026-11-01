@@ -1,6 +1,6 @@
 import type { GameEvent } from '../models/Game.js';
 import { element } from './dom.js';
-import { gameText } from './GameText.js';
+import { renderEventContent } from './EventContent.js';
 
 export function renderCombatLog(lines: readonly string[]): HTMLElement {
   const details = element('details', 'combat-event-log');
@@ -21,17 +21,15 @@ export function renderEvents(
   year.append(element('h3', '', `Year ${(events[0] ?? pending)!.round}`));
   const entries = element('ol', 'event-entries');
   for (const event of events) {
-    const row = element('li', '', gameText(event.text));
+    const row = element('li');
+    row.append(renderEventContent(event));
     if (event.combatLog) row.append(renderCombatLog(event.combatLog));
     row.dataset.eventId = event.id;
     entries.append(row);
   }
   if (pending) {
-    const destination = element(
-      'li',
-      'event-destination',
-      gameText(pending.text),
-    );
+    const destination = element('li', 'event-destination');
+    destination.append(renderEventContent(pending));
     destination.setAttribute('aria-hidden', 'true');
     entries.append(destination);
   }

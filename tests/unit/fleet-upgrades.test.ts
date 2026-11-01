@@ -9,6 +9,32 @@ import {
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { finishYear } from '../fixtures/salvage.js';
 
+it('delproduktion-med-sammanhang: reports parts reserved for a fleet upgrade before installing them', () => {
+  const state = upgradeState();
+  state.colonies[0]![1].stock['Ion pulse engine'] = 1;
+  state.colonies[0]![1].buildings.push({
+    id: 'ion-factory',
+    type: 'Ion pulse engine factory',
+    slotIndex: 2,
+    demolition: false,
+  });
+  const game = Game.restore(state);
+  game.upgradeFleet('fleet-home');
+  finishYear(game);
+  const line = game.events
+    .flatMap((event) => event.lines ?? [])
+    .find((line) => line.production?.target === 'Fleet upgrade')!;
+  expect(line.production).toMatchObject({
+    target: 'Fleet upgrade',
+    recipient: 'Tellus',
+    ready: 2,
+    total: 2,
+  });
+  expect(line.text).toContain(
+    'Ion pulse engine (2/2) for Fleet upgrade on Tellus',
+  );
+});
+
 describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flottuppgradering', () => {
   it.each<ShipType>([
     'Fighter',

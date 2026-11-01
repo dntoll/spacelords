@@ -6,6 +6,7 @@ import type {
 import {
   EventPlayback,
   type EventPlaybackSnapshot,
+  type PlaybackEvent,
   type EventDecision,
 } from './EventPlayback.js';
 import type {
@@ -1850,7 +1851,8 @@ export class AppModel {
       (p) => p.side === 'player' && p.status === 'active' && !p.activated,
     );
     const ship =
-      eligible.find((p) => battleWeapons(p.type, p.hasMissiles).length) ?? eligible[0];
+      eligible.find((p) => battleWeapons(p.type, p.hasMissiles).length) ??
+      eligible[0];
     if (!ship) return false;
     this.commandBattle({ type: 'activate', id: ship.id });
     return true;
@@ -1914,7 +1916,7 @@ export class AppModel {
       round,
       events
         .filter((event) => !this.#presentedEventIds.has(event.id))
-        .map((event) => {
+        .map<PlaybackEvent>((event) => {
           const decision = this.#eventDecision(event.id);
           return decision ? Object.freeze({ ...event, decision }) : event;
         })
@@ -1953,9 +1955,7 @@ export class AppModel {
         ? 'Pirate ship in sight'
         : discovery.kind === 'wreck'
           ? 'Wreck discovered'
-          : discovery.kind === 'star'
-            ? 'Star explored'
-            : 'Planet discovered';
+          : 'Planet discovered';
     const details = [
       `HEX ${item.position.q},${item.position.r}${fleet ? ` · ${fleet.name} · ${fleet.remainingMovement ?? 0} hex remaining` : ''}`,
     ];

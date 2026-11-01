@@ -1,5 +1,26 @@
 # Tekniska krav och arbetsregler
 
+## Händelsebilder och stridspresentation, 2026-11-01
+
+- `bilder-i-events`: GameEvent får valfria oföränderliga EventLine-rader och
+  typade EventIllustration-referenser. Domänmodellen lagrar inga bildadresser.
+  Gemensam HTML-rendering väljer befintliga tillgångar för lista och annons.
+  Ursprunglig text behålls. Dekorativa illustrationer läses inte dubbelt.
+- `delproduktion-med-sammanhang`: huvudbeställning och komponentbehov hämtas
+  från ComponentOrder före completeComponent. Färdiga reservationer räknas
+  utan dubbelräkning av transporter. Kontexten sparas som historisk ögonblicksbild.
+- `flottor-fore-planetdetaljer`: hexpanelen bygger separata flottdelar och
+  planetdelar; planetens rubrik tillhör planetdelen.
+- `animerade-stridsskott` och `skadepartiklar-i-strid`: TacticalBattle lämnar
+  en typad BattleShot med avfyrningsposition, vapen, mål och skaderesultat.
+  Controller samordnar effekten genom ett asynkront vygränssnitt och spärrar
+  stridshandlingar under presentationen. P5-vyn använder högst 128 partiklar
+  och beställer bildrutor bara medan effekten lever. Effekterna använder inte
+  spelmodellens slumpgenerator. Vyavslut rensar bildrutor och väntande löften.
+- Nya sparfält är valfria. Sparversionen behålls; äldre händelser och strider
+  fungerar utan migrering eller rensning. Första renderingen spelar inte
+  föregående BattleShot igen.
+
 ## Kartans prestanda
 
 `responsiv-stjarnkarta` och `rumsligt-kartindex` är **Fullständigt implementerat**.

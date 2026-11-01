@@ -39,6 +39,8 @@ import { button, element, planetIllustration } from './dom.js';
 import { renderDecisions, renderTurnWarning } from './EmpireView.js';
 import { renderTurnActions } from './TurnActionsView.js';
 import { renderEvents, renderCombatLog } from './EventsView.js';
+import { renderEventContent } from './EventContent.js';
+import type { BattleShot } from '../models/TacticalBattle.js';
 
 export class AppView implements AppPort {
   #battleView: BattleView | null = null;
@@ -746,6 +748,9 @@ export class AppView implements AppPort {
       this.#decisionDialog.showModal();
     }
   }
+  async animateBattleShot(shot: BattleShot): Promise<void> {
+    await this.#battleView?.animateShot(shot);
+  }
 
   #renderTurnConsole(model: AppReadModel): void {
     const log = this.#root.querySelector<HTMLElement>(
@@ -834,7 +839,7 @@ export class AppView implements AppPort {
       announcement?.remove();
       this.#announcementObserver?.disconnect();
       announcement = element('div', 'event-announcement');
-      announcement.append(element('p', 'event-text', gameText(current.text)));
+      announcement.append(renderEventContent(current));
       if (current.planetId) {
         announcement.classList.add('event-announcement-planet');
         announcement.tabIndex = 0;
@@ -1548,7 +1553,12 @@ export class AppView implements AppPort {
       cell &&
       !model.destinationFleetId
     ) {
-      const fleets = renderMapFleetPanel(model, this.#emit, cell.position);
+      const fleets = renderMapFleetPanel(
+        model,
+        this.#emit,
+        cell.position,
+        false,
+      );
       if (
         model.fleets.some(
           (fleet) => fleet.position?.key === cell.position.key,
@@ -1557,8 +1567,12 @@ export class AppView implements AppPort {
           (pirate) => pirate.position.key === cell.position.key,
         )
       ) {
-        // flottadministration: position and ships take priority over planet administration.
-        if (object) contents.splice(0, 1);
+        // flottor-fore-planetdetaljer: keep the entire location together below fleets.
+        if (object) {
+          const details = element('section', 'planet-selection-details');
+          details.append(...contents.splice(0));
+          contents.push(details);
+        }
         contents.unshift(fleets);
       }
     }

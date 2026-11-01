@@ -13,6 +13,7 @@ export function renderMapFleetPanel(
   model: AppReadModel,
   emit: IntentHandler,
   position: HexCoordinate,
+  includeLocation = true,
 ): HTMLElement {
   const panel = element('section', 'map-fleet-management');
   panel.setAttribute('aria-label', 'Fleets at this location');
@@ -23,8 +24,8 @@ export function renderMapFleetPanel(
     (candidate) => candidate.position.key === position.key,
   );
   const place = renderMapLocationHeading(
-    cell?.object?.name ?? 'Fleets',
-    planet?.id,
+    includeLocation ? (cell?.object?.name ?? 'Fleets') : 'Fleets',
+    includeLocation ? planet?.id : undefined,
     emit,
   );
   place.classList.add('fleet-place');

@@ -1,9 +1,5 @@
 import { combatDesignName } from '../models/TacticalBattle.js';
-import {
-  SHIP_SPRITES,
-  SHIP_TYPES,
-  type ShipSpriteType,
-} from './ShipImages.js';
+import { SHIP_SPRITES, SHIP_TYPES, type ShipSpriteType } from './ShipImages.js';
 export { SHIP_IMAGES, SHIP_TYPES } from './ShipImages.js';
 import { TELESCOPES } from '../models/Detection.js';
 import { type FleetSnapshot, type ShipType } from '../models/Game.js';
@@ -56,11 +52,7 @@ export function renderFleetShips(
       token.dataset.fleetId = fleet.id;
       token.replaceChildren(
         shipImage(type),
-        element(
-          'span',
-          'ship-token-label',
-          unit ? design : type,
-        ),
+        element('span', 'ship-token-label', unit ? design : type),
       );
       manifest.append(token);
     }

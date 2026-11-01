@@ -291,7 +291,7 @@ describe('flottstrid-per-hex / handelsnatverk', () => {
     expect(replacement.fleet('replacement')!.ships['Transport ship']).toBe(1);
   });
   it('gemensamt-stridsdeltagande: fights together before merging reinforcements at their meeting hex', () => {
-    const state = battle(1, 3).exportState();
+    const state = battle(3, 3).exportState();
     const fleet = state.fleets[0]!;
     const game = Game.restore({
       ...state,
@@ -312,6 +312,9 @@ describe('flottstrid-per-hex / handelsnatverk', () => {
     expect(game.fleet('a')).toBeNull();
     expect(game.fleet('b')!.ships.Fighter).toBeGreaterThan(0);
     expect(game.exportState().pirates).toEqual([]);
+    expect(
+      game.events.find((event) => event.text.startsWith('Combat at HEX'))!.text,
+    ).toContain('Incoming, Target versus Space pirate');
     expect(
       game.events.filter((event) => event.text.startsWith('Combat at HEX')),
     ).toHaveLength(1);

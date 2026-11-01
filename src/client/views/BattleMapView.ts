@@ -14,9 +14,11 @@ import {
   type BattleState,
   type BattleHex,
   type WeaponName,
+  type BattleShot,
 } from '../models/TacticalBattle.js';
 import type { BattleMapPort } from './BattleView.js';
 import { SHIP_SPRITES, type ShipSpriteType } from './ShipImages.js';
+import { BattleEffects, type BattleEffectFrame } from './BattleEffects.js';
 
 export class BattleMapView implements BattleMapPort {
   readonly #p5: p5;
@@ -35,6 +37,58 @@ export class BattleMapView implements BattleMapPort {
   readonly #pointers = new Map<number, Point>();
   #start: Point | null = null;
   #dragged = false;
+  #effect: BattleEffects | null = null;
+  #effectFrame: BattleEffectFrame | null = null;
+  #animationFrame: number | undefined;
+  #finishAnimation: (() => void) | undefined;
+
+  animateShot(shot: BattleShot): Promise<void> {
+    this.#cancelAnimation();
+    if (this.#disposed || !this.#ready) return Promise.resolve();
+    this.#effect = new BattleEffects(shot);
+    const reduced =
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    if (reduced) {
+      const frame = this.#effect.sample(300);
+      this.#effect = null;
+      this.#effectFrame = { ...frame, particles: [], trail: [] };
+      this.container.dataset.shotStage = 'static';
+      void this.#p5.redraw();
+      return Promise.resolve();
+    }
+    const start = performance.now();
+    return new Promise((resolve) => {
+      this.#finishAnimation = resolve;
+      const tick = (now: number) => {
+        if (this.#disposed || !this.#effect) {
+          this.#cancelAnimation();
+          return;
+        }
+        this.#effectFrame = this.#effect.sample(now - start);
+        this.container.dataset.shotStage = this.#effectFrame.impacted
+          ? 'impact'
+          : 'flight';
+        void this.#p5.redraw();
+        if (this.#effectFrame.complete) {
+          this.#cancelAnimation();
+          return;
+        }
+        this.#animationFrame = requestAnimationFrame(tick);
+      };
+      tick(start);
+    });
+  }
+  #cancelAnimation(): void {
+    if (this.#animationFrame !== undefined)
+      cancelAnimationFrame(this.#animationFrame);
+    this.#animationFrame = undefined;
+    this.#effect = null;
+    this.#effectFrame = null;
+    delete this.container.dataset.shotStage;
+    const finish = this.#finishAnimation;
+    this.#finishAnimation = undefined;
+    finish?.();
+  }
 
   constructor(
     private readonly container: HTMLElement,
@@ -89,6 +143,12 @@ export class BattleMapView implements BattleMapPort {
     weapon: WeaponName,
   ): void {
     const changed = this.#state?.id !== state.id;
+    if (
+      this.container.dataset.shotStage === 'static' &&
+      this.#state?.log.length !== state.log.length
+    )
+      this.#cancelAnimation();
+    if (changed) this.#cancelAnimation();
     this.#state = state;
     this.#selected = selected;
     this.#aim = aim;
@@ -293,8 +353,7 @@ export class BattleMapView implements BattleMapPort {
     }
     const aim = this.#aim;
     if (aim && state.phase === 'fighting') {
-      const area =
-        WEAPONS[this.#weapon].area > 0 ? missileArea(aim) : [aim];
+      const area = WEAPONS[this.#weapon].area > 0 ? missileArea(aim) : [aim];
       for (const hex of area) {
         if (
           hex.r < 0 ||
@@ -337,7 +396,17 @@ export class BattleMapView implements BattleMapPort {
         p.PIE,
       );
     }
-    for (const ship of state.pieces) {
+    for (const currentShip of state.pieces) {
+      const impact =
+        !this.#effectFrame?.impacted &&
+        this.#effect?.shot.impacts.find((item) => item.id === currentShip.id);
+      const ship = impact
+        ? {
+            ...currentShip,
+            hull: impact.previousHull,
+            status: 'active' as const,
+          }
+        : currentShip;
       if (ship.status !== 'active' || !ship.position) continue;
       const center = HexGeometry.toPoint(
         new HexCoordinate(ship.position.q, ship.position.r),
@@ -402,10 +471,48 @@ export class BattleMapView implements BattleMapPort {
       p.text(`${ship.hull}${ship.activated ? ' ✓' : ''}`, 0, 42);
       p.pop();
     }
+    this.#drawEffects(p);
+    p.pop();
+  }
+  #drawEffects(p: p5): void {
+    const frame = this.#effectFrame;
+    if (!frame) return;
+    p.push();
+    p.noStroke();
+    for (const [index, position] of frame.trail.entries()) {
+      p.fill(255, 162, 70, 180 * (1 - index / frame.trail.length));
+      p.circle(
+        position.x,
+        position.y,
+        this.#effect?.shot.weapon === 'Missiles' ? 7 : 3,
+      );
+    }
+    if (frame.projectile) {
+      p.fill('#fff7cf');
+      p.circle(
+        frame.projectile.x,
+        frame.projectile.y,
+        this.#effect?.shot.weapon === 'Missiles' ? 10 : 6,
+      );
+    }
+    const context = p.drawingContext as CanvasRenderingContext2D;
+    for (const particle of frame.particles) {
+      context.globalAlpha = particle.alpha;
+      p.fill(particle.color);
+      p.circle(particle.position.x, particle.position.y, particle.radius * 2);
+    }
+    context.globalAlpha = 1;
+    p.noFill();
+    for (const ring of frame.rings) {
+      p.stroke(255, 186, 90, ring.alpha * 220);
+      p.strokeWeight(2);
+      p.circle(ring.position.x, ring.position.y, ring.radius * 2);
+    }
     p.pop();
   }
   dispose(): void {
     this.#disposed = true;
+    this.#cancelAnimation();
     this.#events.abort();
     this.#observer.disconnect();
     this.#p5.remove();

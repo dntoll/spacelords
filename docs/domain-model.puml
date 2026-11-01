@@ -580,4 +580,25 @@ Fleet "1" o-- "0..1" CivilianOrder
 CivilianTraffic ..> CivilianOrder
 CivilianTraffic ..> TradeRoute
 CivilianTraffic ..> Colony
+class EventLine {
+  text
+  illustration
+}
+class ProductionContext {
+  projectId
+  target
+  recipient
+  ready
+  total
+}
+class BattleShot {
+  weapon
+  from
+  at
+  impacts
+}
+GameEvent "1" *-- "0..*" EventLine
+EventLine "1" *-- "0..1" ProductionContext
+ProductionContext ..> ComponentOrder : huvudbeställning och reservationer
+TacticalBattle "1" *-- "0..1" BattleShot : senaste salvan
 @enduml

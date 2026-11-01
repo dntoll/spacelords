@@ -88,6 +88,11 @@ import {
   type TradeRouteSnapshot,
 } from './Logistics.js';
 import { ComponentPlanner } from './ComponentPlanner.js';
+import type {
+  EventIllustration,
+  EventLine,
+  ProductionContext,
+} from './EventDetails.js';
 import {
   DecisionBoard,
   type Decision,
@@ -608,6 +613,9 @@ export interface FleetSnapshot {
   readonly crew: number;
 }
 export interface GameEvent {
+  readonly heading?: string;
+  readonly illustration?: EventIllustration;
+  readonly lines?: readonly EventLine[];
   readonly planetId?: string;
   readonly combatLog?: readonly string[];
   readonly id: string;
@@ -1153,6 +1161,30 @@ export class Game {
           galaxy.contains(position(eventPosition));
         return Object.freeze({
           ...details,
+          ...(details.illustration
+            ? { illustration: Object.freeze({ ...details.illustration }) }
+            : {}),
+          ...(details.lines
+            ? {
+                lines: Object.freeze(
+                  details.lines.map((line) =>
+                    Object.freeze({
+                      ...line,
+                      ...(line.illustration
+                        ? {
+                            illustration: Object.freeze({
+                              ...line.illustration,
+                            }),
+                          }
+                        : {}),
+                      ...(line.production
+                        ? { production: Object.freeze({ ...line.production }) }
+                        : {}),
+                    }),
+                  ),
+                ),
+              }
+            : {}),
           ...(details.combatLog
             ? { combatLog: Object.freeze([...details.combatLog]) }
             : {}),
@@ -4210,7 +4242,15 @@ export class Game {
         );
     }
     const researched = this.#research.advance(researchStations);
-    if (researched) this.#event(`Research completed: ${researched}.`);
+    if (researched)
+      this.#event(
+        `Research completed: ${researched}.`,
+        undefined,
+        undefined,
+        undefined,
+        this.#round,
+        { illustration: { kind: 'research', type: researched } },
+      );
     this.#completeFleetUpgrades();
     this.#repairShipyards();
     this.#logistics.cleanup(this.#logisticsPort());
@@ -4226,6 +4266,7 @@ export class Game {
       this.#planetEvent(
         `${previous} was upgraded to ${project.type} on ${planet.name}.`,
         planet,
+        { kind: 'building', type: project.type as BuildType },
       );
       return;
     }
@@ -4235,7 +4276,10 @@ export class Game {
         project.factoryId!,
         project.stationPosition!,
       );
-      this.#planetEvent(`Orbital shipyard rebuilt at ${planet.name}.`, planet);
+      this.#planetEvent(`Orbital shipyard rebuilt at ${planet.name}.`, planet, {
+        kind: 'building',
+        type: 'Orbital shipyard',
+      });
       return;
     }
     const d = projectDefinition(project.type);
@@ -4245,6 +4289,7 @@ export class Game {
       this.#planetEvent(
         `${project.type} was completed at site ${project.slotIndex! + 1} on ${planet.name}.`,
         planet,
+        { kind: 'building', type: project.type as BuildType },
       );
     } else if (d.permanent) {
       const buildingId = this.#id('building');
@@ -4259,13 +4304,20 @@ export class Game {
       this.#planetEvent(
         `${project.type} was completed on ${planet.name}.`,
         planet,
+        { kind: 'building', type: project.type as BuildType },
       );
     } else if (d.component) {
       state.stock[d.component] += 1;
+      // delproduktion-med-sammanhang: capture the consumer before clearing its production link.
+      const context = this.#productionContext(project.id, d.component);
       this.#logistics.completeComponent(project.id);
       this.#planetEvent(
-        `${d.component} was produced at ${planet.name}.`,
+        context
+          ? `${d.component} (${context.ready}/${context.total}) for ${context.target} on ${context.recipient} — produced at ${planet.name}.`
+          : `${d.component} was produced at ${planet.name}.`,
         planet,
+        { kind: 'component', type: d.component },
+        context,
       );
     } else if (d.ship) {
       this.#createShip(
@@ -4310,6 +4362,7 @@ export class Game {
       this.#planetEvent(
         `${ship} was produced at ${planet.name} and started Civilian transport.`,
         planet,
+        { kind: 'ship', type: ship },
       );
       return;
     }
@@ -4361,7 +4414,52 @@ export class Game {
       },
       ...(ship === 'Fighter' ? { missiles: 0 } : {}),
     });
-    this.#planetEvent(`${ship} was produced at ${planet.name}.`, planet);
+    this.#planetEvent(`${ship} was produced at ${planet.name}.`, planet, {
+      kind: 'ship',
+      type: ship,
+    });
+  }
+  #productionContext(
+    productionId: string,
+    component: Component,
+  ): ProductionContext | undefined {
+    const order = this.#logistics.componentOrders.find(
+      (item) => item.productionProjectId === productionId,
+    );
+    if (!order) return;
+    for (const planet of this.#ownedPlanets()) {
+      const project = this.#state(planet).projects.find(
+        (item) => item.id === order.projectId,
+      );
+      const upgrade = this.#fleets.find(
+        (fleet) => fleet.upgrade?.id === order.projectId,
+      )?.upgrade;
+      if (!project && !upgrade) continue;
+      const parts = project
+        ? (project.parts ?? projectDefinition(project.type).parts)
+        : ShipUpgrades.cost(upgrade!.targets);
+      const total = parts?.[component] ?? 0;
+      if (!total) return;
+      const ready = this.#logistics.componentOrders
+        .filter(
+          (item) =>
+            item.projectId === order.projectId &&
+            item.component === component &&
+            (!item.productionProjectId ||
+              item.productionProjectId === productionId),
+        )
+        .reduce((sum, item) => sum + item.amount, 0);
+      const recipient = this.#ownedPlanets().find(
+        (item) => item.id === order.recipient,
+      );
+      return Object.freeze({
+        projectId: order.projectId,
+        target: project?.type ?? 'Fleet upgrade',
+        recipient: recipient?.name ?? planet.name,
+        ready: Math.min(total, ready),
+        total,
+      });
+    }
   }
   #budget(planet: Planet, state: ColonyState): BudgetSnapshot {
     return this.#allocation(planet, state).budget;
@@ -5993,7 +6091,17 @@ export class Game {
     );
   }
   /** grupperade-planethandelser: settle one immutable report per planet and year. */
-  #planetEvent(text: string, planet: Planet): void {
+  #planetEvent(
+    text: string,
+    planet: Planet,
+    illustration?: EventIllustration,
+    production?: ProductionContext,
+  ): void {
+    const line: EventLine = Object.freeze({
+      text,
+      ...(illustration ? { illustration: Object.freeze(illustration) } : {}),
+      ...(production ? { production } : {}),
+    });
     const index = this.#events.findIndex(
       (event) => event.round === this.#round && event.planetId === planet.id,
     );
@@ -6003,6 +6111,15 @@ export class Game {
         planet.position,
         undefined,
         planet.id,
+        this.#round,
+        {
+          heading: planet.name,
+          illustration: {
+            kind: 'planet',
+            type: this.#environment(planet, this.#state(planet)).type,
+          },
+          lines: Object.freeze([line]),
+        },
       );
       return;
     }
@@ -6010,6 +6127,14 @@ export class Game {
     this.#events[index] = Object.freeze({
       ...previous,
       text: `${previous.text}\n${text}`,
+      lines: Object.freeze([
+        ...(previous.lines ??
+          previous.text
+            .split('\n')
+            .slice(1)
+            .map((text) => ({ text }))),
+        line,
+      ]),
     });
   }
   #event(
@@ -6018,13 +6143,43 @@ export class Game {
     combatLog?: readonly string[],
     planetId?: string,
     round = this.#round,
+    details: Pick<GameEvent, 'heading' | 'illustration' | 'lines'> = {},
   ): string {
     const id = this.#id('event');
+    const planet =
+      position &&
+      this.galaxy.systems
+        .flatMap((system) => system.planets)
+        .find((item) => item.position.key === position.key);
+    const star =
+      position &&
+      this.galaxy.systems.some(
+        (system) => system.star.position.key === position.key,
+      );
+    const illustration: EventIllustration | undefined =
+      details.illustration ??
+      (combatLog
+        ? { kind: 'ship', type: 'Space pirate' }
+        : planet
+          ? {
+              kind: 'planet',
+              type:
+                planet.type === 'gas'
+                  ? 'Gas'
+                  : this.#colonies.has(planet.id)
+                    ? this.#environment(planet, this.#state(planet)).type
+                    : planet.environment,
+            }
+          : star
+            ? { kind: 'star' }
+            : undefined);
     this.#events.push(
       Object.freeze({
         id,
         round,
         text,
+        ...details,
+        ...(illustration ? { illustration: Object.freeze(illustration) } : {}),
         ...(planetId ? { planetId } : {}),
         ...(combatLog ? { combatLog: Object.freeze([...combatLog]) } : {}),
         ...(position

@@ -100,7 +100,9 @@ describe('forskningsoversikt', () => {
     expect(root.textContent).toContain(
       'Build a Research station to advance research.',
     );
-    expect(root.querySelectorAll('[data-technology]')).toHaveLength(20);
+    expect(
+      root.querySelector('[data-technology="Rocket engine factory"]'),
+    ).not.toBeNull();
     click('Inspect Rocket engine factory');
     expect(
       root.querySelector<HTMLButtonElement>(

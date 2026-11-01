@@ -109,7 +109,9 @@ describe('utforskade-stridsuppgraderingar', () => {
     ]);
     const fresh = new Game(createExampleGalaxy());
     expect(
-      fresh.fleet('fleet-home')!.shipUnits!.find((unit) => unit.type === 'Fighter'),
+      fresh
+        .fleet('fleet-home')!
+        .shipUnits!.find((unit) => unit.type === 'Fighter'),
     ).toMatchObject({ missiles: 0 });
   });
 });
@@ -152,8 +154,12 @@ describe('missilernas-omradeseffekt / pansar-i-strid', () => {
       ],
       1,
     );
-    const fighter = battle.snapshot.pieces.find((piece) => piece.id === 'fighter')!;
-    const hauler = battle.snapshot.pieces.find((piece) => piece.id === 'hauler')!;
+    const fighter = battle.snapshot.pieces.find(
+      (piece) => piece.id === 'fighter',
+    )!;
+    const hauler = battle.snapshot.pieces.find(
+      (piece) => piece.id === 'hauler',
+    )!;
     expect(fighter.hull).toBe(5);
     expect(maxHull(fighter)).toBe(5);
     expect(combatDesignName(fighter)).toBe('Armored Fighter');
@@ -191,7 +197,10 @@ describe('missilernas-omradeseffekt / pansar-i-strid', () => {
     const random = fighting.snapshot.random;
     fighting.command({ type: 'fire', weapon: 'Missiles', at: { q: 2, r: 4 } });
     expect(fighting.snapshot.random).toBe(random);
-    expect(fighting.snapshot.pieces.find((piece) => piece.id === 'fighter')!.missiles).toBe(1);
+    expect(
+      fighting.snapshot.pieces.find((piece) => piece.id === 'fighter')!
+        .missiles,
+    ).toBe(1);
     expect(fighting.snapshot.log.at(-1)).toContain('No ships in the area');
     fighting.command({ type: 'end-activation' });
     const again = TacticalBattle.restore({
@@ -204,12 +213,21 @@ describe('missilernas-omradeseffekt / pansar-i-strid', () => {
     again.command({ type: 'activate', id: 'fighter' });
     again.command({ type: 'fire', weapon: 'Missiles', at: { q: 4, r: 4 } });
     const line = again.snapshot.log.at(-1)!;
+    expect(
+      again.snapshot.lastShot!.impacts.map((impact) => impact.id).sort(),
+    ).toEqual(['hauler', 'pirate', 'wing']);
     expect(line).toContain('Armored Transport');
     expect(line).toContain('Space pirate 1');
     expect(line).toContain('Space pirate 2');
     expect(line).toMatch(/Area: \d+ damage/);
-    expect(again.snapshot.pieces.find((piece) => piece.id === 'fighter')!.missiles).toBe(0);
-    expect(again.snapshot.pieces.find((piece) => piece.id === 'hauler')!.hull).toBeLessThanOrEqual(9);
-    expect(again.snapshot.pieces.find((piece) => piece.id === 'pirate')!.hull).toBeLessThanOrEqual(2);
+    expect(
+      again.snapshot.pieces.find((piece) => piece.id === 'fighter')!.missiles,
+    ).toBe(0);
+    expect(
+      again.snapshot.pieces.find((piece) => piece.id === 'hauler')!.hull,
+    ).toBeLessThanOrEqual(9);
+    expect(
+      again.snapshot.pieces.find((piece) => piece.id === 'pirate')!.hull,
+    ).toBeLessThanOrEqual(2);
   });
 });

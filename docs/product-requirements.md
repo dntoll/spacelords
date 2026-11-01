@@ -1,5 +1,27 @@
 # Produktkrav och status
 
+## Illustrerade besked och strid, 2026-11-01
+
+- `bilder-i-events` — **Fullständigt implementerat**: Events och årets
+  händelsebesked använder befintliga bilder och symboler. Planetbesked har
+  planetbild och varje produktionsrad visar sin byggnad, sitt skepp eller en
+  komponentsymbol. Texten är läsbar även om en bild saknas.
+- `delproduktion-med-sammanhang` — **Fullständigt implementerat**: tillverkade
+  delar visar vilken beställning de hör till och dess mottagande planet,
+  exempelvis `Rocket engine (2/3) for Colony ship on Tellus — produced at Vesta.`
+  Antalet omfattar färdiga reserverade delar, även under transport, av det
+  totala behovet för just beställningen. Historiska siffror bevaras.
+- `flottor-fore-planetdetaljer` — **Fullständigt implementerat**: när en hex
+  innehåller flottor och planet visas flottorna först. Planetnamn, bild och
+  planetuppgifter ligger tillsammans efter flottorna.
+- `animerade-stridsskott` — **Fullständigt implementerat**: båda sidors kanoner
+  och missiler visar projektiler från skytt till målhex före träffresultatet.
+  Missiler visar sitt påverkansområde. Nästa handling väntar på effekten.
+- `skadepartiklar-i-strid` — **Fullständigt implementerat**: skada ger korta
+  träffblixtar och gnistor; förstörda skepp ger explosion och splitter.
+  Effekterna klingar av utan bestående rök. Vid minskad rörelse visas
+  omedelbart resultat och en stilla träffmarkering. Sparade strider bevaras.
+
 `vald-flotta-visar-destinationspil` — **Fullständigt implementerat**. En vald
 flotta utan Route visar sin destinationspil på Star map och i Fleets, även
 under destinationsdrag. Ej valda flottor på Star map saknar pil. En flotta på

@@ -8,11 +8,13 @@ import {
   type BattleState,
   type BattleHex,
   type WeaponName,
+  type BattleShot,
 } from '../models/TacticalBattle.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element } from './dom.js';
 
 export interface BattleMapPort {
+  animateShot?(shot: BattleShot): Promise<void>;
   render(
     state: BattleState,
     selected: string | null,
@@ -46,6 +48,7 @@ export class BattleView {
   #weapon: WeaponName = 'Cannon';
   #facing = 0;
   #battleId = '';
+  #animating = false;
 
   constructor(
     root: HTMLElement,
@@ -84,6 +87,7 @@ export class BattleView {
   }
 
   #command(command: Parameters<TacticalBattle['command']>[0]): void {
+    if (this.#animating) return;
     this.emit({ type: 'battle-command', command });
   }
   // skeppsval-startar-stridstur: rendering never begins a ship turn; explicit input does.
@@ -108,6 +112,7 @@ export class BattleView {
     this.render(state);
   }
   #selectHex(position: BattleHex): void {
+    if (this.#animating) return;
     const state = this.#state;
     if (!state) return;
     const piece = state.pieces.find(
@@ -138,6 +143,22 @@ export class BattleView {
       this.render(state);
     }
   }
+  async animateShot(shot: BattleShot): Promise<void> {
+    this.#animating = true;
+    this.#heading.textContent = 'Weapon fire';
+    this.#status.textContent = `Resolving ${shot.weapon} salvo…`;
+    this.#panel.inert = true;
+    this.#details.inert = true;
+    this.#outcome.hidden = true;
+    this.#feedback.hidden = true;
+    try {
+      await this.#map?.animateShot?.(shot);
+    } finally {
+      this.#animating = false;
+      this.#panel.inert = false;
+      this.#details.inert = false;
+    }
+  }
   #select(
     label: string,
     entries: readonly { value: string; text: string; disabled?: boolean }[],
@@ -162,6 +183,7 @@ export class BattleView {
   }
 
   render(state: BattleState, notice?: string | null): void {
+    if (this.#animating) return;
     this.#state = state;
     if (this.#battleId !== state.id) {
       this.#selected = null;

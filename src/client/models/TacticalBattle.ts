@@ -66,9 +66,7 @@ export function combatDesignName(
     return 'Armored Transport';
   return piece.type;
 }
-export function maxHull(
-  piece: Pick<BattlePiece, 'type' | 'armored'>,
-): number {
+export function maxHull(piece: Pick<BattlePiece, 'type' | 'armored'>): number {
   const base = SHIP_PROFILES[piece.type].hull;
   if (!piece.armored) return base;
   if (piece.type === 'Fighter') return base + 2;
@@ -101,10 +99,7 @@ export function battleCamera(
         (view.width -
           (map.width - 0.5) * Math.sqrt(3) * HexGeometry.size * scale) /
         2,
-      y:
-        (view.height -
-          (map.height - 1) * 1.5 * HexGeometry.size * scale) /
-        2,
+      y: (view.height - (map.height - 1) * 1.5 * HexGeometry.size * scale) / 2,
     },
   };
 }
@@ -126,9 +121,7 @@ export function battlePieceLabel(
 ): string {
   const name = combatDesignName(piece);
   const index = pieces
-    .filter(
-      (p) => p.side === piece.side && combatDesignName(p) === name,
-    )
+    .filter((p) => p.side === piece.side && combatDesignName(p) === name)
     .findIndex((p) => p.id === piece.id);
   return `${name} ${index + 1}`;
 }
@@ -140,6 +133,7 @@ export interface BattleActivation {
   readonly movementClosed: boolean;
 }
 export interface BattleState {
+  readonly lastShot?: BattleShot;
   readonly id: string;
   readonly position: BattleHex;
   readonly width: number;
@@ -158,6 +152,20 @@ export interface BattleState {
   readonly activation: BattleActivation | null;
   readonly random: number;
   readonly log: readonly string[];
+}
+/** animerade-stridsskott / skadepartiklar-i-strid: facts, independent of rendering and particles. */
+export interface BattleShot {
+  readonly id: string;
+  readonly weapon: WeaponName;
+  readonly from: BattleHex;
+  readonly at: BattleHex;
+  readonly impacts: readonly {
+    readonly id: string;
+    readonly position: BattleHex;
+    readonly damage: number;
+    readonly previousHull: number;
+    readonly destroyed: boolean;
+  }[];
 }
 export type BattleCommand =
   | { readonly type: 'auto-deploy' | 'start' | 'forward' | 'end-activation' }
@@ -284,6 +292,7 @@ export class TacticalBattle {
   #turn: BattleSide;
   #activation: Activation | null;
   #random: number;
+  #lastShot: BattleShot | undefined;
 
   private constructor(state: BattleState) {
     const copy = structuredClone(state);
@@ -303,6 +312,7 @@ export class TacticalBattle {
     this.#turn = copy.turn;
     this.#activation = copy.activation ? { ...copy.activation } : null;
     this.#random = copy.random;
+    this.#lastShot = copy.lastShot;
   }
 
   static create(
@@ -333,8 +343,7 @@ export class TacticalBattle {
           const armored =
             ship.armored === true &&
             (ship.type === 'Fighter' || ship.type === 'Transport ship');
-          const missiles =
-            ship.type === 'Fighter' ? (ship.missiles ?? 2) : 0;
+          const missiles = ship.type === 'Fighter' ? (ship.missiles ?? 2) : 0;
           return {
             id: ship.id,
             fleetId: f.id,
@@ -519,6 +528,7 @@ export class TacticalBattle {
         activation: this.#activation,
         random: this.#random,
         log: this.#log,
+        ...(this.#lastShot ? { lastShot: this.#lastShot } : {}),
       }),
     );
   }
@@ -731,8 +741,7 @@ export class TacticalBattle {
         reason = 'Line of fire is blocked.';
     }
     if (reason || !profile || profile.area === 0) {
-      if (reason)
-        return Object.freeze({ reason, hits: Object.freeze([]) });
+      if (reason) return Object.freeze({ reason, hits: Object.freeze([]) });
       const target = this.#pieces.find(
         (piece) =>
           piece.id !== source.id &&
@@ -919,14 +928,23 @@ export class TacticalBattle {
     if (preview.reason) throw new Error(preview.reason);
     if (command.weapon === 'Missiles') p.missiles--;
     const notes: string[] = [];
+    const impacts: BattleShot['impacts'][number][] = [];
     let total = 0;
     for (const hit of preview.hits) {
       const dice = Array.from({ length: hit.dice }, () => this.#die());
       const damage = dice.filter((die) => die >= hit.threshold).length;
       total += damage;
       const target = this.#piece(hit.id);
+      const previousHull = target.hull;
       target.hull = Math.max(0, target.hull - damage);
       if (target.hull === 0) target.status = 'destroyed';
+      impacts.push({
+        id: target.id,
+        position: { ...target.position! },
+        damage,
+        previousHull,
+        destroyed: target.hull === 0,
+      });
       const outcome = `${hit.dice}D6 [${dice.join(', ')}], hit ${hit.threshold}+${hit.rear ? ' (rear)' : ''}: ${damage} damage${target.hull === 0 ? ', destroyed' : `, ${target.hull} hull remaining`}`;
       notes.push(
         command.weapon === 'Missiles'
@@ -935,6 +953,13 @@ export class TacticalBattle {
       );
     }
     activation.fired = true;
+    this.#lastShot = {
+      id: `${this.#base.id}:shot:${this.#log.length}`,
+      weapon: command.weapon,
+      from: { ...p.position! },
+      at: { ...command.at },
+      impacts,
+    };
     activation.movementClosed = activation.moved;
     this.#log.push(
       command.weapon === 'Missiles'
@@ -1032,44 +1057,44 @@ export class TacticalBattle {
       let bestShot: { score: number; action: BattleCommand } | null = null;
       if (activation?.fired) return bestShot;
       for (const weapon of battleWeapons(p.type, p.hasMissiles)) {
-          if (weapon === 'Missiles') {
-            const hexes = new Map<string, BattleHex>();
-            for (const enemy of enemies) {
-              if (!enemy.position) continue;
-              for (const point of missileArea(enemy.position))
-                hexes.set(`${point.q},${point.r}`, point);
-            }
-            for (const at of hexes.values()) {
-              const preview = this.impact(p.id, at, weapon, position, facing);
-              if (preview.reason) continue;
-              let score = -1;
-              for (const hit of preview.hits) {
-                const ship = this.#piece(hit.id);
-                const expected = (hit.dice * (7 - hit.threshold)) / 6;
-                const kill = Math.max(0, hit.dice - ship.hull + 1) * 12;
-                const value = expected * 10 + kill;
-                score += ship.side === p.side ? -value : value;
-              }
-              if (score <= 0) continue;
-              if (!bestShot || score > bestShot.score)
-                bestShot = { score, action: { type: 'fire', at, weapon } };
-            }
-            continue;
-          }
+        if (weapon === 'Missiles') {
+          const hexes = new Map<string, BattleHex>();
           for (const enemy of enemies) {
             if (!enemy.position) continue;
-            const preview = this.shot(p.id, enemy.id, weapon, position, facing);
-            if (preview.reason) continue;
-            const expected = (preview.dice * (7 - preview.threshold)) / 6;
-            const kill = Math.max(0, preview.dice - enemy.hull + 1) * 12;
-            const score = expected * 10 + kill;
-            if (!bestShot || score > bestShot.score)
-              bestShot = {
-                score,
-                action: { type: 'fire', at: enemy.position, weapon },
-              };
+            for (const point of missileArea(enemy.position))
+              hexes.set(`${point.q},${point.r}`, point);
           }
+          for (const at of hexes.values()) {
+            const preview = this.impact(p.id, at, weapon, position, facing);
+            if (preview.reason) continue;
+            let score = -1;
+            for (const hit of preview.hits) {
+              const ship = this.#piece(hit.id);
+              const expected = (hit.dice * (7 - hit.threshold)) / 6;
+              const kill = Math.max(0, hit.dice - ship.hull + 1) * 12;
+              const value = expected * 10 + kill;
+              score += ship.side === p.side ? -value : value;
+            }
+            if (score <= 0) continue;
+            if (!bestShot || score > bestShot.score)
+              bestShot = { score, action: { type: 'fire', at, weapon } };
+          }
+          continue;
         }
+        for (const enemy of enemies) {
+          if (!enemy.position) continue;
+          const preview = this.shot(p.id, enemy.id, weapon, position, facing);
+          if (preview.reason) continue;
+          const expected = (preview.dice * (7 - preview.threshold)) / 6;
+          const kill = Math.max(0, preview.dice - enemy.hull + 1) * 12;
+          const score = expected * 10 + kill;
+          if (!bestShot || score > bestShot.score)
+            bestShot = {
+              score,
+              action: { type: 'fire', at: enemy.position, weapon },
+            };
+        }
+      }
       return bestShot;
     };
     const before = !activation?.moved ? shotAt(p.position!, p.facing) : null;

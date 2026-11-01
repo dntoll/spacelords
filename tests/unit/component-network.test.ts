@@ -109,6 +109,70 @@ function thirdSource(game: Game, viaHome = false) {
   };
 }
 
+it.each([false, true])(
+  'delproduktion-med-sammanhang: counts reserved stock and newly finished parts for the specific consumer (local: %s)',
+  (local) => {
+    const state = network({
+      stock: 1,
+      factories: ['Rocket engine factory'],
+    }).game.exportState();
+    const recipient = local ? 0 : 1;
+    state.colonies[recipient]![1].buildings.push({
+      id: 'colony-factory',
+      type: 'Colony ship factory',
+      slotIndex: 3,
+      demolition: false,
+    });
+    const game = Game.restore({
+      ...state,
+      researched: [...state.researched, 'Colony ship factory'],
+    });
+    const planet = game.galaxy.systems[0]!.planets[recipient]!;
+    game.scheduleShip(planet, 'Colony ship');
+    // A second consumer must not contribute its reservations to the first one's progress.
+    game.scheduleShip(planet, 'Colony ship');
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
+    game.finishTurn();
+    const event = game.events.find((event) =>
+      event.lines?.some((line) => line.production),
+    )!;
+    const line = event.lines!.find((line) => line.production)!;
+    expect(line.text).toContain(
+      `Rocket engine (2/3) for Colony ship on ${planet.name}`,
+    );
+    expect(line.production).toMatchObject({
+      ready: 2,
+      total: 3,
+      target: 'Colony ship',
+      recipient: planet.name,
+    });
+    const restored = Game.restore(game.exportState());
+    expect(restored.events.find((item) => item.id === event.id)).toEqual(event);
+    const project = restored
+      .planetSnapshot(restored.galaxy.systems[0]!.planets[recipient]!)!
+      .projects.find((item) => item.id === line.production!.projectId)!;
+    restored.cancelProject(
+      restored.galaxy.systems[0]!.planets[recipient]!,
+      project.id,
+    );
+    expect(restored.events.find((item) => item.id === event.id)).toEqual(event);
+  },
+);
+
+it('delproduktion-med-sammanhang: leaves general stock production without an invented consumer', () => {
+  const { game, home, turn } = network();
+  game.scheduleComponent(home, 'Rocket engine');
+  turn();
+  const line = game.events
+    .flatMap((event) => event.lines ?? [])
+    .find((line) => line.text.includes('Rocket engine was produced'))!;
+  expect(line.production).toBeUndefined();
+  expect(line.illustration).toEqual({
+    kind: 'component',
+    type: 'Rocket engine',
+  });
+});
+
 describe('automatiska-delorder', () => {
   it('does not treat a local queued part as producible after its factory is marked for demolition', () => {
     const state = network({

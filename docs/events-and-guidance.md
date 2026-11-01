@@ -1,5 +1,20 @@
 # Events och beslutsguidning
 
+## Bilder och delproduktion, 2026-11-01
+
+`bilder-i-events` och `delproduktion-med-sammanhang` är **Fullständigt
+implementerat**. Events-listan och årsuppspelningen visar samma grupperade
+planetbesked med planetbild och illustration per underrad. Byggnader använder
+porträtt eller befintlig byggnadssymbol; skepp använder sina skeppsbilder.
+Komponenter använder en komponentsymbol. Texten bevaras vid bildfel.
+
+Delproduktion anger huvudbeställning, mottagande planet och färdiga delar av
+totalt komponentbehov, inklusive redan reserverade delar och delar under
+transport. Pågående produktion räknas inte. Beställningar blandas aldrig,
+och produktion till allmänt lager får inget påhittat sammanhang.
+Siffrorna beskriver läget vid färdigställandet och ändras inte senare.
+Äldre sparade texthändelser visas fortsatt utan krav på nya uppgifter.
+
 Kraven nedan är **Fullständigt implementerat**.
 
 Förtydligande efter sluttest 2026-10-30: `gemensamt-handelseflode` behåller

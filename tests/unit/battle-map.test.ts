@@ -12,6 +12,7 @@ import {
   type Point,
 } from '../../src/client/models/HexCoordinate.js';
 import { TacticalBattle } from '../../src/client/models/TacticalBattle.js';
+import { createTestBattle } from '../../src/client/models/TestBattle.js';
 
 const runtime = vi.hoisted(() => ({ sketch: null as p5 | null }));
 vi.mock('p5', () => ({
@@ -71,6 +72,8 @@ function drawing(imagesLoaded: boolean) {
     strokeWeight: noop,
     fill: noop,
     noStroke: noop,
+    noFill: noop,
+    drawingContext: { globalAlpha: 1 },
     circle: noop,
     imageMode: noop,
     image: () => noses.push(point(1, 0)),
@@ -105,8 +108,37 @@ function drawing(imagesLoaded: boolean) {
   });
   const view = new BattleMapView(container, noop);
   void runtime.sketch.setup();
-  return { view, noses, markers, arcs };
+  return { view, noses, markers, arcs, container };
 }
+
+it('skadepartiklar-i-strid: disposing during flight cancels its frame and resolves presentation', async () => {
+  const { view, container } = drawing(false);
+  const cancel = vi.fn();
+  vi.stubGlobal(
+    'requestAnimationFrame',
+    vi.fn(() => 123),
+  );
+  vi.stubGlobal('cancelAnimationFrame', cancel);
+  const state = createTestBattle().snapshot;
+  view.render(state, null, null, 'Cannon');
+  const complete = vi.fn();
+  const pending = view
+    .animateShot({
+      id: 'shot',
+      weapon: 'Cannon',
+      from: { q: 1, r: 3 },
+      at: { q: 4, r: 3 },
+      impacts: [],
+    })
+    .then(complete);
+  expect(container.dataset.shotStage).toBe('flight');
+  expect(complete).not.toHaveBeenCalled();
+  view.dispose();
+  await pending;
+  expect(cancel).toHaveBeenCalledWith(123);
+  expect(complete).toHaveBeenCalledOnce();
+  expect(container.dataset.shotStage).toBeUndefined();
+});
 
 it.each(Object.keys(SHIP_SPRITES) as ShipSpriteType[])(
   'skeppets-framat-foljer-spriten: %s nose, direction marker and movement agree in all six facings',
