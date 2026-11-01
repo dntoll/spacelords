@@ -51,6 +51,26 @@ export function boardingIsoCorners(
   ]);
 }
 
+/** Maps a square surface texture onto the cell's exact 2:1 diamond. */
+export function boardingIsoTextureTransform(
+  textureWidth: number,
+  textureHeight: number,
+  position: BoardingCell,
+): readonly [number, number, number, number, number, number] {
+  const corners = boardingIsoCorners(position);
+  const north = corners[0]!;
+  const east = corners[1]!;
+  const west = corners[3]!;
+  return Object.freeze([
+    (east.x - north.x) / textureWidth,
+    (east.y - north.y) / textureWidth,
+    (west.x - north.x) / textureHeight,
+    (west.y - north.y) / textureHeight,
+    north.x,
+    north.y,
+  ]);
+}
+
 export function boardingCellFromIsoPoint(point: BoardingPoint): BoardingCell {
   return {
     q: Math.round((point.x / HALF_WIDTH + point.y / HALF_HEIGHT) / 2),

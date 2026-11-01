@@ -52,8 +52,9 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   kvadratkartan visas med klassiska 2:1-diamantrutor och upphöjda barriärer,
   skydd och spelpjäser. Väggar och ytterskrov fyller hela sina rutor.
 - `isometriska-golvtiles` — **Fullständigt implementerat**. Synliga och minneslagda
-  golvrutor ritas med en genomskinlig 2:1-sprite. Okända rutor behåller den
-  ifyllda diamanten. Kartreglerna ändras inte.
+  golvrutor ritas med en kvadratisk yttextur som vyn projicerar på rutans
+  exakta 2:1-diamant. Okända rutor behåller den ifyllda diamanten.
+  Kartreglerna ändras inte.
 - `spelmassigt-bordningsgranssnitt` — **Fullständigt implementerat**. Kartan
   upptar huvuddelen av skärmen. Truppstatus, handlingar, zoom,
   kartförklaring och stridslogg ligger som kompakta HUD-lager ovanpå kartan.

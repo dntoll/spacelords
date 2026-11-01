@@ -11,6 +11,7 @@ import {
   boardingIsoCenter,
   boardingIsoCorners,
   boardingIsoCellPoint,
+  boardingIsoTextureTransform,
 } from '../../src/client/views/BoardingProjection.js';
 
 const floorTile = readFileSync(
@@ -69,11 +70,26 @@ describe('isometrisk-bordningsvy', () => {
 });
 
 describe('isometriska-golvtiles', () => {
-  it('uses a 2:1 floor sprite with a transparent diamond outside', () => {
+  it('projects a square floor texture onto the exact 2:1 diamond', () => {
     expect([...floorTile.subarray(0, 8)]).toEqual([
       137, 80, 78, 71, 13, 10, 26, 10,
     ]);
-    expect(floorTile.readUInt32BE(16) / floorTile.readUInt32BE(20)).toBe(2);
+    expect(floorTile.readUInt32BE(16)).toBe(floorTile.readUInt32BE(20));
     expect(floorTile[25]).toBe(6);
+
+    const size = 64;
+    const [a, b, c, d, e, f] = boardingIsoTextureTransform(size, size, {
+      q: 2,
+      r: 3,
+    });
+    const map = (x: number, y: number) => ({
+      x: a * x + c * y + e,
+      y: b * x + d * y + f,
+    });
+    const [north, east, south, west] = boardingIsoCorners({ q: 2, r: 3 });
+    expect(map(0, 0)).toEqual(north);
+    expect(map(size, 0)).toEqual(east);
+    expect(map(size, size)).toEqual(south);
+    expect(map(0, size)).toEqual(west);
   });
 });

@@ -142,7 +142,8 @@ Se [hela visionen](docs/game-vision.md).
   2:1-diamantrutor där väggar och ytterskrov fyller hela rutan, fyra riktningar
   och 90-gradersvändningar; detta ersätter uttryckligen den tidigare hexkartan.
   En vald väg färgas efter kvarvarande AP och förflyttning animeras stegvis med
-  uppdaterad sikt. Kända golvrutor använder en genomskinlig 2:1-sprite. Se
+  uppdaterad sikt. Kända golvrutor använder en kvadratisk yttextur som vyn
+  projicerar på rutans exakta 2:1-diamant. Se
   [bordningsstrid](docs/boarding-combat.md).
 
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,

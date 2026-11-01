@@ -8,13 +8,12 @@ import type { BoardingPathMark } from '../models/BoardingPathPreview.js';
 import type { BoardingMapPort } from './BoardingView.js';
 import floorTileUrl from '../assets/boarding/floor-tile.png';
 import {
-  BOARDING_TILE_HEIGHT,
-  BOARDING_TILE_WIDTH,
   boardingCellFromIsoPoint,
   boardingFeatureFootprint,
   boardingIsoCamera,
   boardingIsoCenter,
   boardingIsoCorners,
+  boardingIsoTextureTransform,
   type BoardingPoint as Point,
 } from './BoardingProjection.js';
 
@@ -45,6 +44,7 @@ export class BoardingMapView implements BoardingMapPort {
   #scale = 1;
   #offset: Point = { x: 0, y: 0 };
   #floorTile: p5.Image | null = null;
+  #floorSource: CanvasImageSource | null = null;
   #ready = false;
   #disposed = false;
   #fitPending = true;
@@ -74,6 +74,7 @@ export class BoardingMapView implements BoardingMapPort {
         );
         void sketch.loadImage(floorTileUrl).then((image) => {
           this.#floorTile = image;
+          this.#floorSource = null;
           if (!this.#disposed && this.#ready) void this.#p5.redraw();
         });
         this.#bind(canvas, select);
@@ -296,6 +297,68 @@ export class BoardingMapView implements BoardingMapPort {
     );
   }
 
+  #paintFloor(sketch: p5, position: BoardingCell, current: boolean): boolean {
+    const tile = this.#floorTile;
+    if (!tile || tile.width < 2 || tile.height < 2) return false;
+    const source = this.#floorImageSource(tile);
+    if (!source) return false;
+    const corners = boardingIsoCorners(position);
+    const [a, b, c, d, e, f] = boardingIsoTextureTransform(
+      tile.width,
+      tile.height,
+      position,
+    );
+    const ctx = sketch.drawingContext as CanvasRenderingContext2D;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(corners[0]!.x, corners[0]!.y);
+    for (const corner of corners.slice(1)) ctx.lineTo(corner.x, corner.y);
+    ctx.closePath();
+    ctx.clip();
+    if (!current) {
+      ctx.filter = 'brightness(0.42) saturate(0.7)';
+      ctx.globalAlpha = 0.92;
+    }
+    ctx.transform(a, b, c, d, e, f);
+    ctx.drawImage(source, 0, 0, tile.width, tile.height);
+    ctx.restore();
+    return true;
+  }
+
+  #floorImageSource(tile: p5.Image): CanvasImageSource | null {
+    if (this.#floorSource) return this.#floorSource;
+    const image = tile as p5.Image & {
+      canvas?: CanvasImageSource;
+      elt?: CanvasImageSource;
+    };
+    if (image.canvas) {
+      this.#floorSource = image.canvas;
+      return this.#floorSource;
+    }
+    if (image.elt) {
+      this.#floorSource = image.elt;
+      return this.#floorSource;
+    }
+    tile.loadPixels();
+    if (tile.pixels.length < 4) return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = tile.width;
+    canvas.height = tile.height;
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+    context.putImageData(
+      new ImageData(
+        new Uint8ClampedArray(tile.pixels),
+        tile.width,
+        tile.height,
+      ),
+      0,
+      0,
+    );
+    this.#floorSource = canvas;
+    return canvas;
+  }
+
   #tile(sketch: p5, position: BoardingCell, yOffset = 0): void {
     sketch.beginShape();
     for (const corner of boardingIsoCorners(position))
@@ -406,22 +469,8 @@ export class BoardingMapView implements BoardingMapPort {
         const paintedFloor =
           terrain === 'floor' &&
           (current || remembered) &&
-          !!this.#floorTile &&
-          this.#floorTile.width > 1;
-        if (paintedFloor) {
-          sketch.push();
-          sketch.imageMode(sketch.CENTER);
-          if (current) sketch.tint(255);
-          else sketch.tint(70, 82, 102, 230);
-          sketch.image(
-            this.#floorTile!,
-            center.x,
-            center.y,
-            BOARDING_TILE_WIDTH,
-            BOARDING_TILE_HEIGHT,
-          );
-          sketch.pop();
-        } else {
+          this.#paintFloor(sketch, position, current);
+        if (!paintedFloor) {
           sketch.stroke('#3c4b65');
           sketch.strokeWeight(1.2);
           if (current) sketch.fill('#24334a');
