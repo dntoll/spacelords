@@ -166,6 +166,7 @@ Se [hela visionen](docs/game-vision.md).
   `ap-fargad-bordningsvag`, `animerad-bordningsforflyttning`,
   `avbrott-vid-ny-fiende`, `animerat-bordningsskott`,
   `valbar-bordningssoldat`, `klickskott-pa-vald-fiende`,
+  `klickgang-pa-vald-destination`, `klickdorr-pa-vald-dorr`,
   `isometriska-golvtiles`, `isometriska-vaggtexturer` samt
   `bordningsfigurer-fran-spritesheet` är
   **Fullständigt implementerat**. Den första versionen är ett separat testspel

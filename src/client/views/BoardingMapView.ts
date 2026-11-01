@@ -11,6 +11,7 @@ import wallTileUrl from '../assets/boarding/wall-tile.png';
 import factionSpritesUrl from '../assets/boarding/faction-sprites.png';
 import { boardingCharacterSprite } from './BoardingCharacterSprite.js';
 import {
+  boardingAnimTick,
   boardingCellFromIsoPoint,
   boardingFeatureFootprint,
   boardingFeatureGlyph,
@@ -183,6 +184,7 @@ export class BoardingMapView implements BoardingMapPort {
         resolve,
       };
       this.#p5.loop();
+      void this.#p5.redraw();
     });
   }
 
@@ -201,6 +203,7 @@ export class BoardingMapView implements BoardingMapPort {
         resolve,
       };
       this.#p5.loop();
+      void this.#p5.redraw();
     });
   }
 
@@ -562,21 +565,22 @@ export class BoardingMapView implements BoardingMapPort {
     sketch.scale(this.#scale);
     const motion = this.#motion;
     const shot = this.#shot;
-    const raw = motion
-      ? Math.min(1, (performance.now() - motion.started) / motion.duration)
-      : 1;
-    const progress = raw * raw * (3 - 2 * raw);
-    const shotRaw = shot
-      ? Math.min(1, (performance.now() - shot.started) / shot.duration)
-      : 1;
-    const shotProgress = shotRaw * shotRaw * (3 - 2 * shotRaw);
-    if (motion && raw >= 1) {
+    const now = performance.now();
+    const motionTick = motion
+      ? boardingAnimTick(motion.started, motion.duration, now)
+      : null;
+    const shotTick = shot
+      ? boardingAnimTick(shot.started, shot.duration, now)
+      : null;
+    const progress = motionTick?.progress ?? 1;
+    const shotProgress = shotTick?.progress ?? 1;
+    if (motion && motionTick?.done) {
       this.#motion = null;
-      motion.resolve();
+      queueMicrotask(motion.resolve);
     }
-    if (shot && shotRaw >= 1) {
+    if (shot && shotTick?.done) {
       this.#shot = null;
-      shot.resolve();
+      queueMicrotask(shot.resolve);
     }
     if (!this.#motion && !this.#shot && this.#ready && !this.#disposed)
       this.#p5.noLoop();
@@ -840,7 +844,7 @@ export class BoardingMapView implements BoardingMapPort {
         bodyY + (dy / length) * 17,
       );
     }
-    if (shot) {
+    if (shot && shotTick && !shotTick.done) {
       const head = {
         x: shot.from.x + (shot.to.x - shot.from.x) * shotProgress,
         y: shot.from.y + (shot.to.y - shot.from.y) * shotProgress - 12,

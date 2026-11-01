@@ -824,10 +824,6 @@ export class AppView implements AppPort {
     const activeId = playback?.events[playback.index]?.id;
     const key = `${events.at(-1)?.id ?? 'empty'}:${model.round}:${activeId ?? ''}`;
     if (log.dataset.lastEvent === key) return;
-    const follow =
-      !!playback ||
-      log.dataset.round !== String(model.round) ||
-      log.scrollHeight - log.clientHeight - log.scrollTop < 8;
     const list = log.querySelector('ol')!;
     if (events.length) log.querySelector('.console-empty')?.remove();
     else if (!log.querySelector('.console-empty'))
@@ -840,7 +836,7 @@ export class AppView implements AppPort {
     }
     log.dataset.lastEvent = key;
     log.dataset.round = String(model.round);
-    if (follow) log.scrollTop = log.scrollHeight;
+    log.scrollTop = log.scrollHeight;
   }
 
   #renderEventAnnouncement(model: AppReadModel): void {
@@ -923,6 +919,7 @@ export class AppView implements AppPort {
     const target = this.#root.querySelector<HTMLElement>('.event-destination');
     const log = target?.closest('[role="log"]');
     if (!announcement || !target || !log) return;
+    log.scrollTop = log.scrollHeight;
     const model = this.#announcementModel;
     const event = model?.eventPlayback?.events[model.eventPlayback.index];
     const map = this.#container?.getBoundingClientRect();

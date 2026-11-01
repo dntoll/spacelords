@@ -337,7 +337,7 @@ describe('handelser / arsrundor-och-order', () => {
     );
     controller.dispose();
   });
-  it('senaste-aret-i-events: shows only the latest year and preserves focus and reading position within it', () => {
+  it('senaste-aret-i-events: shows only the latest year and scrolls to a new event', () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
     const model = new AppModel();
@@ -363,7 +363,7 @@ describe('handelser / arsrundor-och-order', () => {
       events: [...events, { id: 'new', round: 2, text: 'New arrival' }],
     });
     expect(document.activeElement).toBe(log);
-    expect(log.scrollTop).toBe(100);
+    expect(log.scrollTop).toBe(1000);
     expect(log.querySelectorAll('[data-event-id]')).toHaveLength(101);
     expect(log.querySelector('[data-event-id]')!.textContent).toBe('Event 20');
     expect(events).toHaveLength(120);

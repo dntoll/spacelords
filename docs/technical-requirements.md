@@ -154,9 +154,14 @@ AppModel äger en tillfällig boarding-session medan huvudmenyn är den underlig
 skärmen. `boarding-command` samordnas av AppController och en separat
 `BoardingView`; vyn får bara läsa snapshot och skicka intents. AP-färgad
 vägvisning beräknas ur pathfinding utan att mutera striden. Stegvis gång är
-presentation: modellen samlar synliga rutor efter varje vändning och steg, och
-vyn animerar mellan dem. En ny fiende i sidans sikt avbryter resterande
-steg i samma kommando. Skottanimation är presentation separat från snapshot.
+presentation: modellen samlar synliga rutor efter varje vändning och steg för
+spelaren och för synliga försvarare och civilister, och vyn animerar mellan
+dem. Vyn köar en ny presentation medan en animation pågår så att AI-steg inte
+avbryter den. En ny fiende i sidans sikt avbryter resterande steg i samma
+kommando. Synfältet är 180 grader (cosinus 0 mot siktlinjen). Skottanimation
+är presentation separat från snapshot. Andra klicket på vald destination
+skickar `move`; andra klicket på en angränsande vald dörr skickar `door` eller
+`hack`.
 Byte av egen soldat sker med kommandot `select` och sparar kvarvarande AP. P5-kartan använder
 instance mode och innehåller ingen domänmutation. Golvgrafik är kvadratiska
 yttexturer; vyn äger den klassiska 2:1-projektionen och lägger texturen affint
@@ -964,8 +969,8 @@ validering, kategorier och sidor återanvänds. Granskning ändrar inte sparat s
 order, reservationer eller ID-sekvens. Sparformatet ändras inte.
 
 `senaste-aret-i-events` bevarar Decisions-konsolen ansluten när beslutslistan
-renderas om. Ändrat år följer alltid slutet; uppdateringar inom samma år
-respekterar läsposition. `utvikbara-events` använder HTML details/summary och
+renderas om. Nya poster rullar listan till slutet. Läsposition mellan vyer
+bevaras bara när samma poster visas. `utvikbara-events` använder HTML details/summary och
 tillfälligt presentationstillstånd i AppView. Utfällning rullar till senaste
 händelserna. Höjd begränsas av sidans och skärmens utrymme, med intern scroll.
 `rundkontroller-pa-fler-vyer` återanvänder TurnActionsView och befintliga

@@ -26,14 +26,15 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   bara rutor som ryms inom kvarvarande AP. Rutor där ett gevärsskott fortfarande
   ryms efter ankomst har en färg; övriga rutor man just når har en annan.
 - `animerad-bordningsforflyttning` — **Fullständigt implementerat**. Utförd
-  förflyttning animerar varje vändning och steg. Sikt och kartminne uppdateras
-  efter varje del så att spelaren ser vad soldaten ser på vägen.
+  förflyttning animerar varje vändning och steg för den aktiva soldaten och för
+  synliga försvarare och civilister. Sikt och kartminne uppdateras efter varje
+  del så att spelaren ser vad som händer på vägen. Dolda figurer animeras inte.
 - `avbrott-vid-ny-fiende` — **Fullständigt implementerat**. Om en ny fientlig
   soldat kommer in i sidans sikt under en förflyttning stannar den aktiva
   soldaten efter den del som avslöjade fienden och resten av ordern stryks.
 - `animerat-bordningsskott` — **Fullständigt implementerat**. Gevärs- och
-  overwatchskott visas som en kort projektil från skytt till mål innan skadan
-  syns.
+  overwatchskott visas som en kort projektil från skytt till mål. Spåret
+  försvinner när det når målet, innan skadan syns.
 - `valbar-bordningssoldat` — **Fullständigt implementerat**. Under spelarens
   tur kan en annan egen aktiv soldat som inte är färdig väljas med klick. Den
   förra soldaten sparar sin kvarvarande AP och återupptas när den valda är
@@ -41,13 +42,19 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
 - `klickskott-pa-vald-fiende` — **Fullständigt implementerat**. Första klicket
   på en fiende väljer målet. Ett andra klick på samma valda fiende avfyrar
   geväret om skottet är lagligt.
+- `klickgang-pa-vald-destination` — **Fullständigt implementerat**. Första
+  klicket på en tom ruta räknar ut och visar vägen. Ett andra klick på samma
+  valda destination startar förflyttningen om vägen ryms inom kvarvarande AP.
+- `klickdorr-pa-vald-dorr` — **Fullständigt implementerat**. Första klicket på
+  en dörr väljer den. Ett andra klick på samma angränsande dörr försöker
+  öppna eller stänga den, eller hacka den om den är låst.
 - `tydlig-bordningsstatus` — **Fullständigt implementerat**. Den aktiva soldaten
   namnges uttryckligen och markeras på kartan. Varje bordningssoldat visas med
   en egen HP-bar och numeriskt HP-värde. Kartans förklaring identifierar aktiv
   soldat, riktning och
   `Half cover`, som har en egen färg. Under en dold försvarares tur visar
   `Combat details` att försvararen agerar och loggar handlingens typ utan att
-  avslöja positionen.
+  avslöja positionen. Den öppna stridsloggen följer senaste raden.
 - `isometrisk-bordningsvy` — **Fullständigt implementerat**. Den regelstyrda
   kvadratkartan visas med klassiska 2:1-diamantrutor och upphöjda barriärer,
   skydd och spelpjäser. Väggar och ytterskrov fyller hela sina rutor och har
@@ -71,7 +78,7 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   kartförklaring och stridslogg ligger som kompakta HUD-lager ovanpå kartan.
   Handlingar använder små symbolknappar med fullständiga namn för
   tillgänglighet och framtida utbyte mot bildsymboler.
-- `sikt-minne-och-ljudmarkorer` — **Fullständigt implementerat**. Soldater ser 120 grader.
+- `sikt-minne-och-ljudmarkorer` — **Fullständigt implementerat**. Soldater ser 180 grader.
   Sidorna delar aktuell sikt och senast kända fiendeposition. Skeppets yttre
   form är känd, interiören utforskas och aktuell sikt skiljs tydligt från
   kartminne. Våld visar sin exakta ruta som ljudmarkör för motståndarsidan till
@@ -86,7 +93,7 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   De skyddar bara när de ligger mellan skytt och mål; hukning bakom dem ger
   starkare skydd. Overwatch reserverar AP för ett
   automatiskt skott mot den första fientliga soldat som rör sig i det
-  120-gradiga synfältet; civilister är aldrig mål.
+  180-gradiga synfältet; civilister är aldrig mål.
 - `granater-och-rok` — **Fullständigt implementerat**. Granater kastas mot en ruta med D20.
   Missmarginal styr avståndet och slumpen riktningen. Barriärer stoppar
   explosioner men tar skada. Rök har intern mängd, sprids och avtar slumpmässigt

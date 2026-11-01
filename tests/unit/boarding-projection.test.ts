@@ -16,6 +16,7 @@ import {
   boardingIsoCenter,
   boardingIsoCorners,
   boardingIsoCellPoint,
+  boardingAnimTick,
   boardingIsoTextureTransform,
   boardingQuadTextureTransform,
   boardingWallRun,
@@ -169,5 +170,17 @@ describe('isometriska-vaggtexturer', () => {
     expect(map(0, 0)).toEqual(origin);
     expect(map(8, 0)).toEqual(alongU);
     expect(map(0, 4)).toEqual(alongV);
+  });
+});
+
+describe('animerat-bordningsskott', () => {
+  it('ends the tracer once the shot reaches the target', () => {
+    const flying = boardingAnimTick(1_000, 280, 1_140);
+    expect(flying.done).toBe(false);
+    expect(flying.progress).toBeGreaterThan(0);
+    expect(flying.progress).toBeLessThan(1);
+    const arrived = boardingAnimTick(1_000, 280, 1_280);
+    expect(arrived.done).toBe(true);
+    expect(arrived.progress).toBe(1);
   });
 });

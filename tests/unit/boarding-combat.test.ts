@@ -180,6 +180,164 @@ describe('animerad-bordningsforflyttning', () => {
     expect(turnFrame.visibleCells).not.toEqual(startVisible);
     expect(battle.snapshot).not.toHaveProperty('presentation');
   });
+
+  it('records visible frames when a seen defender steps', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    withState((state) => ({
+      ...state,
+      features: state.features.map((feature) => ({
+        ...feature,
+        destroyed: true,
+      })),
+      people: state.people.map((person) => {
+        if (person.id === player.id)
+          return { ...person, position: { q: 2, r: 5 }, facing: 0 };
+        if (person.id === defender.id)
+          return { ...person, position: { q: 4, r: 5 }, facing: 0 };
+        return { ...person, status: 'dead' };
+      }),
+    }));
+    battle.synchronize();
+    activate(defender.id);
+    battle.command({ type: 'move', to: { q: 5, r: 5 } });
+    expect(battle.presentation.length).toBeGreaterThan(0);
+    expect(
+      battle.presentation.some((frame) =>
+        frame.people.some((person) => person.id === defender.id),
+      ),
+    ).toBe(true);
+  });
+
+  it('keeps hidden defenders and civilians out of movement frames', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    withState((state) => ({
+      ...state,
+      people: state.people.map((person) => {
+        if (person.id === player.id)
+          return { ...person, position: { q: 2, r: 8 }, facing: 2 };
+        if (person.id === defender.id)
+          return { ...person, position: { q: 12, r: 2 }, facing: 0 };
+        if (person.side === 'civilian')
+          return { ...person, position: { q: 14, r: 1 }, facing: 0 };
+        return person;
+      }),
+    }));
+    battle.synchronize();
+    activate(defender.id);
+    battle.command({ type: 'move', to: { q: 12, r: 3 } });
+    expect(battle.presentation).toEqual([]);
+  });
+
+  it('records visible frames when a seen civilian steps', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const civilian = battle.snapshot.people.find(
+      (person) => person.side === 'civilian',
+    )!;
+    withState((state) => ({
+      ...state,
+      features: state.features.map((feature) =>
+        feature.kind === 'door' ? { ...feature, open: true } : feature,
+      ),
+      people: state.people.map((person) => {
+        if (person.id === player.id)
+          return { ...person, position: { q: 5, r: 7 }, facing: 0 };
+        if (person.id === civilian.id)
+          return { ...person, position: { q: 6, r: 7 }, facing: 0 };
+        if (person.side === 'defender')
+          return { ...person, position: { q: 14, r: 1 }, facing: 2 };
+        return person;
+      }),
+      initiativeOrder: [player.id],
+      initiativeIndex: 0,
+      currentActorId: player.id,
+      activation: { id: player.id, remaining: 12 },
+    }));
+    battle.synchronize();
+    battle.command({ type: 'end-activation' });
+    expect(battle.presentation.length).toBeGreaterThan(0);
+    expect(
+      battle.presentation.some((frame) =>
+        frame.people.some((person) => person.id === civilian.id),
+      ),
+    ).toBe(true);
+  });
+});
+
+describe('sikt-minne-och-ljudmarkorer', () => {
+  it('sees a 180 degree cone including side tiles but not behind', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    withState((state) => ({
+      ...state,
+      features: state.features.map((feature) => ({
+        ...feature,
+        destroyed: true,
+      })),
+      people: state.people.map((person) =>
+        person.id === player.id
+          ? { ...person, position: { q: 3, r: 5 }, facing: 0 }
+          : { ...person, status: 'dead' },
+      ),
+    }));
+    battle.synchronize();
+    const visible = new Set(
+      battle.snapshot.visibleCells.map((cell) => `${cell.q},${cell.r}`),
+    );
+    expect(visible.has('4,5')).toBe(true);
+    expect(visible.has('3,4')).toBe(true);
+    expect(visible.has('3,6')).toBe(true);
+    expect(visible.has('2,5')).toBe(false);
+  });
+
+  it('rejects rifle fire behind the soldier as outside the 180° field of fire', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    withState((state) => ({
+      ...state,
+      features: state.features.map((feature) => ({
+        ...feature,
+        destroyed: true,
+      })),
+      people: state.people.map((person) => {
+        if (person.id === player.id)
+          return { ...person, position: { q: 3, r: 5 }, facing: 0 };
+        if (person.id === defender.id)
+          return { ...person, position: { q: 2, r: 5 } };
+        return { ...person, status: 'dead' };
+      }),
+    }));
+    expect(battle.attackPreview(player.id, defender.id).reason).toBe(
+      'The target is outside the 180° field of fire.',
+    );
+    withState((state) => ({
+      ...state,
+      people: state.people.map((person) =>
+        person.id === defender.id
+          ? { ...person, position: { q: 3, r: 4 } }
+          : person,
+      ),
+    }));
+    expect(battle.attackPreview(player.id, defender.id).reason).not.toBe(
+      'The target is outside the 180° field of fire.',
+    );
+  });
 });
 
 describe('avbrott-vid-ny-fiende', () => {
@@ -213,8 +371,8 @@ describe('avbrott-vid-ny-fiende', () => {
       (person) => person.id === player.id,
     )!;
     expect(moved.position).toEqual({ q: 3, r: 5 });
-    expect(moved.facing).toBe(0);
-    expect(battle.snapshot.activation?.remaining).toBe(10);
+    expect(moved.facing).not.toBe(2);
+    expect(battle.snapshot.activation?.remaining).toBe(11);
     expect(battle.snapshot.log.at(-1)).toMatch(/spots a new enemy and stops/i);
   });
 });

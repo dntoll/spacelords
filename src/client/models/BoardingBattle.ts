@@ -161,6 +161,8 @@ const ADJACENT_DIRECTIONS: readonly BoardingCell[] = Object.freeze([
 ]);
 export const BOARDING_RIFLE_AP = 4;
 const RIFLE_AP = BOARDING_RIFLE_AP;
+/** sikt-minne-och-ljudmarkorer: cosine of 90° from facing, a 180° cone. */
+const BOARDING_VISION_COSINE = 0;
 const GRENADE_AP = 4;
 const MED_PACK_AP = 4;
 const HACK_AP = 4;
@@ -678,7 +680,10 @@ export class BoardingBattle {
     const bx = target.q - observer.position.q;
     const by = target.r - observer.position.r;
     const denominator = Math.hypot(ax, ay) * Math.hypot(bx, by);
-    return denominator > 0 && (ax * bx + ay * by) / denominator >= 0.5 - 1e-9;
+    return (
+      denominator > 0 &&
+      (ax * bx + ay * by) / denominator >= BOARDING_VISION_COSINE - 1e-9
+    );
   }
 
   #blocksSight(
@@ -867,7 +872,7 @@ export class BoardingBattle {
     else if (distance(source.position, this.#targetPosition(target)) > 8)
       reason = 'The target is outside rifle range.';
     else if (!this.#inFieldOfView(source, this.#targetPosition(target)))
-      reason = 'The target is outside the 120° field of fire.';
+      reason = 'The target is outside the 180° field of fire.';
     else {
       const line = this.#line(source.position, this.#targetPosition(target));
       if (
@@ -1040,7 +1045,7 @@ export class BoardingBattle {
           facing: normalizeFacing(entry.facing + step.direction),
         }));
         this.#refreshKnowledge();
-        this.#recordPresentation(actor.side);
+        this.#recordPresentation(actor.id);
       } else {
         const cost = current.crouched ? 3 : 2;
         this.#spend(cost);
@@ -1053,7 +1058,7 @@ export class BoardingBattle {
           (entry) => entry.id === actor.id,
         )!;
         this.#triggerOverwatch(moved);
-        this.#recordPresentation(actor.side);
+        this.#recordPresentation(actor.id);
       }
       if (actor.side === 'civilian') continue;
       const spotted = [...this.#hostileIdsInSight(actor.side)].some(
@@ -1071,8 +1076,13 @@ export class BoardingBattle {
     }
   }
 
-  #recordPresentation(side: BoardingSide): void {
-    if (side === 'player') this.#presentation.push(this.visibleSnapshot);
+  #recordPresentation(actorId: string): void {
+    const frame = this.visibleSnapshot;
+    const shown = frame.people.some((entry) => entry.id === actorId);
+    const wasShown = this.#presentation
+      .at(-1)
+      ?.people.some((entry) => entry.id === actorId);
+    if (shown || wasShown) this.#presentation.push(frame);
   }
 
   #door(id: string, action: 'open' | 'close'): void {
@@ -1493,6 +1503,8 @@ export class BoardingBattle {
               ...entry,
               position: frozenCell(step.position),
             }));
+          this.#refreshKnowledge();
+          this.#recordPresentation(initial.id);
         }
       }
       actor = this.#state.people.find((entry) => entry.id === initial.id)!;

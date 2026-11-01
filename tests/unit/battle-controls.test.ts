@@ -509,6 +509,206 @@ it('valbar-bordningssoldat / klickskott-pa-vald-fiende / animerat-bordningsskott
   view.dispose();
 });
 
+it('klickgang-pa-vald-destination: clicking the chosen destination issues move', () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) =>
+      person.side === 'player' &&
+      person.position.q === 2 &&
+      person.position.r === 8,
+  )!;
+  const boardingState: BoardingBattleState = {
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player.id ? { ...person, facing: 0 } : person,
+    ),
+    initiativeOrder: [player.id],
+    initiativeIndex: 0,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 12 },
+  };
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new BoardingView(document.body, emit, (_container, select) => {
+    selectHex = select;
+    return { render() {}, zoom() {}, fit() {}, dispose() {} };
+  });
+  view.render(BoardingBattle.restore(testBoardingMap, boardingState).snapshot);
+  const destination = { q: player.position.q + 2, r: player.position.r };
+  selectHex(destination);
+  expect(emit).not.toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'move', to: destination },
+  });
+  expect(document.body.textContent).toContain('Destination');
+  selectHex(destination);
+  expect(emit).toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'move', to: destination },
+  });
+  view.dispose();
+});
+
+it('klickdorr-pa-vald-dorr: clicking an adjacent selected door opens or hacks it', () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) => person.side === 'player',
+  )!;
+  const door = created.snapshot.features.find(
+    (feature) => feature.kind === 'door' && !feature.locked,
+  )!;
+  const locked = created.snapshot.features.find(
+    (feature) => feature.kind === 'door' && feature.locked,
+  )!;
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new BoardingView(document.body, emit, (_container, select) => {
+    selectHex = select;
+    return { render() {}, zoom() {}, fit() {}, dispose() {} };
+  });
+  view.render(
+    BoardingBattle.restore(testBoardingMap, {
+      ...created.snapshot,
+      people: created.snapshot.people.map((person) =>
+        person.id === player.id
+          ? {
+              ...person,
+              position: { q: door.position.q - 1, r: door.position.r },
+              facing: 0,
+            }
+          : person,
+      ),
+      initiativeOrder: [player.id],
+      initiativeIndex: 0,
+      currentActorId: player.id,
+      activation: { id: player.id, remaining: 12 },
+    }).snapshot,
+  );
+  selectHex(door.position);
+  expect(emit).not.toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'door', id: door.id, action: 'open' },
+  });
+  selectHex(door.position);
+  expect(emit).toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'door', id: door.id, action: 'open' },
+  });
+  view.render(
+    BoardingBattle.restore(testBoardingMap, {
+      ...created.snapshot,
+      people: created.snapshot.people.map((person) =>
+        person.id === player.id
+          ? {
+              ...person,
+              position: { q: locked.position.q - 1, r: locked.position.r },
+              facing: 0,
+            }
+          : person,
+      ),
+      initiativeOrder: [player.id],
+      initiativeIndex: 0,
+      currentActorId: player.id,
+      activation: { id: player.id, remaining: 12 },
+    }).snapshot,
+  );
+  selectHex(locked.position);
+  selectHex(locked.position);
+  expect(emit).toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'hack', id: locked.id },
+  });
+  view.dispose();
+});
+
+it('animerad-bordningsforflyttning: plays a queued enemy move after the current animation', async () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) => person.side === 'player',
+  )!;
+  const defender = created.snapshot.people.find(
+    (person) => person.side === 'defender',
+  )!;
+  let resolveFirst!: () => void;
+  const playMotion = vi
+    .fn<() => Promise<void>>()
+    .mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveFirst = resolve;
+        }),
+    )
+    .mockResolvedValue(undefined);
+  const view = new BoardingView(document.body, vi.fn(), () => ({
+    render() {},
+    playMotion,
+    zoom() {},
+    fit() {},
+    dispose() {},
+  }));
+  const start = {
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player.id
+        ? { ...person, position: { q: 2, r: 5 }, facing: 0 }
+        : person.id === defender.id
+          ? { ...person, position: { q: 5, r: 5 } }
+          : person,
+    ),
+  };
+  const afterPlayer = {
+    ...start,
+    people: start.people.map((person) =>
+      person.id === player.id
+        ? { ...person, position: { q: 3, r: 5 } }
+        : person,
+    ),
+  };
+  const afterEnemy = {
+    ...afterPlayer,
+    people: afterPlayer.people.map((person) =>
+      person.id === defender.id
+        ? { ...person, position: { q: 6, r: 5 } }
+        : person,
+    ),
+  };
+  view.render(start);
+  view.render(afterPlayer, null, [afterPlayer]);
+  expect(playMotion).toHaveBeenCalledTimes(1);
+  view.render(afterEnemy, null, [afterEnemy]);
+  expect(playMotion).toHaveBeenCalledTimes(1);
+  resolveFirst();
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  expect(playMotion).toHaveBeenCalledTimes(2);
+  view.dispose();
+});
+
+it('tydlig-bordningsstatus: combat details follow the latest log line', () => {
+  const created = createTestBoardingBattle();
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new BoardingView(document.body, emit, () => ({
+    render() {},
+    zoom() {},
+    fit() {},
+    dispose() {},
+  }));
+  const details =
+    document.querySelector<HTMLDetailsElement>('.boarding-details')!;
+  details.open = true;
+  Object.defineProperties(details, {
+    scrollHeight: { configurable: true, value: 400 },
+    clientHeight: { configurable: true, value: 80 },
+  });
+  view.render({
+    ...created.snapshot,
+    log: ['Rifle 1', 'Rifle 2', 'Rifle 3', 'Rifle 4'],
+  });
+  expect(details.scrollTop).toBe(400);
+  view.dispose();
+});
+
 it('miljomal-och-forstorelse: selects a door as a direct rifle target', () => {
   const created = createTestBoardingBattle();
   const player = created.snapshot.people.find(

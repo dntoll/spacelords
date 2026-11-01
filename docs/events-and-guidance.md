@@ -117,8 +117,9 @@ händelsetexter bevaras.
 - `senaste-aret-i-events`: Events visar bara senaste årets händelser, i den
   ordning de inträffade. Äldre år behålls i sparningen men tar ingen plats i
   listan. Alla senaste årets händelser finns kvar, även fler än 100.
-  Population rapporteras bara vid ändring. Vanliga uppdateringar inom året bevarar manuellt
-  vald läsposition. Nytt år och utfällning visar senaste händelserna.
+  Population rapporteras bara vid ändring. Nya händelser, nytt år och
+  utfällning rullar listan till senaste posten. Läsposition mellan vyer
+  bevaras bara när listan inte har fått nya poster.
 - `utvikbara-events`: Events kan fällas ut och in via rubriken med touch eller
   tangentbord. Rubriken har minst 44 px träffyta. Infällt läge visar bara
   rubriken. Utfällt läge växer med innehållet upp till tillgängligt utrymme;

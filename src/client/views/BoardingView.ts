@@ -61,6 +61,12 @@ export class BoardingView {
   #actorId: string | null = null;
   #busy = false;
   #playToken = 0;
+  #pending: {
+    state: BoardingBattleState;
+    notice?: string | null;
+    presentation: readonly BoardingBattleState[];
+    shot: BoardingShot | null;
+  }[] = [];
 
   constructor(
     root: HTMLElement,
@@ -156,6 +162,7 @@ export class BoardingView {
     }
     if (
       playerTurn &&
+      actor &&
       person &&
       person.side !== 'player' &&
       this.#selectedId === person.id
@@ -166,9 +173,44 @@ export class BoardingView {
         return;
       }
     }
+    if (
+      playerTurn &&
+      actor &&
+      feature?.kind === 'door' &&
+      !feature.destroyed &&
+      this.#selectedId === feature.id &&
+      Math.abs(actor.position.q - feature.position.q) +
+        Math.abs(actor.position.r - feature.position.r) ===
+        1
+    ) {
+      this.#command(
+        feature.locked
+          ? { type: 'hack', id: feature.id }
+          : {
+              type: 'door',
+              id: feature.id,
+              action: feature.open ? 'close' : 'open',
+            },
+      );
+      return;
+    }
     if (person || feature) {
       this.#selectedId = (person ?? feature)!.id;
       this.#destination = null;
+    } else if (
+      playerTurn &&
+      actor &&
+      this.#destination &&
+      this.#destination.q === position.q &&
+      this.#destination.r === position.r
+    ) {
+      const route = this.#battle().pathTo(actor.id, position);
+      if (route && route.cost <= (state.activation?.remaining ?? 0)) {
+        this.#command({ type: 'move', to: position });
+        return;
+      }
+      this.#selectedId = null;
+      this.#destination = position;
     } else {
       this.#selectedId = null;
       this.#destination = position;
@@ -182,9 +224,12 @@ export class BoardingView {
     presentation: readonly BoardingBattleState[] = [],
     shot: BoardingShot | null = null,
   ): void {
+    if (this.#busy) {
+      this.#pending.push({ state, notice, presentation, shot });
+      return;
+    }
     const previous = this.#state;
     if (
-      !this.#busy &&
       previous &&
       ((presentation.length > 0 && this.#map?.playMotion) ||
         (shot && this.#map?.playShot))
@@ -207,21 +252,33 @@ export class BoardingView {
     this.#busy = true;
     this.#destination = null;
     this.#paint(previous, shot ? 'Firing…' : 'Moving…');
-    let current = previous;
-    for (const frame of frames) {
+    try {
+      let current = previous;
+      for (const frame of frames) {
+        if (token !== this.#playToken) return;
+        await this.#map?.playMotion?.(current, frame);
+        current = frame;
+        this.#paint(frame, 'Moving…');
+      }
+      if (shot && this.#map?.playShot) {
+        if (token !== this.#playToken) return;
+        this.#paint(current, 'Firing…');
+        await this.#map.playShot(shot.from, shot.to);
+      }
       if (token !== this.#playToken) return;
-      await this.#map?.playMotion?.(current, frame);
-      current = frame;
-      this.#paint(frame, 'Moving…');
-    }
-    if (shot && this.#map?.playShot) {
-      if (token !== this.#playToken) return;
-      this.#paint(current, 'Firing…');
-      await this.#map.playShot(shot.from, shot.to);
+      this.#paint(final, notice);
+    } finally {
+      this.#busy = false;
     }
     if (token !== this.#playToken) return;
-    this.#busy = false;
-    this.#paint(final, notice);
+    const queued = this.#pending.shift();
+    if (queued)
+      this.render(
+        queued.state,
+        queued.notice,
+        queued.presentation,
+        queued.shot,
+      );
   }
 
   #paint(state: BoardingBattleState, notice?: string | null): void {
@@ -444,12 +501,15 @@ export class BoardingView {
       element('p', '', 'D20 rolls and modifiers are shown openly.'),
       element('pre', 'boarding-log', state.log.join('\n')),
     );
+    if (this.#details.open)
+      this.#details.scrollTop = this.#details.scrollHeight;
     this.#map?.render(state, this.#selectedId, this.#destination, path);
   }
 
   dispose(): void {
     this.#playToken += 1;
     this.#busy = false;
+    this.#pending = [];
     this.#map?.dispose();
     this.#dialog.close();
     this.#dialog.remove();

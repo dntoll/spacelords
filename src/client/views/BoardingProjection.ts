@@ -236,6 +236,18 @@ export function boardingIsoCamera(
   };
 }
 
+export function boardingAnimTick(
+  started: number,
+  duration: number,
+  now: number,
+): Readonly<{ progress: number; done: boolean }> {
+  const raw = Math.min(1, (now - started) / Math.max(1, duration));
+  return Object.freeze({
+    progress: raw * raw * (3 - 2 * raw),
+    done: raw >= 1,
+  });
+}
+
 export function boardingIsoCellPoint(
   map: BoardingMapSize,
   view: { readonly width: number; readonly height: number },
