@@ -745,3 +745,38 @@ inte automatiskt version 3-sparningar till det äldre formatet.
 - Lokal rapport: `dist/deployments/8e0644695426-1793083894287/report.json`.
   Manuell mobiltest följer. Fullständigt sluttest och merge inväntar separat
   beställning respektive godkännande.
+
+## Illustrerade Events och stridseffekter: 2026-11-01
+
+- Publicerad källrevision: `170872d2436b652d55ac7baabc390a8e33fab480`
+  från `codex/selected-fleet-arrow`. Events har bilder och symboler samt
+  produktionssammanhang med färdiga delar av totalt behov. Hexdetaljer visar
+  flottor före hela planetdelen. Strid visar projektiler, skadepartiklar och
+  explosioner med stöd för minskad rörelse.
+- Deploycommit: `5848e8708e3edda52432e2e3713978474dc9f1c8`.
+  Webbplatsrepots tidigare revision: `ba148caa1d46ce19d78bcdf05fa05e351b30f00d`.
+  Endast `spacelords/` ändrades. Källrepots `main` är oförändrad.
+- Regressionstester reproducerade planetnamnet ovanför flottorna och klippt
+  produktionsbesked på liggande mobil före rättningarna. Riktade tester
+  skyddar komponentreservationer, skilda beställningar, flottuppgraderingar,
+  historiska siffror, skottens faser, områdesskada, sista salvan och städning.
+  Stående och liggande skärmbilder granskades i Chromium och WebKit.
+- `deploy:quick` godkände formatering, ESLint, typkontroll, Pages-bygge,
+  verktygskontroller, Pages-integration, 804 snabbtester på 16,03 sekunder
+  och 28 mobiltester. Samma 28 mobiltester passerade mot liveadressen.
+- Första publiceringsförsöket stannade före webbplatspush eftersom
+  `git diff --check` flaggade blanksteg inne i p5:s strängliteraler i den
+  genererade JavaScript-bundlen. Det verifierade bygget bevarades byte för byte.
+  Publiceringen slutfördes från samma förberedda kopia och källrevision.
+  Strikt blankstegskontroll passerade utanför just denna bundle; en tillfällig
+  Git-inställning tillät dess strängblanksteg. Filavgränsning, kontrollsummor,
+  kontroll av aktuell publiceringsbas och vanlig push behölls. HTTPS användes
+  med befintlig inloggning utan bestående Git-konfigurationsändring.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/41279521521)
+  lyckades. Livefilerna matchade kontrollsummorna; omdirigering och
+  HTML/JS/CSS-typer verifierades. Kontrollsummorna för befintliga
+  webbplatsadresser var oförändrade. Inga länkar, rotfiler, DNS- eller
+  Pages-inställningar ändrades. Äldre sparningar bevaras utan rensning.
+- Rapport: `dist/deployments/170872d2436b-1793512918281/report.json`.
+  Manuell mobiltest följer. Fullständigt sluttest och merge inväntar separat
+  beställning respektive godkännande.
