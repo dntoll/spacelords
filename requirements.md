@@ -130,10 +130,11 @@ Se [hela visionen](docs/game-vision.md).
   `d20-bordningsstrid`, `miljomal-och-forstorelse`,
   `overwatch-och-skydd`, `granater-och-rok`, `utslagning-och-medic`,
   `bordningsmal-reaktor-och-evakuering` och
-  `forsvarare-och-civilister` samt `tydlig-bordningsstatus` är
+  `forsvarare-och-civilister`, `tydlig-bordningsstatus`,
+  `isometrisk-bordningsvy` samt `spelmassigt-bordningsgranssnitt` är
   **Fullständigt implementerat**. Den första versionen är ett separat testspel
-  från huvudmenyn på en handredigerbar transportkarta och påverkar inte kampanj
-  eller sparplatser. Se
+  från huvudmenyn på en handredigerbar transportkarta och påverkar inte
+  kampanj eller sparplatser. Se
   [bordningsstrid](docs/boarding-combat.md).
 
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,

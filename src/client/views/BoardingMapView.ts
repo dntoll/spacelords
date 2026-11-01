@@ -1,9 +1,5 @@
 import p5 from 'p5';
-import {
-  HexCoordinate,
-  HexGeometry,
-  type Point,
-} from '../models/HexCoordinate.js';
+import { HexGeometry, type Point } from '../models/HexCoordinate.js';
 import type { BoardingMap, BoardingHex } from '../models/BoardingMap.js';
 import {
   BoardingBattle,
@@ -11,6 +7,12 @@ import {
   type BoardingPath,
 } from '../models/BoardingBattle.js';
 import type { BoardingMapPort } from './BoardingView.js';
+import {
+  boardingHexFromIsoPoint,
+  boardingIsoCamera,
+  boardingIsoCenter,
+  boardingIsoCorners,
+} from './BoardingProjection.js';
 
 const key = (position: BoardingHex): string => `${position.q},${position.r}`;
 
@@ -89,27 +91,12 @@ export class BoardingMapView implements BoardingMapPort {
       this.#fitPending = true;
       return;
     }
-    const points: Point[] = [];
-    for (let r = 0; r < this.map.height; r++)
-      for (let q = 0; q < this.map.width; q++)
-        points.push(HexGeometry.toPoint(new HexCoordinate(q, r)));
-    const minX = Math.min(...points.map((point) => point.x)) - HexGeometry.size;
-    const maxX = Math.max(...points.map((point) => point.x)) + HexGeometry.size;
-    const minY = Math.min(...points.map((point) => point.y)) - HexGeometry.size;
-    const maxY = Math.max(...points.map((point) => point.y)) + HexGeometry.size;
-    const padding = 18;
-    this.#scale = Math.max(
-      0.08,
-      Math.min(
-        2,
-        (this.#p5.width - padding * 2) / Math.max(1, maxX - minX),
-        (this.#p5.height - padding * 2) / Math.max(1, maxY - minY),
-      ),
-    );
-    this.#offset = {
-      x: this.#p5.width / 2 - ((minX + maxX) / 2) * this.#scale,
-      y: this.#p5.height / 2 - ((minY + maxY) / 2) * this.#scale,
-    };
+    const camera = boardingIsoCamera(this.map, {
+      width: this.#p5.width,
+      height: this.#p5.height,
+    });
+    this.#scale = camera.scale;
+    this.#offset = camera.offset;
     this.#fitPending = false;
     void this.#p5.redraw();
   }
@@ -196,7 +183,7 @@ export class BoardingMapView implements BoardingMapPort {
         if (!this.#pointers.has(event.pointerId)) return;
         if (!this.#dragged) {
           const position = point(event);
-          const hex = HexGeometry.fromPoint({
+          const hex = boardingHexFromIsoPoint({
             x: (position.x - this.#offset.x) / this.#scale,
             y: (position.y - this.#offset.y) / this.#scale,
           });
@@ -236,16 +223,63 @@ export class BoardingMapView implements BoardingMapPort {
     );
   }
 
-  #hex(sketch: p5, center: Point): void {
+  #hex(sketch: p5, position: BoardingHex, yOffset = 0): void {
     sketch.beginShape();
-    for (let index = 0; index < 6; index++) {
-      const angle = (Math.PI / 180) * (60 * index - 30);
-      sketch.vertex(
-        center.x + HexGeometry.size * Math.cos(angle),
-        center.y + HexGeometry.size * Math.sin(angle),
-      );
-    }
+    for (const corner of boardingIsoCorners(position))
+      sketch.vertex(corner.x, corner.y - yOffset);
     sketch.endShape(sketch.CLOSE);
+  }
+
+  #block(
+    sketch: p5,
+    center: Point,
+    width: number,
+    depth: number,
+    height: number,
+    top: string,
+  ): Point {
+    const topNorth = { x: center.x, y: center.y - height - depth };
+    const topEast = { x: center.x + width, y: center.y - height };
+    const topSouth = { x: center.x, y: center.y - height + depth };
+    const topWest = { x: center.x - width, y: center.y - height };
+    const baseEast = { x: center.x + width, y: center.y };
+    const baseSouth = { x: center.x, y: center.y + depth };
+    const baseWest = { x: center.x - width, y: center.y };
+    sketch.noStroke();
+    sketch.fill('#263247');
+    sketch.quad(
+      topEast.x,
+      topEast.y,
+      topSouth.x,
+      topSouth.y,
+      baseSouth.x,
+      baseSouth.y,
+      baseEast.x,
+      baseEast.y,
+    );
+    sketch.fill('#1a2436');
+    sketch.quad(
+      topSouth.x,
+      topSouth.y,
+      topWest.x,
+      topWest.y,
+      baseWest.x,
+      baseWest.y,
+      baseSouth.x,
+      baseSouth.y,
+    );
+    sketch.fill(top);
+    sketch.quad(
+      topNorth.x,
+      topNorth.y,
+      topEast.x,
+      topEast.y,
+      topSouth.x,
+      topSouth.y,
+      topWest.x,
+      topWest.y,
+    );
+    return { x: center.x, y: center.y - height };
   }
 
   #draw(sketch: p5): void {
@@ -262,7 +296,7 @@ export class BoardingMapView implements BoardingMapPort {
     for (let r = 0; r < this.map.height; r++) {
       for (let q = 0; q < this.map.width; q++) {
         const position = { q, r };
-        const center = HexGeometry.toPoint(new HexCoordinate(q, r));
+        const center = boardingIsoCenter(position);
         const terrain = this.map.terrainAt(position);
         const current = visible.has(key(position));
         const remembered = explored.has(key(position));
@@ -273,16 +307,16 @@ export class BoardingMapView implements BoardingMapPort {
         else if (remembered) sketch.fill('#141d2c');
         else if (knownHull) sketch.fill('#343d4c');
         else sketch.fill('#080c15');
-        this.#hex(sketch, center);
+        this.#hex(sketch, position);
         if (path.has(key(position))) {
           sketch.fill(80, 196, 255, 90);
-          this.#hex(sketch, center);
+          this.#hex(sketch, position);
         }
         if (this.#destination && key(this.#destination) === key(position)) {
           sketch.noFill();
           sketch.stroke('#f4cf5a');
           sketch.strokeWeight(4);
-          this.#hex(sketch, center);
+          this.#hex(sketch, position);
         }
         if (smoke.has(key(position)) && (current || remembered)) {
           sketch.noStroke();
@@ -293,16 +327,37 @@ export class BoardingMapView implements BoardingMapPort {
     }
     const known = (position: BoardingHex) =>
       visible.has(key(position)) || explored.has(key(position));
-    for (const feature of state.features) {
+    for (const feature of [...state.features].sort(
+      (a, b) =>
+        boardingIsoCenter(a.position).y - boardingIsoCenter(b.position).y,
+    )) {
       if (
         feature.kind !== 'hull' &&
         feature.kind !== 'wall' &&
         !known(feature.position)
       )
         continue;
-      const center = HexGeometry.toPoint(
-        new HexCoordinate(feature.position.q, feature.position.r),
-      );
+      const floor = boardingIsoCenter(feature.position);
+      const raised =
+        !feature.destroyed &&
+        (feature.kind === 'hull' ||
+          feature.kind === 'wall' ||
+          (feature.kind === 'door' && !feature.open) ||
+          feature.kind === 'cover');
+      const center = raised
+        ? this.#block(
+            sketch,
+            floor,
+            feature.kind === 'door' ? 9 : feature.kind === 'cover' ? 13 : 16,
+            feature.kind === 'door' ? 4 : feature.kind === 'cover' ? 5 : 7,
+            feature.kind === 'door' ? 13 : feature.kind === 'cover' ? 5 : 18,
+            feature.kind === 'cover'
+              ? '#9c7448'
+              : feature.kind === 'door'
+                ? '#6e829f'
+                : '#52657f',
+          )
+        : floor;
       sketch.textAlign(sketch.CENTER, sketch.CENTER);
       sketch.textSize(16);
       sketch.noStroke();
@@ -339,9 +394,7 @@ export class BoardingMapView implements BoardingMapPort {
     }
     for (const marker of state.lastKnownEnemies) {
       if (visible.has(key(marker.position))) continue;
-      const center = HexGeometry.toPoint(
-        new HexCoordinate(marker.position.q, marker.position.r),
-      );
+      const center = boardingIsoCenter(marker.position);
       sketch.noFill();
       sketch.stroke('#e58b5a');
       sketch.circle(center.x, center.y, 22);
@@ -349,24 +402,27 @@ export class BoardingMapView implements BoardingMapPort {
     for (const marker of state.noiseMarkers.filter(
       (entry) => entry.audience === 'player',
     )) {
-      const center = HexGeometry.toPoint(
-        new HexCoordinate(marker.position.q, marker.position.r),
-      );
+      const center = boardingIsoCenter(marker.position);
       sketch.noFill();
       sketch.stroke('#f4cf5a');
       sketch.circle(center.x, center.y, 30);
       sketch.circle(center.x, center.y, 20);
     }
-    for (const person of state.people) {
+    for (const person of [...state.people].sort(
+      (a, b) =>
+        boardingIsoCenter(a.position).y - boardingIsoCenter(b.position).y,
+    )) {
       if (person.status === 'evacuated') continue;
-      const center = HexGeometry.toPoint(
-        new HexCoordinate(person.position.q, person.position.r),
-      );
+      const center = boardingIsoCenter(person.position);
+      const bodyY = center.y - (person.crouched ? 7 : 11);
+      sketch.noStroke();
+      sketch.fill(0, 0, 0, 95);
+      sketch.ellipse(center.x, center.y + 2, 25, 9);
       if (person.id === state.currentActorId && person.status === 'active') {
         sketch.noFill();
         sketch.stroke('#f4cf5a');
-        sketch.strokeWeight(3);
-        sketch.circle(center.x, center.y, person.crouched ? 27 : 33);
+        sketch.strokeWeight(2.5);
+        sketch.ellipse(center.x, center.y + 1, 32, 13);
       }
       sketch.noStroke();
       sketch.fill(
@@ -382,18 +438,35 @@ export class BoardingMapView implements BoardingMapPort {
                   ? '#ef6461'
                   : '#8bd17c',
       );
-      sketch.circle(center.x, center.y, person.crouched ? 20 : 26);
-      const forward = BoardingBattle.forward(person.position, person.facing);
-      const direction = HexGeometry.toPoint(
-        new HexCoordinate(forward.q, forward.r),
+      sketch.circle(center.x, bodyY, person.crouched ? 17 : 21);
+      sketch.fill('#111827');
+      sketch.rect(center.x - 15, bodyY - 18, 30, 5, 2);
+      sketch.fill(
+        person.side === 'player'
+          ? '#5ac8fa'
+          : person.side === 'defender'
+            ? '#ef6461'
+            : '#8bd17c',
       );
+      sketch.rect(
+        center.x - 14,
+        bodyY - 17,
+        (28 * person.hitPoints) / person.maxHitPoints,
+        3,
+        1,
+      );
+      const forward = BoardingBattle.forward(person.position, person.facing);
+      const direction = boardingIsoCenter(forward);
+      const dx = direction.x - center.x;
+      const dy = direction.y - center.y;
+      const length = Math.max(1, Math.hypot(dx, dy));
       sketch.stroke('#ffffff');
-      sketch.strokeWeight(3);
+      sketch.strokeWeight(2.5);
       sketch.line(
         center.x,
-        center.y,
-        center.x + (direction.x - center.x) * 0.45,
-        center.y + (direction.y - center.y) * 0.45,
+        bodyY,
+        center.x + (dx / length) * 17,
+        bodyY + (dy / length) * 17,
       );
     }
     sketch.pop();

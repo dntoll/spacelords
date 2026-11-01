@@ -8,6 +8,18 @@ import { testBoardingMap } from '../models/TestBoarding.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element } from './dom.js';
 
+function iconButton(
+  label: string,
+  symbol: string,
+  action: () => void,
+  className = 'button boarding-icon-button',
+): HTMLButtonElement {
+  const control = button(label, action, className);
+  control.textContent = symbol;
+  control.title = label;
+  return control;
+}
+
 export interface BoardingMapPort {
   render(
     state: BoardingBattleState,
@@ -30,7 +42,7 @@ export class BoardingView {
   readonly #dialog = element('dialog', 'boarding-dialog');
   readonly #heading = element('h1');
   readonly #status = element('p', 'boarding-status');
-  readonly #soldier = element('section', 'boarding-soldier');
+  readonly #team = element('section', 'boarding-team');
   readonly #controls = element('section', 'boarding-controls');
   readonly #details = element('details', 'boarding-details');
   readonly #map: BoardingMapPort | undefined;
@@ -49,7 +61,7 @@ export class BoardingView {
     const header = element('div', 'boarding-heading');
     header.append(
       this.#heading,
-      button('Close boarding', () => emit({ type: 'close-boarding' })),
+      iconButton('Close boarding', '×', () => emit({ type: 'close-boarding' })),
     );
     const board = element('section', 'boarding-board');
     const canvas = element('div', 'boarding-canvas');
@@ -62,17 +74,19 @@ export class BoardingView {
     );
     const zoom = element('div', 'boarding-zoom');
     zoom.append(
-      button('Zoom in', () => this.#map?.zoom(1.25)),
-      button('Zoom out', () => this.#map?.zoom(0.8)),
-      button('Fit boarding map', () => this.#map?.fit()),
+      iconButton('Zoom in', '+', () => this.#map?.zoom(1.25)),
+      iconButton('Zoom out', '−', () => this.#map?.zoom(0.8)),
+      iconButton('Fit boarding map', '⛶', () => this.#map?.fit()),
     );
     board.append(canvas, legend, zoom);
-    this.#soldier.setAttribute('aria-label', 'Selected soldier');
+    this.#team.setAttribute('aria-label', 'Boarding team');
     this.#controls.setAttribute('aria-label', 'Soldier actions');
     this.#details.append(element('summary', '', 'Combat details'));
     const layout = element('div', 'boarding-layout');
-    layout.append(this.#controls, board, this.#details);
-    this.#dialog.append(header, this.#status, this.#soldier, layout);
+    const hud = element('div', 'boarding-hud');
+    hud.append(this.#status, this.#team);
+    layout.append(board, hud, this.#controls, this.#details);
+    this.#dialog.append(header, layout);
     root.append(this.#dialog);
     this.#dialog.showModal();
     this.#map = mapFactory?.(canvas, (position) => this.#selectHex(position));
@@ -86,8 +100,13 @@ export class BoardingView {
     this.emit({ type: 'boarding-command', command });
   }
 
-  #action(label: string, action: () => void, disabled = false): void {
-    const control = button(label, action);
+  #action(
+    label: string,
+    symbol: string,
+    action: () => void,
+    disabled = false,
+  ): void {
+    const control = iconButton(label, symbol, action, 'button boarding-action');
     control.disabled = disabled;
     this.#controls.append(control);
   }
@@ -142,26 +161,38 @@ export class BoardingView {
       (state.phase === 'complete'
         ? `${state.outcome === 'victory' ? 'Victory' : state.outcome === 'aborted' ? 'Boarding aborted' : 'Defeat'} · Civilians saved ${state.savedCivilians}/3`
         : actor
-          ? `${actor.label} · HP ${actor.hitPoints}/${actor.maxHitPoints} · AP ${state.activation?.remaining ?? 0}${state.reactorCountdown === null ? '' : ` · Reactor ${state.reactorCountdown}`}`
-          : 'Resolving the round…');
+          ? `${actor.label} · ${state.activation?.remaining ?? 0} AP${state.reactorCountdown === null ? '' : ` · Reactor ${state.reactorCountdown}`}`
+          : state.currentActorId
+            ? 'Defender turn'
+            : 'Resolving the round…');
     this.#status.setAttribute('role', 'status');
-    this.#soldier.replaceChildren();
-    this.#soldier.hidden = !actor || state.phase === 'complete';
-    if (actor && state.phase !== 'complete') {
+    this.#team.replaceChildren();
+    for (const soldier of state.people.filter(
+      (person) => person.side === 'player',
+    )) {
+      const unit = element(
+        'article',
+        `boarding-unit${soldier.id === state.currentActorId ? ' boarding-unit-active' : ''}`,
+      );
+      unit.setAttribute(
+        'aria-label',
+        `${soldier.label}, ${soldier.hitPoints} of ${soldier.maxHitPoints} HP`,
+      );
       const health = document.createElement('progress');
       health.className = 'boarding-health';
-      health.max = actor.maxHitPoints;
-      health.value = actor.hitPoints;
-      health.setAttribute('aria-label', `${actor.label} HP`);
-      this.#soldier.append(
-        element('strong', '', `Selected soldier · ${actor.label}`),
+      health.max = soldier.maxHitPoints;
+      health.value = soldier.hitPoints;
+      health.setAttribute('aria-label', `${soldier.label} HP`);
+      unit.append(
+        element('strong', '', soldier.label),
         health,
         element(
           'span',
           'boarding-health-value',
-          `${actor.hitPoints}/${actor.maxHitPoints} HP`,
+          `${soldier.hitPoints}/${soldier.maxHitPoints}`,
         ),
       );
+      this.#team.append(unit);
     }
     this.#controls.replaceChildren();
 
@@ -169,19 +200,22 @@ export class BoardingView {
     if (playerTurn && this.#destination)
       path = this.#battle().pathTo(actor.id, this.#destination);
     if (playerTurn) {
-      this.#action('Turn left 60°', () =>
+      this.#action('Turn left 60°', '↶', () =>
         this.#command({ type: 'turn', direction: 1 }),
       );
-      this.#action('Turn right 60°', () =>
+      this.#action('Turn right 60°', '↷', () =>
         this.#command({ type: 'turn', direction: -1 }),
       );
       this.#action(
         `Move${path ? ` · ${path.cost} AP` : ''}`,
+        '↑',
         () => this.#command({ type: 'move', to: this.#destination! }),
         !path || path.cost > (state.activation?.remaining ?? 0),
       );
-      this.#action(actor.crouched ? 'Stand' : 'Crouch', () =>
-        this.#command({ type: actor.crouched ? 'stand' : 'crouch' }),
+      this.#action(
+        actor.crouched ? 'Stand' : 'Crouch',
+        actor.crouched ? '⇧' : '◒',
+        () => this.#command({ type: actor.crouched ? 'stand' : 'crouch' }),
       );
 
       const selectedPerson = state.people.find(
@@ -197,16 +231,18 @@ export class BoardingView {
         preview?.reason
           ? 'Shoot'
           : `Shoot${preview ? ` · ${preview.chance}%` : ''}`,
+        '◎',
         () => this.#command({ type: 'shoot', targetId: this.#selectedId! }),
         !preview || preview.reason !== null,
       );
       if (selectedPerson && selectedPerson.side !== 'civilian')
-        this.#action('Melee', () =>
+        this.#action('Melee', '✦', () =>
           this.#command({ type: 'melee', targetId: this.#selectedId! }),
         );
       if (this.#destination) {
         this.#action(
           'Frag grenade',
+          '◆',
           () =>
             this.#command({
               type: 'grenade',
@@ -217,6 +253,7 @@ export class BoardingView {
         );
         this.#action(
           'Smoke grenade',
+          '◇',
           () =>
             this.#command({
               type: 'grenade',
@@ -229,6 +266,7 @@ export class BoardingView {
       if (selectedFeature?.kind === 'door' && !selectedFeature.destroyed) {
         this.#action(
           selectedFeature.open ? 'Close door' : 'Open door',
+          selectedFeature.open ? '▮' : '▯',
           () =>
             this.#command({
               type: 'door',
@@ -239,6 +277,7 @@ export class BoardingView {
         );
         this.#action(
           'Hack door',
+          '⌁',
           () => this.#command({ type: 'hack', id: selectedFeature.id }),
           !selectedFeature.locked,
         );
@@ -246,11 +285,14 @@ export class BoardingView {
       if (selectedPerson?.status === 'incapacitated')
         this.#action(
           'Use Med-pack',
+          '+',
           () =>
             this.#command({ type: 'med-pack', targetId: selectedPerson.id }),
           actor.medPacks < 1,
         );
-      this.#action('Overwatch', () => this.#command({ type: 'overwatch' }));
+      this.#action('Overwatch', '◉', () =>
+        this.#command({ type: 'overwatch' }),
+      );
       if (
         state.features.some(
           (feature) =>
@@ -259,8 +301,10 @@ export class BoardingView {
             feature.position.r === actor.position.r,
         )
       )
-        this.#action('Evacuate', () => this.#command({ type: 'evacuate' }));
-      this.#action('End soldier turn', () =>
+        this.#action('Evacuate', '⇱', () =>
+          this.#command({ type: 'evacuate' }),
+        );
+      this.#action('End soldier turn', '✓', () =>
         this.#command({ type: 'end-activation' }),
       );
       const selection = element(

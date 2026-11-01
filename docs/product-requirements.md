@@ -60,6 +60,9 @@ utrustning. Seger nås genom att neutralisera försvararna eller hålla både
 `Bridge` och `Engineering`. Reaktorn och dörrar kan beskjutas.
 Aktiv soldat, hälsa, riktning, `Half cover` och pågående försvararhandlingar
 ska framgå tydligt utan att dolda positioner avslöjas.
+Kartan ska visas isometriskt och uppta huvuddelen av ett spelmässigt gränssnitt
+med kompakta handlingsknappar. Varje bordningssoldat ska ha en egen
+hälsomätare.
 
 Prototypen påverkar inga sparade spel och ger ännu inga skepp,
 besättningsmedlemmar, forskningsresultat eller kartupplysningar till kampanjen.

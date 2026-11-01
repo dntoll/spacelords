@@ -257,14 +257,19 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus: exposes corre
   )!;
   expect(left).not.toBeNull();
   expect(right).not.toBeNull();
+  expect(left.textContent).toBe('↶');
+  expect(right.textContent).toBe('↷');
+  expect(left.classList).toContain('boarding-action');
   left.click();
   expect(emit).toHaveBeenCalledWith({
     type: 'boarding-command',
     command: { type: 'turn', direction: 1 },
   });
-  expect(
-    document.querySelector('[aria-label="Selected soldier"]')!.textContent,
-  ).toContain(player.label);
+  const team = document.querySelector('[aria-label="Boarding team"]')!;
+  expect(team.querySelectorAll('progress')).toHaveLength(4);
+  expect(team.querySelector('.boarding-unit-active')!.textContent).toContain(
+    player.label,
+  );
   const health = document.querySelector<HTMLProgressElement>(
     `[aria-label="${player.label} HP"]`,
   )!;

@@ -3682,15 +3682,20 @@ body:has(.discovery-controls) .selection-panel {
 }
 
 .boarding-dialog {
-  width: min(1180px, 100vw);
-  height: min(820px, 100dvh);
+  display: grid;
+  grid-template-rows: 34px minmax(0, 1fr);
+  gap: 4px;
+  width: 100vw;
+  height: 100dvh;
   max-width: none;
   max-height: none;
-  padding: 12px;
-  border: 1px solid #40516b;
-  border-radius: 12px;
+  margin: 0;
+  padding: 5px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
   color: #eaf2ff;
-  background: #0b1220;
+  background: #050912;
 }
 
 .boarding-dialog::backdrop {
@@ -3702,74 +3707,47 @@ body:has(.discovery-controls) .selection-panel {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 4px;
 }
 
 .boarding-heading h1 {
   margin: 0;
-  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  padding-left: 4px;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.boarding-status {
-  min-height: 1.5em;
-  margin: 6px 0;
+.boarding-icon-button,
+.boarding-action {
+  display: inline-grid;
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+  min-height: 38px;
+  padding: 0;
+  place-items: center;
+  border-color: #526a8d;
+  border-radius: 7px;
+  color: #eaf2ff;
+  background: rgb(13 25 43 / 94%);
+  font-size: 1.15rem;
+  line-height: 1;
 }
 
-.boarding-soldier {
-  display: grid;
-  grid-template-columns: minmax(0, auto) minmax(100px, 240px) auto;
-  align-items: center;
-  justify-content: start;
-  gap: 8px;
-  min-height: 34px;
-  margin-bottom: 6px;
-}
-
-.boarding-health {
-  width: 100%;
-  height: 14px;
-  accent-color: #5ac8fa;
-}
-
-.boarding-health-value {
-  color: #c6d8ee;
-  font-variant-numeric: tabular-nums;
-}
-
-.boarding-layout {
-  display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto;
-  height: calc(100% - 106px);
-  gap: 10px;
-}
-
-.boarding-controls {
-  display: flex;
-  flex-flow: row wrap;
-  align-content: flex-start;
-  gap: 6px;
-  overflow: auto;
-}
-
-.boarding-controls .button {
-  min-height: 40px;
-  width: auto;
-}
-
-.boarding-selection {
-  flex: 1 0 100%;
-  margin: 0 0 4px;
-  color: #c6d8ee;
-}
-
+.boarding-layout,
 .boarding-board {
   position: relative;
   min-width: 0;
-  min-height: 260px;
+  min-height: 0;
   overflow: hidden;
-  border: 1px solid #34455f;
-  border-radius: 8px;
+}
+
+.boarding-board {
+  position: absolute;
+  inset: 0;
+  border: 1px solid #263a55;
+  border-radius: 6px;
   background: #060914;
 }
 
@@ -3783,8 +3761,97 @@ body:has(.discovery-controls) .selection-panel {
   touch-action: none;
 }
 
+.boarding-hud {
+  position: absolute;
+  z-index: 2;
+  top: 6px;
+  left: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: calc(100% - 60px);
+  pointer-events: none;
+}
+
+.boarding-status {
+  align-self: flex-start;
+  min-height: 0;
+  margin: 0;
+  padding: 3px 7px;
+  border: 1px solid rgb(82 104 137 / 70%);
+  border-radius: 5px;
+  background: rgb(5 9 18 / 88%);
+  color: #f2f6ff;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.boarding-team {
+  display: flex;
+  gap: 4px;
+  max-width: 100%;
+}
+
+.boarding-unit {
+  display: grid;
+  grid-template-columns: minmax(50px, auto) minmax(42px, 72px) auto;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 5px;
+  border: 1px solid rgb(71 93 124 / 82%);
+  border-radius: 5px;
+  background: rgb(5 11 23 / 88%);
+  font-size: 0.68rem;
+}
+
+.boarding-unit-active {
+  border-color: #f4cf5a;
+  box-shadow: 0 0 0 1px rgb(244 207 90 / 55%);
+}
+
+.boarding-health {
+  width: 100%;
+  height: 8px;
+  accent-color: #5ac8fa;
+}
+
+.boarding-health-value {
+  color: #c6d8ee;
+  font-variant-numeric: tabular-nums;
+}
+
+.boarding-controls {
+  position: absolute;
+  z-index: 3;
+  bottom: 48px;
+  left: 50%;
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: center;
+  gap: 4px;
+  width: max-content;
+  max-width: min(620px, calc(100% - 12px));
+  max-height: 132px;
+  padding: 5px;
+  overflow: auto;
+  border: 1px solid rgb(82 104 137 / 78%);
+  border-radius: 8px;
+  background: rgb(5 9 18 / 90%);
+  box-shadow: 0 7px 24px rgb(0 0 0 / 45%);
+  transform: translateX(-50%);
+}
+
+.boarding-selection {
+  flex: 1 0 100%;
+  margin: 0;
+  color: #d9e7f8;
+  font-size: 0.72rem;
+  text-align: center;
+}
+
 .boarding-zoom {
   position: absolute;
+  z-index: 2;
   right: 6px;
   bottom: 6px;
   justify-content: flex-end;
@@ -3792,7 +3859,7 @@ body:has(.discovery-controls) .selection-panel {
 
 .boarding-legend {
   position: absolute;
-  z-index: 1;
+  z-index: 2;
   left: 6px;
   bottom: 6px;
   display: flex;
@@ -3820,15 +3887,27 @@ body:has(.discovery-controls) .selection-panel {
   color: #fff;
 }
 
-.boarding-zoom .button {
-  min-height: 36px;
-  padding: 4px 8px;
+.boarding-details {
+  position: absolute;
+  z-index: 4;
+  top: 6px;
+  right: 6px;
+  width: min(330px, calc(100% - 12px));
+  max-height: min(55dvh, 360px);
+  padding: 5px 7px;
+  overflow: auto;
+  border: 1px solid rgb(82 104 137 / 78%);
+  border-radius: 6px;
+  background: rgb(5 9 18 / 92%);
+  font-size: 0.75rem;
 }
 
-.boarding-details {
-  grid-column: 1 / -1;
-  max-height: 180px;
-  overflow: auto;
+.boarding-details:not([open]) {
+  width: auto;
+}
+
+.boarding-details summary {
+  cursor: pointer;
 }
 
 .boarding-log {
@@ -3840,66 +3919,41 @@ body:has(.discovery-controls) .selection-panel {
 }
 
 @media (max-width: 680px) {
-  .boarding-dialog {
-    width: 100vw;
-    height: 100dvh;
-    margin: 0;
-    padding: 8px;
-    border-radius: 0;
+  .boarding-team {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .boarding-soldier {
-    grid-template-columns: minmax(0, 1fr) minmax(80px, 1fr) auto;
-    font-size: 0.82rem;
-  }
-
-  .boarding-layout {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    gap: 7px;
-  }
-
-  .boarding-controls {
-    max-height: 164px;
-  }
-
-  .boarding-board {
-    min-height: 180px;
-  }
-
-  .boarding-details {
-    max-height: 24dvh;
+  .boarding-unit {
+    grid-template-columns: minmax(48px, auto) minmax(38px, 1fr) auto;
   }
 
   .boarding-legend {
-    max-width: calc(100% - 150px);
+    max-width: calc(100% - 142px);
+    font-size: 0.65rem;
   }
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
-  .boarding-dialog {
-    padding: 6px;
+  .boarding-hud {
+    max-width: 74%;
   }
 
-  .boarding-layout {
-    grid-template-columns: minmax(0, 1fr) 290px;
-    grid-template-rows: minmax(0, 1fr) auto;
+  .boarding-team {
+    display: flex;
+  }
+
+  .boarding-unit {
+    grid-template-columns: auto 42px auto;
+    padding: 2px 4px;
   }
 
   .boarding-controls {
-    grid-column: 2;
-    grid-row: 1;
-    max-height: none;
+    bottom: 6px;
+    max-width: calc(100% - 300px);
   }
 
-  .boarding-board {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .boarding-details {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    max-height: 90px;
+  .boarding-legend {
+    display: none;
   }
 }
