@@ -410,6 +410,47 @@ package "Framtida domän – ej implementerad" {
   Fleet --> Civilization : encounter orders
 }
 
+package "Fristående bordningsprototyp – ej implementerad" {
+  class BoardingBattle <<planned>> {
+    round
+    initiativeOrder
+    randomState
+    reactorCountdown
+    command()
+  }
+  class BoardingMap <<planned>> {
+    terrain
+    rooms
+    spawnPoints
+  }
+  class BoardingPerson <<planned>> {
+    side: player | defender | civilian
+    position: HexCoordinate
+    facing
+    hitPoints
+    actionPoints
+    status: active | incapacitated | dead | evacuated
+  }
+  class BoardingFeature <<planned>> {
+    kind: door | wall | reactor | cover | exit
+    position: HexCoordinate
+    hitPoints
+    open
+    locked
+  }
+  class BoardingKnowledge <<planned>> {
+    visibleHexes
+    exploredHexes
+    lastKnownEnemies
+    noiseMarkers
+  }
+  BoardingBattle *-- BoardingMap
+  BoardingBattle *-- BoardingPerson
+  BoardingBattle *-- BoardingFeature
+  BoardingBattle *-- BoardingKnowledge
+  BoardingMap --> HexCoordinate
+}
+
 note "Kamera, controllers och p5-vyer är tekniska begrepp\noch ingår inte i problemdomänen." as Scope
 
 class PirateFleet {

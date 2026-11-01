@@ -74,6 +74,27 @@ rullning. Regressionstester skyddar kart- och listval, spärrade val, omedelbar
 sparning och återupptagen tur. Mobiltester mäter att alla order ryms i
 320 × 568, 393 × 851 och 844 × 390 och att kartan fortfarande är synlig.
 
+## Fristående bordningsstrid
+
+Boardingmodellen är skild från `TacticalBattle` och kampanjens `Game`.
+Den får återanvända `HexCoordinate` och `HexGeometry`, men har egna frysta
+snapshots, typade kommandon, deterministiskt slumptillstånd, kartparser,
+siktberäkning, pathfinding och AI. Kartdefinitionen är en rå lagerindelad
+textresurs; runtime-tillstånd som dörrskada, rök och upptäckt blandas inte in i
+den statiska definitionen.
+
+AppModel äger en tillfällig boarding-session medan huvudmenyn är den underliggande
+skärmen. `boarding-command` samordnas av AppController och en separat
+`BoardingView`; vyn får bara läsa snapshot och skicka intents. P5-kartan använder
+instance mode och innehåller ingen domänmutation. Sessionen får inte anropa
+SaveRepository eller ändra `TacticalBattle`, `TurnSimulation` eller sparformat.
+
+Snabba kravnamngivna tester skyddar parser, AP, initiativ, sikt, strid,
+miljöobjekt, effekter och AI med deterministisk slump. Jsdom-tester skyddar
+intentgränsen. Ett riktat Playwright-scenario ingår i snabb mobilkontroll och
+verifierar även att localStorage förblir oförändrad. Se
+[bordningsstrid](boarding-combat.md).
+
 ## Skeppsbildernas riktning i strid
 
 `skeppets-framat-foljer-spriten`: BattleMapView utgår från att samtliga

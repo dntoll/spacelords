@@ -124,6 +124,17 @@ Se [hela visionen](docs/game-vision.md).
   återupptas utan nya tärningsslag och äldre spel bevaras. Detta ersätter den fasta
   förlustformeln i `flottstrid-per-hex`. Se [taktisk strid](docs/tactical-combat.md).
 
+- **Fristående bordningsstrid:** `fristaende-bordningsprototyp`,
+  `datadriven-bordningskarta`, `individuellt-bordningsinitiativ`,
+  `actionpoints-och-riktad-forflyttning`, `sikt-minne-och-ljudmarkorer`,
+  `d20-bordningsstrid`, `miljomal-och-forstorelse`,
+  `overwatch-och-skydd`, `granater-och-rok`, `utslagning-och-medic`,
+  `bordningsmal-reaktor-och-evakuering` och
+  `forsvarare-och-civilister` är **Ej implementerat**. Den första versionen
+  är ett separat testspel från huvudmenyn på en handredigerbar transportkarta
+  och påverkar inte kampanj eller sparplatser. Se
+  [bordningsstrid](docs/boarding-combat.md).
+
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,
   korta instruktioner, färre upprepningar i Production, mindre New fleet-ruta,
   villkorad ! Needs attention vid titeln och kompakt forskningsvy är

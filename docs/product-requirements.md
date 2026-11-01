@@ -49,6 +49,20 @@ sparade spel. `stridsrapport-i-dialog` är **Fullständigt implementerat** med
 året fortsätter automatiskt och rapporten finns i Events.
 Se [taktisk strid](tactical-combat.md).
 
+## Fristående bordningsstrid
+
+`fristaende-bordningsprototyp` och den tillhörande kravfamiljen är
+**Ej implementerat**. Huvudmenyn ska kunna starta en separat taktisk
+bordningsstrid på en hexkarta inuti ett `Transport ship`. Fyra soldater möter
+tre försvarare medan tre civilister försöker överleva och fly. Spelaren använder
+riktning, action points, vapen, skydd, overwatch, granater, rök och medicinsk
+utrustning. Seger nås genom att neutralisera försvararna eller hålla både
+`Bridge` och `Engineering`. Reaktorn och dörrar kan beskjutas.
+
+Prototypen påverkar inga sparade spel och ger ännu inga skepp,
+besättningsmedlemmar, forskningsresultat eller kartupplysningar till kampanjen.
+Se [bordningsstrid](boarding-combat.md).
+
 `bargat-piratskepp-behaller-typ` och `unik-bild-for-civila-transporter` är
 **Fullständigt implementerat**. Ett nyförstört piratskepp kan bärgas och
 repareras till ett eget Space pirate med samma skrov, vapen och bild.
