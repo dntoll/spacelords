@@ -17,6 +17,9 @@
   inte i speldata. Aktivering och position ändrar fokus; eld gör det inte.
 - `fuskknapp-for-teststrid`: samma asteroidgenerering som ordinarie strider
   används. Startzonerna hålls fria. Sparformatet ändras inte.
+- `snabb-testsvit`: fyra arbetstrådar återanvänds per testmiljö. Detta ersätter
+  tre arbetstrådar för att hålla 20-sekundersgränsen med den utökade
+  stridstäckningen. Samma tester behålls; tidsgränsen ändras inte.
 
 ## Autoaim och flerrutiga skrov, 2026-11-01
 
