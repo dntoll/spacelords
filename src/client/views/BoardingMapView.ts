@@ -311,7 +311,9 @@ export class BoardingMapView implements BoardingMapPort {
           ? '#606979'
           : feature.id === this.#selectedId
             ? '#f4cf5a'
-            : '#dce7f7',
+            : feature.kind === 'cover'
+              ? '#d5a86e'
+              : '#dce7f7',
       );
       const glyph =
         feature.kind === 'door'
@@ -360,6 +362,12 @@ export class BoardingMapView implements BoardingMapPort {
       const center = HexGeometry.toPoint(
         new HexCoordinate(person.position.q, person.position.r),
       );
+      if (person.id === state.currentActorId && person.status === 'active') {
+        sketch.noFill();
+        sketch.stroke('#f4cf5a');
+        sketch.strokeWeight(3);
+        sketch.circle(center.x, center.y, person.crouched ? 27 : 33);
+      }
       sketch.noStroke();
       sketch.fill(
         person.status === 'dead'

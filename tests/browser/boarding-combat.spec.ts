@@ -47,6 +47,14 @@ test('fristaende-bordningsprototyp / miljomal-och-forstorelse: targets a door wi
     .click();
   const dialog = page.getByRole('dialog', { name: 'Boarding combat' });
   await expect(dialog).toBeVisible();
+  const soldier = dialog.getByRole('region', { name: 'Selected soldier' });
+  await expect(soldier).toContainText(/^Selected soldier · Boarder \d/);
+  await expect(
+    soldier.getByRole('progressbar', { name: / HP$/ }),
+  ).toBeVisible();
+  await expect(dialog.getByLabel('Map legend')).toContainText(
+    /Half cover.*Facing/,
+  );
   await expect(
     dialog.getByRole('button', { name: 'Turn left 60°', exact: true }),
   ).toBeVisible();

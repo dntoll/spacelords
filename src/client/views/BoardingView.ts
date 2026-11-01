@@ -30,6 +30,7 @@ export class BoardingView {
   readonly #dialog = element('dialog', 'boarding-dialog');
   readonly #heading = element('h1');
   readonly #status = element('p', 'boarding-status');
+  readonly #soldier = element('section', 'boarding-soldier');
   readonly #controls = element('section', 'boarding-controls');
   readonly #details = element('details', 'boarding-details');
   readonly #map: BoardingMapPort | undefined;
@@ -52,18 +53,26 @@ export class BoardingView {
     );
     const board = element('section', 'boarding-board');
     const canvas = element('div', 'boarding-canvas');
+    const legend = element('div', 'boarding-legend');
+    legend.setAttribute('aria-label', 'Map legend');
+    legend.append(
+      element('span', 'boarding-legend-selected', '○ Selected soldier'),
+      element('span', 'boarding-legend-cover', '▰ Half cover'),
+      element('span', 'boarding-legend-facing', '— Facing'),
+    );
     const zoom = element('div', 'boarding-zoom');
     zoom.append(
       button('Zoom in', () => this.#map?.zoom(1.25)),
       button('Zoom out', () => this.#map?.zoom(0.8)),
       button('Fit boarding map', () => this.#map?.fit()),
     );
-    board.append(canvas, zoom);
+    board.append(canvas, legend, zoom);
+    this.#soldier.setAttribute('aria-label', 'Selected soldier');
     this.#controls.setAttribute('aria-label', 'Soldier actions');
     this.#details.append(element('summary', '', 'Combat details'));
     const layout = element('div', 'boarding-layout');
     layout.append(this.#controls, board, this.#details);
-    this.#dialog.append(header, this.#status, layout);
+    this.#dialog.append(header, this.#status, this.#soldier, layout);
     root.append(this.#dialog);
     this.#dialog.showModal();
     this.#map = mapFactory?.(canvas, (position) => this.#selectHex(position));
@@ -136,6 +145,24 @@ export class BoardingView {
           ? `${actor.label} · HP ${actor.hitPoints}/${actor.maxHitPoints} · AP ${state.activation?.remaining ?? 0}${state.reactorCountdown === null ? '' : ` · Reactor ${state.reactorCountdown}`}`
           : 'Resolving the round…');
     this.#status.setAttribute('role', 'status');
+    this.#soldier.replaceChildren();
+    this.#soldier.hidden = !actor || state.phase === 'complete';
+    if (actor && state.phase !== 'complete') {
+      const health = document.createElement('progress');
+      health.className = 'boarding-health';
+      health.max = actor.maxHitPoints;
+      health.value = actor.hitPoints;
+      health.setAttribute('aria-label', `${actor.label} HP`);
+      this.#soldier.append(
+        element('strong', '', `Selected soldier · ${actor.label}`),
+        health,
+        element(
+          'span',
+          'boarding-health-value',
+          `${actor.hitPoints}/${actor.maxHitPoints} HP`,
+        ),
+      );
+    }
     this.#controls.replaceChildren();
 
     let path: BoardingPath | null = null;
@@ -143,10 +170,10 @@ export class BoardingView {
       path = this.#battle().pathTo(actor.id, this.#destination);
     if (playerTurn) {
       this.#action('Turn left 60°', () =>
-        this.#command({ type: 'turn', direction: -1 }),
+        this.#command({ type: 'turn', direction: 1 }),
       );
       this.#action('Turn right 60°', () =>
-        this.#command({ type: 'turn', direction: 1 }),
+        this.#command({ type: 'turn', direction: -1 }),
       );
       this.#action(
         `Move${path ? ` · ${path.cost} AP` : ''}`,

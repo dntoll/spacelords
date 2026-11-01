@@ -58,6 +58,7 @@ tre försvarare medan tre civilister försöker överleva och fly. Spelaren anv�
 riktning, action points, vapen, skydd, overwatch, granater, rök och medicinsk
 utrustning. Seger nås genom att neutralisera försvararna eller hålla både
 `Bridge` och `Engineering`. Reaktorn och dörrar kan beskjutas.
+Aktiv soldat, hälsa, riktning och `Half cover` ska framgå tydligt.
 
 Prototypen påverkar inga sparade spel och ger ännu inga skepp,
 besättningsmedlemmar, forskningsresultat eller kartupplysningar till kampanjen.

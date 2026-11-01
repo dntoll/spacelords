@@ -228,7 +228,7 @@ it('traffhex-istallet-for-mallista: fires at the hex chosen on the map and has n
   view.dispose();
 });
 
-it('actionpoints-och-riktad-forflyttning: exposes turn buttons and a destination path without mutating during render', () => {
+it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus: exposes correct turns, selected soldier health and a map legend without mutating during render', () => {
   const created = createTestBoardingBattle();
   const player = created.snapshot.people.findLast(
     (person) => person.side === 'player',
@@ -260,8 +260,22 @@ it('actionpoints-och-riktad-forflyttning: exposes turn buttons and a destination
   left.click();
   expect(emit).toHaveBeenCalledWith({
     type: 'boarding-command',
-    command: { type: 'turn', direction: -1 },
+    command: { type: 'turn', direction: 1 },
   });
+  expect(
+    document.querySelector('[aria-label="Selected soldier"]')!.textContent,
+  ).toContain(player.label);
+  const health = document.querySelector<HTMLProgressElement>(
+    `[aria-label="${player.label} HP"]`,
+  )!;
+  expect(health.value).toBe(player.hitPoints);
+  expect(health.max).toBe(player.maxHitPoints);
+  expect(document.querySelector('.boarding-legend')!.textContent).toContain(
+    'Half cover',
+  );
+  expect(document.querySelector('.boarding-legend')!.textContent).toContain(
+    'Facing',
+  );
   selectHex({ q: player.position.q + 1, r: player.position.r - 1 });
   expect(document.body.textContent).toContain('Destination');
   expect(battle.snapshot).toStrictEqual(boardingState);

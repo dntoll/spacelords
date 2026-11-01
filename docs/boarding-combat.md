@@ -20,6 +20,11 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   fasta utrustningsmodifierare ger AP. Soldater går endast framåt. Ett stående
   hexsteg kostar 2 AP, ett hukat steg 3 AP, en 60-gradersvändning 1 AP och byte
   mellan stående och hukad ställning 1 AP. Handlingar får blandas fritt.
+  Vänster- och högervändning följer kartans visuella riktning.
+- `tydlig-bordningsstatus` — **Fullständigt implementerat**. Den aktiva soldaten
+  namnges uttryckligen, markeras på kartan och visas med en HP-bar och numeriskt
+  HP-värde. Kartans förklaring identifierar aktiv soldat, riktning och
+  `Half cover`, som har en egen färg.
 - `sikt-minne-och-ljudmarkorer` — **Fullständigt implementerat**. Soldater ser 120 grader.
   Sidorna delar aktuell sikt och senast kända fiendeposition. Skeppets yttre
   form är känd, interiören utforskas och aktuell sikt skiljs tydligt från
