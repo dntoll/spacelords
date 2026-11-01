@@ -31,6 +31,16 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
 - `avbrott-vid-ny-fiende` — **Fullständigt implementerat**. Om en ny fientlig
   soldat kommer in i sidans sikt under en förflyttning stannar den aktiva
   soldaten efter den del som avslöjade fienden och resten av ordern stryks.
+- `animerat-bordningsskott` — **Fullständigt implementerat**. Gevärs- och
+  overwatchskott visas som en kort projektil från skytt till mål innan skadan
+  syns.
+- `valbar-bordningssoldat` — **Fullständigt implementerat**. Under spelarens
+  tur kan en annan egen aktiv soldat som inte är färdig väljas med klick. Den
+  förra soldaten sparar sin kvarvarande AP och återupptas när den valda är
+  klar, så att någon som står i vägen kan flyttas undan.
+- `klickskott-pa-vald-fiende` — **Fullständigt implementerat**. Första klicket
+  på en fiende väljer målet. Ett andra klick på samma valda fiende avfyrar
+  geväret om skottet är lagligt.
 - `tydlig-bordningsstatus` — **Fullständigt implementerat**. Den aktiva soldaten
   namnges uttryckligen och markeras på kartan. Varje bordningssoldat visas med
   en egen HP-bar och numeriskt HP-värde. Kartans förklaring identifierar aktiv

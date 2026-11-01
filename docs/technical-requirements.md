@@ -89,7 +89,8 @@ skärmen. `boarding-command` samordnas av AppController och en separat
 vägvisning beräknas ur pathfinding utan att mutera striden. Stegvis gång är
 presentation: modellen samlar synliga rutor efter varje vändning och steg, och
 vyn animerar mellan dem. En ny fiende i sidans sikt avbryter resterande
-steg i samma kommando. P5-kartan använder
+steg i samma kommando. Skottanimation är presentation separat från snapshot.
+Byte av egen soldat sker med kommandot `select` och sparar kvarvarande AP. P5-kartan använder
 instance mode och innehåller ingen domänmutation. Sessionen får inte anropa
 SaveRepository eller ändra `TacticalBattle`, `TurnSimulation` eller sparformat.
 

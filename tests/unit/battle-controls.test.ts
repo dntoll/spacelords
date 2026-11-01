@@ -337,6 +337,66 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
   view.dispose();
 });
 
+it('valbar-bordningssoldat / klickskott-pa-vald-fiende / animerat-bordningsskott: clicks another soldier to act and a selected enemy to fire', async () => {
+  const created = createTestBoardingBattle();
+  const [actor, other] = created.snapshot.people.filter(
+    (person) => person.side === 'player',
+  );
+  const defender = created.snapshot.people.find(
+    (person) => person.side === 'defender',
+  )!;
+  const boardingState: BoardingBattleState = {
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === actor!.id
+        ? { ...person, position: { q: 2, r: 5 }, facing: 0 }
+        : person.id === defender.id
+          ? { ...person, position: { q: 5, r: 5 } }
+          : person,
+    ),
+    features: created.snapshot.features.map((feature) => ({
+      ...feature,
+      destroyed: true,
+    })),
+    initiativeOrder: [actor!.id, other!.id],
+    initiativeIndex: 0,
+    currentActorId: actor!.id,
+    activation: { id: actor!.id, remaining: 12 },
+  };
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const playShot = vi.fn(() => Promise.resolve());
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new BoardingView(document.body, emit, (_container, select) => {
+    selectHex = select;
+    return { render() {}, playShot, zoom() {}, fit() {}, dispose() {} };
+  });
+  const restored = BoardingBattle.restore(testBoardingMap, boardingState);
+  view.render(restored.snapshot);
+  selectHex(other!.position);
+  expect(emit).toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'select', id: other!.id },
+  });
+  selectHex({ q: 5, r: 5 });
+  expect(emit).not.toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'shoot', targetId: defender.id },
+  });
+  selectHex({ q: 5, r: 5 });
+  expect(emit).toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'shoot', targetId: defender.id },
+  });
+  view.render(restored.visibleSnapshot, null, [], {
+    from: actor!.position,
+    to: defender.position,
+    hit: true,
+  });
+  await Promise.resolve();
+  expect(playShot).toHaveBeenCalled();
+  view.dispose();
+});
+
 it('miljomal-och-forstorelse: selects a door as a direct rifle target', () => {
   const created = createTestBoardingBattle();
   const player = created.snapshot.people.find(

@@ -125,6 +125,7 @@ export class AppView implements AppPort {
         model.boardingBattle,
         model.notice,
         model.boardingPresentation ?? [],
+        model.boardingShot ?? null,
       );
       return;
     }

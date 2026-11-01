@@ -32,6 +32,13 @@ export class BoardingMapView implements BoardingMapPort {
     duration: number;
     resolve: () => void;
   } | null = null;
+  #shot: {
+    from: Point;
+    to: Point;
+    started: number;
+    duration: number;
+    resolve: () => void;
+  } | null = null;
   #scale = 1;
   #offset: Point = { x: 0, y: 0 };
   #ready = false;
@@ -149,11 +156,32 @@ export class BoardingMapView implements BoardingMapPort {
     });
   }
 
+  playShot(from: BoardingCell, to: BoardingCell): Promise<void> {
+    this.#finishMotion();
+    return new Promise((resolve) => {
+      if (!this.#ready) {
+        resolve();
+        return;
+      }
+      this.#shot = {
+        from: boardingIsoCenter(from),
+        to: boardingIsoCenter(to),
+        started: performance.now(),
+        duration: 280,
+        resolve,
+      };
+      this.#p5.loop();
+    });
+  }
+
   #finishMotion(): void {
     const motion = this.#motion;
+    const shot = this.#shot;
     this.#motion = null;
+    this.#shot = null;
     if (this.#ready && !this.#disposed) this.#p5.noLoop();
     motion?.resolve();
+    shot?.resolve();
   }
 
   #bind(canvas: HTMLCanvasElement, select: (cell: BoardingCell) => void): void {
@@ -327,11 +355,25 @@ export class BoardingMapView implements BoardingMapPort {
     sketch.translate(this.#offset.x, this.#offset.y);
     sketch.scale(this.#scale);
     const motion = this.#motion;
+    const shot = this.#shot;
     const raw = motion
       ? Math.min(1, (performance.now() - motion.started) / motion.duration)
       : 1;
     const progress = raw * raw * (3 - 2 * raw);
-    if (motion && raw >= 1) this.#finishMotion();
+    const shotRaw = shot
+      ? Math.min(1, (performance.now() - shot.started) / shot.duration)
+      : 1;
+    const shotProgress = shotRaw * shotRaw * (3 - 2 * shotRaw);
+    if (motion && raw >= 1) {
+      this.#motion = null;
+      motion.resolve();
+    }
+    if (shot && shotRaw >= 1) {
+      this.#shot = null;
+      shot.resolve();
+    }
+    if (!this.#motion && !this.#shot && this.#ready && !this.#disposed)
+      this.#p5.noLoop();
     const visible = new Set(state.visibleCells.map(key));
     const explored = new Set(state.exploredCells.map(key));
     const smoke = new Set(state.smokeCells.map(key));
@@ -553,6 +595,27 @@ export class BoardingMapView implements BoardingMapPort {
         center.x + (dx / length) * 17,
         bodyY + (dy / length) * 17,
       );
+    }
+    if (shot) {
+      const head = {
+        x: shot.from.x + (shot.to.x - shot.from.x) * shotProgress,
+        y: shot.from.y + (shot.to.y - shot.from.y) * shotProgress - 12,
+      };
+      const tail = {
+        x:
+          shot.from.x +
+          (shot.to.x - shot.from.x) * Math.max(0, shotProgress - 0.22),
+        y:
+          shot.from.y +
+          (shot.to.y - shot.from.y) * Math.max(0, shotProgress - 0.22) -
+          12,
+      };
+      sketch.stroke('#fff4c4');
+      sketch.strokeWeight(3.5);
+      sketch.line(tail.x, tail.y, head.x, head.y);
+      sketch.noStroke();
+      sketch.fill('#ffe27a');
+      sketch.circle(head.x, head.y, 7);
     }
     sketch.pop();
   }

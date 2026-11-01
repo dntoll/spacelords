@@ -132,8 +132,9 @@ Se [hela visionen](docs/game-vision.md).
   `bordningsmal-reaktor-och-evakuering` och
   `forsvarare-och-civilister`, `tydlig-bordningsstatus`,
   `isometrisk-bordningsvy`, `spelmassigt-bordningsgranssnitt`,
-  `ap-fargad-bordningsvag`, `animerad-bordningsforflyttning` samt
-  `avbrott-vid-ny-fiende` är
+  `ap-fargad-bordningsvag`, `animerad-bordningsforflyttning`,
+  `avbrott-vid-ny-fiende`, `animerat-bordningsskott`,
+  `valbar-bordningssoldat` samt `klickskott-pa-vald-fiende` är
   **Fullständigt implementerat**. Den första versionen är ett separat testspel
   från huvudmenyn på en handredigerbar transportkarta och påverkar inte
   kampanj eller sparplatser. Kartan använder klassiska kvadratiska

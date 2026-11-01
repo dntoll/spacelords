@@ -219,6 +219,57 @@ describe('avbrott-vid-ny-fiende', () => {
   });
 });
 
+describe('animerat-bordningsskott', () => {
+  it('records a visible shot from the attacker to the target', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const door = battle.snapshot.features.find(
+      (feature) => feature.kind === 'door',
+    )!;
+    withState((state) => ({
+      ...state,
+      randomState: 10_000,
+      people: state.people.map((person) =>
+        person.id === player.id
+          ? {
+              ...person,
+              position: { q: door.position.q - 1, r: door.position.r },
+              facing: 0,
+            }
+          : person,
+      ),
+    }));
+    activate(player.id);
+    battle.command({ type: 'shoot', targetId: door.id });
+    expect(battle.shot).toEqual({
+      from: { q: door.position.q - 1, r: door.position.r },
+      to: door.position,
+      hit: true,
+    });
+    expect(battle.snapshot).not.toHaveProperty('shot');
+  });
+});
+
+describe('valbar-bordningssoldat', () => {
+  it('lets a player postpone one soldier to move another out of the way', () => {
+    const [first, second] = battle.snapshot.people.filter(
+      (person) => person.side === 'player',
+    );
+    activate(first!.id);
+    battle.command({ type: 'turn', direction: 1 });
+    battle.command({ type: 'select', id: second!.id });
+    expect(battle.snapshot.currentActorId).toBe(second!.id);
+    expect(battle.snapshot.activation?.remaining).toBe(12);
+    expect(battle.snapshot.postponed).toEqual([
+      { id: first!.id, remaining: 11 },
+    ]);
+    battle.command({ type: 'end-activation' });
+    expect(battle.snapshot.currentActorId).toBe(first!.id);
+    expect(battle.snapshot.activation?.remaining).toBe(11);
+  });
+});
+
 describe('d20-bordningsstrid / miljomal-och-forstorelse', () => {
   it('uses geometric shooting distance on the square grid', () => {
     const player = battle.snapshot.people.find(

@@ -96,6 +96,8 @@ export interface BoardingBattleState {
   readonly noiseMarkers: readonly BoardingNoise[];
   readonly reactorCountdown: number | null;
   readonly savedCivilians: number;
+  readonly postponed: readonly BoardingActivation[];
+  readonly finishedActors: readonly string[];
   readonly log: readonly string[];
 }
 
@@ -118,7 +120,14 @@ export type BoardingCommand =
   | { readonly type: 'overwatch' }
   | { readonly type: 'med-pack'; readonly targetId: string }
   | { readonly type: 'evacuate' }
+  | { readonly type: 'select'; readonly id: string }
   | { readonly type: 'end-activation' };
+
+export interface BoardingShot {
+  readonly from: BoardingCell;
+  readonly to: BoardingCell;
+  readonly hit: boolean;
+}
 
 export interface BoardingPath {
   readonly cost: number;
@@ -233,6 +242,10 @@ function freezeState(state: BoardingBattleState): BoardingBattleState {
         Object.freeze({ ...entry, position: frozenCell(entry.position) }),
       ),
     ),
+    postponed: Object.freeze(
+      (state.postponed ?? []).map((entry) => Object.freeze({ ...entry })),
+    ),
+    finishedActors: Object.freeze([...(state.finishedActors ?? [])]),
     log: Object.freeze([...state.log]),
   });
 }
@@ -298,6 +311,7 @@ export class BoardingBattle {
   readonly #map: BoardingMap;
   #state: BoardingBattleState;
   #presentation: BoardingBattleState[] = [];
+  #shot: BoardingShot | null = null;
 
   private constructor(map: BoardingMap, state: BoardingBattleState) {
     this.#map = map;
@@ -341,6 +355,8 @@ export class BoardingBattle {
       noiseMarkers: [],
       reactorCountdown: null,
       savedCivilians: 0,
+      postponed: [],
+      finishedActors: [],
       log: [],
     });
     battle.#beginRound();
@@ -367,6 +383,10 @@ export class BoardingBattle {
 
   get presentation(): readonly BoardingBattleState[] {
     return this.#presentation;
+  }
+
+  get shot(): BoardingShot | null {
+    return this.#shot;
   }
 
   get visibleSnapshot(): BoardingBattleState {
@@ -469,6 +489,8 @@ export class BoardingBattle {
         ...entry,
         overwatch: false,
       })),
+      postponed: [],
+      finishedActors: [],
       log: [...this.#state.log, `Initiative, round ${round}: ${text}.`],
     });
   }
@@ -953,6 +975,12 @@ export class BoardingBattle {
       else this.#damageFeature(target.id, damage);
     }
     this.#addNoise(source.position, source.side);
+    if (kind !== 'Melee')
+      this.#shot = Object.freeze({
+        from: frozenCell(source.position),
+        to: frozenCell(this.#targetPosition(target)),
+        hit,
+      });
     this.#replace({
       log: [
         ...this.#state.log,
@@ -1210,6 +1238,7 @@ export class BoardingBattle {
 
   command(command: BoardingCommand): void {
     this.#presentation = [];
+    this.#shot = null;
     const actor = this.#actor();
     if (command.type === 'turn') {
       this.#spend(1);
@@ -1245,28 +1274,80 @@ export class BoardingBattle {
       this.#finishActivation();
     } else if (command.type === 'med-pack') this.#medPack(command.targetId);
     else if (command.type === 'evacuate') this.#evacuate();
+    else if (command.type === 'select') this.#select(command.id);
     else this.#finishActivation();
     this.#refreshKnowledge();
     this.synchronize();
   }
 
+  #select(id: string): void {
+    const actor = this.#actor();
+    if (actor.side !== 'player') throw new Error('Wait for your soldiers.');
+    const target = this.#state.people.find((entry) => entry.id === id);
+    if (!target || target.side !== 'player' || target.status !== 'active')
+      throw new Error('Choose one of your soldiers.');
+    if (target.id === actor.id) return;
+    if (this.#state.finishedActors.includes(id))
+      throw new Error('That soldier has already acted.');
+    const postponed = [
+      ...this.#state.postponed.filter(
+        (entry) => entry.id !== actor.id && entry.id !== id,
+      ),
+      { id: actor.id, remaining: this.#state.activation!.remaining },
+    ];
+    const saved = this.#state.postponed.find((entry) => entry.id === id);
+    this.#replace({
+      postponed,
+      currentActorId: id,
+      activation: {
+        id,
+        remaining: saved?.remaining ?? this.#maxActionPoints(target),
+      },
+      log: [...this.#state.log, `${actor.label} waits. ${target.label} acts.`],
+    });
+  }
+
+  #available(id: string | null, finished: readonly string[]): boolean {
+    if (!id || finished.includes(id)) return false;
+    return (
+      this.#state.people.find((entry) => entry.id === id)?.status === 'active'
+    );
+  }
+
   #finishActivation(): void {
     if (this.#state.phase === 'complete') return;
+    const finishedActors = [
+      ...this.#state.finishedActors,
+      this.#state.currentActorId,
+    ].filter((id): id is string => !!id);
+    const stack = this.#state.postponed.filter(
+      (entry) => !finishedActors.includes(entry.id),
+    );
+    const resume = stack.at(-1);
+    if (resume && this.#available(resume.id, finishedActors)) {
+      this.#replace({
+        finishedActors,
+        postponed: stack.slice(0, -1),
+        currentActorId: resume.id,
+        activation: resume,
+      });
+      return;
+    }
     let index = this.#state.initiativeIndex + 1;
     let id = this.#state.initiativeOrder[index] ?? null;
-    while (
-      id &&
-      this.#state.people.find((entry) => entry.id === id)?.status !== 'active'
-    ) {
+    while (id && !this.#available(id, finishedActors)) {
       index++;
       id = this.#state.initiativeOrder[index] ?? null;
     }
     if (!id) {
+      this.#replace({ finishedActors, postponed: [] });
       this.#endRound();
       return;
     }
     const actor = this.#state.people.find((entry) => entry.id === id)!;
     this.#replace({
+      finishedActors,
+      postponed: [],
       initiativeIndex: index,
       currentActorId: id,
       activation: { id, remaining: this.#maxActionPoints(actor) },

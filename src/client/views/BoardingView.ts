@@ -1,6 +1,7 @@
 import {
   BoardingBattle,
   type BoardingBattleState,
+  type BoardingShot,
 } from '../models/BoardingBattle.js';
 import type { BoardingCell } from '../models/BoardingMap.js';
 import {
@@ -34,6 +35,7 @@ export interface BoardingMapPort {
     from: BoardingBattleState,
     to: BoardingBattleState,
   ): Promise<void>;
+  playShot?(from: BoardingCell, to: BoardingCell): Promise<void>;
   zoom(factor: number): void;
   fit(): void;
   dispose(): void;
@@ -126,6 +128,10 @@ export class BoardingView {
   #selectCell(position: BoardingCell): void {
     const state = this.#state;
     if (!state || state.phase === 'complete' || this.#busy) return;
+    const actor = state.people.find(
+      (entry) => entry.id === state.currentActorId,
+    );
+    const playerTurn = actor?.side === 'player' && actor.status === 'active';
     const person = state.people.find(
       (entry) =>
         entry.status !== 'dead' &&
@@ -140,6 +146,26 @@ export class BoardingView {
         entry.position.r === position.r &&
         ['door', 'reactor', 'wall'].includes(entry.kind),
     );
+    if (person?.side === 'player' && playerTurn) {
+      if (person.id !== actor.id)
+        this.#command({ type: 'select', id: person.id });
+      this.#selectedId = person.id;
+      this.#destination = null;
+      this.render(state);
+      return;
+    }
+    if (
+      playerTurn &&
+      person &&
+      person.side !== 'player' &&
+      this.#selectedId === person.id
+    ) {
+      const preview = this.#battle().attackPreview(actor.id, person.id);
+      if (!preview.reason) {
+        this.#command({ type: 'shoot', targetId: person.id });
+        return;
+      }
+    }
     if (person || feature) {
       this.#selectedId = (person ?? feature)!.id;
       this.#destination = null;
@@ -154,16 +180,17 @@ export class BoardingView {
     state: BoardingBattleState,
     notice?: string | null,
     presentation: readonly BoardingBattleState[] = [],
+    shot: BoardingShot | null = null,
   ): void {
     const previous = this.#state;
     if (
       !this.#busy &&
       previous &&
-      presentation.length > 0 &&
-      this.#map?.playMotion
+      ((presentation.length > 0 && this.#map?.playMotion) ||
+        (shot && this.#map?.playShot))
     ) {
       const token = ++this.#playToken;
-      void this.#play(previous, presentation, state, notice, token);
+      void this.#play(previous, presentation, shot, state, notice, token);
       return;
     }
     this.#paint(state, notice);
@@ -172,20 +199,25 @@ export class BoardingView {
   async #play(
     previous: BoardingBattleState,
     frames: readonly BoardingBattleState[],
+    shot: BoardingShot | null,
     final: BoardingBattleState,
     notice: string | null | undefined,
     token: number,
   ): Promise<void> {
     this.#busy = true;
     this.#destination = null;
-    this.#selectedId = null;
-    this.#paint(previous, 'Moving…');
+    this.#paint(previous, shot ? 'Firing…' : 'Moving…');
     let current = previous;
     for (const frame of frames) {
       if (token !== this.#playToken) return;
       await this.#map?.playMotion?.(current, frame);
       current = frame;
       this.#paint(frame, 'Moving…');
+    }
+    if (shot && this.#map?.playShot) {
+      if (token !== this.#playToken) return;
+      this.#paint(current, 'Firing…');
+      await this.#map.playShot(shot.from, shot.to);
     }
     if (token !== this.#playToken) return;
     this.#busy = false;
@@ -233,6 +265,19 @@ export class BoardingView {
         'aria-label',
         `${soldier.label}, ${soldier.hitPoints} of ${soldier.maxHitPoints} HP`,
       );
+      if (playerTurn && soldier.status === 'active') {
+        unit.tabIndex = 0;
+        unit.setAttribute('role', 'button');
+        unit.addEventListener('click', () => {
+          if (soldier.id === state.currentActorId) {
+            this.#selectedId = soldier.id;
+            this.#destination = null;
+            this.render(state);
+            return;
+          }
+          this.#command({ type: 'select', id: soldier.id });
+        });
+      }
       const health = document.createElement('progress');
       health.className = 'boarding-health';
       health.max = soldier.maxHitPoints;

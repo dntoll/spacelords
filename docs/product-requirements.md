@@ -66,7 +66,9 @@ med kompakta handlingsknappar. Varje bordningssoldat ska ha en egen
 hälsomätare. En vald väg ska visa hur långt soldaten når med kvarvarande AP
 och vilka rutor som fortfarande lämnar AP till ett skott. När soldaten går ska
 varje steg och vändning animeras så att sikt uppdateras längs vägen. Om en ny
-fiende upptäcks avbryts resten av förflyttningen.
+fiende upptäcks avbryts resten av förflyttningen. Skott animeras. Spelaren kan
+klicka fram en annan egen soldat för att flytta undan någon som står i vägen,
+och klicka igen på en redan vald fiende för att skjuta.
 
 Prototypen påverkar inga sparade spel och ger ännu inga skepp,
 besättningsmedlemmar, forskningsresultat eller kartupplysningar till kampanjen.

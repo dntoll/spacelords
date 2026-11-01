@@ -47,6 +47,7 @@ import {
   type BoardingBattle,
   type BoardingBattleState,
   type BoardingCommand,
+  type BoardingShot,
 } from './BoardingBattle.js';
 import { createTestBoardingBattle } from './TestBoarding.js';
 import type { SupplyOverview } from './SupplyOverview.js';
@@ -127,6 +128,7 @@ export interface AppReadModel {
   readonly productionStartOrder?: ShipOrder | null;
   readonly boardingBattle?: BoardingBattleState | null;
   readonly boardingPresentation?: readonly BoardingBattleState[];
+  readonly boardingShot?: BoardingShot | null;
   readonly tacticalBattle: BattleState | null;
   readonly battleFeedback: BattleState | null;
   readonly turnMovement: TurnMovement | null;
@@ -460,6 +462,7 @@ export class AppModel {
       boardingPresentation: Object.freeze([
         ...(this.#testBoarding?.presentation ?? []),
       ]),
+      boardingShot: this.#testBoarding?.shot ?? null,
       tacticalBattle:
         this.#testBattle?.visibleSnapshot ?? this.#game.tacticalBattle,
       battleFeedback: this.#battleFeedback,

@@ -3802,6 +3802,7 @@ body:has(.discovery-controls) .selection-panel {
   border-radius: 5px;
   background: rgb(5 11 23 / 88%);
   font-size: 0.68rem;
+  pointer-events: auto;
 }
 
 .boarding-unit-active {
