@@ -6,6 +6,7 @@ export function battleControlsLayout(
   hull: readonly Point[],
   facing: number,
   count: number,
+  otherHulls: readonly Point[] = [],
 ): readonly Point[] {
   if (!hull.length) return [];
   const center = hull[Math.floor(hull.length / 2)]!;
@@ -24,7 +25,7 @@ export function battleControlsLayout(
     : [0, -Math.PI / 2, Math.PI / 2, Math.PI]
   ).slice(0, count)) {
     const candidates: Point[] = [];
-    for (const extra of [0, 22, 48])
+    for (const extra of [0, 22, 48, 80, 112])
       for (const shift of [
         0,
         Math.PI / 6,
@@ -52,8 +53,16 @@ export function battleControlsLayout(
         (hex) =>
           Math.hypot(hex.x - point.x, hex.y - point.y) < 29 * view.scale + 30,
       );
+    const onOtherShip = (point: Point) =>
+      otherHulls.some(
+        (hex) =>
+          Math.hypot(hex.x - point.x, hex.y - point.y) < 36 * view.scale + 28,
+      );
     chosen.push(
-      candidates.find((point) => !overlap(point) && !onHull(point)) ??
+      candidates.find(
+        (point) => !overlap(point) && !onHull(point) && !onOtherShip(point),
+      ) ??
+        candidates.find((point) => !overlap(point) && !onHull(point)) ??
         candidates.find((point) => !overlap(point)) ??
         candidates[0]!,
     );

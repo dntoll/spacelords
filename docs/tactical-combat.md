@@ -27,8 +27,13 @@ Drag, nypzoom, avbrutna gester, mushjul och tryck på överlägg avfyrar aldrig.
 
 Kameran styrs med drag och nypzoom; datorns mushjul kan zooma.
 Inga kameraknappar eller kamerakommandon på tangentbordet finns.
-Minsta zoom täcker skärmen, vilket beskär sidorna på stående mobil.
-Panorering tillåter högst 24 pixlar utanför spelplanens omslutande rektangel.
+Minsta zoom visar hela spelplanens omslutande rektangel och fyller skärmen
+i minst en riktning. På stående mobil syns då hela bredden med centrerad
+rymd ovanför och under. Kameran kan inte zoomas ut så att spelplanen blir
+mindre än skärmen i båda riktningarna. Detta ersätter kravet att täcka både
+bredd och höjd efter användarens förtydligande av `begransad-stridskamera`.
+Om kartan är mindre än skärmen i en riktning centreras den där. Annars
+tillåter panorering högst 24 pixlar utanför spelplanens omslutande rektangel.
 Största zoom är 3 eller minsta tillåtna zoom om skärmen kräver mer.
 Skärmrotation bevarar kamerans mitt och begränsar den på nytt.
 Ett aktiverat eller flyttat skepp förs in i bild när kartkanterna medger det,

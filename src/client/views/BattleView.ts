@@ -595,11 +595,24 @@ export class BattleView {
     const actions = [
       ...this.#panel.querySelectorAll<HTMLButtonElement>('button'),
     ];
+    const otherHulls = state.pieces
+      .filter(
+        (piece) =>
+          piece.id !== ship.id &&
+          piece.status === 'active' &&
+          (state.phase !== 'deployment' || piece.side === 'player'),
+      )
+      .flatMap((piece) =>
+        ShipFootprint.cells(piece, state.largeShipFootprints === true).map(
+          project,
+        ),
+      );
     const positions = battleControlsLayout(
       viewport,
       hull,
       ship.facing,
       actions.length,
+      otherHulls,
     );
     actions.forEach((action, index) => {
       const point = positions[index]!;

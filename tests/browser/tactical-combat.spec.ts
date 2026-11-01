@@ -6,7 +6,8 @@ import { battleHex } from '../../src/client/models/TacticalBattle.js';
 import { createTestBattle } from '../../src/client/models/TestBattle.js';
 import { ShipFootprint } from '../../src/client/models/ShipFootprint.js';
 
-import { showBattleHex, tapBattleHex } from './battle-helpers.js';
+import { battlePoint, showBattleHex, tapBattleHex } from './battle-helpers.js';
+import { HexGeometry } from '../../src/client/models/HexCoordinate.js';
 
 async function saved(page: Page): Promise<SavedGame> {
   return page.evaluate(
@@ -99,7 +100,7 @@ test('stridsutplacering / sparad-taktisk-strid: deploys all ships and resumes an
   expect(errors).toEqual([]);
 });
 
-test('fullskarms-stridskarta / skeppsnara-stridskontroller / vapensymboler-i-strid / avfyra-pa-markerat-mal / automatiskt-skeppsval-i-strid / synligt-stridsresultat / stridsorder-utan-mobilscroll / skeppets-framat-foljer-spriten / riktning-och-vapen / oppna-stridstarningar: selects, fires and moves without scrolling for ship orders', async ({
+test('begransad-stridskamera / fullskarms-stridskarta / skeppsnara-stridskontroller / vapensymboler-i-strid / avfyra-pa-markerat-mal / automatiskt-skeppsval-i-strid / synligt-stridsresultat / stridsorder-utan-mobilscroll / skeppets-framat-foljer-spriten / riktning-och-vapen / oppna-stridstarningar: selects, fires and moves without scrolling for ship orders', async ({
   page,
 }, testInfo) => {
   const game = arrangeBattle(encounterGame(), (state) => ({
@@ -147,6 +148,42 @@ test('fullskarms-stridskarta / skeppsnara-stridskontroller / vapensymboler-i-str
       'height',
       `${size.height}px`,
     );
+    const canvas = page.getByLabel(/^Battle hex map/);
+    for (const deltaY of [-900, 12000])
+      await canvas.dispatchEvent('wheel', {
+        deltaY,
+        clientX: size.width / 2,
+        clientY: size.height / 2,
+      });
+    const camera = await dialog.locator('.battle-canvas').evaluate((node) => ({
+      scale: Number((node as HTMLElement).dataset.cameraScale),
+      minScale: Number((node as HTMLElement).dataset.cameraMinScale),
+    }));
+    expect(camera.scale).toBeCloseTo(camera.minScale);
+    const first = await battlePoint(page, battleHex(0, 0));
+    const right = await battlePoint(
+      page,
+      battleHex(game.tacticalBattle!.width - 1, 1),
+    );
+    const bottom = await battlePoint(
+      page,
+      battleHex(0, game.tacticalBattle!.height - 1),
+    );
+    const halfWidth = (Math.sqrt(3) * HexGeometry.size * camera.scale) / 2;
+    const radius = HexGeometry.size * camera.scale;
+    expect(first.x - halfWidth).toBeGreaterThanOrEqual(-0.001);
+    expect(first.y - radius).toBeGreaterThanOrEqual(-0.001);
+    expect(right.x + halfWidth).toBeLessThanOrEqual(size.width + 0.001);
+    expect(bottom.y + radius).toBeLessThanOrEqual(size.height + 0.001);
+    expect(
+      Math.min(
+        Math.abs(right.x + halfWidth - first.x + halfWidth - size.width),
+        Math.abs(bottom.y + radius - first.y + radius - size.height),
+      ),
+    ).toBeLessThan(0.001);
+    expect(
+      (await saved(page)).state.simulation!.tacticalBattles![0]!.lastShot,
+    ).toBeUndefined();
     const orders = dialog.getByRole('region', { name: 'Ship orders' });
     for (const label of [
       'Turn left 60°',

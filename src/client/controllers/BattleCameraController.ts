@@ -30,7 +30,7 @@ export class BattleCameraController {
   #map = '';
 
   get snapshot(): BattleViewportSnapshot {
-    const minScale = Math.max(
+    const minScale = Math.min(
       this.#width / (this.#bounds.right - this.#bounds.left),
       this.#height / (this.#bounds.bottom - this.#bounds.top),
     );
@@ -132,19 +132,28 @@ export class BattleCameraController {
     this.pan({ x: x - point.x, y: y - point.y });
   }
   #clamp(): void {
-    const clamp = (value: number, low: number, high: number) =>
-      Math.max(low, Math.min(high, value));
     const margin = 24;
+    const axis = (value: number, size: number, low: number, high: number) => {
+      // begransad-stridskamera: center space on the short axis; keep the other filled.
+      if ((high - low) * this.#scale <= size + 0.0001)
+        return size / 2 - ((low + high) / 2) * this.#scale;
+      return Math.max(
+        size - margin - high * this.#scale,
+        Math.min(margin - low * this.#scale, value),
+      );
+    };
     this.#offset = {
-      x: clamp(
+      x: axis(
         this.#offset.x,
-        this.#width - margin - this.#bounds.right * this.#scale,
-        margin - this.#bounds.left * this.#scale,
+        this.#width,
+        this.#bounds.left,
+        this.#bounds.right,
       ),
-      y: clamp(
+      y: axis(
         this.#offset.y,
-        this.#height - margin - this.#bounds.bottom * this.#scale,
-        margin - this.#bounds.top * this.#scale,
+        this.#height,
+        this.#bounds.top,
+        this.#bounds.bottom,
       ),
     };
   }

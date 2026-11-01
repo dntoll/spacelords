@@ -10,6 +10,7 @@
   vänster- och högersväng samt End ship turn är symbolknappar runt det aktiva
   skeppet. De följer dess riktning och kameran, ryms innanför skärmen och
   döljs när skeppet är utanför bilden. Utplacering har två svängknappar.
+  Vid utzoomning flyttas de undan från andra skepps tryckytor där plats finns.
 - `vapensymboler-i-strid` — **Fullständigt implementerat**: vapen väljs med
   symbolknappar i nederkant. Val och ammunition syns. Vapenval avfyrar inget.
 - `avfyra-pa-markerat-mal` — **Fullständigt implementerat**: första trycket
@@ -19,13 +20,18 @@
   även på tom yta. Kamera- och avbrutna gester avfyrar aldrig.
 - `begransad-stridskamera` — **Fullständigt implementerat**: drag och nypzoom
   styr kartan; datorns mushjul kan zooma. Inga kameraknappar visas.
-  Minsta zoom fyller skärmen; högst 24 pixlars kant utanför spelplanens
-  yttergränser tillåts. Rotation av skärmen behåller giltiga gränser.
+  Minsta zoom visar hela spelplanen och fyller skärmen i minst en riktning.
+  På stående mobil kan hela bredden visas med rymd ovanför och under.
+  I riktningen där kartan är mindre centreras den; i en större riktning
+  begränsas panorering till 24 pixlars kant. Rotation behåller giltiga gränser.
   Aktiverat eller flyttat skepp hålls synligt när kartkanterna medger det.
 
 Detta ersätter orderpanelerna i `stridsorder-utan-mobilscroll` och
 Fire weapon-knappen i `traffhex-istallet-for-mallista`. `fuskknapp-for-teststrid`
 omfattar nu också vanliga asteroider, med fria startzoner. Sparade spel bevaras.
+Förtydligandet av `begransad-stridskamera` ersätter det tidigare kravet att
+kartan måste fylla både bredd och höjd. Utzoomning får inte lämna rymd runt
+spelplanen på alla fyra sidor.
 Se [taktisk strid](tactical-combat.md).
 
 ## Autoaim och stora skepp, 2026-11-01

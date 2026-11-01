@@ -16,7 +16,9 @@ Se [hela visionen](docs/game-vision.md).
   **Fullständigt implementerat**. Hexkartan fyller skärmen med en liten HUD,
   rörelse och End ship turn runt skeppet samt vapen som symbolknappar.
   Ett nytt mål markeras; tryck på ett markerat mål avfyrar vapnet.
-  Drag och nypzoom begränsas vid kartans kanter. Test battle har asteroider.
+  Drag och nypzoom begränsas vid kartans kanter. Det går att zooma ut tills
+  hela kartan ryms; minst en riktning fyller skärmen och överbliven rymd
+  centreras i den andra. Test battle har asteroider.
   Detta ersätter orderpanelerna och Fire weapon-knappen.
   Se [taktisk strid](docs/tactical-combat.md).
 

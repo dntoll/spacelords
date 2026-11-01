@@ -6,13 +6,18 @@
   HTML lägger HUD och tillgängliga symbolknappar ovanpå. BattleMapView lämnar
   en oföränderlig kameraögonblicksbild. Samma projektion placerar kontrollerna
   runt ShipFootprint, med inåtfällning vid kanter och minst 44 pixlars tryckyta.
+  Placeringen undviker andra synliga skrovs tryckytor där plats finns,
+  även vid den nya minsta zoomnivån.
 - `vapensymboler-i-strid` och `avfyra-pa-markerat-mal`: vyn håller tillfälligt
   vapen och mål. Avfyrning går som battle-command till controller och modell
   och kontrolleras mot TacticalBattle. Kamera- och avbrutna pekargester
   konsumerar trycket även sedan ett finger lämnat en nypgest.
 - `begransad-stridskamera`: BattleCameraController hanterar kamera oberoende
-  av p5 och spelmodellen. Minsta skala täcker hela visningsytan; panorering
-  begränsas till 24 pixlars kant utanför kartans omslutande rektangel.
+  av p5 och spelmodellen. Minsta skala är den mindre av visningsytans
+  bredd/kartbredd och höjd/karthöjd, så hela kartan ryms och minst en axel
+  fylls. Detta ersätter tidigare minsta skala som fyllde båda axlarna.
+  En axel där kartan ryms centreras; en större axels panorering begränsas
+  till 24 pixlars kant utanför kartans omslutande rektangel.
   Resize bevarar världscentrum och begränsar skalan på nytt. Kameran sparas
   inte i speldata. Aktivering och position ändrar fokus; eld gör det inte.
 - `fuskknapp-for-teststrid`: samma asteroidgenerering som ordinarie strider

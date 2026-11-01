@@ -2,6 +2,7 @@ import { expect, it, vi } from 'vitest';
 import { BattleCameraController } from '../../src/client/controllers/BattleCameraController.js';
 import { battleControlsLayout } from '../../src/client/views/BattleControlsLayout.js';
 import { createTestBattle } from '../../src/client/models/TestBattle.js';
+import { battleHex } from '../../src/client/models/TacticalBattle.js';
 
 it.each([
   [320, 568],
@@ -70,6 +71,21 @@ it('skeppsnara-stridskontroller: forward follows the nose and end follows the st
       (end!.x - center.x) * nose.x + (end!.y - center.y) * nose.y,
     ).toBeLessThan(-60);
   }
+});
+
+it('skeppsnara-stridskontroller / begransad-stridskamera: keeps target hit areas clear when zoomed out on portrait mobile', () => {
+  const camera = new BattleCameraController();
+  camera.configure({ width: 15, height: 9 }, 393, 851);
+  const ship = camera.project(battleHex(1, 4));
+  const target = camera.project(battleHex(4, 4));
+  const controls = battleControlsLayout(camera.snapshot, [ship], 0, 4, [
+    ship,
+    target,
+  ]);
+  for (const point of controls)
+    expect(
+      Math.hypot(point.x - target.x, point.y - target.y),
+    ).toBeGreaterThanOrEqual(24 + 36 * camera.snapshot.scale);
 });
 
 it('fuskknapp-for-teststrid: uses normal asteroids with clear deployment zones and both large ships', () => {
