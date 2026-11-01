@@ -2,7 +2,12 @@ import { expect, test, type Page } from '@playwright/test';
 import { encounterGame, arrangeBattle } from '../fixtures/battle-checkpoint.js';
 import { startFirstSlot, ignoreEventsUntil } from './save-helpers.js';
 import type { SavedGame } from '../../src/client/models/SaveRepository.js';
-import { battleHex } from '../../src/client/models/TacticalBattle.js';
+import {
+  battleHex,
+  battleHexPoint,
+  type BattleHex,
+} from '../../src/client/models/TacticalBattle.js';
+import { createTestBattle } from '../../src/client/models/TestBattle.js';
 
 async function saved(page: Page): Promise<SavedGame> {
   return page.evaluate(
@@ -10,6 +15,23 @@ async function saved(page: Page): Promise<SavedGame> {
       JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
   );
 }
+
+async function aimAt(
+  page: Page,
+  map: { readonly width: number; readonly height: number },
+  at: BattleHex,
+): Promise<void> {
+  const canvas = page.getByLabel(/^Battle hex map/);
+  const bounds = (await canvas.boundingBox())!;
+  await canvas.click({
+    position: battleHexPoint(
+      map,
+      { width: bounds.width, height: bounds.height },
+      at,
+    ),
+  });
+}
+
 async function prepare(
   page: Page,
   state: SavedGame['state'],
@@ -128,6 +150,12 @@ test('automatiskt-skeppsval-i-strid / synligt-stridsresultat / stridsorder-utan-
   expect(
     (await saved(page)).state.simulation!.tacticalBattles![0]!.activation?.id,
   ).toBe(fighter.id);
+  await aimAt(
+    page,
+    game.tacticalBattle!,
+    game.tacticalBattle!.pieces.find((piece) => piece.side === 'enemy')!
+      .position!,
+  );
   for (const size of [
     { width: 320, height: 568 },
     { width: 844, height: 390 },
@@ -144,7 +172,6 @@ test('automatiskt-skeppsval-i-strid / synligt-stridsresultat / stridsorder-utan-
       'Forward / escape',
       'Turn right 60°',
       'Weapon',
-      'Target',
       'Fire weapon',
       'End ship turn',
     ]) {
@@ -270,6 +297,12 @@ test('fuskknapp-for-teststrid: opens combat from the main menu and leaves save s
     .getByRole('button', { name: 'Test battle (cheat)', exact: true })
     .click();
   const dialog = page.getByRole('dialog', { name: 'Tactical combat' });
+  const testBattle = createTestBattle().snapshot;
+  await aimAt(
+    page,
+    testBattle,
+    testBattle.pieces.find((piece) => piece.side === 'enemy')!.position!,
+  );
   await expect(
     dialog.getByRole('button', { name: 'Fire weapon', exact: true }),
   ).toBeEnabled();
