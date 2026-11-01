@@ -780,3 +780,39 @@ inte automatiskt version 3-sparningar till det äldre formatet.
 - Rapport: `dist/deployments/170872d2436b-1793512918281/report.json`.
   Manuell mobiltest följer. Fullständigt sluttest och merge inväntar separat
   beställning respektive godkännande.
+
+## Autoaim och stora skrov: 2026-11-01
+
+- Publicerad källrevision: `b459101a05a6a84e26b7fb18da8ae3d56ed6bb7d`
+  från `codex/selected-fleet-arrow`. Autoaim väljer närmaste träffbara fiende
+  i främre eldbågen och behåller giltigt valt mål. Spelaren kan byta mål och
+  justera träffhex. Förlorade mål ersätts när ett nytt mål kan träffas.
+- Transport ship och Colony ship upptar tre verkliga skrovhex i nya strider,
+  inklusive Armored Transport. Kollision, sväng, skydd, räckvidd, träffyta,
+  AI och klickval använder samma geometri. Missilsalvor träffar varje skepp
+  en gång. Test battle (cheat) börjar med utplacering och båda stora typerna.
+  Äldre pågående strider behåller sin tidigare geometri utan rensning.
+- Deploycommit: `b7572d377fd1a7ad63c08e552fa399571d04bd41`.
+  Webbplatsrepots tidigare revision: `5848e8708e3edda52432e2e3713978474dc9f1c8`.
+  Endast `spacelords/` ändrades. Källrepots `main` är oförändrad.
+- Kravkopplade tester skyddar automatiskt och manuellt målval, förlorade mål,
+  full skrovkollision och träffyta, blockerade svängar utan förbrukad rörelse,
+  missilernas enkelträff per skepp, större utplaceringar och äldre sparningar.
+  Mobiltester verifierar pekval genom ändhexar, utplacering, mållåsning och
+  manuellt byte genom skärmrotation. Skärmbilder granskades i båda motorerna.
+- `deploy:quick` avslutades med `verified`. Formatering, ESLint, typkontroll,
+  Pages-bygge, verktygskontroller och Pages-integration passerade.
+  814 snabbtester tog 17,78 sekunder. Alla 30 mobiltester passerade både
+  lokalt och mot liveadressen i Chromium och WebKit.
+- HTTPS och processlokal Git-konfiguration användes enligt föregående
+  leveransantecknings granskning av p5:s strängblanksteg. Det testade bygget
+  bevarades exakt. Strikt blankstegskontroll av publiceringsdiffen utanför
+  genererade JavaScript-filer passerade också. Inga bestående Git-inställningar
+  ändrades och övriga publiceringsskydd behölls.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/41282017380)
+  lyckades. Alla livefiler matchade byggets kontrollsummor. Omdirigering och
+  innehållstyper verifierades; befintliga webbplatsadressers kontrollsummor
+  var oförändrade. Inga länkar, rotfiler, DNS- eller Pages-inställningar ändrades.
+- Rapport: `dist/deployments/b459101a05a6-1793515234755/report.json`.
+  Manuell mobiltest följer. Fullständigt sluttest och merge inväntar separat
+  beställning respektive godkännande.
