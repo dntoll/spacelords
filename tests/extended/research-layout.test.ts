@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { researchStationModel } from '../fixtures/research-station.js';
+import { researchStationModel } from '../fixtures/research-station-model.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import { renderResearch } from '../../src/client/views/ResearchView.js';

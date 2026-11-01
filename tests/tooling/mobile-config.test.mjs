@@ -19,9 +19,10 @@ test('snabb-mobilpublicering: the mobile CLI selects exactly the two phone profi
   assert.doesNotMatch(output, /desktop-chromium|tablet-webkit/);
   assert.match(output, /mobile-smoke\.spec\.ts/);
   assert.match(output, /tactical-combat\.spec\.ts/);
+  assert.match(output, /boarding-combat\.spec\.ts/);
   assert.match(output, /factory-upgrades\.spec\.ts/);
   assert.match(output, /research-status\.spec\.ts/);
   assert.match(output, /fleet-upgrades\.spec\.ts/);
   assert.match(output, /orders\.spec\.ts/);
-  assert.match(output, /Total: 22 tests in 6 files/);
+  assert.match(output, /Total: 24 tests in 7 files/);
 });
