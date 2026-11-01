@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { BattleCameraController } from '../../src/client/controllers/BattleCameraController.js';
 import { battleControlsLayout } from '../../src/client/views/BattleControlsLayout.js';
 import { createTestBattle } from '../../src/client/models/TestBattle.js';
@@ -73,13 +73,15 @@ it('skeppsnara-stridskontroller: forward follows the nose and end follows the st
 });
 
 it('fuskknapp-for-teststrid: uses normal asteroids with clear deployment zones and both large ships', () => {
+  const clock = vi.spyOn(Date, 'now').mockReturnValue(1);
   const battle = createTestBattle();
+  clock.mockRestore();
   const initial = battle.snapshot;
   expect(initial.phase).toBe('deployment');
   expect(initial.asteroids.length).toBeGreaterThan(0);
   for (const hex of initial.asteroids) {
-    expect(hex.q).toBeGreaterThanOrEqual(initial.deploymentDepth);
-    expect(hex.q).toBeLessThan(initial.width - initial.deploymentDepth);
+    expect(battle.isDeployment(hex, 'player')).toBe(false);
+    expect(battle.isDeployment(hex, 'enemy')).toBe(false);
   }
   expect(
     initial.pieces.filter((piece) =>
