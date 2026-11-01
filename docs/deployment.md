@@ -816,3 +816,42 @@ inte automatiskt version 3-sparningar till det äldre formatet.
 - Rapport: `dist/deployments/b459101a05a6-1793515234755/report.json`.
   Manuell mobiltest följer. Fullständigt sluttest och merge inväntar separat
   beställning respektive godkännande.
+
+## Stridens spelgränssnitt: 2026-11-01
+
+- Publicerad källrevision: `59aeb1480decd7017e57a576557c2887c0b6ed47`
+  från `codex/selected-fleet-arrow`. Hexkartan fyller spelytan med liten HUD,
+  rörelse och End ship turn runt skeppet samt vapensymboler med ammunition.
+  Ett nytt mål markeras och tryck på markerat mål avfyrar. Autoaim behålls.
+  Utplacering använder skeppsporträtt. Test battle innehåller asteroider.
+- Drag, nypzoom och datorns mushjul styr kameran. Minsta zoom täcker skärmen
+  och panorering begränsas till 24 pixlars kant utanför spelplanens gränser.
+  Kameraknappar och den tidigare orderpanelen har ersatts. Gester avfyrar
+  inte vapen. Kontroller följer skepp, riktning, zoom och skärmrotation.
+- Deploycommit: `c4c75dcfa6548f403ba77da61d6dd90a9e80d9ab`.
+  Webbplatsrepots tidigare revision: `de9df75793b5232b3dd5035ae03c78d51853c19f`.
+  Endast `spacelords/` ändrades. Källrepots `main` är oförändrad.
+- Kravkopplade tester skyddar måltryck, vapenval utan avfyrning, missilers
+  träffhex, stora skrovs målval, gester, kameragränser och knappar vid kanter.
+  Mobil- och datorskärmbilder granskades. Regressionen för måltryck
+  verifierades misslyckas före implementationen.
+- Förkontroller stoppade två försök före uppladdning. Asteroidtestet blandade
+  först ihop axiell hexkoordinat med kartkolumn; kontrollen använder nu
+  startzonens läsfråga och ett fast slumpfrö. Nästa försök överskred
+  snabbsvitens tidsgräns. Fyra arbetstrådar ersätter tre med samma tester
+  och oförändrad gräns på 20 sekunder.
+- `deploy:quick` avslutades med `verified`. Formatering, ESLint, typkontroll,
+  Pages-bygge, verktygskontroller och Pages-integration passerade.
+  829 snabbtester tog 14,63 sekunder. Alla 30 mobiltester passerade både
+  lokalt och mot liveadressen i Chromium och WebKit.
+- HTTPS och processlokal Git-konfiguration användes enligt föregående
+  leveransantecknings granskning av p5:s strängblanksteg. Det testade bygget
+  bevarades exakt. Strikt blankstegskontroll utanför genererade JavaScript-filer
+  passerade. Inga bestående Git-inställningar ändrades; publiceringsskydden behölls.
+- [Pages-körningen](https://github.com/dntoll/dntoll.github.io/actions/runs/41304530098)
+  lyckades. Alla livefiler matchade byggets kontrollsummor. Omdirigering och
+  innehållstyper verifierades; befintliga webbplatsadressers kontrollsummor
+  var oförändrade. Sparningar bevaras utan ändrat format eller rensning.
+- Rapport: `dist/deployments/59aeb1480dec-1793534304068/report.json`.
+  Manuell mobiltest följer. Fullständigt sluttest och merge inväntar separat
+  beställning respektive godkännande.
