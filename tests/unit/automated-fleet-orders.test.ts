@@ -125,16 +125,9 @@ describe('automatisk-bargning', () => {
   });
 });
 
-describe('automatisk-rutttilldelning', () => {
-  it('requires research, assigns the nearest unassigned route and travels to its nearest endpoint', () => {
-    const state = tradeNetworkState();
-    expect(() =>
-      Game.restore(state).setAutomaticTransport('freighters'),
-    ).toThrow('Research Automated transport first');
-    const game = Game.restore({
-      ...state,
-      researched: [...state.researched, 'Automated transport'],
-    });
+describe('automatisk-farledsbemanning', () => {
+  it('assigns a waiting transport to the nearest open route without research', () => {
+    const game = Game.restore(tradeNetworkState());
     game.setAutomaticTransport('freighters');
     expect(game.fleet('freighters')!.routeId).toBe('route-test');
     expect(game.fleet('freighters')!.automation).toBeUndefined();
@@ -142,32 +135,26 @@ describe('automatisk-rutttilldelning', () => {
       'route-test',
     );
   });
-  it('waits without claiming a served route, survives reload and claims a released route', () => {
+  it('joins the least-manned route even when it already has ships, survives reload and keeps the assignment', () => {
     const state = tradeNetworkState();
     let game = Game.restore({
       ...state,
-      researched: [...state.researched, 'Automated transport'],
       fleets: state.fleets.map((f) =>
         f.id === 'travellers' ? { ...f, destination: null } : f,
       ),
     });
     game.assignTradeFleet('route-test', 'freighters');
     game.setAutomaticTransport('travellers');
-    expect(game.fleet('travellers')!.automation).toBe('transport');
+    expect(game.fleet('travellers')!.routeId).toBe('route-test');
+    expect(game.fleet('travellers')!.automation).toBeUndefined();
     expect(game.decisions.some((d) => d.id === 'fleet-idle-travellers')).toBe(
       false,
     );
     game = Game.restore(game.exportState());
-    game.releaseTradeFleet('freighters');
-    finishYear(game);
     expect(game.fleet('travellers')!.routeId).toBe('route-test');
   });
   it('replaces a previous movement order and allows Stop while waiting', () => {
-    const state = tradeNetworkState(false);
-    const game = Game.restore({
-      ...state,
-      researched: [...state.researched, 'Automated transport'],
-    });
+    const game = Game.restore(tradeNetworkState(false));
     game.setAutomaticTransport('travellers');
     expect(game.fleet('travellers')!.destination).toBeNull();
     game.clearDestination('travellers');
@@ -177,24 +164,11 @@ describe('automatisk-rutttilldelning', () => {
   });
 });
 
-describe('forskade-automatiska-order', () => {
-  it('requires research for Patrol and both exploration orders without changing existing orders', () => {
-    const state = tradeNetworkState();
-    const game = Game.restore({ ...state, researched: [] });
-    const before = game.fleet('fleet-home');
-    expect(() => game.setPatrol('fleet-home')).toThrow(
-      'Research Fleet patrol first',
-    );
-    for (const order of ['explore', 'explore-stars'] as const)
-      expect(() => game.setExploration('fleet-home', order)).toThrow(
-        'Research Automated exploration first',
-      );
-    expect(game.fleet('fleet-home')).toEqual(before);
-  });
-  it('keeps older active Patrol and Explore orders operational without granting new research', () => {
+describe('fria-utforsknings-och-patrullorder', () => {
+  it('keeps older active Patrol and Explore orders operational without granting retired research', () => {
     const state = tradeNetworkState();
     for (const order of ['patrol', 'explore'] as const) {
-      let game = Game.restore(state);
+      let game = Game.restore({ ...state, pirates: [] });
       if (order === 'patrol') game.setPatrol('fleet-home');
       else game.setExploration('fleet-home', 'explore');
       const saved = game.exportState();
@@ -208,28 +182,16 @@ describe('forskade-automatiska-order', () => {
       expect(game.research.completed).not.toContain('Fleet patrol');
     }
   });
-  it('queues the relevant ship technology before each automation technology', () => {
+  it('queues Salvage ship factory before Automated salvage', () => {
     const plan = new ResearchPlan();
     plan.add('Automated salvage');
     expect(plan.queue.indexOf('Salvage ship factory')).toBeLessThan(
       plan.queue.indexOf('Automated salvage'),
     );
-    plan.add('Automated transport');
-    expect(plan.queue.indexOf('Trade logistics')).toBeLessThan(
-      plan.queue.indexOf('Automated transport'),
-    );
-    plan.add('Fleet patrol');
-    plan.add('Automated exploration');
-    expect(plan.queue.indexOf('Fighter factory')).toBeLessThan(
-      plan.queue.indexOf('Fleet patrol'),
-    );
-    expect(plan.queue.indexOf('Exploration ship factory')).toBeLessThan(
-      plan.queue.indexOf('Automated exploration'),
-    );
   });
 });
 
-it('automatisk-rutttilldelning: compares both endpoints, skips closing and occupied routes and reserves once per waiting fleet', () => {
+it('automatisk-farledsbemanning: compares both endpoints, skips closing routes and spreads waiting fleets onto the least-manned routes', () => {
   const state = distantTradeNetworkState();
   const fleets = state.fleets.map((f) => {
     const copy = { ...f, destination: null };
@@ -238,7 +200,6 @@ it('automatisk-rutttilldelning: compares both endpoints, skips closing and occup
   });
   const game = Game.restore({
     ...state,
-    researched: [...state.researched, 'Automated transport'],
     fleets,
   });
   game.setAutomaticTransport('travellers');
@@ -247,7 +208,6 @@ it('automatisk-rutttilldelning: compares both endpoints, skips closing and occup
   expect(game.fleet('freighters')!.routeId).toBe('route-test');
   const closing = Game.restore({
     ...state,
-    researched: [...state.researched, 'Automated transport'],
     fleets,
     tradeRoutes: state.tradeRoutes.map((r) => ({
       ...r,
@@ -303,18 +263,14 @@ it('forskade-automatiska-order: completing research in a station unlocks Auto sa
   ).toBe(false);
 });
 
-it('automatisk-rutttilldelning: a newly created route wakes waiting transports without assigning both to the same route', () => {
+it('automatisk-farledsbemanning: a newly created route wakes waiting transports and spreads them onto that route', () => {
   const state = tradeNetworkState(false);
-  const game = Game.restore({
-    ...state,
-    researched: [...state.researched, 'Automated transport'],
-  });
+  const game = Game.restore(state);
   game.setAutomaticTransport('freighters');
   game.setAutomaticTransport('travellers');
   const route = game.createTradeRoute('sol-0', 'sol-1');
   expect(game.fleet('freighters')!.routeId).toBe(route);
-  expect(game.fleet('travellers')!.routeId).toBeUndefined();
-  expect(game.fleet('travellers')!.automation).toBe('transport');
+  expect(game.fleet('travellers')!.routeId).toBe(route);
 });
 
 it.each(['salvage', 'transport'] as const)(

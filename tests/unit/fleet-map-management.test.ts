@@ -44,58 +44,77 @@ it('flottval-vid-varv: the shipyard panel opens a co-located fleet so its automa
   view.dispose();
 });
 
-it.each([
-  ['Auto salvage', 'Automated salvage', 'fleet-home', 'salvage'],
-  ['Auto assign route', 'Automated transport', 'freighters', 'transport'],
-] as const)(
-  'forskade-automatiska-order: %s is visible but locked before research and saves its order after unlocking',
-  (label, technology, fleetId, automation) => {
-    const initial =
-      automation === 'salvage' ? salvageState() : tradeNetworkState(false);
-    let saved = { ...initial, researched: [...initial.researched] };
-    const model = new AppModel(undefined, {
-      load: () => ({ lastPlayed: '2026-10-30', state: saved }),
-      save(_slot, next) {
-        saved = { ...next.state, researched: [...next.state.researched] };
-      },
-      clear() {},
-    });
-    model.startSlot(1);
-    model.openFleet(fleetId);
-    const first = setup(model);
-    first.click('Orders');
-    const locked = first.root.querySelector<HTMLButtonElement>(
-      `[aria-label="${label}"]`,
-    )!;
-    expect(locked.disabled).toBe(true);
-    expect(locked.title).toBe(`Research ${technology} first.`);
-    first.view.dispose();
-    saved = { ...saved, researched: [...saved.researched, technology] };
-    const unlocked = new AppModel(undefined, {
-      load: () => ({ lastPlayed: '2026-10-30', state: saved }),
-      save(_slot, next) {
-        saved = { ...next.state, researched: [...next.state.researched] };
-      },
-      clear() {},
-    });
-    unlocked.startSlot(1);
-    unlocked.openFleet(fleetId);
-    const second = setup(unlocked);
-    second.click('Orders');
-    second.click(label);
-    expect(
-      unlocked.snapshot.fleets.find((f) => f.id === fleetId)!.automation,
-    ).toBe(automation);
-    expect(saved.fleets.find((f) => f.id === fleetId)!.automation).toBe(
-      automation,
-    );
-    second.click('Cancel automatic order');
-    expect(
-      saved.fleets.find((f) => f.id === fleetId)!.automation,
-    ).toBeUndefined();
-    second.view.dispose();
-  },
-);
+it('forskade-automatiska-order: Auto salvage is visible but locked before research and saves its order after unlocking', () => {
+  const initial = salvageState();
+  let saved = { ...initial, researched: [...initial.researched] };
+  const model = new AppModel(undefined, {
+    load: () => ({ lastPlayed: '2026-10-30', state: saved }),
+    save(_slot, next) {
+      saved = { ...next.state, researched: [...next.state.researched] };
+    },
+    clear() {},
+  });
+  model.startSlot(1);
+  model.openFleet('fleet-home');
+  const first = setup(model);
+  first.click('Orders');
+  const locked = first.root.querySelector<HTMLButtonElement>(
+    '[aria-label="Auto salvage"]',
+  )!;
+  expect(locked.disabled).toBe(true);
+  expect(locked.title).toBe('Research Automated salvage first.');
+  first.view.dispose();
+  saved = { ...saved, researched: [...saved.researched, 'Automated salvage'] };
+  const unlocked = new AppModel(undefined, {
+    load: () => ({ lastPlayed: '2026-10-30', state: saved }),
+    save(_slot, next) {
+      saved = { ...next.state, researched: [...next.state.researched] };
+    },
+    clear() {},
+  });
+  unlocked.startSlot(1);
+  unlocked.openFleet('fleet-home');
+  const second = setup(unlocked);
+  second.click('Orders');
+  second.click('Auto salvage');
+  expect(
+    unlocked.snapshot.fleets.find((f) => f.id === 'fleet-home')!.automation,
+  ).toBe('salvage');
+  expect(saved.fleets.find((f) => f.id === 'fleet-home')!.automation).toBe(
+    'salvage',
+  );
+  second.click('Cancel automatic order');
+  expect(
+    saved.fleets.find((f) => f.id === 'fleet-home')!.automation,
+  ).toBeUndefined();
+  second.view.dispose();
+});
+
+it('guard-routes: is available without research and waits when no transport route exists', () => {
+  const initial = tradeNetworkState(false);
+  let saved = { ...initial, researched: [...initial.researched], pirates: [] };
+  const model = new AppModel(undefined, {
+    load: () => ({ lastPlayed: '2026-10-30', state: saved }),
+    save(_slot, next) {
+      saved = { ...next.state, researched: [...next.state.researched] };
+    },
+    clear() {},
+  });
+  model.startSlot(1);
+  model.openFleet('fleet-home');
+  const { root, click, view } = setup(model);
+  click('Orders');
+  const guard = root.querySelector<HTMLButtonElement>(
+    '[aria-label="Guard routes"]',
+  )!;
+  expect(guard.disabled).toBe(false);
+  click('Guard routes');
+  expect(
+    model.snapshot.fleets.find((fleet) => fleet.id === 'fleet-home')!
+      .automation,
+  ).toBe('guard');
+  view.dispose();
+});
 
 function setup(model = new AppModel()) {
   const root = document.createElement('div');

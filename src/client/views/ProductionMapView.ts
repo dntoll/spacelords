@@ -254,7 +254,7 @@ export function renderProductionMapPanel(
         element(
           'p',
           'muted-note',
-          `Start order: ${model.productionStartOrder ? ShipOrders.label(model.productionStartOrder) : option.type === 'Civilian shuttle' ? 'Civilian transport (default)' : 'Planet home fleet (default)'}.`,
+          `Start order: ${model.productionStartOrder ? ShipOrders.label(model.productionStartOrder) : `${ShipOrders.defaultAssignment(option.type)} (default)`}.`,
         ),
       );
       const orders = button('Orders', () =>
@@ -346,7 +346,7 @@ export function renderProductionMapPanel(
       element(
         'p',
         '',
-        `Start order: ${selectedProject.initialOrder ? ShipOrders.label(selectedProject.initialOrder) : 'Default'}`,
+        `Start order: ${selectedProject.initialOrder ? ShipOrders.label(selectedProject.initialOrder) : ShipOrders.defaultAssignment(selectedProject.type)}`,
       ),
     );
     const orders = button(`Orders for queued ${selectedProject.type}`, () =>

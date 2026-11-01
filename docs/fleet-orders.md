@@ -15,11 +15,17 @@ Kraven nedan är **Fullständigt implementerat**.
   till mottagaren och ansluter där; ingen överföring sker på avstånd.
 - `skeppsanpassade-specialorder`: Salvage ships har Auto salvage och
   Deliberate salvage med val av vrak. Exploration ships har Explore och
-  Explore stars. Transport ships har Auto assign route och Civilian shuttles
-  Civilian transport. Colonize och Upgrade behålls där de är tillämpliga.
+  Explore stars. Civilian shuttles har Civilian transport. Fighters har
+  Guard routes. Colonize och Upgrade behålls där de är tillämpliga. Auto
+  assign route är borttaget; Transport ships bemannar farleder enligt
+  `automatisk-farledsbemanning`.
 - `patrullcentrum-vid-order`: Fighters får Patrol efter val av position på
   kartan. Flottan reser dit innan patrulleringen börjar och använder sedan
   platsen som sitt fasta centrum. Äldre patruller fortsätter.
+- `guard-routes`: Fighters kan välja Guard routes i Orders och som
+  startorder. Ordern kräver ingen forskning och är inte standard vid
+  bygge. Flottan reser till närmaste öppna farled med minst ett Transport
+  ship och minst antal eskorter.
 - `startorder-for-nybyggda-skepp`: vid skeppsbeställning kan spelaren välja
   rutt, mottagande flotta eller en tillämplig automatisk order genom samma
   Orders-vy. Valet sparas med bygget och börjar efter färdigställandet.
@@ -45,8 +51,9 @@ passagerare väljs först när dessa uppdrag är avslutade. Flottval kan också
 göras med Fleet target som tillgängligt alternativ till kartvalet.
 
 Orders finns både vid ny beställning och på ett köat skepps detaljer i
-Build queue. Use default order tar bort startordern. Civilian shuttles
-behåller Civilian transport som standard utan uttryckligt annat val.
+Build queue. Use default order tar bort startordern. Transport ships och
+Civilian shuttles bemannar farleder automatiskt utan uttryckligt annat val.
+Civilian shuttles behåller dessutom Civilian transport.
 Beställningsvyn behåller planet och produkt när spelaren återvänder.
 Orderns mål och berörda skepp valideras på nytt vid färdigställandet. En
 ogiltig startorder ger ett besked och skeppet blir tillgängligt för nya

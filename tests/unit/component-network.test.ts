@@ -220,6 +220,7 @@ describe('automatiska-delorder', () => {
     }
     expect(game.shipments.every((s) => s.locationId === 'sol-0')).toBe(true);
     game.closeTradeRoute('route-test');
+    game.releaseTradeFleet('freighters');
     const route = game.createTradeRoute('sol-0', 'sol-1');
     game.assignTradeFleet(route, 'freighters');
     expect(game.shipments).toHaveLength(2);

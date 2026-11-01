@@ -42,7 +42,12 @@ import {
   type BattleReport,
 } from './Salvage.js';
 import { prioritizeProduction } from './ProductionPriorities.js';
-import { routeEscortTargets, tradeAssignmentIssue } from './TradeAssignment.js';
+import {
+  nearestLeastMannedRoute,
+  nearestUnguardedRoute,
+  routeEscortTargets,
+  tradeAssignmentIssue,
+} from './TradeAssignment.js';
 import {
   projectSupplyChain,
   type SupplyChainSnapshot,
@@ -77,7 +82,12 @@ import {
   type Stock,
   type EconomySnapshot,
 } from './Economy.js';
-import { ResearchPlan, TECHNOLOGIES, type Technology } from './Research.js';
+import {
+  ResearchPlan,
+  RETIRED_ORDER_TECHNOLOGIES,
+  TECHNOLOGIES,
+  type Technology,
+} from './Research.js';
 import {
   Logistics,
   type LogisticsPort,
@@ -580,7 +590,8 @@ export interface FleetSnapshot {
   readonly civilian?: Readonly<
     Omit<CivilianOrder, 'path'> & { readonly path: readonly string[] }
   >;
-  readonly automation?: 'salvage' | 'transport';
+  readonly automation?: 'salvage' | 'transport' | 'guard';
+  readonly homeRouteId?: string;
   readonly colonizationTargetId?: string;
   readonly navigationIssue?: string | undefined;
   readonly patrol?: Readonly<{
@@ -673,7 +684,8 @@ interface Fleet {
   upgrade?: FleetUpgradeOrder;
   ordersPaused?: boolean;
   civilian?: CivilianOrder;
-  automation?: 'salvage' | 'transport';
+  automation?: 'salvage' | 'transport' | 'guard';
+  homeRouteId?: string;
   colonizationTargetId?: string;
   navigationIssue?: string;
   starSurvey?: {
@@ -948,9 +960,19 @@ export class Game {
     game.#round = copy.round;
     game.#phase = 'planning';
     game.#sequence = copy.sequence;
+    const retired = new Set<string>(RETIRED_ORDER_TECHNOLOGIES);
+    copy.researched = copy.researched.filter(
+      (technology) => !retired.has(technology),
+    );
+    copy.researchQueue = copy.researchQueue.filter(
+      (technology) => !retired.has(technology),
+    );
+    copy.recoveredResearch = (copy.recoveredResearch ?? []).filter(
+      (technology: Technology) => !retired.has(technology),
+    );
     if (
       state.version >= 10 &&
-      (!Array.isArray(copy.recoveredResearch) ||
+      (!Array.isArray(state.recoveredResearch) ||
         copy.recoveredResearch.some(
           (technology: Technology) => !TECHNOLOGIES.includes(technology),
         ))
@@ -959,7 +981,7 @@ export class Game {
     game.#research = new ResearchPlan(
       new Set(copy.researched),
       [...copy.researchQueue],
-      new Set(copy.recoveredResearch ?? []),
+      new Set(copy.recoveredResearch),
     );
     if (state.version < 6) {
       if (
@@ -1010,9 +1032,15 @@ export class Game {
       for (const building of colony.buildings) delete building.queue;
       for (const project of colony.projects)
         if (project.initialOrder) {
-          ShipOrders.validate(project.initialOrder);
-          if (!projectDefinition(project.type).ship)
-            throw new Error('Invalid saved ship order.');
+          if (
+            (project.initialOrder as { kind?: string }).kind === 'auto-transport'
+          )
+            delete project.initialOrder;
+          else {
+            ShipOrders.validate(project.initialOrder);
+            if (!projectDefinition(project.type).ship)
+              throw new Error('Invalid saved ship order.');
+          }
         }
       const upgradeTargets = new Set<string>();
       for (const project of colony.projects) {
@@ -1038,6 +1066,13 @@ export class Game {
     game.#fleets = copy.fleets.map(
       ({ position: current, destination, courseOrigin, ...fleet }) => {
         fleet.ships = { ...zeroShips(), ...fleet.ships };
+        if (
+          (fleet.pendingOrder as { kind?: string } | undefined)?.kind ===
+          'auto-transport'
+        ) {
+          delete fleet.pendingOrder;
+          fleet.automation ??= 'transport';
+        }
         const empty = game.#shipCount(fleet.ships) === 0;
         if (fleet.civilian !== undefined) {
           CivilianTraffic.validate(
@@ -1049,7 +1084,7 @@ export class Game {
             empty ||
             !fleet.ships['Civilian shuttle'] ||
             fleet.routeId ||
-            fleet.automation ||
+            (fleet.automation && fleet.automation !== 'transport') ||
             fleet.patrol ||
             fleet.exploration ||
             fleet.joinFleetId ||
@@ -1059,18 +1094,29 @@ export class Game {
         }
         if (
           fleet.automation !== undefined &&
-          (!['salvage', 'transport'].includes(fleet.automation) ||
+          (!['salvage', 'transport', 'guard'].includes(fleet.automation) ||
             empty ||
-            !fleet.ships[
-              fleet.automation === 'salvage' ? 'Salvage ship' : 'Transport ship'
-            ] ||
-            fleet.routeId ||
+            (fleet.automation === 'salvage'
+              ? !fleet.ships['Salvage ship']
+              : fleet.automation === 'guard'
+                ? !armedShipCount(fleet.ships)
+                : !fleet.ships['Transport ship'] &&
+                  !fleet.ships['Civilian shuttle']) ||
+            (fleet.routeId &&
+              !(
+                fleet.automation === 'transport' && fleet.releaseRequested
+              )) ||
             fleet.patrol ||
             fleet.exploration ||
             fleet.joinFleetId ||
             fleet.colonizationTargetId)
         )
           throw new Error('Invalid saved automatic fleet order.');
+        if (
+          fleet.homeRouteId !== undefined &&
+          (typeof fleet.homeRouteId !== 'string' || !fleet.homeRouteId)
+        )
+          throw new Error('Invalid saved civilian home route.');
         if (
           fleet.colonizationTargetId !== undefined &&
           (typeof fleet.colonizationTargetId !== 'string' ||
@@ -1716,6 +1762,7 @@ export class Game {
             ? { colonizationTargetId: fleet.colonizationTargetId }
             : {}),
           ...(fleet.automation ? { automation: fleet.automation } : {}),
+          ...(fleet.homeRouteId ? { homeRouteId: fleet.homeRouteId } : {}),
           ...(fleet.ordersPaused ? { ordersPaused: true } : {}),
           salvage: this.#salvage.order(fleet.id)
             ? Object.freeze({
@@ -1933,9 +1980,9 @@ export class Game {
         .flatMap((system) => system.planets)
         .find((planet) => planet.id === order.planetId)!;
       this.setColonization(id, planet.position);
-    } else if (order.kind === 'auto-salvage') this.setAutomaticSalvage(id);
-    else if (order.kind === 'auto-transport') this.setAutomaticTransport(id);
+    }     else if (order.kind === 'auto-salvage') this.setAutomaticSalvage(id);
     else if (order.kind === 'civilian-transport') this.setCivilianTransport(id);
+    else if (order.kind === 'guard-routes') this.setGuardRoutes(id);
     else this.setExploration(id, order.kind);
   }
 
@@ -2190,6 +2237,8 @@ export class Game {
       throw new Error('Release towed wrecks first.');
     this.clearDestination(fleetId);
     fleet.civilian = CivilianTraffic.order();
+    fleet.automation = 'transport';
+    this.#updateAutomaticTransport();
   }
 
   #civilianPort(): CivilianPort {
@@ -2270,45 +2319,81 @@ export class Game {
   setAutomaticTransport(fleetId: string): void {
     this.#requirePlanning();
     this.#requireFleetOrders(fleetId);
-    this.#requireOrderResearch('Automated transport');
     const fleet = this.#fleetState(fleetId);
-    if (!fleet.ships['Transport ship'])
-      throw new Error('A Transport ship is required.');
+    if (!fleet.ships['Transport ship'] && !fleet.ships['Civilian shuttle'])
+      throw new Error('A Transport ship or Civilian shuttle is required.');
     if (this.#salvage.towing(fleetId).length)
       throw new Error('Deliver towed wrecks first.');
     this.clearDestination(fleetId);
+    if (fleet.ships['Civilian shuttle'] && !fleet.civilian)
+      fleet.civilian = CivilianTraffic.order();
     fleet.automation = 'transport';
     this.#updateAutomaticTransport();
   }
-  // automatisk-rutttilldelning: each assignment removes the route from the next fleet's candidates.
+  setGuardRoutes(fleetId: string): void {
+    this.#requirePlanning();
+    this.#requireFleetOrders(fleetId);
+    const fleet = this.#fleetState(fleetId);
+    if (!armedShipCount(fleet.ships))
+      throw new Error('An armed ship is required.');
+    if (this.#salvage.towing(fleetId).length)
+      throw new Error('Deliver towed wrecks first.');
+    this.clearDestination(fleetId);
+    fleet.automation = 'guard';
+    this.#updateGuardRoutes();
+  }
+  // automatisk-farledsbemanning: assign one waiting fleet at a time so manning stays current.
   #updateAutomaticTransport(): void {
     for (const fleet of this.#fleets) {
+      if (fleet.automation !== 'transport' || !fleet.position) continue;
+      if (this.#salvage.towing(fleet.id).length) continue;
+      if (fleet.civilian?.passengers) continue;
+      if (fleet.routeId) continue;
+      if (fleet.ships['Transport ship'] && fleet.destination && !fleet.patrol)
+        continue;
+      const route = nearestLeastMannedRoute(
+        fleet.position,
+        this.tradeRoutes,
+        this.fleetSnapshots(),
+      );
+      if (!route) continue;
+      if (fleet.ships['Transport ship']) this.assignTradeFleet(route.id, fleet.id);
+      else if (fleet.ships['Civilian shuttle'])
+        this.#assignHomeRoute(fleet, route);
+    }
+  }
+  // guard-routes: fighters wait until a transport route needs escort.
+  #updateGuardRoutes(): void {
+    for (const fleet of this.#fleets) {
       if (
-        fleet.automation !== 'transport' ||
+        fleet.automation !== 'guard' ||
         !fleet.position ||
-        !fleet.ships['Transport ship']
+        !armedShipCount(fleet.ships)
       )
         continue;
-      const distance = (route: TradeRouteSnapshot) =>
-        Math.min(
-          fleet.position!.distanceTo(route.start),
-          fleet.position!.distanceTo(route.end),
-        );
-      const route = this.tradeRoutes
-        .filter(
-          (r) =>
-            !r.closing &&
-            !r.fleetIds.some((id) => {
-              const carrier = this.#fleetState(id);
-              return (
-                !carrier.releaseRequested && carrier.ships['Transport ship'] > 0
-              );
-            }),
-        )
-        .sort(
-          (a, b) => distance(a) - distance(b) || a.id.localeCompare(b.id),
-        )[0];
+      if (this.#salvage.towing(fleet.id).length) continue;
+      const route = nearestUnguardedRoute(
+        fleet.position,
+        this.tradeRoutes,
+        this.fleetSnapshots(),
+      );
       if (route) this.assignTradeFleet(route.id, fleet.id);
+    }
+  }
+  #assignHomeRoute(fleet: Fleet, route: TradeRouteSnapshot): void {
+    fleet.homeRouteId = route.id;
+    delete fleet.automation;
+    const a = this.#ownedPlanets().find((planet) => planet.id === route.a);
+    const b = this.#ownedPlanets().find((planet) => planet.id === route.b);
+    if (!a || !b || !fleet.position) return;
+    const endpoint =
+      fleet.position.distanceTo(a.position) <=
+      fleet.position.distanceTo(b.position)
+        ? a
+        : b;
+    if (fleet.position.key !== endpoint.position.key) {
+      fleet.courseOrigin = fleet.position;
+      fleet.destination = endpoint.position;
     }
   }
   orderSalvage(fleetId: string, wreckId: string): void {
@@ -3805,7 +3890,6 @@ export class Game {
   }
   setExploration(id: string, order: ExplorationOrder): void {
     this.#requireFleetOrders(id);
-    this.#requireOrderResearch('Automated exploration');
     if (!['explore', 'explore-stars'].includes(order))
       throw new Error('Unknown exploration order.');
     const fleet = this.#fleetState(id);
@@ -3825,7 +3909,6 @@ export class Game {
   }
   setPatrol(id: string, center?: HexCoordinate): void {
     this.#requireFleetOrders(id);
-    this.#requireOrderResearch('Fleet patrol');
     const fleet = this.#fleetState(id);
     if (!armedShipCount(fleet.ships))
       throw new Error('An armed ship is required for Patrol.');
@@ -3997,6 +4080,7 @@ export class Game {
   startTurn(): void {
     this.#requirePlanning();
     this.#updateAutomaticTransport();
+    this.#updateGuardRoutes();
     this.#updateSalvage();
     this.#logistics.prepare(this.#logisticsPort());
     this.#civilianTraffic.prepare(this.#civilianPort());
@@ -4129,6 +4213,8 @@ export class Game {
     this.#phase = 'planning';
     this.#simulation = null;
     this.#activateShipOrders();
+    this.#updateAutomaticTransport();
+    this.#updateGuardRoutes();
     this.#logistics.reserve(this.#logisticsPort());
   }
   #settleYear(): void {
@@ -4339,10 +4425,18 @@ export class Game {
     initialOrder?: ShipOrder,
   ): void {
     state.population -= SHIPS[ship].crew;
-    if (ship === 'Civilian shuttle' && !initialOrder) {
+    if (
+      !initialOrder &&
+      (ship === 'Civilian shuttle' ||
+        (ship === 'Transport ship' && !destinationFleetId))
+    ) {
       const fleet: Fleet = {
         id: this.#id('fleet'),
-        name: this.#uniqueFleetName(`${planet.name} Civilian transport`),
+        name: this.#uniqueFleetName(
+          ship === 'Civilian shuttle'
+            ? `${planet.name} Civilian transport`
+            : `${planet.name} ${ship}`,
+        ),
         position: planet.position,
         destination: null,
         ships: { ...zeroShips(), [ship]: 1 },
@@ -4356,11 +4450,16 @@ export class Game {
             },
           },
         ],
-        civilian: CivilianTraffic.order(),
+        automation: 'transport',
+        ...(ship === 'Civilian shuttle'
+          ? { civilian: CivilianTraffic.order() }
+          : {}),
       };
       this.#fleets.push(fleet);
       this.#planetEvent(
-        `${ship} was produced at ${planet.name} and started Civilian transport.`,
+        ship === 'Civilian shuttle'
+          ? `${ship} was produced at ${planet.name} and started Civilian transport.`
+          : `${ship} was produced at ${planet.name}.`,
         planet,
         { kind: 'ship', type: ship },
       );
@@ -4498,6 +4597,7 @@ export class Game {
       throw new Error('Research Trade logistics first.');
     const id = this.#logistics.create(a, b, this.#logisticsPort());
     this.#updateAutomaticTransport();
+    this.#updateGuardRoutes();
     return id;
   }
   assignTradeFleet(routeId: string, fleetId: string): void {
@@ -4544,6 +4644,7 @@ export class Game {
           if (target.ships[type])
             this.transferShips(fleetId, type, target.ships[type], target.id);
       }
+      delete source.automation;
     }
     this.#logistics.reserve(this.#logisticsPort());
   }
@@ -4553,7 +4654,19 @@ export class Game {
   }
   closeTradeRoute(id: string): void {
     this.#requirePlanning();
+    const displaced = this.#fleets.filter(
+      (fleet) => fleet.routeId === id || fleet.homeRouteId === id,
+    );
     this.#logistics.close(id, this.#logisticsPort());
+    for (const fleet of displaced) {
+      if (fleet.ships['Transport ship'] || fleet.ships['Civilian shuttle']) {
+        if (fleet.ships['Civilian shuttle'] && !fleet.civilian)
+          fleet.civilian = CivilianTraffic.order();
+        fleet.automation = 'transport';
+      }
+    }
+    this.#updateAutomaticTransport();
+    this.#updateGuardRoutes();
   }
   skipDecision(id: string): void {
     this.#requirePlanning();
@@ -5894,9 +6007,11 @@ export class Game {
     }
     if (
       fleet.automation &&
-      !fleet.ships[
-        fleet.automation === 'salvage' ? 'Salvage ship' : 'Transport ship'
-      ]
+      !(fleet.automation === 'salvage'
+        ? fleet.ships['Salvage ship']
+        : fleet.automation === 'guard'
+          ? armedShipCount(fleet.ships)
+          : fleet.ships['Transport ship'] || fleet.ships['Civilian shuttle'])
     ) {
       this.#cancelFleetUpgrade(fleet);
       delete fleet.pendingOrder;

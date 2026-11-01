@@ -134,6 +134,7 @@ export function renderProduction(
       planet,
       fleets,
       menus.productionFleetId ?? null,
+      definition.ship ? product : undefined,
     );
     destination.setAttribute('aria-label', `Destination fleet for ${product}`);
     destination.disabled = !!reason;
@@ -145,7 +146,7 @@ export function renderProduction(
         element(
           'p',
           'muted-note',
-          `Start order: ${menus.productionStartOrder ? ShipOrders.label(menus.productionStartOrder) : product === 'Civilian shuttle' ? 'Civilian transport (default)' : 'Planet home fleet (default)'}.`,
+          `Start order: ${menus.productionStartOrder ? ShipOrders.label(menus.productionStartOrder) : `${ShipOrders.defaultAssignment(product)} (default)`}.`,
         ),
       );
       const orders = button('Orders', () =>
@@ -250,7 +251,7 @@ export function renderProduction(
         'Unknown fleet')
       : first.type === 'Civilian shuttle'
         ? 'New Civilian transport fleet'
-        : 'Planet home fleet';
+        : ShipOrders.defaultAssignment(first.type);
     const item = element('li');
     item.append(
       button(
@@ -283,10 +284,15 @@ export function fleetSelect(
   planet: PlanetGameSnapshot,
   fleets: readonly FleetSnapshot[],
   selected: string | null,
+  ship?: string,
 ): HTMLSelectElement {
   const select = element('select');
   select.setAttribute('aria-label', 'Destination fleet');
-  const home = element('option', '', 'Planet home fleet (default)');
+  const home = element(
+    'option',
+    '',
+    `${ShipOrders.defaultAssignment(ship ?? '')} (default)`,
+  );
   home.value = '';
   select.append(home);
   for (const fleet of fleets.filter(

@@ -1119,8 +1119,8 @@ export class AppModel {
       this.#closeOrders();
     } else if (
       kind === 'auto-salvage' ||
-      kind === 'auto-transport' ||
       kind === 'civilian-transport' ||
+      kind === 'guard-routes' ||
       kind === 'explore' ||
       kind === 'explore-stars'
     )
@@ -1791,7 +1791,7 @@ export class AppModel {
   automateTransport(id: string): void {
     this.#destinationFleetId = null;
     this.#destinationOrder = 'move';
-    this.#game.setAutomaticTransport(id);
+    this.#game.setGuardRoutes(id);
   }
   patrolFleet(id: string): void {
     this.#game.setPatrol(id);

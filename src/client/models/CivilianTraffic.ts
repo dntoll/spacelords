@@ -24,6 +24,7 @@ export interface CivilianFleet {
   destination: HexCoordinate | null;
   courseOrigin?: HexCoordinate;
   civilian?: CivilianOrder;
+  homeRouteId?: string;
 }
 
 export interface CivilianPlanet {
@@ -144,6 +145,7 @@ export class CivilianTraffic {
             [r.a, r.b].includes(current.id) &&
             [r.a, r.b].includes(next.id),
         )!.id;
+        fleet.homeRouteId = order.legRouteId;
         order.status = `${order.stopping ? 'Stopping after delivery: ' : ''}${order.passengers ? `Transporting ${order.passengers} passengers to ${target.name}` : `Collecting passengers at ${target.name}`}`;
       }
     }

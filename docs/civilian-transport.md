@@ -11,8 +11,9 @@ kan därefter även bygga Civilian shuttle; ingen extra fabrik behövs.
 `civil-skytteltillverkning`: en skyttel kostar 4 Iron, 2 Water, 1 Oil,
 en motor och 50 besättning. Farten är 2; Ion pulse engine ger vanliga +1.
 Kapaciteten är 500 passagerare per skyttel i flottan. Varje nybygge får en
-separat flotta med aktiv Civilian transport. Befintliga flottor behåller sina
-order. Spelaren kan omgruppera olastade skyttlar och låta Fighters följa med.
+separat flotta med aktiv Civilian transport och bemannar en farled enligt
+`automatisk-farledsbemanning`. Befintliga flottor behåller sina order.
+Spelaren kan omgruppera olastade skyttlar och låta Fighters följa med.
 
 ## Arbetskraft och bokning
 
@@ -50,6 +51,13 @@ inte delas eller ges konkurrerande order. Civilian transport kan aktiveras igen.
 En stängande rutt tillåter redan påbörjat ruttled men inga nya resor. Pirater
 förstör civila skyttlar och ombordvarande passagerare enligt vanliga stridsregler.
 
+`civil-farledsbyte`: skytteln har en hemfarled men söker fortfarande
+passageraruppdrag i hela nätet enligt `civiltrafik-pa-handelsnatet`.
+Hemfarleden följer det ruttled uppdraget faktiskt använder. Pågående
+passagerare lämnas inte av. Bytet är uppdragstyrt, inte en årlig
+omfördelning för att jämna ut antalet skepp. När hemfarleden stängs gäller
+`ombemanning-vid-stangd-farled`.
+
 ## Sparning och gränssnitt
 
 `civiltrafik-sparning`: bokningar, passagerare, aktuell destination och
@@ -61,6 +69,11 @@ Skeppets bild återanvänder Transport ship med egen Civilian shuttle-etikett.
 Ändring 2026-10-30: nybyggda skyttlars egna automatiska flottor ersätter
 mottagarvalet för just Civilian shuttle i `skepp-till-destinationsflotta`.
 Övriga nybyggen följer `nybyggda-skepp-utan-ruttflotta`.
+
+Ändring 2026-11-01: `civil-farledsbyte` och `automatisk-farledsbemanning`
+ger nybyggda skyttlar en hemfarled. Befintliga skyttlar utan hemfarled
+rycks inte loss; de får en hemfarled när nästa uppdrag eller en stängd
+farled behöver det.
 
 ## Verifiering av automatiken
 

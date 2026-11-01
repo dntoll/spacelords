@@ -90,11 +90,12 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Orders och startorder:** `egen-ordervy`, `ruttval-for-order`,
   `flottval-pa-orderkarta`, `skeppsanpassade-specialorder`,
-  `patrullcentrum-vid-order` och `startorder-for-nybyggda-skepp` är
-  **Fullständigt implementerat**. Orders samlar
+  `patrullcentrum-vid-order`, `startorder-for-nybyggda-skepp` och
+  `guard-routes` är **Fullständigt implementerat**. Orders samlar
   specialorder med tydliga namn, ruttlista och val av mottagande flotta på
-  kartan. Move och Stop behålls i flottvyn. Samma val kan göras för
-  skepp som beställs. Se [Orders](docs/fleet-orders.md).
+  kartan. Fighters har Guard routes som startorder. Move och Stop behålls i
+  flottvyn. Samma val kan göras för skepp som beställs. Se
+  [Orders](docs/fleet-orders.md).
 
 - **Flottuppgradering:** `flottorder-upgrade`,
   `automatisk-uppgraderingsforsorjning` och `spara-flottuppgradering` är
@@ -211,20 +212,27 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Civiltrafik och arbetskraft:** `civil-skyttelforskning`,
   `civil-skytteltillverkning`, `automatisk-arbetskraftstrafik`,
-  `civiltrafik-pa-handelsnatet` och `civiltrafik-sparning` är
-  **Fullständigt implementerat**. Civilian transport låser upp Civilian shuttle
-  i Transport ship factory. Skyttlar startar automatiskt, fraktar 500 personer
-  per skepp genom öppna Trade routes och omprövar arbetskraftsbehov vid
-  mellanlandningar. Minst 1 000 invånare och lokal bemanning skyddas.
-  Äldre sparningar bevaras. Se [civiltrafik](docs/civilian-transport.md).
+  `civiltrafik-pa-handelsnatet`, `civiltrafik-sparning` och
+  `civil-farledsbyte` är **Fullständigt implementerat**. Civilian transport
+  låser upp Civilian shuttle i Transport ship factory. Skyttlar startar
+  automatiskt, fraktar 500 personer per skepp genom öppna Trade routes och
+  omprövar arbetskraftsbehov vid mellanlandningar. En skyttel har en
+  hemfarled men söker uppdrag i hela nätet och byter hemfarled när
+  uppdraget använder en annan farled. Minst 1 000 invånare och lokal
+  bemanning skyddas. Äldre sparningar bevaras. Se
+  [civiltrafik](docs/civilian-transport.md).
 
 - **Automatiska flottorder:** `automatisk-bargning`,
-  `automatisk-rutttilldelning` och `forskade-automatiska-order` är
-  **Fullständigt implementerat**. Auto salvage hämtar och levererar ett vrak
-  i taget och fortsätter med nästa. Auto assign route hittar närmaste rutt
-  utan transport. Båda kan vänta på nya mål. Även Patrol och Explore kräver
-  forskning för nya order; äldre aktiva order bevaras. Se
-  [automatiska flottorder](docs/automated-fleet-orders.md).
+  `automatisk-farledsbemanning`, `ombemanning-vid-stangd-farled` och
+  `fria-utforsknings-och-patrullorder` är **Fullständigt implementerat**.
+  Auto salvage hämtar och levererar ett vrak i taget och fortsätter med
+  nästa. Färdigbyggda Transport ships och Civilian shuttles bemannar
+  närmaste öppna farled med minst antal skepp utan forskning. När en
+  bemannad farled stängs flyger skeppen vidare till en kvarvarande farled.
+  Explore, Explore stars och Patrol kräver inte längre forskning. Detta
+  ersätter `automatisk-rutttilldelning` och forskningslåsen i
+  `forskade-automatiska-order`. Auto salvage kräver fortfarande Automated
+  salvage. Se [automatiska flottorder](docs/automated-fleet-orders.md).
   `flottval-vid-varv` är **Fullständigt implementerat**: flottor på varvets
   hex kan öppnas från varvspanelen även när kartmarkörerna överlappar.
 

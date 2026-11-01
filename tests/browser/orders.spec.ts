@@ -17,11 +17,7 @@ async function seed(page: Page, routed = true): Promise<GameState> {
   const state: GameState = {
     ...original,
     pirates: [],
-    researched: [
-      ...original.researched,
-      'Automated exploration',
-      'Automated transport',
-    ],
+    researched: [...original.researched],
     fleets: original.fleets.map((fleet) =>
       routed && fleet.id === 'freighters'
         ? { ...fleet, routeId: 'route-test' }

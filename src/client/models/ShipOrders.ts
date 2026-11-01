@@ -15,8 +15,8 @@ export type ShipOrder =
   | {
       readonly kind:
         | 'auto-salvage'
-        | 'auto-transport'
         | 'civilian-transport'
+        | 'guard-routes'
         | 'explore'
         | 'explore-stars';
     };
@@ -71,13 +71,6 @@ export class ShipOrders {
         'Join route',
         'Choose a trade route. Existing transports and escorts are shown.',
       );
-    if (ships['Transport ship'])
-      add(
-        'auto-transport',
-        'Auto assign route',
-        'Find the nearest trade route that needs transport.',
-        'Automated transport',
-      );
     if (ships['Salvage ship']) {
       add(
         'auto-salvage',
@@ -98,26 +91,25 @@ export class ShipOrders {
         'Bring towed wrecks to the nearest working shipyard.',
       );
     if (ships['Exploration ship']) {
-      add(
-        'explore',
-        'Explore',
-        'Explore unknown hexes automatically.',
-        'Automated exploration',
-      );
+      add('explore', 'Explore', 'Explore unknown hexes automatically.');
       add(
         'explore-stars',
         'Explore stars',
         'Survey star systems automatically.',
-        'Automated exploration',
       );
     }
-    if (armedShipCount(ships))
+    if (armedShipCount(ships)) {
+      add(
+        'guard-routes',
+        'Guard routes',
+        'Join the nearest trade route that has transports but few escorts.',
+      );
       add(
         'patrol',
         'Patrol',
         'Choose a position on the map, then patrol around it.',
-        'Fleet patrol',
       );
+    }
     if (ships['Colony ship'])
       add('colonize', 'Colonize', 'Choose an uninhabited planet on the map.');
     if (ships['Civilian shuttle'])
@@ -169,6 +161,12 @@ export class ShipOrders {
     );
   }
 
+  static defaultAssignment(ship: string): string {
+    if (ship === 'Civilian shuttle') return 'Civilian transport';
+    if (ship === 'Transport ship') return 'Automatic route manning';
+    return 'Planet home fleet';
+  }
+
   static label(order: ShipOrder): string {
     return {
       'join-route': 'Join route',
@@ -177,8 +175,8 @@ export class ShipOrders {
       salvage: 'Deliberate salvage',
       colonize: 'Colonize',
       'auto-salvage': 'Auto salvage',
-      'auto-transport': 'Auto assign route',
       'civilian-transport': 'Civilian transport',
+      'guard-routes': 'Guard routes',
       explore: 'Explore',
       'explore-stars': 'Explore stars',
     }[order.kind];
@@ -211,8 +209,8 @@ export class ShipOrders {
     } else if (
       ![
         'auto-salvage',
-        'auto-transport',
         'civilian-transport',
+        'guard-routes',
         'explore',
         'explore-stars',
       ].includes(order.kind)

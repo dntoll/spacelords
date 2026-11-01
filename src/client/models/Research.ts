@@ -11,9 +11,6 @@ export const TECHNOLOGIES = [
   'Trade logistics',
   'Civilian transport',
   'Automated salvage',
-  'Automated transport',
-  'Fleet patrol',
-  'Automated exploration',
   'Rocket engine factory',
   'Ion pulse engine factory',
   'Weapons module factory',
@@ -46,9 +43,6 @@ export const PREREQUISITES: Readonly<
   'Trade logistics': ['Transport ship factory'],
   'Civilian transport': ['Trade logistics'],
   'Automated salvage': ['Salvage ship factory'],
-  'Automated transport': ['Trade logistics'],
-  'Fleet patrol': ['Fighter factory'],
-  'Automated exploration': ['Exploration ship factory'],
   'Rocket engine factory': [],
   'Ion pulse engine factory': ['Rocket engine factory'],
   'Weapons module factory': ['Rocket engine factory'],
@@ -132,15 +126,15 @@ export const COMBAT_RESEARCH = {
     'Upgrade a Fighter into an Armored Fighter. Hull becomes 5. Weapons, size and movement stay the same.',
 } as const;
 
+export const RETIRED_ORDER_TECHNOLOGIES = [
+  'Automated transport',
+  'Fleet patrol',
+  'Automated exploration',
+] as const;
+
 export const ORDER_RESEARCH = {
   'Civilian transport':
     'Unlock Civilian shuttle production in Transport ship factory. New shuttles automatically move up to 500 passengers per ship to available jobs through open Trade routes.',
   'Automated salvage':
     'Unlock Auto salvage: repeatedly collect the nearest known available wreck and tow it to the nearest surviving shipyard.',
-  'Automated transport':
-    'Unlock Auto assign route: find the nearest trade route without an assigned transport fleet, then serve that route.',
-  'Fleet patrol':
-    'Unlock Patrol: circle a fixed area and pursue visible Space pirates within range.',
-  'Automated exploration':
-    'Unlock Explore and Explore stars: automatically explore unknown space or survey known stars.',
 } as const;

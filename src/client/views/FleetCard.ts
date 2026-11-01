@@ -157,6 +157,10 @@ export function renderFleetCard(
         `${fleet.civilian.passengers} passengers aboard · ${fleet.civilian.status}`,
       ),
     );
+  if (fleet.automation === 'guard' || fleet.automation === 'transport')
+    footer.append(
+      element('small', 'muted-note', fleetAssignmentLabel(fleet, model)),
+    );
   if (fleet.navigationIssue)
     footer.append(element('small', 'muted-note', fleet.navigationIssue));
   if (fleet.upgrade)
@@ -235,8 +239,9 @@ export function fleetAssignmentLabel(
     return `Civilian transport: ${fleet.civilian.status} · ${fleet.civilian.passengers} passengers aboard`;
   if (fleet.automation === 'salvage')
     return `Auto salvage: ${fleet.towing?.length ? 'returning to shipyard' : fleet.salvage?.targets.length ? 'collecting a wreck' : 'waiting for an available wreck'}`;
-  if (fleet.automation === 'transport')
-    return 'Auto assign route: waiting for an unassigned route';
+  if (fleet.automation === 'transport') return 'Waiting for a trade route';
+  if (fleet.automation === 'guard')
+    return 'Guard routes: waiting for a trade route that needs escort';
   if (fleet.colonizationTargetId) {
     const position = fleet.destination ?? fleet.position;
     const target = model.cells.find(

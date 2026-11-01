@@ -66,6 +66,7 @@ export interface TransportFleet {
   destination: HexCoordinate | null;
   courseOrigin?: HexCoordinate;
   civilian?: { readonly legRouteId?: string };
+  homeRouteId?: string;
   routeId?: string;
   releaseRequested?: boolean;
   ships: { readonly 'Transport ship': number };
@@ -351,7 +352,10 @@ export class Logistics {
       (r) =>
         !r.closing ||
         port.fleets.some(
-          (f) => f.routeId === r.id || f.civilian?.legRouteId === r.id,
+          (f) =>
+            f.routeId === r.id ||
+            f.homeRouteId === r.id ||
+            f.civilian?.legRouteId === r.id,
         ),
     );
   }

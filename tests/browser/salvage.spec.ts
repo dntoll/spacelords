@@ -98,28 +98,33 @@ test('automatisk-bargning: Auto salvage persists, delivers a wreck and then rese
   expect((await saved(page)).fleets[0]!.automation).toBeUndefined();
 });
 
-test('automatisk-rutttilldelning: Auto assign route selects an empty route and preserves the route assignment on reload', async ({
+test('guard-routes: Guard routes joins a transport route and preserves the assignment on reload', async ({
   page,
 }, testInfo) => {
   const initial = tradeNetworkState();
   await load(page, {
     ...initial,
-    researched: [...initial.researched, 'Automated transport'],
+    pirates: [],
+    fleets: initial.fleets.map((fleet) =>
+      fleet.id === 'freighters' ? { ...fleet, routeId: 'route-test' } : fleet,
+    ),
   });
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await selectMapFleet(page, 'Freighters');
-  await chooseFleetOrder(page, 'Auto assign route');
+  await selectMapFleet(page, 'Home Fleet');
+  await chooseFleetOrder(page, 'Guard routes');
+  const after = await saved(page);
   expect(
-    (await saved(page)).fleets.find((f) => f.id === 'freighters')!.routeId,
-  ).toBe('route-test');
+    after.fleets.find((fleet) => fleet.id === 'freighters')!.ships.Fighter,
+  ).toBeGreaterThan(0);
   await page.screenshot({
-    path: testInfo.outputPath('auto-assigned-route.png'),
+    path: testInfo.outputPath('guard-routes.png'),
   });
   await page.reload();
   await startFirstSlot(page);
   expect(
-    (await saved(page)).fleets.find((f) => f.id === 'freighters')!.routeId,
-  ).toBe('route-test');
+    (await saved(page)).fleets.find((fleet) => fleet.id === 'freighters')!
+      .ships.Fighter,
+  ).toBeGreaterThan(0);
 });
 
 test('bargningsorder-fran-flotta: choose Salvage and a wreck, reload and pick it up automatically', async ({

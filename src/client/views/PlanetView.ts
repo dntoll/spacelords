@@ -507,7 +507,7 @@ function renderQueueOrder(
       element(
         'p',
         '',
-        `Start order: ${project.initialOrder ? ShipOrders.label(project.initialOrder) : project.destinationFleetId ? (fleets.find((fleet) => fleet.id === project.destinationFleetId)?.name ?? 'Unknown fleet') : project.type === 'Civilian shuttle' ? 'Civilian transport' : 'Planet home fleet'}`,
+        `Start order: ${project.initialOrder ? ShipOrders.label(project.initialOrder) : project.destinationFleetId ? (fleets.find((fleet) => fleet.id === project.destinationFleetId)?.name ?? 'Unknown fleet') : ShipOrders.defaultAssignment(project.type)}`,
       ),
     );
     const orders = button(`Orders for queued ${project.type}`, () =>

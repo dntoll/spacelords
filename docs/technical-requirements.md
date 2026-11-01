@@ -1306,19 +1306,25 @@ snabba. Därefter passerade 556 tester på 19,25 sekunder inklusive start.
 
 ## Sparade automatiska uppdrag
 
-`automatisk-bargning`, `automatisk-rutttilldelning` och
-`forskade-automatiska-order`: Fleet har ett valfritt automation-fält med
-värdet salvage eller transport i befintlig sparversion 12. Saknat fält
-behåller äldre beteende. Återläsningen validerar skeppstyp och oförenliga
-uppdrag. Ingen sparning rensas. Tidigare aktiva Patrol- och Explore-order
-får fortsätta; forskningskontrollen gäller nya order.
+`automatisk-bargning`, `automatisk-farledsbemanning`,
+`ombemanning-vid-stangd-farled`, `guard-routes` och
+`fria-utforsknings-och-patrullorder`: Fleet har ett valfritt
+automation-fält med värdet salvage, transport eller guard i befintlig
+sparversion 13. Saknat fält behåller äldre beteende. `homeRouteId` är
+valfritt för Civilian shuttles. Återläsningen validerar skeppstyp och
+oförenliga uppdrag. Ingen sparning rensas. Automated transport, Fleet
+patrol och Automated exploration plockas bort ur genomförd forskning, kö
+och bärgad forskning. Tidigare aktiva Patrol- och Explore-order får
+fortsätta. En väntande transport-automation tilldelas med den nya
+bemanningsregeln.
 
-Game samordnar målval, SalvageOrder och vanlig Logistics-tilldelning.
-Forskning kontrolleras i modellen samt visas i vyerna. Vyerna läser
+Game samordnar målval, SalvageOrder och ruttbemanning. Auto salvage
+kontrolleras mot forskning i modellen samt visas i vyerna. Vyerna läser
 ögonblicksbilder och skickar order genom controller. Order sparas efter
 knapptryck. Nya ordertekniker är inga byggnadsalternativ. Den befintliga
 rörelsebudgeten återanvänds utan extra steg vid byte mellan hämtning och
-leverans.
+leverans. Detta ersätter `automatisk-rutttilldelning` och forskningslåsen
+för Explore, Patrol och Auto assign route i `forskade-automatiska-order`.
 
 ## Civiltrafik
 

@@ -184,7 +184,7 @@ describe('beslut-vantar-pa-paborjad-atgard', () => {
     restored.cancelProject(restored.galaxy.homePlanet, project.id);
     expect(active(restored, 'route-idle-route-test')).toBe(true);
     turn(game);
-    expect(active(game, 'route-idle-route-test')).toBe(true);
+    expect(active(game, 'route-idle-route-test')).toBe(false);
   });
 
   it('keeps material quantities real while a connected supply waits for transport preparation', () => {

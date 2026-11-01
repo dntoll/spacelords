@@ -249,7 +249,7 @@ export type AppIntent =
         | 'begin-colonization'
         | 'begin-salvage'
         | 'auto-salvage'
-        | 'auto-transport'
+        | 'guard-routes'
         | 'upgrade-fleet'
         | 'civilian-transport'
         | 'clear-destination'

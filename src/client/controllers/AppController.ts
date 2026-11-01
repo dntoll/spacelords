@@ -316,7 +316,7 @@ export class AppController {
       case 'clear-start-order':
         this.#model.clearStartOrder();
         break;
-      case 'auto-transport':
+      case 'guard-routes':
         this.#model.automateTransport(intent.id);
         break;
       case 'upgrade-fleet':

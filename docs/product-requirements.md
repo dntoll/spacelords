@@ -795,14 +795,16 @@ och avstånd och prioriterar rutter som saknar samma skeppstyp, därefter
 närmaste rutt. Join fleet väljer en mottagande flotta på kartan utan
 ruttflottor. Salvage ships har Auto salvage och Deliberate salvage;
 Exploration ships har Explore och Explore stars. Fighters får Patrol efter
-val av centrum och reser dit innan patrulleringen börjar.
+val av centrum och Guard routes som startorder. Transport ships bemannar
+farleder automatiskt; Auto assign route är borttaget.
 
 Samma Orders-vy väljer startorder när ett nytt skepp beställs eller ändrar
 ett köat skepps startorder. Ordern börjar efter färdigställandet och gäller
 bara det nya skeppet. Äldre byggen och sparningar bevaras. Kraven
 `egen-ordervy`, `ruttval-for-order`, `flottval-pa-orderkarta`,
-`skeppsanpassade-specialorder`, `patrullcentrum-vid-order` och
-`startorder-for-nybyggda-skepp` är **Fullständigt implementerat**.
+`skeppsanpassade-specialorder`, `patrullcentrum-vid-order`,
+`startorder-for-nybyggda-skepp` och `guard-routes` är
+**Fullständigt implementerat**.
 Se [Orders](fleet-orders.md) för regler och ersatta beteenden.
 
 ## Flottuppgradering
@@ -1110,16 +1112,21 @@ flottor med Salvage ship hämta närmaste kända lediga vrak, leverera det till
 närmaste egna Shipyard och fortsätta med nästa. Uppdraget väntar om mål
 saknas och kan avbrytas.
 
-`automatisk-rutttilldelning` — **Fullständigt implementerat**: Auto assign
-route låter flottor med Transport ship söka närmaste öppna handelsrutt utan
-tilldelad transport. Flottan reser till närmaste ändplanet och arbetar på
-rutten. Den väntar om alla rutter är bemannade.
+`automatisk-farledsbemanning` — **Fullständigt implementerat**: ett
+färdigbyggt Transport ship eller en Civilian shuttle, utan annan
+startorder, bemannar närmaste öppna farled med minst antal skepp. Detta
+ersätter `automatisk-rutttilldelning` och Auto assign route. Ingen
+forskning krävs.
 
-`forskade-automatiska-order` — **Fullständigt implementerat**: Patrol kräver
-Fleet patrol; Explore och Explore stars kräver Automated exploration;
-Auto salvage kräver Automated salvage; Auto assign route kräver Automated
-transport. Detta ersätter tidigare fri tillgång till nya Patrol- och
-Explore-order. Befintliga aktiva order i sparade spel fortsätter.
+`ombemanning-vid-stangd-farled` — **Fullständigt implementerat**: när en
+bemannad farled stängs flyger dess frakt- och civila skepp till närmaste
+kvarvarande farled med minst bemanning. Last och passagerare fullföljs
+först.
+
+`fria-utforsknings-och-patrullorder` — **Fullständigt implementerat**:
+Patrol, Explore och Explore stars kräver inte längre forskning. Auto
+salvage kräver fortfarande Automated salvage. Detta ersätter
+forskningslåsen för de orderna i `forskade-automatiska-order`.
 
 `flottval-vid-varv` — **Fullständigt implementerat**: flottor vid ett varv
 kan väljas direkt från varvspanelen så att deras order kan ändras även när
@@ -1132,7 +1139,11 @@ flera kartmarkörer överlappar.
 - `civil-skytteltillverkning` — **Fullständigt implementerat**: varje skyttel
   rymmer 500 passagerare, kräver 50 besättning och en motor, har fart 2 och
   kostar 4 Iron, 2 Water samt 1 Oil. Nybyggen får en egen flotta som automatiskt
-  börjar med Civilian transport. Transport ships byggs fortsatt i samma fabrik.
+  börjar med Civilian transport och bemannar en farled. Transport ships byggs
+  fortsatt i samma fabrik.
+- `civil-farledsbyte` — **Fullständigt implementerat**: skytteln har en
+  hemfarled men söker passageraruppdrag i hela nätet. Hemfarleden följer
+  det ruttled uppdraget använder. Passagerare lämnas inte av.
 - `automatisk-arbetskraftstrafik` — **Fullständigt implementerat**: invånare
   flyttar från arbetskraftsöverskott till brist i färdiga byggnader och första
   projektet i Build queue. Avreseplaneten behåller minst 1 000 invånare och
