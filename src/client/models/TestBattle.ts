@@ -32,7 +32,6 @@ export function createTestBattle(): TacticalBattle {
   );
   return TacticalBattle.restore({
     ...battle.snapshot,
-    asteroids: [],
     log: [
       'Test battle. Deploy every ship, including the large Transport ship and Colony ship. Saved games are unchanged.',
     ],

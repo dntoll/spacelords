@@ -20,6 +20,12 @@ vi.mock('p5', () => ({
     constructor(configure: (sketch: p5) => void) {
       configure(runtime.sketch!);
     }
+    get width() {
+      return runtime.sketch!.width;
+    }
+    get height() {
+      return runtime.sketch!.height;
+    }
     redraw() {
       runtime.sketch!.draw();
     }
@@ -28,7 +34,10 @@ vi.mock('p5', () => ({
 }));
 afterEach(() => vi.unstubAllGlobals());
 
-function drawing(imagesLoaded: boolean) {
+function drawing(
+  imagesLoaded: boolean,
+  select: (hex: { q: number; r: number }) => void = () => {},
+) {
   let rotation = 0;
   const stack: number[] = [];
   const noses: Point[] = [];
@@ -39,6 +48,7 @@ function drawing(imagesLoaded: boolean) {
     y: x * Math.sin(rotation) + y * Math.cos(rotation),
   });
   const canvas = document.createElement('canvas');
+  canvas.setPointerCapture = () => {};
   const noop = () => {};
   const sketch = {
     width: 800,
@@ -102,14 +112,51 @@ function drawing(imagesLoaded: boolean) {
     },
   );
   const container = document.createElement('div');
+  container.append(canvas);
   Object.defineProperties(container, {
     clientWidth: { value: 800 },
     clientHeight: { value: 600 },
   });
-  const view = new BattleMapView(container, noop);
+  const view = new BattleMapView(container, select);
   void runtime.sketch.setup();
-  return { view, noses, markers, arcs, container };
+  return { view, noses, markers, arcs, container, canvas };
 }
+
+it('avfyra-pa-markerat-mal / begransad-stridskamera: drag, pinch, cancelled pointers and wheel never become a shot', () => {
+  const select = vi.fn();
+  const { view, canvas } = drawing(false, select);
+  const state = createTestBattle().snapshot;
+  view.render(state, null, { q: 4, r: 3 }, 'Cannon');
+  const pointer = (type: string, id: number, x: number, y: number) => {
+    const event = new MouseEvent(type, { clientX: x, clientY: y });
+    Object.defineProperty(event, 'pointerId', { value: id });
+    canvas.dispatchEvent(event);
+  };
+  pointer('pointerdown', 1, 400, 300);
+  pointer('pointermove', 1, 480, 300);
+  pointer('pointerup', 1, 480, 300);
+  pointer('pointerdown', 2, 350, 300);
+  pointer('pointerdown', 3, 450, 300);
+  pointer('pointermove', 2, 320, 300);
+  pointer('pointerup', 2, 320, 300);
+  pointer('pointermove', 3, 451, 300);
+  pointer('pointerup', 3, 451, 300);
+  pointer('pointerdown', 4, 400, 300);
+  pointer('pointercancel', 4, 400, 300);
+  pointer('pointerup', 4, 400, 300);
+  canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: -200 }));
+  expect(select).not.toHaveBeenCalled();
+  pointer('pointerdown', 5, 400, 300);
+  pointer('pointerup', 5, 400, 300);
+  expect(select).toHaveBeenCalledOnce();
+  select.mockClear();
+  canvas.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+  canvas.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'Enter', repeat: true }),
+  );
+  expect(select).toHaveBeenCalledExactlyOnceWith({ q: 4, r: 3 });
+  view.dispose();
+});
 
 it('skadepartiklar-i-strid: disposing during flight cancels its frame and resolves presentation', async () => {
   const { view, container } = drawing(false);

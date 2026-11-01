@@ -52,37 +52,52 @@ function setup(initial = state()) {
   let selectHex: (position: BattleHex) => void = () => {};
   const map: BattleMapFactory = (_container, select) => {
     selectHex = select;
-    return { render() {}, fit() {}, zoom() {}, dispose() {} };
+    return { render() {}, dispose() {} };
   };
   const emit = vi.fn<(intent: AppIntent) => void>();
   const view = new BattleView(document.body, emit, map);
   view.render(initial);
   const select = (id: string) => {
-    const input = document.querySelector<HTMLSelectElement>(
-      'select[aria-label="Your ship"]',
-    )!;
-    input.value = id;
-    input.dispatchEvent(new Event('change'));
+    document
+      .querySelector<HTMLButtonElement>(`[data-ship-id="${id}"]`)!
+      .click();
   };
   return { view, emit, select, selectHex: (hex: BattleHex) => selectHex(hex) };
 }
 
-describe('skeppsval-startar-stridstur', () => {
-  it.each(['list', 'map'] as const)(
-    'selecting an eligible ship through the %s starts exactly one activation intent',
-    (source) => {
-      const { view, emit, select, selectHex } = setup();
-      expect(emit).not.toHaveBeenCalled();
-      expect(document.querySelector('[aria-label="Activate ship"]')).toBeNull();
-      if (source === 'list') select('second');
-      else selectHex({ q: 2, r: 4 });
-      expect(emit).toHaveBeenCalledExactlyOnceWith({
-        type: 'battle-command',
-        command: { type: 'activate', id: 'second' },
-      });
-      view.dispose();
+it('avfyra-pa-markerat-mal: fires by tapping the autoaim target without a separate fire button', () => {
+  const initial = state();
+  const { view, emit, selectHex } = setup({
+    ...initial,
+    activation: {
+      id: 'first',
+      remaining: 4,
+      fired: false,
+      moved: false,
+      movementClosed: false,
     },
-  );
+  });
+  selectHex({ q: 3, r: 4 });
+  expect(emit).toHaveBeenCalledWith({
+    type: 'battle-command',
+    command: { type: 'fire', at: { q: 3, r: 4 }, weapon: 'Cannon' },
+  });
+  expect(document.querySelector('[aria-label="Fire weapon"]')).toBeNull();
+  view.dispose();
+});
+
+describe('skeppsval-startar-stridstur', () => {
+  it('selecting an eligible ship on the map starts exactly one activation intent', () => {
+    const { view, emit, selectHex } = setup();
+    expect(emit).not.toHaveBeenCalled();
+    expect(document.querySelector('select')).toBeNull();
+    selectHex({ q: 2, r: 4 });
+    expect(emit).toHaveBeenCalledExactlyOnceWith({
+      type: 'battle-command',
+      command: { type: 'activate', id: 'second' },
+    });
+    view.dispose();
+  });
   it.each(['enemy turn', 'already used', 'another activation'] as const)(
     'does not activate an ineligible ship during %s',
     (condition) => {
@@ -111,8 +126,8 @@ describe('skeppsval-startar-stridstur', () => {
       expect(emit).not.toHaveBeenCalled();
       if (condition === 'another activation')
         expect(
-          document.querySelector<HTMLSelectElement>('[aria-label="Your ship"]')!
-            .value,
+          document.querySelector<HTMLElement>('.battle-dialog')!.dataset
+            .activeShip,
         ).toBe('first');
       view.dispose();
     },
@@ -134,14 +149,13 @@ describe('skeppsval-startar-stridstur', () => {
     });
     expect(emit).not.toHaveBeenCalled();
     expect(
-      document.querySelector<HTMLSelectElement>('[aria-label="Your ship"]')!
-        .value,
+      document.querySelector<HTMLElement>('.battle-dialog')!.dataset.activeShip,
     ).toBe('first');
     view.dispose();
   });
 });
 
-it('stridsorder-utan-mobilscroll: puts all combat commands ahead of the board and keeps long information in a separate disclosure', () => {
+it('stridsorder-utan-mobilscroll / skeppsnara-stridskontroller: overlays all movement commands on the battlefield without a form panel', () => {
   const initial = state();
   const { view } = setup({
     ...initial,
@@ -153,30 +167,26 @@ it('stridsorder-utan-mobilscroll: puts all combat commands ahead of the board an
       movementClosed: false,
     },
   });
-  const orders = document.querySelector('.battle-controls')!;
   const board = document.querySelector('.battle-board')!;
-  expect(
-    orders.compareDocumentPosition(board) & Node.DOCUMENT_POSITION_FOLLOWING,
-  ).toBeTruthy();
   for (const label of [
     'Turn left 60°',
     'Turn right 60°',
     'Forward / escape',
-    'Weapon',
-    'Fire weapon',
     'End ship turn',
-  ])
-    expect(
-      orders.querySelector(`[aria-label="${label}"]`),
-      label,
-    ).not.toBeNull();
-  expect(orders.querySelector('[aria-label="Target"]')).toBeNull();
-  expect(orders.querySelector('.battle-log')).toBeNull();
+  ]) {
+    const action = board.querySelector(`[aria-label="${label}"]`)!;
+    expect(action).not.toBeNull();
+    expect(action.querySelector('svg')).not.toBeNull();
+  }
+  expect(
+    board.querySelector('select, [aria-label="Fire weapon"], .battle-zoom'),
+  ).toBeNull();
   expect(document.querySelector('.battle-details .battle-log')).not.toBeNull();
+  expect(document.querySelector('.battle-controls .battle-log')).toBeNull();
   view.dispose();
 });
 
-it('traffhex-istallet-for-mallista: fires at the hex chosen on the map and has no target list', () => {
+it('avfyra-pa-markerat-mal / traffhex-istallet-for-mallista: rejects invalid shots and requires selection before firing at a new target', () => {
   const initial = state();
   const { view, emit, selectHex } = setup({
     ...initial,
@@ -188,28 +198,21 @@ it('traffhex-istallet-for-mallista: fires at the hex chosen on the map and has n
       movementClosed: false,
     },
   });
-  expect(document.querySelector('[aria-label="Target"]')).toBeNull();
-  const fire = () =>
-    document.querySelector<HTMLButtonElement>('[aria-label="Fire weapon"]')!;
-  expect(fire().disabled).toBe(false);
   selectHex({ q: 8, r: 4 });
-  expect(fire().disabled).toBe(true);
+  selectHex({ q: 8, r: 4 });
+  expect(emit).not.toHaveBeenCalled();
   expect(document.body.textContent).toContain('enemy ship');
   selectHex({ q: 3, r: 4 });
-  expect(fire().disabled).toBe(false);
-  expect(document.body.textContent).toContain('Impact hex 3,4');
-  expect(document.querySelector('.battle-controls')!.textContent).toContain(
-    'Impact hex 3,4',
-  );
-  fire().click();
-  expect(emit).toHaveBeenCalledWith({
+  expect(emit).not.toHaveBeenCalled();
+  selectHex({ q: 3, r: 4 });
+  expect(emit).toHaveBeenCalledExactlyOnceWith({
     type: 'battle-command',
     command: { type: 'fire', at: { q: 3, r: 4 }, weapon: 'Cannon' },
   });
   view.dispose();
 });
 
-it('autoaim-med-manuellt-mal: keeps a manually selected farther target, loses it outside the front arc and reacquires the closest', () => {
+it('autoaim-med-manuellt-mal: keeps a manually selected farther target and clears it outside the front arc', () => {
   const first = state();
   const initial: BattleState = {
     ...first,
@@ -226,14 +229,13 @@ it('autoaim-med-manuellt-mal: keeps a manually selected farther target, loses it
     ],
   };
   const { view, emit, selectHex } = setup(initial);
-  expect(document.querySelector('.battle-aim')!.textContent).toContain(
-    'Impact hex 3,4',
-  );
+  const aim = () => document.querySelector<HTMLElement>('.battle-aim')!;
+  expect(aim().dataset.aimQ).toBe('3');
   selectHex({ q: 4, r: 4 });
   view.render(initial);
-  document
-    .querySelector<HTMLButtonElement>('[aria-label="Fire weapon"]')!
-    .click();
+  expect(emit).not.toHaveBeenCalled();
+  expect(aim().dataset.aimQ).toBe('4');
+  selectHex({ q: 4, r: 4 });
   expect(emit).toHaveBeenLastCalledWith({
     type: 'battle-command',
     command: { type: 'fire', at: { q: 4, r: 4 }, weapon: 'Cannon' },
@@ -244,16 +246,99 @@ it('autoaim-med-manuellt-mal: keeps a manually selected farther target, loses it
       piece.id === 'first' ? { ...piece, facing: 3 } : piece,
     ),
   });
-  expect(document.querySelector('.battle-aim')!.textContent).toContain(
-    'No target',
-  );
-  expect(
-    document.querySelector<HTMLButtonElement>('[aria-label="Fire weapon"]')!
-      .disabled,
-  ).toBe(true);
+  expect(aim().textContent).toContain('No target');
+  expect(aim().dataset.canFire).toBe('false');
   view.render(initial);
-  expect(document.querySelector('.battle-aim')!.textContent).toContain(
-    'Impact hex 3,4',
+  expect(aim().dataset.aimQ).toBe('3');
+  view.dispose();
+});
+
+it('vapensymboler-i-strid / avfyra-pa-markerat-mal: weapon selection never fires and missile impact can be adjusted before firing', () => {
+  const initial = state();
+  const { view, emit, selectHex } = setup({
+    ...initial,
+    activation: {
+      id: 'first',
+      remaining: 4,
+      fired: false,
+      moved: false,
+      movementClosed: false,
+    },
+  });
+  const missile = document.querySelector<HTMLButtonElement>(
+    '[aria-label="Missiles"]',
+  )!;
+  expect(missile.querySelector('svg')).not.toBeNull();
+  missile.click();
+  expect(emit).not.toHaveBeenCalled();
+  expect(
+    document
+      .querySelector('[aria-label="Missiles"]')!
+      .getAttribute('aria-pressed'),
+  ).toBe('true');
+  selectHex({ q: 5, r: 4 });
+  expect(emit).not.toHaveBeenCalled();
+  selectHex({ q: 5, r: 4 });
+  expect(emit).toHaveBeenLastCalledWith({
+    type: 'battle-command',
+    command: { type: 'fire', at: { q: 5, r: 4 }, weapon: 'Missiles' },
+  });
+  view.dispose();
+});
+
+it('avfyra-pa-markerat-mal: clicking another part of a marked large hull fires at its valid selected impact', () => {
+  const initial = state();
+  const { view, emit, selectHex } = setup({
+    ...initial,
+    largeShipFootprints: true,
+    activation: {
+      id: 'first',
+      remaining: 4,
+      fired: false,
+      moved: false,
+      movementClosed: false,
+    },
+    pieces: initial.pieces.map((piece) =>
+      piece.side === 'enemy'
+        ? {
+            ...piece,
+            type: 'Transport ship',
+            movement: 2,
+            position: { q: 4, r: 4 },
+          }
+        : piece,
+    ),
+  });
+  // The stern is the nearest hittable cell; the bow lies beyond cannon range.
+  expect(document.querySelector<HTMLElement>('.battle-aim')!.dataset.aimQ).toBe(
+    '3',
   );
+  selectHex({ q: 5, r: 4 });
+  expect(emit).toHaveBeenCalledExactlyOnceWith({
+    type: 'battle-command',
+    command: { type: 'fire', at: { q: 3, r: 4 }, weapon: 'Cannon' },
+  });
+  view.dispose();
+});
+
+it('avfyra-pa-markerat-mal: no shots are issued after a salvo, during the enemy turn or beneath Combat details', () => {
+  const initial = state();
+  const activation = {
+    id: 'first',
+    remaining: 4,
+    fired: false,
+    moved: false,
+    movementClosed: false,
+  };
+  const { view, emit, selectHex } = setup({ ...initial, activation });
+  document.querySelector<HTMLDetailsElement>('.battle-details')!.open = true;
+  selectHex({ q: 3, r: 4 });
+  expect(emit).not.toHaveBeenCalled();
+  document.querySelector<HTMLDetailsElement>('.battle-details')!.open = false;
+  view.render({ ...initial, activation: { ...activation, fired: true } });
+  selectHex({ q: 3, r: 4 });
+  view.render({ ...initial, turn: 'enemy', activation: null });
+  selectHex({ q: 3, r: 4 });
+  expect(emit).not.toHaveBeenCalled();
   view.dispose();
 });

@@ -1,5 +1,33 @@
 # Produktkrav och status
 
+## Stridens spelgränssnitt, 2026-11-01
+
+- `fullskarms-stridskarta` — **Fullständigt implementerat**: hexkartan fyller
+  hela spelytan. En liten HUD visar runda, tur, skepp, skrov och rörelse.
+  Combat details öppnar information ovanpå kartan; Save and close går till Saved games.
+  Utplacering har skeppsporträtt, Auto deploy och Start combat.
+- `skeppsnara-stridskontroller` — **Fullständigt implementerat**: Forward,
+  vänster- och högersväng samt End ship turn är symbolknappar runt det aktiva
+  skeppet. De följer dess riktning och kameran, ryms innanför skärmen och
+  döljs när skeppet är utanför bilden. Utplacering har två svängknappar.
+- `vapensymboler-i-strid` — **Fullständigt implementerat**: vapen väljs med
+  symbolknappar i nederkant. Val och ammunition syns. Vapenval avfyrar inget.
+- `avfyra-pa-markerat-mal` — **Fullständigt implementerat**: första trycket
+  på en ny fiende markerar målet; nästa tryck avfyrar. Ett redan markerat
+  Autoaim-mål kan beskjutas direkt. Cannon kan avfyras genom tryck på valfri
+  del av det markerade skrovet. Missilers nya träffhex markeras före avfyrning,
+  även på tom yta. Kamera- och avbrutna gester avfyrar aldrig.
+- `begransad-stridskamera` — **Fullständigt implementerat**: drag och nypzoom
+  styr kartan; datorns mushjul kan zooma. Inga kameraknappar visas.
+  Minsta zoom fyller skärmen; högst 24 pixlars kant utanför spelplanens
+  yttergränser tillåts. Rotation av skärmen behåller giltiga gränser.
+  Aktiverat eller flyttat skepp hålls synligt när kartkanterna medger det.
+
+Detta ersätter orderpanelerna i `stridsorder-utan-mobilscroll` och
+Fire weapon-knappen i `traffhex-istallet-for-mallista`. `fuskknapp-for-teststrid`
+omfattar nu också vanliga asteroider, med fria startzoner. Sparade spel bevaras.
+Se [taktisk strid](tactical-combat.md).
+
 ## Autoaim och stora skepp, 2026-11-01
 
 - `autoaim-med-manuellt-mal` — **Fullständigt implementerat**: saknas ett mål
@@ -17,7 +45,7 @@
   sin tidigare geometri; nya strider använder de större skroven.
 - `fuskknapp-for-teststrid` — **Fullständigt implementerat**, ändrat krav:
   Test battle (cheat) börjar med utplacering och innehåller både Transport ship
-  och Colony ship tillsammans med mindre skepp. Sparplatser påverkas inte.
+  och Colony ship tillsammans med mindre skepp och asteroider. Sparplatser påverkas inte.
   Detta ersätter den tidigare starten direkt i strid med färdig placering.
 
 Autoaim utökar `traffhex-istallet-for-mallista` utan att lägga till en mållista.
@@ -102,12 +130,10 @@ Detta ersätter att piratvrak blir Fighters. Civilian shuttle har en egen bild
 som skiljer passagerarskeppet från Transport ship.
 
 `skeppsval-startar-stridstur` och `stridsorder-utan-mobilscroll` är
-**Fullständigt implementerat**: val av ett tillgängligt skepp, på kartan eller
-i Your ship, startar dess tur direkt. Turn, Forward, Weapon, Fire weapon
-och End ship turn är åtkomliga utan rullning på mobilen. Träffplatsen väljs
-på kartan enligt `traffhex-istallet-for-mallista`. Order ligger över
-kartan på stående telefon och bredvid på bredare skärmar. Combat details
-samlar logg och längre regler. Se [taktisk strid](tactical-combat.md).
+**Fullständigt implementerat**: val av ett tillgängligt skepp på kartan startar
+dess tur direkt. Första valet sker automatiskt. Rörelse och End ship turn
+finns runt skeppet; vapen väljs i nederkant och avfyras på markerat mål.
+Combat details samlar logg och längre regler. Se [taktisk strid](tactical-combat.md).
 
 `skeppets-framat-foljer-spriten` är **Fullständigt implementerat**:
 i strid pekar bilden och framåtmarkeringen i samma riktning som skeppets

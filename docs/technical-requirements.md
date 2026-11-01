@@ -1,5 +1,23 @@
 # Tekniska krav och arbetsregler
 
+## Stridens karta och kontroller, 2026-11-01
+
+- `fullskarms-stridskarta` och `skeppsnara-stridskontroller`: p5 ritar kartan;
+  HTML lägger HUD och tillgängliga symbolknappar ovanpå. BattleMapView lämnar
+  en oföränderlig kameraögonblicksbild. Samma projektion placerar kontrollerna
+  runt ShipFootprint, med inåtfällning vid kanter och minst 44 pixlars tryckyta.
+- `vapensymboler-i-strid` och `avfyra-pa-markerat-mal`: vyn håller tillfälligt
+  vapen och mål. Avfyrning går som battle-command till controller och modell
+  och kontrolleras mot TacticalBattle. Kamera- och avbrutna pekargester
+  konsumerar trycket även sedan ett finger lämnat en nypgest.
+- `begransad-stridskamera`: BattleCameraController hanterar kamera oberoende
+  av p5 och spelmodellen. Minsta skala täcker hela visningsytan; panorering
+  begränsas till 24 pixlars kant utanför kartans omslutande rektangel.
+  Resize bevarar världscentrum och begränsar skalan på nytt. Kameran sparas
+  inte i speldata. Aktivering och position ändrar fokus; eld gör det inte.
+- `fuskknapp-for-teststrid`: samma asteroidgenerering som ordinarie strider
+  används. Startzonerna hålls fria. Sparformatet ändras inte.
+
 ## Autoaim och flerrutiga skrov, 2026-11-01
 
 - `autoaim-med-manuellt-mal`: TacticalBattle lämnar läsfrågor för giltig

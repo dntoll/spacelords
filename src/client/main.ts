@@ -26,7 +26,8 @@ const controller = new AppController(
     root,
     (container, emit) => new GalaxyMapView(container, emit),
     (container, cells) => new SaveMapPreview(container, cells),
-    (container, select) => new BattleMapView(container, select),
+    (container, select, viewport) =>
+      new BattleMapView(container, select, viewport),
   ),
 );
 controller.start();

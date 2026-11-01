@@ -1,5 +1,45 @@
 # Taktisk strid
 
+## Skärmfyllande spelgränssnitt, 2026-11-01
+
+`fullskarms-stridskarta`, `skeppsnara-stridskontroller`,
+`vapensymboler-i-strid`, `avfyra-pa-markerat-mal` och
+`begransad-stridskamera` är **Fullständigt implementerat**.
+
+Kartan fyller hela spelytan. HUD visar runda, aktivt skepp, skrov, rörelse och
+mål. Combat details öppnar regler, skeppsdata och tärningslogg ovanpå kartan.
+Save and close återgår till Saved games. Utplacering använder skeppsporträtt
+med placeringsstatus, två svängknappar, Auto deploy och Start combat.
+
+Fyra symbolknappar ligger runt eget aktivt skepp: Forward vid nosen,
+svängarna vid sidorna och End ship turn bakom. De följer riktning och kamera,
+har minst 44 pixlars tryckyta och viks inåt vid skärmkanter. De döljs om
+skeppet är utanför bilden. Samma regler för rörelse, kollision och tur gäller.
+
+Vapensymbolerna ligger i nederkant och visar valt vapen och ammunition.
+Vapenval avfyrar inget. Tryck på ett nytt mål markerar; nästa tryck avfyrar.
+Autoaims redan markerade mål kan beskjutas med första trycket. Cannon träffar
+valt mål även om spelaren trycker på en annan del av samma stora skrov;
+den giltiga valda träffhexen behålls. För Missiles markerar en ny hex området,
+med avfyrning först vid nästa tryck på samma hex. Tomma områden är tillåtna.
+Enter eller Space på kartan fungerar som tryck på vald träffhex.
+Drag, nypzoom, avbrutna gester, mushjul och tryck på överlägg avfyrar aldrig.
+
+Kameran styrs med drag och nypzoom; datorns mushjul kan zooma.
+Inga kameraknappar eller kamerakommandon på tangentbordet finns.
+Minsta zoom täcker skärmen, vilket beskär sidorna på stående mobil.
+Panorering tillåter högst 24 pixlar utanför spelplanens omslutande rektangel.
+Största zoom är 3 eller minsta tillåtna zoom om skärmen kräver mer.
+Skärmrotation bevarar kamerans mitt och begränsar den på nytt.
+Ett aktiverat eller flyttat skepp förs in i bild när kartkanterna medger det,
+även för fienden. Mellan sådana ändringar behålls spelarens panorering.
+Avfyrning återställer inte kameran.
+
+Detta ersätter orderpanelerna i `stridsorder-utan-mobilscroll` och
+Fire weapon i `traffhex-istallet-for-mallista`. `fuskknapp-for-teststrid`
+använder nu vanliga asteroider utanför startzonerna. Befintliga sparningar
+bevaras utan ändrat format eller rensning.
+
 ## Autoaim och stora skrov, 2026-11-01
 
 `autoaim-med-manuellt-mal` — **Fullständigt implementerat**. När siktet saknar
@@ -58,7 +98,7 @@ Alla flottor på samma Star map-hex deltar tillsammans.
   stegen. Samma rörelseregler gäller båda sidor, även efter omladdning.
 - `fuskknapp-for-teststrid` — **Fullständigt implementerat**: Test battle (cheat)
   i huvudmenyn börjar med utplacering av små skepp samt Transport ship och
-  Colony ship. Den kan upprepas, avslutas till menyn och ändrar inga sparplatser.
+  Colony ship och vanliga asteroider. Den kan upprepas, avslutas till menyn och ändrar inga sparplatser.
   Detta ersätter färdig placering och omedelbar stridsstart.
 - `stridsrapport-i-dialog` — **Fullständigt implementerat**, ändrat krav:
   rapportens informationsruta och Handle/Ignore-val efter striden tas bort.
@@ -70,24 +110,19 @@ Sparformat och befintliga sparningar bevaras.
 
 `skeppsval-startar-stridstur` — **Fullständigt implementerat**, med automatiskt
 förstaval enligt `automatiskt-skeppsval-i-strid` ovan: under egen
-stridstur startar val av ett oanvänt eget skepp dess tur direkt, både på kartan
-och i Your ship. Ingen Activate ship-knapp visas. End ship turn avslutar
+stridstur startar val av ett oanvänt eget skepp på kartan dess tur direkt.
+Ingen Activate ship-knapp visas. End ship turn avslutar
 skeppets tur. Ett valt skepp spelar klart före nästa val, och varje skepp får
 fortsatt bara agera en gång per runda. Under fiendens tur eller vid val av
 ett redan använt skepp startar ingen ny tur. Utplaceringsval är fria och
 pågående sparade skeppsturer återupptas direkt utan ny aktivering.
 
-`stridsorder-utan-mobilscroll` — **Fullständigt implementerat**: Your ship,
-svängar, Forward / escape, Weapon, Fire weapon och End ship turn
-ligger samlat över kartan på stående mobil. På bredare skärmar ligger de
-synligt bredvid kartan. De går att använda utan att rulla till orderpanelen,
-även på 320 × 568 och liggande 844 × 390. Kartan använder återstående yta.
-Träffplatsen väljs på kartan, inte i en mållista.
+`stridsorder-utan-mobilscroll` — **Fullständigt implementerat**, ändrat krav:
+orderpanelen ersätts av knappar runt skeppet och vapensymboler i nederkant.
+Kartan fyller hela skärmen, även på 320 × 568 och liggande 844 × 390.
 Combat details samlar skeppsdata, skottförklaring, tärningslogg och längre regler.
-
-Beställningen 2026-10-31 ersätter den separata aktiveringsknappen och den
-rullande orderpanelen under kartan i `vaxelvisa-skeppsaktiveringar` och
-`taktisk-stridskarta`. Turordning och stridsregler behålls; sparade spel bevaras.
+Detta ersätter panelplaceringen från 2026-10-31. Turordning och stridsregler
+behålls; sparade spel bevaras.
 
 `skeppets-framat-foljer-spriten` — **Fullständigt implementerat**:
 skeppsbildens nos, kartans framåtmarkering, Forward och den främre eldbågen
@@ -168,8 +203,8 @@ missiler. En Fighter i ett äldre sparat spel, där fältet saknas, behåller tv
 salvor.
 
 `traffhex-istallet-for-mallista`: Autoaim föreslår mål och spelaren kan ändra
-träffhex på kartan och
-bekräftar med Fire weapon. Det finns ingen mållista. Cannon och Raider cannon
+träffhex på kartan. Tryck på redan markerat mål avfyrar enligt
+`avfyra-pa-markerat-mal`. Det finns ingen mållista. Cannon och Raider cannon
 kräver ett fientligt skepp på hexen. Missiler kan sikta på en tom hex.
 
 `missilernas-omradeseffekt`: en missilsalva träffar alla aktiva skepp på

@@ -10,6 +10,16 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Strid som spelgränssnitt:** `fullskarms-stridskarta`,
+  `skeppsnara-stridskontroller`, `vapensymboler-i-strid`,
+  `avfyra-pa-markerat-mal` och `begransad-stridskamera` är
+  **Fullständigt implementerat**. Hexkartan fyller skärmen med en liten HUD,
+  rörelse och End ship turn runt skeppet samt vapen som symbolknappar.
+  Ett nytt mål markeras; tryck på ett markerat mål avfyrar vapnet.
+  Drag och nypzoom begränsas vid kartans kanter. Test battle har asteroider.
+  Detta ersätter orderpanelerna och Fire weapon-knappen.
+  Se [taktisk strid](docs/tactical-combat.md).
+
 - **Autoaim och stora stridsskepp:** `autoaim-med-manuellt-mal` och
   `stora-skepp-over-flera-hex` är **Fullständigt implementerat**. Autoaim
   väljer närmaste träffbara fiende i främre eldbågen och prioriterar rakt
@@ -107,9 +117,9 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Direkta stridsorder:** `skeppsval-startar-stridstur` och
   `stridsorder-utan-mobilscroll` är **Fullständigt implementerat**. Val av ett
-  spelbart skepp startar dess tur direkt. Skeppsorder ligger ovanför kartan på
-  stående mobil och synligt bredvid på bredare skärmar; ingen separat Activate
-  ship-knapp behövs. Logg och regler finns under Combat details.
+  spelbart skepp startar dess tur direkt. Rörelse och End ship turn finns
+  runt skeppet; vapenval ligger i skärmens nederkant. Tryck på det markerade
+  målet avfyrar. Logg och regler finns under Combat details.
   Se [taktisk strid](docs/tactical-combat.md).
 
 - **Skeppens riktning i strid:** `skeppets-framat-foljer-spriten` är

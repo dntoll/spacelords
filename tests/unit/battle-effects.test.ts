@@ -75,6 +75,7 @@ it.each(['player', 'enemy'] as const)(
     const initial = {
       ...setup,
       phase: 'fighting' as const,
+      asteroids: [],
       round: 1,
       pieces: setup.pieces.map((piece) => ({
         ...piece,

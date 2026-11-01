@@ -214,11 +214,6 @@ it('skeppsval-startar-stridstur / vaxelvisa-skeppsaktiveringar / riktning-och-va
   const fighter = model.snapshot.tacticalBattle!.pieces.find(
     (p) => p.type === 'Fighter',
   )!;
-  const select = root.querySelector<HTMLSelectElement>(
-    'select[aria-label="Your ship"]',
-  )!;
-  select.value = fighter.id;
-  select.dispatchEvent(new Event('change'));
   expect(saved.state.simulation!.tacticalBattles![0]!.activation?.id).toBe(
     fighter.id,
   );
@@ -267,14 +262,15 @@ it('stridsutplacering / sparad-taktisk-strid: the facing control reflects a save
   );
   controller.start();
   expect(
-    root.querySelector<HTMLSelectElement>('select[aria-label="Facing"]')!.value,
-  ).toBe('3');
+    saved.state.simulation!.tacticalBattles![0]!.pieces.find(
+      (piece) => piece.id === first.id,
+    )!.facing,
+  ).toBe(3);
+  expect(root.querySelector('select')).toBeNull();
   root
     .querySelector<HTMLButtonElement>('button[aria-label="Auto deploy"]')!
     .click();
-  expect(
-    root.querySelector<HTMLSelectElement>('select[aria-label="Facing"]')!.value,
-  ).toBe('0');
+
   expect(
     saved.state.simulation!.tacticalBattles![0]!.pieces.find(
       (p) => p.id === first.id,

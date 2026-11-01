@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { encounterGame, arrangeBattle } from '../fixtures/battle-checkpoint.js';
-import { battleHexPoint } from '../../src/client/models/TacticalBattle.js';
+import { fireAtBattleHex, showBattleHex } from './battle-helpers.js';
 import { startFirstSlot } from './save-helpers.js';
 
 async function seed(page: Page, game: Game) {
@@ -123,16 +123,8 @@ for (const reduced of [false, true]) {
     const canvas = page.locator('.battle-canvas canvas');
     await expect(canvas).toBeVisible();
     await page.clock.pauseAt(new Date('2026-11-01T01:00:00Z'));
-    const size = await canvas.evaluate((node) => ({
-      width: node.clientWidth,
-      height: node.clientHeight,
-    }));
-    await canvas.click({
-      position: battleHexPoint(game.tacticalBattle!, size, { q: 4, r: 4 }),
-    });
-    await page
-      .getByRole('button', { name: 'Fire weapon', exact: true })
-      .click();
+    await showBattleHex(page, { q: 4, r: 4 });
+    await fireAtBattleHex(page, { q: 4, r: 4 });
     const surface = page.locator('.battle-canvas');
     const controls = page.locator('.battle-controls');
     if (!reduced) {

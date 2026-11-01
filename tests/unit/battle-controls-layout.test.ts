@@ -1,0 +1,96 @@
+import { expect, it } from 'vitest';
+import { BattleCameraController } from '../../src/client/controllers/BattleCameraController.js';
+import { battleControlsLayout } from '../../src/client/views/BattleControlsLayout.js';
+import { createTestBattle } from '../../src/client/models/TestBattle.js';
+
+it.each([
+  [320, 568],
+  [393, 851],
+  [844, 390],
+  [1440, 1000],
+])(
+  'skeppsnara-stridskontroller: keeps large-hull controls distinct and reachable at the edges of %s × %s',
+  (width, height) => {
+    const camera = new BattleCameraController();
+    camera.configure({ width: 15, height: 9 }, width, height);
+    for (const facing of [0, 1, 2, 3, 4, 5]) {
+      for (const [x, y] of [
+        [25, 90],
+        [width / 2, height / 2],
+        [width - 25, height - 70],
+      ]) {
+        const angle = (-facing * Math.PI) / 3;
+        const hull = [-60, 0, 60].map((distance) => ({
+          x: x! + Math.cos(angle) * distance,
+          y: y! + Math.sin(angle) * distance,
+        }));
+        for (const count of [2, 4]) {
+          const controls = battleControlsLayout(
+            camera.snapshot,
+            hull,
+            facing,
+            count,
+          );
+          expect(controls).toHaveLength(count);
+          controls.forEach((point, index) => {
+            expect(point.x).toBeGreaterThanOrEqual(24);
+            expect(point.x).toBeLessThanOrEqual(width - 24);
+            expect(point.y).toBeGreaterThanOrEqual(90);
+            expect(point.y).toBeLessThanOrEqual(height - 80);
+            for (const other of controls.slice(0, index))
+              expect(
+                Math.hypot(other.x - point.x, other.y - point.y),
+              ).toBeGreaterThanOrEqual(48);
+          });
+        }
+      }
+    }
+  },
+);
+
+it('skeppsnara-stridskontroller: forward follows the nose and end follows the stern away from screen edges', () => {
+  const camera = new BattleCameraController();
+  camera.configure({ width: 15, height: 9 }, 1440, 1000);
+  const center = { x: 720, y: 500 };
+  for (let facing = 0; facing < 6; facing++) {
+    const [forward, , , end] = battleControlsLayout(
+      camera.snapshot,
+      [center],
+      facing,
+      4,
+    );
+    const nose = {
+      x: Math.cos((-facing * Math.PI) / 3),
+      y: Math.sin((-facing * Math.PI) / 3),
+    };
+    expect(
+      (forward!.x - center.x) * nose.x + (forward!.y - center.y) * nose.y,
+    ).toBeGreaterThan(60);
+    expect(
+      (end!.x - center.x) * nose.x + (end!.y - center.y) * nose.y,
+    ).toBeLessThan(-60);
+  }
+});
+
+it('fuskknapp-for-teststrid: uses normal asteroids with clear deployment zones and both large ships', () => {
+  const battle = createTestBattle();
+  const initial = battle.snapshot;
+  expect(initial.phase).toBe('deployment');
+  expect(initial.asteroids.length).toBeGreaterThan(0);
+  for (const hex of initial.asteroids) {
+    expect(hex.q).toBeGreaterThanOrEqual(initial.deploymentDepth);
+    expect(hex.q).toBeLessThan(initial.width - initial.deploymentDepth);
+  }
+  expect(
+    initial.pieces.filter((piece) =>
+      ['Transport ship', 'Colony ship'].includes(piece.type),
+    ),
+  ).toHaveLength(2);
+  battle.command({ type: 'auto-deploy' });
+  expect(
+    battle.snapshot.pieces
+      .filter((piece) => piece.side === 'player')
+      .every((piece) => piece.position),
+  ).toBe(true);
+  expect(battle.snapshot.asteroids).toEqual(initial.asteroids);
+});

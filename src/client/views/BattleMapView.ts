@@ -5,7 +5,6 @@ import {
   type Point,
 } from '../models/HexCoordinate.js';
 import {
-  battleCamera,
   battleHex,
   maxHull,
   missileArea,
@@ -20,6 +19,10 @@ import type { BattleMapPort } from './BattleView.js';
 import { SHIP_SPRITES, type ShipSpriteType } from './ShipImages.js';
 import { BattleEffects, type BattleEffectFrame } from './BattleEffects.js';
 import { ShipFootprint } from '../models/ShipFootprint.js';
+import {
+  BattleCameraController,
+  type BattleViewportSnapshot,
+} from '../controllers/BattleCameraController.js';
 
 export class BattleMapView implements BattleMapPort {
   readonly #p5: p5;
@@ -34,7 +37,9 @@ export class BattleMapView implements BattleMapPort {
   #offset: Point = { x: 0, y: 0 };
   #ready = false;
   #disposed = false;
-  #fitPending = true;
+  readonly #camera = new BattleCameraController();
+  #focusKey = '';
+  #onViewport: (snapshot: BattleViewportSnapshot) => void;
   readonly #pointers = new Map<number, Point>();
   #start: Point | null = null;
   #dragged = false;
@@ -94,7 +99,9 @@ export class BattleMapView implements BattleMapPort {
   constructor(
     private readonly container: HTMLElement,
     select: (hex: BattleHex) => void,
+    onViewport: (snapshot: BattleViewportSnapshot) => void = () => {},
   ) {
+    this.#onViewport = onViewport;
     this.#p5 = new p5((sketch) => {
       sketch.setup = () => {
         if (this.#disposed) return;
@@ -108,11 +115,11 @@ export class BattleMapView implements BattleMapPort {
         canvas.tabIndex = 0;
         canvas.setAttribute(
           'aria-label',
-          'Battle hex map. Tap a friendly ship to select it. During its turn, tap the hex where the shot should land. Drag to pan, pinch or scroll to zoom.',
+          'Battle hex map. Tap a new target to select it, then tap the selected target to fire. Enter or Space fires at the selected impact hex. Drag to pan; pinch or use the mouse wheel to zoom.',
         );
         this.#bind(canvas, select);
         this.#ready = true;
-        this.fit();
+        this.#configureCamera();
         for (const type of Object.keys(SHIP_SPRITES) as ShipSpriteType[])
           void sketch
             .loadImage(SHIP_SPRITES[type])
@@ -132,8 +139,7 @@ export class BattleMapView implements BattleMapPort {
         Math.max(1, container.clientWidth),
         Math.max(1, container.clientHeight),
       );
-      if (this.#fitPending) this.fit();
-      else void this.#p5.redraw();
+      this.#configureCamera(true);
     });
     this.#observer.observe(container);
   }
@@ -154,36 +160,48 @@ export class BattleMapView implements BattleMapPort {
     this.#selected = selected;
     this.#aim = aim;
     this.#weapon = weapon;
-    if (changed || this.#fitPending) this.fit();
+    this.#configureCamera();
     if (this.#ready) void this.#p5.redraw();
   }
-  fit(): void {
-    if (!this.#state || !this.#ready || this.container.clientWidth < 1) {
-      this.#fitPending = true;
-      return;
+  #configureCamera(resized = false): void {
+    const state = this.#state;
+    if (!state || !this.#ready) return;
+    this.#camera.configure(state, this.#p5.width, this.#p5.height);
+    const focus = state.pieces.find(
+      (piece) => piece.id === (state.activation?.id ?? this.#selected),
+    );
+    const key = `${state.id}:${focus?.id}:${focus?.position?.q},${focus?.position?.r}`;
+    if (key !== this.#focusKey || resized) {
+      const first = !this.#focusKey.startsWith(`${state.id}:`);
+      const at =
+        focus?.position ??
+        battleHex(
+          Math.floor(state.deploymentDepth / 2),
+          Math.floor(state.height / 2),
+        );
+      if (focus?.position || first || (state.phase === 'deployment' && focus))
+        this.#camera.reveal(at, first || !focus?.position);
+      this.#focusKey = key;
     }
-    const s = this.#state;
-    const camera = battleCamera(s, {
-      width: this.#p5.width,
-      height: this.#p5.height,
-    });
-    this.#scale = camera.scale;
-    this.#offset = camera.offset;
-    this.#fitPending = false;
-    void this.#p5.redraw();
+    this.#publishCamera();
   }
-  zoom(factor: number): void {
-    this.#zoomAt(factor, { x: this.#p5.width / 2, y: this.#p5.height / 2 });
+  #publishCamera(): void {
+    const snapshot = this.#camera.snapshot;
+    this.#scale = snapshot.scale;
+    this.#offset = snapshot.offset;
+    Object.assign(this.container.dataset, {
+      cameraScale: String(snapshot.scale),
+      cameraOffsetX: String(snapshot.offset.x),
+      cameraOffsetY: String(snapshot.offset.y),
+      cameraMinScale: String(snapshot.minScale),
+      cameraMaxScale: String(snapshot.maxScale),
+    });
+    this.#onViewport(snapshot);
+    if (this.#ready) void this.#p5.redraw();
   }
   #zoomAt(factor: number, anchor: Point): void {
-    const next = Math.max(0.08, Math.min(3, this.#scale * factor));
-    const ratio = next / this.#scale;
-    this.#offset = {
-      x: anchor.x - (anchor.x - this.#offset.x) * ratio,
-      y: anchor.y - (anchor.y - this.#offset.y) * ratio,
-    };
-    this.#scale = next;
-    if (this.#ready) void this.#p5.redraw();
+    this.#camera.zoom(factor, anchor);
+    this.#publishCamera();
   }
   #bind(canvas: HTMLCanvasElement, select: (hex: BattleHex) => void): void {
     const options = { signal: this.#events.signal };
@@ -198,7 +216,8 @@ export class BattleMapView implements BattleMapPort {
         canvas.setPointerCapture(event.pointerId);
         this.#pointers.set(event.pointerId, point(event));
         this.#start = point(event);
-        this.#dragged = this.#pointers.size > 1;
+        if (this.#pointers.size === 1) this.#dragged = false;
+        else this.#dragged = true;
       },
       options,
     );
@@ -215,11 +234,11 @@ export class BattleMapView implements BattleMapPort {
           )
             this.#dragged = true;
           if (this.#dragged) {
-            this.#offset = {
-              x: this.#offset.x + next.x - previous.x,
-              y: this.#offset.y + next.y - previous.y,
-            };
-            void this.#p5.redraw();
+            this.#camera.pan({
+              x: next.x - previous.x,
+              y: next.y - previous.y,
+            });
+            this.#publishCamera();
           }
         } else {
           const other = [...this.#pointers.entries()].find(
@@ -230,11 +249,17 @@ export class BattleMapView implements BattleMapPort {
             previous.y - other.y,
           );
           const newDistance = Math.hypot(next.x - other.x, next.y - other.y);
-          if (oldDistance > 0)
-            this.#zoomAt(newDistance / oldDistance, {
-              x: (other.x + next.x) / 2,
-              y: (other.y + next.y) / 2,
+          if (oldDistance > 0) {
+            this.#camera.zoom(newDistance / oldDistance, {
+              x: (other.x + previous.x) / 2,
+              y: (other.y + previous.y) / 2,
             });
+            this.#camera.pan({
+              x: (next.x - previous.x) / 2,
+              y: (next.y - previous.y) / 2,
+            });
+            this.#publishCamera();
+          }
           this.#dragged = true;
         }
         this.#pointers.set(event.pointerId, next);
@@ -276,31 +301,20 @@ export class BattleMapView implements BattleMapPort {
       { ...options, passive: false },
     );
     canvas.addEventListener(
+      'lostpointercapture',
+      (event) => {
+        this.#pointers.delete(event.pointerId);
+        this.#dragged = true;
+      },
+      options,
+    );
+    canvas.addEventListener(
       'keydown',
       (event) => {
-        if (event.key === '+' || event.key === '=') this.zoom(1.25);
-        else if (event.key === '-') this.zoom(0.8);
-        else if (event.key === 'Home') this.fit();
-        else if (event.key.startsWith('Arrow')) {
-          this.#offset = {
-            x:
-              this.#offset.x +
-              (event.key === 'ArrowLeft'
-                ? 30
-                : event.key === 'ArrowRight'
-                  ? -30
-                  : 0),
-            y:
-              this.#offset.y +
-              (event.key === 'ArrowUp'
-                ? 30
-                : event.key === 'ArrowDown'
-                  ? -30
-                  : 0),
-          };
-          void this.#p5.redraw();
-        } else return;
-        event.preventDefault();
+        if ((event.key === 'Enter' || event.key === ' ') && this.#aim) {
+          event.preventDefault();
+          if (!event.repeat) select(this.#aim);
+        }
       },
       options,
     );
