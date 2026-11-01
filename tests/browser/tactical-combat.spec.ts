@@ -15,7 +15,6 @@ async function saved(page: Page): Promise<SavedGame> {
       JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
   );
 }
-
 async function prepare(
   page: Page,
   state: SavedGame['state'],
@@ -132,11 +131,6 @@ test('begransad-stridskamera / fullskarms-stridskarta / skeppsnara-stridskontrol
   expect(
     (await saved(page)).state.simulation!.tacticalBattles![0]!.activation?.id,
   ).toBe(fighter.id);
-  await tapBattleHex(
-    page,
-    game.tacticalBattle!.pieces.find((piece) => piece.side === 'enemy')!
-      .position!,
-  );
   for (const size of [
     ...(testInfo.project.name === 'desktop-chromium'
       ? [{ width: 1440, height: 1000 }]
@@ -338,11 +332,6 @@ test('fuskknapp-for-teststrid: opens combat from the main menu and leaves save s
     .getByRole('button', { name: 'Test battle (cheat)', exact: true })
     .click();
   const dialog = page.getByRole('dialog', { name: 'Tactical combat' });
-  const testBattle = createTestBattle().snapshot;
-  await tapBattleHex(
-    page,
-    testBattle.pieces.find((piece) => piece.side === 'enemy')!.position!,
-  );
   await expect(
     dialog.getByRole('heading', { name: 'Deploy fleet', exact: true }),
   ).toBeVisible();
