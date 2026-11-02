@@ -235,3 +235,15 @@ test('snabb-mobilpublicering: a failed check prevents later steps', (t) => {
   assert.throws(() => readFileSync(marker));
   assert.throws(() => readFileSync(join(root, 'logs/publication.log')));
 });
+
+test('snabb-mobilpublicering: generated bundles may contain meaningful trailing whitespace', (t) => {
+  const { checkout, build } = fixture(t);
+  const bundle = 'const message = `line with space \nnext line`;\n';
+  writeFileSync(join(build, 'assets/new.js'), bundle);
+  const result = preparePublication(checkout, build, 'revision');
+  assert.equal(
+    readFileSync(join(checkout, 'spacelords/assets/new.js'), 'utf8'),
+    bundle,
+  );
+  assertAppDiff(checkout, result.base, result.commit);
+});

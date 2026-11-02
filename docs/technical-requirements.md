@@ -1387,10 +1387,14 @@ sviten behöver inte köras om efter flytten. Testfel ska fortfarande stoppa fl�
 Snabbsviten ska fortsatt innehålla en användbar blandning av tester från olika
 delar av programmet och skydda centrala beteenden. Normalt körs snabbsviten;
 alla sviter körs vid begärd omfattande testning.
-Efter uppmätt överskridande flyttades tolv kompletterande testfiler till
+Efter uppmätt överskridande flyttades arton kompletterande testfiler till
 `tests/extended/`, där de fortsatt ingår i fullständig testning.
 
 `snabb-mobilpublicering`: Playwrights testmiljö omvandlar import av karttext
 med `?raw` till samma textinnehåll som Vite. Det gör att testfixturer som
 använder domänmodellen kan laddas utan att kartfiler tolkas som JavaScript.
 Den befintliga kontrollen av mobiltesternas urval skyddar även inläsningen.
+
+`snabb-mobilpublicering`: publiceringsgranskningen tillåter blanksteg i
+genererade klientfiler eftersom de kan vara del av strängar. Kontroll av
+konfliktmarkörer, publiceringskatalog och filinnehåll behålls.

@@ -80,7 +80,15 @@ export function assertAppDiff(checkout, base, target) {
     .filter(Boolean);
   if (changed.some((path) => !path.startsWith('spacelords/')))
     throw new Error('Publication changes files outside spacelords/.');
-  git(checkout, 'diff', '--check', ...args);
+  // snabb-mobilpublicering: generated bundles can contain whitespace in string literals.
+  git(
+    checkout,
+    '-c',
+    'core.whitespace=-trailing-space,-space-before-tab,-blank-at-eof',
+    'diff',
+    '--check',
+    ...args,
+  );
   return changed;
 }
 
