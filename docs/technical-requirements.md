@@ -1387,7 +1387,7 @@ sviten behöver inte köras om efter flytten. Testfel ska fortfarande stoppa fl�
 Snabbsviten ska fortsatt innehålla en användbar blandning av tester från olika
 delar av programmet och skydda centrala beteenden. Normalt körs snabbsviten;
 alla sviter körs vid begärd omfattande testning.
-Efter uppmätt överskridande flyttades arton kompletterande testfiler till
+Efter uppmätt överskridande flyttades ytterligare kompletterande testfiler till
 `tests/extended/`, där de fortsatt ingår i fullständig testning.
 
 `snabb-mobilpublicering`: Playwrights testmiljö omvandlar import av karttext
