@@ -193,7 +193,17 @@ describe('flottfokuserad-kartvy', () => {
     emit({ type: 'begin-map-route', id: 'sol-0' });
     expect(model.snapshot.mapTrade.sourcePlanetId).toBeNull();
     emit({ type: 'map-select-fleet', id: 'freighters' });
-    click('Assign Freighters to Tellus to Vesta');
+    root
+      .querySelector<HTMLButtonElement>(
+        '.selected-fleet-card[data-fleet-id="freighters"] [aria-label="Orders"]',
+      )!
+      .click();
+    click('Join route');
+    expect(
+      root.querySelector<HTMLButtonElement>('[aria-label="Tellus ↔ Vesta"]')
+        ?.disabled,
+    ).toBe(false);
+    click('Tellus ↔ Vesta');
     expect(model.snapshot.screen).toBe('fleets');
     expect(
       model.snapshot.fleets.find((fleet) => fleet.id === 'freighters')?.routeId,

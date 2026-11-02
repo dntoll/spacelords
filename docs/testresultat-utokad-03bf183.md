@@ -11,7 +11,7 @@ Testningen är avslutad. Felen är inte analyserade; ett misslyckat test kan ber
 199 godkända och 10 misslyckade i sex filer.
 
 - `events-order.test.ts`: **Åtgärdat**. Testet antog att raden saknade barnnoder, men kravet `bilder-i-events` införde en innehållsbehållare. Testet kontrollerar fortsatt ordagrann text, att texten inte blir ett HTML-element och händelseordningen. Ingen förlorad funktion påvisades.
-- `fleet-focused-map.test.ts`: knappen för att tilldela en flotta till en rutt hittades inte.
+- `fleet-focused-map.test.ts`: **Åtgärdat**. Den tidigare direktknappen ersattes av `Orders` enligt `egen-ordervy`; testet väljer nu den aktuella flottan och rutten där, och kontrollerar fortsatt frigöring och flottflytt. Ingen förlorad funktion påvisades.
 - `planet-overview.test.ts`: **Åtgärdat** för fem fall. Testerna förväntade ett destinationsfält som ersatts av `Orders` enligt `startorder-for-nybyggda-skepp`. De verifierar nu öppning av ordervyn, beställning och spärrade kontroller. Ingen förlorad funktion påvisades i dessa fall.
 - `planet-pages.test.ts`: **Åtgärdat**. Testdata lade till en fabrik men behöll en gammal komponentlista. Modellen räknar fram listan från fabrikerna, även vid planerad rivning; testdata speglar nu detta och verifierar att beställningen spärras. Ingen förlorad funktion påvisades.
 - `research-tree-view.test.ts`: **Åtgärdat**. Testets fasta antal pilar motsvarade ett äldre forskningsberoende. `transport-ship-efter-rocket-engine` ersatte Exploration ship factory som förkunskap; testet kontrollerar nu uttryckligen det nya och borttagna beroendet. Ingen förlorad funktion påvisades.
