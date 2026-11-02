@@ -122,6 +122,7 @@ describe('planetgemensamt-produktval', () => {
     const view = renderPlanet(
       {
         ...planet,
+        availableComponents: ['Rocket engine'],
         buildings: [
           {
             id: 'engine',
