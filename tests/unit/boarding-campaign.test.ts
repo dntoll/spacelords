@@ -31,7 +31,11 @@ describe('tva-skepp-pa-bordningskartan', () => {
     };
     expect(composed.map.zoneAt(mid)).toBe('bridge');
     expect(composed.map.terrainAt(mid)).toBe('floor');
-    for (let q = Math.min(left.q, right.q) + 1; q < Math.max(left.q, right.q); q++)
+    for (
+      let q = Math.min(left.q, right.q) + 1;
+      q < Math.max(left.q, right.q);
+      q++
+    )
       expect(composed.map.terrainAt({ q, r: left.r })).toBe('floor');
     const space = { q: mid.q, r: left.r + 2 };
     expect(composed.map.terrainAt(space)).toBeNull();
@@ -421,8 +425,12 @@ describe('bordningsbeloning-last-teknik-karta / raptor-efter-dockningsteknik', (
   it('captures hold cargo, recovers Raptor factory and reveals a disk of 4 around the nearest other pirate', () => {
     const galaxy = createExampleGalaxy();
     const state = new Game(galaxy).exportState();
-    const nadir = state.pirates!.find((pirate) => pirate.id === 'pirate-nadir')!;
-    const aster = state.pirates!.find((pirate) => pirate.id === 'pirate-aster')!;
+    const nadir = state.pirates!.find(
+      (pirate) => pirate.id === 'pirate-nadir',
+    )!;
+    const aster = state.pirates!.find(
+      (pirate) => pirate.id === 'pirate-aster',
+    )!;
     let game = Game.restore({
       ...state,
       pirates: [
@@ -499,9 +507,9 @@ describe('bordningsbeloning-last-teknik-karta / raptor-efter-dockningsteknik', (
       game.tacticalBattle!.pieces.find((piece) => piece.id === defender.id)
         ?.side,
     ).toBe('player');
-    const charted = game.pirateSnapshots().find(
-      (pirate) => pirate.id === aster.id,
-    );
+    const charted = game
+      .pirateSnapshots()
+      .find((pirate) => pirate.id === aster.id);
     expect(charted).toBeDefined();
     const origin = new HexCoordinate(charted!.position.q, charted!.position.r);
     for (const offset of HexCoordinate.disk(4)) {

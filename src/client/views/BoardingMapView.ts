@@ -55,8 +55,7 @@ function stackOffset(
     id === selectedId ? 3 : id === actorId ? 2 : status === 'active' ? 1 : 0;
   stack.sort(
     (a, b) =>
-      rank(a.id, a.status) - rank(b.id, b.status) ||
-      a.id.localeCompare(b.id),
+      rank(a.id, a.status) - rank(b.id, b.status) || a.id.localeCompare(b.id),
   );
   const index = Math.max(
     0,
@@ -273,10 +272,7 @@ export class BoardingMapView implements BoardingMapPort {
   #armMotionTimer(duration: number, finish: () => void): void {
     clearTimeout(this.#motionTimer);
     this.#motionTimer = setTimeout(() => {
-      if (
-        this.#motion?.resolve === finish ||
-        this.#shot?.resolve === finish
-      )
+      if (this.#motion?.resolve === finish || this.#shot?.resolve === finish)
         this.#finishMotion();
     }, duration + 80);
   }
@@ -872,7 +868,7 @@ export class BoardingMapView implements BoardingMapPort {
       const dy =
         boardingIsoCenter(a.position).y - boardingIsoCenter(b.position).y;
       if (dy) return dy;
-      const rank = (entry: (typeof a)) =>
+      const rank = (entry: typeof a) =>
         entry.id === this.#selectedId
           ? 3
           : entry.id === state.currentActorId

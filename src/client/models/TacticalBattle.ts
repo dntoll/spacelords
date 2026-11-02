@@ -5,7 +5,8 @@ import { ShipFootprint } from './ShipFootprint.js';
 
 export type BattleSide = 'player' | 'enemy';
 export type CombatShipType = ShipType | 'Space pirate';
-export type WeaponName = 'Cannon' | 'Missiles' | 'Raider cannon' | 'Light cannon';
+export type WeaponName =
+  'Cannon' | 'Missiles' | 'Raider cannon' | 'Light cannon';
 export interface BattleHex {
   readonly q: number;
   readonly r: number;
@@ -163,7 +164,10 @@ export interface BattleState {
     readonly defenderId: string;
   };
   readonly boardingReady?: boolean;
-  readonly shift?: { readonly kind: 'boarding' | 'space'; readonly remaining: number };
+  readonly shift?: {
+    readonly kind: 'boarding' | 'space';
+    readonly remaining: number;
+  };
 }
 /** animerade-stridsskott / skadepartiklar-i-strid: facts, independent of rendering and particles. */
 export interface BattleShot {
@@ -704,7 +708,8 @@ export class TacticalBattle {
     const piece = this.#piece(id);
     const origin = position ?? piece.position;
     if (!origin) return 'Deploy the ship first.';
-    if (piece.dockedWith && !position) return 'This ship is locked in a boarding.';
+    if (piece.dockedWith && !position)
+      return 'This ship is locked in a boarding.';
     return this.placementIssue(
       id,
       origin,

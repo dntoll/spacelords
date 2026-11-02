@@ -17,8 +17,8 @@ for (const screen of ['Star map', 'Fleets']) {
     const system = createExampleGalaxy().systems[1]!;
     const prepared = {
       ...state,
-      pirates: state.pirates!
-        .filter((pirate) => pirate.systemId === 'nadir')
+      pirates: state
+        .pirates!.filter((pirate) => pirate.systemId === 'nadir')
         .map((pirate) => ({ ...pirate, transports: 0 })),
       explored: [
         ...state.explored,

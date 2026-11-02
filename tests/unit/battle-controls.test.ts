@@ -514,6 +514,7 @@ it('valbar-bordningssoldat / klickskott-pa-vald-fiende / animerat-bordningsskott
   });
   await Promise.resolve();
   expect(playShot).toHaveBeenCalled();
+  expect(document.body.textContent).not.toContain('Resolving action…');
   view.dispose();
 });
 
@@ -653,7 +654,9 @@ it('animerad-bordningsforflyttning: does not replay a finished walk when the sam
   const afterPlayer = {
     ...start,
     people: start.people.map((person) =>
-      person.id === player.id ? { ...person, position: { q: 3, r: 5 } } : person,
+      person.id === player.id
+        ? { ...person, position: { q: 3, r: 5 } }
+        : person,
     ),
   };
   view.render(start);
@@ -1035,7 +1038,9 @@ it('docka-babord-styrbord: offers Dock instead of firing when a pirate has side 
         : { ...piece, position: { q: 4, r: 3 }, facing: 0 },
     ),
   });
-  const dock = document.querySelector<HTMLButtonElement>('[aria-label="Dock"]')!;
+  const dock = document.querySelector<HTMLButtonElement>(
+    '[aria-label="Dock"]',
+  )!;
   expect(dock.disabled).toBe(false);
   dock.click();
   expect(emit).toHaveBeenCalledWith({

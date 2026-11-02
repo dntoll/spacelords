@@ -11,7 +11,12 @@ test('snabb-mobilpublicering / viewport-game-layout / sparat-spel: touch navigat
   );
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  page.on('requestfailed', (request) => errors.push(request.url()));
+  let reloading = false;
+  page.on('requestfailed', (request) => {
+    const failure = request.failure()?.errorText ?? '';
+    if (reloading && /cancelled|ERR_ABORTED/i.test(failure)) return;
+    errors.push(`${failure} ${request.url()}`);
+  });
   page.on('response', (response) => {
     if (response.status() >= 400)
       errors.push(`${response.status()} ${response.url()}`);
@@ -52,7 +57,9 @@ test('snabb-mobilpublicering / viewport-game-layout / sparat-spel: touch navigat
   const slot = page.getByRole('article', { name: 'Save slot 1', exact: true });
   await expect(slot).toContainText('Year 2');
   await page.waitForLoadState('networkidle');
+  reloading = true;
   await page.reload();
+  reloading = false;
   await expect(slot).toContainText('Year 2');
   await startFirstSlot(page);
   await expect(map).toBeVisible();

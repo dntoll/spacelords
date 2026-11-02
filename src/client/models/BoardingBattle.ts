@@ -1097,8 +1097,7 @@ export class BoardingBattle {
     const target = this.#target(targetId);
     let reason: string | null = null;
     if (!source || !target) reason = 'Choose an active attacker and target.';
-    else if (!('side' in target))
-      reason = 'Melee requires an adjacent person.';
+    else if (!('side' in target)) reason = 'Melee requires an adjacent person.';
     else if (target.side === source.side) reason = 'Choose an enemy.';
     else if (target.side === 'civilian')
       reason = 'Civilists cannot be targeted directly.';
@@ -1107,9 +1106,7 @@ export class BoardingBattle {
     else if (!sharesEdge(source.position, target.position))
       reason = 'Melee requires an adjacent target.';
     const person = target && 'side' in target ? target : null;
-    const defense = person
-      ? this.#targetDefense(person, source?.position)
-      : 99;
+    const defense = person ? this.#targetDefense(person, source?.position) : 99;
     return Object.freeze({
       chance: reason ? 0 : 75,
       defense,

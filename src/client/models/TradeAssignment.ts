@@ -78,10 +78,7 @@ function routeDistance(
   route: TradeRouteSnapshot,
   origin: HexCoordinate,
 ): number {
-  return Math.min(
-    origin.distanceTo(route.start),
-    origin.distanceTo(route.end),
-  );
+  return Math.min(origin.distanceTo(route.start), origin.distanceTo(route.end));
 }
 
 export function nearestLeastMannedRoute(

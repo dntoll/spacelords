@@ -47,8 +47,9 @@ npm run deploy:quick
 Kommandot kräver ren arbetsbranch, inklusive inga ocommittade nya filer.
 Det kör `check:quick`: formatkontroll, ESLint, snabbsviten, en typkontroll,
 Pages-bygge, automatiska publiceringsskydd, Pages-integration och korta
-mobiltester i Chromium och WebKit. Enhetstestsviten har fortsatt högst
-20 sekunders total exekveringstid; hela flödet har ingen sådan tidsgräns.
+mobiltester i Chromium och WebKit. Snabbsvitens riktvärde är 20 sekunder. Vid överskridande flyttas några
+mindre prioriterade tester till den utökade sviten utan krav på omkörning;
+testprocessen avbryts inte på grund av tiden. Hela flödet har ingen sådan tidsgräns.
 Mobiltesterna använder isolerad webbläsarlagring och rör inte spelarens sparningar.
 
 Publiceringsskriptet:

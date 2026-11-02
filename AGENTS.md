@@ -22,9 +22,15 @@
 
 - Knyt automatiska enhetstester till varje beteendekrav med kravets läsbara namn.
   Varje test ska skydda mot en kategori av fel, inte bara upprepa implementationen.
-- Dela testerna i en snabb svit med högst 20 sekunders total exekveringstid och en
-  utökad svit som får ta längre tid. Båda finns i GitHub CI: snabbkontroller vid
-  push/PR, hela sviten först vid begärt sluttest med explicit källrevision.
+- Dela testerna i en snabb svit med riktvärdet 20 sekunders total exekveringstid
+  och en utökad svit som får ta längre tid. Låt snabbsviten slutföras även om
+  riktvärdet överskrids; flytta då några mindre prioriterade tester till den
+  utökade sviten. Behåll en användbar blandning av tester från olika delar av
+  programmet och skydd för centrala beteenden. Sviten behöver inte köras om
+  efter flytten. Kör normalt bara
+  snabbsviten; kör alla sviter vid begärd omfattande testning. Båda finns i
+  GitHub CI: snabbkontroller vid push/PR, hela sviten vid begärt sluttest med
+  explicit källrevision.
 - Normalläge (`snabb-mobilpublicering`): prioritera mobil, kör
   `npm run deploy:quick` efter committad ändring på arbetsbranch och låt användaren
   testa manuellt på mobilen. En vanlig ändringsbeställning ger tillstånd till

@@ -246,15 +246,9 @@ export function parseBoardingMap(source: string): BoardingMap {
       if (feature) features.push(Object.freeze(feature));
     }
   }
-  if (
-    !campaign &&
-    !features.some((feature) => feature.id === 'reactor')
-  )
+  if (!campaign && !features.some((feature) => feature.id === 'reactor'))
     throw new Error('The map needs one reactor.');
-  if (
-    !campaign &&
-    !features.some((feature) => feature.exit === 'breach')
-  )
+  if (!campaign && !features.some((feature) => feature.exit === 'breach'))
     throw new Error('The map needs one breach.');
   return new BoardingMap(
     layers.meta.get('name') ?? 'Boarding map',

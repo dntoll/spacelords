@@ -147,7 +147,8 @@ export function spreadBoardingSpawns(
       queue.push(next);
     }
   }
-  while (placed.length < count) placed.push(seeds[placed.length % seeds.length]!);
+  while (placed.length < count)
+    placed.push(seeds[placed.length % seeds.length]!);
   return placed;
 }
 

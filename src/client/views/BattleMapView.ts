@@ -419,7 +419,9 @@ export class BattleMapView implements BattleMapPort {
     for (const ship of state.pieces) {
       if (!ship.dockedWith || !ship.position || ship.status !== 'active')
         continue;
-      const partner = state.pieces.find((piece) => piece.id === ship.dockedWith);
+      const partner = state.pieces.find(
+        (piece) => piece.id === ship.dockedWith,
+      );
       if (!partner?.position || drawn.has(ship.id)) continue;
       drawn.add(ship.id);
       drawn.add(partner.id);

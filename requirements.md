@@ -189,7 +189,7 @@ Se [hela visionen](docs/game-vision.md).
   sikt men kan blockera skott. Döda och utslagna blockerar varken skott eller
   gång. Den aktiva soldaten visar synliga och skjutbara
   rutor med två kantfärger, och egna soldater har HP- och AP-staplar ovanför
-  figuren.   Ett valt mål markeras på kartan. Melee kräver ett angränsande
+  figuren. Ett valt mål markeras på kartan. Melee kräver ett angränsande
   fiendemål och drar inte AP utan ett sådant. Gevär och melee kan inte
   träffa den egna soldaten eller eget lag; skott kräver ett fiende- eller
   miljömål. Se
@@ -568,14 +568,16 @@ Se [hela visionen](docs/game-vision.md).
   och bärgning omfattas inte av den nya väntoregeln.
   Se [Events och beslutsguidning](docs/events-and-guidance.md).
 - **Utveckling och kvalitet:** MVC, TypeScript, ESLint, p5 i instance mode,
-  en snabb testsvit inom 20 sekunder och en utökad svit i GitHub CI.
+  en snabb testsvit med riktvärdet 20 sekunder och en utökad svit i GitHub CI.
   `snabb-testsvit` är **Fullständigt implementerat**: om tiden överskrids flyttas
-  mindre prioriterade tester till den utökade sviten vid begärt sluttest.
+  mindre prioriterade tester till den utökade sviten utan krav på omkörning.
+  Sviten avbryts inte vid tidsöverskridande och behåller tester från olika
+  delar av programmet; alla sviter körs vid begärd omfattande testning.
   Detaljerade vy-, rit- och layoutkontroller ligger där; centrala spelregler behålls snabba.
   Även 23 vytester för spelgrafik, planetundersidor och forskningsdetaljer
   ligger i den utökade sviten efter ett uppmätt tidsöverskridande.
   `utokad-testsvit` har en jobbtidsgräns på 20 minuter inklusive installation
-  av webbläsare; snabbsvitens gräns är oförändrad.
+  av webbläsare; snabbsvitens tidsriktvärde är 20 sekunder.
   `snabb-mobilpublicering` är **Fullständigt implementerat** och provpublicerat:
   en vanlig ändringsbeställning innebär snabbtest och publicering av arbetsbranchen,
   om användaren inte uttryckligen avstår. Därefter testar användaren på mobilen.

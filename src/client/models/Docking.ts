@@ -1,5 +1,9 @@
 import { HexCoordinate } from './HexCoordinate.js';
-import type { BattleHex, BattlePiece, CombatShipType } from './TacticalBattle.js';
+import type {
+  BattleHex,
+  BattlePiece,
+  CombatShipType,
+} from './TacticalBattle.js';
 
 const key = (hex: BattleHex): string => `${hex.q},${hex.r}`;
 
@@ -89,12 +93,7 @@ export function dockIssue(
     return 'That ship is already locked in a boarding.';
   if (boardingBusy) return 'Finish the current boarding first.';
   if (
-    !portStarboardContact(
-      sourceCells,
-      sourceFacing,
-      targetCells,
-      targetFacing,
-    )
+    !portStarboardContact(sourceCells, sourceFacing, targetCells, targetFacing)
   )
     return 'Come alongside port or starboard.';
   return null;

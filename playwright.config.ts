@@ -1,4 +1,12 @@
 import { defineConfig, devices } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
+
+process.env.PW_TEST_SOURCE_TRANSFORM = fileURLToPath(
+  new URL('./scripts/playwright-raw-assets.cjs', import.meta.url),
+);
+process.env.PW_TEST_SOURCE_TRANSFORM_SCOPE = fileURLToPath(
+  new URL('./src/', import.meta.url),
+);
 
 export default defineConfig({
   testDir: './tests/browser',

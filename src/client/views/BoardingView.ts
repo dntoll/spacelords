@@ -51,10 +51,7 @@ export type BoardingMapFactory = (
   map: BoardingMap,
 ) => BoardingMapPort;
 
-function samePose(
-  a: BoardingBattleState,
-  b: BoardingBattleState,
-): boolean {
+function samePose(a: BoardingBattleState, b: BoardingBattleState): boolean {
   if (a.people.length !== b.people.length) return false;
   return a.people.every((person) => {
     const other = b.people.find((entry) => entry.id === person.id);
@@ -328,12 +325,11 @@ export class BoardingView {
         await this.#map.playShot(shot.from, shot.to);
         this.#playedShot = shot;
       }
-      if (token !== this.#playToken) return;
-      this.#paint(final, notice);
     } finally {
       this.#busy = false;
     }
     if (token !== this.#playToken) return;
+    this.#paint(final, notice);
     const queued = this.#pending.shift();
     if (queued)
       this.render(
