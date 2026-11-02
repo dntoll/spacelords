@@ -51,4 +51,5 @@ export const BUILDING_SYMBOLS: Readonly<Record<BuildType, string>> =
     'Colony ship factory': colonyShipFactorySymbol,
     'Exploration ship factory': explorationShipFactorySymbol,
     'Fighter factory': fighterFactorySymbol,
+    'Raptor factory': fighterFactorySymbol,
   });

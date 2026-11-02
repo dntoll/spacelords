@@ -16,6 +16,8 @@ import {
   BoardingBattle,
   type BoardingBattleState,
 } from '../../src/client/models/BoardingBattle.js';
+import { composeBoardingMaps } from '../../src/client/models/BoardingComposer.js';
+import type { BoardingMap } from '../../src/client/models/BoardingMap.js';
 import {
   createTestBoardingBattle,
   testBoardingMap,
@@ -627,6 +629,44 @@ it('klickdorr-pa-vald-dorr: clicking an adjacent selected door opens or hacks it
   view.dispose();
 });
 
+it('animerad-bordningsforflyttning: does not replay a finished walk when the same presentation is rendered again', async () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) => person.side === 'player',
+  )!;
+  const playMotion = vi.fn(() => Promise.resolve());
+  const view = new BoardingView(document.body, vi.fn(), () => ({
+    render() {},
+    playMotion,
+    zoom() {},
+    fit() {},
+    dispose() {},
+  }));
+  const start = {
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player.id
+        ? { ...person, position: { q: 2, r: 5 }, facing: 0 }
+        : person,
+    ),
+  };
+  const afterPlayer = {
+    ...start,
+    people: start.people.map((person) =>
+      person.id === player.id ? { ...person, position: { q: 3, r: 5 } } : person,
+    ),
+  };
+  view.render(start);
+  view.render(afterPlayer, null, [afterPlayer]);
+  await Promise.resolve();
+  await Promise.resolve();
+  expect(playMotion).toHaveBeenCalledTimes(1);
+  view.render(afterPlayer, null, [afterPlayer]);
+  await Promise.resolve();
+  expect(playMotion).toHaveBeenCalledTimes(1);
+  view.dispose();
+});
+
 it('animerad-bordningsforflyttning: plays a queued enemy move after the current animation', async () => {
   const created = createTestBoardingBattle();
   const player = created.snapshot.people.find(
@@ -835,4 +875,172 @@ it('fristaende-bordningsprototyp / forsvarare-och-civilister / tydlig-bordningss
   expect(save).not.toHaveBeenCalled();
   expect(render).toHaveBeenCalled();
   controller.dispose();
+});
+
+it('skott-kraver-giltigt-mal: shoot stays disabled until an enemy or feature is selected', () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) => person.side === 'player',
+  )!;
+  const defender = created.snapshot.people.find(
+    (person) => person.side === 'defender',
+  )!;
+  const boardingState: BoardingBattleState = {
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player.id
+        ? { ...person, position: { q: 4, r: 5 }, facing: 0 }
+        : person.id === defender.id
+          ? { ...person, position: { q: 5, r: 5 }, facing: 0 }
+          : person,
+    ),
+    initiativeOrder: [player.id],
+    initiativeIndex: 0,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 12 },
+  };
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new BoardingView(document.body, emit, (_container, select) => {
+    selectHex = select;
+    return { render() {}, zoom() {}, fit() {}, dispose() {} };
+  });
+  view.render(BoardingBattle.restore(testBoardingMap, boardingState).snapshot);
+  const shoot = () =>
+    document.querySelector<HTMLButtonElement>('[aria-label^="Shoot"]')!;
+  expect(shoot().disabled).toBe(true);
+  shoot().click();
+  expect(emit).not.toHaveBeenCalled();
+  selectHex({ q: 4, r: 5 });
+  expect(shoot().disabled).toBe(true);
+  shoot().click();
+  expect(emit).not.toHaveBeenCalled();
+  selectHex({ q: 5, r: 5 });
+  expect(shoot().disabled).toBe(false);
+  shoot().click();
+  expect(emit).toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'shoot', targetId: defender.id },
+  });
+  view.dispose();
+});
+
+it('melee-kraver-valt-mal: melee stays disabled until an adjacent enemy is selected', () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) => person.side === 'player',
+  )!;
+  const defender = created.snapshot.people.find(
+    (person) => person.side === 'defender',
+  )!;
+  const boardingState: BoardingBattleState = {
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player.id
+        ? { ...person, position: { q: 4, r: 5 }, facing: 0 }
+        : person.id === defender.id
+          ? { ...person, position: { q: 5, r: 5 }, facing: 0 }
+          : person,
+    ),
+    initiativeOrder: [player.id],
+    initiativeIndex: 0,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 12 },
+  };
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const rendered = vi.fn();
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new BoardingView(document.body, emit, (_container, select) => {
+    selectHex = select;
+    return { render: rendered, zoom() {}, fit() {}, dispose() {} };
+  });
+  view.render(BoardingBattle.restore(testBoardingMap, boardingState).snapshot);
+  const melee = () =>
+    document.querySelector<HTMLButtonElement>('[aria-label="Melee"]')!;
+  expect(melee().disabled).toBe(true);
+  melee().click();
+  expect(emit).not.toHaveBeenCalled();
+  selectHex({ q: 5, r: 5 });
+  expect(melee().disabled).toBe(false);
+  expect(rendered.mock.calls.at(-1)?.[1]).toBe(defender.id);
+  melee().click();
+  expect(emit).toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'melee', targetId: defender.id },
+  });
+  view.dispose();
+});
+
+it('tva-skepp-pa-bordningskartan: uses the composed campaign map for the boarding canvas', () => {
+  const composed = composeBoardingMaps('Space pirate', 'Transport ship');
+  const battle = BoardingBattle.createCampaign(
+    composed,
+    true,
+    11,
+    'Space pirate',
+    'Transport ship',
+  );
+  const maps: BoardingMap[] = [];
+  const view = new BoardingView(
+    document.body,
+    vi.fn(),
+    (_container, _select, map) => {
+      maps.push(map);
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
+  view.render(battle.visibleSnapshot);
+  expect(maps.at(-1)?.name).toBe(composed.map.name);
+  expect(maps.at(-1)?.width).toBe(composed.map.width);
+  expect(maps.at(-1)?.height).toBe(composed.map.height);
+  view.dispose();
+});
+
+it('docka-babord-styrbord: offers Dock instead of firing when a pirate has side contact', () => {
+  const created = TacticalBattle.create(
+    'dock-view',
+    { q: 8, r: -4 },
+    [
+      {
+        id: 'friendly',
+        side: 'player',
+        retreat: { q: 7, r: -4 },
+        ships: [{ id: 'raider', type: 'Space pirate', ion: false }],
+      },
+      {
+        id: 'enemy',
+        side: 'enemy',
+        retreat: { q: 8, r: -3 },
+        ships: [{ id: 'hauler', type: 'Transport ship', ion: false }],
+      },
+    ],
+    5,
+  ).snapshot;
+  const { view, emit } = setup({
+    ...created,
+    phase: 'fighting',
+    round: 1,
+    turn: 'player',
+    asteroids: [],
+    activation: {
+      id: 'raider',
+      remaining: 3,
+      fired: false,
+      moved: false,
+      movementClosed: false,
+    },
+    pieces: created.pieces.map((piece) =>
+      piece.id === 'raider'
+        ? { ...piece, position: { q: 3, r: 4 }, facing: 0 }
+        : { ...piece, position: { q: 4, r: 3 }, facing: 0 },
+    ),
+  });
+  const dock = document.querySelector<HTMLButtonElement>('[aria-label="Dock"]')!;
+  expect(dock.disabled).toBe(false);
+  dock.click();
+  expect(emit).toHaveBeenCalledWith({
+    type: 'battle-command',
+    command: { type: 'dock', targetId: 'hauler' },
+  });
+  view.dispose();
 });

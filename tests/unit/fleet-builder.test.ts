@@ -127,10 +127,11 @@ describe('skeppsbilder', () => {
         'Civilian shuttle': 1,
         'Space pirate': 1,
         'Salvage ship': 1,
+        Raptor: 1,
       },
     };
     const view = renderFleetShips(fleet);
-    expect(view.querySelectorAll('img').length).toBeLessThan(20);
+    expect(view.querySelectorAll('img').length).toBeLessThan(21);
     expect(view.textContent).toContain('+999988 Fighter');
     expect(new Set(Object.values(SHIP_IMAGES)).size).toBe(7);
     for (const ship of Object.keys(SHIP_IMAGES))
@@ -310,7 +311,7 @@ it('genererade-skeppssprites / bargat-piratskepp-behaller-typ: renders dedicated
       ?.getAttribute('src'),
   ).toBe(SHIP_SPRITES['Space pirate']);
   expect(SHIP_SPRITES['Space pirate']).not.toBe(SHIP_IMAGES.Fighter);
-  expect(Object.keys(SHIP_IMAGES)).toHaveLength(7);
+  expect(Object.keys(SHIP_IMAGES)).toHaveLength(8);
   const view = renderFleetShips({
     ...model.snapshot.fleets[0]!,
     ships: {
@@ -321,6 +322,7 @@ it('genererade-skeppssprites / bargat-piratskepp-behaller-typ: renders dedicated
       'Civilian shuttle': 0,
       'Space pirate': 0,
       'Salvage ship': 1,
+      Raptor: 0,
     },
   });
   for (const type of ['Transport ship', 'Salvage ship'] as const) {

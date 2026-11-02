@@ -17,7 +17,9 @@ for (const screen of ['Star map', 'Fleets']) {
     const system = createExampleGalaxy().systems[1]!;
     const prepared = {
       ...state,
-      pirates: state.pirates!.filter((pirate) => pirate.systemId === 'nadir'),
+      pirates: state.pirates!
+        .filter((pirate) => pirate.systemId === 'nadir')
+        .map((pirate) => ({ ...pirate, transports: 0 })),
       explored: [
         ...state.explored,
         ...system.star.position.neighbors().map((position) => position.key),
@@ -86,3 +88,42 @@ for (const screen of ['Star map', 'Fleets']) {
     expect(errors).toEqual([]);
   });
 }
+
+test('piratflotta-med-lastfartyg: the pirate panel lists a transport and its cargo hold', async ({
+  page,
+}) => {
+  const state = new Game(createExampleGalaxy()).exportState();
+  const system = createExampleGalaxy().systems[1]!;
+  const prepared = {
+    ...state,
+    pirates: state.pirates!.filter((pirate) => pirate.systemId === 'nadir'),
+    explored: [
+      ...state.explored,
+      ...system.star.position.neighbors().map((position) => position.key),
+    ],
+    fleets: [{ ...state.fleets[0]!, position: { q: 0, r: 0 } }],
+  };
+  await page.addInitScript((state) => {
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+    if (!localStorage.getItem('spacelords.save.v2.1'))
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
+      );
+  }, prepared);
+  await page.goto('./');
+  await startFirstSlot(page);
+  const game = Game.restore(prepared);
+  const marker = FleetMapLayout.markers([
+    ...game.fleetSnapshots(),
+    ...game.pirateSnapshots().map(pirateAsFleet),
+  ]).find((marker) => marker.fleet.id === 'pirate-nadir')!;
+  await selectMapPoint(page, marker.point);
+  const pirate = page.getByRole('article', {
+    name: 'Space pirate',
+    exact: true,
+  });
+  await expect(pirate).toBeVisible();
+  await expect(pirate).toContainText('1 transport');
+  await expect(pirate).toContainText('Cargo hold aboard the transport');
+});

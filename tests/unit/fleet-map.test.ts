@@ -24,6 +24,7 @@ function fleet(id: string, count = 3): FleetSnapshot {
       'Civilian shuttle': 0,
       'Space pirate': 0,
       'Salvage ship': 0,
+      Raptor: 0,
     },
     speed: 1,
     crew: 0,
@@ -204,6 +205,7 @@ describe('kartflottor', () => {
         'Civilian shuttle': 0,
         'Space pirate': 0,
         'Salvage ship': 5,
+        Raptor: 0,
       },
     };
     const marker = FleetMapLayout.markers([mixed])[0]!;
@@ -343,6 +345,7 @@ describe('kartflottor', () => {
         'Civilian shuttle': 0,
         'Space pirate': 0,
         'Salvage ship': 0,
+        Raptor: 0,
       },
     };
     const first = drawing();
@@ -609,7 +612,13 @@ it('genererade-skeppssprites: pirates use their own sprite at close and medium z
     };
     renderMapFleets(
       platform as unknown as p5,
-      [fleet('owned'), fleet('hostile')],
+      [
+        fleet('owned'),
+        {
+          ...fleet('hostile'),
+          ships: { ...fleet('hostile').ships, Fighter: 0, 'Space pirate': 3 },
+        },
+      ],
       zoom,
       undefined,
       false,

@@ -90,6 +90,7 @@ test('flottpatrullering: uses shared sight to catch a pirate, resumes its ring, 
       'Civilian shuttle': 0,
       'Space pirate': 0,
       'Salvage ship': 0,
+      Raptor: 0,
     },
     shipUnits: [
       {

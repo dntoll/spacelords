@@ -483,6 +483,88 @@ describe('personer-blockerar-inte-sikt', () => {
   });
 });
 
+describe('doda-blockerar-inte-skott-eller-rorelse', () => {
+  function corridorWithBody(
+    playerId: string,
+    bodyId: string,
+    targetId: string,
+    status: 'dead' | 'incapacitated',
+  ) {
+    withState((state) => ({
+      ...state,
+      features: state.features.map((feature) => ({
+        ...feature,
+        destroyed: true,
+      })),
+      people: state.people.map((person) => {
+        if (person.id === playerId)
+          return { ...person, position: { q: 2, r: 5 }, facing: 0 };
+        if (person.id === bodyId)
+          return {
+            ...person,
+            position: { q: 3, r: 5 },
+            status,
+            hitPoints: 0,
+          };
+        if (person.id === targetId)
+          return { ...person, position: { q: 4, r: 5 }, facing: 2 };
+        return { ...person, status: 'dead', hitPoints: 0 };
+      }),
+    }));
+    battle.synchronize();
+  }
+
+  it.each(['dead', 'incapacitated'] as const)(
+    'fires past a %s soldier at the fighter behind',
+    (status) => {
+      const player = battle.snapshot.people.find(
+        (person) => person.side === 'player',
+      )!;
+      const [body, target] = battle.snapshot.people.filter(
+        (person) => person.side === 'defender',
+      );
+      corridorWithBody(player.id, body!.id, target!.id, status);
+      expect(battle.attackPreview(player.id, target!.id).reason).toBeNull();
+    },
+  );
+
+  it.each(['dead', 'incapacitated'] as const)(
+    'walks through a %s soldier onto the tile beyond',
+    (status) => {
+      const player = battle.snapshot.people.find(
+        (person) => person.side === 'player',
+      )!;
+      const body = battle.snapshot.people.find(
+        (person) => person.side === 'defender',
+      )!;
+      withState((state) => ({
+        ...state,
+        features: state.features.map((feature) => ({
+          ...feature,
+          destroyed: true,
+        })),
+        people: state.people.map((person) => {
+          if (person.id === player.id)
+            return { ...person, position: { q: 2, r: 5 }, facing: 0 };
+          if (person.id === body.id)
+            return {
+              ...person,
+              position: { q: 3, r: 5 },
+              status,
+              hitPoints: 0,
+            };
+          return { ...person, status: 'dead', hitPoints: 0 };
+        }),
+      }));
+      const path = battle.pathTo(player.id, { q: 4, r: 5 });
+      expect(path?.positions.some((cell) => cell.q === 3 && cell.r === 5)).toBe(
+        true,
+      );
+      expect(path?.cost).toBeGreaterThan(0);
+    },
+  );
+});
+
 describe('sikt-och-eld-fran-vald-soldat', () => {
   it('marks tiles behind a person as visible but not fireable', () => {
     const player = battle.snapshot.people.find(
@@ -843,7 +925,153 @@ describe('bordningsmal-reaktor-och-evakuering', () => {
   });
 });
 
+describe('skott-kraver-giltigt-mal', () => {
+  it('does not spend AP or damage when shooting the active soldier', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    activate(player.id, 12);
+    const remaining = battle.snapshot.activation!.remaining;
+    expect(battle.attackPreview(player.id, player.id).reason).toMatch(/enemy/i);
+    expect(() =>
+      battle.command({ type: 'shoot', targetId: player.id }),
+    ).toThrow(/enemy/i);
+    expect(battle.snapshot.activation?.remaining).toBe(remaining);
+    expect(
+      battle.snapshot.people.find((person) => person.id === player.id)
+        ?.hitPoints,
+    ).toBe(player.hitPoints);
+  });
+
+  it('does not allow shooting a teammate in the field of fire', () => {
+    const players = battle.snapshot.people.filter(
+      (person) => person.side === 'player',
+    );
+    const shooter = players[0]!;
+    const teammate = players[1]!;
+    withState((state) => ({
+      ...state,
+      people: state.people.map((person) => {
+        if (person.id === shooter.id)
+          return { ...person, position: { q: 4, r: 5 }, facing: 0 };
+        if (person.id === teammate.id)
+          return { ...person, position: { q: 5, r: 5 }, facing: 0 };
+        return person;
+      }),
+    }));
+    activate(shooter.id, 12);
+    const remaining = battle.snapshot.activation!.remaining;
+    expect(battle.attackPreview(shooter.id, teammate.id).reason).toMatch(
+      /enemy/i,
+    );
+    expect(() =>
+      battle.command({ type: 'shoot', targetId: teammate.id }),
+    ).toThrow(/enemy/i);
+    expect(battle.snapshot.activation?.remaining).toBe(remaining);
+    expect(
+      battle.snapshot.people.find((person) => person.id === teammate.id)
+        ?.hitPoints,
+    ).toBe(teammate.hitPoints);
+  });
+
+  it('rejects melee against the attacker', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    activate(player.id, 12);
+    expect(battle.meleePreview(player.id, player.id).reason).toMatch(/enemy/i);
+    expect(() =>
+      battle.command({ type: 'melee', targetId: player.id }),
+    ).toThrow(/enemy/i);
+    expect(
+      battle.snapshot.people.find((person) => person.id === player.id)
+        ?.hitPoints,
+    ).toBe(player.hitPoints);
+  });
+});
+
+describe('melee-kraver-valt-mal', () => {
+  it('does not spend AP when melee has no adjacent enemy', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    activate(player.id, 12);
+    const remaining = battle.snapshot.activation!.remaining;
+    expect(() =>
+      battle.command({ type: 'melee', targetId: defender.id }),
+    ).toThrow(/adjacent/i);
+    expect(battle.snapshot.activation?.remaining).toBe(remaining);
+    expect(
+      battle.snapshot.people.find((person) => person.id === defender.id)
+        ?.hitPoints,
+    ).toBe(defender.hitPoints);
+  });
+
+  it('applies melee damage to the chosen adjacent enemy even from behind', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    withState((state) => ({
+      ...state,
+      randomState: 10_000,
+      people: state.people.map((person) => {
+        if (person.id === player.id)
+          return { ...person, position: { q: 4, r: 5 }, facing: 0 };
+        if (person.id === defender.id)
+          return { ...person, position: { q: 5, r: 5 }, facing: 0 };
+        return person;
+      }),
+    }));
+    activate(player.id, 12);
+    battle.command({ type: 'melee', targetId: defender.id });
+    expect(battle.snapshot.log.join(' ')).toMatch(/Melee by .* at Defender/i);
+    expect(
+      battle.snapshot.people.find((person) => person.id === defender.id)
+        ?.hitPoints,
+    ).toBeLessThan(defender.hitPoints);
+  });
+});
+
 describe('forsvarare-och-civilister', () => {
+  it('melee-attacks a boarder standing behind when rifle fire is out of arc', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    withState((state) => ({
+      ...state,
+      randomState: 10_000,
+      people: state.people.map((person) => {
+        if (person.id === defender.id)
+          return { ...person, position: { q: 5, r: 5 }, facing: 0 };
+        if (person.id === player.id)
+          return { ...person, position: { q: 4, r: 5 }, facing: 0 };
+        if (person.side !== 'civilian')
+          return { ...person, status: 'incapacitated' as const, hitPoints: 0 };
+        return person;
+      }),
+      initiativeOrder: [defender.id],
+      initiativeIndex: 0,
+      currentActorId: defender.id,
+      activation: { id: defender.id, remaining: 12 },
+    }));
+    expect(battle.visibleOpponents('defender')).toHaveLength(0);
+    expect(battle.actAutomatically(true)).toBe(true);
+    expect(battle.snapshot.log.join(' ')).toMatch(/Melee by Defender.*D20/i);
+    expect(
+      battle.snapshot.people.find((person) => person.id === player.id)
+        ?.hitPoints,
+    ).toBeLessThan(player.hitPoints);
+  });
+
   it('never runs AI for the player actor', () => {
     const player = battle.snapshot.people.find(
       (person) => person.side === 'player',

@@ -224,7 +224,7 @@ describe('gemensam-planetko / sparat-spel / bevara-aldre-produktionskoer', () =>
         .planetSnapshot(restored.galaxy.homePlanet)!
         .projects.map((p) => p.id),
     ).toEqual(['project-2', 'project-3', 'project-1', 'project-6']);
-    expect(restored.exportState().version).toBe(13);
+    expect(restored.exportState().version).toBe(14);
     expect(restored.fleetSnapshots()).toEqual(
       Game.restore(base).fleetSnapshots(),
     );
@@ -294,6 +294,7 @@ describe('skeppsdelar / automatisk-resursforsorjning', () => {
             'Civilian shuttle': 0,
             'Space pirate': 0,
             'Salvage ship': 0,
+            Raptor: 0,
           },
         },
       ],

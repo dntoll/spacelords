@@ -12,6 +12,7 @@ const paths = {
   exit: 'M10 3H3v18h7m5-15 6 6-6 6m-8-6h14',
   deploy: 'M3 3h6v6H3Zm12 0h6v6h-6ZM3 15h6v6H3Zm12 0h6v6h-6Z',
   start: 'm7 3 14 9-14 9Z',
+  dock: 'M4 10h6v4H4zm10 0h6v4h-6M10 12h4M6 4v4m0 8v4m12-16v4m0 8v4',
 } as const;
 
 export function battleButton(

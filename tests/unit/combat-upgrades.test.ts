@@ -86,6 +86,7 @@ describe('utforskade-stridsuppgraderingar', () => {
         ships: {
           ...fleet.ships,
           'Salvage ship': 0,
+          Raptor: 0,
           'Exploration ship': 0,
           Fighter: 1,
           'Transport ship': 1,

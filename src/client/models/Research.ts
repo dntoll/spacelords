@@ -7,6 +7,7 @@ export const TECHNOLOGIES = [
   'Exploration ship factory',
   'Colony ship factory',
   'Fighter factory',
+  'Raptor factory',
   'Transport ship factory',
   'Trade logistics',
   'Civilian transport',
@@ -39,6 +40,7 @@ export const PREREQUISITES: Readonly<
   'Exploration ship factory': ['Rocket engine factory', 'Telescope I factory'],
   'Colony ship factory': ['Rocket engine factory'],
   'Fighter factory': ['Weapons module factory'],
+  'Raptor factory': ['Weapons module factory'],
   'Transport ship factory': ['Rocket engine factory'],
   'Trade logistics': ['Transport ship factory'],
   'Civilian transport': ['Trade logistics'],
@@ -124,6 +126,8 @@ export const COMBAT_RESEARCH = {
     'Upgrade a Transport ship into an Armored Transport. Hull becomes 9. Cargo, size and speed stay the same.',
   'Armored Fighter':
     'Upgrade a Fighter into an Armored Fighter. Hull becomes 5. Weapons, size and movement stay the same.',
+  'Raptor factory':
+    'Docking technology. Builds Raptors: small troop transports with a light cannon that can board enemy ships.',
 } as const;
 
 export const RETIRED_ORDER_TECHNOLOGIES = [

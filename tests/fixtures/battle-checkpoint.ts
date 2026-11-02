@@ -7,7 +7,9 @@ export function encounterGame(pirateCount = 1): Game {
   const first = state.fleets[0]!;
   const game = Game.restore({
     ...state,
-    pirates: [{ ...state.pirates![0]!, count: pirateCount }],
+    pirates: [
+      { ...state.pirates![0]!, count: pirateCount, transports: 0 },
+    ],
     fleets: [
       {
         ...first,

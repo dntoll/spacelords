@@ -30,8 +30,8 @@ const controller = new AppController(
     (container, cells) => new SaveMapPreview(container, cells),
     (container, select, viewport) =>
       new BattleMapView(container, select, viewport),
-    (container, select) =>
-      new BoardingMapView(container, testBoardingMap, select),
+    (container, select, map) =>
+      new BoardingMapView(container, map ?? testBoardingMap, select),
   ),
 );
 controller.start();

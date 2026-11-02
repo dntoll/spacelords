@@ -111,7 +111,9 @@ test('automatiska-delorder: orders remote production through the UI and preserve
   expect(saved.version).toBe(initial.version);
   expect(saved.componentOrders).toEqual([]);
   expect(saved.colonies[0]![1].projects).toEqual([]);
-  expect(saved.fleets.reduce((n, fleet) => n + fleet.ships.Fighter, 0)).toBe(3);
+  expect(
+    saved.fleets.reduce((n, fleet) => n + (fleet.ships.Fighter ?? 0), 0),
+  ).toBe(3);
   expect(errors).toEqual([]);
 });
 

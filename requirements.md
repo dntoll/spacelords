@@ -167,10 +167,13 @@ Se [hela visionen](docs/game-vision.md).
   `ap-fargad-bordningsvag`, `animerad-bordningsforflyttning`,
   `avbrott-vid-ny-fiende`, `animerat-bordningsskott`,
   `valbar-bordningssoldat`, `klickskott-pa-vald-fiende`,
+  `vald-bordningsmal-markeras`, `melee-kraver-valt-mal`,
+  `skott-kraver-giltigt-mal`,
   `klickgang-pa-vald-destination`, `klickdorr-pa-vald-dorr`,
   `isometriska-golvtiles`, `isometriska-vaggtexturer`,
   `bordningsfigurer-fran-spritesheet`, `hp-och-ap-ovanfor-soldater`,
-  `personer-blockerar-inte-sikt` samt `sikt-och-eld-fran-vald-soldat` är
+  `personer-blockerar-inte-sikt`, `doda-blockerar-inte-skott-eller-rorelse`
+  samt `sikt-och-eld-fran-vald-soldat` är
   **Fullständigt implementerat**. Den första versionen är ett separat testspel
   från huvudmenyn på en handredigerbar transportkarta och påverkar inte
   kampanj eller sparplatser. Kartan använder klassiska kvadratiska
@@ -183,10 +186,30 @@ Se [hela visionen](docs/game-vision.md).
   hälften så hög som en vägg. Soldater, försvarare och civilister använder var
   sin isolerade stillbild ur fraktionsarket, står med fötterna lite under
   rutans centrum och behåller en separat riktningspil. Personer blockerar inte
-  sikt men kan blockera skott. Den aktiva soldaten visar synliga och skjutbara
+  sikt men kan blockera skott. Döda och utslagna blockerar varken skott eller
+  gång. Den aktiva soldaten visar synliga och skjutbara
   rutor med två kantfärger, och egna soldater har HP- och AP-staplar ovanför
-  figuren. Se
+  figuren.   Ett valt mål markeras på kartan. Melee kräver ett angränsande
+  fiendemål och drar inte AP utan ett sådant. Gevär och melee kan inte
+  träffa den egna soldaten eller eget lag; skott kräver ett fiende- eller
+  miljömål. Se
   [bordningsstrid](docs/boarding-combat.md).
+
+- **Kampanjbordning:** `piratflotta-med-lastfartyg`, `docka-babord-styrbord`,
+  `lassta-dockade-skepp`, `bordning-tva-rundor-skift`,
+  `tva-skepp-pa-bordningskartan`, `unika-startpositioner-vid-bordning`,
+  `avbryt-bordning-i-egna-skepp`,
+  `erovra-skepp-via-bordning`, `bordningsbeloning-last-teknik-karta` och
+  `raptor-efter-dockningsteknik` är **Fullständigt implementerat**. Pirater
+  har ett lastfartyg med slumpad last. Docka är en stridsorder längs babord
+  eller styrbord. Skeppen låses med en brygga, rymdstridsrundan körs färdigt
+  och bordning växlar sedan två rundor i taget mot rymdstrid. Vinst ger
+  båda skeppen, last, recovered `Raptor factory` och en kartplaceholder.
+  Sparformatet är version 14 med additiv migrering. Menyns
+  `Test boarding (cheat)` är oförändrad. Se
+  [bordningsstrid](docs/boarding-combat.md),
+  [taktisk strid](docs/tactical-combat.md) och
+  [space pirates](docs/space-pirates.md).
 
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,
   korta instruktioner, färre upprepningar i Production, mindre New fleet-ruta,

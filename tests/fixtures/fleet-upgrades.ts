@@ -15,7 +15,12 @@ export function upgradeState(): GameState {
     ],
     fleets: state.fleets.map((fleet) => ({
       ...fleet,
-      ships: { ...fleet.ships, 'Salvage ship': 0, 'Exploration ship': 1 },
+      ships: {
+        ...fleet.ships,
+        'Salvage ship': 0,
+        Raptor: 0,
+        'Exploration ship': 1,
+      },
       shipUnits: [
         {
           id: 'explorer',

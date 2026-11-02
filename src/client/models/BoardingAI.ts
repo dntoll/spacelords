@@ -1,9 +1,14 @@
-import type {
-  BoardingBattle,
-  BoardingCommand,
-  BoardingPerson,
+import {
+  BOARDING_MELEE_AP,
+  BOARDING_RIFLE_AP,
+  type BoardingBattle,
+  type BoardingCommand,
+  type BoardingPerson,
 } from './BoardingBattle.js';
 import type { BoardingCell } from './BoardingMap.js';
+
+const adjacent = (a: BoardingCell, b: BoardingCell): boolean =>
+  Math.abs(a.q - b.q) + Math.abs(a.r - b.r) === 1;
 
 const DIRECTIONS: readonly BoardingCell[] = [
   { q: 1, r: 0 },
@@ -43,8 +48,28 @@ export function chooseDefenderCommand(
         b.preview.chance - a.preview.chance ||
         a.target.hitPoints - b.target.hitPoints,
     );
-  if ((state.activation?.remaining ?? 0) >= 4 && shootable[0])
+  if (
+    actor.cockpit &&
+    battle.canAbort() &&
+    !state.people.some(
+      (entry) =>
+        entry.side === 'defender' &&
+        entry.status === 'active' &&
+        !entry.cockpit,
+    )
+  )
+    return { type: 'abort' };
+  const remaining = state.activation?.remaining ?? 0;
+  if (remaining >= BOARDING_RIFLE_AP && shootable[0])
     return { type: 'shoot', targetId: shootable[0].target.id };
+  const adjacentHostile = state.people.find(
+    (entry) =>
+      entry.side === 'player' &&
+      entry.status === 'active' &&
+      adjacent(actor.position, entry.position),
+  );
+  if (remaining >= BOARDING_MELEE_AP && adjacentHostile)
+    return { type: 'melee', targetId: adjacentHostile.id };
 
   const heard = state.noiseMarkers.find(
     (marker) => marker.audience === 'defender',
@@ -74,6 +99,6 @@ export function chooseDefenderCommand(
       .sort((a, b) => a.path.cost - b.path.cost)[0];
     if (route) return { type: 'move', to: route.destination };
   }
-  if ((state.activation?.remaining ?? 0) >= 4) return { type: 'overwatch' };
+  if (remaining >= BOARDING_RIFLE_AP) return { type: 'overwatch' };
   return { type: 'end-activation' };
 }

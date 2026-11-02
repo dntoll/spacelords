@@ -122,8 +122,8 @@ test('guard-routes: Guard routes joins a transport route and preserves the assig
   await page.reload();
   await startFirstSlot(page);
   expect(
-    (await saved(page)).fleets.find((fleet) => fleet.id === 'freighters')!
-      .ships.Fighter,
+    (await saved(page)).fleets.find((fleet) => fleet.id === 'freighters')!.ships
+      .Fighter,
   ).toBeGreaterThan(0);
 });
 

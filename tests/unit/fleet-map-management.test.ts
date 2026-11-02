@@ -1,4 +1,4 @@
-import { Game } from '../../src/client/models/Game.js';
+import { Game, type GameState } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -46,7 +46,7 @@ it('flottval-vid-varv: the shipyard panel opens a co-located fleet so its automa
 
 it('forskade-automatiska-order: Auto salvage is visible but locked before research and saves its order after unlocking', () => {
   const initial = salvageState();
-  let saved = { ...initial, researched: [...initial.researched] };
+  let saved: GameState = { ...initial, researched: [...initial.researched] };
   const model = new AppModel(undefined, {
     load: () => ({ lastPlayed: '2026-10-30', state: saved }),
     save(_slot, next) {
@@ -92,7 +92,11 @@ it('forskade-automatiska-order: Auto salvage is visible but locked before resear
 
 it('guard-routes: is available without research and waits when no transport route exists', () => {
   const initial = tradeNetworkState(false);
-  let saved = { ...initial, researched: [...initial.researched], pirates: [] };
+  let saved: GameState = {
+    ...initial,
+    researched: [...initial.researched],
+    pirates: [],
+  };
   const model = new AppModel(undefined, {
     load: () => ({ lastPlayed: '2026-10-30', state: saved }),
     save(_slot, next) {

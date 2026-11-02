@@ -1,13 +1,15 @@
 import {
   BoardingBattle,
+  BOARDING_MELEE_AP,
   type BoardingBattleState,
   type BoardingShot,
 } from '../models/BoardingBattle.js';
-import type { BoardingCell } from '../models/BoardingMap.js';
+import type { BoardingCell, BoardingMap } from '../models/BoardingMap.js';
 import {
   boardingPathMarks,
   type BoardingPathMark,
 } from '../models/BoardingPathPreview.js';
+import { composeBoardingMaps } from '../models/BoardingComposer.js';
 import { testBoardingMap } from '../models/TestBoarding.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { button, element } from './dom.js';
@@ -45,8 +47,27 @@ export interface BoardingMapPort {
 
 export type BoardingMapFactory = (
   container: HTMLElement,
-  select: (cell: BoardingCell) => void,
+  select: (cell: BoardingCell, personId?: string) => void,
+  map: BoardingMap,
 ) => BoardingMapPort;
+
+function samePose(
+  a: BoardingBattleState,
+  b: BoardingBattleState,
+): boolean {
+  if (a.people.length !== b.people.length) return false;
+  return a.people.every((person) => {
+    const other = b.people.find((entry) => entry.id === person.id);
+    return (
+      !!other &&
+      other.position.q === person.position.q &&
+      other.position.r === person.position.r &&
+      other.facing === person.facing &&
+      other.hitPoints === person.hitPoints &&
+      other.status === person.status
+    );
+  });
+}
 
 /** The view owns selection only; every game change is a typed controller intent. */
 export class BoardingView {
@@ -56,8 +77,13 @@ export class BoardingView {
   readonly #team = element('section', 'boarding-team');
   readonly #controls = element('section', 'boarding-controls');
   readonly #details = element('details', 'boarding-details');
-  readonly #map: BoardingMapPort | undefined;
+  readonly #canvas = element('div', 'boarding-canvas');
+  readonly #close: HTMLButtonElement;
+  readonly #mapFactory: BoardingMapFactory | undefined;
+  #map: BoardingMapPort | undefined;
+  #mapName = '';
   #state: BoardingBattleState | null = null;
+  #playedShot: BoardingShot | null = null;
   #selectedId: string | null = null;
   #destination: BoardingCell | null = null;
   #actorId: string | null = null;
@@ -65,7 +91,7 @@ export class BoardingView {
   #playToken = 0;
   #pending: {
     state: BoardingBattleState;
-    notice?: string | null;
+    notice?: string | null | undefined;
     presentation: readonly BoardingBattleState[];
     shot: BoardingShot | null;
   }[] = [];
@@ -75,19 +101,19 @@ export class BoardingView {
     private readonly emit: IntentHandler,
     mapFactory?: BoardingMapFactory,
   ) {
+    this.#mapFactory = mapFactory;
+    this.#close = iconButton('Close boarding', '×', () =>
+      this.emit({ type: 'close-boarding' }),
+    );
     this.#dialog.setAttribute('aria-label', 'Boarding combat');
     this.#dialog.addEventListener('cancel', (event) => event.preventDefault());
     const header = element('div', 'boarding-heading');
-    header.append(
-      this.#heading,
-      iconButton('Close boarding', '×', () => emit({ type: 'close-boarding' })),
-    );
+    header.append(this.#heading, this.#close);
     const board = element('section', 'boarding-board');
-    const canvas = element('div', 'boarding-canvas');
     const legend = element('div', 'boarding-legend');
     legend.setAttribute('aria-label', 'Map legend');
     legend.append(
-      element('span', 'boarding-legend-selected', '○ Selected soldier'),
+      element('span', 'boarding-legend-selected', '○ Selected'),
       element('span', 'boarding-legend-cover', '▰ Half cover'),
       element('span', 'boarding-legend-facing', '— Facing'),
       element('span', 'boarding-legend-sight', '◇ Sight'),
@@ -101,7 +127,7 @@ export class BoardingView {
       iconButton('Zoom out', '−', () => this.#map?.zoom(0.8)),
       iconButton('Fit boarding map', '⛶', () => this.#map?.fit()),
     );
-    board.append(canvas, legend, zoom);
+    board.append(this.#canvas, legend, zoom);
     this.#team.setAttribute('aria-label', 'Boarding team');
     this.#controls.setAttribute('aria-label', 'Soldier actions');
     this.#details.append(element('summary', '', 'Combat details'));
@@ -112,11 +138,35 @@ export class BoardingView {
     this.#dialog.append(header, layout);
     root.append(this.#dialog);
     this.#dialog.showModal();
-    this.#map = mapFactory?.(canvas, (position) => this.#selectCell(position));
+  }
+
+  #mapFor(state: BoardingBattleState): BoardingMap {
+    return state.campaign
+      ? composeBoardingMaps(
+          state.campaign.attackerType,
+          state.campaign.defenderType,
+        ).map
+      : testBoardingMap;
+  }
+
+  #ensureMap(state: BoardingBattleState): void {
+    const map = this.#mapFor(state);
+    if (this.#mapName === map.name && this.#map) return;
+    this.#map?.dispose();
+    this.#map = this.#mapFactory?.(
+      this.#canvas,
+      (position, personId) => this.#selectCell(position, personId),
+      map,
+    );
+    this.#mapName = map.name;
   }
 
   #battle(): BoardingBattle {
-    return BoardingBattle.restore(testBoardingMap, this.#state!);
+    const campaign = this.#state?.campaign;
+    const map = campaign
+      ? composeBoardingMaps(campaign.attackerType, campaign.defenderType).map
+      : testBoardingMap;
+    return BoardingBattle.restore(map, this.#state!);
   }
 
   #command(command: Parameters<BoardingBattle['command']>[0]): void {
@@ -135,20 +185,23 @@ export class BoardingView {
     this.#controls.append(control);
   }
 
-  #selectCell(position: BoardingCell): void {
+  #selectCell(position: BoardingCell, personId?: string): void {
     const state = this.#state;
     if (!state || state.phase === 'complete' || this.#busy) return;
     const actor = state.people.find(
       (entry) => entry.id === state.currentActorId,
     );
     const playerTurn = actor?.side === 'player' && actor.status === 'active';
-    const person = state.people.find(
-      (entry) =>
-        entry.status !== 'dead' &&
-        entry.status !== 'evacuated' &&
-        entry.position.q === position.q &&
-        entry.position.r === position.r,
-    );
+    const onTile = (status: 'active' | 'incapacitated', id?: string) =>
+      state.people.find(
+        (entry) =>
+          entry.status === status &&
+          (!id || entry.id === id) &&
+          entry.position.q === position.q &&
+          entry.position.r === position.r,
+      );
+    const person = onTile('active', personId) ?? onTile('active');
+    const downed = onTile('incapacitated', personId) ?? onTile('incapacitated');
     const feature = state.features.find(
       (entry) =>
         !entry.destroyed &&
@@ -213,10 +266,10 @@ export class BoardingView {
         this.#command({ type: 'move', to: position });
         return;
       }
-      this.#selectedId = null;
+      this.#selectedId = downed?.id ?? null;
       this.#destination = position;
     } else {
-      this.#selectedId = null;
+      this.#selectedId = downed?.id ?? null;
       this.#destination = position;
     }
     this.render(state);
@@ -233,15 +286,20 @@ export class BoardingView {
       return;
     }
     const previous = this.#state;
+    this.#ensureMap(state);
+    const alreadyThere = !!previous && samePose(previous, state);
+    const newShot = !!shot && shot !== this.#playedShot;
     if (
       previous &&
+      (!alreadyThere || newShot) &&
       ((presentation.length > 0 && this.#map?.playMotion) ||
-        (shot && this.#map?.playShot))
+        (newShot && this.#map?.playShot))
     ) {
       const token = ++this.#playToken;
       void this.#play(previous, presentation, shot, state, notice, token);
       return;
     }
+    if (shot) this.#playedShot = shot;
     this.#paint(state, notice);
   }
 
@@ -268,6 +326,7 @@ export class BoardingView {
         if (token !== this.#playToken) return;
         this.#paint(current, 'Firing…');
         await this.#map.playShot(shot.from, shot.to);
+        this.#playedShot = shot;
       }
       if (token !== this.#playToken) return;
       this.#paint(final, notice);
@@ -286,7 +345,9 @@ export class BoardingView {
   }
 
   #paint(state: BoardingBattleState, notice?: string | null): void {
+    this.#ensureMap(state);
     this.#state = state;
+    this.#close.hidden = !!state.campaign;
     if (this.#actorId !== state.currentActorId) {
       this.#actorId = state.currentActorId;
       this.#selectedId = null;
@@ -392,6 +453,9 @@ export class BoardingView {
       const preview = this.#selectedId
         ? this.#battle().attackPreview(actor.id, this.#selectedId)
         : null;
+      const melee = this.#selectedId
+        ? this.#battle().meleePreview(actor.id, this.#selectedId)
+        : null;
       this.#action(
         preview?.reason
           ? 'Shoot'
@@ -400,10 +464,14 @@ export class BoardingView {
         () => this.#command({ type: 'shoot', targetId: this.#selectedId! }),
         !preview || preview.reason !== null,
       );
-      if (selectedPerson && selectedPerson.side !== 'civilian')
-        this.#action('Melee', '✦', () =>
-          this.#command({ type: 'melee', targetId: this.#selectedId! }),
-        );
+      this.#action(
+        'Melee',
+        '✦',
+        () => this.#command({ type: 'melee', targetId: this.#selectedId! }),
+        !melee ||
+          melee.reason !== null ||
+          (state.activation?.remaining ?? 0) < BOARDING_MELEE_AP,
+      );
       if (this.#destination) {
         this.#action(
           'Frag grenade',
@@ -469,6 +537,13 @@ export class BoardingView {
         this.#action('Evacuate', '⇱', () =>
           this.#command({ type: 'evacuate' }),
         );
+      if (state.campaign)
+        this.#action(
+          'Abort boarding',
+          '⎋',
+          () => this.#command({ type: 'abort' }),
+          !this.#battle().canAbort(),
+        );
       this.#action('End soldier turn', '✓', () =>
         this.#command({ type: 'end-activation' }),
       );
@@ -489,7 +564,9 @@ export class BoardingView {
           'boarding-selection',
           state.phase === 'complete'
             ? 'Close boarding to return to saved games.'
-            : 'Defenders are acting…',
+            : this.#busy
+              ? 'Resolving action…'
+              : 'Defenders are acting…',
         ),
       );
 

@@ -7,9 +7,18 @@ export function completeTacticalBattles(subject: Game | AppModel): void {
     'snapshot' in subject
       ? subject.snapshot.tacticalBattle
       : subject.tacticalBattle;
+  const boarding = () =>
+    'snapshot' in subject
+      ? subject.snapshot.boardingBattle
+      : subject.boardingBattle;
   for (let attempts = 0; attempts < 1000; attempts++) {
     if ('snapshot' in subject && subject.snapshot.battleFeedback)
       subject.finishBattleFeedback();
+    const boardingState = boarding();
+    if (boardingState) {
+      subject.finishBoarding('aborted');
+      continue;
+    }
     const state = snapshot();
     if (!state) return;
     if (state.phase === 'deployment') {
@@ -30,9 +39,10 @@ export function completeTacticalBattles(subject: Game | AppModel): void {
           )!);
       if (!state.activation)
         subject.commandBattle({ type: 'activate', id: piece.id });
-      if (piece.type === 'Fighter') subject.playBattleActivation();
+      if (piece.type === 'Fighter')
+        subject.playBattleActivation(false, { allowDock: false });
       else subject.commandBattle({ type: 'end-activation' });
-    } else subject.playBattleActivation();
+    } else subject.playBattleActivation(false, { allowDock: false });
   }
   throw new Error('Tactical battle did not terminate.');
 }

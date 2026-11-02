@@ -12,6 +12,7 @@ export const BUILDING_IMAGES: Readonly<Partial<Record<BuildType, string>>> =
     'Colony ship factory': colonyFactory,
     'Exploration ship factory': explorationFactory,
     'Fighter factory': fighterFactory,
+    'Raptor factory': fighterFactory,
     'Research station': researchStation,
   });
 

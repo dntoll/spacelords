@@ -34,20 +34,31 @@ async function saved(page: Page): Promise<GameState> {
       ).state,
   );
 }
-test('skeppssprites-pa-kartan / genererade-skeppssprites: all six sprites load and mixed fleets remain selectable in each map', async ({
+test('skeppssprites-pa-kartan / genererade-skeppssprites: all ship sprites load and mixed fleets remain selectable in each map', async ({
   page,
 }, testInfo) => {
-  const state = researchStationState();
-  state.fleets[0]!.ships = {
-    Fighter: 1,
-    'Exploration ship': 1,
-    'Colony ship': 1,
-    'Transport ship': 1,
-    'Civilian shuttle': 0,
-    'Space pirate': 0,
-    'Salvage ship': 1,
+  const initial = researchStationState();
+  const homeFleet = { ...initial.fleets[0]! };
+  delete homeFleet.shipUnits;
+  const state = {
+    ...initial,
+    fleets: [
+      {
+        ...homeFleet,
+        ships: {
+          Fighter: 1,
+          'Exploration ship': 1,
+          'Colony ship': 1,
+          'Transport ship': 1,
+          'Civilian shuttle': 0,
+          'Space pirate': 0,
+          'Salvage ship': 1,
+          Raptor: 0,
+        },
+      },
+      ...initial.fleets.slice(1),
+    ],
   };
-  delete state.fleets[0]!.shipUnits;
   await seed(page, state);
   for (const screen of ['Star map', 'Fleets', 'Route']) {
     await page
@@ -56,7 +67,7 @@ test('skeppssprites-pa-kartan / genererade-skeppssprites: all six sprites load a
       .click();
     await expect(page.locator('canvas')).toHaveAttribute(
       'data-ship-images-ready',
-      '6',
+      '8',
     );
     await selectMapFleet(page);
     await expect(page.locator('.selected-fleet-card')).toContainText(
@@ -195,7 +206,7 @@ test('gemensam-events-panel / planetinformation-pa-kartan: persistent footer, re
   await expect(page.locator('.planet-map-info')).toHaveCount(0);
   await expect(page.locator('canvas')).toHaveAttribute(
     'data-ship-images-ready',
-    '6',
+    '8',
   );
   await page.screenshot({ path: testInfo.outputPath('shared-footer.png') });
 });

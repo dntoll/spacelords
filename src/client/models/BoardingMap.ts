@@ -30,14 +30,20 @@ const key = (position: BoardingCell): string => `${position.q},${position.r}`;
 const freezeCell = (q: number, r: number): BoardingCell =>
   Object.freeze({ q, r });
 
+export type BoardingShipZone = 'attacker' | 'defender' | 'bridge';
+
 export class BoardingMap {
   readonly name: string;
   readonly width: number;
   readonly height: number;
   readonly features: readonly BoardingFeatureDefinition[];
   readonly spawns: BoardingSpawns;
+  readonly airlocks: readonly BoardingCell[];
+  readonly cockpits: readonly BoardingCell[];
+  readonly campaign: boolean;
   readonly #terrain: ReadonlyMap<string, BoardingTerrain>;
   readonly #rooms: ReadonlyMap<string, BoardingRoom>;
+  readonly #zones: ReadonlyMap<string, BoardingShipZone>;
 
   constructor(
     name: string,
@@ -47,19 +53,31 @@ export class BoardingMap {
     rooms: ReadonlyMap<string, BoardingRoom>,
     features: readonly BoardingFeatureDefinition[],
     spawns: BoardingSpawns,
+    airlocks: readonly BoardingCell[] = [],
+    cockpits: readonly BoardingCell[] = [],
+    campaign = false,
+    zones: ReadonlyMap<string, BoardingShipZone> = new Map(),
   ) {
     this.name = name;
     this.width = width;
     this.height = height;
     this.#terrain = terrain;
     this.#rooms = rooms;
+    this.#zones = zones;
+    this.campaign = campaign;
     this.features = Object.freeze([...features]);
+    this.airlocks = Object.freeze([...airlocks]);
+    this.cockpits = Object.freeze([...cockpits]);
     this.spawns = Object.freeze({
       player: Object.freeze([...spawns.player]),
       defender: Object.freeze([...spawns.defender]),
       civilian: Object.freeze([...spawns.civilian]),
     });
     Object.freeze(this);
+  }
+
+  zoneAt(position: BoardingCell): BoardingShipZone | null {
+    return this.#zones.get(key(position)) ?? null;
   }
 
   terrainAt(position: BoardingCell): BoardingTerrain | null {
@@ -159,6 +177,9 @@ export function parseBoardingMap(source: string): BoardingMap {
   const terrain = new Map<string, BoardingTerrain>();
   const rooms = new Map<string, BoardingRoom>();
   const features: BoardingFeatureDefinition[] = [];
+  const airlocks: BoardingCell[] = [];
+  const cockpits: BoardingCell[] = [];
+  const campaign = layers.meta.get('rules') === 'campaign';
   const spawns: Record<keyof BoardingSpawns, BoardingCell[]> = {
     player: [],
     defender: [],
@@ -184,8 +205,9 @@ export function parseBoardingMap(source: string): BoardingMap {
           }),
         );
 
-      const room = symbol('rooms', layers.rooms, '-BE', q, r);
-      if (room !== '-')
+      const room = symbol('rooms', layers.rooms, '-BEK', q, r);
+      if (room === 'K') cockpits.push(position);
+      else if (room !== '-')
         rooms.set(key(position), room === 'B' ? 'bridge' : 'engineering');
 
       const spawn = symbol('spawns', layers.spawns, '-PDC', q, r);
@@ -193,7 +215,8 @@ export function parseBoardingMap(source: string): BoardingMap {
       else if (spawn === 'D') spawns.defender.push(position);
       else if (spawn === 'C') spawns.civilian.push(position);
 
-      const object = symbol('objects', layers.objects, '-DLRCBX', q, r);
+      const object = symbol('objects', layers.objects, '-DLRCBXA', q, r);
+      if (object === 'A') airlocks.push(position);
       let feature: BoardingFeatureDefinition | null = null;
       if (object === 'D' || object === 'L')
         feature = {
@@ -223,9 +246,15 @@ export function parseBoardingMap(source: string): BoardingMap {
       if (feature) features.push(Object.freeze(feature));
     }
   }
-  if (!features.some((feature) => feature.id === 'reactor'))
+  if (
+    !campaign &&
+    !features.some((feature) => feature.id === 'reactor')
+  )
     throw new Error('The map needs one reactor.');
-  if (!features.some((feature) => feature.exit === 'breach'))
+  if (
+    !campaign &&
+    !features.some((feature) => feature.exit === 'breach')
+  )
     throw new Error('The map needs one breach.');
   return new BoardingMap(
     layers.meta.get('name') ?? 'Boarding map',
@@ -235,5 +264,8 @@ export function parseBoardingMap(source: string): BoardingMap {
     rooms,
     features,
     spawns,
+    airlocks,
+    cockpits,
+    campaign,
   );
 }

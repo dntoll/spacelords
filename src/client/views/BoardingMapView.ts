@@ -34,6 +34,37 @@ import {
 
 const key = (position: BoardingCell): string => `${position.q},${position.r}`;
 
+function stackOffset(
+  people: readonly {
+    readonly id: string;
+    readonly position: BoardingCell;
+    readonly status: string;
+  }[],
+  personId: string,
+  selectedId: string | null,
+  actorId: string | null,
+): { readonly x: number; readonly y: number } {
+  const person = people.find((entry) => entry.id === personId);
+  if (!person) return { x: 0, y: 0 };
+  const stack = people.filter(
+    (entry) =>
+      entry.status !== 'evacuated' &&
+      key(entry.position) === key(person.position),
+  );
+  const rank = (id: string, status: string) =>
+    id === selectedId ? 3 : id === actorId ? 2 : status === 'active' ? 1 : 0;
+  stack.sort(
+    (a, b) =>
+      rank(a.id, a.status) - rank(b.id, b.status) ||
+      a.id.localeCompare(b.id),
+  );
+  const index = Math.max(
+    0,
+    stack.findIndex((entry) => entry.id === personId),
+  );
+  return { x: index * 10, y: index * 5 };
+}
+
 export class BoardingMapView implements BoardingMapPort {
   readonly #p5: p5;
   readonly #observer: ResizeObserver;
@@ -67,6 +98,7 @@ export class BoardingMapView implements BoardingMapPort {
   #factionSprites: p5.Image | null = null;
   #ready = false;
   #disposed = false;
+  #motionTimer: ReturnType<typeof setTimeout> | undefined;
   #fitPending = true;
   readonly #pointers = new Map<number, Point>();
   #start: Point | null = null;
@@ -75,7 +107,7 @@ export class BoardingMapView implements BoardingMapPort {
   constructor(
     private readonly container: HTMLElement,
     private readonly map: BoardingMap,
-    select: (cell: BoardingCell) => void,
+    select: (cell: BoardingCell, personId?: string) => void,
   ) {
     this.#p5 = new p5((sketch) => {
       sketch.setup = () => {
@@ -148,10 +180,14 @@ export class BoardingMapView implements BoardingMapPort {
       this.#fitPending = true;
       return;
     }
-    const camera = boardingIsoCamera(this.map, {
-      width: this.#p5.width,
-      height: this.#p5.height,
-    });
+    const camera = boardingIsoCamera(
+      this.map,
+      {
+        width: this.#p5.width,
+        height: this.#p5.height,
+      },
+      (cell) => this.map.terrainAt(cell) !== null,
+    );
     this.#scale = camera.scale;
     this.#offset = camera.offset;
     this.#fitPending = false;
@@ -183,17 +219,25 @@ export class BoardingMapView implements BoardingMapPort {
     this.#finishMotion();
     this.#state = to;
     return new Promise((resolve) => {
-      if (!this.#ready) {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
         resolve();
+      };
+      if (!this.#ready) {
+        finish();
         return;
       }
+      const duration = 260;
       this.#motion = {
         from,
         to,
         started: performance.now(),
-        duration: 260,
-        resolve,
+        duration,
+        resolve: finish,
       };
+      this.#armMotionTimer(duration, finish);
       this.#p5.loop();
       void this.#p5.redraw();
     });
@@ -202,23 +246,44 @@ export class BoardingMapView implements BoardingMapPort {
   playShot(from: BoardingCell, to: BoardingCell): Promise<void> {
     this.#finishMotion();
     return new Promise((resolve) => {
-      if (!this.#ready) {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
         resolve();
+      };
+      if (!this.#ready) {
+        finish();
         return;
       }
+      const duration = 280;
       this.#shot = {
         from: boardingIsoCenter(from),
         to: boardingIsoCenter(to),
         started: performance.now(),
-        duration: 280,
-        resolve,
+        duration,
+        resolve: finish,
       };
+      this.#armMotionTimer(duration, finish);
       this.#p5.loop();
       void this.#p5.redraw();
     });
   }
 
+  #armMotionTimer(duration: number, finish: () => void): void {
+    clearTimeout(this.#motionTimer);
+    this.#motionTimer = setTimeout(() => {
+      if (
+        this.#motion?.resolve === finish ||
+        this.#shot?.resolve === finish
+      )
+        this.#finishMotion();
+    }, duration + 80);
+  }
+
   #finishMotion(): void {
+    clearTimeout(this.#motionTimer);
+    this.#motionTimer = undefined;
     const motion = this.#motion;
     const shot = this.#shot;
     this.#motion = null;
@@ -228,7 +293,10 @@ export class BoardingMapView implements BoardingMapPort {
     shot?.resolve();
   }
 
-  #bind(canvas: HTMLCanvasElement, select: (cell: BoardingCell) => void): void {
+  #bind(
+    canvas: HTMLCanvasElement,
+    select: (cell: BoardingCell, personId?: string) => void,
+  ): void {
     const options = { signal: this.#events.signal };
     const point = (event: PointerEvent | WheelEvent): Point => {
       const bounds = canvas.getBoundingClientRect();
@@ -296,25 +364,38 @@ export class BoardingMapView implements BoardingMapPort {
             x: (position.x - this.#offset.x) / this.#scale,
             y: (position.y - this.#offset.y) / this.#scale,
           };
+          const people = this.#state?.people ?? [];
           const sprite = boardingCharacterAtPoint(
-            (this.#state?.people ?? [])
+            people
               .filter(
                 (person) =>
                   person.status !== 'dead' && person.status !== 'evacuated',
               )
-              .map((person) => ({
-                id: person.id,
-                side: person.side,
-                floorCenter: boardingIsoCenter(person.position),
-                crouched: person.crouched,
-              })),
+              .map((person) => {
+                const shift = stackOffset(
+                  people,
+                  person.id,
+                  this.#selectedId,
+                  this.#state?.currentActorId ?? null,
+                );
+                const center = boardingIsoCenter(person.position);
+                return {
+                  id: person.id,
+                  side: person.side,
+                  floorCenter: {
+                    x: center.x + shift.x,
+                    y: center.y + shift.y,
+                  },
+                  crouched: person.crouched,
+                };
+              }),
             iso,
           );
           const cell = sprite
             ? this.#state!.people.find((person) => person.id === sprite.id)!
                 .position
             : boardingCellFromIsoPoint(iso);
-          if (this.map.contains(cell)) select(cell);
+          if (this.map.terrainAt(cell)) select(cell, sprite?.id);
         }
         this.#pointers.delete(event.pointerId);
         this.#start = null;
@@ -628,11 +709,17 @@ export class BoardingMapView implements BoardingMapPort {
     );
     const sightEdges = new Set(this.#sight.map(key));
     const fireEdges = new Set(this.#fire.map(key));
+    const selectedCell = [
+      ...state.people.filter((person) => person.id === this.#selectedId),
+      ...state.features.filter((feature) => feature.id === this.#selectedId),
+    ][0]?.position;
+    const selectedTile = selectedCell ? key(selectedCell) : null;
     for (let r = 0; r < this.map.height; r++) {
       for (let q = 0; q < this.map.width; q++) {
         const position = { q, r };
-        const center = boardingIsoCenter(position);
         const terrain = this.map.terrainAt(position);
+        if (!terrain) continue;
+        const center = boardingIsoCenter(position);
         const current = visible.has(key(position));
         const remembered = explored.has(key(position));
         const knownHull = terrain === 'hull';
@@ -667,7 +754,10 @@ export class BoardingMapView implements BoardingMapPort {
           sketch.strokeWeight(2);
           this.#tile(sketch, position);
         }
-        if (this.#destination && key(this.#destination) === key(position)) {
+        if (
+          (this.#destination && key(this.#destination) === key(position)) ||
+          selectedTile === key(position)
+        ) {
           sketch.noFill();
           sketch.stroke('#f4cf5a');
           sketch.strokeWeight(4);
@@ -778,10 +868,20 @@ export class BoardingMapView implements BoardingMapPort {
           );
         })
       : null;
-    for (const person of [...state.people].sort(
-      (a, b) =>
-        boardingIsoCenter(a.position).y - boardingIsoCenter(b.position).y,
-    )) {
+    for (const person of [...state.people].sort((a, b) => {
+      const dy =
+        boardingIsoCenter(a.position).y - boardingIsoCenter(b.position).y;
+      if (dy) return dy;
+      const rank = (entry: (typeof a)) =>
+        entry.id === this.#selectedId
+          ? 3
+          : entry.id === state.currentActorId
+            ? 2
+            : entry.status === 'active'
+              ? 1
+              : 0;
+      return rank(a) - rank(b);
+    })) {
       if (person.status === 'evacuated') continue;
       const origin = mover && person.id === mover.id ? mover : person;
       const target =
@@ -789,11 +889,17 @@ export class BoardingMapView implements BoardingMapPort {
           ? (motion!.to.people.find((entry) => entry.id === person.id) ??
             person)
           : person;
+      const shift = stackOffset(
+        state.people,
+        person.id,
+        this.#selectedId,
+        state.currentActorId,
+      );
       const fromCenter = boardingIsoCenter(origin.position);
       const toCenter = boardingIsoCenter(target.position);
       const center = {
-        x: fromCenter.x + (toCenter.x - fromCenter.x) * progress,
-        y: fromCenter.y + (toCenter.y - fromCenter.y) * progress,
+        x: fromCenter.x + (toCenter.x - fromCenter.x) * progress + shift.x,
+        y: fromCenter.y + (toCenter.y - fromCenter.y) * progress + shift.y,
       };
       const bodyY = center.y + BOARDING_FOOT_PLANT - (person.crouched ? 9 : 13);
       sketch.noStroke();
@@ -804,6 +910,11 @@ export class BoardingMapView implements BoardingMapPort {
         sketch.stroke('#f4cf5a');
         sketch.strokeWeight(2.5);
         sketch.ellipse(center.x, center.y + BOARDING_FOOT_PLANT - 1, 32, 13);
+      } else if (person.id === this.#selectedId) {
+        sketch.noFill();
+        sketch.stroke('#f4cf5a');
+        sketch.strokeWeight(3);
+        sketch.ellipse(center.x, center.y + BOARDING_FOOT_PLANT - 1, 36, 16);
       }
       if (this.#factionSprites) {
         const sprite = boardingCharacterSprite(

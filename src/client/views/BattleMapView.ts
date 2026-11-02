@@ -391,7 +391,9 @@ export class BattleMapView implements BattleMapPort {
     if (
       selected?.position &&
       state.phase === 'fighting' &&
-      (selected.type === 'Fighter' || selected.type === 'Space pirate')
+      (selected.type === 'Fighter' ||
+        selected.type === 'Space pirate' ||
+        selected.type === 'Raptor')
     ) {
       const center = HexGeometry.toPoint(
         new HexCoordinate(selected.position.q, selected.position.r),
@@ -410,6 +412,24 @@ export class BattleMapView implements BattleMapPort {
         angle + arc,
         p.PIE,
       );
+    }
+    p.stroke('#c9b37a');
+    p.strokeWeight(4);
+    const drawn = new Set<string>();
+    for (const ship of state.pieces) {
+      if (!ship.dockedWith || !ship.position || ship.status !== 'active')
+        continue;
+      const partner = state.pieces.find((piece) => piece.id === ship.dockedWith);
+      if (!partner?.position || drawn.has(ship.id)) continue;
+      drawn.add(ship.id);
+      drawn.add(partner.id);
+      const a = HexGeometry.toPoint(
+        new HexCoordinate(ship.position.q, ship.position.r),
+      );
+      const b = HexGeometry.toPoint(
+        new HexCoordinate(partner.position.q, partner.position.r),
+      );
+      p.line(a.x, a.y, b.x, b.y);
     }
     for (const currentShip of state.pieces) {
       const impact =
@@ -474,11 +494,11 @@ export class BattleMapView implements BattleMapPort {
       p.push();
       // skeppets-framat-foljer-spriten: every ship asset has its nose pointing right.
       p.rotate((-ship.facing * Math.PI) / 3);
-      const image = this.#images.get(
-        ship.type === 'Space pirate' ? 'Space pirate' : ship.type,
-      );
+      const image = this.#images.get(ship.type);
       if (image) {
         p.imageMode(p.CENTER);
+        if (ship.side === 'enemy' && ship.type === 'Transport ship')
+          p.tint(210, 92, 78);
         p.image(
           image,
           0,
@@ -486,6 +506,7 @@ export class BattleMapView implements BattleMapPort {
           large ? Math.sqrt(3) * HexGeometry.size * 2.7 : radius * 1.7,
           large ? HexGeometry.size * 1.2 : radius * 1.7,
         );
+        if (ship.side === 'enemy' && ship.type === 'Transport ship') p.noTint();
       } else {
         p.fill(ship.side === 'player' ? '#b0e9f9' : '#ffb2a3');
         p.noStroke();

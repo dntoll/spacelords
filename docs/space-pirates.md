@@ -1,7 +1,9 @@
 # Space pirates
 
-Nya spel börjar med en Space pirate runt varje stjärna utanför hemsystemet.
-Äldre spel får inga pirater. Besegrade pirater återkommer inte.
+Nya spel börjar med en piratflotta runt varje stjärna utanför hemsystemet:
+en `Space pirate` och ett piratfärgat `Transport ship` med slumpad last i
+`hold`. Äldre spel utan pirater får fortfarande inga. Sparningar i version 13
+får ett lastfartyg additivt i version 14. Besegrade pirater återkommer inte.
 
 ## Patrullering och sikt
 
@@ -55,9 +57,12 @@ Flottor som byter hex med varandra möts inte. Alla skepp på samma galaxhex
 deltar tillsammans på en separat stridskarta.
 
 Spelaren placerar sina skepp, aktiverar dem växelvis med fienden och använder
-riktning, vapen och skydd. Öppna D6-slag avgör träffar. Civila skepp är
-obeväpnade men kan skyddas och fly. Förstörda skepp lämnar vrak. Se
-[taktisk strid](tactical-combat.md) för hela regeluppsättningen.
+riktning, vapen och skydd. Pirater väljer `Dock` när babord- eller
+styrbordskontakt mot ett bordningsbart skepp är laglig. Öppna D6-slag avgör
+träffar. Civila skepp är obeväpnade men kan skyddas och fly. Förstörda skepp
+lämnar vrak. Erövrad last lastas av vid ägd planet. Se
+[taktisk strid](tactical-combat.md) och
+[bordningsstrid](boarding-combat.md) för hela regeluppsättningen.
 
 Detta ersätter den tidigare fasta förlustformeln och separata strider för
 spelarflottorna i `flottstrid-per-hex`. Kravnamnet behålls.

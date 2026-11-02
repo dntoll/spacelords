@@ -1,4 +1,8 @@
-import { Game, type ShipUnit } from '../../src/client/models/Game.js';
+import {
+  Game,
+  type GameState,
+  type ShipUnit,
+} from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { Salvage } from '../../src/client/models/Salvage.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
@@ -50,7 +54,7 @@ export function salvageState() {
       'Rocket engine factory',
       'Orbital shipyard',
       'Salvage ship factory',
-    ] as const,
+    ],
     pirates: [],
     salvage: salvage.snapshot(),
     fleets: [
@@ -66,6 +70,7 @@ export function salvageState() {
           'Civilian shuttle': 0,
           'Space pirate': 0,
           'Salvage ship': 1,
+          Raptor: 0,
         },
         shipUnits: [
           {
@@ -76,7 +81,7 @@ export function salvageState() {
         ],
       },
     ],
-  };
+  } satisfies GameState;
 }
 export function finishYear(game: Game): void {
   collectTurnFrames(game);

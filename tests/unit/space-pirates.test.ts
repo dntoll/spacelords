@@ -15,6 +15,7 @@ const empty = {
   'Civilian shuttle': 0,
   'Space pirate': 0,
   'Salvage ship': 0,
+  Raptor: 0,
 };
 function turn(game: Game) {
   for (const frame of turnFrames(game)) game.applyFrame(frame);
@@ -46,20 +47,34 @@ function battle(fighters: number, pirates: number, civilians = 0) {
 describe('rymdpirater-per-stjarna / rymdpiraters-patrullering', () => {
   it('seeds exactly one pirate at every non-home star without mixing player fleets', () => {
     const game = new Game(createExampleGalaxy());
-    expect(game.exportState().pirates).toEqual([
+    const pirates = game.exportState().pirates!;
+    expect(
+      pirates.map((pirate) => ({
+        id: pirate.id,
+        systemId: pirate.systemId,
+        position: pirate.position,
+        count: pirate.count,
+        transports: pirate.transports,
+      })),
+    ).toEqual([
       {
         id: 'pirate-nadir',
         systemId: 'nadir',
         position: { q: 8, r: -3 },
         count: 1,
+        transports: 1,
       },
       {
         id: 'pirate-aster',
         systemId: 'aster',
         position: { q: -5, r: 6 },
         count: 1,
+        transports: 1,
       },
     ]);
+    expect(
+      pirates[0]!.hold!.Iron + pirates[0]!.hold!.Water + pirates[0]!.hold!.Oil,
+    ).toBeGreaterThan(0);
     expect(game.fleetSnapshots()).toHaveLength(1);
     expect(game.pirateSnapshots()).toHaveLength(0);
   });
@@ -385,6 +400,7 @@ describe('rymdpirater-per-stjarna / lokal-sikt', () => {
             'Civilian shuttle': 0,
             'Space pirate': 0,
             'Salvage ship': 0,
+            Raptor: 0,
           },
           shipUnits: [],
         },

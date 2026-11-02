@@ -159,12 +159,29 @@ sätt. Om en ny fiende upptäcks avbryts resten av förflyttningen. Skott
 animeras. Spelaren kan klicka på en annan egen soldat för att flytta undan
 någon som står i vägen, klicka igen på en redan vald fiende för att skjuta,
 klicka igen på en vald destination för att gå dit, och klicka igen på en
-angränsande vald dörr för att öppna, stänga eller hacka den. Soldater ser 180
-grader framåt. En person blockerar inte sikt men kan stå i vägen för skott.
+angränsande vald dörr för att öppna, stänga eller hacka den. Ett valt mål
+markeras tydligt på kartan. Melee kräver ett angränsande fiendemål och drar
+inte AP utan ett sådant. Gevär och melee kan inte träffa den egna soldaten
+eller eget lag; skottknappen är avstängd utan ett fiende- eller miljömål.
+Soldater ser 180 grader framåt. En person blockerar
+inte sikt men kan stå i vägen för skott. Döda och utslagna blockerar varken
+skott eller gång.
 
-Prototypen påverkar inga sparade spel och ger ännu inga skepp,
-besättningsmedlemmar, forskningsresultat eller kartupplysningar till kampanjen.
-Se [bordningsstrid](boarding-combat.md).
+Prototypen från huvudmenyn påverkar inga sparade spel. I kampanjen ger en
+vunnen bordning skeppet, last, recovered `Raptor factory` och en kartplaceholder
+runt närmaste andra pirat. Se [bordningsstrid](boarding-combat.md).
+
+## Kampanjbordning
+
+`piratflotta-med-lastfartyg`, `docka-babord-styrbord`, `lassta-dockade-skepp`,
+`bordning-tva-rundor-skift`, `tva-skepp-pa-bordningskartan`,
+`unika-startpositioner-vid-bordning`, `avbryt-bordning-i-egna-skepp`,
+`erovra-skepp-via-bordning`, `bordningsbeloning-last-teknik-karta` och
+`raptor-efter-dockningsteknik` är **Fullständigt implementerat**. Pirater har
+lastfartyg. Spelaren och pirater kan docka längs sidorna, låsas med en brygga
+och slåss inne i båda skeppen växelvis med rymdstriden. Varje soldat startar
+på en egen golvruta. Avbrott kräver att alla levande är i egna skepp.
+Vinnaren tar båda skeppen i samma strid. `Raptor` byggs efter dockningsteknik.
 
 `bargat-piratskepp-behaller-typ` och `unik-bild-for-civila-transporter` är
 **Fullständigt implementerat**. Ett nyförstört piratskepp kan bärgas och

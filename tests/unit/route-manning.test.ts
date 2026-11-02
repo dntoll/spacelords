@@ -74,16 +74,17 @@ describe('automatisk-farledsbemanning', () => {
   });
 
   it('assigns simultaneous completions one at a time so later ships see updated manning', () => {
-    const state = distantTradeNetworkState();
-    state.fleets = state.fleets.map((fleet) =>
+    const base = distantTradeNetworkState();
+    const fleets = base.fleets.map((fleet) =>
       fleet.id === 'travellers'
         ? { ...fleet, ships: { ...fleet.ships, 'Transport ship': 3 } }
         : fleet,
     );
+    const freighter = { ...fleets.find((fleet) => fleet.id === 'freighters')! };
+    delete freighter.routeId;
     const waiting = {
-      ...state.fleets.find((fleet) => fleet.id === 'freighters')!,
+      ...freighter,
       destination: null,
-      routeId: undefined,
       position: { q: 0, r: 0 },
       ships: {
         Fighter: 0,
@@ -93,14 +94,15 @@ describe('automatisk-farledsbemanning', () => {
         'Civilian shuttle': 0,
         'Space pirate': 0,
         'Salvage ship': 0,
+        Raptor: 0,
       },
       automation: 'transport' as const,
     };
     const game = Game.restore({
-      ...state,
+      ...base,
       pirates: [],
       fleets: [
-        ...state.fleets,
+        ...fleets,
         {
           ...waiting,
           id: 'new-a',
@@ -264,6 +266,7 @@ describe('guard-routes', () => {
             'Civilian shuttle': 0,
             'Space pirate': 0,
             'Salvage ship': 0,
+            Raptor: 0,
           },
           shipUnits: [
             {

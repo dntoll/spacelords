@@ -410,18 +410,27 @@ package "Framtida domän – ej implementerad" {
   Fleet --> Civilization : encounter orders
 }
 
-package "Fristående bordningsprototyp" {
+package "Kampanjbordning" {
+  class BoardingEngagement {
+    attackerId
+    defenderId
+    seenRound
+    shift: boarding | space
+  }
   class BoardingBattle {
     round
     initiativeOrder
     randomState
     reactorCountdown
+    campaign
+    abort()
     command()
   }
   class BoardingMap {
     terrain
     rooms
     spawnPoints
+    shipZones
   }
   class BoardingPerson {
     side: player | defender | civilian
@@ -429,6 +438,7 @@ package "Fristående bordningsprototyp" {
     facing
     hitPoints
     actionPoints
+    cockpit
     status: active | incapacitated | dead | evacuated
   }
   class BoardingFeature {
@@ -448,6 +458,7 @@ package "Fristående bordningsprototyp" {
     column
     row
   }
+  BoardingEngagement *-- BoardingBattle
   BoardingBattle *-- BoardingMap
   BoardingBattle *-- BoardingPerson
   BoardingBattle *-- BoardingFeature
@@ -462,6 +473,8 @@ class PirateFleet {
   systemId
   position : HexCoordinate
   count
+  transports
+  hold
   nextPosition()
 }
 class TacticalBattle {
@@ -470,6 +483,7 @@ class TacticalBattle {
   round
   turn
   randomState
+  dockedPairs
   command()
   actAutomatically(singleStep)
 }
@@ -479,6 +493,7 @@ class BattlePiece {
   hull
   missiles
   movement
+  dockedWith
   status: active | destroyed | escaped
   activated
 }
@@ -513,6 +528,8 @@ class Weapon {
 }
 class BattleAsteroid
 TurnSimulation "1" *-- "0..*" TacticalBattle : ordered encounters
+TurnSimulation "1" *-- "0..1" BoardingEngagement
+TacticalBattle --> BoardingEngagement : dock then shift
 TacticalBattle "1" *-- "1..*" BattlePiece
 TacticalBattle "1" *-- "0..1" BattleActivation
 TacticalBattle "1" *-- "0..*" BattleAsteroid

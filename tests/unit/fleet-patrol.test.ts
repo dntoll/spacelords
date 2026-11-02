@@ -20,6 +20,7 @@ const empty = {
   'Civilian shuttle': 0,
   'Space pirate': 0,
   'Salvage ship': 0,
+  Raptor: 0,
 };
 function setup(position = hex(1, 0), ion = false, transport = false) {
   const state = new Game(createExampleGalaxy()).exportState();

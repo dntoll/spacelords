@@ -254,10 +254,20 @@ förstörs inte automatiskt när pirater överlever. De kan skyddas eller fly.
 `stridsrapport-i-dialog`, `vrak-efter-strid` och
 `spara-bargning-och-stridsavbrott` behåller sina namn och omfattar det nya flödet.
 
-Inga nya skeppstyper, beständiga skrovskador eller nya reparationsregler ingår.
-Missiler och pansarskrov är uppgraderingar av Fighter och Transport ship.
-Befintliga sparningar och redan avgjorda rapporter bevaras utan rensning.
+`Raptor` är en liten trupptransport med light cannon. Missiler och pansarskrov
+är uppgraderingar av Fighter och Transport ship. Befintliga sparningar och
+redan avgjorda rapporter bevaras utan rensning.
 Test battle behåller två missilsalvor på sina Fighters så att vapnet kan prövas.
+
+## Dockning och bordning
+
+`docka-babord-styrbord` och `lassta-dockade-skepp` är **Fullständigt
+implementerat**. `Dock` är en stridsorder i stället för skott när ett
+`Space pirate` eller `Raptor` har kontakt längs babord eller styrbord mot ett
+bordningsbart skepp. Nos mot nos och T-kollision är otillåtna. Dockade skepp
+är låsta, ritas med en brygga och den pågående rymdrundan körs färdigt innan
+bordning. Därefter växlar `bordning-tva-rundor-skift` två rundor i taget.
+Se [bordningsstrid](boarding-combat.md).
 
 ## Verifiering
 

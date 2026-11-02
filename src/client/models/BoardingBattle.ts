@@ -4,7 +4,12 @@ import {
   type BoardingCell,
   type BoardingMap,
 } from './BoardingMap.js';
+import {
+  spreadBoardingSpawns,
+  type ComposedBoarding,
+} from './BoardingComposer.js';
 import { chooseDefenderCommand } from './BoardingAI.js';
+import type { CombatShipType } from './TacticalBattle.js';
 
 export type BoardingSide = 'player' | 'defender' | 'civilian';
 export type BoardingPersonStatus =
@@ -30,6 +35,7 @@ export interface BoardingPerson {
   readonly medPacks: number;
   readonly fragGrenades: number;
   readonly smokeGrenades: number;
+  readonly cockpit?: boolean;
 }
 
 export interface BoardingFeature {
@@ -99,6 +105,12 @@ export interface BoardingBattleState {
   readonly postponed: readonly BoardingActivation[];
   readonly finishedActors: readonly string[];
   readonly log: readonly string[];
+  readonly campaign?: {
+    readonly playerZone: 'attacker' | 'defender';
+    readonly enemyZone: 'attacker' | 'defender';
+    readonly attackerType: CombatShipType;
+    readonly defenderType: CombatShipType;
+  };
 }
 
 export type BoardingCommand =
@@ -120,6 +132,7 @@ export type BoardingCommand =
   | { readonly type: 'overwatch' }
   | { readonly type: 'med-pack'; readonly targetId: string }
   | { readonly type: 'evacuate' }
+  | { readonly type: 'abort' }
   | { readonly type: 'select'; readonly id: string }
   | { readonly type: 'end-activation' };
 
@@ -167,7 +180,8 @@ const GRENADE_AP = 4;
 const MED_PACK_AP = 4;
 const HACK_AP = 4;
 const EVACUATE_AP = 2;
-const MELEE_AP = 3;
+export const BOARDING_MELEE_AP = 3;
+const MELEE_AP = BOARDING_MELEE_AP;
 const REACTOR_ROUNDS = 3;
 
 const positionKey = (position: BoardingCell): string =>
@@ -209,6 +223,7 @@ function hiddenDefenderActivity(command: BoardingCommand): string {
     return 'A defender takes a prepared position.';
   if (command.type === 'med-pack') return 'A defender uses equipment.';
   if (command.type === 'evacuate') return 'A defender evacuates.';
+  if (command.type === 'abort') return 'A defender aborts the boarding.';
   return 'A defender finishes acting.';
 }
 
@@ -292,6 +307,7 @@ function person(
   side: BoardingSide,
   index: number,
   position: BoardingCell,
+  extras: { readonly cockpit?: boolean; readonly label?: string } = {},
 ): BoardingPerson {
   const label =
     side === 'player'
@@ -318,6 +334,8 @@ function person(
     medPacks: side === 'civilian' ? 0 : 1,
     fragGrenades: side === 'player' ? 1 : 0,
     smokeGrenades: side === 'player' ? 1 : 0,
+    ...(extras.cockpit ? { cockpit: true } : {}),
+    ...(extras.label ? { label: extras.label } : {}),
   });
 }
 
@@ -379,6 +397,96 @@ export class BoardingBattle {
     return battle;
   }
 
+  static createCampaign(
+    composed: ComposedBoarding,
+    playerIsAttacker: boolean,
+    seed = Date.now() >>> 0,
+    attackerType: CombatShipType = 'Space pirate',
+    defenderType: CombatShipType = 'Transport ship',
+  ): BoardingBattle {
+    const taken = new Set<string>();
+    const occupy = (cell: BoardingCell | undefined): void => {
+      if (cell) taken.add(`${cell.q},${cell.r}`);
+    };
+    const fill = (cells: readonly BoardingCell[], count: number) =>
+      spreadBoardingSpawns(composed.map, cells, count, taken);
+    const cockpitCells = playerIsAttacker
+      ? composed.defenderCockpit
+      : composed.attackerCockpit;
+    if (!playerIsAttacker)
+      for (const cell of composed.defenderCivilians) occupy(cell);
+    const cockpit = fill(cockpitCells, cockpitCells.length ? 1 : 0)[0];
+    const playerCells = playerIsAttacker
+      ? fill(composed.defenderAirlock, 4)
+      : fill(composed.defenderSpawns, 3);
+    const enemyBoarders = playerIsAttacker
+      ? fill(composed.defenderSpawns, 2)
+      : fill(composed.defenderAirlock, 3);
+    const people = [
+      ...playerCells.map((position, index) =>
+        person('player', index, position, {
+          label: playerIsAttacker
+            ? `Boarder ${index + 1}`
+            : `Crew ${index + 1}`,
+        }),
+      ),
+      ...enemyBoarders.map((position, index) =>
+        person('defender', index, position),
+      ),
+      ...(cockpit
+        ? [
+            person('defender', enemyBoarders.length, cockpit, {
+              cockpit: true,
+              label: 'Cockpit',
+            }),
+          ]
+        : []),
+      ...(playerIsAttacker
+        ? []
+        : composed.defenderCivilians.map((position, index) =>
+            person('civilian', index, position),
+          )),
+    ];
+    const battle = new BoardingBattle(composed.map, {
+      id: `boarding-${seed}`,
+      mapName: composed.map.name,
+      width: composed.map.width,
+      height: composed.map.height,
+      round: 0,
+      randomState: seed || 1,
+      phase: 'fighting',
+      outcome: null,
+      people,
+      features: composed.map.features.map(runtimeFeature),
+      initiative: [],
+      initiativeOrder: [],
+      initiativeIndex: 0,
+      currentActorId: null,
+      activation: null,
+      smoke: [],
+      smokeCells: [],
+      visibleCells: [],
+      exploredCells: [],
+      lastKnownEnemies: [],
+      defenderLastKnownEnemies: [],
+      noiseMarkers: [],
+      reactorCountdown: null,
+      savedCivilians: 0,
+      postponed: [],
+      finishedActors: [],
+      log: [],
+      campaign: {
+        playerZone: playerIsAttacker ? 'attacker' : 'defender',
+        enemyZone: playerIsAttacker ? 'defender' : 'attacker',
+        attackerType,
+        defenderType,
+      },
+    });
+    battle.#beginRound();
+    battle.#refreshKnowledge();
+    return battle;
+  }
+
   static restore(map: BoardingMap, state: BoardingBattleState): BoardingBattle {
     if (state.mapName !== map.name) throw new Error('Boarding map mismatch.');
     return new BoardingBattle(map, state);
@@ -402,6 +510,24 @@ export class BoardingBattle {
 
   get shot(): BoardingShot | null {
     return this.#shot;
+  }
+
+  canAbort(): boolean {
+    const campaign = this.#state.campaign;
+    if (!campaign) return false;
+    const living = this.#state.people.filter(
+      (entry) =>
+        entry.side !== 'civilian' &&
+        entry.status !== 'dead' &&
+        entry.status !== 'evacuated',
+    );
+    if (!living.length) return false;
+    return living.every((entry) => {
+      const zone = this.#map.zoneAt(entry.position);
+      return entry.side === 'player'
+        ? zone === campaign.playerZone
+        : zone === campaign.enemyZone;
+    });
   }
 
   get visibleSnapshot(): BoardingBattleState {
@@ -578,14 +704,14 @@ export class BoardingBattle {
     return this.#state.people.find(
       (entry) =>
         entry.id !== ignoreId &&
-        entry.status !== 'dead' &&
-        entry.status !== 'evacuated' &&
+        // doda-blockerar-inte-skott-eller-rorelse: only standing people occupy a tile.
+        entry.status === 'active' &&
         same(entry.position, position),
     );
   }
 
   #passable(position: BoardingCell, moverId: string): boolean {
-    if (!this.#map.contains(position)) return false;
+    if (this.#map.terrainAt(position) !== 'floor') return false;
     const feature = this.#featureAt(position);
     if (
       feature &&
@@ -603,7 +729,7 @@ export class BoardingBattle {
     const entry = this.#state.people.find(
       (candidate) => candidate.id === id && candidate.status === 'active',
     );
-    if (!entry || !this.#map.contains(destination)) return null;
+    if (!entry || this.#map.terrainAt(destination) !== 'floor') return null;
     type Node = {
       position: BoardingCell;
       facing: number;
@@ -721,8 +847,7 @@ export class BoardingBattle {
     return this.#state.people.some(
       (entry) =>
         !ignoreIds.includes(entry.id) &&
-        entry.status !== 'dead' &&
-        entry.status !== 'evacuated' &&
+        entry.status === 'active' &&
         same(entry.position, position),
     );
   }
@@ -920,6 +1045,7 @@ export class BoardingBattle {
     return target.kind === 'reactor' ? 8 : target.kind === 'door' ? 10 : 12;
   }
 
+  /** skott-kraver-giltigt-mal: rifle fire needs an enemy or feature, never self or allies. */
   attackPreview(sourceId: string, targetId: string): BoardingAttackPreview {
     const source = this.#state.people.find(
       (entry) => entry.id === sourceId && entry.status === 'active',
@@ -927,6 +1053,8 @@ export class BoardingBattle {
     const target = this.#target(targetId);
     let reason: string | null = null;
     if (!source || !target) reason = 'Choose an active attacker and target.';
+    else if ('side' in target && target.side === source.side)
+      reason = 'Choose an enemy.';
     else if ('side' in target && target.side === 'civilian')
       reason = 'Civilists cannot be targeted directly.';
     else if (
@@ -959,6 +1087,34 @@ export class BoardingBattle {
       ? 0
       : Math.max(5, Math.min(95, (21 - Math.max(2, needed)) * 5));
     return Object.freeze({ chance, defense, reason });
+  }
+
+  /** melee-kraver-valt-mal: adjacency only; facing does not block a melee strike. */
+  meleePreview(sourceId: string, targetId: string): BoardingAttackPreview {
+    const source = this.#state.people.find(
+      (entry) => entry.id === sourceId && entry.status === 'active',
+    );
+    const target = this.#target(targetId);
+    let reason: string | null = null;
+    if (!source || !target) reason = 'Choose an active attacker and target.';
+    else if (!('side' in target))
+      reason = 'Melee requires an adjacent person.';
+    else if (target.side === source.side) reason = 'Choose an enemy.';
+    else if (target.side === 'civilian')
+      reason = 'Civilists cannot be targeted directly.';
+    else if (target.status === 'dead' || target.status === 'evacuated')
+      reason = 'The target is no longer active.';
+    else if (!sharesEdge(source.position, target.position))
+      reason = 'Melee requires an adjacent target.';
+    const person = target && 'side' in target ? target : null;
+    const defense = person
+      ? this.#targetDefense(person, source?.position)
+      : 99;
+    return Object.freeze({
+      chance: reason ? 0 : 75,
+      defense,
+      reason,
+    });
   }
 
   #addNoise(position: BoardingCell, actorSide: BoardingSide): void {
@@ -1025,13 +1181,7 @@ export class BoardingBattle {
     if (!target) throw new Error('Choose a target.');
     const preview =
       kind === 'Melee'
-        ? {
-            chance: sharesEdge(source.position, target.position) ? 75 : 0,
-            defense: this.#targetDefense(target, source.position),
-            reason: sharesEdge(source.position, target.position)
-              ? null
-              : 'Melee requires an adjacent target.',
-          }
+        ? this.meleePreview(sourceId, targetId)
         : this.attackPreview(sourceId, targetId);
     if (preview.reason) throw new Error(preview.reason);
     const die = this.#die(20);
@@ -1316,6 +1466,12 @@ export class BoardingBattle {
   command(command: BoardingCommand): void {
     this.#presentation = [];
     this.#shot = null;
+    if (command.type === 'abort') {
+      if (!this.canAbort())
+        throw new Error('Both sides must be in their own ships to abort.');
+      this.#complete('aborted', 'Boarding aborted. The ships undock.');
+      return;
+    }
     const actor = this.#actor();
     if (command.type === 'turn') {
       this.#spend(1);
@@ -1335,9 +1491,13 @@ export class BoardingBattle {
     } else if (command.type === 'door') this.#door(command.id, command.action);
     else if (command.type === 'hack') this.#hack(command.id);
     else if (command.type === 'shoot') {
+      const preview = this.attackPreview(actor.id, command.targetId);
+      if (preview.reason) throw new Error(preview.reason);
       this.#spend(RIFLE_AP);
       this.#attack(actor.id, command.targetId, 'Rifle');
     } else if (command.type === 'melee') {
+      const preview = this.meleePreview(actor.id, command.targetId);
+      if (preview.reason) throw new Error(preview.reason);
       this.#spend(MELEE_AP);
       this.#attack(actor.id, command.targetId, 'Melee');
     } else if (command.type === 'grenade')
@@ -1599,21 +1759,27 @@ export class BoardingBattle {
       activation: null,
       currentActorId: null,
     });
-    if (countdown !== null && countdown <= 0) {
+    if (countdown !== null && countdown <= 0 && !this.#state.campaign) {
       this.#complete('defeat', 'The reactor explodes. The ship is destroyed.');
       return;
     }
-    const playerHolds =
-      this.#holds('bridge', 'player') && this.#holds('engineering', 'player');
-    const defenderContests =
-      this.#holds('bridge', 'defender') ||
-      this.#holds('engineering', 'defender');
-    if (playerHolds && !defenderContests) {
-      this.#complete('victory', 'Bridge and Engineering are secured.');
-      return;
+    if (!this.#state.campaign) {
+      const playerHolds =
+        this.#holds('bridge', 'player') && this.#holds('engineering', 'player');
+      const defenderContests =
+        this.#holds('bridge', 'defender') ||
+        this.#holds('engineering', 'defender');
+      if (playerHolds && !defenderContests) {
+        this.#complete('victory', 'Bridge and Engineering are secured.');
+        return;
+      }
     }
     this.synchronize();
     if (this.#state.phase === 'fighting') this.#beginRound();
+  }
+
+  finish(outcome: BoardingOutcome, message = 'Boarding resolved.'): void {
+    this.#complete(outcome, message);
   }
 
   #complete(outcome: BoardingOutcome, message: string): void {
@@ -1668,11 +1834,28 @@ export class BoardingBattle {
       );
       if (!actor || actor.side !== 'defender' || actor.status !== 'active')
         return acted;
+      const beforeId = actor.id;
+      const beforeRemaining = this.#state.activation?.remaining ?? 0;
       const command = chooseDefenderCommand(this, actor);
       this.#replace({
         log: [...this.#state.log, hiddenDefenderActivity(command)],
       });
-      this.command(command);
+      try {
+        this.command(command);
+      } catch {
+        // forsvarare-och-civilister: a rejected AI action must still yield the turn.
+        if (
+          this.#state.phase === 'fighting' &&
+          this.#state.currentActorId === beforeId
+        )
+          this.command({ type: 'end-activation' });
+      }
+      if (
+        this.#state.phase === 'fighting' &&
+        this.#state.currentActorId === beforeId &&
+        (this.#state.activation?.remaining ?? 0) === beforeRemaining
+      )
+        this.command({ type: 'end-activation' });
       acted = true;
       if (singleStep) return true;
     }

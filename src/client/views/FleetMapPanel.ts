@@ -54,12 +54,14 @@ export function renderMapFleetPanel(
       element(
         'p',
         '',
-        `Hostile · ${pirate.count} ${pirate.count === 1 ? 'pirate' : 'pirates'} · Speed 1 hex/year`,
+        `Hostile · ${pirate.count} ${pirate.count === 1 ? 'raider' : 'raiders'}${pirate.transports ? ` · ${pirate.transports} transport` : ''} · Speed 1 hex/year`,
       ),
       element(
         'p',
         'muted-note',
-        'Patrols this star system. Combat begins when fleets share a hex after movement. Ships manoeuvre and fire in tactical combat.',
+        pirate.hold && Object.values(pirate.hold).some((amount) => amount > 0)
+          ? `Cargo hold aboard the transport. Patrols this star system.`
+          : 'Patrols this star system. Combat begins when fleets share a hex after movement.',
       ),
     );
     cards.append(card);

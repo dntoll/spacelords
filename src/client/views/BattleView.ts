@@ -487,6 +487,21 @@ export class BattleView {
     );
     end.disabled = !active;
     this.#panel.append(forward, left, right, end);
+    const dockTargets = rules.dockTargets(ship.id);
+    if (dockTargets.length) {
+      const dock = battleButton('Dock', 'dock', () => {
+        const aimed = this.#aimTargetId;
+        const target =
+          dockTargets.length === 1
+            ? dockTargets[0]!
+            : aimed && dockTargets.includes(aimed)
+              ? aimed
+              : dockTargets[0]!;
+        this.#command({ type: 'dock', targetId: target });
+      });
+      dock.disabled = locked || !!state.activation?.fired || !!ship.dockedWith;
+      this.#panel.append(dock);
+    }
   }
   #renderDeployment(
     state: BattleState,

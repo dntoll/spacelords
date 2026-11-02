@@ -1,10 +1,11 @@
 import type { ShipType } from './Game.js';
+import { dockIssue as dockingIssue } from './Docking.js';
 import { HexCoordinate, HexGeometry } from './HexCoordinate.js';
 import { ShipFootprint } from './ShipFootprint.js';
 
 export type BattleSide = 'player' | 'enemy';
 export type CombatShipType = ShipType | 'Space pirate';
-export type WeaponName = 'Cannon' | 'Missiles' | 'Raider cannon';
+export type WeaponName = 'Cannon' | 'Missiles' | 'Raider cannon' | 'Light cannon';
 export interface BattleHex {
   readonly q: number;
   readonly r: number;
@@ -24,11 +25,13 @@ export const SHIP_PROFILES: Readonly<Record<CombatShipType, ShipProfile>> =
     'Salvage ship': { size: 2, hull: 5, movement: 3 },
     'Transport ship': { size: 3, hull: 6, movement: 2 },
     'Colony ship': { size: 3, hull: 8, movement: 2 },
+    Raptor: { size: 1, hull: 3, movement: 3 },
   });
 export const WEAPONS = Object.freeze({
   Cannon: { min: 1, max: 3, arc: 120, dice: 2, threshold: 4, area: 0 },
   Missiles: { min: 2, max: 6, arc: 60, dice: 3, threshold: 4, area: 1 },
   'Raider cannon': { min: 1, max: 3, arc: 120, dice: 2, threshold: 5, area: 0 },
+  'Light cannon': { min: 1, max: 3, arc: 120, dice: 1, threshold: 4, area: 0 },
 });
 
 export interface BattleFleet {
@@ -58,6 +61,7 @@ export interface BattlePiece {
   readonly facing: number;
   readonly activated: boolean;
   readonly status: 'active' | 'destroyed' | 'escaped';
+  readonly dockedWith?: string;
 }
 export function combatDesignName(
   piece: Pick<BattlePiece, 'type' | 'armored'>,
@@ -154,6 +158,12 @@ export interface BattleState {
   readonly activation: BattleActivation | null;
   readonly random: number;
   readonly log: readonly string[];
+  readonly pendingBoarding?: {
+    readonly attackerId: string;
+    readonly defenderId: string;
+  };
+  readonly boardingReady?: boolean;
+  readonly shift?: { readonly kind: 'boarding' | 'space'; readonly remaining: number };
 }
 /** animerade-stridsskott / skadepartiklar-i-strid: facts, independent of rendering and particles. */
 export interface BattleShot {
@@ -171,6 +181,7 @@ export interface BattleShot {
 }
 export type BattleCommand =
   | { readonly type: 'auto-deploy' | 'start' | 'forward' | 'end-activation' }
+  | { readonly type: 'dock'; readonly targetId: string }
   | {
       readonly type: 'place';
       readonly id: string;
@@ -222,7 +233,9 @@ export const battleWeapons = (
       : ['Cannon']
     : type === 'Space pirate'
       ? ['Raider cannon']
-      : [];
+      : type === 'Raptor'
+        ? ['Light cannon']
+        : [];
 const opposite = (side: BattleSide): BattleSide =>
   side === 'player' ? 'enemy' : 'player';
 
@@ -301,6 +314,9 @@ export class TacticalBattle {
   #activation: Activation | null;
   #random: number;
   #lastShot: BattleShot | undefined;
+  #pendingBoarding: BattleState['pendingBoarding'];
+  #boardingReady = false;
+  #shift: BattleState['shift'];
 
   private constructor(state: BattleState) {
     const copy = structuredClone(state);
@@ -324,6 +340,9 @@ export class TacticalBattle {
     this.#activation = copy.activation ? { ...copy.activation } : null;
     this.#random = copy.random;
     this.#lastShot = copy.lastShot;
+    this.#pendingBoarding = copy.pendingBoarding;
+    this.#boardingReady = copy.boardingReady === true;
+    this.#shift = copy.shift;
   }
 
   static create(
@@ -558,6 +577,11 @@ export class TacticalBattle {
         random: this.#random,
         log: this.#log,
         ...(this.#lastShot ? { lastShot: this.#lastShot } : {}),
+        ...(this.#pendingBoarding
+          ? { pendingBoarding: this.#pendingBoarding }
+          : {}),
+        ...(this.#boardingReady ? { boardingReady: true } : {}),
+        ...(this.#shift ? { shift: this.#shift } : {}),
       }),
     );
   }
@@ -680,6 +704,7 @@ export class TacticalBattle {
     const piece = this.#piece(id);
     const origin = position ?? piece.position;
     if (!origin) return 'Deploy the ship first.';
+    if (piece.dockedWith && !position) return 'This ship is locked in a boarding.';
     return this.placementIssue(
       id,
       origin,
@@ -717,8 +742,95 @@ export class TacticalBattle {
       piece.position = { ...position };
     }
   }
+  dockIssue(sourceId: string, targetId: string): string | null {
+    const source = this.#piece(sourceId);
+    const target = this.#piece(targetId);
+    return dockingIssue(
+      source,
+      target,
+      this.occupiedHexes(source.id),
+      source.facing,
+      this.occupiedHexes(target.id),
+      target.facing,
+      !!this.#pendingBoarding || this.#pieces.some((piece) => piece.dockedWith),
+    );
+  }
+
+  dockTargets(sourceId: string): readonly string[] {
+    return Object.freeze(
+      this.#pieces
+        .filter((piece) => this.dockIssue(sourceId, piece.id) === null)
+        .map((piece) => piece.id),
+    );
+  }
+
+  get pendingBoarding(): BattleState['pendingBoarding'] {
+    return this.#pendingBoarding;
+  }
+
+  get boardingReady(): boolean {
+    return this.#boardingReady;
+  }
+
+  consumeBoardingReady(): BattleState['pendingBoarding'] {
+    if (!this.#boardingReady) return undefined;
+    this.#boardingReady = false;
+    return this.#pendingBoarding;
+  }
+
+  setShift(kind: 'boarding' | 'space', remaining: number): void {
+    this.#shift = { kind, remaining };
+  }
+
+  clearShift(): void {
+    this.#shift = undefined;
+  }
+
+  get shift(): BattleState['shift'] {
+    return this.#shift;
+  }
+
+  tickShiftRound(): 'boarding' | 'space' | null {
+    if (!this.#shift) return null;
+    this.#shift = {
+      kind: this.#shift.kind,
+      remaining: this.#shift.remaining - 1,
+    };
+    if (this.#shift.remaining > 0) return this.#shift.kind;
+    const next = this.#shift.kind === 'boarding' ? 'space' : 'boarding';
+    this.#shift = { kind: next, remaining: 2 };
+    return next;
+  }
+
+  unlockDock(pieceId: string): void {
+    const piece = this.#pieces.find((entry) => entry.id === pieceId);
+    const partnerId = piece?.dockedWith;
+    if (piece) delete piece.dockedWith;
+    if (partnerId) {
+      const partner = this.#pieces.find((entry) => entry.id === partnerId);
+      if (partner) delete partner.dockedWith;
+    }
+    if (
+      this.#pendingBoarding?.attackerId === pieceId ||
+      this.#pendingBoarding?.defenderId === pieceId
+    ) {
+      this.#pendingBoarding = undefined;
+      this.#boardingReady = false;
+      this.#shift = undefined;
+    }
+  }
+
+  transferPiece(pieceId: string, fleetId: string, side: BattleSide): void {
+    const piece = this.#piece(pieceId);
+    this.unlockDock(pieceId);
+    piece.fleetId = fleetId;
+    piece.side = side;
+    piece.activated = true;
+  }
+
   #beginRound(): void {
     this.#round++;
+    if (this.#pendingBoarding) this.#boardingReady = true;
     for (const p of this.#pieces) p.activated = false;
     let player: number, enemy: number;
     do {
@@ -1020,6 +1132,7 @@ export class TacticalBattle {
     const p = this.#piece(id),
       origin = position ?? p.position;
     if (!origin) return 'Deploy the ship first.';
+    if (p.dockedWith) return 'This ship is locked in a boarding.';
     const next = hex(origin).neighbors()[facing ?? p.facing]!;
     const cells = this.occupiedHexes(id, next, facing);
     if (cells.some((cell) => this.#occupied(cell, id)))
@@ -1123,9 +1236,27 @@ export class TacticalBattle {
       if (p.status === 'escaped') this.#finishActivation();
       return;
     }
+    if (command.type === 'dock') {
+      if (activation.fired)
+        throw new Error('This ship already acted this activation.');
+      if (p.dockedWith) throw new Error('This ship is locked in a boarding.');
+      const issue = this.dockIssue(p.id, command.targetId);
+      if (issue) throw new Error(issue);
+      const target = this.#piece(command.targetId);
+      p.dockedWith = target.id;
+      target.dockedWith = p.id;
+      activation.fired = true;
+      activation.movementClosed = true;
+      this.#pendingBoarding = { attackerId: p.id, defenderId: target.id };
+      this.#log.push(
+        `${battlePieceLabel(p, this.#pieces)} docks with ${battlePieceLabel(target, this.#pieces)}.`,
+      );
+      return;
+    }
     if (command.type !== 'fire') throw new Error('Choose a combat action.');
     if (activation.fired)
       throw new Error('This ship already fired this activation.');
+    if (p.dockedWith) throw new Error('This ship is locked in a boarding.');
     const preview = this.impact(p.id, command.at, command.weapon);
     if (preview.reason) throw new Error(preview.reason);
     if (command.weapon === 'Missiles') p.missiles--;
@@ -1139,7 +1270,10 @@ export class TacticalBattle {
       const target = this.#piece(hit.id);
       const previousHull = target.hull;
       target.hull = Math.max(0, target.hull - damage);
-      if (target.hull === 0) target.status = 'destroyed';
+      if (target.hull === 0) {
+        target.status = 'destroyed';
+        this.unlockDock(target.id);
+      }
       impacts.push({
         id: target.id,
         position: {
@@ -1203,7 +1337,10 @@ export class TacticalBattle {
   }
 
   /** Same public commands drive AI and tests; no hidden positions or privileged attacks. */
-  actAutomatically(singleStep = false): void {
+  actAutomatically(
+    singleStep = false,
+    options?: { readonly allowDock?: boolean },
+  ): void {
     if (this.#phase === 'deployment') {
       this.command({ type: 'auto-deploy' });
       this.command({ type: 'start' });
@@ -1228,7 +1365,9 @@ export class TacticalBattle {
     candidates.sort(
       (a, b) => distance(a) - distance(b) || a.id.localeCompare(b.id),
     );
-    const plan = candidates[0] ? this.#plan(candidates[0]) : null;
+    const plan = candidates[0]
+      ? this.#plan(candidates[0], options?.allowDock !== false)
+      : null;
     if (!plan) throw new Error('No ship can activate.');
     if (!this.#activation) {
       this.command({ type: 'activate', id: plan.id }, side);
@@ -1242,11 +1381,26 @@ export class TacticalBattle {
     if (this.#activation) this.command({ type: 'end-activation' }, side);
   }
 
-  #plan(p: Piece): { id: string; score: number; actions: BattleCommand[] } {
+  #plan(
+    p: Piece,
+    allowDock = true,
+  ): { id: string; score: number; actions: BattleCommand[] } {
     const enemies = this.#pieces.filter(
       (e) => e.side !== p.side && e.status === 'active',
     );
     const activation = this.#activation?.id === p.id ? this.#activation : null;
+    if (p.dockedWith) return { id: p.id, score: 0, actions: [] };
+    if (allowDock && !activation?.fired) {
+      const target = enemies.find(
+        (enemy) => this.dockIssue(p.id, enemy.id) === null,
+      );
+      if (target)
+        return {
+          id: p.id,
+          score: 1000,
+          actions: [{ type: 'dock', targetId: target.id }],
+        };
+    }
     const moves = activation?.movementClosed
       ? 0
       : (activation?.remaining ?? p.movement);

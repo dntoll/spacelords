@@ -64,6 +64,7 @@ export class AppController {
       this.#model.endMovementPlayback();
       this.#model.reportError(error);
       this.#render();
+      this.#schedulePlayback();
     }
   }
 

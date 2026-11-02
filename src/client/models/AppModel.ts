@@ -458,11 +458,13 @@ export class AppModel {
     return Object.freeze({
       turnMovement: null,
       turnMovements: Object.freeze([]),
-      boardingBattle: this.#testBoarding?.visibleSnapshot ?? null,
+      boardingBattle:
+        this.#testBoarding?.visibleSnapshot ?? this.#game.boardingBattle,
       boardingPresentation: Object.freeze([
-        ...(this.#testBoarding?.presentation ?? []),
+        ...(this.#testBoarding?.presentation ??
+          this.#game.boardingPresentation),
       ]),
-      boardingShot: this.#testBoarding?.shot ?? null,
+      boardingShot: this.#testBoarding?.shot ?? this.#game.boardingShot,
       tacticalBattle:
         this.#testBattle?.visibleSnapshot ?? this.#game.tacticalBattle,
       battleFeedback: this.#battleFeedback,
@@ -1854,22 +1856,42 @@ export class AppModel {
   closeTestBoarding(): void {
     this.#testBoarding = null;
   }
+  finishBoarding(outcome: 'victory' | 'defeat' | 'aborted' = 'aborted'): void {
+    if (this.#testBoarding) {
+      this.#testBoarding.finish(outcome);
+      return;
+    }
+    this.#game.finishBoarding(outcome);
+    this.save();
+  }
   commandBoarding(command: BoardingCommand): void {
-    this.#testBoarding?.command(command);
+    if (this.#testBoarding) this.#testBoarding.command(command);
+    else {
+      this.#game.commandBoarding(command);
+      this.save();
+    }
   }
   shouldPlayBoardingStep(): boolean {
-    const boarding = this.#testBoarding?.snapshot;
-    const actor = boarding?.people.find(
-      (person) => person.id === boarding.currentActorId,
-    );
-    return (
-      boarding?.phase === 'fighting' &&
-      actor?.side === 'defender' &&
-      actor.status === 'active'
-    );
+    if (this.#testBoarding) {
+      const boarding = this.#testBoarding.snapshot;
+      const actor = boarding.people.find(
+        (person) => person.id === boarding.currentActorId,
+      );
+      return (
+        boarding.phase === 'fighting' &&
+        actor?.side === 'defender' &&
+        actor.status === 'active'
+      );
+    }
+    return this.#game.boardingDefenderActing;
   }
   playBoardingStep(): boolean {
-    return this.#testBoarding?.actAutomatically(true) ?? false;
+    if (this.#testBoarding)
+      return this.#testBoarding.actAutomatically(true) ?? false;
+    if (!this.#game.boardingBattle) return false;
+    this.#game.playBoardingActivation(true);
+    this.save();
+    return true;
   }
   startTestBattle(): void {
     if (this.#screen !== 'saves') return;
@@ -1910,12 +1932,15 @@ export class AppModel {
     )
       this.beginEventPlayback();
   }
-  playBattleActivation(singleStep = false): void {
+  playBattleActivation(
+    singleStep = false,
+    options?: { readonly allowDock?: boolean },
+  ): void {
     let result: BattleState;
     if (this.#testBattle) {
-      this.#testBattle.actAutomatically(singleStep);
+      this.#testBattle.actAutomatically(singleStep, options);
       result = this.#testBattle.snapshot;
-    } else result = this.#game.playBattleActivation(singleStep);
+    } else result = this.#game.playBattleActivation(singleStep, options);
     this.#afterBattleAction(result);
   }
   finishBattleFeedback(): void {
@@ -2008,7 +2033,7 @@ export class AppModel {
         .find((pirate) => pirate.id === discovery.id);
       if (pirate)
         details.push(
-          `${pirate.count} pirate ${pirate.count === 1 ? 'ship' : 'ships'} in sight.`,
+          `${pirate.count} raider${pirate.count === 1 ? '' : 's'}${pirate.transports ? ` and ${pirate.transports} transport` : ''} in sight.`,
         );
     }
     if (interruption!.economyApplied)

@@ -1,6 +1,10 @@
 import type { HexCoordinate } from './HexCoordinate.js';
 import type { BattleReport } from './Salvage.js';
 import { TacticalBattle, type BattleState } from './TacticalBattle.js';
+import {
+  BoardingEngagement,
+  type SavedBoardingEngagement,
+} from './BoardingEngagement.js';
 
 export type ExplorationOrder = 'explore' | 'explore-stars';
 
@@ -28,6 +32,7 @@ export interface SavedTurnSimulation {
   readonly discoveries: readonly Discovery[];
   readonly handling: boolean;
   readonly otherFleets: boolean;
+  readonly boarding?: SavedBoardingEngagement;
 }
 
 /** spara-avbrutet-ar: movement is spent once and survives order changes and reloads. */
@@ -46,6 +51,7 @@ export class TurnSimulation {
   discoveries: readonly Discovery[] = [];
   handling = false;
   otherFleets = false;
+  boarding: BoardingEngagement | null = null;
 
   constructor(budgets: readonly (readonly [string, number])[]) {
     this.remaining = new Map(budgets.map(([id]) => [id, 60]));
@@ -133,6 +139,7 @@ export class TurnSimulation {
       ),
       handling: this.handling,
       otherFleets: this.otherFleets,
+      ...(this.boarding ? { boarding: this.boarding.snapshot() } : {}),
     });
   }
 
@@ -246,6 +253,8 @@ export class TurnSimulation {
     simulation.discoveries = structuredClone(saved.discoveries);
     simulation.handling = saved.handling;
     simulation.otherFleets = saved.otherFleets;
+    if (saved.boarding)
+      simulation.boarding = BoardingEngagement.restore(saved.boarding);
     return simulation;
   }
 }

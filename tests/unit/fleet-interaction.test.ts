@@ -173,6 +173,7 @@ describe('flottval-pa-kartan', () => {
         'Civilian shuttle': 0,
         'Space pirate': 0,
         'Salvage ship': 0,
+        Raptor: 0,
       },
     };
     expect(FleetMapLayout.markers([empty])).toHaveLength(0);

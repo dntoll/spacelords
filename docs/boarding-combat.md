@@ -1,9 +1,16 @@
 # Bordningsstrid
 
-Den första bordningsstriden är ett fristående testspel som öppnas från
-huvudmenyn. Den använder inte kampanjens flottor, rymdstrid eller sparplatser.
-Scenariot utspelas på en fast, handredigerbar karta över ett `Transport ship`
-med fyra bordningssoldater, tre försvarare och tre civilister.
+Bordning ingår i kampanjens taktiska rymdstrid. Pirater, infångade
+`Space pirate` och `Raptor` kan välja `Dock` längs babord eller styrbord.
+Efter den pågående rymdstridsrundan växlar spelet två bordningsrundor och två
+rymdstridsrundor. Anfallaren startar i motståndarens airlock. Avbrott är
+tillåtet när alla levande stridande är i eget skepp. Pirater lämnar en
+cockpit-soldat. Utslagen sida ger vinnaren båda skeppen i samma strid.
+
+Huvudmenyns `Test boarding (cheat)` är oförändrad: ett fristående testspel på
+en fast, handredigerbar karta över ett `Transport ship` med fyra
+bordningssoldater, tre försvarare och tre civilister, utan påverkan på
+sparplatser.
 
 ## Krav och status
 
@@ -29,6 +36,7 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   förflyttning animerar varje vändning och steg för den aktiva soldaten och för
   synliga försvarare och civilister. Sikt och kartminne uppdateras efter varje
   del så att spelaren ser vad som händer på vägen. Dolda figurer animeras inte.
+  En redan visad förflyttning spelas inte om.
 - `avbrott-vid-ny-fiende` — **Fullständigt implementerat**. Om en ny fientlig
   soldat kommer in i sidans sikt under en förflyttning stannar den aktiva
   soldaten efter den del som avslöjade fienden och resten av ordern stryks.
@@ -44,6 +52,16 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
 - `klickskott-pa-vald-fiende` — **Fullständigt implementerat**. Första klicket
   på en fiende väljer målet. Ett andra klick på samma valda fiende avfyrar
   geväret om skottet är lagligt.
+- `vald-bordningsmal-markeras` — **Fullständigt implementerat**. Ett valt mål
+  markeras på kartan med samma guldring som destinationen, både på rutan och
+  runt figuren, så att det syns vem melee och skott avser.
+- `melee-kraver-valt-mal` — **Fullständigt implementerat**. Melee är avstängt
+  tills ett angränsande fientligt mål är valt. Ogiltig melee drar inte AP.
+  Närliggande försvarare slår melee även om de står med ryggen mot anfallaren.
+- `skott-kraver-giltigt-mal` — **Fullständigt implementerat**. Gevär och melee
+  kan inte riktas mot den aktiva soldaten eller eget lag. Skottknappen är
+  avstängd tills ett fiendemål eller ett tillåtet miljömål är valt. Ogiltiga
+  skott drar inte AP.
 - `klickgang-pa-vald-destination` — **Fullständigt implementerat**. Första
   klicket på en tom ruta räknar ut och visar vägen. Ett andra klick på samma
   valda destination startar förflyttningen om vägen ryms inom kvarvarande AP.
@@ -83,6 +101,9 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   civil eller stridande, blockerar inte siktlinjen. Samma person blockerar
   skott mot rutor bakom. Väggar, skrov, stängda dörrar och rök blockerar
   fortfarande både sikt och skott.
+- `doda-blockerar-inte-skott-eller-rorelse` — **Fullständigt implementerat**.
+  En död eller utslagen soldat blockerar varken skott eller förflyttning.
+  Stående personer blockerar fortfarande skott och rutor.
 - `sikt-och-eld-fran-vald-soldat` — **Fullständigt implementerat**. Under
   spelarens tur visar kartan den aktiva soldatens synliga rutor med cyan kant
   och de rutor ett gevärsskott kan nå med röd kant.
@@ -122,10 +143,12 @@ med fyra bordningssoldater, tre försvarare och tre civilister.
   Förstörd reaktor startar en nedräkning till skeppets förstörelse. En särskild
   handling evakuerar vid breach eller escape pod.
 - `forsvarare-och-civilister` — **Fullständigt implementerat**. Försvararna känner till
-  breach och delad observation, men inte dolda aktuella positioner.
-  Civilisterna styrs av AI, flyr från alla stridande och ljud, öppnar vanliga
-  dörrar men hackar inte och försöker använda escape pods. Överlevande ger ett
-  bonusutfall utan kampanjbelöning i prototypen.
+  breach och delad observation, men inte dolda aktuella positioner. Autoplay
+  kör även dolda försvarare, och en avvisad AI-handling avslutar turen så att
+  `Defenders are acting…` inte fastnar. Civilisterna styrs av AI, flyr från
+  alla stridande och ljud, öppnar vanliga dörrar men hackar inte och försöker
+  använda escape pods. Överlevande ger ett bonusutfall utan kampanjbelöning i
+  prototypen.
 
 ## Karta och dörrar
 
@@ -142,9 +165,40 @@ uppdateras reaktor, rök och tillfälliga ljudmarkörer innan nästa initiativsl
 Spelaren väljer en destinationsruta och ser den billigaste vägen innan den
 utförs stegvis. Vändning vänster och höger kan även göras separat.
 
-## Avgränsning
+## Kampanjbordning
 
-Samtidig växling till rymdstrid, strategiskt övertagande av skeppet,
-rekrytering eller forskningsbelöningar, `Colony ship`, karteditor,
-skrovgenombrott och vakuum ingår inte. Dessa kräver senare separata krav och
-ny avstämning om sparkompatibilitet.
+- `piratflotta-med-lastfartyg` — **Fullständigt implementerat**. Varje piratflotta
+  har en `Space pirate` och ett piratfärgat `Transport ship` med slumpad last
+  i ett `hold` oberoende av handelsrutter. Äldre sparningar (v13) får ett
+  lastfartyg additivt. Version 14. Ingen rensning av sparplatser.
+- `docka-babord-styrbord` — **Fullständigt implementerat**. `Dock` ersätter skott
+  och kräver kontakt längs babord eller styrbord, inte nos mot nos eller
+  T-kollision. Samma eller motriktad kurs är tillåten. Mål: alla skepp utom
+  `Fighter`.
+- `lassta-dockade-skepp` — **Fullständigt implementerat**. Dockade skepp ritas
+  med en brygga, kan inte röra sig eller skjuta och låses tills bordningen
+  slutar. Förstört låst skepp dödar alla ombord; det andra släpps.
+- `bordning-tva-rundor-skift` — **Fullständigt implementerat**. Efter den
+  pågående rymdstridsrundan: två bordningsrundor, två rymdstridsrundor,
+  upprepa. En aktiv bordning per rymdstrid.
+- `tva-skepp-pa-bordningskartan` — **Fullständigt implementerat**. Enkel
+  interiör per bordningsbar typ. Composer sätter anfallare, brygga och
+  försvarare i samma koordinatsystem. Kartvyn använder den sammansatta
+  kampanjkartan, inte testkartan, och kameran ramar in faktisk terräng.
+- `unika-startpositioner-vid-bordning` — **Fullständigt implementerat**.
+  Varje levande soldat startar på en egen golvruta. Airlock-lag spelas ut
+  på angränsande golv i samma skepp så att HP-baren tillhör rätt person.
+- `avbryt-bordning-i-egna-skepp` — **Fullständigt implementerat**. Avbrott när
+  alla levande egna soldater är i eget skepp och alla levande motståndare i
+  sitt. Piraternas cockpit-soldat avbryter när det är lagligt.
+- `erovra-skepp-via-bordning` — **Fullständigt implementerat**. Utslagen sida:
+  vinnaren tar båda skeppen och de byter sida i samma rymdstrid. Kampanjens
+  vinst är avbrott, utslagning eller förstört skepp, inte Bridge+Engineering.
+- `bordningsbeloning-last-teknik-karta` — **Fullständigt implementerat**. Vid
+  vinst: skeppet, last i `hold` som lastas av vid ägd planet, recovered
+  `Raptor factory` och närmaste andra pirat synlig med utforskad radie 4.
+- `raptor-efter-dockningsteknik` — **Fullständigt implementerat**. `Raptor factory`
+  kräver `Weapons module factory` tills den är Recovered. `Raptor` är en liten
+  trupptransport (size 1, hull 3, movement 3, speed 2) med light cannon.
+
+Karteditor, skrovgenombrott och vakuum ingår inte.

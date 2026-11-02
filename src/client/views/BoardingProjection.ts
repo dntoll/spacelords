@@ -201,11 +201,17 @@ export function boardingCellFromIsoPoint(point: BoardingPoint): BoardingCell {
   };
 }
 
-function bounds(map: BoardingMapSize) {
+function bounds(
+  map: BoardingMapSize,
+  occupied?: (cell: BoardingCell) => boolean,
+) {
   const points: BoardingPoint[] = [];
   for (let r = 0; r < map.height; r++)
-    for (let q = 0; q < map.width; q++)
+    for (let q = 0; q < map.width; q++) {
+      if (occupied && !occupied({ q, r })) continue;
       points.push(...boardingIsoCorners({ q, r }));
+    }
+  if (points.length === 0) return bounds(map);
   return {
     minX: Math.min(...points.map((point) => point.x)),
     maxX: Math.max(...points.map((point) => point.x)),
@@ -217,8 +223,9 @@ function bounds(map: BoardingMapSize) {
 export function boardingIsoCamera(
   map: BoardingMapSize,
   view: { readonly width: number; readonly height: number },
+  occupied?: (cell: BoardingCell) => boolean,
 ): { readonly scale: number; readonly offset: BoardingPoint } {
-  const area = bounds(map);
+  const area = bounds(map, occupied);
   const scale = Math.max(
     0.08,
     Math.min(

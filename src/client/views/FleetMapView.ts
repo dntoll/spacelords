@@ -170,7 +170,7 @@ export function renderMapFleets(
       const angle = target
         ? Math.atan2(target.y - center.y, target.x - center.x)
         : -Math.PI / 2;
-      const image = shipImages.get(hostile ? 'Space pirate' : glyph.type);
+      const image = shipImages.get(glyph.type);
       if (image) {
         const longest = Math.max(image.width, image.height);
         const width = (glyph.size * image.width) / longest;
@@ -178,7 +178,10 @@ export function renderMapFleets(
         sketch.push();
         sketch.translate(center.x, center.y);
         sketch.rotate(angle);
+        if (hostile && glyph.type === 'Transport ship')
+          sketch.tint(210, 92, 78);
         sketch.image(image, -width / 2, -height / 2, width, height);
+        if (hostile && glyph.type === 'Transport ship') sketch.noTint();
         sketch.pop();
       } else shipTriangle(sketch, center, glyph.size, angle);
     }

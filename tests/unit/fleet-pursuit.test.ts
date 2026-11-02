@@ -18,6 +18,7 @@ function setup(
     'Civilian shuttle': 0,
     'Space pirate': 0,
     'Salvage ship': 0,
+    Raptor: 0,
   };
   return Game.restore({
     ...state,
@@ -220,6 +221,7 @@ describe('skepp-till-rorlig-flotta', () => {
       'Civilian shuttle': 0,
       'Space pirate': 0,
       'Salvage ship': 0,
+      Raptor: 0,
     });
   });
 });

@@ -141,25 +141,33 @@ rullning. Regressionstester skyddar kart- och listval, spärrade val, omedelbar
 sparning och återupptagen tur. Mobiltester mäter att alla order ryms i
 320 × 568, 393 × 851 och 844 × 390 och att kartan fortfarande är synlig.
 
-## Fristående bordningsstrid
+## Bordningsstrid
 
-Boardingmodellen är skild från `TacticalBattle` och kampanjens `Game`.
-Den får återanvända `HexCoordinate` och `HexGeometry`, men har egna frysta
-snapshots, typade kommandon, deterministiskt slumptillstånd, kartparser,
-siktberäkning, pathfinding och AI. Kartdefinitionen är en rå lagerindelad
-textresurs; runtime-tillstånd som dörrskada, rök och upptäckt blandas inte in i
-den statiska definitionen.
+Kampanjbordning ägs av `TurnSimulation` via `BoardingEngagement`, samma plats
+som `tacticalBattles`. `TacticalBattle` tar `dock`, låser paret och ritar
+bryggan; `Game.commandBattle` / `commandBoarding` växlar på två-rundersskiftet.
+`AppView` visar `BoardingView` när kampanjens `boardingBattle` finns och
+`BattleView` annars. Sparformatet är `GameState.version` 14; piratflottor får
+`transports` och `hold` additivt. Avbrutna rymdstrider utan boardingfält förblir
+giltiga.
 
-AppModel äger en tillfällig boarding-session medan huvudmenyn är den underliggande
-skärmen. `boarding-command` samordnas av AppController och en separat
+Boardingmodellen har egna frysta snapshots, typade kommandon, deterministiskt
+slumptillstånd, kartparser, siktberäkning, pathfinding och AI. Kartdefinitionen
+är en rå lagerindelad textresurs per skeppstyp; `BoardingComposer` lägger två
+skrov och en brygga i samma koordinatsystem.
+
+AppModel äger fortfarande den fristående testsessionen från huvudmenyn.
+`boarding-command` samordnas av AppController och en separat
 `BoardingView`; vyn får bara läsa snapshot och skicka intents. AP-färgad
 vägvisning beräknas ur pathfinding utan att mutera striden. Stegvis gång är
 presentation: modellen samlar synliga rutor efter varje vändning och steg för
 spelaren och för synliga försvarare och civilister, och vyn animerar mellan
 dem. Vyn köar en ny presentation medan en animation pågår så att AI-steg inte
-avbryter den. En ny fiende i sidans sikt avbryter resterande steg i samma
-kommando. Synfältet är 180 grader (cosinus 0 mot siktlinjen). Personer
-blockerar inte sikt men blockerar skottlinjer; overwatch avfyras bara när
+avbryter den. En presentation som redan visats till slutläget spelas inte om.
+Kampanjbordning skapar `BoardingMapView` med den sammansatta kartan. En ny
+fiende i sidans sikt avbryter resterande steg i samma kommando. Synfältet är 180 grader (cosinus 0 mot siktlinjen). Personer
+blockerar inte sikt men blockerar skottlinjer; döda och utslagna upptar inte
+rutan för skott eller förflyttning. Overwatch avfyras bara när
 skottet är fritt. Sikt- och eldrutor för den aktiva spelarsoldaten beräknas i
 modellen och ritas som kanter i vyn. Skottanimation
 är presentation separat från snapshot. Andra klicket på vald destination
@@ -172,8 +180,9 @@ på rutans exakta diamant. Genererad eller målad grafik ska därför vara
 ovanifrån-ytor, inte färdiga isometriska diamanter. Väggar använder en lång
 fasadtextur; vyn klipper ut en ruta i taget längs en sammanhängande q- eller
 r-sträcka och lägger utklippet affint på blockets synliga sidor. `Half cover`
-är visuellt hälften så hög som en vägg. Sessionen får inte anropa
-SaveRepository eller ändra `TacticalBattle`, `TurnSimulation` eller sparformat.
+är visuellt hälften så hög som en vägg. Testsessionen från menyn får inte anropa
+SaveRepository eller ändra kampanjens `TacticalBattle`, `TurnSimulation` eller
+sparplatser.
 
 Snabba kravnamngivna tester skyddar parser, AP, initiativ, sikt, strid,
 miljöobjekt, effekter och AI med deterministisk slump. Jsdom-tester skyddar
@@ -1345,6 +1354,9 @@ D6-slump och fiendebeslut oberoende av p5 och DOM. Game upptäcker samtidiga
 möten och tillämpar varje resultat exakt en gång före fortsatt årssimulering.
 Controller samordnar sparning och fiendens aktivering. BattleView använder
 frysta läsmodeller och skickar kommandon; BattleMapView använder p5 i instance mode.
+
+Sparversion 14 lägger till piratlastfartyg, `hold` och `BoardingEngagement`
+additivt. Version 13 och äldre läses utan rensning.
 
 Sparversion 13 utökar tidigare format med strider, möteskö, tidigare
 flottpositioner och pausade transportorder. Utplacering, skrov, ammunition,
