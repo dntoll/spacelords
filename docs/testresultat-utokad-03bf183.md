@@ -12,7 +12,7 @@ Testningen är avslutad. Felen är inte analyserade; ett misslyckat test kan ber
 
 - `events-order.test.ts`: **Åtgärdat**. Testet antog att raden saknade barnnoder, men kravet `bilder-i-events` införde en innehållsbehållare. Testet kontrollerar fortsatt ordagrann text, att texten inte blir ett HTML-element och händelseordningen. Ingen förlorad funktion påvisades.
 - `fleet-focused-map.test.ts`: knappen för att tilldela en flotta till en rutt hittades inte.
-- `planet-overview.test.ts`: fem fall hittade inte förväntade destinations- och beställningskontroller.
+- `planet-overview.test.ts`: **Åtgärdat** för fem fall. Testerna förväntade ett destinationsfält som ersatts av `Orders` enligt `startorder-for-nybyggda-skepp`. De verifierar nu öppning av ordervyn, beställning och spärrade kontroller. Ingen förlorad funktion påvisades i dessa fall.
 - `planet-pages.test.ts`: den förväntade inaktiva produktbeställningsknappen hittades inte.
 - `research-tree-view.test.ts`: sex upplåsta förbindelser hittades där testet väntade sju.
 - `star-map-trade-view.test.ts`: en förväntad knapp för rutttilldelning hittades inte.

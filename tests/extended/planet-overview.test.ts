@@ -381,10 +381,14 @@ describe('gemensam-planetko / fabrikskoer / kompakta-bygghandlingar', () => {
     const order = view.querySelector('.production-order')!;
     expect(order).not.toBeNull();
     expect(order.textContent).toContain('crew');
-    const select = order.querySelector<HTMLSelectElement>(
-      '[aria-label^="Destination fleet for"]',
+    const orders = order.querySelector<HTMLButtonElement>(
+      '[aria-label="Orders"]',
     )!;
-    select.value = 'fleet-home';
+    orders.click();
+    expect(emit).toHaveBeenCalledWith({
+      type: 'open-ship-orders',
+      ship: BUILDINGS[type].ship,
+    });
     const queue = order.querySelector<HTMLButtonElement>(
       '[aria-label^="Queue "]',
     )!;
@@ -393,7 +397,7 @@ describe('gemensam-planetko / fabrikskoer / kompakta-bygghandlingar', () => {
     expect(emit).toHaveBeenCalledWith({
       type: 'queue-ship',
       ship: BUILDINGS[type].ship,
-      fleetId: 'fleet-home',
+      fleetId: null,
     });
     expect(view.querySelectorAll('.compact-build-queue')).toHaveLength(1);
     expect(view.querySelector('.queue-slots')).toBeNull();
@@ -432,9 +436,8 @@ describe('gemensam-planetko / fabrikskoer / kompakta-bygghandlingar', () => {
         )?.disabled,
       ).toBe(true);
       expect(
-        view.querySelector<HTMLSelectElement>(
-          '[aria-label^="Destination fleet for"]',
-        )?.disabled,
+        view.querySelector<HTMLButtonElement>('[aria-label="Orders"]')
+          ?.disabled,
       ).toBe(true);
       expect(
         view.querySelector('.production-order .blocked-reason')?.textContent,
