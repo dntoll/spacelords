@@ -10,7 +10,7 @@ Testningen är avslutad. Felen är inte analyserade; ett misslyckat test kan ber
 
 199 godkända och 10 misslyckade i sex filer.
 
-- `events-order.test.ts`: en förväntan om händelseradens barnnoder misslyckades.
+- `events-order.test.ts`: **Åtgärdat**. Testet antog att raden saknade barnnoder, men kravet `bilder-i-events` införde en innehållsbehållare. Testet kontrollerar fortsatt ordagrann text, att texten inte blir ett HTML-element och händelseordningen. Ingen förlorad funktion påvisades.
 - `fleet-focused-map.test.ts`: knappen för att tilldela en flotta till en rutt hittades inte.
 - `planet-overview.test.ts`: fem fall hittade inte förväntade destinations- och beställningskontroller.
 - `planet-pages.test.ts`: den förväntade inaktiva produktbeställningsknappen hittades inte.

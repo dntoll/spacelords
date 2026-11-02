@@ -149,7 +149,7 @@ describe('senaste-aret-i-events / sekventiella-arshandelser', () => {
     view.dispose();
   });
 
-  it('keeps unknown event text as literal text and appends it in order', () => {
+  it('senaste-aret-i-events: keeps unknown event text as literal text and appends it in order', () => {
     const { root, model, view } = setup();
     view.render({ ...model.snapshot, events });
     view.render({
@@ -158,7 +158,7 @@ describe('senaste-aret-i-events / sekventiella-arshandelser', () => {
     });
     const row = root.querySelector('[data-event-id="unknown"]')!;
     expect(row.textContent).toBe('<New event>');
-    expect(row.children).toHaveLength(0);
+    expect(row.querySelector('new')).toBeNull();
     expect(root.querySelector('.event-entries')!.lastElementChild).toBe(row);
     view.dispose();
   });
