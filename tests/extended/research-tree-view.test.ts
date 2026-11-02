@@ -39,7 +39,18 @@ it('forsknings-tradnavigation: distinguishes completed, active, queued and unava
     type: 'inspect-research',
     technology: 'Fighter factory',
   });
-  expect(view.querySelectorAll('.research-edge.unlocked')).toHaveLength(7);
+  expect(
+    view.querySelector(
+      '[data-from="Exploration ship factory"][data-to="Transport ship factory"]',
+    ),
+  ).toBeNull();
+  expect(
+    view
+      .querySelector(
+        '[data-from="Rocket engine factory"][data-to="Transport ship factory"]',
+      )
+      ?.classList.contains('unlocked'),
+  ).toBe(true);
   expect(
     view
       .querySelector(
