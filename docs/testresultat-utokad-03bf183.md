@@ -73,6 +73,8 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
+- `flottadministration` / `flottnamn-direktredigering` / `flottknappar-pa-kartan`: **Åtgärdat i mobil Chromium**. Testet sökte Open planet inuti en äldre rubrikstruktur; knappen finns nu i planetinformationen efter flottorna enligt `flottor-fore-planetdetaljer`. Namnbyte, skeppsflytt, destination och omladdning passerar. Ingen förlorad funktion påvisades.
+
 - `flottfokuserad-kartvy`: **Åtgärdat i mobil Chromium**. Testet använde en fast markörposition och en gammal generell destinationstext. Det använder nu flottans faktiska markör och kontrollerar den namngivna destinationen, dragning, förstärkning och omladdning. Ingen förlorad funktion påvisades.
 
 - `kartnavigation` (touchdragning och nypzoom): **Åtgärdat i mobil Chromium**. Den gamla nypgesten började över informationspanelen i stället för kartan. Testet verifierar nu att båda fingrarna träffar kartan och att zoom samt planetval fungerar. Ingen förlorad funktion påvisades.

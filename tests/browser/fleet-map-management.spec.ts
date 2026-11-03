@@ -31,8 +31,7 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
   await expect(
     panel.getByRole('button', { name: 'Create route', exact: true }),
   ).toHaveCount(0);
-  const heading = panel.locator('.map-location-heading').first();
-  const open = heading.getByRole('button', {
+  const open = panel.getByRole('button', {
     name: 'Open planet',
     exact: true,
   });
