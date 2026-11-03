@@ -73,6 +73,8 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
+- `unika-flottnamn` / `rutt-eskortfordelning` / `ruttflottor-pa-kartan`: **Åtgärdat i mobil Chromium**. Testet använde en egen kopia av den borttagna ruttmenyn. Det använder nu Orders och verifierar fortsatt spärr utan transport, eskortfördelning, markörval och omladdning. Ingen förlorad funktion påvisades.
+
 - `ruttflotta-till-narmaste-andplanet`: **Åtgärdat i mobil Chromium**. Den gemensamma testhjälpen använde den borttagna ruttmenyn. Den använder nu `Orders` och `Join route`; testet öppnar rutten från den valda flottan och verifierar fortsatt inflygning och omladdning utan teleportering. Andra tester som använder hjälpen är inte automatiskt bekräftade.
 
 - `flottpatrullering` (piratjakt och sparad strid): **Åtgärdat i mobil Chromium**. Årets händelser och stridsuppspelning tog längre än den tidigare testgränsen på 30 sekunder. Med tillräcklig tid slutfördes scenariot på 35 sekunder och de ursprungliga funktionella kontrollerna passerade. Ingen förlorad funktion påvisades.

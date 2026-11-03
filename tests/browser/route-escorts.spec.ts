@@ -1,29 +1,10 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { routeEscortState } from '../fixtures/route-escorts.js';
-import { startFirstSlot } from './save-helpers.js';
+import { assignFleetToRoute, startFirstSlot } from './save-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import { Game, type GameState } from '../../src/client/models/Game.js';
 import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
 import { selectMapPoint } from './map-helpers.js';
-
-async function assignFleetToRoute(
-  page: Page,
-  fleet: string,
-  from: string,
-  to: string,
-) {
-  await selectMapFleet(page, fleet);
-  const card = page.locator('.selected-fleet-card');
-  const routes = card.locator('.fleet-route-menu');
-  if (!(await routes.evaluate((node) => (node as HTMLDetailsElement).open)))
-    await routes.locator('summary').click();
-  const assign = card.getByRole('button', {
-    name: `Assign ${fleet} to ${from} to ${to}`,
-    exact: true,
-  });
-  await assign.focus();
-  await assign.press('Enter');
-}
 
 test('unika-flottnamn / rutt-eskortfordelning / ruttflottor-pa-kartan: assign fighters and select their carrier at the route midpoint', async ({
   page,
@@ -57,13 +38,18 @@ test('unika-flottnamn / rutt-eskortfordelning / ruttflottor-pa-kartan: assign fi
     'Fleet names must be unique',
   );
   await name.press('Escape');
-  await card.locator('.fleet-route-menu > summary').click();
+  await card.getByRole('button', { name: 'Orders', exact: true }).click();
+  await page.getByRole('button', { name: 'Join route', exact: true }).click();
   await expect(
-    card.getByRole('button', {
-      name: 'Assign Fighters to Tellus to Vesta',
+    page.locator('.orders-view').getByRole('button', {
+      name: 'Tellus ↔ Vesta',
       exact: true,
     }),
   ).toBeDisabled();
+  await page
+    .getByRole('button', { name: 'Back to orders', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
   await assignFleetToRoute(page, 'Carrier A', 'Tellus', 'Vesta');
   await assignFleetToRoute(page, 'Carrier B', 'Tellus', 'Vesta');
   await assignFleetToRoute(page, 'Fighters', 'Tellus', 'Vesta');
@@ -78,6 +64,7 @@ test('unika-flottnamn / rutt-eskortfordelning / ruttflottor-pa-kartan: assign fi
   const game = Game.restore(state);
   expect(game.fleet('carrier-a')!.ships.Fighter).toBe(3);
   expect(game.fleet('carrier-b')!.ships.Fighter).toBe(2);
+  await page.getByRole('button', { name: 'Route', exact: true }).click();
   const marker = FleetMapLayout.markers(
     game.fleetSnapshots(),
     game.tradeRoutes,
