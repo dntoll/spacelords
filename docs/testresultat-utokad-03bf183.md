@@ -71,6 +71,10 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 - `tests/browser/event-playback.spec.ts:384:3 › handelseanpassad-kartkamera / stillastaende-kamera-vid-forflyttning: zooms out from the player's view then holds the full route (393x851)` — 1 körningar; phone-webkit.
 - `tests/browser/turn-console.spec.ts:116:1 › handelser: Events adapts to available screen space without a selection` — 2 körningar; phone-webkit, tablet-webkit; olika felmeddelanden mellan körningar.
 
+### Åtgärdade webbläsarscenarier
+
+- `gemensamma-byggnadsbilder`: **Åtgärdat i mobil Chromium**. Ett fast antal bilder stämde inte längre när Research-vyn fick ytterligare innehåll. Testet kontrollerar nu de fyra bilder som kravet namnger, deras unika resurser och återanvändning. Ingen förlorad funktion påvisades.
+
 ## Webbläsartester
 
 453 godkända, 138 misslyckade och 37 överhoppade på cirka 1,4 timmar. Samma test i olika profiler räknas separat. Fellistan återger testets namn och första felmeddelande; orsakerna är ännu inte utredda.

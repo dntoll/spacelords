@@ -25,10 +25,18 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('button', { name: 'Research', exact: true })
     .click();
-  const images = page.locator('.research-page .building-image img');
-  await expect(images).toHaveCount(4);
+  const names = [
+    'Colony ship factory',
+    'Exploration ship factory',
+    'Fighter factory',
+    'Research station',
+  ];
   const sources: string[] = [];
-  for (const image of await images.all()) {
+  for (const name of names) {
+    const image = page.locator(
+      `.research-page .building-image img[alt="${name}"]`,
+    );
+    await expect(image).toHaveCount(1);
     const source = (await image.getAttribute('src'))!;
     expect(source).toMatch(/^\/spacelords\/assets\/.+\.webp$/);
     await expect
@@ -38,10 +46,8 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
       .toBe(512);
     sources.push(source);
   }
-  expect(new Set(sources).size).toBe(4);
-  const stationSource = await page
-    .getByRole('img', { name: 'Research station', exact: true })
-    .getAttribute('src');
+  expect(new Set(sources).size).toBe(names.length);
+  const stationSource = sources[3]!;
   await page.screenshot({
     path: testInfo.outputPath('research-building-images.png'),
   });
