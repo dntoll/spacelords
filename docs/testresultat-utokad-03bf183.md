@@ -73,6 +73,8 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
+- `automatisk-stjarnutforskning` / `flottorder-som-symboler`: **Passerade isolerat i mobil Chromium**, utan kodändring, på 25,2 sekunder. Den tidigare körningen passerade testets tidsgräns på 30 sekunder. Tidsvariation eller belastning är möjliga orsaker men inte verifierade; övriga profiler har inte körts om.
+
 - `gemensamt-handelseflode` / `upptacktsavbrott` / `spara-avbrutet-ar`: **Åtgärdat i mobil Chromium**. Testet förväntade den äldre separata vrakdialogen och att vrakupptäckten var första händelsen. Det använder nu det gemensamma händelseflödet, hanterar tidigare upptäckter och verifierar fortsatt avbrott, omladdning, order och stridsresultat utan upprepning. Ingen förlorad funktion påvisades.
 
 - `koloniseringsorder`: **Åtgärdat i mobil Chromium**. Testet använde den tidigare direktknappen och planetlistan; enligt `egen-ordervy` väljs Colonize nu i Orders och planeten på kartan. Testet verifierar avbrott, sparning, omladdning och kolonisering. Ingen förlorad funktion påvisades.
