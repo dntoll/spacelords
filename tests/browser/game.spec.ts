@@ -258,19 +258,28 @@ test('kartnavigation: native touch drag and pinch preserve the selected planet',
     page.getByRole('button', { name: 'Open planet', exact: true }),
   ).toBeVisible();
   const zoom = await page.getByLabel('Map zoom').textContent();
+  const pinchY = point.y - 60;
+  for (const x of [point.x - 40, point.x + 40]) {
+    expect(
+      await map.evaluate(
+        (canvas, p) => document.elementFromPoint(p.x, p.y) === canvas,
+        { x, y: pinchY },
+      ),
+    ).toBe(true);
+  }
   await session.send('Input.dispatchTouchEvent', {
     type: 'touchStart',
     touchPoints: [
-      { x: point.x - 40, y: point.y, id: 1 },
-      { x: point.x + 40, y: point.y, id: 2 },
+      { x: point.x - 40, y: pinchY, id: 1 },
+      { x: point.x + 40, y: pinchY, id: 2 },
     ],
   });
   for (let step = 1; step <= 5; step += 1) {
     await session.send('Input.dispatchTouchEvent', {
       type: 'touchMove',
       touchPoints: [
-        { x: point.x - 40 - step * 5, y: point.y, id: 1 },
-        { x: point.x + 40 + step * 5, y: point.y, id: 2 },
+        { x: point.x - 40 - step * 5, y: pinchY, id: 1 },
+        { x: point.x + 40 + step * 5, y: pinchY, id: 2 },
       ],
     });
   }

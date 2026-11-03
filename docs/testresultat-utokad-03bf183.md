@@ -73,6 +73,8 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
+- `kartnavigation` (touchdragning och nypzoom): **Åtgärdat i mobil Chromium**. Den gamla nypgesten började över informationspanelen i stället för kartan. Testet verifierar nu att båda fingrarna träffar kartan och att zoom samt planetval fungerar. Ingen förlorad funktion påvisades.
+
 - `kartnavigation` (planetval med touch): **Åtgärdat i mobil Chromium**. Testet tryckte på kartans mitt i stället för den faktiska hemplanetens position. Det använder nu sparad position och riktig touchinmatning; val av planet är verifierat.
 
 - `kartnavigation` (tangentbord, zoom och val av hemplanet): **Åtgärdat i mobil Chromium**. Testhjälpen använde koordinater från den gamla lilla exempelkartan även för nya spel i den utökade galaxen. Den läser nu koordinater från det faktiska sparade spelet. Testet verifierar fortsatt panorering, zoom och kartval. Flera andra karttester använder samma hjälp; de är inte därmed automatiskt bekräftade som åtgärdade.
