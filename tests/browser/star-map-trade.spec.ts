@@ -277,8 +277,8 @@ test('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: clickin
   await selectMapObject(page, 'Vesta');
   await selectMapObject(page, 'Tellus');
   const p = await screenPoint(page, {
-    x: start.x + (end.x - start.x) / 3,
-    y: start.y + (end.y - start.y) / 3,
+    x: midpoint.x,
+    y: midpoint.y,
   });
   await page.mouse.click(p.x, p.y);
   await expect(routePanel(page)).toContainText('No fleet assigned');
@@ -296,7 +296,7 @@ test('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: clickin
   await expect(
     page.getByRole('complementary', { name: 'Selected fleet' }),
   ).toContainText(
-    'Assign a transport fleet to this route before adding Fighters',
+    'Assign a transport fleet to this route before adding escorts',
   );
   await page.mouse.up();
   const state = await page.evaluate(
