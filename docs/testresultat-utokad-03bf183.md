@@ -73,7 +73,9 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
-- `flottval-pa-kartan` / `dra-flottdestination` (markörval och dragning): **Åtgärdat i mobil Chromium**. Testet antog en fast position vid kartans mitt; det använder nu den faktiska flottmarkören och kameran. Pekare, dragning och avbrott verifieras fortsatt. Ingen förlorad funktion påvisades i detta fall. Det separata fallet för flera flottor återstår.
+- `kartflottor` / `flottval-pa-kartan` (flera flottor i samma hex): **Åtgärdat i mobil Chromium**. Testet använde föråldrade koordinater vid kartans mitt. Det beräknar nu båda markörernas lägen och kontrollerar att de är separata, synliga för pekaren och valbara. Ingen förlorad funktion påvisades.
+
+- `flottval-pa-kartan` / `dra-flottdestination` (markörval och dragning): **Åtgärdat i mobil Chromium**. Testet antog en fast position vid kartans mitt; det använder nu den faktiska flottmarkören och kameran. Pekare, dragning och avbrott verifieras fortsatt. Ingen förlorad funktion påvisades i detta fall. Det separata fallet för flera flottor dokumenteras ovan.
 
 - `automatisk-stjarnutforskning` / `flottorder-som-symboler`: **Passerade isolerat i mobil Chromium**, utan kodändring, på 25,2 sekunder. Den tidigare körningen passerade testets tidsgräns på 30 sekunder. Tidsvariation eller belastning är möjliga orsaker men inte verifierade; övriga profiler har inte körts om.
 

@@ -93,34 +93,53 @@ test('kartflottor / flottval-pa-kartan: colocated fleets occupy separate positio
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await formFleet(page);
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  const { x, y } = await mapCenter(page);
-  const hud = (await page
-    .getByRole('complementary', { name: 'Selected fleet' })
-    .boundingBox())!;
-  // flottval-pa-kartan: the information panel must not cover either fleet marker.
-  expect(
-    x < hud.x ||
-      x > hud.x + hud.width ||
-      y - 18 < hud.y ||
-      y - 18 > hud.y + hud.height,
-  ).toBe(true);
-  expect(
-    x < hud.x ||
-      x > hud.x + hud.width ||
-      y + 18 < hud.y ||
-      y + 18 > hud.y + hud.height,
-  ).toBe(true);
-  await page.mouse.click(x, y - 18);
+  const { canvas } = await mapCenter(page);
+  const saved = await page.evaluate(
+    () =>
+      JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
+  );
+  const markers = FleetMapLayout.markers(
+    Game.restore(saved.state).fleetSnapshots(),
+  );
+  const bounds = (await canvas.boundingBox())!;
+  const [cameraX, cameraY] = (await page
+    .getByTestId('camera-position')
+    .textContent())!
+    .match(/-?\d+(?:\.\d+)?/g)!
+    .map(Number);
+  const zoom =
+    Number(
+      (await page.getByLabel('Map zoom').textContent())!.replace('%', ''),
+    ) / 100;
+  const point = (name: string) => {
+    const marker = markers.find((item) => item.fleet.name === name)!;
+    return {
+      x: bounds.x + bounds.width / 2 + (marker.point.x - cameraX!) * zoom,
+      y: bounds.y + bounds.height / 2 + (marker.point.y - cameraY!) * zoom,
+    };
+  };
+  const first = point('Fleet 1');
+  const home = point('Home Fleet');
+  expect(Math.hypot(first.x - home.x, first.y - home.y)).toBeGreaterThan(0);
+  for (const position of [first, home]) {
+    expect(
+      await canvas.evaluate(
+        (element, p) => document.elementFromPoint(p.x, p.y) === element,
+        position,
+      ),
+    ).toBe(true);
+  }
+  await page.mouse.click(first.x, first.y);
   const panel = page.getByRole('complementary', { name: 'Selected fleet' });
   await expect(
     panel.getByRole('heading', { name: 'Fleet 1', exact: true }),
   ).toBeVisible();
-  await page.mouse.click(x, y + 18);
+  await page.mouse.click(home.x, home.y);
   await expect(
     panel.getByRole('heading', { name: 'Home Fleet', exact: true }),
   ).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('colocated-fleets.png') });
-  await page.mouse.click(x, y);
+  await page.mouse.click((first.x + home.x) / 2, (first.y + home.y) / 2);
   await expect(
     page.getByRole('complementary', { name: 'Selected hex' }),
   ).toContainText('Tellus');
