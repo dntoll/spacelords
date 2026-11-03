@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import transportMap from '../../src/client/maps/transport-boarding.txt?raw';
+import pirateMap from '../../src/client/maps/pirate-boarding.txt?raw';
+import colonyMap from '../../src/client/maps/colony-boarding.txt?raw';
 import {
   BoardingMap,
+  formatBoardingMap,
   parseBoardingMap,
+  parseBoardingMapText,
 } from '../../src/client/models/BoardingMap.js';
 import {
   BoardingBattle,
@@ -74,6 +78,34 @@ describe('datadriven-bordningskarta', () => {
     expect(() => parseBoardingMap(broken)).toThrow(
       /objects.*row 3.*column 14/i,
     );
+  });
+});
+
+describe('lokal-bordningskarteditor', () => {
+  it('round-trips campaign and prototype maps including different sizes', () => {
+    for (const source of [pirateMap, colonyMap, transportMap]) {
+      const text = parseBoardingMapText(source);
+      const again = parseBoardingMapText(formatBoardingMap(text));
+      expect(again).toEqual(text);
+      expect(parseBoardingMap(formatBoardingMap(text)).width).toBe(text.width);
+    }
+    expect(parseBoardingMapText(pirateMap).width).toBe(9);
+    expect(parseBoardingMapText(colonyMap).width).toBe(13);
+    expect(parseBoardingMapText(transportMap).height).toBe(11);
+  });
+
+  it('preserves sprite alignment meta through formatBoardingMap', () => {
+    const text = parseBoardingMapText(pirateMap);
+    const withSprite = {
+      ...text,
+      spriteX: 2.5,
+      spriteY: -1,
+      spriteScale: 11,
+    };
+    const formatted = formatBoardingMap(withSprite);
+    expect(formatted).toContain('spriteX=2.5');
+    expect(parseBoardingMapText(formatted)).toEqual(withSprite);
+    expect(parseBoardingMap(formatted).name).toBe('Space pirate');
   });
 });
 

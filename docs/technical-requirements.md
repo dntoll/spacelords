@@ -1403,6 +1403,21 @@ konfliktmarkörer, publiceringskatalog och filinnehåll behålls.
 
 `egen-raptor-grafik`: ShipImages och BuildingSymbols tillhandahåller egna transparenta WebP-bilder för Raptor och Raptor factory. Fabriken använder symbolen som reservbild tills ett porträtt finns.
 
-## Dockningskorridor
+## Lokal karteditor
 
-`dockningskorridor-sprite`: Stridskartan laddar en transparent sprite och ritar den en gång mellan varje dockat par, bakom skeppen och roterad längs linjen mellan dem. Den tidigare linjen används om bilden inte laddas.
+`lokal-bordningskarteditor`: Express exponerar `GET` och `PUT` `/api/boarding-maps`
+mot en injicerad katalog med vitlistade filnamn. Okänt id, path traversal och
+ogiltig karttext avvisas. `parseBoardingMap` / `formatBoardingMap` rundresar
+lager, `width`/`height` och editorns sprite-meta (`spriteX`, `spriteY`,
+`spriteScale`). Spelets parser ignorerar de nycklarna. AppController provar
+API:t vid start; knappen `Ship layouts` ritas bara när listan svarar.
+`BoardingEditor` äger utkast, två penselbindningar, visningsläge och
+`CommandHistory` (`PaintStrokeCommand`, `ResizeGridCommand`,
+`SpriteTransformCommand`). Vyer skickar intents och får en fryst
+ögonblicksbild. `Top-down` är ett rakt rutnät ovanifrån med skeppssprite under
+tiles. `isometrisk-bordningskarteditor` ritar samma lager med
+`BoardingProjection` (2:1-diamanter, golv- och väggtexturer). Visningsläget
+sparas inte i kartfilen. Sessionen anropar inte `SaveRepository` och ingår inte
+i Pages-bygget. Snabba tester skyddar rundresa, penslar, undo, storlek,
+spritegest, visningsväxling och vitlista. Jsdom skyddar meny och intents. HTTP
+mot `createApp` med tempkatalog ligger i den utökade sviten.

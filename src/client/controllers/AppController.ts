@@ -4,6 +4,7 @@ import type { AppIntent, AppPort } from '../views/ViewContracts.js';
 import type { Point } from '../models/HexCoordinate.js';
 import { MapGesture } from './MapGesture.js';
 import { isMapScreen } from '../models/ProductionMap.js';
+import type { BoardingMapId } from '../models/BoardingMap.js';
 
 export class AppController {
   readonly #model: AppModel;
@@ -17,6 +18,7 @@ export class AppController {
   #battleAnimating = false;
   #receiptTimer: ReturnType<typeof setTimeout> | undefined;
   #playbackTimer: ReturnType<typeof setTimeout> | undefined;
+  #editorRequest = 0;
   #fleetPointer: {
     id: number;
     start: Point;
@@ -35,6 +37,7 @@ export class AppController {
     this.#model.autoSelectBattleShip();
     this.#render();
     this.#schedulePlayback();
+    void this.#probeEditor();
   }
 
   dispose(): void {
@@ -110,6 +113,7 @@ export class AppController {
       previous.eventPlayback ||
       previous.turnMovement ||
       previous.boardingBattle ||
+      previous.editor ||
       previous.tacticalBattle ||
       previous.battleFeedback ||
       previous.notice ||
@@ -250,6 +254,21 @@ export class AppController {
         'test-boarding',
         'boarding-command',
         'close-boarding',
+        'open-editor',
+        'close-editor',
+        'editor-select-map',
+        'editor-resize',
+        'editor-bind-tool',
+        'editor-paint',
+        'editor-sprite-transform',
+        'editor-adjust-sprite',
+        'editor-projection',
+        'editor-opacity',
+        'editor-undo',
+        'editor-redo',
+        'editor-save',
+        'confirm-editor-switch',
+        'cancel-editor-switch',
         'request-clear-slot',
         'cancel-clear-slot',
         'confirm-clear-slot',
@@ -266,6 +285,64 @@ export class AppController {
         this.#model.startTestBoarding();
         this.#schedulePlayback();
         break;
+      case 'open-editor':
+        void this.#loadEditor(
+          this.#model.snapshot.editor?.mapId ??
+            this.#model.snapshot.editorCatalog[0]?.id,
+        );
+        return;
+      case 'close-editor':
+        this.#model.closeEditor();
+        break;
+      case 'editor-select-map': {
+        const decision = this.#model.requestEditorMap(intent.id);
+        if (decision === 'load') {
+          void this.#loadEditor(intent.id);
+          return;
+        }
+        break;
+      }
+      case 'confirm-editor-switch': {
+        const id = this.#model.confirmEditorDiscard();
+        if (id) {
+          void this.#loadEditor(id);
+          return;
+        }
+        break;
+      }
+      case 'cancel-editor-switch':
+        this.#model.cancelEditorDiscard();
+        break;
+      case 'editor-bind-tool':
+        this.#model.editorBindTool(intent.button, intent.tool);
+        break;
+      case 'editor-paint':
+        this.#model.editorPaint(intent.button, intent.cells);
+        break;
+      case 'editor-resize':
+        this.#model.editorResize(intent.width, intent.height);
+        break;
+      case 'editor-sprite-transform':
+        this.#model.editorSpriteTransform(intent.sprite);
+        break;
+      case 'editor-adjust-sprite':
+        this.#model.editorAdjustSprite(intent.value);
+        break;
+      case 'editor-projection':
+        this.#model.editorProjection(intent.value);
+        break;
+      case 'editor-opacity':
+        this.#model.editorOpacity(intent.value);
+        break;
+      case 'editor-undo':
+        this.#model.editorUndo();
+        break;
+      case 'editor-redo':
+        this.#model.editorRedo();
+        break;
+      case 'editor-save':
+        void this.#saveEditor();
+        return;
       case 'salvage-wreck':
         this.#model.orderSalvage(intent.fleetId, intent.wreckId);
         break;
@@ -1017,5 +1094,56 @@ export class AppController {
     } finally {
       this.#runningTurn = false;
     }
+  }
+
+  async #probeEditor(): Promise<void> {
+    try {
+      const response = await fetch('/api/boarding-maps');
+      if (!response.ok) return;
+      const body = (await response.json()) as {
+        maps?: readonly { id: BoardingMapId; name: string }[];
+      };
+      if (!Array.isArray(body.maps) || body.maps.length === 0) return;
+      this.#model.setEditorCatalog(body.maps);
+      this.#render();
+    } catch {
+      /* Pages and tests without a local API hide the editor. */
+    }
+  }
+
+  async #loadEditor(id: BoardingMapId | undefined): Promise<void> {
+    if (!id) return;
+    const request = ++this.#editorRequest;
+    try {
+      const response = await fetch(`/api/boarding-maps/${id}`);
+      if (!response.ok) throw new Error('Unable to load ship layout.');
+      const body = (await response.json()) as { source?: string };
+      if (request !== this.#editorRequest) return;
+      if (typeof body.source !== 'string')
+        throw new Error('Unable to load ship layout.');
+      this.#model.openEditor(id, body.source);
+    } catch (error) {
+      if (request !== this.#editorRequest) return;
+      this.#model.reportError(error);
+    }
+    this.#render();
+  }
+
+  async #saveEditor(): Promise<void> {
+    const editor = this.#model.snapshot.editor;
+    const source = this.#model.editorSource();
+    if (!editor || !source || editor.parseError) return;
+    try {
+      const response = await fetch(`/api/boarding-maps/${editor.mapId}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ source }),
+      });
+      if (!response.ok) throw new Error('Unable to save ship layout.');
+      this.#model.markEditorSaved();
+    } catch (error) {
+      this.#model.reportError(error);
+    }
+    this.#render();
   }
 }

@@ -37,6 +37,16 @@ import { shipTransferIssue } from './FleetTransfer.js';
 import { StarMapTrade, type MapTradeSnapshot } from './StarMapTrade.js';
 import type { SaveRepository } from './SaveRepository.js';
 import {
+  BoardingEditor,
+  type BoardingEditorSnapshot,
+  type EditorBrushButton,
+  type EditorPaintCell,
+  type EditorProjection,
+  type EditorTool,
+  type SpriteTransform,
+} from './BoardingEditor.js';
+import type { BoardingMapId } from './BoardingMap.js';
+import {
   type TacticalBattle,
   battleWeapons,
   type BattleState,
@@ -129,6 +139,13 @@ export interface AppReadModel {
   readonly boardingBattle?: BoardingBattleState | null;
   readonly boardingPresentation?: readonly BoardingBattleState[];
   readonly boardingShot?: BoardingShot | null;
+  readonly editorAvailable: boolean;
+  readonly editorCatalog: readonly {
+    readonly id: BoardingMapId;
+    readonly name: string;
+  }[];
+  readonly editor: BoardingEditorSnapshot | null;
+  readonly pendingEditorDiscard: BoardingMapId | null;
   readonly tacticalBattle: BattleState | null;
   readonly battleFeedback: BattleState | null;
   readonly turnMovement: TurnMovement | null;
@@ -282,6 +299,13 @@ export class AppModel {
   #destinationOrder: 'move' | 'colonize' | 'salvage' = 'move';
   #notice: string | null = null;
   #productionReceipt: ProductionReceipt | null = null;
+  #editorAvailable = false;
+  #editorCatalog: readonly {
+    readonly id: BoardingMapId;
+    readonly name: string;
+  }[] = [];
+  #editor: BoardingEditor | null = null;
+  #pendingEditorDiscard: BoardingMapId | null = null;
 
   #activeSlot: number | null = null;
   #pendingClearSlot: number | null = null;
@@ -465,6 +489,10 @@ export class AppModel {
           this.#game.boardingPresentation),
       ]),
       boardingShot: this.#testBoarding?.shot ?? this.#game.boardingShot,
+      editorAvailable: this.#editorAvailable,
+      editorCatalog: this.#editorCatalog,
+      editor: this.#editor?.snapshot ?? null,
+      pendingEditorDiscard: this.#pendingEditorDiscard,
       tacticalBattle:
         this.#testBattle?.visibleSnapshot ?? this.#game.tacticalBattle,
       battleFeedback: this.#battleFeedback,
@@ -1853,6 +1881,91 @@ export class AppModel {
     if (this.#screen !== 'saves') return;
     this.#testBoarding = createTestBoardingBattle();
     this.#notice = null;
+  }
+
+  setEditorCatalog(
+    maps: readonly { readonly id: BoardingMapId; readonly name: string }[],
+  ): void {
+    this.#editorCatalog = Object.freeze([...maps]);
+    this.#editorAvailable = maps.length > 0;
+  }
+
+  openEditor(id: BoardingMapId, source: string): void {
+    this.#pendingEditorDiscard = null;
+    if (this.#editor) this.#editor.load(id, source);
+    else this.#editor = new BoardingEditor(id, source);
+  }
+
+  closeEditor(): void {
+    this.#editor = null;
+    this.#pendingEditorDiscard = null;
+  }
+
+  requestEditorMap(id: BoardingMapId): 'same' | 'load' | 'confirm' {
+    if (this.#editor?.snapshot.mapId === id) return 'same';
+    if (this.#editor?.snapshot.dirty) {
+      this.#pendingEditorDiscard = id;
+      return 'confirm';
+    }
+    this.#pendingEditorDiscard = null;
+    return 'load';
+  }
+
+  confirmEditorDiscard(): BoardingMapId | null {
+    const id = this.#pendingEditorDiscard;
+    this.#pendingEditorDiscard = null;
+    return id;
+  }
+
+  cancelEditorDiscard(): void {
+    this.#pendingEditorDiscard = null;
+  }
+
+  editorBindTool(button: EditorBrushButton, tool: EditorTool): void {
+    this.#editor?.bindTool(button, tool);
+  }
+
+  editorPaint(
+    button: EditorBrushButton,
+    cells: readonly EditorPaintCell[],
+  ): void {
+    this.#editor?.paintStroke(button, cells);
+  }
+
+  editorResize(width: number, height: number): void {
+    this.#editor?.resize(width, height);
+  }
+
+  editorSpriteTransform(sprite: SpriteTransform): void {
+    this.#editor?.setSpriteTransform(sprite);
+  }
+
+  editorAdjustSprite(value: boolean): void {
+    this.#editor?.setAdjustSprite(value);
+  }
+
+  editorProjection(value: EditorProjection): void {
+    this.#editor?.setProjection(value);
+  }
+
+  editorOpacity(value: number): void {
+    this.#editor?.setSpriteOpacity(value);
+  }
+
+  editorUndo(): void {
+    this.#editor?.undo();
+  }
+
+  editorRedo(): void {
+    this.#editor?.redo();
+  }
+
+  editorSource(): string | null {
+    return this.#editor?.source() ?? null;
+  }
+
+  markEditorSaved(): void {
+    this.#editor?.markSaved();
   }
   closeTestBoarding(): void {
     this.#testBoarding = null;

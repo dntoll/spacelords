@@ -201,7 +201,19 @@ utförs stegvis. Vändning vänster och höger kan även göras separat.
   kräver `Weapons module factory` tills den är Recovered. `Raptor` är en liten
   trupptransport (size 1, hull 3, movement 3, speed 2) med light cannon.
 
-Karteditor, skrovgenombrott och vakuum ingår inte.
+- `lokal-bordningskarteditor` — **Fullständigt implementerat**. En editor för
+  skeppens bordningslayouter körs bara mot den lokala servern. En knapp
+  `Ship layouts` i skärmens nederkant visas när `/api/boarding-maps` svarar.
+  Där väljs skepp, rutnätets bredd och höjd, en tile för vänster musknapp och
+  en för höger, och skeppets sprite som bakgrund som kan panoreras och skalas.
+  Undo och redo använder command pattern. Spara skriver över den valda
+  kartfilen i `src/client/maps/`. Skrovgenombrott och vakuum ingår inte.
+- `isometrisk-bordningskarteditor` — **Fullständigt implementerat**. Samma
+  utkast kan visas med stridens klassiska 2:1-diamanter, golv- och väggtexturer
+  och upphöjda barriärer. Väljaren `View` växlar mellan `Isometric` och
+  `Top-down`. Ovanifrån behålls för att spåra skeppsspriten; isometrin ersätter
+  inte den vyn, utan visar samma celler som i bordningsstriden. Spritejustering
+  gäller bara ovanifrån. Penslar, storlek, undo och spara är desamma.
 
 ## Dockningskorridorens grafik
 

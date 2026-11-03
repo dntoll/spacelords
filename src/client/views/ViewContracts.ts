@@ -2,6 +2,14 @@ import type { ExplorationOrder } from '../models/TurnSimulation.js';
 import type { ShipOrder, OrderKind } from '../models/ShipOrders.js';
 import type { BattleCommand, BattleShot } from '../models/TacticalBattle.js';
 import type { BoardingCommand } from '../models/BoardingBattle.js';
+import type { BoardingMapId } from '../models/BoardingMap.js';
+import type {
+  EditorBrushButton,
+  EditorPaintCell,
+  EditorProjection,
+  EditorTool,
+  SpriteTransform,
+} from '../models/BoardingEditor.js';
 import type {
   MapProductionCategory,
   MapViewport,
@@ -25,6 +33,39 @@ import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 export type AppIntent =
   | { readonly type: 'test-battle' }
   | { readonly type: 'test-boarding' | 'close-boarding' }
+  | {
+      readonly type:
+        | 'open-editor'
+        | 'close-editor'
+        | 'editor-undo'
+        | 'editor-redo'
+        | 'editor-save'
+        | 'confirm-editor-switch'
+        | 'cancel-editor-switch';
+    }
+  | { readonly type: 'editor-select-map'; readonly id: BoardingMapId }
+  | {
+      readonly type: 'editor-resize';
+      readonly width: number;
+      readonly height: number;
+    }
+  | {
+      readonly type: 'editor-bind-tool';
+      readonly button: EditorBrushButton;
+      readonly tool: EditorTool;
+    }
+  | {
+      readonly type: 'editor-paint';
+      readonly button: EditorBrushButton;
+      readonly cells: readonly EditorPaintCell[];
+    }
+  | {
+      readonly type: 'editor-sprite-transform';
+      readonly sprite: SpriteTransform;
+    }
+  | { readonly type: 'editor-adjust-sprite'; readonly value: boolean }
+  | { readonly type: 'editor-projection'; readonly value: EditorProjection }
+  | { readonly type: 'editor-opacity'; readonly value: number }
   | { readonly type: 'boarding-command'; readonly command: BoardingCommand }
   | { readonly type: 'open-fleet-orders'; readonly id: string }
   | {

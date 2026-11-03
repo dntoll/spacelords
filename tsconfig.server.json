@@ -3,9 +3,9 @@
   "compilerOptions": {
     "lib": ["ES2023"],
     "noEmit": false,
-    "rootDir": "src/server",
-    "outDir": "dist/server",
+    "rootDir": "src",
+    "outDir": "dist",
     "sourceMap": true
   },
-  "include": ["src/server/**/*.ts"]
+  "include": ["src/server/**/*.ts", "src/shared/**/*.ts"]
 }

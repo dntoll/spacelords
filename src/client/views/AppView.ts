@@ -2,6 +2,7 @@ import { renderOrders } from './OrdersView.js';
 import { gameText } from './GameText.js';
 import { BattleView, type BattleMapFactory } from './BattleView.js';
 import { BoardingView, type BoardingMapFactory } from './BoardingView.js';
+import { BoardingEditorView } from './BoardingEditorView.js';
 import { discoveryControls } from './DiscoveryView.js';
 import { pirateAsFleet } from '../models/PirateFleet.js';
 import { updateDecisionGuidance } from './DecisionGuidanceView.js';
@@ -46,6 +47,7 @@ import type { BattleShot } from '../models/TacticalBattle.js';
 export class AppView implements AppPort {
   #battleView: BattleView | null = null;
   #boardingView: BoardingView | null = null;
+  #editorView: BoardingEditorView | null = null;
   readonly #root: HTMLElement;
   readonly #mapFactory: MapFactory;
   #emit: IntentHandler = () => undefined;
@@ -115,6 +117,19 @@ export class AppView implements AppPort {
   }
 
   render(model: AppReadModel): void {
+    if (model.editor) {
+      this.#battleView?.dispose();
+      this.#battleView = null;
+      this.#boardingView?.dispose();
+      this.#boardingView = null;
+      this.#editorView ??= new BoardingEditorView(this.#root, (intent) =>
+        this.#emit(intent),
+      );
+      this.#editorView.render(model);
+      return;
+    }
+    this.#editorView?.dispose();
+    this.#editorView = null;
     if (model.boardingBattle) {
       this.#battleView?.dispose();
       this.#battleView = null;
@@ -230,6 +245,7 @@ export class AppView implements AppPort {
       }
       this.#screen = 'saves';
       this.#renderNotice(model);
+      this.#syncLocalEditorNav(model);
       return;
     }
     this.#previews.forEach((preview) => preview.dispose());
@@ -584,6 +600,7 @@ export class AppView implements AppPort {
           '[role="log"]',
         )!.scrollTop = previousEventScroll;
     }
+    this.#syncLocalEditorNav(model);
     this.#renderMapProblems(model);
     const counter = this.#root.querySelector('.decision-counter');
     if (counter)
@@ -1023,6 +1040,7 @@ export class AppView implements AppPort {
   }
 
   dispose(): void {
+    this.#editorView?.dispose();
     this.#boardingView?.dispose();
     this.#battleView?.dispose();
     this.#disposed = true;
@@ -1049,6 +1067,25 @@ export class AppView implements AppPort {
     this.#map = null;
     this.#root.replaceChildren();
     this.#screen = null;
+  }
+
+  #syncLocalEditorNav(model: AppReadModel): void {
+    const existing = this.#root.querySelector('.local-editor-nav');
+    if (!model.editorAvailable) {
+      this.#root.classList.remove('has-local-editor-nav');
+      existing?.remove();
+      return;
+    }
+    this.#root.classList.add('has-local-editor-nav');
+    if (existing) {
+      this.#root.append(existing);
+      return;
+    }
+    const nav = element('div', 'local-editor-nav');
+    nav.append(
+      button('Ship layouts', () => this.#emit({ type: 'open-editor' })),
+    );
+    this.#root.append(nav);
   }
 
   #header(screen: Screen): HTMLElement {

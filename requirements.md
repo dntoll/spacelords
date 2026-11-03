@@ -10,6 +10,13 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Lokal karteditor:** `lokal-bordningskarteditor` och
+  `isometrisk-bordningskarteditor` är **Fullständigt implementerat**. En lokal
+  editor öppnas från en bottenknapp som bara syns mot servern. Där väljs skepp,
+  rutnätets storlek, två penslar, spritebakgrund och undo. Samma layout kan
+  visas ovanifrån eller isometriskt som i striden. Spara skriver över kartfilen.
+  Se [bordningsstrid](docs/boarding-combat.md).
+
 - **Dockningskorridor:** `dockningskorridor-sprite` är **Fullständigt implementerat**. Dockade skepp sammanbinds visuellt med en korridor. Se [bordningsstrid](docs/boarding-combat.md).
 
 - **Raptor-grafik:** `egen-raptor-grafik` är **Fullständigt implementerat**. Raptor och Raptor factory har egna sprites respektive symboler; fabrikens porträtt återstår. Se [skeppsgrafik](docs/ship-artwork.md).
@@ -214,6 +221,14 @@ Se [hela visionen](docs/game-vision.md).
   [bordningsstrid](docs/boarding-combat.md),
   [taktisk strid](docs/tactical-combat.md) och
   [space pirates](docs/space-pirates.md).
+
+- **Lokal karteditor:** `lokal-bordningskarteditor` är **Fullständigt implementerat**.
+  En lokal editor öppnas med `Ship layouts` i nederkant när servern svarar.
+  Skepp, rutnätsstorlek, vänster- och högerpensel, spritebakgrund och undo
+  ingår. Spara skriver över den valda kartfilen. Skrovgenombrott och vakuum
+  ingår inte. `isometrisk-bordningskarteditor` lägger till en 2:1-isometrisk
+  vy av samma utkast, med växling mot ovanifrån för spritejustering. Se
+  [bordningsstrid](docs/boarding-combat.md).
 
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,
   korta instruktioner, färre upprepningar i Production, mindre New fleet-ruta,

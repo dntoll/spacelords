@@ -1,3 +1,21 @@
+import {
+  parseBoardingMapText,
+  type BoardingMapText,
+} from '../../shared/boarding-map-format.js';
+
+export {
+  BOARDING_LAYER_SYMBOLS,
+  BOARDING_MAP_FILES,
+  BOARDING_MAP_IDS,
+  formatBoardingMap,
+  parseBoardingMapText,
+} from '../../shared/boarding-map-format.js';
+export type {
+  BoardingEditorLayer,
+  BoardingMapId,
+  BoardingMapText,
+} from '../../shared/boarding-map-format.js';
+
 export type BoardingCell = Readonly<{ q: number; r: number }>;
 export type BoardingRoom = 'bridge' | 'engineering';
 export type BoardingTerrain = 'floor' | 'wall' | 'hull';
@@ -16,14 +34,6 @@ export interface BoardingSpawns {
   readonly player: readonly BoardingCell[];
   readonly defender: readonly BoardingCell[];
   readonly civilian: readonly BoardingCell[];
-}
-
-interface ParsedLayers {
-  readonly meta: ReadonlyMap<string, string>;
-  readonly terrain: readonly string[];
-  readonly objects: readonly string[];
-  readonly rooms: readonly string[];
-  readonly spawns: readonly string[];
 }
 
 const key = (position: BoardingCell): string => `${position.q},${position.r}`;
@@ -98,97 +108,25 @@ export class BoardingMap {
   }
 }
 
-function sections(source: string): ParsedLayers {
-  const result = new Map<string, string[]>();
-  let current = '';
-  for (const raw of source.replaceAll('\r', '').split('\n')) {
-    const heading = raw.match(/^\[([a-z]+)]$/i);
-    if (heading) {
-      current = heading[1]!.toLowerCase();
-      result.set(current, []);
-    } else if (raw !== '' && current) result.get(current)!.push(raw);
-  }
-  const meta = new Map<string, string>();
-  for (const line of result.get('meta') ?? []) {
-    const separator = line.indexOf('=');
-    if (separator < 1) throw new Error(`Invalid meta line: ${line}`);
-    meta.set(line.slice(0, separator), line.slice(separator + 1));
-  }
-  const layer = (name: string): readonly string[] => {
-    const value = result.get(name);
-    if (!value) throw new Error(`Missing [${name}] layer.`);
-    return value;
-  };
-  return {
-    meta,
-    terrain: layer('terrain'),
-    objects: layer('objects'),
-    rooms: layer('rooms'),
-    spawns: layer('spawns'),
-  };
+function cell(rows: readonly string[], q: number, r: number): string {
+  return rows[r]![q]!;
 }
 
-function dimensions(
-  layers: ParsedLayers,
-): Readonly<{ width: number; height: number }> {
-  const width = Number(layers.meta.get('width'));
-  const height = Number(layers.meta.get('height'));
-  if (!Number.isSafeInteger(width) || width < 1)
-    throw new Error('Map width must be a positive integer.');
-  if (!Number.isSafeInteger(height) || height < 1)
-    throw new Error('Map height must be a positive integer.');
-  for (const [name, rows] of [
-    ['terrain', layers.terrain],
-    ['objects', layers.objects],
-    ['rooms', layers.rooms],
-    ['spawns', layers.spawns],
-  ] as const) {
-    if (rows.length !== height)
-      throw new Error(`${name} has ${rows.length} rows; expected ${height}.`);
-    rows.forEach((row, index) => {
-      if (row.length !== width)
-        throw new Error(
-          `${name} row ${index + 1} has width ${row.length}; expected ${width}.`,
-        );
-    });
-  }
-  return Object.freeze({ width, height });
-}
-
-function symbol(
-  layer: string,
-  rows: readonly string[],
-  allowed: string,
-  q: number,
-  r: number,
-): string {
-  const value = rows[r]![q]!;
-  if (!allowed.includes(value))
-    throw new Error(
-      `${layer} has unknown symbol "${value}" at row ${r + 1}, column ${q + 1}.`,
-    );
-  return value;
-}
-
-/** datadriven-bordningskarta: strict parser for a hand-editable layered map. */
-export function parseBoardingMap(source: string): BoardingMap {
-  const layers = sections(source);
-  const { width, height } = dimensions(layers);
+export function boardingMapFromText(layers: BoardingMapText): BoardingMap {
   const terrain = new Map<string, BoardingTerrain>();
   const rooms = new Map<string, BoardingRoom>();
   const features: BoardingFeatureDefinition[] = [];
   const airlocks: BoardingCell[] = [];
   const cockpits: BoardingCell[] = [];
-  const campaign = layers.meta.get('rules') === 'campaign';
   const spawns: Record<keyof BoardingSpawns, BoardingCell[]> = {
     player: [],
     defender: [],
     civilian: [],
   };
-  for (let r = 0; r < height; r++) {
-    for (let q = 0; q < width; q++) {
+  for (let r = 0; r < layers.height; r++) {
+    for (let q = 0; q < layers.width; q++) {
       const position = freezeCell(q, r);
-      const terrainSymbol = symbol('terrain', layers.terrain, '.#H', q, r);
+      const terrainSymbol = cell(layers.terrain, q, r);
       const terrainKind: BoardingTerrain =
         terrainSymbol === '.'
           ? 'floor'
@@ -205,17 +143,17 @@ export function parseBoardingMap(source: string): BoardingMap {
           }),
         );
 
-      const room = symbol('rooms', layers.rooms, '-BEK', q, r);
+      const room = cell(layers.rooms, q, r);
       if (room === 'K') cockpits.push(position);
       else if (room !== '-')
         rooms.set(key(position), room === 'B' ? 'bridge' : 'engineering');
 
-      const spawn = symbol('spawns', layers.spawns, '-PDC', q, r);
+      const spawn = cell(layers.spawns, q, r);
       if (spawn === 'P') spawns.player.push(position);
       else if (spawn === 'D') spawns.defender.push(position);
       else if (spawn === 'C') spawns.civilian.push(position);
 
-      const object = symbol('objects', layers.objects, '-DLRCBXA', q, r);
+      const object = cell(layers.objects, q, r);
       if (object === 'A') airlocks.push(position);
       let feature: BoardingFeatureDefinition | null = null;
       if (object === 'D' || object === 'L')
@@ -246,20 +184,21 @@ export function parseBoardingMap(source: string): BoardingMap {
       if (feature) features.push(Object.freeze(feature));
     }
   }
-  if (!campaign && !features.some((feature) => feature.id === 'reactor'))
-    throw new Error('The map needs one reactor.');
-  if (!campaign && !features.some((feature) => feature.exit === 'breach'))
-    throw new Error('The map needs one breach.');
   return new BoardingMap(
-    layers.meta.get('name') ?? 'Boarding map',
-    width,
-    height,
+    layers.name,
+    layers.width,
+    layers.height,
     terrain,
     rooms,
     features,
     spawns,
     airlocks,
     cockpits,
-    campaign,
+    layers.campaign,
   );
+}
+
+/** datadriven-bordningskarta: strict parser for a hand-editable layered map. */
+export function parseBoardingMap(source: string): BoardingMap {
+  return boardingMapFromText(parseBoardingMapText(source));
 }
