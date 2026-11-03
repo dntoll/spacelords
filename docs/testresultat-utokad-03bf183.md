@@ -73,6 +73,8 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
+- `flottval-pa-kartan` / `dra-flottdestination` (markörval och dragning): **Åtgärdat i mobil Chromium**. Testet antog en fast position vid kartans mitt; det använder nu den faktiska flottmarkören och kameran. Pekare, dragning och avbrott verifieras fortsatt. Ingen förlorad funktion påvisades i detta fall. Det separata fallet för flera flottor återstår.
+
 - `automatisk-stjarnutforskning` / `flottorder-som-symboler`: **Passerade isolerat i mobil Chromium**, utan kodändring, på 25,2 sekunder. Den tidigare körningen passerade testets tidsgräns på 30 sekunder. Tidsvariation eller belastning är möjliga orsaker men inte verifierade; övriga profiler har inte körts om.
 
 - `gemensamt-handelseflode` / `upptacktsavbrott` / `spara-avbrutet-ar`: **Åtgärdat i mobil Chromium**. Testet förväntade den äldre separata vrakdialogen och att vrakupptäckten var första händelsen. Det använder nu det gemensamma händelseflödet, hanterar tidigare upptäckter och verifierar fortsatt avbrott, omladdning, order och stridsresultat utan upprepning. Ingen förlorad funktion påvisades.

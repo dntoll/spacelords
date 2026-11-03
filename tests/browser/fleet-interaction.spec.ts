@@ -1,4 +1,7 @@
 import { formFleet } from './fleet-helpers.js';
+import { Game } from '../../src/client/models/Game.js';
+import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
+import type { SavedGame } from '../../src/client/models/SaveRepository.js';
 import { selectMapObject } from './map-helpers.js';
 import { startFirstSlot } from './save-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
@@ -21,12 +24,27 @@ test('flottval-pa-kartan / dra-flottdestination: selects a fleet, previews a sna
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');
   await startFirstSlot(page);
-  const { canvas, x, y } = await mapCenter(page);
+  const { canvas } = await mapCenter(page);
   await selectMapObject(page, 'Vesta');
+  const saved = await page.evaluate(
+    () =>
+      JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
+  );
+  const marker = FleetMapLayout.markers(
+    Game.restore(saved.state).fleetSnapshots(),
+  ).find((item) => item.fleet.name === 'Home Fleet')!;
+  const bounds = (await canvas.boundingBox())!;
   const camera = await page.getByTestId('camera-position').textContent();
-  await page.mouse.move(x, y - 18);
+  const [cameraX, cameraY] = camera!.match(/-?\d+(?:\.\d+)?/g)!.map(Number);
+  const zoom =
+    Number(
+      (await page.getByLabel('Map zoom').textContent())!.replace('%', ''),
+    ) / 100;
+  const x = bounds.x + bounds.width / 2 + (marker.point.x - cameraX!) * zoom;
+  const y = bounds.y + bounds.height / 2 + (marker.point.y - cameraY!) * zoom;
+  await page.mouse.move(x, y);
   await expect(canvas).toHaveCSS('cursor', 'pointer');
-  await page.mouse.click(x, y - 18);
+  await page.mouse.click(x, y);
   const panel = page.getByRole('complementary', { name: 'Selected fleet' });
   await expect(
     panel.getByRole('heading', { name: 'Home Fleet', exact: true }),
@@ -34,7 +52,7 @@ test('flottval-pa-kartan / dra-flottdestination: selects a fleet, previews a sna
   await expect(
     page.getByRole('combobox', { name: 'Known objects' }),
   ).toHaveCount(0);
-  await page.mouse.move(x, y - 18);
+  await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x + Math.sqrt(3) * 36, y, { steps: 8 });
   await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
@@ -51,7 +69,7 @@ test('flottval-pa-kartan / dra-flottdestination: selects a fleet, previews a sna
     'aria-description',
     /Destination: selected location on map/,
   );
-  await page.mouse.move(x, y - 18);
+  await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x - Math.sqrt(3) * 36, y, { steps: 8 });
   await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
