@@ -73,6 +73,8 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
+- `handelsrutt-val-pa-stjarnkartan` (tangentbordsalternativ och omladdning): **Åtgärdat i mobil Chromium** genom den uppdaterade ruttilldelningshjälpen. Testet verifierar fortsatt val med tangentbord och sparade order. Ingen förlorad funktion påvisades.
+
 - `unika-flottnamn` / `rutt-eskortfordelning` / `ruttflottor-pa-kartan`: **Åtgärdat i mobil Chromium**. Testet använde en egen kopia av den borttagna ruttmenyn. Det använder nu Orders och verifierar fortsatt spärr utan transport, eskortfördelning, markörval och omladdning. Ingen förlorad funktion påvisades.
 
 - `ruttflotta-till-narmaste-andplanet`: **Åtgärdat i mobil Chromium**. Den gemensamma testhjälpen använde den borttagna ruttmenyn. Den använder nu `Orders` och `Join route`; testet öppnar rutten från den valda flottan och verifierar fortsatt inflygning och omladdning utan teleportering. Andra tester som använder hjälpen är inte automatiskt bekräftade.

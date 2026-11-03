@@ -87,12 +87,17 @@ export async function assignFleetToRoute(
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await selectMapFleet(page, fleet);
   const card = page.locator('.map-fleet-cards .selected-fleet-card');
-  await card.getByRole('button', { name: 'Orders', exact: true }).click();
-  await page.getByRole('button', { name: 'Join route', exact: true }).click();
-  await page
+  const orders = card.getByRole('button', { name: 'Orders', exact: true });
+  await orders.focus();
+  await orders.press('Enter');
+  const join = page.getByRole('button', { name: 'Join route', exact: true });
+  await join.focus();
+  await join.press('Enter');
+  const route = page
     .locator('.orders-view')
-    .getByRole('button', { name: `${from} ↔ ${to}`, exact: true })
-    .click();
+    .getByRole('button', { name: `${from} ↔ ${to}`, exact: true });
+  await route.focus();
+  await route.press('Enter');
 }
 
 export async function endTurn(page: Page): Promise<void> {
