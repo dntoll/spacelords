@@ -23,6 +23,7 @@ import researchStationSymbol from '../assets/symbols/research-station-symbol.web
 import colonyShipFactorySymbol from '../assets/symbols/colony-ship-factory-symbol.webp';
 import explorationShipFactorySymbol from '../assets/symbols/exploration-ship-factory-symbol.webp';
 import fighterFactorySymbol from '../assets/symbols/fighter-factory-symbol.webp';
+import raptorFactorySymbol from '../assets/symbols/raptor-factory-symbol.webp';
 
 // spelgrafik-symboler: shared by catalogs, queues and missing-portrait previews.
 export const BUILDING_SYMBOLS: Readonly<Record<BuildType, string>> =
@@ -51,5 +52,5 @@ export const BUILDING_SYMBOLS: Readonly<Record<BuildType, string>> =
     'Colony ship factory': colonyShipFactorySymbol,
     'Exploration ship factory': explorationShipFactorySymbol,
     'Fighter factory': fighterFactorySymbol,
-    'Raptor factory': fighterFactorySymbol,
+    'Raptor factory': raptorFactorySymbol,
   });

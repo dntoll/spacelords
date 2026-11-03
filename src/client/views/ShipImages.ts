@@ -1,6 +1,7 @@
 import colonyShip from '../assets/ships/colony-ship.webp';
 import explorationShip from '../assets/ships/exploration-ship.webp';
 import fighter from '../assets/ships/fighter.webp';
+import raptor from '../assets/ships/raptor.webp';
 import salvageShip from '../assets/ships/salvage-ship.webp';
 import transportShip from '../assets/ships/transport-ship.webp';
 import civilianShuttle from '../assets/ships/civilian-shuttle.webp';
@@ -15,7 +16,7 @@ export const SHIP_IMAGES: Readonly<Record<ShipType, string>> = Object.freeze({
   'Transport ship': transportShip,
   'Civilian shuttle': civilianShuttle,
   'Salvage ship': salvageShip,
-  Raptor: fighter,
+  Raptor: raptor,
 });
 export type ShipSpriteType = ShipType | 'Space pirate';
 export const SHIP_SPRITES: Readonly<Record<ShipSpriteType, string>> =

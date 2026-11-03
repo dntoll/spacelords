@@ -1398,3 +1398,7 @@ Den befintliga kontrollen av mobiltesternas urval skyddar även inläsningen.
 `snabb-mobilpublicering`: publiceringsgranskningen tillåter blanksteg i
 genererade klientfiler eftersom de kan vara del av strängar. Kontroll av
 konfliktmarkörer, publiceringskatalog och filinnehåll behålls.
+
+## Raptor-grafik
+
+`egen-raptor-grafik`: ShipImages och BuildingSymbols tillhandahåller egna transparenta WebP-bilder för Raptor och Raptor factory. Fabriken använder symbolen som reservbild tills ett porträtt finns.

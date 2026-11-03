@@ -1178,3 +1178,7 @@ Se [spelregler för civiltrafik](civilian-transport.md). Ändring 2026-10-30:
 `skeppstyper`, `skepp-i-byggko`, `skeppsdelar` och `transportfabrik`
 utökas med Civilian shuttle. `skepp-till-destinationsflotta` får undantaget
 att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
+
+## Raptor-grafik
+
+`egen-raptor-grafik` — **Fullständigt implementerat**. Raptor har en egen skeppsbild och Raptor factory en egen symbol. Fabrikens byggnadsporträtt återstår.

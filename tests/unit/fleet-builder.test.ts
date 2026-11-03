@@ -133,7 +133,7 @@ describe('skeppsbilder', () => {
     const view = renderFleetShips(fleet);
     expect(view.querySelectorAll('img').length).toBeLessThan(21);
     expect(view.textContent).toContain('+999988 Fighter');
-    expect(new Set(Object.values(SHIP_IMAGES)).size).toBe(7);
+    expect(new Set(Object.values(SHIP_IMAGES)).size).toBe(8);
     for (const ship of Object.keys(SHIP_IMAGES))
       expect(view.querySelector(`img[alt="${ship}"]`)).not.toBeNull();
   });

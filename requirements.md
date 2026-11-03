@@ -10,6 +10,8 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Raptor-grafik:** `egen-raptor-grafik` är **Fullständigt implementerat**. Raptor och Raptor factory har egna sprites respektive symboler; fabrikens porträtt återstår. Se [skeppsgrafik](docs/ship-artwork.md).
+
 - **Strid som spelgränssnitt:** `fullskarms-stridskarta`,
   `skeppsnara-stridskontroller`, `vapensymboler-i-strid`,
   `avfyra-pa-markerat-mal` och `begransad-stridskamera` är
