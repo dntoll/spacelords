@@ -149,6 +149,18 @@ export function renderFleetCard(
   const speed = element('small', 'fleet-speed', `S: ${fleet.speed} hex`);
   speed.title = `Fleet speed: ${fleet.speed} hexes/year${fleet.remainingMovement === undefined ? '' : ` · ${fleet.remainingMovement} hex remaining this year`}`;
   footer.append(speed);
+  if (fleet.routeId && model.screen === 'map') {
+    const route = model.tradeRoutes.find((item) => item.id === fleet.routeId);
+    if (route) {
+      const selectRoute = button(
+        `Select route ${route.from} to ${route.to}`,
+        () => emit({ type: 'map-select-route', id: route.id }),
+        'button secondary-button',
+      );
+      selectRoute.textContent = `Route: ${route.from} ↔ ${route.to}`;
+      footer.append(selectRoute);
+    }
+  }
   if (fleet.civilian)
     footer.append(
       element(

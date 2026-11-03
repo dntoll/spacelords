@@ -15,7 +15,7 @@ Testningen är avslutad. Felen är inte analyserade; ett misslyckat test kan ber
 - `planet-overview.test.ts`: **Åtgärdat** för fem fall. Testerna förväntade ett destinationsfält som ersatts av `Orders` enligt `startorder-for-nybyggda-skepp`. De verifierar nu öppning av ordervyn, beställning och spärrade kontroller. Ingen förlorad funktion påvisades i dessa fall.
 - `planet-pages.test.ts`: **Åtgärdat**. Testdata lade till en fabrik men behöll en gammal komponentlista. Modellen räknar fram listan från fabrikerna, även vid planerad rivning; testdata speglar nu detta och verifierar att beställningen spärras. Ingen förlorad funktion påvisades.
 - `research-tree-view.test.ts`: **Åtgärdat**. Testets fasta antal pilar motsvarade ett äldre forskningsberoende. `transport-ship-efter-rocket-engine` ersatte Exploration ship factory som förkunskap; testet kontrollerar nu uttryckligen det nya och borttagna beroendet. Ingen förlorad funktion påvisades.
-- `star-map-trade-view.test.ts`: en förväntad knapp för rutttilldelning hittades inte.
+- `star-map-trade-view.test.ts`: **Åtgärdat**. Den gamla rutttilldelningsknappen ersattes av `Orders`, men testet visade även att möjligheten att välja en tilldelad rutt från flottinformationen saknades. Den är återställd enligt `handelsrutt-val-pa-stjarnkartan`.
 
 Fullständig logg: `dist/checks/extended-1793645193206/integration.log`.
 

@@ -395,3 +395,41 @@ test('flottilldelning-pa-stjarnkartan: an overlapping-route chooser survives poi
     .click();
   await expect(routePanel(page)).toContainText('Assigned fleets · 1');
 });
+
+test('handelsrutt-val-pa-stjarnkartan: opens the assigned route from its fleet card', async ({
+  page,
+}) => {
+  const state = tradeNetworkState();
+  const assigned = {
+    ...state,
+    fleets: state.fleets.map((fleet) =>
+      fleet.id === 'freighters' ? { ...fleet, routeId: 'route-test' } : fleet,
+    ),
+  };
+  await page.evaluate(
+    (value) =>
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-10-21T10:00:00Z', state: value }),
+      ),
+    assigned,
+  );
+  await page.reload();
+  await startFirstSlot(page);
+  await selectMapObject(page, 'Tellus');
+  await page
+    .getByRole('button', { name: 'Tellus ↔ Vesta', exact: true })
+    .click();
+  const card = routePanel(page).locator(
+    '.fleet-card[data-fleet-id="freighters"]',
+  );
+  await card.locator('.fleet-name-button').click();
+  const selected = page.locator(
+    '.selected-fleet-card[data-fleet-id="freighters"]',
+  );
+  await expect(selected).toBeVisible();
+  await selected
+    .getByRole('button', { name: 'Select route Tellus to Vesta', exact: true })
+    .click();
+  await expect(routePanel(page)).toContainText('Tellus ↔ Vesta');
+});

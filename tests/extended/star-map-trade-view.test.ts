@@ -35,14 +35,19 @@ it('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: the map p
   );
   const click = (label: string) =>
     root.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!.click();
-  for (const [id, name] of [
-    ['freighters', 'Freighters'],
-    ['travellers', 'Travellers'],
-  ] as const) {
+  for (const id of ['freighters', 'travellers'] as const) {
     model.selectMapFleet(id);
     view.render(model.snapshot);
-    click(`Assign ${name} to Tellus to Vesta`);
+    root
+      .querySelector<HTMLButtonElement>(
+        `.selected-fleet-card[data-fleet-id="${id}"] [aria-label="Orders"]`,
+      )!
+      .click();
+    click('Join route');
+    click('Tellus ↔ Vesta');
   }
+  model.selectMapRoute('route-test');
+  view.render(model.snapshot);
   expect(
     root.querySelector('[aria-label="Selected route"]')!.textContent,
   ).toContain('Assigned fleets · 2');
@@ -65,6 +70,8 @@ it('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: the map p
       .textContent,
   ).toBe('Route Tellus <> Vesta');
   click('Select route Tellus to Vesta');
+  expect(model.snapshot.mapTrade.routeId).toBe('route-test');
+  expect(root.querySelector('[aria-label="Selected route"]')).not.toBeNull();
   root
     .querySelector<HTMLButtonElement>(
       '[data-fleet-id="freighters"] [aria-label="Release from trade route"]',
