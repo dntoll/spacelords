@@ -7,6 +7,17 @@ import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 
 test.beforeEach(async ({ page }) => {
+  const initial = new Game(createExampleGalaxy()).exportState();
+  const state = {
+    ...initial,
+    explored: [...new Set([...initial.explored, '-2,0'])],
+    world: {
+      ...initial.world,
+      terrain: initial.world.terrain?.filter(
+        (cell) => cell.position.q !== -2 || cell.position.r !== 0,
+      ),
+    },
+  };
   await page.addInitScript((state) => {
     if (localStorage.getItem('turn-console-seeded')) return;
     localStorage.setItem('turn-console-seeded', 'yes');
@@ -15,7 +26,7 @@ test.beforeEach(async ({ page }) => {
       'spacelords.save.v2.1',
       JSON.stringify({ lastPlayed: '2026-10-26', state }),
     );
-  }, new Game(createExampleGalaxy()).exportState());
+  }, state);
 });
 
 for (const size of [
