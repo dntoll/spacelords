@@ -83,3 +83,37 @@ it('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: the map p
   expect(root.querySelector('[aria-label="Selected route"]')).toBeNull();
   controller.dispose();
 });
+
+it('route-kartvy / handelsrutt-val-pa-stjarnkartan: opens the assigned route from a selected fleet', () => {
+  const state = tradeNetworkState();
+  const model = new AppModel(undefined, {
+    load: () => ({
+      lastPlayed: '2026-10-21T10:00:00Z',
+      state: {
+        ...state,
+        fleets: state.fleets.map((fleet) =>
+          fleet.id === 'freighters'
+            ? { ...fleet, routeId: 'route-test' }
+            : fleet,
+        ),
+      },
+    }),
+    save() {},
+    clear() {},
+  });
+  model.startSlot(1);
+  model.openRoute();
+  model.selectMapFleet('freighters');
+  const root = document.createElement('div');
+  document.body.replaceChildren(root);
+  const view = new AppView(root, () => ({ render() {}, dispose() {} }));
+  const controller = new AppController(model, view);
+  controller.start();
+  const button = root.querySelector<HTMLButtonElement>(
+    '.selected-fleet-card[data-fleet-id="freighters"] [aria-label="Select route Tellus to Vesta"]',
+  );
+  expect(button).not.toBeNull();
+  button!.click();
+  expect(model.snapshot.mapTrade.routeId).toBe('route-test');
+  controller.dispose();
+});

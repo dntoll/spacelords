@@ -73,6 +73,8 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
+- `handelsrutt-skapande-pa-stjarnkartan` / `flottilldelning-pa-stjarnkartan` och `route-kartvy`: **Åtgärdat i mobil Chromium**. Genvägen från vald flotta till dess rutt saknades i båda vyerna. Den är återställd, och de ursprungliga dragen för att skapa och administrera rutten passerar i båda vyerna. Övriga plattformar har inte körts om.
+
 - `handelsrutt-val-pa-stjarnkartan` (tangentbordsalternativ och omladdning): **Åtgärdat i mobil Chromium** genom den uppdaterade ruttilldelningshjälpen. Testet verifierar fortsatt val med tangentbord och sparade order. Ingen förlorad funktion påvisades.
 
 - `unika-flottnamn` / `rutt-eskortfordelning` / `ruttflottor-pa-kartan`: **Åtgärdat i mobil Chromium**. Testet använde en egen kopia av den borttagna ruttmenyn. Det använder nu Orders och verifierar fortsatt spärr utan transport, eskortfördelning, markörval och omladdning. Ingen förlorad funktion påvisades.
