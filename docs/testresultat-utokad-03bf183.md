@@ -73,6 +73,8 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
+- `kartnavigation` (tangentbord, zoom och val av hemplanet): **Åtgärdat i mobil Chromium**. Testhjälpen använde koordinater från den gamla lilla exempelkartan även för nya spel i den utökade galaxen. Den läser nu koordinater från det faktiska sparade spelet. Testet verifierar fortsatt panorering, zoom och kartval. Flera andra karttester använder samma hjälp; de är inte därmed automatiskt bekräftade som åtgärdade.
+
 - `kartflottor` / `flottval-pa-kartan` (flera flottor i samma hex): **Åtgärdat i mobil Chromium**. Testet använde föråldrade koordinater vid kartans mitt. Det beräknar nu båda markörernas lägen och kontrollerar att de är separata, synliga för pekaren och valbara. Ingen förlorad funktion påvisades.
 
 - `flottval-pa-kartan` / `dra-flottdestination` (markörval och dragning): **Åtgärdat i mobil Chromium**. Testet antog en fast position vid kartans mitt; det använder nu den faktiska flottmarkören och kameran. Pekare, dragning och avbrott verifieras fortsatt. Ingen förlorad funktion påvisades i detta fall. Det separata fallet för flera flottor dokumenteras ovan.

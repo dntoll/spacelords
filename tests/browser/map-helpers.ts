@@ -1,10 +1,10 @@
 import { expect, type Page } from '@playwright/test';
-import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
-import type {
-  Point,
+import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import {
   HexCoordinate,
+  HexGeometry,
+  type Point,
 } from '../../src/client/models/HexCoordinate.js';
-import { HexGeometry } from '../../src/client/models/HexCoordinate.js';
 
 // viewport-game-layout / gemensam-events-panel: use every pixel between shared controls.
 export async function expectMapFillsGameArea(page: Page): Promise<void> {
@@ -29,12 +29,16 @@ export async function expectMapFillsGameArea(page: Page): Promise<void> {
 }
 
 export async function selectMapObject(page: Page, name: string): Promise<void> {
-  const galaxy = createExampleGalaxy();
-  const object = galaxy.systems
-    .flatMap((system) => [system.star, ...system.planets])
-    .find((object) => object.name === name);
-  if (!object) throw new Error(`Unknown example object: ${name}`);
-  await selectMapHex(page, object.position);
+  const position = await page.evaluate((objectName) => {
+    const saved = JSON.parse(
+      localStorage.getItem('spacelords.save.v2.1')!,
+    ) as SavedGame;
+    return saved.state.world.systems
+      .flatMap((system) => [system.star, ...system.planets])
+      .find((object) => object.name === objectName)?.position;
+  }, name);
+  if (!position) throw new Error(`Unknown saved object: ${name}`);
+  await selectMapHex(page, new HexCoordinate(position.q, position.r));
 }
 
 export async function selectMapHex(

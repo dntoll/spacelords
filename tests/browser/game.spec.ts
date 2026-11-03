@@ -174,8 +174,7 @@ test('kartnavigation: keyboard pans and zooms, canvas hit-testing selects the ho
   await map.press('Home');
   await expect(position).toHaveText(before ?? '');
   await selectMapObject(page, 'Vesta');
-  const point = await center(map);
-  await page.mouse.click(point.x, point.y);
+  await selectMapObject(page, 'Tellus');
   await expect(
     page.getByRole('button', { name: 'Open planet', exact: true }),
   ).toBeVisible();
