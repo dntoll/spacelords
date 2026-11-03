@@ -73,6 +73,8 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
+- `koloniseringsorder`: **Åtgärdat i mobil Chromium**. Testet använde den tidigare direktknappen och planetlistan; enligt `egen-ordervy` väljs Colonize nu i Orders och planeten på kartan. Testet verifierar avbrott, sparning, omladdning och kolonisering. Ingen förlorad funktion påvisades.
+
 - `end-turn-vid-kartval` / `rundkontroller-i-decisions`: **Åtgärdat i mobil Chromium**. Testet antog att en vald ruta var känd och tom; de aktuella kraven visar `Unexplored` för okända rutor. Testdata gör nu rutan uttryckligen känd och fri från terräng innan testet kontrollerar att panelen döljs och att rundknappen är åtkomlig. Ingen förlorad funktion påvisades i detta fall.
 
 - `gemensamma-byggnadsbilder`: **Åtgärdat i mobil Chromium**. Ett fast antal bilder stämde inte längre när Research-vyn fick ytterligare innehåll. Testet kontrollerar nu de fyra bilder som kravet namnger, deras unika resurser och återanvändning. Ingen förlorad funktion påvisades.
