@@ -73,6 +73,8 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
+- `gemensamt-handelseflode` / `upptacktsavbrott` / `spara-avbrutet-ar`: **Åtgärdat i mobil Chromium**. Testet förväntade den äldre separata vrakdialogen och att vrakupptäckten var första händelsen. Det använder nu det gemensamma händelseflödet, hanterar tidigare upptäckter och verifierar fortsatt avbrott, omladdning, order och stridsresultat utan upprepning. Ingen förlorad funktion påvisades.
+
 - `koloniseringsorder`: **Åtgärdat i mobil Chromium**. Testet använde den tidigare direktknappen och planetlistan; enligt `egen-ordervy` väljs Colonize nu i Orders och planeten på kartan. Testet verifierar avbrott, sparning, omladdning och kolonisering. Ingen förlorad funktion påvisades.
 
 - `end-turn-vid-kartval` / `rundkontroller-i-decisions`: **Åtgärdat i mobil Chromium**. Testet antog att en vald ruta var känd och tom; de aktuella kraven visar `Unexplored` för okända rutor. Testdata gör nu rutan uttryckligen känd och fri från terräng innan testet kontrollerar att panelen döljs och att rundknappen är åtkomlig. Ingen förlorad funktion påvisades i detta fall.

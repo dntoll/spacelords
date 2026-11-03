@@ -162,11 +162,10 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
     await warning
       .getByRole('button', { name: 'End turn anyway', exact: true })
       .click();
-  const dialog = page.getByRole('dialog', {
-    name: 'Wreck discovered',
-    exact: true,
-  });
-  await expect(dialog).toBeVisible();
+  const announcement = page.locator('.event-announcement-interactive');
+  await ignoreEventsUntil(page, announcement.filter({ hasText: 'Wreck' }));
+  await expect(announcement).toHaveAttribute('data-stage', 'awaiting-choice');
+  await expect(announcement).toContainText('Wreck');
   const checkpoint = await page.evaluate(
     () =>
       JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
@@ -177,8 +176,10 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
   ).toBe(false);
   await page.reload();
   await startFirstSlot(page);
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole('button', { name: 'Handle', exact: true }).click();
+  await expect(announcement).toHaveAttribute('data-stage', 'awaiting-choice');
+  await announcement
+    .getByRole('button', { name: 'Handle', exact: true })
+    .click();
   const controls = page.getByRole('region', {
     name: 'Interrupted year',
     exact: true,
@@ -200,7 +201,7 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
   ).toBeInViewport();
   await page.reload();
   await startFirstSlot(page);
-  await expect(dialog).toHaveCount(0);
+  await expect(announcement).toHaveCount(0);
   await expect(controls).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('discovery-handling.png'),
