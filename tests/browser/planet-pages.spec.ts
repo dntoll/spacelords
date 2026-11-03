@@ -242,7 +242,12 @@ test('byggkategorier / symbolbaserade-kataloger: icon categories and compact lis
   await expect(
     page.locator('.catalog-item-button > span:first-of-type'),
   ).toHaveText(['Rocket engine factory', 'Weapons module factory']);
-  await expect(page.locator('.catalog-item svg')).toHaveCount(2);
+  const componentIcons = page.locator('.catalog-item .catalog-icon');
+  await expect(componentIcons).toHaveCount(2);
+  for (const icon of await componentIcons.all()) {
+    await expect(icon).toHaveAttribute('aria-hidden', 'true');
+    await expect(icon).toBeVisible();
+  }
   await page
     .getByRole('searchbox', { name: 'Search buildings' })
     .fill('weapons');
