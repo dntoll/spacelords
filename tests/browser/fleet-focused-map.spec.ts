@@ -4,6 +4,7 @@ import { tradeNetworkState } from '../fixtures/trade-network.js';
 import { startFirstSlot } from './save-helpers.js';
 import {
   chooseFleetDestination,
+  fleetMarkerPoint,
   receiveShip,
   selectMapFleet,
 } from './fleet-helpers.js';
@@ -45,9 +46,10 @@ test('flottfokuserad-kartvy: background is inert, route crossings set destinatio
   await map.press('ArrowDown');
   await map.press('ArrowDown');
   const camera = await page.getByTestId('camera-position').textContent();
-  await page.mouse.move(center.x, center.y + 18 - 100);
+  const marker = await fleetMarkerPoint(page, 'Freighters');
+  await page.mouse.move(marker.x, marker.y);
   await page.mouse.down();
-  await page.mouse.move(center.x - Math.sqrt(3) * 18, center.y + 54 - 100, {
+  await page.mouse.move(marker.x - Math.sqrt(3) * 18, marker.y + 36, {
     steps: 8,
   });
   await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
@@ -61,7 +63,7 @@ test('flottfokuserad-kartvy: background is inert, route crossings set destinatio
   );
   await expect(panel.locator('.selected-fleet-card')).toHaveAttribute(
     'aria-description',
-    /Destination: selected location on map/,
+    /Destination: Vesta/,
   );
   await expect(panel.locator('.selected-fleet-card')).not.toContainText(
     'Trade route:',

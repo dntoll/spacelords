@@ -117,3 +117,33 @@ export async function receiveShip(page: Page, name: string): Promise<void> {
   if (!value) throw new Error(`No receiving fleet: ${name}`);
   await select.selectOption(value);
 }
+
+export async function fleetMarkerPoint(
+  page: Page,
+  name: string,
+): Promise<{ x: number; y: number }> {
+  const record = await page.evaluate(
+    () =>
+      JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
+  );
+  const game = Game.restore(record.state);
+  const canvas = page.locator('canvas[data-rendered="true"]');
+  const bounds = (await canvas.boundingBox())!;
+  const [cameraX, cameraY] = (await page
+    .getByTestId('camera-position')
+    .textContent())!
+    .match(/-?\d+(?:\.\d+)?/g)!
+    .map(Number);
+  const zoom =
+    Number(
+      (await page.getByLabel('Map zoom').textContent())!.replace('%', ''),
+    ) / 100;
+  const marker = FleetMapLayout.markers(game.fleetSnapshots(), [], zoom).find(
+    (item) => item.fleet.name === name || item.fleet.ownName === name,
+  );
+  if (!marker) throw new Error(`No positioned fleet: ${name}`);
+  return {
+    x: bounds.x + bounds.width / 2 + (marker.point.x - cameraX!) * zoom,
+    y: bounds.y + bounds.height / 2 + (marker.point.y - cameraY!) * zoom,
+  };
+}

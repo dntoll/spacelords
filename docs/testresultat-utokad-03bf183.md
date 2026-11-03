@@ -73,6 +73,8 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
+- `flottfokuserad-kartvy`: **Åtgärdat i mobil Chromium**. Testet använde en fast markörposition och en gammal generell destinationstext. Det använder nu flottans faktiska markör och kontrollerar den namngivna destinationen, dragning, förstärkning och omladdning. Ingen förlorad funktion påvisades.
+
 - `kartnavigation` (touchdragning och nypzoom): **Åtgärdat i mobil Chromium**. Den gamla nypgesten började över informationspanelen i stället för kartan. Testet verifierar nu att båda fingrarna träffar kartan och att zoom samt planetval fungerar. Ingen förlorad funktion påvisades.
 
 - `kartnavigation` (planetval med touch): **Åtgärdat i mobil Chromium**. Testet tryckte på kartans mitt i stället för den faktiska hemplanetens position. Det använder nu sparad position och riktig touchinmatning; val av planet är verifierat.
