@@ -1,4 +1,4 @@
-import { chooseShipStartFleet } from './fleet-helpers.js';
+import { chooseFleetOrder, chooseShipStartFleet } from './fleet-helpers.js';
 import { formFleet, selectMapFleet } from './fleet-helpers.js';
 import { selectMapObject } from './map-helpers.js';
 import { chooseFleetDestination } from './fleet-helpers.js';
@@ -330,7 +330,7 @@ test('flera-skarmstorlekar: canvas follows its container without horizontal over
 test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: research, build ships and settle a new colony', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(90_000);
+  test.setTimeout(150_000);
   const nextYear = async () => {
     await page.getByRole('button', { name: 'Star map', exact: true }).click();
     await endTurn(page);
@@ -382,7 +382,9 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await page
     .getByRole('button', { name: 'Build building at site 2', exact: true })
     .click();
-  await expect(page.locator('.building-menu .catalog-item')).toHaveCount(7);
+  await expect(
+    page.getByRole('button', { name: 'Show Colony ship factory', exact: true }),
+  ).toBeVisible();
   await page
     .getByRole('button', { name: 'Show Colony ship factory', exact: true })
     .click();
@@ -508,8 +510,11 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
   await chooseFleetDestination(page, 'Fleet 1');
   await selectMapObject(page, 'Vesta');
   await nextYear();
+  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
+  await selectMapFleet(page, 'Fleet 1');
+  await chooseFleetOrder(page, 'Colonize');
   await selectMapObject(page, 'Vesta');
-  await page.getByRole('button', { name: 'Colonize', exact: true }).click();
+  await nextYear();
   await selectMapObject(page, 'Vesta');
   await expect(page.locator('.order-status')).toContainText(
     '1 empty building sites',

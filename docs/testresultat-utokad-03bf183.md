@@ -73,6 +73,8 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
+- `planetbyggplatser` / `fabrikskoer` / `forska-fram-fabriker` / `kolonisation`: **Åtgärdat i mobil Chromium**. Testet förutsatte ett äldre antal byggnader och en borttagen direktknapp för kolonisering. Det kontrollerar nu att rätt fabrik låses upp och använder kolonisationsordern; forskning, skeppsproduktion, resa och kolonins byggplatser passerar. Ingen förlorad funktion påvisades. Snabbsviten passerade på 20,35 sekunder; kartans särskilda prestandatester flyttades därför till den utökade sviten, medan andra kart- och navigationstester finns kvar i snabbsviten.
+
 - `handelsrutt-val-pa-stjarnkartan` / `flottilldelning-pa-stjarnkartan` (ogiltigt ruttsläpp): **Åtgärdat i mobil Chromium**. Den gamla klickpunkten träffade en flottmarkör med företräde och testet väntade en äldre förklaringstext. Testet väljer nu en fri punkt på rutten och kontrollerar fortsatt att spärren visas och att ingen destination eller ruttorder skapas. Ingen förlorad funktion påvisades.
 
 - `handelsrutt-skapande-pa-stjarnkartan` / `flottilldelning-pa-stjarnkartan` och `route-kartvy`: **Åtgärdat i mobil Chromium**. Genvägen från vald flotta till dess rutt saknades i båda vyerna. Den är återställd, och de ursprungliga dragen för att skapa och administrera rutten passerar i båda vyerna. Övriga plattformar har inte körts om.
