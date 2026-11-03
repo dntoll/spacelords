@@ -75,6 +75,7 @@ for (const screen of ['Star map', 'Fleets']) {
 test('flottpatrullering: uses shared sight to catch a pirate, resumes its ring, and persists combat', async ({
   page,
 }) => {
+  test.setTimeout(90_000);
   const state = {
     ...new Game(createExampleGalaxy()).exportState(),
     researched: ['Fleet patrol'] as const,

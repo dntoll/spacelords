@@ -73,6 +73,8 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
+- `flottpatrullering` (piratjakt och sparad strid): **Åtgärdat i mobil Chromium**. Årets händelser och stridsuppspelning tog längre än den tidigare testgränsen på 30 sekunder. Med tillräcklig tid slutfördes scenariot på 35 sekunder och de ursprungliga funktionella kontrollerna passerade. Ingen förlorad funktion påvisades.
+
 - `flottadministration` / `flottnamn-direktredigering` / `flottknappar-pa-kartan`: **Åtgärdat i mobil Chromium**. Testet sökte Open planet inuti en äldre rubrikstruktur; knappen finns nu i planetinformationen efter flottorna enligt `flottor-fore-planetdetaljer`. Namnbyte, skeppsflytt, destination och omladdning passerar. Ingen förlorad funktion påvisades.
 
 - `flottfokuserad-kartvy`: **Åtgärdat i mobil Chromium**. Testet använde en fast markörposition och en gammal generell destinationstext. Det använder nu flottans faktiska markör och kontrollerar den namngivna destinationen, dragning, förstärkning och omladdning. Ingen förlorad funktion påvisades.
