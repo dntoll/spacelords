@@ -212,10 +212,9 @@ test('kartnavigation: native touch selects the planet', async ({
   isMobile,
 }) => {
   test.skip(!isMobile, 'Touch is exercised by phone and tablet projects.');
-  const map = await canvas(page);
+  await canvas(page);
   await selectMapObject(page, 'Vesta');
-  const point = await center(map);
-  await page.touchscreen.tap(point.x, point.y);
+  await selectMapObject(page, 'Tellus', 'touch');
   await expect(
     page.getByRole('button', { name: 'Open planet', exact: true }),
   ).toBeVisible();

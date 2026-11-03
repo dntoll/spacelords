@@ -28,7 +28,11 @@ export async function expectMapFillsGameArea(page: Page): Promise<void> {
     .toBeLessThanOrEqual(2);
 }
 
-export async function selectMapObject(page: Page, name: string): Promise<void> {
+export async function selectMapObject(
+  page: Page,
+  name: string,
+  input: 'mouse' | 'touch' = 'mouse',
+): Promise<void> {
   const position = await page.evaluate((objectName) => {
     const saved = JSON.parse(
       localStorage.getItem('spacelords.save.v2.1')!,
@@ -38,17 +42,22 @@ export async function selectMapObject(page: Page, name: string): Promise<void> {
       .find((object) => object.name === objectName)?.position;
   }, name);
   if (!position) throw new Error(`Unknown saved object: ${name}`);
-  await selectMapHex(page, new HexCoordinate(position.q, position.r));
+  await selectMapHex(page, new HexCoordinate(position.q, position.r), input);
 }
 
 export async function selectMapHex(
   page: Page,
   position: HexCoordinate,
+  input: 'mouse' | 'touch' = 'mouse',
 ): Promise<void> {
-  await selectMapPoint(page, HexGeometry.toPoint(position));
+  await selectMapPoint(page, HexGeometry.toPoint(position), input);
 }
 
-export async function selectMapPoint(page: Page, target: Point): Promise<void> {
+export async function selectMapPoint(
+  page: Page,
+  target: Point,
+  input: 'mouse' | 'touch' = 'mouse',
+): Promise<void> {
   const map = page.locator('canvas[data-rendered="true"]');
   await expect(map).toHaveCount(1);
   const reverse: string[] = [];
@@ -73,9 +82,11 @@ export async function selectMapPoint(page: Page, target: Point): Promise<void> {
       point,
     );
     if (exposed) {
-      await map.click({
-        position: { x: bounds.width / 2 + dx, y: bounds.height / 2 + dy },
-      });
+      if (input === 'touch') await page.touchscreen.tap(point.x, point.y);
+      else
+        await map.click({
+          position: { x: bounds.width / 2 + dx, y: bounds.height / 2 + dy },
+        });
       for (const key of reverse.reverse()) await map.press(key);
       await page.mouse.move(1, 1);
       return;
