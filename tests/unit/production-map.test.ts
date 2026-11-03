@@ -537,6 +537,27 @@ it('radiella-byggval: every unlocked option and factory product is reachable thr
   controller.dispose();
 });
 
+it('radiella-byggval: pages narrow screens with enlarged text so options remain separate', () => {
+  const { model, emit, controller } = setup({
+    ...tradeNetworkState(),
+    researched: TECHNOLOGIES,
+  });
+  emit({ type: 'open-production' });
+  emit({
+    type: 'map-size',
+    viewport: {
+      width: 320,
+      height: 568,
+      availableWidth: 320,
+      availableHeight: 320,
+      fontScale: 1.25,
+    },
+  });
+  expect(model.snapshot.productionMap.options.length).toBeLessThanOrEqual(2);
+  expect(model.snapshot.productionMap.pages).toBeGreaterThan(1);
+  controller.dispose();
+});
+
 it('produktions-kartvy: clears controls after selecting space outside the galaxy', () => {
   const { model, emit, root, controller } = setup();
   emit({ type: 'open-production' });

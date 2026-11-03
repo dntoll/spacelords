@@ -1327,7 +1327,8 @@ export class AppModel {
       : options;
     const viewport = this.#mapViewport;
     const pageSize =
-      (viewport?.fontScale ?? 1) > 1.5
+      (viewport?.fontScale ?? 1) > 1.5 ||
+      (!!viewport && viewport.width <= 360 && (viewport.fontScale ?? 1) >= 1.25)
         ? 2
         : viewport &&
             (viewport.width <= 600 ||

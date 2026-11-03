@@ -10,7 +10,12 @@ test('route-kartvy / produktions-kartvy / radiella-byggval / kompakt-produktions
   test.setTimeout(60_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  const state = { ...tradeNetworkState(), researched: TECHNOLOGIES };
+  const state = {
+    ...tradeNetworkState(),
+    researched: TECHNOLOGIES.filter(
+      (technology) => technology !== 'Ion pulse engine factory',
+    ),
+  };
   const home = state.colonies[0]![1];
   home.stock.Iron = 1000;
   home.stock.Water = 1000;

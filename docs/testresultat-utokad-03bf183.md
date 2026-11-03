@@ -73,6 +73,8 @@ Antalet nedan är misslyckade körningar för scenariot, inte ett antal bekräft
 
 ### Åtgärdade webbläsarscenarier
 
+- `route-kartvy` / `produktions-kartvy` / `radiella-byggval` / `kompakt-produktionsko`: **Åtgärdat i mobil Chromium**. Testets gamla forskningsläge dolde raketmotorn eftersom dess efterföljare redan var upptäckt; detta är ändrat i testdata. Därefter påvisades en faktisk överlappning mellan byggval vid 320 pixlars skärm och förstorad text. Sidindelningen begränsar nu antalet samtidiga val i detta läge. Det riktade scenariot verifierar fortsatt bland annat order, kö, tangentbord, touch och större text.
+
 - `byggkategorier` / `symbolbaserade-kataloger`: **Åtgärdat i mobil Chromium**. Katalogen visar numera bildsymboler där testet krävde SVG. Testet kontrollerar nu synliga, dekorativa symboler oberoende av bildformat och verifierar fortfarande kategorier, sökning, detaljer, tangentbordsfokus och beställning. Ingen förlorad funktion påvisades.
 
 - `planetbyggplatser` / `fabrikskoer` / `forska-fram-fabriker` / `kolonisation`: **Åtgärdat i mobil Chromium**. Testet förutsatte ett äldre antal byggnader och en borttagen direktknapp för kolonisering. Det kontrollerar nu att rätt fabrik låses upp och använder kolonisationsordern; forskning, skeppsproduktion, resa och kolonins byggplatser passerar. Ingen förlorad funktion påvisades. Snabbsviten passerade på 20,35 sekunder; kartans särskilda prestandatester flyttades därför till den utökade sviten, medan andra kart- och navigationstester finns kvar i snabbsviten.
