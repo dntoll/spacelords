@@ -91,6 +91,10 @@ test('ruttflotta-till-narmaste-andplanet: remote assignment saves an approach wi
   ).toHaveCount(0);
   await expect(panel).not.toContainText('Freighters');
   await assignFleetToRoute(page, 'Freighters', 'Tellus', 'Vesta');
+  await page
+    .locator('.selected-fleet-card')
+    .getByRole('button', { name: 'Select route Tellus to Vesta', exact: true })
+    .click();
   await expect(panel).toContainText('Assigned fleets · 1');
   await expect(
     panel.locator('.fleet-card[data-fleet-id="freighters"]'),
