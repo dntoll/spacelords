@@ -46,6 +46,13 @@ test('spelgrafik-symboler / spelgrafik-planeter / spelgrafik-kartstation: mobile
   await expect(
     page.getByRole('heading', { name: 'Shipyard · Tellus', exact: true }),
   ).toBeVisible();
+  const zoomBefore = await canvas.getAttribute('data-camera-zoom');
+  await canvas.press('+');
+  await expect(canvas).not.toHaveAttribute('data-camera-zoom', zoomBefore!);
+  await selectMapPoint(page, yard.point);
+  await expect(
+    page.getByRole('heading', { name: 'Shipyard · Tellus', exact: true }),
+  ).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('shipyard-artwork.png') });
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await expect(page.locator('.planet-overview .planet-portrait')).toBeVisible();

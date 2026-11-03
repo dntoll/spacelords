@@ -18,7 +18,7 @@ import { SHIP_SPRITES, type ShipSpriteType } from './ShipImages.js';
 import { FleetMapLayout } from '../models/FleetMapLayout.js';
 import { pirateAsFleet } from '../models/PirateFleet.js';
 import { MapArtwork } from './MapArtwork.js';
-import { renderPlanetGlyph, renderShipyardGlyph } from './PlanetGlyph.js';
+import { renderPlanetGlyph, renderSalvageGlyph } from './PlanetGlyph.js';
 
 const STAR_MAP_LABEL =
   'Star map. Click a fleet or trade route to select it. Drag a selected owned planet to another owned planet to create a route. Press R to start a route from the selected owned planet, then choose its target. Drag a fleet onto a route to assign it, or elsewhere to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.';
@@ -315,23 +315,18 @@ export class GalaxyMapView implements MapPort {
     )) {
       sketch.push();
       sketch.translate(marker.point.x, marker.point.y);
-      sketch.scale(1 / model.camera.zoom);
       sketch.stroke(
         marker.id === model.salvageSelection ? '#ffffff' : '#e8bd76',
       );
-      sketch.strokeWeight(2);
+      sketch.strokeWeight(marker.kind === 'yard' ? 2 / model.camera.zoom : 2);
       sketch.fill('#152936');
-      if (marker.kind === 'yard')
-        renderShipyardGlyph(
-          sketch,
-          marker.id === model.salvageSelection,
-          this.#artwork.station,
-        );
-      else {
-        sketch.line(-8, -7, 8, 7);
-        sketch.line(-8, 7, 8, -7);
-        sketch.circle(0, 0, 6);
-      }
+      renderSalvageGlyph(
+        sketch,
+        marker.kind,
+        model.camera.zoom,
+        marker.id === model.salvageSelection,
+        this.#artwork.station,
+      );
       sketch.pop();
     }
     for (const choice of model.shipyardPlacement?.choices ?? []) {

@@ -228,6 +228,8 @@ Byggnadsporträtten ingår inte. Se [bildleveransen](generated-map-artwork.md).
 identifierad forskning visar byggnadssymbolerna. Byggnader utan målat porträtt
 visar sin symbol i detaljvyn. Planettypen styr bilden på kartorna och i
 planetvyn. Orbital shipyard har en egen kartbild med bibehållet urval.
+`spelgrafik-kartstation` innebär också att varvets kartbild och position i
+kartan följer zoomningen på samma sätt som planeterna. Varvet förblir valbart.
 
 Mobilens kartpaneler, centrerat Show-fokus och dubbelklick för research beskrivs
 i [mobilens kartval och forskning](mobile-map-interactions.md).

@@ -20,14 +20,15 @@ export function salvageMarkers(
       (item) => item.position.key === object.position.key,
     );
     const center = HexGeometry.toPoint(object.position);
+    const scale = object.kind === 'yard' ? 1 : 1 / zoom;
     return {
       id: object.id,
       kind: object.kind,
       point: {
         x:
           center.x +
-          ((group.indexOf(object) - (group.length - 1) / 2) * 44) / zoom,
-        y: center.y + 18 / zoom,
+          (group.indexOf(object) - (group.length - 1) / 2) * 44 * scale,
+        y: center.y + 18 * scale,
       },
     };
   });
@@ -42,7 +43,7 @@ export function hitSalvageMarker(
     salvageMarkers(wrecks, yards, zoom).find(
       (marker) =>
         Math.hypot(marker.point.x - point.x, marker.point.y - point.y) <=
-        22 / zoom,
+        (marker.kind === 'yard' ? Math.max(20, 22 / zoom) : 22 / zoom),
     ) ?? null
   );
 }

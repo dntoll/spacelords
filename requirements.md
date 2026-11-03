@@ -303,7 +303,8 @@ Se [hela visionen](docs/game-vision.md).
   en kartbild för Orbital shipyard är genererade, granskade och sparade som
   transparenta PNG-original. De 20 byggnadsporträtten ingår inte;
   `spelgrafik-symboler`, `spelgrafik-planeter` och `spelgrafik-kartstation`
-  är **Fullständigt implementerat**: bilderna används i spelet och riktade
+  är **Fullständigt implementerat**: bilderna används i spelet, och varvets
+  kartbild och position följer zoomningen som planeterna. Riktade
   mobilkontroller är godkända. Leveransen följer snabbpublicering för mobiltest.
   Se [bildleveransen](docs/generated-map-artwork.md).
 

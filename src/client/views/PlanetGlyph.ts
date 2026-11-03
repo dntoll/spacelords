@@ -39,3 +39,20 @@ export function renderShipyardGlyph(
     }
   } else sketch.rect(-10, -8, 20, 16);
 }
+
+export function renderSalvageGlyph(
+  sketch: p5,
+  kind: 'yard' | 'wreck',
+  zoom: number,
+  selected: boolean,
+  image?: p5.Image,
+): void {
+  if (kind === 'yard') {
+    renderShipyardGlyph(sketch, selected, image);
+    return;
+  }
+  sketch.scale(1 / zoom);
+  sketch.line(-8, -7, 8, 7);
+  sketch.line(-8, 7, 8, -7);
+  sketch.circle(0, 0, 6);
+}

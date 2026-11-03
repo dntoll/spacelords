@@ -17,8 +17,30 @@ import {
 import { discoveryState } from '../fixtures/exploration.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppController } from '../../src/client/controllers/AppController.js';
-import { salvageMarkers } from '../../src/client/models/SalvageMapLayout.js';
+import {
+  hitSalvageMarker,
+  salvageMarkers,
+} from '../../src/client/models/SalvageMapLayout.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
+
+it('spelgrafik-kartstation: shipyards stay anchored to their hex and remain selectable at different zoom levels', () => {
+  const game = Game.restore(salvageState());
+  const point = salvageMarkers(game.wrecks, game.shipyards, 1).find(
+    (marker) => marker.kind === 'yard',
+  )!.point;
+  for (const zoom of [0.5, 1, 2]) {
+    const yard = salvageMarkers(game.wrecks, game.shipyards, zoom).find(
+      (marker) => marker.kind === 'yard',
+    )!;
+    expect(yard.point).toEqual(point);
+    expect(
+      hitSalvageMarker(game.wrecks, game.shipyards, zoom, {
+        x: point.x + 19,
+        y: point.y,
+      })?.id,
+    ).toBe(yard.id);
+  }
+});
 
 describe('bargningsorder-fran-flotta', () => {
   it('selects a wreck from the fleet, saves the mission and resumes pickup and return automatically', () => {

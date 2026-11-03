@@ -11,7 +11,26 @@ import { MapArtwork } from '../../src/client/views/MapArtwork.js';
 import {
   renderPlanetGlyph,
   renderShipyardGlyph,
+  renderSalvageGlyph,
 } from '../../src/client/views/PlanetGlyph.js';
+
+it('spelgrafik-kartstation: shipyard scales with the map while wreck markers keep their screen size', () => {
+  const sketch = {
+    scale: vi.fn(),
+    image: vi.fn(),
+    circle: vi.fn(),
+    rect: vi.fn(),
+    noFill: vi.fn(),
+    line: vi.fn(),
+  };
+  const image = {} as p5.Image;
+  renderSalvageGlyph(sketch as unknown as p5, 'yard', 2, true, image);
+  expect(sketch.scale).not.toHaveBeenCalled();
+  expect(sketch.image).toHaveBeenCalledWith(image, -20, -20, 40, 40);
+  expect(sketch.circle).toHaveBeenCalledWith(0, 0, 42);
+  renderSalvageGlyph(sketch as unknown as p5, 'wreck', 2, false, image);
+  expect(sketch.scale).toHaveBeenCalledWith(0.5);
+});
 
 it('spelgrafik-symboler: every building has a distinct decorative symbol while its action stays accessible', () => {
   const sources = new Set<string>();
