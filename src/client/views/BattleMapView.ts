@@ -1,4 +1,5 @@
 import p5 from 'p5';
+import dockingCorridor from '../assets/map/docking-corridor.webp';
 import {
   HexCoordinate,
   HexGeometry,
@@ -29,6 +30,7 @@ export class BattleMapView implements BattleMapPort {
   readonly #observer: ResizeObserver;
   readonly #events = new AbortController();
   readonly #images = new Map<string, p5.Image>();
+  #corridor: p5.Image | undefined;
   #state: BattleState | null = null;
   #selected: string | null = null;
   #aim: BattleHex | null = null;
@@ -120,6 +122,15 @@ export class BattleMapView implements BattleMapPort {
         this.#bind(canvas, select);
         this.#ready = true;
         this.#configureCamera();
+        void sketch
+          .loadImage(dockingCorridor)
+          .then((image) => {
+            if (!this.#disposed && image) {
+              this.#corridor = image;
+              void sketch.redraw();
+            }
+          })
+          .catch(() => undefined);
         for (const type of Object.keys(SHIP_SPRITES) as ShipSpriteType[])
           void sketch
             .loadImage(SHIP_SPRITES[type])
@@ -431,7 +442,21 @@ export class BattleMapView implements BattleMapPort {
       const b = HexGeometry.toPoint(
         new HexCoordinate(partner.position.q, partner.position.r),
       );
-      p.line(a.x, a.y, b.x, b.y);
+      if (this.#corridor) {
+        const length = Math.hypot(b.x - a.x, b.y - a.y) * 1.16;
+        p.push();
+        p.translate((a.x + b.x) / 2, (a.y + b.y) / 2);
+        p.rotate(Math.atan2(b.y - a.y, b.x - a.x));
+        p.imageMode(p.CENTER);
+        p.image(
+          this.#corridor,
+          0,
+          0,
+          length,
+          (length * this.#corridor.height) / this.#corridor.width,
+        );
+        p.pop();
+      } else p.line(a.x, a.y, b.x, b.y);
     }
     for (const currentShip of state.pieces) {
       const impact =

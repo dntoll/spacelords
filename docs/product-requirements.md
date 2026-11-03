@@ -1182,3 +1182,7 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 ## Raptor-grafik
 
 `egen-raptor-grafik` — **Fullständigt implementerat**. Raptor har en egen skeppsbild och Raptor factory en egen symbol. Fabrikens byggnadsporträtt återstår.
+
+## Dockningskorridor
+
+`dockningskorridor-sprite` — **Fullständigt implementerat**. Dockade skepp sammanbinds visuellt med en dockningskorridor som följer skeppens inbördes riktning.

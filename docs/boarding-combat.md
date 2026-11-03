@@ -202,3 +202,7 @@ utförs stegvis. Vändning vänster och höger kan även göras separat.
   trupptransport (size 1, hull 3, movement 3, speed 2) med light cannon.
 
 Karteditor, skrovgenombrott och vakuum ingår inte.
+
+## Dockningskorridorens grafik
+
+`dockningskorridor-sprite` är **Fullständigt implementerat**. En transparent korridorsprite förbinder dockade skepp på stridskartan. Originalet finns i `assets/original/map/docking-corridor.png`. Bilden genererades med inbyggd bildgenerering med en prompt om en rak trycksatt korridor ovanifrån, med dockningskragar, grå metallplåt och blågröna och bärnstensfärgade detaljer.

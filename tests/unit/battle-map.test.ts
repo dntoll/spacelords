@@ -43,6 +43,7 @@ function drawing(
   const noses: Point[] = [];
   const markers: Point[] = [];
   const arcs: number[] = [];
+  const images: { url: string; angle: number }[] = [];
   const point = (x: number, y: number): Point => ({
     x: x * Math.cos(rotation) - y * Math.sin(rotation),
     y: x * Math.sin(rotation) + y * Math.cos(rotation),
@@ -60,12 +61,14 @@ function drawing(
     pixelDensity: noop,
     noLoop: noop,
     textFont: noop,
-    loadImage: () =>
+    loadImage: (url: string) =>
       imagesLoaded
-        ? Promise.resolve({ width: 384, height: 192 })
+        ? Promise.resolve({ width: 384, height: 192, url })
         : new Promise(() => {}),
     redraw: () => runtime.sketch!.draw(),
-    background: noop,
+    background: () => {
+      images.length = 0;
+    },
     push: () => stack.push(rotation),
     pop: () => {
       rotation = stack.pop()!;
@@ -86,7 +89,10 @@ function drawing(
     drawingContext: { globalAlpha: 1 },
     circle: noop,
     imageMode: noop,
-    image: () => noses.push(point(1, 0)),
+    image: (image: { url: string }) => {
+      images.push({ url: image.url, angle: rotation });
+      noses.push(point(1, 0));
+    },
     triangle: (x: number, y: number) => noses.push(point(x, y)),
     line: (x: number, y: number, endX: number, endY: number) =>
       markers.push(point(endX - x, endY - y)),
@@ -119,7 +125,7 @@ function drawing(
   });
   const view = new BattleMapView(container, select);
   void runtime.sketch.setup();
-  return { view, noses, markers, arcs, container, canvas };
+  return { view, noses, markers, arcs, images, container, canvas };
 }
 
 it('avfyra-pa-markerat-mal / begransad-stridskamera: drag, pinch, cancelled pointers and wheel never become a shot', () => {
@@ -300,5 +306,60 @@ it('skeppets-framat-foljer-spriten: the fallback triangle points toward the same
     expect(nose.x * marker.y - nose.y * marker.x).toBeCloseTo(0, 8);
     expect(nose.x * marker.x + nose.y * marker.y).toBeGreaterThan(0);
   }
+  view.dispose();
+});
+
+it('dockningskorridor-sprite: draws one aligned corridor per docked pair and none after undocking', async () => {
+  const { view, images } = drawing(true);
+  await Promise.resolve();
+  const state = createTestBattle().snapshot;
+  const first = state.pieces[0]!;
+  const second = state.pieces[1]!;
+  const a = new HexCoordinate(2, 3);
+  const b = new HexCoordinate(2, 4);
+  const docked = {
+    ...state,
+    pieces: [
+      {
+        ...first,
+        position: a,
+        dockedWith: second.id,
+        status: 'active' as const,
+      },
+      {
+        ...second,
+        position: b,
+        dockedWith: first.id,
+        status: 'active' as const,
+      },
+    ],
+  };
+  images.length = 0;
+  view.render(docked, null, null, 'Cannon');
+  const corridors = images.filter((image) =>
+    image.url.includes('docking-corridor'),
+  );
+  expect(corridors).toHaveLength(1);
+  const start = HexGeometry.toPoint(a);
+  const end = HexGeometry.toPoint(b);
+  expect(corridors[0]!.angle).toBeCloseTo(
+    Math.atan2(end.y - start.y, end.x - start.x),
+  );
+  images.length = 0;
+  view.render(
+    {
+      ...docked,
+      pieces: [
+        { ...first, position: a },
+        { ...second, position: b },
+      ],
+    },
+    null,
+    null,
+    'Cannon',
+  );
+  expect(
+    images.filter((image) => image.url.includes('docking-corridor')),
+  ).toHaveLength(0);
   view.dispose();
 });

@@ -1402,3 +1402,7 @@ konfliktmarkörer, publiceringskatalog och filinnehåll behålls.
 ## Raptor-grafik
 
 `egen-raptor-grafik`: ShipImages och BuildingSymbols tillhandahåller egna transparenta WebP-bilder för Raptor och Raptor factory. Fabriken använder symbolen som reservbild tills ett porträtt finns.
+
+## Dockningskorridor
+
+`dockningskorridor-sprite`: Stridskartan laddar en transparent sprite och ritar den en gång mellan varje dockat par, bakom skeppen och roterad längs linjen mellan dem. Den tidigare linjen används om bilden inte laddas.
