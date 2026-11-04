@@ -12,6 +12,22 @@ export interface BoardingFeatureDefinition {
   readonly exit?: 'breach' | 'escape-pod';
 }
 
+export interface BoardingLight {
+  readonly position: BoardingCell;
+  readonly height: number;
+  readonly radius: number;
+  readonly intensity: number;
+}
+
+export function boardingCeilingLight(position: BoardingCell): BoardingLight {
+  return Object.freeze({
+    position: Object.freeze({ ...position }),
+    height: 2.2,
+    radius: 6,
+    intensity: 1,
+  });
+}
+
 export interface BoardingSpawns {
   readonly player: readonly BoardingCell[];
   readonly defender: readonly BoardingCell[];
@@ -19,6 +35,7 @@ export interface BoardingSpawns {
 }
 
 interface ParsedLayers {
+  readonly lights: readonly string[] | undefined;
   readonly meta: ReadonlyMap<string, string>;
   readonly terrain: readonly string[];
   readonly objects: readonly string[];
@@ -41,6 +58,7 @@ export class BoardingMap {
   readonly airlocks: readonly BoardingCell[];
   readonly cockpits: readonly BoardingCell[];
   readonly campaign: boolean;
+  readonly lights: readonly BoardingLight[];
   readonly #terrain: ReadonlyMap<string, BoardingTerrain>;
   readonly #rooms: ReadonlyMap<string, BoardingRoom>;
   readonly #zones: ReadonlyMap<string, BoardingShipZone>;
@@ -57,6 +75,7 @@ export class BoardingMap {
     cockpits: readonly BoardingCell[] = [],
     campaign = false,
     zones: ReadonlyMap<string, BoardingShipZone> = new Map(),
+    lights: readonly BoardingLight[] = [],
   ) {
     this.name = name;
     this.width = width;
@@ -65,6 +84,14 @@ export class BoardingMap {
     this.#rooms = rooms;
     this.#zones = zones;
     this.campaign = campaign;
+    this.lights = Object.freeze(
+      lights.map((light) =>
+        Object.freeze({
+          ...light,
+          position: freezeCell(light.position.q, light.position.r),
+        }),
+      ),
+    );
     this.features = Object.freeze([...features]);
     this.airlocks = Object.freeze([...airlocks]);
     this.cockpits = Object.freeze([...cockpits]);
@@ -125,6 +152,7 @@ function sections(source: string): ParsedLayers {
     objects: layer('objects'),
     rooms: layer('rooms'),
     spawns: layer('spawns'),
+    lights: result.get('lights'),
   };
 }
 
@@ -142,6 +170,7 @@ function dimensions(
     ['objects', layers.objects],
     ['rooms', layers.rooms],
     ['spawns', layers.spawns],
+    ...(layers.lights ? [['lights', layers.lights] as const] : []),
   ] as const) {
     if (rows.length !== height)
       throw new Error(`${name} has ${rows.length} rows; expected ${height}.`);
@@ -178,6 +207,7 @@ export function parseBoardingMap(source: string): BoardingMap {
   const rooms = new Map<string, BoardingRoom>();
   const features: BoardingFeatureDefinition[] = [];
   const airlocks: BoardingCell[] = [];
+  const lights: BoardingLight[] = [];
   const cockpits: BoardingCell[] = [];
   const campaign = layers.meta.get('rules') === 'campaign';
   const spawns: Record<keyof BoardingSpawns, BoardingCell[]> = {
@@ -204,6 +234,15 @@ export function parseBoardingMap(source: string): BoardingMap {
             position,
           }),
         );
+
+      if (
+        layers.lights &&
+        symbol('lights', layers.lights, '-L', q, r) === 'L'
+      ) {
+        if (terrainKind !== 'floor')
+          throw new Error(`A light needs floor at ${q},${r}.`);
+        lights.push(boardingCeilingLight(position));
+      }
 
       const room = symbol('rooms', layers.rooms, '-BEK', q, r);
       if (room === 'K') cockpits.push(position);
@@ -261,5 +300,7 @@ export function parseBoardingMap(source: string): BoardingMap {
     airlocks,
     cockpits,
     campaign,
+    new Map(),
+    lights,
   );
 }

@@ -10,7 +10,9 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
-- **Meterskala och skymmande väggar:** `meterskala-i-bordning` och `genomskinliga-skymmande-vaggar` är **Fullständigt implementerat**. En ruta är 1 × 1 m, väggar 2,4 m, dörröppningar 2,1 m och Half cover 1,2 m. Väggar som täcker upptäckta spelrutor blir automatiskt halvgenomskinliga. Se [bordningsstrid](docs/boarding-combat.md).
+- **Belysning i bordning:** `ljuskallestyrd-bordningsbelysning`, `vertexljus-i-bordning` och `tileljus-for-sprites` är **Fullständigt implementerat**. Fasta kartlampor och ambientljus styr golv, väggar och sprites oberoende av aktuell sikt. Kravkopplade tester och visuell mobilgranskning verifierar ljus och väggsnitt. Se [bordningsstrid](docs/boarding-combat.md).
+
+- **Meterskala och skymmande väggar:** `meterskala-i-bordning` och `genomskinliga-skymmande-vaggar` är **Fullständigt implementerat**. En ruta är 1 × 1 m, väggar 2,4 m, dörröppningar 2,1 m och Half cover 1,2 m. Väggar som täcker upptäckta spelrutor visas som ogenomskinliga 40 cm höga snitt med synligt vägginre. Detta ersätter den tidigare transparensen efter uttrycklig beställning. Se [bordningsstrid](docs/boarding-combat.md).
 
 - **Bordningsgrafik:** `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock, reactor, Half cover och öppna och stängda dörrar i två riktningar visas med isometrisk grafik utan inbyggt golv. Se [bordningsstrid](docs/boarding-combat.md).
 

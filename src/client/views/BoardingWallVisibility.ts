@@ -1,3 +1,4 @@
+import { BOARDING_METERS, boardingHeight } from './BoardingScale.js';
 import type { BoardingCell } from '../models/BoardingMap.js';
 import {
   BOARDING_WALL_HEIGHT,
@@ -7,12 +8,15 @@ import {
   type BoardingPoint,
 } from './BoardingProjection.js';
 
-function silhouette(position: BoardingCell): readonly BoardingPoint[] {
+function silhouette(
+  position: BoardingCell,
+  height = BOARDING_WALL_HEIGHT,
+): readonly BoardingPoint[] {
   const faces = boardingIsoBlockFaces(
     boardingIsoCenter(position),
     32,
     16,
-    BOARDING_WALL_HEIGHT,
+    height,
   );
   return [
     faces.top[0],
@@ -62,13 +66,13 @@ function contains(
   return true;
 }
 
-/** genomskinliga-skymmande-vaggar: only discovered ground can trigger transparency. */
+/** genomskinliga-skymmande-vaggar: only discovered ground can trigger a visual cutaway. */
 export class BoardingWallVisibility {
   readonly #floors: readonly {
     center: BoardingPoint;
     corners: readonly BoardingPoint[];
   }[];
-  readonly #opacity = new Map<string, number>();
+  readonly #heights = new Map<string, number>();
 
   constructor(discoveredFloors: readonly BoardingCell[]) {
     this.#floors = discoveredFloors.map((position) => ({
@@ -77,9 +81,9 @@ export class BoardingWallVisibility {
     }));
   }
 
-  opacity(position: BoardingCell): number {
+  height(position: BoardingCell): number {
     const key = `${position.q},${position.r}`;
-    const cached = this.#opacity.get(key);
+    const cached = this.#heights.get(key);
     if (cached !== undefined) return cached;
     const center = boardingIsoCenter(position);
     const polygon = silhouette(position);
@@ -90,9 +94,11 @@ export class BoardingWallVisibility {
         Math.abs(floor.center.x - center.x) < 64 &&
         overlaps(polygon, floor.corners),
     );
-    const opacity = occludes ? 0.35 : 1;
-    this.#opacity.set(key, opacity);
-    return opacity;
+    const height = occludes
+      ? boardingHeight(BOARDING_METERS.cutawayWall)
+      : BOARDING_WALL_HEIGHT;
+    this.#heights.set(key, height);
+    return height;
   }
 
   blocks(
@@ -104,8 +110,7 @@ export class BoardingWallVisibility {
     return walls.some(
       (wall) =>
         boardingIsoCenter(wall).y > depth &&
-        this.opacity(wall) === 1 &&
-        contains(silhouette(wall), point),
+        contains(silhouette(wall, this.height(wall)), point),
     );
   }
 }

@@ -1,5 +1,7 @@
 import {
   BoardingMap,
+  boardingCeilingLight,
+  type BoardingLight,
   parseBoardingMap,
   type BoardingCell,
   type BoardingShipZone,
@@ -38,6 +40,7 @@ function transform(
   move: (cell: BoardingCell) => BoardingCell,
   zone: BoardingShipZone,
 ): {
+  lights: BoardingLight[];
   terrain: Map<string, 'floor' | 'wall' | 'hull'>;
   rooms: Map<string, 'bridge' | 'engineering'>;
   features: BoardingMap['features'][number][];
@@ -71,6 +74,10 @@ function transform(
   const relocate = (cells: readonly BoardingCell[]) =>
     cells.map((cell) => move(cell));
   return {
+    lights: map.lights.map((light) => ({
+      ...light,
+      position: move(light.position),
+    })),
     terrain,
     rooms,
     features,
@@ -246,6 +253,11 @@ export function composeBoardingMaps(
     [...left.cockpits, ...right.cockpits],
     true,
     zones,
+    [
+      ...left.lights,
+      ...right.lights,
+      boardingCeilingLight(freezeCell(Math.round((lo + hi) / 2), bridgeR)),
+    ],
   );
   return {
     map,

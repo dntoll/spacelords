@@ -1,3 +1,4 @@
+import { BoardingEngagement } from '../../src/client/models/BoardingEngagement.js';
 import { describe, expect, it } from 'vitest';
 import { composeBoardingMaps } from '../../src/client/models/BoardingComposer.js';
 import { BoardingBattle } from '../../src/client/models/BoardingBattle.js';
@@ -521,4 +522,23 @@ describe('bordningsbeloning-last-teknik-karta / raptor-efter-dockningsteknik', (
     if (game.galaxy.cellAt(far) && !before.has(far.key))
       expect(game.exportState().explored).not.toContain(far.key);
   });
+});
+
+it('ljuskallestyrd-bordningsbelysning: restores existing engagement state and derives lamps without new saved fields', () => {
+  const engagement = BoardingEngagement.start(
+    'attacker',
+    'defender',
+    'Space pirate',
+    'Transport ship',
+    true,
+    11,
+  );
+  const saved = JSON.parse(JSON.stringify(engagement.snapshot())) as ReturnType<
+    BoardingEngagement['snapshot']
+  >;
+  expect(saved).not.toHaveProperty('lights');
+  expect(saved.battle).not.toHaveProperty('lights');
+  const restored = BoardingEngagement.restore(saved);
+  expect(restored.battle.snapshot).toEqual(engagement.battle.snapshot);
+  expect(restored.composed.map.lights).toEqual(engagement.composed.map.lights);
 });

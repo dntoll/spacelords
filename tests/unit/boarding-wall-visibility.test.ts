@@ -1,3 +1,7 @@
+import {
+  BOARDING_METERS,
+  boardingHeight,
+} from '../../src/client/views/BoardingScale.js';
 import { describe, expect, it } from 'vitest';
 import {
   BoardingWallVisibility,
@@ -9,17 +13,25 @@ import {
 } from '../../src/client/views/BoardingProjection.js';
 
 describe('genomskinliga-skymmande-vaggar', () => {
-  it('fades only walls that actually cover discovered floor behind them', () => {
+  it('cuts only walls that actually cover discovered floor behind them', () => {
     const wall = { q: 4, r: 4 };
-    expect(new BoardingWallVisibility([{ q: 3, r: 3 }]).opacity(wall)).toBe(
-      0.35,
+    expect(new BoardingWallVisibility([{ q: 3, r: 3 }]).height(wall)).toBe(
+      boardingHeight(BOARDING_METERS.cutawayWall),
     );
-    expect(new BoardingWallVisibility([{ q: 5, r: 5 }]).opacity(wall)).toBe(1);
-    expect(new BoardingWallVisibility([{ q: 1, r: 7 }]).opacity(wall)).toBe(1);
-    expect(new BoardingWallVisibility([{ q: 0, r: 0 }]).opacity(wall)).toBe(1);
-    expect(new BoardingWallVisibility([]).opacity(wall)).toBe(1);
+    expect(new BoardingWallVisibility([{ q: 5, r: 5 }]).height(wall)).toBe(
+      BOARDING_WALL_HEIGHT,
+    );
+    expect(new BoardingWallVisibility([{ q: 1, r: 7 }]).height(wall)).toBe(
+      BOARDING_WALL_HEIGHT,
+    );
+    expect(new BoardingWallVisibility([{ q: 0, r: 0 }]).height(wall)).toBe(
+      BOARDING_WALL_HEIGHT,
+    );
+    expect(new BoardingWallVisibility([]).height(wall)).toBe(
+      BOARDING_WALL_HEIGHT,
+    );
   });
-  it('allows picking through faded height but keeps opaque walls in front of sprites', () => {
+  it('allows picking above the section but keeps both tall walls and the remaining section solid', () => {
     const wall = { q: 4, r: 4 };
     const behind = { q: 3, r: 3 };
     const center = boardingIsoCenter(wall);
@@ -30,6 +42,13 @@ describe('genomskinliga-skymmande-vaggar', () => {
     expect(
       new BoardingWallVisibility([behind]).blocks(point, behind, [wall]),
     ).toBe(false);
+    expect(
+      new BoardingWallVisibility([behind]).blocks(
+        { x: center.x, y: center.y - 4 },
+        behind,
+        [wall],
+      ),
+    ).toBe(true);
     expect(
       new BoardingWallVisibility([]).blocks(point, { q: 5, r: 5 }, [wall]),
     ).toBe(false);

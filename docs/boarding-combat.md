@@ -215,7 +215,7 @@ Originalen i `assets/original/boarding/` behålls i hög upplösning. Bilderna m
 
 Andra möjliga bildbehov är breach, escape pod, förstörda varianter av miljöobjekt samt figurernas olika riktningar och animationer. Golv, väggar och en stillbild per figurgrupp finns redan.
 
-## Meterskala och automatisk väggtransparens
+## Meterskala och automatiska väggsnitt
 
 `meterskala-i-bordning` och `genomskinliga-skymmande-vaggar` är **Fullständigt implementerat**.
 
@@ -230,6 +230,16 @@ Andra möjliga bildbehov är breach, escape pod, förstörda varianter av miljö
 
 Dessa mått ersätter tidigare oberoende pixelstorlekar i `isometrisk-bordningsvy` och `isometriska-bordningsobjekt`. Half cover behåller sin tidigare relation till vägghöjden. Rörelse-, sikt- och stridsregler ändras inte, och sparningar är kompatibla.
 
-Väggar som överlappar upptäckt golv bakom sig tonas ned automatiskt till 35 procents opacitet. Både aktuellt synliga rutor och kartminne kan utlösa nedtoning, men okända golv gör det inte. Vyn skiljer fortfarande kartminne från aktuell sikt. Figurer och föremål ritas i djupordning tillsammans med väggarna. Höga väggar hindrar inte klick på synliga figurer genom nedtonade väggdelar.
+Väggar och ytterskrov som överlappar upptäckt golv bakom sig visas som ogenomskinliga 40 cm höga genomskärningar. Både aktuell sikt och kartminne kan utlösa snittet, men okänt golv gör det inte. Ovansidan visar en ljus metallkant, mörkare kärna och förstärkningsribbor längs väggsträckan. Figurer och föremål behåller gemensam djupordning med väggarna. Klick ovanför snittet når synliga figurer bakom, medan den kvarvarande väggen blockerar klick på täckta figurdelar. Sikt, skott och ljusblockering använder den fullständiga väggen. Denna uttryckliga ändring ersätter tidigare 35 procents opacitet; det stabila kravnamnet `genomskinliga-skymmande-vaggar` behålls.
 
 Bildoriginalen med suffixet `-meters` ersätter de tidigare dörr- och airlockbilderna. Reactor, Half cover, golv, väggtextur och figurer återanvänds och anpassas till måtten. [Prompter och bildberedning](image-prompts/boarding-scale.md) beskriver leveransen. Jämförelsescen och spelvyn har granskats i mobilens stående och liggande format; riktade tester skyddar skala, ritordning, skymning, val genom väggar och dold information.
+
+## Fasta lampor och läsbar interiör
+
+- `ljuskallestyrd-bordningsbelysning` — **Fullständigt implementerat**. Taklampor anges i ett valfritt `[lights]`-lager med `L` och `-`, med samma dimensioner som övriga kartlager. Lampor kräver golv. Standardlampan sitter på 2,2 m höjd med 6 m räckvidd och intensitet 1; ambientnivån är 0,65. Alla levererade interiörer har fasta lampor, och den sammansatta dockningskorridoren får en mittlampa. Belysningen styrs inte av soldaternas position, riktning eller sikt.
+- `vertexljus-i-bordning` — **Fullständigt implementerat**. Varje hörn på golv och väggytor får ljus från lampor med fri ljuslinje, avståndsavtagande och hänsyn till ytriktning. Ljuset interpoleras över ytornas trianglar och multipliceras med befintliga texturer. Väggar, skrov, stängda dörrar och rök blockerar ljus; förstörda barriärer, öppna dörrar och personer gör det inte. Väggsnitt använder full vägghöjd vid blockering.
+- `tileljus-for-sprites` — **Fullständigt implementerat**. Varje ruta får ett ljusvärde vid golvets mittpunkt. Personer och objektsprites använder detta värde; under rörelse interpoleras figurens ljus mellan start och mål. HP, AP, riktning och valmarkeringar påverkas inte av belysningen.
+
+Upptäckta rutor har samma belysning i aktuell sikt och kartminne. Den tidigare siktstyrda mörkningen tas bort; `Sight` och `Fire` visar fortsatt taktisk räckvidd. Okänd interiör och dolda personer behåller sina synlighetsregler. Lamporna kan inte släckas eller förstöras. Sparformatet ändras inte: kartan med lampor återskapas vid återläsning.
+
+Leveransen är granskad i mobilens stående och liggande format med texturer, figurer och väggsnitt. Riktade tester verifierar även reservgeometri, återanvändning av ljusmasker vid ändrad sikt, beskärning av väggens nedre texturdel och mjuk figurtoning under rörelse.

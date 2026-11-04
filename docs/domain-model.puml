@@ -431,6 +431,13 @@ package "Kampanjbordning" {
     rooms
     spawnPoints
     shipZones
+    lights
+  }
+  class BoardingLight {
+    position: BoardingCell
+    height
+    radius
+    intensity
   }
   class BoardingPerson {
     side: player | defender | civilian
@@ -463,6 +470,8 @@ package "Kampanjbordning" {
   BoardingBattle *-- BoardingPerson
   BoardingBattle *-- BoardingFeature
   BoardingBattle *-- BoardingKnowledge
+  BoardingMap *-- BoardingLight
+  BoardingLight --> BoardingCell
   BoardingMap --> BoardingCell
   note right of BoardingCell
     meterskala-i-bordning:
