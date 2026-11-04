@@ -1189,4 +1189,4 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 ## Isometriska bordningsobjekt
 
-`isometriska-bordningsobjekt` — **Delvis implementerat**. Airlock, reactor, Half cover och öppna och stängda dörrar i två riktningar ska ha isometrisk grafik för 2:1-rutnätet. Bilder är framtagna, men visas ännu inte i spelet.
+`isometriska-bordningsobjekt` — **Fullständigt implementerat**. Airlock, reactor, Half cover och öppna och stängda dörrar i två riktningar visas med isometrisk grafik för 2:1-rutnätet. Objekten visas ovanpå spelets golv.

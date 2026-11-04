@@ -10,7 +10,7 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
-- **Bordningsgrafik:** `isometriska-bordningsobjekt` är **Delvis implementerat**. Sju originalbilder är skapade för airlock, reactor, Half cover och dörrarnas två riktningar och tillstånd. Anpassning och inkoppling i spelet återstår. Se [bordningsstrid](docs/boarding-combat.md).
+- **Bordningsgrafik:** `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock, reactor, Half cover och öppna och stängda dörrar i två riktningar visas med isometrisk grafik utan inbyggt golv. Se [bordningsstrid](docs/boarding-combat.md).
 
 - **Dockningskorridor:** `dockningskorridor-sprite` är **Fullständigt implementerat**. Dockade skepp sammanbinds visuellt med en korridor. Se [bordningsstrid](docs/boarding-combat.md).
 

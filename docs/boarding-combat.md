@@ -209,6 +209,8 @@ Karteditor, skrovgenombrott och vakuum ingår inte.
 
 ## Isometriska bordningsobjekt
 
-`isometriska-bordningsobjekt` är **Delvis implementerat**. Sju transparenta original i `assets/original/boarding/` visar airlock, reactor, Half cover och öppna respektive stängda dörrar längs vardera kartaxeln. Bilderna har 2:1-format och genererades med inbyggd bildgenerering för ett isometriskt 2:1-rutnät i mörk blågrå metall med cyan detaljer. Airlock tolkas som en golvlucka. Dörrarnas öppna och stängda ramar skiljer sig, och Half cover innehåller även en högre låda. Grafikens storlek, förankring och dörrarnas riktning behöver anpassas och granskas i spelet innan den kan kopplas in; befintliga spelvyer använder den inte.
+`isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock, reactor, Half cover och öppna respektive stängda dörrar längs båda kartaxlarna visas som separata bilder utan golv. Dörrarnas riktning följer intilliggande väggar. Förstörda objekt och bilder som inte laddas behåller reservvisningen; låsta dörrar markeras fortfarande.
+
+Originalen i `assets/original/boarding/` behålls i hög upplösning. Bilderna med suffixet `-v2` genererades med inbyggd bildgenerering för ett isometriskt 2:1-rutnät: separata objekt av mörk blågrå metall med cyan och bärnstensfärgade detaljer, genomskinlig bakgrund och utan golv. De öppna dörrarna genererades från respektive stängd dörr med samma ram och genomskinlig öppning. De ursprungliga stängda dörrarna återanvänds. Webbversionerna beskärs och skalas med `scripts/prepare-boarding-objects.py`; samma beskärning används för båda tillstånden i varje dörrpar.
 
 Andra möjliga bildbehov är breach, escape pod, förstörda varianter av miljöobjekt samt figurernas olika riktningar och animationer. Golv, väggar och en stillbild per figurgrupp finns redan.

@@ -7,6 +7,18 @@ import {
 } from '../models/BoardingBattle.js';
 import type { BoardingPathMark } from '../models/BoardingPathPreview.js';
 import type { BoardingMapPort } from './BoardingView.js';
+import airlockUrl from '../assets/boarding/airlock.webp';
+import reactorUrl from '../assets/boarding/reactor.webp';
+import halfCoverUrl from '../assets/boarding/half-cover.webp';
+import doorClosedQUrl from '../assets/boarding/door-closed-q.webp';
+import doorOpenQUrl from '../assets/boarding/door-open-q.webp';
+import doorClosedRUrl from '../assets/boarding/door-closed-r.webp';
+import doorOpenRUrl from '../assets/boarding/door-open-r.webp';
+import {
+  boardingObjectArtwork,
+  boardingObjectBounds,
+  type BoardingArtwork,
+} from './BoardingObjectArtwork.js';
 import floorTileUrl from '../assets/boarding/floor-tile.png';
 import wallTileUrl from '../assets/boarding/wall-tile.png';
 import factionSpritesUrl from '../assets/boarding/faction-sprites.png';
@@ -33,6 +45,16 @@ import {
 } from './BoardingProjection.js';
 
 const key = (position: BoardingCell): string => `${position.q},${position.r}`;
+
+const BOARDING_OBJECT_IMAGES: Readonly<Record<BoardingArtwork, string>> = {
+  airlock: airlockUrl,
+  reactor: reactorUrl,
+  'half-cover': halfCoverUrl,
+  'door-closed-q': doorClosedQUrl,
+  'door-open-q': doorOpenQUrl,
+  'door-closed-r': doorClosedRUrl,
+  'door-open-r': doorOpenRUrl,
+};
 
 function stackOffset(
   people: readonly {
@@ -95,6 +117,7 @@ export class BoardingMapView implements BoardingMapPort {
   #wallTile: p5.Image | null = null;
   #wallSource: CanvasImageSource | null = null;
   #factionSprites: p5.Image | null = null;
+  readonly #objects = new Map<BoardingArtwork, p5.Image>();
   #ready = false;
   #disposed = false;
   #motionTimer: ReturnType<typeof setTimeout> | undefined;
@@ -137,6 +160,19 @@ export class BoardingMapView implements BoardingMapPort {
           this.#factionSprites = image;
           if (!this.#disposed && this.#ready) void this.#p5.redraw();
         });
+        for (const [name, url] of Object.entries(BOARDING_OBJECT_IMAGES) as [
+          BoardingArtwork,
+          string,
+        ][]) {
+          void sketch
+            .loadImage(url)
+            .then((image) => {
+              if (this.#disposed || !image) return;
+              this.#objects.set(name, image);
+              if (this.#ready) void this.#p5.redraw();
+            })
+            .catch(() => undefined);
+        }
         this.#bind(canvas, select);
         this.#ready = true;
         this.fit();
@@ -662,6 +698,23 @@ export class BoardingMapView implements BoardingMapPort {
     return true;
   }
 
+  #paintObject(
+    sketch: p5,
+    name: BoardingArtwork,
+    center: Point,
+    current: boolean,
+  ): boolean {
+    const image = this.#objects.get(name);
+    if (!image) return false;
+    const box = boardingObjectBounds(name, center, image.width, image.height);
+    sketch.push();
+    sketch.imageMode(sketch.CORNER);
+    if (!current) sketch.tint(145, 145, 160);
+    sketch.image(image, box.x, box.y, box.width, box.height);
+    sketch.pop();
+    return true;
+  }
+
   #draw(sketch: p5): void {
     sketch.background('#060914');
     const state = this.#state;
@@ -768,6 +821,15 @@ export class BoardingMapView implements BoardingMapPort {
     }
     const known = (position: BoardingCell) =>
       visible.has(key(position)) || explored.has(key(position));
+    for (const position of this.map.airlocks) {
+      if (!known(position)) continue;
+      this.#paintObject(
+        sketch,
+        'airlock',
+        boardingIsoCenter(position),
+        visible.has(key(position)),
+      );
+    }
     const walls = new Set(
       state.features
         .filter(
@@ -806,6 +868,28 @@ export class BoardingMapView implements BoardingMapPort {
         )
       )
         continue;
+      const artwork = boardingObjectArtwork(feature, (q, r) => {
+        const terrain = this.map.terrainAt({ q, r });
+        return terrain === 'wall' || terrain === 'hull';
+      });
+      if (
+        artwork &&
+        this.#paintObject(
+          sketch,
+          artwork,
+          floor,
+          visible.has(key(feature.position)),
+        )
+      ) {
+        if (feature.kind === 'door' && feature.locked && !feature.open) {
+          sketch.textAlign(sketch.CENTER, sketch.CENTER);
+          sketch.textSize(12);
+          sketch.noStroke();
+          sketch.fill('#f4cf5a');
+          sketch.text('▣', floor.x, floor.y - 12);
+        }
+        continue;
+      }
       const footprint = boardingFeatureFootprint(feature.kind);
       const center = raised
         ? this.#block(

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { boardingIsoCellPoint } from '../../src/client/views/BoardingProjection.js';
 
-test('fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordningsstatus / isometrisk-bordningsvy / spelmassigt-bordningsgranssnitt / bordningsfigurer-fran-spritesheet: uses character sprites in the tactical HUD, targets a door and advances a hidden defender without changing saves', async ({
+test('isometriska-bordningsobjekt / fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordningsstatus / isometrisk-bordningsvy / spelmassigt-bordningsgranssnitt / bordningsfigurer-fran-spritesheet: uses character sprites in the tactical HUD, targets a door and advances a hidden defender without changing saves', async ({
   page,
 }) => {
   await page.goto('./');
@@ -20,6 +20,25 @@ test('fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordnings
       ),
     )
     .toBe(true);
+  for (const artwork of [
+    'airlock-',
+    'reactor-',
+    'half-cover-',
+    'door-closed-q-',
+    'door-closed-r-',
+  ]) {
+    await expect
+      .poll(() =>
+        page.evaluate(
+          (name) =>
+            performance
+              .getEntriesByType('resource')
+              .some((entry) => entry.name.includes(name)),
+          artwork,
+        ),
+      )
+      .toBe(true);
+  }
   const team = dialog.getByRole('region', { name: 'Boarding team' });
   await expect(team.getByRole('progressbar')).toHaveCount(4);
   await expect(team.locator('.boarding-unit-active')).toContainText(

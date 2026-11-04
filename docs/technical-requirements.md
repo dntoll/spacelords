@@ -1409,4 +1409,4 @@ konfliktmarkörer, publiceringskatalog och filinnehåll behålls.
 
 ## Isometriska bordningsobjekt
 
-`isometriska-bordningsobjekt`: originalbilder sparas separat från klientens använda tillgångar. Inkoppling, placering och val av dörrarnas riktning återstår; sparformatet ska inte ändras utan separat avstämning.
+`isometriska-bordningsobjekt`: originalbilder sparas separat från klientens beskurna WebP-filer. `scripts/prepare-boarding-objects.py` beskär transparens och skalar till högst 128 pixlar; dörrpar delar beskärning så att ramen inte flyttar sig. Vyn ritar objekten ovanpå golvet i proportioner anpassade till 64 × 32-rutorna, bevarar reservvisning och visar bara kända objekt. Dörrriktningen härleds från ursprunglig omgivande väggterräng utan att ändra sparformatet.
