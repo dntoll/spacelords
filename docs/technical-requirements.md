@@ -1426,3 +1426,5 @@ konfliktmarkörer, publiceringskatalog och filinnehåll behålls.
 Kravkopplade enhetstester skyddar ljusblockering, ambient, falloff, kartformat, komposition, mittpunktsljus och interpolation. Riktade renderingstester skyddar väggsnitt, klick och oberoende från aktuell sikt. Kampanjtest verifierar återläsning utan nya sparfält.
 
 Snabbsvitens körning 2026-11-04 passerade med 788 tester på 24,37 s. De längre fallen för flottadministration, komponentnätverk och beslutsvyer flyttades därefter till den utökade sviten. Centralt skydd för dessa områden finns kvar genom bland annat flottinteraktion, leveransplanering och väntande beslut. De nya ljus- och väggtesten ligger kvar i snabbsviten; tidigare godkända tester behöver inte köras om enbart på grund av flytten.
+
+`tydlig-bordningsstatus`: boarding-testet i webbläsaren pausar den styrda klockan innan AI-turen börjar. Den tillfälliga statusen verifieras innan klockan stegas fram för stridsloggen; därmed hinner en snabb AI-tur inte avslutas medan WebKit öppnar `Combat details`.

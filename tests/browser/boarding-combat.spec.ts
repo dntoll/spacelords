@@ -78,6 +78,9 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   await expect(
     dialog.getByRole('button', { name: 'Shoot', exact: true }),
   ).toBeDisabled();
+  // tydlig-bordningsstatus: inspect the transient turn before advancing AI timers.
+  await page.clock.install({ time: new Date('2026-11-04T00:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-11-04T01:00:00Z'));
   const defendersActing = dialog.getByText('Defenders are acting…', {
     exact: true,
   });
@@ -92,6 +95,7 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   await expect(dialog.locator('.boarding-activity')).toContainText(
     'A defender is acting',
   );
+  await page.clock.runFor(500);
   await expect(dialog.locator('.boarding-log')).toContainText(/A defender /);
 
   await dialog
