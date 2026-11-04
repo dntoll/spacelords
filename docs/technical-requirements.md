@@ -1406,3 +1406,7 @@ konfliktmarkörer, publiceringskatalog och filinnehåll behålls.
 ## Dockningskorridor
 
 `dockningskorridor-sprite`: Stridskartan laddar en transparent sprite och ritar den en gång mellan varje dockat par, bakom skeppen och roterad längs linjen mellan dem. Den tidigare linjen används om bilden inte laddas.
+
+## Isometriska bordningsobjekt
+
+`isometriska-bordningsobjekt`: originalbilder sparas separat från klientens använda tillgångar. Inkoppling, placering och val av dörrarnas riktning återstår; sparformatet ska inte ändras utan separat avstämning.

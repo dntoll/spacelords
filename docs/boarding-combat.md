@@ -206,3 +206,9 @@ Karteditor, skrovgenombrott och vakuum ingår inte.
 ## Dockningskorridorens grafik
 
 `dockningskorridor-sprite` är **Fullständigt implementerat**. En transparent korridorsprite förbinder dockade skepp på stridskartan. Originalet finns i `assets/original/map/docking-corridor.png`. Bilden genererades med inbyggd bildgenerering med en prompt om en rak trycksatt korridor ovanifrån, med dockningskragar, grå metallplåt och blågröna och bärnstensfärgade detaljer.
+
+## Isometriska bordningsobjekt
+
+`isometriska-bordningsobjekt` är **Delvis implementerat**. Sju transparenta original i `assets/original/boarding/` visar airlock, reactor, Half cover och öppna respektive stängda dörrar längs vardera kartaxeln. Bilderna har 2:1-format och genererades med inbyggd bildgenerering för ett isometriskt 2:1-rutnät i mörk blågrå metall med cyan detaljer. Airlock tolkas som en golvlucka. Dörrarnas öppna och stängda ramar skiljer sig, och Half cover innehåller även en högre låda. Grafikens storlek, förankring och dörrarnas riktning behöver anpassas och granskas i spelet innan den kan kopplas in; befintliga spelvyer använder den inte.
+
+Andra möjliga bildbehov är breach, escape pod, förstörda varianter av miljöobjekt samt figurernas olika riktningar och animationer. Golv, väggar och en stillbild per figurgrupp finns redan.

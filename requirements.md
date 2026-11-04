@@ -10,6 +10,8 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Bordningsgrafik:** `isometriska-bordningsobjekt` är **Delvis implementerat**. Sju originalbilder är skapade för airlock, reactor, Half cover och dörrarnas två riktningar och tillstånd. Anpassning och inkoppling i spelet återstår. Se [bordningsstrid](docs/boarding-combat.md).
+
 - **Dockningskorridor:** `dockningskorridor-sprite` är **Fullständigt implementerat**. Dockade skepp sammanbinds visuellt med en korridor. Se [bordningsstrid](docs/boarding-combat.md).
 
 - **Raptor-grafik:** `egen-raptor-grafik` är **Fullständigt implementerat**. Raptor och Raptor factory har egna sprites respektive symboler; fabrikens porträtt återstår. Se [skeppsgrafik](docs/ship-artwork.md).
