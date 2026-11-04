@@ -211,6 +211,25 @@ Karteditor, skrovgenombrott och vakuum ingår inte.
 
 `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock, reactor, Half cover och öppna respektive stängda dörrar längs båda kartaxlarna visas som separata bilder utan golv. Dörrarnas riktning följer intilliggande väggar. Förstörda objekt och bilder som inte laddas behåller reservvisningen; låsta dörrar markeras fortfarande.
 
-Originalen i `assets/original/boarding/` behålls i hög upplösning. Bilderna med suffixet `-v2` genererades med inbyggd bildgenerering för ett isometriskt 2:1-rutnät: separata objekt av mörk blågrå metall med cyan och bärnstensfärgade detaljer, genomskinlig bakgrund och utan golv. De öppna dörrarna genererades från respektive stängd dörr med samma ram och genomskinlig öppning. De ursprungliga stängda dörrarna återanvänds. Webbversionerna beskärs och skalas med `scripts/prepare-boarding-objects.py`; samma beskärning används för båda tillstånden i varje dörrpar.
+Originalen i `assets/original/boarding/` behålls i hög upplösning. Bilderna med suffixet `-v2` genererades med inbyggd bildgenerering för ett isometriskt 2:1-rutnät: separata objekt av mörk blågrå metall med cyan och bärnstensfärgade detaljer, genomskinlig bakgrund och utan golv. De öppna dörrarna genererades från respektive stängd dörr med samma ram och genomskinlig öppning. Dessa första dörrbilder ersätts vid meterskalan nedan. Webbversionerna beskärs och skalas med `scripts/prepare-boarding-objects.py`; samma beskärning används för båda tillstånden i varje dörrpar.
 
 Andra möjliga bildbehov är breach, escape pod, förstörda varianter av miljöobjekt samt figurernas olika riktningar och animationer. Golv, väggar och en stillbild per figurgrupp finns redan.
+
+## Meterskala och automatisk väggtransparens
+
+`meterskala-i-bordning` och `genomskinliga-skymmande-vaggar` är **Fullständigt implementerat**.
+
+| Del                                 | Mått            |
+| ----------------------------------- | --------------- |
+| Golvruta                            | 1 × 1 m         |
+| Vägg och ytterskrov                 | 2,4 m hög       |
+| Dörrens och airlockens fria öppning | 2,1 m hög       |
+| Stående person                      | cirka 1,8 m hög |
+| Reactor                             | 1,8 m hög       |
+| Half cover                          | 1,2 m hög       |
+
+Dessa mått ersätter tidigare oberoende pixelstorlekar i `isometrisk-bordningsvy` och `isometriska-bordningsobjekt`. Half cover behåller sin tidigare relation till vägghöjden. Rörelse-, sikt- och stridsregler ändras inte, och sparningar är kompatibla.
+
+Väggar som överlappar upptäckt golv bakom sig tonas ned automatiskt till 35 procents opacitet. Både aktuellt synliga rutor och kartminne kan utlösa nedtoning, men okända golv gör det inte. Vyn skiljer fortfarande kartminne från aktuell sikt. Figurer och föremål ritas i djupordning tillsammans med väggarna. Höga väggar hindrar inte klick på synliga figurer genom nedtonade väggdelar.
+
+Bildoriginalen med suffixet `-meters` ersätter de tidigare dörr- och airlockbilderna. Reactor, Half cover, golv, väggtextur och figurer återanvänds och anpassas till måtten. [Prompter och bildberedning](image-prompts/boarding-scale.md) beskriver leveransen. Jämförelsescen och spelvyn har granskats i mobilens stående och liggande format; riktade tester skyddar skala, ritordning, skymning, val genom väggar och dold information.

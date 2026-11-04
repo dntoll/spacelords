@@ -37,7 +37,7 @@ describe('isometriska-bordningsobjekt', () => {
       ),
     ).toBeNull();
   });
-  it('uses distinct intact objects and fits images within the tile without distortion', () => {
+  it('uses distinct intact objects and fits calibrated objects within their meter footprint', () => {
     const wallAt = () => false;
     expect(
       boardingObjectArtwork(
@@ -57,15 +57,10 @@ describe('isometriska-bordningsobjekt', () => {
         wallAt,
       ),
     ).toBeNull();
-    const box = boardingObjectBounds(
-      'half-cover',
-      { x: 100, y: 100 },
-      400,
-      200,
-    );
+    const box = boardingObjectBounds('half-cover', { x: 100, y: 100 });
     expect(box.width).toBeLessThanOrEqual(42);
-    expect(box.height).toBeCloseTo(14);
-    expect(box.width / box.height).toBeCloseTo(2);
+    expect(box.height).toBeGreaterThan(1.2 * 16 * Math.sqrt(6));
+    expect(box.height).toBeLessThan(1.8 * 16 * Math.sqrt(6));
     expect(box.x + box.width / 2).toBe(100);
   });
 });

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { boardingIsoCellPoint } from '../../src/client/views/BoardingProjection.js';
 
-test('isometriska-bordningsobjekt / fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordningsstatus / isometrisk-bordningsvy / spelmassigt-bordningsgranssnitt / bordningsfigurer-fran-spritesheet: uses character sprites in the tactical HUD, targets a door and advances a hidden defender without changing saves', async ({
+test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordningsobjekt / fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordningsstatus / isometrisk-bordningsvy / spelmassigt-bordningsgranssnitt / bordningsfigurer-fran-spritesheet: uses character sprites in the tactical HUD, targets a door and advances a hidden defender without changing saves', async ({
   page,
 }) => {
   await page.goto('./');
@@ -47,6 +47,7 @@ test('isometriska-bordningsobjekt / fristaende-bordningsprototyp / miljomal-och-
   await expect(dialog.getByLabel('Map legend')).toContainText(
     /Half cover.*Facing.*Sight.*Fire/,
   );
+  await expect(dialog.getByLabel('Map legend')).toContainText('1 tile = 1 m');
   const turnLeft = dialog.getByRole('button', {
     name: 'Turn left 90°',
     exact: true,

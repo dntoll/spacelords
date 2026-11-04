@@ -1,3 +1,4 @@
+import { BOARDING_SPRITE_METRICS } from './BoardingSpriteMetrics.js';
 import type {
   BoardingCell,
   BoardingFeatureKind,
@@ -47,19 +48,12 @@ export function boardingObjectArtwork(
 export function boardingObjectBounds(
   kind: BoardingArtwork,
   center: { readonly x: number; readonly y: number },
-  imageWidth: number,
-  imageHeight: number,
 ): { x: number; y: number; width: number; height: number } {
-  const limits =
-    kind === 'half-cover'
-      ? [42, 14]
-      : kind === 'reactor'
-        ? [42, 38]
-        : kind === 'airlock'
-          ? [48, 24]
-          : [56, 32];
-  const scale = Math.min(limits[0]! / imageWidth, limits[1]! / imageHeight);
-  const width = imageWidth * scale,
-    height = imageHeight * scale;
-  return { x: center.x - width / 2, y: center.y + 6 - height, width, height };
+  const metric = BOARDING_SPRITE_METRICS[kind];
+  return {
+    x: center.x - metric.anchorX,
+    y: center.y - metric.anchorY,
+    width: metric.width,
+    height: metric.height,
+  };
 }

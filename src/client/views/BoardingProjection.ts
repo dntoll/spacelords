@@ -3,18 +3,24 @@ import type {
   BoardingFeatureKind,
 } from '../models/BoardingMap.js';
 
-export const BOARDING_TILE_WIDTH = 64;
-export const BOARDING_TILE_HEIGHT = 32;
-export const BOARDING_WALL_HEIGHT = 18;
-export const BOARDING_COVER_HEIGHT = BOARDING_WALL_HEIGHT / 2;
-export const BOARDING_DOOR_HEIGHT = 13;
+import {
+  BOARDING_METERS,
+  BOARDING_TILE_WIDTH,
+  BOARDING_TILE_HEIGHT,
+  boardingHeight,
+  boardingWorldPoint,
+} from './BoardingScale.js';
+export { BOARDING_TILE_WIDTH, BOARDING_TILE_HEIGHT } from './BoardingScale.js';
+export const BOARDING_WALL_HEIGHT = boardingHeight(BOARDING_METERS.wall);
+export const BOARDING_COVER_HEIGHT = boardingHeight(BOARDING_METERS.cover);
+export const BOARDING_DOOR_HEIGHT = boardingHeight(BOARDING_METERS.opening);
 export const BOARDING_WALL_SLICES = 8;
 const TILE_WIDTH = BOARDING_TILE_WIDTH;
 const TILE_HEIGHT = BOARDING_TILE_HEIGHT;
 const HALF_WIDTH = TILE_WIDTH / 2;
 const HALF_HEIGHT = TILE_HEIGHT / 2;
 const PADDING = 18;
-const HEIGHT_HEADROOM = 24;
+const HEIGHT_HEADROOM = BOARDING_WALL_HEIGHT + 18;
 
 export interface BoardingPoint {
   readonly x: number;
@@ -31,14 +37,16 @@ export function boardingFeatureFootprint(
 ): Readonly<{ width: number; depth: number }> {
   if (kind === 'wall' || kind === 'hull')
     return { width: HALF_WIDTH, depth: HALF_HEIGHT };
-  if (kind === 'door') return { width: 9, depth: 4 };
-  if (kind === 'cover') return { width: 13, depth: 5 };
+  if (kind === 'door') return { width: 18, depth: 9 };
+  if (kind === 'cover') return { width: 24, depth: 12 };
+  if (kind === 'reactor') return { width: 24, depth: 12 };
   return { width: 0, depth: 0 };
 }
 
 export function boardingFeatureHeight(kind: BoardingFeatureKind): number {
   if (kind === 'cover') return BOARDING_COVER_HEIGHT;
   if (kind === 'door') return BOARDING_DOOR_HEIGHT;
+  if (kind === 'reactor') return boardingHeight(BOARDING_METERS.reactor);
   if (kind === 'wall' || kind === 'hull') return BOARDING_WALL_HEIGHT;
   return 0;
 }
@@ -107,10 +115,7 @@ export function boardingWallSlice(
 }
 
 export function boardingIsoCenter(position: BoardingCell): BoardingPoint {
-  return {
-    x: (position.q - position.r) * HALF_WIDTH,
-    y: (position.q + position.r) * HALF_HEIGHT,
-  };
+  return boardingWorldPoint(position.q, position.r);
 }
 
 export function boardingIsoCorners(

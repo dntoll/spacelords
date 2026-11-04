@@ -1190,3 +1190,8 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 ## Isometriska bordningsobjekt
 
 `isometriska-bordningsobjekt` — **Fullständigt implementerat**. Airlock, reactor, Half cover och öppna och stängda dörrar i två riktningar visas med isometrisk grafik för 2:1-rutnätet. Objekten visas ovanpå spelets golv.
+
+## Meterskala och skymmande väggar i bordning
+
+- `meterskala-i-bordning` — **Fullständigt implementerat**. En golvruta är 1 × 1 m. Väggar och ytterskrov är 2,4 m höga; dörrar och airlock har 2,1 m fri öppning. Stående personer och reactor är cirka 1,8 m höga. Half cover är 1,2 m, fortsatt halva vägghöjden. Skalan framgår i kartans förklaring.
+- `genomskinliga-skymmande-vaggar` — **Fullständigt implementerat**. Väggar och ytterskrov som skymmer upptäckta spelbara rutor visas automatiskt med 35 procents opacitet. Spelaren kan välja rutor och synliga personer bakom dem samt välja väggens egen ruta. Okända områden och dolda personer avslöjas inte. Föremål, väggar och personer har gemensam djupordning.

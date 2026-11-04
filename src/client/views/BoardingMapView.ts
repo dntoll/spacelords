@@ -1,4 +1,9 @@
 import p5 from 'p5';
+import { BOARDING_METERS, boardingHeight } from './BoardingScale.js';
+import {
+  BoardingWallVisibility,
+  boardingDepthOrder,
+} from './BoardingWallVisibility.js';
 import type { BoardingMap, BoardingCell } from '../models/BoardingMap.js';
 import {
   BoardingBattle,
@@ -117,6 +122,8 @@ export class BoardingMapView implements BoardingMapPort {
   #wallTile: p5.Image | null = null;
   #wallSource: CanvasImageSource | null = null;
   #factionSprites: p5.Image | null = null;
+  #wallVisibility = new BoardingWallVisibility([]);
+  #wallPositions: readonly BoardingCell[] = [];
   readonly #objects = new Map<BoardingArtwork, p5.Image>();
   #ready = false;
   #disposed = false;
@@ -201,6 +208,25 @@ export class BoardingMapView implements BoardingMapPort {
   ): void {
     const changed = this.#state?.id !== state.id;
     this.#state = state;
+    const known = new Map(
+      [...state.exploredCells, ...state.visibleCells].map((cell) => [
+        key(cell),
+        cell,
+      ]),
+    );
+    this.#wallVisibility = new BoardingWallVisibility(
+      [...known.values()].filter(
+        (cell) => this.map.terrainAt(cell) === 'floor',
+      ),
+    );
+    this.#wallPositions = state.features
+      .filter(
+        (feature) =>
+          !feature.destroyed &&
+          (feature.kind === 'hull' ||
+            (feature.kind === 'wall' && known.has(key(feature.position)))),
+      )
+      .map((feature) => feature.position);
     this.#selectedId = selectedId;
     this.#destination = destination;
     this.#path = path;
@@ -292,9 +318,27 @@ export class BoardingMapView implements BoardingMapPort {
         return;
       }
       const duration = 280;
+      const weaponPoint = (cell: BoardingCell): Point => {
+        const person = this.#state?.people.find(
+          (entry) =>
+            key(entry.position) === key(cell) && entry.status === 'active',
+        );
+        const point = boardingIsoCenter(cell);
+        return {
+          x: point.x,
+          y:
+            point.y +
+            BOARDING_FOOT_PLANT -
+            boardingHeight(
+              person?.crouched
+                ? BOARDING_METERS.crouchedRifle
+                : BOARDING_METERS.rifle,
+            ),
+        };
+      };
       this.#shot = {
-        from: boardingIsoCenter(from),
-        to: boardingIsoCenter(to),
+        from: weaponPoint(from),
+        to: weaponPoint(to),
         started: performance.now(),
         duration,
         resolve: finish,
@@ -401,7 +445,12 @@ export class BoardingMapView implements BoardingMapPort {
             people
               .filter(
                 (person) =>
-                  person.status !== 'dead' && person.status !== 'evacuated',
+                  person.status !== 'dead' &&
+                  person.status !== 'evacuated' &&
+                  (person.side === 'player' ||
+                    this.#state!.visibleCells.some(
+                      (cell) => key(cell) === key(person.position),
+                    )),
               )
               .map((person) => {
                 const shift = stackOffset(
@@ -423,11 +472,21 @@ export class BoardingMapView implements BoardingMapPort {
               }),
             iso,
           );
-          const cell = sprite
-            ? this.#state!.people.find((person) => person.id === sprite.id)!
+          const picked =
+            sprite &&
+            !this.#wallVisibility.blocks(
+              iso,
+              this.#state!.people.find((person) => person.id === sprite.id)!
+                .position,
+              this.#wallPositions,
+            )
+              ? sprite
+              : null;
+          const cell = picked
+            ? this.#state!.people.find((person) => person.id === picked.id)!
                 .position
             : boardingCellFromIsoPoint(iso);
-          if (this.map.terrainAt(cell)) select(cell, sprite?.id);
+          if (this.map.terrainAt(cell)) select(cell, picked?.id);
         }
         this.#pointers.delete(event.pointerId);
         this.#start = null;
@@ -706,7 +765,7 @@ export class BoardingMapView implements BoardingMapPort {
   ): boolean {
     const image = this.#objects.get(name);
     if (!image) return false;
-    const box = boardingObjectBounds(name, center, image.width, image.height);
+    const box = boardingObjectBounds(name, center);
     sketch.push();
     sketch.imageMode(sketch.CORNER);
     if (!current) sketch.tint(145, 145, 160);
@@ -819,16 +878,24 @@ export class BoardingMapView implements BoardingMapPort {
         }
       }
     }
+    const scene: { depth: number; order: number; paint: () => void }[] = [];
+    const overlays: (() => void)[] = [];
     const known = (position: BoardingCell) =>
       visible.has(key(position)) || explored.has(key(position));
     for (const position of this.map.airlocks) {
       if (!known(position)) continue;
-      this.#paintObject(
-        sketch,
-        'airlock',
-        boardingIsoCenter(position),
-        visible.has(key(position)),
-      );
+      scene.push({
+        depth: boardingIsoCenter(position).y,
+        order: -1,
+        paint: () => {
+          this.#paintObject(
+            sketch,
+            'airlock',
+            boardingIsoCenter(position),
+            visible.has(key(position)),
+          );
+        },
+      });
     }
     const walls = new Set(
       state.features
@@ -839,103 +906,99 @@ export class BoardingMapView implements BoardingMapPort {
         )
         .map((feature) => key(feature.position)),
     );
-    for (const feature of [...state.features].sort(
-      (a, b) =>
-        boardingIsoCenter(a.position).y - boardingIsoCenter(b.position).y,
-    )) {
-      if (
-        feature.kind !== 'hull' &&
-        feature.kind !== 'wall' &&
-        !known(feature.position)
-      )
-        continue;
+    for (const feature of state.features) {
+      if (feature.kind !== 'hull' && !known(feature.position)) continue;
       const floor = boardingIsoCenter(feature.position);
-      const raised =
-        !feature.destroyed &&
-        (feature.kind === 'hull' ||
-          feature.kind === 'wall' ||
-          (feature.kind === 'door' && !feature.open) ||
-          feature.kind === 'cover');
-      if (
-        raised &&
-        (feature.kind === 'wall' || feature.kind === 'hull') &&
-        this.#paintWall(
-          sketch,
-          feature.position,
-          visible.has(key(feature.position)),
-          feature.id === this.#selectedId,
-          walls,
-        )
-      )
-        continue;
-      const artwork = boardingObjectArtwork(feature, (q, r) => {
-        const terrain = this.map.terrainAt({ q, r });
-        return terrain === 'wall' || terrain === 'hull';
-      });
-      if (
-        artwork &&
-        this.#paintObject(
-          sketch,
-          artwork,
-          floor,
-          visible.has(key(feature.position)),
-        )
-      ) {
-        if (feature.kind === 'door' && feature.locked && !feature.open) {
-          sketch.textAlign(sketch.CENTER, sketch.CENTER);
-          sketch.textSize(12);
-          sketch.noStroke();
-          sketch.fill('#f4cf5a');
-          sketch.text('▣', floor.x, floor.y - 12);
-        }
-        continue;
-      }
-      const footprint = boardingFeatureFootprint(feature.kind);
-      const center = raised
-        ? this.#block(
-            sketch,
-            floor,
-            footprint.width,
-            footprint.depth,
-            boardingFeatureHeight(feature.kind),
-            feature.kind === 'cover'
-              ? '#9c7448'
-              : feature.kind === 'door'
-                ? '#6e829f'
-                : '#52657f',
+      scene.push({
+        depth: floor.y,
+        order: 0,
+        paint: () => {
+          const context = sketch.drawingContext as CanvasRenderingContext2D;
+          context.save();
+          if (
+            !feature.destroyed &&
+            (feature.kind === 'wall' || feature.kind === 'hull')
           )
-        : floor;
-      const glyph = boardingFeatureGlyph(feature);
-      if (!glyph) continue;
-      sketch.textAlign(sketch.CENTER, sketch.CENTER);
-      sketch.textSize(16);
-      sketch.noStroke();
-      sketch.fill(
-        feature.destroyed
-          ? '#606979'
-          : feature.id === this.#selectedId
-            ? '#f4cf5a'
-            : feature.kind === 'cover'
-              ? '#d5a86e'
-              : '#dce7f7',
-      );
-      sketch.text(glyph, center.x, center.y);
-    }
-    for (const marker of state.lastKnownEnemies) {
-      if (visible.has(key(marker.position))) continue;
-      const center = boardingIsoCenter(marker.position);
-      sketch.noFill();
-      sketch.stroke('#e58b5a');
-      sketch.circle(center.x, center.y, 22);
-    }
-    for (const marker of state.noiseMarkers.filter(
-      (entry) => entry.audience === 'player',
-    )) {
-      const center = boardingIsoCenter(marker.position);
-      sketch.noFill();
-      sketch.stroke('#f4cf5a');
-      sketch.circle(center.x, center.y, 30);
-      sketch.circle(center.x, center.y, 20);
+            context.globalAlpha *= this.#wallVisibility.opacity(
+              feature.position,
+            );
+          try {
+            const raised =
+              !feature.destroyed &&
+              (feature.kind === 'hull' ||
+                feature.kind === 'wall' ||
+                (feature.kind === 'door' && !feature.open) ||
+                feature.kind === 'cover' ||
+                feature.kind === 'reactor');
+            if (
+              raised &&
+              (feature.kind === 'wall' || feature.kind === 'hull') &&
+              this.#paintWall(
+                sketch,
+                feature.position,
+                visible.has(key(feature.position)),
+                feature.id === this.#selectedId,
+                walls,
+              )
+            )
+              return;
+            const artwork = boardingObjectArtwork(feature, (q, r) => {
+              const terrain = this.map.terrainAt({ q, r });
+              return terrain === 'wall' || terrain === 'hull';
+            });
+            if (
+              artwork &&
+              this.#paintObject(
+                sketch,
+                artwork,
+                floor,
+                visible.has(key(feature.position)),
+              )
+            ) {
+              if (feature.kind === 'door' && feature.locked && !feature.open) {
+                sketch.textAlign(sketch.CENTER, sketch.CENTER);
+                sketch.textSize(12);
+                sketch.noStroke();
+                sketch.fill('#f4cf5a');
+                sketch.text('▣', floor.x, floor.y - boardingHeight(1.5));
+              }
+              return;
+            }
+            const footprint = boardingFeatureFootprint(feature.kind);
+            const center = raised
+              ? this.#block(
+                  sketch,
+                  floor,
+                  footprint.width,
+                  footprint.depth,
+                  boardingFeatureHeight(feature.kind),
+                  feature.kind === 'cover'
+                    ? '#9c7448'
+                    : feature.kind === 'door'
+                      ? '#6e829f'
+                      : '#52657f',
+                )
+              : floor;
+            const glyph = boardingFeatureGlyph(feature);
+            if (!glyph) return;
+            sketch.textAlign(sketch.CENTER, sketch.CENTER);
+            sketch.textSize(16);
+            sketch.noStroke();
+            sketch.fill(
+              feature.destroyed
+                ? '#606979'
+                : feature.id === this.#selectedId
+                  ? '#f4cf5a'
+                  : feature.kind === 'cover'
+                    ? '#d5a86e'
+                    : '#dce7f7',
+            );
+            sketch.text(glyph, center.x, center.y);
+          } finally {
+            context.restore();
+          }
+        },
+      });
     }
     const mover = motion
       ? motion.from.people.find((person) => {
@@ -962,7 +1025,11 @@ export class BoardingMapView implements BoardingMapPort {
               : 0;
       return rank(a) - rank(b);
     })) {
-      if (person.status === 'evacuated') continue;
+      if (
+        person.status === 'evacuated' ||
+        (person.side !== 'player' && !visible.has(key(person.position)))
+      )
+        continue;
       const origin = mover && person.id === mover.id ? mover : person;
       const target =
         mover && person.id === mover.id
@@ -981,116 +1048,176 @@ export class BoardingMapView implements BoardingMapPort {
         x: fromCenter.x + (toCenter.x - fromCenter.x) * progress + shift.x,
         y: fromCenter.y + (toCenter.y - fromCenter.y) * progress + shift.y,
       };
-      const bodyY = center.y + BOARDING_FOOT_PLANT - (person.crouched ? 9 : 13);
-      sketch.noStroke();
-      sketch.fill(0, 0, 0, 95);
-      sketch.ellipse(center.x, center.y + BOARDING_FOOT_PLANT, 25, 9);
-      if (person.id === state.currentActorId && person.status === 'active') {
-        sketch.noFill();
-        sketch.stroke('#f4cf5a');
-        sketch.strokeWeight(2.5);
-        sketch.ellipse(center.x, center.y + BOARDING_FOOT_PLANT - 1, 32, 13);
-      } else if (person.id === this.#selectedId) {
-        sketch.noFill();
-        sketch.stroke('#f4cf5a');
-        sketch.strokeWeight(3);
-        sketch.ellipse(center.x, center.y + BOARDING_FOOT_PLANT - 1, 36, 16);
-      }
-      if (this.#factionSprites) {
-        const sprite = boardingCharacterSprite(
-          person.side,
-          center,
-          person.crouched,
-        );
-        sketch.push();
-        if (person.status === 'dead') sketch.tint(100, 115);
-        else if (person.status === 'incapacitated') sketch.tint(190, 175);
-        sketch.image(
-          this.#factionSprites,
-          sprite.destination.x,
-          sprite.destination.y,
-          sprite.destination.width,
-          sprite.destination.height,
-          sprite.source.x,
-          sprite.source.y,
-          sprite.source.width,
-          sprite.source.height,
-        );
-        sketch.pop();
-      } else {
-        sketch.noStroke();
-        sketch.fill(
-          person.side === 'player'
-            ? '#5ac8fa'
-            : person.side === 'defender'
-              ? '#ef6461'
-              : '#8bd17c',
-        );
-        sketch.circle(center.x, bodyY, person.crouched ? 17 : 21);
-      }
-      sketch.noStroke();
-      const healthY = this.#factionSprites
-        ? boardingCharacterSprite(person.side, center, person.crouched)
-            .destination.y - 6
-        : bodyY - 18;
-      const showAp = person.side === 'player' && person.status === 'active';
-      if (showAp) {
-        const maxAp = Math.max(1, person.agility + person.equipmentApModifier);
-        const remaining = boardingActionPointsRemaining(state, person.id);
-        sketch.fill('#111827');
-        sketch.rect(center.x - 15, healthY - 7, 30, 5, 2);
-        sketch.fill('#f4cf5a');
-        sketch.rect(center.x - 14, healthY - 6, (28 * remaining) / maxAp, 3, 1);
-      }
-      sketch.fill('#111827');
-      sketch.rect(center.x - 15, healthY, 30, 5, 2);
-      sketch.fill(
-        person.side === 'player'
-          ? '#5ac8fa'
-          : person.side === 'defender'
-            ? '#ef6461'
-            : '#8bd17c',
-      );
-      sketch.rect(
-        center.x - 14,
-        healthY + 1,
-        (28 * person.hitPoints) / person.maxHitPoints,
-        3,
-        1,
-      );
-      const fromFacing = boardingIsoCenter(
-        BoardingBattle.forward({ q: 0, r: 0 }, origin.facing),
-      );
-      const toFacing = boardingIsoCenter(
-        BoardingBattle.forward({ q: 0, r: 0 }, target.facing),
-      );
-      const originIso = boardingIsoCenter({ q: 0, r: 0 });
-      const dx =
-        fromFacing.x + (toFacing.x - fromFacing.x) * progress - originIso.x;
-      const dy =
-        fromFacing.y + (toFacing.y - fromFacing.y) * progress - originIso.y;
-      const length = Math.max(1, Math.hypot(dx, dy));
-      sketch.stroke('#111827');
-      sketch.strokeWeight(5);
-      sketch.line(
-        center.x,
-        bodyY,
-        center.x + (dx / length) * 17,
-        bodyY + (dy / length) * 17,
-      );
-      sketch.stroke('#ffffff');
-      sketch.strokeWeight(2.5);
-      sketch.line(
-        center.x,
-        bodyY,
-        center.x + (dx / length) * 17,
-        bodyY + (dy / length) * 17,
-      );
+      scene.push({
+        depth: center.y,
+        order: 1,
+        paint: () => {
+          const bodyY =
+            center.y +
+            BOARDING_FOOT_PLANT -
+            boardingHeight(
+              person.crouched
+                ? BOARDING_METERS.crouchedRifle
+                : BOARDING_METERS.rifle,
+            );
+          sketch.noStroke();
+          sketch.fill(0, 0, 0, 95);
+          sketch.ellipse(center.x, center.y + BOARDING_FOOT_PLANT, 25, 9);
+          if (
+            person.id === state.currentActorId &&
+            person.status === 'active'
+          ) {
+            sketch.noFill();
+            sketch.stroke('#f4cf5a');
+            sketch.strokeWeight(2.5);
+            sketch.ellipse(
+              center.x,
+              center.y + BOARDING_FOOT_PLANT - 1,
+              32,
+              13,
+            );
+          } else if (person.id === this.#selectedId) {
+            sketch.noFill();
+            sketch.stroke('#f4cf5a');
+            sketch.strokeWeight(3);
+            sketch.ellipse(
+              center.x,
+              center.y + BOARDING_FOOT_PLANT - 1,
+              36,
+              16,
+            );
+          }
+          if (this.#factionSprites) {
+            const sprite = boardingCharacterSprite(
+              person.side,
+              center,
+              person.crouched,
+            );
+            sketch.push();
+            if (person.status === 'dead') sketch.tint(100, 115);
+            else if (person.status === 'incapacitated') sketch.tint(190, 175);
+            sketch.image(
+              this.#factionSprites,
+              sprite.destination.x,
+              sprite.destination.y,
+              sprite.destination.width,
+              sprite.destination.height,
+              sprite.source.x,
+              sprite.source.y,
+              sprite.source.width,
+              sprite.source.height,
+            );
+            sketch.pop();
+          } else {
+            sketch.noStroke();
+            sketch.fill(
+              person.side === 'player'
+                ? '#5ac8fa'
+                : person.side === 'defender'
+                  ? '#ef6461'
+                  : '#8bd17c',
+            );
+            sketch.circle(center.x, bodyY, person.crouched ? 17 : 21);
+          }
+          overlays.push(() => {
+            sketch.noStroke();
+            const healthY = this.#factionSprites
+              ? boardingCharacterSprite(person.side, center, person.crouched)
+                  .destination.y - 6
+              : bodyY - 18;
+            const showAp =
+              person.side === 'player' && person.status === 'active';
+            if (showAp) {
+              const maxAp = Math.max(
+                1,
+                person.agility + person.equipmentApModifier,
+              );
+              const remaining = boardingActionPointsRemaining(state, person.id);
+              sketch.fill('#111827');
+              sketch.rect(center.x - 15, healthY - 7, 30, 5, 2);
+              sketch.fill('#f4cf5a');
+              sketch.rect(
+                center.x - 14,
+                healthY - 6,
+                (28 * remaining) / maxAp,
+                3,
+                1,
+              );
+            }
+            sketch.fill('#111827');
+            sketch.rect(center.x - 15, healthY, 30, 5, 2);
+            sketch.fill(
+              person.side === 'player'
+                ? '#5ac8fa'
+                : person.side === 'defender'
+                  ? '#ef6461'
+                  : '#8bd17c',
+            );
+            sketch.rect(
+              center.x - 14,
+              healthY + 1,
+              (28 * person.hitPoints) / person.maxHitPoints,
+              3,
+              1,
+            );
+            const fromFacing = boardingIsoCenter(
+              BoardingBattle.forward({ q: 0, r: 0 }, origin.facing),
+            );
+            const toFacing = boardingIsoCenter(
+              BoardingBattle.forward({ q: 0, r: 0 }, target.facing),
+            );
+            const originIso = boardingIsoCenter({ q: 0, r: 0 });
+            const dx =
+              fromFacing.x +
+              (toFacing.x - fromFacing.x) * progress -
+              originIso.x;
+            const dy =
+              fromFacing.y +
+              (toFacing.y - fromFacing.y) * progress -
+              originIso.y;
+            const length = Math.max(1, Math.hypot(dx, dy));
+            sketch.stroke('#111827');
+            sketch.strokeWeight(5);
+            sketch.line(
+              center.x,
+              bodyY,
+              center.x + (dx / length) * 17,
+              bodyY + (dy / length) * 17,
+            );
+            sketch.stroke('#ffffff');
+            sketch.strokeWeight(2.5);
+            sketch.line(
+              center.x,
+              bodyY,
+              center.x + (dx / length) * 17,
+              bodyY + (dy / length) * 17,
+            );
+          });
+        },
+      });
     }
+    scene.sort(boardingDepthOrder).forEach((item) => item.paint());
+    for (const marker of state.lastKnownEnemies) {
+      if (visible.has(key(marker.position))) continue;
+      const center = boardingIsoCenter(marker.position);
+      sketch.noFill();
+      sketch.stroke('#e58b5a');
+      sketch.circle(center.x, center.y, 22);
+    }
+    for (const marker of state.noiseMarkers.filter(
+      (entry) => entry.audience === 'player',
+    )) {
+      const center = boardingIsoCenter(marker.position);
+      sketch.noFill();
+      sketch.stroke('#f4cf5a');
+      sketch.circle(center.x, center.y, 30);
+      sketch.circle(center.x, center.y, 20);
+    }
+    overlays.forEach((paint) => paint());
     if (shot && shotTick && !shotTick.done) {
       const head = {
         x: shot.from.x + (shot.to.x - shot.from.x) * shotProgress,
-        y: shot.from.y + (shot.to.y - shot.from.y) * shotProgress - 12,
+        y: shot.from.y + (shot.to.y - shot.from.y) * shotProgress,
       };
       const tail = {
         x:
@@ -1098,8 +1225,7 @@ export class BoardingMapView implements BoardingMapPort {
           (shot.to.x - shot.from.x) * Math.max(0, shotProgress - 0.22),
         y:
           shot.from.y +
-          (shot.to.y - shot.from.y) * Math.max(0, shotProgress - 0.22) -
-          12,
+          (shot.to.y - shot.from.y) * Math.max(0, shotProgress - 0.22),
       };
       sketch.stroke('#fff4c4');
       sketch.strokeWeight(3.5);

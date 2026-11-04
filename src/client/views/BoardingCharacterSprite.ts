@@ -1,3 +1,4 @@
+import { BOARDING_METERS, boardingHeight } from './BoardingScale.js';
 export type BoardingCharacterSide = 'player' | 'defender' | 'civilian';
 
 interface Point {
@@ -32,7 +33,9 @@ export function boardingCharacterSprite(
   crouched: boolean,
 ): { readonly source: Rectangle; readonly destination: Rectangle } {
   const source = sources[side];
-  const height = crouched ? 46 : 54;
+  const height = boardingHeight(
+    crouched ? BOARDING_METERS.crouchedPerson : BOARDING_METERS.person,
+  );
   const width = (height * source.width) / source.height;
   return {
     source,

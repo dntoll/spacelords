@@ -464,6 +464,11 @@ package "Kampanjbordning" {
   BoardingBattle *-- BoardingFeature
   BoardingBattle *-- BoardingKnowledge
   BoardingMap --> BoardingCell
+  note right of BoardingCell
+    meterskala-i-bordning:
+    En golvruta motsvarar 1 × 1 meter.
+    Visuell höjd och skymning hör till vylagret.
+  end note
 }
 
 note "Kamera, controllers och p5-vyer är tekniska begrepp\noch ingår inte i problemdomänen." as Scope

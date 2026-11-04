@@ -110,6 +110,7 @@ export class BoardingView {
     const legend = element('div', 'boarding-legend');
     legend.setAttribute('aria-label', 'Map legend');
     legend.append(
+      element('span', 'boarding-legend-scale', '1 tile = 1 m'),
       element('span', 'boarding-legend-selected', '○ Selected'),
       element('span', 'boarding-legend-cover', '▰ Half cover'),
       element('span', 'boarding-legend-facing', '— Facing'),
