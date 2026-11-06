@@ -362,7 +362,7 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
   };
   const battle = BoardingBattle.restore(testBoardingMap, boardingState);
   let selectHex: (position: { q: number; r: number }) => void = () => {};
-  const rendered = vi.fn();
+  const rendered = vi.fn<ReturnType<BoardingMapFactory>['render']>();
   const playMotion = vi.fn(() => Promise.resolve());
   const map: BoardingMapFactory = (_container, select) => {
     selectHex = select;
@@ -372,10 +372,10 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
   const view = new BoardingView(document.body, emit, map);
   view.render(battle.visibleSnapshot);
   const left = document.querySelector<HTMLButtonElement>(
-    '[aria-label="Turn left 90°"]',
+    '[aria-label="Turn left 45°"]',
   )!;
   const right = document.querySelector<HTMLButtonElement>(
-    '[aria-label="Turn right 90°"]',
+    '[aria-label="Turn right 45°"]',
   )!;
   expect(left).not.toBeNull();
   expect(right).not.toBeNull();
@@ -457,7 +457,7 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
   view.dispose();
 });
 
-it('valbar-bordningssoldat / klickskott-pa-vald-fiende / animerat-bordningsskott: clicks another soldier to act and a selected enemy to fire', async () => {
+it('valbar-bordningssoldat / klickskott-pa-vald-fiende / animerat-bordningsskott / traffchans-vid-synliga-fiender: clicks another soldier to act and a selected enemy to fire', async () => {
   const created = createTestBoardingBattle();
   const [actor, other] = created.snapshot.people.filter(
     (person) => person.side === 'player',
@@ -485,19 +485,24 @@ it('valbar-bordningssoldat / klickskott-pa-vald-fiende / animerat-bordningsskott
   };
   let selectHex: (position: { q: number; r: number }) => void = () => {};
   const playShot = vi.fn(() => Promise.resolve());
+  const rendered = vi.fn<ReturnType<BoardingMapFactory>['render']>();
   const emit = vi.fn<(intent: AppIntent) => void>();
   const view = new BoardingView(document.body, emit, (_container, select) => {
     selectHex = select;
-    return { render() {}, playShot, zoom() {}, fit() {}, dispose() {} };
+    return { render: rendered, playShot, zoom() {}, fit() {}, dispose() {} };
   });
   const restored = BoardingBattle.restore(testBoardingMap, boardingState);
   view.render(restored.snapshot);
+  expect(rendered.mock.lastCall?.[6]).toContainEqual(
+    expect.objectContaining({ id: defender.id, affordable: true }),
+  );
   selectHex(other!.position);
   expect(emit).toHaveBeenCalledWith({
     type: 'boarding-command',
     command: { type: 'select', id: other!.id },
   });
   selectHex({ q: 5, r: 5 });
+  expect(rendered.mock.lastCall?.[1]).toBe(defender.id);
   expect(emit).not.toHaveBeenCalledWith({
     type: 'boarding-command',
     command: { type: 'shoot', targetId: defender.id },
@@ -951,7 +956,7 @@ it('melee-kraver-valt-mal: melee stays disabled until an adjacent enemy is selec
     activation: { id: player.id, remaining: 12 },
   };
   let selectHex: (position: { q: number; r: number }) => void = () => {};
-  const rendered = vi.fn();
+  const rendered = vi.fn<ReturnType<BoardingMapFactory>['render']>();
   const emit = vi.fn<(intent: AppIntent) => void>();
   const view = new BoardingView(document.body, emit, (_container, select) => {
     selectHex = select;
@@ -1046,6 +1051,41 @@ it('docka-babord-styrbord: offers Dock instead of firing when a pirate has side 
   expect(emit).toHaveBeenCalledWith({
     type: 'battle-command',
     command: { type: 'dock', targetId: 'hauler' },
+  });
+  view.dispose();
+});
+
+it('valbar-bordningssoldat: renders the controller-selected soldier and preserves AP when switching back', () => {
+  const created = createTestBoardingBattle();
+  const [first, second] = created.snapshot.people.filter(
+    (person) => person.side === 'player',
+  );
+  const battle = BoardingBattle.restore(testBoardingMap, {
+    ...created.snapshot,
+    currentActorId: first!.id,
+    activation: { id: first!.id, remaining: 7 },
+  });
+  const rendered = vi.fn<ReturnType<BoardingMapFactory>['render']>();
+  let selectCell: (position: { q: number; r: number }) => void = () => {};
+  const view = new BoardingView(
+    document.body,
+    (intent) => {
+      if (intent.type !== 'boarding-command') return;
+      battle.command(intent.command);
+      view.render(battle.snapshot);
+    },
+    (_container, select) => {
+      selectCell = select;
+      return { render: rendered, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
+  view.render(battle.snapshot);
+  selectCell(second!.position);
+  expect(rendered.mock.lastCall?.[0].currentActorId).toBe(second!.id);
+  selectCell(first!.position);
+  expect(rendered.mock.lastCall?.[0].activation).toEqual({
+    id: first!.id,
+    remaining: 7,
   });
   view.dispose();
 });

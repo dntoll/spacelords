@@ -442,7 +442,8 @@ package "Kampanjbordning" {
   class BoardingPerson {
     side: player | defender | civilian
     position: BoardingCell
-    facing
+    facing: eight directions
+    crouched
     hitPoints
     actionPoints
     cockpit
@@ -467,6 +468,16 @@ package "Kampanjbordning" {
   }
   BoardingEngagement *-- BoardingBattle
   BoardingBattle *-- BoardingMap
+  class BoardingActivation {
+    id
+    remaining
+  }
+  BoardingBattle *-- BoardingActivation
+  note right of BoardingActivation
+    automatisk-bordningstur-vid-tom-ap:
+    AP noll avslutar aktiveringen efter handlingens utfall.
+    Tidigare uppskjutna soldater behåller återstående AP.
+  end note
   BoardingBattle *-- BoardingPerson
   BoardingBattle *-- BoardingFeature
   BoardingBattle *-- BoardingKnowledge

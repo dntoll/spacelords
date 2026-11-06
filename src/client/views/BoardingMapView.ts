@@ -11,6 +11,7 @@ import {
   BoardingBattle,
   boardingActionPointsRemaining,
   type BoardingBattleState,
+  type BoardingTargetIndicator,
 } from '../models/BoardingBattle.js';
 import type { BoardingPathMark } from '../models/BoardingPathPreview.js';
 import type { BoardingMapPort } from './BoardingView.js';
@@ -28,7 +29,7 @@ import {
 } from './BoardingObjectArtwork.js';
 import floorTileUrl from '../assets/boarding/floor-tile.png';
 import wallTileUrl from '../assets/boarding/wall-tile.png';
-import factionSpritesUrl from '../assets/boarding/faction-sprites.png';
+import factionSpritesUrl from '../assets/boarding/characters/directional-faction-sprites.webp';
 import {
   BOARDING_FOOT_PLANT,
   boardingCharacterAtPoint,
@@ -103,6 +104,7 @@ export class BoardingMapView implements BoardingMapPort {
   #path: readonly BoardingPathMark[] = [];
   #sight: readonly BoardingCell[] = [];
   #fire: readonly BoardingCell[] = [];
+  #targets: readonly BoardingTargetIndicator[] = [];
   #motion: {
     from: BoardingBattleState;
     to: BoardingBattleState;
@@ -160,7 +162,7 @@ export class BoardingMapView implements BoardingMapPort {
         canvas.tabIndex = 0;
         canvas.setAttribute(
           'aria-label',
-          'Isometric boarding map. Tap a tile to choose a destination or target. Drag to pan, pinch or scroll to zoom.',
+          'Isometric boarding map. Tap a destination or enemy, then tap it again to move or fire. Drag to pan, pinch or scroll to zoom.',
         );
         void sketch.loadImage(floorTileUrl).then((image) => {
           this.#floorTile = image;
@@ -214,6 +216,7 @@ export class BoardingMapView implements BoardingMapPort {
     path: readonly BoardingPathMark[],
     sight: readonly BoardingCell[] = [],
     fire: readonly BoardingCell[] = [],
+    targets: readonly BoardingTargetIndicator[] = [],
   ): void {
     const changed = this.#state?.id !== state.id;
     this.#state = state;
@@ -224,6 +227,7 @@ export class BoardingMapView implements BoardingMapPort {
     this.#path = path;
     this.#sight = sight;
     this.#fire = fire;
+    this.#targets = targets;
     if (changed || this.#fitPending) this.fit();
     if (this.#ready) void this.#p5.redraw();
   }
@@ -462,6 +466,7 @@ export class BoardingMapView implements BoardingMapPort {
                     y: center.y + shift.y,
                   },
                   crouched: person.crouched,
+                  facing: person.facing,
                 };
               }),
             iso,
@@ -1178,6 +1183,7 @@ export class BoardingMapView implements BoardingMapPort {
               person.side,
               center,
               person.crouched,
+              progress < 0.5 ? origin.facing : target.facing,
             );
             sketch.push();
             const light =
@@ -1189,6 +1195,10 @@ export class BoardingMapView implements BoardingMapPort {
             else if (person.status === 'incapacitated')
               sketch.tint(190 * light, 175);
             else sketch.tint(255 * light);
+            if (sprite.mirrored) {
+              sketch.translate(center.x * 2, 0);
+              sketch.scale(-1, 1);
+            }
             sketch.image(
               this.#factionSprites,
               sprite.destination.x,
@@ -1222,10 +1232,61 @@ export class BoardingMapView implements BoardingMapPort {
             context.restore();
           }
           overlays.push(() => {
+            const indicator = this.#targets.find(
+              (entry) => entry.id === person.id,
+            );
+            if (indicator) {
+              // traffchans-vid-synliga-fiender: keep targeting UI readable at mobile fit zoom.
+              const uiScale = 1 / this.#scale;
+              const selected = person.id === this.#selectedId;
+              const color =
+                indicator.reason || !indicator.affordable
+                  ? '#a9adb6'
+                  : selected
+                    ? '#ffdc70'
+                    : '#ff9494';
+              sketch.noFill();
+              sketch.stroke(color);
+              sketch.strokeWeight((selected ? 2.5 : 1.2) * uiScale);
+              const radius = (selected ? 12 : 8) * uiScale;
+              sketch.circle(center.x, bodyY, radius * 2);
+              for (const sign of [-1, 1]) {
+                sketch.line(
+                  center.x + sign * (radius - 3 * uiScale),
+                  bodyY,
+                  center.x + sign * (radius + 5 * uiScale),
+                  bodyY,
+                );
+                sketch.line(
+                  center.x,
+                  bodyY + sign * (radius - 3 * uiScale),
+                  center.x,
+                  bodyY + sign * (radius + 5 * uiScale),
+                );
+              }
+              const label = `${indicator.chance}%${indicator.reason ? ' · Blocked' : ''}`;
+              sketch.textSize(11 * uiScale);
+              sketch.textAlign(sketch.LEFT, sketch.CENTER);
+              sketch.noStroke();
+              sketch.fill('#101827');
+              sketch.rect(
+                center.x + radius + 8 * uiScale,
+                bodyY - 9 * uiScale,
+                sketch.textWidth(label) + 10 * uiScale,
+                18 * uiScale,
+                3 * uiScale,
+              );
+              sketch.fill(color);
+              sketch.text(label, center.x + radius + 13 * uiScale, bodyY);
+            }
             sketch.noStroke();
             const healthY = this.#factionSprites
-              ? boardingCharacterSprite(person.side, center, person.crouched)
-                  .destination.y - 6
+              ? boardingCharacterSprite(
+                  person.side,
+                  center,
+                  person.crouched,
+                  person.facing,
+                ).destination.y - 6
               : bodyY - 18;
             const showAp =
               person.side === 'player' && person.status === 'active';

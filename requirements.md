@@ -183,23 +183,28 @@ Se [hela visionen](docs/game-vision.md).
   `isometriska-golvtiles`, `isometriska-vaggtexturer`,
   `bordningsfigurer-fran-spritesheet`, `hp-och-ap-ovanfor-soldater`,
   `personer-blockerar-inte-sikt`, `doda-blockerar-inte-skott-eller-rorelse`
-  samt `sikt-och-eld-fran-vald-soldat` är
+  `sikt-och-eld-fran-vald-soldat`, `traffchans-vid-synliga-fiender`,
+  `automatisk-bordningstur-vid-tom-ap` samt `hukning-minskar-skottchans` är
   **Fullständigt implementerat**. Den första versionen är ett separat testspel
   från huvudmenyn på en handredigerbar transportkarta och påverkar inte
   kampanj eller sparplatser. Kartan använder klassiska kvadratiska
-  2:1-diamantrutor där väggar och ytterskrov fyller hela rutan, fyra riktningar
-  och 90-gradersvändningar; detta ersätter uttryckligen den tidigare hexkartan.
+  2:1-diamantrutor där väggar och ytterskrov fyller hela rutan, åtta riktningar
+  och 45-gradersvändningar; detta ersätter uttryckligen den tidigare hexkartan.
   En vald väg färgas efter kvarvarande AP och förflyttning animeras stegvis med
   uppdaterad sikt. Kända golvrutor använder en kvadratisk yttextur som vyn
   projicerar på rutans exakta 2:1-diamant. Väggar tar utklipp ur en lång
   fasadtextur så att en längre sträcka blir sammanhängande. `Half cover` är
-  hälften så hög som en vägg. Soldater, försvarare och civilister använder var
-  sin isolerade stillbild ur fraktionsarket, står med fötterna lite under
-  rutans centrum och behåller en separat riktningspil. Personer blockerar inte
+  hälften så hög som en vägg. Soldater, pirater och civilister har stående och
+  hukande bilder för åtta riktningar, står med fötterna lite under rutans
+  centrum och behåller en separat riktningspil. Diagonala steg kostar 3/4 AP
+  stående/hukande, raka steg 2/3 AP och varje 45-gradersvändning 1 AP. Personer blockerar inte
   sikt men kan blockera skott. Döda och utslagna blockerar varken skott eller
   gång. Den aktiva soldaten visar synliga och skjutbara
   rutor med två kantfärger, och egna soldater har HP- och AP-staplar ovanför
-  figuren. Ett valt mål markeras på kartan. Melee kräver ett angränsande
+  figuren. Ett valt mål markeras med crosshair; alla fiender den aktiva soldaten
+  ser har träffchans vid figuren. AP noll ger automatiskt turbyte enligt
+  befintlig turhantering. Hukning ger +2 Defense mot skott i öppen terräng
+  och totalt +5 bakom `Half cover`. Melee kräver ett angränsande
   fiendemål och drar inte AP utan ett sådant. Gevär och melee kan inte
   träffa den egna soldaten eller eget lag; skott kräver ett fiende- eller
   miljömål. Se

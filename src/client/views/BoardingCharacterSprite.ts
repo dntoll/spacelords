@@ -1,3 +1,4 @@
+import { boardingCharacterSources } from './BoardingCharacterAtlas.js';
 import { BOARDING_METERS, boardingHeight } from './BoardingScale.js';
 export type BoardingCharacterSide = 'player' | 'defender' | 'civilian';
 
@@ -11,11 +12,22 @@ interface Rectangle extends Point {
   readonly height: number;
 }
 
-const sources: Record<BoardingCharacterSide, Rectangle> = {
-  player: { x: 83, y: 10, width: 65, height: 97 },
-  defender: { x: 82, y: 407, width: 63, height: 87 },
-  civilian: { x: 105, y: 760, width: 49, height: 83 },
-};
+type CharacterAngle = 'front' | 'front-right' | 'right' | 'back-right' | 'back';
+
+// Match model directions to their screen direction after the 2:1 projection.
+const views: readonly {
+  readonly angle: CharacterAngle;
+  readonly mirrored: boolean;
+}[] = [
+  { angle: 'front-right', mirrored: false },
+  { angle: 'back-right', mirrored: false },
+  { angle: 'back-right', mirrored: true },
+  { angle: 'front-right', mirrored: true },
+  { angle: 'right', mirrored: false },
+  { angle: 'back', mirrored: false },
+  { angle: 'right', mirrored: true },
+  { angle: 'front', mirrored: false },
+];
 
 /** bordningsfigurer-fran-spritesheet: plant feet slightly below the tile center. */
 export const BOARDING_FOOT_PLANT = 8;
@@ -25,20 +37,31 @@ export interface BoardingCharacterPick {
   readonly side: BoardingCharacterSide;
   readonly floorCenter: Point;
   readonly crouched: boolean;
+  readonly facing?: number;
 }
 
 export function boardingCharacterSprite(
   side: BoardingCharacterSide,
   floorCenter: Point,
   crouched: boolean,
-): { readonly source: Rectangle; readonly destination: Rectangle } {
-  const source = sources[side];
+  facing = 0,
+): {
+  readonly source: Rectangle;
+  readonly destination: Rectangle;
+  readonly mirrored: boolean;
+} {
+  const view = views[((facing % 8) + 8) % 8]!;
+  const source =
+    boardingCharacterSources[side][crouched ? 'crouched' : 'standing'][
+      view.angle
+    ];
   const height = boardingHeight(
     crouched ? BOARDING_METERS.crouchedPerson : BOARDING_METERS.person,
   );
   const width = (height * source.width) / source.height;
   return {
     source,
+    mirrored: view.mirrored,
     destination: {
       x: floorCenter.x - width / 2,
       y: floorCenter.y - height + BOARDING_FOOT_PLANT,
@@ -58,6 +81,7 @@ export function boardingCharacterAtPoint(
       person.side,
       person.floorCenter,
       person.crouched,
+      person.facing,
     ).destination;
     return (
       point.x >= box.x &&

@@ -280,3 +280,32 @@ it('vertexljus-i-bordning / tileljus-for-sprites: loaded textures keep cutaway m
   await animation;
   view.dispose();
 });
+
+it('traffchans-vid-synliga-fiender: keeps hit percentages readable when a mobile map is zoomed out', () => {
+  const { view, state, player, map } = scene(true);
+  const textSize = vi.fn();
+  Object.assign(runtime.sketch!, { textSize, textWidth: () => 24 });
+  view.render(
+    state,
+    null,
+    null,
+    [],
+    [],
+    [],
+    [
+      {
+        id: player.id,
+        chance: 75,
+        defense: 10,
+        reason: null,
+        affordable: true,
+      },
+    ],
+  );
+  view.zoom(0.2);
+  const camera = boardingIsoCamera(map, { width: 800, height: 600 });
+  expect(
+    Number(textSize.mock.lastCall?.[0]) * camera.scale * 0.2,
+  ).toBeGreaterThanOrEqual(11);
+  view.dispose();
+});

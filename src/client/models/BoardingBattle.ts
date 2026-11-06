@@ -148,9 +148,22 @@ export interface BoardingPath {
   readonly positions: readonly BoardingCell[];
   readonly finalFacing: number;
   readonly steps: readonly (
-    | { readonly type: 'turn'; readonly direction: -1 | 1 }
-    | { readonly type: 'forward'; readonly position: BoardingCell }
+    | {
+        readonly type: 'turn';
+        readonly direction: -1 | 1;
+        readonly cost: number;
+      }
+    | {
+        readonly type: 'forward';
+        readonly position: BoardingCell;
+        readonly cost: number;
+      }
   )[];
+}
+
+export interface BoardingTargetIndicator extends BoardingAttackPreview {
+  readonly id: string;
+  readonly affordable: boolean;
 }
 
 export interface BoardingAttackPreview {
@@ -194,7 +207,23 @@ const distance = (a: BoardingCell, b: BoardingCell): number =>
   Math.hypot(a.q - b.q, a.r - b.r);
 const sharesEdge = (a: BoardingCell, b: BoardingCell): boolean =>
   Math.abs(a.q - b.q) + Math.abs(a.r - b.r) === 1;
-const normalizeFacing = (facing: number): number => ((facing % 4) + 4) % 4;
+// actionpoints-och-riktad-forflyttning: retain 0–3 for existing saved games.
+const FACING_ORDER = [0, 4, 1, 5, 2, 6, 3, 7] as const;
+const normalizeFacing = (facing: number): number => ((facing % 8) + 8) % 8;
+const turnFacing = (facing: number, direction: -1 | 1): number =>
+  FACING_ORDER[
+    (FACING_ORDER.indexOf(
+      normalizeFacing(facing) as (typeof FACING_ORDER)[number],
+    ) +
+      direction +
+      8) %
+      8
+  ]!;
+const forwardCost = (
+  from: BoardingCell,
+  to: BoardingCell,
+  crouched: boolean,
+): number => (crouched ? 3 : 2) + (from.q !== to.q && from.r !== to.r ? 1 : 0);
 
 export function boardingActionPointsRemaining(
   state: BoardingBattleState,
@@ -493,7 +522,7 @@ export class BoardingBattle {
   }
 
   static forward(position: BoardingCell, facing: number): BoardingCell {
-    const direction = CARDINAL_DIRECTIONS[normalizeFacing(facing)]!;
+    const direction = ADJACENT_DIRECTIONS[normalizeFacing(facing)]!;
     return Object.freeze({
       q: position.q + direction.q,
       r: position.r + direction.r,
@@ -762,13 +791,13 @@ export class BoardingBattle {
           steps: Object.freeze([...current.steps]),
         });
       for (const direction of [-1, 1] as const) {
-        const facing = normalizeFacing(current.facing + direction);
+        const facing = turnFacing(current.facing, direction);
         const next: Node = {
           ...current,
           facing,
           cost: current.cost + 1,
           turns: current.turns + 1,
-          steps: [...current.steps, { type: 'turn', direction }],
+          steps: [...current.steps, { type: 'turn', direction, cost: 1 }],
         };
         const nodeKey = `${positionKey(next.position)}:${facing}`;
         if ((best.get(nodeKey) ?? Infinity) > next.cost) {
@@ -777,13 +806,22 @@ export class BoardingBattle {
         }
       }
       const forward = BoardingBattle.forward(current.position, current.facing);
-      if (this.#passable(forward, id)) {
-        const moveCost = entry.crouched ? 3 : 2;
+      const diagonal =
+        forward.q !== current.position.q && forward.r !== current.position.r;
+      const clearCorner =
+        !diagonal ||
+        (this.#passable({ q: forward.q, r: current.position.r }, id) &&
+          this.#passable({ q: current.position.q, r: forward.r }, id));
+      if (clearCorner && this.#passable(forward, id)) {
+        const moveCost = forwardCost(current.position, forward, entry.crouched);
         const next: Node = {
           ...current,
           position: forward,
           cost: current.cost + moveCost,
-          steps: [...current.steps, { type: 'forward', position: forward }],
+          steps: [
+            ...current.steps,
+            { type: 'forward', position: forward, cost: moveCost },
+          ],
           positions: [...current.positions, forward],
         };
         const nodeKey = `${positionKey(forward)}:${next.facing}`;
@@ -1031,6 +1069,7 @@ export class BoardingBattle {
   #targetDefense(
     target: BoardingPerson | BoardingFeature,
     source?: BoardingCell,
+    ranged = false,
   ): number {
     if ('side' in target) {
       let result = target.defense;
@@ -1040,6 +1079,7 @@ export class BoardingBattle {
       if (smoked) result += 2;
       const hasCover = source && this.#coverBetween(source, target.position);
       if (hasCover) result += target.crouched ? 5 : 2;
+      else if (ranged && target.crouched) result += 2;
       return result;
     }
     return target.kind === 'reactor' ? 8 : target.kind === 'door' ? 10 : 12;
@@ -1081,12 +1121,41 @@ export class BoardingBattle {
       )
         reason = 'The shot is blocked.';
     }
-    const defense = target ? this.#targetDefense(target, source?.position) : 99;
+    const defense = target
+      ? this.#targetDefense(target, source?.position, true)
+      : 99;
     const needed = defense - (source?.accuracy ?? 0);
     const chance = reason
       ? 0
       : Math.max(5, Math.min(95, (21 - Math.max(2, needed)) * 5));
     return Object.freeze({ chance, defense, reason });
+  }
+
+  /** traffchans-vid-synliga-fiender: do not expose allies' sight or remembered enemies. */
+  targetIndicators(sourceId: string): readonly BoardingTargetIndicator[] {
+    const source = this.#state.people.find(
+      (person) => person.id === sourceId && person.status === 'active',
+    );
+    if (!source) return Object.freeze([]);
+    return Object.freeze(
+      this.#state.people
+        .filter(
+          (person) =>
+            person.side !== source.side &&
+            person.side !== 'civilian' &&
+            person.status !== 'dead' &&
+            person.status !== 'evacuated' &&
+            this.#canSee(source, person.position),
+        )
+        .map((person) =>
+          Object.freeze({
+            id: person.id,
+            ...this.attackPreview(sourceId, person.id),
+            affordable:
+              boardingActionPointsRemaining(this.#state, sourceId) >= RIFLE_AP,
+          }),
+        ),
+    );
   }
 
   /** melee-kraver-valt-mal: adjacency only; facing does not block a melee strike. */
@@ -1256,12 +1325,12 @@ export class BoardingBattle {
         this.#spend(1);
         this.#updatePerson(actor.id, (entry) => ({
           ...entry,
-          facing: normalizeFacing(entry.facing + step.direction),
+          facing: turnFacing(entry.facing, step.direction),
         }));
         this.#refreshKnowledge();
         this.#recordPresentation(actor.id);
       } else {
-        const cost = current.crouched ? 3 : 2;
+        const cost = step.cost;
         this.#spend(cost);
         this.#updatePerson(actor.id, (entry) => ({
           ...entry,
@@ -1474,7 +1543,7 @@ export class BoardingBattle {
       this.#spend(1);
       this.#updatePerson(actor.id, (entry) => ({
         ...entry,
-        facing: normalizeFacing(entry.facing + command.direction),
+        facing: turnFacing(entry.facing, command.direction),
       }));
     } else if (command.type === 'move') this.#move(command.to);
     else if (command.type === 'crouch' || command.type === 'stand') {
@@ -1512,6 +1581,15 @@ export class BoardingBattle {
     else this.#finishActivation();
     this.#refreshKnowledge();
     this.synchronize();
+    // automatisk-bordningstur-vid-tom-ap: finish only after the whole action resolves.
+    if (
+      this.#state.phase === 'fighting' &&
+      this.#state.currentActorId === actor.id &&
+      (this.#state.activation?.remaining === 0 ||
+        this.#state.people.find((person) => person.id === actor.id)?.status !==
+          'active')
+    )
+      this.#finishActivation();
   }
 
   #select(id: string): void {
@@ -1521,8 +1599,8 @@ export class BoardingBattle {
     if (!target || target.side !== 'player' || target.status !== 'active')
       throw new Error('Choose one of your soldiers.');
     if (target.id === actor.id) return;
-    if (this.#state.finishedActors.includes(id))
-      throw new Error('That soldier has already acted.');
+    if (boardingActionPointsRemaining(this.#state, id) <= 0)
+      throw new Error('That soldier has no AP remaining.');
     const postponed = [
       ...this.#state.postponed.filter(
         (entry) => entry.id !== actor.id && entry.id !== id,
@@ -1714,13 +1792,13 @@ export class BoardingBattle {
       if (route) {
         for (const step of route.steps) {
           actor = this.#state.people.find((entry) => entry.id === initial.id)!;
-          const cost = step.type === 'turn' ? 1 : actor.crouched ? 3 : 2;
+          const cost = step.cost;
           if (cost > remaining) break;
           remaining -= cost;
           if (step.type === 'turn')
             this.#updatePerson(actor.id, (entry) => ({
               ...entry,
-              facing: normalizeFacing(entry.facing + step.direction),
+              facing: turnFacing(entry.facing, step.direction),
             }));
           else
             this.#updatePerson(actor.id, (entry) => ({

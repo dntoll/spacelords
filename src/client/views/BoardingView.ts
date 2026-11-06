@@ -1,6 +1,9 @@
 import {
   BoardingBattle,
   BOARDING_MELEE_AP,
+  BOARDING_RIFLE_AP,
+  boardingActionPointsRemaining,
+  type BoardingTargetIndicator,
   type BoardingBattleState,
   type BoardingShot,
 } from '../models/BoardingBattle.js';
@@ -34,6 +37,7 @@ export interface BoardingMapPort {
     path: readonly BoardingPathMark[],
     sight?: readonly BoardingCell[],
     fire?: readonly BoardingCell[],
+    targets?: readonly BoardingTargetIndicator[],
   ): void;
   playMotion?(
     from: BoardingBattleState,
@@ -208,8 +212,11 @@ export class BoardingView {
         ['door', 'reactor', 'wall'].includes(entry.kind),
     );
     if (person?.side === 'player' && playerTurn) {
-      if (person.id !== actor.id)
+      if (boardingActionPointsRemaining(state, person.id) <= 0) return;
+      if (person.id !== actor.id) {
         this.#command({ type: 'select', id: person.id });
+        return;
+      }
       this.#selectedId = person.id;
       this.#destination = null;
       this.render(state);
@@ -223,7 +230,10 @@ export class BoardingView {
       this.#selectedId === person.id
     ) {
       const preview = this.#battle().attackPreview(actor.id, person.id);
-      if (!preview.reason) {
+      if (
+        !preview.reason &&
+        (state.activation?.remaining ?? 0) >= BOARDING_RIFLE_AP
+      ) {
         this.#command({ type: 'shoot', targetId: person.id });
         return;
       }
@@ -384,7 +394,11 @@ export class BoardingView {
         'aria-label',
         `${soldier.label}, ${soldier.hitPoints} of ${soldier.maxHitPoints} HP`,
       );
-      if (playerTurn && soldier.status === 'active') {
+      if (
+        playerTurn &&
+        soldier.status === 'active' &&
+        boardingActionPointsRemaining(state, soldier.id) > 0
+      ) {
         unit.tabIndex = 0;
         unit.setAttribute('role', 'button');
         unit.addEventListener('click', () => {
@@ -423,10 +437,10 @@ export class BoardingView {
       ? boardingPathMarks(route, state.activation?.remaining ?? 0)
       : [];
     if (playerTurn) {
-      this.#action('Turn left 90°', '↶', () =>
+      this.#action('Turn left 45°', '↶', () =>
         this.#command({ type: 'turn', direction: 1 }),
       );
-      this.#action('Turn right 90°', '↷', () =>
+      this.#action('Turn right 45°', '↷', () =>
         this.#command({ type: 'turn', direction: -1 }),
       );
       this.#action(
@@ -459,7 +473,9 @@ export class BoardingView {
           : `Shoot${preview ? ` · ${preview.chance}%` : ''}`,
         '◎',
         () => this.#command({ type: 'shoot', targetId: this.#selectedId! }),
-        !preview || preview.reason !== null,
+        !preview ||
+          preview.reason !== null ||
+          (state.activation?.remaining ?? 0) < BOARDING_RIFLE_AP,
       );
       this.#action(
         'Melee',
@@ -551,7 +567,7 @@ export class BoardingView {
           ? `Target: ${selectedPerson?.label ?? selectedFeature?.kind ?? this.#selectedId}${preview?.reason ? ` · ${preview.reason}` : ''}`
           : this.#destination
             ? `Destination ${this.#destination.q},${this.#destination.r}${route ? ` · ${route.cost} AP` : ' · unreachable'}`
-            : 'Select a destination or target on the map.',
+            : 'Tap a destination or enemy, then tap it again to move or fire.',
       );
       this.#controls.prepend(selection);
     } else
@@ -594,6 +610,7 @@ export class BoardingView {
       path,
       sight,
       fireTiles,
+      overlayActor ? this.#battle().targetIndicators(overlayActor.id) : [],
     );
   }
 

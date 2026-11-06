@@ -91,3 +91,21 @@ Piratskeppet avviker avsiktligt med rost­röd, ockragul och kolgrå lappad plå
 | [Orbital shipyard](map/orbital-shipyard.md)                             | map       | `orbital-shipyard-sprite.png`            |
 
 Maskinläsbart index: [manifest.json](manifest.json). Referensbilderna är kopior av befintliga spelbilder; de ersätter inga tillgångar i spelet. De fyra befintliga byggnadsporträtten och de tre befintliga målade skeppen behöver inte genereras om.
+
+## Bordningsfigurer med åtta riktningar
+
+[boarding-characters.json](boarding-characters.json) innehåller de 30 slutliga
+prompterna, originalens sökvägar och generatorvalet. Bilderna skapades med den
+inbyggda `image_gen`, med transparent bakgrund. Det befintliga fraktionsarket
+var stilreferens för `player-standing-front`; det nya originalet användes
+sedan som stilreferens för de övriga bilderna.
+
+Originalen finns i `assets/original/boarding/characters/`. Fem vinklar per typ
+och ställning speglas i vyn till åtta riktningar. Webbarket finns i
+`src/client/assets/boarding/characters/directional-faction-sprites.webp`.
+Återskapa bildarket och dess källrektanglar från de sparade originalen med:
+
+```sh
+python3 scripts/prepare-boarding-characters.py
+npx prettier --write src/client/views/BoardingCharacterAtlas.ts
+```

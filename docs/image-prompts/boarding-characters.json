@@ -1,0 +1,272 @@
+[
+  {
+    "side": "player",
+    "stance": "standing",
+    "angle": "front",
+    "prompt": "Use case: stylized-concept. Asset: ONE transparent game character sprite, full body, no sheet. Reference image is STYLE REFERENCE ONLY: match its painted detailed dark sci-fi tactical sprite style. Subject: space marine soldier, charcoal blue-grey powered armor, cyan visor and small cyan lights, holding a compact rifle in both hands, no shield. Standing neutral ready pose. Direction: DIRECTLY FRONT facing the camera, symmetrical frontal torso, both eyes and front of chest visible, gun points toward viewer. Orthographic camera elevated 30 degrees to fit 2:1 dimetric game map. Entire body and feet visible, centered, tall portrait composition with transparent margins. Consistent human height 1.8m. Transparent background, no floor, no cast shadow, no base, no scenery, no text, no labels, no UI. Single figure only.",
+    "original": "assets/original/boarding/characters/player-standing-front.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "player",
+    "stance": "standing",
+    "angle": "front-right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space marine soldier wearing charcoal blue-grey power armor with cyan visor and cyan accents, holding a compact rifle. Preserve the reference soldier's exact suit design and equipment. Pose: standing neutral ready pose, height 1.8m. Direction: THREE QUARTER FRONT RIGHT: chest and face visible, faces toward screen bottom-right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/player-standing-front-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "player",
+    "stance": "standing",
+    "angle": "back-right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space marine soldier wearing charcoal blue-grey power armor with cyan visor and cyan accents, holding a compact rifle. Preserve the reference soldier's exact suit design and equipment. Pose: standing neutral ready pose, height 1.8m. Direction: THREE QUARTER REAR RIGHT: back and backpack visible, head and body face away toward screen upper-right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/player-standing-back-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "player",
+    "stance": "standing",
+    "angle": "right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space marine soldier wearing charcoal blue-grey power armor with cyan visor and cyan accents, holding a compact rifle. Preserve the reference soldier's exact suit design and equipment. Pose: standing neutral ready pose, height 1.8m. Direction: DIRECT RIGHT PROFILE: side of torso, nose points screen right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/player-standing-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "player",
+    "stance": "standing",
+    "angle": "back",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space marine soldier wearing charcoal blue-grey power armor with cyan visor and cyan accents, holding a compact rifle. Preserve the reference soldier's exact suit design and equipment. Pose: standing neutral ready pose, height 1.8m. Direction: DIRECT BACK: back of head and torso visible, faces away toward screen top, no face visible. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/player-standing-back.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "player",
+    "stance": "crouched",
+    "angle": "front",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space marine soldier wearing charcoal blue-grey power armor with cyan visor and cyan accents, holding a compact rifle. Preserve the reference soldier's exact suit design and equipment. Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: DIRECT FRONT: faces camera, chest and both eyes visible, facing toward screen bottom. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/player-crouched-front.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "player",
+    "stance": "crouched",
+    "angle": "front-right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space marine soldier wearing charcoal blue-grey power armor with cyan visor and cyan accents, holding a compact rifle. Preserve the reference soldier's exact suit design and equipment. Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: THREE QUARTER FRONT RIGHT: chest and face visible, faces toward screen bottom-right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/player-crouched-front-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "player",
+    "stance": "crouched",
+    "angle": "right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space marine soldier wearing charcoal blue-grey power armor with cyan visor and cyan accents, holding a compact rifle. Preserve the reference soldier's exact suit design and equipment. Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: DIRECT RIGHT PROFILE: side of torso, nose points screen right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/player-crouched-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "player",
+    "stance": "crouched",
+    "angle": "back-right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space marine soldier wearing charcoal blue-grey power armor with cyan visor and cyan accents, holding a compact rifle. Preserve the reference soldier's exact suit design and equipment. Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: THREE QUARTER REAR RIGHT: back and backpack visible, head and body face away toward screen upper-right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/player-crouched-back-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "player",
+    "stance": "crouched",
+    "angle": "back",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space marine soldier wearing charcoal blue-grey power armor with cyan visor and cyan accents, holding a compact rifle. Preserve the reference soldier's exact suit design and equipment. Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: DIRECT BACK: back of head and torso visible, faces away toward screen top, no face visible. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/player-crouched-back.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "defender",
+    "stance": "standing",
+    "angle": "front",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space pirate wearing weathered charcoal power armor with red visor and red accents, holding a compact rifle.  Pose: standing neutral ready pose, height 1.8m. Direction: DIRECT FRONT: faces camera, chest and both eyes visible, facing toward screen bottom. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/defender-standing-front.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "defender",
+    "stance": "standing",
+    "angle": "front-right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space pirate wearing weathered charcoal power armor with red visor and red accents, holding a compact rifle.  Pose: standing neutral ready pose, height 1.8m. Direction: THREE QUARTER FRONT RIGHT: chest and face visible, faces toward screen bottom-right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/defender-standing-front-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "defender",
+    "stance": "standing",
+    "angle": "right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space pirate wearing weathered charcoal power armor with red visor and red accents, holding a compact rifle.  Pose: standing neutral ready pose, height 1.8m. Direction: DIRECT RIGHT PROFILE: side of torso, nose points screen right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/defender-standing-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "defender",
+    "stance": "standing",
+    "angle": "back-right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space pirate wearing weathered charcoal power armor with red visor and red accents, holding a compact rifle.  Pose: standing neutral ready pose, height 1.8m. Direction: THREE QUARTER REAR RIGHT: back and backpack visible, head and body face away toward screen upper-right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/defender-standing-back-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "defender",
+    "stance": "crouched",
+    "angle": "front",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space pirate wearing weathered charcoal power armor with red visor and red accents, holding a compact rifle.  Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: DIRECT FRONT: faces camera, chest and both eyes visible, facing toward screen bottom. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/defender-crouched-front.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "defender",
+    "stance": "standing",
+    "angle": "back",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space pirate wearing weathered charcoal power armor with red visor and red accents, holding a compact rifle.  Pose: standing neutral ready pose, height 1.8m. Direction: DIRECT BACK: back of head and torso visible, faces away toward screen top, no face visible. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/defender-standing-back.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "defender",
+    "stance": "crouched",
+    "angle": "front-right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space pirate wearing weathered charcoal power armor with red visor and red accents, holding a compact rifle.  Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: THREE QUARTER FRONT RIGHT: chest and face visible, faces toward screen bottom-right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/defender-crouched-front-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "defender",
+    "stance": "crouched",
+    "angle": "right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space pirate wearing weathered charcoal power armor with red visor and red accents, holding a compact rifle.  Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: DIRECT RIGHT PROFILE: side of torso, nose points screen right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/defender-crouched-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "defender",
+    "stance": "crouched",
+    "angle": "back",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space pirate wearing weathered charcoal power armor with red visor and red accents, holding a compact rifle.  Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: DIRECT BACK: back of head and torso visible, faces away toward screen top, no face visible. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/defender-crouched-back.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "defender",
+    "stance": "crouched",
+    "angle": "back-right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: space pirate wearing weathered charcoal power armor with red visor and red accents, holding a compact rifle.  Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: THREE QUARTER REAR RIGHT: back and backpack visible, head and body face away toward screen upper-right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/defender-crouched-back-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "civilian",
+    "stance": "standing",
+    "angle": "front",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: unarmed civilian woman with dark hair wearing a pale blue-grey practical jumpsuit and jacket, no armor, no gun.  Pose: standing neutral ready pose, height 1.8m. Direction: DIRECT FRONT: faces camera, chest and both eyes visible, facing toward screen bottom. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/civilian-standing-front.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "civilian",
+    "stance": "standing",
+    "angle": "front-right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: unarmed civilian woman with dark hair wearing a pale blue-grey practical jumpsuit and jacket, no armor, no gun.  Pose: standing neutral ready pose, height 1.8m. Direction: THREE QUARTER FRONT RIGHT: chest and face visible, faces toward screen bottom-right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/civilian-standing-front-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "civilian",
+    "stance": "standing",
+    "angle": "right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: unarmed civilian woman with dark hair wearing a pale blue-grey practical jumpsuit and jacket, no armor, no gun.  Pose: standing neutral ready pose, height 1.8m. Direction: DIRECT RIGHT PROFILE: side of torso, nose points screen right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/civilian-standing-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "civilian",
+    "stance": "standing",
+    "angle": "back-right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: unarmed civilian woman with dark hair wearing a pale blue-grey practical jumpsuit and jacket, no armor, no gun.  Pose: standing neutral ready pose, height 1.8m. Direction: THREE QUARTER REAR RIGHT: back and backpack visible, head and body face away toward screen upper-right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/civilian-standing-back-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "civilian",
+    "stance": "crouched",
+    "angle": "front",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: unarmed civilian woman with dark hair wearing a pale blue-grey practical jumpsuit and jacket, no armor, no gun.  Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: DIRECT FRONT: faces camera, chest and both eyes visible, facing toward screen bottom. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/civilian-crouched-front.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "civilian",
+    "stance": "standing",
+    "angle": "back",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: unarmed civilian woman with dark hair wearing a pale blue-grey practical jumpsuit and jacket, no armor, no gun.  Pose: standing neutral ready pose, height 1.8m. Direction: DIRECT BACK: back of head and torso visible, faces away toward screen top, no face visible. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/civilian-standing-back.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "civilian",
+    "stance": "crouched",
+    "angle": "front-right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: unarmed civilian woman with dark hair wearing a pale blue-grey practical jumpsuit and jacket, no armor, no gun.  Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: THREE QUARTER FRONT RIGHT: chest and face visible, faces toward screen bottom-right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/civilian-crouched-front-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "civilian",
+    "stance": "crouched",
+    "angle": "right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: unarmed civilian woman with dark hair wearing a pale blue-grey practical jumpsuit and jacket, no armor, no gun.  Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: DIRECT RIGHT PROFILE: side of torso, nose points screen right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/civilian-crouched-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "civilian",
+    "stance": "crouched",
+    "angle": "back-right",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: unarmed civilian woman with dark hair wearing a pale blue-grey practical jumpsuit and jacket, no armor, no gun.  Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: THREE QUARTER REAR RIGHT: back and backpack visible, head and body face away toward screen upper-right. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/civilian-crouched-back-right.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "civilian",
+    "stance": "crouched",
+    "angle": "back",
+    "prompt": "Use case: stylized-concept. ONE isolated full-body transparent game sprite, single figure, no sheet. Reference image is style and camera reference. Subject: unarmed civilian woman with dark hair wearing a pale blue-grey practical jumpsuit and jacket, no armor, no gun.  Pose: deep tactical crouch with both knees bent, hips lowered, height 1.2m instead of 1.8m, NOT standing. Direction: DIRECT BACK: back of head and torso visible, faces away toward screen top, no face visible. Entire body, feet and equipment fit inside frame, centered, generous transparent margins. Orthographic camera elevated 30 degrees, 2:1 dimetric game sprite, detailed painted sci-fi style, consistent neutral lighting. CRITICAL: genuine transparent alpha background; no black backdrop, glow, vignette, floor, base, ground shadow, scenery, text, labels, UI or additional figures.",
+    "original": "assets/original/boarding/characters/civilian-crouched-back.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  }
+]

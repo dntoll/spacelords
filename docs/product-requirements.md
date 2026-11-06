@@ -144,10 +144,12 @@ ska framgå tydligt utan att dolda positioner avslöjas.
 Kända golvrutor ska visas med en isometrisk golvbild. Väggar ska se ut som
 sammanhängande skeppsväggar utan prickmarkering, och `Half cover` ska vara
 tydligt lägre än en vägg.
-Soldater, försvarare och civilister ska visas med skilda figurer från spelets
-fraktionsark, stå med fötterna nära golvet på sin ruta och visas utan delar av
-angränsande figurer. En separat riktningspil behålls. En stillbild per grupp
-används i denna första version. Ovanför egna soldater syns både HP och AP.
+Soldater, pirater och civilister ska visas med skilda stående och hukande
+figurer som tydligt visar åt vilket av åtta håll de står. Figurerna står med
+fötterna nära golvet på sin ruta och behåller en separat riktningspil.
+Ovanför egna soldater syns både HP och AP. Raka steg kostar 2 AP stående
+eller 3 AP hukande; diagonaler kostar 3 respektive 4 AP. En 45-gradersvändning
+kostar 1 AP. Man kan inte gå diagonalt genom blockerade hörn.
 Kartan ska visas isometriskt och uppta huvuddelen av ett spelmässigt gränssnitt
 med kompakta handlingsknappar. Varje bordningssoldat ska ha en egen
 hälsomätare. En vald väg ska visa hur långt soldaten når med kvarvarande AP
@@ -160,7 +162,13 @@ animeras. Spelaren kan klicka på en annan egen soldat för att flytta undan
 någon som står i vägen, klicka igen på en redan vald fiende för att skjuta,
 klicka igen på en vald destination för att gå dit, och klicka igen på en
 angränsande vald dörr för att öppna, stänga eller hacka den. Ett valt mål
-markeras tydligt på kartan. Melee kräver ett angränsande fiendemål och drar
+markeras med ett tydligt crosshair. Alla fiender som den aktiva soldaten själv
+ser visar träffchans vid figuren. Ett blockerat skott visar `0% · Blocked`; för
+få AP tonar ned indikatorn. Vid noll AP går turen automatiskt vidare enligt
+initiativ och tidigare uppskjutna soldater. En egen soldat med AP kvar kan
+väljas under spelarens tur utan att dess AP återställs. Hukning ger +2 Defense
+mot skott i öppen terräng och totalt +5 bakom `Half cover`, men ger ingen ny
+bonus mot melee. Melee kräver ett angränsande fiendemål och drar
 inte AP utan ett sådant. Gevär och melee kan inte träffa den egna soldaten
 eller eget lag; skottknappen är avstängd utan ett fiende- eller miljömål.
 Soldater ser 180 grader framåt. En person blockerar

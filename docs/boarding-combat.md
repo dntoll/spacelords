@@ -25,10 +25,12 @@ sparplatser.
   fortsatt lika resultat slås om. Civilister agerar sist.
 - `actionpoints-och-riktad-forflyttning` — **Fullständigt implementerat**. Egenskaper och
   fasta utrustningsmodifierare ger AP. Soldater går endast framåt. Ett stående
-  rutsteg kostar 2 AP, ett hukat steg 3 AP, en 90-gradersvändning 1 AP och byte
+  rutsteg kostar 2 AP, ett hukat steg 3 AP, ett diagonalt steg 3 AP stående eller 4 AP hukande, en 45-gradersvändning 1 AP och byte
   mellan stående och hukad ställning 1 AP. Handlingar får blandas fritt och
-  förflyttning sker i fyra riktningar utan diagonala steg. Detta ersätter
-  uttryckligen den tidigare hexkartan med sex riktningar och 60-gradersvändning.
+  förflyttning sker i åtta riktningar. Diagonaler kräver att båda sidrutorna
+  är fria för rörelse. Detta ersätter uttryckligen den tidigare regeln om fyra
+  riktningar utan diagonaler och 90-gradersvändningar; den tidigare hexkartan
+  med sex riktningar är fortsatt ersatt.
 - `ap-fargad-bordningsvag` — **Fullständigt implementerat**. En vald väg visar
   bara rutor som ryms inom kvarvarande AP. Rutor där ett gevärsskott fortfarande
   ryms efter ankomst har en färg; övriga rutor man just når har en annan.
@@ -44,7 +46,7 @@ sparplatser.
   overwatchskott visas som en kort projektil från skytt till mål. Spåret
   försvinner när det når målet, innan skadan syns.
 - `valbar-bordningssoldat` — **Fullständigt implementerat**. Under spelarens
-  tur kan en annan egen aktiv soldat som inte är färdig väljas med klick på
+  tur kan en annan egen aktiv soldat med AP kvar väljas med klick på
   figuren eller golvrutan. Ett klick på spriten väljer soldaten även när
   kroppen täcker rutan bakom. Den förra soldaten sparar sin kvarvarande AP och
   återupptas när den valda är klar, så att någon som står i vägen kan flyttas
@@ -53,8 +55,8 @@ sparplatser.
   på en fiende väljer målet. Ett andra klick på samma valda fiende avfyrar
   geväret om skottet är lagligt.
 - `vald-bordningsmal-markeras` — **Fullständigt implementerat**. Ett valt mål
-  markeras på kartan med samma guldring som destinationen, både på rutan och
-  runt figuren, så att det syns vem melee och skott avser.
+  markeras på kartan med en guldring på rutan och ett tydligt crosshair över
+  figuren, så att det syns vem melee och skott avser.
 - `melee-kraver-valt-mal` — **Fullständigt implementerat**. Melee är avstängt
   tills ett angränsande fientligt mål är valt. Ogiltig melee drar inte AP.
   Närliggande försvarare slår melee även om de står med ryggen mot anfallaren.
@@ -87,13 +89,27 @@ sparplatser.
   ytterskrov ritas med utklipp ur en lång fasadtextur. En sammanhängande
   väggsträcka längs q eller r får på varandra följande utklipp så att sidan
   läses som en enda vägg. Kartreglerna ändras inte.
-- `bordningsfigurer-fran-spritesheet` — **Fullständigt implementerat**. Spelarens
-  soldater, försvarare och civilister visas med var sitt utklipp ur det gemensamma
-  fraktionsarket. Varje utklipp innehåller bara den avsedda figuren och
-  förankras med fötterna lite under rutans centrum så att figurerna står närmare
-  golvet. Riktningspilen, HP, aktiv markering och statusmarkeringar behålls.
-  Samma stillbild används i alla riktningar tills separata riktningar och
-  animationer införs.
+- `bordningsfigurer-fran-spritesheet` — **Fullständigt implementerat**. Soldater,
+  pirater och civilister har egna stående och hukande figurer. Fem grundvinklar
+  per typ och ställning speglas till åtta riktningar. Bilden visar samma håll
+  som figurens rörelse, sikt och riktningspil. Fötterna förankras nära golvet,
+  och HP, AP och statusmarkeringar behålls. Detta ersätter samma stillbild för
+  alla riktningar. Totalt 30 genererade grundbilder används i ett bildark.
+- `traffchans-vid-synliga-fiender` — **Fullständigt implementerat**. Under
+  spelarens tur visas en indikator och träffchans vid varje fiende som den
+  aktiva soldaten själv ser. Vald fiende har ett tydligare crosshair.
+  Markering och procenttext behåller läsbar skärmstorlek även vid mobilens
+  utzoomning. Blockerat skott visar `0% · Blocked`. För få AP tonar ned indikatorn men
+  ändrar inte träffchansen. Andra soldaters sikt och kartminne ger inga indikatorer.
+- `automatisk-bordningstur-vid-tom-ap` — **Fullständigt implementerat**. När AP
+  når noll avslutas soldatens aktivering efter den färdiga handlingen. Nästa
+  figur följer befintlig turhantering, inklusive uppskjutna soldater och
+  initiativordning. Animationer visas färdigt före nästa figurs handling.
+  Seger avgörs före turbyte; en handling avslutar aldrig samma tur två gånger.
+- `hukning-minskar-skottchans` — **Fullständigt implementerat**. Hukning ger
+  +2 Defense mot gevär och overwatch även utan skydd. Bakom `Half cover`
+  behålls totalbonusen +5. Rök behåller sin separata bonus. Den nya bonusen
+  gäller inte melee och är densamma i träffchansen och det faktiska skottet.
 - `hp-och-ap-ovanfor-soldater` — **Fullständigt implementerat**. Ovanför varje
   egen soldat visas HP och kvarvarande AP som två korta staplar. Försvarare och
   civilister visar bara HP.

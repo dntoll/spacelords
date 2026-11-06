@@ -17,8 +17,13 @@ function path(forwards: number, turns = 0, stepCost = 2): BoardingPath {
       ...Array.from({ length: turns }, () => ({
         type: 'turn' as const,
         direction: 1 as const,
+        cost: 1,
       })),
-      ...positions.map((position) => ({ type: 'forward' as const, position })),
+      ...positions.map((position) => ({
+        type: 'forward' as const,
+        position,
+        cost: stepCost,
+      })),
     ],
   };
 }
@@ -41,4 +46,23 @@ describe('ap-fargad-bordningsvag', () => {
       { position: { q: 2, r: 0 }, kind: 'reach' },
     ]);
   });
+});
+
+// ap-fargad-bordningsvag: mixed cardinal and diagonal steps cannot use an average cost.
+it('ap-fargad-bordningsvag: sums actual mixed step costs at AP boundaries', () => {
+  const mixed: BoardingPath = {
+    cost: 7,
+    turns: 0,
+    finalFacing: 0,
+    positions: [],
+    steps: [
+      { type: 'forward', position: { q: 1, r: 0 }, cost: 2 },
+      { type: 'forward', position: { q: 2, r: 1 }, cost: 3 },
+      { type: 'forward', position: { q: 3, r: 1 }, cost: 2 },
+    ],
+  };
+  expect(boardingPathMarks(mixed, 6)).toEqual([
+    { position: { q: 1, r: 0 }, kind: 'fire' },
+    { position: { q: 2, r: 1 }, kind: 'reach' },
+  ]);
 });

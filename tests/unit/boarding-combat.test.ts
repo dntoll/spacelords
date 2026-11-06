@@ -92,7 +92,7 @@ describe('individuellt-bordningsinitiativ', () => {
 });
 
 describe('actionpoints-och-riktad-forflyttning', () => {
-  it('uses four edge-sharing directions for the square grid', () => {
+  it('preserves the four saved cardinal directions for the square grid', () => {
     const origin = { q: 5, r: 5 };
     expect(
       [0, 1, 2, 3].map((facing) => BoardingBattle.forward(origin, facing)),
@@ -125,7 +125,7 @@ describe('actionpoints-och-riktad-forflyttning', () => {
     expect(battle.snapshot.activation?.remaining).toBe(12 - path!.cost);
   });
 
-  it('charges one AP for turning and stance changes and three for crouched movement', () => {
+  it('charges one AP for turning and stance changes and four for crouched diagonal movement', () => {
     const player = battle.snapshot.people.findLast(
       (person) => person.side === 'player',
     )!;
@@ -145,7 +145,7 @@ describe('actionpoints-och-riktad-forflyttning', () => {
     )!;
     const destination = BoardingBattle.forward(turned.position, turned.facing);
     battle.command({ type: 'move', to: destination });
-    expect(battle.snapshot.activation?.remaining).toBe(7);
+    expect(battle.snapshot.activation?.remaining).toBe(6);
   });
 });
 
@@ -647,7 +647,7 @@ describe('avbrott-vid-ny-fiende', () => {
     )!;
     expect(moved.position).toEqual({ q: 3, r: 5 });
     expect(moved.facing).not.toBe(2);
-    expect(battle.snapshot.activation?.remaining).toBe(11);
+    expect(battle.snapshot.activation?.remaining).toBe(10);
     expect(battle.snapshot.log.at(-1)).toMatch(/spots a new enemy and stops/i);
   });
 });

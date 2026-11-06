@@ -1428,3 +1428,20 @@ Kravkopplade enhetstester skyddar ljusblockering, ambient, falloff, kartformat, 
 Snabbsvitens körning 2026-11-04 passerade med 788 tester på 24,37 s. De längre fallen för flottadministration, komponentnätverk och beslutsvyer flyttades därefter till den utökade sviten. Centralt skydd för dessa områden finns kvar genom bland annat flottinteraktion, leveransplanering och väntande beslut. De nya ljus- och väggtesten ligger kvar i snabbsviten; tidigare godkända tester behöver inte köras om enbart på grund av flytten.
 
 `tydlig-bordningsstatus`: boarding-testet i webbläsaren pausar den styrda klockan innan AI-turen börjar. Den tillfälliga statusen verifieras innan klockan stegas fram för stridsloggen; därmed hinner en snabb AI-tur inte avslutas medan WebKit öppnar `Combat details`.
+
+## Bordning: åtta riktningar och figurbilder
+
+`actionpoints-och-riktad-forflyttning`, `bordningsfigurer-fran-spritesheet`,
+`traffchans-vid-synliga-fiender`, `automatisk-bordningstur-vid-tom-ap` och
+`hukning-minskar-skottchans` — **Fullständigt implementerat**.
+
+- Sparade riktningar 0–3 behåller sin betydelse. Diagonaler använder 4–7 och
+  vändningar följer en uttrycklig cyklisk ordning. Ingen sparrensning behövs.
+- Varje delsteg i `BoardingPath` bär sin verkliga AP-kostnad, gemensam för
+  förhandsvisning och utförande hos soldater, försvarare och civilister.
+- Modellen lämnar oföränderliga målindikatorer; vyn beräknar inga stridsregler.
+- Turbyte görs vid kommandots slut, efter stridsutfall, inte när AP debiteras
+  eller under en intern overwatchreaktion. Vyn köar efterföljande animationer.
+- Genererade original och prompter sparas i repot. `scripts/prepare-boarding-characters.py`
+  packar ett transparent WebP-bildark och typade källrektanglar. Spegling sker
+  endast i vyn. Renderingen och figurernas klickytor använder samma bildgränser.

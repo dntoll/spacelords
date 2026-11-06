@@ -14,17 +14,11 @@ export function boardingPathMarks(
   remainingAp: number,
   fireCost = BOARDING_RIFLE_AP,
 ): readonly BoardingPathMark[] {
-  const forwards = path.steps.filter((step) => step.type === 'forward');
-  const stepCost =
-    forwards.length === 0 ? 0 : (path.cost - path.turns) / forwards.length;
   const marks: BoardingPathMark[] = [];
   let cost = 0;
   for (const step of path.steps) {
-    if (step.type === 'turn') {
-      cost += 1;
-      continue;
-    }
-    cost += stepCost;
+    cost += step.cost;
+    if (step.type === 'turn') continue;
     if (cost > remainingAp) break;
     marks.push({
       position: step.position,

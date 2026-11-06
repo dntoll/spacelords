@@ -49,7 +49,7 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   );
   await expect(dialog.getByLabel('Map legend')).toContainText('1 tile = 1 m');
   const turnLeft = dialog.getByRole('button', {
-    name: 'Turn left 90°',
+    name: 'Turn left 45°',
     exact: true,
   });
   await expect(turnLeft).toBeVisible();
