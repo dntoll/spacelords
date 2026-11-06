@@ -324,17 +324,21 @@ export class BoardingView {
     this.#paint(previous, shot ? 'Firing…' : 'Moving…');
     try {
       let current = previous;
-      for (const frame of frames) {
+      const shotIndex = Math.min(shot?.presentationIndex ?? 0, frames.length);
+      // animerat-bordningsskott: resolve the shot before later actors' movement and damage.
+      for (let index = 0; index <= frames.length; index++) {
+        if (token !== this.#playToken) return;
+        if (shot && this.#map?.playShot && index === shotIndex) {
+          this.#paint(current, 'Firing…');
+          await this.#map.playShot(shot.from, shot.to);
+          this.#playedShot = shot;
+        }
+        const frame = frames[index];
+        if (!frame) break;
         if (token !== this.#playToken) return;
         await this.#map?.playMotion?.(current, frame);
         current = frame;
         this.#paint(frame, 'Moving…');
-      }
-      if (shot && this.#map?.playShot) {
-        if (token !== this.#playToken) return;
-        this.#paint(current, 'Firing…');
-        await this.#map.playShot(shot.from, shot.to);
-        this.#playedShot = shot;
       }
     } finally {
       this.#busy = false;

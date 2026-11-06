@@ -137,6 +137,7 @@ export type BoardingCommand =
   | { readonly type: 'end-activation' };
 
 export interface BoardingShot {
+  readonly presentationIndex?: number;
   readonly from: BoardingCell;
   readonly to: BoardingCell;
   readonly hit: boolean;
@@ -1266,6 +1267,7 @@ export class BoardingBattle {
       this.#shot = Object.freeze({
         from: frozenCell(source.position),
         to: frozenCell(this.#targetPosition(target)),
+        presentationIndex: this.#presentation.length,
         hit,
       });
     this.#replace({
@@ -1340,8 +1342,10 @@ export class BoardingBattle {
         const moved = this.#state.people.find(
           (entry) => entry.id === actor.id,
         )!;
-        this.#triggerOverwatch(moved);
         this.#recordPresentation(actor.id);
+        const previousShot = this.#shot;
+        this.#triggerOverwatch(moved);
+        if (this.#shot !== previousShot) this.#recordPresentation(actor.id);
       }
       if (actor.side === 'civilian') continue;
       const spotted = [...this.#hostileIdsInSight(actor.side)].some(

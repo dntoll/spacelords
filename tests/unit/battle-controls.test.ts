@@ -1089,3 +1089,42 @@ it('valbar-bordningssoldat: renders the controller-selected soldier and preserve
   });
   view.dispose();
 });
+
+it('automatisk-bordningstur-vid-tom-ap / animerat-bordningsskott: shows the last rifle shot before civilians move at round end', async () => {
+  const initial = createTestBoardingBattle().snapshot;
+  const actor = initial.people.find((person) => person.side === 'player')!;
+  const enemy = initial.people.find((person) => person.side === 'defender')!;
+  const civilian = initial.people.find((person) => person.side === 'civilian')!;
+  const after = {
+    ...initial,
+    people: initial.people.map((person) =>
+      person.id === civilian.id
+        ? { ...person, position: { q: 13, r: 3 } }
+        : person,
+    ),
+  };
+  const order: string[] = [];
+  const view = new BoardingView(document.body, vi.fn(), () => ({
+    render() {},
+    zoom() {},
+    fit() {},
+    dispose() {},
+    playShot: () => {
+      order.push('shot');
+      return Promise.resolve();
+    },
+    playMotion: () => {
+      order.push('move');
+      return Promise.resolve();
+    },
+  }));
+  view.render(initial);
+  view.render(after, null, [after], {
+    from: actor.position,
+    to: enemy.position,
+    hit: true,
+  });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(order).toEqual(['shot', 'move']);
+  view.dispose();
+});

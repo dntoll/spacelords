@@ -678,6 +678,7 @@ describe('animerat-bordningsskott', () => {
     expect(battle.shot).toEqual({
       from: { q: door.position.q - 1, r: door.position.r },
       to: door.position,
+      presentationIndex: 0,
       hit: true,
     });
     expect(battle.snapshot).not.toHaveProperty('shot');
@@ -860,6 +861,14 @@ describe('overwatch-och-skydd', () => {
         ?.overwatch,
     ).toBe(false);
     expect(battle.snapshot.log.join(' ')).toMatch(/Overwatch.*D20/i);
+    const shot = battle.shot!;
+    const beforeShot = battle.presentation[shot.presentationIndex! - 1]!;
+    expect(
+      beforeShot.people.find((person) => person.id === player.id)?.position,
+    ).toEqual(shot.to);
+    expect(
+      beforeShot.people.find((person) => person.id === player.id)?.hitPoints,
+    ).toBe(player.hitPoints);
   });
 });
 
@@ -1180,5 +1189,41 @@ describe('forsvarare-och-civilister', () => {
       .filter((person) => person.side === 'civilian')
       .map((person) => `${person.position.q},${person.position.r}`);
     expect(after).not.toEqual(before);
+  });
+});
+
+describe('automatisk-bordningstur-vid-tom-ap / animerat-bordningsskott', () => {
+  it('keeps a round-ending rifle shot before the subsequent civilian presentation frames', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    withState((state) => ({
+      ...state,
+      randomState: 123456,
+      people: state.people.map((person) =>
+        person.id === player.id
+          ? { ...person, position: { q: 2, r: 5 }, facing: 0 }
+          : person.id === defender.id
+            ? {
+                ...person,
+                position: { q: 5, r: 5 },
+                hitPoints: 100,
+                maxHitPoints: 100,
+              }
+            : person,
+      ),
+      initiativeOrder: [player.id],
+      initiativeIndex: 0,
+      currentActorId: player.id,
+      activation: { id: player.id, remaining: 4 },
+    }));
+    const round = battle.snapshot.round;
+    battle.command({ type: 'shoot', targetId: defender.id });
+    expect(battle.snapshot.round).toBe(round + 1);
+    expect(battle.presentation.length).toBeGreaterThan(0);
+    expect(battle.shot?.presentationIndex).toBe(0);
   });
 });

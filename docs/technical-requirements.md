@@ -1442,6 +1442,8 @@ Snabbsvitens körning 2026-11-04 passerade med 788 tester på 24,37 s. De längr
 - Modellen lämnar oföränderliga målindikatorer; vyn beräknar inga stridsregler.
 - Turbyte görs vid kommandots slut, efter stridsutfall, inte när AP debiteras
   eller under en intern overwatchreaktion. Vyn köar efterföljande animationer.
+  Skottets presentationsindex placerar projektilen före efterföljande
+  civiliströrelse och skadebild, även när sista skottet avslutar rundan.
 - Genererade original och prompter sparas i repot. `scripts/prepare-boarding-characters.py`
   packar ett transparent WebP-bildark och typade källrektanglar. Spegling sker
   endast i vyn. Renderingen och figurernas klickytor använder samma bildgränser.
