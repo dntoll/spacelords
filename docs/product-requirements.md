@@ -179,6 +179,20 @@ Prototypen från huvudmenyn påverkar inga sparade spel. I kampanjen ger en
 vunnen bordning skeppet, last, recovered `Raptor factory` och en kartplaceholder
 runt närmaste andra pirat. Se [bordningsstrid](boarding-combat.md).
 
+`kamerafokus-vid-bordningssoldatbyte` — **Fullständigt implementerat**. Vid
+byte till en egen soldat utanför bild ska kameran zooma ut tills soldaten syns,
+panorera till den och zooma in till samma nivå som tidigare. Hela figuren och
+HP/AP ska synas på kartytan som är fri från HUD. Synliga soldater kräver ingen
+kameraflytt. Detta gäller även automatiska turbyten.
+
+`kameraoverblick-vid-synlig-bordningsrorelse` — **Fullständigt implementerat**.
+När en fiende eller civilist rör sig inom synhåll ska kameran vid behov zooma
+ut så att figuren och alla egna aktiva soldater som ser den syns samtidigt.
+Kameran står still medan figuren rör sig och behåller översikten efteråt.
+Dolda positioner får aldrig avslöjas av kameran. Spelaren kan avbryta båda
+kameraflödena genom att själv panorera, zooma eller välja `Fit`. Minskad
+rörelse visar kamerans slutläge direkt.
+
 ## Kampanjbordning
 
 `piratflotta-med-lastfartyg`, `docka-babord-styrbord`, `lassta-dockade-skepp`,

@@ -942,6 +942,18 @@ export class BoardingBattle {
     );
   }
 
+  /** kameraoverblick-vid-synlig-bordningsrorelse: report actual active player observers. */
+  playerObserversOf(position: BoardingCell): readonly BoardingPerson[] {
+    return Object.freeze(
+      this.#state.people.filter(
+        (person) =>
+          person.side === 'player' &&
+          person.status === 'active' &&
+          this.#canSee(person, position),
+      ),
+    );
+  }
+
   /** sikt-och-eld-fran-vald-soldat: tiles a rifle shot could reach. */
   fireFrom(id: string): readonly BoardingCell[] {
     const observer = this.#state.people.find((entry) => entry.id === id);

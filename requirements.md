@@ -10,6 +10,13 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Bordningskamera:** `kamerafokus-vid-bordningssoldatbyte` och
+  `kameraoverblick-vid-synlig-bordningsrorelse` är **Fullständigt implementerat**.
+  Soldatbyte till någon utanför bild zoomar ut, panorerar och återställer
+  zoomnivån. Synliga fienders och civilisters rörelser ramar in figuren och
+  alla egna soldater som ser den. Kameran tar hänsyn till HUD och kan avbrytas
+  manuellt. Se [bordningsstrid](docs/boarding-combat.md).
+
 - **Belysning i bordning:** `ljuskallestyrd-bordningsbelysning`, `vertexljus-i-bordning` och `tileljus-for-sprites` är **Fullständigt implementerat**. Fasta kartlampor och ambientljus styr golv, väggar och sprites oberoende av aktuell sikt. Kravkopplade tester och visuell mobilgranskning verifierar ljus och väggsnitt. Se [bordningsstrid](docs/boarding-combat.md).
 
 - **Meterskala och skymmande väggar:** `meterskala-i-bordning` och `genomskinliga-skymmande-vaggar` är **Fullständigt implementerat**. En ruta är 1 × 1 m, väggar 2,4 m, dörröppningar 2,1 m och Half cover 1,2 m. Väggar som täcker upptäckta spelrutor visas som ogenomskinliga 40 cm höga snitt med synligt vägginre. Detta ersätter den tidigare transparensen efter uttrycklig beställning. Se [bordningsstrid](docs/boarding-combat.md).

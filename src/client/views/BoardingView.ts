@@ -1,3 +1,4 @@
+import type { BoardingCameraBounds } from '../controllers/BoardingCameraController.js';
 import {
   BoardingBattle,
   BOARDING_MELEE_AP,
@@ -39,6 +40,14 @@ export interface BoardingMapPort {
     fire?: readonly BoardingCell[],
     targets?: readonly BoardingTargetIndicator[],
   ): void;
+  setViewportProvider?(provider: () => BoardingCameraBounds | null): void;
+  beginPresentation?(): void;
+  endPresentation?(): void;
+  focusActor?(id: string): Promise<void>;
+  frameVisibleMovement?(
+    from: BoardingBattleState,
+    to: BoardingBattleState,
+  ): Promise<void>;
   playMotion?(
     from: BoardingBattleState,
     to: BoardingBattleState,
@@ -89,6 +98,8 @@ export class BoardingView {
   #destination: BoardingCell | null = null;
   #actorId: string | null = null;
   #busy = false;
+  #controlsHeight = 0;
+  #viewportWidth = 0;
   #playToken = 0;
   #pending: {
     state: BoardingBattleState;
@@ -161,6 +172,49 @@ export class BoardingView {
       map,
     );
     this.#mapName = map.name;
+    this.#map?.setViewportProvider?.(() => this.#viewport());
+  }
+
+  #viewport(): BoardingCameraBounds | null {
+    const canvas = this.#canvas.getBoundingClientRect();
+    if (canvas.width <= 0 || canvas.height <= 0) return null;
+    const hud = this.#dialog
+      .querySelector('.boarding-hud')!
+      .getBoundingClientRect();
+    const details = this.#details.getBoundingClientRect();
+    const controls = this.#controls.getBoundingClientRect();
+    if (canvas.width !== this.#viewportWidth) {
+      this.#controlsHeight = 0;
+      this.#viewportWidth = canvas.width;
+    }
+    this.#controlsHeight = Math.max(this.#controlsHeight, controls.height);
+    const lowerPanels = [
+      ...this.#dialog.querySelectorAll('.boarding-legend, .boarding-zoom'),
+    ]
+      .map((panel) => panel.getBoundingClientRect())
+      .filter((panel) => panel.width > 0 && panel.height > 0);
+    return {
+      left: 0,
+      right: canvas.width,
+      top: Math.max(0, hud.bottom - canvas.top, details.bottom - canvas.top),
+      bottom: Math.min(
+        canvas.height,
+        controls.bottom - canvas.top - this.#controlsHeight,
+        ...lowerPanels.map((panel) => panel.top - canvas.top),
+      ),
+    };
+  }
+
+  #needsFocus(from: BoardingBattleState, to: BoardingBattleState): boolean {
+    return (
+      (from.currentActorId !== to.currentActorId || from.round !== to.round) &&
+      to.people.some(
+        (person) =>
+          person.id === to.currentActorId &&
+          person.side === 'player' &&
+          person.status === 'active',
+      )
+    );
   }
 
   #battle(): BoardingBattle {
@@ -299,9 +353,10 @@ export class BoardingView {
     const newShot = !!shot && shot !== this.#playedShot;
     if (
       previous &&
-      (!alreadyThere || newShot) &&
-      ((presentation.length > 0 && this.#map?.playMotion) ||
-        (newShot && this.#map?.playShot))
+      (((!alreadyThere || newShot) &&
+        ((presentation.length > 0 && this.#map?.playMotion) ||
+          (newShot && this.#map?.playShot))) ||
+        (this.#map?.focusActor && this.#needsFocus(previous, state)))
     ) {
       const token = ++this.#playToken;
       void this.#play(previous, presentation, shot, state, notice, token);
@@ -320,6 +375,7 @@ export class BoardingView {
     token: number,
   ): Promise<void> {
     this.#busy = true;
+    this.#map?.beginPresentation?.();
     this.#destination = null;
     this.#paint(previous, shot ? 'Firing…' : 'Moving…');
     try {
@@ -336,12 +392,25 @@ export class BoardingView {
         const frame = frames[index];
         if (!frame) break;
         if (token !== this.#playToken) return;
+        if (this.#map?.frameVisibleMovement)
+          await this.#map.frameVisibleMovement(current, frame);
+        if (token !== this.#playToken) return;
         await this.#map?.playMotion?.(current, frame);
         current = frame;
         this.#paint(frame, 'Moving…');
       }
+      if (token !== this.#playToken) return;
+      if (
+        this.#map?.focusActor &&
+        this.#needsFocus(previous, final) &&
+        final.currentActorId
+      ) {
+        this.#paint(final, 'Focusing…');
+        await this.#map.focusActor(final.currentActorId);
+      }
     } finally {
       this.#busy = false;
+      this.#map?.endPresentation?.();
     }
     if (token !== this.#playToken) return;
     this.#paint(final, notice);
@@ -607,6 +676,7 @@ export class BoardingView {
     const fireTiles = overlayActor
       ? this.#battle().fireFrom(overlayActor.id)
       : [];
+    this.#viewport();
     this.#map?.render(
       state,
       this.#selectedId,

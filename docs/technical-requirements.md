@@ -1447,3 +1447,30 @@ Snabbsvitens körning 2026-11-04 passerade med 788 tester på 24,37 s. De längr
 - Genererade original och prompter sparas i repot. `scripts/prepare-boarding-characters.py`
   packar ett transparent WebP-bildark och typade källrektanglar. Spegling sker
   endast i vyn. Renderingen och figurernas klickytor använder samma bildgränser.
+
+## Automatisk bordningskamera
+
+`kamerafokus-vid-bordningssoldatbyte` och
+`kameraoverblick-vid-synlig-bordningsrorelse` är **Fullständigt implementerat**.
+BoardingCameraController beräknar oföränderliga kamerafaser oberoende av p5.
+BoardingView mäter fri kartyta utanför HUD, handlingsknappar, stridsdetaljer,
+zoom och förklaring. BoardingMapView projicerar figurernas bildrektanglar och
+HP/AP till världsmått. En anpassad marginal på högst 24 skärmpixlar bevaras.
+Soldatfokus har separata faser för utzoomning, panorering och återställd zoom,
+vardera 300 ms med mjuk interpolation. Tillfällig automatisk zoom kan
+underskrida den manuella miniminivån för att rymma avlägsna figurer.
+
+Översikten härleds enbart ur synliga personer i presentationens snapshots.
+BoardingBattle.playerObserversOf använder modellens verkliga siktregler utan
+att ändra striden. Både synliga ändpunkter och deras observatörer ramas in
+före steget. BoardingView inväntar kameran före figuranimationen och fokuserar
+nästa egna soldat efter avslutad handling. Skottets presentationIndex behåller
+ordningen före efterföljande rörelse.
+
+Manuella kameragester och Fit avbryter väntande faser och hämmar återstående
+automatik i aktuell presentation. Resize och dispose avslutar kamerans löften;
+versionskontroll avvisar gamla callbacks. En reservtimer avslutar faser även
+när bakgrundsflikar stryper requestAnimationFrame. prefers-reduced-motion
+hoppar till sista kamerafasen. Kameran är presentation utan nya sparfält.
+Kravnamngivna enhetstester skyddar geometri, siktsammansättning och ordning;
+riktade vytester skyddar avbrott och mobiltester verifierar fokus utanför bild.

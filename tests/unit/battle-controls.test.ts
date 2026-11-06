@@ -1128,3 +1128,145 @@ it('automatisk-bordningstur-vid-tom-ap / animerat-bordningsskott: shows the last
   expect(order).toEqual(['shot', 'move']);
   view.dispose();
 });
+
+it('kamerafokus-vid-bordningssoldatbyte: focuses a newly activated soldier even without movement and does not replay focus on rerender', async () => {
+  const initial = createTestBoardingBattle().snapshot;
+  const next = initial.people.find(
+    (person) =>
+      person.side === 'player' && person.id !== initial.currentActorId,
+  )!;
+  const focusActor = vi.fn(() => Promise.resolve());
+  const view = new BoardingView(document.body, vi.fn(), () => ({
+    render() {},
+    focusActor,
+    zoom() {},
+    fit() {},
+    dispose() {},
+  }));
+  view.render(initial);
+  expect(focusActor).not.toHaveBeenCalled();
+  const selected = {
+    ...initial,
+    currentActorId: next.id,
+    activation: { id: next.id, remaining: 7 },
+  };
+  view.render(selected);
+  view.render(selected);
+  await vi.waitFor(() =>
+    expect(document.querySelector('.boarding-status')!.textContent).toContain(
+      '7 AP',
+    ),
+  );
+  expect(focusActor).toHaveBeenCalledExactlyOnceWith(next.id);
+  view.dispose();
+});
+
+it('kameraoverblick-vid-synlig-bordningsrorelse / kamerafokus-vid-bordningssoldatbyte: frames before movement, preserves shot order and focuses the next soldier last', async () => {
+  const initial = createTestBoardingBattle().snapshot;
+  const actor = initial.people.find(
+    (person) =>
+      person.side === 'player' && person.id !== initial.currentActorId,
+  )!;
+  const civilian = initial.people.find((person) => person.side === 'civilian')!;
+  const frame = {
+    ...initial,
+    people: initial.people.map((person) =>
+      person.id === civilian.id
+        ? { ...person, position: { q: 13, r: 3 } }
+        : person,
+    ),
+  };
+  const final = {
+    ...frame,
+    currentActorId: actor.id,
+    activation: { id: actor.id, remaining: 12 },
+  };
+  const order: string[] = [];
+  const view = new BoardingView(document.body, vi.fn(), () => ({
+    render() {},
+    zoom() {},
+    fit() {},
+    dispose() {},
+    frameVisibleMovement: () => {
+      order.push('frame');
+      return Promise.resolve();
+    },
+    playMotion: () => {
+      order.push('move');
+      return Promise.resolve();
+    },
+    playShot: () => {
+      order.push('shot');
+      return Promise.resolve();
+    },
+    focusActor: () => {
+      order.push('focus');
+      return Promise.resolve();
+    },
+  }));
+  view.render(initial);
+  view.render(final, null, [frame], {
+    from: { q: 2, r: 5 },
+    to: { q: 5, r: 5 },
+    hit: true,
+    presentationIndex: 0,
+  });
+  await vi.waitFor(() =>
+    expect(order).toEqual(['shot', 'frame', 'move', 'focus']),
+  );
+  view.dispose();
+});
+
+it('kamerafokus-vid-bordningssoldatbyte: reserves the action HUD while busy and recalculates free space after rotation with a hidden legend', () => {
+  let width = 400;
+  let controlsHeight = 132;
+  const rect = (top: number, height: number, rectWidth = width) =>
+    ({
+      left: 0,
+      right: rectWidth,
+      top,
+      bottom: top + height,
+      width: rectWidth,
+      height,
+    }) as DOMRect;
+  const bounds = vi
+    .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+    .mockImplementation(function (this: HTMLElement) {
+      if (this.classList.contains('boarding-canvas'))
+        return rect(0, width === 400 ? 800 : 400);
+      if (this.classList.contains('boarding-hud')) return rect(0, 100);
+      if (this.classList.contains('boarding-details')) return rect(0, 50);
+      if (this.classList.contains('boarding-controls'))
+        return rect(
+          (width === 400 ? 720 : 360) - controlsHeight,
+          controlsHeight,
+        );
+      if (this.classList.contains('boarding-legend'))
+        return width === 400 ? rect(740, 20) : rect(0, 0, 0);
+      if (this.classList.contains('boarding-zoom'))
+        return rect(width === 400 ? 740 : 370, 20);
+      return rect(0, 0, 0);
+    });
+  let viewport: (() => { top: number; bottom: number } | null) | undefined;
+  const view = new BoardingView(document.body, vi.fn(), () => ({
+    render() {},
+    zoom() {},
+    fit() {},
+    dispose() {},
+    setViewportProvider(provider) {
+      viewport = provider;
+    },
+  }));
+  try {
+    view.render(createTestBoardingBattle().snapshot);
+    expect(viewport!()).toMatchObject({ top: 100, bottom: 588 });
+    controlsHeight = 30;
+    expect(viewport!()).toMatchObject({ top: 100, bottom: 588 });
+    width = 800;
+    controlsHeight = 60;
+    expect(viewport!()).toMatchObject({ top: 100, bottom: 300 });
+  } finally {
+    view.dispose();
+    bounds.mockRestore();
+  }
+});

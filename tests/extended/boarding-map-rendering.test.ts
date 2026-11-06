@@ -32,11 +32,13 @@ vi.mock('p5', () => ({
       runtime.sketch!.draw();
     }
     noLoop() {}
+    resizeCanvas() {}
     loop() {}
     remove() {}
   },
 }));
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -103,9 +105,13 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
       return prop in target ? (Reflect.get(target, prop) as unknown) : noop;
     },
   }) as unknown as p5;
+  let resize = () => {};
   vi.stubGlobal(
     'ResizeObserver',
     class {
+      constructor(callback: () => void) {
+        resize = callback;
+      }
       observe() {}
       disconnect() {}
     },
@@ -175,6 +181,7 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
   };
   return {
     view,
+    resize: () => resize(),
     calls,
     select,
     click,
@@ -308,4 +315,121 @@ it('traffchans-vid-synliga-fiender: keeps hit percentages readable when a mobile
     Number(textSize.mock.lastCall?.[0]) * camera.scale * 0.2,
   ).toBeGreaterThanOrEqual(11);
   view.dispose();
+});
+
+it('kamerafokus-vid-bordningssoldatbyte: reduced motion applies the final focus instantly at the original zoom', async () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true }));
+  const { view, player } = scene(true);
+  view.zoom(3);
+  const scale = view.cameraSnapshot.scale;
+  view.setViewportProvider(() => ({
+    left: 400,
+    top: 200,
+    right: 700,
+    bottom: 500,
+  }));
+  await view.focusActor(player.id);
+  expect(view.cameraSnapshot.scale).toBe(scale);
+  expect(
+    view.cameraSnapshot.offset.x + boardingIsoCenter(player.position).x * scale,
+  ).toBeCloseTo(550);
+  view.dispose();
+});
+
+it('kamerafokus-vid-bordningssoldatbyte: a manual zoom cancels pending phases and suppresses later automatic changes in that presentation', async () => {
+  vi.stubGlobal(
+    'requestAnimationFrame',
+    vi.fn(() => 1),
+  );
+  vi.stubGlobal('cancelAnimationFrame', vi.fn());
+  const { view, player } = scene(true);
+  view.setViewportProvider(() => ({
+    left: 400,
+    top: 200,
+    right: 700,
+    bottom: 500,
+  }));
+  view.beginPresentation();
+  const focus = view.focusActor(player.id);
+  view.zoom(0.8);
+  const manual = view.cameraSnapshot;
+  await focus;
+  await view.focusActor(player.id);
+  expect(view.cameraSnapshot).toEqual(manual);
+  view.endPresentation();
+  view.dispose();
+});
+
+it('kamerafokus-vid-bordningssoldatbyte: resize and disposal settle pending focus without stale camera updates', async () => {
+  vi.stubGlobal(
+    'requestAnimationFrame',
+    vi.fn(() => 1),
+  );
+  vi.stubGlobal('cancelAnimationFrame', vi.fn());
+  const { view, player, resize } = scene(true);
+  view.setViewportProvider(() => ({
+    left: 400,
+    top: 200,
+    right: 700,
+    bottom: 500,
+  }));
+  const focus = view.focusActor(player.id);
+  resize();
+  await focus;
+  const afterResize = view.cameraSnapshot;
+  const next = view.focusActor(player.id);
+  view.dispose();
+  await next;
+  expect(view.cameraSnapshot).toEqual(afterResize);
+});
+
+it('kamerafokus-vid-bordningssoldatbyte: fallback clocks finish all phases when browser animation frames are throttled', async () => {
+  vi.useFakeTimers();
+  vi.stubGlobal(
+    'requestAnimationFrame',
+    vi.fn(() => 1),
+  );
+  vi.stubGlobal('cancelAnimationFrame', vi.fn());
+  const { view, player } = scene(true);
+  const scale = view.cameraSnapshot.scale;
+  view.setViewportProvider(() => ({
+    left: 400,
+    top: 200,
+    right: 700,
+    bottom: 500,
+  }));
+  const focus = view.focusActor(player.id);
+  await vi.advanceTimersByTimeAsync(1200);
+  await focus;
+  expect(view.cameraSnapshot.scale).toBe(scale);
+  expect(view.cameraSnapshot.offset.x).toBeCloseTo(550);
+  view.dispose();
+});
+
+it('kamerafokus-vid-bordningssoldatbyte: a new already-visible focus cancels an older pending focus', async () => {
+  vi.stubGlobal(
+    'requestAnimationFrame',
+    vi.fn(() => 1),
+  );
+  vi.stubGlobal('cancelAnimationFrame', vi.fn());
+  const { view, player } = scene(true);
+  view.setViewportProvider(() => ({
+    left: 400,
+    top: 200,
+    right: 700,
+    bottom: 500,
+  }));
+  const completed = vi.fn();
+  const pending = view.focusActor(player.id).then(completed);
+  view.setViewportProvider(() => ({
+    left: -10000,
+    top: -10000,
+    right: 10000,
+    bottom: 10000,
+  }));
+  await view.focusActor(player.id);
+  await Promise.resolve();
+  expect(completed).toHaveBeenCalledOnce();
+  view.dispose();
+  await pending;
 });

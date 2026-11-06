@@ -51,6 +51,24 @@ sparplatser.
   kroppen täcker rutan bakom. Den förra soldaten sparar sin kvarvarande AP och
   återupptas när den valda är klar, så att någon som står i vägen kan flyttas
   undan.
+- `kamerafokus-vid-bordningssoldatbyte` — **Fullständigt implementerat**. Vid
+  manuellt eller automatiskt byte till en egen soldat utanför den fria kartytan
+  zoomar kameran först ut tills hela figuren med HP/AP syns, panorerar till
+  soldaten och zoomar in till exakt samma nivå som före bytet. En redan synlig
+  soldat ändrar inte kameran. HUD och en liten kantmarginal räknas bort.
+- `kameraoverblick-vid-synlig-bordningsrorelse` — **Fullständigt implementerat**.
+  Före varje synligt steg av en försvarare eller civilist zoomar kameran vid
+  behov ut så att figuren och alla aktiva egna soldater som ser den ryms.
+  Endast synliga start- och slutpositioner påverkar kameran; riktning, barriärer
+  och rök avgör vilka egna soldater som ser figuren. Kameran står still under
+  själva steget och behåller översikten efteråt. Dolda förflyttningar och
+  stillastående turbyten ger ingen sådan kameraflytt.
+
+  Båda kameraflödena använder mjuka övergångar. Manuell panorering, zoom eller
+  `Fit` avbryter automatiken för resten av den pågående uppspelningen utan
+  att stoppa figurerna. Minskad rörelse visar slutläget direkt. Storleksbyte
+  och stängning avslutar väntande kamerafaser säkert. Sparningar påverkas inte.
+
 - `klickskott-pa-vald-fiende` — **Fullständigt implementerat**. Första klicket
   på en fiende väljer målet. Ett andra klick på samma valda fiende avfyrar
   geväret om skottet är lagligt.

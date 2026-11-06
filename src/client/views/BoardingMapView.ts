@@ -1,3 +1,10 @@
+import {
+  BoardingCameraController,
+  type BoardingCameraBounds,
+  type BoardingCameraSnapshot,
+  type BoardingCameraSubject,
+  type BoardingCameraTransition,
+} from '../controllers/BoardingCameraController.js';
 import { BoardingLighting } from './BoardingLighting.js';
 import { BoardingLightPainter } from './BoardingLightPainter.js';
 import p5 from 'p5';
@@ -11,6 +18,7 @@ import {
   BoardingBattle,
   boardingActionPointsRemaining,
   type BoardingBattleState,
+  type BoardingPerson,
   type BoardingTargetIndicator,
 } from '../models/BoardingBattle.js';
 import type { BoardingPathMark } from '../models/BoardingPathPreview.js';
@@ -119,6 +127,12 @@ export class BoardingMapView implements BoardingMapPort {
     duration: number;
     resolve: () => void;
   } | null = null;
+  readonly #camera = new BoardingCameraController();
+  #viewportProvider: (() => BoardingCameraBounds | null) | undefined;
+  #cameraAnimation: { cancel: () => void } | null = null;
+  #cameraVersion = 0;
+  #presenting = false;
+  #cameraSuppressed = false;
   #scale = 1;
   #offset: Point = { x: 0, y: 0 };
   #floorTile: p5.Image | null = null;
@@ -199,6 +213,7 @@ export class BoardingMapView implements BoardingMapPort {
     }, container);
     this.#observer = new ResizeObserver(() => {
       if (!this.#ready || this.#disposed) return;
+      this.#cancelCamera(true);
       this.#p5.resizeCanvas(
         Math.max(1, container.clientWidth),
         Math.max(1, container.clientHeight),
@@ -233,6 +248,7 @@ export class BoardingMapView implements BoardingMapPort {
   }
 
   fit(): void {
+    this.#cancelCamera(true);
     if (!this.#ready || this.container.clientWidth < 1) {
       this.#fitPending = true;
       return;
@@ -259,6 +275,7 @@ export class BoardingMapView implements BoardingMapPort {
   }
 
   #zoomAt(factor: number, anchor: Point): void {
+    this.#cancelCamera(true);
     const next = Math.max(0.08, Math.min(3, this.#scale * factor));
     const ratio = next / this.#scale;
     this.#offset = {
@@ -267,6 +284,156 @@ export class BoardingMapView implements BoardingMapPort {
     };
     this.#scale = next;
     if (this.#ready) void this.#p5.redraw();
+  }
+
+  get cameraSnapshot(): BoardingCameraSnapshot {
+    return Object.freeze({
+      scale: this.#scale,
+      offset: Object.freeze({ ...this.#offset }),
+    });
+  }
+
+  setViewportProvider(provider: () => BoardingCameraBounds | null): void {
+    this.#viewportProvider = provider;
+  }
+
+  beginPresentation(): void {
+    this.#presenting = true;
+    this.#cameraSuppressed = false;
+  }
+
+  endPresentation(): void {
+    this.#presenting = false;
+    this.#cameraSuppressed = false;
+  }
+
+  #cameraBounds(): BoardingCameraBounds {
+    return (
+      this.#viewportProvider?.() ?? {
+        left: 0,
+        top: 0,
+        right: this.#p5.width,
+        bottom: this.#p5.height,
+      }
+    );
+  }
+
+  #cameraSubject(person: BoardingPerson): BoardingCameraSubject {
+    const center = boardingIsoCenter(person.position);
+    const sprite = boardingCharacterSprite(
+      person.side,
+      center,
+      person.crouched,
+      person.facing,
+    ).destination;
+    const left = Math.min(sprite.x, center.x - 18);
+    const right = Math.max(sprite.x + sprite.width, center.x + 18);
+    return {
+      x: left,
+      y: sprite.y - 14,
+      width: right - left,
+      height: sprite.height + 14,
+    };
+  }
+
+  focusActor(id: string): Promise<void> {
+    this.#cancelCamera();
+    const person = this.#state?.people.find(
+      (entry) =>
+        entry.id === id && entry.side === 'player' && entry.status === 'active',
+    );
+    return this.#playCamera(
+      person
+        ? this.#camera.focus(
+            this.cameraSnapshot,
+            this.#cameraSubject(person),
+            this.#cameraBounds(),
+          )
+        : [],
+    );
+  }
+
+  frameVisibleMovement(
+    from: BoardingBattleState,
+    to: BoardingBattleState,
+  ): Promise<void> {
+    if (this.#cameraSuppressed) return Promise.resolve();
+    const subjects = this.#camera
+      .movementSubjects(this.map, from, to)
+      .map((person) => this.#cameraSubject(person));
+    return this.#playCamera(
+      this.#camera.overview(
+        this.cameraSnapshot,
+        subjects,
+        this.#cameraBounds(),
+      ),
+    );
+  }
+
+  #applyCamera(snapshot: BoardingCameraSnapshot): void {
+    this.#scale = snapshot.scale;
+    this.#offset = snapshot.offset;
+    if (this.#ready && !this.#disposed) void this.#p5.redraw();
+  }
+
+  #cancelCamera(manual = false): void {
+    this.#cameraVersion++;
+    if (manual && this.#presenting) this.#cameraSuppressed = true;
+    this.#cameraAnimation?.cancel();
+    this.#cameraAnimation = null;
+  }
+
+  async #playCamera(
+    phases: readonly BoardingCameraTransition[],
+  ): Promise<void> {
+    if (
+      !this.#ready ||
+      this.#disposed ||
+      this.#cameraSuppressed ||
+      !phases.length
+    )
+      return;
+    this.#cancelCamera();
+    const version = this.#cameraVersion;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      this.#applyCamera(phases.at(-1)!.to);
+      return;
+    }
+    for (const phase of phases) {
+      if (version !== this.#cameraVersion) return;
+      const completed = await this.#playCameraPhase(phase);
+      if (!completed) return;
+    }
+  }
+
+  #playCameraPhase(phase: BoardingCameraTransition): Promise<boolean> {
+    return new Promise((resolve) => {
+      const started = performance.now();
+      let frame = 0;
+      let settled = false;
+      const finish = (completed: boolean) => {
+        if (settled) return;
+        settled = true;
+        cancelAnimationFrame(frame);
+        clearTimeout(timer);
+        this.#cameraAnimation = null;
+        resolve(completed);
+      };
+      const tick = (now: number) => {
+        if (settled) return;
+        const progress = Math.min(1, (now - started) / phase.duration);
+        this.#applyCamera(this.#camera.sample(phase, progress));
+        if (progress >= 1) finish(true);
+        else frame = requestAnimationFrame(tick);
+      };
+      this.#cameraAnimation = { cancel: () => finish(false) };
+      // Finish even when background tabs throttle requestAnimationFrame.
+      const timer = setTimeout(() => {
+        this.#applyCamera(phase.to);
+        finish(true);
+      }, phase.duration + 80);
+      frame = requestAnimationFrame(tick);
+    });
   }
 
   playMotion(
@@ -400,6 +567,7 @@ export class BoardingMapView implements BoardingMapPort {
           )
             this.#dragged = true;
           if (this.#dragged) {
+            this.#cancelCamera(true);
             this.#offset = {
               x: this.#offset.x + next.x - previous.x,
               y: this.#offset.y + next.y - previous.y,
@@ -1402,6 +1570,7 @@ export class BoardingMapView implements BoardingMapPort {
 
   dispose(): void {
     this.#disposed = true;
+    this.#cancelCamera();
     this.#finishMotion();
     this.#events.abort();
     this.#observer.disconnect();

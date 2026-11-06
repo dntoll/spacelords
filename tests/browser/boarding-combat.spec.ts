@@ -107,3 +107,62 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   ).toBeVisible();
   expect(await page.evaluate(() => ({ ...localStorage }))).toEqual(before);
 });
+
+test('kamerafokus-vid-bordningssoldatbyte: selecting an offscreen soldier reveals the figure above the mobile HUD', async ({
+  page,
+}, testInfo) => {
+  await page.goto('./');
+  await page
+    .getByRole('button', { name: 'Test boarding (cheat)', exact: true })
+    .click();
+  const dialog = page.getByRole('dialog', { name: 'Boarding combat' });
+  const canvas = dialog.locator('canvas');
+  await expect(canvas).toBeVisible();
+  const goldPixels = () =>
+    canvas.evaluate((element) => {
+      const canvas = element as HTMLCanvasElement;
+      const context = canvas.getContext('2d')!;
+      const pixels = context.getImageData(
+        0,
+        0,
+        canvas.width,
+        canvas.height,
+      ).data;
+      let count = 0;
+      for (let index = 0; index < pixels.length; index += 4)
+        if (
+          pixels[index] === 244 &&
+          pixels[index + 1] === 207 &&
+          pixels[index + 2] === 90
+        )
+          count++;
+      return count;
+    });
+  for (let index = 0; index < 8; index++)
+    await dialog.getByRole('button', { name: 'Zoom in', exact: true }).click();
+  const box = (await canvas.boundingBox())!;
+  for (let index = 0; index < 4; index++) {
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(
+      box.x + box.width / 2 + 120,
+      box.y + box.height / 2 + 150,
+      { steps: 2 },
+    );
+    await page.mouse.up();
+  }
+  await expect.poll(goldPixels).toBe(0);
+  const soldier = dialog
+    .locator('.boarding-unit:not(.boarding-unit-active)')
+    .first();
+  const label = (await soldier.locator('strong').textContent())!;
+  await soldier.click();
+  await expect(dialog.locator('.boarding-status')).toContainText(label);
+  await expect.poll(goldPixels).toBeGreaterThan(20);
+  await dialog.screenshot({
+    path: testInfo.outputPath('boarding-camera-focus.png'),
+  });
+  await dialog
+    .getByRole('button', { name: 'Close boarding', exact: true })
+    .click();
+});
