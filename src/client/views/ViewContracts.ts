@@ -21,6 +21,14 @@ import type {
   Technology,
 } from '../models/Game.js';
 import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
+import type { BoardingMapId } from '../../shared/boarding-map-format.js';
+import type {
+  EditorBrushButton,
+  EditorPaintCell,
+  EditorProjection,
+  EditorTool,
+  SpriteTransform,
+} from '../models/boarding/BoardingEditor.js';
 
 export type AppIntent =
   | { readonly type: 'test-battle' }
@@ -262,6 +270,34 @@ export type AppIntent =
       readonly amount: number;
       readonly target: string | null;
     }
+  | { readonly type: 'open-editor' | 'close-editor' }
+  | { readonly type: 'editor-undo' | 'editor-redo' | 'editor-save' }
+  | {
+      readonly type: 'confirm-editor-switch' | 'cancel-editor-switch';
+    }
+  | { readonly type: 'editor-select-map'; readonly id: BoardingMapId }
+  | {
+      readonly type: 'editor-resize';
+      readonly width: number;
+      readonly height: number;
+    }
+  | {
+      readonly type: 'editor-bind-tool';
+      readonly button: EditorBrushButton;
+      readonly tool: EditorTool;
+    }
+  | {
+      readonly type: 'editor-paint';
+      readonly button: EditorBrushButton;
+      readonly cells: readonly EditorPaintCell[];
+    }
+  | {
+      readonly type: 'editor-sprite-transform';
+      readonly sprite: SpriteTransform;
+    }
+  | { readonly type: 'editor-adjust-sprite'; readonly value: boolean }
+  | { readonly type: 'editor-projection'; readonly value: EditorProjection }
+  | { readonly type: 'editor-opacity'; readonly value: number }
   | {
       readonly type: 'pointer-start' | 'pointer-move' | 'pointer-end';
       readonly id: number;

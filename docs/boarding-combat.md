@@ -210,6 +210,22 @@ sparplatser.
   alla stridande och ljud, öppnar vanliga dörrar men hackar inte och försöker
   använda escape pods. Överlevande ger ett bonusutfall utan kampanjbelöning i
   prototypen.
+- `lokal-bordningskarteditor` — **Fullständigt implementerat**. En editor för
+  skeppens bordningslayouter körs bara mot den lokala servern. Knappen
+  `Ship layouts` i skärmens nederkant visas när `GET /api/boarding-maps`
+  svarar med minst en karta, även ovanpå sparskärmen. Utan API, som på Pages
+  och i vanliga tester, förblir knappen dold. Där väljs skepp, rutnätets
+  bredd och höjd, en pensel för vänster musknapp och en för höger, och
+  skeppets sprite som bakgrund som kan panoreras och skalas. Undo och redo
+  använder command pattern. Spara skriver över den valda kartfilen i
+  `src/client/maps/` och behåller `[lights]` tillsammans med övriga lager.
+  Skrovgenombrott och vakuum ingår inte. Kampanj och sparplatser påverkas inte.
+- `isometrisk-bordningskarteditor` — **Fullständigt implementerat**. Samma
+  utkast kan visas med stridens klassiska 2:1-diamanter, golv- och väggtexturer
+  och upphöjda barriärer. Väljaren `View` växlar mellan `Isometric` och
+  `Top-down`. Ovanifrån används för spritejustering. Isometrin visar samma
+  celler som bordningsstriden. Penslar, storlek, undo och spara fungerar i
+  båda vyerna.
 
 ## Karta och dörrar
 

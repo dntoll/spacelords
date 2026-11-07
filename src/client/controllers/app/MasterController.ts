@@ -1,5 +1,6 @@
 import { SaveController } from '../saves/SaveController.js';
 import { BoardingController } from '../boarding/BoardingController.js';
+import { BoardingEditorController } from '../boarding/BoardingEditorController.js';
 import { BattleController } from '../battle/BattleController.js';
 import { ResearchController } from '../research/ResearchController.js';
 import { PlanetController } from '../planet/PlanetController.js';
@@ -20,6 +21,7 @@ import { isMapScreen } from '../../models/ProductionMap.js';
 export class MasterController {
   readonly #saveCase: SaveController;
   readonly #boarding: BoardingController;
+  readonly #editor: BoardingEditorController;
   readonly #battle: BattleController;
   readonly #research: ResearchController;
   readonly #planet: PlanetController;
@@ -53,6 +55,7 @@ export class MasterController {
     this.#view = view;
     this.#saveCase = new SaveController(model.saveCase);
     this.#boarding = new BoardingController(model.boarding);
+    this.#editor = new BoardingEditorController(model.editorCase);
     this.#battle = new BattleController(model.battle);
     this.#research = new ResearchController(model.researchCase);
     this.#planet = new PlanetController(model.planet);
@@ -69,6 +72,9 @@ export class MasterController {
     this.#view.bind((intent) => this.#handle(intent));
     this.#battle.autoSelectBattleShip();
     this.#render();
+    void this.#editor.refresh().then(() => {
+      if (!this.#disposed) this.#render();
+    });
     this.#schedulePlayback();
   }
 
@@ -145,6 +151,7 @@ export class MasterController {
       previous.eventPlayback ||
       previous.turnMovement ||
       previous.boardingBattle ||
+      previous.editor ||
       previous.tacticalBattle ||
       previous.battleFeedback ||
       previous.notice ||
@@ -283,6 +290,21 @@ export class MasterController {
         'test-boarding',
         'boarding-command',
         'close-boarding',
+        'open-editor',
+        'close-editor',
+        'editor-select-map',
+        'editor-resize',
+        'editor-bind-tool',
+        'editor-paint',
+        'editor-sprite-transform',
+        'editor-adjust-sprite',
+        'editor-projection',
+        'editor-opacity',
+        'editor-undo',
+        'editor-redo',
+        'editor-save',
+        'confirm-editor-switch',
+        'cancel-editor-switch',
         'request-clear-slot',
         'cancel-clear-slot',
         'confirm-clear-slot',
@@ -511,6 +533,51 @@ export class MasterController {
         break;
       case 'confirm-clear-slot':
         this.#saveCase.confirmClearSlot();
+        break;
+      case 'open-editor':
+        void this.#runEditor(() => this.#editor.open());
+        return;
+      case 'close-editor':
+        this.#editor.close();
+        break;
+      case 'editor-select-map':
+        void this.#runEditor(() => this.#editor.select(intent.id));
+        return;
+      case 'editor-resize':
+        this.#editor.resize(intent.width, intent.height);
+        break;
+      case 'editor-bind-tool':
+        this.#editor.bindTool(intent.button, intent.tool);
+        break;
+      case 'editor-paint':
+        this.#editor.paint(intent.button, intent.cells);
+        break;
+      case 'editor-sprite-transform':
+        this.#editor.spriteTransform(intent.sprite);
+        break;
+      case 'editor-adjust-sprite':
+        this.#editor.adjustSprite(intent.value);
+        break;
+      case 'editor-projection':
+        this.#editor.projection(intent.value);
+        break;
+      case 'editor-opacity':
+        this.#editor.opacity(intent.value);
+        break;
+      case 'editor-undo':
+        this.#editor.undo();
+        break;
+      case 'editor-redo':
+        this.#editor.redo();
+        break;
+      case 'editor-save':
+        void this.#runEditor(() => this.#editor.save());
+        return;
+      case 'confirm-editor-switch':
+        void this.#runEditor(() => this.#editor.confirmSwitch());
+        return;
+      case 'cancel-editor-switch':
+        this.#editor.cancelSwitch();
         break;
       case 'open-map':
         this.#starMap.openMap();
@@ -812,6 +879,9 @@ export class MasterController {
       !intent.type.startsWith('research-') &&
       !intent.type.startsWith('supply-') &&
       !intent.type.startsWith('open-') &&
+      !intent.type.startsWith('editor-') &&
+      intent.type !== 'close-editor' &&
+      intent.type !== 'cancel-editor-switch' &&
       !(
         intent.type.startsWith('map-production-') &&
         intent.type !== 'map-production-build'
@@ -845,6 +915,16 @@ export class MasterController {
       this.#model.save();
     this.#render();
     this.#schedulePlayback();
+  }
+
+  async #runEditor(action: () => Promise<void>): Promise<void> {
+    try {
+      await action();
+    } catch (error) {
+      this.#model.reportError(error);
+    }
+    if (this.#disposed) return;
+    this.#render();
   }
 
   #cancelPointer(keepRouteSource = false): void {

@@ -1,5 +1,10 @@
 import { SaveFacade } from './saves/SaveFacade.js';
 import { BoardingFacade } from './boarding/BoardingFacade.js';
+import {
+  BoardingEditorFacade,
+  type BoardingEditorCatalogItem,
+} from './boarding/BoardingEditorFacade.js';
+import type { BoardingEditorSnapshot } from './boarding/BoardingEditor.js';
 import { BattleFacade } from './battle/BattleFacade.js';
 import { ResearchFacade } from './research/ResearchFacade.js';
 import { PlanetFacade } from './planet/PlanetFacade.js';
@@ -213,10 +218,15 @@ export interface AppReadModel {
   readonly events: readonly GameEvent[];
   readonly notice: PlayerNotice;
   readonly productionReceipt: ProductionReceipt | null;
+  readonly editorAvailable: boolean;
+  readonly editorCatalog: readonly BoardingEditorCatalogItem[];
+  readonly editor: BoardingEditorSnapshot | null;
+  readonly pendingEditorDiscard: BoardingEditorCatalogItem['id'] | null;
 }
 
 export class AppModel {
   readonly saveCase: SaveFacade;
+  readonly editorCase = new BoardingEditorFacade();
   readonly boarding: BoardingFacade;
   readonly battle: BattleFacade;
   readonly researchCase: ResearchFacade;
@@ -565,6 +575,10 @@ export class AppModel {
       events: this.#game.events,
       notice: this.#notice,
       productionReceipt: this.#productionReceipt,
+      editorAvailable: this.editorCase.available,
+      editorCatalog: this.editorCase.catalog,
+      editor: this.editorCase.editor,
+      pendingEditorDiscard: this.editorCase.pendingDiscard,
     });
   }
 
@@ -588,6 +602,37 @@ export class AppModel {
   }
   clearNotice(): void {
     this.#notice = null;
+  }
+  setEditorCatalog(maps: readonly BoardingEditorCatalogItem[]): void {
+    this.editorCase.setCatalog(maps);
+  }
+  openEditor(id: BoardingEditorCatalogItem['id'], source: string): void {
+    this.editorCase.open(id, source);
+  }
+  editorBindTool(...args: Parameters<BoardingEditorFacade['bindTool']>): void {
+    this.editorCase.bindTool(...args);
+  }
+  editorPaint(...args: Parameters<BoardingEditorFacade['paint']>): void {
+    this.editorCase.paint(...args);
+  }
+  editorResize(...args: Parameters<BoardingEditorFacade['resize']>): void {
+    this.editorCase.resize(...args);
+  }
+  editorUndo(): void {
+    this.editorCase.undo();
+  }
+  editorAdjustSprite(
+    ...args: Parameters<BoardingEditorFacade['adjustSprite']>
+  ): void {
+    this.editorCase.adjustSprite(...args);
+  }
+  editorProjection(
+    ...args: Parameters<BoardingEditorFacade['projection']>
+  ): void {
+    this.editorCase.projection(...args);
+  }
+  requestEditorMap(id: BoardingEditorCatalogItem['id']): void {
+    this.editorCase.requestMap(id);
   }
 
   fleetAtPoint(point: Point): string | null {

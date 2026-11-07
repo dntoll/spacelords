@@ -36,6 +36,12 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Bordningsgrafik:** `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock, reactor, Half cover och öppna och stängda dörrar i två riktningar visas med isometrisk grafik utan inbyggt golv. Se [bordningsstrid](docs/boarding-combat.md).
 
+- **Lokal bordningskarteditor:** `lokal-bordningskarteditor` och
+  `isometrisk-bordningskarteditor` är **Fullständigt implementerat**. Knappen
+  `Ship layouts` visas i nederkanten när den lokala servern har minst en karta,
+  och editorn öppnas ovanpå aktuell vy. `View` växlar mellan `Isometric` och
+  `Top-down`. Se [bordningsstrid](docs/boarding-combat.md).
+
 - **Dockningskorridor:** `dockningskorridor-sprite` är **Fullständigt implementerat**. Dockade skepp sammanbinds visuellt med en korridor. Se [bordningsstrid](docs/boarding-combat.md).
 
 - **Raptor-grafik:** `egen-raptor-grafik` är **Fullständigt implementerat**. Raptor och Raptor factory har egna sprites respektive symboler; fabrikens porträtt återstår. Se [skeppsgrafik](docs/ship-artwork.md).
