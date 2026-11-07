@@ -1,11 +1,11 @@
-import type { AppReadModel } from '../models/AppModel.js';
+import type { AppReadModel } from '../../models/AppModel.js';
 import {
   decisionScreen,
   needsAttention,
   type Decision,
-} from '../models/Decisions.js';
-import type { IntentHandler } from './ViewContracts.js';
-import { button, element } from './dom.js';
+} from '../../models/Decisions.js';
+import type { IntentHandler } from '../ViewContracts.js';
+import { button, element } from '../dom.js';
 
 function nextStep(decision: Decision): string {
   if (decision.kind === 'route')

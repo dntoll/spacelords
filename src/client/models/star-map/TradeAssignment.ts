@@ -1,7 +1,7 @@
-import type { FleetSnapshot } from './Game.js';
-import type { HexCoordinate } from './HexCoordinate.js';
-import type { TradeRouteSnapshot } from './Logistics.js';
-import { armedShipCount } from './ShipEquipment.js';
+import type { FleetSnapshot } from '../Game.js';
+import type { HexCoordinate } from '../HexCoordinate.js';
+import type { TradeRouteSnapshot } from '../Logistics.js';
+import { armedShipCount } from '../ShipEquipment.js';
 
 export function tradeAssignmentIssue(
   fleet: FleetSnapshot,

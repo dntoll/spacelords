@@ -5,7 +5,7 @@ import { pirateAsFleet } from '../../src/client/models/PirateFleet.js';
 import { FleetMapLayout } from '../../src/client/models/star-map/FleetMapLayout.js';
 import { selectMapPoint } from './map-helpers.js';
 import { endTurn, startFirstSlot } from './save-helpers.js';
-import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import type { SavedGame } from '../../src/client/models/saves/SaveRepository.js';
 
 for (const screen of ['Star map', 'Fleets']) {
   test(`rymdpirater-per-stjarna / flottstrid-per-hex / rymdpiraters-sparning: ${screen} shows hostile read-only pirates and persists combat`, async ({

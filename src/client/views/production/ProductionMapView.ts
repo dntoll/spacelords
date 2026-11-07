@@ -1,18 +1,18 @@
-import { ShipOrders } from '../models/ShipOrders.js';
-import type { ShipType } from '../models/Game.js';
-import type { AppReadModel } from '../models/AppModel.js';
-import type { PlanetGameSnapshot } from '../models/Game.js';
-import type { SupplyStep } from '../models/ProjectSupply.js';
-import type { ProductionOption } from '../models/ProductionMap.js';
-import type { IntentHandler } from './ViewContracts.js';
+import { ShipOrders } from '../../models/ShipOrders.js';
+import type { ShipType } from '../../models/Game.js';
+import type { AppReadModel } from '../../models/AppModel.js';
+import type { PlanetGameSnapshot } from '../../models/Game.js';
+import type { SupplyStep } from '../../models/ProjectSupply.js';
+import type { ProductionOption } from '../../models/ProductionMap.js';
+import type { IntentHandler } from '../ViewContracts.js';
 import {
   catalogIcon,
   catalogHeading,
   categoryButtons,
-} from './CatalogControls.js';
-import { renderMapLocationHeading } from './MapLocationHeading.js';
-import { button, element, queueButton } from './dom.js';
-import { bindQueueOrder, decorateQueueRow } from './QueueView.js';
+} from '../CatalogControls.js';
+import { renderMapLocationHeading } from '../MapLocationHeading.js';
+import { button, element, queueButton } from '../dom.js';
+import { bindQueueOrder, decorateQueueRow } from '../QueueView.js';
 
 function presenceLabel(option: ProductionOption): string {
   return {

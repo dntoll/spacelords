@@ -1,5 +1,5 @@
-import { ShipOrders } from '../models/ShipOrders.js';
-import type { AppReadModel } from '../models/AppModel.js';
+import { ShipOrders } from '../../models/ShipOrders.js';
+import type { AppReadModel } from '../../models/AppModel.js';
 import {
   BUILDINGS,
   factoryShips,
@@ -8,16 +8,16 @@ import {
   type FleetSnapshot,
   type ShipType,
   SHIPS,
-} from '../models/Game.js';
-import type { Component } from '../models/Economy.js';
-import type { IntentHandler } from './ViewContracts.js';
+} from '../../models/Game.js';
+import type { Component } from '../../models/Economy.js';
+import type { IntentHandler } from '../ViewContracts.js';
 import {
   categoryButtons,
   catalogItem,
   catalogHeading,
-} from './CatalogControls.js';
-import { button, element } from './dom.js';
-import { bindQueueOrder, decorateQueueRow } from './QueueView.js';
+} from '../CatalogControls.js';
+import { button, element } from '../dom.js';
+import { bindQueueOrder, decorateQueueRow } from '../QueueView.js';
 
 type Menus = Pick<AppReadModel, 'phase'> &
   Partial<

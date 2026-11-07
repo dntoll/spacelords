@@ -2,7 +2,7 @@
 import { expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 
 it('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: the map panel administers multiple fleets and retains real positions', () => {

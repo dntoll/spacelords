@@ -1,5 +1,5 @@
-import type { IntentHandler } from './ViewContracts.js';
-import { button, element } from './dom.js';
+import type { IntentHandler } from '../ViewContracts.js';
+import { button, element } from '../dom.js';
 
 export function renderTurnActions(emit: IntentHandler): HTMLElement {
   const actions = element('div', 'turn-actions');

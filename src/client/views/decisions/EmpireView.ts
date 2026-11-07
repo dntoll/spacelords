@@ -1,7 +1,7 @@
-import type { AppReadModel } from '../models/AppModel.js';
-import { needsAttention } from '../models/Decisions.js';
-import type { IntentHandler } from './ViewContracts.js';
-import { button, element } from './dom.js';
+import type { AppReadModel } from '../../models/AppModel.js';
+import { needsAttention } from '../../models/Decisions.js';
+import type { IntentHandler } from '../ViewContracts.js';
+import { button, element } from '../dom.js';
 
 export function renderDecisions(
   model: AppReadModel,

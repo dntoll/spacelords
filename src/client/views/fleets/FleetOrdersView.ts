@@ -1,7 +1,7 @@
-import type { AppReadModel } from '../models/AppModel.js';
-import type { FleetSnapshot } from '../models/Game.js';
-import type { IntentHandler } from './ViewContracts.js';
-import { button, element } from './dom.js';
+import type { AppReadModel } from '../../models/AppModel.js';
+import type { FleetSnapshot } from '../../models/Game.js';
+import type { IntentHandler } from '../ViewContracts.js';
+import { button, element } from '../dom.js';
 import { bindFleetOrderDrag } from './FleetOrderDrag.js';
 
 /** egen-ordervy: keep the three common actions readable beside the fleet. */

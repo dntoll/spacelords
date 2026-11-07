@@ -1,7 +1,7 @@
 import type { ShipType } from './Game.js';
 import { dockIssue as dockingIssue } from './Docking.js';
 import { HexCoordinate, HexGeometry } from './HexCoordinate.js';
-import { ShipFootprint } from './ShipFootprint.js';
+import { ShipFootprint } from './battle/ShipFootprint.js';
 
 export type BattleSide = 'player' | 'enemy';
 export type CombatShipType = ShipType | 'Space pirate';

@@ -1,15 +1,15 @@
-import type { AppReadModel } from '../models/AppModel.js';
-import { BUILDINGS, type BuildType } from '../models/Game.js';
-import type { IntentHandler } from './ViewContracts.js';
-import { buildingImage } from './BuildingImage.js';
+import type { AppReadModel } from '../../models/AppModel.js';
+import { BUILDINGS, type BuildType } from '../../models/Game.js';
+import type { IntentHandler } from '../ViewContracts.js';
+import { buildingImage } from '../BuildingImage.js';
 import {
   BUILDING_CATEGORIES,
   buildingCategory,
   categoryButtons,
   catalogItem,
   catalogHeading,
-} from './CatalogControls.js';
-import { button, element, labelValue } from './dom.js';
+} from '../CatalogControls.js';
+import { button, element, labelValue } from '../dom.js';
 
 export function renderBuildSelection(
   model: AppReadModel,

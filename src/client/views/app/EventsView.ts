@@ -1,5 +1,5 @@
-import type { GameEvent } from '../models/Game.js';
-import { element } from './dom.js';
+import type { GameEvent } from '../../models/Game.js';
+import { element } from '../dom.js';
 import { renderEventContent } from './EventContent.js';
 
 export function renderCombatLog(lines: readonly string[]): HTMLElement {

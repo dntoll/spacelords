@@ -1,4 +1,7 @@
-import type { SavedGame, SaveRepository } from '../models/SaveRepository.js';
+import type {
+  SavedGame,
+  SaveRepository,
+} from '../models/saves/SaveRepository.js';
 
 export class BrowserSaveRepository implements SaveRepository {
   constructor(

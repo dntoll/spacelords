@@ -1,6 +1,6 @@
-import type { Camera } from './Camera.js';
-import type { Game } from './Game.js';
-import { HexGeometry, type Point } from './HexCoordinate.js';
+import type { Camera } from '../Camera.js';
+import type { Game } from '../Game.js';
+import { HexGeometry, type Point } from '../HexCoordinate.js';
 import { tradeAssignmentIssue } from './TradeAssignment.js';
 import { TradeRouteMapLayout } from './TradeRouteMapLayout.js';
 

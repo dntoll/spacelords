@@ -7,7 +7,7 @@ import {
   HexCoordinate,
   HexGeometry,
 } from '../../src/client/models/HexCoordinate.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 

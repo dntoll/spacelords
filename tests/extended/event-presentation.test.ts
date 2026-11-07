@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppView } from '../../src/client/views/AppView.js';
-import { renderEventContent } from '../../src/client/views/EventContent.js';
-import { renderEvents } from '../../src/client/views/EventsView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
+import { renderEventContent } from '../../src/client/views/app/EventContent.js';
+import { renderEvents } from '../../src/client/views/app/EventsView.js';
 import { BUILDING_IMAGES } from '../../src/client/views/BuildingImage.js';
 import { BUILDING_SYMBOLS } from '../../src/client/views/BuildingSymbols.js';
 import { SHIP_IMAGES } from '../../src/client/views/ShipImages.js';

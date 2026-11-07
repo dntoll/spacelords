@@ -3,8 +3,8 @@ import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, it, expect, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
-import { renderPlanet } from '../../src/client/views/PlanetView.js';
-import { renderBuildSelection } from '../../src/client/views/BuildSelectionView.js';
+import { renderPlanet } from '../../src/client/views/planet/PlanetView.js';
+import { renderBuildSelection } from '../../src/client/views/planet/BuildSelectionView.js';
 import { renderResearch } from '../../src/client/views/research/ResearchView.js';
 import {
   BUILDINGS,
@@ -15,7 +15,7 @@ import {
   BUILDING_IMAGES,
   buildingImage,
 } from '../../src/client/views/BuildingImage.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 
 function setup() {
   const root = document.createElement('div');

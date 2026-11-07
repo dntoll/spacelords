@@ -11,7 +11,7 @@ import {
 } from '../../src/client/models/TacticalBattle.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import type { SaveRepository } from '../../src/client/models/SaveRepository.js';
+import type { SaveRepository } from '../../src/client/models/saves/SaveRepository.js';
 import {
   BoardingBattle,
   type BoardingBattleState,
@@ -26,7 +26,7 @@ import {
   BoardingView,
   type BoardingMapFactory,
 } from '../../src/client/views/boarding/BoardingView.js';
-import { renderSaveSlots } from '../../src/client/views/SaveSlotsView.js';
+import { renderSaveSlots } from '../../src/client/views/saves/SaveSlotsView.js';
 import type { AppIntent } from '../../src/client/views/ViewContracts.js';
 
 afterEach(() => {

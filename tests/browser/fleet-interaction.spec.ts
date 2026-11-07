@@ -1,7 +1,7 @@
 import { formFleet } from './fleet-helpers.js';
 import { Game } from '../../src/client/models/Game.js';
 import { FleetMapLayout } from '../../src/client/models/star-map/FleetMapLayout.js';
-import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import type { SavedGame } from '../../src/client/models/saves/SaveRepository.js';
 import { selectMapObject } from './map-helpers.js';
 import { startFirstSlot } from './save-helpers.js';
 import { expect, test, type Page } from '@playwright/test';

@@ -3,7 +3,7 @@ import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { selectMapHex } from './map-helpers.js';
 import { expect, test } from '@playwright/test';
 import { discoveryState } from '../fixtures/exploration.js';
-import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import type { SavedGame } from '../../src/client/models/saves/SaveRepository.js';
 import { startFirstSlot, endTurn, ignoreEventsUntil } from './save-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import { Game } from '../../src/client/models/Game.js';

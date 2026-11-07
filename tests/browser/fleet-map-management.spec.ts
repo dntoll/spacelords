@@ -1,6 +1,6 @@
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { selectMapHex } from './map-helpers.js';
-import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import type { SavedGame } from '../../src/client/models/saves/SaveRepository.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot } from './save-helpers.js';
 import { chooseFleetDestination, selectMapFleet } from './fleet-helpers.js';

@@ -2,7 +2,7 @@
 import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import type {
   AppIntent,
   AppPort,

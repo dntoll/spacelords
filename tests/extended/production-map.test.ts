@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { playerNoticeText } from '../../src/client/views/app/playerNoticeText.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { Game, TECHNOLOGIES } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';

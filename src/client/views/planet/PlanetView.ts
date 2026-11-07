@@ -1,6 +1,6 @@
-import { ShipOrders } from '../models/ShipOrders.js';
-import type { ShipType } from '../models/Game.js';
-import type { AppReadModel } from '../models/AppModel.js';
+import { ShipOrders } from '../../models/ShipOrders.js';
+import type { ShipType } from '../../models/Game.js';
+import type { AppReadModel } from '../../models/AppModel.js';
 import {
   BUILDINGS,
   type ConstructionProjectSnapshot,
@@ -9,15 +9,15 @@ import {
   type BuildType,
   type PlanetGameSnapshot,
   type Resource,
-} from '../models/Game.js';
-import { COMPONENTS } from '../models/Economy.js';
-import type { SupplyStep } from '../models/ProjectSupply.js';
+} from '../../models/Game.js';
+import { COMPONENTS } from '../../models/Economy.js';
+import type { SupplyStep } from '../../models/ProjectSupply.js';
 import { renderProduction } from './PlanetProductionView.js';
-import type { IntentHandler } from './ViewContracts.js';
-import { button, element, planetIllustration, queueButton } from './dom.js';
-import { buildingImage } from './BuildingImage.js';
-import { bindQueueOrder, decorateQueueRow } from './QueueView.js';
-import { catalogIcon } from './CatalogControls.js';
+import type { IntentHandler } from '../ViewContracts.js';
+import { button, element, planetIllustration, queueButton } from '../dom.js';
+import { buildingImage } from '../BuildingImage.js';
+import { bindQueueOrder, decorateQueueRow } from '../QueueView.js';
+import { catalogIcon } from '../CatalogControls.js';
 
 type PlanetMenus = Pick<AppReadModel, 'phase'> &
   Partial<

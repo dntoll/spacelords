@@ -1,5 +1,5 @@
 import type { AppReadModel } from '../models/AppModel.js';
-import { tradeAssignmentIssue } from '../models/TradeAssignment.js';
+import { tradeAssignmentIssue } from '../models/star-map/TradeAssignment.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { renderTradeAssignment } from './TradeFleetView.js';
 import { renderTradeRouteDetails } from './TradeRouteDetailsView.js';

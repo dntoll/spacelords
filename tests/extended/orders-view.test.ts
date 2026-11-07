@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
-import type { SaveRepository } from '../../src/client/models/SaveRepository.js';
+import type { SaveRepository } from '../../src/client/models/saves/SaveRepository.js';
 
 function setup() {
   const initial = tradeNetworkState();

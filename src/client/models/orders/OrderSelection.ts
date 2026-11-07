@@ -1,7 +1,7 @@
-import type { FleetSnapshot, ShipType } from './Game.js';
-import type { HexCoordinate } from './HexCoordinate.js';
-import type { OrderOption, RouteOrderChoice } from './ShipOrders.js';
-import type { Screen } from './AppModel.js';
+import type { FleetSnapshot, ShipType } from '../Game.js';
+import type { HexCoordinate } from '../HexCoordinate.js';
+import type { OrderOption, RouteOrderChoice } from '../ShipOrders.js';
+import type { Screen } from '../AppModel.js';
 
 export interface OrderSelection {
   readonly fleetId: string | null;

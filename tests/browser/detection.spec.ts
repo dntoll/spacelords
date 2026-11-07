@@ -8,7 +8,7 @@ import { pirateAsFleet } from '../../src/client/models/PirateFleet.js';
 import { selectMapPoint } from './map-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import { endTurn, startFirstSlot, ignoreEventsUntil } from './save-helpers.js';
-import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import type { SavedGame } from '../../src/client/models/saves/SaveRepository.js';
 
 async function load(page: Page, state: GameState) {
   await page.addInitScript((state) => {

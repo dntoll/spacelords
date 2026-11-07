@@ -20,7 +20,7 @@ import {
 import type { BattleMapPort } from './BattleView.js';
 import { SHIP_SPRITES, type ShipSpriteType } from '../ShipImages.js';
 import { BattleEffects, type BattleEffectFrame } from './BattleEffects.js';
-import { ShipFootprint } from '../../models/ShipFootprint.js';
+import { ShipFootprint } from '../../models/battle/ShipFootprint.js';
 import {
   BattleCameraController,
   type BattleViewportSnapshot,

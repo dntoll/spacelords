@@ -1,6 +1,6 @@
-import type { BuildType, ProjectType, ShipType, Technology } from './Game.js';
-import type { Component } from './Economy.js';
-import type { PlanetEnvironmentType } from './Planet.js';
+import type { BuildType, ProjectType, ShipType, Technology } from '../Game.js';
+import type { Component } from '../Economy.js';
+import type { PlanetEnvironmentType } from '../Planet.js';
 
 export type EventIllustration =
   | { readonly kind: 'star' }

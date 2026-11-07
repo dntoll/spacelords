@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import type { SavedGame } from '../../src/client/models/saves/SaveRepository.js';
 import {
   HexCoordinate,
   HexGeometry,

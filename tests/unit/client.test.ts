@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import type { MapFactory } from '../../src/client/views/ViewContracts.js';
 
 let root: HTMLElement;

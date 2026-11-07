@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { renderFleetOrders } from '../../src/client/views/FleetOrdersView.js';
+import { renderFleetOrders } from '../../src/client/views/fleets/FleetOrdersView.js';
 
 function setup() {
   const model = new AppModel().snapshot;

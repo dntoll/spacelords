@@ -1,11 +1,11 @@
 import p5 from 'p5';
-import type { MapCell } from '../models/Galaxy.js';
-import { HexGeometry } from '../models/HexCoordinate.js';
-import { renderTerrain } from './TerrainMapView.js';
-import { createStarTextures, renderStarGlyph } from './StarGlyph.js';
-import starSprite from '../assets/stars/plasma-star.webp';
-import { MapArtwork } from './MapArtwork.js';
-import { renderPlanetGlyph } from './PlanetGlyph.js';
+import type { MapCell } from '../../models/Galaxy.js';
+import { HexGeometry } from '../../models/HexCoordinate.js';
+import { renderTerrain } from '../TerrainMapView.js';
+import { createStarTextures, renderStarGlyph } from '../StarGlyph.js';
+import starSprite from '../../assets/stars/plasma-star.webp';
+import { MapArtwork } from '../MapArtwork.js';
+import { renderPlanetGlyph } from '../PlanetGlyph.js';
 
 /** Read-only p5 instance; hidden cells never reach the preview. */
 export class SaveMapPreview {

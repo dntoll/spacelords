@@ -1,4 +1,4 @@
-import type { GameState } from './Game.js';
+import type { GameState } from '../Game.js';
 
 export interface SavedGame {
   readonly lastPlayed: string;

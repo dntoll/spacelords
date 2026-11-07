@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { HexGeometry } from '../../src/client/models/HexCoordinate.js';
-import { TradeRouteMapLayout } from '../../src/client/models/TradeRouteMapLayout.js';
+import { TradeRouteMapLayout } from '../../src/client/models/star-map/TradeRouteMapLayout.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import {
   tradeNetworkState,

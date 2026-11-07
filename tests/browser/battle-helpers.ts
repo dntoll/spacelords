@@ -9,7 +9,7 @@ import {
   HexGeometry,
   HexCoordinate,
 } from '../../src/client/models/HexCoordinate.js';
-import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import type { SavedGame } from '../../src/client/models/saves/SaveRepository.js';
 
 /** Project using the actual camera; field gestures remain real pointer input. */
 export async function battlePoint(page: Page, at: BattleHex) {

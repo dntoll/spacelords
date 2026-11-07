@@ -1,13 +1,13 @@
-import { shipImage } from './ShipView.js';
-import { shipTransferIssue } from '../models/fleets/FleetTransfer.js';
-import type { AppReadModel } from '../models/AppModel.js';
-import type { HexCoordinate } from '../models/HexCoordinate.js';
-import type { IntentHandler } from './ViewContracts.js';
-import { renderFleetCard } from './FleetCard.js';
+import { shipImage } from '../ShipView.js';
+import { shipTransferIssue } from '../../models/fleets/FleetTransfer.js';
+import type { AppReadModel } from '../../models/AppModel.js';
+import type { HexCoordinate } from '../../models/HexCoordinate.js';
+import type { IntentHandler } from '../ViewContracts.js';
+import { renderFleetCard } from '../FleetCard.js';
 import { bindShipTransfers } from './ShipTransferInput.js';
-import { button, element } from './dom.js';
-import { mapFleetRouteFeedback } from './StarMapTradeView.js';
-import { renderMapLocationHeading } from './MapLocationHeading.js';
+import { button, element } from '../dom.js';
+import { mapFleetRouteFeedback } from '../StarMapTradeView.js';
+import { renderMapLocationHeading } from '../MapLocationHeading.js';
 
 export function renderMapFleetPanel(
   model: AppReadModel,

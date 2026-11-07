@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import pirateMap from '../../src/client/maps/pirate-boarding.txt?raw';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import { BoardingEditorView } from '../../src/client/views/boarding/BoardingEditorView.js';
 import type {
   AppIntent,

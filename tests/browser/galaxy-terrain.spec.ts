@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { startFirstSlot, endTurn } from './save-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import { selectMapHex } from './map-helpers.js';
-import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import type { SavedGame } from '../../src/client/models/saves/SaveRepository.js';
 import { Game } from '../../src/client/models/Game.js';
 import { Galaxy } from '../../src/client/models/Galaxy.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';

@@ -1,4 +1,4 @@
-import type { HexCoordinate } from './HexCoordinate.js';
+import type { HexCoordinate } from '../HexCoordinate.js';
 
 export const STAR_COLORS = [
   '#ff806d',

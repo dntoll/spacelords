@@ -2,7 +2,7 @@ import { chooseFleetOrder } from './fleet-helpers.js';
 import { expect, test } from '@playwright/test';
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
-import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import type { SavedGame } from '../../src/client/models/saves/SaveRepository.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import { endTurn, startFirstSlot } from './save-helpers.js';
 

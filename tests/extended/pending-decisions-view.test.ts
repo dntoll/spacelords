@@ -2,7 +2,7 @@
 import { expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import { domeProductionState } from '../fixtures/production-dome.js';
 
 it('beslut-vantar-pa-paborjad-atgard: updates guidance, counter, map problems and turn warning after queuing and cancelling research', () => {

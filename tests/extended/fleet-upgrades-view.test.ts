@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import { upgradeState } from '../fixtures/fleet-upgrades.js';
 
 describe('flottorder-upgrade / spara-flottuppgradering', () => {

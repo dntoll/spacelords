@@ -19,7 +19,7 @@ import { ShipOrders, type ShipOrder, type OrderKind } from './ShipOrders.js';
 import type {
   OrderSelection,
   OrderSelectionSnapshot,
-} from './OrderSelection.js';
+} from './orders/OrderSelection.js';
 import type {
   EventPlayback,
   EventPlaybackSnapshot,
@@ -49,8 +49,11 @@ import {
   type SupplyChainSnapshot,
 } from './ProjectSupplyChain.js';
 import type { ProjectSupplySnapshot } from './ProjectSupply.js';
-import { StarMapTrade, type MapTradeSnapshot } from './StarMapTrade.js';
-import type { SaveRepository } from './SaveRepository.js';
+import {
+  StarMapTrade,
+  type MapTradeSnapshot,
+} from './star-map/StarMapTrade.js';
+import type { SaveRepository } from './saves/SaveRepository.js';
 import {
   type TacticalBattle,
   type BattleState,

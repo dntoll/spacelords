@@ -4,7 +4,7 @@ import { renderMapTradeRoutes } from './MapTradeRoutesView.js';
 import { renderDetectionBoundary } from './DetectionMapView.js';
 import { renderTerrain } from '../TerrainMapView.js';
 import { createStarTextures, renderStarGlyph } from '../StarGlyph.js';
-import { showMapHex } from '../../models/StarAppearance.js';
+import { showMapHex } from '../../models/star-map/StarAppearance.js';
 import starSprite from '../../assets/stars/plasma-star.webp';
 import { salvageMarkers } from '../../models/star-map/SalvageMapLayout.js';
 import { renderMapOverlays } from './MapOverlayView.js';

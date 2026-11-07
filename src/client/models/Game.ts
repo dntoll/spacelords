@@ -54,7 +54,7 @@ import {
   nearestUnguardedRoute,
   routeEscortTargets,
   tradeAssignmentIssue,
-} from './TradeAssignment.js';
+} from './star-map/TradeAssignment.js';
 import {
   projectSupplyChain,
   type SupplyChainSnapshot,
@@ -109,7 +109,7 @@ import type {
   EventIllustration,
   EventLine,
   ProductionContext,
-} from './EventDetails.js';
+} from './app/EventDetails.js';
 import {
   DecisionBoard,
   type Decision,

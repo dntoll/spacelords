@@ -1,7 +1,7 @@
 import type { AppReadModel } from '../models/AppModel.js';
 import type { FleetSnapshot } from '../models/Game.js';
 import type { TradeRouteSnapshot } from '../models/Logistics.js';
-import { tradeAssignmentIssue } from '../models/TradeAssignment.js';
+import { tradeAssignmentIssue } from '../models/star-map/TradeAssignment.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { renderFleetCard } from './FleetCard.js';
 import { button, element } from './dom.js';

@@ -1,5 +1,5 @@
-import { HexGeometry, type Point } from './HexCoordinate.js';
-import type { TradeRouteSnapshot } from './Logistics.js';
+import { HexGeometry, type Point } from '../HexCoordinate.js';
+import type { TradeRouteSnapshot } from '../Logistics.js';
 
 // handelsrutt-val-pa-stjarnkartan: distance is measured in screen pixels.
 export class TradeRouteMapLayout {

@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { renderBuildSelection } from '../../src/client/views/BuildSelectionView.js';
-import { renderPlanet } from '../../src/client/views/PlanetView.js';
+import { renderBuildSelection } from '../../src/client/views/planet/BuildSelectionView.js';
+import { renderPlanet } from '../../src/client/views/planet/PlanetView.js';
 import type { ConstructionProjectSnapshot } from '../../src/client/models/Game.js';
-import { fleetSelect } from '../../src/client/views/PlanetProductionView.js';
+import { fleetSelect } from '../../src/client/views/planet/PlanetProductionView.js';
 
 it('nybyggda-skepp-utan-ruttflotta: destination menus omit route fleets and retain ordinary local and empty fleets', () => {
   const model = new AppModel();

@@ -5,12 +5,12 @@ import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { afterEach, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import type {
   SaveRepository,
   SavedGame,
-} from '../../src/client/models/SaveRepository.js';
+} from '../../src/client/models/saves/SaveRepository.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { discoveryState } from '../fixtures/exploration.js';
 import { encounterGame, arrangeBattle } from '../fixtures/battle-checkpoint.js';

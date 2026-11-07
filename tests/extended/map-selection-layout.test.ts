@@ -3,7 +3,7 @@ import { turnFrames } from '../fixtures/turn-steps.js';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 
 let root: HTMLElement;

@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { researchStationModel } from '../fixtures/research-station-model.js';
-import { AppView } from '../../src/client/views/AppView.js';
-import { renderDecisionGuidance } from '../../src/client/views/DecisionGuidanceView.js';
-import { renderProductionMapPanel } from '../../src/client/views/ProductionMapView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
+import { renderDecisionGuidance } from '../../src/client/views/decisions/DecisionGuidanceView.js';
+import { renderProductionMapPanel } from '../../src/client/views/production/ProductionMapView.js';
 import { renderResearch } from '../../src/client/views/research/ResearchView.js';
 import { isResearchIdentified } from '../../src/client/models/research/ResearchTree.js';
-import { gameText } from '../../src/client/views/GameText.js';
+import { gameText } from '../../src/client/views/app/GameText.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 
 describe('kompakt-spelgranssnitt', () => {

@@ -18,7 +18,7 @@ import {
 import type { BattleViewportSnapshot } from './BattleCameraController.js';
 import type { IntentHandler } from '../ViewContracts.js';
 import { element } from '../dom.js';
-import { ShipFootprint } from '../../models/ShipFootprint.js';
+import { ShipFootprint } from '../../models/battle/ShipFootprint.js';
 import { shipImage } from '../ShipView.js';
 import { battleButton } from './BattleIcons.js';
 import { battleControlsLayout } from './BattleControlsLayout.js';

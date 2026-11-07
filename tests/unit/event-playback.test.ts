@@ -15,7 +15,7 @@ import {
 } from '../../src/client/models/HexCoordinate.js';
 import { collectTurnFrames, turnFrames } from '../fixtures/turn-steps.js';
 import { discoveryState } from '../fixtures/exploration.js';
-import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import type { SavedGame } from '../../src/client/models/saves/SaveRepository.js';
 import type p5 from 'p5';
 import { renderMapEvent } from '../../src/client/views/star-map/MapEventView.js';
 

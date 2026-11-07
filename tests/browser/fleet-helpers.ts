@@ -1,7 +1,7 @@
 import { Game } from '../../src/client/models/Game.js';
 import { HexGeometry } from '../../src/client/models/HexCoordinate.js';
 import { FleetMapLayout } from '../../src/client/models/star-map/FleetMapLayout.js';
-import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import type { SavedGame } from '../../src/client/models/saves/SaveRepository.js';
 import { selectMapPoint } from './map-helpers.js';
 import { expect, type Page } from '@playwright/test';
 

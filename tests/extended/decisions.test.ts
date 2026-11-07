@@ -3,7 +3,7 @@ import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it, vi } from 'vitest';
 import { decisionScreen } from '../../src/client/models/Decisions.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { BrowserSaveRepository } from '../../src/client/storage/BrowserSaveRepository.js';
 import { Game } from '../../src/client/models/Game.js';

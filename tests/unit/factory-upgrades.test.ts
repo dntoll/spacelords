@@ -9,9 +9,9 @@ import {
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import { turnFrames } from '../fixtures/turn-steps.js';
-import { renderProduction } from '../../src/client/views/PlanetProductionView.js';
+import { renderProduction } from '../../src/client/views/planet/PlanetProductionView.js';
 
 function saved(
   researched: Technology[] = [

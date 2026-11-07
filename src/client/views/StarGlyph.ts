@@ -8,7 +8,7 @@ import {
   STAR_COLORS,
   starAppearance,
   starDetail,
-} from '../models/StarAppearance.js';
+} from '../models/star-map/StarAppearance.js';
 
 /** stjarnvariation: generate each palette once per p5 instance, never per frame. */
 export function createStarTextures(

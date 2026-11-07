@@ -1,10 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { encounterGame, arrangeBattle } from '../fixtures/battle-checkpoint.js';
 import { startFirstSlot, ignoreEventsUntil } from './save-helpers.js';
-import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import type { SavedGame } from '../../src/client/models/saves/SaveRepository.js';
 import { battleHex } from '../../src/client/models/TacticalBattle.js';
 import { createTestBattle } from '../../src/client/models/battle/TestBattle.js';
-import { ShipFootprint } from '../../src/client/models/ShipFootprint.js';
+import { ShipFootprint } from '../../src/client/models/battle/ShipFootprint.js';
 
 import { battlePoint, showBattleHex, tapBattleHex } from './battle-helpers.js';
 import { HexGeometry } from '../../src/client/models/HexCoordinate.js';

@@ -10,7 +10,7 @@ import {
 } from '../../src/client/models/HexCoordinate.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 
 describe('handelseannonsering / handelser-pa-kartan', () => {
   it('gemensamt-handelseflode: keeps interactive event choices above End turn when marker spacing exceeds the available height', () => {

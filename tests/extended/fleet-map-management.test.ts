@@ -3,12 +3,12 @@ import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderFleetCard } from '../../src/client/views/FleetCard.js';
-import { renderFleetOrders } from '../../src/client/views/FleetOrdersView.js';
+import { renderFleetOrders } from '../../src/client/views/fleets/FleetOrdersView.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { playerNoticeText } from '../../src/client/views/app/playerNoticeText.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 import { salvageState } from '../fixtures/salvage.js';
 import { BrowserSaveRepository } from '../../src/client/storage/BrowserSaveRepository.js';

@@ -1,52 +1,52 @@
-import { renderOrders } from './OrdersView.js';
+import { renderOrders } from '../orders/OrdersView.js';
 import { gameText } from './GameText.js';
-import { BattleView, type BattleMapFactory } from './battle/BattleView.js';
+import { BattleView, type BattleMapFactory } from '../battle/BattleView.js';
 import {
   BoardingView,
   type BoardingMapFactory,
-} from './boarding/BoardingView.js';
-import { BoardingEditorView } from './boarding/BoardingEditorView.js';
+} from '../boarding/BoardingView.js';
+import { BoardingEditorView } from '../boarding/BoardingEditorView.js';
 import { discoveryControls } from './DiscoveryView.js';
-import { pirateAsFleet } from '../models/PirateFleet.js';
-import { updateDecisionGuidance } from './DecisionGuidanceView.js';
+import { pirateAsFleet } from '../../models/PirateFleet.js';
+import { updateDecisionGuidance } from '../decisions/DecisionGuidanceView.js';
 import {
   isMapScreen,
   productionPosition,
   type MapScreen,
-} from '../models/ProductionMap.js';
+} from '../../models/ProductionMap.js';
 import {
   renderProductionRing,
   renderProductionMapPanel,
   renderRoutePlanet,
-} from './ProductionMapView.js';
-import { bindMapSelectionScroll } from './MapSelectionScroll.js';
-import { renderMapTradeSelection } from './StarMapTradeView.js';
-import { renderMapFleetPanel } from './FleetMapPanel.js';
-import { renderMapLocationHeading } from './MapLocationHeading.js';
-import { renderSaveSlots, clearSlotDialog } from './SaveSlotsView.js';
-import { needsAttention } from '../models/Decisions.js';
-import type { MapCell } from '../models/Galaxy.js';
-import type { AppReadModel, Screen } from '../models/AppModel.js';
-import { playerNoticeText } from './app/playerNoticeText.js';
-import { HexGeometry, HexCoordinate } from '../models/HexCoordinate.js';
-import type { TurnFrame } from '../models/Game.js';
+} from '../production/ProductionMapView.js';
+import { bindMapSelectionScroll } from '../star-map/MapSelectionScroll.js';
+import { renderMapTradeSelection } from '../StarMapTradeView.js';
+import { renderMapFleetPanel } from '../fleets/FleetMapPanel.js';
+import { renderMapLocationHeading } from '../MapLocationHeading.js';
+import { renderSaveSlots, clearSlotDialog } from '../saves/SaveSlotsView.js';
+import { needsAttention } from '../../models/Decisions.js';
+import type { MapCell } from '../../models/Galaxy.js';
+import type { AppReadModel, Screen } from '../../models/AppModel.js';
+import { playerNoticeText } from './playerNoticeText.js';
+import { HexGeometry, HexCoordinate } from '../../models/HexCoordinate.js';
+import type { TurnFrame } from '../../models/Game.js';
 import type {
   AppPort,
   IntentHandler,
   MapFactory,
   MapPort,
-} from './ViewContracts.js';
-import { renderBuildSelection } from './BuildSelectionView.js';
-import { renderPlanet } from './PlanetView.js';
-import { renderResearch } from './research/ResearchView.js';
-import { renderResearchSelection } from './research/ResearchDetailsView.js';
-import { updateResearchCamera } from './research/ResearchTreeView.js';
-import { button, element, planetIllustration } from './dom.js';
-import { renderDecisions, renderTurnWarning } from './EmpireView.js';
+} from '../ViewContracts.js';
+import { renderBuildSelection } from '../planet/BuildSelectionView.js';
+import { renderPlanet } from '../planet/PlanetView.js';
+import { renderResearch } from '../research/ResearchView.js';
+import { renderResearchSelection } from '../research/ResearchDetailsView.js';
+import { updateResearchCamera } from '../research/ResearchTreeView.js';
+import { button, element, planetIllustration } from '../dom.js';
+import { renderDecisions, renderTurnWarning } from '../decisions/EmpireView.js';
 import { renderTurnActions } from './TurnActionsView.js';
 import { renderEvents, renderCombatLog } from './EventsView.js';
 import { renderEventContent } from './EventContent.js';
-import type { BattleShot } from '../models/TacticalBattle.js';
+import type { BattleShot } from '../../models/TacticalBattle.js';
 
 export class AppView implements AppPort {
   #battleView: BattleView | null = null;
@@ -1694,4 +1694,4 @@ export class AppView implements AppPort {
     });
   }
 }
-import { renderSalvageSelection } from './SalvageView.js';
+import { renderSalvageSelection } from '../SalvageView.js';

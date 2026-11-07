@@ -1,7 +1,7 @@
-import type { AppReadModel } from '../models/AppModel.js';
-import type { ShipType } from '../models/Game.js';
-import type { IntentHandler } from './ViewContracts.js';
-import { button, element } from './dom.js';
+import type { AppReadModel } from '../../models/AppModel.js';
+import type { ShipType } from '../../models/Game.js';
+import type { IntentHandler } from '../ViewContracts.js';
+import { button, element } from '../dom.js';
 
 /** egen-ordervy: named choices explain their result before the player acts. */
 export function renderOrders(

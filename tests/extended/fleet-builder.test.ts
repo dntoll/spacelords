@@ -4,12 +4,12 @@ import {
   SHIP_IMAGES,
 } from '../../src/client/views/ShipView.js';
 import { SHIP_SPRITES } from '../../src/client/views/ShipImages.js';
-import { renderMapFleetPanel } from '../../src/client/views/FleetMapPanel.js';
+import { renderMapFleetPanel } from '../../src/client/views/fleets/FleetMapPanel.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
-import { AppView } from '../../src/client/views/AppView.js';
+import { AppView } from '../../src/client/views/app/AppView.js';
 
 beforeEach(() => document.body.replaceChildren());
 function pointer(type: string, x: number, y: number): Event {

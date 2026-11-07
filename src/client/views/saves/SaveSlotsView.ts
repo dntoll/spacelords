@@ -1,6 +1,6 @@
-import type { AppReadModel } from '../models/AppModel.js';
-import type { IntentHandler } from './ViewContracts.js';
-import { button, element } from './dom.js';
+import type { AppReadModel } from '../../models/AppModel.js';
+import type { IntentHandler } from '../ViewContracts.js';
+import { button, element } from '../dom.js';
 
 export function renderSaveSlots(
   model: AppReadModel,

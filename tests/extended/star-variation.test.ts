@@ -3,7 +3,7 @@ import {
   starAppearance,
   starDetail,
   showMapHex,
-} from '../../src/client/models/StarAppearance.js';
+} from '../../src/client/models/star-map/StarAppearance.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { SpiralGalaxyLayout } from '../../src/client/models/SpiralGalaxyLayout.js';
 import { Game } from '../../src/client/models/Game.js';

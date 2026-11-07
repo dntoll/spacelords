@@ -1,4 +1,4 @@
-import type { SavedGame } from '../../src/client/models/SaveRepository.js';
+import type { SavedGame } from '../../src/client/models/saves/SaveRepository.js';
 import { expect, test } from '@playwright/test';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 import { startFirstSlot } from './save-helpers.js';

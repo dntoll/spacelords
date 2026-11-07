@@ -1,12 +1,12 @@
-import type { GameEvent } from '../models/Game.js';
-import type { EventIllustration } from '../models/EventDetails.js';
-import { BUILDING_IMAGES } from './BuildingImage.js';
-import { BUILDING_SYMBOLS } from './BuildingSymbols.js';
-import { SHIP_IMAGES } from './ShipImages.js';
-import { PLANET_IMAGES } from './PlanetImages.js';
-import { element } from './dom.js';
+import type { GameEvent } from '../../models/Game.js';
+import type { EventIllustration } from '../../models/app/EventDetails.js';
+import { BUILDING_IMAGES } from '../BuildingImage.js';
+import { BUILDING_SYMBOLS } from '../BuildingSymbols.js';
+import { SHIP_IMAGES } from '../ShipImages.js';
+import { PLANET_IMAGES } from '../PlanetImages.js';
+import { element } from '../dom.js';
 import { gameText } from './GameText.js';
-import starImage from '../assets/stars/plasma-star.webp';
+import starImage from '../../assets/stars/plasma-star.webp';
 
 function artwork(art: EventIllustration): string | undefined {
   if (art.kind === 'star') return starImage;
