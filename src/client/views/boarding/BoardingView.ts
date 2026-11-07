@@ -104,6 +104,7 @@ export class BoardingView {
   #destination: BoardingCell | null = null;
   #actorId: string | null = null;
   #busy = false;
+  #draining = false;
   #controlsHeight = 0;
   #viewportWidth = 0;
   #playToken = 0;
@@ -382,6 +383,7 @@ export class BoardingView {
     }
     if (shot) this.#playedShot = shot;
     this.#paint(state, notice);
+    this.#drainPending();
   }
 
   async #play(
@@ -436,14 +438,26 @@ export class BoardingView {
     }
     if (token !== this.#playToken) return;
     this.#paint(final, notice);
-    const queued = this.#pending.shift();
-    if (queued)
-      this.render(
-        queued.state,
-        queued.notice,
-        queued.presentation,
-        queued.shot,
-      );
+    this.#drainPending();
+  }
+
+  #drainPending(): void {
+    if (this.#draining) return;
+    this.#draining = true;
+    try {
+      // forsvarare-och-civilister: a non-animated update must not strand later turns.
+      while (!this.#busy && this.#pending.length > 0) {
+        const queued = this.#pending.shift()!;
+        this.render(
+          queued.state,
+          queued.notice,
+          queued.presentation,
+          queued.shot,
+        );
+      }
+    } finally {
+      this.#draining = false;
+    }
   }
 
   #paint(state: BoardingBattleState, notice?: string | null): void {

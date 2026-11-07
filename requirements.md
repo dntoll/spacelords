@@ -235,7 +235,9 @@ Se [hela visionen](docs/game-vision.md).
   `automatisk-bordningstur-vid-tom-ap` samt `hukning-minskar-skottchans` är
   **Fullständigt implementerat**. Den första versionen är ett separat testspel
   från huvudmenyn på en handredigerbar transportkarta och påverkar inte
-  kampanj eller sparplatser. Kartan använder klassiska kvadratiska
+  kampanj eller sparplatser. `forsvarare-och-civilister` säkerställer även att
+  köade uppdateringar efter försvararnas handlingar når nästa spelartur.
+  Kartan använder klassiska kvadratiska
   2:1-diamantrutor där väggar och ytterskrov fyller hela rutan, åtta riktningar
   och 45-gradersvändningar; detta ersätter uttryckligen den tidigare hexkartan.
   En vald väg färgas efter kvarvarande AP och förflyttning animeras stegvis med

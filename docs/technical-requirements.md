@@ -1446,6 +1446,10 @@ konfliktmarkörer, publiceringskatalog och filinnehåll behålls.
 
 ## Isometriska bordningsobjekt
 
+`forsvarare-och-civilister`: bordningsvyn tömmer väntande tillstånd i ordning
+efter en presentation och pausar kön om nästa tillstånd startar en ny
+animation. En statisk uppdatering får inte lämna senare turer kvar i kön.
+
 `formbar-skeppskontur`: `O` i terränglagret betecknar tom rymd; den saknas i
 domänens terräng och skapar inga features. `Outside` rensar redigerade lager
 atomiskt med undo. Kartformatet behåller övriga befintliga symboler.
