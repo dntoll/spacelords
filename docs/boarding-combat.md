@@ -206,7 +206,9 @@ sparplatser.
 - `forsvarare-och-civilister` — **Fullständigt implementerat**. Försvararna känner till
   breach och delad observation, men inte dolda aktuella positioner. Autoplay
   kör även dolda försvarare, och en avvisad AI-handling avslutar turen så att
-  `Defenders are acting…` inte fastnar. Civilisterna styrs av AI, flyr från
+  `Defenders are acting…` inte fastnar. Köade uppdateringar visas i ordning även
+  när en handling saknar animation, så nästa aktiva soldat visas när det blir
+  spelarens tur. Civilisterna styrs av AI, flyr från
   alla stridande och ljud, öppnar vanliga dörrar men hackar inte och försöker
   använda escape pods. Överlevande ger ett bonusutfall utan kampanjbelöning i
   prototypen.

@@ -855,6 +855,123 @@ it('animerad-bordningsforflyttning: plays a queued enemy move after the current 
   view.dispose();
 });
 
+it('forsvarare-och-civilister: drains queued defender updates until the next player turn appears', async () => {
+  const initial = createTestBoardingBattle().snapshot;
+  const defender = initial.people.find((person) => person.side === 'defender')!;
+  const player = initial.people.find((person) => person.side === 'player')!;
+  let finishMotion!: () => void;
+  const renderMap = vi.fn<(state: BoardingBattleState) => void>();
+  const view = new BoardingView(document.body, vi.fn(), () => ({
+    render: renderMap,
+    playMotion: () =>
+      new Promise<void>((resolve) => {
+        finishMotion = resolve;
+      }),
+    zoom() {},
+    fit() {},
+    dispose() {},
+  }));
+  const defenderTurn = {
+    ...initial,
+    currentActorId: defender.id,
+    activation: { id: defender.id, remaining: 12 },
+  };
+  const moved = {
+    ...defenderTurn,
+    people: defenderTurn.people.map((person) =>
+      person.id === defender.id
+        ? {
+            ...person,
+            position: { q: person.position.q - 1, r: person.position.r },
+          }
+        : person,
+    ),
+  };
+  const prepared = {
+    ...moved,
+    log: [...moved.log, 'A defender takes a prepared position.'],
+  };
+  const playerTurn = {
+    ...prepared,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 12 },
+  };
+  view.render(defenderTurn);
+  view.render(moved, null, [moved]);
+  view.render(prepared);
+  view.render(playerTurn);
+  finishMotion();
+  await vi.waitFor(() =>
+    expect(renderMap.mock.lastCall?.[0].currentActorId).toBe(player.id),
+  );
+  expect(document.querySelector('.boarding-status')?.textContent).toContain(
+    player.label,
+  );
+  view.dispose();
+});
+
+it('forsvarare-och-civilister: preserves later animations after a queued non-animated update', async () => {
+  const initial = createTestBoardingBattle().snapshot;
+  const defender = initial.people.find((person) => person.side === 'defender')!;
+  const player = initial.people.find((person) => person.side === 'player')!;
+  let finishFirst!: () => void;
+  const playMotion = vi
+    .fn<() => Promise<void>>()
+    .mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishFirst = resolve;
+        }),
+    )
+    .mockResolvedValue(undefined);
+  const renderMap = vi.fn<(state: BoardingBattleState) => void>();
+  const view = new BoardingView(document.body, vi.fn(), () => ({
+    render: renderMap,
+    playMotion,
+    zoom() {},
+    fit() {},
+    dispose() {},
+  }));
+  const start = {
+    ...initial,
+    currentActorId: defender.id,
+    activation: { id: defender.id, remaining: 12 },
+  };
+  const move = (
+    state: BoardingBattleState,
+    q: number,
+  ): BoardingBattleState => ({
+    ...state,
+    people: state.people.map((person) =>
+      person.id === defender.id
+        ? { ...person, position: { ...person.position, q } }
+        : person,
+    ),
+  });
+  const first = move(start, defender.position.q - 1);
+  const prepared = {
+    ...first,
+    log: [...first.log, 'A defender takes a prepared position.'],
+  };
+  const second = move(prepared, defender.position.q - 2);
+  const playerTurn = {
+    ...second,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 12 },
+  };
+  view.render(start);
+  view.render(first, null, [first]);
+  view.render(prepared);
+  view.render(second, null, [second]);
+  view.render(playerTurn);
+  finishFirst();
+  await vi.waitFor(() =>
+    expect(renderMap.mock.lastCall?.[0].currentActorId).toBe(player.id),
+  );
+  expect(playMotion).toHaveBeenCalledTimes(2);
+  view.dispose();
+});
+
 it('tydlig-bordningsstatus: combat details follow the latest log line', () => {
   const created = createTestBoardingBattle();
   const emit = vi.fn<(intent: AppIntent) => void>();
