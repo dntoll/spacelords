@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
 import {
@@ -24,7 +24,7 @@ function setup() {
   document.body.append(root);
   const view = new AppView(root, () => ({ render() {}, dispose() {} }));
   let emit: IntentHandler = () => {};
-  new AppController(model, {
+  new MasterController(model, {
     bind(handler) {
       emit = handler;
       view.bind(handler);

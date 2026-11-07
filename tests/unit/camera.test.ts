@@ -4,7 +4,7 @@ import {
   HexCoordinate,
   HexGeometry,
 } from '../../src/client/models/HexCoordinate.js';
-import { MapGesture } from '../../src/client/controllers/MapGesture.js';
+import { MapGesture } from '../../src/client/views/star-map/MapGesture.js';
 
 describe('kartnavigation / utokad-utzoomning', () => {
   it('keeps the point under the pointer fixed while zooming', () => {

@@ -24,7 +24,7 @@ import { ShipFootprint } from '../models/ShipFootprint.js';
 import {
   BattleCameraController,
   type BattleViewportSnapshot,
-} from '../controllers/BattleCameraController.js';
+} from './battle/BattleCameraController.js';
 
 export class BattleMapView implements BattleMapPort {
   readonly #p5: p5;

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { AppView } from '../../src/client/views/AppView.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
@@ -184,7 +184,7 @@ it('planetundersidor / sparat-spel: browsing pages, products and supply steps ne
   model.build('Research station', 0);
   const planet = model.snapshot.planet!;
   let emit: IntentHandler = () => {};
-  const controller = new AppController(model, {
+  const controller = new MasterController(model, {
     bind(handler) {
       emit = handler;
     },
@@ -357,7 +357,7 @@ it('symbolbaserade-kataloger: keeps keyboard focus on a category that shares a n
   model.openBuildSite(0);
   const root = document.createElement('div');
   document.body.replaceChildren(root);
-  const controller = new AppController(
+  const controller = new MasterController(
     model,
     new AppView(root, () => ({ render() {}, dispose() {} })),
   );
@@ -379,7 +379,7 @@ it('symbolbaserade-kataloger: returns focus to the list when a browser does not 
   model.openBuildSite(0);
   const root = document.createElement('div');
   document.body.replaceChildren(root);
-  const controller = new AppController(
+  const controller = new MasterController(
     model,
     new AppView(root, () => ({ render() {}, dispose() {} })),
   );

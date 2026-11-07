@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { HexGeometry } from '../../src/client/models/HexCoordinate.js';
 import { TradeRouteMapLayout } from '../../src/client/models/TradeRouteMapLayout.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
@@ -21,7 +21,7 @@ function session(withRoute = true, state = tradeNetworkState(withRoute)) {
   });
   model.startSlot(1);
   let emit: IntentHandler = () => {};
-  const controller = new AppController(model, {
+  const controller = new MasterController(model, {
     bind(handler) {
       emit = handler;
     },

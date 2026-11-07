@@ -49,9 +49,18 @@
 
 ## Arkitektur och kod
 
-- Använd MVC, även i klientapplikationen. Vyer hanterar indata och renderar utdata
-  och fungerar som lager mot plattformen. Vyer får läsa modellen men aldrig ändra
-  den. Indata skickas till controllers, som samordnar modell och vy.
+- Använd MVC på server och klient. En master-controller tar emot färdiga
+  domänfakta, delegerar till use-case-controllern för fallet och är den enda som
+  byter fall. Vyer får läsa modellen men aldrig ändra den.
+- En use-case-controller anropar bara sitt falls modell-facad. Den känner inte
+  till DOM eller p5. Facaden är enda vägen in i fallet och lämnar strukturerade
+  utfall utan visningstext.
+- Vyn är lagret mot DOM, p5 och spelaren. Den äger pekning och kamera, kan ha en
+  inre kameracontroller och lämnar domänfakta. Den känner inte till
+  use-case-controllern. Bordning och strid får en bildruta. Övriga vyer ritas
+  när något synligt ändrats. Vyn väljer meningarna spelaren ser.
+- Lägg en underkatalog per fall under `controllers`, `models` och `views`.
+  Delade modellfiler ligger kvar i `models` tills bara de återstår.
 - Modellera objektorienterat med hög sammanhållning och låg koppling. Ge vyer
   enbart läsgränssnitt eller oföränderliga ögonblicksbilder av modellerna.
 - Underhåll problemdomänens klasser och relationer i PlantUML i

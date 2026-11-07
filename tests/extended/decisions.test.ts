@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { decisionScreen } from '../../src/client/models/Decisions.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppView } from '../../src/client/views/AppView.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { BrowserSaveRepository } from '../../src/client/storage/BrowserSaveRepository.js';
 import { Game } from '../../src/client/models/Game.js';
 import { researchStationState } from '../fixtures/research-station.js';
@@ -30,7 +30,7 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
       model.startSlot(1);
       const root = document.createElement('div');
       document.body.replaceChildren(root);
-      const controller = new AppController(
+      const controller = new MasterController(
         model,
         new AppView(root, () => ({ render() {}, dispose() {} })),
       );
@@ -83,7 +83,7 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
     document.body.replaceChildren(root);
     const model = researchStationModel();
     model.openDecisions();
-    new AppController(
+    new MasterController(
       model,
       new AppView(root, () => ({ render() {}, dispose() {} })),
     ).start();
@@ -226,7 +226,7 @@ describe('tysta-beslut', () => {
     document.body.replaceChildren(root);
     const model = researchStationModel();
     model.openDecisions();
-    new AppController(
+    new MasterController(
       model,
       new AppView(root, () => ({ render() {}, dispose() {} })),
     ).start();
@@ -252,7 +252,7 @@ it('beslutsmarkering-pa-flikar: marks every resolving tab and updates markers af
   const model = researchStationModel();
   const root = document.createElement('div');
   document.body.replaceChildren(root);
-  const controller = new AppController(
+  const controller = new MasterController(
     model,
     new AppView(root, () => ({ render() {}, dispose() {} })),
   );
@@ -305,7 +305,7 @@ it('beslutslista: removes Next decision and retains Review on each decision', ()
   document.body.replaceChildren(root);
   const model = researchStationModel();
   model.openDecisions();
-  const controller = new AppController(
+  const controller = new MasterController(
     model,
     new AppView(root, () => ({ render() {}, dispose() {} })),
   );

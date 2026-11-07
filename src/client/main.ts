@@ -1,4 +1,4 @@
-import { AppController } from './controllers/AppController.js';
+import { MasterController } from './controllers/app/MasterController.js';
 import { AppModel } from './models/AppModel.js';
 import { AppView } from './views/AppView.js';
 import { GalaxyMapView } from './views/GalaxyMapView.js';
@@ -15,7 +15,7 @@ if (!root) {
   throw new Error('The application root #app is missing.');
 }
 
-const controller = new AppController(
+const controller = new MasterController(
   new AppModel(
     createExpandedGalaxy(),
     new BrowserSaveRepository({

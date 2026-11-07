@@ -4,7 +4,7 @@ import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import type {
@@ -37,7 +37,7 @@ it('geografisk-arsuppspelning / gemensamt-handelseflode / upptacktsavbrott / ord
     model.startSlot(1);
     const view = new AppView(root, () => ({ render() {}, dispose() {} }));
     let emit: IntentHandler = () => {};
-    const controller = new AppController(model, {
+    const controller = new MasterController(model, {
       bind: (handler) => {
         emit = handler;
         view.bind(handler);
@@ -161,7 +161,7 @@ it('flottorder-som-symboler / kompakta-flottkort: exposes explorer controls and 
   const root = document.createElement('div');
   document.body.replaceChildren(root);
   const view = new AppView(root, () => ({ render() {}, dispose() {} }));
-  const controller = new AppController(model, view);
+  const controller = new MasterController(model, view);
   controller.start();
   const card = () => root.querySelector('.fleet-card')!;
   expect(
@@ -209,7 +209,7 @@ it('skeppsval-startar-stridstur / vaxelvisa-skeppsaktiveringar / riktning-och-va
   });
   model.startSlot(1);
   const view = new AppView(root, () => ({ render() {}, dispose() {} }));
-  const controller = new AppController(model, view);
+  const controller = new MasterController(model, view);
   controller.start();
   const fighter = model.snapshot.tacticalBattle!.pieces.find(
     (p) => p.type === 'Fighter',
@@ -256,7 +256,7 @@ it('stridsutplacering / sparad-taktisk-strid: the facing control reflects a save
     clear() {},
   });
   model.startSlot(1);
-  const controller = new AppController(
+  const controller = new MasterController(
     model,
     new AppView(root, () => ({ render() {}, dispose() {} })),
   );

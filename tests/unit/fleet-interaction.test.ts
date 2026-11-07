@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
 import {
   HexCoordinate,
@@ -13,7 +13,7 @@ import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 function setup() {
   const model = new AppModel();
   let emit: IntentHandler = () => {};
-  new AppController(model, {
+  new MasterController(model, {
     bind: (handler) => {
       emit = handler;
     },

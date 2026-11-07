@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import type {
@@ -25,7 +25,7 @@ describe('vynavigation', () => {
   it('preserves camera and selection through planet and research navigation', () => {
     const model = new AppModel();
     const view = new TestView();
-    new AppController(model, view).start();
+    new MasterController(model, view).start();
     view.handler({ type: 'pan', delta: { x: 45, y: -20 } });
     view.handler({ type: 'zoom', factor: 1.5, anchor: { x: 0, y: 0 } });
     const before = model.snapshot;
@@ -80,7 +80,7 @@ describe('viewport-game-layout', () => {
   it('routes build selection and returns to Overview without retaining an old site', () => {
     const model = new AppModel();
     const view = new TestView();
-    new AppController(model, view).start();
+    new MasterController(model, view).start();
     view.handler({ type: 'open-planet' });
     view.handler({ type: 'build-site', index: 2 });
     expect(model.snapshot.screen).toBe('build-selection');

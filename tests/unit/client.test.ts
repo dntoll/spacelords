@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { turnFrames } from '../fixtures/turn-steps.js';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppView } from '../../src/client/views/AppView.js';
@@ -23,8 +23,8 @@ beforeEach(() => {
   disposed = 0;
 });
 
-function start(): AppController {
-  const controller = new AppController(
+function start(): MasterController {
+  const controller = new MasterController(
     new AppModel(),
     new AppView(root, mapFactory),
   );
@@ -192,7 +192,10 @@ describe('byggnaders-resursanvandning', () => {
     model.finishTurn();
 
     model.openPlanet();
-    const controller = new AppController(model, new AppView(root, mapFactory));
+    const controller = new MasterController(
+      model,
+      new AppView(root, mapFactory),
+    );
     controller.start();
     click('Building sites');
     expect(root.querySelector('.building-panel')?.textContent).toContain(
@@ -234,7 +237,7 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
     advance(model);
     advance(model);
     model.openPlanet();
-    new AppController(model, new AppView(root, mapFactory)).start();
+    new MasterController(model, new AppView(root, mapFactory)).start();
     click('Building sites');
     expect(root.querySelectorAll('.building-site')).toHaveLength(10);
     expect(root.querySelector('.building-menu')).toBeNull();
@@ -273,7 +276,7 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
     const target = model.snapshot.fleets[1]!;
     model.transferShips(home.id, 'Fighter', 1, target.id);
     model.openPlanet();
-    new AppController(model, new AppView(root, mapFactory)).start();
+    new MasterController(model, new AppView(root, mapFactory)).start();
     root
       .querySelector<HTMLButtonElement>(
         '.planet-tabs [aria-label="Production"]',
@@ -350,11 +353,11 @@ describe('kolonisation / kartorderstatus', () => {
     model.setDestination('fleet-home', 0, 1);
     advance(model);
     model.select(new HexCoordinate(0, 1));
-    new AppController(model, new AppView(root, mapFactory)).start();
+    new MasterController(model, new AppView(root, mapFactory)).start();
     click('Orders');
     click('Colonize');
     model.select(new HexCoordinate(0, 1));
-    new AppController(model, new AppView(root, mapFactory)).start();
+    new MasterController(model, new AppView(root, mapFactory)).start();
     expect(
       model.snapshot.cells.find((cell) => cell.position.key === '0,1')!.object!
         .owned,
@@ -388,7 +391,7 @@ describe('kompakta-koknappar', () => {
     model.research('Colony ship factory');
     model.research('Transport ship factory');
     model.openResearch();
-    new AppController(model, new AppView(root, mapFactory)).start();
+    new MasterController(model, new AppView(root, mapFactory)).start();
     const rows = () => [...root.querySelectorAll('.research-queue article')];
     const buttons = () => [
       ...rows()[0]!.querySelectorAll<HTMLButtonElement>('button'),
@@ -418,7 +421,7 @@ describe('kompakta-koknappar', () => {
     const model = new AppModel();
     buildShipyard(model);
     model.openPlanet();
-    new AppController(model, new AppView(root, mapFactory)).start();
+    new MasterController(model, new AppView(root, mapFactory)).start();
     root
       .querySelector<HTMLButtonElement>(
         '.planet-tabs [aria-label="Production"]',

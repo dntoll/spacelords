@@ -16,7 +16,7 @@ import {
 } from '../fixtures/salvage.js';
 import { discoveryState } from '../fixtures/exploration.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import {
   hitSalvageMarker,
   salvageMarkers,
@@ -101,7 +101,7 @@ describe('bargningsorder-fran-flotta', () => {
     });
     model.startSlot(1);
     let emit!: IntentHandler;
-    const controller = new AppController(model, {
+    const controller = new MasterController(model, {
       bind(handler) {
         emit = handler;
       },

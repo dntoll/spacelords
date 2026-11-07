@@ -4,7 +4,7 @@ import {
   type BoardingCameraSnapshot,
   type BoardingCameraSubject,
   type BoardingCameraTransition,
-} from '../controllers/BoardingCameraController.js';
+} from './boarding/BoardingCameraController.js';
 import { BoardingLighting } from './BoardingLighting.js';
 import { BoardingLightPainter } from './BoardingLightPainter.js';
 import p5 from 'p5';

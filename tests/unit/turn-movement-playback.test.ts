@@ -6,7 +6,7 @@ import {
 } from '../../src/client/models/TurnMovementPlayback.js';
 import { Game, type TurnFrame } from '../../src/client/models/Game.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import {
   HexCoordinate,
@@ -139,7 +139,7 @@ it('samtidig-farledsanimation: controller frames every route together, animates 
   let emit!: IntentHandler;
   const frames: TurnFrame[] = [];
   let fixedCamera: typeof original | null = null;
-  const controller = new AppController(model, {
+  const controller = new MasterController(model, {
     bind(handler) {
       emit = handler;
     },
@@ -306,7 +306,7 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     model.setDestination('fleet-home', 3, 0);
     let emit!: IntentHandler;
     let steps = 0;
-    const controller = new AppController(model, {
+    const controller = new MasterController(model, {
       bind(handler) {
         emit = handler;
       },
@@ -467,7 +467,7 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     let emit!: IntentHandler;
     const order: string[] = [];
     const cameras = new Map<string, typeof model.snapshot.camera>();
-    const controller = new AppController(model, {
+    const controller = new MasterController(model, {
       bind(handler) {
         emit = handler;
       },
@@ -507,7 +507,7 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     const model = new AppModel();
     let emit!: IntentHandler;
     const animate = vi.fn(() => Promise.resolve());
-    const controller = new AppController(model, {
+    const controller = new MasterController(model, {
       bind(handler) {
         emit = handler;
       },

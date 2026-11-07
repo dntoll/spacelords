@@ -2,7 +2,7 @@ import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EventPlayback } from '../../src/client/models/EventPlayback.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import type {
   AppPort,
   IntentHandler,
@@ -191,7 +191,7 @@ describe('sekventiella-arshandelser', () => {
       render,
       dispose() {},
     };
-    const controller = new AppController(model, port);
+    const controller = new MasterController(model, port);
     controller.start();
     emit({ type: 'end-turn' });
     return { model, controller, emit, render };
@@ -261,7 +261,7 @@ describe('sekventiella-arshandelser', () => {
     });
     model.startSlot(1);
     let emit!: IntentHandler;
-    const controller = new AppController(model, {
+    const controller = new MasterController(model, {
       bind(handler) {
         emit = handler;
       },

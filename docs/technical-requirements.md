@@ -88,7 +88,7 @@
 ## Kartans prestanda
 
 `responsiv-stjarnkarta` och `rumsligt-kartindex` är **Fullständigt implementerat**.
-AppController återanvänder senast presenterade läsmodell under ren navigation.
+MasterController återanvänder senast presenterade läsmodell under ren navigation.
 AppModel levererar en ny oföränderlig presentation utan att beräkna om
 imperiets ekonomi. AppView uppdaterar kamera och byggvalens position;
 GalaxyMapView samlar omritningar per bildruta och använder MapViewport
@@ -103,7 +103,7 @@ Se [orsak, mätning och tester](map-performance.md).
 `skeppsanpassade-specialorder`, `patrullcentrum-vid-order` och
 `startorder-for-nybyggda-skepp`: ShipOrders delar typade order, namn,
 kapabiliteter och ruttsortering mellan befintliga flottor och nyproduktion.
-OrdersView renderar HTML-val; AppController och AppModel samordnar meny och
+OrdersView renderar HTML-val; MasterController och AppModel samordnar meny och
 kartval. Domänorder går genom Game. Move ligger kvar som separat kartval.
 OrderSelection är tillfälligt presentationsläge; mål- och startorder i spelet
 sparas direkt. Ruttflottor filtreras från mottagarkartan och dess träffytor.
@@ -133,7 +133,7 @@ bemanning och försörjning. FleetUpgradeOrder använder en separat
 beställningsidentitet i samma Logistics- och ComponentPlanner-flöde som
 vanlig produktion. Exakta motortyper krävs vid Upgrade; nybyggens vanliga
 motoralternativ behålls. Vyer får frysta order, mål och listor och skickar
-avsikter genom AppController och AppModel. Sparning sker omedelbart.
+avsikter genom MasterController och AppModel. Sparning sker omedelbart.
 
 Fleet har ett valfritt `upgrade`-fält; äldre sparningar saknar det och kräver
 ingen migrering eller rensning. Sparade mål valideras mot skeppsidentitet,
@@ -147,7 +147,7 @@ Chromium och WebKit och ingår i snabbpubliceringen.
 ## Direkta stridsorder
 
 `skeppsval-startar-stridstur`: BattleView skickar aktiveringsavsikten från
-ett uttryckligt skeppsval. AppController samordnar modelländring och ny vy,
+ett uttryckligt skeppsval. MasterController samordnar modelländring och ny vy,
 och AppModel sparar omedelbart. Rendering startar aldrig en aktivering.
 Behöriga val kräver egen tur, oanvänt eget skepp och ingen pågående
 aktivering. Domänens aktiveringsregler och sparformat är oförändrade.
@@ -175,7 +175,7 @@ slumptillstånd, kartparser, siktberäkning, pathfinding och AI. Kartdefinitione
 skrov och en brygga i samma koordinatsystem.
 
 AppModel äger fortfarande den fristående testsessionen från huvudmenyn.
-`boarding-command` samordnas av AppController och en separat
+`boarding-command` samordnas av MasterController och en separat
 `BoardingView`; vyn får bara läsa snapshot och skicka intents. AP-färgad
 vägvisning beräknas ur pathfinding utan att mutera striden. Stegvis gång är
 presentation: modellen samlar synliga rutor efter varje vändning och steg för
@@ -232,7 +232,7 @@ före och efter val i Chromium och WebKit. Inga modell- eller sparändringar.
 FactoryTechnology definierar versionskedjorna gemensamt för byggfilter,
 komponentfilter och uppgraderingar. Game lämnar frysta komponentval och
 uppgraderingsalternativ; vyn skickar en
-avsikt via AppController och AppModel. Projektets valfria `upgradeBuildingId`
+avsikt via MasterController och AppModel. Projektets valfria `upgradeBuildingId`
 knyter uppgraderingen till befintlig fabrik. Fabrikens id och plats bevaras;
 byggplats och befintliga arbetare reserveras inte en gång till. Samma
 personalberäkning används för genomförande, försörjningsvy och civiltrafik.
@@ -247,7 +247,7 @@ prompter bevaras och manifestet uppdateras per fil. Kontrollera antal, filformat
 alpha, fria kanter och unika filnamn automatiskt; granska motiv, ljusriktning
 och symbolernas läsbarhet visuellt. Se [bildleveransen](generated-map-artwork.md).
 
-`spelgrafik-symboler`: BuildingSymbols delar de 24 symbolerna mellan kataloger,
+`spelgrafik-symboler`: BuildingSymbols ger varje byggnadstyp en egen symbol, inklusive den senare `Raptor factory` från `egen-raptor-grafik`, och delar dem mellan kataloger,
 byggnadsköer och identifierad forskning. Fyra befintliga porträtt behålls;
 övriga detaljvyer använder symbolen. Bilder är dekorativa vid namngivna val
 och ersätts av befintlig SVG-symbol vid laddningsfel.
@@ -310,7 +310,7 @@ samt att alla förkunskaper är färdiga. Anonyma rutor visar inga avslöjande
 namn, bilder eller tillgänglighetstexter.
 
 `forskningsdetaljer-vid-val`: AppModel äger sessionsbundet inspectedResearch,
-skilt från aktiv forskning. Intent inspect-research går via AppController.
+skilt från aktiv forskning. Intent inspect-research går via MasterController.
 Detaljer visas i en fast HTML-del utanför trädets kamera. Vid högst 640 px bredd
 ligger den under trädet och använder högst 32 procent av panelhöjden och 88 px;
 annars ligger den bredvid. En 32 px hög Research-knapp med innehållsbredd ligger
@@ -445,7 +445,7 @@ beställa en annan produkt efter det första klickets omritning.
 
 `route-kartvy`, `produktions-kartvy` och `delad-kartkamera` använder en gemensam
 GalaxyMapView-instans mellan map, fleets, route och production. AppModel håller
-Camera och tillfälliga kategori-, sid-, alternativ- och projektval. AppController
+Camera och tillfälliga kategori-, sid-, alternativ- och projektval. MasterController
 avbryter gester vid navigation. Production tillåter planetval och kameragester;
 rutt- och flottorder hör till andra tillämpliga kartlägen.
 
@@ -529,7 +529,7 @@ minikarta, översiktsvy eller förhandsvisningsfabrik för flottor finns kvar.
 Explicit ruttval från flottpanelen öppnar Star map; kartbakgrunden är inaktiv.
 Sparformat och domänmodell ändras inte.
 
-AppModel håller ett oföränderligt, tillfälligt namnutkast. AppController
+AppModel håller ett oföränderligt, tillfälligt namnutkast. MasterController
 samordnar redigering, validering och sparning genom befintliga Game-kommandon.
 En överföring till en ny flotta använder den befintliga sammanhängande
 domänhandlingen; kommandot returnerar den mottagande flottans ögonblicksbild.
@@ -556,25 +556,30 @@ fortsatt av befintlig GitHub CI.
 
 ## Tekniska krav
 
-| Kravnamn                 | Status                     | Krav                                                                                                                                                                                                                                      | Verifiering                                                |
-| ------------------------ | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `typescript-projekt`     | Fullständigt implementerat | Node.js-projekt med strikt TypeScript för server och klient.                                                                                                                                                                              | `npm run typecheck`, `npm run build`                       |
-| `enkel-utvecklingsstart` | Fullständigt implementerat | Ett kommando startar klientens utvecklingsserver och servern med automatisk omladdning. Dokumentera installation, adresser och felsökning.                                                                                                | `npm run dev`, lokal startkontroll                         |
-| `produktionsstart`       | Fullständigt implementerat | Byggd klient och server kan köras tillsammans utan utvecklingsverktyg.                                                                                                                                                                    | Utökade HTTP-tester mot byggd server                       |
-| `serverstatus`           | Fullständigt implementerat | Servern erbjuder en enkel statuskontroll utan verksamhetsfunktioner. Okända API-adresser ger 404.                                                                                                                                         | Enhetstest av statusmodell/controller och utökat HTTP-test |
-| `rena-gitfiler`          | Fullständigt implementerat | Ignorera beroenden, byggresultat, testresultat, lokala inställningar och hemligheter. Checka in låsfil och ofarligt miljöexempel.                                                                                                         | `.gitignore`, `git status`, `git check-ignore`             |
-| `lasbara-kravnamn`       | Fullständigt implementerat | Ge varje krav ett stabilt, unikt och läsbart namn. Använd samma namn i tester, docs och relevanta kodkommentarer.                                                                                                                         | Kravgranskning och namngivna tester                        |
-| `separerade-kravlistor`  | Fullständigt implementerat | Börja rotöversikten med vision och kravkategorier. Håll produktkrav korta och otekniska. Lista tekniska krav separat och flytta växande detaljer till `docs/`. Dokumentera alla krav och ifrågasätt motsägelser.                          | Dokumentationsgranskning, `AGENTS.md`                      |
-| `meningsfulla-tester`    | Fullständigt implementerat | Knyt beteendekrav till enhetstester som skyddar mot felkategorier. Använd andra relevanta kontroller för verktygs- och processkrav.                                                                                                       | Kravkopplingen nedan och kodgranskning                     |
-| `snabb-testsvit`         | Fullständigt implementerat | Den snabba svitens riktvärde är 20 sekunder inklusive start. Låt sviten slutföras och flytta vid överskridande mindre prioriterade tester till den utökade sviten utan krav på omkörning. Kör alla sviter vid begärd omfattande testning. | `npm test`, uppmätt exekveringstid                         |
-| `utokad-testsvit`        | Fullständigt implementerat | Ha en separat svit för tester som får ta längre tid, HTTP-integration samt riktiga browserkontroller mot produktionsbygget. CI-jobbet får ta högst 20 minuter inklusive installation av webbläsare.                                       | `npm run test:extended`                                    |
-| `tester-i-github`        | Fullständigt implementerat | Kör snabbkontroller, Pages-bygge och mobilröktest vid push/PR. Kör hela sviten i GitHub Actions vid begärt sluttest för explicit källrevision.                                                                                            | `.github/workflows/ci.yml`, `npm run check` lokalt         |
-| `regressionstest-forst`  | Fullständigt implementerat | Reproducera buggar med ett misslyckat test före rättningen. Skriv även tester först för annan implementation när lämpligt.                                                                                                                | Commit- och arbetsgranskning                               |
-| `mvc-arkitektur`         | Fullständigt implementerat | Använd MVC på server och klient. Vyer hanterar plattformens in-/utdata, får läsa modellen och skickar ändringsavsikter till controllers. Modeller är objektorienterade med hög sammanhållning och låg koppling.                           | Enhets- och typkontroll, arkitekturgranskning              |
-| `plantuml-domanmodell`   | Fullständigt implementerat | Underhåll problemdomänens klasser och relationer i PlantUML. Lägg till domänbegrepp först när krav motiverar dem.                                                                                                                         | `docs/domain-model.puml`, domängranskning                  |
-| `branches-och-commits`   | Fullständigt implementerat | Arbeta på branches och gör regelbundna commits med tydliga meddelanden.                                                                                                                                                                   | Git-historik och arbetsregler                              |
-| `typescript-lintning`    | Fullständigt implementerat | Använd ESLint med typescript-eslint och meningsfull typmedveten kontroll. Undanta genererade bygg-, täcknings- och browserresultat från källkodsgranskningen.                                                                             | `npm run lint`                                             |
-| `lasbar-kod`             | Fullständigt implementerat | Använd tydlig namngivning och Clean Code. Kommentarer förklarar motiv, begränsningar och kravkopplingar utan att upprepa koden. Håll formatering konsekvent.                                                                              | Kodgranskning och `npm run format:check`                   |
+| Kravnamn                 | Status                     | Krav                                                                                                                                                                                                                                                                                                           | Verifiering                                                |
+| ------------------------ | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `typescript-projekt`     | Fullständigt implementerat | Node.js-projekt med strikt TypeScript för server och klient.                                                                                                                                                                                                                                                   | `npm run typecheck`, `npm run build`                       |
+| `enkel-utvecklingsstart` | Fullständigt implementerat | Ett kommando startar klientens utvecklingsserver och servern med automatisk omladdning. Dokumentera installation, adresser och felsökning.                                                                                                                                                                     | `npm run dev`, lokal startkontroll                         |
+| `produktionsstart`       | Fullständigt implementerat | Byggd klient och server kan köras tillsammans utan utvecklingsverktyg.                                                                                                                                                                                                                                         | Utökade HTTP-tester mot byggd server                       |
+| `serverstatus`           | Fullständigt implementerat | Servern erbjuder en enkel statuskontroll utan verksamhetsfunktioner. Okända API-adresser ger 404.                                                                                                                                                                                                              | Enhetstest av statusmodell/controller och utökat HTTP-test |
+| `rena-gitfiler`          | Fullständigt implementerat | Ignorera beroenden, byggresultat, testresultat, lokala inställningar och hemligheter. Checka in låsfil och ofarligt miljöexempel.                                                                                                                                                                              | `.gitignore`, `git status`, `git check-ignore`             |
+| `lasbara-kravnamn`       | Fullständigt implementerat | Ge varje krav ett stabilt, unikt och läsbart namn. Använd samma namn i tester, docs och relevanta kodkommentarer.                                                                                                                                                                                              | Kravgranskning och namngivna tester                        |
+| `separerade-kravlistor`  | Fullständigt implementerat | Börja rotöversikten med vision och kravkategorier. Håll produktkrav korta och otekniska. Lista tekniska krav separat och flytta växande detaljer till `docs/`. Dokumentera alla krav och ifrågasätt motsägelser.                                                                                               | Dokumentationsgranskning, `AGENTS.md`                      |
+| `meningsfulla-tester`    | Fullständigt implementerat | Knyt beteendekrav till enhetstester som skyddar mot felkategorier. Använd andra relevanta kontroller för verktygs- och processkrav.                                                                                                                                                                            | Kravkopplingen nedan och kodgranskning                     |
+| `snabb-testsvit`         | Fullständigt implementerat | Den snabba svitens riktvärde är 20 sekunder inklusive start. Låt sviten slutföras och flytta vid överskridande mindre prioriterade tester till den utökade sviten utan krav på omkörning. Kör alla sviter vid begärd omfattande testning.                                                                      | `npm test`, uppmätt exekveringstid                         |
+| `utokad-testsvit`        | Fullständigt implementerat | Ha en separat svit för tester som får ta längre tid, HTTP-integration samt riktiga browserkontroller mot produktionsbygget. CI-jobbet får ta högst 20 minuter inklusive installation av webbläsare.                                                                                                            | `npm run test:extended`                                    |
+| `tester-i-github`        | Fullständigt implementerat | Kör snabbkontroller, Pages-bygge och mobilröktest vid push/PR. Kör hela sviten i GitHub Actions vid begärt sluttest för explicit källrevision.                                                                                                                                                                 | `.github/workflows/ci.yml`, `npm run check` lokalt         |
+| `regressionstest-forst`  | Fullständigt implementerat | Reproducera buggar med ett misslyckat test före rättningen. Skriv även tester först för annan implementation när lämpligt.                                                                                                                                                                                     | Commit- och arbetsgranskning                               |
+| `mvc-arkitektur`         | Delvis implementerat       | Använd MVC på server och klient. En master-controller tar emot domänfakta och är den enda som byter fall. Use-case-controllers anropar bara sin modell-facad. Vyer läser modellen, lämnar domänfakta och ändrar den inte. Stjärnkartans pekhändelser översätts fortfarande i mastern.                          | Enhets- och typkontroll, arkitekturgranskning              |
+| `master-controller`      | Fullständigt implementerat | En master tar emot avsikter, delegerar till rätt use-case-controller och är den enda som byter fall. Pågående år samordnas här.                                                                                                                                                                                | Enhetstest `master-controller`, arkitekturgranskning       |
+| `use-case-controller`    | Fullständigt implementerat | Star map, Planet, Research, Fleets, Routes, Production, Orders, Decisions, Saves, Battle och Boarding har varsin controller. Den känner inte till DOM eller p5.                                                                                                                                                | Enhetstest `use-case-controller`                           |
+| `modell-facad`           | Fullständigt implementerat | Varje fall har en facad som är enda vägen in och bara visar det fallet får läsa och ändra. Ett fall öppnar inte ett annat.                                                                                                                                                                                     | Enhetstest `modell-facad`                                  |
+| `vy-plattformsgrans`     | Delvis implementerat       | Vyn äger DOM, p5 och kamera och kan ha en inre kameracontroller. Forskningsträdets pekning blir pan och zoom i vyn. Stjärnkartans pekning översätts fortfarande i mastern, eftersom handel, bärgning och flottor möts där. Bordning och strid ritas per bildruta. Övriga vyer ritas när något synligt ändrats. | Enhetstest `vy-plattformsgrans`, kartans `noLoop`          |
+| `speltexter-i-vy`        | Fullständigt implementerat | Fel, bekräftelser och upptäcktsbesked är strukturerade utfall. Vyn väljer meningen. Utfallet skrivs inte in i sparningen.                                                                                                                                                                                      | Enhetstest `speltexter-i-vy` och vytester av formuleringen |
+| `plantuml-domanmodell`   | Fullständigt implementerat | Underhåll problemdomänens klasser och relationer i PlantUML. Lägg till domänbegrepp först när krav motiverar dem.                                                                                                                                                                                              | `docs/domain-model.puml`, domängranskning                  |
+| `branches-och-commits`   | Fullständigt implementerat | Arbeta på branches och gör regelbundna commits med tydliga meddelanden.                                                                                                                                                                                                                                        | Git-historik och arbetsregler                              |
+| `typescript-lintning`    | Fullständigt implementerat | Använd ESLint med typescript-eslint och meningsfull typmedveten kontroll. Undanta genererade bygg-, täcknings- och browserresultat från källkodsgranskningen.                                                                                                                                                  | `npm run lint`                                             |
+| `lasbar-kod`             | Fullständigt implementerat | Använd tydlig namngivning och Clean Code. Kommentarer förklarar motiv, begränsningar och kravkopplingar utan att upprepa koden. Håll formatering konsekvent.                                                                                                                                                   | Kodgranskning och `npm run format:check`                   |
 
 ## Koppling mellan beteendekrav och tester
 
@@ -607,6 +612,11 @@ fortsatt av befintlig GitHub CI.
 - Spelgrundens kravkoppling beskrivs i [first-iteration.md](first-iteration.md).
 - `mvc-arkitektur`: enhetstest verifierar att modellens läsdata inte kan ändras
   utifrån. Typkontrollen begränsar vyn till modellens läsgränssnitt.
+  `master-controller`, `use-case-controller` och `modell-facad` skyddar att ett
+  fall inte öppnar ett annat och att facaden saknar de andra fallens kommandon.
+  `speltexter-i-vy` skyddar att ett utfall inte bär visningstext; vyn låser
+  formuleringen. Forskningsträdets pekning blir pan och zoom i vyn.
+  Stjärnkartans pekhändelser går fortfarande till mastern.
 - `serverstatus`: enhetstest verifierar statusmodell och controller oberoende av
   HTTP; integrationstest verifierar routning, JSON och okända API-adresser.
 - `produktionsstart`: integrationstest verifierar att byggd startsida och dess
@@ -679,6 +689,10 @@ Inga konstlade enhetstester behövs för en dokumenterad publiceringsprocess.
 
 ## Beslut och ändringar
 
+- 2026-11-07: `mvc-arkitektur` förtydligas med master-controller, en controller
+  och en modell-facad per fall, vy som plattformsgräns och speltexter i vyn.
+  En gemensam bildruteloop och tomma vidarebefordrande facader ingår inte.
+  Sparformatet ändras inte.
 - 2026-10-17: ESLint med typescript-eslint ersätter det tidigare JSLint-kravet på
   användarens förslag, eftersom projektet ska skrivas i TypeScript.
 - 2026-10-17: Läsbara kravnamn och en separat teknisk kravlista tillkommer på
@@ -1147,7 +1161,7 @@ ingen ersättning har beställts.
 `end-turn-vid-kartval`, `sekventiella-arshandelser`, `handelser-pa-kartan`
 och ändringen av `senaste-aret-i-events` är **Fullständigt implementerat**.
 AppModel äger ett separat EventPlayback med frysta ögonblicksbilder.
-AppController driver de automatiska stegen och städar timern vid dispose.
+MasterController driver de automatiska stegen och städar timern vid dispose.
 Vyer skickar intents och ändrar aldrig modellen. Under presentationen spärras
 andra spelhandlingar. Kontrollmenyn med Pause/Play, Next och Skip är borttagen.
 Detta ersätter den tidigare timern på 1,5 sekunder och dess kontroll-intents.
@@ -1235,7 +1249,7 @@ förblir synliga även under en stor samtidig panorering och inzoomning.
 Uppspelningskameran får underskrida den manuella
 minzoomen för att hela färden ska rymmas. Spelarens zoomgränser ändras inte.
 
-AppController inväntar kamerafaserna före skeppets första rörelsesteg.
+MasterController inväntar kamerafaserna före skeppets första rörelsesteg.
 Vyns animationsklocka rapporterar progression; controllern uppdaterar modellen
 och vyn renderar dess läsmodell. GalaxyMapView ändrar enbart skeppsmarkörens
 position under färden. Kameran är gemensam genom rörelser och efterföljande

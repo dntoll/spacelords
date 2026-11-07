@@ -1,4 +1,4 @@
-import type { Point } from '../models/HexCoordinate.js';
+import type { Point } from '../../models/HexCoordinate.js';
 
 export type GestureAction =
   | { readonly type: 'none' }

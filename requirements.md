@@ -617,6 +617,13 @@ Se [hela visionen](docs/game-vision.md).
   Se [Events och beslutsguidning](docs/events-and-guidance.md).
 - **Utveckling och kvalitet:** MVC, TypeScript, ESLint, p5 i instance mode,
   en snabb testsvit med riktvärdet 20 sekunder och en utökad svit i GitHub CI.
+  `master-controller`, `use-case-controller`, `modell-facad` och
+  `speltexter-i-vy` är **Fullständigt implementerat**: mastern delegerar till
+  en controller och en facad per fall, och vyn formulerar spelartexter.
+  `mvc-arkitektur` och `vy-plattformsgrans` är **Delvis implementerat**:
+  forskningsträdets pekning och kamerorna ligger i vyn, medan stjärnkartans
+  pekning fortfarande översätts i mastern. Bordning och strid behåller sin
+  bildruteloop. Se [tekniska kraven](docs/technical-requirements.md).
   `snabb-testsvit` är **Fullständigt implementerat**: om tiden överskrids flyttas
   mindre prioriterade tester till den utökade sviten utan krav på omkörning.
   Sviten avbryts inte vid tidsöverskridande och behåller tester från olika

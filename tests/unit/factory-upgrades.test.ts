@@ -8,7 +8,7 @@ import {
 } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import { turnFrames } from '../fixtures/turn-steps.js';
 import { renderProduction } from '../../src/client/views/PlanetProductionView.js';
@@ -334,7 +334,7 @@ describe('uppgradera-obsoleta-fabriker', () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
     const view = new AppView(root, () => ({ render() {}, dispose() {} }));
-    const controller = new AppController(model, view);
+    const controller = new MasterController(model, view);
     controller.start();
     model.openPlanet();
     model.selectPlanetTab('sites');

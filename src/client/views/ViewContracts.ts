@@ -113,15 +113,7 @@ export type AppIntent =
       readonly width: number;
       readonly height: number;
     }
-  | { readonly type: 'research-fit' | 'research-pointer-cancel' }
-  | {
-      readonly type:
-        | 'research-pointer-start'
-        | 'research-pointer-move'
-        | 'research-pointer-end';
-      readonly id: number;
-      readonly point: Point;
-    }
+  | { readonly type: 'research-fit' }
   | {
       readonly type:
         | 'open-decisions'

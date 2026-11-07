@@ -2,7 +2,7 @@
 import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, it, expect, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { renderPlanet } from '../../src/client/views/PlanetView.js';
 import { renderBuildSelection } from '../../src/client/views/BuildSelectionView.js';
 import { renderResearch } from '../../src/client/views/ResearchView.js';
@@ -21,7 +21,7 @@ function setup() {
   const root = document.createElement('div');
   document.body.replaceChildren(root);
   const model = new AppModel();
-  const controller = new AppController(
+  const controller = new MasterController(
     model,
     new AppView(root, () => ({ render() {}, dispose() {} })),
   );
@@ -210,7 +210,7 @@ describe('planetbudgetoversikt', () => {
     model.finishTurn();
 
     model.openPlanet();
-    new AppController(
+    new MasterController(
       model,
       new AppView(root, () => ({ render() {}, dispose() {} })),
     ).start();

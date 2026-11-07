@@ -1,4 +1,8 @@
 import { bindDiagramNavigation } from './DiagramNavigation.js';
+import {
+  ResearchPointer,
+  type ResearchPointerFact,
+} from './research/ResearchPointer.js';
 import type {
   ResearchSnapshot,
   Technology,
@@ -217,16 +221,20 @@ export function updateResearchCamera(
 }
 
 function bindNavigation(viewport: HTMLElement, emit: IntentHandler): void {
+  const pointer = new ResearchPointer();
+  const emitFacts = (facts: readonly ResearchPointerFact[]) => {
+    for (const fact of facts) emit(fact);
+  };
   bindDiagramNavigation(
     viewport,
     {
       pan: (delta) => emit({ type: 'research-pan', delta }),
       zoom: (factor, anchor) => emit({ type: 'research-zoom', factor, anchor }),
       fit: () => emit({ type: 'research-fit' }),
-      start: (id, point) => emit({ type: 'research-pointer-start', id, point }),
-      move: (id, point) => emit({ type: 'research-pointer-move', id, point }),
-      end: (id, point) => emit({ type: 'research-pointer-end', id, point }),
-      cancel: () => emit({ type: 'research-pointer-cancel' }),
+      start: (id, point) => emitFacts(pointer.start(id, point)),
+      move: (id, point) => emitFacts(pointer.move(id, point)),
+      end: (id) => emitFacts(pointer.end(id)),
+      cancel: () => emitFacts(pointer.cancel()),
     },
     '.research-node',
   );

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { BattleView } from '../../src/client/views/BattleView.js';
 import { renderSaveSlots } from '../../src/client/views/SaveSlotsView.js';
 import type { SaveRepository } from '../../src/client/models/SaveRepository.js';
@@ -54,7 +54,7 @@ function setup() {
     render: vi.fn(),
     dispose() {},
   };
-  const controller = new AppController(model, view);
+  const controller = new MasterController(model, view);
   controller.start();
   return { model, controller, emit, repo, view };
 }
@@ -209,7 +209,7 @@ it('fuskknapp-for-teststrid: starts repeatable combat from the menu without writ
   model.openSaves();
   save.mockClear();
   let emit: (intent: AppIntent) => void = () => {};
-  const controller = new AppController(model, {
+  const controller = new MasterController(model, {
     bind: (handler) => {
       emit = handler;
     },

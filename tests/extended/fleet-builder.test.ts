@@ -8,7 +8,7 @@ import { renderMapFleetPanel } from '../../src/client/views/FleetMapPanel.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppView } from '../../src/client/views/AppView.js';
 
 beforeEach(() => document.body.replaceChildren());
@@ -29,7 +29,7 @@ function setup() {
   const root = document.createElement('div');
   document.body.append(root);
   const model = new AppModel();
-  new AppController(
+  new MasterController(
     model,
     new AppView(root, () => ({ render() {}, dispose() {} })),
   ).start();

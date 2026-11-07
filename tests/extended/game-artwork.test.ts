@@ -50,7 +50,7 @@ it('spelgrafik-symboler: every building has a distinct decorative symbol while i
     expect(item.querySelector('svg')).not.toBeNull();
     expect(control.getAttribute('aria-label')).toBe(`Show ${type}`);
   }
-  expect(sources.size).toBe(24);
+  expect(sources.size).toBe(Object.keys(BUILDINGS).length);
 });
 
 it('spelgrafik-symboler: a missing portrait uses its symbol while supplied portraits stay intact', () => {

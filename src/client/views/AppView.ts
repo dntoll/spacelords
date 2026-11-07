@@ -23,6 +23,7 @@ import { renderSaveSlots, clearSlotDialog } from './SaveSlotsView.js';
 import { needsAttention } from '../models/Decisions.js';
 import type { MapCell } from '../models/Galaxy.js';
 import type { AppReadModel, Screen } from '../models/AppModel.js';
+import { playerNoticeText } from './app/playerNoticeText.js';
 import { HexGeometry, HexCoordinate } from '../models/HexCoordinate.js';
 import type { TurnFrame } from '../models/Game.js';
 import type {
@@ -125,7 +126,7 @@ export class AppView implements AppPort {
       );
       this.#boardingView.render(
         model.boardingBattle,
-        model.notice,
+        playerNoticeText(model.notice),
         model.boardingPresentation ?? [],
         model.boardingShot ?? null,
       );
@@ -145,7 +146,7 @@ export class AppView implements AppPort {
       );
       this.#battleView.render(
         (model.battleFeedback ?? model.tacticalBattle)!,
-        model.notice,
+        playerNoticeText(model.notice),
       );
       return;
     }
@@ -1014,8 +1015,9 @@ export class AppView implements AppPort {
       this.#root.append(confirmation);
     }
     const existingNotice = this.#root.querySelector('.game-notice');
-    if (model.notice) {
-      const notice = element('p', 'game-notice', model.notice);
+    const noticeText = playerNoticeText(model.notice);
+    if (noticeText) {
+      const notice = element('p', 'game-notice', noticeText);
       notice.setAttribute('role', 'status');
       existingNotice?.replaceWith(notice);
       if (!existingNotice) this.#root.append(notice);

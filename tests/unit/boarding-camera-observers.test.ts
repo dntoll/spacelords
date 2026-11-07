@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BoardingCameraController } from '../../src/client/controllers/BoardingCameraController.js';
+import { BoardingCameraController } from '../../src/client/views/boarding/BoardingCameraController.js';
 import {
   BoardingBattle,
   type BoardingBattleState,

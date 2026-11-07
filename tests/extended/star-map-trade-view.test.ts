@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 
@@ -25,7 +25,7 @@ it('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: the map p
   const root = document.createElement('div');
   document.body.replaceChildren(root);
   const view = new AppView(root, () => ({ render() {}, dispose() {} }));
-  const controller = new AppController(model, view);
+  const controller = new MasterController(model, view);
   controller.start();
   expect(
     root.querySelector('.trade-route-details .trade-assignment-option'),
@@ -107,7 +107,7 @@ it('route-kartvy / handelsrutt-val-pa-stjarnkartan: opens the assigned route fro
   const root = document.createElement('div');
   document.body.replaceChildren(root);
   const view = new AppView(root, () => ({ render() {}, dispose() {} }));
-  const controller = new AppController(model, view);
+  const controller = new MasterController(model, view);
   controller.start();
   const button = root.querySelector<HTMLButtonElement>(
     '.selected-fleet-card[data-fleet-id="freighters"] [aria-label="Select route Tellus to Vesta"]',

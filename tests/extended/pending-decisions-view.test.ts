@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import { domeProductionState } from '../fixtures/production-dome.js';
 
@@ -22,7 +22,7 @@ it('beslut-vantar-pa-paborjad-atgard: updates guidance, counter, map problems an
   model.openProduction('sol-0');
   const root = document.createElement('div');
   document.body.replaceChildren(root);
-  const controller = new AppController(
+  const controller = new MasterController(
     model,
     new AppView(root, () => ({ render() {}, dispose() {} })),
   );

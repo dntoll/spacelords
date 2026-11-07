@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import {
   AppModel,
   type AppReadModel,
@@ -14,7 +14,7 @@ describe('responsiv-stjarnkarta', () => {
     let emit: IntentHandler = () => {};
     const render = vi.fn();
     const renderCamera = vi.fn();
-    const controller = new AppController(model, {
+    const controller = new MasterController(model, {
       bind: (handler) => {
         emit = handler;
       },
@@ -43,7 +43,7 @@ describe('responsiv-stjarnkarta', () => {
     const model = new AppModel();
     let emit: IntentHandler = () => {};
     const renderCamera = vi.fn<(model: AppReadModel) => void>();
-    const controller = new AppController(model, {
+    const controller = new MasterController(model, {
       bind: (handler) => {
         emit = handler;
       },
@@ -67,7 +67,7 @@ describe('responsiv-stjarnkarta', () => {
     let emit: IntentHandler = () => {};
     const render = vi.fn<(model: AppReadModel) => void>();
     const renderCamera = vi.fn<(model: AppReadModel) => void>();
-    const controller = new AppController(model, {
+    const controller = new MasterController(model, {
       bind: (handler) => {
         emit = handler;
       },

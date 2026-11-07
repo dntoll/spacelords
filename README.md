@@ -60,9 +60,14 @@ lintkravet: [verktygets dokumentation](https://typescript-eslint.io/getting-star
 
 ```text
 src/client/              Klientens startpunkt, HTML och CSS
-  models/                Objektorienterad modell med fryst läsdata
-  controllers/           Samordnar modell och vy
-  views/                 p5-karta, DOM-vyer och plattformsindata
+  models/                Delad spelmodell, sedan en katalog per fall
+    app/                 Spelsessionens strukturerade utfall
+    boarding/            Bordningens facad och modell
+  controllers/
+    app/                 Master-controller
+    boarding/            Ett fall per katalog
+  views/                 Plattformslager, en katalog per fall
+    boarding/            Karta, kamera, figurer
 src/server/
   models/                Plattformsoavhängiga modeller
   controllers/           Samordning utan HTTP-beroenden
@@ -75,10 +80,12 @@ tests/browser/           Playwright: desktop, mobil, surfplatta och touch
 docs/                    Krav, arbetsbeslut och PlantUML-domänmodell
 ```
 
-Vyer får bara modellens läsgränssnitt eller frysta ögonblicksbilder. Vyn skickar
-indata till en controller, som anropar modellen och begär ny rendering. Vyn ändrar
-aldrig modellen. Hexgeometri, sikt, kamera och modeller beror inte på p5, DOM
-eller HTTP. Kartans läsdata innehåller inga dolda planetuppgifter.
+Vyer får bara modellens läsgränssnitt eller frysta ögonblicksbilder. Vyn översätter
+pekning, tangentbord och DOM till domänfakta och lämnar dem till master-controllern.
+Use-case-controllern anropar bara sin facad. Mastern byter fall och ber vyn rita
+när något synligt ändrats. Vyn ändrar aldrig modellen och väljer själv meningarna
+spelaren ser. Hexgeometri, sikt och modeller beror inte på p5, DOM eller HTTP.
+Kameragesten bor i vyn. Kartans läsdata innehåller inga dolda planetuppgifter.
 
 p5 används i instance mode och ritar om vid förändringar. Kartvyn städar canvas,
 händelser och ResizeObserver vid vybyte och hot reload. Navigation sker inom

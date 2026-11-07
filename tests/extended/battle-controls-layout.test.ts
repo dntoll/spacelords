@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { BattleCameraController } from '../../src/client/controllers/BattleCameraController.js';
+import { BattleCameraController } from '../../src/client/views/battle/BattleCameraController.js';
 import { battleControlsLayout } from '../../src/client/views/BattleControlsLayout.js';
 import { createTestBattle } from '../../src/client/models/TestBattle.js';
 import { battleHex } from '../../src/client/models/TacticalBattle.js';

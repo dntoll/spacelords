@@ -9,7 +9,7 @@ import {
   type BattleState,
   type BattleHex,
 } from '../../src/client/models/TacticalBattle.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import type { SaveRepository } from '../../src/client/models/SaveRepository.js';
 import {
@@ -844,7 +844,7 @@ it('fristaende-bordningsprototyp / forsvarare-och-civilister / tydlig-bordningss
   save.mockClear();
   let emit: (intent: AppIntent) => void = () => {};
   const render = vi.fn();
-  const controller = new AppController(model, {
+  const controller = new MasterController(model, {
     bind: (handler) => {
       emit = handler;
     },

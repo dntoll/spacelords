@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import { upgradeState } from '../fixtures/fleet-upgrades.js';
@@ -18,7 +18,7 @@ describe('flottorder-upgrade / spara-flottuppgradering', () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
     const view = new AppView(root, () => ({ render() {}, dispose() {} }));
-    const controller = new AppController(model, view);
+    const controller = new MasterController(model, view);
     controller.start();
     const button = (label: string) =>
       root.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;

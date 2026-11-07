@@ -9,7 +9,7 @@ import {
   HexGeometry,
 } from '../../src/client/models/HexCoordinate.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppView } from '../../src/client/views/AppView.js';
 
 describe('handelseannonsering / handelser-pa-kartan', () => {
@@ -300,7 +300,7 @@ describe('handelser / arsrundor-och-order', () => {
     }));
     for (const decision of model.snapshot.decisions)
       model.skipDecision(decision.id);
-    const controller = new AppController(model, view);
+    const controller = new MasterController(model, view);
     controller.start();
     const end = root.querySelector<HTMLButtonElement>('.end-turn')!;
     end.click();

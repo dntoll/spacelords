@@ -2,8 +2,8 @@ import {
   HexCoordinate,
   HexGeometry,
   type Point,
-} from '../models/HexCoordinate.js';
-import type { BattleHex } from '../models/TacticalBattle.js';
+} from '../../models/HexCoordinate.js';
+import type { BattleHex } from '../../models/TacticalBattle.js';
 
 export interface BattleViewportSnapshot {
   readonly width: number;

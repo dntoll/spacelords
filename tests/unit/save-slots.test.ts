@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import type {
   AppIntent,
@@ -162,7 +162,7 @@ describe('tre-sparplatser / sparplats-utforskad-karta', () => {
     HTMLDialogElement.prototype.close = function () {
       this.open = false;
     };
-    const controller = new AppController(
+    const controller = new MasterController(
       new AppModel(undefined, repository()),
       new AppView(root, () => ({ render() {}, dispose() {} })),
     );
@@ -249,7 +249,7 @@ describe('frontend-backend-mock', () => {
       dispose() {},
       animateTurnStep: () => animation,
     };
-    const controller = new AppController(model, view);
+    const controller = new MasterController(model, view);
     controller.start();
     emit({ type: 'start-slot', id: 1 });
     emit({ type: 'rename-fleet', id: 'fleet-home', name: 'Saved expedition' });

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
@@ -173,7 +173,7 @@ describe('handelseanpassad-kartkamera / stillastaende-kamera-vid-forflyttning', 
       (sum, phase) => sum + phase.duration,
       0,
     );
-    const controller = new AppController(model, {
+    const controller = new MasterController(model, {
       bind() {},
       render() {},
       dispose() {},
@@ -213,7 +213,7 @@ describe('handelseanpassad-kartkamera / stillastaende-kamera-vid-forflyttning', 
     let tick!: (progress: number) => void;
     let complete!: () => void;
     const render = vi.fn();
-    const controller = new AppController(model, {
+    const controller = new MasterController(model, {
       bind(handler) {
         emit = handler;
       },

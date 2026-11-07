@@ -6,7 +6,8 @@ import { renderFleetCard } from '../../src/client/views/FleetCard.js';
 import { renderFleetOrders } from '../../src/client/views/FleetOrdersView.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
+import { playerNoticeText } from '../../src/client/views/app/playerNoticeText.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 import { salvageState } from '../fixtures/salvage.js';
@@ -124,7 +125,7 @@ function setup(model = new AppModel()) {
   const root = document.createElement('div');
   document.body.append(root);
   const view = new AppView(root, () => ({ render() {}, dispose() {} }));
-  const controller = new AppController(model, view);
+  const controller = new MasterController(model, view);
   controller.start();
   const click = (label: string) => {
     const target = (
@@ -329,7 +330,7 @@ describe('flottnamn-direktredigering', () => {
     input.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
     );
-    expect(model.snapshot.notice).toContain('1–40');
+    expect(playerNoticeText(model.snapshot.notice)).toContain('1–40');
     expect(root.querySelector('[aria-label="Fleet name"]')).not.toBeNull();
     root
       .querySelector('input')!
@@ -565,7 +566,7 @@ describe('flottpatrullering', () => {
     });
     model.startSlot(1);
     let emit: IntentHandler = () => {};
-    const controller = new AppController(model, {
+    const controller = new MasterController(model, {
       bind(handler) {
         emit = handler;
       },

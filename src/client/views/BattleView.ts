@@ -15,7 +15,7 @@ import {
   HexGeometry,
   type Point,
 } from '../models/HexCoordinate.js';
-import type { BattleViewportSnapshot } from '../controllers/BattleCameraController.js';
+import type { BattleViewportSnapshot } from './battle/BattleCameraController.js';
 import type { IntentHandler } from './ViewContracts.js';
 import { element } from './dom.js';
 import { ShipFootprint } from '../models/ShipFootprint.js';

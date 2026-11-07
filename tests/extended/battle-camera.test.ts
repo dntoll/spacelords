@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { BattleCameraController } from '../../src/client/controllers/BattleCameraController.js';
+import { BattleCameraController } from '../../src/client/views/battle/BattleCameraController.js';
 
 it.each([
   [320, 568],

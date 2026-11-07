@@ -1,5 +1,5 @@
 import type { Point } from '../models/HexCoordinate.js';
-import type { BattleViewportSnapshot } from '../controllers/BattleCameraController.js';
+import type { BattleViewportSnapshot } from './battle/BattleCameraController.js';
 
 export function battleControlsLayout(
   view: BattleViewportSnapshot,

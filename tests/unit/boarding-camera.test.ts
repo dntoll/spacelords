@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BoardingCameraController,
   type BoardingCameraSnapshot,
-} from '../../src/client/controllers/BoardingCameraController.js';
+} from '../../src/client/views/boarding/BoardingCameraController.js';
 
 const camera = new BoardingCameraController();
 const bounds = { left: 0, top: 80, right: 400, bottom: 600 };

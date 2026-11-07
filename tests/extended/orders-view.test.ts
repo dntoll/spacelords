@@ -2,7 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppView } from '../../src/client/views/AppView.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
@@ -32,7 +32,7 @@ function setup() {
     mapIntent = emit;
     return { render() {}, dispose() {} };
   });
-  const controller = new AppController(model, view);
+  const controller = new MasterController(model, view);
   controller.start();
   const click = (label: string) =>
     root.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!.click();

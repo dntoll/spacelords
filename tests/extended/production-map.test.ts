@@ -3,7 +3,8 @@ import { turnFrames } from '../fixtures/turn-steps.js';
 import { domeProductionState as domeWorld } from '../fixtures/production-dome.js';
 import { describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
+import { playerNoticeText } from '../../src/client/views/app/playerNoticeText.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { Game, TECHNOLOGIES } from '../../src/client/models/Game.js';
@@ -31,7 +32,7 @@ function setup(state = tradeNetworkState()) {
   const factory = vi.fn(() => ({ render, dispose }));
   const view = new AppView(root, factory);
   let emit: IntentHandler = () => {};
-  const controller = new AppController(model, {
+  const controller = new MasterController(model, {
     bind(handler) {
       emit = handler;
       view.bind(handler);
@@ -126,7 +127,9 @@ it('produktionsorder-aterkoppling: replaces a previous success with the reason w
   expect(root.querySelector('.production-receipt')).not.toBeNull();
   const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
   emit({ type: 'map-production-build', option: 'Fighter' });
-  expect(model.snapshot.notice).toContain('no longer available');
+  expect(playerNoticeText(model.snapshot.notice)).toContain(
+    'no longer available',
+  );
   expect(root.querySelector('.production-receipt')).toBeNull();
   expect(model.snapshot.planet!.projects).toHaveLength(1);
   warning.mockRestore();
@@ -193,7 +196,7 @@ describe('route-kartvy / delad-kartkamera', () => {
     expect(model.snapshot.tradeRoutes).toHaveLength(1);
     const id = model.snapshot.tradeRoutes[0]!.id;
     emit({ type: 'assign-trade-fleet', routeId: id, fleetId: 'fleet-home' });
-    expect(model.snapshot.notice).toContain(
+    expect(playerNoticeText(model.snapshot.notice)).toContain(
       'Assign a transport fleet to this route before adding escorts',
     );
     emit({ type: 'assign-trade-fleet', routeId: id, fleetId: 'freighters' });
@@ -415,7 +418,7 @@ it('radiella-byggval / automatiska-delorder: preview is pure and failed ordering
   emit({ type: 'open-production' });
   emit({ type: 'map-production-option', option: 'Transport ship' });
   emit({ type: 'map-production-build' });
-  expect(model.snapshot.notice).toContain('Cannot order');
+  expect(playerNoticeText(model.snapshot.notice)).toContain('Cannot order');
   expect(model.snapshot.productionMap.selectedOption!.type).toBe(
     'Transport ship',
   );

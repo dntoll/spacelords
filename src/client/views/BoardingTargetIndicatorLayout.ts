@@ -1,4 +1,4 @@
-import type { BoardingCameraBounds } from '../controllers/BoardingCameraController.js';
+import type { BoardingCameraBounds } from './boarding/BoardingCameraController.js';
 
 export interface BoardingTargetPoint {
   readonly id: string;

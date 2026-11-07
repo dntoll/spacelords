@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
+import { ResearchPointer } from '../../src/client/views/research/ResearchPointer.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import {
   RESEARCH_TREE,
@@ -58,10 +59,10 @@ describe('forsknings-tradnavigation', () => {
     camera.panBy({ x: 900, y: -900 });
     expect(camera.snapshot).toEqual(phone);
   });
-  it('routes drag and pinch through the controller without moving the star map or changing research', () => {
+  it('routes drag and pinch through the research view without moving the star map or changing research', () => {
     const model = new AppModel();
     let emit: IntentHandler = () => {};
-    const controller = new AppController(model, {
+    const controller = new MasterController(model, {
       bind: (handler) => {
         emit = handler;
       },
@@ -70,19 +71,35 @@ describe('forsknings-tradnavigation', () => {
     });
     controller.start();
     const map = model.snapshot.camera;
+    const pointer = new ResearchPointer();
+    const point = (
+      kind: 'start' | 'move' | 'end' | 'cancel',
+      id = 0,
+      at = { x: 0, y: 0 },
+    ) => {
+      const facts =
+        kind === 'start'
+          ? pointer.start(id, at)
+          : kind === 'move'
+            ? pointer.move(id, at)
+            : kind === 'end'
+              ? pointer.end(id)
+              : pointer.cancel();
+      for (const fact of facts) emit(fact);
+    };
     emit({ type: 'open-research' });
     emit({ type: 'research-size', width: 800, height: 600 });
     emit({ type: 'research-zoom', factor: 1.2, anchor: { x: 400, y: 300 } });
     const initial = model.snapshot.researchCamera;
-    emit({ type: 'research-pointer-start', id: 1, point: { x: 100, y: 100 } });
-    emit({ type: 'research-pointer-move', id: 1, point: { x: 160, y: 130 } });
+    point('start', 1, { x: 100, y: 100 });
+    point('move', 1, { x: 160, y: 130 });
     expect(model.snapshot.researchCamera.offset).not.toEqual(initial.offset);
-    emit({ type: 'research-pointer-start', id: 2, point: { x: 240, y: 130 } });
-    emit({ type: 'research-pointer-move', id: 2, point: { x: 280, y: 130 } });
+    point('start', 2, { x: 240, y: 130 });
+    point('move', 2, { x: 280, y: 130 });
     expect(model.snapshot.researchCamera.zoom).toBeGreaterThan(initial.zoom);
-    emit({ type: 'research-pointer-cancel' });
+    point('cancel');
     const stopped = model.snapshot.researchCamera;
-    emit({ type: 'research-pointer-move', id: 1, point: { x: 900, y: 600 } });
+    point('move', 1, { x: 900, y: 600 });
     expect(model.snapshot.researchCamera).toEqual(stopped);
     emit({ type: 'open-map' });
     emit({ type: 'open-research' });

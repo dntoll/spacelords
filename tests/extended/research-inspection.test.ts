@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { AppController } from '../../src/client/controllers/AppController.js';
+import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppView } from '../../src/client/views/AppView.js';
 import { isResearchIdentified } from '../../src/client/models/ResearchTree.js';
 import { researchStationModel } from '../fixtures/research-station-model.js';
@@ -11,7 +11,7 @@ function setup() {
   model.openResearch();
   const root = document.createElement('div');
   document.body.replaceChildren(root);
-  const controller = new AppController(
+  const controller = new MasterController(
     model,
     new AppView(root, () => ({ render() {}, dispose() {} })),
   );
