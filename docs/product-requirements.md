@@ -195,9 +195,14 @@ kameraflytt. Detta gäller även automatiska turbyten.
 När en fiende eller civilist rör sig inom synhåll ska kameran vid behov zooma
 ut så att figuren och alla egna aktiva soldater som ser den syns samtidigt.
 Kameran står still medan figuren rör sig och behåller översikten efteråt.
-Dolda positioner får aldrig avslöjas av kameran. Spelaren kan avbryta båda
+Dolda positioner får aldrig avslöjas av kameran. Spelaren kan avbryta
 kameraflödena genom att själv panorera, zooma eller välja `Fit`. Minskad
 rörelse visar kamerans slutläge direkt.
+
+`kameraoverblick-fore-bordningsskott` — **Fullständigt implementerat**. När en
+synlig fiende eller egen soldat skjuter på den andra sidan ska kameran före
+skottet panorera och vid behov zooma ut tills både skytt och mål syns. Dolda
+positioner får inte avslöjas.
 
 ## Kampanjbordning
 

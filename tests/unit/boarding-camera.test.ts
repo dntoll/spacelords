@@ -91,6 +91,51 @@ describe('kameraoverblick-vid-synlig-bordningsrorelse', () => {
   });
 });
 
+describe('kameraoverblick-fore-bordningsskott', () => {
+  it('pans and zooms out once so the shooter and target are both inside the free viewport', () => {
+    const shooter = { x: 700, y: -260, width: 40, height: 90 };
+    const target = { x: 940, y: 420, width: 40, height: 90 };
+    const phases = camera.frame(initial, [shooter, target], bounds);
+    expect(phases).toHaveLength(1);
+    const final = phases[0]!.to;
+    expect(final.scale).toBeLessThan(initial.scale);
+    for (const subject of [shooter, target]) {
+      const rect = screen(final, subject);
+      expect(rect.left).toBeGreaterThanOrEqual(bounds.left + 23.99);
+      expect(rect.right).toBeLessThanOrEqual(bounds.right - 23.99);
+      expect(rect.top).toBeGreaterThanOrEqual(bounds.top + 23.99);
+      expect(rect.bottom).toBeLessThanOrEqual(bounds.bottom - 23.99);
+    }
+    const combined = {
+      left: Math.min(screen(final, shooter).left, screen(final, target).left),
+      right: Math.max(
+        screen(final, shooter).right,
+        screen(final, target).right,
+      ),
+      top: Math.min(screen(final, shooter).top, screen(final, target).top),
+      bottom: Math.max(
+        screen(final, shooter).bottom,
+        screen(final, target).bottom,
+      ),
+    };
+    expect((combined.left + combined.right) / 2).toBeCloseTo(200);
+    expect((combined.top + combined.bottom) / 2).toBeCloseTo(340);
+  });
+
+  it('does not move the camera when both combatants are already visible', () => {
+    expect(
+      camera.frame(
+        initial,
+        [
+          { x: -40, y: -40, width: 30, height: 60 },
+          { x: 30, y: 20, width: 30, height: 60 },
+        ],
+        bounds,
+      ),
+    ).toEqual([]);
+  });
+});
+
 describe('kantindikator-for-synlig-fiende', () => {
   it('centers an offscreen target without changing zoom', () => {
     const phases = camera.center(initial, soldier, bounds);

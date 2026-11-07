@@ -63,8 +63,12 @@ sparplatser.
   och rök avgör vilka egna soldater som ser figuren. Kameran står still under
   själva steget och behåller översikten efteråt. Dolda förflyttningar och
   stillastående turbyten ger ingen sådan kameraflytt.
+- `kameraoverblick-fore-bordningsskott` — **Fullständigt implementerat**. Före
+  ett skott mellan en synlig egen soldat och försvarare panorerar kameran och
+  zoomar vid behov ut så att båda figurerna ryms på den fria kartytan. Skottet
+  animeras först när kameran är klar. En dold skytt avslöjas inte av kameran.
 
-  Båda kameraflödena använder mjuka övergångar. Manuell panorering, zoom eller
+  Kameraflödena använder mjuka övergångar. Manuell panorering, zoom eller
   `Fit` avbryter automatiken för resten av den pågående uppspelningen utan
   att stoppa figurerna. Minskad rörelse visar slutläget direkt. Storleksbyte
   och stängning avslutar väntande kamerafaser säkert. Sparningar påverkas inte.

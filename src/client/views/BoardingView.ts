@@ -46,6 +46,7 @@ export interface BoardingMapPort {
     from: BoardingBattleState,
     to: BoardingBattleState,
   ): Promise<void>;
+  frameShot?(from: BoardingCell, to: BoardingCell): Promise<void>;
   playMotion?(
     from: BoardingBattleState,
     to: BoardingBattleState,
@@ -400,6 +401,10 @@ export class BoardingView {
         if (token !== this.#playToken) return;
         if (shot && this.#map?.playShot && index === shotIndex) {
           this.#paint(current, 'Firing…');
+          if (this.#map.frameShot) {
+            await this.#map.frameShot(shot.from, shot.to);
+            if (token !== this.#playToken) return;
+          }
           await this.#map.playShot(shot.from, shot.to);
           this.#playedShot = shot;
         }

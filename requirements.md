@@ -11,12 +11,15 @@ Se [hela visionen](docs/game-vision.md).
 ## Kravkategorier
 
 - **Bordningskamera:** `kamerafokus-vid-bordningssoldatbyte`,
-  `kameraoverblick-vid-synlig-bordningsrorelse` och
+  `kameraoverblick-vid-synlig-bordningsrorelse`,
+  `kameraoverblick-fore-bordningsskott` och
   `kantindikator-for-synlig-fiende` är **Fullständigt implementerat**.
   Soldatbyte till någon utanför bild zoomar ut, panorerar och återställer
   zoomnivån. Synliga fienders och civilisters rörelser ramar in figuren och
-  alla egna soldater som ser den. Kameran tar hänsyn till HUD och kan avbrytas
-  manuellt. Se [bordningsstrid](docs/boarding-combat.md).
+  alla egna soldater som ser den. Före ett skott panorerar och zoomar kameran
+  ut tills den synliga skytten och målet syns samtidigt. Kameran tar hänsyn
+  till HUD och kan avbrytas manuellt. Se
+  [bordningsstrid](docs/boarding-combat.md).
 
 - **Bordningens kartinformation:** `bordning-utan-riktningspilar`,
   `bordning-utan-sikt-och-eldrutor`, `senast-sedd-fiende-med-fragetecken` och

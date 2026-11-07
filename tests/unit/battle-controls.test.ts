@@ -1162,7 +1162,7 @@ it('kamerafokus-vid-bordningssoldatbyte: focuses a newly activated soldier even 
   view.dispose();
 });
 
-it('kameraoverblick-vid-synlig-bordningsrorelse / kamerafokus-vid-bordningssoldatbyte: frames before movement, preserves shot order and focuses the next soldier last', async () => {
+it('kameraoverblick-fore-bordningsskott / kameraoverblick-vid-synlig-bordningsrorelse / kamerafokus-vid-bordningssoldatbyte: frames the combatants before the shot, then movement, and focuses the next soldier last', async () => {
   const initial = createTestBoardingBattle().snapshot;
   const actor = initial.people.find(
     (person) =>
@@ -1192,6 +1192,10 @@ it('kameraoverblick-vid-synlig-bordningsrorelse / kamerafokus-vid-bordningssolda
       order.push('frame');
       return Promise.resolve();
     },
+    frameShot: () => {
+      order.push('shot-frame');
+      return Promise.resolve();
+    },
     playMotion: () => {
       order.push('move');
       return Promise.resolve();
@@ -1213,7 +1217,7 @@ it('kameraoverblick-vid-synlig-bordningsrorelse / kamerafokus-vid-bordningssolda
     presentationIndex: 0,
   });
   await vi.waitFor(() =>
-    expect(order).toEqual(['shot', 'frame', 'move', 'focus']),
+    expect(order).toEqual(['shot-frame', 'shot', 'frame', 'move', 'focus']),
   );
   view.dispose();
 });

@@ -394,6 +394,29 @@ export class BoardingMapView implements BoardingMapPort {
     );
   }
 
+  frameShot(from: BoardingCell, to: BoardingCell): Promise<void> {
+    if (this.#cameraSuppressed) return Promise.resolve();
+    const state = this.#state;
+    if (!state) return Promise.resolve();
+    const combatants = [from, to]
+      .map((cell) =>
+        state.people.find(
+          (person) =>
+            person.status === 'active' && key(person.position) === key(cell),
+        ),
+      )
+      .filter((person): person is BoardingPerson => !!person);
+    // kameraoverblick-fore-bordningsskott: the visible snapshot prevents camera framing from revealing hidden enemies.
+    if (combatants.length !== 2) return Promise.resolve();
+    return this.#playCamera(
+      this.#camera.frame(
+        this.cameraSnapshot,
+        combatants.map((person) => this.#cameraSubject(person)),
+        this.#cameraBounds(),
+      ),
+    );
+  }
+
   #applyCamera(snapshot: BoardingCameraSnapshot): void {
     this.#scale = snapshot.scale;
     this.#offset = snapshot.offset;

@@ -469,6 +469,34 @@ it('kamerafokus-vid-bordningssoldatbyte: reduced motion applies the final focus 
   view.dispose();
 });
 
+it('kameraoverblick-fore-bordningsskott: frames two visible combatants but never reveals a missing hidden shooter', async () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true }));
+  const { view, state, player } = scene(true);
+  const defender = {
+    ...player,
+    id: 'visible-defender',
+    side: 'defender' as const,
+    position: { q: 5, r: 0 },
+  };
+  view.render({ ...state, people: [player, defender] }, null, null, []);
+  view.zoom(3);
+  view.setViewportProvider(() => ({
+    left: 250,
+    top: 150,
+    right: 550,
+    bottom: 450,
+  }));
+  const close = view.cameraSnapshot;
+  await view.frameShot(player.position, defender.position);
+  expect(view.cameraSnapshot.scale).toBeLessThan(close.scale);
+
+  view.render({ ...state, people: [player] }, null, null, []);
+  const hidden = view.cameraSnapshot;
+  await view.frameShot(player.position, defender.position);
+  expect(view.cameraSnapshot).toEqual(hidden);
+  view.dispose();
+});
+
 it('kamerafokus-vid-bordningssoldatbyte: a manual zoom cancels pending phases and suppresses later automatic changes in that presentation', async () => {
   vi.stubGlobal(
     'requestAnimationFrame',

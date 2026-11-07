@@ -181,6 +181,45 @@ export class BoardingCameraController {
     return Object.freeze([this.#phase(from, to, world)]);
   }
 
+  /** kameraoverblick-fore-bordningsskott: center both combatants and only zoom out as far as needed. */
+  frame(
+    from: BoardingCameraSnapshot,
+    subjects: readonly BoardingCameraSubject[],
+    viewport: BoardingCameraBounds,
+  ): readonly BoardingCameraTransition[] {
+    const bounds = this.#safeBounds(viewport);
+    if (
+      !subjects.length ||
+      bounds.right <= bounds.left ||
+      bounds.bottom <= bounds.top ||
+      subjects.every((subject) => this.#contains(from, subject, bounds))
+    )
+      return Object.freeze([]);
+    const left = Math.min(...subjects.map((subject) => subject.x));
+    const right = Math.max(
+      ...subjects.map((subject) => subject.x + subject.width),
+    );
+    const top = Math.min(...subjects.map((subject) => subject.y));
+    const bottom = Math.max(
+      ...subjects.map((subject) => subject.y + subject.height),
+    );
+    const pivot = { x: (left + right) / 2, y: (top + bottom) / 2 };
+    const anchor = center(bounds);
+    const scale = Math.max(
+      Number.EPSILON,
+      Math.min(
+        from.scale,
+        (bounds.right - bounds.left) / Math.max(Number.EPSILON, right - left),
+        (bounds.bottom - bounds.top) / Math.max(Number.EPSILON, bottom - top),
+      ),
+    );
+    const to = snapshot(scale, {
+      x: anchor.x - pivot.x * scale,
+      y: anchor.y - pivot.y * scale,
+    });
+    return Object.freeze([this.#phase(from, to, pivot)]);
+  }
+
   /** kamerafokus-vid-bordningssoldatbyte: reveal, pan, then restore the exact previous zoom. */
   focus(
     from: BoardingCameraSnapshot,
