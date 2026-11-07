@@ -313,6 +313,19 @@ Bildoriginalen med suffixet `-meters` ersätter de tidigare dörr- och airlockbi
 
 ## Fasta lampor och läsbar interiör
 
+- `formbar-skeppskontur` — **Fullständigt implementerat**. `Outside` anger tom
+  rymd inom kartans rektangel; `Hull` placeras manuellt runt skeppets form.
+- `redigerbara-bordningslampor` — **Fullständigt implementerat**. Lampor kan
+  läggas till och tas bort i editorn; de kräver golv och kan ångras.
+- `kategoriserad-bordningspalett` — **Fullständigt implementerat**. Terräng,
+  objekt, rum, startpositioner och belysning har separata grupper och verktygshjälp.
+- `isometrisk-skeppsreferens` — **Fullständigt implementerat**. Skeppsbilden
+  projiceras bakom isometrin och syns genom `Outside` och runt kartan.
+- `rumsspecifika-bordningstexturer` och `texturerad-vaggovansida` — **Fullständigt
+  implementerat**. Bilderna används i spel och editor.
+- `spelidentisk-bordningseditor` — **Fullständigt implementerat**. Spelets
+  bilder, ytprojektion, ljus och väggsnitt används även i editorn.
+
 - `ljuskallestyrd-bordningsbelysning` — **Fullständigt implementerat**. Taklampor anges i ett valfritt `[lights]`-lager med `L` och `-`, med samma dimensioner som övriga kartlager. Lampor kräver golv. Standardlampan sitter på 2,2 m höjd med 6 m räckvidd och intensitet 1; ambientnivån är 0,65. Alla levererade interiörer har fasta lampor, och den sammansatta dockningskorridoren får en mittlampa. Belysningen styrs inte av soldaternas position, riktning eller sikt.
 - `vertexljus-i-bordning` — **Fullständigt implementerat**. Varje hörn på golv och väggytor får ljus från lampor med fri ljuslinje, avståndsavtagande och hänsyn till ytriktning. Ljuset interpoleras över ytornas trianglar och multipliceras med befintliga texturer. Väggar, skrov, stängda dörrar och rök blockerar ljus; förstörda barriärer, öppna dörrar och personer gör det inte. Väggsnitt använder full vägghöjd vid blockering.
 - `tileljus-for-sprites` — **Fullständigt implementerat**. Varje ruta får ett ljusvärde vid golvets mittpunkt. Personer och objektsprites använder detta värde; under rörelse interpoleras figurens ljus mellan start och mål. HP, AP, riktning och valmarkeringar påverkas inte av belysningen.

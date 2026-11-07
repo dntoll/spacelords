@@ -3,10 +3,12 @@ import pirateMap from '../../src/client/maps/pirate-boarding.txt?raw';
 import colonyMap from '../../src/client/maps/colony-boarding.txt?raw';
 import { BoardingEditor } from '../../src/client/models/boarding/BoardingEditor.js';
 import { parseBoardingMapText } from '../../src/shared/boarding-map-format.js';
+import { parseBoardingMap } from '../../src/client/models/boarding/BoardingMap.js';
 import { boardingEditorCellAt } from '../../src/client/views/boarding/BoardingEditorPick.js';
 import {
   boardingIsoCamera,
   boardingIsoCenter,
+  boardingSpritePlaneTransform,
 } from '../../src/client/views/boarding/BoardingProjection.js';
 
 describe('lokal-bordningskarteditor', () => {
@@ -93,7 +95,71 @@ describe('lokal-bordningskarteditor', () => {
   });
 });
 
+describe('formbar-skeppskontur / redigerbara-bordningslampor', () => {
+  const source =
+    '[meta]\nwidth=3\nheight=2\nrules=campaign\n[terrain]\n...\nHHH\n[objects]\n-R-\n---\n[rooms]\n-B-\n---\n[spawns]\n-P-\n---\n[lights]\n-L-\n---\n';
+
+  it('clears all content on Outside and restores it with a single undo', () => {
+    const editor = new BoardingEditor('pirate', source);
+    editor.bindTool('primary', { layer: 'terrain', symbol: 'O' });
+    expect(editor.paintStroke('primary', [{ q: 1, r: 0 }])).toBe(true);
+    const saved = parseBoardingMapText(editor.source());
+    expect(saved.terrain[0]).toBe('.O.');
+    expect([
+      saved.objects[0],
+      saved.rooms[0],
+      saved.spawns[0],
+      saved.lights?.[0],
+    ]).toEqual(['---', '---', '---', '---']);
+    expect(
+      parseBoardingMap(editor.source()).terrainAt({ q: 1, r: 0 }),
+    ).toBeNull();
+    const map = parseBoardingMap(editor.source());
+    expect(map.contains({ q: 1, r: 0 })).toBe(false);
+    expect(
+      map.features.some(
+        (feature) => feature.position.q === 1 && feature.position.r === 0,
+      ),
+    ).toBe(false);
+    editor.undo();
+    expect(parseBoardingMapText(editor.source()).lights?.[0]).toBe('-L-');
+    expect(editor.snapshot.layers.objects[0]).toBe('-R-');
+  });
+
+  it('places lights only on floor and restores them when a wall stroke is undone', () => {
+    const editor = new BoardingEditor('pirate', source);
+    editor.bindTool('primary', { layer: 'lights', symbol: 'L' });
+    expect(editor.paintStroke('primary', [{ q: 0, r: 1 }])).toBe(false);
+    expect(editor.paintStroke('primary', [{ q: 0, r: 0 }])).toBe(true);
+    editor.bindTool('primary', { layer: 'terrain', symbol: '#' });
+    editor.paintStroke('primary', [{ q: 0, r: 0 }]);
+    expect(parseBoardingMapText(editor.source()).lights?.[0]).toBe('-L-');
+    editor.undo();
+    expect(parseBoardingMapText(editor.source()).lights?.[0]).toBe('LL-');
+  });
+
+  it('preserves an absent optional light layer after undoing its first lamp', () => {
+    const editor = new BoardingEditor(
+      'pirate',
+      source.replace('[lights]\n-L-\n---\n', ''),
+    );
+    editor.bindTool('primary', { layer: 'lights', symbol: 'L' });
+    editor.paintStroke('primary', [{ q: 0, r: 0 }]);
+    expect(parseBoardingMapText(editor.source()).lights?.[0]).toBe('L--');
+    editor.undo();
+    expect(parseBoardingMapText(editor.source()).lights).toBeNull();
+    editor.redo();
+    expect(parseBoardingMapText(editor.source()).lights?.[0]).toBe('L--');
+  });
+});
+
 describe('isometrisk-bordningskarteditor', () => {
+  it('isometrisk-skeppsreferens: aligns the sprite plane with both axes of the cell grid', () => {
+    const [a, b, c, d, x, y] = boardingSpritePlaneTransform();
+    expect([x, y]).toEqual([0, -16]);
+    expect([a, b]).toEqual([32, 16]);
+    expect([c, d]).toEqual([-32, 16]);
+  });
   it('defaults to isometric and switches to top-down for sprite adjustment', () => {
     const editor = new BoardingEditor('pirate', pirateMap);
     expect(editor.snapshot.projection).toBe('isometric');

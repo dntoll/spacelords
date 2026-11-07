@@ -3,6 +3,13 @@ import type {
   BoardingCell,
   BoardingFeatureKind,
 } from '../../models/boarding/BoardingMap.js';
+import airlockUrl from '../../assets/boarding/airlock.webp';
+import reactorUrl from '../../assets/boarding/reactor.webp';
+import halfCoverUrl from '../../assets/boarding/half-cover.webp';
+import doorClosedQUrl from '../../assets/boarding/door-closed-q.webp';
+import doorOpenQUrl from '../../assets/boarding/door-open-q.webp';
+import doorClosedRUrl from '../../assets/boarding/door-closed-r.webp';
+import doorOpenRUrl from '../../assets/boarding/door-open-r.webp';
 
 export type BoardingArtwork =
   | 'airlock'
@@ -13,6 +20,17 @@ export type BoardingArtwork =
   | 'door-closed-r'
   | 'door-open-r';
 type WallAt = (q: number, r: number) => boolean;
+
+export const BOARDING_OBJECT_IMAGES: Readonly<Record<BoardingArtwork, string>> =
+  {
+    airlock: airlockUrl,
+    reactor: reactorUrl,
+    'half-cover': halfCoverUrl,
+    'door-closed-q': doorClosedQUrl,
+    'door-open-q': doorOpenQUrl,
+    'door-closed-r': doorClosedRUrl,
+    'door-open-r': doorOpenRUrl,
+  };
 
 /** isometriska-bordningsobjekt: infer orientation from the original terrain, including destroyed walls. */
 export function boardingDoorAxis(

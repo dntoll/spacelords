@@ -25,20 +25,20 @@ import {
 } from '../../models/boarding/BoardingBattle.js';
 import type { BoardingPathMark } from '../../models/boarding/BoardingPathPreview.js';
 import type { BoardingMapPort } from './BoardingView.js';
-import airlockUrl from '../../assets/boarding/airlock.webp';
-import reactorUrl from '../../assets/boarding/reactor.webp';
-import halfCoverUrl from '../../assets/boarding/half-cover.webp';
-import doorClosedQUrl from '../../assets/boarding/door-closed-q.webp';
-import doorOpenQUrl from '../../assets/boarding/door-open-q.webp';
-import doorClosedRUrl from '../../assets/boarding/door-closed-r.webp';
-import doorOpenRUrl from '../../assets/boarding/door-open-r.webp';
 import {
+  BOARDING_OBJECT_IMAGES,
   boardingObjectArtwork,
   boardingObjectBounds,
   type BoardingArtwork,
 } from './BoardingObjectArtwork.js';
-import floorTileUrl from '../../assets/boarding/floor-tile.png';
-import wallTileUrl from '../../assets/boarding/wall-tile.png';
+import {
+  BOARDING_FLOOR_IMAGES,
+  BOARDING_WALL_IMAGES,
+  BOARDING_WALL_TOP_IMAGE,
+  boardingSurfaceStyle,
+  boardingWallFaceStyle,
+  type BoardingSurfaceStyle,
+} from './BoardingSurfaceArtwork.js';
 import factionSpritesUrl from '../../assets/boarding/characters/directional-faction-sprites.webp';
 import {
   BOARDING_FOOT_PLANT,
@@ -61,12 +61,14 @@ import {
   boardingIsoCamera,
   boardingIsoCenter,
   boardingIsoCorners,
-  boardingIsoTextureTransform,
-  boardingQuadTextureTransform,
   boardingWallRun,
-  boardingWallSlice,
   type BoardingPoint as Point,
 } from './BoardingProjection.js';
+import {
+  paintIsoFloor,
+  paintIsoWall,
+  type IsoImageCache,
+} from './BoardingSurfacePainter.js';
 
 const key = (position: BoardingCell): string => `${position.q},${position.r}`;
 
@@ -76,16 +78,6 @@ const characterPose = (person: BoardingPerson): BoardingCharacterPose =>
       ? 'crouched'
       : 'standing'
     : 'incapacitated';
-
-const BOARDING_OBJECT_IMAGES: Readonly<Record<BoardingArtwork, string>> = {
-  airlock: airlockUrl,
-  reactor: reactorUrl,
-  'half-cover': halfCoverUrl,
-  'door-closed-q': doorClosedQUrl,
-  'door-open-q': doorOpenQUrl,
-  'door-closed-r': doorClosedRUrl,
-  'door-open-r': doorOpenRUrl,
-};
 
 function stackOffset(
   people: readonly {
@@ -149,10 +141,10 @@ export class BoardingMapView implements BoardingMapPort {
   #cameraSuppressed = false;
   #scale = 1;
   #offset: Point = { x: 0, y: 0 };
-  #floorTile: p5.Image | null = null;
-  #floorSource: CanvasImageSource | null = null;
-  #wallTile: p5.Image | null = null;
-  #wallSource: CanvasImageSource | null = null;
+  readonly #floorTiles = new Map<BoardingSurfaceStyle, p5.Image>();
+  readonly #wallTiles = new Map<BoardingSurfaceStyle, p5.Image>();
+  #wallTop: p5.Image | null = null;
+  readonly #isoCaches = new WeakMap<p5.Image, IsoImageCache>();
   #factionSprites: p5.Image | null = null;
   #lighting: BoardingLighting;
   #lightSignature = '';
@@ -196,14 +188,26 @@ export class BoardingMapView implements BoardingMapPort {
           'aria-label',
           'Isometric boarding map. Tap a destination or enemy, then tap it again to move or fire. Drag to pan, pinch or scroll to zoom.',
         );
-        void sketch.loadImage(floorTileUrl).then((image) => {
-          this.#floorTile = image;
-          this.#floorSource = null;
-          if (!this.#disposed && this.#ready) void this.#p5.redraw();
-        });
-        void sketch.loadImage(wallTileUrl).then((image) => {
-          this.#wallTile = image;
-          this.#wallSource = null;
+        for (const [style, url] of Object.entries(BOARDING_FLOOR_IMAGES) as [
+          BoardingSurfaceStyle,
+          string,
+        ][]) {
+          void sketch.loadImage(url).then((image) => {
+            this.#floorTiles.set(style, image);
+            if (!this.#disposed && this.#ready) void this.#p5.redraw();
+          });
+        }
+        for (const [style, url] of Object.entries(BOARDING_WALL_IMAGES) as [
+          BoardingSurfaceStyle,
+          string,
+        ][]) {
+          void sketch.loadImage(url).then((image) => {
+            this.#wallTiles.set(style, image);
+            if (!this.#disposed && this.#ready) void this.#p5.redraw();
+          });
+        }
+        void sketch.loadImage(BOARDING_WALL_TOP_IMAGE).then((image) => {
+          this.#wallTop = image;
           if (!this.#disposed && this.#ready) void this.#p5.redraw();
         });
         void sketch.loadImage(factionSpritesUrl).then((image) => {
@@ -791,27 +795,11 @@ export class BoardingMapView implements BoardingMapPort {
   }
 
   #paintFloor(sketch: p5, position: BoardingCell): boolean {
-    const tile = this.#floorTile;
-    if (!tile || tile.width < 2 || tile.height < 2) return false;
-    const source = this.#imageSource(tile, 'floor');
-    if (!source) return false;
-    const corners = boardingIsoCorners(position);
-    const [a, b, c, d, e, f] = boardingIsoTextureTransform(
-      tile.width,
-      tile.height,
-      position,
-    );
-    const ctx = sketch.drawingContext as CanvasRenderingContext2D;
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(corners[0]!.x, corners[0]!.y);
-    for (const corner of corners.slice(1)) ctx.lineTo(corner.x, corner.y);
-    ctx.closePath();
-    ctx.clip();
-    ctx.transform(a, b, c, d, e, f);
-    ctx.drawImage(source, 0, 0, tile.width, tile.height);
-    ctx.restore();
-    return true;
+    const tile =
+      this.#floorTiles.get(
+        boardingSurfaceStyle((cell) => this.map.roomAt(cell), position),
+      ) ?? this.#floorTiles.get('default');
+    return !!tile && paintIsoFloor(sketch, tile, this.#cache(tile), position);
   }
 
   #tile(sketch: p5, position: BoardingCell, yOffset = 0): void {
@@ -867,83 +855,13 @@ export class BoardingMapView implements BoardingMapPort {
     return faces.apex;
   }
 
-  #imageSource(
-    tile: p5.Image,
-    cache: 'floor' | 'wall',
-  ): CanvasImageSource | null {
-    const current = cache === 'floor' ? this.#floorSource : this.#wallSource;
-    if (current) return current;
-    const image = tile as p5.Image & {
-      canvas?: CanvasImageSource;
-      elt?: CanvasImageSource;
-    };
-    const found = image.canvas ?? image.elt ?? null;
-    if (found) {
-      if (cache === 'floor') this.#floorSource = found;
-      else this.#wallSource = found;
-      return found;
+  #cache(image: p5.Image): IsoImageCache {
+    let cache = this.#isoCaches.get(image);
+    if (!cache) {
+      cache = { floor: null, wall: null };
+      this.#isoCaches.set(image, cache);
     }
-    tile.loadPixels();
-    if (tile.pixels.length < 4) return null;
-    const canvas = document.createElement('canvas');
-    canvas.width = tile.width;
-    canvas.height = tile.height;
-    const context = canvas.getContext('2d');
-    if (!context) return null;
-    context.putImageData(
-      new ImageData(
-        new Uint8ClampedArray(tile.pixels),
-        tile.width,
-        tile.height,
-      ),
-      0,
-      0,
-    );
-    if (cache === 'floor') this.#floorSource = canvas;
-    else this.#wallSource = canvas;
-    return canvas;
-  }
-
-  #paintTexturedQuad(
-    sketch: p5,
-    source: CanvasImageSource,
-    slice: { readonly x: number; readonly width: number },
-    textureHeight: number,
-    origin: Point,
-    alongU: Point,
-    alongV: Point,
-    clip: readonly Point[],
-    visibleFraction = 1,
-  ): void {
-    const first = clip[0];
-    if (!first) return;
-    const [a, b, c, d, e, f] = boardingQuadTextureTransform(
-      slice.width,
-      textureHeight,
-      origin,
-      alongU,
-      alongV,
-    );
-    const ctx = sketch.drawingContext as CanvasRenderingContext2D;
-    ctx.save();
-    ctx.beginPath();
-    ctx.moveTo(first.x, first.y);
-    for (const corner of clip.slice(1)) ctx.lineTo(corner.x, corner.y);
-    ctx.closePath();
-    ctx.clip();
-    ctx.transform(a, b, c, d, e, f);
-    ctx.drawImage(
-      source,
-      slice.x,
-      textureHeight * (1 - visibleFraction),
-      slice.width,
-      textureHeight * visibleFraction,
-      0,
-      0,
-      slice.width,
-      textureHeight,
-    );
-    ctx.restore();
+    return cache;
   }
 
   #paintWall(
@@ -951,12 +869,13 @@ export class BoardingMapView implements BoardingMapPort {
     position: BoardingCell,
     selected: boolean,
     walls: ReadonlySet<string>,
+    known: (position: BoardingCell) => boolean,
   ): void {
-    const tile = this.#wallTile;
-    const source =
-      tile && tile.width >= 8 && tile.height >= 2
-        ? this.#imageSource(tile, 'wall')
+    const roomAt = (cell: BoardingCell) =>
+      known(cell) && this.map.terrainAt(cell) === 'floor'
+        ? this.map.roomAt(cell)
         : null;
+    const tile = this.#wallTiles.get('default');
     const height = this.#wallVisibility.height(position);
     const cutaway = height < boardingFeatureHeight('wall');
     const faces = boardingIsoBlockFaces(
@@ -965,45 +884,24 @@ export class BoardingMapView implements BoardingMapPort {
       16,
       height,
     );
-    if (source && tile) {
-      const alongQ = boardingWallRun(walls, position, 'q');
-      const alongR = boardingWallRun(walls, position, 'r');
-      const qSlice = boardingWallSlice(tile.width, alongQ.index);
-      const rSlice = boardingWallSlice(tile.width, alongR.index);
-      this.#paintTexturedQuad(
-        sketch,
-        source,
-        rSlice,
-        tile.height,
-        faces.southEast[0],
-        faces.southEast[1],
-        faces.southEast[3],
-        faces.southEast,
-        height / boardingFeatureHeight('wall'),
-      );
-      this.#paintTexturedQuad(
-        sketch,
-        source,
-        qSlice,
-        tile.height,
-        faces.southWest[1],
-        faces.southWest[0],
-        faces.southWest[2],
-        faces.southWest,
-        height / boardingFeatureHeight('wall'),
-      );
-      if (!cutaway)
-        this.#paintTexturedQuad(
-          sketch,
-          source,
-          alongQ.length >= alongR.length ? qSlice : rSlice,
-          tile.height,
-          faces.top[0],
-          alongQ.length >= alongR.length ? faces.top[1] : faces.top[3],
-          alongQ.length >= alongR.length ? faces.top[3] : faces.top[1],
-          faces.top,
-        );
-    } else {
+    const option = (image: p5.Image | undefined | null) =>
+      image ? { tile: image, cache: this.#cache(image) } : undefined;
+    const painted =
+      tile &&
+      paintIsoWall(sketch, tile, this.#cache(tile), position, walls, height, {
+        east: option(
+          this.#wallTiles.get(
+            boardingWallFaceStyle(roomAt, position, 'southEast'),
+          ),
+        ),
+        west: option(
+          this.#wallTiles.get(
+            boardingWallFaceStyle(roomAt, position, 'southWest'),
+          ),
+        ),
+        top: option(this.#wallTop),
+      });
+    if (!painted) {
       this.#block(
         sketch,
         boardingIsoCenter(position),
@@ -1013,7 +911,8 @@ export class BoardingMapView implements BoardingMapPort {
         '#52657f',
       );
     }
-    if (cutaway) this.#paintWallSection(sketch, faces.top, walls, position);
+    if (cutaway && !this.#wallTop)
+      this.#paintWallSection(sketch, faces.top, walls, position);
     const context = sketch.drawingContext as CanvasRenderingContext2D;
     for (const face of ['southEast', 'southWest', 'top'] as const)
       this.#lightPainter.paint(
@@ -1356,6 +1255,7 @@ export class BoardingMapView implements BoardingMapPort {
                 feature.position,
                 feature.id === this.#selectedId,
                 walls,
+                known,
               );
               return;
             }

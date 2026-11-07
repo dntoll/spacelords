@@ -1446,6 +1446,25 @@ konfliktmarkörer, publiceringskatalog och filinnehåll behålls.
 
 ## Isometriska bordningsobjekt
 
+`formbar-skeppskontur`: `O` i terränglagret betecknar tom rymd; den saknas i
+domänens terräng och skapar inga features. `Outside` rensar redigerade lager
+atomiskt med undo. Kartformatet behåller övriga befintliga symboler.
+
+`redigerbara-bordningslampor`: editorn redigerar det befintliga valfria
+`[lights]`-lagret med samma lampmodell som spelet. Golv som ersätts tar bort
+sin lampa i samma kommando. `kategoriserad-bordningspalett` grupperar
+verktygen och visar hjälpen även vid tangentbordsfokus.
+
+`rumsspecifika-bordningstexturer`: golv och de två synliga väggsidorna väljer
+bild från respektive intilliggande rumsruta. Okänd interiör avslöjas inte.
+`texturerad-vaggovansida` använder en separat bild även på väggsnitt.
+`isometrisk-skeppsreferens` projicerar befintlig spritejustering på 2:1-planet.
+`spelidentisk-bordningseditor` återanvänder bildregister, mått, ljusberäkning
+och väggsnitt samt den gemensamma ytprojektionen för golv och väggar.
+Snabbsviten överskred först 20 sekunder under parallella kontroller; den tyngre
+taktiska integrationsfilen flyttades till den utökade sviten. Därefter
+passerade snabbsviten med 758 tester på 14,70 sekunder utan parallell belastning.
+
 `isometriska-bordningsobjekt`: originalbilder sparas separat från klientens beskurna WebP-filer. `scripts/prepare-boarding-objects.py` beskär transparens och exporterar vid tre gånger spelets grundupplösning; dörrpar delar beskärning så att ramen inte flyttar sig. Vyn ritar objekten ovanpå golvet i proportioner anpassade till 64 × 32-rutorna, bevarar reservvisning och visar bara kända objekt. Dörrriktningen härleds från ursprunglig omgivande väggterräng utan att ändra sparformatet.
 
 ## Meterskala och väggskymning i bordning

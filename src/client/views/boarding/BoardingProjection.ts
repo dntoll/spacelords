@@ -118,6 +118,18 @@ export function boardingIsoCenter(position: BoardingCell): BoardingPoint {
   return boardingWorldPoint(position.q, position.r);
 }
 
+/** isometrisk-skeppsreferens: map top-down cell coordinates onto the ground plane. */
+export function boardingSpritePlaneTransform(): readonly [
+  number,
+  number,
+  number,
+  number,
+  number,
+  number,
+] {
+  return [HALF_WIDTH, HALF_HEIGHT, -HALF_WIDTH, HALF_HEIGHT, 0, -HALF_HEIGHT];
+}
+
 export function boardingIsoCorners(
   position: BoardingCell,
 ): readonly BoardingPoint[] {

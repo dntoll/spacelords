@@ -6,13 +6,39 @@ import type {
   SpriteTransform,
 } from '../../models/boarding/BoardingEditor.js';
 import type { BoardingMapId } from '../../../shared/boarding-map-format.js';
-import floorTileUrl from '../../assets/boarding/floor-tile.png';
-import wallTileUrl from '../../assets/boarding/wall-tile.png';
+import {
+  BOARDING_FLOOR_IMAGES,
+  BOARDING_WALL_IMAGES,
+  BOARDING_WALL_TOP_IMAGE,
+  boardingSurfaceStyle,
+  boardingWallFaceStyle,
+  type BoardingSurfaceStyle,
+} from './BoardingSurfaceArtwork.js';
+import factionSpritesUrl from '../../assets/boarding/characters/directional-faction-sprites.webp';
+import {
+  boardingCharacterSprite,
+  type BoardingCharacterSide,
+} from './BoardingCharacterSprite.js';
+import {
+  BOARDING_OBJECT_IMAGES,
+  boardingObjectArtwork,
+  boardingObjectBounds,
+  type BoardingArtwork,
+} from './BoardingObjectArtwork.js';
+import { BoardingWallVisibility } from './BoardingWallVisibility.js';
+import { parseBoardingMap } from '../../models/boarding/BoardingMap.js';
+import { formatBoardingMap } from '../../../shared/boarding-map-format.js';
+import { BoardingLighting } from './BoardingLighting.js';
+import { BoardingLightPainter } from './BoardingLightPainter.js';
+import { boardingHeight } from './BoardingScale.js';
 import { SHIP_SPRITES, type ShipSpriteType } from '../ShipImages.js';
 import {
   boardingFeatureGlyph,
   boardingIsoCamera,
   boardingIsoCenter,
+  boardingIsoCorners,
+  boardingIsoBlockFaces,
+  boardingSpritePlaneTransform,
 } from './BoardingProjection.js';
 import {
   boardingEditorCellAt,
@@ -24,7 +50,7 @@ import {
   paintIsoFloor,
   paintIsoWall,
   type IsoImageCache,
-} from './editorIsoPaint.js';
+} from './BoardingSurfacePainter.js';
 
 const LONG_PRESS_MS = 420;
 
@@ -87,9 +113,14 @@ export class BoardingEditorMapView {
   #snapshot: BoardingEditorSnapshot | null = null;
   #sprite: p5.Image | null = null;
   #spriteMap: BoardingMapId | null = null;
-  #floorTile: p5.Image | null = null;
-  #wallTile: p5.Image | null = null;
-  readonly #isoCache: IsoImageCache = { floor: null, wall: null };
+  readonly #floorTiles = new Map<BoardingSurfaceStyle, p5.Image>();
+  readonly #wallTiles = new Map<BoardingSurfaceStyle, p5.Image>();
+  #wallTop: p5.Image | null = null;
+  #factionSprites: p5.Image | null = null;
+  readonly #objects = new Map<BoardingArtwork, p5.Image>();
+  #lighting: BoardingLighting | null = null;
+  readonly #lightPainter = new BoardingLightPainter();
+  readonly #isoCaches = new WeakMap<p5.Image, IsoImageCache>();
   #ready = false;
   #disposed = false;
   #offset = { x: 24, y: 24 };
@@ -126,16 +157,42 @@ export class BoardingEditorMapView {
         sketch.pixelDensity(1);
         sketch.noLoop();
         sketch.describe('Ship layout grid.');
-        void sketch.loadImage(floorTileUrl).then((image) => {
-          this.#floorTile = image;
-          this.#isoCache.floor = null;
-          if (this.#ready) void this.#p5.redraw();
+        for (const [style, url] of Object.entries(BOARDING_FLOOR_IMAGES) as [
+          BoardingSurfaceStyle,
+          string,
+        ][]) {
+          void sketch.loadImage(url).then((image) => {
+            this.#floorTiles.set(style, image);
+            if (this.#ready && !this.#disposed) void this.#p5.redraw();
+          });
+        }
+        for (const [style, url] of Object.entries(BOARDING_WALL_IMAGES) as [
+          BoardingSurfaceStyle,
+          string,
+        ][]) {
+          void sketch.loadImage(url).then((image) => {
+            this.#wallTiles.set(style, image);
+            if (this.#ready && !this.#disposed) void this.#p5.redraw();
+          });
+        }
+        void sketch.loadImage(BOARDING_WALL_TOP_IMAGE).then((image) => {
+          this.#wallTop = image;
+          if (this.#ready && !this.#disposed) void this.#p5.redraw();
         });
-        void sketch.loadImage(wallTileUrl).then((image) => {
-          this.#wallTile = image;
-          this.#isoCache.wall = null;
-          if (this.#ready) void this.#p5.redraw();
+        void sketch.loadImage(factionSpritesUrl).then((image) => {
+          this.#factionSprites = image;
+          if (this.#ready && !this.#disposed) void this.#p5.redraw();
         });
+        for (const [name, url] of Object.entries(BOARDING_OBJECT_IMAGES) as [
+          BoardingArtwork,
+          string,
+        ][]) {
+          void sketch.loadImage(url).then((image) => {
+            if (this.#disposed) return;
+            this.#objects.set(name, image);
+            if (this.#ready) void this.#p5.redraw();
+          });
+        }
         this.#ready = true;
         this.#bind(canvas);
         void sketch.redraw();
@@ -157,6 +214,31 @@ export class BoardingEditorMapView {
 
   render(snapshot: BoardingEditorSnapshot): void {
     this.#snapshot = snapshot;
+    const map = parseBoardingMap(
+      formatBoardingMap({
+        name: snapshot.name,
+        width: snapshot.width,
+        height: snapshot.height,
+        campaign: true,
+        spriteX: null,
+        spriteY: null,
+        spriteScale: null,
+        ...snapshot.layers,
+      }),
+    );
+    this.#lighting = new BoardingLighting(map, {
+      features: map.features.map((feature) => ({
+        ...feature,
+        hitPoints: 1,
+        maxHitPoints: 1,
+        open: false,
+        locked: feature.locked ?? false,
+        destroyed: false,
+        exit: feature.exit ?? null,
+      })),
+      smokeCells: [],
+    });
+    this.#lightPainter.clear();
     if (this.#spriteMap !== snapshot.mapId) {
       this.#spriteMap = snapshot.mapId;
       this.#sprite = null;
@@ -183,14 +265,18 @@ export class BoardingEditorMapView {
   }
 
   #fit(snapshot: BoardingEditorSnapshot): void {
-    const key = `${snapshot.projection}:${snapshot.mapId}:${snapshot.width}x${snapshot.height}:${this.#p5.width}x${this.#p5.height}`;
+    const key = `${snapshot.projection}:${snapshot.mapId}:${snapshot.width}x${snapshot.height}:${this.#p5.width}x${this.#p5.height}:${snapshot.projection === 'isometric' ? snapshot.layers.terrain.map((row) => row.replaceAll(/[^O]/g, '.')).join('') : ''}`;
     if (this.#layoutKey === key) return;
     this.#layoutKey = key;
     if (snapshot.projection === 'isometric') {
-      const camera = boardingIsoCamera(snapshot, {
-        width: this.#p5.width,
-        height: this.#p5.height,
-      });
+      const camera = boardingIsoCamera(
+        snapshot,
+        {
+          width: this.#p5.width,
+          height: this.#p5.height,
+        },
+        (cell) => snapshot.layers.terrain[cell.r]?.[cell.q] !== 'O',
+      );
       this.#scale = camera.scale;
       this.#offset = camera.offset;
       return;
@@ -407,8 +493,10 @@ export class BoardingEditorMapView {
       for (let q = 0; q < snapshot.width; q++) {
         const terrain = snapshot.layers.terrain[r]?.[q] ?? 'H';
         sketch.noStroke();
-        sketch.fill(TERRAIN_FILL[terrain] ?? '#24323c');
-        sketch.rect(q * size, r * size, size, size);
+        if (terrain !== 'O') {
+          sketch.fill(TERRAIN_FILL[terrain] ?? '#24323c');
+          sketch.rect(q * size, r * size, size, size);
+        }
         const room = snapshot.layers.rooms[r]?.[q] ?? '-';
         if (room !== '-') {
           sketch.fill(ROOM_FILL[room] ?? '#3f5f9f99');
@@ -434,20 +522,55 @@ export class BoardingEditorMapView {
     sketch.push();
     sketch.translate(this.#offset.x, this.#offset.y);
     sketch.scale(this.#scale);
+    const sprite = this.#previewSprite ?? snapshot.sprite;
+    if (this.#sprite) {
+      sketch.push();
+      sketch.tint(255, Math.round(snapshot.spriteOpacity * 255));
+      sketch.applyMatrix(...boardingSpritePlaneTransform());
+      sketch.image(
+        this.#sprite,
+        sprite.x,
+        sprite.y,
+        sprite.scale,
+        (sprite.scale * this.#sprite.height) / Math.max(1, this.#sprite.width),
+      );
+      sketch.pop();
+    }
     const walls = new Set<string>();
+    const roomAt = ({ q, r }: { q: number; r: number }) => {
+      if (snapshot.layers.terrain[r]?.[q] !== '.') return null;
+      const symbol = snapshot.layers.rooms[r]?.[q];
+      return symbol === 'B'
+        ? ('bridge' as const)
+        : symbol === 'E'
+          ? ('engineering' as const)
+          : symbol === 'K'
+            ? ('cockpit' as const)
+            : null;
+    };
+    const floors: { q: number; r: number }[] = [];
     for (let r = 0; r < snapshot.height; r++) {
       for (let q = 0; q < snapshot.width; q++) {
         const terrain = snapshot.layers.terrain[r]?.[q] ?? 'H';
+        if (terrain === 'O') continue;
+        if (terrain === '.') floors.push({ q, r });
         if (terrain === '#' || terrain === 'H') walls.add(wallKey(q, r));
       }
     }
+    const visibility = new BoardingWallVisibility(floors);
     for (let r = 0; r < snapshot.height; r++) {
       for (let q = 0; q < snapshot.width; q++) {
         const position = { q, r };
         const terrain = snapshot.layers.terrain[r]?.[q] ?? 'H';
+        if (terrain === 'O') continue;
+        const floor =
+          this.#floorTiles.get(boardingSurfaceStyle(roomAt, position)) ??
+          this.#floorTiles.get('default') ??
+          null;
         const paintedFloor =
           terrain === '.' &&
-          paintIsoFloor(sketch, this.#floorTile, this.#isoCache, position);
+          floor !== null &&
+          paintIsoFloor(sketch, floor, this.#cache(floor), position);
         if (!paintedFloor) {
           sketch.noStroke();
           sketch.fill(
@@ -459,12 +582,12 @@ export class BoardingEditorMapView {
           );
           paintIsoDiamond(sketch, position);
         }
-        const room = snapshot.layers.rooms[r]?.[q] ?? '-';
-        if (room !== '-') {
-          sketch.noStroke();
-          sketch.fill(ROOM_FILL[room] ?? '#3f5f9f99');
-          paintIsoDiamond(sketch, position);
-        }
+        if (terrain === '.' && this.#lighting)
+          this.#lightPainter.paint(
+            sketch.drawingContext as CanvasRenderingContext2D,
+            boardingIsoCorners(position),
+            this.#lighting.surface(position, 'floor'),
+          );
         sketch.noFill();
         sketch.stroke('#8eb0c255');
         sketch.strokeWeight(1);
@@ -480,17 +603,85 @@ export class BoardingEditorMapView {
     raised.sort((a, b) => a.y - b.y);
     for (const cell of raised) {
       const terrain = snapshot.layers.terrain[cell.r]?.[cell.q] ?? 'H';
+      if (terrain === 'O') continue;
       const object = snapshot.layers.objects[cell.r]?.[cell.q] ?? '-';
       const position = { q: cell.q, r: cell.r };
       const center = boardingIsoCenter(position);
       if (terrain === '#' || terrain === 'H') {
+        const height = visibility.height(position);
+        const wall = this.#wallTiles.get('default') ?? null;
+        const option = (image: p5.Image | undefined | null) =>
+          image ? { tile: image, cache: this.#cache(image) } : undefined;
         if (
-          !paintIsoWall(sketch, this.#wallTile, this.#isoCache, position, walls)
+          !wall ||
+          !paintIsoWall(
+            sketch,
+            wall,
+            this.#cache(wall),
+            position,
+            walls,
+            height,
+            {
+              east: option(
+                this.#wallTiles.get(
+                  boardingWallFaceStyle(roomAt, position, 'southEast'),
+                ),
+              ),
+              west: option(
+                this.#wallTiles.get(
+                  boardingWallFaceStyle(roomAt, position, 'southWest'),
+                ),
+              ),
+              top: option(this.#wallTop),
+            },
+          )
         )
-          paintIsoBlock(sketch, center, terrain === '#' ? 'wall' : 'hull');
+          paintIsoBlock(
+            sketch,
+            center,
+            terrain === '#' ? 'wall' : 'hull',
+            height,
+          );
+        if (this.#lighting) {
+          const faces = boardingIsoBlockFaces(center, 32, 16, height);
+          for (const face of ['southEast', 'southWest', 'top'] as const)
+            this.#lightPainter.paint(
+              sketch.drawingContext as CanvasRenderingContext2D,
+              faces[face],
+              this.#lighting.surface(
+                position,
+                face,
+                height / boardingHeight(1),
+              ),
+            );
+        }
       }
       const kind = objectKind(object);
-      if (kind) {
+      const featureKind = object === 'R' ? 'reactor' : kind;
+      const artwork =
+        object === 'A'
+          ? 'airlock'
+          : featureKind
+            ? boardingObjectArtwork({ kind: featureKind, position }, (q, r) =>
+                walls.has(wallKey(q, r)),
+              )
+            : null;
+      const image = artwork ? this.#objects.get(artwork) : undefined;
+      if (artwork && image) {
+        const box = boardingObjectBounds(artwork, center);
+        sketch.push();
+        sketch.tint(255 * (this.#lighting?.tile(position) ?? 1));
+        sketch.image(image, box.x, box.y, box.width, box.height);
+        sketch.pop();
+        if (object === 'L') {
+          sketch.noStroke();
+          sketch.fill('#f4cf5a');
+          sketch.textAlign(sketch.CENTER, sketch.CENTER);
+          sketch.textSize(12);
+          sketch.text('▣', center.x, center.y - boardingHeight(1.5));
+        }
+      }
+      if (kind && !image) {
         const apex = paintIsoBlock(sketch, center, kind);
         const mark = boardingFeatureGlyph({
           kind,
@@ -504,8 +695,9 @@ export class BoardingEditorMapView {
           sketch.textSize(16);
           sketch.text(mark, apex.x, apex.y);
         }
-      } else {
-        const marks = cellMarks(snapshot, cell.q, cell.r);
+      } else if (!image) {
+        const mark = glyph('objects', object);
+        const marks = mark ? [mark] : [];
         if (marks.length) {
           sketch.noStroke();
           sketch.fill('#e5e8e6');
@@ -514,8 +706,60 @@ export class BoardingEditorMapView {
           sketch.text(marks.join(''), center.x, center.y - 10);
         }
       }
+      const spawn = snapshot.layers.spawns[cell.r]?.[cell.q];
+      const side: BoardingCharacterSide | null =
+        spawn === 'P'
+          ? 'player'
+          : spawn === 'D'
+            ? 'defender'
+            : spawn === 'C'
+              ? 'civilian'
+              : null;
+      if (side && this.#factionSprites) {
+        const sprite = boardingCharacterSprite(side, center, 'standing');
+        sketch.push();
+        sketch.tint(255 * (this.#lighting?.tile(position) ?? 1));
+        sketch.image(
+          this.#factionSprites,
+          sprite.destination.x,
+          sprite.destination.y,
+          sprite.destination.width,
+          sprite.destination.height,
+          sprite.source.x,
+          sprite.source.y,
+          sprite.source.width,
+          sprite.source.height,
+        );
+        sketch.pop();
+      } else if (side) {
+        sketch.noStroke();
+        sketch.fill(
+          side === 'player'
+            ? '#5ac8fa'
+            : side === 'defender'
+              ? '#ef6461'
+              : '#8bd17c',
+        );
+        sketch.circle(center.x, center.y - boardingHeight(1.3), 21);
+      }
+      if (snapshot.layers.lights[cell.r]?.[cell.q] === 'L') {
+        sketch.noStroke();
+        sketch.fill('#ffdb70');
+        sketch.textAlign(sketch.CENTER, sketch.CENTER);
+        sketch.textSize(18);
+        sketch.text('☼', center.x, center.y - boardingHeight(2.2));
+      }
     }
     sketch.pop();
+  }
+
+  #cache(image: p5.Image): IsoImageCache {
+    let cache = this.#isoCaches.get(image);
+    if (!cache) {
+      cache = { floor: null, wall: null };
+      this.#isoCaches.set(image, cache);
+    }
+    return cache;
   }
 }
 
@@ -528,5 +772,6 @@ function cellMarks(
     glyph('objects', snapshot.layers.objects[r]?.[q] ?? '-'),
     glyph('rooms', snapshot.layers.rooms[r]?.[q] ?? '-'),
     glyph('spawns', snapshot.layers.spawns[r]?.[q] ?? '-'),
+    snapshot.layers.lights[r]?.[q] === 'L' ? '☼' : null,
   ].filter((mark): mark is string => mark !== null);
 }

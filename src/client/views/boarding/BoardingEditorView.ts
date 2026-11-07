@@ -30,6 +30,7 @@ const PALETTE: readonly PaletteTile[] = [
   { layer: 'terrain', symbol: '.', label: 'Floor' },
   { layer: 'terrain', symbol: '#', label: 'Wall' },
   { layer: 'terrain', symbol: 'H', label: 'Hull' },
+  { layer: 'terrain', symbol: 'O', label: 'Outside' },
   { layer: 'objects', symbol: '-', label: 'No object' },
   { layer: 'objects', symbol: 'D', label: 'Door' },
   { layer: 'objects', symbol: 'L', label: 'Locked door' },
@@ -46,6 +47,8 @@ const PALETTE: readonly PaletteTile[] = [
   { layer: 'spawns', symbol: 'P', label: 'Player spawn' },
   { layer: 'spawns', symbol: 'D', label: 'Defender spawn' },
   { layer: 'spawns', symbol: 'C', label: 'Civilian spawn' },
+  { layer: 'lights', symbol: 'L', label: 'Ceiling light' },
+  { layer: 'lights', symbol: '-', label: 'No light' },
 ];
 
 function sameTool(a: EditorTool, b: EditorTool): boolean {
@@ -87,8 +90,9 @@ export class BoardingEditorView {
   readonly #height = element('input', 'boarding-editor-size');
   readonly #projection = element('select', 'boarding-editor-ship');
   readonly #opacity = element('input', 'boarding-editor-opacity');
-  readonly #leftSlot = element('p', 'boarding-editor-slot');
-  readonly #rightSlot = element('p', 'boarding-editor-slot');
+  readonly #leftSlot = element('button', 'boarding-editor-slot');
+  readonly #rightSlot = element('button', 'boarding-editor-slot');
+  readonly #help = element('p', 'boarding-editor-help');
   readonly #keys = new AbortController();
   #map: EditorMapPort | null = null;
   #bindTarget: EditorBrushButton | null = null;
@@ -105,6 +109,10 @@ export class BoardingEditorView {
       ((container, emitPaint, emitSprite) =>
         new BoardingEditorMapView(container, emitPaint, emitSprite));
     this.#root = root;
+    this.#leftSlot.type = 'button';
+    this.#rightSlot.type = 'button';
+    this.#help.setAttribute('role', 'status');
+    this.#help.setAttribute('aria-live', 'polite');
     this.#ship.setAttribute('aria-label', 'Ship');
     this.#width.type = 'number';
     this.#width.min = String(BOARDING_EDITOR_MIN_SIZE);
@@ -183,7 +191,13 @@ export class BoardingEditorView {
       },
       { signal: this.#keys.signal },
     );
-    this.#page.append(this.#toolbar, this.#canvas, this.#status, this.#palette);
+    this.#page.append(
+      this.#toolbar,
+      this.#canvas,
+      this.#status,
+      this.#help,
+      this.#palette,
+    );
   }
 
   render(model: AppReadModel): void {
@@ -217,6 +231,18 @@ export class BoardingEditorView {
     this.#toolbar.querySelector<HTMLButtonElement>(
       '[aria-label="Save"]',
     )!.disabled = !!editor.parseError;
+    const descriptions: Readonly<Record<string, string>> = {
+      Undo: 'Undo the last layout change.',
+      Redo: 'Redo the last undone layout change.',
+      'Adjust sprite': 'Move and resize the ship image in top-down view.',
+      'Paint tiles': 'Finish adjusting the ship image and paint tiles.',
+      Save: 'Save this layout to the local map file.',
+      Close: 'Close the ship layout editor.',
+    };
+    for (const control of this.#toolbar.querySelectorAll('button')) {
+      const label = control.getAttribute('aria-label') ?? '';
+      this.#tooltip(control, descriptions[label] ?? label);
+    }
     this.#ship.replaceChildren();
     for (const option of model.editorCatalog) {
       const node = element('option');
@@ -231,6 +257,11 @@ export class BoardingEditorView {
     this.#opacity.value = String(editor.spriteOpacity);
     this.#leftSlot.textContent = `L ${toolLabel(editor.primary)}`;
     this.#rightSlot.textContent = `R ${toolLabel(editor.secondary)}`;
+    this.#tooltip(this.#leftSlot, 'Choose the left brush, then select a tool.');
+    this.#tooltip(
+      this.#rightSlot,
+      'Choose the right brush, then select a tool.',
+    );
     this.#status.textContent = [
       editor.dirty ? 'Unsaved changes.' : 'Saved.',
       editor.parseError,
@@ -274,32 +305,65 @@ export class BoardingEditorView {
     return wrap;
   }
 
+  #tooltip(control: HTMLButtonElement, description: string): void {
+    control.title = description;
+    control.onfocus = () => {
+      this.#help.textContent = description;
+    };
+    control.onblur = () => {
+      this.#help.textContent = '';
+    };
+    control.onpointerenter = () => {
+      this.#help.textContent = description;
+    };
+    control.onpointerleave = () => {
+      if (document.activeElement !== control) this.#help.textContent = '';
+    };
+  }
+
   #renderPalette(primary: EditorTool, secondary: EditorTool): void {
     this.#palette.replaceChildren(this.#leftSlot, this.#rightSlot);
-    for (const tile of PALETTE) {
-      const choice = button(
-        tile.label,
-        () => undefined,
-        'boarding-editor-tile',
-      );
-      if (sameTool(primary, tile)) choice.classList.add('is-primary');
-      if (sameTool(secondary, tile)) choice.classList.add('is-secondary');
-      choice.addEventListener('click', () =>
-        this.emit({
-          type: 'editor-bind-tool',
-          button: this.#bindTarget ?? 'primary',
-          tool: tile,
-        }),
-      );
-      choice.addEventListener('contextmenu', (event) => {
-        event.preventDefault();
-        this.emit({
-          type: 'editor-bind-tool',
-          button: 'secondary',
-          tool: tile,
+    const groups: readonly [BoardingEditorLayer, string][] = [
+      ['terrain', 'Terrain'],
+      ['objects', 'Objects'],
+      ['rooms', 'Rooms'],
+      ['spawns', 'Spawns'],
+      ['lights', 'Lighting'],
+    ];
+    for (const [layer, label] of groups) {
+      const group = element('section', 'boarding-editor-group');
+      group.setAttribute('aria-label', label);
+      group.append(element('h3', '', label));
+      for (const tile of PALETTE.filter((entry) => entry.layer === layer)) {
+        const choice = button(
+          tile.label,
+          () => undefined,
+          'boarding-editor-tile',
+        );
+        this.#tooltip(
+          choice,
+          `${tile.label} — click for left brush, right-click for right brush`,
+        );
+        if (sameTool(primary, tile)) choice.classList.add('is-primary');
+        if (sameTool(secondary, tile)) choice.classList.add('is-secondary');
+        choice.addEventListener('click', () =>
+          this.emit({
+            type: 'editor-bind-tool',
+            button: this.#bindTarget ?? 'primary',
+            tool: tile,
+          }),
+        );
+        choice.addEventListener('contextmenu', (event) => {
+          event.preventDefault();
+          this.emit({
+            type: 'editor-bind-tool',
+            button: 'secondary',
+            tool: tile,
+          });
         });
-      });
-      this.#palette.append(choice);
+        group.append(choice);
+      }
+      this.#palette.append(group);
     }
     this.#bindTarget = null;
   }
@@ -316,6 +380,8 @@ export class BoardingEditorView {
       button('Discard', () => this.emit({ type: 'confirm-editor-switch' })),
       button('Cancel', () => this.emit({ type: 'cancel-editor-switch' })),
     );
+    for (const control of dialog.querySelectorAll('button'))
+      this.#tooltip(control, control.getAttribute('aria-label') ?? '');
     return dialog;
   }
 }

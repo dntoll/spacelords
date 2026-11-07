@@ -40,6 +40,7 @@ export interface BoardingEditorSnapshot {
     readonly objects: readonly string[];
     readonly rooms: readonly string[];
     readonly spawns: readonly string[];
+    readonly lights: readonly string[];
   };
   readonly primary: EditorTool;
   readonly secondary: EditorTool;
@@ -150,6 +151,7 @@ class CommandHistory {
 
 class PaintStrokeCommand implements EditorCommand {
   readonly #editor: BoardingEditor;
+  readonly #before: BoardingMapText;
   readonly #changes: readonly {
     readonly layer: BoardingEditorLayer;
     readonly q: number;
@@ -160,6 +162,7 @@ class PaintStrokeCommand implements EditorCommand {
 
   constructor(
     editor: BoardingEditor,
+    before: BoardingMapText,
     changes: readonly {
       readonly layer: BoardingEditorLayer;
       readonly q: number;
@@ -169,6 +172,7 @@ class PaintStrokeCommand implements EditorCommand {
     }[],
   ) {
     this.#editor = editor;
+    this.#before = before;
     this.#changes = changes;
   }
 
@@ -178,8 +182,7 @@ class PaintStrokeCommand implements EditorCommand {
   }
 
   undo(): void {
-    for (const change of this.#changes)
-      this.#editor.write(change.layer, change.q, change.r, change.from);
+    this.#editor.replaceLayers(this.#before);
   }
 }
 
@@ -338,7 +341,16 @@ export class BoardingEditor {
       const key = `${cell.q},${cell.r}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      const from = symbolAt(this.#text[tool.layer], cell.q, cell.r);
+      const terrain = this.#text.terrain[cell.r]?.[cell.q];
+      if (tool.layer !== 'terrain' && terrain === 'O') continue;
+      if (tool.layer === 'lights' && tool.symbol === 'L' && terrain !== '.')
+        continue;
+      const rows =
+        this.#text[tool.layer] ??
+        Array.from({ length: this.#text.height }, () =>
+          '-'.repeat(this.#text.width),
+        );
+      const from = symbolAt(rows, cell.q, cell.r);
       if (from === null || from === tool.symbol) continue;
       changes.push({
         layer: tool.layer,
@@ -347,9 +359,20 @@ export class BoardingEditor {
         from,
         to: tool.symbol,
       });
+      const clearLayers: readonly BoardingEditorLayer[] =
+        tool.layer === 'terrain' && tool.symbol === 'O'
+          ? ['objects', 'rooms', 'spawns', 'lights']
+          : tool.layer === 'terrain' && tool.symbol !== '.'
+            ? ['lights']
+            : [];
+      for (const layer of clearLayers) {
+        const old = this.#text[layer]?.[cell.r]?.[cell.q] ?? '-';
+        if (old !== '-')
+          changes.push({ layer, q: cell.q, r: cell.r, from: old, to: '-' });
+      }
     }
     if (changes.length === 0) return false;
-    this.#history.run(new PaintStrokeCommand(this, changes));
+    this.#history.run(new PaintStrokeCommand(this, this.#text, changes));
     this.#dirty = true;
     return true;
   }
@@ -438,7 +461,12 @@ export class BoardingEditor {
     r: number,
     symbol: string,
   ): void {
-    const rows = cloneRows(this.#text[layer]);
+    const rows = cloneRows(
+      this.#text[layer] ??
+        Array.from({ length: this.#text.height }, () =>
+          '-'.repeat(this.#text.width),
+        ),
+    );
     writeCell(rows, q, r, symbol);
     this.#text = Object.freeze({
       ...this.#text,
@@ -467,6 +495,13 @@ export class BoardingEditor {
         objects: this.#text.objects,
         rooms: this.#text.rooms,
         spawns: this.#text.spawns,
+        lights:
+          this.#text.lights ??
+          Object.freeze(
+            Array.from({ length: this.#text.height }, () =>
+              '-'.repeat(this.#text.width),
+            ),
+          ),
       }),
       primary: this.#primary,
       secondary: this.#secondary,

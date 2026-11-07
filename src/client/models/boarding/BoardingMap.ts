@@ -1,5 +1,5 @@
 export type BoardingCell = Readonly<{ q: number; r: number }>;
-export type BoardingRoom = 'bridge' | 'engineering';
+export type BoardingRoom = 'bridge' | 'engineering' | 'cockpit';
 export type BoardingTerrain = 'floor' | 'wall' | 'hull';
 export type BoardingFeatureKind =
   'door' | 'reactor' | 'cover' | 'exit' | 'wall' | 'hull';
@@ -120,7 +120,8 @@ export class BoardingMap {
       position.q >= 0 &&
       position.q < this.width &&
       position.r >= 0 &&
-      position.r < this.height
+      position.r < this.height &&
+      this.#terrain.has(key(position))
     );
   }
 }
@@ -218,7 +219,8 @@ export function parseBoardingMap(source: string): BoardingMap {
   for (let r = 0; r < height; r++) {
     for (let q = 0; q < width; q++) {
       const position = freezeCell(q, r);
-      const terrainSymbol = symbol('terrain', layers.terrain, '.#H', q, r);
+      const terrainSymbol = symbol('terrain', layers.terrain, '.#HO', q, r);
+      if (terrainSymbol === 'O') continue;
       const terrainKind: BoardingTerrain =
         terrainSymbol === '.'
           ? 'floor'
@@ -246,8 +248,11 @@ export function parseBoardingMap(source: string): BoardingMap {
 
       const room = symbol('rooms', layers.rooms, '-BEK', q, r);
       if (room === 'K') cockpits.push(position);
-      else if (room !== '-')
-        rooms.set(key(position), room === 'B' ? 'bridge' : 'engineering');
+      if (room !== '-')
+        rooms.set(
+          key(position),
+          room === 'B' ? 'bridge' : room === 'E' ? 'engineering' : 'cockpit',
+        );
 
       const spawn = symbol('spawns', layers.spawns, '-PDC', q, r);
       if (spawn === 'P') spawns.player.push(position);

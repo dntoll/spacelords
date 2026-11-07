@@ -10,6 +10,18 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Formbara bordningsskepp och editor:** `formbar-skeppskontur`,
+  `redigerbara-bordningslampor`, `kategoriserad-bordningspalett` och
+  `isometrisk-skeppsreferens` är **Fullständigt implementerat**. `Outside`
+  formar skeppskonturen och editorn visar skeppsbilden i båda projektionerna.
+  `spelidentisk-bordningseditor` är **Fullständigt implementerat**: samma bildval,
+  ytprojektion, ljus och väggsnitt används. Se [bordningsstrid](docs/boarding-combat.md).
+
+- **Rumsinteriörer:** `rumsspecifika-bordningstexturer` och
+  `texturerad-vaggovansida` är **Fullständigt implementerat**: bilderna används
+  i spel och editor. Se
+  [bordningsstrid](docs/boarding-combat.md).
+
 - **Bordningskamera:** `kamerafokus-vid-bordningssoldatbyte`,
   `kameraoverblick-vid-synlig-bordningsrorelse`,
   `kameraoverblick-fore-bordningsskott` och

@@ -4083,7 +4083,7 @@ body:has(.discovery-controls) .selection-panel {
 }
 
 #app.has-game-footer.has-local-editor-nav {
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
 }
 
 .local-editor-nav {
@@ -4116,6 +4116,8 @@ body:has(.discovery-controls) .selection-panel {
   padding: 8px;
   border-bottom: 1px solid var(--line);
   background: #10232e;
+  max-height: 30vh;
+  overflow: auto;
 }
 
 .boarding-editor-field {
@@ -4156,6 +4158,19 @@ body:has(.discovery-controls) .selection-panel {
   padding: 8px 8px max(8px, env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
   background: #10232e;
+  max-height: 32vh;
+  overflow: auto;
+}
+
+.boarding-editor-help {
+  margin: 0;
+  padding: 0 8px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.boarding-editor-help:empty {
+  display: none;
 }
 
 .boarding-editor-slot {
@@ -4171,6 +4186,22 @@ body:has(.discovery-controls) .selection-panel {
 
 .boarding-editor-tile {
   min-height: 44px;
+}
+
+.boarding-editor-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-left: 1px solid #547080;
+}
+
+.boarding-editor-group h3 {
+  width: 100%;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
 }
 
 .boarding-editor-tile.is-primary {

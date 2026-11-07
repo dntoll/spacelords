@@ -36,6 +36,25 @@ function click(label: string): void {
 }
 
 describe('lokal-bordningskarteditor', () => {
+  it('kategoriserad-bordningspalett: groups tools and describes their use', () => {
+    const model = new AppModel();
+    model.setEditorCatalog([{ id: 'pirate', name: 'Space pirate' }]);
+    model.openEditor('pirate', pirateMap);
+    const view = new BoardingEditorView(root, () => undefined, editorMap);
+    view.render(model.snapshot);
+    for (const label of ['Terrain', 'Objects', 'Rooms', 'Spawns', 'Lighting'])
+      expect(
+        root.querySelector(`section[aria-label="${label}"]`),
+      ).not.toBeNull();
+    expect(
+      root.querySelector<HTMLButtonElement>('[aria-label="Outside"]')?.title,
+    ).toContain('Outside');
+    expect(
+      root.querySelector<HTMLButtonElement>('[aria-label="Ceiling light"]')
+        ?.title,
+    ).toContain('Ceiling light');
+    view.dispose();
+  });
   it('hides Ship layouts until the local map catalog is available', () => {
     const model = new AppModel();
     const view = new AppView(root, mapFactory);

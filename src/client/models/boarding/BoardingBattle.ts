@@ -865,6 +865,7 @@ export class BoardingBattle {
   }
 
   #blocksVision(position: BoardingCell): boolean {
+    if (this.#map.terrainAt(position) === null) return true;
     const feature = this.#featureAt(position);
     if (
       feature &&

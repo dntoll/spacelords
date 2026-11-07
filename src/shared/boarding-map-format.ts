@@ -1,8 +1,9 @@
 ﻿export const BOARDING_LAYER_SYMBOLS = Object.freeze({
-  terrain: '.#H',
+  terrain: '.#HO',
   objects: '-DLRCBXA',
   rooms: '-BEK',
   spawns: '-PDC',
+  lights: '-L',
 });
 
 export type BoardingEditorLayer = keyof typeof BOARDING_LAYER_SYMBOLS;
@@ -156,6 +157,19 @@ export function parseBoardingMapText(source: string): BoardingMapText {
   for (const name of ['terrain', 'objects', 'rooms', 'spawns'] as const)
     assertLayer(name, layers[name], width, height);
   if (layers.lights) assertLights(layers.lights, layers.terrain, width, height);
+  for (let r = 0; r < height; r++) {
+    for (let q = 0; q < width; q++) {
+      if (layers.terrain[r]![q] !== 'O') continue;
+      if (
+        [layers.objects, layers.rooms, layers.spawns, layers.lights].some(
+          (rows) => rows && rows[r]![q] !== '-',
+        )
+      )
+        throw new Error(
+          `Outside cannot contain objects, rooms, spawns or lights at ${q},${r}.`,
+        );
+    }
+  }
   const campaign = layers.meta.get('rules') === 'campaign';
   if (!campaign && !hasSymbol(layers.objects, 'R'))
     throw new Error('The map needs one reactor.');
