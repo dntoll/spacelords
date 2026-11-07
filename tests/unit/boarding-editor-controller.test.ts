@@ -11,7 +11,8 @@ it('lokal-bordningskarteditor: the local build still discovers available maps', 
   vi.stubEnv('BASE_URL', '/');
   const fetch = vi.fn().mockResolvedValue({
     ok: true,
-    json: async () => ({ maps: [{ id: 'pirate', name: 'Space pirate' }] }),
+    json: () =>
+      Promise.resolve({ maps: [{ id: 'pirate', name: 'Space pirate' }] }),
   });
   vi.stubGlobal('fetch', fetch);
   const editor = new BoardingEditorFacade();
