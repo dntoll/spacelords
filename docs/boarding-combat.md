@@ -91,7 +91,9 @@ sparplatser.
 - `tydlig-bordningsstatus` — **Fullständigt implementerat**. Den aktiva soldaten
   namnges uttryckligen och markeras på kartan. Varje bordningssoldat visas med
   en egen HP-bar och numeriskt HP-värde i HUD. Kartans förklaring identifierar
-  aktiv soldat, riktning, sikt, eld och `Half cover`, som har en egen färg.
+  vald figur, möjlig väg och `Half cover`. Riktningspilar samt separata
+  förklaringar för sikt och eld har tagits bort enligt
+  `bordning-utan-riktningspilar` och `bordning-utan-sikt-och-eldrutor`.
   Under en dold försvarares tur visar `Combat details` att försvararen agerar
   och loggar handlingens typ utan att avslöja positionen. Den öppna
   stridsloggen följer senaste raden.
@@ -110,15 +112,27 @@ sparplatser.
 - `bordningsfigurer-fran-spritesheet` — **Fullständigt implementerat**. Soldater,
   pirater och civilister har egna stående och hukande figurer. Fem grundvinklar
   per typ och ställning speglas till åtta riktningar. Bilden visar samma håll
-  som figurens rörelse, sikt och riktningspil. Fötterna förankras nära golvet,
+  som figurens rörelse och sikt. Fötterna förankras nära golvet,
   och HP, AP och statusmarkeringar behålls. Detta ersätter samma stillbild för
-  alla riktningar. Totalt 30 genererade grundbilder används i ett bildark.
+  alla riktningar. Totalt 33 genererade grundbilder används i ett bildark.
+- `utslagna-bordningsfigurer` — **Fullständigt implementerat**. Soldat, pirat
+  och civilist har var sin transparent liggande, riktningsoberoende bild.
+  Utslagna använder bilden och kan fortsatt väljas för `Med-pack`; döda använder
+  samma pose med mörkare toning och kan inte väljas som levande mål.
+- `bordning-utan-riktningspilar` — **Fullständigt implementerat**. De tidigare
+  vita pilarna ovanpå personer är borttagna. Figurens åtta bildriktningar visar
+  fortsatt vilket håll en aktiv person står åt.
 - `traffchans-vid-synliga-fiender` — **Fullständigt implementerat**. Under
   spelarens tur visas en indikator och träffchans vid varje fiende som den
   aktiva soldaten själv ser. Vald fiende har ett tydligare crosshair.
   Markering och procenttext behåller läsbar skärmstorlek även vid mobilens
   utzoomning. Blockerat skott visar `0% · Blocked`. För få AP tonar ned indikatorn men
   ändrar inte träffchansen. Andra soldaters sikt och kartminne ger inga indikatorer.
+- `kantindikator-for-synlig-fiende` — **Fullständigt implementerat**. En fiende
+  som den aktiva soldaten ser men vars figur ligger utanför den fria kartytan
+  får samma crosshair och procent vid kanten i fiendens riktning. Flera
+  indikatorer längs samma kant säras. Ett klick väljer fienden och panorerar
+  mjukt till den på 300 ms med oförändrad zoom, utan att avfyra ett skott.
 - `automatisk-bordningstur-vid-tom-ap` — **Fullständigt implementerat**. När AP
   når noll avslutas soldatens aktivering efter den färdiga handlingen. Nästa
   figur följer befintlig turhantering, inklusive uppskjutna soldater och
@@ -138,9 +152,13 @@ sparplatser.
 - `doda-blockerar-inte-skott-eller-rorelse` — **Fullständigt implementerat**.
   En död eller utslagen soldat blockerar varken skott eller förflyttning.
   Stående personer blockerar fortfarande skott och rutor.
-- `sikt-och-eld-fran-vald-soldat` — **Fullständigt implementerat**. Under
-  spelarens tur visar kartan den aktiva soldatens synliga rutor med cyan kant
-  och de rutor ett gevärsskott kan nå med röd kant.
+- `sikt-och-eld-fran-vald-soldat` — **Fullständigt implementerat med ändrat
+  beteende**. Modellen beräknar fortsatt soldatens sikt och möjliga skott för
+  regler, målindikatorer och AI. Kartans tidigare cyan och röda rutkanter har
+  uttryckligen ersatts av `bordning-utan-sikt-och-eldrutor`.
+- `bordning-utan-sikt-och-eldrutor` — **Fullständigt implementerat**. Röda och
+  blå markeringar på marken samt deras förklaringar visas inte. Den gröna och
+  orangea förhandsvisningen av vald förflyttningsväg behålls.
 - `spelmassigt-bordningsgranssnitt` — **Fullständigt implementerat**. Kartan
   upptar huvuddelen av skärmen. Truppstatus, handlingar, zoom,
   kartförklaring och stridslogg ligger som kompakta HUD-lager ovanpå kartan.
@@ -151,6 +169,11 @@ sparplatser.
   inte den delade sikten. Skeppets yttre form är känd, interiören utforskas och
   aktuell sikt skiljs tydligt från kartminne. Våld visar sin exakta ruta som
   ljudmarkör för motståndarsidan till rundans slut.
+- `senast-sedd-fiende-med-fragetecken` — **Fullständigt implementerat**. En
+  dold senast känd position visas som ett orange frågetecken. Markören finns
+  kvar för en utslagen fiende som kan behandlas, men tas bort för döda och
+  evakuerade. Om den kända rutan åter syns utan fienden rensas den gamla
+  positionen. Synliga personer visas bara med sin figur.
 - `d20-bordningsstrid` — **Fullständigt implementerat**. Skott använder öppet D20 plus
   Accuracy mot försvar, men visar även träffchans i procent. Naturlig 1 missar
   och naturlig 20 dubblar vapnets skadetärningar.
@@ -274,6 +297,6 @@ Bildoriginalen med suffixet `-meters` ersätter de tidigare dörr- och airlockbi
 - `vertexljus-i-bordning` — **Fullständigt implementerat**. Varje hörn på golv och väggytor får ljus från lampor med fri ljuslinje, avståndsavtagande och hänsyn till ytriktning. Ljuset interpoleras över ytornas trianglar och multipliceras med befintliga texturer. Väggar, skrov, stängda dörrar och rök blockerar ljus; förstörda barriärer, öppna dörrar och personer gör det inte. Väggsnitt använder full vägghöjd vid blockering.
 - `tileljus-for-sprites` — **Fullständigt implementerat**. Varje ruta får ett ljusvärde vid golvets mittpunkt. Personer och objektsprites använder detta värde; under rörelse interpoleras figurens ljus mellan start och mål. HP, AP, riktning och valmarkeringar påverkas inte av belysningen.
 
-Upptäckta rutor har samma belysning i aktuell sikt och kartminne. Den tidigare siktstyrda mörkningen tas bort; `Sight` och `Fire` visar fortsatt taktisk räckvidd. Okänd interiör och dolda personer behåller sina synlighetsregler. Lamporna kan inte släckas eller förstöras. Sparformatet ändras inte: kartan med lampor återskapas vid återläsning.
+Upptäckta rutor har samma belysning i aktuell sikt och kartminne. Den tidigare siktstyrda mörkningen är borttagen. Okänd interiör och dolda personer behåller sina synlighetsregler. Lamporna kan inte släckas eller förstöras. Sparformatet ändras inte: kartan med lampor återskapas vid återläsning.
 
 Leveransen är granskad i mobilens stående och liggande format med texturer, figurer och väggsnitt. Riktade tester verifierar även reservgeometri, återanvändning av ljusmasker vid ändrad sikt, beskärning av väggens nedre texturdel och mjuk figurtoning under rörelse.

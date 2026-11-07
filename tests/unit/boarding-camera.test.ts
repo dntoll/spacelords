@@ -90,3 +90,14 @@ describe('kameraoverblick-vid-synlig-bordningsrorelse', () => {
     expect(camera.overview(initial, [], bounds)).toEqual([]);
   });
 });
+
+describe('kantindikator-for-synlig-fiende', () => {
+  it('centers an offscreen target without changing zoom', () => {
+    const phases = camera.center(initial, soldier, bounds);
+    expect(phases).toHaveLength(1);
+    expect(phases[0]!.to.scale).toBe(initial.scale);
+    const final = screen(phases[0]!.to);
+    expect((final.left + final.right) / 2).toBe(200);
+    expect((final.top + final.bottom) / 2).toBe(340);
+  });
+});

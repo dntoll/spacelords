@@ -1,6 +1,7 @@
 import { boardingCharacterSources } from './BoardingCharacterAtlas.js';
 import { BOARDING_METERS, boardingHeight } from './BoardingScale.js';
 export type BoardingCharacterSide = 'player' | 'defender' | 'civilian';
+export type BoardingCharacterPose = 'standing' | 'crouched' | 'incapacitated';
 
 interface Point {
   readonly x: number;
@@ -36,14 +37,14 @@ export interface BoardingCharacterPick {
   readonly id: string;
   readonly side: BoardingCharacterSide;
   readonly floorCenter: Point;
-  readonly crouched: boolean;
+  readonly pose: BoardingCharacterPose;
   readonly facing?: number;
 }
 
 export function boardingCharacterSprite(
   side: BoardingCharacterSide,
   floorCenter: Point,
-  crouched: boolean,
+  pose: BoardingCharacterPose,
   facing = 0,
 ): {
   readonly source: Rectangle;
@@ -52,19 +53,26 @@ export function boardingCharacterSprite(
 } {
   const view = views[((facing % 8) + 8) % 8]!;
   const source =
-    boardingCharacterSources[side][crouched ? 'crouched' : 'standing'][
-      view.angle
-    ];
+    pose === 'incapacitated'
+      ? boardingCharacterSources[side].incapacitated
+      : boardingCharacterSources[side][pose][view.angle];
   const height = boardingHeight(
-    crouched ? BOARDING_METERS.crouchedPerson : BOARDING_METERS.person,
+    pose === 'standing'
+      ? BOARDING_METERS.person
+      : pose === 'crouched'
+        ? BOARDING_METERS.crouchedPerson
+        : BOARDING_METERS.incapacitatedPerson,
   );
   const width = (height * source.width) / source.height;
   return {
     source,
-    mirrored: view.mirrored,
+    mirrored: pose !== 'incapacitated' && view.mirrored,
     destination: {
       x: floorCenter.x - width / 2,
-      y: floorCenter.y - height + BOARDING_FOOT_PLANT,
+      y:
+        pose === 'incapacitated'
+          ? floorCenter.y - height / 2 + BOARDING_FOOT_PLANT
+          : floorCenter.y - height + BOARDING_FOOT_PLANT,
       width,
       height,
     },
@@ -80,7 +88,7 @@ export function boardingCharacterAtPoint(
     const box = boardingCharacterSprite(
       person.side,
       person.floorCenter,
-      person.crouched,
+      person.pose,
       person.facing,
     ).destination;
     return (

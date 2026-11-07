@@ -400,14 +400,11 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
   expect(document.querySelector('.boarding-legend')!.textContent).toContain(
     'Half cover',
   );
-  expect(document.querySelector('.boarding-legend')!.textContent).toContain(
+  expect(document.querySelector('.boarding-legend')!.textContent).not.toContain(
     'Facing',
   );
-  expect(document.querySelector('.boarding-legend')!.textContent).toContain(
+  expect(document.querySelector('.boarding-legend')!.textContent).not.toContain(
     'Sight',
-  );
-  expect(document.querySelector('.boarding-legend')!.textContent).toContain(
-    'Fire',
   );
   selectHex({ q: player.position.q + 3, r: player.position.r });
   expect(document.body.textContent).toContain('Destination');
@@ -483,7 +480,11 @@ it('valbar-bordningssoldat / klickskott-pa-vald-fiende / animerat-bordningsskott
     currentActorId: actor!.id,
     activation: { id: actor!.id, remaining: 12 },
   };
-  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  let selectHex: (
+    position: { q: number; r: number },
+    personId?: string,
+    mode?: 'center-target',
+  ) => void = () => {};
   const playShot = vi.fn(() => Promise.resolve());
   const rendered = vi.fn<ReturnType<BoardingMapFactory>['render']>();
   const emit = vi.fn<(intent: AppIntent) => void>();
@@ -493,7 +494,7 @@ it('valbar-bordningssoldat / klickskott-pa-vald-fiende / animerat-bordningsskott
   });
   const restored = BoardingBattle.restore(testBoardingMap, boardingState);
   view.render(restored.snapshot);
-  expect(rendered.mock.lastCall?.[6]).toContainEqual(
+  expect(rendered.mock.lastCall?.[4]).toContainEqual(
     expect.objectContaining({ id: defender.id, affordable: true }),
   );
   selectHex(other!.position);
@@ -501,7 +502,7 @@ it('valbar-bordningssoldat / klickskott-pa-vald-fiende / animerat-bordningsskott
     type: 'boarding-command',
     command: { type: 'select', id: other!.id },
   });
-  selectHex({ q: 5, r: 5 });
+  selectHex({ q: 5, r: 5 }, defender.id, 'center-target');
   expect(rendered.mock.lastCall?.[1]).toBe(defender.id);
   expect(emit).not.toHaveBeenCalledWith({
     type: 'boarding-command',

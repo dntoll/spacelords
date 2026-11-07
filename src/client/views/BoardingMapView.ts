@@ -15,7 +15,6 @@ import {
 } from './BoardingWallVisibility.js';
 import type { BoardingMap, BoardingCell } from '../models/BoardingMap.js';
 import {
-  BoardingBattle,
   boardingActionPointsRemaining,
   type BoardingBattleState,
   type BoardingPerson,
@@ -42,7 +41,13 @@ import {
   BOARDING_FOOT_PLANT,
   boardingCharacterAtPoint,
   boardingCharacterSprite,
+  type BoardingCharacterPose,
 } from './BoardingCharacterSprite.js';
+import {
+  boardingEdgeTargetIndicators,
+  boardingScreenRectangleVisible,
+  type BoardingEdgeTargetIndicator,
+} from './BoardingTargetIndicatorLayout.js';
 import {
   boardingAnimTick,
   boardingCellFromIsoPoint,
@@ -61,6 +66,13 @@ import {
 } from './BoardingProjection.js';
 
 const key = (position: BoardingCell): string => `${position.q},${position.r}`;
+
+const characterPose = (person: BoardingPerson): BoardingCharacterPose =>
+  person.status === 'active'
+    ? person.crouched
+      ? 'crouched'
+      : 'standing'
+    : 'incapacitated';
 
 const BOARDING_OBJECT_IMAGES: Readonly<Record<BoardingArtwork, string>> = {
   airlock: airlockUrl,
@@ -110,9 +122,8 @@ export class BoardingMapView implements BoardingMapPort {
   #selectedId: string | null = null;
   #destination: BoardingCell | null = null;
   #path: readonly BoardingPathMark[] = [];
-  #sight: readonly BoardingCell[] = [];
-  #fire: readonly BoardingCell[] = [];
   #targets: readonly BoardingTargetIndicator[] = [];
+  #edgeTargetHits: readonly BoardingEdgeTargetIndicator[] = [];
   #motion: {
     from: BoardingBattleState;
     to: BoardingBattleState;
@@ -157,7 +168,11 @@ export class BoardingMapView implements BoardingMapPort {
   constructor(
     private readonly container: HTMLElement,
     private readonly map: BoardingMap,
-    select: (cell: BoardingCell, personId?: string) => void,
+    select: (
+      cell: BoardingCell,
+      personId?: string,
+      mode?: 'center-target',
+    ) => void,
   ) {
     this.#lighting = new BoardingLighting(map, {
       features: [],
@@ -229,8 +244,6 @@ export class BoardingMapView implements BoardingMapPort {
     selectedId: string | null,
     destination: BoardingCell | null,
     path: readonly BoardingPathMark[],
-    sight: readonly BoardingCell[] = [],
-    fire: readonly BoardingCell[] = [],
     targets: readonly BoardingTargetIndicator[] = [],
   ): void {
     const changed = this.#state?.id !== state.id;
@@ -240,8 +253,6 @@ export class BoardingMapView implements BoardingMapPort {
     this.#selectedId = selectedId;
     this.#destination = destination;
     this.#path = path;
-    this.#sight = sight;
-    this.#fire = fire;
     this.#targets = targets;
     if (changed || this.#fitPending) this.fit();
     if (this.#ready) void this.#p5.redraw();
@@ -323,7 +334,7 @@ export class BoardingMapView implements BoardingMapPort {
     const sprite = boardingCharacterSprite(
       person.side,
       center,
-      person.crouched,
+      characterPose(person),
       person.facing,
     ).destination;
     const left = Math.min(sprite.x, center.x - 18);
@@ -345,6 +356,19 @@ export class BoardingMapView implements BoardingMapPort {
     return this.#playCamera(
       person
         ? this.#camera.focus(
+            this.cameraSnapshot,
+            this.#cameraSubject(person),
+            this.#cameraBounds(),
+          )
+        : [],
+    );
+  }
+
+  #centerTarget(id: string): Promise<void> {
+    const person = this.#state?.people.find((entry) => entry.id === id);
+    return this.#playCamera(
+      person
+        ? this.#camera.center(
             this.cameraSnapshot,
             this.#cameraSubject(person),
             this.#cameraBounds(),
@@ -536,7 +560,11 @@ export class BoardingMapView implements BoardingMapPort {
 
   #bind(
     canvas: HTMLCanvasElement,
-    select: (cell: BoardingCell, personId?: string) => void,
+    select: (
+      cell: BoardingCell,
+      personId?: string,
+      mode?: 'center-target',
+    ) => void,
   ): void {
     const options = { signal: this.#events.signal };
     const point = (event: PointerEvent | WheelEvent): Point => {
@@ -602,6 +630,23 @@ export class BoardingMapView implements BoardingMapPort {
         if (!this.#pointers.has(event.pointerId)) return;
         if (!this.#dragged && !this.#motion) {
           const position = point(event);
+          const edgeTarget = this.#edgeTargetHits.find(
+            (entry) =>
+              position.x >= entry.hitBounds.left &&
+              position.x <= entry.hitBounds.right &&
+              position.y >= entry.hitBounds.top &&
+              position.y <= entry.hitBounds.bottom,
+          );
+          const edgePerson = edgeTarget
+            ? this.#state?.people.find((entry) => entry.id === edgeTarget.id)
+            : undefined;
+          if (edgeTarget && edgePerson) {
+            select(edgePerson.position, edgePerson.id, 'center-target');
+            void this.#centerTarget(edgePerson.id);
+            this.#pointers.delete(event.pointerId);
+            this.#start = null;
+            return;
+          }
           const iso = {
             x: (position.x - this.#offset.x) / this.#scale,
             y: (position.y - this.#offset.y) / this.#scale,
@@ -633,7 +678,7 @@ export class BoardingMapView implements BoardingMapPort {
                     x: center.x + shift.x,
                     y: center.y + shift.y,
                   },
-                  crouched: person.crouched,
+                  pose: characterPose(person),
                   facing: person.facing,
                 };
               }),
@@ -1034,10 +1079,111 @@ export class BoardingMapView implements BoardingMapPort {
     return true;
   }
 
+  #paintTargetIndicator(
+    sketch: p5,
+    position: Point,
+    indicator: BoardingTargetIndicator,
+    selected: boolean,
+    uiScale: number,
+    labelSide: 'left' | 'right' = 'right',
+  ): void {
+    const color =
+      indicator.reason || !indicator.affordable
+        ? '#a9adb6'
+        : selected
+          ? '#ffdc70'
+          : '#ff9494';
+    sketch.noFill();
+    sketch.stroke(color);
+    sketch.strokeWeight((selected ? 2.5 : 1.2) * uiScale);
+    const radius = (selected ? 12 : 8) * uiScale;
+    sketch.circle(position.x, position.y, radius * 2);
+    for (const sign of [-1, 1]) {
+      sketch.line(
+        position.x + sign * (radius - 3 * uiScale),
+        position.y,
+        position.x + sign * (radius + 5 * uiScale),
+        position.y,
+      );
+      sketch.line(
+        position.x,
+        position.y + sign * (radius - 3 * uiScale),
+        position.x,
+        position.y + sign * (radius + 5 * uiScale),
+      );
+    }
+    const label = `${indicator.chance}%${indicator.reason ? ' · Blocked' : ''}`;
+    sketch.textSize(11 * uiScale);
+    sketch.textAlign(sketch.LEFT, sketch.CENTER);
+    const width = sketch.textWidth(label) + 10 * uiScale;
+    const labelX =
+      labelSide === 'right'
+        ? position.x + radius + 8 * uiScale
+        : position.x - radius - 8 * uiScale - width;
+    sketch.noStroke();
+    sketch.fill('#101827');
+    sketch.rect(
+      labelX,
+      position.y - 9 * uiScale,
+      width,
+      18 * uiScale,
+      3 * uiScale,
+    );
+    sketch.fill(color);
+    sketch.text(label, labelX + 5 * uiScale, position.y);
+  }
+
   #draw(sketch: p5): void {
     sketch.background('#060914');
     const state = this.#state;
     if (!state) return;
+    const viewport = this.#cameraBounds();
+    const edgeTargets = boardingEdgeTargetIndicators(
+      this.#targets.flatMap((indicator) => {
+        const person = state.people.find((entry) => entry.id === indicator.id);
+        if (!person) return [];
+        const shift = stackOffset(
+          state.people,
+          person.id,
+          this.#selectedId,
+          state.currentActorId,
+        );
+        const floor = boardingIsoCenter(person.position);
+        const center = { x: floor.x + shift.x, y: floor.y + shift.y };
+        const sprite = boardingCharacterSprite(
+          person.side,
+          center,
+          characterPose(person),
+          person.facing,
+        ).destination;
+        const screenRectangle = {
+          left: sprite.x * this.#scale + this.#offset.x,
+          right: (sprite.x + sprite.width) * this.#scale + this.#offset.x,
+          top: sprite.y * this.#scale + this.#offset.y,
+          bottom: (sprite.y + sprite.height) * this.#scale + this.#offset.y,
+        };
+        if (boardingScreenRectangleVisible(screenRectangle, viewport))
+          return [];
+        const bodyY =
+          center.y +
+          BOARDING_FOOT_PLANT -
+          boardingHeight(
+            person.crouched
+              ? BOARDING_METERS.crouchedRifle
+              : BOARDING_METERS.rifle,
+          );
+        return [
+          {
+            id: person.id,
+            x: center.x * this.#scale + this.#offset.x,
+            y: bodyY * this.#scale + this.#offset.y,
+          },
+        ];
+      }),
+      viewport,
+    );
+    this.#edgeTargetHits = edgeTargets;
+    const edgeTargetIds = new Set(edgeTargets.map((entry) => entry.id));
     sketch.push();
     sketch.translate(this.#offset.x, this.#offset.y);
     sketch.scale(this.#scale);
@@ -1075,8 +1221,6 @@ export class BoardingMapView implements BoardingMapPort {
         .filter((mark) => mark.kind === 'reach')
         .map((mark) => key(mark.position)),
     );
-    const sightEdges = new Set(this.#sight.map(key));
-    const fireEdges = new Set(this.#fire.map(key));
     const selectedCell = [
       ...state.people.filter((person) => person.id === this.#selectedId),
       ...state.features.filter((feature) => feature.id === this.#selectedId),
@@ -1114,17 +1258,6 @@ export class BoardingMapView implements BoardingMapPort {
           this.#tile(sketch, position);
         } else if (reach.has(key(position))) {
           sketch.fill(240, 179, 90, 115);
-          this.#tile(sketch, position);
-        }
-        if (fireEdges.has(key(position))) {
-          sketch.noFill();
-          sketch.stroke('#ef6461');
-          sketch.strokeWeight(2.5);
-          this.#tile(sketch, position);
-        } else if (sightEdges.has(key(position))) {
-          sketch.noFill();
-          sketch.stroke('#5ac8fa');
-          sketch.strokeWeight(2);
           this.#tile(sketch, position);
         }
         if (
@@ -1350,7 +1483,7 @@ export class BoardingMapView implements BoardingMapPort {
             const sprite = boardingCharacterSprite(
               person.side,
               center,
-              person.crouched,
+              characterPose(person),
               progress < 0.5 ? origin.facing : target.facing,
             );
             sketch.push();
@@ -1396,63 +1529,31 @@ export class BoardingMapView implements BoardingMapPort {
                 this.#lighting.tile(origin.position)) *
                 progress;
             context.filter = `brightness(${light})`;
-            sketch.circle(center.x, bodyY, person.crouched ? 17 : 21);
+            if (person.status === 'active')
+              sketch.circle(center.x, bodyY, person.crouched ? 17 : 21);
+            else sketch.ellipse(center.x, center.y, 35, 14);
             context.restore();
           }
           overlays.push(() => {
             const indicator = this.#targets.find(
               (entry) => entry.id === person.id,
             );
-            if (indicator) {
+            if (indicator && !edgeTargetIds.has(person.id)) {
               // traffchans-vid-synliga-fiender: keep targeting UI readable at mobile fit zoom.
-              const uiScale = 1 / this.#scale;
-              const selected = person.id === this.#selectedId;
-              const color =
-                indicator.reason || !indicator.affordable
-                  ? '#a9adb6'
-                  : selected
-                    ? '#ffdc70'
-                    : '#ff9494';
-              sketch.noFill();
-              sketch.stroke(color);
-              sketch.strokeWeight((selected ? 2.5 : 1.2) * uiScale);
-              const radius = (selected ? 12 : 8) * uiScale;
-              sketch.circle(center.x, bodyY, radius * 2);
-              for (const sign of [-1, 1]) {
-                sketch.line(
-                  center.x + sign * (radius - 3 * uiScale),
-                  bodyY,
-                  center.x + sign * (radius + 5 * uiScale),
-                  bodyY,
-                );
-                sketch.line(
-                  center.x,
-                  bodyY + sign * (radius - 3 * uiScale),
-                  center.x,
-                  bodyY + sign * (radius + 5 * uiScale),
-                );
-              }
-              const label = `${indicator.chance}%${indicator.reason ? ' · Blocked' : ''}`;
-              sketch.textSize(11 * uiScale);
-              sketch.textAlign(sketch.LEFT, sketch.CENTER);
-              sketch.noStroke();
-              sketch.fill('#101827');
-              sketch.rect(
-                center.x + radius + 8 * uiScale,
-                bodyY - 9 * uiScale,
-                sketch.textWidth(label) + 10 * uiScale,
-                18 * uiScale,
-                3 * uiScale,
+              this.#paintTargetIndicator(
+                sketch,
+                { x: center.x, y: bodyY },
+                indicator,
+                person.id === this.#selectedId,
+                1 / this.#scale,
               );
-              sketch.fill(color);
-              sketch.text(label, center.x + radius + 13 * uiScale, bodyY);
             }
             sketch.noStroke();
             const healthY = this.#factionSprites
               ? boardingCharacterSprite(
                   person.side,
                   center,
-                  person.crouched,
+                  characterPose(person),
                   person.facing,
                 ).destination.y - 6
               : bodyY - 18;
@@ -1491,38 +1592,6 @@ export class BoardingMapView implements BoardingMapPort {
               3,
               1,
             );
-            const fromFacing = boardingIsoCenter(
-              BoardingBattle.forward({ q: 0, r: 0 }, origin.facing),
-            );
-            const toFacing = boardingIsoCenter(
-              BoardingBattle.forward({ q: 0, r: 0 }, target.facing),
-            );
-            const originIso = boardingIsoCenter({ q: 0, r: 0 });
-            const dx =
-              fromFacing.x +
-              (toFacing.x - fromFacing.x) * progress -
-              originIso.x;
-            const dy =
-              fromFacing.y +
-              (toFacing.y - fromFacing.y) * progress -
-              originIso.y;
-            const length = Math.max(1, Math.hypot(dx, dy));
-            sketch.stroke('#111827');
-            sketch.strokeWeight(5);
-            sketch.line(
-              center.x,
-              bodyY,
-              center.x + (dx / length) * 17,
-              bodyY + (dy / length) * 17,
-            );
-            sketch.stroke('#ffffff');
-            sketch.strokeWeight(2.5);
-            sketch.line(
-              center.x,
-              bodyY,
-              center.x + (dx / length) * 17,
-              bodyY + (dy / length) * 17,
-            );
           });
         },
       });
@@ -1530,10 +1599,21 @@ export class BoardingMapView implements BoardingMapPort {
     scene.sort(boardingDepthOrder).forEach((item) => item.paint());
     for (const marker of state.lastKnownEnemies) {
       if (visible.has(key(marker.position))) continue;
+      const remembered = state.people.find((person) => person.id === marker.id);
+      if (
+        !remembered ||
+        remembered.status === 'dead' ||
+        remembered.status === 'evacuated'
+      )
+        continue;
       const center = boardingIsoCenter(marker.position);
-      sketch.noFill();
-      sketch.stroke('#e58b5a');
-      sketch.circle(center.x, center.y, 22);
+      const uiScale = 1 / this.#scale;
+      sketch.textAlign(sketch.CENTER, sketch.CENTER);
+      sketch.textSize(22 * uiScale);
+      sketch.stroke('#101827');
+      sketch.strokeWeight(4 * uiScale);
+      sketch.fill('#e58b5a');
+      sketch.text('?', center.x, center.y - 2 * uiScale);
     }
     for (const marker of state.noiseMarkers.filter(
       (entry) => entry.audience === 'player',
@@ -1566,6 +1646,18 @@ export class BoardingMapView implements BoardingMapPort {
       sketch.circle(head.x, head.y, 7);
     }
     sketch.pop();
+    for (const edge of edgeTargets) {
+      const indicator = this.#targets.find((entry) => entry.id === edge.id);
+      if (indicator)
+        this.#paintTargetIndicator(
+          sketch,
+          edge,
+          indicator,
+          edge.id === this.#selectedId,
+          1,
+          edge.labelSide,
+        );
+    }
   }
 
   dispose(): void {

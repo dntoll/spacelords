@@ -13,8 +13,15 @@ import {
   boardingIsoCamera,
   boardingIsoCenter,
 } from '../../src/client/views/BoardingProjection.js';
-import { boardingHeight } from '../../src/client/views/BoardingScale.js';
-import { boardingCharacterSprite } from '../../src/client/views/BoardingCharacterSprite.js';
+import {
+  BOARDING_METERS,
+  boardingHeight,
+} from '../../src/client/views/BoardingScale.js';
+import {
+  BOARDING_FOOT_PLANT,
+  boardingCharacterSprite,
+} from '../../src/client/views/BoardingCharacterSprite.js';
+import { boardingEdgeTargetIndicators } from '../../src/client/views/BoardingTargetIndicatorLayout.js';
 
 const runtime = vi.hoisted(() => ({ sketch: null as p5 | null }));
 vi.mock('p5', () => ({
@@ -45,12 +52,16 @@ afterEach(() => {
 
 function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
   const calls: { kind: string; alpha: number; y: number }[] = [];
+  const lines: { stroke: string; points: number[] }[] = [];
+  const strokes: string[] = [];
+  const texts: string[] = [];
   const canvas = document.createElement('canvas');
   canvas.setPointerCapture = () => {};
   const masks: unknown[][] = [];
   const imageLights: number[] = [];
   const pendingImages: ((image: unknown) => void)[] = [];
   let tint = 255;
+  let currentStroke = '';
   const context = {
     globalAlpha: 1,
     beginPath() {},
@@ -89,9 +100,20 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
     image: () => {
       imageLights.push(tint);
     },
+    stroke: (value: string) => {
+      currentStroke = value;
+      strokes.push(value);
+    },
+    line: (...points: number[]) =>
+      lines.push({ stroke: currentStroke, points }),
+    text: (value: string) => texts.push(value),
+    textWidth: (value: string) => value.length * 7,
     redraw: () => runtime.sketch!.draw(),
     background: () => {
       calls.length = 0;
+      lines.length = 0;
+      strokes.length = 0;
+      texts.length = 0;
       masks.length = 0;
       imageLights.length = 0;
     },
@@ -169,6 +191,16 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
       canvas.dispatchEvent(event);
     }
   };
+  const clickScreen = (point: { x: number; y: number }) => {
+    for (const name of ['pointerdown', 'pointerup']) {
+      const event = new MouseEvent(name, {
+        clientX: point.x,
+        clientY: point.y,
+      });
+      Object.defineProperty(event, 'pointerId', { value: 1 });
+      canvas.dispatchEvent(event);
+    }
+  };
   const loadImages = async () => {
     for (const resolve of pendingImages)
       resolve({
@@ -185,12 +217,16 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
     calls,
     select,
     click,
+    clickScreen,
     player,
     state,
     masks,
     imageLights,
     loadImages,
     map,
+    lines,
+    strokes,
+    texts,
   };
 }
 
@@ -216,7 +252,7 @@ it('genomskinliga-skymmande-vaggar: fallback walls are opaque 40 cm sections, fo
   const sprite = boardingCharacterSprite(
     'player',
     boardingIsoCenter(player.position),
-    false,
+    'standing',
   ).destination;
   click({ x: sprite.x + sprite.width / 2, y: sprite.y + sprite.height / 2 });
   expect(select).toHaveBeenLastCalledWith(player.position, player.id);
@@ -297,8 +333,6 @@ it('traffchans-vid-synliga-fiender: keeps hit percentages readable when a mobile
     null,
     null,
     [],
-    [],
-    [],
     [
       {
         id: player.id,
@@ -314,6 +348,105 @@ it('traffchans-vid-synliga-fiender: keeps hit percentages readable when a mobile
   expect(
     Number(textSize.mock.lastCall?.[0]) * camera.scale * 0.2,
   ).toBeGreaterThanOrEqual(11);
+  view.dispose();
+});
+
+it('bordning-utan-riktningspilar / bordning-utan-sikt-och-eldrutor / senast-sedd-fiende-med-fragetecken: simplifies tactical map marks', () => {
+  const { view, state, player, lines, strokes, texts } = scene(true);
+  view.render(
+    {
+      ...state,
+      people: [
+        player,
+        {
+          ...player,
+          id: 'remembered',
+          side: 'defender',
+          position: { q: 1, r: 1 },
+        },
+      ],
+      lastKnownEnemies: [{ id: 'remembered', position: { q: 1, r: 1 } }],
+    },
+    player.id,
+    null,
+    [],
+  );
+  expect(lines.some((line) => line.stroke === '#ffffff')).toBe(false);
+  expect(strokes).not.toContain('#ef6461');
+  expect(strokes).not.toContain('#5ac8fa');
+  expect(texts).toContain('?');
+  view.render(
+    {
+      ...state,
+      people: [
+        player,
+        {
+          ...player,
+          id: 'remembered',
+          side: 'defender',
+          status: 'dead',
+          position: { q: 1, r: 1 },
+        },
+      ],
+      lastKnownEnemies: [{ id: 'remembered', position: { q: 1, r: 1 } }],
+    },
+    player.id,
+    null,
+    [],
+  );
+  expect(texts).not.toContain('?');
+  view.dispose();
+});
+
+it('kantindikator-for-synlig-fiende: clicking an edge target selects and centers it at the same zoom', async () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true }));
+  const { view, state, player, map, select, clickScreen } = scene(true);
+  const viewport = { left: 650, top: 120, right: 790, bottom: 500 };
+  view.setViewportProvider(() => viewport);
+  view.render(
+    state,
+    null,
+    null,
+    [],
+    [
+      {
+        id: player.id,
+        chance: 75,
+        defense: 10,
+        reason: null,
+        affordable: true,
+      },
+    ],
+  );
+  const camera = boardingIsoCamera(map, { width: 800, height: 600 });
+  const body = boardingIsoCenter(player.position);
+  const edge = boardingEdgeTargetIndicators(
+    [
+      {
+        id: player.id,
+        x: body.x * camera.scale + camera.offset.x,
+        y:
+          (body.y +
+            BOARDING_FOOT_PLANT -
+            boardingHeight(BOARDING_METERS.rifle)) *
+            camera.scale +
+          camera.offset.y,
+      },
+    ],
+    viewport,
+  )[0]!;
+  const scale = view.cameraSnapshot.scale;
+  clickScreen(edge);
+  await Promise.resolve();
+  expect(select).toHaveBeenLastCalledWith(
+    player.position,
+    player.id,
+    'center-target',
+  );
+  expect(view.cameraSnapshot.scale).toBe(scale);
+  expect(
+    view.cameraSnapshot.offset.x + boardingIsoCenter(player.position).x * scale,
+  ).toBeCloseTo((viewport.left + viewport.right) / 2);
   view.dispose();
 });
 

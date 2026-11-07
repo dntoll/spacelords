@@ -7,6 +7,7 @@ export const BOARDING_METERS = Object.freeze({
   frame: 2.3,
   person: 1.8,
   crouchedPerson: 1.2,
+  incapacitatedPerson: 0.72,
   cover: 1.2,
   reactor: 1.8,
   rifle: 1.3,

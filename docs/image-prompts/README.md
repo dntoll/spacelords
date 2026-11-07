@@ -94,14 +94,15 @@ Maskinläsbart index: [manifest.json](manifest.json). Referensbilderna är kopio
 
 ## Bordningsfigurer med åtta riktningar
 
-[boarding-characters.json](boarding-characters.json) innehåller de 30 slutliga
+[boarding-characters.json](boarding-characters.json) innehåller de 33 slutliga
 prompterna, originalens sökvägar och generatorvalet. Bilderna skapades med den
 inbyggda `image_gen`, med transparent bakgrund. Det befintliga fraktionsarket
 var stilreferens för `player-standing-front`; det nya originalet användes
 sedan som stilreferens för de övriga bilderna.
 
 Originalen finns i `assets/original/boarding/characters/`. Fem vinklar per typ
-och ställning speglas i vyn till åtta riktningar. Webbarket finns i
+och aktiv ställning speglas i vyn till åtta riktningar. Varje typ har dessutom
+en riktningsoberoende liggande bild för utslagna och döda personer. Webbarket finns i
 `src/client/assets/boarding/characters/directional-faction-sprites.webp`.
 Återskapa bildarket och dess källrektanglar från de sparade originalen med:
 

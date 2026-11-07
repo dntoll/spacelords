@@ -268,5 +268,32 @@
     "original": "assets/original/boarding/characters/civilian-crouched-back.png",
     "generator": "built-in image_gen",
     "transparent_background": true
+  },
+  {
+    "side": "player",
+    "stance": "incapacitated",
+    "angle": "independent",
+    "prompt": "Create a single transparent-background game sprite of the exact same cyan-armored player soldier shown in the reference image, preserving the character design, colors, proportions, clean stylized 3D concept-art rendering, and soft material detail. Show the full body lying prone and unconscious/incapacitated on the ground, viewed from a 30-degree elevated orthographic 2:1 dimetric game-camera angle. The pose must read clearly as incapacitated: relaxed limbs, face turned slightly to the side, no standing or kneeling pose. Place the rifle harmlessly alongside the body. No blood, wounds, gore, floor, base, shadow, text, icons, border, or extra objects. Keep every body part and the entire weapon visible with comfortable transparent padding. Output one isolated raster sprite with a true alpha background.",
+    "original": "assets/original/boarding/characters/player-incapacitated.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "defender",
+    "stance": "incapacitated",
+    "angle": "independent",
+    "prompt": "Create a single transparent-background game sprite of the exact same red-armored pirate/defender soldier shown in the reference image, preserving the character design, colors, proportions, clean stylized 3D concept-art rendering, and soft material detail. Show the full body lying prone and unconscious/incapacitated on the ground, viewed from a 30-degree elevated orthographic 2:1 dimetric game-camera angle. The pose must read clearly as incapacitated: relaxed limbs, face turned slightly to the side, no standing or kneeling pose. Place the weapon harmlessly alongside the body. No blood, wounds, gore, floor, base, shadow, text, icons, border, or extra objects. Keep every body part and the entire weapon visible with comfortable transparent padding. Output one isolated raster sprite with a true alpha background.",
+    "original": "assets/original/boarding/characters/defender-incapacitated.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
+  },
+  {
+    "side": "civilian",
+    "stance": "incapacitated",
+    "angle": "independent",
+    "prompt": "Create a single transparent-background game sprite of the exact same civilian shown in the reference image, preserving the character identity, gray jumpsuit design, colors, proportions, clean stylized 3D concept-art rendering, and soft material detail. Show the full body lying prone and unconscious/incapacitated on the ground, viewed from a 30-degree elevated orthographic 2:1 dimetric game-camera angle. The pose must read clearly as incapacitated: relaxed limbs, face turned slightly to the side, no standing or kneeling pose. The civilian is unarmed. No blood, wounds, gore, floor, base, shadow, text, icons, border, weapon, or extra objects. Keep every body part visible with comfortable transparent padding. Output one isolated raster sprite with a true alpha background.",
+    "original": "assets/original/boarding/characters/civilian-incapacitated.png",
+    "generator": "built-in image_gen",
+    "transparent_background": true
   }
 ]

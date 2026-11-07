@@ -8,7 +8,11 @@ import {
 describe('bordningsfigurer-fran-spritesheet', () => {
   it('isolates one figure per row and plants every figure slightly below the tile center', () => {
     for (const side of ['player', 'defender', 'civilian'] as const) {
-      const sprite = boardingCharacterSprite(side, { x: 80, y: 120 }, false);
+      const sprite = boardingCharacterSprite(
+        side,
+        { x: 80, y: 120 },
+        'standing',
+      );
 
       expect(sprite.source.width).toBeGreaterThan(0);
       expect(sprite.source.height).toBe(224);
@@ -26,13 +30,13 @@ describe('valbar-bordningssoldat', () => {
       id: 'back',
       side: 'player' as const,
       floorCenter: { x: 80, y: 100 },
-      crouched: false,
+      pose: 'standing' as const,
     };
     const front = {
       id: 'front',
       side: 'defender' as const,
       floorCenter: { x: 80, y: 140 },
-      crouched: false,
+      pose: 'standing' as const,
     };
     const overlap = {
       x: 80,
@@ -51,11 +55,11 @@ describe('valbar-bordningssoldat', () => {
 });
 
 describe('bordningsfigurer-fran-spritesheet', () => {
-  it('maps eight projected directions to five views with three mirrored counterparts', () => {
+  it('bordningsfigurer-fran-spritesheet / utslagna-bordningsfigurer: maps active directions and keeps one prone pose per side', () => {
     for (const side of ['player', 'defender', 'civilian'] as const) {
-      for (const crouched of [false, true]) {
+      for (const pose of ['standing', 'crouched'] as const) {
         const sprites = Array.from({ length: 8 }, (_, facing) =>
-          boardingCharacterSprite(side, { x: 0, y: 0 }, crouched, facing),
+          boardingCharacterSprite(side, { x: 0, y: 0 }, pose, facing),
         );
         expect(
           new Set(sprites.map((sprite) => JSON.stringify(sprite.source))).size,
@@ -79,14 +83,26 @@ describe('bordningsfigurer-fran-spritesheet', () => {
           );
       }
       expect(
-        boardingCharacterSprite(side, { x: 0, y: 0 }, true).source,
+        boardingCharacterSprite(side, { x: 0, y: 0 }, 'crouched').source,
       ).not.toEqual(
-        boardingCharacterSprite(side, { x: 0, y: 0 }, false).source,
+        boardingCharacterSprite(side, { x: 0, y: 0 }, 'standing').source,
       );
       expect(
-        boardingCharacterSprite(side, { x: 0, y: 0 }, true).destination.height,
+        boardingCharacterSprite(side, { x: 0, y: 0 }, 'crouched').destination
+          .height,
       ).toBeLessThan(
-        boardingCharacterSprite(side, { x: 0, y: 0 }, false).destination.height,
+        boardingCharacterSprite(side, { x: 0, y: 0 }, 'standing').destination
+          .height,
+      );
+      const incapacitated = Array.from({ length: 8 }, (_, facing) =>
+        boardingCharacterSprite(side, { x: 0, y: 0 }, 'incapacitated', facing),
+      );
+      expect(
+        new Set(incapacitated.map((sprite) => JSON.stringify(sprite.source))),
+      ).toHaveLength(1);
+      expect(incapacitated.every((sprite) => !sprite.mirrored)).toBe(true);
+      expect(incapacitated[0]!.destination.width).toBeGreaterThan(
+        incapacitated[0]!.destination.height,
       );
     }
   });
@@ -96,13 +112,13 @@ describe('bordningsfigurer-fran-spritesheet', () => {
         id: 'soldier',
         side: 'player' as const,
         floorCenter: { x: 80, y: 120 },
-        crouched: false,
+        pose: 'standing' as const,
         facing,
       };
       const { destination: box } = boardingCharacterSprite(
         person.side,
         person.floorCenter,
-        false,
+        'standing',
         facing,
       );
       expect(

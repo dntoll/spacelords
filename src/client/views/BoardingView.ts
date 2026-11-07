@@ -36,8 +36,6 @@ export interface BoardingMapPort {
     selectedId: string | null,
     destination: BoardingCell | null,
     path: readonly BoardingPathMark[],
-    sight?: readonly BoardingCell[],
-    fire?: readonly BoardingCell[],
     targets?: readonly BoardingTargetIndicator[],
   ): void;
   setViewportProvider?(provider: () => BoardingCameraBounds | null): void;
@@ -60,7 +58,11 @@ export interface BoardingMapPort {
 
 export type BoardingMapFactory = (
   container: HTMLElement,
-  select: (cell: BoardingCell, personId?: string) => void,
+  select: (
+    cell: BoardingCell,
+    personId?: string,
+    mode?: 'center-target',
+  ) => void,
   map: BoardingMap,
 ) => BoardingMapPort;
 
@@ -128,9 +130,6 @@ export class BoardingView {
       element('span', 'boarding-legend-scale', '1 tile = 1 m'),
       element('span', 'boarding-legend-selected', '○ Selected'),
       element('span', 'boarding-legend-cover', '▰ Half cover'),
-      element('span', 'boarding-legend-facing', '— Facing'),
-      element('span', 'boarding-legend-sight', '◇ Sight'),
-      element('span', 'boarding-legend-shot', '◇ Fire'),
       element('span', 'boarding-legend-fire', '▣ Fire after move'),
       element('span', 'boarding-legend-reach', '▣ Move only'),
     );
@@ -168,7 +167,7 @@ export class BoardingView {
     this.#map?.dispose();
     this.#map = this.#mapFactory?.(
       this.#canvas,
-      (position, personId) => this.#selectCell(position, personId),
+      (position, personId, mode) => this.#selectCell(position, personId, mode),
       map,
     );
     this.#mapName = map.name;
@@ -241,7 +240,11 @@ export class BoardingView {
     this.#controls.append(control);
   }
 
-  #selectCell(position: BoardingCell, personId?: string): void {
+  #selectCell(
+    position: BoardingCell,
+    personId?: string,
+    mode?: 'center-target',
+  ): void {
     const state = this.#state;
     if (!state || state.phase === 'complete' || this.#busy) return;
     const actor = state.people.find(
@@ -265,6 +268,17 @@ export class BoardingView {
         entry.position.r === position.r &&
         ['door', 'reactor', 'wall'].includes(entry.kind),
     );
+    if (
+      mode === 'center-target' &&
+      playerTurn &&
+      person &&
+      person.side !== 'player'
+    ) {
+      this.#selectedId = person.id;
+      this.#destination = null;
+      this.render(state);
+      return;
+    }
     if (person?.side === 'player' && playerTurn) {
       if (boardingActionPointsRemaining(state, person.id) <= 0) return;
       if (person.id !== actor.id) {
@@ -672,18 +686,12 @@ export class BoardingView {
       this.#details.scrollTop = this.#details.scrollHeight;
     const overlayActor =
       playerTurn && actor?.status === 'active' ? actor : null;
-    const sight = overlayActor ? this.#battle().sightFrom(overlayActor.id) : [];
-    const fireTiles = overlayActor
-      ? this.#battle().fireFrom(overlayActor.id)
-      : [];
     this.#viewport();
     this.#map?.render(
       state,
       this.#selectedId,
       this.#destination,
       path,
-      sight,
-      fireTiles,
       overlayActor ? this.#battle().targetIndicators(overlayActor.id) : [],
     );
   }

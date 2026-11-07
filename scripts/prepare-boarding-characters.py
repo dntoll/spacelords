@@ -12,7 +12,7 @@ ANGLES = ("front", "front-right", "right", "back-right", "back")
 
 
 def main():
-    atlas = Image.new("RGBA", (256 * 5, 256 * 6))
+    atlas = Image.new("RGBA", (256 * 5, 256 * 7))
     sources = {}
     for side_index, side in enumerate(SIDES):
         sources[side] = {}
@@ -39,6 +39,27 @@ def main():
                     y = row * 256 + 248 - height
                     atlas.alpha_composite(image, (x, y))
                     sources[side][stance][angle] = dict(x=x, y=y, width=width, height=height)
+        path = ORIGINALS / f"{side}-incapacitated.png"
+        with Image.open(path) as original:
+            image = original.convert("RGBA")
+            alpha = image.getchannel("A")
+            if alpha.getextrema()[0] != 0:
+                raise ValueError(f"Missing transparent background: {path}")
+            bounds = alpha.point(lambda value: 255 if value > 16 else 0).getbbox()
+            if not bounds:
+                raise ValueError(f"Empty character: {path}")
+            image = image.crop(bounds)
+            width = 240
+            height = round(image.height * width / image.width)
+            if height > 248:
+                raise ValueError(f"Character exceeds atlas cell: {path} ({height}px)")
+            image = image.resize((width, height), Image.Resampling.LANCZOS)
+            x = side_index * 256 + (256 - width) // 2
+            y = 256 * 6 + (256 - height) // 2
+            atlas.alpha_composite(image, (x, y))
+            sources[side]["incapacitated"] = dict(
+                x=x, y=y, width=width, height=height
+            )
     OUTPUT.mkdir(parents=True, exist_ok=True)
     atlas.save(OUTPUT / "directional-faction-sprites.webp", quality=88, method=6)
     manifest = ROOT / "src/client/views/BoardingCharacterAtlas.ts"
@@ -48,7 +69,7 @@ def main():
         + json.dumps(sources, indent=2)
         + " as const;\n"
     )
-    print(f"Packed 30 character sprites: {OUTPUT.relative_to(ROOT)}")
+    print(f"Packed 33 character sprites: {OUTPUT.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

@@ -46,7 +46,7 @@ describe('meterskala-i-bordning', () => {
     const sprite = boardingCharacterSprite(
       'player',
       { x: 0, y: 0 },
-      false,
+      'standing',
     ).destination;
     expect(sprite.height / verticalMeter).toBeCloseTo(1.8);
     expect(sprite.y + sprite.height).toBe(BOARDING_FOOT_PLANT);

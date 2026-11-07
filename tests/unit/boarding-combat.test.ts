@@ -91,6 +91,81 @@ describe('individuellt-bordningsinitiativ', () => {
   });
 });
 
+describe('senast-sedd-fiende-med-fragetecken', () => {
+  const hiddenFloor = () => {
+    const visible = new Set(
+      battle.snapshot.visibleCells.map((cell) => `${cell.q},${cell.r}`),
+    );
+    for (let r = 0; r < map.height; r++)
+      for (let q = 0; q < map.width; q++)
+        if (map.terrainAt({ q, r }) === 'floor' && !visible.has(`${q},${r}`))
+          return { q, r };
+    throw new Error('Expected a hidden floor cell');
+  };
+
+  it('keeps an incapacitated enemy remembered but removes a dead enemy', () => {
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    const hidden = hiddenFloor();
+    withState((state) => ({
+      ...state,
+      people: state.people.map((person) =>
+        person.id === defender.id
+          ? {
+              ...person,
+              position: hidden,
+              status: 'incapacitated' as const,
+              hitPoints: 0,
+            }
+          : person,
+      ),
+      lastKnownEnemies: [{ id: defender.id, position: hidden }],
+    }));
+    battle.synchronize();
+    expect(battle.snapshot.lastKnownEnemies).toContainEqual({
+      id: defender.id,
+      position: hidden,
+    });
+    withState((state) => ({
+      ...state,
+      people: state.people.map((person) =>
+        person.id === defender.id
+          ? { ...person, status: 'dead' as const }
+          : person,
+      ),
+    }));
+    battle.synchronize();
+    expect(
+      battle.snapshot.lastKnownEnemies.some(
+        (entry) => entry.id === defender.id,
+      ),
+    ).toBe(false);
+  });
+
+  it('clears a stale position when that tile is observed empty', () => {
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player' && person.status === 'active',
+    )!;
+    const defender = battle.snapshot.people.find(
+      (person) => person.side === 'defender',
+    )!;
+    const hidden = hiddenFloor();
+    withState((state) => ({
+      ...state,
+      people: state.people.map((person) =>
+        person.id === defender.id ? { ...person, position: hidden } : person,
+      ),
+      lastKnownEnemies: [{ id: defender.id, position: player.position }],
+    }));
+    battle.synchronize();
+    expect(battle.snapshot.lastKnownEnemies).not.toContainEqual({
+      id: defender.id,
+      position: player.position,
+    });
+  });
+});
+
 describe('actionpoints-och-riktad-forflyttning', () => {
   it('preserves the four saved cardinal directions for the square grid', () => {
     const origin = { q: 5, r: 5 };

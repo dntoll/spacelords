@@ -997,8 +997,38 @@ export class BoardingBattle {
     );
     for (const position of visible)
       explored.set(positionKey(position), position);
-    const lastKnown = new Map(
-      this.#state.lastKnownEnemies.map((entry) => [entry.id, entry]),
+    const rememberedEnemies = (
+      side: 'player' | 'defender',
+      currentVisibility: ReadonlySet<string>,
+      remembered: readonly BoardingLastKnown[],
+    ) => {
+      const living = new Map(
+        this.#state.people
+          .filter(
+            (entry) =>
+              entry.side === side &&
+              entry.status !== 'dead' &&
+              entry.status !== 'evacuated',
+          )
+          .map((entry) => [entry.id, entry]),
+      );
+      return new Map(
+        remembered
+          .filter((entry) => {
+            const enemy = living.get(entry.id);
+            return (
+              !!enemy &&
+              (!currentVisibility.has(positionKey(entry.position)) ||
+                positionKey(enemy.position) === positionKey(entry.position))
+            );
+          })
+          .map((entry) => [entry.id, entry]),
+      );
+    };
+    const lastKnown = rememberedEnemies(
+      'defender',
+      visibleKeys,
+      this.#state.lastKnownEnemies,
     );
     for (const enemy of this.#state.people.filter(
       (entry) =>
@@ -1008,8 +1038,10 @@ export class BoardingBattle {
         visibleKeys.has(positionKey(entry.position)),
     ))
       lastKnown.set(enemy.id, { id: enemy.id, position: enemy.position });
-    const defenderLastKnown = new Map(
-      this.#state.defenderLastKnownEnemies.map((entry) => [entry.id, entry]),
+    const defenderLastKnown = rememberedEnemies(
+      'player',
+      defenderVisibleKeys,
+      this.#state.defenderLastKnownEnemies,
     );
     for (const enemy of this.#state.people.filter(
       (entry) =>

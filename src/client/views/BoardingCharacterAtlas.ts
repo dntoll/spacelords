@@ -65,6 +65,12 @@ export const boardingCharacterSources = {
         height: 149,
       },
     },
+    incapacitated: {
+      x: 8,
+      y: 1611,
+      width: 240,
+      height: 106,
+    },
   },
   defender: {
     standing: {
@@ -131,6 +137,12 @@ export const boardingCharacterSources = {
         height: 149,
       },
     },
+    incapacitated: {
+      x: 264,
+      y: 1604,
+      width: 240,
+      height: 120,
+    },
   },
   civilian: {
     standing: {
@@ -196,6 +208,12 @@ export const boardingCharacterSources = {
         width: 98,
         height: 149,
       },
+    },
+    incapacitated: {
+      x: 520,
+      y: 1616,
+      width: 240,
+      height: 96,
     },
   },
 } as const;

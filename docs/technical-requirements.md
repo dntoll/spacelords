@@ -1432,6 +1432,8 @@ Snabbsvitens körning 2026-11-04 passerade med 788 tester på 24,37 s. De längr
 ## Bordning: åtta riktningar och figurbilder
 
 `actionpoints-och-riktad-forflyttning`, `bordningsfigurer-fran-spritesheet`,
+`utslagna-bordningsfigurer`, `bordning-utan-riktningspilar`,
+`bordning-utan-sikt-och-eldrutor`, `senast-sedd-fiende-med-fragetecken`,
 `traffchans-vid-synliga-fiender`, `automatisk-bordningstur-vid-tom-ap` och
 `hukning-minskar-skottchans` — **Fullständigt implementerat**.
 
@@ -1446,7 +1448,14 @@ Snabbsvitens körning 2026-11-04 passerade med 788 tester på 24,37 s. De längr
   civiliströrelse och skadebild, även när sista skottet avslutar rundan.
 - Genererade original och prompter sparas i repot. `scripts/prepare-boarding-characters.py`
   packar ett transparent WebP-bildark och typade källrektanglar. Spegling sker
-  endast i vyn. Renderingen och figurernas klickytor använder samma bildgränser.
+  endast i vyn. De tre liggande källorna packas i en egen rad och används
+  riktningsoberoende för statusarna `incapacitated` och `dead`. Renderingen och
+  figurernas klickytor använder samma bildgränser.
+- BoardingMapView ritar inga riktningslinjer och tar inte längre emot sikt- och
+  eldrutor från BoardingView. Modellens sikt- och eldberäkningar behålls för
+  reglerna. Last known-poster filtreras mot personstatus och rensas när deras
+  gamla ruta ingår i aktuell sikt utan att personen står kvar. Ändringen kräver
+  inga nya sparfält.
 
 ## Automatisk bordningskamera
 
@@ -1474,3 +1483,13 @@ när bakgrundsflikar stryper requestAnimationFrame. prefers-reduced-motion
 hoppar till sista kamerafasen. Kameran är presentation utan nya sparfält.
 Kravnamngivna enhetstester skyddar geometri, siktsammansättning och ordning;
 riktade vytester skyddar avbrott och mobiltester verifierar fokus utanför bild.
+
+`kantindikator-for-synlig-fiende` är **Fullständigt implementerat**.
+BoardingTargetIndicatorLayout projicerar mål utanför den fria kartytan längs
+strålen från kartytans mitt, håller crosshair och procent innanför en
+22-pixlarsmarginal och särar mål på samma kant. Layouten är p5-oberoende och
+ger även klickrektanglar. BoardingMapView skickar klicket som ett särskilt
+markeringsläge till BoardingView, vilket förhindrar att ett redan markerat mål
+skjuts. BoardingCameraController panorerar därefter målfiguren till den fria
+kartytans mitt under 300 ms med exakt bevarad zoom. Manuell kameraavbrytning och
+minskad rörelse använder samma regler som övriga automatiska kameraflöden.

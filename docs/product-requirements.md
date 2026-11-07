@@ -139,14 +139,15 @@ fly. Spelaren använder riktning, action points, vapen, riktat skydd, overwatch,
 granater, rök och medicinsk utrustning. Seger nås genom att neutralisera
 försvararna eller hålla både `Bridge` och `Engineering`. Reaktorn och dörrar kan
 beskjutas.
-Aktiv soldat, hälsa, riktning, `Half cover` och pågående försvararhandlingar
+Aktiv soldat, hälsa, `Half cover` och pågående försvararhandlingar
 ska framgå tydligt utan att dolda positioner avslöjas.
 Kända golvrutor ska visas med en isometrisk golvbild. Väggar ska se ut som
 sammanhängande skeppsväggar utan prickmarkering, och `Half cover` ska vara
 tydligt lägre än en vägg.
 Soldater, pirater och civilister ska visas med skilda stående och hukande
 figurer som tydligt visar åt vilket av åtta håll de står. Figurerna står med
-fötterna nära golvet på sin ruta och behåller en separat riktningspil.
+fötterna nära golvet på sin ruta. Vita riktningspilar visas inte. Utslagna och
+döda personer visas med en egen liggande bild för soldat, pirat och civilist.
 Ovanför egna soldater syns både HP och AP. Raka steg kostar 2 AP stående
 eller 3 AP hukande; diagonaler kostar 3 respektive 4 AP. En 45-gradersvändning
 kostar 1 AP. Man kan inte gå diagonalt genom blockerade hörn.
@@ -154,8 +155,8 @@ Kartan ska visas isometriskt och uppta huvuddelen av ett spelmässigt gränssnit
 med kompakta handlingsknappar. Varje bordningssoldat ska ha en egen
 hälsomätare. En vald väg ska visa hur långt soldaten når med kvarvarande AP
 och vilka rutor som fortfarande lämnar AP till ett skott. Den aktiva soldatens
-synliga rutor och de rutor ett skott kan nå ska markeras med två olika
-kantfärger. När soldaten går ska varje steg och vändning animeras så att sikt
+synliga rutor och de rutor ett skott kan nå ska inte markeras med röda eller
+blå kantfärger. När soldaten går ska varje steg och vändning animeras så att sikt
 uppdateras längs vägen. Synliga försvarare och civilister animeras på samma
 sätt. Om en ny fiende upptäcks avbryts resten av förflyttningen. Skott
 animeras. Spelaren kan klicka på en annan egen soldat för att flytta undan
@@ -164,7 +165,12 @@ klicka igen på en vald destination för att gå dit, och klicka igen på en
 angränsande vald dörr för att öppna, stänga eller hacka den. Ett valt mål
 markeras med ett tydligt crosshair. Alla fiender som den aktiva soldaten själv
 ser visar träffchans vid figuren. Ett blockerat skott visar `0% · Blocked`; för
-få AP tonar ned indikatorn. Vid noll AP går turen automatiskt vidare enligt
+få AP tonar ned indikatorn. Om en sådan fiende är utanför bild visas samma
+crosshair och procent vid skärmkanten i fiendens riktning. Ett klick på
+kantindikatorn markerar fienden och centrerar kameran utan att skjuta och utan
+att ändra zoomnivån. Senast sedd position för en levande eller utslagen fiende
+visas med ett frågetecken; frågetecknet tas bort när positionen åter ses tom
+eller när fienden är död. Vid noll AP går turen automatiskt vidare enligt
 initiativ och tidigare uppskjutna soldater. En egen soldat med AP kvar kan
 väljas under spelarens tur utan att dess AP återställs. Hukning ger +2 Defense
 mot skott i öppen terräng och totalt +5 bakom `Half cover`, men ger ingen ny
@@ -1220,7 +1226,7 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 ## Belysning i bordning
 
-- `ljuskallestyrd-bordningsbelysning` — **Fullständigt implementerat**. Fasta lampor belyser skeppens rum och korridorer. Ett grundljus gör även obelysta, upptäckta ytor läsbara. Belysningen följer lamporna och är densamma för aktuell sikt och kartminne; kantmarkeringar visar fortsatt `Sight` och `Fire`. Okänd interiör och dolda fiender avslöjas inte.
+- `ljuskallestyrd-bordningsbelysning` — **Fullständigt implementerat**. Fasta lampor belyser skeppens rum och korridorer. Ett grundljus gör även obelysta, upptäckta ytor läsbara. Belysningen följer lamporna och är densamma för aktuell sikt och kartminne. Okänd interiör och dolda fiender avslöjas inte.
 - `vertexljus-i-bordning` — **Fullständigt implementerat**. Ljuset varierar jämnt över golv och väggytor utifrån lampornas avstånd och skymmande barriärer.
 - `tileljus-for-sprites` — **Fullständigt implementerat**. Figurer och föremål får rutans ljusstyrka, beräknad från ljuset som når rutans mitt. Figurernas ljus ändras mjukt under förflyttning, medan markeringar och status förblir tydliga.
 

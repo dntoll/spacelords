@@ -10,12 +10,22 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
-- **Bordningskamera:** `kamerafokus-vid-bordningssoldatbyte` och
-  `kameraoverblick-vid-synlig-bordningsrorelse` är **Fullständigt implementerat**.
+- **Bordningskamera:** `kamerafokus-vid-bordningssoldatbyte`,
+  `kameraoverblick-vid-synlig-bordningsrorelse` och
+  `kantindikator-for-synlig-fiende` är **Fullständigt implementerat**.
   Soldatbyte till någon utanför bild zoomar ut, panorerar och återställer
   zoomnivån. Synliga fienders och civilisters rörelser ramar in figuren och
   alla egna soldater som ser den. Kameran tar hänsyn till HUD och kan avbrytas
   manuellt. Se [bordningsstrid](docs/boarding-combat.md).
+
+- **Bordningens kartinformation:** `bordning-utan-riktningspilar`,
+  `bordning-utan-sikt-och-eldrutor`, `senast-sedd-fiende-med-fragetecken` och
+  `utslagna-bordningsfigurer` är **Fullständigt implementerat**. Figurerna
+  visar riktningen med sina åtta bildvinklar utan vita pilar. Röda och blå
+  rutkanter har tagits bort. Senast sedd levande eller utslagen fiende visas
+  som ett frågetecken, medan döda inte lämnar markören. Utslagna och döda
+  soldater och civilister har egna liggande bilder. Se
+  [bordningsstrid](docs/boarding-combat.md).
 
 - **Belysning i bordning:** `ljuskallestyrd-bordningsbelysning`, `vertexljus-i-bordning` och `tileljus-for-sprites` är **Fullständigt implementerat**. Fasta kartlampor och ambientljus styr golv, väggar och sprites oberoende av aktuell sikt. Kravkopplade tester och visuell mobilgranskning verifierar ljus och väggsnitt. Se [bordningsstrid](docs/boarding-combat.md).
 
@@ -189,7 +199,10 @@ Se [hela visionen](docs/game-vision.md).
   `klickgang-pa-vald-destination`, `klickdorr-pa-vald-dorr`,
   `isometriska-golvtiles`, `isometriska-vaggtexturer`,
   `bordningsfigurer-fran-spritesheet`, `hp-och-ap-ovanfor-soldater`,
-  `personer-blockerar-inte-sikt`, `doda-blockerar-inte-skott-eller-rorelse`
+  `utslagna-bordningsfigurer`, `bordning-utan-riktningspilar`,
+  `bordning-utan-sikt-och-eldrutor`, `senast-sedd-fiende-med-fragetecken`,
+  `kantindikator-for-synlig-fiende`, `personer-blockerar-inte-sikt`,
+  `doda-blockerar-inte-skott-eller-rorelse`,
   `sikt-och-eld-fran-vald-soldat`, `traffchans-vid-synliga-fiender`,
   `automatisk-bordningstur-vid-tom-ap` samt `hukning-minskar-skottchans` är
   **Fullständigt implementerat**. Den första versionen är ett separat testspel
@@ -202,14 +215,16 @@ Se [hela visionen](docs/game-vision.md).
   projicerar på rutans exakta 2:1-diamant. Väggar tar utklipp ur en lång
   fasadtextur så att en längre sträcka blir sammanhängande. `Half cover` är
   hälften så hög som en vägg. Soldater, pirater och civilister har stående och
-  hukande bilder för åtta riktningar, står med fötterna lite under rutans
-  centrum och behåller en separat riktningspil. Diagonala steg kostar 3/4 AP
+  hukande bilder för åtta riktningar och visar riktningen utan en separat pil.
+  Utslagna och döda visas med riktningsoberoende liggande bilder. Diagonala steg kostar 3/4 AP
   stående/hukande, raka steg 2/3 AP och varje 45-gradersvändning 1 AP. Personer blockerar inte
   sikt men kan blockera skott. Döda och utslagna blockerar varken skott eller
-  gång. Den aktiva soldaten visar synliga och skjutbara
-  rutor med två kantfärger, och egna soldater har HP- och AP-staplar ovanför
+  gång. Synliga och skjutbara rutor har inga röda eller blå kantmarkeringar.
+  Egna soldater har HP- och AP-staplar ovanför
   figuren. Ett valt mål markeras med crosshair; alla fiender den aktiva soldaten
-  ser har träffchans vid figuren. AP noll ger automatiskt turbyte enligt
+  ser har träffchans vid figuren eller, om de är utanför bild, vid skärmkanten.
+  Ett klick på kantindikatorn markerar fienden och centrerar kameran utan skott.
+  AP noll ger automatiskt turbyte enligt
   befintlig turhantering. Hukning ger +2 Defense mot skott i öppen terräng
   och totalt +5 bakom `Half cover`. Melee kräver ett angränsande
   fiendemål och drar inte AP utan ett sådant. Gevär och melee kan inte

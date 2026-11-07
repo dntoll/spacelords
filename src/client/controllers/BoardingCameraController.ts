@@ -220,6 +220,26 @@ export class BoardingCameraController {
     return Object.freeze(phases);
   }
 
+  /** kantindikator-for-synlig-fiende: pan to the target without changing zoom. */
+  center(
+    from: BoardingCameraSnapshot,
+    subject: BoardingCameraSubject,
+    viewport: BoardingCameraBounds,
+  ): readonly BoardingCameraTransition[] {
+    const bounds = this.#safeBounds(viewport);
+    if (bounds.right <= bounds.left || bounds.bottom <= bounds.top) return [];
+    const pivot = {
+      x: subject.x + subject.width / 2,
+      y: subject.y + subject.height / 2,
+    };
+    const anchor = center(bounds);
+    const to = snapshot(from.scale, {
+      x: anchor.x - pivot.x * from.scale,
+      y: anchor.y - pivot.y * from.scale,
+    });
+    return Object.freeze([this.#phase(from, to, pivot)]);
+  }
+
   sample(
     phase: BoardingCameraTransition,
     progress: number,
