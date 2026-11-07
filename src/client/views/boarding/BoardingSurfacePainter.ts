@@ -13,7 +13,7 @@ import {
   type BoardingPoint,
 } from './BoardingProjection.js';
 
-/** isometrisk-bordningskarteditor: combat projection, floor and wall textures, raised barriers. */
+/** spelidentisk-bordningseditor: shared floor and wall projection for combat and the editor. */
 
 export type IsoImageCache = {
   floor: CanvasImageSource | null;
@@ -103,6 +103,7 @@ function paintTexturedQuad(
   alongV: BoardingPoint,
   clip: readonly BoardingPoint[],
   filter?: string,
+  visibleFraction = 1,
 ): void {
   const first = clip[0];
   if (!first) return;
@@ -125,9 +126,9 @@ function paintTexturedQuad(
   ctx.drawImage(
     source,
     slice.x,
-    0,
+    textureHeight * (1 - visibleFraction),
     slice.width,
-    textureHeight,
+    textureHeight * visibleFraction,
     0,
     0,
     slice.width,
@@ -142,6 +143,12 @@ export function paintIsoWall(
   cache: IsoImageCache,
   position: BoardingCell,
   walls: ReadonlySet<string>,
+  height = boardingFeatureHeight('wall'),
+  options?: {
+    readonly east?: { tile: p5.Image; cache: IsoImageCache } | undefined;
+    readonly west?: { tile: p5.Image; cache: IsoImageCache } | undefined;
+    readonly top?: { tile: p5.Image; cache: IsoImageCache } | undefined;
+  },
 ): boolean {
   if (!tile || tile.width < 8 || tile.height < 2) return false;
   const source = imageSource(tile, cache, 'wall');
@@ -151,45 +158,49 @@ export function paintIsoWall(
     boardingIsoCenter(position),
     footprint.width,
     footprint.depth,
-    boardingFeatureHeight('wall'),
+    height,
   );
   const alongQ = boardingWallRun(walls, position, 'q');
   const alongR = boardingWallRun(walls, position, 'r');
   const qSlice = boardingWallSlice(tile.width, alongQ.index);
   const rSlice = boardingWallSlice(tile.width, alongR.index);
   const topSlice = alongQ.length >= alongR.length ? qSlice : rSlice;
+  const east = options?.east;
+  const west = options?.west;
+  const top = options?.top;
   paintTexturedQuad(
     sketch,
-    source,
-    rSlice,
-    tile.height,
+    (east && imageSource(east.tile, east.cache, 'wall')) ?? source,
+    east ? boardingWallSlice(east.tile.width, alongR.index) : rSlice,
+    east?.tile.height ?? tile.height,
     faces.southEast[0],
     faces.southEast[1],
     faces.southEast[3],
     faces.southEast,
-    'brightness(1.08)',
+    undefined,
+    height / boardingFeatureHeight('wall'),
   );
   paintTexturedQuad(
     sketch,
-    source,
-    qSlice,
-    tile.height,
+    (west && imageSource(west.tile, west.cache, 'wall')) ?? source,
+    west ? boardingWallSlice(west.tile.width, alongQ.index) : qSlice,
+    west?.tile.height ?? tile.height,
     faces.southWest[1],
     faces.southWest[0],
     faces.southWest[2],
     faces.southWest,
-    'brightness(0.72)',
+    undefined,
+    height / boardingFeatureHeight('wall'),
   );
   paintTexturedQuad(
     sketch,
-    source,
-    topSlice,
-    tile.height,
+    (top && imageSource(top.tile, top.cache, 'wall')) ?? source,
+    top ? { x: 0, width: top.tile.width } : topSlice,
+    top?.tile.height ?? tile.height,
     faces.top[0],
     alongQ.length >= alongR.length ? faces.top[1] : faces.top[3],
     alongQ.length >= alongR.length ? faces.top[3] : faces.top[1],
     faces.top,
-    'brightness(1.18) saturate(0.85)',
   );
   return true;
 }
@@ -198,9 +209,10 @@ export function paintIsoBlock(
   sketch: p5,
   center: BoardingPoint,
   kind: 'door' | 'cover' | 'wall' | 'hull',
+  heightOverride?: number,
 ): BoardingPoint {
   const footprint = boardingFeatureFootprint(kind);
-  const height = boardingFeatureHeight(kind);
+  const height = heightOverride ?? boardingFeatureHeight(kind);
   const faces = boardingIsoBlockFaces(
     center,
     footprint.width,

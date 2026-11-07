@@ -6,6 +6,7 @@ import {
   type BoardingCell,
   type BoardingShipZone,
   type BoardingSpawns,
+  type BoardingRoom,
 } from './BoardingMap.js';
 import type { CombatShipType } from '../TacticalBattle.js';
 import colonyMap from '../../maps/colony-boarding.txt?raw';
@@ -42,7 +43,7 @@ function transform(
 ): {
   lights: BoardingLight[];
   terrain: Map<string, 'floor' | 'wall' | 'hull'>;
-  rooms: Map<string, 'bridge' | 'engineering'>;
+  rooms: Map<string, BoardingRoom>;
   features: BoardingMap['features'][number][];
   spawns: BoardingSpawns;
   airlocks: BoardingCell[];
@@ -50,7 +51,7 @@ function transform(
   zones: Map<string, BoardingShipZone>;
 } {
   const terrain = new Map<string, 'floor' | 'wall' | 'hull'>();
-  const rooms = new Map<string, 'bridge' | 'engineering'>();
+  const rooms = new Map<string, BoardingRoom>();
   const zones = new Map<string, BoardingShipZone>();
   for (let r = 0; r < map.height; r++) {
     for (let q = 0; q < map.width; q++) {

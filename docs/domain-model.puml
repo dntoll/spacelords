@@ -457,7 +457,7 @@ package "Kampanjbordning" {
   }
   class BoardingMap {
     terrain
-    rooms
+    rooms: bridge | engineering | cockpit
     spawnPoints
     shipZones
     lights
@@ -513,6 +513,10 @@ package "Kampanjbordning" {
   BoardingMap *-- BoardingLight
   BoardingLight --> BoardingCell
   BoardingMap --> BoardingCell
+  note right of BoardingMap
+    formbar-skeppskontur:
+    Tom rymd saknar terrängruta; skrov markerar skeppets kant.
+  end note
   note right of BoardingCell
     meterskala-i-bordning:
     En golvruta motsvarar 1 × 1 meter.

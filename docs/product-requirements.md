@@ -268,6 +268,19 @@ Se [taktisk strid](tactical-combat.md).
 
 ## Fristående bordningsstrid
 
+`formbar-skeppskontur` och `isometrisk-skeppsreferens` är **Fullständigt
+implementerat**. I editorn kan `Outside` användas för att forma ett skepp med
+varierande bredd, med manuellt utplacerat `Hull` längs kanten. Skeppets bild
+visas som stöd bakom kartan i båda vyerna.
+
+`redigerbara-bordningslampor` och `kategoriserad-bordningspalett` är
+**Fullständigt implementerat**. Verktygen är grupperade, har hjälpförklaringar
+och kan användas för att placera och ta bort taklampor.
+
+`rumsspecifika-bordningstexturer`, `texturerad-vaggovansida` och
+`spelidentisk-bordningseditor` är **Fullständigt implementerat**. Rumstyper har
+egna ytor och editorn visar spelets objekt, figurer, ljus och väggsnitt.
+
 `fristaende-bordningsprototyp` och den tillhörande kravfamiljen är
 **Fullständigt implementerat**. Huvudmenyn kan starta en separat taktisk
 bordningsstrid på en kvadratisk 2:1-isometrisk karta inuti ett `Transport ship`.

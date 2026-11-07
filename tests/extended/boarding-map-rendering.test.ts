@@ -292,7 +292,7 @@ it('ljuskallestyrd-bordningsbelysning / vertexljus-i-bordning: sight changes reu
   view.dispose();
 });
 
-it('vertexljus-i-bordning / tileljus-for-sprites: loaded textures keep cutaway masks and sprites interpolate physical tile light during movement', async () => {
+it('texturerad-vaggovansida / vertexljus-i-bordning / tileljus-for-sprites: loaded textures keep cutaway masks and sprites interpolate physical tile light during movement', async () => {
   const sources = [boardingCeilingLight({ q: 1, r: 3 })];
   const { view, state, player, masks, imageLights, loadImages, map } = scene(
     true,
@@ -302,8 +302,11 @@ it('vertexljus-i-bordning / tileljus-for-sprites: loaded textures keep cutaway m
   const lighting = new BoardingLighting(map, state);
   expect(masks.filter((args) => args.length === 3)).toHaveLength(4);
   const wallTextures = masks.filter((args) => args.length === 9);
-  expect(wallTextures).toHaveLength(2);
-  expect(wallTextures.every((args) => Number(args[2]) > 0)).toBe(true);
+  expect(wallTextures).toHaveLength(3);
+  expect(wallTextures.slice(0, 2).every((args) => Number(args[2]) > 0)).toBe(
+    true,
+  );
+  expect(Number(wallTextures[2]![2])).toBe(0);
   expect(imageLights).toEqual([255 * lighting.tile(player.position)]);
   const rememberedLight = imageLights[0];
   view.render({ ...state, visibleCells: state.exploredCells }, null, null, []);
