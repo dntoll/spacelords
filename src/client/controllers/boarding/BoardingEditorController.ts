@@ -28,6 +28,11 @@ export class BoardingEditorController {
   }
 
   async refresh(): Promise<void> {
+    // lokal-bordningskarteditor: static Pages builds have no local map API.
+    if (import.meta.env.BASE_URL !== '/') {
+      this.#editor.setCatalog([]);
+      return;
+    }
     try {
       const response = await fetch('/api/boarding-maps');
       if (!response.ok) {

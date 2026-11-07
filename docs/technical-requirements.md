@@ -1528,6 +1528,8 @@ atomiskt med undo. Kartformatet behåller övriga befintliga symboler.
 `[lights]`-lagret med samma lampmodell som spelet. Golv som ersätts tar bort
 sin lampa i samma kommando. `kategoriserad-bordningspalett` grupperar
 verktygen och visar hjälpen även vid tangentbordsfokus.
+`lokal-bordningskarteditor`: Pages-bygget anropar inte det lokala kart-API:t;
+rotbygget kan fortfarande upptäcka en tillgänglig lokal server.
 
 `rumsspecifika-bordningstexturer`: golv och de två synliga väggsidorna väljer
 bild från respektive intilliggande rumsruta. Okänd interiör avslöjas inte.
