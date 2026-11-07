@@ -33,7 +33,7 @@ export function createTestBattle(): TacticalBattle {
   return TacticalBattle.restore({
     ...battle.snapshot,
     log: [
-      'Test battle. Deploy every ship, including the large Transport ship and Colony ship. Saved games are unchanged.',
+      'Test battle. Deploy every ship, including the large Transport ship and Colony ship. Retreat through the green Escape hexes from round two. Saved games are unchanged.',
     ],
   });
 }

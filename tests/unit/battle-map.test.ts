@@ -43,6 +43,8 @@ function drawing(
   const noses: Point[] = [];
   const markers: Point[] = [];
   const arcs: number[] = [];
+  const fills: unknown[][] = [];
+  const texts: string[] = [];
   const images: { url: string; angle: number }[] = [];
   const point = (x: number, y: number): Point => ({
     x: x * Math.cos(rotation) - y * Math.sin(rotation),
@@ -68,6 +70,8 @@ function drawing(
     redraw: () => runtime.sketch!.draw(),
     background: () => {
       images.length = 0;
+      fills.length = 0;
+      texts.length = 0;
     },
     push: () => stack.push(rotation),
     pop: () => {
@@ -83,7 +87,7 @@ function drawing(
     endShape: noop,
     stroke: noop,
     strokeWeight: noop,
-    fill: noop,
+    fill: (...values: unknown[]) => fills.push(values),
     noStroke: noop,
     noFill: noop,
     drawingContext: { globalAlpha: 1 },
@@ -107,7 +111,7 @@ function drawing(
     rect: noop,
     textAlign: noop,
     textSize: noop,
-    text: noop,
+    text: (value: string) => texts.push(value),
   };
   runtime.sketch = sketch as unknown as p5;
   vi.stubGlobal(
@@ -125,8 +129,26 @@ function drawing(
   });
   const view = new BattleMapView(container, select);
   void runtime.sketch.setup();
-  return { view, noses, markers, arcs, images, container, canvas };
+  return {
+    view,
+    noses,
+    markers,
+    arcs,
+    images,
+    fills,
+    texts,
+    container,
+    canvas,
+  };
 }
+
+it('flyktzoner-i-rymdstrid: paints and labels all six escape hexes', () => {
+  const { view, fills, texts } = drawing(false);
+  view.render(createTestBattle().snapshot, null, null, 'Cannon');
+  expect(texts.filter((label) => label === 'Escape')).toHaveLength(6);
+  expect(fills.filter(([color]) => color === '#176342')).toHaveLength(6);
+  view.dispose();
+});
 
 it('avfyra-pa-markerat-mal / begransad-stridskamera: drag, pinch, cancelled pointers and wheel never become a shot', () => {
   const select = vi.fn();

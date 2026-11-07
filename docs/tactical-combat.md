@@ -1,5 +1,28 @@
 # Taktisk strid
 
+## Bordningsskydd och flyktzoner, 2026-11-07
+
+`pirater-skyddar-bordade-skepp` och `flyktzoner-i-rymdstrid` är
+**Fullständigt implementerat**.
+
+När ett piratskepp har dockat med ett fientligt skepp väljer övriga pirater
+inte det bordade skeppet som mål. Deras soldater ska inte utsättas för den egna
+flottans eld. Regeln styr piraternas automatiska beslut; den allmänna
+skottmodellen får inget dolt undantag. När dockningen bryts eller bordningen
+avgörs kan skeppet väljas som vanligt igen.
+
+Nya stridskartor har tre gröna `Escape`-hexar mitt på överkanten och tre mitt
+på nederkanten. De hålls fria från asteroider och används av båda sidor.
+Reträtt är fortsatt låst till runda två och kräver en säker strategisk
+reträtthex. Ett litet skepp lämnar med ett steg utåt. Transport ship, Armored
+Transport och Colony ship måste föra hela sitt trehexskrov över kanten. Under
+utpassagen är skeppet kvar som mål och kan avsluta sin aktivering, men det kan
+inte svänga, skjuta eller docka och får därefter bara fortsätta rakt ut.
+
+Detta ersätter reträtt genom den egna kortsidan för nya strider. Ett valfritt
+fält skiljer den nya kartregeln från äldre pågående strider, som går att spela
+färdigt med sin tidigare reträtt och utan rensning av sparningar.
+
 ## Skärmfyllande spelgränssnitt, 2026-11-01
 
 `fullskarms-stridskarta`, `skeppsnara-stridskontroller`,
@@ -61,7 +84,8 @@ Alla skrovhex räknas för klick, kollision, räckvidd, träff och befintliga
 regler om större skepps skydd. Missiler slår bara en gång per skepp även om
 flera av dess hex ingår i området. Automatisk utplacering tar hänsyn till
 hela skrovet. Svängar till en överlappande eller ogiltig placering tillåts inte.
-Reträtt sker när skrovet korsar den egna kortsidan, från runda två.
+I nya strider sker reträtt först när hela skrovet har passerat en markerad
+`Escape`-zon, från runda två. Äldre pågående strider behåller kortsideregeln.
 
 Detta ersätter en hex per skepp i `taktisk-stridskarta` och
 `stridsutplacering` för nya strider. Äldre pågående strider behåller sina
@@ -137,20 +161,20 @@ samma riktning. Förtydligandet 2026-10-31 av `stridsutplacering` och
 `riktning-och-vapen` rättar den tidigare 90° vridningen av skeppsbilderna.
 Stridsregler och sparade riktningar bevaras.
 
-| Krav                              | Status                     | Innehåll                                                                              |
-| --------------------------------- | -------------------------- | ------------------------------------------------------------------------------------- |
-| `taktisk-stridskarta`             | Fullständigt implementerat | Separat karta, minst 13 × 9 hexar, växer tills alla skepp ryms.                       |
-| `gemensamt-stridsdeltagande`      | Fullständigt implementerat | Alla skepp från båda sidors flottor på samma galaxhex deltar.                         |
-| `stridsutplacering`               | Fullständigt implementerat | Egen startzon, sex riktningar och Auto deploy. Fiendens placering avslöjas vid start. |
-| `vaxelvisa-skeppsaktiveringar`    | Fullständigt implementerat | Växelvis ett skepp, ett rörelsemoment och en salva i valfri ordning.                  |
-| `riktning-och-vapen`              | Fullständigt implementerat | Fasta vapen, eldbågar, ammunition och svag akter.                                     |
-| `skyddande-stridshinder`          | Fullständigt implementerat | Asteroider och större skepp blockerar skott helt.                                     |
-| `oppna-stridstarningar`           | Fullständigt implementerat | Initiativ och vapensalvor visar D6-slag.                                              |
-| `skeppsvis-retratt`               | Fullständigt implementerat | Enskilda skepp lämnar egen kortsida från runda två. Flottan samlas efteråt.           |
-| `sparad-taktisk-strid`            | Fullständigt implementerat | Utplacering, skador, ammunition, aktivering och slump sparas.                         |
-| `utforskade-stridsuppgraderingar` | Fullständigt implementerat | Missiler och pansarskrov forskas fram och monteras med Upgrade.                       |
-| `missilernas-omradeseffekt`       | Fullständigt implementerat | Missiler träffar vald hex och alla grannhexar. En Fighter har två salvor.             |
-| `traffhex-istallet-for-mallista`  | Fullständigt implementerat | Skott siktas mot en hex på kartan. Ingen mållista.                                    |
+| Krav                              | Status                     | Innehåll                                                                                     |
+| --------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------- |
+| `taktisk-stridskarta`             | Fullständigt implementerat | Separat karta, minst 13 × 9 hexar, växer tills alla skepp ryms.                              |
+| `gemensamt-stridsdeltagande`      | Fullständigt implementerat | Alla skepp från båda sidors flottor på samma galaxhex deltar.                                |
+| `stridsutplacering`               | Fullständigt implementerat | Egen startzon, sex riktningar och Auto deploy. Fiendens placering avslöjas vid start.        |
+| `vaxelvisa-skeppsaktiveringar`    | Fullständigt implementerat | Växelvis ett skepp, ett rörelsemoment och en salva i valfri ordning.                         |
+| `riktning-och-vapen`              | Fullständigt implementerat | Fasta vapen, eldbågar, ammunition och svag akter.                                            |
+| `skyddande-stridshinder`          | Fullständigt implementerat | Asteroider och större skepp blockerar skott helt.                                            |
+| `oppna-stridstarningar`           | Fullständigt implementerat | Initiativ och vapensalvor visar D6-slag.                                                     |
+| `skeppsvis-retratt`               | Fullständigt implementerat | Enskilda skepp lämnar markerad över- eller nederkant från runda två. Flottan samlas efteråt. |
+| `sparad-taktisk-strid`            | Fullständigt implementerat | Utplacering, skador, ammunition, aktivering och slump sparas.                                |
+| `utforskade-stridsuppgraderingar` | Fullständigt implementerat | Missiler och pansarskrov forskas fram och monteras med Upgrade.                              |
+| `missilernas-omradeseffekt`       | Fullständigt implementerat | Missiler träffar vald hex och alla grannhexar. En Fighter har två salvor.                    |
+| `traffhex-istallet-for-mallista`  | Fullständigt implementerat | Skott siktas mot en hex på kartan. Ingen mållista.                                           |
 
 ## Möte och utplacering
 
@@ -230,8 +254,10 @@ Missiler kräver också fri linje. Kartan är synlig: skydd döljer inte pjäser
 
 ## Reträtt och resultat
 
-Från andra stridsrundan kan ett skepp fly med ett steg ut genom sin egen
-kortsida. Flydda skepp kan inte angripas. Före striden väljs en säker
+Från andra stridsrundan kan ett skepp fly genom någon av de sex markerade
+`Escape`-hexarna på över- och nederkanten. Hela skrovet måste lämna kartan;
+ett delvis utpasserat stort skepp kan fortfarande angripas men är låst till
+fortsatt rak reträtt. Flydda skepp kan inte angripas. Före striden väljs en säker
 grannhex på Star map per flotta: tidigare hex i första hand, annars första
 farbara grannhex utan fiender. Pirater måste stanna på sin patrullring.
 Saknas säker grannhex visas att reträtt inte är möjlig.

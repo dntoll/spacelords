@@ -319,7 +319,10 @@ export class BattleView {
               : `${ammo} missile salvos remaining`,
           );
           action.disabled =
-            state.turn !== 'player' || !!state.activation?.fired || ammo === 0;
+            state.turn !== 'player' ||
+            !!state.activation?.fired ||
+            !!selected.escapeEdge ||
+            ammo === 0;
           action.append(
             element('span', 'battle-ammo', ammo === null ? '∞' : String(ammo)),
           );
@@ -577,7 +580,7 @@ export class BattleView {
       element(
         'p',
         'battle-help',
-        'Tap a new target to select it; tap the marked target to fire. Select a weapon using its icon. Missiles hit every ship in the impact hex and its neighbours once, including your own ships. Move then fire, or fire then move. Turning and moving cost 1 movement. Large ships occupy three hexes and must fit completely when turning. Retreat opens in round two through your own edge. Each successful D6 causes one hull damage. Rear attacks reduce the required roll by one. Asteroids and larger ships block fire. Surviving ships recover hull and ammunition after combat.',
+        'Tap a new target to select it; tap the marked target to fire. Select a weapon using its icon. Missiles hit every ship in the impact hex and its neighbours once, including your own ships. Move then fire, or fire then move. Turning and moving cost 1 movement. Large ships occupy three hexes and must fit completely when turning. Retreat opens in round two through the green Escape hexes at the top or bottom; the whole ship must leave. Each successful D6 causes one hull damage. Rear attacks reduce the required roll by one. Asteroids and larger ships block fire. Surviving ships recover hull and ammunition after combat.',
       ),
     );
   }
@@ -596,10 +599,20 @@ export class BattleView {
         y: world.y * viewport.scale + viewport.offset.y,
       };
     };
-    const hull = ShipFootprint.cells(
+    const hullCells = ShipFootprint.cells(
       ship,
       state.largeShipFootprints === true,
-    ).map(project);
+    );
+    const visibleHull = ship.escapeEdge
+      ? hullCells.filter(
+          (cell) =>
+            cell.r >= 0 &&
+            cell.r < state.height &&
+            cell.q + Math.floor(cell.r / 2) >= 0 &&
+            cell.q + Math.floor(cell.r / 2) < state.width,
+        )
+      : hullCells;
+    const hull = (visibleHull.length ? visibleHull : hullCells).map(project);
     this.#panel.hidden = !hull.some(
       (point) =>
         point.x >= -36 * viewport.scale &&

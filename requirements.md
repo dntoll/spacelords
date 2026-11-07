@@ -186,6 +186,13 @@ Se [hela visionen](docs/game-vision.md).
   återupptas utan nya tärningsslag och äldre spel bevaras. Detta ersätter den fasta
   förlustformeln i `flottstrid-per-hex`. Se [taktisk strid](docs/tactical-combat.md).
 
+- **Bordningsskydd och flyktzoner:** `pirater-skyddar-bordade-skepp` och
+  `flyktzoner-i-rymdstrid` är **Fullständigt implementerat**. Andra pirater
+  väljer inte skeppet som deras allierade bordar som skottmål. Nya strider har
+  tre gröna `Escape`-hexar mitt på både över- och nederkanten; från runda två
+  måste hela skeppet lämna genom en sådan zon. Äldre pågående strider behåller
+  sin tidigare reträttregel. Se [taktisk strid](docs/tactical-combat.md).
+
 - **Fristående bordningsstrid:** `fristaende-bordningsprototyp`,
   `datadriven-bordningskarta`, `individuellt-bordningsinitiativ`,
   `actionpoints-och-riktad-forflyttning`, `sikt-minne-och-ljudmarkorer`,

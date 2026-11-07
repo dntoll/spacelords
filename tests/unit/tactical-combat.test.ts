@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  battleEscapeHexes,
   TacticalBattle,
   SHIP_PROFILES,
   type BattleState,
@@ -101,7 +102,7 @@ describe('tactical combat', () => {
   it('skeppsvis-retratt: rejects round-one exits and unavailable strategic retreat destinations', () => {
     const state = positioned().snapshot;
     const pieces = state.pieces.map((p) =>
-      p.id === 'fighter' ? { ...p, position: { q: -2, r: 4 }, facing: 3 } : p,
+      p.id === 'fighter' ? { ...p, position: { q: 7, r: 0 }, facing: 2 } : p,
     );
     const early = TacticalBattle.restore({ ...state, pieces, round: 1 });
     early.command({ type: 'activate', id: 'fighter' });
@@ -262,8 +263,10 @@ describe('tactical combat', () => {
 
   it('skeppsvis-retratt: only exits the own edge after round one and preserves an escaped ship', () => {
     const state = positioned().snapshot;
+    const legacy = structuredClone(state);
+    Reflect.deleteProperty(legacy, 'escapeZones');
     const game = TacticalBattle.restore({
-      ...state,
+      ...legacy,
       pieces: state.pieces.map((p) =>
         p.id === 'fighter' ? { ...p, position: { q: -2, r: 4 }, facing: 3 } : p,
       ),
@@ -274,5 +277,153 @@ describe('tactical combat', () => {
       'escaped',
     );
     expect(game.snapshot.pieces.find((p) => p.id === 'fighter')!.hull).toBe(3);
+  });
+
+  it('pirater-skyddar-bordade-skepp: another pirate does not fire on the ship carrying its boarders', () => {
+    const state = positioned().snapshot;
+    const dockedPieces = [
+      {
+        ...state.pieces.find((p) => p.id === 'transport')!,
+        position: { q: 5, r: 4 },
+        facing: 0,
+        dockedWith: 'boarder',
+      },
+      {
+        ...state.pieces.find((p) => p.id === 'pirate')!,
+        id: 'boarder',
+        position: { q: 5, r: 5 },
+        facing: 0,
+        dockedWith: 'transport',
+        activated: true,
+      },
+      {
+        ...state.pieces.find((p) => p.id === 'pirate')!,
+        id: 'gunner',
+        position: { q: 8, r: 4 },
+        facing: 3,
+      },
+    ];
+    const game = TacticalBattle.restore({
+      ...state,
+      turn: 'enemy',
+      pieces: dockedPieces,
+    });
+    const before = game.snapshot.pieces.find((p) => p.id === 'transport')!.hull;
+    game.actAutomatically();
+    expect(game.snapshot.pieces.find((p) => p.id === 'transport')!.hull).toBe(
+      before,
+    );
+    expect(game.snapshot.log.join(' ')).not.toContain('Raider cannon');
+
+    const alternative = TacticalBattle.restore({
+      ...state,
+      turn: 'enemy',
+      pieces: [
+        ...dockedPieces,
+        {
+          ...state.pieces.find((p) => p.id === 'fighter')!,
+          position: { q: 6, r: 3 },
+        },
+      ],
+    });
+    alternative.actAutomatically();
+    expect(alternative.snapshot.log.join(' ')).toContain('Raider cannon');
+  });
+
+  it('flyktzoner-i-rymdstrid: exposes the centered top and bottom three hexes and rejects every other edge', () => {
+    const generated = battle().snapshot;
+    const generatedZones = battleEscapeHexes(generated);
+    expect(
+      generated.asteroids.some((asteroid) =>
+        generatedZones.some(
+          (zone) => zone.q === asteroid.q && zone.r === asteroid.r,
+        ),
+      ),
+    ).toBe(false);
+    const state = positioned().snapshot;
+    const zones = battleEscapeHexes({ ...state, escapeZones: true });
+    expect(zones).toEqual([
+      { q: 6, r: 0 },
+      { q: 7, r: 0 },
+      { q: 8, r: 0 },
+      { q: 2, r: 8 },
+      { q: 3, r: 8 },
+      { q: 4, r: 8 },
+    ]);
+    const game = TacticalBattle.restore({
+      ...state,
+      escapeZones: true,
+      pieces: state.pieces.map((p) =>
+        p.id === 'fighter' ? { ...p, position: { q: -2, r: 4 }, facing: 3 } : p,
+      ),
+    });
+    game.command({ type: 'activate', id: 'fighter' });
+    expect(() => game.command({ type: 'forward' })).toThrow('Escape');
+  });
+
+  it('flyktzoner-i-rymdstrid: a small ship escapes outward from a marked hex from round two', () => {
+    const state = positioned().snapshot;
+    const game = TacticalBattle.restore({
+      ...state,
+      escapeZones: true,
+      pieces: state.pieces.map((p) =>
+        p.id === 'fighter' ? { ...p, position: { q: 6, r: 0 }, facing: 2 } : p,
+      ),
+    });
+    game.command({ type: 'activate', id: 'fighter' });
+    game.command({ type: 'forward' });
+    expect(game.snapshot.pieces.find((p) => p.id === 'fighter')).toMatchObject({
+      position: null,
+      status: 'escaped',
+    });
+  });
+
+  it('flyktzoner-i-rymdstrid: a large ship remains targetable and committed until its whole hull has left', () => {
+    const state = positioned().snapshot;
+    const game = TacticalBattle.restore({
+      ...state,
+      escapeZones: true,
+      pieces: state.pieces.map((p) =>
+        p.id === 'transport'
+          ? { ...p, position: { q: 6, r: 1 }, facing: 2 }
+          : p.id === 'fighter'
+            ? { ...p, position: { q: 1, r: 6 } }
+            : { ...p, position: { q: 6, r: 3 }, facing: 2 },
+      ),
+    });
+    game.command({ type: 'activate', id: 'transport' });
+    game.command({ type: 'forward' });
+    expect(
+      game.snapshot.pieces.find((p) => p.id === 'transport'),
+    ).toMatchObject({ status: 'active', escapeEdge: 'top' });
+    expect(() => game.command({ type: 'turn', direction: 1 })).toThrow(
+      'committed',
+    );
+    expect(() =>
+      game.command({ type: 'fire', at: { q: 6, r: 3 }, weapon: 'Cannon' }),
+    ).toThrow('committed');
+    expect(game.shot('pirate', 'transport', 'Raider cannon').reason).toBeNull();
+    game.command({ type: 'forward' });
+    const partial = TacticalBattle.restore(
+      JSON.parse(JSON.stringify(game.snapshot)) as BattleState,
+    ).snapshot;
+    expect(partial.pieces.find((p) => p.id === 'transport')).toMatchObject({
+      position: { q: 6, r: -1 },
+      status: 'active',
+      escapeEdge: 'top',
+    });
+    const resumed = TacticalBattle.restore({
+      ...partial,
+      turn: 'player',
+      activation: null,
+      pieces: partial.pieces.map((p) =>
+        p.id === 'transport' ? { ...p, activated: false } : p,
+      ),
+    });
+    resumed.command({ type: 'activate', id: 'transport' });
+    resumed.command({ type: 'forward' });
+    expect(
+      resumed.snapshot.pieces.find((p) => p.id === 'transport'),
+    ).toMatchObject({ position: null, status: 'escaped' });
   });
 });

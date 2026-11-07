@@ -295,15 +295,18 @@ describe('tactical combat integration', () => {
         ...p,
         position:
           p.type === 'Transport ship'
-            ? battleHex(1, 4)
+            ? battleHex(Math.floor(state.width / 2), 1)
             : battleHex(index + 5, 4),
-        facing: p.type === 'Transport ship' ? 3 : p.side === 'player' ? 0 : 3,
+        facing: p.type === 'Transport ship' ? 2 : p.side === 'player' ? 0 : 3,
+        movement: p.type === 'Transport ship' ? 3 : p.movement,
       })),
     }));
     const transport = game.tacticalBattle!.pieces.find(
       (p) => p.type === 'Transport ship',
     )!;
     game.commandBattle({ type: 'activate', id: transport.id });
+    game.commandBattle({ type: 'forward' });
+    game.commandBattle({ type: 'forward' });
     game.commandBattle({ type: 'forward' });
     expect(
       game.tacticalBattle!.pieces.find((p) => p.id === transport.id)!.status,

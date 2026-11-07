@@ -276,17 +276,28 @@ test('skeppsvis-retratt / gemensamt-handelseflode: escapes each ship, regroups t
     phase: 'fighting',
     round: 2,
     turn: 'player',
-    pieces: state.pieces.map((p, i) => ({
-      ...p,
-      position:
-        p.side === 'player'
-          ? battleHex(
-              p.type === 'Transport ship' || p.type === 'Colony ship' ? 1 : 0,
-              i + 1,
-            )
-          : battleHex(state.width - 1, state.height - 1),
-      facing: 3,
-    })),
+    pieces: state.pieces.map((p) => {
+      if (p.side !== 'player')
+        return {
+          ...p,
+          position: battleHex(state.width - 1, Math.floor(state.height / 2)),
+          facing: 3,
+        };
+      const players = state.pieces.filter((piece) => piece.side === 'player');
+      const index = players.findIndex((piece) => piece.id === p.id);
+      const top = index < 3;
+      const col = Math.floor(state.width / 2) - 1 + (index % 3);
+      const large = ShipFootprint.length(p.type, true) === 3;
+      return {
+        ...p,
+        position: battleHex(
+          col,
+          top ? (large ? 1 : 0) : state.height - (large ? 2 : 1),
+        ),
+        facing: top ? 2 : 5,
+        movement: large ? 3 : p.movement,
+      };
+    }),
   }));
   const errors = await prepare(page, game.exportState());
   const dialog = page.getByRole('dialog', { name: 'Tactical combat' });
@@ -296,12 +307,17 @@ test('skeppsvis-retratt / gemensamt-handelseflode: escapes each ship, regroups t
     i < initial.pieces.filter((p) => p.side === 'player').length;
     i++
   ) {
+    await expect(dialog).toHaveAttribute('data-active-ship', /.+/);
+    const activeId = (await dialog.getAttribute('data-active-ship'))!;
+    const active = initial.pieces.find((piece) => piece.id === activeId)!;
+    const steps = ShipFootprint.length(active.type, true);
     await expect(
       dialog.getByRole('button', { name: 'Forward / escape', exact: true }),
     ).toBeEnabled();
-    await dialog
-      .getByRole('button', { name: 'Forward / escape', exact: true })
-      .click();
+    for (let step = 0; step < steps; step++)
+      await dialog
+        .getByRole('button', { name: 'Forward / escape', exact: true })
+        .click();
   }
   await expect(dialog.locator('.battle-outcome')).toContainText(
     'Retreat complete',

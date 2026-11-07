@@ -504,6 +504,7 @@ class PirateFleet {
 }
 class TacticalBattle {
   largeShipFootprints
+  escapeZones
   phase: deployment | fighting | complete
   round
   turn
@@ -519,6 +520,7 @@ class BattlePiece {
   missiles
   movement
   dockedWith
+  escapeEdge: top | bottom [0..1]
   status: active | destroyed | escaped
   activated
 }
@@ -544,6 +546,11 @@ note right of BattlePiece
   bargat-piratskepp-behaller-typ:
   Space pirate kan tillhöra spelaren efter bärgning.
   Typ, bild och Raider cannon följer skeppet.
+end note
+note left of BattlePiece
+  flyktzoner-i-rymdstrid:
+  ett stort skepp är aktivt och beskjutbart
+  tills hela skrovet har lämnat Escape-zonen.
 end note
 class Weapon {
   range

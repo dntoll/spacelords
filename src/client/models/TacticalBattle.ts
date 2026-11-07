@@ -63,6 +63,7 @@ export interface BattlePiece {
   readonly activated: boolean;
   readonly status: 'active' | 'destroyed' | 'escaped';
   readonly dockedWith?: string;
+  readonly escapeEdge?: 'top' | 'bottom';
 }
 export function combatDesignName(
   piece: Pick<BattlePiece, 'type' | 'armored'>,
@@ -140,6 +141,7 @@ export interface BattleActivation {
 }
 export interface BattleState {
   readonly largeShipFootprints?: boolean;
+  readonly escapeZones?: boolean;
   readonly lastShot?: BattleShot;
   readonly id: string;
   readonly position: BattleHex;
@@ -227,6 +229,17 @@ export const battleHex = (col: number, row: number): BattleHex => ({
   q: col - Math.floor(row / 2),
   r: row,
 });
+export function battleEscapeHexes(
+  map: Pick<BattleState, 'width' | 'height' | 'escapeZones'>,
+): readonly BattleHex[] {
+  if (map.escapeZones !== true) return Object.freeze([]);
+  const center = Math.floor(map.width / 2);
+  return Object.freeze(
+    [0, map.height - 1].flatMap((row) =>
+      [center - 1, center, center + 1].map((col) => battleHex(col, row)),
+    ),
+  );
+}
 export const battleWeapons = (
   type: CombatShipType,
   hasMissiles = type === 'Fighter',
@@ -308,6 +321,7 @@ export class TacticalBattle {
     | 'deploymentDepth'
     | 'fleets'
     | 'largeShipFootprints'
+    | 'escapeZones'
   >;
   readonly #asteroids: BattleHex[];
   readonly #pieces: Piece[];
@@ -333,6 +347,9 @@ export class TacticalBattle {
       fleets: copy.fleets,
       ...(copy.largeShipFootprints !== undefined
         ? { largeShipFootprints: copy.largeShipFootprints }
+        : {}),
+      ...(copy.escapeZones !== undefined
+        ? { escapeZones: copy.escapeZones }
         : {}),
     };
     this.#asteroids = [...copy.asteroids];
@@ -381,6 +398,7 @@ export class TacticalBattle {
       height,
       deploymentDepth,
       largeShipFootprints: true,
+      escapeZones: true,
       fleets: fleets.map(({ id, side, retreat }) => ({ id, side, retreat })),
       pieces: fleets.flatMap((f) =>
         f.ships.map((ship) => {
@@ -422,6 +440,9 @@ export class TacticalBattle {
       .filter(
         (p) =>
           column(p) >= deploymentDepth && column(p) < width - deploymentDepth,
+      )
+      .filter(
+        (p) => !battleEscapeHexes(result.#base).some((zone) => same(zone, p)),
       );
     const count = Math.floor(candidates.length * 0.12);
     for (
@@ -435,6 +456,7 @@ export class TacticalBattle {
         if (
           result.#asteroids.length >= count ||
           !result.contains(point) ||
+          battleEscapeHexes(result.#base).some((zone) => same(zone, point)) ||
           column(point) < deploymentDepth ||
           column(point) >= width - deploymentDepth ||
           result.#asteroids.some((p) => same(p, point))
@@ -454,6 +476,8 @@ export class TacticalBattle {
       !state.id ||
       (state.largeShipFootprints !== undefined &&
         typeof state.largeShipFootprints !== 'boolean') ||
+      (state.escapeZones !== undefined &&
+        typeof state.escapeZones !== 'boolean') ||
       !Number.isSafeInteger(state.width) ||
       state.width < 13 ||
       !Number.isSafeInteger(state.height) ||
@@ -506,6 +530,8 @@ export class TacticalBattle {
         (p.armored !== undefined && typeof p.armored !== 'boolean') ||
         (p.armored === true && !armored) ||
         (p.hasMissiles !== undefined && typeof p.hasMissiles !== 'boolean') ||
+        (p.escapeEdge !== undefined &&
+          !['top', 'bottom'].includes(p.escapeEdge)) ||
         (launchers && p.type !== 'Fighter') ||
         !Number.isSafeInteger(p.hull) ||
         p.hull < 0 ||
@@ -529,13 +555,42 @@ export class TacticalBattle {
       if (p.position) {
         if (
           !Number.isSafeInteger(p.position.q) ||
-          !Number.isSafeInteger(p.position.r) ||
-          !result.contains(p.position)
+          !Number.isSafeInteger(p.position.r)
         )
           throw new Error('Invalid saved combat position.');
+        if (p.status !== 'active' && !result.contains(p.position))
+          throw new Error('Invalid saved combat position.');
         if (p.status === 'active') {
-          for (const cell of result.occupiedHexes(p.id)) {
-            if (!result.contains(cell) || occupied.has(hex(cell).key))
+          const cells = result.occupiedHexes(p.id);
+          const inside = cells.filter((cell) => result.contains(cell));
+          const zones = battleEscapeHexes(result.#base);
+          const retreating =
+            !!p.escapeEdge &&
+            result.#base.escapeZones === true &&
+            state.phase === 'fighting' &&
+            state.round >= 2 &&
+            inside.length > 0 &&
+            inside.length < cells.length &&
+            cells
+              .filter((cell) => !result.contains(cell))
+              .every((cell) =>
+                p.escapeEdge === 'top'
+                  ? cell.r < 0
+                  : cell.r >= result.#base.height,
+              ) &&
+            cells.some((cell) => zones.some((zone) => same(zone, cell))) &&
+            (p.escapeEdge === 'top'
+              ? p.facing === 1 || p.facing === 2
+              : p.facing === 4 || p.facing === 5);
+          if (
+            (!retreating &&
+              (!result.contains(p.position) ||
+                inside.length !== cells.length)) ||
+            (p.escapeEdge && !retreating)
+          )
+            throw new Error('Invalid saved combat position.');
+          for (const cell of inside) {
+            if (occupied.has(hex(cell).key))
               throw new Error(
                 'Overlapping or out-of-bounds saved combat ships.',
               );
@@ -544,6 +599,8 @@ export class TacticalBattle {
         }
       } else if (p.status === 'active' && state.phase !== 'deployment')
         throw new Error('Missing combat position.');
+      if (p.escapeEdge && (p.status !== 'active' || !p.position))
+        throw new Error('Invalid saved combat retreat.');
     }
     const a = state.activation;
     if (
@@ -708,6 +765,8 @@ export class TacticalBattle {
     const piece = this.#piece(id);
     const origin = position ?? piece.position;
     if (!origin) return 'Deploy the ship first.';
+    if (piece.escapeEdge && !position)
+      return 'This ship is committed to its escape.';
     if (piece.dockedWith && !position)
       return 'This ship is locked in a boarding.';
     return this.placementIssue(
@@ -750,6 +809,8 @@ export class TacticalBattle {
   dockIssue(sourceId: string, targetId: string): string | null {
     const source = this.#piece(sourceId);
     const target = this.#piece(targetId);
+    if (source.escapeEdge || target.escapeEdge)
+      return 'A retreating ship is committed to its escape.';
     return dockingIssue(
       source,
       target,
@@ -1143,6 +1204,25 @@ export class TacticalBattle {
     if (cells.some((cell) => this.#occupied(cell, id)))
       return 'The next hex is occupied.';
     if (cells.every((cell) => this.contains(cell))) return null;
+    if (this.#base.escapeZones === true) {
+      const direction = facing ?? p.facing;
+      const edge = p.escapeEdge ?? this.#escapeDeparture(p, origin, direction);
+      if (!edge) return 'Escape through one of the green Escape hexes.';
+      const crossesAnotherEdge = cells.some((cell) => {
+        if (this.contains(cell)) return false;
+        return edge === 'top' ? cell.r >= 0 : cell.r < this.#base.height;
+      });
+      if (
+        (edge === 'top' && direction !== 1 && direction !== 2) ||
+        (edge === 'bottom' && direction !== 4 && direction !== 5) ||
+        crossesAnotherEdge
+      )
+        return 'Continue straight through the selected Escape edge.';
+      if (this.#round < 2) return 'Retreat is available from round two.';
+      return this.#base.fleets.find((f) => f.id === p.fleetId)?.retreat
+        ? null
+        : 'No safe retreat hex is available.';
+    }
     const outside = cells.filter((cell) => !this.contains(cell));
     const ownEdge = outside.every((cell) =>
       p.side === 'player' ? column(cell) < 0 : column(cell) >= this.#base.width,
@@ -1156,6 +1236,27 @@ export class TacticalBattle {
     return this.#base.fleets.find((f) => f.id === p.fleetId)?.retreat
       ? null
       : 'No safe retreat hex is available.';
+  }
+
+  #escapeDeparture(
+    piece: Piece,
+    position: BattleHex,
+    facing: number,
+  ): 'top' | 'bottom' | null {
+    const cells = this.occupiedHexes(piece.id, position, facing);
+    const front = cells.at(-1);
+    if (!front) return null;
+    const zones = battleEscapeHexes(this.#base);
+    if (!zones.some((zone) => same(zone, front))) return null;
+    const next = hex(position).neighbors()[facing]!;
+    const nextCells = this.occupiedHexes(piece.id, next, facing);
+    if (front.r === 0 && nextCells.some((cell) => cell.r < 0)) return 'top';
+    if (
+      front.r === this.#base.height - 1 &&
+      nextCells.some((cell) => cell.r >= this.#base.height)
+    )
+      return 'bottom';
+    return null;
   }
 
   command(command: BattleCommand, side: BattleSide = 'player'): void {
@@ -1220,13 +1321,22 @@ export class TacticalBattle {
       if (command.type === 'forward') {
         const issue = this.forwardIssue(p.id);
         if (issue) throw new Error(issue);
+        const escapeEdge =
+          this.#base.escapeZones === true
+            ? (p.escapeEdge ?? this.#escapeDeparture(p, p.position!, p.facing))
+            : null;
         const next = hex(p.position!).neighbors()[p.facing]!;
         p.position = next;
-        if (
-          this.occupiedHexes(p.id, next).some((cell) => !this.contains(cell))
-        ) {
+        if (escapeEdge) p.escapeEdge = escapeEdge;
+        const footprint = this.occupiedHexes(p.id, next);
+        const escaped =
+          this.#base.escapeZones === true
+            ? footprint.every((cell) => !this.contains(cell))
+            : footprint.some((cell) => !this.contains(cell));
+        if (escaped) {
           p.position = null;
           p.status = 'escaped';
+          delete p.escapeEdge;
           this.#log.push(`${battlePieceLabel(p, this.#pieces)} escaped.`);
         }
       } else if (command.type === 'turn') {
@@ -1259,6 +1369,7 @@ export class TacticalBattle {
       return;
     }
     if (command.type !== 'fire') throw new Error('Choose a combat action.');
+    if (p.escapeEdge) throw new Error('This ship is committed to its escape.');
     if (activation.fired)
       throw new Error('This ship already fired this activation.');
     if (p.dockedWith) throw new Error('This ship is locked in a boarding.');
@@ -1341,6 +1452,15 @@ export class TacticalBattle {
     else if (!available(this.#turn)) this.#beginRound();
   }
 
+  /** pirater-skyddar-bordade-skepp: automatic allies protect their boarders. */
+  #protectedByFriendlyBoarders(target: Piece, firingSide: BattleSide): boolean {
+    if (!target.dockedWith || target.side === firingSide) return false;
+    const boarder = this.#pieces.find(
+      (piece) => piece.id === target.dockedWith,
+    );
+    return boarder?.side === firingSide && boarder.status === 'active';
+  }
+
   /** Same public commands drive AI and tests; no hidden positions or privileged attacks. */
   actAutomatically(
     singleStep = false,
@@ -1393,8 +1513,27 @@ export class TacticalBattle {
     const enemies = this.#pieces.filter(
       (e) => e.side !== p.side && e.status === 'active',
     );
+    const fireTargets = enemies.filter(
+      (enemy) => !this.#protectedByFriendlyBoarders(enemy, p.side),
+    );
     const activation = this.#activation?.id === p.id ? this.#activation : null;
     if (p.dockedWith) return { id: p.id, score: 0, actions: [] };
+    if (p.escapeEdge) {
+      const moves = activation?.movementClosed
+        ? 0
+        : (activation?.remaining ?? p.movement);
+      const steps = Math.min(
+        moves,
+        this.occupiedHexes(p.id).filter((cell) => this.contains(cell)).length,
+      );
+      return {
+        id: p.id,
+        score: 100,
+        actions: Array.from({ length: steps }, () => ({
+          type: 'forward' as const,
+        })),
+      };
+    }
     if (allowDock && !activation?.fired) {
       const target = enemies.find(
         (enemy) => this.dockIssue(p.id, enemy.id) === null,
@@ -1426,7 +1565,7 @@ export class TacticalBattle {
       for (const weapon of battleWeapons(p.type, p.hasMissiles)) {
         if (weapon === 'Missiles') {
           const hexes = new Map<string, BattleHex>();
-          for (const enemy of enemies) {
+          for (const enemy of fireTargets) {
             if (!enemy.position) continue;
             for (const point of this.occupiedHexes(enemy.id).flatMap(
               missileArea,
@@ -1436,6 +1575,12 @@ export class TacticalBattle {
           for (const at of hexes.values()) {
             const preview = this.impact(p.id, at, weapon, position, facing);
             if (preview.reason) continue;
+            if (
+              preview.hits.some((hit) =>
+                this.#protectedByFriendlyBoarders(this.#piece(hit.id), p.side),
+              )
+            )
+              continue;
             let score = -1;
             for (const hit of preview.hits) {
               const ship = this.#piece(hit.id);
@@ -1450,7 +1595,7 @@ export class TacticalBattle {
           }
           continue;
         }
-        for (const enemy of enemies) {
+        for (const enemy of fireTargets) {
           if (!enemy.position) continue;
           const at = this.aimAt(p.id, enemy.id, weapon, position, facing);
           if (!at) continue;
@@ -1526,18 +1671,32 @@ export class TacticalBattle {
         });
       if (this.forwardIssue(p.id, node.position, node.facing) === null) {
         const next = hex(node.position).neighbors()[node.facing]!;
-        if (this.contains(next))
+        const nextCells = this.occupiedHexes(p.id, next, node.facing);
+        if (nextCells.every((cell) => this.contains(cell)))
           queue.push({
             position: next,
             facing: node.facing,
             actions: [...node.actions, { type: 'forward' }],
           });
-        else if (!armed)
+        else if (!armed) {
+          const remaining = moves - node.actions.length;
+          const steps = Math.min(
+            remaining,
+            this.occupiedHexes(p.id, node.position, node.facing).filter(
+              (cell) => this.contains(cell),
+            ).length,
+          );
           return {
             id: p.id,
             score: 100,
-            actions: [...node.actions, { type: 'forward' }],
+            actions: [
+              ...node.actions,
+              ...Array.from({ length: steps }, () => ({
+                type: 'forward' as const,
+              })),
+            ],
           };
+        }
       }
     }
     if (
@@ -1560,8 +1719,12 @@ export class TacticalBattle {
   /** Search beyond this activation so an asteroid cannot trap a locally greedy pilot. */
   #approach(p: Piece): BattleCommand[] | null {
     const enemies = this.#pieces.filter(
-      (e) => e.side !== p.side && e.status === 'active',
+      (e) =>
+        e.side !== p.side &&
+        e.status === 'active' &&
+        !this.#protectedByFriendlyBoarders(e, p.side),
     );
+    if (!enemies.length) return null;
     const queue = [
       { position: p.position!, facing: p.facing, path: [] as BattleCommand[] },
     ];
@@ -1591,7 +1754,12 @@ export class TacticalBattle {
       };
       if (this.forwardIssue(p.id, node.position, node.facing) === null) {
         const next = hex(node.position).neighbors()[node.facing]!;
-        if (this.contains(next)) add(next, node.facing, { type: 'forward' });
+        if (
+          this.occupiedHexes(p.id, next, node.facing).every((cell) =>
+            this.contains(cell),
+          )
+        )
+          add(next, node.facing, { type: 'forward' });
       }
       if (!this.turnIssue(p.id, -1, node.position, node.facing))
         add(node.position, (node.facing + 5) % 6, {

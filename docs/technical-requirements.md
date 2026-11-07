@@ -46,6 +46,24 @@
   geometri som ordinarie strider. Transport ship och Colony ship ingår;
   inga sparplatser skrivs.
 
+## Bordningsskydd och flyktzoner, 2026-11-07
+
+- `pirater-skyddar-bordade-skepp`: TacticalBattle skiljer AI:s skottkandidater
+  från modellens allmänna träffregler. Ett mål vars dockningspartner tillhör
+  den automatiska sidan tas bort från direkta mål och områdessalvor som skulle
+  träffa det. Upplåsning och avgjord bordning återställer vanligt målval.
+- `flyktzoner-i-rymdstrid`: nya BattleState har det valfria fältet
+  `escapeZones: true`. De sex zonerna härleds från kartans mittkolumn och dess
+  grannar på första och sista raden och undantas från asteroidgenerering.
+  BattleMapView ritar grön hex och engelsk `Escape`-text.
+- Ett delvis utpasserat trehexskepp sparar valfritt `escapeEdge` på BattlePiece.
+  Dess skrov får ligga delvis utanför just denna över- eller nederkant, men
+  minst en skrovhex måste finnas kvar på kartan. Sväng, eld och dockning spärras;
+  skeppet är fortsatt ett giltigt mål. När sista skrovhexen lämnar sätts vanlig
+  `escaped`-status. Kontroller förankras mot den del av skrovet som ännu syns.
+- Fälten är additiva och sparversion 14 behålls. Saknat `escapeZones` ger den
+  äldre kortsideregeln för en redan pågående strid; inga sparplatser rensas.
+
 ## Händelsebilder och stridspresentation, 2026-11-01
 
 - `bilder-i-events`: GameEvent får valfria oföränderliga EventLine-rader och

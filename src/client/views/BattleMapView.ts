@@ -6,6 +6,7 @@ import {
   type Point,
 } from '../models/HexCoordinate.js';
 import {
+  battleEscapeHexes,
   battleHex,
   maxHull,
   missileArea,
@@ -117,7 +118,7 @@ export class BattleMapView implements BattleMapPort {
         canvas.tabIndex = 0;
         canvas.setAttribute(
           'aria-label',
-          'Battle hex map. Tap a new target to select it, then tap the selected target to fire. Enter or Space fires at the selected impact hex. Drag to pan; pinch or use the mouse wheel to zoom.',
+          'Battle hex map. Green hexes marked Escape are the retreat exits. Tap a new target to select it, then tap the selected target to fire. Enter or Space fires at the selected impact hex. Drag to pan; pinch or use the mouse wheel to zoom.',
         );
         this.#bind(canvas, select);
         this.#ready = true;
@@ -351,19 +352,34 @@ export class BattleMapView implements BattleMapPort {
       }
       p.endShape(p.CLOSE);
     };
+    const escapeZones = new Set(
+      battleEscapeHexes(state).map((zone) => `${zone.q},${zone.r}`),
+    );
     for (let row = 0; row < state.height; row++)
       for (let col = 0; col < state.width; col++) {
+        const cell = battleHex(col, row);
+        const escape = escapeZones.has(`${cell.q},${cell.r}`);
         p.stroke('#263d51');
         p.strokeWeight(1 / this.#scale);
         p.fill(
-          state.phase === 'deployment' && col < state.deploymentDepth
-            ? '#123e56'
-            : state.phase === 'deployment' &&
-                col >= state.width - state.deploymentDepth
-              ? '#3b2532'
-              : '#0c1c2b',
+          escape
+            ? '#176342'
+            : state.phase === 'deployment' && col < state.deploymentDepth
+              ? '#123e56'
+              : state.phase === 'deployment' &&
+                  col >= state.width - state.deploymentDepth
+                ? '#3b2532'
+                : '#0c1c2b',
         );
-        polygon(battleHex(col, row), HexGeometry.size - 1);
+        polygon(cell, HexGeometry.size - 1);
+        if (escape) {
+          const center = HexGeometry.toPoint(new HexCoordinate(cell.q, cell.r));
+          p.noStroke();
+          p.fill('#d8ffe9');
+          p.textAlign(p.CENTER);
+          p.textSize(8);
+          p.text('Escape', center.x, center.y + 3);
+        }
       }
     for (const asteroid of state.asteroids) {
       p.fill('#56606b');

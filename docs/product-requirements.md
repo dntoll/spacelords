@@ -58,6 +58,21 @@ Autoaim utökar `traffhex-istallet-for-mallista` utan att lägga till en mållis
 De stora skroven ersätter regeln om en hex per skepp i `taktisk-stridskarta`
 och `stridsutplacering` för nya strider.
 
+## Bordningsskydd och flyktzoner, 2026-11-07
+
+- `pirater-skyddar-bordade-skepp` — **Fullständigt implementerat**: när ett
+  piratskepp har dockat väljer andra piratskepp inte det bordade skeppet som
+  skottmål. Skyddet gäller piraternas automatiska stridsbeslut och upphör när
+  skeppen inte längre är dockade.
+- `flyktzoner-i-rymdstrid` — **Fullständigt implementerat**: nya strider har
+  tre gröna hexar märkta `Escape` mitt på överkanten och tre mitt på
+  nederkanten. Båda sidor kan lämna genom endera zonen från runda två. Ett
+  stort skepp är kvar i striden och kan beskjutas tills hela dess trehexskrov
+  har passerat kanten; efter påbörjad utpassage kan det bara fortsätta rakt ut.
+
+Flyktzonerna ersätter reträtt genom den egna kortsidan i nya strider. Äldre
+pågående strider behåller sin tidigare karta och reträttregel.
+
 ## Illustrerade besked och strid, 2026-11-01
 
 - `bilder-i-events` — **Fullständigt implementerat**: Events och årets
