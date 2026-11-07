@@ -1,7 +1,7 @@
 import { pirateAsFleet } from '../PirateFleet.js';
 import type { MapViewport } from '../ProductionMap.js';
-import { hitSalvageMarker } from '../SalvageMapLayout.js';
-import { FleetMapLayout } from '../FleetMapLayout.js';
+import { hitSalvageMarker } from './SalvageMapLayout.js';
+import { FleetMapLayout } from './FleetMapLayout.js';
 import {
   HexGeometry,
   type HexCoordinate,

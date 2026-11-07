@@ -3,11 +3,11 @@ import { BoardingCameraController } from '../../src/client/views/boarding/Boardi
 import {
   BoardingBattle,
   type BoardingBattleState,
-} from '../../src/client/models/BoardingBattle.js';
+} from '../../src/client/models/boarding/BoardingBattle.js';
 import {
   BoardingMap,
   type BoardingTerrain,
-} from '../../src/client/models/BoardingMap.js';
+} from '../../src/client/models/boarding/BoardingMap.js';
 
 function scene() {
   const terrain = new Map<string, BoardingTerrain>();

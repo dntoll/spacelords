@@ -5,7 +5,7 @@
 import {
   boardingCellFromIsoPoint,
   type BoardingPoint,
-} from '../BoardingProjection.js';
+} from './BoardingProjection.js';
 
 export const EDITOR_ORTHO_CELL = 36;
 

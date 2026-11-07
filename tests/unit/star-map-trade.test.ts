@@ -8,7 +8,7 @@ import {
   tradeNetworkState,
   distantTradeNetworkState,
 } from '../fixtures/trade-network.js';
-import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
+import { FleetMapLayout } from '../../src/client/models/star-map/FleetMapLayout.js';
 
 function session(withRoute = true, state = tradeNetworkState(withRoute)) {
   const model = new AppModel(undefined, {

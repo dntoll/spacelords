@@ -12,7 +12,7 @@ import { DecisionController } from '../decisions/DecisionController.js';
 import { StarMapController } from '../star-map/StarMapController.js';
 import { TurnController } from './TurnController.js';
 import type { AppModel, AppReadModel } from '../../models/AppModel.js';
-import { TurnMovementPlayback } from '../../models/TurnMovementPlayback.js';
+import { TurnMovementPlayback } from '../../models/app/TurnMovementPlayback.js';
 import type { AppIntent, AppPort } from '../../views/ViewContracts.js';
 import type { Point } from '../../models/HexCoordinate.js';
 import { MapGesture } from '../../views/star-map/MapGesture.js';

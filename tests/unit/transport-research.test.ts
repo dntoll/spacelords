@@ -3,11 +3,11 @@ import { Game } from '../../src/client/models/Game.js';
 import {
   ResearchPlan,
   type Technology,
-} from '../../src/client/models/Research.js';
+} from '../../src/client/models/research/Research.js';
 import {
   isResearchIdentified,
   ResearchTreeLayout,
-} from '../../src/client/models/ResearchTree.js';
+} from '../../src/client/models/research/ResearchTree.js';
 import { researchStationState } from '../fixtures/research-station.js';
 
 describe('transport-ship-efter-rocket-engine', () => {

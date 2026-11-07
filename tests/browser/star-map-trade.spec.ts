@@ -10,7 +10,7 @@ import {
   HexGeometry,
   type Point,
 } from '../../src/client/models/HexCoordinate.js';
-import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
+import { FleetMapLayout } from '../../src/client/models/star-map/FleetMapLayout.js';
 
 const initial = tradeNetworkState(false);
 const game = Game.restore(initial);

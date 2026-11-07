@@ -1,5 +1,5 @@
 import type { ExplorationOrder } from '../TurnSimulation.js';
-import { shipTransferIssue } from '../FleetTransfer.js';
+import { shipTransferIssue } from './FleetTransfer.js';
 import { Salvage } from '../Salvage.js';
 import { type ShipType } from '../Game.js';
 import { HexCoordinate } from '../HexCoordinate.js';

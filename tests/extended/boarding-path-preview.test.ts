@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { BOARDING_RIFLE_AP } from '../../src/client/models/BoardingBattle.js';
-import { boardingPathMarks } from '../../src/client/models/BoardingPathPreview.js';
-import type { BoardingPath } from '../../src/client/models/BoardingBattle.js';
+import { BOARDING_RIFLE_AP } from '../../src/client/models/boarding/BoardingBattle.js';
+import { boardingPathMarks } from '../../src/client/models/boarding/BoardingPathPreview.js';
+import type { BoardingPath } from '../../src/client/models/boarding/BoardingBattle.js';
 
 function path(forwards: number, turns = 0, stepCost = 2): BoardingPath {
   const positions = Array.from({ length: forwards }, (_, index) => ({

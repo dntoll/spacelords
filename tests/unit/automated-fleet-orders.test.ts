@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Game, type GameState } from '../../src/client/models/Game.js';
-import { ResearchPlan } from '../../src/client/models/Research.js';
+import { ResearchPlan } from '../../src/client/models/research/Research.js';
 import { salvageState, finishYear } from '../fixtures/salvage.js';
 import {
   tradeNetworkState,

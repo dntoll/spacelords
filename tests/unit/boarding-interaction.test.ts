@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   BoardingBattle,
   type BoardingBattleState,
-} from '../../src/client/models/BoardingBattle.js';
+} from '../../src/client/models/boarding/BoardingBattle.js';
 import {
   BoardingMap,
   type BoardingTerrain,
-} from '../../src/client/models/BoardingMap.js';
+} from '../../src/client/models/boarding/BoardingMap.js';
 
 function arena(blocked = false) {
   const terrain = new Map<string, BoardingTerrain>();

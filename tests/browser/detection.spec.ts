@@ -3,7 +3,7 @@ import { selectMapHex } from './map-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 import { Game, type GameState } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
-import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
+import { FleetMapLayout } from '../../src/client/models/star-map/FleetMapLayout.js';
 import { pirateAsFleet } from '../../src/client/models/PirateFleet.js';
 import { selectMapPoint } from './map-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';

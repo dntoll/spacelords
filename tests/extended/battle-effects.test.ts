@@ -2,8 +2,8 @@ import { expect, it } from 'vitest';
 import {
   BattleEffects,
   BATTLE_SHOT_DURATION,
-} from '../../src/client/views/BattleEffects.js';
-import { createTestBattle } from '../../src/client/models/TestBattle.js';
+} from '../../src/client/views/battle/BattleEffects.js';
+import { createTestBattle } from '../../src/client/models/battle/TestBattle.js';
 import {
   TacticalBattle,
   type BattleShot,

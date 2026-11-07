@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import type p5 from 'p5';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { renderMapOverlays } from '../../src/client/views/MapOverlayView.js';
+import { renderMapOverlays } from '../../src/client/views/star-map/MapOverlayView.js';
 
 it('kartorderstatus: Star map omits S/Q labels while preserving planet order information', () => {
   const model = new AppModel();

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MapViewport } from '../../src/client/models/MapViewport.js';
+import { MapViewport } from '../../src/client/models/star-map/MapViewport.js';
 import {
   HexCoordinate,
   HexGeometry,

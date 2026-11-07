@@ -1,8 +1,8 @@
 import type {
   TurnMovementPlayback,
   TurnMovement,
-} from '../../models/TurnMovementPlayback.js';
-import type { CameraFraming } from '../../models/CameraFraming.js';
+} from '../../models/app/TurnMovementPlayback.js';
+import type { CameraFraming } from '../../models/app/CameraFraming.js';
 import { type TurnFrame } from '../../models/Game.js';
 import type { AppReadModel } from '../../models/AppModel.js';
 import type { TurnFacade } from '../../models/app/TurnFacade.js';

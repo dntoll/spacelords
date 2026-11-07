@@ -4,10 +4,10 @@ import { Game, type BuildType } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { TELESCOPES } from '../../src/client/models/Detection.js';
-import { ResearchPlan } from '../../src/client/models/Research.js';
+import { ResearchPlan } from '../../src/client/models/research/Research.js';
 import { turnFrames } from '../fixtures/turn-steps.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
-import { renderDetectionBoundary } from '../../src/client/views/DetectionMapView.js';
+import { renderDetectionBoundary } from '../../src/client/views/star-map/DetectionMapView.js';
 import type p5 from 'p5';
 
 function equipped(level: 1 | 2 | 3, factory?: BuildType) {

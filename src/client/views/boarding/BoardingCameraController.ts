@@ -2,8 +2,8 @@ import {
   BoardingBattle,
   type BoardingBattleState,
   type BoardingPerson,
-} from '../../models/BoardingBattle.js';
-import type { BoardingMap } from '../../models/BoardingMap.js';
+} from '../../models/boarding/BoardingBattle.js';
+import type { BoardingMap } from '../../models/boarding/BoardingMap.js';
 
 export interface BoardingCameraPoint {
   readonly x: number;

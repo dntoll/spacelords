@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CameraFraming,
   type CameraBounds,
-} from '../../src/client/models/CameraFraming.js';
+} from '../../src/client/models/app/CameraFraming.js';
 import type { CameraSnapshot } from '../../src/client/models/Camera.js';
 import type { Point } from '../../src/client/models/HexCoordinate.js';
 

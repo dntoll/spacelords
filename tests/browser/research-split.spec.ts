@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { researchStationState } from '../fixtures/research-station.js';
 import { startFirstSlot } from './save-helpers.js';
-import { TECHNOLOGIES } from '../../src/client/models/Research.js';
+import { TECHNOLOGIES } from '../../src/client/models/research/Research.js';
 
 test('kompakt-forskningstrad: shortened technology names fit two lines in narrow tiles', async ({
   page,

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   TurnMovementPlayback,
   type MovementScene,
-} from '../../src/client/models/TurnMovementPlayback.js';
+} from '../../src/client/models/app/TurnMovementPlayback.js';
 import { Game, type TurnFrame } from '../../src/client/models/Game.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';

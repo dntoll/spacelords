@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   boardingEdgeTargetIndicators,
   boardingScreenRectangleVisible,
-} from '../../src/client/views/BoardingTargetIndicatorLayout.js';
+} from '../../src/client/views/boarding/BoardingTargetIndicatorLayout.js';
 
 describe('kantindikator-for-synlig-fiende', () => {
   const viewport = { left: 100, top: 80, right: 500, bottom: 580 };

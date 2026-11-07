@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { Game, type GameState } from '../../src/client/models/Game.js';
-import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
+import { FleetMapLayout } from '../../src/client/models/star-map/FleetMapLayout.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import { selectMapObject, selectMapPoint } from './map-helpers.js';

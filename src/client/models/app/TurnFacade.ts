@@ -1,10 +1,10 @@
-import { EventPlayback, type PlaybackEvent } from '../EventPlayback.js';
+import { EventPlayback, type PlaybackEvent } from './EventPlayback.js';
 import type {
   TurnMovementPlayback,
   TurnMovement,
-} from '../TurnMovementPlayback.js';
+} from './TurnMovementPlayback.js';
 import { Camera } from '../Camera.js';
-import { CameraFraming } from '../CameraFraming.js';
+import { CameraFraming } from './CameraFraming.js';
 import { type TurnFrame } from '../Game.js';
 import { HexGeometry } from '../HexCoordinate.js';
 import type { AppHost, AppReadModel } from '../AppModel.js';

@@ -7,11 +7,11 @@ import {
   RESEARCH_TREE,
   ResearchTreeCamera,
   ResearchTreeLayout,
-} from '../../src/client/models/ResearchTree.js';
+} from '../../src/client/models/research/ResearchTree.js';
 import {
   PREREQUISITES,
   TECHNOLOGIES,
-} from '../../src/client/models/Research.js';
+} from '../../src/client/models/research/Research.js';
 
 describe('forsknings-tradnavigation', () => {
   it('kompakt-forskningstrad: halves tile height and packs independent branches without overlap', () => {

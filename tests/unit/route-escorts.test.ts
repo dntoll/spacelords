@@ -126,7 +126,7 @@ it('rutt-eskortfordelning: rejects closing routes, releasing carriers, travellin
 
 it('ruttflottor-pa-kartan: assigned fleets are separated around the midpoint, remain selectable and leave physical fleet positions unchanged', async () => {
   const { FleetMapLayout } =
-    await import('../../src/client/models/FleetMapLayout.js');
+    await import('../../src/client/models/star-map/FleetMapLayout.js');
   const { HexGeometry } =
     await import('../../src/client/models/HexCoordinate.js');
   const { AppModel } = await import('../../src/client/models/AppModel.js');

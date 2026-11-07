@@ -5,7 +5,7 @@ import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { renderPlanet } from '../../src/client/views/PlanetView.js';
 import { renderBuildSelection } from '../../src/client/views/BuildSelectionView.js';
-import { renderResearch } from '../../src/client/views/ResearchView.js';
+import { renderResearch } from '../../src/client/views/research/ResearchView.js';
 import {
   BUILDINGS,
   TECHNOLOGIES,

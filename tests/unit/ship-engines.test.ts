@@ -8,7 +8,7 @@ import {
 } from '../../src/client/models/Game.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { emptyStock } from '../../src/client/models/Economy.js';
-import { ResearchPlan } from '../../src/client/models/Research.js';
+import { ResearchPlan } from '../../src/client/models/research/Research.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 
 function prepared(rocket = 0, ion = 0) {

@@ -1,6 +1,6 @@
 import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { EventPlayback } from '../../src/client/models/EventPlayback.js';
+import { EventPlayback } from '../../src/client/models/app/EventPlayback.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { Game, type GameState } from '../../src/client/models/Game.js';

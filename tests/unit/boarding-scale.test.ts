@@ -1,5 +1,5 @@
-import { BOARDING_SPRITE_METRICS } from '../../src/client/views/BoardingSpriteMetrics.js';
-import { boardingObjectBounds } from '../../src/client/views/BoardingObjectArtwork.js';
+import { BOARDING_SPRITE_METRICS } from '../../src/client/views/boarding/BoardingSpriteMetrics.js';
+import { boardingObjectBounds } from '../../src/client/views/boarding/BoardingObjectArtwork.js';
 import { describe, expect, it } from 'vitest';
 import {
   BOARDING_WALL_HEIGHT,
@@ -7,11 +7,11 @@ import {
   BOARDING_COVER_HEIGHT,
   boardingIsoCamera,
   boardingIsoCenter,
-} from '../../src/client/views/BoardingProjection.js';
+} from '../../src/client/views/boarding/BoardingProjection.js';
 import {
   boardingCharacterSprite,
   BOARDING_FOOT_PLANT,
-} from '../../src/client/views/BoardingCharacterSprite.js';
+} from '../../src/client/views/boarding/BoardingCharacterSprite.js';
 
 const verticalMeter = 16 * Math.sqrt(6);
 describe('meterskala-i-bordning', () => {

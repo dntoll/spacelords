@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { pirateAsFleet } from '../../src/client/models/PirateFleet.js';
-import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
+import { FleetMapLayout } from '../../src/client/models/star-map/FleetMapLayout.js';
 import { selectMapPoint } from './map-helpers.js';
 import { endTurn, startFirstSlot } from './save-helpers.js';
 import type { SavedGame } from '../../src/client/models/SaveRepository.js';

@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   BattleView,
   type BattleMapFactory,
-} from '../../src/client/views/BattleView.js';
+} from '../../src/client/views/battle/BattleView.js';
 import {
   TacticalBattle,
   type BattleState,
@@ -15,17 +15,17 @@ import type { SaveRepository } from '../../src/client/models/SaveRepository.js';
 import {
   BoardingBattle,
   type BoardingBattleState,
-} from '../../src/client/models/BoardingBattle.js';
-import { composeBoardingMaps } from '../../src/client/models/BoardingComposer.js';
-import type { BoardingMap } from '../../src/client/models/BoardingMap.js';
+} from '../../src/client/models/boarding/BoardingBattle.js';
+import { composeBoardingMaps } from '../../src/client/models/boarding/BoardingComposer.js';
+import type { BoardingMap } from '../../src/client/models/boarding/BoardingMap.js';
 import {
   createTestBoardingBattle,
   testBoardingMap,
-} from '../../src/client/models/TestBoarding.js';
+} from '../../src/client/models/boarding/TestBoarding.js';
 import {
   BoardingView,
   type BoardingMapFactory,
-} from '../../src/client/views/BoardingView.js';
+} from '../../src/client/views/boarding/BoardingView.js';
 import { renderSaveSlots } from '../../src/client/views/SaveSlotsView.js';
 import type { AppIntent } from '../../src/client/views/ViewContracts.js';
 

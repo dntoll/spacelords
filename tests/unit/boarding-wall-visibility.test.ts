@@ -1,16 +1,16 @@
 import {
   BOARDING_METERS,
   boardingHeight,
-} from '../../src/client/views/BoardingScale.js';
+} from '../../src/client/views/boarding/BoardingScale.js';
 import { describe, expect, it } from 'vitest';
 import {
   BoardingWallVisibility,
   boardingDepthOrder,
-} from '../../src/client/views/BoardingWallVisibility.js';
+} from '../../src/client/views/boarding/BoardingWallVisibility.js';
 import {
   BOARDING_WALL_HEIGHT,
   boardingIsoCenter,
-} from '../../src/client/views/BoardingProjection.js';
+} from '../../src/client/views/boarding/BoardingProjection.js';
 
 describe('genomskinliga-skymmande-vaggar', () => {
   it('cuts only walls that actually cover discovered floor behind them', () => {

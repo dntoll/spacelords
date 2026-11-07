@@ -6,7 +6,7 @@ import {
   projectDefinition,
 } from '../../src/client/models/Game.js';
 import { Salvage } from '../../src/client/models/Salvage.js';
-import { ResearchPlan } from '../../src/client/models/Research.js';
+import { ResearchPlan } from '../../src/client/models/research/Research.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { Galaxy } from '../../src/client/models/Galaxy.js';
 import {
@@ -20,7 +20,7 @@ import { MasterController } from '../../src/client/controllers/app/MasterControl
 import {
   hitSalvageMarker,
   salvageMarkers,
-} from '../../src/client/models/SalvageMapLayout.js';
+} from '../../src/client/models/star-map/SalvageMapLayout.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 
 it('spelgrafik-kartstation: shipyards stay anchored to their hex and remain selectable at different zoom levels', () => {

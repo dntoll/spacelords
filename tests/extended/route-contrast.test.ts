@@ -2,7 +2,7 @@ import { expect, it, vi } from 'vitest';
 import type p5 from 'p5';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
-import { renderMapTradeRoutes } from '../../src/client/views/MapTradeRoutesView.js';
+import { renderMapTradeRoutes } from '../../src/client/views/star-map/MapTradeRoutesView.js';
 
 function luminance(hex: string): number {
   const channels = hex

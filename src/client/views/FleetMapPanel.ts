@@ -1,5 +1,5 @@
 import { shipImage } from './ShipView.js';
-import { shipTransferIssue } from '../models/FleetTransfer.js';
+import { shipTransferIssue } from '../models/fleets/FleetTransfer.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import type { HexCoordinate } from '../models/HexCoordinate.js';
 import type { IntentHandler } from './ViewContracts.js';

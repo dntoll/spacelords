@@ -5,7 +5,7 @@ import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { catalogItem } from '../../src/client/views/CatalogControls.js';
 import { buildingImage } from '../../src/client/views/BuildingImage.js';
 import { planetIllustration } from '../../src/client/views/dom.js';
-import { renderResearchTree } from '../../src/client/views/ResearchTreeView.js';
+import { renderResearchTree } from '../../src/client/views/research/ResearchTreeView.js';
 import type p5 from 'p5';
 import { MapArtwork } from '../../src/client/views/MapArtwork.js';
 import {

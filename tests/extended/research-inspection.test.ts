@@ -2,9 +2,9 @@
 import { describe, expect, it } from 'vitest';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppView } from '../../src/client/views/AppView.js';
-import { isResearchIdentified } from '../../src/client/models/ResearchTree.js';
+import { isResearchIdentified } from '../../src/client/models/research/ResearchTree.js';
 import { researchStationModel } from '../fixtures/research-station-model.js';
-import { renderResearchTree } from '../../src/client/views/ResearchTreeView.js';
+import { renderResearchTree } from '../../src/client/views/research/ResearchTreeView.js';
 
 function setup() {
   const model = researchStationModel();

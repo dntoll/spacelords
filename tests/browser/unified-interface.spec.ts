@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { Game, type GameState } from '../../src/client/models/Game.js';
-import { salvageMarkers } from '../../src/client/models/SalvageMapLayout.js';
+import { salvageMarkers } from '../../src/client/models/star-map/SalvageMapLayout.js';
 import { salvageState, advancedExplorer } from '../fixtures/salvage.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { researchStationState } from '../fixtures/research-station.js';

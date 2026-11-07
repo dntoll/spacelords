@@ -3,7 +3,7 @@ import {
   boardingDoorAxis,
   boardingObjectArtwork,
   boardingObjectBounds,
-} from '../../src/client/views/BoardingObjectArtwork.js';
+} from '../../src/client/views/boarding/BoardingObjectArtwork.js';
 
 describe('isometriska-bordningsobjekt', () => {
   it('chooses the door state and the wall axis without changing the model', () => {

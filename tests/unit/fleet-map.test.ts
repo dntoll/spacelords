@@ -6,9 +6,9 @@ import {
   HexGeometry,
 } from '../../src/client/models/HexCoordinate.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { renderMapOverlays } from '../../src/client/views/MapOverlayView.js';
-import { renderMapFleets } from '../../src/client/views/FleetMapView.js';
-import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
+import { renderMapOverlays } from '../../src/client/views/star-map/MapOverlayView.js';
+import { renderMapFleets } from '../../src/client/views/star-map/FleetMapView.js';
+import { FleetMapLayout } from '../../src/client/models/star-map/FleetMapLayout.js';
 
 function fleet(id: string, count = 3): FleetSnapshot {
   return {

@@ -1,5 +1,5 @@
-import { type BoardingCommand } from '../BoardingBattle.js';
-import { createTestBoardingBattle } from '../TestBoarding.js';
+import { type BoardingCommand } from './BoardingBattle.js';
+import { createTestBoardingBattle } from './TestBoarding.js';
 import type { AppHost } from '../AppModel.js';
 
 export class BoardingFacade {

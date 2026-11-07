@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { Game, TECHNOLOGIES } from '../../src/client/models/Game.js';
-import { salvageMarkers } from '../../src/client/models/SalvageMapLayout.js';
+import { salvageMarkers } from '../../src/client/models/star-map/SalvageMapLayout.js';
 import { salvageState } from '../fixtures/salvage.js';
 import { selectMapPoint } from './map-helpers.js';
 import { startFirstSlot } from './save-helpers.js';

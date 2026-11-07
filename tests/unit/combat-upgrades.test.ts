@@ -3,7 +3,7 @@ import { upgradeState } from '../fixtures/fleet-upgrades.js';
 import { finishYear } from '../fixtures/salvage.js';
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
-import { ResearchPlan } from '../../src/client/models/Research.js';
+import { ResearchPlan } from '../../src/client/models/research/Research.js';
 import { ShipUpgrades } from '../../src/client/models/ShipUpgrades.js';
 import {
   TacticalBattle,

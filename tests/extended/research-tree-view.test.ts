@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { turnFrames } from '../fixtures/turn-steps.js';
-import { TECHNOLOGIES } from '../../src/client/models/Research.js';
+import { TECHNOLOGIES } from '../../src/client/models/research/Research.js';
 import { expect, it, vi } from 'vitest';
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
-import { ResearchTreeLayout } from '../../src/client/models/ResearchTree.js';
-import { renderResearch } from '../../src/client/views/ResearchView.js';
+import { ResearchTreeLayout } from '../../src/client/models/research/ResearchTree.js';
+import { renderResearch } from '../../src/client/views/research/ResearchView.js';
 
 it('forsknings-tradnavigation: distinguishes completed, active, queued and unavailable technologies while preserving research commands', () => {
   const emit = vi.fn();

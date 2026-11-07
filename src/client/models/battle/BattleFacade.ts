@@ -3,7 +3,7 @@ import {
   type BattleState,
   type BattleCommand,
 } from '../TacticalBattle.js';
-import { createTestBattle } from '../TestBattle.js';
+import { createTestBattle } from './TestBattle.js';
 import type { AppHost } from '../AppModel.js';
 
 export class BattleFacade {

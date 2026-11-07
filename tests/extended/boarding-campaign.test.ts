@@ -1,14 +1,14 @@
-import { BoardingEngagement } from '../../src/client/models/BoardingEngagement.js';
+import { BoardingEngagement } from '../../src/client/models/boarding/BoardingEngagement.js';
 import { describe, expect, it } from 'vitest';
-import { composeBoardingMaps } from '../../src/client/models/BoardingComposer.js';
-import { BoardingBattle } from '../../src/client/models/BoardingBattle.js';
+import { composeBoardingMaps } from '../../src/client/models/boarding/BoardingComposer.js';
+import { BoardingBattle } from '../../src/client/models/boarding/BoardingBattle.js';
 import {
   TacticalBattle,
   SHIP_PROFILES,
   battleWeapons,
 } from '../../src/client/models/TacticalBattle.js';
 import { BUILDINGS, Game, SHIPS } from '../../src/client/models/Game.js';
-import { ResearchPlan } from '../../src/client/models/Research.js';
+import { ResearchPlan } from '../../src/client/models/research/Research.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { emptyStock } from '../../src/client/models/Economy.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';

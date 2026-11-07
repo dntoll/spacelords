@@ -3,12 +3,12 @@ import transportMap from '../../src/client/maps/transport-boarding.txt?raw';
 import {
   BoardingMap,
   parseBoardingMap,
-} from '../../src/client/models/BoardingMap.js';
+} from '../../src/client/models/boarding/BoardingMap.js';
 import {
   BoardingBattle,
   boardingActionPointsRemaining,
   type BoardingBattleState,
-} from '../../src/client/models/BoardingBattle.js';
+} from '../../src/client/models/boarding/BoardingBattle.js';
 
 const map = parseBoardingMap(transportMap);
 let battle: BoardingBattle;

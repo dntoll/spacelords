@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { researchStationModel } from '../fixtures/research-station-model.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppView } from '../../src/client/views/AppView.js';
-import { renderResearch } from '../../src/client/views/ResearchView.js';
+import { renderResearch } from '../../src/client/views/research/ResearchView.js';
 
 describe('forskningstradets-utrymme', () => {
   it('places station information beside the heading and removes the reserved sidebar and zoom controls', () => {

@@ -39,8 +39,8 @@ import type {
   BoardingBattleState,
   BoardingCommand,
   BoardingShot,
-} from './BoardingBattle.js';
-import { BoardingEngagement } from './BoardingEngagement.js';
+} from './boarding/BoardingBattle.js';
+import { BoardingEngagement } from './boarding/BoardingEngagement.js';
 import {
   Salvage,
   type WreckSnapshot,
@@ -69,7 +69,7 @@ import { Galaxy, Star, StarSystem, type MapCell } from './Galaxy.js';
 import { HexCoordinate } from './HexCoordinate.js';
 import { HexNavigation } from './HexNavigation.js';
 import type { TerrainHex } from './Galaxy.js';
-import { shipTransferIssue } from './FleetTransfer.js';
+import { shipTransferIssue } from './fleets/FleetTransfer.js';
 import { PlanetEnvironment } from './PlanetEnvironment.js';
 import {
   Planet,
@@ -94,7 +94,7 @@ import {
   RETIRED_ORDER_TECHNOLOGIES,
   TECHNOLOGIES,
   type Technology,
-} from './Research.js';
+} from './research/Research.js';
 import {
   Logistics,
   type LogisticsPort,
@@ -121,7 +121,7 @@ import {
   type SupplyPlanetInput,
   type SupplyPlanet,
 } from './SupplyOverview.js';
-export { TECHNOLOGIES, type Technology } from './Research.js';
+export { TECHNOLOGIES, type Technology } from './research/Research.js';
 
 export type GamePhase = 'planning' | 'simulating' | 'interrupted';
 export type Resource = 'Iron' | 'Water' | 'Oil';

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest';
 import type p5 from 'p5';
-import { BattleMapView } from '../../src/client/views/BattleMapView.js';
+import { BattleMapView } from '../../src/client/views/battle/BattleMapView.js';
 import {
   SHIP_SPRITES,
   type ShipSpriteType,
@@ -12,7 +12,7 @@ import {
   type Point,
 } from '../../src/client/models/HexCoordinate.js';
 import { TacticalBattle } from '../../src/client/models/TacticalBattle.js';
-import { createTestBattle } from '../../src/client/models/TestBattle.js';
+import { createTestBattle } from '../../src/client/models/battle/TestBattle.js';
 
 const runtime = vi.hoisted(() => ({ sketch: null as p5 | null }));
 vi.mock('p5', () => ({

@@ -24,11 +24,11 @@ import type {
   EventPlayback,
   EventPlaybackSnapshot,
   EventDecision,
-} from './EventPlayback.js';
+} from './app/EventPlayback.js';
 import type {
   TurnMovementPlayback,
   TurnMovement,
-} from './TurnMovementPlayback.js';
+} from './app/TurnMovementPlayback.js';
 import type {
   ExplorationOrder,
   SavedTurnSimulation,
@@ -61,12 +61,12 @@ import {
   type BoardingBattleState,
   type BoardingCommand,
   type BoardingShot,
-} from './BoardingBattle.js';
+} from './boarding/BoardingBattle.js';
 import type { SupplyOverview } from './SupplyOverview.js';
 import {
   ResearchTreeCamera,
   type ResearchCameraSnapshot,
-} from './ResearchTree.js';
+} from './research/ResearchTree.js';
 import type { Component } from './Economy.js';
 import {
   Salvage,
@@ -80,9 +80,9 @@ import {
   type DecisionScreen,
 } from './Decisions.js';
 import type { ShipmentSnapshot, TradeRouteSnapshot } from './Logistics.js';
-import { FleetMapLayout } from './FleetMapLayout.js';
+import { FleetMapLayout } from './star-map/FleetMapLayout.js';
 import { Camera, type CameraSnapshot } from './Camera.js';
-import { CameraFraming } from './CameraFraming.js';
+import { CameraFraming } from './app/CameraFraming.js';
 import { createExampleGalaxy } from './exampleGalaxy.js';
 import {
   Game,

@@ -1,5 +1,5 @@
 ﻿import type p5 from 'p5';
-import type { BoardingCell } from '../../models/BoardingMap.js';
+import type { BoardingCell } from '../../models/boarding/BoardingMap.js';
 import {
   boardingFeatureFootprint,
   boardingFeatureHeight,
@@ -11,7 +11,7 @@ import {
   boardingWallRun,
   boardingWallSlice,
   type BoardingPoint,
-} from '../BoardingProjection.js';
+} from './BoardingProjection.js';
 
 /** isometrisk-bordningskarteditor: combat projection, floor and wall textures, raised barriers. */
 

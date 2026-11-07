@@ -5,7 +5,7 @@ import { expect, type Page, type Locator } from '@playwright/test';
 import {
   PREREQUISITES,
   TECHNOLOGIES,
-} from '../../src/client/models/Research.js';
+} from '../../src/client/models/research/Research.js';
 import type { GameState } from '../../src/client/models/Game.js';
 
 export async function chooseResearch(

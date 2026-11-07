@@ -13,7 +13,7 @@ import {
   boardingFeatureGlyph,
   boardingIsoCamera,
   boardingIsoCenter,
-} from '../BoardingProjection.js';
+} from './BoardingProjection.js';
 import {
   boardingEditorCellAt,
   EDITOR_ORTHO_CELL,

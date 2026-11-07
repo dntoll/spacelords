@@ -1,5 +1,5 @@
 import { renderFleetOrders } from './FleetOrdersView.js';
-import { shipTransferIssue } from '../models/FleetTransfer.js';
+import { shipTransferIssue } from '../models/fleets/FleetTransfer.js';
 import type { AppReadModel } from '../models/AppModel.js';
 import type { FleetSnapshot } from '../models/Game.js';
 import type { IntentHandler } from './ViewContracts.js';

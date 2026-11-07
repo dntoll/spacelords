@@ -3,7 +3,7 @@ import { encounterGame, arrangeBattle } from '../fixtures/battle-checkpoint.js';
 import { startFirstSlot, ignoreEventsUntil } from './save-helpers.js';
 import type { SavedGame } from '../../src/client/models/SaveRepository.js';
 import { battleHex } from '../../src/client/models/TacticalBattle.js';
-import { createTestBattle } from '../../src/client/models/TestBattle.js';
+import { createTestBattle } from '../../src/client/models/battle/TestBattle.js';
 import { ShipFootprint } from '../../src/client/models/ShipFootprint.js';
 
 import { battlePoint, showBattleHex, tapBattleHex } from './battle-helpers.js';

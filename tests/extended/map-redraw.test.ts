@@ -2,7 +2,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import type p5 from 'p5';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { GalaxyMapView } from '../../src/client/views/GalaxyMapView.js';
+import { GalaxyMapView } from '../../src/client/views/star-map/GalaxyMapView.js';
 
 const runtime = vi.hoisted(() => ({ sketch: null as p5 | null }));
 vi.mock('p5', () => ({

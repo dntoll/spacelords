@@ -3,7 +3,7 @@ import { routeEscortState } from '../fixtures/route-escorts.js';
 import { assignFleetToRoute, startFirstSlot } from './save-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import { Game, type GameState } from '../../src/client/models/Game.js';
-import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
+import { FleetMapLayout } from '../../src/client/models/star-map/FleetMapLayout.js';
 import { selectMapPoint } from './map-helpers.js';
 
 test('unika-flottnamn / rutt-eskortfordelning / ruttflottor-pa-kartan: assign fighters and select their carrier at the route midpoint', async ({

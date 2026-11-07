@@ -7,7 +7,7 @@ import { boardingEditorCellAt } from '../../src/client/views/boarding/BoardingEd
 import {
   boardingIsoCamera,
   boardingIsoCenter,
-} from '../../src/client/views/BoardingProjection.js';
+} from '../../src/client/views/boarding/BoardingProjection.js';
 
 describe('lokal-bordningskarteditor', () => {
   it('paints left and right brushes on independent layers', () => {

@@ -1,7 +1,7 @@
 import type { ExplorationOrder } from '../models/TurnSimulation.js';
 import type { ShipOrder, OrderKind } from '../models/ShipOrders.js';
 import type { BattleCommand, BattleShot } from '../models/TacticalBattle.js';
-import type { BoardingCommand } from '../models/BoardingBattle.js';
+import type { BoardingCommand } from '../models/boarding/BoardingBattle.js';
 import type {
   MapProductionCategory,
   MapViewport,

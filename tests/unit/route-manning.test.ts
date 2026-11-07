@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Game, TECHNOLOGIES } from '../../src/client/models/Game.js';
-import { RETIRED_ORDER_TECHNOLOGIES } from '../../src/client/models/Research.js';
+import { RETIRED_ORDER_TECHNOLOGIES } from '../../src/client/models/research/Research.js';
 import { ShipOrders } from '../../src/client/models/ShipOrders.js';
 import {
   distantTradeNetworkState,

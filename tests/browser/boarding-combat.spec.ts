@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { boardingIsoCellPoint } from '../../src/client/views/BoardingProjection.js';
+import { boardingIsoCellPoint } from '../../src/client/views/boarding/BoardingProjection.js';
 
 test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordningsobjekt / fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordningsstatus / isometrisk-bordningsvy / spelmassigt-bordningsgranssnitt / bordningsfigurer-fran-spritesheet / bordning-utan-riktningspilar / bordning-utan-sikt-och-eldrutor: uses character sprites in the tactical HUD, targets a door and advances a hidden defender without changing saves', async ({
   page,

@@ -21,7 +21,7 @@ import {
   boardingQuadTextureTransform,
   boardingWallRun,
   boardingWallSlice,
-} from '../../src/client/views/BoardingProjection.js';
+} from '../../src/client/views/boarding/BoardingProjection.js';
 
 const floorTile = readFileSync(
   join(

@@ -2,7 +2,7 @@ import { researchStationState } from '../fixtures/research-station.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot } from './save-helpers.js';
 import { Game } from '../../src/client/models/Game.js';
-import { ResearchTreeLayout } from '../../src/client/models/ResearchTree.js';
+import { ResearchTreeLayout } from '../../src/client/models/research/ResearchTree.js';
 
 test('transport-ship-efter-rocket-engine: transport shares the engine prerequisite with Colony ship and can be researched before exploration', async ({
   page,

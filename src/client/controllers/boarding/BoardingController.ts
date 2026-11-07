@@ -1,4 +1,4 @@
-import { type BoardingCommand } from '../../models/BoardingBattle.js';
+import { type BoardingCommand } from '../../models/boarding/BoardingBattle.js';
 import type { BoardingFacade } from '../../models/boarding/BoardingFacade.js';
 
 export class BoardingController {

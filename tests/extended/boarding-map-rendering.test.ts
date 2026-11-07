@@ -1,27 +1,27 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest';
-import { BoardingLighting } from '../../src/client/views/BoardingLighting.js';
+import { BoardingLighting } from '../../src/client/views/boarding/BoardingLighting.js';
 import type p5 from 'p5';
-import { BoardingMapView } from '../../src/client/views/BoardingMapView.js';
+import { BoardingMapView } from '../../src/client/views/boarding/BoardingMapView.js';
 import {
   boardingCeilingLight,
   type BoardingLight,
   BoardingMap,
-} from '../../src/client/models/BoardingMap.js';
-import { BoardingBattle } from '../../src/client/models/BoardingBattle.js';
+} from '../../src/client/models/boarding/BoardingMap.js';
+import { BoardingBattle } from '../../src/client/models/boarding/BoardingBattle.js';
 import {
   boardingIsoCamera,
   boardingIsoCenter,
-} from '../../src/client/views/BoardingProjection.js';
+} from '../../src/client/views/boarding/BoardingProjection.js';
 import {
   BOARDING_METERS,
   boardingHeight,
-} from '../../src/client/views/BoardingScale.js';
+} from '../../src/client/views/boarding/BoardingScale.js';
 import {
   BOARDING_FOOT_PLANT,
   boardingCharacterSprite,
-} from '../../src/client/views/BoardingCharacterSprite.js';
-import { boardingEdgeTargetIndicators } from '../../src/client/views/BoardingTargetIndicatorLayout.js';
+} from '../../src/client/views/boarding/BoardingCharacterSprite.js';
+import { boardingEdgeTargetIndicators } from '../../src/client/views/boarding/BoardingTargetIndicatorLayout.js';
 
 const runtime = vi.hoisted(() => ({ sketch: null as p5 | null }));
 vi.mock('p5', () => ({

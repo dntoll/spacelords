@@ -3,7 +3,7 @@ import { MasterController } from '../../src/client/controllers/app/MasterControl
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
-import { TurnMovementPlayback } from '../../src/client/models/TurnMovementPlayback.js';
+import { TurnMovementPlayback } from '../../src/client/models/app/TurnMovementPlayback.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { discoveryState } from '../fixtures/exploration.js';
 

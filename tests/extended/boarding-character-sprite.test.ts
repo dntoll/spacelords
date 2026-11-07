@@ -3,7 +3,7 @@ import {
   BOARDING_FOOT_PLANT,
   boardingCharacterAtPoint,
   boardingCharacterSprite,
-} from '../../src/client/views/BoardingCharacterSprite.js';
+} from '../../src/client/views/boarding/BoardingCharacterSprite.js';
 
 describe('bordningsfigurer-fran-spritesheet', () => {
   it('isolates one figure per row and plants every figure slightly below the tile center', () => {

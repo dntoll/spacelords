@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
-import { FleetMapLayout } from '../../src/client/models/FleetMapLayout.js';
+import { FleetMapLayout } from '../../src/client/models/star-map/FleetMapLayout.js';
 import {
   HexCoordinate,
   HexGeometry,

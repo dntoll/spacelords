@@ -1,7 +1,10 @@
 import { renderOrders } from './OrdersView.js';
 import { gameText } from './GameText.js';
-import { BattleView, type BattleMapFactory } from './BattleView.js';
-import { BoardingView, type BoardingMapFactory } from './BoardingView.js';
+import { BattleView, type BattleMapFactory } from './battle/BattleView.js';
+import {
+  BoardingView,
+  type BoardingMapFactory,
+} from './boarding/BoardingView.js';
 import { BoardingEditorView } from './boarding/BoardingEditorView.js';
 import { discoveryControls } from './DiscoveryView.js';
 import { pirateAsFleet } from '../models/PirateFleet.js';
@@ -35,9 +38,9 @@ import type {
 } from './ViewContracts.js';
 import { renderBuildSelection } from './BuildSelectionView.js';
 import { renderPlanet } from './PlanetView.js';
-import { renderResearch } from './ResearchView.js';
-import { renderResearchSelection } from './ResearchDetailsView.js';
-import { updateResearchCamera } from './ResearchTreeView.js';
+import { renderResearch } from './research/ResearchView.js';
+import { renderResearchSelection } from './research/ResearchDetailsView.js';
+import { updateResearchCamera } from './research/ResearchTreeView.js';
 import { button, element, planetIllustration } from './dom.js';
 import { renderDecisions, renderTurnWarning } from './EmpireView.js';
 import { renderTurnActions } from './TurnActionsView.js';

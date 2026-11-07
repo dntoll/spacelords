@@ -2,20 +2,20 @@ import { describe, expect, it } from 'vitest';
 import {
   BoardingLighting,
   BOARDING_AMBIENT,
-} from '../../src/client/views/BoardingLighting.js';
+} from '../../src/client/views/boarding/BoardingLighting.js';
 import {
   BoardingMap,
   parseBoardingMap,
   type BoardingLight,
-} from '../../src/client/models/BoardingMap.js';
+} from '../../src/client/models/boarding/BoardingMap.js';
 import type {
   BoardingBattleState,
   BoardingFeature,
-} from '../../src/client/models/BoardingBattle.js';
+} from '../../src/client/models/boarding/BoardingBattle.js';
 import {
   composeBoardingMaps,
   boardingInterior,
-} from '../../src/client/models/BoardingComposer.js';
+} from '../../src/client/models/boarding/BoardingComposer.js';
 
 const lamp = (q: number, r: number): BoardingLight => ({
   position: { q, r },
@@ -163,7 +163,7 @@ describe('tileljus-for-sprites', () => {
 
 it('vertexljus-i-bordning: triangular interpolation preserves every corner and stays continuous across the diagonal', async () => {
   const { boardingQuadLight } =
-    await import('../../src/client/views/BoardingLightPainter.js');
+    await import('../../src/client/views/boarding/BoardingLightPainter.js');
   const values = [0.65, 0.8, 1, 0.7];
   expect(boardingQuadLight(values, 0, 0)).toBe(values[0]);
   expect(boardingQuadLight(values, 1, 0)).toBe(values[1]);

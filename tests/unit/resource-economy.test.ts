@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 import { PlanetEconomy, emptyStock } from '../../src/client/models/Economy.js';
-import { ResearchPlan } from '../../src/client/models/Research.js';
+import { ResearchPlan } from '../../src/client/models/research/Research.js';
 
 function turn(game: Game) {
   for (const frame of turnFrames(game)) game.applyFrame(frame);

@@ -1,6 +1,6 @@
 import { completeTacticalBattles } from '../fixtures/tactical-combat.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { EventPlayback } from '../../src/client/models/EventPlayback.js';
+import { EventPlayback } from '../../src/client/models/app/EventPlayback.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import type {
@@ -17,7 +17,7 @@ import { collectTurnFrames, turnFrames } from '../fixtures/turn-steps.js';
 import { discoveryState } from '../fixtures/exploration.js';
 import type { SavedGame } from '../../src/client/models/SaveRepository.js';
 import type p5 from 'p5';
-import { renderMapEvent } from '../../src/client/views/MapEventView.js';
+import { renderMapEvent } from '../../src/client/views/star-map/MapEventView.js';
 
 afterEach(() => vi.useRealTimers());
 

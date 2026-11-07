@@ -2,7 +2,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import type p5 from 'p5';
 import { AppModel } from '../../src/client/models/AppModel.js';
-import { GalaxyMapView } from '../../src/client/views/GalaxyMapView.js';
+import { GalaxyMapView } from '../../src/client/views/star-map/GalaxyMapView.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 
 const runtime = vi.hoisted(() => ({
@@ -20,7 +20,7 @@ vi.mock('p5', () => ({
     remove() {}
   },
 }));
-vi.mock('../../src/client/views/MapOverlayView.js', () => ({
+vi.mock('../../src/client/views/star-map/MapOverlayView.js', () => ({
   renderMapOverlays: () => {
     runtime.events.push('overlays');
   },

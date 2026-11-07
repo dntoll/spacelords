@@ -2,7 +2,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
-import { BattleView } from '../../src/client/views/BattleView.js';
+import { BattleView } from '../../src/client/views/battle/BattleView.js';
 import { renderSaveSlots } from '../../src/client/views/SaveSlotsView.js';
 import type { SaveRepository } from '../../src/client/models/SaveRepository.js';
 import type {

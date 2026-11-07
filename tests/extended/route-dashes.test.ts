@@ -2,7 +2,7 @@ import { expect, it, vi } from 'vitest';
 import type p5 from 'p5';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
-import { renderMapTradeRoutes } from '../../src/client/views/MapTradeRoutesView.js';
+import { renderMapTradeRoutes } from '../../src/client/views/star-map/MapTradeRoutesView.js';
 
 it.each([0.5, 1, 2])(
   'streckade-rutter-utan-transporter: renders transport state at zoom %s and resets dashes',

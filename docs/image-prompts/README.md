@@ -108,5 +108,5 @@ en riktningsoberoende liggande bild för utslagna och döda personer. Webbarket 
 
 ```sh
 python3 scripts/prepare-boarding-characters.py
-npx prettier --write src/client/views/BoardingCharacterAtlas.ts
+npx prettier --write src/client/views/boarding/BoardingCharacterAtlas.ts
 ```
