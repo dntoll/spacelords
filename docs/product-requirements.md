@@ -48,6 +48,19 @@ tidigare stödda sparversioner utan rensning.
 
 Se [planetköer](planet-queues.md).
 
+`utforskningsko-som-avstickare` är **Fullständigt implementerat**: en ledig
+Exploration ship-flotta eller en flotta med `Explore`/`Explore stars` tar
+närmaste nåbara kömål och återupptar sedan sin tidigare utforskning.
+`utforskad-planet-visar-kolonisationsdata` och
+`riktad-koloniskeppsbestallning` är **Fullständigt implementerat**: beskedet
+visar planettyp och antal `Build slots`. Om inget ledigt Colony ship finns kan
+spelaren beställa ett för målet från närmaste nåbara Colony ship factory.
+
+`anfallsko-for-pirater` och `anfallsko-som-avstickare` är **Fullständigt
+implementerat**: synliga pirater kan prioriteras i `Attack queue`. Närmaste
+lediga Fighter-flotta eller Patrol-flotta anfaller en gång och återupptar
+sedan sin tidigare order. Ett mål som lämnar aktuell sikt tas bort.
+
 ## Stridens spelgränssnitt, 2026-11-01
 
 - `fullskarms-stridskarta` — **Fullständigt implementerat**: hexkartan fyller

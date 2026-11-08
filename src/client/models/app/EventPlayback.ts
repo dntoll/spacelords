@@ -11,6 +11,12 @@ export interface EventDecision {
     planetId: string;
     label: string;
   }>;
+  readonly attackAction?: Readonly<{ pirateId: string; label: string }>;
+  readonly colonyShipAction?: Readonly<{
+    planetId: string;
+    label: string;
+    blockedReason: string | null;
+  }>;
 }
 
 export interface PlaybackEvent extends GameEvent {

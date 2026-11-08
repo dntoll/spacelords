@@ -39,6 +39,14 @@ function renderPlanetQueue(
           : 'Waiting for an available ship',
       ),
     );
+    if (kind === 'colonization' && !item.assignedFleetId) {
+      const build = button('Build Colony ship', () =>
+        emit({ type: 'request-colony-ship', planetId: item.planetId }),
+      );
+      build.disabled = locked || !!item.colonyShipBuildReason;
+      if (item.colonyShipBuildReason) build.title = item.colonyShipBuildReason;
+      row.append(build);
+    }
     const remove = button(
       `Remove ${item.name} from ${title}`,
       () =>
@@ -61,6 +69,55 @@ function renderPlanetQueue(
     items.map((item) => item.planetId),
     (planetId, index) =>
       emit({ type: 'move-planet-queue', kind, planetId, index }),
+    locked,
+  );
+  section.append(list);
+  return section;
+}
+
+function renderAttackQueue(
+  model: AppReadModel,
+  emit: IntentHandler,
+): HTMLElement {
+  const section = element('section', 'empire-card planet-queue-card');
+  section.append(element('h2', '', 'Attack queue'));
+  if (!model.attackQueue.length)
+    section.append(
+      element(
+        'p',
+        'muted-note',
+        'Add visible pirates when you want a Fighter fleet to attack them.',
+      ),
+    );
+  const list = element('ol', 'planet-queue-list');
+  const locked = !['planning', 'interrupted'].includes(model.phase);
+  for (const item of model.attackQueue) {
+    const row = element('li');
+    row.append(
+      element('strong', '', item.name),
+      element(
+        'span',
+        'muted-note',
+        item.assignedFleetName
+          ? `Assigned to ${item.assignedFleetName}`
+          : 'Waiting for an available Fighter fleet',
+      ),
+    );
+    const remove = button(
+      `Remove ${item.name} from Attack queue`,
+      () => emit({ type: 'remove-attack-queue', pirateId: item.pirateId }),
+      'queue-icon-button',
+    );
+    remove.textContent = '×';
+    remove.disabled = locked;
+    row.append(remove);
+    decorateQueueRow(row, item.pirateId, item.name, locked);
+    list.append(row);
+  }
+  bindQueueOrder(
+    list,
+    model.attackQueue.map((item) => item.pirateId),
+    (pirateId, index) => emit({ type: 'move-attack-queue', pirateId, index }),
     locked,
   );
   section.append(list);
@@ -110,6 +167,7 @@ export function renderDecisions(
   panel.append(
     renderPlanetQueue(model, emit, 'exploration'),
     renderPlanetQueue(model, emit, 'colonization'),
+    renderAttackQueue(model, emit),
   );
   page.append(panel);
   return page;

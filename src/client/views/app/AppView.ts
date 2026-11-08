@@ -919,6 +919,32 @@ export class AppView implements AppPort {
             ),
           );
         }
+        if (current.decision.attackAction) {
+          const action = current.decision.attackAction;
+          actions.append(
+            button(action.label, () =>
+              this.#emit({
+                type: 'add-attack-queue',
+                pirateId: action.pirateId,
+              }),
+            ),
+          );
+        }
+        if (current.decision.colonyShipAction) {
+          const action = current.decision.colonyShipAction;
+          const build = button(action.label, () =>
+            this.#emit({
+              type: 'request-colony-ship',
+              planetId: action.planetId,
+            }),
+          );
+          build.disabled = !!action.blockedReason;
+          if (action.blockedReason) {
+            build.title = action.blockedReason;
+            build.dataset.blocked = 'true';
+          }
+          actions.append(build);
+        }
         actions.append(
           button('Handle', () => this.#emit({ type: 'handle-discoveries' })),
           button('Ignore', () => this.#emit({ type: 'ignore-discoveries' })),
@@ -948,7 +974,9 @@ export class AppView implements AppPort {
     for (const action of announcement.querySelectorAll<HTMLButtonElement>(
       'button',
     ))
-      action.disabled = playback.stage !== 'awaiting-choice';
+      action.disabled =
+        playback.stage !== 'awaiting-choice' ||
+        action.dataset.blocked === 'true';
   }
 
   #positionAnnouncement(): void {

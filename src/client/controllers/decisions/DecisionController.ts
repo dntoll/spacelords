@@ -38,4 +38,20 @@ export class DecisionController {
   allowOtherFleetOrders(): void {
     return this.facade.allowOtherFleetOrders();
   }
+
+  addPirateToAttackQueue(pirateId: string): void {
+    return this.facade.addPirateToAttackQueue(pirateId);
+  }
+
+  removePirateFromAttackQueue(pirateId: string): void {
+    return this.facade.removePirateFromAttackQueue(pirateId);
+  }
+
+  movePirateAttackQueue(pirateId: string, index: number): void {
+    return this.facade.movePirateAttackQueue(pirateId, index);
+  }
+
+  requestColonyShip(planetId: string): void {
+    return this.facade.requestColonyShip(planetId);
+  }
 }

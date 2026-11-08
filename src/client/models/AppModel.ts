@@ -168,6 +168,7 @@ export interface AppReadModel {
   readonly projectSupply: readonly ProjectSupplySnapshot[];
   readonly decisions: readonly Decision[];
   readonly planetQueues: Game['planetQueues'];
+  readonly attackQueue: Game['attackQueue'];
   readonly attentionScreens: readonly DecisionScreen[];
   readonly tradeRoutes: readonly TradeRouteSnapshot[];
   readonly supply: SupplyOverview;
@@ -479,6 +480,7 @@ export class AppModel {
       projectSupply,
       decisions,
       planetQueues: this.#game.planetQueues,
+      attackQueue: this.#game.attackQueue,
       attentionScreens: Object.freeze([
         ...new Set(decisions.filter(needsAttention).map(decisionScreen)),
       ]),
@@ -1297,6 +1299,15 @@ export class AppModel {
           `${pirate.count} raider${pirate.count === 1 ? '' : 's'}${pirate.transports ? ` and ${pirate.transports} transport` : ''} in sight.`,
         );
     }
+    if (discovery.kind === 'planet-explored') {
+      const intel = this.#game.planetIntel(
+        new HexCoordinate(item.position.q, item.position.r),
+      );
+      if (intel?.surveyed)
+        details.push(
+          `Type: ${intel.environment} · Build slots: ${intel.maxBuildSlots}.`,
+        );
+    }
     if (interruption!.economyApplied)
       details.push(
         'The year is paused after production. No movement remains this year.',
@@ -1312,6 +1323,17 @@ export class AppModel {
           (entry) => entry.planetId === discovery.id,
         )
       : false;
+    const attackQueued =
+      discovery.kind === 'pirate' &&
+      this.#game.attackQueue.some((entry) => entry.pirateId === discovery.id);
+    const colonyShip =
+      discovery.kind === 'planet-explored'
+        ? this.#game.colonyShipRequest(discovery.id)
+        : null;
+    const offerColonyShip =
+      colonyShip &&
+      (!colonyShip.colonyShipBuildReason ||
+        colonyShip.colonyShipBuildReason.startsWith('No reachable'));
     return Object.freeze({
       title,
       details: Object.freeze(details),
@@ -1325,6 +1347,23 @@ export class AppModel {
                 queueKind === 'exploration'
                   ? 'Add to Exploration queue'
                   : 'Add to Colonization queue',
+            }),
+          }
+        : {}),
+      ...(discovery.kind === 'pirate' && !attackQueued
+        ? {
+            attackAction: Object.freeze({
+              pirateId: discovery.id,
+              label: 'Add to Attack queue',
+            }),
+          }
+        : {}),
+      ...(offerColonyShip
+        ? {
+            colonyShipAction: Object.freeze({
+              planetId: discovery.id,
+              label: 'Build Colony ship',
+              blockedReason: colonyShip.colonyShipBuildReason,
             }),
           }
         : {}),

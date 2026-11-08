@@ -298,6 +298,29 @@ export class MasterController {
         this.#render();
         this.#schedulePlayback();
       }
+      if (
+        playback.stage === 'awaiting-choice' &&
+        intent.type === 'add-attack-queue' &&
+        current?.decision?.attackAction?.pirateId === intent.pirateId
+      ) {
+        this.#decisions.addPirateToAttackQueue(intent.pirateId);
+        this.#turn.chooseEvent('ignore');
+        this.#model.save();
+        this.#render();
+        this.#schedulePlayback();
+      }
+      if (
+        playback.stage === 'awaiting-choice' &&
+        intent.type === 'request-colony-ship' &&
+        current?.decision?.colonyShipAction?.planetId === intent.planetId &&
+        !current.decision.colonyShipAction.blockedReason
+      ) {
+        this.#decisions.requestColonyShip(intent.planetId);
+        this.#turn.chooseEvent('ignore');
+        this.#model.save();
+        this.#render();
+        this.#schedulePlayback();
+      }
       return;
     }
     if (this.#model.snapshot.turnMovement) return;
@@ -550,6 +573,18 @@ export class MasterController {
         break;
       case 'move-planet-queue':
         this.#model.movePlanetQueue(intent.kind, intent.planetId, intent.index);
+        break;
+      case 'add-attack-queue':
+        this.#decisions.addPirateToAttackQueue(intent.pirateId);
+        break;
+      case 'remove-attack-queue':
+        this.#decisions.removePirateFromAttackQueue(intent.pirateId);
+        break;
+      case 'move-attack-queue':
+        this.#decisions.movePirateAttackQueue(intent.pirateId, intent.index);
+        break;
+      case 'request-colony-ship':
+        this.#decisions.requestColonyShip(intent.planetId);
         break;
       case 'confirm-research-removal':
         this.#research.confirmResearchRemoval();

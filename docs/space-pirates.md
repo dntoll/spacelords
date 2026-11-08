@@ -49,6 +49,16 @@ med kompakt status i flottkortet. Ordern, patrullpunkten och återstående
 rörelse bevaras vid omladdning, även under upptäckts- och stridsavbrott.
 Äldre sparningar bevaras utan att få någon Patrol-order automatiskt.
 
+## Attack queue
+
+`anfallsko-for-pirater` och `anfallsko-som-avstickare` är **Fullständigt
+implementerat**. Ett `Pirate ship in sight`-besked kan lägga kontakten i den
+omordningsbara `Attack queue` under `Decisions`. Närmaste nåbara lediga
+Fighter-flotta eller Patrol-flotta tar målet. Patrol-statusen bevaras under
+avstickaren och återupptas efter den första taktiska striden, även om piraten
+överlever eller spelaren retirerar. Målet tas bort om aktuell gemensam sikt
+förloras; dold eller senast känd position används aldrig.
+
 ## Strid
 
 Alla flottor flyttar samtidigt ett hexsteg. Därefter börjar taktisk strid

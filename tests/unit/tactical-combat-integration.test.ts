@@ -376,6 +376,6 @@ describe('tactical combat integration', () => {
     expect(restored.fleets).toEqual(state.fleets);
     expect(restored.events).toEqual(state.events);
     expect(restored.pirates).toEqual(state.pirates);
-    expect(restored.version).toBe(15);
+    expect(restored.version).toBe(16);
   });
 });

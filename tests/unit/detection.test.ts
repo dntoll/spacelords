@@ -444,7 +444,7 @@ describe('teleskop-i-exploration-ships', () => {
           shipUnits: [],
         })),
       });
-      expect(game.exportState().version).toBe(15);
+      expect(game.exportState().version).toBe(16);
       expect(game.exportState().explored).toContain('-6,6');
       expect(
         game.planetSnapshot(game.galaxy.homePlanet)!.economy.stock.Iron,

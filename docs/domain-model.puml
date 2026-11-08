@@ -45,11 +45,22 @@ class PlanetQueues {
   exploration : ordered Planet ids
   colonization : ordered Planet ids
 }
+class AttackQueue {
+  targets : ordered visible PirateFleet ids
+}
+class FleetDetour {
+  kind : explore-planet | attack-pirate
+  targetId
+}
 class PlanetKnowledge {
   detected
   surveyed
 }
 PlanetQueues --> Planet : prioritized targets
+AttackQueue --> PirateFleet : prioritized visible targets
+Fleet "1" o-- "0..1" FleetDetour
+FleetDetour --> Planet : temporary exploration target
+FleetDetour --> PirateFleet : temporary attack target
 PlanetKnowledge --> Planet
 Fleet --> "0..1" Planet : queued exploration target
 class Colony {

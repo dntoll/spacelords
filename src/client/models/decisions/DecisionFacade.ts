@@ -67,4 +67,20 @@ export class DecisionFacade {
   allowOtherFleetOrders(): void {
     this.host.game.allowOtherFleetOrders();
   }
+
+  addPirateToAttackQueue(pirateId: string): void {
+    this.host.game.addPirateToAttackQueue(pirateId);
+  }
+
+  removePirateFromAttackQueue(pirateId: string): void {
+    this.host.game.removePirateFromAttackQueue(pirateId);
+  }
+
+  movePirateAttackQueue(pirateId: string, index: number): void {
+    this.host.game.movePirateAttackQueue(pirateId, index);
+  }
+
+  requestColonyShip(planetId: string): void {
+    this.host.productionReceipt = this.host.game.requestColonyShip(planetId);
+  }
 }

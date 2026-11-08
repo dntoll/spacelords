@@ -172,6 +172,16 @@ export type AppIntent =
       readonly planetId: string;
       readonly index: number;
     }
+  | {
+      readonly type: 'add-attack-queue' | 'remove-attack-queue';
+      readonly pirateId: string;
+    }
+  | {
+      readonly type: 'move-attack-queue';
+      readonly pirateId: string;
+      readonly index: number;
+    }
+  | { readonly type: 'request-colony-ship'; readonly planetId: string }
   | { readonly type: 'start-slot' | 'request-clear-slot'; readonly id: number }
   | { readonly type: 'open-saves' | 'cancel-clear-slot' | 'confirm-clear-slot' }
   | {

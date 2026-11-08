@@ -11,6 +11,15 @@
   samma drag- och tangentbordshantering som övriga köer.
 - Äldre sparningar utan separat utforskningslista migrerar sina tidigare kända
   planeter till utforskade. Nya sparningar lagrar båda köerna och aktiva mål.
+- `FleetDetour` ligger i domänmodellen och låter endast `Explore`,
+  `Explore stars` och Patrol ligga kvar medan ett kömål tillfälligt styr
+  destinationen. Vyn får en oföränderlig status och ändrar aldrig ordern.
+- `Attack queue` lagrar piratidentiteter men tilldelar bara mål vars nuvarande
+  position ligger i gemensam sikt. Sparversion 16 lägger till kön och avstickaren
+  som valfria, bakåtkompatibla data.
+- Riktad Colony ship-produktion är en atomisk modellåtgärd: målet läggs i
+  Colonization queue, närmaste nåbara färdiga fabrik väljs och projektet får
+  en typad Colonize-startorder.
 
 ## Stridens karta och kontroller, 2026-11-01
 

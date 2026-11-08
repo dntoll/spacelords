@@ -32,6 +32,16 @@ Se [hela visionen](docs/game-vision.md).
   `Decisions`; lediga flottor väljs efter köordning och kortast framkomliga väg.
   Se [planetköer](docs/planet-queues.md).
 
+- **Köavstickare och riktad kolonisation:** `utforskningsko-som-avstickare`,
+  `utforskad-planet-visar-kolonisationsdata`,
+  `riktad-koloniskeppsbestallning`, `anfallsko-for-pirater` och
+  `anfallsko-som-avstickare` är **Fullständigt implementerat**. Explore-flottor
+  kan tillfälligt utforska en köplanet och Patrol-flottor kan anfalla en synlig
+  köad pirat innan deras tidigare order återupptas. Utforskade planetbesked
+  visar typ och byggplatser och kan beställa ett riktat Colony ship från
+  närmaste nåbara fabrik. Se [planetköer](docs/planet-queues.md) och
+  [Space pirates](docs/space-pirates.md).
+
 - **Bordningskamera:** `kamerafokus-vid-bordningssoldatbyte`,
   `kameraoverblick-vid-synlig-bordningsrorelse`,
   `kameraoverblick-fore-bordningsskott` och

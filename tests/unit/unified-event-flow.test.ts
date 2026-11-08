@@ -169,6 +169,42 @@ describe('gemensamt-handelseflode', () => {
     expect(playback.snapshot.stage).toBe('announcing');
   });
 
+  it('utforskad-planet-visar-kolonisationsdata: includes type, build slots and the dedicated Colony ship action', () => {
+    const game = Game.restore(discoveryState());
+    game.startTurn();
+    while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
+    const checkpoint = game.exportState();
+    const discovery = checkpoint.simulation!.discoveries.find(
+      (item) => item.kind === 'planet',
+    )!;
+    const state: GameState = {
+      ...checkpoint,
+      surveyedPlanets: [...(checkpoint.surveyedPlanets ?? []), discovery.id],
+      simulation: {
+        ...checkpoint.simulation!,
+        discoveries: checkpoint.simulation!.discoveries.map((item) =>
+          item.id === discovery.id
+            ? { ...item, kind: 'planet-explored' as const }
+            : item,
+        ),
+      },
+    };
+    const current = session(state).open();
+    current.model.beginEventPlayback();
+    const event = current.model.snapshot.eventPlayback?.events.find(
+      (item) => item.decision?.title === 'Planet explored',
+    );
+    const planet = state.world.systems
+      .flatMap((system) => system.planets)
+      .find((item) => item.id === discovery.id)!;
+
+    expect(event?.decision?.details).toContain(
+      `Type: ${planet.environment} · Build slots: ${planet.buildSlots}.`,
+    );
+    expect(event?.decision?.colonyShipAction?.label).toBe('Build Colony ship');
+    current.controller.dispose();
+  });
+
   it('spara-avbrutet-ar: restores each choice and handling without replaying movement, combat or announcements', async () => {
     const slot = session();
     let current = slot.open();
