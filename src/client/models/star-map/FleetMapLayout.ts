@@ -8,6 +8,8 @@ export interface FleetMapMarker {
   readonly scale: number;
 }
 
+export type RouteFleetPlacement = 'center' | 'endpoint';
+
 // kartflottor / flottval-pa-kartan: drawing and hit tests share world coordinates.
 export class FleetMapLayout {
   static readonly hitRadius = HexGeometry.size / 4;
@@ -60,6 +62,7 @@ export class FleetMapLayout {
     fleets: readonly FleetSnapshot[],
     routes: readonly TradeRouteSnapshot[] = [],
     zoom = 1,
+    routePlacement: RouteFleetPlacement = 'center',
   ): readonly FleetMapMarker[] {
     const groups = new Map<string, FleetSnapshot[]>();
     for (const fleet of fleets) {
@@ -68,8 +71,15 @@ export class FleetMapLayout {
         !Object.values(fleet.ships).some((count) => count > 0)
       )
         continue;
-      const key = routes.some((route) => route.id === fleet.routeId)
-        ? `route:${fleet.routeId}`
+      const route = routes.find((candidate) => candidate.id === fleet.routeId);
+      const atEndpoint =
+        route && [route.start.key, route.end.key].includes(fleet.position.key);
+      const key = route
+        ? routePlacement === 'center'
+          ? `route:${route.id}`
+          : atEndpoint
+            ? `route-endpoint:${route.id}:${fleet.position.key}`
+            : fleet.position.key
         : fleet.position.key;
       const group = groups.get(key) ?? [];
       group.push(fleet);
@@ -93,6 +103,42 @@ export class FleetMapLayout {
                   point: Object.freeze({
                     x: (start.x + end.x) / 2,
                     y: (start.y + end.y) / 2 + offset,
+                  }),
+                  scale: 0.6,
+                });
+              }
+              const endpointRoute = routes.find(
+                (route) =>
+                  routePlacement === 'endpoint' &&
+                  key === `route-endpoint:${route.id}:${fleet.position!.key}`,
+              );
+              if (endpointRoute) {
+                const endpoint = HexGeometry.toPoint(fleet.position!);
+                const other = HexGeometry.toPoint(
+                  endpointRoute.start.key === fleet.position!.key
+                    ? endpointRoute.end
+                    : endpointRoute.start,
+                );
+                const length = Math.hypot(
+                  other.x - endpoint.x,
+                  other.y - endpoint.y,
+                );
+                const direction = {
+                  x: (other.x - endpoint.x) / length,
+                  y: (other.y - endpoint.y) / length,
+                };
+                const offset = (index - (group.length - 1) / 2) * 18;
+                return Object.freeze({
+                  fleet,
+                  point: Object.freeze({
+                    x:
+                      endpoint.x +
+                      direction.x * this.orbitRadius -
+                      direction.y * offset,
+                    y:
+                      endpoint.y +
+                      direction.y * this.orbitRadius +
+                      direction.x * offset,
                   }),
                   scale: 0.6,
                 });
@@ -121,10 +167,11 @@ export class FleetMapLayout {
     point: Point,
     routes: readonly TradeRouteSnapshot[] = [],
     zoom = 1,
+    routePlacement: RouteFleetPlacement = 'center',
   ): string | null {
     let nearest: string | null = null;
     let distance = Infinity;
-    for (const marker of this.markers(fleets, routes, zoom)) {
+    for (const marker of this.markers(fleets, routes, zoom, routePlacement)) {
       const next = Math.hypot(
         point.x - marker.point.x,
         point.y - marker.point.y,

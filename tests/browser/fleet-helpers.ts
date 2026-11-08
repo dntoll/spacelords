@@ -73,7 +73,9 @@ export async function selectMapFleet(
     .count();
   const marker = FleetMapLayout.markers(
     fleets,
-    routeView ? game.tradeRoutes : [],
+    game.tradeRoutes,
+    1,
+    routeView ? 'center' : 'endpoint',
   ).find(
     (marker) => marker.fleet.name === name || marker.fleet.ownName === name,
   );

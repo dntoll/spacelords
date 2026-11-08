@@ -23,7 +23,7 @@ interface MovementTrack {
   readonly movements: TurnMovement[];
 }
 
-/** samtidig-farledsanimation: replay visible tracks without changing simulation order. */
+/** samtidig-automatisk-flottanimation: replay visible tracks without changing simulation order. */
 export class TurnMovementPlayback {
   readonly #tracks = new Map<string, MovementTrack>();
   readonly #positions = new Map<string, HexCoordinate>();
@@ -95,22 +95,41 @@ export class TurnMovementPlayback {
   }
 
   get batches(): readonly (readonly (readonly TurnMovement[])[])[] {
-    const traffic: (readonly TurnMovement[])[] = [];
-    const independent: (readonly TurnMovement[])[] = [];
+    const automatic: (readonly TurnMovement[])[] = [];
+    const manual: (readonly TurnMovement[])[] = [];
     for (const track of this.tracks) {
       const fleet = this.#tracks.get(track[0]!.fleetId)!.fleet;
-      const routeTraffic =
-        ('routeId' in fleet && fleet.routeId) ||
-        ('civilian' in fleet && fleet.civilian);
-      (routeTraffic ? traffic : independent).push(track);
+      const autonomous =
+        'routeId' in fleet &&
+        !!(
+          fleet.routeId ||
+          fleet.civilian ||
+          fleet.exploration ||
+          fleet.patrol ||
+          fleet.automation ||
+          fleet.planetQueue
+        );
+      (autonomous ? automatic : manual).push(track);
     }
-    independent.sort((a, b) =>
-      comparePlaybackPositions(a[0]!.from, b[0]!.from),
-    );
+    manual.sort((a, b) => comparePlaybackPositions(a[0]!.from, b[0]!.from));
     return Object.freeze([
-      ...(traffic.length ? [Object.freeze(traffic)] : []),
-      ...independent.map((track) => Object.freeze([track])),
+      ...(automatic.length ? [Object.freeze(automatic)] : []),
+      ...manual.map((track) => Object.freeze([track])),
     ]);
+  }
+
+  isAutonomous(fleetId: string): boolean {
+    const fleet = this.#tracks.get(fleetId)?.fleet;
+    return !!(
+      fleet &&
+      'routeId' in fleet &&
+      (fleet.routeId ||
+        fleet.civilian ||
+        fleet.exploration ||
+        fleet.patrol ||
+        fleet.automation ||
+        fleet.planetQueue)
+    );
   }
 
   begin(movements: TurnMovement | readonly TurnMovement[]): void {

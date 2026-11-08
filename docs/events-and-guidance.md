@@ -138,14 +138,20 @@ händelsetexter bevaras.
   `geografisk-arsuppspelning` fram till varje avbrott och efter årets slut. End turn är synlig men spärrad under simulering och
   presentation. Inga nya order utförs medan presentationen pågår.
   Upptäckts- och stridsavbrott behålls före årets avslut.
-- `en-flotta-i-taget`: utanför farledstrafiken följer varje synlig flottmarkör
-  hela sin färd innan nästa flottmarkör animeras. Kameran står stilla under färden. Spelets
-  förflyttning, strider och upptäckter behåller sina befintliga regler.
+- `en-flotta-i-taget`: manuella Move-flottor följer var och en hela sin färd
+  innan nästa manuella flottmarkör animeras. Kameran står stilla under färden.
+  Autonoma order omfattas i stället av `samtidig-automatisk-flottanimation`.
 - `samtidig-farledsanimation`: synliga flottor på Route och Civilian shuttles
   animeras först tillsammans. Kameran zoomar ut vid behov så samtliga visade
   färder ryms, även deras svängar, och står sedan stilla. En flotta som når
   slutet av sin färd stannar medan de andra fortsätter. Kravet är
   **Fullständigt implementerat**.
+- `samtidig-automatisk-flottanimation`: Route/Civilian, Explore,
+  Explore stars, Patrol, Guard routes, Auto salvage och automatiskt tilldelade
+  planetköer animeras tillsammans i en gemensam utzoomad vy. Kameran står
+  stilla under färden. Endast steg fram till ett upptäcktsavbrott ingår;
+  därefter fokuserar eventkameran upptäckten. Kravet är
+  **Fullständigt implementerat** och utökar `samtidig-farledsanimation`.
 - `destinationer-for-aktiva-skepp`: under årets presentation kan bara
   flottorna som rör sig i det aktuella steget visa destinationspilar.
   Pilar visas i Fleets för flottor utan Route, och för vald flotta utan
@@ -154,8 +160,8 @@ händelsetexter bevaras.
   `ruttflottor-utan-destinationspilar`.
   Stillastående flottors pilar döljs under uppspelning och händelseannonsering. Kravet är
   **Fullständigt implementerat**.
-- `geografisk-arsuppspelning`: efter den samtidiga farledstrafiken visas
-  övriga färder från vänster till höger utifrån startplatsen. Vid samma
+- `geografisk-arsuppspelning`: efter den samtidiga autonoma gruppen visas
+  manuella färder från vänster till höger utifrån startplatsen. Vid samma
   horisontella läge visas den nedre först. Därefter annonseras platsbundna
   händelser i samma geografiska ordning; händelser på samma plats behåller
   sin inbördes ordning. Globala och äldre positionslösa händelser visas sist
@@ -183,6 +189,11 @@ händelsetexter bevaras.
   rullning därefter. Tidigare vy, giltiga objektval och kamera återställs när
   presentationen är klar. Det gäller även Research,
   Decisions och planetvyn. Händelser avslöjar ingen dold information.
+
+Ändring 2026-11-08: `samtidig-automatisk-flottanimation` ersätter
+`en-flotta-i-taget` för alla autonoma order och utökar
+`samtidig-farledsanimation`. Manuella Move-order behåller den seriella
+presentationen.
 
 Ändring 2026-10-31: `samtidig-farledsanimation` ersätter `en-flotta-i-taget`
 för farledstrafiken. `geografisk-arsuppspelning` ersätter kravet på verklig

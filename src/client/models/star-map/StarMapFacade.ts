@@ -132,8 +132,11 @@ export class StarMapFacade {
           : this.host.game.pirateSnapshots().map(pirateAsFleet)),
       ],
       this.host.camera.screenToWorld(point),
-      this.host.screen === 'route' ? this.host.game.tradeRoutes : [],
+      ['map', 'fleets', 'route'].includes(this.host.screen)
+        ? this.host.game.tradeRoutes
+        : [],
       this.host.camera.snapshot.zoom,
+      this.host.screen === 'route' ? 'center' : 'endpoint',
     );
   }
 

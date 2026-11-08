@@ -330,6 +330,7 @@ export interface AppPort {
   animateTurnStep?(
     frame: TurnFrame,
     onProgress?: (progress: number) => void,
+    duration?: number,
   ): Promise<void>;
   dispose(): void;
 }
@@ -339,6 +340,7 @@ export interface MapPort {
   animateTurnStep?(
     frame: TurnFrame,
     onProgress?: (progress: number) => void,
+    duration?: number,
   ): Promise<void>;
   dispose(): void;
 }

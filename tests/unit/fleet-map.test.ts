@@ -560,6 +560,49 @@ it('ruttflottor-pa-kartan: Route highlights idle transports, labels route fleets
   }
 });
 
+it('ruttflottor-vid-ruttanslutning: places an endpoint fleet toward its route on Star map and Fleets but keeps travel positions real', () => {
+  const route = {
+    id: 'route-test',
+    a: 'a',
+    b: 'b',
+    from: 'A',
+    to: 'B',
+    start: new HexCoordinate(0, 0),
+    end: new HexCoordinate(4, 0),
+    closing: false,
+    fleetIds: ['assigned'],
+    capacity: 10,
+    hasActiveTransport: true,
+    waiting: 0,
+    status: 'Ready',
+  };
+  const assigned = {
+    ...fleet('assigned'),
+    routeId: route.id,
+    destination: route.end,
+  };
+  const endpoint = FleetMapLayout.markers(
+    [assigned],
+    [route],
+    0.35,
+    'endpoint',
+  )[0]!;
+  const start = HexGeometry.toPoint(route.start);
+  expect(endpoint.point.y).toBeCloseTo(start.y);
+  expect(endpoint.point.x).toBeGreaterThan(start.x);
+  expect(endpoint.point.x - start.x).toBeCloseTo(FleetMapLayout.orbitRadius);
+  const travelling = {
+    ...assigned,
+    position: new HexCoordinate(2, 0),
+  };
+  expect(
+    FleetMapLayout.markers([travelling], [route], 0.35, 'endpoint')[0]!.point,
+  ).toEqual(FleetMapLayout.markers([travelling])[0]!.point);
+  expect(
+    FleetMapLayout.hit([assigned], endpoint.point, [route], 0.35, 'endpoint'),
+  ).toBe(assigned.id);
+});
+
 it('beslutsvagledning-i-vyn: idle fleet decisions have a solid amber ring and Production marks the planet needing an order', () => {
   const { sketch } = drawing();
   const dash = vi.fn();

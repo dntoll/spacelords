@@ -59,7 +59,9 @@ export function renderMapOverlays(
     model.camera.zoom,
     model,
     model.screen === 'fleets',
-    model.screen === 'route' ? model.tradeRoutes : null,
+    ['map', 'fleets', 'route'].includes(model.screen)
+      ? model.tradeRoutes
+      : null,
     model.screen === 'fleets'
       ? model.decisions
           .filter(needsAttention)
@@ -69,5 +71,6 @@ export function renderMapOverlays(
     movementPoints,
     shipImages,
     model.screen === 'fleets',
+    model.screen === 'route' ? 'center' : 'endpoint',
   );
 }

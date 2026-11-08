@@ -71,7 +71,7 @@ import {
 } from './ProductionPresence.js';
 import { ProjectSupply, type ProjectSupplySnapshot } from './ProjectSupply.js';
 import { Galaxy, Star, StarSystem, type MapCell } from './Galaxy.js';
-import { HexCoordinate } from './HexCoordinate.js';
+import { HexCoordinate, HexGeometry } from './HexCoordinate.js';
 import { HexNavigation } from './HexNavigation.js';
 import type { TerrainHex } from './Galaxy.js';
 import { shipTransferIssue } from './fleets/FleetTransfer.js';
@@ -779,6 +779,7 @@ interface SavedFleet extends Omit<
 }
 
 export interface GameState {
+  readonly productionFleetSequences?: Readonly<Record<string, number>>;
   readonly planetQueues?: PlanetQueuesSnapshot;
   readonly surveyedPlanets?: readonly string[];
   readonly tradeRoutes: readonly TradeRoute[];
@@ -786,7 +787,7 @@ export interface GameState {
   readonly componentOrders?: readonly ComponentOrder[];
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
-  readonly version: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
+  readonly version: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15;
   readonly knownTerrain?: readonly string[];
   readonly salvage?: ReturnType<Salvage['snapshot']>;
   readonly recoveredResearch?: readonly (
@@ -840,6 +841,7 @@ export class Game {
   #round = 1;
   #phase: GamePhase = 'planning';
   #sequence = 1;
+  #productionFleetSequences: Record<string, number> = {};
   #colonies = new Map<string, ColonyState>();
   #fleets: Fleet[];
   #pirates: PirateFleet[];
@@ -907,7 +909,8 @@ export class Game {
     if (this.#phase === 'simulating')
       throw new Error('Wait for the turn to finish before saving.');
     return structuredClone({
-      version: 14,
+      version: 15,
+      productionFleetSequences: { ...this.#productionFleetSequences },
       planetQueues: this.#planetQueues.snapshot(),
       surveyedPlanets: [...this.#surveyedPlanets],
       knownTerrain: [...this.#knownTerrain],
@@ -955,7 +958,9 @@ export class Game {
 
   static restore(state: GameState): Game {
     if (
-      ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(state.version) ||
+      ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(
+        state.version,
+      ) ||
       !Number.isSafeInteger(state.round) ||
       state.round < 1 ||
       !Number.isSafeInteger(state.sequence) ||
@@ -1009,6 +1014,17 @@ export class Game {
       researched: string[];
       researchQueue: string[];
       recoveredResearch: Technology[];
+    };
+    if (
+      state.version >= 15 &&
+      (!copy.productionFleetSequences ||
+        Object.entries(copy.productionFleetSequences).some(
+          ([key, next]) => !key || !Number.isSafeInteger(next) || next < 1,
+        ))
+    )
+      throw new Error('Invalid saved production fleet sequences.');
+    game.#productionFleetSequences = {
+      ...(copy.productionFleetSequences ?? {}),
     };
     if (state.version >= 7 && !Array.isArray(state.pirates))
       throw new Error('Missing saved pirate fleets.');
@@ -4560,6 +4576,8 @@ export class Game {
     delete fleet.explorationTargetId;
     delete fleet.planetQueue;
     delete fleet.starSurvey;
+    fleet.destination = null;
+    delete fleet.courseOrigin;
     this.#updateExploration(fleet);
   }
   setPatrol(id: string, center?: HexCoordinate): void {
@@ -5100,11 +5118,7 @@ export class Game {
     ) {
       const fleet: Fleet = {
         id: this.#id('fleet'),
-        name: this.#uniqueFleetName(
-          ship === 'Civilian shuttle'
-            ? `${planet.name} Civilian transport`
-            : `${planet.name} ${ship}`,
-        ),
+        name: this.#productionFleetName(ship, planet),
         position: planet.position,
         destination: null,
         ships: { ...zeroShips(), [ship]: 1 },
@@ -5153,9 +5167,7 @@ export class Game {
     if (!reserve) {
       reserve = {
         id: this.#id('fleet'),
-        name: this.#uniqueFleetName(
-          initialOrder ? `${planet.name} ${ship}` : `${planet.name} Home Fleet`,
-        ),
+        name: this.#productionFleetName(ship, planet),
         position: planet.position,
         destination: null,
         ships: zeroShips(),
@@ -6396,7 +6408,36 @@ export class Game {
       else {
         delete fleet.starSurvey;
         const home = this.galaxy.homePlanet.position;
-        const candidates = this.galaxy
+        const homePoint = HexGeometry.toPoint(home);
+        const angleFromHome = (point: HexCoordinate): number | null => {
+          if (point.key === home.key) return null;
+          const target = HexGeometry.toPoint(point);
+          return Math.atan2(target.y - homePoint.y, target.x - homePoint.x);
+        };
+        const angleDistance = (a: number, b: number) => {
+          const difference = Math.abs(a - b) % (Math.PI * 2);
+          return Math.min(difference, Math.PI * 2 - difference);
+        };
+        const otherExplorers = this.#fleets.filter(
+          (candidate) =>
+            candidate.id !== fleet.id && candidate.exploration === 'explore',
+        );
+        const occupiedTargets = new Set(
+          otherExplorers.flatMap((candidate) =>
+            candidate.destination ? [candidate.destination.key] : [],
+          ),
+        );
+        const occupiedAngles = otherExplorers.flatMap((candidate) => {
+          const point = candidate.destination ?? candidate.position;
+          const angle = point ? angleFromHome(point) : null;
+          return angle === null ? [] : [angle];
+        });
+        const preferredPoint =
+          fleet.position.key === home.key ? fleet.destination : fleet.position;
+        const preferredAngle = preferredPoint
+          ? angleFromHome(preferredPoint)
+          : null;
+        const frontier = this.galaxy
           .mapSnapshot()
           .map((cell) => cell.position)
           .filter(
@@ -6408,14 +6449,37 @@ export class Game {
               point
                 .neighbors()
                 .some((neighbor) => this.#explored.has(neighbor.key)),
-          )
-          .sort(
-            (a, b) =>
-              home.distanceTo(a) - home.distanceTo(b) ||
-              fleet.position!.distanceTo(a) - fleet.position!.distanceTo(b) ||
-              Math.atan2(a.r - home.r, a.q - home.q) -
-                Math.atan2(b.r - home.r, b.q - home.q),
           );
+        const unclaimed = frontier.filter(
+          (point) => !occupiedTargets.has(point.key),
+        );
+        const candidates = unclaimed.length ? unclaimed : frontier;
+        candidates.sort((a, b) => {
+          const aAngle = angleFromHome(a) ?? 0;
+          const bAngle = angleFromHome(b) ?? 0;
+          const direction =
+            preferredAngle !== null
+              ? angleDistance(aAngle, preferredAngle) -
+                angleDistance(bAngle, preferredAngle)
+              : Math.min(
+                  ...occupiedAngles.map((angle) =>
+                    angleDistance(bAngle, angle),
+                  ),
+                  Math.PI,
+                ) -
+                Math.min(
+                  ...occupiedAngles.map((angle) =>
+                    angleDistance(aAngle, angle),
+                  ),
+                  Math.PI,
+                );
+          return (
+            home.distanceTo(a) - home.distanceTo(b) ||
+            direction ||
+            fleet.position!.distanceTo(a) - fleet.position!.distanceTo(b) ||
+            a.key.localeCompare(b.key)
+          );
+        });
         target =
           candidates.find(
             (point) =>
@@ -7117,6 +7181,22 @@ export class Game {
       const suffix = ` (${number})`;
       name = clean.slice(0, 40 - suffix.length) + suffix;
     }
+    return name;
+  }
+  #productionFleetName(ship: ShipType, planet: Planet): string {
+    const key = JSON.stringify([planet.id, ship]);
+    let number = this.#productionFleetSequences[key] ?? 1;
+    let name = '';
+    do {
+      const suffix = ` ${number}`;
+      name = `${ship} ${planet.name}`.slice(0, 40 - suffix.length) + suffix;
+      number += 1;
+    } while (
+      this.#fleets.some(
+        (fleet) => fleet.name.toLowerCase() === name.toLowerCase(),
+      )
+    );
+    this.#productionFleetSequences[key] = number;
     return name;
   }
   #nextFleetName(): string {

@@ -149,6 +149,7 @@ export class GalaxyMapView implements MapPort {
   animateTurnStep(
     frame: TurnFrame,
     onProgress?: (progress: number) => void,
+    duration = 400,
   ): Promise<void> {
     if (
       this.#disposed ||
@@ -168,7 +169,7 @@ export class GalaxyMapView implements MapPort {
         }
         if (this.#ready) {
           started ??= now;
-          const progress = Math.min(1, (now - started) / 400);
+          const progress = Math.min(1, (now - started) / duration);
           this.#movement = { movements: frame.movements, progress };
           onProgress?.(progress);
           this.#requestDraw();

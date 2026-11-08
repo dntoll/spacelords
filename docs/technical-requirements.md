@@ -975,16 +975,22 @@ påverkas inte. Kartan och planetens Production-undersida läser samma oföränd
 ProductionGuidance; alla val och beställningar går genom controller. Sparformat,
 forskning och Domes-per-byggplats-regler ändras inte.
 
-`unika-flottnamn` valideras i Game vid namnbyte och används vid all automatisk
+`produktionsflottors-automatiska-namn` lagrar nästa nummer per planet-ID och
+skeppstyp i sparformat 15. Game skapar namnet atomärt när produktionen behöver
+en ny flotta. Version 2–14 läses fortsatt; befintliga namn ändras inte och
+första nya numret väljs utan konflikt. `unika-flottnamn` valideras i Game vid namnbyte och används vid all automatisk
 namngivning. Inläsning normaliserar äldre dubbletter utan att ändra flott-ID,
 skepp, order eller sparformat. `rutt-eskortfordelning` använder samma
 TradeAssignment-validering i modell och förhandsvisning. Game fördelar Fighters
 via befintlig transferShips och fysisk FleetPursuit; skeppsenheter och motorer
 bevaras. Fördelningen räknar även väntande förstärkningar och muterar först efter
 validering. Kapacitet och leveranser använder fortfarande enbart Transport ship.
-`ruttflottor-pa-kartan` använder FleetMapLayout för både p5-rendering och
-träfftest. Endast Route skickar in rutter för mittpunktsplacering. Kamerazoom
-styr avstånd och träffradie. Flottornas verkliga positioner ändras inte av vyn.
+`ruttflottor-pa-kartan` och `ruttflottor-vid-ruttanslutning` använder
+FleetMapLayout för både p5-rendering och träfftest. Route använder
+mittpunktsplacering. Star map och Fleets använder endpointplacering en halv
+hexradie mot ruttens andra ände och fasta världsmått mellan samlokaliserade
+flottor. Resande flottor använder verklig position. Vyn ändrar aldrig
+domänpositionen.
 
 `forskning-kraver-station` valideras i Game.selectResearch innan ResearchPlan
 lägger till tekniken eller dess förkunskaper. ResearchSnapshot exponerar
@@ -1204,14 +1210,27 @@ Enhetstester skyddar ordning, timer, spärrar, sparkompatibilitet, positioner
 och återställning. Riktade mobiltester skyddar stående/liggande layout,
 kartmarkering, kontroller, rullning och omladdning i Chromium och WebKit.
 
-## Seriell flottpresentation och händelseannonsering
+## Flottpresentation och händelseannonsering
+
+### Gemensam autonom presentation 2026-11-08
+
+`samtidig-automatisk-flottanimation` är **Fullständigt implementerat**.
+TurnMovementPlayback klassificerar Route/Civilian, Explore, Explore stars,
+Patrol, Guard routes, Auto salvage och automatiskt tilldelade planetköer från
+flottans domänsnapshot och samlar deras synliga spår i en gemensam första
+batch. Manuella spår behåller geografiskt sorterade enflottebatcher.
+MasterController ramar in alla batchens ändpunkter en gång och animerar ett
+steg per kvarvarande spår med samma klocka. En autonom batch begränsas till
+cirka fyra sekunders rörelse genom kortare bildtid per hex; manuella Move-steg
+behåller 400 ms. Simuleringsordning, rörelsebudget,
+upptäcktsavbrott och sparad händelseordning ändras inte.
 
 ### Gemensam farledspresentation och geografisk ordning 2026-10-31
 
 `samtidig-farledsanimation`, `destinationer-for-aktiva-skepp` och
 `geografisk-arsuppspelning` är **Fullständigt implementerat**.
-TurnMovementPlayback grupperar Route-flottor och Civilian shuttles i en
-gemensam första grupp. Övriga flottspår sorteras efter sin första synliga
+Farledstrafiken ingår numera i den autonoma första gruppen. Manuella
+flottspår sorteras efter sin första synliga
 världsposition: stigande x, sedan fallande y. EventPlayback använder samma
 ordning för platsbundna händelser och lägger positionslösa sist, med stabil
 ordning för lika positioner. Simulering och sparad logg sorteras aldrig om;
@@ -1225,7 +1244,7 @@ aktuella markörer med samma klocka. Destinationspilar begränsas till dessa
 flottor och till vald flotta utan Route, och döljs under händelser. Kameran förblir stilla under gruppens färd;
 befintlig storleksanpassning och minskad rörelse återanvänds.
 
-Detta ersätter den seriella presentationen nedan för farledstrafik och tidigare
+Detta ersätter den seriella presentationen nedan för autonoma order och tidigare
 krav på kronologisk annonsering. Domänmodell och sparformat ändras inte.
 Kravkopplade regressionstester skyddar samtidighet, geografisk ordning,
 destinationspilar, mobil inramning, sikt och kameraåterställning.

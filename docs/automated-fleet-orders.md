@@ -1,5 +1,15 @@
 # Automatiska flottorder
 
+## Radiell hexutforskning
+
+`radiell-automatisk-hexutforskning` — **Fullständigt implementerat**.
+Explore-flottor väljer olika lediga frontierhexar. En ny explorer vid Tellus
+väljer den nåbara riktning som ligger längst från andra explorers riktningar.
+Efter avfärd prioriterar flottan frontierhexar längs vinkeln från Tellus genom
+dess aktuella position inom närmaste outforskade lager. Lika val avgörs stabilt
+med hexavstånd från flottan och koordinat. Explore stars och planetköer behåller
+sina egna regler.
+
 ## Återkommande bärgning
 
 `automatisk-bargning` — **Fullständigt implementerat**.

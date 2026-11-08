@@ -1703,8 +1703,12 @@ export class AppView implements AppPort {
   animateTurnStep(
     frame: TurnFrame,
     onProgress?: (progress: number) => void,
+    duration?: number,
   ): Promise<void> {
-    return this.#map?.animateTurnStep?.(frame, onProgress) ?? Promise.resolve();
+    return (
+      this.#map?.animateTurnStep?.(frame, onProgress, duration) ??
+      Promise.resolve()
+    );
   }
 
   renderCamera(model: AppReadModel): void {

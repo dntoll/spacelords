@@ -1,5 +1,10 @@
 # Stridsrapporter, bärgning och varv
 
+`kartobjekt-foljer-zoom` — **Fullständigt implementerat**. Vrakens kryss,
+offset från hexcentrum och separation mellan flera vrak använder fasta
+världsmått och följer därmed kartans zoom. Pekning använder fortfarande en
+minsta osynlig skärmstorlek så att vrak kan väljas på mobil.
+
 `vrak-utanfor-stjarnor` — **Fullständigt implementerat**. Nya startvrak
 placeras på skilda, närmaste framkomliga hexar vid Nadir och Aster.
 Stjärnor, täta asteroidfält och platser utanför kartan undviks.

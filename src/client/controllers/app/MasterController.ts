@@ -1107,16 +1107,25 @@ export class MasterController {
           await this.#animateCamera();
           if (this.#disposed) return;
           const steps = Math.max(...batch.map((track) => track.length));
+          const stepDuration = movementPlayback.isAutonomous(
+            batch[0]![0]!.fleetId,
+          )
+            ? Math.min(400, 4000 / steps)
+            : 400;
           for (let index = 0; index < steps; index++) {
             const movements = batch.flatMap((track) =>
               track[index] ? [track[index]!] : [],
             );
             this.#turn.focusTurnMovement(movements);
             this.#render();
-            await (this.#view.animateTurnStep?.({ movements }, (progress) => {
-              if (!this.#disposed && this.#turn.advanceTurnMovement(progress))
-                this.#render();
-            }) ?? Promise.resolve());
+            await (this.#view.animateTurnStep?.(
+              { movements },
+              (progress) => {
+                if (!this.#disposed && this.#turn.advanceTurnMovement(progress))
+                  this.#render();
+              },
+              stepDuration,
+            ) ?? Promise.resolve());
             if (this.#disposed) return;
             this.#turn.completeTurnMovement();
           }

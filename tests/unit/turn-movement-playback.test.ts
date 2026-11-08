@@ -111,6 +111,59 @@ it('samtidig-farledsanimation / geografisk-arsuppspelning: groups route traffic 
   expect(Object.isFrozen(playback.currents)).toBe(true);
 });
 
+it('samtidig-automatisk-flottanimation: groups every autonomous order while manual Move remains separate', () => {
+  const base = new Game(createExampleGalaxy()).fleetSnapshots()[0]!;
+  const fleets = [
+    { ...base, id: 'route', routeId: 'route-a' },
+    {
+      ...base,
+      id: 'civilian',
+      civilian: {
+        status: 'Waiting',
+        passengers: 0,
+        reserved: 0,
+        path: [],
+        stopping: false,
+      },
+    },
+    { ...base, id: 'explore', exploration: 'explore' as const },
+    {
+      ...base,
+      id: 'patrol',
+      patrol: { center: new HexCoordinate(0, 0), range: 1 },
+    },
+    { ...base, id: 'salvage', automation: 'salvage' as const },
+    {
+      ...base,
+      id: 'planet-queue',
+      planetQueue: 'exploration' as const,
+    },
+    { ...base, id: 'manual' },
+  ].map((fleet, index) => ({
+    ...fleet,
+    position: new HexCoordinate(index, 0),
+  }));
+  const origin = { fleets, pirates: [], cells: [], ownedPlanets: [] };
+  const playback = new TurnMovementPlayback(origin);
+  playback.record(
+    {
+      movements: fleets.map((fleet) => ({
+        fleetId: fleet.id,
+        from: fleet.position,
+        to: fleet.position.neighbors()[0]!,
+      })),
+    },
+    origin,
+    origin,
+  );
+  expect(
+    playback.batches.map((batch) => batch.map((track) => track[0]!.fleetId)),
+  ).toEqual([
+    ['route', 'civilian', 'explore', 'patrol', 'salvage', 'planet-queue'],
+    ['manual'],
+  ]);
+});
+
 function scene(game: Game): MovementScene {
   return {
     fleets: game.fleetSnapshots(),
@@ -138,6 +191,7 @@ it('samtidig-farledsanimation: controller frames every route together, animates 
   const original = model.snapshot.camera;
   let emit!: IntentHandler;
   const frames: TurnFrame[] = [];
+  const durations: number[] = [];
   let fixedCamera: typeof original | null = null;
   const controller = new MasterController(model, {
     bind(handler) {
@@ -145,8 +199,9 @@ it('samtidig-farledsanimation: controller frames every route together, animates 
     },
     render() {},
     dispose() {},
-    animateTurnStep(frame, onProgress) {
+    animateTurnStep(frame, onProgress, duration) {
       frames.push(frame);
+      durations.push(duration!);
       fixedCamera ??= model.snapshot.camera;
       expect(model.snapshot.camera).toEqual(fixedCamera);
       expect(model.snapshot.turnMovements).toEqual(frame.movements);
@@ -185,6 +240,9 @@ it('samtidig-farledsanimation: controller frames every route together, animates 
       moves.map((move) => `${move.fleetId}:${move.from.key}:${move.to.key}`),
     ).size,
   ).toBe(moves.length);
+  expect(
+    durations.reduce((sum, duration) => sum + duration, 0),
+  ).toBeLessThanOrEqual(4000);
   await vi.advanceTimersByTimeAsync(30000);
   expect(model.snapshot.camera).toEqual(original);
   controller.dispose();

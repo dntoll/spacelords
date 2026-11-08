@@ -79,6 +79,7 @@ describe('startorder-for-nybyggda-skepp / flottval-pa-orderkarta', () => {
         .fleetSnapshots()
         .find((fleet) => !before.includes(fleet.id))!;
       expect(fleet.ships[ship]).toBe(1);
+      expect(fleet.name).toBe(`${ship} ${resumed.galaxy.homePlanet.name} 1`);
       expect(fleet.pendingOrder).toBeUndefined();
       if (order.kind === 'auto-salvage')
         expect(fleet.automation).toBe('salvage');
@@ -96,6 +97,52 @@ describe('startorder-for-nybyggda-skepp / flottval-pa-orderkarta', () => {
       );
     },
   );
+
+  it('produktionsflottors-automatiska-namn: persists a separate type-and-planet sequence across renaming and reload', () => {
+    const state = tradeNetworkState(false);
+    const colony = state.colonies[0]![1];
+    colony.stock = {
+      ...colony.stock,
+      Iron: 500,
+      Water: 500,
+      Oil: 500,
+      'Rocket engine': 20,
+      'Telescope I': 5,
+    };
+    colony.buildings.push({
+      id: 'exploration-factory',
+      type: 'Exploration ship factory',
+      slotIndex: 2,
+      demolition: false,
+    });
+    let game = Game.restore({ ...state, pirates: [] });
+    for (let index = 0; index < 2; index++)
+      game.scheduleShip(
+        game.galaxy.homePlanet,
+        'Exploration ship',
+        null,
+        'exploration-factory',
+        { kind: 'explore' },
+      );
+    finishYear(game);
+    const first = game
+      .fleetSnapshots()
+      .find((fleet) => fleet.name === 'Exploration ship Tellus 1')!;
+    expect(first).toBeDefined();
+    game.renameFleet(first.id, 'First scouts');
+    game = Game.restore(game.exportState());
+    finishYear(game);
+    expect(
+      game
+        .fleetSnapshots()
+        .some((fleet) => fleet.name === 'Exploration ship Tellus 2'),
+    ).toBe(true);
+    expect(game.exportState().productionFleetSequences).toEqual(
+      expect.objectContaining({
+        '["sol-0","Exploration ship"]': 3,
+      }),
+    );
+  });
 
   it('keeps the new ship safe and reports a receiving fleet that disappeared during construction', () => {
     const state = tradeNetworkState();

@@ -84,9 +84,9 @@ test('civil-skyttelforskning / civil-skytteltillverkning / civiltrafik-sparning:
     .click();
   await endTurn(page);
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await selectMapFleet(page, `${homeName} Civilian transport`);
+  await selectMapFleet(page, `Civilian shuttle ${homeName} 1`);
   const card = page.locator('.map-fleet-cards .selected-fleet-card');
-  await expect(card).toContainText('Civilian transport');
+  await expect(card).toContainText('Civilian shuttle');
   await expect(card).toContainText('0 passengers aboard');
   await expect(
     card.getByRole('button', { name: 'Stop Civilian transport', exact: true }),
@@ -109,9 +109,9 @@ test('civil-skyttelforskning / civil-skytteltillverkning / civiltrafik-sparning:
   expect(() => Game.restore(saved)).not.toThrow();
   await page.reload();
   await startFirstSlot(page);
-  await selectMapFleet(page, `${homeName} Civilian transport`);
+  await selectMapFleet(page, `Civilian shuttle ${homeName} 1`);
   await expect(
     page.locator('.map-fleet-cards .selected-fleet-card'),
-  ).toContainText('Civilian transport');
+  ).toContainText('Civilian shuttle');
   expect(errors).toEqual([]);
 });

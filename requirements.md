@@ -10,6 +10,18 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Kartobjekt och automatiska flottor:** `kartobjekt-foljer-zoom`,
+  `produktionsflottors-automatiska-namn`,
+  `samtidig-automatisk-flottanimation`,
+  `ruttflottor-vid-ruttanslutning` och
+  `radiell-automatisk-hexutforskning` är **Fullständigt implementerat**.
+  Vrak följer kartans skala, produktionsskapade flottor får namn som
+  `Exploration ship Tellus 1`, autonoma flottor animeras tillsammans och
+  Route-flottor vid en ändplanet placeras mot ruttlinjen. Explore-flottor
+  reserverar skilda radiella riktningar från Tellus. Äldre sparningar läses
+  utan namnbyte eller rensning. Se
+  [produktkraven](docs/product-requirements.md).
+
 - **Planetköer:** `planetupptackt-fore-utforskning`,
   `planetutforskning-vid-ankomst`, `utforskningsko`, `koloniseringsko` och
   `automatisk-tilldelning-av-planetkoer` är **Fullständigt implementerat**.
@@ -439,18 +451,21 @@ Se [hela visionen](docs/game-vision.md).
   Äldre spel får inga pirater. Se [spelreglerna](docs/space-pirates.md).
 
 - **Flottanimation och händelseannonser:** `en-flotta-i-taget`,
+  `samtidig-automatisk-flottanimation`,
   `osynliga-flottor-utan-animation` och `handelseannonsering` är
-  **Fullständigt implementerat**. Farledstrafik visas samtidigt enligt
-  `samtidig-farledsanimation`; övriga flottors synliga färder visas en åt gången.
+  **Fullständigt implementerat**. Alla autonoma flottor visas samtidigt;
+  manuella Move-order visas en åt gången enligt den återstående delen av
+  `en-flotta-i-taget`.
   Dolda rörelser ger ingen animation eller väntan. Platsbundna händelser
   annonseras under den markerade platsen och globala händelser centralt;
   texten flyttas sedan till listan automatiskt. Pause/Play, Next och Skip är
   borttagna på uttrycklig beställning. Se [Events](docs/events-and-guidance.md).
 
 - **Lugnare årspresentation:** `samtidig-farledsanimation`,
+  `samtidig-automatisk-flottanimation`,
   `destinationer-for-aktiva-skepp` och `geografisk-arsuppspelning` är
-  **Fullständigt implementerat**. Synliga farledsskepp och Civilian shuttles
-  animeras först tillsammans med alla deras färder i samma stillastående vy.
+  **Fullständigt implementerat**. Synliga autonoma flottor animeras först
+  tillsammans med alla deras färder i samma stillastående vy.
   Destinationspilar begränsas till Fleets och vald flotta utan Route enligt
   `destinationspilar-endast-i-flottvyn`, `vald-flotta-visar-destinationspil`
   och `ruttflottor-utan-destinationspilar`.

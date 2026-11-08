@@ -1,5 +1,38 @@
 # Produktkrav och status
 
+## Kartobjekt och automatiska flottor, 2026-11-08
+
+- `kartobjekt-foljer-zoom` — **Fullständigt implementerat**: vrakens symboler
+  och inbördes placering följer kartans världsgeometri och blir inte större
+  relativt planeter och hexar vid utzoomning. Den osynliga pekytan behåller
+  mobil storlek. Texter, linjetjocklek, händelsemarkeringar och små
+  översiktspunkter är fortsatt läsbara skärmoverlay-element.
+- `produktionsflottors-automatiska-namn` — **Fullständigt implementerat**:
+  en flotta som skapas för ett färdigbyggt skepp får namnet
+  `Ship type Planet N`. Löpnummerserien är separat per skeppstyp och planet
+  och överlever namnbyte och omladdning. Befintliga och manuellt skapade
+  flottor döps inte om.
+- `samtidig-automatisk-flottanimation` — **Fullständigt implementerat**:
+  Route/Civilian, Explore, Explore stars, Patrol, Guard routes, Auto salvage
+  och automatiskt tilldelade planetköer visas samtidigt i en gemensam
+  utzoomad, stillastående kartbild. Manuella Move-färder visas därefter en i
+  taget. Upptäckter stoppar året före senare steg och får därefter fokuserad
+  eventkamera och ordinarie Handle/Ignore.
+- `ruttflottor-vid-ruttanslutning` — **Fullständigt implementerat**: på
+  Star map och Fleets ligger en tilldelad Route-flotta vid ändplaneten mot
+  sin rutt, medan en resande flotta visas på sin verkliga position. Route-vyn
+  behåller mittplaceringen.
+- `radiell-automatisk-hexutforskning` — **Fullständigt implementerat**:
+  Explore-flottor reserverar skilda frontierhexar och väljer skilda vinklar
+  från Tellus inom närmaste outforskade lager. En flotta fortsätter i
+  huvudsak längs sin radiella riktning utan att hoppa över den inre fronten.
+  Explore stars och planetköernas prioritering ändras inte.
+
+Detta förtydligar `automatisk-hexutforskning` och `ruttflottor-pa-kartan`.
+`samtidig-automatisk-flottanimation` ersätter `en-flotta-i-taget` för autonoma
+order och utökar `samtidig-farledsanimation`. Sparformat 15 läser alla
+tidigare stödda sparversioner utan rensning.
+
 ## Planetköer, 2026-11-08
 
 - `planetupptackt-fore-utforskning` och `planetutforskning-vid-ankomst` —
@@ -931,7 +964,9 @@ ansluta som eskort till en rutt med aktiv transport och fördelas jämnt mellan
 transportflottorna med hänsyn till befintliga eskorter. Skepp på annan plats
 måste först resa till sin flotta. Route visar tilldelade flottor vid ruttens mitt
 med sina namn; lediga transportflottor visas lila för att vara lätta att hitta.
-Star map och Fleets visar fortsatt verkliga positioner. Detta utökar tidigare
+Star map och Fleets visar resande flottors verkliga positioner och placerar en
+flotta vid ändplanet mot dess rutt enligt `ruttflottor-vid-ruttanslutning`.
+Detta utökar tidigare
 kravet på transportskepp i den tilldelade ursprungsflottan och ersätter Route-vyns
 fysiska placering av tilldelade flottmarkörer. Se
 [kartkraven](route-production.md#flottor-på-rutter) för fullständig avgränsning.
@@ -1041,7 +1076,7 @@ behålls enligt `forstarka-ruttflotta`.
 | `end-turn-vid-kartval`            | Fullständigt implementerat | End turn syns och har egen plats även när en planet, flotta, handelsrutt eller destination är vald. Informationspanelen kan rullas utan att täcka knappen.                                                                                                                                                                                                         |
 | `sekventiella-arshandelser`       | Fullständigt implementerat | Händelser annonseras en i taget i geografisk ordning vid avbrott och efter årets slut enligt `geografisk-arsuppspelning`. Varje text flyttas sedan till Events innan nästa visas. Presentationen går automatiskt utan Pause/Play, Next eller Skip. End turn är spärrad medan presentationen pågår. Upptäckts- och stridsavbrott behålls före årets avslut.         |
 | `handelser-pa-kartan`             | Fullständigt implementerat | Kartan visar och markerar platsen för aktuell händelse. Globala händelser saknar kartmarkering. Listan ligger under kartan på stående mobil och bredvid på liggande mobil och bredare skärmar. Efter uppspelningen återställs tidigare vy, giltiga val och kamera.                                                                                                 |
-| `en-flotta-i-taget`               | Fullständigt implementerat | Utanför farledstrafiken följer en synlig flottmarkör åt gången sin färd inom en stillastående kartbild. Farledstrafiken visas samtidigt enligt `samtidig-farledsanimation`. Spelets förflyttning, upptäckter och strider behåller sina regler.                                                                                                                     |
+| `en-flotta-i-taget`               | Fullständigt implementerat | En manuell Move-flotta åt gången följer sin färd inom en stillastående kartbild. Autonoma order visas samtidigt enligt `samtidig-automatisk-flottanimation`. Spelets förflyttning, upptäckter och strider behåller sina regler.                                                                                                                                    |
 | `osynliga-flottor-utan-animation` | Fullständigt implementerat | Dolda flottors förflyttningar animeras inte och ger ingen kameraflytt eller animationsväntan. Fientliga steg visas bara när båda ändarna är synliga.                                                                                                                                                                                                               |
 | `handelseannonsering`             | Fullständigt implementerat | Platsbundna händelsers text och textruta visas under den markerade platsen så att platsen förblir synlig, även efter skärmrotation. Globala händelser visas mitt på skärmen. Efter en kort lästid flyttas texten till Events och blir en rad där. Därefter visas nästa händelse. Vid minskad rörelse behålls information och resultat utan förflyttningsanimation. |
 
@@ -1058,10 +1093,11 @@ Kameran står stilla genom hela den visade färden, även när farledstrafik
 animeras samtidigt. Nästa kamerarörelse sker inför nästa grupp eller händelse. Skärmrotation
 anpassar inramningen utan att börja om färden.
 
-`samtidig-farledsanimation`, `destinationer-for-aktiva-skepp` och
+`samtidig-farledsanimation`, `samtidig-automatisk-flottanimation`,
+`destinationer-for-aktiva-skepp` och
 `geografisk-arsuppspelning` — **Fullständigt implementerat**.
-Farledsflottor och Civilian shuttles animeras först samtidigt i en gemensam
-vy där hela de visade färderna ryms. Övriga färder visas sedan från vänster
+Alla autonoma flottor animeras först samtidigt i en gemensam vy där hela de
+visade färderna ryms. Manuella färder visas sedan från vänster
 till höger utifrån startplatsen, vid samma horisontella läge nerifrån och upp.
 Händelser visas därefter i samma geografiska ordning, med globala händelser
 sist. Destinationspilar visas i Fleets för flottor utan Route som flyttas i
@@ -1070,6 +1106,10 @@ det aktuella steget, och för vald flotta utan Route även på Star map, enligt
 och `ruttflottor-utan-destinationspilar`.
 Avbrott och händelsernas sparade kronologi behålls. Se
 [Events](events-and-guidance.md).
+
+Ändring 2026-11-08: `samtidig-automatisk-flottanimation` ersätter
+`en-flotta-i-taget` för autonoma order och utökar
+`samtidig-farledsanimation`.
 
 Ändring 2026-10-31: detta ersätter `en-flotta-i-taget` för farledstrafiken
 och presentationsordningen i `sekventiella-arshandelser` och

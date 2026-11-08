@@ -42,6 +42,24 @@ it('spelgrafik-kartstation: shipyards stay anchored to their hex and remain sele
   }
 });
 
+it('kartobjekt-foljer-zoom: wreck positions use world geometry instead of spreading apart while zooming out', () => {
+  const game = Game.restore(salvageState());
+  const wreck = game.wrecks[0]!;
+  const wrecks = [
+    wreck,
+    {
+      ...wreck,
+      id: 'second-wreck',
+      ship: { ...wreck.ship, id: 'second-ship' },
+    },
+  ];
+  const normal = salvageMarkers(wrecks, [], 1).map((marker) => marker.point);
+  const overview = salvageMarkers(wrecks, [], 0.1).map(
+    (marker) => marker.point,
+  );
+  expect(overview).toEqual(normal);
+});
+
 describe('bargningsorder-fran-flotta', () => {
   it('selects a wreck from the fleet, saves the mission and resumes pickup and return automatically', () => {
     let saved = {

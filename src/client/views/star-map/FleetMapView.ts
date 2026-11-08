@@ -2,6 +2,7 @@ import type p5 from 'p5';
 import type { TradeRouteSnapshot } from '../../models/Logistics.js';
 import type { AppReadModel } from '../../models/AppModel.js';
 import { FleetMapLayout } from '../../models/star-map/FleetMapLayout.js';
+import type { RouteFleetPlacement } from '../../models/star-map/FleetMapLayout.js';
 import type { FleetSnapshot } from '../../models/Game.js';
 import type { ShipSpriteType } from '../ShipImages.js';
 import { HexGeometry, type Point } from '../../models/HexCoordinate.js';
@@ -29,13 +30,17 @@ export function renderMapFleets(
   movementPoints: ReadonlyMap<string, Point> = new Map(),
   shipImages: ReadonlyMap<ShipSpriteType, p5.Image> = new Map(),
   showDestinationArrows = true,
+  routePlacement: RouteFleetPlacement = 'center',
 ): void {
-  const markers = FleetMapLayout.markers(fleets, routeView ?? [], zoom).map(
-    (marker) => ({
-      ...marker,
-      point: movementPoints.get(marker.fleet.id) ?? marker.point,
-    }),
-  );
+  const markers = FleetMapLayout.markers(
+    fleets,
+    routeView ?? [],
+    zoom,
+    routePlacement,
+  ).map((marker) => ({
+    ...marker,
+    point: movementPoints.get(marker.fleet.id) ?? marker.point,
+  }));
   const destinationFor = (fleet: FleetSnapshot) =>
     interaction.fleetDragging && interaction.mapFleetId === fleet.id
       ? interaction.fleetDestinationPreview
@@ -44,7 +49,7 @@ export function renderMapFleets(
   // kartflottor: draw routes underneath the separate fleet swarms.
   for (const { fleet, point } of markers) {
     const route = routeView?.find((route) => route.id === fleet.routeId);
-    if (route) {
+    if (route && routePlacement === 'center') {
       const start = HexGeometry.toPoint(route.start),
         end = HexGeometry.toPoint(route.end);
       const center = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
@@ -92,7 +97,7 @@ export function renderMapFleets(
     const hovered = interaction.hoveredFleetId === fleet.id;
     const needsOrder = attentionFleetIds.includes(fleet.id);
     const availableTransport =
-      routeView !== null &&
+      routePlacement === 'center' &&
       !fleet.routeId &&
       !fleet.upgrade &&
       !fleet.destination &&
@@ -116,7 +121,7 @@ export function renderMapFleets(
       showUnselectedRings ||
       availableTransport ||
       needsOrder ||
-      (routeView && fleet.routeId)
+      (routePlacement === 'center' && routeView && fleet.routeId)
     ) {
       const context = sketch.drawingContext as
         CanvasRenderingContext2D | undefined;
@@ -140,7 +145,9 @@ export function renderMapFleets(
     if (
       hostile ||
       movementPoints.has(fleet.id) ||
-      (routeView && (fleet.routeId || availableTransport))
+      (routePlacement === 'center' &&
+        routeView &&
+        (fleet.routeId || availableTransport))
     ) {
       sketch.noStroke();
       const width = (fleet.name.length * 6.5 + 10) / zoom;

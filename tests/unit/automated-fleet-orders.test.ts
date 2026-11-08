@@ -6,7 +6,10 @@ import {
   tradeNetworkState,
   distantTradeNetworkState,
 } from '../fixtures/trade-network.js';
-import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
+import {
+  HexCoordinate,
+  HexGeometry,
+} from '../../src/client/models/HexCoordinate.js';
 
 function automaticSalvage(): GameState {
   const state = salvageState();
@@ -123,6 +126,40 @@ describe('automatisk-bargning', () => {
     expect(game.fleet('fleet-home')!.automation).toBeUndefined();
     expect(game.fleet('fleet-home')!.towing).toEqual(['advanced-wreck']);
   });
+});
+
+it('radiell-automatisk-hexutforskning: explorers at Tellus reserve different frontier directions', () => {
+  const state = tradeNetworkState();
+  const home = state.fleets[0]!;
+  const explorer = home.shipUnits!.find(
+    (ship) => ship.type === 'Exploration ship',
+  )!;
+  const extra = (id: string) => ({
+    id,
+    name: id,
+    position: home.position,
+    destination: null,
+    ships: { 'Exploration ship': 1 },
+    shipUnits: [{ ...explorer, id: `${id}-ship` }],
+  });
+  const game = Game.restore({
+    ...state,
+    pirates: [],
+    fleets: [home, extra('explorer-two'), extra('explorer-three')],
+  });
+  for (const id of ['fleet-home', 'explorer-two', 'explorer-three'])
+    game.setExploration(id, 'explore');
+  const homePoint = HexGeometry.toPoint(game.galaxy.homePlanet.position);
+  const destinations = game
+    .fleetSnapshots()
+    .map((fleet) => fleet.destination)
+    .filter((point): point is HexCoordinate => !!point);
+  expect(new Set(destinations.map((point) => point.key)).size).toBe(3);
+  const directions = destinations.map((point) => {
+    const target = HexGeometry.toPoint(point);
+    return Math.atan2(target.y - homePoint.y, target.x - homePoint.x);
+  });
+  expect(new Set(directions.map((angle) => angle.toFixed(3))).size).toBe(3);
 });
 
 describe('automatisk-farledsbemanning', () => {

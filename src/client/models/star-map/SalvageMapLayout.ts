@@ -7,6 +7,7 @@ export function salvageMarkers(
   yards: readonly ShipyardSnapshot[],
   zoom: number,
 ) {
+  void zoom;
   const objects = [
     ...yards
       .filter((yard) => !yard.destroyed)
@@ -20,7 +21,7 @@ export function salvageMarkers(
       (item) => item.position.key === object.position.key,
     );
     const center = HexGeometry.toPoint(object.position);
-    const scale = object.kind === 'yard' ? 1 : 1 / zoom;
+    const scale = 1;
     return {
       id: object.id,
       kind: object.kind,
