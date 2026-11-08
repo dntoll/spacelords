@@ -1,5 +1,19 @@
 # Produktkrav och status
 
+## Planetköer, 2026-11-08
+
+- `planetupptackt-fore-utforskning` och `planetutforskning-vid-ankomst` —
+  **Fullständigt implementerat**: upptäckt visar planetens namn och position. Ett
+  Exploration ship måste därefter nå planeten för att visa typ, habitability,
+  resurser och byggplatser samt möjliggöra planettypsforskning.
+- `utforskningsko`, `koloniseringsko` och
+  `automatisk-tilldelning-av-planetkoer` — **Fullständigt implementerat**: spelaren
+  kan prioritera upptäckta respektive utforskade planeter under `Decisions`.
+  Lediga Exploration ships och Colony ships tar skilda mål i köordning; närmaste
+  flotta väljs och ett förlorat skepps mål kan tas över av en annan flotta.
+
+Se [planetköer](planet-queues.md).
+
 ## Stridens spelgränssnitt, 2026-11-01
 
 - `fullskarms-stridskarta` — **Fullständigt implementerat**: hexkartan fyller

@@ -261,6 +261,13 @@ export function fleetAssignmentLabel(
     )?.object?.name;
     return `Colonize: ${target ?? 'selected planet'}`;
   }
+  if (fleet.explorationTargetId) {
+    const position = fleet.destination ?? fleet.position;
+    const target = model.cells.find(
+      (cell) => cell.position.key === position?.key,
+    )?.object?.name;
+    return `Explore planet: ${target ?? 'selected planet'}`;
+  }
   if (fleet.salvage?.targets.length)
     return `Salvage: ${fleet.salvage.targets.length} wreck(s) assigned`;
   if (fleet.patrol) {

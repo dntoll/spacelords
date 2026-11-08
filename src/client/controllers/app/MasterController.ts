@@ -504,6 +504,15 @@ export class MasterController {
       case 'remove-research':
         this.#research.requestResearchRemoval(intent.technology);
         break;
+      case 'add-planet-queue':
+        this.#model.addPlanetToQueue(intent.kind, intent.planetId);
+        break;
+      case 'remove-planet-queue':
+        this.#model.removePlanetFromQueue(intent.kind, intent.planetId);
+        break;
+      case 'move-planet-queue':
+        this.#model.movePlanetQueue(intent.kind, intent.planetId, intent.index);
+        break;
       case 'confirm-research-removal':
         this.#research.confirmResearchRemoval();
         break;

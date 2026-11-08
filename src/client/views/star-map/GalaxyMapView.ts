@@ -421,9 +421,13 @@ export class GalaxyMapView implements MapPort {
         point,
         26,
         color,
-        this.#artwork.planet(
-          object.type === 'gas' ? 'Gas' : (object.environment ?? 'Temperate'),
-        ),
+        object.surveyed
+          ? this.#artwork.planet(
+              object.type === 'gas'
+                ? 'Gas'
+                : (object.environment ?? 'Temperate'),
+            )
+          : undefined,
       );
     }
     sketch.pop();

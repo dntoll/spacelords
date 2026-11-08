@@ -32,6 +32,7 @@ export function renderFleetOrders(
         !fleet.salvage &&
         !fleet.upgrade &&
         !fleet.colonizationTargetId &&
+        !fleet.explorationTargetId &&
         !fleet.joinFleetId,
     ),
   );
@@ -53,11 +54,13 @@ export function renderFleetOrders(
                 ? 'Cancel salvage'
                 : fleet.colonizationTargetId
                   ? 'Cancel colonization'
-                  : fleet.patrol
-                    ? 'Cancel patrol'
-                    : fleet.joinFleetId
-                      ? 'Cancel reinforcement'
-                      : 'Clear destination',
+                  : fleet.explorationTargetId
+                    ? 'Cancel planet exploration'
+                    : fleet.patrol
+                      ? 'Cancel patrol'
+                      : fleet.joinFleetId
+                        ? 'Cancel reinforcement'
+                        : 'Clear destination',
     () =>
       emit({
         type: fleet.routeId ? 'release-trade-fleet' : 'clear-destination',

@@ -1,6 +1,44 @@
 import { researchStationState } from '../fixtures/research-station.js';
 import { expect, test, type Locator } from '@playwright/test';
 import { startFirstSlot, chooseResearch } from './save-helpers.js';
+import { Game } from '../../src/client/models/Game.js';
+import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
+
+test('utforskningsko: Decisions shows the assigned planet and can remove it', async ({
+  page,
+}) => {
+  const base = new Game(createExampleGalaxy()).exportState();
+  const target = base.world.systems
+    .flatMap((system) => system.planets)
+    .find(
+      (planet) => !planet.colony && base.knownObjects?.includes(planet.id),
+    )!;
+  const state = {
+    ...base,
+    planetQueues: { exploration: [target.id], colonization: [] },
+  };
+  await page.addInitScript((saved) => {
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({ lastPlayed: '2026-11-08T00:00:00Z', state: saved }),
+    );
+  }, state);
+  await page.goto('./');
+  await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Decisions', exact: true }).click();
+  const queue = page
+    .getByRole('heading', { name: 'Exploration queue' })
+    .locator('..');
+  await expect(queue).toContainText(target.name);
+  await expect(queue).toContainText('Assigned to Home Fleet');
+  await queue
+    .getByRole('button', {
+      name: `Remove ${target.name} from Exploration queue`,
+    })
+    .click();
+  await expect(queue).not.toContainText(target.name);
+});
 
 for (const width of [320, 900]) {
   test(`kompakta-koknappar: research and build queues use compact controls at ${width}px`, async ({

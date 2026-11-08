@@ -414,6 +414,7 @@ describe('planettypsforskning', () => {
     const discovered = Game.restore({
       ...state,
       explored: [...state.explored, ice.position.key],
+      surveyedPlanets: [...(state.surveyedPlanets ?? []), ice.id],
     });
     expect(
       discovered.decisions.some(
@@ -442,6 +443,10 @@ describe('planettypsforskning', () => {
       explored: [
         ...saved.explored,
         game.galaxy.systems[1]!.planets[0]!.position.key,
+      ],
+      surveyedPlanets: [
+        ...(saved.surveyedPlanets ?? []),
+        game.galaxy.systems[1]!.planets[0]!.id,
       ],
     });
     expect(discovered.research.available).toContain('Ice dome');

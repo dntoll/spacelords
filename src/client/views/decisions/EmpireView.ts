@@ -2,6 +2,70 @@ import type { AppReadModel } from '../../models/AppModel.js';
 import { needsAttention } from '../../models/Decisions.js';
 import type { IntentHandler } from '../ViewContracts.js';
 import { button, element } from '../dom.js';
+import { bindQueueOrder, decorateQueueRow } from '../QueueView.js';
+import type { PlanetQueueKind } from '../../models/PlanetQueues.js';
+
+function renderPlanetQueue(
+  model: AppReadModel,
+  emit: IntentHandler,
+  kind: PlanetQueueKind,
+): HTMLElement {
+  const section = element('section', 'empire-card planet-queue-card');
+  const title =
+    kind === 'exploration' ? 'Exploration queue' : 'Colonization queue';
+  section.append(element('h2', '', title));
+  const items = model.planetQueues[kind];
+  if (!items.length)
+    section.append(
+      element(
+        'p',
+        'muted-note',
+        kind === 'exploration'
+          ? 'Add discovered planets when you want an Exploration ship to survey them.'
+          : 'Add explored planets when you want a Colony ship to settle them.',
+      ),
+    );
+  const list = element('ol', 'planet-queue-list');
+  const locked = !['planning', 'interrupted'].includes(model.phase);
+  for (const item of items) {
+    const row = element('li');
+    row.append(
+      element('strong', '', item.name),
+      element(
+        'span',
+        'muted-note',
+        item.assignedFleetName
+          ? `Assigned to ${item.assignedFleetName}`
+          : 'Waiting for an available ship',
+      ),
+    );
+    const remove = button(
+      `Remove ${item.name} from ${title}`,
+      () =>
+        emit({
+          type: 'remove-planet-queue',
+          kind,
+          planetId: item.planetId,
+        }),
+      'queue-icon-button',
+    );
+    remove.textContent = '×';
+    remove.title = `Remove ${item.name} from ${title}`;
+    remove.disabled = locked;
+    row.append(remove);
+    decorateQueueRow(row, item.planetId, item.name, locked);
+    list.append(row);
+  }
+  bindQueueOrder(
+    list,
+    items.map((item) => item.planetId),
+    (planetId, index) =>
+      emit({ type: 'move-planet-queue', kind, planetId, index }),
+    locked,
+  );
+  section.append(list);
+  return section;
+}
 
 export function renderDecisions(
   model: AppReadModel,
@@ -43,6 +107,10 @@ export function renderDecisions(
     card.append(skip, mute);
     panel.append(card);
   }
+  panel.append(
+    renderPlanetQueue(model, emit, 'exploration'),
+    renderPlanetQueue(model, emit, 'colonization'),
+  );
   page.append(panel);
   return page;
 }

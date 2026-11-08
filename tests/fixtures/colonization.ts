@@ -31,6 +31,9 @@ export function colonizationState(colonyShips = 2): GameState {
         ]),
       ]),
     ],
+    surveyedPlanets: state.world.systems.flatMap((system) =>
+      system.planets.map((planet) => planet.id),
+    ),
     fleets: [
       {
         ...state.fleets[0]!,

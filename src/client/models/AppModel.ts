@@ -86,6 +86,7 @@ import type { ShipmentSnapshot, TradeRouteSnapshot } from './Logistics.js';
 import { FleetMapLayout } from './star-map/FleetMapLayout.js';
 import { Camera, type CameraSnapshot } from './Camera.js';
 import { CameraFraming } from './app/CameraFraming.js';
+import type { PlanetQueueKind } from './PlanetQueues.js';
 import { createExampleGalaxy } from './exampleGalaxy.js';
 import {
   Game,
@@ -166,6 +167,7 @@ export interface AppReadModel {
   readonly mapFocusRevision: number;
   readonly projectSupply: readonly ProjectSupplySnapshot[];
   readonly decisions: readonly Decision[];
+  readonly planetQueues: Game['planetQueues'];
   readonly attentionScreens: readonly DecisionScreen[];
   readonly tradeRoutes: readonly TradeRouteSnapshot[];
   readonly supply: SupplyOverview;
@@ -194,7 +196,7 @@ export interface AppReadModel {
   readonly radius: number;
   readonly cells: readonly MapCell[];
   readonly selected: MapCell | null;
-  readonly selectedPlanetInfo: ReturnType<Game['planetKnowledge']>;
+  readonly selectedPlanetInfo: ReturnType<Game['planetIntel']>;
   readonly camera: CameraSnapshot;
   readonly planet: PlanetGameSnapshot | null;
   readonly round: number;
@@ -476,6 +478,7 @@ export class AppModel {
       mapFocusRevision: this.#mapFocusRevision,
       projectSupply,
       decisions,
+      planetQueues: this.#game.planetQueues,
       attentionScreens: Object.freeze([
         ...new Set(decisions.filter(needsAttention).map(decisionScreen)),
       ]),
@@ -538,7 +541,7 @@ export class AppModel {
           .mapSnapshot()
           .find((cell) => cell.position.key === this.#selected.key) ?? null,
       camera: this.#eventCamera?.snapshot ?? this.#camera.snapshot,
-      selectedPlanetInfo: this.#game.planetKnowledge(this.#selected),
+      selectedPlanetInfo: this.#game.planetIntel(this.#selected),
       planet:
         this.#screen === 'planet' ||
         this.#screen === 'build-selection' ||
@@ -877,6 +880,19 @@ export class AppModel {
   }
   confirmResearchRemoval(): void {
     return this.researchCase.confirmResearchRemoval();
+  }
+  addPlanetToQueue(kind: PlanetQueueKind, planetId: string): void {
+    this.#game.addPlanetToQueue(kind, planetId);
+  }
+  removePlanetFromQueue(kind: PlanetQueueKind, planetId: string): void {
+    this.#game.removePlanetFromQueue(kind, planetId);
+  }
+  movePlanetQueue(
+    kind: PlanetQueueKind,
+    planetId: string,
+    index: number,
+  ): void {
+    this.#game.movePlanetQueue(kind, planetId, index);
   }
   openRoute(planetId?: string): void {
     return this.routes.openRoute(planetId);
@@ -1266,7 +1282,9 @@ export class AppModel {
         ? 'Pirate ship in sight'
         : discovery.kind === 'wreck'
           ? 'Wreck discovered'
-          : 'Planet discovered';
+          : discovery.kind === 'planet-explored'
+            ? 'Planet explored'
+            : 'Planet discovered';
     const details = [
       `HEX ${item.position.q},${item.position.r}${fleet ? ` · ${fleet.name} · ${fleet.remainingMovement ?? 0} hex remaining` : ''}`,
     ];
@@ -1283,10 +1301,33 @@ export class AppModel {
       details.push(
         'The year is paused after production. No movement remains this year.',
       );
+    const queueKind =
+      discovery.kind === 'planet'
+        ? ('exploration' as const)
+        : discovery.kind === 'planet-explored'
+          ? ('colonization' as const)
+          : null;
+    const queued = queueKind
+      ? this.#game.planetQueues[queueKind].some(
+          (entry) => entry.planetId === discovery.id,
+        )
+      : false;
     return Object.freeze({
       title,
       details: Object.freeze(details),
       fleetId: item.fleetId,
+      ...(queueKind && !queued
+        ? {
+            queueAction: Object.freeze({
+              kind: queueKind,
+              planetId: discovery.id,
+              label:
+                queueKind === 'exploration'
+                  ? 'Add to Exploration queue'
+                  : 'Add to Colonization queue',
+            }),
+          }
+        : {}),
     });
   }
 

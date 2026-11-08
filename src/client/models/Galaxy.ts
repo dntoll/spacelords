@@ -38,6 +38,7 @@ export interface MapObject {
   readonly name: string;
   readonly type: 'star' | 'solid' | 'gas';
   readonly owned: boolean;
+  readonly surveyed?: boolean;
   readonly environment?: PlanetEnvironmentType | 'Gas';
 }
 
@@ -162,6 +163,7 @@ export class Galaxy {
       string,
       PlanetEnvironmentType | 'Gas'
     > = new Map(),
+    surveyedPlanetIds: ReadonlySet<string> = new Set(),
   ): readonly MapCell[] {
     if (!explored) return this.#cells;
     return Object.freeze(
@@ -181,9 +183,14 @@ export class Galaxy {
             ? Object.freeze({
                 kind: 'planet' as const,
                 type: planet.type,
-                environment:
-                  planetEnvironments.get(planet.id) ??
-                  (planet.type === 'gas' ? 'Gas' : planet.environment),
+                surveyed: surveyedPlanetIds.has(planet.id),
+                ...(surveyedPlanetIds.has(planet.id)
+                  ? {
+                      environment:
+                        planetEnvironments.get(planet.id) ??
+                        (planet.type === 'gas' ? 'Gas' : planet.environment),
+                    }
+                  : {}),
                 name: planet.name,
                 owned:
                   ownedPlanetIds?.has(planet.id) ??

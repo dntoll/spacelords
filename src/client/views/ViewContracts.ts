@@ -21,6 +21,7 @@ import type {
   Technology,
 } from '../models/Game.js';
 import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
+import type { PlanetQueueKind } from '../models/PlanetQueues.js';
 import type { BoardingMapId } from '../../shared/boarding-map-format.js';
 import type {
   EditorBrushButton,
@@ -156,6 +157,17 @@ export type AppIntent =
       readonly index: number;
     }
   | { readonly type: 'remove-research'; readonly technology: Technology }
+  | {
+      readonly type: 'add-planet-queue' | 'remove-planet-queue';
+      readonly kind: PlanetQueueKind;
+      readonly planetId: string;
+    }
+  | {
+      readonly type: 'move-planet-queue';
+      readonly kind: PlanetQueueKind;
+      readonly planetId: string;
+      readonly index: number;
+    }
   | { readonly type: 'start-slot' | 'request-clear-slot'; readonly id: number }
   | { readonly type: 'open-saves' | 'cancel-clear-slot' | 'confirm-clear-slot' }
   | {

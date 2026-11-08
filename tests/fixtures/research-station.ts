@@ -9,5 +9,11 @@ export function researchStationState() {
     slotIndex: 0,
     demolition: false,
   });
-  return state;
+  return {
+    ...state,
+    surveyedPlanets: state.world.systems
+      .flatMap((system) => system.planets)
+      .filter((planet) => state.knownObjects?.includes(planet.id))
+      .map((planet) => planet.id),
+  };
 }

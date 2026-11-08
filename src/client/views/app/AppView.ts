@@ -901,6 +901,18 @@ export class AppView implements AppPort {
           details.append(renderCombatLog(current.combatLog));
         }
         const actions = element('div', 'event-actions');
+        if (current.decision.queueAction) {
+          const action = current.decision.queueAction;
+          actions.append(
+            button(action.label, () =>
+              this.#emit({
+                type: 'add-planet-queue',
+                kind: action.kind,
+                planetId: action.planetId,
+              }),
+            ),
+          );
+        }
         actions.append(
           button('Handle', () => this.#emit({ type: 'handle-discoveries' })),
           button('Ignore', () => this.#emit({ type: 'ignore-discoveries' })),
@@ -1469,14 +1481,58 @@ export class AppView implements AppPort {
       : null;
     if (model.screen === 'map' && model.selectedPlanetInfo) {
       const summary = element('div', 'planet-selection-summary');
-      summary.append(
-        planetIllustration(false, model.selectedPlanetInfo.environment),
-        element(
-          'p',
-          'planet-map-info',
-          `Type: ${model.selectedPlanetInfo.environment} · Habitability: ${model.selectedPlanetInfo.habitability}%`,
-        ),
-      );
+      if (model.selectedPlanetInfo.surveyed) {
+        summary.append(
+          planetIllustration(false, model.selectedPlanetInfo.environment),
+          element(
+            'p',
+            'planet-map-info',
+            `Type: ${model.selectedPlanetInfo.environment} · Habitability: ${model.selectedPlanetInfo.habitability}% · Building sites: ${model.selectedPlanetInfo.buildSlots}/${model.selectedPlanetInfo.maxBuildSlots}`,
+          ),
+          element(
+            'p',
+            'muted-note',
+            `Resources: ${model.selectedPlanetInfo.resources.map((resource) => `${resource.name} ${resource.perYear}/year`).join(', ') || 'None'}`,
+          ),
+        );
+        if (
+          !owned &&
+          !model.planetQueues.colonization.some(
+            (item) => item.planetId === model.selectedPlanetInfo!.id,
+          )
+        )
+          summary.append(
+            button('Add to Colonization queue', () =>
+              this.#emit({
+                type: 'add-planet-queue',
+                kind: 'colonization',
+                planetId: model.selectedPlanetInfo!.id,
+              }),
+            ),
+          );
+      } else {
+        summary.append(
+          element(
+            'p',
+            'planet-map-info',
+            'Planet details have not been explored.',
+          ),
+        );
+        if (
+          !model.planetQueues.exploration.some(
+            (item) => item.planetId === model.selectedPlanetInfo!.id,
+          )
+        )
+          summary.append(
+            button('Add to Exploration queue', () =>
+              this.#emit({
+                type: 'add-planet-queue',
+                kind: 'exploration',
+                planetId: model.selectedPlanetInfo!.id,
+              }),
+            ),
+          );
+      }
       contents.push(summary);
     } else if (model.screen === 'map' && cell && !cell.explored && !object) {
       contents.push(
@@ -1536,6 +1592,7 @@ export class AppView implements AppPort {
               colonization &&
               (!target.explored ||
                 target.object?.kind !== 'planet' ||
+                !target.object.surveyed ||
                 target.object.owned)
             )
               continue;

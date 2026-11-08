@@ -99,11 +99,13 @@ export class SaveMapPreview {
                 point,
                 18,
                 cell.object.owned ? '#b0e5ce' : '#86adc5',
-                this.#artwork.planet(
-                  cell.object.type === 'gas'
-                    ? 'Gas'
-                    : (cell.object.environment ?? 'Temperate'),
-                ),
+                cell.object.surveyed
+                  ? this.#artwork.planet(
+                      cell.object.type === 'gas'
+                        ? 'Gas'
+                        : (cell.object.environment ?? 'Temperate'),
+                    )
+                  : undefined,
               );
           }
         });

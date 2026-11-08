@@ -167,13 +167,23 @@ export function renderOrders(
     section.append(picker);
   } else
     section.append(
-      element('h3', '', view.page === 'patrol' ? 'Patrol' : 'Colonize'),
+      element(
+        'h3',
+        '',
+        view.page === 'patrol'
+          ? 'Patrol'
+          : view.page === 'explore-planet'
+            ? 'Explore planet'
+            : 'Colonize',
+      ),
       element(
         'p',
         '',
         view.page === 'patrol'
           ? 'Choose the Patrol center on the map. Travel there before patrolling.'
-          : 'Choose a known uninhabited planet on the map.',
+          : view.page === 'explore-planet'
+            ? 'Choose a discovered unexplored planet on the map.'
+            : 'Choose a known uninhabited planet on the map.',
       ),
     );
   return section;

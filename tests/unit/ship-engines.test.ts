@@ -12,7 +12,14 @@ import { ResearchPlan } from '../../src/client/models/research/Research.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
 
 function prepared(rocket = 0, ion = 0) {
-  const state = new Game(createExampleGalaxy()).exportState();
+  const initial = new Game(createExampleGalaxy()).exportState();
+  const state = {
+    ...initial,
+    surveyedPlanets: initial.world.systems
+      .flatMap((system) => system.planets)
+      .filter((planet) => initial.knownObjects?.includes(planet.id))
+      .map((planet) => planet.id),
+  };
   const colony = state.colonies[0]![1];
   colony.population = 30000;
   colony.stock = {

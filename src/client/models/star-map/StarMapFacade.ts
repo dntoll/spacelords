@@ -20,14 +20,25 @@ export class StarMapFacade {
           kind: 'patrol',
           position: { q: position.q, r: position.r },
         });
-      else if (this.host.orderSelection.page === 'colonize') {
-        const planet = this.host.game.planetKnowledge(position)
+      else if (
+        this.host.orderSelection.page === 'colonize' ||
+        this.host.orderSelection.page === 'explore-planet'
+      ) {
+        const intel = this.host.game.planetIntel(position);
+        const valid =
+          this.host.orderSelection.page === 'colonize'
+            ? intel?.surveyed
+            : intel && !intel.surveyed;
+        const planet = valid
           ? this.host.game.galaxy.systems
               .flatMap((system) => system.planets)
               .find((planet) => planet.position.key === position.key)
           : null;
         if (planet)
-          this.host.completeOrder({ kind: 'colonize', planetId: planet.id });
+          this.host.completeOrder({
+            kind: this.host.orderSelection.page,
+            planetId: planet.id,
+          });
       }
       return;
     }

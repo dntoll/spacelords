@@ -1,5 +1,17 @@
 # Tekniska krav och arbetsregler
 
+## Planetköer, 2026-11-08
+
+- `PlanetQueues` äger de två beständiga prioritetslistorna. `Game` validerar
+  kunskapsnivå, beräknar framkomlig väg, reserverar mål och lämnar oföränderliga
+  köögonblicksbilder till vyn.
+- Detekterade och utforskade planeter lagras separat. Kartvyn får ingen
+  environment före utforskning och använder då en neutral planetsymbol.
+- Köredigering går som intention via controller till modellen. Vyn återanvänder
+  samma drag- och tangentbordshantering som övriga köer.
+- Äldre sparningar utan separat utforskningslista migrerar sina tidigare kända
+  planeter till utforskade. Nya sparningar lagrar båda köerna och aktiva mål.
+
 ## Stridens karta och kontroller, 2026-11-01
 
 - `fullskarms-stridskarta` och `skeppsnara-stridskontroller`: p5 ritar kartan;

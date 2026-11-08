@@ -12,7 +12,7 @@ import {
 import { startFirstSlot } from './save-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 
-async function seed(page: Page, state = researchStationState()) {
+async function seed(page: Page, state: GameState = researchStationState()) {
   await page.addInitScript((saved) => {
     localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     if (!localStorage.getItem('spacelords.save.v2.1'))

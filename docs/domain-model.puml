@@ -16,6 +16,7 @@ SavedGame --> Fleet
 SavedGame --> Colony
 SavedGame --> Research
 SavedGame --> GameEvent
+SavedGame --> PlanetQueues
 
 class Galaxy {
   radius
@@ -40,6 +41,17 @@ class Planet {
   deposits: finite resources
   extractionPotential
 }
+class PlanetQueues {
+  exploration : ordered Planet ids
+  colonization : ordered Planet ids
+}
+class PlanetKnowledge {
+  detected
+  surveyed
+}
+PlanetQueues --> Planet : prioritized targets
+PlanetKnowledge --> Planet
+Fleet --> "0..1" Planet : queued exploration target
 class Colony {
   habitability: 0..100
   populationCapacity

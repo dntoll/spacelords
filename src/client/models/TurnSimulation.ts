@@ -11,7 +11,7 @@ export type ExplorationOrder = 'explore' | 'explore-stars';
 export interface Discovery {
   readonly eventId?: string;
   readonly id: string;
-  readonly kind: 'planet' | 'star' | 'pirate' | 'wreck';
+  readonly kind: 'planet' | 'planet-explored' | 'star' | 'pirate' | 'wreck';
   readonly name: string;
   readonly position: { readonly q: number; readonly r: number };
   readonly fleetId: string | null;
@@ -196,7 +196,9 @@ export class TurnSimulation {
         (discovery: Discovery) =>
           (discovery.eventId !== undefined &&
             typeof discovery.eventId !== 'string') ||
-          !['planet', 'star', 'pirate', 'wreck'].includes(discovery.kind) ||
+          !['planet', 'planet-explored', 'star', 'pirate', 'wreck'].includes(
+            discovery.kind,
+          ) ||
           !discovery.id ||
           !discovery.name ||
           !contains(discovery.position) ||

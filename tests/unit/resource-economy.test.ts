@@ -93,7 +93,15 @@ describe('forskningsko / forskningsberoenden / transport-ship-efter-rocket-engin
 
 describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
   it('reaches every building and ship through actual play and supplies a new colony automatically', () => {
-    let game = new Game(createExampleGalaxy());
+    const base = new Game(createExampleGalaxy()).exportState();
+    const initial = {
+      ...base,
+      surveyedPlanets: base.world.systems
+        .flatMap((system) => system.planets)
+        .filter((planet) => base.knownObjects?.includes(planet.id))
+        .map((planet) => planet.id),
+    };
+    let game = Game.restore(initial);
     const home = game.galaxy.homePlanet;
     for (const building of [
       'Iron mine',
@@ -181,6 +189,7 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
     for (let year = 0; year < 4; year++) turn(game);
     const remote = game.galaxy.systems[1]!.planets[0]!;
     game.transferShips('fleet-home', 'Fighter', 1, secondColonizer.id);
+    game.transferShips('fleet-home', 'Exploration ship', 1, secondColonizer.id);
     game.setDestination(secondColonizer.id, remote.position);
     for (let i = 0; game.fleet(secondColonizer.id)!.destination && i < 8; i++)
       turn(game);

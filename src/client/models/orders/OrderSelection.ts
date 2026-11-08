@@ -12,7 +12,13 @@ export interface OrderSelection {
   readonly title: string;
   readonly returnScreen: Screen;
   readonly page:
-    'menu' | 'routes' | 'fleets' | 'patrol' | 'salvage' | 'colonize';
+    | 'menu'
+    | 'routes'
+    | 'fleets'
+    | 'patrol'
+    | 'salvage'
+    | 'colonize'
+    | 'explore-planet';
   readonly selectedFleetId: string | null;
 }
 export interface OrderSelectionSnapshot extends OrderSelection {

@@ -54,8 +54,8 @@ export class OrderFacade {
         ? 'routes'
         : kind === 'join-fleet'
           ? 'fleets'
-          : ['patrol', 'salvage', 'colonize'].includes(kind)
-            ? (kind as 'patrol' | 'salvage' | 'colonize')
+          : ['patrol', 'salvage', 'colonize', 'explore-planet'].includes(kind)
+            ? (kind as 'patrol' | 'salvage' | 'colonize' | 'explore-planet')
             : null;
     if (page) {
       this.host.orderSelection = { ...view, page, selectedFleetId: null };

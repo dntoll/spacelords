@@ -11,7 +11,14 @@ import { Galaxy, StarSystem } from '../../src/client/models/Galaxy.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 
 function setup(galaxy = createExampleGalaxy()) {
-  const state = new Game(galaxy).exportState();
+  const initial = new Game(galaxy).exportState();
+  const state = {
+    ...initial,
+    surveyedPlanets: initial.world.systems
+      .flatMap((system) => system.planets)
+      .filter((planet) => initial.knownObjects?.includes(planet.id))
+      .map((planet) => planet.id),
+  };
   for (const [, colony] of state.colonies) {
     colony.stock['Rocket engine'] = 100;
     colony.stock['Telescope I'] = 100;

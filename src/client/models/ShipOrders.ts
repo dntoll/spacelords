@@ -12,6 +12,7 @@ export type ShipOrder =
     }
   | { readonly kind: 'salvage'; readonly wreckId: string }
   | { readonly kind: 'colonize'; readonly planetId: string }
+  | { readonly kind: 'explore-planet'; readonly planetId: string }
   | {
       readonly kind:
         | 'auto-salvage'
@@ -91,6 +92,11 @@ export class ShipOrders {
         'Bring towed wrecks to the nearest working shipyard.',
       );
     if (ships['Exploration ship']) {
+      add(
+        'explore-planet',
+        'Explore planet',
+        'Choose a discovered planet whose details are still unknown.',
+      );
       add('explore', 'Explore', 'Explore unknown hexes automatically.');
       add(
         'explore-stars',
@@ -174,6 +180,7 @@ export class ShipOrders {
       patrol: 'Patrol',
       salvage: 'Deliberate salvage',
       colonize: 'Colonize',
+      'explore-planet': 'Explore planet',
       'auto-salvage': 'Auto salvage',
       'civilian-transport': 'Civilian transport',
       'guard-routes': 'Guard routes',
@@ -192,11 +199,17 @@ export class ShipOrders {
           ? order.fleetId
           : order.kind === 'salvage'
             ? order.wreckId
-            : order.kind === 'colonize'
+            : order.kind === 'colonize' || order.kind === 'explore-planet'
               ? order.planetId
               : null;
     if (
-      ['join-route', 'join-fleet', 'salvage', 'colonize'].includes(order.kind)
+      [
+        'join-route',
+        'join-fleet',
+        'salvage',
+        'colonize',
+        'explore-planet',
+      ].includes(order.kind)
     ) {
       if (typeof id !== 'string' || !id)
         throw new Error('Invalid saved ship order.');
