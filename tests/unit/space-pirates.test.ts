@@ -142,7 +142,8 @@ describe('flottstrid-per-hex', () => {
     expect(game.interruption!.battles).toHaveLength(1);
   });
   it('stops a destroyed fleet before subsequent planned steps and preserves its empty identity', () => {
-    const game = battle(0, 1, 1);
+    // Collisions can destroy one pirate before it destroys the civilian.
+    const game = battle(0, 2, 1);
     game.setDestination('fleet-home', new HexCoordinate(9, -4));
     // The pirate and explorer arrive at the explorer's first destination together.
     const state = game.exportState();
@@ -235,7 +236,8 @@ describe('flottstrid-per-hex / handelsnatverk', () => {
           id: 'pirate-test',
           systemId: 'sol',
           position: { q: -1, r: 1 },
-          count: 1,
+          // Collisions can destroy one pirate before the cargo is lost.
+          count: 2,
         },
       ],
       fleets: [

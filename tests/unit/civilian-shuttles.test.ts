@@ -180,7 +180,8 @@ describe('civiltrafik-sparning', () => {
             id: 'pirate-test',
             systemId: 'nadir',
             position: { q: 8, r: -3 },
-            count: 1,
+            // Collisions can destroy one pirate; two preserve the loss scenario.
+            count: fighters ? 1 : 2,
           },
         ],
         fleets: [

@@ -28,7 +28,8 @@ describe('koloniseringsorder', () => {
             id: 'pirate-nadir',
             systemId: 'nadir',
             position: { q: 6, r: -2 },
-            count: 1,
+            // Three pirates keep the unescorted defeat deterministic after collisions.
+            count: fighters ? 1 : 3,
           },
         ],
         fleets: [
