@@ -72,9 +72,10 @@ export class MasterController {
     this.#view.bind((intent) => this.#handle(intent));
     this.#battle.autoSelectBattleShip();
     this.#render();
-    void this.#editor.refresh().then(() => {
-      if (!this.#disposed) this.#render();
-    });
+    if (import.meta.env.BASE_URL === '/')
+      void this.#editor.refresh().then(() => {
+        if (!this.#disposed) this.#render();
+      });
     this.#schedulePlayback();
   }
 
