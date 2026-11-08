@@ -393,7 +393,7 @@ test('fuskknapp-for-teststrid: opens combat from the main menu and leaves save s
   expect(await page.evaluate(() => ({ ...localStorage }))).toEqual(before);
 });
 
-test('autoaim-med-manuellt-mal: acquires, loses and reacquires a target and respects manual aim through rotation', async ({
+test('autoaim-med-manuellt-mal: switches invalid automatic targets and respects a manual target through layout changes', async ({
   page,
 }, testInfo) => {
   const game = arrangeBattle(encounterGame(2), (state) => {
@@ -429,20 +429,22 @@ test('autoaim-med-manuellt-mal: acquires, loses and reacquires a target and resp
   await aimed('3', '2');
   await expect(aim).toHaveAttribute('data-can-fire', 'true');
   await dialog.getByRole('button', { name: 'Turn right', exact: true }).click();
-  await expect(aim).toContainText('No target');
-  await expect(aim).toHaveAttribute('data-can-fire', 'false');
+  await aimed('4', '4');
+  await expect(aim).toHaveAttribute('data-can-fire', 'true');
   await dialog.getByRole('button', { name: 'Turn left', exact: true }).click();
-  await aimed('3', '2');
+  await aimed('4', '4');
   const current = (await saved(page)).state.simulation!.tacticalBattles![0]!;
+  const automaticHex = { q: 4, r: 4 };
   const manualTarget = current.pieces.find(
     (piece) =>
       piece.side === 'enemy' &&
       piece.status === 'active' &&
       piece.position &&
-      !ShipFootprint.contains(piece, current.largeShipFootprints === true, {
-        q: 3,
-        r: 2,
-      }),
+      !ShipFootprint.contains(
+        piece,
+        current.largeShipFootprints === true,
+        automaticHex,
+      ),
   )!;
   const manualHex = manualTarget.position!;
   for (let attempt = 0; attempt < 3; attempt++) {

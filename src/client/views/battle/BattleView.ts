@@ -377,7 +377,7 @@ export class BattleView {
       this.#aimText.textContent = !weapons.length
         ? 'Unarmed'
         : (preview?.reason ??
-          (this.#aim && target
+          (target
             ? `Target: ${battlePieceLabel(target, state.pieces)}`
             : this.#aim &&
                 state.asteroids.some(
@@ -430,7 +430,6 @@ export class BattleView {
   ): void {
     const pose = `${selected.id}:${selected.position?.q},${selected.position?.r}:${selected.facing}:${this.#weapon}`;
     const preferred = this.#targets.get(selected.id);
-    let lockedTarget = false;
     if (preferred) {
       const at = rules.aimAt(selected.id, preferred, this.#weapon);
       if (at) {
@@ -446,12 +445,9 @@ export class BattleView {
         )
           this.#aim = at;
         this.#aimTargetId = preferred;
-        lockedTarget = true;
       } else {
-        const target = state.pieces.find((piece) => piece.id === preferred);
-        lockedTarget = target?.status === 'active';
-        if (!lockedTarget) this.#targets.delete(selected.id);
-        this.#aimTargetId = lockedTarget ? preferred : null;
+        this.#targets.delete(selected.id);
+        this.#aimTargetId = null;
         this.#aim = null;
       }
     } else if (
@@ -462,7 +458,6 @@ export class BattleView {
       this.#aim = null;
     if (
       !this.#aim &&
-      !lockedTarget &&
       state.activation?.id === selected.id &&
       !state.activation.fired
     ) {
