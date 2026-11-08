@@ -218,11 +218,11 @@ it('skeppsval-startar-stridstur / vaxelvisa-skeppsaktiveringar / riktning-och-va
     fighter.id,
   );
   root
-    .querySelector<HTMLButtonElement>('button[aria-label="Turn left 60°"]')!
+    .querySelector<HTMLButtonElement>('button[aria-label="Turn left"]')!
     .click();
   const checkpoint = saved.state.simulation!.tacticalBattles![0]!;
   expect(checkpoint.pieces.find((p) => p.id === fighter.id)!.facing).toBe(1);
-  expect(checkpoint.activation!.remaining).toBe(3);
+  expect(checkpoint.activation!.remaining).toBe(1);
   expect(Game.restore(saved.state).tacticalBattle).toEqual(
     model.snapshot.tacticalBattle,
   );

@@ -1,6 +1,6 @@
 import type { ExplorationOrder } from '../models/TurnSimulation.js';
 import type { ShipOrder, OrderKind } from '../models/ShipOrders.js';
-import type { BattleCommand, BattleShot } from '../models/TacticalBattle.js';
+import type { BattleCommand, BattleManeuver, BattleShot } from '../models/TacticalBattle.js';
 import type { BoardingCommand } from '../models/boarding/BoardingBattle.js';
 import type {
   MapProductionCategory,
@@ -320,6 +320,7 @@ export type IntentHandler = (intent: AppIntent) => void;
 
 export interface AppPort {
   animateBattleShot?(shot: BattleShot): Promise<void>;
+  animateBattleManeuver?(maneuver: BattleManeuver): Promise<void>;
   bind(handler: IntentHandler): void;
   render(model: AppReadModel): void;
   renderCamera?(model: AppReadModel): void;

@@ -517,6 +517,7 @@ class PirateFleet {
 class TacticalBattle {
   largeShipFootprints
   escapeZones
+  maneuverSystem
   phase: deployment | fighting | complete
   round
   turn
@@ -531,9 +532,10 @@ class BattlePiece {
   hull
   missiles
   movement
+  speed
   dockedWith
   escapeEdge: top | bottom [0..1]
-  status: active | destroyed | escaped
+  status: active | wreck | destroyed | escaped
   activated
 }
 class ShipFootprint {

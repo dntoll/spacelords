@@ -1,5 +1,74 @@
 # Taktisk strid
 
+## Manöver, vrak och krock, 2026-11-08
+
+Nya strider använder `maneuverSystem`. Hastighet ligger kvar mellan
+aktiveringarna och börjar på 0. Maxhastighet är skeppets rörelsetal, inklusive
+ionbonus och bogsering. Äldre pågående strider utan flaggan behåller ett steg
+eller en 60°-sväng per rörelsepoäng.
+
+`manoverpoang-och-hastighet`: varje manöverpoäng ändrar hastigheten med +1, 0
+eller −1 och väljer sedan vänster, höger eller rakt fram. Små och medelstora
+skepp har två manöverpoäng. Transport ship, Armored Transport och Colony ship
+har en. Rakt fram flyttar skeppet lika många hex som hastigheten, animerat i
+dess riktning. Hastighet 0 rakt fram förbrukar poängen utan förflyttning.
+
+`svang-vid-hastighet`: högre hastighet ger en vidare sväng. Hastighet 0 vrider
+60° på plats. Hastighet 1 tar ett steg i den nya riktningen. Högre hastighet
+går `ceil(hastighet / 2)` hex i den gamla riktningen och resten i den nya.
+
+`manoverforhandsvisning`: de tre riktningarna visar de hexar skeppet kommer att
+passera när pekaren eller fokus ligger på knappen.
+
+`krock-med-skepp-och-asteroid`: en krock med ett annat skepp stoppar före
+överlapp och ger båda skrovskada lika med den åkande skeppets hastighet,
+minst 1. En asteroid försvinner, skadar skeppet en gång med samma belopp och
+släpper igenom det. Vrak är oframkomliga och ger ingen rammningsskada.
+
+`motor-utslagen-vrak`: en salva som gör minst två skada och innehåller en 6:a
+slår ut motorerna. Skeppet blir då ett vrak även om skrov återstår. Krockar
+slår inte ut motorerna.
+
+`skrovslut-vrak-eller-splitter`: tar skrovet slut utan motorträff blir skeppet
+vrak i 10 procent av fallen och sprängs annars. Ett vrak ritas som sin
+skeppstyp men mörkare. Ett sprängt skepp ritas som debris utan spelregler.
+
+`vrak-blockerar-och-sprangs` och `vrak-beskjutning-sista-utvag`: vraket ligger
+kvar och blockerar färd. Beskjutning spränger det även vid en miss. Andra
+skepp skjuter inte på vrak så länge de kan manövrera eller skjuta på ett
+aktivt skepp.
+
+`nasta-skepp-vid-slut-pa-handlingar`: när skeppet varken kan manövrera, skjuta,
+docka eller spränga ett vrak går turen vidare.
+
+`ingen-avslut-med-fart-och-manoverpoang`: End ship turn kan inte väljas när
+skeppet har fart och minst en manöverpoäng kvar, och en laglig manöver finns.
+Hastighet 0, slut på poäng eller en spärrad väg tillåter fortfarande avslut.
+
+`skott-mellan-manoverpoang`: ett skott mellan manöverpoängen avslutar inte
+turen. Den kvarvarande poängen måste användas om en laglig manöver finns.
+Äldre strider stänger fortfarande rörelsen efter eld när skeppet redan rört sig.
+
+`beskjut-asteroid`: en kanon eller en missilsalva kan riktas mot en asteroid.
+Asteroiden sprängs och försvinner. Den blockerar inte sitt eget skott. Andra
+asteroider blockerar fortfarande eldlinjen.
+
+`styrning-pa-skrovet`: Straight, Turn left och Turn right är små knappar på
+kanterna av främsta hexen, mot den hex man styr mot. + och − sitter på
+akterhexen med farten mellan sig. Tryck växlar nästa manövers fartändring
+och talet uppdateras direkt. End ship turn ligger i skeppets mitt. Utplacering
+och äldre strider behåller de större knapparna runt skrovet.
+
+`flykt-mot-escape-zon`: obeväpnade skepp utan beväpnad eskort söker närmaste
+gröna `Escape`-zon och vänder utåt, riktning 1–2 upptill och 4–5 nedtill.
+Ett obeväpnat skepp med eskort håller sig undan fienden och lämnar inte kartan.
+
+Detta ersätter i nya strider ett steg per rörelsepoäng, regeln om ingen
+tröghet, att skepp och asteroider alltid är oframkomliga, och att varje
+förstört skepp lämnar ett bärgningsvrak i `vrak-efter-strid`. Ett sprängt
+skepp lämnar inget bärgningsvrak. Ett vrak gör det, även om skrov återstår.
+Båda tas bort ur flottan.
+
 ## Bordningsskydd och flyktzoner, 2026-11-07
 
 `pirater-skyddar-bordade-skepp` och `flyktzoner-i-rymdstrid` är
@@ -14,10 +83,12 @@ avgörs kan skeppet väljas som vanligt igen.
 Nya stridskartor har tre gröna `Escape`-hexar mitt på överkanten och tre mitt
 på nederkanten. De hålls fria från asteroider och används av båda sidor.
 Reträtt är fortsatt låst till runda två och kräver en säker strategisk
-reträtthex. Ett litet skepp lämnar med ett steg utåt. Transport ship, Armored
-Transport och Colony ship måste föra hela sitt trehexskrov över kanten. Under
-utpassagen är skeppet kvar som mål och kan avsluta sin aktivering, men det kan
-inte svänga, skjuta eller docka och får därefter bara fortsätta rakt ut.
+reträtthex. I nya strider lämnar skeppet med en rak manöver i tillräcklig
+hastighet. I äldre strider lämnar ett litet skepp med ett steg utåt. Transport
+ship, Armored Transport och Colony ship måste föra hela sitt trehexskrov över
+kanten. Under utpassagen är skeppet kvar som mål och kan avsluta sin
+aktivering, men det kan inte svänga, skjuta eller docka och får därefter bara
+fortsätta rakt ut.
 
 Detta ersätter reträtt genom den egna kortsidan för nya strider. Ett valfritt
 fält skiljer den nya kartregeln från äldre pågående strider, som går att spela
@@ -197,10 +268,10 @@ Sidorna aktiverar växelvis ett valfritt, oanvänt skepp. Varje skepp agerar
 en gång per runda. Den sida som har fler skepp fortsätter när motståndaren
 har aktiverat alla sina.
 
-En aktivering ger ett sammanhängande rörelsemoment och högst en vapensalva,
-i valfri ordning. Ett steg framåt eller en sväng på 60° kostar en rörelsepoäng.
-Efter rörelse följd av eld får skeppet inte röra sig igen. Oanvänd rörelse
-försvinner. Ingen tröghet, energi eller överreaktionseld ingår.
+En aktivering ger högst en vapensalva och, i nya strider, de manöverpoäng som
+beskrivs överst. I äldre strider utan `maneuverSystem` kostar ett steg framåt
+eller en sväng på 60° en rörelsepoäng. Efter rörelse följd av eld får skeppet
+inte röra sig igen. Oanvänd rörelse försvinner.
 
 | Skepp             | Storlek | Skrov | Rörelse |
 | ----------------- | ------- | ----: | ------: |
@@ -246,8 +317,9 @@ Varje lyckad tärning ger en skrovskada.
 Anfall från målets bakre 120° sänker träffkravet med ett. Bågarnas gränser
 ingår. Slagen visas tillsammans med träffkrav, skada och återstående skrov.
 
-Asteroider är ofarbara och oförstörbara och bryter skottlinjen helt.
-Skepp är ofarbara; ett mellanliggande skepp blockerar eld om det är större
+Asteroider bryter skottlinjen helt. I nya strider kan ett skepp köra in i en
+asteroid: asteroiden försvinner och skeppet tar krockskada. I äldre strider är
+asteroider ofarbara och oförstörbara. Skepp blockerar eld om det är större
 än den mindre av skytten och målet. Detta gäller båda sidor. Skottlinjen går
 mellan hexarnas centrum; även beröring av ett hinders kant blockerar.
 Missiler kräver också fri linje. Kartan är synlig: skydd döljer inte pjäser.
@@ -267,10 +339,12 @@ reträtthex efter striden. Order och återstående årsrörelse stoppas. Last
 och passagerare i överlevande skepp bevaras. Lastade transportuppdrag pausas
 och kan återupptas med Resume orders after retreat. Flottan delas inte.
 
-Striden slutar när ena sidan saknar kvarvarande pjäser. Överlevande får fullt
-skrov och ny ammunition efter striden. Förstörda skepp lämnar beständiga vrak
-med sin utrustning; last och besättning följer befintliga förlustregler.
-En gemensam rapport i Events visar deltagare, förluster, överlevande och flykt.
+Striden slutar när ena sidan saknar aktiva skepp. Vrak räcker inte för att
+hålla striden igång. Överlevande får fullt skrov och ny ammunition efter
+striden. Ett skepp som slutar som vrak lämnar ett beständigt bärgningsvrak med
+sin utrustning. Ett sprängt skepp gör det inte. Last och besättning följer
+befintliga förlustregler. En gemensam rapport i Events visar deltagare,
+förluster, överlevande och flykt.
 
 ## Ersatta regler och avgränsning
 

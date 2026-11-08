@@ -16,6 +16,7 @@ import {
   type BattleHex,
   type WeaponName,
   type BattleShot,
+  type BattleManeuver,
 } from '../../models/TacticalBattle.js';
 import type { BattleMapPort } from './BattleView.js';
 import { SHIP_SPRITES, type ShipSpriteType } from '../ShipImages.js';
@@ -50,6 +51,58 @@ export class BattleMapView implements BattleMapPort {
   #effectFrame: BattleEffectFrame | null = null;
   #animationFrame: number | undefined;
   #finishAnimation: (() => void) | undefined;
+  #preview: BattleHex[] = [];
+  #pose: {
+    shipId: string;
+    position: BattleHex;
+    facing: number;
+  } | null = null;
+
+  setManeuverPreview(hexes: readonly BattleHex[] | null): void {
+    this.#preview = hexes ? hexes.map((hex) => ({ ...hex })) : [];
+    if (this.#ready && !this.#disposed) void this.#p5.redraw();
+  }
+
+  animateManeuver(maneuver: BattleManeuver): Promise<void> {
+    this.#cancelAnimation();
+    if (
+      this.#disposed ||
+      !this.#ready ||
+      !maneuver.steps.length ||
+      (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false)
+    )
+      return Promise.resolve();
+    const frames = [maneuver.from, ...maneuver.steps];
+    const start = performance.now();
+    const stepMs = 170;
+    return new Promise((resolve) => {
+      this.#finishAnimation = resolve;
+      const tick = (now: number) => {
+        if (this.#disposed) {
+          this.#cancelAnimation();
+          return;
+        }
+        const index = Math.min(
+          frames.length - 1,
+          Math.floor((now - start) / stepMs),
+        );
+        const frame = frames[index]!;
+        this.#pose = {
+          shipId: maneuver.shipId,
+          position: frame.position,
+          facing: frame.facing,
+        };
+        void this.#p5.redraw();
+        if (now - start >= stepMs * frames.length) {
+          this.#pose = null;
+          this.#cancelAnimation();
+          return;
+        }
+        this.#animationFrame = requestAnimationFrame(tick);
+      };
+      tick(start);
+    });
+  }
 
   animateShot(shot: BattleShot): Promise<void> {
     this.#cancelAnimation();
@@ -93,6 +146,7 @@ export class BattleMapView implements BattleMapPort {
     this.#animationFrame = undefined;
     this.#effect = null;
     this.#effectFrame = null;
+    this.#pose = null;
     delete this.container.dataset.shotStage;
     const finish = this.#finishAnimation;
     this.#finishAnimation = undefined;
@@ -393,6 +447,18 @@ export class BattleMapView implements BattleMapPort {
       p.circle(center.x - 8, center.y + 5, 14);
       p.circle(center.x + 9, center.y - 10, 10);
     }
+    for (const [index, cell] of this.#preview.entries()) {
+      p.stroke('#9ad7ff');
+      p.strokeWeight(2 / this.#scale);
+      p.fill(90, 190, 255, 80);
+      polygon(cell, HexGeometry.size - 4);
+      const center = HexGeometry.toPoint(new HexCoordinate(cell.q, cell.r));
+      p.noStroke();
+      p.fill('#f4fbff');
+      p.textAlign(p.CENTER, p.CENTER);
+      p.textSize(12);
+      p.text(String(index + 1), center.x, center.y);
+    }
     const aim = this.#aim;
     if (aim && state.phase === 'fighting') {
       const area = WEAPONS[this.#weapon].area > 0 ? missileArea(aim) : [aim];
@@ -475,17 +541,41 @@ export class BattleMapView implements BattleMapPort {
       } else p.line(a.x, a.y, b.x, b.y);
     }
     for (const currentShip of state.pieces) {
+      const motion =
+        this.#pose?.shipId === currentShip.id ? this.#pose : null;
+      if (!motion && currentShip.status === 'destroyed') {
+        if (currentShip.position) this.#drawDebris(p, currentShip.position, currentShip.id);
+        continue;
+      }
+      if (
+        !motion &&
+        currentShip.status !== 'active' &&
+        currentShip.status !== 'wreck'
+      )
+        continue;
       const impact =
         !this.#effectFrame?.impacted &&
         this.#effect?.shot.impacts.find((item) => item.id === currentShip.id);
-      const ship = impact
-        ? {
-            ...currentShip,
-            hull: impact.previousHull,
-            status: 'active' as const,
-          }
-        : currentShip;
-      if (ship.status !== 'active' || !ship.position) continue;
+      const ship = {
+        ...(impact
+          ? {
+              ...currentShip,
+              hull: impact.previousHull,
+              status: 'active' as const,
+            }
+          : currentShip),
+        ...(motion
+          ? {
+              position: motion.position,
+              facing: motion.facing,
+              status:
+                currentShip.status === 'wreck'
+                  ? ('wreck' as const)
+                  : ('active' as const),
+            }
+          : {}),
+      };
+      if (!ship.position) continue;
       const center = HexGeometry.toPoint(
         new HexCoordinate(ship.position.q, ship.position.r),
       );
@@ -540,7 +630,8 @@ export class BattleMapView implements BattleMapPort {
       const image = this.#images.get(ship.type);
       if (image) {
         p.imageMode(p.CENTER);
-        if (ship.side === 'enemy' && ship.type === 'Transport ship')
+        if (ship.status === 'wreck') p.tint(90);
+        else if (ship.side === 'enemy' && ship.type === 'Transport ship')
           p.tint(210, 92, 78);
         p.image(
           image,
@@ -549,7 +640,8 @@ export class BattleMapView implements BattleMapPort {
           large ? Math.sqrt(3) * HexGeometry.size * 2.7 : radius * 1.7,
           large ? HexGeometry.size * 1.2 : radius * 1.7,
         );
-        if (ship.side === 'enemy' && ship.type === 'Transport ship') p.noTint();
+        if (ship.status === 'wreck' || (ship.side === 'enemy' && ship.type === 'Transport ship'))
+          p.noTint();
       } else {
         p.fill(ship.side === 'player' ? '#b0e9f9' : '#ffb2a3');
         p.noStroke();
@@ -616,6 +708,25 @@ export class BattleMapView implements BattleMapPort {
       p.circle(ring.position.x, ring.position.y, ring.radius * 2);
     }
     p.pop();
+  }
+  #drawDebris(p: p5, position: BattleHex, id: string): void {
+    const center = HexGeometry.toPoint(
+      new HexCoordinate(position.q, position.r),
+    );
+    let seed = 2166136261;
+    for (const glyph of id) seed = Math.imul(seed ^ glyph.charCodeAt(0), 16777619);
+    p.noStroke();
+    for (let index = 0; index < 7; index++) {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      const angle = ((seed % 360) * Math.PI) / 180;
+      const distance = 4 + (seed % 16);
+      p.fill(index % 2 === 0 ? '#9aa3ad' : '#5e6973');
+      p.circle(
+        center.x + Math.cos(angle) * distance,
+        center.y + Math.sin(angle) * distance,
+        3 + (seed % 5),
+      );
+    }
   }
   dispose(): void {
     this.#disposed = true;

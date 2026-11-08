@@ -1,6 +1,12 @@
 import type { ShipType } from './Game.js';
 import { dockIssue as dockingIssue } from './Docking.js';
 import { HexCoordinate, HexGeometry } from './HexCoordinate.js';
+import {
+  hullLossOutcome,
+  maneuverPath,
+  maneuverPoints,
+  type ManeuverStep,
+} from './battle/Maneuver.js';
 import { ShipFootprint } from './battle/ShipFootprint.js';
 
 export type BattleSide = 'player' | 'enemy';
@@ -60,8 +66,9 @@ export interface BattlePiece {
   readonly armored?: boolean;
   readonly position: BattleHex | null;
   readonly facing: number;
+  readonly speed?: number;
   readonly activated: boolean;
-  readonly status: 'active' | 'destroyed' | 'escaped';
+  readonly status: 'active' | 'destroyed' | 'escaped' | 'wreck';
   readonly dockedWith?: string;
   readonly escapeEdge?: 'top' | 'bottom';
 }
@@ -142,7 +149,10 @@ export interface BattleActivation {
 export interface BattleState {
   readonly largeShipFootprints?: boolean;
   readonly escapeZones?: boolean;
+  /** manoverpoang-och-hastighet: absent on battles saved before maneuver points. */
+  readonly maneuverSystem?: boolean;
   readonly lastShot?: BattleShot;
+  readonly lastManeuver?: BattleManeuver;
   readonly id: string;
   readonly position: BattleHex;
   readonly width: number;
@@ -171,6 +181,26 @@ export interface BattleState {
     readonly remaining: number;
   };
 }
+/** manoverpoang-och-hastighet: one plotted maneuver, animated hex by hex. */
+export interface BattleManeuver {
+  readonly id: string;
+  readonly shipId: string;
+  readonly from: ManeuverStep;
+  readonly steps: readonly ManeuverStep[];
+}
+export interface ManeuverPreview {
+  readonly speed: number;
+  readonly facing: number;
+  readonly position: BattleHex | null;
+  readonly steps: readonly ManeuverStep[];
+  readonly traveled: readonly ManeuverStep[];
+  readonly issue: string | null;
+  readonly escaped: boolean;
+  readonly collisions: readonly (
+    | { readonly kind: 'ship'; readonly id: string; readonly at: BattleHex }
+    | { readonly kind: 'asteroid'; readonly at: BattleHex }
+  )[];
+}
 /** animerade-stridsskott / skadepartiklar-i-strid: facts, independent of rendering and particles. */
 export interface BattleShot {
   readonly id: string;
@@ -197,6 +227,11 @@ export type BattleCommand =
   | { readonly type: 'activate'; readonly id: string }
   | { readonly type: 'turn'; readonly direction: -1 | 1 }
   | {
+      readonly type: 'maneuver';
+      readonly speed: -1 | 0 | 1;
+      readonly direction: -1 | 0 | 1;
+    }
+  | {
       readonly type: 'fire';
       readonly at: BattleHex;
       readonly weapon: WeaponName;
@@ -212,10 +247,12 @@ export interface ImpactHit {
   readonly dice: number;
   readonly threshold: number;
   readonly rear: boolean;
+  readonly wreck?: boolean;
 }
 export interface ImpactPreview {
   readonly reason: string | null;
   readonly hits: readonly ImpactHit[];
+  readonly asteroids?: readonly BattleHex[];
 }
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 type Piece = Mutable<BattlePiece>;
@@ -322,6 +359,7 @@ export class TacticalBattle {
     | 'fleets'
     | 'largeShipFootprints'
     | 'escapeZones'
+    | 'maneuverSystem'
   >;
   readonly #asteroids: BattleHex[];
   readonly #pieces: Piece[];
@@ -332,6 +370,8 @@ export class TacticalBattle {
   #activation: Activation | null;
   #random: number;
   #lastShot: BattleShot | undefined;
+  #lastManeuver: BattleManeuver | undefined;
+  #forceWreckTargets = false;
   #pendingBoarding: BattleState['pendingBoarding'];
   #boardingReady = false;
   #shift: BattleState['shift'];
@@ -351,6 +391,9 @@ export class TacticalBattle {
       ...(copy.escapeZones !== undefined
         ? { escapeZones: copy.escapeZones }
         : {}),
+      ...(copy.maneuverSystem !== undefined
+        ? { maneuverSystem: copy.maneuverSystem }
+        : {}),
     };
     this.#asteroids = [...copy.asteroids];
     this.#pieces = copy.pieces.map((p) => ({ ...p }));
@@ -361,6 +404,7 @@ export class TacticalBattle {
     this.#activation = copy.activation ? { ...copy.activation } : null;
     this.#random = copy.random;
     this.#lastShot = copy.lastShot;
+    this.#lastManeuver = copy.lastManeuver;
     this.#pendingBoarding = copy.pendingBoarding;
     this.#boardingReady = copy.boardingReady === true;
     this.#shift = copy.shift;
@@ -399,6 +443,7 @@ export class TacticalBattle {
       deploymentDepth,
       largeShipFootprints: true,
       escapeZones: true,
+      maneuverSystem: true,
       fleets: fleets.map(({ id, side, retreat }) => ({ id, side, retreat })),
       pieces: fleets.flatMap((f) =>
         f.ships.map((ship) => {
@@ -420,6 +465,7 @@ export class TacticalBattle {
             armored,
             position: null,
             facing: f.side === 'player' ? 0 : 3,
+            speed: 0,
             activated: false,
             status: 'active' as const,
           };
@@ -478,6 +524,8 @@ export class TacticalBattle {
         typeof state.largeShipFootprints !== 'boolean') ||
       (state.escapeZones !== undefined &&
         typeof state.escapeZones !== 'boolean') ||
+      (state.maneuverSystem !== undefined &&
+        typeof state.maneuverSystem !== 'boolean') ||
       !Number.isSafeInteger(state.width) ||
       state.width < 13 ||
       !Number.isSafeInteger(state.height) ||
@@ -526,7 +574,8 @@ export class TacticalBattle {
           (f: BattleState['fleets'][number]) =>
             f.id === p.fleetId && f.side === p.side,
         ) ||
-        !['active', 'destroyed', 'escaped'].includes(p.status) ||
+        !['active', 'destroyed', 'escaped', 'wreck'].includes(p.status) ||
+        (result.#base.maneuverSystem !== true && p.status === 'wreck') ||
         (p.armored !== undefined && typeof p.armored !== 'boolean') ||
         (p.armored === true && !armored) ||
         (p.hasMissiles !== undefined && typeof p.hasMissiles !== 'boolean') ||
@@ -536,7 +585,15 @@ export class TacticalBattle {
         !Number.isSafeInteger(p.hull) ||
         p.hull < 0 ||
         p.hull > maxHull({ type: p.type, armored }) ||
-        (p.status === 'destroyed') !== (p.hull === 0) ||
+        (result.#base.maneuverSystem === true
+          ? p.speed === undefined ||
+            !Number.isSafeInteger(p.speed) ||
+            p.speed < 0 ||
+            p.speed > p.movement ||
+            ((p.status === 'active' || p.status === 'escaped') &&
+              p.hull <= 0) ||
+            (p.status === 'destroyed' && p.hull !== 0)
+          : (p.status === 'destroyed') !== (p.hull === 0)) ||
         !Number.isSafeInteger(p.movement) ||
         p.movement < 1 ||
         p.movement > profile.movement + 1 ||
@@ -596,8 +653,25 @@ export class TacticalBattle {
               );
             occupied.add(hex(cell).key);
           }
+        } else if (p.status === 'wreck') {
+          const cells = result.occupiedHexes(p.id);
+          if (
+            !cells.length ||
+            cells.some((cell) => !result.contains(cell))
+          )
+            throw new Error('Invalid saved combat position.');
+          for (const cell of cells) {
+            if (occupied.has(hex(cell).key))
+              throw new Error(
+                'Overlapping or out-of-bounds saved combat ships.',
+              );
+            occupied.add(hex(cell).key);
+          }
         }
-      } else if (p.status === 'active' && state.phase !== 'deployment')
+      } else if (
+        (p.status === 'active' || p.status === 'wreck') &&
+        state.phase !== 'deployment'
+      )
         throw new Error('Missing combat position.');
       if (p.escapeEdge && (p.status !== 'active' || !p.position))
         throw new Error('Invalid saved combat retreat.');
@@ -612,7 +686,10 @@ export class TacticalBattle {
             p.side === state.turn &&
             p.status === 'active' &&
             !p.activated &&
-            a.remaining <= p.movement,
+            a.remaining <=
+              (result.#base.maneuverSystem === true
+                ? Math.max(p.movement, maneuverPoints(p.type))
+                : p.movement),
         ) ||
         !Number.isSafeInteger(a.remaining) ||
         a.remaining < 0 ||
@@ -638,6 +715,7 @@ export class TacticalBattle {
         random: this.#random,
         log: this.#log,
         ...(this.#lastShot ? { lastShot: this.#lastShot } : {}),
+        ...(this.#lastManeuver ? { lastManeuver: this.#lastManeuver } : {}),
         ...(this.#pendingBoarding
           ? { pendingBoarding: this.#pendingBoarding }
           : {}),
@@ -716,7 +794,7 @@ export class TacticalBattle {
       this.#pieces.some(
         (a) =>
           a.id !== ignoreId &&
-          a.status === 'active' &&
+          (a.status === 'active' || a.status === 'wreck') &&
           ShipFootprint.contains(a, this.#base.largeShipFootprints === true, p),
       )
     );
@@ -942,12 +1020,9 @@ export class TacticalBattle {
           this.#aimAngle(origin, b, facing ?? source.facing),
     );
     return (
-      cells.find((at) => {
-        const preview = this.impact(sourceId, at, weapon, from, facing);
-        return (
-          !preview.reason && preview.hits.some((hit) => hit.id === targetId)
-        );
-      }) ?? null
+      cells.find(
+        (at) => !this.#shotAt(sourceId, targetId, weapon, at, from, facing).reason,
+      ) ?? null
     );
   }
 
@@ -1090,26 +1165,73 @@ export class TacticalBattle {
         reason = 'Impact hex is outside weapon range.';
       else if (!inArc(origin, at, facing ?? source.facing, profile.arc))
         reason = 'Impact hex is outside the firing arc.';
-      else if (this.#blocked(origin, at, source, 1))
+      else if (this.#blocked(origin, at, source, 1, at))
         reason = 'Line of fire is blocked.';
     }
     if (reason || !profile || profile.area === 0) {
       if (reason) return Object.freeze({ reason, hits: Object.freeze([]) });
+      const allowWrecks = this.#mayTargetWrecks(source.id);
       const target = this.#pieces.find(
         (piece) =>
           piece.id !== source.id &&
-          piece.status === 'active' &&
           piece.position &&
+          (piece.status === 'active' ||
+            (allowWrecks && piece.status === 'wreck')) &&
           ShipFootprint.contains(
             piece,
             this.#base.largeShipFootprints === true,
             at,
           ),
       );
-      if (!target || target.side === source.side)
+      const asteroid = this.#asteroids.find((rock) => same(rock, at));
+      if (
+        !target &&
+        asteroid &&
+        origin &&
+        profile
+      ) {
+        const distance = hex(origin).distanceTo(hex(at));
+        if (distance < profile.min || distance > profile.max)
+          return Object.freeze({
+            reason: 'Target is outside weapon range.',
+            hits: Object.freeze([]),
+          });
+        if (!inArc(origin, at, facing ?? source.facing, profile.arc))
+          return Object.freeze({
+            reason: 'Target is outside the firing arc.',
+            hits: Object.freeze([]),
+          });
+        if (this.#blocked(origin, at, source, 1, at))
+          return Object.freeze({
+            reason: 'Line of fire is blocked.',
+            hits: Object.freeze([]),
+          });
+        return Object.freeze({
+          reason: null,
+          hits: Object.freeze([]),
+          asteroids: Object.freeze([{ ...asteroid }]),
+        });
+      }
+      if (
+        !target ||
+        (target.status === 'active' && target.side === source.side)
+      )
         return Object.freeze({
           reason: 'Choose a hex with an enemy ship.',
           hits: Object.freeze([]),
+        });
+      if (target.status === 'wreck')
+        return Object.freeze({
+          reason: null,
+          hits: Object.freeze([
+            {
+              id: target.id,
+              dice: 0,
+              threshold: 0,
+              rear: false,
+              wreck: true,
+            },
+          ]),
         });
       const preview = this.#shotAt(
         sourceId,
@@ -1135,12 +1257,14 @@ export class TacticalBattle {
         ),
       });
     }
+    const allowWrecks = this.#mayTargetWrecks(source.id);
     const hits = this.#pieces
       .filter(
         (piece) =>
           piece.id !== source.id &&
-          piece.status === 'active' &&
           piece.position &&
+          (piece.status === 'active' ||
+            (allowWrecks && piece.status === 'wreck')) &&
           this.occupiedHexes(piece.id).some(
             (cell) => hex(cell).distanceTo(hex(at)) <= profile.area,
           ),
@@ -1155,12 +1279,22 @@ export class TacticalBattle {
         );
         return {
           id: piece.id,
-          dice: profile.dice,
+          dice: piece.status === 'wreck' ? 0 : profile.dice,
           threshold: profile.threshold - Number(rear),
           rear,
+          ...(piece.status === 'wreck' ? { wreck: true } : {}),
         };
       });
-    return Object.freeze({ reason: null, hits: Object.freeze(hits) });
+    const rocks = this.#asteroids.filter(
+      (asteroid) => hex(asteroid).distanceTo(hex(at)) <= profile.area,
+    );
+    return Object.freeze({
+      reason: null,
+      hits: Object.freeze(hits),
+      ...(rocks.length
+        ? { asteroids: Object.freeze(rocks.map((asteroid) => ({ ...asteroid }))) }
+        : {}),
+    });
   }
 
   #blocked(
@@ -1168,10 +1302,11 @@ export class TacticalBattle {
     at: BattleHex,
     source: Piece,
     targetSize: number,
+    ignore?: BattleHex,
   ): boolean {
     const size = Math.min(SHIP_PROFILES[source.type].size, targetSize);
     const obstacles = [
-      ...this.#asteroids,
+      ...this.#asteroids.filter((asteroid) => !ignore || !same(asteroid, ignore)),
       ...this.#pieces
         .filter(
           (piece) =>
@@ -1188,6 +1323,271 @@ export class TacticalBattle {
         .flatMap((piece) => this.occupiedHexes(piece.id)),
     ];
     return obstacles.some((obstacle) => crossesHex(origin, at, obstacle));
+  }
+
+  get #usesManeuver(): boolean {
+    return this.#base.maneuverSystem === true;
+  }
+
+  /** Stable side roll so weapon dice keep their existing sequence. */
+  #fate(label: string): number {
+    let seed = this.#random ^ 0x9e3779b9;
+    for (let index = 0; index < label.length; index++)
+      seed = Math.imul(seed ^ label.charCodeAt(index), 0x85ebca6b);
+    seed ^= seed << 13;
+    seed ^= seed >>> 17;
+    seed ^= seed << 5;
+    return (seed >>> 0) / 0x100000000;
+  }
+
+  #applyHullDamage(
+    target: Piece,
+    damage: number,
+    dice: readonly number[] = [],
+  ): 'active' | 'wreck' | 'exploded' {
+    if (target.status === 'wreck') {
+      target.status = 'destroyed';
+      target.hull = 0;
+      this.unlockDock(target.id);
+      return 'exploded';
+    }
+    if (target.status !== 'active' || damage <= 0) return 'active';
+    const stamp = `${target.id}:${this.#log.length}:${target.hull}`;
+    const enginesKnockedOut =
+      damage >= 2 && dice.some((die) => die === 6);
+    target.hull = Math.max(0, target.hull - damage);
+    const outcome = hullLossOutcome(
+      enginesKnockedOut,
+      target.hull,
+      this.#fate(`${stamp}:hull`),
+    );
+    if (outcome === 'exploded') {
+      target.status = 'destroyed';
+      target.hull = 0;
+      this.unlockDock(target.id);
+    } else if (outcome === 'wreck') {
+      target.status = 'wreck';
+      target.speed = 0;
+      delete target.escapeEdge;
+      this.unlockDock(target.id);
+    }
+    return outcome;
+  }
+
+  #exitIssue(
+    piece: Piece,
+    origin: BattleHex,
+    facing: number,
+    committed: 'top' | 'bottom' | undefined = piece.escapeEdge,
+  ): string | null {
+    const next = hex(origin).neighbors()[facing]!;
+    const cells = this.occupiedHexes(piece.id, next, facing);
+    if (cells.every((cell) => this.contains(cell))) return null;
+    if (this.#base.escapeZones === true) {
+      const edge = committed ?? this.#escapeDeparture(piece, origin, facing);
+      if (!edge) return 'Escape through one of the green Escape hexes.';
+      const crossesAnotherEdge = cells.some((cell) => {
+        if (this.contains(cell)) return false;
+        return edge === 'top' ? cell.r >= 0 : cell.r < this.#base.height;
+      });
+      if (
+        (edge === 'top' && facing !== 1 && facing !== 2) ||
+        (edge === 'bottom' && facing !== 4 && facing !== 5) ||
+        crossesAnotherEdge
+      )
+        return 'Continue straight through the selected Escape edge.';
+      if (this.#round < 2) return 'Retreat is available from round two.';
+      return this.#base.fleets.find((f) => f.id === piece.fleetId)?.retreat
+        ? null
+        : 'No safe retreat hex is available.';
+    }
+    const outside = cells.filter((cell) => !this.contains(cell));
+    const ownEdge = outside.every((cell) =>
+      piece.side === 'player'
+        ? column(cell) < 0
+        : column(cell) >= this.#base.width,
+    );
+    if (
+      !ownEdge ||
+      outside.some((cell) => cell.r < 0 || cell.r >= this.#base.height)
+    )
+      return 'Ships can only exit their own short edge.';
+    if (this.#round < 2) return 'Retreat is available from round two.';
+    return this.#base.fleets.find((f) => f.id === piece.fleetId)?.retreat
+      ? null
+      : 'No safe retreat hex is available.';
+  }
+
+  previewManeuver(
+    id: string,
+    delta: -1 | 0 | 1,
+    direction: -1 | 0 | 1,
+    pose?: {
+      readonly position: BattleHex;
+      readonly facing: number;
+      readonly speed: number;
+    },
+  ): ManeuverPreview {
+    const piece = this.#piece(id);
+    const origin = pose?.position ?? piece.position;
+    const facing = pose?.facing ?? piece.facing;
+    const speed = pose?.speed ?? piece.speed ?? 0;
+    const empty = (
+      issue: string,
+      nextSpeed = speed,
+    ): ManeuverPreview => ({
+      speed: nextSpeed,
+      facing,
+      position: origin ? { ...origin } : null,
+      steps: [],
+      traveled: [],
+      issue,
+      escaped: false,
+      collisions: [],
+    });
+    if (!this.#usesManeuver) return empty('This battle uses the earlier movement rules.');
+    if (delta !== -1 && delta !== 0 && delta !== 1)
+      return empty('Change speed by one, or hold it.');
+    if (direction !== -1 && direction !== 0 && direction !== 1)
+      return empty('Choose left, straight, or right.');
+    if (!origin) return empty('Deploy the ship first.');
+    if (!pose && piece.dockedWith)
+      return empty('This ship is locked in a boarding.');
+    if (!pose && piece.escapeEdge && direction !== 0)
+      return empty('This ship is committed to its escape.');
+    const nextSpeed = Math.min(piece.movement, Math.max(0, speed + delta));
+    if (nextSpeed !== speed + delta)
+      return empty(
+        nextSpeed === piece.movement
+          ? 'The ship is already at maximum speed.'
+          : 'The ship is already stopped.',
+        nextSpeed,
+      );
+    const steps = maneuverPath(origin, facing, nextSpeed, direction);
+    if (
+      direction !== 0 &&
+      nextSpeed === 0 &&
+      this.placementIssue(id, origin, (facing + direction + 6) % 6)
+    )
+      return {
+        ...empty('The ship footprint is occupied.', nextSpeed),
+        facing: (facing + direction + 6) % 6,
+        steps,
+      };
+    const gone = new Set<string>();
+    const traveled: ManeuverStep[] = [];
+    const collisions: ManeuverPreview['collisions'][number][] = [];
+    let cursor = origin;
+    let cursorFacing = facing;
+    let committed = piece.escapeEdge;
+    let escaped = false;
+    const blocked = (
+      issue: string,
+    ): ManeuverPreview => ({
+      speed: nextSpeed,
+      facing: cursorFacing,
+      position: { ...cursor },
+      steps,
+      traveled,
+      issue,
+      escaped: false,
+      collisions,
+    });
+    for (const step of steps) {
+      if (step.position.q === cursor.q && step.position.r === cursor.r) {
+        traveled.push(step);
+        cursorFacing = step.facing;
+        continue;
+      }
+      const approachFacing = this.#stepFacing(
+        cursor,
+        step.position,
+        cursorFacing,
+      );
+      const cells = this.occupiedHexes(id, step.position, step.facing);
+      if (cells.some((cell) => !this.contains(cell))) {
+        const leaving = this.#exitIssue(
+          piece,
+          cursor,
+          approachFacing,
+          committed,
+        );
+        if (leaving) return blocked(leaving);
+      }
+      const overlaps = (other: Piece) =>
+        !!other.position &&
+        cells.some((cell) =>
+          ShipFootprint.contains(
+            other,
+            this.#base.largeShipFootprints === true,
+            cell,
+          ),
+        );
+      if (
+        this.#pieces.some(
+          (other) =>
+            other.id !== id && other.status === 'wreck' && overlaps(other),
+        )
+      )
+        return blocked('A wreck blocks the way.');
+      const ships = this.#pieces.filter(
+        (other) =>
+          other.id !== id && other.status === 'active' && overlaps(other),
+      );
+      if (ships.length) {
+        for (const other of ships)
+          collisions.push({
+            kind: 'ship',
+            id: other.id,
+            at: { ...step.position },
+          });
+        break;
+      }
+      for (const cell of cells) {
+        if (
+          this.#asteroids.some((asteroid) => same(asteroid, cell)) &&
+          !gone.has(hex(cell).key)
+        ) {
+          gone.add(hex(cell).key);
+          collisions.push({ kind: 'asteroid', at: { ...cell } });
+        }
+      }
+      const departed = cursor;
+      traveled.push(step);
+      cursor = step.position;
+      cursorFacing = step.facing;
+      if (cells.some((cell) => !this.contains(cell)))
+        committed =
+          committed ??
+          this.#escapeDeparture(piece, departed, approachFacing) ??
+          undefined;
+      if (cells.every((cell) => !this.contains(cell))) {
+        escaped = true;
+        break;
+      }
+    }
+    const final = traveled.at(-1);
+    return {
+      speed: nextSpeed,
+      facing:
+        final?.facing ??
+        (direction !== 0 && nextSpeed === 0
+          ? (facing + direction + 6) % 6
+          : cursorFacing),
+      position: escaped ? null : { ...(final?.position ?? cursor) },
+      steps,
+      traveled,
+      issue: null,
+      escaped,
+      collisions,
+    };
+  }
+
+  #stepFacing(from: BattleHex, to: BattleHex, fallback: number): number {
+    const index = hex(from)
+      .neighbors()
+      .findIndex((point) => point.q === to.q && point.r === to.r);
+    return index < 0 ? fallback : index;
   }
 
   forwardIssue(
@@ -1301,20 +1701,50 @@ export class TacticalBattle {
         throw new Error('Choose an unactivated ship on your side.');
       this.#activation = {
         id: p.id,
-        remaining: p.movement,
+        remaining: this.#usesManeuver ? maneuverPoints(p.type) : p.movement,
         moved: false,
         fired: false,
         movementClosed: false,
       };
+      this.#advanceIfSpent();
       return;
     }
     const activation = this.#activation;
     if (!activation) throw new Error('Activate a ship first.');
     const p = this.#piece(activation.id);
     if (command.type === 'end-activation') {
+      const blocked = this.endIssue(p.id);
+      if (blocked) throw new Error(blocked);
       this.#finishActivation();
       return;
     }
+    if (command.type === 'maneuver') {
+      if (!this.#usesManeuver)
+        throw new Error('This battle uses the earlier movement rules.');
+      if (activation.remaining < 1 || activation.movementClosed)
+        throw new Error('No movement remains in this activation.');
+      if (command.speed !== -1 && command.speed !== 0 && command.speed !== 1)
+        throw new Error('Change speed by one, or hold it.');
+      if (
+        command.direction !== -1 &&
+        command.direction !== 0 &&
+        command.direction !== 1
+      )
+        throw new Error('Choose left, straight, or right.');
+      const preview = this.previewManeuver(
+        p.id,
+        command.speed,
+        command.direction,
+      );
+      if (preview.issue) throw new Error(preview.issue);
+      this.#commitManeuver(p, activation, command, preview);
+      return;
+    }
+    if (
+      this.#usesManeuver &&
+      (command.type === 'forward' || command.type === 'turn')
+    )
+      throw new Error('Choose a speed and a heading.');
     if (command.type === 'forward' || command.type === 'turn') {
       if (activation.remaining < 1 || activation.movementClosed)
         throw new Error('No movement remains in this activation.');
@@ -1366,6 +1796,7 @@ export class TacticalBattle {
       this.#log.push(
         `${battlePieceLabel(p, this.#pieces)} docks with ${battlePieceLabel(target, this.#pieces)}.`,
       );
+      this.#advanceIfSpent();
       return;
     }
     if (command.type !== 'fire') throw new Error('Choose a combat action.');
@@ -1380,16 +1811,26 @@ export class TacticalBattle {
     const impacts: BattleShot['impacts'][number][] = [];
     let total = 0;
     for (const hit of preview.hits) {
-      const dice = Array.from({ length: hit.dice }, () => this.#die());
-      const damage = dice.filter((die) => die >= hit.threshold).length;
-      total += damage;
       const target = this.#piece(hit.id);
       const previousHull = target.hull;
-      target.hull = Math.max(0, target.hull - damage);
-      if (target.hull === 0) {
-        target.status = 'destroyed';
-        this.unlockDock(target.id);
-      }
+      const dice = hit.wreck
+        ? []
+        : Array.from({ length: hit.dice }, () => this.#die());
+      const damage = hit.wreck
+        ? 0
+        : dice.filter((die) => die >= hit.threshold).length;
+      total += damage;
+      const loss = hit.wreck
+        ? this.#applyHullDamage(target, 1)
+        : this.#applyHullDamage(target, damage, dice);
+      const phrase =
+        loss === 'exploded'
+          ? hit.wreck
+            ? ', wreck explodes'
+            : ', destroyed'
+          : loss === 'wreck'
+            ? ', wreck'
+            : `, ${target.hull} hull remaining`;
       impacts.push({
         id: target.id,
         position: {
@@ -1401,14 +1842,21 @@ export class TacticalBattle {
         },
         damage,
         previousHull,
-        destroyed: target.hull === 0,
+        destroyed: loss === 'exploded',
       });
-      const outcome = `${hit.dice}D6 [${dice.join(', ')}], hit ${hit.threshold}+${hit.rear ? ' (rear)' : ''}: ${damage} damage${target.hull === 0 ? ', destroyed' : `, ${target.hull} hull remaining`}`;
+      const outcome = hit.wreck
+        ? '0 damage, wreck explodes'
+        : `${hit.dice}D6 [${dice.join(', ')}], hit ${hit.threshold}+${hit.rear ? ' (rear)' : ''}: ${damage} damage${phrase}`;
       notes.push(
         command.weapon === 'Missiles'
-          ? `${battlePieceLabel(target, this.#pieces)} ${hit.dice}D6 [${dice.join(', ')}], hit ${hit.threshold}+${hit.rear ? ' (rear)' : ''}, ${damage} hits${target.hull === 0 ? ', destroyed' : `, ${target.hull} hull remaining`}`
+          ? `${battlePieceLabel(target, this.#pieces)} ${hit.wreck ? 'wreck explodes' : `${hit.dice}D6 [${dice.join(', ')}], hit ${hit.threshold}+${hit.rear ? ' (rear)' : ''}, ${damage} hits${phrase}`}`
           : outcome,
       );
+    }
+    for (const asteroid of preview.asteroids ?? []) {
+      const index = this.#asteroids.findIndex((rock) => same(rock, asteroid));
+      if (index >= 0) this.#asteroids.splice(index, 1);
+      notes.push(`Asteroid at ${asteroid.q},${asteroid.r} breaks.`);
     }
     activation.fired = true;
     this.#lastShot = {
@@ -1418,14 +1866,227 @@ export class TacticalBattle {
       at: { ...command.at },
       impacts,
     };
-    activation.movementClosed = activation.moved;
+    if (!this.#usesManeuver) activation.movementClosed = activation.moved;
+    const shipNote = preview.hits[0]
+      ? battlePieceLabel(this.#piece(preview.hits[0].id), this.#pieces)
+      : '';
     this.#log.push(
       command.weapon === 'Missiles'
         ? `${battlePieceLabel(p, this.#pieces)}: Missiles → ${command.at.q},${command.at.r}. ${notes.join(' ') || 'No ships in the area.'} Area: ${total} damage.`
-        : `${battlePieceLabel(p, this.#pieces)}: ${command.weapon} → ${command.at.q},${command.at.r} ${battlePieceLabel(this.#piece(preview.hits[0]!.id), this.#pieces)}. ${notes[0]}`,
+        : `${battlePieceLabel(p, this.#pieces)}: ${command.weapon} → ${command.at.q},${command.at.r}${shipNote ? ` ${shipNote}` : ''}. ${notes.join(' ')}`,
     );
     this.#checkComplete();
+    this.#advanceIfSpent();
   }
+
+  #commitManeuver(
+    piece: Piece,
+    activation: Activation,
+    command: { readonly speed: -1 | 0 | 1; readonly direction: -1 | 0 | 1 },
+    preview: ManeuverPreview,
+  ): void {
+    const from = {
+      position: { ...piece.position! },
+      facing: piece.facing,
+    };
+    piece.speed = preview.speed;
+    let stopped = false;
+    for (const step of preview.traveled) {
+      const cells = this.occupiedHexes(piece.id, step.position, step.facing);
+      for (const collision of preview.collisions) {
+        if (collision.kind !== 'asteroid') continue;
+        if (!cells.some((cell) => same(cell, collision.at))) continue;
+        const index = this.#asteroids.findIndex((asteroid) =>
+          same(asteroid, collision.at),
+        );
+        if (index < 0) continue;
+        this.#asteroids.splice(index, 1);
+        this.#applyHullDamage(piece, Math.max(1, preview.speed));
+        if (piece.status !== 'active') {
+          piece.position = { ...step.position };
+          piece.facing = step.facing;
+          stopped = true;
+          break;
+        }
+      }
+      if (stopped) break;
+      piece.position = { ...step.position };
+      piece.facing = step.facing;
+      if (preview.escaped && step === preview.traveled.at(-1)) {
+        piece.position = null;
+        piece.status = 'escaped';
+        delete piece.escapeEdge;
+      }
+    }
+    if (piece.status === 'active' && !preview.traveled.length && command.direction !== 0)
+      piece.facing = preview.facing;
+    if (piece.status === 'active' && !preview.escaped) {
+      for (const collision of preview.collisions) {
+        if (collision.kind !== 'ship' || stopped) continue;
+        const other = this.#piece(collision.id);
+        if (other.status !== 'active') continue;
+        const amount = Math.max(1, preview.speed);
+        this.#applyHullDamage(other, amount);
+        if (piece.status === 'active') this.#applyHullDamage(piece, amount);
+        if (piece.status !== 'active') stopped = true;
+      }
+      if (piece.status === 'active') {
+        const outside = this.occupiedHexes(piece.id).some(
+          (cell) => !this.contains(cell),
+        );
+        if (outside && !piece.escapeEdge) {
+          let previous = from;
+          for (const step of preview.traveled) {
+            const cells = this.occupiedHexes(
+              piece.id,
+              step.position,
+              step.facing,
+            );
+            if (cells.some((cell) => !this.contains(cell))) {
+              piece.escapeEdge =
+                this.#escapeDeparture(
+                  piece,
+                  previous.position,
+                  this.#stepFacing(previous.position, step.position, previous.facing),
+                ) ?? (step.position.r <= 0 ? 'top' : 'bottom');
+              break;
+            }
+            previous = step;
+          }
+        }
+      }
+    }
+    this.#lastManeuver = {
+      id: `${this.#base.id}:move:${this.#log.length}:${piece.id}`,
+      shipId: piece.id,
+      from,
+      steps: preview.traveled,
+    };
+    const heading =
+      command.direction === 0
+        ? 'straight'
+        : command.direction === 1
+          ? 'left'
+          : 'right';
+    const pace =
+      command.speed > 0
+        ? 'accelerates'
+        : command.speed < 0
+          ? 'brakes'
+          : 'holds speed';
+    const collisionNote = preview.collisions.length
+      ? ` ${preview.collisions
+          .map((collision) =>
+            collision.kind === 'asteroid'
+              ? 'An asteroid breaks.'
+              : `Collides with ${battlePieceLabel(this.#piece(collision.id), this.#pieces)}.`,
+          )
+          .join(' ')}`
+      : '';
+    this.#log.push(
+      `${battlePieceLabel(piece, this.#pieces)} ${pace} to speed ${preview.speed} and goes ${heading}.${collisionNote}${piece.status === 'escaped' ? ' Escaped.' : piece.status === 'wreck' ? ' Wreck.' : piece.status === 'destroyed' ? ' Destroyed.' : ''}`,
+    );
+    activation.remaining--;
+    activation.moved = true;
+    if (piece.status !== 'active' || this.#checkComplete()) {
+      if (this.#activation) this.#finishActivation();
+      return;
+    }
+    this.#advanceIfSpent();
+  }
+
+  #hasActiveEnemyShot(piece: Piece): boolean {
+    return battleWeapons(piece.type, piece.hasMissiles).some(
+      (weapon) => this.autoTarget(piece.id, weapon) !== null,
+    );
+  }
+
+  #hasLegalManeuver(piece: Piece): boolean {
+    const activation = this.#activation;
+    if (
+      activation?.id === piece.id &&
+      (activation.movementClosed || activation.remaining < 1)
+    )
+      return false;
+    for (const speed of [-1, 0, 1] as const)
+      for (const direction of [-1, 0, 1] as const)
+        if (!this.previewManeuver(piece.id, speed, direction).issue)
+          return true;
+    return false;
+  }
+
+  /** vrak-beskjutning-sista-utvag: wrecks are targets only with no move and no other shot. */
+  #mayTargetWrecks(id: string): boolean {
+    if (!this.#usesManeuver) return false;
+    const piece = this.#piece(id);
+    if (piece.status !== 'active' || piece.escapeEdge) return false;
+    if (this.#forceWreckTargets) return true;
+    const activation = this.#activation;
+    if (
+      !activation ||
+      activation.id !== id ||
+      activation.fired ||
+      piece.escapeEdge ||
+      piece.status !== 'active'
+    )
+      return false;
+    if (this.#hasLegalManeuver(piece) || this.#hasActiveEnemyShot(piece))
+      return false;
+    return true;
+  }
+
+  #hasCombatAction(piece: Piece): boolean {
+    const activation = this.#activation;
+    if (!activation || activation.id !== piece.id || piece.status !== 'active')
+      return false;
+    if (!activation.fired && this.dockTargets(piece.id).length > 0) return true;
+    if (!activation.fired && this.#hasActiveEnemyShot(piece)) return true;
+    if (this.#mayTargetWrecks(piece.id)) {
+      const wreck = this.#pieces.some(
+        (other) => other.status === 'wreck' && other.position,
+      );
+      if (wreck && this.#hasWreckShot(piece)) return true;
+    }
+    if (!activation.fired && this.#hasAsteroidShot(piece)) return true;
+    return (
+      !activation.movementClosed &&
+      activation.remaining > 0 &&
+      this.#hasLegalManeuver(piece)
+    );
+  }
+
+  #hasAsteroidShot(piece: Piece): boolean {
+    return battleWeapons(piece.type, piece.hasMissiles).some((weapon) =>
+      this.#asteroids.some(
+        (asteroid) => !this.impact(piece.id, asteroid, weapon).reason,
+      ),
+    );
+  }
+
+  #hasWreckShot(piece: Piece): boolean {
+    return battleWeapons(piece.type, piece.hasMissiles).some((weapon) =>
+      this.#pieces.some(
+        (other) =>
+          other.status === 'wreck' &&
+          other.position &&
+          this.occupiedHexes(other.id).some(
+            (cell) => !this.impact(piece.id, cell, weapon).reason,
+          ),
+      ),
+    );
+  }
+
+  /** nasta-skepp-vid-slut-pa-handlingar */
+  #advanceIfSpent(): void {
+    if (!this.#usesManeuver || !this.#activation || this.#phase !== 'fighting')
+      return;
+    const piece = this.#pieces.find(
+      (candidate) => candidate.id === this.#activation!.id,
+    );
+    if (!piece || piece.status !== 'active' || !this.#hasCombatAction(piece))
+      this.#finishActivation();
+  }
+
   #checkComplete(): boolean {
     if (
       (['player', 'enemy'] as const).some(
@@ -1503,13 +2164,60 @@ export class TacticalBattle {
       this.command(action, side);
       if (singleStep) return;
     }
-    if (this.#activation) this.command({ type: 'end-activation' }, side);
+    while (this.#activation && this.endIssue(this.#activation.id)) {
+      const extra = this.#fallbackManeuver(this.#piece(this.#activation.id));
+      if (!extra) break;
+      this.command(extra, side);
+      if (singleStep) return;
+    }
+    if (this.#activation && !this.endIssue(this.#activation.id))
+      this.command({ type: 'end-activation' }, side);
+  }
+
+  /** ingen-avslut-med-fart-och-manoverpoang */
+  endIssue(id: string): string | null {
+    if (!this.#usesManeuver) return null;
+    const piece = this.#piece(id);
+    const activation = this.#activation;
+    if (
+      !activation ||
+      activation.id !== id ||
+      activation.movementClosed ||
+      activation.remaining < 1 ||
+      !this.#hasLegalManeuver(piece)
+    )
+      return null;
+    if (activation.fired && activation.moved)
+      return 'Use the remaining maneuver point after firing.';
+    if ((piece.speed ?? 0) < 1) return null;
+    return 'Use the remaining maneuver points while the ship has speed.';
+  }
+
+  #fallbackManeuver(
+    piece: Piece,
+  ): { type: 'maneuver'; speed: -1 | 0 | 1; direction: -1 | 0 | 1 } | null {
+    const options: Array<{ speed: -1 | 0 | 1; direction: -1 | 0 | 1 }> = [
+      { speed: 0, direction: 0 },
+      { speed: -1, direction: 0 },
+      { speed: 0, direction: 1 },
+      { speed: 0, direction: -1 },
+      { speed: 1, direction: 0 },
+      { speed: -1, direction: 1 },
+      { speed: -1, direction: -1 },
+      { speed: 1, direction: 1 },
+      { speed: 1, direction: -1 },
+    ];
+    const choice = options.find(
+      (option) => !this.previewManeuver(piece.id, option.speed, option.direction).issue,
+    );
+    return choice ? { type: 'maneuver', ...choice } : null;
   }
 
   #plan(
     p: Piece,
     allowDock = true,
   ): { id: string; score: number; actions: BattleCommand[] } {
+    if (this.#usesManeuver) return this.#planManeuver(p, allowDock);
     const enemies = this.#pieces.filter(
       (e) => e.side !== p.side && e.status === 'active',
     );
@@ -1625,10 +2333,7 @@ export class TacticalBattle {
       const nearest = Math.min(
         ...enemies.map((e) => hex(node.position).distanceTo(hex(e.position!))),
       );
-      const exitDistance =
-        p.side === 'player'
-          ? column(node.position)
-          : this.#base.width - 1 - column(node.position);
+      const route = this.#fleeScore(p, node.position, node.facing);
       let risk = 0;
       for (const enemy of enemies)
         for (const weapon of battleWeapons(enemy.type, enemy.hasMissiles)) {
@@ -1643,12 +2348,9 @@ export class TacticalBattle {
           if (!preview.reason)
             risk += (preview.dice * (7 - preview.threshold)) / 6;
         }
-      const aligned = Math.cos(
-        ((node.facing - (p.side === 'player' ? 3 : 0)) * Math.PI) / 3,
-      );
       const score =
         (shot?.score ?? 0) -
-        (armed ? nearest * 0.8 : exitDistance * 3 - aligned) -
+        (armed ? nearest * 0.8 : route.distance * 3 - route.aligned) -
         risk * 2 -
         node.actions.length * 0.02;
       const actions =
@@ -1714,6 +2416,278 @@ export class TacticalBattle {
         };
     }
     return best;
+  }
+
+  /** flykt-mot-escape-zon: unarmed ships head for a green edge, not their old rear. */
+  #fleeScore(
+    piece: Piece,
+    position: BattleHex,
+    facing: number,
+  ): { readonly distance: number; readonly aligned: number } {
+    if (this.#base.escapeZones === true) {
+      let distance = Infinity;
+      let edge: 'top' | 'bottom' = 'top';
+      for (const zone of battleEscapeHexes(this.#base)) {
+        const next = hex(position).distanceTo(hex(zone));
+        if (next < distance) {
+          distance = next;
+          edge = zone.r === 0 ? 'top' : 'bottom';
+        }
+      }
+      const outward = edge === 'top' ? [1, 2] : [4, 5];
+      return {
+        distance,
+        aligned: Math.max(
+          ...outward.map((direction) =>
+            Math.cos(((facing - direction) * Math.PI) / 3),
+          ),
+        ),
+      };
+    }
+    return {
+      distance:
+        piece.side === 'player'
+          ? column(position)
+          : this.#base.width - 1 - column(position),
+      aligned: Math.cos(
+        ((facing - (piece.side === 'player' ? 3 : 0)) * Math.PI) / 3,
+      ),
+    };
+  }
+
+  #planManeuver(
+    p: Piece,
+    allowDock: boolean,
+  ): { id: string; score: number; actions: BattleCommand[] } {
+    const enemies = this.#pieces.filter(
+      (enemy) => enemy.side !== p.side && enemy.status === 'active',
+    );
+    const activation = this.#activation?.id === p.id ? this.#activation : null;
+    if (p.dockedWith) return { id: p.id, score: 0, actions: [] };
+    if (allowDock && !activation?.fired) {
+      const target = enemies.find(
+        (enemy) => this.dockIssue(p.id, enemy.id) === null,
+      );
+      if (target)
+        return {
+          id: p.id,
+          score: 1000,
+          actions: [{ type: 'dock', targetId: target.id }],
+        };
+    }
+    const moves = activation?.movementClosed
+      ? 0
+      : (activation?.remaining ?? maneuverPoints(p.type));
+    if (p.escapeEdge) {
+      const actions: BattleCommand[] = [];
+      let pose = {
+        position: p.position!,
+        facing: p.facing,
+        speed: p.speed ?? 0,
+      };
+      for (let index = 0; index < moves; index++) {
+        const delta = (pose.speed < 1 ? 1 : 0) as -1 | 0 | 1;
+        const preview = this.previewManeuver(p.id, delta, 0, pose);
+        if (preview.issue) break;
+        actions.push({ type: 'maneuver', speed: delta, direction: 0 });
+        if (preview.escaped || !preview.position) break;
+        pose = {
+          position: preview.position,
+          facing: preview.facing,
+          speed: preview.speed,
+        };
+      }
+      return { id: p.id, score: 100, actions };
+    }
+    const armed = battleWeapons(p.type, p.hasMissiles).length > 0;
+    const escorted = this.#pieces.some(
+      (other) =>
+        other.id !== p.id &&
+        other.side === p.side &&
+        other.status === 'active' &&
+        battleWeapons(other.type, other.hasMissiles).length > 0,
+    );
+    const fleeing = !armed && !escorted;
+    type Node = {
+      position: BattleHex;
+      facing: number;
+      speed: number;
+      actions: BattleCommand[];
+      penalty: number;
+    };
+    const queue: Node[] = [
+      {
+        position: p.position!,
+        facing: p.facing,
+        speed: p.speed ?? 0,
+        actions: [],
+        penalty: 0,
+      },
+    ];
+    const seen = new Set<string>();
+    let best = { id: p.id, score: -Infinity, actions: [] as BattleCommand[] };
+    const saved = {
+      position: p.position,
+      facing: p.facing,
+      speed: p.speed,
+    };
+    const scoreShot = () => {
+      let bestShot: { score: number; action: BattleCommand } | null = null;
+      if (activation?.fired) return bestShot;
+      for (const weapon of battleWeapons(p.type, p.hasMissiles)) {
+        for (const enemy of enemies) {
+          if (
+            !enemy.position ||
+            this.#protectedByFriendlyBoarders(enemy, p.side)
+          )
+            continue;
+          if (weapon === 'Missiles') {
+            for (const at of this.occupiedHexes(enemy.id).flatMap(missileArea)) {
+              const preview = this.impact(p.id, at, weapon);
+              if (preview.reason || !preview.hits.length) continue;
+              let score = -1;
+              for (const hit of preview.hits) {
+                const ship = this.#piece(hit.id);
+                const expected = (hit.dice * (7 - hit.threshold)) / 6;
+                const value =
+                  expected * 10 + Math.max(0, hit.dice - ship.hull + 1) * 12;
+                score += ship.side === p.side ? -value : value;
+              }
+              if (score <= 0) continue;
+              if (!bestShot || score > bestShot.score)
+                bestShot = { score, action: { type: 'fire', at, weapon } };
+            }
+            continue;
+          }
+          const at = this.aimAt(p.id, enemy.id, weapon);
+          if (!at) continue;
+          const preview = this.shot(p.id, enemy.id, weapon);
+          if (preview.reason) continue;
+          const expected = (preview.dice * (7 - preview.threshold)) / 6;
+          const score =
+            expected * 10 + Math.max(0, preview.dice - enemy.hull + 1) * 12;
+          if (!bestShot || score > bestShot.score)
+            bestShot = { score, action: { type: 'fire', at, weapon } };
+        }
+      }
+      return bestShot;
+    };
+    try {
+      for (let index = 0; index < queue.length; index++) {
+        const node = queue[index]!;
+        const key = `${node.position.q},${node.position.r},${node.facing},${node.speed}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        p.position = node.position;
+        p.facing = node.facing;
+        p.speed = node.speed;
+        const shot = scoreShot();
+        const route = this.#fleeScore(p, node.position, node.facing);
+        const nearest = enemies.length
+          ? Math.min(
+              ...enemies.map((enemy) =>
+                hex(node.position).distanceTo(hex(enemy.position!)),
+              ),
+            )
+          : 0;
+        let risk = 0;
+        for (const enemy of enemies)
+          for (const weapon of battleWeapons(enemy.type, enemy.hasMissiles)) {
+            const preview = this.shot(enemy.id, p.id, weapon);
+            if (!preview.reason)
+              risk += (preview.dice * (7 - preview.threshold)) / 6;
+          }
+        let wreckAction: BattleCommand | null = null;
+        if (!shot && node.actions.length >= moves) {
+          this.#forceWreckTargets = true;
+          for (const weapon of battleWeapons(p.type, p.hasMissiles))
+            for (const wreck of this.#pieces)
+              if (wreck.status === 'wreck' && wreck.position)
+                for (const at of this.occupiedHexes(wreck.id)) {
+                  const preview = this.impact(p.id, at, weapon);
+                  if (!preview.reason && preview.hits.some((hit) => hit.wreck))
+                    wreckAction = { type: 'fire', at, weapon };
+                }
+          this.#forceWreckTargets = false;
+        }
+        const score =
+          (shot?.score ?? (wreckAction ? 2 : 0)) -
+          (armed
+            ? nearest * 0.8
+            : fleeing
+              ? route.distance * 3 - route.aligned * 4
+              : -nearest * 0.4) -
+          risk * 2 -
+          node.penalty -
+          node.actions.length * 0.02;
+        const actions = [
+          ...node.actions,
+          ...(shot ? [shot.action] : wreckAction ? [wreckAction] : []),
+        ];
+        const remaining = moves - node.actions.length;
+        let mustContinue = node.speed > 0 && remaining > 0;
+        if (mustContinue) {
+          mustContinue = ([-1, 0, 1] as const).some((speed) =>
+            ([-1, 0, 1] as const).some(
+              (direction) =>
+                !this.previewManeuver(p.id, speed, direction, node).issue,
+            ),
+          );
+        }
+        if (!mustContinue && score > best.score)
+          best = { id: p.id, score, actions };
+        if (node.actions.length >= moves) continue;
+        for (const speed of [-1, 0, 1] as const)
+          for (const direction of [-1, 0, 1] as const) {
+            const preview = this.previewManeuver(p.id, speed, direction, node);
+            if (preview.issue) continue;
+            const penalty =
+              node.penalty +
+              preview.collisions.filter((collision) => collision.kind === 'ship')
+                .length *
+                6 +
+              preview.collisions.filter(
+                (collision) => collision.kind === 'asteroid',
+              ).length *
+                Math.max(1, preview.speed) *
+                8;
+            if (preview.escaped) {
+              if (fleeing) {
+                const escapeScore = 120 - penalty;
+                if (escapeScore > best.score)
+                  best = {
+                    id: p.id,
+                    score: escapeScore,
+                    actions: [
+                      ...node.actions,
+                      { type: 'maneuver', speed, direction },
+                    ],
+                  };
+              }
+              continue;
+            }
+            if (!preview.position) continue;
+            queue.push({
+              position: preview.position,
+              facing: preview.facing,
+              speed: preview.speed,
+              penalty,
+              actions: [
+                ...node.actions,
+                { type: 'maneuver', speed, direction },
+              ],
+            });
+          }
+      }
+    } finally {
+      this.#forceWreckTargets = false;
+      p.position = saved.position;
+      p.facing = saved.facing;
+      p.speed = saved.speed ?? 0;
+    }
+    return best.score === -Infinity
+      ? { id: p.id, score: 0, actions: [] }
+      : best;
   }
 
   /** Search beyond this activation so an asteroid cannot trap a locally greedy pilot. */

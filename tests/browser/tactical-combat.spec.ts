@@ -185,20 +185,23 @@ test('begransad-stridskamera / fullskarms-stridskarta / skeppsnara-stridskontrol
       (await saved(page)).state.simulation!.tacticalBattles![0]!.lastShot,
     ).toBeUndefined();
     const orders = dialog.getByRole('region', { name: 'Ship orders' });
-    for (const label of [
-      'Turn left 60°',
-      'Forward / escape',
-      'Turn right 60°',
-      'End ship turn',
-    ]) {
-      const control = orders.getByRole('button', { name: label, exact: true });
+    const speed = dialog.getByRole('region', { name: 'Speed' });
+    for (const [region, label] of [
+      [speed, 'Increase speed'],
+      [speed, 'Decrease speed'],
+      [orders, 'Straight'],
+      [orders, 'Turn left'],
+      [orders, 'Turn right'],
+      [orders, 'End ship turn'],
+    ] as const) {
+      const control = region.getByRole('button', { name: label, exact: true });
       const bounds = (await control.boundingBox())!;
       expect(bounds.y, label).toBeGreaterThanOrEqual(0);
       expect(bounds.y + bounds.height, label).toBeLessThanOrEqual(size.height);
       expect(bounds.x, label).toBeGreaterThanOrEqual(0);
       expect(bounds.x + bounds.width, label).toBeLessThanOrEqual(size.width);
-      expect(bounds.height, label).toBeGreaterThanOrEqual(44);
-      expect(bounds.width, label).toBeGreaterThanOrEqual(44);
+      expect(bounds.height, label).toBeGreaterThanOrEqual(22);
+      expect(bounds.width, label).toBeGreaterThanOrEqual(22);
     }
     const board = (await page.getByLabel(/^Battle hex map/).boundingBox())!;
     expect(board).toMatchObject({
@@ -248,9 +251,8 @@ test('begransad-stridskamera / fullskarms-stridskarta / skeppsnara-stridskontrol
   await page.screenshot({
     path: testInfo.outputPath('battle-forward-before.png'),
   });
-  await dialog
-    .getByRole('button', { name: 'Forward / escape', exact: true })
-    .click();
+  await dialog.getByRole('button', { name: 'Increase speed', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Straight', exact: true }).click();
   const checkpoint = (await saved(page)).state.simulation!.tacticalBattles![0]!;
   expect(checkpoint.pieces.find((p) => p.id === fighter.id)!.position).toEqual({
     q: 2,
@@ -296,6 +298,7 @@ test('skeppsvis-retratt / gemensamt-handelseflode: escapes each ship, regroups t
         ),
         facing: top ? 2 : 5,
         movement: large ? 3 : p.movement,
+        speed: large ? 3 : 1,
       };
     }),
   }));
@@ -308,16 +311,17 @@ test('skeppsvis-retratt / gemensamt-handelseflode: escapes each ship, regroups t
     i++
   ) {
     await expect(dialog).toHaveAttribute('data-active-ship', /.+/);
-    const activeId = (await dialog.getAttribute('data-active-ship'))!;
-    const active = initial.pieces.find((piece) => piece.id === activeId)!;
-    const steps = ShipFootprint.length(active.type, true);
     await expect(
-      dialog.getByRole('button', { name: 'Forward / escape', exact: true }),
+      dialog.getByRole('button', { name: 'Straight', exact: true }),
     ).toBeEnabled();
-    for (let step = 0; step < steps; step++)
-      await dialog
-        .getByRole('button', { name: 'Forward / escape', exact: true })
-        .click();
+    await dialog.getByRole('button', { name: 'Straight', exact: true }).click();
+    await expect
+      .poll(async () =>
+        (await dialog.getByRole('heading').first().textContent()) === 'Maneuver'
+          ? 'busy'
+          : 'ready',
+      )
+      .toBe('ready');
   }
   await expect(dialog.locator('.battle-outcome')).toContainText(
     'Retreat complete',
@@ -409,7 +413,7 @@ test('autoaim-med-manuellt-mal: acquires, loses and reacquires a target and resp
             : piece.id === enemies[0]!.id
               ? { q: 4, r: 4 }
               : piece.id === enemies[1]!.id
-                ? { q: 3, r: 3 }
+                ? { q: 3, r: 2 }
                 : { q: 7, r: index },
         facing: piece.side === 'player' ? 0 : 3,
       })),
@@ -424,17 +428,11 @@ test('autoaim-med-manuellt-mal: acquires, loses and reacquires a target and resp
   };
   await aimed('3', '3');
   await expect(aim).toHaveAttribute('data-can-fire', 'true');
-  for (let turn = 0; turn < 2; turn++)
-    await dialog
-      .getByRole('button', { name: 'Turn right 60°', exact: true })
-      .click();
+  await dialog.getByRole('button', { name: 'Turn right', exact: true }).click();
   await expect(aim).toContainText('No target');
   await expect(aim).toHaveAttribute('data-can-fire', 'false');
-  for (let turn = 0; turn < 2; turn++)
-    await dialog
-      .getByRole('button', { name: 'Turn left 60°', exact: true })
-      .click();
-  await aimed('4', '4');
+  await dialog.getByRole('button', { name: 'Turn left', exact: true }).click();
+  await aimed('3', '3');
   await tapBattleHex(page, { q: 3, r: 3 });
   expect(
     (await saved(page)).state.simulation!.tacticalBattles![0]!.lastShot,

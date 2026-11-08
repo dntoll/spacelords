@@ -1,5 +1,61 @@
-import type { Point } from '../../models/HexCoordinate.js';
+import { HexGeometry, type Point } from '../../models/HexCoordinate.js';
 import type { BattleViewportSnapshot } from './BattleCameraController.js';
+
+export interface ManeuverControlPoints {
+  readonly straight: Point;
+  readonly left: Point;
+  readonly right: Point;
+  readonly done: Point;
+  readonly faster: Point;
+  readonly slower: Point;
+  readonly speed: Point;
+}
+
+const hexWidth = Math.sqrt(3) * HexGeometry.size;
+
+function shift(
+  origin: Point,
+  facing: number,
+  scale: number,
+  fraction: number,
+): Point {
+  const angle = (((facing % 6) + 6) % 6 * -Math.PI) / 3;
+  const distance = hexWidth * scale * fraction;
+  return {
+    x: origin.x + Math.cos(angle) * distance,
+    y: origin.y + Math.sin(angle) * distance,
+  };
+}
+
+/** styrning-pa-skrovet: headings on the bow edges, speed at the stern, done amidships. */
+export function maneuverControlsLayout(
+  nose: Point,
+  center: Point,
+  stern: Point,
+  facing: number,
+  scale: number,
+  singleHex: boolean,
+): ManeuverControlPoints {
+  const back = (facing + 3) % 6;
+  const speed = shift(stern, back, scale, singleHex ? 0.42 : 0.12);
+  const flank = (side: number): Point => {
+    const angle = (((facing % 6) + 6) % 6 * -Math.PI) / 3 + Math.PI / 2;
+    const distance = hexWidth * scale * 0.24 * side;
+    return {
+      x: speed.x + Math.cos(angle) * distance,
+      y: speed.y + Math.sin(angle) * distance,
+    };
+  };
+  return {
+    straight: shift(nose, facing, scale, 0.5),
+    left: shift(nose, facing + 1, scale, 0.5),
+    right: shift(nose, facing - 1, scale, 0.5),
+    done: center,
+    faster: flank(1),
+    slower: flank(-1),
+    speed,
+  };
+}
 
 export function battleControlsLayout(
   view: BattleViewportSnapshot,

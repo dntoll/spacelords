@@ -8,6 +8,7 @@ import {
   type BattleHex,
   type WeaponName,
   type BattleShot,
+  type BattleManeuver,
   type BattlePiece,
 } from '../../models/TacticalBattle.js';
 import {
@@ -21,10 +22,12 @@ import { element } from '../dom.js';
 import { ShipFootprint } from '../../models/battle/ShipFootprint.js';
 import { shipImage } from '../ShipView.js';
 import { battleButton } from './BattleIcons.js';
-import { battleControlsLayout } from './BattleControlsLayout.js';
+import { battleControlsLayout, maneuverControlsLayout } from './BattleControlsLayout.js';
 
 export interface BattleMapPort {
   animateShot?(shot: BattleShot): Promise<void>;
+  animateManeuver?(maneuver: BattleManeuver): Promise<void>;
+  setManeuverPreview?(hexes: readonly BattleHex[] | null): void;
   render(
     state: BattleState,
     selected: string | null,
@@ -48,6 +51,10 @@ export class BattleView {
   readonly #feedback = element('p', 'battle-feedback');
   readonly #outcome = element('p', 'battle-outcome');
   readonly #panel = element('section', 'battle-controls');
+  readonly #speeds = element('section', 'battle-speed');
+  #speedDelta: -1 | 0 | 1 = 0;
+  #speedShip = '';
+  #shownSpeed: number | undefined;
   readonly #weapons = element('section', 'battle-weapons');
   readonly #deployment = element('section', 'battle-deployment');
   readonly #details = element('details', 'battle-details');
@@ -97,6 +104,7 @@ export class BattleView {
     );
     hud.append(summary, menu);
     this.#panel.setAttribute('aria-label', 'Ship orders');
+    this.#speeds.setAttribute('aria-label', 'Speed');
     this.#weapons.setAttribute('aria-label', 'Weapons');
     this.#deployment.setAttribute('aria-label', 'Deployment');
     this.#feedback.setAttribute('role', 'status');
@@ -112,6 +120,7 @@ export class BattleView {
       canvas,
       hud,
       this.#panel,
+      this.#speeds,
       this.#weapons,
       this.#deployment,
       this.#feedback,
@@ -223,6 +232,7 @@ export class BattleView {
     this.#heading.textContent = 'Weapon fire';
     this.#status.textContent = `Resolving ${shot.weapon} salvo…`;
     this.#panel.inert = this.#weapons.inert = this.#deployment.inert = true;
+    this.#speeds.inert = true;
     this.#outcome.hidden = this.#feedback.hidden = true;
     try {
       await this.#map?.animateShot?.(shot);
@@ -230,6 +240,22 @@ export class BattleView {
       this.#animating = false;
       this.#dialog.classList.remove('is-animating');
       this.#panel.inert = this.#weapons.inert = this.#deployment.inert = false;
+      this.#speeds.inert = false;
+    }
+  }
+  async animateManeuver(maneuver: BattleManeuver): Promise<void> {
+    this.#animating = true;
+    this.#dialog.classList.add('is-animating');
+    this.#heading.textContent = 'Maneuver';
+    this.#status.textContent = 'The ship is moving…';
+    this.#panel.inert = this.#speeds.inert = true;
+    this.#map?.setManeuverPreview?.(null);
+    try {
+      await this.#map?.animateManeuver?.(maneuver);
+    } finally {
+      this.#animating = false;
+      this.#dialog.classList.remove('is-animating');
+      this.#panel.inert = this.#speeds.inert = false;
     }
   }
 
@@ -274,9 +300,15 @@ export class BattleView {
       (state.phase === 'deployment'
         ? 'Choose a ship · tap the blue zone'
         : selected
-          ? `${battlePieceLabel(selected, state.pieces)} · ${selected.hull}/${maxHull(selected)} hull · ${state.activation?.remaining ?? selected.movement} MP`
+          ? `${battlePieceLabel(selected, state.pieces)} · ${selected.hull}/${maxHull(selected)} hull · ${
+              state.maneuverSystem
+                ? `speed ${selected.speed ?? 0}/${selected.movement} · ${state.activation?.remaining ?? 0} MP`
+                : `${state.activation?.remaining ?? selected.movement} MP`
+            }`
           : 'Enemy manoeuvring…');
     this.#panel.replaceChildren();
+    this.#speeds.replaceChildren();
+    this.#speeds.hidden = state.maneuverSystem !== true || state.phase !== 'fighting';
     this.#weapons.replaceChildren();
     this.#deployment.replaceChildren();
     this.#information.replaceChildren();
@@ -343,9 +375,15 @@ export class BattleView {
         : (preview?.reason ??
           (target
             ? `Target: ${battlePieceLabel(target, state.pieces)}`
-            : this.#aim
-              ? 'Impact selected · tap again to fire'
-              : 'No target in range'));
+            : this.#aim &&
+                state.asteroids.some(
+                  (asteroid) =>
+                    asteroid.q === this.#aim!.q && asteroid.r === this.#aim!.r,
+                )
+              ? 'Asteroid · tap again to fire'
+              : this.#aim
+                ? 'Impact selected · tap again to fire'
+                : 'No target in range'));
       this.#aimText.dataset.aimQ = this.#aim ? String(this.#aim.q) : '';
       this.#aimText.dataset.aimR = this.#aim ? String(this.#aim.r) : '';
       this.#aimText.dataset.canFire = String(
@@ -478,18 +516,94 @@ export class BattleView {
       if (ship.position) this.#panel.append(left, right);
       return;
     }
-    const forward = battleButton('Forward / escape', 'forward', () =>
-      this.#command({ type: 'forward' }),
-    );
-    forward.disabled = locked || !!rules.forwardIssue(ship.id);
-    forward.title = rules.forwardIssue(ship.id) ?? 'Forward / escape';
-    forward.querySelector('svg')!.style.transform =
-      `rotate(${-ship.facing * 60 + 90}deg)`;
     const end = battleButton('End ship turn', 'end', () =>
       this.#command({ type: 'end-activation' }),
     );
-    end.disabled = !active;
-    this.#panel.append(forward, left, right, end);
+    end.disabled = !active || !!rules.endIssue(ship.id);
+    end.title = rules.endIssue(ship.id) ?? 'End ship turn';
+    end.dataset.slot = 'done';
+    if (state.maneuverSystem === true) {
+      const speed = ship.speed ?? 0;
+      if (this.#speedShip !== ship.id || this.#shownSpeed !== speed) {
+        const sameShip = this.#speedShip === ship.id;
+        const speedChanged = sameShip && this.#shownSpeed !== speed;
+        this.#speedShip = ship.id;
+        this.#shownSpeed = speed;
+        if (!sameShip || speedChanged) this.#speedDelta = 0;
+      }
+      end.classList.add('battle-maneuver');
+      const chooseSpeed = (delta: -1 | 1, label: string) => {
+        const control = battleButton(label, delta > 0 ? 'plus' : 'minus', () => {
+          this.#speedDelta = this.#speedDelta === delta ? 0 : delta;
+          if (this.#state) this.render(this.#state);
+        }, 'battle-maneuver');
+        control.dataset.slot = delta > 0 ? 'faster' : 'slower';
+        control.setAttribute('aria-pressed', String(this.#speedDelta === delta));
+        control.disabled =
+          !active ||
+          locked ||
+          speed + delta < 0 ||
+          speed + delta > ship.movement;
+        this.#speeds.append(control);
+      };
+      chooseSpeed(1, 'Increase speed');
+      chooseSpeed(-1, 'Decrease speed');
+      const readout = element('output', 'battle-speed-value');
+      readout.dataset.slot = 'speed';
+      readout.value = String(speed + this.#speedDelta);
+      readout.setAttribute('aria-label', `Speed ${readout.value}`);
+      this.#speeds.append(readout);
+      const heading = (
+        direction: -1 | 0 | 1,
+        label: string,
+        icon: 'left' | 'forward' | 'right',
+        slot: string,
+      ) => {
+        const preview = rules.previewManeuver(ship.id, this.#speedDelta, direction);
+        const control = battleButton(label, icon, () => {
+          this.#map?.setManeuverPreview?.(null);
+          if (!preview.issue) this.#command({ type: 'maneuver', speed: this.#speedDelta, direction });
+        }, 'battle-maneuver');
+        control.dataset.slot = slot;
+        const hexes = (preview.issue ? preview.steps : preview.traveled).map(
+          (step) => step.position,
+        );
+        control.title =
+          preview.issue ??
+          (preview.escaped
+            ? `${label}. Escapes through ${hexes.length} hexes.`
+            : `${label}. ${hexes.length} hex${hexes.length === 1 ? '' : 'es'} at speed ${preview.speed}.`);
+        control.classList.toggle('is-blocked', !!preview.issue);
+        control.setAttribute('aria-disabled', String(!!preview.issue || locked || !active));
+        const show = () => this.#map?.setManeuverPreview?.(hexes);
+        const hide = () => this.#map?.setManeuverPreview?.(null);
+        control.addEventListener('pointerenter', show);
+        control.addEventListener('pointerleave', hide);
+        control.addEventListener('focus', show);
+        control.addEventListener('blur', hide);
+        return control;
+      };
+      const straight = heading(0, 'Straight', 'forward', 'straight');
+      straight.querySelector('svg')!.style.transform =
+        `rotate(${-ship.facing * 60 + 90}deg)`;
+      this.#panel.append(
+        straight,
+        heading(1, 'Turn left', 'left', 'left'),
+        heading(-1, 'Turn right', 'right', 'right'),
+        end,
+      );
+    } else {
+      const forward = battleButton('Forward / escape', 'forward', () =>
+        this.#command({ type: 'forward' }),
+      );
+      forward.disabled = locked || !!rules.forwardIssue(ship.id);
+      forward.title = rules.forwardIssue(ship.id) ?? 'Forward / escape';
+      forward.querySelector('svg')!.style.transform =
+        `rotate(${-ship.facing * 60 + 90}deg)`;
+      left.disabled = locked || !!rules.turnIssue(ship.id, 1);
+      right.disabled = locked || !!rules.turnIssue(ship.id, -1);
+      this.#panel.append(forward, left, right, end);
+    }
     const dockTargets = rules.dockTargets(ship.id);
     if (dockTargets.length) {
       const dock = battleButton('Dock', 'dock', () => {
@@ -503,6 +617,8 @@ export class BattleView {
         this.#command({ type: 'dock', targetId: target });
       });
       dock.disabled = locked || !!state.activation?.fired || !!ship.dockedWith;
+      dock.dataset.slot = 'dock';
+      if (state.maneuverSystem === true) dock.classList.add('battle-maneuver');
       this.#panel.append(dock);
     }
   }
@@ -541,11 +657,19 @@ export class BattleView {
     if (selected) this.#renderActions(state, selected, rules);
   }
   #renderFeedback(state: BattleState): void {
+    const latest = state.log.at(-1) ?? '';
     const shot = state.log.findLast((line) => /: \d+ damage/.test(line));
+    const asteroid = latest.includes('Asteroid at') && latest.includes('breaks');
     const damage = shot?.match(/: (\d+) damage(.*)$/);
-    this.#feedback.hidden = !shot;
-    if (shot && damage) {
-      const result = Number(damage[1]) > 0 ? 'Hit' : 'Miss';
+    this.#feedback.hidden = !shot && !asteroid;
+    if (asteroid && (!shot || state.log.lastIndexOf(shot) < state.log.length - 1)) {
+      this.#feedback.dataset.result = 'hit';
+      this.#feedback.textContent = `Hit · ${latest.split('. ').at(-1)}`;
+    } else if (shot && damage) {
+      const result =
+        damage[2]?.includes('explodes') || Number(damage[1]) > 0
+          ? 'Hit'
+          : 'Miss';
       this.#feedback.dataset.result = result.toLowerCase();
       this.#feedback.textContent = `${result} · ${damage[1]} damage${damage[2]} ${shot.split('. ')[0]}.`;
     }
@@ -580,7 +704,9 @@ export class BattleView {
       element(
         'p',
         'battle-help',
-        'Tap a new target to select it; tap the marked target to fire. Select a weapon using its icon. Missiles hit every ship in the impact hex and its neighbours once, including your own ships. Move then fire, or fire then move. Turning and moving cost 1 movement. Large ships occupy three hexes and must fit completely when turning. Retreat opens in round two through the green Escape hexes at the top or bottom; the whole ship must leave. Each successful D6 causes one hull damage. Rear attacks reduce the required roll by one. Asteroids and larger ships block fire. Surviving ships recover hull and ammunition after combat.',
+        state.maneuverSystem === true
+          ? 'Each maneuver point changes speed by one, then turns or goes straight. Straight, left and right sit on the bow. + and − sit at the stern with the speed between them. Done sits amidships and stays unavailable while the ship has both speed and maneuver points. A shot between maneuver points still spends the remaining point. A shot breaks an asteroid. Straight travel moves that many hexes. A faster ship takes a wider turn. Hover a heading to see those hexes. Ships that collide damage each other. An asteroid breaks and damages the ship. Wrecks block movement, are drawn darker, and explode if shot. Ships shoot a wreck only when they cannot move or shoot another ship. Engines knocked out leave a wreck. Running out of hull explodes the ship most of the time. Tap a marked target to fire. Retreat from round two is through the green Escape hexes.'
+          : 'Tap a new target to select it; tap the marked target to fire. Select a weapon using its icon. Missiles hit every ship in the impact hex and its neighbours once, including your own ships. Move then fire, or fire then move. Turning and moving cost 1 movement. Large ships occupy three hexes and must fit completely when turning. Retreat opens in round two through the green Escape hexes at the top or bottom; the whole ship must leave. Each successful D6 causes one hull damage. Rear attacks reduce the required roll by one. Asteroids and larger ships block fire. Surviving ships recover hull and ammunition after combat.',
       ),
     );
   }
@@ -623,6 +749,56 @@ export class BattleView {
     const actions = [
       ...this.#panel.querySelectorAll<HTMLButtonElement>('button'),
     ];
+    if (state.maneuverSystem === true && state.phase === 'fighting') {
+      const nose = project(hullCells.at(-1)!);
+      const stern = project(hullCells[0]!);
+      const center = project(hullCells[Math.floor(hullCells.length / 2)]!);
+      const places = maneuverControlsLayout(
+        nose,
+        center,
+        stern,
+        ship.facing,
+        viewport.scale,
+        hullCells.length === 1,
+      );
+      const buttonSize = Math.max(
+        22,
+        Math.min(34, Math.sqrt(3) * HexGeometry.size * viewport.scale * 0.42),
+      );
+      const size = `${buttonSize}px`;
+      this.#panel.style.setProperty('--maneuver-button', size);
+      this.#speeds.style.setProperty('--maneuver-button', size);
+      const clamp = (point: Point): Point => ({
+        x: Math.max(buttonSize / 2, Math.min(viewport.width - buttonSize / 2, point.x)),
+        y: Math.max(buttonSize / 2, Math.min(viewport.height - buttonSize / 2, point.y)),
+      });
+      const place = (node: HTMLElement, point: Point) => {
+        const at = clamp(point);
+        node.style.left = `${at.x}px`;
+        node.style.top = `${at.y}px`;
+      };
+      const slots: Record<string, Point> = {
+        straight: places.straight,
+        left: places.left,
+        right: places.right,
+        done: places.done,
+        dock: {
+          x: center.x + Math.cos(((-ship.facing * Math.PI) / 3) + Math.PI / 2) * 28,
+          y: center.y + Math.sin(((-ship.facing * Math.PI) / 3) + Math.PI / 2) * 28,
+        },
+        faster: places.faster,
+        slower: places.slower,
+        speed: places.speed,
+      };
+      for (const node of [
+        ...actions,
+        ...this.#speeds.querySelectorAll<HTMLElement>('[data-slot]'),
+      ]) {
+        const point = slots[node.dataset.slot ?? ''];
+        if (point) place(node, point);
+      }
+      return;
+    }
     const otherHulls = state.pieces
       .filter(
         (piece) =>

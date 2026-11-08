@@ -190,9 +190,11 @@ it('stridsorder-utan-mobilscroll / skeppsnara-stridskontroller: overlays all mov
   });
   const board = document.querySelector('.battle-board')!;
   for (const label of [
-    'Turn left 60°',
-    'Turn right 60°',
-    'Forward / escape',
+    'Increase speed',
+    'Decrease speed',
+    'Straight',
+    'Turn left',
+    'Turn right',
     'End ship turn',
   ]) {
     const action = board.querySelector(`[aria-label="${label}"]`)!;
@@ -204,6 +206,35 @@ it('stridsorder-utan-mobilscroll / skeppsnara-stridskontroller: overlays all mov
   ).toBeNull();
   expect(document.querySelector('.battle-details .battle-log')).not.toBeNull();
   expect(document.querySelector('.battle-controls .battle-log')).toBeNull();
+  const readout = board.querySelector('output') as HTMLOutputElement;
+  expect(readout.value).toBe('0');
+  board.querySelector<HTMLButtonElement>('[aria-label="Increase speed"]')!.click();
+  expect(
+    (document.querySelector('.battle-board output') as HTMLOutputElement).value,
+  ).toBe('1');
+  view.dispose();
+});
+
+it('ingen-avslut-med-fart-och-manoverpoang: End ship turn is unavailable while speed and maneuver points remain', () => {
+  const moving = state();
+  const { view } = setup({
+    ...moving,
+    activation: {
+      id: 'first',
+      remaining: 2,
+      fired: false,
+      moved: false,
+      movementClosed: false,
+    },
+    pieces: moving.pieces.map((piece) =>
+      piece.id === 'first' ? { ...piece, speed: 1 } : piece,
+    ),
+  });
+  const end = document.querySelector<HTMLButtonElement>(
+    '[aria-label="End ship turn"]',
+  )!;
+  expect(end.disabled).toBe(true);
+  expect(end.title).toMatch(/speed/);
   view.dispose();
 });
 

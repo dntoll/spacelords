@@ -32,14 +32,17 @@ function battle(): TacticalBattle {
 }
 
 function positioned(overrides: Partial<BattleState> = {}): TacticalBattle {
-  const state = battle().snapshot;
+  const state = structuredClone(battle().snapshot);
+  const copy = { ...state };
+  if (overrides.maneuverSystem !== true)
+    delete (copy as { maneuverSystem?: boolean }).maneuverSystem;
   return TacticalBattle.restore({
-    ...state,
+    ...copy,
     phase: 'fighting',
     round: 2,
     turn: 'player',
     asteroids: [],
-    pieces: state.pieces.map((piece, index) => ({
+    pieces: copy.pieces.map((piece, index) => ({
       ...piece,
       position: { q: index === 2 ? 5 : index === 1 ? 3 : 1, r: 4 },
       facing: index === 2 ? 3 : 0,

@@ -96,7 +96,10 @@ it('automatiskt-skeppsval-i-strid: activates an available player ship on entry a
   const { model, controller, emit } = setup();
   const active = model.snapshot.tacticalBattle!.activation;
   expect(active?.id).toBeTruthy();
-  emit({ type: 'battle-command', command: { type: 'turn', direction: 1 } });
+  emit({
+    type: 'battle-command',
+    command: { type: 'maneuver', speed: 0, direction: 1 },
+  });
   expect(model.snapshot.tacticalBattle!.activation?.id).toBe(active!.id);
   expect(model.snapshot.tacticalBattle!.activation?.remaining).toBe(
     active!.remaining - 1,
@@ -124,14 +127,13 @@ it('synliga-fiendemanovrer: each automatic step moves at most one hex or turns o
     expect(changed.length).toBeLessThanOrEqual(1);
     for (const p of changed) {
       const old = state.pieces.find((other) => other.id === p.id)!;
-      if (old.position && p.position) {
-        const dq = old.position.q - p.position.q,
-          dr = old.position.r - p.position.r;
-        expect(
-          Math.max(Math.abs(dq), Math.abs(dr), Math.abs(dq + dr)),
-        ).toBeLessThanOrEqual(1);
-        if (dq || dr) expect(p.facing).toBe(old.facing);
-      }
+        if (old.position && p.position) {
+          const dq = old.position.q - p.position.q,
+            dr = old.position.r - p.position.r;
+          expect(
+            Math.max(Math.abs(dq), Math.abs(dr), Math.abs(dq + dr)),
+          ).toBeLessThanOrEqual((old.speed ?? 0) + 1);
+        }
     }
     state = next;
   }

@@ -223,9 +223,8 @@ describe('tactical combat integration', () => {
       })),
     }));
     game.playBattleActivation();
-    expect(
-      game.tacticalBattle!.pieces.find((p) => p.id === victimId)!.status,
-    ).toBe('destroyed');
+    const victim = game.tacticalBattle!.pieces.find((p) => p.id === victimId)!;
+    expect(['destroyed', 'wreck']).toContain(victim.status);
     expect(game.fleet('fleet-home')!.ships.Fighter).toBe(2);
     game = arrangeBattle(game, (state) => ({
       ...state,
@@ -237,9 +236,11 @@ describe('tactical combat integration', () => {
         activated: false,
         hull: p.side === 'enemy' ? 1 : p.hull,
         position:
-          p.status === 'destroyed'
-            ? p.position
-            : {
+          p.status === 'wreck'
+            ? { q: p.side === 'player' ? 4 : 5, r: 6 }
+            : p.status === 'destroyed'
+              ? p.position
+              : {
                 q:
                   p.side === 'enemy'
                     ? 3
@@ -254,16 +255,18 @@ describe('tactical combat integration', () => {
     game.commandBattle({ type: 'activate', id: fighters[0]!.id });
     game.commandBattle({
       type: 'fire',
-      at: game.tacticalBattle!.pieces.find((p) => p.side === 'enemy')!
-        .position!,
+      at: game.tacticalBattle!.pieces.find(
+        (p) => p.side === 'enemy' && p.status === 'active',
+      )!.position!,
       weapon: 'Cannon',
     });
     expect(game.tacticalBattle).toBeNull();
     expect(game.fleet('fleet-home')!.shipUnits).not.toContainEqual(fighters[1]);
     expect(game.fleet('fleet-home')!.shipUnits).toContainEqual(fighters[0]);
-    expect(game.wrecks.find((w) => w.ship.id === victimId)!.ship).toEqual(
-      fighters[1],
-    );
+    const salvagedVictim = game.wrecks.find((w) => w.ship.id === victimId);
+    if (victim.status === 'wreck')
+      expect(salvagedVictim!.ship).toEqual(fighters[1]);
+    else expect(salvagedVictim).toBeUndefined();
     expect(game.interruption!.battles![0]!.fleetIds).toEqual(['fleet-home']);
     const combatEvent = game.events.find((event) =>
       event.text.startsWith('Combat at HEX'),
@@ -274,7 +277,18 @@ describe('tactical combat integration', () => {
     const saved = game.exportState();
     expect(Game.restore(saved).exportState()).toEqual(saved);
     expect(() => game.playBattleActivation()).toThrow();
-    expect(game.interruption!.battles![0]!.wreckIds).toHaveLength(2);
+    const battleWrecks = game.wrecks.filter((wreck) =>
+      game.interruption!.battles![0]!.wreckIds.includes(wreck.id),
+    );
+    expect(battleWrecks.length).toBeLessThanOrEqual(2);
+    if (victim.status === 'wreck')
+      expect(battleWrecks.some((wreck) => wreck.ship.id === victimId)).toBe(
+        true,
+      );
+    else
+      expect(battleWrecks.some((wreck) => wreck.ship.id === victimId)).toBe(
+        false,
+      );
   });
 
   it('skeppsvis-retratt: escaping one ship regroups the original fleet and spends its remaining year movement', () => {
@@ -299,15 +313,14 @@ describe('tactical combat integration', () => {
             : battleHex(index + 5, 4),
         facing: p.type === 'Transport ship' ? 2 : p.side === 'player' ? 0 : 3,
         movement: p.type === 'Transport ship' ? 3 : p.movement,
+        speed: p.type === 'Transport ship' ? 3 : (p.speed ?? 0),
       })),
     }));
     const transport = game.tacticalBattle!.pieces.find(
       (p) => p.type === 'Transport ship',
     )!;
     game.commandBattle({ type: 'activate', id: transport.id });
-    game.commandBattle({ type: 'forward' });
-    game.commandBattle({ type: 'forward' });
-    game.commandBattle({ type: 'forward' });
+    game.commandBattle({ type: 'maneuver', speed: 0, direction: 0 });
     expect(
       game.tacticalBattle!.pieces.find((p) => p.id === transport.id)!.status,
     ).toBe('escaped');

@@ -3951,7 +3951,8 @@ export class Game {
     battle.command(command);
     for (const id of destroyed) {
       const piece = battle.snapshot.pieces.find((entry) => entry.id === id);
-      if (piece?.status === 'destroyed') this.#boardingShipDestroyed(id);
+      if (piece?.status === 'destroyed' || piece?.status === 'wreck')
+        this.#boardingShipDestroyed(id);
     }
     this.#syncBoarding(battle);
     this.#tickSpaceShift(battle, beforeRound);
@@ -4327,18 +4328,24 @@ export class Game {
     for (const participant of state.fleets) {
       const pieces = state.pieces.filter((p) => p.fleetId === participant.id);
       const killed = new Set(
-        pieces.filter((p) => p.status === 'destroyed').map((p) => p.id),
+        pieces
+          .filter(
+            (p) => p.status === 'destroyed' || p.status === 'wreck',
+          )
+          .map((p) => p.id),
       );
       const escaped = pieces.some((p) => p.status === 'escaped');
       if (participant.side === 'enemy') {
         const pirate = this.#pirates.find((p) => p.id === participant.id)!;
-        const lost = pieces.filter((p) => p.status === 'destroyed');
+        const lost = pieces.filter(
+          (p) => p.status === 'destroyed' || p.status === 'wreck',
+        );
         pirate.count -= lost.filter((p) => p.type === 'Space pirate').length;
         pirate.transports -= lost.filter(
           (p) => p.type === 'Transport ship',
         ).length;
         if (pirate.transports <= 0) pirate.hold = emptyStock();
-        for (const piece of lost)
+        for (const piece of lost.filter((p) => p.status === 'wreck'))
           wreckIds.push(
             this.#salvage.addWreck(
               this.#id('wreck'),
@@ -4363,9 +4370,12 @@ export class Game {
       const lostUnits = fleet.shipUnits!.filter((unit) => killed.has(unit.id));
       for (const unit of lostUnits) {
         fleet.ships[unit.type]--;
-        wreckIds.push(
-          this.#salvage.addWreck(this.#id('wreck'), unit, position).id,
-        );
+        if (
+          pieces.find((piece) => piece.id === unit.id)?.status === 'wreck'
+        )
+          wreckIds.push(
+            this.#salvage.addWreck(this.#id('wreck'), unit, position).id,
+          );
       }
       fleet.shipUnits = fleet.shipUnits!.filter((unit) => !killed.has(unit.id));
       this.#salvage.releaseLostCapacity(fleet, position);
@@ -4430,7 +4440,9 @@ export class Game {
       ),
     );
     const lost = state.pieces.filter(
-      (p) => p.side === 'player' && p.status === 'destroyed',
+      (p) =>
+        p.side === 'player' &&
+        (p.status === 'destroyed' || p.status === 'wreck'),
     );
     const losses =
       (Object.keys(SHIPS) as ShipType[])
@@ -4442,13 +4454,18 @@ export class Game {
         .map((p) => `${p.count} ${p.type}`)
         .join(', ') || 'no ships';
     const pirateLosses = state.pieces.filter(
-      (p) => p.side === 'enemy' && p.status === 'destroyed',
+      (p) =>
+        p.side === 'enemy' &&
+        (p.status === 'destroyed' || p.status === 'wreck'),
     ).length;
     const surviving = state.pieces.filter(
-      (p) => p.side === 'player' && p.status !== 'destroyed',
+      (p) =>
+        p.side === 'player' &&
+        p.status !== 'destroyed' &&
+        p.status !== 'wreck',
     );
     const captured = surviving.filter((p) => p.type === 'Space pirate').length;
-    const summary = `Lost ${losses}; destroyed ${pirateLosses} pirates. Survivors: ${surviving.filter((p) => p.type === 'Fighter').length} Fighters, ${captured ? `${captured} captured pirates, ` : ''}${state.pieces.filter((p) => p.side === 'enemy' && p.status !== 'destroyed').length} pirates, ${surviving.filter((p) => p.type !== 'Fighter' && p.type !== 'Space pirate').length} civilian ships. ${state.pieces.filter((p) => p.status === 'escaped').length} ships escaped.`;
+    const summary = `Lost ${losses}; destroyed ${pirateLosses} pirates. Survivors: ${surviving.filter((p) => p.type === 'Fighter').length} Fighters, ${captured ? `${captured} captured pirates, ` : ''}${state.pieces.filter((p) => p.side === 'enemy' && p.status !== 'destroyed' && p.status !== 'wreck').length} pirates, ${surviving.filter((p) => p.type !== 'Fighter' && p.type !== 'Space pirate').length} civilian ships. ${state.pieces.filter((p) => p.status === 'escaped').length} ships escaped.`;
     const names = playerIds
       .map((id) => this.#fleetDisplayName(this.#fleetState(id)))
       .join(', ');
@@ -4470,6 +4487,7 @@ export class Game {
       },
     ];
     simulation.tacticalBattles.shift();
+    this.#updateSight();
     if (!simulation.tacticalBattles.length) {
       simulation.awaitingCombat = false;
       this.#afterCombat();

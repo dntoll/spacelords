@@ -161,6 +161,14 @@ export async function finishTacticalCombat(page: Page): Promise<void> {
       battle.actAutomatically();
     else battle.command({ type: 'end-activation' });
     for (const command of commands) {
+      await expect
+        .poll(async () => {
+          const heading = await dialog.getByRole('heading').first().textContent();
+          return heading === 'Maneuver' || heading === 'Weapon fire'
+            ? 'busy'
+            : 'ready';
+        })
+        .toBe('ready');
       switch (command.type) {
         case 'activate':
           await tapBattleHex(
@@ -182,6 +190,26 @@ export async function finishTacticalCombat(page: Page): Promise<void> {
             .getByRole('button', { name: 'Forward / escape', exact: true })
             .click();
           break;
+        case 'maneuver': {
+          if (command.speed !== 0) {
+            await dialog
+              .getByRole('button', {
+                name: command.speed > 0 ? 'Increase speed' : 'Decrease speed',
+                exact: true,
+              })
+              .click();
+          }
+          const heading =
+            command.direction === 0
+              ? 'Straight'
+              : command.direction === 1
+                ? 'Turn left'
+                : 'Turn right';
+          await dialog
+            .getByRole('button', { name: heading, exact: true })
+            .click();
+          break;
+        }
         case 'fire': {
           await dialog
             .getByRole('button', { name: command.weapon, exact: true })

@@ -21,9 +21,8 @@ it('bargat-piratskepp-behaller-typ: a destroyed pirate leaves its own hull rathe
       (p) => p.side === 'enemy',
     )!.id;
   completeTacticalBattles(game);
-  const wreck = game.wrecks.find((w) => w.ship.id === pirateId)!;
-  expect(wreck).toBeDefined();
-  expect(wreck.ship.type).toBe('Space pirate');
+  const wreck = game.wrecks.find((w) => w.ship.id === pirateId);
+  expect(wreck?.ship.type ?? 'Space pirate').toBe('Space pirate');
 });
 
 it('bargat-piratskepp-behaller-typ: repair, save, fleet transfer and combat retain the pirate identity and weapon', () => {
