@@ -13,6 +13,8 @@ Se [hela visionen](docs/game-vision.md).
 - **Planetköer:** `planetupptackt-fore-utforskning`,
   `planetutforskning-vid-ankomst`, `utforskningsko`, `koloniseringsko` och
   `automatisk-tilldelning-av-planetkoer` är **Fullständigt implementerat**.
+  Köåtgärden i ett upptäckts- eller utforskningsbesked sparar valet och stänger
+  beskedet.
   Detektion visar först namn och position. Exploration ships avslöjar detaljer
   vid ankomst, varefter Colony ships kan kolonisera. Båda köerna redigeras i
   `Decisions`; lediga flottor väljs efter köordning och kortast framkomliga väg.

@@ -5,7 +5,8 @@
 - `planetupptackt-fore-utforskning` och `planetutforskning-vid-ankomst` —
   **Fullständigt implementerat**: upptäckt visar planetens namn och position. Ett
   Exploration ship måste därefter nå planeten för att visa typ, habitability,
-  resurser och byggplatser samt möjliggöra planettypsforskning.
+  resurser och byggplatser samt möjliggöra planettypsforskning. Eventets
+  köåtgärd sparar valet och stänger beskedet.
 - `utforskningsko`, `koloniseringsko` och
   `automatisk-tilldelning-av-planetkoer` — **Fullständigt implementerat**: spelaren
   kan prioritera upptäckta respektive utforskade planeter under `Decisions`.

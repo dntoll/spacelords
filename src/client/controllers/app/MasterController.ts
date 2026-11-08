@@ -250,6 +250,7 @@ export class MasterController {
     }
     const playback = this.#model.snapshot.eventPlayback;
     if (playback) {
+      const current = playback.events[playback.index];
       if (
         playback.stage === 'awaiting-choice' &&
         ['handle-discoveries', 'ignore-discoveries'].includes(intent.type)
@@ -257,6 +258,18 @@ export class MasterController {
         this.#turn.chooseEvent(
           intent.type === 'handle-discoveries' ? 'handle' : 'ignore',
         );
+        this.#model.save();
+        this.#render();
+        this.#schedulePlayback();
+      }
+      if (
+        playback.stage === 'awaiting-choice' &&
+        intent.type === 'add-planet-queue' &&
+        current?.decision?.queueAction?.kind === intent.kind &&
+        current.decision.queueAction.planetId === intent.planetId
+      ) {
+        this.#model.addPlanetToQueue(intent.kind, intent.planetId);
+        this.#turn.chooseEvent('ignore');
         this.#model.save();
         this.#render();
         this.#schedulePlayback();

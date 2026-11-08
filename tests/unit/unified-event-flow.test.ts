@@ -38,6 +38,45 @@ function session(initial: GameState = discoveryState()) {
 }
 
 describe('gemensamt-handelseflode', () => {
+  it('planetupptackt-fore-utforskning / utforskningsko: adding a discovery to the queue confirms the action and closes the choice', async () => {
+    const current = session().open();
+    current.emit({ type: 'confirm-end-turn' });
+    await vi.advanceTimersByTimeAsync(0);
+
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const playback = current.model.snapshot.eventPlayback;
+      const action = playback?.events[playback.index]?.decision?.queueAction;
+      if (action) break;
+      if (playback?.stage === 'awaiting-choice')
+        current.emit({ type: 'ignore-discoveries' });
+      await vi.advanceTimersByTimeAsync(2_000);
+    }
+
+    const playback = current.model.snapshot.eventPlayback!;
+    const action = playback.events[playback.index]!.decision!.queueAction!;
+    expect(playback.stage).toBe('awaiting-choice');
+
+    current.emit({
+      type: 'add-planet-queue',
+      kind: action.kind,
+      planetId: action.planetId,
+    });
+
+    expect(
+      current.model.snapshot.planetQueues[action.kind].map(
+        (entry) => entry.planetId,
+      ),
+    ).toContain(action.planetId);
+    expect(current.model.snapshot.eventPlayback?.stage).toBe('filing');
+    await vi.advanceTimersByTimeAsync(500);
+    expect(
+      current.model.snapshot.eventPlayback?.events[
+        current.model.snapshot.eventPlayback.index
+      ]?.id,
+    ).not.toBe(playback.events[playback.index]!.id);
+    current.controller.dispose();
+  });
+
   it.each([0, 1])(
     'stridsresultat-utan-upprepning: shows losses and survivors once while retaining wrecks and saved history (%s Fighters)',
     (fighters) => {
