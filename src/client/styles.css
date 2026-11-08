@@ -3638,6 +3638,42 @@ body:has(.discovery-controls) .selection-panel {
   transform: translate(-50%, -50%);
   pointer-events: auto;
 }
+.battle-icon.battle-maneuver {
+  flex: 0 0 var(--maneuver-button, 28px);
+  width: var(--maneuver-button, 28px);
+  height: var(--maneuver-button, 28px);
+  min-width: var(--maneuver-button, 28px);
+  min-height: var(--maneuver-button, 28px);
+  padding: 4px;
+}
+.battle-controls > button.is-blocked {
+  opacity: 0.45;
+}
+.battle-speed {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.battle-speed > button,
+.battle-speed > output {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+.battle-speed-value {
+  display: grid;
+  place-items: center;
+  min-width: var(--maneuver-button, 28px);
+  height: var(--maneuver-button, 28px);
+  color: #ffd486;
+  font-weight: 700;
+  pointer-events: none;
+  text-shadow: 0 1px 2px #000;
+}
+.battle-speed[hidden] {
+  display: none;
+}
 .battle-weapons {
   position: absolute;
   right: max(14px, env(safe-area-inset-right));

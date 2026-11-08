@@ -117,6 +117,30 @@ export class MasterController {
     this.#presented = snapshot;
     this.#view.render(snapshot);
     const shot = battle?.lastShot;
+    const maneuver = battle?.lastManeuver;
+    if (
+      !this.#battleAnimating &&
+      maneuver &&
+      previous?.id === battle.id &&
+      previous.lastManeuver?.id !== maneuver.id &&
+      snapshot.screen !== 'saves' &&
+      this.#view.animateBattleManeuver
+    ) {
+      this.#battleAnimating = true;
+      clearTimeout(this.#playbackTimer);
+      const finish = () => {
+        this.#battleAnimating = false;
+        if (this.#disposed) return;
+        this.#battle.autoSelectBattleShip();
+        this.#render();
+        this.#schedulePlayback();
+      };
+      void this.#view.animateBattleManeuver(maneuver).then(finish, (error) => {
+        this.#model.reportError(error);
+        finish();
+      });
+      return;
+    }
     if (
       !this.#battleAnimating &&
       shot &&

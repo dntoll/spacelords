@@ -221,6 +221,23 @@ Se [hela visionen](docs/game-vision.md).
   måste hela skeppet lämna genom en sådan zon. Äldre pågående strider behåller
   sin tidigare reträttregel. Se [taktisk strid](docs/tactical-combat.md).
 
+- **Manöver, vrak och krock:** `manoverpoang-och-hastighet`,
+  `svang-vid-hastighet`, `manoverforhandsvisning`,
+  `krock-med-skepp-och-asteroid`, `motor-utslagen-vrak`,
+  `skrovslut-vrak-eller-splitter`, `vrak-blockerar-och-sprangs`,
+  `vrak-beskjutning-sista-utvag`, `nasta-skepp-vid-slut-pa-handlingar`,
+  `flykt-mot-escape-zon`, `styrning-pa-skrovet`,
+  `ingen-avslut-med-fart-och-manoverpoang`, `skott-mellan-manoverpoang` och
+  `beskjut-asteroid` är **Fullständigt implementerat**.
+  Nya strider har hastighet och manöverpoäng, vidare sväng i högre fart, krock
+  med skepp och asteroider, samt vrak som ligger kvar. Riktning sitter på
+  fören, fart vid aktern och End ship turn i mitten. Den kan inte väljas när
+  skeppet har både fart och manöverpoäng kvar. Ett skott mellan två
+  manöverpoäng kräver att den andra också används. En beskjutning spränger en
+  asteroid. Sprängda skepp lämnar inget
+  bärgningsvrak. Obeväpnade skepp flyr mot `Escape`. Äldre pågående strider
+  behåller den tidigare rörelsen. Se [taktisk strid](docs/tactical-combat.md).
+
 - **Fristående bordningsstrid:** `fristaende-bordningsprototyp`,
   `datadriven-bordningskarta`, `individuellt-bordningsinitiativ`,
   `actionpoints-och-riktad-forflyttning`, `sikt-minne-och-ljudmarkorer`,

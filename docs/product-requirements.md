@@ -54,11 +54,16 @@ Se [planetköer](planet-queues.md).
   hela spelytan. En liten HUD visar runda, tur, skepp, skrov och rörelse.
   Combat details öppnar information ovanpå kartan; Save and close går till Saved games.
   Utplacering har skeppsporträtt, Auto deploy och Start combat.
-- `skeppsnara-stridskontroller` — **Fullständigt implementerat**: Forward,
-  vänster- och högersväng samt End ship turn är symbolknappar runt det aktiva
-  skeppet. De följer dess riktning och kameran, ryms innanför skärmen och
-  döljs när skeppet är utanför bilden. Utplacering har två svängknappar.
-  Vid utzoomning flyttas de undan från andra skepps tryckytor där plats finns.
+- `skeppsnara-stridskontroller` — **Fullständigt implementerat**: i nya
+  strider sitter Straight, Turn left och Turn right på fören, + och − med
+  farten mellan sig vid aktern, och End ship turn i mitten. End ship turn
+  går inte att välja när skeppet har både fart och manöverpoäng kvar, eller
+  när ett skott har lämnat en manöverpoäng. En asteroid kan beskjutas och
+  sprängs då. Äldre
+  strider behåller Forward och 60°-svängarna runt skrovet. Knapparna följer
+  skeppets riktning och kameran och döljs när skeppet är utanför bilden.
+  Utplacering har två svängknappar. Vid utzoomning flyttas de äldre knapparna
+  undan från andra skepps tryckytor där plats finns.
 - `vapensymboler-i-strid` — **Fullständigt implementerat**: vapen väljs med
   symbolknappar i nederkant. Val och ammunition syns. Vapenval avfyrar inget.
 - `avfyra-pa-markerat-mal` — **Fullständigt implementerat**: första trycket
@@ -120,6 +125,30 @@ och `stridsutplacering` för nya strider.
 
 Flyktzonerna ersätter reträtt genom den egna kortsidan i nya strider. Äldre
 pågående strider behåller sin tidigare karta och reträttregel.
+
+## Manöver, vrak och krock, 2026-11-08
+
+- `manoverpoang-och-hastighet` och `svang-vid-hastighet` —
+  **Fullständigt implementerat**: små och medelstora skepp har två
+  manöverpoäng, stora ett. Varje poäng ändrar hastigheten ett steg och väljer
+  sväng eller rakt fram. Högre hastighet ger en vidare sväng.
+- `manoverforhandsvisning` — **Fullständigt implementerat**: de tre
+  riktningarna visar färdhexarna vid hovring.
+- `krock-med-skepp-och-asteroid` — **Fullständigt implementerat**: skepp tar
+  krockskada av varandra. En asteroid förstörs och skadar skeppet.
+- `motor-utslagen-vrak`, `skrovslut-vrak-eller-splitter`,
+  `vrak-blockerar-och-sprangs` och `vrak-beskjutning-sista-utvag` —
+  **Fullständigt implementerat**: utslagna motorer ger ett mörkare vrak som
+  ligger kvar och blockerar. Skrovslut spränger skeppet i nio fall av tio.
+  Vrak beskjuts bara när skeppet inte kan manövrera eller skjuta på andra.
+- `nasta-skepp-vid-slut-pa-handlingar` och `flykt-mot-escape-zon` —
+  **Fullständigt implementerat**: turen går vidare när handlingarna är slut.
+  Obeväpnade skepp flyr mot en `Escape`-zon.
+
+Detta ersätter stegvis rörelse utan tröghet och att varje förstört skepp
+lämnar ett bärgningsvrak. Äldre pågående strider behåller de tidigare
+rörelsereglerna.
+Se [taktisk strid](tactical-combat.md).
 
 ## Illustrerade besked och strid, 2026-11-01
 
@@ -1216,8 +1245,8 @@ Kraven `stridsrapport-i-dialog`, `vrak-efter-strid`, `bargningsskepp`,
 `forstort-varv`, `forskning-fran-bargade-delar`, `upptackbara-vrak` och
 `spara-bargning-och-stridsavbrott` är **Fullständigt implementerat**.
 
-Spelaren får läsa stridsresultatet innan året fortsätter. Förlorade skepp lämnar
-vrak. Salvage ships kan hämta dem till orbitala varv, där skeppen repareras med
+Spelaren får läsa stridsresultatet innan året fortsätter. Skepp som blir vrak
+i striden lämnar bärgningsvrak. Sprängda skepp gör det inte. Salvage ships kan hämta dem till orbitala varv, där skeppen repareras med
 nya besättningar och en tredjedel av råvarukostnaden. Varv och bärgningsskepp har
 egen forskning och planetanläggningar. Bogsering sänker flottans fart. Pirater
 kan förstöra varvsstationer som sedan kan återuppbyggas.

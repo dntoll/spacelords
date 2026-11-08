@@ -2,6 +2,11 @@ import { button } from '../dom.js';
 
 const paths = {
   forward: 'M12 3 21 15h-6v6H9v-6H3Z',
+  accelerate: 'M12 4v16M6 10l6-6 6 6',
+  hold: 'M5 12h14',
+  brake: 'M12 20V4M6 14l6 6 6-6',
+  plus: 'M12 5v14M5 12h14',
+  minus: 'M5 12h14',
   left: 'M8 4 3 9l5 5M3 9h10a7 7 0 0 1 0 14',
   right: 'm16 4 5 5-5 5m5-5H11a7 7 0 0 0 0 14',
   end: 'm4 12 5 5L20 5M4 21h16',

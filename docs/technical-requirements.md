@@ -1440,6 +1440,13 @@ bära `hasMissiles` och `armored`. Saknade fält i en pågående strid betyder a
 en Fighter har avfyrare och att skrovet är opansrat. Eldkommandot siktar mot
 en hex. Sparversionen är oförändrad och inga sparningar rensas.
 
+`manoverpoang-och-hastighet`: nya strider sparar `maneuverSystem`, `speed` och
+`lastManeuver` additivt. Status kan vara `wreck`. Saknad `maneuverSystem`
+behåller den tidigare rörelsen. Sparversionen ändras inte och inga sparningar
+rensas. En salva som gör minst två skada och innehåller en 6:a slår ut
+motorerna. Vrakslaget vid skrovslut är ett sidokast som inte flyttar
+vapentärningarna.
+
 `snabb-testsvit`: testprocesser återanvänds per miljö med isolate: false.
 Befintlig rensning av mocks och testernas återställning av klockor och DOM
 behålls. Detta minskar startkostnaden per testfil utan att flytta bort

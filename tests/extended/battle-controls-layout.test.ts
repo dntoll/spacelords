@@ -1,6 +1,9 @@
 import { expect, it, vi } from 'vitest';
 import { BattleCameraController } from '../../src/client/views/battle/BattleCameraController.js';
-import { battleControlsLayout } from '../../src/client/views/battle/BattleControlsLayout.js';
+import {
+  battleControlsLayout,
+  maneuverControlsLayout,
+} from '../../src/client/views/battle/BattleControlsLayout.js';
 import { createTestBattle } from '../../src/client/models/battle/TestBattle.js';
 import { battleHex } from '../../src/client/models/TacticalBattle.js';
 
@@ -111,4 +114,21 @@ it('fuskknapp-for-teststrid: uses normal asteroids with clear deployment zones a
       .every((piece) => piece.position),
   ).toBe(true);
   expect(battle.snapshot.asteroids).toEqual(initial.asteroids);
+});
+
+it('styrning-pa-skrovet: headings sit on the bow edges and speed at the stern', () => {
+  const nose = { x: 200, y: 100 };
+  const center = { x: 137, y: 136 };
+  const stern = { x: 74, y: 172 };
+  const places = maneuverControlsLayout(nose, center, stern, 1, 1, false);
+  expect(places.straight.y).toBeLessThan(nose.y);
+  expect(places.left.x).toBeLessThan(places.straight.x);
+  expect(places.right.x).toBeGreaterThan(places.straight.x);
+  expect(places.done).toEqual(center);
+  expect(places.speed.y).toBeGreaterThan(nose.y);
+  expect(places.faster.x).not.toBeCloseTo(places.slower.x);
+  expect(places.speed.x).toBeGreaterThan(
+    Math.min(places.faster.x, places.slower.x),
+  );
+  expect(places.speed.x).toBeLessThan(Math.max(places.faster.x, places.slower.x));
 });

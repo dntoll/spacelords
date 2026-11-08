@@ -32,8 +32,10 @@ function largeBattle(enemyTransport = false) {
     ],
     12345,
   );
+  const legacy = structuredClone(battle.snapshot);
+  delete (legacy as { maneuverSystem?: boolean }).maneuverSystem;
   return TacticalBattle.restore({
-    ...battle.snapshot,
+    ...legacy,
     phase: 'fighting',
     round: 2,
     turn: 'player',

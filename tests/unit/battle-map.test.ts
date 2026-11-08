@@ -261,7 +261,7 @@ it.each(Object.keys(SHIP_SPRITES) as ShipSpriteType[])(
       arcs.length = 0;
       view.render(state, 'ship', null, 'Cannon');
       battle.command({ type: 'activate', id: 'ship' });
-      battle.command({ type: 'forward' });
+      battle.command({ type: 'maneuver', speed: 1, direction: 0 });
       const destination = battle.snapshot.pieces.find(
         (piece) => piece.id === 'ship',
       )!.position!;

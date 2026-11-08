@@ -46,7 +46,7 @@ import { renderDecisions, renderTurnWarning } from '../decisions/EmpireView.js';
 import { renderTurnActions } from './TurnActionsView.js';
 import { renderEvents, renderCombatLog } from './EventsView.js';
 import { renderEventContent } from './EventContent.js';
-import type { BattleShot } from '../../models/TacticalBattle.js';
+import type { BattleManeuver, BattleShot } from '../../models/TacticalBattle.js';
 
 export class AppView implements AppPort {
   #battleView: BattleView | null = null;
@@ -792,6 +792,9 @@ export class AppView implements AppPort {
   }
   async animateBattleShot(shot: BattleShot): Promise<void> {
     await this.#battleView?.animateShot(shot);
+  }
+  async animateBattleManeuver(maneuver: BattleManeuver): Promise<void> {
+    await this.#battleView?.animateManeuver(maneuver);
   }
 
   #renderTurnConsole(model: AppReadModel): void {
