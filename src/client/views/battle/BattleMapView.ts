@@ -50,6 +50,7 @@ export class BattleMapView implements BattleMapPort {
   #effect: BattleEffects | null = null;
   #effectFrame: BattleEffectFrame | null = null;
   #animationFrame: number | undefined;
+  #animationTimeout: ReturnType<typeof setTimeout> | undefined;
   #finishAnimation: (() => void) | undefined;
   #preview: BattleHex[] = [];
   #pose: {
@@ -77,6 +78,10 @@ export class BattleMapView implements BattleMapPort {
     const stepMs = 170;
     return new Promise((resolve) => {
       this.#finishAnimation = resolve;
+      this.#animationTimeout = setTimeout(
+        () => this.#cancelAnimation(),
+        stepMs * frames.length + 250,
+      );
       const tick = (now: number) => {
         if (this.#disposed) {
           this.#cancelAnimation();
@@ -144,6 +149,9 @@ export class BattleMapView implements BattleMapPort {
     if (this.#animationFrame !== undefined)
       cancelAnimationFrame(this.#animationFrame);
     this.#animationFrame = undefined;
+    if (this.#animationTimeout !== undefined)
+      clearTimeout(this.#animationTimeout);
+    this.#animationTimeout = undefined;
     this.#effect = null;
     this.#effectFrame = null;
     this.#pose = null;

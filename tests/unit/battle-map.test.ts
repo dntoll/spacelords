@@ -215,6 +215,36 @@ it('skadepartiklar-i-strid: disposing during flight cancels its frame and resolv
   expect(container.dataset.shotStage).toBeUndefined();
 });
 
+it('avslutad-manoveranimation: completes when the browser does not deliver another animation frame', async () => {
+  vi.useFakeTimers();
+  try {
+    const { view } = drawing(false);
+    vi.stubGlobal(
+      'requestAnimationFrame',
+      vi.fn(() => 123),
+    );
+    vi.stubGlobal('cancelAnimationFrame', vi.fn());
+    const state = createTestBattle().snapshot;
+    view.render(state, null, null, 'Cannon');
+    const maneuver = {
+      id: 'first-maneuver',
+      shipId: state.pieces[0]!.id,
+      from: { position: { q: 1, r: 3 }, facing: 0 },
+      steps: [{ position: { q: 2, r: 3 }, facing: 0 }],
+    };
+    const complete = vi.fn();
+    const pending = view.animateManeuver(maneuver).then(complete);
+
+    await vi.advanceTimersByTimeAsync(1_000);
+
+    expect(complete).toHaveBeenCalledOnce();
+    await pending;
+    view.dispose();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 it.each(Object.keys(SHIP_SPRITES) as ShipSpriteType[])(
   'skeppets-framat-foljer-spriten: %s nose, direction marker and movement agree in all six facings',
   async (type) => {

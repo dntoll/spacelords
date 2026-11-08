@@ -20,6 +20,11 @@ går `ceil(hastighet / 2)` hex i den gamla riktningen och resten i den nya.
 `manoverforhandsvisning`: de tre riktningarna visar de hexar skeppet kommer att
 passera när pekaren eller fokus ligger på knappen.
 
+`avslutad-manoveranimation`: kartan har en tidsgräns som avslutar
+manöverpresentationen om webbläsaren inte levererar nästa animationsbildruta.
+Den ordinarie animationen fortsätter bildruta för bildruta, medan reservvägen
+släpper fram den sparade slutpositionen och nästa stridsorder.
+
 `krock-med-skepp-och-asteroid`: en krock med ett annat skepp stoppar före
 överlapp och ger båda skrovskada lika med den åkande skeppets hastighet,
 minst 1. En asteroid försvinner, skadar skeppet en gång med samma belopp och

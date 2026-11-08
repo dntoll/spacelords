@@ -134,6 +134,9 @@ pågående strider behåller sin tidigare karta och reträttregel.
   sväng eller rakt fram. Högre hastighet ger en vidare sväng.
 - `manoverforhandsvisning` — **Fullständigt implementerat**: de tre
   riktningarna visar färdhexarna vid hovring.
+- `avslutad-manoveranimation` — **Fullständigt implementerat**: efter en
+  manöver visas skeppet på sin slutposition och stridsorder blir åter
+  tillgängliga även om webbläsaren missar en animationsbildruta.
 - `krock-med-skepp-och-asteroid` — **Fullständigt implementerat**: skepp tar
   krockskada av varandra. En asteroid förstörs och skadar skeppet.
 - `motor-utslagen-vrak`, `skrovslut-vrak-eller-splitter`,

@@ -253,6 +253,9 @@ test('begransad-stridskamera / fullskarms-stridskarta / skeppsnara-stridskontrol
     .getByRole('button', { name: 'Increase speed', exact: true })
     .click();
   await dialog.getByRole('button', { name: 'Straight', exact: true }).click();
+  await expect
+    .poll(async () => dialog.getByRole('heading').first().textContent())
+    .not.toBe('Maneuver');
   const checkpoint = (await saved(page)).state.simulation!.tacticalBattles![0]!;
   expect(checkpoint.pieces.find((p) => p.id === fighter.id)!.position).toEqual({
     q: 2,

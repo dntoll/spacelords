@@ -222,7 +222,7 @@ Se [hela visionen](docs/game-vision.md).
   sin tidigare reträttregel. Se [taktisk strid](docs/tactical-combat.md).
 
 - **Manöver, vrak och krock:** `manoverpoang-och-hastighet`,
-  `svang-vid-hastighet`, `manoverforhandsvisning`,
+  `svang-vid-hastighet`, `manoverforhandsvisning`, `avslutad-manoveranimation`,
   `krock-med-skepp-och-asteroid`, `motor-utslagen-vrak`,
   `skrovslut-vrak-eller-splitter`, `vrak-blockerar-och-sprangs`,
   `vrak-beskjutning-sista-utvag`, `nasta-skepp-vid-slut-pa-handlingar`,
@@ -234,7 +234,9 @@ Se [hela visionen](docs/game-vision.md).
   fören, fart vid aktern och End ship turn i mitten. Den kan inte väljas när
   skeppet har både fart och manöverpoäng kvar. Ett skott mellan två
   manöverpoäng kräver att den andra också används. En beskjutning spränger en
-  asteroid. Sprängda skepp lämnar inget
+  asteroid. Manöverpresentationen avslutas även om webbläsaren tappar en
+  animationsbildruta, så skeppet visas på sin verkliga slutposition och nästa
+  order kan ges. Sprängda skepp lämnar inget
   bärgningsvrak. Obeväpnade skepp flyr mot `Escape`. Äldre pågående strider
   behåller den tidigare rörelsen. Se [taktisk strid](docs/tactical-combat.md).
 
