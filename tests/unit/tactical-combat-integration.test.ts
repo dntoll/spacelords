@@ -241,14 +241,14 @@ describe('tactical combat integration', () => {
             : p.status === 'destroyed'
               ? p.position
               : {
-                q:
-                  p.side === 'enemy'
-                    ? 3
-                    : p.id === fighters[0]!.id
-                      ? 1
-                      : 7 + index,
-                r: 2,
-              },
+                  q:
+                    p.side === 'enemy'
+                      ? 3
+                      : p.id === fighters[0]!.id
+                        ? 1
+                        : 7 + index,
+                  r: 2,
+                },
         facing: 0,
       })),
     }));

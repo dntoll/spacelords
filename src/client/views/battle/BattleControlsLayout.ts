@@ -19,7 +19,7 @@ function shift(
   scale: number,
   fraction: number,
 ): Point {
-  const angle = (((facing % 6) + 6) % 6 * -Math.PI) / 3;
+  const angle = ((((facing % 6) + 6) % 6) * -Math.PI) / 3;
   const distance = hexWidth * scale * fraction;
   return {
     x: origin.x + Math.cos(angle) * distance,
@@ -39,7 +39,7 @@ export function maneuverControlsLayout(
   const back = (facing + 3) % 6;
   const speed = shift(stern, back, scale, singleHex ? 0.42 : 0.12);
   const flank = (side: number): Point => {
-    const angle = (((facing % 6) + 6) % 6 * -Math.PI) / 3 + Math.PI / 2;
+    const angle = ((((facing % 6) + 6) % 6) * -Math.PI) / 3 + Math.PI / 2;
     const distance = hexWidth * scale * 0.24 * side;
     return {
       x: speed.x + Math.cos(angle) * distance,

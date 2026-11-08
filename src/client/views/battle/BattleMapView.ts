@@ -541,10 +541,10 @@ export class BattleMapView implements BattleMapPort {
       } else p.line(a.x, a.y, b.x, b.y);
     }
     for (const currentShip of state.pieces) {
-      const motion =
-        this.#pose?.shipId === currentShip.id ? this.#pose : null;
+      const motion = this.#pose?.shipId === currentShip.id ? this.#pose : null;
       if (!motion && currentShip.status === 'destroyed') {
-        if (currentShip.position) this.#drawDebris(p, currentShip.position, currentShip.id);
+        if (currentShip.position)
+          this.#drawDebris(p, currentShip.position, currentShip.id);
         continue;
       }
       if (
@@ -640,7 +640,10 @@ export class BattleMapView implements BattleMapPort {
           large ? Math.sqrt(3) * HexGeometry.size * 2.7 : radius * 1.7,
           large ? HexGeometry.size * 1.2 : radius * 1.7,
         );
-        if (ship.status === 'wreck' || (ship.side === 'enemy' && ship.type === 'Transport ship'))
+        if (
+          ship.status === 'wreck' ||
+          (ship.side === 'enemy' && ship.type === 'Transport ship')
+        )
           p.noTint();
       } else {
         p.fill(ship.side === 'player' ? '#b0e9f9' : '#ffb2a3');
@@ -714,7 +717,8 @@ export class BattleMapView implements BattleMapPort {
       new HexCoordinate(position.q, position.r),
     );
     let seed = 2166136261;
-    for (const glyph of id) seed = Math.imul(seed ^ glyph.charCodeAt(0), 16777619);
+    for (const glyph of id)
+      seed = Math.imul(seed ^ glyph.charCodeAt(0), 16777619);
     p.noStroke();
     for (let index = 0; index < 7; index++) {
       seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;

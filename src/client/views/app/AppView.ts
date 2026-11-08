@@ -46,7 +46,10 @@ import { renderDecisions, renderTurnWarning } from '../decisions/EmpireView.js';
 import { renderTurnActions } from './TurnActionsView.js';
 import { renderEvents, renderCombatLog } from './EventsView.js';
 import { renderEventContent } from './EventContent.js';
-import type { BattleManeuver, BattleShot } from '../../models/TacticalBattle.js';
+import type {
+  BattleManeuver,
+  BattleShot,
+} from '../../models/TacticalBattle.js';
 
 export class AppView implements AppPort {
   #battleView: BattleView | null = null;

@@ -44,7 +44,9 @@ describe('space maneuvering', () => {
     created.command({ type: 'activate', id: fighter.id });
     expect(created.snapshot.activation?.remaining).toBe(2);
     created.command({ type: 'maneuver', speed: 1, direction: 0 });
-    expect(created.snapshot.pieces.find((p) => p.id === fighter.id)).toMatchObject({
+    expect(
+      created.snapshot.pieces.find((p) => p.id === fighter.id),
+    ).toMatchObject({
       speed: 1,
     });
     expect(
@@ -79,10 +81,14 @@ describe('space maneuvering', () => {
     );
     created.command({ type: 'auto-deploy' });
     created.command({ type: 'start' });
-    const fighter = created.snapshot.pieces.find((piece) => piece.id === 'fighter')!;
+    const fighter = created.snapshot.pieces.find(
+      (piece) => piece.id === 'fighter',
+    )!;
     created.command({ type: 'activate', id: fighter.id });
     created.command({ type: 'maneuver', speed: 1, direction: 0 });
-    const moving = created.snapshot.pieces.find((piece) => piece.id === 'fighter')!;
+    const moving = created.snapshot.pieces.find(
+      (piece) => piece.id === 'fighter',
+    )!;
     expect(moving.speed).toBeGreaterThan(0);
     expect(created.snapshot.activation?.remaining).toBeGreaterThan(0);
     expect(created.endIssue(fighter.id)).toMatch(/speed/);
@@ -201,7 +207,9 @@ describe('space maneuvering', () => {
       });
       battle.command({ type: 'activate', id: 'fighter' });
       battle.command({ type: 'maneuver', speed: 0, direction: 0 });
-      const pirate = battle.snapshot.pieces.find((piece) => piece.id === 'pirate')!;
+      const pirate = battle.snapshot.pieces.find(
+        (piece) => piece.id === 'pirate',
+      )!;
       outcomes.add(pirate.status);
     }
     expect(outcomes.has('wreck')).toBe(true);
@@ -243,7 +251,9 @@ describe('space maneuvering', () => {
     });
     ram.command({ type: 'activate', id: 'fighter' });
     ram.command({ type: 'maneuver', speed: 0, direction: 0 });
-    const fighter = ram.snapshot.pieces.find((piece) => piece.id === 'fighter')!;
+    const fighter = ram.snapshot.pieces.find(
+      (piece) => piece.id === 'fighter',
+    )!;
     const pirate = ram.snapshot.pieces.find((piece) => piece.id === 'pirate')!;
     expect(fighter.position).toEqual({ q: 1, r: 4 });
     expect(fighter.hull).toBeLessThan(3);
@@ -322,12 +332,16 @@ describe('space maneuvering', () => {
     battle.command({ type: 'maneuver', speed: -1, direction: 0 });
     battle.command({ type: 'maneuver', speed: 0, direction: 1 });
     expect(battle.snapshot.activation?.remaining).toBe(0);
-    expect(battle.impact('fighter', { q: 2, r: 4 }, 'Cannon').hits[0]).toMatchObject({
+    expect(
+      battle.impact('fighter', { q: 2, r: 4 }, 'Cannon').hits[0],
+    ).toMatchObject({
       id: 'pirate',
       wreck: true,
     });
     battle.command({ type: 'fire', at: { q: 2, r: 4 }, weapon: 'Cannon' });
-    expect(battle.snapshot.pieces.find((piece) => piece.id === 'pirate')).toMatchObject({
+    expect(
+      battle.snapshot.pieces.find((piece) => piece.id === 'pirate'),
+    ).toMatchObject({
       status: 'destroyed',
       hull: 0,
     });
@@ -407,12 +421,16 @@ describe('space maneuvering', () => {
       })),
     });
     battle.actAutomatically();
-    const shuttle = battle.snapshot.pieces.find((piece) => piece.id === 'shuttle')!;
+    const shuttle = battle.snapshot.pieces.find(
+      (piece) => piece.id === 'shuttle',
+    )!;
     const zones = battleEscapeHexes(battle.snapshot);
     const nearest = (at: { q: number; r: number }) =>
       Math.min(
         ...zones.map((zone) =>
-          new HexCoordinate(at.q, at.r).distanceTo(new HexCoordinate(zone.q, zone.r)),
+          new HexCoordinate(at.q, at.r).distanceTo(
+            new HexCoordinate(zone.q, zone.r),
+          ),
         ),
       );
     expect(shuttle.facing).not.toBe(0);

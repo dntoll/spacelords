@@ -127,13 +127,13 @@ it('synliga-fiendemanovrer: each automatic step moves at most one hex or turns o
     expect(changed.length).toBeLessThanOrEqual(1);
     for (const p of changed) {
       const old = state.pieces.find((other) => other.id === p.id)!;
-        if (old.position && p.position) {
-          const dq = old.position.q - p.position.q,
-            dr = old.position.r - p.position.r;
-          expect(
-            Math.max(Math.abs(dq), Math.abs(dr), Math.abs(dq + dr)),
-          ).toBeLessThanOrEqual((old.speed ?? 0) + 1);
-        }
+      if (old.position && p.position) {
+        const dq = old.position.q - p.position.q,
+          dr = old.position.r - p.position.r;
+        expect(
+          Math.max(Math.abs(dq), Math.abs(dr), Math.abs(dq + dr)),
+        ).toBeLessThanOrEqual((old.speed ?? 0) + 1);
+      }
     }
     state = next;
   }

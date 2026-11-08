@@ -163,7 +163,10 @@ export async function finishTacticalCombat(page: Page): Promise<void> {
     for (const command of commands) {
       await expect
         .poll(async () => {
-          const heading = await dialog.getByRole('heading').first().textContent();
+          const heading = await dialog
+            .getByRole('heading')
+            .first()
+            .textContent();
           return heading === 'Maneuver' || heading === 'Weapon fire'
             ? 'busy'
             : 'ready';

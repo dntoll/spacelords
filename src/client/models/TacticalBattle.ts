@@ -655,10 +655,7 @@ export class TacticalBattle {
           }
         } else if (p.status === 'wreck') {
           const cells = result.occupiedHexes(p.id);
-          if (
-            !cells.length ||
-            cells.some((cell) => !result.contains(cell))
-          )
+          if (!cells.length || cells.some((cell) => !result.contains(cell)))
             throw new Error('Invalid saved combat position.');
           for (const cell of cells) {
             if (occupied.has(hex(cell).key))
@@ -1021,7 +1018,8 @@ export class TacticalBattle {
     );
     return (
       cells.find(
-        (at) => !this.#shotAt(sourceId, targetId, weapon, at, from, facing).reason,
+        (at) =>
+          !this.#shotAt(sourceId, targetId, weapon, at, from, facing).reason,
       ) ?? null
     );
   }
@@ -1184,12 +1182,7 @@ export class TacticalBattle {
           ),
       );
       const asteroid = this.#asteroids.find((rock) => same(rock, at));
-      if (
-        !target &&
-        asteroid &&
-        origin &&
-        profile
-      ) {
+      if (!target && asteroid && origin && profile) {
         const distance = hex(origin).distanceTo(hex(at));
         if (distance < profile.min || distance > profile.max)
           return Object.freeze({
@@ -1292,7 +1285,11 @@ export class TacticalBattle {
       reason: null,
       hits: Object.freeze(hits),
       ...(rocks.length
-        ? { asteroids: Object.freeze(rocks.map((asteroid) => ({ ...asteroid }))) }
+        ? {
+            asteroids: Object.freeze(
+              rocks.map((asteroid) => ({ ...asteroid })),
+            ),
+          }
         : {}),
     });
   }
@@ -1306,7 +1303,9 @@ export class TacticalBattle {
   ): boolean {
     const size = Math.min(SHIP_PROFILES[source.type].size, targetSize);
     const obstacles = [
-      ...this.#asteroids.filter((asteroid) => !ignore || !same(asteroid, ignore)),
+      ...this.#asteroids.filter(
+        (asteroid) => !ignore || !same(asteroid, ignore),
+      ),
       ...this.#pieces
         .filter(
           (piece) =>
@@ -1353,8 +1352,7 @@ export class TacticalBattle {
     }
     if (target.status !== 'active' || damage <= 0) return 'active';
     const stamp = `${target.id}:${this.#log.length}:${target.hull}`;
-    const enginesKnockedOut =
-      damage >= 2 && dice.some((die) => die === 6);
+    const enginesKnockedOut = damage >= 2 && dice.some((die) => die === 6);
     target.hull = Math.max(0, target.hull - damage);
     const outcome = hullLossOutcome(
       enginesKnockedOut,
@@ -1432,10 +1430,7 @@ export class TacticalBattle {
     const origin = pose?.position ?? piece.position;
     const facing = pose?.facing ?? piece.facing;
     const speed = pose?.speed ?? piece.speed ?? 0;
-    const empty = (
-      issue: string,
-      nextSpeed = speed,
-    ): ManeuverPreview => ({
+    const empty = (issue: string, nextSpeed = speed): ManeuverPreview => ({
       speed: nextSpeed,
       facing,
       position: origin ? { ...origin } : null,
@@ -1445,7 +1440,8 @@ export class TacticalBattle {
       escaped: false,
       collisions: [],
     });
-    if (!this.#usesManeuver) return empty('This battle uses the earlier movement rules.');
+    if (!this.#usesManeuver)
+      return empty('This battle uses the earlier movement rules.');
     if (delta !== -1 && delta !== 0 && delta !== 1)
       return empty('Change speed by one, or hold it.');
     if (direction !== -1 && direction !== 0 && direction !== 1)
@@ -1481,9 +1477,7 @@ export class TacticalBattle {
     let cursorFacing = facing;
     let committed = piece.escapeEdge;
     let escaped = false;
-    const blocked = (
-      issue: string,
-    ): ManeuverPreview => ({
+    const blocked = (issue: string): ManeuverPreview => ({
       speed: nextSpeed,
       facing: cursorFacing,
       position: { ...cursor },
@@ -1918,7 +1912,11 @@ export class TacticalBattle {
         delete piece.escapeEdge;
       }
     }
-    if (piece.status === 'active' && !preview.traveled.length && command.direction !== 0)
+    if (
+      piece.status === 'active' &&
+      !preview.traveled.length &&
+      command.direction !== 0
+    )
       piece.facing = preview.facing;
     if (piece.status === 'active' && !preview.escaped) {
       for (const collision of preview.collisions) {
@@ -1947,7 +1945,11 @@ export class TacticalBattle {
                 this.#escapeDeparture(
                   piece,
                   previous.position,
-                  this.#stepFacing(previous.position, step.position, previous.facing),
+                  this.#stepFacing(
+                    previous.position,
+                    step.position,
+                    previous.facing,
+                  ),
                 ) ?? (step.position.r <= 0 ? 'top' : 'bottom');
               break;
             }
@@ -2208,7 +2210,8 @@ export class TacticalBattle {
       { speed: 1, direction: -1 },
     ];
     const choice = options.find(
-      (option) => !this.previewManeuver(piece.id, option.speed, option.direction).issue,
+      (option) =>
+        !this.previewManeuver(piece.id, option.speed, option.direction).issue,
     );
     return choice ? { type: 'maneuver', ...choice } : null;
   }
@@ -2542,7 +2545,9 @@ export class TacticalBattle {
           )
             continue;
           if (weapon === 'Missiles') {
-            for (const at of this.occupiedHexes(enemy.id).flatMap(missileArea)) {
+            for (const at of this.occupiedHexes(enemy.id).flatMap(
+              missileArea,
+            )) {
               const preview = this.impact(p.id, at, weapon);
               if (preview.reason || !preview.hits.length) continue;
               let score = -1;
@@ -2643,8 +2648,9 @@ export class TacticalBattle {
             if (preview.issue) continue;
             const penalty =
               node.penalty +
-              preview.collisions.filter((collision) => collision.kind === 'ship')
-                .length *
+              preview.collisions.filter(
+                (collision) => collision.kind === 'ship',
+              ).length *
                 6 +
               preview.collisions.filter(
                 (collision) => collision.kind === 'asteroid',

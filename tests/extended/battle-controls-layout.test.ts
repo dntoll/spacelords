@@ -130,5 +130,7 @@ it('styrning-pa-skrovet: headings sit on the bow edges and speed at the stern', 
   expect(places.speed.x).toBeGreaterThan(
     Math.min(places.faster.x, places.slower.x),
   );
-  expect(places.speed.x).toBeLessThan(Math.max(places.faster.x, places.slower.x));
+  expect(places.speed.x).toBeLessThan(
+    Math.max(places.faster.x, places.slower.x),
+  );
 });

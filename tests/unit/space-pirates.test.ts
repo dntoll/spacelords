@@ -113,9 +113,9 @@ describe('flottstrid-per-hex', () => {
         .exportState()
         .pirates!.reduce((sum, p) => sum + p.count, 0);
       expect(survivors === 0 || enemySurvivors === 0).toBe(true);
-      expect(survivors + enemySurvivors + game.wrecks.length).toBeLessThanOrEqual(
-        fighters + pirates,
-      );
+      expect(
+        survivors + enemySurvivors + game.wrecks.length,
+      ).toBeLessThanOrEqual(fighters + pirates);
       expect(survivors + enemySurvivors).toBeGreaterThan(0);
       expect(game.fleet('fleet-home')!.shipUnits).toHaveLength(survivors);
       expect(

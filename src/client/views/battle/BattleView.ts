@@ -22,7 +22,10 @@ import { element } from '../dom.js';
 import { ShipFootprint } from '../../models/battle/ShipFootprint.js';
 import { shipImage } from '../ShipView.js';
 import { battleButton } from './BattleIcons.js';
-import { battleControlsLayout, maneuverControlsLayout } from './BattleControlsLayout.js';
+import {
+  battleControlsLayout,
+  maneuverControlsLayout,
+} from './BattleControlsLayout.js';
 
 export interface BattleMapPort {
   animateShot?(shot: BattleShot): Promise<void>;
@@ -308,7 +311,8 @@ export class BattleView {
           : 'Enemy manoeuvring…');
     this.#panel.replaceChildren();
     this.#speeds.replaceChildren();
-    this.#speeds.hidden = state.maneuverSystem !== true || state.phase !== 'fighting';
+    this.#speeds.hidden =
+      state.maneuverSystem !== true || state.phase !== 'fighting';
     this.#weapons.replaceChildren();
     this.#deployment.replaceChildren();
     this.#information.replaceChildren();
@@ -533,12 +537,20 @@ export class BattleView {
       }
       end.classList.add('battle-maneuver');
       const chooseSpeed = (delta: -1 | 1, label: string) => {
-        const control = battleButton(label, delta > 0 ? 'plus' : 'minus', () => {
-          this.#speedDelta = this.#speedDelta === delta ? 0 : delta;
-          if (this.#state) this.render(this.#state);
-        }, 'battle-maneuver');
+        const control = battleButton(
+          label,
+          delta > 0 ? 'plus' : 'minus',
+          () => {
+            this.#speedDelta = this.#speedDelta === delta ? 0 : delta;
+            if (this.#state) this.render(this.#state);
+          },
+          'battle-maneuver',
+        );
         control.dataset.slot = delta > 0 ? 'faster' : 'slower';
-        control.setAttribute('aria-pressed', String(this.#speedDelta === delta));
+        control.setAttribute(
+          'aria-pressed',
+          String(this.#speedDelta === delta),
+        );
         control.disabled =
           !active ||
           locked ||
@@ -559,11 +571,25 @@ export class BattleView {
         icon: 'left' | 'forward' | 'right',
         slot: string,
       ) => {
-        const preview = rules.previewManeuver(ship.id, this.#speedDelta, direction);
-        const control = battleButton(label, icon, () => {
-          this.#map?.setManeuverPreview?.(null);
-          if (!preview.issue) this.#command({ type: 'maneuver', speed: this.#speedDelta, direction });
-        }, 'battle-maneuver');
+        const preview = rules.previewManeuver(
+          ship.id,
+          this.#speedDelta,
+          direction,
+        );
+        const control = battleButton(
+          label,
+          icon,
+          () => {
+            this.#map?.setManeuverPreview?.(null);
+            if (!preview.issue)
+              this.#command({
+                type: 'maneuver',
+                speed: this.#speedDelta,
+                direction,
+              });
+          },
+          'battle-maneuver',
+        );
         control.dataset.slot = slot;
         const hexes = (preview.issue ? preview.steps : preview.traveled).map(
           (step) => step.position,
@@ -574,7 +600,10 @@ export class BattleView {
             ? `${label}. Escapes through ${hexes.length} hexes.`
             : `${label}. ${hexes.length} hex${hexes.length === 1 ? '' : 'es'} at speed ${preview.speed}.`);
         control.classList.toggle('is-blocked', !!preview.issue);
-        control.setAttribute('aria-disabled', String(!!preview.issue || locked || !active));
+        control.setAttribute(
+          'aria-disabled',
+          String(!!preview.issue || locked || !active),
+        );
         const show = () => this.#map?.setManeuverPreview?.(hexes);
         const hide = () => this.#map?.setManeuverPreview?.(null);
         control.addEventListener('pointerenter', show);
@@ -659,10 +688,14 @@ export class BattleView {
   #renderFeedback(state: BattleState): void {
     const latest = state.log.at(-1) ?? '';
     const shot = state.log.findLast((line) => /: \d+ damage/.test(line));
-    const asteroid = latest.includes('Asteroid at') && latest.includes('breaks');
+    const asteroid =
+      latest.includes('Asteroid at') && latest.includes('breaks');
     const damage = shot?.match(/: (\d+) damage(.*)$/);
     this.#feedback.hidden = !shot && !asteroid;
-    if (asteroid && (!shot || state.log.lastIndexOf(shot) < state.log.length - 1)) {
+    if (
+      asteroid &&
+      (!shot || state.log.lastIndexOf(shot) < state.log.length - 1)
+    ) {
       this.#feedback.dataset.result = 'hit';
       this.#feedback.textContent = `Hit · ${latest.split('. ').at(-1)}`;
     } else if (shot && damage) {
@@ -769,8 +802,14 @@ export class BattleView {
       this.#panel.style.setProperty('--maneuver-button', size);
       this.#speeds.style.setProperty('--maneuver-button', size);
       const clamp = (point: Point): Point => ({
-        x: Math.max(buttonSize / 2, Math.min(viewport.width - buttonSize / 2, point.x)),
-        y: Math.max(buttonSize / 2, Math.min(viewport.height - buttonSize / 2, point.y)),
+        x: Math.max(
+          buttonSize / 2,
+          Math.min(viewport.width - buttonSize / 2, point.x),
+        ),
+        y: Math.max(
+          buttonSize / 2,
+          Math.min(viewport.height - buttonSize / 2, point.y),
+        ),
       });
       const place = (node: HTMLElement, point: Point) => {
         const at = clamp(point);
@@ -783,8 +822,12 @@ export class BattleView {
         right: places.right,
         done: places.done,
         dock: {
-          x: center.x + Math.cos(((-ship.facing * Math.PI) / 3) + Math.PI / 2) * 28,
-          y: center.y + Math.sin(((-ship.facing * Math.PI) / 3) + Math.PI / 2) * 28,
+          x:
+            center.x +
+            Math.cos((-ship.facing * Math.PI) / 3 + Math.PI / 2) * 28,
+          y:
+            center.y +
+            Math.sin((-ship.facing * Math.PI) / 3 + Math.PI / 2) * 28,
         },
         faster: places.faster,
         slower: places.slower,

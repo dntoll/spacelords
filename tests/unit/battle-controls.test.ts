@@ -208,7 +208,9 @@ it('stridsorder-utan-mobilscroll / skeppsnara-stridskontroller: overlays all mov
   expect(document.querySelector('.battle-controls .battle-log')).toBeNull();
   const readout = board.querySelector('output') as HTMLOutputElement;
   expect(readout.value).toBe('0');
-  board.querySelector<HTMLButtonElement>('[aria-label="Increase speed"]')!.click();
+  board
+    .querySelector<HTMLButtonElement>('[aria-label="Increase speed"]')!
+    .click();
   expect(
     (document.querySelector('.battle-board output') as HTMLOutputElement).value,
   ).toBe('1');
