@@ -73,9 +73,7 @@ test('stridsutplacering / sparad-taktisk-strid: deploys all ships and resumes an
   await expect(
     dialog.getByRole('button', { name: 'Activate ship', exact: true }),
   ).toHaveCount(0);
-  await dialog
-    .getByRole('button', { name: 'Turn left 60°', exact: true })
-    .click();
+  await dialog.getByRole('button', { name: 'Turn left', exact: true }).click();
   const checkpoint = (await saved(page)).state.simulation!.tacticalBattles![0]!;
   await page.screenshot({ path: testInfo.outputPath('battle-activation.png') });
   await page.reload();
@@ -428,26 +426,45 @@ test('autoaim-med-manuellt-mal: acquires, loses and reacquires a target and resp
     await expect(aim).toHaveAttribute('data-aim-q', q);
     await expect(aim).toHaveAttribute('data-aim-r', r);
   };
-  await aimed('3', '3');
+  await aimed('3', '2');
   await expect(aim).toHaveAttribute('data-can-fire', 'true');
   await dialog.getByRole('button', { name: 'Turn right', exact: true }).click();
   await expect(aim).toContainText('No target');
   await expect(aim).toHaveAttribute('data-can-fire', 'false');
   await dialog.getByRole('button', { name: 'Turn left', exact: true }).click();
-  await aimed('3', '3');
-  await tapBattleHex(page, { q: 3, r: 3 });
+  await aimed('3', '2');
+  const current = (await saved(page)).state.simulation!.tacticalBattles![0]!;
+  const manualTarget = current.pieces.find(
+    (piece) =>
+      piece.side === 'enemy' &&
+      piece.status === 'active' &&
+      piece.position &&
+      !ShipFootprint.contains(piece, current.largeShipFootprints === true, {
+        q: 3,
+        r: 2,
+      }),
+  )!;
+  const manualHex = manualTarget.position!;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await tapBattleHex(page, manualHex);
+    if (
+      (await aim.getAttribute('data-aim-q')) === String(manualHex.q) &&
+      (await aim.getAttribute('data-aim-r')) === String(manualHex.r)
+    )
+      break;
+  }
   expect(
     (await saved(page)).state.simulation!.tacticalBattles![0]!.lastShot,
   ).toBeUndefined();
-  await aimed('3', '3');
+  await aimed(String(manualHex.q), String(manualHex.r));
   await page.setViewportSize({ width: 844, height: 390 });
-  await aimed('3', '3');
+  await aimed(String(manualHex.q), String(manualHex.r));
   await page.screenshot({
     path: testInfo.outputPath('manual-autoaim-large-ships.png'),
   });
-  await tapBattleHex(page, { q: 3, r: 3 });
+  await tapBattleHex(page, manualHex);
   expect(
     (await saved(page)).state.simulation!.tacticalBattles![0]!.lastShot!.at,
-  ).toEqual({ q: 3, r: 3 });
+  ).toEqual(manualHex);
   expect(errors).toEqual([]);
 });

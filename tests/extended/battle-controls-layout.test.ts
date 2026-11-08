@@ -134,3 +134,18 @@ it('styrning-pa-skrovet: headings sit on the bow edges and speed at the stern', 
     Math.max(places.faster.x, places.slower.x),
   );
 });
+
+it('styrning-pa-skrovet: controls remain separated on a zoomed-out single-hex ship', () => {
+  const point = { x: 200, y: 100 };
+  const places = Object.values(
+    maneuverControlsLayout(point, point, point, 0, 0.15, true),
+  );
+  for (let first = 0; first < places.length; first++)
+    for (let second = first + 1; second < places.length; second++)
+      expect(
+        Math.hypot(
+          places[first]!.x - places[second]!.x,
+          places[first]!.y - places[second]!.y,
+        ),
+      ).toBeGreaterThanOrEqual(35.9);
+});

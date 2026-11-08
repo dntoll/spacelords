@@ -3661,6 +3661,9 @@ body:has(.discovery-controls) .selection-panel {
   transform: translate(-50%, -50%);
   pointer-events: auto;
 }
+.battle-speed > output {
+  pointer-events: none;
+}
 .battle-speed-value {
   display: grid;
   place-items: center;
