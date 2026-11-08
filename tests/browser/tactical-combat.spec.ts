@@ -433,6 +433,13 @@ test('autoaim-med-manuellt-mal: switches invalid automatic targets and respects 
   await expect(aim).toHaveAttribute('data-can-fire', 'true');
   await dialog.getByRole('button', { name: 'Turn left', exact: true }).click();
   await aimed('4', '4');
+  await expect
+    .poll(async () =>
+      (await dialog.getByRole('heading').first().textContent()) === 'Maneuver'
+        ? 'busy'
+        : 'ready',
+    )
+    .toBe('ready');
   const current = (await saved(page)).state.simulation!.tacticalBattles![0]!;
   const automaticHex = { q: 4, r: 4 };
   const manualTarget = current.pieces.find(
