@@ -137,9 +137,16 @@ it('styrning-pa-skrovet: headings sit on the bow edges and speed at the stern', 
 
 it('styrning-pa-skrovet: controls remain separated on a zoomed-out single-hex ship', () => {
   const point = { x: 200, y: 100 };
-  const places = Object.values(
-    maneuverControlsLayout(point, point, point, 0, 0.15, true),
-  );
+  const layout = maneuverControlsLayout(point, point, point, 0, 0.15, true);
+  const places = [
+    layout.straight,
+    layout.left,
+    layout.right,
+    layout.done,
+    layout.faster,
+    layout.slower,
+    layout.speed,
+  ];
   for (let first = 0; first < places.length; first++)
     for (let second = first + 1; second < places.length; second++)
       expect(
