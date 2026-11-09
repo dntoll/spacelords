@@ -499,6 +499,9 @@ export class MasterController {
       case 'map-production-page':
         this.#production.selectMapProductionPage(intent.page);
         break;
+      case 'prepare-route-transport':
+        this.#decisions.prepareRouteTransport(intent.routeId);
+        break;
       case 'map-production-option':
         this.#production.selectMapProductionOption(intent.option);
         break;

@@ -1,3 +1,4 @@
+import type { TransportAction } from './Decisions.js';
 import { ShipOrders, type ShipOrder } from './ShipOrders.js';
 import {
   PlanetQueues,
@@ -5763,6 +5764,7 @@ export class Game {
         label: `${route.from} ↔ ${route.to}: ${this.#transportNextStep(route)}`,
         kind: 'route',
         routeId: route.id,
+        transportAction: this.#routeTransportAction(route),
       });
     return this.#decisions.snapshot(items);
   }
@@ -6414,6 +6416,64 @@ export class Game {
     return this.#availableTransport(route)
       ? null
       : this.#transportPreparation(excludePlanetId);
+  }
+
+  #routeTransportAction(route: TradeRouteSnapshot): TransportAction {
+    if (this.#availableTransport(route)) return { kind: 'assign' };
+    if (!this.#research.completed.has('Transport ship factory')) {
+      const issue = this.#researchQueueIssue();
+      return { kind: 'research', ...(issue ? { blockedReason: issue } : {}) };
+    }
+    const planets = this.#ownedPlanets().sort(
+      (a, b) =>
+        Number(![route.a, route.b].includes(a.id)) -
+          Number(![route.a, route.b].includes(b.id)) ||
+        a.id.localeCompare(b.id),
+    );
+    const factory = planets.find((planet) =>
+      this.#state(planet).buildings.some(
+        (building) =>
+          building.type === 'Transport ship factory' && !building.demolition,
+      ),
+    );
+    if (factory)
+      return { kind: 'ship', planetId: factory.id, planetName: factory.name };
+    const buildable = planets.find(
+      (planet) => !this.canBuild(planet, 'Transport ship factory'),
+    );
+    if (buildable)
+      return {
+        kind: 'factory',
+        planetId: buildable.id,
+        planetName: buildable.name,
+      };
+    return {
+      kind: 'factory',
+      blockedReason:
+        'No owned planet can build a Transport ship factory. Check available building sites and Domes.',
+    };
+  }
+
+  prepareRouteTransport(routeId: string): ProductionReceipt | null {
+    this.#requirePlanning();
+    const route = this.tradeRoutes.find(
+      (candidate) =>
+        candidate.id === routeId && !candidate.closing && !candidate.capacity,
+    );
+    if (!route || this.#transportWaiting(route))
+      throw new Error('This route no longer needs transport preparation.');
+    const action = this.#routeTransportAction(route);
+    if (action.blockedReason) throw new Error(action.blockedReason);
+    if (action.kind === 'research') {
+      this.selectResearch('Transport ship factory');
+      return null;
+    }
+    if (action.kind === 'assign')
+      throw new Error('Select an available transport fleet to assign it.');
+    const planet = this.#planetById(action.planetId!)!;
+    return action.kind === 'factory'
+      ? this.scheduleBuild(planet, 'Transport ship factory')
+      : this.scheduleShip(planet, 'Transport ship');
   }
 
   #transportNextStep(route: TradeRouteSnapshot): string {

@@ -9,7 +9,9 @@ import { button, element } from '../dom.js';
 
 function nextStep(decision: Decision): string {
   if (decision.kind === 'route')
-    return ' Use Research or Production to prepare transport. Select an available purple transport fleet and assign it via Trade routes.';
+    return decision.transportAction?.kind === 'assign'
+      ? ' Select an available purple transport fleet and assign it to the route.'
+      : '';
   if (decision.id.startsWith('supply-'))
     return ' Inspect the marked planet and its project. Connect suppliers with a route and assign transport for missing deliveries.';
   if (decision.id.startsWith('staff-'))
@@ -36,6 +38,35 @@ export function renderDecisionGuidance(
   for (const decision of decisions) {
     const row = element('div', 'decision-guidance-row');
     row.append(element('p', '', `${decision.label}.${nextStep(decision)}`));
+    const action = decision.transportAction;
+    if (
+      decision.kind === 'route' &&
+      decision.routeId &&
+      action &&
+      action.kind !== 'assign'
+    ) {
+      row.classList.add('decision-guidance-actions');
+      const label =
+        action.kind === 'research'
+          ? 'Queue transport research'
+          : action.kind === 'factory'
+            ? 'Build transport factory'
+            : 'Queue Transport ship';
+      const control = button(
+        label,
+        () =>
+          emit({ type: 'prepare-route-transport', routeId: decision.routeId! }),
+        'button secondary-button',
+      );
+      control.disabled = !!action.blockedReason;
+      if (action.planetName)
+        control.textContent = `${label} · ${action.planetName}`;
+      if (action.blockedReason) {
+        control.title = action.blockedReason;
+        row.append(element('p', 'muted-note', action.blockedReason));
+      }
+      row.append(control);
+    }
     if (decision.kind !== 'research') {
       const show = button(
         `Show decision: ${decision.label}`,

@@ -1355,3 +1355,7 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 - `tileljus-for-sprites` — **Fullständigt implementerat**. Figurer och föremål får rutans ljusstyrka, beräknad från ljuset som når rutans mitt. Figurernas ljus ändras mjukt under förflyttning, medan markeringar och status förblir tydliga.
 
 Lamporna är fasta och påverkas inte av stridsskador. Väggsnitten är en visuell hjälp; väggarna behåller sin funktion för rörelse, sikt och skott.
+
+## Åtgärder för rutttransport
+
+`atgarder-for-rutttransport` är **Fullständigt implementerat**. När en rutt saknar transport visar vägledningen nästa steg utifrån tillgänglig forskning, fabriker och transportskepp. Spelaren kan köa forskning, fabriksbygge eller transportskepp direkt från vägledningen. Vald planet, hinder och resultat framgår. Finns en tillgänglig transportflotta visas vägledning för att tilldela den.

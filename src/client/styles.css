@@ -1901,7 +1901,10 @@ p {
   padding: 5px 8px;
   font-size: 0.7rem;
 }
-.research-page .decision-guidance-row p {
+.research-page .decision-guidance-actions {
+  flex-wrap: wrap;
+}
+.decision-guidance-row p {
   margin: 0;
 }
 .research-heading {
@@ -2839,9 +2842,15 @@ p {
   align-items: center;
   gap: 8px;
 }
+.decision-guidance-actions {
+  flex-wrap: wrap;
+}
 .decision-guidance-row p {
   margin: 4px 0;
   flex: 1;
+}
+.decision-guidance-actions p {
+  flex-basis: 100%;
 }
 .decision-guidance-row button {
   min-width: 44px;

@@ -308,3 +308,7 @@ försörjningsreglerna behålls.
 Regeln gäller produktion och transport. Personal, varv och bärgning behåller
 sina tidigare beslutsregler. Ett hinder hos en komponentleverantör visas vid
 källan; mottagaren väntar på sin beställda produktion.
+
+## Åtgärder för rutttransport
+
+`atgarder-for-rutttransport` är **Fullständigt implementerat**. Vägledningen för en rutt utan kapacitet erbjuder nästa steg utifrån rikets forskning, fabriker och tillgängliga transportskepp. Forskning, fabrik eller skepp kan köas direkt; vald planet, hinder och resultat visas. Befintliga regler för forsknings- och byggköer gäller.

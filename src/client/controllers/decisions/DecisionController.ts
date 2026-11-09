@@ -3,6 +3,10 @@ import type { DecisionFacade } from '../../models/decisions/DecisionFacade.js';
 export class DecisionController {
   constructor(private readonly facade: DecisionFacade) {}
 
+  prepareRouteTransport(routeId: string): void {
+    this.facade.prepareRouteTransport(routeId);
+  }
+
   openDecisions(): void {
     return this.facade.openDecisions();
   }

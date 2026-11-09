@@ -127,6 +127,7 @@ export type AppIntent =
       readonly height: number;
     }
   | { readonly type: 'research-fit' }
+  | { readonly type: 'prepare-route-transport'; readonly routeId: string }
   | {
       readonly type:
         | 'open-decisions'

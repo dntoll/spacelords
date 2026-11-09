@@ -6,6 +6,8 @@ export function playerNoticeText(notice: PlayerNotice): string | null {
   switch (notice.kind) {
     case 'upgrade-ordered':
       return 'Upgrade ordered.';
+    case 'transport-preparation-queued':
+      return `Queued ${notice.product}${notice.planet ? ` on ${notice.planet}` : ''}.`;
     case 'shipyard-queued':
       return 'Shipyard construction queued.';
     case 'discoveries':

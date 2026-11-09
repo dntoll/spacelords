@@ -3,6 +3,11 @@ export type PlayerNotice =
   | null
   | { readonly kind: 'upgrade-ordered' }
   | { readonly kind: 'shipyard-queued' }
+  | {
+      readonly kind: 'transport-preparation-queued';
+      readonly product: string;
+      readonly planet: string | null;
+    }
   | { readonly kind: 'discoveries'; readonly names: readonly string[] }
   | { readonly kind: 'action-failed'; readonly reason: string };
 

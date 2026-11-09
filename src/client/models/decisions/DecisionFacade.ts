@@ -4,6 +4,20 @@ import type { AppHost } from '../AppModel.js';
 export class DecisionFacade {
   constructor(private readonly host: AppHost) {}
 
+  prepareRouteTransport(routeId: string): void {
+    const receipt = this.host.game.prepareRouteTransport(routeId);
+    this.host.productionReceipt = receipt;
+    this.host.notice = {
+      kind: 'transport-preparation-queued',
+      product: receipt?.product ?? 'Transport ship factory research',
+      planet: receipt
+        ? (this.host.game
+            .ownedPlanetSnapshots()
+            .find((planet) => planet.id === receipt.planetId)?.name ?? null)
+        : null,
+    };
+  }
+
   openDecisions(): void {
     this.host.screen = 'decisions';
   }
