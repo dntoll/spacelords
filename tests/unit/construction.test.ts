@@ -401,10 +401,6 @@ describe('planetlager / arbetskraft-och-besattning', () => {
   it('passiva-vantehandelser: keeps production waiting for local extraction without announcing it', () => {
     const { game } = setup();
     const saved = game.exportState();
-    const home = saved.world.systems
-      .flatMap((system) => system.planets)
-      .find((planet) => planet.id === game.galaxy.homePlanet.id)!;
-    home.resources.find((resource) => resource.name === 'Iron')!.perYear = 1;
     const colony = saved.colonies[0]![1];
     colony.stock.Iron = 0;
     colony.buildings.push({
@@ -413,7 +409,27 @@ describe('planetlager / arbetskraft-och-besattning', () => {
       slotIndex: 0,
       demolition: false,
     });
-    const restored = Game.restore(saved);
+    const restored = Game.restore({
+      ...saved,
+      world: {
+        ...saved.world,
+        systems: saved.world.systems.map((system) => ({
+          ...system,
+          planets: system.planets.map((planet) =>
+            planet.id === game.galaxy.homePlanet.id
+              ? {
+                  ...planet,
+                  resources: planet.resources.map((resource) =>
+                    resource.name === 'Iron'
+                      ? { ...resource, perYear: 1 }
+                      : resource,
+                  ),
+                }
+              : planet,
+          ),
+        })),
+      },
+    });
     const planet = restored.galaxy.homePlanet;
     restored.scheduleBuild(planet, 'Research station', 1);
     expect(
