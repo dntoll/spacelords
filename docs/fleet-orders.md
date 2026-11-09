@@ -63,3 +63,7 @@ Patrullens nya centrum, startorder och pågående anslutning sparas utan
 inkompatibla ändringar. Både pekarval och tangentbordsval av position sparar
 den nya spelordern omedelbart. Back lämnar ett ej slutfört målval utan ny
 order. Produktionsutkast är tillfälliga tills Build eller Queue används.
+
+## Synlig flottorder
+
+`synlig-flottorder` är **Fullständigt implementerat**: flottkort visar aktiv order och relevanta mål eller status direkt. Tillfälliga uppdrag och pausade order framgår även på mobil. Detta ersätter regeln i `kompakta-flottkort` att destination och uppdragsdetaljer enbart finns i hjälptext; kortet får bli högre för ordertexten.

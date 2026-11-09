@@ -868,7 +868,7 @@ samtidigt, även på mobil. Fyra skepp ryms på en rad i kartans flottkort på
 vanliga mobilskärmar och i smala flottkort på dator och surfplatta. Standardkort
 med fyra skepp är högst 140 px höga vid minst 220 px kortbredd. Namn, skepp och
 en enda faktisk flottfart, exempelvis S: 2 hex, visas. Position och motorinformation
-utelämnas; destination och uppdragsdetaljer finns i hjälptext. Order, namnbyte och skeppsöverföring är fortsatt åtkomliga
+utelämnas; aktiva order och relevanta mål eller status visas direkt på kortet enligt `synlig-flottorder`. Order, namnbyte och skeppsöverföring är fortsatt åtkomliga
 med pekytor på minst 44 pixlar i höjd.
 
 ## Terraforming och planetkapacitet
@@ -946,6 +946,10 @@ Upgrade enligt kraven nedan.
 
 2026-10-24: Motorreglerna ersätter tidigare oförändrade recept för andra skepp
 än Fighter samt företrädet för lokal motorproduktion framför fjärrlager.
+
+## Synlig flottorder
+
+`synlig-flottorder` är **Fullständigt implementerat**. Flottkort visar aktiv order och relevanta mål eller status direkt, även på mobil. Tillfälliga uppdrag och pausade order framgår. Detta ersätter regeln i `kompakta-flottkort` att destination och uppdragsdetaljer enbart finns i hjälptext. Kortet får bli högre för ordertexten.
 
 ## Orders och startorder
 

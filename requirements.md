@@ -156,6 +156,8 @@ Se [hela visionen](docs/game-vision.md).
   `terraformning` om bestående grundtyp och fabriker vid 100%.
   Se [Terraforming och Domes](docs/terraforming.md).
 
+- **Synlig flottorder:** `synlig-flottorder` är **Fullständigt implementerat**. Aktiva flottorder och relevanta mål eller status visas direkt på flottkort, även på mobil. Tillfälliga uppdrag och pausade order framgår. Se [Orders](docs/fleet-orders.md).
+
 - **Orders och startorder:** `egen-ordervy`, `ruttval-for-order`,
   `flottval-pa-orderkarta`, `skeppsanpassade-specialorder`,
   `patrullcentrum-vid-order`, `startorder-for-nybyggda-skepp` och

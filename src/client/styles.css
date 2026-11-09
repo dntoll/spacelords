@@ -4225,3 +4225,9 @@ body:has(.discovery-controls) .selection-panel {
     inset 0 0 0 2px #7ad0ff,
     inset 0 0 0 4px #e3b341;
 }
+
+.fleet-order-status {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}

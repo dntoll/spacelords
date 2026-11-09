@@ -1,3 +1,4 @@
+import { ShipOrders } from '../models/ShipOrders.js';
 import { renderFleetOrders } from './fleets/FleetOrdersView.js';
 import { shipTransferIssue } from '../models/fleets/FleetTransfer.js';
 import type { AppReadModel } from '../models/AppModel.js';
@@ -161,28 +162,8 @@ export function renderFleetCard(
       footer.append(selectRoute);
     }
   }
-  if (fleet.civilian)
-    footer.append(
-      element(
-        'small',
-        'fleet-civilian-status',
-        `${fleet.civilian.passengers} passengers aboard · ${fleet.civilian.status}`,
-      ),
-    );
-  if (fleet.automation === 'guard' || fleet.automation === 'transport')
-    footer.append(
-      element('small', 'muted-note', fleetAssignmentLabel(fleet, model)),
-    );
   if (fleet.navigationIssue)
     footer.append(element('small', 'muted-note', fleet.navigationIssue));
-  if (fleet.upgrade)
-    footer.append(
-      element(
-        'small',
-        'fleet-upgrade-status',
-        fleetAssignmentLabel(fleet, model),
-      ),
-    );
   if (fleet.detectionRange !== undefined) {
     const detection = element(
       'small',
@@ -234,6 +215,13 @@ export function renderFleetCard(
     .join('. ');
   card.setAttribute('aria-description', card.title);
   card.append(header, hangar, footer);
+  const assignment = fleetAssignmentLabel(fleet, model);
+  if (assignment && (!fleet.patrol || fleet.detour || fleet.ordersPaused)) {
+    const status = element('div', 'fleet-order-status', assignment);
+    if (fleet.upgrade) status.classList.add('fleet-upgrade-status');
+    if (fleet.civilian) status.classList.add('fleet-civilian-status');
+    card.append(status);
+  }
   return card;
 }
 
@@ -241,6 +229,23 @@ export function fleetAssignmentLabel(
   fleet: FleetSnapshot,
   model: AppReadModel,
 ): string {
+  if (fleet.detour?.kind === 'attack-pirate')
+    return `Attack Space pirate${fleet.ordersPaused ? ' · paused' : ''}`;
+  if (fleet.detour?.kind === 'explore-planet') {
+    const target = model.cells.find(
+      (cell) => cell.position.key === fleet.destination?.key,
+    )?.object?.name;
+    return `Explore planet: ${target ?? 'selected planet'}${fleet.ordersPaused ? ' · paused' : ''}`;
+  }
+  if (fleet.ordersPaused) {
+    const active = fleetAssignmentLabel(
+      { ...fleet, ordersPaused: false },
+      model,
+    );
+    return active ? `${active} · paused` : 'Orders paused';
+  }
+  if (fleet.pendingOrder)
+    return `Pending: ${ShipOrders.label(fleet.pendingOrder)}`;
   if (fleet.upgrade) {
     const planet =
       model.ownedPlanets.find((planet) => planet.id === fleet.upgrade!.planetId)
@@ -268,6 +273,8 @@ export function fleetAssignmentLabel(
     )?.object?.name;
     return `Explore planet: ${target ?? 'selected planet'}`;
   }
+  if (fleet.exploration)
+    return fleet.exploration === 'explore-stars' ? 'Explore stars' : 'Explore';
   if (fleet.salvage?.targets.length)
     return `Salvage: ${fleet.salvage.targets.length} wreck(s) assigned`;
   if (fleet.patrol) {
@@ -282,6 +289,12 @@ export function fleetAssignmentLabel(
   if (fleet.routeId) {
     const route = model.tradeRoutes.find((route) => route.id === fleet.routeId);
     return `Trade route: ${route ? `${route.from} ↔ ${route.to}` : fleet.routeId}`;
+  }
+  if (fleet.destination) {
+    const target = model.cells.find(
+      (cell) => cell.position.key === fleet.destination?.key,
+    )?.object?.name;
+    return `Move: ${target ?? `hex ${fleet.destination.q}, ${fleet.destination.r}`}`;
   }
   return '';
 }
