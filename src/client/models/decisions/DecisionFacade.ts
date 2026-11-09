@@ -82,6 +82,16 @@ export class DecisionFacade {
     this.host.game.allowOtherFleetOrders();
   }
 
+  addWreckToSalvageQueue(wreckId: string): void {
+    this.host.game.addWreckToSalvageQueue(wreckId);
+  }
+  removeWreckFromSalvageQueue(wreckId: string): void {
+    this.host.game.removeWreckFromSalvageQueue(wreckId);
+  }
+  moveWreckInSalvageQueue(wreckId: string, index: number): void {
+    this.host.game.moveWreckInSalvageQueue(wreckId, index);
+  }
+
   addPirateToAttackQueue(pirateId: string): void {
     this.host.game.addPirateToAttackQueue(pirateId);
   }

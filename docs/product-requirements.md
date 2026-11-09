@@ -1363,3 +1363,7 @@ Lamporna är fasta och påverkas inte av stridsskador. Väggsnitten är en visue
 ## Transportbygge i försörjningssteg
 
 `transportbygge-i-forsorjningssteg` är **Fullständigt implementerat**. När ett projekt väntar på materialtransport visar byggkön vilken transportförberedelse som pågår och var ett transportskepp eller en transportfabrik är köad. När förberedelsen avbryts visas inte längre den gamla uppgiften.
+
+## Bärgningskö
+
+`bargningsko` är **Fullständigt implementerat**. Ett upptäckt, tillgängligt vrak kan läggas i Salvage queue direkt från händelsen eller från kartan. Kön visas i Decisions och kan ändras i ordning eller kortas. Lediga Salvage ships hämtar nåbara vrak i köordning; automatiska bärgare kan också användas när de är lediga. Vraket finns kvar i kön till leverans vid ett varv. En borttagen köpost avbokar hämtning före upptagning; ett redan bogserat vrak fortsätter till varvet. Kön och pågående uppdrag sparas.

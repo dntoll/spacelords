@@ -43,6 +43,16 @@ export class DecisionController {
     return this.facade.allowOtherFleetOrders();
   }
 
+  addWreckToSalvageQueue(wreckId: string): void {
+    this.facade.addWreckToSalvageQueue(wreckId);
+  }
+  removeWreckFromSalvageQueue(wreckId: string): void {
+    this.facade.removeWreckFromSalvageQueue(wreckId);
+  }
+  moveWreckInSalvageQueue(wreckId: string, index: number): void {
+    this.facade.moveWreckInSalvageQueue(wreckId, index);
+  }
+
   addPirateToAttackQueue(pirateId: string): void {
     return this.facade.addPirateToAttackQueue(pirateId);
   }

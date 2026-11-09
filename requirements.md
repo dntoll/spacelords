@@ -156,6 +156,8 @@ Se [hela visionen](docs/game-vision.md).
   `terraformning` om bestående grundtyp och fabriker vid 100%.
   Se [Terraforming och Domes](docs/terraforming.md).
 
+- **Bärgningskö:** `bargningsko` är **Fullständigt implementerat**. Upptäckta vrak kan köas från händelsen eller kartan, prioriteras i Decisions och hämtas av lediga Salvage ships. Kön sparas och posten avslutas när vraket levereras till ett varv. Se [automatiska flottorder](docs/automated-fleet-orders.md).
+
 - **Transportbygge i försörjningssteg:** `transportbygge-i-forsorjningssteg` är **Fullständigt implementerat**. När ett byggprojekt väntar på transport visar försörjningsstegen vilken transportförberedelse som pågår och var ett skepp eller en fabrik är köad. Se [försörjning och produktion](docs/supply-production.md).
 
 - **Åtgärder för rutttransport:** `atgarder-for-rutttransport` är **Fullständigt implementerat**. Ruttens vägledning erbjuder nästa möjliga steg för forskning, fabrik eller transportskepp utifrån rikets läge och visar hinder och återkoppling. Se [händelser och vägledning](docs/events-and-guidance.md).

@@ -168,6 +168,7 @@ export interface AppReadModel {
   readonly projectSupply: readonly ProjectSupplySnapshot[];
   readonly decisions: readonly Decision[];
   readonly planetQueues: Game['planetQueues'];
+  readonly salvageQueue: Game['salvageQueue'];
   readonly attackQueue: Game['attackQueue'];
   readonly attentionScreens: readonly DecisionScreen[];
   readonly tradeRoutes: readonly TradeRouteSnapshot[];
@@ -480,6 +481,7 @@ export class AppModel {
       projectSupply,
       decisions,
       planetQueues: this.#game.planetQueues,
+      salvageQueue: this.#game.salvageQueue,
       attackQueue: this.#game.attackQueue,
       attentionScreens: Object.freeze([
         ...new Set(decisions.filter(needsAttention).map(decisionScreen)),
@@ -1355,6 +1357,24 @@ export class AppModel {
             attackAction: Object.freeze({
               pirateId: discovery.id,
               label: 'Add to Attack queue',
+            }),
+          }
+        : {}),
+      ...(discovery.kind === 'wreck' &&
+      !this.#game.salvageQueue.some(
+        (entry) => entry.wreckId === discovery.id,
+      ) &&
+      this.#game.wrecks.some(
+        (wreck) =>
+          wreck.id === discovery.id &&
+          !wreck.yardId &&
+          !wreck.reservedBy &&
+          !wreck.towedBy,
+      )
+        ? {
+            salvageAction: Object.freeze({
+              wreckId: discovery.id,
+              label: 'Add to Salvage queue',
             }),
           }
         : {}),

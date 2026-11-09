@@ -919,6 +919,17 @@ export class AppView implements AppPort {
             ),
           );
         }
+        if (current.decision.salvageAction) {
+          const action = current.decision.salvageAction;
+          actions.append(
+            button(action.label, () =>
+              this.#emit({
+                type: 'add-salvage-queue',
+                wreckId: action.wreckId,
+              }),
+            ),
+          );
+        }
         if (current.decision.attackAction) {
           const action = current.decision.attackAction;
           actions.append(

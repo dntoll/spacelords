@@ -102,3 +102,7 @@ till valt vrak får inget orderkrav.
 Automated exploration läses in utan de teknikerna. Redan aktiva Patrol-
 och Explore-order fortsätter. En flotta som väntade på Auto assign route
 tilldelas med den nya bemanningsregeln.
+
+## Bärgningskö
+
+`bargningsko` är **Fullständigt implementerat**. Spelaren kan lägga till ett upptäckt och tillgängligt vrak från upptäcktshändelsen eller kartan. Salvage queue i Decisions kan prioriteras och poster kan tas bort. Närmaste nåbara lediga flotta med Salvage ship hämtar köade vrak; lediga automatiska bärgare får också uppdrag utan att förlora sin automatiska order. Posten finns kvar till leverans vid varv. Borttagning före upptagning avbokar uppdraget, medan ett redan bogserat vrak levereras. Kön och tilldelningar sparas; tidigare sparningar utan kö kan läsas.

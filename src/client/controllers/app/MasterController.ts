@@ -300,6 +300,17 @@ export class MasterController {
       }
       if (
         playback.stage === 'awaiting-choice' &&
+        intent.type === 'add-salvage-queue' &&
+        current?.decision?.salvageAction?.wreckId === intent.wreckId
+      ) {
+        this.#decisions.addWreckToSalvageQueue(intent.wreckId);
+        this.#turn.chooseEvent('ignore');
+        this.#model.save();
+        this.#render();
+        this.#schedulePlayback();
+      }
+      if (
+        playback.stage === 'awaiting-choice' &&
         intent.type === 'add-attack-queue' &&
         current?.decision?.attackAction?.pirateId === intent.pirateId
       ) {
@@ -576,6 +587,15 @@ export class MasterController {
         break;
       case 'move-planet-queue':
         this.#model.movePlanetQueue(intent.kind, intent.planetId, intent.index);
+        break;
+      case 'add-salvage-queue':
+        this.#decisions.addWreckToSalvageQueue(intent.wreckId);
+        break;
+      case 'remove-salvage-queue':
+        this.#decisions.removeWreckFromSalvageQueue(intent.wreckId);
+        break;
+      case 'move-salvage-queue':
+        this.#decisions.moveWreckInSalvageQueue(intent.wreckId, intent.index);
         break;
       case 'add-attack-queue':
         this.#decisions.addPirateToAttackQueue(intent.pirateId);

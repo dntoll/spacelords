@@ -124,6 +124,55 @@ function renderAttackQueue(
   return section;
 }
 
+function renderSalvageQueue(
+  model: AppReadModel,
+  emit: IntentHandler,
+): HTMLElement {
+  const section = element('section', 'empire-card planet-queue-card');
+  section.append(element('h2', '', 'Salvage queue'));
+  if (!model.salvageQueue.length)
+    section.append(
+      element(
+        'p',
+        'muted-note',
+        'Add discovered wrecks when you want a Salvage ship to recover them.',
+      ),
+    );
+  const list = element('ol', 'planet-queue-list');
+  const locked = !['planning', 'interrupted'].includes(model.phase);
+  for (const item of model.salvageQueue) {
+    const row = element('li');
+    row.append(
+      element('strong', '', item.name),
+      element(
+        'span',
+        'muted-note',
+        item.assignedFleetName
+          ? `Assigned to ${item.assignedFleetName}`
+          : 'Waiting for an available Salvage ship',
+      ),
+    );
+    const remove = button(
+      `Remove ${item.name} from Salvage queue`,
+      () => emit({ type: 'remove-salvage-queue', wreckId: item.wreckId }),
+      'queue-icon-button',
+    );
+    remove.textContent = '×';
+    remove.disabled = locked;
+    row.append(remove);
+    decorateQueueRow(row, item.wreckId, item.name, locked);
+    list.append(row);
+  }
+  bindQueueOrder(
+    list,
+    model.salvageQueue.map((item) => item.wreckId),
+    (wreckId, index) => emit({ type: 'move-salvage-queue', wreckId, index }),
+    locked,
+  );
+  section.append(list);
+  return section;
+}
+
 export function renderDecisions(
   model: AppReadModel,
   emit: IntentHandler,
@@ -168,6 +217,7 @@ export function renderDecisions(
     renderPlanetQueue(model, emit, 'exploration'),
     renderPlanetQueue(model, emit, 'colonization'),
     renderAttackQueue(model, emit),
+    renderSalvageQueue(model, emit),
   );
   page.append(panel);
   return page;

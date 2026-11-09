@@ -77,6 +77,51 @@ describe('gemensamt-handelseflode', () => {
     current.controller.dispose();
   });
 
+  it('bargningsko: a wreck discovery can be queued and the choice is saved', () => {
+    const game = Game.restore(discoveryState());
+    game.startTurn();
+    while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
+    const checkpoint = game.exportState();
+    const wreck = checkpoint.salvage!.wrecks[0]!;
+    const discovery = checkpoint.simulation!.discoveries[0]!;
+    const state: GameState = {
+      ...checkpoint,
+      salvage: {
+        ...checkpoint.salvage!,
+        wrecks: checkpoint.salvage!.wrecks.map((item) =>
+          item.id === wreck.id ? { ...item, known: true } : item,
+        ),
+      },
+      simulation: {
+        ...checkpoint.simulation!,
+        discoveries: [
+          {
+            ...discovery,
+            id: wreck.id,
+            kind: 'wreck',
+            position: wreck.position,
+          },
+        ],
+      },
+    };
+    const slot = session(state);
+    const current = slot.open();
+    current.model.beginEventPlayback();
+    const playback = current.model.snapshot.eventPlayback!;
+    const event = playback.events[playback.index]!;
+    expect(event.decision?.salvageAction).toMatchObject({
+      wreckId: wreck.id,
+      label: 'Add to Salvage queue',
+    });
+    current.emit({ type: 'add-salvage-queue', wreckId: wreck.id });
+    expect(
+      current.model.snapshot.salvageQueue.map((item) => item.wreckId),
+    ).toContain(wreck.id);
+    expect(current.model.snapshot.eventPlayback?.stage).toBe('filing');
+    expect(slot.saved().state.salvageQueue).toContain(wreck.id);
+    current.controller.dispose();
+  });
+
   it.each([0, 1])(
     'stridsresultat-utan-upprepning: shows losses and survivors once while retaining wrecks and saved history (%s Fighters)',
     (fighters) => {

@@ -799,6 +799,7 @@ export interface GameState {
   readonly productionFleetSequences?: Readonly<Record<string, number>>;
   readonly planetQueues?: PlanetQueuesSnapshot;
   readonly attackQueue?: readonly string[];
+  readonly salvageQueue?: readonly string[];
   readonly surveyedPlanets?: readonly string[];
   readonly tradeRoutes: readonly TradeRoute[];
   readonly shipments: readonly Shipment[];
@@ -852,6 +853,7 @@ export interface GameState {
 export class Game {
   #planetQueues = new PlanetQueues();
   #attackQueue: string[] = [];
+  #salvageQueue: string[] = [];
   #surveyedPlanets = new Set<string>();
   readonly #civilianTraffic = new CivilianTraffic();
   #logistics = new Logistics();
@@ -933,6 +935,7 @@ export class Game {
       productionFleetSequences: { ...this.#productionFleetSequences },
       planetQueues: this.#planetQueues.snapshot(),
       attackQueue: [...this.#attackQueue],
+      salvageQueue: [...this.#salvageQueue],
       surveyedPlanets: [...this.#surveyedPlanets],
       knownTerrain: [...this.#knownTerrain],
       salvage: this.#salvage.snapshot(),
@@ -1299,6 +1302,16 @@ export class Game {
     )
       throw new Error('Invalid saved attack queue.');
     game.#attackQueue = [...((copy.attackQueue ?? []) as string[])];
+    if (
+      copy.salvageQueue !== undefined &&
+      (!Array.isArray(copy.salvageQueue) ||
+        copy.salvageQueue.some(
+          (id: unknown) => typeof id !== 'string' || !id,
+        ) ||
+        new Set(copy.salvageQueue).size !== copy.salvageQueue.length)
+    )
+      throw new Error('Invalid saved salvage queue.');
+    game.#salvageQueue = [...((copy.salvageQueue ?? []) as string[])];
     const planetIds = new Set(
       galaxy.systems.flatMap((system) =>
         system.planets.map((planet) => planet.id),
@@ -1576,6 +1589,73 @@ export class Game {
       exploration: entries('exploration'),
       colonization: entries('colonization'),
     });
+  }
+
+  get salvageQueue() {
+    return Object.freeze(
+      this.#salvageQueue.flatMap((wreckId) => {
+        const wreck = this.#salvage.wrecks.find(
+          (item) => item.id === wreckId && item.known && !item.yardId,
+        );
+        if (!wreck) return [];
+        const fleet = this.#fleets.find(
+          (item) => item.id === (wreck.towedBy ?? wreck.reservedBy),
+        );
+        return [
+          Object.freeze({
+            wreckId,
+            name: `${wreck.ship.type} wreck`,
+            position: wreck.position,
+            assignedFleetId: fleet?.id ?? null,
+            assignedFleetName: fleet?.name ?? null,
+          }),
+        ];
+      }),
+    );
+  }
+
+  addWreckToSalvageQueue(wreckId: string): void {
+    this.#requirePlanetQueueEditing();
+    const wreck = this.#salvage.wrecks.find(
+      (item) =>
+        item.id === wreckId &&
+        item.known &&
+        !item.yardId &&
+        !item.reservedBy &&
+        !item.towedBy,
+    );
+    if (this.#salvageQueue.includes(wreckId)) return;
+    if (!wreck) throw new Error('Choose an available discovered wreck.');
+    this.#salvageQueue.push(wreckId);
+    this.#updateSalvage();
+  }
+
+  removeWreckFromSalvageQueue(wreckId: string): void {
+    this.#requirePlanetQueueEditing();
+    if (!this.#salvageQueue.includes(wreckId)) return;
+    this.#salvageQueue = this.#salvageQueue.filter((id) => id !== wreckId);
+    const wreck = this.#salvage.wrecks.find((item) => item.id === wreckId);
+    if (wreck?.reservedBy && !wreck.towedBy) {
+      const order = this.#salvage.order(wreck.reservedBy);
+      if (order) order.targets = order.targets.filter((id) => id !== wreckId);
+      wreck.reservedBy = null;
+    }
+    this.#updateSalvage();
+  }
+
+  moveWreckInSalvageQueue(wreckId: string, index: number): void {
+    this.#requirePlanetQueueEditing();
+    const from = this.#salvageQueue.indexOf(wreckId);
+    if (
+      from < 0 ||
+      !Number.isInteger(index) ||
+      index < 0 ||
+      index >= this.#salvageQueue.length
+    )
+      throw new Error('Choose a valid salvage queue position.');
+    this.#salvageQueue.splice(from, 1);
+    this.#salvageQueue.splice(index, 0, wreckId);
+    this.#updateSalvage();
   }
 
   get attackQueue(): readonly AttackQueueEntrySnapshot[] {
@@ -3065,14 +3145,57 @@ export class Game {
       stationPosition: position,
     });
   }
+  #assignSalvageQueue(): void {
+    this.#salvageQueue = this.#salvageQueue.filter((id) =>
+      this.#salvage.wrecks.some(
+        (wreck) => wreck.id === id && wreck.known && !wreck.yardId,
+      ),
+    );
+    for (const id of this.#salvageQueue) {
+      const wreck = this.#salvage.wrecks.find((item) => item.id === id)!;
+      if (wreck.reservedBy || wreck.towedBy) continue;
+      const fleet = this.#fleets
+        .filter(
+          (item) =>
+            item.ships['Salvage ship'] > 0 &&
+            (this.#isIdleFleet(item) ||
+              (item.automation === 'salvage' &&
+                !!item.position &&
+                !item.destination &&
+                !this.#salvage.order(item.id) &&
+                !this.#salvage.towing(item.id).length)),
+        )
+        .flatMap((item) => {
+          const path = this.#navigation.path(
+            item.position!,
+            wreck.position,
+            this.#speed(item),
+            this.#knownTerrain,
+          );
+          return item.position!.key === wreck.position.key || path.length
+            ? [{ fleet: item, distance: path.length }]
+            : [];
+        })
+        .sort(
+          (a, b) =>
+            a.distance - b.distance || a.fleet.id.localeCompare(b.fleet.id),
+        )[0]?.fleet;
+      if (fleet) this.#salvage.assign(fleet, id);
+    }
+  }
+
   #updateSalvage(): void {
     this.#updateFleetUpgrades();
     for (let pass = 0; pass < 2; pass++) {
+      this.#assignSalvageQueue();
       this.#updateAutomaticSalvage();
       this.#salvage.update(
         this.#fleets,
         (position) => this.#hostileAt(position),
         (wreck, yard) => {
+          this.#salvageQueue = this.#salvageQueue.filter(
+            (id) => id !== wreck.id,
+          );
           for (const [part, amount] of Object.entries(
             Salvage.components(wreck.ship),
           )) {

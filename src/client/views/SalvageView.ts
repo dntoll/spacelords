@@ -50,6 +50,20 @@ export function renderSalvageSelection(
         `Engines: ${wreck.ship.engines['Rocket engine']} Rocket, ${wreck.ship.engines['Ion pulse engine']} Ion${wreck.ship.telescope ? ` · Telescope ${wreck.ship.telescope}` : ''}`,
       ),
     );
+    if (
+      !wreck.yardId &&
+      !wreck.reservedBy &&
+      !wreck.towedBy &&
+      !model.salvageQueue.some((item) => item.wreckId === wreck.id)
+    ) {
+      const queue = button('Add to Salvage queue', () =>
+        emit({ type: 'add-salvage-queue', wreckId: wreck.id }),
+      );
+      queue.disabled = !['planning', 'interrupted'].includes(model.phase);
+      panel.append(queue);
+    }
+    if (model.salvageQueue.some((item) => item.wreckId === wreck.id))
+      panel.append(element('p', 'muted-note', 'In Salvage queue.'));
     if (wreck.reservedBy || wreck.towedBy || wreck.yardId)
       panel.append(
         element(

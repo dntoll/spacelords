@@ -17,6 +17,7 @@ SavedGame --> Colony
 SavedGame --> Research
 SavedGame --> GameEvent
 SavedGame --> PlanetQueues
+SavedGame --> SalvageQueue
 
 class Galaxy {
   radius
@@ -45,6 +46,11 @@ class PlanetQueues {
   exploration : ordered Planet ids
   colonization : ordered Planet ids
 }
+class SalvageQueue {
+  targets : ordered discovered Wreck ids
+}
+SalvageQueue --> Wreck : prioritized targets
+
 class AttackQueue {
   targets : ordered visible PirateFleet ids
 }

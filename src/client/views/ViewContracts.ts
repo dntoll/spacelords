@@ -126,6 +126,15 @@ export type AppIntent =
       readonly width: number;
       readonly height: number;
     }
+  | {
+      readonly type: 'add-salvage-queue' | 'remove-salvage-queue';
+      readonly wreckId: string;
+    }
+  | {
+      readonly type: 'move-salvage-queue';
+      readonly wreckId: string;
+      readonly index: number;
+    }
   | { readonly type: 'research-fit' }
   | { readonly type: 'prepare-route-transport'; readonly routeId: string }
   | {

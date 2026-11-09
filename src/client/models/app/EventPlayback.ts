@@ -11,6 +11,7 @@ export interface EventDecision {
     planetId: string;
     label: string;
   }>;
+  readonly salvageAction?: Readonly<{ wreckId: string; label: string }>;
   readonly attackAction?: Readonly<{ pirateId: string; label: string }>;
   readonly colonyShipAction?: Readonly<{
     planetId: string;
