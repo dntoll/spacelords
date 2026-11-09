@@ -87,3 +87,7 @@ slutlig position och zoom når canvas. Även ett verkligt pekartryck,
 dragning och släpp kontrolleras från början till slut utan ändringar
 i Turn console. Tidsmätningar används inte som
 instabila godkännandegränser i CI.
+
+## Produktionsvyns respons
+
+`snabb-produktionsvy` är **Fullständigt implementerat**. Produktionsval återanvänder den senast presenterade oföränderliga läsmodellen för kontroll av läge och återkoppling och skapar en ny läsmodell efter ändringen. Före rättningen byggdes sju fullständiga läsmodeller för ett enda produktionsval; regressionstestet verifierar en och kontrollerar att rätt val visas. Händelser, spelrundor och strid behåller uppdateringar när deras tillstånd ändras.

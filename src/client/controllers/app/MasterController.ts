@@ -91,11 +91,12 @@ export class MasterController {
     try {
       if (this.#navigate(intent)) return;
       if (intent.type !== 'map-size') this.#model.clearNotice();
-      const receipt = this.#model.snapshot.productionReceipt;
+      const receipt = this.#presented?.productionReceipt;
       this.#handleIntent(intent);
-      if (this.#model.snapshot.productionReceipt !== receipt) {
+      const nextReceipt = this.#presented?.productionReceipt;
+      if (nextReceipt !== receipt) {
         clearTimeout(this.#receiptTimer);
-        if (this.#model.snapshot.productionReceipt)
+        if (nextReceipt)
           this.#receiptTimer = setTimeout(() => {
             this.#production.clearProductionReceipt();
             this.#render();
@@ -272,7 +273,8 @@ export class MasterController {
       this.#render();
       return;
     }
-    const playback = this.#model.snapshot.eventPlayback;
+    const before = this.#presented ?? this.#model.snapshot;
+    const playback = before.eventPlayback;
     if (playback) {
       const current = playback.events[playback.index];
       if (
@@ -334,7 +336,7 @@ export class MasterController {
       }
       return;
     }
-    if (this.#model.snapshot.turnMovement) return;
+    if (before.turnMovement) return;
     let mapOrder = false;
     if (intent.type.startsWith('open-') || intent.type === 'end-turn') {
       this.#starMap.cancelShipyardPlacement();
@@ -355,7 +357,7 @@ export class MasterController {
     )
       this.#cancelPointer(['pan', 'zoom'].includes(intent.type));
     if (
-      this.#model.snapshot.screen === 'saves' &&
+      before.screen === 'saves' &&
       ![
         'start-slot',
         'test-battle',
@@ -1042,7 +1044,9 @@ export class MasterController {
     clearTimeout(this.#playbackTimer);
     if (this.#disposed || this.#battleAnimating) return;
     const activated = this.#battle.autoSelectBattleShip();
-    const snapshot = this.#model.snapshot;
+    const snapshot = activated
+      ? this.#model.snapshot
+      : (this.#presented ?? this.#model.snapshot);
     const playback = snapshot.eventPlayback;
     if (this.#boarding.shouldPlayBoardingStep()) {
       this.#playbackTimer = setTimeout(() => {

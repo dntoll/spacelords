@@ -1367,3 +1367,7 @@ Lamporna är fasta och påverkas inte av stridsskador. Väggsnitten är en visue
 ## Bärgningskö
 
 `bargningsko` är **Fullständigt implementerat**. Ett upptäckt, tillgängligt vrak kan läggas i Salvage queue direkt från händelsen eller från kartan. Kön visas i Decisions och kan ändras i ordning eller kortas. Lediga Salvage ships hämtar nåbara vrak i köordning; automatiska bärgare kan också användas när de är lediga. Vraket finns kvar i kön till leverans vid ett varv. En borttagen köpost avbokar hämtning före upptagning; ett redan bogserat vrak fortsätter till varvet. Kön och pågående uppdrag sparas.
+
+## Snabb produktionsvy
+
+`snabb-produktionsvy` är **Fullständigt implementerat**. Produktionsval och ändringar i Production ska reagera snabbt även när riket växer. Vyn visar aktuella val, köer och återkoppling efter varje ändring.
