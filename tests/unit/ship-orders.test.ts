@@ -9,6 +9,58 @@ import {
 } from '../../src/client/models/ShipOrders.js';
 
 describe('startorder-for-nybyggda-skepp / flottval-pa-orderkarta', () => {
+  it.each([false, true])(
+    'produktionsflotta-efter-kolonisering: uses an empty colonizer only when explicitly selected (%s)',
+    (selected) => {
+      const state = tradeNetworkState(false);
+      const colony = state.colonies[0]![1];
+      colony.stock = {
+        ...colony.stock,
+        Iron: 500,
+        Water: 500,
+        Oil: 500,
+        'Rocket engine': 20,
+      };
+      colony.buildings.push({
+        id: 'salvage-factory',
+        type: 'Salvage ship factory',
+        slotIndex: 2,
+        demolition: false,
+      });
+      let game = Game.restore({
+        ...state,
+        pirates: [],
+        fleets: state.fleets.map((fleet) =>
+          fleet.id === 'fleet-home'
+            ? {
+                ...fleet,
+                name: 'Colony ship Tellus 1',
+                position: null,
+                shipUnits: [],
+                ships: Object.fromEntries(
+                  Object.keys(fleet.ships).map((type) => [type, 0]),
+                ),
+              }
+            : fleet,
+        ),
+      });
+      game.scheduleShip(
+        game.galaxy.homePlanet,
+        'Salvage ship',
+        selected ? 'fleet-home' : null,
+        'salvage-factory',
+      );
+      game = Game.restore(game.exportState());
+      finishYear(game);
+      expect(game.fleet('fleet-home')!.ships['Salvage ship']).toBe(
+        selected ? 1 : 0,
+      );
+      expect(
+        game.fleetSnapshots().find((fleet) => fleet.ships['Salvage ship'] === 1)
+          ?.name,
+      ).toBe(selected ? 'Colony ship Tellus 1' : 'Salvage ship Tellus 1');
+    },
+  );
   it('lets an explicit manual order replace a pending start order', () => {
     const state = tradeNetworkState();
     const game = Game.restore({

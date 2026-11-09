@@ -984,6 +984,10 @@ påverkas inte. Kartan och planetens Production-undersida läser samma oföränd
 ProductionGuidance; alla val och beställningar går genom controller. Sparformat,
 forskning och Domes-per-byggplats-regler ändras inte.
 
+`produktionsflotta-efter-kolonisering` kräver lokal position för den automatiska
+hemflottan vid färdig produktion. Uttryckligen valda tomma mottagare fungerar
+fortfarande. Äldre sparningar med tom hemflotta hanteras utan formatändring.
+
 `produktionsflottors-automatiska-namn` lagrar nästa nummer per planet-ID och
 skeppstyp i sparformat 15. Game skapar namnet atomärt när produktionen behöver
 en ny flotta. Version 2–14 läses fortsatt; befintliga namn ändras inte och

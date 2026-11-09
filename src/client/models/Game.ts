@@ -5550,6 +5550,7 @@ export class Game {
       return;
     }
     // nybyggda-skepp-utan-ruttflotta: recheck assignments made after the order was queued.
+    // produktionsflotta-efter-kolonisering: an implicit home fleet must be local.
     let reserve = initialOrder
       ? undefined
       : (this.#fleets.find(
@@ -5564,7 +5565,7 @@ export class Game {
             fleet.id === state.homeFleetId &&
             !fleet.routeId &&
             !fleet.civilian &&
-            (!fleet.position || fleet.position.key === planet.position.key),
+            fleet.position?.key === planet.position.key,
         ));
     if (!reserve) {
       reserve = {

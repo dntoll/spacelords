@@ -12,11 +12,13 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Kartobjekt och automatiska flottor:** `kartobjekt-foljer-zoom`,
   `produktionsflottors-automatiska-namn`,
+  `produktionsflotta-efter-kolonisering`,
   `samtidig-automatisk-flottanimation`,
   `ruttflottor-vid-ruttanslutning` och
   `radiell-automatisk-hexutforskning` är **Fullständigt implementerat**.
   Vrak följer kartans skala, produktionsskapade flottor får namn som
-  `Exploration ship Tellus 1`, autonoma flottor animeras tillsammans och
+  `Exploration ship Tellus 1`, tomma tidigare hemflottor återanvänds bara vid
+  uttryckligt val, autonoma flottor animeras tillsammans och
   Route-flottor vid en ändplanet placeras mot ruttlinjen. Explore-flottor
   reserverar skilda radiella riktningar från Tellus. Äldre sparningar läses
   utan namnbyte eller rensning. Se
