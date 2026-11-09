@@ -1359,3 +1359,7 @@ Lamporna är fasta och påverkas inte av stridsskador. Väggsnitten är en visue
 ## Åtgärder för rutttransport
 
 `atgarder-for-rutttransport` är **Fullständigt implementerat**. När en rutt saknar transport visar vägledningen nästa steg utifrån tillgänglig forskning, fabriker och transportskepp. Spelaren kan köa forskning, fabriksbygge eller transportskepp direkt från vägledningen. Vald planet, hinder och resultat framgår. Finns en tillgänglig transportflotta visas vägledning för att tilldela den.
+
+## Transportbygge i försörjningssteg
+
+`transportbygge-i-forsorjningssteg` är **Fullständigt implementerat**. När ett projekt väntar på materialtransport visar byggkön vilken transportförberedelse som pågår och var ett transportskepp eller en transportfabrik är köad. När förberedelsen avbryts visas inte längre den gamla uppgiften.

@@ -6396,7 +6396,10 @@ export class Game {
           item.type === 'Transport ship' ||
           item.type === 'Transport ship factory',
       );
-      if (project) return `Waiting for ${project.type} construction.`;
+      if (project) {
+        const planet = this.#planetById(id);
+        return `Waiting for ${project.type} queued at ${planet?.name ?? id}.`;
+      }
     }
     return null;
   }
@@ -6565,7 +6568,8 @@ export class Game {
     }
     if (covered >= missing)
       return `Waiting for ${material} production or transport preparation.`;
-    if (!this.#transportPreparation(planetId)) return null;
+    const preparation = this.#transportPreparation(planetId);
+    if (!preparation) return null;
     const allocations: { key: string; amount: number; available: number }[] =
       [];
     for (const source of this.#ownedPlanets()) {
@@ -6597,7 +6601,7 @@ export class Game {
     if (covered < missing) return null;
     for (const { key, amount, available } of allocations)
       waitingStock.set(key, available - amount);
-    return `Waiting for ${material} transport preparation.`;
+    return `Waiting for ${material} transport. ${preparation}`;
   }
   #allocation(
     planet: Planet,

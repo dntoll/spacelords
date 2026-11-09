@@ -80,3 +80,7 @@ med aktuell plats, nästa etapp, hinder och uppskattning när sådan finns.
 En annullerad eller felplacerad delorder visas som ett hinder. Vyn visar och
 länkar till spelets befintliga order; den väljer inte nya leverantörer eller
 transportvägar. Route sammanfattar fortsatt planetens första projekt.
+
+## Transportbygge i försörjningssteg
+
+`transportbygge-i-forsorjningssteg` är **Fullständigt implementerat**. Ett projekt som väntar på materialtransport visar pågående transportforskning eller vilket transportskepp eller vilken transportfabrik som är köad och på vilken planet. Uppgiften följer den aktuella kön och försvinner när förberedelsen avbryts.
