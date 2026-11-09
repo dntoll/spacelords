@@ -5377,12 +5377,17 @@ export class Game {
       const active = state.projects.slice(0, 1);
       for (const project of active) {
         const blocked = blocks.get(project.id);
-        if (blocked)
-          this.#planetEvent(
-            `${project.type} is waiting on ${planet.name}: ${blocked}`,
-            planet,
-          );
-        else {
+        if (blocked) {
+          // passiva-vantehandelser: announce only projects requiring attention.
+          if (
+            this.supplyOverview().planets.find((item) => item.id === planet.id)
+              ?.status === 'Needs attention'
+          )
+            this.#planetEvent(
+              `${project.type} is waiting on ${planet.name}: ${blocked}`,
+              planet,
+            );
+        } else {
           const cost = this.#projectCost(planet, project);
           for (const resource of MATERIALS)
             state.stock[resource] -= cost[resource];

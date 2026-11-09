@@ -35,12 +35,17 @@ informationen kan rullas inom rutan. End turn får inte täckas.
 - `grupperade-planethandelser`: material som lossats, färdig produktion,
   Population och ändrad Habitability samlas i ett enda årsbesked per planet.
   Alla levererande flottors namn och materialmängder behålls. Även färdiga
-  fabriksuppgraderingar, rivningar och väntande produktion ingår. Population
+  fabriksuppgraderingar, rivningar och åtgärdskrävande produktionshinder ingår. Population
   visas bara när antalet ändras. Olika planeter och år hålls isär. Samma besked annonseras
   på kartan och visas som en post i Events, med planetens namn och position.
   Raderna behåller sin inbördes händelseordning. Långa besked kan rullas och
   ligger ovanför End turn även på liggande mobil. Kravet är
   **Fullständigt implementerat**.
+
+- `passiva-vantehandelser`: produktion som väntar utan att kräva åtgärd ger
+  inget händelsebesked. Status finns kvar i produktion och försörjningsöversikt.
+  Tidigare sparade händelser bevaras. Kravet ersätter passiva väntemeddelanden i
+  `grupperade-planethandelser` och är **Fullständigt implementerat**.
 
 - `population-besked-endast-vid-andring` — **Fullständigt implementerat**:
   oförändrad Population ger varken en rad i planetbeskedet eller ett eget

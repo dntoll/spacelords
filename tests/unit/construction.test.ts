@@ -398,6 +398,36 @@ describe('skepp-till-destinationsflotta', () => {
 });
 
 describe('planetlager / arbetskraft-och-besattning', () => {
+  it('passiva-vantehandelser: keeps production waiting for local extraction without announcing it', () => {
+    const { game } = setup();
+    const saved = game.exportState();
+    const home = saved.world.systems
+      .flatMap((system) => system.planets)
+      .find((planet) => planet.id === game.galaxy.homePlanet.id)!;
+    home.resources.find((resource) => resource.name === 'Iron')!.perYear = 1;
+    const colony = saved.colonies[0]![1];
+    colony.stock.Iron = 0;
+    colony.buildings.push({
+      id: 'mine',
+      type: 'Iron mine',
+      slotIndex: 0,
+      demolition: false,
+    });
+    const restored = Game.restore(saved);
+    const planet = restored.galaxy.homePlanet;
+    restored.scheduleBuild(planet, 'Research station', 1);
+    expect(
+      restored.supplyOverview().planets.find((p) => p.id === planet.id)!.status,
+    ).toBe('Waiting');
+    for (const frame of turnFrames(restored)) restored.applyFrame(frame);
+    restored.finishTurn();
+    expect(restored.planetSnapshot(planet)!.projects).toHaveLength(1);
+    expect(
+      restored.events.some((event) =>
+        event.text.includes('Research station is waiting on'),
+      ),
+    ).toBe(false);
+  });
   it('allows material shortages to be queued and leaves the head blocked without charging it', () => {
     const { game, planet, unlock } = setup();
     unlock('Colony ship factory');
@@ -413,6 +443,11 @@ describe('planetlager / arbetskraft-och-besattning', () => {
     restored.finishTurn();
     expect(restored.planetSnapshot(planet)!.projects).toHaveLength(2);
     expect(restored.planetSnapshot(planet)!.economy.stock.Iron).toBe(0);
+    expect(
+      restored.events.some((event) =>
+        event.text.includes('Colony ship factory is waiting on'),
+      ),
+    ).toBe(true);
   });
 
   it('reserves only active queue heads and never spends stored materials twice', () => {

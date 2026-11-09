@@ -1188,6 +1188,11 @@ får plats. Research och planetvyn har också Events och End turn. En flik med !
 ger konkret vägledning i sin vy: rätt objekt och kontroller markeras med färg,
 Show öppnar rätt mål och kort hjälp förklarar vad spelaren kan göra.
 Tystade, överhoppade och lösta beslut ger ingen sådan markering.
+
+`passiva-vantehandelser` är **Fullständigt implementerat**. Produktion som bara
+väntar utan att spelaren behöver agera ger inget besked i Events. Spelaren kan
+fortfarande se väntestatus i produktionen; hinder som kräver åtgärd meddelas.
+Detta ersätter passiva väntande produktionsbesked i `grupperade-planethandelser`.
 Se [utförliga krav och ersatta gränssnittskrav](events-and-guidance.md).
 
 ## Space pirates

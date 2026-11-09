@@ -668,6 +668,8 @@ Se [hela visionen](docs/game-vision.md).
   samlat och låter spelaren fortsätta ändå. Händelsekonsolen (`handelser`) är
   fullständigt implementerad: Events är fällbar och visar hela senaste året
   när utrymmet räcker, med intern rullning för resten.
+  `passiva-vantehandelser` är **Fullständigt implementerat**: väntan som inte
+  kräver spelarens åtgärd ger inget händelsebesked; status finns kvar i produktionen.
   `grupperade-transporthandelser` och `ett-meddelande-per-skeppsbygge` är
   **Fullständigt implementerat**: ankomst och hela transportlasten visas i
   ett besked per flotta; varje färdigbyggt skepp ger ett produktionsbesked.
