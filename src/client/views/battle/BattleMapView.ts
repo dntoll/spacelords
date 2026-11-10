@@ -103,7 +103,7 @@ export class BattleMapView implements BattleMapPort {
         }
         const index = Math.min(
           frames.length - 1,
-          Math.floor((now - start) / stepMs),
+          Math.max(0, Math.floor((now - start) / stepMs)),
         );
         const frame = frames[index]!;
         this.#pose = {

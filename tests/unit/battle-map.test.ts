@@ -245,6 +245,29 @@ it('avslutad-manoveranimation: completes when the browser does not deliver anoth
   }
 });
 
+it('avslutad-manoveranimation: accepts an animation frame timestamp just before the start time', async () => {
+  const { view } = drawing(false);
+  let frame: FrameRequestCallback | undefined;
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    frame = callback;
+    return 1;
+  });
+  vi.stubGlobal('cancelAnimationFrame', () => {});
+  const now = vi.spyOn(performance, 'now').mockReturnValue(100);
+  const state = createTestBattle().snapshot;
+  view.render(state, null, null, 'Cannon');
+  const pending = view.animateManeuver({
+    id: 'early-frame',
+    shipId: state.pieces[0]!.id,
+    from: { position: { q: 1, r: 3 }, facing: 0 },
+    steps: [{ position: { q: 2, r: 3 }, facing: 0 }],
+  });
+  expect(() => frame!(99)).not.toThrow();
+  view.dispose();
+  await pending;
+  now.mockRestore();
+});
+
 it.each(Object.keys(SHIP_SPRITES) as ShipSpriteType[])(
   'skeppets-framat-foljer-spriten: %s nose, direction marker and movement agree in all six facings',
   async (type) => {
