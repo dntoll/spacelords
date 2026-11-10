@@ -86,6 +86,100 @@ function setup(initial = state()) {
   return { view, emit, select, selectHex: (hex: BattleHex) => selectHex(hex) };
 }
 
+it('hexmal-for-manover: previews an option before confirming the same maneuver', () => {
+  const initial = state();
+  const { view, emit } = setup({
+    ...initial,
+    activation: {
+      id: 'first',
+      remaining: 2,
+      fired: false,
+      moved: false,
+      movementClosed: false,
+    },
+  });
+  const option = document.querySelector<HTMLButtonElement>(
+    '[data-maneuver-option]',
+  );
+  expect(option).not.toBeNull();
+  option!.click();
+  expect(emit).not.toHaveBeenCalled();
+  expect(
+    document.querySelector('[data-maneuver-option][aria-pressed="true"]'),
+  ).not.toBeNull();
+  document
+    .querySelector<HTMLButtonElement>(
+      '[data-maneuver-option][aria-pressed="true"]',
+    )!
+    .click();
+  const intent = emit.mock.calls[0]?.[0];
+  expect(intent?.type).toBe('battle-command');
+  if (intent?.type === 'battle-command')
+    expect(intent.command.type).toBe('maneuver');
+  view.dispose();
+});
+
+it('overwatch-i-rymdstrid: reserves the currently selected weapon', () => {
+  const initial = state();
+  const { view, emit } = setup({
+    ...initial,
+    activation: {
+      id: 'first',
+      remaining: 2,
+      fired: false,
+      moved: false,
+      movementClosed: false,
+    },
+  });
+  document
+    .querySelector<HTMLButtonElement>('[aria-label="Overwatch"]')!
+    .click();
+  expect(emit).toHaveBeenCalledWith({
+    type: 'battle-command',
+    command: { type: 'overwatch', weapon: 'Cannon' },
+  });
+  view.dispose();
+});
+
+it('overwatch-i-rymdstrid: plays reactions between the movement steps', async () => {
+  const order: string[] = [];
+  const view = new BattleView(document.body, vi.fn(), () => ({
+    render() {},
+    dispose() {},
+    animateManeuver(move) {
+      order.push(`move:${move.steps.length}`);
+      return Promise.resolve();
+    },
+    animateShot() {
+      order.push('shot');
+      return Promise.resolve();
+    },
+  }));
+  await view.animateManeuver({
+    id: 'move',
+    shipId: 'first',
+    from: { position: { q: 0, r: 0 }, facing: 0 },
+    steps: [
+      { position: { q: 1, r: 0 }, facing: 0 },
+      { position: { q: 2, r: 0 }, facing: 0 },
+    ],
+    reactions: [
+      {
+        step: 1,
+        shot: {
+          id: 'shot',
+          weapon: 'Cannon',
+          from: { q: 0, r: 1 },
+          at: { q: 1, r: 0 },
+          impacts: [],
+        },
+      },
+    ],
+  });
+  expect(order).toEqual(['move:1', 'shot', 'move:1']);
+  view.dispose();
+});
+
 it('avfyra-pa-markerat-mal: fires by tapping the autoaim target without a separate fire button', () => {
   const initial = state();
   const { view, emit, selectHex } = setup({
@@ -176,7 +270,7 @@ describe('skeppsval-startar-stridstur', () => {
   });
 });
 
-it('stridsorder-utan-mobilscroll / skeppsnara-stridskontroller: overlays all movement commands on the battlefield without a form panel', () => {
+it('stridsorder-utan-mobilscroll / hexmal-for-manover: overlays maneuver choices on the battlefield without a form panel', () => {
   const initial = state();
   const { view } = setup({
     ...initial,
@@ -189,31 +283,19 @@ it('stridsorder-utan-mobilscroll / skeppsnara-stridskontroller: overlays all mov
     },
   });
   const board = document.querySelector('.battle-board')!;
-  for (const label of [
-    'Increase speed',
-    'Decrease speed',
-    'Straight',
-    'Turn left',
-    'Turn right',
-    'End ship turn',
-  ]) {
-    const action = board.querySelector(`[aria-label="${label}"]`)!;
-    expect(action).not.toBeNull();
-    expect(action.querySelector('svg')).not.toBeNull();
-  }
+  expect(
+    board.querySelector('[aria-label="End ship turn"] svg'),
+  ).not.toBeNull();
+  expect(
+    board.querySelectorAll('[data-maneuver-option]').length,
+  ).toBeGreaterThan(0);
+  expect(board.querySelector('[aria-label="Increase speed"]')).toBeNull();
+  expect(board.querySelector('[aria-label="Straight"]')).toBeNull();
   expect(
     board.querySelector('select, [aria-label="Fire weapon"], .battle-zoom'),
   ).toBeNull();
   expect(document.querySelector('.battle-details .battle-log')).not.toBeNull();
   expect(document.querySelector('.battle-controls .battle-log')).toBeNull();
-  const readout = board.querySelector('output') as HTMLOutputElement;
-  expect(readout.value).toBe('0');
-  board
-    .querySelector<HTMLButtonElement>('[aria-label="Increase speed"]')!
-    .click();
-  expect(
-    (document.querySelector('.battle-board output') as HTMLOutputElement).value,
-  ).toBe('1');
   view.dispose();
 });
 

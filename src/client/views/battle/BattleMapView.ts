@@ -53,6 +53,9 @@ export class BattleMapView implements BattleMapPort {
   #animationTimeout: ReturnType<typeof setTimeout> | undefined;
   #finishAnimation: (() => void) | undefined;
   #preview: BattleHex[] = [];
+  #targets: readonly BattleHex[] = [];
+  #previewPose: { shipId: string; position: BattleHex; facing: number } | null =
+    null;
   #pose: {
     shipId: string;
     position: BattleHex;
@@ -61,6 +64,17 @@ export class BattleMapView implements BattleMapPort {
 
   setManeuverPreview(hexes: readonly BattleHex[] | null): void {
     this.#preview = hexes ? hexes.map((hex) => ({ ...hex })) : [];
+    if (this.#ready && !this.#disposed) void this.#p5.redraw();
+  }
+
+  setManeuverTargets(hexes: readonly BattleHex[]): void {
+    this.#targets = hexes;
+  }
+
+  setPreviewPose(
+    pose: { shipId: string; position: BattleHex; facing: number } | null,
+  ): void {
+    this.#previewPose = pose;
     if (this.#ready && !this.#disposed) void this.#p5.redraw();
   }
 
@@ -455,6 +469,12 @@ export class BattleMapView implements BattleMapPort {
       p.circle(center.x - 8, center.y + 5, 14);
       p.circle(center.x + 9, center.y - 10, 10);
     }
+    for (const cell of this.#targets) {
+      p.stroke('#60caff');
+      p.strokeWeight(2 / this.#scale);
+      p.fill(50, 145, 200, 50);
+      polygon(cell, HexGeometry.size - 3);
+    }
     for (const [index, cell] of this.#preview.entries()) {
       p.stroke('#9ad7ff');
       p.strokeWeight(2 / this.#scale);
@@ -488,7 +508,11 @@ export class BattleMapView implements BattleMapPort {
         polygon(hex, HexGeometry.size - 2);
       }
     }
-    const selected = state.pieces.find((s) => s.id === this.#selected);
+    const original = state.pieces.find((s) => s.id === this.#selected);
+    const selected =
+      original && this.#previewPose?.shipId === original.id
+        ? { ...original, ...this.#previewPose }
+        : original;
     if (
       selected?.position &&
       state.phase === 'fighting' &&
@@ -549,7 +573,12 @@ export class BattleMapView implements BattleMapPort {
       } else p.line(a.x, a.y, b.x, b.y);
     }
     for (const currentShip of state.pieces) {
-      const motion = this.#pose?.shipId === currentShip.id ? this.#pose : null;
+      const motion =
+        this.#pose?.shipId === currentShip.id
+          ? this.#pose
+          : this.#previewPose?.shipId === currentShip.id
+            ? this.#previewPose
+            : null;
       if (!motion && currentShip.status === 'destroyed') {
         if (currentShip.position)
           this.#drawDebris(p, currentShip.position, currentShip.id);
@@ -679,6 +708,10 @@ export class BattleMapView implements BattleMapPort {
       p.textAlign(p.CENTER);
       p.textSize(11);
       p.text(`${ship.hull}${ship.activated ? ' ✓' : ''}`, 0, 42);
+      if (ship.overwatch && ship.status === 'active') {
+        p.fill('#ffe28b');
+        p.text('OW', 0, -radius - 9);
+      }
       p.pop();
     }
     this.#drawEffects(p);

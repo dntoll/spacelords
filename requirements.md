@@ -244,16 +244,15 @@ Se [hela visionen](docs/game-vision.md).
   sin tidigare reträttregel. Se [taktisk strid](docs/tactical-combat.md).
 
 - **Manöver, vrak och krock:** `manoverpoang-och-hastighet`,
-  `svang-vid-hastighet`, `manoverforhandsvisning`, `avslutad-manoveranimation`,
+  `svang-vid-hastighet`, `avslutad-manoveranimation`,
   `krock-med-skepp-och-asteroid`, `motor-utslagen-vrak`,
   `skrovslut-vrak-eller-splitter`, `vrak-blockerar-och-sprangs`,
   `vrak-beskjutning-sista-utvag`, `nasta-skepp-vid-slut-pa-handlingar`,
-  `flykt-mot-escape-zon`, `styrning-pa-skrovet`,
+  `flykt-mot-escape-zon`,
   `ingen-avslut-med-fart-och-manoverpoang`, `skott-mellan-manoverpoang` och
   `beskjut-asteroid` är **Fullständigt implementerat**.
   Nya strider har hastighet och manöverpoäng, vidare sväng i högre fart, krock
-  med skepp och asteroider, samt vrak som ligger kvar. Riktning sitter på
-  fören, fart vid aktern och End ship turn i mitten. Den kan inte väljas när
+  med skepp och asteroider, samt vrak som ligger kvar. End ship turn kan inte väljas när
   skeppet har både fart och manöverpoäng kvar. Ett skott mellan två
   manöverpoäng kräver att den andra också används. En beskjutning spränger en
   asteroid. Manöverpresentationen avslutas även om webbläsaren tappar en
@@ -261,6 +260,13 @@ Se [hela visionen](docs/game-vision.md).
   order kan ges. Sprängda skepp lämnar inget
   bärgningsvrak. Obeväpnade skepp flyr mot `Escape`. Äldre pågående strider
   behåller den tidigare rörelsen. Se [taktisk strid](docs/tactical-combat.md).
+
+- **Nya stridsorder:** `hexmal-for-manover` och `overwatch-i-rymdstrid` är
+  **Fullständigt implementerat**. Kartan visar valbara manövrer och
+  förhandsvisning. Overwatch reserverar ett vapen och avfyras mot den första
+  fiende som blir skjutbar under rörelse.
+  Kartvalen ersätter fart- och riktningsknapparna i nya strider. Se
+  [produktkraven](docs/product-requirements.md).
 
 - **Fristående bordningsstrid:** `fristaende-bordningsprototyp`,
   `datadriven-bordningskarta`, `individuellt-bordningsinitiativ`,

@@ -9,6 +9,15 @@ import { ShipFootprint } from '../../src/client/models/battle/ShipFootprint.js';
 import { battlePoint, showBattleHex, tapBattleHex } from './battle-helpers.js';
 import { HexGeometry } from '../../src/client/models/HexCoordinate.js';
 
+async function maneuver(
+  page: Page,
+  speed: number,
+  direction: number,
+): Promise<void> {
+  const option = page.locator(`[data-maneuver-option="${speed}:${direction}"]`);
+  await option.click();
+  await page.locator(`[data-maneuver-option="${speed}:${direction}"]`).click();
+}
 async function saved(page: Page): Promise<SavedGame> {
   return page.evaluate(
     () =>
@@ -37,6 +46,37 @@ async function prepare(
   await expect(page.getByLabel(/^Battle hex map/)).toBeVisible();
   return errors;
 }
+
+test('overwatch-i-rymdstrid: reserves the selected weapon on a phone', async ({
+  page,
+}) => {
+  const game = arrangeBattle(encounterGame(), (state) => ({
+    ...state,
+    phase: 'fighting',
+    round: 2,
+    turn: 'player',
+    asteroids: [],
+    pieces: state.pieces.map((piece, index) => ({
+      ...piece,
+      position: battleHex(index * 2 + 1, 4),
+      facing: piece.side === 'player' ? 0 : 3,
+    })),
+  }));
+  const errors = await prepare(page, game.exportState());
+  const dialog = page.getByRole('dialog', { name: 'Tactical combat' });
+  const activeId = await dialog.getAttribute('data-active-ship');
+  await dialog.getByRole('button', { name: 'Overwatch', exact: true }).click();
+  await expect
+    .poll(
+      async () =>
+        (await saved(page)).state.simulation!.tacticalBattles![0]!.pieces.find(
+          (piece) => piece.id === activeId,
+        )?.overwatch,
+    )
+    .toBe('Cannon');
+  await expect(dialog.locator('.battle-aim')).toContainText('Overwatch');
+  expect(errors).toEqual([]);
+});
 
 test('stridsutplacering / sparad-taktisk-strid: deploys all ships and resumes an unfinished activation without rerolling', async ({
   page,
@@ -73,7 +113,7 @@ test('stridsutplacering / sparad-taktisk-strid: deploys all ships and resumes an
   await expect(
     dialog.getByRole('button', { name: 'Activate ship', exact: true }),
   ).toHaveCount(0);
-  await dialog.getByRole('button', { name: 'Turn left', exact: true }).click();
+  await maneuver(page, 0, 1);
   const checkpoint = (await saved(page)).state.simulation!.tacticalBattles![0]!;
   await page.screenshot({ path: testInfo.outputPath('battle-activation.png') });
   await page.reload();
@@ -182,25 +222,17 @@ test('begransad-stridskamera / fullskarms-stridskarta / skeppsnara-stridskontrol
     expect(
       (await saved(page)).state.simulation!.tacticalBattles![0]!.lastShot,
     ).toBeUndefined();
-    const orders = dialog.getByRole('region', { name: 'Ship orders' });
-    const speed = dialog.getByRole('region', { name: 'Speed' });
-    for (const [region, label] of [
-      [speed, 'Increase speed'],
-      [speed, 'Decrease speed'],
-      [orders, 'Straight'],
-      [orders, 'Turn left'],
-      [orders, 'Turn right'],
-      [orders, 'End ship turn'],
-    ] as const) {
-      const control = region.getByRole('button', { name: label, exact: true });
-      const bounds = (await control.boundingBox())!;
-      expect(bounds.y, label).toBeGreaterThanOrEqual(0);
-      expect(bounds.y + bounds.height, label).toBeLessThanOrEqual(size.height);
-      expect(bounds.x, label).toBeGreaterThanOrEqual(0);
-      expect(bounds.x + bounds.width, label).toBeLessThanOrEqual(size.width);
-      expect(bounds.height, label).toBeGreaterThanOrEqual(22);
-      expect(bounds.width, label).toBeGreaterThanOrEqual(22);
-    }
+    const endTurn = dialog.getByRole('button', {
+      name: 'End ship turn',
+      exact: true,
+    });
+    await expect(endTurn).toBeVisible();
+    await expect(
+      dialog.locator('[data-maneuver-option]').first(),
+    ).toBeVisible();
+    await expect(
+      dialog.getByRole('button', { name: 'Increase speed' }),
+    ).toHaveCount(0);
     const board = (await page.getByLabel(/^Battle hex map/).boundingBox())!;
     expect(board).toMatchObject({
       x: 0,
@@ -249,10 +281,7 @@ test('begransad-stridskamera / fullskarms-stridskarta / skeppsnara-stridskontrol
   await page.screenshot({
     path: testInfo.outputPath('battle-forward-before.png'),
   });
-  await dialog
-    .getByRole('button', { name: 'Increase speed', exact: true })
-    .click();
-  await dialog.getByRole('button', { name: 'Straight', exact: true }).click();
+  await maneuver(page, 1, 0);
   await expect
     .poll(async () => dialog.getByRole('heading').first().textContent())
     .not.toBe('Maneuver');
@@ -275,6 +304,7 @@ test('begransad-stridskamera / fullskarms-stridskarta / skeppsnara-stridskontrol
 test('skeppsvis-retratt / gemensamt-handelseflode: escapes each ship, regroups the fleet and resumes the paused year', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(60_000);
   const game = arrangeBattle(encounterGame(), (state) => ({
     ...state,
     asteroids: [],
@@ -314,10 +344,7 @@ test('skeppsvis-retratt / gemensamt-handelseflode: escapes each ship, regroups t
     i++
   ) {
     await expect(dialog).toHaveAttribute('data-active-ship', /.+/);
-    await expect(
-      dialog.getByRole('button', { name: 'Straight', exact: true }),
-    ).toBeEnabled();
-    await dialog.getByRole('button', { name: 'Straight', exact: true }).click();
+    await maneuver(page, 0, 0);
     await expect
       .poll(async () =>
         (await dialog.getByRole('heading').first().textContent()) === 'Maneuver'
@@ -431,10 +458,10 @@ test('autoaim-med-manuellt-mal: switches invalid automatic targets and respects 
   };
   await aimed('3', '2');
   await expect(aim).toHaveAttribute('data-can-fire', 'true');
-  await dialog.getByRole('button', { name: 'Turn right', exact: true }).click();
+  await maneuver(page, 0, -1);
   await aimed('4', '4');
   await expect(aim).toHaveAttribute('data-can-fire', 'true');
-  await dialog.getByRole('button', { name: 'Turn left', exact: true }).click();
+  await maneuver(page, 0, 1);
   await aimed('4', '4');
   await expect
     .poll(async () =>

@@ -72,9 +72,8 @@ sedan sin tidigare order. Ett mål som lämnar aktuell sikt tas bort.
   hela spelytan. En liten HUD visar runda, tur, skepp, skrov och rörelse.
   Combat details öppnar information ovanpå kartan; Save and close går till Saved games.
   Utplacering har skeppsporträtt, Auto deploy och Start combat.
-- `skeppsnara-stridskontroller` — **Fullständigt implementerat**: i nya
-  strider sitter Straight, Turn left och Turn right på fören, + och − med
-  farten mellan sig vid aktern, och End ship turn i mitten. End ship turn
+- `skeppsnara-stridskontroller` — **Fullständigt implementerat**: End ship turn
+  sitter nära skeppet. End ship turn
   går inte att välja när skeppet har både fart och manöverpoäng kvar, eller
   när ett skott har lämnat en manöverpoäng. En asteroid kan beskjutas och
   sprängs då. Äldre
@@ -146,12 +145,23 @@ pågående strider behåller sin tidigare karta och reträttregel.
 
 ## Manöver, vrak och krock, 2026-11-08
 
+- `hexmal-for-manover` — **Fullständigt implementerat**: nåbara hexar visar
+  möjliga slutriktningar och alternativ med olika fart eller färdväg. Första
+  trycket ska visa skeppet och dess vapenkon på slutplatsen; nästa tryck på
+  samma alternativ genomför manövern.
+  Detta ersätter fart- och riktningsknapparna i strid.
+- `overwatch-i-rymdstrid` — **Fullständigt implementerat**: ett skepp kan
+  reservera sitt skott till första fiende som blir skjutbar under rörelse.
+  Reservationen gäller till skeppets nästa aktivering. Skeppet kan i stället
+  skjuta före, mellan eller efter manövrer, eller avstå från att skjuta.
+  Högst ett skott får avfyras per skepp och runda.
+
 - `manoverpoang-och-hastighet` och `svang-vid-hastighet` —
   **Fullständigt implementerat**: små och medelstora skepp har två
   manöverpoäng, stora ett. Varje poäng ändrar hastigheten ett steg och väljer
   sväng eller rakt fram. Högre hastighet ger en vidare sväng.
-- `manoverforhandsvisning` — **Fullständigt implementerat**: de tre
-  riktningarna visar färdhexarna vid hovring.
+- `manoverforhandsvisning` — ersatt av `hexmal-for-manover`, som visar
+  färdhexar efter val av ett manöveralternativ.
 - `avslutad-manoveranimation` — **Fullständigt implementerat**: efter en
   manöver visas skeppet på sin slutposition och stridsorder blir åter
   tillgängliga även om webbläsaren missar en animationsbildruta.

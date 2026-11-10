@@ -206,6 +206,7 @@ describe('missilernas-omradeseffekt / pansar-i-strid', () => {
     fighting.command({ type: 'end-activation' });
     const again = TacticalBattle.restore({
       ...fighting.snapshot,
+      round: fighting.snapshot.round + 1,
       turn: 'player',
       pieces: fighting.snapshot.pieces.map((piece) =>
         piece.id === 'fighter' ? { ...piece, activated: false } : piece,

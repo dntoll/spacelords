@@ -554,6 +554,8 @@ class BattlePiece {
   escapeEdge: top | bottom [0..1]
   status: active | wreck | destroyed | escaped
   activated
+  overwatch: WeaponName [0..1]
+  firedRound: number [0..1]
 }
 class ShipFootprint {
   cells()

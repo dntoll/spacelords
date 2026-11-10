@@ -52,6 +52,131 @@ function positioned(overrides: Partial<BattleState> = {}): TacticalBattle {
 }
 
 describe('tactical combat', () => {
+  it('overwatch-i-rymdstrid: reserves a shot across saves and fires once as an enemy moves into range', () => {
+    const initial = positioned({ maneuverSystem: true }).snapshot;
+    const game = TacticalBattle.restore({
+      ...initial,
+      pieces: initial.pieces.filter((p) => p.id !== 'transport'),
+    });
+    game.command({ type: 'activate', id: 'fighter' });
+    game.command({ type: 'overwatch', weapon: 'Cannon' });
+    expect(
+      game.snapshot.pieces.find((p) => p.id === 'fighter')?.overwatch,
+    ).toBe('Cannon');
+    game.command({ type: 'end-activation' });
+    const restored = TacticalBattle.restore(game.snapshot);
+    restored.command({ type: 'activate', id: 'pirate' }, 'enemy');
+    restored.command({ type: 'maneuver', speed: 1, direction: 0 }, 'enemy');
+    expect(
+      restored.snapshot.pieces.find((p) => p.id === 'fighter')?.overwatch,
+    ).toBeUndefined();
+    expect(restored.snapshot.lastShot?.from).toEqual({ q: 1, r: 4 });
+    expect(restored.snapshot.lastManeuver?.reactions).toHaveLength(1);
+    expect(
+      restored.snapshot.pieces.find((p) => p.id === 'fighter')?.firedRound,
+    ).toBe(restored.snapshot.round);
+  });
+
+  it('overwatch-i-rymdstrid: rejects a second shot or reservation in the same activation', () => {
+    const game = positioned({ maneuverSystem: true });
+    game.command({ type: 'activate', id: 'fighter' });
+    game.command({ type: 'overwatch', weapon: 'Cannon' });
+    expect(() =>
+      game.command({ type: 'overwatch', weapon: 'Cannon' }),
+    ).toThrow();
+    expect(() =>
+      game.command({ type: 'fire', weapon: 'Cannon', at: { q: 5, r: 4 } }),
+    ).toThrow();
+  });
+
+  it('overwatch-i-rymdstrid: keeps the turn open to reserve a shot after the final maneuver', () => {
+    const initial = positioned({ maneuverSystem: true }).snapshot;
+    const game = TacticalBattle.restore({
+      ...initial,
+      activation: {
+        id: 'fighter',
+        remaining: 1,
+        moved: false,
+        fired: false,
+        movementClosed: false,
+      },
+    });
+    game.command({ type: 'maneuver', speed: 0, direction: 0 });
+    expect(game.snapshot.activation?.id).toBe('fighter');
+    game.command({ type: 'overwatch', weapon: 'Cannon' });
+    expect(
+      game.snapshot.pieces.find((p) => p.id === 'fighter')?.overwatch,
+    ).toBe('Cannon');
+  });
+
+  it('overwatch-i-rymdstrid: clears an unused reservation on the next activation and preserves a shot spent this round', () => {
+    const state = positioned({ maneuverSystem: true }).snapshot;
+    const game = TacticalBattle.restore({
+      ...state,
+      pieces: state.pieces.map((piece) =>
+        piece.id === 'fighter'
+          ? { ...piece, overwatch: 'Cannon' as const, firedRound: state.round }
+          : piece,
+      ),
+    });
+    game.command({ type: 'activate', id: 'fighter' });
+    expect(
+      game.snapshot.pieces.find((piece) => piece.id === 'fighter')?.overwatch,
+    ).toBeUndefined();
+    expect(game.snapshot.activation?.fired).toBe(true);
+    expect(() =>
+      game.command({ type: 'overwatch', weapon: 'Cannon' }),
+    ).toThrow();
+  });
+
+  it('overwatch-i-rymdstrid: stops the maneuver at the reaction when the moving ship is destroyed', () => {
+    const state = positioned({ maneuverSystem: true }).snapshot;
+    let stopped: BattleState | undefined;
+    for (let seed = 1; seed <= 40 && !stopped; seed++) {
+      const game = TacticalBattle.restore({
+        ...state,
+        turn: 'enemy',
+        random: seed,
+        pieces: state.pieces
+          .filter((piece) => piece.id !== 'transport')
+          .map((piece) =>
+            piece.id === 'fighter'
+              ? { ...piece, overwatch: 'Cannon' as const, activated: true }
+              : { ...piece, hull: 1, speed: 1 },
+          ),
+      });
+      game.command({ type: 'activate', id: 'pirate' }, 'enemy');
+      game.command({ type: 'maneuver', speed: 1, direction: 0 }, 'enemy');
+      if (
+        game.snapshot.pieces.find((piece) => piece.id === 'pirate')!.status !==
+        'active'
+      )
+        stopped = game.snapshot;
+    }
+    expect(stopped).toBeDefined();
+    expect(stopped!.lastManeuver!.steps).toHaveLength(1);
+    expect(stopped!.lastManeuver!.reactions![0]!.step).toBe(1);
+  });
+  it('hexmal-for-manover: lists distinct legal maneuvers without changing the battle', () => {
+    const game = positioned({ maneuverSystem: true });
+    game.command({ type: 'activate', id: 'fighter' });
+    const before = game.snapshot;
+    const options = game.maneuverOptions('fighter');
+    expect(options.length).toBeGreaterThan(1);
+    expect(
+      options.some(
+        (option) =>
+          option.preview.position?.q === 1 && option.preview.facing !== 0,
+      ),
+    ).toBe(true);
+    for (const option of options) {
+      expect(option.preview.issue).toBeNull();
+      expect(option.preview).toEqual(
+        game.previewManeuver('fighter', option.speed, option.direction),
+      );
+    }
+    expect(game.snapshot).toEqual(before);
+  });
   it('skyddande-stridshinder: asteroid edge touches block fire, while a nearby asteroid does not', () => {
     const state = positioned().snapshot;
     const pieces = state.pieces

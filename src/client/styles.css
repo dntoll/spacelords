@@ -3643,6 +3643,36 @@ body:has(.discovery-controls) .selection-panel {
   inset: 0;
   pointer-events: none;
 }
+.battle-maneuver-options {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.battle-maneuver-links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  stroke: #8bd7ff;
+  stroke-width: 1.5;
+}
+.battle-maneuver-option {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  min-width: 38px;
+  min-height: 38px;
+  border: 2px solid #8bd7ff;
+  border-radius: 50%;
+  background: #163b54e8;
+  color: white;
+  font-weight: 700;
+}
+.battle-maneuver-option[aria-pressed='true'] {
+  background: #22749c;
+  border-color: #fff3a3;
+}
 .battle-controls > button {
   position: absolute;
   transform: translate(-50%, -50%);

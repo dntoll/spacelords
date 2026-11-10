@@ -194,22 +194,14 @@ export async function finishTacticalCombat(page: Page): Promise<void> {
             .click();
           break;
         case 'maneuver': {
-          if (command.speed !== 0) {
-            await dialog
-              .getByRole('button', {
-                name: command.speed > 0 ? 'Increase speed' : 'Decrease speed',
-                exact: true,
-              })
-              .click();
-          }
-          const heading =
-            command.direction === 0
-              ? 'Straight'
-              : command.direction === 1
-                ? 'Turn left'
-                : 'Turn right';
+          const option = dialog.locator(
+            `[data-maneuver-option="${command.speed}:${command.direction}"]`,
+          );
+          await option.click();
           await dialog
-            .getByRole('button', { name: heading, exact: true })
+            .locator(
+              `[data-maneuver-option="${command.speed}:${command.direction}"]`,
+            )
             .click();
           break;
         }

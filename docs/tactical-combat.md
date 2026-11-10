@@ -17,8 +17,9 @@ dess riktning. Hastighet 0 rakt fram förbrukar poängen utan förflyttning.
 60° på plats. Hastighet 1 tar ett steg i den nya riktningen. Högre hastighet
 går `ceil(hastighet / 2)` hex i den gamla riktningen och resten i den nya.
 
-`manoverforhandsvisning`: de tre riktningarna visar de hexar skeppet kommer att
-passera när pekaren eller fokus ligger på knappen.
+`manoverforhandsvisning` ersätts av `hexmal-for-manover`: ett tryck på ett
+manöveralternativ visar färdväg, slutposition, riktning och vapenkon. Ett andra
+tryck på samma alternativ genomför manövern.
 
 `avslutad-manoveranimation`: kartan har en tidsgräns som avslutar
 manöverpresentationen om webbläsaren inte levererar nästa animationsbildruta.
@@ -44,7 +45,7 @@ skepp skjuter inte på vrak så länge de kan manövrera eller skjuta på ett
 aktivt skepp.
 
 `nasta-skepp-vid-slut-pa-handlingar`: när skeppet varken kan manövrera, skjuta,
-docka eller spränga ett vrak går turen vidare.
+reservera Overwatch, docka eller spränga ett vrak går turen vidare.
 
 `ingen-avslut-med-fart-och-manoverpoang`: End ship turn kan inte väljas när
 skeppet har fart och minst en manöverpoäng kvar, och en laglig manöver finns.
@@ -58,11 +59,9 @@ turen. Den kvarvarande poängen måste användas om en laglig manöver finns.
 Asteroiden sprängs och försvinner. Den blockerar inte sitt eget skott. Andra
 asteroider blockerar fortfarande eldlinjen.
 
-`styrning-pa-skrovet`: Straight, Turn left och Turn right är små knappar på
-kanterna av främsta hexen, mot den hex man styr mot. + och − sitter på
-akterhexen med farten mellan sig. Tryck växlar nästa manövers fartändring
-och talet uppdateras direkt. End ship turn ligger i skeppets mitt. Utplacering
-och äldre strider behåller de större knapparna runt skrovet.
+`styrning-pa-skrovet` ersätts i nya strider av `hexmal-for-manover`. End ship
+turn ligger kvar i skeppets mitt. Utplacering och äldre strider behåller de
+större knapparna runt skrovet.
 
 `flykt-mot-escape-zon`: obeväpnade skepp utan beväpnad eskort söker närmaste
 gröna `Escape`-zon och vänder utåt, riktning 1–2 upptill och 4–5 nedtill.

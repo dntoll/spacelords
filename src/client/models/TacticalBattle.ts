@@ -68,6 +68,8 @@ export interface BattlePiece {
   readonly facing: number;
   readonly speed?: number;
   readonly activated: boolean;
+  readonly overwatch?: WeaponName;
+  readonly firedRound?: number;
   readonly status: 'active' | 'destroyed' | 'escaped' | 'wreck';
   readonly dockedWith?: string;
   readonly escapeEdge?: 'top' | 'bottom';
@@ -187,6 +189,10 @@ export interface BattleManeuver {
   readonly shipId: string;
   readonly from: ManeuverStep;
   readonly steps: readonly ManeuverStep[];
+  readonly reactions?: readonly {
+    readonly step: number;
+    readonly shot: BattleShot;
+  }[];
 }
 export interface ManeuverPreview {
   readonly speed: number;
@@ -200,6 +206,11 @@ export interface ManeuverPreview {
     | { readonly kind: 'ship'; readonly id: string; readonly at: BattleHex }
     | { readonly kind: 'asteroid'; readonly at: BattleHex }
   )[];
+}
+export interface ManeuverOption {
+  readonly speed: -1 | 0 | 1;
+  readonly direction: -1 | 0 | 1;
+  readonly preview: ManeuverPreview;
 }
 /** animerade-stridsskott / skadepartiklar-i-strid: facts, independent of rendering and particles. */
 export interface BattleShot {
@@ -226,6 +237,7 @@ export type BattleCommand =
     }
   | { readonly type: 'activate'; readonly id: string }
   | { readonly type: 'turn'; readonly direction: -1 | 1 }
+  | { readonly type: 'overwatch'; readonly weapon: WeaponName }
   | {
       readonly type: 'maneuver';
       readonly speed: -1 | 0 | 1;
@@ -576,6 +588,13 @@ export class TacticalBattle {
         ) ||
         !['active', 'destroyed', 'escaped', 'wreck'].includes(p.status) ||
         (result.#base.maneuverSystem !== true && p.status === 'wreck') ||
+        (p.overwatch !== undefined &&
+          (!battleWeapons(p.type, p.hasMissiles).includes(p.overwatch) ||
+            (p.overwatch === 'Missiles' && p.missiles < 1))) ||
+        (p.firedRound !== undefined &&
+          (!Number.isSafeInteger(p.firedRound) ||
+            p.firedRound < 1 ||
+            p.firedRound > state.round)) ||
         (p.armored !== undefined && typeof p.armored !== 'boolean') ||
         (p.armored === true && !armored) ||
         (p.hasMissiles !== undefined && typeof p.hasMissiles !== 'boolean') ||
@@ -1416,6 +1435,27 @@ export class TacticalBattle {
       : 'No safe retreat hex is available.';
   }
 
+  /** hexmal-for-manover: preserve distinct commands even when their endpoints coincide. */
+  maneuverOptions(id: string): readonly ManeuverOption[] {
+    const activation = this.#activation;
+    if (
+      !this.#usesManeuver ||
+      !activation ||
+      activation.id !== id ||
+      activation.remaining < 1 ||
+      activation.movementClosed
+    )
+      return [];
+    const options: ManeuverOption[] = [];
+    for (const speed of [-1, 0, 1] as const) {
+      for (const direction of [-1, 0, 1] as const) {
+        const preview = this.previewManeuver(id, speed, direction);
+        if (!preview.issue) options.push({ speed, direction, preview });
+      }
+    }
+    return options;
+  }
+
   previewManeuver(
     id: string,
     delta: -1 | 0 | 1,
@@ -1693,11 +1733,12 @@ export class TacticalBattle {
         p.activated
       )
         throw new Error('Choose an unactivated ship on your side.');
+      delete p.overwatch;
       this.#activation = {
         id: p.id,
         remaining: this.#usesManeuver ? maneuverPoints(p.type) : p.movement,
         moved: false,
-        fired: false,
+        fired: p.firedRound === this.#round,
         movementClosed: false,
       };
       this.#advanceIfSpent();
@@ -1757,7 +1798,8 @@ export class TacticalBattle {
           this.#base.escapeZones === true
             ? footprint.every((cell) => !this.contains(cell))
             : footprint.some((cell) => !this.contains(cell));
-        if (escaped) {
+        if (!escaped) this.#triggerOverwatch(p);
+        if (escaped && p.status === 'active') {
           p.position = null;
           p.status = 'escaped';
           delete p.escapeEdge;
@@ -1772,7 +1814,24 @@ export class TacticalBattle {
       }
       activation.remaining--;
       activation.moved = true;
-      if (p.status === 'escaped') this.#finishActivation();
+      if (p.status !== 'active') {
+        if (!this.#checkComplete() && this.#activation)
+          this.#finishActivation();
+      }
+      return;
+    }
+    if (command.type === 'overwatch') {
+      if (activation.fired || p.escapeEdge || p.dockedWith)
+        throw new Error('This ship cannot reserve a shot.');
+      if (
+        !battleWeapons(p.type, p.hasMissiles).includes(command.weapon) ||
+        (command.weapon === 'Missiles' && p.missiles < 1)
+      )
+        throw new Error('Choose an available weapon.');
+      p.overwatch = command.weapon;
+      activation.fired = true;
+      this.#log.push(`${battlePieceLabel(p, this.#pieces)} enters Overwatch.`);
+      this.#advanceIfSpent();
       return;
     }
     if (command.type === 'dock') {
@@ -1798,6 +1857,17 @@ export class TacticalBattle {
     if (activation.fired)
       throw new Error('This ship already fired this activation.');
     if (p.dockedWith) throw new Error('This ship is locked in a boarding.');
+    this.#fireShot(p, command);
+    activation.fired = true;
+    if (!this.#usesManeuver) activation.movementClosed = activation.moved;
+    this.#checkComplete();
+    this.#advanceIfSpent();
+  }
+
+  #fireShot(
+    p: Piece,
+    command: { readonly at: BattleHex; readonly weapon: WeaponName },
+  ): void {
     const preview = this.impact(p.id, command.at, command.weapon);
     if (preview.reason) throw new Error(preview.reason);
     if (command.weapon === 'Missiles') p.missiles--;
@@ -1852,7 +1922,6 @@ export class TacticalBattle {
       if (index >= 0) this.#asteroids.splice(index, 1);
       notes.push(`Asteroid at ${asteroid.q},${asteroid.r} breaks.`);
     }
-    activation.fired = true;
     this.#lastShot = {
       id: `${this.#base.id}:shot:${this.#log.length}`,
       weapon: command.weapon,
@@ -1860,7 +1929,6 @@ export class TacticalBattle {
       at: { ...command.at },
       impacts,
     };
-    if (!this.#usesManeuver) activation.movementClosed = activation.moved;
     const shipNote = preview.hits[0]
       ? battlePieceLabel(this.#piece(preview.hits[0].id), this.#pieces)
       : '';
@@ -1869,8 +1937,28 @@ export class TacticalBattle {
         ? `${battlePieceLabel(p, this.#pieces)}: Missiles → ${command.at.q},${command.at.r}. ${notes.join(' ') || 'No ships in the area.'} Area: ${total} damage.`
         : `${battlePieceLabel(p, this.#pieces)}: ${command.weapon} → ${command.at.q},${command.at.r}${shipNote ? ` ${shipNote}` : ''}. ${notes.join(' ')}`,
     );
-    this.#checkComplete();
-    this.#advanceIfSpent();
+    p.firedRound = this.#round;
+  }
+
+  #triggerOverwatch(mover: Piece): BattleShot[] {
+    const shots: BattleShot[] = [];
+    for (const watcher of this.#pieces) {
+      if (mover.status !== 'active') break;
+      if (
+        watcher.side === mover.side ||
+        watcher.status !== 'active' ||
+        !watcher.overwatch ||
+        watcher.dockedWith
+      )
+        continue;
+      const at = this.aimAt(watcher.id, mover.id, watcher.overwatch);
+      if (!at) continue;
+      const weapon = watcher.overwatch;
+      delete watcher.overwatch;
+      this.#fireShot(watcher, { at, weapon });
+      shots.push(this.#lastShot!);
+    }
+    return shots;
   }
 
   #commitManeuver(
@@ -1885,6 +1973,8 @@ export class TacticalBattle {
     };
     piece.speed = preview.speed;
     let stopped = false;
+    const traveled: ManeuverStep[] = [];
+    const reactions: { step: number; shot: BattleShot }[] = [];
     for (const step of preview.traveled) {
       const cells = this.occupiedHexes(piece.id, step.position, step.facing);
       for (const collision of preview.collisions) {
@@ -1899,13 +1989,23 @@ export class TacticalBattle {
         if (piece.status !== 'active') {
           piece.position = { ...step.position };
           piece.facing = step.facing;
+          traveled.push(step);
           stopped = true;
           break;
         }
       }
       if (stopped) break;
+      const moved = !same(piece.position, step.position);
       piece.position = { ...step.position };
       piece.facing = step.facing;
+      traveled.push(step);
+      if (moved)
+        for (const shot of this.#triggerOverwatch(piece))
+          reactions.push({ step: traveled.length, shot });
+      if (piece.status !== 'active') {
+        stopped = true;
+        break;
+      }
       if (preview.escaped && step === preview.traveled.at(-1)) {
         piece.position = null;
         piece.status = 'escaped';
@@ -1962,7 +2062,8 @@ export class TacticalBattle {
       id: `${this.#base.id}:move:${this.#log.length}:${piece.id}`,
       shipId: piece.id,
       from,
-      steps: preview.traveled,
+      steps: traveled,
+      ...(reactions.length ? { reactions } : {}),
     };
     const heading =
       command.direction === 0
@@ -2041,6 +2142,15 @@ export class TacticalBattle {
     const activation = this.#activation;
     if (!activation || activation.id !== piece.id || piece.status !== 'active')
       return false;
+    if (
+      !activation.fired &&
+      !piece.escapeEdge &&
+      !piece.dockedWith &&
+      battleWeapons(piece.type, piece.hasMissiles).some(
+        (weapon) => weapon !== 'Missiles' || piece.missiles > 0,
+      )
+    )
+      return true;
     if (!activation.fired && this.dockTargets(piece.id).length > 0) return true;
     if (!activation.fired && this.#hasActiveEnemyShot(piece)) return true;
     if (this.#mayTargetWrecks(piece.id)) {

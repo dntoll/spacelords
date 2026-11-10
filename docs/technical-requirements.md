@@ -23,6 +23,12 @@
 
 ## Stridens karta och kontroller, 2026-11-01
 
+- `hexmal-for-manover` och `overwatch-i-rymdstrid`: modellen lämnar lagliga
+  manöveralternativ och lagrar valfritt reserverat vapen och skottrunda per
+  skepp. Äldre sparningar utan dessa fält fortsätter fungera. Vyn äger
+  förhandsvisningen; reaktionsskott prövas mot vanliga skottregler vid varje
+  förflyttningssteg och sparas i manöverns uppspelningsunderlag.
+
 - `fullskarms-stridskarta` och `skeppsnara-stridskontroller`: p5 ritar kartan;
   HTML lägger HUD och tillgängliga symbolknappar ovanpå. BattleMapView lämnar
   en oföränderlig kameraögonblicksbild. Samma projektion placerar kontrollerna
