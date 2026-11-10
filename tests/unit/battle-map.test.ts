@@ -45,7 +45,8 @@ function drawing(
   const arcs: number[] = [];
   const fills: unknown[][] = [];
   const texts: string[] = [];
-  const images: { url: string; angle: number }[] = [];
+  const translations: Point[] = [];
+  const images: { url: string; angle: number; alpha: number }[] = [];
   const point = (x: number, y: number): Point => ({
     x: x * Math.cos(rotation) - y * Math.sin(rotation),
     y: x * Math.sin(rotation) + y * Math.cos(rotation),
@@ -72,12 +73,13 @@ function drawing(
       images.length = 0;
       fills.length = 0;
       texts.length = 0;
+      translations.length = 0;
     },
     push: () => stack.push(rotation),
     pop: () => {
       rotation = stack.pop()!;
     },
-    translate: noop,
+    translate: (x: number, y: number) => translations.push({ x, y }),
     scale: noop,
     rotate: (angle: number) => {
       rotation += angle;
@@ -94,7 +96,11 @@ function drawing(
     circle: noop,
     imageMode: noop,
     image: (image: { url: string }) => {
-      images.push({ url: image.url, angle: rotation });
+      images.push({
+        url: image.url,
+        angle: rotation,
+        alpha: sketch.drawingContext.globalAlpha,
+      });
       noses.push(point(1, 0));
     },
     triangle: (x: number, y: number) => noses.push(point(x, y)),
@@ -137,10 +143,76 @@ function drawing(
     images,
     fills,
     texts,
+    translations,
     container,
     canvas,
   };
 }
+
+it('animerad-skeppsforflyttning: draws the moving ship between two hex centers', async () => {
+  const { view, translations } = drawing(false);
+  let frame: FrameRequestCallback | undefined;
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    frame = callback;
+    return 1;
+  });
+  vi.stubGlobal('cancelAnimationFrame', () => {});
+  const now = vi.spyOn(performance, 'now').mockReturnValue(100);
+  const state = createTestBattle().snapshot;
+  const ship = { ...state.pieces[0]!, position: { q: 1, r: 3 } };
+  view.render(
+    { ...state, phase: 'fighting', pieces: [ship] },
+    ship.id,
+    null,
+    'Cannon',
+  );
+  const pending = view.animateManeuver({
+    id: 'move',
+    shipId: ship.id,
+    from: { position: { q: 1, r: 3 }, facing: 0 },
+    steps: [{ position: { q: 2, r: 3 }, facing: 0 }],
+  });
+  frame!(185);
+  expect(
+    translations.some(
+      (point) =>
+        Math.abs(point.x - (Math.sqrt(3) * HexGeometry.size) / 2) < 0.001 &&
+        point.y === 0,
+    ),
+  ).toBe(true);
+  view.dispose();
+  await pending;
+  now.mockRestore();
+});
+
+it('skuggad-manovervag / ingen-hpsiffra-pa-stridskartan: draws the selected path as translucent ships and leaves the real ship opaque', async () => {
+  const { view, images, texts } = drawing(true);
+  await Promise.resolve();
+  const state = createTestBattle().snapshot;
+  const ship = {
+    ...state.pieces[0]!,
+    position: { q: 2, r: 3 },
+    activated: true,
+  };
+  view.render(
+    { ...state, phase: 'fighting', pieces: [ship] },
+    ship.id,
+    null,
+    'Cannon',
+  );
+  view.setManeuverPreview({
+    shipId: ship.id,
+    steps: [
+      { position: { q: 3, r: 3 }, facing: 0 },
+      { position: { q: 4, r: 3 }, facing: 0 },
+      { position: { q: 5, r: 3 }, facing: 1 },
+    ],
+  });
+  expect(images.map((item) => item.alpha)).toEqual([0.35, 0.35, 0.35, 1]);
+  expect(texts).not.toContain(`${ship.hull} ✓`);
+  expect(texts).toContain('✓');
+  view.dispose();
+});
 
 it('flyktzoner-i-rymdstrid: paints and labels all six escape hexes', () => {
   const { view, fills, texts } = drawing(false);

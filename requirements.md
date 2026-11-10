@@ -265,6 +265,11 @@ Se [hela visionen](docs/game-vision.md).
   **Fullständigt implementerat**. Kartan visar valbara manövrer och
   förhandsvisning. Overwatch reserverar ett vapen och avfyras mot den första
   fiende som blir skjutbar under rörelse.
+  `skuggad-manovervag`, `manoverval-vid-hexkant`,
+  `animerad-skeppsforflyttning` och `ingen-hpsiffra-pa-stridskartan` är
+  **Fullständigt implementerat**: den valda färden visas med skuggade skepp,
+  riktningsval ligger vid motsvarande hexkant och skeppet rör sig animerat.
+  HP visas med stapel utan siffra under skeppet.
   Kartvalen ersätter fart- och riktningsknapparna i nya strider. Se
   [produktkraven](docs/product-requirements.md).
 

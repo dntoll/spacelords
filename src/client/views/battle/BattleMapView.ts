@@ -19,6 +19,8 @@ import {
   type BattleManeuver,
 } from '../../models/TacticalBattle.js';
 import type { BattleMapPort } from './BattleView.js';
+import type { ManeuverStep } from '../../models/battle/Maneuver.js';
+import { maneuverFrame } from './BattleManeuverPresentation.js';
 import { SHIP_SPRITES, type ShipSpriteType } from '../ShipImages.js';
 import { BattleEffects, type BattleEffectFrame } from './BattleEffects.js';
 import { ShipFootprint } from '../../models/battle/ShipFootprint.js';
@@ -52,7 +54,7 @@ export class BattleMapView implements BattleMapPort {
   #animationFrame: number | undefined;
   #animationTimeout: ReturnType<typeof setTimeout> | undefined;
   #finishAnimation: (() => void) | undefined;
-  #preview: BattleHex[] = [];
+  #preview: { shipId: string; steps: readonly ManeuverStep[] } | null = null;
   #targets: readonly BattleHex[] = [];
   #previewPose: { shipId: string; position: BattleHex; facing: number } | null =
     null;
@@ -60,10 +62,14 @@ export class BattleMapView implements BattleMapPort {
     shipId: string;
     position: BattleHex;
     facing: number;
+    offset?: Point;
+    rotationFacing?: number;
   } | null = null;
 
-  setManeuverPreview(hexes: readonly BattleHex[] | null): void {
-    this.#preview = hexes ? hexes.map((hex) => ({ ...hex })) : [];
+  setManeuverPreview(
+    preview: { shipId: string; steps: readonly ManeuverStep[] } | null,
+  ): void {
+    this.#preview = preview ? structuredClone(preview) : null;
     if (this.#ready && !this.#disposed) void this.#p5.redraw();
   }
 
@@ -101,18 +107,24 @@ export class BattleMapView implements BattleMapPort {
           this.#cancelAnimation();
           return;
         }
+        const elapsed = Math.max(0, now - start);
         const index = Math.min(
-          frames.length - 1,
-          Math.max(0, Math.floor((now - start) / stepMs)),
+          maneuver.steps.length - 1,
+          Math.floor(elapsed / stepMs),
         );
-        const frame = frames[index]!;
+        const from = frames[index]!;
+        const to = frames[index + 1]!;
+        const progress = Math.min(1, (elapsed - index * stepMs) / stepMs);
+        const interpolated = maneuverFrame(from, to, progress);
         this.#pose = {
           shipId: maneuver.shipId,
-          position: frame.position,
-          facing: frame.facing,
+          position: from.position,
+          facing: from.facing,
+          offset: interpolated.offset,
+          rotationFacing: interpolated.facing,
         };
         void this.#p5.redraw();
-        if (now - start >= stepMs * frames.length) {
+        if (now - start >= stepMs * maneuver.steps.length) {
           this.#pose = null;
           this.#cancelAnimation();
           return;
@@ -475,18 +487,6 @@ export class BattleMapView implements BattleMapPort {
       p.fill(50, 145, 200, 50);
       polygon(cell, HexGeometry.size - 3);
     }
-    for (const [index, cell] of this.#preview.entries()) {
-      p.stroke('#9ad7ff');
-      p.strokeWeight(2 / this.#scale);
-      p.fill(90, 190, 255, 80);
-      polygon(cell, HexGeometry.size - 4);
-      const center = HexGeometry.toPoint(new HexCoordinate(cell.q, cell.r));
-      p.noStroke();
-      p.fill('#f4fbff');
-      p.textAlign(p.CENTER, p.CENTER);
-      p.textSize(12);
-      p.text(String(index + 1), center.x, center.y);
-    }
     const aim = this.#aim;
     if (aim && state.phase === 'fighting') {
       const area = WEAPONS[this.#weapon].area > 0 ? missileArea(aim) : [aim];
@@ -572,13 +572,20 @@ export class BattleMapView implements BattleMapPort {
         p.pop();
       } else p.line(a.x, a.y, b.x, b.y);
     }
-    for (const currentShip of state.pieces) {
+    const renderShips = state.pieces.flatMap((currentShip) => [
+      ...(this.#preview?.shipId === currentShip.id
+        ? this.#preview.steps.map((step) => ({ currentShip, ghost: step }))
+        : []),
+      { currentShip, ghost: null },
+    ]);
+    for (const { currentShip, ghost } of renderShips) {
       const motion =
-        this.#pose?.shipId === currentShip.id
+        ghost ??
+        (this.#pose?.shipId === currentShip.id
           ? this.#pose
-          : this.#previewPose?.shipId === currentShip.id
+          : !this.#preview && this.#previewPose?.shipId === currentShip.id
             ? this.#previewPose
-            : null;
+            : null);
       if (!motion && currentShip.status === 'destroyed') {
         if (currentShip.position)
           this.#drawDebris(p, currentShip.position, currentShip.id);
@@ -613,6 +620,12 @@ export class BattleMapView implements BattleMapPort {
           : {}),
       };
       if (!ship.position) continue;
+      p.push();
+      const context = p.drawingContext as CanvasRenderingContext2D;
+      const previousAlpha = context.globalAlpha;
+      if (ghost) context.globalAlpha = 0.35;
+      if (!ghost && this.#pose?.shipId === currentShip.id && this.#pose.offset)
+        p.translate(this.#pose.offset.x, this.#pose.offset.y);
       const center = HexGeometry.toPoint(
         new HexCoordinate(ship.position.q, ship.position.r),
       );
@@ -663,7 +676,15 @@ export class BattleMapView implements BattleMapPort {
       if (!large) p.circle(0, 0, radius * 2.3);
       p.push();
       // skeppets-framat-foljer-spriten: every ship asset has its nose pointing right.
-      p.rotate((-ship.facing * Math.PI) / 3);
+      p.rotate(
+        (-(ghost
+          ? ship.facing
+          : this.#pose?.shipId === currentShip.id
+            ? (this.#pose.rotationFacing ?? ship.facing)
+            : ship.facing) *
+          Math.PI) /
+          3,
+      );
       const image = this.#images.get(ship.type);
       if (image) {
         p.imageMode(p.CENTER);
@@ -699,19 +720,23 @@ export class BattleMapView implements BattleMapPort {
       const nose = large ? Math.sqrt(3) * HexGeometry.size * 1.4 : radius;
       p.line(nose + 2, 0, nose + 9, 0);
       p.pop();
-      p.noStroke();
-      p.fill('#112331');
-      p.rect(-23, 23, 46, 5);
-      p.fill(ship.side === 'player' ? '#64d7ff' : '#fa867a');
-      p.rect(-23, 23, (46 * ship.hull) / maxHull(ship), 5);
-      p.fill('#eef5fb');
-      p.textAlign(p.CENTER);
-      p.textSize(11);
-      p.text(`${ship.hull}${ship.activated ? ' ✓' : ''}`, 0, 42);
-      if (ship.overwatch && ship.status === 'active') {
-        p.fill('#ffe28b');
-        p.text('OW', 0, -radius - 9);
+      if (!ghost) {
+        p.noStroke();
+        p.fill('#112331');
+        p.rect(-23, 23, 46, 5);
+        p.fill(ship.side === 'player' ? '#64d7ff' : '#fa867a');
+        p.rect(-23, 23, (46 * ship.hull) / maxHull(ship), 5);
+        p.fill('#eef5fb');
+        p.textAlign(p.CENTER);
+        p.textSize(11);
+        if (ship.activated) p.text('✓', 0, 42);
+        if (ship.overwatch && ship.status === 'active') {
+          p.fill('#ffe28b');
+          p.text('OW', 0, -radius - 9);
+        }
       }
+      p.pop();
+      context.globalAlpha = previousAlpha;
       p.pop();
     }
     this.#drawEffects(p);

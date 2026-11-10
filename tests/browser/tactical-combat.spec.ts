@@ -81,6 +81,7 @@ test('overwatch-i-rymdstrid: reserves the selected weapon on a phone', async ({
 test('stridsutplacering / sparad-taktisk-strid: deploys all ships and resumes an unfinished activation without rerolling', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(60_000);
   const game = encounterGame();
   const errors = await prepare(page, game.exportState());
   const dialog = page.getByRole('dialog', { name: 'Tactical combat' });
@@ -113,7 +114,47 @@ test('stridsutplacering / sparad-taktisk-strid: deploys all ships and resumes an
   await expect(
     dialog.getByRole('button', { name: 'Activate ship', exact: true }),
   ).toHaveCount(0);
-  await maneuver(page, 0, 1);
+  const beforePreview = (await saved(page)).state.simulation!
+    .tacticalBattles![0]!;
+  const boxes = await dialog
+    .locator('[data-maneuver-option]')
+    .evaluateAll((buttons) =>
+      buttons.map((button) => {
+        const box = button.getBoundingClientRect();
+        return {
+          left: box.left,
+          right: box.right,
+          top: box.top,
+          bottom: box.bottom,
+        };
+      }),
+    );
+  for (let index = 0; index < boxes.length; index++) {
+    for (let next = index + 1; next < boxes.length; next++) {
+      const a = boxes[index]!,
+        b = boxes[next]!;
+      expect(
+        a.right <= b.left ||
+          b.right <= a.left ||
+          a.bottom <= b.top ||
+          b.bottom <= a.top,
+      ).toBe(true);
+    }
+  }
+  const choice = dialog.locator('[data-maneuver-option="1:0"]');
+  await choice.click();
+  await expect(choice).toHaveAttribute('aria-pressed', 'true');
+  const choiceBox = (await choice.boundingBox())!;
+  expect(choiceBox.width).toBeGreaterThanOrEqual(24);
+  expect(choiceBox.height).toBeCloseTo(choiceBox.width, 0);
+  expect(
+    await choice.evaluate((button) => button.scrollWidth <= button.clientWidth),
+  ).toBe(true);
+  expect((await saved(page)).state.simulation!.tacticalBattles![0]).toEqual(
+    beforePreview,
+  );
+  await page.screenshot({ path: testInfo.outputPath('battle-preview.png') });
+  await choice.click();
   const checkpoint = (await saved(page)).state.simulation!.tacticalBattles![0]!;
   await page.screenshot({ path: testInfo.outputPath('battle-activation.png') });
   await page.reload();

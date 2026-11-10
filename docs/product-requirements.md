@@ -150,6 +150,16 @@ pågående strider behåller sin tidigare karta och reträttregel.
   trycket ska visa skeppet och dess vapenkon på slutplatsen; nästa tryck på
   samma alternativ genomför manövern.
   Detta ersätter fart- och riktningsknapparna i strid.
+- `skuggad-manovervag` — **Fullständigt implementerat**: den valda färdvägen
+  visar skuggade skepp i varje steg. Det verkliga skeppet syns tydligt kvar på
+  startpositionen och vapenkonen visas vid slutpositionen.
+- `manoverval-vid-hexkant` — **Fullständigt implementerat**: riktningsvalen
+  placeras vid hexens sida i den nya riktningen. Alternativ med samma mål och
+  riktning kan väljas var för sig.
+- `animerad-skeppsforflyttning` — **Fullständigt implementerat**: skeppet färdas
+  mjukt längs sin väg och reaktionsskott visas där de inträffar.
+- `ingen-hpsiffra-pa-stridskartan` — **Fullständigt implementerat**: skeppens
+  HP visas med en stapel utan siffra under skeppet.
 - `overwatch-i-rymdstrid` — **Fullständigt implementerat**: ett skepp kan
   reservera sitt skott till första fiende som blir skjutbar under rörelse.
   Reservationen gäller till skeppets nästa aktivering. Skeppet kan i stället

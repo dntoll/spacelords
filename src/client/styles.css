@@ -3661,8 +3661,13 @@ body:has(.discovery-controls) .selection-panel {
   position: absolute;
   transform: translate(-50%, -50%);
   pointer-events: auto;
-  min-width: 38px;
-  min-height: 38px;
+  width: var(--maneuver-option-size, 30px);
+  height: var(--maneuver-option-size, 30px);
+  min-width: var(--maneuver-option-size, 30px);
+  min-height: var(--maneuver-option-size, 30px);
+  padding: 0;
+  font-size: 10px;
+  white-space: nowrap;
   border: 2px solid #8bd7ff;
   border-radius: 50%;
   background: #163b54e8;
@@ -3672,6 +3677,14 @@ body:has(.discovery-controls) .selection-panel {
 .battle-maneuver-option[aria-pressed='true'] {
   background: #22749c;
   border-color: #fff3a3;
+}
+.battle-maneuver-options:has(.battle-maneuver-option[aria-pressed='true'])
+  .battle-maneuver-option:not([aria-pressed='true']) {
+  opacity: 0.3;
+}
+.battle-maneuver-options:has(.battle-maneuver-option[aria-pressed='true'])
+  .battle-maneuver-links {
+  opacity: 0.3;
 }
 .battle-controls > button {
   position: absolute;

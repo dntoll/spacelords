@@ -18,8 +18,12 @@ dess riktning. Hastighet 0 rakt fram förbrukar poängen utan förflyttning.
 går `ceil(hastighet / 2)` hex i den gamla riktningen och resten i den nya.
 
 `manoverforhandsvisning` ersätts av `hexmal-for-manover`: ett tryck på ett
-manöveralternativ visar färdväg, slutposition, riktning och vapenkon. Ett andra
-tryck på samma alternativ genomför manövern.
+manöveralternativ visar enligt `skuggad-manovervag` ett skuggat skepp vid varje
+steg, samt vapenkonen på slutplatsen. Det verkliga skeppet ligger kvar synligt.
+`manoverval-vid-hexkant` placerar riktningar vid motsvarande hexkant. Ett andra
+tryck på samma alternativ genomför manövern. `animerad-skeppsforflyttning`
+visar mjuk rörelse och svängar, med paus för reaktionsskott.
+`ingen-hpsiffra-pa-stridskartan` behåller HP-stapeln utan numerisk etikett.
 
 `avslutad-manoveranimation`: kartan har en tidsgräns som avslutar
 manöverpresentationen om webbläsaren inte levererar nästa animationsbildruta.

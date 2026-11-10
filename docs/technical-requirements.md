@@ -23,6 +23,12 @@
 
 ## Stridens karta och kontroller, 2026-11-01
 
+- `skuggad-manovervag`, `manoverval-vid-hexkant` och
+  `animerad-skeppsforflyttning`: vyn får en oföränderlig följd av positioner
+  och riktningar. Den ritar genomskinliga kopior utan att flytta modellen och
+  interpolerar animationen mellan stegen. Val placeras vid respektive hexkant
+  och hålls åtkomliga även när flera alternativ delar riktning.
+
 - `hexmal-for-manover` och `overwatch-i-rymdstrid`: modellen lämnar lagliga
   manöveralternativ och lagrar valfritt reserverat vapen och skottrunda per
   skepp. Äldre sparningar utan dessa fält fortsätter fungera. Vyn äger

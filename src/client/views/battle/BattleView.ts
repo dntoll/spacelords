@@ -18,6 +18,11 @@ import {
   type Point,
 } from '../../models/HexCoordinate.js';
 import type { BattleViewportSnapshot } from './BattleCameraController.js';
+import type { ManeuverStep } from '../../models/battle/Maneuver.js';
+import {
+  maneuverOptionLayout,
+  maneuverOptionSize,
+} from './BattleManeuverPresentation.js';
 import type { IntentHandler } from '../ViewContracts.js';
 import { element } from '../dom.js';
 import { ShipFootprint } from '../../models/battle/ShipFootprint.js';
@@ -31,7 +36,9 @@ import {
 export interface BattleMapPort {
   animateShot?(shot: BattleShot): Promise<void>;
   animateManeuver?(maneuver: BattleManeuver): Promise<void>;
-  setManeuverPreview?(hexes: readonly BattleHex[] | null): void;
+  setManeuverPreview?(
+    preview: { shipId: string; steps: readonly ManeuverStep[] } | null,
+  ): void;
   setManeuverTargets?(hexes: readonly BattleHex[]): void;
   setPreviewPose?(
     pose: { shipId: string; position: BattleHex; facing: number } | null,
@@ -621,6 +628,7 @@ export class BattleView {
         button.dataset.maneuverOption = id;
         button.dataset.q = String(destination.q);
         button.dataset.r = String(destination.r);
+        button.dataset.facing = String(option.preview.facing);
         button.setAttribute(
           'aria-label',
           `Maneuver to ${destination.q}, ${destination.r}, facing ${option.preview.facing}, speed ${option.preview.speed}`,
@@ -642,9 +650,10 @@ export class BattleView {
             return;
           }
           this.#maneuverChoice = id;
-          this.#map?.setManeuverPreview?.(
-            option.preview.traveled.map((step) => step.position),
-          );
+          this.#map?.setManeuverPreview?.({
+            shipId: ship.id,
+            steps: option.preview.traveled,
+          });
           this.#map?.setPreviewPose?.(
             option.preview.position
               ? {
@@ -800,55 +809,42 @@ export class BattleView {
     links.classList.add('battle-maneuver-links');
     links.setAttribute('aria-hidden', 'true');
     this.#maneuvers.prepend(links);
-    const occupied: Point[] = [];
-    for (const button of this.#maneuvers.querySelectorAll<HTMLElement>(
-      '[data-maneuver-option]',
-    )) {
-      const anchor = project({
+    this.#maneuvers.style.setProperty(
+      '--maneuver-option-size',
+      `${maneuverOptionSize(viewport.scale)}px`,
+    );
+    const options = [
+      ...this.#maneuvers.querySelectorAll<HTMLElement>(
+        '[data-maneuver-option]',
+      ),
+    ];
+    const anchors = options.map((button) => ({
+      center: project({
         q: Number(button.dataset.q),
         r: Number(button.dataset.r),
-      });
-      const candidates: Point[] = [];
-      for (let radius = 0; radius <= 200; radius += 42) {
-        const count = radius
-          ? Math.max(8, Math.ceil((2 * Math.PI * radius) / 42))
-          : 1;
-        for (let i = 0; i < count; i++) {
-          const angle = (2 * Math.PI * i) / count;
-          candidates.push({
-            x: anchor.x + Math.cos(angle) * radius,
-            y: anchor.y + Math.sin(angle) * radius,
-          });
-        }
-      }
-      const chosen =
-        candidates.find(
-          (point) =>
-            point.x >= 20 &&
-            point.x <= viewport.width - 20 &&
-            point.y >= 64 &&
-            point.y <= viewport.height - 64 &&
-            occupied.every(
-              (other) =>
-                Math.abs(other.x - point.x) >= 40 ||
-                Math.abs(other.y - point.y) >= 40,
-            ),
-        ) ?? anchor;
-      occupied.push(chosen);
-      if (Math.hypot(chosen.x - anchor.x, chosen.y - anchor.y) > 2) {
-        const line = document.createElementNS(
-          'http://www.w3.org/2000/svg',
-          'line',
-        );
-        line.setAttribute('x1', String(anchor.x));
-        line.setAttribute('y1', String(anchor.y));
-        line.setAttribute('x2', String(chosen.x));
-        line.setAttribute('y2', String(chosen.y));
-        links.append(line);
-      }
+      }),
+      facing: Number(button.dataset.facing),
+    }));
+    const optionPositions = maneuverOptionLayout(
+      anchors,
+      viewport.scale,
+      viewport,
+    );
+    options.forEach((button, index) => {
+      const anchor = anchors[index]!.center;
+      const chosen = optionPositions[index]!;
+      const line = document.createElementNS(
+        'http://www.w3.org/2000/svg',
+        'line',
+      );
+      line.setAttribute('x1', String(anchor.x));
+      line.setAttribute('y1', String(anchor.y));
+      line.setAttribute('x2', String(chosen.x));
+      line.setAttribute('y2', String(chosen.y));
+      links.append(line);
       button.style.left = `${chosen.x}px`;
       button.style.top = `${chosen.y}px`;
-    }
+    });
     const hullCells = ShipFootprint.cells(
       ship,
       state.largeShipFootprints === true,
