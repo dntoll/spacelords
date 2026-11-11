@@ -66,7 +66,7 @@ export class TurnSimulation {
   spend(id: string, speed = 1): void {
     const remaining = this.remaining.get(id) ?? 0;
     if (speed <= 0 || this.movement(id, speed) < 1)
-      throw new Error('No movement remaining this year.');
+      throw new Error('No movement remaining this round.');
     this.remaining.set(id, remaining - 60 / speed);
   }
 
@@ -205,7 +205,7 @@ export class TurnSimulation {
           (discovery.fleetId !== null && !ids.has(discovery.fleetId)),
       )
     )
-      throw new Error('Invalid interrupted year.');
+      throw new Error('Invalid interrupted round.');
     const simulation = new TurnSimulation(saved.remaining);
     if (
       saved.tacticalBattles !== undefined &&

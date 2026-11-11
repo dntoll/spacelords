@@ -55,12 +55,12 @@ test('snabb-mobilpublicering / viewport-game-layout / sparat-spel: touch navigat
   await endTurn(page);
   await page.getByRole('button', { name: 'Saved games', exact: true }).tap();
   const slot = page.getByRole('article', { name: 'Save slot 1', exact: true });
-  await expect(slot).toContainText('Year 2');
+  await expect(slot).toContainText('Round 2');
   await page.waitForLoadState('networkidle');
   reloading = true;
   await page.reload();
   reloading = false;
-  await expect(slot).toContainText('Year 2');
+  await expect(slot).toContainText('Round 2');
   await startFirstSlot(page);
   await expect(map).toBeVisible();
   expect(errors).toEqual([]);

@@ -74,7 +74,7 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
     page.getByRole('heading', { name: 'Tellus', exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText('Stored 100 · Extracting 0/year', { exact: true }).first(),
+    page.getByText('Stored 100 · Extracting 0/round', { exact: true }).first(),
   ).toBeVisible();
   await page
     .getByRole('button', { name: 'Building sites', exact: true })

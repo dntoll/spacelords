@@ -162,7 +162,7 @@ test('spara-avbrutet-ar / aktuell-detektionssikt: an obsolete saved pirate warni
     page.getByRole('dialog', { name: 'Pirate ship in sight', exact: true }),
   ).toHaveCount(0);
   const controls = page.getByRole('region', {
-    name: 'Interrupted year',
+    name: 'Interrupted round',
     exact: true,
   });
   await expect(controls).toBeVisible();
@@ -195,7 +195,7 @@ test('upptacktsavbrott / spara-avbrutet-ar: reload a year-end discovery without 
     exact: true,
   });
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('No movement remains this year');
+  await expect(dialog).toContainText('No movement remains this round');
   const checkpoint = await saved(page);
   expect(checkpoint.simulation!.economyApplied).toBe(true);
   await page.reload();

@@ -38,7 +38,7 @@ export function renderSaveSlots(
         slot.error
           ? 'Unavailable'
           : slot.lastPlayed
-            ? `Year ${slot.round}`
+            ? `Round ${slot.round}`
             : 'Empty slot',
       ),
     );

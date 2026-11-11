@@ -177,7 +177,7 @@ describe('gemensamt-handelseflode', () => {
     expect(events.length).toBeGreaterThan(0);
     for (const event of events)
       expect(event.decision!.details.join('\n')).not.toContain(
-        'The year is paused',
+        'The round is paused',
       );
     expect(
       events.some((event) =>

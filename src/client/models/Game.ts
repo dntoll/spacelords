@@ -189,7 +189,7 @@ export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
     'Orbital shipyard': {
       permanent: true,
       description:
-        'Builds a planetary facility, shuttles and an orbital station. Repairs one wreck per year.',
+        'Builds a planetary facility, shuttles and an orbital station. Repairs one wreck per round.',
       workers: 800,
       cost: { Iron: 24, Water: 12, Oil: 6 },
       crew: 0,
@@ -243,7 +243,7 @@ export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
       environment: 'Ice',
       terraforming: 5,
       description:
-        'Raises habitability by 5 percentage points per year when staffed, up to 100%.',
+        'Raises habitability by 5 percentage points per round when staffed, up to 100%.',
       workers: 300,
       cost: { Iron: 12, Water: 6, Oil: 3 },
       crew: 0,
@@ -262,7 +262,7 @@ export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
       environment: 'Desert',
       terraforming: 5,
       description:
-        'Raises habitability by 5 percentage points per year when staffed, up to 100%.',
+        'Raises habitability by 5 percentage points per round when staffed, up to 100%.',
       workers: 300,
       cost: { Iron: 12, Water: 6, Oil: 3 },
       crew: 0,
@@ -281,7 +281,7 @@ export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
       environment: 'Ocean',
       terraforming: 5,
       description:
-        'Raises habitability by 5 percentage points per year when staffed, up to 100%.',
+        'Raises habitability by 5 percentage points per round when staffed, up to 100%.',
       workers: 300,
       cost: { Iron: 12, Water: 6, Oil: 3 },
       crew: 0,
@@ -300,7 +300,7 @@ export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
       environment: 'Toxic',
       terraforming: 5,
       description:
-        'Raises habitability by 5 percentage points per year when staffed, up to 100%.',
+        'Raises habitability by 5 percentage points per round when staffed, up to 100%.',
       workers: 300,
       cost: { Iron: 12, Water: 6, Oil: 3 },
       crew: 0,
@@ -366,7 +366,7 @@ export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
     'Research station': {
       permanent: true,
       description:
-        'Contributes one research point per year to the selected technology.',
+        'Contributes one research point per round to the selected technology.',
       workers: 600,
       cost: { Iron: 2, Water: 3, Oil: 1 },
       crew: 0,
@@ -1481,7 +1481,7 @@ export class Game {
       game.#phase = 'interrupted';
       game.#validateTacticalParticipants();
     } else if (state.version >= 8 && copy.simulation)
-      throw new Error('Unexpected interrupted year.');
+      throw new Error('Unexpected interrupted round.');
     if (state.version < 9) {
       if (game.#research.completed.has('Exploration ship factory'))
         game.#research.completed.add('Telescope I factory');
@@ -5162,9 +5162,9 @@ export class Game {
     this.#simulation!.otherFleets = true;
   }
   continueTurn(): void {
-    if (this.#phase !== 'interrupted') throw new Error('No interrupted year.');
+    if (this.#phase !== 'interrupted') throw new Error('No interrupted round.');
     if (this.#simulation!.tacticalBattles.length)
-      throw new Error('Complete tactical combat before continuing the year.');
+      throw new Error('Complete tactical combat before continuing the round.');
     this.#simulation!.discoveries = [];
     this.#simulation!.battles = [];
     this.#simulation!.activeEventId = undefined;
@@ -6179,7 +6179,7 @@ export class Game {
           if (m.waitingReason) return m.waitingReason;
           const local =
             m.localYears !== null
-              ? `Waiting for local ${m.material} extraction (~${m.localYears} year(s))`
+              ? `Waiting for local ${m.material} extraction (~${m.localYears} round(s))`
               : '';
           const shipments = this.shipments.filter(
             (s) =>
@@ -6193,7 +6193,7 @@ export class Game {
               ? Math.max(...shipments.map((s) => s.years!))
               : null;
           const incoming = shipments.length
-            ? `${shipments.reduce((n, s) => n + s.amount, 0)} ${m.material} incoming — ${years === null ? 'arrival unknown' : `estimated arrival ${years} year(s)`}`
+            ? `${shipments.reduce((n, s) => n + s.amount, 0)} ${m.material} incoming — ${years === null ? 'arrival unknown' : `estimated arrival ${years} round(s)`}`
             : '';
           const production =
             m.ordered > 0
@@ -6916,7 +6916,7 @@ export class Game {
     }
     if (!this.#simulation!.movement(fleet.id, speed)) {
       state.navigationIssue =
-        'Asteroid passage requires a full year of movement.';
+        'Asteroid passage requires a full round of movement.';
       return [];
     }
     return path;

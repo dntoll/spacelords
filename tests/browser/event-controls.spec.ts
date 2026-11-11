@@ -34,7 +34,7 @@ test('senaste-aret-i-events: Decisions follows the latest year after End turn an
     node.scrollTop = node.scrollHeight;
   });
   await endTurn(page);
-  await expect(log).toContainText('Year 21');
+  await expect(log).toContainText('Round 21');
   await expect
     .poll(() =>
       log.evaluate(
@@ -81,7 +81,7 @@ test('rundkontroller-pa-fler-vyer / utvikbara-events: Research and planet pages 
   await expect(
     page.getByRole('heading', { name: 'Tellus', exact: true }),
   ).toBeVisible();
-  await expect(log).toContainText('Year 2');
+  await expect(log).toContainText('Round 2');
   const end = page.getByRole('button', { name: 'End turn', exact: true });
   await expect(end).toBeInViewport();
   expect(

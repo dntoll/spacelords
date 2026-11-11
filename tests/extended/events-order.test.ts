@@ -54,14 +54,14 @@ describe('senaste-aret-i-events / sekventiella-arshandelser', () => {
     expect(root.querySelector('[data-event-id="p1"]')).not.toBeNull();
     view.dispose();
   });
-  it('shows only the latest year in occurrence order, including +0, without changing saved history', () => {
+  it('round-i-speltexter: shows only the latest round in occurrence order, including +0, without changing saved history', () => {
     const { root, model, view } = setup();
     view.render({ ...model.snapshot, events });
     expect(
       [...root.querySelectorAll('.event-year h3')].map(
         (node) => node.textContent,
       ),
-    ).toEqual(['Year 16']);
+    ).toEqual(['Round 16']);
     expect(root.querySelector('.event-type-label')).toBeNull();
     expect(
       [...root.querySelectorAll<HTMLElement>('[data-event-id]')].map(

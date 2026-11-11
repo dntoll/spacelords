@@ -1312,7 +1312,7 @@ export class AppModel {
     }
     if (interruption!.economyApplied)
       details.push(
-        'The year is paused after production. No movement remains this year.',
+        'The round is paused after production. No movement remains this round.',
       );
     const queueKind =
       discovery.kind === 'planet'

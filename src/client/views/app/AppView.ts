@@ -1503,7 +1503,7 @@ export class AppView implements AppPort {
           : cell?.terrain === 'dense-asteroids'
             ? 'Impassable asteroid field.'
             : cell?.terrain === 'sparse-asteroids'
-              ? 'Entering or leaving this hex uses a full year of movement, regardless of engine.'
+              ? 'Entering or leaving this hex uses a full round of movement, regardless of engine.'
               : cell?.terrain === 'nebula'
                 ? 'Ships inside can only be detected from the same hex. Observers inside see only their own hex. The cloud blocks sight beyond it.'
                 : '';
@@ -1537,7 +1537,7 @@ export class AppView implements AppPort {
           element(
             'p',
             'muted-note',
-            `Resources: ${model.selectedPlanetInfo.resources.map((resource) => `${resource.name} ${resource.perYear}/year`).join(', ') || 'None'}`,
+            `Resources: ${model.selectedPlanetInfo.resources.map((resource) => `${resource.name} ${resource.perYear}/round`).join(', ') || 'None'}`,
           ),
         );
         if (

@@ -136,7 +136,7 @@ test('asteroidbalten / nebulosornas-sikt: discovered terrain explains movement a
   ).toBeVisible();
   await expect(
     page.getByText(
-      'Entering or leaving this hex uses a full year of movement, regardless of engine.',
+      'Entering or leaving this hex uses a full round of movement, regardless of engine.',
       { exact: true },
     ),
   ).toBeVisible();

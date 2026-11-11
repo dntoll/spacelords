@@ -18,7 +18,7 @@ export function renderEvents(
 ): HTMLElement[] {
   if (!events.length && !pending) return [];
   const year = element('li', 'event-year');
-  year.append(element('h3', '', `Year ${(events[0] ?? pending)!.round}`));
+  year.append(element('h3', '', `Round ${(events[0] ?? pending)!.round}`));
   const entries = element('ol', 'event-entries');
   for (const event of events) {
     const row = element('li');

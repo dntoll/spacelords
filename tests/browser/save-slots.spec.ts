@@ -24,7 +24,7 @@ test('tre-sparplatser / sparat-spel / tomm-sparplats: reload, preview, isolation
     exact: true,
   });
   await expect(first.locator('time')).toBeVisible();
-  await expect(first).toContainText('Year 2');
+  await expect(first).toContainText('Round 2');
   await expect(
     first.locator('canvas[data-preview-rendered="true"]'),
   ).toBeVisible();
@@ -37,20 +37,20 @@ test('tre-sparplatser / sparat-spel / tomm-sparplats: reload, preview, isolation
   await expect(page.getByRole('dialog')).toContainText('cannot be undone');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(first).toContainText('Year 2');
+  await expect(first).toContainText('Round 2');
   await page.reload();
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Saved games', exact: true }).click();
-  await expect(first).toContainText('Year 2');
+  await expect(first).toContainText('Round 2');
   await second.getByRole('button', { name: 'Start game' }).click();
   await page.getByRole('button', { name: 'Saved games', exact: true }).click();
   await first.getByRole('button', { name: 'Clear slot' }).click();
   await page.getByRole('button', { name: 'Delete saved game' }).click();
   await expect(first).toContainText('Empty slot');
-  await expect(second).toContainText('Year 1');
+  await expect(second).toContainText('Round 1');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Saved games', exact: true }).click();
-  await expect(first).toContainText('Year 1');
+  await expect(first).toContainText('Round 1');
   expect(errors).toEqual([]);
 });
 

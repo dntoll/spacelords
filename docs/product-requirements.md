@@ -1411,3 +1411,6 @@ Lamporna är fasta och påverkas inte av stridsskador. Väggsnitten är en visue
 Population- och Habitability-besked tystas och återaktiveras var för sig.
 Valen sparas och gäller framtida besked från alla planeter. Andra händelser
 och tidigare besked påverkas inte.
+
+`round-i-speltexter` — **Fullständigt implementerat**: Spelets texter använder
+`round` i stället för `year` för spelets tidssteg, även i hjälptexter.

@@ -95,15 +95,15 @@ for (const size of [
     await expect(console).toBeVisible();
     await expect(log).toContainText('Home Fleet arrived at Vesta.');
     await expect(
-      log.getByRole('heading', { name: 'Year 1', exact: true }),
+      log.getByRole('heading', { name: 'Round 1', exact: true }),
     ).toHaveCount(1);
     await expect(log.locator('.event-type-label')).toHaveCount(0);
     await endTurn(page);
     await expect(
-      log.getByRole('heading', { name: 'Year 1', exact: true }),
+      log.getByRole('heading', { name: 'Round 1', exact: true }),
     ).toHaveCount(0);
     await expect(
-      log.getByRole('heading', { name: 'Year 2', exact: true }),
+      log.getByRole('heading', { name: 'Round 2', exact: true }),
     ).toHaveCount(1);
     await expect(end).toBeEnabled();
     await page.screenshot({

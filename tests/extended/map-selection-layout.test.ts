@@ -174,7 +174,7 @@ describe('rundkontroller-i-decisions', () => {
       ...model.snapshot,
       events: [{ id: 'arrival', round: 1, text: 'Fleet arrived.' }],
     });
-    expect(root.querySelector('.event-year h3')?.textContent).toBe('Year 1');
+    expect(root.querySelector('.event-year h3')?.textContent).toBe('Round 1');
     expect(root.querySelector('[data-event-id="arrival"]')?.textContent).toBe(
       'Fleet arrived.',
     );

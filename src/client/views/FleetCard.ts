@@ -148,7 +148,7 @@ export function renderFleetCard(
   header.insertBefore(orders, rename.parentElement === header ? rename : null);
   const footer = element('div', 'fleet-card-footer');
   const speed = element('small', 'fleet-speed', `S: ${fleet.speed} hex`);
-  speed.title = `Fleet speed: ${fleet.speed} hexes/year${fleet.remainingMovement === undefined ? '' : ` · ${fleet.remainingMovement} hex remaining this year`}`;
+  speed.title = `Fleet speed: ${fleet.speed} hexes/round${fleet.remainingMovement === undefined ? '' : ` · ${fleet.remainingMovement} hex remaining this round`}`;
   footer.append(speed);
   if (fleet.routeId && (model.screen === 'map' || model.screen === 'route')) {
     const route = model.tradeRoutes.find((item) => item.id === fleet.routeId);

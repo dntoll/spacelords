@@ -172,7 +172,7 @@ export function renderProduction(
         element(
           'p',
           '',
-          `Speed ${SHIPS[definition.ship].speed} hexes/year · ${definition.crew} crew`,
+          `Speed ${SHIPS[definition.ship].speed} hexes/round · ${definition.crew} crew`,
         ),
       );
     if (definition.component)
@@ -192,7 +192,7 @@ export function renderProduction(
       element(
         'p',
         'muted-note',
-        'One shared build queue. One project completes per planet and year.',
+        'One shared build queue. One project completes per planet and round.',
       ),
       queue,
       button(

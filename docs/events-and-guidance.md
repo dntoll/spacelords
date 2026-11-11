@@ -24,6 +24,9 @@ informationen kan rullas inom rutan. End turn får inte täckas.
 
 ## Händelser
 
+- `round-i-speltexter` — **Fullständigt implementerat**: Spelets synliga texter
+  och tillgänglighetstexter använder `round` för tidssteg i stället för `year`.
+
 - `tysta-planetbesked` — **Fullständigt implementerat**: Decisions erbjuder
   separata Mute och Unmute för Population och Habitability på alla planeter.
   Inställningarna sparas, gäller framtida årsbesked och lämnar andra rader och

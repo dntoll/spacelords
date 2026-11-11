@@ -189,6 +189,9 @@ Se [hela visionen](docs/game-vision.md).
   och transport. Ordern väntar tills uppgraderingen kan genomföras och
   bevaras vid omladdning. Se [flottuppgradering](docs/fleet-upgrades.md).
 
+- **Rundtexter:** `round-i-speltexter` är **Fullständigt implementerat**: spelet
+  använder `round` i stället för `year` i synliga texter och hjälptexter.
+
 - **Samlade planetbesked:** `grupperade-planethandelser` är
   **Fullständigt implementerat**. Varje planet får ett gemensamt årsbesked
   för anlänt material, färdig produktion, Population och Habitability.

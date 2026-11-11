@@ -139,7 +139,7 @@ export function renderSalvageSelection(
       element(
         'p',
         '',
-        'Automatic repairs · one ship per year · fresh crew from the planet.',
+        'Automatic repairs · one ship per round · fresh crew from the planet.',
       ),
     );
     const repairs = element('ol', 'repair-queue');
@@ -180,7 +180,7 @@ export function renderSalvageSelection(
         '',
         yard.issue ??
           (yard.queue.length
-            ? 'Repairs complete at the end of the year.'
+            ? 'Repairs complete at the end of the round.'
             : 'No wrecks in Orbit.'),
       ),
     );

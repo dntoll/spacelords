@@ -7,8 +7,8 @@ export function discoveryControls(
   emit: IntentHandler,
 ): HTMLElement {
   const bar = element('section', 'discovery-controls');
-  bar.setAttribute('aria-label', 'Interrupted year');
-  bar.append(element('strong', '', `Year ${model.round} paused`));
+  bar.setAttribute('aria-label', 'Interrupted round');
+  bar.append(element('strong', '', `Round ${model.round} paused`));
   const selected = model.fleets.find((fleet) => fleet.id === model.mapFleetId);
   if (selected)
     bar.append(

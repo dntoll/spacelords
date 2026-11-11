@@ -301,13 +301,13 @@ describe('spara-avbrutet-ar', () => {
     interrupt(broken);
     const saved = broken.exportState();
     expect(() => Game.restore({ ...saved, simulation: null })).toThrow(
-      'Invalid interrupted year',
+      'Invalid interrupted round',
     );
     expect(() =>
       Game.restore({
         ...saved,
         simulation: { ...saved.simulation!, remaining: [['fleet-home', 99]] },
       }),
-    ).toThrow('Invalid interrupted year');
+    ).toThrow('Invalid interrupted round');
   });
 });

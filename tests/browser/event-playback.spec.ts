@@ -240,8 +240,8 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   ).toBeVisible();
   await console.locator('summary').click();
   await expect(log.locator('[data-event-id]')).toHaveCount(3);
-  await expect(log).not.toContainText('Year 1');
-  await expect(log).toContainText('Year 2');
+  await expect(log).not.toContainText('Round 1');
+  await expect(log).toContainText('Round 2');
   await noOverflow(page);
   await page.reload();
   await startFirstSlot(page);
@@ -502,7 +502,7 @@ test('senaste-aret-i-events / handelseannonsering: long yearly lists scroll inte
     page.getByRole('button', { name: 'End turn', exact: true }),
   ).toBeEnabled({ timeout: 5000 });
   await expect(log.locator('[data-event-id]')).toHaveCount(1);
-  await expect(log).toContainText('Year 10');
+  await expect(log).toContainText('Round 10');
   await expect
     .poll(() => console.evaluate((node) => node.clientHeight))
     .toBeLessThan(160);

@@ -31,7 +31,7 @@ test('centrerade-handelseval-pa-dator / upptacktsbesked-utan-pausmening: event c
   const announcement = page.locator('.event-announcement-interactive');
   await expect(announcement).toHaveAttribute('data-stage', 'awaiting-choice');
   await expect(announcement).not.toContainText(
-    'The year is paused. Fleets already sharing a hex will fight before the next movement.',
+    'The round is paused. Fleets already sharing a hex will fight before the next movement.',
   );
   const eventId = await announcement.getAttribute('data-announcement-id');
   for (const viewport of [
@@ -181,7 +181,7 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
     .getByRole('button', { name: 'Handle', exact: true })
     .click();
   const controls = page.getByRole('region', {
-    name: 'Interrupted year',
+    name: 'Interrupted round',
     exact: true,
   });
   await expect(controls).toContainText('Home Fleet · 2 hex remaining');

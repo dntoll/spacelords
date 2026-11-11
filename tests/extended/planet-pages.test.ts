@@ -341,7 +341,7 @@ describe('byggkategorier / symbolbaserade-kataloger', () => {
     });
     const selected = render('Fighter');
     const details = selected.querySelector('.catalog-details')!;
-    expect(details.textContent).toContain('Speed 3 hexes/year');
+    expect(details.textContent).toContain('Speed 3 hexes/round');
     expect(details.textContent).toContain('50 crew');
     expect(details.textContent).toContain('Rocket engine');
     expect(details.textContent).toContain('Weapons module');

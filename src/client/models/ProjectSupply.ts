@@ -175,7 +175,7 @@ export class ProjectSupply {
               pendingTransportPath?.(shipment.locationId, planet.id);
             children.push(
               step(
-                `Transport ${amount} ${material} from ${shipment.source} to ${shipment.recipient} · ${shipment.state} · At ${shipment.location} → ${shipment.remainingStops?.join(' → ') ?? shipment.nextStop}${shipment.years === null ? '' : ` · ~${shipment.years} year(s)`}${shipment.issue ? ` · ${shipment.issue}` : ''}`,
+                `Transport ${amount} ${material} from ${shipment.source} to ${shipment.recipient} · ${shipment.state} · At ${shipment.location} → ${shipment.remainingStops?.join(' → ') ?? shipment.nextStop}${shipment.years === null ? '' : ` · ~${shipment.years} round(s)`}${shipment.issue ? ` · ${shipment.issue}` : ''}`,
                 shipment.issue && !pending ? 'Needs attention' : 'Waiting',
                 {
                   planetId: shipment.locationId,
@@ -193,7 +193,7 @@ export class ProjectSupply {
             if (amount)
               children.push(
                 step(
-                  `Extract ${amount} ${material} at ${planet.name} · ${planet.extraction[material]}/year`,
+                  `Extract ${amount} ${material} at ${planet.name} · ${planet.extraction[material]}/round`,
                   'Waiting',
                   { planetId: planet.id },
                 ),

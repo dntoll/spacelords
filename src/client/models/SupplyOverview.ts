@@ -185,7 +185,7 @@ export class SupplyOverview {
                           (m) =>
                             m.waitingReason ??
                             (m.localYears !== null
-                              ? `Waiting for local ${m.material} extraction (~${m.localYears} year(s))`
+                              ? `Waiting for local ${m.material} extraction (~${m.localYears} round(s))`
                               : m.ordered > 0
                                 ? `Waiting for ${m.material} production`
                                 : `Waiting for ${m.material} delivery`),

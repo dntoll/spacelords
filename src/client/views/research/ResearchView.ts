@@ -31,7 +31,7 @@ export function renderResearch(
     element(
       'p',
       '',
-      'Research station needs no technology of its own. Unbreathable planets require a researched Dome at the site first. Each operating station contributes one research point per year. Each technology costs one point.',
+      'Research station needs no technology of its own. Unbreathable planets require a researched Dome at the site first. Each operating station contributes one research point per round. Each technology costs one point.',
     ),
     element(
       'p',

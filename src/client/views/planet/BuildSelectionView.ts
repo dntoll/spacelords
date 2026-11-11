@@ -153,7 +153,7 @@ export function renderBuildSelection(
       element(
         'p',
         'muted-note',
-        'One shared build queue. One project completes per planet and year.',
+        'One shared build queue. One project completes per planet and round.',
       ),
       order,
       button(

@@ -82,7 +82,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   for (let year = 0; year < 4; year++) await nextYear(page);
   await home(page);
   await expect(page.locator('[data-resource="Iron"]')).toContainText(
-    'Extracting 10/year',
+    'Extracting 10/round',
   );
   await page
     .getByRole('navigation', { name: 'Main navigation' })

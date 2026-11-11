@@ -161,7 +161,7 @@ function budgetPanel(planet: PlanetGameSnapshot): HTMLElement {
       element(
         'span',
         'budget-total-label',
-        `Stored ${total} · Extracting ${planet.economy.extraction[resource]}/year`,
+        `Stored ${total} · Extracting ${planet.economy.extraction[resource]}/round`,
       ),
       element(
         'span',
@@ -242,7 +242,7 @@ function buildQueue(
     element(
       'p',
       'muted-note',
-      'One shared queue for buildings, components and ships. One project completes per year.',
+      'One shared queue for buildings, components and ships. One project completes per round.',
     ),
   );
   const list = element('ol', 'queue-slots');

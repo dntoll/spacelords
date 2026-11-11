@@ -54,7 +54,7 @@ export function renderMapFleetPanel(
       element(
         'p',
         '',
-        `Hostile · ${pirate.count} ${pirate.count === 1 ? 'raider' : 'raiders'}${pirate.transports ? ` · ${pirate.transports} transport` : ''} · Speed 1 hex/year`,
+        `Hostile · ${pirate.count} ${pirate.count === 1 ? 'raider' : 'raiders'}${pirate.transports ? ` · ${pirate.transports} transport` : ''} · Speed 1 hex/round`,
       ),
       element(
         'p',
