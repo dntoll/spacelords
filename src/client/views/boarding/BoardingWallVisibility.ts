@@ -1,12 +1,26 @@
-import { BOARDING_METERS, boardingHeight } from './BoardingScale.js';
-import type { BoardingCell } from '../../models/boarding/BoardingMap.js';
 import {
+  BOARDING_METERS,
+  BOARDING_VERTICAL_METER,
+  boardingHeight,
+} from './BoardingScale.js';
+import type {
+  BoardingCell,
+  BoardingThinAxis,
+} from '../../models/boarding/BoardingMap.js';
+import {
+  BOARDING_COVER_HEIGHT,
   BOARDING_WALL_HEIGHT,
   boardingIsoBlockFaces,
   boardingIsoCenter,
   boardingIsoCorners,
+  boardingThinWallOutline,
   type BoardingPoint,
 } from './BoardingProjection.js';
+
+export interface BoardingWallShape {
+  readonly axis?: BoardingThinAxis;
+  readonly low?: boolean;
+}
 
 function silhouette(
   position: BoardingCell,
@@ -81,12 +95,18 @@ export class BoardingWallVisibility {
     }));
   }
 
-  height(position: BoardingCell): number {
-    const key = `${position.q},${position.r}`;
+  height(position: BoardingCell, shape: BoardingWallShape = {}): number {
+    const key = `${position.q},${position.r}:${shape.low ? 1 : 0}:${shape.axis ?? ''}`;
     const cached = this.#heights.get(key);
     if (cached !== undefined) return cached;
+    if (shape.low) {
+      this.#heights.set(key, BOARDING_COVER_HEIGHT);
+      return BOARDING_COVER_HEIGHT;
+    }
     const center = boardingIsoCenter(position);
-    const polygon = silhouette(position);
+    const polygon = shape.axis
+      ? boardingThinWallOutline(position, shape.axis, BOARDING_METERS.wall)
+      : silhouette(position);
     const occludes = this.#floors.some(
       (floor) =>
         floor.center.y < center.y &&
@@ -104,14 +124,21 @@ export class BoardingWallVisibility {
   blocks(
     point: BoardingPoint,
     ground: BoardingCell,
-    walls: readonly BoardingCell[],
+    walls: readonly (BoardingCell & BoardingWallShape)[],
   ): boolean {
     const depth = boardingIsoCenter(ground).y;
-    return walls.some(
-      (wall) =>
-        boardingIsoCenter(wall).y > depth &&
-        contains(silhouette(wall, this.height(wall)), point),
-    );
+    return walls.some((wall) => {
+      if (boardingIsoCenter(wall).y <= depth) return false;
+      const height = this.height(wall, wall);
+      const polygon = wall.axis
+        ? boardingThinWallOutline(
+            wall,
+            wall.axis,
+            height / BOARDING_VERTICAL_METER,
+          )
+        : silhouette(wall, height);
+      return contains(polygon, point);
+    });
   }
 }
 

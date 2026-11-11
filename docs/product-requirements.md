@@ -1396,6 +1396,11 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 - `meterskala-i-bordning` — **Fullständigt implementerat**. En golvruta är 1 × 1 m. Väggar och ytterskrov är 2,4 m höga; dörrar och airlock har 2,1 m fri öppning. Stående personer och reactor är cirka 1,8 m höga. Half cover är 1,2 m, fortsatt halva vägghöjden. Skalan framgår i kartans förklaring.
 - `genomskinliga-skymmande-vaggar` — **Fullständigt implementerat**. Väggar och ytterskrov som skymmer upptäckta spelbara rutor visas automatiskt som ogenomskinliga, 40 cm höga genomskärningar. Ovansidan har en tydlig metallkant och synligt vägginre. Detta ersätter det tidigare kravet på 35 procents opacitet efter uttrycklig beställning. Spelaren kan välja rutor och synliga personer bakom dem samt välja väggens egen ruta. Okända områden och dolda personer avslöjas inte. Föremål, väggar och personer har gemensam djupordning.
 
+## Tunna innerväggar
+
+- `tunna-innervaggar` — **Fullständigt implementerat**. En tunn innervägg är en tredjedel så tjock som en vanlig vägg och står centrerad på en ruta med golv. Den finns i två riktningar, längs q och längs r. Den inre tredjedelen visar rutans egen golvtextur. Den yttre tredjedelen visar golvtexturen hos grannen den vetter mot, när den grannen har golv och sidan är känd eller ihågkommen. Vetter sidan mot `Outside`, en vanlig vägg eller ytterskrov ritas inget golv där. Väggen är 2,4 m hög, blockerar gång, sikt, skott och ljus, och kan förstöras. En förstörd tunn vägg släpper igenom sikt och skott, men rutan förblir ogångbar. När väggen skymmer upptäckt golv fälls den till samma 40 cm höga snitt som andra väggar.
+- `halvhog-tunn-vagg` — **Fullständigt implementerat**. Samma tunna vägg finns även i halv höjd, 1,2 m, i båda riktningarna. Den fungerar som `Half cover`: den blockerar gång, men inte sikt, skott eller ljus, och ger samma skydd när den står mellan skytt och mål. Den fälls inte. När den förstörs blir rutan gångbar, eftersom väggen står på golv.
+
 ## Belysning i bordning
 
 - `ljuskallestyrd-bordningsbelysning` — **Fullständigt implementerat**. Fasta lampor belyser skeppens rum och korridorer. Ett grundljus gör även obelysta, upptäckta ytor läsbara. Belysningen följer lamporna och är densamma för aktuell sikt och kartminne. Okänd interiör och dolda fiender avslöjas inte.

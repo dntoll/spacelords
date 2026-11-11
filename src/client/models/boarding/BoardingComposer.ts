@@ -7,6 +7,7 @@ import {
   type BoardingShipZone,
   type BoardingSpawns,
   type BoardingRoom,
+  type BoardingTerrain,
 } from './BoardingMap.js';
 import type { CombatShipType } from '../TacticalBattle.js';
 import colonyMap from '../../maps/colony-boarding.txt?raw';
@@ -42,7 +43,7 @@ function transform(
   zone: BoardingShipZone,
 ): {
   lights: BoardingLight[];
-  terrain: Map<string, 'floor' | 'wall' | 'hull'>;
+  terrain: Map<string, BoardingTerrain>;
   rooms: Map<string, BoardingRoom>;
   features: BoardingMap['features'][number][];
   spawns: BoardingSpawns;
@@ -50,7 +51,7 @@ function transform(
   cockpits: BoardingCell[];
   zones: Map<string, BoardingShipZone>;
 } {
-  const terrain = new Map<string, 'floor' | 'wall' | 'hull'>();
+  const terrain = new Map<string, BoardingTerrain>();
   const rooms = new Map<string, BoardingRoom>();
   const zones = new Map<string, BoardingShipZone>();
   for (let r = 0; r < map.height; r++) {
@@ -118,6 +119,7 @@ const blockedSpawn = (map: BoardingMap, cell: BoardingCell): boolean => {
       feature.position.r === cell.r &&
       (feature.kind === 'wall' ||
         feature.kind === 'hull' ||
+        feature.kind === 'thin-wall' ||
         feature.kind === 'reactor' ||
         feature.kind === 'cover' ||
         feature.kind === 'door'),
@@ -216,7 +218,12 @@ export function composeBoardingMaps(
     }
   }
   const features = [...left.features, ...right.features].filter((feature) => {
-    if (feature.kind !== 'hull' && feature.kind !== 'wall') return true;
+    if (
+      feature.kind !== 'hull' &&
+      feature.kind !== 'wall' &&
+      feature.kind !== 'thin-wall'
+    )
+      return true;
     return terrain.get(key(feature.position)) !== 'floor';
   });
   for (const [cellKey, kind] of terrain) {

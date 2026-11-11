@@ -1,8 +1,12 @@
+import { BOARDING_LAYER_SYMBOLS } from '../../../shared/boarding-map-format.js';
+
 export type BoardingCell = Readonly<{ q: number; r: number }>;
 export type BoardingRoom = 'bridge' | 'engineering' | 'cockpit';
-export type BoardingTerrain = 'floor' | 'wall' | 'hull';
+export type BoardingTerrain =
+  'floor' | 'wall' | 'hull' | 'thin-wall' | 'low-thin-wall';
+export type BoardingThinAxis = 'q' | 'r';
 export type BoardingFeatureKind =
-  'door' | 'reactor' | 'cover' | 'exit' | 'wall' | 'hull';
+  'door' | 'reactor' | 'cover' | 'exit' | 'wall' | 'hull' | 'thin-wall';
 
 export interface BoardingFeatureDefinition {
   readonly id: string;
@@ -10,6 +14,52 @@ export interface BoardingFeatureDefinition {
   readonly position: BoardingCell;
   readonly locked?: boolean;
   readonly exit?: 'breach' | 'escape-pod';
+  readonly axis?: BoardingThinAxis;
+  readonly low?: boolean;
+}
+
+/** tunna-innervaggar: Q and q run across q; R and r run across r. */
+export function boardingThinAxisFromSymbol(
+  symbol: string,
+): BoardingThinAxis | null {
+  if (symbol === 'Q' || symbol === 'q') return 'q';
+  if (symbol === 'R' || symbol === 'r') return 'r';
+  return null;
+}
+
+export function boardingThinWallIsLow(symbol: string): boolean {
+  return symbol === 'q' || symbol === 'r';
+}
+
+/** tunna-innervaggar: only floor and thin walls contribute an outer floor band. */
+export function boardingTerrainShowsFloor(
+  terrain: BoardingTerrain | null,
+): boolean {
+  return (
+    terrain === 'floor' ||
+    terrain === 'thin-wall' ||
+    terrain === 'low-thin-wall'
+  );
+}
+
+export function boardingThinNeighbor(
+  position: BoardingCell,
+  axis: BoardingThinAxis,
+): BoardingCell {
+  return Object.freeze(
+    axis === 'q'
+      ? { q: position.q + 1, r: position.r }
+      : { q: position.q, r: position.r + 1 },
+  );
+}
+
+export function boardingThinOutsideTerrain(
+  terrainAt: (cell: BoardingCell) => BoardingTerrain | null,
+  position: BoardingCell,
+  axis: BoardingThinAxis,
+): BoardingTerrain | null {
+  const terrain = terrainAt(boardingThinNeighbor(position, axis));
+  return boardingTerrainShowsFloor(terrain) ? terrain : null;
 }
 
 export interface BoardingLight {
@@ -219,23 +269,45 @@ export function parseBoardingMap(source: string): BoardingMap {
   for (let r = 0; r < height; r++) {
     for (let q = 0; q < width; q++) {
       const position = freezeCell(q, r);
-      const terrainSymbol = symbol('terrain', layers.terrain, '.#HO', q, r);
+      const terrainSymbol = symbol(
+        'terrain',
+        layers.terrain,
+        BOARDING_LAYER_SYMBOLS.terrain,
+        q,
+        r,
+      );
       if (terrainSymbol === 'O') continue;
-      const terrainKind: BoardingTerrain =
-        terrainSymbol === '.'
+      const axis = boardingThinAxisFromSymbol(terrainSymbol);
+      const terrainKind = axis
+        ? boardingThinWallIsLow(terrainSymbol)
+          ? 'low-thin-wall'
+          : 'thin-wall'
+        : terrainSymbol === '.'
           ? 'floor'
           : terrainSymbol === '#'
             ? 'wall'
             : 'hull';
       terrain.set(key(position), terrainKind);
-      if (terrainKind !== 'floor')
+      if (axis)
         features.push(
           Object.freeze({
-            id: `${terrainKind}-${q}-${r}`,
-            kind: terrainKind,
+            id: `thin-wall-${q}-${r}`,
+            kind: 'thin-wall',
+            position,
+            axis,
+            low: terrainKind === 'low-thin-wall',
+          }),
+        );
+      else if (terrainSymbol === '#' || terrainSymbol === 'H') {
+        const kind = terrainSymbol === '#' ? 'wall' : 'hull';
+        features.push(
+          Object.freeze({
+            id: `${kind}-${q}-${r}`,
+            kind,
             position,
           }),
         );
+      }
 
       if (
         layers.lights &&

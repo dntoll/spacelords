@@ -48,6 +48,8 @@ export interface BoardingFeature {
   readonly locked: boolean;
   readonly destroyed: boolean;
   readonly exit: 'breach' | 'escape-pod' | null;
+  readonly axis?: 'q' | 'r';
+  readonly low?: boolean;
 }
 
 export interface BoardingActivation {
@@ -314,6 +316,7 @@ function featureHitPoints(feature: BoardingFeatureDefinition): number {
   if (feature.kind === 'door') return 8;
   if (feature.kind === 'reactor') return 12;
   if (feature.kind === 'wall') return 10;
+  if (feature.kind === 'thin-wall') return feature.low ? 6 : 10;
   if (feature.kind === 'cover') return 6;
   return 999;
 }
@@ -330,6 +333,8 @@ function runtimeFeature(feature: BoardingFeatureDefinition): BoardingFeature {
     locked: feature.locked ?? false,
     destroyed: false,
     exit: feature.exit ?? null,
+    ...(feature.axis ? { axis: feature.axis } : {}),
+    ...(feature.low ? { low: true } : {}),
   });
 }
 
@@ -740,13 +745,19 @@ export class BoardingBattle {
     );
   }
 
+  #canStand(position: BoardingCell): boolean {
+    const terrain = this.#map.terrainAt(position);
+    return terrain === 'floor' || terrain === 'low-thin-wall';
+  }
+
   #passable(position: BoardingCell, moverId: string): boolean {
-    if (this.#map.terrainAt(position) !== 'floor') return false;
+    if (!this.#canStand(position)) return false;
     const feature = this.#featureAt(position);
     if (
       feature &&
       (feature.kind === 'wall' ||
         feature.kind === 'hull' ||
+        feature.kind === 'thin-wall' ||
         feature.kind === 'reactor' ||
         feature.kind === 'cover' ||
         (feature.kind === 'door' && !feature.open))
@@ -759,7 +770,7 @@ export class BoardingBattle {
     const entry = this.#state.people.find(
       (candidate) => candidate.id === id && candidate.status === 'active',
     );
-    if (!entry || this.#map.terrainAt(destination) !== 'floor') return null;
+    if (!entry || !this.#canStand(destination)) return null;
     type Node = {
       position: BoardingCell;
       facing: number;
@@ -871,6 +882,7 @@ export class BoardingBattle {
       feature &&
       (feature.kind === 'wall' ||
         feature.kind === 'hull' ||
+        (feature.kind === 'thin-wall' && !feature.low) ||
         (feature.kind === 'door' && !feature.open))
     )
       return true;
@@ -1085,7 +1097,10 @@ export class BoardingBattle {
     if (lengthSquared === 0) return false;
     return this.#state.features.some((feature) => {
       if (
-        feature.kind !== 'cover' ||
+        !(
+          feature.kind === 'cover' ||
+          (feature.kind === 'thin-wall' && feature.low)
+        ) ||
         feature.destroyed ||
         Math.max(
           Math.abs(feature.position.q - target.q),
@@ -1276,7 +1291,10 @@ export class BoardingBattle {
         hitPoints,
         destroyed,
         open:
-          destroyed && (entry.kind === 'door' || entry.kind === 'wall')
+          destroyed &&
+          (entry.kind === 'door' ||
+            entry.kind === 'wall' ||
+            (entry.kind === 'thin-wall' && !entry.low))
             ? true
             : entry.open,
       };

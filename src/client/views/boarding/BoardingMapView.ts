@@ -8,14 +8,22 @@ import {
 import { BoardingLighting } from './BoardingLighting.js';
 import { BoardingLightPainter } from './BoardingLightPainter.js';
 import p5 from 'p5';
-import { BOARDING_METERS, boardingHeight } from './BoardingScale.js';
+import {
+  BOARDING_METERS,
+  BOARDING_VERTICAL_METER,
+  boardingHeight,
+} from './BoardingScale.js';
 import {
   BoardingWallVisibility,
   boardingDepthOrder,
 } from './BoardingWallVisibility.js';
-import type {
-  BoardingMap,
-  BoardingCell,
+import {
+  boardingTerrainShowsFloor,
+  boardingThinNeighbor,
+  boardingThinOutsideTerrain,
+  type BoardingMap,
+  type BoardingCell,
+  type BoardingThinAxis,
 } from '../../models/boarding/BoardingMap.js';
 import {
   boardingActionPointsRemaining,
@@ -66,7 +74,9 @@ import {
 } from './BoardingProjection.js';
 import {
   paintIsoFloor,
+  paintIsoThinWall,
   paintIsoWall,
+  paintThinWallFloors,
   type IsoImageCache,
 } from './BoardingSurfacePainter.js';
 
@@ -150,7 +160,10 @@ export class BoardingMapView implements BoardingMapPort {
   #lightSignature = '';
   readonly #lightPainter = new BoardingLightPainter();
   #wallVisibility = new BoardingWallVisibility([]);
-  #wallPositions: readonly BoardingCell[] = [];
+  #wallPositions: readonly (BoardingCell & {
+    axis?: BoardingThinAxis;
+    low?: boolean;
+  })[] = [];
   readonly #objects = new Map<BoardingArtwork, p5.Image>();
   #ready = false;
   #disposed = false;
@@ -772,8 +785,8 @@ export class BoardingMapView implements BoardingMapPort {
       ]),
     );
     this.#wallVisibility = new BoardingWallVisibility(
-      [...known.values()].filter(
-        (cell) => this.map.terrainAt(cell) === 'floor',
+      [...known.values()].filter((cell) =>
+        boardingTerrainShowsFloor(this.map.terrainAt(cell)),
       ),
     );
     this.#wallPositions = state.features
@@ -781,9 +794,15 @@ export class BoardingMapView implements BoardingMapPort {
         (feature) =>
           !feature.destroyed &&
           (feature.kind === 'hull' ||
-            (feature.kind === 'wall' && known.has(key(feature.position)))),
+            ((feature.kind === 'wall' || feature.kind === 'thin-wall') &&
+              known.has(key(feature.position)))),
       )
-      .map((feature) => feature.position);
+      .map((feature) => ({
+        ...feature.position,
+        ...(feature.kind === 'thin-wall' && feature.axis
+          ? { axis: feature.axis, low: feature.low === true }
+          : {}),
+      }));
   }
 
   #updateLighting(state: BoardingBattleState): void {
@@ -872,7 +891,7 @@ export class BoardingMapView implements BoardingMapPort {
     known: (position: BoardingCell) => boolean,
   ): void {
     const roomAt = (cell: BoardingCell) =>
-      known(cell) && this.map.terrainAt(cell) === 'floor'
+      known(cell) && boardingTerrainShowsFloor(this.map.terrainAt(cell))
         ? this.map.roomAt(cell)
         : null;
     const tile = this.#wallTiles.get('default');
@@ -935,6 +954,112 @@ export class BoardingMapView implements BoardingMapPort {
           number,
         ]),
       );
+    }
+  }
+
+  #floorTile(position: BoardingCell): p5.Image | null {
+    return (
+      this.#floorTiles.get(
+        boardingSurfaceStyle((cell) => this.map.roomAt(cell), position),
+      ) ??
+      this.#floorTiles.get('default') ??
+      null
+    );
+  }
+
+  /** tunna-innervaggar: split the cell into this floor, the slab and the faced floor. */
+  #paintThinFloors(
+    sketch: p5,
+    position: BoardingCell,
+    axis: BoardingThinAxis,
+    known: (cell: BoardingCell) => boolean,
+  ): void {
+    const neighbor = boardingThinNeighbor(position, axis);
+    const floors = paintThinWallFloors(sketch, position, axis, {
+      cache: (image) => this.#cache(image),
+      floorAt: (cell) => this.#floorTile(cell),
+      showsOutside:
+        boardingThinOutsideTerrain(
+          (cell) => this.map.terrainAt(cell),
+          position,
+          axis,
+        ) !== null,
+      outsideKnown: known(neighbor),
+    });
+    const context = sketch.drawingContext as CanvasRenderingContext2D;
+    const light = this.#lighting.tile(position);
+    const values = [light, light, light, light];
+    this.#lightPainter.paint(context, floors.inside, values);
+    if (floors.outside)
+      this.#lightPainter.paint(context, floors.outside, values);
+  }
+
+  /** tunna-innervaggar / halvhog-tunn-vagg: full thin walls cut away; low walls stay at 1.2 m. */
+  #paintThinWall(
+    sketch: p5,
+    position: BoardingCell,
+    axis: BoardingThinAxis,
+    low: boolean,
+    selected: boolean,
+    peers: ReadonlySet<string>,
+    known: (cell: BoardingCell) => boolean,
+  ): void {
+    const height = this.#wallVisibility.height(position, { axis, low });
+    const roomAt = (cell: BoardingCell) =>
+      known(cell) && boardingTerrainShowsFloor(this.map.terrainAt(cell))
+        ? this.map.roomAt(cell)
+        : null;
+    const faced =
+      boardingThinOutsideTerrain(
+        (cell) => this.map.terrainAt(cell),
+        position,
+        axis,
+      ) !== null
+        ? boardingThinNeighbor(position, axis)
+        : position;
+    const tile = this.#wallTiles.get('default');
+    const option = (image: p5.Image | undefined | null) =>
+      image ? { tile: image, cache: this.#cache(image) } : undefined;
+    const mesh = paintIsoThinWall(
+      sketch,
+      tile ?? null,
+      tile ? this.#cache(tile) : { floor: null, wall: null },
+      position,
+      axis,
+      peers,
+      height,
+      {
+        face: option(this.#wallTiles.get(boardingSurfaceStyle(roomAt, faced))),
+        top: option(this.#wallTop),
+        section:
+          !low && height < boardingFeatureHeight('wall') && !this.#wallTop,
+      },
+    );
+    const context = sketch.drawingContext as CanvasRenderingContext2D;
+    const meters = height / BOARDING_VERTICAL_METER;
+    const longFace = axis === 'q' ? 'southEast' : 'southWest';
+    const endFace = axis === 'q' ? 'southWest' : 'southEast';
+    this.#lightPainter.paint(
+      context,
+      mesh.longFace,
+      this.#lighting.surface(position, longFace, meters),
+    );
+    this.#lightPainter.paint(
+      context,
+      mesh.endFace,
+      this.#lighting.surface(position, endFace, meters),
+    );
+    this.#lightPainter.paint(
+      context,
+      mesh.top,
+      this.#lighting.surface(position, 'top', meters),
+    );
+    if (selected) {
+      sketch.noStroke();
+      sketch.fill(244, 207, 90, 72);
+      sketch.beginShape();
+      for (const point of mesh.top) sketch.vertex(point.x, point.y);
+      sketch.endShape(sketch.CLOSE);
     }
   }
 
@@ -1151,6 +1276,13 @@ export class BoardingMapView implements BoardingMapPort {
       ...state.features.filter((feature) => feature.id === this.#selectedId),
     ][0]?.position;
     const selectedTile = selectedCell ? key(selectedCell) : null;
+    const thinAt = new Map(
+      state.features
+        .filter((feature) => feature.kind === 'thin-wall' && feature.axis)
+        .map((feature) => [key(feature.position), feature] as const),
+    );
+    const seen = (cell: BoardingCell) =>
+      visible.has(key(cell)) || explored.has(key(cell));
     for (let r = 0; r < this.map.height; r++) {
       for (let q = 0; q < this.map.width; q++) {
         const position = { q, r };
@@ -1160,24 +1292,29 @@ export class BoardingMapView implements BoardingMapPort {
         const current = visible.has(key(position));
         const remembered = explored.has(key(position));
         const knownHull = terrain === 'hull';
-        const paintedFloor =
-          terrain === 'floor' &&
-          (current || remembered) &&
-          this.#paintFloor(sketch, position);
-        if (!paintedFloor) {
-          sketch.stroke('#3c4b65');
-          sketch.strokeWeight(1.2);
-          if (current || remembered) sketch.fill('#24334a');
-          else if (knownHull) sketch.fill('#343d4c');
-          else sketch.fill('#080c15');
-          this.#tile(sketch, position);
+        const thin = thinAt.get(key(position));
+        if (thin?.axis && (current || remembered))
+          this.#paintThinFloors(sketch, position, thin.axis, seen);
+        else {
+          const paintedFloor =
+            terrain === 'floor' &&
+            (current || remembered) &&
+            this.#paintFloor(sketch, position);
+          if (!paintedFloor) {
+            sketch.stroke('#3c4b65');
+            sketch.strokeWeight(1.2);
+            if (current || remembered) sketch.fill('#24334a');
+            else if (knownHull) sketch.fill('#343d4c');
+            else sketch.fill('#080c15');
+            this.#tile(sketch, position);
+          }
+          if (terrain === 'floor' && (current || remembered))
+            this.#lightPainter.paint(
+              sketch.drawingContext as CanvasRenderingContext2D,
+              boardingIsoCorners(position),
+              this.#lighting.surface(position, 'floor'),
+            );
         }
-        if (terrain === 'floor' && (current || remembered))
-          this.#lightPainter.paint(
-            sketch.drawingContext as CanvasRenderingContext2D,
-            boardingIsoCorners(position),
-            this.#lighting.surface(position, 'floor'),
-          );
         if (fire.has(key(position))) {
           sketch.fill(98, 212, 138, 115);
           this.#tile(sketch, position);
@@ -1229,6 +1366,24 @@ export class BoardingMapView implements BoardingMapPort {
         )
         .map((feature) => key(feature.position)),
     );
+    const thinPeers = {
+      q: new Set<string>(),
+      r: new Set<string>(),
+      lowQ: new Set<string>(),
+      lowR: new Set<string>(),
+    };
+    for (const feature of state.features) {
+      if (feature.kind !== 'thin-wall' || feature.destroyed || !feature.axis)
+        continue;
+      const peers = feature.low
+        ? feature.axis === 'q'
+          ? thinPeers.lowQ
+          : thinPeers.lowR
+        : feature.axis === 'q'
+          ? thinPeers.q
+          : thinPeers.r;
+      peers.add(key(feature.position));
+    }
     for (const feature of state.features) {
       if (feature.kind !== 'hull' && !known(feature.position)) continue;
       const floor = boardingIsoCenter(feature.position);
@@ -1243,6 +1398,7 @@ export class BoardingMapView implements BoardingMapPort {
               !feature.destroyed &&
               (feature.kind === 'hull' ||
                 feature.kind === 'wall' ||
+                feature.kind === 'thin-wall' ||
                 (feature.kind === 'door' && !feature.open) ||
                 feature.kind === 'cover' ||
                 feature.kind === 'reactor');
@@ -1259,9 +1415,33 @@ export class BoardingMapView implements BoardingMapPort {
               );
               return;
             }
+            if (raised && feature.kind === 'thin-wall' && feature.axis) {
+              const peers = feature.low
+                ? feature.axis === 'q'
+                  ? thinPeers.lowQ
+                  : thinPeers.lowR
+                : feature.axis === 'q'
+                  ? thinPeers.q
+                  : thinPeers.r;
+              this.#paintThinWall(
+                sketch,
+                feature.position,
+                feature.axis,
+                feature.low === true,
+                feature.id === this.#selectedId,
+                peers,
+                known,
+              );
+              return;
+            }
             const artwork = boardingObjectArtwork(feature, (q, r) => {
               const terrain = this.map.terrainAt({ q, r });
-              return terrain === 'wall' || terrain === 'hull';
+              return (
+                terrain === 'wall' ||
+                terrain === 'hull' ||
+                terrain === 'thin-wall' ||
+                terrain === 'low-thin-wall'
+              );
             });
             if (
               artwork &&

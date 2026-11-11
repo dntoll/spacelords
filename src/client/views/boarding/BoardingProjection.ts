@@ -1,6 +1,7 @@
 import type {
   BoardingCell,
   BoardingFeatureKind,
+  BoardingThinAxis,
 } from '../../models/boarding/BoardingMap.js';
 
 import {
@@ -209,6 +210,174 @@ export function boardingIsoBlockFaces(
     southWest: [topSouth, topWest, baseWest, baseSouth],
     apex: { x: center.x, y: center.y - height },
   };
+}
+
+interface CellPoint {
+  readonly q: number;
+  readonly r: number;
+}
+
+/** tunna-innervaggar: three equal bands, with the wall centered on the cell. */
+export function boardingThinWallCells(
+  position: BoardingCell,
+  axis: BoardingThinAxis,
+): Readonly<{
+  inside: readonly CellPoint[];
+  wall: readonly CellPoint[];
+  outside: readonly CellPoint[];
+}> {
+  const half = BOARDING_METERS.thinWall / 2;
+  const band = (start: number, end: number): readonly CellPoint[] => {
+    const { q, r } = position;
+    return axis === 'q'
+      ? [
+          { q: q + start, r: r - 0.5 },
+          { q: q + end, r: r - 0.5 },
+          { q: q + end, r: r + 0.5 },
+          { q: q + start, r: r + 0.5 },
+        ]
+      : [
+          { q: q - 0.5, r: r + start },
+          { q: q + 0.5, r: r + start },
+          { q: q + 0.5, r: r + end },
+          { q: q - 0.5, r: r + end },
+        ];
+  };
+  return Object.freeze({
+    inside: Object.freeze(band(-0.5, -half)),
+    wall: Object.freeze(band(-half, half)),
+    outside: Object.freeze(band(half, 0.5)),
+  });
+}
+
+export interface BoardingThinFloorBand {
+  readonly polygon: readonly BoardingPoint[];
+  readonly origin: BoardingPoint;
+  readonly alongU: BoardingPoint;
+  readonly alongV: BoardingPoint;
+  readonly u: number;
+  readonly v: number;
+  readonly uSpan: number;
+  readonly vSpan: number;
+}
+
+function projectCell(point: CellPoint, meters = 0): BoardingPoint {
+  return boardingWorldPoint(point.q, point.r, meters);
+}
+
+function floorBand(
+  cells: readonly CellPoint[],
+  axis: BoardingThinAxis,
+  outside: boolean,
+): BoardingThinFloorBand {
+  const screen = cells.map((cell) => projectCell(cell));
+  const polygon = outside
+    ? axis === 'q'
+      ? [screen[1]!, screen[0]!, screen[3]!, screen[2]!]
+      : [screen[3]!, screen[2]!, screen[1]!, screen[0]!]
+    : screen;
+  return Object.freeze({
+    polygon: Object.freeze(polygon),
+    origin: polygon[0]!,
+    alongU: polygon[1]!,
+    alongV: polygon[3]!,
+    u: 0,
+    v: 0,
+    uSpan: axis === 'q' ? BOARDING_METERS.thinWall : 1,
+    vSpan: axis === 'r' ? BOARDING_METERS.thinWall : 1,
+  });
+}
+
+export function boardingThinFloorBands(
+  position: BoardingCell,
+  axis: BoardingThinAxis,
+): Readonly<{ inside: BoardingThinFloorBand; outside: BoardingThinFloorBand }> {
+  const cells = boardingThinWallCells(position, axis);
+  return Object.freeze({
+    inside: floorBand(cells.inside, axis, false),
+    outside: floorBand(cells.outside, axis, true),
+  });
+}
+
+export interface BoardingThinWallMesh {
+  readonly top: readonly BoardingPoint[];
+  readonly longFace: readonly BoardingPoint[];
+  readonly endFace: readonly BoardingPoint[];
+  readonly lengthAxis: 'q' | 'r';
+  readonly topOrigin: BoardingPoint;
+  readonly topAlongLength: BoardingPoint;
+  readonly topAlongThickness: BoardingPoint;
+}
+
+/** tunna-innervaggar: camera-facing long side and short end of a centered slab. */
+export function boardingThinWallMesh(
+  position: BoardingCell,
+  axis: BoardingThinAxis,
+  meters: number,
+): BoardingThinWallMesh {
+  const cells = boardingThinWallCells(position, axis).wall;
+  const ground = cells.map((cell) => projectCell(cell));
+  const top = cells.map((cell) => projectCell(cell, meters));
+  const face = (first: number, second: number): readonly BoardingPoint[] =>
+    Object.freeze([top[first]!, top[second]!, ground[second]!, ground[first]!]);
+  const long = axis === 'q' ? face(1, 2) : face(3, 2);
+  const end = axis === 'q' ? face(2, 3) : face(1, 2);
+  return Object.freeze({
+    top: Object.freeze(top),
+    longFace: long,
+    endFace: end,
+    lengthAxis: axis === 'q' ? 'r' : 'q',
+    topOrigin: top[0]!,
+    topAlongLength: axis === 'q' ? top[3]! : top[1]!,
+    topAlongThickness: axis === 'q' ? top[1]! : top[3]!,
+  });
+}
+
+function convexHull(
+  points: readonly BoardingPoint[],
+): readonly BoardingPoint[] {
+  const unique: BoardingPoint[] = [];
+  for (const point of points)
+    if (
+      !unique.some(
+        (entry) =>
+          Math.abs(entry.x - point.x) < 1e-6 &&
+          Math.abs(entry.y - point.y) < 1e-6,
+      )
+    )
+      unique.push(point);
+  if (unique.length < 3) return Object.freeze(unique);
+  const sorted = [...unique].sort((a, b) => a.x - b.x || a.y - b.y);
+  const cross = (o: BoardingPoint, a: BoardingPoint, b: BoardingPoint) =>
+    (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const build = (source: readonly BoardingPoint[]): BoardingPoint[] => {
+    const hull: BoardingPoint[] = [];
+    for (const point of source) {
+      while (
+        hull.length >= 2 &&
+        cross(hull[hull.length - 2]!, hull[hull.length - 1]!, point) <= 0
+      )
+        hull.pop();
+      hull.push(point);
+    }
+    return hull;
+  };
+  const lower = build(sorted);
+  const upper = build([...sorted].reverse());
+  lower.pop();
+  upper.pop();
+  return Object.freeze([...lower, ...upper]);
+}
+
+export function boardingThinWallOutline(
+  position: BoardingCell,
+  axis: BoardingThinAxis,
+  meters: number,
+): readonly BoardingPoint[] {
+  const cells = boardingThinWallCells(position, axis).wall;
+  return convexHull(
+    cells.flatMap((cell) => [projectCell(cell), projectCell(cell, meters)]),
+  );
 }
 
 export function boardingCellFromIsoPoint(point: BoardingPoint): BoardingCell {

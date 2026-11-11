@@ -298,18 +298,22 @@ Andra möjliga bildbehov är breach, escape pod, förstörda varianter av miljö
 
 `meterskala-i-bordning` och `genomskinliga-skymmande-vaggar` är **Fullständigt implementerat**.
 
-| Del                                 | Mått            |
-| ----------------------------------- | --------------- |
-| Golvruta                            | 1 × 1 m         |
-| Vägg och ytterskrov                 | 2,4 m hög       |
-| Dörrens och airlockens fria öppning | 2,1 m hög       |
-| Stående person                      | cirka 1,8 m hög |
-| Reactor                             | 1,8 m hög       |
-| Half cover                          | 1,2 m hög       |
+| Del                                 | Mått                   |
+| ----------------------------------- | ---------------------- |
+| Golvruta                            | 1 × 1 m                |
+| Vägg och ytterskrov                 | 2,4 m hög              |
+| Dörrens och airlockens fria öppning | 2,1 m hög              |
+| Stående person                      | cirka 1,8 m hög        |
+| Reactor                             | 1,8 m hög              |
+| Half cover                          | 1,2 m hög              |
+| Tunn innervägg                      | 1/3 m tjock, 2,4 m hög |
+| Halvhög tunn vägg                   | 1/3 m tjock, 1,2 m hög |
 
 Dessa mått ersätter tidigare oberoende pixelstorlekar i `isometrisk-bordningsvy` och `isometriska-bordningsobjekt`. Half cover behåller sin tidigare relation till vägghöjden. Rörelse-, sikt- och stridsregler ändras inte, och sparningar är kompatibla.
 
-Väggar och ytterskrov som överlappar upptäckt golv bakom sig visas som ogenomskinliga 40 cm höga genomskärningar. Både aktuell sikt och kartminne kan utlösa snittet, men okänt golv gör det inte. Ovansidan visar en ljus metallkant, mörkare kärna och förstärkningsribbor längs väggsträckan. Figurer och föremål behåller gemensam djupordning med väggarna. Klick ovanför snittet når synliga figurer bakom, medan den kvarvarande väggen blockerar klick på täckta figurdelar. Sikt, skott och ljusblockering använder den fullständiga väggen. Denna uttryckliga ändring ersätter tidigare 35 procents opacitet; det stabila kravnamnet `genomskinliga-skymmande-vaggar` behålls.
+`tunna-innervaggar` och `halvhog-tunn-vagg` är **Fullständigt implementerat**. En tunn innervägg står centrerad på en golvruta och är en tredjedel så tjock som en vanlig vägg. `Q` och `q` är tjocka längs q och vänder det yttre golvet mot `(q+1, r)`. `R` och `r` gör detsamma längs r mot `(q, r+1)`. Den inre tredjedelen visar rutans golvtextur. Den yttre tredjedelen visar grannens golvtextur när grannen har golv och sidan är känd eller ihågkommen. `Outside`, vanlig vägg och ytterskrov lämnar den yttre tredjedelen utan golv. `Q` och `R` är 2,4 m, blockerar gång, sikt, skott och ljus, har 10 träffpunkter och fälls till 40 cm när de skymmer upptäckt golv. En förstörd fullhög tunn vägg släpper igenom sikt och skott men rutan förblir ogångbar. `q` och `r` är 1,2 m och fungerar som `Half cover` i båda riktningarna: de blockerar gång, inte sikt, skott eller ljus, ger samma skydd och har 6 träffpunkter. De fälls inte. När de förstörs blir rutan gångbar. Editorns penslar heter `Thin wall q`, `Thin wall r`, `Low thin wall q` och `Low thin wall r`. Befintliga kartor och `Half cover` ändras inte.
+
+Väggar och ytterskrov som överlappar upptäckt golv bakom sig visas som ogenomskinliga 40 cm höga genomskärningar. Både aktuell sikt och kartminne kan utlösa snittet, men okänt golv gör det inte. Fullhöga tunna väggar använder samma snitt. Halvhöga tunna väggar gör det inte. Ovansidan visar en ljus metallkant, mörkare kärna och förstärkningsribbor längs väggsträckan. Figurer och föremål behåller gemensam djupordning med väggarna. Klick ovanför snittet når synliga figurer bakom, medan den kvarvarande väggen blockerar klick på täckta figurdelar. Sikt, skott och ljusblockering använder den fullständiga väggen. Denna uttryckliga ändring ersätter tidigare 35 procents opacitet; det stabila kravnamnet `genomskinliga-skymmande-vaggar` behålls.
 
 Bildoriginalen med suffixet `-meters` ersätter de tidigare dörr- och airlockbilderna. Reactor, Half cover, golv, väggtextur och figurer återanvänds och anpassas till måtten. [Prompter och bildberedning](image-prompts/boarding-scale.md) beskriver leveransen. Jämförelsescen och spelvyn har granskats i mobilens stående och liggande format; riktade tester skyddar skala, ritordning, skymning, val genom väggar och dold information.
 

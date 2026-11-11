@@ -26,11 +26,17 @@ import {
   type BoardingArtwork,
 } from './BoardingObjectArtwork.js';
 import { BoardingWallVisibility } from './BoardingWallVisibility.js';
-import { parseBoardingMap } from '../../models/boarding/BoardingMap.js';
+import {
+  boardingThinAxisFromSymbol,
+  boardingThinNeighbor,
+  boardingThinOutsideTerrain,
+  boardingThinWallIsLow,
+  parseBoardingMap,
+} from '../../models/boarding/BoardingMap.js';
 import { formatBoardingMap } from '../../../shared/boarding-map-format.js';
 import { BoardingLighting } from './BoardingLighting.js';
 import { BoardingLightPainter } from './BoardingLightPainter.js';
-import { boardingHeight } from './BoardingScale.js';
+import { BOARDING_METERS, boardingHeight } from './BoardingScale.js';
 import { SHIP_SPRITES, type ShipSpriteType } from '../ShipImages.js';
 import {
   boardingFeatureGlyph,
@@ -48,7 +54,9 @@ import {
   paintIsoBlock,
   paintIsoDiamond,
   paintIsoFloor,
+  paintIsoThinWall,
   paintIsoWall,
+  paintThinWallFloors,
   type IsoImageCache,
 } from './BoardingSurfacePainter.js';
 
@@ -70,6 +78,10 @@ const TERRAIN_FILL: Readonly<Record<string, string>> = {
   '.': '#3d6a7a99',
   '#': '#6b5d3acc',
   H: '#24323ccc',
+  Q: '#8aa0b8cc',
+  R: '#8aa0b8cc',
+  q: '#c4a574cc',
+  r: '#c4a574cc',
 };
 
 const ROOM_FILL: Readonly<Record<string, string>> = {
@@ -93,6 +105,17 @@ function glyph(
     if (symbol === 'A') return 'A';
   }
   return symbol;
+}
+
+function editorTerrain(symbol: string | undefined) {
+  if (!symbol || symbol === 'O') return null;
+  if (symbol === '.') return 'floor' as const;
+  if (symbol === '#') return 'wall' as const;
+  if (symbol === 'H') return 'hull' as const;
+  if (!boardingThinAxisFromSymbol(symbol)) return null;
+  return boardingThinWallIsLow(symbol)
+    ? ('low-thin-wall' as const)
+    : ('thin-wall' as const);
 }
 
 function objectKind(symbol: string): 'door' | 'cover' | 'wall' | 'hull' | null {
@@ -502,6 +525,25 @@ export class BoardingEditorMapView {
           sketch.fill(ROOM_FILL[room] ?? '#3f5f9f99');
           sketch.rect(q * size, r * size, size, size);
         }
+        const thinAxis = boardingThinAxisFromSymbol(terrain);
+        if (thinAxis) {
+          sketch.fill(boardingThinWallIsLow(terrain) ? '#d7b07a' : '#e7eef5');
+          const inset = (1 - BOARDING_METERS.thinWall) / 2;
+          if (thinAxis === 'q')
+            sketch.rect(
+              (q + inset) * size,
+              r * size,
+              size * BOARDING_METERS.thinWall,
+              size,
+            );
+          else
+            sketch.rect(
+              q * size,
+              (r + inset) * size,
+              size,
+              size * BOARDING_METERS.thinWall,
+            );
+        }
         sketch.noFill();
         sketch.stroke('#8eb0c255');
         sketch.rect(q * size, r * size, size, size);
@@ -537,8 +579,17 @@ export class BoardingEditorMapView {
       sketch.pop();
     }
     const walls = new Set<string>();
+    const structure = new Set<string>();
+    const thinPeers: Record<string, Set<string>> = {
+      Q: new Set(),
+      R: new Set(),
+      q: new Set(),
+      r: new Set(),
+    };
     const roomAt = ({ q, r }: { q: number; r: number }) => {
-      if (snapshot.layers.terrain[r]?.[q] !== '.') return null;
+      const terrain = snapshot.layers.terrain[r]?.[q];
+      if (terrain !== '.' && !boardingThinAxisFromSymbol(terrain ?? ''))
+        return null;
       const symbol = snapshot.layers.rooms[r]?.[q];
       return symbol === 'B'
         ? ('bridge' as const)
@@ -553,8 +604,16 @@ export class BoardingEditorMapView {
       for (let q = 0; q < snapshot.width; q++) {
         const terrain = snapshot.layers.terrain[r]?.[q] ?? 'H';
         if (terrain === 'O') continue;
-        if (terrain === '.') floors.push({ q, r });
+        if (terrain === '.' || boardingThinAxisFromSymbol(terrain))
+          floors.push({ q, r });
         if (terrain === '#' || terrain === 'H') walls.add(wallKey(q, r));
+        if (
+          terrain === '#' ||
+          terrain === 'H' ||
+          boardingThinAxisFromSymbol(terrain)
+        )
+          structure.add(wallKey(q, r));
+        thinPeers[terrain]?.add(wallKey(q, r));
       }
     }
     const visibility = new BoardingWallVisibility(floors);
@@ -567,11 +626,50 @@ export class BoardingEditorMapView {
           this.#floorTiles.get(boardingSurfaceStyle(roomAt, position)) ??
           this.#floorTiles.get('default') ??
           null;
+        const thinAxis = boardingThinAxisFromSymbol(terrain);
+        if (thinAxis) {
+          const floorsPainted = paintThinWallFloors(
+            sketch,
+            position,
+            thinAxis,
+            {
+              cache: (image) => this.#cache(image),
+              floorAt: (cell) =>
+                this.#floorTiles.get(boardingSurfaceStyle(roomAt, cell)) ??
+                this.#floorTiles.get('default') ??
+                null,
+              showsOutside:
+                boardingThinOutsideTerrain(
+                  (cell) =>
+                    editorTerrain(snapshot.layers.terrain[cell.r]?.[cell.q]),
+                  position,
+                  thinAxis,
+                ) !== null,
+              outsideKnown: true,
+            },
+          );
+          if (this.#lighting) {
+            const light = this.#lighting.tile(position);
+            const values = [light, light, light, light];
+            this.#lightPainter.paint(
+              sketch.drawingContext as CanvasRenderingContext2D,
+              floorsPainted.inside,
+              values,
+            );
+            if (floorsPainted.outside)
+              this.#lightPainter.paint(
+                sketch.drawingContext as CanvasRenderingContext2D,
+                floorsPainted.outside,
+                values,
+              );
+          }
+        }
         const paintedFloor =
+          !thinAxis &&
           terrain === '.' &&
           floor !== null &&
           paintIsoFloor(sketch, floor, this.#cache(floor), position);
-        if (!paintedFloor) {
+        if (!thinAxis && !paintedFloor) {
           sketch.noStroke();
           sketch.fill(
             terrain === '.'
@@ -656,6 +754,62 @@ export class BoardingEditorMapView {
             );
         }
       }
+      const thinAxis = boardingThinAxisFromSymbol(terrain);
+      if (thinAxis) {
+        const low = boardingThinWallIsLow(terrain);
+        const height = visibility.height(position, { axis: thinAxis, low });
+        const faced =
+          boardingThinOutsideTerrain(
+            (cell) => editorTerrain(snapshot.layers.terrain[cell.r]?.[cell.q]),
+            position,
+            thinAxis,
+          ) !== null
+            ? boardingThinNeighbor(position, thinAxis)
+            : position;
+        const wall = this.#wallTiles.get('default') ?? null;
+        const option = (image: p5.Image | undefined | null) =>
+          image ? { tile: image, cache: this.#cache(image) } : undefined;
+        const mesh = paintIsoThinWall(
+          sketch,
+          wall,
+          wall ? this.#cache(wall) : { floor: null, wall: null },
+          position,
+          thinAxis,
+          thinPeers[terrain] ?? new Set(),
+          height,
+          {
+            face: option(
+              this.#wallTiles.get(boardingSurfaceStyle(roomAt, faced)),
+            ),
+            top: option(this.#wallTop),
+            section:
+              !low &&
+              height < boardingHeight(BOARDING_METERS.wall) &&
+              !this.#wallTop,
+          },
+        );
+        if (this.#lighting) {
+          const meters = height / boardingHeight(1);
+          const longFace = thinAxis === 'q' ? 'southEast' : 'southWest';
+          const endFace = thinAxis === 'q' ? 'southWest' : 'southEast';
+          const context = sketch.drawingContext as CanvasRenderingContext2D;
+          this.#lightPainter.paint(
+            context,
+            mesh.longFace,
+            this.#lighting.surface(position, longFace, meters),
+          );
+          this.#lightPainter.paint(
+            context,
+            mesh.endFace,
+            this.#lighting.surface(position, endFace, meters),
+          );
+          this.#lightPainter.paint(
+            context,
+            mesh.top,
+            this.#lighting.surface(position, 'top', meters),
+          );
+        }
+      }
       const kind = objectKind(object);
       const featureKind = object === 'R' ? 'reactor' : kind;
       const artwork =
@@ -663,7 +817,7 @@ export class BoardingEditorMapView {
           ? 'airlock'
           : featureKind
             ? boardingObjectArtwork({ kind: featureKind, position }, (q, r) =>
-                walls.has(wallKey(q, r)),
+                structure.has(wallKey(q, r)),
               )
             : null;
       const image = artwork ? this.#objects.get(artwork) : undefined;

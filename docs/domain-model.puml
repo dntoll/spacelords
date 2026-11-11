@@ -479,12 +479,20 @@ package "Kampanjbordning" {
     status: active | incapacitated | dead | evacuated
   }
   class BoardingFeature {
-    kind: door | wall | reactor | cover | exit
+    kind: door | wall | reactor | cover | exit | thin-wall
     position: BoardingCell
+    axis: q | r
+    low
     hitPoints
     open
     locked
   }
+  note right of BoardingFeature
+    tunna-innervaggar:
+    Q och R är 1/3 m innerväggar på golv.
+    halvhog-tunn-vagg:
+    q och r är 1,2 m, ger Half cover och fälls inte.
+  end note
   class BoardingKnowledge {
     visibleCells
     exploredCells

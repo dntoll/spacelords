@@ -2,6 +2,7 @@
 export const BOARDING_METERS = Object.freeze({
   tile: 1,
   wall: 2.4,
+  thinWall: 1 / 3,
   cutawayWall: 0.4,
   opening: 2.1,
   frame: 2.3,

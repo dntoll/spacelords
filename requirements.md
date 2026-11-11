@@ -84,6 +84,8 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Meterskala och skymmande väggar:** `meterskala-i-bordning` och `genomskinliga-skymmande-vaggar` är **Fullständigt implementerat**. En ruta är 1 × 1 m, väggar 2,4 m, dörröppningar 2,1 m och Half cover 1,2 m. Väggar som täcker upptäckta spelrutor visas som ogenomskinliga 40 cm höga snitt med synligt vägginre. Detta ersätter den tidigare transparensen efter uttrycklig beställning. Se [bordningsstrid](docs/boarding-combat.md).
 
+- **Tunna innerväggar:** `tunna-innervaggar` och `halvhog-tunn-vagg` är **Fullständigt implementerat**. En tunn vägg är 1/3 m tjock, står på en golvruta och finns längs q eller r. Rutans golvtextur ritas på den inre sidan och grannens golv på den yttre, utom när den sidan är `Outside`, vägg eller ytterskrov. Fullhöga tunna väggar fälls som andra väggar. Halvhöga tunna väggar är 1,2 m, ger `Half cover` och fälls inte. Se [bordningsstrid](docs/boarding-combat.md).
+
 - **Bordningsgrafik:** `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock, reactor, Half cover och öppna och stängda dörrar i två riktningar visas med isometrisk grafik utan inbyggt golv. Se [bordningsstrid](docs/boarding-combat.md).
 
 - **Lokal bordningskarteditor:** `lokal-bordningskarteditor` och

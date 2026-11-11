@@ -1,5 +1,10 @@
 ﻿import type p5 from 'p5';
-import type { BoardingCell } from '../../models/boarding/BoardingMap.js';
+import {
+  boardingThinNeighbor,
+  type BoardingCell,
+  type BoardingThinAxis,
+} from '../../models/boarding/BoardingMap.js';
+import { BOARDING_VERTICAL_METER } from './BoardingScale.js';
 import {
   boardingFeatureFootprint,
   boardingFeatureHeight,
@@ -8,9 +13,12 @@ import {
   boardingIsoCorners,
   boardingIsoTextureTransform,
   boardingQuadTextureTransform,
+  boardingThinFloorBands,
+  boardingThinWallMesh,
   boardingWallRun,
   boardingWallSlice,
   type BoardingPoint,
+  type BoardingThinWallMesh,
 } from './BoardingProjection.js';
 
 /** spelidentisk-bordningseditor: shared floor and wall projection for combat and the editor. */
@@ -203,6 +211,237 @@ export function paintIsoWall(
     faces.top,
   );
   return true;
+}
+
+export function paintIsoPolygon(
+  sketch: p5,
+  polygon: readonly BoardingPoint[],
+  color: string,
+): void {
+  const first = polygon[0];
+  if (!first) return;
+  sketch.noStroke();
+  sketch.fill(color);
+  sketch.beginShape();
+  for (const point of polygon) sketch.vertex(point.x, point.y);
+  sketch.endShape(sketch.CLOSE);
+}
+
+/** tunna-innervaggar: one third of a floor texture, clipped to that band. */
+export function paintIsoFloorBand(
+  sketch: p5,
+  tile: p5.Image | null,
+  cache: IsoImageCache,
+  band: {
+    readonly polygon: readonly BoardingPoint[];
+    readonly origin: BoardingPoint;
+    readonly alongU: BoardingPoint;
+    readonly alongV: BoardingPoint;
+    readonly u: number;
+    readonly v: number;
+    readonly uSpan: number;
+    readonly vSpan: number;
+  },
+): boolean {
+  if (!tile || tile.width < 2 || tile.height < 2) return false;
+  const source = imageSource(tile, cache, 'floor');
+  const first = band.polygon[0];
+  if (!source || !first || band.uSpan <= 0 || band.vSpan <= 0) return false;
+  const region = {
+    x: band.u * tile.width,
+    y: band.v * tile.height,
+    width: band.uSpan * tile.width,
+    height: band.vSpan * tile.height,
+  };
+  const [a, b, c, d, e, f] = boardingQuadTextureTransform(
+    region.width,
+    region.height,
+    band.origin,
+    band.alongU,
+    band.alongV,
+  );
+  const ctx = sketch.drawingContext as CanvasRenderingContext2D;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(first.x, first.y);
+  for (const corner of band.polygon.slice(1)) ctx.lineTo(corner.x, corner.y);
+  ctx.closePath();
+  ctx.clip();
+  ctx.transform(a, b, c, d, e, f);
+  ctx.drawImage(
+    source,
+    region.x,
+    region.y,
+    region.width,
+    region.height,
+    0,
+    0,
+    region.width,
+    region.height,
+  );
+  ctx.restore();
+  return true;
+}
+
+/** tunna-innervaggar: inside floor is this cell; outside floor is the faced neighbor. */
+export function paintThinWallFloors(
+  sketch: p5,
+  position: BoardingCell,
+  axis: BoardingThinAxis,
+  options: {
+    readonly cache: (image: p5.Image) => IsoImageCache;
+    readonly floorAt: (cell: BoardingCell) => p5.Image | null;
+    readonly showsOutside: boolean;
+    readonly outsideKnown: boolean;
+  },
+): {
+  readonly inside: readonly BoardingPoint[];
+  readonly outside: readonly BoardingPoint[] | null;
+} {
+  const bands = boardingThinFloorBands(position, axis);
+  const own = options.floorAt(position);
+  if (!own || !paintIsoFloorBand(sketch, own, options.cache(own), bands.inside))
+    paintIsoPolygon(sketch, bands.inside.polygon, '#24334a');
+  if (!options.showsOutside)
+    return { inside: bands.inside.polygon, outside: null };
+  if (!options.outsideKnown) {
+    paintIsoPolygon(sketch, bands.outside.polygon, '#080c15');
+    return { inside: bands.inside.polygon, outside: bands.outside.polygon };
+  }
+  const neighbor = boardingThinNeighbor(position, axis);
+  const tile = options.floorAt(neighbor);
+  if (
+    !tile ||
+    !paintIsoFloorBand(sketch, tile, options.cache(tile), bands.outside)
+  )
+    paintIsoPolygon(sketch, bands.outside.polygon, '#24334a');
+  return { inside: bands.inside.polygon, outside: bands.outside.polygon };
+}
+
+function paintCutawayTop(
+  sketch: p5,
+  top: readonly BoardingPoint[],
+  axis: BoardingThinAxis,
+): void {
+  const first = top[0];
+  const opposite = top[2];
+  if (!first || !opposite) return;
+  const center = {
+    x: (first.x + opposite.x) / 2,
+    y: (first.y + opposite.y) / 2,
+  };
+  const quad = (points: readonly BoardingPoint[]) => {
+    sketch.beginShape();
+    for (const point of points) sketch.vertex(point.x, point.y);
+    sketch.endShape(sketch.CLOSE);
+  };
+  sketch.noStroke();
+  sketch.fill('#b1becb');
+  quad(top);
+  const inner = top.map((point) => ({
+    x: center.x + (point.x - center.x) * 0.76,
+    y: center.y + (point.y - center.y) * 0.76,
+  }));
+  sketch.fill('#303c48');
+  quad(inner);
+  const along = inner[axis === 'q' ? 3 : 1];
+  const across = inner[axis === 'q' ? 1 : 3];
+  const start = inner[0];
+  if (!along || !across || !start) return;
+  sketch.stroke('#7c8b9b');
+  sketch.strokeWeight(1.5);
+  for (const fraction of [0.25, 0.75]) {
+    const x = start.x + (along.x - start.x) * fraction;
+    const y = start.y + (along.y - start.y) * fraction;
+    sketch.line(x, y, x + across.x - start.x, y + across.y - start.y);
+  }
+  sketch.noStroke();
+}
+
+/** tunna-innervaggar / halvhog-tunn-vagg: slab using the existing wall textures. */
+export function paintIsoThinWall(
+  sketch: p5,
+  tile: p5.Image | null,
+  cache: IsoImageCache,
+  position: BoardingCell,
+  axis: BoardingThinAxis,
+  peers: ReadonlySet<string>,
+  height: number,
+  options?: {
+    readonly face?: { tile: p5.Image; cache: IsoImageCache } | undefined;
+    readonly top?: { tile: p5.Image; cache: IsoImageCache } | undefined;
+    readonly section?: boolean;
+  },
+): BoardingThinWallMesh {
+  const mesh = boardingThinWallMesh(
+    position,
+    axis,
+    height / BOARDING_VERTICAL_METER,
+  );
+  const source = tile ? imageSource(tile, cache, 'wall') : null;
+  const run = boardingWallRun(peers, position, mesh.lengthAxis);
+  const slice = tile
+    ? boardingWallSlice(tile.width, run.index)
+    : { x: 0, width: 1 };
+  const fraction = height / boardingFeatureHeight('wall');
+  const face = options?.face;
+  const faceSource =
+    (face && imageSource(face.tile, face.cache, 'wall')) ?? source;
+  const top = options?.top;
+  const topSource = top && imageSource(top.tile, top.cache, 'wall');
+  if (faceSource && tile) {
+    paintTexturedQuad(
+      sketch,
+      faceSource,
+      face ? boardingWallSlice(face.tile.width, run.index) : slice,
+      face?.tile.height ?? tile.height,
+      mesh.longFace[0]!,
+      mesh.longFace[1]!,
+      mesh.longFace[3]!,
+      mesh.longFace,
+      undefined,
+      fraction,
+    );
+  } else paintIsoPolygon(sketch, mesh.longFace, '#263247');
+  if (source && tile) {
+    paintTexturedQuad(
+      sketch,
+      source,
+      boardingWallSlice(tile.width, 0),
+      tile.height,
+      mesh.endFace[0]!,
+      mesh.endFace[1]!,
+      mesh.endFace[3]!,
+      mesh.endFace,
+      undefined,
+      fraction,
+    );
+  } else paintIsoPolygon(sketch, mesh.endFace, '#1a2436');
+  if (topSource && top) {
+    paintTexturedQuad(
+      sketch,
+      topSource,
+      { x: 0, width: top.tile.width },
+      top.tile.height,
+      mesh.topOrigin,
+      mesh.topAlongLength,
+      mesh.topAlongThickness,
+      mesh.top,
+    );
+  } else if (source && tile) {
+    paintTexturedQuad(
+      sketch,
+      source,
+      slice,
+      tile.height,
+      mesh.topOrigin,
+      mesh.topAlongLength,
+      mesh.topAlongThickness,
+      mesh.top,
+    );
+  } else paintIsoPolygon(sketch, mesh.top, '#52657f');
+  if (options?.section) paintCutawayTop(sketch, mesh.top, axis);
+  return mesh;
 }
 
 export function paintIsoBlock(

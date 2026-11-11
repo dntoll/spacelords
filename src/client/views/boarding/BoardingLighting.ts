@@ -65,6 +65,7 @@ export class BoardingLighting {
             !feature.destroyed &&
             (feature.kind === 'wall' ||
               feature.kind === 'hull' ||
+              (feature.kind === 'thin-wall' && !feature.low) ||
               (feature.kind === 'door' && !feature.open)),
         )
         .map((feature) => ({
@@ -87,6 +88,7 @@ export class BoardingLighting {
           (feature) =>
             feature.kind === 'wall' ||
             feature.kind === 'hull' ||
+            feature.kind === 'thin-wall' ||
             feature.kind === 'door',
         )
         .map((feature) => [
