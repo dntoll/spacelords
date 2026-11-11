@@ -3236,6 +3236,7 @@ export class Game {
     )
       throw new Error('Choose your shipyard.');
     this.#salvage.moveRepair(yardId, wreckId, index);
+    this.#logistics.reserve(this.#logisticsPort());
   }
   #planetName(id: string): string {
     return this.#ownedPlanets().find((planet) => planet.id === id)!.name;
@@ -3339,6 +3340,30 @@ export class Game {
         yard.position,
       );
     }
+  }
+  // varvets-automatiska-materialforsorjning: only the next wreck in each active yard requests supplies.
+  #repairProjects(planetId: string): { id: string; cost: Stock }[] {
+    return this.#salvage.yards
+      .filter((yard) => yard.planetId === planetId && !yard.destroyed)
+      .flatMap((yard) => {
+        const wreck = this.#salvage.wrecks.find(
+          (item) => item.id === yard.queue[0],
+        );
+        return wreck
+          ? [
+              {
+                id: `repair-${wreck.id}`,
+                cost: {
+                  ...emptyStock(),
+                  ...Salvage.repairCost(
+                    wreck.ship,
+                    (type) => projectDefinition(type).cost,
+                  ),
+                },
+              },
+            ]
+          : [];
+      });
   }
   canBuild(planet: Planet, type: BuildType, slotIndex?: number): string | null {
     if (
@@ -5906,6 +5931,9 @@ export class Game {
     for (const fleet of this.#fleets)
       if (fleet.upgrade)
         projects.set(fleet.upgrade.id, `Upgrade ${fleet.name}`);
+    for (const planet of this.#ownedPlanets())
+      for (const project of this.#repairProjects(planet.id))
+        projects.set(project.id, 'Shipyard repair');
     return Object.freeze(
       this.#logistics.shipmentSnapshots(this.#logisticsPort()).map((shipment) =>
         Object.freeze({
@@ -6285,6 +6313,7 @@ export class Game {
               id: fleet.upgrade.id,
               cost: ShipUpgrades.cost(fleet.upgrade.targets),
             });
+        projects.push(...this.#repairProjects(planet.id));
         const demand = emptyStock();
         for (const project of projects)
           for (const material of MATERIALS)
@@ -6327,6 +6356,9 @@ export class Game {
       },
       projectExists: (id: string) =>
         this.#fleets.some((fleet) => fleet.upgrade?.id === id) ||
+        this.#ownedPlanets().some((planet) =>
+          this.#repairProjects(planet.id).some((project) => project.id === id),
+        ) ||
         [...this.#colonies.values()].some((s) =>
           s.projects.some((p) => p.id === id),
         ),
@@ -6380,6 +6412,9 @@ export class Game {
   }
   #economySnapshot(planet: Planet, state: ColonyState): EconomySnapshot {
     const demand = emptyStock();
+    for (const project of this.#repairProjects(planet.id))
+      for (const material of MATERIALS)
+        demand[material] += project.cost[material];
     for (const fleet of this.#fleets)
       if (fleet.upgrade?.planetId === planet.id)
         for (const material of MATERIALS)

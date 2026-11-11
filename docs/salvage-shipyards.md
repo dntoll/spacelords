@@ -70,6 +70,13 @@ Varvet börjar reparera året efter färdigställandet. Reparationer använder
 planetens lager efter vanlig produktion och kräver dess lediga besättning.
 Material och personer förbrukas först när reparationen färdigställs.
 
+`varvets-automatiska-materialforsorjning` — **Fullständigt implementerat**.
+Första vraket i varje fungerande varvs kö beställer automatiskt saknade
+reparationsråvaror från handelsnätet på samma sätt som ett aktivt bygge.
+Tillgängligt lager och inkommande leveranser räknas av. Vid omordning gäller
+behovet det nya första vraket. Äldre sparningar och pågående reparationer
+fortsätter utan rensning.
+
 `omordningsbar-reparationsko` ersätter tvingande FIFO-prioritering.
 Reparationskön använder samma draghandtag som andra köer, behåller vald
 ordning efter omladdning och reparerar fortfarande högst ett skepp per år.

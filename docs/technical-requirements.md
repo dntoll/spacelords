@@ -1593,3 +1593,12 @@ markeringsläge till BoardingView, vilket förhindrar att ett redan markerat må
 skjuts. BoardingCameraController panorerar därefter målfiguren till den fria
 kartytans mitt under 300 ms med exakt bevarad zoom. Manuell kameraavbrytning och
 minskad rörelse använder samma regler som övriga automatiska kameraflöden.
+
+# Varvets materialförsörjning
+
+`varvets-automatiska-materialforsorjning`: varje fungerande varvs första
+reparationspost representeras i logistikens behov och använder vrakets stabila
+identitet för leveranser. Omordning uppdaterar planeringen. Befintliga
+sparfält används och leveranser på väg hanteras enligt logistikens vanliga
+regler. Riktade tester verifierar behov efter omladdning och transport fram till
+färdig reparation.

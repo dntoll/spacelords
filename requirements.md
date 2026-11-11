@@ -10,6 +10,8 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Varvets material:** `varvets-automatiska-materialforsorjning` är **Fullständigt implementerat**. Den första reparationen i varje fungerande Shipyard beställer saknade råvaror genom planetens handelsnät på samma sätt som ett aktivt bygge. Se [varv](docs/salvage-shipyards.md).
+
 - **Kartobjekt och automatiska flottor:** `kartobjekt-foljer-zoom`,
   `produktionsflottors-automatiska-namn`,
   `produktionsflotta-efter-kolonisering`,
