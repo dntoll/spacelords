@@ -742,7 +742,9 @@ Se [hela visionen](docs/game-vision.md).
   `utokad-testsvit` har en jobbtidsgräns på 20 minuter inklusive installation
   av webbläsare. Den omfattar HTTP-integration och Playwright, inte
   Vitest-enhetstesterna. Ett webbläsarfall tar högst 30 sekunder, eller 90
-  sekunder när fallet spelar igenom flera år.
+  sekunder när fallet spelar igenom flera år. Matrisen är telefon Chromium,
+  dator Chromium och telefon WebKit, med sex arbetstrådar. Surfplatta WebKit
+  väntar tills fler plattformar väljs. Detta ersätter de fyra profilerna.
   `snabb-mobilpublicering` är **Fullständigt implementerat** och provpublicerat:
   en vanlig ändringsbeställning innebär snabbtest utan Playwright och publicering
   av arbetsbranchen, om användaren inte uttryckligen avstår. Driftsättningen

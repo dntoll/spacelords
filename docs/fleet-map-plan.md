@@ -170,7 +170,7 @@ touch och tangentbord. Detta steg görs efter steg 2–4 för att undvika funkti
   byggordrars mottagare, handelsrutter, last och frigörande.
 - Kör webbläsarflöden för hexval → överföring → ny flotta → namnbyte →
   destinationsdrag → omladdning. Testa även avbrott, positionslösa flottor,
-  förstärkning på avstånd och stora flottlistor på telefon, surfplatta och dator.
+  förstärkning på avstånd och stora flottlistor på telefon och dator.
 - Verifiera fokus, minst 44 px klickytor, intern rullning, bibehållen kamera,
   touchdrag och att planet- och ruttkontroller är åtkomliga.
 - Kör npm run check: format, lint, enhetstester utan total tidsgräns och utökad svit

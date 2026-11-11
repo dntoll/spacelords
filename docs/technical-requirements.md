@@ -746,11 +746,11 @@ Inga konstlade enhetstester behövs för en dokumenterad publiceringsprocess.
 
 ## Första spelgrunden
 
-| Kravnamn             | Status                     | Krav                                                                                                                                                                                                           | Verifiering                                               |
-| -------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `p5-karta`           | Fullständigt implementerat | p5.js 2.3.4 i instance mode renderar en 2D-karta. Modeller och controllers beror inte på p5. HTML används för övriga vyer. Rita om vid förändring och städa instansen vid vybyte.                              | Enhetstester av modeller och browsertester av renderingen |
-| `kravstatus`         | Fullständigt implementerat | Aktiva produktkrav och tekniska krav har en av de tre beslutade statusarna, med återstående arbete för delvisa krav. Processkravens status avser det stöd som finns i repot; efterlevnad granskas fortlöpande. | Kravlistor och AGENTS.md                                  |
-| `browserverifiering` | Fullständigt implementerat | Den utökade sviten kontrollerar mus, touch, canvasstorlek, vybyten och olika skärmstorlekar mot Pages-bygget med Playwright.                                                                                   | Lokal körning av `npm run test:extended`                  |
+| Kravnamn             | Status                     | Krav                                                                                                                                                                                                                                                                         | Verifiering                                               |
+| -------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `p5-karta`           | Fullständigt implementerat | p5.js 2.3.4 i instance mode renderar en 2D-karta. Modeller och controllers beror inte på p5. HTML används för övriga vyer. Rita om vid förändring och städa instansen vid vybyte.                                                                                            | Enhetstester av modeller och browsertester av renderingen |
+| `kravstatus`         | Fullständigt implementerat | Aktiva produktkrav och tekniska krav har en av de tre beslutade statusarna, med återstående arbete för delvisa krav. Processkravens status avser det stöd som finns i repot; efterlevnad granskas fortlöpande.                                                               | Kravlistor och AGENTS.md                                  |
+| `browserverifiering` | Fullständigt implementerat | Den utökade sviten kontrollerar mus, touch, canvasstorlek och vybyten mot Pages-bygget med Playwright i telefon Chromium, dator Chromium och telefon WebKit, med sex arbetstrådar. Surfplatta WebKit väntar tills fler plattformar väljs. Detta ersätter de fyra profilerna. | Lokal körning av `npm run test:extended`                  |
 
 2026-10-17: Spelvisionen ersätter den tomma startsidan. p5.js väljs i stället
 för planförslagets SVG. Se [första iterationen](first-iteration.md) för
@@ -845,6 +845,11 @@ behåller HTTP-integration och Playwright.
 2026-11-11: `snabb-mobilpublicering` väntar på Pages och lämnar den manuella
 testen till användaren. Detta ersätter livejämförelse av publicerade filer och
 Playwright i driftsättningen. Playwright ligger kvar i `utokad-testsvit`.
+
+2026-11-11: `browserverifiering` kör telefon Chromium, dator Chromium och telefon
+WebKit med sex arbetstrådar. Surfplatta WebKit väntar tills fler plattformar
+väljs. Detta ersätter de fyra profilerna och två arbetstrådar. Produktmålet
+att spelet ska gå att använda på surfplatta ligger kvar.
 
 - `fokuserat-kartval` och `rundkontroller-i-decisions`: enhetstester kontrollerar
   växlingen mellan tomma rutor, himlakroppar, flottor och handelsrutter samt

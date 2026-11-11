@@ -71,7 +71,8 @@ Publiceringsskriptet:
 
 Kompakt rapport med revisioner, tider, filkontrollsummor, Pages-länk och utfall
 finns i `dist/deployments/<revision>-<tid>/report.json`. Stegloggar ligger bredvid,
-kontrolloggar i `dist/checks/`. Dessa filer är ignorerade av Git. Läs fullständiga
+kontrolloggar i `dist/checks/`. Samma utskrift visas i terminalen medan steget
+körs. Dessa filer är ignorerade av Git. Läs fullständiga
 loggar, spår och skärmbilder vid fel; läs inte om lyckade körningar utan skäl.
 Vid avbrott efter push kan publicering redan pågå: kontrollera rapporten och
 Pages innan du försöker igen. En ofärdig Pages-körning innebär inte återställning.
@@ -88,8 +89,10 @@ När användaren ber om sluttest körs `npm run check` lokalt för exakt aktuell
 källrevision. GitHub startar inte sluttestet. Detta ersätter manuell
 `workflow_dispatch` med låst SHA. Körningen omfattar kvalitetskontroller,
 enhetstester, båda byggena, alla integrationstester och hela webbläsarsviten.
-Matrisen är telefon Chromium, telefon WebKit, surfplatta WebKit och dator
-Chromium. Steggränsen är 20 minuter. Loggar sparas under `dist/checks/`.
+Matrisen är telefon Chromium, dator Chromium och telefon WebKit, med sex
+arbetstrådar. Surfplatta WebKit väntar tills fler plattformar väljs. Detta
+ersätter de fyra profilerna. Steggränsen är 20 minuter. Loggar sparas under
+`dist/checks/`.
 
 Efter godkänt sluttest redovisas testad SHA och relevanta överhoppade fall.
 Fråga därefter om merge till källrepots `main`. Ett separat ja krävs för

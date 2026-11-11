@@ -11,7 +11,8 @@ process.env.PW_TEST_SOURCE_TRANSFORM_SCOPE = fileURLToPath(
 export default defineConfig({
   testDir: './tests/browser',
   fullyParallel: false,
-  workers: 2,
+  // utokad-testsvit: tablet waits until more platforms are chosen.
+  workers: 6,
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
   timeout: 30_000,
@@ -30,7 +31,6 @@ export default defineConfig({
       },
     },
     { name: 'phone-webkit', use: { ...devices['iPhone 13'] } },
-    { name: 'tablet-webkit', use: { ...devices['iPad Mini'] } },
   ],
   webServer: {
     command: 'node scripts/preview-pages.mjs',

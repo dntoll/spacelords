@@ -51,9 +51,8 @@ export function renderSalvageGlyph(
     renderShipyardGlyph(sketch, selected, image);
     return;
   }
-  // spelgrafik-kartstation: wreck markers keep a constant screen size.
-  // The map restores the transform after this call.
-  if (zoom > 0) sketch.scale(1 / zoom);
+  // kartobjekt-foljer-zoom: the cross uses world units inside the map scale.
+  void zoom;
   sketch.line(-8, -7, 8, 7);
   sketch.line(-8, 7, 8, -7);
   sketch.circle(0, 0, 6);

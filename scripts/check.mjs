@@ -4,6 +4,7 @@ import {
   openSync,
   closeSync,
   writeFileSync,
+  writeSync,
   appendFileSync,
 } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -37,15 +38,23 @@ function launch(command, args, descriptor) {
     process.env.npm_execpath ??
     resolve(dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js');
   const useNpmCli = command === 'npm' && process.platform === 'win32';
-  return spawn(
+  const child = spawn(
     useNpmCli ? process.execPath : command,
     useNpmCli ? [npmCli, ...args] : args,
     {
-      stdio: ['ignore', descriptor, descriptor],
+      stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
       detached: process.platform !== 'win32',
     },
   );
+  // utokad-testsvit: show the step while it runs and keep the log.
+  const forward = (chunk, destination) => {
+    destination.write(chunk);
+    writeSync(descriptor, chunk);
+  };
+  child.stdout.on('data', (chunk) => forward(chunk, process.stdout));
+  child.stderr.on('data', (chunk) => forward(chunk, process.stderr));
+  return child;
 }
 
 function waitForStep(child, timeoutMs) {
@@ -96,6 +105,7 @@ export async function runSteps(steps, directory, timeoutMs = stepTimeoutMs) {
   for (const [name, command, args] of steps) {
     const log = resolve(directory, `${name}.log`);
     const descriptor = openSync(log, 'w');
+    console.log(`RUN ${name}`);
     const started = performance.now();
     let result;
     try {

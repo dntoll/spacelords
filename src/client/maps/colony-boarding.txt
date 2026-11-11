@@ -3,6 +3,9 @@ name=Colony ship
 width=13
 height=9
 rules=campaign
+spriteX=-6.200000339084202
+spriteY=-4.188889397515191
+spriteScale=40.350938235633876
 
 [terrain]
 HHHHHHHHHHHHH

@@ -77,7 +77,7 @@ src/server/
 tests/unit/              Vitest-enhetstester
 tests/extended/          Vitest-vytester, samma svit som tests/unit
 tests/integration/       HTTP-tester mot det faktiska produktionsbygget
-tests/browser/           Playwright: desktop, mobil, surfplatta och touch
+tests/browser/           Playwright: dator, telefon Chromium, telefon WebKit
 docs/                    Krav, arbetsbeslut och PlantUML-domänmodell
 ```
 
@@ -153,8 +153,9 @@ CI installerar dem på sin runner. `npm run test:browser` förutsätter att
 Playwright startar sin egen statiska förhandsvisning på port 4178. Avsluta en
 manuellt startad förhandsvisning på den porten innan testerna körs.
 
-Matrisen täcker desktop i Chromium, telefon i Chromium och WebKit samt surfplatta
-i WebKit. Alla kör rendering och navigation. Faktiska drag och nypgester körs
+Matrisen täcker desktop i Chromium, telefon i Chromium och telefon i WebKit,
+med sex arbetstrådar. Surfplatta WebKit väntar tills fler plattformar väljs.
+Alla kör rendering och navigation. Faktiska drag och nypgester körs
 via Chromiums touchgränssnitt; WebKit verifierar touchtryck. Matematik och
 pekargester enhetstestas separat. Endast scenarier som inte gäller en viss enhet
 hoppas över, inte misslyckade kontroller. Skärmbilder och felspår sparas i

@@ -14,7 +14,7 @@ import {
   renderSalvageGlyph,
 } from '../../src/client/views/PlanetGlyph.js';
 
-it('spelgrafik-kartstation: shipyard scales with the map while wreck markers keep their screen size', () => {
+it('kartobjekt-foljer-zoom / spelgrafik-kartstation: shipyards and wreck markers both use the map scale', () => {
   const sketch = {
     scale: vi.fn(),
     image: vi.fn(),
@@ -28,8 +28,9 @@ it('spelgrafik-kartstation: shipyard scales with the map while wreck markers kee
   expect(sketch.scale).not.toHaveBeenCalled();
   expect(sketch.image).toHaveBeenCalledWith(image, -20, -20, 40, 40);
   expect(sketch.circle).toHaveBeenCalledWith(0, 0, 42);
-  renderSalvageGlyph(sketch as unknown as p5, 'wreck', 2, false, image);
-  expect(sketch.scale).toHaveBeenCalledWith(0.5);
+  renderSalvageGlyph(sketch as unknown as p5, 'wreck', 0.25, false, image);
+  expect(sketch.scale).not.toHaveBeenCalled();
+  expect(sketch.line).toHaveBeenCalledWith(-8, -7, 8, 7);
 });
 
 it('spelgrafik-symboler: every building has a distinct decorative symbol while its action stays accessible', () => {
