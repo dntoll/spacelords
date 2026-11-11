@@ -22,23 +22,22 @@
 
 - Knyt automatiska enhetstester till varje beteendekrav med kravets läsbara namn.
   Varje test ska skydda mot en kategori av fel, inte bara upprepa implementationen.
-- Dela testerna i en snabb svit med riktvärdet 20 sekunders total exekveringstid
-  och en utökad svit som får ta längre tid. Låt snabbsviten slutföras även om
-  riktvärdet överskrids; flytta då några mindre prioriterade tester till den
-  utökade sviten. Behåll en användbar blandning av tester från olika delar av
-  programmet och skydd för centrala beteenden. Sviten behöver inte köras om
-  efter flytten. Kör normalt bara
-  snabbsviten; kör alla sviter vid begärd omfattande testning. Båda finns i
-  GitHub CI: snabbkontroller vid push/PR, hela sviten vid begärt sluttest med
-  explicit källrevision.
+- Kör alla Vitest-tester utom HTTP-integration i en svit utan total tidsgräns.
+  Detta ersätter riktvärdet 20 sekunder och regeln att flytta långsammare
+  Vitest-tester till den utökade sviten. HTTP-integration och Playwright hålls
+  separat. Kör enhetstesterna vid vanliga ändringar. Kör den långa sviten lokalt
+  vid begärd omfattande testning. GitHub Actions kör bara snabbkontrollerna,
+  och endast vid push till `main`. Detta ersätter körning vid varje push,
+  pull request och manuellt sluttest i GitHub.
 - Normalläge (`snabb-mobilpublicering`): prioritera mobil, kör
   `npm run deploy:quick` efter committad ändring på arbetsbranch och låt användaren
   testa manuellt på mobilen. En vanlig ändringsbeställning ger tillstånd till
   denna publicering. Kör riktade regressionstester för ändrat beteende; kör inte
   hela plattformsmatrisen eller upprepa godkända kontroller utan nytt skäl.
-- Sluttest (`sluttest-fore-merge`) görs när användaren ber om det: starta hela
-  CI-sviten för exakt aktuell källrevision, redovisa resultat och fråga därefter
-  om merge till källrepots `main`. Merge kräver godkänt sluttest och separat ja.
+- Sluttest (`sluttest-fore-merge`) görs när användaren ber om det: kör hela
+  sviten lokalt för exakt aktuell källrevision, redovisa resultat och fråga
+  därefter om merge till källrepots `main`. Merge kräver godkänt sluttest och
+  separat ja. GitHub startar inte sluttestet.
   Ändrad revision eller konfliktlösning kräver nytt sluttest. Vid rättning:
   snabbtest, ny publicering och ny manuell test innan nytt begärt sluttest.
 - Vid en bugg: skriv först ett regressionstest, kör det och verifiera att det

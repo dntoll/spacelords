@@ -119,6 +119,10 @@ it('flottilldelning-pa-stjarnkartan: an invalid route drop and cancelled drag ca
   const end = point({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
   drag(point(marker.point), end);
   expect(model.snapshot.fleets[0]!.destination).toEqual(before.destination);
+  expect(model.snapshot.notice).toEqual({
+    kind: 'action-failed',
+    reason: 'Assign a transport fleet to this route before adding escorts',
+  });
   emit({ type: 'pointer-start', id: 1, point: point(marker.point) });
   emit({ type: 'pointer-move', id: 1, point: end });
   emit({ type: 'pointer-cancel' });

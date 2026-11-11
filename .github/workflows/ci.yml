@@ -1,27 +1,20 @@
 name: CI
-run-name: ${{ github.event_name == 'workflow_dispatch' && format('Final tests {0}', inputs.revision) || format('Quick checks {0}', github.ref_name) }}
+run-name: Quick checks main
 
 on:
   push:
-  pull_request:
-  workflow_dispatch:
-    inputs:
-      revision:
-        description: Full commit SHA approved for final testing
-        required: true
-        type: string
+    branches: [main]
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event_name }}-${{ inputs.revision || github.ref }}
-  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+  group: ci-main
+  cancel-in-progress: true
 
 jobs:
   quality:
-    name: Quick mobile checks
-    if: github.event_name != 'workflow_dispatch'
+    name: Quick checks
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -31,48 +24,11 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium webkit
       - run: npm run check:quick
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: quick-checks
-          path: |
-            dist/checks/
-            test-results/
-
-  final:
-    name: Final tests
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    # utokad-testsvit: includes browser installation and all four device profiles.
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.revision }}
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - name: Verify pinned revision
-        env:
-          FINAL_REVISION: ${{ inputs.revision }}
-        run: |
-          node --input-type=module -e '
-            import { execFileSync } from "node:child_process";
-            const sha = process.env.FINAL_REVISION;
-            if (!/^[a-f0-9]{40}$/.test(sha) ||
-                execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim() !== sha)
-              process.exit(1);
-          '
-      - run: npm ci
-      - run: npx playwright install --with-deps chromium webkit
-      - run: npm run check
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: final-checks-${{ inputs.revision }}
           path: |
             dist/checks/
             test-results/

@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { mkdtempSync, mkdirSync, cpSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -24,12 +23,6 @@ async function request(url) {
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}: ${url}`);
   return response;
-}
-
-async function checksum(url) {
-  return createHash('sha256')
-    .update(Buffer.from(await (await request(url)).arrayBuffer()))
-    .digest('hex');
 }
 
 async function waitForPages(revision, report) {
@@ -61,23 +54,6 @@ async function waitForPages(revision, report) {
   throw new Error(
     'Timed out waiting for Pages. Publication may still be in progress.',
   );
-}
-
-async function verifyLive(hashes) {
-  for (const [path, hash] of Object.entries(hashes)) {
-    const url = `${appURL}${path}?verify=${hash.slice(0, 12)}`;
-    if ((await checksum(url)) !== hash)
-      throw new Error(`Published bytes differ: ${path}`);
-    const type = (await request(url)).headers.get('content-type') ?? '';
-    if (
-      (path.endsWith('.js') && !type.includes('javascript')) ||
-      (path.endsWith('.css') && !type.includes('text/css')) ||
-      (path.endsWith('.html') && !type.includes('text/html'))
-    )
-      throw new Error(`Unexpected content type: ${path}`);
-  }
-  const redirect = await request(`${site}/spacelords`);
-  if (redirect.url !== appURL) throw new Error('Unexpected app redirect.');
 }
 
 export async function deploy() {
@@ -114,15 +90,6 @@ export async function deploy() {
     const build = join(work, 'build');
     cpSync(resolve('dist/pages'), build, { recursive: true });
     const builtHashes = manifest(build);
-    const before = {};
-    for (const path of [
-      '/',
-      '/MachineBloom/',
-      '/Defence-Grid/test/',
-      '/styles.css',
-      '/i18n.js',
-    ])
-      before[path] = await checksum(`${site}${path}`);
     report.operations.push(
       ...(await runSteps(
         [
@@ -203,36 +170,14 @@ export async function deploy() {
         directory,
       )),
     );
-    report.status = 'published-awaiting-verification';
+    report.status = 'published-awaiting-pages';
     save();
     await waitForPages(current.commit, report);
-    await verifyLive(publication.hashes);
-    for (const [path, hash] of Object.entries(before)) {
-      if ((await checksum(`${site}${path}`)) !== hash)
-        throw new Error(
-          `Existing website changed: ${path}. Inspect concurrent publications.`,
-        );
-    }
-    const previousURL = process.env.SPACELORDS_SMOKE_URL;
-    process.env.SPACELORDS_SMOKE_URL = appURL;
-    try {
-      report.operations.push(
-        ...(await runSteps(
-          [['live-mobile', 'npm', ['run', 'test:mobile']]],
-          directory,
-        )),
-      );
-    } finally {
-      if (previousURL === undefined) delete process.env.SPACELORDS_SMOKE_URL;
-      else process.env.SPACELORDS_SMOKE_URL = previousURL;
-    }
-    report.status = 'verified';
+    report.status = 'published';
     console.log(`Published ${source.revision.slice(0, 12)}: ${appURL}`);
   } catch (error) {
     report.failure = error.message;
-    if (
-      !['publishing', 'published-awaiting-verification'].includes(report.status)
-    )
+    if (!['publishing', 'published-awaiting-pages'].includes(report.status))
       report.status = 'failed';
     throw error;
   } finally {

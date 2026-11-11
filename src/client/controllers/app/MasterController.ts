@@ -103,7 +103,9 @@ export class MasterController {
           }, 3000);
       }
     } catch (error) {
-      console.warn(error);
+      // Refused orders use Error and become a player notice. Other throws stay visible.
+      if (!(error instanceof Error) || error.name !== 'Error')
+        console.warn(error);
       this.#turn.endMovementPlayback();
       this.#model.reportError(error);
       this.#render();

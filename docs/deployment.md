@@ -45,12 +45,10 @@ npm run deploy:quick
 ```
 
 Kommandot kräver ren arbetsbranch, inklusive inga ocommittade nya filer.
-Det kör `check:quick`: formatkontroll, ESLint, snabbsviten, en typkontroll,
-Pages-bygge, automatiska publiceringsskydd, Pages-integration och korta
-mobiltester i Chromium och WebKit. Snabbsvitens riktvärde är 20 sekunder. Vid överskridande flyttas några
-mindre prioriterade tester till den utökade sviten utan krav på omkörning;
-testprocessen avbryts inte på grund av tiden. Hela flödet har ingen sådan tidsgräns.
-Mobiltesterna använder isolerad webbläsarlagring och rör inte spelarens sparningar.
+Det kör `check:quick`: formatkontroll, ESLint, enhetstesterna, en typkontroll,
+Pages-bygge, automatiska publiceringsskydd och Pages-integration.
+Enhetstesterna har ingen total tidsgräns och omfattar alla Vitest-tester utom
+HTTP-integration. Playwright ingår inte. Hela flödet har ingen tidsgräns.
 
 Publiceringsskriptet:
 
@@ -67,42 +65,35 @@ Publiceringsskriptet:
 6. Använder dokumenterad vanlig push från den granskade deploybranchen till
    webbplatsrepots `main`, med befintlig SSH. Ingen force-push eller ändring av
    branchskydd görs. Avvisad push kräver ny granskning.
-7. Följer Pages-körningen för deployrevisionen, kontrollerar alla livefilers
-   byteinnehåll, HTML/JS/CSS-typer och omdirigeringen `/spacelords`.
-8. Kontrollerar att startsidan och tidigare kontrolladresser är oförändrade och
-   kör en kort mobilkontroll mot liveadressen i båda webbläsarmotorerna.
+7. Följer Pages-körningen för deployrevisionen och avslutar när den är klar.
+   Detta ersätter livejämförelse av publicerade filer och mobiltest mot
+   liveadressen. Användaren testar därefter manuellt.
 
 Kompakt rapport med revisioner, tider, filkontrollsummor, Pages-länk och utfall
 finns i `dist/deployments/<revision>-<tid>/report.json`. Stegloggar ligger bredvid,
 kontrolloggar i `dist/checks/`. Dessa filer är ignorerade av Git. Läs fullständiga
 loggar, spår och skärmbilder vid fel; läs inte om lyckade körningar utan skäl.
 Vid avbrott efter push kan publicering redan pågå: kontrollera rapporten och
-Pages innan du försöker igen. Ett misslyckat livetest innebär inte återställning.
+Pages innan du försöker igen. En ofärdig Pages-körning innebär inte återställning.
 
 `npm run check:quick` kör samma förkontroller utan publicering. Dela resultat
 mellan körningar bara när källrevision och byggresultat är oförändrade. GitHub
-kör snabbkontroller vid push/PR, men lokal publicering väntar inte på en
-upprepning av samma kontroller i CI. GitHub CI publicerar inget.
+kör snabbkontrollerna endast vid push till `main`. Arbetsgrenar och pull
+requests startar inget, och lokal publicering väntar inte på CI. GitHub CI
+publicerar inget. Playwright körs i den utökade sviten, inte i driftsättningen.
 
 ## Begärt sluttest och merge
 
-När användaren ber om sluttest startas workflowet `CI` manuellt i GitHub Actions
-med `revision` satt till hela aktuell käll-SHA och workflowets branch satt till
-arbetsbranchen. Jobbet `Final tests` checkar ut och verifierar denna revision och
-kör `npm run check`: kvalitetskontroller, snabbsvit, båda byggena, alla
-integrationstester och hela webbläsarsviten. Matrisen är telefon Chromium,
-telefon WebKit, surfplatta WebKit och dator Chromium. Jobbgränsen är fortsatt
-20 minuter inklusive installation. Loggar och felunderlag sparas som artefakter.
+När användaren ber om sluttest körs `npm run check` lokalt för exakt aktuell
+källrevision. GitHub startar inte sluttestet. Detta ersätter manuell
+`workflow_dispatch` med låst SHA. Körningen omfattar kvalitetskontroller,
+enhetstester, båda byggena, alla integrationstester och hela webbläsarsviten.
+Matrisen är telefon Chromium, telefon WebKit, surfplatta WebKit och dator
+Chromium. Steggränsen är 20 minuter. Loggar sparas under `dist/checks/`.
 
-`workflow_dispatch` blir tillgängligt när workflowändringen finns på GitHubs
-defaultbranch. Vid införandet måste denna första version därför sluttestas
-med `npm run check` lokalt och CI:s tillgängliga kontroller redovisas innan
-användaren tillfrågas om första merge. Detta undantag gäller enbart införandet;
-merge får inte ske automatiskt för att aktivera workflowet.
-
-Efter godkänt sluttest redovisas testad SHA, CI-länk och relevanta överhoppade
-fall. Fråga därefter om merge till källrepots `main`. Ett separat ja krävs för
-den testade revisionen. Kontrollera åter aktuell branchrevision, CI-resultat och
+Efter godkänt sluttest redovisas testad SHA och relevanta överhoppade fall.
+Fråga därefter om merge till källrepots `main`. Ett separat ja krävs för
+den testade revisionen. Kontrollera åter aktuell branchrevision och
 att inga konfliktlösningar eller andra ändringar tillkommit före merge.
 Ändrad källrevision kräver nytt sluttest. Samma godkända fullständiga körning
 behöver inte upprepas lokalt.

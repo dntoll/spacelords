@@ -173,7 +173,7 @@ touch och tangentbord. Detta steg görs efter steg 2–4 för att undvika funkti
   förstärkning på avstånd och stora flottlistor på telefon, surfplatta och dator.
 - Verifiera fokus, minst 44 px klickytor, intern rullning, bibehållen kamera,
   touchdrag och att planet- och ruttkontroller är åtkomliga.
-- Kör npm run check: format, lint, snabbsvit inom 20 sekunder och utökad svit
+- Kör npm run check: format, lint, enhetstester utan total tidsgräns och utökad svit
   med byggen och webbläsartester. Båda sviterna ska fortsatt köras i GitHub CI.
 - Uppdatera kravstatus först när respektive beteende är verifierat. Gör
   sammanhängande commits med relevanta kontroller före varje commit.

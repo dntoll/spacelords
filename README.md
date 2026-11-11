@@ -29,30 +29,30 @@ inställningen. Vite byter inte port automatiskt.
 
 ## Kommandon
 
-| Kommando                | Användning                                                                 |
-| ----------------------- | -------------------------------------------------------------------------- |
-| `npm run dev`           | Starta klient och server med automatisk omladdning.                        |
-| `npm test`              | Snabba enhetstester, högst 20 sekunder totalt.                             |
-| `npm run test:watch`    | Enhetstester i bevakningsläge, utan total tidsgräns.                       |
-| `npm run test:extended` | Bygg och kör HTTP- samt browsertester.                                     |
-| `npm run lint`          | Typmedveten ESLint-kontroll.                                               |
-| `npm run lint:fix`      | Rätta lintfel som kan lösas automatiskt.                                   |
-| `npm run typecheck`     | Strikt typkontroll av klient, server, tester och konfiguration.            |
-| `npm run format`        | Formatera kod och dokumentation med Prettier.                              |
-| `npm run check:quick`   | Kvalitet, snabbsvit, Pages-bygge och kort mobiltest i Chromium/WebKit.     |
-| `npm run deploy:quick`  | Snabbtest och publicering av committad arbetsbranch för manuell mobiltest. |
-| `npm run test:tooling`  | Publiceringsskydd mot tillfälliga lokala Git-repon.                        |
-| `npm run test:mobile`   | Kort mobiltest mot befintligt Pages-bygge.                                 |
-| `npm run check`         | Format, lint, båda testsviterna, typkontroll och bygge.                    |
-| `npm run build`         | Skapa `dist/client` och `dist/server`.                                     |
-| `npm run test:browser`  | Kör Playwright mot befintligt Pages-bygge.                                 |
-| `npm run preview:pages` | Förhandsvisa Pages-bygget på port 4178.                                    |
-| `npm run build:pages`   | Bygg enbart klienten för `/spacelords/` i `dist/pages`.                    |
-| `npm start`             | Kör produktionsbygget på port 3000. Bygg först.                            |
+| Kommando                | Användning                                                              |
+| ----------------------- | ----------------------------------------------------------------------- |
+| `npm run dev`           | Starta klient och server med automatisk omladdning.                     |
+| `npm test`              | Alla Vitest-enhetstester utom HTTP-integration. Ingen total tidsgräns.  |
+| `npm run test:watch`    | Enhetstester i bevakningsläge, utan total tidsgräns.                    |
+| `npm run test:extended` | Bygg och kör HTTP- samt browsertester.                                  |
+| `npm run lint`          | Typmedveten ESLint-kontroll.                                            |
+| `npm run lint:fix`      | Rätta lintfel som kan lösas automatiskt.                                |
+| `npm run typecheck`     | Strikt typkontroll av klient, server, tester och konfiguration.         |
+| `npm run format`        | Formatera kod och dokumentation med Prettier.                           |
+| `npm run check:quick`   | Kvalitet, enhetstester, Pages-bygge och HTTP-test. Ingen Playwright.    |
+| `npm run deploy:quick`  | Snabbtest, publicering och väntan på Pages. Därefter manuell mobiltest. |
+| `npm run test:tooling`  | Publiceringsskydd mot tillfälliga lokala Git-repon.                     |
+| `npm run test:mobile`   | Kort mobiltest mot befintligt Pages-bygge.                              |
+| `npm run check`         | Format, lint, båda testsviterna, typkontroll och bygge.                 |
+| `npm run build`         | Skapa `dist/client` och `dist/server`.                                  |
+| `npm run test:browser`  | Kör Playwright mot befintligt Pages-bygge.                              |
+| `npm run preview:pages` | Förhandsvisa Pages-bygget på port 4178.                                 |
+| `npm run build:pages`   | Bygg enbart klienten för `/spacelords/` i `dist/pages`.                 |
+| `npm start`             | Kör produktionsbygget på port 3000. Bygg först.                         |
 
-GitHub Actions kör snabbkontroller, Pages-bygge och korta mobiltester vid push
-och pull request. Hela sviten startas manuellt när sluttest beställs, med explicit
-källrevision. `package-lock.json` låser beroendena; använd `npm ci` för reproducerbar
+GitHub Actions kör snabbkontroller och Pages-bygge endast vid push till `main`.
+Arbetsgrenar och pull requests startar inget. Playwright och den långa sviten
+körs lokalt. `package-lock.json` låser beroendena; använd `npm ci` för reproducerbar
 installation. ESLint med typescript-eslint används enligt det uppdaterade
 lintkravet: [verktygets dokumentation](https://typescript-eslint.io/getting-started/typed-linting/).
 
@@ -74,7 +74,8 @@ src/server/
   views/                 HTTP-adaptrar som renderar JSON
   app.ts                 Routning och statiska klientfiler
   main.ts                Serverstart och avstängning
-tests/unit/              Snabb svit
+tests/unit/              Vitest-enhetstester
+tests/extended/          Vitest-vytester, samma svit som tests/unit
 tests/integration/       HTTP-tester mot det faktiska produktionsbygget
 tests/browser/           Playwright: desktop, mobil, surfplatta och touch
 docs/                    Krav, arbetsbeslut och PlantUML-domänmodell

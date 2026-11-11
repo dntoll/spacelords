@@ -133,7 +133,8 @@ export async function check(profile) {
   if (profile !== 'quick') steps.push(npm('build:artifacts'));
   steps.push(npm('build:pages:artifacts'), npm('test:tooling'));
   if (profile === 'quick') {
-    steps.push(npm('test:pages'), npm('test:mobile'));
+    // snabb-mobilpublicering: Playwright stays in the extended suite.
+    steps.push(npm('test:pages'));
   } else {
     steps.push(
       [

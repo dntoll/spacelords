@@ -604,9 +604,9 @@ fortsatt av befintlig GitHub CI.
 | `lasbara-kravnamn`               | Fullständigt implementerat | Ge varje krav ett stabilt, unikt och läsbart namn. Använd samma namn i tester, docs och relevanta kodkommentarer.                                                                                                                                                                                                                                 | Kravgranskning och namngivna tester                                                               |
 | `separerade-kravlistor`          | Fullständigt implementerat | Börja rotöversikten med vision och kravkategorier. Håll produktkrav korta och otekniska. Lista tekniska krav separat och flytta växande detaljer till `docs/`. Dokumentera alla krav och ifrågasätt motsägelser.                                                                                                                                  | Dokumentationsgranskning, `AGENTS.md`                                                             |
 | `meningsfulla-tester`            | Fullständigt implementerat | Knyt beteendekrav till enhetstester som skyddar mot felkategorier. Använd andra relevanta kontroller för verktygs- och processkrav.                                                                                                                                                                                                               | Kravkopplingen nedan och kodgranskning                                                            |
-| `snabb-testsvit`                 | Fullständigt implementerat | Den snabba svitens riktvärde är 20 sekunder inklusive start. Låt sviten slutföras och flytta vid överskridande mindre prioriterade tester till den utökade sviten utan krav på omkörning. Kör alla sviter vid begärd omfattande testning.                                                                                                         | `npm test`, uppmätt exekveringstid                                                                |
-| `utokad-testsvit`                | Fullständigt implementerat | Ha en separat svit för tester som får ta längre tid, HTTP-integration samt riktiga browserkontroller mot produktionsbygget. CI-jobbet får ta högst 20 minuter inklusive installation av webbläsare. Ett webbläsarfall tar högst 30 sekunder, eller 90 sekunder för en årskedja. | `npm run test:extended`                                                                           |
-| `tester-i-github`                | Fullständigt implementerat | Kör snabbkontroller, Pages-bygge och mobilröktest vid push/PR. Kör hela sviten i GitHub Actions vid begärt sluttest för explicit källrevision.                                                                                                                                                                                                    | `.github/workflows/ci.yml`, `npm run check` lokalt                                                |
+| `snabb-testsvit`                 | Fullständigt implementerat | Kör alla Vitest-tester utom `tests/integration` i en svit utan total tidsgräns. Detta ersätter riktvärdet 20 sekunder och regeln att flytta långsammare Vitest-tester till den utökade sviten. Ett enskilt test avbryts efter 15 sekunder.                                                                                                        | `npm test`                                                                                        |
+| `utokad-testsvit`                | Fullständigt implementerat | Ha en separat lokal svit för HTTP-integration och Playwright mot produktionsbygget. Vitest-enhetstester ingår inte. Ett webbläsarfall tar högst 30 sekunder, eller 90 sekunder för en årskedja. Steget får ta högst 20 minuter. GitHub startar inte sviten.                                                                                       | `npm run test:extended`                                                                           |
+| `tester-i-github`                | Fullständigt implementerat | Kör snabbkontroller och Pages-bygge endast vid push till `main`. Detta ersätter körning vid varje push, pull request, mobilröktest i CI och manuellt sluttest i GitHub. Playwright körs lokalt i den utökade sviten.                                                                                                                              | `.github/workflows/ci.yml`, `npm run check` lokalt                                                |
 | `regressionstest-forst`          | Fullständigt implementerat | Reproducera buggar med ett misslyckat test före rättningen. Skriv även tester först för annan implementation när lämpligt.                                                                                                                                                                                                                        | Commit- och arbetsgranskning                                                                      |
 | `mvc-arkitektur`                 | Delvis implementerat       | Använd MVC på server och klient. En master-controller tar emot domänfakta och är den enda som byter fall. Use-case-controllers anropar bara sin modell-facad. Vyer läser modellen, lämnar domänfakta och ändrar den inte. Stjärnkartans pekhändelser översätts fortfarande i mastern.                                                             | Enhets- och typkontroll, arkitekturgranskning                                                     |
 | `master-controller`              | Fullständigt implementerat | En master tar emot avsikter, delegerar till rätt use-case-controller och är den enda som byter fall. Pågående år samordnas här.                                                                                                                                                                                                                   | Enhetstest `master-controller`, arkitekturgranskning                                              |
@@ -750,7 +750,7 @@ Inga konstlade enhetstester behövs för en dokumenterad publiceringsprocess.
 | -------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
 | `p5-karta`           | Fullständigt implementerat | p5.js 2.3.4 i instance mode renderar en 2D-karta. Modeller och controllers beror inte på p5. HTML används för övriga vyer. Rita om vid förändring och städa instansen vid vybyte.                              | Enhetstester av modeller och browsertester av renderingen |
 | `kravstatus`         | Fullständigt implementerat | Aktiva produktkrav och tekniska krav har en av de tre beslutade statusarna, med återstående arbete för delvisa krav. Processkravens status avser det stöd som finns i repot; efterlevnad granskas fortlöpande. | Kravlistor och AGENTS.md                                  |
-| `browserverifiering` | Fullständigt implementerat | Den utökade sviten kontrollerar mus, touch, canvasstorlek, vybyten och olika skärmstorlekar mot Pages-bygget med Playwright.                                                                                   | Browsertester i lokal körning och GitHub CI               |
+| `browserverifiering` | Fullständigt implementerat | Den utökade sviten kontrollerar mus, touch, canvasstorlek, vybyten och olika skärmstorlekar mot Pages-bygget med Playwright.                                                                                   | Lokal körning av `npm run test:extended`                  |
 
 2026-10-17: Spelvisionen ersätter den tomma startsidan. p5.js väljs i stället
 för planförslagets SVG. Se [första iterationen](first-iteration.md) för
@@ -836,6 +836,15 @@ hela CI-jobbet; `snabb-testsvit` behåller sin gräns på 20 sekunder.
 den tiden tar högst 90 sekunder. CI-jobbets 20 minuter behålls och är inte ett
 takt per fall. När ett stegs tidsgräns slår till avslutas hela processträdet,
 så att förhandsvisningen inte blir kvar på porten.
+
+2026-11-11: `snabb-testsvit` har ingen total tidsgräns och omfattar
+`tests/unit` och `tests/extended`. Detta ersätter riktvärdet 20 sekunder och
+regeln att flytta Vitest-tester till den utökade sviten. `utokad-testsvit`
+behåller HTTP-integration och Playwright.
+
+2026-11-11: `snabb-mobilpublicering` väntar på Pages och lämnar den manuella
+testen till användaren. Detta ersätter livejämförelse av publicerade filer och
+Playwright i driftsättningen. Playwright ligger kvar i `utokad-testsvit`.
 
 - `fokuserat-kartval` och `rundkontroller-i-decisions`: enhetstester kontrollerar
   växlingen mellan tomma rutor, himlakroppar, flottor och handelsrutter samt
@@ -932,25 +941,22 @@ väntan och fel, sparning och hela produktionskedjan. Snabbsviten behåller
 ## Snabb mobilpublicering och sluttest
 
 Beslut 2026-10-24: `snabb-mobilpublicering` ersätter tidigare krav på fullständigt
-`check` inför varje driftsättning. `tester-i-github` behåller sitt namn men
-ersätter kravet på långsam svit vid varje push/PR med snabbkontroller vid push/PR
-och manuellt startat sluttest för exakt källrevision. Båda sviterna finns kvar i
-GitHub CI; 20-sekundersgränsen gäller fortsatt hela snabbsviten och sluttestjobbet
-har fortsatt högst 20 minuter inklusive installation.
+`check` inför varje driftsättning. Beslut 2026-11-11 ersätter därefter
+snabbkontroller vid varje push och pull request, manuellt sluttest i GitHub
+samt Playwright och livekontroll i driftsättningen. GitHub kör snabbkontrollerna
+endast vid push till `main`. Playwright ligger i den lokala utökade sviten.
 
 - `snabb-mobilpublicering` — **Fullständigt implementerat**: `check:quick` kontrollerar
-  kvalitet, typer, snabbsvit, Pages-bygge, publiceringsskydd, Pages-integration och
-  kort mobiltest i Chromium och WebKit. `deploy:quick` kräver ren arbetsbranch,
-  pushar exakt källrevision och publicerar enbart `spacelords/` via isolerad
-  checkout och vanlig push. Den sparar rapport och kontrollerar Pages, livefiler
-  och mobilnavigation. Normalflödet är verifierat mot liveadressen; snabb-CI har
-  också passerat. Gles hämtning av aktuell revision undviker webbplatsrepots
-  övriga innehåll och historik.
-- `sluttest-fore-merge` — **Delvis implementerat**: hela sviten är förberedd för
-  manuell CI-start med låst källrevision. Separat ja krävs efter godkänt sluttest
-  innan merge till källrepots `main`. Första aktivering på defaultbranch och
-  verklig manuell CI-körning återstår; införandeundantaget finns i
-  `docs/deployment.md`. Inga branchskydd eller Pages-inställningar ändras.
+  kvalitet, typer, enhetstester, Pages-bygge, publiceringsskydd och Pages-integration.
+  Playwright ingår inte. `deploy:quick` kräver ren arbetsbranch, pushar exakt
+  källrevision och publicerar enbart `spacelords/` via isolerad checkout och vanlig
+  push. Den väntar tills Pages är klar. Livejämförelse och mobiltest mot adressen
+  är ersatta av manuell test. Gles hämtning av aktuell revision undviker
+  webbplatsrepots övriga innehåll och historik.
+- `sluttest-fore-merge` — **Delvis implementerat**: hela sviten körs lokalt med
+  `npm run check` när den beställs. GitHub startar den inte. Separat ja krävs efter
+  godkänt sluttest innan merge till källrepots `main`. Inga branchskydd eller
+  Pages-inställningar ändras.
 - `avstamning-sparkompatibilitet` förtydligas: användaren accepterar förlust av
   sparningar efter ny fråga inför varje inkompatibel ändring. Ingen generell
   rensning införs med snabbflödet.
@@ -1103,13 +1109,10 @@ reservationer, sparfält eller ID:n. Befintliga sparningar bevaras.
   pirater. Starthex är stjärnans första granne enligt HexCoordinate; patrullen
   följer samma grannordning. Piratrörelser utökar inte spelarens utforskade karta.
 
-`snabb-testsvit`: snabbsviten använder tre isolerade testworkers och behåller
-spelregler, sparning, rörelse och centrala användarflöden. De detaljerade
-ritlager-, kontrast-, streckmönster- och Research-layoutkontrollerna ligger i
-`tests/extended/`: de har lägre regressionsvärde vid vanliga speländringar än
-beteendetesterna. Inga tester tas bort. Den utökade sviten upptäcker dem via
-`vitest.extended.config.ts` och kör dem först vid separat begärt sluttest.
-20-sekundersgränsen inkluderar fortsatt verktygsstarten.
+`snabb-testsvit`: sviten behåller spelregler, sparning, rörelse och centrala
+användarflöden. De detaljerade ritlager-, kontrast-, streckmönster- och
+Research-layoutkontrollerna ligger kvar i `tests/extended/` och körs i samma
+svit. Inga tester tas bort.
 
 ## Stegvis simulering och upptäcktsavbrott
 
@@ -1485,20 +1488,18 @@ vapentärningarna.
 `snabb-testsvit`: testprocesser återanvänds per miljö med isolate: false.
 Befintlig rensning av mocks och testernas återställning av klockor och DOM
 behålls. Detta minskar startkostnaden per testfil utan att flytta bort
-beteendetester. Den samlade 20-sekundersgränsen behålls. Riktade stridstester
-på telefon ingår i snabbpublicering för Chromium och WebKit.
+beteendetester. Riktade stridstester på telefon ingår i snabbpublicering för
+Chromium och WebKit.
 
-## Förtydligat riktvärde för snabbtest
+## Enhetstester utan total tidsgräns
 
-`snabb-testsvit`: 20 sekunder är ett riktvärde, inte en avbrottsgräns.
-Detta ersätter tidigare instruktion om att avbryta processen vid 20 sekunder.
-Flytta några mindre prioriterade tester till den utökade sviten vid överskridande;
-sviten behöver inte köras om efter flytten. Testfel ska fortfarande stoppa flödet.
-Snabbsviten ska fortsatt innehålla en användbar blandning av tester från olika
-delar av programmet och skydda centrala beteenden. Normalt körs snabbsviten;
-alla sviter körs vid begärd omfattande testning.
-Efter uppmätt överskridande flyttades ytterligare kompletterande testfiler till
-`tests/extended/`, där de fortsatt ingår i fullständig testning.
+`snabb-testsvit`: sviten har ingen total tidsgräns. Detta ersätter riktvärdet
+20 sekunder, inklusive regeln att det bara var ett riktvärde, och regeln att
+flytta långsammare Vitest-tester till den utökade sviten. `tests/unit` och
+`tests/extended` körs tillsammans. `tests/integration` och Playwright stannar i
+`utokad-testsvit`. Ett enskilt Vitest-test avbryts efter 15 sekunder så att ett
+låst test inte väntar obegränsat. Testfel stoppar flödet. Enhetstesterna körs
+vid vanliga ändringar; den långa sviten körs vid begärd omfattande testning.
 
 `snabb-mobilpublicering`: Playwrights testmiljö omvandlar import av karttext
 med `?raw` till samma textinnehåll som Vite. Det gör att testfixturer som

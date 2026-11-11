@@ -711,7 +711,8 @@ Se [hela visionen](docs/game-vision.md).
   och bärgning omfattas inte av den nya väntoregeln.
   Se [Events och beslutsguidning](docs/events-and-guidance.md).
 - **Utveckling och kvalitet:** MVC, TypeScript, ESLint, p5 i instance mode,
-  en snabb testsvit med riktvärdet 20 sekunder och en utökad svit i GitHub CI.
+  en Vitest-svit utan total tidsgräns och en utökad svit för HTTP-integration
+  och webbläsartester i GitHub CI.
   `master-controller`, `use-case-controller`, `modell-facad` och
   `speltexter-i-vy` är **Fullständigt implementerat**: mastern delegerar till
   en controller och en facad per fall, och vyn formulerar spelartexter.
@@ -719,22 +720,25 @@ Se [hela visionen](docs/game-vision.md).
   forskningsträdets pekning och kamerorna ligger i vyn, medan stjärnkartans
   pekning fortfarande översätts i mastern. Bordning och strid behåller sin
   bildruteloop. Se [tekniska kraven](docs/technical-requirements.md).
-  `snabb-testsvit` är **Fullständigt implementerat**: om tiden överskrids flyttas
-  mindre prioriterade tester till den utökade sviten utan krav på omkörning.
-  Sviten avbryts inte vid tidsöverskridande och behåller tester från olika
-  delar av programmet; alla sviter körs vid begärd omfattande testning.
-  Detaljerade vy-, rit- och layoutkontroller ligger där; centrala spelregler behålls snabba.
-  Även 23 vytester för spelgrafik, planetundersidor och forskningsdetaljer
-  ligger i den utökade sviten efter ett uppmätt tidsöverskridande.
+  `snabb-testsvit` är **Fullständigt implementerat**: sviten omfattar alla
+  Vitest-tester utom `tests/integration` och har ingen total tidsgräns.
+  Detta ersätter riktvärdet 20 sekunder och regeln att flytta långsammare
+  Vitest-tester till den utökade sviten. Detaljerade vy-, rit- och
+  layoutkontroller ingår i samma svit.
   `utokad-testsvit` har en jobbtidsgräns på 20 minuter inklusive installation
-  av webbläsare. Ett webbläsarfall tar högst 30 sekunder, eller 90 sekunder
-  när fallet spelar igenom flera år. Snabbsvitens tidsriktvärde är 20 sekunder.
+  av webbläsare. Den omfattar HTTP-integration och Playwright, inte
+  Vitest-enhetstesterna. Ett webbläsarfall tar högst 30 sekunder, eller 90
+  sekunder när fallet spelar igenom flera år.
   `snabb-mobilpublicering` är **Fullständigt implementerat** och provpublicerat:
-  en vanlig ändringsbeställning innebär snabbtest och publicering av arbetsbranchen,
-  om användaren inte uttryckligen avstår. Därefter testar användaren på mobilen.
-  `sluttest-fore-merge` är **Delvis implementerat**: fullständig testning beställs
-  separat före godkänd merge; första aktivering av manuell sluttest-CI på
-  defaultbranch återstår.
+  en vanlig ändringsbeställning innebär snabbtest utan Playwright och publicering
+  av arbetsbranchen, om användaren inte uttryckligen avstår. Driftsättningen
+  väntar tills Pages är klar. Därefter testar användaren på mobilen. Playwright
+  ligger kvar i den utökade sviten. Detta ersätter livekontroll av publicerade
+  filer och mobiltest i driftsättningen.
+  `tester-i-github` kör snabbkontroller endast vid push till `main`. Detta
+  ersätter körning vid varje push, pull request och manuellt sluttest i GitHub.
+  `sluttest-fore-merge` är **Delvis implementerat**: fullständig testning körs
+  lokalt när den beställs, före godkänd merge. GitHub startar den inte.
 - **Driftsättning:** endast klientbygget under `spacelords/` i målrepot;
   befintlig webbplats, navigation, DNS och Pages-inställningar bevaras.
 
