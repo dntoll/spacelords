@@ -194,6 +194,9 @@ Se [hela visionen](docs/game-vision.md).
   för anlänt material, färdig produktion, Population och Habitability.
   Leveranser från flera flottor finns i samma besked. Se
   [Events och beslutsguidning](docs/events-and-guidance.md).
+  `tysta-planetbesked` är **Fullständigt implementerat**: Population- och
+  Habitability-besked kan tystas var för sig i Decisions. Inställningarna
+  sparas och påverkar framtida besked.
   `population-besked-endast-vid-andring` är **Fullständigt implementerat**:
   Population ger besked endast när antalet ändras. +0 och tomma planetbesked
   utgår; andra planetändringar visas fortfarande. Detta ersätter den tidigare

@@ -1,5 +1,5 @@
 import type { AppReadModel } from '../../models/AppModel.js';
-import { needsAttention } from '../../models/Decisions.js';
+import { isMessageSetting, needsAttention } from '../../models/Decisions.js';
 import type { IntentHandler } from '../ViewContracts.js';
 import { button, element } from '../dom.js';
 import { bindQueueOrder, decorateQueueRow } from '../QueueView.js';
@@ -181,7 +181,7 @@ export function renderDecisions(
   page.append(element('h1', '', 'Decisions'));
   const panel = element('div', 'empire-content');
 
-  if (!model.decisions.length)
+  if (!model.decisions.some((item) => !isMessageSetting(item.id)))
     panel.append(element('p', '', 'No decisions need your attention.'));
   for (const item of model.decisions) {
     const card = element('article', 'empire-card');
@@ -191,6 +191,18 @@ export function renderDecisions(
       card.append(element('p', 'muted-note', 'Muted for future turns'));
     else if (item.skipped)
       card.append(element('p', 'muted-note', 'Skipped this turn'));
+    if (isMessageSetting(item.id)) {
+      const toggle = button(item.muted ? 'Unmute' : 'Mute', () =>
+        emit({
+          type: item.muted ? 'unmute-decision' : 'mute-decision',
+          id: item.id,
+        }),
+      );
+      toggle.disabled = model.phase !== 'planning';
+      card.append(toggle);
+      panel.append(card);
+      continue;
+    }
     const review = button('Review', () =>
       emit({ type: 'open-decision', id: item.id }),
     );

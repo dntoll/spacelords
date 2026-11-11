@@ -24,6 +24,11 @@ informationen kan rullas inom rutan. End turn får inte täckas.
 
 ## Händelser
 
+- `tysta-planetbesked` — **Fullständigt implementerat**: Decisions erbjuder
+  separata Mute och Unmute för Population och Habitability på alla planeter.
+  Inställningarna sparas, gäller framtida årsbesked och lämnar andra rader och
+  tidigare händelser oförändrade. Tomma besked skapas inte.
+
 - `ruttflottor-utan-ankomstbesked`: en flotta på Route ger inget ankomstbesked
   när den når en ändplanet, vare sig med last eller utan. Uppdraget fortsätter.
   Verklig lossning redovisas som levererat material i planetens årsbesked,

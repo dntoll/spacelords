@@ -1406,3 +1406,8 @@ Lamporna är fasta och påverkas inte av stridsskador. Väggsnitten är en visue
 ## Snabb produktionsvy
 
 `snabb-produktionsvy` är **Fullständigt implementerat**. Produktionsval och ändringar i Production ska reagera snabbt även när riket växer. Vyn visar aktuella val, köer och återkoppling efter varje ändring.
+
+`tysta-planetbesked` — **Fullständigt implementerat**: I Decisions kan
+Population- och Habitability-besked tystas och återaktiveras var för sig.
+Valen sparas och gäller framtida besked från alla planeter. Andra händelser
+och tidigare besked påverkas inte.

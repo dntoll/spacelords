@@ -21,8 +21,17 @@ export interface Decision extends DecisionDescriptor {
   readonly current: boolean;
 }
 
+export function isMessageSetting(id: string): boolean {
+  return id === 'message-population' || id === 'message-habitability';
+}
+
 export function needsAttention(decision: Decision): boolean {
-  return decision.current && !decision.skipped && !decision.muted;
+  return (
+    !isMessageSetting(decision.id) &&
+    decision.current &&
+    !decision.skipped &&
+    !decision.muted
+  );
 }
 
 export type DecisionScreen = 'research' | 'fleets' | 'route' | 'production';

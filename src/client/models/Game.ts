@@ -118,6 +118,7 @@ import type {
 } from './app/EventDetails.js';
 import {
   DecisionBoard,
+  isMessageSetting,
   type Decision,
   type DecisionDescriptor,
 } from './Decisions.js';
@@ -5372,7 +5373,12 @@ export class Game {
           : 0;
       const previousHabitability = previousEnvironment.habitability;
       state.habitability = Math.min(100, previousHabitability + improvement);
-      if (state.habitability !== previousHabitability)
+      if (
+        state.habitability !== previousHabitability &&
+        !this.#decisions.muted.some(
+          (item) => item.id === 'message-habitability',
+        )
+      )
         this.#planetEvent(
           `Habitability on ${planet.name} increased to ${state.habitability}%.`,
           planet,
@@ -5434,7 +5440,10 @@ export class Game {
         ),
       );
       state.population += growth;
-      if (growth !== 0)
+      if (
+        growth !== 0 &&
+        !this.#decisions.muted.some((item) => item.id === 'message-population')
+      )
         this.#planetEvent(
           `Population on ${planet.name} changed by +${growth}.`,
           planet,
@@ -5785,12 +5794,30 @@ export class Game {
   }
   muteDecision(id: string): void {
     this.#requirePlanning();
-    const decision = this.decisions.find((item) => item.id === id);
+    const decision = [...this.decisions, ...this.messageSettings].find(
+      (item) => item.id === id,
+    );
     if (decision) this.#decisions.mute(decision);
   }
   unmuteDecision(id: string): void {
     this.#requirePlanning();
     this.#decisions.unmute(id);
+  }
+  get messageSettings(): readonly Decision[] {
+    return this.#decisions
+      .snapshot([
+        {
+          id: 'message-population',
+          label: 'Population messages',
+          kind: 'planet',
+        },
+        {
+          id: 'message-habitability',
+          label: 'Habitability messages',
+          kind: 'planet',
+        },
+      ])
+      .filter((item) => isMessageSetting(item.id));
   }
   get decisions(): readonly Decision[] {
     const items: DecisionDescriptor[] = [];
@@ -5920,7 +5947,9 @@ export class Game {
         routeId: route.id,
         transportAction: this.#routeTransportAction(route),
       });
-    return this.#decisions.snapshot(items);
+    return this.#decisions
+      .snapshot(items)
+      .filter((item) => !isMessageSetting(item.id));
   }
   get shipments() {
     const projects = new Map<string, string>(

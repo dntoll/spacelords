@@ -272,3 +272,49 @@ describe('grupperade-planethandelser / grupperade-transporthandelser', () => {
     );
   });
 });
+
+it('tysta-planetbesked: independently mutes future population and habitability messages across saves', () => {
+  const state = tradeNetworkState(false);
+  const game = Game.restore({
+    ...state,
+    fleets: [],
+    colonies: state.colonies.map(([id, colony]) => [
+      id,
+      id === 'sol-1'
+        ? {
+            ...colony,
+            population: 1000,
+            habitability: 75,
+            projects: [],
+            buildings: [
+              {
+                id: 'terraformer',
+                type: 'Desert terraforming factory',
+                slotIndex: 0,
+                demolition: false,
+              },
+            ],
+          }
+        : colony,
+    ]),
+  });
+  expect(
+    game.messageSettings.find((item) => item.id === 'message-population'),
+  ).toBeDefined();
+  game.muteDecision('message-population');
+  const restored = Game.restore(game.exportState());
+  collectTurnFrames(restored);
+  restored.finishTurn();
+  const report = restored.events.find((event) => event.planetId === 'sol-1')!;
+  expect(report.text).toContain('Habitability');
+  expect(report.text).not.toContain('Population');
+  restored.unmuteDecision('message-population');
+  restored.muteDecision('message-habitability');
+  collectTurnFrames(restored);
+  restored.finishTurn();
+  const next = restored.events.find(
+    (event) => event.planetId === 'sol-1' && event.round === 2,
+  )!;
+  expect(next.text).toContain('Population');
+  expect(next.text).not.toContain('Habitability');
+});

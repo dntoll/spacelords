@@ -479,7 +479,7 @@ export class AppModel {
       focusedProjectId: this.#focusedProjectId,
       mapFocusRevision: this.#mapFocusRevision,
       projectSupply,
-      decisions,
+      decisions: Object.freeze([...decisions, ...this.#game.messageSettings]),
       planetQueues: this.#game.planetQueues,
       salvageQueue: this.#game.salvageQueue,
       attackQueue: this.#game.attackQueue,
