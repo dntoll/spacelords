@@ -330,6 +330,7 @@ Se [hela visionen](docs/game-vision.md).
   fasadtextur så att en längre sträcka blir sammanhängande. `Half cover` är
   hälften så hög som en vägg. Soldater, pirater och civilister har stående och
   hukande bilder för åtta riktningar och visar riktningen utan en separat pil.
+  Fötterna, skuggan och valringen sitter i rutans mitt.
   Utslagna och döda visas med riktningsoberoende liggande bilder. Diagonala steg kostar 3/4 AP
   stående/hukande, raka steg 2/3 AP och varje 45-gradersvändning 1 AP. Personer blockerar inte
   sikt men kan blockera skott. Döda och utslagna blockerar varken skott eller

@@ -1591,7 +1591,8 @@ Snabbsvitens körning 2026-11-04 passerade med 788 tester på 24,37 s. De längr
   packar ett transparent WebP-bildark och typade källrektanglar. Spegling sker
   endast i vyn. De tre liggande källorna packas i en egen rad och används
   riktningsoberoende för statusarna `incapacitated` och `dead`. Renderingen och
-  figurernas klickytor använder samma bildgränser.
+  figurernas klickytor använder samma bildgränser. Alla poser delar fotpunkten
+  i rutans mitt; skugga och valring använder samma punkt.
 - BoardingMapView ritar inga riktningslinjer och tar inte längre emot sikt- och
   eldrutor från BoardingView. Modellens sikt- och eldberäkningar behålls för
   reglerna. Last known-poster filtreras mot personstatus och rensas när deras

@@ -11,6 +11,7 @@ import {
 import {
   boardingCharacterSprite,
   BOARDING_FOOT_PLANT,
+  NO_FLIGHT_ADJUSTMENT,
 } from '../../src/client/views/boarding/BoardingCharacterSprite.js';
 
 const verticalMeter = 16 * Math.sqrt(6);
@@ -49,7 +50,9 @@ describe('meterskala-i-bordning', () => {
       'standing',
     ).destination;
     expect(sprite.height / verticalMeter).toBeCloseTo(1.8);
-    expect(sprite.y + sprite.height).toBe(BOARDING_FOOT_PLANT);
+    expect(sprite.y + sprite.height).toBe(
+      BOARDING_FOOT_PLANT + NO_FLIGHT_ADJUSTMENT,
+    );
     const camera = boardingIsoCamera(
       { width: 3, height: 3 },
       { width: 430, height: 500 },

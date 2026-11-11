@@ -296,7 +296,7 @@ sammanhängande skeppsväggar utan prickmarkering, och `Half cover` ska vara
 tydligt lägre än en vägg.
 Soldater, pirater och civilister ska visas med skilda stående och hukande
 figurer som tydligt visar åt vilket av åtta håll de står. Figurerna står med
-fötterna nära golvet på sin ruta. Vita riktningspilar visas inte. Utslagna och
+fötterna i rutans mitt, och skugga och valring ligger på samma punkt. Vita riktningspilar visas inte. Utslagna och
 döda personer visas med en egen liggande bild för soldat, pirat och civilist.
 Ovanför egna soldater syns både HP och AP. Raka steg kostar 2 AP stående
 eller 3 AP hukande; diagonaler kostar 3 respektive 4 AP. En 45-gradersvändning

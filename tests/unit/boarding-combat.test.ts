@@ -34,6 +34,11 @@ function activate(id: string, remaining = 12) {
 }
 
 describe('datadriven-bordningskarta', () => {
+  const objectLayer =
+    transportMap.split('[objects]')[1]?.split(/\n\[/)[0] ?? '';
+  const objectCount = (marker: string) =>
+    [...objectLayer].filter((symbol) => symbol === marker).length;
+
   it('parses the editable transport layers into immutable domain data', () => {
     expect(map).toBeInstanceOf(BoardingMap);
     expect(map.name).toBe('Transport boarding');
@@ -44,13 +49,13 @@ describe('datadriven-bordningskarta', () => {
     expect(map.spawns.civilian).toHaveLength(3);
     expect(
       map.features.filter((feature) => feature.kind === 'door'),
-    ).toHaveLength(3);
+    ).toHaveLength(objectCount('D') + objectCount('L'));
     expect(map.features.some((feature) => feature.kind === 'reactor')).toBe(
       true,
     );
     expect(
       map.features.filter((feature) => feature.kind === 'exit'),
-    ).toHaveLength(3);
+    ).toHaveLength(objectCount('X') + objectCount('B'));
     expect(map.roomAt({ q: 1, r: 1 })).toBe('bridge');
     expect(map.roomAt({ q: 11, r: 1 })).toBe('engineering');
     expect(Object.isFrozen(map.features)).toBe(true);

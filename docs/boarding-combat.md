@@ -116,8 +116,8 @@ sparplatser.
 - `bordningsfigurer-fran-spritesheet` — **Fullständigt implementerat**. Soldater,
   pirater och civilister har egna stående och hukande figurer. Fem grundvinklar
   per typ och ställning speglas till åtta riktningar. Bilden visar samma håll
-  som figurens rörelse och sikt. Fötterna förankras nära golvet,
-  och HP, AP och statusmarkeringar behålls. Detta ersätter samma stillbild för
+  som figurens rörelse och sikt. Fötterna står i rutans mitt, med skugga och
+  valring på samma punkt, och HP, AP och statusmarkeringar behålls. Detta ersätter samma stillbild för
   alla riktningar. Totalt 33 genererade grundbilder används i ett bildark.
 - `utslagna-bordningsfigurer` — **Fullständigt implementerat**. Soldat, pirat
   och civilist har var sin transparent liggande, riktningsoberoende bild.

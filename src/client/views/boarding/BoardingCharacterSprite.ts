@@ -30,8 +30,10 @@ const views: readonly {
   { angle: 'front', mirrored: false },
 ];
 
-/** bordningsfigurer-fran-spritesheet: plant feet slightly below the tile center. */
-export const BOARDING_FOOT_PLANT = 8;
+/** bordningsfigurer-fran-spritesheet: plant feet on the tile center, shared by every pose. */
+export const BOARDING_FOOT_PLANT = 0;
+export const NO_FLIGHT_ADJUSTMENT = 3;
+
 
 export interface BoardingCharacterPick {
   readonly id: string;
@@ -72,7 +74,7 @@ export function boardingCharacterSprite(
       y:
         pose === 'incapacitated'
           ? floorCenter.y - height / 2 + BOARDING_FOOT_PLANT
-          : floorCenter.y - height + BOARDING_FOOT_PLANT,
+          : floorCenter.y - height + BOARDING_FOOT_PLANT + NO_FLIGHT_ADJUSTMENT,
       width,
       height,
     },

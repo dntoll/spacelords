@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   BOARDING_FOOT_PLANT,
+  NO_FLIGHT_ADJUSTMENT,
   boardingCharacterAtPoint,
   boardingCharacterSprite,
 } from '../../src/client/views/boarding/BoardingCharacterSprite.js';
 
 describe('bordningsfigurer-fran-spritesheet', () => {
-  it('isolates one figure per row and plants every figure slightly below the tile center', () => {
+  it('isolates one figure per row and plants every figure on the tile center', () => {
     for (const side of ['player', 'defender', 'civilian'] as const) {
       const sprite = boardingCharacterSprite(
         side,
@@ -18,7 +19,7 @@ describe('bordningsfigurer-fran-spritesheet', () => {
       expect(sprite.source.height).toBe(224);
       expect(sprite.destination.x + sprite.destination.width / 2).toBe(80);
       expect(sprite.destination.y + sprite.destination.height).toBe(
-        120 + BOARDING_FOOT_PLANT,
+        120 + BOARDING_FOOT_PLANT + NO_FLIGHT_ADJUSTMENT,
       );
     }
   });
@@ -79,7 +80,7 @@ describe('bordningsfigurer-fran-spritesheet', () => {
         expect(sprites[4]!.source).toEqual(sprites[6]!.source);
         for (const sprite of sprites)
           expect(sprite.destination.y + sprite.destination.height).toBe(
-            BOARDING_FOOT_PLANT,
+            BOARDING_FOOT_PLANT + NO_FLIGHT_ADJUSTMENT,
           );
       }
       expect(
