@@ -6049,7 +6049,7 @@ export class Game {
         stock: economy.stock,
         reserved: this.#logistics.reserved(planet.id, project?.id),
         componentProduction,
-        demand: economy.demand,
+        demand: project ? this.#projectCost(planet, project) : emptyStock(),
         extraction: economy.extraction,
         deposits: economy.deposits,
         capabilities: products.map((product) => {

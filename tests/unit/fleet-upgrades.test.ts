@@ -36,6 +36,36 @@ it('delproduktion-med-sammanhang: reports parts reserved for a fleet upgrade bef
 });
 
 describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flottuppgradering', () => {
+  it('produktionsstatus-for-separata-behov: does not treat an upgrade’s ordered components as requirements of the factory project producing them', () => {
+    const state = upgradeState();
+    const colony = state.colonies[0]![1];
+    colony.stock['Ion pulse engine'] = 0;
+    colony.stock['Telescope III'] = 0;
+    colony.buildings.push(
+      {
+        id: 'ion-factory',
+        type: 'Ion pulse engine factory',
+        slotIndex: 2,
+        demolition: false,
+      },
+      {
+        id: 'telescope-factory',
+        type: 'Telescope III factory',
+        slotIndex: 3,
+        demolition: false,
+      },
+    );
+    const game = Game.restore(state);
+    game.upgradeFleet('fleet-home');
+    const supply = game
+      .supplyOverview()
+      .planets.find((planet) => planet.id === 'sol-0')!;
+    expect(supply.project?.type).toBe('Ion pulse engine');
+    expect(supply.status).toBe('Ready');
+    expect(
+      game.decisions.some((decision) => decision.id === 'supply-sol-0'),
+    ).toBe(false);
+  });
   it.each<ShipType>([
     'Fighter',
     'Colony ship',

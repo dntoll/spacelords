@@ -1,5 +1,9 @@
 # Produktkrav och status
 
+`produktionsstatus-for-separata-behov` — **Fullständigt implementerat**.
+Byggprojektets försörjningsstatus avser dess egna behov, så att andra
+pågående arbeten inte orsakar missvisande bristbesked.
+
 ## Kartobjekt och automatiska flottor, 2026-11-08
 
 - `kartobjekt-foljer-zoom` — **Fullständigt implementerat**: vrakens symboler

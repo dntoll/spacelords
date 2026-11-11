@@ -314,6 +314,28 @@ describe('bargningsorder / bogsering-av-vrak', () => {
 });
 
 describe('automatisk-vrakreparation / forskning-fran-bargade-delar', () => {
+  it('produktionsstatus-for-separata-behov: does not attribute repair materials to an unrelated construction project', () => {
+    const state = salvageState();
+    const colony = state.colonies[0]![1];
+    colony.stock = { ...colony.stock, ...projectDefinition('Iron mine').cost };
+    colony.projects = [
+      {
+        id: 'mine-project',
+        type: 'Iron mine',
+        slotIndex: 2,
+        factoryId: null,
+        destinationFleetId: null,
+      },
+    ];
+    state.salvage.yards[0]!.queue = ['advanced-wreck'];
+    state.salvage.wrecks[0]!.yardId = 'yard';
+    state.salvage.wrecks[0]!.position = new HexCoordinate(2, 0);
+    const game = Game.restore(state);
+    expect(
+      game.supplyOverview().planets.find((planet) => planet.id === 'sol-0')!
+        .status,
+    ).toBe('Ready');
+  });
   it('varvets-automatiska-materialforsorjning: exposes the first queued repair as material demand after restoring a save', () => {
     const state = salvageState();
     state.salvage.yards[0]!.queue = ['advanced-wreck'];

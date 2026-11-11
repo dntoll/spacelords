@@ -10,6 +10,8 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Tydlig försörjningsstatus:** `produktionsstatus-for-separata-behov` är **Fullständigt implementerat**. Ett byggprojekts status bedöms utifrån dess eget behov, utan att blanda in varvets reparationer eller flottuppgraderingar. Se [ekonomi och logistik](docs/economy-logistics.md).
+
 - **Varvets material:** `varvets-automatiska-materialforsorjning` är **Fullständigt implementerat**. Den första reparationen i varje fungerande Shipyard beställer saknade råvaror genom planetens handelsnät på samma sätt som ett aktivt bygge. Se [varv](docs/salvage-shipyards.md).
 
 - **Kartobjekt och automatiska flottor:** `kartobjekt-foljer-zoom`,

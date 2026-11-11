@@ -1,5 +1,10 @@
 # Tekniska krav och arbetsregler
 
+`produktionsstatus-for-separata-behov`: försörjningsöversikten för aktivt
+byggprojekt använder projektets egen kostnad; planetens samlade efterfrågan
+behålls för logistikplanering och ekonomivyn. Ett regressionstest skyddar
+statusen när en flottuppgradering beställer delar från lokal produktion.
+
 ## Planetköer, 2026-11-08
 
 - `PlanetQueues` äger de två beständiga prioritetslistorna. `Game` validerar

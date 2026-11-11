@@ -1,5 +1,10 @@
 # Ekonomi, logistik och beslut
 
+`produktionsstatus-for-separata-behov` — **Fullständigt implementerat**.
+Försörjningsstatus för planetens aktiva byggprojekt gäller det projektets
+egna behov. Varvets reparationer och flottuppgraderingar ska inte ge falska
+bristbesked för projektet som tillverkar deras beställda delar.
+
 Planeter har ändliga fyndigheter av Iron, Water och Oil. Iron mine,
 Water extractor och Oil extractor flyttar material till planetens obegränsade
 lager. Bemanning krävs; nya byggnader arbetar från nästa år. Material som inte
