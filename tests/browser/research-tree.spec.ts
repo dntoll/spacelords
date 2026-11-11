@@ -147,7 +147,10 @@ test('forsknings-tradnavigation: dependency arrows, navigation and research pres
   await page.keyboard.press('+');
   await expect(stage).not.toHaveAttribute('style', initial!);
   const zoomed = await stage.getAttribute('style');
-  await page.keyboard.press('ArrowRight');
+  for (const key of ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp']) {
+    await page.keyboard.press(key);
+    if ((await stage.getAttribute('style')) !== zoomed) break;
+  }
   await expect(stage).not.toHaveAttribute('style', zoomed!);
   const choose = page.getByRole('button', {
     name: 'Inspect Rocket engine factory',

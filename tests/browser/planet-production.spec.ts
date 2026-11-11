@@ -30,7 +30,7 @@ async function build(page: Page, site: number, type: string) {
 test('gemensam-planetko / delfabriker / automatiska-delorder: research, manufacture parts and assemble a Fighter in one saved queue', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(120_000);
+  test.setTimeout(90_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');

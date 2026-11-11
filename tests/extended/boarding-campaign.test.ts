@@ -256,9 +256,11 @@ describe('lassta-dockade-skepp / docka-babord-styrbord', () => {
       attackerId: 'raider',
       defenderId: 'hauler',
     });
-    battle.command({ type: 'end-activation' }, 'enemy');
+    // nasta-skepp-vid-slut-pa-handlingar: docking spends the action, so the
+    // defender's activation finishes the round and opens the boarding.
+    expect(battle.snapshot.turn).toBe('player');
+    expect(battle.snapshot.activation).toBeNull();
     battle.command({ type: 'activate', id: 'hauler' }, 'player');
-    battle.command({ type: 'end-activation' }, 'player');
     expect(battle.boardingReady).toBe(true);
     expect(battle.consumeBoardingReady()).toEqual({
       attackerId: 'raider',
@@ -496,7 +498,8 @@ describe('bordningsbeloning-last-teknik-karta / raptor-efter-dockningsteknik', (
     }));
     game.commandBattle({ type: 'activate', id: attacker.id });
     game.commandBattle({ type: 'dock', targetId: defender.id });
-    game.commandBattle({ type: 'end-activation' });
+    if (game.tacticalBattle?.activation)
+      game.commandBattle({ type: 'end-activation' });
     if (game.tacticalBattle?.turn === 'enemy')
       game.playBattleActivation(false, { allowDock: false });
     expect(game.boardingBattle).not.toBeNull();

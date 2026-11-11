@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import {
   mkdirSync,
   openSync,
@@ -9,7 +9,88 @@ import {
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export function runSteps(steps, directory) {
+// utokad-testsvit: the CI job stays at 20 minutes. A single browser case does not.
+export const stepTimeoutMs = 20 * 60_000;
+
+export function killProcessTree(pid) {
+  if (!pid) return;
+  if (process.platform === 'win32') {
+    spawnSync('taskkill', ['/pid', String(pid), '/t', '/f'], {
+      stdio: 'ignore',
+    });
+    return;
+  }
+  try {
+    process.kill(-pid, 'SIGKILL');
+  } catch {
+    try {
+      process.kill(pid, 'SIGKILL');
+    } catch {
+      // The process has already exited.
+    }
+  }
+}
+
+function launch(command, args, descriptor) {
+  // utokad-testsvit: npm is a .cmd launcher on Windows, not an executable.
+  const npmCli =
+    process.env.npm_execpath ??
+    resolve(dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js');
+  const useNpmCli = command === 'npm' && process.platform === 'win32';
+  return spawn(
+    useNpmCli ? process.execPath : command,
+    useNpmCli ? [npmCli, ...args] : args,
+    {
+      stdio: ['ignore', descriptor, descriptor],
+      windowsHide: true,
+      detached: process.platform !== 'win32',
+    },
+  );
+}
+
+function waitForStep(child, timeoutMs) {
+  return new Promise((resolve) => {
+    let settled = false;
+    let timedOut = false;
+    let fallback;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      clearTimeout(fallback);
+      resolve(result);
+    };
+    const timer = setTimeout(() => {
+      timedOut = true;
+      killProcessTree(child.pid);
+      fallback = setTimeout(() => {
+        finish({
+          error: Object.assign(new Error('The operation timed out.'), {
+            code: 'ETIMEDOUT',
+          }),
+          status: null,
+          signal: null,
+        });
+      }, 2_000);
+    }, timeoutMs);
+    child.once('error', (error) =>
+      finish({ error, status: null, signal: null }),
+    );
+    child.once('close', (status, signal) =>
+      finish({
+        error: timedOut
+          ? Object.assign(new Error('The operation timed out.'), {
+              code: 'ETIMEDOUT',
+            })
+          : null,
+        status: timedOut ? null : status,
+        signal,
+      }),
+    );
+  });
+}
+
+export async function runSteps(steps, directory, timeoutMs = stepTimeoutMs) {
   mkdirSync(directory, { recursive: true });
   const results = [];
   for (const [name, command, args] of steps) {
@@ -18,19 +99,7 @@ export function runSteps(steps, directory) {
     const started = performance.now();
     let result;
     try {
-      // utokad-testsvit: npm is a .cmd launcher on Windows, not an executable.
-      const npmCli =
-        process.env.npm_execpath ??
-        resolve(dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js');
-      const useNpmCli = command === 'npm' && process.platform === 'win32';
-      result = spawnSync(
-        useNpmCli ? process.execPath : command,
-        useNpmCli ? [npmCli, ...args] : args,
-        {
-          stdio: ['ignore', descriptor, descriptor],
-          timeout: 20 * 60_000,
-        },
-      );
+      result = await waitForStep(launch(command, args, descriptor), timeoutMs);
     } finally {
       closeSync(descriptor);
     }
@@ -48,7 +117,7 @@ export function runSteps(steps, directory) {
   return results;
 }
 
-export function check(profile) {
+export async function check(profile) {
   if (process.env.SPACELORDS_SMOKE_URL)
     throw new Error(
       'Checks must use the local build. Unset SPACELORDS_SMOKE_URL.',
@@ -82,7 +151,7 @@ export function check(profile) {
   }
   const directory = resolve('dist/checks', `${profile}-${Date.now()}`);
   console.log(`Checks: ${profile}. Logs: ${directory}`);
-  return { profile, steps: runSteps(steps, directory), directory };
+  return { profile, steps: await runSteps(steps, directory), directory };
 }
 
 if (
@@ -90,7 +159,7 @@ if (
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
   try {
-    check(process.argv[2]);
+    await check(process.argv[2]);
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

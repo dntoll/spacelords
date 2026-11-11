@@ -97,6 +97,7 @@ test('piratflotta-med-lastfartyg: the pirate panel lists a transport and its car
   const prepared = {
     ...state,
     pirates: state.pirates!.filter((pirate) => pirate.systemId === 'nadir'),
+    chartedPirates: ['pirate-nadir'],
     explored: [
       ...state.explored,
       ...system.star.position.neighbors().map((position) => position.key),

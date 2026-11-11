@@ -92,10 +92,14 @@ test('tysta-beslut / beslutsmarkering-pa-flikar / tystade-beslut-sist: Mute pers
       .locator(`[data-decision-id="${id}"]`)
       .getByRole('button', { name: 'Mute', exact: true })
       .click();
-    await expect(page.locator('[data-decision-id]').last()).toHaveAttribute(
-      'data-decision-id',
-      id,
-    );
+    // tystade-beslut-sist: message settings stay after the muted decisions.
+    await expect(
+      page
+        .locator(
+          '[data-decision-id]:not([data-decision-id="message-population"]):not([data-decision-id="message-habitability"])',
+        )
+        .last(),
+    ).toHaveAttribute('data-decision-id', id);
   }
   await expect(
     page.locator('[data-screen="fleets"] .nav-attention'),

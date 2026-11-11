@@ -105,7 +105,7 @@ export async function deploy() {
   save();
   console.log(`Deployment report: ${join(directory, 'report.json')}`);
   try {
-    report.checks = check('quick');
+    report.checks = await check('quick');
     report.status = 'checked';
     save();
     assertSource(root, source.revision);
@@ -124,7 +124,7 @@ export async function deploy() {
     ])
       before[path] = await checksum(`${site}${path}`);
     report.operations.push(
-      ...runSteps(
+      ...(await runSteps(
         [
           [
             'push-source',
@@ -158,7 +158,7 @@ export async function deploy() {
           ],
         ],
         directory,
-      ),
+      )),
     );
     git(
       report.checkout,
@@ -192,7 +192,7 @@ export async function deploy() {
     report.status = 'publishing';
     save();
     report.operations.push(
-      ...runSteps(
+      ...(await runSteps(
         [
           [
             'publish',
@@ -201,7 +201,7 @@ export async function deploy() {
           ],
         ],
         directory,
-      ),
+      )),
     );
     report.status = 'published-awaiting-verification';
     save();
@@ -217,10 +217,10 @@ export async function deploy() {
     process.env.SPACELORDS_SMOKE_URL = appURL;
     try {
       report.operations.push(
-        ...runSteps(
+        ...(await runSteps(
           [['live-mobile', 'npm', ['run', 'test:mobile']]],
           directory,
-        ),
+        )),
       );
     } finally {
       if (previousURL === undefined) delete process.env.SPACELORDS_SMOKE_URL;

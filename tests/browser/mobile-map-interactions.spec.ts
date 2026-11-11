@@ -21,7 +21,12 @@ async function start(page: Page, state: GameState) {
 for (const gesture of ['double click', 'double tap'] as const) {
   test(`dubbelklick-koar-forskning: ${gesture} queues once after inspecting the tile`, async ({
     page,
+    isMobile,
   }) => {
+    test.skip(
+      gesture === 'double tap' && !isMobile,
+      'Native touch requires a mobile device.',
+    );
     await start(page, researchStationState());
     await page.getByRole('button', { name: 'Research', exact: true }).click();
     const tile = page.getByRole('button', {

@@ -105,22 +105,44 @@ it('forskning-fran-bargade-delar: shows recovered technology as available while 
 });
 
 it('planettypsforskning: omits hidden projects and sizes the diagram for only discovered technologies', () => {
-  const research = new Game(createExampleGalaxy()).research;
+  const game = new Game(createExampleGalaxy());
+  const research = game.research;
   const view = renderResearch(research, false, vi.fn());
   const layout = new ResearchTreeLayout(research.available);
   expect(
     view.querySelector('.research-introduction-details')!.textContent,
   ).toContain('Dome');
   expect(view.querySelector('[data-technology="Ice dome"]')).toBeNull();
-  expect(view.querySelector('[data-technology="Desert dome"]')).not.toBeNull();
+  expect(view.querySelector('[data-technology="Desert dome"]')).toBeNull();
   expect(view.querySelectorAll('[data-technology]')).toHaveLength(
     research.available.length,
   );
   expect(
     view.querySelector<HTMLElement>('.research-tree-stage')!.style.height,
   ).toBe(`${layout.height}px`);
+  const desert = game.galaxy.systems
+    .flatMap((system) => system.planets)
+    .find(
+      (planet) => planet.type === 'solid' && planet.environment === 'Desert',
+    )!;
+  const state = game.exportState();
+  const surveyed = Game.restore({
+    ...state,
+    surveyedPlanets: [...(state.surveyedPlanets ?? []), desert.id],
+  }).research;
+  const unlocked = renderResearch(surveyed, false, vi.fn());
   expect(
-    view.querySelector(
+    unlocked.querySelector('[data-technology="Desert dome"]'),
+  ).not.toBeNull();
+  expect(unlocked.querySelector('[data-technology="Ice dome"]')).toBeNull();
+  expect(unlocked.querySelectorAll('[data-technology]')).toHaveLength(
+    surveyed.available.length,
+  );
+  expect(
+    unlocked.querySelector<HTMLElement>('.research-tree-stage')!.style.height,
+  ).toBe(`${new ResearchTreeLayout(surveyed.available).height}px`);
+  expect(
+    unlocked.querySelector(
       '[data-from="Desert dome"][data-to="Desert terraforming factory"]',
     ),
   ).not.toBeNull();

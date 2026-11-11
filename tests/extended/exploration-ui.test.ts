@@ -217,9 +217,12 @@ it('skeppsval-startar-stridstur / vaxelvisa-skeppsaktiveringar / riktning-och-va
   expect(saved.state.simulation!.tacticalBattles![0]!.activation?.id).toBe(
     fighter.id,
   );
-  root
-    .querySelector<HTMLButtonElement>('button[aria-label="Turn left"]')!
-    .click();
+  const turnLeft = () =>
+    [...root.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
+      button.getAttribute('aria-label')?.endsWith('facing 1, speed 0'),
+    );
+  turnLeft()!.click();
+  turnLeft()!.click();
   const checkpoint = saved.state.simulation!.tacticalBattles![0]!;
   expect(checkpoint.pieces.find((p) => p.id === fighter.id)!.facing).toBe(1);
   expect(checkpoint.activation!.remaining).toBe(1);

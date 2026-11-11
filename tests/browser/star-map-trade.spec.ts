@@ -171,7 +171,9 @@ for (const mode of ['Star map', 'Route'] as const)
 
 test('handelsrutt-skapande-pa-stjarnkartan: missing research is visible before Create route and remains visible after a drag', async ({
   page,
+  isMobile,
 }, testInfo) => {
+  test.skip(!isMobile, 'Native touch requires a mobile device.');
   const locked = {
     ...initial,
     researched: initial.researched.filter(
@@ -219,7 +221,9 @@ test('handelsrutt-skapande-pa-stjarnkartan: missing research is visible before C
 
 test('handelsrutt-skapande-pa-stjarnkartan: Create route and a target tap save a route after Trade logistics is completed', async ({
   page,
+  isMobile,
 }) => {
+  test.skip(!isMobile, 'Native touch requires a mobile device.');
   await page.getByRole('button', { name: 'Route', exact: true }).tap();
   await page.getByRole('button', { name: 'Create route', exact: true }).tap();
   const destination = await screenPoint(page, end);

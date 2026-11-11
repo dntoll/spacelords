@@ -111,19 +111,35 @@ it('spelgrafik-planeter: all six detail illustrations are distinct and recover f
   expect(sources.size).toBe(6);
 });
 
-it('spelgrafik-planeter: map snapshots expose environment only for discovered planets', () => {
+it('spelgrafik-planeter: map snapshots expose environment only for surveyed planets', () => {
   const galaxy = createExampleGalaxy();
   const planets = galaxy.systems.flatMap((system) => system.planets);
   const explored = new Set(planets.map((planet) => planet.position.key));
-  const cells = galaxy.mapSnapshot(explored);
+  const concealed = galaxy.mapSnapshot(explored);
   for (const planet of planets) {
-    const object = cells.find(
+    const object = concealed.find(
+      (cell) => cell.position.key === planet.position.key,
+    )!.object!;
+    expect(object.environment).toBeUndefined();
+    expect(object.surveyed).toBe(false);
+    expect(Object.isFrozen(object)).toBe(true);
+  }
+  const revealed = galaxy.mapSnapshot(
+    explored,
+    undefined,
+    explored,
+    explored,
+    new Map(),
+    new Set(planets.map((planet) => planet.id)),
+  );
+  for (const planet of planets) {
+    const object = revealed.find(
       (cell) => cell.position.key === planet.position.key,
     )!.object!;
     expect(object.environment).toBe(
       planet.type === 'gas' ? 'Gas' : planet.environment,
     );
-    expect(Object.isFrozen(object)).toBe(true);
+    expect(object.surveyed).toBe(true);
   }
   const hidden = galaxy.mapSnapshot(new Set());
   expect(hidden.filter((cell) => cell.object?.kind === 'planet')).toHaveLength(

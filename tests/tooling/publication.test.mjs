@@ -214,10 +214,10 @@ test('bevara-befintlig-webbplats: sparse shallow publication aborts when another
   );
 });
 
-test('snabb-mobilpublicering: a failed check prevents later steps', (t) => {
+test('snabb-mobilpublicering: a failed check prevents later steps', async (t) => {
   const { root } = fixture(t);
   const marker = join(root, 'must-not-exist');
-  assert.throws(
+  await assert.rejects(
     () =>
       runSteps(
         [

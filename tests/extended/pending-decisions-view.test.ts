@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { expect, it } from 'vitest';
+import { needsAttention } from '../../src/client/models/Decisions.js';
 import { Game } from '../../src/client/models/Game.js';
 import { tradeNetworkState } from '../fixtures/trade-network.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
@@ -50,9 +51,7 @@ it('beslut-vantar-pa-paborjad-atgard: updates guidance, counter, map problems an
       (problem) => problem.decisionId === 'building-empty-sol-0',
     ),
   ).toBe(false);
-  const expected = model.snapshot.decisions.filter(
-    (d) => d.current && !d.muted && !d.skipped,
-  ).length;
+  const expected = model.snapshot.decisions.filter(needsAttention).length;
   expect(root.querySelector('.decision-counter')?.textContent).toBe(
     `Decisions (${expected})`,
   );

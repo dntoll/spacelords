@@ -1,7 +1,10 @@
 // @vitest-environment jsdom
 import { turnFrames } from '../fixtures/turn-steps.js';
 import { describe, expect, it, vi } from 'vitest';
-import { decisionScreen } from '../../src/client/models/Decisions.js';
+import {
+  decisionScreen,
+  isMessageSetting,
+} from '../../src/client/models/Decisions.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import { AppView } from '../../src/client/views/app/AppView.js';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
@@ -65,7 +68,11 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
 
   it('opens the selected context and skips only until the next turn, including after saving', () => {
     const model = researchStationModel();
-    expect(model.snapshot.decisions).toHaveLength(3);
+    expect(
+      model.snapshot.decisions.filter(
+        (decision) => !isMessageSetting(decision.id),
+      ),
+    ).toHaveLength(3);
     model.openDecision('research-empty');
     expect(model.snapshot.screen).toBe('research');
     model.openDecision('building-empty-sol-0');

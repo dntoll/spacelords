@@ -330,7 +330,7 @@ test('flera-skarmstorlekar: canvas follows its container without horizontal over
 test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: research, build ships and settle a new colony', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(150_000);
+  test.setTimeout(90_000);
   const nextYear = async () => {
     await page.getByRole('button', { name: 'Star map', exact: true }).click();
     await endTurn(page);

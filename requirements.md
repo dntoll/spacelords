@@ -727,7 +727,8 @@ Se [hela visionen](docs/game-vision.md).
   Även 23 vytester för spelgrafik, planetundersidor och forskningsdetaljer
   ligger i den utökade sviten efter ett uppmätt tidsöverskridande.
   `utokad-testsvit` har en jobbtidsgräns på 20 minuter inklusive installation
-  av webbläsare; snabbsvitens tidsriktvärde är 20 sekunder.
+  av webbläsare. Ett webbläsarfall tar högst 30 sekunder, eller 90 sekunder
+  när fallet spelar igenom flera år. Snabbsvitens tidsriktvärde är 20 sekunder.
   `snabb-mobilpublicering` är **Fullständigt implementerat** och provpublicerat:
   en vanlig ändringsbeställning innebär snabbtest och publicering av arbetsbranchen,
   om användaren inte uttryckligen avstår. Därefter testar användaren på mobilen.

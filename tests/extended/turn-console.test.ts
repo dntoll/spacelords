@@ -73,7 +73,12 @@ describe('handelseannonsering / handelser-pa-kartan', () => {
     expect(Object.isFrozen(home)).toBe(true);
     const planets = game.galaxy.systems.flatMap((system) => system.planets);
     const vesta = planets.find((planet) => planet.name === 'Vesta')!;
-    expect(game.planetKnowledge(vesta.position)?.habitability).toBe(
+    expect(game.planetKnowledge(vesta.position)).toBeNull();
+    const surveyed = Game.restore({
+      ...game.exportState(),
+      surveyedPlanets: [...game.exportState().surveyedPlanets!, vesta.id],
+    });
+    expect(surveyed.planetKnowledge(vesta.position)?.habitability).toBe(
       vesta.habitability,
     );
     const unknown = planets.find(
@@ -316,17 +321,30 @@ describe('handelser / arsrundor-och-order', () => {
       step++
     )
       await vi.advanceTimersByTimeAsync(50);
-    expect(root.querySelector('[role="dialog"]')).toBeNull();
+    const announcement = root.querySelector('.event-announcement');
+    expect(announcement?.textContent).toContain('Vesta');
+    expect(root.querySelector('[role="dialog"]')).toBe(announcement);
     expect(root.textContent).not.toContain('Continue');
     const log = root.querySelector('[role="log"]')!;
     expect(log).not.toBeNull();
-    expect(root.querySelector('.event-announcement')?.textContent).toContain(
-      'Vesta',
-    );
     expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
       true,
     );
-    await vi.advanceTimersByTimeAsync(model.snapshot.events.length * 2600);
+    const dismiss = () => {
+      const choice = root.querySelector<HTMLButtonElement>(
+        'button[aria-label="Ignore"]',
+      );
+      if (choice && !choice.disabled) choice.click();
+    };
+    for (
+      let step = 0;
+      step < 160 &&
+      root.querySelector<HTMLButtonElement>('.end-turn')!.disabled;
+      step++
+    ) {
+      dismiss();
+      await vi.advanceTimersByTimeAsync(100);
+    }
     expect(
       [...log.querySelectorAll<HTMLElement>('[data-event-id]')].map(
         (item) => item.dataset.eventId,
