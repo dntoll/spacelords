@@ -494,8 +494,8 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
   )!;
   expect(left).not.toBeNull();
   expect(right).not.toBeNull();
-  expect(left.textContent).toBe('↶');
-  expect(right.textContent).toBe('↷');
+  expect(left.textContent).toContain('Turn left');
+  expect(right.textContent).toContain('Turn right');
   expect(left.classList).toContain('boarding-action');
   left.click();
   expect(emit).toHaveBeenCalledWith({
@@ -512,20 +512,10 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
   )!;
   expect(health.value).toBe(player.hitPoints);
   expect(health.max).toBe(player.maxHitPoints);
-  expect(document.querySelector('.boarding-legend')!.textContent).toContain(
-    'Half cover',
-  );
-  expect(document.querySelector('.boarding-legend')!.textContent).not.toContain(
-    'Facing',
-  );
-  expect(document.querySelector('.boarding-legend')!.textContent).not.toContain(
-    'Sight',
-  );
+  expect(document.querySelector('.boarding-legend')).toBeNull();
+  expect(document.querySelector('.boarding-zoom')).toBeNull();
   selectHex({ q: player.position.q + 3, r: player.position.r });
   expect(document.body.textContent).toContain('Destination');
-  expect(document.querySelector('.boarding-legend')!.textContent).toMatch(
-    /Fire after move|Move only/,
-  );
   expect(rendered.mock.calls.at(-1)?.[3]).toEqual([
     {
       position: { q: player.position.q + 1, r: player.position.r },
@@ -1506,4 +1496,60 @@ it('kamerafokus-vid-bordningssoldatbyte: reserves the action HUD while busy and 
     view.dispose();
     bounds.mockRestore();
   }
+});
+
+it('dorrhandling-framfor-soldat / oppen-dorr-som-golvruta: offers the facing door and selects an open door as a destination', () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) => person.side === 'player',
+  )!;
+  const door = created.snapshot.features.find(
+    (feature) => feature.kind === 'door',
+  )!;
+  const boardingState: BoardingBattleState = {
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player.id
+        ? {
+            ...person,
+            position: { q: door.position.q - 1, r: door.position.r },
+            facing: 0,
+          }
+        : person,
+    ),
+    features: created.snapshot.features.map((feature) =>
+      feature.id === door.id
+        ? { ...feature, locked: false, open: false }
+        : feature,
+    ),
+    initiativeOrder: [player.id],
+    initiativeIndex: 0,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 12 },
+  };
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new BoardingView(document.body, emit, (_container, select) => {
+    selectHex = select;
+    return { render() {}, zoom() {}, fit() {}, dispose() {} };
+  });
+  view.render(boardingState);
+  document
+    .querySelector<HTMLButtonElement>('[aria-label="Open door"]')!
+    .click();
+  expect(emit).toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'door', id: door.id, action: 'open' },
+  });
+  view.render({
+    ...boardingState,
+    features: boardingState.features.map((feature) =>
+      feature.id === door.id ? { ...feature, open: true } : feature,
+    ),
+  });
+  selectHex(door.position);
+  expect(document.querySelector('.boarding-selection')!.textContent).toContain(
+    'Destination',
+  );
+  view.dispose();
 });

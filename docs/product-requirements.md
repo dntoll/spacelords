@@ -346,7 +346,7 @@ När en fiende eller civilist rör sig inom synhåll ska kameran vid behov zooma
 ut så att figuren och alla egna aktiva soldater som ser den syns samtidigt.
 Kameran står still medan figuren rör sig och behåller översikten efteråt.
 Dolda positioner får aldrig avslöjas av kameran. Spelaren kan avbryta
-kameraflödena genom att själv panorera, zooma eller välja `Fit`. Minskad
+kameraflödena genom att själv panorera eller zooma. Minskad
 rörelse visar kamerans slutläge direkt.
 
 `kameraoverblick-fore-bordningsskott` — **Fullständigt implementerat**. När en
@@ -1393,7 +1393,7 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 ## Meterskala och skymmande väggar i bordning
 
-- `meterskala-i-bordning` — **Fullständigt implementerat**. En golvruta är 1 × 1 m. Väggar och ytterskrov är 2,4 m höga; dörrar och airlock har 2,1 m fri öppning. Stående personer och reactor är cirka 1,8 m höga. Half cover är 1,2 m, fortsatt halva vägghöjden. Skalan framgår i kartans förklaring.
+- `meterskala-i-bordning` — **Fullständigt implementerat**. En golvruta är 1 × 1 m. Väggar och ytterskrov är 2,4 m höga; dörrar och airlock har 2,1 m fri öppning. Stående personer och reactor är cirka 1,8 m höga. Half cover är 1,2 m, fortsatt halva vägghöjden.
 - `genomskinliga-skymmande-vaggar` — **Fullständigt implementerat**. Väggar och ytterskrov som skymmer upptäckta spelbara rutor visas automatiskt som ogenomskinliga, 40 cm höga genomskärningar. Ovansidan har en tydlig metallkant och synligt vägginre. Detta ersätter det tidigare kravet på 35 procents opacitet efter uttrycklig beställning. Spelaren kan välja rutor och synliga personer bakom dem samt välja väggens egen ruta. Okända områden och dolda personer avslöjas inte. Föremål, väggar och personer har gemensam djupordning.
 
 ## Tunna innerväggar
@@ -1432,3 +1432,19 @@ och tidigare besked påverkas inte.
 
 `round-i-speltexter` — **Fullständigt implementerat**: Spelets texter använder
 `round` i stället för `year` för spelets tidssteg, även i hjälptexter.
+
+`illustrerade-bordningshandlingar` — **Delvis implementerat**: handlingsraden
+har bildsymboler och korta etiketter. Fler särskilda bilder för samtliga
+handlingar återstår.
+
+`bordning-utan-kameraknappar-och-forklaringspanel` — **Fullständigt implementerat**:
+handlingsraden ligger vid nederkanten. Förklaringspanelen och kameraknapparna
+är borttagna; nypzoom och mushjul finns kvar. Detta ersätter tidigare uppgifter
+om synlig kartförklaring och knappen `Fit` i boarding.
+
+`dorrhandling-framfor-soldat` och `oppen-dorr-som-golvruta` —
+**Fullständigt implementerat**: en soldat får dörrhandlingen när den står
+intill och tittar mot en stängd dörr. En öppen dörr väljs som en gångruta.
+
+`volymetrisk-bordningsrok` — **Fullständigt implementerat**: rök visas med
+animerade halvgenomskinliga partiklar genom rutan.

@@ -1,3 +1,5 @@
+import actionAtlasUrl from '../../assets/boarding/action-atlas-v2.png';
+import extraActionAtlasUrl from '../../assets/boarding/action-atlas-extra-v2.png';
 import type { BoardingCameraBounds } from './BoardingCameraController.js';
 import {
   BoardingBattle,
@@ -129,22 +131,7 @@ export class BoardingView {
     const header = element('div', 'boarding-heading');
     header.append(this.#heading, this.#close);
     const board = element('section', 'boarding-board');
-    const legend = element('div', 'boarding-legend');
-    legend.setAttribute('aria-label', 'Map legend');
-    legend.append(
-      element('span', 'boarding-legend-scale', '1 tile = 1 m'),
-      element('span', 'boarding-legend-selected', '○ Selected'),
-      element('span', 'boarding-legend-cover', '▰ Half cover'),
-      element('span', 'boarding-legend-fire', '▣ Fire after move'),
-      element('span', 'boarding-legend-reach', '▣ Move only'),
-    );
-    const zoom = element('div', 'boarding-zoom');
-    zoom.append(
-      iconButton('Zoom in', '+', () => this.#map?.zoom(1.25)),
-      iconButton('Zoom out', '−', () => this.#map?.zoom(0.8)),
-      iconButton('Fit boarding map', '⛶', () => this.#map?.fit()),
-    );
-    board.append(this.#canvas, legend, zoom);
+    board.append(this.#canvas);
     this.#team.setAttribute('aria-label', 'Boarding team');
     this.#controls.setAttribute('aria-label', 'Soldier actions');
     this.#details.append(element('summary', '', 'Combat details'));
@@ -192,11 +179,6 @@ export class BoardingView {
       this.#viewportWidth = canvas.width;
     }
     this.#controlsHeight = Math.max(this.#controlsHeight, controls.height);
-    const lowerPanels = [
-      ...this.#dialog.querySelectorAll('.boarding-legend, .boarding-zoom'),
-    ]
-      .map((panel) => panel.getBoundingClientRect())
-      .filter((panel) => panel.width > 0 && panel.height > 0);
     return {
       left: 0,
       right: canvas.width,
@@ -204,7 +186,6 @@ export class BoardingView {
       bottom: Math.min(
         canvas.height,
         controls.bottom - canvas.top - this.#controlsHeight,
-        ...lowerPanels.map((panel) => panel.top - canvas.top),
       ),
     };
   }
@@ -241,6 +222,44 @@ export class BoardingView {
     disabled = false,
   ): void {
     const control = iconButton(label, symbol, action, 'button boarding-action');
+    const icon = document.createElement('span');
+    const name = label.split(' · ')[0]!;
+    const positions: Record<string, string> = {
+      'Turn left 45°': '50% 0%',
+      'Turn right 45°': '50% 0%',
+      Move: '0% 0%',
+      Shoot: '100% 0%',
+      Overwatch: '50% 100%',
+      'Open door': '100% 100%',
+      'Close door': '100% 100%',
+    };
+    const extraPositions: Record<string, string> = {
+      Crouch: '0% 0%',
+      Stand: '0% 0%',
+      Melee: '50% 0%',
+      'Frag grenade': '100% 0%',
+      'Smoke grenade': '0% 100%',
+      'Use Med-pack': '50% 100%',
+      'End soldier turn': '100% 100%',
+    };
+    if (positions[name] || extraPositions[name]) {
+      icon.className = 'boarding-action-art';
+      icon.style.backgroundImage = `url(${extraPositions[name] ? extraActionAtlasUrl : actionAtlasUrl})`;
+      icon.style.backgroundPosition = (positions[name] ??
+        extraPositions[name])!;
+      if (name === 'Turn left 45°') icon.style.transform = 'scaleX(-1)';
+      control.replaceChildren(icon);
+    } else {
+      icon.className = 'boarding-action-symbol';
+      icon.textContent = symbol;
+      control.replaceChildren(icon);
+    }
+    const caption = element(
+      'span',
+      'boarding-action-caption',
+      name.replace(' 45°', ''),
+    );
+    control.append(caption);
     control.disabled = disabled;
     this.#controls.append(control);
   }
@@ -271,7 +290,8 @@ export class BoardingView {
         !entry.destroyed &&
         entry.position.q === position.q &&
         entry.position.r === position.r &&
-        ['door', 'reactor', 'wall'].includes(entry.kind),
+        ['door', 'reactor', 'wall'].includes(entry.kind) &&
+        !(entry.kind === 'door' && entry.open),
     );
     if (
       mode === 'center-target' &&
@@ -618,23 +638,36 @@ export class BoardingView {
           actor.smokeGrenades < 1,
         );
       }
-      if (selectedFeature?.kind === 'door' && !selectedFeature.destroyed) {
+      const forward = BoardingBattle.forward(actor.position, actor.facing);
+      const facingDoor = state.features.find(
+        (feature) =>
+          feature.kind === 'door' &&
+          !feature.destroyed &&
+          !feature.open &&
+          feature.position.q === forward.q &&
+          feature.position.r === forward.r,
+      );
+      const door =
+        selectedFeature?.kind === 'door' && !selectedFeature.destroyed
+          ? selectedFeature
+          : facingDoor;
+      if (door) {
         this.#action(
-          selectedFeature.open ? 'Close door' : 'Open door',
-          selectedFeature.open ? '▮' : '▯',
+          door.open ? 'Close door' : 'Open door',
+          door.open ? '▮' : '▯',
           () =>
             this.#command({
               type: 'door',
-              id: selectedFeature.id,
-              action: selectedFeature.open ? 'close' : 'open',
+              id: door.id,
+              action: door.open ? 'close' : 'open',
             }),
-          selectedFeature.locked,
+          door.locked,
         );
         this.#action(
           'Hack door',
           '⌁',
-          () => this.#command({ type: 'hack', id: selectedFeature.id }),
-          !selectedFeature.locked,
+          () => this.#command({ type: 'hack', id: door.id }),
+          !door.locked,
         );
       }
       if (selectedPerson?.status === 'incapacitated')

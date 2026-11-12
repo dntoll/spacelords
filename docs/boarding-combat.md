@@ -68,8 +68,7 @@ sparplatser.
   zoomar vid behov ut så att båda figurerna ryms på den fria kartytan. Skottet
   animeras först när kameran är klar. En dold skytt avslöjas inte av kameran.
 
-  Kameraflödena använder mjuka övergångar. Manuell panorering, zoom eller
-  `Fit` avbryter automatiken för resten av den pågående uppspelningen utan
+  Kameraflödena använder mjuka övergångar. Manuell panorering eller zoom avbryter automatiken för resten av den pågående uppspelningen utan
   att stoppa figurerna. Minskad rörelse visar slutläget direkt. Storleksbyte
   och stängning avslutar väntande kamerafaser säkert. Sparningar påverkas inte.
 
@@ -91,12 +90,11 @@ sparplatser.
   valda destination startar förflyttningen om vägen ryms inom kvarvarande AP.
 - `klickdorr-pa-vald-dorr` — **Fullständigt implementerat**. Första klicket på
   en dörr väljer den. Ett andra klick på samma angränsande dörr försöker
-  öppna eller stänga den, eller hacka den om den är låst.
+  öppna den, eller hacka den om den är låst. Öppna dörrar väljs som golvrutor.
 - `tydlig-bordningsstatus` — **Fullständigt implementerat**. Den aktiva soldaten
   namnges uttryckligen och markeras på kartan. Varje bordningssoldat visas med
-  en egen HP-bar och numeriskt HP-värde i HUD. Kartans förklaring identifierar
-  vald figur, möjlig väg och `Half cover`. Riktningspilar samt separata
-  förklaringar för sikt och eld har tagits bort enligt
+  en egen HP-bar och numeriskt HP-värde i HUD. Kartans förklaringspanel har
+  tagits bort. Riktningspilar och markeringar för sikt och eld har tagits bort enligt
   `bordning-utan-riktningspilar` och `bordning-utan-sikt-och-eldrutor`.
   Under en dold försvarares tur visar `Combat details` att försvararen agerar
   och loggar handlingens typ utan att avslöja positionen. Den öppna
@@ -164,10 +162,9 @@ sparplatser.
   blå markeringar på marken samt deras förklaringar visas inte. Den gröna och
   orangea förhandsvisningen av vald förflyttningsväg behålls.
 - `spelmassigt-bordningsgranssnitt` — **Fullständigt implementerat**. Kartan
-  upptar huvuddelen av skärmen. Truppstatus, handlingar, zoom,
-  kartförklaring och stridslogg ligger som kompakta HUD-lager ovanpå kartan.
-  Handlingar använder små symbolknappar med fullständiga namn för
-  tillgänglighet och framtida utbyte mot bildsymboler.
+  upptar huvuddelen av skärmen. Truppstatus, handlingar och stridslogg ligger
+  som kompakta HUD-lager ovanpå kartan. Handlingar har bilder och etiketter;
+  zoom sker med nypning eller mushjul.
 - `sikt-minne-och-ljudmarkorer` — **Fullständigt implementerat**. Soldater ser 180 grader.
   Sidorna delar aktuell sikt och senast kända fiendeposition. Personer blockerar
   inte den delade sikten. Skeppets yttre form är känd, interiören utforskas och

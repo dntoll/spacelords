@@ -60,6 +60,14 @@ Se [hela visionen](docs/game-vision.md).
   i spel och editor. Se
   [bordningsstrid](docs/boarding-combat.md).
 
+- **Bordningsgränssnitt och rök:** `illustrerade-bordningshandlingar` är
+  **Delvis implementerat**; särskilda bilder för alla handlingar återstår.
+  `bordning-utan-kameraknappar-och-forklaringspanel`,
+  `dorrhandling-framfor-soldat`, `oppen-dorr-som-golvruta` och
+  `volymetrisk-bordningsrok` är **Fullständigt implementerat**. Handlingsraden
+  ligger längre ned, öppna dörrar kan väljas som gångrutor och rök animeras
+  genom rutan. Se [produktkrav](docs/product-requirements.md).
+
 - **Bordningskamera:** `kamerafokus-vid-bordningssoldatbyte`,
   `kameraoverblick-vid-synlig-bordningsrorelse`,
   `kameraoverblick-fore-bordningsskott` och

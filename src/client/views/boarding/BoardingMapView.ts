@@ -1,3 +1,7 @@
+import { boardingSmokeParticles } from './BoardingSmokeParticles.js';
+import smokeOneUrl from '../../assets/boarding/smoke-1.png';
+import smokeTwoUrl from '../../assets/boarding/smoke-2.png';
+import smokeThreeUrl from '../../assets/boarding/smoke-3.png';
 import {
   BoardingCameraController,
   type BoardingCameraBounds,
@@ -156,6 +160,7 @@ export class BoardingMapView implements BoardingMapPort {
   #wallTop: p5.Image | null = null;
   readonly #isoCaches = new WeakMap<p5.Image, IsoImageCache>();
   #factionSprites: p5.Image | null = null;
+  readonly #smokeTextures: (p5.Image | null)[] = [null, null, null];
   #lighting: BoardingLighting;
   #lightSignature = '';
   readonly #lightPainter = new BoardingLightPainter();
@@ -223,6 +228,12 @@ export class BoardingMapView implements BoardingMapPort {
           this.#wallTop = image;
           if (!this.#disposed && this.#ready) void this.#p5.redraw();
         });
+        [smokeOneUrl, smokeTwoUrl, smokeThreeUrl].forEach((url, index) => {
+          void sketch.loadImage(url).then((image) => {
+            this.#smokeTextures[index] = image;
+            if (!this.#disposed && this.#ready) void this.#p5.redraw();
+          });
+        });
         void sketch.loadImage(factionSpritesUrl).then((image) => {
           this.#factionSprites = image;
           if (!this.#disposed && this.#ready) void this.#p5.redraw();
@@ -275,7 +286,10 @@ export class BoardingMapView implements BoardingMapPort {
     this.#path = path;
     this.#targets = targets;
     if (changed || this.#fitPending) this.fit();
-    if (this.#ready) void this.#p5.redraw();
+    if (this.#ready) {
+      if (state.smokeCells.length) this.#p5.loop();
+      else void this.#p5.redraw();
+    }
   }
 
   fit(): void {
@@ -596,7 +610,8 @@ export class BoardingMapView implements BoardingMapPort {
     const shot = this.#shot;
     this.#motion = null;
     this.#shot = null;
-    if (this.#ready && !this.#disposed) this.#p5.noLoop();
+    if (this.#ready && !this.#disposed && !this.#state?.smokeCells.length)
+      this.#p5.noLoop();
     motion?.resolve();
     shot?.resolve();
   }
@@ -1256,11 +1271,16 @@ export class BoardingMapView implements BoardingMapPort {
       this.#shot = null;
       queueMicrotask(shot.resolve);
     }
-    if (!this.#motion && !this.#shot && this.#ready && !this.#disposed)
+    if (
+      !this.#motion &&
+      !this.#shot &&
+      !state.smokeCells.length &&
+      this.#ready &&
+      !this.#disposed
+    )
       this.#p5.noLoop();
     const visible = new Set(state.visibleCells.map(key));
     const explored = new Set(state.exploredCells.map(key));
-    const smoke = new Set(state.smokeCells.map(key));
     const fire = new Set(
       this.#path
         .filter((mark) => mark.kind === 'fire')
@@ -1288,7 +1308,6 @@ export class BoardingMapView implements BoardingMapPort {
         const position = { q, r };
         const terrain = this.map.terrainAt(position);
         if (!terrain) continue;
-        const center = boardingIsoCenter(position);
         const current = visible.has(key(position));
         const remembered = explored.has(key(position));
         const knownHull = terrain === 'hull';
@@ -1331,15 +1350,36 @@ export class BoardingMapView implements BoardingMapPort {
           sketch.strokeWeight(4);
           this.#tile(sketch, position);
         }
-        if (smoke.has(key(position)) && (current || remembered)) {
-          sketch.noStroke();
-          sketch.fill(170, 180, 190, 125);
-          sketch.ellipse(center.x, center.y, 42, 20);
-        }
       }
     }
     const scene: { depth: number; order: number; paint: () => void }[] = [];
     const overlays: (() => void)[] = [];
+    for (const position of state.smokeCells) {
+      if (!visible.has(key(position)) && !explored.has(key(position))) continue;
+      const center = boardingIsoCenter(position);
+      scene.push({
+        depth: center.y + 1,
+        order: 5,
+        paint: () => {
+          sketch.push();
+          sketch.imageMode(sketch.CENTER);
+          for (const particle of boardingSmokeParticles(position, now)) {
+            const texture = this.#smokeTextures[particle.texture];
+            if (!texture) continue;
+            sketch.tint(255, particle.opacity);
+            sketch.image(
+              texture,
+              center.x + particle.x,
+              center.y + particle.y,
+              particle.size,
+              particle.height,
+            );
+          }
+          sketch.pop();
+        },
+      });
+    }
+
     const known = (position: BoardingCell) =>
       visible.has(key(position)) || explored.has(key(position));
     for (const position of this.map.airlocks) {
