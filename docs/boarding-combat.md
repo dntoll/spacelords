@@ -163,7 +163,7 @@ sparplatser.
   orangea förhandsvisningen av vald förflyttningsväg behålls.
 - `spelmassigt-bordningsgranssnitt` — **Fullständigt implementerat**. Kartan
   upptar huvuddelen av skärmen. Truppstatus, handlingar och stridslogg ligger
-  som kompakta HUD-lager ovanpå kartan. Handlingar har bilder och etiketter;
+  som kompakta HUD-lager ovanpå kartan. Handlingar har stora bilder utan synliga etiketter;
   zoom sker med nypning eller mushjul.
 - `sikt-minne-och-ljudmarkorer` — **Fullständigt implementerat**. Soldater ser 180 grader.
   Sidorna delar aktuell sikt och senast kända fiendeposition. Personer blockerar
@@ -329,10 +329,22 @@ Bildoriginalen med suffixet `-meters` ersätter de tidigare dörr- och airlockbi
 - `spelidentisk-bordningseditor` — **Fullständigt implementerat**. Spelets
   bilder, ytprojektion, ljus och väggsnitt används även i editorn.
 
-- `ljuskallestyrd-bordningsbelysning` — **Fullständigt implementerat**. Taklampor anges i ett valfritt `[lights]`-lager med `L` och `-`, med samma dimensioner som övriga kartlager. Lampor kräver golv. Standardlampan sitter på 2,2 m höjd med 6 m räckvidd och intensitet 1; ambientnivån är 0,65. Alla levererade interiörer har fasta lampor, och den sammansatta dockningskorridoren får en mittlampa. Belysningen styrs inte av soldaternas position, riktning eller sikt.
+- `ljuskallestyrd-bordningsbelysning` — **Fullständigt implementerat**. Taklampor anges i ett valfritt `[lights]`-lager med `L` och `-`, med samma dimensioner som övriga kartlager. Lampor kräver golv. Standardlampan sitter på 2,2 m höjd med 6 m räckvidd och intensitet 1; ambientnivån är 0,42. Alla levererade interiörer har fasta lampor, och den sammansatta dockningskorridoren får en mittlampa. Belysningen styrs inte av soldaternas position, riktning eller sikt.
 - `vertexljus-i-bordning` — **Fullständigt implementerat**. Varje hörn på golv och väggytor får ljus från lampor med fri ljuslinje, avståndsavtagande och hänsyn till ytriktning. Ljuset interpoleras över ytornas trianglar och multipliceras med befintliga texturer. Väggar, skrov, stängda dörrar och rök blockerar ljus; förstörda barriärer, öppna dörrar och personer gör det inte. Väggsnitt använder full vägghöjd vid blockering.
 - `tileljus-for-sprites` — **Fullständigt implementerat**. Varje ruta får ett ljusvärde vid golvets mittpunkt. Personer och objektsprites använder detta värde; under rörelse interpoleras figurens ljus mellan start och mål. HP, AP, riktning och valmarkeringar påverkas inte av belysningen.
 
 Upptäckta rutor har samma belysning i aktuell sikt och kartminne. Den tidigare siktstyrda mörkningen är borttagen. Okänd interiör och dolda personer behåller sina synlighetsregler. Lamporna kan inte släckas eller förstöras. Sparformatet ändras inte: kartan med lampor återskapas vid återläsning.
 
 Leveransen är granskad i mobilens stående och liggande format med texturer, figurer och väggsnitt. Riktade tester verifierar även reservgeometri, återanvändning av ljusmasker vid ändrad sikt, beskärning av väggens nedre texturdel och mjuk figurtoning under rörelse.
+
+- `tydliga-handlingsbilder-pa-mobil` — **Fullständigt implementerat**. Stora,
+  olikfärgade symboler ersätter tidigare likartade bilder. Knapparna saknar
+  synlig text men behåller tillgänglighetsnamn och hela handlingsraden syns
+  utan intern rullning. Detta ersätter tidigare krav på synliga knappetiketter.
+- `synligt-skott-hela-vagen` — **Fullständigt implementerat**. Projektilen
+  visas fram till målet; kameran ramar in synliga start- och slutpositioner,
+  även när målet är ett objekt.
+- `kastad-granat-i-bage` — **Fullständigt implementerat**. Granater visas i en
+  båge från kastaren till faktisk nedslagsruta före effekten.
+- `morkare-ambientljus-i-bordning` — **Fullständigt implementerat**.
+  Ambientnivån är 0,42 i stället för 0,65, medan lamporna fungerar som tidigare.

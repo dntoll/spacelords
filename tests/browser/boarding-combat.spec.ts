@@ -44,13 +44,7 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   await expect(team.locator('.boarding-unit-active')).toContainText(
     /^Boarder \d/,
   );
-  await expect(dialog.getByLabel('Map legend')).toContainText(
-    /Half cover.*Fire after move.*Move only/,
-  );
-  await expect(dialog.getByLabel('Map legend')).not.toContainText(
-    /Facing|Sight|◇ Fire/,
-  );
-  await expect(dialog.getByLabel('Map legend')).toContainText('1 tile = 1 m');
+  await expect(dialog.getByLabel('Map legend')).toHaveCount(0);
   const turnLeft = dialog.getByRole('button', {
     name: 'Turn left 45°',
     exact: true,
@@ -60,8 +54,20 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   const boardBox = (await dialog.locator('.boarding-board').boundingBox())!;
   const actionBox = (await turnLeft.boundingBox())!;
   expect(boardBox.height / dialogBox.height).toBeGreaterThan(0.85);
-  expect(actionBox.width).toBeLessThanOrEqual(44);
-  expect(actionBox.height).toBeLessThanOrEqual(44);
+  expect(actionBox.width).toBeGreaterThanOrEqual(60);
+  expect(actionBox.height).toBeGreaterThanOrEqual(60);
+  const controls = dialog.getByRole('region', { name: 'Soldier actions' });
+  const controlBounds = await controls.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+    bottom: element.getBoundingClientRect().bottom,
+    screenHeight: window.innerHeight,
+  }));
+  expect(controlBounds.scrollHeight).toBeLessThanOrEqual(
+    controlBounds.clientHeight,
+  );
+  expect(controlBounds.bottom).toBeLessThanOrEqual(controlBounds.screenHeight);
+  await expect(turnLeft).toHaveText('');
 
   const canvas = dialog.locator('canvas');
   const box = await canvas.boundingBox();

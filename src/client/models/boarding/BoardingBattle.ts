@@ -139,6 +139,8 @@ export type BoardingCommand =
   | { readonly type: 'end-activation' };
 
 export interface BoardingShot {
+  readonly kind?: 'grenade';
+  readonly grenade?: 'frag' | 'smoke';
   readonly presentationIndex?: number;
   readonly from: BoardingCell;
   readonly to: BoardingCell;
@@ -1491,6 +1493,14 @@ export class BoardingBattle {
         });
       if (!this.#map.contains(impact)) impact = frozenCell(target);
     }
+    this.#shot = Object.freeze({
+      kind: 'grenade',
+      grenade,
+      from: frozenCell(actor.position),
+      to: impact,
+      presentationIndex: this.#presentation.length,
+      hit: true,
+    });
     this.#addNoise(impact, actor.side);
     if (grenade === 'smoke') {
       const amounts = new Map(

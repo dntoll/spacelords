@@ -17,6 +17,7 @@ import {
   boardingIsoCorners,
   boardingIsoCellPoint,
   boardingAnimTick,
+  boardingProjectilePoint,
   boardingIsoTextureTransform,
   boardingQuadTextureTransform,
   boardingWallRun,
@@ -183,4 +184,15 @@ describe('animerat-bordningsskott', () => {
     expect(arrived.done).toBe(true);
     expect(arrived.progress).toBe(1);
   });
+});
+
+it('synligt-skott-hela-vagen / kastad-granat-i-bage: reaches the exact destination and grenade rises above the straight path', () => {
+  const from = { x: 10, y: 20 };
+  const to = { x: 110, y: 40 };
+  expect(boardingProjectilePoint(from, to, 0)).toEqual(from);
+  expect(boardingProjectilePoint(from, to, 1)).toEqual(to);
+  expect(boardingProjectilePoint(from, to, 1, 'grenade')).toEqual(to);
+  expect(boardingProjectilePoint(from, to, 0.5, 'grenade').y).toBeLessThan(
+    boardingProjectilePoint(from, to, 0.5).y,
+  );
 });

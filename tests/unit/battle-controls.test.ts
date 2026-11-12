@@ -494,8 +494,10 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
   )!;
   expect(left).not.toBeNull();
   expect(right).not.toBeNull();
-  expect(left.textContent).toContain('Turn left');
-  expect(right.textContent).toContain('Turn right');
+  expect(left.querySelector('.boarding-action-art')).not.toBeNull();
+  expect(right.querySelector('.boarding-action-art')).not.toBeNull();
+  expect(left.textContent).toBe('');
+  expect(right.textContent).toBe('');
   expect(left.classList).toContain('boarding-action');
   left.click();
   expect(emit).toHaveBeenCalledWith({
@@ -1550,6 +1552,36 @@ it('dorrhandling-framfor-soldat / oppen-dorr-som-golvruta: offers the facing doo
   selectHex(door.position);
   expect(document.querySelector('.boarding-selection')!.textContent).toContain(
     'Destination',
+  );
+  view.dispose();
+});
+
+it('kastad-granat-i-bage: plays the throw before applying the impact state', async () => {
+  const initial = createTestBoardingBattle().snapshot;
+  const actor = initial.people.find((person) => person.side === 'player')!;
+  const impact = { q: actor.position.q + 1, r: actor.position.r };
+  const playShot = vi.fn(() => Promise.resolve());
+  const view = new BoardingView(document.body, vi.fn(), () => ({
+    render() {},
+    zoom() {},
+    fit() {},
+    dispose() {},
+    playShot,
+  }));
+  view.render(initial);
+  view.render({ ...initial, smokeCells: [impact] }, null, [], {
+    kind: 'grenade',
+    grenade: 'smoke',
+    from: actor.position,
+    to: impact,
+    hit: true,
+  });
+  await vi.waitFor(() =>
+    expect(playShot).toHaveBeenCalledExactlyOnceWith(
+      actor.position,
+      impact,
+      'grenade',
+    ),
   );
   view.dispose();
 });

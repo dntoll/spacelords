@@ -4027,9 +4027,8 @@ body:has(.discovery-controls) .selection-panel {
   gap: 4px;
   width: max-content;
   max-width: min(620px, calc(100% - 12px));
-  max-height: 132px;
   padding: 5px;
-  overflow: auto;
+  overflow: visible;
   border: 1px solid rgb(82 104 137 / 78%);
   border-radius: 8px;
   background: rgb(5 9 18 / 90%);
@@ -4162,7 +4161,7 @@ body:has(.discovery-controls) .selection-panel {
 
   .boarding-controls {
     bottom: 6px;
-    max-width: calc(100% - 300px);
+    max-width: calc(100% - 12px);
   }
 
   .boarding-legend {
@@ -4317,19 +4316,18 @@ body:has(.discovery-controls) .selection-panel {
 }
 
 .boarding-action {
-  width: 56px;
-  min-width: 56px;
-  height: 58px;
-  min-height: 58px;
+  width: 60px;
+  min-width: 60px;
+  height: 60px;
+  min-height: 60px;
   gap: 0;
-  grid-template-rows: 38px 1fr;
   overflow: hidden;
 }
 
 .boarding-action-art {
-  width: 38px;
-  height: 38px;
-  background-size: 300% 200%;
+  width: 56px;
+  height: 56px;
+  background-size: 400% 300%;
 }
 
 .boarding-action-symbol {

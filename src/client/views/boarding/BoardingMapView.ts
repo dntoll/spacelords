@@ -65,6 +65,7 @@ import {
 } from './BoardingTargetIndicatorLayout.js';
 import {
   boardingAnimTick,
+  boardingProjectilePoint,
   boardingCellFromIsoPoint,
   boardingFeatureFootprint,
   boardingFeatureGlyph,
@@ -145,6 +146,7 @@ export class BoardingMapView implements BoardingMapPort {
     to: Point;
     started: number;
     duration: number;
+    kind?: 'grenade';
     resolve: () => void;
   } | null = null;
   readonly #camera = new BoardingCameraController();
@@ -432,20 +434,22 @@ export class BoardingMapView implements BoardingMapPort {
     if (this.#cameraSuppressed) return Promise.resolve();
     const state = this.#state;
     if (!state) return Promise.resolve();
-    const combatants = [from, to]
-      .map((cell) =>
-        state.people.find(
-          (person) =>
-            person.status === 'active' && key(person.position) === key(cell),
-        ),
-      )
-      .filter((person): person is BoardingPerson => !!person);
-    // kameraoverblick-fore-bordningsskott: the visible snapshot prevents camera framing from revealing hidden enemies.
-    if (combatants.length !== 2) return Promise.resolve();
+    const subjects = [from, to].map((cell) => {
+      const person = state.people.find(
+        (entry) =>
+          entry.status === 'active' && key(entry.position) === key(cell),
+      );
+      if (person) return this.#cameraSubject(person);
+      if (!state.visibleCells.some((visible) => key(visible) === key(cell)))
+        return null;
+      const center = boardingIsoCenter(cell);
+      return { x: center.x - 18, y: center.y - 65, width: 36, height: 70 };
+    });
+    if (subjects.some((subject) => !subject)) return Promise.resolve();
     return this.#playCamera(
       this.#camera.frame(
         this.cameraSnapshot,
-        combatants.map((person) => this.#cameraSubject(person)),
+        subjects as BoardingCameraSubject[],
         this.#cameraBounds(),
       ),
     );
@@ -550,7 +554,11 @@ export class BoardingMapView implements BoardingMapPort {
     });
   }
 
-  playShot(from: BoardingCell, to: BoardingCell): Promise<void> {
+  playShot(
+    from: BoardingCell,
+    to: BoardingCell,
+    kind?: 'grenade',
+  ): Promise<void> {
     this.#finishMotion();
     return new Promise((resolve) => {
       let settled = false;
@@ -563,7 +571,7 @@ export class BoardingMapView implements BoardingMapPort {
         finish();
         return;
       }
-      const duration = 280;
+      const duration = kind === 'grenade' ? 850 : 600;
       const weaponPoint = (cell: BoardingCell): Point => {
         const person = this.#state?.people.find(
           (entry) =>
@@ -584,7 +592,8 @@ export class BoardingMapView implements BoardingMapPort {
       };
       this.#shot = {
         from: weaponPoint(from),
-        to: weaponPoint(to),
+        to: kind === 'grenade' ? boardingIsoCenter(to) : weaponPoint(to),
+        ...(kind ? { kind } : {}),
         started: performance.now(),
         duration,
         resolve: finish,
@@ -1771,26 +1780,34 @@ export class BoardingMapView implements BoardingMapPort {
       sketch.circle(center.x, center.y, 20);
     }
     overlays.forEach((paint) => paint());
-    if (shot && shotTick && !shotTick.done) {
-      const head = {
-        x: shot.from.x + (shot.to.x - shot.from.x) * shotProgress,
-        y: shot.from.y + (shot.to.y - shot.from.y) * shotProgress,
-      };
-      const tail = {
-        x:
-          shot.from.x +
-          (shot.to.x - shot.from.x) * Math.max(0, shotProgress - 0.22),
-        y:
-          shot.from.y +
-          (shot.to.y - shot.from.y) * Math.max(0, shotProgress - 0.22),
-      };
-      sketch.stroke('#fff4c4');
-      sketch.strokeWeight(3.5);
-      sketch.line(tail.x, tail.y, head.x, head.y);
-      sketch.noStroke();
-      sketch.fill('#ffe27a');
-      sketch.circle(head.x, head.y, 7);
+    if (shot && shotTick) {
+      const head = boardingProjectilePoint(
+        shot.from,
+        shot.to,
+        shotProgress,
+        shot.kind,
+      );
+      if (shot.kind === 'grenade') {
+        sketch.noStroke();
+        sketch.fill('#141f24');
+        sketch.circle(head.x, head.y, 11);
+        sketch.fill('#e5c35a');
+        sketch.circle(head.x, head.y, 5);
+      } else {
+        const tail = boardingProjectilePoint(
+          shot.from,
+          shot.to,
+          Math.max(0, shotProgress - 0.22),
+        );
+        sketch.stroke('#fff4c4');
+        sketch.strokeWeight(3.5);
+        sketch.line(tail.x, tail.y, head.x, head.y);
+        sketch.noStroke();
+        sketch.fill('#ffe27a');
+        sketch.circle(head.x, head.y, 7);
+      }
     }
+
     sketch.pop();
     for (const edge of edgeTargets) {
       const indicator = this.#targets.find((entry) => entry.id === edge.id);

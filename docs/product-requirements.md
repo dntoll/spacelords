@@ -1433,9 +1433,12 @@ och tidigare besked påverkas inte.
 `round-i-speltexter` — **Fullständigt implementerat**: Spelets texter använder
 `round` i stället för `year` för spelets tidssteg, även i hjälptexter.
 
-`illustrerade-bordningshandlingar` — **Delvis implementerat**: handlingsraden
-har bildsymboler och korta etiketter. Fler särskilda bilder för samtliga
-handlingar återstår.
+`tydliga-handlingsbilder-pa-mobil` — **Fullständigt implementerat**: stora
+och tydligt olika symboler visar handlingarna utan synliga texter, och hela
+handlingsraden är åtkomlig utan intern rullning. Detta ersätter de tidigare
+synliga knappetiketterna. `illustrerade-bordningshandlingar` är **Delvis
+implementerat**: Stand, Hack door, Evacuate och Abort boarding använder ännu
+enkla symboler.
 
 `bordning-utan-kameraknappar-och-forklaringspanel` — **Fullständigt implementerat**:
 handlingsraden ligger vid nederkanten. Förklaringspanelen och kameraknapparna
@@ -1448,3 +1451,8 @@ intill och tittar mot en stängd dörr. En öppen dörr väljs som en gångruta.
 
 `volymetrisk-bordningsrok` — **Fullständigt implementerat**: rök visas med
 animerade halvgenomskinliga partiklar genom rutan.
+
+`synligt-skott-hela-vagen`, `kastad-granat-i-bage` och
+`morkare-ambientljus-i-bordning` — **Fullständigt implementerat**. Skott syns
+fram till målet, granater kastas i en synlig båge och interiörernas grundljus
+är mörkare.

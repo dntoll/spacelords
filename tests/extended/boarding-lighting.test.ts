@@ -213,3 +213,8 @@ it('ljuskallestyrd-bordningsbelysning: all shipped interiors have valid lamps, a
     }),
   ).not.toBe(signature);
 });
+
+it('morkare-ambientljus-i-bordning: unlit space is darker than the previous ambient level', () => {
+  expect(BOARDING_AMBIENT).toBeLessThan(0.65);
+  expect(BOARDING_AMBIENT).toBeGreaterThan(0);
+});

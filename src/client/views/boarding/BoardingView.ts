@@ -1,5 +1,4 @@
-import actionAtlasUrl from '../../assets/boarding/action-atlas-v2.png';
-import extraActionAtlasUrl from '../../assets/boarding/action-atlas-extra-v2.png';
+import actionAtlasUrl from '../../assets/boarding/actions-distinct-v3.png';
 import type { BoardingCameraBounds } from './BoardingCameraController.js';
 import {
   BoardingBattle,
@@ -56,7 +55,11 @@ export interface BoardingMapPort {
     from: BoardingBattleState,
     to: BoardingBattleState,
   ): Promise<void>;
-  playShot?(from: BoardingCell, to: BoardingCell): Promise<void>;
+  playShot?(
+    from: BoardingCell,
+    to: BoardingCell,
+    kind?: 'grenade',
+  ): Promise<void>;
   zoom(factor: number): void;
   fit(): void;
   dispose(): void;
@@ -225,41 +228,30 @@ export class BoardingView {
     const icon = document.createElement('span');
     const name = label.split(' · ')[0]!;
     const positions: Record<string, string> = {
-      'Turn left 45°': '50% 0%',
-      'Turn right 45°': '50% 0%',
-      Move: '0% 0%',
-      Shoot: '100% 0%',
-      Overwatch: '50% 100%',
-      'Open door': '100% 100%',
-      'Close door': '100% 100%',
-    };
-    const extraPositions: Record<string, string> = {
-      Crouch: '0% 0%',
-      Stand: '0% 0%',
-      Melee: '50% 0%',
-      'Frag grenade': '100% 0%',
-      'Smoke grenade': '0% 100%',
-      'Use Med-pack': '50% 100%',
+      'Turn left 45°': '0% 0%',
+      'Turn right 45°': '33.333% 0%',
+      Move: '66.667% 0%',
+      Crouch: '100% 0%',
+      Shoot: '0% 50%',
+      Melee: '33.333% 50%',
+      'Frag grenade': '66.667% 50%',
+      'Smoke grenade': '100% 50%',
+      'Open door': '0% 100%',
+      'Close door': '0% 100%',
+      Overwatch: '33.333% 100%',
+      'Use Med-pack': '66.667% 100%',
       'End soldier turn': '100% 100%',
     };
-    if (positions[name] || extraPositions[name]) {
+    if (positions[name]) {
       icon.className = 'boarding-action-art';
-      icon.style.backgroundImage = `url(${extraPositions[name] ? extraActionAtlasUrl : actionAtlasUrl})`;
-      icon.style.backgroundPosition = (positions[name] ??
-        extraPositions[name])!;
-      if (name === 'Turn left 45°') icon.style.transform = 'scaleX(-1)';
+      icon.style.backgroundImage = `url(${actionAtlasUrl})`;
+      icon.style.backgroundPosition = positions[name];
       control.replaceChildren(icon);
     } else {
       icon.className = 'boarding-action-symbol';
       icon.textContent = symbol;
       control.replaceChildren(icon);
     }
-    const caption = element(
-      'span',
-      'boarding-action-caption',
-      name.replace(' 45°', ''),
-    );
-    control.append(caption);
     control.disabled = disabled;
     this.#controls.append(control);
   }
@@ -417,7 +409,10 @@ export class BoardingView {
     this.#busy = true;
     this.#map?.beginPresentation?.();
     this.#destination = null;
-    this.#paint(previous, shot ? 'Firing…' : 'Moving…');
+    this.#paint(
+      previous,
+      shot?.kind === 'grenade' ? 'Throwing…' : shot ? 'Firing…' : 'Moving…',
+    );
     try {
       let current = previous;
       const shotIndex = Math.min(shot?.presentationIndex ?? 0, frames.length);
@@ -425,12 +420,15 @@ export class BoardingView {
       for (let index = 0; index <= frames.length; index++) {
         if (token !== this.#playToken) return;
         if (shot && this.#map?.playShot && index === shotIndex) {
-          this.#paint(current, 'Firing…');
+          this.#paint(
+            current,
+            shot.kind === 'grenade' ? 'Throwing…' : 'Firing…',
+          );
           if (this.#map.frameShot) {
             await this.#map.frameShot(shot.from, shot.to);
             if (token !== this.#playToken) return;
           }
-          await this.#map.playShot(shot.from, shot.to);
+          await this.#map.playShot(shot.from, shot.to, shot.kind);
           this.#playedShot = shot;
         }
         const frame = frames[index];

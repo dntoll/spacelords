@@ -60,13 +60,20 @@ Se [hela visionen](docs/game-vision.md).
   i spel och editor. Se
   [bordningsstrid](docs/boarding-combat.md).
 
-- **Bordningsgränssnitt och rök:** `illustrerade-bordningshandlingar` är
-  **Delvis implementerat**; särskilda bilder för alla handlingar återstår.
+- **Bordningsgränssnitt och rök:** `tydliga-handlingsbilder-pa-mobil` är
+  **Fullständigt implementerat**: stora särskiljbara knappar utan text syns utan
+  intern rullning. `illustrerade-bordningshandlingar` är **Delvis implementerat**:
+  Stand, Hack door, Evacuate och Abort boarding använder ännu enkla symboler.
   `bordning-utan-kameraknappar-och-forklaringspanel`,
   `dorrhandling-framfor-soldat`, `oppen-dorr-som-golvruta` och
   `volymetrisk-bordningsrok` är **Fullständigt implementerat**. Handlingsraden
   ligger längre ned, öppna dörrar kan väljas som gångrutor och rök animeras
   genom rutan. Se [produktkrav](docs/product-requirements.md).
+
+- **Bordningsanimation och ljus:** `synligt-skott-hela-vagen`,
+  `kastad-granat-i-bage` och `morkare-ambientljus-i-bordning` är
+  **Fullständigt implementerat**. Skott visas fram till målet, granater kastas
+  i en båge och grundljuset är lägre. Se [bordningsstrid](docs/boarding-combat.md).
 
 - **Bordningskamera:** `kamerafokus-vid-bordningssoldatbyte`,
   `kameraoverblick-vid-synlig-bordningsrorelse`,

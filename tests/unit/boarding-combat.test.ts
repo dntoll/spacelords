@@ -1307,3 +1307,19 @@ describe('automatisk-bordningstur-vid-tom-ap / animerat-bordningsskott', () => {
     expect(battle.shot?.presentationIndex).toBe(0);
   });
 });
+
+it('kastad-granat-i-bage: records the actual grenade impact for presentation without changing the save', () => {
+  const player = battle.snapshot.people.find(
+    (person) => person.side === 'player',
+  )!;
+  activate(player.id);
+  const target = { q: player.position.q + 1, r: player.position.r };
+  battle.command({ type: 'grenade', grenade: 'smoke', at: target });
+  expect(battle.shot).toMatchObject({
+    kind: 'grenade',
+    grenade: 'smoke',
+    from: player.position,
+  });
+  expect(battle.snapshot.smokeCells).toContainEqual(battle.shot!.to);
+  expect(battle.snapshot).not.toHaveProperty('shot');
+});

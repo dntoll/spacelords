@@ -453,3 +453,20 @@ export function boardingIsoCellPoint(
     y: camera.offset.y + center.y * camera.scale,
   };
 }
+
+/** kastad-granat-i-bage / synligt-skott-hela-vagen: endpoints remain exact. */
+export function boardingProjectilePoint(
+  from: BoardingPoint,
+  to: BoardingPoint,
+  progress: number,
+  kind?: 'grenade',
+): BoardingPoint {
+  const t = Math.max(0, Math.min(1, progress));
+  return {
+    x: from.x + (to.x - from.x) * t,
+    y:
+      from.y +
+      (to.y - from.y) * t -
+      (kind === 'grenade' ? 4 * t * (1 - t) * 60 : 0),
+  };
+}

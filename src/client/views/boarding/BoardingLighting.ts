@@ -6,7 +6,7 @@ import type {
 import type { BoardingBattleState } from '../../models/boarding/BoardingBattle.js';
 import { BOARDING_METERS } from './BoardingScale.js';
 
-export const BOARDING_AMBIENT = 0.65;
+export const BOARDING_AMBIENT = 0.42;
 export type BoardingSurface = 'floor' | 'top' | 'southEast' | 'southWest';
 interface WorldPoint {
   readonly q: number;
