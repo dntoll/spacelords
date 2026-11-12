@@ -34,7 +34,6 @@ const views: readonly {
 export const BOARDING_FOOT_PLANT = 0;
 export const NO_FLIGHT_ADJUSTMENT = 3;
 
-
 export interface BoardingCharacterPick {
   readonly id: string;
   readonly side: BoardingCharacterSide;
