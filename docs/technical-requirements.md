@@ -1672,3 +1672,18 @@ färdig reparation.
   klippolygonen är exakt texturens parallellogram, och väggar och objekt utanför
   canvasen sorteras bort. Ritningen per bildruta blev ungefär tre gånger
   snabbare i profileringen.
+- `ingen-rok-i-hela-vaggar`: `BoardingBattle.#smokeCanFill` avvisar rutor utan
+  terräng och rutor med oförstörd vägg, ytterskrov eller stängd dörr. Både
+  rökgranatens placering och spridningen vid rundslut använder den; spridningen
+  blockeras inte längre av personer. `smokeCells` filtreras med samma regel så
+  att äldre sparad rök i väggar inte visas. Sparformatet ändras inte.
+- `bordning-explosioner-och-forstorelse`: `BoardingEffectParticles` är
+  p5-oberoende och ger deterministiska partiklar per effekt och förfluten tid.
+  BoardingMapView startar en effekt när ett skott eller kast landar (granattypen
+  skickas med `playShot`) och när ett känt objekt blir förstört mellan två
+  renderade tillstånd. Effekterna ritas med canvas (additivt för eld) och håller
+  p5-loopen igång bara medan de pågår. Förstörda objekt ritas som bråte.
+- `avstangda-omojliga-handlingar`: vyn stänger av knapparna utifrån
+  kvarvarande AP och de exporterade kostnaderna `BOARDING_HACK_AP`,
+  `BOARDING_MED_PACK_AP` och `BOARDING_EVACUATE_AP`, plus avstånd och
+  modellens `grenadeReason` och `doorReason`.

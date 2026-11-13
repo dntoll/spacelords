@@ -165,3 +165,65 @@ describe('gang-mot-avlagset-mal', () => {
     expect(restore(1).stepTowards(actor.id, { q: 10, r: 2 })).toBeNull();
   });
 });
+
+describe('ingen-rok-i-hela-vaggar', () => {
+  function walled(destroyed: boolean) {
+    const terrain = new Map<string, BoardingTerrain>();
+    for (let r = 0; r < 5; r++)
+      for (let q = 0; q < 6; q++)
+        terrain.set(`${q},${r}`, q === 3 ? 'wall' : 'floor');
+    const map = new BoardingMap(
+      'Walled',
+      6,
+      5,
+      terrain,
+      new Map(),
+      [0, 1, 2, 3, 4].map((r) => ({
+        id: `wall-${r}`,
+        kind: 'wall' as const,
+        position: { q: 3, r },
+      })),
+      {
+        player: [{ q: 1, r: 2 }],
+        defender: [{ q: 5, r: 4 }],
+        civilian: [],
+      },
+    );
+    const initial = BoardingBattle.create(map, 17).snapshot;
+    const actor = initial.people.find((person) => person.side === 'player')!;
+    return BoardingBattle.restore(map, {
+      ...initial,
+      features: initial.features.map((feature) =>
+        feature.id === 'wall-2' ? { ...feature, destroyed } : feature,
+      ),
+      currentActorId: actor.id,
+      activation: { id: actor.id, remaining: 12 },
+      initiativeOrder: [actor.id],
+      initiativeIndex: 0,
+      postponed: [],
+      finishedActors: [],
+    });
+  }
+
+  it('keeps grenade smoke out of intact wall tiles', () => {
+    const battle = walled(false);
+    battle.command({ type: 'grenade', grenade: 'smoke', at: { q: 2, r: 2 } });
+    const impact = battle.shot!.to;
+    expect(
+      battle.snapshot.smoke.filter((entry) => entry.position.q === 3),
+    ).toEqual([]);
+    expect(battle.snapshot.smoke.length).toBeGreaterThan(0);
+    expect(impact.q).not.toBe(3);
+  });
+
+  it('lets smoke into a shot-out wall tile', () => {
+    const battle = walled(true);
+    battle.command({ type: 'grenade', grenade: 'smoke', at: { q: 2, r: 2 } });
+    if (Math.abs(battle.shot!.to.q - 3) <= 1)
+      expect(
+        battle.snapshot.smoke.some(
+          (entry) => entry.position.q === 3 && entry.position.r === 2,
+        ),
+      ).toBe(battle.shot!.to.r >= 1 && battle.shot!.to.r <= 3);
+  });
+});

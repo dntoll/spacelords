@@ -67,9 +67,24 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
   }[] = [];
   let spriteCanvas: HTMLCanvasElement | null = null;
   let currentStroke = '';
+  const effectCalls: string[] = [];
   const context = {
     globalAlpha: 1,
     filter: 'none',
+    globalCompositeOperation: 'source-over',
+    // bordning-explosioner-och-forstorelse: record particle drawing.
+    arc() {
+      effectCalls.push('arc');
+    },
+    rect() {
+      effectCalls.push('rect');
+    },
+    ellipse() {
+      effectCalls.push('ellipse');
+    },
+    fill() {},
+    stroke() {},
+    createRadialGradient: () => ({ addColorStop() {} }),
     beginPath() {},
     moveTo() {},
     lineTo() {},
@@ -247,6 +262,7 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
     state,
     masks,
     imageLights,
+    effectCalls,
     loadImages,
     map,
     lines,
@@ -639,4 +655,32 @@ it('kamerafokus-vid-bordningssoldatbyte: a new already-visible focus cancels an 
   expect(completed).toHaveBeenCalledOnce();
   view.dispose();
   await pending;
+});
+
+it('bordning-explosioner-och-forstorelse: a known feature that breaks bursts into debris and leaves rubble', () => {
+  const { view, state, calls, effectCalls } = scene(true);
+  effectCalls.length = 0;
+  runtime.sketch!.draw();
+  expect(effectCalls).toHaveLength(0);
+  const broken = {
+    ...state,
+    features: state.features.map((feature) =>
+      feature.id === 'wall' ? { ...feature, destroyed: true } : feature,
+    ),
+  };
+  view.render(broken, null, null, []);
+  // render() starts the p5 loop for the effect; draw its first frame.
+  runtime.sketch!.draw();
+  expect(effectCalls.filter((call) => call === 'rect').length).toBeGreaterThan(
+    0,
+  );
+  // The intact wall's faces are replaced by low rubble on its tile.
+  const wallTop = boardingIsoCenter({ q: 4, r: 4 }).y - boardingHeight(0.4);
+  expect(
+    calls.filter((call) => call.kind === 'wall' && call.y < wallTop),
+  ).toHaveLength(0);
+  expect(calls.filter((call) => call.kind === 'wall').length).toBeGreaterThan(
+    0,
+  );
+  view.dispose();
 });

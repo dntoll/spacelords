@@ -1686,6 +1686,39 @@ it('granat-kostar-bara-vid-kast: grenade buttons are disabled for a tile outside
   view.dispose();
 });
 
+it('avstangda-omojliga-handlingar: disables actions the soldier cannot afford', () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) => person.side === 'player',
+  )!;
+  const view = new BoardingView(document.body, vi.fn(), () => ({
+    render() {},
+    zoom() {},
+    fit() {},
+    dispose() {},
+  }));
+  const disabled = (label: string) =>
+    document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)
+      ?.disabled;
+  const render = (remaining: number) =>
+    view.render({
+      ...created.snapshot,
+      initiativeOrder: [player.id],
+      initiativeIndex: 0,
+      currentActorId: player.id,
+      activation: { id: player.id, remaining },
+    });
+  render(2);
+  expect(disabled('Turn left 45°')).toBe(false);
+  expect(disabled('Crouch')).toBe(false);
+  expect(disabled('Overwatch')).toBe(true);
+  expect(disabled('Shoot')).toBe(true);
+  expect(disabled('End soldier turn')).toBe(false);
+  render(12);
+  expect(disabled('Overwatch')).toBe(false);
+  view.dispose();
+});
+
 it('kastad-granat-i-bage: plays the throw before applying the impact state', async () => {
   const initial = createTestBoardingBattle().snapshot;
   const actor = initial.people.find((person) => person.side === 'player')!;
@@ -1711,6 +1744,7 @@ it('kastad-granat-i-bage: plays the throw before applying the impact state', asy
       actor.position,
       impact,
       'grenade',
+      'smoke',
     ),
   );
   view.dispose();

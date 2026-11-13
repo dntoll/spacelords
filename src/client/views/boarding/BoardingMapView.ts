@@ -53,6 +53,13 @@ import {
   boardingWallFaceStyle,
   type BoardingSurfaceStyle,
 } from './BoardingSurfaceArtwork.js';
+import {
+  BOARDING_EFFECT_DURATION,
+  boardingDestructionEffect,
+  boardingEffectParticles,
+  boardingRubble,
+  type BoardingEffectKind,
+} from './BoardingEffectParticles.js';
 import factionSpritesUrl from '../../assets/boarding/characters/directional-faction-sprites.webp';
 import {
   BOARDING_FOOT_PLANT,
@@ -171,6 +178,11 @@ export class BoardingMapView implements BoardingMapPort {
     kind?: 'grenade';
     resolve: () => void;
   } | null = null;
+  #effects: {
+    kind: BoardingEffectKind;
+    position: BoardingCell;
+    started: number;
+  }[] = [];
   readonly #camera = new BoardingCameraController();
   #viewportProvider: (() => BoardingCameraBounds | null) | undefined;
   #cameraAnimation: { cancel: () => void } | null = null;
@@ -302,6 +314,7 @@ export class BoardingMapView implements BoardingMapPort {
     targets: readonly BoardingTargetIndicator[] = [],
   ): void {
     const changed = this.#state?.id !== state.id;
+    if (!changed && this.#state) this.#spawnDestruction(this.#state, state);
     this.#state = state;
     this.#updateLighting(state);
     this.#updateWalls(state);
@@ -311,9 +324,33 @@ export class BoardingMapView implements BoardingMapPort {
     this.#targets = targets;
     if (changed || this.#fitPending) this.fit();
     if (this.#ready) {
-      if (state.smokeCells.length) this.#p5.loop();
+      if (state.smokeCells.length || this.#effects.length) this.#p5.loop();
       else void this.#p5.redraw();
     }
+  }
+
+  /** bordning-explosioner-och-forstorelse: burst where a known feature breaks. */
+  #spawnDestruction(
+    previous: BoardingBattleState,
+    next: BoardingBattleState,
+  ): void {
+    const known = new Set(
+      [...next.visibleCells, ...next.exploredCells].map(key),
+    );
+    for (const feature of next.features) {
+      if (!feature.destroyed || !known.has(key(feature.position))) continue;
+      const before = previous.features.find((entry) => entry.id === feature.id);
+      if (before && !before.destroyed)
+        this.#spawnEffect(
+          boardingDestructionEffect(feature.kind),
+          feature.position,
+        );
+    }
+  }
+
+  #spawnEffect(kind: BoardingEffectKind, position: BoardingCell): void {
+    this.#effects.push({ kind, position, started: performance.now() });
+    if (this.#ready && !this.#disposed) this.#p5.loop();
   }
 
   fit(): void {
@@ -580,6 +617,7 @@ export class BoardingMapView implements BoardingMapPort {
     from: BoardingCell,
     to: BoardingCell,
     kind?: 'grenade',
+    grenade?: 'frag' | 'smoke',
   ): Promise<void> {
     this.#finishMotion();
     return new Promise((resolve) => {
@@ -587,6 +625,9 @@ export class BoardingMapView implements BoardingMapPort {
       const finish = () => {
         if (settled) return;
         settled = true;
+        // bordning-explosioner-och-forstorelse: the grenade bursts on landing.
+        if (kind === 'grenade') this.#spawnEffect(grenade ?? 'frag', to);
+        else this.#spawnEffect('sparks', to);
         resolve();
       };
       if (!this.#ready) {
@@ -641,7 +682,12 @@ export class BoardingMapView implements BoardingMapPort {
     const shot = this.#shot;
     this.#motion = null;
     this.#shot = null;
-    if (this.#ready && !this.#disposed && !this.#state?.smokeCells.length)
+    if (
+      this.#ready &&
+      !this.#disposed &&
+      !this.#state?.smokeCells.length &&
+      !this.#effects.length
+    )
       this.#p5.noLoop();
     motion?.resolve();
     shot?.resolve();
@@ -1464,9 +1510,13 @@ export class BoardingMapView implements BoardingMapPort {
       this.#shot = null;
       queueMicrotask(shot.resolve);
     }
+    this.#effects = this.#effects.filter(
+      (effect) => now - effect.started < BOARDING_EFFECT_DURATION[effect.kind],
+    );
     if (
       !this.#motion &&
       !this.#shot &&
+      !this.#effects.length &&
       !state.smokeCells.length &&
       this.#ready &&
       !this.#disposed
@@ -1646,6 +1696,10 @@ export class BoardingMapView implements BoardingMapPort {
                 peers,
                 known,
               );
+              return;
+            }
+            if (feature.destroyed && feature.kind !== 'exit') {
+              this.#paintRubble(sketch, feature.position);
               return;
             }
             const artwork = boardingObjectArtwork(feature, (q, r) => {
@@ -1976,6 +2030,7 @@ export class BoardingMapView implements BoardingMapPort {
         sketch.circle(head.x, head.y, 7);
       }
     }
+    this.#paintEffects(sketch, now);
 
     sketch.pop();
     for (const edge of edgeTargets) {
@@ -1989,6 +2044,92 @@ export class BoardingMapView implements BoardingMapPort {
           1,
           edge.labelSide,
         );
+    }
+  }
+
+  #paintEffects(sketch: p5, now: number): void {
+    if (!this.#effects.length) return;
+    const context = sketch.drawingContext as CanvasRenderingContext2D;
+    for (const effect of this.#effects) {
+      const center = boardingIsoCenter(effect.position);
+      for (const particle of boardingEffectParticles(
+        effect.kind,
+        effect.position,
+        now - effect.started,
+      )) {
+        context.save();
+        context.globalCompositeOperation = particle.glow
+          ? 'lighter'
+          : 'source-over';
+        context.globalAlpha = Math.max(0, Math.min(1, particle.alpha));
+        const [red, green, blue] = particle.color;
+        const color = `rgb(${red}, ${green}, ${blue})`;
+        const x = center.x + particle.x;
+        const y = center.y + particle.y;
+        context.beginPath();
+        if (particle.shape === 'ring') {
+          context.strokeStyle = color;
+          context.lineWidth = 3;
+          context.ellipse(
+            x,
+            y,
+            particle.size / 2,
+            (particle.size / 2) * BOARDING_GROUND_RATIO,
+            0,
+            0,
+            Math.PI * 2,
+          );
+          context.stroke();
+        } else if (particle.shape === 'shard') {
+          context.fillStyle = color;
+          context.rect(
+            x - particle.size / 2,
+            y - particle.size / 4,
+            particle.size,
+            particle.size / 2,
+          );
+          context.fill();
+        } else {
+          {
+            const gradient = context.createRadialGradient(
+              x,
+              y,
+              0,
+              x,
+              y,
+              particle.size / 2,
+            );
+            // Soft edges for both fire and smoke.
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(particle.glow ? 0.35 : 0.6, color);
+            gradient.addColorStop(1, `rgba(${red}, ${green}, ${blue}, 0)`);
+            context.fillStyle = gradient;
+          }
+          context.arc(x, y, particle.size / 2, 0, Math.PI * 2);
+          context.fill();
+        }
+        context.restore();
+      }
+    }
+  }
+
+  #paintRubble(sketch: p5, position: BoardingCell): void {
+    const center = boardingIsoCenter(position);
+    const light = this.#lighting.tile(position);
+    sketch.noStroke();
+    for (const piece of boardingRubble(position)) {
+      const shade = Math.min(255, piece.shade * light);
+      sketch.fill(shade, shade * 1.04, shade * 1.12);
+      sketch.quad(
+        center.x + piece.x - piece.width / 2,
+        center.y + piece.y,
+        center.x + piece.x,
+        center.y + piece.y - piece.height,
+        center.x + piece.x + piece.width / 2,
+        center.y + piece.y,
+        center.x + piece.x,
+        center.y + piece.y + piece.height / 2,
+      );
     }
   }
 

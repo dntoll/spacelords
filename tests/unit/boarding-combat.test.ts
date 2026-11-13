@@ -964,7 +964,21 @@ describe('granater-och-rok', () => {
       at: { ...player.position },
     });
     expect(battle.snapshot.smoke.some((smoke) => smoke.amount > 0)).toBe(true);
-    expect(battle.snapshot.smokeCells).toHaveLength(9);
+    const cells = battle.snapshot.smokeCells;
+    expect(cells.length).toBeGreaterThan(0);
+    expect(cells.length).toBeLessThanOrEqual(9);
+    // ingen-rok-i-hela-vaggar: the spawn tile borders walls that stay clear.
+    expect(
+      cells.some((cell) =>
+        battle.snapshot.features.some(
+          (feature) =>
+            (feature.kind === 'wall' || feature.kind === 'hull') &&
+            !feature.destroyed &&
+            feature.position.q === cell.q &&
+            feature.position.r === cell.r,
+        ),
+      ),
+    ).toBe(false);
   });
 });
 

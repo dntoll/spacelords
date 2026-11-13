@@ -4,6 +4,9 @@ import {
   BoardingBattle,
   BOARDING_MELEE_AP,
   BOARDING_RIFLE_AP,
+  BOARDING_EVACUATE_AP,
+  BOARDING_HACK_AP,
+  BOARDING_MED_PACK_AP,
   boardingActionPointsRemaining,
   type BoardingTargetIndicator,
   type BoardingBattleState,
@@ -59,6 +62,7 @@ export interface BoardingMapPort {
     from: BoardingCell,
     to: BoardingCell,
     kind?: 'grenade',
+    grenade?: 'frag' | 'smoke',
   ): Promise<void>;
   zoom(factor: number): void;
   fit(): void;
@@ -445,7 +449,7 @@ export class BoardingView {
             await this.#map.frameShot(shot.from, shot.to);
             if (token !== this.#playToken) return;
           }
-          await this.#map.playShot(shot.from, shot.to, shot.kind);
+          await this.#map.playShot(shot.from, shot.to, shot.kind, shot.grenade);
           this.#playedShot = shot;
         }
         const frame = frames[index];
@@ -581,11 +585,20 @@ export class BoardingView {
       ? boardingPathMarks(route, state.activation?.remaining ?? 0)
       : [];
     if (playerTurn) {
-      this.#action('Turn left 45°', '↶', () =>
-        this.#command({ type: 'turn', direction: 1 }),
+      // avstangda-omojliga-handlingar: every action the soldier cannot afford or
+      // perform right now is shown disabled.
+      const remaining = state.activation?.remaining ?? 0;
+      this.#action(
+        'Turn left 45°',
+        '↶',
+        () => this.#command({ type: 'turn', direction: 1 }),
+        remaining < 1,
       );
-      this.#action('Turn right 45°', '↷', () =>
-        this.#command({ type: 'turn', direction: -1 }),
+      this.#action(
+        'Turn right 45°',
+        '↷',
+        () => this.#command({ type: 'turn', direction: -1 }),
+        remaining < 1,
       );
       this.#action(
         `Move${route ? ` · ${route.cost} AP` : ''}`,
@@ -597,6 +610,7 @@ export class BoardingView {
         actor.crouched ? 'Stand' : 'Crouch',
         actor.crouched ? '⇧' : '◒',
         () => this.#command({ type: actor.crouched ? 'stand' : 'crouch' }),
+        remaining < 1,
       );
 
       const selectedPerson = state.people.find(
@@ -703,7 +717,11 @@ export class BoardingView {
           'Hack door',
           '⌁',
           () => this.#command({ type: 'hack', id: door.id }),
-          !door.locked,
+          !door.locked ||
+            remaining < BOARDING_HACK_AP ||
+            Math.abs(actor.position.q - door.position.q) +
+              Math.abs(actor.position.r - door.position.r) !==
+              1,
         );
       }
       if (closable && !door?.open)
@@ -720,10 +738,17 @@ export class BoardingView {
           '+',
           () =>
             this.#command({ type: 'med-pack', targetId: selectedPerson.id }),
-          actor.medPacks < 1,
+          actor.medPacks < 1 ||
+            remaining < BOARDING_MED_PACK_AP ||
+            Math.abs(actor.position.q - selectedPerson.position.q) +
+              Math.abs(actor.position.r - selectedPerson.position.r) !==
+              1,
         );
-      this.#action('Overwatch', '◉', () =>
-        this.#command({ type: 'overwatch' }),
+      this.#action(
+        'Overwatch',
+        '◉',
+        () => this.#command({ type: 'overwatch' }),
+        remaining < BOARDING_RIFLE_AP,
       );
       if (
         state.features.some(
@@ -733,8 +758,11 @@ export class BoardingView {
             feature.position.r === actor.position.r,
         )
       )
-        this.#action('Evacuate', '⇱', () =>
-          this.#command({ type: 'evacuate' }),
+        this.#action(
+          'Evacuate',
+          '⇱',
+          () => this.#command({ type: 'evacuate' }),
+          remaining < BOARDING_EVACUATE_AP,
         );
       if (state.campaign)
         this.#action(

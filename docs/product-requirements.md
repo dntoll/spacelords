@@ -1460,6 +1460,16 @@ inte kan kastas, till exempel för att rutan är för långt bort, kostar ingen 
 ruta eller dörr som ligger för långt bort gör att soldaten går så långt den
 hinner åt det hållet.
 
+`bordning-explosioner-och-forstorelse` — **Fullständigt implementerat**:
+granater exploderar synligt och saker som går sönder syns gå sönder och lämnar
+bråte.
+
+`ingen-rok-i-hela-vaggar` — **Fullständigt implementerat**: rök hamnar inte
+inuti väggar, utom i väggar som skjutits sönder.
+
+`avstangda-omojliga-handlingar` — **Fullständigt implementerat**:
+handlingsknappar som inte kan utföras är avstängda.
+
 `bordning-jamn-bildfrekvens` — **Fullständigt implementerat**: bordningskartan
 ska kännas jämn och inte ryckig på mobilen.
 

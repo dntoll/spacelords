@@ -198,6 +198,20 @@ sparplatser.
   till någon av åtta omgivande rutor vid rundslut, men visas binärt. Explosioner
   påverkar mål­rutan och alla åtta omgivande rutor. Man ser in i en rökruta men
   inte bakom den; mål i rök har `Half cover`.
+- `ingen-rok-i-hela-vaggar` — **Fullständigt implementerat**. Rök från granater
+  och rökens spridning hamnar aldrig i rutor med hel vägg, ytterskrov eller
+  stängd dörr. En sönderskjuten vägg kan fyllas med rök. Äldre sparad rök i
+  väggar visas inte.
+- `bordning-explosioner-och-forstorelse` — **Fullständigt implementerat**. När
+  en splittergranat landar visas blixt, eldklot, gnistor, splitter och en
+  tryckvåg; en rökgranat ger ett grått rökutbrott, och ett gevärsskott ger
+  gnistor i träffpunkten. Ett känt objekt som går sönder kastar metallskrot och
+  gnistor, reactor med en större cyan explosion, och rutan visar därefter bråte.
+  Effekterna är rent visuella och sparas inte.
+- `avstangda-omojliga-handlingar` — **Fullständigt implementerat**. Vrid,
+  hukning, Overwatch, `Hack door`, `Use Med-pack`, `Evacuate`, dörrar, granater,
+  skott, melee och förflyttning är avstängda när AP, avstånd eller mål inte
+  räcker. `End soldier turn` är alltid tillgänglig.
 - `granat-kostar-bara-vid-kast` — **Fullständigt implementerat**. Ett kast
   utanför räckvidden (6 rutor), utan kvarvarande granat av den sorten eller med
   för lite AP avvisas innan någon AP dras. Granatknapparna är avstängda för

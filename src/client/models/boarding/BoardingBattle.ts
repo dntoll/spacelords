@@ -196,9 +196,12 @@ const RIFLE_AP = BOARDING_RIFLE_AP;
 const BOARDING_VISION_COSINE = 0;
 const GRENADE_AP = 4;
 const GRENADE_RANGE = 6;
-const MED_PACK_AP = 4;
-const HACK_AP = 4;
-const EVACUATE_AP = 2;
+export const BOARDING_MED_PACK_AP = 4;
+const MED_PACK_AP = BOARDING_MED_PACK_AP;
+export const BOARDING_HACK_AP = 4;
+const HACK_AP = BOARDING_HACK_AP;
+export const BOARDING_EVACUATE_AP = 2;
+const EVACUATE_AP = BOARDING_EVACUATE_AP;
 export const BOARDING_MELEE_AP = 3;
 const MELEE_AP = BOARDING_MELEE_AP;
 const REACTOR_ROUNDS = 3;
@@ -753,6 +756,19 @@ export class BoardingBattle {
     return terrain === 'floor' || terrain === 'low-thin-wall';
   }
 
+  /** ingen-rok-i-hela-vaggar: smoke stays out of intact walls, hull and closed doors. */
+  #smokeCanFill(position: BoardingCell): boolean {
+    if (!this.#map.contains(position) || this.#map.terrainAt(position) === null)
+      return false;
+    const feature = this.#featureAt(position);
+    return !(
+      feature &&
+      (feature.kind === 'wall' ||
+        feature.kind === 'hull' ||
+        (feature.kind === 'door' && !feature.open))
+    );
+  }
+
   #passable(position: BoardingCell, moverId: string): boolean {
     if (!this.#canStand(position)) return false;
     const feature = this.#featureAt(position);
@@ -1158,7 +1174,9 @@ export class BoardingBattle {
       lastKnownEnemies: [...lastKnown.values()],
       defenderLastKnownEnemies: [...defenderLastKnown.values()],
       smokeCells: this.#state.smoke
-        .filter((entry) => entry.amount > 0)
+        .filter(
+          (entry) => entry.amount > 0 && this.#smokeCanFill(entry.position),
+        )
         .map((entry) => entry.position),
     });
   }
@@ -1585,7 +1603,7 @@ export class BoardingBattle {
         this.#state.smoke.map((entry) => [positionKey(entry.position), entry]),
       );
       const add = (position: BoardingCell, amount: number) => {
-        if (!this.#map.contains(position)) return;
+        if (!this.#smokeCanFill(position)) return;
         const old = amounts.get(positionKey(position));
         amounts.set(positionKey(position), {
           position: frozenCell(position),
@@ -1831,7 +1849,7 @@ export class BoardingBattle {
           q: entry.position.q + direction.q,
           r: entry.position.r + direction.r,
         };
-        if (this.#map.contains(spread) && this.#passable(spread, 'smoke')) {
+        if (this.#smokeCanFill(spread)) {
           const old = values.get(positionKey(spread));
           values.set(positionKey(spread), {
             position: frozenCell(spread),

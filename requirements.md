@@ -56,6 +56,15 @@ Se [hela visionen](docs/game-vision.md).
   ytprojektion, ljus och väggsnitt används. Se [bordningsstrid](docs/boarding-combat.md).
 - **60° kameravinkel i bordning:** `kameravinkel-60-i-bordning` är **Delvis implementerat** (provversion). Bordningskartan visas med samma 60° kamerahöjd som Ludos high-angle, vilket ger nästan kvadratiska diamanter (64 × 32√3). Figurer, reactor och en låda (ersätter bilden för `Half cover`) använder nya bilder för 60°. Dörrar och airlock trycks fortfarande ihop från 2:1-bilderna, eftersom de nya dörr- och airlockbilderna har 2:1-lutning och inte passar väggarna; passande bilder återstår. Ersätter provet `isometri-3-2-i-bordning` och 2:1-projektionen i `isometrisk-bordningsvy`.
 
+- **Explosioner, förstörelse och rök:** `bordning-explosioner-och-forstorelse`,
+  `ingen-rok-i-hela-vaggar` och `avstangda-omojliga-handlingar` är
+  **Fullständigt implementerat**. Splittergranater exploderar med eld, gnistor,
+  splitter och tryckvåg; rökgranater ger ett rökutbrott. Objekt som går sönder
+  kastar skrot och lämnar bråte, och reactor ger en större explosion. Rök hamnar
+  aldrig i hela väggar, ytterskrov eller stängda dörrar, men väl i sönderskjutna
+  väggar. Handlingar som inte kan utföras är avstängda. Se
+  [bordningsstrid](docs/boarding-combat.md).
+
 - **Rumsinteriörer:** `rumsspecifika-bordningstexturer` och
   `texturerad-vaggovansida` är **Fullständigt implementerat**: bilderna används
   i spel och editor. Se
