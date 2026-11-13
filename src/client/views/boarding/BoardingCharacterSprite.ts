@@ -1,9 +1,7 @@
-import { boardingCharacterSources } from './BoardingCharacterAtlas.js';
 import {
-  BOARDING_METERS,
-  BOARDING_SPRITE_SQUASH,
-  boardingHeight,
-} from './BoardingScale.js';
+  BOARDING_CHARACTER_UNITS_PER_PIXEL,
+  boardingCharacterSources,
+} from './BoardingCharacterAtlas.js';
 export type BoardingCharacterSide = 'player' | 'defender' | 'civilian';
 export type BoardingCharacterPose = 'standing' | 'crouched' | 'incapacitated';
 
@@ -36,7 +34,8 @@ const views: readonly {
 
 /** bordningsfigurer-fran-spritesheet: plant feet on the tile center, shared by every pose. */
 export const BOARDING_FOOT_PLANT = 0;
-export const NO_FLIGHT_ADJUSTMENT = 3;
+/** The sprite's lowest pixel is the front of the feet, just below the tile centre. */
+export const NO_FLIGHT_ADJUSTMENT = 5;
 
 export interface BoardingCharacterPick {
   readonly id: string;
@@ -61,15 +60,9 @@ export function boardingCharacterSprite(
     pose === 'incapacitated'
       ? boardingCharacterSources[side].incapacitated
       : boardingCharacterSources[side][pose][view.angle];
-  const height = boardingHeight(
-    pose === 'standing'
-      ? BOARDING_METERS.person
-      : pose === 'crouched'
-        ? BOARDING_METERS.crouchedPerson
-        : BOARDING_METERS.incapacitatedPerson,
-  );
-  const width =
-    (height * source.width) / source.height / BOARDING_SPRITE_SQUASH;
+  // kameravinkel-60-i-bordning: the 60-degree sheet shares one pixel scale.
+  const width = source.width * BOARDING_CHARACTER_UNITS_PER_PIXEL;
+  const height = source.height * BOARDING_CHARACTER_UNITS_PER_PIXEL;
   return {
     source,
     mirrored: pose !== 'incapacitated' && view.mirrored,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { BOARDING_CHARACTER_UNITS_PER_PIXEL } from '../../src/client/views/boarding/BoardingCharacterAtlas.js';
 import {
   BOARDING_FOOT_PLANT,
   NO_FLIGHT_ADJUSTMENT,
@@ -16,7 +17,13 @@ describe('bordningsfigurer-fran-spritesheet', () => {
       );
 
       expect(sprite.source.width).toBeGreaterThan(0);
-      expect(sprite.source.height).toBe(224);
+      // kameravinkel-60-i-bordning: one pixel scale for the whole sheet.
+      expect(sprite.destination.height).toBeCloseTo(
+        sprite.source.height * BOARDING_CHARACTER_UNITS_PER_PIXEL,
+      );
+      expect(sprite.destination.width).toBeCloseTo(
+        sprite.source.width * BOARDING_CHARACTER_UNITS_PER_PIXEL,
+      );
       expect(sprite.destination.x + sprite.destination.width / 2).toBe(80);
       expect(sprite.destination.y + sprite.destination.height).toBe(
         120 + BOARDING_FOOT_PLANT + NO_FLIGHT_ADJUSTMENT,

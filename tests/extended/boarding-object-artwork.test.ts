@@ -50,18 +50,22 @@ describe('isometriska-bordningsobjekt', () => {
         { kind: 'cover', position: { q: 0, r: 0 } },
         wallAt,
       ),
-    ).toBe('half-cover');
+    ).toBe('crate');
     expect(
       boardingObjectArtwork(
         { kind: 'cover', position: { q: 0, r: 0 }, destroyed: true },
         wallAt,
       ),
     ).toBeNull();
-    const box = boardingObjectBounds('half-cover', { x: 100, y: 100 });
-    expect(box.width).toBeLessThanOrEqual(42);
+    // kameravinkel-60-i-bordning: the crate stays within one tile and shows
+    // its top face as well as its sides.
+    const box = boardingObjectBounds('crate', { x: 100, y: 100 });
+    expect(box.width).toBeLessThan(64);
     const verticalMeter = 64 / Math.SQRT2 / 2;
-    expect(box.height).toBeGreaterThan(1.2 * verticalMeter);
-    expect(box.height).toBeLessThan(1.8 * verticalMeter);
+    const tileDepth = 32 * Math.sqrt(3);
+    expect(box.height).toBeGreaterThan(verticalMeter);
+    expect(box.height).toBeLessThan(1.2 * verticalMeter + tileDepth);
+    expect(box.y + box.height).toBeGreaterThan(100);
     expect(box.x + box.width / 2).toBe(100);
   });
 });

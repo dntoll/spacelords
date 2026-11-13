@@ -23,7 +23,7 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   for (const artwork of [
     'airlock-',
     'reactor-',
-    'half-cover-',
+    'crate-',
     'door-closed-q-',
     'door-closed-r-',
   ]) {

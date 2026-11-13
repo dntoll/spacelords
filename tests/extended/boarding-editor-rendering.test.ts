@@ -89,8 +89,7 @@ it('spelidentisk-bordningseditor: renders calibrated door, cover and faction spr
   );
   const cover = images.find(
     (call) =>
-      (call[0] as { url?: string }).url ===
-      BOARDING_OBJECT_IMAGES['half-cover'],
+      (call[0] as { url?: string }).url === BOARDING_OBJECT_IMAGES['crate'],
   );
   expect(door?.slice(1)).toEqual(
     Object.values(
@@ -99,7 +98,7 @@ it('spelidentisk-bordningseditor: renders calibrated door, cover and faction spr
   );
   expect(cover?.slice(1)).toEqual(
     Object.values(
-      boardingObjectBounds('half-cover', boardingIsoCenter({ q: 1, r: 1 })),
+      boardingObjectBounds('crate', boardingIsoCenter({ q: 1, r: 1 })),
     ),
   );
   expect(images.filter((call) => call.length === 9)).toHaveLength(3);

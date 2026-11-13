@@ -1,75 +1,103 @@
-"""Pack generated character originals into a transparent web atlas and source bounds."""
+"""Cut the 60-degree character sheet into a transparent web atlas and source bounds.
+
+bordningsfigurer-fran-spritesheet / kameravinkel-60-i-bordning: the original
+sheet has five angles per row and rows for standing and crouched player,
+defender and civilian, followed by one row of incapacitated figures. Every
+figure keeps the sheet's common pixel scale so poses stay in proportion.
+"""
 from pathlib import Path
+from math import cos, pi, sin, sqrt
+from statistics import median
 import json
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
-ORIGINALS = ROOT / "assets/original/boarding/characters"
+SHEET = ROOT / "assets/original/boarding/60deg/directional-faction-sprites-60deg.png"
 OUTPUT = ROOT / "src/client/assets/boarding/characters"
 SIDES = ("player", "defender", "civilian")
 STANCES = ("standing", "crouched")
 ANGLES = ("front", "front-right", "right", "back-right", "back")
+COLUMNS, ROWS, CELL = 5, 7, 256
+# Mirrors BoardingScale.ts: a 1.8 m person about 0.35 m deep seen from 60 degrees.
+GROUND_METER = 64 / sqrt(2)
+STANDING_SCREEN_HEIGHT = (1.8 * cos(pi / 3) + 0.35 * sin(pi / 3)) * GROUND_METER
+
+
+def figure(sheet, column, row):
+    width, height = sheet.width / COLUMNS, sheet.height / ROWS
+    cell = sheet.crop((round(column * width), round(row * height),
+                       round((column + 1) * width), round((row + 1) * height)))
+    mask = cell.getchannel("A").point(lambda value: 255 if value > 16 else 0)
+    if not mask.getbbox():
+        raise ValueError(f"Empty character cell {column},{row}")
+    # Keep the largest band of rows and columns so stray pixels from a
+    # neighbouring figure never stretch the bounds.
+    top, bottom = largest_run(mask, vertical=True)
+    mask = mask.crop((0, top, mask.width, bottom))
+    left, right = largest_run(mask, vertical=False)
+    if left == 0 or right == cell.width:
+        print(f"warning: figure touches the cell edge at {column},{row}")
+    return cell.crop((left, top, right, bottom))
+
+
+def largest_run(mask, vertical):
+    length = mask.height if vertical else mask.width
+    counts = []
+    for index in range(length):
+        line = mask.crop((0, index, mask.width, index + 1) if vertical
+                         else (index, 0, index + 1, mask.height))
+        counts.append(line.histogram()[255])
+    best, best_weight, start = (0, length), -1, None
+    for index, count in enumerate(counts + [0]):
+        if count and start is None:
+            start = index
+        if not count and start is not None:
+            weight = sum(counts[start:index])
+            if weight > best_weight:
+                best, best_weight = (start, index), weight
+            start = None
+    return best
 
 
 def main():
-    atlas = Image.new("RGBA", (256 * 5, 256 * 7))
+    sheet = Image.open(SHEET).convert("RGBA")
+    atlas = Image.new("RGBA", (CELL * COLUMNS, CELL * ROWS))
     sources = {}
+    standing = []
+
+    def place(image, column, row, key):
+        if image.width > CELL - 8 or image.height > CELL - 8:
+            raise ValueError(f"Character exceeds atlas cell: {key}")
+        x = column * CELL + (CELL - image.width) // 2
+        y = row * CELL + CELL - 8 - image.height
+        atlas.alpha_composite(image, (x, y))
+        return dict(x=x, y=y, width=image.width, height=image.height)
+
     for side_index, side in enumerate(SIDES):
         sources[side] = {}
         for stance_index, stance in enumerate(STANCES):
             sources[side][stance] = {}
             row = side_index * 2 + stance_index
             for column, angle in enumerate(ANGLES):
-                path = ORIGINALS / f"{side}-{stance}-{angle}.png"
-                with Image.open(path) as original:
-                    image = original.convert("RGBA")
-                    alpha = image.getchannel("A")
-                    if alpha.getextrema()[0] != 0:
-                        raise ValueError(f"Missing transparent background: {path}")
-                    bounds = alpha.point(lambda value: 255 if value > 16 else 0).getbbox()
-                    if not bounds:
-                        raise ValueError(f"Empty character: {path}")
-                    image = image.crop(bounds)
-                    height = 224 if stance == "standing" else 149
-                    width = round(image.width * height / image.height)
-                    if width > 248:
-                        raise ValueError(f"Character exceeds atlas cell: {path} ({width}px)")
-                    image = image.resize((width, height), Image.Resampling.LANCZOS)
-                    x = column * 256 + (256 - width) // 2
-                    y = row * 256 + 248 - height
-                    atlas.alpha_composite(image, (x, y))
-                    sources[side][stance][angle] = dict(x=x, y=y, width=width, height=height)
-        path = ORIGINALS / f"{side}-incapacitated.png"
-        with Image.open(path) as original:
-            image = original.convert("RGBA")
-            alpha = image.getchannel("A")
-            if alpha.getextrema()[0] != 0:
-                raise ValueError(f"Missing transparent background: {path}")
-            bounds = alpha.point(lambda value: 255 if value > 16 else 0).getbbox()
-            if not bounds:
-                raise ValueError(f"Empty character: {path}")
-            image = image.crop(bounds)
-            width = 240
-            height = round(image.height * width / image.width)
-            if height > 248:
-                raise ValueError(f"Character exceeds atlas cell: {path} ({height}px)")
-            image = image.resize((width, height), Image.Resampling.LANCZOS)
-            x = side_index * 256 + (256 - width) // 2
-            y = 256 * 6 + (256 - height) // 2
-            atlas.alpha_composite(image, (x, y))
-            sources[side]["incapacitated"] = dict(
-                x=x, y=y, width=width, height=height
-            )
+                image = figure(sheet, column, row)
+                if stance == "standing":
+                    standing.append(image.height)
+                sources[side][stance][angle] = place(image, column, row, f"{side}-{stance}-{angle}")
+        sources[side]["incapacitated"] = place(
+            figure(sheet, side_index, ROWS - 1), side_index, ROWS - 1, f"{side}-incapacitated")
     OUTPUT.mkdir(parents=True, exist_ok=True)
     atlas.save(OUTPUT / "directional-faction-sprites.webp", quality=88, method=6)
-    manifest = ROOT / "src/client/views/BoardingCharacterAtlas.ts"
+    units_per_pixel = STANDING_SCREEN_HEIGHT / median(standing)
+    manifest = ROOT / "src/client/views/boarding/BoardingCharacterAtlas.ts"
     manifest.write_text(
         "// bordningsfigurer-fran-spritesheet: generated by scripts/prepare-boarding-characters.py.\n"
+        + "/** Projection units per atlas pixel, shared by every pose. */\n"
+        + f"export const BOARDING_CHARACTER_UNITS_PER_PIXEL = {units_per_pixel};\n"
         + "export const boardingCharacterSources = "
         + json.dumps(sources, indent=2)
         + " as const;\n"
     )
-    print(f"Packed 33 character sprites: {OUTPUT.relative_to(ROOT)}")
+    print(f"Packed 33 character sprites at {units_per_pixel:.4f} units/px")
 
 
 if __name__ == "__main__":

@@ -8,17 +8,10 @@ export const BOARDING_SPRITE_METRICS = {
     openingHeight: 82.30285535751479,
   },
   reactor: {
-    width: 42,
-    height: 82.54530459215553,
-    anchorX: 21.0,
-    anchorY: 76.54530459215553,
-    openingHeight: 0,
-  },
-  'half-cover': {
-    width: 38,
-    height: 55.030203061437014,
-    anchorX: 19.0,
-    anchorY: 51.030203061437014,
+    width: 58,
+    height: 71.28491620111733,
+    anchorX: 29.0,
+    anchorY: 56.05586592178771,
     openingHeight: 0,
   },
   'door-closed-q': {
@@ -48,5 +41,12 @@ export const BOARDING_SPRITE_METRICS = {
     anchorX: 17.6,
     anchorY: 103.56440262430988,
     openingHeight: 82.30285535751479,
+  },
+  crate: {
+    width: 54,
+    height: 64.18976545842217,
+    anchorX: 27.0,
+    anchorY: 46.45842217484009,
+    openingHeight: 0,
   },
 } as const;

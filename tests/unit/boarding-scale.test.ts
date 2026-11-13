@@ -60,11 +60,13 @@ describe('meterskala-i-bordning', () => {
       { x: 0, y: 0 },
       'standing',
     );
-    expect(sprite.height / verticalMeter).toBeCloseTo(1.8);
-    // kameravinkel-60-i-bordning: existing sprites are only compressed vertically.
-    const unsquashedHeight = 1.8 * spriteVerticalMeter;
-    expect(sprite.width).toBeCloseTo(
-      (unsquashedHeight * source.width) / source.height,
+    // kameravinkel-60-i-bordning: a 60-degree figure shows its 1.8 m height
+    // and part of its depth, so it is taller than 1.8 vertical meters but
+    // shorter than that plus half a tile, and keeps the artwork's proportions.
+    expect(sprite.height).toBeGreaterThan(1.8 * verticalMeter);
+    expect(sprite.height).toBeLessThan(1.8 * verticalMeter + halfDepth * 1.2);
+    expect(sprite.width / sprite.height).toBeCloseTo(
+      source.width / source.height,
     );
     expect(sprite.y + sprite.height).toBe(
       BOARDING_FOOT_PLANT + NO_FLIGHT_ADJUSTMENT,
