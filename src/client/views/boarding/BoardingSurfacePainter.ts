@@ -400,8 +400,13 @@ export function paintIsoThinWall(
   height: number,
   options?: {
     readonly face?: { tile: p5.Image; cache: IsoImageCache } | undefined;
-    /** dorrar-som-tunna-vaggar: stretch the whole face image over the slab. */
-    readonly wholeFace?: boolean;
+    /**
+     * dorrar-som-tunna-vaggar: the part (0–1) of the face image stretched over
+     * the slab, instead of the wall run's slice.
+     */
+    readonly faceTexture?: readonly [number, number];
+    /** animerade-dorrar: the part of the slab's length to draw. */
+    readonly span?: readonly [number, number];
     readonly top?: { tile: p5.Image; cache: IsoImageCache } | undefined;
     readonly section?: boolean;
   },
@@ -410,6 +415,7 @@ export function paintIsoThinWall(
     position,
     axis,
     height / BOARDING_VERTICAL_METER,
+    options?.span,
   );
   const source = tile ? imageSource(tile, cache, 'wall') : null;
   const run = boardingWallRun(peers, position, mesh.lengthAxis);
@@ -427,8 +433,13 @@ export function paintIsoThinWall(
       sketch,
       faceSource,
       face
-        ? options?.wholeFace
-          ? { x: 0, width: face.tile.width }
+        ? options?.faceTexture
+          ? {
+              x: options.faceTexture[0] * face.tile.width,
+              width:
+                (options.faceTexture[1] - options.faceTexture[0]) *
+                face.tile.width,
+            }
           : boardingWallSlice(face.tile.width, run.index)
         : slice,
       face?.tile.height ?? tile.height,

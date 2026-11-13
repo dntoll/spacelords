@@ -23,6 +23,12 @@ import {
   boardingDepthOrder,
 } from './BoardingWallVisibility.js';
 import {
+  BOARDING_DOOR_SLIDE_MS,
+  boardingDoorLeaves,
+  boardingDoorOpenness,
+  type BoardingDoorLeaf,
+} from './BoardingDoorSlide.js';
+import {
   boardingTerrainShowsFloor,
   boardingThinNeighbor,
   boardingThinOutsideTerrain,
@@ -185,6 +191,8 @@ export class BoardingMapView implements BoardingMapPort {
     kind?: 'grenade';
     resolve: () => void;
   } | null = null;
+  /** animerade-dorrar: when each sliding door last changed state. */
+  readonly #doorMoves = new Map<string, number>();
   #effects: {
     kind: BoardingEffectKind;
     position: BoardingCell;
@@ -332,7 +340,10 @@ export class BoardingMapView implements BoardingMapPort {
     sight: BoardingSightArea | null = null,
   ): void {
     const changed = this.#state?.id !== state.id;
-    if (!changed && this.#state) this.#spawnDestruction(this.#state, state);
+    if (!changed && this.#state) {
+      this.#spawnDestruction(this.#state, state);
+      this.#trackDoors(this.#state, state);
+    }
     this.#state = state;
     this.#updateLighting(state);
     this.#updateWalls(state);
@@ -343,8 +354,27 @@ export class BoardingMapView implements BoardingMapPort {
     this.#sight = sight;
     if (changed || this.#fitPending) this.fit();
     if (this.#ready) {
-      if (state.smokeCells.length || this.#effects.length) this.#p5.loop();
+      if (
+        state.smokeCells.length ||
+        this.#effects.length ||
+        this.#doorMoves.size
+      )
+        this.#p5.loop();
       else void this.#p5.redraw();
+    }
+  }
+
+  /** animerade-dorrar: a known door that opened or closed starts sliding. */
+  #trackDoors(previous: BoardingBattleState, next: BoardingBattleState): void {
+    const known = new Set(
+      [...next.visibleCells, ...next.exploredCells].map(key),
+    );
+    for (const door of next.features) {
+      if (door.kind !== 'door' || door.destroyed) continue;
+      const before = previous.features.find((entry) => entry.id === door.id);
+      if (!before || before.open === door.open) continue;
+      if (known.has(key(door.position)))
+        this.#doorMoves.set(door.id, performance.now());
     }
   }
 
@@ -604,6 +634,7 @@ export class BoardingMapView implements BoardingMapPort {
     to: BoardingBattleState,
   ): Promise<void> {
     this.#finishMotion();
+    this.#trackDoors(this.#state ?? from, to);
     this.#state = to;
     this.#updateLighting(to);
     this.#updateWalls(to);
@@ -705,7 +736,8 @@ export class BoardingMapView implements BoardingMapPort {
       this.#ready &&
       !this.#disposed &&
       !this.#state?.smokeCells.length &&
-      !this.#effects.length
+      !this.#effects.length &&
+      !this.#doorMoves.size
     )
       this.#p5.noLoop();
     motion?.resolve();
@@ -1322,7 +1354,7 @@ export class BoardingMapView implements BoardingMapPort {
     selected: boolean,
     peers: ReadonlySet<string>,
     known: (cell: BoardingCell) => boolean,
-    door?: { readonly locked: boolean },
+    door?: { readonly locked: boolean } & Partial<BoardingDoorLeaf>,
   ): void {
     const height = this.#wallVisibility.height(position, { axis, low });
     const roomAt = (cell: BoardingCell) =>
@@ -1352,7 +1384,12 @@ export class BoardingMapView implements BoardingMapPort {
         face: door
           ? option(this.#doorFaces.get(door.locked ? 'locked' : 'open'))
           : option(this.#wallTiles.get(boardingSurfaceStyle(roomAt, faced))),
-        wholeFace: !!door,
+        ...(door
+          ? {
+              faceTexture: door.texture ?? [0, 1],
+              span: door.span ?? [-0.5, 0.5],
+            }
+          : {}),
         top: option(this.#wallTop),
         section:
           !low && height < boardingFeatureHeight('wall') && !this.#wallTop,
@@ -1577,10 +1614,13 @@ export class BoardingMapView implements BoardingMapPort {
     this.#effects = this.#effects.filter(
       (effect) => now - effect.started < BOARDING_EFFECT_DURATION[effect.kind],
     );
+    for (const [id, started] of this.#doorMoves)
+      if (now - started >= BOARDING_DOOR_SLIDE_MS) this.#doorMoves.delete(id);
     if (
       !this.#motion &&
       !this.#shot &&
       !this.#effects.length &&
+      !this.#doorMoves.size &&
       !state.smokeCells.length &&
       this.#ready &&
       !this.#disposed
@@ -1762,23 +1802,28 @@ export class BoardingMapView implements BoardingMapPort {
               );
               return;
             }
-            // dorrar-som-tunna-vaggar: a closed door is a thin wall with a door face.
-            if (closedDoor(feature)) {
+            // dorrar-som-tunna-vaggar: a closed door is a thin wall with a
+            // door face. animerade-dorrar: its leaves slide into the wall.
+            if (feature.kind === 'door' && !feature.destroyed) {
               const axis = this.map.doorAxis(feature.position);
-              this.#paintThinWall(
-                sketch,
-                feature.position,
-                axis,
-                false,
-                feature.id === this.#selectedId,
-                axis === 'q' ? thinPeers.q : thinPeers.r,
-                known,
-                { locked: feature.locked },
+              const openness = boardingDoorOpenness(
+                feature.open,
+                this.#doorMoves.get(feature.id) ?? null,
+                now,
               );
+              for (const leaf of boardingDoorLeaves(openness))
+                this.#paintThinWall(
+                  sketch,
+                  feature.position,
+                  axis,
+                  false,
+                  feature.id === this.#selectedId,
+                  axis === 'q' ? thinPeers.q : thinPeers.r,
+                  known,
+                  { locked: feature.locked, ...leaf },
+                );
               return;
             }
-            // An open door has slid away into the wall.
-            if (feature.kind === 'door' && !feature.destroyed) return;
             if (raised && feature.kind === 'thin-wall' && feature.axis) {
               const peers = feature.low
                 ? feature.axis === 'q'

@@ -807,7 +807,7 @@ export class BoardingEditorMapView {
               : option(
                   this.#wallTiles.get(boardingSurfaceStyle(roomAt, faced)),
                 ),
-            wholeFace: door,
+            ...(door ? { faceTexture: [0, 1] as const } : {}),
             top: option(this.#wallTop),
             section:
               !low &&

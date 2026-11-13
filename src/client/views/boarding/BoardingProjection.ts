@@ -224,6 +224,8 @@ interface CellPoint {
 export function boardingThinWallCells(
   position: BoardingCell,
   axis: BoardingThinAxis,
+  /** animerade-dorrar: the part of the length to cover, from -0.5 to 0.5. */
+  span: readonly [number, number] = [-0.5, 0.5],
 ): Readonly<{
   inside: readonly CellPoint[];
   wall: readonly CellPoint[];
@@ -232,18 +234,19 @@ export function boardingThinWallCells(
   const half = BOARDING_METERS.thinWall / 2;
   const band = (start: number, end: number): readonly CellPoint[] => {
     const { q, r } = position;
+    const [from, to] = span;
     return axis === 'q'
       ? [
-          { q: q + start, r: r - 0.5 },
-          { q: q + end, r: r - 0.5 },
-          { q: q + end, r: r + 0.5 },
-          { q: q + start, r: r + 0.5 },
+          { q: q + start, r: r + from },
+          { q: q + end, r: r + from },
+          { q: q + end, r: r + to },
+          { q: q + start, r: r + to },
         ]
       : [
-          { q: q - 0.5, r: r + start },
-          { q: q + 0.5, r: r + start },
-          { q: q + 0.5, r: r + end },
-          { q: q - 0.5, r: r + end },
+          { q: q + from, r: r + start },
+          { q: q + to, r: r + start },
+          { q: q + to, r: r + end },
+          { q: q + from, r: r + end },
         ];
   };
   return Object.freeze({
@@ -317,8 +320,9 @@ export function boardingThinWallMesh(
   position: BoardingCell,
   axis: BoardingThinAxis,
   meters: number,
+  span?: readonly [number, number],
 ): BoardingThinWallMesh {
-  const cells = boardingThinWallCells(position, axis).wall;
+  const cells = boardingThinWallCells(position, axis, span).wall;
   const ground = cells.map((cell) => projectCell(cell));
   const top = cells.map((cell) => projectCell(cell, meters));
   const face = (first: number, second: number): readonly BoardingPoint[] =>

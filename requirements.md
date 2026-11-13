@@ -143,7 +143,7 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Bordningsgrafik:** `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock, reactor och Half cover visas med isometrisk grafik utan inbyggt golv. Se [bordningsstrid](docs/boarding-combat.md).
 
-- **Dörrar som tunna väggar:** `dorrar-som-tunna-vaggar` är **Fullständigt implementerat**. En stängd dörr modelleras och ritas som en fullhög tunn vägg längs väggen den står i, med en egen dörrtextur (röd lampa när den är låst). En öppen dörr har glidit undan. Fullhöga tunna väggar och stängda dörrar skymmer sikt, skott och granater bara med sin tunna skiva mitt i rutan, så siktlinjen når fram till dörren. Ersätter dörrbilderna i `isometriska-bordningsobjekt` och att tunna väggar skymde hela rutan i `geometrisk-sikt`.
+- **Dörrar som tunna väggar:** `dorrar-som-tunna-vaggar` är **Fullständigt implementerat**. En stängd dörr modelleras och ritas som en fullhög tunn vägg längs väggen den står i, med en egen dörrtextur (röd lampa när den är låst). En öppen dörr har glidit undan. Fullhöga tunna väggar och stängda dörrar skymmer sikt, skott och granater bara med sin tunna skiva mitt i rutan, så siktlinjen når fram till dörren. Ersätter dörrbilderna i `isometriska-bordningsobjekt` och att tunna väggar skymde hela rutan i `geometrisk-sikt`. `animerade-dorrar` är **Fullständigt implementerat**: en känd dörr som öppnas eller stängs glider isär eller ihop på 0,45 s.
 
 - **Lokal bordningskarteditor:** `lokal-bordningskarteditor` och
   `isometrisk-bordningskarteditor` är **Fullständigt implementerat**. Knappen

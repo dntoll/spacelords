@@ -1393,6 +1393,8 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 `dorrar-som-tunna-vaggar` — **Fullständigt implementerat**. Dörrar ser ut och fungerar som tunna väggar med dörrens utseende. En stängd dörr skymmer sikten precis som en tunn vägg, så siktlinjen går fram till dörren. En öppen dörr har glidit undan. Låsta dörrar har en röd lampa.
 
+`animerade-dorrar` — **Fullständigt implementerat**. Dörrar man ser glider synligt isär när de öppnas och ihop när de stängs.
+
 ## Meterskala och skymmande väggar i bordning
 
 - `kameravinkel-60-i-bordning` — **Delvis implementerat**. Bordningskartan provas med en brant kamera (60°) som matchar Ludos high-angle, i stället för 2:1. Figurer, reactor och en låda, som ersätter bilden för `Half cover`, har nya bilder för vinkeln. Dörrar och airlock använder ännu de ihoptryckta äldre bilderna; passande bilder för dem återstår. Ersätter provet `isometri-3-2-i-bordning`.
