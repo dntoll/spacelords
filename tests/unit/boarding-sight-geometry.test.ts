@@ -303,9 +303,13 @@ describe('granat-over-halvskydd-inte-genom-vagg', () => {
       ]),
     ).toBeNull();
     expect(
-      reason([], { q: 5, r: 3 }, {
-        smoke: [{ position: { q: 3, r: 3 }, amount: 4 }],
-      }),
+      reason(
+        [],
+        { q: 5, r: 3 },
+        {
+          smoke: [{ position: { q: 3, r: 3 }, amount: 4 }],
+        },
+      ),
     ).toBeNull();
   });
   it('lets a grenade fly over a crouched person but not a standing one', () => {
