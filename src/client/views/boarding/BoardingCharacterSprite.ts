@@ -1,5 +1,9 @@
 import { boardingCharacterSources } from './BoardingCharacterAtlas.js';
-import { BOARDING_METERS, boardingHeight } from './BoardingScale.js';
+import {
+  BOARDING_METERS,
+  BOARDING_SPRITE_SQUASH,
+  boardingHeight,
+} from './BoardingScale.js';
 export type BoardingCharacterSide = 'player' | 'defender' | 'civilian';
 export type BoardingCharacterPose = 'standing' | 'crouched' | 'incapacitated';
 
@@ -15,7 +19,7 @@ interface Rectangle extends Point {
 
 type CharacterAngle = 'front' | 'front-right' | 'right' | 'back-right' | 'back';
 
-// Match model directions to their screen direction after the 2:1 projection.
+// Match model directions to their screen direction after the isometric projection.
 const views: readonly {
   readonly angle: CharacterAngle;
   readonly mirrored: boolean;
@@ -64,7 +68,8 @@ export function boardingCharacterSprite(
         ? BOARDING_METERS.crouchedPerson
         : BOARDING_METERS.incapacitatedPerson,
   );
-  const width = (height * source.width) / source.height;
+  const width =
+    (height * source.width) / source.height / BOARDING_SPRITE_SQUASH;
   return {
     source,
     mirrored: pose !== 'incapacitated' && view.mirrored,

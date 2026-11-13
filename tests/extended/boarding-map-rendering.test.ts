@@ -10,6 +10,7 @@ import {
 } from '../../src/client/models/boarding/BoardingMap.js';
 import { BoardingBattle } from '../../src/client/models/boarding/BoardingBattle.js';
 import {
+  BOARDING_TILE_HEIGHT,
   boardingIsoCamera,
   boardingIsoCenter,
 } from '../../src/client/views/boarding/BoardingProjection.js';
@@ -240,7 +241,7 @@ it('genomskinliga-skymmande-vaggar: fallback walls are opaque 40 cm sections, fo
     Math.min(
       ...calls.filter((call) => call.kind === 'wall').map((call) => call.y),
     ),
-  ).toBeCloseTo(wallTop - 16);
+  ).toBeCloseTo(wallTop - BOARDING_TILE_HEIGHT / 2);
   expect(
     calls
       .filter((call) => call.kind === 'wall')

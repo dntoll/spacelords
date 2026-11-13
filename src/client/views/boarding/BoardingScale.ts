@@ -16,10 +16,20 @@ export const BOARDING_METERS = Object.freeze({
 });
 
 export const BOARDING_TILE_WIDTH = 64;
-export const BOARDING_TILE_HEIGHT = 32;
+/** isometri-3-2-i-bordning: a 3:2 ground diamond, camera elevation asin(2/3) ≈ 41.8°. */
+export const BOARDING_TILE_HEIGHT = (BOARDING_TILE_WIDTH * 2) / 3;
+/** Screen depth per screen width of a ground footprint. */
+export const BOARDING_GROUND_RATIO = BOARDING_TILE_HEIGHT / BOARDING_TILE_WIDTH;
 
-// An orthographic 2:1 ground diamond has a 30 degree camera elevation.
-export const BOARDING_VERTICAL_METER = 16 * Math.sqrt(6);
+const GROUND_METER = BOARDING_TILE_WIDTH / Math.SQRT2;
+export const BOARDING_VERTICAL_METER =
+  GROUND_METER * Math.sqrt(1 - BOARDING_GROUND_RATIO ** 2);
+
+// The existing sprites were rendered for the earlier 2:1 (30 degree) camera.
+// isometri-3-2-i-bordning: they are compressed vertically, never horizontally.
+const SPRITE_VERTICAL_METER = GROUND_METER * Math.cos(Math.PI / 6);
+export const BOARDING_SPRITE_SQUASH =
+  BOARDING_VERTICAL_METER / SPRITE_VERTICAL_METER;
 
 export function boardingHeight(meters: number): number {
   return meters * BOARDING_VERTICAL_METER;

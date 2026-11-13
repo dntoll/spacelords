@@ -39,6 +39,8 @@ import { BoardingLightPainter } from './BoardingLightPainter.js';
 import { BOARDING_METERS, boardingHeight } from './BoardingScale.js';
 import { SHIP_SPRITES, type ShipSpriteType } from '../ShipImages.js';
 import {
+  BOARDING_HALF_TILE_WIDTH,
+  BOARDING_HALF_TILE_HEIGHT,
   boardingFeatureGlyph,
   boardingIsoCamera,
   boardingIsoCenter,
@@ -741,7 +743,12 @@ export class BoardingEditorMapView {
             height,
           );
         if (this.#lighting) {
-          const faces = boardingIsoBlockFaces(center, 32, 16, height);
+          const faces = boardingIsoBlockFaces(
+            center,
+            BOARDING_HALF_TILE_WIDTH,
+            BOARDING_HALF_TILE_HEIGHT,
+            height,
+          );
           for (const face of ['southEast', 'southWest', 'top'] as const)
             this.#lightPainter.paint(
               sketch.drawingContext as CanvasRenderingContext2D,

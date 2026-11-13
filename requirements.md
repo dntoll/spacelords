@@ -54,6 +54,7 @@ Se [hela visionen](docs/game-vision.md).
   formar skeppskonturen och editorn visar skeppsbilden i båda projektionerna.
   `spelidentisk-bordningseditor` är **Fullständigt implementerat**: samma bildval,
   ytprojektion, ljus och väggsnitt används. Se [bordningsstrid](docs/boarding-combat.md).
+- **3:2-isometri i bordning:** `isometri-3-2-i-bordning` är **Delvis implementerat** (provversion). Bordningskartan visas med 3:2-diamanter (kamerahöjd cirka 41,8° i stället för 30°). Befintliga figurer och objekt trycks bara ihop på höjden; nya sprites för den nya vinkeln återstår. Ersätter 2:1-projektionen i `isometrisk-bordningsvy`.
 
 - **Rumsinteriörer:** `rumsspecifika-bordningstexturer` och
   `texturerad-vaggovansida` är **Fullständigt implementerat**: bilderna används

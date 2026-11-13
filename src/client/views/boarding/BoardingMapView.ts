@@ -13,6 +13,7 @@ import { BoardingLighting } from './BoardingLighting.js';
 import { BoardingLightPainter } from './BoardingLightPainter.js';
 import p5 from 'p5';
 import {
+  BOARDING_GROUND_RATIO,
   BOARDING_METERS,
   BOARDING_VERTICAL_METER,
   boardingHeight,
@@ -64,6 +65,8 @@ import {
   type BoardingEdgeTargetIndicator,
 } from './BoardingTargetIndicatorLayout.js';
 import {
+  BOARDING_HALF_TILE_WIDTH,
+  BOARDING_HALF_TILE_HEIGHT,
   boardingAnimTick,
   boardingProjectilePoint,
   boardingCellFromIsoPoint,
@@ -122,6 +125,11 @@ function stackOffset(
     stack.findIndex((entry) => entry.id === personId),
   );
   return { x: index * 10, y: index * 5 };
+}
+
+/** isometri-3-2-i-bordning: floor ellipses were sized for a 2:1 ground diamond. */
+function groundEllipse(depthAt2to1: number): number {
+  return depthAt2to1 * 2 * BOARDING_GROUND_RATIO;
 }
 
 export class BoardingMapView implements BoardingMapPort {
@@ -923,8 +931,8 @@ export class BoardingMapView implements BoardingMapPort {
     const cutaway = height < boardingFeatureHeight('wall');
     const faces = boardingIsoBlockFaces(
       boardingIsoCenter(position),
-      32,
-      16,
+      BOARDING_HALF_TILE_WIDTH,
+      BOARDING_HALF_TILE_HEIGHT,
       height,
     );
     const option = (image: p5.Image | undefined | null) =>
@@ -948,8 +956,8 @@ export class BoardingMapView implements BoardingMapPort {
       this.#block(
         sketch,
         boardingIsoCenter(position),
-        32,
-        16,
+        BOARDING_HALF_TILE_WIDTH,
+        BOARDING_HALF_TILE_HEIGHT,
         height,
         '#52657f',
       );
@@ -1609,7 +1617,12 @@ export class BoardingMapView implements BoardingMapPort {
             );
           sketch.noStroke();
           sketch.fill(0, 0, 0, 95);
-          sketch.ellipse(center.x, center.y + BOARDING_FOOT_PLANT, 25, 9);
+          sketch.ellipse(
+            center.x,
+            center.y + BOARDING_FOOT_PLANT,
+            25,
+            groundEllipse(9),
+          );
           if (
             person.id === state.currentActorId &&
             person.status === 'active'
@@ -1621,7 +1634,7 @@ export class BoardingMapView implements BoardingMapPort {
               center.x,
               center.y + BOARDING_FOOT_PLANT - 1,
               32,
-              13,
+              groundEllipse(13),
             );
           } else if (person.id === this.#selectedId) {
             sketch.noFill();
@@ -1631,7 +1644,7 @@ export class BoardingMapView implements BoardingMapPort {
               center.x,
               center.y + BOARDING_FOOT_PLANT - 1,
               36,
-              16,
+              groundEllipse(16),
             );
           }
           if (this.#factionSprites) {
@@ -1686,7 +1699,7 @@ export class BoardingMapView implements BoardingMapPort {
             context.filter = `brightness(${light})`;
             if (person.status === 'active')
               sketch.circle(center.x, bodyY, person.crouched ? 17 : 21);
-            else sketch.ellipse(center.x, center.y, 35, 14);
+            else sketch.ellipse(center.x, center.y, 35, groundEllipse(14));
             context.restore();
           }
           overlays.push(() => {

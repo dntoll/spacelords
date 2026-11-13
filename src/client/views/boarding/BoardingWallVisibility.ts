@@ -8,6 +8,8 @@ import type {
   BoardingThinAxis,
 } from '../../models/boarding/BoardingMap.js';
 import {
+  BOARDING_HALF_TILE_WIDTH,
+  BOARDING_HALF_TILE_HEIGHT,
   BOARDING_COVER_HEIGHT,
   BOARDING_WALL_HEIGHT,
   boardingIsoBlockFaces,
@@ -28,8 +30,8 @@ function silhouette(
 ): readonly BoardingPoint[] {
   const faces = boardingIsoBlockFaces(
     boardingIsoCenter(position),
-    32,
-    16,
+    BOARDING_HALF_TILE_WIDTH,
+    BOARDING_HALF_TILE_HEIGHT,
     height,
   );
   return [

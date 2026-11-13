@@ -14,13 +14,20 @@ import {
   NO_FLIGHT_ADJUSTMENT,
 } from '../../src/client/views/boarding/BoardingCharacterSprite.js';
 
-const verticalMeter = 16 * Math.sqrt(6);
+// isometri-3-2-i-bordning: a 3:2 ground diamond means a camera elevation of asin(2/3).
+const groundMeter = 64 / Math.SQRT2;
+const verticalMeter = (groundMeter * Math.sqrt(5)) / 3;
+// The existing sprites were rendered for the earlier 2:1 (30 degree) camera.
+const spriteVerticalMeter = 16 * Math.sqrt(6);
+const squash = verticalMeter / spriteVerticalMeter;
 describe('meterskala-i-bordning', () => {
   it('keeps the 1 m square floor and gives walls, openings and cover their agreed meter heights', () => {
     const alongQ = boardingIsoCenter({ q: 1, r: 0 });
     const alongR = boardingIsoCenter({ q: 0, r: 1 });
-    expect(alongQ).toEqual({ x: 32, y: 16 });
-    expect(alongR).toEqual({ x: -32, y: 16 });
+    expect(alongQ.x).toBe(32);
+    expect(alongQ.y).toBeCloseTo(64 / 3);
+    expect(alongR.x).toBe(-32);
+    expect(alongR.y).toBeCloseTo(64 / 3);
     expect(BOARDING_WALL_HEIGHT / verticalMeter).toBeCloseTo(2.4);
     expect(BOARDING_DOOR_HEIGHT / verticalMeter).toBeCloseTo(2.1);
     expect(BOARDING_COVER_HEIGHT / verticalMeter).toBeCloseTo(1.2);
@@ -30,8 +37,11 @@ describe('meterskala-i-bordning', () => {
       const closed = `door-closed-${axis}` as const,
         open = `door-open-${axis}` as const;
       expect(
-        BOARDING_SPRITE_METRICS[open].openingHeight / verticalMeter,
+        BOARDING_SPRITE_METRICS[open].openingHeight / spriteVerticalMeter,
       ).toBeCloseTo(2.1);
+      expect(boardingObjectBounds(open, { x: 0, y: 0 }).height).toBeCloseTo(
+        BOARDING_SPRITE_METRICS[open].height * squash,
+      );
       expect(boardingObjectBounds(open, { x: 10, y: 20 })).toEqual(
         boardingObjectBounds(closed, { x: 10, y: 20 }),
       );
@@ -40,16 +50,21 @@ describe('meterskala-i-bordning', () => {
       );
     }
     expect(
-      BOARDING_SPRITE_METRICS.airlock.openingHeight / verticalMeter,
+      BOARDING_SPRITE_METRICS.airlock.openingHeight / spriteVerticalMeter,
     ).toBeCloseTo(2.1);
   });
   it('plants a standing 1.8 m person at its feet and keeps the camera above the highest wall', () => {
-    const sprite = boardingCharacterSprite(
+    const { source, destination: sprite } = boardingCharacterSprite(
       'player',
       { x: 0, y: 0 },
       'standing',
-    ).destination;
+    );
     expect(sprite.height / verticalMeter).toBeCloseTo(1.8);
+    // isometri-3-2-i-bordning: existing sprites are only compressed vertically.
+    const unsquashedHeight = 1.8 * spriteVerticalMeter;
+    expect(sprite.width).toBeCloseTo(
+      (unsquashedHeight * source.width) / source.height,
+    );
     expect(sprite.y + sprite.height).toBe(
       BOARDING_FOOT_PLANT + NO_FLIGHT_ADJUSTMENT,
     );
@@ -58,7 +73,7 @@ describe('meterskala-i-bordning', () => {
       { width: 430, height: 500 },
     );
     expect(
-      camera.offset.y + (-16 - 2.4 * verticalMeter) * camera.scale,
+      camera.offset.y + (-64 / 3 - 2.4 * verticalMeter) * camera.scale,
     ).toBeGreaterThanOrEqual(18 - 1e-6);
   });
 });

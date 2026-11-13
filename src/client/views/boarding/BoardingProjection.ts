@@ -8,6 +8,7 @@ import {
   BOARDING_METERS,
   BOARDING_TILE_WIDTH,
   BOARDING_TILE_HEIGHT,
+  BOARDING_GROUND_RATIO,
   boardingHeight,
   boardingWorldPoint,
 } from './BoardingScale.js';
@@ -18,8 +19,10 @@ export const BOARDING_DOOR_HEIGHT = boardingHeight(BOARDING_METERS.opening);
 export const BOARDING_WALL_SLICES = 8;
 const TILE_WIDTH = BOARDING_TILE_WIDTH;
 const TILE_HEIGHT = BOARDING_TILE_HEIGHT;
-const HALF_WIDTH = TILE_WIDTH / 2;
-const HALF_HEIGHT = TILE_HEIGHT / 2;
+export const BOARDING_HALF_TILE_WIDTH = TILE_WIDTH / 2;
+export const BOARDING_HALF_TILE_HEIGHT = TILE_HEIGHT / 2;
+const HALF_WIDTH = BOARDING_HALF_TILE_WIDTH;
+const HALF_HEIGHT = BOARDING_HALF_TILE_HEIGHT;
 const PADDING = 18;
 const HEIGHT_HEADROOM = BOARDING_WALL_HEIGHT + 18;
 
@@ -38,9 +41,9 @@ export function boardingFeatureFootprint(
 ): Readonly<{ width: number; depth: number }> {
   if (kind === 'wall' || kind === 'hull')
     return { width: HALF_WIDTH, depth: HALF_HEIGHT };
-  if (kind === 'door') return { width: 18, depth: 9 };
-  if (kind === 'cover') return { width: 24, depth: 12 };
-  if (kind === 'reactor') return { width: 24, depth: 12 };
+  if (kind === 'door') return { width: 18, depth: 18 * BOARDING_GROUND_RATIO };
+  if (kind === 'cover' || kind === 'reactor')
+    return { width: 24, depth: 24 * BOARDING_GROUND_RATIO };
   return { width: 0, depth: 0 };
 }
 
@@ -160,7 +163,7 @@ export function boardingQuadTextureTransform(
   ]);
 }
 
-/** Maps a square surface texture onto the cell's exact 2:1 diamond. */
+/** Maps a square surface texture onto the cell's exact ground diamond. */
 export function boardingIsoTextureTransform(
   textureWidth: number,
   textureHeight: number,

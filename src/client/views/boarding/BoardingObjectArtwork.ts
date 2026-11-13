@@ -1,4 +1,5 @@
 import { BOARDING_SPRITE_METRICS } from './BoardingSpriteMetrics.js';
+import { BOARDING_SPRITE_SQUASH } from './BoardingScale.js';
 import type {
   BoardingCell,
   BoardingFeatureKind,
@@ -70,8 +71,8 @@ export function boardingObjectBounds(
   const metric = BOARDING_SPRITE_METRICS[kind];
   return {
     x: center.x - metric.anchorX,
-    y: center.y - metric.anchorY,
+    y: center.y - metric.anchorY * BOARDING_SPRITE_SQUASH,
     width: metric.width,
-    height: metric.height,
+    height: metric.height * BOARDING_SPRITE_SQUASH,
   };
 }

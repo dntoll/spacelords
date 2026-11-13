@@ -156,9 +156,11 @@ describe('formbar-skeppskontur / redigerbara-bordningslampor', () => {
 describe('isometrisk-bordningskarteditor', () => {
   it('isometrisk-skeppsreferens: aligns the sprite plane with both axes of the cell grid', () => {
     const [a, b, c, d, x, y] = boardingSpritePlaneTransform();
-    expect([x, y]).toEqual([0, -16]);
-    expect([a, b]).toEqual([32, 16]);
-    expect([c, d]).toEqual([-32, 16]);
+    // isometri-3-2-i-bordning: half a 64 x 128/3 ground diamond.
+    const half = 64 / 3;
+    expect([x, y]).toEqual([0, -half]);
+    expect([a, b]).toEqual([32, half]);
+    expect([c, d]).toEqual([-32, half]);
   });
   it('defaults to isometric and switches to top-down for sprite adjustment', () => {
     const editor = new BoardingEditor('pirate', pirateMap);
