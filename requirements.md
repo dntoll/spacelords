@@ -396,7 +396,9 @@ Se [hela visionen](docs/game-vision.md).
   (`billig-vandning`, **Fullständigt implementerat**). Stående personer är
   pelare med 0,5 rutors diameter som skymmer sikt och skott, och hukande ger
   halvskydd (`personer-som-pelare-i-sikt`, **Fullständigt implementerat**,
-  ersätter `personer-blockerar-inte-sikt`). Man kan skjuta förbi en person när
+  ersätter `personer-blockerar-inte-sikt`). En hel reactor skymmer på samma
+  sätt men med en halv rutas radie (`reaktor-skymmer-sikt`, **Fullständigt
+  implementerat**). Man kan skjuta förbi en person när
   minst 10 % av målrutan syns. Döda och utslagna blockerar varken skott eller
   gång. Synliga och skjutbara rutor har inga röda eller blå kantmarkeringar.
   Egna soldater har HP- och AP-staplar ovanför

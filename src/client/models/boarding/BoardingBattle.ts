@@ -220,6 +220,8 @@ const RIFLE_AP = BOARDING_RIFLE_AP;
 const BOARDING_VISION_COSINE = 0;
 const GRENADE_AP = 4;
 const GRENADE_RANGE = 6;
+/** reaktor-skymmer-sikt: half a tile, so the reactor fills its tile's width. */
+const REACTOR_SIGHT_RADIUS = 0.5;
 /** Codes for #visionBlocks' grid: open, whole tile, slab q, slab r. */
 const SHAPE_CODES = [false, true, 'q', 'r'] as const;
 export const BOARDING_MED_PACK_AP = 4;
@@ -961,7 +963,8 @@ export class BoardingBattle {
       entry.position,
       target,
       (q, r) => this.#solidShape({ q, r }),
-      this.#bodies(),
+      // Only people catch a grenade; it is thrown over the reactor.
+      this.#bodies().filter((body) => body.radius === undefined),
     );
     if (obstacle === 'wall') return 'The throw is blocked by a wall.';
     if (obstacle === 'person')
@@ -1061,16 +1064,27 @@ export class BoardingBattle {
     readonly bodies: readonly BoardingSightBody[];
   } | null = null;
 
-  /** personer-som-pelare-i-sikt: people still on their feet, per state. */
+  /**
+   * personer-som-pelare-i-sikt: people still on their feet, per state.
+   * reaktor-skymmer-sikt: an intact reactor is a pillar half a tile in radius.
+   */
   #bodies(): readonly BoardingSightBody[] {
     if (this.#bodyCache?.state === this.#state) return this.#bodyCache.bodies;
-    const bodies = this.#state.people
+    const bodies: BoardingSightBody[] = this.#state.people
       .filter((entry) => entry.status === 'active')
       .map((entry) => ({
         q: entry.position.q,
         r: entry.position.r,
         cover: entry.crouched,
       }));
+    for (const feature of this.#state.features)
+      if (feature.kind === 'reactor' && !feature.destroyed)
+        bodies.push({
+          q: feature.position.q,
+          r: feature.position.r,
+          cover: false,
+          radius: REACTOR_SIGHT_RADIUS,
+        });
     this.#bodyCache = { state: this.#state, bodies };
     return bodies;
   }

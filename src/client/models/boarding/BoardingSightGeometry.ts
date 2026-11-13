@@ -142,21 +142,25 @@ export interface BoardingSightBody {
   readonly q: number;
   readonly r: number;
   readonly cover: boolean;
+  /** reaktor-skymmer-sikt: a wider pillar, such as the reactor. */
+  readonly radius?: number;
 }
 
 export const BOARDING_BODY_RADIUS = 0.25;
+const radiusOf = (body: BoardingSightBody) =>
+  body.radius ?? BOARDING_BODY_RADIUS;
 
 /** Distance along a unit ray at which it first enters the body, or null. */
 function rayBody(
   eye: BoardingSightPoint,
   direction: BoardingSightPoint,
   length: number,
-  body: BoardingSightPoint,
+  body: BoardingSightBody,
 ): number | null {
   const fq = eye.q - body.q;
   const fr = eye.r - body.r;
   const b = fq * direction.q + fr * direction.r;
-  const c = fq * fq + fr * fr - BOARDING_BODY_RADIUS * BOARDING_BODY_RADIUS;
+  const c = fq * fq + fr * fr - radiusOf(body) * radiusOf(body);
   if (c <= 0) return null;
   const discriminant = b * b - c;
   if (discriminant < 0) return null;
@@ -415,11 +419,11 @@ export function boardingSightOutline(
     }
   for (const pillar of pillars) {
     const distance = Math.hypot(pillar.q - eye.q, pillar.r - eye.r);
-    if (distance > radius + BOARDING_BODY_RADIUS) continue;
+    if (distance > radius + radiusOf(pillar)) continue;
     let centre = Math.atan2(pillar.r - eye.r, pillar.q - eye.q);
     while (centre < start) centre += Math.PI * 2;
     while (centre > start + Math.PI * 2) centre -= Math.PI * 2;
-    const spread = Math.asin(BOARDING_BODY_RADIUS / distance);
+    const spread = Math.asin(Math.min(1, radiusOf(pillar) / distance));
     for (const edge of [centre - spread, centre + spread])
       for (const offset of [-1e-4, 1e-4])
         if (edge + offset > start && edge + offset < end)

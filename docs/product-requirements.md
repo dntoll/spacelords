@@ -1509,6 +1509,8 @@ står i skuggan får mindre skydd än en som står helt bakom.
 `avstand-paverkar-traffchans` — **Fullständigt implementerat**: det är svårare
 att träffa på långt håll än på nära håll.
 
+`reaktor-skymmer-sikt` — **Fullständigt implementerat**: reaktorn skymmer sikt och skott som en bred stående person, men går själv att se och beskjuta.
+
 `personer-som-pelare-i-sikt` — **Fullständigt implementerat**: stående personer
 skymmer sikten som smala pelare, hukande ger halvskydd, och man kan skjuta förbi
 personer om tillräckligt mycket av målet syns.

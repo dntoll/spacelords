@@ -162,6 +162,10 @@ sparplatser.
   egen soldat visas HP och kvarvarande AP som två korta staplar. Försvarare och
   civilister visar bara HP.
 - `personer-blockerar-inte-sikt` — **Ersatt** av `personer-som-pelare-i-sikt`.
+- `reaktor-skymmer-sikt` — **Fullständigt implementerat**. En hel reactor
+  skymmer sikt och skott som en stående person men är en pelare med en halv
+  rutas radie, alltså lika bred som rutan. Själva reaktorn går fortfarande att
+  se och beskjuta. En förstörd reactor skymmer inte. Granater kastas över den.
 - `personer-som-pelare-i-sikt` — **Fullständigt implementerat**. En stående
   person, civil eller stridande, är en pelare med 0,5 rutors diameter mitt i
   sin ruta. Den skymmer sikten och kastar en skugga, så rutor bakom kan vara

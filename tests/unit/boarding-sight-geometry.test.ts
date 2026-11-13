@@ -410,3 +410,35 @@ describe('dorrar-som-tunna-vaggar', () => {
     ).toBe(false);
   });
 });
+
+describe('reaktor-skymmer-sikt', () => {
+  const reactor: BoardingFeatureDefinition = {
+    id: 'reactor',
+    kind: 'reactor',
+    position: { q: 3, r: 3 },
+  };
+  it('hides what stands straight behind the reactor', () => {
+    const { enemy, restore } = deck([reactor]);
+    const battle = restore({ q: 5, r: 3 });
+    battle.synchronize();
+    expect(
+      battle.visibleSnapshot.people.some((person) => person.id === enemy.id),
+    ).toBe(false);
+  });
+  it('cuts the sight outline at a pillar half a tile in radius', () => {
+    const { shooter, restore } = deck([reactor]);
+    const outline = restore({ q: 8, r: 0 }).sightArea(shooter.id).outline;
+    const ahead = outline.filter((point) => Math.abs(point.r - 3) < 0.05);
+    expect(Math.max(...ahead.map((point) => point.q))).toBeCloseTo(2.5, 2);
+    // Wider than a person: a ray 0.4 tiles off the centre line is still cut.
+    const beside = outline.filter(
+      (point) => Math.abs(point.r - 3.4) < 0.1 && point.q > 2,
+    );
+    expect(Math.max(...beside.map((point) => point.q))).toBeLessThan(3.5);
+  });
+  it('still lets the reactor itself be seen and shot', () => {
+    const { shooter, restore } = deck([reactor]);
+    const battle = restore({ q: 8, r: 0 });
+    expect(battle.attackPreview(shooter.id, 'reactor').reason).toBeNull();
+  });
+});
