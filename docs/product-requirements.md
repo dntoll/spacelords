@@ -1456,6 +1456,11 @@ dörr kan stänga den med `Close door`, men inte när någon står i dörröppni
 `granat-kostar-bara-vid-kast` — **Fullständigt implementerat**: en granat som
 inte kan kastas, till exempel för att rutan är för långt bort, kostar ingen AP.
 
+`granat-over-halvskydd-inte-genom-vagg` — **Fullständigt implementerat**: en
+granat kan kastas över lådor, låga väggar och personer som sitter ner, men inte
+genom väggar, stängda dörrar eller personer som står upp. En granat som hamnar
+fel studsar aldrig in genom en vägg.
+
 `gang-mot-avlagset-mal` — **Fullständigt implementerat**: ett andra tryck på en
 ruta eller dörr som ligger för långt bort gör att soldaten går så långt den
 hinner åt det hållet.

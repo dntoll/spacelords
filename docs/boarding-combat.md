@@ -274,6 +274,15 @@ sparplatser.
   utanför räckvidden (6 rutor), utan kvarvarande granat av den sorten eller med
   för lite AP avvisas innan någon AP dras. Granatknapparna är avstängda för
   sådana rutor. Samma gäller `Hack door` mot en ogiltig dörr.
+- `granat-over-halvskydd-inte-genom-vagg` — **Fullständigt implementerat**.
+  Kastet följer en rak linje från kastarens rutmitt till målrutans mitt.
+  Väggar, skrov, höga tunna väggar, stängda dörrar och rutor utanför däcket
+  stoppar kastet (`The throw is blocked by a wall.`). En stående person i
+  linjen (pelare med 0,5 rutors diameter, se `personer-som-pelare-i-sikt`)
+  stoppar också kastet (`The throw is blocked by a standing person.`). Halvskydd,
+  låga tunna väggar, rök och hukande personer kastas granaten över. Själva
+  målrutan får vara en vägg. En granat som missar och avviker stannar framför
+  den första vägg den skulle studsa in i.
 - `stang-oppen-dorr` — **Fullständigt implementerat**. En soldat som står
   intill en öppen dörr får `Close door` (1 AP). Knappen är avstängd när någon
   står i dörrens ruta, och modellen avvisar stängningen utan AP-kostnad.

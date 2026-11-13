@@ -14,6 +14,7 @@ import {
   boardingBodyShadow,
   boardingCoverShadow,
   boardingSightOutline,
+  boardingThrowObstacle,
   boardingTileSight,
   boardingVisibleShare,
   type BoardingSightBody,
@@ -953,9 +954,32 @@ export class BoardingBattle {
     if (!this.#map.contains(target)) return 'Choose a tile on the map.';
     if (distance(entry.position, target) > GRENADE_RANGE)
       return 'The target tile is outside throwing range.';
+    const obstacle = boardingThrowObstacle(
+      entry.position,
+      target,
+      (q, r) => this.#stopsGrenade({ q, r }),
+      this.#bodies(),
+    );
+    if (obstacle === 'wall') return 'The throw is blocked by a wall.';
+    if (obstacle === 'person')
+      return 'The throw is blocked by a standing person.';
     if (boardingActionPointsRemaining(this.#state, id) < GRENADE_AP)
       return `The action needs ${GRENADE_AP} AP.`;
     return null;
+  }
+
+  /** granat-over-halvskydd-inte-genom-vagg: solid tiles; smoke is no wall. */
+  #stopsGrenade(position: BoardingCell): boolean {
+    if (!this.#map.contains(position)) return true;
+    if (this.#map.terrainAt(position) === null) return true;
+    const feature = this.#featureAt(position);
+    return (
+      !!feature &&
+      (feature.kind === 'wall' ||
+        feature.kind === 'hull' ||
+        (feature.kind === 'thin-wall' && !feature.low) ||
+        (feature.kind === 'door' && !feature.open))
+    );
   }
 
   /** stang-oppen-dorr: reason the door action is unavailable, or null. */
@@ -1011,16 +1035,7 @@ export class BoardingBattle {
   }
 
   #blocksVision(position: BoardingCell): boolean {
-    if (this.#map.terrainAt(position) === null) return true;
-    const feature = this.#featureAt(position);
-    if (
-      feature &&
-      (feature.kind === 'wall' ||
-        feature.kind === 'hull' ||
-        (feature.kind === 'thin-wall' && !feature.low) ||
-        (feature.kind === 'door' && !feature.open))
-    )
-      return true;
+    if (this.#stopsGrenade(position)) return true;
     return this.#state.smoke.some(
       (entry) => entry.amount > 0 && same(entry.position, position),
     );
@@ -1721,11 +1736,12 @@ export class BoardingBattle {
       const margin = difficulty - (die + actor.accuracy);
       const deviation = Math.min(3, Math.max(1, Math.ceil(margin / 5)));
       const direction = ADJACENT_DIRECTIONS[this.#die(8) - 1]!;
-      for (let index = 0; index < deviation; index++)
-        impact = frozenCell({
-          q: impact.q + direction.q,
-          r: impact.r + direction.r,
-        });
+      for (let index = 0; index < deviation; index++) {
+        const next = { q: impact.q + direction.q, r: impact.r + direction.r };
+        // granat-over-halvskydd-inte-genom-vagg: a wall stops the scatter.
+        if (this.#map.contains(next) && this.#stopsGrenade(next)) break;
+        impact = frozenCell(next);
+      }
       if (!this.#map.contains(impact)) impact = frozenCell(target);
     }
     this.#shot = Object.freeze({

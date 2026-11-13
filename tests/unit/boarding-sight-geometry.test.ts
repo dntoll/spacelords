@@ -260,3 +260,74 @@ describe('personer-som-pelare-i-sikt', () => {
     ).toBe(false);
   });
 });
+
+describe('granat-over-halvskydd-inte-genom-vagg', () => {
+  const far = { q: 10, r: 0 };
+  const reason = (
+    features: readonly BoardingFeatureDefinition[],
+    target = { q: 5, r: 3 },
+    change: Partial<BoardingBattleState> = {},
+  ) => {
+    const { shooter, restore } = deck(features);
+    return restore(far, change).grenadeReason(shooter.id, 'frag', target);
+  };
+  const bystander = (crouched: boolean): Partial<BoardingBattleState> => {
+    const { enemy, restore } = deck();
+    const base = restore(far).snapshot;
+    const placed = base.people.find((person) => person.id === enemy.id)!;
+    return {
+      people: [
+        ...base.people,
+        { ...placed, id: 'bystander', position: { q: 3, r: 3 }, crouched },
+      ],
+    };
+  };
+
+  it('refuses a throw whose path crosses a wall', () => {
+    expect(reason([wall])).toMatch(/wall/);
+    expect(reason([wall], { q: 5, r: 1 })).toBeNull();
+    const door: BoardingFeatureDefinition = {
+      id: 'door',
+      kind: 'door',
+      position: { q: 3, r: 3 },
+    };
+    expect(reason([door])).toMatch(/wall/);
+  });
+  it('lets a grenade fly over half cover, a low wall and smoke', () => {
+    expect(
+      reason([{ id: 'crate', kind: 'cover', position: { q: 3, r: 3 } }]),
+    ).toBeNull();
+    expect(
+      reason([
+        { id: 'low', kind: 'thin-wall', low: true, position: { q: 3, r: 3 } },
+      ]),
+    ).toBeNull();
+    expect(
+      reason([], { q: 5, r: 3 }, {
+        smoke: [{ position: { q: 3, r: 3 }, amount: 4 }],
+      }),
+    ).toBeNull();
+  });
+  it('lets a grenade fly over a crouched person but not a standing one', () => {
+    expect(reason([], { q: 5, r: 3 }, bystander(true))).toBeNull();
+    expect(reason([], { q: 5, r: 3 }, bystander(false))).toMatch(/blocked/);
+  });
+  it('never lets a missed grenade scatter through a wall', () => {
+    const column: BoardingFeatureDefinition[] = Array.from(
+      { length: 7 },
+      (_, r) => ({ id: `wall-${r}`, kind: 'wall', position: { q: 5, r } }),
+    );
+    const { shooter, restore } = deck(column);
+    let missed = 0;
+    for (let seed = 1; seed <= 200; seed++) {
+      const battle = restore(far, { randomState: seed });
+      battle.command({ type: 'grenade', grenade: 'smoke', at: { q: 4, r: 3 } });
+      const line = battle.snapshot.log.at(-1)!;
+      const [, q] = /impact (-?\d+),(-?\d+)/.exec(line)!.map(Number);
+      expect(q).toBeLessThanOrEqual(4);
+      if (!line.endsWith('impact 4,3.')) missed++;
+    }
+    expect(missed).toBeGreaterThan(0);
+    expect(shooter.smokeGrenades).toBe(1);
+  });
+});

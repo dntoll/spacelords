@@ -99,10 +99,13 @@ Se [hela visionen](docs/game-vision.md).
   genom rutan. Se [produktkrav](docs/product-requirements.md).
 
 - **Bordningshandlingar och flyt:** `stang-oppen-dorr`,
-  `granat-kostar-bara-vid-kast`, `gang-mot-avlagset-mal` och
+  `granat-kostar-bara-vid-kast`, `granat-over-halvskydd-inte-genom-vagg`,
+  `gang-mot-avlagset-mal` och
   `bordning-jamn-bildfrekvens` är **Fullständigt implementerat**. En soldat
   intill en öppen, tom dörr får `Close door`. En granat som inte kan kastas
-  drar ingen AP och knapparna är avstängda. Ett andra tryck på ett mål som
+  drar ingen AP och knapparna är avstängda. Granater kastas över halvskydd,
+  låga väggar, rök och hukande personer, men inte genom väggar, stängda dörrar
+  eller stående personer, och en miss studsar aldrig genom en vägg. Ett andra tryck på ett mål som
   ligger för långt bort går så långt AP räcker. Golvlagret cachas och
   figurernas ljus ritas utan p5:s `tint()` för jämnare bildfrekvens på mobil.
   Se [bordningsstrid](docs/boarding-combat.md).

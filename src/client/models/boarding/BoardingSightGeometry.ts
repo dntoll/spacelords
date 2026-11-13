@@ -144,6 +144,39 @@ function trace(
   return result;
 }
 
+/**
+ * granat-over-halvskydd-inte-genom-vagg: what stops a grenade thrown from the
+ * centre of `from` to the centre of `target`. Solid tiles stop it, standing
+ * people catch it, and crouched people and half cover are thrown over.
+ */
+export function boardingThrowObstacle(
+  from: BoardingSightPoint,
+  target: BoardingSightPoint,
+  solid: BoardingSightBlocker,
+  bodies: readonly BoardingSightBody[] = [],
+): 'wall' | 'person' | null {
+  const dq = target.q - from.q;
+  const dr = target.r - from.r;
+  const length = Math.hypot(dq, dr);
+  if (length < EPSILON) return null;
+  const direction = { q: dq / length, r: dr / length };
+  const wall = walk(
+    from,
+    direction,
+    length,
+    (q, r) => !(q === target.q && r === target.r) && solid(q, r),
+  );
+  if (wall !== null) return 'wall';
+  const blocked = bodies.some(
+    (body) =>
+      !body.cover &&
+      !ownTile(body, target) &&
+      !ownTile(body, from) &&
+      rayBody(from, direction, length, body) !== null,
+  );
+  return blocked ? 'person' : null;
+}
+
 const none: BoardingSightBlocker = () => false;
 
 /** geometrisk-sikt / halvskydd-skuggar-delvis: visible and shadowed shares. */
