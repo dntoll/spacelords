@@ -1473,6 +1473,9 @@ fiender visas utan hårkors och utan tom HP-mätare.
 `ljudmarkor-bara-utom-sikt` — **Fullständigt implementerat**: ljudmarkören
 visas bara där man inte redan ser vad som hände.
 
+`fiende-syns-till-sin-tur` — **Fullständigt implementerat**: en fiende man har
+sett finns kvar på kartan tills det blir dess tur, även om ingen ser den längre.
+
 `avstangda-omojliga-handlingar` — **Fullständigt implementerat**:
 handlingsknappar som inte kan utföras är avstängda.
 

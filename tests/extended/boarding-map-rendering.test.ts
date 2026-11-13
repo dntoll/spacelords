@@ -731,3 +731,41 @@ it('utslagen-fiende-utan-sikte / ljudmarkor-bara-utom-sikt: no empty HP bar for 
   expect(bars).toHaveLength(0);
   view.dispose();
 });
+
+it('fiende-syns-till-sin-tur / senast-sedd-fiende-med-fragetecken: draws a lingering enemy out of sight and marks a hidden one with a question mark', () => {
+  const { view, state, player, calls, texts } = scene(true);
+  const enemy = {
+    ...player,
+    id: 'lingering',
+    side: 'defender' as const,
+    position: { q: 1, r: 1 },
+  };
+  const people = () => calls.filter((call) => call.kind === 'person').length;
+  view.render({ ...state, people: [player, enemy] }, null, null, []);
+  const withoutEnemy = people();
+  view.render(
+    {
+      ...state,
+      people: [player, enemy],
+      lastKnownEnemies: [{ id: enemy.id, position: enemy.position }],
+      lingeringEnemyIds: [enemy.id],
+    },
+    null,
+    null,
+    [],
+  );
+  expect(people()).toBeGreaterThan(withoutEnemy);
+  expect(texts).not.toContain('?');
+  view.render(
+    {
+      ...state,
+      people: [player],
+      lastKnownEnemies: [{ id: enemy.id, position: enemy.position }],
+    },
+    null,
+    null,
+    [],
+  );
+  expect(texts).toContain('?');
+  view.dispose();
+});

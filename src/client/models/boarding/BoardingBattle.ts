@@ -101,6 +101,8 @@ export interface BoardingBattleState {
   readonly exploredCells: readonly BoardingCell[];
   readonly lastKnownEnemies: readonly BoardingLastKnown[];
   readonly defenderLastKnownEnemies: readonly BoardingLastKnown[];
+  /** fiende-syns-till-sin-tur: seen defenders shown until their next activation. */
+  readonly lingeringEnemyIds?: readonly string[];
   readonly noiseMarkers: readonly BoardingNoise[];
   readonly reactorCountdown: number | null;
   readonly savedCivilians: number;
@@ -314,6 +316,7 @@ function freezeState(state: BoardingBattleState): BoardingBattleState {
       (state.postponed ?? []).map((entry) => Object.freeze({ ...entry })),
     ),
     finishedActors: Object.freeze([...(state.finishedActors ?? [])]),
+    lingeringEnemyIds: Object.freeze([...(state.lingeringEnemyIds ?? [])]),
     log: Object.freeze([...state.log]),
   });
 }
@@ -573,12 +576,14 @@ export class BoardingBattle {
 
   get visibleSnapshot(): BoardingBattleState {
     const visible = new Set(this.#state.visibleCells.map(positionKey));
+    const lingering = new Set(this.#state.lingeringEnemyIds ?? []);
     return freezeState({
       ...this.#state,
       people: this.#state.people.filter(
         (entry) =>
           entry.side === 'player' ||
           visible.has(positionKey(entry.position)) ||
+          lingering.has(entry.id) ||
           entry.status === 'evacuated',
       ),
     });
@@ -1144,14 +1149,32 @@ export class BoardingBattle {
       visibleKeys,
       this.#state.lastKnownEnemies,
     );
-    for (const enemy of this.#state.people.filter(
+    const seenDefenders = this.#state.people.filter(
       (entry) =>
         entry.side === 'defender' &&
         entry.status !== 'dead' &&
         entry.status !== 'evacuated' &&
         visibleKeys.has(positionKey(entry.position)),
-    ))
+    );
+    for (const enemy of seenDefenders)
       lastKnown.set(enemy.id, { id: enemy.id, position: enemy.position });
+    // fiende-syns-till-sin-tur: an enemy only moves on its own activation, so a
+    // seen enemy stays where it was shown until that activation begins.
+    const lingering = new Set(
+      (this.#state.lingeringEnemyIds ?? []).filter((id) => {
+        const enemy = this.#state.people.find((entry) => entry.id === id);
+        const known = lastKnown.get(id);
+        return (
+          !!enemy &&
+          !!known &&
+          id !== this.#state.currentActorId &&
+          enemy.status !== 'dead' &&
+          enemy.status !== 'evacuated' &&
+          positionKey(known.position) === positionKey(enemy.position)
+        );
+      }),
+    );
+    for (const enemy of seenDefenders) lingering.add(enemy.id);
     const defenderLastKnown = rememberedEnemies(
       'player',
       defenderVisibleKeys,
@@ -1173,6 +1196,7 @@ export class BoardingBattle {
       exploredCells: [...explored.values()],
       lastKnownEnemies: [...lastKnown.values()],
       defenderLastKnownEnemies: [...defenderLastKnown.values()],
+      lingeringEnemyIds: [...lingering],
       smokeCells: this.#state.smoke
         .filter(
           (entry) => entry.amount > 0 && this.#smokeCanFill(entry.position),

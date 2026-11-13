@@ -65,7 +65,10 @@ Se [hela visionen](docs/game-vision.md).
   väggar. Handlingar som inte kan utföras är avstängda.
   `utslagen-fiende-utan-sikte` och `ljudmarkor-bara-utom-sikt` är
   **Fullständigt implementerat**: utslagna personer får varken hårkors eller
-  tom HP-mätare, och ljudmarkörer visas bara på rutor som inte syns. Se
+  tom HP-mätare, och ljudmarkörer visas bara på rutor som inte syns.
+  `fiende-syns-till-sin-tur` är **Fullständigt implementerat**: en fiende som
+  truppen har sett står kvar på kartan när ingen längre ser den, tills fiendens
+  egen tur börjar. Därefter visas frågetecknet för senast kända position. Se
   [bordningsstrid](docs/boarding-combat.md).
 
 - **Rumsinteriörer:** `rumsspecifika-bordningstexturer` och

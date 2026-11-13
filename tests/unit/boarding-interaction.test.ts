@@ -306,3 +306,52 @@ describe('avstamning-sparkompatibilitet', () => {
     }
   });
 });
+
+describe('fiende-syns-till-sin-tur', () => {
+  const lookAway = () => {
+    const { restore, state, other, enemy } = arena();
+    const battle = restore({
+      people: state.people.map((person) =>
+        person.id === other.id ? { ...person, facing: 2 } : person,
+      ),
+    });
+    // Four 45-degree turns take the actor from east to west.
+    for (let turn = 0; turn < 4; turn++)
+      battle.command({ type: 'turn', direction: 1 });
+    return { battle, enemy };
+  };
+  const shown = (battle: BoardingBattle, id: string) =>
+    battle.visibleSnapshot.people.some((person) => person.id === id);
+
+  it('keeps a seen enemy on the map after the squad looks away', () => {
+    const { battle, enemy } = lookAway();
+    expect(
+      battle.snapshot.visibleCells.some(
+        (cell) => cell.q === enemy.position.q && cell.r === enemy.position.r,
+      ),
+    ).toBe(false);
+    expect(shown(battle, enemy.id)).toBe(true);
+  });
+  it('hides the enemy once its own activation begins out of sight', () => {
+    const { battle, enemy } = lookAway();
+    battle.command({ type: 'end-activation' });
+    expect(battle.snapshot.currentActorId).toBe(enemy.id);
+    expect(shown(battle, enemy.id)).toBe(false);
+    expect(battle.snapshot.lastKnownEnemies).toContainEqual({
+      id: enemy.id,
+      position: enemy.position,
+    });
+  });
+  it('never shows an enemy the squad has not seen', () => {
+    const { restore, state, enemy } = arena();
+    const battle = restore({
+      people: state.people.map((person) =>
+        person.side === 'player' ? { ...person, facing: 2 } : person,
+      ),
+      lastKnownEnemies: [],
+      lingeringEnemyIds: [],
+    });
+    battle.command({ type: 'turn', direction: 1 });
+    expect(shown(battle, enemy.id)).toBe(false);
+  });
+});

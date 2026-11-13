@@ -1777,6 +1777,8 @@ export class BoardingMapView implements BoardingMapPort {
           );
         })
       : null;
+    // fiende-syns-till-sin-tur: a seen enemy stays drawn until its activation.
+    const lingering = new Set(state.lingeringEnemyIds ?? []);
     for (const person of [...state.people].sort((a, b) => {
       const dy =
         boardingIsoCenter(a.position).y - boardingIsoCenter(b.position).y;
@@ -1793,7 +1795,9 @@ export class BoardingMapView implements BoardingMapPort {
     })) {
       if (
         person.status === 'evacuated' ||
-        (person.side !== 'player' && !visible.has(key(person.position)))
+        (person.side !== 'player' &&
+          !visible.has(key(person.position)) &&
+          !lingering.has(person.id))
       )
         continue;
       const origin = mover && person.id === mover.id ? mover : person;
@@ -1978,13 +1982,12 @@ export class BoardingMapView implements BoardingMapPort {
     }
     scene.sort(boardingDepthOrder).forEach((item) => item.paint());
     for (const marker of state.lastKnownEnemies) {
-      if (visible.has(key(marker.position))) continue;
+      if (visible.has(key(marker.position)) || lingering.has(marker.id))
+        continue;
+      // senast-sedd-fiende-med-fragetecken: the player's snapshot leaves hidden
+      // enemies out, so only a known dead or evacuated enemy drops its mark.
       const remembered = state.people.find((person) => person.id === marker.id);
-      if (
-        !remembered ||
-        remembered.status === 'dead' ||
-        remembered.status === 'evacuated'
-      )
+      if (remembered?.status === 'dead' || remembered?.status === 'evacuated')
         continue;
       const center = boardingIsoCenter(marker.position);
       const uiScale = 1 / this.#scale;

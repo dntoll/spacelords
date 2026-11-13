@@ -180,7 +180,15 @@ sparplatser.
   dold senast känd position visas som ett orange frågetecken. Markören finns
   kvar för en utslagen fiende som kan behandlas, men tas bort för döda och
   evakuerade. Om den kända rutan åter syns utan fienden rensas den gamla
-  positionen. Synliga personer visas bara med sin figur.
+  positionen. Synliga personer visas bara med sin figur. Frågetecknet visades
+  tidigare aldrig i spelet, eftersom spelarens bild utelämnar dolda fiender;
+  det är rättat.
+- `fiende-syns-till-sin-tur` — **Fullständigt implementerat**. En fiende som
+  någon soldat har sett ritas kvar på sin ruta när ingen längre ser den, till
+  exempel när soldaten vänder sig bort eller går. Fienden flyttar sig bara på
+  sin egen tur, så bilden stämmer. När fiendens tur börjar och ingen ser den
+  försvinner figuren och ersätts av frågetecknet. Detta ändrar
+  `sikt-minne-och-ljudmarkorer`, där fiender bara syntes i aktuell sikt.
 - `d20-bordningsstrid` — **Fullständigt implementerat**. Skott använder öppet D20 plus
   Accuracy mot försvar, men visar även träffchans i procent. Naturlig 1 missar
   och naturlig 20 dubblar vapnets skadetärningar.
