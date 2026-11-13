@@ -9,6 +9,7 @@ import type { BoardingMapId } from '../../../shared/boarding-map-format.js';
 import {
   BOARDING_FLOOR_IMAGES,
   BOARDING_WALL_IMAGES,
+  BOARDING_DOOR_FACE_IMAGES,
   BOARDING_WALL_TOP_IMAGE,
   boardingSurfaceStyle,
   boardingWallFaceStyle,
@@ -27,6 +28,7 @@ import {
 } from './BoardingObjectArtwork.js';
 import { BoardingWallVisibility } from './BoardingWallVisibility.js';
 import {
+  boardingDoorAxis,
   boardingThinAxisFromSymbol,
   boardingThinNeighbor,
   boardingThinOutsideTerrain,
@@ -141,6 +143,7 @@ export class BoardingEditorMapView {
   readonly #floorTiles = new Map<BoardingSurfaceStyle, p5.Image>();
   readonly #wallTiles = new Map<BoardingSurfaceStyle, p5.Image>();
   #wallTop: p5.Image | null = null;
+  readonly #doorFaces = new Map<'open' | 'locked', p5.Image>();
   #factionSprites: p5.Image | null = null;
   readonly #objects = new Map<BoardingArtwork, p5.Image>();
   #lighting: BoardingLighting | null = null;
@@ -197,6 +200,15 @@ export class BoardingEditorMapView {
         ][]) {
           void sketch.loadImage(url).then((image) => {
             this.#wallTiles.set(style, image);
+            if (this.#ready && !this.#disposed) void this.#p5.redraw();
+          });
+        }
+        for (const [kind, url] of Object.entries(BOARDING_DOOR_FACE_IMAGES) as [
+          'open' | 'locked',
+          string,
+        ][]) {
+          void sketch.loadImage(url).then((image) => {
+            this.#doorFaces.set(kind, image);
             if (this.#ready && !this.#disposed) void this.#p5.redraw();
           });
         }
@@ -761,9 +773,13 @@ export class BoardingEditorMapView {
             );
         }
       }
-      const thinAxis = boardingThinAxisFromSymbol(terrain);
+      // dorrar-som-tunna-vaggar: a door is a thin wall with a door face.
+      const door = objectKind(object) === 'door';
+      const thinAxis = door
+        ? boardingDoorAxis(position, (q, r) => structure.has(wallKey(q, r)))
+        : boardingThinAxisFromSymbol(terrain);
       if (thinAxis) {
-        const low = boardingThinWallIsLow(terrain);
+        const low = !door && boardingThinWallIsLow(terrain);
         const height = visibility.height(position, { axis: thinAxis, low });
         const faced =
           boardingThinOutsideTerrain(
@@ -782,12 +798,16 @@ export class BoardingEditorMapView {
           wall ? this.#cache(wall) : { floor: null, wall: null },
           position,
           thinAxis,
-          thinPeers[terrain] ?? new Set(),
+          (door ? thinPeers[thinAxis.toUpperCase()] : thinPeers[terrain]) ??
+            new Set(),
           height,
           {
-            face: option(
-              this.#wallTiles.get(boardingSurfaceStyle(roomAt, faced)),
-            ),
+            face: door
+              ? option(this.#doorFaces.get(object === 'L' ? 'locked' : 'open'))
+              : option(
+                  this.#wallTiles.get(boardingSurfaceStyle(roomAt, faced)),
+                ),
+            wholeFace: door,
             top: option(this.#wallTop),
             section:
               !low &&
@@ -818,14 +838,13 @@ export class BoardingEditorMapView {
         }
       }
       const kind = objectKind(object);
-      const featureKind = object === 'R' ? 'reactor' : kind;
+      const featureKind =
+        object === 'R' ? 'reactor' : kind === 'door' ? null : kind;
       const artwork =
         object === 'A'
           ? 'airlock'
           : featureKind
-            ? boardingObjectArtwork({ kind: featureKind, position }, (q, r) =>
-                structure.has(wallKey(q, r)),
-              )
+            ? boardingObjectArtwork({ kind: featureKind, position })
             : null;
       const image = artwork ? this.#objects.get(artwork) : undefined;
       if (artwork && image) {
@@ -834,15 +853,8 @@ export class BoardingEditorMapView {
         sketch.tint(255 * (this.#lighting?.tile(position) ?? 1));
         sketch.image(image, box.x, box.y, box.width, box.height);
         sketch.pop();
-        if (object === 'L') {
-          sketch.noStroke();
-          sketch.fill('#f4cf5a');
-          sketch.textAlign(sketch.CENTER, sketch.CENTER);
-          sketch.textSize(12);
-          sketch.text('▣', center.x, center.y - boardingHeight(1.5));
-        }
       }
-      if (kind && !image) {
+      if (kind && kind !== 'door' && !image) {
         const apex = paintIsoBlock(sketch, center, kind);
         const mark = boardingFeatureGlyph({
           kind,
@@ -856,7 +868,7 @@ export class BoardingEditorMapView {
           sketch.textSize(16);
           sketch.text(mark, apex.x, apex.y);
         }
-      } else if (!image) {
+      } else if (!image && !door) {
         const mark = glyph('objects', object);
         const marks = mark ? [mark] : [];
         if (marks.length) {

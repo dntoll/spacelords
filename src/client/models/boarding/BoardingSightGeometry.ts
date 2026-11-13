@@ -9,7 +9,15 @@ export interface BoardingSightPoint {
   readonly r: number;
 }
 
-export type BoardingSightBlocker = (q: number, r: number) => boolean;
+/**
+ * True blocks the whole tile. dorrar-som-tunna-vaggar: 'q' or 'r' blocks only
+ * a slab one third of a tile thick through the middle, thin along that axis,
+ * as full thin walls and closed doors do.
+ */
+export type BoardingSightBlocker = (
+  q: number,
+  r: number,
+) => boolean | 'q' | 'r';
 
 /** Sight reaches eight tiles; the extra half keeps the eighth tile whole. */
 export const BOARDING_SIGHT_RADIUS = 8.5;
@@ -19,17 +27,73 @@ export const BOARDING_SEEN_SHARE = 0.1;
 const SAMPLES = [-0.4, -0.2, 0, 0.2, 0.4] as const;
 const EPSILON = 1e-9;
 const ARC_STEP = Math.PI / 180;
+/** Half the thickness of a thin wall or door slab, in tiles. */
+const SLAB_HALF = 1 / 6;
+
+/**
+ * dorrar-som-tunna-vaggar: distance at which a ray inside tile (q, r) between
+ * `entered` and `exited` meets what blocks there, or null if it slips past.
+ */
+function solidHit(
+  from: BoardingSightPoint,
+  direction: BoardingSightPoint,
+  q: number,
+  r: number,
+  solid: boolean | 'q' | 'r',
+  entered: number,
+  exited: number,
+): number | null {
+  if (!solid) return null;
+  if (solid === true) return entered;
+  const start = solid === 'q' ? from.q : from.r;
+  const step = solid === 'q' ? direction.q : direction.r;
+  const centre = solid === 'q' ? q : r;
+  let low = -Infinity;
+  let high = Infinity;
+  if (Math.abs(step) < EPSILON) {
+    if (Math.abs(start - centre) > SLAB_HALF) return null;
+  } else {
+    const a = (centre - SLAB_HALF - start) / step;
+    const b = (centre + SLAB_HALF - start) / step;
+    low = Math.min(a, b);
+    high = Math.max(a, b);
+  }
+  const hit = Math.max(low, entered);
+  return hit <= Math.min(high, exited) ? hit : null;
+}
+
+/** The corners of what blocks in tile (q, r), for exact shadow edges. */
+function solidCorners(
+  q: number,
+  r: number,
+  solid: boolean | 'q' | 'r',
+): readonly (readonly [number, number])[] {
+  const dq = solid === 'q' ? SLAB_HALF : 0.5;
+  const dr = solid === 'r' ? SLAB_HALF : 0.5;
+  return [
+    [q - dq, r - dr],
+    [q + dq, r - dr],
+    [q + dq, r + dr],
+    [q - dq, r + dr],
+  ];
+}
 
 /**
  * Walks the tiles a ray crosses after its own start tile, in order, until the
- * visitor returns true or the ray reaches `length`. Returns the distance at
- * which the stopping tile was entered, or null.
+ * visitor stops it or the ray reaches `length`. The visitor gets the distances
+ * at which the ray enters and leaves the tile and returns true to stop where
+ * the tile was entered, a distance to stop there, or false to go on.
  */
 function walk(
   from: BoardingSightPoint,
   direction: BoardingSightPoint,
   length: number,
-  stop: (q: number, r: number) => boolean,
+  stop: (
+    q: number,
+    r: number,
+    entered: number,
+    exited: number,
+  ) => boolean | number | null,
 ): number | null {
   let q = Math.round(from.q);
   let r = Math.round(from.r);
@@ -51,7 +115,9 @@ function walk(
       nextR += deltaR;
     }
     if (entered > length) return null;
-    if (stop(q, r)) return entered;
+    const result = stop(q, r, entered, Math.min(nextQ, nextR));
+    if (result === true) return entered;
+    if (typeof result === 'number' && result <= length) return result;
   }
 }
 
@@ -120,9 +186,10 @@ function trace(
   const direction = { q: dq / length, r: dr / length };
   // Assigned inside the walk callback, so TypeScript cannot narrow it.
   let result = 'clear' as RayResult;
-  walk(eye, direction, length, (q, r) => {
+  walk(eye, direction, length, (q, r, entered, exited) => {
     if (q === target.q && r === target.r) return true;
-    if (blocks(q, r)) {
+    const hit = solidHit(eye, direction, q, r, blocks(q, r), entered, exited);
+    if (hit !== null && hit <= length) {
       result = 'blocked';
       return true;
     }
@@ -160,11 +227,10 @@ export function boardingThrowObstacle(
   const length = Math.hypot(dq, dr);
   if (length < EPSILON) return null;
   const direction = { q: dq / length, r: dr / length };
-  const wall = walk(
-    from,
-    direction,
-    length,
-    (q, r) => !(q === target.q && r === target.r) && solid(q, r),
+  const wall = walk(from, direction, length, (q, r, entered, exited) =>
+    q === target.q && r === target.r
+      ? false
+      : solidHit(from, direction, q, r, solid(q, r), entered, exited),
   );
   if (wall !== null) return 'wall';
   const blocked = bodies.some(
@@ -335,13 +401,9 @@ export function boardingSightOutline(
   const centreR = Math.round(eye.r);
   for (let r = centreR - reach; r <= centreR + reach; r++)
     for (let q = centreQ - reach; q <= centreQ + reach; q++) {
-      if ((q === centreQ && r === centreR) || !blocks(q, r)) continue;
-      for (const [cq, cr] of [
-        [q - 0.5, r - 0.5],
-        [q + 0.5, r - 0.5],
-        [q + 0.5, r + 0.5],
-        [q - 0.5, r + 0.5],
-      ] as const) {
+      const solid = q === centreQ && r === centreR ? false : blocks(q, r);
+      if (!solid) continue;
+      for (const [cq, cr] of solidCorners(q, r, solid)) {
         if (Math.hypot(cq - eye.q, cr - eye.r) > radius) continue;
         let angle = Math.atan2(cr - eye.r, cq - eye.q);
         while (angle < start) angle += Math.PI * 2;
@@ -367,7 +429,9 @@ export function boardingSightOutline(
   const outline: BoardingSightPoint[] = [{ q: eye.q, r: eye.r }];
   for (const angle of angles) {
     const direction = { q: Math.cos(angle), r: Math.sin(angle) };
-    const hit = walk(eye, direction, radius, (q, r) => blocks(q, r));
+    const hit = walk(eye, direction, radius, (q, r, entered, exited) =>
+      solidHit(eye, direction, q, r, blocks(q, r), entered, exited),
+    );
     let distance = hit ?? radius;
     for (const pillar of pillars) {
       const entered = rayBody(eye, direction, distance, pillar);

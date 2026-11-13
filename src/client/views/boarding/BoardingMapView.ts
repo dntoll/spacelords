@@ -49,6 +49,7 @@ import {
 import {
   BOARDING_FLOOR_IMAGES,
   BOARDING_WALL_IMAGES,
+  BOARDING_DOOR_FACE_IMAGES,
   BOARDING_WALL_TOP_IMAGE,
   boardingSurfaceStyle,
   boardingWallFaceStyle,
@@ -98,6 +99,10 @@ import {
 } from './BoardingSurfacePainter.js';
 
 const key = (position: BoardingCell): string => `${position.q},${position.r}`;
+
+/** dorrar-som-tunna-vaggar: closed doors stand as thin walls. */
+const closedDoor = (feature: BoardingFeature): boolean =>
+  feature.kind === 'door' && !feature.open && !feature.destroyed;
 /** Keeps the cached floor layer within mobile canvas memory limits. */
 const FLOOR_LAYER_MAX_SIDE = 3072;
 
@@ -196,6 +201,7 @@ export class BoardingMapView implements BoardingMapPort {
   readonly #floorTiles = new Map<BoardingSurfaceStyle, p5.Image>();
   readonly #wallTiles = new Map<BoardingSurfaceStyle, p5.Image>();
   #wallTop: p5.Image | null = null;
+  readonly #doorFaces = new Map<'open' | 'locked', p5.Image>();
   readonly #isoCaches = new WeakMap<p5.Image, IsoImageCache>();
   #factionSprites: p5.Image | null = null;
   readonly #smokeTextures: (p5.Image | null)[] = [null, null, null];
@@ -259,6 +265,15 @@ export class BoardingMapView implements BoardingMapPort {
         ][]) {
           void sketch.loadImage(url).then((image) => {
             this.#wallTiles.set(style, image);
+            if (!this.#disposed && this.#ready) void this.#p5.redraw();
+          });
+        }
+        for (const [kind, url] of Object.entries(BOARDING_DOOR_FACE_IMAGES) as [
+          'open' | 'locked',
+          string,
+        ][]) {
+          void sketch.loadImage(url).then((image) => {
+            this.#doorFaces.set(kind, image);
             if (!this.#disposed && this.#ready) void this.#p5.redraw();
           });
         }
@@ -890,14 +905,18 @@ export class BoardingMapView implements BoardingMapPort {
         (feature) =>
           !feature.destroyed &&
           (feature.kind === 'hull' ||
-            ((feature.kind === 'wall' || feature.kind === 'thin-wall') &&
+            ((feature.kind === 'wall' ||
+              feature.kind === 'thin-wall' ||
+              closedDoor(feature)) &&
               known.has(key(feature.position)))),
       )
       .map((feature) => ({
         ...feature.position,
         ...(feature.kind === 'thin-wall' && feature.axis
           ? { axis: feature.axis, low: feature.low === true }
-          : {}),
+          : feature.kind === 'door'
+            ? { axis: this.map.doorAxis(feature.position), low: false }
+            : {}),
       }));
   }
 
@@ -1303,6 +1322,7 @@ export class BoardingMapView implements BoardingMapPort {
     selected: boolean,
     peers: ReadonlySet<string>,
     known: (cell: BoardingCell) => boolean,
+    door?: { readonly locked: boolean },
   ): void {
     const height = this.#wallVisibility.height(position, { axis, low });
     const roomAt = (cell: BoardingCell) =>
@@ -1329,7 +1349,10 @@ export class BoardingMapView implements BoardingMapPort {
       peers,
       height,
       {
-        face: option(this.#wallTiles.get(boardingSurfaceStyle(roomAt, faced))),
+        face: door
+          ? option(this.#doorFaces.get(door.locked ? 'locked' : 'open'))
+          : option(this.#wallTiles.get(boardingSurfaceStyle(roomAt, faced))),
+        wholeFace: !!door,
         top: option(this.#wallTop),
         section:
           !low && height < boardingFeatureHeight('wall') && !this.#wallTop,
@@ -1580,10 +1603,23 @@ export class BoardingMapView implements BoardingMapPort {
       ...state.features.filter((feature) => feature.id === this.#selectedId),
     ][0]?.position;
     const selectedTile = selectedCell ? key(selectedCell) : null;
+    // dorrar-som-tunna-vaggar: a door splits its floor like a thin wall.
     const thinAt = new Map(
       state.features
-        .filter((feature) => feature.kind === 'thin-wall' && feature.axis)
-        .map((feature) => [key(feature.position), feature] as const),
+        .filter(
+          (feature) =>
+            (feature.kind === 'thin-wall' && feature.axis) ||
+            feature.kind === 'door',
+        )
+        .map(
+          (feature) =>
+            [
+              key(feature.position),
+              feature.kind === 'door'
+                ? { ...feature, axis: this.map.doorAxis(feature.position) }
+                : feature,
+            ] as const,
+        ),
     );
     const seen = (cell: BoardingCell) =>
       visible.has(key(cell)) || explored.has(key(cell));
@@ -1669,6 +1705,11 @@ export class BoardingMapView implements BoardingMapPort {
       lowR: new Set<string>(),
     };
     for (const feature of state.features) {
+      if (closedDoor(feature)) {
+        const axis = this.map.doorAxis(feature.position);
+        (axis === 'q' ? thinPeers.q : thinPeers.r).add(key(feature.position));
+        continue;
+      }
       if (feature.kind !== 'thin-wall' || feature.destroyed || !feature.axis)
         continue;
       const peers = feature.low
@@ -1721,6 +1762,23 @@ export class BoardingMapView implements BoardingMapPort {
               );
               return;
             }
+            // dorrar-som-tunna-vaggar: a closed door is a thin wall with a door face.
+            if (closedDoor(feature)) {
+              const axis = this.map.doorAxis(feature.position);
+              this.#paintThinWall(
+                sketch,
+                feature.position,
+                axis,
+                false,
+                feature.id === this.#selectedId,
+                axis === 'q' ? thinPeers.q : thinPeers.r,
+                known,
+                { locked: feature.locked },
+              );
+              return;
+            }
+            // An open door has slid away into the wall.
+            if (feature.kind === 'door' && !feature.destroyed) return;
             if (raised && feature.kind === 'thin-wall' && feature.axis) {
               const peers = feature.low
                 ? feature.axis === 'q'
@@ -1744,15 +1802,7 @@ export class BoardingMapView implements BoardingMapPort {
               this.#paintRubble(sketch, feature.position);
               return;
             }
-            const artwork = boardingObjectArtwork(feature, (q, r) => {
-              const terrain = this.map.terrainAt({ q, r });
-              return (
-                terrain === 'wall' ||
-                terrain === 'hull' ||
-                terrain === 'thin-wall' ||
-                terrain === 'low-thin-wall'
-              );
-            });
+            const artwork = boardingObjectArtwork(feature);
             if (
               artwork &&
               this.#paintObject(
@@ -1762,13 +1812,6 @@ export class BoardingMapView implements BoardingMapPort {
                 this.#lighting.tile(feature.position),
               )
             ) {
-              if (feature.kind === 'door' && feature.locked && !feature.open) {
-                sketch.textAlign(sketch.CENTER, sketch.CENTER);
-                sketch.textSize(12);
-                sketch.noStroke();
-                sketch.fill('#f4cf5a');
-                sketch.text('▣', floor.x, floor.y - boardingHeight(1.5));
-              }
               return;
             }
             context.filter = `brightness(${this.#lighting.tile(feature.position)})`;

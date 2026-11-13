@@ -11,6 +11,8 @@ import wallBridge from '../../assets/boarding/wall-bridge.webp';
 import wallEngineering from '../../assets/boarding/wall-engineering.webp';
 import wallCockpit from '../../assets/boarding/wall-cockpit.webp';
 import wallTop from '../../assets/boarding/wall-top.webp';
+import doorFace from '../../assets/boarding/door-face.png';
+import doorFaceLocked from '../../assets/boarding/door-face-locked.png';
 
 export type BoardingSurfaceStyle = BoardingRoom | 'default';
 
@@ -31,6 +33,10 @@ export const BOARDING_WALL_IMAGES: Readonly<
   cockpit: wallCockpit,
 };
 export const BOARDING_WALL_TOP_IMAGE = wallTop;
+/** dorrar-som-tunna-vaggar: the face of a closed door, which slides open. */
+export const BOARDING_DOOR_FACE_IMAGES: Readonly<
+  Record<'open' | 'locked', string>
+> = { open: doorFace, locked: doorFaceLocked };
 
 /** rumsspecifika-bordningstexturer: a face belongs to the floor adjacent to it. */
 export function boardingSurfaceStyle(

@@ -3,6 +3,7 @@ import {
   type BoardingFeatureKind,
   type BoardingCell,
   type BoardingMap,
+  type BoardingThinAxis,
 } from './BoardingMap.js';
 import {
   spreadBoardingSpawns,
@@ -219,6 +220,8 @@ const RIFLE_AP = BOARDING_RIFLE_AP;
 const BOARDING_VISION_COSINE = 0;
 const GRENADE_AP = 4;
 const GRENADE_RANGE = 6;
+/** Codes for #visionBlocks' grid: open, whole tile, slab q, slab r. */
+const SHAPE_CODES = [false, true, 'q', 'r'] as const;
 export const BOARDING_MED_PACK_AP = 4;
 const MED_PACK_AP = BOARDING_MED_PACK_AP;
 export const BOARDING_HACK_AP = 4;
@@ -957,7 +960,7 @@ export class BoardingBattle {
     const obstacle = boardingThrowObstacle(
       entry.position,
       target,
-      (q, r) => this.#stopsGrenade({ q, r }),
+      (q, r) => this.#solidShape({ q, r }),
       this.#bodies(),
     );
     if (obstacle === 'wall') return 'The throw is blocked by a wall.';
@@ -1035,7 +1038,10 @@ export class BoardingBattle {
   }
 
   #blocksVision(position: BoardingCell): boolean {
-    if (this.#stopsGrenade(position)) return true;
+    return this.#stopsGrenade(position) || this.#smokeAt(position);
+  }
+
+  #smokeAt(position: BoardingCell): boolean {
     return this.#state.smoke.some(
       (entry) => entry.amount > 0 && same(entry.position, position),
     );
@@ -1043,7 +1049,7 @@ export class BoardingBattle {
 
   #visionCache: {
     readonly state: BoardingBattleState;
-    readonly blocks: (q: number, r: number) => boolean;
+    readonly blocks: (q: number, r: number) => boolean | BoardingThinAxis;
   } | null = null;
   #coverCache: {
     readonly state: BoardingBattleState;
@@ -1087,8 +1093,25 @@ export class BoardingBattle {
     return cover;
   }
 
+  /**
+   * dorrar-som-tunna-vaggar: full thin walls and closed doors block only their
+   * slab; smoke and other walls block the whole tile.
+   */
+  #visionShape(position: BoardingCell): boolean | BoardingThinAxis {
+    return this.#smokeAt(position) || this.#solidShape(position);
+  }
+
+  /** granat-over-halvskydd-inte-genom-vagg: what stops a grenade, by shape. */
+  #solidShape(position: BoardingCell): boolean | BoardingThinAxis {
+    if (!this.#stopsGrenade(position)) return false;
+    const feature = this.#featureAt(position);
+    if (feature?.kind === 'thin-wall' && feature.axis) return feature.axis;
+    if (feature?.kind === 'door') return this.#map.doorAxis(position);
+    return true;
+  }
+
   /** geometrisk-sikt: blocking tiles, cached for the current state. */
-  #visionBlocks(): (q: number, r: number) => boolean {
+  #visionBlocks(): (q: number, r: number) => boolean | BoardingThinAxis {
     if (this.#visionCache?.state === this.#state)
       return this.#visionCache.blocks;
     const width = this.#map.width;
@@ -1096,9 +1119,11 @@ export class BoardingBattle {
     const grid = new Uint8Array(width * height);
     for (let r = 0; r < height; r++)
       for (let q = 0; q < width; q++)
-        grid[r * width + q] = this.#blocksVision({ q, r }) ? 1 : 0;
+        grid[r * width + q] = SHAPE_CODES.indexOf(this.#visionShape({ q, r }));
     const blocks = (q: number, r: number) =>
-      q < 0 || r < 0 || q >= width || r >= height || grid[r * width + q] === 1;
+      q < 0 || r < 0 || q >= width || r >= height
+        ? true
+        : SHAPE_CODES[grid[r * width + q]!]!;
     this.#visionCache = { state: this.#state, blocks };
     return blocks;
   }

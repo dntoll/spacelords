@@ -27,6 +27,23 @@ export function boardingThinAxisFromSymbol(
   return null;
 }
 
+/**
+ * dorrar-som-tunna-vaggar: a door is a thin slab along the wall line it stands
+ * in. Walls above and below give a slab thin along q, like `Q`.
+ */
+export function boardingDoorAxis(
+  position: BoardingCell,
+  wallAt: (q: number, r: number) => boolean,
+): BoardingThinAxis {
+  const alongR =
+    Number(wallAt(position.q, position.r - 1)) +
+    Number(wallAt(position.q, position.r + 1));
+  const alongQ =
+    Number(wallAt(position.q - 1, position.r)) +
+    Number(wallAt(position.q + 1, position.r));
+  return alongR > alongQ ? 'q' : 'r';
+}
+
 export function boardingThinWallIsLow(symbol: string): boolean {
   return symbol === 'q' || symbol === 'r';
 }
@@ -112,6 +129,7 @@ export class BoardingMap {
   readonly #terrain: ReadonlyMap<string, BoardingTerrain>;
   readonly #rooms: ReadonlyMap<string, BoardingRoom>;
   readonly #zones: ReadonlyMap<string, BoardingShipZone>;
+  readonly #walls: ReadonlySet<string>;
 
   constructor(
     name: string,
@@ -143,6 +161,19 @@ export class BoardingMap {
       ),
     );
     this.features = Object.freeze([...features]);
+    this.#walls = new Set([
+      ...[...terrain]
+        .filter(([, kind]) => kind !== 'floor')
+        .map(([cell]) => cell),
+      ...features
+        .filter(
+          (feature) =>
+            feature.kind === 'wall' ||
+            feature.kind === 'hull' ||
+            feature.kind === 'thin-wall',
+        )
+        .map((feature) => key(feature.position)),
+    ]);
     this.airlocks = Object.freeze([...airlocks]);
     this.cockpits = Object.freeze([...cockpits]);
     this.spawns = Object.freeze({
@@ -159,6 +190,11 @@ export class BoardingMap {
 
   terrainAt(position: BoardingCell): BoardingTerrain | null {
     return this.#terrain.get(key(position)) ?? null;
+  }
+
+  /** dorrar-som-tunna-vaggar: see boardingDoorAxis. */
+  doorAxis(position: BoardingCell): BoardingThinAxis {
+    return boardingDoorAxis(position, (q, r) => this.#walls.has(`${q},${r}`));
   }
 
   roomAt(position: BoardingCell): BoardingRoom | null {

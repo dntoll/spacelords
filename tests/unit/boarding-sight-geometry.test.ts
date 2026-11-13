@@ -335,3 +335,78 @@ describe('granat-over-halvskydd-inte-genom-vagg', () => {
     expect(shooter.smokeGrenades).toBe(1);
   });
 });
+
+describe('dorrar-som-tunna-vaggar', () => {
+  /** A wall line along r at q = 4 with a door or thin wall at (4,3). */
+  const wallLine = (middle: BoardingFeatureDefinition) => [
+    ...[0, 1, 2, 4, 5, 6].map((r): BoardingFeatureDefinition => ({
+      id: `wall-${r}`,
+      kind: 'wall',
+      position: { q: 4, r },
+    })),
+    middle,
+  ];
+  const door: BoardingFeatureDefinition = {
+    id: 'door',
+    kind: 'door',
+    position: { q: 4, r: 3 },
+  };
+  /** Outline corners straight ahead along row 3 from the shooter at (1,3). */
+  const reachAlongRow = (middle: BoardingFeatureDefinition) => {
+    const { shooter, restore } = deck(wallLine(middle));
+    const outline = restore({ q: 8, r: 0 }).sightArea(shooter.id).outline;
+    return Math.max(
+      ...outline
+        .filter((point) => Math.abs(point.r - 3) < 0.05)
+        .map((point) => point.q),
+    );
+  };
+
+  it('turns a door to lie along the wall line it stands in', () => {
+    const map = new BoardingMap(
+      'Deck',
+      12,
+      7,
+      new Map(),
+      new Map(),
+      wallLine(door),
+      { player: [{ q: 1, r: 3 }], defender: [], civilian: [] },
+    );
+    // Walls above and below: a slab thin along q, like the thin wall Q.
+    expect(map.doorAxis({ q: 4, r: 3 })).toBe('q');
+    const across = new BoardingMap(
+      'Deck',
+      12,
+      7,
+      new Map(),
+      new Map(),
+      [
+        { id: 'w', kind: 'wall', position: { q: 3, r: 3 } },
+        { id: 'e', kind: 'wall', position: { q: 5, r: 3 } },
+        door,
+      ],
+      { player: [{ q: 1, r: 1 }], defender: [], civilian: [] },
+    );
+    expect(across.doorAxis({ q: 4, r: 3 })).toBe('r');
+  });
+  it('cuts sight at the slab of a closed door, as at a thin wall', () => {
+    const slab = 4 - 1 / 6;
+    expect(reachAlongRow(door)).toBeCloseTo(slab, 2);
+    expect(
+      reachAlongRow({
+        id: 'thin',
+        kind: 'thin-wall',
+        position: { q: 4, r: 3 },
+        axis: 'q',
+      }),
+    ).toBeCloseTo(slab, 2);
+  });
+  it('hides what stands behind a closed door', () => {
+    const { enemy, restore } = deck(wallLine(door));
+    const battle = restore({ q: 6, r: 3 });
+    battle.synchronize();
+    expect(
+      battle.visibleSnapshot.people.some((person) => person.id === enemy.id),
+    ).toBe(false);
+  });
+});

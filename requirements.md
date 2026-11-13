@@ -141,7 +141,9 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Tunna innerväggar:** `tunna-innervaggar` och `halvhog-tunn-vagg` är **Fullständigt implementerat**. En tunn vägg är 1/3 m tjock, står på en golvruta och finns längs q eller r. Rutans golvtextur ritas på den inre sidan och grannens golv på den yttre, utom när den sidan är `Outside`, vägg eller ytterskrov. Fullhöga tunna väggar fälls som andra väggar. Halvhöga tunna väggar är 1,2 m, ger `Half cover` och fälls inte. Se [bordningsstrid](docs/boarding-combat.md).
 
-- **Bordningsgrafik:** `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock, reactor, Half cover och öppna och stängda dörrar i två riktningar visas med isometrisk grafik utan inbyggt golv. Se [bordningsstrid](docs/boarding-combat.md).
+- **Bordningsgrafik:** `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock, reactor och Half cover visas med isometrisk grafik utan inbyggt golv. Se [bordningsstrid](docs/boarding-combat.md).
+
+- **Dörrar som tunna väggar:** `dorrar-som-tunna-vaggar` är **Fullständigt implementerat**. En stängd dörr modelleras och ritas som en fullhög tunn vägg längs väggen den står i, med en egen dörrtextur (röd lampa när den är låst). En öppen dörr har glidit undan. Fullhöga tunna väggar och stängda dörrar skymmer sikt, skott och granater bara med sin tunna skiva mitt i rutan, så siktlinjen når fram till dörren. Ersätter dörrbilderna i `isometriska-bordningsobjekt` och att tunna väggar skymde hela rutan i `geometrisk-sikt`.
 
 - **Lokal bordningskarteditor:** `lokal-bordningskarteditor` och
   `isometrisk-bordningskarteditor` är **Fullständigt implementerat**. Knappen

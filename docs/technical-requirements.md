@@ -1551,6 +1551,8 @@ Snabbsviten överskred först 20 sekunder under parallella kontroller; den tyngr
 taktiska integrationsfilen flyttades till den utökade sviten. Därefter
 passerade snabbsviten med 758 tester på 14,70 sekunder utan parallell belastning.
 
+`dorrar-som-tunna-vaggar`: `BoardingMap.doorAxis` härleder dörrens tunna axel ur kartans väggar, och samma regel används av spel- och redigeringsvyn. Siktgeometrin tar emot `true` för hel ruta eller `'q'`/`'r'` för en skiva en tredjedel ruta tjock; strålen träffar skivan där den korsar bandet inom rutan. Dörrtexturerna `door-face.png` och `door-face-locked.png` sträcks över hela väggsidan. De gamla dörrbilderna har tagits bort ur klienten men bildberedningsskriptet och dess genererade mått är orörda.
+
 `isometriska-bordningsobjekt`: originalbilder sparas separat från klientens beskurna WebP-filer. `scripts/prepare-boarding-objects.py` beskär transparens och exporterar vid tre gånger spelets grundupplösning; dörrpar delar beskärning så att ramen inte flyttar sig. Vyn ritar objekten ovanpå golvet i proportioner anpassade till 64 × 32-rutorna, bevarar reservvisning och visar bara kända objekt. Dörrriktningen härleds från ursprunglig omgivande väggterräng utan att ändra sparformatet.
 
 ## Meterskala och väggskymning i bordning

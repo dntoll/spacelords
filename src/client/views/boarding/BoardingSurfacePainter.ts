@@ -400,6 +400,8 @@ export function paintIsoThinWall(
   height: number,
   options?: {
     readonly face?: { tile: p5.Image; cache: IsoImageCache } | undefined;
+    /** dorrar-som-tunna-vaggar: stretch the whole face image over the slab. */
+    readonly wholeFace?: boolean;
     readonly top?: { tile: p5.Image; cache: IsoImageCache } | undefined;
     readonly section?: boolean;
   },
@@ -424,7 +426,11 @@ export function paintIsoThinWall(
     paintTexturedQuad(
       sketch,
       faceSource,
-      face ? boardingWallSlice(face.tile.width, run.index) : slice,
+      face
+        ? options?.wholeFace
+          ? { x: 0, width: face.tile.width }
+          : boardingWallSlice(face.tile.width, run.index)
+        : slice,
       face?.tile.height ?? tile.height,
       mesh.longFace[0]!,
       mesh.longFace[1]!,

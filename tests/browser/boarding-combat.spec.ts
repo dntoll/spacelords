@@ -20,13 +20,7 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
       ),
     )
     .toBe(true);
-  for (const artwork of [
-    'airlock-',
-    'reactor-',
-    'crate-',
-    'door-closed-q-',
-    'door-closed-r-',
-  ]) {
+  for (const artwork of ['airlock-', 'reactor-', 'crate-', 'door-face-']) {
     await expect
       .poll(() =>
         page.evaluate(

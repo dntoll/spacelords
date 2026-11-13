@@ -46,7 +46,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-it('spelidentisk-bordningseditor: renders calibrated door, cover and faction sprites from the shared artwork', async () => {
+it('spelidentisk-bordningseditor: renders calibrated cover and faction sprites from the shared artwork, and doors as thin walls', async () => {
   const images: unknown[][] = [];
   const canvas = document.createElement('canvas');
   const context = new Proxy({}, { get: () => () => undefined });
@@ -91,20 +91,16 @@ it('spelidentisk-bordningseditor: renders calibrated door, cover and faction spr
   await Promise.resolve();
   images.length = 0;
   view.render(editor.snapshot);
-  const door = images.find(
-    (call) =>
-      (call[0] as { url?: string }).url ===
-      BOARDING_OBJECT_IMAGES['door-closed-q'],
-  );
   const cover = images.find(
     (call) =>
       (call[0] as { url?: string }).url === BOARDING_OBJECT_IMAGES['crate'],
   );
-  expect(door?.slice(1)).toEqual(
-    Object.values(
-      boardingObjectBounds('door-closed-q', boardingIsoCenter({ q: 1, r: 0 })),
+  // dorrar-som-tunna-vaggar: the door at (1,0) is no sprite.
+  expect(
+    images.filter((call) =>
+      String((call[0] as { url?: string }).url).includes('door'),
     ),
-  );
+  ).toEqual([]);
   expect(cover?.slice(1)).toEqual(
     Object.values(
       boardingObjectBounds('crate', boardingIsoCenter({ q: 1, r: 1 })),
