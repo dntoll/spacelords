@@ -1485,6 +1485,10 @@ visas på marken med en kantlinje som följer vad soldaten faktiskt ser, så att
 till en liten del är svårare att träffa. Under hälften synlig ger +4 i försvar,
 delvis synlig +2. Under en tiondel synlig räknas fienden som dold.
 
+`halvskydd-skuggar-delvis` — **Fullständigt implementerat**: halvskydd täcker
+rutorna närmast bakom sig. Skuggan syns på marken, och en fiende som bara delvis
+står i skuggan får mindre skydd än en som står helt bakom.
+
 `avstangda-omojliga-handlingar` — **Fullständigt implementerat**:
 handlingsknappar som inte kan utföras är avstängda.
 

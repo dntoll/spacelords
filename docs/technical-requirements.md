@@ -1716,3 +1716,9 @@ färdig reparation.
   `BOARDING_SEEN_SHARE`), skott och `boardingPartialSightDefense`.
   `sightArea(id)` ger konturen och halvskydden till BoardingMapView, som ritar
   dem på golvet före väggar och personer.
+- `halvskydd-skuggar-delvis`: `boardingTileSight` ger både synlig andel och
+  den andel av den synliga delen vars stråle passerar halvskydd inom en ruta
+  (Chebyshev) från målet. `#coveredShare` mäter från skyttens ruta mot målet och
+  ersätter `#coverBetween`. `boardingCoverShadow` bygger skuggfyrhörningen från
+  rutans silhuetthörn ut till mittavståndet plus 1,5 ruta; `sightArea` lämnar
+  den som `coverShadows`.

@@ -1059,8 +1059,19 @@ export class BoardingMapView implements BoardingMapPort {
       sketch.vertex(projected.x, projected.y);
     }
     sketch.endShape(sketch.CLOSE);
-    sketch.noFill();
+    // halvskydd-skuggar-delvis: half cover shades the floor right behind it.
+    sketch.fill(240, 160, 80, 45);
     sketch.stroke('#f0a050');
+    sketch.strokeWeight(2);
+    for (const shadow of sight.coverShadows) {
+      sketch.beginShape();
+      for (const point of shadow) {
+        const projected = boardingIsoCenter(point);
+        sketch.vertex(projected.x, projected.y);
+      }
+      sketch.endShape(sketch.CLOSE);
+    }
+    sketch.noFill();
     sketch.strokeWeight(3);
     for (const position of sight.halfCover) this.#tile(sketch, position);
     sketch.pop();

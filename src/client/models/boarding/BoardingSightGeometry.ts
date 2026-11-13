@@ -65,31 +65,90 @@ function inFront(
   );
 }
 
-/** Whether the straight line from the eye to `point` is clear up to `target`. */
-function clear(
+type RayResult = 'clear' | 'covered' | 'blocked';
+
+/**
+ * Follows the straight line from the eye to `point` up to `target`. A tile
+ * that blocks stops it; half cover within one tile of the target shadows it.
+ */
+function trace(
   eye: BoardingSightPoint,
   point: BoardingSightPoint,
   target: BoardingSightPoint,
   blocks: BoardingSightBlocker,
-): boolean {
+  halfCover: BoardingSightBlocker,
+): RayResult {
   const dq = point.q - eye.q;
   const dr = point.r - eye.r;
   const length = Math.hypot(dq, dr);
-  if (length < EPSILON) return true;
+  if (length < EPSILON) return 'clear';
   const direction = { q: dq / length, r: dr / length };
-  let blocked = false;
+  let result: RayResult = 'clear';
   walk(eye, direction, length, (q, r) => {
     if (q === target.q && r === target.r) return true;
-    if (blocks(q, r)) blocked = true;
-    return blocked;
+    if (blocks(q, r)) {
+      result = 'blocked';
+      return true;
+    }
+    if (
+      Math.max(Math.abs(q - target.q), Math.abs(r - target.r)) <= 1 &&
+      halfCover(q, r)
+    )
+      result = 'covered';
+    return false;
   });
-  return !blocked;
+  return result;
+}
+
+const none: BoardingSightBlocker = () => false;
+
+/** geometrisk-sikt / halvskydd-skuggar-delvis: visible and shadowed shares. */
+export interface BoardingTileSight {
+  /** Share (0–1) of the tile the eye sees. */
+  readonly visible: number;
+  /** Share (0–1) of the visible part that lies in a half-cover shadow. */
+  readonly covered: number;
 }
 
 /**
- * geometrisk-sikt: the share (0–1) of `target` visible from `eye`, sampled on a
- * 5×5 grid. The target tile itself never blocks, so a wall face is visible.
+ * geometrisk-sikt: how much of `target` the eye sees, sampled on a 5×5 grid,
+ * and how much of that is shadowed by adjacent half cover. The target tile
+ * itself never blocks, so a wall face is visible.
  */
+export function boardingTileSight(
+  eye: BoardingSightPoint,
+  forward: BoardingSightPoint,
+  target: BoardingSightPoint,
+  blocks: BoardingSightBlocker,
+  halfCover: BoardingSightBlocker = none,
+  radius = BOARDING_SIGHT_RADIUS,
+): BoardingTileSight {
+  if (Math.round(eye.q) === target.q && Math.round(eye.r) === target.r)
+    return { visible: 1, covered: 0 };
+  if (Math.hypot(target.q - eye.q, target.r - eye.r) > radius + 1)
+    return { visible: 0, covered: 0 };
+  let seen = 0;
+  let shadowed = 0;
+  for (const dq of SAMPLES)
+    for (const dr of SAMPLES) {
+      const point = { q: target.q + dq, r: target.r + dr };
+      if (
+        Math.hypot(point.q - eye.q, point.r - eye.r) > radius ||
+        !inFront(eye, forward, point)
+      )
+        continue;
+      const result = trace(eye, point, target, blocks, halfCover);
+      if (result === 'blocked') continue;
+      seen++;
+      if (result === 'covered') shadowed++;
+    }
+  return {
+    visible: seen / (SAMPLES.length * SAMPLES.length),
+    covered: seen ? shadowed / seen : 0,
+  };
+}
+
+/** geometrisk-sikt: the share (0–1) of `target` visible from `eye`. */
 export function boardingVisibleShare(
   eye: BoardingSightPoint,
   forward: BoardingSightPoint,
@@ -97,21 +156,50 @@ export function boardingVisibleShare(
   blocks: BoardingSightBlocker,
   radius = BOARDING_SIGHT_RADIUS,
 ): number {
-  if (Math.round(eye.q) === target.q && Math.round(eye.r) === target.r)
-    return 1;
-  if (Math.hypot(target.q - eye.q, target.r - eye.r) > radius + 1) return 0;
-  let seen = 0;
-  for (const dq of SAMPLES)
-    for (const dr of SAMPLES) {
-      const point = { q: target.q + dq, r: target.r + dr };
-      if (
-        Math.hypot(point.q - eye.q, point.r - eye.r) <= radius &&
-        inFront(eye, forward, point) &&
-        clear(eye, point, target, blocks)
-      )
-        seen++;
-    }
-  return seen / (SAMPLES.length * SAMPLES.length);
+  return boardingTileSight(eye, forward, target, blocks, none, radius).visible;
+}
+
+/**
+ * halvskydd-skuggar-delvis: the shadow half cover casts away from the eye. It
+ * starts at the tile's silhouette and reaches `reach` beyond its centre, so it
+ * covers the tiles right behind it, matching the cover rule.
+ */
+export function boardingCoverShadow(
+  eye: BoardingSightPoint,
+  cover: BoardingSightPoint,
+  reach = 1.5,
+): readonly BoardingSightPoint[] {
+  const centreAngle = Math.atan2(cover.r - eye.r, cover.q - eye.q);
+  const corners = [
+    { q: cover.q - 0.5, r: cover.r - 0.5 },
+    { q: cover.q + 0.5, r: cover.r - 0.5 },
+    { q: cover.q + 0.5, r: cover.r + 0.5 },
+    { q: cover.q - 0.5, r: cover.r + 0.5 },
+  ].map((corner) => {
+    let angle = Math.atan2(corner.r - eye.r, corner.q - eye.q) - centreAngle;
+    while (angle <= -Math.PI) angle += Math.PI * 2;
+    while (angle > Math.PI) angle -= Math.PI * 2;
+    return { corner, angle };
+  });
+  corners.sort((a, b) => a.angle - b.angle);
+  const first = corners[0]!.corner;
+  const last = corners[corners.length - 1]!.corner;
+  const far = Math.hypot(cover.q - eye.q, cover.r - eye.r) + reach;
+  const extend = (corner: BoardingSightPoint): BoardingSightPoint => {
+    const dq = corner.q - eye.q;
+    const dr = corner.r - eye.r;
+    const length = Math.hypot(dq, dr);
+    return Object.freeze({
+      q: eye.q + (dq / length) * far,
+      r: eye.r + (dr / length) * far,
+    });
+  };
+  return Object.freeze([
+    Object.freeze({ ...first }),
+    Object.freeze({ ...last }),
+    extend(last),
+    extend(first),
+  ]);
 }
 
 /**

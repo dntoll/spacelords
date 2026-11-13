@@ -26,13 +26,14 @@ function deck(features: readonly BoardingFeatureDefinition[] = []) {
   const restore = (
     enemyAt: { q: number; r: number },
     change: Partial<BoardingBattleState> = {},
+    crouched = false,
   ) =>
     BoardingBattle.restore(map, {
       ...initial,
       people: initial.people.map((person) =>
         person.id === shooter.id
           ? { ...person, facing: 0 }
-          : { ...person, position: enemyAt, facing: 2 },
+          : { ...person, position: enemyAt, facing: 2, crouched },
       ),
       currentActorId: shooter.id,
       activation: { id: shooter.id, remaining: 12 },
@@ -123,5 +124,45 @@ describe('delvis-synligt-mal', () => {
     expect(beside.defense).toBe(enemy.defense + 2);
     const hidden = restore({ q: 5, r: 3 }).attackPreview(shooter.id, enemy.id);
     expect(hidden.reason).not.toBeNull();
+  });
+});
+
+describe('halvskydd-skuggar-delvis', () => {
+  const crate: BoardingFeatureDefinition = {
+    id: 'crate',
+    kind: 'cover',
+    position: { q: 4, r: 3 },
+  };
+  const defense = (at: { q: number; r: number }, crouched = false): number => {
+    const { shooter, enemy, restore } = deck([crate]);
+    const preview = restore(at, {}, crouched).attackPreview(
+      shooter.id,
+      enemy.id,
+    );
+    expect(preview.reason).toBeNull();
+    return preview.defense - enemy.defense;
+  };
+
+  it('gives full cover to a target mostly in the shadow right behind half cover', () => {
+    expect(defense({ q: 5, r: 3 })).toBe(2);
+    expect(defense({ q: 5, r: 3 }, true)).toBe(5);
+  });
+  it('gives half the cover bonus to a partly shadowed target', () => {
+    expect(defense({ q: 5, r: 2 })).toBe(1);
+    expect(defense({ q: 5, r: 2 }, true)).toBe(3);
+  });
+  it('gives no cover outside the shadow or far behind the half cover', () => {
+    expect(defense({ q: 5, r: 1 })).toBe(0);
+    expect(defense({ q: 7, r: 3 })).toBe(0);
+  });
+  it('draws the shadow behind half cover in sight', () => {
+    const { shooter, restore } = deck([crate]);
+    const area = restore({ q: 8, r: 6 }).sightArea(shooter.id);
+    expect(area.coverShadows).toHaveLength(1);
+    const shadow = area.coverShadows[0]!;
+    // The shadow starts at the crate and reaches into the tile behind it.
+    expect(Math.min(...shadow.map((point) => point.q))).toBeGreaterThan(3.4);
+    expect(Math.max(...shadow.map((point) => point.q))).toBeGreaterThan(5);
+    expect(Math.max(...shadow.map((point) => point.q))).toBeLessThan(6.2);
   });
 });

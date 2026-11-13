@@ -781,8 +781,34 @@ it('geometrisk-sikt: outlines the given sight area and its half cover on the flo
       { q: 5, r: 4 },
     ],
     halfCover: [{ q: 4, r: 3 }],
+    coverShadows: [],
   });
   expect(strokes).toContain('#62d6ff');
   expect(strokes).toContain('#f0a050');
+  view.dispose();
+});
+
+it('halvskydd-skuggar-delvis: shades the floor behind half cover', () => {
+  const { view, state, player } = scene(true);
+  const fills: number[][] = [];
+  Object.assign(runtime.sketch!, {
+    fill: (...args: number[]) => fills.push(args),
+  });
+  view.render(state, player.id, null, [], [], {
+    outline: [
+      { q: 3, r: 3 },
+      { q: 5, r: 2 },
+      { q: 5, r: 4 },
+    ],
+    halfCover: [],
+    coverShadows: [
+      [
+        { q: 4, r: 3 },
+        { q: 4, r: 4 },
+        { q: 5, r: 4 },
+      ],
+    ],
+  });
+  expect(fills).toContainEqual([240, 160, 80, 45]);
   view.dispose();
 });

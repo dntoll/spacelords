@@ -11,7 +11,9 @@ import {
 import { chooseDefenderCommand } from './BoardingAI.js';
 import {
   BOARDING_SEEN_SHARE,
+  boardingCoverShadow,
   boardingSightOutline,
+  boardingTileSight,
   boardingVisibleShare,
   type BoardingSightPoint,
 } from './BoardingSightGeometry.js';
@@ -183,6 +185,8 @@ export interface BoardingTargetIndicator extends BoardingAttackPreview {
 export interface BoardingSightArea {
   readonly outline: readonly BoardingSightPoint[];
   readonly halfCover: readonly BoardingCell[];
+  /** halvskydd-skuggar-delvis: the floor each half cover shadows. */
+  readonly coverShadows: readonly (readonly BoardingSightPoint[])[];
 }
 
 export interface BoardingAttackPreview {
@@ -1021,6 +1025,28 @@ export class BoardingBattle {
     readonly state: BoardingBattleState;
     readonly blocks: (q: number, r: number) => boolean;
   } | null = null;
+  #coverCache: {
+    readonly state: BoardingBattleState;
+    readonly cover: (q: number, r: number) => boolean;
+  } | null = null;
+
+  /** halvskydd-skuggar-delvis: intact crates and low walls, per state. */
+  #halfCover(): (q: number, r: number) => boolean {
+    if (this.#coverCache?.state === this.#state) return this.#coverCache.cover;
+    const cells = new Set(
+      this.#state.features
+        .filter(
+          (feature) =>
+            !feature.destroyed &&
+            (feature.kind === 'cover' ||
+              (feature.kind === 'thin-wall' && !!feature.low)),
+        )
+        .map((feature) => positionKey(feature.position)),
+    );
+    const cover = (q: number, r: number) => cells.has(`${q},${r}`);
+    this.#coverCache = { state: this.#state, cover };
+    return cover;
+  }
 
   /** geometrisk-sikt: blocking tiles, cached for the current state. */
   #visionBlocks(): (q: number, r: number) => boolean {
@@ -1061,7 +1087,7 @@ export class BoardingBattle {
   sightArea(id: string): BoardingSightArea {
     const observer = this.#state.people.find((entry) => entry.id === id);
     if (!observer || observer.status !== 'active')
-      return Object.freeze({ outline: [], halfCover: [] });
+      return Object.freeze({ outline: [], halfCover: [], coverShadows: [] });
     const halfCover = this.#state.features
       .filter(
         (feature) =>
@@ -1072,6 +1098,9 @@ export class BoardingBattle {
       )
       .map((feature) => frozenCell(feature.position));
     return Object.freeze({
+      coverShadows: Object.freeze(
+        halfCover.map((cell) => boardingCoverShadow(observer.position, cell)),
+      ),
       outline: boardingSightOutline(
         observer.position,
         this.#forwardVector(observer),
@@ -1306,41 +1335,19 @@ export class BoardingBattle {
     return target.position;
   }
 
-  #coverBetween(source: BoardingCell, target: BoardingCell): boolean {
-    const dx = target.q - source.q;
-    const dy = target.r - source.r;
-    const lengthSquared = dx * dx + dy * dy;
-    if (lengthSquared === 0) return false;
-    return this.#state.features.some((feature) => {
-      if (
-        !(
-          feature.kind === 'cover' ||
-          (feature.kind === 'thin-wall' && feature.low)
-        ) ||
-        feature.destroyed ||
-        Math.max(
-          Math.abs(feature.position.q - target.q),
-          Math.abs(feature.position.r - target.r),
-        ) > 1
-      )
-        return false;
-      const fromSource = {
-        q: feature.position.q - source.q,
-        r: feature.position.r - source.r,
-      };
-      const t = (fromSource.q * dx + fromSource.r * dy) / lengthSquared;
-      if (t <= 0 || t >= 1) return false;
-      const closest = {
-        q: source.q + dx * t,
-        r: source.r + dy * t,
-      };
-      return (
-        Math.hypot(
-          feature.position.q - closest.q,
-          feature.position.r - closest.r,
-        ) <= 0.75
-      );
-    });
+  /**
+   * halvskydd-skuggar-delvis: the share of the target tile's visible part that
+   * lies in the shadow of half cover right next to it, seen from `source`.
+   */
+  #coveredShare(source: BoardingCell, target: BoardingCell): number {
+    if (same(source, target)) return 0;
+    return boardingTileSight(
+      source,
+      { q: target.q - source.q, r: target.r - source.r },
+      target,
+      this.#visionBlocks(),
+      this.#halfCover(),
+    ).covered;
   }
 
   #targetDefense(
@@ -1354,8 +1361,10 @@ export class BoardingBattle {
         (entry) => entry.amount > 0 && same(entry.position, target.position),
       );
       if (smoked) result += 2;
-      const hasCover = source && this.#coverBetween(source, target.position);
-      if (hasCover) result += target.crouched ? 5 : 2;
+      const covered = source ? this.#coveredShare(source, target.position) : 0;
+      if (covered >= 0.5) result += target.crouched ? 5 : 2;
+      else if (covered >= BOARDING_SEEN_SHARE)
+        result += target.crouched ? 3 : 1;
       else if (ranged && target.crouched) result += 2;
       return result;
     }

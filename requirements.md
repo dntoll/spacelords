@@ -74,7 +74,10 @@ Se [hela visionen](docs/game-vision.md).
   implementerat**: den valda soldatens sikt ritas på golvet som en yta med
   ljusblå kantlinje som klipps av siktlinjen, inte per ruta, och halvskydd i
   sikt markeras orange. En ruta räknas som sedd från 10 % synlig yta; mål som
-  syns till under hälften får +4 i försvar och delvis synliga mål +2. Se
+  syns till under hälften får +4 i försvar och delvis synliga mål +2.
+  `halvskydd-skuggar-delvis` är **Fullständigt implementerat**: halvskydd
+  kastar en orange skugga närmast bakom sig, och ett mål som till minst hälften
+  ligger i skuggan får full skyddsbonus, till 10–50 % halv bonus. Se
   [bordningsstrid](docs/boarding-combat.md).
 
 - **Rumsinteriörer:** `rumsspecifika-bordningstexturer` och

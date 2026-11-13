@@ -198,6 +198,15 @@ sparplatser.
   och ett mål som syns till hälften eller mer men inte helt ger +2. Bonusen
   ingår i försvarsvärdet i stridsloggen och i träffchansen. Personer i vägen
   blockerar fortfarande skott längs linjen mellan rutornas mitt.
+- `halvskydd-skuggar-delvis` — **Fullständigt implementerat**. Lådor och låga
+  väggar skymmer inte sikten men kastar en skugga från skyttens öga som når
+  ungefär en ruta bakom dem. Skuggan ritas orange med kantlinje i den valda
+  soldatens siktyta. Den andel av målrutans synliga del som ligger i skugga från
+  halvskydd intill målet avgör bonusen: minst hälften ger full bonus (+2 stående,
+  +5 hukad), 10–50 % ger halv bonus (+1 stående, +3 hukad), och under 10 %
+  räknas som inget skydd (en hukad person får då +2 mot skott som förut). Detta
+  ersätter den tidigare regeln där skyddet räknades som helt eller inte alls
+  efter avståndet till linjen mellan rutornas mitt.
 - `billig-vandning` — **Fullständigt implementerat**. Varje 45-gradersvändning
   kostar 0,25 AP i stället för 1 AP, både med vridknapparna och när en
   förflyttning vänder soldaten. Det ersätter vändkostnaden i
