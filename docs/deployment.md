@@ -29,7 +29,7 @@ arbetsbranchen, om användaren inte avstår. Källrepots `main` ändras först e
 separat sluttest och godkännande. Prioritera mobil; användaren testar sedan på
 sin telefon och kan beställa ändringar eller mer omfattande tester.
 
-Använd Node.js 24. Installera beroenden med `npm ci` när låsfilen ändrats eller
+Använd Node.js 26 (LTS). Installera beroenden med `npm ci` när låsfilen ändrats eller
 beroenden saknas. Installera webbläsarna vid behov:
 
 ```sh

@@ -1,5 +1,9 @@
 # Arbetsregler
 
+`agentoberoende-arbetsregler`: denna fil är den gemensamma källan för alla
+agenter och verktyg. Agentspecifika filer, exempelvis `CLAUDE.md`, hänvisar hit
+i stället för att upprepa reglerna.
+
 ## Krav och spårbarhet
 
 - Spara varje nytt eller ändrat krav och uppdatera översikten i `requirements.md`.
@@ -87,7 +91,9 @@
 
 ## Git
 
-- Arbeta i branches, normalt med prefixet `codex/`, inte direkt på `main`.
+- Arbeta i branches, inte direkt på `main`. Varje agent använder sitt eget
+  branchprefix, exempelvis `codex/` för Codex och `claude/` för Claude Code.
+  Detta ersätter regeln om prefixet `codex/` för alla.
 - Gör regelbundna, sammanhängande commits med tydliga commitmeddelanden.
 - Kör relevanta kontroller före commit. Bevara användarens befintliga ändringar.
 

@@ -2,7 +2,7 @@
 
 Första grunden till ett långsamt rymdimperiespel: en hexkarta med p5.js,
 begränsad sikt och vyerna `Star map`, planetinformation och `Research`. Spelet fungerar
-lokalt i klienten på mobil, surfplatta och dator. Node.js 24 och strikt TypeScript
+lokalt i klienten på mobil, surfplatta och dator. Node.js 26 och strikt TypeScript
 används med MVC och en liten Express-server för lokal produktionsdrift.
 
 Tre fasta exempelstjärnsystem och en hemplanet, Tellus, återställs vid omladdning.
@@ -20,7 +20,7 @@ npm run dev
 Öppna [klienten](http://127.0.0.1:5173). Klienten uppdateras vid ändringar och
 servern startas om automatiskt. [Serverstatus](http://127.0.0.1:3000/api/health)
 finns även via klientens `/api/health`, som proxas till servern. `Ctrl+C` avslutar
-båda processerna. Nvm är valfritt om Node.js 24 redan finns installerat.
+båda processerna. Nvm är valfritt om Node.js 26 redan finns installerat.
 
 Ingen `.env` behövs. Kopiera vid behov `.env.example` till `.env` och anpassa
 `HOST`/`PORT`. Om serveradressen ändras måste proxyn i `vite.config.ts` uppdateras
