@@ -55,6 +55,7 @@ import {
 import {
   BOARDING_FLOOR_IMAGES,
   BOARDING_WALL_IMAGES,
+  BOARDING_CRATE_IMAGES,
   BOARDING_DOOR_FACE_IMAGES,
   BOARDING_DOOR_TOP_IMAGE,
   BOARDING_WALL_TOP_IMAGE,
@@ -99,6 +100,7 @@ import {
 } from './BoardingProjection.js';
 import {
   paintIsoFloor,
+  paintIsoCrate,
   paintIsoThinWall,
   paintIsoWall,
   paintThinWallFloors,
@@ -212,6 +214,7 @@ export class BoardingMapView implements BoardingMapPort {
   #wallTop: p5.Image | null = null;
   readonly #doorFaces = new Map<'open' | 'locked', p5.Image>();
   #doorTop: p5.Image | null = null;
+  readonly #crate = new Map<'side' | 'top', p5.Image>();
   readonly #isoCaches = new WeakMap<p5.Image, IsoImageCache>();
   #factionSprites: p5.Image | null = null;
   readonly #smokeTextures: (p5.Image | null)[] = [null, null, null];
@@ -285,6 +288,15 @@ export class BoardingMapView implements BoardingMapPort {
         ][]) {
           void sketch.loadImage(url).then((image) => {
             this.#doorFaces.set(kind, image);
+            if (!this.#disposed && this.#ready) void this.#p5.redraw();
+          });
+        }
+        for (const [kind, url] of Object.entries(BOARDING_CRATE_IMAGES) as [
+          'side' | 'top',
+          string,
+        ][]) {
+          void sketch.loadImage(url).then((image) => {
+            this.#crate.set(kind, image);
             if (!this.#disposed && this.#ready) void this.#p5.redraw();
           });
         }
@@ -1438,6 +1450,35 @@ export class BoardingMapView implements BoardingMapPort {
     }
   }
 
+  /** halvskydd-som-geometri: a textured, lit box; false while textures load. */
+  #paintCrate(sketch: p5, feature: BoardingFeature): boolean {
+    const option = (image: p5.Image | undefined) =>
+      image ? { tile: image, cache: this.#cache(image) } : undefined;
+    const faces = paintIsoCrate(
+      sketch,
+      boardingIsoCenter(feature.position),
+      option(this.#crate.get('side')),
+      option(this.#crate.get('top')),
+    );
+    if (!faces) return false;
+    const context = sketch.drawingContext as CanvasRenderingContext2D;
+    const meters = boardingFeatureHeight('cover') / BOARDING_VERTICAL_METER;
+    for (const face of ['southEast', 'southWest', 'top'] as const)
+      this.#lightPainter.paint(
+        context,
+        faces[face],
+        this.#lighting.surface(feature.position, face, meters),
+      );
+    if (feature.id === this.#selectedId) {
+      sketch.noStroke();
+      sketch.fill(244, 207, 90, 72);
+      sketch.beginShape();
+      for (const point of faces.top) sketch.vertex(point.x, point.y);
+      sketch.endShape(sketch.CLOSE);
+    }
+    return true;
+  }
+
   /** genomskinliga-skymmande-vaggar: exposed core distinguishes a cut from Half cover. */
   #paintWallSection(
     sketch: p5,
@@ -1862,6 +1903,8 @@ export class BoardingMapView implements BoardingMapPort {
               this.#paintRubble(sketch, feature.position);
               return;
             }
+            if (feature.kind === 'cover' && this.#paintCrate(sketch, feature))
+              return;
             const artwork = boardingObjectArtwork(feature);
             if (
               artwork &&

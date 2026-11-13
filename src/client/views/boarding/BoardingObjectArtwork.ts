@@ -6,10 +6,10 @@ import type {
 } from '../../models/boarding/BoardingMap.js';
 import airlockUrl from '../../assets/boarding/airlock.webp';
 import reactorUrl from '../../assets/boarding/reactor.webp';
-import crateUrl from '../../assets/boarding/crate.webp';
 
-// dorrar-som-tunna-vaggar: doors are thin walls with a door face, not sprites.
-export type BoardingArtwork = 'airlock' | 'reactor' | 'crate';
+// dorrar-som-tunna-vaggar and halvskydd-som-geometri: doors and Half cover
+// are textured geometry, not sprites.
+export type BoardingArtwork = 'airlock' | 'reactor';
 /** Artwork still drawn for the 2:1 camera and compressed to 60 degrees. */
 const LEGACY_2TO1_ARTWORK: ReadonlySet<BoardingArtwork> = new Set(['airlock']);
 
@@ -17,7 +17,6 @@ export const BOARDING_OBJECT_IMAGES: Readonly<Record<BoardingArtwork, string>> =
   {
     airlock: airlockUrl,
     reactor: reactorUrl,
-    crate: crateUrl,
   };
 
 export function boardingObjectArtwork(feature: {
@@ -28,8 +27,6 @@ export function boardingObjectArtwork(feature: {
 }): BoardingArtwork | null {
   if (feature.destroyed) return null;
   if (feature.kind === 'reactor') return 'reactor';
-  // kameravinkel-60-i-bordning: a crate replaces the earlier Half cover artwork.
-  if (feature.kind === 'cover') return 'crate';
   return null;
 }
 

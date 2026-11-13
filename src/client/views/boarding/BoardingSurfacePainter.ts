@@ -544,3 +544,58 @@ export function paintIsoBlock(
   );
   return faces.apex;
 }
+
+/**
+ * halvskydd-som-geometri: Half cover is a box with textured sides and top in
+ * the floor's own projection, instead of a sprite drawn for another camera.
+ * Returns the faces so the caller can light them, or null without textures.
+ */
+export function paintIsoCrate(
+  sketch: p5,
+  center: BoardingPoint,
+  side: { tile: p5.Image; cache: IsoImageCache } | undefined,
+  top: { tile: p5.Image; cache: IsoImageCache } | undefined,
+): ReturnType<typeof boardingIsoBlockFaces> | null {
+  const sideSource = side && imageSource(side.tile, side.cache, 'wall');
+  const topSource = top && imageSource(top.tile, top.cache, 'wall');
+  if (!side || !top || !sideSource || !topSource) return null;
+  const footprint = boardingFeatureFootprint('cover');
+  const faces = boardingIsoBlockFaces(
+    center,
+    footprint.width,
+    footprint.depth,
+    boardingFeatureHeight('cover'),
+  );
+  const whole = (tile: p5.Image) => ({ x: 0, width: tile.width });
+  paintTexturedQuad(
+    sketch,
+    sideSource,
+    whole(side.tile),
+    side.tile.height,
+    faces.southEast[0],
+    faces.southEast[1],
+    faces.southEast[3],
+    faces.southEast,
+  );
+  paintTexturedQuad(
+    sketch,
+    sideSource,
+    whole(side.tile),
+    side.tile.height,
+    faces.southWest[1],
+    faces.southWest[0],
+    faces.southWest[2],
+    faces.southWest,
+  );
+  paintTexturedQuad(
+    sketch,
+    topSource,
+    whole(top.tile),
+    top.tile.height,
+    faces.top[0],
+    faces.top[1],
+    faces.top[3],
+    faces.top,
+  );
+  return faces;
+}

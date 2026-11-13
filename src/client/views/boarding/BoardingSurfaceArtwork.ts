@@ -14,6 +14,8 @@ import wallTop from '../../assets/boarding/wall-top.webp';
 import doorFace from '../../assets/boarding/door-face.png';
 import doorFaceLocked from '../../assets/boarding/door-face-locked.png';
 import doorTop from '../../assets/boarding/door-top.png';
+import crateSide from '../../assets/boarding/crate-side.png';
+import crateTop from '../../assets/boarding/crate-top.png';
 
 export type BoardingSurfaceStyle = BoardingRoom | 'default';
 
@@ -40,6 +42,11 @@ export const BOARDING_DOOR_FACE_IMAGES: Readonly<
 > = { open: doorFace, locked: doorFaceLocked };
 /** dorrens-ovansida: a door's top is its sliding track, not the wall top. */
 export const BOARDING_DOOR_TOP_IMAGE = doorTop;
+/** halvskydd-som-geometri: textures for the sides and top of Half cover. */
+export const BOARDING_CRATE_IMAGES: Readonly<Record<'side' | 'top', string>> = {
+  side: crateSide,
+  top: crateTop,
+};
 
 /** rumsspecifika-bordningstexturer: a face belongs to the floor adjacent to it. */
 export function boardingSurfaceStyle(

@@ -9,6 +9,7 @@ import type { BoardingMapId } from '../../../shared/boarding-map-format.js';
 import {
   BOARDING_FLOOR_IMAGES,
   BOARDING_WALL_IMAGES,
+  BOARDING_CRATE_IMAGES,
   BOARDING_DOOR_FACE_IMAGES,
   BOARDING_DOOR_TOP_IMAGE,
   BOARDING_WALL_TOP_IMAGE,
@@ -45,6 +46,7 @@ import {
   BOARDING_HALF_TILE_WIDTH,
   BOARDING_HALF_TILE_HEIGHT,
   boardingFeatureGlyph,
+  boardingFeatureHeight,
   boardingIsoCamera,
   boardingIsoCenter,
   boardingIsoCorners,
@@ -59,6 +61,7 @@ import {
   paintIsoBlock,
   paintIsoDiamond,
   paintIsoFloor,
+  paintIsoCrate,
   paintIsoThinWall,
   paintIsoWall,
   paintThinWallFloors,
@@ -146,6 +149,7 @@ export class BoardingEditorMapView {
   #wallTop: p5.Image | null = null;
   readonly #doorFaces = new Map<'open' | 'locked', p5.Image>();
   #doorTop: p5.Image | null = null;
+  readonly #crate = new Map<'side' | 'top', p5.Image>();
   #factionSprites: p5.Image | null = null;
   readonly #objects = new Map<BoardingArtwork, p5.Image>();
   #lighting: BoardingLighting | null = null;
@@ -211,6 +215,15 @@ export class BoardingEditorMapView {
         ][]) {
           void sketch.loadImage(url).then((image) => {
             this.#doorFaces.set(kind, image);
+            if (this.#ready && !this.#disposed) void this.#p5.redraw();
+          });
+        }
+        for (const [kind, url] of Object.entries(BOARDING_CRATE_IMAGES) as [
+          'side' | 'top',
+          string,
+        ][]) {
+          void sketch.loadImage(url).then((image) => {
+            this.#crate.set(kind, image);
             if (this.#ready && !this.#disposed) void this.#p5.redraw();
           });
         }
@@ -851,7 +864,30 @@ export class BoardingEditorMapView {
       }
       const kind = objectKind(object);
       const featureKind =
-        object === 'R' ? 'reactor' : kind === 'door' ? null : kind;
+        object === 'R'
+          ? 'reactor'
+          : kind === 'door' || kind === 'cover'
+            ? null
+            : kind;
+      // halvskydd-som-geometri: Half cover is a textured box, as in combat.
+      const crate =
+        kind === 'cover'
+          ? paintIsoCrate(
+              sketch,
+              center,
+              this.#crateOption('side'),
+              this.#crateOption('top'),
+            )
+          : null;
+      if (crate && this.#lighting) {
+        const meters = boardingFeatureHeight('cover') / boardingHeight(1);
+        for (const face of ['southEast', 'southWest', 'top'] as const)
+          this.#lightPainter.paint(
+            sketch.drawingContext as CanvasRenderingContext2D,
+            crate[face],
+            this.#lighting.surface(position, face, meters),
+          );
+      }
       const artwork =
         object === 'A'
           ? 'airlock'
@@ -866,7 +902,7 @@ export class BoardingEditorMapView {
         sketch.image(image, box.x, box.y, box.width, box.height);
         sketch.pop();
       }
-      if (kind && kind !== 'door' && !image) {
+      if (kind && kind !== 'door' && !crate && !image) {
         const apex = paintIsoBlock(sketch, center, kind);
         const mark = boardingFeatureGlyph({
           kind,
@@ -880,7 +916,7 @@ export class BoardingEditorMapView {
           sketch.textSize(16);
           sketch.text(mark, apex.x, apex.y);
         }
-      } else if (!image && !door) {
+      } else if (!image && !door && !crate) {
         const mark = glyph('objects', object);
         const marks = mark ? [mark] : [];
         if (marks.length) {
@@ -936,6 +972,13 @@ export class BoardingEditorMapView {
       }
     }
     sketch.pop();
+  }
+
+  #crateOption(
+    face: 'side' | 'top',
+  ): { tile: p5.Image; cache: IsoImageCache } | undefined {
+    const image = this.#crate.get(face);
+    return image ? { tile: image, cache: this.#cache(image) } : undefined;
   }
 
   #cache(image: p5.Image): IsoImageCache {

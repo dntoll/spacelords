@@ -3,6 +3,14 @@ import {
   boardingObjectArtwork,
   boardingObjectBounds,
 } from '../../src/client/views/boarding/BoardingObjectArtwork.js';
+import {
+  BOARDING_COVER_HEIGHT,
+  boardingFeatureFootprint,
+  boardingFeatureHeight,
+  boardingIsoBlockFaces,
+  boardingIsoCenter,
+  boardingIsoCorners,
+} from '../../src/client/views/boarding/BoardingProjection.js';
 
 describe('isometriska-bordningsobjekt', () => {
   it('draws doors as thin walls instead of sprites', () => {
@@ -18,23 +26,27 @@ describe('isometriska-bordningsobjekt', () => {
     ).toBe('reactor');
     expect(
       boardingObjectArtwork({ kind: 'cover', position: { q: 0, r: 0 } }),
-    ).toBe('crate');
-    expect(
-      boardingObjectArtwork({
-        kind: 'cover',
-        position: { q: 0, r: 0 },
-        destroyed: true,
-      }),
     ).toBeNull();
-    // kameravinkel-60-i-bordning: the crate stays within one tile and shows
-    // its top face as well as its sides.
-    const box = boardingObjectBounds('crate', { x: 100, y: 100 });
+    const box = boardingObjectBounds('reactor', { x: 100, y: 100 });
     expect(box.width).toBeLessThan(64);
-    const verticalMeter = 64 / Math.SQRT2 / 2;
-    const tileDepth = 32 * Math.sqrt(3);
-    expect(box.height).toBeGreaterThan(verticalMeter);
-    expect(box.height).toBeLessThan(1.2 * verticalMeter + tileDepth);
-    expect(box.y + box.height).toBeGreaterThan(100);
     expect(box.x + box.width / 2).toBe(100);
+  });
+  it('halvskydd-som-geometri: builds Half cover as a 1.2 m box inside its tile', () => {
+    const footprint = boardingFeatureFootprint('cover');
+    const faces = boardingIsoBlockFaces(
+      boardingIsoCenter({ q: 2, r: 2 }),
+      footprint.width,
+      footprint.depth,
+      boardingFeatureHeight('cover'),
+    );
+    const tile = boardingIsoCorners({ q: 2, r: 2 });
+    const xs = tile.map((corner) => corner.x);
+    for (const point of [...faces.southEast, ...faces.southWest]) {
+      expect(point.x).toBeGreaterThanOrEqual(Math.min(...xs));
+      expect(point.x).toBeLessThanOrEqual(Math.max(...xs));
+    }
+    expect(boardingFeatureHeight('cover')).toBe(BOARDING_COVER_HEIGHT);
+    // The top is the footprint diamond lifted by the box height.
+    expect(faces.top[2].y - faces.top[0].y).toBeCloseTo(footprint.depth * 2);
   });
 });

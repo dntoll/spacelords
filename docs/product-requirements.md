@@ -1389,7 +1389,9 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 ## Isometriska bordningsobjekt
 
-`isometriska-bordningsobjekt` — **Fullständigt implementerat**. Airlock, reactor och Half cover visas med isometrisk grafik för 2:1-rutnätet. Objekten visas ovanpå spelets golv.
+`isometriska-bordningsobjekt` — **Fullständigt implementerat**. Airlock och reactor visas med isometrisk grafik för 2:1-rutnätet. Objekten visas ovanpå spelets golv.
+
+`halvskydd-som-geometri` — **Fullständigt implementerat**. Half cover är en låda som byggs i samma perspektiv som golv och väggar, så den alltid passar rutan.
 
 `dorrar-som-tunna-vaggar` — **Fullständigt implementerat**. Dörrar ser ut och fungerar som tunna väggar med dörrens utseende. En stängd dörr skymmer sikten precis som en tunn vägg, så siktlinjen går fram till dörren. En öppen dörr har glidit undan. Låsta dörrar har en röd lampa.
 

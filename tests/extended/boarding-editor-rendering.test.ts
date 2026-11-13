@@ -3,11 +3,6 @@ import { afterEach, beforeAll, expect, it, vi } from 'vitest';
 import type p5 from 'p5';
 import type { BoardingEditorMapView as BoardingEditorMapViewClass } from '../../src/client/views/boarding/BoardingEditorMapView.js';
 import { BoardingEditor } from '../../src/client/models/boarding/BoardingEditor.js';
-import {
-  BOARDING_OBJECT_IMAGES,
-  boardingObjectBounds,
-} from '../../src/client/views/boarding/BoardingObjectArtwork.js';
-import { boardingIsoCenter } from '../../src/client/views/boarding/BoardingProjection.js';
 
 const runtime = vi.hoisted(() => ({ sketch: null as p5 | null }));
 vi.mock('p5', () => ({
@@ -46,7 +41,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-it('spelidentisk-bordningseditor: renders calibrated cover and faction sprites from the shared artwork, and doors as thin walls', async () => {
+it('spelidentisk-bordningseditor: renders faction sprites from the shared artwork, and doors and Half cover as geometry', async () => {
   const images: unknown[][] = [];
   const canvas = document.createElement('canvas');
   const context = new Proxy({}, { get: () => () => undefined });
@@ -91,21 +86,13 @@ it('spelidentisk-bordningseditor: renders calibrated cover and faction sprites f
   await Promise.resolve();
   images.length = 0;
   view.render(editor.snapshot);
-  const cover = images.find(
-    (call) =>
-      (call[0] as { url?: string }).url === BOARDING_OBJECT_IMAGES['crate'],
-  );
-  // dorrar-som-tunna-vaggar: the door at (1,0) is no sprite.
+  // dorrar-som-tunna-vaggar and halvskydd-som-geometri: the door at (1,0)
+  // and the Half cover at (1,1) are geometry, not sprites.
   expect(
     images.filter((call) =>
-      String((call[0] as { url?: string }).url).includes('door'),
+      /door|crate/.test(String((call[0] as { url?: string }).url)),
     ),
   ).toEqual([]);
-  expect(cover?.slice(1)).toEqual(
-    Object.values(
-      boardingObjectBounds('crate', boardingIsoCenter({ q: 1, r: 1 })),
-    ),
-  );
   expect(images.filter((call) => call.length === 9)).toHaveLength(3);
   view.dispose();
 });
