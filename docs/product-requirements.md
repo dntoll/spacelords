@@ -1492,6 +1492,10 @@ står i skuggan får mindre skydd än en som står helt bakom.
 `avstand-paverkar-traffchans` — **Fullständigt implementerat**: det är svårare
 att träffa på långt håll än på nära håll.
 
+`personer-som-pelare-i-sikt` — **Fullständigt implementerat**: stående personer
+skymmer sikten som smala pelare, hukande ger halvskydd, och man kan skjuta förbi
+personer om tillräckligt mycket av målet syns.
+
 `avstangda-omojliga-handlingar` — **Fullständigt implementerat**:
 handlingsknappar som inte kan utföras är avstängda.
 

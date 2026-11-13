@@ -11,10 +11,12 @@ import {
 import { chooseDefenderCommand } from './BoardingAI.js';
 import {
   BOARDING_SEEN_SHARE,
+  boardingBodyShadow,
   boardingCoverShadow,
   boardingSightOutline,
   boardingTileSight,
   boardingVisibleShare,
+  type BoardingSightBody,
   type BoardingSightPoint,
 } from './BoardingSightGeometry.js';
 import type { CombatShipType } from '../TacticalBattle.js';
@@ -1033,6 +1035,25 @@ export class BoardingBattle {
     readonly cover: (q: number, r: number) => boolean;
   } | null = null;
 
+  #bodyCache: {
+    readonly state: BoardingBattleState;
+    readonly bodies: readonly BoardingSightBody[];
+  } | null = null;
+
+  /** personer-som-pelare-i-sikt: people still on their feet, per state. */
+  #bodies(): readonly BoardingSightBody[] {
+    if (this.#bodyCache?.state === this.#state) return this.#bodyCache.bodies;
+    const bodies = this.#state.people
+      .filter((entry) => entry.status === 'active')
+      .map((entry) => ({
+        q: entry.position.q,
+        r: entry.position.r,
+        cover: entry.crouched,
+      }));
+    this.#bodyCache = { state: this.#state, bodies };
+    return bodies;
+  }
+
   /** halvskydd-skuggar-delvis: intact crates and low walls, per state. */
   #halfCover(): (q: number, r: number) => boolean {
     if (this.#coverCache?.state === this.#state) return this.#coverCache.cover;
@@ -1083,6 +1104,7 @@ export class BoardingBattle {
       this.#forwardVector(observer),
       target,
       this.#visionBlocks(),
+      this.#bodies(),
     );
   }
 
@@ -1100,14 +1122,27 @@ export class BoardingBattle {
           this.#visibleShare(observer, feature.position) > 0,
       )
       .map((feature) => frozenCell(feature.position));
+    const crouched = this.#state.people.filter(
+      (entry) =>
+        entry.id !== observer.id &&
+        entry.status === 'active' &&
+        entry.crouched &&
+        this.#visibleShare(observer, entry.position) > 0,
+    );
     return Object.freeze({
-      coverShadows: Object.freeze(
-        halfCover.map((cell) => boardingCoverShadow(observer.position, cell)),
-      ),
+      coverShadows: Object.freeze([
+        ...halfCover.map((cell) =>
+          boardingCoverShadow(observer.position, cell),
+        ),
+        ...crouched.map((entry) =>
+          boardingBodyShadow(observer.position, entry.position),
+        ),
+      ]),
       outline: boardingSightOutline(
         observer.position,
         this.#forwardVector(observer),
         this.#visionBlocks(),
+        this.#bodies(),
       ),
       halfCover: Object.freeze(halfCover),
     });
@@ -1118,30 +1153,10 @@ export class BoardingBattle {
     return this.#visibleShare(observer, target) >= BOARDING_SEEN_SHARE;
   }
 
-  /** Standing people between the tiles' centres still block a shot. */
-  #personInLine(
-    source: BoardingCell,
-    target: BoardingCell,
-    ignoreIds: readonly string[],
-  ): boolean {
-    return this.#line(source, target)
-      .slice(1, -1)
-      .some((position) =>
-        this.#state.people.some(
-          (entry) =>
-            !ignoreIds.includes(entry.id) &&
-            entry.status === 'active' &&
-            same(entry.position, position),
-        ),
-      );
-  }
-
-  /** geometrisk-sikt: walls follow sight; people still block the line of fire. */
+  /** geometrisk-sikt / personer-som-pelare-i-sikt: a shot needs a tenth in sight. */
   #canFire(observer: BoardingPerson, target: BoardingCell): boolean {
     return (
-      distance(observer.position, target) <= 8 &&
-      this.#canSee(observer, target) &&
-      !this.#personInLine(observer.position, target, [observer.id])
+      distance(observer.position, target) <= 8 && this.#canSee(observer, target)
     );
   }
 
@@ -1350,6 +1365,7 @@ export class BoardingBattle {
       target,
       this.#visionBlocks(),
       this.#halfCover(),
+      this.#bodies(),
     ).covered;
   }
 
@@ -1398,13 +1414,6 @@ export class BoardingBattle {
       reason = this.#inFieldOfView(source, this.#targetPosition(target))
         ? 'The shot is blocked.'
         : 'The target is outside the 180° field of fire.';
-    else if (
-      this.#personInLine(source.position, this.#targetPosition(target), [
-        source.id,
-        'side' in target ? target.id : '',
-      ])
-    )
-      reason = 'The shot is blocked.';
     const share =
       source && target
         ? this.#visibleShare(source, this.#targetPosition(target))

@@ -160,7 +160,7 @@ describe('traffchans-vid-synliga-fiender', () => {
         .some((target) => target.id === enemy.id),
     ).toBe(false);
   });
-  it('keeps a visible enemy marked at zero chance when another person blocks the shot', () => {
+  it('personer-som-pelare-i-sikt: gives no crosshair to an enemy hidden behind a standing person', () => {
     const { restore, state, actor, other, enemy } = arena();
     const battle = restore({
       people: state.people.map((person) =>
@@ -169,14 +169,10 @@ describe('traffchans-vid-synliga-fiender', () => {
           : person,
       ),
     });
-    expect(battle.targetIndicators(actor.id)).toEqual([
-      expect.objectContaining({
-        id: enemy.id,
-        chance: 0,
-        affordable: true,
-        reason: 'The shot is blocked.',
-      }),
-    ]);
+    expect(battle.targetIndicators(actor.id)).toEqual([]);
+    expect(battle.attackPreview(actor.id, enemy.id).reason).toBe(
+      'The shot is blocked.',
+    );
   });
   it('reports insufficient AP separately from the hit probability and excludes civilians and dead enemies', () => {
     const { restore, state, actor, enemy } = arena();

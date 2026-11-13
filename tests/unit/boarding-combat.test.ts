@@ -452,7 +452,9 @@ describe('personer-blockerar-inte-sikt', () => {
     battle.synchronize();
   }
 
-  it('sees a soldier behind a person but cannot shoot through them', () => {
+  // personer-som-pelare-i-sikt replaces the old rule: a standing person right
+  // in front now hides the tile behind as well as blocking the shot.
+  it('personer-som-pelare-i-sikt: hides and protects a soldier straight behind a standing person', () => {
     const player = battle.snapshot.people.find(
       (person) => person.side === 'player',
     )!;
@@ -466,13 +468,13 @@ describe('personer-blockerar-inte-sikt', () => {
     const visible = new Set(
       battle.snapshot.visibleCells.map((cell) => `${cell.q},${cell.r}`),
     );
-    expect(visible.has('4,5')).toBe(true);
+    expect(visible.has('4,5')).toBe(false);
     expect(battle.attackPreview(player.id, defender.id).reason).toBe(
       'The shot is blocked.',
     );
   });
 
-  it('lets a soldier block fire the same way a civilian does', () => {
+  it('personer-som-pelare-i-sikt: lets a soldier block sight and fire the same way a civilian does', () => {
     const player = battle.snapshot.people.find(
       (person) => person.side === 'player',
     )!;
@@ -485,7 +487,7 @@ describe('personer-blockerar-inte-sikt', () => {
     );
     expect(
       battle.snapshot.visibleCells.some((cell) => cell.q === 4 && cell.r === 5),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('still hides tiles behind walls from both sight and fire', () => {
@@ -646,7 +648,7 @@ describe('doda-blockerar-inte-skott-eller-rorelse', () => {
 });
 
 describe('sikt-och-eld-fran-vald-soldat', () => {
-  it('marks tiles behind a person as visible but not fireable', () => {
+  it('personer-som-pelare-i-sikt: sees and can fire at a person but not at the tile hidden behind them', () => {
     const player = battle.snapshot.people.find(
       (person) => person.side === 'player',
     )!;
@@ -671,7 +673,7 @@ describe('sikt-och-eld-fran-vald-soldat', () => {
     const sight = new Set(battle.sightFrom(player.id).map(key));
     const fire = new Set(battle.fireFrom(player.id).map(key));
     expect(sight.has('3,5')).toBe(true);
-    expect(sight.has('4,5')).toBe(true);
+    expect(sight.has('4,5')).toBe(false);
     expect(fire.has('3,5')).toBe(true);
     expect(fire.has('4,5')).toBe(false);
     expect(sight.has('2,5')).toBe(false);

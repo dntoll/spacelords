@@ -1726,3 +1726,10 @@ färdig reparation.
   `attackPreview` (därmed även Overwatch), men inte i `meleePreview`.
   Siktytan ritas med fyllnadsalfa 14 och 1,25 breda linjer; skuggor med alfa 24
   och 1 bred linje.
+- `personer-som-pelare-i-sikt`: aktiva personer blir `BoardingSightBody`
+  (cirklar med radie 0,25 i rutans mitt, `cover` för hukande) och cachas per
+  tillstånd. Strålar mot stående cirklar blockeras; hukande cirklar inom en ruta
+  från målet räknas som halvskydd. Cirklar i skyttens och målets egna rutor
+  hoppas över. Siktkonturen får extra strålar vid cirklarnas tangenter, och
+  `boardingBodyShadow` ger skuggan bakom hukande. Den gamla kontrollen av
+  personer längs linjen mellan rutornas mitt är borttagen.

@@ -153,10 +153,16 @@ sparplatser.
 - `hp-och-ap-ovanfor-soldater` — **Fullständigt implementerat**. Ovanför varje
   egen soldat visas HP och kvarvarande AP som två korta staplar. Försvarare och
   civilister visar bara HP.
-- `personer-blockerar-inte-sikt` — **Fullständigt implementerat**. En person,
-  civil eller stridande, blockerar inte siktlinjen. Samma person blockerar
-  skott mot rutor bakom. Väggar, skrov, stängda dörrar och rök blockerar
-  fortfarande både sikt och skott.
+- `personer-blockerar-inte-sikt` — **Ersatt** av `personer-som-pelare-i-sikt`.
+- `personer-som-pelare-i-sikt` — **Fullständigt implementerat**. En stående
+  person, civil eller stridande, är en pelare med 0,5 rutors diameter mitt i
+  sin ruta. Den skymmer sikten och kastar en skugga, så rutor bakom kan vara
+  helt eller delvis dolda. En hukande person har samma storlek men skymmer inte
+  sikten; den ger halvskydd åt den som står närmast bakom, på samma sätt som en
+  låda, och skuggan ritas orange i siktytan. Skott går förbi personer när minst
+  10 % av målrutan syns; delvis sikt ger målet +2 eller +4 i försvar enligt
+  `delvis-synligt-mal`. Målets egen pelare och skyttens egen räknas aldrig.
+  Utslagna och döda ligger ner och påverkar inte sikten.
 - `doda-blockerar-inte-skott-eller-rorelse` — **Fullständigt implementerat**.
   En död eller utslagen soldat blockerar varken skott eller förflyttning.
   Stående personer blockerar fortfarande skott och rutor.
@@ -172,8 +178,8 @@ sparplatser.
   som kompakta HUD-lager ovanpå kartan. Handlingar har stora bilder utan synliga etiketter;
   zoom sker med nypning eller mushjul.
 - `sikt-minne-och-ljudmarkorer` — **Fullständigt implementerat**. Soldater ser 180 grader.
-  Sidorna delar aktuell sikt och senast kända fiendeposition. Personer blockerar
-  inte den delade sikten. Skeppets yttre form är känd, interiören utforskas och
+  Sidorna delar aktuell sikt och senast kända fiendeposition. Stående personer
+  skymmer sikten enligt `personer-som-pelare-i-sikt`. Skeppets yttre form är känd, interiören utforskas och
   aktuell sikt skiljs tydligt från kartminne. Våld visar sin exakta ruta som
   ljudmarkör för motståndarsidan till rundans slut.
 - `senast-sedd-fiende-med-fragetecken` — **Fullständigt implementerat**. En

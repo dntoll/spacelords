@@ -194,3 +194,69 @@ describe('avstand-paverkar-traffchans', () => {
     expect(far.chance).toBeLessThan(close.chance);
   });
 });
+
+describe('personer-som-pelare-i-sikt', () => {
+  /** Adds a bystander copied from the enemy at `at`. */
+  const withBystander = (
+    at: { q: number; r: number },
+    crouched: boolean,
+    enemyAt: { q: number; r: number },
+  ) => {
+    const { shooter, enemy, restore } = deck();
+    const base = restore(enemyAt).snapshot;
+    const placed = base.people.find((person) => person.id === enemy.id)!;
+    const battle = restore(enemyAt, {
+      people: [
+        ...base.people,
+        { ...placed, id: 'bystander', position: at, crouched },
+      ],
+    });
+    battle.synchronize();
+    return { battle, shooter, enemy: placed };
+  };
+  const range = (q: number, r: number) =>
+    boardingRangeDefense(Math.hypot(q - 1, r - 3));
+
+  it('lets a standing person hide what is straight behind them', () => {
+    const { battle, enemy } = withBystander({ q: 3, r: 3 }, false, {
+      q: 5,
+      r: 3,
+    });
+    expect(
+      battle.visibleSnapshot.people.some((person) => person.id === enemy.id),
+    ).toBe(false);
+  });
+  it('allows a shot past a standing person when a tenth of the target shows', () => {
+    const { battle, shooter, enemy } = withBystander({ q: 2, r: 3 }, false, {
+      q: 5,
+      r: 4,
+    });
+    const preview = battle.attackPreview(shooter.id, enemy.id);
+    expect(preview.reason).toBeNull();
+    expect(
+      preview.defense - enemy.defense - range(5, 4),
+    ).toBeGreaterThanOrEqual(2);
+  });
+  it('lets a crouched person give half cover without blocking sight', () => {
+    const { battle, shooter, enemy } = withBystander({ q: 4, r: 3 }, true, {
+      q: 5,
+      r: 3,
+    });
+    const preview = battle.attackPreview(shooter.id, enemy.id);
+    expect(preview.reason).toBeNull();
+    expect(
+      preview.defense - enemy.defense - range(5, 3),
+    ).toBeGreaterThanOrEqual(1);
+    expect(battle.sightArea(shooter.id).coverShadows).toHaveLength(1);
+  });
+  it('cuts the sight outline behind a standing person', () => {
+    const { battle, shooter } = withBystander({ q: 3, r: 3 }, false, {
+      q: 8,
+      r: 6,
+    });
+    const outline = battle.sightArea(shooter.id).outline;
+    expect(
+      outline.some((point) => Math.abs(point.r - 3) < 0.05 && point.q > 3.3),
+    ).toBe(false);
+  });
+});

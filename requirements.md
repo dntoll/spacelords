@@ -387,8 +387,11 @@ Se [hela visionen](docs/game-vision.md).
   Fötterna, skuggan och valringen sitter i rutans mitt.
   Utslagna och döda visas med riktningsoberoende liggande bilder. Diagonala steg kostar 3/4 AP
   stående/hukande, raka steg 2/3 AP och varje 45-gradersvändning 0,25 AP
-  (`billig-vandning`, **Fullständigt implementerat**). Personer blockerar inte
-  sikt men kan blockera skott. Döda och utslagna blockerar varken skott eller
+  (`billig-vandning`, **Fullständigt implementerat**). Stående personer är
+  pelare med 0,5 rutors diameter som skymmer sikt och skott, och hukande ger
+  halvskydd (`personer-som-pelare-i-sikt`, **Fullständigt implementerat**,
+  ersätter `personer-blockerar-inte-sikt`). Man kan skjuta förbi en person när
+  minst 10 % av målrutan syns. Döda och utslagna blockerar varken skott eller
   gång. Synliga och skjutbara rutor har inga röda eller blå kantmarkeringar.
   Egna soldater har HP- och AP-staplar ovanför
   figuren. Ett valt mål markeras med crosshair; alla fiender den aktiva soldaten
