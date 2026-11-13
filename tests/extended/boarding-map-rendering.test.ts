@@ -2,6 +2,7 @@
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { BoardingLighting } from '../../src/client/views/boarding/BoardingLighting.js';
 import type p5 from 'p5';
+import type { BoardingMapView as BoardingMapViewClass } from '../../src/client/views/boarding/BoardingMapView.js';
 import {
   boardingCeilingLight,
   type BoardingLight,
@@ -47,7 +48,7 @@ vi.mock('p5', () => ({
 }));
 // snabb-testsvit runs with isolate: false, so another file may already have
 // loaded the view with the real p5. Reload it after the mock is registered.
-let BoardingMapView: typeof import('../../src/client/views/boarding/BoardingMapView.js').BoardingMapView;
+let BoardingMapView: typeof BoardingMapViewClass;
 beforeAll(async () => {
   vi.resetModules();
   ({ BoardingMapView } =

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
 import type p5 from 'p5';
+import type { BoardingEditorMapView as BoardingEditorMapViewClass } from '../../src/client/views/boarding/BoardingEditorMapView.js';
 import { BoardingEditor } from '../../src/client/models/boarding/BoardingEditor.js';
 import {
   BOARDING_OBJECT_IMAGES,
@@ -33,7 +34,7 @@ vi.mock('p5', () => ({
 
 // snabb-testsvit runs with isolate: false, so another file may already have
 // loaded the view with the real p5. Reload it after the mock is registered.
-let BoardingEditorMapView: typeof import('../../src/client/views/boarding/BoardingEditorMapView.js').BoardingEditorMapView;
+let BoardingEditorMapView: typeof BoardingEditorMapViewClass;
 beforeAll(async () => {
   vi.resetModules();
   ({ BoardingEditorMapView } =
