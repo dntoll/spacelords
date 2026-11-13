@@ -1707,3 +1707,12 @@ färdig reparation.
   vägsökningens vändsteg och `#move`, som drar varje stegs egen kostnad.
   Vridknapparna är avstängda först under 0,25 AP. Kvartar är exakta flyttal,
   så AP-summorna avrundas inte.
+- `geometrisk-sikt` och `delvis-synligt-mal`: `BoardingSightGeometry.ts` är ren
+  modellkod utan p5. Ruta (q, r) är enhetskvadraten kring (q, r). Synlig andel
+  mäts med 5×5 provpunkter och strålgång genom rutnätet (Amanatides–Woo), där
+  målrutan själv aldrig skymmer. Siktkonturen svepes med en stråle per grad
+  plus strålar strax förbi varje blockerande hörn. `BoardingBattle` cachar
+  blockerande rutor per tillstånd och använder andelen för `#canSee` (minst
+  `BOARDING_SEEN_SHARE`), skott och `boardingPartialSightDefense`.
+  `sightArea(id)` ger konturen och halvskydden till BoardingMapView, som ritar
+  dem på golvet före väggar och personer.

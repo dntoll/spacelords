@@ -35,6 +35,7 @@ import {
   type BoardingBattleState,
   type BoardingFeature,
   type BoardingPerson,
+  type BoardingSightArea,
   type BoardingTargetIndicator,
 } from '../../models/boarding/BoardingBattle.js';
 import type { BoardingPathMark } from '../../models/boarding/BoardingPathPreview.js';
@@ -151,6 +152,7 @@ export class BoardingMapView implements BoardingMapPort {
   #destination: BoardingCell | null = null;
   #path: readonly BoardingPathMark[] = [];
   #targets: readonly BoardingTargetIndicator[] = [];
+  #sight: BoardingSightArea | null = null;
   #edgeTargetHits: readonly BoardingEdgeTargetIndicator[] = [];
   #floorLayer: {
     graphics: p5.Graphics;
@@ -312,6 +314,7 @@ export class BoardingMapView implements BoardingMapPort {
     destination: BoardingCell | null,
     path: readonly BoardingPathMark[],
     targets: readonly BoardingTargetIndicator[] = [],
+    sight: BoardingSightArea | null = null,
   ): void {
     const changed = this.#state?.id !== state.id;
     if (!changed && this.#state) this.#spawnDestruction(this.#state, state);
@@ -322,6 +325,7 @@ export class BoardingMapView implements BoardingMapPort {
     this.#destination = destination;
     this.#path = path;
     this.#targets = targets;
+    this.#sight = sight;
     if (changed || this.#fitPending) this.fit();
     if (this.#ready) {
       if (state.smokeCells.length || this.#effects.length) this.#p5.loop();
@@ -1036,6 +1040,32 @@ export class BoardingMapView implements BoardingMapPort {
     return !!tile && paintIsoFloor(sketch, tile, this.#cache(tile), position);
   }
 
+  /**
+   * geometrisk-sikt: the selected soldier's sight lies on the floor as a faint
+   * area cut by line of sight, with a solid edge; half cover in sight is
+   * outlined in amber.
+   */
+  #paintSight(sketch: p5): void {
+    const sight = this.#sight;
+    if (!sight || sight.outline.length < 3) return;
+    sketch.push();
+    sketch.fill(98, 200, 250, 30);
+    sketch.stroke('#62d6ff');
+    sketch.strokeWeight(2.5);
+    sketch.strokeJoin(sketch.ROUND);
+    sketch.beginShape();
+    for (const point of sight.outline) {
+      const projected = boardingIsoCenter(point);
+      sketch.vertex(projected.x, projected.y);
+    }
+    sketch.endShape(sketch.CLOSE);
+    sketch.noFill();
+    sketch.stroke('#f0a050');
+    sketch.strokeWeight(3);
+    for (const position of sight.halfCover) this.#tile(sketch, position);
+    sketch.pop();
+  }
+
   #tile(sketch: p5, position: BoardingCell, yOffset = 0): void {
     sketch.beginShape();
     for (const corner of boardingIsoCorners(position))
@@ -1571,6 +1601,7 @@ export class BoardingMapView implements BoardingMapPort {
         }
       }
     }
+    this.#paintSight(sketch);
     const scene: { depth: number; order: number; paint: () => void }[] = [];
     const overlays: (() => void)[] = [];
     for (const position of state.smokeCells) {

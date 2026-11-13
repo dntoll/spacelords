@@ -10,6 +10,7 @@ import {
   BOARDING_MED_PACK_AP,
   boardingActionPointsRemaining,
   type BoardingTargetIndicator,
+  type BoardingSightArea,
   type BoardingBattleState,
   type BoardingShot,
 } from '../../models/boarding/BoardingBattle.js';
@@ -45,6 +46,7 @@ export interface BoardingMapPort {
     destination: BoardingCell | null,
     path: readonly BoardingPathMark[],
     targets?: readonly BoardingTargetIndicator[],
+    sight?: BoardingSightArea | null,
   ): void;
   setViewportProvider?(provider: () => BoardingCameraBounds | null): void;
   beginPresentation?(): void;
@@ -821,6 +823,8 @@ export class BoardingView {
       this.#destination,
       path,
       overlayActor ? this.#battle().targetIndicators(overlayActor.id) : [],
+      // geometrisk-sikt: only the acting soldier's sight is shown.
+      overlayActor ? this.#battle().sightArea(overlayActor.id) : null,
     );
   }
 

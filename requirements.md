@@ -69,7 +69,12 @@ Se [hela visionen](docs/game-vision.md).
   `fiende-syns-till-sin-tur` är **Fullständigt implementerat**: en fiende som
   truppen har sett står kvar på kartan när ingen längre ser den, tills fiendens
   egen tur börjar. Därefter visas frågetecknet för senast kända position.
-  Samma sak gäller civila, som står kvar tills de civilas fas når dem. Se
+  Samma sak gäller civila, som står kvar tills de civilas fas når dem.
+  `geometrisk-sikt` och `delvis-synligt-mal` är **Fullständigt
+  implementerat**: den valda soldatens sikt ritas på golvet som en yta med
+  ljusblå kantlinje som klipps av siktlinjen, inte per ruta, och halvskydd i
+  sikt markeras orange. En ruta räknas som sedd från 10 % synlig yta; mål som
+  syns till under hälften får +4 i försvar och delvis synliga mål +2. Se
   [bordningsstrid](docs/boarding-combat.md).
 
 - **Rumsinteriörer:** `rumsspecifika-bordningstexturer` och

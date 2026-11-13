@@ -9,6 +9,12 @@ import {
   type ComposedBoarding,
 } from './BoardingComposer.js';
 import { chooseDefenderCommand } from './BoardingAI.js';
+import {
+  BOARDING_SEEN_SHARE,
+  boardingSightOutline,
+  boardingVisibleShare,
+  type BoardingSightPoint,
+} from './BoardingSightGeometry.js';
 import type { CombatShipType } from '../TacticalBattle.js';
 
 export type BoardingSide = 'player' | 'defender' | 'civilian';
@@ -173,6 +179,12 @@ export interface BoardingTargetIndicator extends BoardingAttackPreview {
   readonly affordable: boolean;
 }
 
+/** geometrisk-sikt: what the selected soldier sees, for the map overlay. */
+export interface BoardingSightArea {
+  readonly outline: readonly BoardingSightPoint[];
+  readonly halfCover: readonly BoardingCell[];
+}
+
 export interface BoardingAttackPreview {
   readonly chance: number;
   readonly defense: number;
@@ -216,6 +228,9 @@ const same = (a: BoardingCell, b: BoardingCell): boolean =>
   a.q === b.q && a.r === b.r;
 const frozenCell = (position: BoardingCell): BoardingCell =>
   Object.freeze({ q: position.q, r: position.r });
+/** delvis-synligt-mal: +4 defense below half visibility, +2 below full. */
+export const boardingPartialSightDefense = (share: number): number =>
+  share >= 1 ? 0 : share >= 0.5 ? 2 : 4;
 const distance = (a: BoardingCell, b: BoardingCell): number =>
   Math.hypot(a.q - b.q, a.r - b.r);
 const sharesEdge = (a: BoardingCell, b: BoardingCell): boolean =>
@@ -1002,42 +1017,99 @@ export class BoardingBattle {
     );
   }
 
-  #blocksFire(
-    position: BoardingCell,
-    ignoreIds: readonly string[] = [],
-  ): boolean {
-    if (this.#blocksVision(position)) return true;
-    return this.#state.people.some(
-      (entry) =>
-        !ignoreIds.includes(entry.id) &&
-        entry.status === 'active' &&
-        same(entry.position, position),
+  #visionCache: {
+    readonly state: BoardingBattleState;
+    readonly blocks: (q: number, r: number) => boolean;
+  } | null = null;
+
+  /** geometrisk-sikt: blocking tiles, cached for the current state. */
+  #visionBlocks(): (q: number, r: number) => boolean {
+    if (this.#visionCache?.state === this.#state)
+      return this.#visionCache.blocks;
+    const width = this.#map.width;
+    const height = this.#map.height;
+    const grid = new Uint8Array(width * height);
+    for (let r = 0; r < height; r++)
+      for (let q = 0; q < width; q++)
+        grid[r * width + q] = this.#blocksVision({ q, r }) ? 1 : 0;
+    const blocks = (q: number, r: number) =>
+      q < 0 || r < 0 || q >= width || r >= height || grid[r * width + q] === 1;
+    this.#visionCache = { state: this.#state, blocks };
+    return blocks;
+  }
+
+  #forwardVector(observer: BoardingPerson): BoardingSightPoint {
+    const ahead = BoardingBattle.forward(observer.position, observer.facing);
+    return {
+      q: ahead.q - observer.position.q,
+      r: ahead.r - observer.position.r,
+    };
+  }
+
+  /** delvis-synligt-mal: the share of a tile the observer sees. */
+  #visibleShare(observer: BoardingPerson, target: BoardingCell): number {
+    if (observer.status !== 'active') return 0;
+    return boardingVisibleShare(
+      observer.position,
+      this.#forwardVector(observer),
+      target,
+      this.#visionBlocks(),
     );
   }
 
-  #lineClear(
-    observer: BoardingPerson,
-    target: BoardingCell,
-    blocked: (position: BoardingCell) => boolean,
-  ): boolean {
-    if (
-      observer.status !== 'active' ||
-      distance(observer.position, target) > 8 ||
-      !this.#inFieldOfView(observer, target)
-    )
-      return false;
-    return !this.#line(observer.position, target).slice(1, -1).some(blocked);
+  /** geometrisk-sikt: the selected soldier's sight outline and half cover. */
+  sightArea(id: string): BoardingSightArea {
+    const observer = this.#state.people.find((entry) => entry.id === id);
+    if (!observer || observer.status !== 'active')
+      return Object.freeze({ outline: [], halfCover: [] });
+    const halfCover = this.#state.features
+      .filter(
+        (feature) =>
+          !feature.destroyed &&
+          (feature.kind === 'cover' ||
+            (feature.kind === 'thin-wall' && !!feature.low)) &&
+          this.#visibleShare(observer, feature.position) > 0,
+      )
+      .map((feature) => frozenCell(feature.position));
+    return Object.freeze({
+      outline: boardingSightOutline(
+        observer.position,
+        this.#forwardVector(observer),
+        this.#visionBlocks(),
+      ),
+      halfCover: Object.freeze(halfCover),
+    });
   }
 
+  /** geometrisk-sikt: a tile is seen from a tenth of its area upwards. */
   #canSee(observer: BoardingPerson, target: BoardingCell): boolean {
-    return this.#lineClear(observer, target, (position) =>
-      this.#blocksVision(position),
-    );
+    return this.#visibleShare(observer, target) >= BOARDING_SEEN_SHARE;
   }
 
+  /** Standing people between the tiles' centres still block a shot. */
+  #personInLine(
+    source: BoardingCell,
+    target: BoardingCell,
+    ignoreIds: readonly string[],
+  ): boolean {
+    return this.#line(source, target)
+      .slice(1, -1)
+      .some((position) =>
+        this.#state.people.some(
+          (entry) =>
+            !ignoreIds.includes(entry.id) &&
+            entry.status === 'active' &&
+            same(entry.position, position),
+        ),
+      );
+  }
+
+  /** geometrisk-sikt: walls follow sight; people still block the line of fire. */
   #canFire(observer: BoardingPerson, target: BoardingCell): boolean {
-    return this.#lineClear(observer, target, (position) =>
-      this.#blocksFire(position, [observer.id]),
+    return (
+      distance(observer.position, target) <= 8 &&
+      this.#canSee(observer, target) &&
+      !this.#personInLine(observer.position, target, [observer.id])
     );
   }
 
@@ -1310,24 +1382,24 @@ export class BoardingBattle {
       reason = 'The target is no longer active.';
     else if (distance(source.position, this.#targetPosition(target)) > 8)
       reason = 'The target is outside rifle range.';
-    else if (!this.#inFieldOfView(source, this.#targetPosition(target)))
-      reason = 'The target is outside the 180° field of fire.';
-    else {
-      const line = this.#line(source.position, this.#targetPosition(target));
-      if (
-        line
-          .slice(1, -1)
-          .some((position) =>
-            this.#blocksFire(position, [
-              source.id,
-              'side' in target ? target.id : '',
-            ]),
-          )
-      )
-        reason = 'The shot is blocked.';
-    }
+    else if (!this.#canSee(source, this.#targetPosition(target)))
+      reason = this.#inFieldOfView(source, this.#targetPosition(target))
+        ? 'The shot is blocked.'
+        : 'The target is outside the 180° field of fire.';
+    else if (
+      this.#personInLine(source.position, this.#targetPosition(target), [
+        source.id,
+        'side' in target ? target.id : '',
+      ])
+    )
+      reason = 'The shot is blocked.';
+    const share =
+      source && target
+        ? this.#visibleShare(source, this.#targetPosition(target))
+        : 1;
     const defense = target
-      ? this.#targetDefense(target, source?.position, true)
+      ? this.#targetDefense(target, source?.position, true) +
+        boardingPartialSightDefense(share)
       : 99;
     const needed = defense - (source?.accuracy ?? 0);
     const chance = reason

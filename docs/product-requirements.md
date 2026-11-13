@@ -1477,6 +1477,14 @@ visas bara där man inte redan ser vad som hände.
 sett finns kvar på kartan tills det blir dess tur, även om ingen ser den längre.
 Detsamma gäller civila.
 
+`geometrisk-sikt` — **Fullständigt implementerat**: den valda soldatens sikt
+visas på marken med en kantlinje som följer vad soldaten faktiskt ser, så att
+även halva rutor kan synas. Halvskydd i sikt markeras med en annan färg.
+
+`delvis-synligt-mal` — **Fullständigt implementerat**: en fiende som bara syns
+till en liten del är svårare att träffa. Under hälften synlig ger +4 i försvar,
+delvis synlig +2. Under en tiondel synlig räknas fienden som dold.
+
 `avstangda-omojliga-handlingar` — **Fullständigt implementerat**:
 handlingsknappar som inte kan utföras är avstängda.
 

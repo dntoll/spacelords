@@ -183,6 +183,21 @@ sparplatser.
   positionen. Synliga personer visas bara med sin figur. Frågetecknet visades
   tidigare aldrig i spelet, eftersom spelarens bild utelämnar dolda fiender;
   det är rättat.
+- `geometrisk-sikt` — **Fullständigt implementerat**. Sikten räknas med
+  verkliga siktlinjer i stället för hela rutor: 180 grader framåt, 8,5 rutors
+  radie från soldatens rutmitt, och väggar, skrov, höga tunna väggar, stängda
+  dörrar och rök kastar skuggor. En ruta kan därför vara delvis synlig. Den
+  valda soldatens sikt ritas på golvet under spelarens tur som en svag yta med
+  en ljusblå kantlinje, och lådor och låga väggar som syns markeras med orange
+  rutkant som halvskydd. Detta ersätter delvis `bordning-utan-sikt-och-eldrutor`:
+  siktytan visas igen, men som en sammanhängande yta; de röda eldrutorna visas
+  fortfarande inte.
+- `delvis-synligt-mal` — **Fullständigt implementerat**. En ruta räknas som
+  sedd när minst 10 % av den syns; först då syns en fiende där och kan beskjutas.
+  Ett skott mot ett mål vars ruta syns till under hälften ger målet +4 i försvar,
+  och ett mål som syns till hälften eller mer men inte helt ger +2. Bonusen
+  ingår i försvarsvärdet i stridsloggen och i träffchansen. Personer i vägen
+  blockerar fortfarande skott längs linjen mellan rutornas mitt.
 - `billig-vandning` — **Fullständigt implementerat**. Varje 45-gradersvändning
   kostar 0,25 AP i stället för 1 AP, både med vridknapparna och när en
   förflyttning vänder soldaten. Det ersätter vändkostnaden i

@@ -504,6 +504,10 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
     type: 'boarding-command',
     command: { type: 'turn', direction: 1 },
   });
+  // geometrisk-sikt: the acting soldier's sight outline reaches the map.
+  const sight = rendered.mock.calls.at(-1)?.[5];
+  expect(sight?.outline[0]).toEqual(player.position);
+  expect(sight?.outline.length).toBeGreaterThan(3);
   const team = document.querySelector('[aria-label="Boarding team"]')!;
   expect(team.querySelectorAll('progress')).toHaveLength(4);
   expect(team.querySelector('.boarding-unit-active')!.textContent).toContain(

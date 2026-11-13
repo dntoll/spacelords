@@ -769,3 +769,20 @@ it('fiende-syns-till-sin-tur / senast-sedd-fiende-med-fragetecken: draws a linge
   expect(texts).toContain('?');
   view.dispose();
 });
+
+it('geometrisk-sikt: outlines the given sight area and its half cover on the floor', () => {
+  const { view, state, player, strokes } = scene(true);
+  view.render(state, player.id, null, []);
+  expect(strokes).not.toContain('#62d6ff');
+  view.render(state, player.id, null, [], [], {
+    outline: [
+      { q: 3, r: 3 },
+      { q: 5, r: 2 },
+      { q: 5, r: 4 },
+    ],
+    halfCover: [{ q: 4, r: 3 }],
+  });
+  expect(strokes).toContain('#62d6ff');
+  expect(strokes).toContain('#f0a050');
+  view.dispose();
+});
