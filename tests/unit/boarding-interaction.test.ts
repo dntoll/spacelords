@@ -64,17 +64,28 @@ describe('actionpoints-och-riktad-forflyttning', () => {
       { q: 1, r: 1 },
     ]);
   });
-  it('charges one per 45-degree turn and three per standing diagonal', () => {
+  it('billig-vandning: charges a quarter AP per 45-degree turn and three per standing diagonal', () => {
     const { restore, actor } = arena();
     const battle = restore();
     battle.command({ type: 'turn', direction: 1 });
     expect(
       battle.snapshot.people.find((person) => person.id === actor.id)?.facing,
     ).toBe(4);
+    expect(battle.snapshot.activation?.remaining).toBe(11.75);
     const path = battle.pathTo(actor.id, { q: 3, r: 1 });
     expect(path?.cost).toBe(3);
     battle.command({ type: 'move', to: { q: 3, r: 1 } });
-    expect(battle.snapshot.activation?.remaining).toBe(8);
+    expect(battle.snapshot.activation?.remaining).toBe(8.75);
+  });
+  it('billig-vandning: a route that turns pays a quarter AP per turn', () => {
+    const { restore, actor } = arena();
+    const battle = restore();
+    // Facing east, reaching the tile behind needs four turns and one step.
+    const path = battle.pathTo(actor.id, { q: 1, r: 2 });
+    expect(path?.turns).toBe(4);
+    expect(path?.cost).toBe(3);
+    battle.command({ type: 'move', to: { q: 1, r: 2 } });
+    expect(battle.snapshot.activation?.remaining).toBe(9);
   });
   it('does not cut a blocked corner', () => {
     const { restore, actor } = arena(true);
@@ -94,7 +105,7 @@ describe('automatisk-bordningstur-vid-tom-ap', () => {
   it('resumes a postponed soldier with their saved AP', () => {
     const { restore, actor, other } = arena();
     const battle = restore({
-      activation: { id: actor.id, remaining: 1 },
+      activation: { id: actor.id, remaining: 0.25 },
       postponed: [{ id: other.id, remaining: 3 }],
     });
     battle.command({ type: 'turn', direction: -1 });

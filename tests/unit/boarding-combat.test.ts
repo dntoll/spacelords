@@ -205,7 +205,7 @@ describe('actionpoints-och-riktad-forflyttning', () => {
     expect(battle.snapshot.activation?.remaining).toBe(12 - path!.cost);
   });
 
-  it('charges one AP for turning and stance changes and four for crouched diagonal movement', () => {
+  it('billig-vandning: charges a quarter AP per turn, one per stance change and four for crouched diagonal movement', () => {
     const player = battle.snapshot.people.findLast(
       (person) => person.side === 'player',
     )!;
@@ -225,7 +225,7 @@ describe('actionpoints-och-riktad-forflyttning', () => {
     )!;
     const destination = BoardingBattle.forward(turned.position, turned.facing);
     battle.command({ type: 'move', to: destination });
-    expect(battle.snapshot.activation?.remaining).toBe(6);
+    expect(battle.snapshot.activation?.remaining).toBe(6.75);
   });
 });
 
@@ -727,7 +727,8 @@ describe('avbrott-vid-ny-fiende', () => {
     )!;
     expect(moved.position).toEqual({ q: 3, r: 5 });
     expect(moved.facing).not.toBe(2);
-    expect(battle.snapshot.activation?.remaining).toBe(10);
+    // billig-vandning: the two turns before the stop cost a quarter AP each.
+    expect(battle.snapshot.activation?.remaining).toBe(11.5);
     expect(battle.snapshot.log.at(-1)).toMatch(/spots a new enemy and stops/i);
   });
 });
@@ -776,11 +777,11 @@ describe('valbar-bordningssoldat', () => {
     expect(battle.snapshot.currentActorId).toBe(second!.id);
     expect(battle.snapshot.activation?.remaining).toBe(12);
     expect(battle.snapshot.postponed).toEqual([
-      { id: first!.id, remaining: 11 },
+      { id: first!.id, remaining: 11.75 },
     ]);
     battle.command({ type: 'end-activation' });
     expect(battle.snapshot.currentActorId).toBe(first!.id);
-    expect(battle.snapshot.activation?.remaining).toBe(11);
+    expect(battle.snapshot.activation?.remaining).toBe(11.75);
   });
 });
 

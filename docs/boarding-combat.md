@@ -25,7 +25,7 @@ sparplatser.
   fortsatt lika resultat slås om. Civilister agerar sist.
 - `actionpoints-och-riktad-forflyttning` — **Fullständigt implementerat**. Egenskaper och
   fasta utrustningsmodifierare ger AP. Soldater går endast framåt. Ett stående
-  rutsteg kostar 2 AP, ett hukat steg 3 AP, ett diagonalt steg 3 AP stående eller 4 AP hukande, en 45-gradersvändning 1 AP och byte
+  rutsteg kostar 2 AP, ett hukat steg 3 AP, ett diagonalt steg 3 AP stående eller 4 AP hukande, en 45-gradersvändning 0,25 AP (`billig-vandning`) och byte
   mellan stående och hukad ställning 1 AP. Handlingar får blandas fritt och
   förflyttning sker i åtta riktningar. Diagonaler kräver att båda sidrutorna
   är fria för rörelse. Detta ersätter uttryckligen den tidigare regeln om fyra
@@ -183,6 +183,11 @@ sparplatser.
   positionen. Synliga personer visas bara med sin figur. Frågetecknet visades
   tidigare aldrig i spelet, eftersom spelarens bild utelämnar dolda fiender;
   det är rättat.
+- `billig-vandning` — **Fullständigt implementerat**. Varje 45-gradersvändning
+  kostar 0,25 AP i stället för 1 AP, både med vridknapparna och när en
+  förflyttning vänder soldaten. Det ersätter vändkostnaden i
+  `actionpoints-och-riktad-forflyttning`. AP kan därför visas med decimaler,
+  till exempel `11.75 AP`.
 - `fiende-syns-till-sin-tur` — **Fullständigt implementerat**. En fiende som
   någon soldat har sett ritas kvar på sin ruta när ingen längre ser den, till
   exempel när soldaten vänder sig bort eller går. Fienden flyttar sig bara på

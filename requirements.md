@@ -375,7 +375,8 @@ Se [hela visionen](docs/game-vision.md).
   hukande bilder för åtta riktningar och visar riktningen utan en separat pil.
   Fötterna, skuggan och valringen sitter i rutans mitt.
   Utslagna och döda visas med riktningsoberoende liggande bilder. Diagonala steg kostar 3/4 AP
-  stående/hukande, raka steg 2/3 AP och varje 45-gradersvändning 1 AP. Personer blockerar inte
+  stående/hukande, raka steg 2/3 AP och varje 45-gradersvändning 0,25 AP
+  (`billig-vandning`, **Fullständigt implementerat**). Personer blockerar inte
   sikt men kan blockera skott. Döda och utslagna blockerar varken skott eller
   gång. Synliga och skjutbara rutor har inga röda eller blå kantmarkeringar.
   Egna soldater har HP- och AP-staplar ovanför

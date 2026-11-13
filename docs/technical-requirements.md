@@ -1703,3 +1703,7 @@ färdig reparation.
   kända ruta. Civilfasen glömmer varje civil innan den agerar. `visibleSnapshot` tar med dem,
   och BoardingMapView ritar dem utanför sikt i stället för frågetecknet. AI:n
   och träffchanser använder fortfarande bara aktuell sikt.
+- `billig-vandning`: `BOARDING_TURN_AP = 0.25` används av vridkommandot,
+  vägsökningens vändsteg och `#move`, som drar varje stegs egen kostnad.
+  Vridknapparna är avstängda först under 0,25 AP. Kvartar är exakta flyttal,
+  så AP-summorna avrundas inte.

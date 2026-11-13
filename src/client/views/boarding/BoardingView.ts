@@ -5,6 +5,7 @@ import {
   BOARDING_MELEE_AP,
   BOARDING_RIFLE_AP,
   BOARDING_EVACUATE_AP,
+  BOARDING_TURN_AP,
   BOARDING_HACK_AP,
   BOARDING_MED_PACK_AP,
   boardingActionPointsRemaining,
@@ -592,13 +593,13 @@ export class BoardingView {
         'Turn left 45°',
         '↶',
         () => this.#command({ type: 'turn', direction: 1 }),
-        remaining < 1,
+        remaining < BOARDING_TURN_AP,
       );
       this.#action(
         'Turn right 45°',
         '↷',
         () => this.#command({ type: 'turn', direction: -1 }),
-        remaining < 1,
+        remaining < BOARDING_TURN_AP,
       );
       this.#action(
         `Move${route ? ` · ${route.cost} AP` : ''}`,

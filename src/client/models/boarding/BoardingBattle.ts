@@ -193,6 +193,8 @@ const ADJACENT_DIRECTIONS: readonly BoardingCell[] = Object.freeze([
   Object.freeze({ q: 1, r: 1 }),
 ]);
 export const BOARDING_RIFLE_AP = 4;
+/** billig-vandning: each 45-degree turn costs a quarter AP. */
+export const BOARDING_TURN_AP = 0.25;
 const RIFLE_AP = BOARDING_RIFLE_AP;
 /** sikt-minne-och-ljudmarkorer: cosine of 90° from facing, a 180° cone. */
 const BOARDING_VISION_COSINE = 0;
@@ -831,9 +833,12 @@ export class BoardingBattle {
         const next: Node = {
           ...current,
           facing,
-          cost: current.cost + 1,
+          cost: current.cost + BOARDING_TURN_AP,
           turns: current.turns + 1,
-          steps: [...current.steps, { type: 'turn', direction, cost: 1 }],
+          steps: [
+            ...current.steps,
+            { type: 'turn', direction, cost: BOARDING_TURN_AP },
+          ],
         };
         const nodeKey = `${positionKey(next.position)}:${facing}`;
         if ((best.get(nodeKey) ?? Infinity) > next.cost) {
@@ -1526,7 +1531,7 @@ export class BoardingBattle {
       )!;
       if (current.status !== 'active') break;
       if (step.type === 'turn') {
-        this.#spend(1);
+        this.#spend(step.cost);
         this.#updatePerson(actor.id, (entry) => ({
           ...entry,
           facing: turnFacing(entry.facing, step.direction),
@@ -1749,7 +1754,7 @@ export class BoardingBattle {
     }
     const actor = this.#actor();
     if (command.type === 'turn') {
-      this.#spend(1);
+      this.#spend(BOARDING_TURN_AP);
       this.#updatePerson(actor.id, (entry) => ({
         ...entry,
         facing: turnFacing(entry.facing, command.direction),

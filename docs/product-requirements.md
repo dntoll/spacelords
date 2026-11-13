@@ -300,7 +300,7 @@ fötterna i rutans mitt, och skugga och valring ligger på samma punkt. Vita rik
 döda personer visas med en egen liggande bild för soldat, pirat och civilist.
 Ovanför egna soldater syns både HP och AP. Raka steg kostar 2 AP stående
 eller 3 AP hukande; diagonaler kostar 3 respektive 4 AP. En 45-gradersvändning
-kostar 1 AP. Man kan inte gå diagonalt genom blockerade hörn.
+kostar 0,25 AP (`billig-vandning` — **Fullständigt implementerat**). Man kan inte gå diagonalt genom blockerade hörn.
 Kartan ska visas isometriskt och uppta huvuddelen av ett spelmässigt gränssnitt
 med kompakta handlingsknappar. Varje bordningssoldat ska ha en egen
 hälsomätare. En vald väg ska visa hur långt soldaten når med kvarvarande AP
