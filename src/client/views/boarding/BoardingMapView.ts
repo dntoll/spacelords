@@ -1778,7 +1778,7 @@ export class BoardingMapView implements BoardingMapPort {
         })
       : null;
     // fiende-syns-till-sin-tur: a seen enemy stays drawn until its activation.
-    const lingering = new Set(state.lingeringEnemyIds ?? []);
+    const lingering = new Set(state.lingeringPersonIds ?? []);
     for (const person of [...state.people].sort((a, b) => {
       const dy =
         boardingIsoCenter(a.position).y - boardingIsoCenter(b.position).y;

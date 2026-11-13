@@ -748,7 +748,7 @@ it('fiende-syns-till-sin-tur / senast-sedd-fiende-med-fragetecken: draws a linge
       ...state,
       people: [player, enemy],
       lastKnownEnemies: [{ id: enemy.id, position: enemy.position }],
-      lingeringEnemyIds: [enemy.id],
+      lingeringPersonIds: [enemy.id],
     },
     null,
     null,

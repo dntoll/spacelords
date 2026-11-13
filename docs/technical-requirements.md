@@ -1696,9 +1696,10 @@ färdig reparation.
   dynamisk import, så att en vy som en annan fil redan laddat med riktig p5
   inte återanvänds. Det rättar det tidigare ordningsberoende felet i
   `spelidentisk-bordningseditor`.
-- `fiende-syns-till-sin-tur`: `BoardingBattleState.lingeringEnemyIds` (valfritt
-  fält, så äldre sparade spel fungerar) håller försvarare som spelarsidan sett.
-  `#refreshKnowledge` behåller ett id så länge fienden lever, står kvar på sin
-  senast kända ruta och inte är aktuell aktör. `visibleSnapshot` tar med dem,
+- `fiende-syns-till-sin-tur`: `BoardingBattleState.lingeringPersonIds` (valfritt
+  fält, så äldre sparade spel fungerar) håller försvarare och civila som
+  spelarsidan sett. `#refreshKnowledge` behåller ett id så länge personen lever
+  och inte är aktuell aktör; en försvarare måste dessutom stå kvar på sin senast
+  kända ruta. Civilfasen glömmer varje civil innan den agerar. `visibleSnapshot` tar med dem,
   och BoardingMapView ritar dem utanför sikt i stället för frågetecknet. AI:n
   och träffchanser använder fortfarande bara aktuell sikt.

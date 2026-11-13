@@ -349,9 +349,58 @@ describe('fiende-syns-till-sin-tur', () => {
         person.side === 'player' ? { ...person, facing: 2 } : person,
       ),
       lastKnownEnemies: [],
-      lingeringEnemyIds: [],
+      lingeringPersonIds: [],
     });
     battle.command({ type: 'turn', direction: 1 });
     expect(shown(battle, enemy.id)).toBe(false);
+  });
+});
+
+describe('fiende-syns-till-sin-tur: civilians', () => {
+  it('keeps a seen civilian on the map until the civilian phase', () => {
+    const terrain = new Map<string, BoardingTerrain>();
+    for (let r = 0; r < 7; r++)
+      for (let q = 0; q < 7; q++) terrain.set(`${q},${r}`, 'floor');
+    const map = new BoardingMap('Arena', 7, 7, terrain, new Map(), [], {
+      player: [{ q: 2, r: 2 }],
+      defender: [{ q: 0, r: 6 }],
+      civilian: [{ q: 5, r: 3 }],
+    });
+    const initial = BoardingBattle.create(map, 17).snapshot;
+    const actor = initial.people.find((person) => person.side === 'player')!;
+    const enemy = initial.people.find((person) => person.side === 'defender')!;
+    const civilian = initial.people.find(
+      (person) => person.side === 'civilian',
+    )!;
+    const battle = BoardingBattle.restore(map, {
+      ...initial,
+      people: initial.people.map((person) =>
+        person.id === actor.id
+          ? { ...person, facing: 0 }
+          : person.id === enemy.id
+            ? { ...person, facing: 2 }
+            : person,
+      ),
+      currentActorId: actor.id,
+      activation: { id: actor.id, remaining: 12 },
+      initiativeOrder: [actor.id, enemy.id],
+      initiativeIndex: 0,
+      postponed: [],
+      finishedActors: [],
+      lastKnownEnemies: [],
+      lingeringPersonIds: [],
+    });
+    const shown = () =>
+      battle.visibleSnapshot.people.some((person) => person.id === civilian.id);
+    for (let turn = 0; turn < 4; turn++)
+      battle.command({ type: 'turn', direction: 1 });
+    expect(shown()).toBe(true);
+    battle.command({ type: 'end-activation' });
+    expect(battle.snapshot.currentActorId).toBe(enemy.id);
+    expect(shown()).toBe(true);
+    const round = battle.snapshot.round;
+    battle.command({ type: 'end-activation' });
+    expect(battle.snapshot.round).toBe(round + 1);
+    expect(shown()).toBe(false);
   });
 });

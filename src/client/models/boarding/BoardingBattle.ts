@@ -102,7 +102,7 @@ export interface BoardingBattleState {
   readonly lastKnownEnemies: readonly BoardingLastKnown[];
   readonly defenderLastKnownEnemies: readonly BoardingLastKnown[];
   /** fiende-syns-till-sin-tur: seen defenders shown until their next activation. */
-  readonly lingeringEnemyIds?: readonly string[];
+  readonly lingeringPersonIds?: readonly string[];
   readonly noiseMarkers: readonly BoardingNoise[];
   readonly reactorCountdown: number | null;
   readonly savedCivilians: number;
@@ -316,7 +316,7 @@ function freezeState(state: BoardingBattleState): BoardingBattleState {
       (state.postponed ?? []).map((entry) => Object.freeze({ ...entry })),
     ),
     finishedActors: Object.freeze([...(state.finishedActors ?? [])]),
-    lingeringEnemyIds: Object.freeze([...(state.lingeringEnemyIds ?? [])]),
+    lingeringPersonIds: Object.freeze([...(state.lingeringPersonIds ?? [])]),
     log: Object.freeze([...state.log]),
   });
 }
@@ -576,7 +576,7 @@ export class BoardingBattle {
 
   get visibleSnapshot(): BoardingBattleState {
     const visible = new Set(this.#state.visibleCells.map(positionKey));
-    const lingering = new Set(this.#state.lingeringEnemyIds ?? []);
+    const lingering = new Set(this.#state.lingeringPersonIds ?? []);
     return freezeState({
       ...this.#state,
       people: this.#state.people.filter(
@@ -1158,23 +1158,35 @@ export class BoardingBattle {
     );
     for (const enemy of seenDefenders)
       lastKnown.set(enemy.id, { id: enemy.id, position: enemy.position });
-    // fiende-syns-till-sin-tur: an enemy only moves on its own activation, so a
-    // seen enemy stays where it was shown until that activation begins.
+    // fiende-syns-till-sin-tur: enemies and civilians only move on their own
+    // turn, so a seen one stays where it was shown until that turn begins.
+    // Civilians are forgotten when the civilian phase reaches them.
     const lingering = new Set(
-      (this.#state.lingeringEnemyIds ?? []).filter((id) => {
-        const enemy = this.#state.people.find((entry) => entry.id === id);
+      (this.#state.lingeringPersonIds ?? []).filter((id) => {
+        const person = this.#state.people.find((entry) => entry.id === id);
+        if (
+          !person ||
+          id === this.#state.currentActorId ||
+          person.status === 'dead' ||
+          person.status === 'evacuated'
+        )
+          return false;
+        if (person.side === 'civilian') return true;
         const known = lastKnown.get(id);
         return (
-          !!enemy &&
           !!known &&
-          id !== this.#state.currentActorId &&
-          enemy.status !== 'dead' &&
-          enemy.status !== 'evacuated' &&
-          positionKey(known.position) === positionKey(enemy.position)
+          positionKey(known.position) === positionKey(person.position)
         );
       }),
     );
-    for (const enemy of seenDefenders) lingering.add(enemy.id);
+    for (const person of this.#state.people)
+      if (
+        person.side !== 'player' &&
+        person.status !== 'dead' &&
+        person.status !== 'evacuated' &&
+        visibleKeys.has(positionKey(person.position))
+      )
+        lingering.add(person.id);
     const defenderLastKnown = rememberedEnemies(
       'player',
       defenderVisibleKeys,
@@ -1196,7 +1208,7 @@ export class BoardingBattle {
       exploredCells: [...explored.values()],
       lastKnownEnemies: [...lastKnown.values()],
       defenderLastKnownEnemies: [...defenderLastKnown.values()],
-      lingeringEnemyIds: [...lingering],
+      lingeringPersonIds: [...lingering],
       smokeCells: this.#state.smoke
         .filter(
           (entry) => entry.amount > 0 && this.#smokeCanFill(entry.position),
@@ -1912,6 +1924,12 @@ export class BoardingBattle {
     for (const initial of this.#state.people.filter(
       (entry) => entry.side === 'civilian' && entry.status === 'active',
     )) {
+      this.#replace({
+        lingeringPersonIds: (this.#state.lingeringPersonIds ?? []).filter(
+          (id) => id !== initial.id,
+        ),
+      });
+      this.#refreshKnowledge();
       let actor = this.#state.people.find((entry) => entry.id === initial.id)!;
       let remaining = this.#maxActionPoints(actor);
       const adjacentDoor = this.#state.features.find(

@@ -68,7 +68,8 @@ Se [hela visionen](docs/game-vision.md).
   tom HP-mätare, och ljudmarkörer visas bara på rutor som inte syns.
   `fiende-syns-till-sin-tur` är **Fullständigt implementerat**: en fiende som
   truppen har sett står kvar på kartan när ingen längre ser den, tills fiendens
-  egen tur börjar. Därefter visas frågetecknet för senast kända position. Se
+  egen tur börjar. Därefter visas frågetecknet för senast kända position.
+  Samma sak gäller civila, som står kvar tills de civilas fas når dem. Se
   [bordningsstrid](docs/boarding-combat.md).
 
 - **Rumsinteriörer:** `rumsspecifika-bordningstexturer` och

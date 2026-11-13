@@ -189,6 +189,8 @@ sparplatser.
   sin egen tur, så bilden stämmer. När fiendens tur börjar och ingen ser den
   försvinner figuren och ersätts av frågetecknet. Detta ändrar
   `sikt-minne-och-ljudmarkorer`, där fiender bara syntes i aktuell sikt.
+  Civila som har setts står på samma sätt kvar tills de civilas fas i
+  rundans slut når dem; då försvinner de om ingen ser dem.
 - `d20-bordningsstrid` — **Fullständigt implementerat**. Skott använder öppet D20 plus
   Accuracy mot försvar, men visar även träffchans i procent. Naturlig 1 missar
   och naturlig 20 dubblar vapnets skadetärningar.
