@@ -13,6 +13,7 @@ import wallCockpit from '../../assets/boarding/wall-cockpit.webp';
 import wallTop from '../../assets/boarding/wall-top.webp';
 import doorFace from '../../assets/boarding/door-face.png';
 import doorFaceLocked from '../../assets/boarding/door-face-locked.png';
+import doorTop from '../../assets/boarding/door-top.png';
 
 export type BoardingSurfaceStyle = BoardingRoom | 'default';
 
@@ -37,6 +38,8 @@ export const BOARDING_WALL_TOP_IMAGE = wallTop;
 export const BOARDING_DOOR_FACE_IMAGES: Readonly<
   Record<'open' | 'locked', string>
 > = { open: doorFace, locked: doorFaceLocked };
+/** dorrens-ovansida: a door's top is its sliding track, not the wall top. */
+export const BOARDING_DOOR_TOP_IMAGE = doorTop;
 
 /** rumsspecifika-bordningstexturer: a face belongs to the floor adjacent to it. */
 export function boardingSurfaceStyle(

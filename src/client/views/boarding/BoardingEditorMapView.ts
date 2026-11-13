@@ -10,6 +10,7 @@ import {
   BOARDING_FLOOR_IMAGES,
   BOARDING_WALL_IMAGES,
   BOARDING_DOOR_FACE_IMAGES,
+  BOARDING_DOOR_TOP_IMAGE,
   BOARDING_WALL_TOP_IMAGE,
   boardingSurfaceStyle,
   boardingWallFaceStyle,
@@ -144,6 +145,7 @@ export class BoardingEditorMapView {
   readonly #wallTiles = new Map<BoardingSurfaceStyle, p5.Image>();
   #wallTop: p5.Image | null = null;
   readonly #doorFaces = new Map<'open' | 'locked', p5.Image>();
+  #doorTop: p5.Image | null = null;
   #factionSprites: p5.Image | null = null;
   readonly #objects = new Map<BoardingArtwork, p5.Image>();
   #lighting: BoardingLighting | null = null;
@@ -212,6 +214,10 @@ export class BoardingEditorMapView {
             if (this.#ready && !this.#disposed) void this.#p5.redraw();
           });
         }
+        void sketch.loadImage(BOARDING_DOOR_TOP_IMAGE).then((image) => {
+          this.#doorTop = image;
+          if (this.#ready && !this.#disposed) void this.#p5.redraw();
+        });
         void sketch.loadImage(BOARDING_WALL_TOP_IMAGE).then((image) => {
           this.#wallTop = image;
           if (this.#ready && !this.#disposed) void this.#p5.redraw();
@@ -812,7 +818,9 @@ export class BoardingEditorMapView {
                   this.#wallTiles.get(boardingSurfaceStyle(roomAt, faced)),
                 ),
             ...(door ? { faceTexture: [0, 1] as const } : {}),
-            top: option(this.#wallTop),
+            top: option(
+              door ? (this.#doorTop ?? this.#wallTop) : this.#wallTop,
+            ),
             section:
               !low &&
               height < boardingHeight(BOARDING_METERS.wall) &&

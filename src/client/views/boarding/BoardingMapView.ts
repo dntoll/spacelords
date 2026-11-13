@@ -56,6 +56,7 @@ import {
   BOARDING_FLOOR_IMAGES,
   BOARDING_WALL_IMAGES,
   BOARDING_DOOR_FACE_IMAGES,
+  BOARDING_DOOR_TOP_IMAGE,
   BOARDING_WALL_TOP_IMAGE,
   boardingSurfaceStyle,
   boardingWallFaceStyle,
@@ -210,6 +211,7 @@ export class BoardingMapView implements BoardingMapPort {
   readonly #wallTiles = new Map<BoardingSurfaceStyle, p5.Image>();
   #wallTop: p5.Image | null = null;
   readonly #doorFaces = new Map<'open' | 'locked', p5.Image>();
+  #doorTop: p5.Image | null = null;
   readonly #isoCaches = new WeakMap<p5.Image, IsoImageCache>();
   #factionSprites: p5.Image | null = null;
   readonly #smokeTextures: (p5.Image | null)[] = [null, null, null];
@@ -286,6 +288,10 @@ export class BoardingMapView implements BoardingMapPort {
             if (!this.#disposed && this.#ready) void this.#p5.redraw();
           });
         }
+        void sketch.loadImage(BOARDING_DOOR_TOP_IMAGE).then((image) => {
+          this.#doorTop = image;
+          if (!this.#disposed && this.#ready) void this.#p5.redraw();
+        });
         void sketch.loadImage(BOARDING_WALL_TOP_IMAGE).then((image) => {
           this.#wallTop = image;
           if (!this.#disposed && this.#ready) void this.#p5.redraw();
@@ -1399,7 +1405,7 @@ export class BoardingMapView implements BoardingMapPort {
               span: door.span ?? [-0.5, 0.5],
             }
           : {}),
-        top: option(this.#wallTop),
+        top: option(door ? (this.#doorTop ?? this.#wallTop) : this.#wallTop),
         section:
           !low && height < boardingFeatureHeight('wall') && !this.#wallTop,
       },

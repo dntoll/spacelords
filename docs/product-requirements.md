@@ -1395,6 +1395,8 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 `animerade-dorrar` — **Fullständigt implementerat**. Dörrar man ser glider synligt isär när de öppnas och ihop när de stängs.
 
+`dorrens-ovansida` — **Fullständigt implementerat**. Dörrens ovansida ser annorlunda ut än väggarnas, så dörrar syns även uppifrån.
+
 `dorrar-falls-inte` — **Fullständigt implementerat**. Dörrar står alltid kvar i full höjd, även där väggar fälls ner för att visa golvet bakom.
 
 ## Meterskala och skymmande väggar i bordning
