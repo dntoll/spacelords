@@ -1467,6 +1467,12 @@ bråte.
 `ingen-rok-i-hela-vaggar` — **Fullständigt implementerat**: rök hamnar inte
 inuti väggar, utom i väggar som skjutits sönder.
 
+`utslagen-fiende-utan-sikte` — **Fullständigt implementerat**: utslagna
+fiender visas utan hårkors och utan tom HP-mätare.
+
+`ljudmarkor-bara-utom-sikt` — **Fullständigt implementerat**: ljudmarkören
+visas bara där man inte redan ser vad som hände.
+
 `avstangda-omojliga-handlingar` — **Fullständigt implementerat**:
 handlingsknappar som inte kan utföras är avstängda.
 

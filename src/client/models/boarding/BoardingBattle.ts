@@ -1307,8 +1307,8 @@ export class BoardingBattle {
           (person) =>
             person.side !== source.side &&
             person.side !== 'civilian' &&
-            person.status !== 'dead' &&
-            person.status !== 'evacuated' &&
+            // utslagen-fiende-utan-sikte: knocked-out enemies get no crosshair.
+            person.status === 'active' &&
             this.#canSee(source, person.position),
         )
         .map((person) =>

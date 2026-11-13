@@ -208,6 +208,13 @@ sparplatser.
   gnistor i träffpunkten. Ett känt objekt som går sönder kastar metallskrot och
   gnistor, reactor med en större cyan explosion, och rutan visar därefter bråte.
   Effekterna är rent visuella och sparas inte.
+- `utslagen-fiende-utan-sikte` — **Fullständigt implementerat**. En utslagen
+  fiende får inget hårkors eller träffchans och ingen person som inte står upp
+  får HP-mätare på kartan. Detta ändrar `traffchans-vid-synliga-fiender`, som
+  tidigare visade indikatorer även för utslagna fiender.
+- `ljudmarkor-bara-utom-sikt` — **Fullständigt implementerat**. Ljudmarkörens
+  två gula ringar visas bara på rutor som spelaren inte ser just nu; på en synlig
+  ruta upprepar den bara vad som redan syns.
 - `avstangda-omojliga-handlingar` — **Fullständigt implementerat**. Vrid,
   hukning, Overwatch, `Hack door`, `Use Med-pack`, `Evacuate`, dörrar, granater,
   skott, melee och förflyttning är avstängda när AP, avstånd eller mål inte

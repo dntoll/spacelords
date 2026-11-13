@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { BoardingLighting } from '../../src/client/views/boarding/BoardingLighting.js';
 import type p5 from 'p5';
-import { BoardingMapView } from '../../src/client/views/boarding/BoardingMapView.js';
 import {
   boardingCeilingLight,
   type BoardingLight,
@@ -46,6 +45,15 @@ vi.mock('p5', () => ({
     remove() {}
   },
 }));
+// snabb-testsvit runs with isolate: false, so another file may already have
+// loaded the view with the real p5. Reload it after the mock is registered.
+let BoardingMapView: typeof import('../../src/client/views/boarding/BoardingMapView.js').BoardingMapView;
+beforeAll(async () => {
+  vi.resetModules();
+  ({ BoardingMapView } =
+    await import('../../src/client/views/boarding/BoardingMapView.js'));
+});
+
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
@@ -682,5 +690,43 @@ it('bordning-explosioner-och-forstorelse: a known feature that breaks bursts int
   expect(calls.filter((call) => call.kind === 'wall').length).toBeGreaterThan(
     0,
   );
+  view.dispose();
+});
+
+it('utslagen-fiende-utan-sikte / ljudmarkor-bara-utom-sikt: no empty HP bar for a knocked-out person and no noise ring on a visible tile', () => {
+  const { view, state, player, calls } = scene(true);
+  const bars: number[][] = [];
+  Object.assign(runtime.sketch!, {
+    rect: (...args: number[]) => bars.push(args),
+  });
+  const visibleTile = { q: 3, r: 3 };
+  const hiddenTile = { q: 1, r: 1 };
+  const noisy = {
+    ...state,
+    visibleCells: [visibleTile],
+    noiseMarkers: [
+      { position: visibleTile, audience: 'player' as const },
+      { position: hiddenTile, audience: 'player' as const },
+    ],
+  };
+  view.render(noisy, null, null, []);
+  const ringYs = calls
+    .filter((call) => call.kind === 'person')
+    .map((call) => call.y);
+  expect(ringYs).toContain(boardingIsoCenter(hiddenTile).y);
+  expect(ringYs).not.toContain(boardingIsoCenter(visibleTile).y);
+  const standingBars = bars.length;
+  expect(standingBars).toBeGreaterThan(0);
+  bars.length = 0;
+  view.render(
+    {
+      ...noisy,
+      people: [{ ...player, status: 'incapacitated', hitPoints: 0 }],
+    },
+    null,
+    null,
+    [],
+  );
+  expect(bars).toHaveLength(0);
   view.dispose();
 });

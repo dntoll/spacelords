@@ -1954,6 +1954,8 @@ export class BoardingMapView implements BoardingMapPort {
                 1,
               );
             }
+            // utslagen-fiende-utan-sikte: an empty bar adds nothing to the prone pose.
+            if (person.status !== 'active') return;
             sketch.fill('#111827');
             sketch.rect(center.x - 15, healthY, 30, 5, 2);
             sketch.fill(
@@ -1993,8 +1995,11 @@ export class BoardingMapView implements BoardingMapPort {
       sketch.fill('#e58b5a');
       sketch.text('?', center.x, center.y - 2 * uiScale);
     }
+    // ljudmarkor-bara-utom-sikt: a heard tile in plain view repeats what the
+    // player already sees.
     for (const marker of state.noiseMarkers.filter(
-      (entry) => entry.audience === 'player',
+      (entry) =>
+        entry.audience === 'player' && !visible.has(key(entry.position)),
     )) {
       const center = boardingIsoCenter(marker.position);
       sketch.noFill();

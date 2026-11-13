@@ -184,6 +184,18 @@ describe('traffchans-vid-synliga-fiender', () => {
       }).targetIndicators(actor.id),
     ).toEqual([]);
   });
+  it('utslagen-fiende-utan-sikte: gives a knocked-out enemy no crosshair', () => {
+    const { restore, state, actor, enemy } = arena();
+    expect(
+      restore({
+        people: state.people.map((person) =>
+          person.id === enemy.id
+            ? { ...person, status: 'incapacitated', hitPoints: 0 }
+            : person,
+        ),
+      }).targetIndicators(actor.id),
+    ).toEqual([]);
+  });
 });
 
 describe('automatisk-bordningstur-vid-tom-ap', () => {

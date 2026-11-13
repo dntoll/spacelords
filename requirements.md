@@ -62,7 +62,10 @@ Se [hela visionen](docs/game-vision.md).
   splitter och tryckvåg; rökgranater ger ett rökutbrott. Objekt som går sönder
   kastar skrot och lämnar bråte, och reactor ger en större explosion. Rök hamnar
   aldrig i hela väggar, ytterskrov eller stängda dörrar, men väl i sönderskjutna
-  väggar. Handlingar som inte kan utföras är avstängda. Se
+  väggar. Handlingar som inte kan utföras är avstängda.
+  `utslagen-fiende-utan-sikte` och `ljudmarkor-bara-utom-sikt` är
+  **Fullständigt implementerat**: utslagna personer får varken hårkors eller
+  tom HP-mätare, och ljudmarkörer visas bara på rutor som inte syns. Se
   [bordningsstrid](docs/boarding-combat.md).
 
 - **Rumsinteriörer:** `rumsspecifika-bordningstexturer` och

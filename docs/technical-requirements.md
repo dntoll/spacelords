@@ -1687,3 +1687,12 @@ färdig reparation.
   kvarvarande AP och de exporterade kostnaderna `BOARDING_HACK_AP`,
   `BOARDING_MED_PACK_AP` och `BOARDING_EVACUATE_AP`, plus avstånd och
   modellens `grenadeReason` och `doorReason`.
+- `utslagen-fiende-utan-sikte` och `ljudmarkor-bara-utom-sikt`:
+  `BoardingBattle.targetIndicators` tar bara med aktiva fiender, och
+  BoardingMapView ritar HP-mätare bara för aktiva personer och ljudmarkörer bara
+  utanför aktuell sikt. `attackPreview` är oförändrad.
+- Testisolering: snabbsviten kör med `isolate: false`. Testfiler som ersätter
+  `p5` med `vi.mock` laddar därför om vymodulen med `vi.resetModules()` och
+  dynamisk import, så att en vy som en annan fil redan laddat med riktig p5
+  inte återanvänds. Det rättar det tidigare ordningsberoende felet i
+  `spelidentisk-bordningseditor`.
