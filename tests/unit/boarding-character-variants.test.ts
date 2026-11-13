@@ -48,9 +48,8 @@ describe('figurvarianter-i-bordning', () => {
 });
 
 it('figurvarianter-i-bordning: has one atlas image per variant', async () => {
-  const { BOARDING_CHARACTER_IMAGES } = await import(
-    '../../src/client/views/boarding/BoardingCharacterImages.js'
-  );
+  const { BOARDING_CHARACTER_IMAGES } =
+    await import('../../src/client/views/boarding/BoardingCharacterImages.js');
   expect(BOARDING_CHARACTER_IMAGES).toHaveLength(
     boardingCharacterVariants.length,
   );
