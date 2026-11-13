@@ -70,11 +70,12 @@ import {
   boardingRubble,
   type BoardingEffectKind,
 } from './BoardingEffectParticles.js';
-import factionSpritesUrl from '../../assets/boarding/characters/directional-faction-sprites.webp';
+import { BOARDING_CHARACTER_IMAGES } from './BoardingCharacterImages.js';
 import {
   BOARDING_FOOT_PLANT,
   boardingCharacterAtPoint,
   boardingCharacterSprite,
+  boardingCharacterVariant,
   type BoardingCharacterPose,
 } from './BoardingCharacterSprite.js';
 import {
@@ -216,7 +217,8 @@ export class BoardingMapView implements BoardingMapPort {
   #doorTop: p5.Image | null = null;
   readonly #crate = new Map<'side' | 'top', p5.Image>();
   readonly #isoCaches = new WeakMap<p5.Image, IsoImageCache>();
-  #factionSprites: p5.Image | null = null;
+  /** figurvarianter-i-bordning: the atlas of each character look. */
+  readonly #characterSheets = new Map<number, p5.Image>();
   readonly #smokeTextures: (p5.Image | null)[] = [null, null, null];
   #lighting: BoardingLighting;
   #lightSignature = '';
@@ -314,9 +316,11 @@ export class BoardingMapView implements BoardingMapPort {
             if (!this.#disposed && this.#ready) void this.#p5.redraw();
           });
         });
-        void sketch.loadImage(factionSpritesUrl).then((image) => {
-          this.#factionSprites = image;
-          if (!this.#disposed && this.#ready) void this.#p5.redraw();
+        BOARDING_CHARACTER_IMAGES.forEach((url, variant) => {
+          void sketch.loadImage(url).then((image) => {
+            this.#characterSheets.set(variant, image);
+            if (!this.#disposed && this.#ready) void this.#p5.redraw();
+          });
         });
         for (const [name, url] of Object.entries(BOARDING_OBJECT_IMAGES) as [
           BoardingArtwork,
@@ -499,6 +503,7 @@ export class BoardingMapView implements BoardingMapPort {
       center,
       characterPose(person),
       person.facing,
+      this.#variantOf(person.id),
     ).destination;
     const left = Math.min(sprite.x, center.x - 18);
     const right = Math.max(sprite.x + sprite.width, center.x + 18);
@@ -1450,6 +1455,12 @@ export class BoardingMapView implements BoardingMapPort {
     }
   }
 
+  /** figurvarianter-i-bordning: a person's look once its atlas has loaded. */
+  #variantOf(id: string): number {
+    const variant = boardingCharacterVariant(id);
+    return this.#characterSheets.has(variant) ? variant : 0;
+  }
+
   /** halvskydd-som-geometri: a textured, lit box; false while textures load. */
   #paintCrate(sketch: p5, feature: BoardingFeature): boolean {
     const option = (image: p5.Image | undefined) =>
@@ -1616,6 +1627,7 @@ export class BoardingMapView implements BoardingMapPort {
           center,
           characterPose(person),
           person.facing,
+          this.#variantOf(person.id),
         ).destination;
         const screenRectangle = {
           left: sprite.x * this.#scale + this.#offset.x,
@@ -2050,12 +2062,13 @@ export class BoardingMapView implements BoardingMapPort {
               groundEllipse(16),
             );
           }
-          if (this.#factionSprites) {
+          if (this.#characterSheets.has(0)) {
             const sprite = boardingCharacterSprite(
               person.side,
               center,
               characterPose(person),
               progress < 0.5 ? origin.facing : target.facing,
+              this.#variantOf(person.id),
             );
             sketch.push();
             const light =
@@ -2075,7 +2088,7 @@ export class BoardingMapView implements BoardingMapPort {
             }
             this.#paintLit(
               sketch,
-              this.#factionSprites,
+              this.#characterSheets.get(sprite.variant)!,
               shade * light,
               alpha,
               sprite.destination,
@@ -2119,12 +2132,13 @@ export class BoardingMapView implements BoardingMapPort {
               );
             }
             sketch.noStroke();
-            const healthY = this.#factionSprites
+            const healthY = this.#characterSheets.has(0)
               ? boardingCharacterSprite(
                   person.side,
                   center,
                   characterPose(person),
                   person.facing,
+                  this.#variantOf(person.id),
                 ).destination.y - 6
               : bodyY - 18;
             const showAp =

@@ -121,6 +121,14 @@ sparplatser.
   som figurens rörelse och sikt. Fötterna står i rutans mitt, med skugga och
   valring på samma punkt, och HP, AP och statusmarkeringar behålls. Detta ersätter samma stillbild för
   alla riktningar. Totalt 33 genererade grundbilder används i ett bildark.
+- `figurvarianter-i-bordning` — **Fullständigt implementerat**. Det finns fyra
+  bildark med samma upplägg: originalet och tre varianter. Varje person får ett
+  fast utseende efter sitt nummer inom sidan, så `Boarder 1`–`4` och de fyra
+  första piraterna och civila ser alla olika ut och behåller sitt utseende hela
+  striden. Varje ark har sin egen pixelskala så att alla står lika höga. Valet
+  är bara grafik och sparas inte. Redigeringsvyn visar originalutseendet.
+  Originalarken ligger i `assets/original/boarding/60deg/` och
+  `scripts/prepare-boarding-characters.py` bygger en atlas per ark.
 - `utslagna-bordningsfigurer` — **Fullständigt implementerat**. Soldat, pirat
   och civilist har var sin transparent liggande, riktningsoberoende bild.
   Utslagna använder bilden och kan fortsatt väljas för `Med-pack`; döda använder
@@ -386,7 +394,7 @@ Karteditor, skrovgenombrott och vakuum ingår inte.
 
 `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock och reactor visas som separata bilder utan golv. Förstörda objekt och bilder som inte laddas behåller reservvisningen. Dörrar och Half cover ritas inte längre som bilder, se `dorrar-som-tunna-vaggar` och `halvskydd-som-geometri`.
 
-`halvskydd-som-geometri` är **Fullständigt implementerat**. Half cover är en låda i spelets egen projektion: en fyrkant tre fjärdedelar av en ruta bred, centrerad i rutan och 1,2 m hög. De två synliga sidorna får `crate-side.png` och ovansidan `crate-top.png`, och varje yta ljussätts som väggar. Den ersätter lådbilden `crate`, som var ritad för en annan kameravinkel och därför fick fel projektion. Förstörd Half cover visar bråte som förut, och så länge texturerna laddas visas den enkla reservlådan. Redigeringsvyn ritar Half cover på samma sätt.
+`halvskydd-som-geometri` är **Fullständigt implementerat**. Half cover är en låda i spelets egen projektion: en fyrkant tre fjärdedelar av en ruta bred, centrerad i rutan och 1,2 m hög. De två synliga sidorna får `crate-side.png` och ovansidan `crate-top.png`, och varje yta ljussätts som väggar. Den ersätter lådbilden `crate`, som var ritad för en annan kameravinkel och därför fick fel projektion. Förstörd Half cover visar bråte som förut, och så länge texturerna laddas visas den enkla reservlådan. Redigeringsvyn ritar Half cover på samma sätt. Testbordningens transportskepp har en Half cover på (4, 9) i rummet där soldaterna börjar, så att lådan syns direkt.
 
 `dorrar-som-tunna-vaggar` är **Fullständigt implementerat**. En dörr är en tunn vägg, en tredjedel av en ruta tjock och centrerad i rutan, längs den vägglinje den står i: väggar ovanför och nedanför ger en skiva som är tunn längs q (som `Q`), annars längs r (som `R`). Riktningen härleds ur kartans väggar och sparas inte, så sparade spel påverkas inte. En stängd dörr ritas som en fullhög tunn vägg med en egen dörrtextur i stället för väggtexturen, med cyan lampa när den är olåst och röd när den är låst. Ovansidan är inte väggens: `dorrens-ovansida` (**Fullständigt implementerat**) ger dörren en egen ovansida, en mörk skena med mittfog och gul-svarta varningsränder längs kanterna (`door-top.png`). Den fälls aldrig ner, inte ens när den skymmer upptäckt golv (`dorrar-falls-inte`, **Fullständigt implementerat**); detta ersätter att dörrar fälldes som tunna väggar. En öppen dörr har glidit in i väggen och visar bara golvet, och en förstörd dörr visar bråte. Golvet i dörrens ruta delas som vid en tunn vägg. Fullhöga tunna väggar och stängda dörrar skymmer sikt, skott och granatkast bara med sin skiva, inte med hela rutan: siktytans kant når fram till skivan och kan gå förbi dess ändar. Rök och vanliga väggar skymmer fortfarande hela rutan. Detta ersätter dörrbilderna i `isometriska-bordningsobjekt` och att tunna väggar skymde hela rutan i `geometrisk-sikt`. Redigeringsvyn ritar dörrar på samma sätt.
 

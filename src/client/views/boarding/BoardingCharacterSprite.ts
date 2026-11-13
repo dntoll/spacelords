@@ -1,7 +1,4 @@
-import {
-  BOARDING_CHARACTER_UNITS_PER_PIXEL,
-  boardingCharacterSources,
-} from './BoardingCharacterAtlas.js';
+import { boardingCharacterVariants } from './BoardingCharacterAtlas.js';
 export type BoardingCharacterSide = 'player' | 'defender' | 'civilian';
 export type BoardingCharacterPose = 'standing' | 'crouched' | 'incapacitated';
 
@@ -37,6 +34,19 @@ export const BOARDING_FOOT_PLANT = 0;
 /** The sprite's lowest pixel is the front of the feet, just below the tile centre. */
 export const NO_FLIGHT_ADJUSTMENT = 5;
 
+/**
+ * figurvarianter-i-bordning: which look a person has. People are numbered per
+ * side, so consecutive people get different sheets; other ids are hashed.
+ */
+export function boardingCharacterVariant(id: string): number {
+  const count = boardingCharacterVariants.length;
+  const number = /-(\d+)$/.exec(id);
+  if (number) return (Number(number[1]) - 1 + count) % count;
+  let hash = 0;
+  for (const character of id) hash = (hash * 31 + character.charCodeAt(0)) | 0;
+  return Math.abs(hash) % count;
+}
+
 export interface BoardingCharacterPick {
   readonly id: string;
   readonly side: BoardingCharacterSide;
@@ -50,21 +60,26 @@ export function boardingCharacterSprite(
   floorCenter: Point,
   pose: BoardingCharacterPose,
   facing = 0,
+  variant = 0,
 ): {
   readonly source: Rectangle;
   readonly destination: Rectangle;
   readonly mirrored: boolean;
+  readonly variant: number;
 } {
   const view = views[((facing % 8) + 8) % 8]!;
+  const sheet =
+    boardingCharacterVariants[variant] ?? boardingCharacterVariants[0];
   const source =
     pose === 'incapacitated'
-      ? boardingCharacterSources[side].incapacitated
-      : boardingCharacterSources[side][pose][view.angle];
-  // kameravinkel-60-i-bordning: the 60-degree sheet shares one pixel scale.
-  const width = source.width * BOARDING_CHARACTER_UNITS_PER_PIXEL;
-  const height = source.height * BOARDING_CHARACTER_UNITS_PER_PIXEL;
+      ? sheet.sources[side].incapacitated
+      : sheet.sources[side][pose][view.angle];
+  // kameravinkel-60-i-bordning: each 60-degree sheet shares one pixel scale.
+  const width = source.width * sheet.unitsPerPixel;
+  const height = source.height * sheet.unitsPerPixel;
   return {
     source,
+    variant: boardingCharacterVariants[variant] ? variant : 0,
     mirrored: pose !== 'incapacitated' && view.mirrored,
     destination: {
       x: floorCenter.x - width / 2,
@@ -89,6 +104,7 @@ export function boardingCharacterAtPoint(
       person.floorCenter,
       person.pose,
       person.facing,
+      boardingCharacterVariant(person.id),
     ).destination;
     return (
       point.x >= box.x &&
