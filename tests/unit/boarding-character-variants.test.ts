@@ -54,3 +54,18 @@ it('figurvarianter-i-bordning: has one atlas image per variant', async () => {
     boardingCharacterVariants.length,
   );
 });
+
+describe('figurvarianter-i-bordning: scale', () => {
+  const sides = ['player', 'defender', 'civilian'] as const;
+  it('draws every side of every variant at the same standing height', () => {
+    const floor = { x: 0, y: 0 };
+    const heights = boardingCharacterVariants.flatMap((_, variant) =>
+      sides.map(
+        (side) =>
+          boardingCharacterSprite(side, floor, 'standing', 7, variant)
+            .destination.height,
+      ),
+    );
+    expect(Math.min(...heights) / Math.max(...heights)).toBeGreaterThan(0.9);
+  });
+});

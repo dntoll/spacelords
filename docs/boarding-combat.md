@@ -125,7 +125,7 @@ sparplatser.
   bildark med samma upplägg: originalet och tre varianter. Varje person får ett
   fast utseende efter sitt nummer inom sidan, så `Boarder 1`–`4` och de fyra
   första piraterna och civila ser alla olika ut och behåller sitt utseende hela
-  striden. Varje ark har sin egen pixelskala så att alla står lika höga. Valet
+  striden. Varje sida i varje ark har sin egen pixelskala så att alla står 1,8 m höga, hur stort tecknaren än ritat dem; detta ersätter en gemensam skala per ark, som gjorde soldater olika långa i olika varianter. Arken är inte ett jämnt rutnät, så skriptet hittar figurernas sju rader genom de genomskinliga mellanrummen i stället för att dela arket i lika höga rader. Det rättar figurer som klipptes av vid en rutnätslinje, till exempel stående civila och pirater. Valet
   är bara grafik och sparas inte. Redigeringsvyn visar originalutseendet.
   Originalarken ligger i `assets/original/boarding/60deg/` och
   `scripts/prepare-boarding-characters.py` bygger en atlas per ark.

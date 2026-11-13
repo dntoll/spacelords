@@ -74,9 +74,9 @@ export function boardingCharacterSprite(
     pose === 'incapacitated'
       ? sheet.sources[side].incapacitated
       : sheet.sources[side][pose][view.angle];
-  // kameravinkel-60-i-bordning: each 60-degree sheet shares one pixel scale.
-  const width = source.width * sheet.unitsPerPixel;
-  const height = source.height * sheet.unitsPerPixel;
+  // kameravinkel-60-i-bordning: poses of a side in a sheet share one scale.
+  const width = source.width * sheet.unitsPerPixel[side];
+  const height = source.height * sheet.unitsPerPixel[side];
   return {
     source,
     variant: boardingCharacterVariants[variant] ? variant : 0,

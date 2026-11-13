@@ -17,12 +17,12 @@ describe('bordningsfigurer-fran-spritesheet', () => {
       );
 
       expect(sprite.source.width).toBeGreaterThan(0);
-      // kameravinkel-60-i-bordning: one pixel scale for the whole sheet.
+      // kameravinkel-60-i-bordning: one pixel scale per side of a sheet.
       expect(sprite.destination.height).toBeCloseTo(
-        sprite.source.height * boardingCharacterVariants[0].unitsPerPixel,
+        sprite.source.height * boardingCharacterVariants[0].unitsPerPixel[side],
       );
       expect(sprite.destination.width).toBeCloseTo(
-        sprite.source.width * boardingCharacterVariants[0].unitsPerPixel,
+        sprite.source.width * boardingCharacterVariants[0].unitsPerPixel[side],
       );
       expect(sprite.destination.x + sprite.destination.width / 2).toBe(80);
       expect(sprite.destination.y + sprite.destination.height).toBe(
