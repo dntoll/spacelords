@@ -14,9 +14,10 @@ import {
   NO_FLIGHT_ADJUSTMENT,
 } from '../../src/client/views/boarding/BoardingCharacterSprite.js';
 
-// isometri-3-2-i-bordning: a 3:2 ground diamond means a camera elevation of asin(2/3).
+// kameravinkel-60-i-bordning: a 60 degree camera gives a 64 x 32√3 ground diamond.
 const groundMeter = 64 / Math.SQRT2;
-const verticalMeter = (groundMeter * Math.sqrt(5)) / 3;
+const halfDepth = 16 * Math.sqrt(3);
+const verticalMeter = groundMeter / 2;
 // The existing sprites were rendered for the earlier 2:1 (30 degree) camera.
 const spriteVerticalMeter = 16 * Math.sqrt(6);
 const squash = verticalMeter / spriteVerticalMeter;
@@ -25,9 +26,9 @@ describe('meterskala-i-bordning', () => {
     const alongQ = boardingIsoCenter({ q: 1, r: 0 });
     const alongR = boardingIsoCenter({ q: 0, r: 1 });
     expect(alongQ.x).toBe(32);
-    expect(alongQ.y).toBeCloseTo(64 / 3);
+    expect(alongQ.y).toBeCloseTo(halfDepth);
     expect(alongR.x).toBe(-32);
-    expect(alongR.y).toBeCloseTo(64 / 3);
+    expect(alongR.y).toBeCloseTo(halfDepth);
     expect(BOARDING_WALL_HEIGHT / verticalMeter).toBeCloseTo(2.4);
     expect(BOARDING_DOOR_HEIGHT / verticalMeter).toBeCloseTo(2.1);
     expect(BOARDING_COVER_HEIGHT / verticalMeter).toBeCloseTo(1.2);
@@ -60,7 +61,7 @@ describe('meterskala-i-bordning', () => {
       'standing',
     );
     expect(sprite.height / verticalMeter).toBeCloseTo(1.8);
-    // isometri-3-2-i-bordning: existing sprites are only compressed vertically.
+    // kameravinkel-60-i-bordning: existing sprites are only compressed vertically.
     const unsquashedHeight = 1.8 * spriteVerticalMeter;
     expect(sprite.width).toBeCloseTo(
       (unsquashedHeight * source.width) / source.height,
@@ -73,7 +74,7 @@ describe('meterskala-i-bordning', () => {
       { width: 430, height: 500 },
     );
     expect(
-      camera.offset.y + (-64 / 3 - 2.4 * verticalMeter) * camera.scale,
+      camera.offset.y + (-halfDepth - 2.4 * verticalMeter) * camera.scale,
     ).toBeGreaterThanOrEqual(18 - 1e-6);
   });
 });

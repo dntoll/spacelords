@@ -16,17 +16,19 @@ export const BOARDING_METERS = Object.freeze({
 });
 
 export const BOARDING_TILE_WIDTH = 64;
-/** isometri-3-2-i-bordning: a 3:2 ground diamond, camera elevation asin(2/3) ≈ 41.8°. */
-export const BOARDING_TILE_HEIGHT = (BOARDING_TILE_WIDTH * 2) / 3;
+/** kameravinkel-60-i-bordning: Ludo's high-angle camera looks down at 60 degrees. */
+export const BOARDING_CAMERA_ELEVATION = Math.PI / 3;
+export const BOARDING_TILE_HEIGHT =
+  BOARDING_TILE_WIDTH * Math.sin(BOARDING_CAMERA_ELEVATION);
 /** Screen depth per screen width of a ground footprint. */
 export const BOARDING_GROUND_RATIO = BOARDING_TILE_HEIGHT / BOARDING_TILE_WIDTH;
 
 const GROUND_METER = BOARDING_TILE_WIDTH / Math.SQRT2;
 export const BOARDING_VERTICAL_METER =
-  GROUND_METER * Math.sqrt(1 - BOARDING_GROUND_RATIO ** 2);
+  GROUND_METER * Math.cos(BOARDING_CAMERA_ELEVATION);
 
 // The existing sprites were rendered for the earlier 2:1 (30 degree) camera.
-// isometri-3-2-i-bordning: they are compressed vertically, never horizontally.
+// kameravinkel-60-i-bordning: until regenerated they are compressed vertically, never horizontally.
 const SPRITE_VERTICAL_METER = GROUND_METER * Math.cos(Math.PI / 6);
 export const BOARDING_SPRITE_SQUASH =
   BOARDING_VERTICAL_METER / SPRITE_VERTICAL_METER;

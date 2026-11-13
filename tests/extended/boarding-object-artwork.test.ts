@@ -59,7 +59,7 @@ describe('isometriska-bordningsobjekt', () => {
     ).toBeNull();
     const box = boardingObjectBounds('half-cover', { x: 100, y: 100 });
     expect(box.width).toBeLessThanOrEqual(42);
-    const verticalMeter = ((64 / Math.SQRT2) * Math.sqrt(5)) / 3;
+    const verticalMeter = 64 / Math.SQRT2 / 2;
     expect(box.height).toBeGreaterThan(1.2 * verticalMeter);
     expect(box.height).toBeLessThan(1.8 * verticalMeter);
     expect(box.x + box.width / 2).toBe(100);

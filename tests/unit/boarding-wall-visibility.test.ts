@@ -8,6 +8,7 @@ import {
   boardingDepthOrder,
 } from '../../src/client/views/boarding/BoardingWallVisibility.js';
 import {
+  BOARDING_HALF_TILE_HEIGHT,
   BOARDING_WALL_HEIGHT,
   boardingIsoCenter,
 } from '../../src/client/views/boarding/BoardingProjection.js';
@@ -35,7 +36,15 @@ describe('genomskinliga-skymmande-vaggar', () => {
     const wall = { q: 4, r: 4 };
     const behind = { q: 3, r: 3 };
     const center = boardingIsoCenter(wall);
-    const point = { x: center.x, y: center.y - BOARDING_WALL_HEIGHT / 2 };
+    // Just above the cutaway section's top face, still inside a tall wall.
+    const point = {
+      x: center.x,
+      y:
+        center.y -
+        boardingHeight(BOARDING_METERS.cutawayWall) -
+        BOARDING_HALF_TILE_HEIGHT -
+        4,
+    };
     expect(new BoardingWallVisibility([]).blocks(point, behind, [wall])).toBe(
       true,
     );

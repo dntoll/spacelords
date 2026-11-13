@@ -32,7 +32,7 @@ const floorTile = readFileSync(
 );
 
 describe('isometrisk-bordningsvy', () => {
-  it('isometri-3-2-i-bordning: uses 3:2 diamond tiles and maps a screen point back to its square cell', () => {
+  it('kameravinkel-60-i-bordning: uses 60 degree diamond tiles and maps a screen point back to its square cell', () => {
     const origin = boardingIsoCenter({ q: 0, r: 0 });
     const alongQ = boardingIsoCenter({ q: 1, r: 0 });
     const alongR = boardingIsoCenter({ q: 0, r: 1 });
@@ -49,7 +49,7 @@ describe('isometrisk-bordningsvy', () => {
     const height =
       Math.max(...corners.map((point) => point.y)) -
       Math.min(...corners.map((point) => point.y));
-    expect(width / height).toBeCloseTo(1.5);
+    expect(width / height).toBeCloseTo(2 / Math.sqrt(3));
     expect(width).toBe(BOARDING_TILE_WIDTH);
     expect(height).toBe(BOARDING_TILE_HEIGHT);
     expect(boardingFeatureFootprint('wall')).toEqual({
@@ -88,7 +88,7 @@ describe('isometrisk-bordningsvy', () => {
 });
 
 describe('isometriska-golvtiles', () => {
-  it('projects a square floor texture onto the exact 3:2 diamond', () => {
+  it('projects a square floor texture onto the exact ground diamond', () => {
     expect([...floorTile.subarray(0, 8)]).toEqual([
       137, 80, 78, 71, 13, 10, 26, 10,
     ]);

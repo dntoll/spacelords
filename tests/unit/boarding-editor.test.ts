@@ -156,11 +156,17 @@ describe('formbar-skeppskontur / redigerbara-bordningslampor', () => {
 describe('isometrisk-bordningskarteditor', () => {
   it('isometrisk-skeppsreferens: aligns the sprite plane with both axes of the cell grid', () => {
     const [a, b, c, d, x, y] = boardingSpritePlaneTransform();
-    // isometri-3-2-i-bordning: half a 64 x 128/3 ground diamond.
-    const half = 64 / 3;
-    expect([x, y]).toEqual([0, -half]);
-    expect([a, b]).toEqual([32, half]);
-    expect([c, d]).toEqual([-32, half]);
+    // kameravinkel-60-i-bordning: half a 64 x 32√3 ground diamond.
+    const half = 16 * Math.sqrt(3);
+    for (const [actual, expected] of [
+      [x, 0],
+      [y, -half],
+      [a, 32],
+      [b, half],
+      [c, -32],
+      [d, half],
+    ] as const)
+      expect(actual).toBeCloseTo(expected);
   });
   it('defaults to isometric and switches to top-down for sprite adjustment', () => {
     const editor = new BoardingEditor('pirate', pirateMap);

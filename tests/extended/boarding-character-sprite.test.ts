@@ -36,7 +36,7 @@ describe('valbar-bordningssoldat', () => {
     const front = {
       id: 'front',
       side: 'defender' as const,
-      floorCenter: { x: 80, y: 140 },
+      floorCenter: { x: 80, y: 125 },
       pose: 'standing' as const,
     };
     const overlap = {

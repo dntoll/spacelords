@@ -1393,7 +1393,7 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 ## Meterskala och skymmande väggar i bordning
 
-- `isometri-3-2-i-bordning` — **Delvis implementerat**. Bordningskartan provas med en brantare 3:2-isometri i stället för 2:1. Nuvarande figurer och objekt trycks ihop på höjden; egna bilder för den nya vinkeln återstår.
+- `kameravinkel-60-i-bordning` — **Delvis implementerat**. Bordningskartan provas med en brant kamera (60°) som matchar Ludos high-angle, i stället för 2:1. Nuvarande figurer och objekt trycks ihop på höjden; nya bilder för vinkeln återstår. Ersätter provet `isometri-3-2-i-bordning`.
 - `meterskala-i-bordning` — **Fullständigt implementerat**. En golvruta är 1 × 1 m. Väggar och ytterskrov är 2,4 m höga; dörrar och airlock har 2,1 m fri öppning. Stående personer och reactor är cirka 1,8 m höga. Half cover är 1,2 m, fortsatt halva vägghöjden.
 - `genomskinliga-skymmande-vaggar` — **Fullständigt implementerat**. Väggar och ytterskrov som skymmer upptäckta spelbara rutor visas automatiskt som ogenomskinliga, 40 cm höga genomskärningar. Ovansidan har en tydlig metallkant och synligt vägginre. Detta ersätter det tidigare kravet på 35 procents opacitet efter uttrycklig beställning. Spelaren kan välja rutor och synliga personer bakom dem samt välja väggens egen ruta. Okända områden och dolda personer avslöjas inte. Föremål, väggar och personer har gemensam djupordning.
 
