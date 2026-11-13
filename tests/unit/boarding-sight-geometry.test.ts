@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BoardingBattle,
+  boardingRangeDefense,
   type BoardingBattleState,
 } from '../../src/client/models/boarding/BoardingBattle.js';
 import {
@@ -115,13 +116,16 @@ describe('delvis-synligt-mal', () => {
     const { shooter, enemy, restore } = deck([wall]);
     const open = restore({ q: 5, r: 1 }).attackPreview(shooter.id, enemy.id);
     expect(open.reason).toBeNull();
-    expect(open.defense).toBe(enemy.defense);
+    // Shooter at (1,3); avstand-paverkar-traffchans is added on its own.
+    const range = (q: number, r: number) =>
+      boardingRangeDefense(Math.hypot(q - 1, r - 3));
+    expect(open.defense).toBe(enemy.defense + range(5, 1));
     const corner = restore({ q: 5, r: 2 }).attackPreview(shooter.id, enemy.id);
     expect(corner.reason).toBeNull();
-    expect(corner.defense).toBe(enemy.defense + 4);
+    expect(corner.defense).toBe(enemy.defense + 4 + range(5, 2));
     const beside = restore({ q: 1, r: 1 }).attackPreview(shooter.id, enemy.id);
     expect(beside.reason).toBeNull();
-    expect(beside.defense).toBe(enemy.defense + 2);
+    expect(beside.defense).toBe(enemy.defense + 2 + range(1, 1));
     const hidden = restore({ q: 5, r: 3 }).attackPreview(shooter.id, enemy.id);
     expect(hidden.reason).not.toBeNull();
   });
@@ -140,7 +144,12 @@ describe('halvskydd-skuggar-delvis', () => {
       enemy.id,
     );
     expect(preview.reason).toBeNull();
-    return preview.defense - enemy.defense;
+    // avstand-paverkar-traffchans is measured on its own.
+    return (
+      preview.defense -
+      enemy.defense -
+      boardingRangeDefense(Math.hypot(at.q - 1, at.r - 3))
+    );
   };
 
   it('gives full cover to a target mostly in the shadow right behind half cover', () => {
@@ -164,5 +173,24 @@ describe('halvskydd-skuggar-delvis', () => {
     expect(Math.min(...shadow.map((point) => point.q))).toBeGreaterThan(3.4);
     expect(Math.max(...shadow.map((point) => point.q))).toBeGreaterThan(5);
     expect(Math.max(...shadow.map((point) => point.q))).toBeLessThan(6.2);
+  });
+});
+
+describe('avstand-paverkar-traffchans', () => {
+  it('adds one defense per begun two tiles beyond two tiles', () => {
+    expect(boardingRangeDefense(1)).toBe(0);
+    expect(boardingRangeDefense(2)).toBe(0);
+    expect(boardingRangeDefense(2.5)).toBe(1);
+    expect(boardingRangeDefense(4)).toBe(1);
+    expect(boardingRangeDefense(5)).toBe(2);
+    expect(boardingRangeDefense(8)).toBe(3);
+  });
+  it('makes a distant open target harder to hit than a close one', () => {
+    const { shooter, enemy, restore } = deck();
+    const close = restore({ q: 3, r: 3 }).attackPreview(shooter.id, enemy.id);
+    const far = restore({ q: 8, r: 3 }).attackPreview(shooter.id, enemy.id);
+    expect(close.defense).toBe(enemy.defense);
+    expect(far.defense).toBe(enemy.defense + 3);
+    expect(far.chance).toBeLessThan(close.chance);
   });
 });

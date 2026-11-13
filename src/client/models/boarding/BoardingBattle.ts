@@ -235,6 +235,9 @@ const frozenCell = (position: BoardingCell): BoardingCell =>
 /** delvis-synligt-mal: +4 defense below half visibility, +2 below full. */
 export const boardingPartialSightDefense = (share: number): number =>
   share >= 1 ? 0 : share >= 0.5 ? 2 : 4;
+/** avstand-paverkar-traffchans: +1 defense per begun two tiles beyond two. */
+export const boardingRangeDefense = (tiles: number): number =>
+  Math.max(0, Math.ceil((tiles - 2 - 1e-9) / 2));
 const distance = (a: BoardingCell, b: BoardingCell): number =>
   Math.hypot(a.q - b.q, a.r - b.r);
 const sharesEdge = (a: BoardingCell, b: BoardingCell): boolean =>
@@ -1408,7 +1411,12 @@ export class BoardingBattle {
         : 1;
     const defense = target
       ? this.#targetDefense(target, source?.position, true) +
-        boardingPartialSightDefense(share)
+        boardingPartialSightDefense(share) +
+        (source
+          ? boardingRangeDefense(
+              distance(source.position, this.#targetPosition(target)),
+            )
+          : 0)
       : 99;
     const needed = defense - (source?.accuracy ?? 0);
     const chance = reason

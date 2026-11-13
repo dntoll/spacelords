@@ -1489,6 +1489,9 @@ delvis synlig +2. Under en tiondel synlig räknas fienden som dold.
 rutorna närmast bakom sig. Skuggan syns på marken, och en fiende som bara delvis
 står i skuggan får mindre skydd än en som står helt bakom.
 
+`avstand-paverkar-traffchans` — **Fullständigt implementerat**: det är svårare
+att träffa på långt håll än på nära håll.
+
 `avstangda-omojliga-handlingar` — **Fullständigt implementerat**:
 handlingsknappar som inte kan utföras är avstängda.
 

@@ -1722,3 +1722,7 @@ färdig reparation.
   ersätter `#coverBetween`. `boardingCoverShadow` bygger skuggfyrhörningen från
   rutans silhuetthörn ut till mittavståndet plus 1,5 ruta; `sightArea` lämnar
   den som `coverShadows`.
+- `avstand-paverkar-traffchans`: `boardingRangeDefense(avstånd)` läggs till i
+  `attackPreview` (därmed även Overwatch), men inte i `meleePreview`.
+  Siktytan ritas med fyllnadsalfa 14 och 1,25 breda linjer; skuggor med alfa 24
+  och 1 bred linje.

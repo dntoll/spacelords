@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BoardingBattle,
+  boardingRangeDefense,
   type BoardingBattleState,
 } from '../../src/client/models/boarding/BoardingBattle.js';
 import {
@@ -280,8 +281,9 @@ describe('hukning-minskar-skottchans', () => {
       smoke: [{ position: enemy.position, amount: 1 }],
       smokeCells: [enemy.position],
     });
+    // Shooter (2,2) to enemy (5,2) is three tiles: +1 for avstand-paverkar-traffchans.
     expect(battle.attackPreview(actor.id, enemy.id).defense).toBe(
-      enemy.defense + 7,
+      enemy.defense + 7 + boardingRangeDefense(3),
     );
   });
   it('uses the preview defense in an actual rifle attack', () => {

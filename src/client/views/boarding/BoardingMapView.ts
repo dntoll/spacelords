@@ -1049,9 +1049,9 @@ export class BoardingMapView implements BoardingMapPort {
     const sight = this.#sight;
     if (!sight || sight.outline.length < 3) return;
     sketch.push();
-    sketch.fill(98, 200, 250, 30);
+    sketch.fill(98, 200, 250, 14);
     sketch.stroke('#62d6ff');
-    sketch.strokeWeight(2.5);
+    sketch.strokeWeight(1.25);
     sketch.strokeJoin(sketch.ROUND);
     sketch.beginShape();
     for (const point of sight.outline) {
@@ -1060,9 +1060,9 @@ export class BoardingMapView implements BoardingMapPort {
     }
     sketch.endShape(sketch.CLOSE);
     // halvskydd-skuggar-delvis: half cover shades the floor right behind it.
-    sketch.fill(240, 160, 80, 45);
+    sketch.fill(240, 160, 80, 24);
     sketch.stroke('#f0a050');
-    sketch.strokeWeight(2);
+    sketch.strokeWeight(1);
     for (const shadow of sight.coverShadows) {
       sketch.beginShape();
       for (const point of shadow) {
@@ -1072,7 +1072,7 @@ export class BoardingMapView implements BoardingMapPort {
       sketch.endShape(sketch.CLOSE);
     }
     sketch.noFill();
-    sketch.strokeWeight(3);
+    sketch.strokeWeight(1.5);
     for (const position of sight.halfCover) this.#tile(sketch, position);
     sketch.pop();
   }

@@ -77,7 +77,10 @@ Se [hela visionen](docs/game-vision.md).
   syns till under hälften får +4 i försvar och delvis synliga mål +2.
   `halvskydd-skuggar-delvis` är **Fullständigt implementerat**: halvskydd
   kastar en orange skugga närmast bakom sig, och ett mål som till minst hälften
-  ligger i skuggan får full skyddsbonus, till 10–50 % halv bonus. Se
+  ligger i skuggan får full skyddsbonus, till 10–50 % halv bonus.
+  `avstand-paverkar-traffchans` är **Fullständigt implementerat**: skott får
+  +1 i målets försvar per påbörjade två rutor bortom två rutor (högst +3 vid
+  åtta rutor). Se
   [bordningsstrid](docs/boarding-combat.md).
 
 - **Rumsinteriörer:** `rumsspecifika-bordningstexturer` och

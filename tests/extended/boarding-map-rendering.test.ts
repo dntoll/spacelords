@@ -809,6 +809,6 @@ it('halvskydd-skuggar-delvis: shades the floor behind half cover', () => {
       ],
     ],
   });
-  expect(fills).toContainEqual([240, 160, 80, 45]);
+  expect(fills).toContainEqual([240, 160, 80, 24]);
   view.dispose();
 });

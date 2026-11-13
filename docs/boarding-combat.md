@@ -187,8 +187,8 @@ sparplatser.
   verkliga siktlinjer i stället för hela rutor: 180 grader framåt, 8,5 rutors
   radie från soldatens rutmitt, och väggar, skrov, höga tunna väggar, stängda
   dörrar och rök kastar skuggor. En ruta kan därför vara delvis synlig. Den
-  valda soldatens sikt ritas på golvet under spelarens tur som en svag yta med
-  en ljusblå kantlinje, och lådor och låga väggar som syns markeras med orange
+  valda soldatens sikt ritas på golvet under spelarens tur som en mycket svag
+  yta med en smal ljusblå kantlinje, och lådor och låga väggar som syns markeras med orange
   rutkant som halvskydd. Detta ersätter delvis `bordning-utan-sikt-och-eldrutor`:
   siktytan visas igen, men som en sammanhängande yta; de röda eldrutorna visas
   fortfarande inte.
@@ -207,6 +207,12 @@ sparplatser.
   räknas som inget skydd (en hukad person får då +2 mot skott som förut). Detta
   ersätter den tidigare regeln där skyddet räknades som helt eller inte alls
   efter avståndet till linjen mellan rutornas mitt.
+- `avstand-paverkar-traffchans` — **Fullständigt implementerat**. Ett skott
+  ger målet +1 i försvar per påbörjade två rutor bortom två rutors avstånd
+  mellan rutornas mitt: upp till 2 rutor +0, upp till 4 +1, upp till 6 +2 och
+  upp till 8 +3. Bonusen ingår i försvarsvärdet i stridsloggen och i
+  träffchansen och läggs ihop med skydd, rök och delvis sikt. Närstrid påverkas
+  inte.
 - `billig-vandning` — **Fullständigt implementerat**. Varje 45-gradersvändning
   kostar 0,25 AP i stället för 1 AP, både med vridknapparna och när en
   förflyttning vänder soldaten. Det ersätter vändkostnaden i
