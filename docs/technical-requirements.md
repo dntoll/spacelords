@@ -1631,8 +1631,10 @@ Kravnamngivna enhetstester skyddar geometri, siktsammansättning och ordning;
 riktade vytester skyddar avbrott och mobiltester verifierar fokus utanför bild.
 
 `kantindikator-for-synlig-fiende` är **Fullständigt implementerat**.
-BoardingTargetIndicatorLayout projicerar mål utanför den fria kartytan längs
-strålen från kartytans mitt, håller crosshair och procent innanför en
+BoardingTargetIndicatorLayout klämmer mål utanför den fria kartytan till
+närmaste punkt innanför kanten (ersätter projektionen längs strålen från
+kartytans mitt, som kunde placera etiketten långt från målet), håller
+crosshair och procent innanför en
 22-pixlarsmarginal och särar mål på samma kant. Layouten är p5-oberoende och
 ger även klickrektanglar. BoardingMapView skickar klicket som ett särskilt
 markeringsläge till BoardingView, vilket förhindrar att ett redan markerat mål
@@ -1648,3 +1650,25 @@ identitet för leveranser. Omordning uppdaterar planeringen. Befintliga
 sparfält används och leveranser på väg hanteras enligt logistikens vanliga
 regler. Riktade tester verifierar behov efter omladdning och transport fram till
 färdig reparation.
+
+## Bordningshandlingar och bildfrekvens
+
+- `granat-kostar-bara-vid-kast` och `stang-oppen-dorr`: BoardingBattle
+  exponerar `grenadeReason` och `doorReason` som läsfrågor. Kommandona
+  validerar med samma frågor innan `#spend`, och vyn stänger av knapparna
+  utifrån dem. `#hack` validerar dörren före AP-dragning. Regressionstester i
+  `tests/unit/boarding-actions.test.ts` och vytester i
+  `tests/unit/battle-controls.test.ts`.
+- `gang-mot-avlagset-mal`: `BoardingBattle.stepTowards` väljer billigaste väg
+  till målet, eller till en kantgranne vid stängd dörr respektive en granne vid
+  upptagen ruta, och returnerar sista rutan som ryms i kvarvarande AP. Vyn
+  skickar då ett vanligt `move`-kommando; sparformatet ändras inte.
+- `bordning-jamn-bildfrekvens`: profilering visade att p5:s `tint()` ritade om
+  hela figuratlasen fyra gånger per figur och bildruta. BoardingMapView ritar
+  nu bilder via `drawImage` med `filter: brightness()` och `globalAlpha`.
+  Golvlagret ritas i en `p5.Graphics` i isokoordinater med upplösning i
+  halvoktavsteg (högst 3072 px per sida) och nyckel av ljussignatur, sikt,
+  minne och laddade golvbilder. `paintTexturedQuad` hoppar över `clip()` när
+  klippolygonen är exakt texturens parallellogram, och väggar och objekt utanför
+  canvasen sorteras bort. Ritningen per bildruta blev ungefär tre gånger
+  snabbare i profileringen.

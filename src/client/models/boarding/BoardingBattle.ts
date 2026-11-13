@@ -195,6 +195,7 @@ const RIFLE_AP = BOARDING_RIFLE_AP;
 /** sikt-minne-och-ljudmarkorer: cosine of 90° from facing, a 180° cone. */
 const BOARDING_VISION_COSINE = 0;
 const GRENADE_AP = 4;
+const GRENADE_RANGE = 6;
 const MED_PACK_AP = 4;
 const HACK_AP = 4;
 const EVACUATE_AP = 2;
@@ -848,6 +849,88 @@ export class BoardingBattle {
     return null;
   }
 
+  /**
+   * gang-mot-avlagset-mal: the furthest tile the person can afford on the
+   * cheapest route towards a destination, or beside a door or occupied tile.
+   */
+  stepTowards(id: string, destination: BoardingCell): BoardingCell | null {
+    const entry = this.#state.people.find(
+      (candidate) => candidate.id === id && candidate.status === 'active',
+    );
+    if (!entry) return null;
+    const feature = this.#featureAt(destination);
+    const goals =
+      feature?.kind === 'door' && !feature.open
+        ? CARDINAL_DIRECTIONS
+        : [{ q: 0, r: 0 }, ...ADJACENT_DIRECTIONS];
+    const routes = goals
+      .map((offset) => ({
+        q: destination.q + offset.q,
+        r: destination.r + offset.r,
+      }))
+      .filter((goal) => this.#map.contains(goal))
+      .map((goal) =>
+        same(goal, entry.position) ? null : this.pathTo(id, goal),
+      )
+      .filter((route): route is BoardingPath => route !== null);
+    const route =
+      routes.find((candidate) => {
+        const last = candidate.positions.at(-1);
+        return last && same(last, destination);
+      }) ?? routes.sort((a, b) => a.cost - b.cost)[0];
+    if (!route) return null;
+    const budget = boardingActionPointsRemaining(this.#state, id);
+    let spent = 0;
+    let reached: BoardingCell | null = null;
+    for (const step of route.steps) {
+      spent += step.cost;
+      if (spent > budget) break;
+      if (step.type === 'forward') reached = step.position;
+    }
+    return reached ? frozenCell(reached) : null;
+  }
+
+  /** Reason a grenade cannot be thrown at the tile, or null when it can. */
+  grenadeReason(
+    id: string,
+    grenade: 'frag' | 'smoke',
+    target: BoardingCell,
+  ): string | null {
+    const entry = this.#state.people.find((candidate) => candidate.id === id);
+    if (!entry || entry.status !== 'active') return 'No active person.';
+    if ((grenade === 'frag' ? entry.fragGrenades : entry.smokeGrenades) < 1)
+      return `No ${grenade} grenade remains.`;
+    if (!this.#map.contains(target)) return 'Choose a tile on the map.';
+    if (distance(entry.position, target) > GRENADE_RANGE)
+      return 'The target tile is outside throwing range.';
+    if (boardingActionPointsRemaining(this.#state, id) < GRENADE_AP)
+      return `The action needs ${GRENADE_AP} AP.`;
+    return null;
+  }
+
+  /** stang-oppen-dorr: reason the door action is unavailable, or null. */
+  doorReason(
+    id: string,
+    doorId: string,
+    action: 'open' | 'close',
+  ): string | null {
+    const entry = this.#state.people.find((candidate) => candidate.id === id);
+    const door = this.#state.features.find(
+      (candidate) =>
+        candidate.id === doorId &&
+        candidate.kind === 'door' &&
+        !candidate.destroyed,
+    );
+    if (!entry || !door || !sharesEdge(entry.position, door.position))
+      return 'Choose an adjacent door.';
+    if (action === 'open' && door.locked) return 'The door is locked.';
+    if (action === 'close' && this.#personAt(door.position))
+      return 'The doorway is occupied.';
+    if (boardingActionPointsRemaining(this.#state, id) < 1)
+      return 'The action needs 1 AP.';
+    return null;
+  }
+
   #line(a: BoardingCell, b: BoardingCell): readonly BoardingCell[] {
     const steps = Math.max(Math.abs(b.q - a.q), Math.abs(b.r - a.r));
     if (steps === 0) return Object.freeze([frozenCell(a)]);
@@ -1439,26 +1522,20 @@ export class BoardingBattle {
 
   #door(id: string, action: 'open' | 'close'): void {
     const actor = this.#actor();
-    const door = this.#state.features.find(
-      (entry) => entry.id === id && entry.kind === 'door' && !entry.destroyed,
-    );
-    if (!door || !sharesEdge(actor.position, door.position))
-      throw new Error('Choose an adjacent door.');
-    if (action === 'open' && door.locked)
-      throw new Error('The door is locked.');
-    if (action === 'close' && this.#personAt(door.position))
-      throw new Error('The doorway is occupied.');
+    const reason = this.doorReason(actor.id, id, action);
+    if (reason) throw new Error(reason);
     this.#spend(1);
     this.#updateFeature(id, (entry) => ({ ...entry, open: action === 'open' }));
   }
 
   #hack(id: string): void {
-    const actor = this.#spend(HACK_AP);
+    const actor = this.#actor();
     const door = this.#state.features.find(
       (entry) => entry.id === id && entry.kind === 'door' && !entry.destroyed,
     );
     if (!door || !sharesEdge(actor.position, door.position) || !door.locked)
       throw new Error('Choose an adjacent locked door.');
+    this.#spend(HACK_AP);
     const die = this.#die(20);
     const success = die + 2 >= 12;
     if (success)
@@ -1476,9 +1553,10 @@ export class BoardingBattle {
   }
 
   #grenade(grenade: 'frag' | 'smoke', target: BoardingCell): void {
+    // granat-kostar-bara-vid-kast: validate before any AP is spent.
+    const reason = this.grenadeReason(this.#actor().id, grenade, target);
+    if (reason) throw new Error(reason);
     const actor = this.#spend(GRENADE_AP);
-    if (distance(actor.position, target) > 6)
-      throw new Error('The target tile is outside throwing range.');
     const die = this.#die(20);
     const difficulty = 8 + Math.ceil(distance(actor.position, target));
     let impact = frozenCell(target);

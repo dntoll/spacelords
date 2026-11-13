@@ -344,6 +344,14 @@ export class BoardingView {
       );
       return;
     }
+    if (
+      playerTurn &&
+      actor &&
+      feature?.kind === 'door' &&
+      this.#selectedId === feature.id &&
+      this.#walkTowards(actor.id, position)
+    )
+      return;
     if (person || feature) {
       this.#selectedId = (person ?? feature)!.id;
       this.#destination = null;
@@ -359,6 +367,7 @@ export class BoardingView {
         this.#command({ type: 'move', to: position });
         return;
       }
+      if (this.#walkTowards(actor.id, position)) return;
       this.#selectedId = downed?.id ?? null;
       this.#destination = position;
     } else {
@@ -366,6 +375,14 @@ export class BoardingView {
       this.#destination = position;
     }
     this.render(state);
+  }
+
+  /** gang-mot-avlagset-mal: a repeated tap on a far target walks as far as AP allows. */
+  #walkTowards(actorId: string, position: BoardingCell): boolean {
+    const step = this.#battle().stepTowards(actorId, position);
+    if (!step) return false;
+    this.#command({ type: 'move', to: step });
+    return true;
   }
 
   render(
@@ -622,7 +639,8 @@ export class BoardingView {
               grenade: 'frag',
               at: this.#destination!,
             }),
-          actor.fragGrenades < 1,
+          this.#battle().grenadeReason(actor.id, 'frag', this.#destination) !==
+            null,
         );
         this.#action(
           'Smoke grenade',
@@ -633,7 +651,8 @@ export class BoardingView {
               grenade: 'smoke',
               at: this.#destination!,
             }),
-          actor.smokeGrenades < 1,
+          this.#battle().grenadeReason(actor.id, 'smoke', this.#destination) !==
+            null,
         );
       }
       const forward = BoardingBattle.forward(actor.position, actor.facing);
@@ -649,17 +668,36 @@ export class BoardingView {
         selectedFeature?.kind === 'door' && !selectedFeature.destroyed
           ? selectedFeature
           : facingDoor;
+      // stang-oppen-dorr: an adjacent open door can be closed when its tile is empty.
+      const openDoors = state.features.filter(
+        (feature) =>
+          feature.kind === 'door' &&
+          !feature.destroyed &&
+          feature.open &&
+          feature.id !== door?.id &&
+          Math.abs(actor.position.q - feature.position.q) +
+            Math.abs(actor.position.r - feature.position.r) ===
+            1,
+      );
+      const atDestination = (cell: BoardingCell) =>
+        !!this.#destination &&
+        this.#destination.q === cell.q &&
+        this.#destination.r === cell.r;
+      const closable =
+        openDoors.find((feature) => atDestination(feature.position)) ??
+        openDoors.find(
+          (feature) =>
+            feature.position.q === forward.q &&
+            feature.position.r === forward.r,
+        ) ??
+        openDoors[0];
       if (door) {
+        const action = door.open ? 'close' : 'open';
         this.#action(
           door.open ? 'Close door' : 'Open door',
           door.open ? '▮' : '▯',
-          () =>
-            this.#command({
-              type: 'door',
-              id: door.id,
-              action: door.open ? 'close' : 'open',
-            }),
-          door.locked,
+          () => this.#command({ type: 'door', id: door.id, action }),
+          this.#battle().doorReason(actor.id, door.id, action) !== null,
         );
         this.#action(
           'Hack door',
@@ -668,6 +706,14 @@ export class BoardingView {
           !door.locked,
         );
       }
+      if (closable && !door?.open)
+        this.#action(
+          'Close door',
+          '▮',
+          () =>
+            this.#command({ type: 'door', id: closable.id, action: 'close' }),
+          this.#battle().doorReason(actor.id, closable.id, 'close') !== null,
+        );
       if (selectedPerson?.status === 'incapacitated')
         this.#action(
           'Use Med-pack',

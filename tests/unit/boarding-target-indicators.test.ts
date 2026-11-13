@@ -32,6 +32,14 @@ describe('kantindikator-for-synlig-fiende', () => {
     expect(indicators.find((entry) => entry.id === 'bottom')?.y).toBe(558);
   });
 
+  it('places the marker at the nearest edge point, beside a target just off a corner', () => {
+    const [indicator] = boardingEdgeTargetIndicators(
+      [{ id: 'corner', x: 700, y: 620 }],
+      viewport,
+    );
+    expect(indicator).toMatchObject({ x: 478, y: 558 });
+  });
+
   it('separates multiple targets on the same edge and distinguishes partial visibility', () => {
     const indicators = boardingEdgeTargetIndicators(
       [

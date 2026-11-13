@@ -101,6 +101,35 @@ export function paintIsoFloor(
   return true;
 }
 
+/**
+ * bordning-jamn-bildfrekvens: the texture transform already fills exactly this
+ * parallelogram, so clipping to it would only cost time on every frame.
+ */
+function coversExactly(
+  clip: readonly BoardingPoint[],
+  origin: BoardingPoint,
+  alongU: BoardingPoint,
+  alongV: BoardingPoint,
+): boolean {
+  if (clip.length !== 4) return false;
+  const corners = [
+    origin,
+    alongU,
+    alongV,
+    {
+      x: alongU.x + alongV.x - origin.x,
+      y: alongU.y + alongV.y - origin.y,
+    },
+  ];
+  return clip.every((point) =>
+    corners.some(
+      (corner) =>
+        Math.abs(corner.x - point.x) < 1e-6 &&
+        Math.abs(corner.y - point.y) < 1e-6,
+    ),
+  );
+}
+
 function paintTexturedQuad(
   sketch: p5,
   source: CanvasImageSource,
@@ -124,11 +153,13 @@ function paintTexturedQuad(
   );
   const ctx = sketch.drawingContext as CanvasRenderingContext2D;
   ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(first.x, first.y);
-  for (const corner of clip.slice(1)) ctx.lineTo(corner.x, corner.y);
-  ctx.closePath();
-  ctx.clip();
+  if (!coversExactly(clip, origin, alongU, alongV)) {
+    ctx.beginPath();
+    ctx.moveTo(first.x, first.y);
+    for (const corner of clip.slice(1)) ctx.lineTo(corner.x, corner.y);
+    ctx.closePath();
+    ctx.clip();
+  }
   if (filter) ctx.filter = filter;
   ctx.transform(a, b, c, d, e, f);
   ctx.drawImage(

@@ -33,6 +33,7 @@ import {
 import {
   boardingActionPointsRemaining,
   type BoardingBattleState,
+  type BoardingFeature,
   type BoardingPerson,
   type BoardingTargetIndicator,
 } from '../../models/boarding/BoardingBattle.js';
@@ -89,6 +90,8 @@ import {
 } from './BoardingSurfacePainter.js';
 
 const key = (position: BoardingCell): string => `${position.q},${position.r}`;
+/** Keeps the cached floor layer within mobile canvas memory limits. */
+const FLOOR_LAYER_MAX_SIDE = 3072;
 
 const characterPose = (person: BoardingPerson): BoardingCharacterPose =>
   person.status === 'active'
@@ -142,6 +145,17 @@ export class BoardingMapView implements BoardingMapPort {
   #path: readonly BoardingPathMark[] = [];
   #targets: readonly BoardingTargetIndicator[] = [];
   #edgeTargetHits: readonly BoardingEdgeTargetIndicator[] = [];
+  #floorLayer: {
+    graphics: p5.Graphics;
+    signature: string;
+    resolution: number;
+  } | null = null;
+  #floorBoundsCache: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null = null;
   #motion: {
     from: BoardingBattleState;
     to: BoardingBattleState;
@@ -845,6 +859,129 @@ export class BoardingMapView implements BoardingMapPort {
     this.#lightPainter.clear();
   }
 
+  /**
+   * bordning-jamn-bildfrekvens: floors, light masks and fog only change with
+   * sight, lighting, loaded artwork or a large zoom step, so they are painted
+   * once into an offscreen layer and blitted on every frame.
+   */
+  #paintFloorLayer(
+    sketch: p5,
+    visible: ReadonlySet<string>,
+    explored: ReadonlySet<string>,
+    thinAt: ReadonlyMap<string, BoardingFeature>,
+    seen: (cell: BoardingCell) => boolean,
+  ): void {
+    const bounds = this.#floorBounds();
+    const density = sketch.pixelDensity();
+    const wanted = this.#scale * density;
+    const largest = Math.max(bounds.width, bounds.height);
+    const resolution = Math.min(
+      // Half-octave steps rebuild the layer only on noticeable zoom changes.
+      2 ** (Math.ceil(Math.log2(Math.max(wanted, 0.125)) * 2) / 2),
+      FLOOR_LAYER_MAX_SIDE / largest,
+    );
+    const signature = [
+      this.#lightSignature,
+      [...visible].join(';'),
+      [...explored].join(';'),
+      this.#floorTiles.size,
+      resolution,
+    ].join('|');
+    if (this.#floorLayer?.signature !== signature) {
+      const width = Math.ceil(bounds.width * resolution);
+      const height = Math.ceil(bounds.height * resolution);
+      let layer = this.#floorLayer?.graphics;
+      if (!layer || layer.width !== width || layer.height !== height) {
+        layer?.remove();
+        layer = sketch.createGraphics(width, height);
+        layer.pixelDensity(1);
+      }
+      layer.clear();
+      layer.push();
+      layer.scale(resolution);
+      layer.translate(-bounds.x, -bounds.y);
+      this.#paintFloors(layer, visible, explored, thinAt, seen);
+      layer.pop();
+      this.#floorLayer = { graphics: layer, signature, resolution };
+    }
+    const canvas = (
+      this.#floorLayer.graphics as unknown as { elt: HTMLCanvasElement }
+    ).elt;
+    (sketch.drawingContext as CanvasRenderingContext2D).drawImage(
+      canvas,
+      bounds.x,
+      bounds.y,
+      canvas.width / this.#floorLayer.resolution,
+      canvas.height / this.#floorLayer.resolution,
+    );
+  }
+
+  #floorBounds(): { x: number; y: number; width: number; height: number } {
+    if (this.#floorBoundsCache) return this.#floorBoundsCache;
+    let left = Infinity,
+      right = -Infinity,
+      top = Infinity,
+      bottom = -Infinity;
+    for (let r = 0; r < this.map.height; r++)
+      for (let q = 0; q < this.map.width; q++)
+        for (const corner of boardingIsoCorners({ q, r })) {
+          left = Math.min(left, corner.x);
+          right = Math.max(right, corner.x);
+          top = Math.min(top, corner.y);
+          bottom = Math.max(bottom, corner.y);
+        }
+    const margin = 4;
+    this.#floorBoundsCache = {
+      x: left - margin,
+      y: top - margin,
+      width: right - left + margin * 2,
+      height: bottom - top + margin * 2,
+    };
+    return this.#floorBoundsCache;
+  }
+
+  #paintFloors(
+    sketch: p5,
+    visible: ReadonlySet<string>,
+    explored: ReadonlySet<string>,
+    thinAt: ReadonlyMap<string, BoardingFeature>,
+    seen: (cell: BoardingCell) => boolean,
+  ): void {
+    for (let r = 0; r < this.map.height; r++) {
+      for (let q = 0; q < this.map.width; q++) {
+        const position = { q, r };
+        const terrain = this.map.terrainAt(position);
+        if (!terrain) continue;
+        const current = visible.has(key(position));
+        const remembered = explored.has(key(position));
+        const knownHull = terrain === 'hull';
+        const thin = thinAt.get(key(position));
+        if (thin?.axis && (current || remembered)) {
+          this.#paintThinFloors(sketch, position, thin.axis, seen);
+          continue;
+        }
+        const paintedFloor =
+          terrain === 'floor' &&
+          (current || remembered) &&
+          this.#paintFloor(sketch, position);
+        if (!paintedFloor) {
+          sketch.stroke('#3c4b65');
+          sketch.strokeWeight(1.2);
+          if (current || remembered) sketch.fill('#24334a');
+          else if (knownHull) sketch.fill('#343d4c');
+          else sketch.fill('#080c15');
+          this.#tile(sketch, position);
+        }
+        if (terrain === 'floor' && (current || remembered))
+          this.#lightPainter.paint(
+            sketch.drawingContext as CanvasRenderingContext2D,
+            boardingIsoCorners(position),
+            this.#lighting.surface(position, 'floor'),
+          );
+      }
+    }
+  }
+
   #paintFloor(sketch: p5, position: BoardingCell): boolean {
     const tile =
       this.#floorTiles.get(
@@ -904,6 +1041,50 @@ export class BoardingMapView implements BoardingMapPort {
       faces.top[3].y,
     );
     return faces.apex;
+  }
+
+  /**
+   * bordning-jamn-bildfrekvens: p5's tint() recolours the whole source image
+   * into a scratch canvas on every call, which for the character atlas costs
+   * far more than the sprite itself. A canvas filter darkens just the slice.
+   */
+  #paintLit(
+    sketch: p5,
+    image: p5.Image,
+    light: number,
+    alpha: number,
+    destination: { x: number; y: number; width: number; height: number },
+    source: { x: number; y: number; width: number; height: number } = {
+      x: 0,
+      y: 0,
+      width: image.width,
+      height: image.height,
+    },
+  ): void {
+    const element = image as p5.Image & {
+      canvas?: HTMLCanvasElement;
+      elt?: HTMLImageElement;
+    };
+    const canvas = element.canvas ?? element.elt;
+    if (!canvas) return;
+    const density = image.width > 0 ? canvas.width / image.width : 1;
+    const context = sketch.drawingContext as CanvasRenderingContext2D;
+    context.save();
+    const brightness = Math.max(0, Math.min(1, light));
+    if (brightness < 1) context.filter = `brightness(${brightness})`;
+    if (alpha < 1) context.globalAlpha *= Math.max(0, alpha);
+    context.drawImage(
+      canvas,
+      source.x * density,
+      source.y * density,
+      source.width * density,
+      source.height * density,
+      destination.x,
+      destination.y,
+      destination.width,
+      destination.height,
+    );
+    context.restore();
   }
 
   #cache(image: p5.Image): IsoImageCache {
@@ -1152,12 +1333,7 @@ export class BoardingMapView implements BoardingMapPort {
   ): boolean {
     const image = this.#objects.get(name);
     if (!image) return false;
-    const box = boardingObjectBounds(name, center);
-    sketch.push();
-    sketch.imageMode(sketch.CORNER);
-    sketch.tint(255 * light);
-    sketch.image(image, box.x, box.y, box.width, box.height);
-    sketch.pop();
+    this.#paintLit(sketch, image, light, 1, boardingObjectBounds(name, center));
     return true;
   }
 
@@ -1320,41 +1496,17 @@ export class BoardingMapView implements BoardingMapPort {
     );
     const seen = (cell: BoardingCell) =>
       visible.has(key(cell)) || explored.has(key(cell));
+    this.#paintFloorLayer(sketch, visible, explored, thinAt, seen);
     for (let r = 0; r < this.map.height; r++) {
       for (let q = 0; q < this.map.width; q++) {
         const position = { q, r };
-        const terrain = this.map.terrainAt(position);
-        if (!terrain) continue;
-        const current = visible.has(key(position));
-        const remembered = explored.has(key(position));
-        const knownHull = terrain === 'hull';
-        const thin = thinAt.get(key(position));
-        if (thin?.axis && (current || remembered))
-          this.#paintThinFloors(sketch, position, thin.axis, seen);
-        else {
-          const paintedFloor =
-            terrain === 'floor' &&
-            (current || remembered) &&
-            this.#paintFloor(sketch, position);
-          if (!paintedFloor) {
-            sketch.stroke('#3c4b65');
-            sketch.strokeWeight(1.2);
-            if (current || remembered) sketch.fill('#24334a');
-            else if (knownHull) sketch.fill('#343d4c');
-            else sketch.fill('#080c15');
-            this.#tile(sketch, position);
-          }
-          if (terrain === 'floor' && (current || remembered))
-            this.#lightPainter.paint(
-              sketch.drawingContext as CanvasRenderingContext2D,
-              boardingIsoCorners(position),
-              this.#lighting.surface(position, 'floor'),
-            );
-        }
+        if (!this.map.terrainAt(position)) continue;
         if (fire.has(key(position))) {
+          sketch.noStroke();
           sketch.fill(98, 212, 138, 115);
           this.#tile(sketch, position);
         } else if (reach.has(key(position))) {
+          sketch.noStroke();
           sketch.fill(240, 179, 90, 115);
           this.#tile(sketch, position);
         }
@@ -1378,21 +1530,16 @@ export class BoardingMapView implements BoardingMapPort {
         depth: center.y + 1,
         order: 5,
         paint: () => {
-          sketch.push();
-          sketch.imageMode(sketch.CENTER);
           for (const particle of boardingSmokeParticles(position, now)) {
             const texture = this.#smokeTextures[particle.texture];
             if (!texture) continue;
-            sketch.tint(255, particle.opacity);
-            sketch.image(
-              texture,
-              center.x + particle.x,
-              center.y + particle.y,
-              particle.size,
-              particle.height,
-            );
+            this.#paintLit(sketch, texture, 1, particle.opacity / 255, {
+              x: center.x + particle.x - particle.size / 2,
+              y: center.y + particle.y - particle.height / 2,
+              width: particle.size,
+              height: particle.height,
+            });
           }
-          sketch.pop();
         },
       });
     }
@@ -1441,9 +1588,19 @@ export class BoardingMapView implements BoardingMapPort {
           : thinPeers.r;
       peers.add(key(feature.position));
     }
+    // bordning-jamn-bildfrekvens: skip walls and objects wholly off the canvas.
+    const margin = BOARDING_HALF_TILE_WIDTH * 3;
+    const onCanvas = (point: Point) =>
+      point.x * this.#scale + this.#offset.x >= -margin * this.#scale &&
+      point.x * this.#scale + this.#offset.x <=
+        sketch.width + margin * this.#scale &&
+      point.y * this.#scale + this.#offset.y >= -margin * this.#scale &&
+      point.y * this.#scale + this.#offset.y <=
+        sketch.height + margin * this.#scale * 2;
     for (const feature of state.features) {
       if (feature.kind !== 'hull' && !known(feature.position)) continue;
       const floor = boardingIsoCenter(feature.position);
+      if (!onCanvas(floor)) continue;
       scene.push({
         depth: floor.y,
         order: 0,
@@ -1660,24 +1817,23 @@ export class BoardingMapView implements BoardingMapPort {
               (this.#lighting.tile(target.position) -
                 this.#lighting.tile(origin.position)) *
                 progress;
-            if (person.status === 'dead') sketch.tint(100 * light, 115);
-            else if (person.status === 'incapacitated')
-              sketch.tint(190 * light, 175);
-            else sketch.tint(255 * light);
+            const [shade, alpha] =
+              person.status === 'dead'
+                ? [100 / 255, 115 / 255]
+                : person.status === 'incapacitated'
+                  ? [190 / 255, 175 / 255]
+                  : [1, 1];
             if (sprite.mirrored) {
               sketch.translate(center.x * 2, 0);
               sketch.scale(-1, 1);
             }
-            sketch.image(
+            this.#paintLit(
+              sketch,
               this.#factionSprites,
-              sprite.destination.x,
-              sprite.destination.y,
-              sprite.destination.width,
-              sprite.destination.height,
-              sprite.source.x,
-              sprite.source.y,
-              sprite.source.width,
-              sprite.source.height,
+              shade * light,
+              alpha,
+              sprite.destination,
+              sprite.source,
             );
             sketch.pop();
           } else {
@@ -1842,6 +1998,8 @@ export class BoardingMapView implements BoardingMapPort {
     this.#finishMotion();
     this.#events.abort();
     this.#observer.disconnect();
+    this.#floorLayer?.graphics.remove();
+    this.#floorLayer = null;
     this.#p5.remove();
   }
 }

@@ -71,6 +71,15 @@ Se [hela visionen](docs/game-vision.md).
   ligger längre ned, öppna dörrar kan väljas som gångrutor och rök animeras
   genom rutan. Se [produktkrav](docs/product-requirements.md).
 
+- **Bordningshandlingar och flyt:** `stang-oppen-dorr`,
+  `granat-kostar-bara-vid-kast`, `gang-mot-avlagset-mal` och
+  `bordning-jamn-bildfrekvens` är **Fullständigt implementerat**. En soldat
+  intill en öppen, tom dörr får `Close door`. En granat som inte kan kastas
+  drar ingen AP och knapparna är avstängda. Ett andra tryck på ett mål som
+  ligger för långt bort går så långt AP räcker. Golvlagret cachas och
+  figurernas ljus ritas utan p5:s `tint()` för jämnare bildfrekvens på mobil.
+  Se [bordningsstrid](docs/boarding-combat.md).
+
 - **Bordningsanimation och ljus:** `synligt-skott-hela-vagen`,
   `kastad-granat-i-bage` och `morkare-ambientljus-i-bordning` är
   **Fullständigt implementerat**. Skott visas fram till målet, granater kastas

@@ -23,6 +23,7 @@ import {
   boardingCharacterSprite,
 } from '../../src/client/views/boarding/BoardingCharacterSprite.js';
 import { boardingEdgeTargetIndicators } from '../../src/client/views/boarding/BoardingTargetIndicatorLayout.js';
+import factionSpritesUrl from '../../src/client/assets/boarding/characters/directional-faction-sprites.webp';
 
 const runtime = vi.hoisted(() => ({ sketch: null as p5 | null }));
 vi.mock('p5', () => ({
@@ -60,11 +61,15 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
   canvas.setPointerCapture = () => {};
   const masks: unknown[][] = [];
   const imageLights: number[] = [];
-  const pendingImages: ((image: unknown) => void)[] = [];
-  let tint = 255;
+  const pendingImages: {
+    url: string;
+    resolve: (image: unknown) => void;
+  }[] = [];
+  let spriteCanvas: HTMLCanvasElement | null = null;
   let currentStroke = '';
   const context = {
     globalAlpha: 1,
+    filter: 'none',
     beginPath() {},
     moveTo() {},
     lineTo() {},
@@ -72,16 +77,22 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
     clip() {},
     transform() {},
     drawImage(...args: unknown[]) {
-      masks.push(args);
+      // tileljus-for-sprites: sprites are lit with a brightness filter.
+      if (spriteCanvas && args[0] === spriteCanvas) {
+        const brightness = /brightness\(([^)]+)\)/.exec(this.filter)?.[1];
+        imageLights.push(255 * (brightness ? Number(brightness) : 1));
+      } else masks.push(args);
     },
     save() {
-      stack.push(this.globalAlpha);
+      stack.push({ alpha: this.globalAlpha, filter: this.filter });
     },
     restore() {
-      this.globalAlpha = stack.pop()!;
+      const saved = stack.pop()!;
+      this.globalAlpha = saved.alpha;
+      this.filter = saved.filter;
     },
   };
-  const stack: number[] = [];
+  const stack: { alpha: number; filter: string }[] = [];
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
     createImageData: (width: number, height: number) => ({
       data: new Uint8ClampedArray(width * height * 4),
@@ -94,13 +105,27 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
     height: 600,
     createCanvas: () => ({ elt: canvas }),
     drawingContext: context,
-    loadImage: () => new Promise((resolve) => pendingImages.push(resolve)),
-    tint: (value: number) => {
-      tint = value;
-    },
-    image: () => {
-      imageLights.push(tint);
-    },
+    loadImage: (url: string) =>
+      new Promise((resolve) => pendingImages.push({ url, resolve })),
+    pixelDensity: () => 1,
+    // bordning-jamn-bildfrekvens: the cached floor layer shares the recorders.
+    createGraphics: (width: number, height: number) =>
+      new Proxy(
+        {
+          ...base,
+          width,
+          height,
+          elt: document.createElement('canvas'),
+          remove: noop,
+        },
+        {
+          get(target, prop) {
+            return prop in target
+              ? (Reflect.get(target, prop) as unknown)
+              : noop;
+          },
+        },
+      ),
     stroke: (value: string) => {
       currentStroke = value;
       strokes.push(value);
@@ -203,12 +228,11 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
     }
   };
   const loadImages = async () => {
-    for (const resolve of pendingImages)
-      resolve({
-        width: 512,
-        height: 128,
-        canvas: document.createElement('canvas'),
-      });
+    for (const { url, resolve } of pendingImages) {
+      const image = document.createElement('canvas');
+      if (url === factionSpritesUrl) spriteCanvas = image;
+      resolve({ width: 512, height: 128, canvas: image });
+    }
     await Promise.resolve();
     view.render(state, null, null, []);
   };
@@ -281,15 +305,31 @@ it('genomskinliga-skymmande-vaggar: unknown floor leaves a wall opaque and a hid
   view.dispose();
 });
 
-it('ljuskallestyrd-bordningsbelysning / vertexljus-i-bordning: sight changes reuse identical physical light masks', () => {
+it('ljuskallestyrd-bordningsbelysning / vertexljus-i-bordning / bordning-jamn-bildfrekvens: sight changes reuse identical physical light masks', () => {
   const { view, state, masks } = scene(true, [
     boardingCeilingLight({ q: 2, r: 3 }),
   ]);
-  const first = masks.map((args) => args[0]);
-  expect(first.length).toBeGreaterThan(0);
-  masks.length = 0;
+  const lightMasks = () =>
+    masks.filter((args) => args.length === 3).map((args) => args[0]);
   view.render({ ...state, visibleCells: state.exploredCells }, null, null, []);
-  expect(masks.map((args) => args[0])).toEqual(first);
+  const first = lightMasks();
+  expect(first.length).toBeGreaterThan(0);
+  view.render(state, null, null, []);
+  expect(lightMasks()).toEqual(first);
+  view.dispose();
+});
+
+it('bordning-jamn-bildfrekvens: unchanged sight reuses the cached floor layer', () => {
+  const { view, state, masks } = scene(true, [
+    boardingCeilingLight({ q: 2, r: 3 }),
+  ]);
+  view.render({ ...state, visibleCells: state.exploredCells }, null, null, []);
+  const painted = masks.filter((args) => args.length === 3).length;
+  runtime.sketch!.draw();
+  expect(masks.filter((args) => args.length === 3).length).toBeLessThan(
+    painted,
+  );
+  expect(masks.filter((args) => args.length === 5)).toHaveLength(1);
   view.dispose();
 });
 
@@ -300,6 +340,8 @@ it('texturerad-vaggovansida / vertexljus-i-bordning / tileljus-for-sprites: load
     sources,
   );
   await loadImages();
+  // Changed sight repaints the cached floor layer within this frame.
+  view.render({ ...state, visibleCells: state.exploredCells }, null, null, []);
   const lighting = new BoardingLighting(map, state);
   expect(masks.filter((args) => args.length === 3)).toHaveLength(4);
   const wallTextures = masks.filter((args) => args.length === 9);
@@ -309,9 +351,9 @@ it('texturerad-vaggovansida / vertexljus-i-bordning / tileljus-for-sprites: load
   );
   expect(Number(wallTextures[2]![2])).toBe(0);
   expect(imageLights).toEqual([255 * lighting.tile(player.position)]);
-  const rememberedLight = imageLights[0];
-  view.render({ ...state, visibleCells: state.exploredCells }, null, null, []);
-  expect(imageLights[0]).toBe(rememberedLight);
+  const visibleLight = imageLights[0];
+  view.render(state, null, null, []);
+  expect(imageLights[0]).toBe(visibleLight);
   const clock = vi.spyOn(performance, 'now').mockReturnValue(1000);
   const target = { q: 5, r: 3 };
   const next = { ...state, people: [{ ...player, position: target }] };

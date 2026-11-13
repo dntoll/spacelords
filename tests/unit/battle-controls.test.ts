@@ -1556,6 +1556,136 @@ it('dorrhandling-framfor-soldat / oppen-dorr-som-golvruta: offers the facing doo
   view.dispose();
 });
 
+it('stang-oppen-dorr: offers Close door beside an open door and disables it while the doorway is occupied', () => {
+  const created = createTestBoardingBattle();
+  const [player, ally] = created.snapshot.people.filter(
+    (person) => person.side === 'player',
+  );
+  const door = created.snapshot.features.find(
+    (feature) => feature.kind === 'door',
+  )!;
+  const beside = { q: door.position.q - 1, r: door.position.r };
+  const boardingState: BoardingBattleState = {
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player!.id
+        ? { ...person, position: beside, facing: 3 }
+        : person,
+    ),
+    features: created.snapshot.features.map((feature) =>
+      feature.id === door.id
+        ? { ...feature, locked: false, open: true }
+        : feature,
+    ),
+    initiativeOrder: [player!.id],
+    initiativeIndex: 0,
+    currentActorId: player!.id,
+    activation: { id: player!.id, remaining: 12 },
+  };
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new BoardingView(document.body, emit, () => ({
+    render() {},
+    zoom() {},
+    fit() {},
+    dispose() {},
+  }));
+  view.render(boardingState);
+  const close = () =>
+    document.querySelector<HTMLButtonElement>('[aria-label="Close door"]');
+  expect(close()?.disabled).toBe(false);
+  close()!.click();
+  expect(emit).toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'door', id: door.id, action: 'close' },
+  });
+  view.render({
+    ...boardingState,
+    people: boardingState.people.map((person) =>
+      person.id === ally!.id ? { ...person, position: door.position } : person,
+    ),
+  });
+  expect(close()?.disabled).toBe(true);
+  view.dispose();
+});
+
+it('gang-mot-avlagset-mal: a second tap on an unaffordable destination walks as far as AP allows', () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) =>
+      person.side === 'player' &&
+      person.position.q === 2 &&
+      person.position.r === 8,
+  )!;
+  const boardingState: BoardingBattleState = {
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player.id ? { ...person, facing: 0 } : person,
+    ),
+    initiativeOrder: [player.id],
+    initiativeIndex: 0,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 4 },
+  };
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new BoardingView(document.body, emit, (_container, select) => {
+    selectHex = select;
+    return { render() {}, zoom() {}, fit() {}, dispose() {} };
+  });
+  view.render(boardingState);
+  const destination = { q: player.position.q + 4, r: player.position.r };
+  const battle = BoardingBattle.restore(testBoardingMap, boardingState);
+  expect(battle.pathTo(player.id, destination)!.cost).toBeGreaterThan(4);
+  const step = battle.stepTowards(player.id, destination);
+  expect(step).not.toBeNull();
+  selectHex(destination);
+  expect(emit).not.toHaveBeenCalled();
+  expect(
+    document.querySelector<HTMLButtonElement>('[aria-label="Frag grenade"]')
+      ?.disabled,
+  ).toBe(false);
+  selectHex(destination);
+  expect(emit).toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'move', to: step },
+  });
+  view.dispose();
+});
+
+it('granat-kostar-bara-vid-kast: grenade buttons are disabled for a tile outside throwing range', () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) =>
+      person.side === 'player' &&
+      person.position.q === 2 &&
+      person.position.r === 8,
+  )!;
+  const boardingState: BoardingBattleState = {
+    ...created.snapshot,
+    initiativeOrder: [player.id],
+    initiativeIndex: 0,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 12 },
+  };
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const view = new BoardingView(
+    document.body,
+    vi.fn(),
+    (_container, select) => {
+      selectHex = select;
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
+  view.render(boardingState);
+  selectHex({ q: player.position.q + 9, r: player.position.r });
+  for (const label of ['Frag grenade', 'Smoke grenade'])
+    expect(
+      document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)
+        ?.disabled,
+    ).toBe(true);
+  view.dispose();
+});
+
 it('kastad-granat-i-bage: plays the throw before applying the impact state', async () => {
   const initial = createTestBoardingBattle().snapshot;
   const actor = initial.people.find((person) => person.side === 'player')!;

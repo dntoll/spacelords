@@ -88,6 +88,10 @@ sparplatser.
 - `klickgang-pa-vald-destination` — **Fullständigt implementerat**. Första
   klicket på en tom ruta räknar ut och visar vägen. Ett andra klick på samma
   valda destination startar förflyttningen om vägen ryms inom kvarvarande AP.
+- `gang-mot-avlagset-mal` — **Fullständigt implementerat**. Ett andra klick på
+  en vald destination eller dörr som ligger för långt bort för kvarvarande AP
+  går längs den billigaste vägen så långt AP räcker. Mot en stängd dörr eller
+  en upptagen ruta stannar soldaten bredvid den.
 - `klickdorr-pa-vald-dorr` — **Fullständigt implementerat**. Första klicket på
   en dörr väljer den. Ett andra klick på samma angränsande dörr försöker
   öppna den, eller hacka den om den är låst. Öppna dörrar väljs som golvrutor.
@@ -132,7 +136,9 @@ sparplatser.
   ändrar inte träffchansen. Andra soldaters sikt och kartminne ger inga indikatorer.
 - `kantindikator-for-synlig-fiende` — **Fullständigt implementerat**. En fiende
   som den aktiva soldaten ser men vars figur ligger utanför den fria kartytan
-  får samma crosshair och procent vid kanten i fiendens riktning. Flera
+  får samma crosshair och procent vid den närmaste punkten på kanten, så att
+  etiketten ligger intill fienden och inte där en stråle från mitten når
+  kanten. Flera
   indikatorer längs samma kant säras. Ett klick väljer fienden och panorerar
   mjukt till den på 300 ms med oförändrad zoom, utan att avfyra ett skott.
 - `automatisk-bordningstur-vid-tom-ap` — **Fullständigt implementerat**. När AP
@@ -192,6 +198,18 @@ sparplatser.
   till någon av åtta omgivande rutor vid rundslut, men visas binärt. Explosioner
   påverkar mål­rutan och alla åtta omgivande rutor. Man ser in i en rökruta men
   inte bakom den; mål i rök har `Half cover`.
+- `granat-kostar-bara-vid-kast` — **Fullständigt implementerat**. Ett kast
+  utanför räckvidden (6 rutor), utan kvarvarande granat av den sorten eller med
+  för lite AP avvisas innan någon AP dras. Granatknapparna är avstängda för
+  sådana rutor. Samma gäller `Hack door` mot en ogiltig dörr.
+- `stang-oppen-dorr` — **Fullständigt implementerat**. En soldat som står
+  intill en öppen dörr får `Close door` (1 AP). Knappen är avstängd när någon
+  står i dörrens ruta, och modellen avvisar stängningen utan AP-kostnad.
+- `bordning-jamn-bildfrekvens` — **Fullständigt implementerat**. Golv, ljus
+  och dimma ritas i ett cachat lager som bara byggs om när sikt, ljus, laddade
+  bilder eller zoomsteg ändras. Figurer, objekt och rök ljussätts med ett
+  canvasfilter i stället för p5:s `tint()`, väggytor klipps inte i onödan och
+  väggar utanför skärmen hoppas över.
 - `utslagning-och-medic` — **Fullständigt implementerat**. Vid 0 HP blir alla personer
   utslagna. Nästa träff dödar. `Med-pack` kan återuppliva. En sida utan
   stridsdugliga soldater är neutraliserad; utslagna överlevande tas till fånga.

@@ -1450,6 +1450,19 @@ om synlig kartförklaring och knappen `Fit` i boarding.
 **Fullständigt implementerat**: en soldat får dörrhandlingen när den står
 intill och tittar mot en stängd dörr. En öppen dörr väljs som en gångruta.
 
+`stang-oppen-dorr` — **Fullständigt implementerat**: en soldat intill en öppen
+dörr kan stänga den med `Close door`, men inte när någon står i dörröppningen.
+
+`granat-kostar-bara-vid-kast` — **Fullständigt implementerat**: en granat som
+inte kan kastas, till exempel för att rutan är för långt bort, kostar ingen AP.
+
+`gang-mot-avlagset-mal` — **Fullständigt implementerat**: ett andra tryck på en
+ruta eller dörr som ligger för långt bort gör att soldaten går så långt den
+hinner åt det hållet.
+
+`bordning-jamn-bildfrekvens` — **Fullständigt implementerat**: bordningskartan
+ska kännas jämn och inte ryckig på mobilen.
+
 `volymetrisk-bordningsrok` — **Fullständigt implementerat**: rök visas med
 animerade halvgenomskinliga partiklar genom rutan.
 

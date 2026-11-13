@@ -64,26 +64,20 @@ export function boardingEdgeTargetIndicators(
   };
   if (bounds.right <= bounds.left || bounds.bottom <= bounds.top) return [];
   const origin = center(bounds);
+  // kantindikator-for-synlig-fiende: the nearest edge point keeps the label
+  // beside the target instead of where a ray from the centre meets the edge.
   const positioned: Positioned[] = targets.map((target) => {
-    const dx = target.x - origin.x;
-    const dy = target.y - origin.y;
-    const candidates = [
-      dx < 0 ? (bounds.left - origin.x) / dx : Number.POSITIVE_INFINITY,
-      dx > 0 ? (bounds.right - origin.x) / dx : Number.POSITIVE_INFINITY,
-      dy < 0 ? (bounds.top - origin.y) / dy : Number.POSITIVE_INFINITY,
-      dy > 0 ? (bounds.bottom - origin.y) / dy : Number.POSITIVE_INFINITY,
-    ];
-    const distance = Math.min(...candidates);
-    const x = origin.x + dx * distance;
-    const y = origin.y + dy * distance;
-    const edge: Edge =
-      Math.abs(x - bounds.left) < 0.01
-        ? 'left'
-        : Math.abs(x - bounds.right) < 0.01
-          ? 'right'
-          : Math.abs(y - bounds.top) < 0.01
-            ? 'top'
-            : 'bottom';
+    const x = Math.max(bounds.left, Math.min(bounds.right, target.x));
+    const y = Math.max(bounds.top, Math.min(bounds.bottom, target.y));
+    const overshoot: Record<Edge, number> = {
+      left: bounds.left - target.x,
+      right: target.x - bounds.right,
+      top: bounds.top - target.y,
+      bottom: target.y - bounds.bottom,
+    };
+    const edge = (Object.keys(overshoot) as Edge[]).reduce((best, next) =>
+      overshoot[next] > overshoot[best] ? next : best,
+    );
     return { id: target.id, x, y, edge };
   });
   for (const edge of ['left', 'right', 'top', 'bottom'] as const) {
