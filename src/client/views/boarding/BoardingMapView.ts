@@ -220,6 +220,7 @@ export class BoardingMapView implements BoardingMapPort {
   #wallPositions: readonly (BoardingCell & {
     axis?: BoardingThinAxis;
     low?: boolean;
+    door?: boolean;
   })[] = [];
   readonly #objects = new Map<BoardingArtwork, p5.Image>();
   #ready = false;
@@ -947,7 +948,11 @@ export class BoardingMapView implements BoardingMapPort {
         ...(feature.kind === 'thin-wall' && feature.axis
           ? { axis: feature.axis, low: feature.low === true }
           : feature.kind === 'door'
-            ? { axis: this.map.doorAxis(feature.position), low: false }
+            ? {
+                axis: this.map.doorAxis(feature.position),
+                low: false,
+                door: true,
+              }
             : {}),
       }));
   }
@@ -1356,7 +1361,11 @@ export class BoardingMapView implements BoardingMapPort {
     known: (cell: BoardingCell) => boolean,
     door?: { readonly locked: boolean } & Partial<BoardingDoorLeaf>,
   ): void {
-    const height = this.#wallVisibility.height(position, { axis, low });
+    const height = this.#wallVisibility.height(position, {
+      axis,
+      low,
+      door: !!door,
+    });
     const roomAt = (cell: BoardingCell) =>
       known(cell) && boardingTerrainShowsFloor(this.map.terrainAt(cell))
         ? this.map.roomAt(cell)

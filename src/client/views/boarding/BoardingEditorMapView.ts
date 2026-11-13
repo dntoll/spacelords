@@ -780,7 +780,11 @@ export class BoardingEditorMapView {
         : boardingThinAxisFromSymbol(terrain);
       if (thinAxis) {
         const low = !door && boardingThinWallIsLow(terrain);
-        const height = visibility.height(position, { axis: thinAxis, low });
+        const height = visibility.height(position, {
+          axis: thinAxis,
+          low,
+          door,
+        });
         const faced =
           boardingThinOutsideTerrain(
             (cell) => editorTerrain(snapshot.layers.terrain[cell.r]?.[cell.q]),

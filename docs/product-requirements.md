@@ -1395,6 +1395,8 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 `animerade-dorrar` — **Fullständigt implementerat**. Dörrar man ser glider synligt isär när de öppnas och ihop när de stängs.
 
+`dorrar-falls-inte` — **Fullständigt implementerat**. Dörrar står alltid kvar i full höjd, även där väggar fälls ner för att visa golvet bakom.
+
 ## Meterskala och skymmande väggar i bordning
 
 - `kameravinkel-60-i-bordning` — **Delvis implementerat**. Bordningskartan provas med en brant kamera (60°) som matchar Ludos high-angle, i stället för 2:1. Figurer, reactor och en låda, som ersätter bilden för `Half cover`, har nya bilder för vinkeln. Dörrar och airlock använder ännu de ihoptryckta äldre bilderna; passande bilder för dem återstår. Ersätter provet `isometri-3-2-i-bordning`.

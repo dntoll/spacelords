@@ -22,6 +22,8 @@ import {
 export interface BoardingWallShape {
   readonly axis?: BoardingThinAxis;
   readonly low?: boolean;
+  /** dorrar-falls-inte: a door keeps its full height. */
+  readonly door?: boolean;
 }
 
 function silhouette(
@@ -98,6 +100,7 @@ export class BoardingWallVisibility {
   }
 
   height(position: BoardingCell, shape: BoardingWallShape = {}): number {
+    if (shape.door) return BOARDING_WALL_HEIGHT;
     const key = `${position.q},${position.r}:${shape.low ? 1 : 0}:${shape.axis ?? ''}`;
     const cached = this.#heights.get(key);
     if (cached !== undefined) return cached;
