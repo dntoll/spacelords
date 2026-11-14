@@ -528,13 +528,14 @@ export function paintIsoGlass(
     sketch.endShape(sketch.CLOSE);
   };
   sketch.push();
-  sketch.strokeWeight(0.8);
-  sketch.stroke(214, 236, 255, 150);
-  sketch.fill(140, 192, 245, 46);
+  // Clearly blue yet see-through, with a bright frame so a flat pane reads.
+  sketch.strokeWeight(1.4);
+  sketch.stroke(206, 232, 255, 220);
+  sketch.fill(120, 182, 245, 92);
   polygon(mesh.longFace);
-  sketch.fill(120, 176, 235, 58);
+  sketch.fill(104, 166, 235, 110);
   polygon(mesh.endFace);
-  sketch.fill(196, 226, 255, 110);
+  sketch.fill(206, 232, 255, 200);
   polygon(mesh.top);
   const [topA, topB, baseB, baseA] = mesh.longFace;
   if (topA && topB && baseB && baseA) {
@@ -544,8 +545,8 @@ export function paintIsoGlass(
     });
     const start = along(baseA, topA, 0.35);
     const end = along(baseB, topB, 0.85);
-    sketch.stroke(240, 248, 255, 110);
-    sketch.strokeWeight(1.2);
+    sketch.stroke(244, 250, 255, 170);
+    sketch.strokeWeight(1.6);
     sketch.line(start.x, start.y, end.x, end.y);
   }
   sketch.pop();
