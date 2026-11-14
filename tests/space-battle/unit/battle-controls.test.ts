@@ -1637,9 +1637,19 @@ it('gang-mot-avlagset-mal: a second tap on an unaffordable destination walks as 
     return { render() {}, zoom() {}, fit() {}, dispose() {} };
   });
   view.render(boardingState);
-  const destination = { q: player.position.q + 4, r: player.position.r };
   const battle = BoardingBattle.restore(testBoardingMap, boardingState);
-  expect(battle.pathTo(player.id, destination)!.cost).toBeGreaterThan(4);
+  // Any reachable tile beyond this activation's AP, whatever the test layout.
+  const cells = Array.from(
+    { length: testBoardingMap.width * testBoardingMap.height },
+    (_, index) => ({
+      q: index % testBoardingMap.width,
+      r: Math.floor(index / testBoardingMap.width),
+    }),
+  );
+  const destination = cells.find(
+    (cell) => (battle.pathTo(player.id, cell)?.cost ?? 0) > 4,
+  )!;
+  expect(destination).toBeDefined();
   const step = battle.stepTowards(player.id, destination);
   expect(step).not.toBeNull();
   selectHex(destination);
