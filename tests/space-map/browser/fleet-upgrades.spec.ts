@@ -17,7 +17,7 @@ test('flottorder-upgrade / spara-flottuppgradering: orders on touch, reloads dur
       JSON.stringify({ lastPlayed: '2026-10-31', state }),
     );
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page);

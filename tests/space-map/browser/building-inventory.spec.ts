@@ -4,7 +4,7 @@ import { startFirstSlot, endTurn } from './save-helpers.js';
 test('byggnadsantal-lokalt-och-globalt: Build selection counts completed buildings and excludes queued projects', async ({
   page,
 }, testInfo) => {
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page

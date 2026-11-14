@@ -47,7 +47,7 @@ test('automatiska-delorder: orders remote production through the UI and preserve
     );
     localStorage.setItem('components-seeded', 'yes');
   }, initial);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
@@ -130,7 +130,7 @@ test('automatiska-delorder: explains a missing part and leaves the saved order s
       JSON.stringify({ lastPlayed: '2026-10-23T10:00:00Z', state }),
     );
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();

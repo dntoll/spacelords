@@ -32,7 +32,7 @@ async function seed(page: Page, twoFleets = false) {
       JSON.stringify({ lastPlayed: '2026-10-27', state }),
     );
   }, game.exportState());
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await expect(page.locator('canvas[data-rendered="true"]')).toBeVisible();
   return { secondId, homeHex: game.galaxy.homePlanet.position.key };
@@ -265,7 +265,7 @@ test('samtidig-farledsanimation / destinationer-for-aktiva-skepp: route fleets m
       JSON.stringify({ lastPlayed: '2026-10-31', state: saved }),
     );
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const canvas = page.locator('canvas[data-rendered="true"]');
   await expect(canvas).toBeVisible();
@@ -474,7 +474,7 @@ test('senaste-aret-i-events / handelseannonsering: long yearly lists scroll inte
     { ...initial, round: 10, events },
   );
   await page.setViewportSize({ width: 320, height: 568 });
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Decisions', exact: true }).click();
   const console = page.getByRole('region', { name: 'Turn console' });

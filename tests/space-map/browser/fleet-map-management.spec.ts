@@ -11,7 +11,7 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
 }, testInfo) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const panel = page.locator('.selection-panel');
   const camera = await page.getByTestId('camera-position').textContent();
@@ -127,7 +127,7 @@ test('flottadministration: a pointer drop forms a new fleet without a view chang
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page
     .getByRole('button', { name: 'Fighter 1 in Home Fleet', exact: true })
@@ -154,7 +154,7 @@ test('flottadministration: native touch forms a fleet on Star map', async ({
     'Native touch dragging uses Chromium CDP.',
   );
   await page.setViewportSize({ width: 600, height: 1100 });
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const source = page.getByRole('button', {
     name: 'Fighter 1 in Home Fleet',
@@ -237,7 +237,7 @@ for (const cargo of [false, true]) {
       );
       localStorage.setItem('fleet-transfer-seeded', 'yes');
     }, state);
-    await page.goto('../../browser/');
+    await page.goto('./');
     await startFirstSlot(page);
     const freighters = page.locator(
       '.map-fleet-cards [data-fleet-id="freighters"].fleet-card',

@@ -52,7 +52,7 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   test.setTimeout(90_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Decisions', exact: true }).click();
   await page.getByRole('button', { name: 'End turn', exact: true }).click();

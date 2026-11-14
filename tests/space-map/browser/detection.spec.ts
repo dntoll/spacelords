@@ -22,7 +22,7 @@ async function load(page: Page, state: GameState) {
         JSON.stringify({ lastPlayed: '2026-10-25T12:00:00Z', state }),
       );
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
 }
 

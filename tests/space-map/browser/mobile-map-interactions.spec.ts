@@ -14,7 +14,7 @@ async function start(page: Page, state: GameState) {
       JSON.stringify({ lastPlayed: '2026-10-27', state }),
     );
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
 }
 

@@ -23,7 +23,7 @@ test('beslut-vantar-pa-paborjad-atgard: queued Dome research removes production 
   }, state);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Production', exact: true }).click();
   await expect(page.locator('.production-guidance')).toHaveText(

@@ -23,7 +23,7 @@ test('senaste-aret-i-events: Decisions follows the latest year after End turn an
       JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
     );
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Decisions', exact: true }).click();
   const console = page.getByRole('region', { name: 'Turn console' });
@@ -59,7 +59,7 @@ test('senaste-aret-i-events: Decisions follows the latest year after End turn an
 test('rundkontroller-pa-fler-vyer / utvikbara-events: Research and planet pages retain their view and fit expanded events above End turn', async ({
   page,
 }) => {
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   const console = page.getByRole('region', { name: 'Turn console' });

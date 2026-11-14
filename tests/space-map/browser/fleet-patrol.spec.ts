@@ -27,7 +27,7 @@ for (const screen of ['Star map', 'Fleets']) {
     );
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    await page.goto('../../browser/');
+    await page.goto('./');
     await startFirstSlot(page);
     await page.getByRole('button', { name: screen, exact: true }).click();
     await selectMapFleet(page);
@@ -138,7 +138,7 @@ test('flottpatrullering: uses shared sight to catch a pirate, resumes its ring, 
         JSON.stringify({ lastPlayed: '2026-10-25T00:00:00Z', state }),
       );
   }, prepared);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page);

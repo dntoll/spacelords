@@ -7,7 +7,7 @@ test('delad-kartkamera / flottfokuserad-kartvy: shares camera, shows fleet image
 }, testInfo) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const map = page.locator('canvas[data-rendered="true"]');
   await map.press('ArrowRight');
@@ -85,7 +85,7 @@ test('flottfokuserad-kartvy / flottadministration: native touch forms a new flee
     'Chromium exposes native touch dragging through CDP.',
   );
   await page.setViewportSize({ width: 600, height: 1000 });
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page);
@@ -140,7 +140,7 @@ for (const size of [
     page,
   }, testInfo) => {
     await page.setViewportSize(size);
-    await page.goto('../../browser/');
+    await page.goto('./');
     await startFirstSlot(page);
     await page.getByRole('button', { name: 'Fleets', exact: true }).click();
     await page.addStyleTag({ content: 'html { font-size: 125%; }' });

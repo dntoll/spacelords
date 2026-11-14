@@ -33,7 +33,7 @@ test.beforeEach(async ({ page }) => {
     );
     localStorage.setItem('star-map-trade-seeded', 'yes');
   }, initial);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
 });
 

@@ -27,7 +27,7 @@ async function startScrollablePanel(page: Page): Promise<void> {
       }),
     );
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
 }
 

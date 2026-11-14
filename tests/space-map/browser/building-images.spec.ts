@@ -22,7 +22,7 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
         JSON.stringify({ lastPlayed: '2026-10-29T09:00:00Z', state }),
       );
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page
     .getByRole('navigation', { name: 'Main navigation' })

@@ -26,7 +26,7 @@ test('koloniseringsorder: Colonize chooses a planet, survives reload and settles
           }
         ).state,
     );
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await selectMapFleet(page, 'Home Fleet');
   await chooseFleetOrder(page, 'Colonize');

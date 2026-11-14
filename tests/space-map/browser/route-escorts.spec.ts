@@ -23,7 +23,7 @@ test('unika-flottnamn / rutt-eskortfordelning / ruttflottor-pa-kartan: assign fi
     );
     localStorage.setItem('route-escorts-seeded', 'yes');
   }, routeEscortState());
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Route', exact: true }).click();
   await expect(page.locator('.map-route-legend')).toContainText(

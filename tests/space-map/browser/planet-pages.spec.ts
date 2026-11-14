@@ -48,7 +48,7 @@ test('planetundersidor / planetgemensamt-produktval / kompakt-produktionsko / pr
     );
     localStorage.setItem('planet-pages-seeded', 'yes');
   }, seededGame());
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await expect(page.locator('[aria-current="page"]')).toHaveText('Overview');
@@ -177,7 +177,7 @@ test('byggkategorier / symbolbaserade-kataloger: icon categories and compact lis
       JSON.stringify({ lastPlayed: '2026-10-24T10:00:00Z', state }),
     );
   }, seededGame());
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page

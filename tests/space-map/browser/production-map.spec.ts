@@ -39,7 +39,7 @@ test('route-kartvy / produktions-kartvy / radiella-byggval / kompakt-produktions
     );
     localStorage.setItem('production-map-seeded', 'yes');
   }, saved);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const canvas = page.locator('canvas[data-rendered="true"]');
   await canvas.evaluate((node) => {

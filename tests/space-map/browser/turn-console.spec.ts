@@ -39,7 +39,7 @@ for (const size of [
     page,
   }, testInfo) => {
     await page.setViewportSize(size);
-    await page.goto('../../browser/');
+    await page.goto('./');
     await startFirstSlot(page);
     const end = page.getByRole('button', { name: 'End turn', exact: true });
     const console = page.getByRole('region', { name: 'Turn console' });
@@ -128,7 +128,7 @@ test('handelser: Events adapts to available screen space without a selection', a
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await selectMapHex(page, new HexCoordinate(-2, 0));
   for (let year = 0; year < 8; year++) await endTurn(page);

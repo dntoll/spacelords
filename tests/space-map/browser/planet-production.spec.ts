@@ -33,7 +33,7 @@ test('gemensam-planetko / delfabriker / automatiska-delorder: research, manufact
   test.setTimeout(90_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await home(page);
   await build(page, 1, 'Research station');

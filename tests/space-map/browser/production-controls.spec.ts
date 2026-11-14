@@ -6,7 +6,7 @@ test('forskning-kraver-station / dubbelklick-bygger-pa-kartan / byggknapp-vid-ti
 }, testInfo) => {
   // Completing a station and prerequisite research spans several narrated years.
   test.setTimeout(90_000);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   await page
@@ -84,7 +84,7 @@ test('dubbelklick-bygger-pa-kartan: double tap queues one order while single tap
   isMobile,
 }) => {
   test.skip(!isMobile, 'Native touch requires a mobile device.');
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Production', exact: true }).click();
   const mine = page.getByRole('button', {

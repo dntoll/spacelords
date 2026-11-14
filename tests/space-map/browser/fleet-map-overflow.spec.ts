@@ -37,7 +37,7 @@ test('flottadministration / skeppsbilder / viewport-game-layout: long fleet list
       JSON.stringify({ lastPlayed: '2026-10-21T10:00:00Z', state: saved }),
     );
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const panel = page.locator('.selection-panel');
   await expect(panel.locator('.fleet-card')).toHaveCount(25);
@@ -109,7 +109,7 @@ test('kompakta-flottkort: four ships fit in one row and fleet actions remain tou
       JSON.stringify({ lastPlayed: '2026-10-23T10:00:00Z', state: saved }),
     );
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const card = page.locator('.map-fleet-cards .fleet-card').first();
   await expect(card).toBeVisible();

@@ -59,7 +59,7 @@ test('fardig-terraformning-till-temperate: changes the planet portrait, frees th
     );
     localStorage.setItem('terraforming-completion-seeded', 'yes');
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const openColony = async () => {
     await page.getByRole('button', { name: 'Star map', exact: true }).click();
@@ -123,7 +123,7 @@ test('planettypsforskning / domes-per-byggplats / terraformning / andningsbar-at
     );
     localStorage.setItem('terraforming-seeded', 'yes');
   }, initialState());
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page
     .getByRole('navigation', { name: 'Main navigation' })

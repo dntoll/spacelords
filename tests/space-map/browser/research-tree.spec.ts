@@ -17,7 +17,7 @@ test('transport-ship-efter-rocket-engine: transport shares the engine prerequisi
     },
     { ...researchStationState(), researched: ['Rocket engine factory'] },
   );
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   await expect(
@@ -67,7 +67,7 @@ test('forsknings-tradnavigation: native touch pans and pinches the tree', async 
     browserName !== 'chromium' || !isMobile,
     'Native touch uses the mobile Chromium input channel.',
   );
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   const tree = page.getByRole('region', { name: 'Research tree', exact: true });
@@ -127,7 +127,7 @@ test('forsknings-tradnavigation: dependency arrows, navigation and research pres
     );
     localStorage.setItem('research-station-seeded', 'yes');
   }, researchStationState());
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   const tree = page.getByRole('region', { name: 'Research tree', exact: true });
@@ -208,7 +208,7 @@ test('forsknings-tradnavigation: mouse drag pans and wheel zooms without queuein
   isMobile,
 }) => {
   test.skip(isMobile, 'Mouse gestures are covered on desktop.');
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   const tree = page.getByRole('region', { name: 'Research tree', exact: true });
@@ -236,7 +236,7 @@ for (const size of [
     page,
   }, testInfo) => {
     await page.setViewportSize(size);
-    await page.goto('../../browser/');
+    await page.goto('./');
     await startFirstSlot(page);
     if ('font' in size && size.font)
       await page.addStyleTag({

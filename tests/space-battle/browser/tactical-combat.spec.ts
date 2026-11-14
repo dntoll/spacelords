@@ -48,7 +48,7 @@ async function prepare(
         JSON.stringify({ lastPlayed: '2026-10-31', state }),
       );
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await expect(
     page.getByRole('dialog', { name: 'Tactical combat' }),
@@ -427,7 +427,7 @@ test('skeppsvis-retratt / gemensamt-handelseflode: escapes each ship, regroups t
 test('fuskknapp-for-teststrid: opens combat from the main menu and leaves save slots untouched', async ({
   page,
 }, testInfo) => {
-  await page.goto('../../browser/');
+  await page.goto('./');
   const before = await page.evaluate(() => ({ ...localStorage }));
   await page
     .getByRole('button', { name: 'Test battle (cheat)', exact: true })

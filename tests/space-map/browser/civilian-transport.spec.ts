@@ -61,7 +61,7 @@ test('civil-skyttelforskning / civil-skytteltillverkning / civiltrafik-sparning:
   }, state);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await chooseResearch(page, 'Civilian transport');
   await endTurn(page);

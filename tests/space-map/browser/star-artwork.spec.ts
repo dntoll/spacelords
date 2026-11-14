@@ -8,7 +8,7 @@ test('stjarnornas-hexutseende / utokad-utzoomning: textured stars stay inside he
 }, testInfo) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const map = page.locator('canvas[data-rendered="true"]');
   await expect(map).toHaveAttribute('data-star-texture-ready', 'true');

@@ -19,7 +19,7 @@ async function seed(page: Page, game: Game) {
         JSON.stringify({ lastPlayed: '2026-11-01', state }),
       );
   }, game.exportState());
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   return errors;
 }

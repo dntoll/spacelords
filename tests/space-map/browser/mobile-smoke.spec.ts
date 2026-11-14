@@ -24,7 +24,7 @@ test('snabb-mobilpublicering / viewport-game-layout / sparat-spel: touch navigat
     if (path.startsWith('/assets/') || path.startsWith('/api/'))
       errors.push(path);
   });
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const map = page.locator('canvas[data-rendered="true"]');
   await expect(map).toBeVisible();
@@ -69,7 +69,7 @@ test('snabb-mobilpublicering / viewport-game-layout / sparat-spel: touch navigat
 test('responsiv-stjarnkarta / rumsligt-kartindex: camera updates preserve the turn console and reach the canvas', async ({
   page,
 }) => {
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const canvas = page.locator('canvas[data-rendered="true"]');
   await expect(canvas).toBeVisible();

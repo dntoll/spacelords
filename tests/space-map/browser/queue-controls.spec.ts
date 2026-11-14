@@ -24,7 +24,7 @@ test('utforskningsko: Decisions shows the assigned planet and can remove it', as
       JSON.stringify({ lastPlayed: '2026-11-08T00:00:00Z', state: saved }),
     );
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Decisions', exact: true }).click();
   const queue = page
@@ -52,7 +52,7 @@ for (const width of [320, 900]) {
         JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
       );
     }, researchStationState());
-    await page.goto('../../browser/');
+    await page.goto('./');
     await startFirstSlot(page);
     await page
       .getByRole('navigation', { name: 'Main navigation' })

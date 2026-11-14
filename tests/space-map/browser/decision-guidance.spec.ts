@@ -12,7 +12,7 @@ test('beslutsvagledning-i-vyn: navigation warnings lead to highlighted controls 
       JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
     );
   }, researchStationState());
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   const guidance = page.getByRole('complementary', {

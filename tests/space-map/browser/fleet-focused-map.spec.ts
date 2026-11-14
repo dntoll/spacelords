@@ -23,7 +23,7 @@ test('flottfokuserad-kartvy: background is inert, route crossings set destinatio
         JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
       );
   }, tradeNetworkState());
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   const map = page.locator('canvas[data-rendered="true"]');

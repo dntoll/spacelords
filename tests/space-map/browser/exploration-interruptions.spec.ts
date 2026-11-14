@@ -26,7 +26,7 @@ test('centrerade-handelseval-pa-dator / upptacktsbesked-utan-pausmening: event c
     );
   }, game.exportState());
   await page.setViewportSize({ width: 1920, height: 1200 });
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const announcement = page.locator('.event-announcement-interactive');
   await expect(announcement).toHaveAttribute('data-stage', 'awaiting-choice');
@@ -79,7 +79,7 @@ test('gemensamt-handelseflode: event information and keyboard actions fit on sma
     );
   }, game.exportState());
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const announcement = page.locator('.event-announcement-interactive');
   await expect(announcement).toHaveAttribute('data-stage', 'awaiting-choice');
@@ -153,7 +153,7 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
   }, discoveryState());
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: /^Decisions/ }).click();
   await page.getByRole('button', { name: 'End turn', exact: true }).click();
@@ -245,7 +245,7 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
 test('automatisk-stjarnutforskning / flottorder-som-symboler: explores persistently from the compact card and saves the order', async ({
   page,
 }) => {
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.evaluate(() => {
     const saved = JSON.parse(
@@ -284,7 +284,7 @@ test('automatisk-stjarnutforskning / flottorder-som-symboler: explores persisten
 test('produktionsorder-aterkoppling: double-click gives a visible receipt while the queue is below the selected details', async ({
   page,
 }) => {
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Production', exact: true }).click();
   await page

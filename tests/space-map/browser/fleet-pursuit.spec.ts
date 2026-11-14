@@ -15,7 +15,7 @@ test('skepp-till-rorlig-flotta: reinforcements survive reload and catch a moving
   test.setTimeout(60_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await formFleet(page);

@@ -31,7 +31,7 @@ test('spelgrafik-symboler / spelgrafik-planeter / spelgrafik-kartstation: mobile
         JSON.stringify({ lastPlayed: '2026-10-29T09:00:00Z', state }),
       );
   }, restored.exportState());
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const canvas = page.locator('canvas[data-rendered="true"]');
   await expect(canvas).toHaveAttribute('data-planet-images-ready', '6');

@@ -37,7 +37,7 @@ test('senaste-teknik-i-byggval / uppgradera-obsoleta-fabriker: upgrade an occupi
     );
     localStorage.setItem('factory-upgrades-seeded', 'yes');
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page

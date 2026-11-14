@@ -13,7 +13,7 @@ async function expectNoScroll(page: Page): Promise<void> {
 test('viewport-game-layout: the map fills the viewport without page scrolling', async ({
   page,
 }) => {
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const map = page.locator('canvas[data-rendered="true"]');
   await expect(map).toHaveCount(1);
@@ -50,7 +50,7 @@ test('viewport-game-layout: navigation font changes cannot crowd out the phone m
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.addStyleTag({
     content: ':root { font-family: monospace; font-size: 8px; }',
@@ -75,7 +75,7 @@ for (const size of [
     page,
   }, testInfo) => {
     await page.setViewportSize(size);
-    await page.goto('../../browser/');
+    await page.goto('./');
     await startFirstSlot(page);
     await expect(page.locator('canvas[data-rendered="true"]')).toHaveCount(1);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
@@ -130,7 +130,7 @@ test('viewport-game-layout: wider fallback font metrics cannot expand the planet
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 568 });
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.addStyleTag({
     content: ':root { font-family: system-ui, sans-serif; font-size: 18px; }',
@@ -160,7 +160,7 @@ test('viewport-game-layout: wider fallback font metrics cannot expand the planet
 test('visa-byggalternativ / kompakta-bygghandlingar: selection preserves Overview position and keyboard focus', async ({
   page,
 }, testInfo) => {
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page

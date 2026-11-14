@@ -22,7 +22,7 @@ test('flottval-pa-kartan / dra-flottdestination: selects a fleet, previews a sna
 }, testInfo) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const { canvas } = await mapCenter(page);
   await selectMapObject(page, 'Vesta');
@@ -88,7 +88,7 @@ test('flottval-pa-kartan / dra-flottdestination: selects a fleet, previews a sna
 test('kartflottor / flottval-pa-kartan: colocated fleets occupy separate positions within the hex', async ({
   page,
 }, testInfo) => {
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await formFleet(page);

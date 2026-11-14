@@ -16,7 +16,7 @@ test('dome-fore-fabriksforslag / domes-per-byggplats: Production builds a Dome b
     );
     localStorage.setItem('production-domes-seeded', 'yes');
   }, domeProductionState());
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const production = page
     .getByRole('navigation', { name: 'Main navigation' })

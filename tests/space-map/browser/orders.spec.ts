@@ -36,7 +36,7 @@ async function seed(page: Page, routed = true): Promise<GameState> {
       JSON.stringify({ lastPlayed: '2026-10-31', state }),
     );
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   return state;
 }

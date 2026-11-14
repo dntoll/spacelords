@@ -36,7 +36,7 @@ for (const screen of ['Star map', 'Fleets']) {
           JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
         );
     }, prepared);
-    await page.goto('../../browser/');
+    await page.goto('./');
     await startFirstSlot(page);
     if (screen === 'Fleets')
       await page.getByRole('button', { name: 'Fleets', exact: true }).click();
@@ -112,7 +112,7 @@ test('piratflotta-med-lastfartyg: the pirate panel lists a transport and its car
         JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
       );
   }, prepared);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const game = Game.restore(prepared);
   const marker = FleetMapLayout.markers([

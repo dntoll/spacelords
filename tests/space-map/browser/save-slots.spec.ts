@@ -6,7 +6,7 @@ test('tre-sparplatser / sparat-spel / tomm-sparplats: reload, preview, isolation
 }, testInfo) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('../../browser/');
+  await page.goto('./');
   await expect(
     page.getByRole('heading', { name: 'Saved games', exact: true }),
   ).toBeVisible();
@@ -57,7 +57,7 @@ test('tre-sparplatser / sparat-spel / tomm-sparplats: reload, preview, isolation
 test('tomm-sparplats: destructive actions retain readable text contrast', async ({
   page,
 }) => {
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Saved games', exact: true }).click();
   const clear = page

@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test('tydliga-handlingsbilder-pa-mobil: large text-free actions fit without internal scrolling', async ({
   page,
 }) => {
-  await page.goto('../../browser/');
+  await page.goto('./');
   await page
     .getByRole('button', { name: 'Test boarding (cheat)', exact: true })
     .click();

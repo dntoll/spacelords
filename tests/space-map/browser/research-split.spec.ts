@@ -17,7 +17,7 @@ test('kompakt-forskningstrad: shortened technology names fit two lines in narrow
     },
     { ...researchStationState(), researched: [...TECHNOLOGIES] },
   );
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   const labels = await page.locator('.research-node').evaluateAll((nodes) =>
@@ -61,7 +61,7 @@ for (const size of [
         JSON.stringify({ lastPlayed: '2026-10-30T00:00:00Z', state }),
       );
     }, researchStationState());
-    await page.goto('../../browser/');
+    await page.goto('./');
     await startFirstSlot(page);
     await page.getByRole('button', { name: 'Research', exact: true }).click();
     const tree = page.getByRole('region', {

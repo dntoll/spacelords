@@ -19,7 +19,7 @@ test('forskningsstatus-med-tydliga-farger: unresearched colors stay distinct fro
       researchQueue: ['Telescope II factory', 'Telescope III factory'],
     },
   );
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   const completed = page.locator('[data-technology="Rocket engine factory"]');

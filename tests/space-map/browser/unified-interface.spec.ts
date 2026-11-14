@@ -24,7 +24,7 @@ async function seed(page: Page, state: GameState = researchStationState()) {
         JSON.stringify({ lastPlayed: '2026-10-27T00:00:00Z', state: saved }),
       );
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
 }
 async function saved(page: Page): Promise<GameState> {

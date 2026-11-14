@@ -20,7 +20,7 @@ test('produktionsval-efter-forekomst / produktionsberoenden-i-byggval: page thro
     );
     localStorage.setItem('production-priorities-seeded', 'yes');
   }, state);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Production', exact: true }).click();
   const ring = page.getByRole('group', { name: 'Build options' });

@@ -16,7 +16,7 @@ test('utokad-galax / stjarnornas-hexutseende / automatisk-stjarnutforskning: new
   test.setTimeout(90_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   const saved = () =>
     page.evaluate(
@@ -112,7 +112,7 @@ test('asteroidbalten / nebulosornas-sikt: discovered terrain explains movement a
       JSON.stringify({ lastPlayed: '2026-10-26T00:00:00Z', state }),
     );
   }, fixture);
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await selectMapHex(page, new HexCoordinate(5, -3));
   await expect(

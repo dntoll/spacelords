@@ -12,7 +12,7 @@ test('direkt-atgard-fran-rundvarning: reviews open Research, Production and Flee
       JSON.stringify({ lastPlayed: '2026-10-30', state }),
     );
   }, researchStationState());
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   for (const [id, screen] of [
     ['research-empty', 'research'],
@@ -68,7 +68,7 @@ test('tysta-beslut / beslutsmarkering-pa-flikar / tystade-beslut-sist: Mute pers
     );
     localStorage.setItem('decision-station-seeded', 'yes');
   }, researchStationState());
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Decisions', exact: true }).click();
   await expect(

@@ -15,7 +15,7 @@ test('forsorjningsproblem-pa-kartan / forsorjningsstatus / leveransfloden: resol
     );
     localStorage.setItem('route-map-seeded', 'yes');
   }, tradeNetworkState());
-  await page.goto('../../browser/');
+  await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Route', exact: true }).click();
   await selectMapObject(page, 'Vesta');

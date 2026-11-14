@@ -4,7 +4,7 @@ import { boardingIsoCellPoint } from '../../../src/client/boarding/views/renderi
 test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordningsobjekt / fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordningsstatus / isometrisk-bordningsvy / spelmassigt-bordningsgranssnitt / bordningsfigurer-fran-spritesheet / bordning-utan-riktningspilar / bordning-utan-sikt-och-eldrutor: uses character sprites in the tactical HUD, targets a door and advances a hidden defender without changing saves', async ({
   page,
 }) => {
-  await page.goto('../../browser/');
+  await page.goto('./');
   const before = await page.evaluate(() => ({ ...localStorage }));
   await page
     .getByRole('button', { name: 'Test boarding (cheat)', exact: true })
@@ -114,7 +114,7 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
 test('kamerafokus-vid-bordningssoldatbyte: selecting an offscreen soldier reveals the figure above the mobile HUD', async ({
   page,
 }, testInfo) => {
-  await page.goto('../../browser/');
+  await page.goto('./');
   await page
     .getByRole('button', { name: 'Test boarding (cheat)', exact: true })
     .click();
