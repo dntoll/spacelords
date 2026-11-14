@@ -31,7 +31,7 @@ package "map" as boarding__map {
   rectangle "<b>models</b>\nBoardingComposer\nBoardingMap\nTestBoarding" as boarding__map__models
 }
 package "rendering" as boarding__rendering {
-  rectangle "<b>views</b>\nBoardingCharacterAtlas\nBoardingCharacterImages\nBoardingCharacterSprite\nBoardingLightPainter\nBoardingLighting\nBoardingObjectArtwork\nBoardingProjection\nBoardingScale\nBoardingSpriteMetrics\nBoardingSurfaceArtwork\nBoardingSurfacePainter\nBoardingWallVisibility" as boarding__rendering__views
+  rectangle "<b>views</b>\nBoardingCharacterAtlas\nBoardingCharacterImages\nBoardingCharacterSprite\nBoardingLightMap\nBoardingLightPainter\nBoardingLighting\nBoardingObjectArtwork\nBoardingProjection\nBoardingScale\nBoardingSpriteMetrics\nBoardingSurfaceArtwork\nBoardingSurfacePainter\nBoardingWallVisibility" as boarding__rendering__views
 }
 rectangle "shared" as ext__shared #EEEEEE
 rectangle "space-battle" as ext__space_battle #EEEEEE
@@ -41,12 +41,12 @@ boarding__editor__views --> boarding__editor__models
 boarding___delat_ ..> boarding__battle : 2, typer
 boarding___delat_ ..> boarding__editor : 2, typer
 boarding__battle --> boarding__map : 14
-boarding__battle --> boarding__rendering : 11
+boarding__battle --> boarding__rendering : 12
 boarding__editor --> boarding__map : 1
-boarding__editor --> boarding__rendering : 10
+boarding__editor --> boarding__rendering : 11
 boarding__map --> boarding__battle : 1
-boarding__rendering ..> boarding__battle : 1, typer
-boarding__rendering --> boarding__map : 6
+boarding__rendering ..> boarding__battle : 2, typer
+boarding__rendering --> boarding__map : 7
 boarding___delat_ --> ext__shared : map-format
 boarding__battle ..> ext__space_battle : models, typer
 boarding__editor --> ext__shared : map-format
