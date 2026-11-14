@@ -1,6 +1,9 @@
-import type {
-  BoardingCell,
-  BoardingLight,
+import {
+  boardingStraightThinPieces,
+  boardingThinPieceBounds,
+  type BoardingCell,
+  type BoardingLight,
+  type BoardingMap,
 } from '../../models/map/BoardingMap.js';
 import type { BoardingBattleState } from '../../models/battle/BoardingBattle.js';
 import type { BoardingPoint } from './BoardingProjection.js';
@@ -36,6 +39,24 @@ interface Segment {
 }
 
 const EPSILON = 1e-9;
+
+/** sammanfogade-tunna-vaggar: where the joined shape of each thin wall comes from. */
+type ThinShapes = Pick<BoardingMap, 'thinWallPieces'>;
+
+type ThinFeature = BoardingBattleState['features'][number];
+
+/** The ground rectangles of a thin wall, joined when the map is known. */
+function thinFootprints(
+  feature: ThinFeature,
+  shapes: ThinShapes | undefined,
+): readonly { minQ: number; maxQ: number; minR: number; maxR: number }[] {
+  const pieces =
+    shapes?.thinWallPieces(feature.position) ??
+    boardingStraightThinPieces(feature.axis ?? 'q');
+  return pieces.map((piece) =>
+    boardingThinPieceBounds(feature.position, piece),
+  );
+}
 const RAY_SPREAD = 1e-5;
 
 function cellBlocker(position: BoardingCell): BoardingLightBlocker {
@@ -55,31 +76,15 @@ function cellBlocker(position: BoardingCell): BoardingLightBlocker {
  */
 export function boardingLightBlockers(
   state: Pick<BoardingBattleState, 'features' | 'smokeCells'>,
+  shapes?: ThinShapes,
 ): readonly BoardingLightBlocker[] {
-  const half = BOARDING_METERS.thinWall / 2;
   const blockers: BoardingLightBlocker[] = [];
   for (const feature of state.features) {
     if (feature.destroyed) continue;
-    const { q, r } = feature.position;
     if (feature.kind === 'thin-wall') {
       if (feature.low) continue;
-      blockers.push(
-        feature.axis === 'r'
-          ? {
-              minQ: q - 0.5,
-              maxQ: q + 0.5,
-              minR: r - half,
-              maxR: r + half,
-              cell: false,
-            }
-          : {
-              minQ: q - half,
-              maxQ: q + half,
-              minR: r - 0.5,
-              maxR: r + 0.5,
-              cell: false,
-            },
-      );
+      for (const footprint of thinFootprints(feature, shapes))
+        blockers.push({ ...footprint, cell: false });
     } else if (
       feature.kind === 'wall' ||
       feature.kind === 'hull' ||
@@ -127,12 +132,11 @@ function square(
  */
 export function boardingLightOccluders(
   state: OccluderState,
+  shapes?: ThinShapes,
 ): readonly BoardingLightOccluder[] {
-  const half = BOARDING_METERS.thinWall / 2;
   const occluders: BoardingLightOccluder[] = [];
   for (const feature of state.features) {
     if (feature.destroyed) continue;
-    const { q, r } = feature.position;
     if (feature.kind === 'cover')
       occluders.push(
         square(feature.position, OBJECT_HALF, BOARDING_METERS.cover),
@@ -142,23 +146,8 @@ export function boardingLightOccluders(
         square(feature.position, OBJECT_HALF, BOARDING_METERS.reactor),
       );
     else if (feature.kind === 'thin-wall' && feature.low)
-      occluders.push(
-        feature.axis === 'r'
-          ? {
-              minQ: q - 0.5,
-              maxQ: q + 0.5,
-              minR: r - half,
-              maxR: r + half,
-              height: BOARDING_METERS.cover,
-            }
-          : {
-              minQ: q - half,
-              maxQ: q + half,
-              minR: r - 0.5,
-              maxR: r + 0.5,
-              height: BOARDING_METERS.cover,
-            },
-      );
+      for (const footprint of thinFootprints(feature, shapes))
+        occluders.push({ ...footprint, height: BOARDING_METERS.cover });
   }
   for (const person of state.people ?? []) {
     if (person.status === 'dead' || person.status === 'evacuated') continue;
@@ -174,10 +163,13 @@ export function boardingLightOccluders(
 }
 
 /** ljuskarta-i-bordning: changes exactly when the painted light map would. */
-export function boardingLightMapSignature(state: OccluderState): string {
+export function boardingLightMapSignature(
+  state: OccluderState,
+  shapes?: ThinShapes,
+): string {
   return JSON.stringify([
-    boardingLightBlockers(state),
-    boardingLightOccluders(state),
+    boardingLightBlockers(state, shapes),
+    boardingLightOccluders(state, shapes),
   ]);
 }
 
@@ -464,7 +456,7 @@ export class BoardingLightMap {
       readonly width: number;
       readonly height: number;
       readonly lights: readonly BoardingLight[];
-    },
+    } & Partial<ThinShapes>,
     state: OccluderState,
     texels = BOARDING_LIGHT_MAP_TEXELS,
     debug = boardingLightDebug(),
@@ -479,12 +471,13 @@ export class BoardingLightMap {
     const ambient = debug ? 0 : Math.round(255 * BOARDING_AMBIENT);
     context.fillStyle = `rgb(${ambient}, ${ambient}, ${ambient})`;
     context.fillRect(0, 0, canvas.width, canvas.height);
-    const blockers = boardingLightBlockers(state);
+    const shapes = map.thinWallPieces ? (map as ThinShapes) : undefined;
+    const blockers = boardingLightBlockers(state, shapes);
     const texel = (point: BoardingLightPoint) => ({
       x: 1 + (point.q + 0.5) * texels,
       y: 1 + (point.r + 0.5) * texels,
     });
-    const occluders = boardingLightOccluders(state);
+    const occluders = boardingLightOccluders(state, shapes);
     const outlines: (readonly BoardingLightPoint[])[] = [];
     const scratch = document.createElement('canvas');
     const lamp = scratch.getContext('2d');

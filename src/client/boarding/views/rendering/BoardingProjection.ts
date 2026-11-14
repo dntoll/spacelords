@@ -380,8 +380,9 @@ export function boardingThinWallOutline(
   position: BoardingCell,
   axis: BoardingThinAxis,
   meters: number,
+  span?: readonly [number, number],
 ): readonly BoardingPoint[] {
-  const cells = boardingThinWallCells(position, axis).wall;
+  const cells = boardingThinWallCells(position, axis, span).wall;
   return convexHull(
     cells.flatMap((cell) => [projectCell(cell), projectCell(cell, meters)]),
   );

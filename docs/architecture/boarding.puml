@@ -40,7 +40,7 @@ boarding__battle__views --> boarding__battle__models
 boarding__editor__views --> boarding__editor__models
 boarding___delat_ ..> boarding__battle : 2, typer
 boarding___delat_ ..> boarding__editor : 2, typer
-boarding__battle --> boarding__map : 14
+boarding__battle --> boarding__map : 15
 boarding__battle --> boarding__rendering : 12
 boarding__editor --> boarding__map : 1
 boarding__editor --> boarding__rendering : 11

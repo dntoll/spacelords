@@ -5,6 +5,7 @@ import {
   type BoardingBattleState,
 } from '../../../src/client/boarding/models/battle/BoardingBattle.js';
 import {
+  boardingStraightThinPieces,
   boardingThinOutsideTerrain,
   parseBoardingMap,
   type BoardingMap,
@@ -126,17 +127,23 @@ describe('tunna-innervaggar', () => {
   it('cuts only full-height thin walls and keeps a destroyed wall tile impassable', () => {
     const wall = { q: 4, r: 4 };
     const visibility = new BoardingWallVisibility([{ q: 3, r: 4 }]);
-    expect(visibility.height(wall, { axis: 'q' })).toBe(
-      boardingHeight(BOARDING_METERS.cutawayWall),
-    );
     expect(
-      new BoardingWallVisibility([{ q: 4, r: 3 }]).height(wall, { axis: 'r' }),
+      visibility.height(wall, { pieces: boardingStraightThinPieces('q') }),
     ).toBe(boardingHeight(BOARDING_METERS.cutawayWall));
     expect(
-      new BoardingWallVisibility([{ q: 5, r: 4 }]).height(wall, { axis: 'q' }),
+      new BoardingWallVisibility([{ q: 4, r: 3 }]).height(wall, {
+        pieces: boardingStraightThinPieces('r'),
+      }),
+    ).toBe(boardingHeight(BOARDING_METERS.cutawayWall));
+    expect(
+      new BoardingWallVisibility([{ q: 5, r: 4 }]).height(wall, {
+        pieces: boardingStraightThinPieces('q'),
+      }),
     ).toBe(BOARDING_WALL_HEIGHT);
     expect(
-      new BoardingWallVisibility([{ q: 4, r: 5 }]).height(wall, { axis: 'r' }),
+      new BoardingWallVisibility([{ q: 4, r: 5 }]).height(wall, {
+        pieces: boardingStraightThinPieces('r'),
+      }),
     ).toBe(BOARDING_WALL_HEIGHT);
     const horizontal = battleFor(['.Q..'], ['P--D']);
     const player = horizontal.battle.snapshot.people.find(
@@ -223,13 +230,13 @@ describe('halvhog-tunn-vagg', () => {
     const wall = { q: 4, r: 4 };
     expect(
       new BoardingWallVisibility([{ q: 3, r: 4 }]).height(wall, {
-        axis: 'q',
+        pieces: boardingStraightThinPieces('q'),
         low: true,
       }),
     ).toBe(BOARDING_COVER_HEIGHT);
     expect(
       new BoardingWallVisibility([{ q: 4, r: 3 }]).height(wall, {
-        axis: 'r',
+        pieces: boardingStraightThinPieces('r'),
         low: true,
       }),
     ).toBe(BOARDING_COVER_HEIGHT);

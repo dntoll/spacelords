@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { boardingStraightThinPieces } from '../../../src/client/boarding/models/map/BoardingMap.js';
 import {
   BOARDING_DOOR_SLIDE_MS,
   boardingDoorLeaves,
@@ -60,11 +61,14 @@ describe('dorrar-falls-inte', () => {
   it('keeps a door at full height where a thin wall would be cut away', () => {
     const door = { q: 4, r: 4 };
     const visibility = new BoardingWallVisibility([{ q: 3, r: 4 }]);
-    expect(visibility.height(door, { axis: 'q' })).toBe(
-      boardingHeight(BOARDING_METERS.cutawayWall),
-    );
-    expect(visibility.height(door, { axis: 'q', door: true })).toBe(
-      BOARDING_WALL_HEIGHT,
-    );
+    expect(
+      visibility.height(door, { pieces: boardingStraightThinPieces('q') }),
+    ).toBe(boardingHeight(BOARDING_METERS.cutawayWall));
+    expect(
+      visibility.height(door, {
+        pieces: boardingStraightThinPieces('q'),
+        door: true,
+      }),
+    ).toBe(BOARDING_WALL_HEIGHT);
   });
 });

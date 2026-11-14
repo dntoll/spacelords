@@ -492,6 +492,8 @@ package "Kampanjbordning" {
     Q och R är 1/3 m innerväggar på golv.
     halvhog-tunn-vagg:
     q och r är 1,2 m, ger Half cover och fälls inte.
+    sammanfogade-tunna-vaggar:
+    formen följer grannarnas väggar och dörrar.
   end note
   class BoardingKnowledge {
     visibleCells

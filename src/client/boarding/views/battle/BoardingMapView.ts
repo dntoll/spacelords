@@ -34,12 +34,15 @@ import {
   type BoardingDoorLeaf,
 } from './BoardingDoorSlide.js';
 import {
+  boardingStraightThinPieces,
   boardingTerrainShowsFloor,
   boardingThinNeighbor,
   boardingThinOutsideTerrain,
+  boardingThinPiecesStraight,
   type BoardingMap,
   type BoardingCell,
   type BoardingThinAxis,
+  type BoardingThinPiece,
 } from '../../models/map/BoardingMap.js';
 import {
   boardingActionPointsRemaining,
@@ -977,16 +980,26 @@ export class BoardingMapView implements BoardingMapPort {
       )
       .map((feature) => ({
         ...feature.position,
-        ...(feature.kind === 'thin-wall' && feature.axis
-          ? { axis: feature.axis, low: feature.low === true }
+        ...(feature.kind === 'thin-wall'
+          ? { pieces: this.#thinPieces(feature), low: feature.low === true }
           : feature.kind === 'door'
             ? {
-                axis: this.map.doorAxis(feature.position),
+                pieces: boardingStraightThinPieces(
+                  this.map.doorAxis(feature.position),
+                ),
                 low: false,
                 door: true,
               }
             : {}),
       }));
+  }
+
+  /** sammanfogade-tunna-vaggar: the joined slabs of a thin wall. */
+  #thinPieces(feature: BoardingFeature): readonly BoardingThinPiece[] {
+    return (
+      this.map.thinWallPieces(feature.position) ??
+      boardingStraightThinPieces(feature.axis ?? 'q')
+    );
   }
 
   #updateLighting(state: BoardingBattleState): void {
@@ -1013,7 +1026,7 @@ export class BoardingMapView implements BoardingMapPort {
     sketch: p5,
     visible: ReadonlySet<string>,
     explored: ReadonlySet<string>,
-    thinAt: ReadonlyMap<string, BoardingFeature>,
+    thinAt: ReadonlyMap<string, readonly BoardingThinPiece[]>,
     seen: (cell: BoardingCell) => boolean,
   ): void {
     const bounds = this.#floorBounds();
@@ -1090,7 +1103,7 @@ export class BoardingMapView implements BoardingMapPort {
     sketch: p5,
     visible: ReadonlySet<string>,
     explored: ReadonlySet<string>,
-    thinAt: ReadonlyMap<string, BoardingFeature>,
+    thinAt: ReadonlyMap<string, readonly BoardingThinPiece[]>,
     seen: (cell: BoardingCell) => boolean,
   ): void {
     for (let r = 0; r < this.map.height; r++) {
@@ -1102,8 +1115,23 @@ export class BoardingMapView implements BoardingMapPort {
         const remembered = explored.has(key(position));
         const knownHull = terrain === 'hull';
         const thin = thinAt.get(key(position));
-        if (thin?.axis && (current || remembered)) {
-          this.#paintThinFloors(sketch, position, thin.axis, seen);
+        if (thin && (current || remembered)) {
+          const straight = boardingThinPiecesStraight(thin);
+          if (straight) {
+            this.#paintThinFloors(sketch, position, straight, seen);
+            continue;
+          }
+          // sammanfogade-tunna-vaggar: a joint or an end keeps its own floor.
+          if (!this.#paintFloor(sketch, position)) {
+            sketch.noStroke();
+            sketch.fill('#24334a');
+            this.#tile(sketch, position);
+          }
+          this.#lightMap?.paint(
+            sketch.drawingContext as CanvasRenderingContext2D,
+            boardingIsoCorners(position),
+            position,
+          );
           continue;
         }
         const paintedFloor =
@@ -1398,15 +1426,17 @@ export class BoardingMapView implements BoardingMapPort {
   #paintThinWall(
     sketch: p5,
     position: BoardingCell,
-    axis: BoardingThinAxis,
+    shape: readonly BoardingThinPiece[],
+    piece: BoardingThinPiece,
     low: boolean,
     selected: boolean,
     peers: ReadonlySet<string>,
     known: (cell: BoardingCell) => boolean,
     door?: { readonly locked: boolean } & Partial<BoardingDoorLeaf>,
   ): void {
+    const axis = piece.axis;
     const height = this.#wallVisibility.height(position, {
-      axis,
+      pieces: shape,
       low,
       door: !!door,
     });
@@ -1442,7 +1472,7 @@ export class BoardingMapView implements BoardingMapPort {
               faceTexture: door.texture ?? [0, 1],
               span: door.span ?? [-0.5, 0.5],
             }
-          : {}),
+          : { span: piece.span }),
         top: option(door ? (this.#doorTop ?? this.#wallTop) : this.#wallTop),
         section:
           !low && height < boardingFeatureHeight('wall') && !this.#wallTop,
@@ -1736,17 +1766,17 @@ export class BoardingMapView implements BoardingMapPort {
     const thinAt = new Map(
       state.features
         .filter(
-          (feature) =>
-            (feature.kind === 'thin-wall' && feature.axis) ||
-            feature.kind === 'door',
+          (feature) => feature.kind === 'thin-wall' || feature.kind === 'door',
         )
         .map(
           (feature) =>
             [
               key(feature.position),
               feature.kind === 'door'
-                ? { ...feature, axis: this.map.doorAxis(feature.position) }
-                : feature,
+                ? boardingStraightThinPieces(
+                    this.map.doorAxis(feature.position),
+                  )
+                : this.#thinPieces(feature),
             ] as const,
         ),
     );
@@ -1833,22 +1863,25 @@ export class BoardingMapView implements BoardingMapPort {
       lowQ: new Set<string>(),
       lowR: new Set<string>(),
     };
+    const thinPeersFor = (axis: BoardingThinAxis, low: boolean) =>
+      low
+        ? axis === 'q'
+          ? thinPeers.lowQ
+          : thinPeers.lowR
+        : axis === 'q'
+          ? thinPeers.q
+          : thinPeers.r;
     for (const feature of state.features) {
       if (closedDoor(feature)) {
         const axis = this.map.doorAxis(feature.position);
         (axis === 'q' ? thinPeers.q : thinPeers.r).add(key(feature.position));
         continue;
       }
-      if (feature.kind !== 'thin-wall' || feature.destroyed || !feature.axis)
-        continue;
-      const peers = feature.low
-        ? feature.axis === 'q'
-          ? thinPeers.lowQ
-          : thinPeers.lowR
-        : feature.axis === 'q'
-          ? thinPeers.q
-          : thinPeers.r;
-      peers.add(key(feature.position));
+      if (feature.kind !== 'thin-wall' || feature.destroyed) continue;
+      for (const piece of this.#thinPieces(feature))
+        thinPeersFor(piece.axis, feature.low === true).add(
+          key(feature.position),
+        );
     }
     // bordning-jamn-bildfrekvens: skip walls and objects wholly off the canvas.
     const margin = BOARDING_HALF_TILE_WIDTH * 3;
@@ -1895,6 +1928,7 @@ export class BoardingMapView implements BoardingMapPort {
             // door face. animerade-dorrar: its leaves slide into the wall.
             if (feature.kind === 'door' && !feature.destroyed) {
               const axis = this.map.doorAxis(feature.position);
+              const slab = boardingStraightThinPieces(axis);
               const openness = boardingDoorOpenness(
                 feature.open,
                 this.#doorMoves.get(feature.id) ?? null,
@@ -1904,7 +1938,8 @@ export class BoardingMapView implements BoardingMapPort {
                 this.#paintThinWall(
                   sketch,
                   feature.position,
-                  axis,
+                  slab,
+                  slab[0]!,
                   false,
                   feature.id === this.#selectedId,
                   axis === 'q' ? thinPeers.q : thinPeers.r,
@@ -1913,23 +1948,20 @@ export class BoardingMapView implements BoardingMapPort {
                 );
               return;
             }
-            if (raised && feature.kind === 'thin-wall' && feature.axis) {
-              const peers = feature.low
-                ? feature.axis === 'q'
-                  ? thinPeers.lowQ
-                  : thinPeers.lowR
-                : feature.axis === 'q'
-                  ? thinPeers.q
-                  : thinPeers.r;
-              this.#paintThinWall(
-                sketch,
-                feature.position,
-                feature.axis,
-                feature.low === true,
-                feature.id === this.#selectedId,
-                peers,
-                known,
-              );
+            if (raised && feature.kind === 'thin-wall') {
+              // sammanfogade-tunna-vaggar: each slab, back to front.
+              const pieces = this.#thinPieces(feature);
+              for (const piece of pieces)
+                this.#paintThinWall(
+                  sketch,
+                  feature.position,
+                  pieces,
+                  piece,
+                  feature.low === true,
+                  feature.id === this.#selectedId,
+                  thinPeersFor(piece.axis, feature.low === true),
+                  known,
+                );
               return;
             }
             if (feature.destroyed && feature.kind !== 'exit') {

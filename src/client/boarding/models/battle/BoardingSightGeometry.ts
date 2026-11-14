@@ -4,6 +4,13 @@
  * observer's tile. A blocking tile casts a real shadow, so a tile can be
  * partly visible. The rules stay independent of p5 and the view.
  */
+import {
+  boardingStraightThinPieces,
+  boardingThinPieceBounds,
+  type BoardingThinAxis,
+  type BoardingThinPiece,
+} from '../map/BoardingMap.js';
+
 export interface BoardingSightPoint {
   readonly q: number;
   readonly r: number;
@@ -12,12 +19,13 @@ export interface BoardingSightPoint {
 /**
  * True blocks the whole tile. dorrar-som-tunna-vaggar: 'q' or 'r' blocks only
  * a slab one third of a tile thick through the middle, thin along that axis,
- * as full thin walls and closed doors do.
+ * as closed doors do. sammanfogade-tunna-vaggar: a list of pieces blocks the
+ * joined footprint of a thin wall.
  */
-export type BoardingSightBlocker = (
-  q: number,
-  r: number,
-) => boolean | 'q' | 'r';
+export type BoardingSightSolid =
+  boolean | BoardingThinAxis | readonly BoardingThinPiece[];
+
+export type BoardingSightBlocker = (q: number, r: number) => BoardingSightSolid;
 
 /** Sight reaches eight tiles; the extra half keeps the eighth tile whole. */
 export const BOARDING_SIGHT_RADIUS = 8.5;
@@ -27,8 +35,34 @@ export const BOARDING_SEEN_SHARE = 0.1;
 const SAMPLES = [-0.4, -0.2, 0, 0.2, 0.4] as const;
 const EPSILON = 1e-9;
 const ARC_STEP = Math.PI / 180;
-/** Half the thickness of a thin wall or door slab, in tiles. */
-const SLAB_HALF = 1 / 6;
+
+type Box = ReturnType<typeof boardingThinPieceBounds>;
+
+/** The ground rectangles that block in tile (q, r). */
+function solidBoxes(q: number, r: number, solid: BoardingSightSolid): Box[] {
+  if (!solid) return [];
+  if (solid === true)
+    return [{ minQ: q - 0.5, maxQ: q + 0.5, minR: r - 0.5, maxR: r + 0.5 }];
+  const pieces =
+    typeof solid === 'string' ? boardingStraightThinPieces(solid) : solid;
+  return pieces.map((piece) => boardingThinPieceBounds({ q, r }, piece));
+}
+
+/** The part of the ray's distances that lies between `min` and `max`. */
+function slab(
+  start: number,
+  step: number,
+  min: number,
+  max: number,
+): readonly [number, number] | null {
+  if (Math.abs(step) < EPSILON)
+    return start < min - EPSILON || start > max + EPSILON
+      ? null
+      : [-Infinity, Infinity];
+  const a = (min - start) / step;
+  const b = (max - start) / step;
+  return [Math.min(a, b), Math.max(a, b)];
+}
 
 /**
  * dorrar-som-tunna-vaggar: distance at which a ray inside tile (q, r) between
@@ -39,43 +73,36 @@ function solidHit(
   direction: BoardingSightPoint,
   q: number,
   r: number,
-  solid: boolean | 'q' | 'r',
+  solid: BoardingSightSolid,
   entered: number,
   exited: number,
 ): number | null {
   if (!solid) return null;
   if (solid === true) return entered;
-  const start = solid === 'q' ? from.q : from.r;
-  const step = solid === 'q' ? direction.q : direction.r;
-  const centre = solid === 'q' ? q : r;
-  let low = -Infinity;
-  let high = Infinity;
-  if (Math.abs(step) < EPSILON) {
-    if (Math.abs(start - centre) > SLAB_HALF) return null;
-  } else {
-    const a = (centre - SLAB_HALF - start) / step;
-    const b = (centre + SLAB_HALF - start) / step;
-    low = Math.min(a, b);
-    high = Math.max(a, b);
+  let first: number | null = null;
+  for (const box of solidBoxes(q, r, solid)) {
+    const alongQ = slab(from.q, direction.q, box.minQ, box.maxQ);
+    const alongR = slab(from.r, direction.r, box.minR, box.maxR);
+    if (!alongQ || !alongR) continue;
+    const hit = Math.max(alongQ[0], alongR[0], entered);
+    if (hit <= Math.min(alongQ[1], alongR[1], exited) && (first ?? hit) >= hit)
+      first = hit;
   }
-  const hit = Math.max(low, entered);
-  return hit <= Math.min(high, exited) ? hit : null;
+  return first;
 }
 
 /** The corners of what blocks in tile (q, r), for exact shadow edges. */
 function solidCorners(
   q: number,
   r: number,
-  solid: boolean | 'q' | 'r',
+  solid: BoardingSightSolid,
 ): readonly (readonly [number, number])[] {
-  const dq = solid === 'q' ? SLAB_HALF : 0.5;
-  const dr = solid === 'r' ? SLAB_HALF : 0.5;
-  return [
-    [q - dq, r - dr],
-    [q + dq, r - dr],
-    [q + dq, r + dr],
-    [q - dq, r + dr],
-  ];
+  return solidBoxes(q, r, solid).flatMap((box) => [
+    [box.minQ, box.minR] as const,
+    [box.maxQ, box.minR] as const,
+    [box.maxQ, box.maxR] as const,
+    [box.minQ, box.maxR] as const,
+  ]);
 }
 
 /**

@@ -3,7 +3,6 @@ import {
   type BoardingFeatureKind,
   type BoardingCell,
   type BoardingMap,
-  type BoardingThinAxis,
 } from '../map/BoardingMap.js';
 import {
   spreadBoardingSpawns,
@@ -18,7 +17,9 @@ import {
   boardingThrowObstacle,
   boardingTileSight,
   boardingVisibleShare,
+  type BoardingSightBlocker,
   type BoardingSightBody,
+  type BoardingSightSolid,
   type BoardingSightPoint,
 } from './BoardingSightGeometry.js';
 import type { CombatShipType } from '../../../space-battle/models/index.js';
@@ -222,8 +223,6 @@ const GRENADE_AP = 4;
 const GRENADE_RANGE = 6;
 /** reaktor-skymmer-sikt: half a tile, so the reactor fills its tile's width. */
 const REACTOR_SIGHT_RADIUS = 0.5;
-/** Codes for #visionBlocks' grid: open, whole tile, slab q, slab r. */
-const SHAPE_CODES = [false, true, 'q', 'r'] as const;
 export const BOARDING_MED_PACK_AP = 4;
 const MED_PACK_AP = BOARDING_MED_PACK_AP;
 export const BOARDING_HACK_AP = 4;
@@ -1052,7 +1051,7 @@ export class BoardingBattle {
 
   #visionCache: {
     readonly state: BoardingBattleState;
-    readonly blocks: (q: number, r: number) => boolean | BoardingThinAxis;
+    readonly blocks: BoardingSightBlocker;
   } | null = null;
   #coverCache: {
     readonly state: BoardingBattleState;
@@ -1111,33 +1110,33 @@ export class BoardingBattle {
    * dorrar-som-tunna-vaggar: full thin walls and closed doors block only their
    * slab; smoke and other walls block the whole tile.
    */
-  #visionShape(position: BoardingCell): boolean | BoardingThinAxis {
+  #visionShape(position: BoardingCell): BoardingSightSolid {
     return this.#smokeAt(position) || this.#solidShape(position);
   }
 
   /** granat-over-halvskydd-inte-genom-vagg: what stops a grenade, by shape. */
-  #solidShape(position: BoardingCell): boolean | BoardingThinAxis {
+  #solidShape(position: BoardingCell): BoardingSightSolid {
     if (!this.#stopsGrenade(position)) return false;
     const feature = this.#featureAt(position);
-    if (feature?.kind === 'thin-wall' && feature.axis) return feature.axis;
+    // sammanfogade-tunna-vaggar: the map knows the joined shape.
+    if (feature?.kind === 'thin-wall')
+      return this.#map.thinWallPieces(position) ?? feature.axis ?? true;
     if (feature?.kind === 'door') return this.#map.doorAxis(position);
     return true;
   }
 
   /** geometrisk-sikt: blocking tiles, cached for the current state. */
-  #visionBlocks(): (q: number, r: number) => boolean | BoardingThinAxis {
+  #visionBlocks(): BoardingSightBlocker {
     if (this.#visionCache?.state === this.#state)
       return this.#visionCache.blocks;
     const width = this.#map.width;
     const height = this.#map.height;
-    const grid = new Uint8Array(width * height);
+    const grid = new Array<BoardingSightSolid>(width * height);
     for (let r = 0; r < height; r++)
       for (let q = 0; q < width; q++)
-        grid[r * width + q] = SHAPE_CODES.indexOf(this.#visionShape({ q, r }));
+        grid[r * width + q] = this.#visionShape({ q, r });
     const blocks = (q: number, r: number) =>
-      q < 0 || r < 0 || q >= width || r >= height
-        ? true
-        : SHAPE_CODES[grid[r * width + q]!]!;
+      q < 0 || r < 0 || q >= width || r >= height ? true : grid[r * width + q]!;
     this.#visionCache = { state: this.#state, blocks };
     return blocks;
   }

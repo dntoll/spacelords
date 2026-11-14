@@ -32,11 +32,16 @@ import {
 import { BoardingWallVisibility } from '../rendering/BoardingWallVisibility.js';
 import {
   boardingDoorAxis,
+  boardingStraightThinPieces,
   boardingThinAxisFromSymbol,
   boardingThinNeighbor,
   boardingThinOutsideTerrain,
+  boardingThinPieceBounds,
+  boardingThinPiecesStraight,
   boardingThinWallIsLow,
   parseBoardingMap,
+  type BoardingMap,
+  type BoardingThinPiece,
 } from '../../models/map/BoardingMap.js';
 import { formatBoardingMap } from '../../../../shared/boarding/map-format.js';
 import { BoardingLighting } from '../rendering/BoardingLighting.js';
@@ -157,6 +162,8 @@ export class BoardingEditorMapView {
   #snapshot: BoardingEditorSnapshot | null = null;
   /** What is drawn: the committed state plus any stroke in progress. */
   #display: BoardingEditorSnapshot | null = null;
+  /** The parsed map behind #display, for joined thin wall shapes. */
+  #map: BoardingMap | null = null;
   #panMode = false;
   /** True once the player has zoomed or panned away from the fitted view. */
   #userCamera = false;
@@ -348,6 +355,7 @@ export class BoardingEditorMapView {
       })),
       smokeCells: [],
     };
+    this.#map = map;
     this.#lighting = new BoardingLighting(map, physical);
     this.#lightMap = new BoardingLightMap(map, physical);
     this.#lightPainter.clear();
@@ -664,24 +672,18 @@ export class BoardingEditorMapView {
           sketch.fill(ROOM_FILL[room] ?? '#3f5f9f99');
           sketch.rect(q * size, r * size, size, size);
         }
-        const thinAxis = boardingThinAxisFromSymbol(terrain);
-        if (thinAxis) {
+        const pieces = this.#thinPieces(snapshot, { q, r });
+        if (pieces) {
           sketch.fill(boardingThinWallIsLow(terrain) ? '#d7b07a' : '#e7eef5');
-          const inset = (1 - BOARDING_METERS.thinWall) / 2;
-          if (thinAxis === 'q')
+          for (const piece of pieces) {
+            const box = boardingThinPieceBounds({ q, r }, piece);
             sketch.rect(
-              (q + inset) * size,
-              r * size,
-              size * BOARDING_METERS.thinWall,
-              size,
+              (box.minQ + 0.5) * size,
+              (box.minR + 0.5) * size,
+              (box.maxQ - box.minQ) * size,
+              (box.maxR - box.minR) * size,
             );
-          else
-            sketch.rect(
-              q * size,
-              (r + inset) * size,
-              size,
-              size * BOARDING_METERS.thinWall,
-            );
+          }
         }
         sketch.noFill();
         sketch.stroke('#8eb0c255');
@@ -697,6 +699,23 @@ export class BoardingEditorMapView {
       }
     }
     sketch.pop();
+  }
+
+  /**
+   * sammanfogade-tunna-vaggar: the joined slabs of the thin wall painted at
+   * `position`, or null where none stands.
+   */
+  #thinPieces(
+    snapshot: BoardingEditorSnapshot,
+    position: { q: number; r: number },
+  ): readonly BoardingThinPiece[] | null {
+    const axis = boardingThinAxisFromSymbol(
+      snapshot.layers.terrain[position.r]?.[position.q] ?? '',
+    );
+    if (!axis) return null;
+    return (
+      this.#map?.thinWallPieces(position) ?? boardingStraightThinPieces(axis)
+    );
   }
 
   #drawIso(sketch: p5, snapshot: BoardingEditorSnapshot): void {
@@ -752,7 +771,11 @@ export class BoardingEditorMapView {
           boardingThinAxisFromSymbol(terrain)
         )
           structure.add(wallKey(q, r));
-        thinPeers[terrain]?.add(wallKey(q, r));
+        const low = boardingThinWallIsLow(terrain);
+        for (const piece of this.#thinPieces(snapshot, { q, r }) ?? [])
+          thinPeers[low ? piece.axis : piece.axis.toUpperCase()]?.add(
+            wallKey(q, r),
+          );
       }
     }
     const visibility = new BoardingWallVisibility(floors);
@@ -765,7 +788,8 @@ export class BoardingEditorMapView {
           this.#floorTiles.get(boardingSurfaceStyle(roomAt, position)) ??
           this.#floorTiles.get('default') ??
           null;
-        const thinAxis = boardingThinAxisFromSymbol(terrain);
+        const pieces = this.#thinPieces(snapshot, position);
+        const thinAxis = pieces && boardingThinPiecesStraight(pieces);
         if (thinAxis) {
           const floorsPainted = paintThinWallFloors(
             sketch,
@@ -792,23 +816,21 @@ export class BoardingEditorMapView {
           if (floorsPainted.outside)
             this.#lightMap?.paint(context, floorsPainted.outside, position);
         }
+        // sammanfogade-tunna-vaggar: a joint or an end keeps its own floor.
+        const ownFloor = terrain === '.' || (pieces !== null && !thinAxis);
         const paintedFloor =
           !thinAxis &&
-          terrain === '.' &&
+          ownFloor &&
           floor !== null &&
           paintIsoFloor(sketch, floor, this.#cache(floor), position);
         if (!thinAxis && !paintedFloor) {
           sketch.noStroke();
           sketch.fill(
-            terrain === '.'
-              ? '#24334a'
-              : terrain === '#'
-                ? '#3a4658'
-                : '#343d4c',
+            ownFloor ? '#24334a' : terrain === '#' ? '#3a4658' : '#343d4c',
           );
           paintIsoDiamond(sketch, position);
         }
-        if (terrain === '.')
+        if (ownFloor)
           this.#lightMap?.paint(
             sketch.drawingContext as CanvasRenderingContext2D,
             boardingIsoCorners(position),
@@ -889,16 +911,18 @@ export class BoardingEditorMapView {
       }
       // dorrar-som-tunna-vaggar: a door is a thin wall with a door face.
       const door = objectKind(object) === 'door';
-      const thinAxis = door
-        ? boardingDoorAxis(position, (q, r) => structure.has(wallKey(q, r)))
-        : boardingThinAxisFromSymbol(terrain);
-      if (thinAxis) {
-        const low = !door && boardingThinWallIsLow(terrain);
-        const height = visibility.height(position, {
-          axis: thinAxis,
-          low,
-          door,
-        });
+      const shape = door
+        ? boardingStraightThinPieces(
+            boardingDoorAxis(position, (q, r) => structure.has(wallKey(q, r))),
+          )
+        : this.#thinPieces(snapshot, position);
+      const low = !door && boardingThinWallIsLow(terrain);
+      const height = shape
+        ? visibility.height(position, { pieces: shape, low, door })
+        : 0;
+      // sammanfogade-tunna-vaggar: each slab, back to front.
+      for (const piece of shape ?? []) {
+        const thinAxis = piece.axis;
         const faced =
           boardingThinOutsideTerrain(
             (cell) => editorTerrain(snapshot.layers.terrain[cell.r]?.[cell.q]),
@@ -916,8 +940,7 @@ export class BoardingEditorMapView {
           wall ? this.#cache(wall) : { floor: null, wall: null },
           position,
           thinAxis,
-          (door ? thinPeers[thinAxis.toUpperCase()] : thinPeers[terrain]) ??
-            new Set(),
+          thinPeers[low ? thinAxis : thinAxis.toUpperCase()] ?? new Set(),
           height,
           {
             face: door
@@ -925,7 +948,7 @@ export class BoardingEditorMapView {
               : option(
                   this.#wallTiles.get(boardingSurfaceStyle(roomAt, faced)),
                 ),
-            ...(door ? { faceTexture: [0, 1] as const } : {}),
+            ...(door ? { faceTexture: [0, 1] as const } : { span: piece.span }),
             top: option(
               door ? (this.#doorTop ?? this.#wallTop) : this.#wallTop,
             ),

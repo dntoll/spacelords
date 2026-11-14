@@ -5,7 +5,7 @@ import {
 } from './BoardingScale.js';
 import type {
   BoardingCell,
-  BoardingThinAxis,
+  BoardingThinPiece,
 } from '../../models/map/BoardingMap.js';
 import {
   BOARDING_HALF_TILE_WIDTH,
@@ -20,7 +20,8 @@ import {
 } from './BoardingProjection.js';
 
 export interface BoardingWallShape {
-  readonly axis?: BoardingThinAxis;
+  /** sammanfogade-tunna-vaggar: the slabs of a thin wall or a door. */
+  readonly pieces?: readonly BoardingThinPiece[];
   readonly low?: boolean;
   /** dorrar-falls-inte: a door keeps its full height. */
   readonly door?: boolean;
@@ -44,6 +45,23 @@ function silhouette(
     faces.southWest[2],
     faces.top[3],
   ];
+}
+
+function outlines(
+  position: BoardingCell,
+  shape: BoardingWallShape,
+  height: number,
+): readonly (readonly BoardingPoint[])[] {
+  return shape.pieces
+    ? shape.pieces.map((piece) =>
+        boardingThinWallOutline(
+          position,
+          piece.axis,
+          height / BOARDING_VERTICAL_METER,
+          piece.span,
+        ),
+      )
+    : [silhouette(position, height)];
 }
 
 function overlaps(
@@ -101,7 +119,10 @@ export class BoardingWallVisibility {
 
   height(position: BoardingCell, shape: BoardingWallShape = {}): number {
     if (shape.door) return BOARDING_WALL_HEIGHT;
-    const key = `${position.q},${position.r}:${shape.low ? 1 : 0}:${shape.axis ?? ''}`;
+    const pieces = shape.pieces
+      ?.map((piece) => `${piece.axis}${piece.span.join('/')}`)
+      .join(';');
+    const key = `${position.q},${position.r}:${shape.low ? 1 : 0}:${pieces ?? ''}`;
     const cached = this.#heights.get(key);
     if (cached !== undefined) return cached;
     if (shape.low) {
@@ -109,15 +130,13 @@ export class BoardingWallVisibility {
       return BOARDING_COVER_HEIGHT;
     }
     const center = boardingIsoCenter(position);
-    const polygon = shape.axis
-      ? boardingThinWallOutline(position, shape.axis, BOARDING_METERS.wall)
-      : silhouette(position);
+    const polygons = outlines(position, shape, BOARDING_WALL_HEIGHT);
     const occludes = this.#floors.some(
       (floor) =>
         floor.center.y < center.y &&
         center.y - floor.center.y < BOARDING_WALL_HEIGHT + 32 &&
         Math.abs(floor.center.x - center.x) < 64 &&
-        overlaps(polygon, floor.corners),
+        polygons.some((polygon) => overlaps(polygon, floor.corners)),
     );
     const height = occludes
       ? boardingHeight(BOARDING_METERS.cutawayWall)
@@ -134,15 +153,9 @@ export class BoardingWallVisibility {
     const depth = boardingIsoCenter(ground).y;
     return walls.some((wall) => {
       if (boardingIsoCenter(wall).y <= depth) return false;
-      const height = this.height(wall, wall);
-      const polygon = wall.axis
-        ? boardingThinWallOutline(
-            wall,
-            wall.axis,
-            height / BOARDING_VERTICAL_METER,
-          )
-        : silhouette(wall, height);
-      return contains(polygon, point);
+      return outlines(wall, wall, this.height(wall, wall)).some((polygon) =>
+        contains(polygon, point),
+      );
     });
   }
 }

@@ -18,7 +18,11 @@ export interface BoardingFeatureDefinition {
   readonly low?: boolean;
 }
 
-/** tunna-innervaggar: Q and q run across q; R and r run across r. */
+/**
+ * tunna-innervaggar: Q, R, q and r are thin walls; lower case is half height.
+ * sammanfogade-tunna-vaggar: the shape follows the neighbours, so Q and R mean
+ * the same wall. The letter's axis is only kept in saved battle features.
+ */
 export function boardingThinAxisFromSymbol(
   symbol: string,
 ): BoardingThinAxis | null {
@@ -42,6 +46,119 @@ export function boardingDoorAxis(
     Number(wallAt(position.q - 1, position.r)) +
     Number(wallAt(position.q + 1, position.r));
   return alongR > alongQ ? 'q' : 'r';
+}
+
+/**
+ * sammanfogade-tunna-vaggar: one straight part of a thin wall's footprint. It
+ * is thin along `axis`, like a `Q` or `R` slab, and covers `span` of its
+ * length, from -0.5 to 0.5 across the cell.
+ */
+export interface BoardingThinPiece {
+  readonly axis: BoardingThinAxis;
+  readonly span: readonly [number, number];
+}
+
+/** North is toward lower r and west toward lower q, as in the editor grid. */
+export type BoardingThinArm = 'north' | 'south' | 'west' | 'east';
+
+const THIN_HALF = 1 / 6;
+
+function thinPiece(
+  axis: BoardingThinAxis,
+  from: number,
+  to: number,
+): BoardingThinPiece {
+  return Object.freeze({ axis, span: Object.freeze([from, to] as const) });
+}
+
+/** A straight slab across the whole cell, as a door stands. */
+export function boardingStraightThinPieces(
+  axis: BoardingThinAxis,
+): readonly BoardingThinPiece[] {
+  return Object.freeze([thinPiece(axis, -0.5, 0.5)]);
+}
+
+/**
+ * sammanfogade-tunna-vaggar: the footprint of a thin wall with arms toward the
+ * given neighbours, as slabs that do not overlap, ordered back to front for
+ * the isometric camera. A wall without arms is a post as thick as the wall.
+ */
+export function boardingThinPieces(
+  arms: ReadonlySet<BoardingThinArm>,
+): readonly BoardingThinPiece[] {
+  const north = arms.has('north');
+  const south = arms.has('south');
+  const west = arms.has('west');
+  const east = arms.has('east');
+  const pieces: BoardingThinPiece[] = [];
+  if (north || south) {
+    if (west) pieces.push(thinPiece('r', -0.5, -THIN_HALF));
+    pieces.push(
+      thinPiece('q', north ? -0.5 : -THIN_HALF, south ? 0.5 : THIN_HALF),
+    );
+    if (east) pieces.push(thinPiece('r', THIN_HALF, 0.5));
+  } else if (west || east)
+    pieces.push(
+      thinPiece('r', west ? -0.5 : -THIN_HALF, east ? 0.5 : THIN_HALF),
+    );
+  else pieces.push(thinPiece('q', -THIN_HALF, THIN_HALF));
+  return Object.freeze(pieces);
+}
+
+/**
+ * sammanfogade-tunna-vaggar: a thin wall reaches toward every neighbour that
+ * is a wall, hull or thin wall of either height, and toward a door whose slab
+ * runs toward it. `doorAxisAt` gives a door's axis, or null where none stands.
+ */
+export function boardingThinWallArms(
+  position: BoardingCell,
+  wallAt: (q: number, r: number) => boolean,
+  doorAxisAt: (q: number, r: number) => BoardingThinAxis | null,
+): ReadonlySet<BoardingThinArm> {
+  const sides = [
+    ['north', 0, -1, 'q'],
+    ['south', 0, 1, 'q'],
+    ['west', -1, 0, 'r'],
+    ['east', 1, 0, 'r'],
+  ] as const;
+  const arms = new Set<BoardingThinArm>();
+  for (const [arm, dq, dr, doorAxis] of sides) {
+    const q = position.q + dq;
+    const r = position.r + dr;
+    if (wallAt(q, r) || doorAxisAt(q, r) === doorAxis) arms.add(arm);
+  }
+  return arms;
+}
+
+/** The ground rectangle a piece covers, in cell coordinates. */
+export function boardingThinPieceBounds(
+  position: BoardingCell,
+  piece: BoardingThinPiece,
+): Readonly<{ minQ: number; maxQ: number; minR: number; maxR: number }> {
+  const [from, to] = piece.span;
+  return piece.axis === 'q'
+    ? {
+        minQ: position.q - THIN_HALF,
+        maxQ: position.q + THIN_HALF,
+        minR: position.r + from,
+        maxR: position.r + to,
+      }
+    : {
+        minQ: position.q + from,
+        maxQ: position.q + to,
+        minR: position.r - THIN_HALF,
+        maxR: position.r + THIN_HALF,
+      };
+}
+
+/** The axis when the pieces are one slab across the whole cell, else null. */
+export function boardingThinPiecesStraight(
+  pieces: readonly BoardingThinPiece[],
+): BoardingThinAxis | null {
+  const only = pieces.length === 1 ? pieces[0]! : null;
+  return only && only.span[0] === -0.5 && only.span[1] === 0.5
+    ? only.axis
+    : null;
 }
 
 export function boardingThinWallIsLow(symbol: string): boolean {
@@ -130,6 +247,7 @@ export class BoardingMap {
   readonly #rooms: ReadonlyMap<string, BoardingRoom>;
   readonly #zones: ReadonlyMap<string, BoardingShipZone>;
   readonly #walls: ReadonlySet<string>;
+  readonly #thinPieces: ReadonlyMap<string, readonly BoardingThinPiece[]>;
 
   constructor(
     name: string,
@@ -174,6 +292,24 @@ export class BoardingMap {
         )
         .map((feature) => key(feature.position)),
     ]);
+    const doors = new Set(
+      features
+        .filter((feature) => feature.kind === 'door')
+        .map((feature) => key(feature.position)),
+    );
+    const wallAt = (q: number, r: number) => this.#walls.has(`${q},${r}`);
+    const doorAxisAt = (q: number, r: number) =>
+      doors.has(`${q},${r}`) ? boardingDoorAxis({ q, r }, wallAt) : null;
+    this.#thinPieces = new Map(
+      features
+        .filter((feature) => feature.kind === 'thin-wall')
+        .map((feature) => [
+          key(feature.position),
+          boardingThinPieces(
+            boardingThinWallArms(feature.position, wallAt, doorAxisAt),
+          ),
+        ]),
+    );
     this.airlocks = Object.freeze([...airlocks]);
     this.cockpits = Object.freeze([...cockpits]);
     this.spawns = Object.freeze({
@@ -195,6 +331,11 @@ export class BoardingMap {
   /** dorrar-som-tunna-vaggar: see boardingDoorAxis. */
   doorAxis(position: BoardingCell): BoardingThinAxis {
     return boardingDoorAxis(position, (q, r) => this.#walls.has(`${q},${r}`));
+  }
+
+  /** sammanfogade-tunna-vaggar: the joined shape of the thin wall here. */
+  thinWallPieces(position: BoardingCell): readonly BoardingThinPiece[] | null {
+    return this.#thinPieces.get(key(position)) ?? null;
   }
 
   roomAt(position: BoardingCell): BoardingRoom | null {

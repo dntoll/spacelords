@@ -30,10 +30,10 @@ const PALETTE: readonly PaletteTile[] = [
   { layer: 'terrain', symbol: '.', label: 'Floor' },
   { layer: 'terrain', symbol: '#', label: 'Wall' },
   { layer: 'terrain', symbol: 'H', label: 'Hull' },
-  { layer: 'terrain', symbol: 'Q', label: 'Thin wall q' },
-  { layer: 'terrain', symbol: 'R', label: 'Thin wall r' },
-  { layer: 'terrain', symbol: 'q', label: 'Low thin wall q' },
-  { layer: 'terrain', symbol: 'r', label: 'Low thin wall r' },
+  // sammanfogade-tunna-vaggar: the shape follows the neighbours, so one
+  // tile per height is enough. R and r still load as the same walls.
+  { layer: 'terrain', symbol: 'Q', label: 'Thin wall' },
+  { layer: 'terrain', symbol: 'q', label: 'Low thin wall' },
   { layer: 'terrain', symbol: 'O', label: 'Outside' },
   { layer: 'objects', symbol: '-', label: 'No object' },
   { layer: 'objects', symbol: 'D', label: 'Door' },

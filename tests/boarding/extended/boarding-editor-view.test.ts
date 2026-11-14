@@ -57,6 +57,21 @@ describe('lokal-bordningskarteditor', () => {
     ).toContain('Ceiling light');
     view.dispose();
   });
+  it('sammanfogade-tunna-vaggar: offers one thin wall tool per height', () => {
+    const model = new AppModel();
+    model.setEditorCatalog([{ id: 'pirate', name: 'Space pirate' }]);
+    model.openEditor('pirate', pirateMap);
+    const view = new BoardingEditorView(root, () => undefined, editorMap);
+    view.render(model.snapshot);
+    const terrain = [
+      ...root.querySelectorAll('section[aria-label="Terrain"] button'),
+    ].map((button) => button.getAttribute('aria-label'));
+    expect(terrain.filter((label) => label?.includes('hin wall'))).toEqual([
+      'Thin wall',
+      'Low thin wall',
+    ]);
+    view.dispose();
+  });
   it('hides Ship layouts until the local map catalog is available', () => {
     const model = new AppModel();
     const view = new AppView(root, mapFactory);
