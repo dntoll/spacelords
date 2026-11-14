@@ -3319,6 +3319,15 @@ body:has(.discovery-controls) .selection-panel {
     font-size: 0.875rem;
     line-height: 1.25;
   }
+  /* viewport-game-layout: on short screens Build selection scrolls as one page
+     so the catalog is not squeezed to nothing under its heading and search. */
+  .build-selection-page {
+    grid-template-rows: auto auto auto;
+    overflow: auto;
+  }
+  .build-selection-page > .planet-content.building-menu {
+    overflow: visible;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .event-announcement {
