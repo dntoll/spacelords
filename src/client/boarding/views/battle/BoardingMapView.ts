@@ -11,7 +11,10 @@ import {
 } from './BoardingCameraController.js';
 import { BoardingLighting } from '../rendering/BoardingLighting.js';
 import { BoardingLightPainter } from '../rendering/BoardingLightPainter.js';
-import { BoardingLightMap } from '../rendering/BoardingLightMap.js';
+import {
+  BoardingLightMap,
+  boardingLightDebug,
+} from '../rendering/BoardingLightMap.js';
 import p5 from 'p5';
 import {
   BOARDING_GROUND_RATIO,
@@ -1757,7 +1760,7 @@ export class BoardingMapView implements BoardingMapPort {
         }
       }
     }
-    this.#paintSight(sketch);
+    if (!boardingLightDebug()) this.#paintSight(sketch);
     const scene: { depth: number; order: number; paint: () => void }[] = [];
     const overlays: (() => void)[] = [];
     for (const position of state.smokeCells) {

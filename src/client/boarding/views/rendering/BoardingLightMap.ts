@@ -246,6 +246,21 @@ export function boardingLightMapTransform(
   ];
 }
 
+/**
+ * ljuskarta-i-bordning: `?light-debug` in the address shows the raw light map,
+ * with black instead of ambient light and every lamp polygon outlined, so
+ * shadow edges can be checked by eye.
+ */
+export function boardingLightDebug(): boolean {
+  try {
+    return new URLSearchParams(globalThis.location?.search ?? '').has(
+      'light-debug',
+    );
+  } catch {
+    return false;
+  }
+}
+
 const falloffs = new Map<string, HTMLCanvasElement | null>();
 
 function falloff(
@@ -307,6 +322,7 @@ export class BoardingLightMap {
     },
     state: Pick<BoardingBattleState, 'features' | 'smokeCells'>,
     texels = BOARDING_LIGHT_MAP_TEXELS,
+    debug = boardingLightDebug(),
   ) {
     this.#texels = texels;
     const canvas = document.createElement('canvas');
@@ -315,7 +331,7 @@ export class BoardingLightMap {
     const context = canvas.getContext('2d');
     this.#canvas = context ? canvas : null;
     if (!context) return;
-    const ambient = Math.round(255 * BOARDING_AMBIENT);
+    const ambient = debug ? 0 : Math.round(255 * BOARDING_AMBIENT);
     context.fillStyle = `rgb(${ambient}, ${ambient}, ${ambient})`;
     context.fillRect(0, 0, canvas.width, canvas.height);
     const blockers = boardingLightBlockers(state);
@@ -323,6 +339,7 @@ export class BoardingLightMap {
       x: 1 + (point.q + 0.5) * texels,
       y: 1 + (point.r + 0.5) * texels,
     });
+    const outlines: (readonly BoardingLightPoint[])[] = [];
     for (const light of map.lights) {
       const shape = boardingLightPolygon(
         light.position,
@@ -331,6 +348,7 @@ export class BoardingLightMap {
       );
       const image = falloff(light, texels);
       if (shape.length < 3 || !image) continue;
+      outlines.push(shape);
       context.save();
       context.beginPath();
       shape.forEach((point, index) => {
@@ -348,6 +366,19 @@ export class BoardingLightMap {
         center.y - image.height / 2,
       );
       context.restore();
+    }
+    if (!debug) return;
+    context.strokeStyle = '#ff40ff';
+    context.lineWidth = 1;
+    for (const shape of outlines) {
+      context.beginPath();
+      shape.forEach((point, index) => {
+        const { x, y } = texel(point);
+        if (index === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      });
+      context.closePath();
+      context.stroke();
     }
   }
 
