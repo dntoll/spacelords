@@ -20,7 +20,9 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
       ),
     )
     .toBe(true);
-  for (const artwork of ['airlock-', 'reactor-', 'crate-', 'door-face-']) {
+  // isometriska-bordningsobjekt: crate and door faces are small enough for
+  // Vite to inline as data URLs, so only file-backed artwork is a resource.
+  for (const artwork of ['airlock-', 'reactor-']) {
     await expect
       .poll(() =>
         page.evaluate(
@@ -70,7 +72,7 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
     position: boardingIsoCellPoint(
       { width: 17, height: 11 },
       { width: box!.width, height: box!.height },
-      { q: 3, r: 9 },
+      { q: 7, r: 6 },
     ),
   });
   const shoot = dialog.getByRole('button', { name: /^Shoot · \d+%$/ });
@@ -141,14 +143,15 @@ test('kamerafokus-vid-bordningssoldatbyte: selecting an offscreen soldier reveal
           count++;
       return count;
     });
-  for (let index = 0; index < 8; index++)
-    await dialog.getByRole('button', { name: 'Zoom in', exact: true }).click();
+  // The zoom buttons were removed; the map keeps keyboard zoom on the canvas.
+  await canvas.focus();
+  for (let index = 0; index < 8; index++) await canvas.press('+');
   const box = (await canvas.boundingBox())!;
   for (let index = 0; index < 4; index++) {
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
     await page.mouse.move(
-      box.x + box.width / 2 + 120,
+      box.x + box.width / 2 - 120,
       box.y + box.height / 2 + 150,
       { steps: 2 },
     );
