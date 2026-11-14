@@ -119,8 +119,8 @@ const closedDoor = (feature: BoardingFeature): boolean =>
   feature.kind === 'door' && !feature.open && !feature.destroyed;
 /** Keeps the cached floor layer within mobile canvas memory limits. */
 const FLOOR_LAYER_MAX_SIDE = 3072;
-/** Sight tint added at full light; ambient light gives about the old even fill. */
-const SIGHT_GLOW = [14, 28, 35] as const;
+/** Sight tint added at full light; kept faint so the light map shows through. */
+const SIGHT_GLOW = [9, 18, 23] as const;
 
 const characterPose = (person: BoardingPerson): BoardingCharacterPose =>
   person.status === 'active'
