@@ -157,7 +157,14 @@ test('forsknings-tradnavigation: dependency arrows, navigation and research pres
     exact: true,
   });
   await choose.focus();
-  const camera = await stage.getAttribute('style');
+  const cameraOf = async () => {
+    const [x, y, zoom] = (await stage.getAttribute('style'))!
+      .match(/-?[\d.]+(?=px,|px\)|\))/g)!
+      .map(Number);
+    const height = (await tree.boundingBox())!.height;
+    return { x: x!, y: y!, zoom: zoom!, height };
+  };
+  const camera = await cameraOf();
   await choose.click();
   await expect(page.locator('.research-queue article')).toHaveCount(0);
   await page
@@ -167,7 +174,14 @@ test('forsknings-tradnavigation: dependency arrows, navigation and research pres
     })
     .click();
   await expect(page.locator('.research-queue article')).toHaveCount(1);
-  await expect(stage).toHaveAttribute('style', camera!);
+  // The research guidance above the tree disappears once research is queued.
+  // The tree may then grow, and the edge bound may shift it by that much only.
+  const after = await cameraOf();
+  expect(after.zoom).toBe(camera.zoom);
+  expect(after.x).toBe(camera.x);
+  expect(Math.abs(after.y - camera.y)).toBeLessThanOrEqual(
+    Math.abs(after.height - camera.height) + 0.5,
+  );
   await expect(
     page.locator('[data-technology="Rocket engine factory"]'),
   ).toHaveAttribute('data-state', 'active');
@@ -215,14 +229,19 @@ test('forsknings-tradnavigation: mouse drag pans and wheel zooms without queuein
   const stage = page.locator('.research-tree-stage');
   const bounds = (await tree.boundingBox())!;
   const initial = await stage.getAttribute('style');
+  // The whole tree fits a desktop screen and stays centred, so zoom in first.
+  await page.mouse.move(
+    bounds.x + bounds.width / 2,
+    bounds.y + bounds.height / 2,
+  );
+  await page.mouse.wheel(0, -180);
+  await expect(stage).not.toHaveAttribute('style', initial!);
+  const zoomed = await stage.getAttribute('style');
   await page.mouse.move(bounds.x + 20, bounds.y + 20);
   await page.mouse.down();
   await page.mouse.move(bounds.x + 140, bounds.y + 80, { steps: 8 });
   await page.mouse.up();
-  await expect(stage).not.toHaveAttribute('style', initial!);
-  const panned = await stage.getAttribute('style');
-  await page.mouse.wheel(0, -180);
-  await expect(stage).not.toHaveAttribute('style', panned!);
+  await expect(stage).not.toHaveAttribute('style', zoomed!);
   await expect(page.locator('.research-queue article')).toHaveCount(0);
 });
 

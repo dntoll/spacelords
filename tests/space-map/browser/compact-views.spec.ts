@@ -152,8 +152,14 @@ test('forskningsdetaljer-vid-val: dragging from a research tile pans without ins
     name: 'Inspect Rocket engine factory',
     exact: true,
   });
-  await tile.focus();
   const stage = page.locator('.research-tree-stage');
+  // A tree that fits the screen stays centred, so zoom in before panning.
+  const tree = page.getByRole('region', { name: 'Research tree', exact: true });
+  await tree.focus();
+  const fitted = await stage.getAttribute('style');
+  await tree.press('+');
+  await expect(stage).not.toHaveAttribute('style', fitted!);
+  await tile.focus();
   const initial = await stage.getAttribute('style');
   const box = (await tile.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
