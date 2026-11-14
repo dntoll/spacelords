@@ -103,12 +103,16 @@ test('teleskopfabriker / teleskop-i-exploration-ships: manufacture the best tele
   );
   await load(page, state);
   await page.getByRole('button', { name: 'Production', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Next build options', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Show Exploration ship', exact: true })
-    .dblclick();
+  const exploration = page.getByRole('button', {
+    name: 'Show Exploration ship',
+    exact: true,
+  });
+  // produktionsval-efter-forekomst: wide screens show every option at once.
+  if (!(await exploration.isVisible()))
+    await page
+      .getByRole('button', { name: 'Next build options', exact: true })
+      .click();
+  await exploration.dblclick();
   let current = await saved(page);
   expect(
     current.colonies[0]![1].projects.map((project) => project.type),
