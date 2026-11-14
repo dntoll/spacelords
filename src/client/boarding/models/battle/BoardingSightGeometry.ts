@@ -354,6 +354,40 @@ export function boardingTileSight(
   };
 }
 
+/**
+ * skott-langs-fri-siktlinje: the point in `target` a shot flies to. Sight
+ * counts a target seen when part of it shows, so the shot follows the clear
+ * sight line nearest the tile's centre, never one through a wall. Null when
+ * no sample of the target is in sight.
+ */
+export function boardingAimPoint(
+  eye: BoardingSightPoint,
+  forward: BoardingSightPoint,
+  target: BoardingSightPoint,
+  blocks: BoardingSightBlocker,
+  bodies: readonly BoardingSightBody[] = [],
+  radius = BOARDING_SIGHT_RADIUS,
+): BoardingSightPoint | null {
+  let best: BoardingSightPoint | null = null;
+  let bestOffset = Infinity;
+  for (const dq of SAMPLES)
+    for (const dr of SAMPLES) {
+      const point = { q: target.q + dq, r: target.r + dr };
+      const offset = Math.hypot(dq, dr);
+      if (
+        offset >= bestOffset ||
+        Math.hypot(point.q - eye.q, point.r - eye.r) > radius ||
+        !inFront(eye, forward, point)
+      )
+        continue;
+      if (trace(eye, point, target, blocks, none, bodies) === 'blocked')
+        continue;
+      best = Object.freeze(point);
+      bestOffset = offset;
+    }
+  return best;
+}
+
 /** geometrisk-sikt: the share (0–1) of `target` visible from `eye`. */
 export function boardingVisibleShare(
   eye: BoardingSightPoint,

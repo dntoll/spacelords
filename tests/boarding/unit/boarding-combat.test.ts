@@ -762,6 +762,8 @@ describe('animerat-bordningsskott', () => {
     expect(battle.shot).toEqual({
       from: { q: door.position.q - 1, r: door.position.r },
       to: door.position,
+      // skott-langs-fri-siktlinje: a door in plain view is aimed at its centre.
+      aim: door.position,
       presentationIndex: 0,
       hit: true,
     });

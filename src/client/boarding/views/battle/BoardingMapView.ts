@@ -739,6 +739,8 @@ export class BoardingMapView implements BoardingMapPort {
     to: BoardingCell,
     kind?: 'grenade',
     grenade?: 'frag' | 'smoke',
+    /** skott-langs-fri-siktlinje: the point in `to` the bullet flies to. */
+    aim?: Readonly<{ q: number; r: number }>,
   ): Promise<void> {
     this.#finishMotion();
     return new Promise((resolve) => {
@@ -756,12 +758,15 @@ export class BoardingMapView implements BoardingMapPort {
         return;
       }
       const duration = kind === 'grenade' ? 850 : 600;
-      const weaponPoint = (cell: BoardingCell): Point => {
+      const weaponPoint = (
+        cell: BoardingCell,
+        at: Readonly<{ q: number; r: number }> = cell,
+      ): Point => {
         const person = this.#state?.people.find(
           (entry) =>
             key(entry.position) === key(cell) && entry.status === 'active',
         );
-        const point = boardingIsoCenter(cell);
+        const point = boardingIsoCenter(at);
         return {
           x: point.x,
           y:
@@ -776,7 +781,7 @@ export class BoardingMapView implements BoardingMapPort {
       };
       this.#shot = {
         from: weaponPoint(from),
-        to: kind === 'grenade' ? boardingIsoCenter(to) : weaponPoint(to),
+        to: kind === 'grenade' ? boardingIsoCenter(to) : weaponPoint(to, aim),
         ...(kind ? { kind } : {}),
         started: performance.now(),
         duration,

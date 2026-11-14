@@ -84,6 +84,10 @@ Se [hela visionen](docs/game-vision.md).
   `halvskydd-markering-sammanfogad` är **Fullständigt implementerat**: alla
   skuggor ritas som en enda orange yta med en kontur, beskuren till den blå
   siktytan och skeppets rutor; låga väggar skuggar från själva väggen.
+  `hukad-ser-inte-over-halvskydd` är **Fullständigt implementerat**: en hukad
+  person ser och skjuter inte över halvskydd längre bort än en ruta.
+  `skott-langs-fri-siktlinje` är **Fullständigt implementerat**: skottet
+  följer den fria siktlinjen närmast målets mitt och krossar glas längs den.
   `avstand-paverkar-traffchans` är **Fullständigt implementerat**: skott får
   +1 i målets försvar per påbörjade två rutor bortom två rutor (högst +3 vid
   åtta rutor). Se

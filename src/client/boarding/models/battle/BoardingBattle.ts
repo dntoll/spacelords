@@ -15,6 +15,7 @@ import {
   boardingCoverShadow,
   boardingSightOutline,
   boardingThrowObstacle,
+  boardingAimPoint,
   boardingSegmentSolids,
   boardingTileSight,
   boardingVisibleShare,
@@ -162,6 +163,8 @@ export interface BoardingShot {
   readonly presentationIndex?: number;
   readonly from: BoardingCell;
   readonly to: BoardingCell;
+  /** skott-langs-fri-siktlinje: where in `to` the bullet flies. */
+  readonly aim?: Readonly<{ q: number; r: number }>;
   readonly hit: boolean;
 }
 
@@ -1181,6 +1184,43 @@ export class BoardingBattle {
     };
   }
 
+  /**
+   * hukad-ser-inte-over-halvskydd: a crouched person's eyes are below half
+   * cover, so crates, low walls and crouched people block their sight, except
+   * those right beside them that they peek over.
+   */
+  #visionBlocksFor(observer: BoardingPerson | undefined): BoardingSightBlocker {
+    const blocks = this.#visionBlocks();
+    if (!observer?.crouched) return blocks;
+    const cover = this.#halfCover();
+    const { q: eyeQ, r: eyeR } = observer.position;
+    return (q, r) => {
+      const solid = blocks(q, r);
+      if (solid !== false) return solid;
+      if (!cover(q, r) || Math.max(Math.abs(q - eyeQ), Math.abs(r - eyeR)) <= 1)
+        return false;
+      const feature = this.#featureAt({ q, r });
+      return feature?.kind === 'thin-wall'
+        ? (this.#map.thinWallPieces({ q, r }) ?? true)
+        : true;
+    };
+  }
+
+  /** hukad-ser-inte-over-halvskydd: distant crouched people block, too. */
+  #bodiesFor(
+    observer: BoardingPerson | undefined,
+  ): readonly BoardingSightBody[] {
+    const bodies = this.#bodies();
+    if (!observer?.crouched) return bodies;
+    const { q: eyeQ, r: eyeR } = observer.position;
+    return bodies.map((body) =>
+      body.cover &&
+      Math.max(Math.abs(body.q - eyeQ), Math.abs(body.r - eyeR)) > 1
+        ? { ...body, cover: false }
+        : body,
+    );
+  }
+
   /** delvis-synligt-mal: the share of a tile the observer sees. */
   #visibleShare(observer: BoardingPerson, target: BoardingCell): number {
     if (observer.status !== 'active') return 0;
@@ -1188,8 +1228,8 @@ export class BoardingBattle {
       observer.position,
       this.#forwardVector(observer),
       target,
-      this.#visionBlocks(),
-      this.#bodies(),
+      this.#visionBlocksFor(observer),
+      this.#bodiesFor(observer),
     );
   }
 
@@ -1233,8 +1273,8 @@ export class BoardingBattle {
       outline: boardingSightOutline(
         observer.position,
         this.#forwardVector(observer),
-        this.#visionBlocks(),
-        this.#bodies(),
+        this.#visionBlocksFor(observer),
+        this.#bodiesFor(observer),
       ),
       halfCover: Object.freeze(halfCover),
     });
@@ -1451,13 +1491,14 @@ export class BoardingBattle {
    */
   #coveredShare(source: BoardingCell, target: BoardingCell): number {
     if (same(source, target)) return 0;
+    const shooter = this.#personAt(source);
     return boardingTileSight(
       source,
       { q: target.q - source.q, r: target.r - source.r },
       target,
-      this.#visionBlocks(),
+      this.#visionBlocksFor(shooter),
       this.#halfCover(),
-      this.#bodies(),
+      this.#bodiesFor(shooter),
     ).covered;
   }
 
@@ -1662,12 +1703,24 @@ export class BoardingBattle {
       else this.#damageFeature(target.id, damage);
     }
     this.#addNoise(source.position, source.side);
-    if (kind !== 'Melee')
-      this.#shatterAlong(source.position, this.#targetPosition(target));
-    if (kind !== 'Melee')
+    const targetCell = this.#targetPosition(target);
+    // skott-langs-fri-siktlinje: aim before glass breaks along the line.
+    const aim =
+      kind === 'Melee'
+        ? null
+        : (boardingAimPoint(
+            source.position,
+            this.#forwardVector(source),
+            targetCell,
+            this.#visionBlocksFor(source),
+            this.#bodiesFor(source),
+          ) ?? frozenCell(targetCell));
+    if (aim) this.#shatterAlong(source.position, aim);
+    if (aim)
       this.#shot = Object.freeze({
         from: frozenCell(source.position),
-        to: frozenCell(this.#targetPosition(target)),
+        to: frozenCell(targetCell),
+        aim,
         presentationIndex: this.#presentation.length,
         hit,
       });
@@ -1681,7 +1734,10 @@ export class BoardingBattle {
   }
 
   /** krossbart-glas: a bullet breaks every pane it passes, hit or miss. */
-  #shatterAlong(from: BoardingCell, to: BoardingCell): void {
+  #shatterAlong(
+    from: BoardingCell,
+    to: Readonly<{ q: number; r: number }>,
+  ): void {
     const crossed = boardingSegmentSolids(from, to, (q, r) =>
       this.#intactGlass({ q, r })
         ? (this.#map.thinWallPieces({ q, r }) ?? true)

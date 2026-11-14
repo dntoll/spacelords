@@ -1770,6 +1770,14 @@ färdig reparation.
   på ett återanvänt offscreen-lager: alla kanter stryks och skuggornas insidor
   raderas, så bara unionens yttre kant blir kvar. Både fyllning och kontur klipps
   mot siktpolygonen och mot skeppets rutor. Rutramarna runt `halfCover` tas bort.
+- `hukad-ser-inte-over-halvskydd`: `#visionBlocksFor` och `#bodiesFor` gör
+  för en hukad betraktare lådor (hel ruta), låga väggar (deras plattor) och
+  hukade personer (pelare) blockerande när de ligger mer än en ruta bort
+  (Chebyshev). Det gäller sikt, kunskap, eldval, siktytan och skyddsandelen.
+- `skott-langs-fri-siktlinje`: `boardingAimPoint` väljer bland siktens 5×5
+  provpunkter den fria punkt som ligger närmast målrutans mitt. Skottet sparar
+  den som `aim`; glas krossas längs linjen dit och spårljuset ritas dit. Detta
+  ersätter linjen mitt-till-mitt i `krossbart-glas`.
 - `avstand-paverkar-traffchans`: `boardingRangeDefense(avstånd)` läggs till i
   `attackPreview` (därmed även Overwatch), men inte i `meleePreview`.
   Siktytan ritas med fyllnadsalfa 14 och 1,25 breda linjer; skuggor med alfa 24

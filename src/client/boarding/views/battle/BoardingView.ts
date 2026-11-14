@@ -66,6 +66,7 @@ export interface BoardingMapPort {
     to: BoardingCell,
     kind?: 'grenade',
     grenade?: 'frag' | 'smoke',
+    aim?: Readonly<{ q: number; r: number }>,
   ): Promise<void>;
   zoom(factor: number): void;
   fit(): void;
@@ -452,7 +453,13 @@ export class BoardingView {
             await this.#map.frameShot(shot.from, shot.to);
             if (token !== this.#playToken) return;
           }
-          await this.#map.playShot(shot.from, shot.to, shot.kind, shot.grenade);
+          await this.#map.playShot(
+            shot.from,
+            shot.to,
+            shot.kind,
+            shot.grenade,
+            shot.aim,
+          );
           this.#playedShot = shot;
         }
         const frame = frames[index];

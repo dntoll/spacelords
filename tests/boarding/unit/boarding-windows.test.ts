@@ -5,6 +5,10 @@ import {
 } from '../../../src/client/boarding/models/battle/BoardingBattle.js';
 import { parseBoardingMap } from '../../../src/client/boarding/models/map/BoardingMap.js';
 import { boardingThinWallCells } from '../../../src/client/boarding/views/rendering/BoardingProjection.js';
+import {
+  boardingAimPoint,
+  boardingSegmentSolids,
+} from '../../../src/client/boarding/models/battle/BoardingSightGeometry.js';
 import { boardingLightGlass } from '../../../src/client/boarding/views/rendering/BoardingLightMap.js';
 import {
   boardingDestructionEffect,
@@ -225,5 +229,24 @@ describe('tunna-fonster', () => {
     };
     expect(width()).toBeCloseTo(1 / 3);
     expect(width(0.02)).toBeCloseTo(0.02);
+  });
+});
+
+describe('skott-langs-fri-siktlinje', () => {
+  it('aims along a clear sight line instead of through a wall corner', () => {
+    const eye = { q: 0, r: 0 };
+    const target = { q: 4, r: 1 };
+    const blocks = (q: number, r: number) => q === 2 && r === 0;
+    // The centre-to-centre line clips the wall; part of the target shows.
+    expect(boardingSegmentSolids(eye, target, blocks)).not.toEqual([]);
+    const aim = boardingAimPoint(eye, { q: 1, r: 0 }, target, blocks)!;
+    expect(aim).not.toBeNull();
+    expect(Math.round(aim.q)).toBe(4);
+    expect(Math.round(aim.r)).toBe(1);
+    expect(boardingSegmentSolids(eye, aim, blocks)).toEqual([]);
+    // A target in plain view is aimed at its centre.
+    expect(boardingAimPoint(eye, { q: 1, r: 0 }, target, () => false)).toEqual(
+      target,
+    );
   });
 });
