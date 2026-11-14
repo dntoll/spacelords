@@ -3,6 +3,9 @@ name=Salvage ship
 width=11
 height=7
 rules=campaign
+spriteX=-7.4799074574283395
+spriteY=-6.8510639560419895
+spriteScale=34.89386025618094
 
 [terrain]
 HHHHHHHHHHH
