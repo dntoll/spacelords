@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, expect, it, vi } from 'vitest';
 import type p5 from 'p5';
-import { BattleMapView } from '../../../src/client/space-battle/views/BattleMapView.js';
+import type { BattleMapView as BattleMapViewClass } from '../../../src/client/space-battle/views/BattleMapView.js';
 import {
   SHIP_SPRITES,
   type ShipSpriteType,
@@ -32,6 +32,14 @@ vi.mock('p5', () => ({
     remove() {}
   },
 }));
+// With isolate: false, an earlier test file in this worker may already have
+// loaded the view with the real p5. Reload it after the mock is registered.
+let BattleMapView: typeof BattleMapViewClass;
+beforeAll(async () => {
+  vi.resetModules();
+  ({ BattleMapView } =
+    await import('../../../src/client/space-battle/views/BattleMapView.js'));
+});
 afterEach(() => vi.unstubAllGlobals());
 
 function drawing(
