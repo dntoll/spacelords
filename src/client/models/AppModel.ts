@@ -9,7 +9,6 @@ import {
   type BoardingCommand,
   type BoardingShot,
 } from '../boarding/models/index.js';
-import { BattleFacade } from './battle/BattleFacade.js';
 import { ResearchFacade } from './research/ResearchFacade.js';
 import { PlanetFacade } from './planet/PlanetFacade.js';
 import { FleetFacade } from './fleets/FleetFacade.js';
@@ -59,10 +58,11 @@ import {
 } from './star-map/StarMapTrade.js';
 import type { SaveRepository } from './saves/SaveRepository.js';
 import {
+  BattleFacade,
   type TacticalBattle,
   type BattleState,
   type BattleCommand,
-} from './TacticalBattle.js';
+} from '../space-battle/models/index.js';
 import type { SupplyOverview } from './SupplyOverview.js';
 import {
   ResearchTreeCamera,

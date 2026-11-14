@@ -4,7 +4,7 @@ import {
   battleWeapons,
   type BattleCommand,
   type BattleHex,
-} from '../../src/client/models/TacticalBattle.js';
+} from '../../src/client/space-battle/models/TacticalBattle.js';
 import {
   HexGeometry,
   HexCoordinate,

@@ -1,4 +1,4 @@
-import { combatDesignName } from '../models/TacticalBattle.js';
+import { combatDesignName } from '../space-battle/models/index.js';
 import { SHIP_SPRITES, SHIP_TYPES, type ShipSpriteType } from './ShipImages.js';
 export { SHIP_IMAGES, SHIP_TYPES } from './ShipImages.js';
 import { TELESCOPES } from '../models/Detection.js';

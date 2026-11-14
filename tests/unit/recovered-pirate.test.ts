@@ -6,7 +6,7 @@ import {
   TacticalBattle,
   battleWeapons,
   SHIP_PROFILES,
-} from '../../src/client/models/TacticalBattle.js';
+} from '../../src/client/space-battle/models/TacticalBattle.js';
 import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
 import { encounterGame } from '../fixtures/battle-checkpoint.js';
 import { completeTacticalBattles } from '../fixtures/tactical-combat.js';

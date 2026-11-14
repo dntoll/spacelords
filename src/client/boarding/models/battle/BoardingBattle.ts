@@ -21,7 +21,7 @@ import {
   type BoardingSightBody,
   type BoardingSightPoint,
 } from './BoardingSightGeometry.js';
-import type { CombatShipType } from '../../../models/TacticalBattle.js';
+import type { CombatShipType } from '../../../space-battle/models/index.js';
 
 export type BoardingSide = 'player' | 'defender' | 'civilian';
 export type BoardingPersonStatus =

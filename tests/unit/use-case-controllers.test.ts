@@ -3,7 +3,7 @@ import { MasterController } from '../../src/client/controllers/app/MasterControl
 import { AppModel } from '../../src/client/models/AppModel.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
 import { BoardingFacade } from '../../src/client/boarding/models/battle/BoardingFacade.js';
-import { BattleFacade } from '../../src/client/models/battle/BattleFacade.js';
+import { BattleFacade } from '../../src/client/space-battle/models/BattleFacade.js';
 import { ResearchFacade } from '../../src/client/models/research/ResearchFacade.js';
 import { BrowserSaveRepository } from '../../src/client/storage/BrowserSaveRepository.js';
 import { playerNoticeText } from '../../src/client/views/app/playerNoticeText.js';

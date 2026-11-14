@@ -2,7 +2,7 @@ import { MasterController } from './controllers/app/MasterController.js';
 import { AppModel } from './models/AppModel.js';
 import { AppView } from './views/app/AppView.js';
 import { GalaxyMapView } from './views/star-map/GalaxyMapView.js';
-import { BattleMapView } from './views/battle/BattleMapView.js';
+import { BattleMapView } from './space-battle/views/index.js';
 import { BoardingMapView } from './boarding/views/index.js';
 import './styles.css';
 import { SaveMapPreview } from './views/saves/SaveMapPreview.js';

@@ -9,6 +9,8 @@ export default defineConfig({
       'tests/extended/**/*.test.ts',
       'tests/boarding/unit/**/*.test.ts',
       'tests/boarding/extended/**/*.test.ts',
+      'tests/space-battle/unit/**/*.test.ts',
+      'tests/space-battle/extended/**/*.test.ts',
     ],
     environment: 'node',
     pool: 'threads',

@@ -1,6 +1,6 @@
 import { Game, type GameState } from '../../src/client/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
-import type { BattleState } from '../../src/client/models/TacticalBattle.js';
+import type { BattleState } from '../../src/client/space-battle/models/TacticalBattle.js';
 
 export function encounterGame(pirateCount = 1): Game {
   const state = new Game(createExampleGalaxy()).exportState();

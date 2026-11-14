@@ -70,6 +70,10 @@ i stället för att upprepa reglerna.
   `src/shared/boarding/` och `tests/boarding/`. Övrig kod importerar bara via
   `boarding/{models,views,controllers}/index.js`. ESLint håller gränsen åt
   båda hållen.
+- Undantag (`isolerad-rymdstridsmodul`): rymdstriden är på samma sätt en egen
+  modul i `src/client/space-battle/` med tester i `tests/space-battle/`.
+  Bordningen och övrig kod importerar den bara via
+  `space-battle/{models,views,controllers}/index.js`.
 - Modellera objektorienterat med hög sammanhållning och låg koppling. Ge vyer
   enbart läsgränssnitt eller oföränderliga ögonblicksbilder av modellerna.
 - Underhåll problemdomänens klasser och relationer i PlantUML i

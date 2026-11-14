@@ -14,7 +14,7 @@ Befintliga sparade vraks positioner, utrustning och order bevaras.
 Ändring 2026-10-31: `stridsrapport-i-dialog` behåller sitt stabila namn men
 resultatet visas på stridskartan. Informationsrutan med Handle/Ignore efter
 strid tas bort. Året fortsätter automatiskt; rapport och slag sparas i Events.
-Se [taktisk strid](tactical-combat.md).
+Se [taktisk strid](space-battle/tactical-combat.md).
 
 `bargat-piratskepp-behaller-typ` — **Fullständigt implementerat**:
 nyförstörda pirater ger Space pirate-vrak. Reparation återställer samma

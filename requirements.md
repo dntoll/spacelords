@@ -165,7 +165,7 @@ Se [hela visionen](docs/game-vision.md).
   hela kartan ryms; minst en riktning fyller skärmen och överbliven rymd
   centreras i den andra. Test battle har asteroider.
   Detta ersätter orderpanelerna och Fire weapon-knappen.
-  Se [taktisk strid](docs/tactical-combat.md).
+  Se [taktisk strid](docs/space-battle/tactical-combat.md).
 
 - **Autoaim och stora stridsskepp:** `autoaim-med-manuellt-mal` och
   `stora-skepp-over-flera-hex` är **Fullständigt implementerat**. Autoaim
@@ -174,7 +174,7 @@ Se [hela visionen](docs/game-vision.md).
   och Colony ship upptar tre hex med verklig kollision, träffyta och skydd.
   `fuskknapp-for-teststrid` omfattar nu utplacering och båda stora typerna.
   Äldre pågående strider behåller sin tidigare geometri utan rensning.
-  Se [taktisk strid](docs/tactical-combat.md).
+  Se [taktisk strid](docs/space-battle/tactical-combat.md).
 
 - **Illustrerade händelser och stridseffekter:** `bilder-i-events`,
   `delproduktion-med-sammanhang`, `flottor-fore-planetdetaljer`,
@@ -184,7 +184,7 @@ Se [hela visionen](docs/game-vision.md).
   av totalt behov. Hexdetaljer visar flottor före hela planetdelen.
   Strid visar projektiler, träffpartiklar och explosioner före nästa handling.
   Äldre sparningar bevaras. Se [Events](docs/events-and-guidance.md) och
-  [taktisk strid](docs/tactical-combat.md).
+  [taktisk strid](docs/space-battle/tactical-combat.md).
 
 - **Vald flotta och stjärnupptäckt:** `vald-flotta-visar-destinationspil` och
   `stjarnupptackt-utan-avbrott` är **Fullständigt implementerat**. En vald
@@ -217,7 +217,7 @@ Se [hela visionen](docs/game-vision.md).
   manöver. Huvudmenyn har Test battle (cheat) utan påverkan på sparplatserna.
   `stridsrapport-i-dialog` är **Fullständigt implementerat** med ändrat beteende:
   slutresultatet visas på stridskartan, året fortsätter utan rapportdialog och
-  rapporten finns i Events. Se [taktisk strid](docs/tactical-combat.md).
+  rapporten finns i Events. Se [taktisk strid](docs/space-battle/tactical-combat.md).
 
 - **Bärgade pirater och civila skeppsbilder:** `bargat-piratskepp-behaller-typ`
   och `unik-bild-for-civila-transporter` är **Fullständigt implementerat**.
@@ -284,12 +284,12 @@ Se [hela visionen](docs/game-vision.md).
   spelbart skepp startar dess tur direkt. Rörelse och End ship turn finns
   runt skeppet; vapenval ligger i skärmens nederkant. Tryck på det markerade
   målet avfyrar. Logg och regler finns under Combat details.
-  Se [taktisk strid](docs/tactical-combat.md).
+  Se [taktisk strid](docs/space-battle/tactical-combat.md).
 
 - **Skeppens riktning i strid:** `skeppets-framat-foljer-spriten` är
   **Fullständigt implementerat**. Skeppsbildens nos, framåtmarkering,
   framåtförflyttning och eldbåge följer samma riktning i alla sex lägen.
-  Se [taktisk strid](docs/tactical-combat.md).
+  Se [taktisk strid](docs/space-battle/tactical-combat.md).
 
 - **Tydlig forskningsstatus:** `forskningsstatus-med-tydliga-farger` är
   **Fullständigt implementerat**. Research skiljer blå tillgänglig forskning
@@ -308,21 +308,21 @@ Se [hela visionen](docs/game-vision.md).
   Armored Fighter forskas fram och monteras med Upgrade. En Fighter bär två
   missilsalvor. Missiler träffar vald hex och alla grannhexar, även egna skepp.
   Skott siktas på stridskartan. Äldre sparade Fighters behåller sina salvor.
-  Se [taktisk strid](docs/tactical-combat.md) och
+  Se [taktisk strid](docs/space-battle/tactical-combat.md) och
   [flottuppgradering](docs/fleet-upgrades.md).
 
 - **Taktisk strid:** Ny separat hexkarta med alla deltagande skepp,
   utplacering, växelvisa aktiveringar, eldbågar, skydd, öppna D6-slag och
   skeppsvis reträtt är **Fullständigt implementerat**. Sparade strider
   återupptas utan nya tärningsslag och äldre spel bevaras. Detta ersätter den fasta
-  förlustformeln i `flottstrid-per-hex`. Se [taktisk strid](docs/tactical-combat.md).
+  förlustformeln i `flottstrid-per-hex`. Se [taktisk strid](docs/space-battle/tactical-combat.md).
 
 - **Bordningsskydd och flyktzoner:** `pirater-skyddar-bordade-skepp` och
   `flyktzoner-i-rymdstrid` är **Fullständigt implementerat**. Andra pirater
   väljer inte skeppet som deras allierade bordar som skottmål. Nya strider har
   tre gröna `Escape`-hexar mitt på både över- och nederkanten; från runda två
   måste hela skeppet lämna genom en sådan zon. Äldre pågående strider behåller
-  sin tidigare reträttregel. Se [taktisk strid](docs/tactical-combat.md).
+  sin tidigare reträttregel. Se [taktisk strid](docs/space-battle/tactical-combat.md).
 
 - **Manöver, vrak och krock:** `manoverpoang-och-hastighet`,
   `svang-vid-hastighet`, `avslutad-manoveranimation`,
@@ -340,7 +340,7 @@ Se [hela visionen](docs/game-vision.md).
   animationsbildruta, så skeppet visas på sin verkliga slutposition och nästa
   order kan ges. Sprängda skepp lämnar inget
   bärgningsvrak. Obeväpnade skepp flyr mot `Escape`. Äldre pågående strider
-  behåller den tidigare rörelsen. Se [taktisk strid](docs/tactical-combat.md).
+  behåller den tidigare rörelsen. Se [taktisk strid](docs/space-battle/tactical-combat.md).
 
 - **Nya stridsorder:** `hexmal-for-manover` och `overwatch-i-rymdstrid` är
   **Fullständigt implementerat**. Kartan visar valbara manövrer och
@@ -426,7 +426,7 @@ Se [hela visionen](docs/game-vision.md).
   Sparformatet är version 14 med additiv migrering. Menyns
   `Test boarding (cheat)` är oförändrad. Se
   [bordningsstrid](docs/boarding/boarding-combat.md),
-  [taktisk strid](docs/tactical-combat.md) och
+  [taktisk strid](docs/space-battle/tactical-combat.md) och
   [space pirates](docs/space-pirates.md).
 
 - **Renare spelgränssnitt:** Kraven för borttagna S/Q-texter och hex-koordinater,
@@ -805,6 +805,8 @@ Se [hela visionen](docs/game-vision.md).
   ligger samlad i `src/client/boarding/` och motsvarande kataloger för server,
   delat kartformat och tester. Övrig kod når modulen bara via dess
   `index.js`-filer, och ESLint håller gränsen.
+  `isolerad-rymdstridsmodul` är **Fullständigt implementerat** på samma sätt
+  för rymdstriden i `src/client/space-battle/` och `tests/space-battle/`.
   `snabb-testsvit` är **Fullständigt implementerat**: sviten omfattar alla
   Vitest-tester utom `tests/integration` och har ingen total tidsgräns.
   Detta ersätter riktvärdet 20 sekunder och regeln att flytta långsammare

@@ -106,7 +106,7 @@ omfattar nu också vanliga asteroider, med fria startzoner. Sparade spel bevaras
 Förtydligandet av `begransad-stridskamera` ersätter det tidigare kravet att
 kartan måste fylla både bredd och höjd. Utzoomning får inte lämna rymd runt
 spelplanen på alla fyra sidor.
-Se [taktisk strid](tactical-combat.md).
+Se [taktisk strid](space-battle/tactical-combat.md).
 
 ## Autoaim och stora skepp, 2026-11-01
 
@@ -193,7 +193,7 @@ pågående strider behåller sin tidigare karta och reträttregel.
 Detta ersätter stegvis rörelse utan tröghet och att varje förstört skepp
 lämnar ett bärgningsvrak. Äldre pågående strider behåller de tidigare
 rörelsereglerna.
-Se [taktisk strid](tactical-combat.md).
+Se [taktisk strid](space-battle/tactical-combat.md).
 
 ## Illustrerade besked och strid, 2026-11-01
 
@@ -264,7 +264,7 @@ för sig. Test battle (cheat) startar direkt från huvudmenyn utan att påverka
 sparade spel. `stridsrapport-i-dialog` är **Fullständigt implementerat** med
 ändrat beteende: informationsrutan efter strid ersätts av resultat på kartan;
 året fortsätter automatiskt och rapporten finns i Events.
-Se [taktisk strid](tactical-combat.md).
+Se [taktisk strid](space-battle/tactical-combat.md).
 
 ## Fristående bordningsstrid
 
@@ -376,13 +376,13 @@ som skiljer passagerarskeppet från Transport ship.
 **Fullständigt implementerat**: val av ett tillgängligt skepp på kartan startar
 dess tur direkt. Första valet sker automatiskt. Rörelse och End ship turn
 finns runt skeppet; vapen väljs i nederkant och avfyras på markerat mål.
-Combat details samlar logg och längre regler. Se [taktisk strid](tactical-combat.md).
+Combat details samlar logg och längre regler. Se [taktisk strid](space-battle/tactical-combat.md).
 
 `skeppets-framat-foljer-spriten` är **Fullständigt implementerat**:
 i strid pekar bilden och framåtmarkeringen i samma riktning som skeppets
 förflyttning och främre eldbåge. Detta gäller alla skepp och pirater i alla
 sex riktningar, även när bilden ännu inte har laddats. Se
-[taktisk strid](tactical-combat.md).
+[taktisk strid](space-battle/tactical-combat.md).
 
 `forskningsstatus-med-tydliga-farger` är **Fullständigt implementerat**:
 Research visar outforskad tillgänglig teknik blå och färdig teknik grön med ✓.
@@ -1265,7 +1265,7 @@ Flottan samlas efter reträtt och överlevande återställs efter striden.
 Missiler och pansarskrov forskas fram och monteras på befintliga skepp.
 Skott siktas mot en hex på stridskartan. Äldre sparade spel behålls.
 
-Kraven och deras status finns i [taktisk strid](tactical-combat.md).
+Kraven och deras status finns i [taktisk strid](space-battle/tactical-combat.md).
 
 ## Gemensamt händelseflöde
 

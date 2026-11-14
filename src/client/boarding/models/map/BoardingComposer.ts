@@ -9,7 +9,7 @@ import {
   type BoardingRoom,
   type BoardingTerrain,
 } from './BoardingMap.js';
-import type { CombatShipType } from '../../../models/TacticalBattle.js';
+import type { CombatShipType } from '../../../space-battle/models/index.js';
 import colonyMap from '../../maps/colony-boarding.txt?raw';
 import explorationMap from '../../maps/exploration-boarding.txt?raw';
 import salvageMap from '../../maps/salvage-boarding.txt?raw';

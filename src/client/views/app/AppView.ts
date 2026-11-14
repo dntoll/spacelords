@@ -1,6 +1,9 @@
 import { renderOrders } from '../orders/OrdersView.js';
 import { gameText } from './GameText.js';
-import { BattleView, type BattleMapFactory } from '../battle/BattleView.js';
+import {
+  BattleView,
+  type BattleMapFactory,
+} from '../../space-battle/views/index.js';
 import {
   BoardingView,
   BoardingEditorView,
@@ -49,7 +52,7 @@ import { renderEventContent } from './EventContent.js';
 import type {
   BattleManeuver,
   BattleShot,
-} from '../../models/TacticalBattle.js';
+} from '../../space-battle/models/index.js';
 
 export class AppView implements AppPort {
   #battleView: BattleView | null = null;

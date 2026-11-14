@@ -9,7 +9,7 @@ import {
   TacticalBattle,
   combatDesignName,
   maxHull,
-} from '../../src/client/models/TacticalBattle.js';
+} from '../../src/client/space-battle/models/TacticalBattle.js';
 
 const ion = { 'Rocket engine': 0, 'Ion pulse engine': 1 } as const;
 

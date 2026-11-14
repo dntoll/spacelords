@@ -1,6 +1,9 @@
 import type { HexCoordinate } from './HexCoordinate.js';
 import type { BattleReport } from './Salvage.js';
-import { TacticalBattle, type BattleState } from './TacticalBattle.js';
+import {
+  TacticalBattle,
+  type BattleState,
+} from '../space-battle/models/index.js';
 import {
   BoardingEngagement,
   type SavedBoardingEngagement,

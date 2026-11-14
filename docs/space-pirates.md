@@ -71,7 +71,7 @@ riktning, vapen och skydd. Pirater väljer `Dock` när babord- eller
 styrbordskontakt mot ett bordningsbart skepp är laglig. Öppna D6-slag avgör
 träffar. Civila skepp är obeväpnade men kan skyddas och fly. Förstörda skepp
 lämnar vrak. Erövrad last lastas av vid ägd planet. Se
-[taktisk strid](tactical-combat.md) och
+[taktisk strid](space-battle/tactical-combat.md) och
 [bordningsstrid](boarding/boarding-combat.md) för hela regeluppsättningen.
 
 Detta ersätter den tidigare fasta förlustformeln och separata strider för

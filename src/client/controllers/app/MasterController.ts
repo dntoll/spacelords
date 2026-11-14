@@ -3,7 +3,7 @@ import {
   BoardingController,
   BoardingEditorController,
 } from '../../boarding/controllers/index.js';
-import { BattleController } from '../battle/BattleController.js';
+import { BattleController } from '../../space-battle/controllers/index.js';
 import { ResearchController } from '../research/ResearchController.js';
 import { PlanetController } from '../planet/PlanetController.js';
 import { FleetController } from '../fleets/FleetController.js';

@@ -3,7 +3,7 @@ import {
   composeBoardingMaps,
   type ComposedBoarding,
 } from '../map/BoardingComposer.js';
-import type { CombatShipType } from '../../../models/TacticalBattle.js';
+import type { CombatShipType } from '../../../space-battle/models/index.js';
 
 export interface SavedBoardingEngagement {
   readonly attackerId: string;

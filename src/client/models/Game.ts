@@ -40,7 +40,7 @@ import {
   type BattleCommand,
   type BattleFleet,
   type BattlePiece,
-} from './TacticalBattle.js';
+} from '../space-battle/models/index.js';
 import {
   BoardingEngagement,
   type BoardingBattleState,

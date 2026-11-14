@@ -6,7 +6,7 @@ import {
   TacticalBattle,
   SHIP_PROFILES,
   battleWeapons,
-} from '../../../src/client/models/TacticalBattle.js';
+} from '../../../src/client/space-battle/models/TacticalBattle.js';
 import { BUILDINGS, Game, SHIPS } from '../../../src/client/models/Game.js';
 import { ResearchPlan } from '../../../src/client/models/research/Research.js';
 import { createExampleGalaxy } from '../../../src/client/models/exampleGalaxy.js';

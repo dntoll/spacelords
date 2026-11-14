@@ -4,7 +4,7 @@ import type {
   BattleCommand,
   BattleManeuver,
   BattleShot,
-} from '../models/TacticalBattle.js';
+} from '../space-battle/models/index.js';
 import type {
   MapProductionCategory,
   MapViewport,
