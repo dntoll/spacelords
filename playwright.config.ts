@@ -24,13 +24,21 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'phone-chromium', use: { ...devices['Pixel 7'] } },
+    // utokad-testsvit: six parallel workers slow Chromium by about half.
+    {
+      name: 'phone-chromium',
+      use: { ...devices['Pixel 7'] },
+      timeout: 45_000,
+      metadata: { timeoutScale: 1.5 },
+    },
     {
       name: 'desktop-chromium',
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 1440, height: 1000 },
       },
+      timeout: 45_000,
+      metadata: { timeoutScale: 1.5 },
     },
     // utokad-testsvit: WebKit runs about three times slower on Windows.
     {

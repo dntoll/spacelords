@@ -341,12 +341,15 @@ test('en-flotta-i-taget / osynliga-flottor-utan-animation: full fleet routes are
   });
   await requestTurn(page);
   await expect(canvas).toHaveAttribute('data-moving-fleet', 'fleet-home');
+  // Read once per poll: under load the movement may end between two reads.
   await expect
-    .poll(() => canvas.getAttribute('data-moving-progress'))
-    .not.toBe('0');
-  const progress = Number(await canvas.getAttribute('data-moving-progress'));
-  expect(progress).toBeGreaterThan(0);
-  expect(progress).toBeLessThan(1);
+    .poll(async () => {
+      const progress = Number(
+        await canvas.getAttribute('data-moving-progress'),
+      );
+      return progress > 0 && progress < 1;
+    })
+    .toBe(true);
   await noMenu(page);
   await expect(
     page.getByRole('button', { name: 'End turn', exact: true }),
