@@ -49,7 +49,7 @@ import { BoardingLightMap } from '../rendering/BoardingLightMap.js';
 import { BoardingLightPainter } from '../rendering/BoardingLightPainter.js';
 import { BOARDING_METERS, boardingHeight } from '../rendering/BoardingScale.js';
 import {
-  SHIP_SPRITES,
+  SHIP_BOARDING_IMAGES,
   type ShipSpriteType,
 } from '../../../space-map/views/index.js';
 import {
@@ -365,7 +365,7 @@ export class BoardingEditorMapView {
     if (this.#spriteMap !== snapshot.mapId) {
       this.#spriteMap = snapshot.mapId;
       this.#sprite = null;
-      const url = SHIP_SPRITES[SHIP_SPRITE_FOR_MAP[snapshot.mapId]];
+      const url = SHIP_BOARDING_IMAGES[SHIP_SPRITE_FOR_MAP[snapshot.mapId]];
       void this.#p5
         .loadImage(url)
         .then((image) => {

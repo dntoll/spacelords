@@ -55,6 +55,9 @@ Se [hela visionen](docs/game-vision.md).
   `skeppsbild-under-bordning` är **Delvis implementerat**: skeppsbilden ligger
   under kartan även i strid, för kartor som justerats i editorn (testbordningen
   och `Colony ship`). Övriga skepp saknar justering och visar ännu ingen bild.
+  `hogupplost-skeppsbild-i-bordning` är **Fullständigt implementerat**: spel och
+  editor lägger kartan på en högupplöst bild av skeppet i stället för
+  stjärnkartans lilla bild.
   `spelidentisk-bordningseditor` är **Fullständigt implementerat**: samma bildval,
   ytprojektion, ljus och väggsnitt används. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 - **60° kameravinkel i bordning:** `kameravinkel-60-i-bordning` är **Delvis implementerat** (provversion). Bordningskartan visas med samma 60° kamerahöjd som Ludos high-angle, vilket ger nästan kvadratiska diamanter (64 × 32√3). Figurer, reactor och en låda (ersätter bilden för `Half cover`) använder nya bilder för 60°. Dörrar och airlock trycks fortfarande ihop från 2:1-bilderna, eftersom de nya dörr- och airlockbilderna har 2:1-lutning och inte passar väggarna; passande bilder återstår. Ersätter provet `isometri-3-2-i-bordning` och 2:1-projektionen i `isometrisk-bordningsvy`.
@@ -97,6 +100,7 @@ Se [hela visionen](docs/game-vision.md).
 - **Bordningsgränssnitt och rök:** `tydliga-handlingsbilder-pa-mobil` är
   **Fullständigt implementerat**: stora särskiljbara knappar utan text syns utan
   intern rullning. `illustrerade-bordningshandlingar` är **Delvis implementerat**:
+  de illustrerade handlingarna har metalliska bilder i samma stil som skeppen.
   Stand, Hack door, Evacuate och Abort boarding använder ännu enkla symboler.
   `bordning-utan-kameraknappar-och-forklaringspanel`,
   `dorrhandling-framfor-soldat`, `oppen-dorr-som-golvruta` och

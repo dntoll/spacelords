@@ -450,6 +450,9 @@ Bildoriginalen med suffixet `-meters` ersätter de tidigare dörr- och airlockbi
   under kartan även i strid, med editorns justering. I en hopkopplad bordning
   flyttas anfallarens bild med sitt skepp och försvararens spegelvänds med sitt.
   Återstår: justering av skepp utom testbordningen och `Colony ship`.
+- `hogupplost-skeppsbild-i-bordning` — **Fullständigt implementerat**. Spel och
+  editor använder en högupplöst skeppsbild med samma utsnitt och proportioner
+  som stjärnkartans bild, så befintlig justering gäller oförändrad.
 - `rumsspecifika-bordningstexturer` och `texturerad-vaggovansida` — **Fullständigt
   implementerat**. Bilderna används i spel och editor.
 - `spelidentisk-bordningseditor` — **Fullständigt implementerat**. Spelets

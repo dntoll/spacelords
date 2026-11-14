@@ -108,7 +108,7 @@ import {
   boardingWallRun,
   type BoardingPoint as Point,
 } from '../rendering/BoardingProjection.js';
-import { SHIP_SPRITES } from '../../../space-map/views/index.js';
+import { SHIP_BOARDING_IMAGES } from '../../../space-map/views/index.js';
 import {
   paintIsoFloor,
   paintIsoCrate,
@@ -368,7 +368,7 @@ export class BoardingMapView implements BoardingMapPort {
         }
         for (const ship of new Set(this.map.pictures.map((item) => item.ship)))
           void sketch
-            .loadImage(SHIP_SPRITES[ship])
+            .loadImage(SHIP_BOARDING_IMAGES[ship])
             .then((image) => {
               if (this.#disposed || !image) return;
               this.#shipPictures.set(ship, image);
