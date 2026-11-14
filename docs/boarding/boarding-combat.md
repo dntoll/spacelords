@@ -445,6 +445,10 @@ Bildoriginalen med suffixet `-meters` ersätter de tidigare dörr- och airlockbi
   objekt, rum, startpositioner och belysning har separata grupper och verktygshjälp.
 - `isometrisk-skeppsreferens` — **Fullständigt implementerat**. Skeppsbilden
   projiceras bakom isometrin och syns genom `Outside` och runt kartan.
+- `skeppsbild-under-bordning` — **Delvis implementerat**. Skeppsbilden ritas
+  under kartan även i strid, med editorns justering. I en hopkopplad bordning
+  flyttas anfallarens bild med sitt skepp och försvararens spegelvänds med sitt.
+  Återstår: justering av skepp utom testbordningen och `Colony ship`.
 - `rumsspecifika-bordningstexturer` och `texturerad-vaggovansida` — **Fullständigt
   implementerat**. Bilderna används i spel och editor.
 - `spelidentisk-bordningseditor` — **Fullständigt implementerat**. Spelets

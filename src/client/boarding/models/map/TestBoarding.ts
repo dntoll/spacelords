@@ -2,7 +2,7 @@ import transportMap from '../../maps/transport-boarding.txt?raw';
 import { BoardingBattle } from '../battle/BoardingBattle.js';
 import { parseBoardingMap } from './BoardingMap.js';
 
-export const testBoardingMap = parseBoardingMap(transportMap);
+export const testBoardingMap = parseBoardingMap(transportMap, 'Transport ship');
 
 /** fristaende-bordningsprototyp: repeatable encounter outside saved games. */
 export function createTestBoardingBattle(seed = 0x5a17): BoardingBattle {

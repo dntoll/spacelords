@@ -33,8 +33,10 @@ const freezeCell = (q: number, r: number): BoardingCell =>
   Object.freeze({ q, r });
 
 export function boardingInterior(type: CombatShipType): BoardingMap {
-  const source = INTERIORS[type] ?? pirateMap;
-  return parseBoardingMap(source);
+  const source = INTERIORS[type];
+  return source
+    ? parseBoardingMap(source, type)
+    : parseBoardingMap(pirateMap, 'Space pirate');
 }
 
 function transform(
@@ -267,6 +269,19 @@ export function composeBoardingMaps(
       ...left.lights,
       ...right.lights,
       boardingCeilingLight(freezeCell(Math.round((lo + hi) / 2), bridgeR)),
+    ],
+    // skeppsbild-under-bordning: each picture follows its ship's cells.
+    [
+      ...attacker.pictures.map((picture) => ({
+        ...picture,
+        y: picture.y + attackerOffsetR,
+      })),
+      ...defender.pictures.map((picture) => ({
+        ...picture,
+        x: width - picture.x - picture.scale,
+        y: picture.y + defenderOffsetR,
+        mirrored: !picture.mirrored,
+      })),
     ],
   );
   return {

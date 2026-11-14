@@ -273,6 +273,11 @@ implementerat**. I editorn kan `Outside` användas för att forma ett skepp med
 varierande bredd, med manuellt utplacerat `Hull` längs kanten. Skeppets bild
 visas som stöd bakom kartan i båda vyerna.
 
+`skeppsbild-under-bordning` är **Delvis implementerat**: skeppsbilden syns under
+kartan även när man spelar, nedtonad som obelyst skrov. När två skepp kopplas
+ihop följer varje bild sitt skepp. Bara skepp vars bild justerats i editorn
+visar den; övriga skepp behöver justeras.
+
 `redigerbara-bordningslampor` och `kategoriserad-bordningspalett` är
 **Fullständigt implementerat**. Verktygen är grupperade, har hjälpförklaringar
 och kan användas för att placera och ta bort taklampor.

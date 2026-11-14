@@ -260,13 +260,24 @@ describe('skuggor-fran-figurer-och-foremal', () => {
       smokeCells: [],
       people: [person(0, 0)],
     });
-    expect(boardingShadowPolygon(lamp, soldier!).length).toBeGreaterThan(0);
-    expect(
-      inside(boardingShadowPolygon(lamp, soldier!), { q: 0.1, r: 0 }),
-    ).toBe(true);
-    expect(inside(boardingShadowPolygon(lamp, soldier!), { q: 2, r: 0 })).toBe(
-      false,
-    );
+    const shadow = boardingShadowPolygon(lamp, soldier!);
+    expect(inside(shadow, { q: 0.1, r: 0 })).toBe(true);
+    // Round, and no wider than the figure: a lamp is a small area, not a point.
+    expect(inside(shadow, { q: 0.17, r: 0.17 })).toBe(false);
+    expect(inside(shadow, { q: 0.45, r: 0 })).toBe(false);
+    expect(inside(shadow, { q: 0, r: -0.45 })).toBe(false);
+  });
+
+  it('narrows the shadow of a figure next to the lamp to a short streak', () => {
+    const [soldier] = boardingLightOccluders({
+      features: [],
+      smokeCells: [],
+      people: [person(1, 0)],
+    });
+    const shadow = boardingShadowPolygon(lamp, soldier!);
+    expect(inside(shadow, { q: 2, r: 0 })).toBe(true);
+    expect(inside(shadow, { q: 2, r: 0.3 })).toBe(false);
+    expect(inside(shadow, { q: 1, r: 0.35 })).toBe(false);
   });
 
   it('changes the light signature when a figure moves or crouches only', () => {
