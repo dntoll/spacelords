@@ -62,10 +62,11 @@ describe('datadriven-bordningskarta', () => {
   });
 
   it('reports the layer and row when a hand-edited map has the wrong width', () => {
-    const broken = transportMap.replace(
-      'H.......#.......H',
-      'H......#.......H',
-    );
+    // Shorten terrain row 2 whatever the hand-edited map currently holds.
+    const lines = transportMap.split('\n');
+    const row = lines.findIndex((line) => line.trim() === '[terrain]') + 2;
+    lines[row] = lines[row]!.slice(1);
+    const broken = lines.join('\n');
     expect(() => parseBoardingMap(broken)).toThrow(
       /terrain row 2.*expected 17/i,
     );
