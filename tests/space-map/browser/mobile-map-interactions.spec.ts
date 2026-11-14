@@ -52,7 +52,12 @@ for (const gesture of ['double click', 'double tap'] as const) {
 
 test('centrerat-kartfokus / kartpanel-till-events: Show centers Vesta above the production panel', async ({
   page,
+  isMobile,
 }, testInfo) => {
+  test.skip(
+    !isMobile,
+    'Desktop places the panel beside the map, not below it.',
+  );
   const state = tradeNetworkState(false);
   state.colonies[1]![1].projects = [];
   await start(page, state);
@@ -78,8 +83,12 @@ test('centrerat-kartfokus / kartpanel-till-events: Show centers Vesta above the 
 test('handelsrutt-skapande-pa-stjarnkartan: native touch drags an exposed selected planet into a route', async ({
   page,
   browserName,
+  isMobile,
 }) => {
-  test.skip(browserName !== 'chromium', 'Native touch drag uses Chromium CDP.');
+  test.skip(
+    browserName !== 'chromium' || !isMobile,
+    'Native touch drag uses Chromium CDP on a touch device.',
+  );
   const state = tradeNetworkState(false);
   await start(page, state);
   const [source, target] = Game.restore(state).ownedPlanetSnapshots();
