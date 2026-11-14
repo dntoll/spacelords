@@ -119,6 +119,8 @@ const closedDoor = (feature: BoardingFeature): boolean =>
   feature.kind === 'door' && !feature.open && !feature.destroyed;
 /** Keeps the cached floor layer within mobile canvas memory limits. */
 const FLOOR_LAYER_MAX_SIDE = 3072;
+/** Sight tint added at full light; ambient light gives about the old even fill. */
+const SIGHT_GLOW = [14, 28, 35] as const;
 
 const characterPose = (person: BoardingPerson): BoardingCharacterPose =>
   person.status === 'active'
@@ -1133,8 +1135,14 @@ export class BoardingMapView implements BoardingMapPort {
   #paintSight(sketch: p5): void {
     const sight = this.#sight;
     if (!sight || sight.outline.length < 3) return;
+    // ljuskarta-i-bordning: the sight area glows with the light on the floor.
+    this.#lightMap?.glow(
+      sketch.drawingContext as CanvasRenderingContext2D,
+      sight.outline.map((point) => boardingIsoCenter(point)),
+      SIGHT_GLOW,
+    );
     sketch.push();
-    sketch.fill(98, 200, 250, 14);
+    sketch.noFill();
     sketch.stroke('#62d6ff');
     sketch.strokeWeight(1.25);
     sketch.strokeJoin(sketch.ROUND);

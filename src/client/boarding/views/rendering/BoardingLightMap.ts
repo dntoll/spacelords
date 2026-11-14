@@ -313,6 +313,7 @@ function falloff(
 export class BoardingLightMap {
   readonly #canvas: HTMLCanvasElement | null;
   readonly #texels: number;
+  readonly #tints = new Map<string, HTMLCanvasElement | null>();
 
   constructor(
     map: {
@@ -380,6 +381,51 @@ export class BoardingLightMap {
       context.closePath();
       context.stroke();
     }
+  }
+
+  /**
+   * ljuskarta-i-bordning: adds `color`, scaled by the light map, inside
+   * `clip`, so an overlay glows brighter where the deck is lit.
+   */
+  glow(
+    context: CanvasRenderingContext2D,
+    clip: readonly BoardingPoint[],
+    color: readonly [number, number, number],
+  ): void {
+    if (!this.#canvas || clip.length < 3) return;
+    const tinted = this.#tinted(color);
+    if (!tinted) return;
+    context.save();
+    context.beginPath();
+    clip.forEach((point, index) => {
+      if (index === 0) context.moveTo(point.x, point.y);
+      else context.lineTo(point.x, point.y);
+    });
+    context.closePath();
+    context.clip();
+    context.globalCompositeOperation = 'lighter';
+    context.transform(...boardingLightMapTransform(this.#texels));
+    context.drawImage(tinted, 0, 0);
+    context.restore();
+  }
+
+  #tinted(color: readonly [number, number, number]): HTMLCanvasElement | null {
+    const id = color.join(',');
+    if (this.#tints.has(id)) return this.#tints.get(id)!;
+    const source = this.#canvas!;
+    const canvas = document.createElement('canvas');
+    canvas.width = source.width;
+    canvas.height = source.height;
+    const context = canvas.getContext('2d');
+    const result = context ? canvas : null;
+    if (context) {
+      context.drawImage(source, 0, 0);
+      context.globalCompositeOperation = 'multiply';
+      context.fillStyle = `rgb(${color.join(', ')})`;
+      context.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    this.#tints.set(id, result);
+    return result;
   }
 
   /** Multiplies the light under one cell onto the floor area clipped by `clip`. */
