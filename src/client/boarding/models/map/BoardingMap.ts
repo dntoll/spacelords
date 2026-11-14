@@ -1,4 +1,5 @@
 import { BOARDING_LAYER_SYMBOLS } from '../../../../shared/boarding/map-format.js';
+import type { CombatShipType } from '../../../space-battle/models/index.js';
 
 export type BoardingCell = Readonly<{ q: number; r: number }>;
 export type BoardingRoom = 'bridge' | 'engineering' | 'cockpit';
@@ -79,6 +80,19 @@ export function boardingThinOutsideTerrain(
   return boardingTerrainShowsFloor(terrain) ? terrain : null;
 }
 
+/**
+ * skeppsbild-under-bordning: the ship's picture lies on the deck plane under
+ * the cells; x, y and scale are in cells, as aligned in the editor.
+ */
+export interface BoardingShipPicture {
+  readonly ship: CombatShipType;
+  readonly x: number;
+  readonly y: number;
+  readonly scale: number;
+  /** Drawn flipped left to right, as for the defender in a joined boarding. */
+  readonly mirrored: boolean;
+}
+
 export interface BoardingLight {
   readonly position: BoardingCell;
   readonly height: number;
@@ -126,6 +140,7 @@ export class BoardingMap {
   readonly cockpits: readonly BoardingCell[];
   readonly campaign: boolean;
   readonly lights: readonly BoardingLight[];
+  readonly pictures: readonly BoardingShipPicture[];
   readonly #terrain: ReadonlyMap<string, BoardingTerrain>;
   readonly #rooms: ReadonlyMap<string, BoardingRoom>;
   readonly #zones: ReadonlyMap<string, BoardingShipZone>;
@@ -144,7 +159,11 @@ export class BoardingMap {
     campaign = false,
     zones: ReadonlyMap<string, BoardingShipZone> = new Map(),
     lights: readonly BoardingLight[] = [],
+    pictures: readonly BoardingShipPicture[] = [],
   ) {
+    this.pictures = Object.freeze(
+      pictures.map((picture) => Object.freeze({ ...picture })),
+    );
     this.name = name;
     this.width = width;
     this.height = height;
@@ -287,7 +306,10 @@ function symbol(
 }
 
 /** datadriven-bordningskarta: strict parser for a hand-editable layered map. */
-export function parseBoardingMap(source: string): BoardingMap {
+export function parseBoardingMap(
+  source: string,
+  ship?: CombatShipType,
+): BoardingMap {
   const layers = sections(source);
   const { width, height } = dimensions(layers);
   const terrain = new Map<string, BoardingTerrain>();
@@ -415,5 +437,19 @@ export function parseBoardingMap(source: string): BoardingMap {
     campaign,
     new Map(),
     lights,
+    shipPictures(layers.meta, ship),
   );
+}
+
+/** skeppsbild-under-bordning: only a map aligned in the editor shows its ship. */
+function shipPictures(
+  meta: ReadonlyMap<string, string>,
+  ship: CombatShipType | undefined,
+): BoardingShipPicture[] {
+  const [x, y, scale] = ['spriteX', 'spriteY', 'spriteScale'].map((name) =>
+    Number(meta.get(name) ?? NaN),
+  );
+  if (!ship || ![x, y, scale].every((value) => Number.isFinite(value)))
+    return [];
+  return [{ ship, x: x!, y: y!, scale: scale!, mirrored: false }];
 }

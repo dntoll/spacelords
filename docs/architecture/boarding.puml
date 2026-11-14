@@ -49,6 +49,7 @@ boarding__rendering ..> boarding__battle : 2, typer
 boarding__rendering --> boarding__map : 7
 boarding___delat_ --> ext__shared : map-format
 boarding__battle ..> ext__space_battle : models, typer
+boarding__battle --> ext__space_map : views
 boarding__editor --> ext__shared : map-format
 boarding__editor --> ext__space_map : views
 boarding__map --> ext__shared : map-format

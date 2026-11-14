@@ -101,9 +101,11 @@ import {
   boardingIsoCamera,
   boardingIsoCenter,
   boardingIsoCorners,
+  boardingSpritePlaneTransform,
   boardingWallRun,
   type BoardingPoint as Point,
 } from '../rendering/BoardingProjection.js';
+import { SHIP_SPRITES } from '../../../space-map/views/index.js';
 import {
   paintIsoFloor,
   paintIsoCrate,
@@ -121,6 +123,8 @@ const closedDoor = (feature: BoardingFeature): boolean =>
 /** Keeps the cached floor layer within mobile canvas memory limits. */
 const FLOOR_LAYER_MAX_SIDE = 3072;
 /** Sight tint added at full light; kept faint so the light map shows through. */
+/** Grey level the ship picture is drawn at, so it reads as unlit hull. */
+const SHIP_PICTURE_SHADE = 150;
 const SIGHT_GLOW = [9, 18, 23] as const;
 
 const characterPose = (person: BoardingPerson): BoardingCharacterPose =>
@@ -239,6 +243,7 @@ export class BoardingMapView implements BoardingMapPort {
     door?: boolean;
   })[] = [];
   readonly #objects = new Map<BoardingArtwork, p5.Image>();
+  readonly #shipPictures = new Map<string, p5.Image>();
   #ready = false;
   #disposed = false;
   #motionTimer: ReturnType<typeof setTimeout> | undefined;
@@ -344,6 +349,15 @@ export class BoardingMapView implements BoardingMapPort {
             })
             .catch(() => undefined);
         }
+        for (const ship of new Set(this.map.pictures.map((item) => item.ship)))
+          void sketch
+            .loadImage(SHIP_SPRITES[ship])
+            .then((image) => {
+              if (this.#disposed || !image) return;
+              this.#shipPictures.set(ship, image);
+              if (this.#ready) void this.#p5.redraw();
+            })
+            .catch(() => undefined);
         this.#bind(canvas, select);
         this.#ready = true;
         this.fit();
@@ -1062,6 +1076,33 @@ export class BoardingMapView implements BoardingMapPort {
     );
   }
 
+  /**
+   * skeppsbild-under-bordning: the ship as seen from outside lies under the
+   * deck, dimmed like unlit hull, as in the editor.
+   */
+  #paintShipPictures(sketch: p5): void {
+    for (const picture of this.map.pictures) {
+      const image = this.#shipPictures.get(picture.ship);
+      if (!image) continue;
+      sketch.push();
+      sketch.applyMatrix(...boardingSpritePlaneTransform());
+      sketch.translate(picture.x, picture.y);
+      if (picture.mirrored) {
+        sketch.translate(picture.scale, 0);
+        sketch.scale(-1, 1);
+      }
+      sketch.tint(SHIP_PICTURE_SHADE);
+      sketch.image(
+        image,
+        0,
+        0,
+        picture.scale,
+        (picture.scale * image.height) / Math.max(1, image.width),
+      );
+      sketch.pop();
+    }
+  }
+
   #floorBounds(): { x: number; y: number; width: number; height: number } {
     if (this.#floorBoundsCache) return this.#floorBoundsCache;
     let left = Infinity,
@@ -1752,6 +1793,7 @@ export class BoardingMapView implements BoardingMapPort {
     );
     const seen = (cell: BoardingCell) =>
       visible.has(key(cell)) || explored.has(key(cell));
+    this.#paintShipPictures(sketch);
     this.#paintFloorLayer(sketch, visible, explored, thinAt, seen);
     for (let r = 0; r < this.map.height; r++) {
       for (let q = 0; q < this.map.width; q++) {

@@ -52,6 +52,9 @@ Se [hela visionen](docs/game-vision.md).
   `redigerbara-bordningslampor`, `kategoriserad-bordningspalett` och
   `isometrisk-skeppsreferens` är **Fullständigt implementerat**. `Outside`
   formar skeppskonturen och editorn visar skeppsbilden i båda projektionerna.
+  `skeppsbild-under-bordning` är **Delvis implementerat**: skeppsbilden ligger
+  under kartan även i strid, för kartor som justerats i editorn (testbordningen
+  och `Colony ship`). Övriga skepp saknar justering och visar ännu ingen bild.
   `spelidentisk-bordningseditor` är **Fullständigt implementerat**: samma bildval,
   ytprojektion, ljus och väggsnitt används. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 - **60° kameravinkel i bordning:** `kameravinkel-60-i-bordning` är **Delvis implementerat** (provversion). Bordningskartan visas med samma 60° kamerahöjd som Ludos high-angle, vilket ger nästan kvadratiska diamanter (64 × 32√3). Figurer, reactor och en låda (ersätter bilden för `Half cover`) använder nya bilder för 60°. Dörrar och airlock trycks fortfarande ihop från 2:1-bilderna, eftersom de nya dörr- och airlockbilderna har 2:1-lutning och inte passar väggarna; passande bilder återstår. Ersätter provet `isometri-3-2-i-bordning` och 2:1-projektionen i `isometrisk-bordningsvy`.

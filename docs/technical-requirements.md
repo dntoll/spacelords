@@ -1554,6 +1554,11 @@ rotbygget kan fortfarande upptäcka en tillgänglig lokal server.
 bild från respektive intilliggande rumsruta. Okänd interiör avslöjas inte.
 `texturerad-vaggovansida` använder en separat bild även på väggsnitt.
 `isometrisk-skeppsreferens` projicerar befintlig spritejustering på 2:1-planet.
+`skeppsbild-under-bordning`: `parseBoardingMap(source, ship)` ger
+`BoardingMap.pictures` när kartan har `spriteX`, `spriteY` och `spriteScale`;
+`composeBoardingMaps` förskjuter anfallarens bild i r och speglar försvararens
+med x' = bredd − x − skala. `BoardingMapView` ritar bilderna med
+`boardingSpritePlaneTransform` och gråton 150 före golvlagret.
 `spelidentisk-bordningseditor` återanvänder bildregister, mått, ljusberäkning
 och väggsnitt samt den gemensamma ytprojektionen för golv och väggar.
 
