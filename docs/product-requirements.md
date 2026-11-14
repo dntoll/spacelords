@@ -333,7 +333,7 @@ skott eller gång.
 
 Prototypen från huvudmenyn påverkar inga sparade spel. I kampanjen ger en
 vunnen bordning skeppet, last, recovered `Raptor factory` och en kartplaceholder
-runt närmaste andra pirat. Se [bordningsstrid](boarding-combat.md).
+runt närmaste andra pirat. Se [bordningsstrid](boarding/boarding-combat.md).
 
 `kamerafokus-vid-bordningssoldatbyte` — **Fullständigt implementerat**. Vid
 byte till en egen soldat utanför bild ska kameran zooma ut tills soldaten syns,

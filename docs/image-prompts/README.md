@@ -103,10 +103,10 @@ sedan som stilreferens för de övriga bilderna.
 Originalen finns i `assets/original/boarding/characters/`. Fem vinklar per typ
 och aktiv ställning speglas i vyn till åtta riktningar. Varje typ har dessutom
 en riktningsoberoende liggande bild för utslagna och döda personer. Webbarket finns i
-`src/client/assets/boarding/characters/directional-faction-sprites.webp`.
+`src/client/boarding/assets/characters/directional-faction-sprites.webp`.
 Återskapa bildarket och dess källrektanglar från de sparade originalen med:
 
 ```sh
 python3 scripts/prepare-boarding-characters.py
-npx prettier --write src/client/views/boarding/BoardingCharacterAtlas.ts
+npx prettier --write src/client/boarding/views/rendering/BoardingCharacterAtlas.ts
 ```

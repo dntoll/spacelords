@@ -1,6 +1,8 @@
 import { SaveController } from '../saves/SaveController.js';
-import { BoardingController } from '../boarding/BoardingController.js';
-import { BoardingEditorController } from '../boarding/BoardingEditorController.js';
+import {
+  BoardingController,
+  BoardingEditorController,
+} from '../../boarding/controllers/index.js';
 import { BattleController } from '../battle/BattleController.js';
 import { ResearchController } from '../research/ResearchController.js';
 import { PlanetController } from '../planet/PlanetController.js';

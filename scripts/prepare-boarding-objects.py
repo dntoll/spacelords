@@ -15,7 +15,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 original = ROOT / 'assets/original/boarding/60deg'
-output = ROOT / 'src/client/assets/boarding'
+output = ROOT / 'src/client/boarding/assets'
 sources = {
     'reactor': 'reactor-60deg.png',
     'crate': 'crate-60deg.png',
@@ -76,7 +76,7 @@ for axis in ('q', 'r', 'airlock'):
         direction=-1 if slope < 0 else 1,
     )
 
-metrics_path = ROOT / 'src/client/views/boarding/BoardingSpriteMetrics.ts'
+metrics_path = ROOT / 'src/client/boarding/views/rendering/BoardingSpriteMetrics.ts'
 existing = metrics_path.read_text()
 # Prettier unquotes keys and adds trailing commas; restore strict JSON first.
 literal = existing[existing.index('= {') + 2:existing.rindex(' as const')]

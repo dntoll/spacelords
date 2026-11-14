@@ -7,7 +7,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 ORIGINALS = ROOT / 'assets/original/boarding'
-OUTPUT = ROOT / 'src/client/assets/boarding'
+OUTPUT = ROOT / 'src/client/boarding/assets'
 
 for name in ('floor-bridge', 'floor-engineering', 'floor-cockpit',
              'wall-bridge', 'wall-engineering', 'wall-cockpit', 'wall-top'):

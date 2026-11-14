@@ -2,13 +2,13 @@ import express from 'express';
 import { HealthController } from './controllers/HealthController.js';
 import { HealthModel } from './models/HealthModel.js';
 import { createHealthView } from './views/HealthView.js';
-import { BoardingMapsController } from './controllers/BoardingMapsController.js';
-import { BoardingMapsModel } from './models/BoardingMapsModel.js';
+import { BoardingMapsController } from './boarding/BoardingMapsController.js';
+import { BoardingMapsModel } from './boarding/BoardingMapsModel.js';
 import {
   createBoardingMapReadView,
   createBoardingMapWriteView,
   createBoardingMapsListView,
-} from './views/BoardingMapsView.js';
+} from './boarding/BoardingMapsView.js';
 
 export function createApp(
   clientDirectory: string,

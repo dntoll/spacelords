@@ -3,9 +3,9 @@ import { gameText } from './GameText.js';
 import { BattleView, type BattleMapFactory } from '../battle/BattleView.js';
 import {
   BoardingView,
+  BoardingEditorView,
   type BoardingMapFactory,
-} from '../boarding/BoardingView.js';
-import { BoardingEditorView } from '../boarding/BoardingEditorView.js';
+} from '../../boarding/views/index.js';
 import { discoveryControls } from './DiscoveryView.js';
 import { pirateAsFleet } from '../../models/PirateFleet.js';
 import { updateDecisionGuidance } from '../decisions/DecisionGuidanceView.js';

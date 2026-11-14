@@ -4,7 +4,12 @@ export default defineConfig({
   test: {
     setupFiles: ['tests/setup.ts'],
     // snabb-testsvit: every Vitest file except HTTP integration. No total time budget.
-    include: ['tests/unit/**/*.test.ts', 'tests/extended/**/*.test.ts'],
+    include: [
+      'tests/unit/**/*.test.ts',
+      'tests/extended/**/*.test.ts',
+      'tests/boarding/unit/**/*.test.ts',
+      'tests/boarding/extended/**/*.test.ts',
+    ],
     environment: 'node',
     pool: 'threads',
     // snabb-testsvit: reuse workers within each environment instead of restarting per file.

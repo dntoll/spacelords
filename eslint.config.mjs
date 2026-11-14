@@ -34,6 +34,7 @@ export default tseslint.config(
   },
   {
     files: ['src/client/**/*.ts'],
+    ignores: ['src/client/boarding/**'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -43,10 +44,35 @@ export default tseslint.config(
               group: ['**/server/**'],
               message: 'Client code must not import server code.',
             },
+            {
+              // isolerad-bordningsmodul: the rest of the game sees only the barrels.
+              regex: '(^|/)boarding/(?!(models|views|controllers)/index\\.js$)',
+              message:
+                'Import boarding only through boarding/{models,views,controllers}/index.js.',
+            },
           ],
         },
       ],
     },
   },
+  ...[2, 3].map((depth) => ({
+    // isolerad-bordningsmodul: an import that climbs out of src/client/boarding
+    // may only reach the shared game files the module is allowed to use.
+    files: [`src/client/boarding/${'*/'.repeat(depth - 1)}*.ts`],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: `^(\\.\\./){${depth}}(?!models/(TacticalBattle|AppModel)\\.js$|views/(dom|ViewContracts|ShipImages|app/playerNoticeText)\\.js$|\\.\\./shared/boarding/)`,
+              message:
+                'The boarding module may only use TacticalBattle, AppModel, dom, ViewContracts, ShipImages, playerNoticeText and shared/boarding.',
+            },
+          ],
+        },
+      ],
+    },
+  })),
   prettier,
 );

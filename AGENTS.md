@@ -64,6 +64,12 @@ i stället för att upprepa reglerna.
   när något synligt ändrats. Vyn väljer meningarna spelaren ser.
 - Lägg en underkatalog per fall under `controllers`, `models` och `views`.
   Delade modellfiler ligger kvar i `models` tills bara de återstår.
+- Undantag (`isolerad-bordningsmodul`): bordningen är en egen modul i
+  `src/client/boarding/` med egna `controllers/`, `models/`, `views/`,
+  `assets/` och `maps/`. Den har motsvarande delar i `src/server/boarding/`,
+  `src/shared/boarding/` och `tests/boarding/`. Övrig kod importerar bara via
+  `boarding/{models,views,controllers}/index.js`. ESLint håller gränsen åt
+  båda hållen.
 - Modellera objektorienterat med hög sammanhållning och låg koppling. Ge vyer
   enbart läsgränssnitt eller oföränderliga ögonblicksbilder av modellerna.
 - Underhåll problemdomänens klasser och relationer i PlantUML i

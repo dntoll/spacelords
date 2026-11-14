@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MasterController } from '../../src/client/controllers/app/MasterController.js';
 import { AppModel } from '../../src/client/models/AppModel.js';
 import type { IntentHandler } from '../../src/client/views/ViewContracts.js';
-import { BoardingFacade } from '../../src/client/models/boarding/BoardingFacade.js';
+import { BoardingFacade } from '../../src/client/boarding/models/battle/BoardingFacade.js';
 import { BattleFacade } from '../../src/client/models/battle/BattleFacade.js';
 import { ResearchFacade } from '../../src/client/models/research/ResearchFacade.js';
 import { BrowserSaveRepository } from '../../src/client/storage/BrowserSaveRepository.js';

@@ -5,7 +5,6 @@ import type {
   BattleManeuver,
   BattleShot,
 } from '../models/TacticalBattle.js';
-import type { BoardingCommand } from '../models/boarding/BoardingBattle.js';
 import type {
   MapProductionCategory,
   MapViewport,
@@ -26,14 +25,15 @@ import type {
 } from '../models/Game.js';
 import type { HexCoordinate, Point } from '../models/HexCoordinate.js';
 import type { PlanetQueueKind } from '../models/PlanetQueues.js';
-import type { BoardingMapId } from '../../shared/boarding-map-format.js';
 import type {
+  BoardingCommand,
+  BoardingMapId,
   EditorBrushButton,
   EditorPaintCell,
   EditorProjection,
   EditorTool,
   SpriteTransform,
-} from '../models/boarding/BoardingEditor.js';
+} from '../boarding/models/index.js';
 
 export type AppIntent =
   | { readonly type: 'test-battle' }

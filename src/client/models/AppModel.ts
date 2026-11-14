@@ -1,10 +1,14 @@
 import { SaveFacade } from './saves/SaveFacade.js';
-import { BoardingFacade } from './boarding/BoardingFacade.js';
 import {
+  BoardingFacade,
   BoardingEditorFacade,
   type BoardingEditorCatalogItem,
-} from './boarding/BoardingEditorFacade.js';
-import type { BoardingEditorSnapshot } from './boarding/BoardingEditor.js';
+  type BoardingEditorSnapshot,
+  type BoardingBattle,
+  type BoardingBattleState,
+  type BoardingCommand,
+  type BoardingShot,
+} from '../boarding/models/index.js';
 import { BattleFacade } from './battle/BattleFacade.js';
 import { ResearchFacade } from './research/ResearchFacade.js';
 import { PlanetFacade } from './planet/PlanetFacade.js';
@@ -59,12 +63,6 @@ import {
   type BattleState,
   type BattleCommand,
 } from './TacticalBattle.js';
-import {
-  type BoardingBattle,
-  type BoardingBattleState,
-  type BoardingCommand,
-  type BoardingShot,
-} from './boarding/BoardingBattle.js';
 import type { SupplyOverview } from './SupplyOverview.js';
 import {
   ResearchTreeCamera,

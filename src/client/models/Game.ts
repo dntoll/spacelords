@@ -41,12 +41,12 @@ import {
   type BattleFleet,
   type BattlePiece,
 } from './TacticalBattle.js';
-import type {
-  BoardingBattleState,
-  BoardingCommand,
-  BoardingShot,
-} from './boarding/BoardingBattle.js';
-import { BoardingEngagement } from './boarding/BoardingEngagement.js';
+import {
+  BoardingEngagement,
+  type BoardingBattleState,
+  type BoardingCommand,
+  type BoardingShot,
+} from '../boarding/models/index.js';
 import {
   Salvage,
   type WreckSnapshot,

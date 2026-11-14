@@ -12,8 +12,8 @@ if (!Number.isInteger(port) || port < 0 || port > 65535) {
 function resolveMapsDirectory(): string {
   if (process.env.BOARDING_MAPS_DIR) return process.env.BOARDING_MAPS_DIR;
   const candidates = [
-    fileURLToPath(new URL('../client/maps/', import.meta.url)),
-    fileURLToPath(new URL('../../src/client/maps/', import.meta.url)),
+    fileURLToPath(new URL('../client/boarding/maps/', import.meta.url)),
+    fileURLToPath(new URL('../../src/client/boarding/maps/', import.meta.url)),
   ];
   return (
     candidates.find((directory) =>

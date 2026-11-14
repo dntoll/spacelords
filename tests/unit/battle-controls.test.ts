@@ -15,17 +15,17 @@ import type { SaveRepository } from '../../src/client/models/saves/SaveRepositor
 import {
   BoardingBattle,
   type BoardingBattleState,
-} from '../../src/client/models/boarding/BoardingBattle.js';
-import { composeBoardingMaps } from '../../src/client/models/boarding/BoardingComposer.js';
-import type { BoardingMap } from '../../src/client/models/boarding/BoardingMap.js';
+} from '../../src/client/boarding/models/battle/BoardingBattle.js';
+import { composeBoardingMaps } from '../../src/client/boarding/models/map/BoardingComposer.js';
+import type { BoardingMap } from '../../src/client/boarding/models/map/BoardingMap.js';
 import {
   createTestBoardingBattle,
   testBoardingMap,
-} from '../../src/client/models/boarding/TestBoarding.js';
+} from '../../src/client/boarding/models/map/TestBoarding.js';
 import {
   BoardingView,
   type BoardingMapFactory,
-} from '../../src/client/views/boarding/BoardingView.js';
+} from '../../src/client/boarding/views/battle/BoardingView.js';
 import { renderSaveSlots } from '../../src/client/views/saves/SaveSlotsView.js';
 import type { AppIntent } from '../../src/client/views/ViewContracts.js';
 

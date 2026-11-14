@@ -3,12 +3,12 @@ import { AppModel } from './models/AppModel.js';
 import { AppView } from './views/app/AppView.js';
 import { GalaxyMapView } from './views/star-map/GalaxyMapView.js';
 import { BattleMapView } from './views/battle/BattleMapView.js';
-import { BoardingMapView } from './views/boarding/BoardingMapView.js';
+import { BoardingMapView } from './boarding/views/index.js';
 import './styles.css';
 import { SaveMapPreview } from './views/saves/SaveMapPreview.js';
 import { BrowserSaveRepository } from './storage/BrowserSaveRepository.js';
 import { createExpandedGalaxy } from './models/exampleGalaxy.js';
-import { testBoardingMap } from './models/boarding/TestBoarding.js';
+import { testBoardingMap } from './boarding/models/index.js';
 
 const root = document.querySelector<HTMLElement>('#app');
 if (!root) {

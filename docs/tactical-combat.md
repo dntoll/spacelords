@@ -375,7 +375,7 @@ implementerat**. `Dock` är en stridsorder i stället för skott när ett
 bordningsbart skepp. Nos mot nos och T-kollision är otillåtna. Dockade skepp
 är låsta, ritas med en brygga och den pågående rymdrundan körs färdigt innan
 bordning. Därefter växlar `bordning-tva-rundor-skift` två rundor i taget.
-Se [bordningsstrid](boarding-combat.md).
+Se [bordningsstrid](boarding/boarding-combat.md).
 
 ## Verifiering
 

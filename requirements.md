@@ -53,7 +53,7 @@ Se [hela visionen](docs/game-vision.md).
   `isometrisk-skeppsreferens` är **Fullständigt implementerat**. `Outside`
   formar skeppskonturen och editorn visar skeppsbilden i båda projektionerna.
   `spelidentisk-bordningseditor` är **Fullständigt implementerat**: samma bildval,
-  ytprojektion, ljus och väggsnitt används. Se [bordningsstrid](docs/boarding-combat.md).
+  ytprojektion, ljus och väggsnitt används. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 - **60° kameravinkel i bordning:** `kameravinkel-60-i-bordning` är **Delvis implementerat** (provversion). Bordningskartan visas med samma 60° kamerahöjd som Ludos high-angle, vilket ger nästan kvadratiska diamanter (64 × 32√3). Figurer, reactor och en låda (ersätter bilden för `Half cover`) använder nya bilder för 60°. Dörrar och airlock trycks fortfarande ihop från 2:1-bilderna, eftersom de nya dörr- och airlockbilderna har 2:1-lutning och inte passar väggarna; passande bilder återstår. Ersätter provet `isometri-3-2-i-bordning` och 2:1-projektionen i `isometrisk-bordningsvy`.
 
 - **Explosioner, förstörelse och rök:** `bordning-explosioner-och-forstorelse`,
@@ -81,12 +81,12 @@ Se [hela visionen](docs/game-vision.md).
   `avstand-paverkar-traffchans` är **Fullständigt implementerat**: skott får
   +1 i målets försvar per påbörjade två rutor bortom två rutor (högst +3 vid
   åtta rutor). Se
-  [bordningsstrid](docs/boarding-combat.md).
+  [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Rumsinteriörer:** `rumsspecifika-bordningstexturer` och
   `texturerad-vaggovansida` är **Fullständigt implementerat**: bilderna används
   i spel och editor. Se
-  [bordningsstrid](docs/boarding-combat.md).
+  [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Bordningsgränssnitt och rök:** `tydliga-handlingsbilder-pa-mobil` är
   **Fullständigt implementerat**: stora särskiljbara knappar utan text syns utan
@@ -108,12 +108,12 @@ Se [hela visionen](docs/game-vision.md).
   eller stående personer, och en miss studsar aldrig genom en vägg. Ett andra tryck på ett mål som
   ligger för långt bort går så långt AP räcker. Golvlagret cachas och
   figurernas ljus ritas utan p5:s `tint()` för jämnare bildfrekvens på mobil.
-  Se [bordningsstrid](docs/boarding-combat.md).
+  Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Bordningsanimation och ljus:** `synligt-skott-hela-vagen`,
   `kastad-granat-i-bage` och `morkare-ambientljus-i-bordning` är
   **Fullständigt implementerat**. Skott visas fram till målet, granater kastas
-  i en båge och grundljuset är lägre. Se [bordningsstrid](docs/boarding-combat.md).
+  i en båge och grundljuset är lägre. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Bordningskamera:** `kamerafokus-vid-bordningssoldatbyte`,
   `kameraoverblick-vid-synlig-bordningsrorelse`,
@@ -124,7 +124,7 @@ Se [hela visionen](docs/game-vision.md).
   alla egna soldater som ser den. Före ett skott panorerar och zoomar kameran
   ut tills den synliga skytten och målet syns samtidigt. Kameran tar hänsyn
   till HUD och kan avbrytas manuellt. Se
-  [bordningsstrid](docs/boarding-combat.md).
+  [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Bordningens kartinformation:** `bordning-utan-riktningspilar`,
   `bordning-utan-sikt-och-eldrutor`, `senast-sedd-fiende-med-fragetecken` och
@@ -133,15 +133,15 @@ Se [hela visionen](docs/game-vision.md).
   rutkanter har tagits bort. Senast sedd levande eller utslagen fiende visas
   som ett frågetecken, medan döda inte lämnar markören. Utslagna och döda
   soldater och civilister har egna liggande bilder. Se
-  [bordningsstrid](docs/boarding-combat.md).
+  [bordningsstrid](docs/boarding/boarding-combat.md).
 
-- **Belysning i bordning:** `ljuskallestyrd-bordningsbelysning`, `vertexljus-i-bordning` och `tileljus-for-sprites` är **Fullständigt implementerat**. Fasta kartlampor och ambientljus styr golv, väggar och sprites oberoende av aktuell sikt. Kravkopplade tester och visuell mobilgranskning verifierar ljus och väggsnitt. Se [bordningsstrid](docs/boarding-combat.md).
+- **Belysning i bordning:** `ljuskallestyrd-bordningsbelysning`, `vertexljus-i-bordning` och `tileljus-for-sprites` är **Fullständigt implementerat**. Fasta kartlampor och ambientljus styr golv, väggar och sprites oberoende av aktuell sikt. Kravkopplade tester och visuell mobilgranskning verifierar ljus och väggsnitt. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
-- **Meterskala och skymmande väggar:** `meterskala-i-bordning` och `genomskinliga-skymmande-vaggar` är **Fullständigt implementerat**. En ruta är 1 × 1 m, väggar 2,4 m, dörröppningar 2,1 m och Half cover 1,2 m. Väggar som täcker upptäckta spelrutor visas som ogenomskinliga 40 cm höga snitt med synligt vägginre. Detta ersätter den tidigare transparensen efter uttrycklig beställning. Se [bordningsstrid](docs/boarding-combat.md).
+- **Meterskala och skymmande väggar:** `meterskala-i-bordning` och `genomskinliga-skymmande-vaggar` är **Fullständigt implementerat**. En ruta är 1 × 1 m, väggar 2,4 m, dörröppningar 2,1 m och Half cover 1,2 m. Väggar som täcker upptäckta spelrutor visas som ogenomskinliga 40 cm höga snitt med synligt vägginre. Detta ersätter den tidigare transparensen efter uttrycklig beställning. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
-- **Tunna innerväggar:** `tunna-innervaggar` och `halvhog-tunn-vagg` är **Fullständigt implementerat**. En tunn vägg är 1/3 m tjock, står på en golvruta och finns längs q eller r. Rutans golvtextur ritas på den inre sidan och grannens golv på den yttre, utom när den sidan är `Outside`, vägg eller ytterskrov. Fullhöga tunna väggar fälls som andra väggar. Halvhöga tunna väggar är 1,2 m, ger `Half cover` och fälls inte. Se [bordningsstrid](docs/boarding-combat.md).
+- **Tunna innerväggar:** `tunna-innervaggar` och `halvhog-tunn-vagg` är **Fullständigt implementerat**. En tunn vägg är 1/3 m tjock, står på en golvruta och finns längs q eller r. Rutans golvtextur ritas på den inre sidan och grannens golv på den yttre, utom när den sidan är `Outside`, vägg eller ytterskrov. Fullhöga tunna väggar fälls som andra väggar. Halvhöga tunna väggar är 1,2 m, ger `Half cover` och fälls inte. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
-- **Bordningsgrafik:** `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock och reactor visas med isometrisk grafik utan inbyggt golv. `halvskydd-som-geometri` är **Fullständigt implementerat**: Half cover är en 1,2 m hög låda byggd som geometri i spelets projektion, med texturerade sidor och ovansida och samma belysning som väggarna, i stället för en bild. Se [bordningsstrid](docs/boarding-combat.md).
+- **Bordningsgrafik:** `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock och reactor visas med isometrisk grafik utan inbyggt golv. `halvskydd-som-geometri` är **Fullständigt implementerat**: Half cover är en 1,2 m hög låda byggd som geometri i spelets projektion, med texturerade sidor och ovansida och samma belysning som väggarna, i stället för en bild. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Dörrar som tunna väggar:** `dorrar-som-tunna-vaggar` är **Fullständigt implementerat**. En stängd dörr modelleras och ritas som en fullhög tunn vägg längs väggen den står i, med en egen dörrtextur (röd lampa när den är låst). En öppen dörr har glidit undan. Fullhöga tunna väggar och stängda dörrar skymmer sikt, skott och granater bara med sin tunna skiva mitt i rutan, så siktlinjen når fram till dörren. Ersätter dörrbilderna i `isometriska-bordningsobjekt` och att tunna väggar skymde hela rutan i `geometrisk-sikt`. `dorrens-ovansida` är **Fullständigt implementerat**: dörrens ovansida är en egen randig skena, inte väggens ovansida. `dorrar-falls-inte` är **Fullständigt implementerat**: dörrar står kvar i full höjd där väggar fälls ner. `animerade-dorrar` är **Fullständigt implementerat**: en känd dörr som öppnas eller stängs glider isär eller ihop på 0,45 s.
 
@@ -149,9 +149,9 @@ Se [hela visionen](docs/game-vision.md).
   `isometrisk-bordningskarteditor` är **Fullständigt implementerat**. Knappen
   `Ship layouts` visas i nederkanten när den lokala servern har minst en karta,
   och editorn öppnas ovanpå aktuell vy. `View` växlar mellan `Isometric` och
-  `Top-down`. Se [bordningsstrid](docs/boarding-combat.md).
+  `Top-down`. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
-- **Dockningskorridor:** `dockningskorridor-sprite` är **Fullständigt implementerat**. Dockade skepp sammanbinds visuellt med en korridor. Se [bordningsstrid](docs/boarding-combat.md).
+- **Dockningskorridor:** `dockningskorridor-sprite` är **Fullständigt implementerat**. Dockade skepp sammanbinds visuellt med en korridor. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Raptor-grafik:** `egen-raptor-grafik` är **Fullständigt implementerat**. Raptor och Raptor factory har egna sprites respektive symboler; fabrikens porträtt återstår. Se [skeppsgrafik](docs/ship-artwork.md).
 
@@ -411,7 +411,7 @@ Se [hela visionen](docs/game-vision.md).
   fiendemål och drar inte AP utan ett sådant. Gevär och melee kan inte
   träffa den egna soldaten eller eget lag; skott kräver ett fiende- eller
   miljömål. Se
-  [bordningsstrid](docs/boarding-combat.md).
+  [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Kampanjbordning:** `piratflotta-med-lastfartyg`, `docka-babord-styrbord`,
   `lassta-dockade-skepp`, `bordning-tva-rundor-skift`,
@@ -425,7 +425,7 @@ Se [hela visionen](docs/game-vision.md).
   båda skeppen, last, recovered `Raptor factory` och en kartplaceholder.
   Sparformatet är version 14 med additiv migrering. Menyns
   `Test boarding (cheat)` är oförändrad. Se
-  [bordningsstrid](docs/boarding-combat.md),
+  [bordningsstrid](docs/boarding/boarding-combat.md),
   [taktisk strid](docs/tactical-combat.md) och
   [space pirates](docs/space-pirates.md).
 
@@ -801,6 +801,10 @@ Se [hela visionen](docs/game-vision.md).
   forskningsträdets pekning och kamerorna ligger i vyn, medan stjärnkartans
   pekning fortfarande översätts i mastern. Bordning och strid behåller sin
   bildruteloop. Se [tekniska kraven](docs/technical-requirements.md).
+  `isolerad-bordningsmodul` är **Fullständigt implementerat**: bordningen
+  ligger samlad i `src/client/boarding/` och motsvarande kataloger för server,
+  delat kartformat och tester. Övrig kod når modulen bara via dess
+  `index.js`-filer, och ESLint håller gränsen.
   `snabb-testsvit` är **Fullständigt implementerat**: sviten omfattar alla
   Vitest-tester utom `tests/integration` och har ingen total tidsgräns.
   Detta ersätter riktvärdet 20 sekunder och regeln att flytta långsammare

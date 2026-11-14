@@ -4,7 +4,7 @@ import { TacticalBattle, type BattleState } from './TacticalBattle.js';
 import {
   BoardingEngagement,
   type SavedBoardingEngagement,
-} from './boarding/BoardingEngagement.js';
+} from '../boarding/models/index.js';
 
 export type ExplorationOrder = 'explore' | 'explore-stars';
 

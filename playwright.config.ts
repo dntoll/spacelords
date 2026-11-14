@@ -9,7 +9,9 @@ process.env.PW_TEST_SOURCE_TRANSFORM_SCOPE = fileURLToPath(
 );
 
 export default defineConfig({
-  testDir: './tests/browser',
+  // isolerad-bordningsmodul: boarding browser tests live in tests/boarding/browser.
+  testDir: './tests',
+  testMatch: ['browser/**/*.spec.ts', 'boarding/browser/**/*.spec.ts'],
   fullyParallel: false,
   // utokad-testsvit: tablet waits until more platforms are chosen.
   workers: 6,
