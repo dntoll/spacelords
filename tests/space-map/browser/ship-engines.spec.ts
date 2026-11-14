@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import { expect, test } from '@playwright/test';
 import { Game } from '../../../src/client/space-map/models/Game.js';
@@ -8,7 +9,7 @@ import { chooseResearch, endTurn, startFirstSlot } from './save-helpers.js';
 test('motorbehov-for-alla-skepp / ion-pulse-engine / automatisk-motormontering: research, manufacture, fit and retain mixed engines on mobile', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(90_000);
+  scenarioTimeout(90_000);
   const state = new Game(createExampleGalaxy()).exportState();
   const colony = state.colonies[0]![1];
   colony.population = 30000;

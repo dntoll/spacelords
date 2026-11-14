@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { selectMapObject } from './map-helpers.js';
 import {
   chooseFleetDestination,
@@ -12,7 +13,7 @@ test('skepp-till-rorlig-flotta: reinforcements survive reload and catch a moving
   page,
 }, testInfo) => {
   // utokad-testsvit: allow two turns, reload and map interactions on WebKit.
-  test.setTimeout(60_000);
+  scenarioTimeout(60_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');

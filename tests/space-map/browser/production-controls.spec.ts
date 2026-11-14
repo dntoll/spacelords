@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot, endTurn, chooseResearch } from './save-helpers.js';
 
@@ -5,7 +6,7 @@ test('forskning-kraver-station / dubbelklick-bygger-pa-kartan / byggknapp-vid-ti
   page,
 }, testInfo) => {
   // Completing a station and prerequisite research spans several narrated years.
-  test.setTimeout(90_000);
+  scenarioTimeout(90_000);
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();

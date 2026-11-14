@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { chooseFleetOrder } from './fleet-helpers.js';
 import { expect, test } from '@playwright/test';
 import { Game } from '../../../src/client/space-map/models/Game.js';
@@ -75,7 +76,7 @@ for (const screen of ['Star map', 'Fleets']) {
 test('flottpatrullering: uses shared sight to catch a pirate, resumes its ring, and persists combat', async ({
   page,
 }) => {
-  test.setTimeout(90_000);
+  scenarioTimeout(90_000);
   const state = {
     ...new Game(createExampleGalaxy()).exportState(),
     researched: ['Fleet patrol'] as const,

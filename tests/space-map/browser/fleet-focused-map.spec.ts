@@ -45,8 +45,21 @@ test('flottfokuserad-kartvy: background is inert, route crossings set destinatio
   await selectMapFleet(page, 'Freighters');
   await map.press('ArrowDown');
   await map.press('ArrowDown');
+  // Decision guidance may cover the marker on short phones; uncover it first.
+  let marker = await fleetMarkerPoint(page, 'Freighters');
+  for (
+    let attempt = 0;
+    attempt < 4 &&
+    (await page.evaluate(
+      ([x, y]) => document.elementFromPoint(x!, y!)?.tagName !== 'CANVAS',
+      [marker.x, marker.y],
+    ));
+    attempt++
+  ) {
+    await map.press('ArrowUp');
+    marker = await fleetMarkerPoint(page, 'Freighters');
+  }
   const camera = await page.getByTestId('camera-position').textContent();
-  const marker = await fleetMarkerPoint(page, 'Freighters');
   await page.mouse.move(marker.x, marker.y);
   await page.mouse.down();
   await page.mouse.move(marker.x - Math.sqrt(3) * 18, marker.y + 36, {

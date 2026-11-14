@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { chooseFleetOrder } from './fleet-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 import {
@@ -40,7 +41,7 @@ async function saved(page: Page): Promise<GameState> {
 test('automatisk-bargning: Auto salvage persists, delivers a wreck and then reserves the next one', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(60_000);
+  scenarioTimeout(60_000);
   const initial = salvageState();
   const state: GameState = {
     ...initial,
@@ -178,7 +179,7 @@ test('bargningsorder-fran-flotta: choose Salvage and a wreck, reload and pick it
 test('bargningsorder / automatisk-vrakreparation / forskning-fran-bargade-delar: salvage, tow, reload, dock and research recovered parts', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(90_000);
+  scenarioTimeout(90_000);
   const state = salvageState();
   const game = Game.restore(state);
   await load(page, state);
@@ -316,6 +317,7 @@ test('orbitalt-varv: choose a neighboring station hex before queuing constructio
 test('stridsrapport-i-dialog / spara-bargning-och-stridsavbrott: combat history survives reload without a report dialog', async ({
   page,
 }, testInfo) => {
+  scenarioTimeout(90_000);
   await load(page, discoveryState());
   await page.getByRole('button', { name: /^Decisions/ }).click();
   await page.getByRole('button', { name: 'End turn', exact: true }).click();

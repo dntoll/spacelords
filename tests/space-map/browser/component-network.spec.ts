@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { expect, test } from '@playwright/test';
 import {
   type BuildType,
@@ -33,7 +34,7 @@ function initialState() {
 test('automatiska-delorder: orders remote production through the UI and preserves supply until a Fighter is assembled', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(90_000);
+  scenarioTimeout(90_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   const initial = initialState();

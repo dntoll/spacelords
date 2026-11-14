@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { expect, test, type Page } from '@playwright/test';
 import {
   Game,
@@ -120,7 +121,7 @@ test('egen-ordervy / flottval-pa-orderkarta / patrullcentrum-vid-order: uses rea
 test('startorder-for-nybyggda-skepp / ruttval-for-order: chooses a route before building and starts only the new transport on it after reload', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(45_000);
+  scenarioTimeout(45_000);
   const state = await seed(page, false);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page

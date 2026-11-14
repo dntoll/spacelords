@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { expect, test } from '@playwright/test';
 import {
   Game,
@@ -10,9 +11,13 @@ import { selectMapObject } from './map-helpers.js';
 test('route-kartvy / produktions-kartvy / radiella-byggval / kompakt-produktionsko: shared map, radial orders and queue work with touch, keyboard and larger text', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(60_000);
+  scenarioTimeout(60_000);
   const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('pageerror', (error) => {
+    // WebKit reports the browser's benign ResizeObserver loop notice as an error.
+    if (!error.message.startsWith('ResizeObserver loop completed'))
+      errors.push(error.message);
+  });
   const state = {
     ...tradeNetworkState(),
     researched: TECHNOLOGIES.filter(

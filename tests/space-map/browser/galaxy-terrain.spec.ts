@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { chooseFleetOrder } from './fleet-helpers.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot, endTurn } from './save-helpers.js';
@@ -13,7 +14,7 @@ test('utokad-galax / stjarnornas-hexutseende / automatisk-stjarnutforskning: new
   page,
 }, testInfo) => {
   // The three years include the full serial event announcements.
-  test.setTimeout(90_000);
+  scenarioTimeout(90_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');

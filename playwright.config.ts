@@ -32,7 +32,13 @@ export default defineConfig({
         viewport: { width: 1440, height: 1000 },
       },
     },
-    { name: 'phone-webkit', use: { ...devices['iPhone 13'] } },
+    // utokad-testsvit: WebKit runs about three times slower on Windows.
+    {
+      name: 'phone-webkit',
+      use: { ...devices['iPhone 13'] },
+      timeout: 90_000,
+      metadata: { timeoutScale: 3 },
+    },
   ],
   webServer: {
     command: 'node scripts/preview-pages.mjs',

@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 import { chooseFleetOrder, chooseShipStartFleet } from './fleet-helpers.js';
 import { selectMapObject } from './map-helpers.js';
@@ -50,7 +51,7 @@ async function build(page: Page, site: number, type: string) {
 test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk-frakt / forstarka-ruttflotta / flottans-handelsrutt: a new game supplies its colony through an assigned fleet', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(240_000);
+  scenarioTimeout(180_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');

@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { expect, test } from '@playwright/test';
 import {
   Game,
@@ -10,7 +11,7 @@ import { selectMapFleet } from './fleet-helpers.js';
 test('civil-skyttelforskning / civil-skytteltillverkning / civiltrafik-sparning: research, build and operate passenger traffic', async ({
   page,
 }) => {
-  test.setTimeout(90_000);
+  scenarioTimeout(90_000);
   const state = tradeNetworkState();
   const home = state.colonies[0]![1];
   home.population = 4000;

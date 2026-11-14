@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { expect, test } from '@playwright/test';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
@@ -11,7 +12,7 @@ for (const screen of ['Star map', 'Fleets']) {
   test(`rymdpirater-per-stjarna / flottstrid-per-hex / rymdpiraters-sparning: ${screen} shows hostile read-only pirates and persists combat`, async ({
     page,
   }, testInfo) => {
-    test.setTimeout(60000);
+    scenarioTimeout(60_000);
     const state = new Game(createExampleGalaxy()).exportState();
     const fleet = state.fleets[0]!;
     const system = createExampleGalaxy().systems[1]!;

@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 import { endTurn, startFirstSlot, chooseResearch } from './save-helpers.js';
@@ -30,7 +31,7 @@ async function build(page: Page, site: number, type: string) {
 test('gemensam-planetko / delfabriker / automatiska-delorder: research, manufacture parts and assemble a Fighter in one saved queue', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(90_000);
+  scenarioTimeout(90_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');

@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { expect, test, type Page } from '@playwright/test';
 import {
   encounterGame,
@@ -91,7 +92,7 @@ test('overwatch-i-rymdstrid: reserves the selected weapon on a phone', async ({
 test('stridsutplacering / sparad-taktisk-strid: deploys all ships and resumes an unfinished activation without rerolling', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(60_000);
+  scenarioTimeout(60_000);
   const game = encounterGame();
   const errors = await prepare(page, game.exportState());
   const dialog = page.getByRole('dialog', { name: 'Tactical combat' });
@@ -355,7 +356,7 @@ test('begransad-stridskamera / fullskarms-stridskarta / skeppsnara-stridskontrol
 test('skeppsvis-retratt / gemensamt-handelseflode: escapes each ship, regroups the fleet and resumes the paused year', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(60_000);
+  scenarioTimeout(60_000);
   const game = arrangeBattle(encounterGame(), (state) => ({
     ...state,
     asteroids: [],

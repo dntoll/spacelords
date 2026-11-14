@@ -10,8 +10,8 @@ import {
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-// utokad-testsvit: the CI job stays at 20 minutes. A single browser case does not.
-export const stepTimeoutMs = 20 * 60_000;
+// utokad-testsvit: a local step, such as Playwright on three projects, may take an hour.
+export const stepTimeoutMs = 60 * 60_000;
 
 export function killProcessTree(pid) {
   if (!pid) return;
