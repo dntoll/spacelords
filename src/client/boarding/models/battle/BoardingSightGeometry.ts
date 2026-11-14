@@ -243,6 +243,37 @@ function trace(
 }
 
 /**
+ * krossbart-glas: the tiles after `from` whose solid the straight line to the
+ * centre of `to` passes through, in order. A shot breaks the glass there.
+ */
+export function boardingSegmentSolids(
+  from: BoardingSightPoint,
+  to: BoardingSightPoint,
+  solid: BoardingSightBlocker,
+): readonly BoardingSightPoint[] {
+  const dq = to.q - from.q;
+  const dr = to.r - from.r;
+  const length = Math.hypot(dq, dr);
+  if (length < EPSILON) return Object.freeze([]);
+  const direction = { q: dq / length, r: dr / length };
+  const crossed: BoardingSightPoint[] = [];
+  walk(from, direction, length, (q, r, entered, exited) => {
+    const hit = solidHit(
+      from,
+      direction,
+      q,
+      r,
+      solid(q, r),
+      entered,
+      Math.min(exited, length),
+    );
+    if (hit !== null) crossed.push(Object.freeze({ q, r }));
+    return false;
+  });
+  return Object.freeze(crossed);
+}
+
+/**
  * granat-over-halvskydd-inte-genom-vagg: what stops a grenade thrown from the
  * centre of `from` to the centre of `target`. Solid tiles stop it, standing
  * people catch it, and crouched people and half cover are thrown over.

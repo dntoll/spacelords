@@ -1,9 +1,10 @@
 import type { BoardingCell } from '../../models/map/BoardingMap.js';
 import type { BoardingFeatureKind } from '../../models/map/BoardingMap.js';
+import { BOARDING_WALL_HEIGHT } from '../rendering/BoardingProjection.js';
 
 /** Visual-only effects; they never change or persist battle state. */
 export type BoardingEffectKind =
-  'frag' | 'smoke' | 'debris' | 'reactor' | 'sparks';
+  'frag' | 'smoke' | 'debris' | 'reactor' | 'sparks' | 'glass';
 
 export interface BoardingEffectParticle {
   readonly x: number;
@@ -24,6 +25,7 @@ export const BOARDING_EFFECT_DURATION: Readonly<
   debris: 900,
   reactor: 1300,
   sparks: 450,
+  glass: 1100,
 };
 
 /** Deterministic noise so a replayed effect looks the same in tests and frames. */
@@ -58,6 +60,8 @@ export function boardingEffectParticles(
       readonly shape: 'circle' | 'shard';
       readonly offset: number;
       readonly grow?: number;
+      /** krossbart-glas: start this high and fall until the floor stops it. */
+      readonly height?: number;
     },
   ) => {
     for (let index = 0; index < count; index++) {
@@ -71,13 +75,17 @@ export function boardingEffectParticles(
         options.size[0] +
         (options.size[1] - options.size[0]) * n(4) +
         (options.grow ?? 0) * local;
+      const start = (options.height ?? 0) * (0.25 + 0.75 * n(7));
+      const flight =
+        -options.rise * (0.4 + 0.6 * n(5)) * local +
+        options.gravity * local * local;
       particles.push({
         // Ground spread is squashed like the floor; height rises then falls.
         x: Math.cos(angle) * distance,
         y:
           Math.sin(angle) * distance * 0.6 -
-          options.rise * (0.4 + 0.6 * n(5)) * local +
-          options.gravity * local * local,
+          start +
+          (options.height ? Math.min(start, flight) : flight),
         size,
         color: options.colors[Math.floor(n(6) * options.colors.length)]!,
         alpha:
@@ -225,6 +233,36 @@ export function boardingEffectParticles(
       offset: 700,
       grow: 18,
     });
+  } else if (kind === 'glass') {
+    // krossbart-glas: pale shards rain from the pane down to the floor.
+    burst(26, {
+      speed: 26,
+      rise: 6,
+      gravity: 150,
+      size: [2, 5],
+      colors: [
+        [200, 228, 255],
+        [150, 196, 240],
+        [236, 246, 255],
+      ],
+      life: 1,
+      glow: false,
+      shape: 'shard',
+      offset: 900,
+      height: BOARDING_WALL_HEIGHT,
+    });
+    burst(8, {
+      speed: 18,
+      rise: 4,
+      gravity: 120,
+      size: [1, 2],
+      colors: [[220, 240, 255]],
+      life: 0.6,
+      glow: true,
+      shape: 'circle',
+      offset: 950,
+      height: BOARDING_WALL_HEIGHT,
+    });
   } else {
     burst(10, {
       speed: 30,
@@ -245,6 +283,7 @@ export function boardingEffectParticles(
 export function boardingDestructionEffect(
   kind: BoardingFeatureKind,
 ): BoardingEffectKind {
+  if (kind === 'window') return 'glass';
   return kind === 'reactor' ? 'reactor' : 'debris';
 }
 

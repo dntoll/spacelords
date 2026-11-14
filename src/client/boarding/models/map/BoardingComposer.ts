@@ -120,6 +120,7 @@ const blockedSpawn = (map: BoardingMap, cell: BoardingCell): boolean => {
       (feature.kind === 'wall' ||
         feature.kind === 'hull' ||
         feature.kind === 'thin-wall' ||
+        feature.kind === 'window' ||
         feature.kind === 'reactor' ||
         feature.kind === 'cover' ||
         feature.kind === 'door'),
@@ -221,7 +222,8 @@ export function composeBoardingMaps(
     if (
       feature.kind !== 'hull' &&
       feature.kind !== 'wall' &&
-      feature.kind !== 'thin-wall'
+      feature.kind !== 'thin-wall' &&
+      feature.kind !== 'window'
     )
       return true;
     return terrain.get(key(feature.position)) !== 'floor';

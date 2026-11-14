@@ -3,6 +3,7 @@ import {
   boardingThinNeighbor,
   type BoardingCell,
   type BoardingThinAxis,
+  type BoardingThinPiece,
 } from '../../models/map/BoardingMap.js';
 import { BOARDING_VERTICAL_METER } from './BoardingScale.js';
 import {
@@ -489,6 +490,48 @@ export function paintIsoThinWall(
     );
   } else paintIsoPolygon(sketch, mesh.top, '#52657f');
   if (options?.section) paintCutawayTop(sketch, mesh.top, axis);
+  return mesh;
+}
+
+/**
+ * fonster-pa-halvhog-vagg / helhogt-fonster: a see-through, faintly blue pane
+ * between `from` and `to` meters, with light edges and a glint.
+ */
+export function paintIsoGlass(
+  sketch: p5,
+  position: BoardingCell,
+  piece: BoardingThinPiece,
+  from: number,
+  to: number,
+): BoardingThinWallMesh {
+  const mesh = boardingThinWallMesh(position, piece.axis, to, piece.span, from);
+  const polygon = (points: readonly BoardingPoint[]) => {
+    sketch.beginShape();
+    for (const point of points) sketch.vertex(point.x, point.y);
+    sketch.endShape(sketch.CLOSE);
+  };
+  sketch.push();
+  sketch.strokeWeight(0.8);
+  sketch.stroke(214, 236, 255, 150);
+  sketch.fill(140, 192, 245, 46);
+  polygon(mesh.longFace);
+  sketch.fill(120, 176, 235, 58);
+  polygon(mesh.endFace);
+  sketch.fill(196, 226, 255, 110);
+  polygon(mesh.top);
+  const [topA, topB, baseB, baseA] = mesh.longFace;
+  if (topA && topB && baseB && baseA) {
+    const along = (a: BoardingPoint, b: BoardingPoint, t: number) => ({
+      x: a.x + (b.x - a.x) * t,
+      y: a.y + (b.y - a.y) * t,
+    });
+    const start = along(baseA, topA, 0.35);
+    const end = along(baseB, topB, 0.85);
+    sketch.stroke(240, 248, 255, 110);
+    sketch.strokeWeight(1.2);
+    sketch.line(start.x, start.y, end.x, end.y);
+  }
+  sketch.pop();
   return mesh;
 }
 

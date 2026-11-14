@@ -293,14 +293,9 @@ describe('granat-over-halvskydd-inte-genom-vagg', () => {
     };
     expect(reason([door])).toMatch(/wall/);
   });
-  it('lets a grenade fly over half cover, a low wall and smoke', () => {
+  it('lets a grenade fly over half cover and smoke', () => {
     expect(
       reason([{ id: 'crate', kind: 'cover', position: { q: 3, r: 3 } }]),
-    ).toBeNull();
-    expect(
-      reason([
-        { id: 'low', kind: 'thin-wall', low: true, position: { q: 3, r: 3 } },
-      ]),
     ).toBeNull();
     expect(
       reason(
@@ -310,6 +305,22 @@ describe('granat-over-halvskydd-inte-genom-vagg', () => {
           smoke: [{ position: { q: 3, r: 3 }, amount: 4 }],
         },
       ),
+    ).toBeNull();
+  });
+  it('fonster-pa-halvhog-vagg: throws over a low wall only once its glass is broken', () => {
+    const low: BoardingFeatureDefinition[] = [
+      { id: 'low', kind: 'thin-wall', low: true, position: { q: 3, r: 3 } },
+    ];
+    expect(reason(low)).toMatch(/blocked/);
+    const { shooter, restore } = deck(low);
+    const features = restore(far).snapshot.features.map((feature) =>
+      feature.id === 'low' ? { ...feature, shattered: true } : feature,
+    );
+    expect(
+      restore(far, { features }).grenadeReason(shooter.id, 'frag', {
+        q: 5,
+        r: 3,
+      }),
     ).toBeNull();
   });
   it('lets a grenade fly over a crouched person but not a standing one', () => {

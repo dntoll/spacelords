@@ -72,6 +72,7 @@ import {
   paintIsoDiamond,
   paintIsoFloor,
   paintIsoCrate,
+  paintIsoGlass,
   paintIsoThinWall,
   paintIsoWall,
   paintThinWallFloors,
@@ -107,6 +108,7 @@ const TERRAIN_FILL: Readonly<Record<string, string>> = {
   R: '#8aa0b8cc',
   q: '#c4a574cc',
   r: '#c4a574cc',
+  W: '#3d6a7a99',
 };
 
 const ROOM_FILL: Readonly<Record<string, string>> = {
@@ -137,6 +139,7 @@ function editorTerrain(symbol: string | undefined) {
   if (symbol === '.') return 'floor' as const;
   if (symbol === '#') return 'wall' as const;
   if (symbol === 'H') return 'hull' as const;
+  if (symbol === 'W') return 'window' as const;
   if (!boardingThinAxisFromSymbol(symbol)) return null;
   return boardingThinWallIsLow(symbol)
     ? ('low-thin-wall' as const)
@@ -674,7 +677,13 @@ export class BoardingEditorMapView {
         }
         const pieces = this.#thinPieces(snapshot, { q, r });
         if (pieces) {
-          sketch.fill(boardingThinWallIsLow(terrain) ? '#d7b07a' : '#e7eef5');
+          sketch.fill(
+            terrain === 'W'
+              ? '#8fc8ff'
+              : boardingThinWallIsLow(terrain)
+                ? '#d7b07a'
+                : '#e7eef5',
+          );
           for (const piece of pieces) {
             const box = boardingThinPieceBounds({ q, r }, piece);
             sketch.rect(
@@ -709,9 +718,9 @@ export class BoardingEditorMapView {
     snapshot: BoardingEditorSnapshot,
     position: { q: number; r: number },
   ): readonly BoardingThinPiece[] | null {
-    const axis = boardingThinAxisFromSymbol(
-      snapshot.layers.terrain[position.r]?.[position.q] ?? '',
-    );
+    const symbol = snapshot.layers.terrain[position.r]?.[position.q] ?? '';
+    // helhogt-fonster: a High window pane is shaped like a thin wall.
+    const axis = symbol === 'W' ? 'q' : boardingThinAxisFromSymbol(symbol);
     if (!axis) return null;
     return (
       this.#map?.thinWallPieces(position) ?? boardingStraightThinPieces(axis)
@@ -746,7 +755,11 @@ export class BoardingEditorMapView {
     };
     const roomAt = ({ q, r }: { q: number; r: number }) => {
       const terrain = snapshot.layers.terrain[r]?.[q];
-      if (terrain !== '.' && !boardingThinAxisFromSymbol(terrain ?? ''))
+      if (
+        terrain !== '.' &&
+        terrain !== 'W' &&
+        !boardingThinAxisFromSymbol(terrain ?? '')
+      )
         return null;
       const symbol = snapshot.layers.rooms[r]?.[q];
       return symbol === 'B'
@@ -762,12 +775,17 @@ export class BoardingEditorMapView {
       for (let q = 0; q < snapshot.width; q++) {
         const terrain = snapshot.layers.terrain[r]?.[q] ?? 'H';
         if (terrain === 'O') continue;
-        if (terrain === '.' || boardingThinAxisFromSymbol(terrain))
+        if (
+          terrain === '.' ||
+          terrain === 'W' ||
+          boardingThinAxisFromSymbol(terrain)
+        )
           floors.push({ q, r });
         if (terrain === '#' || terrain === 'H') walls.add(wallKey(q, r));
         if (
           terrain === '#' ||
           terrain === 'H' ||
+          terrain === 'W' ||
           boardingThinAxisFromSymbol(terrain)
         )
           structure.add(wallKey(q, r));
@@ -920,8 +938,9 @@ export class BoardingEditorMapView {
       const height = shape
         ? visibility.height(position, { pieces: shape, low, door })
         : 0;
+      const pane = !door && terrain === 'W';
       // sammanfogade-tunna-vaggar: each slab, back to front.
-      for (const piece of shape ?? []) {
+      for (const piece of pane ? [] : (shape ?? [])) {
         const thinAxis = piece.axis;
         const faced =
           boardingThinOutsideTerrain(
@@ -980,6 +999,16 @@ export class BoardingEditorMapView {
           );
         }
       }
+      // fonster-pa-halvhog-vagg / helhogt-fonster: glass up to the ceiling.
+      if (!door && (pane || low))
+        for (const piece of shape ?? [])
+          paintIsoGlass(
+            sketch,
+            position,
+            piece,
+            pane ? 0 : BOARDING_METERS.cover,
+            BOARDING_METERS.wall,
+          );
       const kind = objectKind(object);
       const featureKind =
         object === 'R'

@@ -96,6 +96,28 @@ export function boardingLightBlockers(
   return blockers;
 }
 
+/** glas-tintar-ljus: the light colour after it passes through glass. */
+export const BOARDING_GLASS_TINT: readonly [number, number, number] = [
+  168, 206, 255,
+];
+
+/**
+ * glas-tintar-ljus: footprints of intact glass, on low thin walls and High
+ * window panes. Light passing them is tinted, not stopped.
+ */
+export function boardingLightGlass(
+  state: Pick<BoardingBattleState, 'features'>,
+  shapes?: ThinShapes,
+): readonly { minQ: number; maxQ: number; minR: number; maxR: number }[] {
+  return state.features.flatMap((feature) =>
+    !feature.destroyed &&
+    (feature.kind === 'window' ||
+      (feature.kind === 'thin-wall' && feature.low && !feature.shattered))
+      ? thinFootprints(feature, shapes)
+      : [],
+  );
+}
+
 /** A footprint lower than the ceiling whose shadow ends where its top projects. */
 export interface BoardingLightOccluder {
   readonly minQ: number;
@@ -170,6 +192,7 @@ export function boardingLightMapSignature(
   return JSON.stringify([
     boardingLightBlockers(state, shapes),
     boardingLightOccluders(state, shapes),
+    boardingLightGlass(state, shapes),
   ]);
 }
 
@@ -478,6 +501,7 @@ export class BoardingLightMap {
       y: 1 + (point.r + 0.5) * texels,
     });
     const occluders = boardingLightOccluders(state, shapes);
+    const glass = boardingLightGlass(state, shapes);
     const outlines: (readonly BoardingLightPoint[])[] = [];
     const scratch = document.createElement('canvas');
     const lamp = scratch.getContext('2d');
@@ -511,6 +535,22 @@ export class BoardingLightMap {
       trace(shape);
       lamp.clip();
       lamp.drawImage(image, 0, 0);
+      // glas-tintar-ljus: what lies beyond a pane, seen from the lamp, gets
+      // the glass colour. The lamp image is opaque inside the clip, so
+      // multiplying there never adds colour where no light falls.
+      lamp.globalCompositeOperation = 'multiply';
+      lamp.fillStyle = `rgb(${BOARDING_GLASS_TINT.join(', ')})`;
+      for (const pane of glass) {
+        if (
+          pane.maxQ < light.position.q - light.radius ||
+          pane.minQ > light.position.q + light.radius ||
+          pane.maxR < light.position.r - light.radius ||
+          pane.minR > light.position.r + light.radius
+        )
+          continue;
+        trace(boardingShadowPolygon(light, { ...pane, height: light.height }));
+        lamp.fill();
+      }
       lamp.restore();
       lamp.save();
       lamp.globalCompositeOperation = 'destination-out';

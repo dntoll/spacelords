@@ -3,10 +3,17 @@ import { BOARDING_LAYER_SYMBOLS } from '../../../../shared/boarding/map-format.j
 export type BoardingCell = Readonly<{ q: number; r: number }>;
 export type BoardingRoom = 'bridge' | 'engineering' | 'cockpit';
 export type BoardingTerrain =
-  'floor' | 'wall' | 'hull' | 'thin-wall' | 'low-thin-wall';
+  'floor' | 'wall' | 'hull' | 'thin-wall' | 'low-thin-wall' | 'window';
 export type BoardingThinAxis = 'q' | 'r';
 export type BoardingFeatureKind =
-  'door' | 'reactor' | 'cover' | 'exit' | 'wall' | 'hull' | 'thin-wall';
+  | 'door'
+  | 'reactor'
+  | 'cover'
+  | 'exit'
+  | 'wall'
+  | 'hull'
+  | 'thin-wall'
+  | 'window';
 
 export interface BoardingFeatureDefinition {
   readonly id: string;
@@ -172,7 +179,8 @@ export function boardingTerrainShowsFloor(
   return (
     terrain === 'floor' ||
     terrain === 'thin-wall' ||
-    terrain === 'low-thin-wall'
+    terrain === 'low-thin-wall' ||
+    terrain === 'window'
   );
 }
 
@@ -302,7 +310,10 @@ export class BoardingMap {
       doors.has(`${q},${r}`) ? boardingDoorAxis({ q, r }, wallAt) : null;
     this.#thinPieces = new Map(
       features
-        .filter((feature) => feature.kind === 'thin-wall')
+        .filter(
+          (feature) =>
+            feature.kind === 'thin-wall' || feature.kind === 'window',
+        )
         .map((feature) => [
           key(feature.position),
           boardingThinPieces(
@@ -333,7 +344,10 @@ export class BoardingMap {
     return boardingDoorAxis(position, (q, r) => this.#walls.has(`${q},${r}`));
   }
 
-  /** sammanfogade-tunna-vaggar: the joined shape of the thin wall here. */
+  /**
+   * sammanfogade-tunna-vaggar: the joined shape of the thin wall here.
+   * helhogt-fonster: a High window pane joins and is shaped the same way.
+   */
   thinWallPieces(position: BoardingCell): readonly BoardingThinPiece[] | null {
     return this.#thinPieces.get(key(position)) ?? null;
   }
@@ -463,7 +477,9 @@ export function parseBoardingMap(source: string): BoardingMap {
           ? 'floor'
           : terrainSymbol === '#'
             ? 'wall'
-            : 'hull';
+            : terrainSymbol === 'W'
+              ? 'window'
+              : 'hull';
       terrain.set(key(position), terrainKind);
       if (axis)
         features.push(
@@ -474,6 +490,11 @@ export function parseBoardingMap(source: string): BoardingMap {
             axis,
             low: terrainKind === 'low-thin-wall',
           }),
+        );
+      // helhogt-fonster: a full-height pane of glass on the floor.
+      else if (terrainKind === 'window')
+        features.push(
+          Object.freeze({ id: `window-${q}-${r}`, kind: 'window', position }),
         );
       else if (terrainSymbol === '#' || terrainSymbol === 'H') {
         const kind = terrainSymbol === '#' ? 'wall' : 'hull';

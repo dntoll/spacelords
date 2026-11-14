@@ -70,6 +70,8 @@ describe('lokal-bordningskarteditor', () => {
       'Thin wall',
       'Low thin wall',
     ]);
+    // helhogt-fonster: the full-height pane has its own brush.
+    expect(terrain).toContain('High window pane');
     view.dispose();
   });
   it('hides Ship layouts until the local map catalog is available', () => {

@@ -15,6 +15,7 @@ import {
   boardingCoverShadow,
   boardingSightOutline,
   boardingThrowObstacle,
+  boardingSegmentSolids,
   boardingTileSight,
   boardingVisibleShare,
   type BoardingSightBlocker,
@@ -63,6 +64,8 @@ export interface BoardingFeature {
   readonly exit: 'breach' | 'escape-pod' | null;
   readonly axis?: 'q' | 'r';
   readonly low?: boolean;
+  /** fonster-pa-halvhog-vagg: the glass above a low thin wall is broken. */
+  readonly shattered?: boolean;
 }
 
 export interface BoardingActivation {
@@ -357,6 +360,7 @@ function featureHitPoints(feature: BoardingFeatureDefinition): number {
   if (feature.kind === 'reactor') return 12;
   if (feature.kind === 'wall') return 10;
   if (feature.kind === 'thin-wall') return feature.low ? 6 : 10;
+  if (feature.kind === 'window') return 1;
   if (feature.kind === 'cover') return 6;
   return 999;
 }
@@ -789,7 +793,10 @@ export class BoardingBattle {
 
   #canStand(position: BoardingCell): boolean {
     const terrain = this.#map.terrainAt(position);
-    return terrain === 'floor' || terrain === 'low-thin-wall';
+    // helhogt-fonster: a broken window can be stepped through.
+    return (
+      terrain === 'floor' || terrain === 'low-thin-wall' || terrain === 'window'
+    );
   }
 
   /** ingen-rok-i-hela-vaggar: smoke stays out of intact walls, hull and closed doors. */
@@ -801,6 +808,7 @@ export class BoardingBattle {
       feature &&
       (feature.kind === 'wall' ||
         feature.kind === 'hull' ||
+        feature.kind === 'window' ||
         (feature.kind === 'door' && !feature.open))
     );
   }
@@ -813,6 +821,7 @@ export class BoardingBattle {
       (feature.kind === 'wall' ||
         feature.kind === 'hull' ||
         feature.kind === 'thin-wall' ||
+        feature.kind === 'window' ||
         feature.kind === 'reactor' ||
         feature.kind === 'cover' ||
         (feature.kind === 'door' && !feature.open))
@@ -973,8 +982,27 @@ export class BoardingBattle {
     return null;
   }
 
-  /** granat-over-halvskydd-inte-genom-vagg: solid tiles; smoke is no wall. */
+  /**
+   * granat-over-halvskydd-inte-genom-vagg: solid tiles; smoke is no wall.
+   * fonster-pa-halvhog-vagg / helhogt-fonster: intact glass reaches the
+   * ceiling, so nothing is thrown over or through it.
+   */
   #stopsGrenade(position: BoardingCell): boolean {
+    return this.#solidWall(position) || this.#intactGlass(position);
+  }
+
+  /** fonster-pa-halvhog-vagg / helhogt-fonster: unbroken glass stands here. */
+  #intactGlass(position: BoardingCell): boolean {
+    const feature = this.#featureAt(position);
+    return (
+      !!feature &&
+      (feature.kind === 'window' ||
+        (feature.kind === 'thin-wall' && !!feature.low && !feature.shattered))
+    );
+  }
+
+  /** Walls that stop sight as well as grenades; glass does not. */
+  #solidWall(position: BoardingCell): boolean {
     if (!this.#map.contains(position)) return true;
     if (this.#map.terrainAt(position) === null) return true;
     const feature = this.#featureAt(position);
@@ -1040,7 +1068,7 @@ export class BoardingBattle {
   }
 
   #blocksVision(position: BoardingCell): boolean {
-    return this.#stopsGrenade(position) || this.#smokeAt(position);
+    return this.#solidWall(position) || this.#smokeAt(position);
   }
 
   #smokeAt(position: BoardingCell): boolean {
@@ -1111,15 +1139,19 @@ export class BoardingBattle {
    * slab; smoke and other walls block the whole tile.
    */
   #visionShape(position: BoardingCell): BoardingSightSolid {
-    return this.#smokeAt(position) || this.#solidShape(position);
+    return this.#smokeAt(position) || this.#solidShape(position, false);
   }
 
-  /** granat-over-halvskydd-inte-genom-vagg: what stops a grenade, by shape. */
-  #solidShape(position: BoardingCell): BoardingSightSolid {
-    if (!this.#stopsGrenade(position)) return false;
+  /**
+   * granat-over-halvskydd-inte-genom-vagg: what stops a grenade, by shape.
+   * Without `glass`, only what also stops sight.
+   */
+  #solidShape(position: BoardingCell, glass = true): BoardingSightSolid {
+    if (!this.#solidWall(position) && !(glass && this.#intactGlass(position)))
+      return false;
     const feature = this.#featureAt(position);
     // sammanfogade-tunna-vaggar: the map knows the joined shape.
-    if (feature?.kind === 'thin-wall')
+    if (feature?.kind === 'thin-wall' || feature?.kind === 'window')
       return this.#map.thinWallPieces(position) ?? feature.axis ?? true;
     if (feature?.kind === 'door') return this.#map.doorAxis(position);
     return true;
@@ -1585,6 +1617,8 @@ export class BoardingBattle {
         ...entry,
         hitPoints,
         destroyed,
+        // fonster-pa-halvhog-vagg: any blow to a low wall breaks its glass.
+        ...(entry.kind === 'thin-wall' && entry.low ? { shattered: true } : {}),
         open:
           destroyed &&
           (entry.kind === 'door' ||
@@ -1622,6 +1656,8 @@ export class BoardingBattle {
     }
     this.#addNoise(source.position, source.side);
     if (kind !== 'Melee')
+      this.#shatterAlong(source.position, this.#targetPosition(target));
+    if (kind !== 'Melee')
       this.#shot = Object.freeze({
         from: frozenCell(source.position),
         to: frozenCell(this.#targetPosition(target)),
@@ -1635,6 +1671,24 @@ export class BoardingBattle {
       ],
     });
     this.synchronize();
+  }
+
+  /** krossbart-glas: a bullet breaks every pane it passes, hit or miss. */
+  #shatterAlong(from: BoardingCell, to: BoardingCell): void {
+    const crossed = boardingSegmentSolids(from, to, (q, r) =>
+      this.#intactGlass({ q, r })
+        ? (this.#map.thinWallPieces({ q, r }) ?? true)
+        : false,
+    );
+    for (const position of crossed) {
+      const feature = this.#featureAt(position);
+      if (!feature) continue;
+      this.#updateFeature(feature.id, (entry) =>
+        entry.kind === 'window'
+          ? { ...entry, hitPoints: 0, destroyed: true }
+          : { ...entry, shattered: true },
+      );
+    }
   }
 
   #triggerOverwatch(mover: BoardingPerson): void {

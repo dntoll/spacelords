@@ -110,6 +110,7 @@ import {
 import {
   paintIsoFloor,
   paintIsoCrate,
+  paintIsoGlass,
   paintIsoThinWall,
   paintIsoWall,
   paintThinWallFloors,
@@ -429,6 +430,13 @@ export class BoardingMapView implements BoardingMapPort {
           boardingDestructionEffect(feature.kind),
           feature.position,
         );
+    }
+    // krossbart-glas: the glass above a low wall rains down when it breaks.
+    for (const feature of next.features) {
+      if (!feature.shattered || !known.has(key(feature.position))) continue;
+      const before = previous.features.find((entry) => entry.id === feature.id);
+      if (before && !before.shattered && !before.destroyed)
+        this.#spawnEffect('glass', feature.position);
     }
   }
 
@@ -1766,7 +1774,10 @@ export class BoardingMapView implements BoardingMapPort {
     const thinAt = new Map(
       state.features
         .filter(
-          (feature) => feature.kind === 'thin-wall' || feature.kind === 'door',
+          (feature) =>
+            feature.kind === 'thin-wall' ||
+            feature.kind === 'window' ||
+            feature.kind === 'door',
         )
         .map(
           (feature) =>
@@ -1908,6 +1919,7 @@ export class BoardingMapView implements BoardingMapPort {
               (feature.kind === 'hull' ||
                 feature.kind === 'wall' ||
                 feature.kind === 'thin-wall' ||
+                feature.kind === 'window' ||
                 (feature.kind === 'door' && !feature.open) ||
                 feature.kind === 'cover' ||
                 feature.kind === 'reactor');
@@ -1961,6 +1973,28 @@ export class BoardingMapView implements BoardingMapPort {
                   feature.id === this.#selectedId,
                   thinPeersFor(piece.axis, feature.low === true),
                   known,
+                );
+              // fonster-pa-halvhog-vagg: glass from the wall up to the ceiling.
+              if (feature.low && !feature.shattered)
+                for (const piece of pieces)
+                  paintIsoGlass(
+                    sketch,
+                    feature.position,
+                    piece,
+                    BOARDING_METERS.cover,
+                    BOARDING_METERS.wall,
+                  );
+              return;
+            }
+            // helhogt-fonster: a pane from floor to ceiling.
+            if (raised && feature.kind === 'window') {
+              for (const piece of this.#thinPieces(feature))
+                paintIsoGlass(
+                  sketch,
+                  feature.position,
+                  piece,
+                  0,
+                  BOARDING_METERS.wall,
                 );
               return;
             }

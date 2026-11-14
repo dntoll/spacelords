@@ -321,9 +321,11 @@ export function boardingThinWallMesh(
   axis: BoardingThinAxis,
   meters: number,
   span?: readonly [number, number],
+  /** fonster-pa-halvhog-vagg: the slab's lower edge, for glass above a wall. */
+  base = 0,
 ): BoardingThinWallMesh {
   const cells = boardingThinWallCells(position, axis, span).wall;
-  const ground = cells.map((cell) => projectCell(cell));
+  const ground = cells.map((cell) => projectCell(cell, base));
   const top = cells.map((cell) => projectCell(cell, meters));
   const face = (first: number, second: number): readonly BoardingPoint[] =>
     Object.freeze([top[first]!, top[second]!, ground[second]!, ground[first]!]);

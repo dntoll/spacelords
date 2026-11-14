@@ -34,6 +34,7 @@ const PALETTE: readonly PaletteTile[] = [
   // tile per height is enough. R and r still load as the same walls.
   { layer: 'terrain', symbol: 'Q', label: 'Thin wall' },
   { layer: 'terrain', symbol: 'q', label: 'Low thin wall' },
+  { layer: 'terrain', symbol: 'W', label: 'High window pane' },
   { layer: 'terrain', symbol: 'O', label: 'Outside' },
   { layer: 'objects', symbol: '-', label: 'No object' },
   { layer: 'objects', symbol: 'D', label: 'Door' },

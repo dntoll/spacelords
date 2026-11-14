@@ -494,6 +494,8 @@ package "Kampanjbordning" {
     q och r är 1,2 m, ger Half cover och fälls inte.
     sammanfogade-tunna-vaggar:
     formen följer grannarnas väggar och dörrar.
+    fonster-pa-halvhog-vagg / helhogt-fonster:
+    glas till taket; krossas av skott (shattered).
   end note
   class BoardingKnowledge {
     visibleCells
