@@ -330,7 +330,7 @@ test('flera-skarmstorlekar: canvas follows its container without horizontal over
 test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: research, build ships and settle a new colony', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(90_000);
+  test.setTimeout(180_000);
   const nextYear = async () => {
     await page.getByRole('button', { name: 'Star map', exact: true }).click();
     await endTurn(page);
@@ -507,6 +507,9 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     page.getByRole('button', { name: 'Colony ship 1 in Fleet 1', exact: true }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
+  // planetutforskning-vid-ankomst: Colony ships settle only explored planets.
+  await chooseFleetDestination(page, 'Home Fleet');
+  await selectMapObject(page, 'Vesta');
   await chooseFleetDestination(page, 'Fleet 1');
   await selectMapObject(page, 'Vesta');
   await nextYear();
