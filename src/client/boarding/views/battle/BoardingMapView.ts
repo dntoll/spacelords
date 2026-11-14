@@ -173,6 +173,17 @@ function groundEllipse(depthAt2to1: number): number {
   return depthAt2to1 * 2 * BOARDING_GROUND_RATIO;
 }
 
+/** Points in one winding order, so a nonzero fill of many paints their union. */
+function sameWinding(points: readonly Point[]): readonly Point[] {
+  let area = 0;
+  for (let index = 0; index < points.length; index++) {
+    const a = points[index]!;
+    const b = points[(index + 1) % points.length]!;
+    area += a.x * b.y - b.x * a.y;
+  }
+  return area < 0 ? [...points].reverse() : points;
+}
+
 export class BoardingMapView implements BoardingMapPort {
   readonly #p5: p5;
   readonly #observer: ResizeObserver;
@@ -212,6 +223,8 @@ export class BoardingMapView implements BoardingMapPort {
   } | null = null;
   /** animerade-dorrar: when each sliding door last changed state. */
   readonly #doorMoves = new Map<string, number>();
+  #coverLayer: HTMLCanvasElement | null = null;
+  #shipCellCache: readonly (readonly Point[])[] | null = null;
   #effects: {
     kind: BoardingEffectKind;
     position: BoardingCell;
@@ -1241,22 +1254,89 @@ export class BoardingMapView implements BoardingMapPort {
       sketch.vertex(projected.x, projected.y);
     }
     sketch.endShape(sketch.CLOSE);
-    // halvskydd-skuggar-delvis: half cover shades the floor right behind it.
-    sketch.fill(240, 160, 80, 24);
-    sketch.stroke('#f0a050');
-    sketch.strokeWeight(1);
-    for (const shadow of sight.coverShadows) {
-      sketch.beginShape();
-      for (const point of shadow) {
-        const projected = boardingIsoCenter(point);
-        sketch.vertex(projected.x, projected.y);
-      }
-      sketch.endShape(sketch.CLOSE);
-    }
-    sketch.noFill();
-    sketch.strokeWeight(1.5);
-    for (const position of sight.halfCover) this.#tile(sketch, position);
     sketch.pop();
+    // halvskydd-skuggar-delvis: half cover shades the floor right behind it.
+    this.#paintCoverShadows(sketch.drawingContext as CanvasRenderingContext2D, [
+      ...sight.outline.map((point) => boardingIsoCenter(point)),
+    ]);
+  }
+
+  /**
+   * halvskydd-markering-sammanfogad: every half cover shadow joins one amber
+   * area with a single outline, cut to the blue sight area and to the ship.
+   */
+  #paintCoverShadows(
+    context: CanvasRenderingContext2D,
+    sightOutline: readonly Point[],
+  ): void {
+    const shadows = (this.#sight?.coverShadows ?? [])
+      .filter((shadow) => shadow.length >= 3)
+      .map((shadow) =>
+        sameWinding(shadow.map((point) => boardingIsoCenter(point))),
+      );
+    if (!shadows.length) return;
+    const trace = (
+      target: CanvasRenderingContext2D,
+      polygons: readonly (readonly Point[])[],
+    ) => {
+      target.beginPath();
+      for (const polygon of polygons) {
+        polygon.forEach((point, index) => {
+          if (index === 0) target.moveTo(point.x, point.y);
+          else target.lineTo(point.x, point.y);
+        });
+        target.closePath();
+      }
+    };
+    context.save();
+    trace(context, [sightOutline]);
+    context.clip();
+    trace(context, this.#shipCells());
+    context.clip();
+    // One path for all shadows fills their union once, without darker overlaps.
+    trace(context, shadows);
+    context.fillStyle = 'rgba(240, 160, 80, 0.1)';
+    context.fill();
+    const scratch = (this.#coverLayer ??= document.createElement('canvas'));
+    if (
+      scratch.width !== context.canvas.width ||
+      scratch.height !== context.canvas.height
+    ) {
+      scratch.width = context.canvas.width;
+      scratch.height = context.canvas.height;
+    }
+    const layer = scratch.getContext('2d');
+    if (layer) {
+      layer.setTransform(1, 0, 0, 1, 0, 0);
+      layer.clearRect(0, 0, scratch.width, scratch.height);
+      layer.setTransform(context.getTransform());
+      // Stroke every shadow, then erase all their insides: only the outer
+      // edge of the union is left, with no lines inside it.
+      layer.strokeStyle = '#f0a050';
+      layer.lineWidth = 2;
+      layer.lineJoin = 'round';
+      trace(layer, shadows);
+      layer.stroke();
+      layer.globalCompositeOperation = 'destination-out';
+      trace(layer, shadows);
+      layer.fill();
+      layer.globalCompositeOperation = 'source-over';
+      context.setTransform(1, 0, 0, 1, 0, 0);
+      context.drawImage(scratch, 0, 0);
+    }
+    context.restore();
+  }
+
+  /** The ground diamonds of every tile in the ship, for clipping overlays. */
+  #shipCells(): readonly (readonly Point[])[] {
+    if (this.#shipCellCache) return this.#shipCellCache;
+    const cells: (readonly Point[])[] = [];
+    for (let r = 0; r < this.map.height; r++)
+      for (let q = 0; q < this.map.width; q++)
+        if (this.map.terrainAt({ q, r }))
+          cells.push(boardingIsoCorners({ q, r }));
+    this.#shipCellCache = cells;
+    return cells;
   }
 
   #tile(sketch: p5, position: BoardingCell, yOffset = 0): void {

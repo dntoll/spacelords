@@ -216,6 +216,7 @@ sparplatser.
   och ett mål som syns till hälften eller mer men inte helt ger +2. Bonusen
   ingår i försvarsvärdet i stridsloggen och i träffchansen. Personer i vägen
   blockerar fortfarande skott längs linjen mellan rutornas mitt.
+- `halvskydd-markering-sammanfogad` — **Fullständigt implementerat**. Alla halvskyddsskuggor ritas som en orange yta med en enda kontur, beskuren till siktytan och skeppets rutor. En låg tunn vägg kastar sin skugga från väggens plattor, så golvet på betraktarens sida markeras inte. Halvskydd ritas inte längre med egen rutram.
 - `halvskydd-skuggar-delvis` — **Fullständigt implementerat**. Lådor och låga
   väggar skymmer inte sikten men kastar en skugga från skyttens öga som når
   ungefär en ruta bakom dem. Skuggan ritas orange med kantlinje i den valda

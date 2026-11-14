@@ -1764,6 +1764,12 @@ färdig reparation.
   ersätter `#coverBetween`. `boardingCoverShadow` bygger skuggfyrhörningen från
   rutans silhuetthörn ut till mittavståndet plus 1,5 ruta; `sightArea` lämnar
   den som `coverShadows`.
+- `halvskydd-markering-sammanfogad`: `boardingCoverShadow` tar valfritt en
+  låg väggs plattor och bygger då skuggan från deras hörn. Vyn fyller alla
+  skuggor med en gemensam bana (samma varvriktning, nonzero) och ritar konturen
+  på ett återanvänt offscreen-lager: alla kanter stryks och skuggornas insidor
+  raderas, så bara unionens yttre kant blir kvar. Både fyllning och kontur klipps
+  mot siktpolygonen och mot skeppets rutor. Rutramarna runt `halfCover` tas bort.
 - `avstand-paverkar-traffchans`: `boardingRangeDefense(avstånd)` läggs till i
   `attackPreview` (därmed även Overwatch), men inte i `meleePreview`.
   Siktytan ritas med fyllnadsalfa 14 och 1,25 breda linjer; skuggor med alfa 24

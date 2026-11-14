@@ -405,19 +405,36 @@ export function boardingCoverShadow(
   eye: BoardingSightPoint,
   cover: BoardingSightPoint,
   reach = 1.5,
+  /**
+   * halvskydd-markering-sammanfogad: a low thin wall casts its shadow from its
+   * own slabs, so the floor in front of it stays unmarked.
+   */
+  footprint: readonly BoardingThinPiece[] | null = null,
 ): readonly BoardingSightPoint[] {
   const centreAngle = Math.atan2(cover.r - eye.r, cover.q - eye.q);
-  const corners = [
-    { q: cover.q - 0.5, r: cover.r - 0.5 },
-    { q: cover.q + 0.5, r: cover.r - 0.5 },
-    { q: cover.q + 0.5, r: cover.r + 0.5 },
-    { q: cover.q - 0.5, r: cover.r + 0.5 },
-  ].map((corner) => {
-    let angle = Math.atan2(corner.r - eye.r, corner.q - eye.q) - centreAngle;
-    while (angle <= -Math.PI) angle += Math.PI * 2;
-    while (angle > Math.PI) angle -= Math.PI * 2;
-    return { corner, angle };
-  });
+  const boxes = footprint
+    ? footprint.map((piece) => boardingThinPieceBounds(cover, piece))
+    : [
+        {
+          minQ: cover.q - 0.5,
+          maxQ: cover.q + 0.5,
+          minR: cover.r - 0.5,
+          maxR: cover.r + 0.5,
+        },
+      ];
+  const corners = boxes
+    .flatMap((box) => [
+      { q: box.minQ, r: box.minR },
+      { q: box.maxQ, r: box.minR },
+      { q: box.maxQ, r: box.maxR },
+      { q: box.minQ, r: box.maxR },
+    ])
+    .map((corner) => {
+      let angle = Math.atan2(corner.r - eye.r, corner.q - eye.q) - centreAngle;
+      while (angle <= -Math.PI) angle += Math.PI * 2;
+      while (angle > Math.PI) angle -= Math.PI * 2;
+      return { corner, angle };
+    });
   corners.sort((a, b) => a.angle - b.angle);
   const first = corners[0]!.corner;
   const last = corners[corners.length - 1]!.corner;

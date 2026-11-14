@@ -498,7 +498,7 @@ const GLASS_THICKNESS = 0.02;
 
 /**
  * fonster-pa-halvhog-vagg / helhogt-fonster: a see-through, faintly blue pane
- * between `from` and `to` meters, with light edges and a glint.
+ * between `from` and `to` meters, with light edges.
  */
 export function paintIsoGlass(
   sketch: p5,
@@ -537,18 +537,6 @@ export function paintIsoGlass(
   polygon(mesh.endFace);
   sketch.fill(206, 232, 255, 200);
   polygon(mesh.top);
-  const [topA, topB, baseB, baseA] = mesh.longFace;
-  if (topA && topB && baseB && baseA) {
-    const along = (a: BoardingPoint, b: BoardingPoint, t: number) => ({
-      x: a.x + (b.x - a.x) * t,
-      y: a.y + (b.y - a.y) * t,
-    });
-    const start = along(baseA, topA, 0.35);
-    const end = along(baseB, topB, 0.85);
-    sketch.stroke(244, 250, 255, 170);
-    sketch.strokeWeight(1.6);
-    sketch.line(start.x, start.y, end.x, end.y);
-  }
   sketch.pop();
   return mesh;
 }

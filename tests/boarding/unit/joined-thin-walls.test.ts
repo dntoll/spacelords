@@ -7,7 +7,10 @@ import {
   type BoardingThinArm,
   type BoardingThinPiece,
 } from '../../../src/client/boarding/models/map/BoardingMap.js';
-import { boardingVisibleShare } from '../../../src/client/boarding/models/battle/BoardingSightGeometry.js';
+import {
+  boardingCoverShadow,
+  boardingVisibleShare,
+} from '../../../src/client/boarding/models/battle/BoardingSightGeometry.js';
 import { boardingLightBlockers } from '../../../src/client/boarding/views/rendering/BoardingLightMap.js';
 import { BoardingBattle } from '../../../src/client/boarding/models/battle/BoardingBattle.js';
 
@@ -166,5 +169,37 @@ describe('sammanfogade-tunna-vaggar', () => {
     // A wall below the thick wall only: a north arm and its end, one slab.
     expect(blockers).toHaveLength(1);
     expect(blockers[0]).toMatchObject({ minR: 1.5, maxR: 2 + 1 / 6 });
+  });
+});
+
+describe('halvskydd-markering-sammanfogad', () => {
+  const inside = (
+    polygon: readonly { q: number; r: number }[],
+    point: { q: number; r: number },
+  ) => {
+    let result = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const a = polygon[i]!;
+      const b = polygon[j]!;
+      if (
+        a.r > point.r !== b.r > point.r &&
+        point.q < ((b.q - a.q) * (point.r - a.r)) / (b.r - a.r) + a.q
+      )
+        result = !result;
+    }
+    return result;
+  };
+
+  it('casts a low wall shadow from the wall, not from the near half of its tile', () => {
+    const eye = { q: 0, r: 2.1 };
+    const wall = { q: 3, r: 2 };
+    const slab = boardingThinPieces(new Set(['north', 'south'] as const));
+    const fromWall = boardingCoverShadow(eye, wall, 1.5, slab);
+    const fromTile = boardingCoverShadow(eye, wall);
+    const near = { q: 2.65, r: 2 };
+    const behind = { q: 3.4, r: 2 };
+    expect(inside(fromTile, near)).toBe(true);
+    expect(inside(fromWall, near)).toBe(false);
+    expect(inside(fromWall, behind)).toBe(true);
   });
 });

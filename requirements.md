@@ -81,6 +81,9 @@ Se [hela visionen](docs/game-vision.md).
   `halvskydd-skuggar-delvis` är **Fullständigt implementerat**: halvskydd
   kastar en orange skugga närmast bakom sig, och ett mål som till minst hälften
   ligger i skuggan får full skyddsbonus, till 10–50 % halv bonus.
+  `halvskydd-markering-sammanfogad` är **Fullständigt implementerat**: alla
+  skuggor ritas som en enda orange yta med en kontur, beskuren till den blå
+  siktytan och skeppets rutor; låga väggar skuggar från själva väggen.
   `avstand-paverkar-traffchans` är **Fullständigt implementerat**: skott får
   +1 i målets försvar per påbörjade två rutor bortom två rutor (högst +3 vid
   åtta rutor). Se

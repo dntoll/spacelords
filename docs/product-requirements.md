@@ -1540,6 +1540,8 @@ delvis synlig +2. Under en tiondel synlig räknas fienden som dold.
 rutorna närmast bakom sig. Skuggan syns på marken, och en fiende som bara delvis
 står i skuggan får mindre skydd än en som står helt bakom.
 
+`halvskydd-markering-sammanfogad` — **Fullständigt implementerat**: den orange markeringen är en enda sammanhängande yta med en kontur, utan linjer inuti. Den syns bara inom den blå siktytan och aldrig utanför skeppet. En låg vägg markerar bara golvet bakom sig, inte sidan mot den som tittar. Halvskydd får ingen egen orange rutram.
+
 `avstand-paverkar-traffchans` — **Fullständigt implementerat**: det är svårare
 att träffa på långt håll än på nära håll.
 

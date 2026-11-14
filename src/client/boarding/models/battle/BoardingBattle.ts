@@ -1217,7 +1217,14 @@ export class BoardingBattle {
     return Object.freeze({
       coverShadows: Object.freeze([
         ...halfCover.map((cell) =>
-          boardingCoverShadow(observer.position, cell),
+          boardingCoverShadow(
+            observer.position,
+            cell,
+            1.5,
+            this.#featureAt(cell)?.kind === 'thin-wall'
+              ? this.#map.thinWallPieces(cell)
+              : null,
+          ),
         ),
         ...crouched.map((entry) =>
           boardingBodyShadow(observer.position, entry.position),

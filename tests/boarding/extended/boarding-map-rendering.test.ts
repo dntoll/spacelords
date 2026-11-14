@@ -78,7 +78,15 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
   let spriteCanvas: HTMLCanvasElement | null = null;
   let currentStroke = '';
   const effectCalls: string[] = [];
+  // halvskydd-markering-sammanfogad: fills on the canvas and strokes on the
+  // offscreen outline layer.
+  const contextFills: string[] = [];
+  const layerStrokes: string[] = [];
   const context = {
+    canvas,
+    fillStyle: '',
+    setTransform() {},
+    getTransform: () => ({}),
     globalAlpha: 1,
     filter: 'none',
     globalCompositeOperation: 'source-over',
@@ -92,7 +100,9 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
     ellipse() {
       effectCalls.push('ellipse');
     },
-    fill() {},
+    fill() {
+      contextFills.push(this.fillStyle);
+    },
     stroke() {},
     createRadialGradient: () => ({ addColorStop() {} }),
     beginPath() {},
@@ -134,6 +144,12 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
     clip() {},
     fill() {},
     drawImage() {},
+    clearRect() {},
+    setTransform() {},
+    strokeStyle: '',
+    stroke(this: { strokeStyle: string }) {
+      layerStrokes.push(this.strokeStyle);
+    },
   } as unknown as CanvasRenderingContext2D);
   const noop = () => {};
   const base = {
@@ -289,6 +305,8 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
     lines,
     strokes,
     texts,
+    contextFills,
+    layerStrokes,
   };
 }
 
@@ -808,16 +826,13 @@ it('geometrisk-sikt: outlines the given sight area and its half cover on the flo
     coverShadows: [],
   });
   expect(strokes).toContain('#62d6ff');
-  expect(strokes).toContain('#f0a050');
+  // halvskydd-markering-sammanfogad: no amber tile outline of its own.
+  expect(strokes).not.toContain('#f0a050');
   view.dispose();
 });
 
-it('halvskydd-skuggar-delvis: shades the floor behind half cover', () => {
-  const { view, state, player } = scene(true);
-  const fills: number[][] = [];
-  Object.assign(runtime.sketch!, {
-    fill: (...args: number[]) => fills.push(args),
-  });
+it('halvskydd-skuggar-delvis / halvskydd-markering-sammanfogad: shades the floor behind half cover as one area with one outline', () => {
+  const { view, state, player, contextFills, layerStrokes } = scene(true);
   view.render(state, player.id, null, [], [], {
     outline: [
       { q: 3, r: 3 },
@@ -831,8 +846,18 @@ it('halvskydd-skuggar-delvis: shades the floor behind half cover', () => {
         { q: 4, r: 4 },
         { q: 5, r: 4 },
       ],
+      [
+        { q: 4.5, r: 3 },
+        { q: 5, r: 3 },
+        { q: 4.5, r: 4 },
+      ],
     ],
   });
-  expect(fills).toContainEqual([240, 160, 80, 24]);
+  // Overlapping shadows are filled and outlined in a single pass each, so
+  // their overlap is not darker and no lines run inside the area.
+  expect(
+    contextFills.filter((style) => style === 'rgba(240, 160, 80, 0.1)'),
+  ).toHaveLength(1);
+  expect(layerStrokes.filter((style) => style === '#f0a050')).toHaveLength(1);
   view.dispose();
 });
