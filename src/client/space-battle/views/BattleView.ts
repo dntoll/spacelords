@@ -825,10 +825,22 @@ export class BattleView {
       }),
       facing: Number(button.dataset.facing),
     }));
+    const hullCells = ShipFootprint.cells(
+      ship,
+      state.largeShipFootprints === true,
+    );
+    const center = project(hullCells[Math.floor(hullCells.length / 2)]!);
+    const buttonSize = Math.max(
+      22,
+      Math.min(34, Math.sqrt(3) * HexGeometry.size * viewport.scale * 0.42),
+    );
+    const maneuvering =
+      state.maneuverSystem === true && state.phase === 'fighting';
     const optionPositions = maneuverOptionLayout(
       anchors,
       viewport.scale,
       viewport,
+      maneuvering ? [{ center, size: buttonSize }] : [],
     );
     options.forEach((button, index) => {
       const anchor = anchors[index]!.center;
@@ -845,10 +857,6 @@ export class BattleView {
       button.style.left = `${chosen.x}px`;
       button.style.top = `${chosen.y}px`;
     });
-    const hullCells = ShipFootprint.cells(
-      ship,
-      state.largeShipFootprints === true,
-    );
     const visibleHull = ship.escapeEdge
       ? hullCells.filter(
           (cell) =>
@@ -869,10 +877,9 @@ export class BattleView {
     const actions = [
       ...this.#panel.querySelectorAll<HTMLButtonElement>('button'),
     ];
-    if (state.maneuverSystem === true && state.phase === 'fighting') {
+    if (maneuvering) {
       const nose = project(hullCells.at(-1)!);
       const stern = project(hullCells[0]!);
-      const center = project(hullCells[Math.floor(hullCells.length / 2)]!);
       const places = maneuverControlsLayout(
         nose,
         center,
@@ -880,10 +887,6 @@ export class BattleView {
         ship.facing,
         viewport.scale,
         hullCells.length === 1,
-      );
-      const buttonSize = Math.max(
-        22,
-        Math.min(34, Math.sqrt(3) * HexGeometry.size * viewport.scale * 0.42),
       );
       const size = `${buttonSize}px`;
       this.#panel.style.setProperty('--maneuver-button', size);

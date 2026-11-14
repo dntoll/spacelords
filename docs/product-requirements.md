@@ -159,7 +159,8 @@ pågående strider behåller sin tidigare karta och reträttregel.
   startpositionen och vapenkonen visas vid slutpositionen.
 - `manoverval-vid-hexkant` — **Fullständigt implementerat**: riktningsvalen
   placeras vid hexens sida i den nya riktningen. Alternativ med samma mål och
-  riktning kan väljas var för sig.
+  riktning kan väljas var för sig. Valen täcker aldrig `End ship turn`, även
+  när kartan är utzoomad på en telefon.
 - `animerad-skeppsforflyttning` — **Fullständigt implementerat**: skeppet färdas
   mjukt längs sin väg och reaktionsskott visas där de inträffar.
 - `ingen-hpsiffra-pa-stridskartan` — **Fullständigt implementerat**: skeppens

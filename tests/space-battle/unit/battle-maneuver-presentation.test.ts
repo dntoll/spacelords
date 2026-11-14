@@ -2,6 +2,7 @@ import { expect, it } from 'vitest';
 import {
   maneuverFrame,
   maneuverOptionLayout,
+  maneuverOptionSize,
 } from '../../../src/client/space-battle/views/BattleManeuverPresentation.js';
 
 it('animerad-skeppsforflyttning: interpolates movement and the shortest turn between hexes', () => {
@@ -39,4 +40,27 @@ it('manoverval-vid-hexkant: places each facing towards its hex edge and separate
   expect(
     Math.hypot(points[0]!.x - points[1]!.x, points[0]!.y - points[1]!.y),
   ).toBeGreaterThanOrEqual(26);
+});
+
+it('manoverval-vid-hexkant / styrning-pa-skrovet: options at a zoomed-out ship leave End ship turn tappable', () => {
+  const center = { x: 180, y: 1100 };
+  const done = { center, size: 22 };
+  for (const scale of [0.25, 0.4, 0.6, 1]) {
+    const points = maneuverOptionLayout(
+      [
+        { center, facing: 5 },
+        { center, facing: 0 },
+        { center, facing: 1 },
+      ],
+      scale,
+      { width: 412, height: 2200 },
+      [done],
+    );
+    const size = maneuverOptionSize(scale);
+    for (const point of points)
+      expect(
+        Math.abs(point.x - center.x) >= (size + done.size) / 2 ||
+          Math.abs(point.y - center.y) >= (size + done.size) / 2,
+      ).toBe(true);
+  }
 });

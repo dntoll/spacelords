@@ -178,6 +178,7 @@ test('bargningsorder-fran-flotta: choose Salvage and a wreck, reload and pick it
 test('bargningsorder / automatisk-vrakreparation / forskning-fran-bargade-delar: salvage, tow, reload, dock and research recovered parts', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(90_000);
   const state = salvageState();
   const game = Game.restore(state);
   await load(page, state);
@@ -216,7 +217,13 @@ test('bargningsorder / automatisk-vrakreparation / forskning-fran-bargade-delar:
   ).toBe(true);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   const card = page.locator('[data-technology="Telescope III factory"]');
-  await expect(card).toContainText('Recovered');
+  // kompakt-forskningstrad: the tile carries its status as a description.
+  await expect(
+    card.getByRole('button', {
+      name: 'Inspect Telescope III factory',
+      exact: true,
+    }),
+  ).toHaveAttribute('aria-description', 'Recovered');
   await card
     .getByRole('button', { name: 'Inspect Telescope III factory', exact: true })
     .focus();

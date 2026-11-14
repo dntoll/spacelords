@@ -26,13 +26,22 @@ export function maneuverFrame(
 }
 
 /** manoverval-vid-hexkant: anchor at the facing edge and fan out only as needed. */
+/** manoverval-vid-hexkant: reserved controls, such as End ship turn, stay uncovered. */
 export function maneuverOptionLayout(
   options: readonly { center: Point; facing: number }[],
   scale: number,
   viewport: { width: number; height: number },
+  reserved: readonly { center: Point; size: number }[] = [],
 ): readonly Point[] {
   const chosen: Point[] = [];
-  const spacing = maneuverOptionSize(scale) + 2;
+  const size = maneuverOptionSize(scale);
+  const spacing = size + 2;
+  const free = (point: Point) =>
+    reserved.every(
+      (control) =>
+        Math.abs(point.x - control.center.x) >= (size + control.size) / 2 ||
+        Math.abs(point.y - control.center.y) >= (size + control.size) / 2,
+    );
   for (const { center, facing } of options) {
     const angle = (-facing * Math.PI) / 3;
     const forward = { x: Math.cos(angle), y: Math.sin(angle) };
@@ -67,14 +76,16 @@ export function maneuverOptionLayout(
         });
       }
     }
+    const apart = (point: Point) =>
+      chosen.every(
+        (other) =>
+          Math.abs(point.x - other.x) >= spacing ||
+          Math.abs(point.y - other.y) >= spacing,
+      );
     chosen.push(
-      candidates.find((point) =>
-        chosen.every(
-          (other) =>
-            Math.abs(point.x - other.x) >= spacing ||
-            Math.abs(point.y - other.y) >= spacing,
-        ),
-      ) ?? candidates[0]!,
+      candidates.find((point) => apart(point) && free(point)) ??
+        candidates.find(apart) ??
+        candidates[0]!,
     );
   }
   return chosen;
