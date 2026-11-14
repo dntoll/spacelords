@@ -806,7 +806,9 @@ export class BoardingEditorMapView {
           this.#floorTiles.get(boardingSurfaceStyle(roomAt, position)) ??
           this.#floorTiles.get('default') ??
           null;
-        const pieces = this.#thinPieces(snapshot, position);
+        // tunna-fonster: a thin pane leaves its whole floor in view.
+        const pieces =
+          terrain === 'W' ? null : this.#thinPieces(snapshot, position);
         const thinAxis = pieces && boardingThinPiecesStraight(pieces);
         if (thinAxis) {
           const floorsPainted = paintThinWallFloors(
@@ -835,7 +837,8 @@ export class BoardingEditorMapView {
             this.#lightMap?.paint(context, floorsPainted.outside, position);
         }
         // sammanfogade-tunna-vaggar: a joint or an end keeps its own floor.
-        const ownFloor = terrain === '.' || (pieces !== null && !thinAxis);
+        const ownFloor =
+          terrain === '.' || terrain === 'W' || (pieces !== null && !thinAxis);
         const paintedFloor =
           !thinAxis &&
           ownFloor &&

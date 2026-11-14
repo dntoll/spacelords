@@ -4,6 +4,7 @@ import {
   type BoardingBattleState,
 } from '../../../src/client/boarding/models/battle/BoardingBattle.js';
 import { parseBoardingMap } from '../../../src/client/boarding/models/map/BoardingMap.js';
+import { boardingThinWallCells } from '../../../src/client/boarding/views/rendering/BoardingProjection.js';
 import { boardingLightGlass } from '../../../src/client/boarding/views/rendering/BoardingLightMap.js';
 import {
   boardingDestructionEffect,
@@ -207,5 +208,22 @@ describe('krossbart-glas', () => {
       particles.reduce((sum, particle) => sum + particle.y, 0) /
       particles.length;
     expect(meanY(late)).toBeGreaterThan(meanY(early));
+  });
+});
+
+describe('tunna-fonster', () => {
+  it('draws a pane far thinner than a thin wall', () => {
+    const width = (thickness?: number) => {
+      const wall = boardingThinWallCells(
+        { q: 0, r: 0 },
+        'q',
+        [-0.5, 0.5],
+        thickness,
+      ).wall;
+      const qs = wall.map((point) => point.q);
+      return Math.max(...qs) - Math.min(...qs);
+    };
+    expect(width()).toBeCloseTo(1 / 3);
+    expect(width(0.02)).toBeCloseTo(0.02);
   });
 });

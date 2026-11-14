@@ -5,7 +5,7 @@ import {
   type BoardingThinAxis,
   type BoardingThinPiece,
 } from '../../models/map/BoardingMap.js';
-import { BOARDING_VERTICAL_METER } from './BoardingScale.js';
+import { BOARDING_METERS, BOARDING_VERTICAL_METER } from './BoardingScale.js';
 import {
   boardingFeatureFootprint,
   boardingFeatureHeight,
@@ -493,6 +493,9 @@ export function paintIsoThinWall(
   return mesh;
 }
 
+/** tunna-fonster: a pane is drawn almost flat, 2 cm thick. */
+const GLASS_THICKNESS = 0.02;
+
 /**
  * fonster-pa-halvhog-vagg / helhogt-fonster: a see-through, faintly blue pane
  * between `from` and `to` meters, with light edges and a glint.
@@ -504,7 +507,21 @@ export function paintIsoGlass(
   from: number,
   to: number,
 ): BoardingThinWallMesh {
-  const mesh = boardingThinWallMesh(position, piece.axis, to, piece.span, from);
+  // tunna-fonster: joints meet at the thin pane, not at the wall's thickness.
+  const wallHalf = BOARDING_METERS.thinWall / 2;
+  const narrow = (end: number) =>
+    Math.abs(Math.abs(end) - wallHalf) < 1e-6
+      ? Math.sign(end) * (GLASS_THICKNESS / 2)
+      : end;
+  const span = [narrow(piece.span[0]), narrow(piece.span[1])] as const;
+  const mesh = boardingThinWallMesh(
+    position,
+    piece.axis,
+    to,
+    span,
+    from,
+    GLASS_THICKNESS,
+  );
   const polygon = (points: readonly BoardingPoint[]) => {
     sketch.beginShape();
     for (const point of points) sketch.vertex(point.x, point.y);

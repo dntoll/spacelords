@@ -1424,6 +1424,7 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 - `helhogt-fonster` — **Fullständigt implementerat**. `High window pane` är ett fönster från golv till tak, lika tunt som en tunn vägg och sammanfogat med väggar på samma sätt. Det släpper igenom sikt och skott men inte gång eller granatkast, och det ger inget skydd. När det är krossat kan man gå igenom rutan.
 - `krossbart-glas` — **Fullständigt implementerat**. Ett gevärsskott som passerar genom glas krossar det, oavsett om skottet träffar sitt mål. En granat eller annan skada på en halvhög vägg krossar också dess fönster. När glaset går sönder regnar ljusblå glasbitar ner på golvet.
 - `glas-tintar-ljus` — **Fullständigt implementerat**. Ljus från lampor som passerar helt glas får en blå ton på golvet bakom. Krossat glas tintar inte längre.
+- `tunna-fonster` — **Fullständigt implementerat**. Fönsterglas ritas nästan utan tjocklek, så att golvet runt ett `High window pane` syns i hela rutan. Glasets form för skott och ljus är oförändrad.
 
 ## Belysning i bordning
 

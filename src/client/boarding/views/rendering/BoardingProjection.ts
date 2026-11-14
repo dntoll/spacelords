@@ -226,12 +226,14 @@ export function boardingThinWallCells(
   axis: BoardingThinAxis,
   /** animerade-dorrar: the part of the length to cover, from -0.5 to 0.5. */
   span: readonly [number, number] = [-0.5, 0.5],
+  /** tunna-fonster: a pane is far thinner than a wall. */
+  thickness: number = BOARDING_METERS.thinWall,
 ): Readonly<{
   inside: readonly CellPoint[];
   wall: readonly CellPoint[];
   outside: readonly CellPoint[];
 }> {
-  const half = BOARDING_METERS.thinWall / 2;
+  const half = thickness / 2;
   const band = (start: number, end: number): readonly CellPoint[] => {
     const { q, r } = position;
     const [from, to] = span;
@@ -323,8 +325,9 @@ export function boardingThinWallMesh(
   span?: readonly [number, number],
   /** fonster-pa-halvhog-vagg: the slab's lower edge, for glass above a wall. */
   base = 0,
+  thickness?: number,
 ): BoardingThinWallMesh {
-  const cells = boardingThinWallCells(position, axis, span).wall;
+  const cells = boardingThinWallCells(position, axis, span, thickness).wall;
   const ground = cells.map((cell) => projectCell(cell, base));
   const top = cells.map((cell) => projectCell(cell, meters));
   const face = (first: number, second: number): readonly BoardingPoint[] =>

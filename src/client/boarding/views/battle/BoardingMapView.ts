@@ -1143,7 +1143,7 @@ export class BoardingMapView implements BoardingMapPort {
           continue;
         }
         const paintedFloor =
-          terrain === 'floor' &&
+          (terrain === 'floor' || terrain === 'window') &&
           (current || remembered) &&
           this.#paintFloor(sketch, position);
         if (!paintedFloor) {
@@ -1154,7 +1154,10 @@ export class BoardingMapView implements BoardingMapPort {
           else sketch.fill('#080c15');
           this.#tile(sketch, position);
         }
-        if (terrain === 'floor' && (current || remembered))
+        if (
+          (terrain === 'floor' || terrain === 'window') &&
+          (current || remembered)
+        )
           this.#lightMap?.paint(
             sketch.drawingContext as CanvasRenderingContext2D,
             boardingIsoCorners(position),
@@ -1773,11 +1776,9 @@ export class BoardingMapView implements BoardingMapPort {
     // dorrar-som-tunna-vaggar: a door splits its floor like a thin wall.
     const thinAt = new Map(
       state.features
+        // tunna-fonster: a thin pane leaves its whole floor in view.
         .filter(
-          (feature) =>
-            feature.kind === 'thin-wall' ||
-            feature.kind === 'window' ||
-            feature.kind === 'door',
+          (feature) => feature.kind === 'thin-wall' || feature.kind === 'door',
         )
         .map(
           (feature) =>
