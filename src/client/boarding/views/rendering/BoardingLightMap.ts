@@ -99,6 +99,8 @@ export interface BoardingLightOccluder {
   readonly maxR: number;
   /** Meters above the floor. */
   readonly height: number;
+  /** A figure's footprint is round; objects fill their box. */
+  readonly round: boolean;
 }
 
 type OccluderState = Pick<BoardingBattleState, 'features' | 'smokeCells'> &
@@ -107,10 +109,18 @@ type OccluderState = Pick<BoardingBattleState, 'features' | 'smokeCells'> &
 /** Half side of a figure, crate or reactor footprint, in cells. */
 const OBJECT_HALF = 0.2;
 
+/**
+ * skuggor-fran-figurer-och-foremal: lamps are small discs, not points, so the
+ * hard shadow under a figure shrinks to its feet instead of growing past it.
+ */
+const LAMP_RADIUS = 0.3;
+const ROUND_SIDES = 12;
+
 function square(
   position: BoardingCell,
   half: number,
   height: number,
+  round = false,
 ): BoardingLightOccluder {
   return {
     minQ: position.q - half,
@@ -118,6 +128,7 @@ function square(
     minR: position.r - half,
     maxR: position.r + half,
     height,
+    round,
   };
 }
 
@@ -150,6 +161,7 @@ export function boardingLightOccluders(
               minR: r - half,
               maxR: r + half,
               height: BOARDING_METERS.cover,
+              round: false,
             }
           : {
               minQ: q - half,
@@ -157,6 +169,7 @@ export function boardingLightOccluders(
               minR: r - 0.5,
               maxR: r + 0.5,
               height: BOARDING_METERS.cover,
+              round: false,
             },
       );
   }
@@ -168,7 +181,7 @@ export function boardingLightOccluders(
         : person.crouched
           ? BOARDING_METERS.crouchedPerson
           : BOARDING_METERS.person;
-    occluders.push(square(person.position, OBJECT_HALF, height));
+    occluders.push(square(person.position, OBJECT_HALF, height, true));
   }
   return occluders;
 }
@@ -206,33 +219,82 @@ function hull(points: readonly BoardingLightPoint[]): BoardingLightPoint[] {
 }
 
 /**
- * skuggor-fran-figurer-och-foremal: the floor a footprint hides from one
- * lamp, from the footprint out to where the lamp projects its top edge.
+ * skuggor-fran-figurer-och-foremal: the floor a footprint hides from the
+ * whole lamp disc. The footprint's top, seen from the lamp centre, lands
+ * H/(H−h) times as far away; the disc's edges narrow that umbra by
+ * a·h/(H−h) on every side, down to a point. Shadows end at the lamp's reach.
  */
 export function boardingShadowPolygon(
   light: Pick<BoardingLight, 'position' | 'height' | 'radius'>,
   occluder: BoardingLightOccluder,
 ): readonly BoardingLightPoint[] {
   const source = light.position;
-  const corners = [
-    { q: occluder.minQ, r: occluder.minR },
-    { q: occluder.maxQ, r: occluder.minR },
-    { q: occluder.maxQ, r: occluder.maxR },
-    { q: occluder.minQ, r: occluder.maxR },
-  ];
+  const center = {
+    q: (occluder.minQ + occluder.maxQ) / 2,
+    r: (occluder.minR + occluder.maxR) / 2,
+  };
+  const halfQ = (occluder.maxQ - occluder.minQ) / 2,
+    halfR = (occluder.maxR - occluder.minR) / 2;
+  const outline = occluder.round
+    ? Array.from({ length: ROUND_SIDES }, (_, index) => {
+        const angle = (index / ROUND_SIDES) * Math.PI * 2;
+        return {
+          q: center.q + Math.cos(angle) * halfQ,
+          r: center.r + Math.sin(angle) * halfR,
+        };
+      })
+    : [
+        { q: occluder.minQ, r: occluder.minR },
+        { q: occluder.maxQ, r: occluder.minR },
+        { q: occluder.maxQ, r: occluder.maxR },
+        { q: occluder.minQ, r: occluder.maxR },
+      ];
   const reach = light.radius + 1;
-  const projected = corners.map((corner) => {
-    const dq = corner.q - source.q,
-      dr = corner.r - source.r;
-    const distance = Math.hypot(dq, dr);
-    const scale =
-      occluder.height < light.height
-        ? light.height / (light.height - occluder.height)
-        : Infinity;
-    const stretch = Math.min(scale, distance > EPSILON ? reach / distance : 1);
-    return { q: source.q + dq * stretch, r: source.r + dr * stretch };
+  const dq = center.q - source.q,
+    dr = center.r - source.r;
+  const distance = Math.hypot(dq, dr);
+  const { height } = light;
+  if (occluder.height >= height) {
+    // Taller than the lamp: the shadow runs on to the edge of the light.
+    const stretch = (point: BoardingLightPoint) => {
+      const pq = point.q - source.q,
+        pr = point.r - source.r;
+      const length = Math.hypot(pq, pr);
+      const scale = length > EPSILON ? reach / length : 1;
+      return { q: source.q + pq * scale, r: source.r + pr * scale };
+    };
+    return hull([...outline, ...outline.map(stretch)]);
+  }
+  const drop = height - occluder.height;
+  const projection = height / drop;
+  const narrow = (half: number) =>
+    half > EPSILON
+      ? Math.max(0, (half * height - LAMP_RADIUS * occluder.height) / drop) /
+        half
+      : 0;
+  const scaleQ = narrow(halfQ),
+    scaleR = narrow(halfR);
+  // Stop at the lamp's reach, part way along the cone if it is longer.
+  const far = distance * projection;
+  const along =
+    far > reach && far - distance > EPSILON
+      ? Math.max(0, (reach - distance) / (far - distance))
+      : 1;
+  const tip = {
+    q: source.q + dq * projection,
+    r: source.r + dr * projection,
+  };
+  const end = outline.map((point) => {
+    const projected = {
+      q: tip.q + (point.q - center.q) * scaleQ,
+      r: tip.r + (point.r - center.r) * scaleR,
+    };
+    return {
+      q: point.q + (projected.q - point.q) * along,
+      r: point.r + (projected.r - point.r) * along,
+    };
   });
-  return hull([...corners, ...projected]);
+  return hull([...outline, ...end]);
 }
 
 function edges(blocker: BoardingLightBlocker): readonly Segment[] {
