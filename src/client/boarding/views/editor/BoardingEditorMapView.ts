@@ -39,6 +39,7 @@ import {
 } from '../../models/map/BoardingMap.js';
 import { formatBoardingMap } from '../../../../shared/boarding/map-format.js';
 import { BoardingLighting } from '../rendering/BoardingLighting.js';
+import { BoardingLightMap } from '../rendering/BoardingLightMap.js';
 import { BoardingLightPainter } from '../rendering/BoardingLightPainter.js';
 import { BOARDING_METERS, boardingHeight } from '../rendering/BoardingScale.js';
 import {
@@ -157,6 +158,7 @@ export class BoardingEditorMapView {
   readonly #objects = new Map<BoardingArtwork, p5.Image>();
   #lighting: BoardingLighting | null = null;
   readonly #lightPainter = new BoardingLightPainter();
+  #lightMap: BoardingLightMap | null = null;
   readonly #isoCaches = new WeakMap<p5.Image, IsoImageCache>();
   #ready = false;
   #disposed = false;
@@ -285,7 +287,7 @@ export class BoardingEditorMapView {
         ...snapshot.layers,
       }),
     );
-    this.#lighting = new BoardingLighting(map, {
+    const physical = {
       features: map.features.map((feature) => ({
         ...feature,
         hitPoints: 1,
@@ -296,7 +298,9 @@ export class BoardingEditorMapView {
         exit: feature.exit ?? null,
       })),
       smokeCells: [],
-    });
+    };
+    this.#lighting = new BoardingLighting(map, physical);
+    this.#lightMap = new BoardingLightMap(map, physical);
     this.#lightPainter.clear();
     if (this.#spriteMap !== snapshot.mapId) {
       this.#spriteMap = snapshot.mapId;
@@ -684,21 +688,10 @@ export class BoardingEditorMapView {
               outsideKnown: true,
             },
           );
-          if (this.#lighting) {
-            const light = this.#lighting.tile(position);
-            const values = [light, light, light, light];
-            this.#lightPainter.paint(
-              sketch.drawingContext as CanvasRenderingContext2D,
-              floorsPainted.inside,
-              values,
-            );
-            if (floorsPainted.outside)
-              this.#lightPainter.paint(
-                sketch.drawingContext as CanvasRenderingContext2D,
-                floorsPainted.outside,
-                values,
-              );
-          }
+          const context = sketch.drawingContext as CanvasRenderingContext2D;
+          this.#lightMap?.paint(context, floorsPainted.inside, position);
+          if (floorsPainted.outside)
+            this.#lightMap?.paint(context, floorsPainted.outside, position);
         }
         const paintedFloor =
           !thinAxis &&
@@ -716,11 +709,11 @@ export class BoardingEditorMapView {
           );
           paintIsoDiamond(sketch, position);
         }
-        if (terrain === '.' && this.#lighting)
-          this.#lightPainter.paint(
+        if (terrain === '.')
+          this.#lightMap?.paint(
             sketch.drawingContext as CanvasRenderingContext2D,
             boardingIsoCorners(position),
-            this.#lighting.surface(position, 'floor'),
+            position,
           );
         sketch.noFill();
         sketch.stroke('#8eb0c255');

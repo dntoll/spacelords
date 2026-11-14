@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { BOARDING_LIGHT_MAP_TEXELS } from '../../../src/client/boarding/views/rendering/BoardingLightMap.js';
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
 import { BoardingLighting } from '../../../src/client/boarding/views/rendering/BoardingLighting.js';
 import type p5 from 'p5';
@@ -122,6 +123,16 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
       data: new Uint8ClampedArray(width * height * 4),
     }),
     putImageData() {},
+    // ljuskarta-i-bordning: the light map paints lit polygons offscreen.
+    fillRect() {},
+    save() {},
+    restore() {},
+    beginPath() {},
+    moveTo() {},
+    lineTo() {},
+    closePath() {},
+    clip() {},
+    drawImage() {},
   } as unknown as CanvasRenderingContext2D);
   const noop = () => {};
   const base = {
@@ -330,6 +341,16 @@ it('genomskinliga-skymmande-vaggar: unknown floor leaves a wall opaque and a hid
   view.dispose();
 });
 
+/** ljuskarta-i-bordning: floors sample the top-down light map, recognised by its size. */
+const lightMapOf =
+  (map: { width: number; height: number }) =>
+  (args: readonly unknown[]): boolean =>
+    args.length === 9 &&
+    (args[0] as HTMLCanvasElement).width ===
+      map.width * BOARDING_LIGHT_MAP_TEXELS + 2 &&
+    (args[0] as HTMLCanvasElement).height ===
+      map.height * BOARDING_LIGHT_MAP_TEXELS + 2;
+
 it('ljuskallestyrd-bordningsbelysning / vertexljus-i-bordning / bordning-jamn-bildfrekvens: sight changes reuse identical physical light masks', () => {
   const { view, state, masks } = scene(true, [
     boardingCeilingLight({ q: 2, r: 3 }),
@@ -344,16 +365,15 @@ it('ljuskallestyrd-bordningsbelysning / vertexljus-i-bordning / bordning-jamn-bi
   view.dispose();
 });
 
-it('bordning-jamn-bildfrekvens: unchanged sight reuses the cached floor layer', () => {
-  const { view, state, masks } = scene(true, [
+it('bordning-jamn-bildfrekvens / ljuskarta-i-bordning: unchanged sight reuses the cached floor layer and its floor light', () => {
+  const { view, state, masks, map } = scene(true, [
     boardingCeilingLight({ q: 2, r: 3 }),
   ]);
+  const floorLight = () => masks.filter(lightMapOf(map)).length;
   view.render({ ...state, visibleCells: state.exploredCells }, null, null, []);
-  const painted = masks.filter((args) => args.length === 3).length;
+  expect(floorLight()).toBeGreaterThan(0);
   runtime.sketch!.draw();
-  expect(masks.filter((args) => args.length === 3).length).toBeLessThan(
-    painted,
-  );
+  expect(floorLight()).toBe(0);
   expect(masks.filter((args) => args.length === 5)).toHaveLength(1);
   view.dispose();
 });
@@ -368,8 +388,11 @@ it('texturerad-vaggovansida / vertexljus-i-bordning / tileljus-for-sprites: load
   // Changed sight repaints the cached floor layer within this frame.
   view.render({ ...state, visibleCells: state.exploredCells }, null, null, []);
   const lighting = new BoardingLighting(map, state);
-  expect(masks.filter((args) => args.length === 3)).toHaveLength(4);
-  const wallTextures = masks.filter((args) => args.length === 9);
+  expect(masks.filter((args) => args.length === 3)).toHaveLength(3);
+  expect(masks.filter(lightMapOf(map)).length).toBeGreaterThan(0);
+  const wallTextures = masks.filter(
+    (args) => args.length === 9 && !lightMapOf(map)(args),
+  );
   expect(wallTextures).toHaveLength(3);
   expect(wallTextures.slice(0, 2).every((args) => Number(args[2]) > 0)).toBe(
     true,

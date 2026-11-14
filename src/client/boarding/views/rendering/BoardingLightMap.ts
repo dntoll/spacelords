@@ -1,0 +1,379 @@
+import type {
+  BoardingCell,
+  BoardingLight,
+} from '../../models/map/BoardingMap.js';
+import type { BoardingBattleState } from '../../models/battle/BoardingBattle.js';
+import type { BoardingPoint } from './BoardingProjection.js';
+import { BOARDING_AMBIENT } from './BoardingLighting.js';
+import {
+  BOARDING_METERS,
+  BOARDING_TILE_HEIGHT,
+  BOARDING_TILE_WIDTH,
+} from './BoardingScale.js';
+
+/** ljuskarta-i-bordning: texels per cell side in the static light map. */
+export const BOARDING_LIGHT_MAP_TEXELS = 16;
+
+/** A point on the deck in cell coordinates; cell centres are whole numbers. */
+export interface BoardingLightPoint {
+  readonly q: number;
+  readonly r: number;
+}
+
+/** An axis-aligned footprint that stops light from wall foot to ceiling. */
+export interface BoardingLightBlocker {
+  readonly minQ: number;
+  readonly maxQ: number;
+  readonly minR: number;
+  readonly maxR: number;
+  /** Whole cells merge with their neighbours so shared edges cast no rays. */
+  readonly cell: boolean;
+}
+
+interface Segment {
+  readonly a: BoardingLightPoint;
+  readonly b: BoardingLightPoint;
+}
+
+const EPSILON = 1e-9;
+const RAY_SPREAD = 1e-5;
+
+function cellBlocker(position: BoardingCell): BoardingLightBlocker {
+  return {
+    minQ: position.q - 0.5,
+    maxQ: position.q + 0.5,
+    minR: position.r - 0.5,
+    maxR: position.r + 0.5,
+    cell: true,
+  };
+}
+
+/**
+ * ljuskarta-i-bordning: lamps sit below wall height, so every full-height
+ * barrier blocks light from floor to lamp and a top-down footprint suffices.
+ * Thin walls block only their middle third, unlike the cell-wide sight rules.
+ */
+export function boardingLightBlockers(
+  state: Pick<BoardingBattleState, 'features' | 'smokeCells'>,
+): readonly BoardingLightBlocker[] {
+  const half = BOARDING_METERS.thinWall / 2;
+  const blockers: BoardingLightBlocker[] = [];
+  for (const feature of state.features) {
+    if (feature.destroyed) continue;
+    const { q, r } = feature.position;
+    if (feature.kind === 'thin-wall') {
+      if (feature.low) continue;
+      blockers.push(
+        feature.axis === 'r'
+          ? {
+              minQ: q - 0.5,
+              maxQ: q + 0.5,
+              minR: r - half,
+              maxR: r + half,
+              cell: false,
+            }
+          : {
+              minQ: q - half,
+              maxQ: q + half,
+              minR: r - 0.5,
+              maxR: r + 0.5,
+              cell: false,
+            },
+      );
+    } else if (
+      feature.kind === 'wall' ||
+      feature.kind === 'hull' ||
+      (feature.kind === 'door' && !feature.open)
+    )
+      blockers.push(cellBlocker(feature.position));
+  }
+  for (const position of state.smokeCells) blockers.push(cellBlocker(position));
+  return blockers;
+}
+
+function edges(blocker: BoardingLightBlocker): readonly Segment[] {
+  const { minQ, maxQ, minR, maxR } = blocker;
+  return [
+    { a: { q: minQ, r: minR }, b: { q: maxQ, r: minR } },
+    { a: { q: maxQ, r: minR }, b: { q: maxQ, r: maxR } },
+    { a: { q: maxQ, r: maxR }, b: { q: minQ, r: maxR } },
+    { a: { q: minQ, r: maxR }, b: { q: minQ, r: minR } },
+  ];
+}
+
+const edgeKey = (segment: Segment): string => {
+  const [first, second] = [segment.a, segment.b].sort(
+    (left, right) => left.q - right.q || left.r - right.r,
+  );
+  return `${first!.q},${first!.r},${second!.q},${second!.r}`;
+};
+
+function segmentsAround(
+  source: BoardingLightPoint,
+  radius: number,
+  blockers: readonly BoardingLightBlocker[],
+): readonly Segment[] {
+  const reach = radius + 1;
+  const cellEdges = new Map<string, { segment: Segment; count: number }>();
+  const segments: Segment[] = [];
+  for (const blocker of blockers) {
+    if (
+      blocker.maxQ < source.q - reach ||
+      blocker.minQ > source.q + reach ||
+      blocker.maxR < source.r - reach ||
+      blocker.minR > source.r + reach
+    )
+      continue;
+    for (const segment of edges(blocker)) {
+      if (!blocker.cell) {
+        segments.push(segment);
+        continue;
+      }
+      const id = edgeKey(segment);
+      const entry = cellEdges.get(id);
+      if (entry) entry.count++;
+      else cellEdges.set(id, { segment, count: 1 });
+    }
+  }
+  for (const { segment, count } of cellEdges.values())
+    if (count === 1) segments.push(segment);
+  const min = { q: source.q - reach, r: source.r - reach };
+  const max = { q: source.q + reach, r: source.r + reach };
+  segments.push(
+    ...edges({
+      minQ: min.q,
+      maxQ: max.q,
+      minR: min.r,
+      maxR: max.r,
+      cell: false,
+    }),
+  );
+  return segments;
+}
+
+function cast(
+  source: BoardingLightPoint,
+  angle: number,
+  segments: readonly Segment[],
+): BoardingLightPoint {
+  const dq = Math.cos(angle),
+    dr = Math.sin(angle);
+  let nearest = Infinity;
+  for (const { a, b } of segments) {
+    const sq = b.q - a.q,
+      sr = b.r - a.r;
+    const denominator = dq * sr - dr * sq;
+    if (Math.abs(denominator) < EPSILON) continue;
+    const oq = a.q - source.q,
+      or = a.r - source.r;
+    const t = (oq * sr - or * sq) / denominator;
+    const u = (oq * dr - or * dq) / denominator;
+    // Inclusive ends stop rays through the zero-width gap between diagonal walls.
+    if (t > EPSILON && u >= -EPSILON && u <= 1 + EPSILON && t < nearest)
+      nearest = t;
+  }
+  return { q: source.q + dq * nearest, r: source.r + dr * nearest };
+}
+
+/**
+ * ljuskarta-i-bordning: the area a lamp reaches, as a polygon in cell
+ * coordinates, by casting rays at every barrier corner and just beside it.
+ */
+export function boardingLightPolygon(
+  source: BoardingLightPoint,
+  radius: number,
+  blockers: readonly BoardingLightBlocker[],
+): readonly BoardingLightPoint[] {
+  if (
+    blockers.some(
+      (blocker) =>
+        source.q >= blocker.minQ &&
+        source.q <= blocker.maxQ &&
+        source.r >= blocker.minR &&
+        source.r <= blocker.maxR,
+    )
+  )
+    return [];
+  const segments = segmentsAround(source, radius, blockers);
+  const angles = new Set<number>();
+  for (const { a, b } of segments)
+    for (const point of [a, b]) {
+      const angle = Math.atan2(point.r - source.r, point.q - source.q);
+      angles
+        .add(angle - RAY_SPREAD)
+        .add(angle)
+        .add(angle + RAY_SPREAD);
+    }
+  return [...angles]
+    .sort((left, right) => left - right)
+    .map((angle) => cast(source, angle, segments));
+}
+
+/** ljuskarta-i-bordning: the same falloff as the vertex and tile light on the floor. */
+export function boardingFloorLight(
+  light: BoardingLight,
+  point: BoardingLightPoint,
+): number {
+  const distance = Math.hypot(
+    light.position.q - point.q,
+    light.position.r - point.r,
+    light.height,
+  );
+  if (distance >= light.radius) return 0;
+  return (
+    light.intensity *
+    (1 - distance / light.radius) ** 2 *
+    (light.height / distance)
+  );
+}
+
+/**
+ * Texel (x, y) in the light map to screen space. The map has a one-texel
+ * border, so cell (q, r) covers x from 1 + q·texels to 1 + (q + 1)·texels.
+ */
+export function boardingLightMapTransform(
+  texels: number,
+): readonly [number, number, number, number, number, number] {
+  const halfWidth = BOARDING_TILE_WIDTH / 2,
+    halfHeight = BOARDING_TILE_HEIGHT / 2;
+  return [
+    halfWidth / texels,
+    halfHeight / texels,
+    -halfWidth / texels,
+    halfHeight / texels,
+    0,
+    (-2 / texels - 1) * halfHeight,
+  ];
+}
+
+const falloffs = new Map<string, HTMLCanvasElement | null>();
+
+function falloff(
+  light: BoardingLight,
+  texels: number,
+): HTMLCanvasElement | null {
+  const id = `${light.radius},${light.height},${light.intensity},${texels}`;
+  if (falloffs.has(id)) return falloffs.get(id)!;
+  const side = Math.ceil(light.radius * 2 * texels);
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = side;
+  const context = canvas.getContext('2d');
+  if (!context) {
+    falloffs.set(id, null);
+    return null;
+  }
+  const pixels = context.createImageData(side, side);
+  const center = side / 2;
+  for (let y = 0; y < side; y++)
+    for (let x = 0; x < side; x++) {
+      const value = Math.round(
+        255 *
+          Math.min(
+            1,
+            boardingFloorLight(
+              { ...light, position: { q: 0, r: 0 } },
+              {
+                q: (x + 0.5 - center) / texels,
+                r: (y + 0.5 - center) / texels,
+              },
+            ),
+          ),
+      );
+      const index = (y * side + x) * 4;
+      pixels.data[index] =
+        pixels.data[index + 1] =
+        pixels.data[index + 2] =
+          value;
+      pixels.data[index + 3] = 255;
+    }
+  context.putImageData(pixels, 0, 0);
+  falloffs.set(id, canvas);
+  return canvas;
+}
+
+/**
+ * ljuskarta-i-bordning: floor light painted once per change of lamps or
+ * barriers into a top-down map, then multiplied onto each projected floor.
+ */
+export class BoardingLightMap {
+  readonly #canvas: HTMLCanvasElement | null;
+  readonly #texels: number;
+
+  constructor(
+    map: {
+      readonly width: number;
+      readonly height: number;
+      readonly lights: readonly BoardingLight[];
+    },
+    state: Pick<BoardingBattleState, 'features' | 'smokeCells'>,
+    texels = BOARDING_LIGHT_MAP_TEXELS,
+  ) {
+    this.#texels = texels;
+    const canvas = document.createElement('canvas');
+    canvas.width = map.width * texels + 2;
+    canvas.height = map.height * texels + 2;
+    const context = canvas.getContext('2d');
+    this.#canvas = context ? canvas : null;
+    if (!context) return;
+    const ambient = Math.round(255 * BOARDING_AMBIENT);
+    context.fillStyle = `rgb(${ambient}, ${ambient}, ${ambient})`;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    const blockers = boardingLightBlockers(state);
+    const texel = (point: BoardingLightPoint) => ({
+      x: 1 + (point.q + 0.5) * texels,
+      y: 1 + (point.r + 0.5) * texels,
+    });
+    for (const light of map.lights) {
+      const shape = boardingLightPolygon(
+        light.position,
+        light.radius,
+        blockers,
+      );
+      const image = falloff(light, texels);
+      if (shape.length < 3 || !image) continue;
+      context.save();
+      context.beginPath();
+      shape.forEach((point, index) => {
+        const { x, y } = texel(point);
+        if (index === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      });
+      context.closePath();
+      context.clip();
+      context.globalCompositeOperation = 'lighter';
+      const center = texel(light.position);
+      context.drawImage(
+        image,
+        center.x - image.width / 2,
+        center.y - image.height / 2,
+      );
+      context.restore();
+    }
+  }
+
+  /** Multiplies the light under one cell onto the floor area clipped by `clip`. */
+  paint(
+    context: CanvasRenderingContext2D,
+    clip: readonly BoardingPoint[],
+    cell: BoardingCell,
+  ): void {
+    if (!this.#canvas || clip.length < 3) return;
+    const texels = this.#texels;
+    context.save();
+    context.beginPath();
+    clip.forEach((point, index) => {
+      if (index === 0) context.moveTo(point.x, point.y);
+      else context.lineTo(point.x, point.y);
+    });
+    context.closePath();
+    context.clip();
+    context.globalCompositeOperation = 'multiply';
+    context.transform(...boardingLightMapTransform(texels));
+    // One texel beyond the cell on every side keeps filtering seamless at borders.
+    const x = cell.q * texels,
+      y = cell.r * texels,
+      side = texels + 2;
+    context.drawImage(this.#canvas, x, y, side, side, x, y, side, side);
+    context.restore();
+  }
+}

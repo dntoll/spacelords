@@ -1424,7 +1424,7 @@ Lamporna är fasta och påverkas inte av stridsskador; detta ersätts av `tandba
 
 ## Ny ljussättning i bordning
 
-Alla krav nedan är **Ej implementerat**. Detaljer finns i [ljussättning i bordning](boarding/boarding-lighting.md).
+Kraven nedan är **Ej implementerat** utom `ljuskarta-i-bordning`, som är **Delvis implementerat**: golven har fått det nya ljuset, men väggar återstår. Detaljer finns i [ljussättning i bordning](boarding/boarding-lighting.md).
 
 - `ljuskarta-i-bordning` — Golv och väggar får ljus och skuggor med mjuka, exakta kanter i stället för rutornas fyrkantighet. Ersätter `vertexljus-i-bordning`.
 - `fargat-ljus-i-bordning` — Lampor kan ha färg, som tonar allt som inte själv lyser.

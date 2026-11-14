@@ -11,6 +11,7 @@ import {
 } from './BoardingCameraController.js';
 import { BoardingLighting } from '../rendering/BoardingLighting.js';
 import { BoardingLightPainter } from '../rendering/BoardingLightPainter.js';
+import { BoardingLightMap } from '../rendering/BoardingLightMap.js';
 import p5 from 'p5';
 import {
   BOARDING_GROUND_RATIO,
@@ -223,6 +224,7 @@ export class BoardingMapView implements BoardingMapPort {
   #lighting: BoardingLighting;
   #lightSignature = '';
   readonly #lightPainter = new BoardingLightPainter();
+  #lightMap: BoardingLightMap | null = null;
   #wallVisibility = new BoardingWallVisibility([]);
   #wallPositions: readonly (BoardingCell & {
     axis?: BoardingThinAxis;
@@ -985,6 +987,7 @@ export class BoardingMapView implements BoardingMapPort {
     if (signature === this.#lightSignature) return;
     this.#lightSignature = signature;
     this.#lighting = new BoardingLighting(this.map, state);
+    this.#lightMap = new BoardingLightMap(this.map, state);
     this.#lightPainter.clear();
   }
 
@@ -1102,10 +1105,10 @@ export class BoardingMapView implements BoardingMapPort {
           this.#tile(sketch, position);
         }
         if (terrain === 'floor' && (current || remembered))
-          this.#lightPainter.paint(
+          this.#lightMap?.paint(
             sketch.drawingContext as CanvasRenderingContext2D,
             boardingIsoCorners(position),
-            this.#lighting.surface(position, 'floor'),
+            position,
           );
       }
     }
@@ -1366,11 +1369,9 @@ export class BoardingMapView implements BoardingMapPort {
       outsideKnown: known(neighbor),
     });
     const context = sketch.drawingContext as CanvasRenderingContext2D;
-    const light = this.#lighting.tile(position);
-    const values = [light, light, light, light];
-    this.#lightPainter.paint(context, floors.inside, values);
+    this.#lightMap?.paint(context, floors.inside, position);
     if (floors.outside)
-      this.#lightPainter.paint(context, floors.outside, values);
+      this.#lightMap?.paint(context, floors.outside, position);
   }
 
   /** tunna-innervaggar / halvhog-tunn-vagg: full thin walls cut away; low walls stay at 1.2 m. */
