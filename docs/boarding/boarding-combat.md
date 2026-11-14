@@ -450,7 +450,7 @@ Bildoriginalen med suffixet `-meters` ersätter de tidigare dörr- och airlockbi
 - `vertexljus-i-bordning` — **Fullständigt implementerat**. Varje hörn på golv och väggytor får ljus från lampor med fri ljuslinje, avståndsavtagande och hänsyn till ytriktning. Ljuset interpoleras över ytornas trianglar och multipliceras med befintliga texturer. Väggar, skrov, stängda dörrar och rök blockerar ljus; förstörda barriärer, öppna dörrar och personer gör det inte. Väggsnitt använder full vägghöjd vid blockering.
 - `tileljus-for-sprites` — **Fullständigt implementerat**. Varje ruta får ett ljusvärde vid golvets mittpunkt. Personer och objektsprites använder detta värde; under rörelse interpoleras figurens ljus mellan start och mål. HP, AP, riktning och valmarkeringar påverkas inte av belysningen.
 
-Upptäckta rutor har samma belysning i aktuell sikt och kartminne. Den tidigare siktstyrda mörkningen är borttagen. Okänd interiör och dolda personer behåller sina synlighetsregler. Lamporna kan inte släckas eller förstöras. Sparformatet ändras inte: kartan med lampor återskapas vid återläsning.
+Upptäckta rutor har samma belysning i aktuell sikt och kartminne. Den tidigare siktstyrda mörkningen är borttagen. Okänd interiör och dolda personer behåller sina synlighetsregler. Lamporna kan inte släckas eller förstöras; detta ersätts av `tandbara-lampor` i [ljussättning i bordning](boarding-lighting.md). Sparformatet ändras inte: kartan med lampor återskapas vid återläsning.
 
 Leveransen är granskad i mobilens stående och liggande format med texturer, figurer och väggsnitt. Riktade tester verifierar även reservgeometri, återanvändning av ljusmasker vid ändrad sikt, beskärning av väggens nedre texturdel och mjuk figurtoning under rörelse.
 

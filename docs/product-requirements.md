@@ -1420,7 +1420,23 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 - `vertexljus-i-bordning` — **Fullständigt implementerat**. Ljuset varierar jämnt över golv och väggytor utifrån lampornas avstånd och skymmande barriärer.
 - `tileljus-for-sprites` — **Fullständigt implementerat**. Figurer och föremål får rutans ljusstyrka, beräknad från ljuset som når rutans mitt. Figurernas ljus ändras mjukt under förflyttning, medan markeringar och status förblir tydliga.
 
-Lamporna är fasta och påverkas inte av stridsskador. Väggsnitten är en visuell hjälp; väggarna behåller sin funktion för rörelse, sikt och skott.
+Lamporna är fasta och påverkas inte av stridsskador; detta ersätts av `tandbara-lampor` när det är implementerat. Väggsnitten är en visuell hjälp; väggarna behåller sin funktion för rörelse, sikt och skott.
+
+## Ny ljussättning i bordning
+
+Alla krav nedan är **Ej implementerat**. Detaljer finns i [ljussättning i bordning](boarding/boarding-lighting.md).
+
+- `ljuskarta-i-bordning` — Golv och väggar får ljus och skuggor med mjuka, exakta kanter i stället för rutornas fyrkantighet. Ersätter `vertexljus-i-bordning`.
+- `fargat-ljus-i-bordning` — Lampor kan ha färg, som tonar allt som inte själv lyser.
+- `visuell-morkerinstallning` — Spelaren kan göra bilden ljusare eller mörkare. Det påverkar bara bilden, inte spelet.
+- `ljusniva-per-ruta` — Varje ruta har en ljusnivå i spelet som följer de tända lamporna.
+- `tandbara-lampor` — Lampor kan tändas och släckas under striden.
+- `brand-som-ljuskalla` — Det som brinner lyser upp sin omgivning.
+- `dynamiskt-bordningsljus` — Även ljus som rör sig kastar skuggor.
+- `barbart-ljus` — Figurer kan bära ljus, exempelvis ficklampor, som lyser dit figuren tittar.
+- `blinkande-lampor` — Lampor kan blinka och fladdra.
+- `mynningsblixt-i-bordning` — Skott får omgivningen att blixtra till.
+- `morker-forsvarar` — En figur i mörker är svårare att upptäcka och träffa.
 
 ## Åtgärder för rutttransport
 
