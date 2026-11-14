@@ -1,4 +1,5 @@
-import { chooseShipStartFleet } from './fleet-helpers.js';
+import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
+import { chooseFleetOrder, chooseShipStartFleet } from './fleet-helpers.js';
 import { selectMapObject } from './map-helpers.js';
 import {
   chooseFleetDestination,
@@ -49,7 +50,7 @@ async function build(page: Page, site: number, type: string) {
 test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk-frakt / forstarka-ruttflotta / flottans-handelsrutt: a new game supplies its colony through an assigned fleet', async ({
   page,
 }, testInfo) => {
-  test.setTimeout(90_000);
+  test.setTimeout(240_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');
@@ -79,7 +80,18 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     'Research station',
   ].entries())
     await build(page, index + 1, type);
-  for (let year = 0; year < 4; year++) await nextYear(page);
+  // planetutforskning-vid-ankomst: explore Vesta so its Desert dome research
+  // appears and the Settlers may colonize it later.
+  await page.getByRole('button', { name: 'Star map', exact: true }).click();
+  await selectMapFleet(page, 'Home Fleet');
+  await chooseFleetDestination(page, 'Home Fleet');
+  await selectMapObject(page, 'Vesta');
+  await nextYear(page);
+  await page.getByRole('button', { name: 'Star map', exact: true }).click();
+  await selectMapFleet(page, 'Home Fleet');
+  await chooseFleetDestination(page, 'Home Fleet');
+  await selectMapObject(page, 'Tellus');
+  for (let year = 0; year < 3; year++) await nextYear(page);
   await home(page);
   await expect(page.locator('[data-resource="Iron"]')).toContainText(
     'Extracting 10/round',
@@ -89,6 +101,8 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
     .getByRole('button', { name: 'Research', exact: true })
     .click();
   for (const technology of [
+    // Exploration ship factory needs Telescope I factory since telescopes.
+    'Exploration ship factory',
     'Trade logistics',
     'Colony ship factory',
     'Fighter factory',
@@ -158,8 +172,12 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await chooseFleetDestination(page, 'Settlers');
   await selectMapObject(page, 'Vesta');
   await nextYear(page);
+  // koloniseringsorder: Colony ships settle through the fleet's Colonize order.
+  await selectMapFleet(page, 'Settlers');
+  await chooseFleetOrder(page, 'Colonize');
   await selectMapObject(page, 'Vesta');
-  await page.getByRole('button', { name: 'Colonize', exact: true }).click();
+  await nextYear(page);
+  await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page
     .getByRole('button', { name: 'Building sites', exact: true })
@@ -174,6 +192,9 @@ test('utvinningsbyggnader / forskningsko / automatisk-resursforsorjning / fysisk
   await page.getByRole('button', { name: 'Route', exact: true }).click();
   await connectTradePlanets(page, 'Tellus', 'Vesta');
   await assignFleetToRoute(page, 'Freighters', 'Tellus', 'Vesta');
+  await page
+    .getByRole('button', { name: 'Select route Tellus to Vesta', exact: true })
+    .click();
   await expect(
     page.getByRole('complementary', { name: 'Selected route' }),
   ).toContainText('30 cargo capacity');
@@ -262,8 +283,26 @@ async function expectVisibleRoute(page: Page, fraction: number): Promise<void> {
   const map = page.locator('canvas[data-rendered="true"]');
   await map.press('ArrowRight');
   await map.press('ArrowLeft');
-  const start = HexGeometry.toPoint(new HexCoordinate(1, 0));
-  const end = HexGeometry.toPoint(new HexCoordinate(0, 1));
+  const [tellus, vesta] = await page.evaluate(() => {
+    const planets = (
+      JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame
+    ).state.world.systems.flatMap((system) => system.planets);
+    return ['Tellus', 'Vesta'].map(
+      (name) => planets.find((planet) => planet.name === name)!.position,
+    );
+  });
+  const start = HexGeometry.toPoint(new HexCoordinate(tellus!.q, tellus!.r));
+  const end = HexGeometry.toPoint(new HexCoordinate(vesta!.q, vesta!.r));
+  // The map edge may keep the camera off Tellus, so project from the camera.
+  const [cameraX, cameraY] = (await page
+    .getByTestId('camera-position')
+    .textContent())!
+    .match(/-?\d+/g)!
+    .map(Number);
+  const zoom =
+    Number(
+      (await page.getByLabel('Map zoom').textContent())!.replace('%', ''),
+    ) / 100;
   // synliga-handelsrutter: sample inside the selected tile, outside planet badges.
   await expect
     .poll(() =>
@@ -289,7 +328,10 @@ async function expectVisibleRoute(page: Page, fraction: number): Promise<void> {
               routePixels++;
           return routePixels;
         },
-        { x: (end.x - start.x) * fraction, y: (end.y - start.y) * fraction },
+        {
+          x: (start.x + (end.x - start.x) * fraction - cameraX!) * zoom,
+          y: (start.y + (end.y - start.y) * fraction - cameraY!) * zoom,
+        },
       ),
     )
     .toBeGreaterThan(2);
