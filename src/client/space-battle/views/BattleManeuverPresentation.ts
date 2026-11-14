@@ -2,7 +2,7 @@ import {
   HexCoordinate,
   HexGeometry,
   type Point,
-} from '../../models/HexCoordinate.js';
+} from '../../common/HexCoordinate.js';
 import type { ManeuverStep } from '../models/Maneuver.js';
 
 /** animerad-skeppsforflyttning: interpolate in world coordinates without mutating hexes. */

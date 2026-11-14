@@ -807,6 +807,11 @@ Se [hela visionen](docs/game-vision.md).
   `index.js`-filer, och ESLint håller gränsen.
   `isolerad-rymdstridsmodul` är **Fullständigt implementerat** på samma sätt
   för rymdstriden i `src/client/space-battle/` och `tests/space-battle/`.
+  `isolerad-rymdkartmodul` och `app-skal` är **Fullständigt implementerat**:
+  stjärnkartespelet ligger i `src/client/space-map/`. App-skalet i
+  `src/client/app/` binder ihop modulerna, och generisk kod ligger i
+  `src/client/common/`. `AppModel` och `AppView` innehåller ännu
+  stjärnkartelogik som kan flyttas in i modulen.
   `snabb-testsvit` är **Fullständigt implementerat**: sviten omfattar alla
   Vitest-tester utom `tests/integration` och har ingen total tidsgräns.
   Detta ersätter riktvärdet 20 sekunder och regeln att flytta långsammare

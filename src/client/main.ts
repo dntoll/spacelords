@@ -1,13 +1,14 @@
-import { MasterController } from './controllers/app/MasterController.js';
-import { AppModel } from './models/AppModel.js';
-import { AppView } from './views/app/AppView.js';
-import { GalaxyMapView } from './views/star-map/GalaxyMapView.js';
+import { MasterController } from './app/controllers/MasterController.js';
+import { AppModel } from './app/models/AppModel.js';
+import { AppView } from './app/views/AppView.js';
+import { GalaxyMapView, SaveMapPreview } from './space-map/views/index.js';
 import { BattleMapView } from './space-battle/views/index.js';
 import { BoardingMapView } from './boarding/views/index.js';
 import './styles.css';
-import { SaveMapPreview } from './views/saves/SaveMapPreview.js';
-import { BrowserSaveRepository } from './storage/BrowserSaveRepository.js';
-import { createExpandedGalaxy } from './models/exampleGalaxy.js';
+import {
+  BrowserSaveRepository,
+  createExpandedGalaxy,
+} from './space-map/models/index.js';
 import { testBoardingMap } from './boarding/models/index.js';
 
 const root = document.querySelector<HTMLElement>('#app');

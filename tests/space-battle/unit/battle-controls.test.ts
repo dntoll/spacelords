@@ -9,9 +9,9 @@ import {
   type BattleState,
   type BattleHex,
 } from '../../../src/client/space-battle/models/TacticalBattle.js';
-import { MasterController } from '../../../src/client/controllers/app/MasterController.js';
-import { AppModel } from '../../../src/client/models/AppModel.js';
-import type { SaveRepository } from '../../../src/client/models/saves/SaveRepository.js';
+import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
+import { AppModel } from '../../../src/client/app/models/AppModel.js';
+import type { SaveRepository } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 import {
   BoardingBattle,
   type BoardingBattleState,
@@ -26,8 +26,8 @@ import {
   BoardingView,
   type BoardingMapFactory,
 } from '../../../src/client/boarding/views/battle/BoardingView.js';
-import { renderSaveSlots } from '../../../src/client/views/saves/SaveSlotsView.js';
-import type { AppIntent } from '../../../src/client/views/ViewContracts.js';
+import { renderSaveSlots } from '../../../src/client/space-map/views/saves/SaveSlotsView.js';
+import type { AppIntent } from '../../../src/client/app/views/ViewContracts.js';
 
 afterEach(() => {
   vi.useRealTimers();

@@ -44,7 +44,7 @@ import { BOARDING_METERS, boardingHeight } from '../rendering/BoardingScale.js';
 import {
   SHIP_SPRITES,
   type ShipSpriteType,
-} from '../../../views/ShipImages.js';
+} from '../../../space-map/views/index.js';
 import {
   BOARDING_HALF_TILE_WIDTH,
   BOARDING_HALF_TILE_HEIGHT,

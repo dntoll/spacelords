@@ -12,7 +12,7 @@ for asset in manifest['assets']:
     category = asset['category']
     if category not in ('symbols', 'planets', 'map'):
         continue
-    destination = root / 'src/client/assets' / category / Path(asset['output']).with_suffix('.webp')
+    destination = root / 'src/client/space-map/assets' / category / Path(asset['output']).with_suffix('.webp')
     destination.parent.mkdir(parents=True, exist_ok=True)
     with Image.open(root / 'assets/original' / category / asset['output']) as source:
         image = source.convert('RGBA')

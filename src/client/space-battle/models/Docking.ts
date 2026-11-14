@@ -1,4 +1,4 @@
-import { HexCoordinate } from '../../models/HexCoordinate.js';
+import { HexCoordinate } from '../../common/HexCoordinate.js';
 import type {
   BattleHex,
   BattlePiece,

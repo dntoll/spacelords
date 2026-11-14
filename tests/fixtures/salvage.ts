@@ -2,10 +2,10 @@ import {
   Game,
   type GameState,
   type ShipUnit,
-} from '../../src/client/models/Game.js';
-import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
-import { Salvage } from '../../src/client/models/Salvage.js';
-import { HexCoordinate } from '../../src/client/models/HexCoordinate.js';
+} from '../../src/client/space-map/models/Game.js';
+import { createExampleGalaxy } from '../../src/client/space-map/models/exampleGalaxy.js';
+import { Salvage } from '../../src/client/space-map/models/Salvage.js';
+import { HexCoordinate } from '../../src/client/common/HexCoordinate.js';
 import { collectTurnFrames } from './turn-steps.js';
 
 export const advancedExplorer: ShipUnit = {

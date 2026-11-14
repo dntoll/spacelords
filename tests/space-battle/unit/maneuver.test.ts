@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HexCoordinate } from '../../../src/client/models/HexCoordinate.js';
+import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import {
   hullLossOutcome,
   maneuverPath,

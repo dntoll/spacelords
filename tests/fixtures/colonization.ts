@@ -1,5 +1,8 @@
-import { Game, type GameState } from '../../src/client/models/Game.js';
-import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
+import {
+  Game,
+  type GameState,
+} from '../../src/client/space-map/models/Game.js';
+import { createExampleGalaxy } from '../../src/client/space-map/models/exampleGalaxy.js';
 
 export function colonizationState(colonyShips = 2): GameState {
   const state = new Game(createExampleGalaxy()).exportState();

@@ -1,0 +1,105 @@
+import { Galaxy, Star, StarSystem } from './Galaxy.js';
+import { HexCoordinate } from '../../common/HexCoordinate.js';
+import { createGalaxyTerrain } from './GalaxyTerrain.js';
+import { SpiralGalaxyLayout } from './SpiralGalaxyLayout.js';
+import {
+  Colony,
+  Planet,
+  Player,
+  type PlanetEnvironmentType,
+} from './Planet.js';
+
+// fast-exempelvarld: illustrative values, not economic or research balance.
+export function createExampleGalaxy(expanded = false): Galaxy {
+  const player = new Player('player', 'Your empire');
+  const definitions = [
+    {
+      id: 'sol',
+      name: 'Sol',
+      q: 0,
+      r: 0,
+      planets: ['Tellus', 'Vesta', 'Brontes'],
+    },
+    {
+      id: 'nadir',
+      name: 'Nadir',
+      q: 7,
+      r: -3,
+      planets: ['Nadir I', 'Nadir II', 'Nadir III'],
+    },
+    {
+      id: 'aster',
+      name: 'Aster',
+      q: -6,
+      r: 6,
+      planets: ['Aster I', 'Aster II', 'Aster III'],
+    },
+  ];
+  // utokad-galax / galaxarmar: only new worlds use the sparse spiral placement.
+  if (expanded) {
+    const positions = SpiralGalaxyLayout.positions(
+      definitions.map((system) => new HexCoordinate(system.q, system.r)),
+    );
+    for (const point of positions.slice(definitions.length)) {
+      const number = definitions.length + 1;
+      const name = `System ${number}`;
+      definitions.push({
+        id: `system-${number}`,
+        name,
+        q: point.q,
+        r: point.r,
+        planets: [`${name} I`, `${name} II`, `${name} III`],
+      });
+    }
+  }
+  const environments: readonly (readonly PlanetEnvironmentType[])[] = [
+    ['Temperate', 'Desert', 'Temperate'],
+    ['Ice', 'Ocean', 'Temperate'],
+    ['Toxic', 'Desert', 'Temperate'],
+  ];
+  const offsets = [
+    [1, 0],
+    [0, 1],
+    [-1, 0],
+  ] as const;
+  const systems = definitions.map(
+    (system, systemIndex) =>
+      new StarSystem(
+        new Star(system.id, system.name, new HexCoordinate(system.q, system.r)),
+        system.planets.map((name, index) => {
+          const [offsetQ, offsetR] = offsets[index]!;
+          const q = offsetQ * (expanded ? 2 : 1);
+          const r = offsetR * (expanded ? 2 : 1);
+          const home = systemIndex === 0 && index === 0;
+          return new Planet({
+            id: `${system.id}-${index}`,
+            name,
+            type: index === 2 ? 'gas' : 'solid',
+            environment:
+              environments[systemIndex % environments.length]![index]!,
+            position: new HexCoordinate(system.q + q, system.r + r),
+            habitability: home ? 100 : index === 2 ? 0 : 25,
+            buildSlots: home ? 10 : index === 2 ? 0 : 6,
+            resources: [
+              { name: 'Iron', perYear: home ? 10 : index === 0 ? 12 : 4 },
+              { name: 'Water', perYear: home ? 8 : index === 0 ? 3 : 10 },
+              { name: 'Oil', perYear: home ? 4 : index === 0 ? 0 : 6 },
+            ],
+            colony: home ? new Colony(player.id, 12_000) : null,
+          });
+        }),
+        expanded ? 2 : 1,
+      ),
+  );
+  return new Galaxy(
+    player,
+    systems,
+    expanded ? 100 : 10,
+    expanded ? createGalaxyTerrain(systems, 100) : [],
+  );
+}
+
+let expandedGalaxy: Galaxy | undefined;
+export function createExpandedGalaxy(): Galaxy {
+  return (expandedGalaxy ??= createExampleGalaxy(true));
+}

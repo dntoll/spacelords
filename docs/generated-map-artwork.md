@@ -75,7 +75,7 @@ byggnadsporträtt, byggköer och forskning. Mobiltesterna verifierar verklig
 bildladdning, planetvyn och valbar station i Chromium och WebKit.
 Skärmbilder granskas, inklusive de två korrigerade rymdfartygssymbolerna.
 
-Optimerade WebP-bilder sparas i `src/client/assets/symbols/`,
-`src/client/assets/planets/` och `src/client/assets/map/`. Alla är 512 px
+Optimerade WebP-bilder sparas i `src/client/space-map/assets/symbols/`,
+`src/client/space-map/assets/planets/` och `src/client/space-map/assets/map/`. Alla är 512 px
 med bevarad transparens. `scripts/prepare-game-artwork.py` skapar dessa
 webbversioner utan att ändra originalen.

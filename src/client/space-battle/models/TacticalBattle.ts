@@ -1,6 +1,6 @@
-import type { ShipType } from '../../models/Game.js';
+import type { ShipType } from '../../space-map/models/index.js';
 import { dockIssue as dockingIssue } from './Docking.js';
-import { HexCoordinate, HexGeometry } from '../../models/HexCoordinate.js';
+import { HexCoordinate, HexGeometry } from '../../common/HexCoordinate.js';
 import {
   hullLossOutcome,
   maneuverPath,

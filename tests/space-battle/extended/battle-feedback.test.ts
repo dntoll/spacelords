@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest';
-import { AppModel } from '../../../src/client/models/AppModel.js';
-import { MasterController } from '../../../src/client/controllers/app/MasterController.js';
+import { AppModel } from '../../../src/client/app/models/AppModel.js';
+import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import { BattleView } from '../../../src/client/space-battle/views/BattleView.js';
-import { renderSaveSlots } from '../../../src/client/views/saves/SaveSlotsView.js';
-import type { SaveRepository } from '../../../src/client/models/saves/SaveRepository.js';
+import { renderSaveSlots } from '../../../src/client/space-map/views/saves/SaveSlotsView.js';
+import type { SaveRepository } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 import type {
   AppIntent,
   AppPort,
-} from '../../../src/client/views/ViewContracts.js';
+} from '../../../src/client/app/views/ViewContracts.js';
 import { TacticalBattle } from '../../../src/client/space-battle/models/TacticalBattle.js';
 import {
   arrangeBattle,

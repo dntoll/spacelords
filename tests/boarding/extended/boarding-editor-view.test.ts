@@ -1,13 +1,13 @@
 ﻿// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
 import pirateMap from '../../../src/client/boarding/maps/pirate-boarding.txt?raw';
-import { AppModel } from '../../../src/client/models/AppModel.js';
-import { AppView } from '../../../src/client/views/app/AppView.js';
+import { AppModel } from '../../../src/client/app/models/AppModel.js';
+import { AppView } from '../../../src/client/app/views/AppView.js';
 import { BoardingEditorView } from '../../../src/client/boarding/views/editor/BoardingEditorView.js';
 import type {
   AppIntent,
   MapFactory,
-} from '../../../src/client/views/ViewContracts.js';
+} from '../../../src/client/app/views/ViewContracts.js';
 
 let root: HTMLElement;
 const mapFactory: MapFactory = () => ({

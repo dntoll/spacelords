@@ -6,8 +6,8 @@ import {
 import {
   startFirstSlot,
   ignoreEventsUntil,
-} from '../../browser/save-helpers.js';
-import type { SavedGame } from '../../../src/client/models/saves/SaveRepository.js';
+} from '../../space-map/browser/save-helpers.js';
+import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 import { battleHex } from '../../../src/client/space-battle/models/TacticalBattle.js';
 import { createTestBattle } from '../../../src/client/space-battle/models/TestBattle.js';
 import { ShipFootprint } from '../../../src/client/space-battle/models/ShipFootprint.js';
@@ -16,8 +16,8 @@ import {
   battlePoint,
   showBattleHex,
   tapBattleHex,
-} from '../../browser/battle-helpers.js';
-import { HexGeometry } from '../../../src/client/models/HexCoordinate.js';
+} from '../../space-map/browser/battle-helpers.js';
+import { HexGeometry } from '../../../src/client/common/HexCoordinate.js';
 
 async function maneuver(
   page: Page,

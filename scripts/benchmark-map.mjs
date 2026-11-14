@@ -1,8 +1,8 @@
 import { AppController } from '../src/client/controllers/AppController.ts';
-import { AppModel } from '../src/client/models/AppModel.ts';
-import { createExampleGalaxy } from '../src/client/models/exampleGalaxy.ts';
-import { HexGeometry } from '../src/client/models/HexCoordinate.ts';
-import { MapViewport } from '../src/client/models/star-map/MapViewport.ts';
+import { AppModel } from '../src/client/app/models/AppModel.ts';
+import { createExampleGalaxy } from '../src/client/space-map/models/exampleGalaxy.ts';
+import { HexGeometry } from '../src/client/common/HexCoordinate.ts';
+import { MapViewport } from '../src/client/space-map/models/star-map/MapViewport.ts';
 
 // responsiv-stjarnkarta / rumsligt-kartindex: diagnostic timings, never CI thresholds.
 function measure(action, iterations = 200) {

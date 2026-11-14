@@ -5,12 +5,12 @@ import { BattleMapView } from '../../../src/client/space-battle/views/BattleMapV
 import {
   SHIP_SPRITES,
   type ShipSpriteType,
-} from '../../../src/client/views/ShipImages.js';
+} from '../../../src/client/space-map/views/ShipImages.js';
 import {
   HexCoordinate,
   HexGeometry,
   type Point,
-} from '../../../src/client/models/HexCoordinate.js';
+} from '../../../src/client/common/HexCoordinate.js';
 import { TacticalBattle } from '../../../src/client/space-battle/models/TacticalBattle.js';
 import { createTestBattle } from '../../../src/client/space-battle/models/TestBattle.js';
 

@@ -1,4 +1,4 @@
-import { AppModel } from '../../src/client/models/AppModel.js';
+import { AppModel } from '../../src/client/app/models/AppModel.js';
 import { researchStationState } from './research-station.js';
 
 export function researchStationModel() {

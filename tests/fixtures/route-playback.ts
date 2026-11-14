@@ -1,5 +1,5 @@
 import { tradeNetworkState } from './trade-network.js';
-import type { GameState } from '../../src/client/models/Game.js';
+import type { GameState } from '../../src/client/space-map/models/Game.js';
 
 export function routePlaybackState(): GameState {
   const state = tradeNetworkState();

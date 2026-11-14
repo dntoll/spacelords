@@ -62,18 +62,25 @@ i stället för att upprepa reglerna.
   inre kameracontroller och lämnar domänfakta. Den känner inte till
   use-case-controllern. Bordning och strid får en bildruta. Övriga vyer ritas
   när något synligt ändrats. Vyn väljer meningarna spelaren ser.
-- Lägg en underkatalog per fall under `controllers`, `models` och `views`.
-  Delade modellfiler ligger kvar i `models` tills bara de återstår.
-- Undantag (`isolerad-bordningsmodul`): bordningen är en egen modul i
-  `src/client/boarding/` med egna `controllers/`, `models/`, `views/`,
-  `assets/` och `maps/`. Den har motsvarande delar i `src/server/boarding/`,
-  `src/shared/boarding/` och `tests/boarding/`. Övrig kod importerar bara via
-  `boarding/{models,views,controllers}/index.js`. ESLint håller gränsen åt
-  båda hållen.
-- Undantag (`isolerad-rymdstridsmodul`): rymdstriden är på samma sätt en egen
-  modul i `src/client/space-battle/` med tester i `tests/space-battle/`.
-  Bordningen och övrig kod importerar den bara via
-  `space-battle/{models,views,controllers}/index.js`.
+- Klienten (`app-skal`) består av ett app-skal och tre spelmoduler:
+  - `src/client/app/` håller `MasterController`, `AppModel`, `AppView`,
+    `ViewContracts`, `PlayerNotice` och `playerNoticeText`. Det binder ihop
+    modulerna.
+  - `src/client/common/` har generisk kod utan spelkunskap: `dom` och
+    `HexCoordinate`.
+  - Modulerna är `space-map/` (stjärnkartespelet, `isolerad-rymdkartmodul`),
+    `space-battle/` (`isolerad-rymdstridsmodul`) och `boarding/`
+    (`isolerad-bordningsmodul`). Var och en har egna `controllers/`,
+    `models/`, `views/` och vid behov `assets/`. Testerna ligger i
+    `tests/<modul>/{unit,extended,browser}/`.
+- Lägg en underkatalog per fall under modulens `controllers`, `models` och
+  `views`. Delade modellfiler ligger kvar i modulens `models` tills bara de
+  återstår.
+- Kod utanför en modul importerar den bara via
+  `<modul>/{models,views,controllers}/index.js`. En modul får utanför sig själv
+  bara nå `AppModel`, `ViewContracts`, `common/` och andra modulers
+  `models`- och `views`-index. Undantagen listas i `featureModules` i
+  `eslint.config.mjs`, och ESLint håller gränserna.
 - Modellera objektorienterat med hög sammanhållning och låg koppling. Ge vyer
   enbart läsgränssnitt eller oföränderliga ögonblicksbilder av modellerna.
 - Underhåll problemdomänens klasser och relationer i PlantUML i

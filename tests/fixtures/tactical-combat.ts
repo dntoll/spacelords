@@ -1,5 +1,5 @@
-import type { Game } from '../../src/client/models/Game.js';
-import type { AppModel } from '../../src/client/models/AppModel.js';
+import type { Game } from '../../src/client/space-map/models/Game.js';
+import type { AppModel } from '../../src/client/app/models/AppModel.js';
 
 /** Other subsystem scenarios fight using the actual rules, holding civilian ships. */
 export function completeTacticalBattles(subject: Game | AppModel): void {

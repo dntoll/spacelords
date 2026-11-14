@@ -1,4 +1,4 @@
-import { HexCoordinate } from '../../models/HexCoordinate.js';
+import { HexCoordinate } from '../../common/HexCoordinate.js';
 import type { BattleHex, BattlePiece } from './TacticalBattle.js';
 
 /** stora-skepp-over-flera-hex: the saved position is the ship's center. */

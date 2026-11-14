@@ -1,6 +1,9 @@
-import { Game, type GameState } from '../../src/client/models/Game.js';
-import { createExampleGalaxy } from '../../src/client/models/exampleGalaxy.js';
-import { emptyStock } from '../../src/client/models/Economy.js';
+import {
+  Game,
+  type GameState,
+} from '../../src/client/space-map/models/Game.js';
+import { createExampleGalaxy } from '../../src/client/space-map/models/exampleGalaxy.js';
+import { emptyStock } from '../../src/client/space-map/models/Economy.js';
 
 export function tradeNetworkState(withRoute = true): GameState {
   const state = new Game(createExampleGalaxy()).exportState();

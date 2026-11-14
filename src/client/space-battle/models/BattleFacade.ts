@@ -4,7 +4,7 @@ import {
   type BattleCommand,
 } from './TacticalBattle.js';
 import { createTestBattle } from './TestBattle.js';
-import type { AppHost } from '../../models/AppModel.js';
+import type { AppHost } from '../../app/models/AppModel.js';
 
 export class BattleFacade {
   constructor(private readonly host: AppHost) {}

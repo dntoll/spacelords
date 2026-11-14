@@ -1,4 +1,4 @@
-import { HexCoordinate } from '../../models/HexCoordinate.js';
+import { HexCoordinate } from '../../common/HexCoordinate.js';
 import type { BattleHex, CombatShipType } from './TacticalBattle.js';
 
 /** manoverpoang-och-hastighet: one-hex ships get two maneuvers, three-hex ships one. */

@@ -60,24 +60,24 @@ lintkravet: [verktygets dokumentation](https://typescript-eslint.io/getting-star
 
 ```text
 src/client/              Klientens startpunkt, HTML och CSS
-  models/                Delad spelmodell, sedan en katalog per fall
-    app/                 Spelsessionens strukturerade utfall
-    boarding/            Bordningens facad och modell
-  controllers/
-    app/                 Master-controller
-    boarding/            Ett fall per katalog
-  views/                 Plattformslager, en katalog per fall
-    boarding/            Karta, kamera, figurer
+  app/                   App-skal: master-controller, AppModel, AppView, ViewContracts
+  common/                Generisk kod utan spelkunskap: dom, HexCoordinate
+  space-map/             Stjärnkartespelet: controllers/, models/, views/ per fall
+  space-battle/          Rymdstriden: TacticalBattle med vyer och controller
+  boarding/              Bordningen och dess karteditor
 src/server/
   models/                Plattformsoavhängiga modeller
   controllers/           Samordning utan HTTP-beroenden
   views/                 HTTP-adaptrar som renderar JSON
+  boarding/              Bordningskartornas API
   app.ts                 Routning och statiska klientfiler
   main.ts                Serverstart och avstängning
-tests/unit/              Vitest-enhetstester
-tests/extended/          Vitest-vytester, samma svit som tests/unit
+src/shared/boarding/     Kartformat som klient och server delar
+tests/<modul>/unit/      Vitest-enhetstester per modul (app, space-map, …)
+tests/<modul>/extended/  Vitest-vytester, samma svit som unit
+tests/<modul>/browser/   Playwright: dator, telefon Chromium, telefon WebKit
+tests/unit/              Serverns enhetstester
 tests/integration/       HTTP-tester mot det faktiska produktionsbygget
-tests/browser/           Playwright: dator, telefon Chromium, telefon WebKit
 docs/                    Krav, arbetsbeslut och PlantUML-domänmodell
 ```
 

@@ -1,4 +1,4 @@
-import { button } from '../../views/dom.js';
+import { button } from '../../common/dom.js';
 
 const paths = {
   forward: 'M12 3 21 15h-6v6H9v-6H3Z',

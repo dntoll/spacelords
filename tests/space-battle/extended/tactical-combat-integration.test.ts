@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { Game, type GameState } from '../../../src/client/models/Game.js';
+import {
+  Game,
+  type GameState,
+} from '../../../src/client/space-map/models/Game.js';
 import {
   TacticalBattle,
   battleHex,
@@ -9,9 +12,9 @@ import {
   arrangeBattle,
   encounterGame,
 } from '../../fixtures/battle-checkpoint.js';
-import { createExampleGalaxy } from '../../../src/client/models/exampleGalaxy.js';
+import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import { tradeNetworkState } from '../../fixtures/trade-network.js';
-import { HexCoordinate } from '../../../src/client/models/HexCoordinate.js';
+import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 
 describe('tactical combat integration', () => {
   it('sparad-taktisk-strid: rejects a checkpoint that replaces an actual participating ship', () => {

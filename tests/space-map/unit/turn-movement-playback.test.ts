@@ -1,0 +1,586 @@
+import { completeTacticalBattles } from '../../fixtures/tactical-combat.js';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  TurnMovementPlayback,
+  type MovementScene,
+} from '../../../src/client/space-map/models/turn/TurnMovementPlayback.js';
+import {
+  Game,
+  type TurnFrame,
+} from '../../../src/client/space-map/models/Game.js';
+import { AppModel } from '../../../src/client/app/models/AppModel.js';
+import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
+import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
+import {
+  HexCoordinate,
+  HexGeometry,
+} from '../../../src/client/common/HexCoordinate.js';
+import type { IntentHandler } from '../../../src/client/app/views/ViewContracts.js';
+import { Detection } from '../../../src/client/space-map/models/Detection.js';
+import { routePlaybackState } from '../../fixtures/route-playback.js';
+
+afterEach(() => vi.useRealTimers());
+
+it('destinationer-for-aktiva-skepp: retains the current order target beyond the recorded journey and when a route changes direction', () => {
+  const base = new Game(createExampleGalaxy()).fleetSnapshots()[0]!;
+  const from = new HexCoordinate(1, 0),
+    via = new HexCoordinate(2, 0),
+    to = new HexCoordinate(3, 0);
+  const outbound = {
+    ...base,
+    routeId: 'route',
+    position: from,
+    destination: to,
+  };
+  const origin = {
+    fleets: [outbound],
+    pirates: [],
+    cells: [],
+    ownedPlanets: [],
+  };
+  const playback = new TurnMovementPlayback(origin);
+  playback.record(
+    { movements: [{ fleetId: base.id, from, to: via }] },
+    origin,
+    origin,
+  );
+  const returning = {
+    ...origin,
+    fleets: [{ ...outbound, position: via, destination: from }],
+  };
+  playback.record(
+    { movements: [{ fleetId: base.id, from: via, to: from }] },
+    returning,
+    returning,
+  );
+  playback.begin(playback.tracks[0]![0]!);
+  expect(playback.fleets[0]!.destination).toEqual(to);
+  playback.complete();
+  playback.begin(playback.tracks[0]![1]!);
+  expect(playback.fleets[0]!.destination).toEqual(from);
+});
+
+it('samtidig-farledsanimation / geografisk-arsuppspelning: groups route traffic first and orders other tracks west to east, then south to north', () => {
+  const base = new Game(createExampleGalaxy()).fleetSnapshots()[0]!;
+  const fleets = [
+    { ...base, id: 'east', position: new HexCoordinate(4, 0) },
+    { ...base, id: 'north', position: new HexCoordinate(0, -2) },
+    {
+      ...base,
+      id: 'route-a',
+      routeId: 'a',
+      position: new HexCoordinate(-8, 0),
+    },
+    { ...base, id: 'south', position: new HexCoordinate(-2, 2) },
+    { ...base, id: 'route-b', routeId: 'b', position: new HexCoordinate(8, 0) },
+  ];
+  const origin = { fleets, pirates: [], cells: [], ownedPlanets: [] };
+  const playback = new TurnMovementPlayback(origin);
+  const moves = fleets.map((fleet) => ({
+    fleetId: fleet.id,
+    from: fleet.position,
+    to: fleet.position.neighbors()[0]!,
+  }));
+  playback.record({ movements: moves }, origin, origin);
+  const extra = {
+    fleetId: 'route-a',
+    from: moves[2]!.to,
+    to: new HexCoordinate(-6, 0),
+  };
+  playback.record({ movements: [extra] }, origin, origin);
+  expect(
+    playback.batches.map((batch) => batch.map((track) => track[0]!.fleetId)),
+  ).toEqual([['route-a', 'route-b'], ['south'], ['north'], ['east']]);
+  const simultaneous = [moves[2]!, moves[4]!];
+  playback.begin(simultaneous);
+  expect(playback.currents).toEqual(simultaneous);
+  playback.advance(0.25);
+  expect(
+    playback.fleets.find((fleet) => fleet.id === 'route-b')!.position,
+  ).toEqual(moves[4]!.from);
+  playback.advance(0.75);
+  for (const move of simultaneous)
+    expect(
+      playback.fleets.find((fleet) => fleet.id === move.fleetId)!.position,
+    ).toEqual(move.to);
+  expect(
+    playback.fleets.find((fleet) => fleet.id === 'east')!.destination,
+  ).toBeNull();
+  playback.complete();
+  playback.begin([extra]);
+  expect(
+    playback.fleets.find((fleet) => fleet.id === 'route-b')!.destination,
+  ).toBeNull();
+  expect(Object.isFrozen(playback.currents)).toBe(true);
+});
+
+it('samtidig-automatisk-flottanimation: groups every autonomous order while manual Move remains separate', () => {
+  const base = new Game(createExampleGalaxy()).fleetSnapshots()[0]!;
+  const fleets = [
+    { ...base, id: 'route', routeId: 'route-a' },
+    {
+      ...base,
+      id: 'civilian',
+      civilian: {
+        status: 'Waiting',
+        passengers: 0,
+        reserved: 0,
+        path: [],
+        stopping: false,
+      },
+    },
+    { ...base, id: 'explore', exploration: 'explore' as const },
+    {
+      ...base,
+      id: 'patrol',
+      patrol: { center: new HexCoordinate(0, 0), range: 1 },
+    },
+    { ...base, id: 'salvage', automation: 'salvage' as const },
+    {
+      ...base,
+      id: 'planet-queue',
+      planetQueue: 'exploration' as const,
+    },
+    { ...base, id: 'manual' },
+  ].map((fleet, index) => ({
+    ...fleet,
+    position: new HexCoordinate(index, 0),
+  }));
+  const origin = { fleets, pirates: [], cells: [], ownedPlanets: [] };
+  const playback = new TurnMovementPlayback(origin);
+  playback.record(
+    {
+      movements: fleets.map((fleet) => ({
+        fleetId: fleet.id,
+        from: fleet.position,
+        to: fleet.position.neighbors()[0]!,
+      })),
+    },
+    origin,
+    origin,
+  );
+  expect(
+    playback.batches.map((batch) => batch.map((track) => track[0]!.fleetId)),
+  ).toEqual([
+    ['route', 'civilian', 'explore', 'patrol', 'salvage', 'planet-queue'],
+    ['manual'],
+  ]);
+});
+
+function scene(game: Game): MovementScene {
+  return {
+    fleets: game.fleetSnapshots(),
+    pirates: game.pirateSnapshots(),
+    cells: game.mapSnapshot(),
+    ownedPlanets: game.ownedPlanetSnapshots(),
+  };
+}
+
+it('samtidig-farledsanimation: controller frames every route together, animates each step once and restores the mobile camera', async () => {
+  vi.useFakeTimers();
+  const state = routePlaybackState();
+  const model = new AppModel(undefined, {
+    load: () => ({ lastPlayed: '2026-10-31', state }),
+    save() {},
+    clear() {},
+  });
+  model.startSlot(1);
+  model.resizeMap({
+    width: 393,
+    height: 400,
+    availableWidth: 393,
+    availableHeight: 400,
+  });
+  const original = model.snapshot.camera;
+  let emit!: IntentHandler;
+  const frames: TurnFrame[] = [];
+  const durations: number[] = [];
+  let fixedCamera: typeof original | null = null;
+  const controller = new MasterController(model, {
+    bind(handler) {
+      emit = handler;
+    },
+    render() {},
+    dispose() {},
+    animateTurnStep(frame, onProgress, duration) {
+      frames.push(frame);
+      durations.push(duration!);
+      fixedCamera ??= model.snapshot.camera;
+      expect(model.snapshot.camera).toEqual(fixedCamera);
+      expect(model.snapshot.turnMovements).toEqual(frame.movements);
+      for (const fleet of model.snapshot.fleets)
+        if (!frame.movements.some((move) => move.fleetId === fleet.id))
+          expect(fleet.destination).toBeNull();
+      for (const move of frame.movements)
+        for (const hex of [move.from, move.to]) {
+          const point = HexGeometry.toPoint(hex);
+          expect(
+            Math.abs((point.x - fixedCamera.center.x) * fixedCamera.zoom),
+          ).toBeLessThan(393 / 2 - 24);
+          expect(
+            Math.abs((point.y - fixedCamera.center.y) * fixedCamera.zoom),
+          ).toBeLessThan(400 / 2 - 24);
+        }
+      onProgress?.(0.75);
+      for (const move of frame.movements)
+        expect(
+          model.snapshot.fleets.find((fleet) => fleet.id === move.fleetId)!
+            .position,
+        ).toEqual(move.to);
+      return Promise.resolve();
+    },
+  });
+  controller.start();
+  emit({ type: 'confirm-end-turn' });
+  await vi.advanceTimersByTimeAsync(0);
+  expect(frames[0]!.movements.map((move) => move.fleetId).sort()).toEqual([
+    'freighters',
+    'travellers',
+  ]);
+  const moves = frames.flatMap((frame) => frame.movements);
+  expect(
+    new Set(
+      moves.map((move) => `${move.fleetId}:${move.from.key}:${move.to.key}`),
+    ).size,
+  ).toBe(moves.length);
+  expect(
+    durations.reduce((sum, duration) => sum + duration, 0),
+  ).toBeLessThanOrEqual(4000);
+  await vi.advanceTimersByTimeAsync(30000);
+  expect(model.snapshot.camera).toEqual(original);
+  controller.dispose();
+});
+
+describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
+  it.each([false, true])(
+    'sikt-under-forflyttning: uses displayed positions, hides lost contacts and respects nebula (%s)',
+    (cloud) => {
+      const game = new Game(createExampleGalaxy());
+      const from = new HexCoordinate(3, 0),
+        to = new HexCoordinate(4, 0);
+      const first = {
+        ...game.fleetSnapshots()[0]!,
+        position: from,
+        detectionRange: 1,
+      };
+      const second = {
+        ...first,
+        id: 'second',
+        position: new HexCoordinate(0, 3),
+      };
+      const oldContact = {
+        id: 'old',
+        systemId: 'test',
+        count: 1,
+        position: new HexCoordinate(2, 0),
+      };
+      const newContact = {
+        ...oldContact,
+        id: 'new',
+        position: new HexCoordinate(5, 0),
+      };
+      const cells = HexCoordinate.disk(8).map((position) => ({
+        position,
+        visible:
+          (from.distanceTo(position) <= 1 &&
+            (!cloud || position.key !== to.key)) ||
+          second.position.distanceTo(position) <= 1,
+        explored:
+          from.distanceTo(position) <= 1 ||
+          second.position.distanceTo(position) <= 1,
+        object: null,
+        terrain:
+          cloud && position.key === to.key
+            ? ('nebula' as const)
+            : ('space' as const),
+      }));
+      const before: MovementScene = {
+        fleets: [first, second],
+        pirates: [oldContact],
+        cells,
+        ownedPlanets: [],
+      };
+      const after: MovementScene = {
+        ...before,
+        fleets: [
+          { ...first, position: to },
+          { ...second, position: new HexCoordinate(0, 5) },
+        ],
+        pirates: [newContact],
+        cells: cells.map((cell) =>
+          cell.position.key === '0,6'
+            ? {
+                ...cell,
+                explored: true,
+                visible: true,
+                object: {
+                  kind: 'planet',
+                  type: 'solid',
+                  name: 'Future planet',
+                  owned: false,
+                },
+              }
+            : cell,
+        ),
+      };
+      const playback = new TurnMovementPlayback(before);
+      playback.record(
+        {
+          movements: [
+            { fleetId: first.id, from, to },
+            {
+              fleetId: second.id,
+              from: second.position,
+              to: new HexCoordinate(0, 5),
+            },
+          ],
+        },
+        before,
+        after,
+      );
+      playback.begin(playback.tracks[0]![0]!);
+      playback.advance(0.75);
+      const at = (key: string) =>
+        playback.cells.find((cell) => cell.position.key === key)!;
+      expect(at('2,0')).toMatchObject({ explored: true, visible: false });
+      expect(at('4,0').visible).toBe(true);
+      expect(at('5,0').visible).toBe(!cloud);
+      expect(at('0,3').visible).toBe(true);
+      expect(at('0,6')).toMatchObject({
+        explored: false,
+        visible: false,
+        object: null,
+      });
+      expect(playback.pirates.map((pirate) => pirate.id)).toEqual(
+        cloud ? [] : ['new'],
+      );
+      expect(before.cells).toEqual(cells);
+      expect(playback.advance(0.9)).toBe(false);
+      expect(Object.isFrozen(playback.cells)).toBe(true);
+      expect(Object.isFrozen(at('2,0'))).toBe(true);
+    },
+  );
+
+  it('sikt-under-forflyttning: updates shared sight during animation and preserves map memory', async () => {
+    vi.useFakeTimers();
+    const model = new AppModel();
+    model.setDestination('fleet-home', 3, 0);
+    let emit!: IntentHandler;
+    let steps = 0;
+    const controller = new MasterController(model, {
+      bind(handler) {
+        emit = handler;
+      },
+      render() {},
+      animateTurnStep(
+        frame: TurnFrame,
+        onProgress?: (progress: number) => void,
+      ) {
+        const move = frame.movements[0]!;
+        const before = model.snapshot;
+        onProgress?.(0.25);
+        expect(model.snapshot.cells).toEqual(before.cells);
+        onProgress?.(0.75);
+        const after = model.snapshot;
+        const expected = Detection.coverage(
+          [
+            ...after.ownedPlanets.map((planet) => ({
+              position: planet.position,
+              range: planet.detectionRange ?? 1,
+            })),
+            ...after.fleets
+              .filter((fleet) => fleet.position)
+              .map((fleet) => ({
+                position: fleet.id === move.fleetId ? move.to : fleet.position!,
+                range: fleet.detectionRange ?? 0,
+              })),
+          ],
+          (point) =>
+            after.cells.find((cell) => cell.position.key === point.key)
+              ?.terrain === 'nebula',
+        );
+        expect(
+          after.cells
+            .filter((cell) => cell.visible)
+            .map((cell) => cell.position.key)
+            .sort(),
+        ).toEqual(
+          after.cells
+            .filter((cell) => expected.has(cell.position.key))
+            .map((cell) => cell.position.key)
+            .sort(),
+        );
+        expect(
+          after.cells.some(
+            (cell) =>
+              cell.visible &&
+              !before.cells.find(
+                (old) => old.position.key === cell.position.key,
+              )?.visible,
+          ),
+        ).toBe(true);
+        for (const cell of before.cells.filter((cell) => cell.explored))
+          expect(
+            after.cells.find(
+              (current) => current.position.key === cell.position.key,
+            )?.explored,
+          ).toBe(true);
+        steps++;
+        return Promise.resolve();
+      },
+      dispose() {},
+    });
+    controller.start();
+    emit({ type: 'confirm-end-turn' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(steps).toBeGreaterThan(1);
+    controller.dispose();
+  });
+
+  it('groups interleaved simulation steps into complete fleet tracks and keeps other markers still', () => {
+    const game = new Game(createExampleGalaxy());
+    game.transferShips('fleet-home', 'Fighter', 1, null);
+    const second = game.fleetSnapshots()[1]!;
+    game.setDestination('fleet-home', new HexCoordinate(3, 0));
+    game.setDestination(second.id, new HexCoordinate(0, 3));
+    game.startTurn();
+    const origin = scene(game),
+      playback = new TurnMovementPlayback(origin);
+    const hiddenIds = new Set<string>();
+    for (let index = 0; index < 50; index++) {
+      if (game.phase === 'interrupted') {
+        completeTacticalBattles(game);
+        game.continueTurn();
+      }
+      const frame = game.nextTurnFrame();
+      if (!frame) break;
+      const before = scene(game);
+      game.applyFrame(frame);
+      playback.record(frame, before, scene(game));
+      for (const move of frame.movements)
+        if (
+          !before.fleets.some((fleet) => fleet.id === move.fleetId) &&
+          !before.pirates.some((fleet) => fleet.id === move.fleetId)
+        )
+          hiddenIds.add(move.fleetId);
+    }
+    game.finishTurn();
+    const final = game.exportState();
+    expect(hiddenIds.size).toBeGreaterThan(0);
+    expect(playback.tracks).toHaveLength(2);
+    expect(
+      playback.tracks.every(
+        (track) =>
+          track.length > 1 &&
+          track.every((move) => move.fleetId === track[0]!.fleetId),
+      ),
+    ).toBe(true);
+    const first = playback.tracks[0]![0]!;
+    playback.begin(first);
+    expect(playback.current).toBe(first);
+    playback.complete();
+    expect(
+      playback.fleets.find((fleet) => fleet.id === first.fleetId)?.position,
+    ).toEqual(first.to);
+    const idle = origin.fleets.find((fleet) => fleet.id !== first.fleetId)!;
+    expect(
+      playback.fleets.find((fleet) => fleet.id === idle.id)?.position,
+    ).toEqual(idle.position);
+    expect(
+      playback.tracks.flat().some((move) => hiddenIds.has(move.fleetId)),
+    ).toBe(false);
+    expect(game.exportState()).toEqual(final);
+  });
+
+  it('does not reveal either endpoint of a hostile step with a hidden endpoint', () => {
+    const game = new Game(createExampleGalaxy());
+    const saved = game.exportState().pirates![0]!;
+    const from = new HexCoordinate(saved.position.q, saved.position.r),
+      to = from.neighbors()[0]!;
+    const pirate = { ...saved, position: from };
+    const visible = { fleets: [], pirates: [pirate], cells: [] };
+    const hidden = { ...visible, pirates: [] };
+    const frame = { movements: [{ fleetId: pirate.id, from, to }] };
+    for (const [before, after] of [
+      [hidden, hidden],
+      [hidden, visible],
+      [visible, hidden],
+    ]) {
+      const playback = new TurnMovementPlayback(before!);
+      playback.record(frame, before!, after!);
+      expect(playback.tracks).toHaveLength(0);
+    }
+    const playback = new TurnMovementPlayback(visible);
+    playback.record(frame, visible, {
+      ...visible,
+      pirates: [{ ...pirate, position: to }],
+    });
+    expect(playback.tracks).toHaveLength(1);
+  });
+
+  it('stillastaende-kamera-vid-forflyttning: frames each full route and keeps its camera fixed while ships move', async () => {
+    vi.useFakeTimers();
+    const model = new AppModel();
+    model.transferShips('fleet-home', 'Fighter', 1, null);
+    const other = model.snapshot.fleets[1]!;
+    model.setDestination('fleet-home', 3, 0);
+    model.setDestination(other.id, 0, 3);
+    let emit!: IntentHandler;
+    const order: string[] = [];
+    const cameras = new Map<string, typeof model.snapshot.camera>();
+    const controller = new MasterController(model, {
+      bind(handler) {
+        emit = handler;
+      },
+      render(snapshot) {
+        if (snapshot.turnMovement) {
+          expect(snapshot.phase).toBe('simulating');
+        }
+      },
+      animateTurnStep(frame: TurnFrame) {
+        expect(frame.movements).toHaveLength(1);
+        const movement = frame.movements[0]!;
+        const camera = model.snapshot.camera;
+        if (cameras.has(movement.fleetId))
+          expect(camera).toEqual(cameras.get(movement.fleetId));
+        cameras.set(movement.fleetId, camera);
+        order.push(movement.fleetId);
+        return Promise.resolve();
+      },
+      dispose() {},
+    });
+    controller.start();
+    emit({ type: 'confirm-end-turn' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(order.length).toBeGreaterThan(3);
+    expect([...new Set(order)]).toHaveLength(2);
+    let switches = 0;
+    for (let index = 1; index < order.length; index++)
+      if (order[index] !== order[index - 1]) switches++;
+    expect(switches).toBe(1);
+    expect(order.every((id) => !id.startsWith('pirate-'))).toBe(true);
+    expect(model.snapshot.eventPlayback).not.toBeNull();
+    controller.dispose();
+  });
+
+  it('introduces no animation or presentation wait for a year with only hidden movement', () => {
+    vi.useFakeTimers();
+    const model = new AppModel();
+    let emit!: IntentHandler;
+    const animate = vi.fn(() => Promise.resolve());
+    const controller = new MasterController(model, {
+      bind(handler) {
+        emit = handler;
+      },
+      render() {},
+      animateTurnStep: animate,
+      dispose() {},
+    });
+    controller.start();
+    emit({ type: 'confirm-end-turn' });
+    expect(animate).not.toHaveBeenCalled();
+    expect(model.snapshot.turnMovement).toBeNull();
+    expect(model.snapshot.eventPlayback?.stage).toBe('announcing');
+    controller.dispose();
+  });
+});

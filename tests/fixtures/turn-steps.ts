@@ -1,5 +1,8 @@
-import type { AppModel } from '../../src/client/models/AppModel.js';
-import type { Game, TurnFrame } from '../../src/client/models/Game.js';
+import type { AppModel } from '../../src/client/app/models/AppModel.js';
+import type {
+  Game,
+  TurnFrame,
+} from '../../src/client/space-map/models/Game.js';
 import { completeTacticalBattles } from './tactical-combat.js';
 
 type Subject = Game | AppModel;

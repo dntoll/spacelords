@@ -2,7 +2,7 @@ import {
   HexCoordinate,
   HexGeometry,
   type Point,
-} from '../../models/HexCoordinate.js';
+} from '../../common/HexCoordinate.js';
 import type { BattleHex } from '../models/TacticalBattle.js';
 
 export interface BattleViewportSnapshot {

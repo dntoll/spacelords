@@ -1,4 +1,4 @@
-﻿import type { AppReadModel } from '../../../models/AppModel.js';
+﻿import type { AppReadModel } from '../../../app/models/AppModel.js';
 import type {
   BoardingEditorSnapshot,
   EditorBrushButton,
@@ -15,9 +15,9 @@ import type {
   BoardingEditorLayer,
   BoardingMapId,
 } from '../../../../shared/boarding/map-format.js';
-import type { IntentHandler } from '../../../views/ViewContracts.js';
-import { playerNoticeText } from '../../../views/app/playerNoticeText.js';
-import { button, element } from '../../../views/dom.js';
+import type { IntentHandler } from '../../../app/views/ViewContracts.js';
+import { playerNoticeText } from '../../../app/views/playerNoticeText.js';
+import { button, element } from '../../../common/dom.js';
 import { BoardingEditorMapView } from './BoardingEditorMapView.js';
 
 interface PaletteTile {

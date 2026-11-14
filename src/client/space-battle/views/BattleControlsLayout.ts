@@ -1,4 +1,4 @@
-import { HexGeometry, type Point } from '../../models/HexCoordinate.js';
+import { HexGeometry, type Point } from '../../common/HexCoordinate.js';
 import type { BattleViewportSnapshot } from './BattleCameraController.js';
 
 export interface ManeuverControlPoints {

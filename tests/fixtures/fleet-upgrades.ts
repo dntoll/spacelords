@@ -1,4 +1,4 @@
-import { type GameState } from '../../src/client/models/Game.js';
+import { type GameState } from '../../src/client/space-map/models/Game.js';
 import { salvageState } from './salvage.js';
 
 export function upgradeState(): GameState {

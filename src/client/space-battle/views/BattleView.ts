@@ -16,17 +16,17 @@ import {
   HexCoordinate,
   HexGeometry,
   type Point,
-} from '../../models/HexCoordinate.js';
+} from '../../common/HexCoordinate.js';
 import type { BattleViewportSnapshot } from './BattleCameraController.js';
 import type { ManeuverStep } from '../models/Maneuver.js';
 import {
   maneuverOptionLayout,
   maneuverOptionSize,
 } from './BattleManeuverPresentation.js';
-import type { IntentHandler } from '../../views/ViewContracts.js';
-import { element } from '../../views/dom.js';
+import type { IntentHandler } from '../../app/views/ViewContracts.js';
+import { element } from '../../common/dom.js';
 import { ShipFootprint } from '../models/ShipFootprint.js';
-import { shipImage } from '../../views/ShipView.js';
+import { shipImage } from '../../space-map/views/index.js';
 import { battleButton } from './BattleIcons.js';
 import {
   battleControlsLayout,

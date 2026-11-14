@@ -24,8 +24,8 @@ import {
 } from '../../models/battle/BoardingPathPreview.js';
 import { composeBoardingMaps } from '../../models/map/BoardingComposer.js';
 import { testBoardingMap } from '../../models/map/TestBoarding.js';
-import type { IntentHandler } from '../../../views/ViewContracts.js';
-import { button, element } from '../../../views/dom.js';
+import type { IntentHandler } from '../../../app/views/ViewContracts.js';
+import { button, element } from '../../../common/dom.js';
 
 function iconButton(
   label: string,

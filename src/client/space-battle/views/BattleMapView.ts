@@ -4,7 +4,7 @@ import {
   HexCoordinate,
   HexGeometry,
   type Point,
-} from '../../models/HexCoordinate.js';
+} from '../../common/HexCoordinate.js';
 import {
   battleEscapeHexes,
   battleHex,
@@ -21,7 +21,10 @@ import {
 import type { BattleMapPort } from './BattleView.js';
 import type { ManeuverStep } from '../models/Maneuver.js';
 import { maneuverFrame } from './BattleManeuverPresentation.js';
-import { SHIP_SPRITES, type ShipSpriteType } from '../../views/ShipImages.js';
+import {
+  SHIP_SPRITES,
+  type ShipSpriteType,
+} from '../../space-map/views/index.js';
 import { BattleEffects, type BattleEffectFrame } from './BattleEffects.js';
 import { ShipFootprint } from '../models/ShipFootprint.js';
 import {

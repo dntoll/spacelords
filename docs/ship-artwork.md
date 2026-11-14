@@ -5,7 +5,7 @@ Civilian shuttle har en egen transparent bild med passagerarfönster,
 avrundad ljus kabin, blå motorer och gula markeringar. Den används i samtliga
 skeppsvyer och på både Star map och stridskartan. Originalet finns i
 `assets/original/ships/civilian-shuttle.png`; webbversionen i
-`src/client/assets/ships/civilian-shuttle.webp`, proportionellt skalad till
+`src/client/space-map/assets/ships/civilian-shuttle.webp`, proportionellt skalad till
 384 × 192 px med bibehållen alfa och WebP-kvalitet 90. Den inbyggda imagegen
 användes. [Den fullständiga prompten](image-prompts/ships/civilian-shuttle.md)
 bevaras för framtida ändringar.
@@ -24,7 +24,7 @@ Originalet behålls oförändrat.
 
 Skeppen klipptes ut radvis med tio bildpunkters marginal runt den synliga
 formen och skalades proportionellt till högst 384 × 192 px. Webbversionerna
-är WebP med kvalitet 90 i `src/client/assets/ships/`:
+är WebP med kvalitet 90 i `src/client/space-map/assets/ships/`:
 
 - `colony-ship.webp`
 - `fighter.webp`
@@ -50,7 +50,7 @@ Exploration ship behåller sin grafik. Sparade spel påverkas inte.
 
 PNG-originalen sparas som `assets/original/ships/transport-ship.png`,
 `salvage-ship.png` och `pirate-ship.png`. Webbversionerna finns i
-`src/client/assets/ships/` med samma basnamn och ändelsen WebP.
+`src/client/space-map/assets/ships/` med samma basnamn och ändelsen WebP.
 Transparenta marginaler beskärs och bilderna skalas proportionellt till högst
 384 × 192 px, med WebP-kvalitet 90. Alfa och kompletta silhuetter kontrolleras.
 

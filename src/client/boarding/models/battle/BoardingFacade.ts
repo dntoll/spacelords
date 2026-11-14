@@ -1,6 +1,6 @@
 import { type BoardingCommand } from './BoardingBattle.js';
 import { createTestBoardingBattle } from '../map/TestBoarding.js';
-import type { AppHost } from '../../../models/AppModel.js';
+import type { AppHost } from '../../../app/models/AppModel.js';
 
 export class BoardingFacade {
   constructor(private readonly host: AppHost) {}

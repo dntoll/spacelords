@@ -7,11 +7,15 @@ import {
   SHIP_PROFILES,
   battleWeapons,
 } from '../../../src/client/space-battle/models/TacticalBattle.js';
-import { BUILDINGS, Game, SHIPS } from '../../../src/client/models/Game.js';
-import { ResearchPlan } from '../../../src/client/models/research/Research.js';
-import { createExampleGalaxy } from '../../../src/client/models/exampleGalaxy.js';
-import { emptyStock } from '../../../src/client/models/Economy.js';
-import { HexCoordinate } from '../../../src/client/models/HexCoordinate.js';
+import {
+  BUILDINGS,
+  Game,
+  SHIPS,
+} from '../../../src/client/space-map/models/Game.js';
+import { ResearchPlan } from '../../../src/client/space-map/models/research/Research.js';
+import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
+import { emptyStock } from '../../../src/client/space-map/models/Economy.js';
+import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { arrangeBattle } from '../../fixtures/battle-checkpoint.js';
 
 describe('tva-skepp-pa-bordningskartan', () => {
