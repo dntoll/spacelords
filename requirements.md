@@ -812,6 +812,9 @@ Se [hela visionen](docs/game-vision.md).
   `src/client/app/` binder ihop modulerna, och generisk kod ligger i
   `src/client/common/`. `AppModel` och `AppView` innehåller ännu
   stjärnkartelogik som kan flyttas in i modulen.
+  `arkitekturkarta` är **Fullständigt implementerat**: en genererad kodkarta i
+  två nivåer ligger i [docs/architecture](docs/architecture/README.md), och
+  `test:tooling` stoppar en inaktuell karta.
   `snabb-testsvit` är **Fullständigt implementerat**: sviten omfattar alla
   Vitest-tester utom `tests/integration` och har ingen total tidsgräns.
   Detta ersätter riktvärdet 20 sekunder och regeln att flytta långsammare

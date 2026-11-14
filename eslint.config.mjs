@@ -4,31 +4,9 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 // isolerad-bordningsmodul / isolerad-rymdstridsmodul / isolerad-rymdkartmodul /
-// app-skal: feature modules under src/client. `depths` are the directory depths
-// of their source files and `allowed` the extra paths, relative to src/client,
-// they may import from outside themselves. Every module may also use the app
-// shell's AppModel and ViewContracts, `common/`, and the model and view barrels
-// of the other modules. See docs/architecture/overview.puml.
-const featureModules = [
-  {
-    dir: 'space-map',
-    depths: [2, 3],
-    allowed: ['app/models/PlayerNotice\\.js$'],
-  },
-  { dir: 'space-battle', depths: [2], allowed: [] },
-  {
-    dir: 'boarding',
-    depths: [2, 3],
-    allowed: ['app/views/playerNoticeText\\.js$', '\\.\\./shared/boarding/'],
-  },
-];
-
-const sharedForModules = [
-  'app/models/AppModel\\.js$',
-  'app/views/ViewContracts\\.js$',
-  'common/',
-  `(${featureModules.map(({ dir }) => dir).join('|')})/(models|views)/index\\.js$`,
-];
+// app-skal: the module boundaries come from architecture.config.mjs, which also
+// drives docs/architecture/.
+import { featureModules, sharedForModules } from './architecture.config.mjs';
 
 const serverImport = {
   group: ['**/server/**'],

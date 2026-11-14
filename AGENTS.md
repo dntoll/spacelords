@@ -80,7 +80,12 @@ i stället för att upprepa reglerna.
   `<modul>/{models,views,controllers}/index.js`. En modul får utanför sig själv
   bara nå `AppModel`, `ViewContracts`, `common/` och andra modulers
   `models`- och `views`-index. Undantagen listas i `featureModules` i
-  `eslint.config.mjs`, och ESLint håller gränserna.
+  `architecture.config.mjs`, och ESLint håller gränserna.
+- Kodkartan (`arkitekturkarta`) i `docs/architecture/` genereras från samma
+  lista och från importerna. Läs `docs/architecture/overview.puml` och berörd
+  moduls diagram innan strukturella ändringar. Kör `npm run architecture:map`
+  efter ändrade importer, filer eller fall och committa diagrammen med koden.
+  `test:tooling` misslyckas när kartan är inaktuell.
 - Modellera objektorienterat med hög sammanhållning och låg koppling. Ge vyer
   enbart läsgränssnitt eller oföränderliga ögonblicksbilder av modellerna.
 - Underhåll problemdomänens klasser och relationer i PlantUML i

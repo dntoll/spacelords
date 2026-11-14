@@ -31,6 +31,7 @@
     "test:tooling": "node --test tests/tooling/*.test.mjs",
     "test:mobile": "playwright test --config playwright.mobile.config.ts",
     "check:quick": "node scripts/check.mjs quick",
+    "architecture:map": "node scripts/architecture-map.mjs",
     "deploy:quick": "node scripts/deploy-quick.mjs"
   },
   "dependencies": {
