@@ -1,4 +1,4 @@
-import actionAtlasUrl from '../../assets/actions-distinct-v3.png';
+import actionAtlasUrl from '../../assets/actions-distinct-v4.png';
 import type { BoardingCameraBounds } from './BoardingCameraController.js';
 import {
   BoardingBattle,

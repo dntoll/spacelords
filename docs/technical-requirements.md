@@ -1559,6 +1559,12 @@ bild från respektive intilliggande rumsruta. Okänd interiör avslöjas inte.
 `composeBoardingMaps` förskjuter anfallarens bild i r och speglar försvararens
 med x' = bredd − x − skala. `BoardingMapView` ritar bilderna med
 `boardingSpritePlaneTransform` och gråton 150 före golvlagret.
+`hogupplost-skeppsbild-i-bordning`: bordningsvyerna laddar
+`SHIP_BOARDING_IMAGES` (`*-boarding-hd.webp`) i stället för `SHIP_SPRITES`.
+Bilderna måste ha samma proportioner som spritarna, eftersom `spriteX`,
+`spriteY` och `spriteScale` justerades mot dem; testet läser WebP-huvudena.
+`illustrerade-bordningshandlingar` använder atlasen `actions-distinct-v4.png`
+med samma 4 × 3-rutnät som tidigare.
 `spelidentisk-bordningseditor` återanvänder bildregister, mått, ljusberäkning
 och väggsnitt samt den gemensamma ytprojektionen för golv och väggar.
 

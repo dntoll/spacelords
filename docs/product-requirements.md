@@ -278,6 +278,10 @@ kartan även när man spelar, nedtonad som obelyst skrov. När två skepp koppla
 ihop följer varje bild sitt skepp. Bara skepp vars bild justerats i editorn
 visar den; övriga skepp behöver justeras.
 
+`hogupplost-skeppsbild-i-bordning` är **Fullständigt implementerat**: bilden
+under bordningskartan är en högupplöst version av skeppet, så att detaljer syns
+även när kartan är inzoomad.
+
 `redigerbara-bordningslampor` och `kategoriserad-bordningspalett` är
 **Fullständigt implementerat**. Verktygen är grupperade, har hjälpförklaringar
 och kan användas för att placera och ta bort taklampor.
@@ -1484,8 +1488,9 @@ och tidigare besked påverkas inte.
 och tydligt olika symboler visar handlingarna utan synliga texter, och hela
 handlingsraden är åtkomlig utan intern rullning. Detta ersätter de tidigare
 synliga knappetiketterna. `illustrerade-bordningshandlingar` är **Delvis
-implementerat**: Stand, Hack door, Evacuate och Abort boarding använder ännu
-enkla symboler.
+implementerat**: de illustrerade handlingarna har metalliska bilder i samma stil
+som skeppen. Stand, Hack door, Evacuate och Abort boarding använder ännu enkla
+symboler.
 
 `bordning-utan-kameraknappar-och-forklaringspanel` — **Fullständigt implementerat**:
 handlingsraden ligger vid nederkanten. Förklaringspanelen och kameraknapparna
