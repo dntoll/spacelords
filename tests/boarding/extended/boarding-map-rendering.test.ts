@@ -132,6 +132,7 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
     lineTo() {},
     closePath() {},
     clip() {},
+    fill() {},
     drawImage() {},
   } as unknown as CanvasRenderingContext2D);
   const noop = () => {};

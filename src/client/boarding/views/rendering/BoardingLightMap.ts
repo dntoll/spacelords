@@ -91,6 +91,150 @@ export function boardingLightBlockers(
   return blockers;
 }
 
+/** A footprint lower than the ceiling whose shadow ends where its top projects. */
+export interface BoardingLightOccluder {
+  readonly minQ: number;
+  readonly maxQ: number;
+  readonly minR: number;
+  readonly maxR: number;
+  /** Meters above the floor. */
+  readonly height: number;
+}
+
+type OccluderState = Pick<BoardingBattleState, 'features' | 'smokeCells'> &
+  Partial<Pick<BoardingBattleState, 'people'>>;
+
+/** Half side of a figure, crate or reactor footprint, in cells. */
+const OBJECT_HALF = 0.2;
+
+function square(
+  position: BoardingCell,
+  half: number,
+  height: number,
+): BoardingLightOccluder {
+  return {
+    minQ: position.q - half,
+    maxQ: position.q + half,
+    minR: position.r - half,
+    maxR: position.r + half,
+    height,
+  };
+}
+
+/**
+ * skuggor-fran-figurer-och-foremal: figures, crates, the reactor and low
+ * thin walls stop light only up to their own height.
+ */
+export function boardingLightOccluders(
+  state: OccluderState,
+): readonly BoardingLightOccluder[] {
+  const half = BOARDING_METERS.thinWall / 2;
+  const occluders: BoardingLightOccluder[] = [];
+  for (const feature of state.features) {
+    if (feature.destroyed) continue;
+    const { q, r } = feature.position;
+    if (feature.kind === 'cover')
+      occluders.push(
+        square(feature.position, OBJECT_HALF, BOARDING_METERS.cover),
+      );
+    else if (feature.kind === 'reactor')
+      occluders.push(
+        square(feature.position, OBJECT_HALF, BOARDING_METERS.reactor),
+      );
+    else if (feature.kind === 'thin-wall' && feature.low)
+      occluders.push(
+        feature.axis === 'r'
+          ? {
+              minQ: q - 0.5,
+              maxQ: q + 0.5,
+              minR: r - half,
+              maxR: r + half,
+              height: BOARDING_METERS.cover,
+            }
+          : {
+              minQ: q - half,
+              maxQ: q + half,
+              minR: r - 0.5,
+              maxR: r + 0.5,
+              height: BOARDING_METERS.cover,
+            },
+      );
+  }
+  for (const person of state.people ?? []) {
+    if (person.status === 'dead' || person.status === 'evacuated') continue;
+    const height =
+      person.status === 'incapacitated'
+        ? BOARDING_METERS.incapacitatedPerson
+        : person.crouched
+          ? BOARDING_METERS.crouchedPerson
+          : BOARDING_METERS.person;
+    occluders.push(square(person.position, OBJECT_HALF, height));
+  }
+  return occluders;
+}
+
+/** ljuskarta-i-bordning: changes exactly when the painted light map would. */
+export function boardingLightMapSignature(state: OccluderState): string {
+  return JSON.stringify([
+    boardingLightBlockers(state),
+    boardingLightOccluders(state),
+  ]);
+}
+
+function hull(points: readonly BoardingLightPoint[]): BoardingLightPoint[] {
+  const sorted = [...points].sort((a, b) => a.q - b.q || a.r - b.r);
+  const cross = (
+    o: BoardingLightPoint,
+    a: BoardingLightPoint,
+    b: BoardingLightPoint,
+  ) => (a.q - o.q) * (b.r - o.r) - (a.r - o.r) * (b.q - o.q);
+  const half = (list: BoardingLightPoint[]) => {
+    const result: BoardingLightPoint[] = [];
+    for (const point of list) {
+      while (
+        result.length >= 2 &&
+        cross(result[result.length - 2]!, result[result.length - 1]!, point) <=
+          0
+      )
+        result.pop();
+      result.push(point);
+    }
+    result.pop();
+    return result;
+  };
+  return [...half(sorted), ...half([...sorted].reverse())];
+}
+
+/**
+ * skuggor-fran-figurer-och-foremal: the floor a footprint hides from one
+ * lamp, from the footprint out to where the lamp projects its top edge.
+ */
+export function boardingShadowPolygon(
+  light: Pick<BoardingLight, 'position' | 'height' | 'radius'>,
+  occluder: BoardingLightOccluder,
+): readonly BoardingLightPoint[] {
+  const source = light.position;
+  const corners = [
+    { q: occluder.minQ, r: occluder.minR },
+    { q: occluder.maxQ, r: occluder.minR },
+    { q: occluder.maxQ, r: occluder.maxR },
+    { q: occluder.minQ, r: occluder.maxR },
+  ];
+  const reach = light.radius + 1;
+  const projected = corners.map((corner) => {
+    const dq = corner.q - source.q,
+      dr = corner.r - source.r;
+    const distance = Math.hypot(dq, dr);
+    const scale =
+      occluder.height < light.height
+        ? light.height / (light.height - occluder.height)
+        : Infinity;
+    const stretch = Math.min(scale, distance > EPSILON ? reach / distance : 1);
+    return { q: source.q + dq * stretch, r: source.r + dr * stretch };
+  });
+  return hull([...corners, ...projected]);
+}
+
 function edges(blocker: BoardingLightBlocker): readonly Segment[] {
   const { minQ, maxQ, minR, maxR } = blocker;
   return [
@@ -321,7 +465,7 @@ export class BoardingLightMap {
       readonly height: number;
       readonly lights: readonly BoardingLight[];
     },
-    state: Pick<BoardingBattleState, 'features' | 'smokeCells'>,
+    state: OccluderState,
     texels = BOARDING_LIGHT_MAP_TEXELS,
     debug = boardingLightDebug(),
   ) {
@@ -340,7 +484,10 @@ export class BoardingLightMap {
       x: 1 + (point.q + 0.5) * texels,
       y: 1 + (point.r + 0.5) * texels,
     });
+    const occluders = boardingLightOccluders(state);
     const outlines: (readonly BoardingLightPoint[])[] = [];
+    const scratch = document.createElement('canvas');
+    const lamp = scratch.getContext('2d');
     for (const light of map.lights) {
       const shape = boardingLightPolygon(
         light.position,
@@ -348,21 +495,50 @@ export class BoardingLightMap {
         blockers,
       );
       const image = falloff(light, texels);
-      if (shape.length < 3 || !image) continue;
+      if (shape.length < 3 || !image || !lamp) continue;
       outlines.push(shape);
-      context.save();
-      context.beginPath();
-      shape.forEach((point, index) => {
-        const { x, y } = texel(point);
-        if (index === 0) context.moveTo(x, y);
-        else context.lineTo(x, y);
+      // Each lamp is lit and shadowed on its own, so one figure's shadow
+      // never darkens light from another lamp.
+      scratch.width = image.width;
+      scratch.height = image.height;
+      const local = (point: BoardingLightPoint) => ({
+        x: image.width / 2 + (point.q - light.position.q) * texels,
+        y: image.height / 2 + (point.r - light.position.r) * texels,
       });
-      context.closePath();
-      context.clip();
+      const trace = (points: readonly BoardingLightPoint[]) => {
+        lamp.beginPath();
+        points.forEach((point, index) => {
+          const { x, y } = local(point);
+          if (index === 0) lamp.moveTo(x, y);
+          else lamp.lineTo(x, y);
+        });
+        lamp.closePath();
+      };
+      lamp.save();
+      trace(shape);
+      lamp.clip();
+      lamp.drawImage(image, 0, 0);
+      lamp.restore();
+      lamp.save();
+      lamp.globalCompositeOperation = 'destination-out';
+      lamp.fillStyle = '#000';
+      for (const occluder of occluders) {
+        if (
+          occluder.maxQ < light.position.q - light.radius ||
+          occluder.minQ > light.position.q + light.radius ||
+          occluder.maxR < light.position.r - light.radius ||
+          occluder.minR > light.position.r + light.radius
+        )
+          continue;
+        trace(boardingShadowPolygon(light, occluder));
+        lamp.fill();
+      }
+      lamp.restore();
+      context.save();
       context.globalCompositeOperation = 'lighter';
       const center = texel(light.position);
       context.drawImage(
-        image,
+        scratch,
         center.x - image.width / 2,
         center.y - image.height / 2,
       );

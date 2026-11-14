@@ -14,6 +14,7 @@ import { BoardingLightPainter } from '../rendering/BoardingLightPainter.js';
 import {
   BoardingLightMap,
   boardingLightDebug,
+  boardingLightMapSignature,
 } from '../rendering/BoardingLightMap.js';
 import p5 from 'p5';
 import {
@@ -228,6 +229,7 @@ export class BoardingMapView implements BoardingMapPort {
   readonly #smokeTextures: (p5.Image | null)[] = [null, null, null];
   #lighting: BoardingLighting;
   #lightSignature = '';
+  #lightMapSignature = '';
   readonly #lightPainter = new BoardingLightPainter();
   #lightMap: BoardingLightMap | null = null;
   #wallVisibility = new BoardingWallVisibility([]);
@@ -988,11 +990,17 @@ export class BoardingMapView implements BoardingMapPort {
   }
 
   #updateLighting(state: BoardingBattleState): void {
+    // skuggor-fran-figurer-och-foremal: the floor light map also follows
+    // figures, so it is rebuilt more often than the wall and tile light.
+    const mapSignature = boardingLightMapSignature(state);
+    if (mapSignature !== this.#lightMapSignature) {
+      this.#lightMapSignature = mapSignature;
+      this.#lightMap = new BoardingLightMap(this.map, state);
+    }
     const signature = BoardingLighting.signature(state);
     if (signature === this.#lightSignature) return;
     this.#lightSignature = signature;
     this.#lighting = new BoardingLighting(this.map, state);
-    this.#lightMap = new BoardingLightMap(this.map, state);
     this.#lightPainter.clear();
   }
 
@@ -1019,6 +1027,7 @@ export class BoardingMapView implements BoardingMapPort {
     );
     const signature = [
       this.#lightSignature,
+      this.#lightMapSignature,
       [...visible].join(';'),
       [...explored].join(';'),
       this.#floorTiles.size,

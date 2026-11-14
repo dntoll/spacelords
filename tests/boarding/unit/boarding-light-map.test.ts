@@ -4,6 +4,9 @@ import {
   boardingLightBlockers,
   boardingLightPolygon,
   boardingLightMapTransform,
+  boardingLightMapSignature,
+  boardingLightOccluders,
+  boardingShadowPolygon,
   type BoardingLightPoint,
 } from '../../../src/client/boarding/views/rendering/BoardingLightMap.js';
 import {
@@ -167,5 +170,112 @@ describe('ljuskarta-i-bordning', () => {
       expect(a * x + c * y + e).toBeCloseTo(center.x, 6);
       expect(b * x + d * y + f).toBeCloseTo(center.y, 6);
     }
+  });
+});
+
+function inside(
+  shape: readonly BoardingLightPoint[],
+  point: BoardingLightPoint,
+): boolean {
+  let result = false;
+  for (let i = 0, j = shape.length - 1; i < shape.length; j = i++) {
+    const a = shape[i]!,
+      b = shape[j]!;
+    if (
+      a.r > point.r !== b.r > point.r &&
+      point.q < ((b.q - a.q) * (point.r - a.r)) / (b.r - a.r) + a.q
+    )
+      result = !result;
+  }
+  return result;
+}
+
+function person(
+  q: number,
+  r: number,
+  extra: Partial<BoardingBattleState['people'][number]> = {},
+): BoardingBattleState['people'][number] {
+  return {
+    id: `person-${q}-${r}`,
+    position: { q, r },
+    crouched: false,
+    status: 'active',
+    ...extra,
+  } as BoardingBattleState['people'][number];
+}
+
+describe('skuggor-fran-figurer-och-foremal', () => {
+  it('gives standing, crouched and fallen figures and low objects their heights', () => {
+    const occluders = boardingLightOccluders({
+      features: [
+        feature('cover', 1, 1),
+        feature('reactor', 2, 2),
+        feature('cover', 3, 3, { destroyed: true }),
+        feature('wall', 4, 4),
+        { ...feature('thin-wall', 5, 5), axis: 'q', low: true },
+      ],
+      smokeCells: [],
+      people: [
+        person(0, 1),
+        person(0, 2, { crouched: true }),
+        person(0, 3, { status: 'incapacitated' }),
+        person(0, 4, { status: 'dead' }),
+        person(0, 5, { status: 'evacuated' }),
+      ],
+    });
+    expect(occluders.map((occluder) => occluder.height)).toEqual([
+      1.2, 1.8, 1.2, 1.8, 1.2, 0.72,
+    ]);
+    const low = occluders[2]!;
+    expect(low.maxQ - low.minQ).toBeCloseTo(1 / 3);
+    expect(low.maxR - low.minR).toBeCloseTo(1);
+  });
+
+  it('casts a long shadow behind a standing figure and none beside it', () => {
+    const [soldier] = boardingLightOccluders({
+      features: [],
+      smokeCells: [],
+      people: [person(2, 0)],
+    });
+    const shadow = boardingShadowPolygon(lamp, soldier!);
+    expect(inside(shadow, { q: 3, r: 0 })).toBe(true);
+    expect(inside(shadow, { q: 5.5, r: 0 })).toBe(true);
+    expect(inside(shadow, { q: 1.5, r: 0 })).toBe(false);
+    expect(inside(shadow, { q: 3, r: 1 })).toBe(false);
+  });
+
+  it('ends the shadow of an object lower than the lamp', () => {
+    const [crate] = boardingLightOccluders({
+      features: [feature('cover', 2, 0)],
+      smokeCells: [],
+    });
+    const shadow = boardingShadowPolygon(lamp, crate!);
+    expect(inside(shadow, { q: 3.5, r: 0 })).toBe(true);
+    expect(inside(shadow, { q: 5.5, r: 0 })).toBe(false);
+  });
+
+  it('keeps the shadow of a figure under the lamp at its feet', () => {
+    const [soldier] = boardingLightOccluders({
+      features: [],
+      smokeCells: [],
+      people: [person(0, 0)],
+    });
+    expect(boardingShadowPolygon(lamp, soldier!).length).toBeGreaterThan(0);
+    expect(
+      inside(boardingShadowPolygon(lamp, soldier!), { q: 0.1, r: 0 }),
+    ).toBe(true);
+    expect(inside(boardingShadowPolygon(lamp, soldier!), { q: 2, r: 0 })).toBe(
+      false,
+    );
+  });
+
+  it('changes the light signature when a figure moves or crouches only', () => {
+    const base = { features: [feature('cover', 1, 1)], smokeCells: [] };
+    const signature = (people: BoardingBattleState['people']) =>
+      boardingLightMapSignature({ ...base, people });
+    const still = signature([person(2, 0)]);
+    expect(signature([person(2, 0, { hitPoints: 1 })])).toBe(still);
+    expect(signature([person(3, 0)])).not.toBe(still);
+    expect(signature([person(2, 0, { crouched: true })])).not.toBe(still);
   });
 });

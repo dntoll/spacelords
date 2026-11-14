@@ -1433,6 +1433,7 @@ Lamporna är fasta och påverkas inte av stridsskador; detta ersätts av `tandba
 Kraven nedan är **Ej implementerat** utom `ljuskarta-i-bordning`, som är **Delvis implementerat**: golven har fått det nya ljuset, men väggar återstår. Detaljer finns i [ljussättning i bordning](boarding/boarding-lighting.md).
 
 - `ljuskarta-i-bordning` — Golv och väggar får ljus och skuggor med mjuka, exakta kanter i stället för rutornas fyrkantighet. Ersätter `vertexljus-i-bordning`.
+- `skuggor-fran-figurer-och-foremal` — **Delvis implementerat**: figurer, lådor och andra låga föremål kastar skuggor på golvet, längre ju högre föremålet är. Väggarna tar ännu inte emot skuggorna.
 - `fargat-ljus-i-bordning` — Lampor kan ha färg, som tonar allt som inte själv lyser.
 - `visuell-morkerinstallning` — Spelaren kan göra bilden ljusare eller mörkare. Det påverkar bara bilden, inte spelet.
 - `ljusniva-per-ruta` — Varje ruta har en ljusnivå i spelet som följer de tända lamporna.
