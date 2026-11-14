@@ -1,4 +1,5 @@
 import { selectMapObject } from './map-helpers.js';
+import { selectMapFleet } from './fleet-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 import {
   tradeNetworkState,
@@ -263,9 +264,10 @@ test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives retain orders after
   ).toHaveAttribute('aria-current', 'page');
   await page.reload();
   await startFirstSlot(page);
-  await selectMapObject(page, 'Tellus');
+  // Route fleets sit on their end planet, so tapping Tellus selects the fleet.
+  await selectMapFleet(page, 'Freighters');
   await page
-    .getByRole('button', { name: 'Tellus ↔ Vesta', exact: true })
+    .getByRole('button', { name: 'Select route Tellus to Vesta', exact: true })
     .click();
   await expect(routePanel(page)).toContainText('Assigned fleets · 1');
   expect(
@@ -427,14 +429,7 @@ test('handelsrutt-val-pa-stjarnkartan: opens the assigned route from its fleet c
   );
   await page.reload();
   await startFirstSlot(page);
-  await selectMapObject(page, 'Tellus');
-  await page
-    .getByRole('button', { name: 'Tellus ↔ Vesta', exact: true })
-    .click();
-  const card = routePanel(page).locator(
-    '.fleet-card[data-fleet-id="freighters"]',
-  );
-  await card.locator('.fleet-name-button').click();
+  await selectMapFleet(page, 'Freighters');
   const selected = page.locator(
     '.selected-fleet-card[data-fleet-id="freighters"]',
   );
