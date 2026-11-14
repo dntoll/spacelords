@@ -17,6 +17,8 @@ const mapFactory: MapFactory = () => ({
 const editorMap = () => ({
   render: () => undefined,
   dispose: () => undefined,
+  setPanMode: () => undefined,
+  fitView: () => undefined,
 });
 
 beforeEach(() => {
@@ -163,5 +165,55 @@ describe('isometrisk-bordningskarteditor', () => {
     click('Adjust sprite');
     expect(model.snapshot.editor?.projection).toBe('top-down');
     expect(model.snapshot.editor?.adjustSprite).toBe(true);
+  });
+});
+
+describe('helskarms-bordningseditor', () => {
+  it('lets the editor take the whole app area until it closes', () => {
+    const model = new AppModel();
+    model.setEditorCatalog([{ id: 'pirate', name: 'Space pirate' }]);
+    model.openEditor('pirate', pirateMap);
+    const view = new BoardingEditorView(root, () => undefined, editorMap);
+    view.render(model.snapshot);
+    expect(root.classList.contains('has-boarding-editor')).toBe(true);
+    view.dispose();
+    expect(root.classList.contains('has-boarding-editor')).toBe(false);
+  });
+});
+
+describe('zooma-panorera-bordningseditor', () => {
+  it('toggles pan mode and fits the view from the toolbar', () => {
+    const model = new AppModel();
+    model.setEditorCatalog([{ id: 'pirate', name: 'Space pirate' }]);
+    model.openEditor('pirate', pirateMap);
+    const panModes: boolean[] = [];
+    let fits = 0;
+    const view = new BoardingEditorView(
+      root,
+      () => undefined,
+      () => ({
+        render: () => undefined,
+        dispose: () => undefined,
+        setPanMode: (value: boolean) => panModes.push(value),
+        fitView: () => {
+          fits += 1;
+        },
+      }),
+    );
+    view.render(model.snapshot);
+    const pan = () =>
+      root.querySelector<HTMLButtonElement>("[aria-label='Pan view']")!;
+    expect(pan().getAttribute('aria-pressed')).toBe('false');
+    click('Pan view');
+    expect(panModes.at(-1)).toBe(true);
+    // A model update rebuilds the toolbar but keeps the chosen mode.
+    view.render(model.snapshot);
+    expect(pan().getAttribute('aria-pressed')).toBe('true');
+    click('Pan view');
+    expect(panModes.at(-1)).toBe(false);
+    expect(pan().getAttribute('aria-pressed')).toBe('false');
+    click('Fit view');
+    expect(fits).toBe(1);
+    view.dispose();
   });
 });

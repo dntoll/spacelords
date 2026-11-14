@@ -1,9 +1,10 @@
 ﻿import p5 from 'p5';
-import type {
-  BoardingEditorSnapshot,
-  EditorBrushButton,
-  EditorPaintCell,
-  SpriteTransform,
+import {
+  boardingEditorStrokePreview,
+  type BoardingEditorSnapshot,
+  type EditorBrushButton,
+  type EditorPaintCell,
+  type SpriteTransform,
 } from '../../models/editor/BoardingEditor.js';
 import type { BoardingMapId } from '../../../../shared/boarding/map-format.js';
 import {
@@ -73,6 +74,13 @@ import {
 } from '../rendering/BoardingSurfacePainter.js';
 
 const LONG_PRESS_MS = 420;
+const MIN_ZOOM = 0.08;
+const MAX_ZOOM = 4;
+const ORTHO_MARGIN = 24;
+
+function clampZoom(scale: number): number {
+  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, scale));
+}
 
 const SHIP_SPRITE_FOR_MAP: Readonly<Record<BoardingMapId, ShipSpriteType>> =
   Object.freeze({
@@ -145,7 +153,13 @@ export class BoardingEditorMapView {
   readonly #p5: p5;
   readonly #observer: ResizeObserver;
   readonly #events = new AbortController();
+  /** The committed editor state. */
   #snapshot: BoardingEditorSnapshot | null = null;
+  /** What is drawn: the committed state plus any stroke in progress. */
+  #display: BoardingEditorSnapshot | null = null;
+  #panMode = false;
+  /** True once the player has zoomed or panned away from the fitted view. */
+  #userCamera = false;
   #sprite: p5.Image | null = null;
   #spriteMap: BoardingMapId | null = null;
   readonly #floorTiles = new Map<BoardingSurfaceStyle, p5.Image>();
@@ -266,8 +280,7 @@ export class BoardingEditorMapView {
         Math.max(container.clientWidth, 1),
         Math.max(container.clientHeight, 1),
       );
-      this.#layoutKey = '';
-      if (this.#snapshot) this.#fit(this.#snapshot);
+      if (this.#snapshot && !this.#userCamera) this.#fitNow(this.#snapshot);
       void this.#p5.redraw();
     });
     this.#observer.observe(container);
@@ -275,6 +288,42 @@ export class BoardingEditorMapView {
 
   render(snapshot: BoardingEditorSnapshot): void {
     this.#snapshot = snapshot;
+    this.#show(this.#strokePreview(snapshot));
+    if (this.#ready) this.#fit(snapshot);
+    if (this.#ready) void this.#p5.redraw();
+  }
+
+  /** zooma-panorera-bordningseditor: left drag pans instead of painting. */
+  setPanMode(value: boolean): void {
+    this.#panMode = value;
+    this.#paint = null;
+  }
+
+  /** zooma-panorera-bordningseditor: return to the view that fits the ship. */
+  fitView(): void {
+    if (!this.#snapshot || !this.#ready) return;
+    this.#fitNow(this.#snapshot);
+    void this.#p5.redraw();
+  }
+
+  #strokePreview(snapshot: BoardingEditorSnapshot): BoardingEditorSnapshot {
+    if (!this.#paint?.cells.length) return snapshot;
+    return boardingEditorStrokePreview(
+      snapshot,
+      this.#paint.button,
+      this.#paint.cells,
+    );
+  }
+
+  /** direkt-penselstreck-i-editor: redraw with the stroke in progress. */
+  #showStroke(): void {
+    if (!this.#snapshot) return;
+    this.#show(this.#strokePreview(this.#snapshot));
+    if (this.#ready) void this.#p5.redraw();
+  }
+
+  #show(snapshot: BoardingEditorSnapshot): void {
+    this.#display = snapshot;
     const map = parseBoardingMap(
       formatBoardingMap({
         name: snapshot.name,
@@ -315,8 +364,6 @@ export class BoardingEditorMapView {
         })
         .catch(() => undefined);
     }
-    if (this.#ready) this.#fit(snapshot);
-    if (this.#ready) void this.#p5.redraw();
   }
 
   dispose(): void {
@@ -327,10 +374,21 @@ export class BoardingEditorMapView {
     this.#p5.remove();
   }
 
+  /** Refit only when the ship, view or grid size changes, not on painting. */
   #fit(snapshot: BoardingEditorSnapshot): void {
-    const key = `${snapshot.projection}:${snapshot.mapId}:${snapshot.width}x${snapshot.height}:${this.#p5.width}x${this.#p5.height}:${snapshot.projection === 'isometric' ? snapshot.layers.terrain.map((row) => row.replaceAll(/[^O]/g, '.')).join('') : ''}`;
+    const key = [
+      snapshot.projection,
+      snapshot.mapId,
+      snapshot.width,
+      snapshot.height,
+    ].join(':');
     if (this.#layoutKey === key) return;
     this.#layoutKey = key;
+    this.#fitNow(snapshot);
+  }
+
+  #fitNow(snapshot: BoardingEditorSnapshot): void {
+    this.#userCamera = false;
     if (snapshot.projection === 'isometric') {
       const camera = boardingIsoCamera(
         snapshot,
@@ -344,8 +402,29 @@ export class BoardingEditorMapView {
       this.#offset = camera.offset;
       return;
     }
-    this.#scale = 1;
-    this.#offset = { x: 24, y: 24 };
+    const gridWidth = snapshot.width * EDITOR_ORTHO_CELL;
+    const gridHeight = snapshot.height * EDITOR_ORTHO_CELL;
+    this.#scale = clampZoom(
+      Math.min(
+        (this.#p5.width - ORTHO_MARGIN * 2) / gridWidth,
+        (this.#p5.height - ORTHO_MARGIN * 2) / gridHeight,
+      ),
+    );
+    this.#offset = {
+      x: (this.#p5.width - gridWidth * this.#scale) / 2,
+      y: (this.#p5.height - gridHeight * this.#scale) / 2,
+    };
+  }
+
+  #zoomAround(anchor: { x: number; y: number }, factor: number): void {
+    const next = clampZoom(this.#scale * factor);
+    const ratio = next / this.#scale;
+    this.#offset = {
+      x: anchor.x - (anchor.x - this.#offset.x) * ratio,
+      y: anchor.y - (anchor.y - this.#offset.y) * ratio,
+    };
+    this.#scale = next;
+    this.#userCamera = true;
   }
 
   #bind(canvas: HTMLCanvasElement): void {
@@ -376,20 +455,29 @@ export class BoardingEditorMapView {
           };
           return;
         }
-        if (event.button === 1 || this.#pointers.size > 1) {
+        if (
+          event.button === 1 ||
+          this.#pointers.size > 1 ||
+          (this.#panMode && event.button === 0)
+        ) {
           this.#cameraDrag = next;
-          this.#paint = null;
+          if (this.#paint) {
+            this.#paint = null;
+            this.#showStroke();
+          }
           return;
         }
         const button: EditorBrushButton =
           event.button === 2 ? 'secondary' : 'primary';
         const cell = this.#cellAt(next);
         this.#paint = { button, cells: cell ? [cell] : [] };
+        this.#showStroke();
         if (event.pointerType === 'touch' && event.button === 0) {
           clearTimeout(this.#longPress);
           this.#longPress = setTimeout(() => {
             if (!this.#paint || this.#paint.cells.length !== 1) return;
             this.#paint.button = 'secondary';
+            this.#showStroke();
           }, LONG_PRESS_MS);
         }
       },
@@ -407,18 +495,33 @@ export class BoardingEditorMapView {
             ([id]) => id !== event.pointerId,
           )?.[1];
           if (other) {
+            // zooma-panorera-bordningseditor: pinch zooms around the fingers
+            // and moving both fingers pans.
+            const oldMid = {
+              x: (previous.x + other.x) / 2,
+              y: (previous.y + other.y) / 2,
+            };
+            const newMid = {
+              x: (next.x + other.x) / 2,
+              y: (next.y + other.y) / 2,
+            };
             const oldDistance = Math.hypot(
               previous.x - other.x,
               previous.y - other.y,
             );
             const newDistance = Math.hypot(next.x - other.x, next.y - other.y);
+            this.#offset = {
+              x: this.#offset.x + newMid.x - oldMid.x,
+              y: this.#offset.y + newMid.y - oldMid.y,
+            };
+            this.#userCamera = true;
             if (oldDistance > 0)
-              this.#scale = Math.min(
-                4,
-                Math.max(0.25, this.#scale * (newDistance / oldDistance)),
-              );
+              this.#zoomAround(newMid, newDistance / oldDistance);
           }
-          this.#paint = null;
+          if (this.#paint) {
+            this.#paint = null;
+            this.#showStroke();
+          }
           void this.#p5.redraw();
           return;
         }
@@ -442,6 +545,7 @@ export class BoardingEditorMapView {
             y: this.#offset.y + next.y - previous.y,
           };
           this.#cameraDrag = next;
+          this.#userCamera = true;
           void this.#p5.redraw();
           return;
         }
@@ -454,8 +558,10 @@ export class BoardingEditorMapView {
             !this.#paint.cells.some(
               (entry) => entry.q === cell.q && entry.r === cell.r,
             )
-          )
+          ) {
             this.#paint.cells.push(cell);
+            this.#showStroke();
+          }
         }
       },
       options,
@@ -496,14 +602,7 @@ export class BoardingEditorMapView {
           });
           return;
         }
-        const anchor = point(event);
-        const next = Math.min(4, Math.max(0.08, this.#scale * factor));
-        const ratio = next / this.#scale;
-        this.#offset = {
-          x: anchor.x - (anchor.x - this.#offset.x) * ratio,
-          y: anchor.y - (anchor.y - this.#offset.y) * ratio,
-        };
-        this.#scale = next;
+        this.#zoomAround(point(event), factor);
         void this.#p5.redraw();
       },
       { ...options, passive: false },
@@ -521,7 +620,7 @@ export class BoardingEditorMapView {
   }
 
   #draw(sketch: p5): void {
-    const snapshot = this.#snapshot;
+    const snapshot = this.#display;
     sketch.background('#09121b');
     if (!snapshot) return;
     if (snapshot.projection === 'isometric') {

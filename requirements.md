@@ -151,7 +151,12 @@ Se [hela visionen](docs/game-vision.md).
   `isometrisk-bordningskarteditor` är **Fullständigt implementerat**. Knappen
   `Ship layouts` visas i nederkanten när den lokala servern har minst en karta,
   och editorn öppnas ovanpå aktuell vy. `View` växlar mellan `Isometric` och
-  `Top-down`. Se [bordningsstrid](docs/boarding/boarding-combat.md).
+  `Top-down`. `helskarms-bordningseditor`, `zooma-panorera-bordningseditor`
+  och `direkt-penselstreck-i-editor` är **Fullständigt implementerat**:
+  editorn fyller hela skärmen från start med skeppet inpassat, `Pan view` gör
+  att drag flyttar vyn i stället för att måla, hjul och nyp zoomar, `Fit view`
+  passar in skeppet igen, och målade rutor syns medan man drar.
+  Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Dockningskorridor:** `dockningskorridor-sprite` är **Fullständigt implementerat**. Dockade skepp sammanbinds visuellt med en korridor. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 

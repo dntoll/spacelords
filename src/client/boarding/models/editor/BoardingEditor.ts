@@ -152,24 +152,12 @@ class CommandHistory {
 class PaintStrokeCommand implements EditorCommand {
   readonly #editor: BoardingEditor;
   readonly #before: BoardingMapText;
-  readonly #changes: readonly {
-    readonly layer: BoardingEditorLayer;
-    readonly q: number;
-    readonly r: number;
-    readonly from: string;
-    readonly to: string;
-  }[];
+  readonly #changes: readonly StrokeChange[];
 
   constructor(
     editor: BoardingEditor,
     before: BoardingMapText,
-    changes: readonly {
-      readonly layer: BoardingEditorLayer;
-      readonly q: number;
-      readonly r: number;
-      readonly from: string;
-      readonly to: string;
-    }[],
+    changes: readonly StrokeChange[],
   ) {
     this.#editor = editor;
     this.#before = before;
@@ -256,6 +244,99 @@ function airlockWarning(text: BoardingMapText): boolean {
   return !hasAirlock;
 }
 
+interface StrokeChange {
+  readonly layer: BoardingEditorLayer;
+  readonly q: number;
+  readonly r: number;
+  readonly from: string;
+  readonly to: string;
+}
+
+type StrokeLayers = {
+  readonly width: number;
+  readonly height: number;
+} & {
+  readonly [layer in BoardingEditorLayer]: readonly string[] | null;
+};
+
+/** The cell changes one brush stroke makes, shared by commit and preview. */
+function strokeChanges(
+  source: StrokeLayers,
+  tool: EditorTool,
+  cells: readonly EditorPaintCell[],
+): StrokeChange[] {
+  const changes: StrokeChange[] = [];
+  const seen = new Set<string>();
+  for (const cell of cells) {
+    if (
+      cell.q < 0 ||
+      cell.r < 0 ||
+      cell.q >= source.width ||
+      cell.r >= source.height
+    )
+      continue;
+    const key = `${cell.q},${cell.r}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const terrain = source.terrain?.[cell.r]?.[cell.q];
+    if (tool.layer !== 'terrain' && terrain === 'O') continue;
+    if (tool.layer === 'lights' && tool.symbol === 'L' && terrain !== '.')
+      continue;
+    const rows =
+      source[tool.layer] ??
+      Array.from({ length: source.height }, () => '-'.repeat(source.width));
+    const from = symbolAt(rows, cell.q, cell.r);
+    if (from === null || from === tool.symbol) continue;
+    changes.push({
+      layer: tool.layer,
+      q: cell.q,
+      r: cell.r,
+      from,
+      to: tool.symbol,
+    });
+    const clearLayers: readonly BoardingEditorLayer[] =
+      tool.layer === 'terrain' && tool.symbol === 'O'
+        ? ['objects', 'rooms', 'spawns', 'lights']
+        : tool.layer === 'terrain' && tool.symbol !== '.'
+          ? ['lights']
+          : [];
+    for (const layer of clearLayers) {
+      const old = source[layer]?.[cell.r]?.[cell.q] ?? '-';
+      if (old !== '-')
+        changes.push({ layer, q: cell.q, r: cell.r, from: old, to: '-' });
+    }
+  }
+  return changes;
+}
+
+/**
+ * direkt-penselstreck-i-editor: the snapshot as it will look once the stroke
+ * in progress is committed, so the view can show tiles while dragging.
+ */
+export function boardingEditorStrokePreview(
+  snapshot: BoardingEditorSnapshot,
+  button: EditorBrushButton,
+  cells: readonly EditorPaintCell[],
+): BoardingEditorSnapshot {
+  const tool = button === 'primary' ? snapshot.primary : snapshot.secondary;
+  const changes = strokeChanges(
+    { width: snapshot.width, height: snapshot.height, ...snapshot.layers },
+    tool,
+    cells,
+  );
+  if (changes.length === 0) return snapshot;
+  const layers = {
+    terrain: cloneRows(snapshot.layers.terrain),
+    objects: cloneRows(snapshot.layers.objects),
+    rooms: cloneRows(snapshot.layers.rooms),
+    spawns: cloneRows(snapshot.layers.spawns),
+    lights: cloneRows(snapshot.layers.lights),
+  };
+  for (const change of changes)
+    writeCell(layers[change.layer], change.q, change.r, change.to);
+  return Object.freeze({ ...snapshot, layers: Object.freeze(layers) });
+}
+
 /** lokal-bordningskarteditor: mutable draft with command history. */
 export class BoardingEditor {
   #mapId: BoardingMapId;
@@ -322,55 +403,7 @@ export class BoardingEditor {
     cells: readonly EditorPaintCell[],
   ): boolean {
     const tool = button === 'primary' ? this.#primary : this.#secondary;
-    const changes: {
-      layer: BoardingEditorLayer;
-      q: number;
-      r: number;
-      from: string;
-      to: string;
-    }[] = [];
-    const seen = new Set<string>();
-    for (const cell of cells) {
-      if (
-        cell.q < 0 ||
-        cell.r < 0 ||
-        cell.q >= this.#text.width ||
-        cell.r >= this.#text.height
-      )
-        continue;
-      const key = `${cell.q},${cell.r}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const terrain = this.#text.terrain[cell.r]?.[cell.q];
-      if (tool.layer !== 'terrain' && terrain === 'O') continue;
-      if (tool.layer === 'lights' && tool.symbol === 'L' && terrain !== '.')
-        continue;
-      const rows =
-        this.#text[tool.layer] ??
-        Array.from({ length: this.#text.height }, () =>
-          '-'.repeat(this.#text.width),
-        );
-      const from = symbolAt(rows, cell.q, cell.r);
-      if (from === null || from === tool.symbol) continue;
-      changes.push({
-        layer: tool.layer,
-        q: cell.q,
-        r: cell.r,
-        from,
-        to: tool.symbol,
-      });
-      const clearLayers: readonly BoardingEditorLayer[] =
-        tool.layer === 'terrain' && tool.symbol === 'O'
-          ? ['objects', 'rooms', 'spawns', 'lights']
-          : tool.layer === 'terrain' && tool.symbol !== '.'
-            ? ['lights']
-            : [];
-      for (const layer of clearLayers) {
-        const old = this.#text[layer]?.[cell.r]?.[cell.q] ?? '-';
-        if (old !== '-')
-          changes.push({ layer, q: cell.q, r: cell.r, from: old, to: '-' });
-      }
-    }
+    const changes = strokeChanges(this.#text, tool, cells);
     if (changes.length === 0) return false;
     this.#history.run(new PaintStrokeCommand(this, this.#text, changes));
     this.#dirty = true;

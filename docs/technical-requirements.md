@@ -735,6 +735,10 @@ Inga konstlade enhetstester behövs för en dokumenterad publiceringsprocess.
 
 ## Beslut och ändringar
 
+- 2026-11-14: `helskarms-bordningseditor`, `zooma-panorera-bordningseditor`
+  och `direkt-penselstreck-i-editor` läggs till. Top-down passas nu in i
+  canvasen i stället för fast skala 1, och målning av `Outside` passar inte
+  längre om isometrisk vy.
 - 2026-11-07: `lokal-bordningskarteditor` och `isometrisk-bordningskarteditor`
   återintegreras som ett eget fall ovanpå den nya MVC-strukturen. Kartfilernas
   `[lights]`-lager rundtureras. Ingen publicering och ingen merge till `main`.
@@ -1552,6 +1556,19 @@ bild från respektive intilliggande rumsruta. Okänd interiör avslöjas inte.
 `isometrisk-skeppsreferens` projicerar befintlig spritejustering på 2:1-planet.
 `spelidentisk-bordningseditor` återanvänder bildregister, mått, ljusberäkning
 och väggsnitt samt den gemensamma ytprojektionen för golv och väggar.
+
+`helskarms-bordningseditor`: editorsidan är enda barnet i `#app`, så klassen
+`has-boarding-editor` ger griden en enda rad. Canvasen är absolut placerad i
+sin behållare så att den inte kan driva ResizeObserver till långsam tillväxt.
+`zooma-panorera-bordningseditor`: kameran och `Pan view` är vytillstånd i
+`BoardingEditorMapView`; modellen påverkas inte. Vyn passas in igen bara när
+skepp, vy eller rutnätsstorlek ändras, eller vid storleksändring innan
+spelaren har flyttat kameran. Nyp zoomar runt fingrarnas mittpunkt.
+`direkt-penselstreck-i-editor`: `boardingEditorStrokePreview` använder samma
+penselregel som `BoardingEditor.paintStroke`, så förhandsvisningen under
+draget blir exakt det som sparas som ett ångra-steg när knappen släpps.
+Tester: `helskarms-bordningseditor`, `zooma-panorera-bordningseditor` och
+`direkt-penselstreck-i-editor`.
 Snabbsviten överskred först 20 sekunder under parallella kontroller; den tyngre
 taktiska integrationsfilen flyttades till den utökade sviten. Därefter
 passerade snabbsviten med 758 tester på 14,70 sekunder utan parallell belastning.

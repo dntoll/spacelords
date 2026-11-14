@@ -281,6 +281,12 @@ och kan användas för att placera och ta bort taklampor.
 `spelidentisk-bordningseditor` är **Fullständigt implementerat**. Rumstyper har
 egna ytor och editorn visar spelets objekt, figurer, ljus och väggsnitt.
 
+`helskarms-bordningseditor`, `zooma-panorera-bordningseditor` och
+`direkt-penselstreck-i-editor` är **Fullständigt implementerat**. Editorn
+fyller hela skärmen direkt med skeppet inpassat. Man kan zooma och panorera;
+i läget `Pan view` flyttar ett drag vyn i stället för att måla, och `Fit view`
+visar hela skeppet igen. Rutor man målar syns medan man drar.
+
 `fristaende-bordningsprototyp` och den tillhörande kravfamiljen är
 **Fullständigt implementerat**. Huvudmenyn kan starta en separat taktisk
 bordningsstrid på en kvadratisk 2:1-isometrisk karta inuti ett `Transport ship`.

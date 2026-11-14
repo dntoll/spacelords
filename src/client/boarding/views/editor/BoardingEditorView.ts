@@ -69,6 +69,9 @@ function toolLabel(tool: EditorTool): string {
 
 export type EditorMapPort = {
   render(snapshot: BoardingEditorSnapshot): void;
+  /** zooma-panorera-bordningseditor */
+  setPanMode(value: boolean): void;
+  fitView(): void;
   dispose(): void;
 };
 
@@ -101,6 +104,10 @@ export class BoardingEditorView {
   #map: EditorMapPort | null = null;
   #bindTarget: EditorBrushButton | null = null;
   #dialog: HTMLDialogElement | null = null;
+  /** zooma-panorera-bordningseditor: camera mode is view state only. */
+  #panMode = false;
+  readonly #pan = button('Pan view', () => this.#setPanMode(!this.#panMode));
+  readonly #fitView = button('Fit view', () => this.#map?.fitView());
   readonly #mapFactory: EditorMapFactory;
 
   constructor(
@@ -209,6 +216,8 @@ export class BoardingEditorView {
     if (!editor) return;
     this.#root.replaceChildren(this.#page);
     this.#root.classList.remove('has-game-footer', 'has-local-editor-nav');
+    // helskarms-bordningseditor: the editor owns every row of the app grid.
+    this.#root.classList.add('has-boarding-editor');
     this.#toolbar.replaceChildren(
       this.#labeled('Ship', this.#ship),
       this.#labeled('Width', this.#width),
@@ -216,6 +225,8 @@ export class BoardingEditorView {
       this.#labeled('View', this.#projection),
       button('Undo', () => this.emit({ type: 'editor-undo' })),
       button('Redo', () => this.emit({ type: 'editor-redo' })),
+      this.#pan,
+      this.#fitView,
       button(editor.adjustSprite ? 'Paint tiles' : 'Adjust sprite', () =>
         this.emit({
           type: 'editor-adjust-sprite',
@@ -238,6 +249,9 @@ export class BoardingEditorView {
     const descriptions: Readonly<Record<string, string>> = {
       Undo: 'Undo the last layout change.',
       Redo: 'Redo the last undone layout change.',
+      'Pan view':
+        'Drag to move the view instead of painting. Wheel or pinch zooms.',
+      'Fit view': 'Zoom and centre the view on the whole ship.',
       'Adjust sprite': 'Move and resize the ship image in top-down view.',
       'Paint tiles': 'Finish adjusting the ship image and paint tiles.',
       Save: 'Save this layout to the local map file.',
@@ -283,6 +297,7 @@ export class BoardingEditorView {
       (sprite) => this.emit({ type: 'editor-sprite-transform', sprite }),
     );
     this.#map.render(editor);
+    this.#setPanMode(this.#panMode);
     if (model.pendingEditorDiscard && !this.#dialog) {
       this.#dialog = this.#confirmDialog();
       this.#page.append(this.#dialog);
@@ -295,12 +310,21 @@ export class BoardingEditorView {
   }
 
   dispose(): void {
+    this.#root.classList.remove('has-boarding-editor');
     this.#keys.abort();
     this.#map?.dispose();
     this.#map = null;
     this.#dialog?.close();
     this.#dialog?.remove();
     this.#dialog = null;
+  }
+
+  #setPanMode(value: boolean): void {
+    this.#panMode = value;
+    this.#pan.setAttribute('aria-pressed', String(value));
+    this.#pan.classList.toggle('is-active', value);
+    this.#canvas.classList.toggle('is-panning', value);
+    this.#map?.setPanMode(value);
   }
 
   #labeled(label: string, control: HTMLElement): HTMLElement {

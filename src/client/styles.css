@@ -4228,10 +4228,33 @@ body:has(.discovery-controls) .selection-panel {
   padding: 4px 8px;
 }
 
+/* helskarms-bordningseditor: the editor page is the only child of #app, so it
+   must fill the whole grid instead of sitting in the auto-sized header row. */
+#app.has-boarding-editor {
+  grid-template-rows: minmax(0, 1fr);
+}
+
 .boarding-editor-canvas {
+  position: relative;
   min-height: 0;
   overflow: hidden;
   touch-action: none;
+}
+
+/* The canvas must not size its container, or the ResizeObserver grows it a few
+   pixels per frame. */
+.boarding-editor-canvas canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.boarding-editor-canvas.is-panning canvas {
+  cursor: grab;
+}
+
+.boarding-editor-toolbar .button.is-active {
+  box-shadow: inset 0 0 0 2px #7ad0ff;
 }
 
 .boarding-editor-status {
