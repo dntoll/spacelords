@@ -8,6 +8,7 @@ export type {
   BoardingBattleState,
   BoardingCommand,
   BoardingShot,
+  BoardingShotPane,
 } from './battle/BoardingBattle.js';
 export { BoardingEditorFacade } from './editor/BoardingEditorFacade.js';
 export type { BoardingEditorCatalogItem } from './editor/BoardingEditorFacade.js';

@@ -165,7 +165,24 @@ export interface BoardingShot {
   readonly to: BoardingCell;
   /** skott-langs-fri-siktlinje: where in `to` the bullet flies. */
   readonly aim?: Readonly<{ q: number; r: number }>;
+  /**
+   * glas-krossas-nar-skottet-passerar: the panes the bullet breaks, each with
+   * the share of the way from `from` to `aim` where the bullet reaches it.
+   */
+  readonly panes?: readonly BoardingShotPane[];
   readonly hit: boolean;
+}
+
+export interface BoardingShotPane {
+  readonly id: string;
+  readonly at: number;
+}
+
+/** krossbart-glas: a full-height window is gone; a low wall keeps its wall. */
+export function boardingBrokenPane(feature: BoardingFeature): BoardingFeature {
+  return feature.kind === 'window'
+    ? { ...feature, hitPoints: 0, destroyed: true }
+    : { ...feature, shattered: true };
 }
 
 export interface BoardingPath {
@@ -1715,12 +1732,13 @@ export class BoardingBattle {
             this.#visionBlocksFor(source),
             this.#bodiesFor(source),
           ) ?? frozenCell(targetCell));
-    if (aim) this.#shatterAlong(source.position, aim);
+    const panes = aim ? this.#shatterAlong(source.position, aim) : [];
     if (aim)
       this.#shot = Object.freeze({
         from: frozenCell(source.position),
         to: frozenCell(targetCell),
         aim,
+        ...(panes.length ? { panes } : {}),
         presentationIndex: this.#presentation.length,
         hit,
       });
@@ -1737,21 +1755,20 @@ export class BoardingBattle {
   #shatterAlong(
     from: BoardingCell,
     to: Readonly<{ q: number; r: number }>,
-  ): void {
+  ): readonly BoardingShotPane[] {
     const crossed = boardingSegmentSolids(from, to, (q, r) =>
       this.#intactGlass({ q, r })
         ? (this.#map.thinWallPieces({ q, r }) ?? true)
         : false,
     );
+    const panes: BoardingShotPane[] = [];
     for (const position of crossed) {
       const feature = this.#featureAt(position);
       if (!feature) continue;
-      this.#updateFeature(feature.id, (entry) =>
-        entry.kind === 'window'
-          ? { ...entry, hitPoints: 0, destroyed: true }
-          : { ...entry, shattered: true },
-      );
+      this.#updateFeature(feature.id, boardingBrokenPane);
+      panes.push(Object.freeze({ id: feature.id, at: position.at }));
     }
+    return Object.freeze(panes);
   }
 
   #triggerOverwatch(mover: BoardingPerson): void {
