@@ -7,10 +7,12 @@ rymdstridsrundor. Anfallaren startar i motståndarens airlock. Avbrott är
 tillåtet när alla levande stridande är i eget skepp. Pirater lämnar en
 cockpit-soldat. Utslagen sida ger vinnaren båda skeppen i samma strid.
 
-Huvudmenyns `Test boarding (cheat)` är oförändrad: ett fristående testspel på
-en fast, handredigerbar karta över ett `Transport ship` med fyra
-bordningssoldater, tre försvarare och tre civilister, utan påverkan på
-sparplatser.
+Huvudmenyns `Test boarding (cheat)` är ett fristående testspel utan påverkan
+på sparplatser. `testbordning-med-tva-skepp` och `valbart-skepp-i-testbordning`:
+ett valt skepp (`Space pirate` som standard, väljs i listan bredvid knappen)
+dockar med den handredigerbara testtransporten via landgången. Fyra
+bordningssoldater startar vid den egna airlocken; försvarare och civilister
+kommer från testtransportens startpositioner.
 
 ## Krav och status
 
@@ -371,6 +373,15 @@ utförs stegvis. Vändning vänster och höger kan även göras separat.
 - `bordning-tva-rundor-skift` — **Fullständigt implementerat**. Efter den
   pågående rymdstridsrundan: två bordningsrundor, två rymdstridsrundor,
   upprepa. En aktiv bordning per rymdstrid.
+- `dockning-sida-vid-sida` — **Fullständigt implementerat**. Anfallaren ligger
+  ovanför och försvararen under. Landgången är två rutor bred och sex rutor
+  lång, med tunna väggar längs sidorna och en lampa i mitten. Ersätter att
+  försvararen spegelvändes till höger.
+- `fast-airlock-i-bordningskarta` — **Fullständigt implementerat**. Exakt en
+  airlock i skrovets över- eller underkant, tom rymd rakt utanför och tomt golv
+  innanför. Editorn lägger till en saknad airlock och tar bort extra när kartan
+  öppnas.
+- `avbryt-gammal-bordning-vid-laddning` — **Fullständigt implementerat**.
 - `tva-skepp-pa-bordningskartan` — **Fullständigt implementerat**. Enkel
   interiör per bordningsbar typ. Composer sätter anfallare, brygga och
   försvarare i samma koordinatsystem. Kartvyn använder den sammansatta

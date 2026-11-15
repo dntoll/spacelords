@@ -105,6 +105,12 @@ function editorHarness(projection: 'top-down' | 'isometric') {
   const calls: { name: string; args: unknown[] }[] = [];
   const canvas = document.createElement('canvas');
   canvas.setPointerCapture = () => undefined;
+  // kamera-utan-lage-i-editor: camera redraws wait for the next frame.
+  vi.stubGlobal('requestAnimationFrame', (draw: FrameRequestCallback) => {
+    draw(0);
+    return 1;
+  });
+  vi.stubGlobal('cancelAnimationFrame', () => undefined);
   const context = new Proxy({}, { get: () => () => undefined });
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
   vi.stubGlobal(
@@ -199,25 +205,47 @@ describe('direkt-penselstreck-i-editor', () => {
   });
 });
 
-describe('zooma-panorera-bordningseditor', () => {
-  it('pans with a left drag in pan mode without painting', () => {
+describe('kamera-utan-lage-i-editor', () => {
+  const space = (type: 'keydown' | 'keyup') =>
+    window.dispatchEvent(new KeyboardEvent(type, { code: 'Space' }));
+
+  it('pans with Space held and a left drag, then paints again on release', () => {
     const harness = editorHarness('top-down');
     const [x, y] = harness.lastTranslate() as [number, number];
-    harness.view.setPanMode(true);
+    space('keydown');
     harness.pointer('pointerdown', 100, 100);
     harness.pointer('pointermove', 200, 150);
     harness.pointer('pointerup', 200, 150);
     expect(harness.strokes).toEqual([]);
     expect(harness.lastTranslate()).toEqual([x + 100, y + 50]);
+    space('keyup');
+    harness.pointer('pointerdown', x + 110, y + 60);
+    harness.pointer('pointerup', x + 110, y + 60);
+    expect(harness.strokes).toHaveLength(1);
     harness.view.dispose();
   });
 
+  it('pans with the middle button or a drag that starts outside the ship', () => {
+    const harness = editorHarness('top-down');
+    const [x, y] = harness.lastTranslate() as [number, number];
+    harness.pointer('pointerdown', 100, 100, { button: 1 });
+    harness.pointer('pointermove', 120, 100, { button: 1 });
+    harness.pointer('pointerup', 120, 100, { button: 1 });
+    harness.pointer('pointerdown', 5, 5);
+    harness.pointer('pointermove', 5, 35);
+    harness.pointer('pointerup', 5, 35);
+    expect(harness.strokes).toEqual([]);
+    expect(harness.lastTranslate()).toEqual([x + 20, y + 30]);
+    harness.view.dispose();
+  });
+});
+
+describe('zooma-panorera-bordningseditor', () => {
   it('keeps the player camera when painting Outside reshapes the ship', () => {
     const harness = editorHarness('isometric');
-    harness.view.setPanMode(true);
-    harness.pointer('pointerdown', 100, 100);
-    harness.pointer('pointermove', 130, 120);
-    harness.pointer('pointerup', 130, 120);
+    harness.pointer('pointerdown', 2, 2);
+    harness.pointer('pointermove', 32, 22);
+    harness.pointer('pointerup', 32, 22);
     const panned = harness.lastTranslate();
     harness.editor.bindTool('primary', { layer: 'terrain', symbol: 'O' });
     harness.editor.paintStroke('primary', [{ q: 3, r: 2 }]);

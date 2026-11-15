@@ -210,7 +210,17 @@ giltiga.
 Boardingmodellen har egna frysta snapshots, typade kommandon, deterministiskt
 slumptillstånd, kartparser, siktberäkning, pathfinding och AI. Kartdefinitionen
 är en rå lagerindelad textresurs per skeppstyp; `BoardingComposer` lägger två
-skrov och en brygga i samma koordinatsystem.
+skrov och en brygga i samma koordinatsystem. `dockning-sida-vid-sida`:
+`composeBoardingInteriors` vänder ett skepp upp och ned när dess airlock
+vetter bort, och bildens `flipAboutY` vänder skeppsbilden kring samma linje.
+Avståndet växer så att inga kolumner överlappar. Kartreglerna
+(`src/shared/boarding/map-rules.ts`) delas av editor, composer och tester.
+`avbryt-gammal-bordning-vid-laddning`: `SavedBoardingEngagement.layout` är
+`side-by-side`; en sparad bordning utan fältet avslutas som `aborted` och
+`Game` frikopplar skeppen direkt vid laddning. Sparversionen är oförändrad.
+`testbordning-med-tva-skepp`: `BoardingBattleState.test` anger det valda
+skeppet, och `boardingMapForState` bygger om samma karta. Testreglerna
+(Bridge, Engineering och reaktorn) gäller bara det bordade skeppet.
 
 AppModel äger fortfarande den fristående testsessionen från huvudmenyn.
 `boarding-command` samordnas av MasterController och en separat
@@ -735,6 +745,14 @@ Inga konstlade enhetstester behövs för en dokumenterad publiceringsprocess.
 
 ## Beslut och ändringar
 
+- 2026-11-15: `kamera-utan-lage-i-editor` ersätter `Pan view`.
+  `fast-airlock-i-bordningskarta` ersätter varningen om airlock i högerkanten
+  och `dockning-sida-vid-sida` ersätter vänster–höger-placeringen i
+  `tva-skepp-pa-bordningskartan`. Användaren godkände att pågående bordningar i
+  äldre sparade spel avbryts (`avstamning-sparkompatibilitet`). Kampanjkartornas
+  airlock flyttades till underkantens skrov. Tester som byggde på redigerbara
+  kartor använder nu fixturer; bara `boarding-shipped-maps` läser de levererade
+  kartorna och kräver enbart att de är giltiga.
 - 2026-11-14: `helskarms-bordningseditor`, `zooma-panorera-bordningseditor`
   och `direkt-penselstreck-i-editor` läggs till. Top-down passas nu in i
   canvasen i stället för fast skala 1, och målning av `Outside` passar inte
@@ -1578,8 +1596,11 @@ och väggsnitt samt den gemensamma ytprojektionen för golv och väggar.
 `helskarms-bordningseditor`: editorsidan är enda barnet i `#app`, så klassen
 `has-boarding-editor` ger griden en enda rad. Canvasen är absolut placerad i
 sin behållare så att den inte kan driva ResizeObserver till långsam tillväxt.
-`zooma-panorera-bordningseditor`: kameran och `Pan view` är vytillstånd i
-`BoardingEditorMapView`; modellen påverkas inte. Vyn passas in igen bara när
+`zooma-panorera-bordningseditor`: kameran är vytillstånd i
+`BoardingEditorMapView`; modellen påverkas inte. `kamera-utan-lage-i-editor`:
+`editorPressMovesView` avgör per tryck om vyn flyttas, och
+`editorWheelZoomFactor` gör zoomsteget proportionellt mot hjulets utslag.
+Omritning under panorering sker högst en gång per bildruta. Vyn passas in igen bara när
 skepp, vy eller rutnätsstorlek ändras, eller vid storleksändring innan
 spelaren har flyttat kameran. Nyp zoomar runt fingrarnas mittpunkt.
 `direkt-penselstreck-i-editor`: `boardingEditorStrokePreview` använder samma

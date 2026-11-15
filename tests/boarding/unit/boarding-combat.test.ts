@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import transportMap from '../../../src/client/boarding/maps/transport-boarding.txt?raw';
+// A frozen copy of the test transport, so editing the real map breaks no test.
+import transportMap from '../../fixtures/boarding/transport-boarding-fixture.txt?raw';
 import {
   BoardingMap,
   parseBoardingMap,

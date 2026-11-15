@@ -1,13 +1,15 @@
 import { type BoardingCommand } from './BoardingBattle.js';
 import { createTestBoardingBattle } from '../map/TestBoarding.js';
 import type { AppHost } from '../../../app/models/AppModel.js';
+import type { CombatShipType } from '../../../space-battle/models/index.js';
 
 export class BoardingFacade {
   constructor(private readonly host: AppHost) {}
 
-  startTestBoarding(): void {
+  /** valbart-skepp-i-testbordning: the chosen ship boards the test transport. */
+  startTestBoarding(attacker?: CombatShipType): void {
     if (this.host.screen !== 'saves') return;
-    this.host.testBoarding = createTestBoardingBattle();
+    this.host.testBoarding = createTestBoardingBattle(attacker);
     this.host.notice = null;
   }
 

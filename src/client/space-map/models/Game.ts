@@ -1480,6 +1480,9 @@ export class Game {
       );
       game.#phase = 'interrupted';
       game.#validateTacticalParticipants();
+      // avbryt-gammal-bordning-vid-laddning
+      const boarding = game.#simulation.boarding;
+      if (boarding?.outdated) game.#resolveBoarding(boarding);
     } else if (state.version >= 8 && copy.simulation)
       throw new Error('Unexpected interrupted round.');
     if (state.version < 9) {

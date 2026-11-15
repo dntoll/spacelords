@@ -6,6 +6,14 @@
   type BoardingMapId,
   type BoardingMapText,
 } from '../../../../shared/boarding/map-format.js';
+import {
+  boardingAirlockCells,
+  boardingAirlockSide,
+  boardingDefaultAirlock,
+  boardingMapRequirements,
+  boardingRoomRegion,
+  type BoardingMapRequirement,
+} from '../../../../shared/boarding/map-rules.js';
 
 export const BOARDING_EDITOR_MAX_SIZE = 64;
 export const BOARDING_EDITOR_MIN_SIZE = 1;
@@ -52,7 +60,10 @@ export interface BoardingEditorSnapshot {
   readonly canUndo: boolean;
   readonly canRedo: boolean;
   readonly parseError: string | null;
-  readonly airlockWarning: boolean;
+  /** kravlista-i-bordningseditor */
+  readonly requirements: readonly BoardingMapRequirement[];
+  /** fyll-rum-i-editor: room brushes fill the enclosed floor. */
+  readonly fillRooms: boolean;
 }
 
 interface EditorCommand {
@@ -231,19 +242,6 @@ function parseErrorOf(text: BoardingMapText): string | null {
   }
 }
 
-function airlockWarning(text: BoardingMapText): boolean {
-  let hasAirlock = false;
-  for (let r = 0; r < text.height; r++) {
-    const row = text.objects[r] ?? '';
-    for (let q = 0; q < text.width; q++) {
-      if (row[q] !== 'A') continue;
-      hasAirlock = true;
-      if (q < text.width - 2) return true;
-    }
-  }
-  return !hasAirlock;
-}
-
 interface StrokeChange {
   readonly layer: BoardingEditorLayer;
   readonly q: number;
@@ -259,46 +257,149 @@ type StrokeLayers = {
   readonly [layer in BoardingEditorLayer]: readonly string[] | null;
 };
 
+const inBounds = (source: StrokeLayers, cell: EditorPaintCell): boolean =>
+  cell.q >= 0 && cell.r >= 0 && cell.q < source.width && cell.r < source.height;
+
+const layerRows = (
+  source: StrokeLayers,
+  layer: BoardingEditorLayer,
+): readonly string[] =>
+  source[layer] ??
+  Array.from({ length: source.height }, () => '-'.repeat(source.width));
+
+/** fast-airlock-i-bordningskarta: the airlock cell and the open column outside it. */
+function airlockGuard(source: StrokeLayers): {
+  readonly airlock: EditorPaintCell | null;
+  readonly outside: ReadonlySet<string>;
+} {
+  const terrain = source.terrain ?? [];
+  const airlock = boardingAirlockCells(source.objects ?? [])[0] ?? null;
+  const outside = new Set<string>();
+  const side = airlock
+    ? boardingAirlockSide(terrain, airlock.q, airlock.r)
+    : null;
+  if (airlock && side === 'top')
+    for (let r = 0; r < airlock.r; r++) outside.add(`${airlock.q},${r}`);
+  if (airlock && side === 'bottom')
+    for (let r = airlock.r + 1; r < source.height; r++)
+      outside.add(`${airlock.q},${r}`);
+  return { airlock, outside };
+}
+
+/** fast-airlock-i-bordningskarta: the Airlock brush moves the one airlock. */
+function airlockMove(
+  source: StrokeLayers,
+  cells: readonly EditorPaintCell[],
+): StrokeChange[] {
+  const terrain = source.terrain ?? [];
+  const target = [...cells]
+    .reverse()
+    .find(
+      (cell) =>
+        inBounds(source, cell) &&
+        terrain[cell.r]?.[cell.q] !== 'O' &&
+        boardingAirlockSide(terrain, cell.q, cell.r) !== null,
+    );
+  if (!target) return [];
+  const changes: StrokeChange[] = [];
+  const objects = layerRows(source, 'objects');
+  for (const old of boardingAirlockCells(objects)) {
+    if (old.q === target.q && old.r === target.r) continue;
+    changes.push({ layer: 'objects', ...old, from: 'A', to: '-' });
+    if (
+      boardingAirlockSide(terrain, old.q, old.r) !== null &&
+      terrain[old.r]?.[old.q] === '.'
+    )
+      changes.push({ layer: 'terrain', ...old, from: '.', to: 'H' });
+  }
+  const from = objects[target.r]![target.q]!;
+  if (from !== 'A')
+    changes.push({ layer: 'objects', ...target, from, to: 'A' });
+  const ground = terrain[target.r]![target.q]!;
+  if (ground !== '.')
+    changes.push({ layer: 'terrain', ...target, from: ground, to: '.' });
+  return changes;
+}
+
 /** The cell changes one brush stroke makes, shared by commit and preview. */
 function strokeChanges(
   source: StrokeLayers,
   tool: EditorTool,
-  cells: readonly EditorPaintCell[],
+  painted: readonly EditorPaintCell[],
+  fillRooms = false,
 ): StrokeChange[] {
+  if (tool.layer === 'objects' && tool.symbol === 'A')
+    return airlockMove(source, painted);
+  // fyll-rum-i-editor: each touched cell grows to its enclosed floor.
+  const cells =
+    fillRooms && tool.layer === 'rooms'
+      ? painted.flatMap((cell) =>
+          inBounds(source, cell)
+            ? boardingRoomRegion(
+                {
+                  width: source.width,
+                  height: source.height,
+                  terrain: source.terrain ?? [],
+                  objects: layerRows(source, 'objects'),
+                  rooms: layerRows(source, 'rooms'),
+                },
+                cell,
+              )
+            : [],
+        )
+      : painted;
+  const guard = airlockGuard(source);
   const changes: StrokeChange[] = [];
   const seen = new Set<string>();
   for (const cell of cells) {
-    if (
-      cell.q < 0 ||
-      cell.r < 0 ||
-      cell.q >= source.width ||
-      cell.r >= source.height
-    )
-      continue;
+    if (!inBounds(source, cell)) continue;
     const key = `${cell.q},${cell.r}`;
     if (seen.has(key)) continue;
     seen.add(key);
     const terrain = source.terrain?.[cell.r]?.[cell.q];
+    const isAirlock = guard.airlock?.q === cell.q && guard.airlock.r === cell.r;
+    if (isAirlock && (tool.layer === 'terrain' || tool.layer === 'objects'))
+      continue;
+    if (
+      guard.outside.has(key) &&
+      tool.layer === 'terrain' &&
+      tool.symbol !== 'O'
+    )
+      continue;
     if (tool.layer !== 'terrain' && terrain === 'O') continue;
     if (tool.layer === 'lights' && tool.symbol === 'L' && terrain !== '.')
       continue;
-    const rows =
-      source[tool.layer] ??
-      Array.from({ length: source.height }, () => '-'.repeat(source.width));
+    const rows = layerRows(source, tool.layer);
     const from = symbolAt(rows, cell.q, cell.r);
-    if (from === null || from === tool.symbol) continue;
-    changes.push({
-      layer: tool.layer,
-      q: cell.q,
-      r: cell.r,
-      from,
-      to: tool.symbol,
-    });
+    if (from === null) continue;
+    // foremal-lagger-golv: an object always stands on floor.
+    const needsFloor =
+      tool.layer === 'objects' &&
+      tool.symbol !== '-' &&
+      terrain !== undefined &&
+      terrain !== '.';
+    if (from === tool.symbol && !needsFloor) continue;
+    if (from !== tool.symbol)
+      changes.push({
+        layer: tool.layer,
+        q: cell.q,
+        r: cell.r,
+        from,
+        to: tool.symbol,
+      });
+    if (needsFloor)
+      changes.push({
+        layer: 'terrain',
+        q: cell.q,
+        r: cell.r,
+        from: terrain,
+        to: '.',
+      });
     const clearLayers: readonly BoardingEditorLayer[] =
       tool.layer === 'terrain' && tool.symbol === 'O'
         ? ['objects', 'rooms', 'spawns', 'lights']
         : tool.layer === 'terrain' && tool.symbol !== '.'
-          ? ['lights']
+          ? ['objects', 'lights']
           : [];
     for (const layer of clearLayers) {
       const old = source[layer]?.[cell.r]?.[cell.q] ?? '-';
@@ -307,6 +408,42 @@ function strokeChanges(
     }
   }
   return changes;
+}
+
+/**
+ * fast-airlock-i-bordningskarta: keep the first airlock on a hull edge, drop
+ * the others and place one when none is there, so every layout starts valid.
+ */
+function withFixedAirlock(text: BoardingMapText): BoardingMapText {
+  const objects = cloneRows(text.objects);
+  const terrain = cloneRows(text.terrain);
+  const lights = text.lights ? cloneRows(text.lights) : null;
+  const airlocks = boardingAirlockCells(objects);
+  const kept =
+    airlocks.find(
+      (cell) => boardingAirlockSide(terrain, cell.q, cell.r) !== null,
+    ) ?? null;
+  for (const cell of airlocks)
+    if (cell !== kept) writeCell(objects, cell.q, cell.r, '-');
+  let placed = kept;
+  if (!placed) {
+    placed = boardingDefaultAirlock({ ...text, terrain, objects });
+    if (placed) writeCell(objects, placed.q, placed.r, 'A');
+  }
+  if (placed && terrain[placed.r]![placed.q] !== '.') {
+    writeCell(terrain, placed.q, placed.r, '.');
+    if (lights) writeCell(lights, placed.q, placed.r, '-');
+  }
+  const changed =
+    objects.some((row, r) => row !== text.objects[r]) ||
+    terrain.some((row, r) => row !== text.terrain[r]);
+  if (!changed) return text;
+  return Object.freeze({
+    ...text,
+    terrain: Object.freeze(terrain),
+    objects: Object.freeze(objects),
+    lights: lights ? Object.freeze(lights) : null,
+  });
 }
 
 /**
@@ -323,6 +460,7 @@ export function boardingEditorStrokePreview(
     { width: snapshot.width, height: snapshot.height, ...snapshot.layers },
     tool,
     cells,
+    snapshot.fillRooms,
   );
   if (changes.length === 0) return snapshot;
   const layers = {
@@ -347,22 +485,20 @@ export class BoardingEditor {
   #spriteOpacity = 0.45;
   #adjustSprite = false;
   #projection: EditorProjection = 'isometric';
+  #fillRooms = false;
   #dirty = false;
   readonly #history = new CommandHistory();
 
   constructor(mapId: BoardingMapId, source: string) {
-    const text = parseBoardingMapText(source);
     this.#mapId = mapId;
-    this.#text = text;
-    this.#sprite = Object.freeze({
-      x: text.spriteX ?? 0,
-      y: text.spriteY ?? 0,
-      scale: text.spriteScale ?? text.width,
-    });
+    this.#text = parseBoardingMapText(source);
+    this.#sprite = Object.freeze({ x: 0, y: 0, scale: 1 });
+    this.load(mapId, source);
   }
 
   load(mapId: BoardingMapId, source: string): void {
-    const text = parseBoardingMapText(source);
+    const parsed = parseBoardingMapText(source);
+    const text = withFixedAirlock(parsed);
     this.#mapId = mapId;
     this.#text = text;
     this.#sprite = Object.freeze({
@@ -370,8 +506,13 @@ export class BoardingEditor {
       y: text.spriteY ?? 0,
       scale: text.spriteScale ?? text.width,
     });
-    this.#dirty = false;
+    // fast-airlock-i-bordningskarta: a corrected airlock is an unsaved change.
+    this.#dirty = text !== parsed;
     this.#history.clear();
+  }
+
+  setFillRooms(value: boolean): void {
+    this.#fillRooms = value;
   }
 
   bindTool(button: EditorBrushButton, tool: EditorTool): void {
@@ -403,7 +544,7 @@ export class BoardingEditor {
     cells: readonly EditorPaintCell[],
   ): boolean {
     const tool = button === 'primary' ? this.#primary : this.#secondary;
-    const changes = strokeChanges(this.#text, tool, cells);
+    const changes = strokeChanges(this.#text, tool, cells, this.#fillRooms);
     if (changes.length === 0) return false;
     this.#history.run(new PaintStrokeCommand(this, this.#text, changes));
     this.#dirty = true;
@@ -439,7 +580,13 @@ export class BoardingEditor {
           ? null
           : Object.freeze(resizeRows(this.#text.lights, width, height, '-')),
     });
-    this.#history.run(new ResizeGridCommand(this, this.#text, next));
+    this.#history.run(
+      new ResizeGridCommand(
+        this,
+        this.#text,
+        withFixedAirlock(this.#keepAirlockOutside(next)),
+      ),
+    );
     this.#dirty = true;
     return true;
   }
@@ -546,8 +693,25 @@ export class BoardingEditor {
       canUndo: this.#history.canUndo,
       canRedo: this.#history.canRedo,
       parseError: parseErrorOf(persisted),
-      airlockWarning: airlockWarning(this.#text),
+      requirements: boardingMapRequirements(this.#text),
+      fillRooms: this.#fillRooms,
     });
+  }
+
+  /** Rows added outside a bottom airlock stay open space, not hull. */
+  #keepAirlockOutside(next: BoardingMapText): BoardingMapText {
+    const airlock = boardingAirlockCells(this.#text.objects)[0];
+    if (
+      !airlock ||
+      airlock.q >= next.width ||
+      airlock.r >= next.height ||
+      boardingAirlockSide(this.#text.terrain, airlock.q, airlock.r) !== 'bottom'
+    )
+      return next;
+    const terrain = cloneRows(next.terrain);
+    for (let r = this.#text.height; r < next.height; r++)
+      writeCell(terrain, airlock.q, r, 'O');
+    return Object.freeze({ ...next, terrain: Object.freeze(terrain) });
   }
 
   #persistedText(): BoardingMapText {

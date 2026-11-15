@@ -132,6 +132,8 @@ export interface BoardingBattleState {
     readonly attackerType: CombatShipType;
     readonly defenderType: CombatShipType;
   };
+  /** testbordning-med-tva-skepp: the ship that docked with the test transport. */
+  readonly test?: { readonly attackerType: CombatShipType };
 }
 
 export type BoardingCommand =
@@ -434,10 +436,38 @@ export class BoardingBattle {
   }
 
   static create(map: BoardingMap, seed = Date.now() >>> 0): BoardingBattle {
+    return BoardingBattle.#start(map, seed, map.spawns.player);
+  }
+
+  /**
+   * testbordning-med-tva-skepp: the boarders start in their own ship by its
+   * airlock and cross the gangway; the test rules apply to the defender.
+   */
+  static createTest(
+    composed: ComposedBoarding,
+    attackerType: CombatShipType,
+    seed = Date.now() >>> 0,
+  ): BoardingBattle {
+    const taken = new Set<string>();
+    const boarders = spreadBoardingSpawns(
+      composed.map,
+      composed.attackerAirlock,
+      4,
+      taken,
+    );
+    return BoardingBattle.#start(composed.map, seed, boarders, {
+      attackerType,
+    });
+  }
+
+  static #start(
+    map: BoardingMap,
+    seed: number,
+    players: readonly BoardingCell[],
+    test?: BoardingBattleState['test'],
+  ): BoardingBattle {
     const people = [
-      ...map.spawns.player.map((position, index) =>
-        person('player', index, position),
-      ),
+      ...players.map((position, index) => person('player', index, position)),
       ...map.spawns.defender.map((position, index) =>
         person('defender', index, position),
       ),
@@ -473,6 +503,7 @@ export class BoardingBattle {
       postponed: [],
       finishedActors: [],
       log: [],
+      ...(test ? { test } : {}),
     });
     battle.#beginRound();
     battle.#refreshKnowledge();
@@ -2179,11 +2210,18 @@ export class BoardingBattle {
     this.#replace({ smoke: [...values.values()] });
   }
 
+  /** testbordning-med-tva-skepp: the test goals lie in the boarded ship. */
+  #inTargetShip(position: BoardingCell): boolean {
+    const zone = this.#map.zoneAt(position);
+    return zone !== 'attacker' && zone !== 'bridge';
+  }
+
   #holds(room: 'bridge' | 'engineering', side: BoardingSide): boolean {
     return this.#state.people.some(
       (entry) =>
         entry.side === side &&
         entry.status === 'active' &&
+        this.#inTargetShip(entry.position) &&
         this.#map.roomAt(entry.position) === room,
     );
   }
@@ -2360,7 +2398,7 @@ export class BoardingBattle {
     if (this.#state.phase === 'complete') return;
     this.#refreshKnowledge();
     const reactor = this.#state.features.find(
-      (entry) => entry.kind === 'reactor',
+      (entry) => entry.kind === 'reactor' && this.#inTargetShip(entry.position),
     );
     if (reactor?.destroyed && this.#state.reactorCountdown === null)
       this.#replace({

@@ -293,9 +293,30 @@ egna ytor och editorn visar spelets objekt, figurer, ljus och väggsnitt.
 
 `helskarms-bordningseditor`, `zooma-panorera-bordningseditor` och
 `direkt-penselstreck-i-editor` är **Fullständigt implementerat**. Editorn
-fyller hela skärmen direkt med skeppet inpassat. Man kan zooma och panorera;
-i läget `Pan view` flyttar ett drag vyn i stället för att måla, och `Fit view`
-visar hela skeppet igen. Rutor man målar syns medan man drar.
+fyller hela skärmen direkt med skeppet inpassat. Man kan zooma och panorera,
+och `Fit view` visar hela skeppet igen. Rutor man målar syns medan man drar.
+
+`kamera-utan-lage-i-editor` är **Fullständigt implementerat** och ersätter
+läget `Pan view`. Man byter aldrig läge för att flytta vyn: mittknappen,
+Space + drag, två fingrar eller ett drag utanför skeppet flyttar vyn, och
+hjulet zoomar mjukt.
+
+`foremal-lagger-golv` är **Fullständigt implementerat**. Föremål står alltid på
+golv; placeras ett föremål på vägg eller skrov blir rutan golv.
+
+`fyll-rum-i-editor` är **Fullständigt implementerat**. Med `Fill rooms` fyller
+en rumspensel hela golvytan som avgränsas av väggar och dörrar.
+
+`fast-airlock-i-bordningskarta` och `kravlista-i-bordningseditor` är
+**Fullständigt implementerat**. Varje skepp har exakt en airlock i skrovets
+över- eller underkant med tom rymd utanför och tomt golv innanför. Den finns
+från början, kan flyttas längs kanten men inte tas bort. En lista över kartan
+visar vilka grundkrav som är uppfyllda. Detta ersätter varningen om att
+airlocken ska sitta i högerkanten.
+
+`skalbar-skeppsbild-i-editor` är **Fullständigt implementerat**. I `Adjust
+sprite` ändras skeppsbildens storlek med hjulet runt pekaren eller med
+`Smaller sprite`, `Sprite size` och `Larger sprite` runt bildens mitt.
 
 `fristaende-bordningsprototyp` och den tillhörande kravfamiljen är
 **Fullständigt implementerat**. Huvudmenyn kan starta en separat taktisk
@@ -381,6 +402,19 @@ lastfartyg. Spelaren och pirater kan docka längs sidorna, låsas med en brygga
 och slåss inne i båda skeppen växelvis med rymdstriden. Varje soldat startar
 på en egen golvruta. Avbrott kräver att alla levande är i egna skepp.
 Vinnaren tar båda skeppen i samma strid. `Raptor` byggs efter dockningsteknik.
+
+`dockning-sida-vid-sida` är **Fullständigt implementerat**. Skeppen ligger
+sida vid sida, anfallaren ovanför och försvararen under, förenade av en två
+rutor bred landgång med tunna väggar mellan airlockerna. Ett skepp vars
+airlock vetter åt fel håll vänds. `avbryt-gammal-bordning-vid-laddning` är
+**Fullständigt implementerat**: en pågående bordning från ett äldre sparat spel
+avbryts och skeppen frikopplas.
+
+`testbordning-med-tva-skepp` och `valbart-skepp-i-testbordning` är
+**Fullständigt implementerat**. `Test boarding (cheat)` visar två skepp med
+landgång: ett valbart anfallande skepp, `Space pirate` som standard, och
+testtransporten. Bordarna startar i sitt eget skepp och målen gäller det
+bordade skeppet.
 
 `bargat-piratskepp-behaller-typ` och `unik-bild-for-civila-transporter` är
 **Fullständigt implementerat**. Ett nyförstört piratskepp kan bärgas och

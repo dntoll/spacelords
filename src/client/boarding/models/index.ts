@@ -19,5 +19,9 @@ export type {
   EditorTool,
   SpriteTransform,
 } from './editor/BoardingEditor.js';
-export { testBoardingMap } from './map/TestBoarding.js';
+export {
+  testBoardingMap,
+  DEFAULT_TEST_BOARDING_ATTACKER,
+} from './map/TestBoarding.js';
+export { BOARDING_INTERIOR_TYPES } from './map/BoardingComposer.js';
 export type { BoardingMapId } from '../../../shared/boarding/map-format.js';

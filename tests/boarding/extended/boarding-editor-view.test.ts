@@ -1,6 +1,6 @@
 ﻿// @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest';
-import pirateMap from '../../../src/client/boarding/maps/pirate-boarding.txt?raw';
+import pirateMap from '../../fixtures/boarding/pirate-boarding-fixture.txt?raw';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
 import { BoardingEditorView } from '../../../src/client/boarding/views/editor/BoardingEditorView.js';
@@ -17,8 +17,8 @@ const mapFactory: MapFactory = () => ({
 const editorMap = () => ({
   render: () => undefined,
   dispose: () => undefined,
-  setPanMode: () => undefined,
   fitView: () => undefined,
+  resizeSprite: () => undefined,
 });
 
 beforeEach(() => {
@@ -199,38 +199,80 @@ describe('helskarms-bordningseditor', () => {
 });
 
 describe('zooma-panorera-bordningseditor', () => {
-  it('toggles pan mode and fits the view from the toolbar', () => {
+  it('kamera-utan-lage-i-editor: has no pan mode to switch and fits the view from the toolbar', () => {
     const model = new AppModel();
     model.setEditorCatalog([{ id: 'pirate', name: 'Space pirate' }]);
     model.openEditor('pirate', pirateMap);
-    const panModes: boolean[] = [];
     let fits = 0;
     const view = new BoardingEditorView(
       root,
       () => undefined,
       () => ({
-        render: () => undefined,
-        dispose: () => undefined,
-        setPanMode: (value: boolean) => panModes.push(value),
+        ...editorMap(),
         fitView: () => {
           fits += 1;
         },
       }),
     );
     view.render(model.snapshot);
-    const pan = () =>
-      root.querySelector<HTMLButtonElement>("[aria-label='Pan view']")!;
-    expect(pan().getAttribute('aria-pressed')).toBe('false');
-    click('Pan view');
-    expect(panModes.at(-1)).toBe(true);
-    // A model update rebuilds the toolbar but keeps the chosen mode.
-    view.render(model.snapshot);
-    expect(pan().getAttribute('aria-pressed')).toBe('true');
-    click('Pan view');
-    expect(panModes.at(-1)).toBe(false);
-    expect(pan().getAttribute('aria-pressed')).toBe('false');
+    expect(root.querySelector("[aria-label='Pan view']")).toBeNull();
+    expect(root.textContent).toContain('Space + drag');
     click('Fit view');
     expect(fits).toBe(1);
+    view.dispose();
+  });
+
+  it('skalbar-skeppsbild-i-editor: resizes the sprite from the toolbar while adjusting it', () => {
+    const model = new AppModel();
+    model.setEditorCatalog([{ id: 'pirate', name: 'Space pirate' }]);
+    model.openEditor('pirate', pirateMap);
+    const sizes: number[] = [];
+    const view = new BoardingEditorView(
+      root,
+      () => undefined,
+      () => ({
+        ...editorMap(),
+        resizeSprite: (scale: number) => {
+          sizes.push(scale);
+        },
+      }),
+    );
+    view.render(model.snapshot);
+    expect(root.querySelector("[aria-label='Larger sprite']")).toBeNull();
+    model.editorAdjustSprite(true);
+    view.render(model.snapshot);
+    const scale = model.snapshot.editor!.sprite.scale;
+    click('Larger sprite');
+    click('Smaller sprite');
+    const field = root.querySelector<HTMLInputElement>(
+      "[aria-label='Sprite size']",
+    )!;
+    expect(Number(field.value)).toBeCloseTo(scale, 1);
+    field.value = '20';
+    field.dispatchEvent(new Event('change'));
+    expect(sizes[0]).toBeCloseTo(scale * 1.05);
+    expect(sizes[1]).toBeCloseTo(scale / 1.05);
+    expect(sizes[2]).toBe(20);
+    view.dispose();
+  });
+
+  it('kravlista-i-bordningseditor: lists the fixed layout rules as met or missing', () => {
+    const model = new AppModel();
+    model.setEditorCatalog([{ id: 'pirate', name: 'Space pirate' }]);
+    model.openEditor('pirate', pirateMap);
+    const view = new BoardingEditorView(root, () => undefined, editorMap);
+    view.render(model.snapshot);
+    const items = [
+      ...root.querySelectorAll<HTMLElement>('.boarding-editor-requirements li'),
+    ];
+    expect(items.map((item) => item.dataset.requirement)).toEqual([
+      'one-airlock',
+      'airlock-on-hull-edge',
+      'airlock-entry',
+      'defender-spawn',
+    ]);
+    expect(items.every((item) => item.classList.contains('is-met'))).toBe(true);
+    expect(root.textContent).not.toContain('right edge');
     view.dispose();
   });
 });

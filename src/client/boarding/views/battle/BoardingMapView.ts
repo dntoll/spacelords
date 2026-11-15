@@ -1125,6 +1125,11 @@ export class BoardingMapView implements BoardingMapPort {
       if (!image) continue;
       sketch.push();
       sketch.applyMatrix(...boardingSpritePlaneTransform());
+      // dockning-sida-vid-sida: a ship turned to face its airlock.
+      if (picture.flipAboutY !== undefined && picture.flipAboutY !== null) {
+        sketch.translate(0, 2 * picture.flipAboutY);
+        sketch.scale(1, -1);
+      }
       sketch.translate(picture.x, picture.y);
       if (picture.mirrored) {
         sketch.translate(picture.scale, 0);
