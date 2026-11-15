@@ -129,6 +129,10 @@ Se [hela visionen](docs/game-vision.md).
   **Fullständigt implementerat**. Skott visas fram till målet, granater kastas
   i en båge och grundljuset är lägre. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
+- **Vändning under förflyttning:** `vandning-under-forflyttning` är
+  **Fullständigt implementerat**. En figur vänder sig samtidigt som den går
+  och varje vändning är snabb. Se [bordningsstrid](docs/boarding/boarding-combat.md).
+
 - **Bordningskamera:** `kamerafokus-vid-bordningssoldatbyte`,
   `kameraoverblick-vid-synlig-bordningsrorelse`,
   `kameraoverblick-fore-bordningsskott` och

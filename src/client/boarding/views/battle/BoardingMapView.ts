@@ -55,6 +55,10 @@ import {
 import type { BoardingPathMark } from '../../models/battle/BoardingPathPreview.js';
 import type { BoardingMapPort } from './BoardingView.js';
 import {
+  boardingFrameMotionDuration,
+  boardingMotionFacing,
+} from './BoardingMotionPacing.js';
+import {
   BOARDING_OBJECT_IMAGES,
   boardingObjectArtwork,
   boardingObjectBounds,
@@ -720,7 +724,7 @@ export class BoardingMapView implements BoardingMapPort {
         finish();
         return;
       }
-      const duration = 260;
+      const duration = boardingFrameMotionDuration(from, to);
       this.#motion = {
         from,
         to,
@@ -2282,7 +2286,14 @@ export class BoardingMapView implements BoardingMapPort {
               person.side,
               center,
               characterPose(person),
-              progress < 0.5 ? origin.facing : target.facing,
+              motion && person.id === mover?.id
+                ? boardingMotionFacing(
+                    origin.facing,
+                    target.facing,
+                    now - motion.started,
+                    motion.duration,
+                  )
+                : target.facing,
               this.#variantOf(person.id),
             );
             sketch.push();
