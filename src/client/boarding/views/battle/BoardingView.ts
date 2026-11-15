@@ -1,5 +1,6 @@
 import actionAtlasUrl from '../../assets/actions-distinct-v4.png';
 import type { BoardingCameraBounds } from './BoardingCameraController.js';
+import { boardingMergedTurnFrames } from './BoardingMotionPacing.js';
 import {
   BoardingBattle,
   BOARDING_MELEE_AP,
@@ -435,6 +436,12 @@ export class BoardingView {
     try {
       let current = previous;
       const shotIndex = Math.min(shot?.presentationIndex ?? 0, frames.length);
+      // vandning-under-forflyttning: a turn plays together with the next step.
+      const merged = boardingMergedTurnFrames(
+        previous,
+        frames,
+        shot ? shotIndex : null,
+      );
       // animerat-bordningsskott: resolve the shot before later actors' movement and damage.
       for (let index = 0; index <= frames.length; index++) {
         if (token !== this.#playToken) return;
@@ -458,6 +465,7 @@ export class BoardingView {
         }
         const frame = frames[index];
         if (!frame) break;
+        if (merged.has(index)) continue;
         if (token !== this.#playToken) return;
         if (this.#map?.frameVisibleMovement)
           await this.#map.frameVisibleMovement(current, frame);

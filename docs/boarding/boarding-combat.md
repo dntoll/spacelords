@@ -41,6 +41,13 @@ kommer från testtransportens startpositioner.
   synliga försvarare och civilister. Sikt och kartminne uppdateras efter varje
   del så att spelaren ser vad som händer på vägen. Dolda figurer animeras inte.
   En redan visad förflyttning spelas inte om.
+- `vandning-under-forflyttning` — **Fullständigt implementerat**. En vändning
+  som följs av ett steg spelas samtidigt med steget: figuren vänder sig i
+  början av steget medan den går. Varje vändning på 45° tar 70 ms och ett
+  steg 260 ms. Flera vändningar i rad spelas som en snabb vändning. En
+  vändning som ett skott följer direkt visas fortfarande före skottet. Sikt och
+  kartminne visas efter det sammanslagna steget. Detta ersätter att varje
+  vändning i `animerad-bordningsforflyttning` spelades som en egen del.
 - `avbrott-vid-ny-fiende` — **Fullständigt implementerat**. Om en ny fientlig
   soldat kommer in i sidans sikt under en förflyttning stannar den aktiva
   soldaten efter den del som avslöjade fienden och resten av ordern stryks.
