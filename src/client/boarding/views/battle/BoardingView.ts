@@ -14,6 +14,7 @@ import {
   type BoardingSightArea,
   type BoardingBattleState,
   type BoardingShot,
+  type BoardingShotPane,
 } from '../../models/battle/BoardingBattle.js';
 import type {
   BoardingCell,
@@ -67,6 +68,7 @@ export interface BoardingMapPort {
     kind?: 'grenade',
     grenade?: 'frag' | 'smoke',
     aim?: Readonly<{ q: number; r: number }>,
+    panes?: readonly BoardingShotPane[],
   ): Promise<void>;
   zoom(factor: number): void;
   fit(): void;
@@ -460,6 +462,7 @@ export class BoardingView {
             shot.kind,
             shot.grenade,
             shot.aim,
+            shot.panes,
           );
           this.#playedShot = shot;
         }
