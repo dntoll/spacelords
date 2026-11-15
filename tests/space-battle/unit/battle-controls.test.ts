@@ -1760,6 +1760,7 @@ it('kastad-granat-i-bage: plays the throw before applying the impact state', asy
       'grenade',
       'smoke',
       undefined,
+      undefined,
     ),
   );
   view.dispose();
