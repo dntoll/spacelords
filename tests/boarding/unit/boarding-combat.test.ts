@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import transportMap from '../../../src/client/boarding/maps/transport-boarding.txt?raw';
+import transportMap from '../../fixtures/boarding/transport-boarding.txt?raw';
 import {
   BoardingMap,
   parseBoardingMap,

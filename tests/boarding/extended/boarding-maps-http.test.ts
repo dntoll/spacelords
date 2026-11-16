@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { once } from 'node:events';
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
-import pirateMap from '../../../src/client/boarding/maps/pirate-boarding.txt?raw';
+import pirateMap from '../../fixtures/boarding/pirate-boarding.txt?raw';
 import { createApp } from '../../../src/server/app.js';
 
 const directory = mkdtempSync(path.join(tmpdir(), 'spacelords-maps-http-'));

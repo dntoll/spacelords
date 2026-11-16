@@ -2,7 +2,7 @@
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import pirateMap from '../../../src/client/boarding/maps/pirate-boarding.txt?raw';
+import pirateMap from '../../fixtures/boarding/pirate-boarding.txt?raw';
 import {
   formatBoardingMap,
   parseBoardingMapText,

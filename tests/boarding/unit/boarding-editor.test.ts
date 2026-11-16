@@ -1,6 +1,6 @@
 ﻿import { describe, expect, it } from 'vitest';
-import pirateMap from '../../../src/client/boarding/maps/pirate-boarding.txt?raw';
-import colonyMap from '../../../src/client/boarding/maps/colony-boarding.txt?raw';
+import pirateMap from '../../fixtures/boarding/pirate-boarding.txt?raw';
+import colonyMap from '../../fixtures/boarding/colony-boarding.txt?raw';
 import { BoardingEditor } from '../../../src/client/boarding/models/editor/BoardingEditor.js';
 import { parseBoardingMapText } from '../../../src/shared/boarding/map-format.js';
 import { parseBoardingMap } from '../../../src/client/boarding/models/map/BoardingMap.js';
