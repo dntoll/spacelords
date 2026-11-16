@@ -36,6 +36,7 @@ import {
 export interface BoardingTileActionMark {
   readonly position: BoardingCell;
   readonly action: BoardingActionArtwork | 'Hack door';
+  readonly cost?: number;
 }
 
 function iconButton(
@@ -701,8 +702,15 @@ export class BoardingView {
         selectedFeature?.kind === 'door' && !selectedFeature.destroyed
           ? selectedFeature
           : facingDoor;
-      if (this.#destination)
-        tileAction = { position: this.#destination, action: 'Move' };
+      if (
+        this.#destination &&
+        (route || this.#battle().stepTowards(actor.id, this.#destination))
+      )
+        tileAction = {
+          position: this.#destination,
+          action: 'Move',
+          cost: route?.cost,
+        };
       else if (selectedPerson && selectedPersonAction)
         tileAction = {
           position: selectedPerson.position,

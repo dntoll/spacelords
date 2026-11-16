@@ -423,8 +423,8 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Kartan använder klassiska kvadratiska
   2:1-diamantrutor där väggar och ytterskrov fyller hela rutan, åtta riktningar
   och 45-gradersvändningar; detta ersätter uttryckligen den tidigare hexkartan.
-  En vald väg får gröna och bruna tilekonturer efter kvarvarande AP. Varje
-  vägruta visar sin ackumulerade AP-kostnad inklusive vändningar tillsammans
+  En vald väg får gröna och bruna tilekonturer efter kvarvarande AP. Den
+  gula destinationsrutan visar hela AP-kostnaden inklusive vändningar tillsammans
   med samma `Move`-symbol som handlingsknappen. En vald ruta som reagerar på
   ett andra klick visar handlingens symbol ovanpå rutan. Förflyttning animeras
   stegvis med uppdaterad sikt. Kända golvrutor använder en kvadratisk yttextur som vyn
