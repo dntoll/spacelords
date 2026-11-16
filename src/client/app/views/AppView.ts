@@ -802,6 +802,10 @@ export class AppView implements AppPort {
       this.#decisionDialog.showModal();
     }
   }
+  boardingPresentation(): Promise<void> | null {
+    return this.#boardingView?.whenIdle() ?? null;
+  }
+
   async animateBattleShot(shot: BattleShot): Promise<void> {
     await this.#battleView?.animateShot(shot);
   }
@@ -1009,7 +1013,15 @@ export class AppView implements AppPort {
     log.scrollTop = log.scrollHeight;
     const model = this.#announcementModel;
     const event = model?.eventPlayback?.events[model.eventPlayback.index];
-    const map = this.#container?.getBoundingClientRect();
+    // handelseannonsering / handelser-pa-kartan: measure the hex on the canvas
+    // the player sees. The canvas can sit inside the map container.
+    const drawn = this.#container
+      ?.querySelector('canvas')
+      ?.getBoundingClientRect();
+    const map =
+      drawn && drawn.width > 0 && drawn.height > 0
+        ? drawn
+        : this.#container?.getBoundingClientRect();
     let originX = window.innerWidth / 2;
     let originY = window.innerHeight / 2;
     if (event?.position && model && map && map.width > 0 && map.height > 0) {
@@ -1034,6 +1046,7 @@ export class AppView implements AppPort {
         map.top +
         map.height / 2 +
         (point.y - model.camera.center.y) * model.camera.zoom;
+      const placedHeight = announcement.offsetHeight;
       if (event.decision || event.planetId) {
         const end = this.#root
           .querySelector('.end-turn')
@@ -1045,11 +1058,9 @@ export class AppView implements AppPort {
         const available = Math.max(80, bottom - markerY - markerGap);
         announcement.style.maxHeight = `${available}px`;
         // gemensamt-handelseflode: preserve End turn when marker spacing cannot fit.
-        originY = Math.min(
-          markerY + markerGap + announcement.offsetHeight / 2,
-          bottom - announcement.offsetHeight / 2,
-        );
-      } else originY = markerY + markerGap + announcement.offsetHeight / 2;
+        // --event-origin-y is the top edge, so a later height change grows downward.
+        originY = Math.min(markerY + markerGap, bottom - placedHeight);
+      } else originY = markerY + markerGap;
       announcement.style.setProperty('--event-origin-x', `${originX}px`);
       announcement.style.setProperty('--event-origin-y', `${originY}px`);
     } else {
@@ -1070,7 +1081,7 @@ export class AppView implements AppPort {
     );
     announcement.style.setProperty(
       '--event-target-y',
-      `${(top + bottom) / 2 - originY}px`,
+      `${(top + bottom) / 2 - originY - (announcement.offsetHeight || 0) / 2}px`,
     );
     announcement.style.setProperty(
       '--event-target-scale',

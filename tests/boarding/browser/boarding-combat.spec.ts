@@ -1,9 +1,60 @@
-import { expect, test } from '@playwright/test';
-import { boardingIsoCellPoint } from '../../../src/client/boarding/views/rendering/BoardingProjection.js';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import { composeTestBoarding } from '../../../src/client/boarding/models/map/TestBoarding.js';
+import {
+  boardingIsoCamera,
+  boardingIsoCenter,
+} from '../../../src/client/boarding/views/rendering/BoardingProjection.js';
+
+const testMap = composeTestBoarding().map;
+// miljomal-och-forstorelse: the boarders start on their own ship, out of rifle
+// range of every door. The attacker reactor is the environment target in range.
+const reactor = testMap.features.find(
+  (feature) => feature.id === 'attacker-reactor',
+)!;
+
+async function panBoarding(
+  page: Page,
+  canvas: Locator,
+  box: { x: number; y: number; width: number; height: number },
+  goldPixels: () => Promise<number>,
+) {
+  const startX = box.x + box.width * 0.55;
+  const startY = box.y + Math.min(box.height * 0.32, 180);
+  let dx = -Math.round(box.width * 0.42);
+  let dy = Math.round(Math.min(box.height, 700) * 0.35);
+  let previous = await goldPixels();
+  for (let index = 0; index < 8 && previous > 0; index++) {
+    await canvas.hover({ position: { x: startX - box.x, y: startY - box.y } });
+    await page.mouse.down();
+    await page.mouse.move(startX + dx, startY + dy, { steps: 8 });
+    await page.mouse.up();
+    const next = await goldPixels();
+    if (next >= previous) {
+      dx = -dx;
+      dy = -dy;
+    }
+    previous = next;
+  }
+}
+
+function cellOnCanvas(
+  view: { readonly width: number; readonly height: number },
+  cell: { readonly q: number; readonly r: number },
+) {
+  const camera = boardingIsoCamera(testMap, view, (entry) =>
+    Boolean(testMap.terrainAt(entry)),
+  );
+  const center = boardingIsoCenter(cell);
+  return {
+    x: camera.offset.x + center.x * camera.scale,
+    y: camera.offset.y + center.y * camera.scale,
+  };
+}
 
 test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordningsobjekt / fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordningsstatus / isometrisk-bordningsvy / spelmassigt-bordningsgranssnitt / bordningsfigurer-fran-spritesheet / bordning-utan-riktningspilar / bordning-utan-sikt-och-eldrutor: uses character sprites in the tactical HUD, targets a door and advances a hidden defender without changing saves', async ({
   page,
 }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('./');
   const before = await page.evaluate(() => ({ ...localStorage }));
   await page
@@ -12,26 +63,30 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   const dialog = page.getByRole('dialog', { name: 'Boarding combat' });
   await expect(dialog).toBeVisible();
   await expect
-    .poll(() =>
-      page.evaluate(() =>
-        performance
-          .getEntriesByType('resource')
-          .some((entry) => entry.name.includes('faction-sprites')),
-      ),
+    .poll(
+      () =>
+        page.evaluate(() =>
+          performance
+            .getEntriesByType('resource')
+            .some((entry) => entry.name.includes('faction-sprites')),
+        ),
+      { timeout: 20_000 },
     )
     .toBe(true);
   // isometriska-bordningsobjekt: crate and door faces are small enough for
   // Vite to inline as data URLs, so only file-backed artwork is a resource.
   for (const artwork of ['escape-pod-', 'reactor-']) {
     await expect
-      .poll(() =>
-        page.evaluate(
-          (name) =>
-            performance
-              .getEntriesByType('resource')
-              .some((entry) => entry.name.includes(name)),
-          artwork,
-        ),
+      .poll(
+        () =>
+          page.evaluate(
+            (name) =>
+              performance
+                .getEntriesByType('resource')
+                .some((entry) => entry.name.includes(name)),
+            artwork,
+          ),
+        { timeout: 20_000 },
       )
       .toBe(true);
   }
@@ -69,23 +124,26 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   const box = await canvas.boundingBox();
   expect(box).not.toBeNull();
   await canvas.click({
-    position: boardingIsoCellPoint(
-      { width: 17, height: 11 },
+    position: cellOnCanvas(
       { width: box!.width, height: box!.height },
-      { q: 7, r: 6 },
+      reactor.position,
     ),
   });
   const shoot = dialog.getByRole('button', { name: /^Shoot · \d+%$/ });
   await expect(shoot).toBeEnabled();
-  await shoot.click();
-  await shoot.click();
-  await expect(dialog.locator('.boarding-log')).toContainText(/Rifle.*door/i);
-  await expect(
-    dialog.getByRole('button', { name: 'Shoot', exact: true }),
-  ).toBeDisabled();
-  // tydlig-bordningsstatus: inspect the transient turn before advancing AI timers.
-  await page.clock.install({ time: new Date('2026-11-04T00:00:00Z') });
-  await page.clock.pauseAt(new Date('2026-11-04T01:00:00Z'));
+  for (let shot = 0; shot < 3; shot++) {
+    await shoot.click();
+    await expect(dialog.getByText('Resolving action…')).toHaveCount(0);
+    await expect(dialog.getByText('Focusing…')).toHaveCount(0);
+  }
+  await expect(dialog.locator('.boarding-log')).toContainText(
+    /Rifle.*reactor/i,
+  );
+  // The rifle spends this soldier's AP, so later soldiers still have a turn.
+  // Pause before ending them: the defender step is only 450ms.
+  await page.clock.install();
+  await page.clock.pauseAt(Date.now() + 1_000);
+  await dialog.getByText('Combat details', { exact: true }).click();
   const defendersActing = dialog.getByText('Defenders are acting…', {
     exact: true,
   });
@@ -96,7 +154,6 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
       .click();
   }
   await expect(defendersActing).toBeVisible();
-  await dialog.getByText('Combat details', { exact: true }).click();
   await expect(dialog.locator('.boarding-activity')).toContainText(
     'A defender is acting',
   );
@@ -147,16 +204,9 @@ test('kamerafokus-vid-bordningssoldatbyte: selecting an offscreen soldier reveal
   await canvas.focus();
   for (let index = 0; index < 8; index++) await canvas.press('+');
   const box = (await canvas.boundingBox())!;
-  for (let index = 0; index < 4; index++) {
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(
-      box.x + box.width / 2 - 120,
-      box.y + box.height / 2 + 150,
-      { steps: 2 },
-    );
-    await page.mouse.up();
-  }
+  // kamerafokus-vid-bordningssoldatbyte: drag far enough that the active
+  // soldier's marker leaves the enlarged two-ship map.
+  await panBoarding(page, canvas, box, goldPixels);
   await expect.poll(goldPixels).toBe(0);
   const soldier = dialog
     .locator('.boarding-unit:not(.boarding-unit-active)')

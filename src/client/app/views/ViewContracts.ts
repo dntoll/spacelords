@@ -346,6 +346,8 @@ export type AppIntent =
 export type IntentHandler = (intent: AppIntent) => void;
 
 export interface AppPort {
+  /** Resolves when the boarding shot or move on screen has finished. */
+  boardingPresentation?(): Promise<void> | null;
   animateBattleShot?(shot: BattleShot): Promise<void>;
   animateBattleManeuver?(maneuver: BattleManeuver): Promise<void>;
   bind(handler: IntentHandler): void;
