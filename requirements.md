@@ -172,6 +172,9 @@ Se [hela visionen](docs/game-vision.md).
   editorn fyller hela skärmen från start med skeppet inpassat, `Pan view` gör
   att drag flyttar vyn i stället för att måla, hjul och nyp zoomar, `Fit view`
   passar in skeppet igen, och målade rutor syns medan man drar.
+  `skeppsbild-last-till-skeppsaxeln` är **Fullständigt implementerat**:
+  i `Adjust sprite` ligger skeppsbilden centrerad på banans skeppsaxel och
+  kan bara skjutas längs axeln och zoomas.
   Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Dockningskorridor:** `dockningskorridor-sprite` är **Fullständigt implementerat**. Dockade skepp sammanbinds visuellt med en korridor. Se [bordningsstrid](docs/boarding/boarding-combat.md).

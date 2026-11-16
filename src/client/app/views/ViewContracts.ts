@@ -31,7 +31,7 @@ import type {
   EditorPaintCell,
   EditorProjection,
   EditorTool,
-  SpriteTransform,
+  SpriteAxisPlacement,
 } from '../../boarding/models/index.js';
 
 export type AppIntent =
@@ -328,8 +328,9 @@ export type AppIntent =
     }
   | {
       readonly type: 'editor-sprite-transform';
-      readonly sprite: SpriteTransform;
+      readonly sprite: SpriteAxisPlacement;
     }
+  | { readonly type: 'editor-picture-aspect'; readonly value: number }
   | { readonly type: 'editor-adjust-sprite'; readonly value: boolean }
   | { readonly type: 'editor-projection'; readonly value: EditorProjection }
   | { readonly type: 'editor-opacity'; readonly value: number }

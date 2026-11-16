@@ -1,9 +1,13 @@
 ﻿import p5 from 'p5';
 import {
   boardingEditorStrokePreview,
+  boardingShipAxisY,
+  centeredSpriteY,
+  spriteZoomAlongAxis,
   type BoardingEditorSnapshot,
   type EditorBrushButton,
   type EditorPaintCell,
+  type SpriteAxisPlacement,
   type SpriteTransform,
 } from '../../models/editor/BoardingEditor.js';
 import type { BoardingMapId } from '../../../../shared/boarding/map-format.js';
@@ -196,10 +200,12 @@ export class BoardingEditorMapView {
   } | null = null;
   #spriteDrag: {
     start: { x: number; y: number };
-    origin: SpriteTransform;
+    origin: SpriteAxisPlacement;
   } | null = null;
+  /** skeppsbild-last-till-skeppsaxeln: two fingers slide and zoom the picture. */
+  #spritePinch = false;
   #cameraDrag: { x: number; y: number } | null = null;
-  #previewSprite: SpriteTransform | null = null;
+  #previewSprite: SpriteAxisPlacement | null = null;
   #longPress: ReturnType<typeof setTimeout> | undefined;
 
   constructor(
@@ -208,7 +214,8 @@ export class BoardingEditorMapView {
       button: EditorBrushButton,
       cells: readonly EditorPaintCell[],
     ) => void,
-    private readonly emitSprite: (sprite: SpriteTransform) => void,
+    private readonly emitSprite: (sprite: SpriteAxisPlacement) => void,
+    private readonly emitPictureAspect: (aspect: number) => void,
   ) {
     this.#p5 = new p5((sketch) => {
       sketch.setup = () => {
@@ -371,6 +378,8 @@ export class BoardingEditorMapView {
         .then((image) => {
           if (this.#disposed || this.#spriteMap !== snapshot.mapId) return;
           this.#sprite = image;
+          if (image.width > 0 && image.height > 0)
+            this.emitPictureAspect(image.height / image.width);
           void this.#p5.redraw();
         })
         .catch(() => undefined);
@@ -459,6 +468,11 @@ export class BoardingEditorMapView {
         const adjustSprite =
           this.#snapshot.adjustSprite &&
           this.#snapshot.projection === 'top-down';
+        if (adjustSprite && (this.#pointers.size > 1 || this.#spritePinch)) {
+          this.#spriteDrag = null;
+          this.#spritePinch = true;
+          return;
+        }
         if (adjustSprite && event.button === 0) {
           this.#spriteDrag = {
             start: next,
@@ -501,6 +515,37 @@ export class BoardingEditorMapView {
         if (!previous || !this.#snapshot) return;
         const next = point(event);
         this.#pointers.set(event.pointerId, next);
+        if (this.#spritePinch) {
+          const other = [...this.#pointers.entries()].find(
+            ([id]) => id !== event.pointerId,
+          )?.[1];
+          if (!other) return;
+          // skeppsbild-last-till-skeppsaxeln: the fingers' midpoint slides the
+          // picture along the axis and their spread zooms it.
+          const size = EDITOR_ORTHO_CELL * this.#scale;
+          const oldMidX = (previous.x + other.x) / 2;
+          const newMidX = (next.x + other.x) / 2;
+          const oldDistance = Math.hypot(
+            previous.x - other.x,
+            previous.y - other.y,
+          );
+          const newDistance = Math.hypot(next.x - other.x, next.y - other.y);
+          const placement = this.#previewSprite ?? this.#snapshot.sprite;
+          const slid = {
+            x: placement.x + (newMidX - oldMidX) / size,
+            scale: placement.scale,
+          };
+          this.#previewSprite =
+            oldDistance > 0
+              ? spriteZoomAlongAxis(
+                  slid,
+                  (newMidX - this.#offset.x) / size,
+                  newDistance / oldDistance,
+                )
+              : slid;
+          void this.#p5.redraw();
+          return;
+        }
         if (this.#pointers.size > 1) {
           const other = [...this.#pointers.entries()].find(
             ([id]) => id !== event.pointerId,
@@ -538,13 +583,11 @@ export class BoardingEditorMapView {
         }
         if (this.#spriteDrag) {
           const size = EDITOR_ORTHO_CELL * this.#scale;
+          // skeppsbild-last-till-skeppsaxeln: only the drag along the axis counts.
           this.#previewSprite = {
             x:
               this.#spriteDrag.origin.x +
               (next.x - this.#spriteDrag.start.x) / size,
-            y:
-              this.#spriteDrag.origin.y +
-              (next.y - this.#spriteDrag.start.y) / size,
             scale: this.#spriteDrag.origin.scale,
           };
           void this.#p5.redraw();
@@ -580,6 +623,14 @@ export class BoardingEditorMapView {
     const finish = (event: PointerEvent) => {
       this.#pointers.delete(event.pointerId);
       clearTimeout(this.#longPress);
+      if (this.#spritePinch) {
+        if (this.#pointers.size > 0) return;
+        const sprite = this.#previewSprite;
+        this.#spritePinch = false;
+        this.#previewSprite = null;
+        if (sprite) this.emitSprite(sprite);
+        return;
+      }
       if (this.#spriteDrag) {
         const sprite = this.#previewSprite ?? this.#spriteDrag.origin;
         this.#spriteDrag = null;
@@ -606,11 +657,15 @@ export class BoardingEditorMapView {
           this.#snapshot?.adjustSprite &&
           this.#snapshot.projection === 'top-down'
         ) {
-          const sprite = this.#previewSprite ?? this.#snapshot.sprite;
-          this.emitSprite({
-            ...sprite,
-            scale: Math.min(128, Math.max(1, sprite.scale * factor)),
-          });
+          // skeppsbild-last-till-skeppsaxeln: zoom around the pointer.
+          const size = EDITOR_ORTHO_CELL * this.#scale;
+          this.emitSprite(
+            spriteZoomAlongAxis(
+              this.#previewSprite ?? this.#snapshot.sprite,
+              (point(event).x - this.#offset.x) / size,
+              factor,
+            ),
+          );
           return;
         }
         this.#zoomAround(point(event), factor);
@@ -643,7 +698,7 @@ export class BoardingEditorMapView {
 
   #drawOrtho(sketch: p5, snapshot: BoardingEditorSnapshot): void {
     const size = EDITOR_ORTHO_CELL * this.#scale;
-    const sprite = this.#previewSprite ?? snapshot.sprite;
+    const sprite = this.#shownSprite(snapshot);
     if (this.#sprite) {
       sketch.push();
       sketch.tint(255, Math.round(snapshot.spriteOpacity * 255));
@@ -707,7 +762,31 @@ export class BoardingEditorMapView {
         }
       }
     }
+    if (snapshot.adjustSprite) {
+      // skeppsbild-last-till-skeppsaxeln: show the axis the picture follows.
+      const axis = boardingShipAxisY(snapshot.height) * size;
+      sketch.stroke('#ffd36a');
+      sketch.strokeWeight(2);
+      sketch.line(-size, axis, (snapshot.width + 1) * size, axis);
+    }
     sketch.pop();
+  }
+
+  /** The sprite as drawn: a pending drag or pinch keeps it on the ship axis. */
+  #shownSprite(snapshot: BoardingEditorSnapshot): SpriteTransform {
+    const preview = this.#previewSprite;
+    if (!preview) return snapshot.sprite;
+    const aspect = this.#sprite
+      ? this.#sprite.height / Math.max(1, this.#sprite.width)
+      : null;
+    return {
+      x: preview.x,
+      y:
+        aspect === null
+          ? snapshot.sprite.y
+          : centeredSpriteY(snapshot.height, preview.scale, aspect),
+      scale: preview.scale,
+    };
   }
 
   /**
@@ -731,7 +810,7 @@ export class BoardingEditorMapView {
     sketch.push();
     sketch.translate(this.#offset.x, this.#offset.y);
     sketch.scale(this.#scale);
-    const sprite = this.#previewSprite ?? snapshot.sprite;
+    const sprite = this.#shownSprite(snapshot);
     if (this.#sprite) {
       sketch.push();
       sketch.tint(255, Math.round(snapshot.spriteOpacity * 255));

@@ -79,6 +79,7 @@ it('spelidentisk-bordningseditor: renders faction sprites from the shared artwor
     container,
     () => undefined,
     () => undefined,
+    () => undefined,
   );
   void runtime.sketch.setup();
   view.render(editor.snapshot);
@@ -141,6 +142,7 @@ function editorHarness(projection: 'top-down' | 'isometric') {
   const view = new BoardingEditorMapView(
     container,
     (...args) => strokes.push(args),
+    () => undefined,
     () => undefined,
   );
   void runtime.sketch.setup();

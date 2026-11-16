@@ -57,8 +57,8 @@ describe('lokal-bordningskarteditor', () => {
 
   it('undoes a sprite pan and scale as one transform', () => {
     const editor = new BoardingEditor('pirate', pirateMap);
-    expect(editor.setSpriteTransform({ x: 2.5, y: -1, scale: 11 })).toBe(true);
-    expect(editor.snapshot.sprite).toEqual({ x: 2.5, y: -1, scale: 11 });
+    expect(editor.setSpriteTransform({ x: 2.5, scale: 11 })).toBe(true);
+    expect(editor.snapshot.sprite).toEqual({ x: 2.5, y: 0, scale: 11 });
     expect(editor.source()).toContain('spriteX=2.5');
     expect(editor.undo()).toBe(true);
     expect(editor.snapshot.sprite).toEqual({ x: 0, y: 0, scale: 9 });

@@ -735,6 +735,10 @@ Inga konstlade enhetstester behövs för en dokumenterad publiceringsprocess.
 
 ## Beslut och ändringar
 
+- 2026-11-16: `skeppsbild-last-till-skeppsaxeln` läggs till. Skeppsbildens
+  höjdläge i editorn styrs inte längre fritt av draget utan följer
+  skeppsaxeln. Ersätter fri tvådimensionell förflyttning i
+  `lokal-bordningskarteditor`.
 - 2026-11-14: `helskarms-bordningseditor`, `zooma-panorera-bordningseditor`
   och `direkt-penselstreck-i-editor` läggs till. Top-down passas nu in i
   canvasen i stället för fast skala 1, och målning av `Outside` passar inte
@@ -1587,6 +1591,19 @@ penselregel som `BoardingEditor.paintStroke`, så förhandsvisningen under
 draget blir exakt det som sparas som ett ångra-steg när knappen släpps.
 Tester: `helskarms-bordningseditor`, `zooma-panorera-bordningseditor` och
 `direkt-penselstreck-i-editor`.
+
+`skeppsbild-last-till-skeppsaxeln`: skeppsaxeln är `y = height / 2` i
+rutenheter, eftersom alla skeppsbilder ligger med längdriktningen längs `q`.
+`BoardingEditor.setSpriteTransform` tar bara `x` och `scale`; modellen räknar
+`spriteY` så att bildens mittlinje ligger på axeln. Bildens proportioner
+rapporteras av vyn med `editor-picture-aspect` när bilden laddats och glöms
+vid byte av skepp. Tills de är kända behålls sparat `spriteY`. När `Adjust
+sprite` startar flyttas en bild utanför axeln dit i ett ångra-steg, och en
+höjdändring av rutnätet flyttar bilden med axeln i samma ångra-steg.
+`spriteZoomAlongAxis` zoomar runt pekarens eller fingrarnas `x` och håller
+punkten kvar även vid skalgränserna 1 och 128. Två fingrar i justeringsläget
+skjuter och zoomar bilden i stället för kameran. Filformatet är oförändrat.
+Tester: `skeppsbild-last-till-skeppsaxeln` med egen fixturkarta.
 Snabbsviten överskred först 20 sekunder under parallella kontroller; den tyngre
 taktiska integrationsfilen flyttades till den utökade sviten. Därefter
 passerade snabbsviten med 758 tester på 14,70 sekunder utan parallell belastning.

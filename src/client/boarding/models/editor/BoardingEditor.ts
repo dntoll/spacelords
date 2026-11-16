@@ -24,6 +24,46 @@ export interface SpriteTransform {
   readonly scale: number;
 }
 
+/** skeppsbild-last-till-skeppsaxeln: where the picture lies along the axis. */
+export interface SpriteAxisPlacement {
+  readonly x: number;
+  readonly scale: number;
+}
+
+export const BOARDING_SPRITE_MIN_SCALE = 1;
+export const BOARDING_SPRITE_MAX_SCALE = 128;
+
+/** skeppsbild-last-till-skeppsaxeln: the ship's long axis is the map's middle row line. */
+export function boardingShipAxisY(height: number): number {
+  return height / 2;
+}
+
+/** Top edge that puts the picture's middle line on the ship axis. */
+export function centeredSpriteY(
+  height: number,
+  scale: number,
+  aspect: number,
+): number {
+  return boardingShipAxisY(height) - (scale * aspect) / 2;
+}
+
+/**
+ * skeppsbild-last-till-skeppsaxeln: zooms the picture around `anchorX` (cells),
+ * so the point under the pointer stays put, also when the size limit is hit.
+ */
+export function spriteZoomAlongAxis(
+  placement: SpriteAxisPlacement,
+  anchorX: number,
+  factor: number,
+): SpriteAxisPlacement {
+  const scale = Math.min(
+    BOARDING_SPRITE_MAX_SCALE,
+    Math.max(BOARDING_SPRITE_MIN_SCALE, placement.scale * factor),
+  );
+  const applied = scale / placement.scale;
+  return { x: anchorX - (anchorX - placement.x) * applied, scale };
+}
+
 export interface EditorPaintCell {
   readonly q: number;
   readonly r: number;
@@ -178,23 +218,31 @@ class ResizeGridCommand implements EditorCommand {
   readonly #editor: BoardingEditor;
   readonly #from: BoardingMapText;
   readonly #to: BoardingMapText;
+  readonly #sprite: {
+    readonly from: SpriteTransform;
+    readonly to: SpriteTransform;
+  };
 
   constructor(
     editor: BoardingEditor,
     from: BoardingMapText,
     to: BoardingMapText,
+    sprite: { readonly from: SpriteTransform; readonly to: SpriteTransform },
   ) {
     this.#editor = editor;
     this.#from = from;
     this.#to = to;
+    this.#sprite = sprite;
   }
 
   execute(): void {
     this.#editor.replaceLayers(this.#to);
+    this.#editor.replaceSprite(this.#sprite.to);
   }
 
   undo(): void {
     this.#editor.replaceLayers(this.#from);
+    this.#editor.replaceSprite(this.#sprite.from);
   }
 }
 
@@ -346,6 +394,8 @@ export class BoardingEditor {
   #secondary: EditorTool = DEFAULT_SECONDARY;
   #spriteOpacity = 0.45;
   #adjustSprite = false;
+  /** Height / width of the ship picture, reported once the view has it. */
+  #pictureAspect: number | null = null;
   #projection: EditorProjection = 'isometric';
   #dirty = false;
   readonly #history = new CommandHistory();
@@ -370,8 +420,39 @@ export class BoardingEditor {
       y: text.spriteY ?? 0,
       scale: text.spriteScale ?? text.width,
     });
+    this.#pictureAspect = null;
     this.#dirty = false;
     this.#history.clear();
+  }
+
+  /** skeppsbild-last-till-skeppsaxeln: proportions of the picture of this ship. */
+  setPictureAspect(aspect: number): void {
+    if (!Number.isFinite(aspect) || aspect <= 0) return;
+    this.#pictureAspect = aspect;
+  }
+
+  /** The sprite with its middle line on the ship axis of a map `height` tall. */
+  #onAxis(placement: SpriteAxisPlacement, height: number): SpriteTransform {
+    return Object.freeze({
+      x: placement.x,
+      y:
+        this.#pictureAspect === null
+          ? this.#sprite.y
+          : centeredSpriteY(height, placement.scale, this.#pictureAspect),
+      scale: placement.scale,
+    });
+  }
+
+  #runSpriteChange(to: SpriteTransform): boolean {
+    if (
+      to.x === this.#sprite.x &&
+      to.y === this.#sprite.y &&
+      to.scale === this.#sprite.scale
+    )
+      return false;
+    this.#history.run(new SpriteTransformCommand(this, this.#sprite, to));
+    this.#dirty = true;
+    return true;
   }
 
   bindTool(button: EditorBrushButton, tool: EditorTool): void {
@@ -384,7 +465,11 @@ export class BoardingEditor {
 
   setAdjustSprite(value: boolean): void {
     this.#adjustSprite = value;
-    if (value) this.#projection = 'top-down';
+    if (!value) return;
+    this.#projection = 'top-down';
+    // skeppsbild-last-till-skeppsaxeln: alignment starts on the axis.
+    if (this.#pictureAspect !== null)
+      this.#runSpriteChange(this.#onAxis(this.#sprite, this.#text.height));
   }
 
   setProjection(value: EditorProjection): void {
@@ -439,33 +524,33 @@ export class BoardingEditor {
           ? null
           : Object.freeze(resizeRows(this.#text.lights, width, height, '-')),
     });
-    this.#history.run(new ResizeGridCommand(this, this.#text, next));
+    // skeppsbild-last-till-skeppsaxeln: a new height moves the axis.
+    const sprite =
+      this.#pictureAspect === null
+        ? this.#sprite
+        : this.#onAxis(this.#sprite, height);
+    this.#history.run(
+      new ResizeGridCommand(this, this.#text, next, {
+        from: this.#sprite,
+        to: sprite,
+      }),
+    );
     this.#dirty = true;
     return true;
   }
 
-  setSpriteTransform(transform: SpriteTransform): boolean {
+  /**
+   * skeppsbild-last-till-skeppsaxeln: the picture only slides along and zooms
+   * on the ship axis; its top edge follows from the axis.
+   */
+  setSpriteTransform(placement: SpriteAxisPlacement): boolean {
     if (
-      !Number.isFinite(transform.x) ||
-      !Number.isFinite(transform.y) ||
-      !Number.isFinite(transform.scale) ||
-      transform.scale <= 0
+      !Number.isFinite(placement.x) ||
+      !Number.isFinite(placement.scale) ||
+      placement.scale <= 0
     )
       return false;
-    const to = Object.freeze({
-      x: transform.x,
-      y: transform.y,
-      scale: transform.scale,
-    });
-    if (
-      to.x === this.#sprite.x &&
-      to.y === this.#sprite.y &&
-      to.scale === this.#sprite.scale
-    )
-      return false;
-    this.#history.run(new SpriteTransformCommand(this, this.#sprite, to));
-    this.#dirty = true;
-    return true;
+    return this.#runSpriteChange(this.#onAxis(placement, this.#text.height));
   }
 
   undo(): boolean {

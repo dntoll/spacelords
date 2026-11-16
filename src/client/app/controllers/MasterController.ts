@@ -379,6 +379,7 @@ export class MasterController {
         'editor-bind-tool',
         'editor-paint',
         'editor-sprite-transform',
+        'editor-picture-aspect',
         'editor-adjust-sprite',
         'editor-projection',
         'editor-opacity',
@@ -669,6 +670,9 @@ export class MasterController {
         break;
       case 'editor-sprite-transform':
         this.#editor.spriteTransform(intent.sprite);
+        break;
+      case 'editor-picture-aspect':
+        this.#editor.pictureAspect(intent.value);
         break;
       case 'editor-adjust-sprite':
         this.#editor.adjustSprite(intent.value);

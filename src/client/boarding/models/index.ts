@@ -17,7 +17,13 @@ export type {
   EditorPaintCell,
   EditorProjection,
   EditorTool,
+  SpriteAxisPlacement,
   SpriteTransform,
+} from './editor/BoardingEditor.js';
+export {
+  boardingShipAxisY,
+  centeredSpriteY,
+  spriteZoomAlongAxis,
 } from './editor/BoardingEditor.js';
 export { testBoardingMap } from './map/TestBoarding.js';
 export type { BoardingMapId } from '../../../shared/boarding/map-format.js';

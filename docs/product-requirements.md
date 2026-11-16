@@ -297,6 +297,11 @@ fyller hela skärmen direkt med skeppet inpassat. Man kan zooma och panorera;
 i läget `Pan view` flyttar ett drag vyn i stället för att måla, och `Fit view`
 visar hela skeppet igen. Rutor man målar syns medan man drar.
 
+`skeppsbild-last-till-skeppsaxeln` är **Fullständigt implementerat**. När man
+justerar skeppsbilden ligger den centrerad på banans skeppsaxel, som syns som
+en linje genom kartans mitt. Bilden kan bara skjutas längs axeln och zoomas;
+den kan inte hamna snett i höjdled.
+
 `fristaende-bordningsprototyp` och den tillhörande kravfamiljen är
 **Fullständigt implementerat**. Huvudmenyn kan starta en separat taktisk
 bordningsstrid på en kvadratisk 2:1-isometrisk karta inuti ett `Transport ship`.
