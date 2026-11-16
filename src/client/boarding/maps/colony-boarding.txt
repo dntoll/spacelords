@@ -9,21 +9,21 @@ spriteScale=38.49718412164401
 
 [terrain]
 HHHHHHHHHHHHOOOOOOOOOOOOOOOO
-H...#.......HHHHHHQQqQQQOOOO
-H...#.......Q..........QQOOO
-H...#...................QWWW
-H...#.......Q..............W
-H..##..................QQWWW
+H...Q....q..HHHHHHQQqQQQOOOO
+H...Q....q..Q..........QQOOO
+H...Q....q..............QWWW
+H...Q.......Q..............W
+H..QQ..................QQWWW
 H...........Q..........QOOOO
 H...........HHHQQqQQQQQQOOOO
 HHHHHHH.HHHHOOOOOOOOOOOOOOOO
 
 [objects]
 ----------------------------
--RRR------------------------
--R---------------CCCC-------
+-RRR--C---------------------
+-R----C----------CCCC-------
 ------C-----D----C--C-------
------------------C--C---D-C-
+------C----------C--C---D-C-
 -DD---------D-C--C--C-------
 --------------C-------------
 ----------------------------
@@ -31,13 +31,13 @@ HHHHHHH.HHHHOOOOOOOOOOOOOOOO
 
 [rooms]
 ----------------------------
-KEEE-KKKKKKK----------------
-KEEE-KKKKKKK-BBBBBBBBBBB----
--EEE-BBBKKKK-BBBBBBBBBBB-GGG
--EEE-BBBKKKK-BBBBBBBBBBBGGGG
------KKKKKKK-BBBBBBBBBBB-GGG
--KKKKKKKKKKK-BBBBBBBBBBB----
--KKKKKKKKKKK----------------
+KEEE-GGGGGGG----------------
+KEEE-GGGGGGG-BBBBBBBBBBB----
+-EEE-GGGGGGG-BBBBBBBBBBB-GGG
+-EEE-GGGGGGG-BBBBBBBBBBBGGGG
+-----GGGGGGG-BBBBBBBBBBB-GGG
+-GGGGGGGGGGG-BBBBBBBBBBB----
+-GGGGGGGGGGG----------------
 ----------------------------
 
 [spawns]
@@ -53,11 +53,11 @@ KEEE-KKKKKKK-BBBBBBBBBBB----
 
 [lights]
 ----------------------------
-----------L-----------------
----L------------------------
 ----------------------------
-------L---------------------
 ----------------------------
---L------L------------------
+--L---L---------------------
 ----------------------------
+----------------------------
+----------------------------
+-------L--------------------
 ----------------------------
