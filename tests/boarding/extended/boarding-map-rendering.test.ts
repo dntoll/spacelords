@@ -111,6 +111,7 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
     lineTo() {},
     closePath() {},
     clip() {},
+    clearRect() {},
     transform() {},
     drawImage(...args: unknown[]) {
       // tileljus-for-sprites: sprites are lit with a brightness filter.
@@ -400,8 +401,7 @@ it('genomskinliga-skymmande-vaggar: unknown floor leaves a wall opaque and a hid
 const lightMapOf =
   (map: { width: number; height: number }) =>
   (args: readonly unknown[]): boolean =>
-    args.length === 9 &&
-    (args[0] as HTMLCanvasElement).width ===
+    (args[0] as HTMLCanvasElement | undefined)?.width ===
       map.width * BOARDING_LIGHT_MAP_TEXELS + 2 &&
     (args[0] as HTMLCanvasElement).height ===
       map.height * BOARDING_LIGHT_MAP_TEXELS + 2;
@@ -425,11 +425,59 @@ it('bordning-jamn-bildfrekvens / ljuskarta-i-bordning: unchanged sight reuses th
     boardingCeilingLight({ q: 2, r: 3 }),
   ]);
   const floorLight = () => masks.filter(lightMapOf(map)).length;
-  view.render({ ...state, visibleCells: state.exploredCells }, null, null, []);
+  // Newly seen cells paint the floors and their light again.
+  view.render(
+    {
+      ...state,
+      exploredCells: [...state.exploredCells, { q: 0, r: 0 }, { q: 1, r: 0 }],
+    },
+    null,
+    null,
+    [],
+  );
   expect(floorLight()).toBeGreaterThan(0);
   runtime.sketch!.draw();
   expect(floorLight()).toBe(0);
   expect(masks.filter((args) => args.length === 5)).toHaveLength(1);
+  view.dispose();
+});
+
+it('jamn-ljuskarta-under-forflyttning / bordning-jamn-bildfrekvens: floors look the same in sight and in memory, so a change of sight alone keeps them', () => {
+  const { view, state, masks, map } = scene(true, [
+    boardingCeilingLight({ q: 2, r: 3 }),
+  ]);
+  view.render({ ...state, visibleCells: state.exploredCells }, null, null, []);
+  view.render({ ...state, visibleCells: [] }, null, null, []);
+  expect(masks.filter(lightMapOf(map))).toHaveLength(0);
+  view.dispose();
+});
+
+it('jamn-ljuskarta-under-forflyttning / skuggor-mellan-rutor: a walking figure relights only the floor around its lamp, every frame', async () => {
+  const { view, state, player, masks, map } = scene(true, [
+    boardingCeilingLight({ q: 2, r: 3 }),
+  ]);
+  const clock = vi.spyOn(performance, 'now').mockReturnValue(1000);
+  const next = {
+    ...state,
+    people: [
+      {
+        ...player,
+        position: { q: player.position.q + 1, r: player.position.r },
+      },
+    ],
+  };
+  const animation = view.playMotion(state, next);
+  const relit = () => masks.filter(lightMapOf(map));
+  for (const time of [1060, 1130]) {
+    clock.mockReturnValue(time);
+    runtime.sketch!.draw();
+    // Only the texels under the lamp's reach, never the whole map.
+    expect(relit()).toHaveLength(1);
+    expect(relit()[0]).toHaveLength(9);
+  }
+  clock.mockReturnValue(1300);
+  runtime.sketch!.draw();
+  await animation;
   view.dispose();
 });
 
@@ -440,11 +488,11 @@ it('texturerad-vaggovansida / vertexljus-i-bordning / tileljus-for-sprites: load
     sources,
   );
   await loadImages();
-  // Changed sight repaints the cached floor layer within this frame.
+  // A change of sight alone keeps the lit floor layer.
   view.render({ ...state, visibleCells: state.exploredCells }, null, null, []);
   const lighting = new BoardingLighting(map, state);
   expect(masks.filter((args) => args.length === 3)).toHaveLength(3);
-  expect(masks.filter(lightMapOf(map)).length).toBeGreaterThan(0);
+  expect(masks.filter(lightMapOf(map))).toHaveLength(0);
   const wallTextures = masks.filter(
     (args) => args.length === 9 && !lightMapOf(map)(args),
   );
@@ -596,6 +644,154 @@ it('kantindikator-for-synlig-fiende: clicking an edge target selects and centers
   expect(
     view.cameraSnapshot.offset.x + boardingIsoCenter(player.position).x * scale,
   ).toBeCloseTo((viewport.left + viewport.right) / 2);
+  view.dispose();
+});
+
+it('kamerafokus-vid-bordningssoldatbyte: one player zoom centers whichever soldier is selected', async () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true }));
+  const { view, state, player } = scene(true);
+  const ally = {
+    ...player,
+    id: 'ally',
+    label: 'Ally',
+    position: { q: 5, r: 0 },
+  };
+  const playing = (actorId: string): typeof state => ({
+    ...state,
+    currentActorId: actorId,
+    activation: { id: actorId, remaining: 8 },
+    people: [player, ally],
+  });
+  view.render(playing(player.id), null, null, []);
+  view.zoom(2);
+  view.render(playing(ally.id), null, null, []);
+  view.zoom(0.5);
+  const shared = view.cameraSnapshot.scale;
+  await view.focusActor(player.id);
+  expect(view.cameraSnapshot.scale).toBeCloseTo(shared);
+  const playerPan = view.cameraSnapshot.offset.x;
+  await view.focusActor(ally.id);
+  expect(view.cameraSnapshot.scale).toBeCloseTo(shared);
+  expect(view.cameraSnapshot.offset.x).not.toBeCloseTo(playerPan);
+  view.dispose();
+});
+
+it('kamerafokus-vid-bordningssoldatbyte: a shot overview returns to the player zoom and the previous pan', async () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true }));
+  const { view, state, player } = scene(true);
+  const defender = {
+    ...player,
+    id: 'defender',
+    side: 'defender' as const,
+    position: { q: 0, r: 0 },
+  };
+  view.render(
+    {
+      ...state,
+      currentActorId: player.id,
+      activation: { id: player.id, remaining: 8 },
+      people: [player, defender],
+    },
+    null,
+    null,
+    [],
+  );
+  view.zoom(2);
+  const played = view.cameraSnapshot;
+  view.beginPresentation();
+  view.setViewportProvider(() => ({
+    left: 300,
+    top: 250,
+    right: 420,
+    bottom: 370,
+  }));
+  await view.frameShot(player.position, defender.position);
+  expect(view.cameraSnapshot.scale).toBeLessThan(played.scale);
+  await view.restorePlayView();
+  expect(view.cameraSnapshot.scale).toBeCloseTo(played.scale);
+  expect(view.cameraSnapshot.offset.x).toBeCloseTo(played.offset.x);
+  expect(view.cameraSnapshot.offset.y).toBeCloseTo(played.offset.y);
+  view.endPresentation();
+  view.dispose();
+});
+
+it('kameraoverblick-vid-synlig-bordningsrorelse: a new sound the player can hear is framed, then the play view returns', async () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true }));
+  const { view, state, player } = scene(true);
+  view.render(
+    {
+      ...state,
+      currentActorId: player.id,
+      people: [player],
+      noiseMarkers: [],
+    },
+    null,
+    null,
+    [],
+  );
+  view.zoom(2);
+  const played = view.cameraSnapshot;
+  view.beginPresentation();
+  view.setViewportProvider(() => ({
+    left: 300,
+    top: 250,
+    right: 420,
+    bottom: 370,
+  }));
+  const heard = {
+    ...state,
+    currentActorId: player.id,
+    people: [player],
+    noiseMarkers: [{ position: { q: 0, r: 0 }, audience: 'player' as const }],
+  };
+  await view.frameVisibleMovement({ ...heard, noiseMarkers: [] }, heard);
+  expect(view.cameraSnapshot.scale).toBeLessThan(played.scale);
+  await view.restorePlayView();
+  expect(view.cameraSnapshot.scale).toBeCloseTo(played.scale);
+  expect(view.cameraSnapshot.offset.x).toBeCloseTo(played.offset.x);
+  const quiet = view.cameraSnapshot;
+  await view.frameVisibleMovement(heard, {
+    ...heard,
+    noiseMarkers: [{ position: { q: 0, r: 0 }, audience: 'defender' as const }],
+  });
+  expect(view.cameraSnapshot).toEqual(quiet);
+  view.endPresentation();
+  view.dispose();
+});
+
+it('kamerafokus-vid-bordningssoldatbyte: an overview before the soldier acts is not stored as their view', async () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true }));
+  const { view, state, player } = scene(true);
+  const defender = {
+    ...player,
+    id: 'defender',
+    side: 'defender' as const,
+    position: { q: 0, r: 0 },
+  };
+  view.render(
+    {
+      ...state,
+      currentActorId: player.id,
+      activation: { id: player.id, remaining: 8 },
+      people: [player, defender],
+    },
+    null,
+    null,
+    [],
+  );
+  view.setViewportProvider(() => ({
+    left: 300,
+    top: 250,
+    right: 420,
+    bottom: 370,
+  }));
+  await view.frameShot(player.position, defender.position);
+  view.beginPresentation();
+  view.endPresentation();
+  view.zoom(2);
+  const played = view.cameraSnapshot.scale;
+  await view.focusActor(player.id);
+  expect(view.cameraSnapshot.scale).toBeCloseTo(played);
   view.dispose();
 });
 

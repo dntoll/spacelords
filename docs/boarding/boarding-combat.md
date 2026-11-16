@@ -24,7 +24,14 @@ kommer från testtransportens startpositioner.
   att redigera för hand.
 - `individuellt-bordningsinitiativ` — **Fullständigt implementerat**. Varje soldat slår
   D20 plus initiativvärde varje runda. Högre grundvärde bryter lika total;
-  fortsatt lika resultat slås om. Civilister agerar sist.
+  fortsatt lika resultat slås om. Civilister agerar sist. Spelarens soldater
+  får sina platser i ordningen i fast lagordning (`fast-soldatordning`).
+- `fast-soldatordning` — **Fullständigt implementerat**. De platser i
+  initiativordningen som spelarens soldater slår till sig fördelas på soldaterna
+  i lagets ordning, så att soldat 1 alltid är den som väljs först varje runda,
+  därefter soldat 2 och så vidare. Fiendernas platser påverkas inte. Ersätter
+  den del av `individuellt-bordningsinitiativ` som lät varje soldats eget slag
+  avgöra soldaternas inbördes ordning.
 - `actionpoints-och-riktad-forflyttning` — **Fullständigt implementerat**. Egenskaper och
   fasta utrustningsmodifierare ger AP. Soldater går endast framåt. Ett stående
   rutsteg kostar 2 AP, ett hukat steg 3 AP, ett diagonalt steg 3 AP stående eller 4 AP hukande, en 45-gradersvändning 0,25 AP (`billig-vandning`) och byte
@@ -68,22 +75,26 @@ kommer från testtransportens startpositioner.
   kroppen täcker rutan bakom. Den förra soldaten sparar sin kvarvarande AP och
   återupptas när den valda är klar, så att någon som står i vägen kan flyttas
   undan.
-- `kamerafokus-vid-bordningssoldatbyte` — **Fullständigt implementerat**. Vid
-  manuellt eller automatiskt byte till en egen soldat utanför den fria kartytan
-  zoomar kameran först ut tills hela figuren med HP/AP syns, panorerar till
-  soldaten och zoomar in till exakt samma nivå som före bytet. En redan synlig
-  soldat ändrar inte kameran. HUD och en liten kantmarginal räknas bort.
+- `kamerafokus-vid-bordningssoldatbyte` — **Fullständigt implementerat**.
+  Spelaren har en zoomnivå för alla soldater. Manuell zoom ändrar den.
+  När en egen soldat blir vald, manuellt eller automatiskt, panoreras figuren
+  till mitten av den fria kartytan och zoomen sätts till spelarens nivå, även
+  om figuren redan syntes. Det ersätter kameran per soldat. HUD och en liten
+  kantmarginal räknas bort.
 - `kameraoverblick-vid-synlig-bordningsrorelse` — **Fullständigt implementerat**.
-  Före varje synligt steg av en försvarare eller civilist zoomar kameran vid
-  behov ut så att figuren och alla aktiva egna soldater som ser den ryms.
+  Före varje synligt steg av en försvarare eller civilist, och när spelaren
+  hör ett nytt ljud, zoomar kameran vid behov ut så att alla punkter ryms.
   Endast synliga start- och slutpositioner påverkar kameran; riktning, barriärer
   och rök avgör vilka egna soldater som ser figuren. Kameran står still under
-  själva steget och behåller översikten efteråt. Dolda förflyttningar och
-  stillastående turbyten ger ingen sådan kameraflytt.
+  själva steget. Utzoomningen ligger kvar mellan stegen i samma uppspelning
+  och återgår sedan till spelarens zoom och panoreringen före händelsen.
+  Dolda förflyttningar och stillastående turbyten ger ingen sådan kameraflytt.
 - `kameraoverblick-fore-bordningsskott` — **Fullständigt implementerat**. Före
   ett skott mellan en synlig egen soldat och försvarare panorerar kameran och
   zoomar vid behov ut så att båda figurerna ryms på den fria kartytan. Skottet
-  animeras först när kameran är klar. En dold skytt avslöjas inte av kameran.
+  animeras först när kameran är klar. Efter uppspelningen återgår zoomen till
+  spelarens nivå, eller till fokus på nästa egna soldat om turen byts. En dold
+  skytt avslöjas inte av kameran.
 
   Kameraflödena använder mjuka övergångar. Manuell panorering eller zoom avbryter automatiken för resten av den pågående uppspelningen utan
   att stoppa figurerna. Minskad rörelse visar slutläget direkt. Storleksbyte
@@ -109,6 +120,22 @@ kommer från testtransportens startpositioner.
   en vald destination eller dörr som ligger för långt bort för kvarvarande AP
   går längs den billigaste vägen så långt AP räcker. Mot en stängd dörr eller
   en upptagen ruta stannar soldaten bredvid den.
+- `vand-mot-vald-ruta` — **Fullständigt implementerat**. När spelaren väljer
+  en tom ruta som destination vänder sig soldaten mot den, den kortaste vägen
+  i 45-gradessteg för 0,25 AP per steg och så långt AP räcker.
+- `vandning-mot-nasta-steg` — **Fullständigt implementerat**. När soldaten
+  går mot ett mål som AP inte räcker till används kvarvarande AP efter sista
+  steget till att vända soldaten mot nästa steg, så att den kan fortsätta
+  direkt nästa runda.
+- `ap-fraktion-sparas` — **Fullständigt implementerat**. Därefter slutar
+  soldatens tur, och AP som är mindre än nästa stegs kostnad läggs till
+  soldatens AP vid nästa aktivering. Kostar nästa steg 2 AP sparas till
+  exempel 1,75 AP. Detta ersätter den tidigare gränsen där bara en bråkdel
+  under 1 AP sparades och soldaten annars fick fortsätta agera.
+- `sparad-gangdestination` — **Fullständigt implementerat**. Ett mål soldaten
+  inte hann nå sparas och är valt igen när soldaten aktiveras nästa gång. Ett
+  nytt tryck på målet fortsätter gå. Målet glöms när soldaten når det eller
+  går någon annanstans med en vanlig förflyttning.
 - `klickdorr-pa-vald-dorr` — **Fullständigt implementerat**. Första klicket på
   en dörr väljer den. Ett andra klick på samma angränsande dörr försöker
   öppna den, eller hacka den om den är låst. Öppna dörrar väljs som golvrutor.
@@ -307,6 +334,17 @@ kommer från testtransportens startpositioner.
   hukning, Overwatch, `Hack door`, `Use Med-pack`, `Evacuate`, dörrar, granater,
   skott, melee och förflyttning är avstängda när AP, avstånd eller mål inte
   räcker. `End soldier turn` är alltid tillgänglig.
+- `fasta-handlingsplatser` — **Fullständigt implementerat**. Alla knappar
+  visas alltid i samma ordning: vridningar, `Move`, hukning, skott, melee,
+  granater, `Open door`/`Close door` på samma plats, `Hack door`,
+  `Use Med-pack`,
+  Overwatch, `Evacuate`, i kampanjen `Abort boarding` och sist
+  `End soldier turn`. En knapp som saknar mål är avstängd i stället för
+  borttagen, så att knapparna aldrig flyttar runt. `Open door` visar en
+  öppen dörr och `Close door` en stängd dörr.
+- `gang-knapp-till-avlagset-mal` — **Fullständigt implementerat**. `Move` är
+  tillgänglig även när destinationen ligger för långt bort och går då som ett
+  andra tryck på målet (`gang-mot-avlagset-mal`).
 - `granat-kostar-bara-vid-kast` — **Fullständigt implementerat**. Ett kast
   utanför räckvidden (6 rutor), utan kvarvarande granat av den sorten eller med
   för lite AP avvisas innan någon AP dras. Granatknapparna är avstängda för
@@ -324,10 +362,22 @@ kommer från testtransportens startpositioner.
   intill en öppen dörr får `Close door` (1 AP). Knappen är avstängd när någon
   står i dörrens ruta, och modellen avvisar stängningen utan AP-kostnad.
 - `bordning-jamn-bildfrekvens` — **Fullständigt implementerat**. Golv, ljus
-  och dimma ritas i ett cachat lager som bara byggs om när sikt, ljus, laddade
-  bilder eller zoomsteg ändras. Figurer, objekt och rök ljussätts med ett
+  och dimma ritas i ett cachat lager som bara byggs om när nya rutor upptäcks,
+  ljuset ändras, bilder laddas eller zoomsteg ändras; under en förflyttning
+  ljussätts bara området kring den gående figuren
+  (`jamn-ljuskarta-under-forflyttning`). Siktområdets kontur förenklas en gång
+  per sikt. Figurer, objekt och rök ljussätts med ett
   canvasfilter i stället för p5:s `tint()`, väggytor klipps inte i onödan och
   väggar utanför skärmen hoppas över.
+- `snabb-bordningsvagsokning` — **Fullständigt implementerat**. Vägen till en
+  vald ruta visas direkt, och turavslut och försvararnas drag väntar inte på
+  vägsökningen. Vägarna blir desamma som tidigare.
+- `motstandartur-i-mitten` — **Fullständigt implementerat**. När den aktuella
+  personen inte är en av spelarens soldater, eller rundan avgörs, visas
+  `Defenders are acting…` i en centrerad ruta över kartan. Handlingsraden
+  döljs så länge. Rutan tar inte emot tryck, så kameran kan fortfarande
+  flyttas. `Resolving action…` under spelarens egna animationer står kvar i
+  handlingsraden.
 - `utslagning-och-medic` — **Fullständigt implementerat**. Vid 0 HP blir alla personer
   utslagna. Nästa träff dödar. `Med-pack` kan återuppliva. En sida utan
   stridsdugliga soldater är neutraliserad; utslagna överlevande tas till fånga.

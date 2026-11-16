@@ -26,6 +26,10 @@ import {
   type BoardingSightPoint,
 } from './BoardingSightGeometry.js';
 import type { CombatShipType } from '../../../space-battle/models/index.js';
+import {
+  BoardingRouteTree,
+  type BoardingRouteMove,
+} from './BoardingRouteSearch.js';
 
 export type BoardingSide = 'player' | 'defender' | 'civilian';
 export type BoardingPersonStatus =
@@ -52,6 +56,10 @@ export interface BoardingPerson {
   readonly fragGrenades: number;
   readonly smokeGrenades: number;
   readonly cockpit?: boolean;
+  /** sparad-gangdestination: the tile a walk has not reached yet. */
+  readonly destination?: BoardingCell;
+  /** ap-fraktion-sparas: AP left from a walk, added to the next activation. */
+  readonly carriedAp?: number;
 }
 
 export interface BoardingFeature {
@@ -140,6 +148,8 @@ export interface BoardingBattleState {
 export type BoardingCommand =
   | { readonly type: 'turn'; readonly direction: -1 | 1 }
   | { readonly type: 'move'; readonly to: BoardingCell }
+  | { readonly type: 'face'; readonly toward: BoardingCell }
+  | { readonly type: 'walk'; readonly to: BoardingCell }
   | { readonly type: 'crouch' | 'stand' }
   | {
       readonly type: 'door';
@@ -287,6 +297,30 @@ const turnFacing = (facing: number, direction: -1 | 1): number =>
       8) %
       8
   ]!;
+/** vand-mot-vald-ruta: the shortest series of 45° turns towards a tile. */
+export function boardingTurnsToward(
+  position: BoardingCell,
+  facing: number,
+  toward: BoardingCell,
+): readonly (-1 | 1)[] {
+  const dq = toward.q - position.q;
+  const dr = toward.r - position.r;
+  if (dq === 0 && dr === 0) return Object.freeze([]);
+  const sector = Math.round(Math.atan2(-dr, dq) / (Math.PI / 4));
+  const target = (sector + 8) % 8;
+  const current = FACING_ORDER.indexOf(
+    normalizeFacing(facing) as (typeof FACING_ORDER)[number],
+  );
+  const left = (target - current + 8) % 8;
+  return Object.freeze(
+    left <= 4
+      ? Array.from({ length: left }, () => 1 as const)
+      : Array.from({ length: 8 - left }, () => -1 as const),
+  );
+}
+const startingActionPoints = (person: BoardingPerson): number =>
+  Math.max(1, person.agility + person.equipmentApModifier) +
+  (person.carriedAp ?? 0);
 const forwardCost = (
   from: BoardingCell,
   to: BoardingCell,
@@ -303,12 +337,14 @@ export function boardingActionPointsRemaining(
   if (state.activation?.id === id) return state.activation.remaining;
   const postponed = state.postponed.find((entry) => entry.id === id);
   if (postponed) return postponed.remaining;
-  return Math.max(1, person.agility + person.equipmentApModifier);
+  return startingActionPoints(person);
 }
 
 function hiddenDefenderActivity(command: BoardingCommand): string {
-  if (command.type === 'turn') return 'A defender turns.';
-  if (command.type === 'move') return 'A defender moves.';
+  if (command.type === 'turn' || command.type === 'face')
+    return 'A defender turns.';
+  if (command.type === 'move' || command.type === 'walk')
+    return 'A defender moves.';
   if (command.type === 'crouch' || command.type === 'stand')
     return 'A defender changes stance.';
   if (command.type === 'door' || command.type === 'hack')
@@ -327,7 +363,13 @@ function hiddenDefenderActivity(command: BoardingCommand): string {
 function freezeState(state: BoardingBattleState): BoardingBattleState {
   const people = Object.freeze(
     state.people.map((person) =>
-      Object.freeze({ ...person, position: frozenCell(person.position) }),
+      Object.freeze({
+        ...person,
+        position: frozenCell(person.position),
+        ...(person.destination
+          ? { destination: frozenCell(person.destination) }
+          : {}),
+      }),
     ),
   );
   const features = Object.freeze(
@@ -742,9 +784,16 @@ export class BoardingBattle {
         (tie.get(b.id) ?? 0) - (tie.get(a.id) ?? 0) ||
         a.id.localeCompare(b.id),
     );
-    const order = initiative.map((entry) => entry.id);
+    // fast-soldatordning: the player's slots go to the soldiers in roster order.
+    const rolled = initiative.map((entry) => entry.id);
+    const soldiers = this.#state.people
+      .filter((entry) => entry.side === 'player' && rolled.includes(entry.id))
+      .map((entry) => entry.id);
+    let nextSoldier = 0;
+    const order = rolled.map((id) =>
+      soldiers.includes(id) ? soldiers[nextSoldier++]! : id,
+    );
     const first = order[0] ?? null;
-    const actor = this.#state.people.find((entry) => entry.id === first);
     const round = this.#state.round + 1;
     const text = initiative
       .map(
@@ -758,10 +807,7 @@ export class BoardingBattle {
       initiativeOrder: order,
       initiativeIndex: 0,
       currentActorId: first,
-      activation:
-        first && actor
-          ? { id: first, remaining: this.#maxActionPoints(actor) }
-          : null,
+      activation: null,
       people: this.#state.people.map((entry) => ({
         ...entry,
         overwatch: false,
@@ -770,10 +816,21 @@ export class BoardingBattle {
       finishedActors: [],
       log: [...this.#state.log, `Initiative, round ${round}: ${text}.`],
     });
+    if (first) this.#replace({ activation: this.#startActivation(first) });
   }
 
-  #maxActionPoints(entry: BoardingPerson): number {
-    return Math.max(1, entry.agility + entry.equipmentApModifier);
+  /** ap-fraktion-sparas: a new activation uses up any carried AP. */
+  #startActivation(id: string): BoardingActivation | null {
+    const entry = this.#state.people.find((candidate) => candidate.id === id);
+    if (!entry) return null;
+    const remaining = startingActionPoints(entry);
+    if (entry.carriedAp !== undefined)
+      this.#updatePerson(id, (person) => {
+        const rest = { ...person };
+        delete rest.carriedAp;
+        return rest;
+      });
+    return { id, remaining };
   }
 
   #label(id: string): string {
@@ -890,89 +947,77 @@ export class BoardingBattle {
       (candidate) => candidate.id === id && candidate.status === 'active',
     );
     if (!entry || !this.#canStand(destination)) return null;
-    type Node = {
-      position: BoardingCell;
-      facing: number;
-      cost: number;
-      turns: number;
-      steps: BoardingPath['steps'];
-      positions: readonly BoardingCell[];
-    };
-    const start: Node = {
-      position: entry.position,
-      facing: entry.facing,
-      cost: 0,
-      turns: 0,
-      steps: [],
-      positions: [],
-    };
-    const queue: Node[] = [start];
-    const best = new Map<string, number>([
-      [`${positionKey(start.position)}:${start.facing}`, 0],
-    ]);
-    while (queue.length > 0) {
-      queue.sort((a, b) => a.cost - b.cost);
-      const current = queue.shift()!;
-      if (same(current.position, destination))
-        return Object.freeze({
-          cost: current.cost,
-          turns: current.turns,
-          positions: Object.freeze([...current.positions]),
-          finalFacing: current.facing,
-          steps: Object.freeze([...current.steps]),
-        });
-      for (const direction of [-1, 1] as const) {
-        const facing = turnFacing(current.facing, direction);
-        const next: Node = {
-          ...current,
-          facing,
-          cost: current.cost + BOARDING_TURN_AP,
-          turns: current.turns + 1,
-          steps: [
-            ...current.steps,
-            { type: 'turn', direction, cost: BOARDING_TURN_AP },
-          ],
-        };
-        const nodeKey = `${positionKey(next.position)}:${facing}`;
-        if ((best.get(nodeKey) ?? Infinity) > next.cost) {
-          best.set(nodeKey, next.cost);
-          queue.push(next);
-        }
-      }
-      const forward = BoardingBattle.forward(current.position, current.facing);
-      const diagonal =
-        forward.q !== current.position.q && forward.r !== current.position.r;
-      const clearCorner =
-        !diagonal ||
-        (this.#passable({ q: forward.q, r: current.position.r }, id) &&
-          this.#passable({ q: current.position.q, r: forward.r }, id));
-      if (clearCorner && this.#passable(forward, id)) {
-        const moveCost = forwardCost(current.position, forward, entry.crouched);
-        const next: Node = {
-          ...current,
-          position: forward,
-          cost: current.cost + moveCost,
-          steps: [
-            ...current.steps,
-            { type: 'forward', position: forward, cost: moveCost },
-          ],
-          positions: [...current.positions, forward],
-        };
-        const nodeKey = `${positionKey(forward)}:${next.facing}`;
-        if ((best.get(nodeKey) ?? Infinity) > next.cost) {
-          best.set(nodeKey, next.cost);
-          queue.push(next);
-        }
-      }
-    }
-    return null;
+    return this.#routesFor(entry).pathTo(destination);
   }
+
+  /** snabb-bordningsvagsokning: one route search per person and state. */
+  #routesFor(entry: BoardingPerson): BoardingRouteTree {
+    if (this.#routeCache?.state !== this.#state)
+      this.#routeCache = { state: this.#state, trees: new Map() };
+    const cached = this.#routeCache.trees.get(entry.id);
+    if (cached) return cached;
+    const tree = BoardingRouteTree.search(
+      entry.position,
+      entry.facing,
+      (position, facing) => {
+        const moves: BoardingRouteMove[] = ([-1, 1] as const).map(
+          (direction) => ({
+            position,
+            facing: turnFacing(facing, direction),
+            step: { type: 'turn', direction, cost: BOARDING_TURN_AP },
+          }),
+        );
+        const forward = BoardingBattle.forward(position, facing);
+        const diagonal = forward.q !== position.q && forward.r !== position.r;
+        const clearCorner =
+          !diagonal ||
+          (this.#passable({ q: forward.q, r: position.r }, entry.id) &&
+            this.#passable({ q: position.q, r: forward.r }, entry.id));
+        if (clearCorner && this.#passable(forward, entry.id))
+          moves.push({
+            position: forward,
+            facing,
+            step: {
+              type: 'forward',
+              position: forward,
+              cost: forwardCost(position, forward, entry.crouched),
+            },
+          });
+        return moves;
+      },
+    );
+    this.#routeCache.trees.set(entry.id, tree);
+    return tree;
+  }
+
+  #routeCache: {
+    readonly state: BoardingBattleState;
+    readonly trees: Map<string, BoardingRouteTree>;
+  } | null = null;
 
   /**
    * gang-mot-avlagset-mal: the furthest tile the person can afford on the
    * cheapest route towards a destination, or beside a door or occupied tile.
    */
   stepTowards(id: string, destination: BoardingCell): BoardingCell | null {
+    const route = this.routeTowards(id, destination);
+    if (!route) return null;
+    const budget = boardingActionPointsRemaining(this.#state, id);
+    let spent = 0;
+    let reached: BoardingCell | null = null;
+    for (const step of route.steps) {
+      spent += step.cost;
+      if (spent > budget) break;
+      if (step.type === 'forward') reached = step.position;
+    }
+    return reached ? frozenCell(reached) : null;
+  }
+
+  /**
+   * gang-mot-avlagset-mal: the cheapest route to a destination, or to a tile
+   * beside it when it is a closed door or occupied.
+   */
+  routeTowards(id: string, destination: BoardingCell): BoardingPath | null {
     const entry = this.#state.people.find(
       (candidate) => candidate.id === id && candidate.status === 'active',
     );
@@ -992,21 +1037,14 @@ export class BoardingBattle {
         same(goal, entry.position) ? null : this.pathTo(id, goal),
       )
       .filter((route): route is BoardingPath => route !== null);
-    const route =
+    return (
       routes.find((candidate) => {
         const last = candidate.positions.at(-1);
         return last && same(last, destination);
-      }) ?? routes.sort((a, b) => a.cost - b.cost)[0];
-    if (!route) return null;
-    const budget = boardingActionPointsRemaining(this.#state, id);
-    let spent = 0;
-    let reached: BoardingCell | null = null;
-    for (const step of route.steps) {
-      spent += step.cost;
-      if (spent > budget) break;
-      if (step.type === 'forward') reached = step.position;
-    }
-    return reached ? frozenCell(reached) : null;
+      }) ??
+      routes.sort((a, b) => a.cost - b.cost)[0] ??
+      null
+    );
   }
 
   /** Reason a grenade cannot be thrown at the tile, or null when it can. */
@@ -1413,7 +1451,13 @@ export class BoardingBattle {
     return Object.freeze([...result.values()]);
   }
 
+  /** snabb-bordningsvagsokning: the state the last knowledge refresh produced. */
+  #knowledgeState: BoardingBattleState | null = null;
+
   #refreshKnowledge(): void {
+    // The refresh only reads positions, facings, features and smoke, so an
+    // unchanged state already holds its own result.
+    if (this.#knowledgeState === this.#state) return;
     const visible = this.#visibleFor('player');
     const defenderVisible = this.#visibleFor('defender');
     const visibleKeys = new Set(visible.map(positionKey));
@@ -1525,6 +1569,7 @@ export class BoardingBattle {
         )
         .map((entry) => entry.position),
     });
+    this.#knowledgeState = this.#state;
   }
 
   #target(id: string): BoardingPerson | BoardingFeature | null {
@@ -1845,15 +1890,100 @@ export class BoardingBattle {
     if (!path) throw new Error('No route to that tile.');
     if (path.cost > this.#state.activation!.remaining)
       throw new Error('The route needs more AP.');
+    // sparad-gangdestination: a move of its own replaces an unfinished walk.
+    this.#rememberDestination(actor.id, null);
+    this.#takeSteps(actor, path.steps);
+  }
+
+  /** vand-mot-vald-ruta: turn towards a tile as far as the AP allows. */
+  #face(toward: BoardingCell): void {
+    const actor = this.#actor();
+    for (const direction of boardingTurnsToward(
+      actor.position,
+      actor.facing,
+      toward,
+    )) {
+      if (this.#state.activation!.remaining < BOARDING_TURN_AP) break;
+      this.#spend(BOARDING_TURN_AP);
+      this.#updatePerson(actor.id, (entry) => ({
+        ...entry,
+        facing: turnFacing(entry.facing, direction),
+      }));
+    }
+  }
+
+  /**
+   * gang-mot-avlagset-mal / vandning-mot-nasta-steg / ap-fraktion-sparas /
+   * sparad-gangdestination: walk as far as the AP allows, turn towards the
+   * next step, then end the activation and keep the AP that did not cover
+   * the next step for the next one.
+   */
+  #walk(destination: BoardingCell): void {
+    const actor = this.#actor();
+    const route = this.routeTowards(actor.id, destination);
+    if (!route) throw new Error('No route to that tile.');
+    const budget = this.#state.activation!.remaining;
+    let spent = 0;
+    let affordable = 0;
+    for (const [index, step] of route.steps.entries()) {
+      spent += step.cost;
+      if (spent > budget) break;
+      if (step.type === 'forward') affordable = index + 1;
+    }
+    let following = affordable;
+    if (affordable === route.steps.length) {
+      this.#rememberDestination(actor.id, null);
+      this.#takeSteps(actor, route.steps);
+      return;
+    }
+    this.#rememberDestination(actor.id, destination);
+    if (this.#takeSteps(actor, route.steps.slice(0, affordable))) return;
+    let left = this.#state.activation!.remaining;
+    for (const step of route.steps.slice(affordable)) {
+      if (step.type !== 'turn' || step.cost > left) break;
+      left -= step.cost;
+      following++;
+    }
+    if (this.#takeSteps(actor, route.steps.slice(affordable, following)))
+      return;
+    // ap-fraktion-sparas: whatever is below the next step's cost is saved.
+    const next = route.steps[following];
+    const remaining = this.#state.activation!.remaining;
+    if (
+      !next ||
+      remaining >= next.cost ||
+      this.#state.currentActorId !== actor.id
+    )
+      return;
+    if (remaining > 0)
+      this.#updatePerson(actor.id, (entry) => ({
+        ...entry,
+        carriedAp: remaining,
+      }));
+    this.#finishActivation();
+  }
+
+  #rememberDestination(id: string, destination: BoardingCell | null): void {
+    this.#updatePerson(id, (person) => {
+      const entry = { ...person };
+      delete entry.destination;
+      return destination
+        ? { ...entry, destination: frozenCell(destination) }
+        : entry;
+    });
+  }
+
+  /** Takes route steps in order; true when something stopped the walk. */
+  #takeSteps(actor: BoardingPerson, steps: BoardingPath['steps']): boolean {
     const knownHostiles =
       actor.side === 'civilian'
         ? new Set<string>()
         : this.#hostileIdsInSight(actor.side);
-    for (const step of path.steps) {
+    for (const step of steps) {
       const current = this.#state.people.find(
         (entry) => entry.id === actor.id,
       )!;
-      if (current.status !== 'active') break;
+      if (current.status !== 'active') return true;
       if (step.type === 'turn') {
         this.#spend(step.cost);
         this.#updatePerson(actor.id, (entry) => ({
@@ -1890,8 +2020,9 @@ export class BoardingBattle {
             `${actor.label} spots a new enemy and stops.`,
           ],
         });
-      break;
+      return true;
     }
+    return false;
   }
 
   #recordPresentation(actorId: string): void {
@@ -2090,6 +2221,8 @@ export class BoardingBattle {
         facing: turnFacing(entry.facing, command.direction),
       }));
     } else if (command.type === 'move') this.#move(command.to);
+    else if (command.type === 'face') this.#face(command.toward);
+    else if (command.type === 'walk') this.#walk(command.to);
     else if (command.type === 'crouch' || command.type === 'stand') {
       const crouched = command.type === 'crouch';
       if (actor.crouched === crouched)
@@ -2155,10 +2288,7 @@ export class BoardingBattle {
     this.#replace({
       postponed,
       currentActorId: id,
-      activation: {
-        id,
-        remaining: saved?.remaining ?? this.#maxActionPoints(target),
-      },
+      activation: saved ?? this.#startActivation(id),
       log: [...this.#state.log, `${actor.label} waits. ${target.label} acts.`],
     });
   }
@@ -2200,13 +2330,12 @@ export class BoardingBattle {
       this.#endRound();
       return;
     }
-    const actor = this.#state.people.find((entry) => entry.id === id)!;
     this.#replace({
       finishedActors,
       postponed: [],
       initiativeIndex: index,
       currentActorId: id,
-      activation: { id, remaining: this.#maxActionPoints(actor) },
+      activation: this.#startActivation(id),
     });
   }
 
@@ -2273,7 +2402,7 @@ export class BoardingBattle {
       });
       this.#refreshKnowledge();
       let actor = this.#state.people.find((entry) => entry.id === initial.id)!;
-      let remaining = this.#maxActionPoints(actor);
+      let remaining = startingActionPoints(actor);
       const adjacentDoor = this.#state.features.find(
         (feature) =>
           feature.kind === 'door' &&

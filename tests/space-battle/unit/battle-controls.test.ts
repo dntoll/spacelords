@@ -1698,18 +1698,125 @@ it('gang-mot-avlagset-mal: a second tap on an unaffordable destination walks as 
     (cell) => (battle.pathTo(player.id, cell)?.cost ?? 0) > 4,
   )!;
   expect(destination).toBeDefined();
-  const step = battle.stepTowards(player.id, destination);
-  expect(step).not.toBeNull();
+  expect(battle.routeTowards(player.id, destination)).not.toBeNull();
   selectHex(destination);
-  expect(emit).not.toHaveBeenCalled();
+  // vand-mot-vald-ruta: the first tap only turns the soldier, never walks.
+  expect(
+    emit.mock.calls.some(
+      ([intent]) =>
+        intent.type === 'boarding-command' && intent.command.type === 'walk',
+    ),
+  ).toBe(false);
   expect(
     document.querySelector<HTMLButtonElement>('[aria-label="Frag grenade"]')
       ?.disabled,
   ).toBe(false);
   selectHex(destination);
-  expect(emit).toHaveBeenCalledWith({
+  expect(emit).toHaveBeenLastCalledWith({
     type: 'boarding-command',
-    command: { type: 'move', to: step },
+    command: { type: 'walk', to: destination },
+  });
+  view.dispose();
+});
+
+it('vand-mot-vald-ruta: choosing a tile to the side turns the soldier towards it', () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) =>
+      person.side === 'player' &&
+      person.position.q === 2 &&
+      person.position.r === 8,
+  )!;
+  const boardingState: BoardingBattleState = {
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player.id ? { ...person, facing: 0 } : person,
+    ),
+    initiativeOrder: [player.id],
+    initiativeIndex: 0,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 12 },
+  };
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new FixtureBoardingView(
+    document.body,
+    emit,
+    (_container, select) => {
+      selectHex = select;
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
+  view.render(boardingState);
+  const battle = BoardingBattle.restore(testBoardingMap, boardingState);
+  const ahead = { q: player.position.q + 1, r: player.position.r };
+  const side = [
+    { q: player.position.q, r: player.position.r - 1 },
+    { q: player.position.q, r: player.position.r + 1 },
+  ].find((cell) => battle.pathTo(player.id, cell))!;
+  expect(side).toBeDefined();
+  if (battle.pathTo(player.id, ahead)) {
+    selectHex(ahead);
+    expect(emit).not.toHaveBeenCalled();
+  }
+  selectHex(side);
+  expect(emit).toHaveBeenCalledExactlyOnceWith({
+    type: 'boarding-command',
+    command: { type: 'face', toward: side },
+  });
+  view.dispose();
+});
+
+it('sparad-gangdestination: a soldier with an unreached destination has it chosen again', () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) =>
+      person.side === 'player' &&
+      person.position.q === 2 &&
+      person.position.r === 8,
+  )!;
+  const battle = BoardingBattle.restore(testBoardingMap, {
+    ...created.snapshot,
+    initiativeOrder: [player.id],
+    initiativeIndex: 0,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 12 },
+  });
+  const cells = Array.from(
+    { length: testBoardingMap.width * testBoardingMap.height },
+    (_, index) => ({
+      q: index % testBoardingMap.width,
+      r: Math.floor(index / testBoardingMap.width),
+    }),
+  );
+  const destination = cells.find(
+    (cell) => (battle.pathTo(player.id, cell)?.cost ?? 0) > 12,
+  )!;
+  expect(destination).toBeDefined();
+  const boardingState: BoardingBattleState = {
+    ...battle.snapshot,
+    people: battle.snapshot.people.map((person) =>
+      person.id === player.id ? { ...person, destination } : person,
+    ),
+  };
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new FixtureBoardingView(
+    document.body,
+    emit,
+    (_container, select) => {
+      selectHex = select;
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
+  view.render(boardingState);
+  expect(document.body.textContent).toContain(
+    `Destination ${destination.q},${destination.r}`,
+  );
+  selectHex(destination);
+  expect(emit).toHaveBeenCalledExactlyOnceWith({
+    type: 'boarding-command',
+    command: { type: 'walk', to: destination },
   });
   view.dispose();
 });
@@ -1811,5 +1918,160 @@ it('kastad-granat-i-bage: plays the throw before applying the impact state', asy
       undefined,
     ),
   );
+  view.dispose();
+});
+
+function farDestinationView() {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) =>
+      person.side === 'player' &&
+      person.position.q === 2 &&
+      person.position.r === 8,
+  )!;
+  const boardingState: BoardingBattleState = {
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player.id ? { ...person, facing: 0 } : person,
+    ),
+    initiativeOrder: [player.id],
+    initiativeIndex: 0,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 4 },
+  };
+  const battle = BoardingBattle.restore(testBoardingMap, boardingState);
+  const destination = Array.from(
+    { length: testBoardingMap.width * testBoardingMap.height },
+    (_, index) => ({
+      q: index % testBoardingMap.width,
+      r: Math.floor(index / testBoardingMap.width),
+    }),
+  ).find(
+    (cell) =>
+      cell.r === player.position.r &&
+      (battle.pathTo(player.id, cell)?.cost ?? 0) > 4,
+  )!;
+  expect(destination).toBeDefined();
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new FixtureBoardingView(
+    document.body,
+    emit,
+    (_container, select) => {
+      selectHex = select;
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
+  view.render(boardingState);
+  return {
+    view,
+    emit,
+    destination,
+    select: (cell: typeof destination) => selectHex(cell),
+  };
+}
+
+const actionNames = () =>
+  [...document.querySelectorAll<HTMLButtonElement>('.boarding-action')].map(
+    (control) =>
+      control
+        .getAttribute('aria-label')!
+        .split(' · ')[0]!
+        .replace(/^Stand$/, 'Crouch')
+        .replace(/^Close door$/, 'Open door'),
+  );
+
+it('gang-knapp-till-avlagset-mal: Move stays enabled for a destination beyond the AP and walks there', () => {
+  const { view, emit, destination, select } = farDestinationView();
+  select(destination);
+  const move = document.querySelector<HTMLButtonElement>(
+    '[aria-label^="Move"]',
+  )!;
+  expect(move.disabled).toBe(false);
+  emit.mockClear();
+  move.click();
+  expect(emit).toHaveBeenCalledExactlyOnceWith({
+    type: 'boarding-command',
+    command: { type: 'walk', to: destination },
+  });
+  view.dispose();
+});
+
+it('fasta-handlingsplatser: every action keeps its place whatever is chosen', () => {
+  const { view, destination, select } = farDestinationView();
+  const before = actionNames();
+  expect(before).toContain('Frag grenade');
+  expect(before.filter((name) => name === 'Open door')).toHaveLength(1);
+  expect(before).toContain('Use Med-pack');
+  expect(before).toContain('Evacuate');
+  expect(
+    document.querySelector<HTMLButtonElement>('[aria-label="Frag grenade"]')
+      ?.disabled,
+  ).toBe(true);
+  select(destination);
+  expect(actionNames()).toEqual(before);
+  view.dispose();
+});
+
+it('fasta-handlingsplatser: Open door and Close door share one place but look different', () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) => person.side === 'player',
+  )!;
+  const door = created.snapshot.features.find(
+    (feature) => feature.kind === 'door',
+  )!;
+  const withDoor = (open: boolean): BoardingBattleState => ({
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player.id
+        ? {
+            ...person,
+            position: { q: door.position.q - 1, r: door.position.r },
+            facing: 0,
+          }
+        : person,
+    ),
+    features: created.snapshot.features.map((feature) =>
+      feature.id === door.id ? { ...feature, locked: false, open } : feature,
+    ),
+    initiativeOrder: [player.id],
+    initiativeIndex: 0,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 12 },
+  });
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new FixtureBoardingView(document.body, emit, () => ({
+    render() {},
+    zoom() {},
+    fit() {},
+    dispose() {},
+  }));
+  const doorSlot = () => {
+    const controls = [
+      ...document.querySelectorAll<HTMLButtonElement>('.boarding-action'),
+    ];
+    const index = controls.findIndex((control) =>
+      /^(Open|Close) door$/.test(control.getAttribute('aria-label')!),
+    );
+    const art = controls[index]!.querySelector<HTMLElement>(
+      '.boarding-action-art',
+    )!;
+    return {
+      index,
+      label: controls[index]!.getAttribute('aria-label'),
+      count: controls.length,
+      look: `${art.style.backgroundImage} ${art.style.backgroundPosition}`,
+    };
+  };
+  view.render(withDoor(false));
+  const opening = doorSlot();
+  expect(opening.label).toBe('Open door');
+  view.render(withDoor(true));
+  const closing = doorSlot();
+  expect(closing.label).toBe('Close door');
+  expect(closing.index).toBe(opening.index);
+  expect(closing.count).toBe(opening.count);
+  expect(closing.look).not.toBe(opening.look);
   view.dispose();
 });

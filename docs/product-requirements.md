@@ -383,24 +383,27 @@ Prototypen från huvudmenyn påverkar inga sparade spel. I kampanjen ger en
 vunnen bordning skeppet, last, recovered `Raptor factory` och en kartplaceholder
 runt närmaste andra pirat. Se [bordningsstrid](boarding/boarding-combat.md).
 
-`kamerafokus-vid-bordningssoldatbyte` — **Fullständigt implementerat**. Vid
-byte till en egen soldat utanför bild ska kameran zooma ut tills soldaten syns,
-panorera till den och zooma in till samma nivå som tidigare. Hela figuren och
-HP/AP ska synas på kartytan som är fri från HUD. Synliga soldater kräver ingen
-kameraflytt. Detta gäller även automatiska turbyten.
+`kamerafokus-vid-bordningssoldatbyte` — **Fullständigt implementerat**.
+Spelaren har en zoomnivå som gäller alla soldater. När en egen soldat blir
+vald panoreras figuren till mitten av kartytan som är fri från HUD, och
+kameran använder den zoomnivån även om figuren redan syntes. Det ersätter
+att varje soldat hade en egen panorering och att en redan synlig soldat
+lämnade kameran orörd.
 
 `kameraoverblick-vid-synlig-bordningsrorelse` — **Fullständigt implementerat**.
-När en fiende eller civilist rör sig inom synhåll ska kameran vid behov zooma
-ut så att figuren och alla egna aktiva soldater som ser den syns samtidigt.
-Kameran står still medan figuren rör sig och behåller översikten efteråt.
-Dolda positioner får aldrig avslöjas av kameran. Spelaren kan avbryta
-kameraflödena genom att själv panorera eller zooma. Minskad
-rörelse visar kamerans slutläge direkt.
+När en fiende eller civilist rör sig inom synhåll, en ny figur blir synlig
+eller spelaren hör ett nytt ljud, zoomar kameran vid behov ut så att alla
+punkter i händelsen syns samtidigt. Kameran står still medan figuren rör sig.
+Utzoomningen är tillfällig och kameran återgår till spelarens zoom och
+panoreringen före händelsen när uppspelningen är klar. Dolda positioner får
+aldrig avslöjas av kameran. Spelaren kan avbryta kameraflödena genom att
+själv panorera eller zooma. Minskad rörelse visar kamerans slutläge direkt.
 
 `kameraoverblick-fore-bordningsskott` — **Fullständigt implementerat**. När en
 synlig fiende eller egen soldat skjuter på den andra sidan ska kameran före
-skottet panorera och vid behov zooma ut tills både skytt och mål syns. Dolda
-positioner får inte avslöjas.
+skottet panorera och vid behov zooma ut tills både skytt och mål syns. Efter
+uppspelningen återgår kameran till spelarens zoom. Dolda positioner får inte
+avslöjas.
 
 ## Kampanjbordning
 
@@ -1506,6 +1509,8 @@ Kraven nedan är **Ej implementerat** utom `ljuskarta-i-bordning`, som är **Del
 
 - `ljuskarta-i-bordning` — Golv och väggar får ljus och skuggor med mjuka, exakta kanter i stället för rutornas fyrkantighet. Ersätter `vertexljus-i-bordning`.
 - `skuggor-fran-figurer-och-foremal` — **Delvis implementerat**: figurer, lådor och andra låga föremål kastar skuggor på golvet, längre ju högre föremålet är. Väggarna tar ännu inte emot skuggorna.
+- `jamn-ljuskarta-under-forflyttning` — **Fullständigt implementerat**: en förflyttning ska inte rycka för att ljus och skuggor räknas om. Skuggorna får vara något grövre medan figuren går och blir skarpa när den stannar.
+- `skuggor-mellan-rutor` — **Fullständigt implementerat**: en figur som går mellan två rutor kastar skugga från där den syns.
 - `fargat-ljus-i-bordning` — Lampor kan ha färg, som tonar allt som inte själv lyser.
 - `visuell-morkerinstallning` — Spelaren kan göra bilden ljusare eller mörkare. Det påverkar bara bilden, inte spelet.
 - `ljusniva-per-ruta` — Varje ruta har en ljusnivå i spelet som följer de tända lamporna.
@@ -1573,6 +1578,24 @@ fel studsar aldrig in genom en vägg.
 ruta eller dörr som ligger för långt bort gör att soldaten går så långt den
 hinner åt det hållet.
 
+`vand-mot-vald-ruta` — **Fullständigt implementerat**: när man väljer en ruta
+vänder sig soldaten ditåt.
+
+`vandning-mot-nasta-steg` — **Fullständigt implementerat**: räcker inte AP
+hela vägen använder soldaten det som blir över till att vända sig mot nästa
+steg, redo att fortsätta nästa runda.
+
+`ap-fraktion-sparas` — **Fullständigt implementerat**: när soldaten inte har
+AP nog för nästa steg slutar dess tur och det som blev över sparas till nästa
+runda. Kostar nästa steg 2 AP och 1,75 AP blir över sparas alltså 1,75 AP.
+
+`sparad-gangdestination` — **Fullständigt implementerat**: målet soldaten
+inte hann fram till är fortfarande valt nästa runda, så att soldaten kan gå
+vidare dit.
+
+`fast-soldatordning` — **Fullständigt implementerat**: spelarens soldater
+väljs alltid i samma ordning, så att soldat 1 är vald först varje runda.
+
 `bordning-explosioner-och-forstorelse` — **Fullständigt implementerat**:
 granater exploderar synligt och saker som går sönder syns gå sönder och lämnar
 bråte.
@@ -1624,8 +1647,23 @@ personer om tillräckligt mycket av målet syns.
 `avstangda-omojliga-handlingar` — **Fullständigt implementerat**:
 handlingsknappar som inte kan utföras är avstängda.
 
+`fasta-handlingsplatser` — **Fullständigt implementerat**: varje
+handlingsknapp har alltid samma plats, så att knapparna inte flyttar runt.
+Öppna och stänga dörr delar plats men ser olika ut.
+
+`gang-knapp-till-avlagset-mal` — **Fullständigt implementerat**: `Move` är
+inte avstängd när destinationen ligger för långt bort; soldaten går då så
+långt den hinner.
+
 `bordning-jamn-bildfrekvens` — **Fullständigt implementerat**: bordningskartan
 ska kännas jämn och inte ryckig på mobilen.
+
+`snabb-bordningsvagsokning` — **Fullständigt implementerat**: ett tryck på en
+ruta visar vägen dit utan märkbar väntan, och att avsluta en soldats tur
+känns inte trögt.
+
+`motstandartur-i-mitten` — **Fullständigt implementerat**: medan motståndarna
+agerar visas det i en ruta mitt på skärmen i stället för längst ned.
 
 `volymetrisk-bordningsrok` — **Fullständigt implementerat**: rök visas med
 animerade halvgenomskinliga partiklar genom rutan.

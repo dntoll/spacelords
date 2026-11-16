@@ -1667,7 +1667,9 @@ passerade snabbsviten med 758 tester på 14,70 sekunder utan parallell belastnin
 Ny ljussättning planeras i [ljussättning i bordning](boarding/boarding-lighting.md). Kraven där är **Ej implementerat**, utom `ljuskarta-i-bordning` som är **Delvis implementerat** (golv klart, väggar återstår):
 
 - `ljuskarta-i-bordning`: färgad ljuskarta i rutnätets koordinater med flera texlar per ruta, byggd av 2D-synlighetspolygoner per ljuskälla mot väggar, stängda dörrar och rök, och multiplicerad över golvet med golvets affina transform. Väggytor hämtar ljus från ljuskartan. Ersätter `vertexljus-i-bordning`. Implementerat för golv i `BoardingLightMap`: 16 texlar per ruta och en texels kant, ambient som grundfärg och per lampa en cachad falloffbild med samma formel som rutljuset, klippt till synlighetspolygonen och adderad med `lighter`. Varje golvyta multipliceras med sin rutas del av kartan, med en texels marginal för sömlös filtrering. Tunna väggar blockerar bara sitt mittband. Polygonerna för de levererade kartorna tar 2–4 ms i Node, mot 2–6 ms för det tidigare hörnljuset på golven.
-- `skuggor-fran-figurer-och-foremal`: `boardingLightOccluders` ger fotavtryck med höjd för aktiva och nedslagna figurer (1,8, 1,2 eller 0,72 m), `Half cover` (1,2 m), reaktorn (1,8 m) och låga tunna väggar (1,2 m). `boardingShadowPolygon` behandlar lampan som en skiva med radien 0,3 m: kärnskuggan är det konvexa höljet av fotavtrycket (runt för figurer) och fotavtryckets topp projicerad H/(H−h) gånger längre bort, krympt med a·h/(H−h) åt varje håll ned till en punkt och avslutad vid lampans räckvidd. En figur rakt under en lampa får därför bara en rund skugga vid fötterna. Varje lampa ritas i en egen bild där skuggorna stansas ut med `destination-out` innan bilden adderas, så en skugga aldrig släcker en annan lampas ljus. `boardingLightMapSignature` bygger om ljuskartan och golvlagret när figurer flyttas, hukar eller faller.
+- `skuggor-fran-figurer-och-foremal`: `boardingLightOccluders` ger fotavtryck med höjd för aktiva och nedslagna figurer (1,8, 1,2 eller 0,72 m), `Half cover` (1,2 m), reaktorn (1,8 m) och låga tunna väggar (1,2 m). `boardingShadowPolygon` behandlar lampan som en skiva med radien 0,3 m: kärnskuggan är det konvexa höljet av fotavtrycket (runt för figurer) och fotavtryckets topp projicerad H/(H−h) gånger längre bort, krympt med a·h/(H−h) åt varje håll ned till en punkt och avslutad vid lampans räckvidd. En figur rakt under en lampa får därför bara en rund skugga vid fötterna. Varje lampa ritas i en egen bild där skuggorna stansas ut med `destination-out` innan bilden adderas, så en skugga aldrig släcker en annan lampas ljus. Figurernas skuggor sköts av `jamn-ljuskarta-under-forflyttning` nedan.
+- `jamn-ljuskarta-under-forflyttning`: `BoardingLightMap` sparar per lampa en bild klippt till synlighetspolygonen, tonad av glas och med fasta föremåls skuggor utstansade. Den byggs bara om när `boardingStaticLightSignature` (barriärer, fasta föremål och glas) ändras. `BoardingLightRefresh` håller reda på vilka figurskuggor varje lampa senast ritades med, avrundade till texelrutnätet, och ger de lampor som når en figur som flyttat sig minst en texel samt det område av kartan som ska sättas ihop igen. Där fylls ambient och alla lampor som når området adderas på nytt. Medan en förflyttning pågår ritas skuggorna med `BOARDING_DRAFT_LIGHT_TEXELS` (8) texlar per ruta och skalas upp; när den är klar ritas de med 16. Golvlagret delas i oupplysta golv, som bara ritas om när mängden någonsin sedda rutor ändras, och ett upplyst lager där ljuskartan multipliceras med en enda `drawImage` och golvens samlade klippbana, bara inom det ändrade området. Ersätter att `boardingLightMapSignature` byggde om ljuskarta och golvlager vid varje steg. I testbordningen på dator gick ett steg från 7–17 ms för ljuskartan och 4–8 ms för golvlagret till 0,1–2 ms respektive 0,1–0,3 ms. Det ändrade området är en skärmrektangel kring lampornas kvadrat, som på skärmen är en romb. Ljuskartan multiplicerades först bara över kvadraten, så rektangelns hörn fick oupplyst golv som blinkade ljust under förflyttning på stora skepp. `boardingLightMapAreaFor` räknar nu tillbaka rektangelns fyra hörn till texlar, med en ruta extra på varje sida.
+- `skuggor-mellan-rutor`: `boardingMovingLightFigures` interpolerar figurernas positioner med samma andel som spritarna, och `BoardingMapView` uppdaterar ljuskartan med dem varje bildruta.
 - `ljusniva-per-ruta`: ljusnivån per ruta beräknas i modellen från tända lampor, bärbart ljus och brand, utan blinkning, mynningsblixt eller mörkerinställning.
 - `dynamiskt-bordningsljus`: ett statiskt lager med hög upplösning byggs om vid ändrade lampor eller barriärer; ett dynamiskt lager med lägre upplösning ritas om när rörliga eller blinkande ljus ändras. Upplösningarna mäts fram på mobil.
 - `tandbara-lampor`: lampornas tillstånd blir ett nytt fält i sparad strid och stäms av enligt `avstamning-sparkompatibilitet` innan det införs.
@@ -1715,11 +1717,18 @@ BoardingCameraController beräknar oföränderliga kamerafaser oberoende av p5.
 BoardingView mäter fri kartyta utanför HUD, handlingsknappar, stridsdetaljer,
 zoom och förklaring. BoardingMapView projicerar figurernas bildrektanglar och
 HP/AP till världsmått. En anpassad marginal på högst 24 skärmpixlar bevaras.
-Soldatfokus har separata faser för utzoomning, panorering och återställd zoom,
-vardera 300 ms med mjuk interpolation. Tillfällig automatisk zoom kan
-underskrida den manuella miniminivån för att rymma avlägsna figurer.
+Soldatfokus är en fas som centrerar den valda soldaten på den fria ytan i
+spelarens zoom, 300 ms med mjuk interpolation. Zoomen är ett enda tal och
+ändras av hjul, nyp, tangenter och Fit. En presentation sparar panoreringen
+vid starten. Skott, synlig rörelse och nya ljud för spelaren zoomar tillfälligt
+ut så att alla punkter ryms, utan att ändra spelarens zoom. Mellan stegen i
+samma uppspelning återgår kameran inte. När uppspelningen är klar återställs
+panoreringen och spelarens zoom, utom när en ny egen soldat ska fokuseras.
+Tillfällig automatisk zoom kan underskrida den manuella miniminivån för att
+rymma avlägsna figurer.
 
-Översikten härleds enbart ur synliga personer i presentationens snapshots.
+Översikten härleds ur synliga personer i presentationens snapshots och ur nya
+ljudmarkörer för spelaren.
 BoardingBattle.playerObserversOf använder modellens verkliga siktregler utan
 att ändra striden. Både synliga ändpunkter och deras observatörer ramas in
 före steget. BoardingView inväntar kameran före figuranimationen och fokuserar
@@ -1763,10 +1772,30 @@ färdig reparation.
   utifrån dem. `#hack` validerar dörren före AP-dragning. Regressionstester i
   `tests/boarding/unit/boarding-actions.test.ts` och vytester i
   `tests/space-battle/unit/battle-controls.test.ts`.
-- `gang-mot-avlagset-mal`: `BoardingBattle.stepTowards` väljer billigaste väg
-  till målet, eller till en kantgranne vid stängd dörr respektive en granne vid
-  upptagen ruta, och returnerar sista rutan som ryms i kvarvarande AP. Vyn
-  skickar då ett vanligt `move`-kommando; sparformatet ändras inte.
+- `gang-mot-avlagset-mal`: `BoardingBattle.routeTowards` väljer billigaste
+  väg till målet, eller till en kantgranne vid stängd dörr respektive en granne
+  vid upptagen ruta. `stepTowards` returnerar sista rutan som ryms i
+  kvarvarande AP. Vyn skickar `walk` vid andra trycket på ett mål som inte
+  ryms och `move` när hela vägen ryms.
+- `vand-mot-vald-ruta`: `boardingTurnsToward` ger kortaste följden av
+  45-gradersvändningar mot rutans närmaste av åtta riktningar. Vyn skickar
+  `face` vid första trycket på en tom ruta när vändning behövs och ryms;
+  kommandot vänder så långt AP räcker. Tester i
+  `tests/boarding/unit/boarding-walk-to-destination.test.ts` och
+  `tests/space-battle/unit/battle-controls.test.ts`.
+- `vandning-mot-nasta-steg`, `ap-fraktion-sparas` och
+  `sparad-gangdestination`: `walk` tar alla steg fram till sista
+  överkomliga framåtsteget och därefter de vändningar före nästa framåtsteg
+  som ryms. Är det som återstår mindre än nästa stegs kostnad, vilket det
+  alltid är när vägen inte nåtts, avslutas aktiveringen och resten sparas i
+  `BoardingPerson.carriedAp`, som läggs till vid nästa aktivering
+  (`#startActivation`) och då nollställs. Ett ej nått mål sparas i
+  `BoardingPerson.destination`; `move` och ett nått mål tar bort det. Vyn
+  väljer sparad destination när en soldat aktiveras och efter en animering
+  inom samma aktivering. Båda fälten är valfria, så äldre sparade spel laddas
+  oförändrade.
+- `fast-soldatordning`: `#beginRound` sorterar initiativet som tidigare och
+  fördelar sedan spelarsoldaternas platser på soldaterna i `people`-ordning.
 - `bordning-jamn-bildfrekvens`: profilering visade att p5:s `tint()` ritade om
   hela figuratlasen fyra gånger per figur och bildruta. BoardingMapView ritar
   nu bilder via `drawImage` med `filter: brightness()` och `globalAlpha`.
@@ -1775,7 +1804,33 @@ färdig reparation.
   minne och laddade golvbilder. `paintTexturedQuad` hoppar över `clip()` när
   klippolygonen är exakt texturens parallellogram, och väggar och objekt utanför
   canvasen sorteras bort. Ritningen per bildruta blev ungefär tre gånger
-  snabbare i profileringen.
+  snabbare i profileringen. Siktkonturen har en stråle förbi varje väggörn
+  inom räckhåll, i testbordningen 20 975 punkter, och ritades, klipptes och
+  användes för halvskyddsskuggor i varje bildruta (30–70 ms). Vyn projicerar
+  och förenklar den med Douglas–Peucker (tolerans 0,1 världspixel) en gång
+  per siktområde, `boardingSimplifiedOutline`, vilket gav 12 punkter och
+  0,1–0,2 ms. Golvlagrets nyckel är nu mängden någonsin sedda rutor, se
+  `jamn-ljuskarta-under-forflyttning`.
+- `snabb-bordningsvagsokning`: `pathTo` var en Dijkstra över ruta och
+  riktning som sorterade om hela kön vid varje uttag och kopierade vägen i
+  varje nod. `routeTowards` frågade upp till nio mål, vyn gjorde om sökningen
+  vid varje ritning med en ny `BoardingBattle`, och en civilist utan nåbar
+  utgång frågade varje ruta på kartan. I testbordningen tog en fråga upp till
+  56 ms, `routeTowards` 250 ms och en civilists drag 5,4 s i Node.
+  `BoardingRouteTree` söker nu en gång från personens ställning med en binär
+  heap ordnad på kostnad och sedan upptäcktsordning, och sparar föräldranoder
+  i stället för hela vägar. Varje rutas väg är den första ställning som nådde
+  rutan, samma väg som den tidigare sökningen stannade vid; en jämförelse över
+  ett helt testförlopp gav identiska vägar. Trädet cachas per person och
+  tillståndsobjekt, som övriga siktcacher, och `BoardingView` återanvänder en
+  `BoardingBattle` per visat tillstånd. Efteråt tar en fråga under 0,1 ms,
+  det tyngsta försvarardraget 250 ms och ett turavslut 45–65 ms. Varje
+  kommando beräknade dessutom sikt och kunskap två gånger, i `command()` och i
+  `synchronize()`. `#refreshKnowledge` hoppar nu över ett tillståndsobjekt
+  som den själv just producerade; den läser bara positioner, riktningar,
+  föremål och rök, inte sina egna utdata, så resultatet blir detsamma.
+  Siktytan (20–55 ms) återstår som kostnad. A* valdes bort eftersom de flesta frågor gäller många mål eller
+  mål som inte går att nå.
 - `ingen-rok-i-hela-vaggar`: `BoardingBattle.#smokeCanFill` avvisar rutor utan
   terräng och rutor med oförstörd vägg, ytterskrov eller stängd dörr. Både
   rökgranatens placering och spridningen vid rundslut använder den; spridningen
@@ -1791,6 +1846,17 @@ färdig reparation.
   kvarvarande AP och de exporterade kostnaderna `BOARDING_HACK_AP`,
   `BOARDING_MED_PACK_AP` och `BOARDING_EVACUATE_AP`, plus avstånd och
   modellens `grenadeReason` och `doorReason`.
+- `fasta-handlingsplatser`: BoardingView ritar alltid samma knappar i samma
+  ordning med fast storlek; knappar utan mål är avstängda i stället för
+  borttagna. `Open door` och `Close door` delar en plats: en vald dörr
+  avgör, annars en öppen dörr på destinationen, dörren framför soldaten och
+  sist en angränsande öppen dörr. `boardingActionButtonImage` ger
+  `Close door` spelets stängda dörrbild (`door-face.png`) i stället för
+  atlasens öppna dörr.
+  `Abort boarding` finns bara i kampanjen men ändras inte under en strid.
+- `gang-knapp-till-avlagset-mal`: `Move` är tillgänglig när
+  `routeTowards` hittar en väg och skickar `move` när hela vägen ryms,
+  annars `walk`. Vytester i `tests/space-battle/unit/battle-controls.test.ts`.
 - `utslagen-fiende-utan-sikte` och `ljudmarkor-bara-utom-sikt`:
   `BoardingBattle.targetIndicators` tar bara med aktiva fiender, och
   BoardingMapView ritar HP-mätare bara för aktiva personer och ljudmarkörer bara

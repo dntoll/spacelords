@@ -43,6 +43,13 @@ const center = (bounds: BoardingCameraBounds): BoardingCameraPoint => ({
   x: (bounds.left + bounds.right) / 2,
   y: (bounds.top + bounds.bottom) / 2,
 });
+const sameView = (
+  left: BoardingCameraSnapshot,
+  right: BoardingCameraSnapshot,
+): boolean =>
+  Math.abs(left.scale - right.scale) <= 1e-6 &&
+  Math.abs(left.offset.x - right.offset.x) <= 1e-6 &&
+  Math.abs(left.offset.y - right.offset.y) <= 1e-6;
 
 /** Camera geometry is independent of p5 and cannot change combat state. */
 export class BoardingCameraController {
@@ -220,43 +227,53 @@ export class BoardingCameraController {
     return Object.freeze([this.#phase(from, to, pivot)]);
   }
 
-  /** kamerafokus-vid-bordningssoldatbyte: reveal, pan, then restore the exact previous zoom. */
+  /**
+   * kamerafokus-vid-bordningssoldatbyte: center the selected soldier in the
+   * free viewport at the player's zoom, even when the figure is already visible.
+   */
   focus(
     from: BoardingCameraSnapshot,
     subject: BoardingCameraSubject,
     viewport: BoardingCameraBounds,
+    scale: number,
   ): readonly BoardingCameraTransition[] {
     const bounds = this.#safeBounds(viewport);
-    if (
-      bounds.right <= bounds.left ||
-      bounds.bottom <= bounds.top ||
-      this.#contains(from, subject, bounds)
-    )
+    if (bounds.right <= bounds.left || bounds.bottom <= bounds.top)
       return Object.freeze([]);
-    const phases = [...this.overview(from, [subject], viewport)];
     const pivot = {
       x: subject.x + subject.width / 2,
       y: subject.y + subject.height / 2,
     };
     const anchor = center(bounds);
-    const current = phases.at(-1)?.to ?? from;
-    const panned = snapshot(current.scale, {
-      x: anchor.x - pivot.x * current.scale,
-      y: anchor.y - pivot.y * current.scale,
+    const to = snapshot(scale, {
+      x: anchor.x - pivot.x * scale,
+      y: anchor.y - pivot.y * scale,
     });
-    phases.push(this.#phase(current, panned, pivot));
-    if (current.scale !== from.scale)
-      phases.push(
-        this.#phase(
-          panned,
-          snapshot(from.scale, {
-            x: anchor.x - pivot.x * from.scale,
-            y: anchor.y - pivot.y * from.scale,
-          }),
-          pivot,
-        ),
-      );
-    return Object.freeze(phases);
+    if (sameView(from, to)) return Object.freeze([]);
+    return Object.freeze([this.#phase(from, to, pivot)]);
+  }
+
+  /**
+   * kamerafokus-vid-bordningssoldatbyte: return to the pan from before an
+   * event, at the player's own zoom.
+   */
+  restore(
+    from: BoardingCameraSnapshot,
+    pan: BoardingCameraPoint,
+    scale: number,
+    viewport: BoardingCameraBounds,
+  ): readonly BoardingCameraTransition[] {
+    const bounds = this.#safeBounds(viewport);
+    if (bounds.right <= bounds.left || bounds.bottom <= bounds.top)
+      return Object.freeze([]);
+    const to = snapshot(scale, pan);
+    if (sameView(from, to)) return Object.freeze([]);
+    const anchor = center(bounds);
+    const pivot = {
+      x: (anchor.x - from.offset.x) / from.scale,
+      y: (anchor.y - from.offset.y) / from.scale,
+    };
+    return Object.freeze([this.#phase(from, to, pivot)]);
   }
 
   /** kantindikator-for-synlig-fiende: pan to the target without changing zoom. */

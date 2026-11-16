@@ -20,7 +20,7 @@ package "(delat)" as boarding___delat_ {
   rectangle "<b>controllers</b>\nBoardingController\nBoardingEditorController" as boarding___delat___controllers
 }
 package "battle" as boarding__battle {
-  rectangle "<b>models</b>\nBoardingAI\nBoardingBattle\nBoardingEngagement\nBoardingFacade\nBoardingPathPreview\nBoardingSightGeometry" as boarding__battle__models
+  rectangle "<b>models</b>\nBoardingAI\nBoardingBattle\nBoardingEngagement\nBoardingFacade\nBoardingPathPreview\nBoardingRouteSearch\nBoardingSightGeometry" as boarding__battle__models
   rectangle "<b>views</b>\nBoardingCameraController\nBoardingDoorSlide\nBoardingEffectParticles\nBoardingMapView\nBoardingMotionPacing\nBoardingShotGlass\nBoardingSmokeParticles\nBoardingTargetIndicatorLayout\nBoardingView" as boarding__battle__views
 }
 package "editor" as boarding__editor {
@@ -31,7 +31,7 @@ package "map" as boarding__map {
   rectangle "<b>models</b>\nBoardingComposer\nBoardingMap\nTestBoarding" as boarding__map__models
 }
 package "rendering" as boarding__rendering {
-  rectangle "<b>views</b>\nBoardingActionArtwork\nBoardingCharacterAtlas\nBoardingCharacterImages\nBoardingCharacterSprite\nBoardingLightMap\nBoardingLightPainter\nBoardingLighting\nBoardingObjectArtwork\nBoardingProjection\nBoardingScale\nBoardingSpriteMetrics\nBoardingSurfaceArtwork\nBoardingSurfacePainter\nBoardingWallVisibility" as boarding__rendering__views
+  rectangle "<b>views</b>\nBoardingActionArtwork\nBoardingCharacterAtlas\nBoardingCharacterImages\nBoardingCharacterSprite\nBoardingLightMap\nBoardingLightPainter\nBoardingLightRefresh\nBoardingLighting\nBoardingObjectArtwork\nBoardingOutline\nBoardingProjection\nBoardingScale\nBoardingSpriteMetrics\nBoardingSurfaceArtwork\nBoardingSurfacePainter\nBoardingWallVisibility" as boarding__rendering__views
 }
 rectangle "shared" as ext__shared #EEEEEE
 rectangle "space-battle" as ext__space_battle #EEEEEE
@@ -40,13 +40,13 @@ boarding__battle__views --> boarding__battle__models
 boarding__editor__views --> boarding__editor__models
 boarding___delat_ ..> boarding__battle : 2, typer
 boarding___delat_ ..> boarding__editor : 2, typer
-boarding__battle --> boarding__map : 14
-boarding__battle --> boarding__rendering : 15
+boarding__battle --> boarding__map : 15
+boarding__battle --> boarding__rendering : 17
 boarding__editor --> boarding__map : 1
 boarding__editor --> boarding__rendering : 11
 boarding__map --> boarding__battle : 1
-boarding__rendering ..> boarding__battle : 2, typer
-boarding__rendering --> boarding__map : 7
+boarding__rendering ..> boarding__battle : 3, typer
+boarding__rendering --> boarding__map : 8
 boarding___delat_ --> ext__shared : map-format
 boarding___delat_ ..> ext__space_battle : models, typer
 boarding__battle ..> ext__space_battle : models, typer

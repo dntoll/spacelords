@@ -3,6 +3,9 @@ name=Transport ship
 width=11
 height=7
 rules=campaign
+spriteX=-9.822794247209034
+spriteY=-3.360098384956446
+spriteScale=30.645588494418067
 
 [terrain]
 HHHHHHHHHHH

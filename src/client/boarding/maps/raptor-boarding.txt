@@ -3,6 +3,9 @@ name=Raptor
 width=9
 height=5
 rules=campaign
+spriteX=-4.85517680735116
+spriteY=-6.85517680735116
+spriteScale=18.71035361470232
 
 [terrain]
 HHHHHHHHH

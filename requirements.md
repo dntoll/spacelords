@@ -69,6 +69,9 @@ Se [hela visionen](docs/game-vision.md).
   kastar skrot och lämnar bråte, och reactor ger en större explosion. Rök hamnar
   aldrig i hela väggar, ytterskrov eller stängda dörrar, men väl i sönderskjutna
   väggar. Handlingar som inte kan utföras är avstängda.
+  `fasta-handlingsplatser` och `gang-knapp-till-avlagset-mal` är
+  **Fullständigt implementerat**: varje handlingsknapp har alltid samma plats,
+  och `Move` är tillgänglig även när destinationen ligger för långt bort.
   `utslagen-fiende-utan-sikte` och `ljudmarkor-bara-utom-sikt` är
   **Fullständigt implementerat**: utslagna personer får varken hårkors eller
   tom HP-mätare, och ljudmarkörer visas bara på rutor som inte syns.
@@ -118,14 +121,24 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Bordningshandlingar och flyt:** `stang-oppen-dorr`,
   `granat-kostar-bara-vid-kast`, `granat-over-halvskydd-inte-genom-vagg`,
-  `gang-mot-avlagset-mal` och
-  `bordning-jamn-bildfrekvens` är **Fullständigt implementerat**. En soldat
+  `gang-mot-avlagset-mal`, `vand-mot-vald-ruta`,
+  `vandning-mot-nasta-steg`, `ap-fraktion-sparas`,
+  `sparad-gangdestination`, `fast-soldatordning`,
+  `bordning-jamn-bildfrekvens`, `snabb-bordningsvagsokning` och
+  `motstandartur-i-mitten` är **Fullständigt implementerat**. En soldat
   intill en öppen, tom dörr får `Close door`. En granat som inte kan kastas
   drar ingen AP och knapparna är avstängda. Granater kastas över halvskydd,
   låga väggar, rök och hukande personer, men inte genom väggar, stängda dörrar
   eller stående personer, och en miss studsar aldrig genom en vägg. Ett andra tryck på ett mål som
-  ligger för långt bort går så långt AP räcker. Golvlagret cachas och
+  ligger för långt bort går så långt AP räcker och vänder soldaten mot nästa
+  steg; turen slutar och AP som inte räckte till nästa steg sparas till
+  nästa runda, och målet är valt igen då. Att välja en ruta vänder soldaten ditåt,
+  och spelarens soldater väljs alltid i samma ordning. Golvlagret cachas och
   figurernas ljus ritas utan p5:s `tint()` för jämnare bildfrekvens på mobil.
+  Vägen till en vald ruta visas utan väntan, och ett turavslut väntar inte
+  på långsam vägsökning hos civilister och försvarare. Medan motståndarna
+  agerar visas `Defenders are acting…` i en ruta mitt på skärmen i stället
+  för i handlingsraden.
   Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Bordningsanimation och ljus:** `synligt-skott-hela-vagen`,
@@ -141,11 +154,14 @@ Se [hela visionen](docs/game-vision.md).
   `kameraoverblick-vid-synlig-bordningsrorelse`,
   `kameraoverblick-fore-bordningsskott` och
   `kantindikator-for-synlig-fiende` är **Fullständigt implementerat**.
-  Soldatbyte till någon utanför bild zoomar ut, panorerar och återställer
-  zoomnivån. Synliga fienders och civilisters rörelser ramar in figuren och
-  alla egna soldater som ser den. Före ett skott panorerar och zoomar kameran
-  ut tills den synliga skytten och målet syns samtidigt. Kameran tar hänsyn
-  till HUD och kan avbrytas manuellt. Se
+  En zoomnivå gäller för spelaren oavsett soldat. När en egen soldat blir
+  vald panoreras figuren till mitten av den fria kartytan och zoomen sätts
+  till den nivån. Skott, synlig rörelse, en nyupptäckt figur och ett ljud
+  spelaren kan höra zoomar tillfälligt ut så att alla punkter i händelsen
+  syns, och kameran återgår sedan till spelarens zoom och panoreringen före
+  händelsen. En ny vald soldat blir i stället fokus. Det ersätter både
+  kameran per soldat och att översikten låg kvar. Kameran tar hänsyn till HUD
+  och kan avbrytas manuellt. Se
   [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Bordningens kartinformation:** `bordning-utan-riktningspilar`,
@@ -154,12 +170,12 @@ Se [hela visionen](docs/game-vision.md).
   visar riktningen med sina åtta bildvinklar utan vita pilar. Röda och blå
   rutkanter har tagits bort. Senast sedd levande eller utslagen fiende visas
   som ett frågetecken, medan döda inte lämnar markören. Utslagna och döda
-  soldater och civilister har egna liggande bilder. Se
+  soldater och civilister har egna liggande bilder. Siktområdets kontur förenklas en gång per sikt i stället för att ritas med tusentals punkter varje bildruta. Se
   [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Belysning i bordning:** `ljuskallestyrd-bordningsbelysning`, `vertexljus-i-bordning` och `tileljus-for-sprites` är **Fullständigt implementerat**. Fasta kartlampor och ambientljus styr golv, väggar och sprites oberoende av aktuell sikt. Kravkopplade tester och visuell mobilgranskning verifierar ljus och väggsnitt. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
-- **Ny ljussättning i bordning:** `ljuskarta-i-bordning` är **Delvis implementerat**: golven får ljus och skuggor från en ljuskarta med 16 texlar per ruta, i strid och editor. Väggar, figurer och föremål använder ännu hörn- och rutljuset. `skuggor-fran-figurer-och-foremal` är **Delvis implementerat**: figurer, lådor, reaktorn och låga väggar kastar skuggor av rätt längd på golvet, men inte på väggar. `fargat-ljus-i-bordning`, `visuell-morkerinstallning`, `ljusniva-per-ruta`, `tandbara-lampor`, `brand-som-ljuskalla`, `dynamiskt-bordningsljus`, `barbart-ljus`, `blinkande-lampor`, `mynningsblixt-i-bordning` och `morker-forsvarar` är **Ej implementerat**. Färgat, skuggkastande ljus i högre upplösning än rutnätet, lampor som tänds, släcks och blinkar, bärbart ljus och mynningsblixtar. Varje ruta får en ljusnivå i spelets regler, och mörker ska senare göra figurer svårare att upptäcka och träffa. `ljuskarta-i-bordning` ersätter `vertexljus-i-bordning` när den är klar. Se [ljussättning i bordning](docs/boarding/boarding-lighting.md).
+- **Ny ljussättning i bordning:** `ljuskarta-i-bordning` är **Delvis implementerat**: golven får ljus och skuggor från en ljuskarta med 16 texlar per ruta, i strid och editor. Väggar, figurer och föremål använder ännu hörn- och rutljuset. `skuggor-fran-figurer-och-foremal` är **Delvis implementerat**: figurer, lådor, reaktorn och låga väggar kastar skuggor av rätt längd på golvet, men inte på väggar. `jamn-ljuskarta-under-forflyttning` och `skuggor-mellan-rutor` är **Fullständigt implementerat**: under en förflyttning ritas bara skuggorna nära figuren om, grövre tills förflyttningen är klar, och skuggan följer figuren mellan rutorna. `fargat-ljus-i-bordning`, `visuell-morkerinstallning`, `ljusniva-per-ruta`, `tandbara-lampor`, `brand-som-ljuskalla`, `dynamiskt-bordningsljus`, `barbart-ljus`, `blinkande-lampor`, `mynningsblixt-i-bordning` och `morker-forsvarar` är **Ej implementerat**. Färgat, skuggkastande ljus i högre upplösning än rutnätet, lampor som tänds, släcks och blinkar, bärbart ljus och mynningsblixtar. Varje ruta får en ljusnivå i spelets regler, och mörker ska senare göra figurer svårare att upptäcka och träffa. `ljuskarta-i-bordning` ersätter `vertexljus-i-bordning` när den är klar. Se [ljussättning i bordning](docs/boarding/boarding-lighting.md).
 
 - **Meterskala och skymmande väggar:** `meterskala-i-bordning` och `genomskinliga-skymmande-vaggar` är **Fullständigt implementerat**. En ruta är 1 × 1 m, väggar 2,4 m, dörröppningar 2,1 m och Half cover 1,2 m. Väggar som täcker upptäckta spelrutor visas som ogenomskinliga 40 cm höga snitt med synligt vägginre. Detta ersätter den tidigare transparensen efter uttrycklig beställning. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
