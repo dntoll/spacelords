@@ -22,7 +22,7 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
     .toBe(true);
   // isometriska-bordningsobjekt: crate and door faces are small enough for
   // Vite to inline as data URLs, so only file-backed artwork is a resource.
-  for (const artwork of ['airlock-', 'reactor-']) {
+  for (const artwork of ['escape-pod-', 'reactor-']) {
     await expect
       .poll(() =>
         page.evaluate(

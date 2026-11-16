@@ -1,9 +1,9 @@
-import { BOARDING_SPRITE_METRICS } from '../../../src/client/boarding/views/rendering/BoardingSpriteMetrics.js';
 import { describe, expect, it } from 'vitest';
 import {
   BOARDING_WALL_HEIGHT,
   BOARDING_DOOR_HEIGHT,
   BOARDING_COVER_HEIGHT,
+  boardingAirlockDoorGeometry,
   boardingIsoCamera,
   boardingIsoCenter,
 } from '../../../src/client/boarding/views/rendering/BoardingProjection.js';
@@ -29,10 +29,20 @@ describe('meterskala-i-bordning', () => {
     expect(BOARDING_DOOR_HEIGHT / verticalMeter).toBeCloseTo(2.1);
     expect(BOARDING_COVER_HEIGHT / verticalMeter).toBeCloseTo(1.2);
   });
-  it('calibrates the free opening of the airlock rather than the complete image', () => {
-    expect(
-      BOARDING_SPRITE_METRICS.airlock.openingHeight / verticalMeter,
-    ).toBeCloseTo(2.1);
+  it('airlock-med-dubbla-geometridorrar: fits an inner and outer door on the same tile', () => {
+    const position = { q: 4, r: 7 };
+    const top = boardingAirlockDoorGeometry(position, 'top');
+    const bottom = boardingAirlockDoorGeometry(position, 'bottom');
+    expect(top.map((door) => door.role)).toEqual(['outer', 'inner']);
+    expect(top.map((door) => door.axis)).toEqual(['r', 'r']);
+    expect(top[0]?.position.r).toBeLessThan(position.r);
+    expect(top[1]?.position.r).toBeGreaterThan(position.r);
+    expect(bottom[0]?.position.r).toBeGreaterThan(position.r);
+    expect(bottom[1]?.position.r).toBeLessThan(position.r);
+    for (const door of [...top, ...bottom]) {
+      expect(door.position.q).toBe(position.q);
+      expect(Math.abs(door.position.r - position.r)).toBeLessThan(0.5);
+    }
   });
   it('plants a standing 1.8 m person at its feet and keeps the camera above the highest wall', () => {
     const { source, destination: sprite } = boardingCharacterSprite(

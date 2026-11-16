@@ -1453,11 +1453,13 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 ## Isometriska bordningsobjekt
 
-`isometriska-bordningsobjekt` — **Fullständigt implementerat**. Airlock och reactor visas med isometrisk grafik ovanpå spelets golv.
+`isometriska-bordningsobjekt` — **Fullständigt implementerat**. Reactor och fristående bordningsobjekt visas med isometrisk grafik ovanpå spelets golv.
 
-`airlock-i-60-graders-perspektiv` — **Fullständigt implementerat**. Airlockens ram följer bordningskartans 60°-perspektiv och ligger i linje med väggarna.
+`airlock-med-dubbla-geometridorrar` — **Fullständigt implementerat**. En airlock är en golvruta med en inre och en yttre dörr. Båda byggs med samma geometri, höjd och perspektiv som vanliga dörrar. Detta ersätter `airlock-i-60-graders-perspektiv` och dess separata airlockbild.
 
 `sprites-for-breach-och-escape-pod` — **Fullständigt implementerat**. Breach och escape pod har egna bilder. När en escape pod används försvinner kapseln och den tomma luckan är kvar.
+
+`oppen-escape-pod` — **Fullständigt implementerat**. En oanvänd escape pod visas öppen och tom så att en person tydligt kan stiga in.
 
 `rumsspecifikt-half-cover` — **Fullständigt implementerat**. Half cover ser ut som styrpaneler i `Cockpit`, maskiner i `Engineering` och matbord eller bänk i `Galley`.
 
@@ -1477,7 +1479,7 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 ## Meterskala och skymmande väggar i bordning
 
-- `kameravinkel-60-i-bordning` — **Fullständigt implementerat**. Bordningskartan använder en brant kamera (60°) som matchar Ludos high-angle, i stället för 2:1. Figurer, reactor och airlock är anpassade till vinkeln; dörrar och Half cover byggs direkt i kartans geometri. Ersätter provet `isometri-3-2-i-bordning`.
+- `kameravinkel-60-i-bordning` — **Fullständigt implementerat**. Bordningskartan använder en brant kamera (60°) som matchar Ludos high-angle, i stället för 2:1. Figurer och reactor är anpassade till vinkeln; dörrar, airlock och Half cover byggs direkt i kartans geometri. Ersätter provet `isometri-3-2-i-bordning`.
 - `meterskala-i-bordning` — **Fullständigt implementerat**. En golvruta är 1 × 1 m. Väggar och ytterskrov är 2,4 m höga; dörrar och airlock har 2,1 m fri öppning. Stående personer och reactor är cirka 1,8 m höga. Half cover är 1,2 m, fortsatt halva vägghöjden.
 - `genomskinliga-skymmande-vaggar` — **Fullständigt implementerat**. Väggar och ytterskrov som skymmer upptäckta spelbara rutor visas automatiskt som ogenomskinliga, 40 cm höga genomskärningar. Ovansidan har en tydlig metallkant och synligt vägginre. Detta ersätter det tidigare kravet på 35 procents opacitet efter uttrycklig beställning. Spelaren kan välja rutor och synliga personer bakom dem samt välja väggens egen ruta. Okända områden och dolda personer avslöjas inte. Föremål, väggar och personer har gemensam djupordning.
 

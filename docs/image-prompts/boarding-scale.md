@@ -4,6 +4,8 @@ Krav: `meterskala-i-bordning`, `isometriska-bordningsobjekt`.
 
 Fem nya original genererades med den inbyggda bildgeneratorn: stängd dörr längs q och r, öppna varianter från respektive stängd dörr samt airlock. De finns som `*-meters.png` i `assets/original/boarding/`. Tidigare original bevaras. Bilderna har transparent bakgrund och saknar golv. Webbversioner och deras golvförankring genereras med `scripts/prepare-boarding-objects.py`, som mäter den fria öppningen, kalibrerar baslinjen och exporterar i tre gånger grundupplösningen. Öppet och stängt delar samma omvandling.
 
+Airlockbilden används inte längre. `airlock-med-dubbla-geometridorrar` ersätter den med två kodritade dörrar på samma ruta; originalet bevaras bara som historiskt underlag.
+
 ## Gemensam genereringsprompt
 
 ```text

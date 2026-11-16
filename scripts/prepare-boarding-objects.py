@@ -15,11 +15,10 @@ ROOT = Path(__file__).resolve().parents[1]
 original = ROOT / 'assets/original/boarding/60deg'
 output = ROOT / 'src/client/boarding/assets'
 sources = {
-    'airlock': '../airlock-meters.png',
     'reactor': 'reactor-60deg.png',
     'crate': 'crate-60deg.png',
     'breach': '../breach.png',
-    'escape-pod': '../escape-pod.png',
+    'escape-pod': '../escape-pod-open.png',
     'escape-hatch': '../escape-hatch.png',
 }
 # Mirrors BoardingScale.ts.
@@ -90,6 +89,7 @@ existing = metrics_path.read_text()
 literal = existing[existing.index('= {') + 2:existing.rindex(' as const')]
 literal = re.sub(r"^(\s*)'?([\w-]+)'?:", r'\1"\2":', literal, flags=re.M)
 metrics = json.loads(re.sub(r',(\s*})', r'\1', literal))
+metrics.pop('airlock', None)
 for name, image in images.items():
     image = image.crop(boxes[name])
     if name.startswith('door-') or name == 'airlock':
