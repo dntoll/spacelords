@@ -149,11 +149,14 @@ Se [hela visionen](docs/game-vision.md).
   `kameraoverblick-vid-synlig-bordningsrorelse`,
   `kameraoverblick-fore-bordningsskott` och
   `kantindikator-for-synlig-fiende` är **Fullständigt implementerat**.
-  Soldatbyte till någon utanför bild zoomar ut, panorerar och återställer
-  zoomnivån. Synliga fienders och civilisters rörelser ramar in figuren och
-  alla egna soldater som ser den. Före ett skott panorerar och zoomar kameran
-  ut tills den synliga skytten och målet syns samtidigt. Kameran tar hänsyn
-  till HUD och kan avbrytas manuellt. Se
+  En zoomnivå gäller för spelaren oavsett soldat. När en egen soldat blir
+  vald panoreras figuren till mitten av den fria kartytan och zoomen sätts
+  till den nivån. Skott, synlig rörelse, en nyupptäckt figur och ett ljud
+  spelaren kan höra zoomar tillfälligt ut så att alla punkter i händelsen
+  syns, och kameran återgår sedan till spelarens zoom och panoreringen före
+  händelsen. En ny vald soldat blir i stället fokus. Det ersätter både
+  kameran per soldat och att översikten låg kvar. Kameran tar hänsyn till HUD
+  och kan avbrytas manuellt. Se
   [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Bordningens kartinformation:** `bordning-utan-riktningspilar`,

@@ -383,24 +383,27 @@ Prototypen från huvudmenyn påverkar inga sparade spel. I kampanjen ger en
 vunnen bordning skeppet, last, recovered `Raptor factory` och en kartplaceholder
 runt närmaste andra pirat. Se [bordningsstrid](boarding/boarding-combat.md).
 
-`kamerafokus-vid-bordningssoldatbyte` — **Fullständigt implementerat**. Vid
-byte till en egen soldat utanför bild ska kameran zooma ut tills soldaten syns,
-panorera till den och zooma in till samma nivå som tidigare. Hela figuren och
-HP/AP ska synas på kartytan som är fri från HUD. Synliga soldater kräver ingen
-kameraflytt. Detta gäller även automatiska turbyten.
+`kamerafokus-vid-bordningssoldatbyte` — **Fullständigt implementerat**.
+Spelaren har en zoomnivå som gäller alla soldater. När en egen soldat blir
+vald panoreras figuren till mitten av kartytan som är fri från HUD, och
+kameran använder den zoomnivån även om figuren redan syntes. Det ersätter
+att varje soldat hade en egen panorering och att en redan synlig soldat
+lämnade kameran orörd.
 
 `kameraoverblick-vid-synlig-bordningsrorelse` — **Fullständigt implementerat**.
-När en fiende eller civilist rör sig inom synhåll ska kameran vid behov zooma
-ut så att figuren och alla egna aktiva soldater som ser den syns samtidigt.
-Kameran står still medan figuren rör sig och behåller översikten efteråt.
-Dolda positioner får aldrig avslöjas av kameran. Spelaren kan avbryta
-kameraflödena genom att själv panorera eller zooma. Minskad
-rörelse visar kamerans slutläge direkt.
+När en fiende eller civilist rör sig inom synhåll, en ny figur blir synlig
+eller spelaren hör ett nytt ljud, zoomar kameran vid behov ut så att alla
+punkter i händelsen syns samtidigt. Kameran står still medan figuren rör sig.
+Utzoomningen är tillfällig och kameran återgår till spelarens zoom och
+panoreringen före händelsen när uppspelningen är klar. Dolda positioner får
+aldrig avslöjas av kameran. Spelaren kan avbryta kameraflödena genom att
+själv panorera eller zooma. Minskad rörelse visar kamerans slutläge direkt.
 
 `kameraoverblick-fore-bordningsskott` — **Fullständigt implementerat**. När en
 synlig fiende eller egen soldat skjuter på den andra sidan ska kameran före
-skottet panorera och vid behov zooma ut tills både skytt och mål syns. Dolda
-positioner får inte avslöjas.
+skottet panorera och vid behov zooma ut tills både skytt och mål syns. Efter
+uppspelningen återgår kameran till spelarens zoom. Dolda positioner får inte
+avslöjas.
 
 ## Kampanjbordning
 

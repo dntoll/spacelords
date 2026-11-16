@@ -5,6 +5,7 @@ import smokeThreeUrl from '../../assets/smoke-3.png';
 import {
   BoardingCameraController,
   type BoardingCameraBounds,
+  type BoardingCameraPoint,
   type BoardingCameraSnapshot,
   type BoardingCameraSubject,
   type BoardingCameraTransition,
@@ -255,6 +256,10 @@ export class BoardingMapView implements BoardingMapPort {
   #cameraVersion = 0;
   #presenting = false;
   #cameraSuppressed = false;
+  /** kamerafokus-vid-bordningssoldatbyte: one zoom chosen by the player. */
+  #playerZoom = 1;
+  /** Pan in effect when the current presentation started. */
+  #homePan: BoardingCameraPoint | null = null;
   #scale = 1;
   #offset: Point = { x: 0, y: 0 };
   readonly #floorTiles = new Map<BoardingSurfaceStyle, p5.Image>();
@@ -537,6 +542,7 @@ export class BoardingMapView implements BoardingMapPort {
     this.#scale = camera.scale;
     this.#offset = camera.offset;
     this.#fitPending = false;
+    this.#rememberPlayerZoom();
     void this.#p5.redraw();
   }
 
@@ -556,6 +562,7 @@ export class BoardingMapView implements BoardingMapPort {
       y: anchor.y - (anchor.y - this.#offset.y) * ratio,
     };
     this.#scale = next;
+    this.#rememberPlayerZoom();
     if (this.#ready) void this.#p5.redraw();
   }
 
@@ -571,6 +578,8 @@ export class BoardingMapView implements BoardingMapPort {
   }
 
   beginPresentation(): void {
+    // kamerafokus-vid-bordningssoldatbyte: remember the pan before any overview.
+    this.#homePan = { x: this.#offset.x, y: this.#offset.y };
     this.#presenting = true;
     this.#cameraSuppressed = false;
   }
@@ -612,19 +621,46 @@ export class BoardingMapView implements BoardingMapPort {
 
   focusActor(id: string): Promise<void> {
     this.#cancelCamera();
-    const person = this.#state?.people.find(
-      (entry) =>
-        entry.id === id && entry.side === 'player' && entry.status === 'active',
-    );
+    const person = this.#playerSoldier(id);
+    if (!person) return this.#playCamera([]);
     return this.#playCamera(
-      person
-        ? this.#camera.focus(
-            this.cameraSnapshot,
-            this.#cameraSubject(person),
-            this.#cameraBounds(),
-          )
-        : [],
+      this.#camera.focus(
+        this.cameraSnapshot,
+        this.#cameraSubject(person),
+        this.#cameraBounds(),
+        this.#playerZoom,
+      ),
     );
+  }
+
+  /** kamerafokus-vid-bordningssoldatbyte: back to the player's zoom and pan. */
+  restorePlayView(): Promise<void> {
+    const pan = this.#homePan;
+    if (!pan) return Promise.resolve();
+    return this.#playCamera(
+      this.#camera.restore(
+        this.cameraSnapshot,
+        pan,
+        this.#playerZoom,
+        this.#cameraBounds(),
+      ),
+    );
+  }
+
+  #rememberPlayerZoom(): void {
+    this.#playerZoom = this.#scale;
+  }
+
+  #playerSoldier(id = this.#state?.currentActorId): BoardingPerson | null {
+    const person = this.#state?.people.find((entry) => entry.id === id);
+    return person?.side === 'player' && person.status === 'active'
+      ? person
+      : null;
+  }
+
+  #cellSubject(cell: BoardingCell): BoardingCameraSubject {
+    const point = boardingIsoCenter(cell);
+    return { x: point.x - 18, y: point.y - 65, width: 36, height: 70 };
   }
 
   #centerTarget(id: string): Promise<void> {
@@ -645,9 +681,22 @@ export class BoardingMapView implements BoardingMapPort {
     to: BoardingBattleState,
   ): Promise<void> {
     if (this.#cameraSuppressed) return Promise.resolve();
-    const subjects = this.#camera
-      .movementSubjects(this.map, from, to)
-      .map((person) => this.#cameraSubject(person));
+    const heard = new Set(
+      from.noiseMarkers
+        .filter((entry) => entry.audience === 'player')
+        .map((entry) => key(entry.position)),
+    );
+    const subjects = [
+      ...this.#camera
+        .movementSubjects(this.map, from, to)
+        .map((person) => this.#cameraSubject(person)),
+      ...to.noiseMarkers
+        .filter(
+          (entry) =>
+            entry.audience === 'player' && !heard.has(key(entry.position)),
+        )
+        .map((entry) => this.#cellSubject(entry.position)),
+    ];
     return this.#playCamera(
       this.#camera.overview(
         this.cameraSnapshot,
@@ -669,8 +718,7 @@ export class BoardingMapView implements BoardingMapPort {
       if (person) return this.#cameraSubject(person);
       if (!state.visibleCells.some((visible) => key(visible) === key(cell)))
         return null;
-      const center = boardingIsoCenter(cell);
-      return { x: center.x - 18, y: center.y - 65, width: 36, height: 70 };
+      return this.#cellSubject(cell);
     });
     if (subjects.some((subject) => !subject)) return Promise.resolve();
     return this.#playCamera(

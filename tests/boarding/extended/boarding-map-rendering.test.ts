@@ -599,6 +599,154 @@ it('kantindikator-for-synlig-fiende: clicking an edge target selects and centers
   view.dispose();
 });
 
+it('kamerafokus-vid-bordningssoldatbyte: one player zoom centers whichever soldier is selected', async () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true }));
+  const { view, state, player } = scene(true);
+  const ally = {
+    ...player,
+    id: 'ally',
+    label: 'Ally',
+    position: { q: 5, r: 0 },
+  };
+  const playing = (actorId: string): typeof state => ({
+    ...state,
+    currentActorId: actorId,
+    activation: { id: actorId, remaining: 8 },
+    people: [player, ally],
+  });
+  view.render(playing(player.id), null, null, []);
+  view.zoom(2);
+  view.render(playing(ally.id), null, null, []);
+  view.zoom(0.5);
+  const shared = view.cameraSnapshot.scale;
+  await view.focusActor(player.id);
+  expect(view.cameraSnapshot.scale).toBeCloseTo(shared);
+  const playerPan = view.cameraSnapshot.offset.x;
+  await view.focusActor(ally.id);
+  expect(view.cameraSnapshot.scale).toBeCloseTo(shared);
+  expect(view.cameraSnapshot.offset.x).not.toBeCloseTo(playerPan);
+  view.dispose();
+});
+
+it('kamerafokus-vid-bordningssoldatbyte: a shot overview returns to the player zoom and the previous pan', async () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true }));
+  const { view, state, player } = scene(true);
+  const defender = {
+    ...player,
+    id: 'defender',
+    side: 'defender' as const,
+    position: { q: 0, r: 0 },
+  };
+  view.render(
+    {
+      ...state,
+      currentActorId: player.id,
+      activation: { id: player.id, remaining: 8 },
+      people: [player, defender],
+    },
+    null,
+    null,
+    [],
+  );
+  view.zoom(2);
+  const played = view.cameraSnapshot;
+  view.beginPresentation();
+  view.setViewportProvider(() => ({
+    left: 300,
+    top: 250,
+    right: 420,
+    bottom: 370,
+  }));
+  await view.frameShot(player.position, defender.position);
+  expect(view.cameraSnapshot.scale).toBeLessThan(played.scale);
+  await view.restorePlayView();
+  expect(view.cameraSnapshot.scale).toBeCloseTo(played.scale);
+  expect(view.cameraSnapshot.offset.x).toBeCloseTo(played.offset.x);
+  expect(view.cameraSnapshot.offset.y).toBeCloseTo(played.offset.y);
+  view.endPresentation();
+  view.dispose();
+});
+
+it('kameraoverblick-vid-synlig-bordningsrorelse: a new sound the player can hear is framed, then the play view returns', async () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true }));
+  const { view, state, player } = scene(true);
+  view.render(
+    {
+      ...state,
+      currentActorId: player.id,
+      people: [player],
+      noiseMarkers: [],
+    },
+    null,
+    null,
+    [],
+  );
+  view.zoom(2);
+  const played = view.cameraSnapshot;
+  view.beginPresentation();
+  view.setViewportProvider(() => ({
+    left: 300,
+    top: 250,
+    right: 420,
+    bottom: 370,
+  }));
+  const heard = {
+    ...state,
+    currentActorId: player.id,
+    people: [player],
+    noiseMarkers: [{ position: { q: 0, r: 0 }, audience: 'player' as const }],
+  };
+  await view.frameVisibleMovement({ ...heard, noiseMarkers: [] }, heard);
+  expect(view.cameraSnapshot.scale).toBeLessThan(played.scale);
+  await view.restorePlayView();
+  expect(view.cameraSnapshot.scale).toBeCloseTo(played.scale);
+  expect(view.cameraSnapshot.offset.x).toBeCloseTo(played.offset.x);
+  const quiet = view.cameraSnapshot;
+  await view.frameVisibleMovement(heard, {
+    ...heard,
+    noiseMarkers: [{ position: { q: 0, r: 0 }, audience: 'defender' as const }],
+  });
+  expect(view.cameraSnapshot).toEqual(quiet);
+  view.endPresentation();
+  view.dispose();
+});
+
+it('kamerafokus-vid-bordningssoldatbyte: an overview before the soldier acts is not stored as their view', async () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true }));
+  const { view, state, player } = scene(true);
+  const defender = {
+    ...player,
+    id: 'defender',
+    side: 'defender' as const,
+    position: { q: 0, r: 0 },
+  };
+  view.render(
+    {
+      ...state,
+      currentActorId: player.id,
+      activation: { id: player.id, remaining: 8 },
+      people: [player, defender],
+    },
+    null,
+    null,
+    [],
+  );
+  view.setViewportProvider(() => ({
+    left: 300,
+    top: 250,
+    right: 420,
+    bottom: 370,
+  }));
+  await view.frameShot(player.position, defender.position);
+  view.beginPresentation();
+  view.endPresentation();
+  view.zoom(2);
+  const played = view.cameraSnapshot.scale;
+  await view.focusActor(player.id);
+  expect(view.cameraSnapshot.scale).toBeCloseTo(played);
+  view.dispose();
+});
+
 it('kamerafokus-vid-bordningssoldatbyte: reduced motion applies the final focus instantly at the original zoom', async () => {
   vi.stubGlobal('matchMedia', () => ({ matches: true }));
   const { view, player } = scene(true);

@@ -1715,11 +1715,18 @@ BoardingCameraController beräknar oföränderliga kamerafaser oberoende av p5.
 BoardingView mäter fri kartyta utanför HUD, handlingsknappar, stridsdetaljer,
 zoom och förklaring. BoardingMapView projicerar figurernas bildrektanglar och
 HP/AP till världsmått. En anpassad marginal på högst 24 skärmpixlar bevaras.
-Soldatfokus har separata faser för utzoomning, panorering och återställd zoom,
-vardera 300 ms med mjuk interpolation. Tillfällig automatisk zoom kan
-underskrida den manuella miniminivån för att rymma avlägsna figurer.
+Soldatfokus är en fas som centrerar den valda soldaten på den fria ytan i
+spelarens zoom, 300 ms med mjuk interpolation. Zoomen är ett enda tal och
+ändras av hjul, nyp, tangenter och Fit. En presentation sparar panoreringen
+vid starten. Skott, synlig rörelse och nya ljud för spelaren zoomar tillfälligt
+ut så att alla punkter ryms, utan att ändra spelarens zoom. Mellan stegen i
+samma uppspelning återgår kameran inte. När uppspelningen är klar återställs
+panoreringen och spelarens zoom, utom när en ny egen soldat ska fokuseras.
+Tillfällig automatisk zoom kan underskrida den manuella miniminivån för att
+rymma avlägsna figurer.
 
-Översikten härleds enbart ur synliga personer i presentationens snapshots.
+Översikten härleds ur synliga personer i presentationens snapshots och ur nya
+ljudmarkörer för spelaren.
 BoardingBattle.playerObserversOf använder modellens verkliga siktregler utan
 att ändra striden. Både synliga ändpunkter och deras observatörer ramas in
 före steget. BoardingView inväntar kameran före figuranimationen och fokuserar
