@@ -399,7 +399,9 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   `bordningsmal-reaktor-och-evakuering` och
   `forsvarare-och-civilister`, `tydlig-bordningsstatus`,
   `isometrisk-bordningsvy`, `spelmassigt-bordningsgranssnitt`,
-  `ap-fargad-bordningsvag`, `animerad-bordningsforflyttning`,
+  `ap-fargad-bordningsvag`,
+  `ap-kostnad-och-handlingssymbol-pa-bordningsruta`,
+  `animerad-bordningsforflyttning`,
   `avbrott-vid-ny-fiende`, `animerat-bordningsskott`,
   `valbar-bordningssoldat`, `klickskott-pa-vald-fiende`,
   `vald-bordningsmal-markeras`, `melee-kraver-valt-mal`,
@@ -421,8 +423,11 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Kartan använder klassiska kvadratiska
   2:1-diamantrutor där väggar och ytterskrov fyller hela rutan, åtta riktningar
   och 45-gradersvändningar; detta ersätter uttryckligen den tidigare hexkartan.
-  En vald väg färgas efter kvarvarande AP och förflyttning animeras stegvis med
-  uppdaterad sikt. Kända golvrutor använder en kvadratisk yttextur som vyn
+  En vald väg får gröna och bruna tilekonturer efter kvarvarande AP. Varje
+  vägruta visar sin ackumulerade AP-kostnad inklusive vändningar tillsammans
+  med samma `Move`-symbol som handlingsknappen. En vald ruta som reagerar på
+  ett andra klick visar handlingens symbol ovanpå rutan. Förflyttning animeras
+  stegvis med uppdaterad sikt. Kända golvrutor använder en kvadratisk yttextur som vyn
   projicerar på rutans exakta 2:1-diamant. Väggar tar utklipp ur en lång
   fasadtextur så att en längre sträcka blir sammanhängande. `Half cover` är
   hälften så hög som en vägg. Soldater, pirater och civilister har stående och

@@ -55,7 +55,16 @@ import {
 } from '../../models/battle/BoardingBattle.js';
 import { boardingShotGlassState } from './BoardingShotGlass.js';
 import type { BoardingPathMark } from '../../models/battle/BoardingPathPreview.js';
-import type { BoardingMapPort } from './BoardingView.js';
+import type {
+  BoardingMapPort,
+  BoardingTileActionMark,
+} from './BoardingView.js';
+import {
+  BOARDING_ACTION_ATLAS_URL,
+  boardingActionArtwork,
+  boardingActionSource,
+  type BoardingActionArtwork,
+} from '../rendering/BoardingActionArtwork.js';
 import {
   boardingFrameMotionDuration,
   boardingMotionFacing,
@@ -198,6 +207,7 @@ export class BoardingMapView implements BoardingMapPort {
   #selectedId: string | null = null;
   #destination: BoardingCell | null = null;
   #path: readonly BoardingPathMark[] = [];
+  #action: BoardingTileActionMark | null = null;
   #targets: readonly BoardingTargetIndicator[] = [];
   #sight: BoardingSightArea | null = null;
   #edgeTargetHits: readonly BoardingEdgeTargetIndicator[] = [];
@@ -254,6 +264,7 @@ export class BoardingMapView implements BoardingMapPort {
   readonly #isoCaches = new WeakMap<p5.Image, IsoImageCache>();
   /** figurvarianter-i-bordning: the atlas of each character look. */
   readonly #characterSheets = new Map<number, p5.Image>();
+  #actionAtlas: p5.Image | null = null;
   readonly #smokeTextures: (p5.Image | null)[] = [null, null, null];
   #lighting: BoardingLighting;
   #lightSignature = '';
@@ -360,6 +371,10 @@ export class BoardingMapView implements BoardingMapPort {
             if (!this.#disposed && this.#ready) void this.#p5.redraw();
           });
         });
+        void sketch.loadImage(BOARDING_ACTION_ATLAS_URL).then((image) => {
+          this.#actionAtlas = image;
+          if (!this.#disposed && this.#ready) void this.#p5.redraw();
+        });
         for (const [name, url] of Object.entries(BOARDING_OBJECT_IMAGES) as [
           BoardingArtwork,
           string,
@@ -408,6 +423,7 @@ export class BoardingMapView implements BoardingMapPort {
     path: readonly BoardingPathMark[],
     targets: readonly BoardingTargetIndicator[] = [],
     sight: BoardingSightArea | null = null,
+    action: BoardingTileActionMark | null = null,
   ): void {
     const changed = this.#state?.id !== state.id;
     if (!changed && this.#state) {
@@ -420,6 +436,7 @@ export class BoardingMapView implements BoardingMapPort {
     this.#selectedId = selectedId;
     this.#destination = destination;
     this.#path = path;
+    this.#action = action;
     this.#targets = targets;
     this.#sight = sight;
     if (changed || this.#fitPending) this.fit();
@@ -1921,15 +1938,8 @@ export class BoardingMapView implements BoardingMapPort {
       this.#p5.noLoop();
     const visible = new Set(state.visibleCells.map(key));
     const explored = new Set(state.exploredCells.map(key));
-    const fire = new Set(
-      this.#path
-        .filter((mark) => mark.kind === 'fire')
-        .map((mark) => key(mark.position)),
-    );
-    const reach = new Set(
-      this.#path
-        .filter((mark) => mark.kind === 'reach')
-        .map((mark) => key(mark.position)),
+    const pathMarks = new Map(
+      this.#path.map((mark) => [key(mark.position), mark]),
     );
     const selectedCell = [
       ...state.people.filter((person) => person.id === this.#selectedId),
@@ -1959,18 +1969,20 @@ export class BoardingMapView implements BoardingMapPort {
       visible.has(key(cell)) || explored.has(key(cell));
     this.#paintShipPictures(sketch);
     this.#paintFloorLayer(sketch, visible, explored, thinAt, seen);
+    const tileOverlays: (() => void)[] = [];
     for (let r = 0; r < this.map.height; r++) {
       for (let q = 0; q < this.map.width; q++) {
         const position = { q, r };
         if (!this.map.terrainAt(position)) continue;
-        if (fire.has(key(position))) {
-          sketch.noStroke();
-          sketch.fill(98, 212, 138, 115);
+        const pathMark = pathMarks.get(key(position));
+        if (pathMark) {
+          sketch.noFill();
+          sketch.stroke(pathMark.kind === 'fire' ? '#62d48a' : '#c58a4a');
+          sketch.strokeWeight(4);
           this.#tile(sketch, position);
-        } else if (reach.has(key(position))) {
-          sketch.noStroke();
-          sketch.fill(240, 179, 90, 115);
-          this.#tile(sketch, position);
+          tileOverlays.push(() =>
+            this.#paintPathCost(sketch, pathMark.position, pathMark.cost),
+          );
         }
         if (
           (this.#destination && key(this.#destination) === key(position)) ||
@@ -2472,6 +2484,15 @@ export class BoardingMapView implements BoardingMapPort {
       sketch.circle(center.x, center.y, 20);
     }
     overlays.forEach((paint) => paint());
+    tileOverlays.forEach((paint) => paint());
+    if (
+      this.#action &&
+      !(
+        this.#action.action === 'Move' &&
+        pathMarks.has(key(this.#action.position))
+      )
+    )
+      this.#paintTileAction(sketch, this.#action);
     if (shot && shotTick) {
       const head = boardingProjectilePoint(
         shot.from,
@@ -2514,6 +2535,78 @@ export class BoardingMapView implements BoardingMapPort {
           edge.labelSide,
         );
     }
+  }
+
+  /** ap-kostnad-och-handlingssymbol-pa-bordningsruta: map guidance stays legible at every zoom. */
+  #paintPathCost(sketch: p5, position: BoardingCell, cost: number): void {
+    const center = boardingIsoCenter(position);
+    const uiScale = 1 / this.#scale;
+    const label = Number.isInteger(cost)
+      ? String(cost)
+      : cost.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+    sketch.noStroke();
+    sketch.fill(10, 18, 28, 215);
+    sketch.rect(
+      center.x - 24 * uiScale,
+      center.y - 10 * uiScale,
+      48 * uiScale,
+      20 * uiScale,
+      8 * uiScale,
+    );
+    this.#paintActionIcon(sketch, 'Move', {
+      x: center.x - 21 * uiScale,
+      y: center.y - 8 * uiScale,
+      size: 16 * uiScale,
+    });
+    sketch.textAlign(sketch.CENTER, sketch.CENTER);
+    sketch.textSize(11 * uiScale);
+    sketch.fill('#f8fafc');
+    sketch.text(label, center.x + 9 * uiScale, center.y + uiScale);
+  }
+
+  #paintTileAction(sketch: p5, mark: BoardingTileActionMark): void {
+    const center = boardingIsoCenter(mark.position);
+    const uiScale = 1 / this.#scale;
+    sketch.noStroke();
+    sketch.fill(10, 18, 28, 220);
+    sketch.circle(center.x, center.y - 4 * uiScale, 32 * uiScale);
+    const artwork = boardingActionArtwork(mark.action);
+    if (artwork)
+      this.#paintActionIcon(sketch, artwork, {
+        x: center.x - 13 * uiScale,
+        y: center.y - 17 * uiScale,
+        size: 26 * uiScale,
+      });
+    else {
+      sketch.textAlign(sketch.CENTER, sketch.CENTER);
+      sketch.textSize(22 * uiScale);
+      sketch.fill('#f8fafc');
+      sketch.text('⌁', center.x, center.y - 3 * uiScale);
+    }
+  }
+
+  #paintActionIcon(
+    sketch: p5,
+    action: BoardingActionArtwork,
+    destination: Readonly<{ x: number; y: number; size: number }>,
+  ): void {
+    if (!this.#actionAtlas) return;
+    const source = boardingActionSource(
+      action,
+      this.#actionAtlas.width,
+      this.#actionAtlas.height,
+    );
+    sketch.image(
+      this.#actionAtlas,
+      destination.x,
+      destination.y,
+      destination.size,
+      destination.size,
+      source.x,
+      source.y,
+      source.width,
+      source.height,
+    );
   }
 
   #paintEffects(sketch: p5, now: number): void {

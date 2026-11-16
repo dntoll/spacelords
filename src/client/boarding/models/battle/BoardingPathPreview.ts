@@ -6,6 +6,8 @@ export type BoardingPathMarkKind = 'fire' | 'reach';
 export interface BoardingPathMark {
   readonly position: BoardingCell;
   readonly kind: BoardingPathMarkKind;
+  /** Accumulated AP through all preceding turns and steps. */
+  readonly cost: number;
 }
 
 /** ap-fargad-bordningsvag: affordable prefix only, split by leftover rifle AP. */
@@ -23,6 +25,7 @@ export function boardingPathMarks(
     marks.push({
       position: step.position,
       kind: cost <= remainingAp - fireCost ? 'fire' : 'reach',
+      cost,
     });
   }
   return Object.freeze(marks);

@@ -35,7 +35,14 @@ kommer från testtransportens startpositioner.
   med sex riktningar är fortsatt ersatt.
 - `ap-fargad-bordningsvag` — **Fullständigt implementerat**. En vald väg visar
   bara rutor som ryms inom kvarvarande AP. Rutor där ett gevärsskott fortfarande
-  ryms efter ankomst har en färg; övriga rutor man just når har en annan.
+  ryms efter ankomst har en grön kontur; övriga rutor man just når har en brun
+  kontur. Rutorna fylls inte med markeringsfärg.
+- `ap-kostnad-och-handlingssymbol-pa-bordningsruta` — **Fullständigt
+  implementerat**. Varje markerad vägruta visar den ackumulerade AP-kostnaden,
+  inklusive alla vändningar före steget, och samma `Move`-bild med fotsymbol
+  som handlingsknappen. En vald destination, fiende eller dörr visar symbolen
+  för den handling som ett andra klick utlöser. En låst dörr visar `Hack door`;
+  en avlägsen dörr visar `Move` eftersom nästa klick går mot dörren.
 - `animerad-bordningsforflyttning` — **Fullständigt implementerat**. Utförd
   förflyttning animerar varje vändning och steg för den aktiva soldaten och för
   synliga försvarare och civilister. Sikt och kartminne uppdateras efter varje

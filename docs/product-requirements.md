@@ -341,7 +341,13 @@ kostar 0,25 AP (`billig-vandning` — **Fullständigt implementerat**). Man kan 
 Kartan ska visas isometriskt och uppta huvuddelen av ett spelmässigt gränssnitt
 med kompakta handlingsknappar. Varje bordningssoldat ska ha en egen
 hälsomätare. En vald väg ska visa hur långt soldaten når med kvarvarande AP
-och vilka rutor som fortfarande lämnar AP till ett skott. Den aktiva soldatens
+och vilka rutor som fortfarande lämnar AP till ett skott. Vägen visas med
+gröna och bruna konturer i stället för helt färgade rutor. Varje vägruta visar
+hur många AP det kostar att nå den, inklusive vändningar, och samma fotsymbol
+som `Move`. När ett andra klick på en markerad ruta utför en handling,
+exempelvis att gå, skjuta, öppna eller hacka en dörr, visas handlingens symbol
+ovanpå rutan (`ap-kostnad-och-handlingssymbol-pa-bordningsruta` —
+**Fullständigt implementerat**). Den aktiva soldatens
 synliga rutor och de rutor ett skott kan nå ska inte markeras med röda eller
 blå kantfärger. När soldaten går ska varje steg och vändning animeras så att sikt
 uppdateras längs vägen. Synliga försvarare och civilister animeras på samma
