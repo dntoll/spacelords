@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   BOARDING_LIGHT_MAP_TEXELS,
   boardingFigureOccluders,
+  boardingLightMapAreaFor,
+  boardingLightMapTransform,
   boardingShadowPolygon,
   boardingStaticLightSignature,
   type BoardingLightPoint,
@@ -12,6 +14,7 @@ import {
   boardingLampReach,
   boardingMovingLightFigures,
 } from '../../../src/client/boarding/views/rendering/BoardingLightRefresh.js';
+import { boardingIsoCenter } from '../../../src/client/boarding/views/rendering/BoardingProjection.js';
 import { boardingSimplifiedOutline } from '../../../src/client/boarding/views/rendering/BoardingOutline.js';
 import type { BoardingLight } from '../../../src/client/boarding/models/map/BoardingMap.js';
 import type {
@@ -265,6 +268,45 @@ describe('bordning-jamn-bildfrekvens', () => {
         }),
       );
       expect(nearest).toBeLessThanOrEqual(0.1 + 1e-9);
+    }
+  });
+});
+
+describe('jamn-ljuskarta-under-forflyttning: light under a refreshed area', () => {
+  it('multiplies light over the whole screen-aligned area, not only the lamp square', () => {
+    // The refreshed floor area is the screen rectangle around the lamp's
+    // square, which is a rhombus on screen. Its corners were left unlit and
+    // flashed bright while someone walked on a large deck.
+    const texels = BOARDING_LIGHT_MAP_TEXELS;
+    const region = boardingLampReach(lamp(14, 12));
+    const corners = [
+      { q: region.minQ, r: region.minR },
+      { q: region.maxQ, r: region.minR },
+      { q: region.maxQ, r: region.maxR },
+      { q: region.minQ, r: region.maxR },
+    ].map((corner) => boardingIsoCenter(corner));
+    const world = {
+      left: Math.min(...corners.map((point) => point.x)),
+      right: Math.max(...corners.map((point) => point.x)),
+      top: Math.min(...corners.map((point) => point.y)),
+      bottom: Math.max(...corners.map((point) => point.y)),
+    };
+    const size = { width: 60 * texels + 2, height: 60 * texels + 2 };
+    const area = boardingLightMapAreaFor(world, texels, size);
+    const [a, b, c, d, e, f] = boardingLightMapTransform(texels);
+    const determinant = a * d - b * c;
+    for (const [x, y] of [
+      [world.left, world.top],
+      [world.right, world.top],
+      [world.right, world.bottom],
+      [world.left, world.bottom],
+    ] as const) {
+      const tx = (d * (x - e) - c * (y - f)) / determinant;
+      const ty = (a * (y - f) - b * (x - e)) / determinant;
+      expect(tx).toBeGreaterThanOrEqual(area.sx);
+      expect(tx).toBeLessThanOrEqual(area.ex);
+      expect(ty).toBeGreaterThanOrEqual(area.sy);
+      expect(ty).toBeLessThanOrEqual(area.ey);
     }
   });
 });

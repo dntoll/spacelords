@@ -124,8 +124,8 @@ Se [hela visionen](docs/game-vision.md).
   `gang-mot-avlagset-mal`, `vand-mot-vald-ruta`,
   `vandning-mot-nasta-steg`, `ap-fraktion-sparas`,
   `sparad-gangdestination`, `fast-soldatordning`,
-  `bordning-jamn-bildfrekvens` och `snabb-bordningsvagsokning` är
-  **Fullständigt implementerat**. En soldat
+  `bordning-jamn-bildfrekvens`, `snabb-bordningsvagsokning` och
+  `motstandartur-i-mitten` är **Fullständigt implementerat**. En soldat
   intill en öppen, tom dörr får `Close door`. En granat som inte kan kastas
   drar ingen AP och knapparna är avstängda. Granater kastas över halvskydd,
   låga väggar, rök och hukande personer, men inte genom väggar, stängda dörrar
@@ -136,7 +136,9 @@ Se [hela visionen](docs/game-vision.md).
   och spelarens soldater väljs alltid i samma ordning. Golvlagret cachas och
   figurernas ljus ritas utan p5:s `tint()` för jämnare bildfrekvens på mobil.
   Vägen till en vald ruta visas utan väntan, och ett turavslut väntar inte
-  på långsam vägsökning hos civilister och försvarare.
+  på långsam vägsökning hos civilister och försvarare. Medan motståndarna
+  agerar visas `Defenders are acting…` i en ruta mitt på skärmen i stället
+  för i handlingsraden.
   Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Bordningsanimation och ljus:** `synligt-skott-hela-vagen`,

@@ -372,6 +372,12 @@ kommer från testtransportens startpositioner.
 - `snabb-bordningsvagsokning` — **Fullständigt implementerat**. Vägen till en
   vald ruta visas direkt, och turavslut och försvararnas drag väntar inte på
   vägsökningen. Vägarna blir desamma som tidigare.
+- `motstandartur-i-mitten` — **Fullständigt implementerat**. När den aktuella
+  personen inte är en av spelarens soldater, eller rundan avgörs, visas
+  `Defenders are acting…` i en centrerad ruta över kartan. Handlingsraden
+  döljs så länge. Rutan tar inte emot tryck, så kameran kan fortfarande
+  flyttas. `Resolving action…` under spelarens egna animationer står kvar i
+  handlingsraden.
 - `utslagning-och-medic` — **Fullständigt implementerat**. Vid 0 HP blir alla personer
   utslagna. Nästa träff dödar. `Med-pack` kan återuppliva. En sida utan
   stridsdugliga soldater är neutraliserad; utslagna överlevande tas till fånga.

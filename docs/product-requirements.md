@@ -1660,6 +1660,9 @@ ska kännas jämn och inte ryckig på mobilen.
 ruta visar vägen dit utan märkbar väntan, och att avsluta en soldats tur
 känns inte trögt.
 
+`motstandartur-i-mitten` — **Fullständigt implementerat**: medan motståndarna
+agerar visas det i en ruta mitt på skärmen i stället för längst ned.
+
 `volymetrisk-bordningsrok` — **Fullständigt implementerat**: rök visas med
 animerade halvgenomskinliga partiklar genom rutan.
 

@@ -4025,6 +4025,28 @@ body:has(.discovery-controls) .selection-panel {
   font-variant-numeric: tabular-nums;
 }
 
+/* motstandartur-i-mitten: the opponents' turn is announced mid-board. */
+.boarding-enemy-turn {
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  left: 50%;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 12px 22px;
+  border: 1px solid rgb(82 104 137 / 80%);
+  border-radius: 8px;
+  background: rgb(5 9 18 / 90%);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 55%);
+  color: #f2f6ff;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
 .boarding-controls {
   position: absolute;
   z-index: 3;
