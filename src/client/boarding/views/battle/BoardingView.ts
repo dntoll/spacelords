@@ -133,6 +133,7 @@ export class BoardingView {
   #actorId: string | null = null;
   #busy = false;
   #draining = false;
+  #idleWaiters: (() => void)[] = [];
   #controlsHeight = 0;
   #viewportWidth = 0;
   #playToken = 0;
@@ -453,6 +454,7 @@ export class BoardingView {
     this.#busy = true;
     this.#map?.beginPresentation?.();
     this.#destination = null;
+    let interrupted = false;
     this.#paint(
       previous,
       shot?.kind === 'grenade' ? 'Throwing…' : shot ? 'Firing…' : 'Moving…',
@@ -468,7 +470,10 @@ export class BoardingView {
       );
       // animerat-bordningsskott: resolve the shot before later actors' movement and damage.
       for (let index = 0; index <= frames.length; index++) {
-        if (token !== this.#playToken) return;
+        if (token !== this.#playToken) {
+          interrupted = true;
+          return;
+        }
         if (shot && this.#map?.playShot && index === shotIndex) {
           this.#paint(
             current,
@@ -476,7 +481,10 @@ export class BoardingView {
           );
           if (this.#map.frameShot) {
             await this.#map.frameShot(shot.from, shot.to);
-            if (token !== this.#playToken) return;
+            if (token !== this.#playToken) {
+              interrupted = true;
+              return;
+            }
           }
           await this.#map.playShot(
             shot.from,
@@ -491,15 +499,24 @@ export class BoardingView {
         const frame = frames[index];
         if (!frame) break;
         if (merged.has(index)) continue;
-        if (token !== this.#playToken) return;
+        if (token !== this.#playToken) {
+          interrupted = true;
+          return;
+        }
         if (this.#map?.frameVisibleMovement)
           await this.#map.frameVisibleMovement(current, frame);
-        if (token !== this.#playToken) return;
+        if (token !== this.#playToken) {
+          interrupted = true;
+          return;
+        }
         await this.#map?.playMotion?.(current, frame);
         current = frame;
         this.#paint(frame, 'Moving…');
       }
-      if (token !== this.#playToken) return;
+      if (token !== this.#playToken) {
+        interrupted = true;
+        return;
+      }
       if (
         this.#map?.focusActor &&
         this.#needsFocus(previous, final) &&
@@ -511,12 +528,28 @@ export class BoardingView {
     } finally {
       this.#busy = false;
       this.#map?.endPresentation?.();
+      if (interrupted) this.#releaseIdle();
     }
-    if (token !== this.#playToken) return;
+    if (interrupted) return;
     if (final.currentActorId === previous.currentActorId)
       this.#destination = this.#savedDestination(final);
     this.#paint(final, notice);
     this.#drainPending();
+    this.#releaseIdle();
+  }
+
+  /** tydlig-bordningsstatus: the defender step waits until the shot is visible. */
+  whenIdle(): Promise<void> | null {
+    if (!this.#busy) return null;
+    return new Promise((resolve) => {
+      this.#idleWaiters.push(resolve);
+    });
+  }
+
+  #releaseIdle(): void {
+    if (this.#busy || this.#draining) return;
+    const waiters = this.#idleWaiters.splice(0);
+    for (const resolve of waiters) resolve();
   }
 
   #drainPending(): void {
@@ -915,6 +948,7 @@ export class BoardingView {
     this.#playToken += 1;
     this.#busy = false;
     this.#pending = [];
+    this.#releaseIdle();
     this.#map?.dispose();
     this.#dialog.close();
     this.#dialog.remove();

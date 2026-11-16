@@ -57,10 +57,10 @@ describe('handelseannonsering / handelser-pa-kartan', () => {
       offsetHeight: { value: 80 },
     });
     view.render(snapshot);
-    const center = Number.parseFloat(
+    const top = Number.parseFloat(
       announcement.style.getPropertyValue('--event-origin-y'),
     );
-    expect(center + announcement.offsetHeight / 2).toBeLessThanOrEqual(262);
+    expect(top + announcement.offsetHeight).toBeLessThanOrEqual(262);
     expect(announcement.querySelectorAll('button')).toHaveLength(2);
     view.dispose();
   });
@@ -198,7 +198,7 @@ describe('handelseannonsering / handelser-pa-kartan', () => {
       announcement.style.getPropertyValue('--event-origin-y'),
     );
     expect(x).toBeCloseTo(280 + point.x * 0.5);
-    expect(y - 36).toBeGreaterThanOrEqual(220 + point.y * 0.5 + 82);
+    expect(y).toBeGreaterThanOrEqual(220 + point.y * 0.5 + 82);
     view.render({
       ...snapshot,
       eventPlayback: { ...snapshot.eventPlayback, index: 1 },

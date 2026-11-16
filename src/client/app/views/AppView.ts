@@ -802,6 +802,10 @@ export class AppView implements AppPort {
       this.#decisionDialog.showModal();
     }
   }
+  boardingPresentation(): Promise<void> | null {
+    return this.#boardingView?.whenIdle() ?? null;
+  }
+
   async animateBattleShot(shot: BattleShot): Promise<void> {
     await this.#battleView?.animateShot(shot);
   }
@@ -1054,17 +1058,10 @@ export class AppView implements AppPort {
         const available = Math.max(80, bottom - markerY - markerGap);
         announcement.style.maxHeight = `${available}px`;
         // gemensamt-handelseflode: preserve End turn when marker spacing cannot fit.
-        originY = Math.min(
-          markerY + markerGap + placedHeight / 2,
-          bottom - placedHeight / 2,
-        );
-      } else originY = markerY + markerGap + placedHeight / 2;
+        // --event-origin-y is the top edge, so a later height change grows downward.
+        originY = Math.min(markerY + markerGap, bottom - placedHeight);
+      } else originY = markerY + markerGap;
       announcement.style.setProperty('--event-origin-x', `${originX}px`);
-      announcement.style.setProperty('--event-origin-y', `${originY}px`);
-      // WebKit can grow the box after offsetHeight is read. translate(-50%)
-      // then lifts the top. Put the top back on the measured gap.
-      const placed = announcement.getBoundingClientRect();
-      if (placed.height > 0) originY += originY - placedHeight / 2 - placed.top;
       announcement.style.setProperty('--event-origin-y', `${originY}px`);
     } else {
       for (const property of [
@@ -1084,7 +1081,7 @@ export class AppView implements AppPort {
     );
     announcement.style.setProperty(
       '--event-target-y',
-      `${(top + bottom) / 2 - originY}px`,
+      `${(top + bottom) / 2 - originY - (announcement.offsetHeight || 0) / 2}px`,
     );
     announcement.style.setProperty(
       '--event-target-scale',

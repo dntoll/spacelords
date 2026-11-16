@@ -1065,6 +1065,14 @@ export class MasterController {
       : (this.#presented ?? this.#model.snapshot);
     const playback = snapshot.eventPlayback;
     if (this.#boarding.shouldPlayBoardingStep()) {
+      // tydlig-bordningsstatus: let the shot finish before the defender step.
+      const presentation = this.#view.boardingPresentation?.() ?? null;
+      if (presentation) {
+        void presentation.then(() => {
+          if (!this.#disposed) this.#schedulePlayback();
+        });
+        return;
+      }
       this.#playbackTimer = setTimeout(() => {
         try {
           this.#boarding.playBoardingStep();

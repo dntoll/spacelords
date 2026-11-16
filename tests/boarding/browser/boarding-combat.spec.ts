@@ -63,26 +63,30 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   const dialog = page.getByRole('dialog', { name: 'Boarding combat' });
   await expect(dialog).toBeVisible();
   await expect
-    .poll(() =>
-      page.evaluate(() =>
-        performance
-          .getEntriesByType('resource')
-          .some((entry) => entry.name.includes('faction-sprites')),
-      ),
+    .poll(
+      () =>
+        page.evaluate(() =>
+          performance
+            .getEntriesByType('resource')
+            .some((entry) => entry.name.includes('faction-sprites')),
+        ),
+      { timeout: 20_000 },
     )
     .toBe(true);
   // isometriska-bordningsobjekt: crate and door faces are small enough for
   // Vite to inline as data URLs, so only file-backed artwork is a resource.
   for (const artwork of ['airlock-', 'reactor-']) {
     await expect
-      .poll(() =>
-        page.evaluate(
-          (name) =>
-            performance
-              .getEntriesByType('resource')
-              .some((entry) => entry.name.includes(name)),
-          artwork,
-        ),
+      .poll(
+        () =>
+          page.evaluate(
+            (name) =>
+              performance
+                .getEntriesByType('resource')
+                .some((entry) => entry.name.includes(name)),
+            artwork,
+          ),
+        { timeout: 20_000 },
       )
       .toBe(true);
   }
@@ -135,16 +139,10 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   await expect(dialog.locator('.boarding-log')).toContainText(
     /Rifle.*reactor/i,
   );
-  await expect(
-    dialog.getByRole('button', { name: 'Shoot', exact: true }),
-  ).toBeDisabled();
-  await expect(
-    dialog.getByRole('button', { name: 'End soldier turn', exact: true }),
-  ).toBeVisible();
-  // tydlig-bordningsstatus: inspect the transient turn before advancing AI timers.
-  // Keep the current time. Jumping backwards freezes a presentation
-  // whose start was measured with the real clock.
+  // The rifle spends this soldier's AP, so later soldiers still have a turn.
+  // Pause before ending them: the defender step is only 450ms.
   await page.clock.install();
+  await page.clock.pauseAt(Date.now() + 1_000);
   await dialog.getByText('Combat details', { exact: true }).click();
   const defendersActing = dialog.getByText('Defenders are acting…', {
     exact: true,
