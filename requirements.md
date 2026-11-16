@@ -69,6 +69,9 @@ Se [hela visionen](docs/game-vision.md).
   kastar skrot och lämnar bråte, och reactor ger en större explosion. Rök hamnar
   aldrig i hela väggar, ytterskrov eller stängda dörrar, men väl i sönderskjutna
   väggar. Handlingar som inte kan utföras är avstängda.
+  `fasta-handlingsplatser` och `gang-knapp-till-avlagset-mal` är
+  **Fullständigt implementerat**: varje handlingsknapp har alltid samma plats,
+  och `Move` är tillgänglig även när destinationen ligger för långt bort.
   `utslagen-fiende-utan-sikte` och `ljudmarkor-bara-utom-sikt` är
   **Fullständigt implementerat**: utslagna personer får varken hårkors eller
   tom HP-mätare, och ljudmarkörer visas bara på rutor som inte syns.

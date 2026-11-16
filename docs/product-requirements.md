@@ -1640,6 +1640,13 @@ personer om tillräckligt mycket av målet syns.
 `avstangda-omojliga-handlingar` — **Fullständigt implementerat**:
 handlingsknappar som inte kan utföras är avstängda.
 
+`fasta-handlingsplatser` — **Fullständigt implementerat**: varje
+handlingsknapp har alltid samma plats, så att knapparna inte flyttar runt.
+
+`gang-knapp-till-avlagset-mal` — **Fullständigt implementerat**: `Move` är
+inte avstängd när destinationen ligger för långt bort; soldaten går då så
+långt den hinner.
+
 `bordning-jamn-bildfrekvens` — **Fullständigt implementerat**: bordningskartan
 ska kännas jämn och inte ryckig på mobilen.
 

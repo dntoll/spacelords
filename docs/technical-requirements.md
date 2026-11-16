@@ -1811,6 +1811,13 @@ färdig reparation.
   kvarvarande AP och de exporterade kostnaderna `BOARDING_HACK_AP`,
   `BOARDING_MED_PACK_AP` och `BOARDING_EVACUATE_AP`, plus avstånd och
   modellens `grenadeReason` och `doorReason`.
+- `fasta-handlingsplatser`: BoardingView ritar alltid samma knappar i samma
+  ordning med fast storlek; knappar utan mål är avstängda i stället för
+  borttagna. Dörrarna har en fast `Open door`- och en fast `Close door`-plats.
+  `Abort boarding` finns bara i kampanjen men ändras inte under en strid.
+- `gang-knapp-till-avlagset-mal`: `Move` är tillgänglig när
+  `routeTowards` hittar en väg och skickar `move` när hela vägen ryms,
+  annars `walk`. Vytester i `tests/space-battle/unit/battle-controls.test.ts`.
 - `utslagen-fiende-utan-sikte` och `ljudmarkor-bara-utom-sikt`:
   `BoardingBattle.targetIndicators` tar bara med aktiva fiender, och
   BoardingMapView ritar HP-mätare bara för aktiva personer och ljudmarkörer bara

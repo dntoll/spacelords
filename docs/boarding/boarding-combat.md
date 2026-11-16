@@ -330,6 +330,15 @@ kommer från testtransportens startpositioner.
   hukning, Overwatch, `Hack door`, `Use Med-pack`, `Evacuate`, dörrar, granater,
   skott, melee och förflyttning är avstängda när AP, avstånd eller mål inte
   räcker. `End soldier turn` är alltid tillgänglig.
+- `fasta-handlingsplatser` — **Fullständigt implementerat**. Alla knappar
+  visas alltid i samma ordning: vridningar, `Move`, hukning, skott, melee,
+  granater, `Open door`, `Close door`, `Hack door`, `Use Med-pack`,
+  Overwatch, `Evacuate`, i kampanjen `Abort boarding` och sist
+  `End soldier turn`. En knapp som saknar mål är avstängd i stället för
+  borttagen, så att knapparna aldrig flyttar runt.
+- `gang-knapp-till-avlagset-mal` — **Fullständigt implementerat**. `Move` är
+  tillgänglig även när destinationen ligger för långt bort och går då som ett
+  andra tryck på målet (`gang-mot-avlagset-mal`).
 - `granat-kostar-bara-vid-kast` — **Fullständigt implementerat**. Ett kast
   utanför räckvidden (6 rutor), utan kvarvarande granat av den sorten eller med
   för lite AP avvisas innan någon AP dras. Granatknapparna är avstängda för

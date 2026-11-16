@@ -1920,3 +1920,95 @@ it('kastad-granat-i-bage: plays the throw before applying the impact state', asy
   );
   view.dispose();
 });
+
+function farDestinationView() {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) =>
+      person.side === 'player' &&
+      person.position.q === 2 &&
+      person.position.r === 8,
+  )!;
+  const boardingState: BoardingBattleState = {
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player.id ? { ...person, facing: 0 } : person,
+    ),
+    initiativeOrder: [player.id],
+    initiativeIndex: 0,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 4 },
+  };
+  const battle = BoardingBattle.restore(testBoardingMap, boardingState);
+  const destination = Array.from(
+    { length: testBoardingMap.width * testBoardingMap.height },
+    (_, index) => ({
+      q: index % testBoardingMap.width,
+      r: Math.floor(index / testBoardingMap.width),
+    }),
+  ).find(
+    (cell) =>
+      cell.r === player.position.r &&
+      (battle.pathTo(player.id, cell)?.cost ?? 0) > 4,
+  )!;
+  expect(destination).toBeDefined();
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new FixtureBoardingView(
+    document.body,
+    emit,
+    (_container, select) => {
+      selectHex = select;
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
+  view.render(boardingState);
+  return {
+    view,
+    emit,
+    destination,
+    select: (cell: typeof destination) => selectHex(cell),
+  };
+}
+
+const actionNames = () =>
+  [...document.querySelectorAll<HTMLButtonElement>('.boarding-action')].map(
+    (control) =>
+      control
+        .getAttribute('aria-label')!
+        .split(' · ')[0]!
+        .replace(/^Stand$/, 'Crouch'),
+  );
+
+it('gang-knapp-till-avlagset-mal: Move stays enabled for a destination beyond the AP and walks there', () => {
+  const { view, emit, destination, select } = farDestinationView();
+  select(destination);
+  const move = document.querySelector<HTMLButtonElement>(
+    '[aria-label^="Move"]',
+  )!;
+  expect(move.disabled).toBe(false);
+  emit.mockClear();
+  move.click();
+  expect(emit).toHaveBeenCalledExactlyOnceWith({
+    type: 'boarding-command',
+    command: { type: 'walk', to: destination },
+  });
+  view.dispose();
+});
+
+it('fasta-handlingsplatser: every action keeps its place whatever is chosen', () => {
+  const { view, destination, select } = farDestinationView();
+  const before = actionNames();
+  expect(before).toContain('Frag grenade');
+  expect(before).toContain('Open door');
+  expect(before).toContain('Close door');
+  expect(before).toContain('Use Med-pack');
+  expect(before).toContain('Evacuate');
+  expect(
+    document.querySelector<HTMLButtonElement>('[aria-label="Frag grenade"]')
+      ?.disabled,
+  ).toBe(true);
+  select(destination);
+  expect(actionNames()).toEqual(before);
+  view.dispose();
+});
