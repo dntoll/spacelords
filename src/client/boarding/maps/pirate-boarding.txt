@@ -3,6 +3,9 @@ name=Space pirate
 width=9
 height=5
 rules=campaign
+spriteX=-5.322935647718719
+spriteY=-5.633504770716298
+spriteScale=19.645871295437438
 
 [terrain]
 HHHHHHHHH
