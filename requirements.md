@@ -69,6 +69,9 @@ Se [hela visionen](docs/game-vision.md).
   kastar skrot och lämnar bråte, och reactor ger en större explosion. Rök hamnar
   aldrig i hela väggar, ytterskrov eller stängda dörrar, men väl i sönderskjutna
   väggar. Handlingar som inte kan utföras är avstängda.
+  `fasta-handlingsplatser` och `gang-knapp-till-avlagset-mal` är
+  **Fullständigt implementerat**: varje handlingsknapp har alltid samma plats,
+  och `Move` är tillgänglig även när destinationen ligger för långt bort.
   `utslagen-fiende-utan-sikte` och `ljudmarkor-bara-utom-sikt` är
   **Fullständigt implementerat**: utslagna personer får varken hårkors eller
   tom HP-mätare, och ljudmarkörer visas bara på rutor som inte syns.
@@ -127,8 +130,8 @@ Se [hela visionen](docs/game-vision.md).
   låga väggar, rök och hukande personer, men inte genom väggar, stängda dörrar
   eller stående personer, och en miss studsar aldrig genom en vägg. Ett andra tryck på ett mål som
   ligger för långt bort går så långt AP räcker och vänder soldaten mot nästa
-  steg; en återstående bråkdel av en AP avslutar turen och sparas till nästa
-  runda, och målet är valt igen då. Att välja en ruta vänder soldaten ditåt,
+  steg; turen slutar och AP som inte räckte till nästa steg sparas till
+  nästa runda, och målet är valt igen då. Att välja en ruta vänder soldaten ditåt,
   och spelarens soldater väljs alltid i samma ordning. Golvlagret cachas och
   figurernas ljus ritas utan p5:s `tint()` för jämnare bildfrekvens på mobil.
   Se [bordningsstrid](docs/boarding/boarding-combat.md).
