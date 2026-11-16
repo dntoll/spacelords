@@ -3,19 +3,19 @@ name=Colony ship
 width=28
 height=9
 rules=campaign
-spriteX=-6.230497267478707
-spriteY=-3.1870965376411258
-spriteScale=36.6639848777562
+spriteX=-7.467889512508164
+spriteY=-3.6282914660984122
+spriteScale=38.49718412164401
 
 [terrain]
 HHHHHHHHHHHHOOOOOOOOOOOOOOOO
-H...#.......HHHHHHHHHHHHOOOO
-H...#.......Q...........HOOO
-H...#...................HWWW
+H...#.......HHHHHHQQqQQQOOOO
+H...#.......Q..........QQOOO
+H...#...................QWWW
 H...#.......Q..............W
-H..##...................HWWW
-H...........Q...........OOOO
-H...........HHHHHHHHHH##OOOO
+H..##..................QQWWW
+H...........Q..........QOOOO
+H...........HHHQQqQQQQQQOOOO
 HHHHHHH.HHHHOOOOOOOOOOOOOOOO
 
 [objects]
@@ -23,7 +23,7 @@ HHHHHHH.HHHHOOOOOOOOOOOOOOOO
 -RRR------------------------
 -R---------------CCCC-------
 ------C-----D----C--C-------
------------------C--C---D---
+-----------------C--C---D-C-
 -DD---------D-C--C--C-------
 --------------C-------------
 ----------------------------
