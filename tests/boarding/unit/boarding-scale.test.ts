@@ -17,8 +17,6 @@ import {
 const groundMeter = 64 / Math.SQRT2;
 const halfDepth = 16 * Math.sqrt(3);
 const verticalMeter = groundMeter / 2;
-// The existing sprites were rendered for the earlier 2:1 (30 degree) camera.
-const spriteVerticalMeter = 16 * Math.sqrt(6);
 describe('meterskala-i-bordning', () => {
   it('keeps the 1 m square floor and gives walls, openings and cover their agreed meter heights', () => {
     const alongQ = boardingIsoCenter({ q: 1, r: 0 });
@@ -33,7 +31,7 @@ describe('meterskala-i-bordning', () => {
   });
   it('calibrates the free opening of the airlock rather than the complete image', () => {
     expect(
-      BOARDING_SPRITE_METRICS.airlock.openingHeight / spriteVerticalMeter,
+      BOARDING_SPRITE_METRICS.airlock.openingHeight / verticalMeter,
     ).toBeCloseTo(2.1);
   });
   it('plants a standing 1.8 m person at its feet and keeps the camera above the highest wall', () => {

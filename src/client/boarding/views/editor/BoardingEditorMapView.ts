@@ -14,13 +14,15 @@ import type { BoardingMapId } from '../../../../shared/boarding/map-format.js';
 import {
   BOARDING_FLOOR_IMAGES,
   BOARDING_WALL_IMAGES,
-  BOARDING_CRATE_IMAGES,
+  BOARDING_COVER_IMAGES,
   BOARDING_DOOR_FACE_IMAGES,
   BOARDING_DOOR_TOP_IMAGE,
   BOARDING_WALL_TOP_IMAGE,
   boardingSurfaceStyle,
+  boardingCoverStyle,
   boardingWallFaceStyle,
   type BoardingSurfaceStyle,
+  type BoardingCoverStyle,
 } from '../rendering/BoardingSurfaceArtwork.js';
 import factionSpritesUrl from '../../assets/characters/directional-faction-sprites.webp';
 import {
@@ -121,6 +123,7 @@ const ROOM_FILL: Readonly<Record<string, string>> = {
   B: '#2f6f8f99',
   E: '#6f4f2f99',
   K: '#3f5f9f99',
+  G: '#7a654099',
 };
 
 function glyph(
@@ -185,7 +188,10 @@ export class BoardingEditorMapView {
   #wallTop: p5.Image | null = null;
   readonly #doorFaces = new Map<'open' | 'locked', p5.Image>();
   #doorTop: p5.Image | null = null;
-  readonly #crate = new Map<'side' | 'top', p5.Image>();
+  readonly #cover = new Map<
+    `${BoardingCoverStyle}-${'side' | 'top'}`,
+    p5.Image
+  >();
   #factionSprites: p5.Image | null = null;
   readonly #objects = new Map<BoardingArtwork, p5.Image>();
   #lighting: BoardingLighting | null = null;
@@ -258,15 +264,19 @@ export class BoardingEditorMapView {
             if (this.#ready && !this.#disposed) void this.#p5.redraw();
           });
         }
-        for (const [kind, url] of Object.entries(BOARDING_CRATE_IMAGES) as [
-          'side' | 'top',
-          string,
-        ][]) {
-          void sketch.loadImage(url).then((image) => {
-            this.#crate.set(kind, image);
-            if (this.#ready && !this.#disposed) void this.#p5.redraw();
-          });
-        }
+        for (const [style, faces] of Object.entries(BOARDING_COVER_IMAGES) as [
+          BoardingCoverStyle,
+          Readonly<Record<'side' | 'top', string>>,
+        ][])
+          for (const [face, url] of Object.entries(faces) as [
+            'side' | 'top',
+            string,
+          ][]) {
+            void sketch.loadImage(url).then((image) => {
+              this.#cover.set(`${style}-${face}`, image);
+              if (this.#ready && !this.#disposed) void this.#p5.redraw();
+            });
+          }
         void sketch.loadImage(BOARDING_DOOR_TOP_IMAGE).then((image) => {
           this.#doorTop = image;
           if (this.#ready && !this.#disposed) void this.#p5.redraw();
@@ -919,7 +929,9 @@ export class BoardingEditorMapView {
           ? ('engineering' as const)
           : symbol === 'K'
             ? ('cockpit' as const)
-            : null;
+            : symbol === 'G'
+              ? ('galley' as const)
+              : null;
     };
     const floors: { q: number; r: number }[] = [];
     for (let r = 0; r < snapshot.height; r++) {
@@ -1176,8 +1188,8 @@ export class BoardingEditorMapView {
           ? paintIsoCrate(
               sketch,
               center,
-              this.#crateOption('side'),
-              this.#crateOption('top'),
+              this.#coverOption(boardingCoverStyle(roomAt, position), 'side'),
+              this.#coverOption(boardingCoverStyle(roomAt, position), 'top'),
             )
           : null;
       if (crate && this.#lighting) {
@@ -1275,10 +1287,11 @@ export class BoardingEditorMapView {
     sketch.pop();
   }
 
-  #crateOption(
+  #coverOption(
+    style: BoardingCoverStyle,
     face: 'side' | 'top',
   ): { tile: p5.Image; cache: IsoImageCache } | undefined {
-    const image = this.#crate.get(face);
+    const image = this.#cover.get(`${style}-${face}`);
     return image ? { tile: image, cache: this.#cache(image) } : undefined;
   }
 

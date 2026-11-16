@@ -31,6 +31,30 @@ describe('isometriska-bordningsobjekt', () => {
     expect(box.width).toBeLessThan(64);
     expect(box.x + box.width / 2).toBe(100);
   });
+  it('sprites-for-breach-och-escape-pod: distinguishes breaches, pods and used pod hatches', () => {
+    expect(
+      boardingObjectArtwork({
+        kind: 'exit',
+        position: { q: 0, r: 0 },
+        exit: 'breach',
+      }),
+    ).toBe('breach');
+    expect(
+      boardingObjectArtwork({
+        kind: 'exit',
+        position: { q: 1, r: 0 },
+        exit: 'escape-pod',
+      }),
+    ).toBe('escape-pod');
+    expect(
+      boardingObjectArtwork({
+        kind: 'exit',
+        position: { q: 1, r: 0 },
+        exit: 'escape-pod',
+        destroyed: true,
+      }),
+    ).toBe('escape-hatch');
+  });
   it('halvskydd-som-geometri: builds Half cover as a 1.2 m box inside its tile', () => {
     const footprint = boardingFeatureFootprint('cover');
     const faces = boardingIsoBlockFaces(

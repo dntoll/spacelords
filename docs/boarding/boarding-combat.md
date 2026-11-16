@@ -24,7 +24,14 @@ kommer från testtransportens startpositioner.
   att redigera för hand.
 - `individuellt-bordningsinitiativ` — **Fullständigt implementerat**. Varje soldat slår
   D20 plus initiativvärde varje runda. Högre grundvärde bryter lika total;
-  fortsatt lika resultat slås om. Civilister agerar sist.
+  fortsatt lika resultat slås om. Civilister agerar sist. Spelarens soldater
+  får sina platser i ordningen i fast lagordning (`fast-soldatordning`).
+- `fast-soldatordning` — **Fullständigt implementerat**. De platser i
+  initiativordningen som spelarens soldater slår till sig fördelas på soldaterna
+  i lagets ordning, så att soldat 1 alltid är den som väljs först varje runda,
+  därefter soldat 2 och så vidare. Fiendernas platser påverkas inte. Ersätter
+  den del av `individuellt-bordningsinitiativ` som lät varje soldats eget slag
+  avgöra soldaternas inbördes ordning.
 - `actionpoints-och-riktad-forflyttning` — **Fullständigt implementerat**. Egenskaper och
   fasta utrustningsmodifierare ger AP. Soldater går endast framåt. Ett stående
   rutsteg kostar 2 AP, ett hukat steg 3 AP, ett diagonalt steg 3 AP stående eller 4 AP hukande, en 45-gradersvändning 0,25 AP (`billig-vandning`) och byte
@@ -113,6 +120,22 @@ kommer från testtransportens startpositioner.
   en vald destination eller dörr som ligger för långt bort för kvarvarande AP
   går längs den billigaste vägen så långt AP räcker. Mot en stängd dörr eller
   en upptagen ruta stannar soldaten bredvid den.
+- `vand-mot-vald-ruta` — **Fullständigt implementerat**. När spelaren väljer
+  en tom ruta som destination vänder sig soldaten mot den, den kortaste vägen
+  i 45-gradessteg för 0,25 AP per steg och så långt AP räcker.
+- `vandning-mot-nasta-steg` — **Fullständigt implementerat**. När soldaten
+  går mot ett mål som AP inte räcker till används kvarvarande AP efter sista
+  steget till att vända soldaten mot nästa steg, så att den kan fortsätta
+  direkt nästa runda.
+- `ap-fraktion-sparas` — **Fullständigt implementerat**. Därefter slutar
+  soldatens tur, och AP som är mindre än nästa stegs kostnad läggs till
+  soldatens AP vid nästa aktivering. Kostar nästa steg 2 AP sparas till
+  exempel 1,75 AP. Detta ersätter den tidigare gränsen där bara en bråkdel
+  under 1 AP sparades och soldaten annars fick fortsätta agera.
+- `sparad-gangdestination` — **Fullständigt implementerat**. Ett mål soldaten
+  inte hann nå sparas och är valt igen när soldaten aktiveras nästa gång. Ett
+  nytt tryck på målet fortsätter gå. Målet glöms när soldaten når det eller
+  går någon annanstans med en vanlig förflyttning.
 - `klickdorr-pa-vald-dorr` — **Fullständigt implementerat**. Första klicket på
   en dörr väljer den. Ett andra klick på samma angränsande dörr försöker
   öppna den, eller hacka den om den är låst. Öppna dörrar väljs som golvrutor.
@@ -223,14 +246,19 @@ kommer från testtransportens startpositioner.
   tidigare aldrig i spelet, eftersom spelarens bild utelämnar dolda fiender;
   det är rättat.
 - `geometrisk-sikt` — **Fullständigt implementerat**. Sikten räknas med
-  verkliga siktlinjer i stället för hela rutor: 180 grader framåt, 8,5 rutors
-  radie från soldatens rutmitt, och väggar, skrov, höga tunna väggar, stängda
+  verkliga siktlinjer i stället för hela rutor: 180 grader framåt från soldatens
+  rutmitt, utan avståndsgräns inom skeppet (`sikt-over-hela-skeppet`), och väggar, skrov, höga tunna väggar, stängda
   dörrar och rök kastar skuggor. En ruta kan därför vara delvis synlig. Den
   valda soldatens sikt ritas på golvet under spelarens tur som en mycket svag
   yta med en smal ljusblå kantlinje, och lådor och låga väggar som syns markeras med orange
   rutkant som halvskydd. Detta ersätter delvis `bordning-utan-sikt-och-eldrutor`:
   siktytan visas igen, men som en sammanhängande yta; de röda eldrutorna visas
   fortfarande inte.
+- `sikt-over-hela-skeppet` — **Fullständigt implementerat**. Bordningen sker
+  inomhus, så sikten begränsas bara av det som skymmer: väggar, skrov, stängda
+  dörrar, rök och personer. Räckvidden är skeppets diagonal plus en halv ruta,
+  så en fri siktlinje når hela skeppet. Detta ersätter radien 8,5 rutor i
+  `geometrisk-sikt`. Skottens räckvidd på 8 rutor är oförändrad.
 - `delvis-synligt-mal` — **Fullständigt implementerat**. En ruta räknas som
   sedd när minst 10 % av den syns; först då syns en fiende där och kan beskjutas.
   Ett skott mot ett mål vars ruta syns till under hälften ger målet +4 i försvar,
@@ -306,6 +334,17 @@ kommer från testtransportens startpositioner.
   hukning, Overwatch, `Hack door`, `Use Med-pack`, `Evacuate`, dörrar, granater,
   skott, melee och förflyttning är avstängda när AP, avstånd eller mål inte
   räcker. `End soldier turn` är alltid tillgänglig.
+- `fasta-handlingsplatser` — **Fullständigt implementerat**. Alla knappar
+  visas alltid i samma ordning: vridningar, `Move`, hukning, skott, melee,
+  granater, `Open door`/`Close door` på samma plats, `Hack door`,
+  `Use Med-pack`,
+  Overwatch, `Evacuate`, i kampanjen `Abort boarding` och sist
+  `End soldier turn`. En knapp som saknar mål är avstängd i stället för
+  borttagen, så att knapparna aldrig flyttar runt. `Open door` visar en
+  öppen dörr och `Close door` en stängd dörr.
+- `gang-knapp-till-avlagset-mal` — **Fullständigt implementerat**. `Move` är
+  tillgänglig även när destinationen ligger för långt bort och går då som ett
+  andra tryck på målet (`gang-mot-avlagset-mal`).
 - `granat-kostar-bara-vid-kast` — **Fullständigt implementerat**. Ett kast
   utanför räckvidden (6 rutor), utan kvarvarande granat av den sorten eller med
   för lite AP avvisas innan någon AP dras. Granatknapparna är avstängda för
@@ -364,8 +403,8 @@ kommer från testtransportens startpositioner.
 ## Karta och dörrar
 
 Textkartan har likstora lager för golv och skrov, objekt, namngivna rum och
-startpositioner. `Bridge`, `Engineering`, breach, escape pods, reaktor, dörrar
-och låga skydd markeras uttryckligen. En vanlig dörr kostar 1 AP att öppna eller
+startpositioner. `Bridge`, `Engineering`, `Cockpit`, `Galley`, breach, escape
+pods, reaktor, dörrar och låga skydd markeras uttryckligen. En vanlig dörr kostar 1 AP att öppna eller
 stänga. En låst dörr kan hackas tyst eller förstöras med skott och explosioner.
 
 ## Runda och information
@@ -430,6 +469,12 @@ Karteditor, skrovgenombrott och vakuum ingår inte.
 ## Isometriska bordningsobjekt
 
 `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock och reactor visas som separata bilder utan golv. Förstörda objekt och bilder som inte laddas behåller reservvisningen. Dörrar och Half cover ritas inte längre som bilder, se `dorrar-som-tunna-vaggar` och `halvskydd-som-geometri`.
+
+`airlock-i-60-graders-perspektiv` är **Fullständigt implementerat**. Airlockens bild är affint anpassad så ramens golvkant följer 60°-projektionens exakta axel och inte längre lutar annorlunda än skrovväggen.
+
+`sprites-for-breach-och-escape-pod` är **Fullständigt implementerat**. Breach, en dockad escape pod och luckan efter en använd pod har var sin sprite. Evakuering genom podden förbrukar den, medan breach fortsätter vara en återanvändbar evakueringspunkt.
+
+`rumsspecifikt-half-cover` och `galley-rum-i-bordning` är **Fullständigt implementerade**. Half cover behåller samma geometri och regler men väljer sid- och topptextur efter rummet: styrpanel i `Cockpit`, maskin i `Engineering`, matbord/bänk i `Galley` och låda i övriga rum. `Galley` använder `G` i rumslagret, har egna golv- och väggtexturer, kan målas i editorn och finns i `Colony ship`.
 
 `halvskydd-som-geometri` är **Fullständigt implementerat**. Half cover är en låda i spelets egen projektion: en fyrkant tre fjärdedelar av en ruta bred, centrerad i rutan och 1,2 m hög. De två synliga sidorna får `crate-side.png` och ovansidan `crate-top.png`, och varje yta ljussätts som väggar. Den ersätter lådbilden `crate`, som var ritad för en annan kameravinkel och därför fick fel projektion. Förstörd Half cover visar bråte som förut, och så länge texturerna laddas visas den enkla reservlådan. Redigeringsvyn ritar Half cover på samma sätt. Testbordningens transportskepp har en Half cover på (4, 9) i rummet där soldaterna börjar, så att lådan syns direkt.
 

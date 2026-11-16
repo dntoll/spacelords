@@ -27,8 +27,19 @@ export type BoardingSightSolid =
 
 export type BoardingSightBlocker = (q: number, r: number) => BoardingSightSolid;
 
-/** Sight reaches eight tiles; the extra half keeps the eighth tile whole. */
+/**
+ * Default reach for the bare geometry; a battle passes its ship's reach
+ * (sikt-over-hela-skeppet) instead.
+ */
 export const BOARDING_SIGHT_RADIUS = 8.5;
+
+/**
+ * sikt-over-hela-skeppet: indoors only walls limit sight, so the reach covers
+ * the ship's whole diagonal from any tile.
+ */
+export function boardingShipSightRadius(width: number, height: number): number {
+  return Math.hypot(width, height) + 0.5;
+}
 /** delvis-synligt-mal: a tile counts as seen from a tenth upwards. */
 export const BOARDING_SEEN_SHARE = 0.1;
 

@@ -1,7 +1,7 @@
 ﻿export const BOARDING_LAYER_SYMBOLS = Object.freeze({
   terrain: '.#HOQRqrW',
   objects: '-DLRCBXA',
-  rooms: '-BEK',
+  rooms: '-BEKG',
   spawns: '-PDC',
   lights: '-L',
 });

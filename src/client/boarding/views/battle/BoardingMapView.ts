@@ -79,13 +79,15 @@ import {
 import {
   BOARDING_FLOOR_IMAGES,
   BOARDING_WALL_IMAGES,
-  BOARDING_CRATE_IMAGES,
+  BOARDING_COVER_IMAGES,
   BOARDING_DOOR_FACE_IMAGES,
   BOARDING_DOOR_TOP_IMAGE,
   BOARDING_WALL_TOP_IMAGE,
   boardingSurfaceStyle,
+  boardingCoverStyle,
   boardingWallFaceStyle,
   type BoardingSurfaceStyle,
+  type BoardingCoverStyle,
 } from '../rendering/BoardingSurfaceArtwork.js';
 import {
   BOARDING_EFFECT_DURATION,
@@ -265,7 +267,10 @@ export class BoardingMapView implements BoardingMapPort {
   #wallTop: p5.Image | null = null;
   readonly #doorFaces = new Map<'open' | 'locked', p5.Image>();
   #doorTop: p5.Image | null = null;
-  readonly #crate = new Map<'side' | 'top', p5.Image>();
+  readonly #cover = new Map<
+    `${BoardingCoverStyle}-${'side' | 'top'}`,
+    p5.Image
+  >();
   readonly #isoCaches = new WeakMap<p5.Image, IsoImageCache>();
   /** figurvarianter-i-bordning: the atlas of each character look. */
   readonly #characterSheets = new Map<number, p5.Image>();
@@ -347,15 +352,19 @@ export class BoardingMapView implements BoardingMapPort {
             if (!this.#disposed && this.#ready) void this.#p5.redraw();
           });
         }
-        for (const [kind, url] of Object.entries(BOARDING_CRATE_IMAGES) as [
-          'side' | 'top',
-          string,
-        ][]) {
-          void sketch.loadImage(url).then((image) => {
-            this.#crate.set(kind, image);
-            if (!this.#disposed && this.#ready) void this.#p5.redraw();
-          });
-        }
+        for (const [style, faces] of Object.entries(BOARDING_COVER_IMAGES) as [
+          BoardingCoverStyle,
+          Readonly<Record<'side' | 'top', string>>,
+        ][])
+          for (const [face, url] of Object.entries(faces) as [
+            'side' | 'top',
+            string,
+          ][]) {
+            void sketch.loadImage(url).then((image) => {
+              this.#cover.set(`${style}-${face}`, image);
+              if (!this.#disposed && this.#ready) void this.#p5.redraw();
+            });
+          }
         void sketch.loadImage(BOARDING_DOOR_TOP_IMAGE).then((image) => {
           this.#doorTop = image;
           if (!this.#disposed && this.#ready) void this.#p5.redraw();
@@ -1748,11 +1757,15 @@ export class BoardingMapView implements BoardingMapPort {
   #paintCrate(sketch: p5, feature: BoardingFeature): boolean {
     const option = (image: p5.Image | undefined) =>
       image ? { tile: image, cache: this.#cache(image) } : undefined;
+    const style = boardingCoverStyle(
+      (position) => this.map.roomAt(position),
+      feature.position,
+    );
     const faces = paintIsoCrate(
       sketch,
       boardingIsoCenter(feature.position),
-      option(this.#crate.get('side')),
-      option(this.#crate.get('top')),
+      option(this.#cover.get(`${style}-side`)),
+      option(this.#cover.get(`${style}-top`)),
     );
     if (!faces) return false;
     const context = sketch.drawingContext as CanvasRenderingContext2D;

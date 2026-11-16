@@ -492,6 +492,8 @@ package "Kampanjbordning" {
     crouched
     hitPoints
     actionPoints
+    carriedActionPoints
+    destination: BoardingCell
     cockpit
     status: active | incapacitated | dead | evacuated
   }

@@ -1453,7 +1453,15 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 ## Isometriska bordningsobjekt
 
-`isometriska-bordningsobjekt` — **Fullständigt implementerat**. Airlock och reactor visas med isometrisk grafik för 2:1-rutnätet. Objekten visas ovanpå spelets golv.
+`isometriska-bordningsobjekt` — **Fullständigt implementerat**. Airlock och reactor visas med isometrisk grafik ovanpå spelets golv.
+
+`airlock-i-60-graders-perspektiv` — **Fullständigt implementerat**. Airlockens ram följer bordningskartans 60°-perspektiv och ligger i linje med väggarna.
+
+`sprites-for-breach-och-escape-pod` — **Fullständigt implementerat**. Breach och escape pod har egna bilder. När en escape pod används försvinner kapseln och den tomma luckan är kvar.
+
+`rumsspecifikt-half-cover` — **Fullständigt implementerat**. Half cover ser ut som styrpaneler i `Cockpit`, maskiner i `Engineering` och matbord eller bänk i `Galley`.
+
+`galley-rum-i-bordning` — **Fullständigt implementerat**. `Galley` är en egen rumstyp med golv, väggar och möblerat Half cover. Rummet kan målas i karteditorn och finns i `Colony ship`.
 
 `figurvarianter-i-bordning` — **Fullständigt implementerat**. Soldater, fiender och civila finns i fyra utseenden, så personer på samma sida ser olika ut.
 
@@ -1469,7 +1477,7 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 ## Meterskala och skymmande väggar i bordning
 
-- `kameravinkel-60-i-bordning` — **Delvis implementerat**. Bordningskartan provas med en brant kamera (60°) som matchar Ludos high-angle, i stället för 2:1. Figurer, reactor och en låda, som ersätter bilden för `Half cover`, har nya bilder för vinkeln. Dörrar och airlock använder ännu de ihoptryckta äldre bilderna; passande bilder för dem återstår. Ersätter provet `isometri-3-2-i-bordning`.
+- `kameravinkel-60-i-bordning` — **Fullständigt implementerat**. Bordningskartan använder en brant kamera (60°) som matchar Ludos high-angle, i stället för 2:1. Figurer, reactor och airlock är anpassade till vinkeln; dörrar och Half cover byggs direkt i kartans geometri. Ersätter provet `isometri-3-2-i-bordning`.
 - `meterskala-i-bordning` — **Fullständigt implementerat**. En golvruta är 1 × 1 m. Väggar och ytterskrov är 2,4 m höga; dörrar och airlock har 2,1 m fri öppning. Stående personer och reactor är cirka 1,8 m höga. Half cover är 1,2 m, fortsatt halva vägghöjden.
 - `genomskinliga-skymmande-vaggar` — **Fullständigt implementerat**. Väggar och ytterskrov som skymmer upptäckta spelbara rutor visas automatiskt som ogenomskinliga, 40 cm höga genomskärningar. Ovansidan har en tydlig metallkant och synligt vägginre. Detta ersätter det tidigare kravet på 35 procents opacitet efter uttrycklig beställning. Spelaren kan välja rutor och synliga personer bakom dem samt välja väggens egen ruta. Okända områden och dolda personer avslöjas inte. Föremål, väggar och personer har gemensam djupordning.
 
@@ -1566,6 +1574,24 @@ fel studsar aldrig in genom en vägg.
 ruta eller dörr som ligger för långt bort gör att soldaten går så långt den
 hinner åt det hållet.
 
+`vand-mot-vald-ruta` — **Fullständigt implementerat**: när man väljer en ruta
+vänder sig soldaten ditåt.
+
+`vandning-mot-nasta-steg` — **Fullständigt implementerat**: räcker inte AP
+hela vägen använder soldaten det som blir över till att vända sig mot nästa
+steg, redo att fortsätta nästa runda.
+
+`ap-fraktion-sparas` — **Fullständigt implementerat**: när soldaten inte har
+AP nog för nästa steg slutar dess tur och det som blev över sparas till nästa
+runda. Kostar nästa steg 2 AP och 1,75 AP blir över sparas alltså 1,75 AP.
+
+`sparad-gangdestination` — **Fullständigt implementerat**: målet soldaten
+inte hann fram till är fortfarande valt nästa runda, så att soldaten kan gå
+vidare dit.
+
+`fast-soldatordning` — **Fullständigt implementerat**: spelarens soldater
+väljs alltid i samma ordning, så att soldat 1 är vald först varje runda.
+
 `bordning-explosioner-och-forstorelse` — **Fullständigt implementerat**:
 granater exploderar synligt och saker som går sönder syns gå sönder och lämnar
 bråte.
@@ -1586,6 +1612,10 @@ Detsamma gäller civila.
 `geometrisk-sikt` — **Fullständigt implementerat**: den valda soldatens sikt
 visas på marken med en kantlinje som följer vad soldaten faktiskt ser, så att
 även halva rutor kan synas. Halvskydd i sikt markeras med en annan färg.
+
+`sikt-over-hela-skeppet` — **Fullständigt implementerat**: striden sker
+inomhus, så en soldat ser så långt det är fritt, ända till andra änden av
+skeppet. Bara väggar, stängda dörrar, rök och personer skymmer.
 
 `delvis-synligt-mal` — **Fullständigt implementerat**: en fiende som bara syns
 till en liten del är svårare att träffa. Under hälften synlig ger +4 i försvar,
@@ -1612,6 +1642,14 @@ personer om tillräckligt mycket av målet syns.
 
 `avstangda-omojliga-handlingar` — **Fullständigt implementerat**:
 handlingsknappar som inte kan utföras är avstängda.
+
+`fasta-handlingsplatser` — **Fullständigt implementerat**: varje
+handlingsknapp har alltid samma plats, så att knapparna inte flyttar runt.
+Öppna och stänga dörr delar plats men ser olika ut.
+
+`gang-knapp-till-avlagset-mal` — **Fullständigt implementerat**: `Move` är
+inte avstängd när destinationen ligger för långt bort; soldaten går då så
+långt den hinner.
 
 `bordning-jamn-bildfrekvens` — **Fullständigt implementerat**: bordningskartan
 ska kännas jämn och inte ryckig på mobilen.

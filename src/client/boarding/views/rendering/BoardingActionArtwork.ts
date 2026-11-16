@@ -1,4 +1,5 @@
 import actionAtlasUrl from '../../assets/actions-distinct-v4.png';
+import closedDoorUrl from '../../assets/door-face.png';
 
 export type BoardingActionArtwork =
   | 'Turn left 45°'
@@ -47,6 +48,24 @@ export function boardingActionBackgroundPosition(
 ): string {
   const [column, row] = ACTION_CELLS[action];
   return `${(column / 3) * 100}% ${(row / 2) * 100}%`;
+}
+
+/**
+ * fasta-handlingsplatser: Open door and Close door share a button place, so
+ * Close door shows the closed door the game draws instead of the atlas cell.
+ */
+export function boardingActionButtonImage(action: BoardingActionArtwork): {
+  readonly url: string;
+  readonly position: string;
+  readonly size: string;
+} {
+  return action === 'Close door'
+    ? { url: closedDoorUrl, position: 'center', size: 'contain' }
+    : {
+        url: actionAtlasUrl,
+        position: boardingActionBackgroundPosition(action),
+        size: '400% 300%',
+      };
 }
 
 export function boardingActionSource(
