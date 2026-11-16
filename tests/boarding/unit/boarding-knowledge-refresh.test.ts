@@ -1,13 +1,11 @@
 import { describe, expect, test, vi } from 'vitest';
+import type * as SightGeometry from '../../../src/client/boarding/models/battle/BoardingSightGeometry.js';
 
 const sight = vi.hoisted(() => ({ calls: 0 }));
 vi.mock(
   '../../../src/client/boarding/models/battle/BoardingSightGeometry.js',
   async (importOriginal) => {
-    const original =
-      await importOriginal<
-        typeof import('../../../src/client/boarding/models/battle/BoardingSightGeometry.js')
-      >();
+    const original = await importOriginal<typeof SightGeometry>();
     return {
       ...original,
       boardingVisibleShare: (
