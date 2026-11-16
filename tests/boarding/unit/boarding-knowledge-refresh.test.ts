@@ -18,6 +18,8 @@ vi.mock(
   },
 );
 
+// The fast suite shares modules between files; load fresh ones that see the mock.
+vi.resetModules();
 const { boardingMapForState, createTestBoardingBattle } =
   await import('../../../src/client/boarding/models/map/TestBoarding.js');
 const { BoardingBattle } =
