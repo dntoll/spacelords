@@ -38,9 +38,10 @@ kommer från testtransportens startpositioner.
   ryms efter ankomst har en grön kontur; övriga rutor man just når har en brun
   kontur. Rutorna fylls inte med markeringsfärg.
 - `ap-kostnad-och-handlingssymbol-pa-bordningsruta` — **Fullständigt
-  implementerat**. Varje markerad vägruta visar den ackumulerade AP-kostnaden,
-  inklusive alla vändningar före steget, och samma `Move`-bild med fotsymbol
-  som handlingsknappen. En vald destination, fiende eller dörr visar symbolen
+  implementerat**. Bara den gula destinationsrutan visar hela AP-kostnaden,
+  inklusive alla vändningar på vägen, och samma `Move`-bild med fotsymbol som
+  handlingsknappen. De gröna och bruna vägrutorna visar ingen siffra eller
+  symbol. En vald destination, fiende eller dörr visar symbolen
   för den handling som ett andra klick utlöser. En låst dörr visar `Hack door`;
   en avlägsen dörr visar `Move` eftersom nästa klick går mot dörren.
 - `animerad-bordningsforflyttning` — **Fullständigt implementerat**. Utförd

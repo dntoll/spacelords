@@ -73,7 +73,11 @@ it('ap-kostnad-och-handlingssymbol-pa-bordningsruta: marks a repeated destinatio
   setup.select(destination);
   const call = setup.render.mock.calls.at(-1)!;
   expect(call[3].every((mark) => mark.cost > 0)).toBe(true);
-  expect(call[6]).toEqual({ position: destination, action: 'Move' });
+  expect(call[6]).toEqual({
+    position: destination,
+    action: 'Move',
+    cost: battle.pathTo(setup.player.id, destination)?.cost,
+  });
   setup.view.dispose();
 });
 

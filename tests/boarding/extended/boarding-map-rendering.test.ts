@@ -314,16 +314,25 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
   };
 }
 
-it('ap-kostnad-och-handlingssymbol-pa-bordningsruta: outlines reachable tiles and writes accumulated AP including turns', () => {
+it('ap-kostnad-och-handlingssymbol-pa-bordningsruta: outlines the path but writes total AP only on the yellow destination', () => {
   const { view, state, strokes, fills, texts } = scene(true);
-  view.render(state, null, { q: 3, r: 2 }, [
-    { position: { q: 2, r: 2 }, kind: 'fire', cost: 2.25 },
-    { position: { q: 3, r: 2 }, kind: 'reach', cost: 5 },
-  ]);
+  view.render(
+    state,
+    null,
+    { q: 3, r: 2 },
+    [
+      { position: { q: 2, r: 2 }, kind: 'fire', cost: 2.25 },
+      { position: { q: 3, r: 2 }, kind: 'reach', cost: 5 },
+    ],
+    [],
+    null,
+    { position: { q: 3, r: 2 }, action: 'Move', cost: 5 },
+  );
   expect(strokes).toEqual(expect.arrayContaining(['#62d48a', '#c58a4a']));
   expect(fills).not.toContainEqual([98, 212, 138, 115]);
   expect(fills).not.toContainEqual([240, 179, 90, 115]);
-  expect(texts).toEqual(expect.arrayContaining(['2.25', '5']));
+  expect(texts).not.toContain('2.25');
+  expect(texts).toContain('5');
   view.dispose();
 });
 

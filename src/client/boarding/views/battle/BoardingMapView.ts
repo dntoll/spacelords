@@ -1969,7 +1969,6 @@ export class BoardingMapView implements BoardingMapPort {
       visible.has(key(cell)) || explored.has(key(cell));
     this.#paintShipPictures(sketch);
     this.#paintFloorLayer(sketch, visible, explored, thinAt, seen);
-    const tileOverlays: (() => void)[] = [];
     for (let r = 0; r < this.map.height; r++) {
       for (let q = 0; q < this.map.width; q++) {
         const position = { q, r };
@@ -1980,9 +1979,6 @@ export class BoardingMapView implements BoardingMapPort {
           sketch.stroke(pathMark.kind === 'fire' ? '#62d48a' : '#c58a4a');
           sketch.strokeWeight(4);
           this.#tile(sketch, position);
-          tileOverlays.push(() =>
-            this.#paintPathCost(sketch, pathMark.position, pathMark.cost),
-          );
         }
         if (
           (this.#destination && key(this.#destination) === key(position)) ||
@@ -2484,15 +2480,7 @@ export class BoardingMapView implements BoardingMapPort {
       sketch.circle(center.x, center.y, 20);
     }
     overlays.forEach((paint) => paint());
-    tileOverlays.forEach((paint) => paint());
-    if (
-      this.#action &&
-      !(
-        this.#action.action === 'Move' &&
-        pathMarks.has(key(this.#action.position))
-      )
-    )
-      this.#paintTileAction(sketch, this.#action);
+    if (this.#action) this.#paintTileAction(sketch, this.#action);
     if (shot && shotTick) {
       const head = boardingProjectilePoint(
         shot.from,
@@ -2538,36 +2526,33 @@ export class BoardingMapView implements BoardingMapPort {
   }
 
   /** ap-kostnad-och-handlingssymbol-pa-bordningsruta: map guidance stays legible at every zoom. */
-  #paintPathCost(sketch: p5, position: BoardingCell, cost: number): void {
-    const center = boardingIsoCenter(position);
-    const uiScale = 1 / this.#scale;
-    const label = Number.isInteger(cost)
-      ? String(cost)
-      : cost.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
-    sketch.noStroke();
-    sketch.fill(10, 18, 28, 215);
-    sketch.rect(
-      center.x - 24 * uiScale,
-      center.y - 10 * uiScale,
-      48 * uiScale,
-      20 * uiScale,
-      8 * uiScale,
-    );
-    this.#paintActionIcon(sketch, 'Move', {
-      x: center.x - 21 * uiScale,
-      y: center.y - 8 * uiScale,
-      size: 16 * uiScale,
-    });
-    sketch.textAlign(sketch.CENTER, sketch.CENTER);
-    sketch.textSize(11 * uiScale);
-    sketch.fill('#f8fafc');
-    sketch.text(label, center.x + 9 * uiScale, center.y + uiScale);
-  }
-
   #paintTileAction(sketch: p5, mark: BoardingTileActionMark): void {
     const center = boardingIsoCenter(mark.position);
     const uiScale = 1 / this.#scale;
     sketch.noStroke();
+    if (mark.action === 'Move' && mark.cost !== undefined) {
+      const label = Number.isInteger(mark.cost)
+        ? String(mark.cost)
+        : mark.cost.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+      sketch.fill(10, 18, 28, 215);
+      sketch.rect(
+        center.x - 24 * uiScale,
+        center.y - 10 * uiScale,
+        48 * uiScale,
+        20 * uiScale,
+        8 * uiScale,
+      );
+      this.#paintActionIcon(sketch, 'Move', {
+        x: center.x - 21 * uiScale,
+        y: center.y - 8 * uiScale,
+        size: 16 * uiScale,
+      });
+      sketch.textAlign(sketch.CENTER, sketch.CENTER);
+      sketch.textSize(11 * uiScale);
+      sketch.fill('#f8fafc');
+      sketch.text(label, center.x + 9 * uiScale, center.y + uiScale);
+      return;
+    }
     sketch.fill(10, 18, 28, 220);
     sketch.circle(center.x, center.y - 4 * uiScale, 32 * uiScale);
     const artwork = boardingActionArtwork(mark.action);
