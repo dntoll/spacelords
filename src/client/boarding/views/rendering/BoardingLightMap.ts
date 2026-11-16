@@ -9,6 +9,13 @@ import type { BoardingBattleState } from '../../models/battle/BoardingBattle.js'
 import type { BoardingPoint } from './BoardingProjection.js';
 import { BOARDING_AMBIENT } from './BoardingLighting.js';
 import {
+  BoardingLightRefresh,
+  boardingLampReach,
+  boardingRegionsOverlap,
+  type BoardingLampRefresh,
+  type BoardingLightRegion,
+} from './BoardingLightRefresh.js';
+import {
   BOARDING_METERS,
   BOARDING_TILE_HEIGHT,
   BOARDING_TILE_WIDTH,
@@ -167,6 +174,44 @@ export function boardingLightOccluders(
   state: OccluderState,
   shapes?: ThinShapes,
 ): readonly BoardingLightOccluder[] {
+  return [
+    ...boardingStaticLightOccluders(state, shapes),
+    ...boardingFigureOccluders(state.people ?? []),
+  ];
+}
+
+/** A figure as light sees it; between tiles while it walks. */
+export type BoardingLightFigure = Pick<
+  BoardingBattleState['people'][number],
+  'position' | 'status' | 'crouched'
+>;
+
+/**
+ * skuggor-mellan-rutor: figures cast round shadows from wherever they stand,
+ * also part way between two tiles.
+ */
+export function boardingFigureOccluders(
+  people: readonly BoardingLightFigure[],
+): readonly BoardingLightOccluder[] {
+  const occluders: BoardingLightOccluder[] = [];
+  for (const person of people) {
+    if (person.status === 'dead' || person.status === 'evacuated') continue;
+    const height =
+      person.status === 'incapacitated'
+        ? BOARDING_METERS.incapacitatedPerson
+        : person.crouched
+          ? BOARDING_METERS.crouchedPerson
+          : BOARDING_METERS.person;
+    occluders.push(square(person.position, OBJECT_HALF, height, true));
+  }
+  return occluders;
+}
+
+/** jamn-ljuskarta-under-forflyttning: occluders that never walk. */
+export function boardingStaticLightOccluders(
+  state: Pick<BoardingBattleState, 'features'>,
+  shapes?: ThinShapes,
+): readonly BoardingLightOccluder[] {
   const occluders: BoardingLightOccluder[] = [];
   for (const feature of state.features) {
     if (feature.destroyed) continue;
@@ -186,17 +231,22 @@ export function boardingLightOccluders(
           round: false,
         });
   }
-  for (const person of state.people ?? []) {
-    if (person.status === 'dead' || person.status === 'evacuated') continue;
-    const height =
-      person.status === 'incapacitated'
-        ? BOARDING_METERS.incapacitatedPerson
-        : person.crouched
-          ? BOARDING_METERS.crouchedPerson
-          : BOARDING_METERS.person;
-    occluders.push(square(person.position, OBJECT_HALF, height, true));
-  }
   return occluders;
+}
+
+/**
+ * jamn-ljuskarta-under-forflyttning: changes exactly when the lamp images
+ * under the figures' shadows would, so walking never rebuilds them.
+ */
+export function boardingStaticLightSignature(
+  state: Pick<BoardingBattleState, 'features' | 'smokeCells'>,
+  shapes?: ThinShapes,
+): string {
+  return JSON.stringify([
+    boardingLightBlockers(state, shapes),
+    boardingStaticLightOccluders(state, shapes),
+    boardingLightGlass(state, shapes),
+  ]);
 }
 
 /** ljuskarta-i-bordning: changes exactly when the painted light map would. */
@@ -529,13 +579,55 @@ function falloff(
   return canvas;
 }
 
+/** One lamp: its fixed light and what was last added to the map. */
+interface Lamp {
+  readonly light: BoardingLight;
+  readonly reach: BoardingLightRegion;
+  /** Light inside walls, tinted by glass and shadowed by fixed objects. */
+  readonly base: HTMLCanvasElement | null;
+  draftBase: HTMLCanvasElement | null;
+  /** Reused canvases for figure shadows at full and draft resolution. */
+  full: HTMLCanvasElement | null;
+  draft: HTMLCanvasElement | null;
+  /** The image added to the map, stretched to the size of `base`. */
+  shown: HTMLCanvasElement | null;
+}
+
+function trace(
+  context: CanvasRenderingContext2D,
+  points: readonly { readonly x: number; readonly y: number }[],
+): void {
+  context.beginPath();
+  points.forEach(({ x, y }, index) => {
+    if (index === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  });
+  context.closePath();
+}
+
+function blank(width: number, height: number): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+}
+
 /**
- * ljuskarta-i-bordning: floor light painted once per change of lamps or
- * barriers into a top-down map, then multiplied onto each projected floor.
+ * ljuskarta-i-bordning: floor light painted into a top-down map, then
+ * multiplied onto the projected floors. jamn-ljuskarta-under-forflyttning:
+ * each lamp's light inside walls, glass and fixed objects is painted once;
+ * figure shadows are punched into a copy only for lamps that reach a figure
+ * that moved, and only that part of the map is put together again.
  */
 export class BoardingLightMap {
   readonly #canvas: HTMLCanvasElement | null;
+  readonly #context: CanvasRenderingContext2D | null;
   readonly #texels: number;
+  readonly #ambient: string;
+  readonly #lamps: Lamp[] = [];
+  readonly #outlines: (readonly BoardingLightPoint[])[] = [];
+  readonly #debug: boolean;
+  readonly #refresh: BoardingLightRefresh;
   readonly #tints = new Map<string, HTMLCanvasElement | null>();
 
   constructor(
@@ -549,26 +641,21 @@ export class BoardingLightMap {
     debug = boardingLightDebug(),
   ) {
     this.#texels = texels;
-    const canvas = document.createElement('canvas');
-    canvas.width = map.width * texels + 2;
-    canvas.height = map.height * texels + 2;
+    this.#debug = debug;
+    this.#refresh = new BoardingLightRefresh(map.lights, texels);
+    const canvas = blank(map.width * texels + 2, map.height * texels + 2);
     const context = canvas.getContext('2d');
     this.#canvas = context ? canvas : null;
-    if (!context) return;
+    this.#context = context;
     const ambient = debug ? 0 : Math.round(255 * BOARDING_AMBIENT);
-    context.fillStyle = `rgb(${ambient}, ${ambient}, ${ambient})`;
+    this.#ambient = `rgb(${ambient}, ${ambient}, ${ambient})`;
+    if (!context) return;
+    context.fillStyle = this.#ambient;
     context.fillRect(0, 0, canvas.width, canvas.height);
     const shapes = map.thinWallPieces ? (map as ThinShapes) : undefined;
     const blockers = boardingLightBlockers(state, shapes);
-    const texel = (point: BoardingLightPoint) => ({
-      x: 1 + (point.q + 0.5) * texels,
-      y: 1 + (point.r + 0.5) * texels,
-    });
-    const occluders = boardingLightOccluders(state, shapes);
+    const occluders = boardingStaticLightOccluders(state, shapes);
     const glass = boardingLightGlass(state, shapes);
-    const outlines: (readonly BoardingLightPoint[])[] = [];
-    const scratch = document.createElement('canvas');
-    const lamp = scratch.getContext('2d');
     for (const light of map.lights) {
       const shape = boardingLightPolygon(
         light.position,
@@ -576,90 +663,238 @@ export class BoardingLightMap {
         blockers,
       );
       const image = falloff(light, texels);
-      if (shape.length < 3 || !image || !lamp) continue;
-      outlines.push(shape);
-      // Each lamp is lit and shadowed on its own, so one figure's shadow
-      // never darkens light from another lamp.
-      scratch.width = image.width;
-      scratch.height = image.height;
-      const local = (point: BoardingLightPoint) => ({
+      const base =
+        shape.length >= 3 && image
+          ? this.#paintLamp(light, image, shape, glass, occluders)
+          : null;
+      if (base) this.#outlines.push(shape);
+      this.#lamps.push({
+        light,
+        reach: boardingLampReach(light),
+        base,
+        draftBase: null,
+        full: null,
+        draft: null,
+        shown: null,
+      });
+    }
+    this.update(state.people ?? []);
+  }
+
+  /** The top-down map, one texel of border around `texels` per cell. */
+  get canvas(): HTMLCanvasElement | null {
+    return this.#canvas;
+  }
+
+  get texels(): number {
+    return this.#texels;
+  }
+
+  /**
+   * jamn-ljuskarta-under-forflyttning / skuggor-mellan-rutor: moves figure
+   * shadows to where the figures stand, coarser while `draft`, and returns
+   * the part of the deck whose light changed, or null.
+   */
+  update(
+    figures: readonly BoardingLightFigure[],
+    draft = false,
+  ): BoardingLightRegion | null {
+    if (!this.#context) return null;
+    const plan = this.#refresh.plan(boardingFigureOccluders(figures), draft);
+    for (const refresh of plan.lamps)
+      this.#shade(this.#lamps[refresh.index]!, refresh);
+    if (plan.region) this.#compose(plan.region);
+    return plan.region;
+  }
+
+  #paintLamp(
+    light: BoardingLight,
+    image: HTMLCanvasElement,
+    shape: readonly BoardingLightPoint[],
+    glass: ReturnType<typeof boardingLightGlass>,
+    occluders: readonly BoardingLightOccluder[],
+  ): HTMLCanvasElement | null {
+    const canvas = blank(image.width, image.height);
+    const lamp = canvas.getContext('2d');
+    if (!lamp) return null;
+    const texels = this.#texels;
+    const local = (points: readonly BoardingLightPoint[]) =>
+      points.map((point) => ({
         x: image.width / 2 + (point.q - light.position.q) * texels,
         y: image.height / 2 + (point.r - light.position.r) * texels,
-      });
-      const trace = (points: readonly BoardingLightPoint[]) => {
-        lamp.beginPath();
-        points.forEach((point, index) => {
-          const { x, y } = local(point);
-          if (index === 0) lamp.moveTo(x, y);
-          else lamp.lineTo(x, y);
-        });
-        lamp.closePath();
-      };
-      lamp.save();
-      trace(shape);
-      lamp.clip();
-      lamp.drawImage(image, 0, 0);
-      // glas-tintar-ljus: what lies beyond a pane, seen from the lamp, gets
-      // the glass colour. The lamp image is opaque inside the clip, so
-      // multiplying there never adds colour where no light falls.
-      lamp.globalCompositeOperation = 'multiply';
-      lamp.fillStyle = `rgb(${BOARDING_GLASS_TINT.join(', ')})`;
-      for (const pane of glass) {
-        if (
-          pane.maxQ < light.position.q - light.radius ||
-          pane.minQ > light.position.q + light.radius ||
-          pane.maxR < light.position.r - light.radius ||
-          pane.minR > light.position.r + light.radius
-        )
-          continue;
-        trace(
+      }));
+    const reach = boardingLampReach(light);
+    lamp.save();
+    trace(lamp, local(shape));
+    lamp.clip();
+    lamp.drawImage(image, 0, 0);
+    // glas-tintar-ljus: what lies beyond a pane, seen from the lamp, gets
+    // the glass colour. The lamp image is opaque inside the clip, so
+    // multiplying there never adds colour where no light falls.
+    lamp.globalCompositeOperation = 'multiply';
+    lamp.fillStyle = `rgb(${BOARDING_GLASS_TINT.join(', ')})`;
+    for (const pane of glass) {
+      if (!boardingRegionsOverlap(reach, pane)) continue;
+      trace(
+        lamp,
+        local(
           boardingShadowPolygon(light, {
             ...pane,
             height: light.height,
             round: false,
           }),
-        );
-        lamp.fill();
-      }
-      lamp.restore();
-      lamp.save();
-      lamp.globalCompositeOperation = 'destination-out';
-      lamp.fillStyle = '#000';
-      for (const occluder of occluders) {
-        if (
-          occluder.maxQ < light.position.q - light.radius ||
-          occluder.minQ > light.position.q + light.radius ||
-          occluder.maxR < light.position.r - light.radius ||
-          occluder.minR > light.position.r + light.radius
-        )
-          continue;
-        trace(boardingShadowPolygon(light, occluder));
-        lamp.fill();
-      }
-      lamp.restore();
-      context.save();
-      context.globalCompositeOperation = 'lighter';
-      const center = texel(light.position);
-      context.drawImage(
-        scratch,
-        center.x - image.width / 2,
-        center.y - image.height / 2,
+        ),
       );
-      context.restore();
+      lamp.fill();
     }
-    if (!debug) return;
+    lamp.restore();
+    // Each lamp is lit and shadowed on its own, so one shadow never darkens
+    // light from another lamp.
+    lamp.save();
+    lamp.globalCompositeOperation = 'destination-out';
+    lamp.fillStyle = '#000';
+    for (const occluder of occluders) {
+      if (!boardingRegionsOverlap(reach, occluder)) continue;
+      trace(lamp, local(boardingShadowPolygon(light, occluder)));
+      lamp.fill();
+    }
+    lamp.restore();
+    return canvas;
+  }
+
+  /** Punches the planned figure shadows into a copy of the lamp's light. */
+  #shade(lamp: Lamp, refresh: BoardingLampRefresh): void {
+    const { base, light } = lamp;
+    if (!base || refresh.occluders.length === 0) {
+      lamp.shown = base;
+      return;
+    }
+    const scale = refresh.texels / this.#texels;
+    const draft = scale !== 1;
+    const width = Math.max(1, Math.ceil(base.width * scale)),
+      height = Math.max(1, Math.ceil(base.height * scale));
+    let source = base;
+    if (draft) {
+      if (!lamp.draftBase) {
+        lamp.draftBase = blank(width, height);
+        lamp.draftBase
+          .getContext('2d')
+          ?.drawImage(base, 0, 0, base.width, base.height, 0, 0, width, height);
+      }
+      source = lamp.draftBase;
+    }
+    const target = draft
+      ? (lamp.draft ??= blank(width, height))
+      : (lamp.full ??= blank(width, height));
+    const context = target.getContext('2d');
+    if (!context) {
+      lamp.shown = base;
+      return;
+    }
+    context.clearRect(0, 0, width, height);
+    context.drawImage(source, 0, 0);
+    context.save();
+    context.globalCompositeOperation = 'destination-out';
+    context.fillStyle = '#000';
+    const texels = this.#texels;
+    for (const occluder of refresh.occluders) {
+      trace(
+        context,
+        boardingShadowPolygon(light, occluder).map((point) => ({
+          x:
+            ((base.width / 2 + (point.q - light.position.q) * texels) * width) /
+            base.width,
+          y:
+            ((base.height / 2 + (point.r - light.position.r) * texels) *
+              height) /
+            base.height,
+        })),
+      );
+      context.fill();
+    }
+    context.restore();
+    lamp.shown = target;
+  }
+
+  /** Puts ambient light and every lamp reaching `region` together again. */
+  #compose(region: BoardingLightRegion): void {
+    const context = this.#context!;
+    const canvas = this.#canvas!;
+    const texels = this.#texels;
+    const margin = 2 / texels;
+    const area = {
+      minQ: region.minQ - margin,
+      maxQ: region.maxQ + margin,
+      minR: region.minR - margin,
+      maxR: region.maxR + margin,
+    };
+    const left = Math.max(0, Math.floor(1 + (area.minQ + 0.5) * texels)),
+      top = Math.max(0, Math.floor(1 + (area.minR + 0.5) * texels)),
+      right = Math.min(canvas.width, Math.ceil(1 + (area.maxQ + 0.5) * texels)),
+      bottom = Math.min(
+        canvas.height,
+        Math.ceil(1 + (area.maxR + 0.5) * texels),
+      );
+    if (right <= left || bottom <= top) return;
+    const rectangle = [
+      { x: left, y: top },
+      { x: right, y: top },
+      { x: right, y: bottom },
+      { x: left, y: bottom },
+    ];
+    context.save();
+    trace(context, rectangle);
+    context.clip();
+    context.globalCompositeOperation = 'source-over';
+    context.fillStyle = this.#ambient;
+    context.fillRect(left, top, right - left, bottom - top);
+    context.globalCompositeOperation = 'lighter';
+    for (const lamp of this.#lamps) {
+      const { shown, base } = lamp;
+      if (!shown || !base || !boardingRegionsOverlap(lamp.reach, area))
+        continue;
+      const x = 1 + (lamp.light.position.q + 0.5) * texels - base.width / 2,
+        y = 1 + (lamp.light.position.r + 0.5) * texels - base.height / 2;
+      context.drawImage(shown, x, y, base.width, base.height);
+    }
+    context.restore();
+    if (this.#debug) this.#strokeOutlines();
+    for (const [id, tinted] of this.#tints) {
+      const tint = tinted?.getContext('2d');
+      if (!tint) continue;
+      tint.save();
+      trace(tint, rectangle);
+      tint.clip();
+      tint.clearRect(left, top, right - left, bottom - top);
+      tint.drawImage(canvas, 0, 0);
+      tint.globalCompositeOperation = 'multiply';
+      tint.fillStyle = `rgb(${id})`;
+      tint.fillRect(left, top, right - left, bottom - top);
+      tint.restore();
+    }
+  }
+
+  /**
+   * ljuskarta-i-bordning: `?light-debug` outlines every lamp polygon on the
+   * raw map, so shadow edges can be checked by eye.
+   */
+  #strokeOutlines(): void {
+    const context = this.#context!;
+    const texels = this.#texels;
+    context.save();
     context.strokeStyle = '#ff40ff';
     context.lineWidth = 1;
-    for (const shape of outlines) {
-      context.beginPath();
-      shape.forEach((point, index) => {
-        const { x, y } = texel(point);
-        if (index === 0) context.moveTo(x, y);
-        else context.lineTo(x, y);
-      });
-      context.closePath();
+    for (const shape of this.#outlines) {
+      trace(
+        context,
+        shape.map((point) => ({
+          x: 1 + (point.q + 0.5) * texels,
+          y: 1 + (point.r + 0.5) * texels,
+        })),
+      );
       context.stroke();
     }
+    context.restore();
   }
 
   /**

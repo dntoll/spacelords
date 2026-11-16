@@ -1507,6 +1507,8 @@ Kraven nedan är **Ej implementerat** utom `ljuskarta-i-bordning`, som är **Del
 
 - `ljuskarta-i-bordning` — Golv och väggar får ljus och skuggor med mjuka, exakta kanter i stället för rutornas fyrkantighet. Ersätter `vertexljus-i-bordning`.
 - `skuggor-fran-figurer-och-foremal` — **Delvis implementerat**: figurer, lådor och andra låga föremål kastar skuggor på golvet, längre ju högre föremålet är. Väggarna tar ännu inte emot skuggorna.
+- `jamn-ljuskarta-under-forflyttning` — **Fullständigt implementerat**: en förflyttning ska inte rycka för att ljus och skuggor räknas om. Skuggorna får vara något grövre medan figuren går och blir skarpa när den stannar.
+- `skuggor-mellan-rutor` — **Fullständigt implementerat**: en figur som går mellan två rutor kastar skugga från där den syns.
 - `fargat-ljus-i-bordning` — Lampor kan ha färg, som tonar allt som inte själv lyser.
 - `visuell-morkerinstallning` — Spelaren kan göra bilden ljusare eller mörkare. Det påverkar bara bilden, inte spelet.
 - `ljusniva-per-ruta` — Varje ruta har en ljusnivå i spelet som följer de tända lamporna.
