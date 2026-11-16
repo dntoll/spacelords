@@ -4258,8 +4258,37 @@ body:has(.discovery-controls) .selection-panel {
   display: block;
 }
 
+/* kamera-utan-lage-i-editor: shown while Space, the middle button or an
+   outside drag moves the view. */
 .boarding-editor-canvas.is-panning canvas {
-  cursor: grab;
+  cursor: grabbing;
+}
+
+/* kravlista-i-bordningseditor: the fixed layout rules over the map. */
+.boarding-editor-requirements {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+  margin: 0;
+  padding: 6px 10px;
+  list-style: none;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #e5e8e6;
+  background: #09121bcc;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  pointer-events: none;
+  max-width: calc(100% - 16px);
+}
+
+.boarding-editor-requirements .is-met {
+  color: #8fd19e;
+}
+
+.boarding-editor-requirements .is-missing {
+  color: #ffb4a8;
 }
 
 .boarding-editor-toolbar .button.is-active {

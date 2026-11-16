@@ -18,14 +18,27 @@ import {
 } from '../../../src/client/boarding/models/battle/BoardingBattle.js';
 import { composeBoardingMaps } from '../../../src/client/boarding/models/map/BoardingComposer.js';
 import type { BoardingMap } from '../../../src/client/boarding/models/map/BoardingMap.js';
-import {
-  createTestBoardingBattle,
-  testBoardingMap,
-} from '../../../src/client/boarding/models/map/TestBoarding.js';
+import { parseBoardingMap } from '../../../src/client/boarding/models/map/BoardingMap.js';
+import transportFixture from '../../fixtures/boarding/transport-boarding-fixture.txt?raw';
 import {
   BoardingView,
   type BoardingMapFactory,
 } from '../../../src/client/boarding/views/battle/BoardingView.js';
+import type { IntentHandler } from '../../../src/client/app/views/ViewContracts.js';
+
+// A frozen single-ship layout, so editing the real test transport breaks no test.
+const testBoardingMap = parseBoardingMap(transportFixture, 'Transport ship');
+const createTestBoardingBattle = () =>
+  BoardingBattle.create(testBoardingMap, 0x5a17);
+class FixtureBoardingView extends BoardingView {
+  constructor(
+    root: HTMLElement,
+    emit: IntentHandler,
+    mapFactory?: BoardingMapFactory,
+  ) {
+    super(root, emit, mapFactory, () => testBoardingMap);
+  }
+}
 import { renderSaveSlots } from '../../../src/client/space-map/views/saves/SaveSlotsView.js';
 import type { AppIntent } from '../../../src/client/app/views/ViewContracts.js';
 
@@ -484,7 +497,7 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
     return { render: rendered, zoom() {}, fit() {}, dispose() {}, playMotion };
   };
   const emit = vi.fn<(intent: AppIntent) => void>();
-  const view = new BoardingView(document.body, emit, map);
+  const view = new FixtureBoardingView(document.body, emit, map);
   view.render(battle.visibleSnapshot);
   const left = document.querySelector<HTMLButtonElement>(
     '[aria-label="Turn left 45°"]',
@@ -599,10 +612,14 @@ it('valbar-bordningssoldat / klickskott-pa-vald-fiende / animerat-bordningsskott
   const playShot = vi.fn(() => Promise.resolve());
   const rendered = vi.fn<ReturnType<BoardingMapFactory>['render']>();
   const emit = vi.fn<(intent: AppIntent) => void>();
-  const view = new BoardingView(document.body, emit, (_container, select) => {
-    selectHex = select;
-    return { render: rendered, playShot, zoom() {}, fit() {}, dispose() {} };
-  });
+  const view = new FixtureBoardingView(
+    document.body,
+    emit,
+    (_container, select) => {
+      selectHex = select;
+      return { render: rendered, playShot, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
   const restored = BoardingBattle.restore(testBoardingMap, boardingState);
   view.render(restored.snapshot);
   expect(rendered.mock.lastCall?.[4]).toContainEqual(
@@ -655,10 +672,14 @@ it('klickgang-pa-vald-destination: clicking the chosen destination issues move',
   };
   let selectHex: (position: { q: number; r: number }) => void = () => {};
   const emit = vi.fn<(intent: AppIntent) => void>();
-  const view = new BoardingView(document.body, emit, (_container, select) => {
-    selectHex = select;
-    return { render() {}, zoom() {}, fit() {}, dispose() {} };
-  });
+  const view = new FixtureBoardingView(
+    document.body,
+    emit,
+    (_container, select) => {
+      selectHex = select;
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
   view.render(BoardingBattle.restore(testBoardingMap, boardingState).snapshot);
   const destination = { q: player.position.q + 2, r: player.position.r };
   selectHex(destination);
@@ -688,10 +709,14 @@ it('klickdorr-pa-vald-dorr: clicking an adjacent selected door opens or hacks it
   )!;
   let selectHex: (position: { q: number; r: number }) => void = () => {};
   const emit = vi.fn<(intent: AppIntent) => void>();
-  const view = new BoardingView(document.body, emit, (_container, select) => {
-    selectHex = select;
-    return { render() {}, zoom() {}, fit() {}, dispose() {} };
-  });
+  const view = new FixtureBoardingView(
+    document.body,
+    emit,
+    (_container, select) => {
+      selectHex = select;
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
   view.render(
     BoardingBattle.restore(testBoardingMap, {
       ...created.snapshot,
@@ -753,7 +778,7 @@ it('animerad-bordningsforflyttning: does not replay a finished walk when the sam
     (person) => person.side === 'player',
   )!;
   const playMotion = vi.fn(() => Promise.resolve());
-  const view = new BoardingView(document.body, vi.fn(), () => ({
+  const view = new FixtureBoardingView(document.body, vi.fn(), () => ({
     render() {},
     playMotion,
     zoom() {},
@@ -805,7 +830,7 @@ it('animerad-bordningsforflyttning: plays a queued enemy move after the current 
         }),
     )
     .mockResolvedValue(undefined);
-  const view = new BoardingView(document.body, vi.fn(), () => ({
+  const view = new FixtureBoardingView(document.body, vi.fn(), () => ({
     render() {},
     playMotion,
     zoom() {},
@@ -857,7 +882,7 @@ it('forsvarare-och-civilister: drains queued defender updates until the next pla
   const player = initial.people.find((person) => person.side === 'player')!;
   let finishMotion!: () => void;
   const renderMap = vi.fn<(state: BoardingBattleState) => void>();
-  const view = new BoardingView(document.body, vi.fn(), () => ({
+  const view = new FixtureBoardingView(document.body, vi.fn(), () => ({
     render: renderMap,
     playMotion: () =>
       new Promise<void>((resolve) => {
@@ -921,7 +946,7 @@ it('forsvarare-och-civilister: preserves later animations after a queued non-ani
     )
     .mockResolvedValue(undefined);
   const renderMap = vi.fn<(state: BoardingBattleState) => void>();
-  const view = new BoardingView(document.body, vi.fn(), () => ({
+  const view = new FixtureBoardingView(document.body, vi.fn(), () => ({
     render: renderMap,
     playMotion,
     zoom() {},
@@ -971,7 +996,7 @@ it('forsvarare-och-civilister: preserves later animations after a queued non-ani
 it('tydlig-bordningsstatus: combat details follow the latest log line', () => {
   const created = createTestBoardingBattle();
   const emit = vi.fn<(intent: AppIntent) => void>();
-  const view = new BoardingView(document.body, emit, () => ({
+  const view = new FixtureBoardingView(document.body, emit, () => ({
     render() {},
     zoom() {},
     fit() {},
@@ -1018,10 +1043,14 @@ it('miljomal-och-forstorelse: selects a door as a direct rifle target', () => {
   };
   let selectHex: (position: { q: number; r: number }) => void = () => {};
   const emit = vi.fn<(intent: AppIntent) => void>();
-  const view = new BoardingView(document.body, emit, (_container, select) => {
-    selectHex = select;
-    return { render() {}, zoom() {}, fit() {}, dispose() {} };
-  });
+  const view = new FixtureBoardingView(
+    document.body,
+    emit,
+    (_container, select) => {
+      selectHex = select;
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
   view.render(BoardingBattle.restore(testBoardingMap, boardingState).snapshot);
   selectHex(door.position);
   const shoot = document.querySelector<HTMLButtonElement>(
@@ -1138,10 +1167,14 @@ it('skott-kraver-giltigt-mal: shoot stays disabled until an enemy or feature is 
   };
   let selectHex: (position: { q: number; r: number }) => void = () => {};
   const emit = vi.fn<(intent: AppIntent) => void>();
-  const view = new BoardingView(document.body, emit, (_container, select) => {
-    selectHex = select;
-    return { render() {}, zoom() {}, fit() {}, dispose() {} };
-  });
+  const view = new FixtureBoardingView(
+    document.body,
+    emit,
+    (_container, select) => {
+      selectHex = select;
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
   view.render(BoardingBattle.restore(testBoardingMap, boardingState).snapshot);
   const shoot = () =>
     document.querySelector<HTMLButtonElement>('[aria-label^="Shoot"]')!;
@@ -1187,10 +1220,14 @@ it('melee-kraver-valt-mal: melee stays disabled until an adjacent enemy is selec
   let selectHex: (position: { q: number; r: number }) => void = () => {};
   const rendered = vi.fn<ReturnType<BoardingMapFactory>['render']>();
   const emit = vi.fn<(intent: AppIntent) => void>();
-  const view = new BoardingView(document.body, emit, (_container, select) => {
-    selectHex = select;
-    return { render: rendered, zoom() {}, fit() {}, dispose() {} };
-  });
+  const view = new FixtureBoardingView(
+    document.body,
+    emit,
+    (_container, select) => {
+      selectHex = select;
+      return { render: rendered, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
   view.render(BoardingBattle.restore(testBoardingMap, boardingState).snapshot);
   const melee = () =>
     document.querySelector<HTMLButtonElement>('[aria-label="Melee"]')!;
@@ -1296,7 +1333,7 @@ it('valbar-bordningssoldat: renders the controller-selected soldier and preserve
   });
   const rendered = vi.fn<ReturnType<BoardingMapFactory>['render']>();
   let selectCell: (position: { q: number; r: number }) => void = () => {};
-  const view = new BoardingView(
+  const view = new FixtureBoardingView(
     document.body,
     (intent) => {
       if (intent.type !== 'boarding-command') return;
@@ -1333,7 +1370,7 @@ it('automatisk-bordningstur-vid-tom-ap / animerat-bordningsskott: shows the last
     ),
   };
   const order: string[] = [];
-  const view = new BoardingView(document.body, vi.fn(), () => ({
+  const view = new FixtureBoardingView(document.body, vi.fn(), () => ({
     render() {},
     zoom() {},
     fit() {},
@@ -1365,7 +1402,7 @@ it('kamerafokus-vid-bordningssoldatbyte: focuses a newly activated soldier even 
       person.side === 'player' && person.id !== initial.currentActorId,
   )!;
   const focusActor = vi.fn(() => Promise.resolve());
-  const view = new BoardingView(document.body, vi.fn(), () => ({
+  const view = new FixtureBoardingView(document.body, vi.fn(), () => ({
     render() {},
     focusActor,
     zoom() {},
@@ -1411,7 +1448,7 @@ it('kameraoverblick-fore-bordningsskott / kameraoverblick-vid-synlig-bordningsro
     activation: { id: actor.id, remaining: 12 },
   };
   const order: string[] = [];
-  const view = new BoardingView(document.body, vi.fn(), () => ({
+  const view = new FixtureBoardingView(document.body, vi.fn(), () => ({
     render() {},
     zoom() {},
     fit() {},
@@ -1481,7 +1518,7 @@ it('kamerafokus-vid-bordningssoldatbyte: reserves the action HUD while busy and 
       return rect(0, 0, 0);
     });
   let viewport: (() => { top: number; bottom: number } | null) | undefined;
-  const view = new BoardingView(document.body, vi.fn(), () => ({
+  const view = new FixtureBoardingView(document.body, vi.fn(), () => ({
     render() {},
     zoom() {},
     fit() {},
@@ -1535,10 +1572,14 @@ it('dorrhandling-framfor-soldat / oppen-dorr-som-golvruta: offers the facing doo
   };
   let selectHex: (position: { q: number; r: number }) => void = () => {};
   const emit = vi.fn<(intent: AppIntent) => void>();
-  const view = new BoardingView(document.body, emit, (_container, select) => {
-    selectHex = select;
-    return { render() {}, zoom() {}, fit() {}, dispose() {} };
-  });
+  const view = new FixtureBoardingView(
+    document.body,
+    emit,
+    (_container, select) => {
+      selectHex = select;
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
   view.render(boardingState);
   document
     .querySelector<HTMLButtonElement>('[aria-label="Open door"]')!
@@ -1587,7 +1628,7 @@ it('stang-oppen-dorr: offers Close door beside an open door and disables it whil
     activation: { id: player!.id, remaining: 12 },
   };
   const emit = vi.fn<(intent: AppIntent) => void>();
-  const view = new BoardingView(document.body, emit, () => ({
+  const view = new FixtureBoardingView(document.body, emit, () => ({
     render() {},
     zoom() {},
     fit() {},
@@ -1632,10 +1673,14 @@ it('gang-mot-avlagset-mal: a second tap on an unaffordable destination walks as 
   };
   let selectHex: (position: { q: number; r: number }) => void = () => {};
   const emit = vi.fn<(intent: AppIntent) => void>();
-  const view = new BoardingView(document.body, emit, (_container, select) => {
-    selectHex = select;
-    return { render() {}, zoom() {}, fit() {}, dispose() {} };
-  });
+  const view = new FixtureBoardingView(
+    document.body,
+    emit,
+    (_container, select) => {
+      selectHex = select;
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
   view.render(boardingState);
   const battle = BoardingBattle.restore(testBoardingMap, boardingState);
   // Any reachable tile beyond this activation's AP, whatever the test layout.
@@ -1682,7 +1727,7 @@ it('granat-kostar-bara-vid-kast: grenade buttons are disabled for a tile outside
     activation: { id: player.id, remaining: 12 },
   };
   let selectHex: (position: { q: number; r: number }) => void = () => {};
-  const view = new BoardingView(
+  const view = new FixtureBoardingView(
     document.body,
     vi.fn(),
     (_container, select) => {
@@ -1705,7 +1750,7 @@ it('avstangda-omojliga-handlingar: disables actions the soldier cannot afford', 
   const player = created.snapshot.people.find(
     (person) => person.side === 'player',
   )!;
-  const view = new BoardingView(document.body, vi.fn(), () => ({
+  const view = new FixtureBoardingView(document.body, vi.fn(), () => ({
     render() {},
     zoom() {},
     fit() {},
@@ -1738,7 +1783,7 @@ it('kastad-granat-i-bage: plays the throw before applying the impact state', asy
   const actor = initial.people.find((person) => person.side === 'player')!;
   const impact = { q: actor.position.q + 1, r: actor.position.r };
   const playShot = vi.fn(() => Promise.resolve());
-  const view = new BoardingView(document.body, vi.fn(), () => ({
+  const view = new FixtureBoardingView(document.body, vi.fn(), () => ({
     render() {},
     zoom() {},
     fit() {},
@@ -1759,6 +1804,7 @@ it('kastad-granat-i-bage: plays the throw before applying the impact state', asy
       impact,
       'grenade',
       'smoke',
+      undefined,
       undefined,
     ),
   );

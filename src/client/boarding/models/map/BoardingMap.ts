@@ -216,6 +216,11 @@ export interface BoardingShipPicture {
   readonly scale: number;
   /** Drawn flipped left to right, as for the defender in a joined boarding. */
   readonly mirrored: boolean;
+  /**
+   * dockning-sida-vid-sida: when set, the picture is flipped top to bottom
+   * about this row line, as for a ship turned to face its airlock.
+   */
+  readonly flipAboutY?: number | null;
 }
 
 export interface BoardingLight {

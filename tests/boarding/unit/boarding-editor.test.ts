@@ -1,6 +1,6 @@
 ﻿import { describe, expect, it } from 'vitest';
-import pirateMap from '../../../src/client/boarding/maps/pirate-boarding.txt?raw';
-import colonyMap from '../../../src/client/boarding/maps/colony-boarding.txt?raw';
+import pirateMap from '../../fixtures/boarding/pirate-boarding-fixture.txt?raw';
+import colonyMap from '../../fixtures/boarding/colony-boarding-fixture.txt?raw';
 import { BoardingEditor } from '../../../src/client/boarding/models/editor/BoardingEditor.js';
 import { parseBoardingMapText } from '../../../src/shared/boarding/map-format.js';
 import { parseBoardingMap } from '../../../src/client/boarding/models/map/BoardingMap.js';
@@ -15,12 +15,12 @@ describe('lokal-bordningskarteditor', () => {
   it('paints left and right brushes on independent layers', () => {
     const editor = new BoardingEditor('pirate', pirateMap);
     editor.bindTool('primary', { layer: 'terrain', symbol: 'H' });
-    editor.bindTool('secondary', { layer: 'objects', symbol: 'D' });
+    editor.bindTool('secondary', { layer: 'rooms', symbol: 'B' });
     expect(editor.paintStroke('primary', [{ q: 4, r: 2 }])).toBe(true);
     expect(editor.paintStroke('secondary', [{ q: 4, r: 2 }])).toBe(true);
     expect(editor.snapshot.layers.terrain[2]![4]).toBe('H');
-    expect(editor.snapshot.layers.objects[2]![4]).toBe('D');
-    expect(editor.snapshot.layers.rooms[2]![4]).toBe('-');
+    expect(editor.snapshot.layers.rooms[2]![4]).toBe('B');
+    expect(editor.snapshot.layers.objects[2]![4]).toBe('-');
   });
 
   it('undoes a paint stroke as one command and redo restores it', () => {
@@ -97,7 +97,7 @@ describe('lokal-bordningskarteditor', () => {
 
 describe('formbar-skeppskontur / redigerbara-bordningslampor', () => {
   const source =
-    '[meta]\nwidth=3\nheight=2\nrules=campaign\n[terrain]\n...\nHHH\n[objects]\n-R-\n---\n[rooms]\n-B-\n---\n[spawns]\n-P-\n---\n[lights]\n-L-\n---\n';
+    '[meta]\nwidth=3\nheight=2\nrules=campaign\n[terrain]\n...\nHH.\n[objects]\n-R-\n--A\n[rooms]\n-B-\n---\n[spawns]\n-P-\n---\n[lights]\n-L-\n---\n';
 
   it('clears all content on Outside and restores it with a single undo', () => {
     const editor = new BoardingEditor('pirate', source);

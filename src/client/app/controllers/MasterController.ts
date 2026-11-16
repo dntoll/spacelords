@@ -382,6 +382,7 @@ export class MasterController {
         'editor-adjust-sprite',
         'editor-projection',
         'editor-opacity',
+        'editor-fill-rooms',
         'editor-undo',
         'editor-redo',
         'editor-save',
@@ -400,7 +401,7 @@ export class MasterController {
         this.#schedulePlayback();
         break;
       case 'test-boarding':
-        this.#boarding.startTestBoarding();
+        this.#boarding.startTestBoarding(intent.attacker);
         this.#schedulePlayback();
         break;
       case 'salvage-wreck':
@@ -678,6 +679,9 @@ export class MasterController {
         break;
       case 'editor-opacity':
         this.#editor.opacity(intent.value);
+        break;
+      case 'editor-fill-rooms':
+        this.#editor.fillRooms(intent.value);
         break;
       case 'editor-undo':
         this.#editor.undo();

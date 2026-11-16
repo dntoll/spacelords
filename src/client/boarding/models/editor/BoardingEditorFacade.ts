@@ -99,6 +99,10 @@ export class BoardingEditorFacade {
     this.#editor?.setSpriteOpacity(value);
   }
 
+  fillRooms(value: boolean): void {
+    this.#editor?.setFillRooms(value);
+  }
+
   undo(): void {
     this.#editor?.undo();
   }

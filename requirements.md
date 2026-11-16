@@ -129,6 +129,10 @@ Se [hela visionen](docs/game-vision.md).
   **Fullständigt implementerat**. Skott visas fram till målet, granater kastas
   i en båge och grundljuset är lägre. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
+- **Vändning under förflyttning:** `vandning-under-forflyttning` är
+  **Fullständigt implementerat**. En figur vänder sig samtidigt som den går
+  och varje vändning är snabb. Se [bordningsstrid](docs/boarding/boarding-combat.md).
+
 - **Bordningskamera:** `kamerafokus-vid-bordningssoldatbyte`,
   `kameraoverblick-vid-synlig-bordningsrorelse`,
   `kameraoverblick-fore-bordningsskott` och
@@ -157,7 +161,7 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Tunna innerväggar:** `tunna-innervaggar` och `halvhog-tunn-vagg` är **Fullständigt implementerat**. En tunn vägg är 1/3 m tjock, står på en golvruta och finns längs q eller r. Rutans golvtextur ritas på den inre sidan och grannens golv på den yttre, utom när den sidan är `Outside`, vägg eller ytterskrov. Fullhöga tunna väggar fälls som andra väggar. Halvhöga tunna väggar är 1,2 m, ger `Half cover` och fälls inte. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 - **Sammanfogade tunna väggar:** `sammanfogade-tunna-vaggar` är **Fullständigt implementerat**. En tunn vägg får sin form av grannarna: den sträcker en arm mot varje grannruta med vägg, ytterskrov, tunn vägg av valfri höjd eller en dörr i samma linje. Det ger raka väggar, ändar, hörn, T-korsningar, kryss och fristående pelare. Editorn har en pensel per höjd, `Thin wall` och `Low thin wall`. Se [bordningsstrid](docs/boarding/boarding-combat.md).
-- **Fönster och glas:** `fonster-pa-halvhog-vagg`, `helhogt-fonster`, `krossbart-glas`, `glas-tintar-ljus` och `tunna-fonster` är **Fullständigt implementerat**. Glaset ritas nästan utan tjocklek. En halvhög tunn vägg har ett ljusblått fönster från väggens överkant till taket, och `High window pane` är ett fönster i full höjd. Glas släpper igenom sikt och skott men stoppar granatkast och gång. Ett skott som passerar glas krossar det och glasbitar regnar ner; ett krossat `High window pane` går att kliva igenom. Ljus genom glas tintas blått. Se [bordningsstrid](docs/boarding/boarding-combat.md).
+- **Fönster och glas:** `fonster-pa-halvhog-vagg`, `helhogt-fonster`, `krossbart-glas`, `glas-tintar-ljus`, `tunna-fonster` och `glas-krossas-nar-skottet-passerar` är **Fullständigt implementerat**. Glaset ritas nästan utan tjocklek. En halvhög tunn vägg har ett ljusblått fönster från väggens överkant till taket, och `High window pane` är ett fönster i full höjd. Glas släpper igenom sikt och skott men stoppar granatkast och gång. Ett skott som passerar glas krossar det i samma ögonblick som det animerade skottet når glaset, och glasbitar regnar ner; ett krossat `High window pane` går att kliva igenom. Ljus genom glas tintas blått. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Bordningsgrafik:** `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock och reactor visas med isometrisk grafik utan inbyggt golv. `halvskydd-som-geometri` är **Fullständigt implementerat**: Half cover är en 1,2 m hög låda byggd som geometri i spelets projektion, med texturerade sidor och ovansida och samma belysning som väggarna, i stället för en bild. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
@@ -169,9 +173,19 @@ Se [hela visionen](docs/game-vision.md).
   och editorn öppnas ovanpå aktuell vy. `View` växlar mellan `Isometric` och
   `Top-down`. `helskarms-bordningseditor`, `zooma-panorera-bordningseditor`
   och `direkt-penselstreck-i-editor` är **Fullständigt implementerat**:
-  editorn fyller hela skärmen från start med skeppet inpassat, `Pan view` gör
-  att drag flyttar vyn i stället för att måla, hjul och nyp zoomar, `Fit view`
-  passar in skeppet igen, och målade rutor syns medan man drar.
+  editorn fyller hela skärmen från start med skeppet inpassat, hjul och nyp
+  zoomar, `Fit view` passar in skeppet igen, och målade rutor syns medan man
+  drar. `kamera-utan-lage-i-editor` är **Fullständigt implementerat** och
+  ersätter läget `Pan view`: mittknappen, Space + drag, två fingrar eller ett
+  drag som börjar utanför skeppet flyttar vyn, allt annat målar. Hjulet zoomar
+  i proportion till hur långt det rullas. `foremal-lagger-golv`,
+  `fyll-rum-i-editor`, `fast-airlock-i-bordningskarta`,
+  `kravlista-i-bordningseditor` och `skalbar-skeppsbild-i-editor` är
+  **Fullständigt implementerat**: ett föremål lägger golv under sig, `Fill
+rooms` fyller ett rum inom väggar och dörrar, varje skepp har exakt en
+  airlock i över- eller underkantens skrov som flyttas men aldrig tas bort, en
+  lista över kartan visar vilka grundkrav som är uppfyllda, och i `Adjust
+sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Dockningskorridor:** `dockningskorridor-sprite` är **Fullständigt implementerat**. Dockade skepp sammanbinds visuellt med en korridor. Se [bordningsstrid](docs/boarding/boarding-combat.md).
@@ -446,8 +460,16 @@ Se [hela visionen](docs/game-vision.md).
   eller styrbord. Skeppen låses med en brygga, rymdstridsrundan körs färdigt
   och bordning växlar sedan två rundor i taget mot rymdstrid. Vinst ger
   båda skeppen, last, recovered `Raptor factory` och en kartplaceholder.
-  Sparformatet är version 14 med additiv migrering. Menyns
-  `Test boarding (cheat)` är oförändrad. Se
+  Sparformatet är version 14 med additiv migrering.
+  `dockning-sida-vid-sida` är **Fullständigt implementerat** och ersätter att
+  försvararen låg spegelvänd till höger: anfallaren ligger ovanför,
+  försvararen under och en två rutor bred landgång på sex rutor med tunna
+  väggar förbinder airlockerna. `avbryt-gammal-bordning-vid-laddning` är
+  **Fullständigt implementerat**: en pågående bordning sparad före ändringen
+  avbryts vid laddning och skeppen frikopplas. `testbordning-med-tva-skepp`
+  och `valbart-skepp-i-testbordning` är **Fullständigt implementerat**:
+  `Test boarding (cheat)` dockar ett valt skepp (`Space pirate` som
+  standard) med testtransporten, och bordarna startar i sitt eget skepp. Se
   [bordningsstrid](docs/boarding/boarding-combat.md),
   [taktisk strid](docs/space-battle/tactical-combat.md) och
   [space pirates](docs/space-pirates.md).

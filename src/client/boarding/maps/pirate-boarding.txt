@@ -9,14 +9,14 @@ HHHHHHHHH
 H......HH
 H.......H
 H......HH
-HHHHHHHHH
+HHH.HHHHH
 
 [objects]
 ---------
 ---------
--------A-
-----R----
 ---------
+----R----
+---A-----
 
 [rooms]
 ---------

@@ -13,6 +13,7 @@ import type {
   PlanetQueueKind,
 } from '../../space-map/models/index.js';
 import type {
+  CombatShipType,
   BattleCommand,
   BattleManeuver,
   BattleShot,
@@ -36,7 +37,8 @@ import type {
 
 export type AppIntent =
   | { readonly type: 'test-battle' }
-  | { readonly type: 'test-boarding' | 'close-boarding' }
+  | { readonly type: 'test-boarding'; readonly attacker?: CombatShipType }
+  | { readonly type: 'close-boarding' }
   | { readonly type: 'boarding-command'; readonly command: BoardingCommand }
   | { readonly type: 'open-fleet-orders'; readonly id: string }
   | {
@@ -333,6 +335,7 @@ export type AppIntent =
   | { readonly type: 'editor-adjust-sprite'; readonly value: boolean }
   | { readonly type: 'editor-projection'; readonly value: EditorProjection }
   | { readonly type: 'editor-opacity'; readonly value: number }
+  | { readonly type: 'editor-fill-rooms'; readonly value: boolean }
   | {
       readonly type: 'pointer-start' | 'pointer-move' | 'pointer-end';
       readonly id: number;

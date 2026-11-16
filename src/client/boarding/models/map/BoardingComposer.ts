@@ -32,6 +32,11 @@ const key = (cell: BoardingCell): string => `${cell.q},${cell.r}`;
 const freezeCell = (q: number, r: number): BoardingCell =>
   Object.freeze({ q, r });
 
+/** valbart-skepp-i-testbordning: every ship type with its own interior. */
+export const BOARDING_INTERIOR_TYPES: readonly CombatShipType[] = Object.freeze(
+  Object.keys(INTERIORS) as CombatShipType[],
+);
+
 export function boardingInterior(type: CombatShipType): BoardingMap {
   const source = INTERIORS[type];
   return source
@@ -165,62 +170,138 @@ export function spreadBoardingSpawns(
   return placed;
 }
 
-/** tva-skepp-pa-bordningskartan: attacker on the left, defender on the right, bridge between. */
-export function composeBoardingMaps(
-  attackerType: CombatShipType,
-  defenderType: CombatShipType,
+/** fast-airlock-i-bordningskarta: the first airlock with open space straight outside. */
+function dockingAirlock(map: BoardingMap): {
+  readonly cell: BoardingCell;
+  readonly side: 'top' | 'bottom';
+} {
+  const open = (q: number, from: number, to: number) => {
+    for (let r = from; r < to; r++)
+      if (map.terrainAt(freezeCell(q, r)) !== null) return false;
+    return true;
+  };
+  for (const cell of map.airlocks) {
+    if (open(cell.q, 0, cell.r)) return { cell, side: 'top' };
+    if (open(cell.q, cell.r + 1, map.height)) return { cell, side: 'bottom' };
+  }
+  // An unedited map without a valid airlock docks at the middle of its bottom.
+  return {
+    cell: freezeCell(Math.floor(map.width / 2), map.height - 1),
+    side: 'bottom',
+  };
+}
+
+/** The rows a ship uses in each column, for keeping two ships apart. */
+function columnExtent(
+  map: BoardingMap,
+  move: (cell: BoardingCell) => BoardingCell,
+): Map<number, { top: number; bottom: number }> {
+  const extent = new Map<number, { top: number; bottom: number }>();
+  for (let r = 0; r < map.height; r++)
+    for (let q = 0; q < map.width; q++) {
+      const from = freezeCell(q, r);
+      if (map.terrainAt(from) === null) continue;
+      const to = move(from);
+      const seen = extent.get(to.q);
+      extent.set(to.q, {
+        top: Math.min(seen?.top ?? Infinity, to.r),
+        bottom: Math.max(seen?.bottom ?? -Infinity, to.r),
+      });
+    }
+  return extent;
+}
+
+/** dockning-sida-vid-sida: long enough to fight over the crossing. */
+const GANGWAY_LENGTH = 6;
+
+/**
+ * dockning-sida-vid-sida: the attacker lies above with its airlock facing
+ * down, the defender below with its airlock facing up, and a straight
+ * gangway joins the two airlocks. A ship whose airlock faces the other way is
+ * flipped top to bottom, which swaps port and starboard.
+ */
+export function composeBoardingInteriors(
+  attacker: BoardingMap,
+  defender: BoardingMap,
 ): ComposedBoarding {
-  const attacker = boardingInterior(attackerType);
-  const defender = boardingInterior(defenderType);
-  const gap = 3;
-  const attackerAir =
-    attacker.airlocks[0] ??
-    freezeCell(attacker.width - 2, Math.floor(attacker.height / 2));
-  const defenderAir =
-    defender.airlocks[0] ??
-    freezeCell(defender.width - 2, Math.floor(defender.height / 2));
-  const attackerOffsetR = Math.max(0, defenderAir.r - attackerAir.r);
-  const defenderOffsetR = Math.max(0, attackerAir.r - defenderAir.r);
-  const width = attacker.width + gap + defender.width;
-  const height = Math.max(
-    attackerOffsetR + attacker.height,
-    defenderOffsetR + defender.height,
-  );
-  const offsetAttacker = (cell: BoardingCell): BoardingCell =>
-    freezeCell(cell.q, cell.r + attackerOffsetR);
-  const offsetDefender = (cell: BoardingCell): BoardingCell =>
+  const attackerDock = dockingAirlock(attacker);
+  const defenderDock = dockingAirlock(defender);
+  const flipAttacker = attackerDock.side === 'top';
+  const flipDefender = defenderDock.side === 'bottom';
+  const attackerQ = Math.max(0, defenderDock.cell.q - attackerDock.cell.q);
+  const defenderQ = Math.max(0, attackerDock.cell.q - defenderDock.cell.q);
+  const placeAttacker = (cell: BoardingCell): BoardingCell =>
     freezeCell(
-      attacker.width + gap + (defender.width - 1 - cell.q),
-      cell.r + defenderOffsetR,
+      cell.q + attackerQ,
+      flipAttacker ? attacker.height - 1 - cell.r : cell.r,
     );
-  const left = transform(attacker, offsetAttacker, 'attacker');
-  const right = transform(defender, offsetDefender, 'defender');
-  const terrain = new Map([...left.terrain, ...right.terrain]);
-  const rooms = new Map([...left.rooms, ...right.rooms]);
-  const zones = new Map([...left.zones, ...right.zones]);
-  const airLeft =
-    left.airlocks[0] ??
-    freezeCell(attacker.width - 2, attackerOffsetR + attackerAir.r);
-  const airRight =
-    right.airlocks[0] ??
-    freezeCell(attacker.width + gap + 1, defenderOffsetR + defenderAir.r);
-  const bridgeR = airLeft.r;
-  const lo = Math.min(airLeft.q, airRight.q);
-  const hi = Math.max(airLeft.q, airRight.q);
-  for (let q = lo + 1; q < hi; q++) {
-    const cell = freezeCell(q, bridgeR);
-    terrain.set(key(cell), 'floor');
-    zones.set(key(cell), 'bridge');
-    if (q === lo + 1 || q === hi - 1) continue;
-    for (const side of [-1, 1]) {
-      const hull = freezeCell(q, bridgeR + side);
-      if (!terrain.has(key(hull))) {
-        terrain.set(key(hull), 'hull');
-        zones.set(key(hull), 'bridge');
-      }
+  const defenderLocal = (cell: BoardingCell): BoardingCell =>
+    freezeCell(
+      cell.q + defenderQ,
+      flipDefender ? defender.height - 1 - cell.r : cell.r,
+    );
+  const attackerAir = placeAttacker(attackerDock.cell);
+  const defenderAirLocal = defenderLocal(defenderDock.cell);
+  const above = columnExtent(attacker, placeAttacker);
+  const below = columnExtent(defender, defenderLocal);
+  let defenderR = attackerAir.r + 1 + GANGWAY_LENGTH - defenderAirLocal.r;
+  for (const [q, extent] of above) {
+    const lower = below.get(q);
+    if (lower) defenderR = Math.max(defenderR, extent.bottom - lower.top + 1);
+  }
+  defenderR = Math.max(0, defenderR);
+  const placeDefender = (cell: BoardingCell): BoardingCell => {
+    const local = defenderLocal(cell);
+    return freezeCell(local.q, local.r + defenderR);
+  };
+  const defenderAir = placeDefender(defenderDock.cell);
+  let width = Math.max(attackerQ + attacker.width, defenderQ + defender.width);
+  const height = Math.max(attacker.height, defenderR + defender.height);
+  const top = transform(attacker, placeAttacker, 'attacker');
+  const bottom = transform(defender, placeDefender, 'defender');
+  const terrain = new Map([...top.terrain, ...bottom.terrain]);
+  const rooms = new Map([...top.rooms, ...bottom.rooms]);
+  const zones = new Map([...top.zones, ...bottom.zones]);
+  // dockning-sida-vid-sida: the gangway is two tiles wide, beside the
+  // airlock column on whichever side is free all the way across.
+  const gangwayQ = attackerAir.q;
+  const firstRow = attackerAir.r + 1;
+  const lastRow = defenderAir.r - 1;
+  const freeColumn = (q: number) => {
+    for (let r = firstRow; r <= lastRow; r++)
+      if (terrain.has(key(freezeCell(q, r)))) return false;
+    return true;
+  };
+  const besideQ = freeColumn(gangwayQ + 1)
+    ? gangwayQ + 1
+    : freeColumn(gangwayQ - 1)
+      ? gangwayQ - 1
+      : null;
+  const lanes = besideQ === null ? [gangwayQ] : [gangwayQ, besideQ];
+  const leftQ = Math.min(...lanes) - 1;
+  const rightQ = Math.max(...lanes) + 1;
+  const gangway: BoardingCell[] = [];
+  const gangwayWalls: BoardingCell[] = [];
+  for (let r = firstRow; r <= lastRow; r++) {
+    for (const q of lanes) {
+      const cell = freezeCell(q, r);
+      if (q === gangwayQ) gangway.push(cell);
+      terrain.set(key(cell), 'floor');
+      zones.set(key(cell), 'bridge');
+    }
+    for (const q of [leftQ, rightQ]) {
+      const wall = freezeCell(q, r);
+      if (q < 0 || terrain.has(key(wall))) continue;
+      width = Math.max(width, q + 1);
+      terrain.set(key(wall), 'thin-wall');
+      zones.set(key(wall), 'bridge');
+      gangwayWalls.push(wall);
     }
   }
-  const features = [...left.features, ...right.features].filter((feature) => {
+  // The airlocks themselves are open floor between ship and gangway.
+  for (const cell of [attackerAir, defenderAir])
+    terrain.set(key(cell), 'floor');
+  const features = [...top.features, ...bottom.features].filter((feature) => {
     if (
       feature.kind !== 'hull' &&
       feature.kind !== 'wall' &&
@@ -230,6 +311,17 @@ export function composeBoardingMaps(
       return true;
     return terrain.get(key(feature.position)) !== 'floor';
   });
+  // dockning-sida-vid-sida: thin walls along the gangway's sides.
+  for (const wall of gangwayWalls)
+    features.push(
+      Object.freeze({
+        id: `gangway-wall-${wall.q}-${wall.r}`,
+        kind: 'thin-wall' as const,
+        position: wall,
+        axis: 'q' as const,
+        low: false,
+      }),
+    );
   for (const [cellKey, kind] of terrain) {
     if (kind !== 'hull') continue;
     if (
@@ -249,6 +341,7 @@ export function composeBoardingMaps(
       }),
     );
   }
+  const middle = gangway[Math.floor(gangway.length / 2)];
   const map = new BoardingMap(
     `${attacker.name} / ${defender.name}`,
     width,
@@ -258,39 +351,51 @@ export function composeBoardingMaps(
     features,
     {
       player: [],
-      defender: right.spawns.defender,
-      civilian: right.spawns.civilian,
+      defender: bottom.spawns.defender,
+      civilian: bottom.spawns.civilian,
     },
-    [...left.airlocks, ...right.airlocks],
-    [...left.cockpits, ...right.cockpits],
+    [attackerAir, defenderAir],
+    [...top.cockpits, ...bottom.cockpits],
     true,
     zones,
     [
-      ...left.lights,
-      ...right.lights,
-      boardingCeilingLight(freezeCell(Math.round((lo + hi) / 2), bridgeR)),
+      ...top.lights,
+      ...bottom.lights,
+      ...(middle ? [boardingCeilingLight(middle)] : []),
     ],
     // skeppsbild-under-bordning: each picture follows its ship's cells.
     [
       ...attacker.pictures.map((picture) => ({
         ...picture,
-        y: picture.y + attackerOffsetR,
+        x: picture.x + attackerQ,
+        flipAboutY: flipAttacker ? attacker.height / 2 : null,
       })),
       ...defender.pictures.map((picture) => ({
         ...picture,
-        x: width - picture.x - picture.scale,
-        y: picture.y + defenderOffsetR,
-        mirrored: !picture.mirrored,
+        x: picture.x + defenderQ,
+        y: picture.y + defenderR,
+        flipAboutY: flipDefender ? defenderR + defender.height / 2 : null,
       })),
     ],
   );
   return {
     map,
-    attackerAirlock: left.airlocks,
-    defenderAirlock: right.airlocks,
-    attackerCockpit: left.cockpits,
-    defenderCockpit: right.cockpits,
-    defenderSpawns: right.spawns.defender,
-    defenderCivilians: right.spawns.civilian,
+    attackerAirlock: [attackerAir],
+    defenderAirlock: [defenderAir],
+    attackerCockpit: top.cockpits,
+    defenderCockpit: bottom.cockpits,
+    defenderSpawns: bottom.spawns.defender,
+    defenderCivilians: bottom.spawns.civilian,
   };
+}
+
+/** tva-skepp-pa-bordningskartan: two ship types joined for a campaign boarding. */
+export function composeBoardingMaps(
+  attackerType: CombatShipType,
+  defenderType: CombatShipType,
+): ComposedBoarding {
+  return composeBoardingInteriors(
+    boardingInterior(attackerType),
+    boardingInterior(defenderType),
+  );
 }

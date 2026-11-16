@@ -65,6 +65,9 @@ import {
 } from '../rendering/BoardingProjection.js';
 import {
   boardingEditorCellAt,
+  editorPressMovesView,
+  editorScaleSpriteAround,
+  editorWheelZoomFactor,
   EDITOR_ORTHO_CELL,
 } from './BoardingEditorPick.js';
 import {
@@ -167,7 +170,9 @@ export class BoardingEditorMapView {
   #display: BoardingEditorSnapshot | null = null;
   /** The parsed map behind #display, for joined thin wall shapes. */
   #map: BoardingMap | null = null;
-  #panMode = false;
+  /** kamera-utan-lage-i-editor: Space held turns any drag into a pan. */
+  #spaceHeld = false;
+  #frame: number | null = null;
   /** True once the player has zoomed or panned away from the fitted view. */
   #userCamera = false;
   #sprite: p5.Image | null = null;
@@ -303,10 +308,20 @@ export class BoardingEditorMapView {
     if (this.#ready) void this.#p5.redraw();
   }
 
-  /** zooma-panorera-bordningseditor: left drag pans instead of painting. */
-  setPanMode(value: boolean): void {
-    this.#panMode = value;
-    this.#paint = null;
+  /** skalbar-skeppsbild-i-editor: resize the ship image around its centre. */
+  resizeSprite(scale: number): void {
+    const snapshot = this.#snapshot;
+    if (!snapshot || !Number.isFinite(scale)) return;
+    const sprite = this.#previewSprite ?? snapshot.sprite;
+    const aspect = this.#sprite
+      ? this.#sprite.height / Math.max(1, this.#sprite.width)
+      : 0;
+    this.emitSprite(
+      editorScaleSpriteAround(sprite, scale, {
+        x: sprite.x + sprite.scale / 2,
+        y: sprite.y + (sprite.scale * aspect) / 2,
+      }),
+    );
   }
 
   /** zooma-panorera-bordningseditor: return to the view that fits the ship. */
@@ -380,6 +395,7 @@ export class BoardingEditorMapView {
   dispose(): void {
     this.#disposed = true;
     clearTimeout(this.#longPress);
+    if (this.#frame !== null) cancelAnimationFrame(this.#frame);
     this.#events.abort();
     this.#observer.disconnect();
     this.#p5.remove();
@@ -438,8 +454,56 @@ export class BoardingEditorMapView {
     this.#userCamera = true;
   }
 
+  /** kamera-utan-lage-i-editor: at most one redraw per frame while moving. */
+  #redrawSoon(): void {
+    if (this.#frame !== null || this.#disposed) return;
+    // Marked before asking, so a callback that runs at once still clears it.
+    this.#frame = -1;
+    const frame = requestAnimationFrame(() => {
+      this.#frame = null;
+      if (!this.#disposed && this.#ready) void this.#p5.redraw();
+    });
+    if (this.#frame === -1) this.#frame = frame;
+  }
+
   #bind(canvas: HTMLCanvasElement): void {
     const options = { signal: this.#events.signal };
+    const showPanning = () =>
+      canvas.parentElement?.classList.toggle(
+        'is-panning',
+        this.#spaceHeld || this.#cameraDrag !== null,
+      );
+    const typing = (target: EventTarget | null) =>
+      target instanceof HTMLElement &&
+      (target.isContentEditable ||
+        ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName));
+    window.addEventListener(
+      'keydown',
+      (event) => {
+        if (event.code !== 'Space' || typing(event.target)) return;
+        event.preventDefault();
+        this.#spaceHeld = true;
+        showPanning();
+      },
+      options,
+    );
+    window.addEventListener(
+      'keyup',
+      (event) => {
+        if (event.code !== 'Space') return;
+        this.#spaceHeld = false;
+        showPanning();
+      },
+      options,
+    );
+    window.addEventListener(
+      'blur',
+      () => {
+        this.#spaceHeld = false;
+        showPanning();
+      },
+      options,
+    );
     const point = (event: PointerEvent | WheelEvent) => {
       const bounds = canvas.getBoundingClientRect();
       return { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
@@ -466,12 +530,19 @@ export class BoardingEditorMapView {
           };
           return;
         }
+        const cell = this.#cellAt(next);
         if (
-          event.button === 1 ||
-          this.#pointers.size > 1 ||
-          (this.#panMode && event.button === 0)
+          editorPressMovesView({
+            button: event.button,
+            spaceHeld: this.#spaceHeld,
+            pointers: this.#pointers.size,
+            onGrid: cell !== null,
+          })
         ) {
+          event.preventDefault();
+          clearTimeout(this.#longPress);
           this.#cameraDrag = next;
+          showPanning();
           if (this.#paint) {
             this.#paint = null;
             this.#showStroke();
@@ -480,7 +551,6 @@ export class BoardingEditorMapView {
         }
         const button: EditorBrushButton =
           event.button === 2 ? 'secondary' : 'primary';
-        const cell = this.#cellAt(next);
         this.#paint = { button, cells: cell ? [cell] : [] };
         this.#showStroke();
         if (event.pointerType === 'touch' && event.button === 0) {
@@ -533,7 +603,7 @@ export class BoardingEditorMapView {
             this.#paint = null;
             this.#showStroke();
           }
-          void this.#p5.redraw();
+          this.#redrawSoon();
           return;
         }
         if (this.#spriteDrag) {
@@ -557,7 +627,7 @@ export class BoardingEditorMapView {
           };
           this.#cameraDrag = next;
           this.#userCamera = true;
-          void this.#p5.redraw();
+          this.#redrawSoon();
           return;
         }
         if (this.#paint) {
@@ -587,8 +657,10 @@ export class BoardingEditorMapView {
         this.emitSprite(sprite);
         return;
       }
-      if (this.#cameraDrag && this.#pointers.size === 0)
+      if (this.#cameraDrag && this.#pointers.size === 0) {
         this.#cameraDrag = null;
+        showPanning();
+      }
       if (this.#paint && this.#pointers.size === 0) {
         const stroke = this.#paint;
         this.#paint = null;
@@ -601,20 +673,25 @@ export class BoardingEditorMapView {
       'wheel',
       (event) => {
         event.preventDefault();
-        const factor = event.deltaY < 0 ? 1.08 : 1 / 1.08;
+        const factor = editorWheelZoomFactor(event);
         if (
           this.#snapshot?.adjustSprite &&
           this.#snapshot.projection === 'top-down'
         ) {
+          // skalbar-skeppsbild-i-editor: the image grows around the pointer.
           const sprite = this.#previewSprite ?? this.#snapshot.sprite;
-          this.emitSprite({
-            ...sprite,
-            scale: Math.min(128, Math.max(1, sprite.scale * factor)),
-          });
+          const size = EDITOR_ORTHO_CELL * this.#scale;
+          const at = point(event);
+          this.emitSprite(
+            editorScaleSpriteAround(sprite, sprite.scale * factor, {
+              x: (at.x - this.#offset.x) / size,
+              y: (at.y - this.#offset.y) / size,
+            }),
+          );
           return;
         }
         this.#zoomAround(point(event), factor);
-        void this.#p5.redraw();
+        this.#redrawSoon();
       },
       { ...options, passive: false },
     );

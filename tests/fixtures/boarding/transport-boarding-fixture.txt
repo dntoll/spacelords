@@ -1,5 +1,5 @@
 [meta]
-name=Combat fixture
+name=Transport boarding
 width=17
 height=11
 spriteX=-17.455555386013454

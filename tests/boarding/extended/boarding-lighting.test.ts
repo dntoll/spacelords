@@ -12,10 +12,7 @@ import type {
   BoardingBattleState,
   BoardingFeature,
 } from '../../../src/client/boarding/models/battle/BoardingBattle.js';
-import {
-  composeBoardingMaps,
-  boardingInterior,
-} from '../../../src/client/boarding/models/map/BoardingComposer.js';
+import { boardingInterior } from '../../../src/client/boarding/models/map/BoardingComposer.js';
 
 const lamp = (q: number, r: number): BoardingLight => ({
   position: { q, r },
@@ -99,32 +96,6 @@ describe('ljuskallestyrd-bordningsbelysning', () => {
     expect(() => parseBoardingMap(base + '[lights]\nL--\n')).toThrow(/floor/i);
     expect(() => parseBoardingMap(base + '[lights]\n-X-\n')).toThrow(/symbol/i);
     expect(() => parseBoardingMap(base + '[lights]\n--\n')).toThrow(/width/i);
-  });
-  it('preserves translated and mirrored lamps and lights the composed corridor', () => {
-    const interior = boardingInterior('Transport ship');
-    const composed = composeBoardingMaps(
-      'Transport ship',
-      'Transport ship',
-    ).map;
-    expect(interior.lights.length).toBeGreaterThan(0);
-    expect(composed.lights.length).toBe(interior.lights.length * 2 + 1);
-    for (const source of interior.lights) {
-      expect(
-        composed.lights.some(
-          (light) =>
-            light.position.q === source.position.q &&
-            light.position.r === source.position.r,
-        ),
-      ).toBe(true);
-      expect(
-        composed.lights.some(
-          (light) =>
-            light.position.q === composed.width - 1 - source.position.q &&
-            light.position.r === source.position.r,
-        ),
-      ).toBe(true);
-    }
-    expect(composed.zoneAt(composed.lights.at(-1)!.position)).toBe('bridge');
   });
 });
 

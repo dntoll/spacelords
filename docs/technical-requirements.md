@@ -210,7 +210,17 @@ giltiga.
 Boardingmodellen har egna frysta snapshots, typade kommandon, deterministiskt
 slumptillstånd, kartparser, siktberäkning, pathfinding och AI. Kartdefinitionen
 är en rå lagerindelad textresurs per skeppstyp; `BoardingComposer` lägger två
-skrov och en brygga i samma koordinatsystem.
+skrov och en brygga i samma koordinatsystem. `dockning-sida-vid-sida`:
+`composeBoardingInteriors` vänder ett skepp upp och ned när dess airlock
+vetter bort, och bildens `flipAboutY` vänder skeppsbilden kring samma linje.
+Avståndet växer så att inga kolumner överlappar. Kartreglerna
+(`src/shared/boarding/map-rules.ts`) delas av editor, composer och tester.
+`avbryt-gammal-bordning-vid-laddning`: `SavedBoardingEngagement.layout` är
+`side-by-side`; en sparad bordning utan fältet avslutas som `aborted` och
+`Game` frikopplar skeppen direkt vid laddning. Sparversionen är oförändrad.
+`testbordning-med-tva-skepp`: `BoardingBattleState.test` anger det valda
+skeppet, och `boardingMapForState` bygger om samma karta. Testreglerna
+(Bridge, Engineering och reaktorn) gäller bara det bordade skeppet.
 
 AppModel äger fortfarande den fristående testsessionen från huvudmenyn.
 `boarding-command` samordnas av MasterController och en separat
@@ -741,6 +751,14 @@ Inga konstlade enhetstester behövs för en dokumenterad publiceringsprocess.
 ## Beslut och ändringar
 
 - 2026-11-16: Branchflödet ändras på användarens begäran. Allt arbete ska finnas på origin, utgå från `development` och mergas tillbaka dit. Releaser körs på molndatorn och flyttar `main` först när hela sviten gått igenom. Det finns en enda testdeployment, och appen visar publicerad branch. `release-till-main` ersätter `sluttest-fore-merge` och dess separata ja före merge. `tester-i-github` utökas till `development`. Regeln att bara publicera arbetsbranchen ersätts av publicering av `development` via `work:merge`.
+- 2026-11-15: `kamera-utan-lage-i-editor` ersätter `Pan view`.
+  `fast-airlock-i-bordningskarta` ersätter varningen om airlock i högerkanten
+  och `dockning-sida-vid-sida` ersätter vänster–höger-placeringen i
+  `tva-skepp-pa-bordningskartan`. Användaren godkände att pågående bordningar i
+  äldre sparade spel avbryts (`avstamning-sparkompatibilitet`). Kampanjkartornas
+  airlock flyttades till underkantens skrov. Tester som byggde på redigerbara
+  kartor använder nu fixturer; bara `boarding-shipped-maps` läser de levererade
+  kartorna och kräver enbart att de är giltiga.
 - 2026-11-14: `helskarms-bordningseditor`, `zooma-panorera-bordningseditor`
   och `direkt-penselstreck-i-editor` läggs till. Top-down passas nu in i
   canvasen i stället för fast skala 1, och målning av `Outside` passar inte
@@ -1584,8 +1602,11 @@ och väggsnitt samt den gemensamma ytprojektionen för golv och väggar.
 `helskarms-bordningseditor`: editorsidan är enda barnet i `#app`, så klassen
 `has-boarding-editor` ger griden en enda rad. Canvasen är absolut placerad i
 sin behållare så att den inte kan driva ResizeObserver till långsam tillväxt.
-`zooma-panorera-bordningseditor`: kameran och `Pan view` är vytillstånd i
-`BoardingEditorMapView`; modellen påverkas inte. Vyn passas in igen bara när
+`zooma-panorera-bordningseditor`: kameran är vytillstånd i
+`BoardingEditorMapView`; modellen påverkas inte. `kamera-utan-lage-i-editor`:
+`editorPressMovesView` avgör per tryck om vyn flyttas, och
+`editorWheelZoomFactor` gör zoomsteget proportionellt mot hjulets utslag.
+Omritning under panorering sker högst en gång per bildruta. Vyn passas in igen bara när
 skepp, vy eller rutnätsstorlek ändras, eller vid storleksändring innan
 spelaren har flyttat kameran. Nyp zoomar runt fingrarnas mittpunkt.
 `direkt-penselstreck-i-editor`: `boardingEditorStrokePreview` använder samma
@@ -1612,6 +1633,7 @@ passerade snabbsviten med 758 tester på 14,70 sekunder utan parallell belastnin
 - `sammanfogade-tunna-vaggar`: `BoardingMap` beräknar en form per tunn vägg ur grannarna i de fyra riktningarna. Armar går mot terräng som inte är golv (vägg, skrov, tunna väggar av båda höjderna) och mot dörrar vars axel pekar mot väggen. Formen är 1–3 icke överlappande plattor (`BoardingThinPiece`: axel och spann), ordnade bakifrån för isometrin; utan armar blir det en pelare på 1/3 × 1/3. Sikt, granatkast, ljuskartans blockerare och skuggor, väggsnitt och ritning använder plattorna. En rak platta över hela rutan behåller golvbanden från `tunna-innervaggar`; andra former visar rutans eget golv. Formen sparas inte i stridsläget utan räknas om från kartan vid laddning, så sparade strider är kompatibla. `Q`/`R` och `q`/`r` betyder nu samma vägg; editorn skriver `Q` och `q`, och befintliga kartor med `R` och `r` laddas oförändrat. Bokstavens axel finns kvar i sparade strider som reserv.
 - `fonster-pa-halvhog-vagg` / `helhogt-fonster`: terrängtecknet `W` ger terrängen `window` och feature-kind `window` (1 träffpunkt) med samma sammanfogade plattor som tunna väggar. Halvhöga tunna väggar har alltid glas; körtidsfältet `shattered` markerar krossat glas, och ett krossat fönster är `destroyed`. Helt glas ingår i granatens hinder (`#stopsGrenade`, kast och spridning) men inte i sikt, skott eller sprängverkan. Helt fönster blockerar gång och rök; `#canStand` godtar `window` så att ett krossat fönster är gångbart. Glas ritas som genomskinliga plattor (`paintIsoGlass`) från 1,2 m respektive golvet upp till 2,4 m. Sparade strider saknar `shattered` och läses som helt glas; inga sparfält tas bort.
 - `krossbart-glas`: `boardingSegmentSolids` går längs skottets linje från skyttens till målets rutcentrum och krossar varje helt glas vars plattor linjen korsar, vid träff och miss. Skada på en halvhög vägg sätter `shattered`. Vyn startar partikeleffekten `glass` när ett känt fönster förstörs eller ett glas övergår till `shattered`.
+- `glas-krossas-nar-skottet-passerar`: `boardingSegmentSolids` anger för varje korsat glas andelen `at` av linjen fram till träffpunkten. `BoardingShot.panes` bär glasets id och `at`. Under skottanimationen visar kartvyn via `boardingShotGlassState` varje ruta som kulan nått (`at` ≤ animationens framsteg) som krossad och startar effekten där, så slutläget efter skottet inte startar den igen.
 - `glas-tintar-ljus`: `boardingLightGlass` listar helt glas. För varje lampa multipliceras ljuset med `BOARDING_GLASS_TINT` i området bakom glaset sett från lampan, inom lampans siktpolygon. Glaslistan ingår i ljuskartans signatur.
 - `tunna-fonster`: `paintIsoGlass` ritar glaset 2 cm tjockt och flyttar fogarnas ändar från väggens halva tjocklek till glasets, så hörn möts utan glipa. Rutor med `High window pane` visar hela golvet i stället för golvbanden. Glasets fotavtryck i modellen, ljuskartan och skottlinjen är oförändrat.
 

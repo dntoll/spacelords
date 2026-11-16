@@ -459,9 +459,26 @@ package "Kampanjbordning" {
     terrain
     rooms: bridge | engineering | cockpit
     spawnPoints
-    shipZones
+    shipZones: attacker | bridge | defender
     lights
   }
+  class Airlock {
+    position: BoardingCell
+    side: top | bottom
+  }
+  class Gangway {
+    length: 6
+    width: 2
+  }
+  note right of Airlock
+    fast-airlock-i-bordningskarta:
+    exakt en per skepp, i skrovets över- eller underkant.
+    dockning-sida-vid-sida:
+    anfallaren ovanför, försvararen under.
+  end note
+  BoardingMap "1" *-- "1..2" Airlock
+  BoardingMap "1" *-- "0..1" Gangway
+  Gangway --> "2" Airlock : förbinder
   class BoardingLight {
     position: BoardingCell
     height
