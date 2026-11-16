@@ -2,10 +2,10 @@
 export const BOARDING_SPRITE_METRICS = {
   airlock: {
     width: 35.2,
-    height: 114.31170873322765,
+    height: 71.07857817752378,
     anchorX: 17.6,
-    anchorY: 106.2097610448481,
-    openingHeight: 82.30285535751479,
+    anchorY: 63.86057531424323,
+    openingHeight: 47.517575695736,
   },
   reactor: {
     width: 58,
@@ -47,6 +47,27 @@ export const BOARDING_SPRITE_METRICS = {
     height: 64.18976545842217,
     anchorX: 27.0,
     anchorY: 46.45842217484009,
+    openingHeight: 0,
+  },
+  breach: {
+    width: 58,
+    height: 48.518765638031695,
+    anchorX: 29.0,
+    anchorY: 25.783152627189327,
+    openingHeight: 0,
+  },
+  'escape-pod': {
+    width: 54,
+    height: 63.84434968017057,
+    anchorX: 27.0,
+    anchorY: 44.32835820895522,
+    openingHeight: 0,
+  },
+  'escape-hatch': {
+    width: 54,
+    height: 43.051376146788996,
+    anchorX: 27.0,
+    anchorY: 24.473394495412844,
     openingHeight: 0,
   },
 } as const;

@@ -60,7 +60,7 @@ Se [hela visionen](docs/game-vision.md).
   stjärnkartans lilla bild.
   `spelidentisk-bordningseditor` är **Fullständigt implementerat**: samma bildval,
   ytprojektion, ljus och väggsnitt används. Se [bordningsstrid](docs/boarding/boarding-combat.md).
-- **60° kameravinkel i bordning:** `kameravinkel-60-i-bordning` är **Delvis implementerat** (provversion). Bordningskartan visas med samma 60° kamerahöjd som Ludos high-angle, vilket ger nästan kvadratiska diamanter (64 × 32√3). Figurer, reactor och en låda (ersätter bilden för `Half cover`) använder nya bilder för 60°. Dörrar och airlock trycks fortfarande ihop från 2:1-bilderna, eftersom de nya dörr- och airlockbilderna har 2:1-lutning och inte passar väggarna; passande bilder återstår. Ersätter provet `isometri-3-2-i-bordning` och 2:1-projektionen i `isometrisk-bordningsvy`.
+- **60° kameravinkel i bordning:** `kameravinkel-60-i-bordning` och `airlock-i-60-graders-perspektiv` är **Fullständigt implementerade**. Bordningskartan visas med samma 60° kamerahöjd som Ludos high-angle, vilket ger nästan kvadratiska diamanter (64 × 32√3). Figurer, reactor och airlock är kalibrerade för vinkeln; airlockens golvkant följer samma projicerade axel som väggarna. Ersätter provet `isometri-3-2-i-bordning` och 2:1-projektionen i `isometrisk-bordningsvy`.
 
 - **Explosioner, förstörelse och rök:** `bordning-explosioner-och-forstorelse`,
   `ingen-rok-i-hela-vaggar` och `avstangda-omojliga-handlingar` är
@@ -164,6 +164,12 @@ Se [hela visionen](docs/game-vision.md).
 - **Fönster och glas:** `fonster-pa-halvhog-vagg`, `helhogt-fonster`, `krossbart-glas`, `glas-tintar-ljus`, `tunna-fonster` och `glas-krossas-nar-skottet-passerar` är **Fullständigt implementerat**. Glaset ritas nästan utan tjocklek. En halvhög tunn vägg har ett ljusblått fönster från väggens överkant till taket, och `High window pane` är ett fönster i full höjd. Glas släpper igenom sikt och skott men stoppar granatkast och gång. Ett skott som passerar glas krossar det i samma ögonblick som det animerade skottet når glaset, och glasbitar regnar ner; ett krossat `High window pane` går att kliva igenom. Ljus genom glas tintas blått. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Bordningsgrafik:** `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock och reactor visas med isometrisk grafik utan inbyggt golv. `halvskydd-som-geometri` är **Fullständigt implementerat**: Half cover är en 1,2 m hög låda byggd som geometri i spelets projektion, med texturerade sidor och ovansida och samma belysning som väggarna, i stället för en bild. Se [bordningsstrid](docs/boarding/boarding-combat.md).
+  `sprites-for-breach-och-escape-pod`, `rumsspecifikt-half-cover` och
+  `galley-rum-i-bordning` är **Fullständigt implementerade**. Breach och
+  escape pod har egna sprites; en använd pod försvinner och lämnar sin lucka.
+  Half cover ser ut som styrpaneler i `Cockpit`, maskiner i `Engineering` och
+  matbord/bänk i `Galley`. `Galley` har egna golv- och väggtexturer och finns i
+  `Colony ship` samt som rummets pensel i editorn.
 
 - **Dörrar som tunna väggar:** `dorrar-som-tunna-vaggar` är **Fullständigt implementerat**. En stängd dörr modelleras och ritas som en fullhög tunn vägg längs väggen den står i, med en egen dörrtextur (röd lampa när den är låst). En öppen dörr har glidit undan. Fullhöga tunna väggar och stängda dörrar skymmer sikt, skott och granater bara med sin tunna skiva mitt i rutan, så siktlinjen når fram till dörren. Ersätter dörrbilderna i `isometriska-bordningsobjekt` och att tunna väggar skymde hela rutan i `geometrisk-sikt`. `dorrens-ovansida` är **Fullständigt implementerat**: dörrens ovansida är en egen randig skena, inte väggens ovansida. `dorrar-falls-inte` är **Fullständigt implementerat**: dörrar står kvar i full höjd där väggar fälls ner. `animerade-dorrar` är **Fullständigt implementerat**: en känd dörr som öppnas eller stängs glider isär eller ihop på 0,45 s.
 
