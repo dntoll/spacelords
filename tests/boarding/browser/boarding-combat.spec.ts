@@ -54,6 +54,7 @@ function cellOnCanvas(
 test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordningsobjekt / fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordningsstatus / isometrisk-bordningsvy / spelmassigt-bordningsgranssnitt / bordningsfigurer-fran-spritesheet / bordning-utan-riktningspilar / bordning-utan-sikt-och-eldrutor: uses character sprites in the tactical HUD, targets a door and advances a hidden defender without changing saves', async ({
   page,
 }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('./');
   const before = await page.evaluate(() => ({ ...localStorage }));
   await page
@@ -144,7 +145,7 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   // Keep the current time. Jumping backwards freezes a presentation
   // whose start was measured with the real clock.
   await page.clock.install();
-  await page.clock.runFor(1500);
+  await dialog.getByText('Combat details', { exact: true }).click();
   const defendersActing = dialog.getByText('Defenders are acting…', {
     exact: true,
   });
@@ -155,7 +156,6 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
       .click();
   }
   await expect(defendersActing).toBeVisible();
-  await dialog.getByText('Combat details', { exact: true }).click();
   await expect(dialog.locator('.boarding-activity')).toContainText(
     'A defender is acting',
   );
