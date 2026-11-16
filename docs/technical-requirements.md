@@ -1818,6 +1818,11 @@ färdig reparation.
   plus strålar strax förbi varje blockerande hörn. `BoardingBattle` cachar
   blockerande rutor per tillstånd och använder andelen för `#canSee` (minst
   `BOARDING_SEEN_SHARE`), skott och `boardingPartialSightDefense`.
+- `sikt-over-hela-skeppet`: `BoardingBattle` skickar
+  `boardingShipSightRadius(width, height)`, kartans diagonal plus en halv ruta,
+  som radie till alla siktberäkningar. `BOARDING_SIGHT_RADIUS` (8,5) är bara
+  standardvärdet för den fristående geometrin. Skottens gräns på 8 rutor i
+  `#canFire` är oförändrad.
   `sightArea(id)` ger konturen och halvskydden till BoardingMapView, som ritar
   dem på golvet före väggar och personer.
 - `halvskydd-skuggar-delvis`: `boardingTileSight` ger både synlig andel och

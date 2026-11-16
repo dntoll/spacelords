@@ -335,7 +335,10 @@ describe('animerad-bordningsforflyttning', () => {
       ...state,
       people: state.people.map((person) => {
         if (person.id === player.id)
-          return { ...person, position: { q: 2, r: 8 }, facing: 2 };
+          return { ...person, position: { q: 2, r: 8 }, facing: 3 };
+        // sikt-over-hela-skeppet: the whole squad faces away, since walls alone
+        // limit sight and the windows would otherwise reveal the defender.
+        if (person.side === 'player') return { ...person, facing: 3 };
         if (person.id === defender.id)
           return { ...person, position: { q: 12, r: 2 }, facing: 0 };
         if (person.side === 'civilian')
@@ -1268,6 +1271,8 @@ describe('forsvarare-och-civilister', () => {
           return { ...person, position: { q: 6, r: 5 } };
         return person;
       }),
+      // sikt-over-hela-skeppet: forget what the opening view revealed.
+      defenderLastKnownEnemies: [],
       initiativeOrder: [defender.id],
       initiativeIndex: 0,
       currentActorId: defender.id,

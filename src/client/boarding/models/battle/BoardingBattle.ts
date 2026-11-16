@@ -19,6 +19,7 @@ import {
   boardingSegmentSolids,
   boardingTileSight,
   boardingVisibleShare,
+  boardingShipSightRadius,
   type BoardingSightBlocker,
   type BoardingSightBody,
   type BoardingSightSolid,
@@ -443,12 +444,15 @@ function person(
 /** A deterministic, campaign-independent boarding encounter. */
 export class BoardingBattle {
   readonly #map: BoardingMap;
+  /** sikt-over-hela-skeppet: only walls limit sight aboard, never distance. */
+  readonly #sightRadius: number;
   #state: BoardingBattleState;
   #presentation: BoardingBattleState[] = [];
   #shot: BoardingShot | null = null;
 
   private constructor(map: BoardingMap, state: BoardingBattleState) {
     this.#map = map;
+    this.#sightRadius = boardingShipSightRadius(map.width, map.height);
     this.#state = freezeState(state);
   }
 
@@ -1278,6 +1282,7 @@ export class BoardingBattle {
       target,
       this.#visionBlocksFor(observer),
       this.#bodiesFor(observer),
+      this.#sightRadius,
     );
   }
 
@@ -1323,6 +1328,7 @@ export class BoardingBattle {
         this.#forwardVector(observer),
         this.#visionBlocksFor(observer),
         this.#bodiesFor(observer),
+        this.#sightRadius,
       ),
       halfCover: Object.freeze(halfCover),
     });
@@ -1547,6 +1553,7 @@ export class BoardingBattle {
       this.#visionBlocksFor(shooter),
       this.#halfCover(),
       this.#bodiesFor(shooter),
+      this.#sightRadius,
     ).covered;
   }
 
@@ -1762,6 +1769,7 @@ export class BoardingBattle {
             targetCell,
             this.#visionBlocksFor(source),
             this.#bodiesFor(source),
+            this.#sightRadius,
           ) ?? frozenCell(targetCell));
     const panes = aim ? this.#shatterAlong(source.position, aim) : [];
     if (aim)
