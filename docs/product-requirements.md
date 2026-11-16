@@ -1457,7 +1457,7 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 `airlock-med-dubbla-geometridorrar` — **Fullständigt implementerat**. En airlock är en golvruta med en inre och en yttre dörr. Båda byggs med samma geometri, höjd och perspektiv som vanliga dörrar. Detta ersätter `airlock-i-60-graders-perspektiv` och dess separata airlockbild.
 
-`forseglad-airlock` — **Fullständigt implementerat**. Airlockens dörrar är automatiska och blockerar sikt. Ingen ser eller skjuter genom airlocken, och den som står i den är dold och ser inget utanför. Att gå igenom kostar inget extra.
+`forseglad-airlock` — **Fullständigt implementerat**. Airlockens dörrar är automatiska och blockerar sikt. Ingen ser eller skjuter genom airlocken, och den som står i den är dold och ser inget utanför. Dörrarna själva syns utifrån. Att gå igenom kostar inget extra.
 
 `automatisk-airlockcykel` — **Fullständigt implementerat**. När någon går igenom öppnas först den ena dörren, man går in, den stängs, sedan öppnas den andra och man går ut. Ersätter `oppna-airlockdorrar`.
 
