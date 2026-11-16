@@ -60,7 +60,7 @@ Se [hela visionen](docs/game-vision.md).
   stjärnkartans lilla bild.
   `spelidentisk-bordningseditor` är **Fullständigt implementerat**: samma bildval,
   ytprojektion, ljus och väggsnitt används. Se [bordningsstrid](docs/boarding/boarding-combat.md).
-- **60° kameravinkel i bordning:** `kameravinkel-60-i-bordning` och `airlock-i-60-graders-perspektiv` är **Fullständigt implementerade**. Bordningskartan visas med samma 60° kamerahöjd som Ludos high-angle, vilket ger nästan kvadratiska diamanter (64 × 32√3). Figurer, reactor och airlock är kalibrerade för vinkeln; airlockens golvkant följer samma projicerade axel som väggarna. Ersätter provet `isometri-3-2-i-bordning` och 2:1-projektionen i `isometrisk-bordningsvy`.
+- **60° kameravinkel i bordning:** `kameravinkel-60-i-bordning` är **Fullständigt implementerat**. Bordningskartan visas med samma 60° kamerahöjd som Ludos high-angle, vilket ger nästan kvadratiska diamanter (64 × 32√3). Figurer och reactor är kalibrerade för vinkeln; airlock byggs i samma projektionsgeometri enligt `airlock-med-dubbla-geometridorrar`. Ersätter provet `isometri-3-2-i-bordning` och 2:1-projektionen i `isometrisk-bordningsvy`.
 
 - **Explosioner, förstörelse och rök:** `bordning-explosioner-och-forstorelse`,
   `ingen-rok-i-hela-vaggar` och `avstangda-omojliga-handlingar` är
@@ -167,10 +167,11 @@ Se [hela visionen](docs/game-vision.md).
 - **Sammanfogade tunna väggar:** `sammanfogade-tunna-vaggar` är **Fullständigt implementerat**. En tunn vägg får sin form av grannarna: den sträcker en arm mot varje grannruta med vägg, ytterskrov, tunn vägg av valfri höjd eller en dörr i samma linje. Det ger raka väggar, ändar, hörn, T-korsningar, kryss och fristående pelare. Editorn har en pensel per höjd, `Thin wall` och `Low thin wall`. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 - **Fönster och glas:** `fonster-pa-halvhog-vagg`, `helhogt-fonster`, `krossbart-glas`, `glas-tintar-ljus`, `tunna-fonster` och `glas-krossas-nar-skottet-passerar` är **Fullständigt implementerat**. Glaset ritas nästan utan tjocklek. En halvhög tunn vägg har ett ljusblått fönster från väggens överkant till taket, och `High window pane` är ett fönster i full höjd. Glas släpper igenom sikt och skott men stoppar granatkast och gång. Ett skott som passerar glas krossar det i samma ögonblick som det animerade skottet når glaset, och glasbitar regnar ner; ett krossat `High window pane` går att kliva igenom. Ljus genom glas tintas blått. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
-- **Bordningsgrafik:** `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock och reactor visas med isometrisk grafik utan inbyggt golv. `halvskydd-som-geometri` är **Fullständigt implementerat**: Half cover är en 1,2 m hög låda byggd som geometri i spelets projektion, med texturerade sidor och ovansida och samma belysning som väggarna, i stället för en bild. Se [bordningsstrid](docs/boarding/boarding-combat.md).
-  `sprites-for-breach-och-escape-pod`, `rumsspecifikt-half-cover` och
+- **Bordningsgrafik:** `isometriska-bordningsobjekt` och `airlock-med-dubbla-geometridorrar` är **Fullständigt implementerade**. Reactor visas med isometrisk grafik utan inbyggt golv. Airlockens tidigare sneda sprite är ersatt av en golvruta med en inre och en yttre 2,1 m hög dörr, byggda med samma geometri och texturer som vanliga dörrar. Det ersätter `airlock-i-60-graders-perspektiv`. `halvskydd-som-geometri` är **Fullständigt implementerat**: Half cover är en 1,2 m hög låda byggd som geometri i spelets projektion, med texturerade sidor och ovansida och samma belysning som väggarna, i stället för en bild. Se [bordningsstrid](docs/boarding/boarding-combat.md).
+  `sprites-for-breach-och-escape-pod`, `oppen-escape-pod`, `rumsspecifikt-half-cover` och
   `galley-rum-i-bordning` är **Fullständigt implementerade**. Breach och
-  escape pod har egna sprites; en använd pod försvinner och lämnar sin lucka.
+  escape pod har egna sprites; podden visas öppen och tom så att en person kan
+  stiga in, och en använd pod försvinner och lämnar sin lucka.
   Half cover ser ut som styrpaneler i `Cockpit`, maskiner i `Engineering` och
   matbord/bänk i `Galley`. `Galley` har egna golv- och väggtexturer och finns i
   `Colony ship` samt som rummets pensel i editorn.

@@ -50,6 +50,7 @@ import {
   type BoardingThinPiece,
 } from '../../models/map/BoardingMap.js';
 import { formatBoardingMap } from '../../../../shared/boarding/map-format.js';
+import { boardingAirlockSide } from '../../../../shared/boarding/map-rules.js';
 import { BoardingLighting } from '../rendering/BoardingLighting.js';
 import { BoardingLightMap } from '../rendering/BoardingLightMap.js';
 import { BoardingLightPainter } from '../rendering/BoardingLightPainter.js';
@@ -61,6 +62,7 @@ import {
 import {
   BOARDING_HALF_TILE_WIDTH,
   BOARDING_HALF_TILE_HEIGHT,
+  boardingAirlockDoorGeometry,
   boardingFeatureGlyph,
   boardingFeatureHeight,
   boardingIsoCamera,
@@ -937,8 +939,11 @@ export class BoardingEditorMapView {
     for (let r = 0; r < snapshot.height; r++) {
       for (let q = 0; q < snapshot.width; q++) {
         const terrain = snapshot.layers.terrain[r]?.[q] ?? 'H';
+        const object = snapshot.layers.objects[r]?.[q] ?? '-';
+        const airlock = object === 'A';
         if (terrain === 'O') continue;
         if (
+          airlock ||
           terrain === '.' ||
           terrain === 'W' ||
           boardingThinAxisFromSymbol(terrain)
@@ -964,6 +969,7 @@ export class BoardingEditorMapView {
       for (let q = 0; q < snapshot.width; q++) {
         const position = { q, r };
         const terrain = snapshot.layers.terrain[r]?.[q] ?? 'H';
+        const airlock = snapshot.layers.objects[r]?.[q] === 'A';
         if (terrain === 'O') continue;
         const floor =
           this.#floorTiles.get(boardingSurfaceStyle(roomAt, position)) ??
@@ -1001,7 +1007,10 @@ export class BoardingEditorMapView {
         }
         // sammanfogade-tunna-vaggar: a joint or an end keeps its own floor.
         const ownFloor =
-          terrain === '.' || terrain === 'W' || (pieces !== null && !thinAxis);
+          airlock ||
+          terrain === '.' ||
+          terrain === 'W' ||
+          (pieces !== null && !thinAxis);
         const paintedFloor =
           !thinAxis &&
           ownFloor &&
@@ -1039,7 +1048,7 @@ export class BoardingEditorMapView {
       const object = snapshot.layers.objects[cell.r]?.[cell.q] ?? '-';
       const position = { q: cell.q, r: cell.r };
       const center = boardingIsoCenter(position);
-      if (terrain === '#' || terrain === 'H') {
+      if ((terrain === '#' || terrain === 'H') && object !== 'A') {
         const height = visibility.height(position);
         const wall = this.#wallTiles.get('default') ?? null;
         const option = (image: p5.Image | undefined | null) =>
@@ -1092,6 +1101,58 @@ export class BoardingEditorMapView {
               ),
             );
         }
+      }
+      if (object === 'A') {
+        const outside =
+          boardingAirlockSide(
+            snapshot.layers.terrain,
+            position.q,
+            position.r,
+          ) ?? 'bottom';
+        const wall = this.#wallTiles.get('default') ?? null;
+        const option = (image: p5.Image | undefined | null) =>
+          image ? { tile: image, cache: this.#cache(image) } : undefined;
+        const doors = [...boardingAirlockDoorGeometry(position, outside)].sort(
+          (a, b) =>
+            boardingIsoCenter(a.position).y - boardingIsoCenter(b.position).y,
+        );
+        for (const door of doors) {
+          const mesh = paintIsoThinWall(
+            sketch,
+            wall,
+            wall ? this.#cache(wall) : { floor: null, wall: null },
+            position,
+            'r',
+            thinPeers.R ?? new Set(),
+            boardingFeatureHeight('door'),
+            {
+              face: option(this.#doorFaces.get('open')),
+              faceTexture: [0, 1],
+              geometryPosition: door.position,
+              top: option(this.#doorTop ?? this.#wallTop),
+            },
+          );
+          if (this.#lighting) {
+            const meters = boardingFeatureHeight('door') / boardingHeight(1);
+            const context = sketch.drawingContext as CanvasRenderingContext2D;
+            this.#lightPainter.paint(
+              context,
+              mesh.longFace,
+              this.#lighting.surface(position, 'southWest', meters),
+            );
+            this.#lightPainter.paint(
+              context,
+              mesh.endFace,
+              this.#lighting.surface(position, 'southEast', meters),
+            );
+            this.#lightPainter.paint(
+              context,
+              mesh.top,
+              this.#lighting.surface(position, 'top', meters),
+            );
+          }
+        }
+        continue;
       }
       // dorrar-som-tunna-vaggar: a door is a thin wall with a door face.
       const door = objectKind(object) === 'door';
@@ -1201,12 +1262,9 @@ export class BoardingEditorMapView {
             this.#lighting.surface(position, face, meters),
           );
       }
-      const artwork =
-        object === 'A'
-          ? 'airlock'
-          : featureKind
-            ? boardingObjectArtwork({ kind: featureKind, position })
-            : null;
+      const artwork = featureKind
+        ? boardingObjectArtwork({ kind: featureKind, position })
+        : null;
       const image = artwork ? this.#objects.get(artwork) : undefined;
       if (artwork && image) {
         const box = boardingObjectBounds(artwork, center);

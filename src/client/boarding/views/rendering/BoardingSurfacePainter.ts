@@ -408,12 +408,14 @@ export function paintIsoThinWall(
     readonly faceTexture?: readonly [number, number];
     /** animerade-dorrar: the part of the slab's length to draw. */
     readonly span?: readonly [number, number];
+    /** airlock-med-dubbla-geometridorrar: draw inside the logical tile off-centre. */
+    readonly geometryPosition?: BoardingCell;
     readonly top?: { tile: p5.Image; cache: IsoImageCache } | undefined;
     readonly section?: boolean;
   },
 ): BoardingThinWallMesh {
   const mesh = boardingThinWallMesh(
-    position,
+    options?.geometryPosition ?? position,
     axis,
     height / BOARDING_VERTICAL_METER,
     options?.span,

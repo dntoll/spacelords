@@ -146,6 +146,39 @@ export function boardingIsoCorners(
   ]);
 }
 
+export interface BoardingAirlockDoorGeometry {
+  readonly role: 'outer' | 'inner';
+  readonly axis: 'r';
+  readonly position: BoardingCell;
+}
+
+/** airlock-med-dubbla-geometridorrar: two parallel doors inside one hull tile. */
+export function boardingAirlockDoorGeometry(
+  position: BoardingCell,
+  outside: 'top' | 'bottom',
+): readonly BoardingAirlockDoorGeometry[] {
+  const direction = outside === 'top' ? -1 : 1;
+  const offset = 0.3;
+  return Object.freeze([
+    Object.freeze({
+      role: 'outer' as const,
+      axis: 'r' as const,
+      position: Object.freeze({
+        q: position.q,
+        r: position.r + direction * offset,
+      }),
+    }),
+    Object.freeze({
+      role: 'inner' as const,
+      axis: 'r' as const,
+      position: Object.freeze({
+        q: position.q,
+        r: position.r - direction * offset,
+      }),
+    }),
+  ]);
+}
+
 export function boardingQuadTextureTransform(
   textureWidth: number,
   textureHeight: number,

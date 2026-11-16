@@ -430,11 +430,11 @@ Karteditor, skrovgenombrott och vakuum ingår inte.
 
 ## Isometriska bordningsobjekt
 
-`isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock och reactor visas som separata bilder utan golv. Förstörda objekt och bilder som inte laddas behåller reservvisningen. Dörrar och Half cover ritas inte längre som bilder, se `dorrar-som-tunna-vaggar` och `halvskydd-som-geometri`.
+`isometriska-bordningsobjekt` är **Fullständigt implementerat**. Reactor och fristående objekt visas som separata bilder utan golv. Förstörda objekt och bilder som inte laddas behåller reservvisningen. Dörrar, airlock och Half cover ritas inte längre som bilder, se `dorrar-som-tunna-vaggar`, `airlock-med-dubbla-geometridorrar` och `halvskydd-som-geometri`.
 
-`airlock-i-60-graders-perspektiv` är **Fullständigt implementerat**. Airlockens bild är affint anpassad så ramens golvkant följer 60°-projektionens exakta axel och inte längre lutar annorlunda än skrovväggen.
+`airlock-med-dubbla-geometridorrar` är **Fullständigt implementerat**. Airlockens skrovruta visar golv samt en inre och en yttre 2,1 m hög dörr på samma ruta. De använder vanliga dörrars projektion, texturer och ljus. Detta ersätter `airlock-i-60-graders-perspektiv` och den tidigare airlockbilden, vars perspektiv inte fungerade.
 
-`sprites-for-breach-och-escape-pod` är **Fullständigt implementerat**. Breach, en dockad escape pod och luckan efter en använd pod har var sin sprite. Evakuering genom podden förbrukar den, medan breach fortsätter vara en återanvändbar evakueringspunkt.
+`sprites-for-breach-och-escape-pod` och `oppen-escape-pod` är **Fullständigt implementerade**. Breach, en öppen och tom dockad escape pod samt luckan efter en använd pod har var sin sprite. En person kan tydligt stiga in i podden. Evakuering genom podden förbrukar den, medan breach fortsätter vara en återanvändbar evakueringspunkt.
 
 `rumsspecifikt-half-cover` och `galley-rum-i-bordning` är **Fullständigt implementerade**. Half cover behåller samma geometri och regler men väljer sid- och topptextur efter rummet: styrpanel i `Cockpit`, maskin i `Engineering`, matbord/bänk i `Galley` och låda i övriga rum. `Galley` använder `G` i rumslagret, har egna golv- och väggtexturer, kan målas i editorn och finns i `Colony ship`.
 

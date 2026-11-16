@@ -111,6 +111,7 @@ import {
 import {
   BOARDING_HALF_TILE_WIDTH,
   BOARDING_HALF_TILE_HEIGHT,
+  boardingAirlockDoorGeometry,
   boardingAnimTick,
   boardingProjectilePoint,
   boardingCellFromIsoPoint,
@@ -1237,6 +1238,9 @@ export class BoardingMapView implements BoardingMapPort {
         const current = visible.has(key(position));
         const remembered = explored.has(key(position));
         const knownHull = terrain === 'hull';
+        const airlock = this.map.airlocks.some(
+          (cell) => cell.q === q && cell.r === r,
+        );
         const thin = thinAt.get(key(position));
         if (thin && (current || remembered)) {
           const straight = boardingThinPiecesStraight(thin);
@@ -1258,7 +1262,7 @@ export class BoardingMapView implements BoardingMapPort {
           continue;
         }
         const paintedFloor =
-          (terrain === 'floor' || terrain === 'window') &&
+          (terrain === 'floor' || terrain === 'window' || airlock) &&
           (current || remembered) &&
           this.#paintFloor(sketch, position);
         if (!paintedFloor) {
@@ -1270,7 +1274,7 @@ export class BoardingMapView implements BoardingMapPort {
           this.#tile(sketch, position);
         }
         if (
-          (terrain === 'floor' || terrain === 'window') &&
+          (terrain === 'floor' || terrain === 'window' || airlock) &&
           (current || remembered)
         )
           this.#lightMap?.paint(
@@ -1625,14 +1629,20 @@ export class BoardingMapView implements BoardingMapPort {
     selected: boolean,
     peers: ReadonlySet<string>,
     known: (cell: BoardingCell) => boolean,
-    door?: { readonly locked: boolean } & Partial<BoardingDoorLeaf>,
+    door?: {
+      readonly locked: boolean;
+      readonly geometryPosition?: BoardingCell;
+      readonly height?: number;
+    } & Partial<BoardingDoorLeaf>,
   ): void {
     const axis = piece.axis;
-    const height = this.#wallVisibility.height(position, {
-      pieces: shape,
-      low,
-      door: !!door,
-    });
+    const height =
+      door?.height ??
+      this.#wallVisibility.height(position, {
+        pieces: shape,
+        low,
+        door: !!door,
+      });
     const roomAt = (cell: BoardingCell) =>
       known(cell) && boardingTerrainShowsFloor(this.map.terrainAt(cell))
         ? this.map.roomAt(cell)
@@ -1664,6 +1674,9 @@ export class BoardingMapView implements BoardingMapPort {
           ? {
               faceTexture: door.texture ?? [0, 1],
               span: door.span ?? [-0.5, 0.5],
+              ...(door.geometryPosition
+                ? { geometryPosition: door.geometryPosition }
+                : {}),
             }
           : { span: piece.span }),
         top: option(door ? (this.#doorTop ?? this.#wallTop) : this.#wallTop),
@@ -2030,21 +2043,7 @@ export class BoardingMapView implements BoardingMapPort {
 
     const known = (position: BoardingCell) =>
       visible.has(key(position)) || explored.has(key(position));
-    for (const position of this.map.airlocks) {
-      if (!known(position)) continue;
-      scene.push({
-        depth: boardingIsoCenter(position).y,
-        order: -1,
-        paint: () => {
-          this.#paintObject(
-            sketch,
-            'airlock',
-            boardingIsoCenter(position),
-            this.#lighting.tile(position),
-          );
-        },
-      });
-    }
+    const airlockKeys = new Set(this.map.airlocks.map(key));
     const walls = new Set(
       state.features
         .filter(
@@ -2080,6 +2079,39 @@ export class BoardingMapView implements BoardingMapPort {
           key(feature.position),
         );
     }
+    for (const position of this.map.airlocks) {
+      if (!known(position)) continue;
+      const outside = this.map.terrainAt({ q: position.q, r: position.r - 1 })
+        ? 'bottom'
+        : 'top';
+      const doors = [...boardingAirlockDoorGeometry(position, outside)].sort(
+        (a, b) =>
+          boardingIsoCenter(a.position).y - boardingIsoCenter(b.position).y,
+      );
+      const slab = boardingStraightThinPieces('r');
+      scene.push({
+        depth: boardingIsoCenter(position).y,
+        order: -1,
+        paint: () => {
+          for (const door of doors)
+            this.#paintThinWall(
+              sketch,
+              position,
+              slab,
+              slab[0]!,
+              false,
+              false,
+              thinPeers.r,
+              known,
+              {
+                locked: false,
+                geometryPosition: door.position,
+                height: boardingFeatureHeight('door'),
+              },
+            );
+        },
+      });
+    }
     // bordning-jamn-bildfrekvens: skip walls and objects wholly off the canvas.
     const margin = BOARDING_HALF_TILE_WIDTH * 3;
     const onCanvas = (point: Point) =>
@@ -2100,6 +2132,11 @@ export class BoardingMapView implements BoardingMapPort {
           const context = sketch.drawingContext as CanvasRenderingContext2D;
           context.save();
           try {
+            if (
+              feature.kind === 'hull' &&
+              airlockKeys.has(key(feature.position))
+            )
+              return;
             const raised =
               !feature.destroyed &&
               (feature.kind === 'hull' ||

@@ -3,7 +3,6 @@ import type {
   BoardingCell,
   BoardingFeatureKind,
 } from '../../models/map/BoardingMap.js';
-import airlockUrl from '../../assets/airlock.webp';
 import reactorUrl from '../../assets/reactor.webp';
 import breachUrl from '../../assets/breach.webp';
 import escapePodUrl from '../../assets/escape-pod.webp';
@@ -12,11 +11,10 @@ import escapeHatchUrl from '../../assets/escape-hatch.webp';
 // dorrar-som-tunna-vaggar and halvskydd-som-geometri: doors and Half cover
 // are textured geometry, not sprites.
 export type BoardingArtwork =
-  'airlock' | 'reactor' | 'breach' | 'escape-pod' | 'escape-hatch';
+  'reactor' | 'breach' | 'escape-pod' | 'escape-hatch';
 
 export const BOARDING_OBJECT_IMAGES: Readonly<Record<BoardingArtwork, string>> =
   {
-    airlock: airlockUrl,
     reactor: reactorUrl,
     breach: breachUrl,
     'escape-pod': escapePodUrl,

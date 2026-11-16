@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BOARDING_OBJECT_IMAGES,
   boardingObjectArtwork,
   boardingObjectBounds,
 } from '../../../src/client/boarding/views/rendering/BoardingObjectArtwork.js';
@@ -20,6 +21,9 @@ describe('isometriska-bordningsobjekt', () => {
         boardingObjectArtwork({ kind: 'door', position: { q: 2, r: 2 }, open }),
       ).toBeNull();
   });
+  it('airlock-med-dubbla-geometridorrar: does not load the obsolete airlock sprite', () => {
+    expect(BOARDING_OBJECT_IMAGES).not.toHaveProperty('airlock');
+  });
   it('uses distinct intact objects and fits calibrated objects within their meter footprint', () => {
     expect(
       boardingObjectArtwork({ kind: 'reactor', position: { q: 0, r: 0 } }),
@@ -31,7 +35,7 @@ describe('isometriska-bordningsobjekt', () => {
     expect(box.width).toBeLessThan(64);
     expect(box.x + box.width / 2).toBe(100);
   });
-  it('sprites-for-breach-och-escape-pod: distinguishes breaches, pods and used pod hatches', () => {
+  it('sprites-for-breach-och-escape-pod / oppen-escape-pod: distinguishes an enterable pod from its used hatch', () => {
     expect(
       boardingObjectArtwork({
         kind: 'exit',
