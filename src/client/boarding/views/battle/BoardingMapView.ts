@@ -37,7 +37,6 @@ import {
 } from '../rendering/BoardingWallVisibility.js';
 import {
   BOARDING_DOOR_SLIDE_MS,
-  boardingAirlockDoorLeaves,
   boardingDoorLeaves,
   boardingDoorOpenness,
   type BoardingDoorLeaf,
@@ -78,6 +77,14 @@ import {
   boardingFrameMotionDuration,
   boardingMotionFacing,
 } from './BoardingMotionPacing.js';
+import {
+  BOARDING_AIRLOCK_CYCLE_MS,
+  boardingAirlockDoorOpenness,
+  boardingAirlockPassage,
+  boardingAirlockStepDuration,
+  boardingAirlockWalkProgress,
+  type BoardingAirlockPassage,
+} from './BoardingAirlockCycle.js';
 import {
   BOARDING_OBJECT_IMAGES,
   boardingObjectArtwork,
@@ -273,6 +280,8 @@ export class BoardingMapView implements BoardingMapPort {
     started: number;
     duration: number;
     resolve: () => void;
+    /** automatisk-airlockcykel: the walker waits for an airlock door. */
+    passage?: BoardingAirlockPassage;
   } | null = null;
   #shot: {
     from: Point;
@@ -285,6 +294,8 @@ export class BoardingMapView implements BoardingMapPort {
   } | null = null;
   /** animerade-dorrar: when each sliding door last changed state. */
   readonly #doorMoves = new Map<string, number>();
+  /** automatisk-airlockcykel: when each airlock door (`q,r,side`) began a cycle. */
+  readonly #airlockCycles = new Map<string, number>();
   #coverLayer: HTMLCanvasElement | null = null;
   #shipCellCache: readonly (readonly Point[])[] | null = null;
   #effects: {
@@ -512,6 +523,42 @@ export class BoardingMapView implements BoardingMapPort {
         this.#p5.loop();
       else void this.#p5.redraw();
     }
+  }
+
+  /**
+   * automatisk-airlockcykel: the airlock door one walker's step passes. Only
+   * a step that is drawn cycles a door, so hidden enemies stay hidden.
+   */
+  #airlockPassage(
+    from: BoardingBattleState,
+    to: BoardingBattleState,
+  ): BoardingAirlockPassage | null {
+    const movers = to.people.filter((next) => {
+      const before = from.people.find((entry) => entry.id === next.id);
+      return (
+        !!before &&
+        (before.position.q !== next.position.q ||
+          before.position.r !== next.position.r)
+      );
+    });
+    if (movers.length !== 1) return null;
+    const next = movers[0]!;
+    const before = from.people.find((entry) => entry.id === next.id)!;
+    const shown = (state: BoardingBattleState, cell: BoardingCell) =>
+      state.visibleCells.some(
+        (entry) => entry.q === cell.q && entry.r === cell.r,
+      );
+    if (
+      next.side !== 'player' &&
+      !shown(from, before.position) &&
+      !shown(to, next.position)
+    )
+      return null;
+    return boardingAirlockPassage(
+      before.position,
+      next.position,
+      this.map.airlocks,
+    );
   }
 
   /** animerade-dorrar: a known door that opened or closed starts sliding. */
@@ -865,13 +912,23 @@ export class BoardingMapView implements BoardingMapPort {
         finish();
         return;
       }
-      const duration = boardingFrameMotionDuration(from, to);
+      const passage = this.#airlockPassage(from, to);
+      const started = performance.now();
+      const duration = passage
+        ? boardingAirlockStepDuration(passage.entering)
+        : boardingFrameMotionDuration(from, to);
+      if (passage)
+        this.#airlockCycles.set(
+          `${key(passage.airlock)},${passage.side}`,
+          started,
+        );
       this.#motion = {
         from,
         to,
-        started: performance.now(),
+        started,
         duration,
         resolve: finish,
+        ...(passage ? { passage } : {}),
       };
       this.#armMotionTimer(duration, finish);
       this.#p5.loop();
@@ -2166,7 +2223,9 @@ export class BoardingMapView implements BoardingMapPort {
     const shotTick = shot
       ? boardingAnimTick(shot.started, shot.duration, now)
       : null;
-    const progress = motionTick?.progress ?? 1;
+    const progress = motion?.passage
+      ? boardingAirlockWalkProgress(now - motion.started)
+      : (motionTick?.progress ?? 1);
     const shotProgress = shotTick?.progress ?? 1;
     if (motion && motionTick?.done) {
       this.#motion = null;
@@ -2181,11 +2240,15 @@ export class BoardingMapView implements BoardingMapPort {
     );
     for (const [id, started] of this.#doorMoves)
       if (now - started >= BOARDING_DOOR_SLIDE_MS) this.#doorMoves.delete(id);
+    for (const [id, started] of this.#airlockCycles)
+      if (now - started >= BOARDING_AIRLOCK_CYCLE_MS.total)
+        this.#airlockCycles.delete(id);
     if (
       !this.#motion &&
       !this.#shot &&
       !this.#effects.length &&
       !this.#doorMoves.size &&
+      !this.#airlockCycles.size &&
       !state.smokeCells.length &&
       this.#ready &&
       !this.#disposed
@@ -2331,8 +2394,15 @@ export class BoardingMapView implements BoardingMapPort {
         depth: boardingIsoCenter(position).y,
         order: -1,
         paint: () => {
-          for (const door of doors)
-            for (const leaf of boardingAirlockDoorLeaves())
+          for (const door of doors) {
+            // automatisk-airlockcykel: closed unless a walker passes it.
+            const side = Math.sign(door.position.r - position.r);
+            const started = this.#airlockCycles.get(`${key(position)},${side}`);
+            const openness =
+              started === undefined
+                ? 0
+                : boardingAirlockDoorOpenness(now - started);
+            for (const leaf of boardingDoorLeaves(openness))
               this.#paintThinWall(
                 sketch,
                 position,
@@ -2349,6 +2419,7 @@ export class BoardingMapView implements BoardingMapPort {
                   ...leaf,
                 },
               );
+          }
         },
       });
     }

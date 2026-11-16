@@ -21,7 +21,7 @@ package "(delat)" as boarding___delat_ {
 }
 package "battle" as boarding__battle {
   rectangle "<b>models</b>\nBoardingAI\nBoardingBattle\nBoardingEngagement\nBoardingFacade\nBoardingPathPreview\nBoardingRouteSearch\nBoardingSightGeometry" as boarding__battle__models
-  rectangle "<b>views</b>\nBoardingCameraController\nBoardingDoorSlide\nBoardingEffectParticles\nBoardingMapView\nBoardingMotionPacing\nBoardingShotGlass\nBoardingSmokeParticles\nBoardingTargetIndicatorLayout\nBoardingView" as boarding__battle__views
+  rectangle "<b>views</b>\nBoardingAirlockCycle\nBoardingCameraController\nBoardingDoorSlide\nBoardingEffectParticles\nBoardingMapView\nBoardingMotionPacing\nBoardingShotGlass\nBoardingSmokeParticles\nBoardingTargetIndicatorLayout\nBoardingView" as boarding__battle__views
 }
 package "editor" as boarding__editor {
   rectangle "<b>models</b>\nBoardingEditor\nBoardingEditorFacade" as boarding__editor__models
@@ -40,7 +40,7 @@ boarding__battle__views --> boarding__battle__models
 boarding__editor__views --> boarding__editor__models
 boarding___delat_ ..> boarding__battle : 2, typer
 boarding___delat_ ..> boarding__editor : 2, typer
-boarding__battle --> boarding__map : 15
+boarding__battle --> boarding__map : 16
 boarding__battle --> boarding__rendering : 17
 boarding__editor --> boarding__map : 1
 boarding__editor --> boarding__rendering : 11

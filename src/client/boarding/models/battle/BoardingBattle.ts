@@ -1098,6 +1098,7 @@ export class BoardingBattle {
   #solidWall(position: BoardingCell): boolean {
     if (!this.#map.contains(position)) return true;
     if (this.#map.terrainAt(position) === null) return true;
+    if (this.#inAirlock(position)) return true;
     const feature = this.#featureAt(position);
     return (
       !!feature &&
@@ -1106,6 +1107,20 @@ export class BoardingBattle {
         (feature.kind === 'thin-wall' && !feature.low) ||
         (feature.kind === 'door' && !feature.open))
     );
+  }
+
+  /**
+   * forseglad-airlock: one of an airlock's two automatic doors is always
+   * closed, so the tile is sealed. It stops sight, shots and splinters, and
+   * walking through it costs no more than floor.
+   */
+  #inAirlock(position: BoardingCell): boolean {
+    return this.#map.airlocks.some((cell) => same(cell, position));
+  }
+
+  /** forseglad-airlock: an airlock and the outside never see each other. */
+  #sealedApart(a: BoardingCell, b: BoardingCell): boolean {
+    return !same(a, b) && (this.#inAirlock(a) || this.#inAirlock(b));
   }
 
   /** stang-oppen-dorr: reason the door action is unavailable, or null. */
@@ -1314,6 +1329,7 @@ export class BoardingBattle {
   /** delvis-synligt-mal: the share of a tile the observer sees. */
   #visibleShare(observer: BoardingPerson, target: BoardingCell): number {
     if (observer.status !== 'active') return 0;
+    if (this.#sealedApart(observer.position, target)) return 0;
     return boardingVisibleShare(
       observer.position,
       this.#forwardVector(observer),
@@ -1329,6 +1345,22 @@ export class BoardingBattle {
     const observer = this.#state.people.find((entry) => entry.id === id);
     if (!observer || observer.status !== 'active')
       return Object.freeze({ outline: [], halfCover: [], coverShadows: [] });
+    // forseglad-airlock: behind closed doors the sight ends at the tile edge.
+    if (this.#inAirlock(observer.position)) {
+      const { q, r } = observer.position;
+      return Object.freeze({
+        outline: Object.freeze(
+          [
+            [-0.5, -0.5],
+            [0.5, -0.5],
+            [0.5, 0.5],
+            [-0.5, 0.5],
+          ].map(([dq, dr]) => Object.freeze({ q: q + dq!, r: r + dr! })),
+        ),
+        halfCover: [],
+        coverShadows: [],
+      });
+    }
     const halfCover = this.#state.features
       .filter(
         (feature) =>
@@ -2123,6 +2155,7 @@ export class BoardingBattle {
         const line = this.#line(impact, position);
         if (line.slice(1, -1).some((entry) => this.#blocksVision(entry)))
           continue;
+        if (this.#sealedApart(impact, position)) continue;
         const damage = this.#rollDamage(6, 2, 0);
         for (const victim of this.#state.people.filter(
           (entry) =>
