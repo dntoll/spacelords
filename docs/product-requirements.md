@@ -1656,6 +1656,10 @@ långt den hinner.
 `bordning-jamn-bildfrekvens` — **Fullständigt implementerat**: bordningskartan
 ska kännas jämn och inte ryckig på mobilen.
 
+`snabb-bordningsvagsokning` — **Fullständigt implementerat**: ett tryck på en
+ruta visar vägen dit utan märkbar väntan, och att avsluta en soldats tur
+känns inte trögt.
+
 `volymetrisk-bordningsrok` — **Fullständigt implementerat**: rök visas med
 animerade halvgenomskinliga partiklar genom rutan.
 

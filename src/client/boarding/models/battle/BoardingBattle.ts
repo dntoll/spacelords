@@ -26,6 +26,10 @@ import {
   type BoardingSightPoint,
 } from './BoardingSightGeometry.js';
 import type { CombatShipType } from '../../../space-battle/models/index.js';
+import {
+  BoardingRouteTree,
+  type BoardingRouteMove,
+} from './BoardingRouteSearch.js';
 
 export type BoardingSide = 'player' | 'defender' | 'civilian';
 export type BoardingPersonStatus =
@@ -943,83 +947,53 @@ export class BoardingBattle {
       (candidate) => candidate.id === id && candidate.status === 'active',
     );
     if (!entry || !this.#canStand(destination)) return null;
-    type Node = {
-      position: BoardingCell;
-      facing: number;
-      cost: number;
-      turns: number;
-      steps: BoardingPath['steps'];
-      positions: readonly BoardingCell[];
-    };
-    const start: Node = {
-      position: entry.position,
-      facing: entry.facing,
-      cost: 0,
-      turns: 0,
-      steps: [],
-      positions: [],
-    };
-    const queue: Node[] = [start];
-    const best = new Map<string, number>([
-      [`${positionKey(start.position)}:${start.facing}`, 0],
-    ]);
-    while (queue.length > 0) {
-      queue.sort((a, b) => a.cost - b.cost);
-      const current = queue.shift()!;
-      if (same(current.position, destination))
-        return Object.freeze({
-          cost: current.cost,
-          turns: current.turns,
-          positions: Object.freeze([...current.positions]),
-          finalFacing: current.facing,
-          steps: Object.freeze([...current.steps]),
-        });
-      for (const direction of [-1, 1] as const) {
-        const facing = turnFacing(current.facing, direction);
-        const next: Node = {
-          ...current,
-          facing,
-          cost: current.cost + BOARDING_TURN_AP,
-          turns: current.turns + 1,
-          steps: [
-            ...current.steps,
-            { type: 'turn', direction, cost: BOARDING_TURN_AP },
-          ],
-        };
-        const nodeKey = `${positionKey(next.position)}:${facing}`;
-        if ((best.get(nodeKey) ?? Infinity) > next.cost) {
-          best.set(nodeKey, next.cost);
-          queue.push(next);
-        }
-      }
-      const forward = BoardingBattle.forward(current.position, current.facing);
-      const diagonal =
-        forward.q !== current.position.q && forward.r !== current.position.r;
-      const clearCorner =
-        !diagonal ||
-        (this.#passable({ q: forward.q, r: current.position.r }, id) &&
-          this.#passable({ q: current.position.q, r: forward.r }, id));
-      if (clearCorner && this.#passable(forward, id)) {
-        const moveCost = forwardCost(current.position, forward, entry.crouched);
-        const next: Node = {
-          ...current,
-          position: forward,
-          cost: current.cost + moveCost,
-          steps: [
-            ...current.steps,
-            { type: 'forward', position: forward, cost: moveCost },
-          ],
-          positions: [...current.positions, forward],
-        };
-        const nodeKey = `${positionKey(forward)}:${next.facing}`;
-        if ((best.get(nodeKey) ?? Infinity) > next.cost) {
-          best.set(nodeKey, next.cost);
-          queue.push(next);
-        }
-      }
-    }
-    return null;
+    return this.#routesFor(entry).pathTo(destination);
   }
+
+  /** snabb-bordningsvagsokning: one route search per person and state. */
+  #routesFor(entry: BoardingPerson): BoardingRouteTree {
+    if (this.#routeCache?.state !== this.#state)
+      this.#routeCache = { state: this.#state, trees: new Map() };
+    const cached = this.#routeCache.trees.get(entry.id);
+    if (cached) return cached;
+    const tree = BoardingRouteTree.search(
+      entry.position,
+      entry.facing,
+      (position, facing) => {
+        const moves: BoardingRouteMove[] = ([-1, 1] as const).map(
+          (direction) => ({
+            position,
+            facing: turnFacing(facing, direction),
+            step: { type: 'turn', direction, cost: BOARDING_TURN_AP },
+          }),
+        );
+        const forward = BoardingBattle.forward(position, facing);
+        const diagonal = forward.q !== position.q && forward.r !== position.r;
+        const clearCorner =
+          !diagonal ||
+          (this.#passable({ q: forward.q, r: position.r }, entry.id) &&
+            this.#passable({ q: position.q, r: forward.r }, entry.id));
+        if (clearCorner && this.#passable(forward, entry.id))
+          moves.push({
+            position: forward,
+            facing,
+            step: {
+              type: 'forward',
+              position: forward,
+              cost: forwardCost(position, forward, entry.crouched),
+            },
+          });
+        return moves;
+      },
+    );
+    this.#routeCache.trees.set(entry.id, tree);
+    return tree;
+  }
+
+  #routeCache: {
+    readonly state: BoardingBattleState;
+    readonly trees: Map<string, BoardingRouteTree>;
+  } | null = null;
 
   /**
    * gang-mot-avlagset-mal: the furthest tile the person can afford on the

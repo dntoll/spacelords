@@ -369,6 +369,9 @@ kommer från testtransportens startpositioner.
   per sikt. Figurer, objekt och rök ljussätts med ett
   canvasfilter i stället för p5:s `tint()`, väggytor klipps inte i onödan och
   väggar utanför skärmen hoppas över.
+- `snabb-bordningsvagsokning` — **Fullständigt implementerat**. Vägen till en
+  vald ruta visas direkt, och turavslut och försvararnas drag väntar inte på
+  vägsökningen. Vägarna blir desamma som tidigare.
 - `utslagning-och-medic` — **Fullständigt implementerat**. Vid 0 HP blir alla personer
   utslagna. Nästa träff dödar. `Med-pack` kan återuppliva. En sida utan
   stridsdugliga soldater är neutraliserad; utslagna överlevande tas till fånga.

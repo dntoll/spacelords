@@ -1811,6 +1811,23 @@ färdig reparation.
   per siktområde, `boardingSimplifiedOutline`, vilket gav 12 punkter och
   0,1–0,2 ms. Golvlagrets nyckel är nu mängden någonsin sedda rutor, se
   `jamn-ljuskarta-under-forflyttning`.
+- `snabb-bordningsvagsokning`: `pathTo` var en Dijkstra över ruta och
+  riktning som sorterade om hela kön vid varje uttag och kopierade vägen i
+  varje nod. `routeTowards` frågade upp till nio mål, vyn gjorde om sökningen
+  vid varje ritning med en ny `BoardingBattle`, och en civilist utan nåbar
+  utgång frågade varje ruta på kartan. I testbordningen tog en fråga upp till
+  56 ms, `routeTowards` 250 ms och en civilists drag 5,4 s i Node.
+  `BoardingRouteTree` söker nu en gång från personens ställning med en binär
+  heap ordnad på kostnad och sedan upptäcktsordning, och sparar föräldranoder
+  i stället för hela vägar. Varje rutas väg är den första ställning som nådde
+  rutan, samma väg som den tidigare sökningen stannade vid; en jämförelse över
+  ett helt testförlopp gav identiska vägar. Trädet cachas per person och
+  tillståndsobjekt, som övriga siktcacher, och `BoardingView` återanvänder en
+  `BoardingBattle` per visat tillstånd. Efteråt tar en fråga under 0,1 ms,
+  det tyngsta försvarardraget 250 ms och ett turavslut 45–65 ms. Siktytan
+  (20–55 ms) och dubbel `#refreshKnowledge` per kommando återstår som
+  kostnader. A* valdes bort eftersom de flesta frågor gäller många mål eller
+  mål som inte går att nå.
 - `ingen-rok-i-hela-vaggar`: `BoardingBattle.#smokeCanFill` avvisar rutor utan
   terräng och rutor med oförstörd vägg, ytterskrov eller stängd dörr. Både
   rökgranatens placering och spridningen vid rundslut använder den; spridningen
