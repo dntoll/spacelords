@@ -1457,6 +1457,8 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 `airlock-med-dubbla-geometridorrar` — **Fullständigt implementerat**. En airlock är en golvruta med en inre och en yttre dörr. Båda byggs med samma geometri, höjd och perspektiv som vanliga dörrar. Detta ersätter `airlock-i-60-graders-perspektiv` och dess separata airlockbild.
 
+`oppna-airlockdorrar` — **Fullständigt implementerat**. Under bordningen står airlockens båda dörrar öppna och ser ut som öppna vanliga dörrar.
+
 `sprites-for-breach-och-escape-pod` — **Fullständigt implementerat**. Breach och escape pod har egna bilder. När en escape pod används försvinner kapseln och den tomma luckan är kvar.
 
 `oppen-escape-pod` — **Fullständigt implementerat**. En oanvänd escape pod visas öppen och tom så att en person tydligt kan stiga in.
