@@ -453,3 +453,51 @@ describe('reaktor-skymmer-sikt', () => {
     expect(battle.attackPreview(shooter.id, 'reactor').reason).toBeNull();
   });
 });
+
+describe('sikt-over-hela-skeppet', () => {
+  /** A 30×5 open corridor: indoors, nothing but walls should limit sight. */
+  function corridor() {
+    const terrain = new Map<string, BoardingTerrain>();
+    for (let r = 0; r < 5; r++)
+      for (let q = 0; q < 30; q++) terrain.set(`${q},${r}`, 'floor');
+    const map = new BoardingMap('Corridor', 30, 5, terrain, new Map(), [], {
+      player: [{ q: 1, r: 2 }],
+      defender: [{ q: 26, r: 2 }],
+      civilian: [],
+    });
+    const initial = BoardingBattle.create(map, 17).snapshot;
+    const shooter = initial.people.find((person) => person.side === 'player')!;
+    const enemy = initial.people.find((person) => person.side === 'defender')!;
+    const battle = BoardingBattle.restore(map, {
+      ...initial,
+      people: initial.people.map((person) =>
+        person.id === shooter.id
+          ? { ...person, facing: 0 }
+          : { ...person, facing: 2 },
+      ),
+      currentActorId: shooter.id,
+      activation: { id: shooter.id, remaining: 12 },
+      initiativeOrder: [shooter.id, enemy.id],
+      initiativeIndex: 0,
+      postponed: [],
+      finishedActors: [],
+      lastKnownEnemies: [],
+      lingeringPersonIds: [],
+    });
+    return { battle, shooter, enemy };
+  }
+
+  it('sees an enemy at the far end of an unblocked ship, far beyond eight tiles', () => {
+    const { battle, enemy } = corridor();
+    battle.synchronize();
+    expect(
+      battle.visibleSnapshot.people.some((person) => person.id === enemy.id),
+    ).toBe(true);
+  });
+
+  it('draws the sight outline all the way to the far hull', () => {
+    const { battle, shooter } = corridor();
+    const outline = battle.sightArea(shooter.id).outline;
+    expect(outline.some((point) => point.q > 28)).toBe(true);
+  });
+});
