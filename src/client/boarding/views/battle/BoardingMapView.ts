@@ -37,6 +37,7 @@ import {
 } from '../rendering/BoardingWallVisibility.js';
 import {
   BOARDING_DOOR_SLIDE_MS,
+  boardingAirlockDoorLeaves,
   boardingDoorLeaves,
   boardingDoorOpenness,
   type BoardingDoorLeaf,
@@ -2331,21 +2332,23 @@ export class BoardingMapView implements BoardingMapPort {
         order: -1,
         paint: () => {
           for (const door of doors)
-            this.#paintThinWall(
-              sketch,
-              position,
-              slab,
-              slab[0]!,
-              false,
-              false,
-              thinPeers.r,
-              known,
-              {
-                locked: false,
-                geometryPosition: door.position,
-                height: boardingFeatureHeight('door'),
-              },
-            );
+            for (const leaf of boardingAirlockDoorLeaves())
+              this.#paintThinWall(
+                sketch,
+                position,
+                slab,
+                slab[0]!,
+                false,
+                false,
+                thinPeers.r,
+                known,
+                {
+                  locked: false,
+                  geometryPosition: door.position,
+                  height: boardingFeatureHeight('door'),
+                  ...leaf,
+                },
+              );
         },
       });
     }
