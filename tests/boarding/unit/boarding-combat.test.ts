@@ -62,6 +62,34 @@ describe('datadriven-bordningskarta', () => {
     expect(Object.isFrozen(map.features)).toBe(true);
   });
 
+  it('sprites-for-breach-och-escape-pod: consumes an escape pod but leaves its exit hatch', () => {
+    const escapePod = battle.snapshot.features.find(
+      (feature) => feature.exit === 'escape-pod',
+    )!;
+    const player = battle.snapshot.people.find(
+      (person) => person.side === 'player',
+    )!;
+    withState((state) => ({
+      ...state,
+      people: state.people.map((person) =>
+        person.id === player.id
+          ? { ...person, position: escapePod.position }
+          : person,
+      ),
+      initiativeOrder: [player.id],
+      initiativeIndex: 0,
+      currentActorId: player.id,
+      activation: { id: player.id, remaining: 12 },
+    }));
+
+    battle.command({ type: 'evacuate' });
+
+    expect(
+      battle.snapshot.features.find((feature) => feature.id === escapePod.id)
+        ?.destroyed,
+    ).toBe(true);
+  });
+
   it('reports the layer and row when a hand-edited map has the wrong width', () => {
     // Shorten terrain row 2 whatever the hand-edited map currently holds.
     const lines = transportMap.split('\n');

@@ -365,8 +365,8 @@ kommer från testtransportens startpositioner.
 ## Karta och dörrar
 
 Textkartan har likstora lager för golv och skrov, objekt, namngivna rum och
-startpositioner. `Bridge`, `Engineering`, breach, escape pods, reaktor, dörrar
-och låga skydd markeras uttryckligen. En vanlig dörr kostar 1 AP att öppna eller
+startpositioner. `Bridge`, `Engineering`, `Cockpit`, `Galley`, breach, escape
+pods, reaktor, dörrar och låga skydd markeras uttryckligen. En vanlig dörr kostar 1 AP att öppna eller
 stänga. En låst dörr kan hackas tyst eller förstöras med skott och explosioner.
 
 ## Runda och information
@@ -431,6 +431,12 @@ Karteditor, skrovgenombrott och vakuum ingår inte.
 ## Isometriska bordningsobjekt
 
 `isometriska-bordningsobjekt` är **Fullständigt implementerat**. Airlock och reactor visas som separata bilder utan golv. Förstörda objekt och bilder som inte laddas behåller reservvisningen. Dörrar och Half cover ritas inte längre som bilder, se `dorrar-som-tunna-vaggar` och `halvskydd-som-geometri`.
+
+`airlock-i-60-graders-perspektiv` är **Fullständigt implementerat**. Airlockens bild är affint anpassad så ramens golvkant följer 60°-projektionens exakta axel och inte längre lutar annorlunda än skrovväggen.
+
+`sprites-for-breach-och-escape-pod` är **Fullständigt implementerat**. Breach, en dockad escape pod och luckan efter en använd pod har var sin sprite. Evakuering genom podden förbrukar den, medan breach fortsätter vara en återanvändbar evakueringspunkt.
+
+`rumsspecifikt-half-cover` och `galley-rum-i-bordning` är **Fullständigt implementerade**. Half cover behåller samma geometri och regler men väljer sid- och topptextur efter rummet: styrpanel i `Cockpit`, maskin i `Engineering`, matbord/bänk i `Galley` och låda i övriga rum. `Galley` använder `G` i rumslagret, har egna golv- och väggtexturer, kan målas i editorn och finns i `Colony ship`.
 
 `halvskydd-som-geometri` är **Fullständigt implementerat**. Half cover är en låda i spelets egen projektion: en fyrkant tre fjärdedelar av en ruta bred, centrerad i rutan och 1,2 m hög. De två synliga sidorna får `crate-side.png` och ovansidan `crate-top.png`, och varje yta ljussätts som väggar. Den ersätter lådbilden `crate`, som var ritad för en annan kameravinkel och därför fick fel projektion. Förstörd Half cover visar bråte som förut, och så länge texturerna laddas visas den enkla reservlådan. Redigeringsvyn ritar Half cover på samma sätt. Testbordningens transportskepp har en Half cover på (4, 9) i rummet där soldaterna börjar, så att lådan syns direkt.
 

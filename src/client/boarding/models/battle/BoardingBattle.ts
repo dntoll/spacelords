@@ -2058,6 +2058,11 @@ export class BoardingBattle {
     );
     if (!exit) throw new Error('Stand on an evacuation point.');
     this.#spend(EVACUATE_AP);
+    if (exit.exit === 'escape-pod')
+      this.#updateFeature(exit.id, (entry) => ({
+        ...entry,
+        destroyed: true,
+      }));
     this.#updatePerson(actor.id, (entry) => ({
       ...entry,
       status: 'evacuated',
