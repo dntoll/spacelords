@@ -1330,6 +1330,14 @@ export class BoardingBattle {
   #visibleShare(observer: BoardingPerson, target: BoardingCell): number {
     if (observer.status !== 'active') return 0;
     if (this.#sealedApart(observer.position, target)) return 0;
+    return this.#outsideShare(observer, target);
+  }
+
+  /**
+   * geometrisk-sikt without forseglad-airlock: how much of `target` lies in
+   * the observer's line of sight, ignoring that an airlock's doors are shut.
+   */
+  #outsideShare(observer: BoardingPerson, target: BoardingCell): number {
     return boardingVisibleShare(
       observer.position,
       this.#forwardVector(observer),
@@ -1502,6 +1510,18 @@ export class BoardingBattle {
     );
     for (const position of visible)
       explored.set(positionKey(position), position);
+    // forseglad-airlock: a player sees the closed doors from outside, so the
+    // airlock is known and drawn, but who stands inside stays hidden.
+    for (const airlock of this.#map.airlocks)
+      if (
+        this.#state.people.some(
+          (observer) =>
+            observer.side === 'player' &&
+            observer.status === 'active' &&
+            this.#outsideShare(observer, airlock) >= BOARDING_SEEN_SHARE,
+        )
+      )
+        explored.set(positionKey(airlock), frozenCell(airlock));
     const rememberedEnemies = (
       side: 'player' | 'defender',
       currentVisibility: ReadonlySet<string>,

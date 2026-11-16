@@ -98,6 +98,19 @@ describe('forseglad-airlock', () => {
     ).not.toBeNull();
   });
 
+  it('shows the closed doors from outside without showing who is inside', () => {
+    const scene = corridor('---A---');
+    const { snapshot } = scene.at(2, 3);
+    const has = (cells: readonly BoardingCell[]) =>
+      cells.some((cell) => cell.q === 3 && cell.r === 1);
+    // Known, so its doors are drawn; not visible, so the guard is not.
+    expect(has(snapshot.exploredCells)).toBe(true);
+    expect(has(snapshot.visibleCells)).toBe(false);
+    // Behind a closed door, the airlock stays unknown.
+    const behindDoor = corridor('-D-A---');
+    expect(has(behindDoor.at(0, 6).snapshot.exploredCells)).toBe(false);
+  });
+
   it('lets someone inside the airlock see only their own tile', () => {
     const scene = corridor('---A---');
     const sight = scene.at(3, 6).sightFrom(scene.player.id);
