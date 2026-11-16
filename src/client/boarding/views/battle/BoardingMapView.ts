@@ -17,6 +17,7 @@ import {
   boardingLightDebug,
   boardingLightMapTransform,
   boardingStaticLightSignature,
+  boardingLightMapAreaFor,
 } from '../rendering/BoardingLightMap.js';
 import { boardingSimplifiedOutline } from '../rendering/BoardingOutline.js';
 import {
@@ -1383,11 +1384,11 @@ export class BoardingMapView implements BoardingMapPort {
         (f - bounds.y) * scale,
       );
       if (region) {
-        // The texels under the area, one cell wider for filtering.
-        const sx = Math.max(0, Math.floor((region.minQ - 0.5) * texels)),
-          sy = Math.max(0, Math.floor((region.minR - 0.5) * texels)),
-          ex = Math.min(source.width, Math.ceil((region.maxQ + 2.5) * texels)),
-          ey = Math.min(source.height, Math.ceil((region.maxR + 2.5) * texels));
+        const { sx, sy, ex, ey } = boardingLightMapAreaFor(
+          world,
+          texels,
+          source,
+        );
         if (ex > sx && ey > sy)
           context.drawImage(
             source,

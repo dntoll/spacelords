@@ -519,6 +519,46 @@ export function boardingLightMapTransform(
   ];
 }
 
+/** A rectangle of texels in the light map, end exclusive. */
+export interface BoardingLightMapArea {
+  readonly sx: number;
+  readonly sy: number;
+  readonly ex: number;
+  readonly ey: number;
+}
+
+/**
+ * jamn-ljuskarta-under-forflyttning: the light map texels to multiply onto a
+ * refreshed screen-aligned area of the floor layer (world pixels). The area
+ * is a rhombus in texels, so all four corners are mapped back, with one cell
+ * more on every side for filtering.
+ */
+export function boardingLightMapAreaFor(
+  world: { left: number; top: number; right: number; bottom: number },
+  texels: number,
+  size: { width: number; height: number },
+): BoardingLightMapArea {
+  const [a, b, c, d, e, f] = boardingLightMapTransform(texels);
+  const determinant = a * d - b * c;
+  const corners = [
+    [world.left, world.top],
+    [world.right, world.top],
+    [world.right, world.bottom],
+    [world.left, world.bottom],
+  ].map(([x, y]) => ({
+    x: (d * (x! - e) - c * (y! - f)) / determinant,
+    y: (a * (y! - f) - b * (x! - e)) / determinant,
+  }));
+  const xs = corners.map((corner) => corner.x),
+    ys = corners.map((corner) => corner.y);
+  return {
+    sx: Math.max(0, Math.floor(Math.min(...xs)) - texels),
+    sy: Math.max(0, Math.floor(Math.min(...ys)) - texels),
+    ex: Math.min(size.width, Math.ceil(Math.max(...xs)) + texels),
+    ey: Math.min(size.height, Math.ceil(Math.max(...ys)) + texels),
+  };
+}
+
 /**
  * ljuskarta-i-bordning: `?light-debug` in the address shows the raw light map,
  * with black instead of ambient light and every lamp polygon outlined, so
