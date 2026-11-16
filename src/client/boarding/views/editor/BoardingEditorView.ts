@@ -5,7 +5,7 @@ import type {
   EditorPaintCell,
   EditorProjection,
   EditorTool,
-  SpriteTransform,
+  SpriteAxisPlacement,
 } from '../../models/editor/BoardingEditor.js';
 import {
   BOARDING_EDITOR_MAX_SIZE,
@@ -100,7 +100,8 @@ export type EditorMapFactory = (
     button: EditorBrushButton,
     cells: readonly EditorPaintCell[],
   ) => void,
-  emitSprite: (sprite: SpriteTransform) => void,
+  emitSprite: (sprite: SpriteAxisPlacement) => void,
+  emitPictureAspect: (aspect: number) => void,
 ) => EditorMapPort;
 
 /** lokal-bordningskarteditor: HTML chrome around the map canvas. */
@@ -135,8 +136,13 @@ export class BoardingEditorView {
   ) {
     this.#mapFactory =
       mapFactory ??
-      ((container, emitPaint, emitSprite) =>
-        new BoardingEditorMapView(container, emitPaint, emitSprite));
+      ((container, emitPaint, emitSprite, emitPictureAspect) =>
+        new BoardingEditorMapView(
+          container,
+          emitPaint,
+          emitSprite,
+          emitPictureAspect,
+        ));
     this.#root = root;
     this.#leftSlot.type = 'button';
     this.#rightSlot.type = 'button';
@@ -343,6 +349,7 @@ export class BoardingEditorView {
       this.#canvas,
       (button, cells) => this.emit({ type: 'editor-paint', button, cells }),
       (sprite) => this.emit({ type: 'editor-sprite-transform', sprite }),
+      (value) => this.emit({ type: 'editor-picture-aspect', value }),
     );
     this.#map.render(editor);
     this.#renderRequirements(editor);

@@ -186,6 +186,9 @@ rooms` fyller ett rum inom väggar och dörrar, varje skepp har exakt en
   airlock i över- eller underkantens skrov som flyttas men aldrig tas bort, en
   lista över kartan visar vilka grundkrav som är uppfyllda, och i `Adjust
 sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
+  `skeppsbild-last-till-skeppsaxeln` är **Fullständigt implementerat**:
+  i `Adjust sprite` ligger skeppsbilden centrerad på banans skeppsaxel och
+  kan bara skjutas längs axeln och zoomas.
   Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Dockningskorridor:** `dockningskorridor-sprite` är **Fullständigt implementerat**. Dockade skepp sammanbinds visuellt med en korridor. Se [bordningsstrid](docs/boarding/boarding-combat.md).

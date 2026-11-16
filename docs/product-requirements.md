@@ -318,6 +318,11 @@ airlocken ska sitta i högerkanten.
 sprite` ändras skeppsbildens storlek med hjulet runt pekaren eller med
 `Smaller sprite`, `Sprite size` och `Larger sprite` runt bildens mitt.
 
+`skeppsbild-last-till-skeppsaxeln` är **Fullständigt implementerat**. När man
+justerar skeppsbilden ligger den centrerad på banans skeppsaxel, som syns som
+en linje genom kartans mitt. Bilden kan bara skjutas längs axeln och zoomas;
+den kan inte hamna snett i höjdled.
+
 `fristaende-bordningsprototyp` och den tillhörande kravfamiljen är
 **Fullständigt implementerat**. Huvudmenyn kan starta en separat taktisk
 bordningsstrid på en kvadratisk 2:1-isometrisk karta inuti ett `Transport ship`.
