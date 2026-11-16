@@ -136,6 +136,10 @@ export class BoardingView {
   #controlsHeight = 0;
   #viewportWidth = 0;
   #playToken = 0;
+  #queries: {
+    readonly state: BoardingBattleState;
+    readonly battle: BoardingBattle;
+  } | null = null;
   #pending: {
     state: BoardingBattleState;
     notice?: string | null | undefined;
@@ -227,8 +231,15 @@ export class BoardingView {
     );
   }
 
+  /** snabb-bordningsvagsokning: one read-only battle per shown state keeps its route cache. */
   #battle(): BoardingBattle {
-    return BoardingBattle.restore(this.#mapFor(this.#state!), this.#state!);
+    const state = this.#state!;
+    if (this.#queries?.state !== state)
+      this.#queries = {
+        state,
+        battle: BoardingBattle.restore(this.#mapFor(state), state),
+      };
+    return this.#queries.battle;
   }
 
   #command(command: Parameters<BoardingBattle['command']>[0]): void {
