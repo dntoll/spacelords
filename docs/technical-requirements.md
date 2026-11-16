@@ -1824,9 +1824,12 @@ färdig reparation.
   ett helt testförlopp gav identiska vägar. Trädet cachas per person och
   tillståndsobjekt, som övriga siktcacher, och `BoardingView` återanvänder en
   `BoardingBattle` per visat tillstånd. Efteråt tar en fråga under 0,1 ms,
-  det tyngsta försvarardraget 250 ms och ett turavslut 45–65 ms. Siktytan
-  (20–55 ms) och dubbel `#refreshKnowledge` per kommando återstår som
-  kostnader. A* valdes bort eftersom de flesta frågor gäller många mål eller
+  det tyngsta försvarardraget 250 ms och ett turavslut 45–65 ms. Varje
+  kommando beräknade dessutom sikt och kunskap två gånger, i `command()` och i
+  `synchronize()`. `#refreshKnowledge` hoppar nu över ett tillståndsobjekt
+  som den själv just producerade; den läser bara positioner, riktningar,
+  föremål och rök, inte sina egna utdata, så resultatet blir detsamma.
+  Siktytan (20–55 ms) återstår som kostnad. A* valdes bort eftersom de flesta frågor gäller många mål eller
   mål som inte går att nå.
 - `ingen-rok-i-hela-vaggar`: `BoardingBattle.#smokeCanFill` avvisar rutor utan
   terräng och rutor med oförstörd vägg, ytterskrov eller stängd dörr. Både
