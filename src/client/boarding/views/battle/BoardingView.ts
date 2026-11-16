@@ -65,6 +65,7 @@ export interface BoardingMapPort {
   beginPresentation?(): void;
   endPresentation?(): void;
   focusActor?(id: string): Promise<void>;
+  restorePlayView?(): Promise<void>;
   frameVisibleMovement?(
     from: BoardingBattleState,
     to: BoardingBattleState,
@@ -483,7 +484,8 @@ export class BoardingView {
       ) {
         this.#paint(final, 'Focusing…');
         await this.#map.focusActor(final.currentActorId);
-      }
+      } else if (this.#map?.restorePlayView)
+        await this.#map.restorePlayView();
     } finally {
       this.#busy = false;
       this.#map?.endPresentation?.();

@@ -19,42 +19,36 @@ const screen = (at: BoardingCameraSnapshot, rect = soldier) => ({
 });
 
 describe('kamerafokus-vid-bordningssoldatbyte', () => {
-  it('zooms out to reveal, pans at fixed zoom and restores exactly the original zoom', () => {
-    const phases = camera.focus(initial, soldier, bounds);
-    expect(phases).toHaveLength(3);
-    expect(phases[0]!.to.scale).toBeLessThan(initial.scale);
-    const overview = screen(phases[0]!.to);
-    expect(overview.left).toBeGreaterThanOrEqual(bounds.left + 23.99);
-    expect(overview.right).toBeLessThanOrEqual(bounds.right - 23.99);
-    expect(phases[1]!.to.scale).toBe(phases[0]!.to.scale);
-    expect(phases[2]!.to.scale).toBe(initial.scale);
-    const final = screen(phases[2]!.to);
+  it('centers the soldier at the player zoom in one step', () => {
+    const playerZoom = 1.5;
+    const phases = camera.focus(initial, soldier, bounds, playerZoom);
+    expect(phases).toHaveLength(1);
+    expect(phases[0]!.to.scale).toBe(playerZoom);
+    const final = screen(phases[0]!.to);
     expect((final.left + final.right) / 2).toBe(200);
     expect((final.top + final.bottom) / 2).toBe(340);
+    expect(camera.sample(phases[0]!, 0)).toEqual(phases[0]!.from);
+    expect(camera.sample(phases[0]!, 1)).toEqual(phases[0]!.to);
   });
-  it('leaves a fully visible soldier alone and counts headroom hidden by the HUD as outside', () => {
+  it('recenters a visible soldier and stays put when already focused', () => {
+    const visible = { x: 40, y: 80, width: 30, height: 70 };
+    const phases = camera.focus(initial, visible, bounds, initial.scale);
+    expect(phases.length).toBeGreaterThan(0);
+    expect(phases.at(-1)!.to.scale).toBe(initial.scale);
     expect(
-      camera.focus(initial, { x: 0, y: 0, width: 30, height: 70 }, bounds),
+      camera.focus(phases.at(-1)!.to, visible, bounds, initial.scale),
     ).toEqual([]);
-    expect(
-      camera.focus(initial, { x: 0, y: -140, width: 30, height: 70 }, bounds)
-        .length,
-    ).toBeGreaterThan(0);
   });
-  it('samples exact endpoints and keeps the subject visible during pan and zoom-in', () => {
-    const phases = camera.focus(initial, soldier, bounds);
-    for (const phase of phases) {
-      expect(camera.sample(phase, 0)).toEqual(phase.from);
-      expect(camera.sample(phase, 1)).toEqual(phase.to);
-    }
-    for (const phase of phases.slice(1))
-      for (const progress of [0.1, 0.5, 0.9]) {
-        const rect = screen(camera.sample(phase, progress));
-        expect(rect.left).toBeGreaterThanOrEqual(bounds.left);
-        expect(rect.right).toBeLessThanOrEqual(bounds.right);
-        expect(rect.top).toBeGreaterThanOrEqual(bounds.top);
-        expect(rect.bottom).toBeLessThanOrEqual(bounds.bottom);
-      }
+  it('returns to the saved pan at the player zoom after a temporary overview', () => {
+    const home = { x: 200, y: 340 };
+    const wide = camera.overview(initial, [soldier], bounds)[0]!.to;
+    expect(wide.scale).toBeLessThan(initial.scale);
+    const phases = camera.restore(wide, home, initial.scale, bounds);
+    expect(phases).toHaveLength(1);
+    expect(phases[0]!.to).toEqual({ scale: initial.scale, offset: home });
+    expect(camera.restore(phases[0]!.to, home, initial.scale, bounds)).toEqual(
+      [],
+    );
   });
 });
 
