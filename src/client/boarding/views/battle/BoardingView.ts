@@ -709,7 +709,7 @@ export class BoardingView {
         tileAction = {
           position: this.#destination,
           action: 'Move',
-          cost: route?.cost,
+          ...(route ? { cost: route.cost } : {}),
         };
       else if (selectedPerson && selectedPersonAction)
         tileAction = {
