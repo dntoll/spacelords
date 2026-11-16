@@ -1777,7 +1777,8 @@ färdig reparation.
 - `vandning-mot-nasta-steg`, `ap-fraktion-sparas` och
   `sparad-gangdestination`: `walk` tar alla steg fram till sista
   överkomliga framåtsteget och därefter de vändningar före nästa framåtsteg
-  som ryms. Under 1 AP kvar avslutas aktiveringen och resten sparas i
+  som ryms. Är det som återstår mindre än nästa stegs kostnad, vilket det
+  alltid är när vägen inte nåtts, avslutas aktiveringen och resten sparas i
   `BoardingPerson.carriedAp`, som läggs till vid nästa aktivering
   (`#startActivation`) och då nollställs. Ett ej nått mål sparas i
   `BoardingPerson.destination`; `move` och ett nått mål tar bort det. Vyn

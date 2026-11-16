@@ -127,8 +127,8 @@ Se [hela visionen](docs/game-vision.md).
   låga väggar, rök och hukande personer, men inte genom väggar, stängda dörrar
   eller stående personer, och en miss studsar aldrig genom en vägg. Ett andra tryck på ett mål som
   ligger för långt bort går så långt AP räcker och vänder soldaten mot nästa
-  steg; en återstående bråkdel av en AP avslutar turen och sparas till nästa
-  runda, och målet är valt igen då. Att välja en ruta vänder soldaten ditåt,
+  steg; turen slutar och AP som inte räckte till nästa steg sparas till
+  nästa runda, och målet är valt igen då. Att välja en ruta vänder soldaten ditåt,
   och spelarens soldater väljs alltid i samma ordning. Golvlagret cachas och
   figurernas ljus ritas utan p5:s `tint()` för jämnare bildfrekvens på mobil.
   Se [bordningsstrid](docs/boarding/boarding-combat.md).

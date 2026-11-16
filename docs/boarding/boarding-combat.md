@@ -123,10 +123,11 @@ kommer från testtransportens startpositioner.
   går mot ett mål som AP inte räcker till används kvarvarande AP efter sista
   steget till att vända soldaten mot nästa steg, så att den kan fortsätta
   direkt nästa runda.
-- `ap-fraktion-sparas` — **Fullständigt implementerat**. Återstår därefter
-  bara en bråkdel av en AP slutar soldatens tur, och bråkdelen läggs till
-  soldatens AP vid nästa aktivering. Återstår minst en hel AP får soldaten
-  fortsätta agera.
+- `ap-fraktion-sparas` — **Fullständigt implementerat**. Därefter slutar
+  soldatens tur, och AP som är mindre än nästa stegs kostnad läggs till
+  soldatens AP vid nästa aktivering. Kostar nästa steg 2 AP sparas till
+  exempel 1,75 AP. Detta ersätter den tidigare gränsen där bara en bråkdel
+  under 1 AP sparades och soldaten annars fick fortsätta agera.
 - `sparad-gangdestination` — **Fullständigt implementerat**. Ett mål soldaten
   inte hann nå sparas och är valt igen när soldaten aktiveras nästa gång. Ett
   nytt tryck på målet fortsätter gå. Målet glöms när soldaten når det eller

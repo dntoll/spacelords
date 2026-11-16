@@ -1934,8 +1934,8 @@ export class BoardingBattle {
   /**
    * gang-mot-avlagset-mal / vandning-mot-nasta-steg / ap-fraktion-sparas /
    * sparad-gangdestination: walk as far as the AP allows, turn towards the
-   * next step and, with only a fraction of an AP left, end the activation and
-   * keep that fraction for the next one.
+   * next step, then end the activation and keep the AP that did not cover
+   * the next step for the next one.
    */
   #walk(destination: BoardingCell): void {
     const actor = this.#actor();
@@ -1965,8 +1965,15 @@ export class BoardingBattle {
     }
     if (this.#takeSteps(actor, route.steps.slice(affordable, following)))
       return;
+    // ap-fraktion-sparas: whatever is below the next step's cost is saved.
+    const next = route.steps[following];
     const remaining = this.#state.activation!.remaining;
-    if (remaining >= 1 || this.#state.currentActorId !== actor.id) return;
+    if (
+      !next ||
+      remaining >= next.cost ||
+      this.#state.currentActorId !== actor.id
+    )
+      return;
     if (remaining > 0)
       this.#updatePerson(actor.id, (entry) => ({
         ...entry,
