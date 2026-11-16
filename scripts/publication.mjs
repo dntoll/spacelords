@@ -96,7 +96,7 @@ function appTree(checkout, revision) {
   return git(checkout, 'ls-tree', revision, '--', 'spacelords');
 }
 
-export function preparePublication(checkout, build, sourceRevision) {
+export function preparePublication(checkout, build, sourceRevision, branch) {
   if (git(checkout, 'status', '--porcelain', '--untracked-files=all'))
     throw new Error('Publication checkout must be clean.');
   const base = git(checkout, 'rev-parse', 'HEAD');
@@ -128,7 +128,7 @@ export function preparePublication(checkout, build, sourceRevision) {
   cpSync(build, app, { recursive: true });
   writeFileSync(
     join(app, 'deployment.json'),
-    JSON.stringify({ sourceRevision, files: hashes }, null, 2) + '\n',
+    JSON.stringify({ sourceRevision, branch, files: hashes }, null, 2) + '\n',
   );
   git(checkout, 'add', '--', 'spacelords');
   assertAppDiff(checkout, base);

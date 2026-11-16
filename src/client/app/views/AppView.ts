@@ -46,6 +46,7 @@ import {
 } from '../../space-map/models/index.js';
 import type { AppReadModel, Screen } from '../models/AppModel.js';
 import { playerNoticeText } from './playerNoticeText.js';
+import { buildLabelText, currentBuild } from './buildLabel.js';
 import { HexGeometry, HexCoordinate } from '../../common/HexCoordinate.js';
 import type {
   AppPort,
@@ -1174,8 +1175,12 @@ export class AppView implements AppPort {
     brand.prepend(emblem);
     const navigation = element('nav', 'main-nav');
     navigation.setAttribute('aria-label', 'Main navigation');
+    const build = currentBuild ? buildLabelText(currentBuild) : null;
+    if (build) brand.title = `Saved games (${build})`;
     if (screen === 'saves') {
       header.append(brand);
+      // synlig-byggversion: the first screen names the deployed branch.
+      if (build) header.append(element('p', 'build-label', build));
       return header;
     }
     for (const [target, label] of [

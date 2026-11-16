@@ -1,15 +1,15 @@
 name: CI
-run-name: Quick checks main
+run-name: Quick checks ${{ github.ref_name }}
 
 on:
   push:
-    branches: [main]
+    branches: [main, development]
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-main
+  group: ci-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:

@@ -29,21 +29,26 @@ i stället för att upprepa reglerna.
 - Kör alla Vitest-tester utom HTTP-integration i en svit utan total tidsgräns.
   Detta ersätter riktvärdet 20 sekunder och regeln att flytta långsammare
   Vitest-tester till den utökade sviten. HTTP-integration och Playwright hålls
-  separat. Kör enhetstesterna vid vanliga ändringar. Kör den långa sviten lokalt
-  vid begärd omfattande testning. GitHub Actions kör bara snabbkontrollerna,
-  och endast vid push till `main`. Detta ersätter körning vid varje push,
-  pull request och manuellt sluttest i GitHub.
-- Normalläge (`snabb-mobilpublicering`): prioritera mobil, kör
-  `npm run deploy:quick` efter committad ändring på arbetsbranch och låt användaren
-  testa manuellt på mobilen. En vanlig ändringsbeställning ger tillstånd till
-  denna publicering. Kör riktade regressionstester för ändrat beteende; kör inte
-  hela plattformsmatrisen eller upprepa godkända kontroller utan nytt skäl.
-- Sluttest (`sluttest-fore-merge`) görs när användaren ber om det: kör hela
-  sviten lokalt för exakt aktuell källrevision, redovisa resultat och fråga
-  därefter om merge till källrepots `main`. Merge kräver godkänt sluttest och
-  separat ja. GitHub startar inte sluttestet.
-  Ändrad revision eller konfliktlösning kräver nytt sluttest. Vid rättning:
-  snabbtest, ny publicering och ny manuell test innan nytt begärt sluttest.
+  separat. Kör enhetstesterna vid vanliga ändringar. Hela sviten körs i
+  releaseflödet nedan. GitHub Actions kör bara snabbkontrollerna, vid push till
+  `main` och `development` (`tester-i-github`).
+- Normalläge (`snabb-mobilpublicering`, `integrationsbranch-development`):
+  prioritera mobil. När en ändring är klar och committad kör agenten
+  `npm run work:merge`. Det kör snabbkontrollerna, mergar arbetsbranchen in i
+  `development`, pushar båda och publicerar `development` till den enda
+  testdeploymenten. Användaren testar `development` manuellt på mobilen, ofta
+  flera features tillsammans. En vanlig ändringsbeställning ger tillstånd till
+  detta. Vill användaren testa en feature isolerat publiceras arbetsbranchen
+  med `npm run deploy:quick` i stället. Kör riktade regressionstester för
+  ändrat beteende; kör inte hela plattformsmatrisen utan nytt skäl.
+- Release (`release-till-main`) görs när användaren ber om det, normalt av
+  agenten på molndatorn: `npm run release:start` skapar `release/<datum>` från
+  `origin/development`. Kör `npm run check`, rätta fel i release-branchen med
+  regressionstest först och upprepa tills hela sviten går igenom för exakt
+  aktuell revision. `npm run release:finish` flyttar då `main` till den
+  revisionen med fast-forward och mergar releasen tillbaka till `development`.
+  Användarens beställning av release ger tillstånd till detta. Det ersätter
+  `sluttest-fore-merge` med separat ja före merge till `main`.
 - Vid en bugg: skriv först ett regressionstest, kör det och verifiera att det
   misslyckas av rätt orsak, och rätta därefter felet.
 - Skriv även tester före annan implementation när det är lämpligt.
@@ -113,9 +118,24 @@ i stället för att upprepa reglerna.
 
 ## Git
 
-- Arbeta i branches, inte direkt på `main`. Varje agent använder sitt eget
-  branchprefix, exempelvis `codex/` för Codex och `claude/` för Claude Code.
-  Detta ersätter regeln om prefixet `codex/` för alla.
+- Allt arbete finns på origin. Inget får finnas bara på en lokal dator.
+- `gemensam-startpunkt`: börja varje uppdrag med `npm run work:start -- <prefix>/<ämne>`.
+  Det hämtar origin och skapar branchen från `origin/development`. I en ny
+  worktree som redan har en egen branch räcker `npm run work:start`. Det
+  flyttar branchen fram till `origin/development`. Utgå aldrig från en lokal
+  `main` eller en annan agents branch.
+- Branchar: `main` innehåller bara revisioner som klarat hela sviten och ändras
+  bara av `release:finish`. `development` är integrationsbranchen och ändras
+  via `work:merge` och `release:finish`. Arbetsbranchar har agentens prefix,
+  exempelvis `codex/` för Codex och `claude/` för Claude Code. Release-branchar
+  heter `release/<datum>`. Pusha aldrig direkt till `main` eller `development`,
+  och använd aldrig force-push mot dem.
+- Innehåller arbetsbranchen inte senaste `origin/development` vägrar
+  skripten publicera eller merga. Kör då `git merge origin/development`, lös
+  konflikter och kör snabbkontrollerna igen.
+- Pusha arbetsbranchen när du är klar, även om den inte mergas än.
+  `npm run branches:status` (`branchoversikt`) visar branchar på origin med
+  commits som saknas i `development`.
 - Gör regelbundna, sammanhängande commits med tydliga commitmeddelanden.
 - Kör relevanta kontroller före commit. Bevara användarens befintliga ändringar.
 
@@ -129,9 +149,12 @@ i stället för att upprepa reglerna.
   länkar till appen från den befintliga webbplatsen.
 - Båda repona och allt klientinnehåll är publika. Lägg aldrig hemligheter i kod,
   dokumentation, byggfiler, webbläsarvariabler eller loggar.
-- Normalläget innebär beställd driftsättning efter vanliga ändringsbeställningar,
-  om användaren inte uttryckligen avstår. Att enbart förbereda ett bygge eller
-  redigera driftsättningsinstruktionen innebär inte att publicera.
-- Publicering till webbplatsrepots `main` är separat från merge till källrepots
-  `main`. Samma redan publicerade revision publiceras inte igen för att sluttest
-  lyckats. Fråga fortsatt inför varje inkompatibel ändring av sparade spel.
+- Det finns en enda testdeployment. Senaste publicering vinner, och appen visar
+  branch, kort revision och byggtid på `Saved games` (`synlig-byggversion`).
+- Normalläget innebär publicering av `development` via `work:merge` efter vanliga
+  ändringsbeställningar, om användaren inte uttryckligen avstår. Att enbart
+  förbereda ett bygge eller redigera driftsättningsinstruktionen innebär inte
+  att publicera.
+- Publicering till webbplatsrepots `main` är separat från källrepots `main`.
+  En release publiceras bara om användaren vill testa den manuellt. Fråga
+  fortsatt inför varje inkompatibel ändring av sparade spel.
