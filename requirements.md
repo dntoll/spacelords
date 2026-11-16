@@ -81,6 +81,10 @@ Se [hela visionen](docs/game-vision.md).
   ljusblå kantlinje som klipps av siktlinjen, inte per ruta, och halvskydd i
   sikt markeras orange. En ruta räknas som sedd från 10 % synlig yta; mål som
   syns till under hälften får +4 i försvar och delvis synliga mål +2.
+  `sikt-over-hela-skeppet` är **Fullständigt implementerat**: ombord är det
+  bara väggar, dörrar, rök och personer som begränsar sikten, inte avståndet.
+  Sikten når hela skeppet och ersätter radien 8,5 rutor i `geometrisk-sikt`.
+  Skottens räckvidd är fortfarande 8 rutor.
   `halvskydd-skuggar-delvis` är **Fullständigt implementerat**: halvskydd
   kastar en orange skugga närmast bakom sig, och ett mål som till minst hälften
   ligger i skuggan får full skyddsbonus, till 10–50 % halv bonus.

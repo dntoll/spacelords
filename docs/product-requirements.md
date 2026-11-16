@@ -1584,6 +1584,10 @@ Detsamma gäller civila.
 visas på marken med en kantlinje som följer vad soldaten faktiskt ser, så att
 även halva rutor kan synas. Halvskydd i sikt markeras med en annan färg.
 
+`sikt-over-hela-skeppet` — **Fullständigt implementerat**: striden sker
+inomhus, så en soldat ser så långt det är fritt, ända till andra änden av
+skeppet. Bara väggar, stängda dörrar, rök och personer skymmer.
+
 `delvis-synligt-mal` — **Fullständigt implementerat**: en fiende som bara syns
 till en liten del är svårare att träffa. Under hälften synlig ger +4 i försvar,
 delvis synlig +2. Under en tiondel synlig räknas fienden som dold.

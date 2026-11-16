@@ -219,14 +219,19 @@ kommer från testtransportens startpositioner.
   tidigare aldrig i spelet, eftersom spelarens bild utelämnar dolda fiender;
   det är rättat.
 - `geometrisk-sikt` — **Fullständigt implementerat**. Sikten räknas med
-  verkliga siktlinjer i stället för hela rutor: 180 grader framåt, 8,5 rutors
-  radie från soldatens rutmitt, och väggar, skrov, höga tunna väggar, stängda
+  verkliga siktlinjer i stället för hela rutor: 180 grader framåt från soldatens
+  rutmitt, utan avståndsgräns inom skeppet (`sikt-over-hela-skeppet`), och väggar, skrov, höga tunna väggar, stängda
   dörrar och rök kastar skuggor. En ruta kan därför vara delvis synlig. Den
   valda soldatens sikt ritas på golvet under spelarens tur som en mycket svag
   yta med en smal ljusblå kantlinje, och lådor och låga väggar som syns markeras med orange
   rutkant som halvskydd. Detta ersätter delvis `bordning-utan-sikt-och-eldrutor`:
   siktytan visas igen, men som en sammanhängande yta; de röda eldrutorna visas
   fortfarande inte.
+- `sikt-over-hela-skeppet` — **Fullständigt implementerat**. Bordningen sker
+  inomhus, så sikten begränsas bara av det som skymmer: väggar, skrov, stängda
+  dörrar, rök och personer. Räckvidden är skeppets diagonal plus en halv ruta,
+  så en fri siktlinje når hela skeppet. Detta ersätter radien 8,5 rutor i
+  `geometrisk-sikt`. Skottens räckvidd på 8 rutor är oförändrad.
 - `delvis-synligt-mal` — **Fullständigt implementerat**. En ruta räknas som
   sedd när minst 10 % av den syns; först då syns en fiende där och kan beskjutas.
   Ett skott mot ett mål vars ruta syns till under hälften ger målet +4 i försvar,
