@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import transportMap from '../../../src/client/boarding/maps/transport-boarding.txt?raw';
+// datadriven-bordningskarta: a fixed fixture, so editing the shipped maps never breaks these tests.
+import transportMap from '../../fixtures/boarding/combat-boarding.txt?raw';
 import {
   BoardingMap,
   parseBoardingMap,
@@ -39,9 +40,9 @@ describe('datadriven-bordningskarta', () => {
   const objectCount = (marker: string) =>
     [...objectLayer].filter((symbol) => symbol === marker).length;
 
-  it('parses the editable transport layers into immutable domain data', () => {
+  it('parses the map layers into immutable domain data', () => {
     expect(map).toBeInstanceOf(BoardingMap);
-    expect(map.name).toBe('Transport boarding');
+    expect(map.name).toBe('Combat fixture');
     expect(map.width).toBe(17);
     expect(map.height).toBe(11);
     expect(map.spawns.player).toHaveLength(4);
