@@ -9,6 +9,7 @@ import {
   BOARDING_HACK_AP,
   BOARDING_MED_PACK_AP,
   boardingActionPointsRemaining,
+  boardingTurnsToward,
   type BoardingTargetIndicator,
   type BoardingSightArea,
   type BoardingBattleState,
@@ -376,16 +377,36 @@ export class BoardingView {
     } else {
       this.#selectedId = downed?.id ?? null;
       this.#destination = position;
+      this.render(state);
+      // vand-mot-vald-ruta: the soldier turns towards the chosen tile.
+      if (
+        playerTurn &&
+        actor &&
+        (state.activation?.remaining ?? 0) >= BOARDING_TURN_AP &&
+        boardingTurnsToward(actor.position, actor.facing, position).length > 0
+      )
+        this.#command({ type: 'face', toward: position });
+      return;
     }
     this.render(state);
   }
 
-  /** gang-mot-avlagset-mal: a repeated tap on a far target walks as far as AP allows. */
+  /**
+   * gang-mot-avlagset-mal / vandning-mot-nasta-steg: a repeated tap on a far
+   * target walks as far as AP allows and turns towards the next step.
+   */
   #walkTowards(actorId: string, position: BoardingCell): boolean {
-    const step = this.#battle().stepTowards(actorId, position);
-    if (!step) return false;
-    this.#command({ type: 'move', to: step });
+    if (!this.#battle().routeTowards(actorId, position)) return false;
+    this.#command({ type: 'walk', to: position });
     return true;
+  }
+
+  /** sparad-gangdestination: the tile the current soldier is walking to. */
+  #savedDestination(state: BoardingBattleState): BoardingCell | null {
+    return (
+      state.people.find((entry) => entry.id === state.currentActorId)
+        ?.destination ?? null
+    );
   }
 
   render(
@@ -489,6 +510,8 @@ export class BoardingView {
       this.#map?.endPresentation?.();
     }
     if (token !== this.#playToken) return;
+    if (final.currentActorId === previous.currentActorId)
+      this.#destination = this.#savedDestination(final);
     this.#paint(final, notice);
     this.#drainPending();
   }
@@ -519,7 +542,7 @@ export class BoardingView {
     if (this.#actorId !== state.currentActorId) {
       this.#actorId = state.currentActorId;
       this.#selectedId = null;
-      this.#destination = null;
+      this.#destination = this.#savedDestination(state);
     }
     const actor = state.people.find(
       (entry) => entry.id === state.currentActorId,
@@ -704,7 +727,7 @@ export class BoardingView {
           : facingDoor;
       if (
         this.#destination &&
-        (route || this.#battle().stepTowards(actor.id, this.#destination))
+        (route || this.#battle().routeTowards(actor.id, this.#destination))
       )
         tileAction = {
           position: this.#destination,
@@ -730,7 +753,9 @@ export class BoardingView {
                 ? 'Close door'
                 : 'Open door',
           };
-        else if (this.#battle().stepTowards(actor.id, selectedFeature.position))
+        else if (
+          this.#battle().routeTowards(actor.id, selectedFeature.position)
+        )
           tileAction = { position: selectedFeature.position, action: 'Move' };
       }
       // stang-oppen-dorr: an adjacent open door can be closed when its tile is empty.

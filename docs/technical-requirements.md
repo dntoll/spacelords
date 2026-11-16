@@ -1759,10 +1759,29 @@ färdig reparation.
   utifrån dem. `#hack` validerar dörren före AP-dragning. Regressionstester i
   `tests/boarding/unit/boarding-actions.test.ts` och vytester i
   `tests/space-battle/unit/battle-controls.test.ts`.
-- `gang-mot-avlagset-mal`: `BoardingBattle.stepTowards` väljer billigaste väg
-  till målet, eller till en kantgranne vid stängd dörr respektive en granne vid
-  upptagen ruta, och returnerar sista rutan som ryms i kvarvarande AP. Vyn
-  skickar då ett vanligt `move`-kommando; sparformatet ändras inte.
+- `gang-mot-avlagset-mal`: `BoardingBattle.routeTowards` väljer billigaste
+  väg till målet, eller till en kantgranne vid stängd dörr respektive en granne
+  vid upptagen ruta. `stepTowards` returnerar sista rutan som ryms i
+  kvarvarande AP. Vyn skickar `walk` vid andra trycket på ett mål som inte
+  ryms och `move` när hela vägen ryms.
+- `vand-mot-vald-ruta`: `boardingTurnsToward` ger kortaste följden av
+  45-gradersvändningar mot rutans närmaste av åtta riktningar. Vyn skickar
+  `face` vid första trycket på en tom ruta när vändning behövs och ryms;
+  kommandot vänder så långt AP räcker. Tester i
+  `tests/boarding/unit/boarding-walk-to-destination.test.ts` och
+  `tests/space-battle/unit/battle-controls.test.ts`.
+- `vandning-mot-nasta-steg`, `ap-fraktion-sparas` och
+  `sparad-gangdestination`: `walk` tar alla steg fram till sista
+  överkomliga framåtsteget och därefter de vändningar före nästa framåtsteg
+  som ryms. Under 1 AP kvar avslutas aktiveringen och resten sparas i
+  `BoardingPerson.carriedAp`, som läggs till vid nästa aktivering
+  (`#startActivation`) och då nollställs. Ett ej nått mål sparas i
+  `BoardingPerson.destination`; `move` och ett nått mål tar bort det. Vyn
+  väljer sparad destination när en soldat aktiveras och efter en animering
+  inom samma aktivering. Båda fälten är valfria, så äldre sparade spel laddas
+  oförändrade.
+- `fast-soldatordning`: `#beginRound` sorterar initiativet som tidigare och
+  fördelar sedan spelarsoldaternas platser på soldaterna i `people`-ordning.
 - `bordning-jamn-bildfrekvens`: profilering visade att p5:s `tint()` ritade om
   hela figuratlasen fyra gånger per figur och bildruta. BoardingMapView ritar
   nu bilder via `drawImage` med `filter: brightness()` och `globalAlpha`.
