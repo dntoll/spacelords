@@ -1009,7 +1009,15 @@ export class AppView implements AppPort {
     log.scrollTop = log.scrollHeight;
     const model = this.#announcementModel;
     const event = model?.eventPlayback?.events[model.eventPlayback.index];
-    const map = this.#container?.getBoundingClientRect();
+    // handelseannonsering / handelser-pa-kartan: measure the hex on the canvas
+    // the player sees. The canvas can sit inside the map container.
+    const drawn = this.#container
+      ?.querySelector('canvas')
+      ?.getBoundingClientRect();
+    const map =
+      drawn && drawn.width > 0 && drawn.height > 0
+        ? drawn
+        : this.#container?.getBoundingClientRect();
     let originX = window.innerWidth / 2;
     let originY = window.innerHeight / 2;
     if (event?.position && model && map && map.width > 0 && map.height > 0) {
@@ -1034,6 +1042,7 @@ export class AppView implements AppPort {
         map.top +
         map.height / 2 +
         (point.y - model.camera.center.y) * model.camera.zoom;
+      const placedHeight = announcement.offsetHeight;
       if (event.decision || event.planetId) {
         const end = this.#root
           .querySelector('.end-turn')
@@ -1046,11 +1055,16 @@ export class AppView implements AppPort {
         announcement.style.maxHeight = `${available}px`;
         // gemensamt-handelseflode: preserve End turn when marker spacing cannot fit.
         originY = Math.min(
-          markerY + markerGap + announcement.offsetHeight / 2,
-          bottom - announcement.offsetHeight / 2,
+          markerY + markerGap + placedHeight / 2,
+          bottom - placedHeight / 2,
         );
-      } else originY = markerY + markerGap + announcement.offsetHeight / 2;
+      } else originY = markerY + markerGap + placedHeight / 2;
       announcement.style.setProperty('--event-origin-x', `${originX}px`);
+      announcement.style.setProperty('--event-origin-y', `${originY}px`);
+      // WebKit can grow the box after offsetHeight is read. translate(-50%)
+      // then lifts the top. Put the top back on the measured gap.
+      const placed = announcement.getBoundingClientRect();
+      if (placed.height > 0) originY += originY - placedHeight / 2 - placed.top;
       announcement.style.setProperty('--event-origin-y', `${originY}px`);
     } else {
       for (const property of [
