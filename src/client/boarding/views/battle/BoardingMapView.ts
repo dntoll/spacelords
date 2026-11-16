@@ -15,8 +15,14 @@ import { BoardingLightPainter } from '../rendering/BoardingLightPainter.js';
 import {
   BoardingLightMap,
   boardingLightDebug,
-  boardingLightMapSignature,
+  boardingLightMapTransform,
+  boardingStaticLightSignature,
 } from '../rendering/BoardingLightMap.js';
+import { boardingSimplifiedOutline } from '../rendering/BoardingOutline.js';
+import {
+  boardingMovingLightFigures,
+  type BoardingLightRegion,
+} from '../rendering/BoardingLightRefresh.js';
 import p5 from 'p5';
 import {
   BOARDING_GROUND_RATIO,
@@ -148,6 +154,29 @@ const FLOOR_LAYER_MAX_SIDE = 3072;
 /** Grey level the ship picture is drawn at, so it reads as unlit hull. */
 const SHIP_PICTURE_SHADE = 150;
 const SIGHT_GLOW = [9, 18, 23] as const;
+/** bordning-jamn-bildfrekvens: how far, in world pixels, the drawn sight outline may stray. */
+const SIGHT_OUTLINE_TOLERANCE = 0.1;
+
+/** A floor outline that receives light, with its bounds in world space. */
+interface LitFloor {
+  readonly points: readonly Point[];
+  readonly left: number;
+  readonly right: number;
+  readonly top: number;
+  readonly bottom: number;
+}
+
+function litFloor(points: readonly Point[]): LitFloor {
+  const xs = points.map((point) => point.x),
+    ys = points.map((point) => point.y);
+  return {
+    points,
+    left: Math.min(...xs),
+    right: Math.max(...xs),
+    top: Math.min(...ys),
+    bottom: Math.max(...ys),
+  };
+}
 
 const characterPose = (person: BoardingPerson): BoardingCharacterPose =>
   person.status === 'active'
@@ -213,12 +242,22 @@ export class BoardingMapView implements BoardingMapPort {
   #action: BoardingTileActionMark | null = null;
   #targets: readonly BoardingTargetIndicator[] = [];
   #sight: BoardingSightArea | null = null;
+  /** The projected sight outline, simplified once per sight area. */
+  #sightOutline: readonly Point[] = [];
   #edgeTargetHits: readonly BoardingEdgeTargetIndicator[] = [];
+  /**
+   * jamn-ljuskarta-under-forflyttning: unlit floors, and the same floors with
+   * the light map multiplied in, which is redone only where light changed.
+   */
   #floorLayer: {
     graphics: p5.Graphics;
+    lit: p5.Graphics;
     signature: string;
     resolution: number;
+    lightMap: BoardingLightMap | null;
   } | null = null;
+  /** Floor outlines, in world space, that the light map is multiplied onto. */
+  #litFloors: LitFloor[] = [];
   #floorBoundsCache: {
     x: number;
     y: number;
@@ -452,6 +491,13 @@ export class BoardingMapView implements BoardingMapPort {
     this.#path = path;
     this.#action = action;
     this.#targets = targets;
+    if (sight !== this.#sight)
+      this.#sightOutline = sight
+        ? boardingSimplifiedOutline(
+            sight.outline.map((point) => boardingIsoCenter(point)),
+            SIGHT_OUTLINE_TOLERANCE,
+          )
+        : [];
     this.#sight = sight;
     if (changed || this.#fitPending) this.fit();
     if (this.#ready) {
@@ -1142,9 +1188,9 @@ export class BoardingMapView implements BoardingMapPort {
   }
 
   #updateLighting(state: BoardingBattleState): void {
-    // skuggor-fran-figurer-och-foremal: the floor light map also follows
-    // figures, so it is rebuilt more often than the wall and tile light.
-    const mapSignature = boardingLightMapSignature(state);
+    // jamn-ljuskarta-under-forflyttning: figures only move shadows within
+    // the light map (see #draw), so walking never rebuilds it.
+    const mapSignature = boardingStaticLightSignature(state, this.map);
     if (mapSignature !== this.#lightMapSignature) {
       this.#lightMapSignature = mapSignature;
       this.#lightMap = new BoardingLightMap(this.map, state);
@@ -1167,6 +1213,7 @@ export class BoardingMapView implements BoardingMapPort {
     explored: ReadonlySet<string>,
     thinAt: ReadonlyMap<string, readonly BoardingThinPiece[]>,
     seen: (cell: BoardingCell) => boolean,
+    lightChange: BoardingLightRegion | null,
   ): void {
     const bounds = this.#floorBounds();
     const density = sketch.pixelDensity();
@@ -1177,33 +1224,51 @@ export class BoardingMapView implements BoardingMapPort {
       2 ** (Math.ceil(Math.log2(Math.max(wanted, 0.125)) * 2) / 2),
       FLOOR_LAYER_MAX_SIDE / largest,
     );
+    // Floors look the same in sight and in memory, so only the cells ever
+    // seen matter, and the light map is applied separately below.
     const signature = [
-      this.#lightSignature,
-      this.#lightMapSignature,
-      [...visible].join(';'),
-      [...explored].join(';'),
+      [...new Set([...visible, ...explored])].sort().join(';'),
       this.#floorTiles.size,
       resolution,
     ].join('|');
+    let relight = false;
     if (this.#floorLayer?.signature !== signature) {
       const width = Math.ceil(bounds.width * resolution);
       const height = Math.ceil(bounds.height * resolution);
-      let layer = this.#floorLayer?.graphics;
-      if (!layer || layer.width !== width || layer.height !== height) {
-        layer?.remove();
-        layer = sketch.createGraphics(width, height);
-        layer.pixelDensity(1);
-      }
+      const resize = (graphics: p5.Graphics | undefined): p5.Graphics => {
+        if (graphics?.width === width && graphics.height === height)
+          return graphics;
+        graphics?.remove();
+        const created = sketch.createGraphics(width, height);
+        created.pixelDensity(1);
+        return created;
+      };
+      const layer = resize(this.#floorLayer?.graphics);
+      const lit = resize(this.#floorLayer?.lit);
       layer.clear();
       layer.push();
       layer.scale(resolution);
       layer.translate(-bounds.x, -bounds.y);
+      this.#litFloors = [];
       this.#paintFloors(layer, visible, explored, thinAt, seen);
       layer.pop();
-      this.#floorLayer = { graphics: layer, signature, resolution };
+      this.#floorLayer = {
+        graphics: layer,
+        lit,
+        signature,
+        resolution,
+        lightMap: this.#lightMap,
+      };
+      relight = true;
     }
+    if (this.#floorLayer.lightMap !== this.#lightMap) {
+      this.#floorLayer.lightMap = this.#lightMap;
+      relight = true;
+    }
+    if (relight) this.#lightFloorLayer(null);
+    else if (lightChange) this.#lightFloorLayer(lightChange);
     const canvas = (
-      this.#floorLayer.graphics as unknown as { elt: HTMLCanvasElement }
+      this.#floorLayer.lit as unknown as { elt: HTMLCanvasElement }
     ).elt;
     (sketch.drawingContext as CanvasRenderingContext2D).drawImage(
       canvas,
@@ -1212,6 +1277,132 @@ export class BoardingMapView implements BoardingMapPort {
       canvas.width / this.#floorLayer.resolution,
       canvas.height / this.#floorLayer.resolution,
     );
+  }
+
+  /**
+   * ljuskarta-i-bordning / jamn-ljuskarta-under-forflyttning: copies the
+   * unlit floors into the lit layer and multiplies the light map onto every
+   * lit floor in one draw, within `region` of the deck or everywhere.
+   */
+  #lightFloorLayer(region: BoardingLightRegion | null): void {
+    const layer = this.#floorLayer!;
+    const context = (layer.lit as unknown as { drawingContext: unknown })
+      .drawingContext as CanvasRenderingContext2D;
+    const albedo = (layer.graphics as unknown as { elt: HTMLCanvasElement })
+      .elt;
+    const bounds = this.#floorBounds();
+    const scale = layer.resolution;
+    const width = layer.lit.width,
+      height = layer.lit.height;
+    let left = 0,
+      top = 0,
+      right = width,
+      bottom = height;
+    if (region) {
+      const corners = [
+        { q: region.minQ, r: region.minR },
+        { q: region.maxQ, r: region.minR },
+        { q: region.maxQ, r: region.maxR },
+        { q: region.minQ, r: region.maxR },
+      ].map((corner) => boardingIsoCenter(corner));
+      const xs = corners.map((point) => (point.x - bounds.x) * scale),
+        ys = corners.map((point) => (point.y - bounds.y) * scale);
+      left = Math.max(0, Math.floor(Math.min(...xs)) - 2);
+      top = Math.max(0, Math.floor(Math.min(...ys)) - 2);
+      right = Math.min(width, Math.ceil(Math.max(...xs)) + 2);
+      bottom = Math.min(height, Math.ceil(Math.max(...ys)) + 2);
+      if (right <= left || bottom <= top) return;
+    }
+    const areaWidth = right - left,
+      areaHeight = bottom - top;
+    context.save();
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.beginPath();
+    context.moveTo(left, top);
+    context.lineTo(right, top);
+    context.lineTo(right, bottom);
+    context.lineTo(left, bottom);
+    context.closePath();
+    context.clip();
+    context.clearRect(left, top, areaWidth, areaHeight);
+    context.globalCompositeOperation = 'source-over';
+    context.drawImage(
+      albedo,
+      left,
+      top,
+      areaWidth,
+      areaHeight,
+      left,
+      top,
+      areaWidth,
+      areaHeight,
+    );
+    const lightMap = this.#lightMap;
+    const source = lightMap?.canvas;
+    if (lightMap && source && this.#litFloors.length) {
+      context.setTransform(
+        scale,
+        0,
+        0,
+        scale,
+        -bounds.x * scale,
+        -bounds.y * scale,
+      );
+      // Only floors inside the area, so the clip stays small during walks.
+      const world = {
+        left: bounds.x + left / scale,
+        right: bounds.x + right / scale,
+        top: bounds.y + top / scale,
+        bottom: bounds.y + bottom / scale,
+      };
+      context.beginPath();
+      for (const floor of this.#litFloors) {
+        if (
+          floor.right < world.left ||
+          floor.left > world.right ||
+          floor.bottom < world.top ||
+          floor.top > world.bottom
+        )
+          continue;
+        floor.points.forEach((point, index) => {
+          if (index === 0) context.moveTo(point.x, point.y);
+          else context.lineTo(point.x, point.y);
+        });
+        context.closePath();
+      }
+      context.clip();
+      context.globalCompositeOperation = 'multiply';
+      const texels = lightMap.texels;
+      const [a, b, c, d, e, f] = boardingLightMapTransform(texels);
+      context.setTransform(
+        a * scale,
+        b * scale,
+        c * scale,
+        d * scale,
+        (e - bounds.x) * scale,
+        (f - bounds.y) * scale,
+      );
+      if (region) {
+        // The texels under the area, one cell wider for filtering.
+        const sx = Math.max(0, Math.floor((region.minQ - 0.5) * texels)),
+          sy = Math.max(0, Math.floor((region.minR - 0.5) * texels)),
+          ex = Math.min(source.width, Math.ceil((region.maxQ + 2.5) * texels)),
+          ey = Math.min(source.height, Math.ceil((region.maxR + 2.5) * texels));
+        if (ex > sx && ey > sy)
+          context.drawImage(
+            source,
+            sx,
+            sy,
+            ex - sx,
+            ey - sy,
+            sx,
+            sy,
+            ex - sx,
+            ey - sy,
+          );
+      } else context.drawImage(source, 0, 0);
+    }
+    context.restore();
   }
 
   /**
@@ -1298,11 +1489,7 @@ export class BoardingMapView implements BoardingMapPort {
             sketch.fill('#24334a');
             this.#tile(sketch, position);
           }
-          this.#lightMap?.paint(
-            sketch.drawingContext as CanvasRenderingContext2D,
-            boardingIsoCorners(position),
-            position,
-          );
+          this.#litFloors.push(litFloor(boardingIsoCorners(position)));
           continue;
         }
         const paintedFloor =
@@ -1321,11 +1508,7 @@ export class BoardingMapView implements BoardingMapPort {
           (terrain === 'floor' || terrain === 'window') &&
           (current || remembered)
         )
-          this.#lightMap?.paint(
-            sketch.drawingContext as CanvasRenderingContext2D,
-            boardingIsoCorners(position),
-            position,
-          );
+          this.#litFloors.push(litFloor(boardingIsoCorners(position)));
       }
     }
   }
@@ -1344,12 +1527,12 @@ export class BoardingMapView implements BoardingMapPort {
    * outlined in amber.
    */
   #paintSight(sketch: p5): void {
-    const sight = this.#sight;
-    if (!sight || sight.outline.length < 3) return;
+    const outline = this.#sightOutline;
+    if (!this.#sight || outline.length < 3) return;
     // ljuskarta-i-bordning: the sight area glows with the light on the floor.
     this.#lightMap?.glow(
       sketch.drawingContext as CanvasRenderingContext2D,
-      sight.outline.map((point) => boardingIsoCenter(point)),
+      outline,
       SIGHT_GLOW,
     );
     sketch.push();
@@ -1358,16 +1541,14 @@ export class BoardingMapView implements BoardingMapPort {
     sketch.strokeWeight(1.25);
     sketch.strokeJoin(sketch.ROUND);
     sketch.beginShape();
-    for (const point of sight.outline) {
-      const projected = boardingIsoCenter(point);
-      sketch.vertex(projected.x, projected.y);
-    }
+    for (const point of outline) sketch.vertex(point.x, point.y);
     sketch.endShape(sketch.CLOSE);
     sketch.pop();
     // halvskydd-skuggar-delvis: half cover shades the floor right behind it.
-    this.#paintCoverShadows(sketch.drawingContext as CanvasRenderingContext2D, [
-      ...sight.outline.map((point) => boardingIsoCenter(point)),
-    ]);
+    this.#paintCoverShadows(
+      sketch.drawingContext as CanvasRenderingContext2D,
+      outline,
+    );
   }
 
   /**
@@ -1657,10 +1838,8 @@ export class BoardingMapView implements BoardingMapPort {
         ) !== null,
       outsideKnown: known(neighbor),
     });
-    const context = sketch.drawingContext as CanvasRenderingContext2D;
-    this.#lightMap?.paint(context, floors.inside, position);
-    if (floors.outside)
-      this.#lightMap?.paint(context, floors.outside, position);
+    this.#litFloors.push(litFloor(floors.inside));
+    if (floors.outside) this.#litFloors.push(litFloor(floors.outside));
   }
 
   /** tunna-innervaggar / halvhog-tunn-vagg: full thin walls cut away; low walls stay at 1.2 m. */
@@ -2029,7 +2208,16 @@ export class BoardingMapView implements BoardingMapPort {
     const seen = (cell: BoardingCell) =>
       visible.has(key(cell)) || explored.has(key(cell));
     this.#paintShipPictures(sketch);
-    this.#paintFloorLayer(sketch, visible, explored, thinAt, seen);
+    // skuggor-mellan-rutor / jamn-ljuskarta-under-forflyttning: shadows follow
+    // figures between tiles, coarser until the walk ends.
+    const lightChange =
+      this.#lightMap?.update(
+        motion
+          ? boardingMovingLightFigures(motion.from, motion.to, progress)
+          : state.people,
+        this.#motion !== null,
+      ) ?? null;
+    this.#paintFloorLayer(sketch, visible, explored, thinAt, seen, lightChange);
     for (let r = 0; r < this.map.height; r++) {
       for (let q = 0; q < this.map.width; q++) {
         const position = { q, r };
@@ -2748,6 +2936,7 @@ export class BoardingMapView implements BoardingMapPort {
     this.#events.abort();
     this.#observer.disconnect();
     this.#floorLayer?.graphics.remove();
+    this.#floorLayer?.lit.remove();
     this.#floorLayer = null;
     this.#p5.remove();
   }

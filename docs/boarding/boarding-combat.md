@@ -362,8 +362,11 @@ kommer från testtransportens startpositioner.
   intill en öppen dörr får `Close door` (1 AP). Knappen är avstängd när någon
   står i dörrens ruta, och modellen avvisar stängningen utan AP-kostnad.
 - `bordning-jamn-bildfrekvens` — **Fullständigt implementerat**. Golv, ljus
-  och dimma ritas i ett cachat lager som bara byggs om när sikt, ljus, laddade
-  bilder eller zoomsteg ändras. Figurer, objekt och rök ljussätts med ett
+  och dimma ritas i ett cachat lager som bara byggs om när nya rutor upptäcks,
+  ljuset ändras, bilder laddas eller zoomsteg ändras; under en förflyttning
+  ljussätts bara området kring den gående figuren
+  (`jamn-ljuskarta-under-forflyttning`). Siktområdets kontur förenklas en gång
+  per sikt. Figurer, objekt och rök ljussätts med ett
   canvasfilter i stället för p5:s `tint()`, väggytor klipps inte i onödan och
   väggar utanför skärmen hoppas över.
 - `utslagning-och-medic` — **Fullständigt implementerat**. Vid 0 HP blir alla personer
