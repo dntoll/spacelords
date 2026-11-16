@@ -39,11 +39,3 @@ export function boardingDoorLeaves(
     { span: [slid, 0.5], texture: [0.5, 1 - slid] },
   ];
 }
-
-/**
- * oppna-airlockdorrar: soldiers pass through an airlock freely, so both of
- * its doors are drawn fully open, the way an open door is.
- */
-export function boardingAirlockDoorLeaves(): readonly BoardingDoorLeaf[] {
-  return boardingDoorLeaves(1);
-}

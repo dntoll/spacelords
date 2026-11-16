@@ -484,7 +484,11 @@ Karteditor, skrovgenombrott och vakuum ingår inte.
 
 `airlock-med-dubbla-geometridorrar` är **Fullständigt implementerat**. Airlockens skrovruta visar golv samt en inre och en yttre 2,1 m hög dörr på samma ruta. De använder vanliga dörrars projektion, texturer och ljus. Detta ersätter `airlock-i-60-graders-perspektiv` och den tidigare airlockbilden, vars perspektiv inte fungerade.
 
-`oppna-airlockdorrar` är **Fullständigt implementerat**. I striden ritas båda airlockdörrarna helt öppna, med samma inskjutna dörrblad som en öppen vanlig dörr, eftersom soldater passerar airlocken fritt. Layoutredigeraren visar dem fortfarande stängda, liksom vanliga dörrar, så att airlocken syns.
+`forseglad-airlock` är **Fullständigt implementerat**. Airlockens två dörrar är automatiska och minst en av dem är alltid stängd. Airlockrutan stoppar därför sikt, skott, granatbanor och splitter genom sig. Den som står i airlocken ser bara sin egen ruta och kan varken ses, beskjutas eller skadas av en granat utanför. Att gå igenom kostar lika mycket AP som vanligt golv, och spelaren styr inte dörrarna.
+
+`automatisk-airlockcykel` är **Fullständigt implementerat**. I vila är båda dörrarna stängda. Ett steg in i airlocken öppnar dörren på den sida man kommer ifrån; figuren väntar tills dörren är öppen, går in och dörren stängs bakom den. Ett steg ut öppnar den andra dörren, och den stängs medan figuren går vidare. Dörrarna är aldrig öppna samtidigt. Cykeln spelas bara för steg som syns, så dolda fiender avslöjas inte av dörrarna. Layoutredigeraren visar dörrarna stängda.
+
+Dessa två krav ersätter `oppna-airlockdorrar`, där dörrarna alltid ritades öppna.
 
 `sprites-for-breach-och-escape-pod` och `oppen-escape-pod` är **Fullständigt implementerade**. Breach, en öppen och tom dockad escape pod samt luckan efter en använd pod har var sin sprite. En person kan tydligt stiga in i podden. Evakuering genom podden förbrukar den, medan breach fortsätter vara en återanvändbar evakueringspunkt.
 

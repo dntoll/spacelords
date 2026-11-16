@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { boardingStraightThinPieces } from '../../../src/client/boarding/models/map/BoardingMap.js';
 import {
   BOARDING_DOOR_SLIDE_MS,
-  boardingAirlockDoorLeaves,
   boardingDoorLeaves,
   boardingDoorOpenness,
 } from '../../../src/client/boarding/views/battle/BoardingDoorSlide.js';
@@ -55,15 +54,6 @@ describe('animerade-dorrar', () => {
     const across = boardingThinWallCells({ q: 2, r: 3 }, 'r', [-0.5, -0.25]);
     expect(Math.min(...across.wall.map((point) => point.q))).toBeCloseTo(1.5);
     expect(Math.max(...across.wall.map((point) => point.q))).toBeCloseTo(1.75);
-  });
-});
-
-describe('oppna-airlockdorrar', () => {
-  it('draws airlock doors open, like an open door, not as closed leaves', () => {
-    expect(boardingAirlockDoorLeaves()).toEqual(boardingDoorLeaves(1));
-    expect(boardingAirlockDoorLeaves()).not.toContainEqual(
-      boardingDoorLeaves(0)[0],
-    );
   });
 });
 
