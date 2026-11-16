@@ -1451,7 +1451,13 @@ export class BoardingBattle {
     return Object.freeze([...result.values()]);
   }
 
+  /** snabb-bordningsvagsokning: the state the last knowledge refresh produced. */
+  #knowledgeState: BoardingBattleState | null = null;
+
   #refreshKnowledge(): void {
+    // The refresh only reads positions, facings, features and smoke, so an
+    // unchanged state already holds its own result.
+    if (this.#knowledgeState === this.#state) return;
     const visible = this.#visibleFor('player');
     const defenderVisible = this.#visibleFor('defender');
     const visibleKeys = new Set(visible.map(positionKey));
@@ -1563,6 +1569,7 @@ export class BoardingBattle {
         )
         .map((entry) => entry.position),
     });
+    this.#knowledgeState = this.#state;
   }
 
   #target(id: string): BoardingPerson | BoardingFeature | null {
