@@ -245,18 +245,20 @@ function trace(
 /**
  * krossbart-glas: the tiles after `from` whose solid the straight line to the
  * centre of `to` passes through, in order. A shot breaks the glass there.
+ * glas-krossas-nar-skottet-passerar: `at` is the share of the line covered
+ * where it meets each solid.
  */
 export function boardingSegmentSolids(
   from: BoardingSightPoint,
   to: BoardingSightPoint,
   solid: BoardingSightBlocker,
-): readonly BoardingSightPoint[] {
+): readonly Readonly<BoardingSightPoint & { at: number }>[] {
   const dq = to.q - from.q;
   const dr = to.r - from.r;
   const length = Math.hypot(dq, dr);
   if (length < EPSILON) return Object.freeze([]);
   const direction = { q: dq / length, r: dr / length };
-  const crossed: BoardingSightPoint[] = [];
+  const crossed: Readonly<BoardingSightPoint & { at: number }>[] = [];
   walk(from, direction, length, (q, r, entered, exited) => {
     const hit = solidHit(
       from,
@@ -267,7 +269,7 @@ export function boardingSegmentSolids(
       entered,
       Math.min(exited, length),
     );
-    if (hit !== null) crossed.push(Object.freeze({ q, r }));
+    if (hit !== null) crossed.push(Object.freeze({ q, r, at: hit / length }));
     return false;
   });
   return Object.freeze(crossed);

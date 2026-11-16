@@ -7,10 +7,12 @@ rymdstridsrundor. Anfallaren startar i motståndarens airlock. Avbrott är
 tillåtet när alla levande stridande är i eget skepp. Pirater lämnar en
 cockpit-soldat. Utslagen sida ger vinnaren båda skeppen i samma strid.
 
-Huvudmenyns `Test boarding (cheat)` är oförändrad: ett fristående testspel på
-en fast, handredigerbar karta över ett `Transport ship` med fyra
-bordningssoldater, tre försvarare och tre civilister, utan påverkan på
-sparplatser.
+Huvudmenyns `Test boarding (cheat)` är ett fristående testspel utan påverkan
+på sparplatser. `testbordning-med-tva-skepp` och `valbart-skepp-i-testbordning`:
+ett valt skepp (`Space pirate` som standard, väljs i listan bredvid knappen)
+dockar med den handredigerbara testtransporten via landgången. Fyra
+bordningssoldater startar vid den egna airlocken; försvarare och civilister
+kommer från testtransportens startpositioner.
 
 ## Krav och status
 
@@ -39,6 +41,13 @@ sparplatser.
   synliga försvarare och civilister. Sikt och kartminne uppdateras efter varje
   del så att spelaren ser vad som händer på vägen. Dolda figurer animeras inte.
   En redan visad förflyttning spelas inte om.
+- `vandning-under-forflyttning` — **Fullständigt implementerat**. En vändning
+  som följs av ett steg spelas samtidigt med steget: figuren vänder sig i
+  början av steget medan den går. Varje vändning på 45° tar 70 ms och ett
+  steg 260 ms. Flera vändningar i rad spelas som en snabb vändning. En
+  vändning som ett skott följer direkt visas fortfarande före skottet. Sikt och
+  kartminne visas efter det sammanslagna steget. Detta ersätter att varje
+  vändning i `animerad-bordningsforflyttning` spelades som en egen del.
 - `avbrott-vid-ny-fiende` — **Fullständigt implementerat**. Om en ny fientlig
   soldat kommer in i sidans sikt under en förflyttning stannar den aktiva
   soldaten efter den del som avslöjade fienden och resten av ordern stryks.
@@ -371,6 +380,15 @@ utförs stegvis. Vändning vänster och höger kan även göras separat.
 - `bordning-tva-rundor-skift` — **Fullständigt implementerat**. Efter den
   pågående rymdstridsrundan: två bordningsrundor, två rymdstridsrundor,
   upprepa. En aktiv bordning per rymdstrid.
+- `dockning-sida-vid-sida` — **Fullständigt implementerat**. Anfallaren ligger
+  ovanför och försvararen under. Landgången är två rutor bred och sex rutor
+  lång, med tunna väggar längs sidorna och en lampa i mitten. Ersätter att
+  försvararen spegelvändes till höger.
+- `fast-airlock-i-bordningskarta` — **Fullständigt implementerat**. Exakt en
+  airlock i skrovets över- eller underkant, tom rymd rakt utanför och tomt golv
+  innanför. Editorn lägger till en saknad airlock och tar bort extra när kartan
+  öppnas.
+- `avbryt-gammal-bordning-vid-laddning` — **Fullständigt implementerat**.
 - `tva-skepp-pa-bordningskartan` — **Fullständigt implementerat**. Enkel
   interiör per bordningsbar typ. Composer sätter anfallare, brygga och
   försvarare i samma koordinatsystem. Kartvyn använder den sammansatta
@@ -430,7 +448,7 @@ Dessa mått ersätter tidigare oberoende pixelstorlekar i `isometrisk-bordningsv
 
 `tunna-innervaggar` och `halvhog-tunn-vagg` är **Fullständigt implementerat**. En tunn innervägg står centrerad på en golvruta och är en tredjedel så tjock som en vanlig vägg. `Q` och `q` är tjocka längs q och vänder det yttre golvet mot `(q+1, r)`. `R` och `r` gör detsamma längs r mot `(q, r+1)`. Den inre tredjedelen visar rutans golvtextur. Den yttre tredjedelen visar grannens golvtextur när grannen har golv och sidan är känd eller ihågkommen. `Outside`, vanlig vägg och ytterskrov lämnar den yttre tredjedelen utan golv. `Q` och `R` är 2,4 m, blockerar gång, sikt, skott och ljus, har 10 träffpunkter och fälls till 40 cm när de skymmer upptäckt golv. En förstörd fullhög tunn vägg släpper igenom sikt och skott men rutan förblir ogångbar. `q` och `r` är 1,2 m och fungerar som `Half cover` i båda riktningarna: de blockerar gång, inte sikt, skott eller ljus, ger samma skydd och har 6 träffpunkter. De fälls inte. När de förstörs blir rutan gångbar. Befintliga kartor och `Half cover` ändras inte.
 
-`fonster-pa-halvhog-vagg`, `helhogt-fonster`, `krossbart-glas` och `glas-tintar-ljus` är **Fullständigt implementerat**. Varje halvhög tunn vägg har ett ljusblått, genomskinligt fönster från 1,2 m upp till taket (2,4 m). `High window pane` (tecknet `W`) är ett fönster från golv till tak med samma sammanfogade form som tunna väggar. Glas släpper igenom sikt och skott men stoppar granatkast och gång; ett helt fönster ger inget skydd, medan den halvhöga väggen under glaset fortsatt ger `Half cover`. Ett gevärsskott krossar allt glas längs linjen mellan skyttens och målets rutmitt, vid träff och miss, och skada på en halvhög vägg krossar dess fönster. Då regnar glasbitar ner på golvet. Ett krossat `High window pane` går att kliva igenom, och över en halvhög vägg med krossat glas kan man åter kasta granater. Lampljus genom helt glas får en blå ton. `tunna-fonster`: glaset ritas bara 2 cm tjockt och golvet under ett `High window pane` syns i hela rutan. Detta ersätter att granater alltid kan kastas över halvhöga tunna väggar.
+`fonster-pa-halvhog-vagg`, `helhogt-fonster`, `krossbart-glas` och `glas-tintar-ljus` är **Fullständigt implementerat**. Varje halvhög tunn vägg har ett ljusblått, genomskinligt fönster från 1,2 m upp till taket (2,4 m). `High window pane` (tecknet `W`) är ett fönster från golv till tak med samma sammanfogade form som tunna väggar. Glas släpper igenom sikt och skott men stoppar granatkast och gång; ett helt fönster ger inget skydd, medan den halvhöga väggen under glaset fortsatt ger `Half cover`. Ett gevärsskott krossar allt glas längs linjen mellan skyttens och målets rutmitt, vid träff och miss, och skada på en halvhög vägg krossar dess fönster. Då regnar glasbitar ner på golvet. `glas-krossas-nar-skottet-passerar`: glaset krossas i samma ögonblick som det animerade skottet når det. Ett krossat `High window pane` går att kliva igenom, och över en halvhög vägg med krossat glas kan man åter kasta granater. Lampljus genom helt glas får en blå ton. `tunna-fonster`: glaset ritas bara 2 cm tjockt och golvet under ett `High window pane` syns i hela rutan. Detta ersätter att granater alltid kan kastas över halvhöga tunna väggar.
 
 `sammanfogade-tunna-vaggar` är **Fullständigt implementerat**. Väggens riktning väljs inte längre i editorn: penslarna heter `Thin wall` och `Low thin wall`, och formen byggs av grannarna. En tunn vägg når fram till varje grannruta (norr, söder, väster, öster i rutnätet) som har vägg, ytterskrov eller tunn vägg av valfri höjd, och till en dörr vars platta ligger i samma linje. Utan grannar blir den en pelare, med en granne en ände, med två ett rakt stycke eller ett hörn, med tre en T-korsning och med fyra ett kryss. Sikt, kast, ljus, skuggor, väggsnitt och ritning följer formen, så det öppna hörnet i ett L släpper igenom sikt. Raka väggar behåller golvbanden ovan; hörn, ändar och korsningar visar rutans eget golv. Detta ersätter att `Q` och `R` (och `q` och `r`) anger riktning; bokstäverna laddas fortfarande och betyder samma vägg.
 

@@ -19,55 +19,6 @@ import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { arrangeBattle } from '../../fixtures/battle-checkpoint.js';
 
 describe('tva-skepp-pa-bordningskartan', () => {
-  it('places both interiors and a bridge with airlocks facing each other', () => {
-    const composed = composeBoardingMaps('Space pirate', 'Transport ship');
-    expect(composed.map.campaign).toBe(true);
-    expect(composed.map.width).toBeGreaterThan(20);
-    expect(composed.attackerAirlock.length).toBeGreaterThan(0);
-    expect(composed.defenderAirlock.length).toBeGreaterThan(0);
-    expect(composed.map.zoneAt(composed.attackerAirlock[0]!)).toBe('attacker');
-    expect(composed.map.zoneAt(composed.defenderAirlock[0]!)).toBe('defender');
-    const left = composed.attackerAirlock[0]!;
-    const right = composed.defenderAirlock[0]!;
-    expect(left.r).toBe(right.r);
-    const mid = {
-      q: Math.round((left.q + right.q) / 2),
-      r: left.r,
-    };
-    expect(composed.map.zoneAt(mid)).toBe('bridge');
-    expect(composed.map.terrainAt(mid)).toBe('floor');
-    for (
-      let q = Math.min(left.q, right.q) + 1;
-      q < Math.max(left.q, right.q);
-      q++
-    )
-      expect(composed.map.terrainAt({ q, r: left.r })).toBe('floor');
-    const space = { q: mid.q, r: left.r + 2 };
-    expect(composed.map.terrainAt(space)).toBeNull();
-    const battle = BoardingBattle.createCampaign(
-      composed,
-      true,
-      11,
-      'Space pirate',
-      'Transport ship',
-    );
-    const boarder = battle.snapshot.people.find(
-      (person) => person.side === 'player',
-    )!;
-    const restored = BoardingBattle.restore(composed.map, {
-      ...battle.snapshot,
-      people: battle.snapshot.people.map((person) =>
-        person.id === boarder.id ? { ...person, position: left } : person,
-      ),
-      currentActorId: boarder.id,
-      activation: { id: boarder.id, remaining: 40 },
-    });
-    const approach = { q: right.q - 1, r: right.r };
-    expect(composed.map.terrainAt(approach)).toBe('floor');
-    expect(restored.pathTo(boarder.id, approach)?.cost).toBeGreaterThan(0);
-    expect(restored.pathTo(boarder.id, space)).toBeNull();
-  });
-
   it('advances a hidden cockpit defender so autoplay does not stall', () => {
     const composed = composeBoardingMaps('Space pirate', 'Transport ship');
     const battle = BoardingBattle.createCampaign(

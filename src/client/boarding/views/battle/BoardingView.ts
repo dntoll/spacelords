@@ -1,5 +1,6 @@
 import actionAtlasUrl from '../../assets/actions-distinct-v4.png';
 import type { BoardingCameraBounds } from './BoardingCameraController.js';
+import { boardingMergedTurnFrames } from './BoardingMotionPacing.js';
 import {
   BoardingBattle,
   BOARDING_MELEE_AP,
@@ -13,6 +14,7 @@ import {
   type BoardingSightArea,
   type BoardingBattleState,
   type BoardingShot,
+  type BoardingShotPane,
 } from '../../models/battle/BoardingBattle.js';
 import type {
   BoardingCell,
@@ -22,8 +24,7 @@ import {
   boardingPathMarks,
   type BoardingPathMark,
 } from '../../models/battle/BoardingPathPreview.js';
-import { composeBoardingMaps } from '../../models/map/BoardingComposer.js';
-import { testBoardingMap } from '../../models/map/TestBoarding.js';
+import { boardingMapForState } from '../../models/map/TestBoarding.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { button, element } from '../../../common/dom.js';
 
@@ -67,6 +68,7 @@ export interface BoardingMapPort {
     kind?: 'grenade',
     grenade?: 'frag' | 'smoke',
     aim?: Readonly<{ q: number; r: number }>,
+    panes?: readonly BoardingShotPane[],
   ): Promise<void>;
   zoom(factor: number): void;
   fit(): void;
@@ -132,6 +134,10 @@ export class BoardingView {
     root: HTMLElement,
     private readonly emit: IntentHandler,
     mapFactory?: BoardingMapFactory,
+    /** The map a battle state was played on; tests pass a fixture. */
+    private readonly mapForState: (
+      state: BoardingBattleState,
+    ) => BoardingMap = boardingMapForState,
   ) {
     this.#mapFactory = mapFactory;
     this.#close = iconButton('Close boarding', '×', () =>
@@ -156,12 +162,7 @@ export class BoardingView {
   }
 
   #mapFor(state: BoardingBattleState): BoardingMap {
-    return state.campaign
-      ? composeBoardingMaps(
-          state.campaign.attackerType,
-          state.campaign.defenderType,
-        ).map
-      : testBoardingMap;
+    return this.mapForState(state);
   }
 
   #ensureMap(state: BoardingBattleState): void {
@@ -214,11 +215,7 @@ export class BoardingView {
   }
 
   #battle(): BoardingBattle {
-    const campaign = this.#state?.campaign;
-    const map = campaign
-      ? composeBoardingMaps(campaign.attackerType, campaign.defenderType).map
-      : testBoardingMap;
-    return BoardingBattle.restore(map, this.#state!);
+    return BoardingBattle.restore(this.#mapFor(this.#state!), this.#state!);
   }
 
   #command(command: Parameters<BoardingBattle['command']>[0]): void {
@@ -441,6 +438,12 @@ export class BoardingView {
     try {
       let current = previous;
       const shotIndex = Math.min(shot?.presentationIndex ?? 0, frames.length);
+      // vandning-under-forflyttning: a turn plays together with the next step.
+      const merged = boardingMergedTurnFrames(
+        previous,
+        frames,
+        shot ? shotIndex : null,
+      );
       // animerat-bordningsskott: resolve the shot before later actors' movement and damage.
       for (let index = 0; index <= frames.length; index++) {
         if (token !== this.#playToken) return;
@@ -459,11 +462,13 @@ export class BoardingView {
             shot.kind,
             shot.grenade,
             shot.aim,
+            shot.panes,
           );
           this.#playedShot = shot;
         }
         const frame = frames[index];
         if (!frame) break;
+        if (merged.has(index)) continue;
         if (token !== this.#playToken) return;
         if (this.#map?.frameVisibleMovement)
           await this.#map.frameVisibleMovement(current, frame);

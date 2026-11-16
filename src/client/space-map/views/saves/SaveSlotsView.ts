@@ -1,6 +1,30 @@
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { button, element } from '../../../common/dom.js';
+import {
+  BOARDING_INTERIOR_TYPES,
+  DEFAULT_TEST_BOARDING_ATTACKER,
+} from '../../../boarding/models/index.js';
+import type { CombatShipType } from '../../../space-battle/models/index.js';
+
+/** valbart-skepp-i-testbordning: the choice survives re-rendering the page. */
+let testBoardingAttacker: CombatShipType = DEFAULT_TEST_BOARDING_ATTACKER;
+
+function testBoardingShip(): HTMLElement {
+  const select = element('select', 'test-boarding-ship');
+  select.setAttribute('aria-label', 'Boarding ship');
+  select.title = 'The ship that docks with the test transport and boards it.';
+  for (const type of BOARDING_INTERIOR_TYPES) {
+    const option = element('option', '', type);
+    option.value = type;
+    select.append(option);
+  }
+  select.value = testBoardingAttacker;
+  select.addEventListener('change', () => {
+    testBoardingAttacker = select.value as CombatShipType;
+  });
+  return select;
+}
 
 export function renderSaveSlots(
   model: AppReadModel,
@@ -22,7 +46,10 @@ export function renderSaveSlots(
       'Progress is saved automatically in this browser.',
     ),
     button('Test battle (cheat)', () => emit({ type: 'test-battle' })),
-    button('Test boarding (cheat)', () => emit({ type: 'test-boarding' })),
+    button('Test boarding (cheat)', () =>
+      emit({ type: 'test-boarding', attacker: testBoardingAttacker }),
+    ),
+    testBoardingShip(),
   );
   const grid = element('div', 'save-grid');
   for (const slot of model.saveSlots) {

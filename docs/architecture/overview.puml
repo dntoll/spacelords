@@ -24,7 +24,7 @@ app --> space_battle : controllers, models, views
 app --> space_map : controllers, models, views
 boarding --> app : AppModel, ViewContracts, playerNoticeText
 boarding --> common : dom
-boarding --> shared : map-format
+boarding --> shared : map-format, map-rules
 boarding ..> space_battle : models, typer
 boarding --> space_map : views
 main --> app : AppModel, AppView, MasterController

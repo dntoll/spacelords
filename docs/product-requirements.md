@@ -293,9 +293,30 @@ egna ytor och editorn visar spelets objekt, figurer, ljus och väggsnitt.
 
 `helskarms-bordningseditor`, `zooma-panorera-bordningseditor` och
 `direkt-penselstreck-i-editor` är **Fullständigt implementerat**. Editorn
-fyller hela skärmen direkt med skeppet inpassat. Man kan zooma och panorera;
-i läget `Pan view` flyttar ett drag vyn i stället för att måla, och `Fit view`
-visar hela skeppet igen. Rutor man målar syns medan man drar.
+fyller hela skärmen direkt med skeppet inpassat. Man kan zooma och panorera,
+och `Fit view` visar hela skeppet igen. Rutor man målar syns medan man drar.
+
+`kamera-utan-lage-i-editor` är **Fullständigt implementerat** och ersätter
+läget `Pan view`. Man byter aldrig läge för att flytta vyn: mittknappen,
+Space + drag, två fingrar eller ett drag utanför skeppet flyttar vyn, och
+hjulet zoomar mjukt.
+
+`foremal-lagger-golv` är **Fullständigt implementerat**. Föremål står alltid på
+golv; placeras ett föremål på vägg eller skrov blir rutan golv.
+
+`fyll-rum-i-editor` är **Fullständigt implementerat**. Med `Fill rooms` fyller
+en rumspensel hela golvytan som avgränsas av väggar och dörrar.
+
+`fast-airlock-i-bordningskarta` och `kravlista-i-bordningseditor` är
+**Fullständigt implementerat**. Varje skepp har exakt en airlock i skrovets
+över- eller underkant med tom rymd utanför och tomt golv innanför. Den finns
+från början, kan flyttas längs kanten men inte tas bort. En lista över kartan
+visar vilka grundkrav som är uppfyllda. Detta ersätter varningen om att
+airlocken ska sitta i högerkanten.
+
+`skalbar-skeppsbild-i-editor` är **Fullständigt implementerat**. I `Adjust
+sprite` ändras skeppsbildens storlek med hjulet runt pekaren eller med
+`Smaller sprite`, `Sprite size` och `Larger sprite` runt bildens mitt.
 
 `fristaende-bordningsprototyp` och den tillhörande kravfamiljen är
 **Fullständigt implementerat**. Huvudmenyn kan starta en separat taktisk
@@ -381,6 +402,19 @@ lastfartyg. Spelaren och pirater kan docka längs sidorna, låsas med en brygga
 och slåss inne i båda skeppen växelvis med rymdstriden. Varje soldat startar
 på en egen golvruta. Avbrott kräver att alla levande är i egna skepp.
 Vinnaren tar båda skeppen i samma strid. `Raptor` byggs efter dockningsteknik.
+
+`dockning-sida-vid-sida` är **Fullständigt implementerat**. Skeppen ligger
+sida vid sida, anfallaren ovanför och försvararen under, förenade av en två
+rutor bred landgång med tunna väggar mellan airlockerna. Ett skepp vars
+airlock vetter åt fel håll vänds. `avbryt-gammal-bordning-vid-laddning` är
+**Fullständigt implementerat**: en pågående bordning från ett äldre sparat spel
+avbryts och skeppen frikopplas.
+
+`testbordning-med-tva-skepp` och `valbart-skepp-i-testbordning` är
+**Fullständigt implementerat**. `Test boarding (cheat)` visar två skepp med
+landgång: ett valbart anfallande skepp, `Space pirate` som standard, och
+testtransporten. Bordarna startar i sitt eget skepp och målen gäller det
+bordade skeppet.
 
 `bargat-piratskepp-behaller-typ` och `unik-bild-for-civila-transporter` är
 **Fullständigt implementerat**. Ett nyförstört piratskepp kan bärgas och
@@ -1433,6 +1467,7 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 - `fonster-pa-halvhog-vagg` — **Fullständigt implementerat**. En halvhög tunn vägg har ett fönster ovanpå sig, från väggens överkant upp till taket, med en lätt blå ton. Man ser och skjuter igenom fönstret, och väggen ger fortfarande `Half cover`. Så länge glaset är helt går det inte att kasta granater över väggen. Detta ersätter att granater kan kastas över en halvhög tunn vägg (`granat-over-halvskydd-inte-genom-vagg` gäller fortfarande `Half cover` och rök).
 - `helhogt-fonster` — **Fullständigt implementerat**. `High window pane` är ett fönster från golv till tak, lika tunt som en tunn vägg och sammanfogat med väggar på samma sätt. Det släpper igenom sikt och skott men inte gång eller granatkast, och det ger inget skydd. När det är krossat kan man gå igenom rutan.
 - `krossbart-glas` — **Fullständigt implementerat**. Ett gevärsskott som passerar genom glas krossar det, oavsett om skottet träffar sitt mål. En granat eller annan skada på en halvhög vägg krossar också dess fönster. När glaset går sönder regnar ljusblå glasbitar ner på golvet.
+- `glas-krossas-nar-skottet-passerar` — **Fullständigt implementerat**. Glaset krossas i samma ögonblick som det animerade skottet passerar genom det, inte först när skottet nått sitt mål.
 - `glas-tintar-ljus` — **Fullständigt implementerat**. Ljus från lampor som passerar helt glas får en blå ton på golvet bakom. Krossat glas tintar inte längre.
 - `tunna-fonster` — **Fullständigt implementerat**. Fönsterglas ritas nästan utan tjocklek, så att golvet runt ett `High window pane` syns i hela rutan. Glasets form för skott och ljus är oförändrad.
 

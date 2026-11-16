@@ -132,6 +132,8 @@ export interface BoardingBattleState {
     readonly attackerType: CombatShipType;
     readonly defenderType: CombatShipType;
   };
+  /** testbordning-med-tva-skepp: the ship that docked with the test transport. */
+  readonly test?: { readonly attackerType: CombatShipType };
 }
 
 export type BoardingCommand =
@@ -165,7 +167,24 @@ export interface BoardingShot {
   readonly to: BoardingCell;
   /** skott-langs-fri-siktlinje: where in `to` the bullet flies. */
   readonly aim?: Readonly<{ q: number; r: number }>;
+  /**
+   * glas-krossas-nar-skottet-passerar: the panes the bullet breaks, each with
+   * the share of the way from `from` to `aim` where the bullet reaches it.
+   */
+  readonly panes?: readonly BoardingShotPane[];
   readonly hit: boolean;
+}
+
+export interface BoardingShotPane {
+  readonly id: string;
+  readonly at: number;
+}
+
+/** krossbart-glas: a full-height window is gone; a low wall keeps its wall. */
+export function boardingBrokenPane(feature: BoardingFeature): BoardingFeature {
+  return feature.kind === 'window'
+    ? { ...feature, hitPoints: 0, destroyed: true }
+    : { ...feature, shattered: true };
 }
 
 export interface BoardingPath {
@@ -434,10 +453,38 @@ export class BoardingBattle {
   }
 
   static create(map: BoardingMap, seed = Date.now() >>> 0): BoardingBattle {
+    return BoardingBattle.#start(map, seed, map.spawns.player);
+  }
+
+  /**
+   * testbordning-med-tva-skepp: the boarders start in their own ship by its
+   * airlock and cross the gangway; the test rules apply to the defender.
+   */
+  static createTest(
+    composed: ComposedBoarding,
+    attackerType: CombatShipType,
+    seed = Date.now() >>> 0,
+  ): BoardingBattle {
+    const taken = new Set<string>();
+    const boarders = spreadBoardingSpawns(
+      composed.map,
+      composed.attackerAirlock,
+      4,
+      taken,
+    );
+    return BoardingBattle.#start(composed.map, seed, boarders, {
+      attackerType,
+    });
+  }
+
+  static #start(
+    map: BoardingMap,
+    seed: number,
+    players: readonly BoardingCell[],
+    test?: BoardingBattleState['test'],
+  ): BoardingBattle {
     const people = [
-      ...map.spawns.player.map((position, index) =>
-        person('player', index, position),
-      ),
+      ...players.map((position, index) => person('player', index, position)),
       ...map.spawns.defender.map((position, index) =>
         person('defender', index, position),
       ),
@@ -473,6 +520,7 @@ export class BoardingBattle {
       postponed: [],
       finishedActors: [],
       log: [],
+      ...(test ? { test } : {}),
     });
     battle.#beginRound();
     battle.#refreshKnowledge();
@@ -1715,12 +1763,13 @@ export class BoardingBattle {
             this.#visionBlocksFor(source),
             this.#bodiesFor(source),
           ) ?? frozenCell(targetCell));
-    if (aim) this.#shatterAlong(source.position, aim);
+    const panes = aim ? this.#shatterAlong(source.position, aim) : [];
     if (aim)
       this.#shot = Object.freeze({
         from: frozenCell(source.position),
         to: frozenCell(targetCell),
         aim,
+        ...(panes.length ? { panes } : {}),
         presentationIndex: this.#presentation.length,
         hit,
       });
@@ -1737,21 +1786,20 @@ export class BoardingBattle {
   #shatterAlong(
     from: BoardingCell,
     to: Readonly<{ q: number; r: number }>,
-  ): void {
+  ): readonly BoardingShotPane[] {
     const crossed = boardingSegmentSolids(from, to, (q, r) =>
       this.#intactGlass({ q, r })
         ? (this.#map.thinWallPieces({ q, r }) ?? true)
         : false,
     );
+    const panes: BoardingShotPane[] = [];
     for (const position of crossed) {
       const feature = this.#featureAt(position);
       if (!feature) continue;
-      this.#updateFeature(feature.id, (entry) =>
-        entry.kind === 'window'
-          ? { ...entry, hitPoints: 0, destroyed: true }
-          : { ...entry, shattered: true },
-      );
+      this.#updateFeature(feature.id, boardingBrokenPane);
+      panes.push(Object.freeze({ id: feature.id, at: position.at }));
     }
+    return Object.freeze(panes);
   }
 
   #triggerOverwatch(mover: BoardingPerson): void {
@@ -2179,11 +2227,18 @@ export class BoardingBattle {
     this.#replace({ smoke: [...values.values()] });
   }
 
+  /** testbordning-med-tva-skepp: the test goals lie in the boarded ship. */
+  #inTargetShip(position: BoardingCell): boolean {
+    const zone = this.#map.zoneAt(position);
+    return zone !== 'attacker' && zone !== 'bridge';
+  }
+
   #holds(room: 'bridge' | 'engineering', side: BoardingSide): boolean {
     return this.#state.people.some(
       (entry) =>
         entry.side === side &&
         entry.status === 'active' &&
+        this.#inTargetShip(entry.position) &&
         this.#map.roomAt(entry.position) === room,
     );
   }
@@ -2360,7 +2415,7 @@ export class BoardingBattle {
     if (this.#state.phase === 'complete') return;
     this.#refreshKnowledge();
     const reactor = this.#state.features.find(
-      (entry) => entry.kind === 'reactor',
+      (entry) => entry.kind === 'reactor' && this.#inTargetShip(entry.position),
     );
     if (reactor?.destroyed && this.#state.reactorCountdown === null)
       this.#replace({

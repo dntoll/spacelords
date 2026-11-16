@@ -120,6 +120,10 @@ export class BoardingEditorController {
     this.#editor.opacity(value);
   }
 
+  fillRooms(value: boolean): void {
+    this.#editor.fillRooms(value);
+  }
+
   undo(): void {
     this.#editor.undo();
   }

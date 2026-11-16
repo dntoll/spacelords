@@ -49,11 +49,17 @@ import {
   type BoardingBattleState,
   type BoardingFeature,
   type BoardingPerson,
+  type BoardingShotPane,
   type BoardingSightArea,
   type BoardingTargetIndicator,
 } from '../../models/battle/BoardingBattle.js';
+import { boardingShotGlassState } from './BoardingShotGlass.js';
 import type { BoardingPathMark } from '../../models/battle/BoardingPathPreview.js';
 import type { BoardingMapPort } from './BoardingView.js';
+import {
+  boardingFrameMotionDuration,
+  boardingMotionFacing,
+} from './BoardingMotionPacing.js';
 import {
   BOARDING_OBJECT_IMAGES,
   boardingObjectArtwork,
@@ -219,6 +225,7 @@ export class BoardingMapView implements BoardingMapPort {
     started: number;
     duration: number;
     kind?: 'grenade';
+    panes: readonly BoardingShotPane[];
     resolve: () => void;
   } | null = null;
   /** animerade-dorrar: when each sliding door last changed state. */
@@ -465,6 +472,21 @@ export class BoardingMapView implements BoardingMapPort {
       if (before && !before.shattered && !before.destroyed)
         this.#spawnEffect('glass', feature.position);
     }
+  }
+
+  /**
+   * glas-krossas-nar-skottet-passerar: break each pane the moment the bullet
+   * reaches it instead of when the final state arrives after the shot.
+   */
+  #breakPanes(panes: readonly BoardingShotPane[], progress: number): void {
+    const before = this.#state;
+    if (!before) return;
+    const after = boardingShotGlassState(before, panes, progress);
+    if (after === before) return;
+    this.#spawnDestruction(before, after);
+    this.#state = after;
+    this.#updateLighting(after);
+    this.#updateWalls(after);
   }
 
   #spawnEffect(kind: BoardingEffectKind, position: BoardingCell): void {
@@ -720,7 +742,7 @@ export class BoardingMapView implements BoardingMapPort {
         finish();
         return;
       }
-      const duration = 260;
+      const duration = boardingFrameMotionDuration(from, to);
       this.#motion = {
         from,
         to,
@@ -741,6 +763,8 @@ export class BoardingMapView implements BoardingMapPort {
     grenade?: 'frag' | 'smoke',
     /** skott-langs-fri-siktlinje: the point in `to` the bullet flies to. */
     aim?: Readonly<{ q: number; r: number }>,
+    /** glas-krossas-nar-skottet-passerar: panes that break as it passes. */
+    panes: readonly BoardingShotPane[] = [],
   ): Promise<void> {
     this.#finishMotion();
     return new Promise((resolve) => {
@@ -783,6 +807,7 @@ export class BoardingMapView implements BoardingMapPort {
         from: weaponPoint(from),
         to: kind === 'grenade' ? boardingIsoCenter(to) : weaponPoint(to, aim),
         ...(kind ? { kind } : {}),
+        panes,
         started: performance.now(),
         duration,
         resolve: finish,
@@ -1125,6 +1150,11 @@ export class BoardingMapView implements BoardingMapPort {
       if (!image) continue;
       sketch.push();
       sketch.applyMatrix(...boardingSpritePlaneTransform());
+      // dockning-sida-vid-sida: a ship turned to face its airlock.
+      if (picture.flipAboutY !== undefined && picture.flipAboutY !== null) {
+        sketch.translate(0, 2 * picture.flipAboutY);
+        sketch.scale(1, -1);
+      }
       sketch.translate(picture.x, picture.y);
       if (picture.mirrored) {
         sketch.translate(picture.scale, 0);
@@ -1795,6 +1825,13 @@ export class BoardingMapView implements BoardingMapPort {
 
   #draw(sketch: p5): void {
     sketch.background('#060914');
+    const flying = this.#shot;
+    if (flying?.panes.length)
+      this.#breakPanes(
+        flying.panes,
+        boardingAnimTick(flying.started, flying.duration, performance.now())
+          .progress,
+      );
     const state = this.#state;
     if (!state) return;
     const viewport = this.#cameraBounds();
@@ -2282,7 +2319,14 @@ export class BoardingMapView implements BoardingMapPort {
               person.side,
               center,
               characterPose(person),
-              progress < 0.5 ? origin.facing : target.facing,
+              motion && person.id === mover?.id
+                ? boardingMotionFacing(
+                    origin.facing,
+                    target.facing,
+                    now - motion.started,
+                    motion.duration,
+                  )
+                : target.facing,
               this.#variantOf(person.id),
             );
             sketch.push();
