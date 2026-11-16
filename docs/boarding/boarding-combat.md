@@ -24,7 +24,14 @@ kommer från testtransportens startpositioner.
   att redigera för hand.
 - `individuellt-bordningsinitiativ` — **Fullständigt implementerat**. Varje soldat slår
   D20 plus initiativvärde varje runda. Högre grundvärde bryter lika total;
-  fortsatt lika resultat slås om. Civilister agerar sist.
+  fortsatt lika resultat slås om. Civilister agerar sist. Spelarens soldater
+  får sina platser i ordningen i fast lagordning (`fast-soldatordning`).
+- `fast-soldatordning` — **Fullständigt implementerat**. De platser i
+  initiativordningen som spelarens soldater slår till sig fördelas på soldaterna
+  i lagets ordning, så att soldat 1 alltid är den som väljs först varje runda,
+  därefter soldat 2 och så vidare. Fiendernas platser påverkas inte. Ersätter
+  den del av `individuellt-bordningsinitiativ` som lät varje soldats eget slag
+  avgöra soldaternas inbördes ordning.
 - `actionpoints-och-riktad-forflyttning` — **Fullständigt implementerat**. Egenskaper och
   fasta utrustningsmodifierare ger AP. Soldater går endast framåt. Ett stående
   rutsteg kostar 2 AP, ett hukat steg 3 AP, ett diagonalt steg 3 AP stående eller 4 AP hukande, en 45-gradersvändning 0,25 AP (`billig-vandning`) och byte
@@ -109,6 +116,21 @@ kommer från testtransportens startpositioner.
   en vald destination eller dörr som ligger för långt bort för kvarvarande AP
   går längs den billigaste vägen så långt AP räcker. Mot en stängd dörr eller
   en upptagen ruta stannar soldaten bredvid den.
+- `vand-mot-vald-ruta` — **Fullständigt implementerat**. När spelaren väljer
+  en tom ruta som destination vänder sig soldaten mot den, den kortaste vägen
+  i 45-gradessteg för 0,25 AP per steg och så långt AP räcker.
+- `vandning-mot-nasta-steg` — **Fullständigt implementerat**. När soldaten
+  går mot ett mål som AP inte räcker till används kvarvarande AP efter sista
+  steget till att vända soldaten mot nästa steg, så att den kan fortsätta
+  direkt nästa runda.
+- `ap-fraktion-sparas` — **Fullständigt implementerat**. Återstår därefter
+  bara en bråkdel av en AP slutar soldatens tur, och bråkdelen läggs till
+  soldatens AP vid nästa aktivering. Återstår minst en hel AP får soldaten
+  fortsätta agera.
+- `sparad-gangdestination` — **Fullständigt implementerat**. Ett mål soldaten
+  inte hann nå sparas och är valt igen när soldaten aktiveras nästa gång. Ett
+  nytt tryck på målet fortsätter gå. Målet glöms när soldaten når det eller
+  går någon annanstans med en vanlig förflyttning.
 - `klickdorr-pa-vald-dorr` — **Fullständigt implementerat**. Första klicket på
   en dörr väljer den. Ett andra klick på samma angränsande dörr försöker
   öppna den, eller hacka den om den är låst. Öppna dörrar väljs som golvrutor.

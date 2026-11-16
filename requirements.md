@@ -118,13 +118,18 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Bordningshandlingar och flyt:** `stang-oppen-dorr`,
   `granat-kostar-bara-vid-kast`, `granat-over-halvskydd-inte-genom-vagg`,
-  `gang-mot-avlagset-mal` och
+  `gang-mot-avlagset-mal`, `vand-mot-vald-ruta`,
+  `vandning-mot-nasta-steg`, `ap-fraktion-sparas`,
+  `sparad-gangdestination`, `fast-soldatordning` och
   `bordning-jamn-bildfrekvens` är **Fullständigt implementerat**. En soldat
   intill en öppen, tom dörr får `Close door`. En granat som inte kan kastas
   drar ingen AP och knapparna är avstängda. Granater kastas över halvskydd,
   låga väggar, rök och hukande personer, men inte genom väggar, stängda dörrar
   eller stående personer, och en miss studsar aldrig genom en vägg. Ett andra tryck på ett mål som
-  ligger för långt bort går så långt AP räcker. Golvlagret cachas och
+  ligger för långt bort går så långt AP räcker och vänder soldaten mot nästa
+  steg; en återstående bråkdel av en AP avslutar turen och sparas till nästa
+  runda, och målet är valt igen då. Att välja en ruta vänder soldaten ditåt,
+  och spelarens soldater väljs alltid i samma ordning. Golvlagret cachas och
   figurernas ljus ritas utan p5:s `tint()` för jämnare bildfrekvens på mobil.
   Se [bordningsstrid](docs/boarding/boarding-combat.md).
 

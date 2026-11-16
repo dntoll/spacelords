@@ -1571,6 +1571,23 @@ fel studsar aldrig in genom en vägg.
 ruta eller dörr som ligger för långt bort gör att soldaten går så långt den
 hinner åt det hållet.
 
+`vand-mot-vald-ruta` — **Fullständigt implementerat**: när man väljer en ruta
+vänder sig soldaten ditåt.
+
+`vandning-mot-nasta-steg` — **Fullständigt implementerat**: räcker inte AP
+hela vägen använder soldaten det som blir över till att vända sig mot nästa
+steg, redo att fortsätta nästa runda.
+
+`ap-fraktion-sparas` — **Fullständigt implementerat**: blir bara en bråkdel av
+en AP kvar slutar soldatens tur och bråkdelen sparas till nästa runda.
+
+`sparad-gangdestination` — **Fullständigt implementerat**: målet soldaten
+inte hann fram till är fortfarande valt nästa runda, så att soldaten kan gå
+vidare dit.
+
+`fast-soldatordning` — **Fullständigt implementerat**: spelarens soldater
+väljs alltid i samma ordning, så att soldat 1 är vald först varje runda.
+
 `bordning-explosioner-och-forstorelse` — **Fullständigt implementerat**:
 granater exploderar synligt och saker som går sönder syns gå sönder och lämnar
 bråte.
