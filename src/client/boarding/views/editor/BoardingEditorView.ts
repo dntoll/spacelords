@@ -65,6 +65,7 @@ const PALETTE: readonly PaletteTile[] = [
   { layer: 'rooms', symbol: 'B', label: 'Bridge' },
   { layer: 'rooms', symbol: 'E', label: 'Engineering' },
   { layer: 'rooms', symbol: 'K', label: 'Cockpit' },
+  { layer: 'rooms', symbol: 'G', label: 'Galley' },
   { layer: 'spawns', symbol: '-', label: 'No spawn' },
   { layer: 'spawns', symbol: 'P', label: 'Player spawn' },
   { layer: 'spawns', symbol: 'D', label: 'Defender spawn' },

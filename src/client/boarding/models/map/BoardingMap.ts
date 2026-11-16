@@ -2,7 +2,7 @@ import { BOARDING_LAYER_SYMBOLS } from '../../../../shared/boarding/map-format.j
 import type { CombatShipType } from '../../../space-battle/models/index.js';
 
 export type BoardingCell = Readonly<{ q: number; r: number }>;
-export type BoardingRoom = 'bridge' | 'engineering' | 'cockpit';
+export type BoardingRoom = 'bridge' | 'engineering' | 'cockpit' | 'galley';
 export type BoardingTerrain =
   'floor' | 'wall' | 'hull' | 'thin-wall' | 'low-thin-wall' | 'window';
 export type BoardingThinAxis = 'q' | 'r';
@@ -543,12 +543,18 @@ export function parseBoardingMap(
         lights.push(boardingCeilingLight(position));
       }
 
-      const room = symbol('rooms', layers.rooms, '-BEK', q, r);
+      const room = symbol('rooms', layers.rooms, '-BEKG', q, r);
       if (room === 'K') cockpits.push(position);
       if (room !== '-')
         rooms.set(
           key(position),
-          room === 'B' ? 'bridge' : room === 'E' ? 'engineering' : 'cockpit',
+          room === 'B'
+            ? 'bridge'
+            : room === 'E'
+              ? 'engineering'
+              : room === 'K'
+                ? 'cockpit'
+                : 'galley',
         );
 
       const spawn = symbol('spawns', layers.spawns, '-PDC', q, r);

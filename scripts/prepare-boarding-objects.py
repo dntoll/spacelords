@@ -1,11 +1,9 @@
 """Fit the 60-degree object originals to the boarding projection.
 
 kameravinkel-60-i-bordning: originals live in assets/original/boarding/60deg.
-Doors and the airlock are sheared so their floor edge follows the exact ground
-axis; free-standing objects keep the artwork's proportions. Only artwork listed
-in `sources` is regenerated; other metrics in BoardingSpriteMetrics.ts are kept.
-The 60-degree door and airlock originals were drawn with a 2:1 floor slope and
-did not fit the walls, so the earlier artwork remains in use for them.
+Portals are sheared so their floor edge follows the exact ground axis;
+free-standing objects keep the artwork's proportions. Only artwork listed in
+`sources` is regenerated; other metrics in BoardingSpriteMetrics.ts are kept.
 """
 from pathlib import Path
 from math import ceil, cos, pi, sin, sqrt
@@ -17,8 +15,12 @@ ROOT = Path(__file__).resolve().parents[1]
 original = ROOT / 'assets/original/boarding/60deg'
 output = ROOT / 'src/client/boarding/assets'
 sources = {
+    'airlock': '../airlock-meters.png',
     'reactor': 'reactor-60deg.png',
     'crate': 'crate-60deg.png',
+    'breach': '../breach.png',
+    'escape-pod': '../escape-pod.png',
+    'escape-hatch': '../escape-hatch.png',
 }
 # Mirrors BoardingScale.ts.
 TILE_WIDTH = 64
@@ -26,7 +28,13 @@ ELEVATION = pi / 3
 GROUND_RATIO = sin(ELEVATION)
 VERTICAL_METER = TILE_WIDTH / sqrt(2) * cos(ELEVATION)
 # Screen width of free-standing objects' footprints, in projection units.
-FREE_WIDTHS = {'crate': 54, 'reactor': 58}
+FREE_WIDTHS = {
+    'crate': 54,
+    'reactor': 58,
+    'breach': 58,
+    'escape-pod': 54,
+    'escape-hatch': 54,
+}
 RESOLUTION = 3
 
 images = {name: Image.open(original / path).convert('RGBA') for name, path in sources.items()}
