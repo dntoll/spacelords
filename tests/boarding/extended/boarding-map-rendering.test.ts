@@ -66,6 +66,7 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
   const calls: { kind: string; alpha: number; y: number }[] = [];
   const lines: { stroke: string; points: number[] }[] = [];
   const strokes: string[] = [];
+  const fills: unknown[][] = [];
   const texts: string[] = [];
   const canvas = document.createElement('canvas');
   canvas.setPointerCapture = () => {};
@@ -182,6 +183,7 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
       currentStroke = value;
       strokes.push(value);
     },
+    fill: (...values: unknown[]) => fills.push(values),
     line: (...points: number[]) =>
       lines.push({ stroke: currentStroke, points }),
     text: (value: string) => texts.push(value),
@@ -191,6 +193,7 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
       calls.length = 0;
       lines.length = 0;
       strokes.length = 0;
+      fills.length = 0;
       texts.length = 0;
       masks.length = 0;
       imageLights.length = 0;
@@ -307,8 +310,32 @@ function scene(discovered: boolean, lights: readonly BoardingLight[] = []) {
     texts,
     contextFills,
     layerStrokes,
+    fills,
   };
 }
+
+it('ap-kostnad-och-handlingssymbol-pa-bordningsruta: outlines reachable tiles and writes accumulated AP including turns', () => {
+  const { view, state, strokes, fills, texts } = scene(true);
+  view.render(state, null, { q: 3, r: 2 }, [
+    { position: { q: 2, r: 2 }, kind: 'fire', cost: 2.25 },
+    { position: { q: 3, r: 2 }, kind: 'reach', cost: 5 },
+  ]);
+  expect(strokes).toEqual(expect.arrayContaining(['#62d48a', '#c58a4a']));
+  expect(fills).not.toContainEqual([98, 212, 138, 115]);
+  expect(fills).not.toContainEqual([240, 179, 90, 115]);
+  expect(texts).toEqual(expect.arrayContaining(['2.25', '5']));
+  view.dispose();
+});
+
+it('ap-kostnad-och-handlingssymbol-pa-bordningsruta: shows the fallback action symbol over a selected locked door', () => {
+  const { view, state, texts } = scene(true);
+  view.render(state, 'wall', null, [], [], null, {
+    position: { q: 4, r: 4 },
+    action: 'Hack door',
+  });
+  expect(texts).toContain('⌁');
+  view.dispose();
+});
 
 it('genomskinliga-skymmande-vaggar: fallback walls are opaque 40 cm sections, follow people in depth and allow picking the person behind', () => {
   const { view, calls, select, click, player } = scene(true);

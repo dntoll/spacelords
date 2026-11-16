@@ -1,4 +1,3 @@
-import actionAtlasUrl from '../../assets/actions-distinct-v4.png';
 import type { BoardingCameraBounds } from './BoardingCameraController.js';
 import { boardingMergedTurnFrames } from './BoardingMotionPacing.js';
 import {
@@ -27,6 +26,17 @@ import {
 import { boardingMapForState } from '../../models/map/TestBoarding.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { button, element } from '../../../common/dom.js';
+import {
+  BOARDING_ACTION_ATLAS_URL,
+  boardingActionArtwork,
+  boardingActionBackgroundPosition,
+  type BoardingActionArtwork,
+} from '../rendering/BoardingActionArtwork.js';
+
+export interface BoardingTileActionMark {
+  readonly position: BoardingCell;
+  readonly action: BoardingActionArtwork | 'Hack door';
+}
 
 function iconButton(
   label: string,
@@ -48,6 +58,7 @@ export interface BoardingMapPort {
     path: readonly BoardingPathMark[],
     targets?: readonly BoardingTargetIndicator[],
     sight?: BoardingSightArea | null,
+    action?: BoardingTileActionMark | null,
   ): void;
   setViewportProvider?(provider: () => BoardingCameraBounds | null): void;
   beginPresentation?(): void;
@@ -232,25 +243,11 @@ export class BoardingView {
     const control = iconButton(label, symbol, action, 'button boarding-action');
     const icon = document.createElement('span');
     const name = label.split(' · ')[0]!;
-    const positions: Record<string, string> = {
-      'Turn left 45°': '0% 0%',
-      'Turn right 45°': '33.333% 0%',
-      Move: '66.667% 0%',
-      Crouch: '100% 0%',
-      Shoot: '0% 50%',
-      Melee: '33.333% 50%',
-      'Frag grenade': '66.667% 50%',
-      'Smoke grenade': '100% 50%',
-      'Open door': '0% 100%',
-      'Close door': '0% 100%',
-      Overwatch: '33.333% 100%',
-      'Use Med-pack': '66.667% 100%',
-      'End soldier turn': '100% 100%',
-    };
-    if (positions[name]) {
+    const artwork = boardingActionArtwork(name);
+    if (artwork) {
       icon.className = 'boarding-action-art';
-      icon.style.backgroundImage = `url(${actionAtlasUrl})`;
-      icon.style.backgroundPosition = positions[name];
+      icon.style.backgroundImage = `url(${BOARDING_ACTION_ATLAS_URL})`;
+      icon.style.backgroundPosition = boardingActionBackgroundPosition(artwork);
       control.replaceChildren(icon);
     } else {
       icon.className = 'boarding-action-symbol';
@@ -599,6 +596,7 @@ export class BoardingView {
     const path = route
       ? boardingPathMarks(route, state.activation?.remaining ?? 0)
       : [];
+    let tileAction: BoardingTileActionMark | null = null;
     if (playerTurn) {
       // avstangda-omojliga-handlingar: every action the soldier cannot afford or
       // perform right now is shown disabled.
@@ -637,6 +635,12 @@ export class BoardingView {
       const preview = this.#selectedId
         ? this.#battle().attackPreview(actor.id, this.#selectedId)
         : null;
+      const selectedPersonAction =
+        selectedPerson?.side !== 'player' &&
+        !preview?.reason &&
+        remaining >= BOARDING_RIFLE_AP
+          ? 'Shoot'
+          : null;
       const melee = this.#selectedId
         ? this.#battle().meleePreview(actor.id, this.#selectedId)
         : null;
@@ -697,6 +701,30 @@ export class BoardingView {
         selectedFeature?.kind === 'door' && !selectedFeature.destroyed
           ? selectedFeature
           : facingDoor;
+      if (this.#destination)
+        tileAction = { position: this.#destination, action: 'Move' };
+      else if (selectedPerson && selectedPersonAction)
+        tileAction = {
+          position: selectedPerson.position,
+          action: selectedPersonAction,
+        };
+      else if (selectedFeature?.kind === 'door') {
+        const adjacent =
+          Math.abs(actor.position.q - selectedFeature.position.q) +
+            Math.abs(actor.position.r - selectedFeature.position.r) ===
+          1;
+        if (adjacent)
+          tileAction = {
+            position: selectedFeature.position,
+            action: selectedFeature.locked
+              ? 'Hack door'
+              : selectedFeature.open
+                ? 'Close door'
+                : 'Open door',
+          };
+        else if (this.#battle().stepTowards(actor.id, selectedFeature.position))
+          tileAction = { position: selectedFeature.position, action: 'Move' };
+      }
       // stang-oppen-dorr: an adjacent open door can be closed when its tile is empty.
       const openDoors = state.features.filter(
         (feature) =>
@@ -837,6 +865,7 @@ export class BoardingView {
       overlayActor ? this.#battle().targetIndicators(overlayActor.id) : [],
       // geometrisk-sikt: only the acting soldier's sight is shown.
       overlayActor ? this.#battle().sightArea(overlayActor.id) : null,
+      tileAction,
     );
   }
 

@@ -539,14 +539,17 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
     {
       position: { q: player.position.q + 1, r: player.position.r },
       kind: 'fire',
+      cost: 2,
     },
     {
       position: { q: player.position.q + 2, r: player.position.r },
       kind: 'reach',
+      cost: 4,
     },
     {
       position: { q: player.position.q + 3, r: player.position.r },
       kind: 'reach',
+      cost: 6,
     },
   ]);
   expect(battle.snapshot).toStrictEqual(boardingState);

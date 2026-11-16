@@ -33,17 +33,17 @@ describe('ap-fargad-bordningsvag', () => {
     const marks = boardingPathMarks(path(4), 7);
     expect(BOARDING_RIFLE_AP).toBe(4);
     expect(marks).toEqual([
-      { position: { q: 1, r: 0 }, kind: 'fire' },
-      { position: { q: 2, r: 0 }, kind: 'reach' },
-      { position: { q: 3, r: 0 }, kind: 'reach' },
+      { position: { q: 1, r: 0 }, kind: 'fire', cost: 2 },
+      { position: { q: 2, r: 0 }, kind: 'reach', cost: 4 },
+      { position: { q: 3, r: 0 }, kind: 'reach', cost: 6 },
     ]);
   });
 
   it('counts turns before a step and uses crouched step cost', () => {
     const marks = boardingPathMarks(path(2, 1, 3), 7);
     expect(marks).toEqual([
-      { position: { q: 1, r: 0 }, kind: 'reach' },
-      { position: { q: 2, r: 0 }, kind: 'reach' },
+      { position: { q: 1, r: 0 }, kind: 'reach', cost: 4 },
+      { position: { q: 2, r: 0 }, kind: 'reach', cost: 7 },
     ]);
   });
 });
@@ -62,7 +62,7 @@ it('ap-fargad-bordningsvag: sums actual mixed step costs at AP boundaries', () =
     ],
   };
   expect(boardingPathMarks(mixed, 6)).toEqual([
-    { position: { q: 1, r: 0 }, kind: 'fire' },
-    { position: { q: 2, r: 1 }, kind: 'reach' },
+    { position: { q: 1, r: 0 }, kind: 'fire', cost: 2 },
+    { position: { q: 2, r: 1 }, kind: 'reach', cost: 5 },
   ]);
 });
