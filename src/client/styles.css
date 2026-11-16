@@ -4373,3 +4373,15 @@ body:has(.discovery-controls) .selection-panel {
   line-height: 1;
   text-align: center;
 }
+
+/* synlig-byggversion: small, but readable on the saved games screen. */
+.app-header > .build-label {
+  align-self: center;
+  justify-self: end;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-align: right;
+}

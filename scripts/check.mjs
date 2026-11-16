@@ -162,7 +162,32 @@ export async function check(profile) {
   }
   const directory = resolve('dist/checks', `${profile}-${Date.now()}`);
   console.log(`Checks: ${profile}. Logs: ${directory}`);
-  return { profile, steps: await runSteps(steps, directory), directory };
+  const before = profile === 'full' ? committedRevision() : null;
+  const result = {
+    profile,
+    steps: await runSteps(steps, directory),
+    directory,
+  };
+  // release-till-main: only a clean, unchanged revision counts as fully tested.
+  if (before && committedRevision() === before) {
+    writeFileSync(
+      resolve('dist/checks/full-passed.json'),
+      JSON.stringify(
+        { revision: before, finishedAt: new Date().toISOString(), directory },
+        null,
+        2,
+      ) + '\n',
+    );
+    console.log(`Full suite passed for ${before}.`);
+  }
+  return result;
+}
+
+function committedRevision() {
+  const run = (...args) =>
+    spawnSync('git', args, { encoding: 'utf8' }).stdout?.trim() ?? '';
+  if (run('status', '--porcelain', '--untracked-files=all')) return null;
+  return run('rev-parse', 'HEAD') || null;
 }
 
 if (

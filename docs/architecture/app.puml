@@ -13,7 +13,7 @@ end note
 package "(delat)" as app___delat_ {
   rectangle "<b>controllers</b>\nMasterController" as app___delat___controllers
   rectangle "<b>models</b>\nAppModel\nPlayerNotice" as app___delat___models
-  rectangle "<b>views</b>\nAppView\nViewContracts\nplayerNoticeText" as app___delat___views
+  rectangle "<b>views</b>\nAppView\nViewContracts\nbuildLabel\nplayerNoticeText" as app___delat___views
 }
 rectangle "boarding" as ext__boarding #EEEEEE
 rectangle "common" as ext__common #EEEEEE

@@ -18,16 +18,31 @@ Skilj på GitHub-åtkomst och lokala filbehörigheter: nekad skrivning till
 byte av transport inte rättar. Begär inte nya nycklar eller inloggning enbart
 på grund av sådana fel. Lagra aldrig åtkomsttoken i repo, URL:er eller loggar.
 
-Läs instruktionen inför varje driftsättning. Arbetsflödet nedan gäller från
-2026-10-24 och ersätter kravet på fullständigt `check` inför varje publicering.
-Äldre leveransanteckningar längre ned beskriver det dåvarande flödet.
+Läs instruktionen inför varje driftsättning. Branch-, test- och releaseflödet
+nedan gäller från 2026-11-16. Det ersätter publicering av enskilda
+arbetsbranchar som normalläge och det lokalt begärda sluttestet med separat
+ja före merge till `main`. Äldre leveransanteckningar längre ned beskriver
+tidigare flöden.
 
-## Normalläge: ändring, snabbtest, publicering, manuell mobiltest
+## Branchar och datorer
 
-En vanlig ändringsbeställning ger tillstånd att publicera den committade
-arbetsbranchen, om användaren inte avstår. Källrepots `main` ändras först efter
-separat sluttest och godkännande. Prioritera mobil; användaren testar sedan på
-sin telefon och kan beställa ändringar eller mer omfattande tester.
+```
+arbetsbranch (claude/x, codex/y) ──work:merge──► development ──release──► main
+```
+
+- `main` innehåller bara revisioner som klarat hela sviten. Bara
+  `release:finish` flyttar den, alltid med fast-forward.
+- `development` är integrationsbranchen. All ny utveckling utgår från den, och
+  arbetsbranchar mergas tillbaka med `work:merge`. Den publiceras till den enda
+  testdeploymenten.
+- Arbetsbranchar har agentens prefix. Release-branchar heter `release/<datum>`.
+- Allt finns på origin. Arbetsdatorerna, hemma och på jobbet, används för
+  features. Molndatorn (Linux) kör releaser när användaren ber om det.
+
+Inget skript använder force-push. Pushar till `main` och `development` är
+vanliga pushar som avvisas om branchen hunnit flytta sig.
+
+## Förberedelser
 
 Använd Node.js 26 (LTS). Installera beroenden med `npm ci` när låsfilen ändrats eller
 beroenden saknas. Installera webbläsarna vid behov:
@@ -36,75 +51,161 @@ beroenden saknas. Installera webbläsarna vid behov:
 npx playwright install --with-deps chromium webkit
 ```
 
-Skriv kravkopplade tester för ändrat beteende. Vid bugg ska regressionstestet
-först misslyckas av rätt orsak. Kör relevanta kontroller före commit och committa
-bara avsedda ändringar på en arbetsbranch. Publicera sedan med:
+## Normalläge: ändring, snabbtest, merge till development, manuell mobiltest
+
+En vanlig ändringsbeställning ger tillstånd att merga den committade
+arbetsbranchen till `development` och publicera, om användaren inte avstår.
+Prioritera mobil; användaren testar sedan på sin telefon och kan beställa
+ändringar, fler features eller en release.
+
+1. Börja från origin (`gemensam-startpunkt`):
+
+   ```sh
+   npm run work:start -- claude/<ämne>
+   ```
+
+   Det hämtar origin och skapar branchen från `origin/development`. En ny
+   worktree som redan har en egen branch flyttas fram med bara
+   `npm run work:start`. Har branchen egna commits på en gammal bas avbryter
+   skriptet.
+
+2. Skriv kravkopplade tester för ändrat beteende. Vid bugg ska regressionstestet
+   först misslyckas av rätt orsak. Kör relevanta kontroller och committa bara
+   avsedda ändringar.
+
+3. Merga och publicera (`integrationsbranch-development`):
+
+   ```sh
+   npm run work:merge
+   ```
+
+   Kommandot kräver ren arbetsbranch som innehåller senaste
+   `origin/development`. Annars avbryter det med instruktion att köra
+   `git merge origin/development`, lösa konflikter och försöka igen. Därmed har
+   merge-commiten exakt samma träd som den testade arbetsbranchen. Kommandot
+   kör `check:quick`, skapar merge-commiten (`--no-ff`, så att en feature kan
+   tas bort med en enda `git revert -m 1`) och pushar arbetsbranchen och
+   `development` atomiskt till origin. Därefter publiceras bygget med etiketten
+   `development · <merge-commit>`. Har `development` flyttats under tiden
+   avvisas pushen innan något publiceras: kör om från steg 3.
+
+Vill användaren testa en feature isolerat publiceras arbetsbranchen utan merge:
 
 ```sh
 npm run deploy:quick
 ```
 
-Kommandot kräver ren arbetsbranch, inklusive inga ocommittade nya filer.
-Det kör `check:quick`: formatkontroll, ESLint, enhetstesterna, en typkontroll,
+Etiketten visar då arbetsbranchens namn. Även detta kräver att branchen
+innehåller senaste `origin/development`, så att ingen tidigare merge saknas i
+testet.
+
+`check:quick` omfattar formatkontroll, ESLint, enhetstesterna, en typkontroll,
 Pages-bygge, automatiska publiceringsskydd och Pages-integration.
 Enhetstesterna har ingen total tidsgräns och omfattar alla Vitest-tester utom
-HTTP-integration. Playwright ingår inte. Hela flödet har ingen tidsgräns.
+HTTP-integration. Playwright ingår inte.
 
-Publiceringsskriptet:
+### En enda testdeployment
 
-1. Fryser och kontrollerar källrevisionen och sparar det testade klientbygget.
-2. Pushar den exakta källrevisionen till arbetsbranchen med befintlig SSH.
-3. Hämtar webbplatsrepots aktuella `main` med `--depth 1`, `--filter=blob:none`
+Det finns bara `https://curiousengineerstudio.se/spacelords/`. Senaste
+publicering vinner. `Saved games` visar branch, kort revision och byggtid
+(`synlig-byggversion`), exempelvis `development · 3f2a1c4 · 2026-11-16 14:32`.
+Samma uppgifter finns som tooltip på `SPACELORDS` och i
+`spacelords/deployment.json` (`sourceRevision`, `branch`).
+
+### Publiceringsskriptet
+
+1. Kontrollerar ren arbetsbranch, hämtar origin och kontrollerar basen.
+2. Kör `check:quick` och sparar det testade klientbygget.
+3. Pushar arbetsbranchen, och vid `work:merge` även `development`, med
+   `git push --atomic origin`.
+4. Hämtar webbplatsrepots aktuella `main` med `--depth 1`, `--filter=blob:none`
    och sparse checkout för `spacelords/` till en separat tillfällig katalog.
    Skapar en deploybranch. Okända filer, fel appinnehåll och symboliska länkar
    avvisas. Övriga kataloger bevaras i Git-trädet utan att laddas ned.
-4. Ersätter endast `spacelords/`, lägger till `deployment.json` med
-   källrevision och kontrollsummor, granskar diffens avgränsning och committar.
-5. Hämtar aktuell `origin/main`. Andra projekts samtidiga ändringar bevaras med
+5. Ersätter endast `spacelords/`, lägger till `deployment.json` med
+   revision, branch och kontrollsummor, granskar diffens avgränsning och committar.
+6. Hämtar aktuell `origin/main`. Andra projekts samtidiga ändringar bevaras med
    rebase; ändrad `spacelords/` avbryter publiceringen för granskning.
-6. Använder dokumenterad vanlig push från den granskade deploybranchen till
-   webbplatsrepots `main`, med befintlig SSH. Ingen force-push eller ändring av
-   branchskydd görs. Avvisad push kräver ny granskning.
-7. Följer Pages-körningen för deployrevisionen och avslutar när den är klar.
-   Detta ersätter livejämförelse av publicerade filer och mobiltest mot
-   liveadressen. Användaren testar därefter manuellt.
+7. Använder vanlig push från den granskade deploybranchen till webbplatsrepots
+   `main` med befintlig SSH. Ingen force-push eller ändring av branchskydd görs.
+8. Följer Pages-körningen för deployrevisionen och avslutar när den är klar.
+   Användaren testar därefter manuellt.
 
 Kompakt rapport med revisioner, tider, filkontrollsummor, Pages-länk och utfall
 finns i `dist/deployments/<revision>-<tid>/report.json`. Stegloggar ligger bredvid,
-kontrolloggar i `dist/checks/`. Samma utskrift visas i terminalen medan steget
-körs. Dessa filer är ignorerade av Git. Läs fullständiga
+kontrolloggar i `dist/checks/`. Dessa filer är ignorerade av Git. Läs fullständiga
 loggar, spår och skärmbilder vid fel; läs inte om lyckade körningar utan skäl.
 Vid avbrott efter push kan publicering redan pågå: kontrollera rapporten och
 Pages innan du försöker igen. En ofärdig Pages-körning innebär inte återställning.
 
-`npm run check:quick` kör samma förkontroller utan publicering. Dela resultat
-mellan körningar bara när källrevision och byggresultat är oförändrade. GitHub
-kör snabbkontrollerna endast vid push till `main`. Arbetsgrenar och pull
-requests startar inget, och lokal publicering väntar inte på CI. GitHub CI
-publicerar inget. Playwright körs i den utökade sviten, inte i driftsättningen.
+GitHub kör snabbkontrollerna vid push till `main` och `development`
+(`tester-i-github`). Arbetsbranchar och pull requests startar inget, och lokal
+publicering väntar inte på CI. GitHub CI publicerar inget.
 
-## Begärt sluttest och merge
+## Release till main
 
-När användaren ber om sluttest körs `npm run check` lokalt för exakt aktuell
-källrevision. GitHub startar inte sluttestet. Detta ersätter manuell
-`workflow_dispatch` med låst SHA. Körningen omfattar kvalitetskontroller,
-enhetstester, båda byggena, alla integrationstester och hela webbläsarsviten.
-Matrisen är telefon Chromium, dator Chromium och telefon WebKit, med sex
-arbetstrådar. Surfplatta WebKit väntar tills fler plattformar väljs. Detta
-ersätter de fyra profilerna. Steggränsen är 20 minuter. Loggar sparas under
-`dist/checks/`.
+När användaren ber om en release, normalt till agenten på molndatorn
+(`release-till-main`):
 
-Efter godkänt sluttest redovisas testad SHA och relevanta överhoppade fall.
-Fråga därefter om merge till källrepots `main`. Ett separat ja krävs för
-den testade revisionen. Kontrollera åter aktuell branchrevision och
-att inga konfliktlösningar eller andra ändringar tillkommit före merge.
-Ändrad källrevision kräver nytt sluttest. Samma godkända fullständiga körning
-behöver inte upprepas lokalt.
+```sh
+npm run release:start
+```
 
-Om fel upptäcks: regressionstest, rättning, snabbtest och ny publicering.
-Låt användaren testa manuellt igen och invänta ny begäran om sluttest. Fråga vid
-behov om förändrat beteende eller större omfattning. En oförändrad, redan
-publicerad revision publiceras inte igen enbart för att sluttestet lyckats.
+Det hämtar origin och skapar och pushar `release/<datum>` från
+`origin/development`. Release-branchen tar bara emot rättningar, inte ny
+funktionalitet. Kör därefter hela sviten:
+
+```sh
+npm run check
+```
+
+Den omfattar kvalitetskontroller, enhetstester, båda byggena, alla
+integrationstester och hela webbläsarsviten. Matrisen är telefon Chromium, dator
+Chromium och telefon WebKit, med sex arbetstrådar. Loggar sparas under
+`dist/checks/`. När sviten går igenom för en ren, oförändrad revision skrivs
+`dist/checks/full-passed.json` med den revisionen.
+
+Vid fel: regressionstest som misslyckas av rätt orsak, rättning, commit, push
+av release-branchen och ny `npm run check`. Upprepa tills hela sviten går
+igenom för exakt aktuell revision. Vill användaren testa releasen manuellt
+publiceras den med `npm run deploy:quick`. Etiketten visar då `release/<datum>`.
+
+Avsluta med:
+
+```sh
+npm run release:finish
+```
+
+Skriptet:
+
+1. Kräver att `full-passed.json` gäller exakt aktuell revision och att
+   releasen innehåller `origin/main`.
+2. Pushar revisionen till `main` (fast-forward).
+3. Innehåller releasen hela `origin/development` pushas samma revision även
+   dit, atomiskt med `main`. Har `development` fått nya features mergas releasen
+   in i den med `--no-ff`. Därefter körs `check:quick`, och resultatet pushas.
+4. Tar bort release-branchen på origin och lokalt.
+
+Om merge tillbaka ger konflikter eller fallerar snabbkontrollerna är `main`
+redan släppt. Skriptet lämnar då release-branchen kvar och anger hur
+rättningen görs: en arbetsbranch från `origin/development`, `git merge
+release/<datum>`, konfliktlösning, tester och `npm run work:merge`.
+`release:start` vägrar skapa nästa release så länge `development` saknar `main`.
+
+Användarens beställning av release är tillståndet att flytta `main`. Redovisa
+testad SHA och relevanta överhoppade fall efteråt.
+
+## Översikt över branchar
+
+```sh
+npm run branches:status
+```
+
+Kommandot (`branchoversikt`) visar hur många commits `development` har som
+ännu inte släppts till `main`. Det varnar om `development` saknar `main` och
+listar branchar på origin med commits som saknas i `development`, med datum
+och senaste commitmeddelande. Ta bort branchar på origin bara efter
+användarens ja.
 
 ## Avgränsning och sparade spel
 
@@ -123,7 +224,8 @@ publicerad revision publiceras inte igen enbart för att sluttestet lyckats.
   inkompatibel sparändring och förklara vad som raderas eller ersätts.
   Normalläget innebär inte ett generellt tillstånd att radera sparningar.
 - Publicering till webbplatsrepots `main` och merge till källrepots `main` är
-  två separata åtgärder. Det senare kräver godkänt sluttest och separat ja.
+  två separata åtgärder. Det senare görs bara av `release:finish` efter godkänd
+  hel svit.
 
 ## Återställning
 

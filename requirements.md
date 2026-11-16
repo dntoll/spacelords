@@ -851,14 +851,18 @@ Se [hela visionen](docs/game-vision.md).
   väntar tills fler plattformar väljs. Detta ersätter de fyra profilerna.
   `snabb-mobilpublicering` är **Fullständigt implementerat** och provpublicerat:
   en vanlig ändringsbeställning innebär snabbtest utan Playwright och publicering
-  av arbetsbranchen, om användaren inte uttryckligen avstår. Driftsättningen
-  väntar tills Pages är klar. Därefter testar användaren på mobilen. Playwright
-  ligger kvar i den utökade sviten. Detta ersätter livekontroll av publicerade
-  filer och mobiltest i driftsättningen.
-  `tester-i-github` kör snabbkontroller endast vid push till `main`. Detta
-  ersätter körning vid varje push, pull request och manuellt sluttest i GitHub.
-  `sluttest-fore-merge` är **Delvis implementerat**: fullständig testning körs
-  lokalt när den beställs, före godkänd merge. GitHub startar den inte.
+  till den enda testdeploymenten, om användaren inte uttryckligen avstår.
+  Driftsättningen väntar tills Pages är klar. Därefter testar användaren på
+  mobilen. Playwright ligger kvar i den utökade sviten.
+  Branchflödet från 2026-11-16 (se [driftsättning](docs/deployment.md)):
+  `gemensam-startpunkt`, `integrationsbranch-development`, `release-till-main`,
+  `synlig-byggversion` och `branchoversikt` är **Delvis implementerat**:
+  skript, regler och tester finns, men flödet är ännu inte provkört mot origin
+  och molndatorn. Arbete utgår alltid från `origin/development`, mergas dit och
+  publiceras därifrån. En release på molndatorn kör hela sviten, flyttar `main`
+  och mergar rättningarna tillbaka. Appen visar publicerad branch och revision.
+  `release-till-main` ersätter `sluttest-fore-merge`.
+  `tester-i-github` kör snabbkontroller vid push till `main` och `development`.
 - **Driftsättning:** endast klientbygget under `spacelords/` i målrepot;
   befintlig webbplats, navigation, DNS och Pages-inställningar bevaras.
 

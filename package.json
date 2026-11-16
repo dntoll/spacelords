@@ -32,7 +32,12 @@
     "test:mobile": "playwright test --config playwright.mobile.config.ts",
     "check:quick": "node scripts/check.mjs quick",
     "architecture:map": "node scripts/architecture-map.mjs",
-    "deploy:quick": "node scripts/deploy-quick.mjs"
+    "deploy:quick": "node scripts/deploy-quick.mjs",
+    "work:start": "node scripts/branch-flow.mjs work:start",
+    "work:merge": "node scripts/branch-flow.mjs work:merge",
+    "release:start": "node scripts/branch-flow.mjs release:start",
+    "release:finish": "node scripts/branch-flow.mjs release:finish",
+    "branches:status": "node scripts/branch-flow.mjs branches:status"
   },
   "dependencies": {
     "express": "^5.3.0",

@@ -11,6 +11,12 @@ import {
   preparePublication,
   refreshPublication,
 } from './publication.mjs';
+import {
+  assertCurrentBase,
+  fetchOrigin,
+  integrationBranch,
+  prepareIntegration,
+} from './branch-flow.mjs';
 
 const site = 'https://curiousengineerstudio.se';
 const appURL = `${site}/spacelords/`;
@@ -56,11 +62,25 @@ async function waitForPages(revision, report) {
   );
 }
 
-export async function deploy() {
+// snabb-mobilpublicering: one test deployment. With integrate, the work branch is
+// merged into development and the label names development and its merge commit.
+export async function deploy({ integrate = false } = {}) {
   const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
   process.chdir(root);
   const started = performance.now();
   const source = assertSource(root);
+  fetchOrigin(root);
+  const integration = integrate
+    ? prepareIntegration(root, source.branch)
+    : (assertCurrentBase(root, source.branch), null);
+  const published = integration
+    ? { branch: integrationBranch, revision: integration.merge }
+    : source;
+  process.env.SPACELORDS_BUILD_BRANCH = published.branch;
+  process.env.SPACELORDS_BUILD_REVISION = published.revision;
+  const pushes = [`${source.revision}:refs/heads/${source.branch}`];
+  if (integration)
+    pushes.push(`${integration.merge}:refs/heads/${integrationBranch}`);
   const directory = resolve(
     'dist/deployments',
     `${source.revision.slice(0, 12)}-${Date.now()}`,
@@ -69,6 +89,8 @@ export async function deploy() {
   const report = {
     sourceRevision: source.revision,
     branch: source.branch,
+    publishedBranch: published.branch,
+    publishedRevision: published.revision,
     url: appURL,
     status: 'started',
     operations: [],
@@ -96,11 +118,8 @@ export async function deploy() {
           [
             'push-source',
             'git',
-            [
-              'push',
-              'git@github.com:dntoll/spacelords.git',
-              `${source.revision}:refs/heads/${source.branch}`,
-            ],
+            // integrationsbranch-development: both refs move, or neither does.
+            ['push', '--atomic', 'origin', ...pushes],
           ],
           [
             'clone-site',
@@ -145,7 +164,8 @@ export async function deploy() {
     const publication = preparePublication(
       report.checkout,
       build,
-      source.revision,
+      published.revision,
+      published.branch,
     );
     const current = refreshPublication(report.checkout, publication.base);
     report.previousRevision = current.previous;
@@ -174,7 +194,9 @@ export async function deploy() {
     save();
     await waitForPages(current.commit, report);
     report.status = 'published';
-    console.log(`Published ${source.revision.slice(0, 12)}: ${appURL}`);
+    console.log(
+      `Published ${published.branch} ${published.revision.slice(0, 12)}: ${appURL}`,
+    );
   } catch (error) {
     report.failure = error.message;
     if (!['publishing', 'published-awaiting-pages'].includes(report.status))
