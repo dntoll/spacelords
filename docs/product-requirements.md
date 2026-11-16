@@ -1578,8 +1578,9 @@ vänder sig soldaten ditåt.
 hela vägen använder soldaten det som blir över till att vända sig mot nästa
 steg, redo att fortsätta nästa runda.
 
-`ap-fraktion-sparas` — **Fullständigt implementerat**: blir bara en bråkdel av
-en AP kvar slutar soldatens tur och bråkdelen sparas till nästa runda.
+`ap-fraktion-sparas` — **Fullständigt implementerat**: när soldaten inte har
+AP nog för nästa steg slutar dess tur och det som blev över sparas till nästa
+runda. Kostar nästa steg 2 AP och 1,75 AP blir över sparas alltså 1,75 AP.
 
 `sparad-gangdestination` — **Fullständigt implementerat**: målet soldaten
 inte hann fram till är fortfarande valt nästa runda, så att soldaten kan gå
@@ -1638,6 +1639,14 @@ personer om tillräckligt mycket av målet syns.
 
 `avstangda-omojliga-handlingar` — **Fullständigt implementerat**:
 handlingsknappar som inte kan utföras är avstängda.
+
+`fasta-handlingsplatser` — **Fullständigt implementerat**: varje
+handlingsknapp har alltid samma plats, så att knapparna inte flyttar runt.
+Öppna och stänga dörr delar plats men ser olika ut.
+
+`gang-knapp-till-avlagset-mal` — **Fullständigt implementerat**: `Move` är
+inte avstängd när destinationen ligger för långt bort; soldaten går då så
+långt den hinner.
 
 `bordning-jamn-bildfrekvens` — **Fullständigt implementerat**: bordningskartan
 ska kännas jämn och inte ryckig på mobilen.

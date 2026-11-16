@@ -123,10 +123,11 @@ kommer från testtransportens startpositioner.
   går mot ett mål som AP inte räcker till används kvarvarande AP efter sista
   steget till att vända soldaten mot nästa steg, så att den kan fortsätta
   direkt nästa runda.
-- `ap-fraktion-sparas` — **Fullständigt implementerat**. Återstår därefter
-  bara en bråkdel av en AP slutar soldatens tur, och bråkdelen läggs till
-  soldatens AP vid nästa aktivering. Återstår minst en hel AP får soldaten
-  fortsätta agera.
+- `ap-fraktion-sparas` — **Fullständigt implementerat**. Därefter slutar
+  soldatens tur, och AP som är mindre än nästa stegs kostnad läggs till
+  soldatens AP vid nästa aktivering. Kostar nästa steg 2 AP sparas till
+  exempel 1,75 AP. Detta ersätter den tidigare gränsen där bara en bråkdel
+  under 1 AP sparades och soldaten annars fick fortsätta agera.
 - `sparad-gangdestination` — **Fullständigt implementerat**. Ett mål soldaten
   inte hann nå sparas och är valt igen när soldaten aktiveras nästa gång. Ett
   nytt tryck på målet fortsätter gå. Målet glöms när soldaten når det eller
@@ -329,6 +330,17 @@ kommer från testtransportens startpositioner.
   hukning, Overwatch, `Hack door`, `Use Med-pack`, `Evacuate`, dörrar, granater,
   skott, melee och förflyttning är avstängda när AP, avstånd eller mål inte
   räcker. `End soldier turn` är alltid tillgänglig.
+- `fasta-handlingsplatser` — **Fullständigt implementerat**. Alla knappar
+  visas alltid i samma ordning: vridningar, `Move`, hukning, skott, melee,
+  granater, `Open door`/`Close door` på samma plats, `Hack door`,
+  `Use Med-pack`,
+  Overwatch, `Evacuate`, i kampanjen `Abort boarding` och sist
+  `End soldier turn`. En knapp som saknar mål är avstängd i stället för
+  borttagen, så att knapparna aldrig flyttar runt. `Open door` visar en
+  öppen dörr och `Close door` en stängd dörr.
+- `gang-knapp-till-avlagset-mal` — **Fullständigt implementerat**. `Move` är
+  tillgänglig även när destinationen ligger för långt bort och går då som ett
+  andra tryck på målet (`gang-mot-avlagset-mal`).
 - `granat-kostar-bara-vid-kast` — **Fullständigt implementerat**. Ett kast
   utanför räckvidden (6 rutor), utan kvarvarande granat av den sorten eller med
   för lite AP avvisas innan någon AP dras. Granatknapparna är avstängda för

@@ -28,9 +28,8 @@ import { boardingMapForState } from '../../models/map/TestBoarding.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { button, element } from '../../../common/dom.js';
 import {
-  BOARDING_ACTION_ATLAS_URL,
   boardingActionArtwork,
-  boardingActionBackgroundPosition,
+  boardingActionButtonImage,
   type BoardingActionArtwork,
 } from '../rendering/BoardingActionArtwork.js';
 
@@ -248,8 +247,11 @@ export class BoardingView {
     const artwork = boardingActionArtwork(name);
     if (artwork) {
       icon.className = 'boarding-action-art';
-      icon.style.backgroundImage = `url(${BOARDING_ACTION_ATLAS_URL})`;
-      icon.style.backgroundPosition = boardingActionBackgroundPosition(artwork);
+      const image = boardingActionButtonImage(artwork);
+      icon.style.backgroundImage = `url(${image.url})`;
+      icon.style.backgroundPosition = image.position;
+      icon.style.backgroundSize = image.size;
+      icon.style.backgroundRepeat = 'no-repeat';
       control.replaceChildren(icon);
     } else {
       icon.className = 'boarding-action-symbol';
@@ -624,7 +626,12 @@ export class BoardingView {
     if (playerTurn) {
       // avstangda-omojliga-handlingar: every action the soldier cannot afford or
       // perform right now is shown disabled.
+      // fasta-handlingsplatser: every action is always shown in the same place.
       const remaining = state.activation?.remaining ?? 0;
+      const destination = this.#destination;
+      // gang-knapp-till-avlagset-mal: a far destination is walked towards.
+      const walkable =
+        !!destination && !!this.#battle().routeTowards(actor.id, destination);
       this.#action(
         'Turn left 45°',
         '↶',
@@ -640,8 +647,13 @@ export class BoardingView {
       this.#action(
         `Move${route ? ` · ${route.cost} AP` : ''}`,
         '↑',
-        () => this.#command({ type: 'move', to: this.#destination! }),
-        !route || route.cost > (state.activation?.remaining ?? 0),
+        () =>
+          this.#command(
+            route && route.cost <= remaining
+              ? { type: 'move', to: destination! }
+              : { type: 'walk', to: destination! },
+          ),
+        !walkable,
       );
       this.#action(
         actor.crouched ? 'Stand' : 'Crouch',
@@ -686,32 +698,18 @@ export class BoardingView {
           melee.reason !== null ||
           (state.activation?.remaining ?? 0) < BOARDING_MELEE_AP,
       );
-      if (this.#destination) {
+      for (const [grenade, label, symbol] of [
+        ['frag', 'Frag grenade', '◆'],
+        ['smoke', 'Smoke grenade', '◇'],
+      ] as const)
         this.#action(
-          'Frag grenade',
-          '◆',
-          () =>
-            this.#command({
-              type: 'grenade',
-              grenade: 'frag',
-              at: this.#destination!,
-            }),
-          this.#battle().grenadeReason(actor.id, 'frag', this.#destination) !==
-            null,
+          label,
+          symbol,
+          () => this.#command({ type: 'grenade', grenade, at: destination! }),
+          !destination ||
+            this.#battle().grenadeReason(actor.id, grenade, destination) !==
+              null,
         );
-        this.#action(
-          'Smoke grenade',
-          '◇',
-          () =>
-            this.#command({
-              type: 'grenade',
-              grenade: 'smoke',
-              at: this.#destination!,
-            }),
-          this.#battle().grenadeReason(actor.id, 'smoke', this.#destination) !==
-            null,
-        );
-      }
       const forward = BoardingBattle.forward(actor.position, actor.facing);
       const facingDoor = state.features.find(
         (feature) =>
@@ -781,65 +779,75 @@ export class BoardingView {
             feature.position.r === forward.r,
         ) ??
         openDoors[0];
-      if (door) {
-        const action = door.open ? 'close' : 'open';
-        this.#action(
-          door.open ? 'Close door' : 'Open door',
-          door.open ? '▮' : '▯',
-          () => this.#command({ type: 'door', id: door.id, action }),
-          this.#battle().doorReason(actor.id, door.id, action) !== null,
-        );
-        this.#action(
-          'Hack door',
-          '⌁',
-          () => this.#command({ type: 'hack', id: door.id }),
+      // fasta-handlingsplatser: Open door and Close door share one place; a
+      // chosen door decides, then an open door at the destination, then the
+      // closed door ahead, then any adjacent open door.
+      const chosenDoor =
+        selectedFeature?.kind === 'door' && !selectedFeature.destroyed
+          ? selectedFeature
+          : null;
+      const doorTarget =
+        chosenDoor ??
+        openDoors.find((feature) => atDestination(feature.position)) ??
+        facingDoor ??
+        closable ??
+        null;
+      const doorAction = doorTarget?.open ? 'close' : 'open';
+      this.#action(
+        doorAction === 'close' ? 'Close door' : 'Open door',
+        doorAction === 'close' ? '▮' : '▯',
+        () =>
+          this.#command({
+            type: 'door',
+            id: doorTarget!.id,
+            action: doorAction,
+          }),
+        !doorTarget ||
+          this.#battle().doorReason(actor.id, doorTarget.id, doorAction) !==
+            null,
+      );
+      this.#action(
+        'Hack door',
+        '⌁',
+        () => this.#command({ type: 'hack', id: door!.id }),
+        !door ||
           !door.locked ||
-            remaining < BOARDING_HACK_AP ||
-            Math.abs(actor.position.q - door.position.q) +
-              Math.abs(actor.position.r - door.position.r) !==
-              1,
-        );
-      }
-      if (closable && !door?.open)
-        this.#action(
-          'Close door',
-          '▮',
-          () =>
-            this.#command({ type: 'door', id: closable.id, action: 'close' }),
-          this.#battle().doorReason(actor.id, closable.id, 'close') !== null,
-        );
-      if (selectedPerson?.status === 'incapacitated')
-        this.#action(
-          'Use Med-pack',
-          '+',
-          () =>
-            this.#command({ type: 'med-pack', targetId: selectedPerson.id }),
+          remaining < BOARDING_HACK_AP ||
+          Math.abs(actor.position.q - door.position.q) +
+            Math.abs(actor.position.r - door.position.r) !==
+            1,
+      );
+      const downed =
+        selectedPerson?.status === 'incapacitated' ? selectedPerson : null;
+      this.#action(
+        'Use Med-pack',
+        '+',
+        () => this.#command({ type: 'med-pack', targetId: downed!.id }),
+        !downed ||
           actor.medPacks < 1 ||
-            remaining < BOARDING_MED_PACK_AP ||
-            Math.abs(actor.position.q - selectedPerson.position.q) +
-              Math.abs(actor.position.r - selectedPerson.position.r) !==
-              1,
-        );
+          remaining < BOARDING_MED_PACK_AP ||
+          Math.abs(actor.position.q - downed.position.q) +
+            Math.abs(actor.position.r - downed.position.r) !==
+            1,
+      );
       this.#action(
         'Overwatch',
         '◉',
         () => this.#command({ type: 'overwatch' }),
         remaining < BOARDING_RIFLE_AP,
       );
-      if (
-        state.features.some(
-          (feature) =>
-            feature.kind === 'exit' &&
-            feature.position.q === actor.position.q &&
-            feature.position.r === actor.position.r,
-        )
-      )
-        this.#action(
-          'Evacuate',
-          '⇱',
-          () => this.#command({ type: 'evacuate' }),
-          remaining < BOARDING_EVACUATE_AP,
-        );
+      this.#action(
+        'Evacuate',
+        '⇱',
+        () => this.#command({ type: 'evacuate' }),
+        remaining < BOARDING_EVACUATE_AP ||
+          !state.features.some(
+            (feature) =>
+              feature.kind === 'exit' &&
+              feature.position.q === actor.position.q &&
+              feature.position.r === actor.position.r,
+          ),
+      );
       if (state.campaign)
         this.#action(
           'Abort boarding',

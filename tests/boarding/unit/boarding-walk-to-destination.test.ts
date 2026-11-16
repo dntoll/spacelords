@@ -87,9 +87,6 @@ describe('vandning-mot-nasta-steg', () => {
     const walker = personIn(battle, actor.id);
     expect(walker.position).toEqual({ q: 5, r: 2 });
     expect(walker.facing).toBe(3);
-    // A whole AP remains, so the soldier may still act.
-    expect(battle.snapshot.currentActorId).toBe(actor.id);
-    expect(battle.snapshot.activation?.remaining).toBe(1);
   });
 
   it('turns as far as the AP allows when it cannot finish the turn', () => {
@@ -121,6 +118,25 @@ describe('ap-fraktion-sparas', () => {
     expect(personIn(battle, actor.id).carriedAp ?? 0).toBe(0);
   });
 
+  it('saves anything below the cost of the next step, not only fractions', () => {
+    const { actor, restore } = corridor();
+    const battle = restore(10.25);
+    battle.command({ type: 'walk', to: { q: 5, r: 4 } });
+    expect(personIn(battle, actor.id).facing).toBe(3);
+    // 1.75 AP is left, less than the 2 AP the next step costs.
+    expect(battle.snapshot.currentActorId).not.toBe(actor.id);
+    expect(personIn(battle, actor.id).carriedAp).toBe(1.75);
+  });
+
+  it('saves the AP when the first step is already out of reach', () => {
+    const { actor, restore } = corridor();
+    const battle = restore(1.5);
+    battle.command({ type: 'walk', to: { q: 3, r: 2 } });
+    expect(personIn(battle, actor.id).position).toEqual({ q: 1, r: 2 });
+    expect(battle.snapshot.currentActorId).not.toBe(actor.id);
+    expect(personIn(battle, actor.id).carriedAp).toBe(1.5);
+  });
+
   it('ends the turn on a fraction even when no step or turn is affordable', () => {
     const { actor, restore } = corridor();
     const battle = restore(0.5);
@@ -148,6 +164,8 @@ describe('sparad-gangdestination', () => {
     const battle = restore(9.5);
     battle.command({ type: 'walk', to: { q: 5, r: 4 } });
     expect(personIn(battle, actor.id).destination).toBeDefined();
+    while (battle.snapshot.currentActorId !== actor.id)
+      battle.command({ type: 'end-activation' });
     battle.command({ type: 'turn', direction: 1 });
     battle.command({ type: 'turn', direction: 1 });
     battle.command({ type: 'face', toward: { q: 4, r: 2 } });
@@ -158,7 +176,6 @@ describe('sparad-gangdestination', () => {
     const { actor, restore } = corridor();
     const battle = restore(9.5);
     battle.command({ type: 'walk', to: { q: 5, r: 4 } });
-    battle.command({ type: 'end-activation' });
     while (battle.snapshot.currentActorId !== actor.id)
       battle.command({ type: 'end-activation' });
     battle.command({ type: 'move', to: { q: 5, r: 3 } });
