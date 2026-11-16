@@ -122,6 +122,12 @@ export class BoardingView {
   readonly #controls = element('section', 'boarding-controls');
   readonly #details = element('details', 'boarding-details');
   readonly #canvas = element('div', 'boarding-canvas');
+  /** motstandartur-i-mitten: shown in the middle of the board while opponents act. */
+  readonly #enemyTurn = element(
+    'p',
+    'boarding-enemy-turn',
+    'Defenders are acting…',
+  );
   readonly #close: HTMLButtonElement;
   readonly #mapFactory: BoardingMapFactory | undefined;
   #map: BoardingMapPort | undefined;
@@ -172,7 +178,9 @@ export class BoardingView {
     const layout = element('div', 'boarding-layout');
     const hud = element('div', 'boarding-hud');
     hud.append(this.#status, this.#team);
-    layout.append(board, hud, this.#controls, this.#details);
+    this.#enemyTurn.setAttribute('role', 'status');
+    this.#enemyTurn.hidden = true;
+    layout.append(board, hud, this.#enemyTurn, this.#controls, this.#details);
     this.#dialog.append(header, layout);
     root.append(this.#dialog);
     this.#dialog.showModal();
@@ -626,6 +634,9 @@ export class BoardingView {
       this.#team.append(unit);
     }
     this.#controls.replaceChildren();
+    // motstandartur-i-mitten: defenders, civilians and round resolution.
+    const opponentsActing =
+      state.phase === 'fighting' && actor?.side !== 'player';
 
     const route =
       playerTurn && actor && this.#destination
@@ -880,18 +891,18 @@ export class BoardingView {
             : 'Tap a destination or enemy, then tap it again to move or fire.',
       );
       this.#controls.prepend(selection);
-    } else
+    } else if (!opponentsActing)
       this.#controls.append(
         element(
           'p',
           'boarding-selection',
           state.phase === 'complete'
             ? 'Close boarding to return to saved games.'
-            : this.#busy
-              ? 'Resolving action…'
-              : 'Defenders are acting…',
+            : 'Resolving action…',
         ),
       );
+    this.#enemyTurn.hidden = !opponentsActing;
+    this.#controls.hidden = opponentsActing;
 
     const defenderActing =
       state.phase === 'fighting' &&
