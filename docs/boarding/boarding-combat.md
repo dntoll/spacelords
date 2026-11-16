@@ -332,10 +332,12 @@ kommer från testtransportens startpositioner.
   räcker. `End soldier turn` är alltid tillgänglig.
 - `fasta-handlingsplatser` — **Fullständigt implementerat**. Alla knappar
   visas alltid i samma ordning: vridningar, `Move`, hukning, skott, melee,
-  granater, `Open door`, `Close door`, `Hack door`, `Use Med-pack`,
+  granater, `Open door`/`Close door` på samma plats, `Hack door`,
+  `Use Med-pack`,
   Overwatch, `Evacuate`, i kampanjen `Abort boarding` och sist
   `End soldier turn`. En knapp som saknar mål är avstängd i stället för
-  borttagen, så att knapparna aldrig flyttar runt.
+  borttagen, så att knapparna aldrig flyttar runt. `Open door` visar en
+  öppen dörr och `Close door` en stängd dörr.
 - `gang-knapp-till-avlagset-mal` — **Fullständigt implementerat**. `Move` är
   tillgänglig även när destinationen ligger för långt bort och går då som ett
   andra tryck på målet (`gang-mot-avlagset-mal`).

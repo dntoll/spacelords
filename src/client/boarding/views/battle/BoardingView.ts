@@ -28,9 +28,8 @@ import { boardingMapForState } from '../../models/map/TestBoarding.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { button, element } from '../../../common/dom.js';
 import {
-  BOARDING_ACTION_ATLAS_URL,
   boardingActionArtwork,
-  boardingActionBackgroundPosition,
+  boardingActionButtonImage,
   type BoardingActionArtwork,
 } from '../rendering/BoardingActionArtwork.js';
 
@@ -248,8 +247,11 @@ export class BoardingView {
     const artwork = boardingActionArtwork(name);
     if (artwork) {
       icon.className = 'boarding-action-art';
-      icon.style.backgroundImage = `url(${BOARDING_ACTION_ATLAS_URL})`;
-      icon.style.backgroundPosition = boardingActionBackgroundPosition(artwork);
+      const image = boardingActionButtonImage(artwork);
+      icon.style.backgroundImage = `url(${image.url})`;
+      icon.style.backgroundPosition = image.position;
+      icon.style.backgroundSize = image.size;
+      icon.style.backgroundRepeat = 'no-repeat';
       control.replaceChildren(icon);
     } else {
       icon.className = 'boarding-action-symbol';
@@ -777,21 +779,32 @@ export class BoardingView {
             feature.position.r === forward.r,
         ) ??
         openDoors[0];
-      const opening = door && !door.open ? door : null;
-      const closing = door?.open ? door : closable;
+      // fasta-handlingsplatser: Open door and Close door share one place; a
+      // chosen door decides, then an open door at the destination, then the
+      // closed door ahead, then any adjacent open door.
+      const chosenDoor =
+        selectedFeature?.kind === 'door' && !selectedFeature.destroyed
+          ? selectedFeature
+          : null;
+      const doorTarget =
+        chosenDoor ??
+        openDoors.find((feature) => atDestination(feature.position)) ??
+        facingDoor ??
+        closable ??
+        null;
+      const doorAction = doorTarget?.open ? 'close' : 'open';
       this.#action(
-        'Open door',
-        '▯',
-        () => this.#command({ type: 'door', id: opening!.id, action: 'open' }),
-        !opening ||
-          this.#battle().doorReason(actor.id, opening.id, 'open') !== null,
-      );
-      this.#action(
-        'Close door',
-        '▮',
-        () => this.#command({ type: 'door', id: closing!.id, action: 'close' }),
-        !closing ||
-          this.#battle().doorReason(actor.id, closing.id, 'close') !== null,
+        doorAction === 'close' ? 'Close door' : 'Open door',
+        doorAction === 'close' ? '▮' : '▯',
+        () =>
+          this.#command({
+            type: 'door',
+            id: doorTarget!.id,
+            action: doorAction,
+          }),
+        !doorTarget ||
+          this.#battle().doorReason(actor.id, doorTarget.id, doorAction) !==
+            null,
       );
       this.#action(
         'Hack door',

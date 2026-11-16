@@ -1642,6 +1642,7 @@ handlingsknappar som inte kan utföras är avstängda.
 
 `fasta-handlingsplatser` — **Fullständigt implementerat**: varje
 handlingsknapp har alltid samma plats, så att knapparna inte flyttar runt.
+Öppna och stänga dörr delar plats men ser olika ut.
 
 `gang-knapp-till-avlagset-mal` — **Fullständigt implementerat**: `Move` är
 inte avstängd när destinationen ligger för långt bort; soldaten går då så

@@ -1813,7 +1813,11 @@ färdig reparation.
   modellens `grenadeReason` och `doorReason`.
 - `fasta-handlingsplatser`: BoardingView ritar alltid samma knappar i samma
   ordning med fast storlek; knappar utan mål är avstängda i stället för
-  borttagna. Dörrarna har en fast `Open door`- och en fast `Close door`-plats.
+  borttagna. `Open door` och `Close door` delar en plats: en vald dörr
+  avgör, annars en öppen dörr på destinationen, dörren framför soldaten och
+  sist en angränsande öppen dörr. `boardingActionButtonImage` ger
+  `Close door` spelets stängda dörrbild (`door-face.png`) i stället för
+  atlasens öppna dörr.
   `Abort boarding` finns bara i kampanjen men ändras inte under en strid.
 - `gang-knapp-till-avlagset-mal`: `Move` är tillgänglig när
   `routeTowards` hittar en väg och skickar `move` när hela vägen ryms,
