@@ -4,7 +4,7 @@ import type {
   EditorPaintCell,
   EditorProjection,
   EditorTool,
-  SpriteTransform,
+  SpriteAxisPlacement,
 } from '../models/editor/BoardingEditor.js';
 import {
   BOARDING_MAP_IDS,
@@ -104,8 +104,12 @@ export class BoardingEditorController {
     this.#editor.resize(width, height);
   }
 
-  spriteTransform(sprite: SpriteTransform): void {
+  spriteTransform(sprite: SpriteAxisPlacement): void {
     this.#editor.spriteTransform(sprite);
+  }
+
+  pictureAspect(aspect: number): void {
+    this.#editor.pictureAspect(aspect);
   }
 
   adjustSprite(value: boolean): void {
