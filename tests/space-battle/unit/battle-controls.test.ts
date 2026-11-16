@@ -1977,7 +1977,8 @@ const actionNames = () =>
       control
         .getAttribute('aria-label')!
         .split(' · ')[0]!
-        .replace(/^Stand$/, 'Crouch'),
+        .replace(/^Stand$/, 'Crouch')
+        .replace(/^Close door$/, 'Open door'),
   );
 
 it('gang-knapp-till-avlagset-mal: Move stays enabled for a destination beyond the AP and walks there', () => {
@@ -2000,8 +2001,7 @@ it('fasta-handlingsplatser: every action keeps its place whatever is chosen', ()
   const { view, destination, select } = farDestinationView();
   const before = actionNames();
   expect(before).toContain('Frag grenade');
-  expect(before).toContain('Open door');
-  expect(before).toContain('Close door');
+  expect(before.filter((name) => name === 'Open door')).toHaveLength(1);
   expect(before).toContain('Use Med-pack');
   expect(before).toContain('Evacuate');
   expect(
@@ -2010,5 +2010,68 @@ it('fasta-handlingsplatser: every action keeps its place whatever is chosen', ()
   ).toBe(true);
   select(destination);
   expect(actionNames()).toEqual(before);
+  view.dispose();
+});
+
+it('fasta-handlingsplatser: Open door and Close door share one place but look different', () => {
+  const created = createTestBoardingBattle();
+  const player = created.snapshot.people.find(
+    (person) => person.side === 'player',
+  )!;
+  const door = created.snapshot.features.find(
+    (feature) => feature.kind === 'door',
+  )!;
+  const withDoor = (open: boolean): BoardingBattleState => ({
+    ...created.snapshot,
+    people: created.snapshot.people.map((person) =>
+      person.id === player.id
+        ? {
+            ...person,
+            position: { q: door.position.q - 1, r: door.position.r },
+            facing: 0,
+          }
+        : person,
+    ),
+    features: created.snapshot.features.map((feature) =>
+      feature.id === door.id ? { ...feature, locked: false, open } : feature,
+    ),
+    initiativeOrder: [player.id],
+    initiativeIndex: 0,
+    currentActorId: player.id,
+    activation: { id: player.id, remaining: 12 },
+  });
+  const emit = vi.fn<(intent: AppIntent) => void>();
+  const view = new FixtureBoardingView(document.body, emit, () => ({
+    render() {},
+    zoom() {},
+    fit() {},
+    dispose() {},
+  }));
+  const doorSlot = () => {
+    const controls = [
+      ...document.querySelectorAll<HTMLButtonElement>('.boarding-action'),
+    ];
+    const index = controls.findIndex((control) =>
+      /^(Open|Close) door$/.test(control.getAttribute('aria-label')!),
+    );
+    const art = controls[index]!.querySelector<HTMLElement>(
+      '.boarding-action-art',
+    )!;
+    return {
+      index,
+      label: controls[index]!.getAttribute('aria-label'),
+      count: controls.length,
+      look: `${art.style.backgroundImage} ${art.style.backgroundPosition}`,
+    };
+  };
+  view.render(withDoor(false));
+  const opening = doorSlot();
+  expect(opening.label).toBe('Open door');
+  view.render(withDoor(true));
+  const closing = doorSlot();
+  expect(closing.label).toBe('Close door');
+  expect(closing.index).toBe(opening.index);
+  expect(closing.count).toBe(opening.count);
+  expect(closing.look).not.toBe(opening.look);
   view.dispose();
 });
