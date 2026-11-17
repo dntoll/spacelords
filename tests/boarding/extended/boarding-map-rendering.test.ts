@@ -1133,3 +1133,55 @@ it('halvskydd-skuggar-delvis / halvskydd-markering-sammanfogad: shades the floor
   expect(layerStrokes.filter((style) => style === '#f0a050')).toHaveLength(1);
   view.dispose();
 });
+
+it('aktiv-figur-pa-ruta-med-kroppar: keeps an active person centered regardless of bodies and selection', () => {
+  const { view, state, player } = scene(true);
+  const ellipses: number[][] = [];
+  Object.assign(runtime.sketch!, {
+    ellipse: (...args: number[]) => ellipses.push(args),
+  });
+  const bodies = [
+    { ...player, id: 'body-a', status: 'dead' as const, hitPoints: 0 },
+    { ...player, id: 'body-b', status: 'incapacitated' as const, hitPoints: 0 },
+  ];
+  for (const people of [
+    [player],
+    [...bodies, player],
+    [player, ...bodies].reverse(),
+  ]) {
+    for (const selected of [null, player.id, 'body-b']) {
+      ellipses.length = 0;
+      view.render(
+        { ...state, people, currentActorId: player.id },
+        selected,
+        null,
+        [],
+      );
+      const ring = ellipses.find((args) => args[2] === 32);
+      expect(ring?.[0]).toBeCloseTo(boardingIsoCenter(player.position).x);
+      expect(ring?.[1]).toBeCloseTo(
+        boardingIsoCenter(player.position).y + BOARDING_FOOT_PLANT - 1,
+      );
+    }
+  }
+  view.dispose();
+});
+
+it('aktiv-figur-pa-ruta-med-kroppar: keeps the active sprite selectable on a shared tile', () => {
+  const { view, state, player, select, click } = scene(true);
+  const body = {
+    ...player,
+    id: 'body',
+    status: 'incapacitated' as const,
+    hitPoints: 0,
+  };
+  view.render({ ...state, people: [body, player] }, null, null, []);
+  const sprite = boardingCharacterSprite(
+    'player',
+    boardingIsoCenter(player.position),
+    'standing',
+  ).destination;
+  click({ x: sprite.x + sprite.width / 2, y: sprite.y + sprite.height * 0.2 });
+  expect(select).toHaveBeenLastCalledWith(player.position, player.id);
+  view.dispose();
+});

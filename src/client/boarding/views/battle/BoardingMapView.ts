@@ -211,7 +211,7 @@ function stackOffset(
   actorId: string | null,
 ): { readonly x: number; readonly y: number } {
   const person = people.find((entry) => entry.id === personId);
-  if (!person) return { x: 0, y: 0 };
+  if (!person || person.status === 'active') return { x: 0, y: 0 };
   const stack = people.filter(
     (entry) =>
       entry.status !== 'evacuated' &&
