@@ -7697,6 +7697,8 @@ export class Game {
     if (fleet.civilian?.passengers) return;
     // ruttflottor-utan-ankomstbesked / flottorder-upgrade: arrival does not finish these orders.
     if (fleet.routeId || fleet.upgrade) return;
+    // ankomstbesked-endast-vid-manuell-forflyttning: automatic legs arrive silently.
+    if (fleet.exploration || fleet.automation || fleet.detour) return;
     this.#event(
       `${this.#fleetDisplayName(fleet)} arrived at ${place}.`,
       fleet.position,
