@@ -286,6 +286,55 @@ export function boardingSegmentSolids(
   return Object.freeze(crossed);
 }
 
+/** missade-skott-traffar-annat: trace a deflected bullet to its first impact. */
+export function boardingStrayShot(
+  from: BoardingSightPoint,
+  target: BoardingSightPoint,
+  miss: number,
+  side: -1 | 1,
+  width: number,
+  height: number,
+  solid: BoardingSightBlocker,
+  bodies: readonly (BoardingSightBody & { readonly id: string })[],
+): Readonly<{
+  to: BoardingSightPoint;
+  cell?: BoardingSightPoint;
+  id?: string;
+}> {
+  const dq = target.q - from.q;
+  const dr = target.r - from.r;
+  const distance = Math.hypot(dq, dr);
+  const offset = 0.76 + 0.24 * Math.min(1, Math.max(0, miss - 1) / 19);
+  const q = dq - ((side * dr) / distance) * offset;
+  const r = dr + ((side * dq) / distance) * offset;
+  const magnitude = Math.hypot(q, r);
+  const direction = { q: q / magnitude, r: r / magnitude };
+  const limit = Math.hypot(width, height) * 2;
+  let cell: BoardingSightPoint | undefined;
+  const wall =
+    walk(from, direction, limit, (x, y, entered, exited) => {
+      if (x < 0 || y < 0 || x >= width || y >= height) return entered;
+      const hit = solidHit(from, direction, x, y, solid(x, y), entered, exited);
+      if (hit !== null) cell = { q: x, r: y };
+      return hit;
+    }) ?? limit;
+  let end = wall;
+  let id: string | undefined;
+  for (const body of bodies) {
+    const hit = rayBody(from, direction, end, body);
+    if (hit !== null && hit < end) {
+      end = hit;
+      id = body.id;
+      cell = undefined;
+    }
+  }
+  return {
+    to: { q: from.q + direction.q * end, r: from.r + direction.r * end },
+    ...(cell ? { cell } : {}),
+    ...(id ? { id } : {}),
+  };
+}
+
 /**
  * granat-over-halvskydd-inte-genom-vagg: what stops a grenade thrown from the
  * centre of `from` to the centre of `target`. Solid tiles stop it, standing

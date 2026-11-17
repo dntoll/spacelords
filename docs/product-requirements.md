@@ -1725,7 +1725,9 @@ står i skuggan får mindre skydd än en som står helt bakom.
 
 `grannruta-syns-genom-rok` — **Fullständigt implementerat**: man ser alltid åtminstone rutorna precis runt sig. Två personer bredvid varandra, även diagonalt, ser därför varandra trots rök. Väggar skymmer som vanligt.
 
-`skott-langs-fri-siktlinje` — **Fullständigt implementerat**: ett skott går längs en linje där målet faktiskt syns, aldrig genom en vägg, och krossar fönster som linjen passerar.
+`skott-langs-fri-siktlinje` — **Fullständigt implementerat**: ett träffande skott går längs en linje där målet faktiskt syns, aldrig genom en vägg, och krossar fönster som linjen passerar.
+
+`missade-skott-traffar-annat` — **Fullständigt implementerat**: missade gevärsskott avviker i en riktning nära målet och kan träffa andra personer eller föremål, även allierade och civila. En större miss ger större avvikelse. Detta förtydligar `skott-langs-fri-siktlinje` för missar.
 
 `avstand-paverkar-traffchans` — **Fullständigt implementerat**: det är svårare
 att träffa på långt håll än på nära håll.

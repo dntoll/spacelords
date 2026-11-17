@@ -515,3 +515,86 @@ describe('sikt-over-hela-skeppet', () => {
     expect(outline.some((point) => point.q > 28)).toBe(true);
   });
 });
+
+describe('missade-skott-traffar-annat', () => {
+  it('a missed rifle shot can hurt an ally behind the target', () => {
+    const { shooter, enemy, restore } = deck();
+    const base = restore({ q: 5, r: 3 }).snapshot;
+    const ally = {
+      ...shooter,
+      id: 'bystander',
+      label: 'Bystander',
+      position: { q: 8, r: 5 },
+    };
+    let struck = false;
+    for (let seed = 1; seed < 100 && !struck; seed++) {
+      const battle = restore(
+        { q: 5, r: 3 },
+        {
+          randomState: seed,
+          people: [
+            ...base.people.map((person) =>
+              person.id === shooter.id ? { ...person, accuracy: -100 } : person,
+            ),
+            ally,
+          ],
+        },
+      );
+      battle.command({ type: 'shoot', targetId: enemy.id });
+      const after = battle.snapshot.people.find(
+        (person) => person.id === ally.id,
+      )!;
+      if (after.hitPoints < ally.hitPoints) {
+        struck = true;
+        expect(
+          battle.snapshot.people.find((person) => person.id === enemy.id)!
+            .hitPoints,
+        ).toBe(enemy.hitPoints);
+        expect(battle.shot?.hit).toBe(false);
+        expect(
+          Math.hypot(
+            battle.shot!.aim!.q - ally.position.q,
+            battle.shot!.aim!.r - ally.position.r,
+          ),
+        ).toBeLessThanOrEqual(0.251);
+      }
+    }
+    expect(struck).toBe(true);
+  });
+
+  it('does not reveal the position or identity of a hidden unintended victim', () => {
+    const { shooter, enemy, restore } = deck();
+    const base = restore({ q: 5, r: 3 }).snapshot;
+    const hidden = {
+      ...shooter,
+      id: 'hidden',
+      label: 'Hidden ally',
+      position: { q: 8, r: 5 },
+    };
+    let struck = false;
+    for (let seed = 1; seed < 100 && !struck; seed++) {
+      const battle = restore(
+        { q: 5, r: 3 },
+        {
+          randomState: seed,
+          visibleCells: base.visibleCells.filter((cell) => cell.q <= 6),
+          people: [
+            ...base.people.map((person) =>
+              person.id === shooter.id ? { ...person, accuracy: -100 } : person,
+            ),
+            hidden,
+          ],
+        },
+      );
+      battle.command({ type: 'shoot', targetId: enemy.id });
+      struck =
+        battle.snapshot.people.find((person) => person.id === hidden.id)!
+          .hitPoints < hidden.hitPoints;
+      if (struck) {
+        expect(battle.snapshot.log.at(-1)).not.toContain(hidden.label);
+        expect(battle.shot!.aim!.q).toBeLessThan(7);
+      }
+    }
+    expect(struck).toBe(true);
+  });
+});
