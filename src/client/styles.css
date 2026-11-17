@@ -4489,6 +4489,8 @@ body:has(.discovery-controls) .selection-panel {
   align-self: center;
   justify-self: center;
   pointer-events: auto;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .boarding-equipment {
@@ -4522,6 +4524,10 @@ body:has(.discovery-controls) .selection-panel {
   grid-template-columns: minmax(48px, auto) minmax(38px, 72px) auto auto;
 }
 
+.boarding-unit[aria-disabled='true'] {
+  opacity: 0.55;
+}
+
 .boarding-ap-value {
   color: #f4cf5a;
   font-variant-numeric: tabular-nums;
@@ -4531,6 +4537,12 @@ body:has(.discovery-controls) .selection-panel {
 .boarding-action-armed {
   border-color: #f4cf5a;
   box-shadow: 0 0 0 2px rgb(244 207 90 / 60%);
+}
+
+.boarding-action[aria-disabled='true'],
+.boarding-context-action[aria-disabled='true'] {
+  opacity: 0.45;
+  filter: grayscale(0.8);
 }
 
 .boarding-equipment .boarding-action {
@@ -4580,6 +4592,12 @@ body:has(.discovery-controls) .selection-panel {
   font-size: 1.25rem;
 }
 
+.boarding-context-action .boarding-action-art {
+  display: block;
+  width: 42px;
+  height: 42px;
+}
+
 @media (max-width: 680px) {
   .boarding-controls {
     grid-template-areas:
@@ -4604,6 +4622,14 @@ body:has(.discovery-controls) .selection-panel {
     min-width: 52px;
     height: 52px;
     min-height: 52px;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .boarding-controls > .boarding-team {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
   }
 }
 

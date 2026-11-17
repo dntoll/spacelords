@@ -2281,10 +2281,12 @@ export class BoardingBattle {
     const target = this.#state.people.find((entry) => entry.id === targetId);
     if (
       !target ||
-      target.status !== 'incapacitated' ||
+      (target.status !== 'incapacitated' &&
+        (target.status !== 'active' ||
+          target.hitPoints >= target.maxHitPoints)) ||
       !sharesEdge(actor.position, target.position)
     )
-      throw new Error('Choose an adjacent incapacitated person.');
+      throw new Error('Choose an adjacent injured person.');
     if (actor.loadout.gadget !== 'med-kit')
       throw new Error('A Med kit is not equipped.');
     if ((actor.loadout.uses ?? 0) < 1) throw new Error('No Med kit remains.');
@@ -2299,7 +2301,10 @@ export class BoardingBattle {
     this.#updatePerson(targetId, (entry) => ({
       ...entry,
       status: 'active',
-      hitPoints: Math.max(1, Math.ceil(entry.maxHitPoints / 3)),
+      hitPoints: Math.min(
+        entry.maxHitPoints,
+        Math.max(1, entry.hitPoints + Math.ceil(entry.maxHitPoints / 3)),
+      ),
     }));
   }
 

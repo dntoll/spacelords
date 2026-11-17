@@ -1571,12 +1571,21 @@ klick på den aktiva soldaten visar vridning, hållning och Overwatch runt
 figuren. Ett klick på en ruta visar bara de handlingar som kan utföras där,
 exempelvis `Move`, `Shoot`, granat, dörrhandling eller sjukvård. Detta ersätter
 den fasta raden med samtliga handlingsknappar och tidigare dubbelklick för att
-utföra vald handling.
+utföra skott och dörrhandlingar. Ett andra tryck på en vald gångruta går dit,
+och soldaten vänder sig mot rutan när den väljs.
 
 `personlig-bordningsutrustning` — **Fullständigt implementerat**: varje soldat
 har ett `Rifle` och en pryl. Frag grenade, Smoke grenade, Hacker tools och Med
 kit fördelas i fast rotation. Granatbärare har tre granater. Den aktiva
 soldatens vapen och pryl visas som två genvägsknappar.
+
+`utrustningsknapp-utfor-valt-mal`, `rokgranat-pa-person`,
+`medkit-for-skadad-soldat`, `ateranvand-handlingsbilder` och
+`orsak-till-otillganglig-handling` — **Fullständigt implementerat**: vapen och
+prylar fungerar på valda mål, och granater kan kastas på personer. Med kit kan
+vårda en skadad angränsande person, även i en öppen dörr. Kontextmenyer och
+turknappen använder handlingsbilderna. Otillgängliga knappar förklarar vid tryck
+varför handlingen inte går att utföra.
 
 `bordningshud-i-botten` och `fullscreen-i-bordning` — **Fullständigt
 implementerat**: hela den beständiga strids-HUD:en, inklusive soldatval, namn,
@@ -1670,11 +1679,10 @@ skymmer sikten som smala pelare, hukande ger halvskydd, och man kan skjuta förb
 personer om tillräckligt mycket av målet syns.
 
 `avstangda-omojliga-handlingar` — **Fullständigt implementerat**:
-handlingsknappar som inte kan utföras är avstängda.
+handlingsknappar som inte kan utföras visas inaktiva och förklarar varför vid
+tryck.
 
-`fasta-handlingsplatser` — **Fullständigt implementerat**: varje
-handlingsknapp har alltid samma plats, så att knapparna inte flyttar runt.
-Öppna och stänga dörr delar plats men ser olika ut.
+`fasta-handlingsplatser` har ersatts av `kontextstyrda-bordningshandlingar`.
 
 `gang-knapp-till-avlagset-mal` — **Fullständigt implementerat**: `Move` är
 inte avstängd när destinationen ligger för långt bort; soldaten går då så

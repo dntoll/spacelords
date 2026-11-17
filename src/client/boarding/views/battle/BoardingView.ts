@@ -9,6 +9,7 @@ import {
   BOARDING_HACK_AP,
   BOARDING_MED_PACK_AP,
   boardingActionPointsRemaining,
+  boardingTurnsToward,
   type BoardingTargetIndicator,
   type BoardingSightArea,
   type BoardingBattleState,
@@ -154,6 +155,7 @@ export class BoardingView {
   #draining = false;
   #idleWaiters: (() => void)[] = [];
   #disposed = false;
+  #ownsFullscreen = false;
   #playToken = 0;
   #queries: {
     readonly state: BoardingBattleState;
@@ -216,39 +218,51 @@ export class BoardingView {
     void this.#enterFullscreen();
   }
 
-  readonly #fullscreenChanged = (): void => this.#syncFullscreenButton();
+  readonly #fullscreenChanged = (): void => {
+    if (document.fullscreenElement !== document.documentElement)
+      this.#ownsFullscreen = false;
+    this.#syncFullscreenButton();
+  };
 
   #syncFullscreenButton(): void {
-    const supported = typeof this.#dialog.requestFullscreen === 'function';
+    const supported =
+      typeof document.documentElement.requestFullscreen === 'function';
     this.#fullscreen.hidden = !supported;
-    const active = document.fullscreenElement === this.#dialog;
+    const active = document.fullscreenElement === document.documentElement;
     this.#fullscreen.title = active ? 'Exit fullscreen' : 'Enter fullscreen';
     this.#fullscreen.setAttribute('aria-label', this.#fullscreen.title);
     this.#fullscreen.textContent = active ? '⤢' : '⛶';
   }
 
-  async #enterFullscreen(): Promise<void> {
+  async #enterFullscreen(reportFailure = false): Promise<void> {
     if (
       document.fullscreenElement ||
-      typeof this.#dialog.requestFullscreen !== 'function'
+      typeof document.documentElement.requestFullscreen !== 'function'
     )
       return;
     try {
-      await this.#dialog.requestFullscreen();
-      if (this.#disposed && document.fullscreenElement === this.#dialog)
+      await document.documentElement.requestFullscreen();
+      this.#ownsFullscreen = true;
+      if (
+        this.#disposed &&
+        document.fullscreenElement === document.documentElement
+      )
         await document.exitFullscreen();
     } catch {
-      // fullscreen-i-bordning: the explicit control remains as the fallback.
+      if (reportFailure && this.#state)
+        this.render(this.#state, 'Fullscreen is unavailable in this browser.');
     }
   }
 
   async #toggleFullscreen(): Promise<void> {
     try {
-      if (document.fullscreenElement === this.#dialog)
+      if (document.fullscreenElement === document.documentElement) {
         await document.exitFullscreen();
-      else await this.#enterFullscreen();
+        this.#ownsFullscreen = false;
+      } else await this.#enterFullscreen(true);
     } catch {
-      // A rejected browser request must never interrupt combat.
+      if (this.#state)
+        this.render(this.#state, 'Fullscreen could not be changed.');
     }
   }
 
@@ -315,8 +329,18 @@ export class BoardingView {
     action: () => void,
     disabled = false,
     container: HTMLElement = this.#equipment,
+    reason = 'This action cannot be performed now.',
   ): void {
-    const control = iconButton(label, symbol, action, 'button boarding-action');
+    const control = iconButton(
+      label,
+      symbol,
+      () => {
+        if (disabled) {
+          if (this.#state) this.render(this.#state, reason);
+        } else action();
+      },
+      'button boarding-action',
+    );
     const icon = document.createElement('span');
     const name = label.split(' · ')[0]!;
     const artwork = boardingActionArtwork(name);
@@ -333,7 +357,7 @@ export class BoardingView {
       icon.textContent = symbol;
       control.replaceChildren(icon);
     }
-    control.disabled = disabled;
+    control.setAttribute('aria-disabled', String(disabled));
     container.append(control);
   }
 
@@ -378,9 +402,11 @@ export class BoardingView {
     }
     if (playerTurn && actor && this.#armedAction) {
       const target = person ?? downed;
+      let reason = 'Choose a valid target for this action.';
       if (this.#armedAction === 'weapon' && (person || feature)) {
         const targetId = (person ?? feature)!.id;
         const preview = this.#battle().attackPreview(actor.id, targetId);
+        reason = preview.reason ?? 'The action needs 4 AP.';
         if (
           !preview.reason &&
           (state.activation?.remaining ?? 0) >= BOARDING_RIFLE_AP
@@ -392,6 +418,16 @@ export class BoardingView {
       }
       if (this.#armedAction === 'gadget') {
         const gadget = actor.loadout.gadget;
+        if (gadget === 'frag-grenade' || gadget === 'smoke-grenade')
+          reason =
+            this.#battle().grenadeReason(
+              actor.id,
+              gadget === 'frag-grenade' ? 'frag' : 'smoke',
+              position,
+            ) ?? reason;
+        else if (gadget === 'med-kit')
+          reason = 'Choose an adjacent injured person.';
+        else reason = 'Choose an adjacent locked door.';
         if (
           (gadget === 'frag-grenade' || gadget === 'smoke-grenade') &&
           !this.#battle().grenadeReason(
@@ -423,7 +459,10 @@ export class BoardingView {
         }
         if (
           gadget === 'med-kit' &&
-          target?.status === 'incapacitated' &&
+          target &&
+          (target.status === 'incapacitated' ||
+            (target.status === 'active' &&
+              target.hitPoints < target.maxHitPoints)) &&
           Math.abs(actor.position.q - target.position.q) +
             Math.abs(actor.position.r - target.position.r) ===
             1 &&
@@ -435,8 +474,18 @@ export class BoardingView {
           return;
         }
       }
+      this.render(state, reason);
+      return;
     }
-    if (person?.side === 'player' && playerTurn) {
+    if (
+      person?.side === 'player' &&
+      playerTurn &&
+      !(
+        person.id !== actor.id &&
+        actor.loadout.gadget === 'med-kit' &&
+        person.hitPoints < person.maxHitPoints
+      )
+    ) {
       if (boardingActionPointsRemaining(state, person.id) <= 0) return;
       if (person.id !== actor.id) {
         this.#command({ type: 'select', id: person.id });
@@ -447,9 +496,37 @@ export class BoardingView {
       this.render(state);
       return;
     }
+    if (
+      playerTurn &&
+      actor &&
+      !person &&
+      this.#destination?.q === position.q &&
+      this.#destination.r === position.r
+    ) {
+      const route = this.#battle().pathTo(actor.id, position);
+      if (route && route.cost > 0) {
+        this.#command(
+          route.cost <= (state.activation?.remaining ?? 0)
+            ? { type: 'move', to: position }
+            : { type: 'walk', to: position },
+        );
+        return;
+      }
+      if (this.#battle().routeTowards(actor.id, position)) {
+        this.#command({ type: 'walk', to: position });
+        return;
+      }
+    }
     this.#selectedId = (person ?? downed ?? feature)?.id ?? null;
     this.#destination = position;
     this.render(state);
+    if (
+      playerTurn &&
+      actor &&
+      (state.activation?.remaining ?? 0) >= BOARDING_TURN_AP &&
+      boardingTurnsToward(actor.position, actor.facing, position).length > 0
+    )
+      this.#command({ type: 'face', toward: position });
   }
 
   /** sparad-gangdestination: the tile the current soldier is walking to. */
@@ -627,14 +704,24 @@ export class BoardingView {
     this.#contextAnchor = null;
     if (!playerTurn || !actor) return;
     const remaining = state.activation?.remaining ?? 0;
+    const weaponReason =
+      remaining < BOARDING_RIFLE_AP
+        ? `The action needs ${BOARDING_RIFLE_AP} AP.`
+        : this.#selectedEquipmentReason(state, actor, 'weapon');
     this.#action(
       'Shoot · Rifle',
       '◎',
       () => {
         this.#armedAction = this.#armedAction === 'weapon' ? null : 'weapon';
+        if (this.#armedAction && this.#destination) {
+          this.#selectCell(this.#destination, this.#selectedId ?? undefined);
+          return;
+        }
         this.render(state);
       },
-      remaining < BOARDING_RIFLE_AP,
+      weaponReason !== null,
+      this.#equipment,
+      weaponReason ?? '',
     );
     const weapon = this.#equipment.lastElementChild as HTMLButtonElement;
     weapon.classList.toggle(
@@ -650,6 +737,12 @@ export class BoardingView {
     };
     const uses = actor.loadout.uses;
     const gadgetLabel = `${gadgetLabels[actor.loadout.gadget]}${uses === null ? '' : ` · ${uses}`}`;
+    const gadgetReason =
+      uses !== null && uses < 1
+        ? 'No uses of this equipment remain.'
+        : remaining < this.#gadgetAp(actor)
+          ? `The action needs ${this.#gadgetAp(actor)} AP.`
+          : this.#selectedEquipmentReason(state, actor, 'gadget');
     this.#action(
       gadgetLabel,
       actor.loadout.gadget === 'hacker-tools'
@@ -659,9 +752,15 @@ export class BoardingView {
           : '◆',
       () => {
         this.#armedAction = this.#armedAction === 'gadget' ? null : 'gadget';
+        if (this.#armedAction && this.#destination) {
+          this.#selectCell(this.#destination, this.#selectedId ?? undefined);
+          return;
+        }
         this.render(state);
       },
-      (uses !== null && uses < 1) || remaining < this.#gadgetAp(actor),
+      gadgetReason !== null,
+      this.#equipment,
+      gadgetReason ?? '',
     );
     const gadget = this.#equipment.lastElementChild as HTMLButtonElement;
     gadget.classList.toggle(
@@ -674,21 +773,65 @@ export class BoardingView {
       gadget.append(count);
     }
 
-    this.#globalControls.append(
-      button('End soldier turn', () =>
-        this.#command({ type: 'end-activation' }),
-      ),
+    this.#action(
+      'End soldier turn',
+      '✓',
+      () => this.#command({ type: 'end-activation' }),
+      false,
+      this.#globalControls,
     );
     if (state.campaign) {
-      const abort = button(
+      this.#action(
         'Abort boarding',
+        '⎋',
         () => this.#command({ type: 'abort' }),
-        'button',
+        !this.#battle().canAbort(),
+        this.#globalControls,
+        'Both sides must be in their own ships to abort.',
       );
-      abort.disabled = !this.#battle().canAbort();
-      this.#globalControls.append(abort);
     }
     this.#renderContextActions(state, actor);
+  }
+
+  #selectedEquipmentReason(
+    state: BoardingBattleState,
+    actor: BoardingPerson,
+    kind: 'weapon' | 'gadget',
+  ): string | null {
+    const position = this.#destination;
+    if (!position) return null;
+    const person = state.people.find((entry) => entry.id === this.#selectedId);
+    const feature = state.features.find(
+      (entry) => entry.id === this.#selectedId,
+    );
+    if (kind === 'weapon')
+      return this.#selectedId
+        ? this.#battle().attackPreview(actor.id, this.#selectedId).reason
+        : 'Choose an enemy or a target to shoot.';
+    const gadget = actor.loadout.gadget;
+    if (gadget === 'frag-grenade' || gadget === 'smoke-grenade')
+      return this.#battle().grenadeReason(
+        actor.id,
+        gadget === 'frag-grenade' ? 'frag' : 'smoke',
+        position,
+      );
+    const adjacent =
+      Math.abs(actor.position.q - position.q) +
+        Math.abs(actor.position.r - position.r) ===
+      1;
+    if (gadget === 'hacker-tools')
+      return adjacent &&
+        feature?.kind === 'door' &&
+        feature.locked &&
+        !feature.destroyed
+        ? null
+        : 'Choose an adjacent locked door.';
+    return adjacent &&
+      person &&
+      (person.status === 'incapacitated' ||
+        (person.status === 'active' && person.hitPoints < person.maxHitPoints))
+      ? null
+      : 'Choose an adjacent injured person.';
   }
 
   #gadgetAp(actor: BoardingPerson): number {
@@ -826,7 +969,10 @@ export class BoardingView {
       }
       if (
         gadget === 'med-kit' &&
-        selectedPerson?.status === 'incapacitated' &&
+        selectedPerson &&
+        (selectedPerson.status === 'incapacitated' ||
+          (selectedPerson.status === 'active' &&
+            selectedPerson.hitPoints < selectedPerson.maxHitPoints)) &&
         (actor.loadout.uses ?? 0) > 0 &&
         remaining >= BOARDING_MED_PACK_AP &&
         Math.abs(actor.position.q - selectedPerson.position.q) +
@@ -876,13 +1022,31 @@ export class BoardingView {
         action.label,
         action.symbol,
         () => {
+          if (action.disabled) {
+            if (this.#state)
+              this.render(
+                this.#state,
+                `The action needs ${action.command.type === 'overwatch' ? BOARDING_RIFLE_AP : action.command.type === 'turn' ? BOARDING_TURN_AP : 1} AP.`,
+              );
+            return;
+          }
           this.#contextMenu.replaceChildren();
           this.#contextAnchor = null;
           this.#command(action.command);
         },
         'button boarding-context-action',
       );
-      control.disabled = !!action.disabled;
+      const artwork = boardingActionArtwork(action.label);
+      if (artwork) {
+        const icon = element('span', 'boarding-action-art');
+        const image = boardingActionButtonImage(artwork);
+        icon.style.backgroundImage = `url(${image.url})`;
+        icon.style.backgroundPosition = image.position;
+        icon.style.backgroundSize = image.size;
+        icon.style.backgroundRepeat = 'no-repeat';
+        control.replaceChildren(icon);
+      }
+      control.setAttribute('aria-disabled', String(!!action.disabled));
       this.#contextMenu.append(control);
     }
     this.#positionContextMenu();
@@ -937,11 +1101,14 @@ export class BoardingView {
       (state.phase === 'complete'
         ? `${state.outcome === 'victory' ? 'Victory' : state.outcome === 'aborted' ? 'Boarding aborted' : 'Defeat'} · Civilians saved ${state.savedCivilians}/3`
         : actor
-          ? `${actor.label} · ${state.activation?.remaining ?? 0} AP${state.reactorCountdown === null ? '' : ` · Reactor ${state.reactorCountdown}`}`
+          ? state.reactorCountdown === null
+            ? ''
+            : `Reactor ${state.reactorCountdown}`
           : state.currentActorId
             ? 'Defender turn'
             : 'Resolving the round…');
     this.#status.setAttribute('role', 'status');
+    this.#status.hidden = !this.#status.textContent;
     this.#team.replaceChildren();
     for (const soldier of state.people.filter(
       (person) => person.side === 'player',
@@ -954,29 +1121,39 @@ export class BoardingView {
         'aria-label',
         `${soldier.label}, ${soldier.hitPoints} of ${soldier.maxHitPoints} HP`,
       );
-      if (
+      const available =
         playerTurn &&
         soldier.status === 'active' &&
-        boardingActionPointsRemaining(state, soldier.id) > 0
-      ) {
-        unit.tabIndex = 0;
-        unit.setAttribute('role', 'button');
-        const selectSoldier = () => {
-          if (soldier.id === state.currentActorId) {
-            this.#selectedId = soldier.id;
-            this.#destination = null;
-            this.render(state);
-            return;
-          }
-          this.#command({ type: 'select', id: soldier.id });
-        };
-        unit.addEventListener('click', selectSoldier);
-        unit.addEventListener('keydown', (event) => {
-          if (event.key !== 'Enter' && event.key !== ' ') return;
-          event.preventDefault();
-          selectSoldier();
-        });
-      }
+        boardingActionPointsRemaining(state, soldier.id) > 0;
+      unit.tabIndex = 0;
+      unit.setAttribute('role', 'button');
+      unit.setAttribute('aria-disabled', String(!available));
+      const selectSoldier = () => {
+        if (!available) {
+          this.render(
+            state,
+            !playerTurn
+              ? 'Wait for your soldiers.'
+              : soldier.status !== 'active'
+                ? `${soldier.label} cannot act.`
+                : `${soldier.label} has no AP remaining.`,
+          );
+          return;
+        }
+        if (soldier.id === state.currentActorId) {
+          this.#selectedId = soldier.id;
+          this.#destination = null;
+          this.render(state);
+          return;
+        }
+        this.#command({ type: 'select', id: soldier.id });
+      };
+      unit.addEventListener('click', selectSoldier);
+      unit.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        selectSoldier();
+      });
       const health = document.createElement('progress');
       health.className = 'boarding-health';
       health.max = soldier.maxHitPoints;
@@ -1060,7 +1237,10 @@ export class BoardingView {
     this.#releaseIdle();
     this.#map?.dispose();
     document.removeEventListener('fullscreenchange', this.#fullscreenChanged);
-    if (document.fullscreenElement === this.#dialog)
+    if (
+      this.#ownsFullscreen &&
+      document.fullscreenElement === document.documentElement
+    )
       void document.exitFullscreen().catch(() => undefined);
     this.#dialog.close();
     this.#dialog.remove();

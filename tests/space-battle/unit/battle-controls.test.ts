@@ -508,8 +508,8 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
   )!;
   expect(left).not.toBeNull();
   expect(right).not.toBeNull();
-  expect(left.textContent).toBe('↶');
-  expect(right.textContent).toBe('↷');
+  expect(left.querySelector('.boarding-action-art')).not.toBeNull();
+  expect(right.querySelector('.boarding-action-art')).not.toBeNull();
   expect(left.classList).toContain('boarding-context-action');
   left.click();
   expect(emit).toHaveBeenCalledWith({
@@ -949,9 +949,9 @@ it('forsvarare-och-civilister: drains queued defender updates until the next pla
   await vi.waitFor(() =>
     expect(renderMap.mock.lastCall?.[0].currentActorId).toBe(player.id),
   );
-  expect(document.querySelector('.boarding-status')?.textContent).toContain(
-    player.label,
-  );
+  expect(
+    document.querySelector('.boarding-unit-active')?.textContent,
+  ).toContain(player.label);
   view.dispose();
 });
 
@@ -1442,9 +1442,9 @@ it('kamerafokus-vid-bordningssoldatbyte: focuses a newly activated soldier even 
   view.render(selected);
   view.render(selected);
   await vi.waitFor(() =>
-    expect(document.querySelector('.boarding-status')!.textContent).toContain(
-      '7 AP',
-    ),
+    expect(
+      document.querySelector('.boarding-unit-active')!.textContent,
+    ).toContain('7 AP'),
   );
   expect(focusActor).toHaveBeenCalledExactlyOnceWith(next.id);
   view.dispose();
@@ -1750,7 +1750,7 @@ it('gang-mot-avlagset-mal: a second tap on an unaffordable destination walks as 
   view.dispose();
 });
 
-it('kontextstyrda-bordningshandlingar: choosing a side tile waits for its Move action', () => {
+it('vand-mot-vald-ruta: choosing a side tile faces it before moving', () => {
   const created = createTestBoardingBattle();
   const player = created.snapshot.people.find(
     (person) =>
@@ -1791,7 +1791,10 @@ it('kontextstyrda-bordningshandlingar: choosing a side tile waits for its Move a
     expect(emit).not.toHaveBeenCalled();
   }
   selectHex(side);
-  expect(emit).not.toHaveBeenCalled();
+  expect(emit).toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'face', toward: side },
+  });
   expect(
     document.querySelector('.boarding-context-menu [aria-label^="Move"]'),
   ).not.toBeNull();
@@ -1900,8 +1903,9 @@ it('avstangda-omojliga-handlingar: disables actions the soldier cannot afford', 
     },
   );
   const disabled = (label: string) =>
-    document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)
-      ?.disabled;
+    document
+      .querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)
+      ?.getAttribute('aria-disabled') === 'true';
   const render = (remaining: number) => {
     view.render({
       ...created.snapshot,
@@ -1917,10 +1921,12 @@ it('avstangda-omojliga-handlingar: disables actions the soldier cannot afford', 
   expect(disabled('Crouch')).toBe(false);
   expect(disabled('Overwatch')).toBe(true);
   expect(
-    document.querySelector<HTMLButtonElement>(
-      '.boarding-equipment [aria-label^="Shoot"]',
-    )?.disabled,
-  ).toBe(true);
+    document
+      .querySelector<HTMLButtonElement>(
+        '.boarding-equipment [aria-label^="Shoot"]',
+      )
+      ?.getAttribute('aria-disabled'),
+  ).toBe('true');
   expect(disabled('End soldier turn')).toBe(false);
   render(12);
   expect(disabled('Overwatch')).toBe(false);
@@ -2011,13 +2017,16 @@ function farDestinationView() {
 }
 
 const actionNames = () =>
-  [...document.querySelectorAll<HTMLButtonElement>('.boarding-action')].map(
-    (control) =>
-      control
-        .getAttribute('aria-label')!
-        .split(' · ')[0]!
-        .replace(/^Stand$/, 'Crouch')
-        .replace(/^Close door$/, 'Open door'),
+  [
+    ...document.querySelectorAll<HTMLButtonElement>(
+      '.boarding-equipment .boarding-action',
+    ),
+  ].map((control) =>
+    control
+      .getAttribute('aria-label')!
+      .split(' · ')[0]!
+      .replace(/^Stand$/, 'Crouch')
+      .replace(/^Close door$/, 'Open door'),
   );
 
 it('gang-knapp-till-avlagset-mal: Move stays enabled for a destination beyond the AP and walks there', () => {
