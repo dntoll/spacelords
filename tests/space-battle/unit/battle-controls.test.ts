@@ -499,6 +499,7 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
   const emit = vi.fn<(intent: AppIntent) => void>();
   const view = new FixtureBoardingView(document.body, emit, map);
   view.render(battle.visibleSnapshot);
+  selectHex(player.position);
   const left = document.querySelector<HTMLButtonElement>(
     '[aria-label="Turn left 45°"]',
   )!;
@@ -507,11 +508,9 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
   )!;
   expect(left).not.toBeNull();
   expect(right).not.toBeNull();
-  expect(left.querySelector('.boarding-action-art')).not.toBeNull();
-  expect(right.querySelector('.boarding-action-art')).not.toBeNull();
-  expect(left.textContent).toBe('');
-  expect(right.textContent).toBe('');
-  expect(left.classList).toContain('boarding-action');
+  expect(left.textContent).toBe('↶');
+  expect(right.textContent).toBe('↷');
+  expect(left.classList).toContain('boarding-context-action');
   left.click();
   expect(emit).toHaveBeenCalledWith({
     type: 'boarding-command',
@@ -534,7 +533,9 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
   expect(document.querySelector('.boarding-legend')).toBeNull();
   expect(document.querySelector('.boarding-zoom')).toBeNull();
   selectHex({ q: player.position.q + 3, r: player.position.r });
-  expect(document.body.textContent).toContain('Destination');
+  expect(
+    document.querySelector('.boarding-context-menu [aria-label^="Move"]'),
+  ).not.toBeNull();
   expect(rendered.mock.calls.at(-1)?.[3]).toEqual([
     {
       position: { q: player.position.q + 1, r: player.position.r },
@@ -639,7 +640,11 @@ it('valbar-bordningssoldat / klickskott-pa-vald-fiende / animerat-bordningsskott
     type: 'boarding-command',
     command: { type: 'shoot', targetId: defender.id },
   });
-  selectHex({ q: 5, r: 5 });
+  document
+    .querySelector<HTMLButtonElement>(
+      '.boarding-context-menu [aria-label^="Shoot"]',
+    )!
+    .click();
   expect(emit).toHaveBeenCalledWith({
     type: 'boarding-command',
     command: { type: 'shoot', targetId: defender.id },
@@ -655,7 +660,7 @@ it('valbar-bordningssoldat / klickskott-pa-vald-fiende / animerat-bordningsskott
   view.dispose();
 });
 
-it('klickgang-pa-vald-destination: clicking the chosen destination issues move', () => {
+it('kontextstyrda-bordningshandlingar: choosing Move at a destination issues move', () => {
   const created = createTestBoardingBattle();
   const player = created.snapshot.people.find(
     (person) =>
@@ -690,8 +695,11 @@ it('klickgang-pa-vald-destination: clicking the chosen destination issues move',
     type: 'boarding-command',
     command: { type: 'move', to: destination },
   });
-  expect(document.body.textContent).toContain('Destination');
-  selectHex(destination);
+  document
+    .querySelector<HTMLButtonElement>(
+      '.boarding-context-menu [aria-label^="Move"]',
+    )!
+    .click();
   expect(emit).toHaveBeenCalledWith({
     type: 'boarding-command',
     command: { type: 'move', to: destination },
@@ -699,7 +707,7 @@ it('klickgang-pa-vald-destination: clicking the chosen destination issues move',
   view.dispose();
 });
 
-it('klickdorr-pa-vald-dorr: clicking an adjacent selected door opens or hacks it', () => {
+it('kontextstyrda-bordningshandlingar: an adjacent door offers open or hack', () => {
   const created = createTestBoardingBattle();
   const player = created.snapshot.people.find(
     (person) => person.side === 'player',
@@ -743,7 +751,11 @@ it('klickdorr-pa-vald-dorr: clicking an adjacent selected door opens or hacks it
     type: 'boarding-command',
     command: { type: 'door', id: door.id, action: 'open' },
   });
-  selectHex(door.position);
+  document
+    .querySelector<HTMLButtonElement>(
+      '.boarding-context-menu [aria-label="Open door"]',
+    )!
+    .click();
   expect(emit).toHaveBeenCalledWith({
     type: 'boarding-command',
     command: { type: 'door', id: door.id, action: 'open' },
@@ -757,6 +769,11 @@ it('klickdorr-pa-vald-dorr: clicking an adjacent selected door opens or hacks it
               ...person,
               position: { q: locked.position.q - 1, r: locked.position.r },
               facing: 0,
+              loadout: {
+                weapon: 'rifle',
+                gadget: 'hacker-tools',
+                uses: null,
+              },
             }
           : person,
       ),
@@ -767,7 +784,11 @@ it('klickdorr-pa-vald-dorr: clicking an adjacent selected door opens or hacks it
     }).snapshot,
   );
   selectHex(locked.position);
-  selectHex(locked.position);
+  document
+    .querySelector<HTMLButtonElement>(
+      '.boarding-context-menu [aria-label="Hack door"]',
+    )!
+    .click();
   expect(emit).toHaveBeenCalledWith({
     type: 'boarding-command',
     command: { type: 'hack', id: locked.id },
@@ -1146,7 +1167,7 @@ it('fristaende-bordningsprototyp / forsvarare-och-civilister / tydlig-bordningss
   controller.dispose();
 });
 
-it('skott-kraver-giltigt-mal: shoot stays disabled until an enemy or feature is selected', () => {
+it('skott-kraver-giltigt-mal: rifle shortcut fires only after a valid target is selected', () => {
   const created = createTestBoardingBattle();
   const player = created.snapshot.people.find(
     (person) => person.side === 'player',
@@ -1180,17 +1201,15 @@ it('skott-kraver-giltigt-mal: shoot stays disabled until an enemy or feature is 
   );
   view.render(BoardingBattle.restore(testBoardingMap, boardingState).snapshot);
   const shoot = () =>
-    document.querySelector<HTMLButtonElement>('[aria-label^="Shoot"]')!;
-  expect(shoot().disabled).toBe(true);
+    document.querySelector<HTMLButtonElement>(
+      '.boarding-equipment [aria-label^="Shoot"]',
+    )!;
+  expect(shoot().disabled).toBe(false);
   shoot().click();
   expect(emit).not.toHaveBeenCalled();
   selectHex({ q: 4, r: 5 });
-  expect(shoot().disabled).toBe(true);
-  shoot().click();
   expect(emit).not.toHaveBeenCalled();
   selectHex({ q: 5, r: 5 });
-  expect(shoot().disabled).toBe(false);
-  shoot().click();
   expect(emit).toHaveBeenCalledWith({
     type: 'boarding-command',
     command: { type: 'shoot', targetId: defender.id },
@@ -1198,7 +1217,7 @@ it('skott-kraver-giltigt-mal: shoot stays disabled until an enemy or feature is 
   view.dispose();
 });
 
-it('melee-kraver-valt-mal: melee stays disabled until an adjacent enemy is selected', () => {
+it('melee-kraver-valt-mal: melee appears only for an adjacent selected enemy', () => {
   const created = createTestBoardingBattle();
   const player = created.snapshot.people.find(
     (person) => person.side === 'player',
@@ -1233,14 +1252,15 @@ it('melee-kraver-valt-mal: melee stays disabled until an adjacent enemy is selec
   );
   view.render(BoardingBattle.restore(testBoardingMap, boardingState).snapshot);
   const melee = () =>
-    document.querySelector<HTMLButtonElement>('[aria-label="Melee"]')!;
-  expect(melee().disabled).toBe(true);
-  melee().click();
+    document.querySelector<HTMLButtonElement>(
+      '.boarding-context-menu [aria-label="Melee"]',
+    );
+  expect(melee()).toBeNull();
   expect(emit).not.toHaveBeenCalled();
   selectHex({ q: 5, r: 5 });
-  expect(melee().disabled).toBe(false);
+  expect(melee()?.disabled).toBe(false);
   expect(rendered.mock.calls.at(-1)?.[1]).toBe(defender.id);
-  melee().click();
+  melee()!.click();
   expect(emit).toHaveBeenCalledWith({
     type: 'boarding-command',
     command: { type: 'melee', targetId: defender.id },
@@ -1532,12 +1552,12 @@ it('kamerafokus-vid-bordningssoldatbyte: reserves the action HUD while busy and 
   }));
   try {
     view.render(createTestBoardingBattle().snapshot);
-    expect(viewport!()).toMatchObject({ top: 100, bottom: 588 });
+    expect(viewport!()).toMatchObject({ top: 0, bottom: 588 });
     controlsHeight = 30;
-    expect(viewport!()).toMatchObject({ top: 100, bottom: 588 });
+    expect(viewport!()).toMatchObject({ top: 0, bottom: 690 });
     width = 800;
     controlsHeight = 60;
-    expect(viewport!()).toMatchObject({ top: 100, bottom: 300 });
+    expect(viewport!()).toMatchObject({ top: 0, bottom: 300 });
   } finally {
     view.dispose();
     bounds.mockRestore();
@@ -1584,6 +1604,7 @@ it('dorrhandling-framfor-soldat / oppen-dorr-som-golvruta: offers the facing doo
     },
   );
   view.render(boardingState);
+  selectHex(door.position);
   document
     .querySelector<HTMLButtonElement>('[aria-label="Open door"]')!
     .click();
@@ -1598,9 +1619,9 @@ it('dorrhandling-framfor-soldat / oppen-dorr-som-golvruta: offers the facing doo
     ),
   });
   selectHex(door.position);
-  expect(document.querySelector('.boarding-selection')!.textContent).toContain(
-    'Destination',
-  );
+  expect(
+    document.querySelector('.boarding-context-menu [aria-label^="Move"]'),
+  ).not.toBeNull();
   view.dispose();
 });
 
@@ -1630,14 +1651,18 @@ it('stang-oppen-dorr: offers Close door beside an open door and disables it whil
     currentActorId: player!.id,
     activation: { id: player!.id, remaining: 12 },
   };
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
   const emit = vi.fn<(intent: AppIntent) => void>();
-  const view = new FixtureBoardingView(document.body, emit, () => ({
-    render() {},
-    zoom() {},
-    fit() {},
-    dispose() {},
-  }));
+  const view = new FixtureBoardingView(
+    document.body,
+    emit,
+    (_container, select) => {
+      selectHex = select;
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
   view.render(boardingState);
+  selectHex(door.position);
   const close = () =>
     document.querySelector<HTMLButtonElement>('[aria-label="Close door"]');
   expect(close()?.disabled).toBe(false);
@@ -1652,7 +1677,8 @@ it('stang-oppen-dorr: offers Close door beside an open door and disables it whil
       person.id === ally!.id ? { ...person, position: door.position } : person,
     ),
   });
-  expect(close()?.disabled).toBe(true);
+  selectHex(door.position);
+  expect(close()).toBeNull();
   view.dispose();
 });
 
@@ -1708,10 +1734,15 @@ it('gang-mot-avlagset-mal: a second tap on an unaffordable destination walks as 
     ),
   ).toBe(false);
   expect(
-    document.querySelector<HTMLButtonElement>('[aria-label="Frag grenade"]')
-      ?.disabled,
+    document.querySelector<HTMLButtonElement>(
+      '.boarding-equipment [aria-label*="grenade"]',
+    )?.disabled,
   ).toBe(false);
-  selectHex(destination);
+  document
+    .querySelector<HTMLButtonElement>(
+      '.boarding-context-menu [aria-label^="Move"]',
+    )!
+    .click();
   expect(emit).toHaveBeenLastCalledWith({
     type: 'boarding-command',
     command: { type: 'walk', to: destination },
@@ -1719,7 +1750,7 @@ it('gang-mot-avlagset-mal: a second tap on an unaffordable destination walks as 
   view.dispose();
 });
 
-it('vand-mot-vald-ruta: choosing a tile to the side turns the soldier towards it', () => {
+it('kontextstyrda-bordningshandlingar: choosing a side tile waits for its Move action', () => {
   const created = createTestBoardingBattle();
   const player = created.snapshot.people.find(
     (person) =>
@@ -1760,10 +1791,10 @@ it('vand-mot-vald-ruta: choosing a tile to the side turns the soldier towards it
     expect(emit).not.toHaveBeenCalled();
   }
   selectHex(side);
-  expect(emit).toHaveBeenCalledExactlyOnceWith({
-    type: 'boarding-command',
-    command: { type: 'face', toward: side },
-  });
+  expect(emit).not.toHaveBeenCalled();
+  expect(
+    document.querySelector('.boarding-context-menu [aria-label^="Move"]'),
+  ).not.toBeNull();
   view.dispose();
 });
 
@@ -1799,21 +1830,19 @@ it('sparad-gangdestination: a soldier with an unreached destination has it chose
       person.id === player.id ? { ...person, destination } : person,
     ),
   };
-  let selectHex: (position: { q: number; r: number }) => void = () => {};
   const emit = vi.fn<(intent: AppIntent) => void>();
-  const view = new FixtureBoardingView(
-    document.body,
-    emit,
-    (_container, select) => {
-      selectHex = select;
-      return { render() {}, zoom() {}, fit() {}, dispose() {} };
-    },
-  );
+  const view = new FixtureBoardingView(document.body, emit, () => ({
+    render() {},
+    zoom() {},
+    fit() {},
+    dispose() {},
+  }));
   view.render(boardingState);
-  expect(document.body.textContent).toContain(
-    `Destination ${destination.q},${destination.r}`,
-  );
-  selectHex(destination);
+  document
+    .querySelector<HTMLButtonElement>(
+      '.boarding-context-menu [aria-label^="Move"]',
+    )!
+    .click();
   expect(emit).toHaveBeenCalledExactlyOnceWith({
     type: 'boarding-command',
     command: { type: 'walk', to: destination },
@@ -1821,7 +1850,7 @@ it('sparad-gangdestination: a soldier with an unreached destination has it chose
   view.dispose();
 });
 
-it('granat-kostar-bara-vid-kast: grenade buttons are disabled for a tile outside throwing range', () => {
+it('granat-kostar-bara-vid-kast: an out-of-range tile omits its grenade action', () => {
   const created = createTestBoardingBattle();
   const player = created.snapshot.people.find(
     (person) =>
@@ -1847,11 +1876,12 @@ it('granat-kostar-bara-vid-kast: grenade buttons are disabled for a tile outside
   );
   view.render(boardingState);
   selectHex({ q: player.position.q + 9, r: player.position.r });
-  for (const label of ['Frag grenade', 'Smoke grenade'])
-    expect(
-      document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)
-        ?.disabled,
-    ).toBe(true);
+  expect(
+    document.querySelector('.boarding-context-menu [aria-label*="grenade"]'),
+  ).toBeNull();
+  expect(
+    document.querySelector('.boarding-equipment [aria-label*="grenade"]'),
+  ).not.toBeNull();
   view.dispose();
 });
 
@@ -1860,16 +1890,19 @@ it('avstangda-omojliga-handlingar: disables actions the soldier cannot afford', 
   const player = created.snapshot.people.find(
     (person) => person.side === 'player',
   )!;
-  const view = new FixtureBoardingView(document.body, vi.fn(), () => ({
-    render() {},
-    zoom() {},
-    fit() {},
-    dispose() {},
-  }));
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const view = new FixtureBoardingView(
+    document.body,
+    vi.fn(),
+    (_container, select) => {
+      selectHex = select;
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
   const disabled = (label: string) =>
     document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)
       ?.disabled;
-  const render = (remaining: number) =>
+  const render = (remaining: number) => {
     view.render({
       ...created.snapshot,
       initiativeOrder: [player.id],
@@ -1877,11 +1910,17 @@ it('avstangda-omojliga-handlingar: disables actions the soldier cannot afford', 
       currentActorId: player.id,
       activation: { id: player.id, remaining },
     });
+    selectHex(player.position);
+  };
   render(2);
   expect(disabled('Turn left 45°')).toBe(false);
   expect(disabled('Crouch')).toBe(false);
   expect(disabled('Overwatch')).toBe(true);
-  expect(disabled('Shoot')).toBe(true);
+  expect(
+    document.querySelector<HTMLButtonElement>(
+      '.boarding-equipment [aria-label^="Shoot"]',
+    )?.disabled,
+  ).toBe(true);
   expect(disabled('End soldier turn')).toBe(false);
   render(12);
   expect(disabled('Overwatch')).toBe(false);
@@ -1997,23 +2036,17 @@ it('gang-knapp-till-avlagset-mal: Move stays enabled for a destination beyond th
   view.dispose();
 });
 
-it('fasta-handlingsplatser: every action keeps its place whatever is chosen', () => {
+it('personlig-bordningsutrustning: the active soldier keeps exactly two equipment shortcuts', () => {
   const { view, destination, select } = farDestinationView();
   const before = actionNames();
-  expect(before).toContain('Frag grenade');
-  expect(before.filter((name) => name === 'Open door')).toHaveLength(1);
-  expect(before).toContain('Use Med-pack');
-  expect(before).toContain('Evacuate');
-  expect(
-    document.querySelector<HTMLButtonElement>('[aria-label="Frag grenade"]')
-      ?.disabled,
-  ).toBe(true);
+  expect(before).toHaveLength(2);
+  expect(before).toContain('Shoot');
   select(destination);
   expect(actionNames()).toEqual(before);
   view.dispose();
 });
 
-it('fasta-handlingsplatser: Open door and Close door share one place but look different', () => {
+it('kontextstyrda-bordningshandlingar: a door menu follows its open state', () => {
   const created = createTestBoardingBattle();
   const player = created.snapshot.people.find(
     (person) => person.side === 'player',
@@ -2041,37 +2074,24 @@ it('fasta-handlingsplatser: Open door and Close door share one place but look di
     activation: { id: player.id, remaining: 12 },
   });
   const emit = vi.fn<(intent: AppIntent) => void>();
-  const view = new FixtureBoardingView(document.body, emit, () => ({
-    render() {},
-    zoom() {},
-    fit() {},
-    dispose() {},
-  }));
-  const doorSlot = () => {
-    const controls = [
-      ...document.querySelectorAll<HTMLButtonElement>('.boarding-action'),
-    ];
-    const index = controls.findIndex((control) =>
-      /^(Open|Close) door$/.test(control.getAttribute('aria-label')!),
-    );
-    const art = controls[index]!.querySelector<HTMLElement>(
-      '.boarding-action-art',
-    )!;
-    return {
-      index,
-      label: controls[index]!.getAttribute('aria-label'),
-      count: controls.length,
-      look: `${art.style.backgroundImage} ${art.style.backgroundPosition}`,
-    };
-  };
+  let selectHex: (position: { q: number; r: number }) => void = () => {};
+  const view = new FixtureBoardingView(
+    document.body,
+    emit,
+    (_container, select) => {
+      selectHex = select;
+      return { render() {}, zoom() {}, fit() {}, dispose() {} };
+    },
+  );
   view.render(withDoor(false));
-  const opening = doorSlot();
-  expect(opening.label).toBe('Open door');
+  selectHex(door.position);
+  expect(
+    document.querySelector('.boarding-context-menu [aria-label="Open door"]'),
+  ).not.toBeNull();
   view.render(withDoor(true));
-  const closing = doorSlot();
-  expect(closing.label).toBe('Close door');
-  expect(closing.index).toBe(opening.index);
-  expect(closing.count).toBe(opening.count);
-  expect(closing.look).not.toBe(opening.look);
+  selectHex(door.position);
+  expect(
+    document.querySelector('.boarding-context-menu [aria-label="Close door"]'),
+  ).not.toBeNull();
   view.dispose();
 });

@@ -9,12 +9,13 @@ import {
   BOARDING_HACK_AP,
   BOARDING_MED_PACK_AP,
   boardingActionPointsRemaining,
-  boardingTurnsToward,
   type BoardingTargetIndicator,
   type BoardingSightArea,
   type BoardingBattleState,
   type BoardingShot,
   type BoardingShotPane,
+  type BoardingCommand,
+  type BoardingPerson,
 } from '../../models/battle/BoardingBattle.js';
 import type {
   BoardingCell,
@@ -39,6 +40,11 @@ export interface BoardingTileActionMark {
   readonly cost?: number;
 }
 
+const gadgetLabelsForMenu = {
+  'frag-grenade': 'Frag grenade',
+  'smoke-grenade': 'Smoke grenade',
+} as const;
+
 function iconButton(
   label: string,
   symbol: string,
@@ -62,6 +68,7 @@ export interface BoardingMapPort {
     action?: BoardingTileActionMark | null,
   ): void;
   setViewportProvider?(provider: () => BoardingCameraBounds | null): void;
+  screenPoint?(position: BoardingCell): Readonly<{ x: number; y: number }>;
   beginPresentation?(): void;
   endPresentation?(): void;
   focusActor?(id: string): Promise<void>;
@@ -120,6 +127,9 @@ export class BoardingView {
   readonly #status = element('p', 'boarding-status');
   readonly #team = element('section', 'boarding-team');
   readonly #controls = element('section', 'boarding-controls');
+  readonly #equipment = element('section', 'boarding-equipment');
+  readonly #globalControls = element('section', 'boarding-global-controls');
+  readonly #contextMenu = element('div', 'boarding-context-menu');
   readonly #details = element('details', 'boarding-details');
   readonly #canvas = element('div', 'boarding-canvas');
   /** motstandartur-i-mitten: shown in the middle of the board while opponents act. */
@@ -129,6 +139,7 @@ export class BoardingView {
     'Defenders are acting…',
   );
   readonly #close: HTMLButtonElement;
+  readonly #fullscreen: HTMLButtonElement;
   readonly #mapFactory: BoardingMapFactory | undefined;
   #map: BoardingMapPort | undefined;
   #mapName = '';
@@ -137,11 +148,12 @@ export class BoardingView {
   #selectedId: string | null = null;
   #destination: BoardingCell | null = null;
   #actorId: string | null = null;
+  #armedAction: 'weapon' | 'gadget' | null = null;
+  #contextAnchor: BoardingCell | null = null;
   #busy = false;
   #draining = false;
   #idleWaiters: (() => void)[] = [];
-  #controlsHeight = 0;
-  #viewportWidth = 0;
+  #disposed = false;
   #playToken = 0;
   #queries: {
     readonly state: BoardingBattleState;
@@ -167,24 +179,77 @@ export class BoardingView {
     this.#close = iconButton('Close boarding', '×', () =>
       this.emit({ type: 'close-boarding' }),
     );
+    this.#fullscreen = iconButton(
+      'Enter fullscreen',
+      '⛶',
+      () => void this.#toggleFullscreen(),
+    );
     this.#dialog.setAttribute('aria-label', 'Boarding combat');
     this.#dialog.addEventListener('cancel', (event) => event.preventDefault());
-    const header = element('div', 'boarding-heading');
-    header.append(this.#heading, this.#close);
     const board = element('section', 'boarding-board');
-    board.append(this.#canvas);
+    board.append(this.#canvas, this.#contextMenu);
     this.#team.setAttribute('aria-label', 'Boarding team');
     this.#controls.setAttribute('aria-label', 'Soldier actions');
     this.#details.append(element('summary', '', 'Combat details'));
     const layout = element('div', 'boarding-layout');
-    const hud = element('div', 'boarding-hud');
-    hud.append(this.#status, this.#team);
+    const header = element('div', 'boarding-heading');
+    header.append(this.#heading, this.#fullscreen, this.#close);
+    this.#controls.append(
+      header,
+      this.#status,
+      this.#team,
+      this.#equipment,
+      this.#globalControls,
+      this.#details,
+    );
     this.#enemyTurn.setAttribute('role', 'status');
     this.#enemyTurn.hidden = true;
-    layout.append(board, hud, this.#enemyTurn, this.#controls, this.#details);
-    this.#dialog.append(header, layout);
+    layout.append(board, this.#enemyTurn, this.#controls);
+    this.#dialog.append(layout);
     root.append(this.#dialog);
     this.#dialog.showModal();
+    this.#canvas.addEventListener('boarding-camera-change', () =>
+      this.#positionContextMenu(),
+    );
+    document.addEventListener('fullscreenchange', this.#fullscreenChanged);
+    this.#syncFullscreenButton();
+    void this.#enterFullscreen();
+  }
+
+  readonly #fullscreenChanged = (): void => this.#syncFullscreenButton();
+
+  #syncFullscreenButton(): void {
+    const supported = typeof this.#dialog.requestFullscreen === 'function';
+    this.#fullscreen.hidden = !supported;
+    const active = document.fullscreenElement === this.#dialog;
+    this.#fullscreen.title = active ? 'Exit fullscreen' : 'Enter fullscreen';
+    this.#fullscreen.setAttribute('aria-label', this.#fullscreen.title);
+    this.#fullscreen.textContent = active ? '⤢' : '⛶';
+  }
+
+  async #enterFullscreen(): Promise<void> {
+    if (
+      document.fullscreenElement ||
+      typeof this.#dialog.requestFullscreen !== 'function'
+    )
+      return;
+    try {
+      await this.#dialog.requestFullscreen();
+      if (this.#disposed && document.fullscreenElement === this.#dialog)
+        await document.exitFullscreen();
+    } catch {
+      // fullscreen-i-bordning: the explicit control remains as the fallback.
+    }
+  }
+
+  async #toggleFullscreen(): Promise<void> {
+    try {
+      if (document.fullscreenElement === this.#dialog)
+        await document.exitFullscreen();
+      else await this.#enterFullscreen();
+    } catch {
+      // A rejected browser request must never interrupt combat.
+    }
   }
 
   #mapFor(state: BoardingBattleState): BoardingMap {
@@ -207,24 +272,12 @@ export class BoardingView {
   #viewport(): BoardingCameraBounds | null {
     const canvas = this.#canvas.getBoundingClientRect();
     if (canvas.width <= 0 || canvas.height <= 0) return null;
-    const hud = this.#dialog
-      .querySelector('.boarding-hud')!
-      .getBoundingClientRect();
-    const details = this.#details.getBoundingClientRect();
     const controls = this.#controls.getBoundingClientRect();
-    if (canvas.width !== this.#viewportWidth) {
-      this.#controlsHeight = 0;
-      this.#viewportWidth = canvas.width;
-    }
-    this.#controlsHeight = Math.max(this.#controlsHeight, controls.height);
     return {
       left: 0,
       right: canvas.width,
-      top: Math.max(0, hud.bottom - canvas.top, details.bottom - canvas.top),
-      bottom: Math.min(
-        canvas.height,
-        controls.bottom - canvas.top - this.#controlsHeight,
-      ),
+      top: 0,
+      bottom: Math.max(0, controls.top - canvas.top),
     };
   }
 
@@ -261,6 +314,7 @@ export class BoardingView {
     symbol: string,
     action: () => void,
     disabled = false,
+    container: HTMLElement = this.#equipment,
   ): void {
     const control = iconButton(label, symbol, action, 'button boarding-action');
     const icon = document.createElement('span');
@@ -280,7 +334,7 @@ export class BoardingView {
       control.replaceChildren(icon);
     }
     control.disabled = disabled;
-    this.#controls.append(control);
+    container.append(control);
   }
 
   #selectCell(
@@ -309,8 +363,7 @@ export class BoardingView {
         !entry.destroyed &&
         entry.position.q === position.q &&
         entry.position.r === position.r &&
-        ['door', 'reactor', 'wall'].includes(entry.kind) &&
-        !(entry.kind === 'door' && entry.open),
+        ['door', 'reactor', 'wall', 'exit', 'window'].includes(entry.kind),
     );
     if (
       mode === 'center-target' &&
@@ -323,6 +376,66 @@ export class BoardingView {
       this.render(state);
       return;
     }
+    if (playerTurn && actor && this.#armedAction) {
+      const target = person ?? downed;
+      if (this.#armedAction === 'weapon' && (person || feature)) {
+        const targetId = (person ?? feature)!.id;
+        const preview = this.#battle().attackPreview(actor.id, targetId);
+        if (
+          !preview.reason &&
+          (state.activation?.remaining ?? 0) >= BOARDING_RIFLE_AP
+        ) {
+          this.#armedAction = null;
+          this.#command({ type: 'shoot', targetId });
+          return;
+        }
+      }
+      if (this.#armedAction === 'gadget') {
+        const gadget = actor.loadout.gadget;
+        if (
+          (gadget === 'frag-grenade' || gadget === 'smoke-grenade') &&
+          !this.#battle().grenadeReason(
+            actor.id,
+            gadget === 'frag-grenade' ? 'frag' : 'smoke',
+            position,
+          )
+        ) {
+          this.#armedAction = null;
+          this.#command({
+            type: 'grenade',
+            grenade: gadget === 'frag-grenade' ? 'frag' : 'smoke',
+            at: position,
+          });
+          return;
+        }
+        if (
+          gadget === 'hacker-tools' &&
+          feature?.kind === 'door' &&
+          feature.locked &&
+          Math.abs(actor.position.q - feature.position.q) +
+            Math.abs(actor.position.r - feature.position.r) ===
+            1 &&
+          (state.activation?.remaining ?? 0) >= BOARDING_HACK_AP
+        ) {
+          this.#armedAction = null;
+          this.#command({ type: 'hack', id: feature.id });
+          return;
+        }
+        if (
+          gadget === 'med-kit' &&
+          target?.status === 'incapacitated' &&
+          Math.abs(actor.position.q - target.position.q) +
+            Math.abs(actor.position.r - target.position.r) ===
+            1 &&
+          (actor.loadout.uses ?? 0) > 0 &&
+          (state.activation?.remaining ?? 0) >= BOARDING_MED_PACK_AP
+        ) {
+          this.#armedAction = null;
+          this.#command({ type: 'med-pack', targetId: target.id });
+          return;
+        }
+      }
+    }
     if (person?.side === 'player' && playerTurn) {
       if (boardingActionPointsRemaining(state, person.id) <= 0) return;
       if (person.id !== actor.id) {
@@ -334,94 +447,9 @@ export class BoardingView {
       this.render(state);
       return;
     }
-    if (
-      playerTurn &&
-      actor &&
-      person &&
-      person.side !== 'player' &&
-      this.#selectedId === person.id
-    ) {
-      const preview = this.#battle().attackPreview(actor.id, person.id);
-      if (
-        !preview.reason &&
-        (state.activation?.remaining ?? 0) >= BOARDING_RIFLE_AP
-      ) {
-        this.#command({ type: 'shoot', targetId: person.id });
-        return;
-      }
-    }
-    if (
-      playerTurn &&
-      actor &&
-      feature?.kind === 'door' &&
-      !feature.destroyed &&
-      this.#selectedId === feature.id &&
-      Math.abs(actor.position.q - feature.position.q) +
-        Math.abs(actor.position.r - feature.position.r) ===
-        1
-    ) {
-      this.#command(
-        feature.locked
-          ? { type: 'hack', id: feature.id }
-          : {
-              type: 'door',
-              id: feature.id,
-              action: feature.open ? 'close' : 'open',
-            },
-      );
-      return;
-    }
-    if (
-      playerTurn &&
-      actor &&
-      feature?.kind === 'door' &&
-      this.#selectedId === feature.id &&
-      this.#walkTowards(actor.id, position)
-    )
-      return;
-    if (person || feature) {
-      this.#selectedId = (person ?? feature)!.id;
-      this.#destination = null;
-    } else if (
-      playerTurn &&
-      actor &&
-      this.#destination &&
-      this.#destination.q === position.q &&
-      this.#destination.r === position.r
-    ) {
-      const route = this.#battle().pathTo(actor.id, position);
-      if (route && route.cost <= (state.activation?.remaining ?? 0)) {
-        this.#command({ type: 'move', to: position });
-        return;
-      }
-      if (this.#walkTowards(actor.id, position)) return;
-      this.#selectedId = downed?.id ?? null;
-      this.#destination = position;
-    } else {
-      this.#selectedId = downed?.id ?? null;
-      this.#destination = position;
-      this.render(state);
-      // vand-mot-vald-ruta: the soldier turns towards the chosen tile.
-      if (
-        playerTurn &&
-        actor &&
-        (state.activation?.remaining ?? 0) >= BOARDING_TURN_AP &&
-        boardingTurnsToward(actor.position, actor.facing, position).length > 0
-      )
-        this.#command({ type: 'face', toward: position });
-      return;
-    }
+    this.#selectedId = (person ?? downed ?? feature)?.id ?? null;
+    this.#destination = position;
     this.render(state);
-  }
-
-  /**
-   * gang-mot-avlagset-mal / vandning-mot-nasta-steg: a repeated tap on a far
-   * target walks as far as AP allows and turns towards the next step.
-   */
-  #walkTowards(actorId: string, position: BoardingCell): boolean {
-    if (!this.#battle().routeTowards(actorId, position)) return false;
-    this.#command({ type: 'walk', to: position });
-    return true;
   }
 
   /** sparad-gangdestination: the tile the current soldier is walking to. */
@@ -590,6 +618,298 @@ export class BoardingView {
     }
   }
 
+  #buildCompactControls(
+    state: BoardingBattleState,
+    actor: BoardingPerson | null,
+    playerTurn: boolean,
+  ): void {
+    this.#contextMenu.replaceChildren();
+    this.#contextAnchor = null;
+    if (!playerTurn || !actor) return;
+    const remaining = state.activation?.remaining ?? 0;
+    this.#action(
+      'Shoot · Rifle',
+      '◎',
+      () => {
+        this.#armedAction = this.#armedAction === 'weapon' ? null : 'weapon';
+        this.render(state);
+      },
+      remaining < BOARDING_RIFLE_AP,
+    );
+    const weapon = this.#equipment.lastElementChild as HTMLButtonElement;
+    weapon.classList.toggle(
+      'boarding-action-armed',
+      this.#armedAction === 'weapon',
+    );
+
+    const gadgetLabels: Record<BoardingPerson['loadout']['gadget'], string> = {
+      'frag-grenade': 'Frag grenade',
+      'smoke-grenade': 'Smoke grenade',
+      'hacker-tools': 'Hack door',
+      'med-kit': 'Use Med-pack',
+    };
+    const uses = actor.loadout.uses;
+    const gadgetLabel = `${gadgetLabels[actor.loadout.gadget]}${uses === null ? '' : ` · ${uses}`}`;
+    this.#action(
+      gadgetLabel,
+      actor.loadout.gadget === 'hacker-tools'
+        ? '⌁'
+        : actor.loadout.gadget === 'med-kit'
+          ? '+'
+          : '◆',
+      () => {
+        this.#armedAction = this.#armedAction === 'gadget' ? null : 'gadget';
+        this.render(state);
+      },
+      (uses !== null && uses < 1) || remaining < this.#gadgetAp(actor),
+    );
+    const gadget = this.#equipment.lastElementChild as HTMLButtonElement;
+    gadget.classList.toggle(
+      'boarding-action-armed',
+      this.#armedAction === 'gadget',
+    );
+    if (uses !== null) {
+      const count = element('span', 'boarding-gadget-count', String(uses));
+      count.setAttribute('aria-hidden', 'true');
+      gadget.append(count);
+    }
+
+    this.#globalControls.append(
+      button('End soldier turn', () =>
+        this.#command({ type: 'end-activation' }),
+      ),
+    );
+    if (state.campaign) {
+      const abort = button(
+        'Abort boarding',
+        () => this.#command({ type: 'abort' }),
+        'button',
+      );
+      abort.disabled = !this.#battle().canAbort();
+      this.#globalControls.append(abort);
+    }
+    this.#renderContextActions(state, actor);
+  }
+
+  #gadgetAp(actor: BoardingPerson): number {
+    if (actor.loadout.gadget === 'hacker-tools') return BOARDING_HACK_AP;
+    if (actor.loadout.gadget === 'med-kit') return BOARDING_MED_PACK_AP;
+    return BOARDING_RIFLE_AP;
+  }
+
+  #renderContextActions(
+    state: BoardingBattleState,
+    actor: BoardingPerson,
+  ): void {
+    const selectedPerson = state.people.find(
+      (entry) => entry.id === this.#selectedId,
+    );
+    const selectedFeature = state.features.find(
+      (entry) => entry.id === this.#selectedId,
+    );
+    const anchor =
+      selectedPerson?.position ??
+      selectedFeature?.position ??
+      this.#destination;
+    if (!anchor) return;
+    const remaining = state.activation?.remaining ?? 0;
+    const actions: {
+      label: string;
+      symbol: string;
+      command: BoardingCommand;
+      disabled?: boolean;
+    }[] = [];
+    if (selectedPerson?.id === actor.id) {
+      actions.push(
+        {
+          label: 'Turn left 45°',
+          symbol: '↶',
+          command: { type: 'turn', direction: 1 },
+          disabled: remaining < BOARDING_TURN_AP,
+        },
+        {
+          label: 'Turn right 45°',
+          symbol: '↷',
+          command: { type: 'turn', direction: -1 },
+          disabled: remaining < BOARDING_TURN_AP,
+        },
+        {
+          label: actor.crouched ? 'Stand' : 'Crouch',
+          symbol: actor.crouched ? '⇧' : '◒',
+          command: { type: actor.crouched ? 'stand' : 'crouch' },
+          disabled: remaining < 1,
+        },
+        {
+          label: 'Overwatch',
+          symbol: '◉',
+          command: { type: 'overwatch' },
+          disabled: remaining < BOARDING_RIFLE_AP,
+        },
+      );
+    } else {
+      const occupied = selectedPerson?.status === 'active';
+      const directRoute = occupied
+        ? null
+        : this.#battle().pathTo(actor.id, anchor);
+      const route =
+        directRoute ?? this.#battle().routeTowards(actor.id, anchor);
+      if (route && route.cost > 0)
+        actions.push({
+          label: `Move · ${route.cost} AP`,
+          symbol: '↑',
+          command:
+            directRoute && directRoute.cost <= remaining
+              ? { type: 'move', to: anchor }
+              : { type: 'walk', to: anchor },
+        });
+      const target = selectedPerson ?? selectedFeature;
+      if (target) {
+        const preview = this.#battle().attackPreview(actor.id, target.id);
+        if (!preview.reason && remaining >= BOARDING_RIFLE_AP)
+          actions.push({
+            label: `Shoot · ${preview.chance}%`,
+            symbol: '◎',
+            command: { type: 'shoot', targetId: target.id },
+          });
+        if (selectedPerson) {
+          const melee = this.#battle().meleePreview(
+            actor.id,
+            selectedPerson.id,
+          );
+          if (!melee.reason && remaining >= BOARDING_MELEE_AP)
+            actions.push({
+              label: 'Melee',
+              symbol: '✦',
+              command: { type: 'melee', targetId: selectedPerson.id },
+            });
+        }
+      }
+      const gadget = actor.loadout.gadget;
+      if (gadget === 'frag-grenade' || gadget === 'smoke-grenade') {
+        const grenade = gadget === 'frag-grenade' ? 'frag' : 'smoke';
+        if (!this.#battle().grenadeReason(actor.id, grenade, anchor))
+          actions.push({
+            label: gadgetLabelsForMenu[gadget],
+            symbol: gadget === 'frag-grenade' ? '◆' : '◇',
+            command: { type: 'grenade', grenade, at: anchor },
+          });
+      }
+      if (selectedFeature?.kind === 'door') {
+        const doorAction = selectedFeature.open ? 'close' : 'open';
+        if (
+          !this.#battle().doorReason(actor.id, selectedFeature.id, doorAction)
+        )
+          actions.push({
+            label: doorAction === 'open' ? 'Open door' : 'Close door',
+            symbol: doorAction === 'open' ? '▯' : '▮',
+            command: {
+              type: 'door',
+              id: selectedFeature.id,
+              action: doorAction,
+            },
+          });
+        const adjacent =
+          Math.abs(actor.position.q - selectedFeature.position.q) +
+            Math.abs(actor.position.r - selectedFeature.position.r) ===
+          1;
+        if (
+          gadget === 'hacker-tools' &&
+          selectedFeature.locked &&
+          adjacent &&
+          remaining >= BOARDING_HACK_AP
+        )
+          actions.push({
+            label: 'Hack door',
+            symbol: '⌁',
+            command: { type: 'hack', id: selectedFeature.id },
+          });
+      }
+      if (
+        gadget === 'med-kit' &&
+        selectedPerson?.status === 'incapacitated' &&
+        (actor.loadout.uses ?? 0) > 0 &&
+        remaining >= BOARDING_MED_PACK_AP &&
+        Math.abs(actor.position.q - selectedPerson.position.q) +
+          Math.abs(actor.position.r - selectedPerson.position.r) ===
+          1
+      )
+        actions.push({
+          label: 'Use Med-pack',
+          symbol: '+',
+          command: { type: 'med-pack', targetId: selectedPerson.id },
+        });
+    }
+    const onExit = state.features.some(
+      (feature) =>
+        feature.kind === 'exit' &&
+        feature.position.q === actor.position.q &&
+        feature.position.r === actor.position.r &&
+        !feature.destroyed,
+    );
+    if (
+      anchor.q === actor.position.q &&
+      anchor.r === actor.position.r &&
+      onExit &&
+      remaining >= BOARDING_EVACUATE_AP
+    )
+      actions.push({
+        label: 'Evacuate',
+        symbol: '↱',
+        command: { type: 'evacuate' },
+      });
+    this.#showContextMenu(anchor, actions);
+  }
+
+  #showContextMenu(
+    anchor: BoardingCell,
+    actions: readonly {
+      label: string;
+      symbol: string;
+      command: BoardingCommand;
+      disabled?: boolean;
+    }[],
+  ): void {
+    if (!actions.length) return;
+    this.#contextAnchor = anchor;
+    for (const action of actions) {
+      const control = iconButton(
+        action.label,
+        action.symbol,
+        () => {
+          this.#contextMenu.replaceChildren();
+          this.#contextAnchor = null;
+          this.#command(action.command);
+        },
+        'button boarding-context-action',
+      );
+      control.disabled = !!action.disabled;
+      this.#contextMenu.append(control);
+    }
+    this.#positionContextMenu();
+  }
+
+  #positionContextMenu(): void {
+    if (!this.#contextAnchor || !this.#map?.screenPoint) return;
+    const point = this.#map.screenPoint(this.#contextAnchor);
+    const width = this.#contextMenu.offsetWidth || 52;
+    const height = this.#contextMenu.offsetHeight || 52;
+    const maxBottom = Math.max(
+      8,
+      this.#controls.getBoundingClientRect().top -
+        this.#canvas.getBoundingClientRect().top -
+        8,
+    );
+    const left = Math.max(
+      8 + width / 2,
+      Math.min(this.#canvas.clientWidth - 8 - width / 2, point.x),
+    );
+    let top = point.y - height - 34;
+    if (top < 8) top = point.y + 34;
+    top = Math.max(8, Math.min(maxBottom - height, top));
+    this.#contextMenu.style.left = `${left}px`;
+    this.#contextMenu.style.top = `${top}px`;
+  }
+
   #paint(state: BoardingBattleState, notice?: string | null): void {
     this.#ensureMap(state);
     this.#state = state;
@@ -597,6 +917,7 @@ export class BoardingView {
     if (this.#actorId !== state.currentActorId) {
       this.#actorId = state.currentActorId;
       this.#selectedId = null;
+      this.#armedAction = null;
       this.#destination = this.#savedDestination(state);
     }
     const actor = state.people.find(
@@ -640,7 +961,7 @@ export class BoardingView {
       ) {
         unit.tabIndex = 0;
         unit.setAttribute('role', 'button');
-        unit.addEventListener('click', () => {
+        const selectSoldier = () => {
           if (soldier.id === state.currentActorId) {
             this.#selectedId = soldier.id;
             this.#destination = null;
@@ -648,6 +969,12 @@ export class BoardingView {
             return;
           }
           this.#command({ type: 'select', id: soldier.id });
+        };
+        unit.addEventListener('click', selectSoldier);
+        unit.addEventListener('keydown', (event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          selectSoldier();
         });
       }
       const health = document.createElement('progress');
@@ -663,10 +990,16 @@ export class BoardingView {
           'boarding-health-value',
           `${soldier.hitPoints}/${soldier.maxHitPoints}`,
         ),
+        element(
+          'span',
+          'boarding-ap-value',
+          `${boardingActionPointsRemaining(state, soldier.id)} AP`,
+        ),
       );
       this.#team.append(unit);
     }
-    this.#controls.replaceChildren();
+    this.#equipment.replaceChildren();
+    this.#globalControls.replaceChildren();
     // motstandartur-i-mitten: defenders, civilians and round resolution.
     const opponentsActing =
       state.phase === 'fighting' && actor?.side !== 'player';
@@ -679,263 +1012,16 @@ export class BoardingView {
       ? boardingPathMarks(route, state.activation?.remaining ?? 0)
       : [];
     let tileAction: BoardingTileActionMark | null = null;
-    if (playerTurn) {
-      // avstangda-omojliga-handlingar: every action the soldier cannot afford or
-      // perform right now is shown disabled.
-      // fasta-handlingsplatser: every action is always shown in the same place.
-      const remaining = state.activation?.remaining ?? 0;
-      const destination = this.#destination;
-      // gang-knapp-till-avlagset-mal: a far destination is walked towards.
-      const walkable =
-        !!destination && !!this.#battle().routeTowards(actor.id, destination);
-      this.#action(
-        'Turn left 45°',
-        '↶',
-        () => this.#command({ type: 'turn', direction: 1 }),
-        remaining < BOARDING_TURN_AP,
-      );
-      this.#action(
-        'Turn right 45°',
-        '↷',
-        () => this.#command({ type: 'turn', direction: -1 }),
-        remaining < BOARDING_TURN_AP,
-      );
-      this.#action(
-        `Move${route ? ` · ${route.cost} AP` : ''}`,
-        '↑',
-        () =>
-          this.#command(
-            route && route.cost <= remaining
-              ? { type: 'move', to: destination! }
-              : { type: 'walk', to: destination! },
-          ),
-        !walkable,
-      );
-      this.#action(
-        actor.crouched ? 'Stand' : 'Crouch',
-        actor.crouched ? '⇧' : '◒',
-        () => this.#command({ type: actor.crouched ? 'stand' : 'crouch' }),
-        remaining < 1,
-      );
-
-      const selectedPerson = state.people.find(
-        (entry) => entry.id === this.#selectedId,
-      );
-      const selectedFeature = state.features.find(
-        (entry) => entry.id === this.#selectedId,
-      );
-      const preview = this.#selectedId
-        ? this.#battle().attackPreview(actor.id, this.#selectedId)
-        : null;
-      const selectedPersonAction =
-        selectedPerson?.side !== 'player' &&
-        !preview?.reason &&
-        remaining >= BOARDING_RIFLE_AP
-          ? 'Shoot'
-          : null;
-      const melee = this.#selectedId
-        ? this.#battle().meleePreview(actor.id, this.#selectedId)
-        : null;
-      this.#action(
-        preview?.reason
-          ? 'Shoot'
-          : `Shoot${preview ? ` · ${preview.chance}%` : ''}`,
-        '◎',
-        () => this.#command({ type: 'shoot', targetId: this.#selectedId! }),
-        !preview ||
-          preview.reason !== null ||
-          (state.activation?.remaining ?? 0) < BOARDING_RIFLE_AP,
-      );
-      this.#action(
-        'Melee',
-        '✦',
-        () => this.#command({ type: 'melee', targetId: this.#selectedId! }),
-        !melee ||
-          melee.reason !== null ||
-          (state.activation?.remaining ?? 0) < BOARDING_MELEE_AP,
-      );
-      for (const [grenade, label, symbol] of [
-        ['frag', 'Frag grenade', '◆'],
-        ['smoke', 'Smoke grenade', '◇'],
-      ] as const)
-        this.#action(
-          label,
-          symbol,
-          () => this.#command({ type: 'grenade', grenade, at: destination! }),
-          !destination ||
-            this.#battle().grenadeReason(actor.id, grenade, destination) !==
-              null,
-        );
-      const forward = BoardingBattle.forward(actor.position, actor.facing);
-      const facingDoor = state.features.find(
-        (feature) =>
-          feature.kind === 'door' &&
-          !feature.destroyed &&
-          !feature.open &&
-          feature.position.q === forward.q &&
-          feature.position.r === forward.r,
-      );
-      const door =
-        selectedFeature?.kind === 'door' && !selectedFeature.destroyed
-          ? selectedFeature
-          : facingDoor;
-      if (
-        this.#destination &&
-        (route || this.#battle().routeTowards(actor.id, this.#destination))
-      )
-        tileAction = {
-          position: this.#destination,
-          action: 'Move',
-          ...(route ? { cost: route.cost } : {}),
-        };
-      else if (selectedPerson && selectedPersonAction)
-        tileAction = {
-          position: selectedPerson.position,
-          action: selectedPersonAction,
-        };
-      else if (selectedFeature?.kind === 'door') {
-        const adjacent =
-          Math.abs(actor.position.q - selectedFeature.position.q) +
-            Math.abs(actor.position.r - selectedFeature.position.r) ===
-          1;
-        if (adjacent)
-          tileAction = {
-            position: selectedFeature.position,
-            action: selectedFeature.locked
-              ? 'Hack door'
-              : selectedFeature.open
-                ? 'Close door'
-                : 'Open door',
-          };
-        else if (
-          this.#battle().routeTowards(actor.id, selectedFeature.position)
-        )
-          tileAction = { position: selectedFeature.position, action: 'Move' };
-      }
-      // stang-oppen-dorr: an adjacent open door can be closed when its tile is empty.
-      const openDoors = state.features.filter(
-        (feature) =>
-          feature.kind === 'door' &&
-          !feature.destroyed &&
-          feature.open &&
-          feature.id !== door?.id &&
-          Math.abs(actor.position.q - feature.position.q) +
-            Math.abs(actor.position.r - feature.position.r) ===
-            1,
-      );
-      const atDestination = (cell: BoardingCell) =>
-        !!this.#destination &&
-        this.#destination.q === cell.q &&
-        this.#destination.r === cell.r;
-      const closable =
-        openDoors.find((feature) => atDestination(feature.position)) ??
-        openDoors.find(
-          (feature) =>
-            feature.position.q === forward.q &&
-            feature.position.r === forward.r,
-        ) ??
-        openDoors[0];
-      // fasta-handlingsplatser: Open door and Close door share one place; a
-      // chosen door decides, then an open door at the destination, then the
-      // closed door ahead, then any adjacent open door.
-      const chosenDoor =
-        selectedFeature?.kind === 'door' && !selectedFeature.destroyed
-          ? selectedFeature
-          : null;
-      const doorTarget =
-        chosenDoor ??
-        openDoors.find((feature) => atDestination(feature.position)) ??
-        facingDoor ??
-        closable ??
-        null;
-      const doorAction = doorTarget?.open ? 'close' : 'open';
-      this.#action(
-        doorAction === 'close' ? 'Close door' : 'Open door',
-        doorAction === 'close' ? '▮' : '▯',
-        () =>
-          this.#command({
-            type: 'door',
-            id: doorTarget!.id,
-            action: doorAction,
-          }),
-        !doorTarget ||
-          this.#battle().doorReason(actor.id, doorTarget.id, doorAction) !==
-            null,
-      );
-      this.#action(
-        'Hack door',
-        '⌁',
-        () => this.#command({ type: 'hack', id: door!.id }),
-        !door ||
-          !door.locked ||
-          remaining < BOARDING_HACK_AP ||
-          Math.abs(actor.position.q - door.position.q) +
-            Math.abs(actor.position.r - door.position.r) !==
-            1,
-      );
-      const downed =
-        selectedPerson?.status === 'incapacitated' ? selectedPerson : null;
-      this.#action(
-        'Use Med-pack',
-        '+',
-        () => this.#command({ type: 'med-pack', targetId: downed!.id }),
-        !downed ||
-          actor.medPacks < 1 ||
-          remaining < BOARDING_MED_PACK_AP ||
-          Math.abs(actor.position.q - downed.position.q) +
-            Math.abs(actor.position.r - downed.position.r) !==
-            1,
-      );
-      this.#action(
-        'Overwatch',
-        '◉',
-        () => this.#command({ type: 'overwatch' }),
-        remaining < BOARDING_RIFLE_AP,
-      );
-      this.#action(
-        'Evacuate',
-        '⇱',
-        () => this.#command({ type: 'evacuate' }),
-        remaining < BOARDING_EVACUATE_AP ||
-          !state.features.some(
-            (feature) =>
-              feature.kind === 'exit' &&
-              feature.position.q === actor.position.q &&
-              feature.position.r === actor.position.r,
-          ),
-      );
-      if (state.campaign)
-        this.#action(
-          'Abort boarding',
-          '⎋',
-          () => this.#command({ type: 'abort' }),
-          !this.#battle().canAbort(),
-        );
-      this.#action('End soldier turn', '✓', () =>
-        this.#command({ type: 'end-activation' }),
-      );
-      const selection = element(
-        'p',
-        'boarding-selection',
-        this.#selectedId
-          ? `Target: ${selectedPerson?.label ?? selectedFeature?.kind ?? this.#selectedId}${preview?.reason ? ` · ${preview.reason}` : ''}`
-          : this.#destination
-            ? `Destination ${this.#destination.q},${this.#destination.r}${route ? ` · ${route.cost} AP` : ' · unreachable'}`
-            : 'Tap a destination or enemy, then tap it again to move or fire.',
-      );
-      this.#controls.prepend(selection);
-    } else if (!opponentsActing)
-      this.#controls.append(
-        element(
-          'p',
-          'boarding-selection',
-          state.phase === 'complete'
-            ? 'Close boarding to return to saved games.'
-            : 'Resolving action…',
-        ),
-      );
+    if (playerTurn && actor && this.#destination && route) {
+      tileAction = {
+        position: this.#destination,
+        action: 'Move',
+        cost: route.cost,
+      };
+    }
+    this.#buildCompactControls(state, actor ?? null, playerTurn);
     this.#enemyTurn.hidden = !opponentsActing;
-    this.#controls.hidden = opponentsActing;
+    this.#controls.hidden = false;
 
     const defenderActing =
       state.phase === 'fighting' &&
@@ -967,11 +1053,15 @@ export class BoardingView {
   }
 
   dispose(): void {
+    this.#disposed = true;
     this.#playToken += 1;
     this.#busy = false;
     this.#pending = [];
     this.#releaseIdle();
     this.#map?.dispose();
+    document.removeEventListener('fullscreenchange', this.#fullscreenChanged);
+    if (document.fullscreenElement === this.#dialog)
+      void document.exitFullscreen().catch(() => undefined);
     this.#dialog.close();
     this.#dialog.remove();
   }

@@ -35,6 +35,16 @@ export type BoardingSide = 'player' | 'defender' | 'civilian';
 export type BoardingPersonStatus =
   'active' | 'incapacitated' | 'dead' | 'evacuated';
 export type BoardingOutcome = 'victory' | 'defeat' | 'aborted';
+export type BoardingWeapon = 'rifle';
+export type BoardingGadget =
+  'frag-grenade' | 'smoke-grenade' | 'hacker-tools' | 'med-kit';
+
+export interface BoardingLoadout {
+  readonly weapon: BoardingWeapon;
+  readonly gadget: BoardingGadget;
+  /** Hacker tools are reusable and therefore have no finite count. */
+  readonly uses: number | null;
+}
 
 export interface BoardingPerson {
   readonly id: string;
@@ -52,9 +62,12 @@ export interface BoardingPerson {
   readonly crouched: boolean;
   readonly overwatch: boolean;
   readonly status: BoardingPersonStatus;
-  readonly medPacks: number;
-  readonly fragGrenades: number;
-  readonly smokeGrenades: number;
+  /** personlig-bordningsutrustning: one weapon and one personal gadget. */
+  readonly loadout: BoardingLoadout;
+  /** Legacy save fields, read only while normalizing old boarding states. */
+  readonly medPacks?: number;
+  readonly fragGrenades?: number;
+  readonly smokeGrenades?: number;
   readonly cockpit?: boolean;
   /** sparad-gangdestination: the tile a walk has not reached yet. */
   readonly destination?: BoardingCell;
@@ -362,9 +375,10 @@ function hiddenDefenderActivity(command: BoardingCommand): string {
 
 function freezeState(state: BoardingBattleState): BoardingBattleState {
   const people = Object.freeze(
-    state.people.map((person) =>
+    normalizeBoardingPeople(state.people).map((person) =>
       Object.freeze({
         ...person,
+        loadout: Object.freeze({ ...person.loadout }),
         position: frozenCell(person.position),
         ...(person.destination
           ? { destination: frozenCell(person.destination) }
@@ -475,11 +489,59 @@ function person(
     crouched: false,
     overwatch: false,
     status: 'active',
-    medPacks: side === 'civilian' ? 0 : 1,
-    fragGrenades: side === 'player' ? 1 : 0,
-    smokeGrenades: side === 'player' ? 1 : 0,
+    loadout: boardingLoadout(index),
     ...(extras.cockpit ? { cockpit: true } : {}),
     ...(extras.label ? { label: extras.label } : {}),
+  });
+}
+
+const BOARDING_GADGET_ROTATION: readonly BoardingGadget[] = [
+  'frag-grenade',
+  'smoke-grenade',
+  'hacker-tools',
+  'med-kit',
+];
+
+function boardingLoadout(index: number): BoardingLoadout {
+  const gadget =
+    BOARDING_GADGET_ROTATION[index % BOARDING_GADGET_ROTATION.length]!;
+  return Object.freeze({
+    weapon: 'rifle',
+    gadget,
+    uses:
+      gadget === 'frag-grenade' || gadget === 'smoke-grenade'
+        ? 3
+        : gadget === 'med-kit'
+          ? 1
+          : null,
+  });
+}
+
+function normalizeBoardingPeople(
+  people: readonly BoardingPerson[],
+): readonly BoardingPerson[] {
+  const sideIndex = new Map<BoardingSide, number>();
+  return people.map((person) => {
+    const index = sideIndex.get(person.side) ?? 0;
+    sideIndex.set(person.side, index + 1);
+    if (person.loadout) return person;
+    const loadout = boardingLoadout(index);
+    const legacyUses =
+      loadout.gadget === 'frag-grenade'
+        ? person.fragGrenades === 0
+          ? 0
+          : 3
+        : loadout.gadget === 'smoke-grenade'
+          ? person.smokeGrenades === 0
+            ? 0
+            : 3
+          : loadout.gadget === 'med-kit'
+            ? Math.max(0, person.medPacks ?? 1)
+            : null;
+    return Object.freeze({
+      ...person,
+      loadout: Object.freeze({ ...loadout, uses: legacyUses }),
+    });
   });
 }
 
@@ -665,7 +727,10 @@ export class BoardingBattle {
 
   static restore(map: BoardingMap, state: BoardingBattleState): BoardingBattle {
     if (state.mapName !== map.name) throw new Error('Boarding map mismatch.');
-    return new BoardingBattle(map, state);
+    return new BoardingBattle(map, {
+      ...state,
+      people: normalizeBoardingPeople(state.people),
+    });
   }
 
   static forward(position: BoardingCell, facing: number): BoardingCell {
@@ -1055,8 +1120,9 @@ export class BoardingBattle {
   ): string | null {
     const entry = this.#state.people.find((candidate) => candidate.id === id);
     if (!entry || entry.status !== 'active') return 'No active person.';
-    if ((grenade === 'frag' ? entry.fragGrenades : entry.smokeGrenades) < 1)
-      return `No ${grenade} grenade remains.`;
+    if (entry.loadout.gadget !== `${grenade}-grenade`)
+      return `No ${grenade} grenade is equipped.`;
+    if ((entry.loadout.uses ?? 0) < 1) return `No ${grenade} grenade remains.`;
     if (!this.#map.contains(target)) return 'Choose a tile on the map.';
     if (distance(entry.position, target) > GRENADE_RANGE)
       return 'The target tile is outside throwing range.';
@@ -1683,6 +1749,8 @@ export class BoardingBattle {
     const target = this.#target(targetId);
     let reason: string | null = null;
     if (!source || !target) reason = 'Choose an active attacker and target.';
+    else if (source.loadout.weapon !== 'rifle')
+      reason = 'A rifle is not equipped.';
     else if ('side' in target && target.side === source.side)
       reason = 'Choose an enemy.';
     else if ('side' in target && target.side === 'civilian')
@@ -2096,6 +2164,8 @@ export class BoardingBattle {
 
   #hack(id: string): void {
     const actor = this.#actor();
+    if (actor.loadout.gadget !== 'hacker-tools')
+      throw new Error('Hacker tools are not equipped.');
     const door = this.#state.features.find(
       (entry) => entry.id === id && entry.kind === 'door' && !entry.destroyed,
     );
@@ -2192,14 +2262,10 @@ export class BoardingBattle {
     }
     this.#updatePerson(actor.id, (entry) => ({
       ...entry,
-      fragGrenades:
-        grenade === 'frag'
-          ? Math.max(0, entry.fragGrenades - 1)
-          : entry.fragGrenades,
-      smokeGrenades:
-        grenade === 'smoke'
-          ? Math.max(0, entry.smokeGrenades - 1)
-          : entry.smokeGrenades,
+      loadout: {
+        ...entry.loadout,
+        uses: Math.max(0, (entry.loadout.uses ?? 0) - 1),
+      },
     }));
     this.#replace({
       log: [
@@ -2219,11 +2285,16 @@ export class BoardingBattle {
       !sharesEdge(actor.position, target.position)
     )
       throw new Error('Choose an adjacent incapacitated person.');
-    if (actor.medPacks < 1) throw new Error('No Med-pack remains.');
+    if (actor.loadout.gadget !== 'med-kit')
+      throw new Error('A Med kit is not equipped.');
+    if ((actor.loadout.uses ?? 0) < 1) throw new Error('No Med kit remains.');
     this.#spend(MED_PACK_AP);
     this.#updatePerson(actor.id, (entry) => ({
       ...entry,
-      medPacks: entry.medPacks - 1,
+      loadout: {
+        ...entry.loadout,
+        uses: Math.max(0, (entry.loadout.uses ?? 0) - 1),
+      },
     }));
     this.#updatePerson(targetId, (entry) => ({
       ...entry,
@@ -2299,6 +2370,8 @@ export class BoardingBattle {
     } else if (command.type === 'grenade')
       this.#grenade(command.grenade, command.at);
     else if (command.type === 'overwatch') {
+      if (actor.loadout.weapon !== 'rifle')
+        throw new Error('A rifle is not equipped.');
       this.#spend(RIFLE_AP);
       this.#updatePerson(actor.id, (entry) => ({
         ...entry,

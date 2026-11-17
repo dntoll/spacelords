@@ -81,7 +81,7 @@ it('ap-kostnad-och-handlingssymbol-pa-bordningsruta: marks a repeated destinatio
   setup.view.dispose();
 });
 
-it('ap-kostnad-och-handlingssymbol-pa-bordningsruta: shows the action a second tap performs on an adjacent door', () => {
+it('kontextstyrda-bordningshandlingar: an adjacent door shows its available action', () => {
   const door = map.features.find((feature) => feature.kind === 'door')!;
   const created = BoardingBattle.create(map, 0x5a17).snapshot;
   const player = created.people.find((person) => person.side === 'player')!;
@@ -97,9 +97,9 @@ it('ap-kostnad-och-handlingssymbol-pa-bordningsruta: shows the action a second t
     ),
   });
   setup.select(door.position);
-  expect(setup.render.mock.calls.at(-1)?.[6]).toEqual({
-    position: door.position,
-    action: door.locked ? 'Hack door' : 'Open door',
-  });
+  const action = document.querySelector(
+    `.boarding-context-menu [aria-label="${door.locked ? 'Hack door' : 'Open door'}"]`,
+  );
+  expect(action).not.toBeNull();
   setup.view.dispose();
 });

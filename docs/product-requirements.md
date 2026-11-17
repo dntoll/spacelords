@@ -349,18 +349,16 @@ hälsomätare. En vald väg ska visa hur långt soldaten når med kvarvarande AP
 och vilka rutor som fortfarande lämnar AP till ett skott. Vägen visas med
 gröna och bruna konturer i stället för helt färgade rutor. Bara den gula
 destinationsrutan visar hur många AP det kostar att nå den, inklusive
-vändningar, och samma fotsymbol som `Move`. När ett andra klick på en markerad ruta utför en handling,
-exempelvis att gå, skjuta, öppna eller hacka en dörr, visas handlingens symbol
-ovanpå rutan (`ap-kostnad-och-handlingssymbol-pa-bordningsruta` —
+vändningar, och samma fotsymbol som `Move`. En vald ruta visar en liten meny
+med de handlingar som kan utföras där (`kontextstyrda-bordningshandlingar` —
 **Fullständigt implementerat**). Den aktiva soldatens
 synliga rutor och de rutor ett skott kan nå ska inte markeras med röda eller
 blå kantfärger. När soldaten går ska varje steg och vändning animeras så att sikt
 uppdateras längs vägen. Synliga försvarare och civilister animeras på samma
 sätt. Om en ny fiende upptäcks avbryts resten av förflyttningen. Skott
 animeras. Spelaren kan klicka på en annan egen soldat för att flytta undan
-någon som står i vägen, klicka igen på en redan vald fiende för att skjuta,
-klicka igen på en vald destination för att gå dit, och klicka igen på en
-angränsande vald dörr för att öppna, stänga eller hacka den. Ett valt mål
+någon som står i vägen. Fiender, destinationer och dörrar får kontextval för
+att skjuta, gå, öppna, stänga eller hacka. Ett valt mål
 markeras med ett tydligt crosshair. Alla fiender som den aktiva soldaten själv
 ser visar träffchans vid figuren. Ett blockerat skott visar `0% · Blocked`; för
 få AP tonar ned indikatorn. Om en sådan fiende är utanför bild visas samma
@@ -1568,9 +1566,27 @@ handlingsraden ligger vid nederkanten. Förklaringspanelen och kameraknapparna
 är borttagna; nypzoom och mushjul finns kvar. Detta ersätter tidigare uppgifter
 om synlig kartförklaring och knappen `Fit` i boarding.
 
-`dorrhandling-framfor-soldat` och `oppen-dorr-som-golvruta` —
-**Fullständigt implementerat**: en soldat får dörrhandlingen när den står
-intill och tittar mot en stängd dörr. En öppen dörr väljs som en gångruta.
+`kontextstyrda-bordningshandlingar` — **Fullständigt implementerat**: ett
+klick på den aktiva soldaten visar vridning, hållning och Overwatch runt
+figuren. Ett klick på en ruta visar bara de handlingar som kan utföras där,
+exempelvis `Move`, `Shoot`, granat, dörrhandling eller sjukvård. Detta ersätter
+den fasta raden med samtliga handlingsknappar och tidigare dubbelklick för att
+utföra vald handling.
+
+`personlig-bordningsutrustning` — **Fullständigt implementerat**: varje soldat
+har ett `Rifle` och en pryl. Frag grenade, Smoke grenade, Hacker tools och Med
+kit fördelas i fast rotation. Granatbärare har tre granater. Den aktiva
+soldatens vapen och pryl visas som två genvägsknappar.
+
+`bordningshud-i-botten` och `fullscreen-i-bordning` — **Fullständigt
+implementerat**: hela den beständiga strids-HUD:en, inklusive soldatval, namn,
+HP, AP, status, rubrik och stängning, ligger längst ned. Bordning försöker gå
+till fullscreen när den öppnas och har en Enter/Exit-knapp när ett uttryckligt
+tryck krävs.
+
+`dorrhandling-framfor-soldat` och `oppen-dorr-som-golvruta` har ersatts av
+`kontextstyrda-bordningshandlingar`: spelaren väljer dörrens ruta för att få
+de handlingar som är möjliga där, oavsett soldatens riktning.
 
 `stang-oppen-dorr` — **Fullständigt implementerat**: en soldat intill en öppen
 dörr kan stänga den med `Close door`, men inte när någon står i dörröppningen.

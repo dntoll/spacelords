@@ -4443,6 +4443,170 @@ body:has(.discovery-controls) .selection-panel {
   text-align: center;
 }
 
+/* bordningshud-i-botten / kontextstyrda-bordningshandlingar */
+.boarding-dialog {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.boarding-dialog:fullscreen {
+  width: 100vw;
+  height: 100dvh;
+}
+
+.boarding-dialog [hidden] {
+  display: none;
+}
+
+.boarding-layout {
+  height: 100%;
+}
+
+.boarding-controls {
+  right: 6px;
+  left: 6px;
+  display: grid;
+  grid-template-areas:
+    'heading heading heading'
+    'status team global'
+    'equipment team details';
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  width: auto;
+  max-width: none;
+  transform: none;
+}
+
+.boarding-controls > .boarding-heading {
+  grid-area: heading;
+}
+
+.boarding-controls > .boarding-status {
+  grid-area: status;
+  align-self: center;
+}
+
+.boarding-controls > .boarding-team {
+  grid-area: team;
+  align-self: center;
+  justify-self: center;
+  pointer-events: auto;
+}
+
+.boarding-equipment {
+  grid-area: equipment;
+  display: flex;
+  gap: 5px;
+}
+
+.boarding-global-controls {
+  grid-area: global;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.boarding-controls > .boarding-details {
+  position: static;
+  grid-area: details;
+  width: auto;
+  max-height: min(35dvh, 240px);
+  padding: 2px 5px;
+  background: rgb(5 9 18 / 72%);
+}
+
+.boarding-controls > .boarding-details:not([open]) {
+  justify-self: end;
+}
+
+.boarding-unit {
+  grid-template-columns: minmax(48px, auto) minmax(38px, 72px) auto auto;
+}
+
+.boarding-ap-value {
+  color: #f4cf5a;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.boarding-action-armed {
+  border-color: #f4cf5a;
+  box-shadow: 0 0 0 2px rgb(244 207 90 / 60%);
+}
+
+.boarding-equipment .boarding-action {
+  position: relative;
+}
+
+.boarding-gadget-count {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  min-width: 18px;
+  padding: 2px;
+  border-radius: 4px;
+  color: #fff;
+  background: #101827;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.boarding-context-menu {
+  position: absolute;
+  z-index: 6;
+  display: flex;
+  gap: 5px;
+  width: max-content;
+  max-width: calc(100% - 16px);
+  flex-wrap: wrap;
+  justify-content: center;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.boarding-context-menu:empty {
+  display: none;
+}
+
+.boarding-context-action {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0;
+  border-color: #f4cf5a;
+  border-radius: 50%;
+  background: rgb(8 18 32 / 94%);
+  color: #fff;
+  font-size: 1.25rem;
+}
+
+@media (max-width: 680px) {
+  .boarding-controls {
+    grid-template-areas:
+      'heading heading'
+      'status status'
+      'team team'
+      'equipment global'
+      'details details';
+    grid-template-columns: 1fr auto;
+  }
+
+  .boarding-controls > .boarding-team {
+    width: 100%;
+  }
+
+  .boarding-unit {
+    grid-template-columns: minmax(44px, auto) minmax(32px, 1fr) auto auto;
+  }
+
+  .boarding-equipment .boarding-action {
+    width: 52px;
+    min-width: 52px;
+    height: 52px;
+    min-height: 52px;
+  }
+}
+
 /* synlig-byggversion: small, but readable on the saved games screen. */
 .app-header > .build-label {
   align-self: center;
