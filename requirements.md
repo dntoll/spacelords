@@ -69,9 +69,11 @@ Se [hela visionen](docs/game-vision.md).
   kastar skrot och lämnar bråte, och reactor ger en större explosion. Rök hamnar
   aldrig i hela väggar, ytterskrov eller stängda dörrar, men väl i sönderskjutna
   väggar. Handlingar som inte kan utföras är avstängda.
-  `fasta-handlingsplatser` och `gang-knapp-till-avlagset-mal` är
-  **Fullständigt implementerat**: varje handlingsknapp har alltid samma plats,
-  och `Move` är tillgänglig även när destinationen ligger för långt bort.
+  `kontextstyrda-bordningshandlingar` är **Fullständigt implementerat**:
+  handlingar visas vid den aktiva soldaten eller valda rutan utifrån mål,
+  avstånd, AP och utrustning. Det ersätter `fasta-handlingsplatser` och
+  dubbeltryck för gång, skott och dörrar. `gang-knapp-till-avlagset-mal` är
+  fortsatt **Fullständigt implementerat** genom rutmenyn.
   `utslagen-fiende-utan-sikte` och `ljudmarkor-bara-utom-sikt` är
   **Fullständigt implementerat**: utslagna personer får varken hårkors eller
   tom HP-mätare, och ljudmarkörer visas bara på rutor som inte syns.
@@ -117,7 +119,12 @@ Se [hela visionen](docs/game-vision.md).
   `dorrhandling-framfor-soldat`, `oppen-dorr-som-golvruta` och
   `volymetrisk-bordningsrok` är **Fullständigt implementerat**. Handlingsraden
   ligger längre ned, öppna dörrar kan väljas som gångrutor och rök animeras
-  genom rutan. Se [produktkrav](docs/product-requirements.md).
+  genom rutan. `personlig-bordningsutrustning`, `bordningshud-i-botten` och
+  `fullscreen-i-bordning` är **Fullständigt implementerat**. Varje soldat har
+  ett `Rifle` och en roterande personlig pryl; granatbärare har tre granater.
+  Hela den beständiga strids-HUD:en ligger längst ned. Bordning försöker öppna
+  fullscreen automatiskt och har en Enter/Exit-knapp som reserv. Se
+  [produktkrav](docs/product-requirements.md).
 
 - **Bordningshandlingar och flyt:** `stang-oppen-dorr`,
   `granat-kostar-bara-vid-kast`, `granat-over-halvskydd-inte-genom-vagg`,
@@ -455,8 +462,8 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   och 45-gradersvändningar; detta ersätter uttryckligen den tidigare hexkartan.
   En vald väg får gröna och bruna tilekonturer efter kvarvarande AP. Den
   gula destinationsrutan visar hela AP-kostnaden inklusive vändningar tillsammans
-  med samma `Move`-symbol som handlingsknappen. En vald ruta som reagerar på
-  ett andra klick visar handlingens symbol ovanpå rutan. Förflyttning animeras
+  med samma `Move`-symbol som handlingsknappen. En vald ruta visar sina lagliga
+  handlingar i en liten kontextmeny. Förflyttning animeras
   stegvis med uppdaterad sikt. Kända golvrutor använder en kvadratisk yttextur som vyn
   projicerar på rutans exakta 2:1-diamant. Väggar tar utklipp ur en lång
   fasadtextur så att en längre sträcka blir sammanhängande. `Half cover` är

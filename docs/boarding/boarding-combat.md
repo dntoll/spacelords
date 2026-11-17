@@ -48,9 +48,9 @@ kommer från testtransportens startpositioner.
   implementerat**. Bara den gula destinationsrutan visar hela AP-kostnaden,
   inklusive alla vändningar på vägen, och samma `Move`-bild med fotsymbol som
   handlingsknappen. De gröna och bruna vägrutorna visar ingen siffra eller
-  symbol. En vald destination, fiende eller dörr visar symbolen
-  för den handling som ett andra klick utlöser. En låst dörr visar `Hack door`;
-  en avlägsen dörr visar `Move` eftersom nästa klick går mot dörren.
+  symbol. En vald destination, fiende eller dörr visar en liten meny med de
+  lagliga handlingarna. En låst dörr visar `Hack door` för en soldat med
+  Hacker tools; en avlägsen dörr visar `Move`.
 - `animerad-bordningsforflyttning` — **Fullständigt implementerat**. Utförd
   förflyttning animerar varje vändning och steg för den aktiva soldaten och för
   synliga försvarare och civilister. Sikt och kartminne uppdateras efter varje
@@ -100,9 +100,10 @@ kommer från testtransportens startpositioner.
   att stoppa figurerna. Minskad rörelse visar slutläget direkt. Storleksbyte
   och stängning avslutar väntande kamerafaser säkert. Sparningar påverkas inte.
 
-- `klickskott-pa-vald-fiende` — **Fullständigt implementerat**. Första klicket
-  på en fiende väljer målet. Ett andra klick på samma valda fiende avfyrar
-  geväret om skottet är lagligt.
+- `klickskott-pa-vald-fiende` — ersatt av
+  `kontextstyrda-bordningshandlingar`. Ett klick på en fiende visar lagliga
+  handlingar vid rutan; `Shoot` avfyrar geväret. `Rifle` i bottenfältet kan
+  också väljas som genväg före målet.
 - `vald-bordningsmal-markeras` — **Fullständigt implementerat**. Ett valt mål
   markeras på kartan med en guldring på rutan och ett tydligt crosshair över
   figuren, så att det syns vem melee och skott avser.
@@ -113,16 +114,16 @@ kommer från testtransportens startpositioner.
   kan inte riktas mot den aktiva soldaten eller eget lag. Skottknappen är
   avstängd tills ett fiendemål eller ett tillåtet miljömål är valt. Ogiltiga
   skott drar inte AP.
-- `klickgang-pa-vald-destination` — **Fullständigt implementerat**. Första
-  klicket på en tom ruta räknar ut och visar vägen. Ett andra klick på samma
-  valda destination startar förflyttningen om vägen ryms inom kvarvarande AP.
-- `gang-mot-avlagset-mal` — **Fullständigt implementerat**. Ett andra klick på
-  en vald destination eller dörr som ligger för långt bort för kvarvarande AP
+- `klickgang-pa-vald-destination` — ersatt av
+  `kontextstyrda-bordningshandlingar`. Ett klick på en tom ruta räknar ut och
+  visar vägen samt en `Move`-knapp vid destinationen.
+- `gang-mot-avlagset-mal` — **Fullständigt implementerat**. `Move` på en
+  vald destination eller dörr som ligger för långt bort för kvarvarande AP
   går längs den billigaste vägen så långt AP räcker. Mot en stängd dörr eller
   en upptagen ruta stannar soldaten bredvid den.
-- `vand-mot-vald-ruta` — **Fullständigt implementerat**. När spelaren väljer
-  en tom ruta som destination vänder sig soldaten mot den, den kortaste vägen
-  i 45-gradessteg för 0,25 AP per steg och så långt AP räcker.
+- `vand-mot-vald-ruta` — ersatt av `kontextstyrda-bordningshandlingar`.
+  Soldaten vänder sig som del av en vald förflyttning, men inte bara för att
+  spelaren öppnar menyn på en ruta.
 - `vandning-mot-nasta-steg` — **Fullständigt implementerat**. När soldaten
   går mot ett mål som AP inte räcker till används kvarvarande AP efter sista
   steget till att vända soldaten mot nästa steg, så att den kan fortsätta
@@ -133,12 +134,13 @@ kommer från testtransportens startpositioner.
   exempel 1,75 AP. Detta ersätter den tidigare gränsen där bara en bråkdel
   under 1 AP sparades och soldaten annars fick fortsätta agera.
 - `sparad-gangdestination` — **Fullständigt implementerat**. Ett mål soldaten
-  inte hann nå sparas och är valt igen när soldaten aktiveras nästa gång. Ett
-  nytt tryck på målet fortsätter gå. Målet glöms när soldaten når det eller
+  inte hann nå sparas och är valt igen när soldaten aktiveras nästa gång. Valet
+  `Move` fortsätter gå. Målet glöms när soldaten når det eller
   går någon annanstans med en vanlig förflyttning.
-- `klickdorr-pa-vald-dorr` — **Fullständigt implementerat**. Första klicket på
-  en dörr väljer den. Ett andra klick på samma angränsande dörr försöker
-  öppna den, eller hacka den om den är låst. Öppna dörrar väljs som golvrutor.
+- `klickdorr-pa-vald-dorr` — ersatt av
+  `kontextstyrda-bordningshandlingar`. Ett klick på en dörr visar `Open door`,
+  `Close door`, `Hack door` eller `Move` när respektive handling är laglig.
+  Öppna dörrar kan väljas.
 - `tydlig-bordningsstatus` — **Fullständigt implementerat**. Den aktiva soldaten
   namnges uttryckligen och markeras på kartan. Varje bordningssoldat visas med
   en egen HP-bar och numeriskt HP-värde i HUD. Kartans förklaringspanel har
@@ -330,21 +332,28 @@ kommer från testtransportens startpositioner.
 - `ljudmarkor-bara-utom-sikt` — **Fullständigt implementerat**. Ljudmarkörens
   två gula ringar visas bara på rutor som spelaren inte ser just nu; på en synlig
   ruta upprepar den bara vad som redan syns.
-- `avstangda-omojliga-handlingar` — **Fullständigt implementerat**. Vrid,
-  hukning, Overwatch, `Hack door`, `Use Med-pack`, `Evacuate`, dörrar, granater,
-  skott, melee och förflyttning är avstängda när AP, avstånd eller mål inte
-  räcker. `End soldier turn` är alltid tillgänglig.
-- `fasta-handlingsplatser` — **Fullständigt implementerat**. Alla knappar
-  visas alltid i samma ordning: vridningar, `Move`, hukning, skott, melee,
-  granater, `Open door`/`Close door` på samma plats, `Hack door`,
-  `Use Med-pack`,
-  Overwatch, `Evacuate`, i kampanjen `Abort boarding` och sist
-  `End soldier turn`. En knapp som saknar mål är avstängd i stället för
-  borttagen, så att knapparna aldrig flyttar runt. `Open door` visar en
-  öppen dörr och `Close door` en stängd dörr.
+- `avstangda-omojliga-handlingar` — **Fullständigt implementerat**.
+  Utrustningsknappar och soldatens egna handlingar stängs av när AP eller
+  laddningar saknas. Rutmenyn visar bara handlingar som är lagliga för den
+  valda rutan.
+- `fasta-handlingsplatser` — ersatt av
+  `kontextstyrda-bordningshandlingar`, som är **Fullständigt implementerat**.
+  `Turn left`, `Turn right`, `Crouch`/`Stand` och Overwatch visas runt den
+  aktiva soldaten. `Move`, skott, melee, personlig pryl, dörrhandling och
+  evakuering visas runt den berörda rutan.
+- `personlig-bordningsutrustning` — **Fullständigt implementerat**. Varje
+  soldat har ett `Rifle` och en pryl. Prylarna roterar i ordningen Frag
+  grenade, Smoke grenade, Hacker tools och Med kit. Granatbärare har tre
+  granater, Med kit har en användning och Hacker tools förbrukas inte.
+- `bordningshud-i-botten` — **Fullständigt implementerat**. Rubrik,
+  stängning, status, soldatval, namn, HP, AP, två utrustningsknappar,
+  turhandlingar och `Combat details` ligger i ett responsivt bottenfält.
+- `fullscreen-i-bordning` — **Fullständigt implementerat**. Vyn försöker gå
+  till fullscreen när den öppnas. En Enter/Exit-knapp finns som reserv och
+  spelet fortsätter i vanlig helskärmsdialog om webbläsaren nekar begäran.
 - `gang-knapp-till-avlagset-mal` — **Fullständigt implementerat**. `Move` är
-  tillgänglig även när destinationen ligger för långt bort och går då som ett
-  andra tryck på målet (`gang-mot-avlagset-mal`).
+  tillgänglig även när destinationen ligger för långt bort och går då mot målet
+  (`gang-mot-avlagset-mal`).
 - `granat-kostar-bara-vid-kast` — **Fullständigt implementerat**. Ett kast
   utanför räckvidden (6 rutor), utan kvarvarande granat av den sorten eller med
   för lite AP avvisas innan någon AP dras. Granatknapparna är avstängda för

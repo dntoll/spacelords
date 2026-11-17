@@ -892,17 +892,22 @@ describe('d20-bordningsstrid / miljomal-och-forstorelse', () => {
     withState((state) => ({
       ...state,
       people: state.people.map((person) =>
-        person.id === target!.id
+        person.id === medic!.id
           ? {
               ...person,
-              position: {
-                q: medic!.position.q + 1,
-                r: medic!.position.r,
-              },
-              hitPoints: 0,
-              status: 'incapacitated',
+              loadout: { weapon: 'rifle', gadget: 'med-kit', uses: 1 },
             }
-          : person,
+          : person.id === target!.id
+            ? {
+                ...person,
+                position: {
+                  q: medic!.position.q + 1,
+                  r: medic!.position.r,
+                },
+                hitPoints: 0,
+                status: 'incapacitated',
+              }
+            : person,
       ),
     }));
     activate(medic!.id);
@@ -995,6 +1000,21 @@ describe('granater-och-rok', () => {
     const player = battle.snapshot.people.find(
       (person) => person.side === 'player',
     )!;
+    withState((state) => ({
+      ...state,
+      people: state.people.map((person) =>
+        person.id === player.id
+          ? {
+              ...person,
+              loadout: {
+                weapon: 'rifle',
+                gadget: 'smoke-grenade',
+                uses: 3,
+              },
+            }
+          : person,
+      ),
+    }));
     activate(player.id);
     battle.command({
       type: 'grenade',
@@ -1366,6 +1386,21 @@ it('kastad-granat-i-bage: records the actual grenade impact for presentation wit
   const player = battle.snapshot.people.find(
     (person) => person.side === 'player',
   )!;
+  withState((state) => ({
+    ...state,
+    people: state.people.map((person) =>
+      person.id === player.id
+        ? {
+            ...person,
+            loadout: {
+              weapon: 'rifle',
+              gadget: 'smoke-grenade',
+              uses: 3,
+            },
+          }
+        : person,
+    ),
+  }));
   activate(player.id);
   const target = { q: player.position.q + 1, r: player.position.r };
   battle.command({ type: 'grenade', grenade: 'smoke', at: target });

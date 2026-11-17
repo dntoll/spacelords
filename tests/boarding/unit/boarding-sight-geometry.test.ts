@@ -333,9 +333,21 @@ describe('granat-over-halvskydd-inte-genom-vagg', () => {
       (_, r) => ({ id: `wall-${r}`, kind: 'wall', position: { q: 5, r } }),
     );
     const { shooter, restore } = deck(column);
+    const prepared = restore(far).snapshot.people.map((person) =>
+      person.id === shooter.id
+        ? {
+            ...person,
+            loadout: {
+              weapon: 'rifle' as const,
+              gadget: 'smoke-grenade' as const,
+              uses: 3,
+            },
+          }
+        : person,
+    );
     let missed = 0;
     for (let seed = 1; seed <= 200; seed++) {
-      const battle = restore(far, { randomState: seed });
+      const battle = restore(far, { randomState: seed, people: prepared });
       battle.command({ type: 'grenade', grenade: 'smoke', at: { q: 4, r: 3 } });
       const line = battle.snapshot.log.at(-1)!;
       const [, q] = /impact (-?\d+),(-?\d+)/.exec(line)!.map(Number);
@@ -343,7 +355,9 @@ describe('granat-over-halvskydd-inte-genom-vagg', () => {
       if (!line.endsWith('impact 4,3.')) missed++;
     }
     expect(missed).toBeGreaterThan(0);
-    expect(shooter.smokeGrenades).toBe(1);
+    expect(
+      prepared.find((person) => person.id === shooter.id)?.loadout.uses,
+    ).toBe(3);
   });
 });
 

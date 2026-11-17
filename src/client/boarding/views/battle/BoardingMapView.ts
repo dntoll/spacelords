@@ -376,7 +376,7 @@ export class BoardingMapView implements BoardingMapPort {
         canvas.tabIndex = 0;
         canvas.setAttribute(
           'aria-label',
-          'Isometric boarding map. Tap a destination or enemy, then tap it again to move or fire. Drag to pan, pinch or scroll to zoom.',
+          'Isometric boarding map. Tap a soldier or tile to choose an action. Drag to pan, pinch or scroll to zoom.',
         );
         for (const [style, url] of Object.entries(BOARDING_FLOOR_IMAGES) as [
           BoardingSurfaceStyle,
@@ -479,6 +479,7 @@ export class BoardingMapView implements BoardingMapPort {
       );
       if (this.#fitPending) this.fit();
       else void this.#p5.redraw();
+      this.#notifyCamera();
     });
     this.#observer.observe(container);
   }
@@ -640,6 +641,7 @@ export class BoardingMapView implements BoardingMapPort {
     this.#fitPending = false;
     this.#rememberPlayerZoom();
     void this.#p5.redraw();
+    this.#notifyCamera();
   }
 
   zoom(factor: number): void {
@@ -660,6 +662,7 @@ export class BoardingMapView implements BoardingMapPort {
     this.#scale = next;
     this.#rememberPlayerZoom();
     if (this.#ready) void this.#p5.redraw();
+    this.#notifyCamera();
   }
 
   get cameraSnapshot(): BoardingCameraSnapshot {
@@ -671,6 +674,18 @@ export class BoardingMapView implements BoardingMapPort {
 
   setViewportProvider(provider: () => BoardingCameraBounds | null): void {
     this.#viewportProvider = provider;
+  }
+
+  screenPoint(position: BoardingCell): Readonly<{ x: number; y: number }> {
+    const center = boardingIsoCenter(position);
+    return Object.freeze({
+      x: center.x * this.#scale + this.#offset.x,
+      y: center.y * this.#scale + this.#offset.y,
+    });
+  }
+
+  #notifyCamera(): void {
+    this.container.dispatchEvent(new CustomEvent('boarding-camera-change'));
   }
 
   beginPresentation(): void {
@@ -830,6 +845,7 @@ export class BoardingMapView implements BoardingMapPort {
     this.#scale = snapshot.scale;
     this.#offset = snapshot.offset;
     if (this.#ready && !this.#disposed) void this.#p5.redraw();
+    this.#notifyCamera();
   }
 
   #cancelCamera(manual = false): void {
@@ -1068,6 +1084,7 @@ export class BoardingMapView implements BoardingMapPort {
               y: this.#offset.y + next.y - previous.y,
             };
             void this.#p5.redraw();
+            this.#notifyCamera();
           }
         } else {
           const other = [...this.#pointers.entries()].find(

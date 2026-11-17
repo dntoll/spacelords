@@ -60,7 +60,7 @@ function corridor() {
       activation: { id: actor!.id, remaining },
       people: state.people.map(change),
     });
-  return { actor: actor!, other: other!, restore };
+  return { actor: actor!, other: other!, map, restore };
 }
 
 describe('granat-kostar-bara-vid-kast', () => {
@@ -74,23 +74,64 @@ describe('granat-kostar-bara-vid-kast', () => {
     ).toThrow(/range/);
     expect(battle.snapshot.activation?.remaining).toBe(12);
     expect(
-      battle.snapshot.people.find((person) => person.id === actor.id)
-        ?.fragGrenades,
-    ).toBe(1);
+      battle.snapshot.people.find((person) => person.id === actor.id)?.loadout
+        .uses,
+    ).toBe(3);
   });
 
   it('keeps AP when no grenade of that kind remains', () => {
     const { actor, restore } = corridor();
     const battle = restore(12, (person) =>
-      person.id === actor.id ? { ...person, smokeGrenades: 0 } : person,
+      person.id === actor.id
+        ? { ...person, loadout: { ...person.loadout, uses: 0 } }
+        : person,
     );
     const near = { q: 3, r: 2 };
-    expect(battle.grenadeReason(actor.id, 'smoke', near)).toMatch(/No smoke/);
+    expect(battle.grenadeReason(actor.id, 'frag', near)).toMatch(/No frag/);
     expect(() =>
-      battle.command({ type: 'grenade', grenade: 'smoke', at: near }),
-    ).toThrow(/No smoke/);
+      battle.command({ type: 'grenade', grenade: 'frag', at: near }),
+    ).toThrow(/No frag/);
     expect(battle.snapshot.activation?.remaining).toBe(12);
-    expect(battle.grenadeReason(actor.id, 'frag', near)).toBeNull();
+  });
+});
+
+describe('personlig-bordningsutrustning', () => {
+  it('assigns one rifle and one rotating gadget, with three grenades', () => {
+    const { restore } = corridor();
+    const players = restore().snapshot.people.filter(
+      (person) => person.side === 'player',
+    );
+    expect(players.map((person) => person.loadout)).toEqual([
+      { weapon: 'rifle', gadget: 'frag-grenade', uses: 3 },
+      { weapon: 'rifle', gadget: 'smoke-grenade', uses: 3 },
+    ]);
+  });
+
+  it('rejects a grenade that is not the active soldier gadget', () => {
+    const { actor, restore } = corridor();
+    const battle = restore();
+    expect(battle.grenadeReason(actor.id, 'smoke', { q: 3, r: 2 })).toMatch(
+      /equipped/i,
+    );
+  });
+
+  it('migrates a legacy available grenade to the new three-use loadout', () => {
+    const { actor, map, restore } = corridor();
+    const current = restore().snapshot;
+    const legacy = {
+      ...current,
+      people: current.people.map((person) => {
+        const copy: Record<string, unknown> = { ...person };
+        delete copy.loadout;
+        if (person.id === actor.id) copy.fragGrenades = 1;
+        return copy;
+      }),
+    } as unknown as BoardingBattleState;
+    const restored = BoardingBattle.restore(map, legacy);
+    expect(
+      restored.snapshot.people.find((person) => person.id === actor.id)
+        ?.loadout,
+    ).toEqual({ weapon: 'rifle', gadget: 'frag-grenade', uses: 3 });
   });
 });
 
@@ -193,6 +234,18 @@ describe('ingen-rok-i-hela-vaggar', () => {
     const actor = initial.people.find((person) => person.side === 'player')!;
     return BoardingBattle.restore(map, {
       ...initial,
+      people: initial.people.map((person) =>
+        person.id === actor.id
+          ? {
+              ...person,
+              loadout: {
+                weapon: 'rifle' as const,
+                gadget: 'smoke-grenade' as const,
+                uses: 3,
+              },
+            }
+          : person,
+      ),
       features: initial.features.map((feature) =>
         feature.id === 'wall-2' ? { ...feature, destroyed } : feature,
       ),
