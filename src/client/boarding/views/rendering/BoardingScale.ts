@@ -3,6 +3,8 @@ export const BOARDING_METERS = Object.freeze({
   tile: 1,
   wall: 2.4,
   thinWall: 1 / 3,
+  /** tunnare-dorrar: doors, airlock doors included, are half a thin wall. */
+  door: 1 / 6,
   cutawayWall: 0.4,
   opening: 2.1,
   frame: 2.3,

@@ -69,6 +69,7 @@ export interface BoardingMapPort {
     action?: BoardingTileActionMark | null,
   ): void;
   setViewportProvider?(provider: () => BoardingCameraBounds | null): void;
+  setUiObstacleProvider?(provider: () => readonly BoardingCameraBounds[]): void;
   screenPoint?(position: BoardingCell): Readonly<{ x: number; y: number }>;
   beginPresentation?(): void;
   endPresentation?(): void;
@@ -290,6 +291,35 @@ export class BoardingView {
     );
     this.#mapName = map.name;
     this.#map?.setViewportProvider?.(() => this.#viewport());
+    this.#map?.setUiObstacleProvider?.(() => this.#uiObstacles());
+  }
+
+  /** kantindikator-utanfor-granssnitt: every visible panel drawn over the board. */
+  #uiObstacles(): readonly BoardingCameraBounds[] {
+    const canvas = this.#canvas.getBoundingClientRect();
+    const margin = 4;
+    return [
+      this.#details,
+      this.#logPreview,
+      this.#close,
+      this.#fullscreen,
+      this.#status,
+      this.#team,
+      this.#equipment,
+      this.#globalControls,
+      this.#enemyTurn,
+    ].flatMap((panel) => {
+      const box = panel.getBoundingClientRect();
+      if (panel.hidden || box.width <= 0 || box.height <= 0) return [];
+      return [
+        {
+          left: box.left - canvas.left - margin,
+          right: box.right - canvas.left + margin,
+          top: box.top - canvas.top - margin,
+          bottom: box.bottom - canvas.top + margin,
+        },
+      ];
+    });
   }
 
   #viewport(): BoardingCameraBounds | null {

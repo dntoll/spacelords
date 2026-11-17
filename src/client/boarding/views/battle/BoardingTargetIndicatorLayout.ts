@@ -54,6 +54,7 @@ const spread = (
 export function boardingEdgeTargetIndicators(
   targets: readonly BoardingTargetPoint[],
   viewport: BoardingCameraBounds,
+  obstacles: readonly BoardingCameraBounds[] = [],
 ): readonly BoardingEdgeTargetIndicator[] {
   const inset = 22;
   const bounds = {
@@ -98,20 +99,87 @@ export function boardingEdgeTargetIndicators(
           entry.x > origin.x)
           ? 'left'
           : 'right';
+      const free = clearOfObstacles(entry, labelSide, bounds, obstacles);
       return Object.freeze({
         id: entry.id,
-        x: entry.x,
-        y: entry.y,
+        x: free.x,
+        y: free.y,
         labelSide,
-        hitBounds: Object.freeze({
-          left: entry.x - (labelSide === 'left' ? 92 : 20),
-          right: entry.x + (labelSide === 'right' ? 92 : 20),
-          top: entry.y - 22,
-          bottom: entry.y + 22,
-        }),
+        hitBounds: indicatorBounds(free, labelSide),
       });
     }),
   );
+}
+
+const indicatorBounds = (
+  point: Readonly<{ x: number; y: number }>,
+  labelSide: 'left' | 'right',
+): BoardingCameraBounds =>
+  Object.freeze({
+    left: point.x - (labelSide === 'left' ? 92 : 20),
+    right: point.x + (labelSide === 'right' ? 92 : 20),
+    top: point.y - 22,
+    bottom: point.y + 22,
+  });
+
+const overlaps = (a: BoardingCameraBounds, b: BoardingCameraBounds) =>
+  a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+
+/**
+ * kantindikator-utanfor-granssnitt: a marker under the HUD, combat log or
+ * header buttons moves to the nearest free spot, along its own edge or inward
+ * past the covering panel.
+ */
+function clearOfObstacles(
+  entry: Positioned,
+  labelSide: 'left' | 'right',
+  bounds: BoardingCameraBounds,
+  obstacles: readonly BoardingCameraBounds[],
+): Readonly<{ x: number; y: number }> {
+  const blocked = (point: Readonly<{ x: number; y: number }>) =>
+    obstacles.some((obstacle) =>
+      overlaps(indicatorBounds(point, labelSide), obstacle),
+    );
+  const start = { x: entry.x, y: entry.y };
+  if (!blocked(start)) return start;
+  const inside = (point: Readonly<{ x: number; y: number }>) =>
+    point.x >= bounds.left &&
+    point.x <= bounds.right &&
+    point.y >= bounds.top &&
+    point.y <= bounds.bottom;
+  const leftReach = labelSide === 'left' ? 92 : 20;
+  const rightReach = labelSide === 'right' ? 92 : 20;
+  // Sliding along the marker's own edge keeps the direction readable, so an
+  // inward step only wins when it is much shorter.
+  const alongY = entry.edge === 'left' || entry.edge === 'right';
+  const cost = (point: Readonly<{ x: number; y: number }>) =>
+    Math.abs(point.x - start.x) * (alongY ? 3 : 1) +
+    Math.abs(point.y - start.y) * (alongY ? 1 : 3);
+  let candidates = [start];
+  // Each round steps every candidate past each covering panel; panels side by
+  // side (log beside header buttons) need more than one round.
+  for (let round = 0; round < 4; round++) {
+    const next: { x: number; y: number }[] = [];
+    for (const point of candidates)
+      for (const obstacle of obstacles) {
+        if (!overlaps(indicatorBounds(point, labelSide), obstacle)) continue;
+        next.push(
+          { x: point.x, y: obstacle.top - 23 },
+          { x: point.x, y: obstacle.bottom + 23 },
+          { x: obstacle.left - rightReach - 1, y: point.y },
+          { x: obstacle.right + leftReach + 1, y: point.y },
+        );
+      }
+    const valid = next.filter(inside);
+    const free = valid.filter((point) => !blocked(point));
+    if (free.length)
+      return free.reduce((best, point) =>
+        cost(point) < cost(best) ? point : best,
+      );
+    if (!valid.length) break;
+    candidates = valid.slice(0, 32);
+  }
+  return start;
 }
 
 export function boardingScreenRectangleVisible(

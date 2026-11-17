@@ -480,6 +480,23 @@ function runtimeFeature(feature: BoardingFeatureDefinition): BoardingFeature {
   });
 }
 
+/** eget-skepp-upptackt: a side knows its own ship; attackers also their gangway. */
+function ownShipCells(
+  map: BoardingMap,
+  zone: 'attacker' | 'defender',
+): BoardingCell[] {
+  const cells: BoardingCell[] = [];
+  for (let r = 0; r < map.height; r++)
+    for (let q = 0; q < map.width; q++) {
+      const cell = frozenCell({ q, r });
+      const at = map.zoneAt(cell);
+      const gangway = zone === 'attacker' && at === 'bridge';
+      if (map.terrainAt(cell) !== null && (at === zone || gangway))
+        cells.push(cell);
+    }
+  return cells;
+}
+
 function person(
   side: BoardingSide,
   index: number,
@@ -599,7 +616,7 @@ export class BoardingBattle {
     const taken = new Set<string>();
     const boarders = spreadBoardingSpawns(
       composed.map,
-      composed.gangway,
+      composed.boardingFront,
       4,
       taken,
     );
@@ -645,7 +662,7 @@ export class BoardingBattle {
       smoke: [],
       smokeCells: [],
       visibleCells: [],
-      exploredCells: [],
+      exploredCells: test ? ownShipCells(map, 'attacker') : [],
       lastKnownEnemies: [],
       defenderLastKnownEnemies: [],
       noiseMarkers: [],
@@ -681,11 +698,11 @@ export class BoardingBattle {
       for (const cell of composed.defenderCivilians) occupy(cell);
     const cockpit = fill(cockpitCells, cockpitCells.length ? 1 : 0)[0];
     const playerCells = playerIsAttacker
-      ? fill(composed.gangway, 4)
+      ? fill(composed.boardingFront, 4)
       : fill(composed.defenderSpawns, 3);
     const enemyBoarders = playerIsAttacker
       ? fill(composed.defenderSpawns, 2)
-      : fill(composed.gangway, 3);
+      : fill(composed.boardingFront, 3);
     const people = [
       ...playerCells.map((position, index) =>
         person('player', index, position, {
@@ -736,7 +753,10 @@ export class BoardingBattle {
       smoke: [],
       smokeCells: [],
       visibleCells: [],
-      exploredCells: [],
+      exploredCells: ownShipCells(
+        composed.map,
+        playerIsAttacker ? 'attacker' : 'defender',
+      ),
       lastKnownEnemies: [],
       defenderLastKnownEnemies: [],
       noiseMarkers: [],

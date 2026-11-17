@@ -128,6 +128,7 @@ import {
 import {
   BOARDING_HALF_TILE_WIDTH,
   BOARDING_HALF_TILE_HEIGHT,
+  boardingAirlockDoorDepth,
   boardingAirlockDoorGeometry,
   boardingAnimTick,
   boardingProjectilePoint,
@@ -306,6 +307,7 @@ export class BoardingMapView implements BoardingMapPort {
   }[] = [];
   readonly #camera = new BoardingCameraController();
   #viewportProvider: (() => BoardingCameraBounds | null) | undefined;
+  #obstacleProvider: (() => readonly BoardingCameraBounds[]) | undefined;
   #cameraAnimation: { cancel: () => void } | null = null;
   #cameraVersion = 0;
   #presenting = false;
@@ -671,6 +673,11 @@ export class BoardingMapView implements BoardingMapPort {
       scale: this.#scale,
       offset: Object.freeze({ ...this.#offset }),
     });
+  }
+
+  /** kantindikator-utanfor-granssnitt: screen panels that edge markers avoid. */
+  setUiObstacleProvider(provider: () => readonly BoardingCameraBounds[]): void {
+    this.#obstacleProvider = provider;
   }
 
   setViewportProvider(provider: () => BoardingCameraBounds | null): void {
@@ -1983,6 +1990,7 @@ export class BoardingMapView implements BoardingMapPort {
                 : {}),
             }
           : { span: piece.span }),
+        ...(door ? { thickness: BOARDING_METERS.door } : {}),
         top: option(door ? (this.#doorTop ?? this.#wallTop) : this.#wallTop),
         section:
           !low && height < boardingFeatureHeight('wall') && !this.#wallTop,
@@ -2225,7 +2233,10 @@ export class BoardingMapView implements BoardingMapPort {
           },
         ];
       }),
-      viewport,
+      this.#obstacleProvider
+        ? { left: 0, top: 0, right: sketch.width, bottom: sketch.height }
+        : viewport,
+      this.#obstacleProvider?.() ?? [],
     );
     this.#edgeTargetHits = edgeTargets;
     const edgeTargetIds = new Set(edgeTargets.map((entry) => entry.id));
@@ -2403,16 +2414,14 @@ export class BoardingMapView implements BoardingMapPort {
       const outside = this.map.terrainAt({ q: position.q, r: position.r - 1 })
         ? 'bottom'
         : 'top';
-      const doors = [...boardingAirlockDoorGeometry(position, outside)].sort(
-        (a, b) =>
-          boardingIsoCenter(a.position).y - boardingIsoCenter(b.position).y,
-      );
       const slab = boardingStraightThinPieces('r');
-      scene.push({
-        depth: boardingIsoCenter(position).y,
-        order: -1,
-        paint: () => {
-          for (const door of doors) {
+      for (const door of boardingAirlockDoorGeometry(position, outside))
+        scene.push({
+          // airlockdorr-framfor-soldat: each door sorts at its own line, so the
+          // one nearer the camera covers whoever stands in the airlock.
+          depth: boardingAirlockDoorDepth(door),
+          order: -1,
+          paint: () => {
             // automatisk-airlockcykel: closed unless a walker passes it.
             const side = Math.sign(door.position.r - position.r);
             const started = this.#airlockCycles.get(`${key(position)},${side}`);
@@ -2443,9 +2452,8 @@ export class BoardingMapView implements BoardingMapPort {
                   ...leaf,
                 },
               );
-          }
-        },
-      });
+          },
+        });
     }
     // bordning-jamn-bildfrekvens: skip walls and objects wholly off the canvas.
     const margin = BOARDING_HALF_TILE_WIDTH * 3;

@@ -105,6 +105,8 @@ export interface ComposedBoarding {
   readonly map: BoardingMap;
   readonly gangwayLength: number;
   readonly gangway: readonly BoardingCell[];
+  /** bordare-vid-malskeppets-ande: both lanes, nearest the boarded airlock first. */
+  readonly boardingFront: readonly BoardingCell[];
   readonly attackerAirlock: readonly BoardingCell[];
   readonly defenderAirlock: readonly BoardingCell[];
   readonly attackerCockpit: readonly BoardingCell[];
@@ -344,6 +346,9 @@ export function composeBoardingInteriors(
       }),
     );
   }
+  const boardingFront: BoardingCell[] = [];
+  for (let r = lastRow; r >= firstRow; r--)
+    for (const q of lanes) boardingFront.push(freezeCell(q, r));
   const middle = gangway[Math.floor(gangway.length / 2)];
   const map = new BoardingMap(
     `${attacker.name} / ${defender.name}`,
@@ -385,6 +390,7 @@ export function composeBoardingInteriors(
     map,
     gangwayLength,
     gangway,
+    boardingFront,
     attackerAirlock: [attackerAir],
     defenderAirlock: [defenderAir],
     attackerCockpit: top.cockpits,
