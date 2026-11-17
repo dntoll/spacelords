@@ -38,7 +38,10 @@ const ids = (people: readonly { id: string }[]) => people.map((p) => p.id);
 
 describe('grannruta-syns-genom-rok', () => {
   it('lets two people on adjacent tiles see each other when both stand in smoke', () => {
-    const battle = scene({ q: 3, r: 3 }, 2)([
+    const battle = scene(
+      { q: 3, r: 3 },
+      2,
+    )([
       { q: 2, r: 3 },
       { q: 3, r: 3 },
     ]);
