@@ -836,11 +836,7 @@ export class BoardingMapView implements BoardingMapPort {
         .map((entry) => this.#cellSubject(entry.position)),
     ];
     return this.#playCamera(
-      this.#camera.frame(
-        this.cameraSnapshot,
-        subjects,
-        this.#cameraBounds(),
-      ),
+      this.#camera.frame(this.cameraSnapshot, subjects, this.#cameraBounds()),
     );
   }
 
