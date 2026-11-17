@@ -1415,6 +1415,32 @@ export class BoardingBattle {
     return blocks;
   }
 
+  /**
+   * grannruta-syns-genom-rok: a person always sees the tiles right around
+   * them, so smoke never hides a neighbour. Walls and facing still count.
+   */
+  #nearSight(
+    observer: BoardingPerson | undefined,
+    target: BoardingCell | undefined,
+  ): boolean {
+    return (
+      !!observer &&
+      !!target &&
+      Math.max(
+        Math.abs(observer.position.q - target.q),
+        Math.abs(observer.position.r - target.r),
+      ) <= 1
+    );
+  }
+
+  #smokelessBlocks(): BoardingSightBlocker {
+    const blocks = this.#visionBlocks();
+    return (q, r) =>
+      blocks(q, r) !== false && this.#smokeAt({ q, r })
+        ? this.#solidShape({ q, r }, false)
+        : blocks(q, r);
+  }
+
   #forwardVector(observer: BoardingPerson): BoardingSightPoint {
     const ahead = BoardingBattle.forward(observer.position, observer.facing);
     return {
@@ -1428,8 +1454,13 @@ export class BoardingBattle {
    * cover, so crates, low walls and crouched people block their sight, except
    * those right beside them that they peek over.
    */
-  #visionBlocksFor(observer: BoardingPerson | undefined): BoardingSightBlocker {
-    const blocks = this.#visionBlocks();
+  #visionBlocksFor(
+    observer: BoardingPerson | undefined,
+    target?: BoardingCell,
+  ): BoardingSightBlocker {
+    const blocks = this.#nearSight(observer, target)
+      ? this.#smokelessBlocks()
+      : this.#visionBlocks();
     if (!observer?.crouched) return blocks;
     const cover = this.#halfCover();
     const { q: eyeQ, r: eyeR } = observer.position;
@@ -1476,7 +1507,7 @@ export class BoardingBattle {
       observer.position,
       this.#forwardVector(observer),
       target,
-      this.#visionBlocksFor(observer),
+      this.#visionBlocksFor(observer, target),
       this.#bodiesFor(observer),
       this.#sightRadius,
     );
@@ -1784,7 +1815,7 @@ export class BoardingBattle {
       source,
       { q: target.q - source.q, r: target.r - source.r },
       target,
-      this.#visionBlocksFor(shooter),
+      this.#visionBlocksFor(shooter, target),
       this.#halfCover(),
       this.#bodiesFor(shooter),
       this.#sightRadius,
@@ -2045,7 +2076,7 @@ export class BoardingBattle {
             source.position,
             this.#forwardVector(source),
             targetCell,
-            this.#visionBlocksFor(source),
+            this.#visionBlocksFor(source, targetCell),
             this.#bodiesFor(source),
             this.#sightRadius,
           ) ?? frozenCell(targetCell));

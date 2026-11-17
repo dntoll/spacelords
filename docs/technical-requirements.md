@@ -1909,6 +1909,10 @@ färdig reparation.
   för en hukad betraktare lådor (hel ruta), låga väggar (deras plattor) och
   hukade personer (pelare) blockerande när de ligger mer än en ruta bort
   (Chebyshev). Det gäller sikt, kunskap, eldval, siktytan och skyddsandelen.
+- `grannruta-syns-genom-rok`: `#visionBlocksFor` tar emot målrutan; ligger
+  den inom en ruta (Chebyshev) från betraktaren används `#smokelessBlocks`,
+  där rök inte blockerar men väggar gör det. Det gäller sikt, kunskap, eldval,
+  sikte och skyddsandel; den ritade siktytan påverkas inte.
 - `skott-langs-fri-siktlinje`: `boardingAimPoint` väljer bland siktens 5×5
   provpunkter den fria punkt som ligger närmast målrutans mitt. Skottet sparar
   den som `aim`; glas krossas längs linjen dit och spårljuset ritas dit. Detta

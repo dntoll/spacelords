@@ -1706,6 +1706,8 @@ står i skuggan får mindre skydd än en som står helt bakom.
 
 `hukad-ser-inte-over-halvskydd` — **Fullständigt implementerat**: den som hukar har ögonen under halvskyddets överkant. Lådor, låga väggar och andra hukade personer längre bort än en ruta skymmer därför sikt och skott, medan halvskydd precis intill går att kika över. Skyddsbonusen för den som hukar bakom halvskydd är oförändrad.
 
+`grannruta-syns-genom-rok` — **Fullständigt implementerat**: man ser alltid åtminstone rutorna precis runt sig. Två personer bredvid varandra, även diagonalt, ser därför varandra trots rök. Väggar skymmer som vanligt.
+
 `skott-langs-fri-siktlinje` — **Fullständigt implementerat**: ett skott går längs en linje där målet faktiskt syns, aldrig genom en vägg, och krossar fönster som linjen passerar.
 
 `avstand-paverkar-traffchans` — **Fullständigt implementerat**: det är svårare

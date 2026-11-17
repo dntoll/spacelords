@@ -136,6 +136,8 @@ Se [hela visionen](docs/game-vision.md).
   siktytan och skeppets rutor; låga väggar skuggar från själva väggen.
   `hukad-ser-inte-over-halvskydd` är **Fullständigt implementerat**: en hukad
   person ser och skjuter inte över halvskydd längre bort än en ruta.
+  `grannruta-syns-genom-rok` är **Fullständigt implementerat**: två personer
+  på intilliggande rutor, även diagonalt, ser varandra trots rök.
   `skott-langs-fri-siktlinje` är **Fullständigt implementerat**: skottet
   följer den fria siktlinjen närmast målets mitt och krossar glas längs den.
   `avstand-paverkar-traffchans` är **Fullständigt implementerat**: skott får
