@@ -352,6 +352,10 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   `ruttflottor-utan-ankomstbesked` är **Fullständigt implementerat**:
   flottor på Route ger inga ankomstbesked vid ändplaneterna eftersom
   ruttuppdraget fortsätter. Lossade material ingår fortsatt i planetbeskedet.
+  `ankomstbesked-endast-vid-manuell-forflyttning` är **Fullständigt
+  implementerat**: ankomstbesked ges bara för manuella förflyttningsorder,
+  inte för delmål under Explore, Explore stars, automatiska order eller
+  avstickare.
 
 - **Direkta stridsorder:** `skeppsval-startar-stridstur` och
   `stridsorder-utan-mobilscroll` är **Fullständigt implementerat**. Val av ett
@@ -623,6 +627,9 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   `handelsrutt-skapande-pa-stjarnkartan` är **Fullständigt implementerat**:
   Trade logistics krävs och förklaras före ruttskapandet; avvisade försök
   behåller sin förklaring och startplanet. Se [handelsrutter](docs/star-map-trade.md).
+  `spelnotis-synlig` är **Fullständigt implementerat**: korta spelnotiser som
+  `Shipyard construction queued.` visas under flikarna, helt inom skärmen och
+  ovanför Events och End turn.
   Se [mobilens kartval och forskning](docs/mobile-map-interactions.md).
 
 - **Gemensamt händelseflöde:** `gemensamt-handelseflode` är **Fullständigt

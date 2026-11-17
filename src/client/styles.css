@@ -564,12 +564,24 @@ p {
 .destination-mode {
   color: var(--accent);
 }
+/* spelnotis-synlig: the bottom edge belongs to the game footer and the map
+   panels, so a notice sits at the top of the content row, below the tabs. */
+#app {
+  position: relative;
+}
 .game-notice {
   position: absolute;
+  grid-row: 2;
+  grid-column: 1;
   left: 50%;
-  bottom: 16px;
+  top: 12px;
   transform: translateX(-50%);
-  z-index: 3;
+  z-index: 30;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  text-align: center;
+  overflow-wrap: anywhere;
   margin: 0;
   padding: 10px 14px;
   border: 1px solid #d3a86a;
@@ -3053,6 +3065,10 @@ p {
   background: #102e34;
   color: #e8fff5;
   pointer-events: none;
+}
+/* spelnotis-synlig: stack a notice below a simultaneous production receipt. */
+.production-receipt ~ .game-notice {
+  top: 72px;
 }
 .discovery-controls {
   position: fixed;
