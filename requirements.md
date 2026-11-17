@@ -10,6 +10,18 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Bordningshandlingar:** `utrustningsknapp-utfor-valt-mal`,
+  `rokgranat-pa-person`, `medkit-for-skadad-soldat`,
+  `ateranvand-handlingsbilder` och `orsak-till-otillganglig-handling` är
+  **Fullständigt implementerat**. Vapen och prylar används mot valda mål,
+  granater kan riktas mot personer och Med kit kan vårda skadade soldater.
+  Tidigare handlingsbilder och den kompakta turknappen används, och spelaren
+  får en förklaring vid tryck på en otillgänglig handling. Soldaten vänder sig
+  åter mot en vald ruta och ett andra tryck går dit. `valbar-bordningssoldat`
+  omfattar hela soldatraden även i liggande mobilläge; en soldat som inte kan
+  agera förklarar varför vid tryck. Se
+  [bordningsstrid](docs/boarding/boarding-combat.md).
+
 - **Tydlig försörjningsstatus:** `produktionsstatus-for-separata-behov` är **Fullständigt implementerat**. Ett byggprojekts status bedöms utifrån dess eget behov, utan att blanda in varvets reparationer eller flottuppgraderingar. Se [ekonomi och logistik](docs/economy-logistics.md).
 
 - **Varvets material:** `varvets-automatiska-materialforsorjning` är **Fullständigt implementerat**. Den första reparationen i varje fungerande Shipyard beställer saknade råvaror genom planetens handelsnät på samma sätt som ett aktivt bygge. Se [varv](docs/salvage-shipyards.md).
@@ -72,7 +84,7 @@ Se [hela visionen](docs/game-vision.md).
   `kontextstyrda-bordningshandlingar` är **Fullständigt implementerat**:
   handlingar visas vid den aktiva soldaten eller valda rutan utifrån mål,
   avstånd, AP och utrustning. Det ersätter `fasta-handlingsplatser` och
-  dubbeltryck för gång, skott och dörrar. `gang-knapp-till-avlagset-mal` är
+  dubbeltryck för skott och dörrar. `gang-knapp-till-avlagset-mal` är
   fortsatt **Fullständigt implementerat** genom rutmenyn.
   `utslagen-fiende-utan-sikte` och `ljudmarkor-bara-utom-sikt` är
   **Fullständigt implementerat**: utslagna personer får varken hårkors eller

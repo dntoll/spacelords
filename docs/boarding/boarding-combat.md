@@ -74,7 +74,8 @@ kommer från testtransportens startpositioner.
   figuren eller golvrutan. Ett klick på spriten väljer soldaten även när
   kroppen täcker rutan bakom. Den förra soldaten sparar sin kvarvarande AP och
   återupptas när den valda är klar, så att någon som står i vägen kan flyttas
-  undan.
+  undan. Alla soldater kan också väljas i bottenfältet i stående och liggande
+  läge. En soldat som inte kan agera kan tryckas för att visa orsaken.
 - `kamerafokus-vid-bordningssoldatbyte` — **Fullständigt implementerat**.
   Spelaren har en zoomnivå för alla soldater. Manuell zoom ändrar den.
   När en egen soldat blir vald, manuellt eller automatiskt, panoreras figuren
@@ -114,16 +115,16 @@ kommer från testtransportens startpositioner.
   kan inte riktas mot den aktiva soldaten eller eget lag. Skottknappen är
   avstängd tills ett fiendemål eller ett tillåtet miljömål är valt. Ogiltiga
   skott drar inte AP.
-- `klickgang-pa-vald-destination` — ersatt av
-  `kontextstyrda-bordningshandlingar`. Ett klick på en tom ruta räknar ut och
-  visar vägen samt en `Move`-knapp vid destinationen.
+- `klickgang-pa-vald-destination` — **Fullständigt implementerat**. Ett klick
+  på en tom ruta visar vägen och ett andra klick går dit. `Move` i rutmenyn
+  fungerar också.
 - `gang-mot-avlagset-mal` — **Fullständigt implementerat**. `Move` på en
   vald destination eller dörr som ligger för långt bort för kvarvarande AP
   går längs den billigaste vägen så långt AP räcker. Mot en stängd dörr eller
   en upptagen ruta stannar soldaten bredvid den.
-- `vand-mot-vald-ruta` — ersatt av `kontextstyrda-bordningshandlingar`.
-  Soldaten vänder sig som del av en vald förflyttning, men inte bara för att
-  spelaren öppnar menyn på en ruta.
+- `vand-mot-vald-ruta` — **Fullständigt implementerat**. Soldaten vänder sig
+  mot en vald ruta i 45-graderssteg för 0,25 AP per steg. Det återinför
+  vändningen som tidigare togs bort av `kontextstyrda-bordningshandlingar`.
 - `vandning-mot-nasta-steg` — **Fullständigt implementerat**. När soldaten
   går mot ett mål som AP inte räcker till används kvarvarande AP efter sista
   steget till att vända soldaten mot nästa steg, så att den kan fortsätta
@@ -345,9 +346,22 @@ kommer från testtransportens startpositioner.
   soldat har ett `Rifle` och en pryl. Prylarna roterar i ordningen Frag
   grenade, Smoke grenade, Hacker tools och Med kit. Granatbärare har tre
   granater, Med kit har en användning och Hacker tools förbrukas inte.
+- `utrustningsknapp-utfor-valt-mal` och `rokgranat-pa-person` — **Fullständigt
+  implementerat**. Ett tryck på vapen eller pryl utför handlingen på ett giltigt
+  valt mål. Utan valt mål väljs mål därefter. Splittergranater kan kastas på
+  fiender och rökgranater på alla personer, även civilister.
+- `medkit-for-skadad-soldat` — **Fullständigt implementerat**. Med kit kan
+  återuppliva en utslagen person eller läka en skadad stående person på en
+  angränsande ruta, även om den står i en öppen dörr. Det läker en tredjedel
+  av max-HP, högst till max-HP.
+- `ateranvand-handlingsbilder` och `orsak-till-otillganglig-handling` —
+  **Fullständigt implementerat**. Kontextmenyer använder de tidigare bilderna
+  för respektive handling och `End soldier turn` är åter en liten bildknapp.
+  Otillgängliga synliga knappar visas inaktiva, men förklarar orsaken vid tryck.
 - `bordningshud-i-botten` — **Fullständigt implementerat**. Rubrik,
   stängning, status, soldatval, namn, HP, AP, två utrustningsknappar,
-  turhandlingar och `Combat details` ligger i ett responsivt bottenfält.
+  turhandlingar och `Combat details` ligger i ett responsivt bottenfält. Den
+  aktiva soldatens namn och AP upprepas inte i en separat statusrad.
 - `fullscreen-i-bordning` — **Fullständigt implementerat**. Vyn försöker gå
   till fullscreen när den öppnas. En Enter/Exit-knapp finns som reserv och
   spelet fortsätter i vanlig helskärmsdialog om webbläsaren nekar begäran.
