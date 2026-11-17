@@ -186,3 +186,30 @@ test('kamerafokus-vid-bordningssoldatbyte: selecting an offscreen soldier reveal
     .getByRole('button', { name: 'Close boarding', exact: true })
     .click();
 });
+
+test('valbar-roll-i-testbordning: choose and replay both roles without changing saves', async ({
+  page,
+}) => {
+  await page.goto('./');
+  const before = await page.evaluate(() => ({ ...localStorage }));
+  const role = page.getByRole('combobox', { name: 'Boarding role' });
+  const ship = page.getByRole('combobox', { name: 'Boarded ship' });
+  await ship.selectOption('Salvage ship');
+  await role.selectOption('defender');
+  await page.getByRole('button', { name: 'Test boarding (cheat)' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Boarding combat' });
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole('region', { name: 'Boarding team' }),
+  ).toContainText('Crew');
+  await dialog.getByRole('button', { name: 'Close boarding' }).click();
+  await expect(role).toHaveValue('defender');
+  await expect(ship).toHaveValue('Salvage ship');
+  await role.selectOption('attacker');
+  await page.getByRole('button', { name: 'Test boarding (cheat)' }).click();
+  await expect(
+    dialog.getByRole('region', { name: 'Boarding team' }),
+  ).toContainText('Boarder');
+  await dialog.getByRole('button', { name: 'Close boarding' }).click();
+  expect(await page.evaluate(() => ({ ...localStorage }))).toEqual(before);
+});

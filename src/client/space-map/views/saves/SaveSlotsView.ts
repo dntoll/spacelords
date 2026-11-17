@@ -3,27 +3,50 @@ import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { button, element } from '../../../common/dom.js';
 import {
   BOARDING_INTERIOR_TYPES,
-  DEFAULT_TEST_BOARDING_ATTACKER,
+  DEFAULT_TEST_BOARDING_SELECTION,
+  type TestBoardingSelection,
 } from '../../../boarding/models/index.js';
 import type { CombatShipType } from '../../../space-battle/models/index.js';
 
-/** valbart-skepp-i-testbordning: the choice survives re-rendering the page. */
-let testBoardingAttacker: CombatShipType = DEFAULT_TEST_BOARDING_ATTACKER;
+/** valbar-roll-i-testbordning: selections survive page re-rendering. */
+let testBoardingSelection: TestBoardingSelection =
+  DEFAULT_TEST_BOARDING_SELECTION;
 
-function testBoardingShip(): HTMLElement {
-  const select = element('select', 'test-boarding-ship');
-  select.setAttribute('aria-label', 'Boarding ship');
-  select.title = 'The ship that docks with the test transport and boards it.';
+function testBoardingOptions(): HTMLElement {
+  const options = element('div', 'test-boarding-options');
+  const role = element('select', 'test-boarding-role');
+  role.setAttribute('aria-label', 'Boarding role');
+  for (const [value, label] of [
+    ['attacker', 'Attack from Raptor'],
+    ['defender', 'Defend against Space pirate'],
+  ]) {
+    const option = element('option', '', label);
+    option.value = value!;
+    role.append(option);
+  }
+  role.value = testBoardingSelection.role;
+  role.addEventListener('change', () => {
+    testBoardingSelection = {
+      ...testBoardingSelection,
+      role: role.value as TestBoardingSelection['role'],
+    };
+  });
+  const ship = element('select', 'test-boarding-ship');
+  ship.setAttribute('aria-label', 'Boarded ship');
   for (const type of BOARDING_INTERIOR_TYPES) {
     const option = element('option', '', type);
     option.value = type;
-    select.append(option);
+    ship.append(option);
   }
-  select.value = testBoardingAttacker;
-  select.addEventListener('change', () => {
-    testBoardingAttacker = select.value as CombatShipType;
+  ship.value = testBoardingSelection.ship;
+  ship.addEventListener('change', () => {
+    testBoardingSelection = {
+      ...testBoardingSelection,
+      ship: ship.value as CombatShipType,
+    };
   });
-  return select;
+  options.append(role, ship);
+  return options;
 }
 
 export function renderSaveSlots(
@@ -47,9 +70,9 @@ export function renderSaveSlots(
     ),
     button('Test battle (cheat)', () => emit({ type: 'test-battle' })),
     button('Test boarding (cheat)', () =>
-      emit({ type: 'test-boarding', attacker: testBoardingAttacker }),
+      emit({ type: 'test-boarding', selection: testBoardingSelection }),
     ),
-    testBoardingShip(),
+    testBoardingOptions(),
   );
   const grid = element('div', 'save-grid');
   for (const slot of model.saveSlots) {

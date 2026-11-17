@@ -1,12 +1,12 @@
 import { type BoardingCommand } from '../models/battle/BoardingBattle.js';
 import type { BoardingFacade } from '../models/battle/BoardingFacade.js';
-import type { CombatShipType } from '../../space-battle/models/index.js';
+import type { TestBoardingSelection } from '../models/map/TestBoarding.js';
 
 export class BoardingController {
   constructor(private readonly facade: BoardingFacade) {}
 
-  startTestBoarding(attacker?: CombatShipType): void {
-    return this.facade.startTestBoarding(attacker);
+  startTestBoarding(selection?: TestBoardingSelection): void {
+    return this.facade.startTestBoarding(selection);
   }
 
   closeTestBoarding(): void {

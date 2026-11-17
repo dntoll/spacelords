@@ -1170,7 +1170,7 @@ export class BoardingView {
   #paint(state: BoardingBattleState, notice?: string | null): void {
     this.#ensureMap(state);
     this.#state = state;
-    this.#close.hidden = !!state.campaign;
+    this.#close.hidden = !!state.campaign && !state.test;
     if (this.#actorId !== state.currentActorId) {
       this.#actorId = state.currentActorId;
       this.#selectedId = null;

@@ -694,6 +694,7 @@ export class BoardingBattle {
     seed = Date.now() >>> 0,
     attackerType: CombatShipType = 'Space pirate',
     defenderType: CombatShipType = 'Transport ship',
+    standalone = false,
   ): BoardingBattle {
     const taken = new Set<string>();
     const occupy = (cell: BoardingCell | undefined): void => {
@@ -775,6 +776,9 @@ export class BoardingBattle {
       postponed: [],
       finishedActors: [],
       log: [],
+      ...(standalone
+        ? { test: { attackerType, gangwayLength: composed.gangwayLength } }
+        : {}),
       campaign: {
         playerZone: playerIsAttacker ? 'attacker' : 'defender',
         enemyZone: playerIsAttacker ? 'defender' : 'attacker',

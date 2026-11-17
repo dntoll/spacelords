@@ -556,9 +556,10 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   väggar förbinder airlockerna. `avbryt-gammal-bordning-vid-laddning` är
   **Fullständigt implementerat**: en pågående bordning sparad före ändringen
   avbryts vid laddning och skeppen frikopplas. `testbordning-med-tva-skepp`
-  och `valbart-skepp-i-testbordning` är **Fullständigt implementerat**:
-  `Test boarding (cheat)` dockar ett valt skepp (`Space pirate` som
-  standard) med testtransporten, och bordarna startar på landgången. Se
+  och `valbar-roll-i-testbordning` är **Fullständigt implementerat**:
+  `Test boarding (cheat)` låter spelaren välja det bordade skeppet och anfalla
+  från en `Raptor` eller försvara sig mot ett `Space pirate`. Det ersätter
+  `valbart-skepp-i-testbordning`, där anfallaren valdes mot testtransporten. Se
   [bordningsstrid](docs/boarding/boarding-combat.md),
   [taktisk strid](docs/space-battle/tactical-combat.md) och
   [space pirates](docs/space-pirates.md).
