@@ -339,9 +339,18 @@ kommer från testtransportens startpositioner.
   valda rutan.
 - `fasta-handlingsplatser` — ersatt av
   `kontextstyrda-bordningshandlingar`, som är **Fullständigt implementerat**.
-  `Turn left`, `Turn right`, `Crouch`/`Stand` och Overwatch visas runt den
-  aktiva soldaten. `Move`, skott, melee, personlig pryl, dörrhandling och
+  `Turn left` och `Turn right` visas runt den aktiva soldaten.
+  `Crouch`/`Stand` och Overwatch ligger i bottenfältet intill vapnet. `Move`,
+  skott, melee, personlig pryl, dörrhandling och
   evakuering visas runt den berörda rutan.
+- `hallning-vid-vapnet` — **Fullständigt implementerat**. `Crouch`/`Stand`
+  och `Overwatch` ligger bredvid soldatens vapen och pryl. Åtgärderna ingår
+  inte längre i menyn runt soldaten.
+- `bordningslogg-i-hornet` och `senaste-raden-i-bordningsloggen` —
+  **Fullständigt implementerat**. `Combat details` ligger uppe till vänster.
+  Den öppna loggen rullas automatiskt till senaste händelsen; en ny händelses
+  sista rad visas i fyra sekunder även när loggen är stängd. Fullscreen och
+  stängning ligger uppe till höger; rundrubriken är borttagen.
 - `personlig-bordningsutrustning` — **Fullständigt implementerat**. Varje
   soldat har ett `Rifle` och en pryl. Prylarna roterar i ordningen Frag
   grenade, Smoke grenade, Hacker tools och Med kit. Granatbärare har tre
@@ -358,9 +367,10 @@ kommer från testtransportens startpositioner.
   **Fullständigt implementerat**. Kontextmenyer använder de tidigare bilderna
   för respektive handling och `End soldier turn` är åter en liten bildknapp.
   Otillgängliga synliga knappar visas inaktiva, men förklarar orsaken vid tryck.
-- `bordningshud-i-botten` — **Fullständigt implementerat**. Rubrik,
-  stängning, status, soldatval, namn, HP, AP, två utrustningsknappar,
-  turhandlingar och `Combat details` ligger i ett responsivt bottenfält. Den
+- `bordningshud-i-botten` — **Fullständigt implementerat**. Status, soldatval,
+  namn, HP, AP, utrustning, hållning, Overwatch och turhandlingar ligger i ett
+  responsivt bottenfält. `bordningslogg-i-hornet` flyttar loggen och
+  fönsterknapparna till skärmens överkant och tar bort rundrubriken. Den
   aktiva soldatens namn och AP upprepas inte i en separat statusrad.
 - `fullscreen-i-bordning` — **Fullständigt implementerat**. Vyn försöker gå
   till fullscreen när den öppnas. En Enter/Exit-knapp finns som reserv och

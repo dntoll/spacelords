@@ -124,7 +124,6 @@ function samePose(a: BoardingBattleState, b: BoardingBattleState): boolean {
 /** The view owns selection only; every game change is a typed controller intent. */
 export class BoardingView {
   readonly #dialog = element('dialog', 'boarding-dialog');
-  readonly #heading = element('h1');
   readonly #status = element('p', 'boarding-status');
   readonly #team = element('section', 'boarding-team');
   readonly #controls = element('section', 'boarding-controls');
@@ -132,6 +131,7 @@ export class BoardingView {
   readonly #globalControls = element('section', 'boarding-global-controls');
   readonly #contextMenu = element('div', 'boarding-context-menu');
   readonly #details = element('details', 'boarding-details');
+  readonly #logPreview = element('p', 'boarding-log-preview');
   readonly #canvas = element('div', 'boarding-canvas');
   /** motstandartur-i-mitten: shown in the middle of the board while opponents act. */
   readonly #enemyTurn = element(
@@ -156,6 +156,9 @@ export class BoardingView {
   #idleWaiters: (() => void)[] = [];
   #disposed = false;
   #ownsFullscreen = false;
+  #logBattleId: string | null = null;
+  #seenLogCount = 0;
+  #logTimer: ReturnType<typeof setTimeout> | undefined;
   #playToken = 0;
   #queries: {
     readonly state: BoardingBattleState;
@@ -194,19 +197,25 @@ export class BoardingView {
     this.#controls.setAttribute('aria-label', 'Soldier actions');
     this.#details.append(element('summary', '', 'Combat details'));
     const layout = element('div', 'boarding-layout');
-    const header = element('div', 'boarding-heading');
-    header.append(this.#heading, this.#fullscreen, this.#close);
+    const header = element('div', 'boarding-header-actions');
+    header.append(this.#fullscreen, this.#close);
+    const log = element('div', 'boarding-log-overlay');
+    this.#logPreview.hidden = true;
+    this.#logPreview.setAttribute('role', 'status');
+    log.append(this.#details, this.#logPreview);
+    this.#details.addEventListener('toggle', () => {
+      if (this.#details.open)
+        this.#details.scrollTop = this.#details.scrollHeight;
+    });
     this.#controls.append(
-      header,
       this.#status,
       this.#team,
       this.#equipment,
       this.#globalControls,
-      this.#details,
     );
     this.#enemyTurn.setAttribute('role', 'status');
     this.#enemyTurn.hidden = true;
-    layout.append(board, this.#enemyTurn, this.#controls);
+    layout.append(board, log, header, this.#enemyTurn, this.#controls);
     this.#dialog.append(layout);
     root.append(this.#dialog);
     this.#dialog.showModal();
@@ -774,6 +783,23 @@ export class BoardingView {
     }
 
     this.#action(
+      actor.crouched ? 'Stand' : 'Crouch',
+      actor.crouched ? '⇧' : '◒',
+      () => this.#command({ type: actor.crouched ? 'stand' : 'crouch' }),
+      remaining < 1,
+      this.#equipment,
+      'The action needs 1 AP.',
+    );
+    this.#action(
+      'Overwatch',
+      '◉',
+      () => this.#command({ type: 'overwatch' }),
+      remaining < BOARDING_RIFLE_AP,
+      this.#equipment,
+      `The action needs ${BOARDING_RIFLE_AP} AP.`,
+    );
+
+    this.#action(
       'End soldier turn',
       '✓',
       () => this.#command({ type: 'end-activation' }),
@@ -875,18 +901,6 @@ export class BoardingView {
           symbol: '↷',
           command: { type: 'turn', direction: -1 },
           disabled: remaining < BOARDING_TURN_AP,
-        },
-        {
-          label: actor.crouched ? 'Stand' : 'Crouch',
-          symbol: actor.crouched ? '⇧' : '◒',
-          command: { type: actor.crouched ? 'stand' : 'crouch' },
-          disabled: remaining < 1,
-        },
-        {
-          label: 'Overwatch',
-          symbol: '◉',
-          command: { type: 'overwatch' },
-          disabled: remaining < BOARDING_RIFLE_AP,
         },
       );
     } else {
@@ -1092,10 +1106,6 @@ export class BoardingView {
       state.phase === 'fighting' &&
       actor?.side === 'player' &&
       actor.status === 'active';
-    this.#heading.textContent =
-      state.phase === 'complete'
-        ? 'Boarding complete'
-        : `Boarding · Round ${state.round}`;
     this.#status.textContent =
       notice ??
       (state.phase === 'complete'
@@ -1204,6 +1214,21 @@ export class BoardingView {
       state.phase === 'fighting' &&
       state.currentActorId !== null &&
       (!actor || actor.side === 'defender');
+    if (this.#logBattleId !== state.id) {
+      this.#logBattleId = state.id;
+      this.#seenLogCount = state.log.length;
+      this.#logPreview.hidden = true;
+      clearTimeout(this.#logTimer);
+    } else if (state.log.length > this.#seenLogCount) {
+      this.#seenLogCount = state.log.length;
+      this.#logPreview.textContent = state.log.at(-1) ?? '';
+      this.#logPreview.hidden = false;
+      clearTimeout(this.#logTimer);
+      this.#logTimer = setTimeout(() => {
+        this.#logPreview.hidden = true;
+        this.#logTimer = undefined;
+      }, 4000);
+    }
     this.#details.replaceChildren(
       element('summary', '', 'Combat details'),
       ...(defenderActing
@@ -1231,6 +1256,7 @@ export class BoardingView {
 
   dispose(): void {
     this.#disposed = true;
+    clearTimeout(this.#logTimer);
     this.#playToken += 1;
     this.#busy = false;
     this.#pending = [];

@@ -4464,19 +4464,56 @@ body:has(.discovery-controls) .selection-panel {
 .boarding-controls {
   right: 6px;
   left: 6px;
+  bottom: 2px;
   display: grid;
   grid-template-areas:
-    'heading heading heading'
     'status team global'
-    'equipment team details';
+    'equipment team global';
   grid-template-columns: auto minmax(0, 1fr) auto;
   width: auto;
   max-width: none;
   transform: none;
 }
 
-.boarding-controls > .boarding-heading {
-  grid-area: heading;
+.boarding-header-actions {
+  position: absolute;
+  z-index: 5;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+}
+
+.boarding-log-overlay {
+  position: absolute;
+  z-index: 4;
+  top: 6px;
+  left: 6px;
+  width: min(330px, calc(100% - 100px));
+  pointer-events: none;
+}
+
+.boarding-log-overlay > .boarding-details {
+  position: static;
+  width: 100%;
+  max-height: min(35dvh, 240px);
+  pointer-events: auto;
+}
+
+.boarding-log-overlay > .boarding-details:not([open]) {
+  width: max-content;
+  max-width: 100%;
+}
+
+.boarding-log-preview {
+  margin: 4px 0 0;
+  padding: 4px 7px;
+  border: 1px solid rgb(82 104 137 / 78%);
+  border-radius: 6px;
+  background: rgb(5 9 18 / 92%);
+  color: #eaf2ff;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
 }
 
 .boarding-controls > .boarding-status {
@@ -4505,19 +4542,6 @@ body:has(.discovery-controls) .selection-panel {
   align-items: center;
   justify-content: flex-end;
   gap: 5px;
-}
-
-.boarding-controls > .boarding-details {
-  position: static;
-  grid-area: details;
-  width: auto;
-  max-height: min(35dvh, 240px);
-  padding: 2px 5px;
-  background: rgb(5 9 18 / 72%);
-}
-
-.boarding-controls > .boarding-details:not([open]) {
-  justify-self: end;
 }
 
 .boarding-unit {
@@ -4601,11 +4625,9 @@ body:has(.discovery-controls) .selection-panel {
 @media (max-width: 680px) {
   .boarding-controls {
     grid-template-areas:
-      'heading heading'
       'status status'
       'team team'
-      'equipment global'
-      'details details';
+      'equipment global';
     grid-template-columns: 1fr auto;
   }
 

@@ -1567,8 +1567,8 @@ handlingsraden ligger vid nederkanten. Förklaringspanelen och kameraknapparna
 om synlig kartförklaring och knappen `Fit` i boarding.
 
 `kontextstyrda-bordningshandlingar` — **Fullständigt implementerat**: ett
-klick på den aktiva soldaten visar vridning, hållning och Overwatch runt
-figuren. Ett klick på en ruta visar bara de handlingar som kan utföras där,
+klick på den aktiva soldaten visar vridning runt figuren. Hållning och
+Overwatch finns vid vapnet. Ett klick på en ruta visar handlingarna som kan utföras där,
 exempelvis `Move`, `Shoot`, granat, dörrhandling eller sjukvård. Detta ersätter
 den fasta raden med samtliga handlingsknappar och tidigare dubbelklick för att
 utföra skott och dörrhandlingar. Ett andra tryck på en vald gångruta går dit,
@@ -1588,10 +1588,17 @@ turknappen använder handlingsbilderna. Otillgängliga knappar förklarar vid tr
 varför handlingen inte går att utföra.
 
 `bordningshud-i-botten` och `fullscreen-i-bordning` — **Fullständigt
-implementerat**: hela den beständiga strids-HUD:en, inklusive soldatval, namn,
-HP, AP, status, rubrik och stängning, ligger längst ned. Bordning försöker gå
+implementerat**: soldatval, namn, HP, AP och handlingar ligger längst ned.
+Loggen ligger uppe till vänster och stängning och fullscreen uppe till höger.
+Bordning försöker gå
 till fullscreen när den öppnas och har en Enter/Exit-knapp när ett uttryckligt
 tryck krävs.
+
+`hallning-vid-vapnet`, `bordningslogg-i-hornet` och
+`senaste-raden-i-bordningsloggen` — **Fullständigt implementerat**:
+`Crouch`/`Stand` och `Overwatch` ligger intill vapnet. `Combat details` följer
+senaste händelsen och visar den kortvarigt även när loggen är stängd.
+Rundrubriken visas inte i bordning.
 
 `dorrhandling-framfor-soldat` och `oppen-dorr-som-golvruta` har ersatts av
 `kontextstyrda-bordningshandlingar`: spelaren väljer dörrens ruta för att få
