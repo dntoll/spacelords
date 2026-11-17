@@ -3,6 +3,8 @@ export const BOARDING_METERS = Object.freeze({
   tile: 1,
   wall: 2.4,
   thinWall: 1 / 3,
+  /** tunnare-dorrar: doors, airlock doors included, are half a thin wall. */
+  door: 1 / 6,
   cutawayWall: 0.4,
   opening: 2.1,
   frame: 2.3,
@@ -16,6 +18,10 @@ export const BOARDING_METERS = Object.freeze({
 });
 
 export const BOARDING_TILE_WIDTH = 64;
+/** tunn-ram-kring-vald-ruta: the selected tile's frame, as thin as the sight outline. */
+export const BOARDING_SELECTED_TILE_STROKE = 1.25;
+/** tunn-ram-kring-vald-ruta: the blue sight outline's width. */
+export const BOARDING_SIGHT_STROKE = 1.25;
 /** kameravinkel-60-i-bordning: Ludo's high-angle camera looks down at 60 degrees. */
 export const BOARDING_CAMERA_ELEVATION = Math.PI / 3;
 export const BOARDING_TILE_HEIGHT =

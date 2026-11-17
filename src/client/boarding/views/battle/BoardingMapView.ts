@@ -25,9 +25,12 @@ import {
   type BoardingLightRegion,
 } from '../rendering/BoardingLightRefresh.js';
 import p5 from 'p5';
+import { boardingIsDoubleTap } from './BoardingContextMenuLayout.js';
 import {
   BOARDING_GROUND_RATIO,
   BOARDING_METERS,
+  BOARDING_SELECTED_TILE_STROKE,
+  BOARDING_SIGHT_STROKE,
   BOARDING_VERTICAL_METER,
   boardingHeight,
 } from '../rendering/BoardingScale.js';
@@ -128,6 +131,7 @@ import {
 import {
   BOARDING_HALF_TILE_WIDTH,
   BOARDING_HALF_TILE_HEIGHT,
+  boardingAirlockDoorDepth,
   boardingAirlockDoorGeometry,
   boardingAnimTick,
   boardingProjectilePoint,
@@ -306,6 +310,9 @@ export class BoardingMapView implements BoardingMapPort {
   }[] = [];
   readonly #camera = new BoardingCameraController();
   #viewportProvider: (() => BoardingCameraBounds | null) | undefined;
+  /** skott-genom-dubbelklick: the last person tapped, and when. */
+  #lastTap: { readonly id: string; readonly at: number } | null = null;
+  #obstacleProvider: (() => readonly BoardingCameraBounds[]) | undefined;
   #cameraAnimation: { cancel: () => void } | null = null;
   #cameraVersion = 0;
   #presenting = false;
@@ -357,7 +364,7 @@ export class BoardingMapView implements BoardingMapPort {
     select: (
       cell: BoardingCell,
       personId?: string,
-      mode?: 'center-target',
+      mode?: 'center-target' | 'shoot',
     ) => void,
   ) {
     this.#lighting = new BoardingLighting(map, {
@@ -673,8 +680,27 @@ export class BoardingMapView implements BoardingMapPort {
     });
   }
 
+  /** kantindikator-utanfor-granssnitt: screen panels that edge markers avoid. */
+  setUiObstacleProvider(provider: () => readonly BoardingCameraBounds[]): void {
+    this.#obstacleProvider = provider;
+  }
+
+  /** skott-genom-dubbelklick: true for a second tap on the same person in time. */
+  #doubleTap(id: string): boolean {
+    const now = performance.now();
+    const repeated =
+      this.#lastTap?.id === id && boardingIsDoubleTap(this.#lastTap.at, now);
+    this.#lastTap = repeated ? null : { id, at: now };
+    return repeated;
+  }
+
   setViewportProvider(provider: () => BoardingCameraBounds | null): void {
     this.#viewportProvider = provider;
+  }
+
+  /** meny-ovanfor-valt-mal: a height in metres as screen pixels at this zoom. */
+  screenLift(meters: number): number {
+    return boardingHeight(meters) * this.#scale;
   }
 
   screenPoint(position: BoardingCell): Readonly<{ x: number; y: number }> {
@@ -1047,7 +1073,7 @@ export class BoardingMapView implements BoardingMapPort {
     select: (
       cell: BoardingCell,
       personId?: string,
-      mode?: 'center-target',
+      mode?: 'center-target' | 'shoot',
     ) => void,
   ): void {
     const options = { signal: this.#events.signal };
@@ -1126,7 +1152,11 @@ export class BoardingMapView implements BoardingMapPort {
             ? this.#state?.people.find((entry) => entry.id === edgeTarget.id)
             : undefined;
           if (edgeTarget && edgePerson) {
-            select(edgePerson.position, edgePerson.id, 'center-target');
+            select(
+              edgePerson.position,
+              edgePerson.id,
+              this.#doubleTap(edgePerson.id) ? 'shoot' : 'center-target',
+            );
             void this.#centerTarget(edgePerson.id);
             this.#pointers.delete(event.pointerId);
             this.#start = null;
@@ -1183,7 +1213,10 @@ export class BoardingMapView implements BoardingMapPort {
             ? this.#state!.people.find((person) => person.id === picked.id)!
                 .position
             : boardingCellFromIsoPoint(iso);
-          if (this.map.terrainAt(cell)) select(cell, picked?.id);
+          if (!this.map.terrainAt(cell)) this.#lastTap = null;
+          else if (picked && this.#doubleTap(picked.id))
+            select(cell, picked.id, 'shoot');
+          else select(cell, picked?.id);
         }
         this.#pointers.delete(event.pointerId);
         this.#start = null;
@@ -1619,7 +1652,7 @@ export class BoardingMapView implements BoardingMapPort {
     sketch.push();
     sketch.noFill();
     sketch.stroke('#62d6ff');
-    sketch.strokeWeight(1.25);
+    sketch.strokeWeight(BOARDING_SIGHT_STROKE);
     sketch.strokeJoin(sketch.ROUND);
     sketch.beginShape();
     for (const point of outline) sketch.vertex(point.x, point.y);
@@ -1983,6 +2016,7 @@ export class BoardingMapView implements BoardingMapPort {
                 : {}),
             }
           : { span: piece.span }),
+        ...(door ? { thickness: BOARDING_METERS.door } : {}),
         top: option(door ? (this.#doorTop ?? this.#wallTop) : this.#wallTop),
         section:
           !low && height < boardingFeatureHeight('wall') && !this.#wallTop,
@@ -2225,7 +2259,10 @@ export class BoardingMapView implements BoardingMapPort {
           },
         ];
       }),
-      viewport,
+      this.#obstacleProvider
+        ? { left: 0, top: 0, right: sketch.width, bottom: sketch.height }
+        : viewport,
+      this.#obstacleProvider?.() ?? [],
     );
     this.#edgeTargetHits = edgeTargets;
     const edgeTargetIds = new Set(edgeTargets.map((entry) => entry.id));
@@ -2329,9 +2366,11 @@ export class BoardingMapView implements BoardingMapPort {
           (this.#destination && key(this.#destination) === key(position)) ||
           selectedTile === key(position)
         ) {
+          // tunn-ram-kring-vald-ruta: a hairline like the sight outline.
           sketch.noFill();
           sketch.stroke('#f4cf5a');
-          sketch.strokeWeight(4);
+          sketch.strokeWeight(BOARDING_SELECTED_TILE_STROKE);
+          sketch.strokeJoin(sketch.ROUND);
           this.#tile(sketch, position);
         }
       }
@@ -2403,16 +2442,14 @@ export class BoardingMapView implements BoardingMapPort {
       const outside = this.map.terrainAt({ q: position.q, r: position.r - 1 })
         ? 'bottom'
         : 'top';
-      const doors = [...boardingAirlockDoorGeometry(position, outside)].sort(
-        (a, b) =>
-          boardingIsoCenter(a.position).y - boardingIsoCenter(b.position).y,
-      );
       const slab = boardingStraightThinPieces('r');
-      scene.push({
-        depth: boardingIsoCenter(position).y,
-        order: -1,
-        paint: () => {
-          for (const door of doors) {
+      for (const door of boardingAirlockDoorGeometry(position, outside))
+        scene.push({
+          // airlockdorr-framfor-soldat: each door sorts at its own line, so the
+          // one nearer the camera covers whoever stands in the airlock.
+          depth: boardingAirlockDoorDepth(door),
+          order: -1,
+          paint: () => {
             // automatisk-airlockcykel: closed unless a walker passes it.
             const side = Math.sign(door.position.r - position.r);
             const started = this.#airlockCycles.get(`${key(position)},${side}`);
@@ -2443,9 +2480,8 @@ export class BoardingMapView implements BoardingMapPort {
                   ...leaf,
                 },
               );
-          }
-        },
-      });
+          },
+        });
     }
     // bordning-jamn-bildfrekvens: skip walls and objects wholly off the canvas.
     const margin = BOARDING_HALF_TILE_WIDTH * 3;
@@ -2695,16 +2731,6 @@ export class BoardingMapView implements BoardingMapPort {
               center.y + BOARDING_FOOT_PLANT - 1,
               32,
               groundEllipse(13),
-            );
-          } else if (person.id === this.#selectedId) {
-            sketch.noFill();
-            sketch.stroke('#f4cf5a');
-            sketch.strokeWeight(3);
-            sketch.ellipse(
-              center.x,
-              center.y + BOARDING_FOOT_PLANT - 1,
-              36,
-              groundEllipse(16),
             );
           }
           if (this.#characterSheets.has(0)) {

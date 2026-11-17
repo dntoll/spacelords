@@ -196,3 +196,64 @@ describe('avbryt-gammal-bordning-vid-laddning', () => {
     expect(outdated.battle.snapshot.outcome).toBe('aborted');
   });
 });
+
+describe('bordare-vid-malskeppets-ande / eget-skepp-upptackt', () => {
+  const composed = () =>
+    composeBoardingInteriors(parseBoardingMap(DOWN), parseBoardingMap(UP));
+
+  it('bordare-vid-malskeppets-ande: places boarders at the gangway end by the boarded airlock', () => {
+    const joined = composed();
+    const boarded = joined.defenderAirlock[0]!;
+    const battle = BoardingBattle.createTest(joined, 'Raptor', 3);
+    const rows = battle.snapshot.people
+      .filter((person) => person.side === 'player')
+      .map((person) => person.position.r);
+    // Two lanes: four boarders fill the last two rows before the airlock.
+    expect(Math.min(...rows)).toBeGreaterThanOrEqual(boarded.r - 2);
+    expect(Math.max(...rows)).toBe(boarded.r - 1);
+  });
+
+  it('eget-skepp-upptackt: reveals every tile of the boarders own ship and gangway, not the target', () => {
+    const joined = composed();
+    const battle = BoardingBattle.createTest(joined, 'Raptor', 3);
+    const explored = new Set(
+      battle.snapshot.exploredCells.map((cell) => `${cell.q},${cell.r}`),
+    );
+    for (let r = 0; r < joined.map.height; r++)
+      for (let q = 0; q < joined.map.width; q++) {
+        const zone = joined.map.zoneAt({ q, r });
+        if (joined.map.terrainAt({ q, r }) === null) continue;
+        if (zone === 'attacker' || zone === 'bridge')
+          expect(explored.has(`${q},${r}`)).toBe(true);
+      }
+    // The far defender cabin corner is beyond the closed airlock.
+    expect(
+      explored.has(
+        `${joined.defenderAirlock[0]!.q + 2},${joined.map.height - 2}`,
+      ),
+    ).toBe(false);
+  });
+
+  it('eget-skepp-upptackt: a defending player knows its own ship from the start', () => {
+    const engagement = BoardingEngagement.start(
+      'a',
+      'd',
+      'Space pirate',
+      'Transport ship',
+      false,
+      5,
+    );
+    const { map } = engagement.composed;
+    const explored = new Set(
+      engagement.battle.snapshot.exploredCells.map((c) => `${c.q},${c.r}`),
+    );
+    let defenderCells = 0;
+    for (let r = 0; r < map.height; r++)
+      for (let q = 0; q < map.width; q++)
+        if (map.zoneAt({ q, r }) === 'defender' && map.terrainAt({ q, r })) {
+          defenderCells++;
+          expect(explored.has(`${q},${r}`)).toBe(true);
+        }
+    expect(defenderCells).toBeGreaterThan(0);
+  });
+});

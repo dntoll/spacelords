@@ -196,6 +196,10 @@ kommer från testtransportens startpositioner.
   kanten. Flera
   indikatorer längs samma kant säras. Ett klick väljer fienden och panorerar
   mjukt till den på 300 ms med oförändrad zoom, utan att avfyra ett skott.
+- `kantindikator-utanfor-granssnitt` — **Fullständigt implementerat**. Kantens
+  crosshair och etikett undviker kontrollerna, `Combat details`, senaste
+  loggraden och knapparna i toppen. Den glider i första hand längs sin kant
+  förbi panelen och flyttas inåt bara när det är mycket närmare.
 - `automatisk-bordningstur-vid-tom-ap` — **Fullständigt implementerat**. När AP
   når noll avslutas soldatens aktivering efter den färdiga handlingen. Nästa
   figur följer befintlig turhantering, inklusive uppskjutna soldater och
@@ -605,3 +609,31 @@ Leveransen är granskad i mobilens stående och liggande format med texturer, fi
   båge från kastaren till faktisk nedslagsruta före effekten.
 - `morkare-ambientljus-i-bordning` — **Fullständigt implementerat**.
   Ambientnivån är 0,42 i stället för 0,65, medan lamporna fungerar som tidigare.
+
+## Bordningsfeedback november 2026
+
+- `bordare-vid-malskeppets-ande` och `eget-skepp-upptackt` — **Fullständigt
+  implementerat**. Bordarna fyller landgångens båda körfält närmast det bordade
+  skeppets airlock. Det egna skeppet är upptäckt från start; anfallare känner
+  även till landgången. Gäller testbordning och kampanj.
+- `tunnare-dorrar` och `airlockdorr-framfor-soldat` — **Fullständigt
+  implementerat**. Dörrar ritas 1/6 m tjocka i stället för 1/3 m. Airlockens två
+  dörrar djupsorteras var för sig efter sin egen linje, så dörren närmast
+  kameran täcker den som står i airlocken. Siktens och skottens geometri är
+  oförändrad.
+- `fiender-reagerar-pa-ljud` och `fiender-soker-upp-bordare` — **Fullständigt
+  implementerat**. Varje ljud har räckvidd (närstrid 3, skott 8, rök 6,
+  explosion 16 rutor). Försvarare inom räckhåll minns var ljudet kom ifrån;
+  explosioner vänder dem dit direkt. På sin tur går de dit, även över flera
+  aktiveringar, eller vänder sig mot platsen om de inte kommer närmare. Den som
+  når platsen glömmer ljudet. Sparade spel utan minnet läses som tidigare.
+- `samlat-pc-granssnitt` — **Fullständigt implementerat**. Med mus och minst
+  681 px bredd samlas kontrollerna i nedre mitten: status, soldatrad och sedan
+  utrustning bredvid turknappen. Mobilens layout är oförändrad.
+- `meny-ovanfor-valt-mal`, `hp-i-valt-mal` och `tunn-ram-kring-vald-ruta` —
+  **Fullständigt implementerat**. Menyn lyfts med målets höjd i aktuell zoom
+  (person 1,8 m, dörr 2,1 m, vägg 2,4 m) och visar HP efter titeln. Vald ruta
+  får en 1,25 px gul ram som siktkanten; ringen kring vald person är borttagen.
+- `skott-genom-dubbelklick` — **Fullständigt implementerat**. Två klick på
+  samma fiende inom 400 ms skjuter, även via kantindikatorn. Ett enkelklick
+  väljer som tidigare.

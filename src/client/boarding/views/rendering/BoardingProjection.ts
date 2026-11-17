@@ -516,3 +516,10 @@ export function boardingProjectilePoint(
       (kind === 'grenade' ? 4 * t * (1 - t) * 60 : 0),
   };
 }
+
+/** airlockdorr-framfor-soldat: an airlock door sorts by its own off-centre line. */
+export function boardingAirlockDoorDepth(
+  door: BoardingAirlockDoorGeometry,
+): number {
+  return boardingIsoCenter(door.position).y;
+}

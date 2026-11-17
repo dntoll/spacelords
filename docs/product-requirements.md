@@ -1470,6 +1470,30 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 `beskrivning-av-vald-bordningsruta` — **Fullständigt implementerat**. Menyn visar vad den valda rutan innehåller och dess knappar placeras högre upp när utrymmet tillåter.
 
+`meny-ovanfor-valt-mal` — **Fullständigt implementerat**. Titeln och knapparna för vald ruta ligger ovanför målet, särskilt ovanför en vald person eller dörr.
+
+`hp-i-valt-mal` — **Fullständigt implementerat**. Allt som har hit points visar dem efter titeln, exempelvis `Defender 1 · 7/10 HP`. Ersätter titeln utan HP i `beskrivning-av-vald-bordningsruta`.
+
+`tunn-ram-kring-vald-ruta` — **Fullständigt implementerat**. Vald ruta markeras enbart med en tunn gul ram, lika tunn som siktområdets blå kant. Den tidigare tjocka ramen och ringen kring vald person tas bort.
+
+`skott-genom-dubbelklick` — **Fullständigt implementerat**. Ett dubbelklick på en fiende skjuter på den om skottet är möjligt; annars visas orsaken.
+
+`samlat-pc-granssnitt` — **Fullständigt implementerat**. På dator med mus samlas bordningens kontroller i nedre mitten. Knapparna och loggen i toppen ligger kvar.
+
+`kantindikator-utanfor-granssnitt` — **Fullständigt implementerat**. Crosshair för en fiende utanför bild hamnar aldrig under kontrollerna, `Combat details` eller knapparna i toppen, utan flyttas längs kanten till närmaste fria plats.
+
+`bordare-vid-malskeppets-ande` — **Fullständigt implementerat**. Vid dockning står bordarna i den ände av landgången som vetter mot skeppet de bordar.
+
+`eget-skepp-upptackt` — **Fullständigt implementerat**. Spelarens eget skepp är fullständigt upptäckt från början; anfallare känner även till landgången.
+
+`tunnare-dorrar` — **Fullständigt implementerat**. Alla dörrar, även airlockens, är hälften så tjocka som tunna väggar.
+
+`airlockdorr-framfor-soldat` — **Fullständigt implementerat**. Airlockens dörr närmast betraktaren ritas framför soldaten i airlocken, så en stängd dörr döljer den.
+
+`fiender-reagerar-pa-ljud` — **Fullständigt implementerat**. Försvarare hör strid inom räckhåll: närstrid 3, skott 8, rökgranat 6 och explosion 16 rutor. En explosion får den som hör den att genast vända sig mot den. Den som inte hört något reagerar inte.
+
+`fiender-soker-upp-bordare` — **Fullständigt implementerat**. En försvarare som hört eller sett bordarna går mot platsen även när den ligger längre bort än en aktivering räcker, och slutar leta när den nått platsen.
+
 `automatisk-airlockcykel` — **Fullständigt implementerat**. När någon går igenom öppnas först den ena dörren, man går in, den stängs, sedan öppnas den andra och man går ut. Ersätter `oppna-airlockdorrar`.
 
 `sprites-for-breach-och-escape-pod` — **Fullständigt implementerat**. Breach och escape pod har egna bilder. När en escape pod används försvinner kapseln och den tomma luckan är kvar.

@@ -412,6 +412,8 @@ export function paintIsoThinWall(
     readonly geometryPosition?: BoardingCell;
     readonly top?: { tile: p5.Image; cache: IsoImageCache } | undefined;
     readonly section?: boolean;
+    /** tunnare-dorrar: the slab's depth in metres. */
+    readonly thickness?: number;
   },
 ): BoardingThinWallMesh {
   const mesh = boardingThinWallMesh(
@@ -419,6 +421,8 @@ export function paintIsoThinWall(
     axis,
     height / BOARDING_VERTICAL_METER,
     options?.span,
+    0,
+    options?.thickness,
   );
   const source = tile ? imageSource(tile, cache, 'wall') : null;
   const run = boardingWallRun(peers, position, mesh.lengthAxis);

@@ -30,6 +30,11 @@ import { boardingMapForState } from '../../models/map/TestBoarding.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { button, element } from '../../../common/dom.js';
 import {
+  boardingContextLiftMeters,
+  boardingContextMenuPosition,
+  boardingContextTitle,
+} from './BoardingContextMenuLayout.js';
+import {
   boardingActionArtwork,
   boardingActionButtonImage,
   type BoardingActionArtwork,
@@ -69,7 +74,9 @@ export interface BoardingMapPort {
     action?: BoardingTileActionMark | null,
   ): void;
   setViewportProvider?(provider: () => BoardingCameraBounds | null): void;
+  setUiObstacleProvider?(provider: () => readonly BoardingCameraBounds[]): void;
   screenPoint?(position: BoardingCell): Readonly<{ x: number; y: number }>;
+  screenLift?(meters: number): number;
   beginPresentation?(): void;
   endPresentation?(): void;
   focusActor?(id: string): Promise<void>;
@@ -101,7 +108,7 @@ export type BoardingMapFactory = (
   select: (
     cell: BoardingCell,
     personId?: string,
-    mode?: 'center-target',
+    mode?: 'center-target' | 'shoot',
   ) => void,
   map: BoardingMap,
 ) => BoardingMapPort;
@@ -151,6 +158,7 @@ export class BoardingView {
   #actorId: string | null = null;
   #armedAction: 'weapon' | 'gadget' | null = null;
   #contextAnchor: BoardingCell | null = null;
+  #contextLift = 0;
   #busy = false;
   #draining = false;
   #idleWaiters: (() => void)[] = [];
@@ -290,6 +298,35 @@ export class BoardingView {
     );
     this.#mapName = map.name;
     this.#map?.setViewportProvider?.(() => this.#viewport());
+    this.#map?.setUiObstacleProvider?.(() => this.#uiObstacles());
+  }
+
+  /** kantindikator-utanfor-granssnitt: every visible panel drawn over the board. */
+  #uiObstacles(): readonly BoardingCameraBounds[] {
+    const canvas = this.#canvas.getBoundingClientRect();
+    const margin = 4;
+    return [
+      this.#details,
+      this.#logPreview,
+      this.#close,
+      this.#fullscreen,
+      this.#status,
+      this.#team,
+      this.#equipment,
+      this.#globalControls,
+      this.#enemyTurn,
+    ].flatMap((panel) => {
+      const box = panel.getBoundingClientRect();
+      if (panel.hidden || box.width <= 0 || box.height <= 0) return [];
+      return [
+        {
+          left: box.left - canvas.left - margin,
+          right: box.right - canvas.left + margin,
+          top: box.top - canvas.top - margin,
+          bottom: box.bottom - canvas.top + margin,
+        },
+      ];
+    });
   }
 
   #viewport(): BoardingCameraBounds | null {
@@ -373,7 +410,7 @@ export class BoardingView {
   #selectCell(
     position: BoardingCell,
     personId?: string,
-    mode?: 'center-target',
+    mode?: 'center-target' | 'shoot',
   ): void {
     const state = this.#state;
     if (!state || state.phase === 'complete' || this.#busy) return;
@@ -398,8 +435,31 @@ export class BoardingView {
         entry.position.r === position.r &&
         ['door', 'reactor', 'wall', 'exit', 'window'].includes(entry.kind),
     );
+    // skott-genom-dubbelklick: a second click on an enemy fires at it.
     if (
-      mode === 'center-target' &&
+      mode === 'shoot' &&
+      playerTurn &&
+      actor &&
+      person?.side === 'defender'
+    ) {
+      const preview = this.#battle().attackPreview(actor.id, person.id);
+      this.#selectedId = person.id;
+      this.#destination = null;
+      if (
+        !preview.reason &&
+        (state.activation?.remaining ?? 0) >= BOARDING_RIFLE_AP
+      ) {
+        this.#armedAction = null;
+        this.#command({ type: 'shoot', targetId: person.id });
+      } else
+        this.render(
+          state,
+          preview.reason ?? `Shooting needs ${BOARDING_RIFLE_AP} AP.`,
+        );
+      return;
+    }
+    if (
+      (mode === 'center-target' || mode === 'shoot') &&
       playerTurn &&
       person &&
       person.side !== 'player'
@@ -1018,11 +1078,16 @@ export class BoardingView {
         command: { type: 'evacuate' },
       });
     const terrain = this.#mapFor(state).terrainAt(anchor);
-    const description =
+    const description = boardingContextTitle(
       selectedPerson?.label ??
-      (selectedFeature
-        ? selectedFeature.kind.replaceAll('-', ' ')
-        : (terrain?.replaceAll('-', ' ') ?? 'Space'));
+        (selectedFeature
+          ? selectedFeature.kind.replaceAll('-', ' ')
+          : (terrain?.replaceAll('-', ' ') ?? 'Space')),
+      selectedPerson ?? selectedFeature,
+    );
+    this.#contextLift = boardingContextLiftMeters(
+      selectedPerson ?? selectedFeature,
+    );
     this.#showContextMenu(anchor, actions, description);
   }
 
@@ -1086,13 +1151,14 @@ export class BoardingView {
         this.#canvas.getBoundingClientRect().top -
         8,
     );
-    const left = Math.max(
-      8 + width / 2,
-      Math.min(this.#canvas.clientWidth - 8 - width / 2, point.x),
-    );
-    let top = point.y - height - 70;
-    if (top < 8) top = point.y + 34;
-    top = Math.max(8, Math.min(maxBottom - height, top));
+    const { left, top } = boardingContextMenuPosition({
+      point,
+      liftPx: this.#map.screenLift?.(this.#contextLift) ?? 0,
+      width,
+      height,
+      canvasWidth: this.#canvas.clientWidth,
+      maxBottom,
+    });
     this.#contextMenu.style.left = `${left}px`;
     this.#contextMenu.style.top = `${top}px`;
   }
