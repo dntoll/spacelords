@@ -616,6 +616,9 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   `handelsrutt-skapande-pa-stjarnkartan` är **Fullständigt implementerat**:
   Trade logistics krävs och förklaras före ruttskapandet; avvisade försök
   behåller sin förklaring och startplanet. Se [handelsrutter](docs/star-map-trade.md).
+  `spelnotis-synlig` är **Fullständigt implementerat**: korta spelnotiser som
+  `Shipyard construction queued.` visas under flikarna, helt inom skärmen och
+  ovanför Events och End turn.
   Se [mobilens kartval och forskning](docs/mobile-map-interactions.md).
 
 - **Gemensamt händelseflöde:** `gemensamt-handelseflode` är **Fullständigt
