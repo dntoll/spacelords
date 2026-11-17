@@ -12,7 +12,8 @@ Se [hela visionen](docs/game-vision.md).
 
 - **Landgång och bordningsgränssnitt:** `landgang-med-bordningsstart`,
   `airlock-oppnar-at-blickriktning`, `ihopfallbar-bordningslogg` och
-  `beskrivning-av-vald-bordningsruta` är **Fullständigt implementerade**.
+  `beskrivning-av-vald-bordningsruta`, `handlingsknappar-ovanfor-halsomatare`
+  och `kompakt-titel-for-vald-bordningsruta` är **Fullständigt implementerade**.
   Bordare börjar på en tio rutor lång landgång vända mot målskeppet;
   airlockens dörr i soldatens blickriktning är öppen. Loggen kan fällas ihop
   även efter scrollning och rutmenyn beskriver valet och ligger högre upp.

@@ -1102,9 +1102,11 @@ export class BoardingView {
     description: string,
   ): void {
     this.#contextAnchor = anchor;
-    this.#contextMenu.append(
-      element('div', 'boarding-context-description', description),
+    const titleRow = element('div', 'boarding-context-title-row');
+    titleRow.append(
+      element('span', 'boarding-context-description', description),
     );
+    this.#contextMenu.append(titleRow);
     for (const action of actions) {
       const control = iconButton(
         action.label,

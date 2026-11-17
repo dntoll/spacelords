@@ -60,7 +60,7 @@ export function boardingContextMenuPosition(options: {
     8 + width / 2,
     Math.min(canvasWidth - 8 - width / 2, point.x),
   );
-  let top = point.y - liftPx - height - 18;
+  let top = point.y - liftPx - height - 50;
   if (top < 8) top = point.y + 34;
   top = Math.max(8, Math.min(maxBottom - height, top));
   return Object.freeze({ left, top });

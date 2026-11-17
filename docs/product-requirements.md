@@ -1472,6 +1472,10 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 `meny-ovanfor-valt-mal` — **Fullständigt implementerat**. Titeln och knapparna för vald ruta ligger ovanför målet, särskilt ovanför en vald person eller dörr.
 
+`handlingsknappar-ovanfor-halsomatare` — **Fullständigt implementerat**. Handlingarna visas ovanför figurens hälsomätare när utrymmet tillåter.
+
+`kompakt-titel-for-vald-bordningsruta` — **Fullständigt implementerat**. Titelns bakgrund följer textens bredd med en liten marginal.
+
 `hp-i-valt-mal` — **Fullständigt implementerat**. Allt som har hit points visar dem efter titeln, exempelvis `Defender 1 · 7/10 HP`. Ersätter titeln utan HP i `beskrivning-av-vald-bordningsruta`.
 
 `tunn-ram-kring-vald-ruta` — **Fullständigt implementerat**. Vald ruta markeras enbart med en tunn gul ram, lika tunn som siktområdets blå kant. Den tidigare tjocka ramen och ringen kring vald person tas bort.
