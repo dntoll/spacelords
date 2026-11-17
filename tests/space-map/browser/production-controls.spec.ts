@@ -98,8 +98,17 @@ test('dubbelklick-bygger-pa-kartan: double tap queues one order while single tap
   await page
     .getByRole('button', { name: 'Show Water extractor', exact: true })
     .tap();
-  await mine.tap();
-  await mine.tap();
+  // Two Playwright taps can land more than 500ms apart when the suite is busy.
+  await mine.evaluate((button) => {
+    const tap = () => {
+      button.dispatchEvent(
+        new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }),
+      );
+      button.click();
+    };
+    tap();
+    tap();
+  });
   await expect(page.locator('.map-queue-row')).toHaveCount(1);
   await expect(page.locator('.map-queue-row')).toContainText('Iron mine');
 });

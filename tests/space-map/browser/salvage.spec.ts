@@ -345,6 +345,9 @@ test('spelnotis-synlig: shipyard placement and its queued notice stay on screen'
     expect(bounds.y + bounds.height, name).toBeLessThanOrEqual(viewport.height);
   };
   // A panel can be "visible" to Playwright while lying below the screen edge.
+  await expect
+    .poll(() => page.locator('.salvage-panel').boundingBox())
+    .not.toBeNull();
   await inside('panel', page.locator('.salvage-panel').boundingBox());
   await inside('heading', heading.boundingBox());
   for (const name of ['Build here', 'Cancel'])

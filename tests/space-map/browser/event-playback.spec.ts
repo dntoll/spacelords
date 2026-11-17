@@ -214,11 +214,18 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   const mapBox = (await page.getByTestId('map-container').boundingBox())!,
     listBox = (await console.boundingBox())!;
   expect(mapBox.y + mapBox.height).toBeLessThanOrEqual(listBox.y);
+  // handelseannonsering: WebKit can place the box a frame late after rotation.
+  await expect
+    .poll(async () => {
+      await page.clock.runFor(32);
+      const box = await announcement.boundingBox();
+      return box ? box.y - (await eventScreenY(page)) : -1;
+    })
+    .toBeGreaterThanOrEqual(80);
   const landscape = (await announcement.boundingBox())!;
   expect(
     Math.abs(landscape.x + landscape.width / 2 - mapBox.x - mapBox.width / 2),
   ).toBeLessThan(2);
-  expect(landscape.y).toBeGreaterThanOrEqual((await eventScreenY(page)) + 80);
   expect(landscape.y + landscape.height).toBeLessThanOrEqual(393 - 8);
   await page.clock.runFor(1400);
   await expect(announcement).toHaveAttribute('data-stage', 'filing');

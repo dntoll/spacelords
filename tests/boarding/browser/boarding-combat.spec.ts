@@ -1,16 +1,4 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { composeTestBoarding } from '../../../src/client/boarding/models/map/TestBoarding.js';
-import {
-  boardingIsoCamera,
-  boardingIsoCenter,
-} from '../../../src/client/boarding/views/rendering/BoardingProjection.js';
-
-const testMap = composeTestBoarding().map;
-// miljomal-och-forstorelse: the boarders start on their own ship, out of rifle
-// range of every door. The attacker reactor is the environment target in range.
-const reactor = testMap.features.find(
-  (feature) => feature.id === 'attacker-reactor',
-)!;
 
 async function panBoarding(
   page: Page,
@@ -37,21 +25,7 @@ async function panBoarding(
   }
 }
 
-function cellOnCanvas(
-  view: { readonly width: number; readonly height: number },
-  cell: { readonly q: number; readonly r: number },
-) {
-  const camera = boardingIsoCamera(testMap, view, (entry) =>
-    Boolean(testMap.terrainAt(entry)),
-  );
-  const center = boardingIsoCenter(cell);
-  return {
-    x: camera.offset.x + center.x * camera.scale,
-    y: camera.offset.y + center.y * camera.scale,
-  };
-}
-
-test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordningsobjekt / fristaende-bordningsprototyp / miljomal-och-forstorelse / tydlig-bordningsstatus / isometrisk-bordningsvy / spelmassigt-bordningsgranssnitt / bordningsfigurer-fran-spritesheet / bordning-utan-riktningspilar / bordning-utan-sikt-och-eldrutor: uses character sprites in the tactical HUD, targets a door and advances a hidden defender without changing saves', async ({
+test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordningsobjekt / fristaende-bordningsprototyp / tydlig-bordningsstatus / isometrisk-bordningsvy / spelmassigt-bordningsgranssnitt / bordningsfigurer-fran-spritesheet / bordning-utan-riktningspilar / bordning-utan-sikt-och-eldrutor: uses character sprites in the tactical HUD, turns the soldier and advances a hidden defender without changing saves', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -96,6 +70,8 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
     /^Boarder \d/,
   );
   await expect(dialog.getByLabel('Map legend')).toHaveCount(0);
+  // kontextstyrda-bordningshandlingar: rotation sits on the selected soldier.
+  await dialog.locator('.boarding-unit-active').click();
   const turnLeft = dialog.getByRole('button', {
     name: 'Turn left 45°',
     exact: true,
@@ -105,8 +81,9 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   const boardBox = (await dialog.locator('.boarding-board').boundingBox())!;
   const actionBox = (await turnLeft.boundingBox())!;
   expect(boardBox.height / dialogBox.height).toBeGreaterThan(0.85);
-  expect(actionBox.width).toBeGreaterThanOrEqual(60);
-  expect(actionBox.height).toBeGreaterThanOrEqual(60);
+  // kontextstyrda-bordningshandlingar: rotation is a 48px control on the map.
+  expect(actionBox.width).toBeGreaterThanOrEqual(48);
+  expect(actionBox.height).toBeGreaterThanOrEqual(48);
   const controls = dialog.getByRole('region', { name: 'Soldier actions' });
   const controlBounds = await controls.evaluate((element) => ({
     clientHeight: element.clientHeight,
@@ -119,27 +96,13 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   );
   expect(controlBounds.bottom).toBeLessThanOrEqual(controlBounds.screenHeight);
   await expect(turnLeft).toHaveText('');
-
-  const canvas = dialog.locator('canvas');
-  const box = await canvas.boundingBox();
-  expect(box).not.toBeNull();
-  await canvas.click({
-    position: cellOnCanvas(
-      { width: box!.width, height: box!.height },
-      reactor.position,
-    ),
-  });
-  const shoot = dialog.getByRole('button', { name: /^Shoot · \d+%$/ });
-  await expect(shoot).toBeEnabled();
-  for (let shot = 0; shot < 3; shot++) {
-    await shoot.click();
-    await expect(dialog.getByText('Resolving action…')).toHaveCount(0);
-    await expect(dialog.getByText('Focusing…')).toHaveCount(0);
-  }
-  await expect(dialog.locator('.boarding-log')).toContainText(
-    /Rifle.*reactor/i,
-  );
-  // The rifle spends this soldier's AP, so later soldiers still have a turn.
+  // billig-vandning: one 45° turn costs 0.25 AP. The own reactor is out of
+  // rifle range from the boarding front, so this test turns instead of shooting.
+  const active = dialog.locator('.boarding-unit-active');
+  await expect(active).toContainText('12 AP');
+  await turnLeft.click();
+  await expect(active).toContainText('11.75 AP');
+  // Later soldiers still have a turn.
   // Pause before ending them: the defender step is only 450ms.
   await page.clock.install();
   await page.clock.pauseAt(Date.now() + 1_000);
@@ -213,7 +176,8 @@ test('kamerafokus-vid-bordningssoldatbyte: selecting an offscreen soldier reveal
     .first();
   const label = (await soldier.locator('strong').textContent())!;
   await soldier.click();
-  await expect(dialog.locator('.boarding-status')).toContainText(label);
+  // bordningshud-i-botten: the name stays on the soldier card, not the status line.
+  await expect(dialog.locator('.boarding-unit-active')).toContainText(label);
   await expect.poll(goldPixels).toBeGreaterThan(20);
   await dialog.screenshot({
     path: testInfo.outputPath('boarding-camera-focus.png'),
