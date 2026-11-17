@@ -425,6 +425,10 @@ airlock vetter åt fel håll vänds. `avbryt-gammal-bordning-vid-laddning` är
 **Fullständigt implementerat**: en pågående bordning från ett äldre sparat spel
 avbryts och skeppen frikopplas.
 
+`aktiv-figur-pa-ruta-med-kroppar` — **Fullständigt implementerat**. En aktiv
+figur står på sin vanliga plats på rutan även när döda eller utslagna figurer
+ligger där.
+
 `testbordning-med-tva-skepp` och `valbar-roll-i-testbordning` är
 **Fullständigt implementerat**. I `Test boarding (cheat)` väljer spelaren
 vilket skepp som bordas och om spelaren anfaller från en `Raptor` eller

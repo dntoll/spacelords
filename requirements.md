@@ -220,7 +220,9 @@ Se [hela visionen](docs/game-vision.md).
   visar riktningen med sina åtta bildvinklar utan vita pilar. Röda och blå
   rutkanter har tagits bort. Senast sedd levande eller utslagen fiende visas
   som ett frågetecken, medan döda inte lämnar markören. Utslagna och döda
-  soldater och civilister har egna liggande bilder. Siktområdets kontur förenklas en gång per sikt i stället för att ritas med tusentals punkter varje bildruta. Se
+  soldater och civilister har egna liggande bilder. `aktiv-figur-pa-ruta-med-kroppar`
+  är **Fullständigt implementerat**: aktiva figurer står kvar på rutans vanliga
+  position även när flera kroppar ligger där. Siktområdets kontur förenklas en gång per sikt i stället för att ritas med tusentals punkter varje bildruta. Se
   [bordningsstrid](docs/boarding/boarding-combat.md).
 
 - **Belysning i bordning:** `ljuskallestyrd-bordningsbelysning`, `vertexljus-i-bordning` och `tileljus-for-sprites` är **Fullständigt implementerat**. Fasta kartlampor och ambientljus styr golv, väggar och sprites oberoende av aktuell sikt. Kravkopplade tester och visuell mobilgranskning verifierar ljus och väggsnitt. Se [bordningsstrid](docs/boarding/boarding-combat.md).

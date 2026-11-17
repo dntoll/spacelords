@@ -183,6 +183,10 @@ testtransporten.
   och civilist har var sin transparent liggande, riktningsoberoende bild.
   Utslagna använder bilden och kan fortsatt väljas för `Med-pack`; döda använder
   samma pose med mörkare toning och kan inte väljas som levande mål.
+- `aktiv-figur-pa-ruta-med-kroppar` — **Fullständigt implementerat**. En aktiv
+  figur står på rutans vanliga position även när flera döda eller utslagna
+  figurer ligger på samma ruta. Kropparna kan fortfarande väljas enligt sina
+  vanliga regler.
 - `bordning-utan-riktningspilar` — **Fullständigt implementerat**. De tidigare
   vita pilarna ovanpå personer är borttagna. Figurens åtta bildriktningar visar
   fortsatt vilket håll en aktiv person står åt.
