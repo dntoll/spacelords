@@ -345,6 +345,10 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   `ruttflottor-utan-ankomstbesked` är **Fullständigt implementerat**:
   flottor på Route ger inga ankomstbesked vid ändplaneterna eftersom
   ruttuppdraget fortsätter. Lossade material ingår fortsatt i planetbeskedet.
+  `ankomstbesked-endast-vid-manuell-forflyttning` är **Fullständigt
+  implementerat**: ankomstbesked ges bara för manuella förflyttningsorder,
+  inte för delmål under Explore, Explore stars, automatiska order eller
+  avstickare.
 
 - **Direkta stridsorder:** `skeppsval-startar-stridstur` och
   `stridsorder-utan-mobilscroll` är **Fullständigt implementerat**. Val av ett

@@ -1197,6 +1197,11 @@ fortsätter. Levererat material finns kvar i planetens årsbesked med flottans
 namn och mängder. Vanliga reseorder behåller sina ankomstbesked. Detta
 ersätter ankomstbeskeden i `grupperade-transporthandelser` från 2026-10-31.
 
+`ankomstbesked-endast-vid-manuell-forflyttning` är **Fullständigt
+implementerat**: en flotta meddelar ankomst bara när spelaren själv har gett
+den ett mål. Delmål under Explore och Explore stars, automatiska order och
+avstickare för planetköer eller attackkön sker tyst.
+
 `ett-meddelande-per-skeppsbygge` är **Fullständigt implementerat**: ett
 färdigbyggt skepp omnämns en gång med skeppstyp och planet i årsbeskedet.
 Kraven förtydligar `handelser` och ersätter tidigare separata besked för

@@ -40,6 +40,14 @@ informationen kan rullas inom rutan. End turn får inte täckas.
   Ändring 2026-10-31: detta ersätter ankomsttexten och undantaget för tomma
   ruttankomster i `grupperade-transporthandelser`.
 
+- `ankomstbesked-endast-vid-manuell-forflyttning`: ankomstbeskedet
+  (`<fleet> arrived at <place>.`) ges bara när en flotta når målet för en
+  manuell förflyttningsorder. Delmål under Explore, Explore stars, automatiska
+  order (Salvage, Transport, Guard) och avstickare från planetköer eller
+  attackkön ger inget ankomstbesked. Kravet är **Fullständigt implementerat**.
+  Ändring 2026-11-17: förtydligar att "vanliga flottor med avslutad
+  reseorder" i `ruttflottor-utan-ankomstbesked` avser manuella order.
+
 - `grupperade-planethandelser`: material som lossats, färdig produktion,
   Population och ändrad Habitability samlas i ett enda årsbesked per planet.
   Alla levererande flottors namn och materialmängder behålls. Även färdiga
