@@ -986,9 +986,11 @@ describe('overwatch-och-skydd', () => {
     expect(battle.snapshot.log.join(' ')).toMatch(/Overwatch.*D20/i);
     const shot = battle.shot!;
     const beforeShot = battle.presentation[shot.presentationIndex! - 1]!;
-    expect(
-      beforeShot.people.find((person) => person.id === player.id)?.position,
-    ).toEqual(shot.to);
+    const position = beforeShot.people.find(
+      (person) => person.id === player.id,
+    )?.position;
+    if (shot.hit) expect(position).toEqual(shot.to);
+    else expect(shot.aim).not.toEqual(position);
     expect(
       beforeShot.people.find((person) => person.id === player.id)?.hitPoints,
     ).toBe(player.hitPoints);

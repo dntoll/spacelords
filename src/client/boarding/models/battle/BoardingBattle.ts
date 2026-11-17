@@ -17,6 +17,7 @@ import {
   boardingThrowObstacle,
   boardingAimPoint,
   boardingSegmentSolids,
+  boardingStrayShot,
   boardingTileSight,
   boardingVisibleShare,
   boardingShipSightRadius,
@@ -2059,7 +2060,7 @@ export class BoardingBattle {
     const total = die + source.accuracy;
     const hit = die === 20 || (die !== 1 && total >= preview.defense);
     const critical = die === 20;
-    const damage = hit
+    let damage = hit
       ? this.#rollDamage(kind === 'Melee' ? 6 : 8, critical ? 2 : 1, 2)
       : 0;
     if (hit) {
@@ -2073,7 +2074,7 @@ export class BoardingBattle {
     );
     const targetCell = this.#targetPosition(target);
     // skott-langs-fri-siktlinje: aim before glass breaks along the line.
-    const aim =
+    let aim =
       kind === 'Melee'
         ? null
         : (boardingAimPoint(
@@ -2084,11 +2085,98 @@ export class BoardingBattle {
             this.#bodiesFor(source),
             this.#sightRadius,
           ) ?? frozenCell(targetCell));
-    const panes = aim ? this.#shatterAlong(source.position, aim) : [];
+    let impactId: string | undefined;
+    if (aim && !hit) {
+      const bodies: (BoardingSightBody & { id: string })[] = this.#state.people
+        .filter(
+          (person) =>
+            person.id !== sourceId &&
+            person.id !== targetId &&
+            person.status === 'active',
+        )
+        .map((person) => ({
+          ...person.position,
+          cover: person.crouched,
+          id: person.id,
+        }));
+      for (const feature of this.#state.features)
+        if (
+          feature.kind === 'reactor' &&
+          !feature.destroyed &&
+          feature.id !== targetId
+        )
+          bodies.push({
+            ...feature.position,
+            cover: false,
+            id: feature.id,
+            radius: REACTOR_SIGHT_RADIUS,
+          });
+      const impact = boardingStrayShot(
+        source.position,
+        targetCell,
+        die === 1 ? 20 : Math.max(1, preview.defense - total),
+        this.#die(2) === 1 ? -1 : 1,
+        this.#map.width,
+        this.#map.height,
+        (q, r) => {
+          const cell = { q, r };
+          const feature = this.#featureAt(cell);
+          if (feature?.id === targetId) return false;
+          if (feature?.kind === 'cover') return true;
+          if (feature?.kind === 'thin-wall' && feature.low)
+            return this.#map.thinWallPieces(cell) ?? true;
+          return this.#solidShape(cell, false);
+        },
+        bodies,
+      );
+      aim = impact.to;
+      impactId =
+        impact.id ??
+        (impact.cell ? this.#featureAt(impact.cell)?.id : undefined);
+      if (impactId) {
+        const unintended = this.#target(impactId);
+        if (
+          unintended &&
+          ('side' in unintended ||
+            (unintended.kind !== 'hull' && unintended.kind !== 'exit'))
+        ) {
+          damage = this.#rollDamage(8, 1, 2);
+          if ('side' in unintended) this.#damagePerson(impactId, damage);
+          else this.#damageFeature(impactId, damage);
+        }
+      }
+    }
+    let panes = aim ? this.#shatterAlong(source.position, aim) : [];
+    const impactTarget = impactId ? this.#target(impactId) : null;
+    const visibleImpact =
+      impactTarget &&
+      this.#state.visibleCells.some((cell) =>
+        same(cell, impactTarget.position),
+      );
+    if (aim && impactTarget && !visibleImpact) {
+      const visible = new Set(this.#state.visibleCells.map(positionKey));
+      const unseen = boardingSegmentSolids(
+        source.position,
+        aim,
+        (q, r) => !visible.has(`${q},${r}`),
+      )[0];
+      if (unseen) {
+        const share = Math.max(0, unseen.at - 0.0001);
+        aim = {
+          q: source.position.q + (aim.q - source.position.q) * share,
+          r: source.position.r + (aim.r - source.position.r) * share,
+        };
+        panes = panes
+          .filter((pane) => pane.at < share)
+          .map((pane) => ({ ...pane, at: pane.at / share }));
+      }
+    }
     if (aim)
       this.#shot = Object.freeze({
         from: frozenCell(source.position),
-        to: frozenCell(targetCell),
+        to: frozenCell(
+          hit ? targetCell : { q: Math.round(aim.q), r: Math.round(aim.r) },
+        ),
         aim,
         ...(panes.length ? { panes } : {}),
         presentationIndex: this.#presentation.length,
@@ -2097,7 +2185,7 @@ export class BoardingBattle {
     this.#replace({
       log: [
         ...this.#state.log,
-        `${kind} by ${source.label} at ${this.#label(targetId)}: D20 [${die}] + ${source.accuracy} = ${total} vs ${preview.defense}; ${hit ? `${critical ? 'critical, ' : ''}${damage} damage` : 'miss'}.`,
+        `${kind} by ${source.label} at ${this.#label(targetId)}: D20 [${die}] + ${source.accuracy} = ${total} vs ${preview.defense}; ${hit ? `${critical ? 'critical, ' : ''}${damage} damage` : 'miss'}${impactId && visibleImpact && damage > 0 ? `, ${this.#label(impactId)} takes ${damage} damage` : ''}.`,
       ],
     });
     this.synchronize();

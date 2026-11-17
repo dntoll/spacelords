@@ -141,7 +141,9 @@ Se [hela visionen](docs/game-vision.md).
   `grannruta-syns-genom-rok` är **Fullständigt implementerat**: två personer
   på intilliggande rutor, även diagonalt, ser varandra trots rök.
   `skott-langs-fri-siktlinje` är **Fullständigt implementerat**: skottet
-  följer den fria siktlinjen närmast målets mitt och krossar glas längs den.
+  följer vid träff den fria siktlinjen närmast målets mitt och krossar glas längs den.
+  `missade-skott-traffar-annat` är **Fullständigt implementerat**: missade
+  gevärsskott avviker och kan skada personer eller föremål längs banan.
   `avstand-paverkar-traffchans` är **Fullständigt implementerat**: skott får
   +1 i målets försvar per påbörjade två rutor bortom två rutor (högst +3 vid
   åtta rutor). Se
