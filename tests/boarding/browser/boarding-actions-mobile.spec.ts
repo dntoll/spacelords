@@ -29,6 +29,21 @@ test('bordningshud-i-botten: compact equipment and contextual soldier actions fi
       .toBe(true);
   }
   const controls = dialog.getByRole('region', { name: 'Soldier actions' });
+  await expect(dialog.locator('.boarding-heading')).toHaveCount(0);
+  await expect(controls.getByRole('button', { name: 'Crouch' })).toBeVisible();
+  await expect(
+    controls.getByRole('button', { name: 'Overwatch' }),
+  ).toBeVisible();
+  const logBox = (await dialog.locator('.boarding-log-overlay').boundingBox())!;
+  const cornerBox = (await dialog
+    .getByRole('button', { name: 'Close boarding' })
+    .boundingBox())!;
+  expect(logBox.x).toBeLessThan(20);
+  expect(logBox.y).toBeLessThan(20);
+  expect(cornerBox.y).toBeLessThan(20);
+  expect(cornerBox.x + cornerBox.width).toBeGreaterThan(
+    page.viewportSize()!.width - 20,
+  );
   const fourth = dialog
     .getByRole('region', { name: 'Boarding team' })
     .getByRole('button', { name: /^Boarder 4,/ });
@@ -44,7 +59,7 @@ test('bordningshud-i-botten: compact equipment and contextual soldier actions fi
   await fourth.click();
   await expect(fourth).toHaveClass(/boarding-unit-active/);
   await page.setViewportSize(originalViewport);
-  await expect(controls.locator('.boarding-equipment > button')).toHaveCount(2);
+  await expect(controls.locator('.boarding-equipment > button')).toHaveCount(4);
   await dialog.locator('.boarding-unit-active').click();
   const turn = dialog.getByRole('button', { name: 'Turn left 45°' });
   await expect(turn).toBeVisible();

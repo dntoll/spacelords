@@ -10,6 +10,14 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Kompakt bordningslogg och stridskontroller:** `bordningslogg-i-hornet`,
+  `senaste-raden-i-bordningsloggen` och `hallning-vid-vapnet` är
+  **Fullständigt implementerat**. `Combat details` ligger uppe till vänster,
+  följer senaste raden när loggen är öppen och visar nya händelser kortvarigt.
+  `Crouch`/`Stand` och `Overwatch` ligger vid vapnet; fullscreen och stängning
+  ligger uppe till höger. Rundrubriken är borttagen. Se
+  [bordningsstrid](docs/boarding/boarding-combat.md).
+
 - **Bordningshandlingar:** `utrustningsknapp-utfor-valt-mal`,
   `rokgranat-pa-person`, `medkit-for-skadad-soldat`,
   `ateranvand-handlingsbilder` och `orsak-till-otillganglig-handling` är
@@ -134,8 +142,9 @@ Se [hela visionen](docs/game-vision.md).
   genom rutan. `personlig-bordningsutrustning`, `bordningshud-i-botten` och
   `fullscreen-i-bordning` är **Fullständigt implementerat**. Varje soldat har
   ett `Rifle` och en roterande personlig pryl; granatbärare har tre granater.
-  Hela den beständiga strids-HUD:en ligger längst ned. Bordning försöker öppna
-  fullscreen automatiskt och har en Enter/Exit-knapp som reserv. Se
+  Soldatval och handlingar ligger längst ned; logg och fönsterknappar ligger i
+  övre hörnen. Bordning försöker öppna fullscreen automatiskt och har en
+  Enter/Exit-knapp som reserv. Se
   [produktkrav](docs/product-requirements.md).
 
 - **Bordningshandlingar och flyt:** `stang-oppen-dorr`,

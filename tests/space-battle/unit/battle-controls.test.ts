@@ -2045,11 +2045,13 @@ it('gang-knapp-till-avlagset-mal: Move stays enabled for a destination beyond th
   view.dispose();
 });
 
-it('personlig-bordningsutrustning: the active soldier keeps exactly two equipment shortcuts', () => {
+it('personlig-bordningsutrustning: equipment, stance and overwatch remain together', () => {
   const { view, destination, select } = farDestinationView();
   const before = actionNames();
-  expect(before).toHaveLength(2);
+  expect(before).toHaveLength(4);
   expect(before).toContain('Shoot');
+  expect(before).toContain('Crouch');
+  expect(before).toContain('Overwatch');
   select(destination);
   expect(actionNames()).toEqual(before);
   view.dispose();

@@ -91,26 +91,71 @@ it('kontextstyrda-bordningshandlingar: a blocked target walks towards it instead
   setup.view.dispose();
 });
 
-it('bordningshud-i-botten: keeps soldier status and exactly two equipment actions in the bottom dock', () => {
+it('bordningshud-i-botten: keeps soldier status and stance and overwatch next to equipment', () => {
   const setup = compactView();
   const dock = document.querySelector('.boarding-controls')!;
-  expect(dock.querySelector('.boarding-heading')).not.toBeNull();
+  expect(document.querySelector('.boarding-heading')).toBeNull();
+  expect(dock.querySelector('[aria-label="Close boarding"]')).toBeNull();
   expect(dock.querySelector('.boarding-status')).not.toBeNull();
   expect(dock.querySelector('.boarding-team')).not.toBeNull();
-  expect(dock.querySelectorAll('.boarding-equipment > button')).toHaveLength(2);
+  expect(dock.querySelectorAll('.boarding-equipment > button')).toHaveLength(4);
+  expect(
+    dock.querySelector('.boarding-equipment [aria-label="Crouch"]'),
+  ).not.toBeNull();
+  expect(
+    dock.querySelector('.boarding-equipment [aria-label="Overwatch"]'),
+  ).not.toBeNull();
   expect(dock.textContent).toContain('AP');
   setup.view.dispose();
 });
 
-it('kontextstyrda-bordningshandlingar: opens stance and rotation actions around the active soldier', () => {
+it('kontextstyrda-bordningshandlingar: opens rotation actions around the active soldier', () => {
   const setup = compactView();
   setup.select(setup.actor.position, setup.actor.id);
   const menu = document.querySelector('.boarding-context-menu')!;
   expect(menu.querySelector('[aria-label="Turn left 45°"]')).not.toBeNull();
   expect(menu.querySelector('[aria-label="Turn right 45°"]')).not.toBeNull();
-  expect(menu.querySelector('[aria-label="Crouch"]')).not.toBeNull();
-  expect(menu.querySelector('[aria-label="Overwatch"]')).not.toBeNull();
+  expect(menu.querySelector('[aria-label="Crouch"]')).toBeNull();
+  expect(menu.querySelector('[aria-label="Overwatch"]')).toBeNull();
   setup.view.dispose();
+});
+
+it('senaste-raden-i-bordningsloggen: previews new log entries briefly and autoscrolls the open log', () => {
+  vi.useFakeTimers();
+  try {
+    const setup = compactView();
+    const details =
+      document.querySelector<HTMLDetailsElement>('.boarding-details')!;
+    const preview = document.querySelector<HTMLElement>(
+      '.boarding-log-preview',
+    )!;
+    expect(preview.hidden).toBe(true);
+    details.open = true;
+    Object.defineProperty(details, 'scrollHeight', {
+      configurable: true,
+      value: 900,
+    });
+    setup.view.render({
+      ...setup.state,
+      log: [...setup.state.log, 'First event', 'Latest event'],
+    });
+    expect(preview.hidden).toBe(false);
+    expect(preview.textContent).toBe('Latest event');
+    expect(details.scrollTop).toBe(900);
+    vi.advanceTimersByTime(3000);
+    setup.view.render({
+      ...setup.state,
+      log: [...setup.state.log, 'First event', 'Latest event', 'Newer event'],
+    });
+    expect(preview.textContent).toBe('Newer event');
+    vi.advanceTimersByTime(3000);
+    expect(preview.hidden).toBe(false);
+    vi.advanceTimersByTime(1000);
+    expect(preview.hidden).toBe(true);
+    setup.view.dispose();
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it('fullscreen-i-bordning: attempts fullscreen automatically and keeps an explicit fallback control', async () => {
