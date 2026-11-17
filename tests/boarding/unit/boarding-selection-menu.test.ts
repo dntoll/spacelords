@@ -126,6 +126,17 @@ describe('hp-i-valt-mal', () => {
 });
 
 describe('meny-ovanfor-valt-mal', () => {
+  it('handlingsknappar-ovanfor-halsomatare: leaves space above the figure for its health bar', () => {
+    const position = boardingContextMenuPosition({
+      point: { x: 400, y: 400 },
+      liftPx: 90,
+      width: 120,
+      height: 60,
+      canvasWidth: 800,
+      maxBottom: 560,
+    });
+    expect(position.top + 60).toBeLessThanOrEqual(400 - 90 - 50);
+  });
   it('lifts the menu over a standing figure and a door, not over bare floor', () => {
     const position = (liftPx: number) =>
       boardingContextMenuPosition({
