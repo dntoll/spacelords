@@ -100,6 +100,8 @@ test('dubbelklick-bygger-pa-kartan: double tap queues one order while single tap
     .tap();
   // Two Playwright taps can land more than 500ms apart when the suite is busy.
   await mine.evaluate((button) => {
+    if (!(button instanceof HTMLButtonElement))
+      throw new Error('Iron mine control is not a button.');
     const tap = () => {
       button.dispatchEvent(
         new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }),
