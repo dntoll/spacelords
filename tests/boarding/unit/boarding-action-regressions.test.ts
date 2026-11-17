@@ -144,6 +144,26 @@ it('granat-mot-vald-fiende: an armed grenade targets the enemy even on a double 
   s.view.dispose();
 });
 
+it.each(['frag-grenade', 'smoke-grenade'] as const)(
+  'granat-avvaljs-utan-ap: deselects %s when AP falls below the throw cost',
+  (gadget) => {
+    const s = setup(gadget);
+    const button = () =>
+      document.querySelector<HTMLButtonElement>(
+        `.boarding-equipment [aria-label^="${gadget === 'frag-grenade' ? 'Frag' : 'Smoke'} grenade"]`,
+      )!;
+    button().click();
+    expect(button().classList.contains('boarding-action-armed')).toBe(true);
+    s.view.render({ ...s.state, activation: { id: s.actor.id, remaining: 3 } });
+    expect(button().classList.contains('boarding-action-armed')).toBe(false);
+    s.select(s.enemy.position, s.enemy.id);
+    expect(document.querySelector('.boarding-status')?.textContent).not.toMatch(
+      /needs 4 AP/,
+    );
+    s.view.dispose();
+  },
+);
+
 it('rokgranat-pa-person: permits choosing a civilian as a smoke grenade target', () => {
   const s = setup('smoke-grenade');
   s.select(s.civilian.position, s.civilian.id);
