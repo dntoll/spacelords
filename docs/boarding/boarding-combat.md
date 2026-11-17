@@ -8,11 +8,12 @@ tillåtet när alla levande stridande är i eget skepp. Pirater lämnar en
 cockpit-soldat. Utslagen sida ger vinnaren båda skeppen i samma strid.
 
 Huvudmenyns `Test boarding (cheat)` är ett fristående testspel utan påverkan
-på sparplatser. `testbordning-med-tva-skepp` och `valbart-skepp-i-testbordning`:
-ett valt skepp (`Space pirate` som standard, väljs i listan bredvid knappen)
-dockar med den handredigerbara testtransporten via landgången. Fyra
-bordningssoldater startar vid den egna airlocken; försvarare och civilister
-kommer från testtransportens startpositioner.
+på sparplatser. `valbar-roll-i-testbordning` — **Fullständigt implementerat**:
+spelaren väljer det bordade skeppet och anfaller från en `Raptor` eller
+försvarar sig mot ett `Space pirate`. Standard är anfall mot `Transport ship`.
+Striden använder kampanjens regler för placering och mål. Detta ersätter
+`valbart-skepp-i-testbordning`, där ett valt anfallande skepp bordade den fasta
+testtransporten.
 
 ## Krav och status
 

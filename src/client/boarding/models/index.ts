@@ -28,7 +28,8 @@ export {
 } from './editor/BoardingEditor.js';
 export {
   testBoardingMap,
-  DEFAULT_TEST_BOARDING_ATTACKER,
+  DEFAULT_TEST_BOARDING_SELECTION,
+  type TestBoardingSelection,
 } from './map/TestBoarding.js';
 export { BOARDING_INTERIOR_TYPES } from './map/BoardingComposer.js';
 export type { BoardingMapId } from '../../../shared/boarding/map-format.js';

@@ -402,7 +402,7 @@ export class MasterController {
         this.#schedulePlayback();
         break;
       case 'test-boarding':
-        this.#boarding.startTestBoarding(intent.attacker);
+        this.#boarding.startTestBoarding(intent.selection);
         this.#schedulePlayback();
         break;
       case 'salvage-wreck':

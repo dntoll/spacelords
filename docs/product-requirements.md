@@ -425,11 +425,12 @@ airlock vetter åt fel håll vänds. `avbryt-gammal-bordning-vid-laddning` är
 **Fullständigt implementerat**: en pågående bordning från ett äldre sparat spel
 avbryts och skeppen frikopplas.
 
-`testbordning-med-tva-skepp` och `valbart-skepp-i-testbordning` är
-**Fullständigt implementerat**. `Test boarding (cheat)` visar två skepp med
-landgång: ett valbart anfallande skepp, `Space pirate` som standard, och
-testtransporten. Bordarna startar på landgången och målen gäller det
-bordade skeppet.
+`testbordning-med-tva-skepp` och `valbar-roll-i-testbordning` är
+**Fullständigt implementerat**. I `Test boarding (cheat)` väljer spelaren
+vilket skepp som bordas och om spelaren anfaller från en `Raptor` eller
+försvarar skeppet mot ett `Space pirate`. Detta ersätter
+`valbart-skepp-i-testbordning`, där det anfallande skeppet valdes mot en fast
+testtransport.
 
 `bargat-piratskepp-behaller-typ` och `unik-bild-for-civila-transporter` är
 **Fullständigt implementerat**. Ett nyförstört piratskepp kan bärgas och

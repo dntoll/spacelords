@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   boardingMapForState,
-  createTestBoardingBattle,
+  composeTestBoarding,
 } from '../../../src/client/boarding/models/map/TestBoarding.js';
 import {
   BoardingBattle,
@@ -9,7 +9,11 @@ import {
 } from '../../../src/client/boarding/models/battle/BoardingBattle.js';
 
 function playerTurn(): BoardingBattle {
-  const battle = createTestBoardingBattle();
+  const battle = BoardingBattle.createTest(
+    composeTestBoarding(),
+    'Space pirate',
+    0x5a17,
+  );
   const actorSide = (state: BoardingBattleState) =>
     state.people.find((person) => person.id === state.currentActorId)?.side;
   for (

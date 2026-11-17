@@ -13,7 +13,6 @@ import type {
   PlanetQueueKind,
 } from '../../space-map/models/index.js';
 import type {
-  CombatShipType,
   BattleCommand,
   BattleManeuver,
   BattleShot,
@@ -27,6 +26,7 @@ import type {
 import type { HexCoordinate, Point } from '../../common/HexCoordinate.js';
 import type {
   BoardingCommand,
+  TestBoardingSelection,
   BoardingMapId,
   EditorBrushButton,
   EditorPaintCell,
@@ -37,7 +37,10 @@ import type {
 
 export type AppIntent =
   | { readonly type: 'test-battle' }
-  | { readonly type: 'test-boarding'; readonly attacker?: CombatShipType }
+  | {
+      readonly type: 'test-boarding';
+      readonly selection?: TestBoardingSelection;
+    }
   | { readonly type: 'close-boarding' }
   | { readonly type: 'boarding-command'; readonly command: BoardingCommand }
   | { readonly type: 'open-fleet-orders'; readonly id: string }

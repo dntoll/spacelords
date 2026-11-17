@@ -77,6 +77,7 @@ import {
   type BoardingEditorSnapshot,
   type BoardingBattle,
   type BoardingBattleState,
+  type TestBoardingSelection,
   type BoardingCommand,
   type BoardingShot,
 } from '../../boarding/models/index.js';
@@ -85,7 +86,6 @@ import {
   type TacticalBattle,
   type BattleState,
   type BattleCommand,
-  type CombatShipType,
 } from '../../space-battle/models/index.js';
 import {
   HexCoordinate,
@@ -1201,8 +1201,8 @@ export class AppModel {
   commandBattle(command: BattleCommand): void {
     return this.battle.commandBattle(command);
   }
-  startTestBoarding(attacker?: CombatShipType): void {
-    return this.boarding.startTestBoarding(attacker);
+  startTestBoarding(selection?: TestBoardingSelection): void {
+    return this.boarding.startTestBoarding(selection);
   }
   closeTestBoarding(): void {
     return this.boarding.closeTestBoarding();
@@ -2086,8 +2086,8 @@ export class AppModel {
       allowOtherFleetOrders: () => model.allowOtherFleetOrders(),
       continueTurn: () => model.continueTurn(),
       commandBattle: (command: BattleCommand) => model.commandBattle(command),
-      startTestBoarding: (attacker?: CombatShipType) =>
-        model.startTestBoarding(attacker),
+      startTestBoarding: (selection?: TestBoardingSelection) =>
+        model.startTestBoarding(selection),
       closeTestBoarding: () => model.closeTestBoarding(),
       finishBoarding: (outcome: 'victory' | 'defeat' | 'aborted' = 'aborted') =>
         model.finishBoarding(outcome),
@@ -2371,7 +2371,7 @@ export interface AppHost {
   allowOtherFleetOrders(): void;
   continueTurn(): void;
   commandBattle(command: BattleCommand): void;
-  startTestBoarding(attacker?: CombatShipType): void;
+  startTestBoarding(selection?: TestBoardingSelection): void;
   closeTestBoarding(): void;
   finishBoarding(outcome?: 'victory' | 'defeat' | 'aborted'): void;
   commandBoarding(command: BoardingCommand): void;

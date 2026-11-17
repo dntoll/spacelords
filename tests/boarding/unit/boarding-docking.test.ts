@@ -143,17 +143,34 @@ describe('testbordning-med-tva-skepp / valbart-skepp-i-testbordning', () => {
     expect(zones('civilian')).toEqual(['defender']);
     expect(battle.snapshot.test).toMatchObject({ attackerType: 'Raptor' });
   });
+});
 
-  it('remembers the chosen ship so the same joined map is rebuilt', () => {
-    const battle = createTestBoardingBattle('Raptor');
-    expect(battle.snapshot.test?.attackerType).toBe('Raptor');
-    const map = boardingMapForState(battle.snapshot);
-    expect(map.name).toBe(battle.snapshot.mapName);
-    expect(() => BoardingBattle.restore(map, battle.snapshot)).not.toThrow();
-    expect(createTestBoardingBattle().snapshot.test?.attackerType).toBe(
-      'Space pirate',
-    );
-  });
+describe('valbar-roll-i-testbordning', () => {
+  it.each([
+    ['attacker', 'Raptor', 'Salvage ship', 'attacker'],
+    ['defender', 'Space pirate', 'Salvage ship', 'defender'],
+  ] as const)(
+    'starts as %s against the selected ship',
+    (role, attacker, defender, zone) => {
+      const battle = createTestBoardingBattle({ role, ship: 'Salvage ship' });
+      expect(battle.snapshot.campaign).toMatchObject({
+        attackerType: attacker,
+        defenderType: defender,
+        playerZone: zone,
+      });
+      const map = boardingMapForState(battle.snapshot);
+      const players = battle.snapshot.people.filter(
+        (person) => person.side === 'player',
+      );
+      expect(players.length).toBeGreaterThan(0);
+      expect(
+        players.every((person) =>
+          ['bridge', zone].includes(map.zoneAt(person.position) ?? ''),
+        ),
+      ).toBe(true);
+      expect(() => BoardingBattle.restore(map, battle.snapshot)).not.toThrow();
+    },
+  );
 });
 
 describe('avbryt-gammal-bordning-vid-laddning', () => {

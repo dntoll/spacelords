@@ -32,15 +32,30 @@ export function composeTestBoarding(
   );
 }
 
-/** fristaende-bordningsprototyp: repeatable encounter outside saved games. */
+export interface TestBoardingSelection {
+  readonly role: 'attacker' | 'defender';
+  readonly ship: CombatShipType;
+}
+
+export const DEFAULT_TEST_BOARDING_SELECTION: TestBoardingSelection = {
+  role: 'attacker',
+  ship: 'Transport ship',
+};
+
+/** valbar-roll-i-testbordning: a standalone encounter using campaign rules. */
 export function createTestBoardingBattle(
-  attacker: CombatShipType = DEFAULT_TEST_BOARDING_ATTACKER,
+  selection: TestBoardingSelection = DEFAULT_TEST_BOARDING_SELECTION,
   seed = 0x5a17,
 ): BoardingBattle {
-  return BoardingBattle.createTest(
-    composeTestBoarding(attacker),
-    attacker,
+  const attacker = selection.role === 'attacker' ? 'Raptor' : 'Space pirate';
+  const defender = selection.ship;
+  return BoardingBattle.createCampaign(
+    composeBoardingMaps(attacker, defender),
+    selection.role === 'attacker',
     seed,
+    attacker,
+    defender,
+    true,
   );
 }
 
