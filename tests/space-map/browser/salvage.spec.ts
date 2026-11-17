@@ -314,6 +314,72 @@ test('orbitalt-varv: choose a neighboring station hex before queuing constructio
   await page.screenshot({ path: testInfo.outputPath('orbital-shipyard.png') });
 });
 
+test('spelnotis-synlig: shipyard placement and its queued notice stay on screen', async ({
+  page,
+}, testInfo) => {
+  const state = salvageState();
+  state.salvage.yards = [];
+  state.colonies[0]![1].buildings.shift();
+  await load(page, state);
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Show Orbital shipyard', exact: true })
+    .dblclick();
+  const heading = page.getByRole('heading', {
+    name: 'Place orbital shipyard',
+    exact: true,
+  });
+  await expect(heading).toBeVisible();
+  const viewport = page.viewportSize()!;
+  const inside = async (name: string, box: Promise<unknown>) => {
+    const bounds = (await box) as {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };
+    expect(bounds, name).toBeTruthy();
+    expect(bounds.x, name).toBeGreaterThanOrEqual(0);
+    expect(bounds.y, name).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width, name).toBeLessThanOrEqual(viewport.width);
+    expect(bounds.y + bounds.height, name).toBeLessThanOrEqual(viewport.height);
+  };
+  // A panel can be "visible" to Playwright while lying below the screen edge.
+  await inside('panel', page.locator('.salvage-panel').boundingBox());
+  await inside('heading', heading.boundingBox());
+  for (const name of ['Build here', 'Cancel'])
+    await inside(
+      name,
+      page.getByRole('button', { name, exact: true }).boundingBox(),
+    );
+  await page.screenshot({
+    path: testInfo.outputPath('shipyard-placement.png'),
+  });
+  await page.getByRole('button', { name: 'Build here', exact: true }).click();
+  const notice = page.locator('.game-notice');
+  await expect(notice).toBeVisible();
+  await inside('queued notice', notice.boundingBox());
+  // The notice must be on top, not hidden behind the map footer or panels.
+  expect(
+    await notice.evaluate((node) => {
+      const box = node.getBoundingClientRect();
+      const hit = document.elementFromPoint(
+        box.left + box.width / 2,
+        box.top + box.height / 2,
+      );
+      return !!hit && node.contains(hit);
+    }),
+  ).toBe(true);
+  // ...and it must leave the navigation tabs uncovered.
+  const header = (await page.locator('.app-header').boundingBox())!;
+  expect((await notice.boundingBox())!.y).toBeGreaterThanOrEqual(
+    header.y + header.height,
+  );
+  await page.screenshot({
+    path: testInfo.outputPath('shipyard-queued-notice.png'),
+  });
+});
+
 test('stridsrapport-i-dialog / spara-bargning-och-stridsavbrott: combat history survives reload without a report dialog', async ({
   page,
 }, testInfo) => {
