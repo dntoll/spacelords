@@ -73,6 +73,8 @@ export interface BoardingPerson {
   readonly destination?: BoardingCell;
   /** ap-fraktion-sparas: AP left from a walk, added to the next activation. */
   readonly carriedAp?: number;
+  /** fiender-reagerar-pa-ljud: where a defender last heard the boarders. */
+  readonly heardAt?: BoardingCell;
 }
 
 export interface BoardingFeature {
@@ -117,6 +119,13 @@ export interface BoardingNoise {
   readonly position: BoardingCell;
   readonly audience: 'player' | 'defender';
 }
+
+/** fiender-reagerar-pa-ljud: what made a sound, which sets how far it carries. */
+export type BoardingSound = 'melee' | 'shot' | 'smoke' | 'explosion';
+
+/** fiender-reagerar-pa-ljud: hearing range in tiles for each sound. */
+export const BOARDING_HEARING_RANGE: Readonly<Record<BoardingSound, number>> =
+  Object.freeze({ melee: 3, shot: 8, smoke: 6, explosion: 16 });
 
 export interface BoardingBattleState {
   readonly id: string;
@@ -402,6 +411,7 @@ function freezeState(state: BoardingBattleState): BoardingBattleState {
         ...(person.destination
           ? { destination: frozenCell(person.destination) }
           : {}),
+        ...(person.heardAt ? { heardAt: frozenCell(person.heardAt) } : {}),
       }),
     ),
   );
@@ -1900,9 +1910,14 @@ export class BoardingBattle {
     });
   }
 
-  #addNoise(position: BoardingCell, actorSide: BoardingSide): void {
+  #addNoise(
+    position: BoardingCell,
+    actorSide: BoardingSide,
+    sound: BoardingSound,
+  ): void {
     const audience =
       actorSide === 'defender' ? 'player' : ('defender' as const);
+    if (audience === 'defender') this.#alertDefenders(position, sound);
     const existing = this.#state.noiseMarkers.some(
       (entry) => entry.audience === audience && same(entry.position, position),
     );
@@ -1913,6 +1928,39 @@ export class BoardingBattle {
           { position: frozenCell(position), audience },
         ],
       });
+  }
+
+  /**
+   * fiender-reagerar-pa-ljud: defenders within earshot remember where the
+   * sound came from; an explosion makes them turn towards it at once, so
+   * nobody keeps their back to a blast. Those out of earshot do not react.
+   */
+  #alertDefenders(position: BoardingCell, sound: BoardingSound): void {
+    const range = BOARDING_HEARING_RANGE[sound];
+    for (const listener of this.#state.people) {
+      if (
+        listener.side !== 'defender' ||
+        listener.status !== 'active' ||
+        listener.cockpit
+      )
+        continue;
+      const distance = Math.hypot(
+        listener.position.q - position.q,
+        listener.position.r - position.r,
+      );
+      if (distance > range) continue;
+      this.#updatePerson(listener.id, (entry) => {
+        let facing = entry.facing;
+        if (sound === 'explosion')
+          for (const direction of boardingTurnsToward(
+            entry.position,
+            facing,
+            position,
+          ))
+            facing = turnFacing(facing, direction);
+        return { ...entry, facing, heardAt: frozenCell(position) };
+      });
+    }
   }
 
   #rollDamage(die: number, count: number, modifier: number): number {
@@ -1983,7 +2031,11 @@ export class BoardingBattle {
       if ('side' in target) this.#damagePerson(target.id, damage);
       else this.#damageFeature(target.id, damage);
     }
-    this.#addNoise(source.position, source.side);
+    this.#addNoise(
+      source.position,
+      source.side,
+      kind === 'Melee' ? 'melee' : 'shot',
+    );
     const targetCell = this.#targetPosition(target);
     // skott-langs-fri-siktlinje: aim before glass breaks along the line.
     const aim =
@@ -2277,7 +2329,11 @@ export class BoardingBattle {
       presentationIndex: this.#presentation.length,
       hit: true,
     });
-    this.#addNoise(impact, actor.side);
+    this.#addNoise(
+      impact,
+      actor.side,
+      grenade === 'smoke' ? 'smoke' : 'explosion',
+    );
     if (grenade === 'smoke') {
       const amounts = new Map(
         this.#state.smoke.map((entry) => [positionKey(entry.position), entry]),
@@ -2779,6 +2835,26 @@ export class BoardingBattle {
       this.#complete('victory', 'All defenders are neutralized.');
   }
 
+  /** fiender-soker-upp-bordare: a defender who reached a sound stops chasing it. */
+  #forgetReachedSound(id: string): void {
+    const listener = this.#state.people.find((entry) => entry.id === id);
+    const heard = listener?.heardAt;
+    if (
+      !listener ||
+      !heard ||
+      Math.max(
+        Math.abs(listener.position.q - heard.q),
+        Math.abs(listener.position.r - heard.r),
+      ) > 1
+    )
+      return;
+    this.#updatePerson(id, (entry) => {
+      const rest = { ...entry };
+      delete rest.heardAt;
+      return rest;
+    });
+  }
+
   actAutomatically(singleStep = false): boolean {
     let acted = false;
     while (this.#state.phase === 'fighting') {
@@ -2803,6 +2879,7 @@ export class BoardingBattle {
         )
           this.command({ type: 'end-activation' });
       }
+      this.#forgetReachedSound(beforeId);
       if (
         this.#state.phase === 'fighting' &&
         this.#state.currentActorId === beforeId &&

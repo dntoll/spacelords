@@ -1,6 +1,8 @@
 import {
   BOARDING_MELEE_AP,
   BOARDING_RIFLE_AP,
+  BOARDING_TURN_AP,
+  boardingTurnsToward,
   type BoardingBattle,
   type BoardingCommand,
   type BoardingPerson,
@@ -71,9 +73,8 @@ export function chooseDefenderCommand(
   if (remaining >= BOARDING_MELEE_AP && adjacentHostile)
     return { type: 'melee', targetId: adjacentHostile.id };
 
-  const heard = state.noiseMarkers.find(
-    (marker) => marker.audience === 'defender',
-  )?.position;
+  // fiender-reagerar-pa-ljud: only a defender who heard the sound reacts.
+  const heard = actor.heardAt;
   const remembered = state.defenderLastKnownEnemies[0]?.position;
   const breach = state.features.find(
     (feature) => feature.exit === 'breach',
@@ -98,6 +99,23 @@ export function chooseDefenderCommand(
       )
       .sort((a, b) => a.path.cost - b.path.cost)[0];
     if (route) return { type: 'move', to: route.destination };
+    // fiender-soker-upp-bordare: a target beyond this activation's AP is
+    // approached as far as the AP allows instead of waiting for it.
+    if (remaining > 0 && !visible[0]) {
+      const far = destinations(target).find(
+        (destination) =>
+          (destination.q !== actor.position.q ||
+            destination.r !== actor.position.r) &&
+          battle.routeTowards(actor.id, destination),
+      );
+      if (far) return { type: 'walk', to: far };
+    }
+    // fiender-reagerar-pa-ljud: one who cannot get closer at least faces it.
+    if (
+      remaining >= BOARDING_TURN_AP &&
+      boardingTurnsToward(actor.position, actor.facing, target).length
+    )
+      return { type: 'face', toward: target };
   }
   if (remaining >= BOARDING_RIFLE_AP) return { type: 'overwatch' };
   return { type: 'end-activation' };
