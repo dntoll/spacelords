@@ -1633,6 +1633,9 @@ vårda en skadad angränsande person, även i en öppen dörr. Kontextmenyer och
 turknappen använder handlingsbilderna. Otillgängliga knappar förklarar vid tryck
 varför handlingen inte går att utföra.
 
+`granat-avvaljs-utan-ap` — **Fullständigt implementerat**: en vald granat
+avväljs automatiskt när soldaten inte längre har tillräckligt med AP för att kasta.
+
 `bordningshud-i-botten` och `fullscreen-i-bordning` — **Fullständigt
 implementerat**: soldatval, namn, HP, AP och handlingar ligger längst ned.
 Loggen ligger uppe till vänster och stängning och fullscreen uppe till höger.

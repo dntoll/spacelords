@@ -170,14 +170,16 @@ Se [hela visionen](docs/game-vision.md).
   [produktkrav](docs/product-requirements.md).
 
 - **Bordningshandlingar och flyt:** `stang-oppen-dorr`,
-  `granat-kostar-bara-vid-kast`, `granat-over-halvskydd-inte-genom-vagg`,
+  `granat-kostar-bara-vid-kast`, `granat-avvaljs-utan-ap`,
+  `granat-over-halvskydd-inte-genom-vagg`,
   `gang-mot-avlagset-mal`, `vand-mot-vald-ruta`,
   `vandning-mot-nasta-steg`, `ap-fraktion-sparas`,
   `sparad-gangdestination`, `fast-soldatordning`,
   `bordning-jamn-bildfrekvens`, `snabb-bordningsvagsokning` och
   `motstandartur-i-mitten` är **Fullständigt implementerat**. En soldat
   intill en öppen, tom dörr får `Close door`. En granat som inte kan kastas
-  drar ingen AP och knapparna är avstängda. Granater kastas över halvskydd,
+  drar ingen AP och knapparna är avstängda. En vald granat avväljs automatiskt
+  när soldaten inte längre har AP för ett kast. Granater kastas över halvskydd,
   låga väggar, rök och hukande personer, men inte genom väggar, stängda dörrar
   eller stående personer, och en miss studsar aldrig genom en vägg. Ett andra tryck på ett mål som
   ligger för långt bort går så långt AP räcker och vänder soldaten mot nästa

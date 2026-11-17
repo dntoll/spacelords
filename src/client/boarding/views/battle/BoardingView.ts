@@ -775,6 +775,13 @@ export class BoardingView {
     this.#contextAnchor = null;
     if (!playerTurn || !actor) return;
     const remaining = state.activation?.remaining ?? 0;
+    if (
+      this.#armedAction === 'gadget' &&
+      (actor.loadout.gadget === 'frag-grenade' ||
+        actor.loadout.gadget === 'smoke-grenade') &&
+      remaining < this.#gadgetAp(actor)
+    )
+      this.#armedAction = null;
     const weaponReason =
       remaining < BOARDING_RIFLE_AP
         ? `The action needs ${BOARDING_RIFLE_AP} AP.`
