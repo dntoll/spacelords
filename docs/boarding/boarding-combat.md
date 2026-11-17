@@ -273,6 +273,7 @@ kommer från testtransportens startpositioner.
   ingår i försvarsvärdet i stridsloggen och i träffchansen. Personer i vägen
   blockerar fortfarande skott längs linjen mellan rutornas mitt.
 - `hukad-ser-inte-over-halvskydd` — **Fullständigt implementerat**. En hukad person (ögon på 0,8 m) ser inte över halvskydd (1,2 m) som ligger mer än en ruta bort: lådor, låga väggar och andra hukade personer skymmer då sikt och skott som väggar. Halvskydd intill den hukade går att kika och skjuta över.
+- `grannruta-syns-genom-rok` — **Fullständigt implementerat**. Man ser alltid minst en ruta runt sig: rök skymmer aldrig en intilliggande ruta, inte heller diagonalt genom rök på rutorna bredvid. Väggar och blickriktning gäller som vanligt, och rök på grannrutan skymmer fortfarande det som ligger bortom den.
 - `skott-langs-fri-siktlinje` — **Fullständigt implementerat**. Skottet flyger till den synliga punkt i målrutan som ligger närmast mitten, så spårljuset aldrig går genom en vägg, och glas längs den linjen krossas.
 - `halvskydd-markering-sammanfogad` — **Fullständigt implementerat**. Alla halvskyddsskuggor ritas som en orange yta med en enda kontur, beskuren till siktytan och skeppets rutor. En låg tunn vägg kastar sin skugga från väggens plattor, så golvet på betraktarens sida markeras inte. Halvskydd ritas inte längre med egen rutram.
 - `halvskydd-skuggar-delvis` — **Fullständigt implementerat**. Lådor och låga
