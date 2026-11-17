@@ -390,8 +390,11 @@ lämnade kameran orörd.
 
 `kameraoverblick-vid-synlig-bordningsrorelse` — **Fullständigt implementerat**.
 När en fiende eller civilist rör sig inom synhåll, en ny figur blir synlig
-eller spelaren hör ett nytt ljud, zoomar kameran vid behov ut så att alla
-punkter i händelsen syns samtidigt. Kameran står still medan figuren rör sig.
+eller spelaren hör ett nytt ljud, panorerar kameran så att händelsen och de
+egna soldater som ser den hamnar mitt i bild, och zoomar ut bara så mycket
+som behövs för att alla ska synas samtidigt. Det ersätter att kameran bara
+zoomade ut kring den tidigare bildmitten. Kameran står still medan figuren
+rör sig.
 Utzoomningen är tillfällig och kameran återgår till spelarens zoom och
 panoreringen före händelsen när uppspelningen är klar. Dolda positioner får
 aldrig avslöjas av kameran. Spelaren kan avbryta kameraflödena genom att
