@@ -45,7 +45,7 @@ const UP = map(
 );
 
 describe('dockning-sida-vid-sida', () => {
-  it('stacks the attacker above the defender with a six tile, two wide gangway between the airlocks', () => {
+  it('landgang-med-bordningsstart: joins the ships with a ten tile, two wide gangway', () => {
     const composed = composeBoardingInteriors(
       parseBoardingMap(DOWN),
       parseBoardingMap(UP),
@@ -53,7 +53,7 @@ describe('dockning-sida-vid-sida', () => {
     const [top] = composed.attackerAirlock;
     const [bottom] = composed.defenderAirlock;
     expect(top!.q).toBe(bottom!.q);
-    expect(bottom!.r - top!.r - 1).toBe(6);
+    expect(bottom!.r - top!.r - 1).toBe(10);
     expect(composed.map.zoneAt(top!)).toBe('attacker');
     expect(composed.map.zoneAt(bottom!)).toBe('defender');
     for (let r = top!.r + 1; r < bottom!.r; r++) {
@@ -68,7 +68,7 @@ describe('dockning-sida-vid-sida', () => {
     }
     expect(
       composed.map.features.filter((f) => f.id.startsWith('gangway-wall')),
-    ).toHaveLength(12);
+    ).toHaveLength(20);
     // Both airlocks are open floor so the gangway connects the ships.
     expect(composed.map.terrainAt(top!)).toBe('floor');
     expect(composed.map.terrainAt(bottom!)).toBe('floor');
@@ -123,7 +123,7 @@ describe('dockning-sida-vid-sida', () => {
 });
 
 describe('testbordning-med-tva-skepp / valbart-skepp-i-testbordning', () => {
-  it('starts the boarders in their own ship and the defenders in the boarded one', () => {
+  it('landgang-med-bordningsstart: starts boarders facing the boarded ship', () => {
     const composed = composeBoardingInteriors(
       parseBoardingMap(DOWN),
       parseBoardingMap(UP),
@@ -133,15 +133,15 @@ describe('testbordning-med-tva-skepp / valbart-skepp-i-testbordning', () => {
       battle.snapshot.people
         .filter((person) => person.side === side)
         .map((person) => composed.map.zoneAt(person.position));
-    expect(zones('player')).toEqual([
-      'attacker',
-      'attacker',
-      'attacker',
-      'attacker',
-    ]);
+    expect(zones('player')).toEqual(['bridge', 'bridge', 'bridge', 'bridge']);
+    expect(
+      battle.snapshot.people
+        .filter((person) => person.side === 'player')
+        .every((person) => person.facing === 3),
+    ).toBe(true);
     expect(zones('defender')).toEqual(['defender']);
     expect(zones('civilian')).toEqual(['defender']);
-    expect(battle.snapshot.test).toEqual({ attackerType: 'Raptor' });
+    expect(battle.snapshot.test).toMatchObject({ attackerType: 'Raptor' });
   });
 
   it('remembers the chosen ship so the same joined map is rebuilt', () => {
@@ -157,6 +157,24 @@ describe('testbordning-med-tva-skepp / valbart-skepp-i-testbordning', () => {
 });
 
 describe('avbryt-gammal-bordning-vid-laddning', () => {
+  it('landgang-med-bordningsstart: restores the old six tile geometry for saves without a length', () => {
+    const saved = BoardingEngagement.start(
+      'a',
+      'd',
+      'Space pirate',
+      'Transport ship',
+      true,
+      5,
+    ).snapshot();
+    const { gangwayLength: _length, ...campaign } = saved.battle.campaign!;
+    expect(_length).toBe(10);
+    const legacy = { ...saved, battle: { ...saved.battle, campaign } };
+    const restored = BoardingEngagement.restore(legacy);
+    expect(restored.composed.gangwayLength).toBe(6);
+    expect(boardingMapForState(restored.battle.snapshot).height).toBe(
+      restored.composed.map.height,
+    );
+  });
   it('ends a boarding saved before side-by-side docking and keeps a new one', () => {
     const saved = BoardingEngagement.start(
       'a',

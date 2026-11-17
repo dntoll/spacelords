@@ -78,6 +78,72 @@ function corridor(objects: string) {
 }
 
 describe('forseglad-airlock', () => {
+  it('airlock-oppnar-at-blickriktning: lets an occupant see through its open door only', () => {
+    const map = parseBoardingMap(
+      [
+        '[meta]',
+        'name=Vertical airlock',
+        'width=3',
+        'height=7',
+        'rules=campaign',
+        '[terrain]',
+        'H.H',
+        'H.H',
+        'H.H',
+        'H.H',
+        'H.H',
+        'H.H',
+        'H.H',
+        '[objects]',
+        '---',
+        '---',
+        '---',
+        '-A-',
+        '---',
+        '---',
+        '---',
+        '[rooms]',
+        '---',
+        '---',
+        '---',
+        '---',
+        '---',
+        '---',
+        '---',
+        '[spawns]',
+        '---',
+        '-D-',
+        '---',
+        '-P-',
+        '---',
+        '---',
+        '---',
+      ].join('\n'),
+    );
+    const initial = BoardingBattle.create(map, 5).snapshot;
+    const player = initial.people.find((p) => p.side === 'player')!;
+    const guard = initial.people.find((p) => p.side === 'defender')!;
+    const facing = (direction: number) =>
+      BoardingBattle.restore(map, {
+        ...initial,
+        people: initial.people.map((p) =>
+          p.id === player.id
+            ? { ...p, facing: direction }
+            : p.id === guard.id
+              ? { ...p, facing: 3 }
+              : p,
+        ),
+      });
+    expect(facing(1).sightFrom(player.id)).toContainEqual(
+      expect.objectContaining({ q: 1, r: 1 }),
+    );
+    expect(facing(1).sightFrom(guard.id)).toContainEqual(
+      expect.objectContaining({ q: 1, r: 3 }),
+    );
+    expect(facing(3).sightFrom(player.id)).not.toContainEqual(
+      expect.objectContaining({ q: 1, r: 1 }),
+    );
+  });
   it('stops sight and shots through the airlock', () => {
     const open = corridor('-------');
     const sealed = corridor('---A---');

@@ -54,6 +54,7 @@ import {
 } from '../../models/map/BoardingMap.js';
 import {
   boardingActionPointsRemaining,
+  boardingOccupiedAirlockSide,
   type BoardingBattleState,
   type BoardingFeature,
   type BoardingPerson,
@@ -2415,10 +2416,16 @@ export class BoardingMapView implements BoardingMapPort {
             // automatisk-airlockcykel: closed unless a walker passes it.
             const side = Math.sign(door.position.r - position.r);
             const started = this.#airlockCycles.get(`${key(position)},${side}`);
+            const heldSide = boardingOccupiedAirlockSide(
+              position,
+              state.people,
+            );
             const openness =
-              started === undefined
-                ? 0
-                : boardingAirlockDoorOpenness(now - started);
+              heldSide === side
+                ? 1
+                : heldSide !== 0 || started === undefined
+                  ? 0
+                  : boardingAirlockDoorOpenness(now - started);
             for (const leaf of boardingDoorLeaves(openness))
               this.#paintThinWall(
                 sketch,

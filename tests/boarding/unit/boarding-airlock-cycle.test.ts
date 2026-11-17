@@ -6,8 +6,27 @@ import {
   boardingAirlockStepDuration,
   boardingAirlockWalkProgress,
 } from '../../../src/client/boarding/views/battle/BoardingAirlockCycle.js';
+import { boardingOccupiedAirlockSide } from '../../../src/client/boarding/models/battle/BoardingBattle.js';
 
 const airlock = { q: 4, r: 7 };
+
+describe('airlock-oppnar-at-blickriktning', () => {
+  it('holds only the door in the active occupant’s facing direction open', () => {
+    const occupant = {
+      position: airlock,
+      facing: 3,
+      status: 'active',
+    } as const;
+    expect(boardingOccupiedAirlockSide(airlock, [occupant])).toBe(1);
+    expect(
+      boardingOccupiedAirlockSide(airlock, [{ ...occupant, facing: 1 }]),
+    ).toBe(-1);
+    expect(
+      boardingOccupiedAirlockSide(airlock, [{ ...occupant, facing: 0 }]),
+    ).toBe(0);
+    expect(boardingOccupiedAirlockSide(airlock, [])).toBe(0);
+  });
+});
 
 describe('automatisk-airlockcykel', () => {
   it('uses the door on the side the walker comes from or goes to', () => {

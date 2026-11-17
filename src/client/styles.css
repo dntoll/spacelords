@@ -4167,6 +4167,10 @@ body:has(.discovery-controls) .selection-panel {
 }
 
 .boarding-details summary {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgb(5 9 18 / 98%);
   cursor: pointer;
 }
 
@@ -4601,6 +4605,17 @@ body:has(.discovery-controls) .selection-panel {
 
 .boarding-context-menu:empty {
   display: none;
+}
+
+.boarding-context-description {
+  flex-basis: 100%;
+  text-align: center;
+  text-transform: capitalize;
+  color: #fff;
+  background: rgb(8 18 32 / 94%);
+  border-radius: 4px;
+  padding: 3px 7px;
+  font-size: 0.75rem;
 }
 
 .boarding-context-action {

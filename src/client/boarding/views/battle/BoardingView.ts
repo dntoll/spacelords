@@ -1017,7 +1017,13 @@ export class BoardingView {
         symbol: '↱',
         command: { type: 'evacuate' },
       });
-    this.#showContextMenu(anchor, actions);
+    const terrain = this.#mapFor(state).terrainAt(anchor);
+    const description =
+      selectedPerson?.label ??
+      (selectedFeature
+        ? selectedFeature.kind.replaceAll('-', ' ')
+        : (terrain?.replaceAll('-', ' ') ?? 'Space'));
+    this.#showContextMenu(anchor, actions, description);
   }
 
   #showContextMenu(
@@ -1028,9 +1034,12 @@ export class BoardingView {
       command: BoardingCommand;
       disabled?: boolean;
     }[],
+    description: string,
   ): void {
-    if (!actions.length) return;
     this.#contextAnchor = anchor;
+    this.#contextMenu.append(
+      element('div', 'boarding-context-description', description),
+    );
     for (const action of actions) {
       const control = iconButton(
         action.label,
@@ -1081,7 +1090,7 @@ export class BoardingView {
       8 + width / 2,
       Math.min(this.#canvas.clientWidth - 8 - width / 2, point.x),
     );
-    let top = point.y - height - 34;
+    let top = point.y - height - 70;
     if (top < 8) top = point.y + 34;
     top = Math.max(8, Math.min(maxBottom - height, top));
     this.#contextMenu.style.left = `${left}px`;

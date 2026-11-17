@@ -23,8 +23,13 @@ export const DEFAULT_TEST_BOARDING_ATTACKER: CombatShipType = 'Space pirate';
  */
 export function composeTestBoarding(
   attacker: CombatShipType = DEFAULT_TEST_BOARDING_ATTACKER,
+  gangwayLength?: number,
 ): ComposedBoarding {
-  return composeBoardingInteriors(boardingInterior(attacker), testBoardingMap);
+  return composeBoardingInteriors(
+    boardingInterior(attacker),
+    testBoardingMap,
+    gangwayLength,
+  );
 }
 
 /** fristaende-bordningsprototyp: repeatable encounter outside saved games. */
@@ -45,7 +50,12 @@ export function boardingMapForState(state: BoardingBattleState): BoardingMap {
     return composeBoardingMaps(
       state.campaign.attackerType,
       state.campaign.defenderType,
+      state.campaign.gangwayLength ?? 6,
     ).map;
-  if (state.test) return composeTestBoarding(state.test.attackerType).map;
+  if (state.test)
+    return composeTestBoarding(
+      state.test.attackerType,
+      state.test.gangwayLength ?? 6,
+    ).map;
   return testBoardingMap;
 }

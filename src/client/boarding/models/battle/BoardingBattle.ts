@@ -153,9 +153,13 @@ export interface BoardingBattleState {
     readonly enemyZone: 'attacker' | 'defender';
     readonly attackerType: CombatShipType;
     readonly defenderType: CombatShipType;
+    readonly gangwayLength?: number;
   };
   /** testbordning-med-tva-skepp: the ship that docked with the test transport. */
-  readonly test?: { readonly attackerType: CombatShipType };
+  readonly test?: {
+    readonly attackerType: CombatShipType;
+    readonly gangwayLength?: number;
+  };
 }
 
 export type BoardingCommand =
@@ -262,6 +266,21 @@ const ADJACENT_DIRECTIONS: readonly BoardingCell[] = Object.freeze([
   Object.freeze({ q: -1, r: 1 }),
   Object.freeze({ q: 1, r: 1 }),
 ]);
+/** airlock-oppnar-at-blickriktning: an occupant opens at most one door. */
+export function boardingOccupiedAirlockSide(
+  cell: BoardingCell,
+  people: readonly Pick<BoardingPerson, 'position' | 'facing' | 'status'>[],
+): number {
+  const occupant = people.find(
+    (entry) =>
+      entry.status === 'active' &&
+      entry.position.q === cell.q &&
+      entry.position.r === cell.r,
+  );
+  return occupant
+    ? Math.sign(ADJACENT_DIRECTIONS[((occupant.facing % 8) + 8) % 8]!.r)
+    : 0;
+}
 export const BOARDING_RIFLE_AP = 4;
 /** billig-vandning: each 45-degree turn costs a quarter AP. */
 export const BOARDING_TURN_AP = 0.25;
@@ -465,7 +484,11 @@ function person(
   side: BoardingSide,
   index: number,
   position: BoardingCell,
-  extras: { readonly cockpit?: boolean; readonly label?: string } = {},
+  extras: {
+    readonly cockpit?: boolean;
+    readonly label?: string;
+    readonly facing?: number;
+  } = {},
 ): BoardingPerson {
   const label =
     side === 'player'
@@ -478,7 +501,7 @@ function person(
     label,
     side,
     position: frozenCell(position),
-    facing: side === 'defender' ? 2 : 0,
+    facing: extras.facing ?? (side === 'defender' ? 2 : 0),
     hitPoints: side === 'civilian' ? 6 : 10,
     maxHitPoints: side === 'civilian' ? 6 : 10,
     agility: side === 'civilian' ? 8 : 12,
@@ -576,12 +599,13 @@ export class BoardingBattle {
     const taken = new Set<string>();
     const boarders = spreadBoardingSpawns(
       composed.map,
-      composed.attackerAirlock,
+      composed.gangway,
       4,
       taken,
     );
     return BoardingBattle.#start(composed.map, seed, boarders, {
       attackerType,
+      gangwayLength: composed.gangwayLength,
     });
   }
 
@@ -592,7 +616,9 @@ export class BoardingBattle {
     test?: BoardingBattleState['test'],
   ): BoardingBattle {
     const people = [
-      ...players.map((position, index) => person('player', index, position)),
+      ...players.map((position, index) =>
+        person('player', index, position, test ? { facing: 3 } : {}),
+      ),
       ...map.spawns.defender.map((position, index) =>
         person('defender', index, position),
       ),
@@ -655,21 +681,27 @@ export class BoardingBattle {
       for (const cell of composed.defenderCivilians) occupy(cell);
     const cockpit = fill(cockpitCells, cockpitCells.length ? 1 : 0)[0];
     const playerCells = playerIsAttacker
-      ? fill(composed.defenderAirlock, 4)
+      ? fill(composed.gangway, 4)
       : fill(composed.defenderSpawns, 3);
     const enemyBoarders = playerIsAttacker
       ? fill(composed.defenderSpawns, 2)
-      : fill(composed.defenderAirlock, 3);
+      : fill(composed.gangway, 3);
     const people = [
       ...playerCells.map((position, index) =>
         person('player', index, position, {
           label: playerIsAttacker
             ? `Boarder ${index + 1}`
             : `Crew ${index + 1}`,
+          ...(playerIsAttacker ? { facing: 3 } : {}),
         }),
       ),
       ...enemyBoarders.map((position, index) =>
-        person('defender', index, position),
+        person(
+          'defender',
+          index,
+          position,
+          !playerIsAttacker ? { facing: 3 } : {},
+        ),
       ),
       ...(cockpit
         ? [
@@ -718,6 +750,7 @@ export class BoardingBattle {
         enemyZone: playerIsAttacker ? 'defender' : 'attacker',
         attackerType,
         defenderType,
+        gangwayLength: composed.gangwayLength,
       },
     });
     battle.#beginRound();
@@ -1186,7 +1219,12 @@ export class BoardingBattle {
 
   /** forseglad-airlock: an airlock and the outside never see each other. */
   #sealedApart(a: BoardingCell, b: BoardingCell): boolean {
-    return !same(a, b) && (this.#inAirlock(a) || this.#inAirlock(b));
+    if (same(a, b)) return false;
+    const airlock = this.#inAirlock(a) ? a : this.#inAirlock(b) ? b : null;
+    if (!airlock) return false;
+    const other = airlock === a ? b : a;
+    const open = boardingOccupiedAirlockSide(airlock, this.#state.people);
+    return open === 0 || Math.sign(other.r - airlock.r) !== open;
   }
 
   /** stang-oppen-dorr: reason the door action is unavailable, or null. */
@@ -1420,7 +1458,10 @@ export class BoardingBattle {
     if (!observer || observer.status !== 'active')
       return Object.freeze({ outline: [], halfCover: [], coverShadows: [] });
     // forseglad-airlock: behind closed doors the sight ends at the tile edge.
-    if (this.#inAirlock(observer.position)) {
+    if (
+      this.#inAirlock(observer.position) &&
+      boardingOccupiedAirlockSide(observer.position, this.#state.people) === 0
+    ) {
       const { q, r } = observer.position;
       return Object.freeze({
         outline: Object.freeze(

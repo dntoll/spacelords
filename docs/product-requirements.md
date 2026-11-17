@@ -425,7 +425,7 @@ avbryts och skeppen frikopplas.
 `testbordning-med-tva-skepp` och `valbart-skepp-i-testbordning` är
 **Fullständigt implementerat**. `Test boarding (cheat)` visar två skepp med
 landgång: ett valbart anfallande skepp, `Space pirate` som standard, och
-testtransporten. Bordarna startar i sitt eget skepp och målen gäller det
+testtransporten. Bordarna startar på landgången och målen gäller det
 bordade skeppet.
 
 `bargat-piratskepp-behaller-typ` och `unik-bild-for-civila-transporter` är
@@ -1460,7 +1460,15 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 `airlock-med-dubbla-geometridorrar` — **Fullständigt implementerat**. En airlock är en golvruta med en inre och en yttre dörr. Båda byggs med samma geometri, höjd och perspektiv som vanliga dörrar. Detta ersätter `airlock-i-60-graders-perspektiv` och dess separata airlockbild.
 
-`forseglad-airlock` — **Fullständigt implementerat**. Airlockens dörrar är automatiska och blockerar sikt. Ingen ser eller skjuter genom airlocken, och den som står i den är dold och ser inget utanför. Dörrarna själva syns utifrån. Att gå igenom kostar inget extra.
+`forseglad-airlock` — **Fullständigt implementerat**, med ändringen i `airlock-oppnar-at-blickriktning`: minst en dörr är stängd och förhindrar passage av sikt och skott genom hela airlocken. Att gå igenom kostar inget extra.
+
+`airlock-oppnar-at-blickriktning` — **Fullständigt implementerat**. En soldat i airlocken håller dörren i blickriktningen öppen, medan den motsatta är stängd. Detta ersätter att båda dörrarna alltid är stängda när någon står stilla.
+
+`landgang-med-bordningsstart` — **Fullständigt implementerat**. Landgången är tio rutor lång och bordarna börjar på den, vända mot skeppet de bordar. Detta ersätter den tidigare starten i ett skepp eller en airlock.
+
+`ihopfallbar-bordningslogg` — **Fullständigt implementerat**. Loggen kan fällas ihop även när man scrollat till slutet.
+
+`beskrivning-av-vald-bordningsruta` — **Fullständigt implementerat**. Menyn visar vad den valda rutan innehåller och dess knappar placeras högre upp när utrymmet tillåter.
 
 `automatisk-airlockcykel` — **Fullständigt implementerat**. När någon går igenom öppnas först den ena dörren, man går in, den stängs, sedan öppnas den andra och man går ut. Ersätter `oppna-airlockdorrar`.
 

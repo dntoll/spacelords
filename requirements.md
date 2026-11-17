@@ -10,6 +10,13 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Landgång och bordningsgränssnitt:** `landgang-med-bordningsstart`,
+  `airlock-oppnar-at-blickriktning`, `ihopfallbar-bordningslogg` och
+  `beskrivning-av-vald-bordningsruta` är **Fullständigt implementerade**.
+  Bordare börjar på en tio rutor lång landgång vända mot målskeppet;
+  airlockens dörr i soldatens blickriktning är öppen. Loggen kan fällas ihop
+  även efter scrollning och rutmenyn beskriver valet och ligger högre upp.
+
 - **Kompakt bordningslogg och stridskontroller:** `bordningslogg-i-hornet`,
   `senaste-raden-i-bordningsloggen` och `hallning-vid-vapnet` är
   **Fullständigt implementerat**. `Combat details` ligger uppe till vänster,
@@ -211,7 +218,7 @@ Se [hela visionen](docs/game-vision.md).
 - **Sammanfogade tunna väggar:** `sammanfogade-tunna-vaggar` är **Fullständigt implementerat**. En tunn vägg får sin form av grannarna: den sträcker en arm mot varje grannruta med vägg, ytterskrov, tunn vägg av valfri höjd eller en dörr i samma linje. Det ger raka väggar, ändar, hörn, T-korsningar, kryss och fristående pelare. Editorn har en pensel per höjd, `Thin wall` och `Low thin wall`. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 - **Fönster och glas:** `fonster-pa-halvhog-vagg`, `helhogt-fonster`, `krossbart-glas`, `glas-tintar-ljus`, `tunna-fonster` och `glas-krossas-nar-skottet-passerar` är **Fullständigt implementerat**. Glaset ritas nästan utan tjocklek. En halvhög tunn vägg har ett ljusblått fönster från väggens överkant till taket, och `High window pane` är ett fönster i full höjd. Glas släpper igenom sikt och skott men stoppar granatkast och gång. Ett skott som passerar glas krossar det i samma ögonblick som det animerade skottet når glaset, och glasbitar regnar ner; ett krossat `High window pane` går att kliva igenom. Ljus genom glas tintas blått. Se [bordningsstrid](docs/boarding/boarding-combat.md).
 
-- **Bordningsgrafik:** `isometriska-bordningsobjekt` och `airlock-med-dubbla-geometridorrar` är **Fullständigt implementerade**. Reactor visas med isometrisk grafik utan inbyggt golv. Airlockens tidigare sneda sprite är ersatt av en golvruta med en inre och en yttre 2,1 m hög dörr, byggda med samma geometri och texturer som vanliga dörrar. Det ersätter `airlock-i-60-graders-perspektiv`. `forseglad-airlock` och `automatisk-airlockcykel` är **Fullständigt implementerade**: dörrarna är automatiska, blockerar sikt och cyklar en i taget när någon går igenom, utan extra AP. De ersätter `oppna-airlockdorrar`. `halvskydd-som-geometri` är **Fullständigt implementerat**: Half cover är en 1,2 m hög låda byggd som geometri i spelets projektion, med texturerade sidor och ovansida och samma belysning som väggarna, i stället för en bild. Se [bordningsstrid](docs/boarding/boarding-combat.md).
+- **Bordningsgrafik:** `isometriska-bordningsobjekt` och `airlock-med-dubbla-geometridorrar` är **Fullständigt implementerade**. Reactor visas med isometrisk grafik utan inbyggt golv. Airlockens tidigare sneda sprite är ersatt av en golvruta med en inre och en yttre 2,1 m hög dörr, byggda med samma geometri och texturer som vanliga dörrar. Det ersätter `airlock-i-60-graders-perspektiv`. `forseglad-airlock` och `automatisk-airlockcykel` är **Fullständigt implementerade** med ändringen `airlock-oppnar-at-blickriktning`: dörrarna är automatiska och minst en hålls stängd. De ersätter `oppna-airlockdorrar`. `halvskydd-som-geometri` är **Fullständigt implementerat**: Half cover är en 1,2 m hög låda byggd som geometri i spelets projektion, med texturerade sidor och ovansida och samma belysning som väggarna, i stället för en bild. Se [bordningsstrid](docs/boarding/boarding-combat.md).
   `sprites-for-breach-och-escape-pod`, `oppen-escape-pod`, `rumsspecifikt-half-cover` och
   `galley-rum-i-bordning` är **Fullständigt implementerade**. Breach och
   escape pod har egna sprites; podden visas öppen och tom så att en person kan
@@ -530,13 +537,13 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Sparformatet är version 14 med additiv migrering.
   `dockning-sida-vid-sida` är **Fullständigt implementerat** och ersätter att
   försvararen låg spegelvänd till höger: anfallaren ligger ovanför,
-  försvararen under och en två rutor bred landgång på sex rutor med tunna
+  försvararen under och en två rutor bred landgång på tio rutor med tunna
   väggar förbinder airlockerna. `avbryt-gammal-bordning-vid-laddning` är
   **Fullständigt implementerat**: en pågående bordning sparad före ändringen
   avbryts vid laddning och skeppen frikopplas. `testbordning-med-tva-skepp`
   och `valbart-skepp-i-testbordning` är **Fullständigt implementerat**:
   `Test boarding (cheat)` dockar ett valt skepp (`Space pirate` som
-  standard) med testtransporten, och bordarna startar i sitt eget skepp. Se
+  standard) med testtransporten, och bordarna startar på landgången. Se
   [bordningsstrid](docs/boarding/boarding-combat.md),
   [taktisk strid](docs/space-battle/tactical-combat.md) och
   [space pirates](docs/space-pirates.md).

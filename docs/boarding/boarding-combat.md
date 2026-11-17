@@ -477,7 +477,7 @@ utförs stegvis. Vändning vänster och höger kan även göras separat.
   pågående rymdstridsrundan: två bordningsrundor, två rymdstridsrundor,
   upprepa. En aktiv bordning per rymdstrid.
 - `dockning-sida-vid-sida` — **Fullständigt implementerat**. Anfallaren ligger
-  ovanför och försvararen under. Landgången är två rutor bred och sex rutor
+  ovanför och försvararen under. Landgången är två rutor bred och tio rutor
   lång, med tunna väggar längs sidorna och en lampa i mitten. Ersätter att
   försvararen spegelvändes till höger.
 - `fast-airlock-i-bordningskarta` — **Fullständigt implementerat**. Exakt en
@@ -517,9 +517,9 @@ Karteditor, skrovgenombrott och vakuum ingår inte.
 
 `airlock-med-dubbla-geometridorrar` är **Fullständigt implementerat**. Airlockens skrovruta visar golv samt en inre och en yttre 2,1 m hög dörr på samma ruta. De använder vanliga dörrars projektion, texturer och ljus. Detta ersätter `airlock-i-60-graders-perspektiv` och den tidigare airlockbilden, vars perspektiv inte fungerade.
 
-`forseglad-airlock` är **Fullständigt implementerat**. Airlockens två dörrar är automatiska och minst en av dem är alltid stängd. Airlockrutan stoppar därför sikt, skott, granatbanor och splitter genom sig. Den som står i airlocken ser bara sin egen ruta och kan varken ses, beskjutas eller skadas av en granat utanför. De stängda dörrarna syns ändå utifrån: en airlock i spelarens siktlinje blir känd och ritas, men räknas inte som synlig, så ingen inuti visas. Att gå igenom kostar lika mycket AP som vanligt golv, och spelaren styr inte dörrarna.
+`forseglad-airlock` är **Fullständigt implementerat** med ändringen i `airlock-oppnar-at-blickriktning`: minst en dörr är stängd, men en aktiv soldat i airlocken håller dörren i sin blickriktning öppen. Detta ersätter att den som står i airlocken alltid är helt avskärmad. Att gå igenom kostar lika mycket AP som vanligt golv.
 
-`automatisk-airlockcykel` är **Fullständigt implementerat**. I vila är båda dörrarna stängda. Ett steg in i airlocken öppnar dörren på den sida man kommer ifrån; figuren väntar tills dörren är öppen, går in och dörren stängs bakom den. Ett steg ut öppnar den andra dörren, och den stängs medan figuren går vidare. Dörrarna är aldrig öppna samtidigt. Cykeln spelas bara för steg som syns, så dolda fiender avslöjas inte av dörrarna. Layoutredigeraren visar dörrarna stängda.
+`automatisk-airlockcykel` är **Fullständigt implementerat**. Ett steg öppnar dörren på den sida man passerar. En aktiv soldat i airlocken håller dörren i blickriktningen öppen enligt `airlock-oppnar-at-blickriktning`; den motsatta hålls stängd. Layoutredigeraren visar dörrarna stängda.
 
 Dessa två krav ersätter `oppna-airlockdorrar`, där dörrarna alltid ritades öppna.
 

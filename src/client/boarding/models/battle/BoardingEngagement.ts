@@ -88,6 +88,7 @@ export class BoardingEngagement {
     const composed = composeBoardingMaps(
       saved.attackerType,
       saved.defenderType,
+      saved.battle.campaign?.gangwayLength ?? 6,
     );
     if (saved.layout !== BOARDING_LAYOUT) {
       const battle = BoardingBattle.restore(composed.map, saved.battle);
