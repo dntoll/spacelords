@@ -207,8 +207,8 @@ Se [hela visionen](docs/game-vision.md).
   En zoomnivå gäller för spelaren oavsett soldat. När en egen soldat blir
   vald panoreras figuren till mitten av den fria kartytan och zoomen sätts
   till den nivån. Skott, synlig rörelse, en nyupptäckt figur och ett ljud
-  spelaren kan höra zoomar tillfälligt ut så att alla punkter i händelsen
-  syns, och kameran återgår sedan till spelarens zoom och panoreringen före
+  spelaren kan höra panorerar tillfälligt händelsen och de egna soldater
+  som ser den till bildens mitt och zoomar ut bara så mycket som behövs, och kameran återgår sedan till spelarens zoom och panoreringen före
   händelsen. En ny vald soldat blir i stället fokus. Det ersätter både
   kameran per soldat och att översikten låg kvar. Kameran tar hänsyn till HUD
   och kan avbrytas manuellt. Se

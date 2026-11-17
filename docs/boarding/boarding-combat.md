@@ -84,10 +84,12 @@ kommer från testtransportens startpositioner.
   kantmarginal räknas bort.
 - `kameraoverblick-vid-synlig-bordningsrorelse` — **Fullständigt implementerat**.
   Före varje synligt steg av en försvarare eller civilist, och när spelaren
-  hör ett nytt ljud, zoomar kameran vid behov ut så att alla punkter ryms.
+  hör ett nytt ljud, panorerar kameran så att figuren och de egna soldater
+  som ser den hamnar mitt på den fria kartytan, och zoomar ut bara så mycket
+  som behövs för att alla punkter ska rymmas.
   Endast synliga start- och slutpositioner påverkar kameran; riktning, barriärer
   och rök avgör vilka egna soldater som ser figuren. Kameran står still under
-  själva steget. Utzoomningen ligger kvar mellan stegen i samma uppspelning
+  själva steget. Inramningen ligger kvar mellan stegen i samma uppspelning
   och återgår sedan till spelarens zoom och panoreringen före händelsen.
   Dolda förflyttningar och stillastående turbyten ger ingen sådan kameraflytt.
 - `kameraoverblick-fore-bordningsskott` — **Fullständigt implementerat**. Före

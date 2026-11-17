@@ -759,6 +759,46 @@ it('kameraoverblick-vid-synlig-bordningsrorelse: a new sound the player can hear
   view.dispose();
 });
 
+it('kameraoverblick-vid-synlig-bordningsrorelse: an off-screen event is panned into the center instead of zooming out further than needed', async () => {
+  vi.stubGlobal('matchMedia', () => ({ matches: true }));
+  const { view, state, player } = scene(true);
+  const quiet = {
+    ...state,
+    currentActorId: player.id,
+    people: [player],
+    noiseMarkers: [],
+  };
+  view.render(quiet, null, null, []);
+  view.zoom(2);
+  const played = view.cameraSnapshot;
+  const sound = boardingIsoCenter({ q: 0, r: 0 });
+  const screenX = sound.x * played.scale + played.offset.x;
+  const screenY = sound.y * played.scale + played.offset.y;
+  const viewport = {
+    left: screenX + 100,
+    right: screenX + 700,
+    top: screenY - 300,
+    bottom: screenY + 300,
+  };
+  view.beginPresentation();
+  view.setViewportProvider(() => viewport);
+  await view.frameVisibleMovement(quiet, {
+    ...quiet,
+    noiseMarkers: [{ position: { q: 0, r: 0 }, audience: 'player' as const }],
+  });
+  const framed = view.cameraSnapshot;
+  expect(framed.scale).toBeCloseTo(played.scale);
+  const subjectCenterY = sound.y - 65 + 35;
+  expect(sound.x * framed.scale + framed.offset.x).toBeCloseTo(
+    (viewport.left + viewport.right) / 2,
+  );
+  expect(subjectCenterY * framed.scale + framed.offset.y).toBeCloseTo(
+    (viewport.top + viewport.bottom) / 2,
+  );
+  view.endPresentation();
+  view.dispose();
+});
+
 it('kamerafokus-vid-bordningssoldatbyte: an overview before the soldier acts is not stored as their view', async () => {
   vi.stubGlobal('matchMedia', () => ({ matches: true }));
   const { view, state, player } = scene(true);

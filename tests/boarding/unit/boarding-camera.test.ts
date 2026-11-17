@@ -11,6 +11,7 @@ const initial: BoardingCameraSnapshot = {
   offset: { x: 200, y: 340 },
 };
 const soldier = { x: 800, y: 50, width: 40, height: 90 };
+const observer = { x: -600, y: -300, width: 35, height: 90 };
 const screen = (at: BoardingCameraSnapshot, rect = soldier) => ({
   left: rect.x * at.scale + at.offset.x,
   right: (rect.x + rect.width) * at.scale + at.offset.x,
@@ -41,7 +42,7 @@ describe('kamerafokus-vid-bordningssoldatbyte', () => {
   });
   it('returns to the saved pan at the player zoom after a temporary overview', () => {
     const home = { x: 200, y: 340 };
-    const wide = camera.overview(initial, [soldier], bounds)[0]!.to;
+    const wide = camera.frame(initial, [soldier, observer], bounds)[0]!.to;
     expect(wide.scale).toBeLessThan(initial.scale);
     const phases = camera.restore(wide, home, initial.scale, bounds);
     expect(phases).toHaveLength(1);
@@ -53,13 +54,21 @@ describe('kamerafokus-vid-bordningssoldatbyte', () => {
 });
 
 describe('kameraoverblick-vid-synlig-bordningsrorelse', () => {
-  it('fits the mover and all observers in one zoom-out and never zooms back in', () => {
+  it('pans a lone off-screen mover to the center without zooming out', () => {
+    const phases = camera.frame(initial, [soldier], bounds);
+    expect(phases).toHaveLength(1);
+    expect(phases[0]!.to.scale).toBe(initial.scale);
+    const rect = screen(phases[0]!.to);
+    expect((rect.left + rect.right) / 2).toBeCloseTo(200);
+    expect((rect.top + rect.bottom) / 2).toBeCloseTo(340);
+  });
+  it('fits the mover and all observers in one pan and zoom-out and never zooms back in', () => {
     const subjects = [
       soldier,
       { x: -600, y: -300, width: 35, height: 90 },
       { x: 300, y: 600, width: 40, height: 90 },
     ];
-    const phases = camera.overview(initial, subjects, bounds);
+    const phases = camera.frame(initial, subjects, bounds);
     expect(phases).toHaveLength(1);
     const final = phases[0]!.to;
     expect(final.scale).toBeLessThan(initial.scale);
@@ -70,10 +79,10 @@ describe('kameraoverblick-vid-synlig-bordningsrorelse', () => {
       expect(rect.top).toBeGreaterThanOrEqual(bounds.top + 23.99);
       expect(rect.bottom).toBeLessThanOrEqual(bounds.bottom - 23.99);
     }
-    expect(camera.overview(final, subjects, bounds)).toEqual([]);
+    expect(camera.frame(final, subjects, bounds)).toEqual([]);
   });
   it('handles tiny viewports and permits automatic zoom below the manual minimum', () => {
-    const phases = camera.overview(initial, [soldier], {
+    const phases = camera.frame(initial, [soldier, observer], {
       left: 0,
       top: 0,
       right: 20,
@@ -81,7 +90,7 @@ describe('kameraoverblick-vid-synlig-bordningsrorelse', () => {
     });
     expect(phases[0]!.to.scale).toBeLessThan(0.08);
     expect(Number.isFinite(phases[0]!.to.offset.x)).toBe(true);
-    expect(camera.overview(initial, [], bounds)).toEqual([]);
+    expect(camera.frame(initial, [], bounds)).toEqual([]);
   });
 });
 

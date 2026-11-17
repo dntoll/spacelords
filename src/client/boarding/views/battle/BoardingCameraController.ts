@@ -152,43 +152,10 @@ export class BoardingCameraController {
     });
   }
 
-  /** kameraoverblick-vid-synlig-bordningsrorelse: only shrink around the free viewport center. */
-  overview(
-    from: BoardingCameraSnapshot,
-    subjects: readonly BoardingCameraSubject[],
-    viewport: BoardingCameraBounds,
-  ): readonly BoardingCameraTransition[] {
-    const bounds = this.#safeBounds(viewport);
-    if (
-      !subjects.length ||
-      bounds.right <= bounds.left ||
-      bounds.bottom <= bounds.top ||
-      subjects.every((subject) => this.#contains(from, subject, bounds))
-    )
-      return Object.freeze([]);
-    const anchor = center(bounds);
-    const world = {
-      x: (anchor.x - from.offset.x) / from.scale,
-      y: (anchor.y - from.offset.y) / from.scale,
-    };
-    let scale = from.scale;
-    for (const subject of subjects) {
-      for (const [distance, room] of [
-        [world.x - subject.x, anchor.x - bounds.left],
-        [subject.x + subject.width - world.x, bounds.right - anchor.x],
-        [world.y - subject.y, anchor.y - bounds.top],
-        [subject.y + subject.height - world.y, bounds.bottom - anchor.y],
-      ] as const)
-        if (distance > 0) scale = Math.min(scale, room / distance);
-    }
-    const to = snapshot(Math.max(Number.EPSILON, scale), {
-      x: anchor.x - world.x * scale,
-      y: anchor.y - world.y * scale,
-    });
-    return Object.freeze([this.#phase(from, to, world)]);
-  }
-
-  /** kameraoverblick-fore-bordningsskott: center both combatants and only zoom out as far as needed. */
+  /**
+   * kameraoverblick-fore-bordningsskott / kameraoverblick-vid-synlig-bordningsrorelse:
+   * pan to the center of all subjects and only zoom out as far as needed.
+   */
   frame(
     from: BoardingCameraSnapshot,
     subjects: readonly BoardingCameraSubject[],
