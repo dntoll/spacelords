@@ -103,6 +103,8 @@ function transform(
 
 export interface ComposedBoarding {
   readonly map: BoardingMap;
+  readonly gangwayLength: number;
+  readonly gangway: readonly BoardingCell[];
   readonly attackerAirlock: readonly BoardingCell[];
   readonly defenderAirlock: readonly BoardingCell[];
   readonly attackerCockpit: readonly BoardingCell[];
@@ -212,7 +214,7 @@ function columnExtent(
 }
 
 /** dockning-sida-vid-sida: long enough to fight over the crossing. */
-const GANGWAY_LENGTH = 6;
+export const GANGWAY_LENGTH = 10;
 
 /**
  * dockning-sida-vid-sida: the attacker lies above with its airlock facing
@@ -223,6 +225,7 @@ const GANGWAY_LENGTH = 6;
 export function composeBoardingInteriors(
   attacker: BoardingMap,
   defender: BoardingMap,
+  gangwayLength = GANGWAY_LENGTH,
 ): ComposedBoarding {
   const attackerDock = dockingAirlock(attacker);
   const defenderDock = dockingAirlock(defender);
@@ -244,7 +247,7 @@ export function composeBoardingInteriors(
   const defenderAirLocal = defenderLocal(defenderDock.cell);
   const above = columnExtent(attacker, placeAttacker);
   const below = columnExtent(defender, defenderLocal);
-  let defenderR = attackerAir.r + 1 + GANGWAY_LENGTH - defenderAirLocal.r;
+  let defenderR = attackerAir.r + 1 + gangwayLength - defenderAirLocal.r;
   for (const [q, extent] of above) {
     const lower = below.get(q);
     if (lower) defenderR = Math.max(defenderR, extent.bottom - lower.top + 1);
@@ -380,6 +383,8 @@ export function composeBoardingInteriors(
   );
   return {
     map,
+    gangwayLength,
+    gangway,
     attackerAirlock: [attackerAir],
     defenderAirlock: [defenderAir],
     attackerCockpit: top.cockpits,
@@ -393,9 +398,11 @@ export function composeBoardingInteriors(
 export function composeBoardingMaps(
   attackerType: CombatShipType,
   defenderType: CombatShipType,
+  gangwayLength = GANGWAY_LENGTH,
 ): ComposedBoarding {
   return composeBoardingInteriors(
     boardingInterior(attackerType),
     boardingInterior(defenderType),
+    gangwayLength,
   );
 }

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('bordningshud-i-botten: compact equipment and contextual soldier actions fit on mobile', async ({
+test('bordningshud-i-botten / ihopfallbar-bordningslogg: controls fit and a scrolled log can close on mobile', async ({
   page,
   browserName,
 }) => {
@@ -44,6 +44,22 @@ test('bordningshud-i-botten: compact equipment and contextual soldier actions fi
   expect(cornerBox.x + cornerBox.width).toBeGreaterThan(
     page.viewportSize()!.width - 20,
   );
+  const details = dialog.locator('.boarding-details');
+  await details.locator('summary').click();
+  await details.locator('.boarding-log').evaluate((log) => {
+    log.textContent = Array.from(
+      { length: 80 },
+      (_, index) => `Event ${index}`,
+    ).join('\n');
+  });
+  await details.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  await expect
+    .poll(() => details.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
+  await details.locator('summary').click();
+  await expect(details).not.toHaveAttribute('open', '');
   const fourth = dialog
     .getByRole('region', { name: 'Boarding team' })
     .getByRole('button', { name: /^Boarder 4,/ });

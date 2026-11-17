@@ -117,7 +117,7 @@ describe('tva-skepp-pa-bordningskartan', () => {
 });
 
 describe('avbryt-bordning-i-egna-skepp', () => {
-  it('starts attackers in the defender airlock so abort is not legal yet', () => {
+  it('landgang-med-bordningsstart: starts attackers in the gangway so abort is not legal yet', () => {
     const composed = composeBoardingMaps('Space pirate', 'Transport ship');
     const battle = BoardingBattle.createCampaign(
       composed,
@@ -133,7 +133,9 @@ describe('avbryt-bordning-i-egna-skepp', () => {
     expect(players).toHaveLength(4);
     expect(
       players.every(
-        (person) => composed.map.zoneAt(person.position) === 'defender',
+        (person) =>
+          composed.map.zoneAt(person.position) === 'bridge' &&
+          person.facing === 3,
       ),
     ).toBe(true);
     expect(
@@ -154,6 +156,18 @@ describe('avbryt-bordning-i-egna-skepp', () => {
       const living = battle.snapshot.people.filter(
         (person) => person.status === 'active',
       );
+      const boarders = living.filter((person) =>
+        playerIsAttacker
+          ? person.side === 'player'
+          : person.side === 'defender' && !person.cockpit,
+      );
+      expect(
+        boarders.every(
+          (person) =>
+            composed.map.zoneAt(person.position) === 'bridge' &&
+            person.facing === 3,
+        ),
+      ).toBe(true);
       const keys = living.map(
         (person) => `${person.position.q},${person.position.r}`,
       );

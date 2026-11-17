@@ -221,6 +221,8 @@ Avståndet växer så att inga kolumner överlappar. Kartreglerna
 `testbordning-med-tva-skepp`: `BoardingBattleState.test` anger det valda
 skeppet, och `boardingMapForState` bygger om samma karta. Testreglerna
 (Bridge, Engineering och reaktorn) gäller bara det bordade skeppet.
+`landgang-med-bordningsstart`: längden sparas additivt i stridens snapshot;
+saknas fältet används sex rutor för att bevara äldre pågående bordningar.
 
 AppModel äger fortfarande den fristående testsessionen från huvudmenyn.
 `boarding-command` samordnas av MasterController och en separat

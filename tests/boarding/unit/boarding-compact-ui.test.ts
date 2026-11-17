@@ -120,6 +120,16 @@ it('kontextstyrda-bordningshandlingar: opens rotation actions around the active 
   setup.view.dispose();
 });
 
+it('beskrivning-av-vald-bordningsruta: identifies the selected soldier above its actions', () => {
+  const setup = compactView();
+  setup.select(setup.actor.position, setup.actor.id);
+  const menu = document.querySelector('.boarding-context-menu')!;
+  expect(menu.querySelector('.boarding-context-description')?.textContent).toBe(
+    setup.actor.label,
+  );
+  setup.view.dispose();
+});
+
 it('senaste-raden-i-bordningsloggen: previews new log entries briefly and autoscrolls the open log', () => {
   vi.useFakeTimers();
   try {
