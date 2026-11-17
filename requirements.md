@@ -17,6 +17,17 @@ Se [hela visionen](docs/game-vision.md).
   airlockens dörr i soldatens blickriktning är öppen. Loggen kan fällas ihop
   även efter scrollning och rutmenyn beskriver valet och ligger högre upp.
 
+- **Bordningsfeedback november 2026:** `kantindikator-utanfor-granssnitt`,
+  `bordare-vid-malskeppets-ande`, `eget-skepp-upptackt`, `tunnare-dorrar`,
+  `airlockdorr-framfor-soldat`, `fiender-reagerar-pa-ljud`,
+  `fiender-soker-upp-bordare`, `samlat-pc-granssnitt`,
+  `meny-ovanfor-valt-mal`, `hp-i-valt-mal`, `tunn-ram-kring-vald-ruta` och
+  `skott-genom-dubbelklick` är **Fullständigt implementerade**. Crosshair vid
+  kanten hamnar aldrig under gränssnittet, bordarna står vid målskeppets ände
+  av landgången, försvarare hör ljud inom räckhåll och söker upp bordarna, och
+  ett dubbelklick på en fiende skjuter. Se
+  [bordningsstrid](docs/boarding/boarding-combat.md).
+
 - **Kompakt bordningslogg och stridskontroller:** `bordningslogg-i-hornet`,
   `senaste-raden-i-bordningsloggen` och `hallning-vid-vapnet` är
   **Fullständigt implementerat**. `Combat details` ligger uppe till vänster,

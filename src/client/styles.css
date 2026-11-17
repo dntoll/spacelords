@@ -4670,6 +4670,33 @@ body:has(.discovery-controls) .selection-panel {
   }
 }
 
+/* samlat-pc-granssnitt: with a mouse the HUD gathers at the bottom centre,
+   leaving the corners to the board; the top row stays where it is. */
+@media (min-width: 681px) and (hover: hover) and (pointer: fine) {
+  .boarding-controls {
+    right: auto;
+    left: 50%;
+    grid-template-areas:
+      'status status'
+      'team team'
+      'equipment global';
+    grid-template-columns: auto auto;
+    justify-content: center;
+    column-gap: 12px;
+    width: max-content;
+    max-width: min(900px, calc(100% - 12px));
+    transform: translateX(-50%);
+  }
+
+  .boarding-controls > .boarding-status {
+    justify-self: center;
+  }
+
+  .boarding-global-controls {
+    justify-content: flex-start;
+  }
+}
+
 /* synlig-byggversion: small, but readable on the saved games screen. */
 .app-header > .build-label {
   align-self: center;

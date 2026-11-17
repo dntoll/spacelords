@@ -124,8 +124,9 @@ it('beskrivning-av-vald-bordningsruta: identifies the selected soldier above its
   const setup = compactView();
   setup.select(setup.actor.position, setup.actor.id);
   const menu = document.querySelector('.boarding-context-menu')!;
+  // hp-i-valt-mal: the title is followed by the soldier's hit points.
   expect(menu.querySelector('.boarding-context-description')?.textContent).toBe(
-    setup.actor.label,
+    `${setup.actor.label} · ${setup.actor.hitPoints}/${setup.actor.maxHitPoints} HP`,
   );
   setup.view.dispose();
 });
