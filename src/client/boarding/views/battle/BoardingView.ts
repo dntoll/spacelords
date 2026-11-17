@@ -438,6 +438,7 @@ export class BoardingView {
     // skott-genom-dubbelklick: a second click on an enemy fires at it.
     if (
       mode === 'shoot' &&
+      this.#armedAction !== 'gadget' &&
       playerTurn &&
       actor &&
       person?.side === 'defender'
@@ -459,7 +460,8 @@ export class BoardingView {
       return;
     }
     if (
-      (mode === 'center-target' || mode === 'shoot') &&
+      (mode === 'center-target' ||
+        (mode === 'shoot' && this.#armedAction !== 'gadget')) &&
       playerTurn &&
       person &&
       person.side !== 'player'

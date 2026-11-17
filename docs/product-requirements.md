@@ -1472,6 +1472,8 @@ att nybyggda Civilian shuttles alltid startar i en egen automatisk flotta.
 
 `meny-ovanfor-valt-mal` — **Fullständigt implementerat**. Titeln och knapparna för vald ruta ligger ovanför målet, särskilt ovanför en vald person eller dörr.
 
+`granat-mot-vald-fiende` — **Fullständigt implementerat**. En utrustad granat kan kastas mot en vald fiendes ruta när kastet är möjligt, även när fienden väljs med dubbeltryck.
+
 `handlingsknappar-ovanfor-halsomatare` — **Fullständigt implementerat**. Handlingarna visas ovanför figurens hälsomätare när utrymmet tillåter.
 
 `kompakt-titel-for-vald-bordningsruta` — **Fullständigt implementerat**. Titelns bakgrund följer textens bredd med en liten marginal.

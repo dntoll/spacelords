@@ -129,6 +129,21 @@ it('utrustningsknapp-utfor-valt-mal: throws a frag grenade at the selected enemy
   s.view.dispose();
 });
 
+it('granat-mot-vald-fiende: an armed grenade targets the enemy even on a double tap', () => {
+  const s = setup();
+  document
+    .querySelector<HTMLButtonElement>(
+      '.boarding-equipment [aria-label^="Frag grenade"]',
+    )!
+    .click();
+  s.select(s.enemy.position, s.enemy.id, 'shoot');
+  expect(s.emit).toHaveBeenCalledWith({
+    type: 'boarding-command',
+    command: { type: 'grenade', grenade: 'frag', at: s.enemy.position },
+  });
+  s.view.dispose();
+});
+
 it('rokgranat-pa-person: permits choosing a civilian as a smoke grenade target', () => {
   const s = setup('smoke-grenade');
   s.select(s.civilian.position, s.civilian.id);
