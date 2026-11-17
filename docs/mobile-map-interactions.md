@@ -8,6 +8,12 @@ Förtydliganden 2026-10-27. Befintliga sparade spel bevaras.
   höjd. Innehållet går fortsatt att rulla och End turn har egen plats.
   Detta kompletterar `rullningsbar-kartpanel` och `gemensam-events-panel` och
   ersätter det tidigare tomma avståndet för en separat kartlogg.
+- `spelnotis-synlig` — **Fullständigt implementerat**: Korta spelnotiser,
+  exempelvis `Shipyard construction queued.` efter `Build here` för ett
+  Orbital shipyard, visas överst i innehållsytan under flikarna, ovanför kartan
+  och detaljpanelen. De ryms helt inom skärmen på både mobil och dator och döljs
+  inte av Events eller End turn. Buggrättning 2026-11-17: notisen låg tidigare
+  vid nederkanten bakom den gemensamma sidfoten.
 - `centrerat-kartfokus` — **Fullständigt implementerat**: Show placerar den
   berörda planeten eller flottan mitt i kartytan som återstår bredvid eller
   ovanför detaljpanelen. Production håller även byggvalen synliga; om de inte
