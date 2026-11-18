@@ -907,7 +907,7 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   **Ej implementerat**. Råvaror och delar delas inom ett nätverk av planeter
   som är förbundna med fraktskepp. Bara utvinning och slutprodukter är
   platsbundna. Varje länk mellan planeter tar en runda (`en-runda-per-lank`). Vyn prototypas separat. Kraven ersätter Route, Production och
-  den fysiska frakten när de implementeras. Se
+  den fysiska frakten när de implementeras. Skepp beställs fortsatt från kartans Production (`skeppsorder-pa-planeten`). Se
   [förenklad produktion](docs/simple-production.md).
   `forsorjningsoversikt`, `relevanta-material` och `materialoversikt` ersätts;
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
