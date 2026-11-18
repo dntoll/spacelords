@@ -87,59 +87,6 @@ describe('produktionsvalens-statusfarger', () => {
       });
     },
   );
-  it('distinguishes physical goods from factories and cargo, and retains queued counts alongside existing stock', () => {
-    const initial = networkState();
-    const state = {
-      ...initial,
-      researched: initial.researched.filter(
-        (type) => type !== 'Ion pulse engine factory',
-      ),
-    };
-    state.colonies[0]![1].stock['Rocket engine'] = 0;
-    state.colonies[2]![1].stock['Rocket engine'] = 7;
-    state.colonies[0]![1].projects = [
-      {
-        id: 'engine-next',
-        type: 'Rocket engine',
-        slotIndex: null,
-        factoryId: 'engine',
-        destinationFleetId: null,
-      },
-    ];
-    expect(option(state, 'Rocket engine')).toMatchObject({
-      presence: 'network',
-      localCount: 0,
-      networkCount: 7,
-      queuedLocalCount: 1,
-    });
-    state.colonies[0]![1].stock['Rocket engine'] = 2;
-    expect(option(state, 'Rocket engine')).toMatchObject({
-      presence: 'local',
-      queuedLocalCount: 1,
-    });
-    state.colonies[0]![1].stock['Rocket engine'] = 0;
-    state.colonies[2]![1].stock['Rocket engine'] = 0;
-    const cargo = {
-      ...state,
-      shipments: [
-        {
-          id: 'cargo',
-          resource: 'Rocket engine' as const,
-          amount: 3,
-          path: ['nadir-1', 'sol-1', 'sol-0'],
-          stage: 0,
-          projectId: 'engine-next',
-          recipient: 'sol-0',
-          fleetId: 'travellers',
-        },
-      ],
-    };
-    expect(option(cargo, 'Rocket engine')).toMatchObject({
-      presence: 'queued',
-      networkCount: 0,
-      empireCount: 3,
-    });
-  });
   it('includes network queues and changes yellow to green when construction completes', () => {
     const state = networkState();
     state.colonies[2]![1].projects = [

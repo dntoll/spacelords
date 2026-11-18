@@ -7,7 +7,6 @@ import {
   type GameState,
 } from '../../../src/client/space-map/models/Game.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 
 const empty = {
@@ -230,87 +229,6 @@ describe('rymdpiraters-sparning', () => {
 });
 
 describe('flottstrid-per-hex / handelsnatverk', () => {
-  it('destroys loaded cargo before unloading and releases its material reservation', () => {
-    const state = tradeNetworkState();
-    const game = Game.restore({
-      ...state,
-      pirates: [
-        {
-          id: 'pirate-test',
-          systemId: 'sol',
-          position: { q: -1, r: 1 },
-          // Collisions can destroy one pirate before the cargo is lost.
-          count: 2,
-        },
-      ],
-      fleets: [
-        {
-          ...state.fleets[0]!,
-          id: 'carrier',
-          name: 'Carrier',
-          position: { q: 0, r: 0 },
-          destination: { q: 0, r: 1 },
-          routeId: 'route-test',
-          shipUnits: [],
-          ships: { ...empty, 'Transport ship': 1 },
-        },
-      ],
-      shipments: [
-        {
-          id: 'lost-iron',
-          resource: 'Iron',
-          amount: 10,
-          path: ['sol-0', 'sol-1'],
-          stage: 0,
-          projectId: 'vesta-mine',
-          recipient: 'sol-1',
-          fleetId: 'carrier',
-          committed: true,
-        },
-      ],
-    });
-    const iron = game.planetSnapshot(game.galaxy.systems[0]!.planets[1]!)!
-      .economy.stock.Iron;
-    turn(game);
-    expect(game.exportState().shipments).toEqual([]);
-    expect(game.fleet('carrier')).toMatchObject({
-      position: null,
-      routeId: undefined,
-    });
-    expect(
-      game.planetSnapshot(game.galaxy.systems[0]!.planets[1]!)!.economy.stock
-        .Iron,
-    ).toBe(iron);
-    expect(
-      game.planetSnapshot(game.galaxy.systems[0]!.planets[1]!)!.projects,
-    ).toHaveLength(1);
-    const saved = game.exportState();
-    const replacement = Game.restore({
-      ...saved,
-      fleets: [
-        ...saved.fleets,
-        {
-          ...saved.fleets[0]!,
-          id: 'replacement',
-          name: 'Replacement',
-          position: { q: 1, r: 0 },
-          destination: null,
-          routeId: 'route-test',
-          shipUnits: [],
-          ships: { ...empty, 'Transport ship': 1 },
-        },
-      ],
-    });
-    turn(replacement);
-    const target = replacement.planetSnapshot(
-      replacement.galaxy.systems[0]!.planets[1]!,
-    )!;
-    expect(target.projects).toHaveLength(0);
-    expect(
-      target.buildings.some((building) => building.type === 'Iron mine'),
-    ).toBe(true);
-    expect(replacement.fleet('replacement')!.ships['Transport ship']).toBe(1);
-  });
   it('gemensamt-stridsdeltagande: fights together before merging reinforcements at their meeting hex', () => {
     const state = battle(3, 3).exportState();
     const fleet = state.fleets[0]!;

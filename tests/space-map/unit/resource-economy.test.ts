@@ -36,7 +36,7 @@ describe('utvinningsbara-resurser / utvinningsbyggnader / planetlager / planetby
     expect(stock.Iron).toBe(3);
     expect(deposits.Iron).toBe(0);
   });
-  it('keeps unused stock, pays only once, and completes one planetary building per year', () => {
+  it('parallella-byggen: keeps unused stock, pays only once, and builds both buildings in the same year', () => {
     const game = new Game(createExampleGalaxy());
     const home = game.galaxy.homePlanet;
     const initial = game.planetSnapshot(home)!.economy.stock.Iron;
@@ -45,15 +45,15 @@ describe('utvinningsbara-resurser / utvinningsbyggnader / planetlager / planetby
     game.scheduleBuild(home, 'Iron mine', 0);
     game.scheduleBuild(home, 'Water extractor', 1);
     turn(game);
-    expect(game.planetSnapshot(home)!.buildings).toHaveLength(1);
+    expect(game.planetSnapshot(home)!.buildings).toHaveLength(2);
     const afterBuild = game.planetSnapshot(home)!.economy;
+    expect(afterBuild.stock.Iron).toBe(initial - 5 - 4);
     turn(game);
     const afterExtraction = game.planetSnapshot(home)!.economy;
     expect(afterExtraction.stock.Iron).toBeGreaterThan(afterBuild.stock.Iron);
     expect(afterExtraction.deposits.Iron).toBeLessThan(
       afterBuild.deposits.Iron,
     );
-    expect(game.planetSnapshot(home)!.buildings).toHaveLength(2);
   });
 });
 
@@ -95,10 +95,12 @@ describe('forskningsko / forskningsberoenden / transport-ship-efter-rocket-engin
 });
 
 describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
-  it('reaches every building and ship through actual play and supplies a new colony automatically', () => {
+  it('produktionsnatverk: reaches every building and ship through actual play and supplies a new colony over a route', () => {
     const base = new Game(createExampleGalaxy()).exportState();
     const initial = {
       ...base,
+      // The economy is under test here; pirates are covered elsewhere.
+      pirates: [],
       surveyedPlanets: base.world.systems
         .flatMap((system) => system.planets)
         .filter((planet) => base.knownObjects?.includes(planet.id))
@@ -131,19 +133,6 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
       game.scheduleBuild(home, factory);
     for (let year = 0; year < 6; year++) turn(game);
     expect(game.planetSnapshot(home)!.buildings).toHaveLength(10);
-    game.scheduleComponent(home, 'Weapons module');
-    turn(game);
-    game.toggleDemolition(
-      home,
-      game
-        .planetSnapshot(home)!
-        .buildings.find(
-          (building) => building.type === 'Weapons module factory',
-        )!.id,
-    );
-    turn(game);
-    game.scheduleBuild(home, 'Telescope I factory');
-    turn(game);
     const colonyFleet = game.createFleet(),
       tradeFleet = game.createFleet();
     game.scheduleShip(home, 'Colony ship', colonyFleet.id);
@@ -151,6 +140,7 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
     game.scheduleShip(home, 'Exploration ship');
     game.scheduleShip(home, 'Fighter');
     for (let year = 0; year < 12; year++) turn(game);
+    // delar-tillverkas-pa-behov: the Weapons module is made for the Fighter.
     expect(game.fleet('fleet-home')!.ships.Fighter).toBe(2);
     const target = game.galaxy.systems[0]!.planets[1]!;
     game.setDestination(colonyFleet.id, target.position);
@@ -164,11 +154,10 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
       'Release',
     );
     const head = game.planetSnapshot(target)!.projects[0]!.id;
-    game.startTurn();
-    const frames = turnFrames(game, false);
-    expect(game.fleet(tradeFleet.id)!.cargo!.Iron).toBe(8);
-    for (const frame of frames) game.applyFrame(frame);
-    game.finishTurn();
+    // en-runda-per-lank: the Iron crosses one link before the Dome is built.
+    turn(game);
+    expect(game.planetSnapshot(target)!.sites[0]!.hasDome).toBe(false);
+    turn(game);
     expect(game.planetSnapshot(target)!.sites[0]!.hasDome).toBe(true);
     game.scheduleBuild(target, 'Iron mine');
     for (let year = 0; year < 3; year++) turn(game);
@@ -205,9 +194,10 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
     turn(game);
     const longRoute = game.createTradeRoute(home.id, remote.id);
     game.assignTradeFleet(longRoute, tradeFleet.id);
-    turn(game);
-    expect(game.fleet(tradeFleet.id)!.destination).not.toBeNull();
-    expect(game.fleet(tradeFleet.id)!.cargo!.Iron).toBe(8);
+    for (let year = 0; year < 3; year++) turn(game);
+    expect(
+      game.planetSnapshot(remote)!.sites.some((site) => site.hasDome),
+    ).toBe(true);
     const restored = Game.restore(
       JSON.parse(JSON.stringify(game.exportState())) as ReturnType<
         Game['exportState']

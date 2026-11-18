@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { upgradeState } from '../../fixtures/fleet-upgrades.js';
 import { tradeNetworkState } from '../../fixtures/trade-network.js';
-import {
-  Game,
-  engineCount,
-  type ShipType,
-} from '../../../src/client/space-map/models/Game.js';
+import { Game } from '../../../src/client/space-map/models/Game.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { finishYear } from '../../fixtures/salvage.js';
 

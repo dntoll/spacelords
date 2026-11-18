@@ -51,6 +51,9 @@ package "production" as space_map__production {
   rectangle "<b>models</b>\nProductionFacade" as space_map__production__models
   rectangle "<b>views</b>\nProductionMapView" as space_map__production__views
 }
+package "production-network" as space_map__production_network {
+  rectangle "<b>models</b>\nNetworkEconomy" as space_map__production_network__models
+}
 package "research" as space_map__research {
   rectangle "<b>controllers</b>\nResearchController" as space_map__research__controllers
   rectangle "<b>models</b>\nResearch\nResearchFacade\nResearchTree" as space_map__research__models
@@ -95,6 +98,7 @@ space_map__star_map__views --> space_map__star_map__models
 space_map__turn__controllers ..> space_map__turn__models : typer
 space_map__turn__views ..> space_map__turn__models : typer
 space_map___delat_ --> space_map__fleets : 4
+space_map___delat_ --> space_map__production_network : 1
 space_map___delat_ --> space_map__research : 2
 space_map___delat_ ..> space_map__saves : 1, typer
 space_map___delat_ --> space_map__star_map : 4
@@ -105,6 +109,7 @@ space_map__fleets --> space_map___delat_ : 12
 space_map__orders ..> space_map___delat_ : 7, typer
 space_map__planet --> space_map___delat_ : 21
 space_map__production --> space_map___delat_ : 13
+space_map__production_network --> space_map___delat_ : 1
 space_map__research --> space_map___delat_ : 10
 space_map__research --> space_map__star_map : 1
 space_map__saves --> space_map___delat_ : 8

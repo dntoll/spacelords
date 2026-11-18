@@ -220,10 +220,6 @@ function buildShipyard(model: AppModel): void {
   advance(model);
   model.build('Rocket engine factory');
   advance(model);
-  for (let index = 0; index < 6; index++) {
-    model.scheduleComponent('Rocket engine');
-    advance(model);
-  }
 }
 
 describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () => {
@@ -349,7 +345,8 @@ describe('kolonisation / kartorderstatus', () => {
     const model = new AppModel();
     buildShipyard(model);
     model.scheduleShip('Colony ship', null);
-    advance(model);
+    // en-enhet-per-fabrik-och-runda: three engines, then the ship.
+    for (let year = 0; year < 4; year++) advance(model);
     model.setDestination('fleet-home', 0, 1);
     advance(model);
     model.select(new HexCoordinate(0, 1));

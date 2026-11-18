@@ -91,6 +91,7 @@ import {
   MATERIALS,
   COMPONENTS,
   type Component,
+  type Material,
   emptyStock,
   type Stock,
   type EconomySnapshot,
@@ -5792,7 +5793,6 @@ export class Game {
         label: 'Choose research',
         kind: 'research',
       });
-    const supplies = this.supplyOverview().planets;
     if (
       this.#research.queue.length &&
       this.#researchQueueIssue() &&
@@ -5841,8 +5841,6 @@ export class Game {
           kind: 'planet',
           planetId: planet.id,
         });
-      const supply = supplies.find((p) => p.id === planet.id)!;
-      const status = this.#supplyDescription(supply);
       const { blocks } = this.#allocation(planet, state);
       const project = state.projects[0];
       const factory = project
@@ -5867,14 +5865,12 @@ export class Game {
           kind: 'planet',
           planetId: planet.id,
         });
-      if (
-        supply.materials.some(
-          (material) => material.unprovided > 0 && !material.waitingReason,
-        )
-      )
+      // blockerad-fabrik: something here needs goods its group cannot make.
+      const missing = this.#missingInGroup(planet);
+      if (missing.length)
         items.push({
           id: `supply-${planet.id}`,
-          label: `${planet.name}: ${status.slice(16)}`,
+          label: `${planet.name}: no ${missing.join(', ')} in its group`,
           kind: 'planet',
           planetId: planet.id,
         });
@@ -7032,6 +7028,43 @@ export class Game {
   }
 
   /** erovrad-last: goods crossing a lost transport's route are lost. */
+  /** blockerad-fabrik: materials neither held nor made in the group. */
+  #missingInGroup(planet: Planet): readonly Material[] {
+    const group = this.#networkGroup(planet.id);
+    const planets = this.#ownedPlanets().filter((item) =>
+      group.includes(item.id),
+    );
+    const needed = new Set<Material>();
+    for (const consumer of this.#networkConsumers())
+      if (consumer.planetId === planet.id)
+        for (const material of MATERIALS)
+          if ((consumer.needs[material] ?? 0) > 0) needed.add(material);
+    return [...needed].filter(
+      (material) =>
+        !planets.some((item) => {
+          const state = this.#state(item);
+          return (
+            state.stock[material] > 0 ||
+            state.buildings.some(
+              (building) =>
+                !building.demolition &&
+                (BUILDINGS[building.type].component === material ||
+                  (BUILDINGS[building.type].extraction === material &&
+                    state.deposits[material] > 0)),
+            )
+          );
+        }) &&
+        !this.#networkConsumers().some(
+          (consumer) =>
+            consumer.planetId === planet.id &&
+            ((this.#network.delivered(consumer.id)[material] ?? 0) > 0 ||
+              this.#network
+                .incoming(consumer.id)
+                .some((transit) => transit.material === material)),
+        ),
+    );
+  }
+
   #captureRouteCargo(fleet: Fleet): void {
     const route = this.#logistics.routes.find(
       (item) => item.id === fleet.routeId,

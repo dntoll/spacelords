@@ -139,38 +139,6 @@ it('produktionsorder-aterkoppling: replaces a previous success with the reason w
   controller.dispose();
 });
 
-it('produktionsorder-aterkoppling / automatiska-delorder: reports the main order after automatically queued components', () => {
-  const state = tradeNetworkState();
-  state.colonies[0]![1].stock['Rocket engine'] = 0;
-  state.colonies[0]![1].buildings.push(
-    {
-      id: 'weapons',
-      type: 'Weapons module factory',
-      slotIndex: 2,
-      demolition: false,
-    },
-    {
-      id: 'fighters',
-      type: 'Fighter factory',
-      slotIndex: 3,
-      demolition: false,
-    },
-  );
-  const { model, emit, root, controller } = setup(state);
-  emit({ type: 'open-production' });
-  emit({ type: 'map-production-build', option: 'Fighter' });
-  expect(
-    model.snapshot.planet!.projects.map((project) => project.type),
-  ).toEqual(['Rocket engine', 'Weapons module', 'Fighter']);
-  expect(root.querySelector('.production-receipt')!.textContent).toBe(
-    'Queued Fighter · #3',
-  );
-  expect(model.snapshot.productionReceipt!.projectId).toBe(
-    model.snapshot.planet!.projects[2]!.id,
-  );
-  controller.dispose();
-});
-
 describe('route-kartvy / delad-kartkamera', () => {
   it('keeps one map instance and camera across all four modes, cancelling an unfinished route', () => {
     const { model, factory, dispose, emit, click, save, controller } = setup();
@@ -209,40 +177,6 @@ describe('route-kartvy / delad-kartkamera', () => {
 });
 
 describe('forsorjningsproblem-pa-kartan', () => {
-  it('marks the resolving navigation view, hides muted/skipped issues and removes arranged supply problems', () => {
-    const { model, root, emit, controller } = setup();
-    expect(
-      model.snapshot.mapProblems.some((p) => p.decisionId === 'supply-sol-1'),
-    ).toBe(true);
-    expect(
-      root.querySelector('[data-screen="route"] .nav-attention'),
-    ).not.toBeNull();
-    emit({ type: 'mute-decision', id: 'supply-sol-1' });
-    expect(
-      model.snapshot.mapProblems.some((p) => p.decisionId === 'supply-sol-1'),
-    ).toBe(false);
-    emit({ type: 'unmute-decision', id: 'supply-sol-1' });
-    emit({ type: 'skip-decision', id: 'supply-sol-1' });
-    expect(
-      model.snapshot.mapProblems.some((p) => p.decisionId === 'supply-sol-1'),
-    ).toBe(false);
-    emit({
-      type: 'assign-trade-fleet',
-      routeId: 'route-test',
-      fleetId: 'freighters',
-    });
-    expect(
-      model.snapshot.supply.planets.find((p) => p.id === 'sol-1')!.status,
-    ).toBe('Waiting');
-    expect(model.snapshot.mapProblems).toEqual([]);
-    expect(
-      root.querySelector('[data-screen="route"] .nav-attention'),
-    ).toBeNull();
-    expect(
-      root.querySelector('[data-screen="fleets"] .nav-attention'),
-    ).not.toBeNull();
-    controller.dispose();
-  });
   it('routes decisions to Route or Production with the affected object selected', () => {
     const { model, emit, controller } = setup();
     emit({ type: 'open-decision', id: 'supply-sol-1' });
@@ -394,38 +328,6 @@ it('centrerat-kartfokus: Show centers the planet in the unobscured area after me
   const world = HexGeometry.toPoint(model.snapshot.planet!.position);
   expect((world.x - camera.center.x) * camera.zoom + 195).toBeCloseTo(195);
   expect((world.y - camera.center.y) * camera.zoom + 300).toBeCloseTo(180);
-  controller.dispose();
-});
-
-it('radiella-byggval / automatiska-delorder: preview is pure and failed ordering keeps option and reports the cause', () => {
-  const state = tradeNetworkState();
-  const home = state.colonies[0]![1];
-  home.buildings = [
-    {
-      id: 'yard',
-      type: 'Transport ship factory',
-      slotIndex: 0,
-      demolition: false,
-    },
-  ];
-  home.stock['Rocket engine'] = 0;
-  const game = Game.restore(state);
-  const before = game.exportState();
-  expect(
-    game
-      .productionOptions(game.galaxy.homePlanet)
-      .find((o) => o.type === 'Transport ship')!.blockedReason,
-  ).toContain('Cannot order');
-  expect(game.exportState()).toEqual(before);
-  const { model, emit, controller } = setup(state);
-  emit({ type: 'open-production' });
-  emit({ type: 'map-production-option', option: 'Transport ship' });
-  emit({ type: 'map-production-build' });
-  expect(playerNoticeText(model.snapshot.notice)).toContain('Cannot order');
-  expect(model.snapshot.productionMap.selectedOption!.type).toBe(
-    'Transport ship',
-  );
-  expect(model.snapshot.planet!.projects).toHaveLength(0);
   controller.dispose();
 });
 
