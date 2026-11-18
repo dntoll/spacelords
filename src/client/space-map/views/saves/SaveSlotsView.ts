@@ -55,25 +55,22 @@ export function renderSaveSlots(
 ): HTMLElement {
   const page = element('section', 'save-page');
   const intro = element('div', 'save-intro');
-  intro.append(
-    element('p', 'coordinate-label', 'YOUR NEXT EXPEDITION'),
-    element('h1', '', 'Saved games'),
-    element(
-      'p',
-      'muted-note',
-      'Choose a slot to begin or continue your empire.',
-    ),
-    element(
-      'p',
-      'save-storage-note',
-      'Progress is saved automatically in this browser.',
-    ),
-    button('Test battle (cheat)', () => emit({ type: 'test-battle' })),
-    button('Test boarding (cheat)', () =>
+  intro.append(element('h1', '', 'Saved games'));
+  const tests = element('details', 'save-tests');
+  tests.append(element('summary', '', 'Test modes'));
+  const testContent = element('div', 'save-test-content');
+  const battle = element('div', 'save-test-mode');
+  battle.append(button('Test battle', () => emit({ type: 'test-battle' })));
+  const boarding = element('div', 'save-test-mode');
+  boarding.append(
+    button('Test boarding', () =>
       emit({ type: 'test-boarding', selection: testBoardingSelection }),
     ),
     testBoardingOptions(),
   );
+  testContent.append(battle, boarding);
+  tests.append(testContent);
+  intro.append(tests);
   const grid = element('div', 'save-grid');
   for (const slot of model.saveSlots) {
     const card = element('article', 'save-card');

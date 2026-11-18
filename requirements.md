@@ -10,6 +10,11 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Startskärm och helskärm:** `startskarm-utan-scroll`, `separata-testlagen`
+  och `helskarm-i-hela-spelet` är **Fullständigt implementerade**. Tre
+  sparplatser delar skärmens tillgängliga yta, testlägena finns under en egen
+  rubrik och helskärm kan växlas från startsidan och spelet.
+
 - **Landgång och bordningsgränssnitt:** `landgang-med-bordningsstart`,
   `airlock-oppnar-at-blickriktning`, `ihopfallbar-bordningslogg` och
   `beskrivning-av-vald-bordningsruta`, `granat-mot-vald-fiende`,
@@ -337,7 +342,7 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   `automatiskt-skeppsval-i-strid`, `synliga-fiendemanovrer` och
   `fuskknapp-for-teststrid` är **Fullständigt implementerat**. Träff, miss och
   skada visas på kartan, egna skepp väljs automatiskt och fienden visar varje
-  manöver. Huvudmenyn har Test battle (cheat) utan påverkan på sparplatserna.
+  manöver. Huvudmenyn har Test battle utan påverkan på sparplatserna.
   `stridsrapport-i-dialog` är **Fullständigt implementerat** med ändrat beteende:
   slutresultatet visas på stridskartan, året fortsätter utan rapportdialog och
   rapporten finns i Events. Se [taktisk strid](docs/space-battle/tactical-combat.md).
@@ -563,7 +568,7 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   **Fullständigt implementerat**: en pågående bordning sparad före ändringen
   avbryts vid laddning och skeppen frikopplas. `testbordning-med-tva-skepp`
   och `valbar-roll-i-testbordning` är **Fullständigt implementerat**:
-  `Test boarding (cheat)` låter spelaren välja det bordade skeppet och anfalla
+  `Test boarding` låter spelaren välja det bordade skeppet och anfalla
   från en `Raptor` eller försvara sig mot ett `Space pirate`. Det ersätter
   `valbart-skepp-i-testbordning`, där anfallaren valdes mot testtransporten. Se
   [bordningsstrid](docs/boarding/boarding-combat.md),

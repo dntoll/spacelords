@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { turnFrames } from '../../fixtures/turn-steps.js';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
 import type {
@@ -267,4 +267,43 @@ describe('frontend-backend-mock', () => {
     expect(repo.load(1)?.state.phase).toBe('planning');
     controller.dispose();
   });
+});
+
+it('startskarm-utan-scroll / separata-testlagen: keeps three slots and groups the test actions separately', () => {
+  const root = document.createElement('div');
+  const controller = new MasterController(
+    new AppModel(undefined, repository()),
+    new AppView(root, () => ({ render() {}, dispose() {} })),
+  );
+  controller.start();
+  expect(root.querySelectorAll('.save-card')).toHaveLength(3);
+  const tests = root.querySelector('.save-tests')!;
+  expect(tests.querySelector('summary')?.textContent).toBe('Test modes');
+  expect(
+    [...tests.querySelectorAll('button')].map((item) => item.textContent),
+  ).toEqual(['Test battle', 'Test boarding']);
+  expect(root.textContent).not.toMatch(
+    /cheat|YOUR NEXT EXPEDITION|Choose a slot|Progress is saved automatically/i,
+  );
+});
+
+it('helskarm-i-hela-spelet: offers a fullscreen control on the start screen and in the game', () => {
+  const request = vi.fn().mockResolvedValue(undefined);
+  Object.defineProperty(document.documentElement, 'requestFullscreen', {
+    configurable: true,
+    value: request,
+  });
+  const root = document.createElement('div');
+  const controller = new MasterController(
+    new AppModel(undefined, repository()),
+    new AppView(root, () => ({ render() {}, dispose() {} })),
+  );
+  controller.start();
+  root
+    .querySelector<HTMLButtonElement>('[aria-label="Toggle fullscreen"]')!
+    .click();
+  expect(request).toHaveBeenCalledOnce();
+  root.querySelector<HTMLButtonElement>('.save-start')!.click();
+  expect(root.querySelector('[aria-label="Toggle fullscreen"]')).not.toBeNull();
+  Reflect.deleteProperty(document.documentElement, 'requestFullscreen');
 });

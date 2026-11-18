@@ -1184,6 +1184,23 @@ export class AppView implements AppPort {
     const emblem = element('span', 'brand-mark', '✦');
     emblem.setAttribute('aria-hidden', 'true');
     brand.prepend(emblem);
+    const fullscreen = button(
+      '⛶',
+      () => {
+        if (document.fullscreenElement) {
+          void document.exitFullscreen().catch(() => undefined);
+        } else {
+          void document.documentElement
+            .requestFullscreen?.()
+            .catch(() => undefined);
+        }
+      },
+      'fullscreen-button',
+    );
+    fullscreen.setAttribute('aria-label', 'Toggle fullscreen');
+    fullscreen.title = 'Toggle fullscreen';
+    fullscreen.hidden =
+      typeof document.documentElement.requestFullscreen !== 'function';
     const navigation = element('nav', 'main-nav');
     navigation.setAttribute('aria-label', 'Main navigation');
     const build = currentBuild ? buildLabelText(currentBuild) : null;
@@ -1192,6 +1209,7 @@ export class AppView implements AppPort {
       header.append(brand);
       // synlig-byggversion: the first screen names the deployed branch.
       if (build) header.append(element('p', 'build-label', build));
+      header.append(fullscreen);
       return header;
     }
     for (const [target, label] of [
@@ -1226,7 +1244,7 @@ export class AppView implements AppPort {
       if (target === 'decisions') choice.classList.add('decision-counter');
       navigation.append(choice);
     }
-    header.append(brand, navigation);
+    header.append(brand, navigation, fullscreen);
     return header;
   }
 

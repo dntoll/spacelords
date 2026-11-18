@@ -1136,7 +1136,7 @@ it('fristaende-bordningsprototyp / forsvarare-och-civilister / tydlig-bordningss
   const menu = renderSaveSlots(model.snapshot, emit);
   document.body.append(menu);
   const control = [...menu.querySelectorAll('button')].find(
-    (node) => node.textContent === 'Test boarding (cheat)',
+    (node) => node.textContent === 'Test boarding',
   );
   expect(control).toBeDefined();
   control!.click();

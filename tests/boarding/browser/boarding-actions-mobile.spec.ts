@@ -5,8 +5,9 @@ test('bordningshud-i-botten / ihopfallbar-bordningslogg: controls fit and a scro
   browserName,
 }) => {
   await page.goto('./');
+  await page.locator('.save-tests summary').click();
   await page
-    .getByRole('button', { name: 'Test boarding (cheat)', exact: true })
+    .getByRole('button', { name: 'Test boarding', exact: true })
     .click();
   const dialog = page.getByRole('dialog', { name: 'Boarding combat' });
   const fullscreen = dialog.getByRole('button', {
