@@ -76,6 +76,11 @@ för senare ändringar.
   bygga på kartan. Byggandet av råvaru- och slutproduktfabriker och styrningen
   av mining ships sker sannolikt kvar på kartan.
   Underlag till vyn från prototyperna hittills:
+  - **Befintliga symboler (`befintliga-symboler-i-nya-vyer`):** de nya
+    skärmarna använder spelets nuvarande symboler och bilder för fabriker,
+    byggnader, delar, råvaror, skepp och planeter, till exempel
+    `BUILDING_SYMBOLS`, `buildingImage`, `SHIP_IMAGES` och
+    `renderPlanetGlyph`. Ikonerna i prototypbilderna är bara platshållare.
   - **Skärm 1, `Build factories` (låst 2026-11-18):**
     - Förbundna planeter visas som en grupp. Rubriken anger planeterna,
       antalet planeter och antalet länkar.
