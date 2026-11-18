@@ -8,6 +8,9 @@ import { git } from './publication.mjs';
 export const integrationBranch = 'development';
 export const releasedBranch = 'main';
 export const passRecordPath = 'dist/checks/full-passed.json';
+// utforskningsbranch: this file exists only on an exploration branch and the
+// work branches started from it. It names the branch they return to.
+export const explorationMarker = 'exploration.json';
 
 function succeeds(directory, ...args) {
   try {
@@ -43,6 +46,38 @@ function currentBranch(directory) {
     : null;
 }
 
+function parseMarker(text, source) {
+  let marker;
+  try {
+    marker = JSON.parse(text);
+  } catch {
+    throw new Error(`${source} is not valid JSON.`);
+  }
+  if (typeof marker?.branch !== 'string' || !marker.branch)
+    throw new Error(`${source} must name its exploration "branch".`);
+  return marker;
+}
+
+// utforskningsbranch: the marker of the checked-out revision.
+export function readExploration(directory) {
+  const file = resolve(directory, explorationMarker);
+  return existsSync(file)
+    ? parseMarker(readFileSync(file, 'utf8'), explorationMarker)
+    : null;
+}
+
+function explorationAt(directory, revision) {
+  const path = `${revision}:${explorationMarker}`;
+  return succeeds(directory, 'cat-file', '-e', path)
+    ? parseMarker(git(directory, 'show', path), path)
+    : null;
+}
+
+// utforskningsbranch: work returns to the exploration while the marker exists.
+export function integrationTarget(directory) {
+  return readExploration(directory)?.branch ?? integrationBranch;
+}
+
 export function fetchOrigin(directory) {
   git(directory, 'fetch', '--prune', 'origin');
 }
@@ -52,12 +87,13 @@ export function isRelease(branch) {
 }
 
 // gemensam-startpunkt: a release builds on main; everything else on development.
-export function requiredBase(branch) {
-  return isRelease(branch) ? releasedBranch : integrationBranch;
+// utforskningsbranch: work inside an exploration builds on the exploration.
+export function requiredBase(directory, branch) {
+  return isRelease(branch) ? releasedBranch : integrationTarget(directory);
 }
 
 export function assertCurrentBase(directory, branch) {
-  const base = requiredBase(branch);
+  const base = requiredBase(directory, branch);
   remoteRevision(directory, base);
   if (!contains(directory, `origin/${base}`))
     throw new Error(
@@ -66,11 +102,20 @@ export function assertCurrentBase(directory, branch) {
     );
 }
 
-export function workStart(directory, name) {
+export function workStart(directory, name, { from } = {}) {
   assertClean(directory);
   fetchOrigin(directory);
-  const base = `origin/${integrationBranch}`;
-  remoteRevision(directory, integrationBranch);
+  const source =
+    from ?? (name ? integrationBranch : integrationTarget(directory));
+  const base = `origin/${source}`;
+  remoteRevision(directory, source);
+  if (
+    source !== integrationBranch &&
+    explorationAt(directory, base)?.branch !== source
+  )
+    throw new Error(
+      `${source} is not an exploration branch: it lacks a ${explorationMarker} naming itself.`,
+    );
   if (name) {
     if (!/^[a-z0-9-]+\/[\w.-]+$/.test(name) || isRelease(name))
       throw new Error(
@@ -93,26 +138,34 @@ export function workStart(directory, name) {
 
 // integrationsbranch-development: when the work branch contains development, the
 // merge commit has exactly the tested tree of the work branch.
+// utforskningsbranch: inside an exploration the target is the exploration. The
+// exploration itself never merges; removing its marker on a work branch does.
 export function prepareIntegration(directory, branch) {
+  const target = integrationTarget(directory);
+  if (branch === target && target !== integrationBranch)
+    throw new Error(
+      `${branch} is an exploration branch. It reaches ${integrationBranch} only when ` +
+        `the user asks: remove ${explorationMarker} on a work branch and run work:merge.`,
+    );
   if (branch === integrationBranch || isRelease(branch))
     throw new Error('Run work:merge from a work branch.');
-  const development = remoteRevision(directory, integrationBranch);
+  const targetRevision = remoteRevision(directory, target);
   assertCurrentBase(directory, branch);
   const head = git(directory, 'rev-parse', 'HEAD');
-  if (head === development || contains(directory, 'HEAD', development))
-    throw new Error(`${branch} has nothing new for ${integrationBranch}.`);
+  if (head === targetRevision || contains(directory, 'HEAD', targetRevision))
+    throw new Error(`${branch} has nothing new for ${target}.`);
   const merge = git(
     directory,
     'commit-tree',
     'HEAD^{tree}',
     '-p',
-    development,
+    targetRevision,
     '-p',
     head,
     '-m',
-    `Merge branch '${branch}' into ${integrationBranch}`,
+    `Merge branch '${branch}' into ${target}`,
   );
-  return { head, merge, development };
+  return { head, merge, target, targetRevision };
 }
 
 function releaseName(directory, date) {
@@ -229,6 +282,8 @@ export async function releaseFinish(
 }
 
 // branchoversikt: remote branches with commits that development lacks.
+// utforskningsbranch: explorations are listed apart, and their work branches
+// are compared with the exploration they return to.
 export function branchesStatus(directory) {
   fetchOrigin(directory);
   const hasDevelopment = succeeds(
@@ -239,6 +294,7 @@ export function branchesStatus(directory) {
   );
   const target = `origin/${hasDevelopment ? integrationBranch : releasedBranch}`;
   const unmerged = [];
+  const explorations = [];
   let merged = 0;
   const refs = git(
     directory,
@@ -258,11 +314,26 @@ export function branchesStatus(directory) {
       ref === `origin/${integrationBranch}`
     )
       continue;
+    const branch = ref.slice(7);
+    const exploration = explorationAt(directory, ref)?.branch;
+    const isExploration = exploration === branch;
+    const compared =
+      exploration &&
+      !isExploration &&
+      succeeds(
+        directory,
+        'rev-parse',
+        '--verify',
+        `origin/${exploration}^{commit}`,
+      )
+        ? `origin/${exploration}`
+        : target;
     const ahead = Number(
-      git(directory, 'rev-list', '--count', `${target}..${ref}`),
+      git(directory, 'rev-list', '--count', `${compared}..${ref}`),
     );
-    if (ahead === 0) merged++;
-    else unmerged.push({ branch: ref.slice(7), date, ahead, subject });
+    if (isExploration) explorations.push({ branch, date, ahead, subject });
+    else if (ahead === 0) merged++;
+    else unmerged.push({ branch, date, ahead, subject, target: compared });
   }
   const untested = hasDevelopment
     ? Number(
@@ -281,7 +352,7 @@ export function branchesStatus(directory) {
         `origin/${integrationBranch}`,
       )
     : null;
-  return { target, unmerged, merged, untested, mainMerged };
+  return { target, unmerged, explorations, merged, untested, mainMerged };
 }
 
 function printStatus(status) {
@@ -294,6 +365,10 @@ function printStatus(status) {
     console.log(
       'WARNING: development lacks main. Merge the last release back.',
     );
+  for (const item of status.explorations)
+    console.log(
+      `Exploration ${item.branch}: ${item.ahead} commit(s) outside development (${item.date}).`,
+    );
   console.log(`${status.merged} remote branch(es) are fully merged.`);
   if (!status.unmerged.length) return console.log('No unmerged branches.');
   console.log(
@@ -301,15 +376,22 @@ function printStatus(status) {
   );
   for (const item of status.unmerged)
     console.log(
-      `  ${item.date}  ${item.branch}  (+${item.ahead})  ${item.subject}`,
+      `  ${item.date}  ${item.branch}  (+${item.ahead} vs ${item.target})  ${item.subject}`,
     );
 }
 
-async function main([command, argument]) {
+async function main([command, ...args]) {
   const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
   process.chdir(root);
   if (command === 'work:start') {
-    const result = workStart(root, argument);
+    const fromIndex = args.indexOf('--from');
+    const from = fromIndex >= 0 ? args[fromIndex + 1] : undefined;
+    if (fromIndex >= 0 && !from)
+      throw new Error('Name the exploration: --from <branch>.');
+    const name = args.find(
+      (arg, index) => index !== fromIndex && index !== fromIndex + 1,
+    );
+    const result = workStart(root, name, { from });
     console.log(`On ${result.branch} at ${result.revision.slice(0, 12)}.`);
   } else if (command === 'work:merge') {
     const { deploy } = await import('./deploy-quick.mjs');
