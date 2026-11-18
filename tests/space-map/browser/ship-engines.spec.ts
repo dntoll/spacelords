@@ -115,7 +115,7 @@ test('motorbehov-for-alla-skepp / ion-pulse-engine / automatisk-motormontering: 
     }),
   });
   await expect(card.locator('.ship-engine-details')).toHaveCount(0);
-  await expect(card.locator('.fleet-speed')).toHaveText('S: 3 hex');
+  await expect(card.locator('.fleet-speed')).toHaveText('➤ 3');
   await card
     .getByRole('button', { name: 'Colony ship 1 in Home Fleet', exact: true })
     .click();
@@ -129,7 +129,7 @@ test('motorbehov-for-alla-skepp / ion-pulse-engine / automatisk-motormontering: 
   const moved = page
     .locator('.fleet-card')
     .filter({ has: page.locator('[data-ship="Colony ship"]') });
-  await expect(moved.locator('.fleet-speed')).toHaveText('S: 3 hex');
+  await expect(moved.locator('.fleet-speed')).toHaveText('➤ 3');
   const installed = await page.evaluate(() => {
     const saved = JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as {
       state: {

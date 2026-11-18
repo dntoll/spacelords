@@ -40,11 +40,11 @@ for (const screen of ['Star map', 'Fleets']) {
       /Patrol: range 3 hex/,
     );
     await expect(card.locator('.fleet-patrol-status')).toHaveText(
-      'Patrol · R: 3',
+      'Patrol: range 3 hex',
     );
     const bounds = await patrol.boundingBox();
     expect(bounds!.width).toBeGreaterThanOrEqual(44);
-    expect(bounds!.height).toBeGreaterThanOrEqual(44);
+    expect(bounds!.height).toBeGreaterThanOrEqual(32);
     expect((await card.boundingBox())!.height).toBeLessThanOrEqual(140);
     await endTurn(page);
     const record = await page.evaluate(

@@ -31,9 +31,7 @@ test('unika-flottnamn / rutt-eskortfordelning / ruttflottor-pa-kartan: assign fi
   );
   await selectMapFleet(page, 'Fighters');
   const card = page.locator('.fleet-card[data-fleet-id="fighters"]');
-  await card
-    .getByRole('button', { name: 'Rename Fighters', exact: true })
-    .click();
+  await card.getByRole('button', { name: 'Fighters', exact: true }).dblclick();
   const name = page.getByRole('textbox', { name: 'Fleet name', exact: true });
   await name.fill('Carrier A');
   await name.press('Enter');

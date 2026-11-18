@@ -2,7 +2,6 @@ import type { AppReadModel } from '../../../app/models/AppModel.js';
 import type { FleetSnapshot } from '../../models/Game.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { button, element } from '../../../common/dom.js';
-import { bindFleetOrderDrag } from './FleetOrderDrag.js';
 
 /** egen-ordervy: keep the three common actions readable beside the fleet. */
 export function renderFleetOrders(
@@ -11,7 +10,6 @@ export function renderFleetOrders(
   emit: IntentHandler,
 ): HTMLElement {
   const orders = element('div', 'fleet-order-toolbar fleet-primary-orders');
-  bindFleetOrderDrag(orders);
   orders.setAttribute('role', 'group');
   orders.setAttribute('aria-label', `Orders for ${fleet.name}`);
   const locked =

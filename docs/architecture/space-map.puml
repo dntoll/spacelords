@@ -87,7 +87,7 @@ space_map__star_map__controllers ..> space_map__star_map__models : typer
 space_map__star_map__views --> space_map__star_map__models
 space_map__turn__controllers ..> space_map__turn__models : typer
 space_map__turn__views ..> space_map__turn__models : typer
-space_map___delat_ --> space_map__fleets : 3
+space_map___delat_ --> space_map__fleets : 4
 space_map___delat_ --> space_map__research : 2
 space_map___delat_ ..> space_map__saves : 1, typer
 space_map___delat_ --> space_map__star_map : 4

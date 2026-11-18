@@ -321,8 +321,10 @@ describe('flottnamn-direktredigering', () => {
   });
 
   it('cancels with Escape or blur and leaves invalid names editable', () => {
-    const { model, root, click } = setup();
-    click('Rename Home Fleet');
+    const { model, root } = setup();
+    root
+      .querySelector('.fleet-name-button')!
+      .dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     let input = root.querySelector<HTMLInputElement>(
       '[aria-label="Fleet name"]',
     )!;
@@ -341,7 +343,9 @@ describe('flottnamn-direktredigering', () => {
         new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
       );
     expect(model.snapshot.fleets[0]!.name).toBe('Home Fleet');
-    click('Rename Home Fleet');
+    root
+      .querySelector('.fleet-name-button')!
+      .dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     root.querySelector<HTMLInputElement>('[aria-label="Fleet name"]')!.blur();
     expect(root.querySelector('[aria-label="Fleet name"]')).toBeNull();
     warn.mockRestore();
@@ -471,7 +475,9 @@ describe('flottadministration / flottnamn-direktredigering / sparat-spel', () =>
     input.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
     );
-    click('Rename Vanguard');
+    root
+      .querySelector('[aria-label="Fleet Vanguard"] .fleet-name-button')!
+      .dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     input = root.querySelector<HTMLInputElement>('[aria-label="Fleet name"]')!;
     input.value = 'Unsaved name';
     input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -593,7 +599,7 @@ describe('flottpatrullering', () => {
     const active = card();
     expect(active.querySelector('[aria-label="Patrol"]')).toBeNull();
     expect(active.querySelector('.fleet-patrol-status')?.textContent).toBe(
-      'Patrol · R: 3',
+      'Patrol: range 3 hex',
     );
     expect(active.getAttribute('aria-description')).toContain(
       'Patrol: range 3 hex',

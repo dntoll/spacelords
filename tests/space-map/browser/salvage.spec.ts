@@ -201,7 +201,7 @@ test('bargningsorder / automatisk-vrakreparation / forskning-fran-bargade-delar:
   await endTurn(page);
   await selectMapFleet(page);
   await expect(page.locator('.selected-fleet-card .fleet-speed')).toHaveText(
-    'S: 1 hex',
+    '➤ 1',
   );
   await expect(
     page.getByText('Towing 1 wrecks', { exact: true }),

@@ -129,7 +129,7 @@ test('teleskopfabriker / teleskop-i-exploration-ships: manufacture the best tele
     ).map((ship) => ship.telescope),
   ).toEqual([1, 3]);
   await selectMapFleet(page);
-  await expect(page.locator('.selected-fleet-card')).toContainText('D: 3 hex');
+  await expect(page.locator('.selected-fleet-card')).toContainText('◉ 3');
   const card = page.locator('.selected-fleet-card');
   expect((await card.boundingBox())!.height).toBeLessThanOrEqual(140);
   await page.screenshot({ path: testInfo.outputPath('telescope-fleet.png') });

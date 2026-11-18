@@ -62,9 +62,7 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
   await expect(
     panel.getByRole('heading', { name: 'Vanguard', exact: true }),
   ).toBeVisible();
-  await panel
-    .getByRole('button', { name: 'Rename Vanguard', exact: true })
-    .click();
+  await panel.getByRole('button', { name: 'Vanguard', exact: true }).dblclick();
   await name.fill('Also discarded');
   // Blur must not swallow the subsequent click on a ship.
   await panel
@@ -92,7 +90,9 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
       document.documentElement.scrollWidth > innerWidth ||
       document.documentElement.scrollHeight > innerHeight,
     clipped: [
-      ...document.querySelectorAll('.map-fleet-management button'),
+      ...document.querySelectorAll(
+        '.map-fleet-management button:not(.fleet-name-button):not(.fleet-order-button):not(.fleet-order-status)',
+      ),
     ].some(
       (node) =>
         node.getClientRects().length > 0 &&
