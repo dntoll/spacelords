@@ -8,7 +8,7 @@ pågående arbeten inte orsakar missvisande bristbesked.
 
 Gäller bara utforskningen `simple_production`. **Ej implementerat.**
 Produktionen har tre nivåer: råvaror, delar och skepp. Planeter som förbinds
-med fraktskepp delar råvaror och delar, oavsett avstånd. Varje fabrik gör en
+med fraktskepp delar råvaror och delar. Varje länk tar en runda, oavsett kartavstånd. Varje fabrik gör en
 enhet per runda, delar tillverkas bara när något behöver dem och skepp kostar
 bara delar. Råvaror utvinns där de finns, även av mining ships i nebulosor och
 asteroidbälten, och skepp tillverkas där deras fabrik står. Se
