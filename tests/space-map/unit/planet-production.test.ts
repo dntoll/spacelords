@@ -105,29 +105,6 @@ describe('gemensam-planetko / delfabriker / automatiska-delorder', () => {
     expect(snapshot().economy.stock['Rocket engine']).toBe(0);
   });
 
-  it('preserves legacy blocked orders without creating new component orders or charging the ship', () => {
-    const base = setup(['Fighter factory']).game.exportState();
-    base.colonies[0]![1].projects.push({
-      id: 'legacy-fighter',
-      type: 'Fighter',
-      slotIndex: null,
-      factoryId: 'factory-0',
-      destinationFleetId: null,
-    });
-    const game = Game.restore({ ...base, version: 3 });
-    const home = game.galaxy.homePlanet;
-    const snapshot = () => game.planetSnapshot(home)!;
-    expect(snapshot().projects.map((p) => p.type)).toEqual(['Fighter']);
-    const stock = snapshot().economy.stock;
-    for (const frame of turnFrames(game)) game.applyFrame(frame);
-    game.finishTurn();
-    expect(snapshot().economy.stock).toEqual(stock);
-    expect(snapshot().projects[0]!.blockedReason).toContain('Rocket engine');
-    expect(() => game.scheduleComponent(home, 'Rocket engine')).toThrow(
-      'factory',
-    );
-  });
-
   it('does not count component orders as reserved building sites', () => {
     const { game, home, snapshot } = setup();
     for (let i = 0; i < 8; i++) game.scheduleShip(home, 'Fighter');

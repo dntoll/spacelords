@@ -6,11 +6,7 @@ import {
   type ProjectType,
 } from '../../../src/client/space-map/models/Game.js';
 import { ProductionPresence } from '../../../src/client/space-map/models/ProductionPresence.js';
-import {
-  distantTradeNetworkState,
-  tradeNetworkState,
-} from '../../fixtures/trade-network.js';
-import { turnFrames } from '../../fixtures/turn-steps.js';
+import { distantTradeNetworkState } from '../../fixtures/trade-network.js';
 
 function networkState(): GameState {
   const state = distantTradeNetworkState();
@@ -38,88 +34,6 @@ function option(state: GameState, type: ProjectType) {
 }
 
 describe('produktionsvalens-statusfarger', () => {
-  it('counts local buildings and active multihop suppliers without changing the world', () => {
-    const game = Game.restore(networkState());
-    const before = game.exportState();
-    const options = game.productionOptions(game.galaxy.homePlanet);
-    expect(options.find((entry) => entry.type === 'Iron mine')).toMatchObject({
-      presence: 'local',
-      localCount: 1,
-    });
-    expect(
-      options.find((entry) => entry.type === 'Water extractor'),
-    ).toMatchObject({ presence: 'network', networkCount: 1 });
-    expect(
-      options.find((entry) => entry.type === 'Oil extractor'),
-    ).toMatchObject({ presence: 'network', networkCount: 1 });
-    expect(game.exportState()).toEqual(before);
-    expect(Object.isFrozen(options[0])).toBe(true);
-  });
-  it.each(['carrier', 'closing', 'disconnected'] as const)(
-    'does not color unavailable network buildings as supplied when %s is missing',
-    (failure) => {
-      const state = networkState();
-      const altered =
-        failure === 'carrier'
-          ? {
-              ...state,
-              fleets: state.fleets.filter((fleet) => fleet.id !== 'freighters'),
-            }
-          : failure === 'closing'
-            ? {
-                ...state,
-                tradeRoutes: state.tradeRoutes.map((route) =>
-                  route.id === 'route-test'
-                    ? { ...route, closing: true }
-                    : route,
-                ),
-              }
-            : {
-                ...state,
-                tradeRoutes: state.tradeRoutes.filter(
-                  (route) => route.id !== 'route-test',
-                ),
-              };
-      expect(option(altered, 'Oil extractor')).toMatchObject({
-        presence: 'missing',
-        networkCount: 0,
-        empireCount: 1,
-      });
-    },
-  );
-  it('includes network queues and changes yellow to green when construction completes', () => {
-    const state = networkState();
-    state.colonies[2]![1].projects = [
-      {
-        id: 'remote-station',
-        type: 'Research station',
-        slotIndex: 1,
-        factoryId: null,
-        destinationFleetId: null,
-      },
-    ];
-    expect(option(state, 'Research station')).toMatchObject({
-      presence: 'queued',
-      queuedNetworkCount: 1,
-      queuedLocalCount: 0,
-    });
-    const game = Game.restore(tradeNetworkState(false));
-    game.scheduleBuild(game.galaxy.homePlanet, 'Research station');
-    const selected = () =>
-      game
-        .productionOptions(game.galaxy.homePlanet)
-        .find((entry) => entry.type === 'Research station')!;
-    expect(selected()).toMatchObject({
-      presence: 'queued',
-      queuedLocalCount: 1,
-    });
-    for (const frame of turnFrames(game)) game.applyFrame(frame);
-    game.finishTurn();
-    expect(selected()).toMatchObject({
-      presence: 'local',
-      queuedLocalCount: 0,
-    });
-  });
   it('counts ships at actual planets and applies local/network/queue precedence for all product types', () => {
     for (const type of [
       'Research station',

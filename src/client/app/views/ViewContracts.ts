@@ -11,7 +11,7 @@ import type {
   TurnFrame,
   Technology,
   PlanetQueueKind,
-  FactoryScreensAction,
+  FactoriesAction,
 } from '../../space-map/models/index.js';
 import type {
   BattleCommand,
@@ -38,10 +38,10 @@ import type {
 
 export type AppIntent =
   | { readonly type: 'test-battle' }
-  | { readonly type: 'test-factory-screens' }
+  | { readonly type: 'open-factories' }
   | {
-      readonly type: 'factory-screens';
-      readonly action: FactoryScreensAction;
+      readonly type: 'factories';
+      readonly action: FactoriesAction;
     }
   | {
       readonly type: 'test-boarding';

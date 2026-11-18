@@ -139,6 +139,29 @@ import {
 export { TECHNOLOGIES, type Technology } from './research/Research.js';
 
 export type GamePhase = 'planning' | 'simulating' | 'interrupted';
+
+/** produktionsnatverk: read-only view of the production network. */
+export interface NetworkConsumerSnapshot {
+  readonly id: string;
+  readonly planetId: string;
+  readonly kind: 'product' | 'building' | 'part';
+  readonly needs: Readonly<Partial<Record<Material, number>>>;
+  readonly delivered: Readonly<Partial<Record<Material, number>>>;
+  /** Rounds until goods already on their way arrive. */
+  readonly arrivalRounds: number;
+  /** Needed goods that are neither delivered nor on their way. */
+  readonly waiting: readonly Material[];
+  readonly ready: boolean;
+  /** Round the consumer first received goods, or null. */
+  readonly startedRound: number | null;
+}
+export interface NetworkSnapshot {
+  readonly groups: readonly (readonly string[])[];
+  readonly activeLinkIds: readonly string[];
+  readonly consumers: readonly NetworkConsumerSnapshot[];
+  /** Materials each planet needs that its group neither holds nor makes. */
+  readonly missing: Readonly<Record<string, readonly Material[]>>;
+}
 export type Resource = 'Iron' | 'Water' | 'Oil';
 export type ShipType =
   | 'Colony ship'
@@ -814,6 +837,7 @@ export interface GameState {
   readonly shipments: readonly Shipment[];
   readonly componentOrders?: readonly ComponentOrder[];
   readonly network?: NetworkEconomyState;
+  readonly networkStarted?: Readonly<Record<string, number>>;
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
   readonly version:
@@ -869,6 +893,7 @@ export class Game {
   #logistics = new Logistics();
   // produktionsnatverk: shared stock and goods moving between planets.
   #network = new NetworkEconomy();
+  #networkStarted: Record<string, number> = {};
   #salvage: Salvage;
   #decisions = new DecisionBoard();
   #research = new ResearchPlan();
@@ -945,6 +970,7 @@ export class Game {
     return structuredClone({
       version: 17,
       network: this.#network.snapshot(),
+      networkStarted: { ...this.#networkStarted },
       productionFleetSequences: { ...this.#productionFleetSequences },
       planetQueues: this.#planetQueues.snapshot(),
       attackQueue: [...this.#attackQueue],
@@ -1123,6 +1149,8 @@ export class Game {
         ? copy.network
         : { transits: [], deliveries: [] },
     );
+    game.#networkStarted =
+      state.version >= 17 ? { ...(copy.networkStarted ?? {}) } : {};
     game.#decisions = new DecisionBoard(
       new Set(copy.skippedDecisions),
       copy.mutedDecisions ?? [],
@@ -2055,20 +2083,8 @@ export class Game {
       economy: this.#economySnapshot(planet, state),
       buildings,
       projects,
-      availableComponents: Object.freeze([
-        ...new Set(
-          state.buildings.flatMap((building) => {
-            const component = BUILDINGS[building.type].component;
-            return component &&
-              !FactoryTechnology.isObsoleteComponent(
-                component,
-                this.#research.completed,
-              )
-              ? [component]
-              : [];
-          }),
-        ),
-      ]),
+      // delar-tillverkas-pa-behov: parts cannot be ordered by hand.
+      availableComponents: Object.freeze([]),
       position: planet.position,
       sites: Object.freeze(
         Array.from({ length: planet.buildSlots }, (_, index) =>
@@ -3612,15 +3628,15 @@ export class Game {
         Number(!!BUILDINGS[b.type].sitePreparation) -
         Number(!!BUILDINGS[a.type].sitePreparation),
     );
+    // skeppsorder-pa-planeten: buildings and parts are handled in Factories.
+    void buildings;
     const types: ProjectType[] = [
-      ...buildings.map((o) => o.type),
       ...new Set(
         snapshot.buildings.flatMap<ProjectType>((b) => {
           const definition = BUILDINGS[b.type];
           return definition.ship ? factoryShips(b.type) : [];
         }),
       ),
-      ...(snapshot.availableComponents ?? []),
     ];
     const missing = new Map<ProjectType, readonly BuildType[]>();
     const factoryTypes = Object.keys(BUILDINGS) as BuildType[];
@@ -3855,19 +3871,10 @@ export class Game {
   }
   scheduleComponent(planet: Planet, component: Component): ProductionReceipt {
     this.#requirePlanning();
-    if (!COMPONENTS.includes(component))
-      throw new Error('Unknown component type.');
-    const state = this.#state(planet);
-    const factory = state.buildings.find(
-      (b) => !b.demolition && BUILDINGS[b.type].component === component,
-    );
-    if (!factory)
-      throw new Error('A matching completed component factory is required.');
-    return this.#scheduleProject(planet, component, {
-      destinationFleetId: null,
-      slotIndex: null,
-      factoryId: factory.id,
-    });
+    // delar-tillverkas-pa-behov: factories make parts when something needs them.
+    void planet;
+    void component;
+    throw new Error('Parts are made automatically when ships need them.');
   }
 
   #componentSites() {
@@ -6988,7 +6995,63 @@ export class Game {
       }
     this.#network.allocate(consumers, port);
     for (const consumer of consumers)
+      if (
+        this.#networkStarted[consumer.id] === undefined &&
+        (Object.keys(this.#network.delivered(consumer.id)).length > 0 ||
+          this.#network.incoming(consumer.id).length > 0)
+      )
+        this.#networkStarted[consumer.id] = this.#round;
+    for (const consumer of consumers)
       if (this.#network.ready(consumer)) this.#finishConsumer(consumer);
+    const waiting = new Set(this.#networkConsumers().map(({ id }) => id));
+    for (const id of Object.keys(this.#networkStarted))
+      if (!waiting.has(id)) delete this.#networkStarted[id];
+  }
+
+  networkSnapshot(): NetworkSnapshot {
+    const consumers = this.#networkConsumers();
+    return Object.freeze({
+      groups: NetworkEconomy.groups(
+        this.#ownedPlanets().map((planet) => planet.id),
+        this.#networkLinks(),
+      ),
+      activeLinkIds: Object.freeze(this.#networkLinks().map(({ id }) => id)),
+      consumers: Object.freeze(
+        consumers.map((consumer) => {
+          const delivered = this.#network.delivered(consumer.id);
+          const incoming = this.#network.incoming(consumer.id);
+          return Object.freeze({
+            id: consumer.id,
+            planetId: consumer.planetId,
+            kind: consumer.kind,
+            needs: consumer.needs,
+            delivered,
+            arrivalRounds: this.#network.arrivalRounds(consumer.id),
+            waiting: Object.freeze(
+              MATERIALS.filter(
+                (material) =>
+                  (consumer.needs[material] ?? 0) -
+                    (delivered[material] ?? 0) -
+                    incoming
+                      .filter((transit) => transit.material === material)
+                      .reduce((sum, transit) => sum + transit.amount, 0) >
+                  0,
+              ),
+            ),
+            ready: this.#network.ready(consumer),
+            startedRound: this.#networkStarted[consumer.id] ?? null,
+          });
+        }),
+      ),
+      missing: Object.freeze(
+        Object.fromEntries(
+          this.#ownedPlanets().map((planet) => [
+            planet.id,
+            this.#missingInGroup(planet),
+          ]),
+        ),
+      ),
+    });
   }
 
   #finishConsumer(consumer: NetworkConsumer): void {

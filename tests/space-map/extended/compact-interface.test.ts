@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { researchStationModel } from '../../fixtures/research-station-model.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
 import { renderDecisionGuidance } from '../../../src/client/space-map/views/decisions/DecisionGuidanceView.js';
-import { renderProductionMapPanel } from '../../../src/client/space-map/views/production/ProductionMapView.js';
 import { renderResearch } from '../../../src/client/space-map/views/research/ResearchView.js';
 import { isResearchIdentified } from '../../../src/client/space-map/models/research/ResearchTree.js';
 import { gameText } from '../../../src/client/space-map/views/turn/GameText.js';
@@ -188,26 +187,6 @@ describe('kompakt-spelgranssnitt', () => {
         expect(row.querySelector('p')!.textContent).toBe(`${label}.`);
       }
     }
-  });
-
-  it('produktionsdetaljer-utan-upprepning / forsorjningskedja-utan-rubrik: retains costs and orders while omitting repeated counts and explanatory headings', () => {
-    const model = researchStationModel();
-    model.openProduction();
-    model.selectMapProductionOption('Research station');
-    const panel = renderProductionMapPanel(model.snapshot, vi.fn());
-    expect(panel.querySelector('.map-build-details')!.textContent).toContain(
-      'Iron',
-    );
-    expect(panel.querySelector('.production-presence-detail')).toBeNull();
-    expect(panel.textContent).not.toMatch(
-      /All your planets|On this planet:|Queued locally:|Map highlights:|Supply chain/,
-    );
-    model.build('Iron mine');
-    model.selectMapProject(model.snapshot.planet!.projects[0]!.id);
-    const queue = renderProductionMapPanel(model.snapshot, vi.fn());
-    expect(queue.querySelector('.map-supply-chain')).not.toBeNull();
-    expect(queue.querySelector('.map-supply-chain h3')).toBeNull();
-    expect(queue.textContent).not.toContain('Map highlights:');
   });
 
   it('inga-hexkoordinater: legacy event coordinates stay readable without changing saved text', () => {

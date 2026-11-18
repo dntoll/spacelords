@@ -183,55 +183,61 @@ för senare ändringar.
 
 ## Implementationsstatus
 
-Fas 1, spelmodellen, är klar 2026-11-18 på `claude/network-economy`.
-Gränssnittet visar fortfarande de gamla vyerna (fas 2).
+Fas 1 (spelmodellen) och fas 2 (skärmarna) är klara 2026-11-18.
 
-**Fullständigt implementerat i spelmodellen** (testerna knutna till
-kravnamnen): `produktionsnatverk`, `fraktskepp-ger-forbindelse`,
-`fraktskepp-ligger-stilla`, `delat-lager-i-natverket`, `en-runda-per-lank`,
-`kortaste-vag-i-lankar`, `varor-stannar-vid-delning`, `erovrad-last`,
-`en-enhet-per-fabrik-och-runda`, `blockerad-fabrik`,
-`delar-tillverkas-pa-behov`, `slutproduktfabrik-utan-order`,
-`standardregel-vid-brist`, `skepp-kostar-bara-delar`,
-`byggnader-kostar-raavaror`, `utvinning-vid-fyndighet`,
-`slutprodukt-vid-fabriken`, `basta-tillgangliga-del`,
-`ovriga-byggnader-pa-byggplatser` och `sparade-spel-bryts-i-utforskningen`
-(sparversion 17; äldre spel tappar varor under transport).
+**Fullständigt implementerat** (testerna knutna till kravnamnen):
+
+- **Nätverket:** `produktionsnatverk`, `fraktskepp-ger-forbindelse`,
+  `fraktskepp-ligger-stilla`, `delat-lager-i-natverket`,
+  `en-runda-per-lank`, `kortaste-vag-i-lankar`,
+  `varor-stannar-vid-delning`, `erovrad-last` och
+  `flytta-fraktskepp-mellan-routes`.
+- **Fabriker och byggen:** `en-enhet-per-fabrik-och-runda`,
+  `blockerad-fabrik`, `delar-tillverkas-pa-behov`,
+  `slutproduktfabrik-utan-order`, `standardregel-vid-brist`,
+  `skepp-kostar-bara-delar`, `byggnader-kostar-raavaror`,
+  `parallella-byggen`, `utvinning-vid-fyndighet`,
+  `slutprodukt-vid-fabriken` och `skeppsorder-pa-planeten`.
+- **Del- och byggnadsval:** `basta-tillgangliga-del` och
+  `ovriga-byggnader-pa-byggplatser`.
+- **Sparade spel:** `sparade-spel-bryts-i-utforskningen` (sparversion 17;
+  äldre spel tappar varor under transport).
+- **Skärmarna:** `Factories` ersätter `Route` i huvudmenyn och
+  innehåller skärm 1, skärm 2, Connect-skärmen och länkarna inom en grupp
+  enligt underlaget nedan, med spelets egna symboler
+  (`befintliga-symboler-i-nya-vyer`). Ett tryck på en skeppsfabrik öppnar
+  kartans Production, som bara erbjuder skepp. Delar kan inte längre
+  beställas för hand.
 
 **Delvis implementerat:**
 
-- `parallella-byggen` och `skeppsorder-pa-planeten`: reglerna gäller i
-  turen, men vyerna saknas (fas 2).
-- `flytta-fraktskepp-mellan-routes`: Release och ny tilldelning fungerar.
-  Connect-skärmen och varningen vid delning saknas (fas 2).
-- `eskort-pa-routes`: befintlig `rutt-eskortfordelning` gäller.
+- `eskort-pa-routes`: befintlig `rutt-eskortfordelning` gäller. Kartvyn
+  Route finns kvar för eskort men nås inte från huvudmenyn. Den öppnas
+  bland annat från beslut.
+- Varje byggnad tar en runda när råvarorna finns. Skärmarnas `Building 0/1`
+  och `~N rounds` är uppskattningar. Längre byggtider finns inte.
 
-Varje byggnad tar en runda när råvarorna finns. Prototypens `Building 1/2`
-förutsätter längre byggtider, som inte finns ännu.
+**Ej implementerat:** `befolkningsutjamning-i-grupp`, `mining-ships` och
+`mining-ship-anslutning`.
 
-**Ej implementerat:** `befolkningsutjamning-i-grupp`, `mining-ships`,
-`mining-ship-anslutning` och de nya skärmarna.
-
-**Ersatta krav vars tester togs bort i fas 1:** `automatiska-delorder`,
+**Ersatta krav vars tester togs bort:** `automatiska-delorder`,
 `delproduktion-med-sammanhang`, `grupperade-transporthandelser`,
 `leveransfloden`, `forsorjningsstatus`, `projektens-forsorjningssteg`,
 `automatisk-motormontering` (ersatt av `basta-tillgangliga-del`),
 `skepp-ur-olastad-ruttflotta` och `skeppsvis-retratt` för lastade
-transporter, samt planetkön där bara första projektet byggs (ersatt av
-`parallella-byggen` och `skeppsorder-pa-planeten`). Kvarvarande gammal kod
-för logistik, delplanering och försörjningsvyer tas bort i fas 1c tillsammans
-med deras krav i övriga dokument.
+transporter, `dome-fore-fabriksforslag`, `produktionsval-efter-forekomst`,
+`produktionsberoenden-i-byggval`, `produktionsvalens-statusfarger` för
+byggnader och nätverksfrakt, samt planetkön där bara första projektet byggs
+(ersatt av `parallella-byggen` och `skeppsorder-pa-planeten`).
+`radiella-byggval`, `dubbelklick-bygger-pa-kartan`, `byggknapp-vid-titel`
+och `produktionsorder-aterkoppling` gäller fortsatt, men bara för skepp.
+Kvarvarande gammal kod för logistik, delplanering och försörjningsvyer, och
+deras krav i övriga dokument, städas bort i ett senare steg.
 
 ## Klickbar prototyp
 
-`fabriksskarmar-prototyp` är **Delvis implementerat**. Under `Test modes` på
-`Saved games` öppnar `Factory screens` en klickbar prototyp med exempeldata:
-skärm 1, skärm 2, connect-skärmen, länkarna inom en grupp och en enkel
-ersättning för beställning av skepp. Grupper, rundor per länk, saknade
-insatsvaror, förslag och `Move` räknas fram ur exempeldatan, men inga
-rundor simuleras och spelets regler ändras inte. Återstår: att koppla
-skärmarna till spelets riktiga modell, och att beställning av skepp sker i
-kartans Production.
+`fabriksskarmar-prototyp` är **Ersatt** av de riktiga skärmarna under
+`Factories`. Testläget `Factory screens` och dess exempeldata är borttagna.
 
 ## Krav som ersätts vid implementation
 

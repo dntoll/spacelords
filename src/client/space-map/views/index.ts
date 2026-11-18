@@ -8,7 +8,7 @@ export * from './ShipView.js';
 export * from './StarMapTradeView.js';
 export * from './decisions/DecisionGuidanceView.js';
 export * from './decisions/EmpireView.js';
-export * from './factory-screens/FactoryScreensView.js';
+export * from './factories/FactoriesView.js';
 export * from './fleets/FleetMapPanel.js';
 export * from './orders/OrdersView.js';
 export * from './planet/BuildSelectionView.js';

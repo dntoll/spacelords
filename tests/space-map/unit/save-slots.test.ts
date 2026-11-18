@@ -281,7 +281,7 @@ it('startskarm-utan-scroll / separata-testlagen: keeps three slots and groups th
   expect(tests.querySelector('summary')?.textContent).toBe('Test modes');
   expect(
     [...tests.querySelectorAll('button')].map((item) => item.textContent),
-  ).toEqual(['Test battle', 'Test boarding', 'Factory screens']);
+  ).toEqual(['Test battle', 'Test boarding']);
   expect(root.textContent).not.toMatch(
     /cheat|YOUR NEXT EXPEDITION|Choose a slot|Progress is saved automatically/i,
   );

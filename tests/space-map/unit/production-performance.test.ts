@@ -5,9 +5,23 @@ import {
   type AppReadModel,
 } from '../../../src/client/app/models/AppModel.js';
 import type { IntentHandler } from '../../../src/client/app/views/ViewContracts.js';
+import { tradeNetworkState } from '../../fixtures/trade-network.js';
 
 it('snabb-produktionsvy: production choices construct one fresh snapshot and display the selected option', () => {
-  const model = new AppModel();
+  // skeppsorder-pa-planeten: the map offers ships from existing factories.
+  const state = tradeNetworkState();
+  state.colonies[0]![1].buildings.push({
+    id: 'yard',
+    type: 'Transport ship factory',
+    slotIndex: 2,
+    demolition: false,
+  });
+  const model = new AppModel(undefined, {
+    load: () => ({ lastPlayed: '2026-11-18T00:00:00Z', state }),
+    save() {},
+    clear() {},
+  });
+  model.startSlot(1);
   model.openProduction('sol-0');
   let emit: IntentHandler = () => {};
   const render = vi.fn<(model: AppReadModel) => void>();

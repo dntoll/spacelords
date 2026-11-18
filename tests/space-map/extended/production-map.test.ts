@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-import { turnFrames } from '../../fixtures/turn-steps.js';
-import { domeProductionState as domeWorld } from '../../fixtures/production-dome.js';
 import { describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
@@ -11,13 +9,32 @@ import {
   Game,
   TECHNOLOGIES,
 } from '../../../src/client/space-map/models/Game.js';
-import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import {
   HexCoordinate,
   HexGeometry,
 } from '../../../src/client/common/HexCoordinate.js';
 import { BUILD_RING_EXTENT } from '../../../src/client/space-map/models/ProductionMap.js';
 import { tradeNetworkState } from '../../fixtures/trade-network.js';
+
+/** skeppsorder-pa-planeten: the map offers ships from existing factories. */
+function shipyardState() {
+  const state = tradeNetworkState();
+  state.colonies[0]![1].buildings.push(
+    {
+      id: 'transport-yard',
+      type: 'Transport ship factory',
+      slotIndex: 2,
+      demolition: false,
+    },
+    {
+      id: 'explorer-yard',
+      type: 'Exploration ship factory',
+      slotIndex: 3,
+      demolition: false,
+    },
+  );
+  return state;
+}
 
 function setup(state = tradeNetworkState()) {
   const save = vi.fn();
@@ -55,67 +72,24 @@ function setup(state = tradeNetworkState()) {
   return { model, root, factory, dispose, emit, click, save, controller };
 }
 
-it('dubbelklick-bygger-pa-kartan / teleskop-i-exploration-ships: an uncategorized ship choice keeps page two stable between clicks', () => {
-  const state = new Game(createExampleGalaxy()).exportState();
-  state.colonies[0]![1].buildings = [
-    {
-      id: 'yard',
-      type: 'Exploration ship factory',
-      slotIndex: 0,
-      demolition: false,
-    },
-    {
-      id: 'telescope',
-      type: 'Telescope III factory',
-      slotIndex: 1,
-      demolition: false,
-    },
-  ];
-  const { model, emit } = setup(state);
-  emit({ type: 'open-production' });
-  emit({
-    type: 'map-size',
-    viewport: {
-      width: 390,
-      height: 800,
-      availableWidth: 390,
-      availableHeight: 500,
-    },
-  });
-  emit({ type: 'map-production-page', page: 1 });
-  expect(model.snapshot.productionMap.categorized).toBe(false);
-  expect(
-    model.snapshot.productionMap.options.some(
-      (option) => option.type === 'Exploration ship',
-    ),
-  ).toBe(true);
-  emit({ type: 'map-production-option', option: 'Exploration ship' });
-  expect(model.snapshot.productionMap.page).toBe(1);
-  expect(
-    model.snapshot.productionMap.options.some(
-      (option) => option.type === 'Exploration ship',
-    ),
-  ).toBe(true);
-});
-
 it('produktionsorder-aterkoppling: confirms a double-click order outside the queue and renews the receipt', () => {
   vi.useFakeTimers();
-  const { root, emit, model, controller } = setup();
+  const { root, emit, model, controller } = setup(shipyardState());
   emit({ type: 'open-production' });
   const choice = root.querySelector<HTMLButtonElement>(
-    '[data-production-option="Research station"]',
+    '[data-production-option="Transport ship"]',
   )!;
   choice.click();
   choice.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
   expect(model.snapshot.planet!.projects).toHaveLength(1);
   expect(
     root.querySelector('.production-receipt[role="status"]')?.textContent,
-  ).toBe('Queued Research station · #1');
+  ).toBe('Queued Transport ship · #1');
   vi.advanceTimersByTime(2500);
-  emit({ type: 'map-production-build', option: 'Research station' });
+  emit({ type: 'map-production-build', option: 'Transport ship' });
   vi.advanceTimersByTime(600);
   expect(root.querySelector('.production-receipt')?.textContent).toBe(
-    'Queued Research station · #2',
+    'Queued Transport ship · #2',
   );
   vi.advanceTimersByTime(2400);
   expect(root.querySelector('.production-receipt')).toBeNull();
@@ -124,9 +98,9 @@ it('produktionsorder-aterkoppling: confirms a double-click order outside the que
 });
 
 it('produktionsorder-aterkoppling: replaces a previous success with the reason when a stale option is rejected', () => {
-  const { root, emit, model, controller } = setup();
+  const { root, emit, model, controller } = setup(shipyardState());
   emit({ type: 'open-production' });
-  emit({ type: 'map-production-build', option: 'Research station' });
+  emit({ type: 'map-production-build', option: 'Transport ship' });
   expect(root.querySelector('.production-receipt')).not.toBeNull();
   const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
   emit({ type: 'map-production-build', option: 'Fighter' });
@@ -145,15 +119,18 @@ describe('route-kartvy / delad-kartkamera', () => {
     emit({ type: 'pan', delta: { x: 40, y: -12 } });
     emit({ type: 'zoom', factor: 1.5, anchor: { x: 0, y: 0 } });
     const camera = model.snapshot.camera;
-    click('Route');
+    // Factories replaces Route in the navigation; the Route map remains.
+    emit({ type: 'open-route' });
     emit({ type: 'begin-map-route', id: 'sol-0' });
     expect(model.snapshot.mapTrade.sourcePlanetId).toBe('sol-0');
     click('Production');
     expect(model.snapshot.mapTrade.sourcePlanetId).toBeNull();
-    for (const name of ['Fleets', 'Star map', 'Route']) {
+    for (const name of ['Fleets', 'Star map']) {
       click(name);
       expect(model.snapshot.camera).toEqual(camera);
     }
+    emit({ type: 'open-route' });
+    expect(model.snapshot.camera).toEqual(camera);
     expect(factory).toHaveBeenCalledTimes(1);
     expect(dispose).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
@@ -161,7 +138,7 @@ describe('route-kartvy / delad-kartkamera', () => {
   });
   it('creates routes with click alternatives, assigns transport and rejects invalid assignment', () => {
     const { model, emit, click, controller } = setup(tradeNetworkState(false));
-    click('Route');
+    emit({ type: 'open-route' });
     click('Create route');
     emit({ type: 'select', position: new HexCoordinate(0, 1) });
     expect(model.snapshot.tradeRoutes).toHaveLength(1);
@@ -192,59 +169,6 @@ describe('forsorjningsproblem-pa-kartan', () => {
 });
 
 describe('produktions-kartvy / radiella-byggval / kompakt-produktionsko', () => {
-  it('offers all options through pages and categories, and retains selection across orders and queue changes', () => {
-    const state = tradeNetworkState();
-    state.colonies[0]![1].stock.Iron = 0;
-    const { model, click, root, emit, save, controller } = setup({
-      ...state,
-      researched: TECHNOLOGIES.filter(
-        (type) => type !== 'Ion pulse engine factory',
-      ),
-    });
-    click('Production');
-    expect(
-      root.querySelectorAll('.radial-build-option').length,
-    ).toBeLessThanOrEqual(8);
-    click('Next build options');
-    expect(model.snapshot.productionMap.page).toBe(1);
-    click('Components');
-    expect(model.snapshot.productionMap.page).toBe(0);
-    click('Show Rocket engine');
-    expect(model.snapshot.supplyChain.projectIds).toEqual([]);
-    expect(save).not.toHaveBeenCalled();
-    click('Build');
-    click('Build');
-    expect(model.snapshot.planet!.projects).toHaveLength(2);
-    expect(root.querySelectorAll('.map-queue-row')).toHaveLength(2);
-    const [first, second] = model.snapshot.planet!.projects;
-    expect(model.snapshot.productionMap.selectedProjectId).toBe(first!.id);
-    click('Select project 2: Rocket engine');
-    expect(model.snapshot.productionMap.selectedProjectId).toBe(second!.id);
-    const handle =
-      root.querySelectorAll<HTMLButtonElement>('.queue-drag-handle')[1]!;
-    handle.focus();
-    for (const key of [' ', 'ArrowUp', 'Enter'])
-      handle.dispatchEvent(
-        new KeyboardEvent('keydown', { key, bubbles: true }),
-      );
-    expect(document.activeElement).toBe(
-      root.querySelector('.queue-drag-handle'),
-    );
-    expect(model.snapshot.productionMap.selectedProjectId).toBe(second!.id);
-    expect(model.snapshot.planet!.projects[0]!.id).toBe(second!.id);
-    click('Cancel project 1');
-    expect(model.snapshot.productionMap.selectedProjectId).toBe(first!.id);
-    expect(model.snapshot.productionMap.selectedOption!.type).toBe(
-      'Rocket engine',
-    );
-    emit({ type: 'select', position: new HexCoordinate(0, 0) });
-    expect(model.snapshot.planet).toBeNull();
-    expect(root.querySelector('.production-ring')).toBeNull();
-    expect(root.querySelector<HTMLElement>('.selection-panel')!.hidden).toBe(
-      true,
-    );
-    controller.dispose();
-  });
   it('gives planet selection priority, ignores fleet/route gestures, and minimally fits the ring without changing zoom', () => {
     const { model, emit, controller } = setup();
     emit({ type: 'open-production' });
@@ -351,11 +275,14 @@ it('radiella-byggval: all product kinds use existing factories, workers/resource
   ] as const)
     expect(game.productionIssue(game.galaxy.homePlanet, type)).toBeNull();
   game.scheduleBuild(game.galaxy.homePlanet, 'Research station');
-  game.scheduleComponent(game.galaxy.homePlanet, 'Rocket engine');
+  // delar-tillverkas-pa-behov: parts are never ordered by hand.
+  expect(() =>
+    game.scheduleComponent(game.galaxy.homePlanet, 'Rocket engine'),
+  ).toThrow('automatically');
   game.scheduleShip(game.galaxy.homePlanet, 'Transport ship');
   expect(
     game.planetSnapshot(game.galaxy.homePlanet)!.projects.map((p) => p.type),
-  ).toEqual(['Research station', 'Rocket engine', 'Transport ship']);
+  ).toEqual(['Research station', 'Transport ship']);
   const projectIds = game
     .planetSnapshot(game.galaxy.homePlanet)!
     .projects.map((p) => p.id);
@@ -370,44 +297,9 @@ it('radiella-byggval: all product kinds use existing factories, workers/resource
   ).toEqual(projectIds);
 });
 
-it('radiella-byggval: full sites and missing/demolished factories report existing blockers without consuming IDs', () => {
-  const state = tradeNetworkState();
-  state.colonies[0]![1].buildings = Array.from(
-    { length: 10 },
-    (_, slotIndex) => ({
-      id: `building-${slotIndex}`,
-      type: 'Research station' as const,
-      slotIndex,
-      demolition: false,
-    }),
-  );
-  const game = Game.restore(state);
-  const before = game.exportState();
-  expect(
-    game.productionIssue(game.galaxy.homePlanet, 'Research station'),
-  ).toContain('No build slots');
-  expect(
-    game.productionIssue(game.galaxy.homePlanet, 'Rocket engine'),
-  ).toContain('factory');
-  expect(
-    game.productionIssue(game.galaxy.homePlanet, 'Transport ship'),
-  ).toContain('shipyard');
-  expect(game.exportState()).toEqual(before);
-  const demolished = tradeNetworkState();
-  demolished.colonies[0]![1].buildings.find(
-    (b) => b.id === 'engine',
-  )!.demolition = true;
-  const preview = Game.restore(demolished);
-  expect(
-    preview
-      .productionOptions(preview.galaxy.homePlanet)
-      .find((o) => o.type === 'Rocket engine')!.blockedReason,
-  ).toContain('factory');
-});
-
-it('radiella-byggval: every unlocked option and factory product is reachable through category and page navigation', () => {
+it('radiella-byggval / skeppsorder-pa-planeten: every ship from existing factories is reachable through category and page navigation', () => {
   const { model, emit, controller } = setup({
-    ...tradeNetworkState(),
+    ...shipyardState(),
     researched: TECHNOLOGIES,
   });
   emit({ type: 'open-production' });
@@ -433,7 +325,7 @@ it('radiella-byggval: every unlocked option and factory product is reachable thr
     }
   }
   const game = Game.restore({
-    ...tradeNetworkState(),
+    ...shipyardState(),
     researched: TECHNOLOGIES,
   });
   expect([...found].sort()).toEqual(
@@ -447,7 +339,7 @@ it('radiella-byggval: every unlocked option and factory product is reachable thr
 
 it('radiella-byggval: pages narrow screens with enlarged text so options remain separate', () => {
   const { model, emit, controller } = setup({
-    ...tradeNetworkState(),
+    ...shipyardState(),
     researched: TECHNOLOGIES,
   });
   emit({ type: 'open-production' });
@@ -476,288 +368,31 @@ it('produktions-kartvy: clears controls after selecting space outside the galaxy
   controller.dispose();
 });
 
-it('radiella-byggval / domes-per-byggplats / dome-fore-fabriksforslag: Production offers the matching Dome before factories when no site is prepared', () => {
-  const { model, root, click, emit, controller } = setup(domeWorld());
-  emit({ type: 'open-production' });
-  expect(model.snapshot.productionMap.options[0]?.type).toBe('Desert dome');
-  expect(
-    model.snapshot.productionMap.options.some((option) =>
-      option.type.includes('factory'),
-    ),
-  ).toBe(false);
-  expect(root.textContent).not.toContain('Build a matching factory');
-  click('Prepare building site');
-  expect(model.snapshot.productionMap.selectedOption?.type).toBe('Desert dome');
-  click('Build');
-  expect(model.snapshot.planet!.projects[0]).toMatchObject({
-    type: 'Desert dome',
-    slotIndex: 0,
-  });
-  controller.dispose();
-});
-
-it('dome-fore-fabriksforslag: requires Dome research, waits for a queued Dome and restores factory options when it completes', () => {
-  const locked = setup(domeWorld(false));
-  locked.emit({ type: 'open-production' });
-  expect(locked.root.textContent).toContain('Research Desert dome');
-  expect(locked.root.textContent).not.toContain('Build a matching factory');
-  expect(
-    locked.model.snapshot.productionMap.options.some(
-      (o) => o.type === 'Desert dome',
-    ),
-  ).toBe(false);
-  locked.controller.dispose();
-
-  const state = domeWorld(true, 2);
-  const { model, root, click, emit, controller } = setup(state);
-  emit({ type: 'open-production' });
-  click('Prepare building site');
-  click('Build');
-  expect(model.snapshot.productionGuidance?.kind).toBe('waiting');
-  expect(root.textContent).toContain('A Dome is already queued');
-  expect(model.snapshot.productionMap.options).toEqual([]);
-  for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
-  model.finishTurn();
-  expect(model.snapshot.productionGuidance?.kind).toBe('factory');
-  expect(model.snapshot.planet!.sites[0]!.hasDome).toBe(true);
-  emit({ type: 'map-production-option', option: 'Rocket engine factory' });
-  click('Build');
-  expect(model.snapshot.planet!.projects[0]).toMatchObject({
-    type: 'Rocket engine factory',
-    slotIndex: 0,
-  });
-  controller.dispose();
-});
-
-it('dome-fore-fabriksforslag: occupied sites cannot accept another Dome, while existing factories can keep producing', () => {
-  const state = domeWorld();
-  state.colonies[0]![1].domes = [0, 1, 2];
-  state.colonies[0]![1].buildings = [0, 1, 2].map((slotIndex) => ({
-    id: `engine-${slotIndex}`,
-    type: 'Rocket engine factory' as const,
-    slotIndex,
-    demolition: false,
-  }));
-  const { model, root, emit, controller } = setup(state);
-  emit({ type: 'open-production' });
-  expect(model.snapshot.productionGuidance?.kind).toBe('full');
-  expect(root.textContent).toContain('No building sites are available');
-  expect(root.textContent).not.toContain('Build a matching factory');
-  expect(model.snapshot.productionMap.options.map((o) => o.type)).toEqual([
-    'Rocket engine',
-  ]);
-  controller.dispose();
-});
-
-it('dome-fore-fabriksforslag: the planet Production tab opens the matching Dome details on the map', () => {
-  const { model, root, click, emit, controller } = setup(domeWorld());
-  emit({ type: 'open-planet' });
-  root
-    .querySelector<HTMLButtonElement>('.planet-tabs [aria-label="Production"]')!
-    .click();
-  expect(root.textContent).toContain('Build a Desert dome');
-  expect(root.textContent).not.toContain('Build a matching factory');
-  click('Prepare building site');
-  expect(model.snapshot.screen).toBe('production');
-  expect(model.snapshot.productionMap.selectedOption?.type).toBe('Desert dome');
-  controller.dispose();
-});
-
 it('dubbelklick-bygger-pa-kartan: keeps radial buttons through selection and queues exactly once on a double click', () => {
-  const { model, root, emit, controller } = setup();
+  const { model, root, emit, controller } = setup(shipyardState());
   emit({ type: 'open-production' });
   const choice = root.querySelector<HTMLButtonElement>(
-    '[aria-label="Show Iron mine"]',
+    '[aria-label="Show Transport ship"]',
   )!;
   const before = model.snapshot.planet!.projects.length;
   choice.click();
-  expect(root.querySelector('[aria-label="Show Iron mine"]')).toBe(choice);
+  expect(root.querySelector('[aria-label="Show Transport ship"]')).toBe(choice);
   expect(model.snapshot.planet!.projects.length).toBe(before);
   choice.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
   expect(model.snapshot.planet!.projects.length).toBe(before + 1);
-  expect(model.snapshot.planet!.projects.at(-1)!.type).toBe('Iron mine');
+  expect(model.snapshot.planet!.projects.at(-1)!.type).toBe('Transport ship');
   controller.dispose();
 });
 
 it('byggknapp-vid-titel: keeps Build beside the selected option heading before its details', () => {
-  const { root, emit, click, controller } = setup();
+  const { root, emit, click, controller } = setup(shipyardState());
   emit({ type: 'open-production' });
-  click('Show Iron mine');
+  click('Show Transport ship');
   const heading = root.querySelector('.map-build-heading')!;
-  expect(heading?.querySelector('h2')?.textContent).toContain('Iron mine');
+  expect(heading?.querySelector('h2')?.textContent).toContain('Transport ship');
   expect(heading?.querySelector('button')?.textContent).toBe('Build');
   expect(root.querySelector('.map-build-details')!.firstElementChild).toBe(
     heading,
   );
   controller.dispose();
-});
-
-it('produktionsval-efter-forekomst: puts globally missing buildings before buildings missing locally, then local buildings, without changing the save', () => {
-  const state = tradeNetworkState();
-  state.colonies[1]![1].projects = [];
-  state.colonies[1]![1].buildings = [
-    { id: 'water', type: 'Water extractor', slotIndex: 0, demolition: false },
-  ];
-  const game = Game.restore({ ...state, researched: TECHNOLOGIES });
-  const before = game.exportState();
-  const options = game.productionOptions(game.galaxy.homePlanet);
-  const index = (type: string) =>
-    options.findIndex((option) => option.type === type);
-  expect(index('Oil extractor')).toBeLessThan(index('Water extractor'));
-  expect(index('Water extractor')).toBeLessThan(index('Iron mine'));
-  expect(
-    options.find((option) => option.type === 'Water extractor'),
-  ).toMatchObject({ localCount: 0, empireCount: 1 });
-  expect(game.productionOptions(game.galaxy.homePlanet)).toEqual(options);
-  expect(game.exportState()).toEqual(before);
-});
-
-it('produktionsberoenden-i-byggval: missing component factories precede shipyards and warn without preventing construction', () => {
-  const state = tradeNetworkState();
-  state.colonies[0]![1].buildings = [];
-  state.colonies[0]![1].stock['Rocket engine'] = 0;
-  const { model, emit, root, click, controller } = setup({
-    ...state,
-    researched: TECHNOLOGIES,
-  });
-  const game = Game.restore({ ...state, researched: TECHNOLOGIES });
-  const options = game.productionOptions(game.galaxy.homePlanet);
-  const index = (type: string) =>
-    options.findIndex((option) => option.type === type);
-  expect(index('Rocket engine factory')).toBeLessThan(index('Fighter factory'));
-  expect(index('Weapons module factory')).toBeLessThan(
-    index('Fighter factory'),
-  );
-  emit({ type: 'open-production' });
-  emit({ type: 'map-production-option', option: 'Fighter factory' });
-  expect(
-    root.querySelector('.production-dependency-warning')?.textContent,
-  ).toContain('Weapons module factory');
-  expect(
-    root.querySelector<HTMLButtonElement>('[aria-label="Build"]')!.disabled,
-  ).toBe(false);
-  click('Build');
-  expect(model.snapshot.planet!.projects.at(-1)!.type).toBe('Fighter factory');
-  controller.dispose();
-});
-
-it('produktionsberoenden-i-byggval: queued factories remain missing until completed, and either engine variant plus a remote weapons factory satisfies the advisory', () => {
-  const state = tradeNetworkState();
-  state.colonies[0]![1].buildings = [];
-  state.colonies[1]![1].projects = [];
-  const game = Game.restore({ ...state, researched: TECHNOLOGIES });
-  const warning = () =>
-    game
-      .productionOptions(game.galaxy.homePlanet)
-      .find((option) => option.type === 'Fighter factory')!.dependencyWarning;
-  game.scheduleBuild(game.galaxy.homePlanet, 'Rocket engine factory');
-  game.scheduleBuild(game.galaxy.homePlanet, 'Weapons module factory');
-  expect(warning()).toContain('Weapons module factory');
-  for (let year = 0; year < 2; year++) {
-    for (const frame of turnFrames(game)) game.applyFrame(frame);
-    game.finishTurn();
-  }
-  expect(warning()).toBeNull();
-  state.colonies[1]![1].buildings = [
-    {
-      id: 'ion',
-      type: 'Ion pulse engine factory',
-      slotIndex: 0,
-      demolition: false,
-    },
-    {
-      id: 'weapons',
-      type: 'Weapons module factory',
-      slotIndex: 1,
-      demolition: false,
-    },
-  ];
-  const remote = Game.restore({ ...state, researched: TECHNOLOGIES });
-  expect(
-    remote
-      .productionOptions(remote.galaxy.homePlanet)
-      .find((option) => option.type === 'Fighter factory')!.dependencyWarning,
-  ).toBeNull();
-  state.colonies[1]![1].buildings[1]!.demolition = true;
-  const closing = Game.restore({ ...state, researched: TECHNOLOGIES });
-  expect(
-    closing
-      .productionOptions(closing.galaxy.homePlanet)
-      .find((option) => option.type === 'Fighter factory')!.dependencyWarning,
-  ).toContain('Weapons module factory');
-});
-
-it('produktionsval-efter-forekomst: counts completed Domes, current parts and fleet presence rather than queued construction', () => {
-  const state = domeWorld();
-  state.colonies[0]![1].domes = [0, 1];
-  state.colonies[0]![1].buildings = [
-    {
-      id: 'transport-yard',
-      type: 'Transport ship factory',
-      slotIndex: 0,
-      demolition: false,
-    },
-    {
-      id: 'engines',
-      type: 'Rocket engine factory',
-      slotIndex: 1,
-      demolition: false,
-    },
-  ];
-  const game = Game.restore({
-    ...state,
-    researched: TECHNOLOGIES.filter(
-      (type) => type !== 'Ion pulse engine factory',
-    ),
-  });
-  const options = game.productionOptions(game.galaxy.homePlanet);
-  expect(options.find((option) => option.type === 'Desert dome')).toMatchObject(
-    { localCount: 2, empireCount: 2 },
-  );
-  expect(
-    options.find((option) => option.type === 'Rocket engine'),
-  ).toMatchObject({ localCount: 3, empireCount: 3 });
-  expect(
-    options.find((option) => option.type === 'Transport ship'),
-  ).toMatchObject({ localCount: 2, empireCount: 3 });
-});
-
-it('produktionsberoenden-i-byggval: orders transitive missing dependencies and retains all choices even with a cyclic catalog', async () => {
-  const { prioritizeProduction } =
-    await import('../../../src/client/space-map/models/ProductionPriorities.js');
-  const game = Game.restore({
-    ...tradeNetworkState(),
-    researched: TECHNOLOGIES,
-  });
-  const options = game
-    .productionOptions(game.galaxy.homePlanet)
-    .filter((option) =>
-      [
-        'Colony ship factory',
-        'Exploration ship factory',
-        'Ion pulse engine factory',
-      ].includes(option.type),
-    );
-  const ordered = prioritizeProduction(
-    options,
-    new Map([
-      ['Colony ship factory', ['Exploration ship factory']],
-      ['Exploration ship factory', ['Ion pulse engine factory']],
-    ]),
-  );
-  expect(ordered.map((option) => option.type)).toEqual([
-    'Ion pulse engine factory',
-    'Exploration ship factory',
-    'Colony ship factory',
-  ]);
-  const cycle = new Map([
-    ['Colony ship factory', ['Exploration ship factory']],
-    ['Exploration ship factory', ['Colony ship factory']],
-  ] as const);
-  const cyclic = prioritizeProduction(options, cycle);
-  expect(new Set(cyclic.map((option) => option.type)).size).toBe(
-    options.length,
-  );
-  expect(prioritizeProduction(options, cycle)).toEqual(cyclic);
-  expect(Object.isFrozen(cyclic)).toBe(true);
 });

@@ -12,9 +12,9 @@ note as about
   Beroenden på app/ och common/ visas i overview.puml.
 end note
 package "Publik yta (index.js)" as public_surface #FFFFEE {
-  rectangle "<b>controllers/index.js</b>\nDecisionController\nFactoryScreensController\nFleetController\nOrderController\nPlanetController\nProductionController\nResearchController\nRouteController\nSaveController\nStarMapController\nTurnController" as public__controllers
-  rectangle "<b>models/index.js</b>\nBrowserSaveRepository\nCamera\nCameraFraming\nDecisionFacade\nDecisions\nEconomy\nEventPlayback\nFactoryScreensFacade\nFleetFacade\nFleetMapLayout\nGalaxy\nGame\nLogistics\nOrderFacade\nOrderSelection\nPirateFleet\nPlanetFacade\nPlanetQueues\nProductionFacade\nProductionMap\nProjectSupply\nProjectSupplyChain\nResearchFacade\nResearchTree\nRouteFacade\nSalvage\nSaveFacade\nSaveRepository\nShipOrders\nStarMapFacade\nStarMapTrade\nSupplyOverview\nTurnFacade\nTurnMovementPlayback\nTurnSimulation\nexampleGalaxy" as public__models
-  rectangle "<b>views/index.js</b>\nBuildSelectionView\nDecisionGuidanceView\nDiscoveryView\nEmpireView\nEventContent\nEventsView\nFactoryScreensView\nFleetMapPanel\nGalaxyMapView\nGameText\nMapGesture\nMapLocationHeading\nMapSelectionScroll\nOrdersView\nPlanetImages\nPlanetView\nProductionMapView\nResearchDetailsView\nResearchTreeView\nResearchView\nSalvageView\nSaveMapPreview\nSaveSlotsView\nShipImages\nShipView\nStarMapTradeView\nTurnActionsView" as public__views
+  rectangle "<b>controllers/index.js</b>\nDecisionController\nFactoriesController\nFleetController\nOrderController\nPlanetController\nProductionController\nResearchController\nRouteController\nSaveController\nStarMapController\nTurnController" as public__controllers
+  rectangle "<b>models/index.js</b>\nBrowserSaveRepository\nCamera\nCameraFraming\nDecisionFacade\nDecisions\nEconomy\nEventPlayback\nFactoriesFacade\nFactoriesSnapshot\nFleetFacade\nFleetMapLayout\nGalaxy\nGame\nLogistics\nOrderFacade\nOrderSelection\nPirateFleet\nPlanetFacade\nPlanetQueues\nProductionFacade\nProductionMap\nProjectSupply\nProjectSupplyChain\nResearchFacade\nResearchTree\nRouteFacade\nSalvage\nSaveFacade\nSaveRepository\nShipOrders\nStarMapFacade\nStarMapTrade\nSupplyOverview\nTurnFacade\nTurnMovementPlayback\nTurnSimulation\nexampleGalaxy" as public__models
+  rectangle "<b>views/index.js</b>\nBuildSelectionView\nDecisionGuidanceView\nDiscoveryView\nEmpireView\nEventContent\nEventsView\nFactoriesView\nFleetMapPanel\nGalaxyMapView\nGameText\nMapGesture\nMapLocationHeading\nMapSelectionScroll\nOrdersView\nPlanetImages\nPlanetView\nProductionMapView\nResearchDetailsView\nResearchTreeView\nResearchView\nSalvageView\nSaveMapPreview\nSaveSlotsView\nShipImages\nShipView\nStarMapTradeView\nTurnActionsView" as public__views
 }
 package "(delat)" as space_map___delat_ {
   rectangle "<b>models</b>\nCamera\nCivilianTraffic\nComponentPlanner\nDecisions\nDetection\nEconomy\nFactoryTechnology\nFleetCombat\nFleetPatrol\nFleetPursuit\nGalaxy\nGalaxyTerrain\nGame\nHexNavigation\nLogistics\nPirateFleet\nPlanet\nPlanetEnvironment\nPlanetQueues\nProductionMap\nProductionPresence\nProductionPriorities\nProjectSupply\nProjectSupplyChain\nSalvage\nShipEquipment\nShipOrders\nShipUpgrades\nSpiralGalaxyLayout\nSupplyOverview\nTurnSimulation\nexampleGalaxy" as space_map___delat___models
@@ -26,10 +26,10 @@ package "decisions" as space_map__decisions {
   rectangle "<b>models</b>\nDecisionFacade" as space_map__decisions__models
   rectangle "<b>views</b>\nDecisionGuidanceView\nEmpireView" as space_map__decisions__views
 }
-package "factory-screens" as space_map__factory_screens {
-  rectangle "<b>controllers</b>\nFactoryScreensController" as space_map__factory_screens__controllers
-  rectangle "<b>models</b>\nFactoryCatalog\nFactoryNetwork\nFactoryScreensFacade\nexampleFactoryNetwork" as space_map__factory_screens__models
-  rectangle "<b>views</b>\nFactoryScreensView" as space_map__factory_screens__views
+package "factories" as space_map__factories {
+  rectangle "<b>controllers</b>\nFactoriesController" as space_map__factories__controllers
+  rectangle "<b>models</b>\nFactoriesFacade\nFactoriesSnapshot" as space_map__factories__models
+  rectangle "<b>views</b>\nFactoriesView" as space_map__factories__views
 }
 package "fleets" as space_map__fleets {
   rectangle "<b>controllers</b>\nFleetController" as space_map__fleets__controllers
@@ -82,8 +82,8 @@ rectangle "boarding" as ext__boarding #EEEEEE
 rectangle "space-battle" as ext__space_battle #EEEEEE
 space_map___delat___views --> space_map___delat___models
 space_map__decisions__controllers ..> space_map__decisions__models : typer
-space_map__factory_screens__controllers ..> space_map__factory_screens__models : typer
-space_map__factory_screens__views ..> space_map__factory_screens__models : typer
+space_map__factories__controllers ..> space_map__factories__models : typer
+space_map__factories__views --> space_map__factories__models
 space_map__fleets__controllers ..> space_map__fleets__models : typer
 space_map__fleets__views --> space_map__fleets__models
 space_map__orders__controllers ..> space_map__orders__models : typer
@@ -104,7 +104,8 @@ space_map___delat_ ..> space_map__saves : 1, typer
 space_map___delat_ --> space_map__star_map : 4
 space_map___delat_ ..> space_map__turn : 1, typer
 space_map__decisions --> space_map___delat_ : 5
-space_map__factory_screens --> space_map___delat_ : 10
+space_map__factories --> space_map___delat_ : 9
+space_map__factories --> space_map__production_network : 1
 space_map__fleets --> space_map___delat_ : 12
 space_map__orders ..> space_map___delat_ : 7, typer
 space_map__planet --> space_map___delat_ : 21
