@@ -165,6 +165,17 @@ för senare ändringar.
 - Hur mycket ett mining ship utvinner per runda, och vilka råvaror nebulosor
   och asteroidbälten har, bestäms senare.
 
+## Klickbar prototyp
+
+`fabriksskarmar-prototyp` är **Delvis implementerat**. Under `Test modes` på
+`Saved games` öppnar `Factory screens` en klickbar prototyp med exempeldata:
+skärm 1, skärm 2, connect-skärmen, länkarna inom en grupp och en enkel
+ersättning för beställning av skepp. Grupper, rundor per länk, saknade
+insatsvaror, förslag och `Move` räknas fram ur exempeldatan, men inga
+rundor simuleras och spelets regler ändras inte. Återstår: att koppla
+skärmarna till spelets riktiga modell, och att beställning av skepp sker i
+kartans Production.
+
 ## Krav som ersätts vid implementation
 
 Följande krav ersätts när motsvarande delar ovan implementeras. Deras tester

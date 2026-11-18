@@ -25,6 +25,7 @@ import {
   renderCombatLog,
   renderEventContent,
   renderSalvageSelection,
+  FactoryScreensView,
 } from '../../space-map/views/index.js';
 import {
   BattleView,
@@ -64,6 +65,7 @@ export class AppView implements AppPort {
   #battleView: BattleView | null = null;
   #boardingView: BoardingView | null = null;
   #editorView: BoardingEditorView | null = null;
+  #factoryScreensView: FactoryScreensView | null = null;
   readonly #root: HTMLElement;
   readonly #mapFactory: MapFactory;
   #emit: IntentHandler = () => undefined;
@@ -143,6 +145,23 @@ export class AppView implements AppPort {
     if (this.#editorView) {
       this.#editorView.dispose();
       this.#editorView = null;
+      this.#screen = null;
+      this.#saveKey = '';
+    }
+    if (model.factoryScreens) {
+      this.#factoryScreensView ??= new FactoryScreensView(
+        this.#root,
+        (action) => this.#emit({ type: 'factory-screens', action }),
+      );
+      this.#factoryScreensView.render(
+        model.factoryScreens,
+        playerNoticeText(model.notice),
+      );
+      return;
+    }
+    if (this.#factoryScreensView) {
+      this.#factoryScreensView.dispose();
+      this.#factoryScreensView = null;
       this.#screen = null;
       this.#saveKey = '';
     }
@@ -1124,6 +1143,8 @@ export class AppView implements AppPort {
   dispose(): void {
     this.#editorView?.dispose();
     this.#editorView = null;
+    this.#factoryScreensView?.dispose();
+    this.#factoryScreensView = null;
     this.#boardingView?.dispose();
     this.#battleView?.dispose();
     this.#disposed = true;

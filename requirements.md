@@ -909,6 +909,8 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   platsbundna. Varje länk mellan planeter tar en runda (`en-runda-per-lank`). Vyn prototypas separat. Kraven ersätter Route, Production och
   den fysiska frakten när de implementeras. Skepp beställs fortsatt från kartans Production (`skeppsorder-pa-planeten`). Se
   [förenklad produktion](docs/simple-production.md).
+  `fabriksskarmar-prototyp` är **Delvis implementerat**: `Factory screens`
+  under `Test modes` är en klickbar prototyp med exempeldata.
   `forsorjningsoversikt`, `relevanta-material` och `materialoversikt` ersätts;
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och

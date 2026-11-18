@@ -22,6 +22,7 @@ export * from './ShipOrders.js';
 export * from './SupplyOverview.js';
 export * from './TurnSimulation.js';
 export * from './decisions/DecisionFacade.js';
+export * from './factory-screens/FactoryScreensFacade.js';
 export * from './exampleGalaxy.js';
 export * from './fleets/FleetFacade.js';
 export * from './orders/OrderFacade.js';

@@ -5,6 +5,8 @@ import {
   FleetFacade,
   RouteFacade,
   ProductionFacade,
+  FactoryScreensFacade,
+  type FactoryScreensSnapshot,
   OrderFacade,
   DecisionFacade,
   StarMapFacade,
@@ -215,12 +217,14 @@ export interface AppReadModel {
   readonly editorAvailable: boolean;
   readonly editorCatalog: readonly BoardingEditorCatalogItem[];
   readonly editor: BoardingEditorSnapshot | null;
+  readonly factoryScreens: FactoryScreensSnapshot | null;
   readonly pendingEditorDiscard: BoardingEditorCatalogItem['id'] | null;
 }
 
 export class AppModel {
   readonly saveCase: SaveFacade;
   readonly editorCase = new BoardingEditorFacade();
+  readonly factoryScreensCase = new FactoryScreensFacade();
   readonly boarding: BoardingFacade;
   readonly battle: BattleFacade;
   readonly researchCase: ResearchFacade;
@@ -575,6 +579,7 @@ export class AppModel {
       editorAvailable: this.editorCase.available,
       editorCatalog: this.editorCase.catalog,
       editor: this.editorCase.editor,
+      factoryScreens: this.factoryScreensCase.snapshot,
       pendingEditorDiscard: this.editorCase.pendingDiscard,
     });
   }

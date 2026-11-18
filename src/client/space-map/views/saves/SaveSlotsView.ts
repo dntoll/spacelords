@@ -68,7 +68,11 @@ export function renderSaveSlots(
     ),
     testBoardingOptions(),
   );
-  testContent.append(battle, boarding);
+  const factories = element('div', 'save-test-mode');
+  factories.append(
+    button('Factory screens', () => emit({ type: 'test-factory-screens' })),
+  );
+  testContent.append(battle, boarding, factories);
   tests.append(testContent);
   intro.append(tests);
   const grid = element('div', 'save-grid');

@@ -7,6 +7,7 @@ import {
   ProductionController,
   OrderController,
   DecisionController,
+  FactoryScreensController,
   StarMapController,
   TurnController,
 } from '../../space-map/controllers/index.js';
@@ -28,6 +29,7 @@ export class MasterController {
   readonly #saveCase: SaveController;
   readonly #boarding: BoardingController;
   readonly #editor: BoardingEditorController;
+  readonly #factoryScreens: FactoryScreensController;
   readonly #battle: BattleController;
   readonly #research: ResearchController;
   readonly #planet: PlanetController;
@@ -62,6 +64,9 @@ export class MasterController {
     this.#saveCase = new SaveController(model.saveCase);
     this.#boarding = new BoardingController(model.boarding);
     this.#editor = new BoardingEditorController(model.editorCase);
+    this.#factoryScreens = new FactoryScreensController(
+      model.factoryScreensCase,
+    );
     this.#battle = new BattleController(model.battle);
     this.#research = new ResearchController(model.researchCase);
     this.#planet = new PlanetController(model.planet);
@@ -257,6 +262,16 @@ export class MasterController {
   }
 
   #handleIntent(intent: AppIntent): void {
+    if (intent.type === 'test-factory-screens') {
+      this.#factoryScreens.open();
+      this.#render();
+      return;
+    }
+    if (intent.type === 'factory-screens') {
+      this.#factoryScreens.handle(intent.action);
+      this.#render();
+      return;
+    }
     if (intent.type === 'boarding-command') {
       this.#boarding.commandBoarding(intent.command);
       this.#render();
