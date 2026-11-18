@@ -13,17 +13,18 @@ Alla krav nedan har status **Ej implementerat**.
 
 ## Produktionsnivåer
 
-| Kravnamn                        | Produktkrav                                                                                                                                                                                             |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tre-produktionsnivaer`         | Produktionen har tre nivåer: råvaror (`Iron`, `Water`, `Oil`), delar (exempelvis `Rocket engine`, `Weapons module`, teleskop) och slutprodukter (skepp). Katalogen motsvarar dagens men ska kunna växa. |
-| `skepp-kostar-bara-delar`       | Skepp kostar enbart delar, inte råvaror direkt.                                                                                                                                                         |
-| `byggnader-kostar-raavaror`     | Byggnader, även fabriker, kostar råvaror ur nätverkets gemensamma lager.                                                                                                                                |
-| `en-enhet-per-fabrik-och-runda` | Varje fabrik tillverkar högst en enhet per runda. Två fabriker för samma del ger två delar per runda. Längre tillverkningstid uppstår genom delkedjan, inte genom en egen tid per produkt.              |
-| `blockerad-fabrik`              | En fabrik som inte får sina råvaror eller delar färdigställer inte sin enhet den rundan.                                                                                                                |
-| `delar-tillverkas-pa-behov`     | En delfabrik tillverkar bara när en beställd slutprodukt eller byggnad i nätverket behöver delen.                                                                                                       |
-| `slutproduktfabrik-utan-order`  | En slutproduktfabrik utan beställning står still.                                                                                                                                                       |
-| `standardregel-vid-brist`       | Räcker insatsvarorna inte till alla fabriker fördelas de med en fast regel utan spelarstyrning: den fabrik som väntat längst får först, och vid lika går en slutproduktfabrik före en delfabrik.        |
-| `parallella-byggen`             | Planetens `Build queue` finns kvar för byggnader. Flera byggnader kan beställas på en gång och byggs samtidigt så långt råvaror och arbetare räcker.                                                    |
+| Kravnamn                        | Produktkrav                                                                                                                                                                                                   |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tre-produktionsnivaer`         | Produktionen har tre nivåer: råvaror (`Iron`, `Water`, `Oil`), delar (exempelvis `Rocket engine`, `Weapons module`, teleskop) och slutprodukter (skepp). Katalogen motsvarar dagens men ska kunna växa.       |
+| `skepp-kostar-bara-delar`       | Skepp kostar enbart delar, inte råvaror direkt.                                                                                                                                                               |
+| `byggnader-kostar-raavaror`     | Byggnader, även fabriker, kostar råvaror ur nätverkets gemensamma lager.                                                                                                                                      |
+| `en-enhet-per-fabrik-och-runda` | Varje fabrik tillverkar högst en enhet per runda. Två fabriker för samma del ger två delar per runda. Längre tillverkningstid uppstår genom delkedjan, inte genom en egen tid per produkt.                    |
+| `blockerad-fabrik`              | En fabrik som inte får sina råvaror eller delar färdigställer inte sin enhet den rundan.                                                                                                                      |
+| `delar-tillverkas-pa-behov`     | En delfabrik tillverkar bara när en beställd slutprodukt eller byggnad i nätverket behöver delen.                                                                                                             |
+| `slutproduktfabrik-utan-order`  | En slutproduktfabrik utan beställning står still.                                                                                                                                                             |
+| `standardregel-vid-brist`       | Räcker insatsvarorna inte till alla fabriker fördelas de med en fast regel utan spelarstyrning: den fabrik som väntat längst får först, och vid lika går en slutproduktfabrik före en delfabrik.              |
+| `parallella-byggen`             | Planeten har en egen kö för byggnader, skild från skeppsorder. Flera byggnader kan beställas på en gång och byggs samtidigt så långt råvaror och arbetare räcker.                                             |
+| `skeppsorder-pa-planeten`       | Skepp beställs på planetnivå från kartans Production. Varje slutproduktfabrik på planeten tar nästa order av sin typ, så fabrikerna arbetar samtidigt. Kön innehåller bara skepp, inte delar eller byggnader. |
 
 Dagens personalregler för fabriker gäller fortsatt.
 
@@ -147,6 +148,13 @@ för senare ändringar.
       frigör skeppet och öppnar förslagen med skeppet förvalt. Om flytten
       delar gruppen varnar skärmen först, till exempel
       `Splits Lyra from group`.
+  - **Beställning av skepp (låst 2026-11-18):** ett tryck på en
+    slutproduktfabrik på skärm 1 öppnar kartans Production för planeten.
+    Där visas bara skepp. Kostnaden visas i delar och tiden i rundor, till
+    exempel `3/4 rounds` och `~4 rounds`. I stället för försörjningskedjan på
+    kartan visas vilka delar som finns i gruppen och hur många rundor bort de
+    är. På skärm 1 visar en slutproduktfabrik med order sitt framsteg och hur
+    många fler som är beställda, till exempel `3/4 rounds · 2 more`.
   - Vyn visar tid, till exempel när en vara kommer fram, och vilken tid en ny
     förbindelse sparar. Tiden visas också när en fabrik ska byggas.
 - Hur mycket ett mining ship utvinner per runda, och vilka råvaror nebulosor
@@ -155,9 +163,15 @@ för senare ändringar.
 ## Krav som ersätts vid implementation
 
 Följande krav ersätts när motsvarande delar ovan implementeras. Deras tester
-ändras eller tas bort samtidigt: `route-kartvy`, `produktions-kartvy`,
+ändras eller tas bort samtidigt: `route-kartvy`,
 `byggprojektets-forsorjningskedja`, `forsorjningsproblem-pa-kartan`,
-`automatiska-delorder`, `leveransfloden`, `forsorjningsstatus`,
-`projektens-forsorjningssteg`, `transportbygge-i-forsorjningssteg` och de
-fysiska transportreglerna i [försörjningsreglerna](supply-production.md).
-Exakt omfattning bestäms per implementationssteg.
+`dome-fore-fabriksforslag`, `produktionsval-efter-forekomst`,
+`produktionsberoenden-i-byggval`, `automatiska-delorder`, `leveransfloden`,
+`forsorjningsstatus`, `projektens-forsorjningssteg`,
+`transportbygge-i-forsorjningssteg` och de fysiska transportreglerna i
+[försörjningsreglerna](supply-production.md).
+
+`produktions-kartvy`, `radiella-byggval`, `kompakt-produktionsko` och
+`dubbelklick-bygger-pa-kartan` behålls men begränsas till skepp enligt
+`skeppsorder-pa-planeten`. Byggnader, Domes och fabriker byggs inte längre
+från kartan. Exakt omfattning bestäms per implementationssteg.
