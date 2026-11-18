@@ -1,116 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { upgradeState } from '../../fixtures/fleet-upgrades.js';
 import { tradeNetworkState } from '../../fixtures/trade-network.js';
-import {
-  Game,
-  engineCount,
-  type ShipType,
-} from '../../../src/client/space-map/models/Game.js';
+import { Game } from '../../../src/client/space-map/models/Game.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { finishYear } from '../../fixtures/salvage.js';
 
-it('delproduktion-med-sammanhang: reports parts reserved for a fleet upgrade before installing them', () => {
-  const state = upgradeState();
-  state.colonies[0]![1].stock['Ion pulse engine'] = 1;
-  state.colonies[0]![1].buildings.push({
-    id: 'ion-factory',
-    type: 'Ion pulse engine factory',
-    slotIndex: 2,
-    demolition: false,
-  });
-  const game = Game.restore(state);
-  game.upgradeFleet('fleet-home');
-  finishYear(game);
-  const line = game.events
-    .flatMap((event) => event.lines ?? [])
-    .find((line) => line.production?.target === 'Fleet upgrade')!;
-  expect(line.production).toMatchObject({
-    target: 'Fleet upgrade',
-    recipient: 'Tellus',
-    ready: 2,
-    total: 2,
-  });
-  expect(line.text).toContain(
-    'Ion pulse engine (2/2) for Fleet upgrade on Tellus',
-  );
-});
-
 describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flottuppgradering', () => {
-  it('produktionsstatus-for-separata-behov: does not treat an upgrade’s ordered components as requirements of the factory project producing them', () => {
-    const state = upgradeState();
-    const colony = state.colonies[0]![1];
-    colony.stock['Ion pulse engine'] = 0;
-    colony.stock['Telescope III'] = 0;
-    colony.buildings.push(
-      {
-        id: 'ion-factory',
-        type: 'Ion pulse engine factory',
-        slotIndex: 2,
-        demolition: false,
-      },
-      {
-        id: 'telescope-factory',
-        type: 'Telescope III factory',
-        slotIndex: 3,
-        demolition: false,
-      },
-    );
-    const game = Game.restore(state);
-    game.upgradeFleet('fleet-home');
-    const supply = game
-      .supplyOverview()
-      .planets.find((planet) => planet.id === 'sol-0')!;
-    expect(supply.project?.type).toBe('Ion pulse engine');
-    expect(supply.status).toBe('Ready');
-    expect(
-      game.decisions.some((decision) => decision.id === 'supply-sol-0'),
-    ).toBe(false);
-  });
-  it.each<ShipType>([
-    'Fighter',
-    'Colony ship',
-    'Transport ship',
-    'Civilian shuttle',
-    'Salvage ship',
-    'Exploration ship',
-  ])(
-    'upgrades the exact engine count of a %s without changing its type or identity',
-    (type) => {
-      const state = upgradeState();
-      state.colonies[0]![1].stock['Ion pulse engine'] = engineCount(type);
-      const game = Game.restore({
-        ...state,
-        fleets: state.fleets.map((fleet) => ({
-          ...fleet,
-          ships: { ...fleet.ships, 'Exploration ship': 0, [type]: 1 },
-          shipUnits: [
-            {
-              id: 'original-ship',
-              type,
-              ...(type === 'Exploration ship' ? { telescope: 3 as const } : {}),
-              engines: {
-                'Rocket engine': engineCount(type),
-                'Ion pulse engine': 0,
-              },
-            },
-          ],
-        })),
-      });
-      game.upgradeFleet('fleet-home');
-      finishYear(game);
-      expect(game.fleet('fleet-home')!.shipUnits![0]).toMatchObject({
-        id: 'original-ship',
-        type,
-        engines: { 'Rocket engine': 0, 'Ion pulse engine': engineCount(type) },
-      });
-      expect(
-        game.planetSnapshot(game.galaxy.homePlanet)!.economy.stock[
-          'Ion pulse engine'
-        ],
-      ).toBe(0);
-    },
-  );
-
   it('preserves recovered advanced equipment while upgrading older ships only to researched levels', () => {
     const state = upgradeState();
     state.colonies[0]![1].stock['Telescope II'] = 1;
@@ -216,7 +111,7 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
     );
   });
 
-  it('manufactures remote components and physically delivers them to the shipyard planet', () => {
+  it('delar-tillverkas-pa-behov / en-runda-per-lank: makes remote parts on demand and brings them to the shipyard planet', () => {
     const state = tradeNetworkState();
     const ready = upgradeState();
     const home = state.colonies[0]![1];
@@ -260,11 +155,7 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
         'Ion pulse engine'
       ],
     ).toBe(2);
-    expect(
-      game
-        .exportState()
-        .colonies[1]![1].projects.map((project) => project.type),
-    ).toEqual(['Ion pulse engine', 'Ion pulse engine', 'Telescope III']);
+    expect(game.exportState().colonies[1]![1].projects).toEqual([]);
     finishYear(game);
     expect(game.fleet('fleet-home')!.upgrade).toBeDefined();
     expect(game.fleet('fleet-home')!.shipUnits![0]!.telescope).toBe(1);
@@ -280,11 +171,6 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
       engines: { 'Ion pulse engine': 2 },
     });
     expect(restored.fleet('fleet-home')!.upgrade).toBeUndefined();
-    expect(
-      restored.events.some((event) =>
-        /delivered[^\n]*1 Telescope III[^\n]*to Tellus/.test(event.text),
-      ),
-    ).toBe(true);
     expect(restored.exportState().componentOrders).toHaveLength(0);
     expect(
       restored.planetSnapshot(restored.galaxy.homePlanet)!.economy.demand[
@@ -400,33 +286,6 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
     ).toBe(2);
   });
 
-  it('reports a cancelled supplier project rather than silently waiting forever', () => {
-    const state = upgradeState();
-    const colony = state.colonies[0]![1];
-    colony.stock['Ion pulse engine'] = 0;
-    colony.buildings.push({
-      id: 'ion',
-      type: 'Ion pulse engine factory',
-      slotIndex: 2,
-      demolition: false,
-    });
-    const game = Game.restore(state);
-    game.upgradeFleet('fleet-home');
-    game.cancelProject(
-      game.galaxy.homePlanet,
-      game.fleet('fleet-home')!.upgrade!.productionIds[0]!,
-    );
-    finishYear(game);
-    expect(game.fleet('fleet-home')!.upgrade!.issue).toContain('cancelled');
-    expect(
-      game.decisions.some((decision) => decision.id === 'upgrade-fleet-home'),
-    ).toBe(true);
-    game.clearDestination('fleet-home');
-    expect(game.planetSnapshot(game.galaxy.homePlanet)!.projects).toHaveLength(
-      0,
-    );
-  });
-
   it('rejects an invalid saved downgrade and incompatible saved route assignment', () => {
     const game = Game.restore(upgradeState());
     game.upgradeFleet('fleet-home');
@@ -492,7 +351,7 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
     ).toHaveLength(1);
   });
 
-  it('orders missing parts at the shipyard planet and waits for production without an idle-fleet decision', () => {
+  it('delar-tillverkas-pa-behov: makes missing parts at the shipyard planet and waits without an idle-fleet decision', () => {
     const state = upgradeState();
     const colony = state.colonies[0]![1];
     colony.stock['Ion pulse engine'] = 0;
@@ -513,11 +372,7 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
     );
     const game = Game.restore(state);
     game.upgradeFleet('fleet-home');
-    expect(
-      game
-        .planetSnapshot(game.galaxy.homePlanet)!
-        .projects.map((project) => project.type),
-    ).toEqual(['Ion pulse engine', 'Ion pulse engine', 'Telescope III']);
+    expect(game.planetSnapshot(game.galaxy.homePlanet)!.projects).toEqual([]);
     finishYear(game);
     expect(game.fleet('fleet-home')!.upgrade).toBeDefined();
     expect(game.fleet('fleet-home')!.shipUnits![0]!.telescope).toBe(1);

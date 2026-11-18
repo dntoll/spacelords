@@ -25,6 +25,7 @@ import {
   renderCombatLog,
   renderEventContent,
   renderSalvageSelection,
+  FactoriesView,
 } from '../../space-map/views/index.js';
 import {
   BattleView,
@@ -64,6 +65,7 @@ export class AppView implements AppPort {
   #battleView: BattleView | null = null;
   #boardingView: BoardingView | null = null;
   #editorView: BoardingEditorView | null = null;
+  #factoriesView: FactoriesView | null = null;
   readonly #root: HTMLElement;
   readonly #mapFactory: MapFactory;
   #emit: IntentHandler = () => undefined;
@@ -143,6 +145,16 @@ export class AppView implements AppPort {
     if (this.#editorView) {
       this.#editorView.dispose();
       this.#editorView = null;
+      this.#screen = null;
+      this.#saveKey = '';
+    }
+    if (model.screen === 'factories' && model.factories) {
+      this.#renderFactories(model);
+      return;
+    }
+    if (this.#factoriesView) {
+      this.#factoriesView.dispose();
+      this.#factoriesView = null;
       this.#screen = null;
       this.#saveKey = '';
     }
@@ -1124,6 +1136,8 @@ export class AppView implements AppPort {
   dispose(): void {
     this.#editorView?.dispose();
     this.#editorView = null;
+    this.#factoriesView?.dispose();
+    this.#factoriesView = null;
     this.#boardingView?.dispose();
     this.#battleView?.dispose();
     this.#disposed = true;
@@ -1216,7 +1230,7 @@ export class AppView implements AppPort {
       ['map', 'Star map'],
       ['research', 'Research'],
       ['fleets', 'Fleets'],
-      ['route', 'Route'],
+      ['factories', 'Factories'],
       ['production', 'Production'],
       ['decisions', 'Decisions'],
     ] as const) {
@@ -1231,8 +1245,8 @@ export class AppView implements AppPort {
                   ? 'open-research'
                   : target === 'fleets'
                     ? 'open-fleets'
-                    : target === 'route'
-                      ? 'open-route'
+                    : target === 'factories'
+                      ? 'open-factories'
                       : target === 'production'
                         ? 'open-production'
                         : 'open-decisions',
@@ -1246,6 +1260,31 @@ export class AppView implements AppPort {
     }
     header.append(brand, navigation, fullscreen);
     return header;
+  }
+
+  /** Förenklad produktion: the Factories screens under the main header. */
+  #renderFactories(model: AppReadModel): void {
+    if (this.#screen !== 'factories' || !this.#factoriesView) {
+      this.#mapObserver?.disconnect();
+      this.#mapObserver = null;
+      this.#ring?.remove();
+      this.#ring = null;
+      this.#ringKey = '';
+      this.#viewportKey = '';
+      this.#map?.dispose();
+      this.#map = null;
+      this.#selectionKey = '';
+      const main = element('main', 'page factories-page');
+      this.#root.replaceChildren(this.#header('factories'), main);
+      this.#factoriesView = new FactoriesView(main, (action) =>
+        this.#emit({ type: 'factories', action }),
+      );
+      this.#screen = 'factories';
+    }
+    this.#factoriesView.render(
+      model.factories!,
+      playerNoticeText(model.notice),
+    );
   }
 
   #mapPage(screen: MapScreen): HTMLElement {

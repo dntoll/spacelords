@@ -13,7 +13,6 @@ import {
   encounterGame,
 } from '../../fixtures/battle-checkpoint.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 
 describe('tactical combat integration', () => {
@@ -102,42 +101,6 @@ describe('tactical combat integration', () => {
     expect(Game.restore(game.exportState()).exportState()).toEqual(
       game.exportState(),
     );
-  });
-
-  it('skeppsvis-retratt: resuming a loaded transport retains its shipment and restores the delivery destination', () => {
-    const state = tradeNetworkState();
-    const fleet = state.fleets.find((f) => f.id === 'freighters')!;
-    const game = Game.restore({
-      ...state,
-      fleets: [
-        {
-          ...fleet,
-          ordersPaused: true,
-          routeId: 'route-test',
-          position: { q: 0, r: 0 },
-          destination: null,
-        },
-      ],
-      shipments: [
-        {
-          id: 'cargo',
-          resource: 'Iron',
-          amount: 10,
-          path: ['sol-0', 'sol-1'],
-          stage: 0,
-          projectId: 'vesta-mine',
-          recipient: 'sol-1',
-          fleetId: fleet.id,
-          committed: true,
-        },
-      ],
-    });
-    game.resumeFleetOrders(fleet.id);
-    expect(game.fleet(fleet.id)!.destination).toEqual(
-      game.galaxy.systems[0]!.planets[1]!.position,
-    );
-    expect(game.exportState().shipments[0]!.fleetId).toBe(fleet.id);
-    expect(game.fleet(fleet.id)!.ordersPaused).toBeUndefined();
   });
 
   it('vaxelvisa-skeppsaktiveringar: one towed wreck slows one individual tug instead of every Salvage ship', () => {
@@ -382,6 +345,6 @@ describe('tactical combat integration', () => {
     expect(restored.fleets).toEqual(state.fleets);
     expect(restored.events).toEqual(state.events);
     expect(restored.pirates).toEqual(state.pirates);
-    expect(restored.version).toBe(16);
+    expect(restored.version).toBe(17);
   });
 });

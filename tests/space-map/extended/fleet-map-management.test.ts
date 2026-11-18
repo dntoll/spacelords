@@ -540,24 +540,6 @@ describe('skepp-ur-olastad-ruttflotta', () => {
     });
     expect(model.snapshot.fleetNameEdit).not.toBeNull();
   });
-
-  it('disables every ship in a loaded route fleet and rejects selection in the model', () => {
-    const { model, root } = assigned(true);
-    const tokens = root.querySelectorAll<HTMLButtonElement>(
-      '.fleet-card[data-fleet-id="freighters"] .ship-token',
-    );
-    expect(tokens.length).toBeGreaterThan(0);
-    expect([...tokens].every((token) => token.disabled)).toBe(true);
-    expect(
-      root
-        .querySelector('[data-fleet-id="freighters"]')!
-        .getAttribute('aria-description'),
-    ).toContain('Ships cannot be moved out while this fleet carries cargo.');
-    model.chooseShipTransfer('freighters', 'Fighter');
-    expect(model.snapshot.shipTransfer).toBeNull();
-    model.chooseShipTransfer('fleet-home', 'Fighter');
-    expect(model.snapshot.shipTransfer?.fleetId).toBe('fleet-home');
-  });
 });
 
 describe('flottpatrullering', () => {

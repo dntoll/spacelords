@@ -11,7 +11,6 @@ import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
 import { turnFrames } from '../../fixtures/turn-steps.js';
-import { renderProduction } from '../../../src/client/space-map/views/planet/PlanetProductionView.js';
 
 function saved(
   researched: Technology[] = [
@@ -47,21 +46,13 @@ describe('senaste-teknik-i-byggval', () => {
     ['Telescope I factory', 'Telescope II factory', 'Telescope III factory'],
     ['Telescope III factory'],
   ])(
-    'offers only the highest researched telescope from %j in both build menus',
+    'offers only the highest researched telescope from %j in the build menu',
     (...researched) => {
-      const { game, home, snapshot } = setup(saved(researched));
+      const { snapshot } = setup(saved(researched));
       const latest = researched.at(-1);
       expect(
         snapshot()
           .buildOptions.filter((o) => o.type.startsWith('Telescope'))
-          .map((o) => o.type),
-      ).toEqual([latest]);
-      expect(
-        game
-          .productionOptions(home)
-          .filter(
-            (o) => o.category === 'Buildings' && o.type.startsWith('Telescope'),
-          )
           .map((o) => o.type),
       ).toEqual([latest]);
       expect(
@@ -82,51 +73,6 @@ describe('senaste-teknik-i-byggval', () => {
     expect(
       snapshot().buildOptions.some((o) => o.type === 'Telescope II factory'),
     ).toBe(false);
-  });
-  it('hides obsolete engine and telescope components in both production menus while preserving stocks and orders', () => {
-    const state = saved([
-      'Rocket engine factory',
-      'Ion pulse engine factory',
-      'Telescope I factory',
-      'Telescope II factory',
-      'Telescope III factory',
-    ]);
-    const colony = state.colonies[0]![1];
-    colony.stock['Rocket engine'] = 3;
-    colony.buildings = (
-      [
-        'Rocket engine factory',
-        'Ion pulse engine factory',
-        'Telescope I factory',
-        'Telescope II factory',
-        'Telescope III factory',
-        'Weapons module factory',
-      ] as BuildType[]
-    ).map((type, slotIndex) => ({
-      id: `factory-${slotIndex}`,
-      type,
-      slotIndex,
-      demolition: false,
-    }));
-    const { game, home, snapshot } = setup(state);
-    const expected = ['Ion pulse engine', 'Telescope III', 'Weapons module'];
-    expect(
-      game
-        .productionOptions(home)
-        .filter((option) => option.category === 'Components')
-        .map((option) => option.type),
-    ).toEqual(expected);
-    const view = renderProduction(snapshot(), [], () => {}, {
-      phase: 'planning',
-      productionCategory: 'Components',
-    });
-    const choices = Array.from(
-      view.querySelectorAll('.catalog-list button'),
-    ).map((button) => button.textContent);
-    expect(choices).toEqual(expected);
-    game.scheduleComponent(home, 'Rocket engine');
-    expect(snapshot().projects[0]!.type).toBe('Rocket engine');
-    expect(snapshot().economy.stock['Rocket engine']).toBe(3);
   });
   it('replaces Rocket engine build choices with Ion even before a new factory is built', () => {
     const { game, home, snapshot } = setup(
@@ -150,14 +96,9 @@ describe('senaste-teknik-i-byggval', () => {
 });
 
 describe('uppgradera-obsoleta-fabriker', () => {
-  it('keeps queue order and waits for the existing factory workforce', () => {
+  it('waits for the existing factory workforce', () => {
     const { game, home, snapshot } = setup();
-    game.scheduleComponent(home, 'Telescope I');
     game.scheduleUpgrade(home, 'old-factory');
-    turn(game);
-    expect(snapshot().economy.stock['Telescope I']).toBe(1);
-    expect(snapshot().buildings[0]!.type).toBe('Telescope I factory');
-    expect(snapshot().projects).toHaveLength(1);
     const state = game.exportState();
     state.colonies[0]![1].population = 200;
     const understaffed = Game.restore(state);

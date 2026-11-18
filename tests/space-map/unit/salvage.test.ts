@@ -351,7 +351,7 @@ describe('automatisk-vrakreparation / forskning-fran-bargade-delar', () => {
     expect(demand.Water).toBe(cost.Water);
     expect(demand.Oil).toBe(cost.Oil);
   });
-  it('varvets-automatiska-materialforsorjning: transports missing resources and completes the repair after a reload', () => {
+  it('varvets-automatiska-materialforsorjning / delat-lager-i-natverket: brings missing resources over the network and completes the repair after a reload', () => {
     const state = tradeNetworkState();
     const salvage = salvageState();
     state.colonies[0]![1].buildings = salvage.colonies[0]![1].buildings;
@@ -378,13 +378,6 @@ describe('automatisk-vrakreparation / forskning-fran-bargade-delar', () => {
       salvage: salvage.salvage,
     });
     game.assignTradeFleet('route-test', 'freighters');
-    expect(
-      game.shipments.some(
-        (shipment) =>
-          shipment.recipientId === 'sol-0' &&
-          shipment.project === 'Shipyard repair',
-      ),
-    ).toBe(true);
     let restored = Game.restore(game.exportState());
     for (let year = 0; year < 12 && restored.wrecks.length; year++) {
       finishYear(restored);

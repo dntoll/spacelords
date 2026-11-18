@@ -334,7 +334,7 @@ describe('teleskop-i-exploration-ships', () => {
     return state;
   }
 
-  it('requires research in order and real telescope supply before a new ship can be ordered', () => {
+  it('requires research in order; delar-tillverkas-pa-behov lets a ship wait for a telescope', () => {
     const research = new ResearchPlan();
     research.add('Exploration ship factory');
     expect(research.queue).toEqual([
@@ -348,9 +348,13 @@ describe('teleskop-i-exploration-ships', () => {
       'Telescope III factory',
     ]);
     const game = Game.restore(shipyard());
-    expect(() =>
-      game.scheduleShip(game.galaxy.homePlanet, 'Exploration ship'),
-    ).toThrow('Cannot order Telescope I');
+    game.scheduleShip(game.galaxy.homePlanet, 'Exploration ship');
+    year(game);
+    expect(
+      game
+        .planetSnapshot(game.galaxy.homePlanet)!
+        .projects.map((project) => project.type),
+    ).toEqual(['Exploration ship']);
   });
 
   it('chooses the best supplied telescope, consumes exactly one and preserves the old ship level', () => {
@@ -374,7 +378,7 @@ describe('teleskop-i-exploration-ships', () => {
     ).toEqual([1, 3]);
   });
 
-  it('automatically queues a telescope in the matching factory and reserves each order only once', () => {
+  it('delar-tillverkas-pa-behov: the telescope factory makes one telescope per ship without queue entries', () => {
     const state = shipyard();
     state.colonies[0]![1].buildings.push({
       id: 'telescope',
@@ -389,12 +393,7 @@ describe('teleskop-i-exploration-ships', () => {
       game
         .planetSnapshot(game.galaxy.homePlanet)!
         .projects.map((project) => project.type),
-    ).toEqual([
-      'Telescope II',
-      'Exploration ship',
-      'Telescope II',
-      'Exploration ship',
-    ]);
+    ).toEqual(['Exploration ship', 'Exploration ship']);
     for (let count = 0; count < 4; count++) year(game);
     expect(
       game
@@ -447,7 +446,7 @@ describe('teleskop-i-exploration-ships', () => {
           shipUnits: [],
         })),
       });
-      expect(game.exportState().version).toBe(16);
+      expect(game.exportState().version).toBe(17);
       expect(game.exportState().explored).toContain('-6,6');
       expect(
         game.planetSnapshot(game.galaxy.homePlanet)!.economy.stock.Iron,

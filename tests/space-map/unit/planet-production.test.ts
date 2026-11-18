@@ -45,7 +45,7 @@ function setup(
 }
 
 describe('gemensam-planetko / delfabriker / automatiska-delorder', () => {
-  it('uses existing component stock before scheduling new parts for a later ship', () => {
+  it('delar-tillverkas-pa-behov: queues only the ships, never separate part orders', () => {
     const base = setup().game.exportState();
     const game = Game.restore({
       ...base,
@@ -64,90 +64,45 @@ describe('gemensam-planetko / delfabriker / automatiska-delorder', () => {
     game.scheduleShip(game.galaxy.homePlanet, 'Fighter');
     expect(
       game.planetSnapshot(game.galaxy.homePlanet)!.projects.map((p) => p.type),
-    ).toEqual(['Fighter', 'Rocket engine', 'Weapons module', 'Fighter']);
+    ).toEqual(['Fighter', 'Fighter']);
   });
 
-  it('rejects missing component factories and keeps invalid orders atomic', () => {
-    const { game, home } = setup(['Fighter factory', 'Rocket engine factory']);
+  it('blockerad-fabrik: keeps invalid orders atomic and lets a ship wait for a part its group cannot make', () => {
+    const { game, home, snapshot, turn } = setup([
+      'Fighter factory',
+      'Rocket engine factory',
+    ]);
     const before = game.exportState();
     expect(() => game.scheduleShip(home, 'Fighter', 'missing')).toThrow();
     expect(game.exportState()).toEqual(before);
-    expect(() => game.scheduleShip(home, 'Fighter')).toThrow('Weapons module');
-    expect(game.exportState()).toEqual(before);
+    game.scheduleShip(home, 'Fighter');
+    turn();
+    expect(snapshot().projects.map((p) => p.type)).toEqual(['Fighter']);
+    expect(
+      game.decisions.find((decision) => decision.id === `supply-${home.id}`)
+        ?.label,
+    ).toContain('no Weapons module');
   });
-  it('queues missing Fighter parts before the ship and completes only one item per planet-year', () => {
+  it('en-enhet-per-fabrik-och-runda / parallella-byggen: makes the parts in one round and the ship in the next while a building builds alongside', () => {
     const { game, home, snapshot, turn } = setup();
     game.scheduleShip(home, 'Fighter');
     game.scheduleBuild(home, 'Research station');
     expect(snapshot().projects.map((p) => p.type)).toEqual([
-      'Rocket engine',
-      'Weapons module',
       'Fighter',
       'Research station',
     ]);
     turn();
     expect(snapshot().economy.stock['Rocket engine']).toBe(1);
-    expect(game.fleet('fleet-home')!.ships.Fighter).toBe(1);
-    expect(snapshot().projects).toHaveLength(3);
-    turn();
     expect(snapshot().economy.stock['Weapons module']).toBe(1);
+    expect(game.fleet('fleet-home')!.ships.Fighter).toBe(1);
+    expect(snapshot().buildings).toHaveLength(4);
+    expect(snapshot().projects.map((p) => p.type)).toEqual(['Fighter']);
     turn();
     expect(game.fleet('fleet-home')!.ships.Fighter).toBe(2);
     expect(snapshot().economy.stock['Rocket engine']).toBe(0);
     expect(snapshot().economy.stock['Weapons module']).toBe(0);
-    expect(snapshot().buildings).toHaveLength(3);
     turn();
-    expect(snapshot().buildings).toHaveLength(4);
-  });
-
-  it('uses stock and earlier queued parts once without creating duplicate automatic orders', () => {
-    const { game, home, snapshot } = setup();
-    game.scheduleComponent(home, 'Rocket engine');
-    game.scheduleComponent(home, 'Weapons module');
-    game.scheduleShip(home, 'Fighter');
-    expect(snapshot().projects.map((p) => p.type)).toEqual([
-      'Rocket engine',
-      'Weapons module',
-      'Fighter',
-    ]);
-    game.scheduleShip(home, 'Fighter');
-    expect(snapshot().projects.map((p) => p.type)).toEqual([
-      'Rocket engine',
-      'Weapons module',
-      'Fighter',
-      'Rocket engine',
-      'Weapons module',
-      'Fighter',
-    ]);
-    const saved = game.exportState();
-    expect(
-      Game.restore(
-        JSON.parse(JSON.stringify(saved)) as typeof saved,
-      ).exportState(),
-    ).toEqual(saved);
-  });
-
-  it('preserves legacy blocked orders without creating new component orders or charging the ship', () => {
-    const base = setup(['Fighter factory']).game.exportState();
-    base.colonies[0]![1].projects.push({
-      id: 'legacy-fighter',
-      type: 'Fighter',
-      slotIndex: null,
-      factoryId: 'factory-0',
-      destinationFleetId: null,
-    });
-    const game = Game.restore({ ...base, version: 3 });
-    const home = game.galaxy.homePlanet;
-    const snapshot = () => game.planetSnapshot(home)!;
-    expect(snapshot().projects.map((p) => p.type)).toEqual(['Fighter']);
-    const stock = snapshot().economy.stock;
-    for (const frame of turnFrames(game)) game.applyFrame(frame);
-    game.finishTurn();
-    expect(snapshot().economy.stock).toEqual(stock);
-    expect(snapshot().projects[0]!.blockedReason).toContain('Rocket engine');
-    expect(() => game.scheduleComponent(home, 'Rocket engine')).toThrow(
-      'factory',
-    );
+    expect(snapshot().economy.stock['Rocket engine']).toBe(0);
   });
 
   it('does not count component orders as reserved building sites', () => {
@@ -227,7 +182,7 @@ describe('gemensam-planetko / sparat-spel / bevara-aldre-produktionskoer', () =>
         .planetSnapshot(restored.galaxy.homePlanet)!
         .projects.map((p) => p.id),
     ).toEqual(['project-2', 'project-3', 'project-1', 'project-6']);
-    expect(restored.exportState().version).toBe(16);
+    expect(restored.exportState().version).toBe(17);
     expect(restored.fleetSnapshots()).toEqual(
       Game.restore(base).fleetSnapshots(),
     );
@@ -246,7 +201,7 @@ describe('gemensam-planetko / sparat-spel / bevara-aldre-produktionskoer', () =>
 });
 
 describe('skeppsdelar / automatisk-resursforsorjning', () => {
-  it('ships manufactured parts over a real trade route to a planet without component factories', () => {
+  it('delat-lager-i-natverket: brings parts over a route to a planet without part factories', () => {
     const base = setup(['Fighter factory']).game.exportState();
     const home = base.world.systems[0]!.planets[0]!;
     const destination = base.world.systems[0]!.planets[1]!;
@@ -306,13 +261,11 @@ describe('skeppsdelar / automatisk-resursforsorjning', () => {
     const route = game.createTradeRoute(home.id, target.id);
     game.assignTradeFleet(route, 'freighters');
     game.scheduleShip(target, 'Fighter');
-    game.startTurn();
-    const frames = turnFrames(game, false);
-    expect(game.fleet('freighters')!.cargo).toMatchObject({
-      'Rocket engine': 1,
-      'Weapons module': 1,
-    });
-    for (const frame of frames) game.applyFrame(frame);
+    // en-runda-per-lank: the parts cross one link, then the Fighter is built.
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
+    game.finishTurn();
+    expect(game.planetSnapshot(target)!.projects).toHaveLength(1);
+    for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
     expect(game.planetSnapshot(target)!.projects).toHaveLength(0);
     expect(
@@ -329,32 +282,5 @@ describe('skeppsdelar / automatisk-resursforsorjning', () => {
         'Weapons module'
       ],
     ).toBe(0);
-  });
-});
-
-describe('projektens-forsorjningssteg / gemensam-planetko / sparat-spel', () => {
-  it('projects actual component links for every queued project and reacts to reorder and cancellation without rewriting saves', () => {
-    const { game, home, snapshot } = setup();
-    game.scheduleShip(home, 'Fighter');
-    const before = game.exportState();
-    const supplies = game.projectSupply(home.id);
-    expect(supplies).toHaveLength(3);
-    expect(JSON.stringify(supplies[2])).toContain(
-      'Produce 1 Rocket engine at Tellus',
-    );
-    expect(JSON.stringify(supplies[2])).toContain('Require 2 Iron');
-    expect(game.exportState()).toEqual(before);
-    const fighter = snapshot().projects[2]!;
-    game.moveProject(home, fighter.id, 0);
-    expect(JSON.stringify(game.projectSupply(home.id)[0])).toContain(
-      'Move production before',
-    );
-    game.cancelProject(home, snapshot().projects[1]!.id);
-    expect(JSON.stringify(game.projectSupply(home.id)[0])).toContain(
-      'production order was cancelled',
-    );
-    expect(Game.restore(game.exportState()).projectSupply(home.id)).toEqual(
-      game.projectSupply(home.id),
-    );
   });
 });

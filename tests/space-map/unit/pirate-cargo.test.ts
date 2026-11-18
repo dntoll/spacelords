@@ -43,7 +43,7 @@ describe('piratflotta-med-lastfartyg', () => {
     const pirate = game.exportState().pirates![0]!;
     expect(pirate.transports).toBe(1);
     expect(pirate.hold).toEqual(pirateHoldFromSeed('pirate-nadir'));
-    expect(game.exportState().version).toBe(16);
+    expect(game.exportState().version).toBe(17);
   });
 
   it('keeps an explicit empty cargo wing on version 14 saves', () => {

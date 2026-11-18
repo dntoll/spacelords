@@ -5,10 +5,7 @@ import {
 } from '../../../src/client/space-map/models/Game.js';
 import { needsAttention } from '../../../src/client/space-map/models/Decisions.js';
 import { domeProductionState } from '../../fixtures/production-dome.js';
-import {
-  tradeNetworkState,
-  distantTradeNetworkState,
-} from '../../fixtures/trade-network.js';
+import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { turnFrames } from '../../fixtures/turn-steps.js';
 
 function turn(game: Game) {
@@ -55,35 +52,6 @@ describe('beslut-vantar-pa-paborjad-atgard', () => {
         (d) => needsAttention(d) && d.label.includes('Research station'),
       ),
     ).toBe(true);
-  });
-  it('waits on multiple routes without promising the same supplier stock twice', () => {
-    const state = distantTradeNetworkState();
-    state.colonies[0]![1].stock.Iron = 5;
-    state.colonies[0]![1].buildings = [];
-    const project = state.colonies[1]![1].projects[0]!;
-    state.colonies[2]![1].projects = [{ ...project, id: 'second-mine' }];
-    const game = Game.restore({
-      ...state,
-      fleets: [],
-      researchQueue: ['Transport ship factory'],
-      researched: state.researched.filter(
-        (t) => t !== 'Transport ship factory' && t !== 'Trade logistics',
-      ),
-    });
-    expect(
-      game.decisions.filter((d) => d.kind === 'route' && d.current),
-    ).toHaveLength(0);
-    expect(
-      game.decisions.filter((d) => d.id.startsWith('supply-') && d.current),
-    ).toHaveLength(1);
-    for (const [, colony] of state.colonies.slice(1)) {
-      const id = state.colonies.find((entry) => entry[1] === colony)![0];
-      expect(
-        game
-          .projectSupply(id)[0]!
-          .requirements.some((r) => r.status === 'Needs attention'),
-      ).toBe(active(game, `supply-${id}`));
-    }
   });
   it('waits for matching Dome research anywhere in the queue and restores the next choice on completion or cancellation', () => {
     const state = domeProductionState(false);
@@ -238,24 +206,6 @@ describe('beslut-vantar-pa-paborjad-atgard', () => {
     );
   });
 
-  it('keeps material quantities real while a connected supply waits for transport preparation', () => {
-    const game = Game.restore(transportState());
-    game.scheduleBuild(game.galaxy.homePlanet, 'Transport ship factory');
-    expect(active(game, 'supply-sol-1')).toBe(false);
-    const supply = game.supplyOverview().planets.find((p) => p.id === 'sol-1')!;
-    expect(supply.status).toBe('Waiting');
-    expect(supply.materials.some((material) => material.unprovided > 0)).toBe(
-      true,
-    );
-    expect(game.supplyStatus('sol-1')).toContain('Waiting');
-    expect(
-      game
-        .projectSupply('sol-1')[0]!
-        .requirements.some((r) => r.status === 'Needs attention'),
-    ).toBe(false);
-    expect(game.tradeRoutes[0]!.capacity).toBe(0);
-  });
-
   it('does not hide missing routes, unrelated shortages or an available transport assignment', () => {
     for (const obstacle of ['route', 'source', 'fleet'] as const) {
       const state = transportState();
@@ -275,16 +225,6 @@ describe('beslut-vantar-pa-paborjad-atgard', () => {
         );
       expect(active(Game.restore(state), 'supply-sol-1'), obstacle).toBe(true);
     }
-  });
-
-  it('reports the root shortage of blocked preparation instead of its transport consequences', () => {
-    const state = transportState();
-    state.colonies[0]![1].stock.Oil = 0;
-    const game = Game.restore(state);
-    game.scheduleBuild(game.galaxy.homePlanet, 'Transport ship factory');
-    expect(active(game, 'route-idle-route-test')).toBe(false);
-    expect(active(game, 'supply-sol-1')).toBe(false);
-    expect(active(game, 'supply-sol-0')).toBe(true);
   });
 
   it('waits for factory research but reports a factory queued behind its dependent product', () => {

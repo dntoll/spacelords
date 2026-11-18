@@ -7,6 +7,7 @@ import {
   ProductionController,
   OrderController,
   DecisionController,
+  FactoriesController,
   StarMapController,
   TurnController,
 } from '../../space-map/controllers/index.js';
@@ -28,6 +29,7 @@ export class MasterController {
   readonly #saveCase: SaveController;
   readonly #boarding: BoardingController;
   readonly #editor: BoardingEditorController;
+  readonly #factories: FactoriesController;
   readonly #battle: BattleController;
   readonly #research: ResearchController;
   readonly #planet: PlanetController;
@@ -62,6 +64,7 @@ export class MasterController {
     this.#saveCase = new SaveController(model.saveCase);
     this.#boarding = new BoardingController(model.boarding);
     this.#editor = new BoardingEditorController(model.editorCase);
+    this.#factories = new FactoriesController(model.factoriesCase);
     this.#battle = new BattleController(model.battle);
     this.#research = new ResearchController(model.researchCase);
     this.#planet = new PlanetController(model.planet);
@@ -257,6 +260,14 @@ export class MasterController {
   }
 
   #handleIntent(intent: AppIntent): void {
+    if (intent.type === 'factories') {
+      // skeppsorder-pa-planeten: ship factories hand over to the map.
+      const outcome = this.#factories.handle(intent.action);
+      if (outcome?.kind === 'open-production')
+        this.#production.openProduction(outcome.planetId);
+      this.#render();
+      return;
+    }
     if (intent.type === 'boarding-command') {
       this.#boarding.commandBoarding(intent.command);
       this.#render();
@@ -710,6 +721,9 @@ export class MasterController {
         break;
       case 'open-research':
         this.#research.openResearch();
+        break;
+      case 'open-factories':
+        this.#factories.open();
         break;
       case 'open-fleets':
         this.#fleets.openFleets();
