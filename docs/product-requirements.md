@@ -4,6 +4,16 @@
 Byggprojektets försörjningsstatus avser dess egna behov, så att andra
 pågående arbeten inte orsakar missvisande bristbesked.
 
+## Förenklad produktion, utforskning 2026-11-18
+
+Gäller bara utforskningen `simple_production`. **Ej implementerat.**
+Produktionen har tre nivåer: råvaror, delar och skepp. Planeter som förbinds
+med fraktskepp delar råvaror och delar, oavsett avstånd. Varje fabrik gör en
+enhet per runda, delar tillverkas bara när något behöver dem och skepp kostar
+bara delar. Råvaror utvinns där de finns, även av mining ships i nebulosor och
+asteroidbälten, och skepp tillverkas där deras fabrik står. Se
+[förenklad produktion](simple-production.md).
+
 ## Kartobjekt och automatiska flottor, 2026-11-08
 
 - `kartobjekt-foljer-zoom` — **Fullständigt implementerat**: vrakens symboler

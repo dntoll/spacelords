@@ -900,6 +900,15 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Se [kartbaserade Route och Production](docs/route-production.md).
   Försörjningsreglerna `forsorjningsstatus`, `leveransfloden` och
   `produktionsformaga` behålls enligt [försörjningsreglerna](docs/supply-production.md).
+- **Förenklad produktion (utforskning `simple_production`):**
+  `tre-produktionsnivaer`, `produktionsnatverk`, `fraktskepp-ger-forbindelse`,
+  `delat-lager-i-natverket`, `en-enhet-per-fabrik-och-runda`,
+  `delar-tillverkas-pa-behov`, `mining-ships` med flera är
+  **Ej implementerat**. Råvaror och delar delas inom ett nätverk av planeter
+  som är förbundna med fraktskepp. Bara utvinning och slutprodukter är
+  platsbundna. Vyn prototypas separat. Kraven ersätter Route, Production och
+  den fysiska frakten när de implementeras. Se
+  [förenklad produktion](docs/simple-production.md).
   `forsorjningsoversikt`, `relevanta-material` och `materialoversikt` ersätts;
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och

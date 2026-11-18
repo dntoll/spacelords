@@ -1,0 +1,82 @@
+# Förenklad produktion (utforskning)
+
+**Utforskning på branchen `simple_production`.** Kraven gäller bara inom
+utforskningen. De följer med till `development` först när användaren ber om
+det, och försvinner om konceptet kastas. Låsta 2026-11-18.
+
+Dagens Route och Production styr för detaljerat, särskilt på mobil. Konceptet
+ersätter fysisk materialfrakt mellan enskilda planeter med ett nätverk där
+råvaror och delar delas. Det som fortfarande är platsbundet är var råvaror
+utvinns och var slutprodukter tillverkas.
+
+Alla krav nedan har status **Ej implementerat**.
+
+## Produktionsnivåer
+
+| Kravnamn                        | Produktkrav                                                                                                                                                                                             |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tre-produktionsnivaer`         | Produktionen har tre nivåer: råvaror (`Iron`, `Water`, `Oil`), delar (exempelvis `Rocket engine`, `Weapons module`, teleskop) och slutprodukter (skepp). Katalogen motsvarar dagens men ska kunna växa. |
+| `skepp-kostar-bara-delar`       | Skepp kostar enbart delar, inte råvaror direkt.                                                                                                                                                         |
+| `byggnader-kostar-raavaror`     | Byggnader, även fabriker, kostar råvaror ur nätverkets gemensamma lager.                                                                                                                                |
+| `en-enhet-per-fabrik-och-runda` | Varje fabrik tillverkar högst en enhet per runda. Två fabriker för samma del ger två delar per runda. Längre tillverkningstid uppstår genom delkedjan, inte genom en egen tid per produkt.              |
+| `blockerad-fabrik`              | En fabrik som inte får sina råvaror eller delar färdigställer inte sin enhet den rundan.                                                                                                                |
+| `delar-tillverkas-pa-behov`     | En delfabrik tillverkar bara när en beställd slutprodukt eller byggnad i nätverket behöver delen.                                                                                                       |
+| `slutproduktfabrik-utan-order`  | En slutproduktfabrik utan beställning står still.                                                                                                                                                       |
+| `standardregel-vid-brist`       | Räcker insatsvarorna inte till alla fabriker fördelas de med en fast regel utan spelarstyrning: den fabrik som väntat längst får först, och vid lika går en slutproduktfabrik före en delfabrik.        |
+| `parallella-byggen`             | Planetens `Build queue` finns kvar för byggnader. Flera byggnader kan beställas på en gång och byggs samtidigt så långt råvaror och arbetare räcker.                                                    |
+
+Dagens personalregler för fabriker gäller fortsatt.
+
+## Plats
+
+| Kravnamn                   | Produktkrav                                                                                                                             |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `utvinning-vid-fyndighet`  | En råvarufabrik står på en planet där råvaran finns och utvinner tills fyndigheten är slut. Olika planeter har olika råvaror.           |
+| `slutprodukt-vid-fabriken` | En slutprodukt tillverkas och levereras vid sin fabrik. Spelaren bygger slutproduktfabriken där produkten behövs.                       |
+| `delat-lager-i-natverket`  | Råvaror och delar inom ett nätverk är tillgängliga för alla dess fabriker och byggen, oavsett var de tillverkats. Lagret har inget tak. |
+| `avstand-utan-betydelse`   | Avståndet mellan planeter i samma nätverk påverkar varken tillgång eller tid.                                                           |
+
+Varje vara behåller i modellen sin ursprungsplanet, även om spelaren inte
+behöver se den. Det krävs för `varor-stannar-vid-delning` och `erovrad-last`.
+
+## Nätverk och fraktskepp
+
+| Kravnamn                          | Produktkrav                                                                                                                                                               |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `produktionsnatverk`              | Ägda planeter och anslutna mining ships som hänger ihop via aktiva routes bildar ett nätverk. Det kan finnas flera separata nätverk.                                      |
+| `fraktskepp-ger-forbindelse`      | En route är aktiv när ett `Transport ship` är tilldelat den. Ett skepp räcker åt båda hållen och har obegränsad kapacitet. Fler fraktskepp ger fler möjliga förbindelser. |
+| `flytta-fraktskepp-mellan-routes` | Spelaren kan flytta ett fraktskepp från en route till en annan och därmed prioritera bort en del av nätverket. Spelaren ser när en route saknar fraktskepp.               |
+| `varor-stannar-vid-delning`       | Delas ett nätverk stannar varje vara i den del där den tillverkades.                                                                                                      |
+| `erovrad-last`                    | Förstörs eller erövras ett fraktskepp får erövraren lasten, det vill säga det som passerade routen under rundan. Nätverket delas om det inte finns någon annan väg.       |
+| `eskort-pa-routes`                | Eskort kan tilldelas en route och skyddar dess fraktskepp. Bygger vidare på `rutt-eskortfordelning`.                                                                      |
+
+## Mining ships
+
+| Kravnamn                 | Produktkrav                                                                                                                                                                       |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mining-ships`           | Mining ships utvinner råvaror ur nebulosor och asteroidbälten. Utvinningen styrs på kartan.                                                                                       |
+| `mining-ship-anslutning` | Ett mining ship är anslutet till nätverket när ett fraktskepp har routen mellan skeppet och den ägda planet som ligger närmast på kartan. Flyttas mining ship flyttas routen med. |
+
+## Sparade spel
+
+`sparade-spel-bryts-i-utforskningen`: användaren har godkänt att utforskningen
+bryter tidigare sparade spel. `avstamning-sparkompatibilitet` gäller som vanligt
+för senare ändringar.
+
+## Utanför denna omgång
+
+- **Vyn** prototypas separat, eventuellt på flera brancher. Den behöver inte
+  bygga på kartan. Byggandet av råvaru- och slutproduktfabriker och styrningen
+  av mining ships sker sannolikt kvar på kartan.
+- Hur mycket ett mining ship utvinner per runda, och vilka råvaror nebulosor
+  och asteroidbälten har, bestäms senare.
+
+## Krav som ersätts vid implementation
+
+Följande krav ersätts när motsvarande delar ovan implementeras. Deras tester
+ändras eller tas bort samtidigt: `route-kartvy`, `produktions-kartvy`,
+`byggprojektets-forsorjningskedja`, `forsorjningsproblem-pa-kartan`,
+`automatiska-delorder`, `leveransfloden`, `forsorjningsstatus`,
+`projektens-forsorjningssteg`, `transportbygge-i-forsorjningssteg` och de
+fysiska transportreglerna i [försörjningsreglerna](supply-production.md).
+Exakt omfattning bestäms per implementationssteg.
