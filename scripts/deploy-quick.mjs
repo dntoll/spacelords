@@ -14,7 +14,6 @@ import {
 import {
   assertCurrentBase,
   fetchOrigin,
-  integrationBranch,
   prepareIntegration,
 } from './branch-flow.mjs';
 
@@ -64,6 +63,7 @@ async function waitForPages(revision, report) {
 
 // snabb-mobilpublicering: one test deployment. With integrate, the work branch is
 // merged into development and the label names development and its merge commit.
+// utforskningsbranch: inside an exploration the exploration takes that role.
 export async function deploy({ integrate = false } = {}) {
   const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
   process.chdir(root);
@@ -74,13 +74,13 @@ export async function deploy({ integrate = false } = {}) {
     ? prepareIntegration(root, source.branch)
     : (assertCurrentBase(root, source.branch), null);
   const published = integration
-    ? { branch: integrationBranch, revision: integration.merge }
+    ? { branch: integration.target, revision: integration.merge }
     : source;
   process.env.SPACELORDS_BUILD_BRANCH = published.branch;
   process.env.SPACELORDS_BUILD_REVISION = published.revision;
   const pushes = [`${source.revision}:refs/heads/${source.branch}`];
   if (integration)
-    pushes.push(`${integration.merge}:refs/heads/${integrationBranch}`);
+    pushes.push(`${integration.merge}:refs/heads/${integration.target}`);
   const directory = resolve(
     'dist/deployments',
     `${source.revision.slice(0, 12)}-${Date.now()}`,

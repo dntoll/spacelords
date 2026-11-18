@@ -6,6 +6,8 @@ import { test } from 'node:test';
 import {
   assertCurrentBase,
   branchesStatus,
+  explorationMarker,
+  integrationTarget,
   prepareIntegration,
   releaseFinish,
   releaseStart,
@@ -103,7 +105,12 @@ test('integrationsbranch-development: the merge commit carries the tested tree',
     /nothing new/,
   );
   const head = commit(agent, 'feature.txt');
-  const { merge, development } = prepareIntegration(agent, 'claude/feature');
+  const {
+    merge,
+    target,
+    targetRevision: development,
+  } = prepareIntegration(agent, 'claude/feature');
+  assert.equal(target, 'development');
   assert.equal(development, remoteRevision('development'));
   assert.equal(
     git(agent, 'rev-parse', `${merge}^{tree}`),
@@ -197,4 +204,92 @@ test('branchoversikt: lists remote branches with work development lacks', (t) =>
   assert.equal(status.merged, 1);
   assert.equal(status.untested, 0);
   assert.equal(status.mainMerged, true);
+});
+
+function exploration(t) {
+  const setup = fixture(t);
+  const { clone, commit } = setup;
+  const owner = clone('owner');
+  git(
+    owner,
+    'switch',
+    '--quiet',
+    '-c',
+    'simple_production',
+    'origin/development',
+  );
+  commit(
+    owner,
+    explorationMarker,
+    JSON.stringify({ branch: 'simple_production', purpose: 'Test' }),
+  );
+  git(owner, 'push', '--quiet', 'origin', 'HEAD:refs/heads/simple_production');
+  return { ...setup, owner };
+}
+
+test('utforskningsbranch: work branches start from and return to the exploration', (t) => {
+  const { clone, commit, remoteRevision } = exploration(t);
+  const agent = clone('agent');
+  const start = workStart(agent, 'claude/idea', { from: 'simple_production' });
+  assert.equal(start.revision, remoteRevision('simple_production'));
+  assert.throws(
+    () => workStart(agent, 'claude/other', { from: 'main' }),
+    /not an exploration branch/,
+  );
+  const head = commit(agent, 'idea.txt');
+  const { merge, target, targetRevision } = prepareIntegration(
+    agent,
+    'claude/idea',
+  );
+  assert.equal(target, 'simple_production');
+  assert.equal(targetRevision, remoteRevision('simple_production'));
+  assert.equal(git(agent, 'rev-parse', `${merge}^1`), targetRevision);
+  assert.equal(git(agent, 'rev-parse', `${merge}^2`), head);
+  assert.equal(integrationTarget(agent), 'simple_production');
+});
+
+test('utforskningsbranch: the exploration never reaches development by itself', (t) => {
+  const { clone, commit, owner, seed } = exploration(t);
+  commit(owner, 'concept.txt');
+  assert.throws(
+    () => prepareIntegration(owner, 'simple_production'),
+    /exploration branch/,
+  );
+  // development moving on does not block work inside the exploration.
+  git(seed, 'switch', '--quiet', '-c', 'development', 'origin/development');
+  commit(seed, 'unrelated.txt');
+  git(seed, 'push', '--quiet', 'origin', 'development');
+  const agent = clone('agent');
+  workStart(agent, 'claude/idea', { from: 'simple_production' });
+  commit(agent, 'idea.txt');
+  assert.doesNotThrow(() => assertCurrentBase(agent, 'claude/idea'));
+  // Removing the marker on a work branch is the explicit decision to merge.
+  git(agent, 'rm', '--quiet', explorationMarker);
+  git(agent, 'commit', '--quiet', '-m', 'End exploration');
+  assert.equal(integrationTarget(agent), 'development');
+  assert.throws(
+    () => prepareIntegration(agent, 'claude/idea'),
+    /lacks the latest origin\/development/,
+  );
+  git(agent, 'merge', '--quiet', '--no-edit', 'origin/development');
+  assert.equal(prepareIntegration(agent, 'claude/idea').target, 'development');
+});
+
+test('utforskningsbranch: branch status lists explorations apart', (t) => {
+  const { clone, commit } = exploration(t);
+  const agent = clone('agent');
+  workStart(agent, 'claude/idea', { from: 'simple_production' });
+  git(agent, 'push', '--quiet', 'origin', 'HEAD:refs/heads/claude/idea');
+  commit(agent, 'idea.txt');
+  git(agent, 'push', '--quiet', 'origin', 'HEAD:refs/heads/claude/pending');
+  const status = branchesStatus(agent);
+  assert.deepEqual(
+    status.explorations.map(({ branch, ahead }) => [branch, ahead]),
+    [['simple_production', 1]],
+  );
+  assert.deepEqual(
+    status.unmerged.map(({ branch, ahead, target }) => [branch, ahead, target]),
+    [['claude/pending', 1, 'origin/simple_production']],
+  );
+  assert.equal(status.merged, 1);
 });

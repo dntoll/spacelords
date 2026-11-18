@@ -204,8 +204,52 @@ npm run branches:status
 Kommandot (`branchoversikt`) visar hur många commits `development` har som
 ännu inte släppts till `main`. Det varnar om `development` saknar `main` och
 listar branchar på origin med commits som saknas i `development`, med datum
-och senaste commitmeddelande. Ta bort branchar på origin bara efter
-användarens ja.
+och senaste commitmeddelande. Utforskningsbranchar listas separat, och deras
+arbetsbranchar jämförs med utforskningen i stället för med `development`. Ta
+bort branchar på origin bara efter användarens ja.
+
+## Utforskningsläge
+
+En utforskningsbranch (`utforskningsbranch`) är en långlivad branch för att
+pröva ett koncept separat från `development`, exempelvis `simple_production`.
+Den fungerar som en egen integrationsbranch tills användaren väljer att merga
+eller kasta konceptet.
+
+```
+claude/x ──work:merge──► simple_production ··(när användaren ber om det)··► development
+                                ▲
+              development ──────┘ (vid behov, bara åt detta håll)
+```
+
+1. Skapa utforskningsbranchen från `origin/development` och lägg till
+   `exploration.json` i roten, exempelvis
+   `{ "branch": "simple_production", "purpose": "Simpler production" }`.
+   Committa och pusha den till origin. Filen finns bara på utforskningen och
+   dess arbetsbranchar, aldrig på `development`.
+2. Starta arbete inom utforskningen:
+
+   ```sh
+   npm run work:start -- claude/<ämne> --from simple_production
+   ```
+
+   Utan `--from` startar `work:start` från `development` som vanligt.
+   Kommandot vägrar om branchen saknar en `exploration.json` som namnger den.
+
+3. `npm run work:merge` från en sådan arbetsbranch mergar in i
+   utforskningsbranchen, pushar båda atomiskt och publicerar med etiketten
+   `simple_production · <merge-commit>`. Arbetsbranchen måste innehålla senaste
+   `origin/simple_production`, men inte senaste `origin/development`.
+   `npm run deploy:quick` publicerar arbetsbranchen isolerat på samma sätt.
+4. `work:merge` direkt från utforskningsbranchen vägras. Den når `development`
+   bara när användaren ber om det: starta en arbetsbranch från utforskningen,
+   ta bort `exploration.json`, merga in `origin/development`, kör
+   snabbkontrollerna och `npm run work:merge`. Då är målet `development`.
+5. Kastas konceptet tas utforskningsbranchen och dess arbetsbranchar bort från
+   origin efter användarens ja.
+
+Det finns fortfarande en enda testdeployment. Nästa publicering av
+`development` skriver över utforskningens bygge, och tvärtom. `Saved games`
+visar vilken branch som är publicerad.
 
 ## Avgränsning och sparade spel
 

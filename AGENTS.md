@@ -133,6 +133,23 @@ i stället för att upprepa reglerna.
 - Innehåller arbetsbranchen inte senaste `origin/development` vägrar
   skripten publicera eller merga. Kör då `git merge origin/development`, lös
   konflikter och kör snabbkontrollerna igen.
+- `utforskningsbranch`: användaren kan utse en branch för att utforska ett
+  koncept, exempelvis `simple_production`. Den utgår från `development` och
+  bär filen `exploration.json`, som namnger branchen. Den behöver inget
+  agentprefix. Inom utforskningen gäller undantag från reglerna ovan:
+  - Arbetsbranchar för konceptet startas med
+    `npm run work:start -- claude/<ämne> --from <utforskningsbranch>`. De
+    mergas med `work:merge` in i utforskningsbranchen, och det är den som
+    publiceras. Skripten läser målet från `exploration.json`.
+  - Utforskningsbranchen mergas aldrig in i `development` förrän användaren
+    ber om det. Då tas `exploration.json` bort på en arbetsbranch från
+    utforskningen, `origin/development` mergas in och `work:merge` körs som
+    vanligt. `work:merge` vägrar annars att merga utforskningsbranchen själv.
+  - `development` får mergas in i utforskningen, men bara åt det hållet. Det
+    krävs inte för att arbeta eller publicera inom utforskningen.
+  - Konceptets krav skrivs på utforskningsbranchen och märks som utforskning.
+    De följer med vid merge och försvinner om konceptet kastas.
+  - `avstamning-sparkompatibilitet` och alla övriga regler gäller som vanligt.
 - Pusha arbetsbranchen när du är klar, även om den inte mergas än.
   `npm run branches:status` (`branchoversikt`) visar branchar på origin med
   commits som saknas i `development`.

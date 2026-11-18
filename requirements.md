@@ -992,6 +992,10 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   och mergar rättningarna tillbaka. Appen visar publicerad branch och revision.
   `release-till-main` ersätter `sluttest-fore-merge`.
   `tester-i-github` kör snabbkontroller vid push till `main` och `development`.
+  `utforskningsbranch` är **Delvis implementerat**: en utforskningsbranch med
+  `exploration.json` tar emot och publicerar sina arbetsbranchar och mergas in
+  i `development` bara när användaren ber om det. Skript, regler och tester
+  finns. Återstår: provkörning mot origin med `simple_production`.
 - **Driftsättning:** endast klientbygget under `spacelords/` i målrepot;
   befintlig webbplats, navigation, DNS och Pages-inställningar bevaras.
 
