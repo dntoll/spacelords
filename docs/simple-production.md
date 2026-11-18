@@ -9,7 +9,7 @@ ersätter fysisk materialfrakt mellan enskilda planeter med ett nätverk där
 råvaror och delar delas. Det som fortfarande är platsbundet är var råvaror
 utvinns och var slutprodukter tillverkas.
 
-Alla krav nedan har status **Ej implementerat**.
+Status per krav finns under [Implementationsstatus](#implementationsstatus).
 
 ## Produktionsnivåer
 
@@ -180,6 +180,47 @@ för senare ändringar.
     förbindelse sparar. Tiden visas också när en fabrik ska byggas.
 - Hur mycket ett mining ship utvinner per runda, och vilka råvaror nebulosor
   och asteroidbälten har, bestäms senare.
+
+## Implementationsstatus
+
+Fas 1, spelmodellen, är klar 2026-11-18 på `claude/network-economy`.
+Gränssnittet visar fortfarande de gamla vyerna (fas 2).
+
+**Fullständigt implementerat i spelmodellen** (testerna knutna till
+kravnamnen): `produktionsnatverk`, `fraktskepp-ger-forbindelse`,
+`fraktskepp-ligger-stilla`, `delat-lager-i-natverket`, `en-runda-per-lank`,
+`kortaste-vag-i-lankar`, `varor-stannar-vid-delning`, `erovrad-last`,
+`en-enhet-per-fabrik-och-runda`, `blockerad-fabrik`,
+`delar-tillverkas-pa-behov`, `slutproduktfabrik-utan-order`,
+`standardregel-vid-brist`, `skepp-kostar-bara-delar`,
+`byggnader-kostar-raavaror`, `utvinning-vid-fyndighet`,
+`slutprodukt-vid-fabriken`, `basta-tillgangliga-del`,
+`ovriga-byggnader-pa-byggplatser` och `sparade-spel-bryts-i-utforskningen`
+(sparversion 17; äldre spel tappar varor under transport).
+
+**Delvis implementerat:**
+
+- `parallella-byggen` och `skeppsorder-pa-planeten`: reglerna gäller i
+  turen, men vyerna saknas (fas 2).
+- `flytta-fraktskepp-mellan-routes`: Release och ny tilldelning fungerar.
+  Connect-skärmen och varningen vid delning saknas (fas 2).
+- `eskort-pa-routes`: befintlig `rutt-eskortfordelning` gäller.
+
+Varje byggnad tar en runda när råvarorna finns. Prototypens `Building 1/2`
+förutsätter längre byggtider, som inte finns ännu.
+
+**Ej implementerat:** `befolkningsutjamning-i-grupp`, `mining-ships`,
+`mining-ship-anslutning` och de nya skärmarna.
+
+**Ersatta krav vars tester togs bort i fas 1:** `automatiska-delorder`,
+`delproduktion-med-sammanhang`, `grupperade-transporthandelser`,
+`leveransfloden`, `forsorjningsstatus`, `projektens-forsorjningssteg`,
+`automatisk-motormontering` (ersatt av `basta-tillgangliga-del`),
+`skepp-ur-olastad-ruttflotta` och `skeppsvis-retratt` för lastade
+transporter, samt planetkön där bara första projektet byggs (ersatt av
+`parallella-byggen` och `skeppsorder-pa-planeten`). Kvarvarande gammal kod
+för logistik, delplanering och försörjningsvyer tas bort i fas 1c tillsammans
+med deras krav i övriga dokument.
 
 ## Klickbar prototyp
 
