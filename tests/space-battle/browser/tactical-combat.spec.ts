@@ -430,9 +430,8 @@ test('fuskknapp-for-teststrid: opens combat from the main menu and leaves save s
 }, testInfo) => {
   await page.goto('./');
   const before = await page.evaluate(() => ({ ...localStorage }));
-  await page
-    .getByRole('button', { name: 'Test battle (cheat)', exact: true })
-    .click();
+  await page.locator('.save-tests summary').click();
+  await page.getByRole('button', { name: 'Test battle', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Tactical combat' });
   await expect(
     dialog.getByRole('heading', { name: 'Deploy fleet', exact: true }),

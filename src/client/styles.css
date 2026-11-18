@@ -4712,3 +4712,148 @@ body:has(.discovery-controls) .selection-panel {
   font-size: 0.75rem;
   text-align: right;
 }
+
+/* startskarm-utan-scroll: save slots share the available game screen. */
+.save-page {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  padding: clamp(8px, 2vw, 24px);
+}
+.save-intro {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.save-intro h1 {
+  margin: 0;
+  font-size: clamp(1.2rem, 3vw, 2rem);
+}
+.save-tests {
+  position: relative;
+  z-index: 5;
+}
+.save-tests summary {
+  cursor: pointer;
+  list-style: none;
+  border: 1px solid #496773;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--accent);
+  background: #132a35;
+  white-space: nowrap;
+}
+.save-tests summary::after {
+  content: ' ▾';
+}
+.save-test-content {
+  position: absolute;
+  right: 0;
+  width: min(320px, 90vw);
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #496773;
+  border-radius: 8px;
+  background: #10232e;
+  box-shadow: 0 12px 30px #000a;
+}
+.save-test-mode,
+.test-boarding-options {
+  display: grid;
+  gap: 6px;
+}
+.save-test-mode button,
+.test-boarding-options select {
+  width: 100%;
+  min-height: 40px;
+}
+.fullscreen-button {
+  flex: none;
+  border: 1px solid #496773;
+  border-radius: 6px;
+  background: #132a35;
+  color: var(--accent);
+  min-width: 36px;
+  min-height: 36px;
+  font-size: 1.3rem;
+}
+.save-grid {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  gap: 10px;
+}
+.save-card {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+.save-card-heading h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.save-map-preview {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  margin: 8px 0;
+}
+.save-last-played {
+  min-height: 0;
+  margin: 0;
+}
+.save-card .save-actions {
+  margin-top: 8px;
+}
+@media (max-width: 760px) {
+  .save-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .save-card {
+    display: grid;
+    grid-template-columns: minmax(70px, 1fr) minmax(0, 2fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    column-gap: 10px;
+    padding: 8px;
+  }
+  .save-card-heading {
+    grid-column: 1 / -1;
+  }
+  .save-map-preview {
+    grid-column: 1;
+    grid-row: 2 / 4;
+    margin: 4px 0 0;
+  }
+  .save-empty-mark {
+    font-size: 1.3rem;
+  }
+  .save-map-preview p {
+    margin: 0;
+    font-size: 0.7rem;
+    text-align: center;
+  }
+  .save-last-played {
+    align-self: center;
+    font-size: 0.72rem;
+  }
+  .save-card .save-actions {
+    margin: 2px 0 0;
+    gap: 6px;
+    align-self: end;
+  }
+  .save-card .save-actions button {
+    padding: 5px 8px;
+    font-size: 0.8rem;
+  }
+}

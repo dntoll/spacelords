@@ -124,7 +124,7 @@ Se [taktisk strid](space-battle/tactical-combat.md).
   Övriga skepp upptar fortsatt en hex. Äldre pågående strider behåller
   sin tidigare geometri; nya strider använder de större skroven.
 - `fuskknapp-for-teststrid` — **Fullständigt implementerat**, ändrat krav:
-  Test battle (cheat) börjar med utplacering och innehåller både Transport ship
+  Test battle börjar med utplacering och innehåller både Transport ship
   och Colony ship tillsammans med mindre skepp och asteroider. Sparplatser påverkas inte.
   Detta ersätter den tidigare starten direkt i strid med färdig placering.
 
@@ -261,7 +261,7 @@ dragning av flottorder behåller sina befintliga beteenden.
 `synliga-fiendemanovrer` och `fuskknapp-for-teststrid` är
 **Fullständigt implementerat**. Träff, miss, skada och slutresultat visas på
 stridskartan. Eget spelbart skepp väljs automatiskt och fiendens steg visas var
-för sig. Test battle (cheat) startar direkt från huvudmenyn utan att påverka
+för sig. Test battle startar direkt från huvudmenyn utan att påverka
 sparade spel. `stridsrapport-i-dialog` är **Fullständigt implementerat** med
 ändrat beteende: informationsrutan efter strid ersätts av resultat på kartan;
 året fortsätter automatiskt och rapporten finns i Events.
@@ -430,7 +430,7 @@ figur står på sin vanliga plats på rutan även när döda eller utslagna figu
 ligger där.
 
 `testbordning-med-tva-skepp` och `valbar-roll-i-testbordning` är
-**Fullständigt implementerat**. I `Test boarding (cheat)` väljer spelaren
+**Fullständigt implementerat**. I `Test boarding` väljer spelaren
 vilket skepp som bordas och om spelaren anfaller från en `Raptor` eller
 försvarar skeppet mot ett `Space pirate`. Detta ersätter
 `valbart-skepp-i-testbordning`, där det anfallande skeppet valdes mot en fast
@@ -1765,3 +1765,12 @@ animerade halvgenomskinliga partiklar genom rutan.
 `morkare-ambientljus-i-bordning` — **Fullständigt implementerat**. Skott syns
 fram till målet, granater kastas i en synlig båge och interiörernas grundljus
 är mörkare.
+
+### Startskärm och helskärm
+
+- `startskarm-utan-scroll` — **Fullständigt implementerat**: De tre sparplatserna
+  delar den tillgängliga skärmen utan att startsidan behöver scrollas.
+- `separata-testlagen` — **Fullständigt implementerat**: Test battle och Test
+  boarding ligger under en egen rubrik med val för bordning.
+- `helskarm-i-hela-spelet` — **Fullständigt implementerat**: Spelaren kan växla
+  helskärm från startsidan och spelet när webbläsaren stöder det.

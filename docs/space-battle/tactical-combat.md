@@ -204,7 +204,7 @@ Alla flottor på samma Star map-hex deltar tillsammans.
 - `synliga-fiendemanovrer` — **Fullständigt implementerat**: fiendens aktivering,
   varje enskild sväng, hexsteg, salva och turavslut visas separat med paus mellan
   stegen. Samma rörelseregler gäller båda sidor, även efter omladdning.
-- `fuskknapp-for-teststrid` — **Fullständigt implementerat**: Test battle (cheat)
+- `fuskknapp-for-teststrid` — **Fullständigt implementerat**: Test battle
   i huvudmenyn börjar med utplacering av små skepp samt Transport ship och
   Colony ship och vanliga asteroider. Den kan upprepas, avslutas till menyn och ändrar inga sparplatser.
   Detta ersätter färdig placering och omedelbar stridsstart.

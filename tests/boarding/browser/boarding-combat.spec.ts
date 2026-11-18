@@ -31,8 +31,9 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('./');
   const before = await page.evaluate(() => ({ ...localStorage }));
+  await page.locator('.save-tests summary').click();
   await page
-    .getByRole('button', { name: 'Test boarding (cheat)', exact: true })
+    .getByRole('button', { name: 'Test boarding', exact: true })
     .click();
   const dialog = page.getByRole('dialog', { name: 'Boarding combat' });
   await expect(dialog).toBeVisible();
@@ -128,7 +129,7 @@ test('meterskala-i-bordning / genomskinliga-skymmande-vaggar / isometriska-bordn
     .click();
   await expect(dialog).toBeHidden();
   await expect(
-    page.getByRole('button', { name: 'Test boarding (cheat)', exact: true }),
+    page.getByRole('button', { name: 'Test boarding', exact: true }),
   ).toBeVisible();
   expect(await page.evaluate(() => ({ ...localStorage }))).toEqual(before);
 });
@@ -137,8 +138,9 @@ test('kamerafokus-vid-bordningssoldatbyte: selecting an offscreen soldier reveal
   page,
 }, testInfo) => {
   await page.goto('./');
+  await page.locator('.save-tests summary').click();
   await page
-    .getByRole('button', { name: 'Test boarding (cheat)', exact: true })
+    .getByRole('button', { name: 'Test boarding', exact: true })
     .click();
   const dialog = page.getByRole('dialog', { name: 'Boarding combat' });
   const canvas = dialog.locator('canvas');
@@ -196,7 +198,8 @@ test('valbar-roll-i-testbordning: choose and replay both roles without changing 
   const ship = page.getByRole('combobox', { name: 'Boarded ship' });
   await ship.selectOption('Salvage ship');
   await role.selectOption('defender');
-  await page.getByRole('button', { name: 'Test boarding (cheat)' }).click();
+  await page.locator('.save-tests summary').click();
+  await page.getByRole('button', { name: 'Test boarding' }).click();
   const dialog = page.getByRole('dialog', { name: 'Boarding combat' });
   await expect(dialog).toBeVisible();
   await expect(
@@ -206,7 +209,8 @@ test('valbar-roll-i-testbordning: choose and replay both roles without changing 
   await expect(role).toHaveValue('defender');
   await expect(ship).toHaveValue('Salvage ship');
   await role.selectOption('attacker');
-  await page.getByRole('button', { name: 'Test boarding (cheat)' }).click();
+  await page.locator('.save-tests summary').click();
+  await page.getByRole('button', { name: 'Test boarding' }).click();
   await expect(
     dialog.getByRole('region', { name: 'Boarding team' }),
   ).toContainText('Boarder');

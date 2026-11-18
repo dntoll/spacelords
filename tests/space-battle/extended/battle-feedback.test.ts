@@ -225,7 +225,7 @@ it('fuskknapp-for-teststrid: starts repeatable combat from the menu without writ
   const menu = renderSaveSlots(model.snapshot, emit);
   document.body.append(menu);
   const button = [...menu.querySelectorAll('button')].find(
-    (node) => node.textContent === 'Test battle (cheat)',
+    (node) => node.textContent === 'Test battle',
   );
   expect(button).toBeDefined();
   button!.click();

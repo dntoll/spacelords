@@ -7,7 +7,7 @@ rymdstridsrundor. Anfallaren startar i motståndarens airlock. Avbrott är
 tillåtet när alla levande stridande är i eget skepp. Pirater lämnar en
 cockpit-soldat. Utslagen sida ger vinnaren båda skeppen i samma strid.
 
-Huvudmenyns `Test boarding (cheat)` är ett fristående testspel utan påverkan
+Huvudmenyns `Test boarding` är ett fristående testspel utan påverkan
 på sparplatser. `valbar-roll-i-testbordning` — **Fullständigt implementerat**:
 spelaren väljer det bordade skeppet och anfaller från en `Raptor` eller
 försvarar sig mot ett `Space pirate`. Standard är anfall mot `Transport ship`.
