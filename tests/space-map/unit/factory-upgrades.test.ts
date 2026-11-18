@@ -150,14 +150,9 @@ describe('senaste-teknik-i-byggval', () => {
 });
 
 describe('uppgradera-obsoleta-fabriker', () => {
-  it('keeps queue order and waits for the existing factory workforce', () => {
+  it('waits for the existing factory workforce', () => {
     const { game, home, snapshot } = setup();
-    game.scheduleComponent(home, 'Telescope I');
     game.scheduleUpgrade(home, 'old-factory');
-    turn(game);
-    expect(snapshot().economy.stock['Telescope I']).toBe(1);
-    expect(snapshot().buildings[0]!.type).toBe('Telescope I factory');
-    expect(snapshot().projects).toHaveLength(1);
     const state = game.exportState();
     state.colonies[0]![1].population = 200;
     const understaffed = Game.restore(state);

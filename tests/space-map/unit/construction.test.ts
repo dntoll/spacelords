@@ -53,7 +53,7 @@ function setup(galaxy = createExampleGalaxy()) {
 }
 
 describe('planetbyggplatser / flera-byggnader-av-samma-typ', () => {
-  it('assigns explicit sites and completes them in queue order', () => {
+  it('parallella-byggen: assigns explicit sites and builds both in the same round', () => {
     const { game, planet, snapshot, turn } = setup();
     game.scheduleBuild(planet, 'Research station', 3);
     game.scheduleBuild(planet, 'Research station', 1);
@@ -64,12 +64,10 @@ describe('planetbyggplatser / flera-byggnader-av-samma-typ', () => {
     );
     expect(() => game.scheduleBuild(planet, 'Research station', -1)).toThrow();
     turn();
-    expect(snapshot().buildings).toHaveLength(1);
-    expect(snapshot().projects).toHaveLength(1);
-    turn();
     expect(snapshot().buildings).toHaveLength(2);
+    expect(snapshot().projects).toHaveLength(0);
     expect(snapshot().sites[3]!.building?.type).toBe('Research station');
-    expect(snapshot().budget.reserved.Iron).toBe(0);
+    expect(snapshot().sites[1]!.building?.type).toBe('Research station');
   });
 
   it('cancels construction and demolishes at the original site without moving other buildings', () => {
@@ -211,7 +209,7 @@ describe('gemensam-planetko / fabrikskoer / skepp-i-byggko', () => {
     ).toThrow('matching');
   });
 
-  it('completes only the planet queue head, even with several factories and building orders', () => {
+  it('skeppsorder-pa-planeten / parallella-byggen: each factory makes one ship per round while buildings build alongside', () => {
     const { game, planet, snapshot, turn, factory, unlock } = setup();
     const colony = factory('Colony ship factory');
     unlock('Exploration ship factory');
@@ -230,18 +228,11 @@ describe('gemensam-planetko / fabrikskoer / skepp-i-byggko', () => {
       before.ships['Colony ship'] + 1,
     );
     expect(game.fleet('fleet-home')!.ships['Exploration ship']).toBe(
-      before.ships['Exploration ship'],
+      before.ships['Exploration ship'] + 1,
     );
-    expect(snapshot().buildings).toHaveLength(3);
-    expect(snapshot().projects.map((p) => p.type)).toEqual([
-      'Colony ship',
-      'Exploration ship',
-      'Research station',
-    ]);
-    turn();
-    turn();
-    turn();
     expect(snapshot().buildings).toHaveLength(4);
+    expect(snapshot().projects.map((p) => p.type)).toEqual(['Colony ship']);
+    turn();
     expect(snapshot().projects).toHaveLength(0);
   });
 
@@ -447,7 +438,7 @@ describe('planetlager / arbetskraft-och-besattning', () => {
       ),
     ).toBe(false);
   });
-  it('allows material shortages to be queued and leaves the head blocked without charging it', () => {
+  it('byggnader-kostar-raavaror: buildings wait for missing resources without charging the missing ones', () => {
     const { game, planet, unlock } = setup();
     unlock('Colony ship factory');
     const saved = game.exportState();
@@ -455,27 +446,19 @@ describe('planetlager / arbetskraft-och-besattning', () => {
     const restored = Game.restore(saved);
     restored.scheduleBuild(planet, 'Colony ship factory', 1);
     restored.scheduleBuild(planet, 'Research station', 2);
-    expect(
-      restored.planetSnapshot(planet)!.projects[0]!.blockedReason,
-    ).toContain('Needs decision');
     for (const frame of turnFrames(restored)) restored.applyFrame(frame);
     restored.finishTurn();
     expect(restored.planetSnapshot(planet)!.projects).toHaveLength(2);
     expect(restored.planetSnapshot(planet)!.economy.stock.Iron).toBe(0);
-    expect(
-      restored.events.some((event) =>
-        event.text.includes('Colony ship factory is waiting on'),
-      ),
-    ).toBe(true);
   });
 
-  it('reserves only active queue heads and never spends stored materials twice', () => {
+  it('standardregel-vid-brist / skepp-kostar-bara-delar: scarce engines go to the oldest ship order and are spent once', () => {
     const { game, planet, factory, turn } = setup();
     factory('Colony ship factory');
     game.scheduleBuild(planet, 'Colony ship factory');
     turn();
     const saved = game.exportState();
-    saved.colonies[0]![1].stock.Iron = 6;
+    saved.colonies[0]![1].stock['Rocket engine'] = 3;
     const restored = Game.restore(saved);
     const yards = restored
       .planetSnapshot(planet)!
@@ -484,11 +467,14 @@ describe('planetlager / arbetskraft-och-besattning', () => {
       restored.scheduleShip(planet, 'Colony ship', null, yard.id);
       restored.scheduleShip(planet, 'Colony ship', null, yard.id);
     }
-    expect(restored.planetSnapshot(planet)!.budget.reserved.Iron).toBe(6);
+    const iron = restored.planetSnapshot(planet)!.economy.stock.Iron;
     for (const frame of turnFrames(restored)) restored.applyFrame(frame);
     restored.finishTurn();
     expect(restored.fleet('fleet-home')!.ships['Colony ship']).toBe(1);
-    expect(restored.planetSnapshot(planet)!.economy.stock.Iron).toBe(0);
+    expect(
+      restored.planetSnapshot(planet)!.economy.stock['Rocket engine'],
+    ).toBe(0);
+    expect(restored.planetSnapshot(planet)!.economy.stock.Iron).toBe(iron);
     expect(restored.planetSnapshot(planet)!.projects).toHaveLength(3);
   });
 });

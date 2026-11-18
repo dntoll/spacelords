@@ -2767,26 +2767,16 @@ export class Game {
     targets: readonly ShipUpgradeTarget[],
     selected: FleetUpgradePlan,
   ) {
-    for (const production of selected.plan.production)
-      this.#colonies.get(production.planetId)!.projects.push({
-        id: production.id,
-        type: production.component,
-        factoryId: production.factoryId,
-        slotIndex: null,
-        destinationFleetId: null,
-      });
+    // delar-tillverkas-pa-behov: the network makes and brings the parts.
     fleet.upgrade = {
       id: selected.projectId,
       yardId: selected.yard.id,
       planetId: selected.yard.planetId,
       targets,
-      productionIds: selected.plan.production.map(
-        (production) => production.id,
-      ),
+      productionIds: [],
       issue: null,
     };
     this.#sequence = selected.sequence;
-    this.#logistics.componentOrders.push(...selected.plan.orders);
     fleet.destination =
       fleet.position!.key === selected.yard.position.key
         ? null
@@ -2798,6 +2788,7 @@ export class Game {
     const order = fleet.upgrade;
     if (!order) return;
     delete fleet.upgrade;
+    this.#network.cancel(order.id, this.#networkPort());
     for (const state of this.#colonies.values())
       state.projects = state.projects.filter(
         (project) => !order.productionIds.includes(project.id),
@@ -6902,6 +6893,25 @@ export class Game {
         });
       }
     }
+    // varvets-automatiska-materialforsorjning: the yard's next repair.
+    for (const yard of this.#salvage.yards) {
+      if (yard.destroyed || yard.builtRound >= this.#round) continue;
+      const repair = this.#repairProjects(yard.planetId).find(
+        (item) => item.id === `repair-${yard.queue[0]}`,
+      );
+      if (repair)
+        consumers.push({
+          id: repair.id,
+          planetId: yard.planetId,
+          kind: 'product',
+          needs: {
+            Iron: repair.cost.Iron,
+            Water: repair.cost.Water,
+            Oil: repair.cost.Oil,
+          },
+          since: since(repair.id),
+        });
+    }
     for (const fleet of this.#fleets)
       if (fleet.upgrade)
         consumers.push({
@@ -7002,19 +7012,19 @@ export class Game {
     }
     const project = state.projects.find((item) => item.id === consumer.id);
     if (!project) {
-      // A fleet upgrade takes its parts from the yard's stock.
+      // Fleet upgrades and repairs take their goods from the yard's stock.
       const delivered = this.#network.delivered(consumer.id);
       for (const material of MATERIALS)
         state.stock[material] += delivered[material] ?? 0;
       this.#network.consume(consumer.id);
       return;
     }
-    const definition = projectDefinition(project.type);
-    if (
-      definition.ship &&
-      !definition.permanent &&
-      state.population < SHIPS[definition.ship].crew
-    )
+    // arbetskraft-och-besattning: workers and crew come from the population.
+    const definition = this.#projectDefinition(state, project);
+    const employed = state.buildings
+      .filter((building) => !building.demolition)
+      .reduce((total, building) => total + BUILDINGS[building.type].workers, 0);
+    if (state.population - employed < definition.workers + definition.crew)
       return;
     state.projects = state.projects.filter((item) => item !== project);
     this.#network.consume(consumer.id);
