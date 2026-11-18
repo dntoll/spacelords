@@ -100,6 +100,31 @@ för senare ändringar.
       minskar aldrig.
     - Gruppen får en Connect-knapp till höger i rubriken när den kan bygga
       transporter.
+    - Ett köat bygge visas som en gul plats med `Queued`.
+  - **Skärm 2, val av byggnad (låst 2026-11-18):**
+    - Skärmen öppnas genom tryck på en tom byggplats. Ett val fyller bara den
+      platsen, och man bygger på fler platser genom att trycka på var och en.
+    - Rubriken visar planet, plats och grupp. Under den visas gruppens lager
+      och lediga arbetare.
+    - Byggnaderna är grupperade efter nivå, med en ledtråd i rubriken, till
+      exempel `Lyra has Water` och `ships appear at Lyra`.
+    - Varje rad visar:
+      - kostnad
+      - antal i gruppen, till exempel `2 in group`, `0 + 1 building` eller
+        `here`
+      - byggtid i rundor
+      - för delfabriker: hur många rundor bort insatsvarorna finns
+      - för slutproduktfabriker: en uppskattad produkttid, till exempel
+        `Fighter ~4 rounds`
+
+      Tiden med `~` ändras när länkarna ändras.
+
+    - En byggnad som inte passar planeten grånas med orsaken, till exempel
+      `No Iron on Lyra`.
+    - Räcker lagret visas `Build`. Annars visas `Queue` och en tagg med det
+      som fattas, till exempel `Short: Water 3, Oil 2`.
+    - Köade byggen ligger i kö. Alla som har råvaror och arbetare byggs
+      samtidigt, och vid brist gäller `standardregel-vid-brist`.
   - En grupp som kan bygga transporter får en Connect-knapp. Knappen öppnar
     en graf där noderna ligger ungefär som i världen och varje fullt
     förbunden grupp visas som en enda nod.
