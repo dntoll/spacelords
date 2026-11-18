@@ -29,15 +29,21 @@ Dagens personalregler för fabriker gäller fortsatt.
 
 ## Plats
 
-| Kravnamn                   | Produktkrav                                                                                                                             |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `utvinning-vid-fyndighet`  | En råvarufabrik står på en planet där råvaran finns och utvinner tills fyndigheten är slut. Olika planeter har olika råvaror.           |
-| `slutprodukt-vid-fabriken` | En slutprodukt tillverkas och levereras vid sin fabrik. Spelaren bygger slutproduktfabriken där produkten behövs.                       |
-| `delat-lager-i-natverket`  | Råvaror och delar inom ett nätverk är tillgängliga för alla dess fabriker och byggen, oavsett var de tillverkats. Lagret har inget tak. |
-| `avstand-utan-betydelse`   | Avståndet mellan planeter i samma nätverk påverkar varken tillgång eller tid.                                                           |
+| Kravnamn                   | Produktkrav                                                                                                                                                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `utvinning-vid-fyndighet`  | En råvarufabrik står på en planet där råvaran finns och utvinner tills fyndigheten är slut. Olika planeter har olika råvaror.                                                                                            |
+| `slutprodukt-vid-fabriken` | En slutprodukt tillverkas och levereras vid sin fabrik. Spelaren bygger slutproduktfabriken där produkten behövs.                                                                                                        |
+| `delat-lager-i-natverket`  | Råvaror och delar inom ett nätverk är tillgängliga för alla dess fabriker och byggen, oavsett var de tillverkats, efter transporttiden enligt `en-runda-per-lank`. Lagret har inget tak.                                 |
+| `en-runda-per-lank`        | Varje länk mellan två planeter tar en runda att passera. En vara som används på samma planet är tillgänglig direkt, en länk bort efter en runda och två länkar bort efter två rundor. Kartavståndet påverkar inte tiden. |
+| `kortaste-vag-i-lankar`    | Varor går automatiskt den väg som har minst antal länkar. Vid lika används en stabil ordning. Spelaren styr inte vägen.                                                                                                  |
 
-Varje vara behåller i modellen sin ursprungsplanet, även om spelaren inte
-behöver se den. Det krävs för `varor-stannar-vid-delning` och `erovrad-last`.
+`en-runda-per-lank` ersätter `avstand-utan-betydelse` (2026-11-18). Tidigare
+påverkade avståndet varken tillgång eller tid. Nu påverkar antalet länkar
+tiden, och en tätare förbunden grupp blir därmed snabbare.
+
+Varje vara har i modellen en plats: en planet eller en länk där den är på väg.
+Den behåller också sin ursprungsplanet. Det krävs för
+`varor-stannar-vid-delning` och `erovrad-last`.
 
 ## Nätverk och fraktskepp
 
@@ -47,7 +53,7 @@ behöver se den. Det krävs för `varor-stannar-vid-delning` och `erovrad-last`.
 | `fraktskepp-ger-forbindelse`      | En route är aktiv när ett `Transport ship` är tilldelat den. Ett skepp räcker åt båda hållen och har obegränsad kapacitet. Fler fraktskepp ger fler möjliga förbindelser. |
 | `flytta-fraktskepp-mellan-routes` | Spelaren kan flytta ett fraktskepp från en route till en annan och därmed prioritera bort en del av nätverket. Spelaren ser när en route saknar fraktskepp.               |
 | `varor-stannar-vid-delning`       | Delas ett nätverk stannar varje vara i den del där den tillverkades.                                                                                                      |
-| `erovrad-last`                    | Förstörs eller erövras ett fraktskepp får erövraren lasten, det vill säga det som passerade routen under rundan. Nätverket delas om det inte finns någon annan väg.       |
+| `erovrad-last`                    | Förstörs eller erövras ett fraktskepp får erövraren lasten, det vill säga det som är på väg över routen just då. Nätverket delas om det inte finns någon annan väg.       |
 | `eskort-pa-routes`                | Eskort kan tilldelas en route och skyddar dess fraktskepp. Bygger vidare på `rutt-eskortfordelning`.                                                                      |
 
 ## Mining ships
@@ -68,6 +74,18 @@ för senare ändringar.
 - **Vyn** prototypas separat, eventuellt på flera brancher. Den behöver inte
   bygga på kartan. Byggandet av råvaru- och slutproduktfabriker och styrningen
   av mining ships sker sannolikt kvar på kartan.
+  Underlag till vyn från prototyperna hittills:
+  - Planeter som är förbundna visas i samma grupp, och antalet fabriker visas
+    per grupp.
+  - En fabrik som saknar insatsvaror i sin grupp markeras som ett problem.
+  - En grupp som kan bygga transporter får en Connect-knapp. Knappen öppnar
+    en graf där noderna ligger ungefär som i världen och varje fullt
+    förbunden grupp visas som en enda nod.
+  - De två närmaste planeterna förbinds automatiskt.
+  - Ett ledigt fraktskepp används före ett nytt bygge.
+  - Spelaren väljer själv planeterna för en extra förbindelse inom en grupp.
+  - Vyn visar tid, till exempel när en vara kommer fram, och vilken tid en ny
+    förbindelse sparar. Tiden visas också när en fabrik ska byggas.
 - Hur mycket ett mining ship utvinner per runda, och vilka råvaror nebulosor
   och asteroidbälten har, bestäms senare.
 

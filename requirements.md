@@ -906,7 +906,7 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   `delar-tillverkas-pa-behov`, `mining-ships` med flera är
   **Ej implementerat**. Råvaror och delar delas inom ett nätverk av planeter
   som är förbundna med fraktskepp. Bara utvinning och slutprodukter är
-  platsbundna. Vyn prototypas separat. Kraven ersätter Route, Production och
+  platsbundna. Varje länk mellan planeter tar en runda (`en-runda-per-lank`). Vyn prototypas separat. Kraven ersätter Route, Production och
   den fysiska frakten när de implementeras. Se
   [förenklad produktion](docs/simple-production.md).
   `forsorjningsoversikt`, `relevanta-material` och `materialoversikt` ersätts;
