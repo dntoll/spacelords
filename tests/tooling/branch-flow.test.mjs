@@ -8,6 +8,7 @@ import {
   branchesStatus,
   explorationMarker,
   integrationTarget,
+  parseWorkStartArgs,
   prepareIntegration,
   releaseFinish,
   releaseStart,
@@ -292,4 +293,27 @@ test('utforskningsbranch: branch status lists explorations apart', (t) => {
     [['claude/pending', 1, 'origin/simple_production']],
   );
   assert.equal(status.merged, 1);
+});
+
+test('utforskningsbranch: work:start keeps the branch name with or without --from', () => {
+  assert.deepEqual(parseWorkStartArgs(['claude/x']), { name: 'claude/x' });
+  assert.deepEqual(parseWorkStartArgs([]), {});
+  assert.deepEqual(
+    parseWorkStartArgs(['claude/x', '--from', 'simple_production']),
+    {
+      name: 'claude/x',
+      from: 'simple_production',
+    },
+  );
+  assert.deepEqual(
+    parseWorkStartArgs(['--from', 'simple_production', 'claude/x']),
+    {
+      name: 'claude/x',
+      from: 'simple_production',
+    },
+  );
+  assert.throws(
+    () => parseWorkStartArgs(['claude/x', '--from']),
+    /--from <branch>/,
+  );
 });

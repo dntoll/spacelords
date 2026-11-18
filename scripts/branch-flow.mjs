@@ -380,17 +380,25 @@ function printStatus(status) {
     );
 }
 
+// utforskningsbranch: work:start [<agent>/<topic>] [--from <exploration>].
+export function parseWorkStartArgs(args) {
+  const rest = [...args];
+  const result = {};
+  const fromIndex = rest.indexOf('--from');
+  if (fromIndex >= 0) {
+    const [, from] = rest.splice(fromIndex, 2);
+    if (!from) throw new Error('Name the exploration: --from <branch>.');
+    result.from = from;
+  }
+  if (rest.length) result.name = rest[0];
+  return result;
+}
+
 async function main([command, ...args]) {
   const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
   process.chdir(root);
   if (command === 'work:start') {
-    const fromIndex = args.indexOf('--from');
-    const from = fromIndex >= 0 ? args[fromIndex + 1] : undefined;
-    if (fromIndex >= 0 && !from)
-      throw new Error('Name the exploration: --from <branch>.');
-    const name = args.find(
-      (arg, index) => index !== fromIndex && index !== fromIndex + 1,
-    );
+    const { name, from } = parseWorkStartArgs(args);
     const result = workStart(root, name, { from });
     console.log(`On ${result.branch} at ${result.revision.slice(0, 12)}.`);
   } else if (command === 'work:merge') {
