@@ -1,5 +1,6 @@
 import { ShipOrders } from '../models/ShipOrders.js';
 import { renderFleetOrders } from './fleets/FleetOrdersView.js';
+import { bindFleetOrderDrag } from './fleets/FleetOrderDrag.js';
 import { shipTransferIssue } from '../models/fleets/FleetTransfer.js';
 import type { AppReadModel } from '../../app/models/AppModel.js';
 import type { FleetSnapshot } from '../models/Game.js';
@@ -42,14 +43,6 @@ export function renderFleetCard(
     event.preventDefault();
     emit({ type: 'begin-fleet-rename', id: fleet.id });
   });
-  const rename = button(
-    `Rename ${fleet.name}`,
-    () => emit({ type: 'begin-fleet-rename', id: fleet.id }),
-    'fleet-rename-button',
-  );
-  rename.textContent = '✎';
-  rename.title = `Rename ${fleet.name}`;
-  rename.disabled = locked;
   if (model.fleetNameEdit?.id === fleet.id) {
     const input = element('input', 'fleet-name-input');
     input.value = model.fleetNameEdit.draft;
@@ -72,12 +65,10 @@ export function renderFleetCard(
       if (!input.isConnected || input.dataset.rendering) return;
       emit({ type: 'cancel-fleet-rename', reason: 'blur' });
       heading.replaceChildren(title);
-      header.append(rename);
     });
     heading.append(input);
   } else {
     heading.append(title);
-    header.append(rename);
   }
   const hangar = element('div', 'fleet-hangar');
   hangar.dataset.fleetId = fleet.id;
@@ -100,7 +91,22 @@ export function renderFleetCard(
           model.shipTransfer.shipId === token.dataset.shipId),
     );
   }
-  hangar.append(manifest);
+  const stats = element('div', 'fleet-stats');
+  const speed = element('small', 'fleet-speed', `➤ ${fleet.speed}`);
+  speed.title = `Fleet speed: ${fleet.speed} hexes/round${fleet.remainingMovement === undefined ? '' : ` · ${fleet.remainingMovement} hex remaining this round`}`;
+  speed.setAttribute('aria-label', speed.title);
+  stats.append(speed);
+  if (fleet.detectionRange !== undefined) {
+    const detection = element(
+      'small',
+      'fleet-detection',
+      `◉ ${fleet.detectionRange}`,
+    );
+    detection.title = `Detection range: ${fleet.detectionRange} hexes`;
+    detection.setAttribute('aria-label', detection.title);
+    stats.append(detection);
+  }
+  hangar.append(manifest, stats);
   if (model.shipTransfer) {
     const source = model.fleets.find(
       (candidate) => candidate.id === model.shipTransfer!.fleetId,
@@ -145,44 +151,58 @@ export function renderFleetCard(
     } else emit({ type: 'map-select-fleet', id: fleet.id });
   });
   const orders = renderFleetOrders(fleet, model, emit);
-  header.insertBefore(orders, rename.parentElement === header ? rename : null);
+  const orderRow = element('div', 'fleet-order-row');
+  bindFleetOrderDrag(orderRow);
+  const assignment = fleetAssignmentLabel(fleet, model);
+  if (assignment) {
+    const route =
+      assignment.startsWith('Trade route:') && fleet.routeId
+        ? model.tradeRoutes.find((item) => item.id === fleet.routeId)
+        : undefined;
+    const targetFleet =
+      assignment.startsWith('En route to ') && fleet.joinFleetId
+        ? model.fleets.find((item) => item.id === fleet.joinFleetId)
+        : undefined;
+    const planetId = /^(Colonize:|Explore planet:|Upgrade:)/.test(assignment)
+      ? (fleet.colonizationTargetId ??
+        fleet.explorationTargetId ??
+        fleet.upgrade?.planetId)
+      : undefined;
+    const status = route
+      ? button(
+          `Select route ${route.from} to ${route.to}`,
+          () => emit({ type: 'map-select-route', id: route.id }),
+          'fleet-order-status',
+        )
+      : targetFleet
+        ? button(
+            `Select fleet ${targetFleet.name}`,
+            () => emit({ type: 'map-select-fleet', id: targetFleet.id }),
+            'fleet-order-status',
+          )
+        : planetId &&
+            model.ownedPlanets.some((planet) => planet.id === planetId)
+          ? button(
+              `Open order planet`,
+              () => emit({ type: 'open-planet', id: planetId }),
+              'fleet-order-status',
+            )
+          : element('span', 'fleet-order-status');
+    status.textContent = assignment;
+    if (fleet.patrol && assignment.startsWith('Patrol:'))
+      status.classList.add('fleet-patrol-status');
+    if (fleet.upgrade) status.classList.add('fleet-upgrade-status');
+    if (fleet.civilian) status.classList.add('fleet-civilian-status');
+    orderRow.append(status);
+  }
+  orderRow.append(orders);
   const footer = element('div', 'fleet-card-footer');
-  const speed = element('small', 'fleet-speed', `S: ${fleet.speed} hex`);
-  speed.title = `Fleet speed: ${fleet.speed} hexes/round${fleet.remainingMovement === undefined ? '' : ` · ${fleet.remainingMovement} hex remaining this round`}`;
-  footer.append(speed);
-  if (fleet.routeId && (model.screen === 'map' || model.screen === 'route')) {
-    const route = model.tradeRoutes.find((item) => item.id === fleet.routeId);
-    if (route) {
-      const selectRoute = button(
-        `Select route ${route.from} to ${route.to}`,
-        () => emit({ type: 'map-select-route', id: route.id }),
-        'button secondary-button',
-      );
-      selectRoute.textContent = `Route: ${route.from} ↔ ${route.to}`;
-      footer.append(selectRoute);
-    }
-  }
-  if (fleet.navigationIssue)
+  if (
+    fleet.navigationIssue &&
+    fleet.navigationIssue !==
+      'Asteroid passage requires a full round of movement.'
+  )
     footer.append(element('small', 'muted-note', fleet.navigationIssue));
-  if (fleet.detectionRange !== undefined) {
-    const detection = element(
-      'small',
-      'fleet-detection',
-      `D: ${fleet.detectionRange} hex`,
-    );
-    detection.title = `Detection range: ${fleet.detectionRange} hexes`;
-    footer.append(detection);
-  }
-  if (fleet.patrol) {
-    const status = element(
-      'small',
-      'fleet-patrol-status',
-      `Patrol · R: ${fleet.patrol.range}`,
-    );
-    status.title = fleetAssignmentLabel(fleet, model);
-    status.setAttribute('aria-label', status.title);
-    footer.append(status);
-  }
   if (fleet.salvage?.issue)
     footer.append(element('small', 'muted-note', fleet.salvage.issue));
   if (fleet.towing?.length) {
@@ -214,14 +234,7 @@ export function renderFleetCard(
     .filter(Boolean)
     .join('. ');
   card.setAttribute('aria-description', card.title);
-  card.append(header, hangar, footer);
-  const assignment = fleetAssignmentLabel(fleet, model);
-  if (assignment && (!fleet.patrol || fleet.detour || fleet.ordersPaused)) {
-    const status = element('div', 'fleet-order-status', assignment);
-    if (fleet.upgrade) status.classList.add('fleet-upgrade-status');
-    if (fleet.civilian) status.classList.add('fleet-civilian-status');
-    card.append(status);
-  }
+  card.append(header, orderRow, hangar, footer);
   return card;
 }
 

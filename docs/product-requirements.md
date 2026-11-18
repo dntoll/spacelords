@@ -690,7 +690,7 @@ Help. Detta ersätter den tidigare utfällningen; panelen kan fortsatt rullas.
 
 `flottnamn-direktredigering` — **Fullständigt implementerat**: Flottans namn på Star map
 kan redigeras genom dubbelklick. Enter sparar och Escape avbryter. Namnbyte
-är också åtkomligt med touch och tangentbord utan dubbelklick.
+sker på touch med dubbelt tryck och är åtkomligt med F2 på tangentbordet. Detta ersätter den separata namnbytesknappen.
 
 `flottknappar-pa-kartan` — **Fullständigt implementerat**: Star map saknar knapparna
 Set destination och Edit fleet. Flottor organiseras direkt på kartan och
@@ -977,12 +977,13 @@ Detta utökar `fokuserat-kartval` och ersätter dess fasta panelhöjd vid rullni
 
 `kompakta-flottkort` är **Fullständigt implementerat**. Star map och Fleets
 visar små skeppsrutor och flottkort med tätare avstånd så att fler flottor ryms
-samtidigt, även på mobil. Fyra skepp ryms på en rad i kartans flottkort på
-vanliga mobilskärmar och i smala flottkort på dator och surfplatta. Standardkort
-med fyra skepp är högst 140 px höga vid minst 220 px kortbredd. Namn, skepp och
-en enda faktisk flottfart, exempelvis S: 2 hex, visas. Position och motorinformation
-utelämnas; aktiva order och relevanta mål eller status visas direkt på kortet enligt `synlig-flottorder`. Order, namnbyte och skeppsöverföring är fortsatt åtkomliga
-med pekytor på minst 44 pixlar i höjd.
+samtidigt, även på mobil. `kompakt-flottkort-med-order` är **Fullständigt implementerat**:
+hela namnet visas med mindre text, order och lägre orderknappar ligger på samma rad,
+och hastighet och upptäcktsräckvidd visas med symboler och siffror till höger om
+skeppen. En order med ett tillgängligt mål öppnar eller väljer målet. Texten om
+asteroidpassage visas inte på kortet. Detta ersätter tidigare höjdkrav på orderknappar,
+kravet på fyra skepp per rad och den separata ruttknappen. Skeppsöverföring och
+namnbyte är fortsatt åtkomliga.
 
 ## Terraforming och planetkapacitet
 
@@ -1062,7 +1063,7 @@ Upgrade enligt kraven nedan.
 
 ## Synlig flottorder
 
-`synlig-flottorder` är **Fullständigt implementerat**. Flottkort visar aktiv order och relevanta mål eller status direkt, även på mobil. Tillfälliga uppdrag och pausade order framgår. Detta ersätter regeln i `kompakta-flottkort` att destination och uppdragsdetaljer enbart finns i hjälptext. Kortet får bli högre för ordertexten.
+`synlig-flottorder` är **Fullständigt implementerat**. Flottkort visar aktiv order och relevanta mål eller status direkt, även på mobil. Tillfälliga uppdrag och pausade order framgår. Detta ersätter regeln i `kompakta-flottkort` att destination och uppdragsdetaljer enbart finns i hjälptext. Ordertexten ligger på samma rad som orderknapparna enligt `kompakt-flottkort-med-order`.
 
 ## Orders och startorder
 

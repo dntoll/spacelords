@@ -172,7 +172,7 @@ it('flottorder-som-symboler / kompakta-flottkort: exposes explorer controls and 
       '.fleet-current-position, .ship-engine-details, .fleet-orders',
     ),
   ).toBeNull();
-  expect(card().querySelector('.fleet-speed')!.textContent).toBe('S: 3 hex');
+  expect(card().querySelector('.fleet-speed')!.textContent).toBe('➤ 3');
   card().querySelector<HTMLButtonElement>('[aria-label="Orders"]')!.click();
   root
     .querySelector<HTMLButtonElement>('[aria-label="Explore stars"]')!

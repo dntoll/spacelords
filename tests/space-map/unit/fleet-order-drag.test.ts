@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
-import { renderFleetOrders } from '../../../src/client/space-map/views/fleets/FleetOrdersView.js';
+import { renderFleetCard } from '../../../src/client/space-map/views/FleetCard.js';
 
 function setup() {
   const model = new AppModel().snapshot;
   const emit = vi.fn();
-  const toolbar = renderFleetOrders(model.fleets[0]!, model, emit);
-  document.body.replaceChildren(toolbar);
+  const card = renderFleetCard(model.fleets[0]!, model, emit);
+  document.body.replaceChildren(card);
+  const toolbar = card.querySelector<HTMLElement>('.fleet-order-row')!;
   Object.defineProperties(toolbar, {
     clientWidth: { value: 88 },
     scrollWidth: { value: 264 },
@@ -27,7 +28,12 @@ function setup() {
     });
     target.dispatchEvent(event);
   };
-  return { toolbar, emit, pointer, button: toolbar.querySelector('button')! };
+  return {
+    toolbar,
+    emit,
+    pointer,
+    button: toolbar.querySelector<HTMLButtonElement>('.fleet-order-button')!,
+  };
 }
 
 describe('dragbara-flottorder', () => {

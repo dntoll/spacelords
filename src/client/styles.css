@@ -4857,3 +4857,65 @@ body:has(.discovery-controls) .selection-panel {
     font-size: 0.8rem;
   }
 }
+
+/* kompakt-flottkort-med-order: keep the fleet's controls and stats compact. */
+.compact-fleet-card .fleet-card-heading {
+  min-width: 0;
+}
+.compact-fleet-card .fleet-name-button {
+  min-height: 0;
+  padding: 2px 4px;
+  font-size: 0.85rem;
+  line-height: 1.15;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+}
+.fleet-order-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+}
+.fleet-order-row .fleet-order-toolbar {
+  flex: none;
+  max-width: none;
+  overflow: visible;
+}
+.fleet-order-row .fleet-order-status {
+  flex: none;
+  margin: 0;
+  white-space: nowrap;
+  font-size: 0.75rem;
+}
+.fleet-order-row button.fleet-order-status {
+  min-height: 32px;
+  padding: 2px 5px;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.map-fleet-management .fleet-order-row button,
+.fleet-order-row .fleet-primary-orders .fleet-order-button {
+  min-height: 32px;
+  padding: 2px 7px;
+}
+.compact-fleet-card .fleet-hangar {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+.fleet-stats {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+  white-space: nowrap;
+}
+.compact-fleet-card .ship-manifest {
+  min-width: 0;
+}
+.compact-fleet-card .fleet-hangar > .button,
+.compact-fleet-card .fleet-hangar > .muted-note {
+  grid-column: 1 / -1;
+}
