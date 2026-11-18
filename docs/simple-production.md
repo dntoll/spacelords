@@ -98,8 +98,8 @@ för senare ändringar.
     - Rundorna visar hur många som gått av totalen. Totalen räknas om vid
       förseningar, till exempel när en länk bryts. Antalet rundor som gått
       minskar aldrig.
-    - Gruppen får en Connect-knapp till höger i rubriken när den kan bygga
-      transporter.
+    - Gruppen får en Connect-knapp till höger i rubriken när den har ett
+      ledigt fraktskepp eller kan bygga transporter.
     - Ett köat bygge visas som en gul plats med `Queued`.
   - **Skärm 2, val av byggnad (låst 2026-11-18):**
     - Skärmen öppnas genom tryck på en tom byggplats. Ett val fyller bara den
@@ -125,12 +125,28 @@ för senare ändringar.
       som fattas, till exempel `Short: Water 3, Oil 2`.
     - Köade byggen ligger i kö. Alla som har råvaror och arbetare byggs
       samtidigt, och vid brist gäller `standardregel-vid-brist`.
-  - En grupp som kan bygga transporter får en Connect-knapp. Knappen öppnar
-    en graf där noderna ligger ungefär som i världen och varje fullt
-    förbunden grupp visas som en enda nod.
-  - De två närmaste planeterna förbinds automatiskt.
-  - Ett ledigt fraktskepp används före ett nytt bygge.
-  - Spelaren väljer själv planeterna för en extra förbindelse inom en grupp.
+  - **Connect-skärmen (låst 2026-11-18):**
+    - Skärmen öppnas från Connect-knappen på skärm 1. Knappen finns bara på
+      en grupp som har ett ledigt fraktskepp eller kan bygga transporter.
+      Bara gruppens egna fraktskepp används, aldrig målgruppens.
+    - En graf visar grupperna ungefär där de ligger i världen. Varje fullt
+      förbunden grupp visas som en enda nod, och möjliga förbindelser är
+      streckade.
+    - Varje förslag anger vilka två planeter som förbinds. Det är alltid de
+      två närmaste, och de väljs automatiskt.
+    - Varje förslag visar vad det ger. Förslag som löser ett problem står
+      först och anger vad de löser, till exempel
+      `Unblocks Rocket engine at Vega`. Övriga förslag står i bokstavsordning,
+      med till exempel `Adds Iron`.
+    - Ett ledigt fraktskepp är förvalt. Annars byggs ett nytt, och den
+      uppskattade byggtiden visas.
+    - Ett tryck på den egna gruppens nod visar länkarna inom gruppen. Där
+      väljer spelaren själv två planeter för en extra förbindelse. Förslaget
+      visar sparad tid och om gruppen då klarar att en länk försvinner.
+    - `Current links` listar gruppens länkar med sina fraktskepp. `Move`
+      frigör skeppet och öppnar förslagen med skeppet förvalt. Om flytten
+      delar gruppen varnar skärmen först, till exempel
+      `Splits Lyra from group`.
   - Vyn visar tid, till exempel när en vara kommer fram, och vilken tid en ny
     förbindelse sparar. Tiden visas också när en fabrik ska byggas.
 - Hur mycket ett mining ship utvinner per runda, och vilka råvaror nebulosor
