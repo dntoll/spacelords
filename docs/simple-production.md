@@ -57,6 +57,22 @@ Den behåller också sin ursprungsplanet. Det krävs för
 | `erovrad-last`                    | Förstörs eller erövras ett fraktskepp får erövraren lasten, det vill säga det som är på väg över routen just då. Nätverket delas om det inte finns någon annan väg.       |
 | `eskort-pa-routes`                | Eskort kan tilldelas en route och skyddar dess fraktskepp. Bygger vidare på `rutt-eskortfordelning`.                                                                      |
 
+Beslut inför implementationen (2026-11-18):
+
+- `fraktskepp-ligger-stilla`: ett tilldelat fraktskepp reser inte längs sin
+  route utan ligger stilla vid den. Pirater anfaller det där, och vinner de
+  gäller `erovrad-last`.
+- `ovriga-byggnader-pa-byggplatser`: byggnader som inte är fabriker, till
+  exempel Research station, Domes, terraformingfabriker och Orbital
+  shipyard, byggs på byggplatserna, kostar råvaror och fungerar i övrigt som
+  i dag.
+- `basta-tillgangliga-del`: skepp väljer fortsatt bästa tillgängliga del,
+  till exempel Ion pulse engine före Rocket engine och högsta teleskopet.
+- `befolkningsutjamning-i-grupp`: Civilian shuttles jämnar ut befolkningen
+  mellan planeterna i en grupp, så att en ny planet snabbare får befolkning.
+  Det ersätter dagens resor längs enskilda routes.
+- Testläget `Factory screens` tas bort när de riktiga skärmarna finns.
+
 ## Mining ships
 
 | Kravnamn                 | Produktkrav                                                                                                                                                                       |
