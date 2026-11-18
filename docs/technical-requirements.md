@@ -459,6 +459,12 @@ grouped-events och star-map-trade-view flyttas till den utökade sviten utan
 borttagning. Därefter passerar alla 475 snabba tester på 10,46 sekunder
 inklusive verktygsstart, av högst 20 sekunder.
 
+`snabb-testsvit` (2026-11-18): eftersom arbetstrådarna körs utan isolering kunde
+DOM från en testfil läcka till nästa. Bordningseditorns `role="status"` fick
+då `dragbara-koer` att fallera beroende på filordning. `tests/setup.ts` tömmer
+nu `body` och `head` efter varje test. Regressionstestet ligger i
+`tests/app/unit/test-dom-isolation.test.ts`.
+
 ## Aktuell sikt och teleskop
 
 `snabb-testsvit`: efter en avbruten körning över 20 sekunder flyttades 44
