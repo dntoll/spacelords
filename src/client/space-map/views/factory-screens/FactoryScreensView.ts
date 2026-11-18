@@ -102,7 +102,9 @@ function graph(
   // Each axis is stretched on its own: the strip is wide but low, and the
   // graph only needs to keep the planets' rough directions.
   const axis = (value: number, min: number, max: number, size: number) =>
-    max === min ? size / 2 : pad + ((value - min) / (max - min)) * (size - pad * 2);
+    max === min
+      ? size / 2
+      : pad + ((value - min) / (max - min)) * (size - pad * 2);
   const at = (point: MapPosition) => ({
     x: axis(point.x, minX, maxX, width),
     y: axis(point.y, minY, maxY, height),
