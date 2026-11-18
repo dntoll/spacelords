@@ -75,9 +75,31 @@ för senare ändringar.
   bygga på kartan. Byggandet av råvaru- och slutproduktfabriker och styrningen
   av mining ships sker sannolikt kvar på kartan.
   Underlag till vyn från prototyperna hittills:
-  - Planeter som är förbundna visas i samma grupp, och antalet fabriker visas
-    per grupp.
-  - En fabrik som saknar insatsvaror i sin grupp markeras som ett problem.
+  - **Skärm 1, `Build factories` (låst 2026-11-18):**
+    - Förbundna planeter visas som en grupp. Rubriken anger planeterna,
+      antalet planeter och antalet länkar.
+    - Överst i varje grupp finns en liten graf över länkarna, där planeterna
+      ligger ungefär som i världen. Listan under visar inga länkar.
+    - Gruppen visar antalet fabriker per typ. En fabrikstyp som saknar
+      insatsvaror i gruppen markeras röd med orsaken.
+    - Planeterna står i bokstavsordning med råvaror och byggplatser.
+    - Både grupper och planeter kan fällas ihop. En hopfälld planet
+      sammanfattar sina platser, till exempel `4/6 sites`.
+    - En byggplats är tom (kan väljas), låst (`Needs Dome`) eller upptagen av
+      en fabrik.
+    - En fabrik har ett av fyra tillstånd:
+      - arbetar
+      - byggs, med rundor, till exempel `Building 1/2`
+      - tillverkar, med rundor, till exempel `3/4 rounds`
+      - saknar insatsvaror (röd)
+
+      En fabrik utan order visas som `Idle`.
+
+    - Rundorna visar hur många som gått av totalen. Totalen räknas om vid
+      förseningar, till exempel när en länk bryts. Antalet rundor som gått
+      minskar aldrig.
+    - Gruppen får en Connect-knapp till höger i rubriken när den kan bygga
+      transporter.
   - En grupp som kan bygga transporter får en Connect-knapp. Knappen öppnar
     en graf där noderna ligger ungefär som i världen och varje fullt
     förbunden grupp visas som en enda nod.
