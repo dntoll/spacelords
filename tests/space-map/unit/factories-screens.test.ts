@@ -268,3 +268,31 @@ it('Skärm 2: a Dome site without the Dome research names the research to do', a
   expect(factories().build!.research).toBe('Desert dome');
   expect(root.textContent).toContain('Research Desert dome');
 });
+
+it('basta-tillgangliga-del: an Exploration ship factory with a better telescope factory in its group is not missing telescopes', () => {
+  const state = { ...tradeNetworkState(), pirates: [] };
+  state.colonies[0]![1].buildings.push(
+    {
+      id: 'explorer-yard',
+      type: 'Exploration ship factory',
+      slotIndex: 2,
+      demolition: false,
+    },
+    {
+      id: 'telescope-two',
+      type: 'Telescope II factory',
+      slotIndex: 3,
+      demolition: false,
+    },
+  );
+  state.colonies[0]![1].projects.push({
+    id: 'project-900',
+    type: 'Exploration ship',
+    slotIndex: null,
+    factoryId: 'explorer-yard',
+    destinationFleetId: null,
+  });
+  const { send, group } = setup(state);
+  send({ type: 'open-factories' });
+  expect(group('Tellus').planets[0]!.sites[2]!.factory!.missing).toEqual([]);
+});

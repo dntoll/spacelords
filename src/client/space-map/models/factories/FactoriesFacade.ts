@@ -350,7 +350,7 @@ export class FactoriesFacade {
   /** Whether the group holds or makes a material. */
   /**
    * basta-tillgangliga-del: whether a factory's input is covered. Ion pulse
-   * engines replace Rocket engines.
+   * engines replace Rocket engines and better telescopes replace Telescope I.
    */
   #supplied(
     context: Context,
@@ -360,7 +360,11 @@ export class FactoriesFacade {
     return (
       this.#has(context, group, material) ||
       (material === 'Rocket engine' &&
-        this.#has(context, group, 'Ion pulse engine'))
+        this.#has(context, group, 'Ion pulse engine')) ||
+      (material === 'Telescope I' &&
+        (['Telescope II', 'Telescope III'] as const).some((telescope) =>
+          this.#has(context, group, telescope),
+        ))
     );
   }
 

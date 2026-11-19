@@ -6149,10 +6149,22 @@ export class Game {
     planet: Planet,
     project: Project,
   ): Partial<Record<Component, number>> {
-    const started =
-      Object.keys(this.#network.delivered(project.id)).length > 0 ||
-      this.#network.incoming(project.id).length > 0;
-    if (started && project.parts) return project.parts;
+    // basta-tillgangliga-del: a family is fixed only once one of its parts
+    // has been delivered or is on its way; the rest is chosen afresh.
+    const delivered = this.#network.delivered(project.id);
+    const incoming = this.#network.incoming(project.id);
+    const committed = (family: readonly Component[]) =>
+      family.some(
+        (part) =>
+          (delivered[part] ?? 0) > 0 ||
+          incoming.some((transit) => transit.material === part),
+      );
+    const engineFamily: readonly Component[] = [
+      'Rocket engine',
+      'Ion pulse engine',
+    ];
+    const keep = (family: readonly Component[]) =>
+      !!project.parts && committed(family);
     const definition = projectDefinition(project.type);
     const ship = definition.ship!;
     const group = this.#networkGroup(planet.id);
@@ -6161,17 +6173,24 @@ export class Game {
     };
     const engines = engineCount(ship);
     if (engines > 0) {
-      const ion = this.#groupHasPart('Ion pulse engine', group, engines);
-      parts['Rocket engine'] = ion ? 0 : engines;
-      parts['Ion pulse engine'] = ion ? engines : 0;
+      if (keep(engineFamily)) {
+        parts['Rocket engine'] = project.parts!['Rocket engine'] ?? 0;
+        parts['Ion pulse engine'] = project.parts!['Ion pulse engine'] ?? 0;
+      } else {
+        const ion = this.#groupHasPart('Ion pulse engine', group, engines);
+        parts['Rocket engine'] = ion ? 0 : engines;
+        parts['Ion pulse engine'] = ion ? engines : 0;
+      }
     }
     if (parts['Telescope I']) {
-      const best =
-        [...TELESCOPES]
-          .reverse()
-          .find((telescope) => this.#groupHasPart(telescope, group)) ??
-        'Telescope I';
       delete parts['Telescope I'];
+      const best = keep(TELESCOPES)
+        ? (TELESCOPES.find((telescope) => project.parts![telescope]) ??
+          'Telescope I')
+        : ([...TELESCOPES]
+            .reverse()
+            .find((telescope) => this.#groupHasPart(telescope, group)) ??
+          'Telescope I');
       parts[best] = 1;
     }
     return parts;
