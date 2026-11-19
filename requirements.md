@@ -911,8 +911,9 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   den fysiska frakten när de implementeras. Skepp beställs fortsatt från kartans Production (`skeppsorder-pa-planeten`). Se
   [förenklad produktion](docs/simple-production.md).
   Spelmodellen och skärmarna under `Factories` är **Fullständigt
-  implementerade** för nätverk, fabriker och byggen; utjämning av befolkning
-  och mining ships återstår.
+  implementerade** för nätverk, fabriker, byggen med byggtid
+  (`byggtid-per-byggnad`) och eskort (`eskort-pa-routes`). Utjämning av
+  befolkning återstår. Mining ships är uppskjutna tills resten är klart.
   `forsorjningsoversikt`, `relevanta-material` och `materialoversikt` ersätts;
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och
