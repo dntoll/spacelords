@@ -120,8 +120,9 @@ för senare ändringar.
     - Rundorna visar hur många som gått av totalen. Totalen räknas om vid
       förseningar, till exempel när en länk bryts. Antalet rundor som gått
       minskar aldrig.
-    - Gruppen får en Connect-knapp till höger i rubriken när den har ett
-      ledigt fraktskepp eller kan bygga transporter.
+    - Gruppen får en Connect-knapp till höger i rubriken när den själv eller
+      en grupp den kan ansluta till har ett ledigt fraktskepp eller kan bygga
+      transporter.
     - Ett köat bygge visas som en gul plats med `Queued`.
   - **Skärm 2, val av byggnad (låst 2026-11-18):**
     - Skärmen öppnas genom tryck på en tom byggplats. Ett val fyller bara den
@@ -147,10 +148,15 @@ för senare ändringar.
       som fattas, till exempel `Short: Water 3, Oil 2`.
     - Köade byggen ligger i kö. Alla som har råvaror och arbetare byggs
       samtidigt, och vid brist gäller `standardregel-vid-brist`.
+    - Ett tryck på en köad eller pågående byggnad öppnar platsen med
+      `Cancel construction` (2026-11-19). Det ersätter att avbryta via
+      kartans Production, som bara hanterar skepp.
   - **Connect-skärmen (låst 2026-11-18):**
-    - Skärmen öppnas från Connect-knappen på skärm 1. Knappen finns bara på
-      en grupp som har ett ledigt fraktskepp eller kan bygga transporter.
-      Bara gruppens egna fraktskepp används, aldrig målgruppens.
+    - Skärmen öppnas från Connect-knappen på skärm 1. En grupp med eget
+      ledigt fraktskepp eller egen Transport ship factory använder det.
+      En grupp utan transport kan ansluta till en grupp som har det och
+      lånar då den gruppens fraktskepp eller fabrik (ändrat 2026-11-19;
+      ersätter regeln att bara egna fraktskepp används).
     - En graf visar grupperna ungefär där de ligger i världen. Varje fullt
       förbunden grupp visas som en enda nod, och möjliga förbindelser är
       streckade.

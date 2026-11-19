@@ -121,6 +121,9 @@ export class FactoriesFacade {
       case 'build':
         this.#build(action.type);
         return null;
+      case 'cancel-site':
+        this.#cancelSite(context);
+        return null;
       case 'open-connect':
         this.#openConnect(context, action.group);
         return null;
@@ -260,7 +263,7 @@ export class FactoriesFacade {
     if (!site) return null;
     if (site.building && factoryShips(site.building.type).length)
       return { kind: 'open-production', planetId };
-    if (site.building || site.project || site.locked) return null;
+    if (site.building || site.locked) return null;
     this.#site = { planet: planetId, index };
     this.#screen = 'build';
     return null;
@@ -275,6 +278,18 @@ export class FactoriesFacade {
         ? this.host.game.freeShipyardHexes(planet.id)[0]
         : undefined;
     this.host.game.scheduleBuild(planet, type, site.index, station);
+    this.#site = null;
+    this.#screen = 'sites';
+  }
+
+  /** parallella-byggen: a queued or unfinished building can be cancelled. */
+  #cancelSite(context: Context): void {
+    const site = this.#site;
+    if (!site) return;
+    const project = this.#planet(context, site.planet).sites[site.index]
+      ?.project;
+    if (project)
+      this.host.game.cancelProject(this.#gamePlanet(site.planet), project.id);
     this.#site = null;
     this.#screen = 'sites';
   }
@@ -304,11 +319,18 @@ export class FactoriesFacade {
   /** fraktskepp-ger-forbindelse: a free transport or a new one mans it. */
   #link(context: Context, a: string, b: string): void {
     const group = this.#group(context, this.#connectFrom ?? a);
-    const choice = this.#transports(context, group).find(
-      (option) => option.selected,
-    )?.choice;
+    const target = this.#group(context, b);
+    const usable = [
+      ...this.#transports(context, group),
+      ...this.#ownTransports(context, target),
+    ];
+    const selected = usable.find((option) => option.selected)?.choice;
+    const choice =
+      selected && this.#transportIn(context, selected, [...group, ...target])
+        ? selected
+        : this.#ownTransports(context, target)[0]?.choice;
     if (!choice)
-      throw new Error('This group has no transport to connect with.');
+      throw new Error('Neither group has a transport to connect with.');
     const game = this.host.game;
     // An open route without a transport is reused rather than doubled.
     const route =
@@ -659,7 +681,8 @@ export class FactoriesFacade {
     const stock = this.#stock(context, group);
     const gamePlanet = this.#gamePlanet(planetId);
     const options: BuildOptionSnapshot[] = [];
-    for (const type of BUILD_TYPES) {
+    const queued = planet.sites[index]?.project;
+    for (const type of queued ? [] : BUILD_TYPES) {
       const reason = this.host.game.canBuild(gamePlanet, type, index);
       if (reason && HIDDEN_REASONS.includes(reason)) continue;
       const definition = BUILDINGS[type];
@@ -730,7 +753,8 @@ export class FactoriesFacade {
         0,
       ),
       options: Object.freeze(options),
-      research: this.#domeResearch(gamePlanet, planet, index),
+      research: queued ? null : this.#domeResearch(gamePlanet, planet, index),
+      project: queued ? (queued.type as BuildType) : null,
     });
   }
 
@@ -748,8 +772,40 @@ export class FactoriesFacade {
       : null;
   }
 
-  /** Connect-skärmen: own free transports first, then a new one. */
+  #transportIn(
+    context: Context,
+    choice: TransportChoice,
+    planets: readonly string[],
+  ): boolean {
+    return this.#ownTransports(context, planets).some(
+      (option) =>
+        option.choice.kind === choice.kind &&
+        (choice.kind === 'free'
+          ? option.choice.kind === 'free' &&
+            option.choice.fleetId === choice.fleetId
+          : option.choice.kind === 'build' &&
+            option.choice.planetId === choice.planetId),
+    );
+  }
+
+  /**
+   * Connect-skärmen: the group's own transports, or when it has none, those
+   * of the groups it can join.
+   */
   #transports(
+    context: Context,
+    group: readonly string[],
+  ): readonly TransportOptionSnapshot[] {
+    const own = this.#ownTransports(context, group);
+    if (own.length) return own;
+    return this.#ownTransports(
+      context,
+      context.network.groups.filter((other) => other[0] !== group[0]).flat(),
+    );
+  }
+
+  /** Free transports in the planets, then a new one from a factory there. */
+  #ownTransports(
     context: Context,
     group: readonly string[],
   ): readonly TransportOptionSnapshot[] {
@@ -860,6 +916,12 @@ export class FactoriesFacade {
           ),
         });
       })
+      .filter(
+        (proposal) =>
+          this.#ownTransports(context, group).length > 0 ||
+          this.#ownTransports(context, this.#group(context, proposal.toId))
+            .length > 0,
+      )
       .sort(
         (a, b) =>
           Number(b.unblocks.length > 0) - Number(a.unblocks.length > 0) ||

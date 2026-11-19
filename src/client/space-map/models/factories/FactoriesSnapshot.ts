@@ -103,6 +103,8 @@ export interface BuildScreenSnapshot {
   readonly options: readonly BuildOptionSnapshot[];
   /** A Dome site whose Dome still needs this research. */
   readonly research: BuildType | null;
+  /** parallella-byggen: the building queued here, which can be cancelled. */
+  readonly project: BuildType | null;
 }
 
 export type TransportChoice =
@@ -205,6 +207,7 @@ export type FactoriesAction =
       readonly site: number;
     }
   | { readonly kind: 'build'; readonly type: BuildType }
+  | { readonly kind: 'cancel-site' }
   | { readonly kind: 'open-connect'; readonly group: string }
   | { readonly kind: 'open-links' }
   | { readonly kind: 'pick-planet'; readonly planet: string }
