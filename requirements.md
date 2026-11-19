@@ -600,7 +600,9 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
 - **Civiltrafik och arbetskraft:** `civil-skyttelforskning`,
   `civil-skytteltillverkning`, `automatisk-arbetskraftstrafik`,
   `civiltrafik-pa-handelsnatet`, `civiltrafik-sparning` och
-  `civil-farledsbyte` är **Fullständigt implementerat**. Civilian transport
+  `civil-farledsbyte` är **Fullständigt implementerat**. I utforskningen
+  `simple_production` ersätts passagerarresorna av
+  `befolkningsutjamning-i-grupp`. Civilian transport
   låser upp Civilian shuttle i Transport ship factory. Skyttlar startar
   automatiskt, fraktar 500 personer per skepp genom öppna Trade routes och
   omprövar arbetskraftsbehov vid mellanlandningar. En skyttel har en
@@ -912,8 +914,9 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   [förenklad produktion](docs/simple-production.md).
   Spelmodellen och skärmarna under `Factories` är **Fullständigt
   implementerade** för nätverk, fabriker, byggen med byggtid
-  (`byggtid-per-byggnad`) och eskort (`eskort-pa-routes`). Utjämning av
-  befolkning återstår. Mining ships är uppskjutna tills resten är klart.
+  (`byggtid-per-byggnad`), eskort (`eskort-pa-routes`) och utjämning av
+  befolkning (`befolkningsutjamning-i-grupp`). Mining ships är uppskjutna
+  tills resten är klart.
   `forsorjningsoversikt`, `relevanta-material` och `materialoversikt` ersätts;
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och

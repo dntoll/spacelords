@@ -371,6 +371,14 @@ Transit --> TradeRoute : crosses one link per round
 Transit --> NetworkConsumer : reserved for
 NetworkConsumer --> ConstructionProject : building or ship order
 NetworkConsumer --> Building : part factory, one unit per round
+class SettlerTransit {
+  amount
+  arrival
+}
+NetworkGroup "1" *-- "*" SettlerTransit : befolkningsutjamning-i-grupp
+SettlerTransit --> Planet : from
+SettlerTransit --> Planet : to
+NetworkGroup "1" o-- "*" Fleet : Civilian shuttles, 500 settlers each per round
 note right of ProductionNetwork
   Förenklad produktion (utforskning simple_production):
   planeter förbundna av routes med ett tilldelat Transport ship
