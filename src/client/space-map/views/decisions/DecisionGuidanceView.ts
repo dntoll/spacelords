@@ -10,10 +10,10 @@ import { button, element } from '../../../common/dom.js';
 function nextStep(decision: Decision): string {
   if (decision.kind === 'route')
     return decision.transportAction?.kind === 'assign'
-      ? ' Select an available purple transport fleet and assign it to the route.'
+      ? ' Use Connect in Factories to give the route a free transport.'
       : '';
   if (decision.id.startsWith('supply-'))
-    return ' Inspect the marked planet and its project. Connect suppliers with a route and assign transport for missing deliveries.';
+    return ' Connect the group to planets that make it, or build what is missing.';
   if (decision.id.startsWith('staff-'))
     return ' Inspect workers and crew. Free workers or wait for population growth.';
   if (decision.id.startsWith('production-'))
@@ -112,6 +112,9 @@ export function updateDecisionGuidance(
       '--decision-guide-height',
       `${guidance.getBoundingClientRect().height + 12}px`,
     );
+  } else if (root.querySelector('.factory-screens')) {
+    // Factories: decisions about links and missing goods lead the list.
+    root.querySelector('.factory-screens')!.prepend(guidance);
   } else {
     const page = root.querySelector('.research-page');
     page?.classList.add('has-decision-guidance');
