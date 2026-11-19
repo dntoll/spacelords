@@ -4962,6 +4962,23 @@ body:has(.discovery-controls) .selection-panel {
   min-height: 44px;
   white-space: nowrap;
 }
+/* eskort-pa-routes */
+.factory-links {
+  min-height: 44px;
+  align-self: flex-start;
+}
+.factory-links.warning {
+  border-color: var(--factory-warning);
+  color: var(--factory-warning);
+}
+.factory-escorts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 6px 12px;
+  padding-left: 10px;
+  border-left: 2px solid var(--factory-time);
+}
 .factory-muted {
   color: var(--muted);
   font-size: 0.8rem;

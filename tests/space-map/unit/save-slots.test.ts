@@ -30,8 +30,10 @@ describe('sparat-spel / frontend-backend-mock', () => {
   it('round-trips research, construction, fleets, exploration, events and future IDs', () => {
     const game = new Game(createExampleGalaxy());
     game.scheduleBuild(game.galaxy.homePlanet, 'Research station', 0);
-    for (const frame of turnFrames(game)) game.applyFrame(frame);
-    game.finishTurn();
+    for (let round = 0; round < 3; round++) {
+      for (const frame of turnFrames(game)) game.applyFrame(frame);
+      game.finishTurn();
+    }
     game.selectResearch('Colony ship factory');
     game.setDestination('fleet-home', new HexCoordinate(3, 0));
     for (const frame of turnFrames(game)) game.applyFrame(frame);
@@ -61,14 +63,14 @@ describe('sparat-spel / frontend-backend-mock', () => {
       current.finishTurn();
     };
     game.scheduleBuild(home, 'Research station', 0);
-    turn(game);
+    for (let round = 0; round < 3; round++) turn(game);
     game.selectResearch('Colony ship factory');
     turn(game);
     turn(game);
     turn(game);
     turn(game);
     game.scheduleBuild(home, 'Colony ship factory', 1);
-    turn(game);
+    for (let round = 0; round < 3; round++) turn(game);
     const snapshot = game.planetSnapshot(home)!;
     const factory = snapshot.buildings.find(
       (building) => building.type === 'Colony ship factory',

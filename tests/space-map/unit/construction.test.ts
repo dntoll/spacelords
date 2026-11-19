@@ -1,6 +1,7 @@
 import { turnFrames } from '../../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import {
+  buildRounds,
   Game,
   type Technology,
   type BuildType,
@@ -33,11 +34,13 @@ function setup(galaxy = createExampleGalaxy()) {
     for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
   };
+  // byggtid-per-byggnad: setup waits out each building's construction.
+  const build = (type: BuildType, site?: number, where = planet) => {
+    game.scheduleBuild(where, type, site);
+    for (let round = 0; round < buildRounds(type); round++) turn();
+  };
   const unlock = (type: Technology) => {
-    if (!game.research.stations) {
-      game.scheduleBuild(planet, 'Research station');
-      turn();
-    }
+    if (!game.research.stations) build('Research station');
     if (!game.research.completed.includes(type)) game.selectResearch(type);
     for (let attempt = 0; game.research.queue.length && attempt < 10; attempt++)
       turn();
@@ -45,11 +48,10 @@ function setup(galaxy = createExampleGalaxy()) {
   };
   const factory = (type: Technology) => {
     unlock(type);
-    game.scheduleBuild(planet, type as BuildType);
-    turn();
+    build(type as BuildType);
     return snapshot().buildings.find((b) => b.type === type)!;
   };
-  return { game, planet, snapshot, turn, unlock, factory };
+  return { game, planet, snapshot, turn, build, unlock, factory };
 }
 
 describe('planetbyggplatser / flera-byggnader-av-samma-typ', () => {
@@ -63,6 +65,12 @@ describe('planetbyggplatser / flera-byggnader-av-samma-typ', () => {
       'No build slots',
     );
     expect(() => game.scheduleBuild(planet, 'Research station', -1)).toThrow();
+    // byggtid-per-byggnad: both stay under construction until their last round.
+    for (let round = 1; round < buildRounds('Research station'); round++) {
+      turn();
+      expect(snapshot().buildings).toHaveLength(0);
+      expect(snapshot().projects).toHaveLength(2);
+    }
     turn();
     expect(snapshot().buildings).toHaveLength(2);
     expect(snapshot().projects).toHaveLength(0);
@@ -76,7 +84,8 @@ describe('planetbyggplatser / flera-byggnader-av-samma-typ', () => {
     game.scheduleBuild(planet, 'Research station', 1);
     game.cancelProject(planet, snapshot().sites[1]!.project!.id);
     expect(snapshot().sites[1]!.project).toBeNull();
-    turn();
+    for (let round = 0; round < buildRounds('Research station'); round++)
+      turn();
     const building = snapshot().sites[3]!.building!;
     game.toggleDemolition(planet, building.id);
     expect(snapshot().budget.reservedWorkers).toBe(0);
@@ -92,7 +101,7 @@ describe('planetbyggplatser / flera-byggnader-av-samma-typ', () => {
 
 describe('forska-fram-fabriker / bygga-forskningsstation', () => {
   it('offers extraction and Research station initially and unlocks each permanent factory through actual research', () => {
-    const { game, planet, snapshot, turn } = setup();
+    const { game, planet, snapshot, turn, build } = setup();
     expect(snapshot().buildOptions.map((option) => option.type)).toEqual([
       'Research station',
       'Iron mine',
@@ -105,8 +114,7 @@ describe('forska-fram-fabriker / bygga-forskningsstation', () => {
     expect(() => game.selectResearch('Colony ship factory')).toThrow(
       'Research station',
     );
-    game.scheduleBuild(planet, 'Research station');
-    turn();
+    build('Research station');
     expect(game.research.completed).toEqual([]);
     game.selectResearch('Colony ship factory');
     turn();
@@ -127,8 +135,7 @@ describe('forska-fram-fabriker / bygga-forskningsstation', () => {
     turn();
     expect(game.research.completed).not.toContain('Fighter factory');
     expect(() => game.selectResearch('Colony ship factory')).toThrow();
-    game.scheduleBuild(planet, 'Colony ship factory');
-    turn();
+    build('Colony ship factory');
     expect(
       snapshot().buildings.some((b) => b.type === 'Colony ship factory'),
     ).toBe(true);
@@ -136,9 +143,8 @@ describe('forska-fram-fabriker / bygga-forskningsstation', () => {
   });
 
   it('does not research using a station scheduled for demolition', () => {
-    const { game, planet, snapshot, turn } = setup();
-    game.scheduleBuild(planet, 'Research station');
-    turn();
+    const { game, planet, snapshot, turn, build } = setup();
+    build('Research station');
     game.selectResearch('Fighter factory');
     game.toggleDemolition(planet, snapshot().buildings[0]!.id);
     turn();
@@ -161,6 +167,8 @@ describe('gemensam-planetko / fabrikskoer / skepp-i-byggko', () => {
       const yard = factory(`${ship} factory`);
       const state = original.exportState();
       state.colonies[0]![1].stock['Weapons module'] = 100;
+      // Room to grow, so the population message joins the same planet event.
+      state.colonies[0]![1].population -= 1000;
       const game = Game.restore(state);
       game.scheduleShip(planet, ship, null, yard.id);
       const year = game.round;
@@ -210,11 +218,9 @@ describe('gemensam-planetko / fabrikskoer / skepp-i-byggko', () => {
   });
 
   it('skeppsorder-pa-planeten / parallella-byggen: each factory makes one ship per round while buildings build alongside', () => {
-    const { game, planet, snapshot, turn, factory, unlock } = setup();
+    const { game, planet, snapshot, turn, factory } = setup();
     const colony = factory('Colony ship factory');
-    unlock('Exploration ship factory');
-    game.scheduleBuild(planet, 'Exploration ship factory');
-    turn();
+    factory('Exploration ship factory');
     const explorer = snapshot().buildings.find(
       (b) => b.type === 'Exploration ship factory',
     )!;
@@ -230,9 +236,17 @@ describe('gemensam-planetko / fabrikskoer / skepp-i-byggko', () => {
     expect(game.fleet('fleet-home')!.ships['Exploration ship']).toBe(
       before.ships['Exploration ship'] + 1,
     );
-    expect(snapshot().buildings).toHaveLength(4);
-    expect(snapshot().projects.map((p) => p.type)).toEqual(['Colony ship']);
+    expect(snapshot().buildings).toHaveLength(3);
+    expect(snapshot().projects.map((p) => p.type)).toEqual([
+      'Colony ship',
+      'Research station',
+    ]);
     turn();
+    expect(snapshot().projects.map((p) => p.type)).toEqual([
+      'Research station',
+    ]);
+    turn();
+    expect(snapshot().buildings).toHaveLength(4);
     expect(snapshot().projects).toHaveLength(0);
   });
 
@@ -273,8 +287,8 @@ describe('gemensam-planetko / fabrikskoer / skepp-i-byggko', () => {
     );
     game.scheduleBuild(planet, 'Colony ship factory');
     game.moveProject(planet, snapshot().projects[1]!.id, 0);
-    turn();
-    turn();
+    for (let round = 0; round <= buildRounds('Colony ship factory'); round++)
+      turn();
     expect(game.fleet('fleet-home')!.ships['Colony ship']).toBe(1);
   });
 });
@@ -450,10 +464,10 @@ describe('planetlager / arbetskraft-och-besattning', () => {
   });
 
   it('standardregel-vid-brist / skepp-kostar-bara-delar: scarce engines go to the oldest ship order and are spent once', () => {
-    const { game, planet, factory, turn } = setup();
+    const { game, factory, build } = setup();
+    const planet = game.galaxy.homePlanet;
     factory('Colony ship factory');
-    game.scheduleBuild(planet, 'Colony ship factory');
-    turn();
+    build('Colony ship factory');
     const saved = game.exportState();
     saved.colonies[0]![1].stock['Rocket engine'] = 3;
     const restored = Game.restore(saved);
@@ -552,10 +566,9 @@ describe('tomma-flottor-utan-position / skepp-till-destinationsflotta', () => {
     const galaxy = new Galaxy(base.player, [
       new StarSystem(base.systems[0]!.star, [base.homePlanet, remote]),
     ]);
-    const { game, planet, turn, factory } = setup(galaxy);
+    const { game, planet, turn, factory, build } = setup(galaxy);
     factory('Exploration ship factory');
-    game.scheduleBuild(remote, 'Exploration ship factory');
-    turn();
+    build('Exploration ship factory', undefined, remote);
     const target = game.createFleet();
     game.scheduleShip(planet, 'Exploration ship', target.id);
     game.scheduleShip(remote, 'Exploration ship', target.id);

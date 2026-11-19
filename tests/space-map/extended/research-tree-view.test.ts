@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { completeConstruction } from '../../fixtures/construction.js';
 import { turnFrames } from '../../fixtures/turn-steps.js';
 import { TECHNOLOGIES } from '../../../src/client/space-map/models/research/Research.js';
 import { expect, it, vi } from 'vitest';
@@ -159,8 +160,7 @@ it('forskning-kraver-station: cannot queue research before a station is complete
   expect(() => game.selectResearch('Colony ship factory')).toThrow(
     /Research station/,
   );
-  for (const frame of turnFrames(game)) game.applyFrame(frame);
-  game.finishTurn();
+  completeConstruction(game, 'Research station');
   game.selectResearch('Colony ship factory');
   const station = game.planetSnapshot(game.galaxy.homePlanet)!.buildings[0]!;
   game.toggleDemolition(game.galaxy.homePlanet, station.id);

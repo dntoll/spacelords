@@ -24,9 +24,16 @@ Status per krav finns under [Implementationsstatus](#implementationsstatus).
 | `slutproduktfabrik-utan-order`  | En slutproduktfabrik utan beställning står still.                                                                                                                                                             |
 | `standardregel-vid-brist`       | Räcker insatsvarorna inte till alla fabriker fördelas de med en fast regel utan spelarstyrning: den fabrik som väntat längst får först, och vid lika går en slutproduktfabrik före en delfabrik.              |
 | `parallella-byggen`             | Planeten har en egen kö för byggnader, skild från skeppsorder. Flera byggnader kan beställas på en gång och byggs samtidigt så långt råvaror och arbetare räcker.                                             |
+| `byggtid-per-byggnad`           | En byggnad byggs i två eller tre rundor från att dess råvaror finns på plats. Enkla byggnader, som utvinning, Domes och enkla fabriker, tar två rundor. Avancerade byggnader tar tre.                         |
 | `skeppsorder-pa-planeten`       | Skepp beställs på planetnivå från kartans Production. Varje slutproduktfabrik på planeten tar nästa order av sin typ, så fabrikerna arbetar samtidigt. Kön innehåller bara skepp, inte delar eller byggnader. |
 
 Dagens personalregler för fabriker gäller fortsatt.
+
+`byggtid-per-byggnad` (2026-11-19) ersätter att varje byggnad blir klar
+samma runda som råvarorna finns. Tre rundor tar Research station, Orbital
+shipyard, terraformingfabrikerna, Ion pulse engine factory, Telescope II
+och III factory, Colony ship factory och Raptor factory. Övriga byggnader tar
+två rundor. En uppgradering av en fabrik tar den nya fabrikens byggtid.
 
 ## Plats
 
@@ -55,7 +62,7 @@ Den behåller också sin ursprungsplanet. Det krävs för
 | `flytta-fraktskepp-mellan-routes` | Spelaren kan flytta ett fraktskepp från en route till en annan och därmed prioritera bort en del av nätverket. Spelaren ser när en route saknar fraktskepp.               |
 | `varor-stannar-vid-delning`       | Delas ett nätverk stannar varje vara i den del där den tillverkades.                                                                                                      |
 | `erovrad-last`                    | Förstörs eller erövras ett fraktskepp får erövraren lasten, det vill säga det som är på väg över routen just då. Nätverket delas om det inte finns någon annan väg.       |
-| `eskort-pa-routes`                | Eskort kan tilldelas en route och skyddar dess fraktskepp. Bygger vidare på `rutt-eskortfordelning`.                                                                      |
+| `eskort-pa-routes`                | Eskort kan tilldelas en route och skyddar dess fraktskepp. Bygger vidare på `rutt-eskortfordelning`. Spelaren ser och tilldelar eskort i `Factories`.                     |
 
 Beslut inför implementationen (2026-11-18):
 
@@ -74,6 +81,9 @@ Beslut inför implementationen (2026-11-18):
 - Testläget `Factory screens` tas bort när de riktiga skärmarna finns.
 
 ## Mining ships
+
+**Uppskjutet (2026-11-19):** mining ships görs först när resten av
+förenklad produktion är klar. De följs upp i ett GitHub-issue.
 
 | Kravnamn                 | Produktkrav                                                                                                                                                                       |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -124,6 +134,10 @@ för senare ändringar.
       en grupp den kan ansluta till har ett ledigt fraktskepp eller kan bygga
       transporter.
     - Ett köat bygge visas som en gul plats med `Queued`.
+    - En grupp med bemannade länkar får knappen `Links and escorts`. Saknar
+      någon länk eskort visas i stället till exempel
+      `1 link without escort`. Knappen öppnar länkarna inom gruppen
+      (`eskort-pa-routes`, 2026-11-19).
   - **Skärm 2, val av byggnad (låst 2026-11-18):**
     - Skärmen öppnas genom tryck på en tom byggplats. Ett val fyller bara den
       platsen, och man bygger på fler platser genom att trycka på var och en.
@@ -175,6 +189,11 @@ för senare ändringar.
       frigör skeppet och öppnar förslagen med skeppet förvalt. Om flytten
       delar gruppen varnar skärmen först, till exempel
       `Splits Lyra from group`.
+    - Varje bemannad länk visar sin eskort, till exempel
+      `Escort: 2 armed ships`, eller `No escort`. `Escort` listar lediga
+      beväpnade flottor utan fraktskepp, närmast först, med antal beväpnade
+      skepp och avstånd. `Assign` skickar flottans beväpnade skepp till
+      länkens fraktskepp enligt `rutt-eskortfordelning`.
   - **Beställning av skepp (låst 2026-11-18):** ett tryck på en
     slutproduktfabrik på skärm 1 öppnar kartans Production för planeten.
     Där visas bara skepp. Kostnaden visas i delar och tiden i rundor, till
@@ -206,6 +225,11 @@ Fas 1 (spelmodellen) och fas 2 (skärmarna) är klara 2026-11-18.
   `slutprodukt-vid-fabriken` och `skeppsorder-pa-planeten`.
 - **Del- och byggnadsval:** `basta-tillgangliga-del` och
   `ovriga-byggnader-pa-byggplatser`.
+- **Byggtid:** `byggtid-per-byggnad` (2026-11-19). Skärm 2 visar varje
+  byggnads byggtid, och platsen räknar upp, till exempel `Building 1/3`.
+- **Eskort:** `eskort-pa-routes` (2026-11-19). Eskort tilldelas från
+  länkarna i `Factories`. Kartvyn Route finns kvar och öppnas bland annat
+  från beslut.
 - **Sparade spel:** `sparade-spel-bryts-i-utforskningen` (sparversion 17;
   äldre spel tappar varor under transport).
 - **Skärmarna:** `Factories` ersätter `Route` i huvudmenyn och
@@ -215,16 +239,8 @@ Fas 1 (spelmodellen) och fas 2 (skärmarna) är klara 2026-11-18.
   kartans Production, som bara erbjuder skepp. Delar kan inte längre
   beställas för hand.
 
-**Delvis implementerat:**
-
-- `eskort-pa-routes`: befintlig `rutt-eskortfordelning` gäller. Kartvyn
-  Route finns kvar för eskort men nås inte från huvudmenyn. Den öppnas
-  bland annat från beslut.
-- Varje byggnad tar en runda när råvarorna finns. Skärmarnas `Building 0/1`
-  och `~N rounds` är uppskattningar. Längre byggtider finns inte.
-
-**Ej implementerat:** `befolkningsutjamning-i-grupp`, `mining-ships` och
-`mining-ship-anslutning`.
+**Ej implementerat:** `befolkningsutjamning-i-grupp`. `mining-ships` och
+`mining-ship-anslutning` är uppskjutna till efter resten av utforskningen.
 
 **Ersatta krav vars tester togs bort:** `automatiska-delorder`,
 `delproduktion-med-sammanhang`, `grupperade-transporthandelser`,

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   Game,
   BUILDINGS,
+  buildRounds,
   type BuildType,
   type Technology,
 } from '../../../src/client/space-map/models/Game.js';
@@ -111,7 +112,8 @@ describe('uppgradera-obsoleta-fabriker', () => {
       understaffed.planetSnapshot(understaffed.galaxy.homePlanet)!.projects[0]!
         .blockedReason,
     ).toContain('population');
-    turn(game);
+    for (let round = 0; round < buildRounds('Telescope III factory'); round++)
+      turn(game);
     expect(snapshot().buildings[0]!.type).toBe('Telescope III factory');
   });
   it.each([
@@ -180,6 +182,11 @@ describe('uppgradera-obsoleta-fabriker', () => {
       expect(() => game.scheduleUpgrade(home, 'old-factory')).toThrow(
         'already queued',
       );
+      // byggtid-per-byggnad: the old factory stays until the upgrade is built.
+      for (let round = 1; round < buildRounds(latest); round++) {
+        turn(game);
+        expect(snapshot().buildings[0]!.type).toBe(old);
+      }
       turn(game);
       expect(snapshot().buildings).toHaveLength(1);
       expect(snapshot().buildings[0]).toMatchObject({

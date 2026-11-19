@@ -4,6 +4,7 @@ import { EventPlayback } from '../../../src/client/space-map/models/turn/EventPl
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import {
+  buildRounds,
   Game,
   type GameState,
 } from '../../../src/client/space-map/models/Game.js';
@@ -437,7 +438,14 @@ describe('gemensamt-handelseflode', () => {
       factoryId: null,
       destinationFleetId: null,
     });
-    const game = Game.restore(state);
+    // byggtid-per-byggnad: construction is in its last round this year.
+    const game = Game.restore({
+      ...state,
+      construction: {
+        'detection-factory':
+          state.round - buildRounds('Telescope II factory') + 1,
+      },
+    });
     game.startTurn();
     while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
     expect(game.interruption?.economyApplied).toBe(true);

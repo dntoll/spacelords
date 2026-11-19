@@ -70,6 +70,8 @@ export interface FactoryGroupSnapshot {
   readonly collapsed: boolean;
   readonly canConnect: boolean;
   readonly emptySites: number;
+  /** eskort-pa-routes: manned links in the group without armed escort. */
+  readonly unescortedLinks: number;
 }
 
 export interface BuildOptionSnapshot {
@@ -163,7 +165,21 @@ export interface LinksScreenSnapshot {
     readonly a: string;
     readonly b: string;
     readonly transport: string | null;
+    /** eskort-pa-routes: armed ships guarding the link's transports. */
+    readonly escorts: number;
+    readonly canEscort: boolean;
   }[];
+  /** eskort-pa-routes: the free armed fleets offered for one link. */
+  readonly escort: {
+    readonly routeId: string;
+    readonly fleets: readonly {
+      readonly fleetId: string;
+      readonly name: string;
+      readonly armed: number;
+      /** Hexes to the nearer end of the link. */
+      readonly distance: number;
+    }[];
+  } | null;
   readonly pick: {
     readonly a: string;
     readonly b: string;
@@ -209,12 +225,14 @@ export type FactoriesAction =
   | { readonly kind: 'build'; readonly type: BuildType }
   | { readonly kind: 'cancel-site' }
   | { readonly kind: 'open-connect'; readonly group: string }
-  | { readonly kind: 'open-links' }
+  | { readonly kind: 'open-links'; readonly group?: string }
   | { readonly kind: 'pick-planet'; readonly planet: string }
   | { readonly kind: 'connect'; readonly target: string }
   | { readonly kind: 'add-link' }
   | { readonly kind: 'choose-transport'; readonly choice: TransportChoice }
   | { readonly kind: 'move-link'; readonly link: string }
+  | { readonly kind: 'escort-link'; readonly link: string }
+  | { readonly kind: 'assign-escort'; readonly fleet: string }
   | { readonly kind: 'confirm-move' | 'cancel-move' };
 
 /** skeppsorder-pa-planeten: ship factories hand over to the map. */

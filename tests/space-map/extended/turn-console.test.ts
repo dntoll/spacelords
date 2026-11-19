@@ -250,12 +250,19 @@ describe('handelser / arsrundor-och-order', () => {
     ).toBe(false);
   });
   it('keeps arrivals in actual movement order before production events', () => {
-    const game = new Game(createExampleGalaxy());
-    game.transferShips('fleet-home', 'Fighter', 1, null);
+    const start = new Game(createExampleGalaxy());
+    start.transferShips('fleet-home', 'Fighter', 1, null);
+    start.setDestination('fleet-home', new HexCoordinate(3, 0));
+    start.scheduleBuild(start.galaxy.homePlanet, 'Research station');
+    const state = start.exportState();
+    const station = start.planetSnapshot(start.galaxy.homePlanet)!.projects[0]!;
+    // byggtid-per-byggnad: the station is in its last round of construction.
+    const game = Game.restore({
+      ...state,
+      construction: { [station.id]: state.round - 2 },
+    });
     const scout = game.fleetSnapshots()[1]!;
-    game.setDestination('fleet-home', new HexCoordinate(3, 0));
     game.setDestination(scout.id, new HexCoordinate(0, 1));
-    game.scheduleBuild(game.galaxy.homePlanet, 'Research station');
     game.startTurn();
     game.applyFrame(game.nextTurnFrame()!);
     expect(game.events.map((event) => event.text)).toEqual([

@@ -2,14 +2,23 @@ import type { AppHost } from '../../../app/models/AppModel.js';
 import { RESOURCES, type Material, type Resource } from '../Economy.js';
 import {
   BUILDINGS,
+  buildRounds,
   factoryShips,
   projectDefinition,
   type BuildType,
+  type FleetSnapshot,
   type NetworkSnapshot,
   type PlanetGameSnapshot,
   type ShipType,
 } from '../Game.js';
+import type { TradeRouteSnapshot } from '../Logistics.js';
 import type { Planet } from '../Planet.js';
+import { armedShipCount } from '../ShipEquipment.js';
+import {
+  routeEscortCount,
+  routeEscortTargets,
+  tradeAssignmentIssue,
+} from '../star-map/TradeAssignment.js';
 import {
   NetworkEconomy,
   type NetworkLink,
@@ -72,6 +81,9 @@ export class FactoriesFacade {
   #transport: TransportChoice | null = null;
   #picked: string[] = [];
   #pendingMove: string | null = null;
+  #escortLink: string | null = null;
+  /** The links screen returns to where it was opened from. */
+  #linksFromSites = false;
   #receipt: FactoriesReceipt | null = null;
 
   constructor(private readonly host: AppHost) {}
@@ -87,6 +99,7 @@ export class FactoriesFacade {
     this.#connectFrom = null;
     this.#picked = [];
     this.#pendingMove = null;
+    this.#escortLink = null;
     this.#receipt = null;
     if (!focus) return;
     const context = this.#context();
@@ -128,10 +141,7 @@ export class FactoriesFacade {
         this.#openConnect(context, action.group);
         return null;
       case 'open-links':
-        if (!this.#connectFrom) return null;
-        this.#screen = 'links';
-        this.#picked = [];
-        this.#pendingMove = null;
+        this.#openLinks(context, action.group);
         return null;
       case 'pick-planet':
         this.#picked = this.#picked.includes(action.planet)
@@ -161,6 +171,13 @@ export class FactoriesFacade {
         return null;
       case 'cancel-move':
         this.#pendingMove = null;
+        return null;
+      case 'escort-link':
+        this.#escortLink =
+          this.#escortLink === action.link ? null : action.link;
+        return null;
+      case 'assign-escort':
+        this.#assignEscort(action.fleet);
         return null;
     }
   }
@@ -239,7 +256,8 @@ export class FactoriesFacade {
   }
 
   #back(): void {
-    if (this.#screen === 'links') {
+    this.#escortLink = null;
+    if (this.#screen === 'links' && !this.#linksFromSites) {
       this.#screen = 'connect';
       this.#picked = [];
       this.#pendingMove = null;
@@ -304,6 +322,74 @@ export class FactoriesFacade {
     this.#transport = this.#transports(context, group)[0]?.choice ?? null;
     this.#picked = [];
     this.#pendingMove = null;
+  }
+
+  /** From Connect, or straight from a group on Skärm 1 (eskort-pa-routes). */
+  #openLinks(context: Context, key: string | undefined): void {
+    if (key) {
+      const group = context.network.groups.find(
+        (members) => this.#key(context, members) === key,
+      );
+      if (!group?.[0]) return;
+      this.#connectFrom = group[0];
+      this.#transport = this.#transports(context, group)[0]?.choice ?? null;
+    }
+    if (!this.#connectFrom) return;
+    this.#linksFromSites = !!key;
+    this.#screen = 'links';
+    this.#picked = [];
+    this.#pendingMove = null;
+    this.#escortLink = null;
+  }
+
+  /** eskort-pa-routes: rutt-eskortfordelning spreads the fleet's armed ships. */
+  #assignEscort(fleetId: string): void {
+    const routeId = this.#escortLink;
+    if (!routeId) return;
+    if (!this.#escortFleets(routeId).some((fleet) => fleet.id === fleetId))
+      throw new Error('That fleet can no longer escort this link.');
+    this.host.game.assignTradeFleet(routeId, fleetId);
+    this.#escortLink = null;
+  }
+
+  #route(routeId: string): TradeRouteSnapshot | undefined {
+    return this.host.game.tradeRoutes.find((route) => route.id === routeId);
+  }
+
+  /** Free armed fleets without transports, nearest first. */
+  #escortFleets(routeId: string): readonly FleetSnapshot[] {
+    const route = this.#route(routeId);
+    if (!route) return [];
+    const fleets = this.host.game.fleetSnapshots();
+    if (!routeEscortTargets(routeId, fleets).length) return [];
+    return fleets
+      .filter(
+        (fleet) =>
+          !fleet.ships['Transport ship'] &&
+          armedShipCount(fleet.ships) > 0 &&
+          tradeAssignmentIssue(fleet, route, fleets) === null,
+      )
+      .sort(
+        (a, b) =>
+          this.#distance(route, a) - this.#distance(route, b) ||
+          byName(a.name, b.name),
+      );
+  }
+
+  #distance(route: TradeRouteSnapshot, fleet: FleetSnapshot): number {
+    if (!fleet.position) return Infinity;
+    return Math.min(
+      fleet.position.distanceTo(route.start),
+      fleet.position.distanceTo(route.end),
+    );
+  }
+
+  #unescorted(context: Context, group: readonly string[]): number {
+    const fleets = this.host.game.fleetSnapshots();
+    return context.links.filter(
+      (link) =>
+        group.includes(link.a) && routeEscortCount(link.id, fleets) === 0,
+    ).length;
   }
 
   #connect(context: Context, targetKey: string): void {
@@ -471,6 +557,13 @@ export class FactoriesFacade {
       );
       const started = consumer?.startedRound ?? null;
       const done = started === null ? 0 : Math.max(0, round - started);
+      // byggtid-per-byggnad: goods first, then the construction rounds.
+      const construction = consumer?.constructionRound ?? null;
+      const length = consumer?.buildRounds ?? buildRounds(type);
+      const remaining =
+        construction === null
+          ? Math.max(1, consumer?.arrivalRounds ?? 1) + length - 1
+          : Math.max(1, length - (round - construction));
       return Object.freeze({
         index: site.index,
         kind: 'factory',
@@ -479,20 +572,21 @@ export class FactoriesFacade {
           tier: factoryTier(type),
           // parallella-byggen: it starts as soon as the group can pay.
           status:
-            consumer &&
-            consumer.waiting.every(
-              (material) =>
-                group.reduce(
-                  (sum, id) =>
-                    sum + this.#planet(context, id).economy.stock[material],
-                  0,
-                ) >= (consumer.needs[material] ?? 0),
-            )
+            construction !== null ||
+            (consumer &&
+              consumer.waiting.every(
+                (material) =>
+                  group.reduce(
+                    (sum, id) =>
+                      sum + this.#planet(context, id).economy.stock[material],
+                    0,
+                  ) >= (consumer.needs[material] ?? 0),
+              ))
               ? 'building'
               : 'queued',
           missing: Object.freeze([...(consumer?.waiting ?? [])]),
           roundsDone: done,
-          roundsTotal: done + Math.max(1, consumer?.arrivalRounds ?? 1),
+          roundsTotal: done + remaining,
           moreOrders: 0,
           makesShips: false,
         }),
@@ -655,6 +749,7 @@ export class FactoriesFacade {
       ),
       collapsed: this.#collapsedGroups.has(key),
       canConnect: this.#transports(context, group).length > 0,
+      unescortedLinks: this.#unescorted(context, group),
       emptySites: planets.reduce(
         (sum, planet) =>
           sum + planet.sites.filter((site) => site.kind === 'empty').length,
@@ -718,7 +813,7 @@ export class FactoriesFacade {
           inGroup,
           buildingInGroup: building,
           here,
-          buildRounds: 1,
+          buildRounds: buildRounds(type),
           missingDeposit,
           inputRounds,
           missingInputs: Object.freeze(
@@ -983,6 +1078,7 @@ export class FactoriesFacade {
     );
     const fleets = this.host.game.fleetSnapshots();
     const move = routes.find((route) => route.id === this.#pendingMove);
+    const escort = routes.find((route) => route.id === this.#escortLink);
     return Object.freeze({
       group: this.#names(context, group),
       planets: Object.freeze(
@@ -1006,9 +1102,26 @@ export class FactoriesFacade {
               ? (fleets.find((fleet) => fleet.id === route.fleetIds[0])?.name ??
                 null)
               : null,
+            escorts: routeEscortCount(route.id, fleets),
+            canEscort: this.#escortFleets(route.id).length > 0,
           }),
         ),
       ),
+      escort: escort
+        ? Object.freeze({
+            routeId: escort.id,
+            fleets: Object.freeze(
+              this.#escortFleets(escort.id).map((fleet) =>
+                Object.freeze({
+                  fleetId: fleet.id,
+                  name: fleet.name,
+                  armed: armedShipCount(fleet.ships),
+                  distance: this.#distance(escort, fleet),
+                }),
+              ),
+            ),
+          })
+        : null,
       pick:
         a && b
           ? Object.freeze({

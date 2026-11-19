@@ -388,6 +388,14 @@ describe('automatisk-vrakreparation / forskning-fran-bargade-delar', () => {
     const game = Game.restore(state);
     finishYear(game);
     expect(game.wrecks).toHaveLength(0);
+    // byggtid-per-byggnad: only the paid station is under construction.
+    expect(
+      game
+        .networkSnapshot()
+        .consumers.filter((consumer) => consumer.constructionRound !== null),
+    ).toHaveLength(1);
+    finishYear(game);
+    finishYear(game);
     expect(game.planetSnapshot(game.galaxy.homePlanet)!.projects).toHaveLength(
       1,
     );
@@ -517,6 +525,9 @@ describe('orbitalt-varv / forstort-varv / bargningsskepp', () => {
     expect(game.freeShipyardHexes(home.id).map((hex) => hex.key)).not.toContain(
       '2,0',
     );
+    finishYear(game);
+    finishYear(game);
+    expect(game.shipyards).toHaveLength(0);
     finishYear(game);
     expect(game.shipyards[0]!.position.key).toBe('2,0');
     expect(game.wrecks).toHaveLength(1);

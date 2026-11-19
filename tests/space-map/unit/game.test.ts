@@ -33,6 +33,14 @@ describe('rundsimulering', () => {
     expect(model.snapshot.planet).toBeNull();
     model.openPlanet();
     expect(model.snapshot.planet!.population).toBe(before + 1200);
+    // byggtid-per-byggnad: a Research station takes three rounds.
+    expect(model.snapshot.planet!.buildings).toHaveLength(0);
+    for (let round = 2; round <= 3; round++) {
+      model.startTurn();
+      for (const frame of turnFrames(model, false)) model.applyTurnFrame(frame);
+      model.finishTurn();
+    }
+    model.openPlanet();
     expect(model.snapshot.planet!.buildings[0]!.type).toBe('Research station');
     expect(
       model.snapshot.fleets.some((fleet) => fleet.ships['Colony ship'] === 0),

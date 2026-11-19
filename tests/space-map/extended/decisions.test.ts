@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { completeConstruction } from '../../fixtures/construction.js';
 import { turnFrames } from '../../fixtures/turn-steps.js';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -206,8 +207,7 @@ describe('tysta-beslut', () => {
     const model = new AppModel(undefined, repo);
     model.startSlot(1);
     model.build('Research station');
-    for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
-    model.finishTurn();
+    completeConstruction(model, 'Research station');
     model.muteDecision('research-empty');
     model.research('Colony ship factory');
     expect(

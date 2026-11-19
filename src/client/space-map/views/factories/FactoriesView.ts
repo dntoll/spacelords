@@ -338,6 +338,19 @@ function groupSection(group: FactoryGroupSnapshot, emit: Emit): HTMLElement {
         `Links between ${group.key}`,
       ),
     );
+  // eskort-pa-routes: the links and their escorts are one tap away.
+  if (group.links.some((link) => !link.pending)) {
+    const unescorted = group.unescortedLinks;
+    const links = button(
+      unescorted
+        ? `${unescorted} ${unescorted === 1 ? 'link' : 'links'} without escort`
+        : 'Links and escorts',
+      () => emit({ kind: 'open-links', group: group.key }),
+      `secondary-button factory-links${unescorted ? ' warning' : ''}`,
+    );
+    links.setAttribute('aria-label', `Links and escorts in ${group.key}`);
+    section.append(links);
+  }
   const counts = element('div', 'factory-counts');
   for (const count of group.counts) {
     const text = `${short(count.type)} ${count.built}${
@@ -638,6 +651,51 @@ function connectScreen(
   ];
 }
 
+/** eskort-pa-routes: free armed fleets, nearest first. */
+function escortPicker(
+  escort: NonNullable<LinksScreenSnapshot['escort']>,
+  title: string,
+  locked: boolean,
+  emit: Emit,
+): HTMLElement {
+  const section = element('div', 'factory-escorts');
+  section.append(
+    element(
+      'p',
+      'factory-muted',
+      'Armed ships join the transports and travel there if needed.',
+    ),
+  );
+  for (const fleet of escort.fleets) {
+    const row = element('div', 'factory-option');
+    const body = element('div', 'factory-option-body');
+    body.append(element('div', 'factory-option-title', fleet.name));
+    const tags = element('div', 'factory-tags');
+    tags.append(
+      tag(`${fleet.armed} armed ${fleet.armed === 1 ? 'ship' : 'ships'}`),
+      tag(
+        fleet.distance === 0
+          ? 'Here'
+          : `${fleet.distance} ${fleet.distance === 1 ? 'hex' : 'hexes'} away`,
+        'time',
+      ),
+    );
+    body.append(tags);
+    row.append(body);
+    if (!locked) {
+      const assign = button(
+        'Assign',
+        () => emit({ kind: 'assign-escort', fleet: fleet.fleetId }),
+        'button factory-action',
+      );
+      assign.setAttribute('aria-label', `Assign ${fleet.name} to ${title}`);
+      row.append(assign);
+    }
+    section.append(row);
+  }
+  return section;
+}
+
 function linksScreen(
   links: LinksScreenSnapshot,
   locked: boolean,
@@ -720,15 +778,43 @@ function linksScreen(
   for (const link of links.links) {
     const row = element('div', 'factory-option');
     const body = element('div', 'factory-option-body');
+    const title = `${name(link.a)}–${name(link.b)}`;
     body.append(
-      element('div', 'factory-option-title', `${name(link.a)}–${name(link.b)}`),
+      element('div', 'factory-option-title', title),
       element(
         'p',
         'factory-muted',
         link.transport ?? 'Waiting for a transport',
       ),
     );
+    if (link.transport) {
+      const tags = element('div', 'factory-tags');
+      tags.append(
+        link.escorts
+          ? tag(
+              `Escort: ${link.escorts} armed ${
+                link.escorts === 1 ? 'ship' : 'ships'
+              }`,
+              'success',
+            )
+          : tag('No escort', 'danger'),
+      );
+      body.append(tags);
+    }
     row.append(body);
+    if (!locked && link.canEscort) {
+      const escort = button(
+        'Escort',
+        () => emit({ kind: 'escort-link', link: link.id }),
+        'secondary-button factory-action',
+      );
+      escort.setAttribute('aria-label', `Escort ${title}`);
+      escort.setAttribute(
+        'aria-expanded',
+        String(links.escort?.routeId === link.id),
+      );
+      row.append(escort);
+    }
     if (!locked && link.transport) {
       const move = button(
         'Move',
@@ -742,6 +828,8 @@ function linksScreen(
       row.append(move);
     }
     current.append(row);
+    if (links.escort?.routeId === link.id)
+      current.append(escortPicker(links.escort, title, locked, emit));
   }
   content.push(current);
   return content;

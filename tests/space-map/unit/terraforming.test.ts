@@ -242,13 +242,16 @@ describe('domes-per-byggplats / terraformning', () => {
     expect(() => game.scheduleBuild(planet, 'Desert dome', 0)).toThrow(
       'No build slots',
     );
+    // byggtid-per-byggnad: a Dome takes two rounds.
+    turn(game);
+    expect(snapshot().sites[0]!.hasDome).toBe(false);
     turn(game);
     expect(snapshot().buildings).toHaveLength(0);
     expect(snapshot().sites[0]!.hasDome).toBe(true);
     expect(snapshot().economy.stock.Iron).toBe(92);
     expect(snapshot().budget.availableSlots).toBe(1);
     game.scheduleBuild(planet, 'Desert terraforming factory', 0);
-    turn(game);
+    for (let round = 0; round < 3; round++) turn(game);
     expect(snapshot().habitability).toBe(25);
     turn(game);
     expect(snapshot()).toMatchObject({
@@ -275,9 +278,11 @@ describe('domes-per-byggplats / terraformning', () => {
     const { game, planet, snapshot } = setup(50);
     game.scheduleBuild(planet, 'Desert dome');
     turn(game);
+    turn(game);
     game.scheduleBuild(planet, 'Desert dome');
     expect(snapshot().projects[0]!.slotIndex).toBe(1);
     const restored = Game.restore(game.exportState());
+    turn(restored);
     turn(restored);
     expect(
       restored.planetSnapshot(restored.galaxy.homePlanet)!.sites[1]!.hasDome,
@@ -352,7 +357,7 @@ describe('planettypsforskning', () => {
       const game = Game.restore({ ...initial.exportState(), researched: [] });
       const planet = game.galaxy.homePlanet;
       game.scheduleBuild(planet, 'Research station');
-      turn(game);
+      for (let round = 0; round < 3; round++) turn(game);
       game.selectResearch(`${environment} terraforming factory` as Technology);
       turn(game);
       turn(game);
@@ -365,8 +370,7 @@ describe('planettypsforskning', () => {
         planet,
         `${environment} terraforming factory` as BuildType,
       );
-      turn(game);
-      turn(game);
+      for (let round = 0; round < 4; round++) turn(game);
       expect(game.planetSnapshot(planet)!.habitability).toBe(85);
     },
   );
