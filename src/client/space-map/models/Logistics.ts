@@ -102,8 +102,8 @@ export class Logistics {
       throw new Error('Assign an idle transport fleet with a position.');
     fleet.routeId = routeId;
     fleet.releaseRequested = false;
-    // ruttflotta-till-narmaste-andplanet / fraktskepp-ligger-stilla: travel
-    // to the nearer end once, then stay there.
+    // ruttflotta-till-narmaste-andplanet / fraktskepp-pendlar: travel to the
+    // nearer end first; Game then sends it between the ends every round.
     const a = port.planets.find((planet) => planet.id === route.a)!;
     const b = port.planets.find((planet) => planet.id === route.b)!;
     const endpoint =
