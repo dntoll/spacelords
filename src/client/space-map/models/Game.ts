@@ -5166,6 +5166,7 @@ export class Game {
     this.#updateAutomaticTransport();
     this.#updateGuardRoutes();
     this.#updateSalvage();
+    this.#plyRoutes();
     this.#assignTaskQueues();
     this.#refreshReinforcements();
     this.#mergeReinforcements();
@@ -5681,7 +5682,13 @@ export class Game {
   }
   releaseTradeFleet(fleetId: string): void {
     this.#requirePlanning();
-    this.#logistics.release(this.#fleetState(fleetId));
+    const fleet = this.#fleetState(fleetId);
+    // fraktskepp-pendlar: a transport between the ends stops where it is.
+    if (fleet.destination && this.#onRoute(fleet)) {
+      fleet.destination = null;
+      delete fleet.courseOrigin;
+    }
+    this.#logistics.release(fleet);
   }
   closeTradeRoute(id: string): void {
     this.#requirePlanning();
@@ -6209,22 +6216,62 @@ export class Game {
       : 'build a Transport ship factory in Production';
   }
 
-  /** fraktskepp-ger-forbindelse / fraktskepp-ligger-stilla */
+  /** fraktskepp-ger-forbindelse / fraktskepp-pendlar */
   #networkLinks(): NetworkLink[] {
     return this.#logistics.routes
       .filter(
         (route) =>
           !route.closing &&
           this.#fleets.some(
-            (fleet) =>
-              fleet.routeId === route.id &&
-              fleet.ships['Transport ship'] > 0 &&
-              fleet.position !== null &&
-              !fleet.destination &&
-              !fleet.releaseRequested,
+            (fleet) => fleet.routeId === route.id && this.#onRoute(fleet),
           ),
       )
       .map(({ id, a, b }) => ({ id, a, b }));
+  }
+
+  /** The two end positions of the fleet's route. */
+  #routeEnds(fleet: Fleet): readonly [HexCoordinate, HexCoordinate] | null {
+    const route = this.#logistics.routes.find((r) => r.id === fleet.routeId);
+    const a = route && this.#planetById(route.a);
+    const b = route && this.#planetById(route.b);
+    return a && b ? [a.position, b.position] : null;
+  }
+
+  /**
+   * fraktskepp-pendlar: a transport serves its route once it has reached it,
+   * whether it waits at an end or travels from one end to the other. Only
+   * the first trip to the route leaves the link inactive.
+   */
+  #onRoute(fleet: Fleet): boolean {
+    if (
+      !fleet.routeId ||
+      fleet.ships['Transport ship'] < 1 ||
+      fleet.position === null ||
+      fleet.releaseRequested
+    )
+      return false;
+    if (!fleet.destination) return true;
+    const ends = this.#routeEnds(fleet)?.map((end) => end.key) ?? [];
+    return (
+      !!fleet.courseOrigin &&
+      fleet.courseOrigin.key !== fleet.destination.key &&
+      ends.includes(fleet.courseOrigin.key) &&
+      ends.includes(fleet.destination.key)
+    );
+  }
+
+  /** fraktskepp-pendlar: each round a waiting transport sets off for the other end. */
+  #plyRoutes(): void {
+    for (const fleet of this.#fleets) {
+      if (fleet.destination || fleet.joinFleetId || !this.#onRoute(fleet))
+        continue;
+      const ends = this.#routeEnds(fleet);
+      const here = fleet.position!.key;
+      const other = ends?.find((end) => end.key !== here);
+      if (!ends?.some((end) => end.key === here) || !other) continue;
+      fleet.courseOrigin = fleet.position!;
+      fleet.destination = other;
+    }
   }
 
   #networkPort(): NetworkPort {

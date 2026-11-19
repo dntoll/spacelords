@@ -3,7 +3,10 @@ import {
   buildRounds,
   Game,
 } from '../../../src/client/space-map/models/Game.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
+import {
+  distantTradeNetworkState,
+  tradeNetworkState,
+} from '../../fixtures/trade-network.js';
 import { turnFrames } from '../../fixtures/turn-steps.js';
 
 // Förenklad produktion in the actual game: the fixture's Vesta mine on
@@ -30,7 +33,7 @@ it('produktionsnatverk: a planet without a route cannot use another planet’s s
   ).toContain('no Iron');
 });
 
-it('fraktskepp-ger-forbindelse / fraktskepp-ligger-stilla / en-runda-per-lank: an assigned transport links the planets and stays put', () => {
+it('fraktskepp-ger-forbindelse / fraktskepp-pendlar / en-runda-per-lank: an assigned transport links the planets while it travels between them', () => {
   const game = Game.restore({ ...tradeNetworkState(), pirates: [] });
   game.assignTradeFleet('route-test', 'freighters');
   const position = game.fleet('freighters')!.position;
@@ -46,11 +49,52 @@ it('fraktskepp-ger-forbindelse / fraktskepp-ligger-stilla / en-runda-per-lank: a
   expect(vesta(game).buildings.map((building) => building.type)).toEqual([
     'Iron mine',
   ]);
-  expect(game.fleet('freighters')).toMatchObject({
-    position,
+  expect(game.fleet('freighters')).toMatchObject({ routeId: 'route-test' });
+  expect(position).not.toBeNull();
+});
+
+const planetAt = (game: Game, index: number) =>
+  game.galaxy.systems[0]!.planets[index]!.position.key;
+
+it('fraktskepp-pendlar: an assigned transport travels to the other end every round', () => {
+  const game = Game.restore({ ...tradeNetworkState(), pirates: [] });
+  game.assignTradeFleet('route-test', 'freighters');
+  const visited: (string | undefined)[] = [];
+  for (let round = 0; round < 3; round++) {
+    turn(game);
+    visited.push(game.fleet('freighters')!.position?.key);
+    expect(game.networkSnapshot().activeLinkIds).toEqual(['route-test']);
+  }
+  expect(visited).toEqual([
+    planetAt(game, 1),
+    planetAt(game, 0),
+    planetAt(game, 1),
+  ]);
+});
+
+it('fraktskepp-pendlar: the link stays active while the transport is between the ends, also after a reload', () => {
+  const game = Game.restore({ ...distantTradeNetworkState(), pirates: [] });
+  expect(game.networkSnapshot().activeLinkIds).toContain('route-distant');
+  turn(game);
+  const travellers = game.fleet('travellers')!;
+  expect(travellers.destination).not.toBeNull();
+  expect(game.networkSnapshot().activeLinkIds).toContain('route-distant');
+  expect(reload(game).networkSnapshot().activeLinkIds).toContain(
+    'route-distant',
+  );
+});
+
+it('fraktskepp-pendlar / flytta-fraktskepp-mellan-routes: releasing a travelling transport stops it where it is', () => {
+  const game = Game.restore({ ...distantTradeNetworkState(), pirates: [] });
+  turn(game);
+  const where = game.fleet('travellers')!.position;
+  game.releaseTradeFleet('travellers');
+  expect(game.fleet('travellers')).toMatchObject({
+    position: where,
     destination: null,
-    routeId: 'route-test',
   });
+  expect(game.fleet('travellers')!.routeId).toBeUndefined();
+  expect(game.networkSnapshot().activeLinkIds).not.toContain('route-distant');
 });
 
 function reload(game: Game): Game {

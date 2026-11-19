@@ -402,7 +402,8 @@ TradeRoute "*" --> "2" Planet : endpoints
 TradeRoute "0..1" <-- "0..*" Fleet : assigned
 note right of TradeRoute
   Tilldelning på avstånd startar en resa till närmaste ändplanet.
-  Där ligger fraktskeppet stilla och länkar planeterna.
+  Därefter pendlar fraktskeppet mellan ändarna och länkar planeterna
+  hela tiden (fraktskepp-pendlar).
   Rutt utan aktiv transport visas streckad.
   rutt-eskortfordelning: Fighters tilldelas endast med aktiv transport.
   Fighters fördelas till transportflottan med minst eskort,

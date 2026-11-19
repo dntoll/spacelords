@@ -66,9 +66,15 @@ Den behåller också sin ursprungsplanet. Det krävs för
 
 Beslut inför implementationen (2026-11-18):
 
-- `fraktskepp-ligger-stilla`: ett tilldelat fraktskepp reser inte längs sin
-  route utan ligger stilla vid den. Pirater anfaller det där, och vinner de
-  gäller `erovrad-last`.
+- `fraktskepp-pendlar` (2026-11-19): ett tilldelat fraktskepp reser först
+  till närmaste ände av sin route och pendlar sedan fram och tillbaka mellan
+  ändarna, en ny resa varje runda. Rörelsen syns bara på kartan: länken är
+  aktiv hela tiden, även mellan ändarna, och varor tar fortfarande en runda
+  per länk enligt `en-runda-per-lank`. Pirater anfaller fraktskeppet där det
+  befinner sig, och vinner de gäller `erovrad-last`. Eskorten följer med i
+  fraktskeppets flotta. Frigörs skeppet mellan ändarna stannar det där det
+  är. Ersätter `fraktskepp-ligger-stilla`, där skeppet låg stilla vid sin
+  route.
 - `ovriga-byggnader-pa-byggplatser`: byggnader som inte är fabriker, till
   exempel Research station, Domes, terraformingfabriker och Orbital
   shipyard, byggs på byggplatserna, kostar råvaror och fungerar i övrigt som
@@ -250,7 +256,7 @@ Fas 1 (spelmodellen) och fas 2 (skärmarna) är klara 2026-11-18.
 **Fullständigt implementerat** (testerna knutna till kravnamnen):
 
 - **Nätverket:** `produktionsnatverk`, `fraktskepp-ger-forbindelse`,
-  `fraktskepp-ligger-stilla`, `delat-lager-i-natverket`,
+  `fraktskepp-pendlar`, `delat-lager-i-natverket`,
   `en-runda-per-lank`, `kortaste-vag-i-lankar`,
   `varor-stannar-vid-delning`, `erovrad-last` och
   `flytta-fraktskepp-mellan-routes`.
