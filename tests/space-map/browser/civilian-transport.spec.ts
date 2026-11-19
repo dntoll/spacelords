@@ -8,7 +8,7 @@ import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { chooseResearch, endTurn, startFirstSlot } from './save-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 
-test('civil-skyttelforskning / civil-skytteltillverkning / civiltrafik-sparning: research, build and operate passenger traffic', async ({
+test('civil-skyttelforskning / civil-skytteltillverkning / civiltrafik-sparning: research, build and keep a shuttle on Civilian transport', async ({
   page,
 }) => {
   scenarioTimeout(90_000);
@@ -104,12 +104,9 @@ test('civil-skyttelforskning / civil-skytteltillverkning / civiltrafik-sparning:
         }
       ).state,
   );
-  expect(
-    saved.events.some(
-      (e) => e.text.includes('boarded') && e.text.includes('passengers'),
-    ),
-  ).toBe(true);
+  // befolkningsutjamning-i-grupp: shuttles no longer carry passengers.
   expect(saved.fleets.some((f) => f.civilian)).toBe(true);
+  expect(saved.fleets.every((f) => !f.civilian?.passengers)).toBe(true);
   expect(() => Game.restore(saved)).not.toThrow();
   await page.reload();
   await startFirstSlot(page);

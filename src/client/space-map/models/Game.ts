@@ -14,7 +14,7 @@ import {
   CivilianTraffic,
   SHUTTLE_CAPACITY,
   type CivilianOrder,
-  type CivilianPort,
+  type CivilianPlanet,
 } from './CivilianTraffic.js';
 import { engineCount, armedShipCount } from './ShipEquipment.js';
 import { FactoryTechnology } from './FactoryTechnology.js';
@@ -104,6 +104,10 @@ import {
   type TradeRoute,
   type TradeRouteSnapshot,
 } from './Logistics.js';
+import {
+  PopulationLevelling,
+  type SettlerTransit,
+} from './production-network/PopulationLevelling.js';
 import {
   NetworkEconomy,
   type NetworkConsumer,
@@ -863,6 +867,7 @@ export interface GameState {
   readonly network?: NetworkEconomyState;
   readonly networkStarted?: Readonly<Record<string, number>>;
   readonly construction?: Readonly<Record<string, number>>;
+  readonly settlers?: readonly SettlerTransit[];
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
   readonly version:
@@ -921,6 +926,8 @@ export class Game {
   #networkStarted: Record<string, number> = {};
   // byggtid-per-byggnad: round each building's construction began.
   #construction: Record<string, number> = {};
+  // befolkningsutjamning-i-grupp: settlers on their way inside a group.
+  #settlers = new PopulationLevelling();
   #salvage: Salvage;
   #decisions = new DecisionBoard();
   #research = new ResearchPlan();
@@ -999,6 +1006,7 @@ export class Game {
       network: this.#network.snapshot(),
       networkStarted: { ...this.#networkStarted },
       construction: { ...this.#construction },
+      settlers: [...this.#settlers.transits],
       productionFleetSequences: { ...this.#productionFleetSequences },
       planetQueues: this.#planetQueues.snapshot(),
       attackQueue: [...this.#attackQueue],
@@ -1183,6 +1191,11 @@ export class Game {
       copy.mutedDecisions ?? [],
     );
     game.#colonies = new Map(copy.colonies);
+    if (copy.settlers !== undefined)
+      PopulationLevelling.validate(copy.settlers, (id) =>
+        game.#colonies.has(id),
+      );
+    game.#settlers = new PopulationLevelling(copy.settlers ?? []);
     for (const colony of game.#colonies.values()) {
       colony.stock = { ...emptyStock(), ...colony.stock };
       colony.deposits = { ...emptyStock(), ...colony.deposits };
@@ -1250,6 +1263,7 @@ export class Game {
           fleet.automation ??= 'transport';
         }
         const empty = game.#shipCount(fleet.ships) === 0;
+        let landed = false;
         if (fleet.civilian !== undefined) {
           CivilianTraffic.validate(
             fleet.civilian,
@@ -1267,6 +1281,16 @@ export class Game {
             fleet.colonizationTargetId
           )
             throw new Error('Invalid saved civilian fleet.');
+          // befolkningsutjamning-i-grupp: passengers of the old shuttle trips
+          // land at their destination, or back home, and the shuttle stops.
+          const { passengers, reserved, targetId, sourceId } = fleet.civilian;
+          if (passengers || reserved) {
+            const colony =
+              game.#colonies.get(targetId!) ?? game.#colonies.get(sourceId!);
+            if (colony) colony.population += passengers;
+            fleet.civilian = CivilianTraffic.order();
+            landed = true;
+          }
         }
         if (
           fleet.automation !== undefined &&
@@ -1347,8 +1371,9 @@ export class Game {
           ...fleet,
           ships: { ...fleet.ships },
           position: empty ? null : position(current!),
-          destination: !empty && destination ? position(destination) : null,
-          ...(!empty && courseOrigin
+          destination:
+            !empty && !landed && destination ? position(destination) : null,
+          ...(!empty && !landed && courseOrigin
             ? { courseOrigin: position(courseOrigin) }
             : {}),
         };
@@ -2962,44 +2987,98 @@ export class Game {
     this.#updateAutomaticTransport();
   }
 
-  #civilianPort(): CivilianPort {
-    return {
-      planets: this.#ownedPlanets().map((planet) => {
-        const state = this.#state(planet);
-        const head = state.projects[0];
-        const definition = head && this.#projectDefinition(state, head);
-        return {
-          id: planet.id,
-          name: planet.name,
-          position: planet.position,
-          get population() {
-            return state.population;
-          },
-          set population(value: number) {
-            state.population = value;
-          },
-          capacity: this.#environment(planet, state).populationCapacity,
-          workforce:
-            state.buildings
-              .filter((b) => !b.demolition)
-              .reduce((n, b) => n + BUILDINGS[b.type].workers, 0) +
-            (definition?.workers ?? 0) +
-            (definition?.crew ?? 0),
-        };
-      }),
-      fleets: this.#fleets,
-      routes: this.#logistics.routes,
-      travelYears: (fleet, from, to) => {
-        const actual = this.#fleetState(fleet.id);
-        if (from.key === to.key) return 0;
-        const speed = this.#speed(actual);
-        const path = this.#navigation.path(from, to, speed, this.#knownTerrain);
-        return path.length
-          ? this.#navigation.years(path, from, speed, this.#knownTerrain)
-          : Infinity;
-      },
-      event: (message, position) => this.#event(message, position),
-    };
+  /**
+   * befolkningsutjamning-i-grupp: workers for finished buildings plus the
+   * workers and crew of every queued project, since they build in parallel.
+   */
+  #settlerPlanets(): CivilianPlanet[] {
+    return this.#ownedPlanets().map((planet) => {
+      const state = this.#state(planet);
+      return {
+        id: planet.id,
+        name: planet.name,
+        position: planet.position,
+        get population() {
+          return state.population;
+        },
+        set population(value: number) {
+          state.population = value;
+        },
+        capacity: this.#environment(planet, state).populationCapacity,
+        workforce:
+          state.buildings
+            .filter((b) => !b.demolition)
+            .reduce((n, b) => n + BUILDINGS[b.type].workers, 0) +
+          state.projects.reduce((n, project) => {
+            const definition = this.#projectDefinition(state, project);
+            return n + definition.workers + definition.crew;
+          }, 0),
+      };
+    });
+  }
+
+  /**
+   * befolkningsutjamning-i-grupp: settlers land, then each group's Civilian
+   * shuttles send the next ones. A shuttle belongs to the group of the
+   * planet it waits at, or of its home route.
+   */
+  #levelPopulation(): void {
+    const owned = new Map(
+      this.#settlerPlanets().map((planet) => [planet.id, planet]),
+    );
+    const landed = new Map<string, Map<string, number>>();
+    for (const transit of this.#settlers.arrivals(this.#round)) {
+      const planet = owned.get(transit.to) ?? owned.get(transit.from);
+      if (!planet) continue;
+      planet.population += transit.amount;
+      const sources = landed.get(planet.id) ?? new Map<string, number>();
+      sources.set(
+        transit.from,
+        (sources.get(transit.from) ?? 0) + transit.amount,
+      );
+      landed.set(planet.id, sources);
+    }
+    for (const [id, sources] of landed) {
+      const planet = this.#ownedPlanets().find((item) => item.id === id)!;
+      for (const [from, amount] of sources)
+        this.#planetEvent(
+          `${amount} settlers arrived at ${planet.name} from ${
+            owned.get(from)?.name ?? 'a lost colony'
+          }.`,
+          planet,
+        );
+    }
+    const links = this.#networkLinks();
+    const routes = new Map(
+      this.#logistics.routes.map((route) => [route.id, route]),
+    );
+    for (const group of NetworkEconomy.groups([...owned.keys()], links)) {
+      if (group.length < 2) continue;
+      const positions = new Set(group.map((id) => owned.get(id)!.position.key));
+      const shuttles = this.#fleets
+        .filter((fleet) => {
+          if (!fleet.civilian || fleet.destination || !fleet.position)
+            return false;
+          const home = fleet.homeRouteId
+            ? routes.get(fleet.homeRouteId)
+            : undefined;
+          return (
+            positions.has(fleet.position.key) ||
+            (!!home && (group.includes(home.a) || group.includes(home.b)))
+          );
+        })
+        .reduce((sum, fleet) => sum + fleet.ships['Civilian shuttle'], 0);
+      if (!shuttles) continue;
+      const distances = new Map(
+        group.map((id) => [id, NetworkEconomy.rounds(id, links)] as const),
+      );
+      this.#settlers.dispatch(
+        group.map((id) => owned.get(id)!),
+        shuttles,
+        (from, to) => distances.get(from)?.get(to) ?? 1,
+        this.#round,
+      );
+    }
   }
 
   setAutomaticSalvage(fleetId: string): void {
@@ -5081,7 +5160,6 @@ export class Game {
     this.#updateGuardRoutes();
     this.#updateSalvage();
     this.#assignTaskQueues();
-    this.#civilianTraffic.prepare(this.#civilianPort());
     this.#refreshReinforcements();
     this.#mergeReinforcements();
     this.#simulation = new TurnSimulation([
@@ -5229,7 +5307,7 @@ export class Game {
       ]);
     this.#completeColonizations();
     this.#unloadHolds();
-    this.#civilianTraffic.arrive(this.#civilianPort());
+    this.#levelPopulation();
     const researchStations = this.research.stations;
     for (const planet of this.#ownedPlanets()) {
       const state = this.#state(planet);

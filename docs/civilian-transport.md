@@ -2,6 +2,12 @@
 
 Samtliga krav nedan är **Fullständigt implementerat**.
 
+**Utforskning `simple_production`:** `befolkningsutjamning-i-grupp` ersätter
+passagerarresorna. Där gäller inte `automatisk-arbetskraftstrafik`,
+`civiltrafik-pa-handelsnatet`, passagerarna i `civiltrafik-sparning` eller
+hemfarledsbytet i `civil-farledsbyte`. Se
+[förenklad produktion](simple-production.md).
+
 ## Forskning och tillverkning
 
 `civil-skyttelforskning`: Civilian transport följer Trade logistics och kostar

@@ -77,7 +77,23 @@ Beslut inför implementationen (2026-11-18):
   till exempel Ion pulse engine före Rocket engine och högsta teleskopet.
 - `befolkningsutjamning-i-grupp`: Civilian shuttles jämnar ut befolkningen
   mellan planeterna i en grupp, så att en ny planet snabbare får befolkning.
-  Det ersätter dagens resor längs enskilda routes.
+  Det ersätter dagens resor längs enskilda routes. Regler (2026-11-19):
+  - Först får planeter med personalbrist folk. Behovet är personal för
+    färdiga byggnader plus personal och besättning för alla köade projekt,
+    eftersom de byggs samtidigt. Därefter flyttas folk så att alla planeter
+    i gruppen når samma andel av sitt befolkningstak. Skillnader under 100
+    personer lämnas.
+  - Ingen planet skickar bort folk under det större av 1 000 och sitt eget
+    personalbehov. Inflyttning begränsas av befolkningstaket.
+  - Varje skyttel i gruppen flyttar upp till 500 personer per runda. En
+    skyttel hör till gruppen där den väntar eller där dess hemfarled ligger.
+    Skyttlar flyger inte längre med passagerare.
+  - Folket är på väg en runda per länk enligt `en-runda-per-lank`.
+    Närmaste planet i länkar skickar först. Under resan växer de inte. De
+    kommer fram även om länken bryts. Ägs målet inte längre återvänder de,
+    och finns ingen av planeterna kvar går de förlorade.
+  - Folk på väg sparas. Passagerare ombord i äldre sparningar stiger av vid
+    sitt mål när spelet laddas, och skytteln stannar där den är.
 - Testläget `Factory screens` tas bort när de riktiga skärmarna finns.
 
 ## Mining ships
@@ -239,10 +255,16 @@ Fas 1 (spelmodellen) och fas 2 (skärmarna) är klara 2026-11-18.
   kartans Production, som bara erbjuder skepp. Delar kan inte längre
   beställas för hand.
 
-**Ej implementerat:** `befolkningsutjamning-i-grupp`. `mining-ships` och
-`mining-ship-anslutning` är uppskjutna till efter resten av utforskningen.
+- **Befolkning:** `befolkningsutjamning-i-grupp` (2026-11-19) enligt
+  reglerna ovan. Gruppen i `Factories` visar ännu inte folk på väg.
 
-**Ersatta krav vars tester togs bort:** `automatiska-delorder`,
+**Uppskjutet:** `mining-ships` och `mining-ship-anslutning` görs efter
+resten av utforskningen.
+
+**Ersatta krav vars tester togs bort:** `automatisk-arbetskraftstrafik`,
+`civiltrafik-pa-handelsnatet`, passagerarresorna i `civiltrafik-sparning`
+och hemfarledsbytet i `civil-farledsbyte` (alla ersatta av
+`befolkningsutjamning-i-grupp`), `automatiska-delorder`,
 `delproduktion-med-sammanhang`, `grupperade-transporthandelser`,
 `leveransfloden`, `forsorjningsstatus`, `projektens-forsorjningssteg`,
 `automatisk-motormontering` (ersatt av `basta-tillgangliga-del`),

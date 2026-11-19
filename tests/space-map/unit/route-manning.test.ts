@@ -152,63 +152,6 @@ describe('automatisk-farledsbemanning', () => {
   });
 });
 
-describe('civil-farledsbyte', () => {
-  it('updates the shuttle home route when a passenger job uses another route and keeps passengers', () => {
-    const state = withShipyard(distantTradeNetworkState());
-    const game = Game.restore({
-      ...state,
-      researched: [...state.researched, 'Civilian transport'],
-      fleets: state.fleets.map((fleet) =>
-        fleet.id === 'travellers'
-          ? {
-              ...fleet,
-              destination: null,
-              ships: { ...fleet.ships, 'Transport ship': 4 },
-            }
-          : fleet,
-      ),
-    });
-    game.scheduleShip(game.galaxy.homePlanet, 'Civilian shuttle');
-    finishYear(game);
-    const shuttleId = builtFleets(game).find(
-      (fleet) => fleet.ships['Civilian shuttle'],
-    )!.id;
-    const shuttle = game.fleet(shuttleId)!;
-    expect(shuttle.homeRouteId).toBe('route-test');
-    const saved = game.exportState();
-    const resumed = Game.restore({
-      ...saved,
-      colonies: saved.colonies.map(([id, colony]) => [
-        id,
-        {
-          ...colony,
-          population: id === 'nadir-1' ? 200 : 1_000_000,
-        },
-      ]),
-      fleets: saved.fleets.map((fleet) =>
-        fleet.id === shuttleId
-          ? {
-              ...fleet,
-              civilian: {
-                passengers: 200,
-                reserved: 200,
-                sourceId: 'sol-0',
-                targetId: 'nadir-1',
-                path: [],
-                stopping: false,
-                status: 'Transporting passengers',
-              },
-            }
-          : fleet,
-      ),
-    });
-    resumed.startTurn();
-    const travelling = resumed.fleet(shuttleId)!;
-    expect(travelling.civilian!.passengers).toBe(200);
-    expect(travelling.homeRouteId).toBe('route-distant');
-  });
-});
-
 describe('ombemanning-vid-stangd-farled', () => {
   it('sends idle transports from a closed route to the remaining least-manned route', () => {
     const state = distantTradeNetworkState();
