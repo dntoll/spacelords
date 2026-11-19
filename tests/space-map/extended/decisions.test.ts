@@ -19,12 +19,12 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
     ['research-empty', 'research'],
     ['building-empty-sol-0', 'production'],
     ['fleet-idle-fleet-home', 'fleets'],
-    ['route-idle-route-test', 'route'],
+    ['route-idle-route-test', 'factories'],
   ] as const)(
     'direkt-atgard-fran-rundvarning: %s opens %s without advancing the year',
     (id, screen) => {
       const state =
-        screen === 'route' ? tradeNetworkState() : researchStationState();
+        screen === 'factories' ? tradeNetworkState() : researchStationState();
       const model = new AppModel(undefined, {
         load: () => ({ lastPlayed: '2026-10-30', state }),
         save() {},
@@ -327,8 +327,8 @@ it('beslutslista: removes Next decision and retains Review on each decision', ()
 it.each([
   ['research-empty', 'research', 'research'],
   ['fleet-idle-home', 'fleet', 'fleets'],
-  ['route-idle-one', 'route', 'route'],
-  ['supply-sol-0', 'planet', 'route'],
+  ['route-idle-one', 'route', 'factories'],
+  ['supply-sol-0', 'planet', 'factories'],
   ['staff-sol-0', 'planet', 'production'],
   ['production-sol-0', 'planet', 'production'],
   ['building-empty-sol-0', 'planet', 'production'],

@@ -76,13 +76,30 @@ export class FactoriesFacade {
 
   constructor(private readonly host: AppHost) {}
 
-  open(): void {
+  /**
+   * `focus` is a planet or route ID: its group stays open and the other
+   * groups fold away.
+   */
+  open(focus?: string): void {
     this.host.screen = 'factories';
     this.#screen = 'sites';
     this.#site = null;
     this.#connectFrom = null;
     this.#picked = [];
     this.#pendingMove = null;
+    this.#receipt = null;
+    if (!focus) return;
+    const context = this.#context();
+    const route = this.host.game.tradeRoutes.find((item) => item.id === focus);
+    const planet = route?.a ?? focus;
+    if (!context.planets.some((item) => item.id === planet)) return;
+    const own = this.#group(context, planet);
+    this.#collapsedGroups = new Set(
+      context.network.groups
+        .filter((group) => group[0] !== own[0])
+        .map((group) => this.#key(context, group)),
+    );
+    this.#collapsedGroups.delete(this.#key(context, own));
   }
 
   apply(action: FactoriesAction): FactoriesOutcome {
@@ -350,7 +367,7 @@ export class FactoriesFacade {
   /** Whether the group holds or makes a material. */
   /**
    * basta-tillgangliga-del: whether a factory's input is covered. Ion pulse
-   * engines replace Rocket engines.
+   * engines replace Rocket engines and better telescopes replace Telescope I.
    */
   #supplied(
     context: Context,
@@ -360,7 +377,11 @@ export class FactoriesFacade {
     return (
       this.#has(context, group, material) ||
       (material === 'Rocket engine' &&
-        this.#has(context, group, 'Ion pulse engine'))
+        this.#has(context, group, 'Ion pulse engine')) ||
+      (material === 'Telescope I' &&
+        (['Telescope II', 'Telescope III'] as const).some((telescope) =>
+          this.#has(context, group, telescope),
+        ))
     );
   }
 

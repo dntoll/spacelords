@@ -38,8 +38,8 @@ export class DecisionFacade {
     if (target === 'research') this.host.openResearch();
     else if (target === 'fleets' && decision.fleetId)
       this.host.openFleet(decision.fleetId);
-    else if (target === 'route' && decision.routeId)
-      this.host.openSupplyRoute(decision.routeId);
+    else if (target === 'factories')
+      this.host.openFactories(decision.planetId ?? decision.routeId);
     else if (decision.planetId) {
       if (target === 'route') this.host.openRoute(decision.planetId);
       else this.host.openProduction(decision.planetId);

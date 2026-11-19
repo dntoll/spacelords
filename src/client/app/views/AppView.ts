@@ -1282,6 +1282,8 @@ export class AppView implements AppPort {
       model.factories!,
       playerNoticeText(model.notice),
     );
+    // beslutsvagledning-i-vyn: route and missing-goods decisions live here.
+    updateDecisionGuidance(this.#root, model, this.#emit);
   }
 
   #mapPage(screen: MapScreen): HTMLElement {

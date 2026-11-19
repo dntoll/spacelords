@@ -34,17 +34,19 @@ export function needsAttention(decision: Decision): boolean {
   );
 }
 
-export type DecisionScreen = 'research' | 'fleets' | 'route' | 'production';
+export type DecisionScreen =
+  'research' | 'fleets' | 'route' | 'factories' | 'production';
 
 // beslutsmarkering-pa-flikar: Review and navigation use the same destination.
 export function decisionScreen(decision: DecisionDescriptor): DecisionScreen {
   if (decision.kind === 'research') return 'research';
+  // produktionsnatverk: links and missing goods are handled in Factories.
   if (
     decision.routeId ||
     decision.kind === 'route' ||
     decision.id.startsWith('supply-')
   )
-    return 'route';
+    return 'factories';
   if (decision.fleetId || decision.kind === 'fleet') return 'fleets';
   return 'production';
 }

@@ -1979,6 +1979,7 @@ export class AppModel {
         model.requestResearchRemoval(type),
       confirmResearchRemoval: () => model.confirmResearchRemoval(),
       openRoute: (planetId?: string) => model.openRoute(planetId),
+      openFactories: (focus?: string) => model.factoriesCase.open(focus),
       openProduction: (planetId?: string) => model.openProduction(planetId),
       focusMapPlanet: (id: string) => model.#focusMapPlanet(id),
       requestMapFocus: (position: HexCoordinate) =>
@@ -2277,6 +2278,8 @@ export interface AppHost {
   requestResearchRemoval(type: Technology | null): void;
   confirmResearchRemoval(): void;
   openRoute(planetId?: string): void;
+  /** Opens Factories, focused on a planet's or a route's group. */
+  openFactories(focus?: string): void;
   openProduction(planetId?: string): void;
   focusMapPlanet(id: string): void;
   requestMapFocus(position: HexCoordinate): void;

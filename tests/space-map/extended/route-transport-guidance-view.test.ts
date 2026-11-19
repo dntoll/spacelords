@@ -10,7 +10,7 @@ describe('atgarder-for-rutttransport', () => {
     const guidance = renderDecisionGuidance(
       {
         ...snapshot,
-        screen: 'route',
+        screen: 'factories',
         decisions: [
           {
             id: 'route-idle-r',
@@ -46,7 +46,7 @@ describe('atgarder-for-rutttransport', () => {
     const guidance = renderDecisionGuidance(
       {
         ...snapshot,
-        screen: 'route',
+        screen: 'factories',
         decisions: [
           {
             id: 'route-idle-r',

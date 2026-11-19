@@ -56,7 +56,7 @@ describe('Factories', () => {
   it('replaces Route in the main navigation and shows each unlinked planet as its own group', () => {
     const { root, factories } = setup();
     const labels = [...root.querySelectorAll('.main-nav button')].map(
-      (button) => button.textContent,
+      (button) => button.getAttribute('aria-label'),
     );
     expect(labels).toContain('Factories');
     expect(labels).not.toContain('Route');
@@ -267,4 +267,58 @@ it('Skärm 2: a Dome site without the Dome research names the research to do', a
   act({ kind: 'open-site', planet: 'sol-0', site: 0 });
   expect(factories().build!.research).toBe('Desert dome');
   expect(root.textContent).toContain('Research Desert dome');
+});
+
+it('basta-tillgangliga-del: an Exploration ship factory with a better telescope factory in its group is not missing telescopes', () => {
+  const state = { ...tradeNetworkState(), pirates: [] };
+  state.colonies[0]![1].buildings.push(
+    {
+      id: 'explorer-yard',
+      type: 'Exploration ship factory',
+      slotIndex: 2,
+      demolition: false,
+    },
+    {
+      id: 'telescope-two',
+      type: 'Telescope II factory',
+      slotIndex: 3,
+      demolition: false,
+    },
+  );
+  state.colonies[0]![1].projects.push({
+    id: 'project-900',
+    type: 'Exploration ship',
+    slotIndex: null,
+    factoryId: 'explorer-yard',
+    destinationFleetId: null,
+  });
+  const { send, group } = setup(state);
+  send({ type: 'open-factories' });
+  expect(group('Tellus').planets[0]!.sites[2]!.factory!.missing).toEqual([]);
+});
+
+it('blockerad-fabrik: Show on a missing-goods decision opens Factories on the planet’s group and marks Factories', () => {
+  const { send, model, factories, group, root } = setup();
+  send({ type: 'open-map' });
+  const decision = model.snapshot.decisions.find(
+    (item) => item.id === 'supply-sol-1',
+  )!;
+  expect(decision.label).toContain('no Iron');
+  expect(model.snapshot.attentionScreens).toContain('factories');
+  expect(
+    root.querySelector('[data-screen="factories"] .nav-attention'),
+  ).not.toBeNull();
+  send({ type: 'open-decision', id: decision.id });
+  expect(model.snapshot.screen).toBe('factories');
+  expect(factories().screen).toBe('sites');
+  expect(group('Vesta').collapsed).toBe(false);
+  expect(group('Tellus').collapsed).toBe(true);
+});
+
+it('beslutsvagledning-i-vyn: Factories shows the guidance for its missing-goods decision', () => {
+  const { send, root } = setup();
+  send({ type: 'open-decision', id: 'supply-sol-1' });
+  expect(
+    root.querySelector('.factory-screens .decision-guidance')?.textContent,
+  ).toContain('Connect the group to planets that make it');
 });

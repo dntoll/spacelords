@@ -350,6 +350,34 @@ describe('teleskop-i-exploration-ships', () => {
     ).toEqual(['Exploration ship']);
   });
 
+  it('basta-tillgangliga-del: a waiting ship switches to a better telescope that becomes available after its engines arrived', () => {
+    const game = Game.restore(shipyard());
+    game.scheduleShip(game.galaxy.homePlanet, 'Exploration ship');
+    year(game);
+    const project = () =>
+      game.planetSnapshot(game.galaxy.homePlanet)!.projects[0]!;
+    expect(project().parts!['Telescope I']).toBe(1);
+    const state = game.exportState();
+    state.colonies[0]![1].buildings.push({
+      id: 'telescope-two',
+      type: 'Telescope II factory',
+      slotIndex: 1,
+      demolition: false,
+    });
+    const upgraded = Game.restore(state);
+    year(upgraded);
+    year(upgraded);
+    expect(
+      upgraded.planetSnapshot(upgraded.galaxy.homePlanet)!.projects,
+    ).toEqual([]);
+    expect(
+      upgraded
+        .fleet('fleet-home')!
+        .shipUnits!.filter((ship) => ship.type === 'Exploration ship')
+        .map((ship) => ship.telescope),
+    ).toEqual([1, 2]);
+  });
+
   it('chooses the best supplied telescope, consumes exactly one and preserves the old ship level', () => {
     const state = shipyard();
     state.colonies[0]![1].stock['Telescope I'] = 1;

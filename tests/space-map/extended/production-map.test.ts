@@ -154,13 +154,16 @@ describe('route-kartvy / delad-kartkamera', () => {
 });
 
 describe('forsorjningsproblem-pa-kartan', () => {
-  it('routes decisions to Route or Production with the affected object selected', () => {
+  it('blockerad-fabrik: routes decisions to Factories or Production with the affected object in view', () => {
     const { model, emit, controller } = setup();
     emit({ type: 'open-decision', id: 'supply-sol-1' });
-    expect(model.snapshot.screen).toBe('route');
-    expect(model.snapshot.selected?.object?.name).toBe('Vesta');
+    expect(model.snapshot.screen).toBe('factories');
+    expect(
+      model.snapshot.factories!.groups.find((group) => group.key === 'Vesta')!
+        .collapsed,
+    ).toBe(false);
     emit({ type: 'open-decision', id: 'route-idle-route-test' });
-    expect(model.snapshot.mapTrade.routeId).toBe('route-test');
+    expect(model.snapshot.screen).toBe('factories');
     emit({ type: 'open-decision', id: 'building-empty-sol-0' });
     expect(model.snapshot.screen).toBe('production');
     expect(model.snapshot.planet?.name).toBe('Tellus');
