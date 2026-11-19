@@ -1,8 +1,6 @@
 // @vitest-environment jsdom
 import { expect, it } from 'vitest';
 import { needsAttention } from '../../../src/client/space-map/models/Decisions.js';
-import { Game } from '../../../src/client/space-map/models/Game.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
@@ -75,38 +73,5 @@ it('beslut-vantar-pa-paborjad-atgard: updates guidance, counter, map problems an
   expect(
     root.querySelector('[data-screen="production"] .nav-attention'),
   ).not.toBeNull();
-  controller.dispose();
-});
-
-it('transportbygge-i-forsorjningssteg: shows the queued ship and its planet in the production queue', () => {
-  const state = tradeNetworkState();
-  state.colonies[0]![1].buildings.push({
-    id: 'transport-factory',
-    type: 'Transport ship factory',
-    slotIndex: 2,
-    demolition: false,
-  });
-  const game = Game.restore({
-    ...state,
-    fleets: state.fleets.filter((fleet) => fleet.id === 'fleet-home'),
-  });
-  game.scheduleShip(game.galaxy.homePlanet, 'Transport ship');
-  const saved = game.exportState();
-  const model = new AppModel(undefined, {
-    load: () => ({ lastPlayed: '2026-10-25T00:00:00Z', state: saved }),
-    save() {},
-    clear() {},
-  });
-  model.startSlot(1);
-  model.openProduction('sol-1');
-  const root = document.createElement('div');
-  document.body.replaceChildren(root);
-  const controller = new MasterController(
-    model,
-    new AppView(root, () => ({ render() {}, dispose() {} })),
-  );
-  controller.start();
-  expect(root.textContent).toContain('Waiting for Iron transport');
-  expect(root.textContent).toContain('Transport ship queued at Tellus');
   controller.dispose();
 });

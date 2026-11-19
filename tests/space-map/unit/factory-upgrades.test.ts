@@ -174,9 +174,6 @@ describe('uppgradera-obsoleta-fabriker', () => {
         before.budget.availableSlots,
       );
       expect(snapshot().budget.reservedWorkers).toBe(300);
-      expect(JSON.stringify(game.projectSupply(home.id))).not.toContain(
-        'Not enough workers',
-      );
       expect(game.planetOrders()[0]!.emptySites).toBe(
         before.budget.availableSlots,
       );

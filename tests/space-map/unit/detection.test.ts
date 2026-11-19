@@ -313,13 +313,6 @@ describe('teleskop-i-exploration-ships', () => {
       .find((ship) => ship.type === 'Exploration ship');
     expect(explorer?.telescope).toBe(3);
     expect(game.planetSnapshot(target)!.economy.stock['Telescope I']).toBe(1);
-    expect(
-      game
-        .exportState()
-        .componentOrders?.filter(
-          (order) => order.component === 'Telescope III',
-        ),
-    ).toHaveLength(0);
   });
   function shipyard() {
     const state = new Game(createExampleGalaxy()).exportState();

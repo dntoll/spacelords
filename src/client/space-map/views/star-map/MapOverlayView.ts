@@ -24,11 +24,7 @@ export function renderMapOverlays(
           decision.planetId === planet.id &&
           decisionScreen(decision) === model.screen,
       );
-      const chain =
-        model.screen === 'production'
-          ? model.supplyChain.planets.find((p) => p.id === planet.id)
-          : null;
-      if (!attention && !decision && !chain) continue;
+      if (!attention && !decision) continue;
       const zoom = model.camera.zoom;
       sketch.noFill();
       sketch.stroke(attention ? '#ff8e85' : '#ffdc88');
@@ -38,11 +34,7 @@ export function renderMapOverlays(
       sketch.fill(attention ? '#ffaaa2' : '#ffdc88');
       sketch.textSize(12 / zoom);
       sketch.textAlign(sketch.CENTER, sketch.BOTTOM);
-      sketch.text(
-        attention || decision ? '!' : chain!.roles.join(' / '),
-        point.x,
-        point.y - 24 / zoom,
-      );
+      sketch.text('!', point.x, point.y - 24 / zoom);
     }
   }
   if (model.screen === 'production') return;

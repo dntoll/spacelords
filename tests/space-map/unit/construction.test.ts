@@ -426,9 +426,6 @@ describe('planetlager / arbetskraft-och-besattning', () => {
     });
     const planet = restored.galaxy.homePlanet;
     restored.scheduleBuild(planet, 'Research station', 1);
-    expect(
-      restored.supplyOverview().planets.find((p) => p.id === planet.id)!.status,
-    ).toBe('Waiting');
     for (const frame of turnFrames(restored)) restored.applyFrame(frame);
     restored.finishTurn();
     expect(restored.planetSnapshot(planet)!.projects).toHaveLength(1);

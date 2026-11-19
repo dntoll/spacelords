@@ -32,13 +32,9 @@ import {
   type ProductionMapSnapshot,
   type ProductionGuidance,
   type MapProblem,
-  emptySupplyChain,
-  type SupplyChainSnapshot,
-  type ProjectSupplySnapshot,
   StarMapTrade,
   type MapTradeSnapshot,
   type SaveRepository,
-  type SupplyOverview,
   ResearchTreeCamera,
   type ResearchCameraSnapshot,
   type Component,
@@ -49,7 +45,6 @@ import {
   needsAttention,
   type Decision,
   type DecisionScreen,
-  type ShipmentSnapshot,
   type TradeRouteSnapshot,
   FleetMapLayout,
   Camera,
@@ -155,18 +150,14 @@ export interface AppReadModel {
   readonly expandedProjectIds: readonly string[];
   readonly focusedProjectId: string | null;
   readonly mapFocusRevision: number;
-  readonly projectSupply: readonly ProjectSupplySnapshot[];
   readonly decisions: readonly Decision[];
   readonly planetQueues: Game['planetQueues'];
   readonly salvageQueue: Game['salvageQueue'];
   readonly attackQueue: Game['attackQueue'];
   readonly attentionScreens: readonly DecisionScreen[];
   readonly tradeRoutes: readonly TradeRouteSnapshot[];
-  readonly supply: SupplyOverview;
-  readonly shipments: readonly ShipmentSnapshot[];
   readonly productionMap: ProductionMapSnapshot;
   readonly productionGuidance: ProductionGuidance | null;
-  readonly supplyChain: SupplyChainSnapshot;
   readonly mapProblems: readonly MapProblem[];
   readonly mapTrade: MapTradeSnapshot;
   readonly ownedPlanets: readonly PlanetGameSnapshot[];
@@ -421,11 +412,6 @@ export class AppModel {
       });
     }
     const decisions = this.#game.decisions;
-    const projectSupply =
-      (this.#screen === 'planet' && this.#planetTab === 'queue') ||
-      this.#screen === 'production'
-        ? this.#game.projectSupply(this.#game.planetAt(this.#selected)?.id)
-        : [];
     return Object.freeze({
       turnMovement: null,
       turnMovements: Object.freeze([]),
@@ -462,16 +448,9 @@ export class AppModel {
           : this.#productionProduct)
           ? this.#shipStartOrder.order
           : null,
-      expandedProjectIds: Object.freeze([
-        ...this.#expandedProjectIds,
-        ...(() => {
-          const id = projectSupply[0]?.projectId;
-          return id && !this.#closedProjectIds.has(id) ? [id] : [];
-        })(),
-      ]),
+      expandedProjectIds: Object.freeze([...this.#expandedProjectIds]),
       focusedProjectId: this.#focusedProjectId,
       mapFocusRevision: this.#mapFocusRevision,
-      projectSupply,
       decisions: Object.freeze([...decisions, ...this.#game.messageSettings]),
       planetQueues: this.#game.planetQueues,
       salvageQueue: this.#game.salvageQueue,
@@ -480,18 +459,12 @@ export class AppModel {
         ...new Set(decisions.filter(needsAttention).map(decisionScreen)),
       ]),
       tradeRoutes: this.#game.tradeRoutes,
-      supply: this.#game.supplyOverview(),
-      shipments: this.#game.shipments,
       productionMap: this.#productionMapSnapshot(),
       productionGuidance:
         (this.#screen === 'production' || this.#screen === 'planet') &&
         this.#game.planetAt(this.#selected)
           ? this.#game.productionGuidance(this.#game.planetAt(this.#selected)!)
           : null,
-      supplyChain:
-        this.#screen === 'production'
-          ? this.#game.supplyChain(this.#selectedMapProject())
-          : emptySupplyChain(),
       mapProblems: Object.freeze(
         decisions.filter(needsAttention).flatMap((decision): MapProblem[] => {
           const screen =

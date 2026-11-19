@@ -2,7 +2,6 @@ import { ShipOrders } from '../../models/ShipOrders.js';
 import type { ShipType } from '../../models/Game.js';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import type { PlanetGameSnapshot } from '../../models/Game.js';
-import type { SupplyStep } from '../../models/ProjectSupply.js';
 import type { ProductionOption } from '../../models/ProductionMap.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import {
@@ -291,15 +290,7 @@ export function renderProductionMapPanel(
       () => emit({ type: 'map-production-project', id: project.id }),
       'button secondary-button map-queue-choice',
     );
-    const supply = model.projectSupply.find((p) => p.projectId === project.id);
-    const status = supply?.requirements.some(
-      (s) => s.status === 'Needs attention',
-    )
-      ? 'Needs attention'
-      : supply?.requirements.some((s) => s.status === 'Waiting')
-        ? 'Waiting'
-        : 'Ready';
-    choose.textContent = `${index + 1}. ${project.type} · ${status}`;
+    choose.textContent = `${index + 1}. ${project.type}`;
     choose.setAttribute(
       'aria-pressed',
       String(map.selectedProjectId === project.id),
@@ -325,9 +316,6 @@ export function renderProductionMapPanel(
   queue.append(list);
   if (!planet.projects.length)
     queue.append(element('p', 'muted-note', 'No production queued.'));
-  const selected = model.projectSupply.find(
-    (p) => p.projectId === map.selectedProjectId,
-  );
   const selectedProject = planet.projects.find(
     (project) => project.id === map.selectedProjectId,
   );
@@ -359,21 +347,6 @@ export function renderProductionMapPanel(
     orders.disabled = model.phase !== 'planning';
     queue.append(orders);
   }
-  if (selected) {
-    const chain = element('section', 'map-supply-chain');
-    chain.setAttribute('aria-label', 'Selected project supply chain');
-    const renderSteps = (steps: readonly SupplyStep[]): HTMLElement => {
-      const list = element('ul');
-      for (const step of steps) {
-        const item = element('li', '', `${step.label} · ${step.status}`);
-        if (step.children.length) item.append(renderSteps(step.children));
-        list.append(item);
-      }
-      return list;
-    };
-    chain.append(renderSteps(selected.requirements));
-    queue.append(chain);
-  }
   panel.append(queue);
   return panel;
 }
@@ -385,15 +358,6 @@ export function renderRoutePlanet(
 ): HTMLElement {
   const panel = element('div', 'route-planet-controls');
   panel.append(renderMapLocationHeading(planet.name, planet.id, emit));
-  const supply = model.supply.planets.find((p) => p.id === planet.id);
-  if (supply)
-    panel.append(
-      element(
-        'p',
-        'route-supply-summary',
-        `${supply.project?.type ?? 'No production queued'} · ${supply.status} · ${supply.summary}`,
-      ),
-    );
   for (const problem of model.mapProblems.filter(
     (p) => p.planetId === planet.id && p.screen === 'route',
   ))

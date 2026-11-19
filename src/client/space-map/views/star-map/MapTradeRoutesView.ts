@@ -18,14 +18,11 @@ export function renderMapTradeRoutes(sketch: p5, model: AppReadModel): void {
     const selected =
       (model.screen === 'map' || model.screen === 'route') &&
       model.mapTrade.routeId === route.id;
-    const inChain =
-      model.screen === 'production' &&
-      model.supplyChain.routeIds.includes(route.id);
     const problem =
       model.screen === 'route' &&
       model.mapProblems.some((p) => p.routeId === route.id);
     sketch.stroke(
-      model.screen === 'fleets' || (model.screen === 'production' && !inChain)
+      model.screen === 'fleets' || model.screen === 'production'
         ? '#2b3d50'
         : invalid
           ? '#ef8d85'
@@ -35,16 +32,10 @@ export function renderMapTradeRoutes(sketch: p5, model: AppReadModel): void {
               ? '#b1e4d1'
               : problem
                 ? '#ef8d85'
-                : inChain
-                  ? '#ffdc88'
-                  : '#83b8ed',
+                : '#83b8ed',
     );
     sketch.strokeWeight(
-      (model.screen === 'fleets'
-        ? 1
-        : selected || target || inChain
-          ? 3.5
-          : 2.5) / zoom,
+      (model.screen === 'fleets' ? 1 : selected || target ? 3.5 : 2.5) / zoom,
     );
     context?.setLineDash(
       route.closing || !route.hasActiveTransport ? [7 / zoom, 5 / zoom] : [],
