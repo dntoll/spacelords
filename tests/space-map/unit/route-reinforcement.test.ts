@@ -205,21 +205,6 @@ describe('skepp-ur-olastad-ruttflotta', () => {
     ).not.toThrow();
   });
 
-  it('does not mistake a waiting warehouse shipment for cargo aboard the fleet', () => {
-    const state = setup().exportState();
-    const game = Game.restore({
-      ...state,
-      shipments: state.shipments.map((shipment) => ({
-        ...shipment,
-        fleetId: null,
-      })),
-    });
-    const waiting = game.exportState().shipments;
-    game.transferShips('freighters', 'Transport ship', 1, 'fleet-home');
-    expect(game.exportState().shipments).toEqual(waiting);
-    expect(game.tradeRoutes[0]!.status).toBe('Needs transport fleet');
-  });
-
   it('finishes closing the route when its last unloaded carrier loses its transport', () => {
     const game = unloaded(1);
     game.closeTradeRoute('route-test');

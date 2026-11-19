@@ -102,8 +102,6 @@ import {
   type LogisticsPort,
   type TransportFleet,
   type TradeRoute,
-  type Shipment,
-  type ComponentOrder,
   type TradeRouteSnapshot,
 } from './Logistics.js';
 import {
@@ -821,8 +819,9 @@ export interface GameState {
   readonly salvageQueue?: readonly string[];
   readonly surveyedPlanets?: readonly string[];
   readonly tradeRoutes: readonly TradeRoute[];
-  readonly shipments: readonly Shipment[];
-  readonly componentOrders?: readonly ComponentOrder[];
+  /** Older saves only: replaced by the production network. */
+  readonly shipments?: readonly unknown[];
+  readonly componentOrders?: readonly unknown[];
   readonly network?: NetworkEconomyState;
   readonly networkStarted?: Readonly<Record<string, number>>;
   readonly skippedDecisions: readonly string[];
@@ -995,8 +994,6 @@ export class Game {
       researchTarget: this.#research.queue[0] ?? null,
       researchQueue: this.#research.queue,
       tradeRoutes: this.#logistics.routes,
-      shipments: this.#logistics.shipments,
-      componentOrders: this.#logistics.componentOrders,
       skippedDecisions: [...this.#decisions.skipped],
       mutedDecisions: this.#decisions.muted,
       colonies: [...this.#colonies],
@@ -1130,7 +1127,7 @@ export class Game {
           game.#research.add(technology);
     }
     // produktionsnatverk: older saves lose goods in transit and part orders.
-    game.#logistics = new Logistics([...copy.tradeRoutes], [], []);
+    game.#logistics = new Logistics([...copy.tradeRoutes]);
     game.#network = new NetworkEconomy(
       state.version >= 17 && copy.network
         ? copy.network
@@ -2872,7 +2869,7 @@ export class Game {
       )!;
       const state = this.#state(planet);
       const cost = ShipUpgrades.cost(order.targets);
-      const held = this.#logistics.reserved(planet.id, order.id);
+      const held = emptyStock();
       const workers = state.buildings
         .filter((building) => !building.demolition)
         .reduce(
@@ -3311,7 +3308,7 @@ export class Game {
           (total, building) => total + BUILDINGS[building.type].workers,
           0,
         );
-      const held = this.#logistics.reserved(planet.id);
+      const held = emptyStock();
       yard.issue =
         state.population - workers < SHIPS[wreck.ship.type].crew
           ? 'Not enough workers or crew for repair.'
@@ -3698,7 +3695,8 @@ export class Game {
   }
 
   #productionPresence(planet: Planet): ProductionPresence {
-    const port = this.#logisticsPort();
+    // produktionsnatverk: planets in the same group count as supplied.
+    const group = this.#networkGroup(planet.id);
     const sources = this.#ownedPlanets().map(
       (owned): ProductionPresenceSource => {
         const state = this.#state(owned);
@@ -3725,8 +3723,7 @@ export class Game {
     );
     const local = sources.find((source) => source.id === planet.id)!;
     const network = sources.filter(
-      (source) =>
-        source !== local && this.#logistics.path(source.id, planet.id, port),
+      (source) => source !== local && group.includes(source.id),
     );
     return new ProductionPresence(local, network);
   }
@@ -3745,12 +3742,9 @@ export class Game {
             (total, colony) => total + colony.stock[component],
             0,
           ) +
-          this.#logistics.shipments
-            .filter(
-              (shipment) =>
-                shipment.resource === component && shipment.fleetId !== null,
-            )
-            .reduce((total, shipment) => total + shipment.amount, 0),
+          this.#network.transits
+            .filter((transit) => transit.material === component)
+            .reduce((total, transit) => total + transit.amount, 0),
       };
     }
     if (Object.hasOwn(SHIPS, type)) {
@@ -4296,16 +4290,6 @@ export class Game {
     if (this.#phase !== 'planning' || !fleet.ordersPaused)
       throw new Error('Resume this fleet while planning.');
     delete fleet.ordersPaused;
-    const cargo = this.#logistics.shipments.find(
-      (shipment) => shipment.fleetId === id,
-    );
-    const delivery =
-      cargo &&
-      this.#ownedPlanets().find((p) => p.id === cargo.path[cargo.stage + 1]);
-    if (delivery) {
-      fleet.destination = delivery.position;
-      fleet.courseOrigin = fleet.position!;
-    }
     if (fleet.civilian?.passengers && !fleet.destination) {
       const target = this.#ownedPlanets().find(
         (p) => p.id === fleet.civilian!.targetId,
@@ -5362,16 +5346,13 @@ export class Game {
       );
     } else if (d.component) {
       state.stock[d.component] += 1;
-      // delproduktion-med-sammanhang: capture the consumer before clearing its production link.
-      const context = this.#productionContext(project.id, d.component);
-      this.#logistics.completeComponent(project.id);
       this.#planetEvent(
-        context
-          ? `${d.component} (${context.ready}/${context.total}) for ${context.target} on ${context.recipient} — produced at ${planet.name}.`
-          : `${d.component} was produced at ${planet.name}.`,
+        `${d.component} was produced at ${planet.name}.`,
         planet,
-        { kind: 'component', type: d.component },
-        context,
+        {
+          kind: 'component',
+          type: d.component,
+        },
       );
     } else if (d.ship) {
       this.#createShip(
@@ -5480,48 +5461,6 @@ export class Game {
       kind: 'ship',
       type: ship,
     });
-  }
-  #productionContext(
-    productionId: string,
-    component: Component,
-  ): ProductionContext | undefined {
-    const order = this.#logistics.componentOrders.find(
-      (item) => item.productionProjectId === productionId,
-    );
-    if (!order) return;
-    for (const planet of this.#ownedPlanets()) {
-      const project = this.#state(planet).projects.find(
-        (item) => item.id === order.projectId,
-      );
-      const upgrade = this.#fleets.find(
-        (fleet) => fleet.upgrade?.id === order.projectId,
-      )?.upgrade;
-      if (!project && !upgrade) continue;
-      const parts = project
-        ? (project.parts ?? projectDefinition(project.type).parts)
-        : ShipUpgrades.cost(upgrade!.targets);
-      const total = parts?.[component] ?? 0;
-      if (!total) return;
-      const ready = this.#logistics.componentOrders
-        .filter(
-          (item) =>
-            item.projectId === order.projectId &&
-            item.component === component &&
-            (!item.productionProjectId ||
-              item.productionProjectId === productionId),
-        )
-        .reduce((sum, item) => sum + item.amount, 0);
-      const recipient = this.#ownedPlanets().find(
-        (item) => item.id === order.recipient,
-      );
-      return Object.freeze({
-        projectId: order.projectId,
-        target: project?.type ?? 'Fleet upgrade',
-        recipient: recipient?.name ?? planet.name,
-        ready: Math.min(total, ready),
-        total,
-      });
-    }
   }
   #budget(planet: Planet, state: ColonyState): BudgetSnapshot {
     return this.#allocation(planet, state).budget;
@@ -5793,10 +5732,6 @@ export class Game {
   }
   #cargo(fleetId: string): Stock {
     const stock = emptyStock();
-    for (const shipment of this.#logistics.shipments.filter(
-      (s) => s.fleetId === fleetId,
-    ))
-      stock[shipment.resource] += shipment.amount;
     const hold = this.#fleets.find((fleet) => fleet.id === fleetId)?.hold;
     if (hold)
       for (const material of MATERIALS) stock[material] += hold[material];
@@ -5827,40 +5762,11 @@ export class Game {
   }
   #logisticsPort(): LogisticsPort {
     return {
-      planets: this.#ownedPlanets().map((planet) => {
-        const state = this.#state(planet);
-        const projects = state.projects
-          .slice(0, 1)
-          .map((p) => ({ id: p.id, cost: this.#projectCost(planet, p) }));
-        for (const fleet of this.#fleets)
-          if (fleet.upgrade?.planetId === planet.id)
-            projects.push({
-              id: fleet.upgrade.id,
-              cost: ShipUpgrades.cost(fleet.upgrade.targets),
-            });
-        projects.push(...this.#repairProjects(planet.id));
-        const demand = emptyStock();
-        for (const project of projects)
-          for (const material of MATERIALS)
-            demand[material] += project.cost[material];
-        for (const order of this.#logistics.componentOrders)
-          if (
-            order.recipient === planet.id &&
-            projects.some((p) => p.id === order.projectId)
-          )
-            demand[order.component] = Math.max(
-              0,
-              demand[order.component] - order.amount,
-            );
-        return {
-          id: planet.id,
-          name: planet.name,
-          position: planet.position,
-          stock: state.stock,
-          demand,
-          projects,
-        };
-      }),
+      planets: this.#ownedPlanets().map((planet) => ({
+        id: planet.id,
+        name: planet.name,
+        position: planet.position,
+      })),
       fleets: this.#fleets,
       speed: (fleet: TransportFleet) => this.#speed(this.#fleetState(fleet.id)),
       travelYears: (fleet, from, to) => {
@@ -5872,21 +5778,6 @@ export class Game {
           : Infinity;
       },
       id: (prefix: string) => this.#id(prefix),
-      event: (message: string, position?: HexCoordinate, planetId?: string) => {
-        const planet = this.#ownedPlanets().find(
-          (item) => item.id === planetId,
-        );
-        if (planet) this.#planetEvent(message, planet);
-        else this.#event(message, position);
-      },
-      projectExists: (id: string) =>
-        this.#fleets.some((fleet) => fleet.upgrade?.id === id) ||
-        this.#ownedPlanets().some((planet) =>
-          this.#repairProjects(planet.id).some((project) => project.id === id),
-        ) ||
-        [...this.#colonies.values()].some((s) =>
-          s.projects.some((p) => p.id === id),
-        ),
     };
   }
   #requireManualFleet(fleet: Fleet): void {
@@ -5954,8 +5845,16 @@ export class Game {
       deposits: Object.freeze({ ...state.deposits }),
       extraction: Object.freeze(this.#extraction(planet, state)),
       demand: Object.freeze(demand),
-      incoming: Object.freeze(this.#logistics.incoming(planet.id)),
+      incoming: Object.freeze(this.#incoming(planet.id)),
     });
+  }
+  /** en-runda-per-lank: goods on their way to a planet's projects. */
+  #incoming(planetId: string): Stock {
+    const stock = emptyStock();
+    for (const transit of this.#network.transits)
+      if (transit.path.at(-1) === planetId)
+        stock[transit.material] += transit.amount;
+    return stock;
   }
   #costBlock(
     budget: BudgetSnapshot,
@@ -6618,7 +6517,7 @@ export class Game {
     planet: Planet,
     state: ColonyState,
   ): { budget: BudgetSnapshot; blocks: Map<string, string> } {
-    const held = this.#logistics.reserved(planet.id, state.projects[0]?.id);
+    const held = emptyStock();
     const production: Cost = {
       Iron: state.stock.Iron - held.Iron,
       Water: state.stock.Water - held.Water,
@@ -7377,7 +7276,7 @@ export class Game {
     if (!definition.ship || definition.permanent) return cost;
     const count = engineCount(definition.ship);
     const stock = this.#state(planet).stock;
-    const held = this.#logistics.reserved(planet.id, project.id);
+    const held = emptyStock();
     const ion = Math.max(
       0,
       stock['Ion pulse engine'] - held['Ion pulse engine'],

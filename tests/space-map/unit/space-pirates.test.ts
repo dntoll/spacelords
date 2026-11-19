@@ -1,7 +1,6 @@
 import { completeTacticalBattles } from '../../fixtures/tactical-combat.js';
 import { collectTurnFrames, turnFrames } from '../../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
-import { Logistics } from '../../../src/client/space-map/models/Logistics.js';
 import {
   Game,
   type GameState,
@@ -358,51 +357,6 @@ describe('rymdpirater-per-stjarna / lokal-sikt', () => {
     expect(
       game.events.some((event) => event.text.startsWith('Combat at HEX')),
     ).toBe(false);
-  });
-});
-
-describe('flottstrid-per-hex / automatiska-delorder', () => {
-  it('releases lost component orders while preserving shipments on other carriers', () => {
-    const order = {
-      id: 'lost-order',
-      projectId: 'ship',
-      recipient: 'target',
-      source: 'source',
-      location: 'source',
-      component: 'Rocket engine' as const,
-      amount: 1,
-      productionProjectId: null,
-      shipmentId: 'lost',
-      delivered: false,
-      committed: true,
-    };
-    const shipment = {
-      id: 'lost',
-      resource: 'Rocket engine' as const,
-      amount: 1,
-      path: ['source', 'target'],
-      stage: 0,
-      projectId: 'ship',
-      recipient: 'target',
-      fleetId: 'lost-carrier',
-      componentOrderId: order.id,
-      committed: true,
-    };
-    const safeOrder = { ...order, id: 'safe-order', shipmentId: 'safe' };
-    const safeShipment = {
-      ...shipment,
-      id: 'safe',
-      fleetId: 'safe-carrier',
-      componentOrderId: safeOrder.id,
-    };
-    const logistics = new Logistics(
-      [],
-      [shipment, safeShipment],
-      [order, safeOrder],
-    );
-    logistics.destroyCargo('lost-carrier');
-    expect(logistics.shipments).toEqual([safeShipment]);
-    expect(logistics.componentOrders).toEqual([safeOrder]);
   });
 });
 

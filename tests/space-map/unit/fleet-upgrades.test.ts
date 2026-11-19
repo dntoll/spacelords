@@ -171,7 +171,6 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
       engines: { 'Ion pulse engine': 2 },
     });
     expect(restored.fleet('fleet-home')!.upgrade).toBeUndefined();
-    expect(restored.exportState().componentOrders).toHaveLength(0);
     expect(
       restored.planetSnapshot(restored.galaxy.homePlanet)!.economy.demand[
         'Ion pulse engine'
@@ -393,7 +392,6 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
     game.upgradeFleet('fleet-home');
     game.setDestination('fleet-home', new HexCoordinate(4, 0));
     expect(game.fleet('fleet-home')!.upgrade).toBeUndefined();
-    expect(game.exportState().componentOrders).toHaveLength(0);
     finishYear(game);
     expect(game.fleet('fleet-home')!.shipUnits![0]!.telescope).toBe(1);
     expect(
@@ -419,6 +417,5 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
       },
     });
     expect(() => destroyed.upgradeFleet('fleet-home')).toThrow();
-    expect(destroyed.exportState().componentOrders).toHaveLength(0);
   });
 });
