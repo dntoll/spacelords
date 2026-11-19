@@ -38,4 +38,18 @@ describe('produktionsbeslut-bara-for-skeppsfabrik', () => {
     game.scheduleShip(tellusOf(game), 'Transport ship');
     expect(ids(game)).not.toContain(reminder);
   });
+
+  it('raises no reminder while any ship order is queued, even if another ship factory is idle', () => {
+    const state = researchStationState({ shipFactory: true });
+    state.colonies[0]![1].buildings.push({
+      id: 'test-fighters',
+      type: 'Fighter factory',
+      slotIndex: 2,
+      demolition: false,
+    });
+    const game = Game.restore(state);
+    expect(ids(game)).toContain(reminder);
+    game.scheduleShip(tellusOf(game), 'Fighter');
+    expect(ids(game)).not.toContain(reminder);
+  });
 });
