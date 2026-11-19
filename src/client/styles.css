@@ -5291,3 +5291,28 @@ body:has(.discovery-controls) .selection-panel {
 .factory-order-actions .secondary-button {
   min-height: 44px;
 }
+
+/* Factories: the screen scrolls inside the app's middle row. */
+.factories-page {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.factories-page > .factory-screens {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.factory-receipt {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: var(--accent);
+}
+/* Factories: sections keep their height so the screen scrolls, not squeezes. */
+.factory-screens > * {
+  flex-shrink: 0;
+}

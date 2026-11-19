@@ -101,6 +101,8 @@ export interface BuildScreenSnapshot {
   readonly stock: Readonly<Record<Resource, number>>;
   readonly workers: number;
   readonly options: readonly BuildOptionSnapshot[];
+  /** A Dome site whose Dome still needs this research. */
+  readonly research: BuildType | null;
 }
 
 export type TransportChoice =
@@ -174,8 +176,18 @@ export interface LinksScreenSnapshot {
   readonly transports: readonly TransportOptionSnapshot[];
 }
 
+/** Connect-skärmen: what the last link order did. */
+export interface FactoriesReceipt {
+  readonly from: string;
+  readonly to: string;
+  /** The transport now on the route, or null while one is being built. */
+  readonly transport: string | null;
+  readonly builtAt: string | null;
+}
+
 export interface FactoriesSnapshot {
   readonly screen: FactoriesScreen;
+  readonly receipt: FactoriesReceipt | null;
   readonly locked: boolean;
   readonly groups: readonly FactoryGroupSnapshot[];
   readonly build: BuildScreenSnapshot | null;

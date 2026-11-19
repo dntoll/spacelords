@@ -21,6 +21,7 @@ import type {
   ConnectionProposalSnapshot,
   FactoriesAction,
   FactoriesOutcome,
+  FactoriesReceipt,
   FactoriesScreen,
   FactoriesSnapshot,
   FactoryGroupSnapshot,
@@ -71,6 +72,7 @@ export class FactoriesFacade {
   #transport: TransportChoice | null = null;
   #picked: string[] = [];
   #pendingMove: string | null = null;
+  #receipt: FactoriesReceipt | null = null;
 
   constructor(private readonly host: AppHost) {}
 
@@ -85,6 +87,8 @@ export class FactoriesFacade {
 
   apply(action: FactoriesAction): FactoriesOutcome {
     const context = this.#context();
+    if (action.kind !== 'toggle-group' && action.kind !== 'toggle-planet')
+      this.#receipt = null;
     switch (action.kind) {
       case 'back':
         this.#back();
@@ -149,6 +153,7 @@ export class FactoriesFacade {
     const site = this.#site;
     return Object.freeze({
       screen: this.#screen,
+      receipt: this.#receipt,
       locked: this.host.game.phase !== 'planning',
       groups: Object.freeze(groups),
       build:
@@ -297,10 +302,17 @@ export class FactoriesFacade {
       )?.id ?? game.createTradeRoute(a, b);
     if (choice.kind === 'free') game.assignTradeFleet(route, choice.fleetId);
     else game.scheduleShip(this.#gamePlanet(choice.planetId), 'Transport ship');
-    const after = this.#context();
-    this.#transport =
-      this.#transports(after, this.#group(after, this.#connectFrom ?? a))[0]
-        ?.choice ?? null;
+    // Connect-skärmen: confirm the order on the overview, where it shows.
+    this.#receipt = Object.freeze({
+      from: this.#planet(context, a).name,
+      to: this.#planet(context, b).name,
+      transport: choice.kind === 'free' ? choice.name : null,
+      builtAt: choice.kind === 'build' ? choice.planet : null,
+    });
+    this.#transport = null;
+    this.#picked = [];
+    this.#screen = 'sites';
+    this.#connectFrom = null;
   }
 
   /** flytta-fraktskepp-mellan-routes */
@@ -336,6 +348,22 @@ export class FactoriesFacade {
   }
 
   /** Whether the group holds or makes a material. */
+  /**
+   * basta-tillgangliga-del: whether a factory's input is covered. Ion pulse
+   * engines replace Rocket engines.
+   */
+  #supplied(
+    context: Context,
+    group: readonly string[],
+    material: Material,
+  ): boolean {
+    return (
+      this.#has(context, group, material) ||
+      (material === 'Rocket engine' &&
+        this.#has(context, group, 'Ion pulse engine'))
+    );
+  }
+
   #has(context: Context, group: readonly string[], material: Material) {
     return group.some((id) => {
       const planet = this.#planet(context, id);
@@ -363,7 +391,7 @@ export class FactoriesFacade {
     for (const [id, distance] of rounds)
       if (
         context.planets.some((planet) => planet.id === id) &&
-        this.#has(context, [id], material) &&
+        this.#supplied(context, [id], material) &&
         (best === null || distance < best)
       )
         best = distance;
@@ -455,7 +483,7 @@ export class FactoriesFacade {
         ? context.network.consumers.find((item) => item.id === active.id)
         : undefined;
       missing = this.#inputs(type).filter(
-        (material) => !this.#has(context, group, material),
+        (material) => !this.#supplied(context, group, material),
       );
       if (missing.length && active) status = 'missing';
       else if (consumer) {
@@ -476,7 +504,7 @@ export class FactoriesFacade {
       } else status = 'idle';
     } else if (BUILDINGS[type].component) {
       missing = this.#inputs(type).filter(
-        (material) => !this.#has(context, group, material),
+        (material) => !this.#supplied(context, group, material),
       );
       const working = context.network.consumers.some(
         (consumer) => consumer.id === `part:${building.id}`,
@@ -574,7 +602,7 @@ export class FactoriesFacade {
               missing: Object.freeze(
                 count.built
                   ? this.#inputs(type).filter(
-                      (material) => !this.#has(context, group, material),
+                      (material) => !this.#supplied(context, group, material),
                     )
                   : [],
               ),
@@ -650,7 +678,9 @@ export class FactoriesFacade {
           missingDeposit,
           inputRounds,
           missingInputs: Object.freeze(
-            inputs.filter((material) => !this.#has(context, group, material)),
+            inputs.filter(
+              (material) => !this.#supplied(context, group, material),
+            ),
           ),
           product,
           productRounds:
@@ -679,7 +709,22 @@ export class FactoriesFacade {
         0,
       ),
       options: Object.freeze(options),
+      research: this.#domeResearch(gamePlanet, planet, index),
     });
+  }
+
+  /** ovriga-byggnader-pa-byggplatser: name the Dome research a site waits for. */
+  #domeResearch(
+    gamePlanet: Planet,
+    planet: PlanetGameSnapshot,
+    index: number,
+  ): BuildType | null {
+    const site = planet.sites[index];
+    if (!site?.domeRequired || site.hasDome || !site.domeType) return null;
+    return this.host.game.canBuild(gamePlanet, site.domeType, index) ===
+      'Research this building first.'
+      ? site.domeType
+      : null;
   }
 
   /** Connect-skärmen: own free transports first, then a new one. */
