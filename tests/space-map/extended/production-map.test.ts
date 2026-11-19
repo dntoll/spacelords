@@ -155,7 +155,14 @@ describe('route-kartvy / delad-kartkamera', () => {
 
 describe('forsorjningsproblem-pa-kartan', () => {
   it('blockerad-fabrik: routes decisions to Factories or Production with the affected object in view', () => {
-    const { model, emit, controller } = setup();
+    const state = tradeNetworkState();
+    state.colonies[0]![1].buildings.push({
+      id: 'yard',
+      type: 'Transport ship factory',
+      slotIndex: 3,
+      demolition: false,
+    });
+    const { model, emit, controller } = setup(state);
     emit({ type: 'open-decision', id: 'supply-sol-1' });
     expect(model.snapshot.screen).toBe('factories');
     expect(

@@ -5333,3 +5333,12 @@ body:has(.discovery-controls) .selection-panel {
 .factory-screens > * {
   flex-shrink: 0;
 }
+
+/* forskningsvy-utan-station: a short note and one button instead of the tree. */
+.research-needs-station {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  justify-items: start;
+  padding: 12px 0;
+}

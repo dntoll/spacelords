@@ -5,13 +5,16 @@ import { startFirstSlot } from './save-helpers.js';
 test('direkt-atgard-fran-rundvarning: reviews open Research, Production and Fleets directly without ending the year', async ({
   page,
 }, testInfo) => {
-  await page.addInitScript((state) => {
-    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
-    localStorage.setItem(
-      'spacelords.save.v2.1',
-      JSON.stringify({ lastPlayed: '2026-10-30', state }),
-    );
-  }, researchStationState());
+  await page.addInitScript(
+    (state) => {
+      localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-10-30', state }),
+      );
+    },
+    researchStationState({ shipFactory: true }),
+  );
   await page.goto('./');
   await startFirstSlot(page);
   for (const [id, screen] of [
@@ -59,15 +62,18 @@ test('direkt-atgard-fran-rundvarning: reviews open Research, Production and Flee
 test('tysta-beslut / beslutsmarkering-pa-flikar / tystade-beslut-sist: Mute persists across turns and reload, Unmute restores warnings', async ({
   page,
 }, testInfo) => {
-  await page.addInitScript((state) => {
-    if (localStorage.getItem('decision-station-seeded')) return;
-    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
-    localStorage.setItem(
-      'spacelords.save.v2.1',
-      JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
-    );
-    localStorage.setItem('decision-station-seeded', 'yes');
-  }, researchStationState());
+  await page.addInitScript(
+    (state) => {
+      if (localStorage.getItem('decision-station-seeded')) return;
+      localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
+      );
+      localStorage.setItem('decision-station-seeded', 'yes');
+    },
+    researchStationState({ shipFactory: true }),
+  );
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Decisions', exact: true }).click();

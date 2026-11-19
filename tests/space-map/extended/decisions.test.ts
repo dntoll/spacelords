@@ -25,7 +25,9 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
     'direkt-atgard-fran-rundvarning: %s opens %s without advancing the year',
     (id, screen) => {
       const state =
-        screen === 'factories' ? tradeNetworkState() : researchStationState();
+        screen === 'factories'
+          ? tradeNetworkState()
+          : researchStationState({ shipFactory: true });
       const model = new AppModel(undefined, {
         load: () => ({ lastPlayed: '2026-10-30', state }),
         save() {},
@@ -68,7 +70,7 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
   );
 
   it('opens the selected context and skips only until the next turn, including after saving', () => {
-    const model = researchStationModel();
+    const model = researchStationModel({ shipFactory: true });
     expect(
       model.snapshot.decisions.filter(
         (decision) => !isMessageSetting(decision.id),
@@ -89,7 +91,7 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
   it('shows one summary warning and advances only after confirmation', async () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
-    const model = researchStationModel();
+    const model = researchStationModel({ shipFactory: true });
     model.openDecisions();
     new MasterController(
       model,
@@ -146,7 +148,7 @@ describe('engangsreset-ekonomi / tre-sparplatser', () => {
 
 describe('tysta-beslut', () => {
   it('keeps a recurring decision muted after it disappears and becomes relevant again', () => {
-    const game = Game.restore(researchStationState());
+    const game = Game.restore(researchStationState({ shipFactory: true }));
     game.muteDecision('research-empty');
     game.selectResearch('Colony ship factory');
     expect(game.decisions.find((d) => d.id === 'research-empty')!.current).toBe(
@@ -163,7 +165,9 @@ describe('tysta-beslut', () => {
     );
   });
   it('loads older saves without muted preferences and keeps warnings active', () => {
-    const state = Game.restore(researchStationState()).exportState();
+    const state = Game.restore(
+      researchStationState({ shipFactory: true }),
+    ).exportState();
     delete (state as { mutedDecisions?: unknown }).mutedDecisions;
     const restored = Game.restore(
       JSON.parse(JSON.stringify(state)) as ReturnType<Game['exportState']>,
@@ -172,7 +176,7 @@ describe('tysta-beslut', () => {
     expect(restored.decisions.every((d) => !d.muted)).toBe(true);
   });
   it('keeps muted decisions quiet across turns and restores their warnings on unmute', () => {
-    const model = researchStationModel();
+    const model = researchStationModel({ shipFactory: true });
     for (const decision of model.snapshot.decisions)
       model.muteDecision(decision.id);
     expect(model.snapshot.decisions.every((d) => d.muted)).toBe(true);
@@ -231,7 +235,7 @@ describe('tysta-beslut', () => {
   it('routes Mute and Unmute through Decisions and excludes muted items from the counter', () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
-    const model = researchStationModel();
+    const model = researchStationModel({ shipFactory: true });
     model.openDecisions();
     new MasterController(
       model,
@@ -256,7 +260,7 @@ describe('tysta-beslut', () => {
 });
 
 it('beslutsmarkering-pa-flikar: marks every resolving tab and updates markers after mute, skip and review', () => {
-  const model = researchStationModel();
+  const model = researchStationModel({ shipFactory: true });
   const root = document.createElement('div');
   document.body.replaceChildren(root);
   const controller = new MasterController(
@@ -286,7 +290,7 @@ it('beslutsmarkering-pa-flikar: marks every resolving tab and updates markers af
 });
 
 it('tystade-beslut-sist: keeps active and skipped decisions before muted decisions, including resolved reminders', () => {
-  const game = Game.restore(researchStationState());
+  const game = Game.restore(researchStationState({ shipFactory: true }));
   game.muteDecision('research-empty');
   expect(game.decisions.map((decision) => decision.id)).toEqual([
     'building-empty-sol-0',
@@ -310,7 +314,7 @@ it('tystade-beslut-sist: keeps active and skipped decisions before muted decisio
 it('beslutslista: removes Next decision and retains Review on each decision', () => {
   const root = document.createElement('div');
   document.body.replaceChildren(root);
-  const model = researchStationModel();
+  const model = researchStationModel({ shipFactory: true });
   model.openDecisions();
   const controller = new MasterController(
     model,
@@ -342,7 +346,7 @@ it.each([
 it('beslutsvagledning-i-vyn: explains the missing order and highlights its interactive target on each view with an attention marker', () => {
   const root = document.createElement('div');
   document.body.replaceChildren(root);
-  const model = researchStationModel();
+  const model = researchStationModel({ shipFactory: true });
   const view = new AppView(root, () => ({ render() {}, dispose() {} }));
   model.openDecision('fleet-idle-fleet-home');
   view.render(model.snapshot);

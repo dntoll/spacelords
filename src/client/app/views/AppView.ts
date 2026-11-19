@@ -617,17 +617,7 @@ export class AppView implements AppPort {
         .querySelector('.decisions-page .empire-content')
         ?.replaceWith(page.querySelector('.empire-content')!);
     }
-    // gemensam-events-panel: retain one log and its reading position across screens.
-    this.#turnActions ??= renderTurnActions((intent) => this.#emit(intent));
-    this.#turnActions.classList.add('game-turn-actions');
-    this.#root.classList.add('has-game-footer');
-    if (this.#turnActions.parentElement !== this.#root) {
-      this.#root.append(this.#turnActions);
-      if (previousActions)
-        this.#turnActions.querySelector<HTMLElement>(
-          '[role="log"]',
-        )!.scrollTop = previousEventScroll;
-    }
+    this.#attachTurnActions(previousActions, previousEventScroll);
     this.#syncLocalEditorNav(model);
     this.#renderMapProblems(model);
     const counter = this.#root.querySelector('.decision-counter');
@@ -1282,8 +1272,46 @@ export class AppView implements AppPort {
       model.factories!,
       playerNoticeText(model.notice),
     );
+    // runda-avslutas-fran-factories: the shared End turn bar and its warning.
+    const previousActions = this.#turnActions;
+    const previousEventScroll =
+      previousActions?.querySelector<HTMLElement>('[role="log"]')?.scrollTop ??
+      0;
+    this.#attachTurnActions(previousActions, previousEventScroll);
+    const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
+    if (end) end.disabled = model.phase !== 'planning' || !!model.eventPlayback;
+    this.#renderTurnConsole(model);
+    this.#renderMapProblems(model);
+    const counter = this.#root.querySelector('.decision-counter');
+    if (counter)
+      counter.textContent = `Decisions (${model.decisions.filter(needsAttention).length})`;
     // beslutsvagledning-i-vyn: route and missing-goods decisions live here.
     updateDecisionGuidance(this.#root, model, this.#emit);
+    this.#decisionDialog?.close();
+    this.#decisionDialog?.remove();
+    this.#decisionDialog = null;
+    if (model.pendingEndTurn) {
+      this.#decisionDialog = renderTurnWarning(model, this.#emit);
+      this.#root.append(this.#decisionDialog);
+      this.#decisionDialog.showModal();
+    }
+  }
+
+  // gemensam-events-panel: retain one log and its reading position across screens.
+  #attachTurnActions(
+    previousActions: HTMLElement | null,
+    previousEventScroll: number,
+  ): void {
+    this.#turnActions ??= renderTurnActions((intent) => this.#emit(intent));
+    this.#turnActions.classList.add('game-turn-actions');
+    this.#root.classList.add('has-game-footer');
+    if (this.#turnActions.parentElement !== this.#root) {
+      this.#root.append(this.#turnActions);
+      if (previousActions)
+        this.#turnActions.querySelector<HTMLElement>(
+          '[role="log"]',
+        )!.scrollTop = previousEventScroll;
+    }
   }
 
   #mapPage(screen: MapScreen): HTMLElement {

@@ -566,6 +566,8 @@ export interface ResearchSnapshot {
   readonly completed: readonly Technology[];
   readonly selected: Technology | null;
   readonly stations: number;
+  /** forskningsvy-utan-station: finished stations, operating or not. */
+  readonly builtStations: number;
   readonly queueBlockedReason: string | null;
   readonly queue: readonly Technology[];
 }
@@ -2213,6 +2215,14 @@ export class Game {
               ).length),
         0,
       ),
+      builtStations: this.#ownedPlanets().reduce(
+        (count, planet) =>
+          count +
+          this.#state(planet).buildings.filter(
+            (b) => b.type === 'Research station',
+          ).length,
+        0,
+      ),
     });
   }
   selectResearch(type: Technology | null): void {
@@ -2249,10 +2259,7 @@ export class Game {
             state.projects.filter(
               (p) => p.slotIndex !== null && !p.upgradeBuildingId,
             ).length,
-          emptyQueues:
-            !state.projects.length && this.#canChooseProduction(planet, state)
-              ? 1
-              : 0,
+          emptyQueues: this.#hasIdleShipFactory(state) ? 1 : 0,
         });
       }),
     );
@@ -5779,7 +5786,7 @@ export class Game {
       });
     for (const planet of this.#ownedPlanets()) {
       const state = this.#state(planet);
-      if (!state.projects.length && this.#canChooseProduction(planet, state))
+      if (this.#hasIdleShipFactory(state))
         items.push({
           id: `building-empty-${planet.id}`,
           label: `${planet.name}: choose production`,
@@ -5994,17 +6001,17 @@ export class Game {
       return 'Waiting for resources.';
     return null;
   }
-  #canChooseProduction(planet: Planet, state: ColonyState): boolean {
-    const producer = state.buildings.some(
-      (building) =>
+  // produktionsbeslut-bara-for-skeppsfabrik: Production only orders ships, so
+  // only a finished ship factory without an order of its own kind asks for one.
+  #hasIdleShipFactory(state: ColonyState): boolean {
+    return state.buildings.some((building) => {
+      const ships: readonly ProjectType[] = factoryShips(building.type);
+      return (
         !building.demolition &&
-        !!(BUILDINGS[building.type].ship || BUILDINGS[building.type].component),
-    );
-    if (!producer && this.#pendingDomeResearch(planet, state)) return false;
-    return (
-      producer ||
-      state.buildings.length < this.#environment(planet, state).buildSlots
-    );
+        ships.length > 0 &&
+        !state.projects.some((project) => ships.includes(project.type))
+      );
+    });
   }
 
   // beslut-vantar-pa-paborjad-atgard: projections explain waiting without granting capacity or placing orders.

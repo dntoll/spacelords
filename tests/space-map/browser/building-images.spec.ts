@@ -13,7 +13,15 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
     ...new Game(createExampleGalaxy()).exportState(),
     researched: TECHNOLOGIES,
   };
-  state.colonies[0]![1].buildings = [];
+  // forskningsvy-utan-station: Research shows its tree once a station is built.
+  state.colonies[0]![1].buildings = [
+    {
+      id: 'station',
+      type: 'Research station',
+      slotIndex: 2,
+      demolition: false,
+    },
+  ];
   await page.addInitScript((state) => {
     localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     if (!localStorage.getItem('spacelords.save.v2.1'))
@@ -94,7 +102,8 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
     .click();
   await expect(site.getByRole('img')).toHaveAttribute('src', stationSource);
   await page.getByRole('button', { name: 'Back to map', exact: true }).click();
-  await endTurn(page);
+  // byggtid-per-byggnad: a Research station takes three rounds.
+  for (let round = 0; round < 3; round += 1) await endTurn(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page
     .getByRole('button', { name: 'Building sites', exact: true })

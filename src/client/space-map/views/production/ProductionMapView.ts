@@ -1,5 +1,5 @@
 import { ShipOrders } from '../../models/ShipOrders.js';
-import type { ShipType } from '../../models/Game.js';
+import { SHIPS, type ShipType } from '../../models/Game.js';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import type { PlanetGameSnapshot } from '../../models/Game.js';
 import type { ProductionOption } from '../../models/ProductionMap.js';
@@ -276,13 +276,20 @@ export function renderProductionMapPanel(
   queue.setAttribute('aria-label', 'Build queue');
   queue.append(element('h2', '', 'Build queue'));
   const list = element('ol', 'map-queue-list');
+  // produktionsko-bara-skepp: buildings are queued and cancelled in Factories.
+  const ships = planet.projects.filter((project) => project.type in SHIPS);
   bindQueueOrder(
     list,
-    planet.projects.map((project) => project.id),
-    (id, index) => emit({ type: 'move-project', id, index }),
+    ships.map((project) => project.id),
+    (id, index) =>
+      emit({
+        type: 'move-project',
+        id,
+        index: planet.projects.indexOf(ships[index]!),
+      }),
     model.phase !== 'planning',
   );
-  planet.projects.forEach((project, index) => {
+  ships.forEach((project, index) => {
     const item = element('li', 'map-queue-row');
     item.dataset.projectId = project.id;
     const choose = button(
@@ -314,9 +321,9 @@ export function renderProductionMapPanel(
     list.append(item);
   });
   queue.append(list);
-  if (!planet.projects.length)
-    queue.append(element('p', 'muted-note', 'No production queued.'));
-  const selectedProject = planet.projects.find(
+  if (!ships.length)
+    queue.append(element('p', 'muted-note', 'No ships queued.'));
+  const selectedProject = ships.find(
     (project) => project.id === map.selectedProjectId,
   );
   if (

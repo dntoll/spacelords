@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { domeProductionState } from '../../fixtures/production-dome.js';
 import { startFirstSlot } from './save-helpers.js';
 
-test('beslut-vantar-pa-paborjad-atgard: queued Dome research removes production reminders across reload', async ({
+test('beslut-vantar-pa-paborjad-atgard: queued Dome research keeps Production waiting across reload', async ({
   page,
 }, testInfo) => {
   const state = domeProductionState(false);
@@ -50,13 +50,11 @@ test('beslut-vantar-pa-paborjad-atgard: queued Dome research removes production 
   await page
     .getByRole('button', { name: 'Remove research', exact: true })
     .click();
+  // produktionsbeslut-bara-for-skeppsfabrik: empty sites raise no reminder.
   await expect(
     page.locator('[data-screen="production"] .nav-attention'),
-  ).toHaveCount(1);
+  ).toHaveCount(0);
   await page.getByRole('button', { name: 'Production', exact: true }).click();
-  await expect(page.locator('.decision-guidance')).toContainText(
-    'choose production',
-  );
   await expect(page.locator('.production-guidance')).toHaveText(
     'Research Desert dome before preparing a building site.',
   );

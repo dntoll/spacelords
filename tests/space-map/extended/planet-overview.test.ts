@@ -116,6 +116,7 @@ describe('gemensamma-byggnadsbilder', () => {
         selected: 'Exploration ship factory',
         queueBlockedReason: null,
         stations: 1,
+        builtStations: 1,
         queue: [
           'Exploration ship factory',
           'Transport ship factory',
@@ -321,6 +322,7 @@ describe('gemensamma-byggnadsbilder', () => {
         selected: null,
         queueBlockedReason: null,
         stations: 0,
+        builtStations: 1,
         queue: [],
       },
       false,

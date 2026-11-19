@@ -74,6 +74,7 @@ it('spelgrafik-symboler: unidentified research never reveals its symbol or name'
       completed: [],
       selected: null,
       stations: 1,
+      builtStations: 1,
       queue: [],
       queueBlockedReason: null,
     },
