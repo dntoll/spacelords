@@ -99,7 +99,8 @@ Beslut inför implementationen (2026-11-18):
 ## Mining ships
 
 **Uppskjutet (2026-11-19):** mining ships görs först när resten av
-förenklad produktion är klar. De följs upp i ett GitHub-issue.
+förenklad produktion är klar. De följs upp i
+[issue 1](https://github.com/dntoll/spacelords/issues/1).
 
 | Kravnamn                 | Produktkrav                                                                                                                                                                       |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
