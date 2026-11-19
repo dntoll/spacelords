@@ -6002,16 +6002,15 @@ export class Game {
     return null;
   }
   // produktionsbeslut-bara-for-skeppsfabrik: Production only orders ships, so
-  // only a finished ship factory without an order of its own kind asks for one.
+  // a planet with a finished ship factory asks for one only while it has no
+  // ship order at all; any queued ship counts, whichever factory takes it.
   #hasIdleShipFactory(state: ColonyState): boolean {
-    return state.buildings.some((building) => {
-      const ships: readonly ProjectType[] = factoryShips(building.type);
-      return (
-        !building.demolition &&
-        ships.length > 0 &&
-        !state.projects.some((project) => ships.includes(project.type))
-      );
-    });
+    return (
+      state.buildings.some(
+        (building) =>
+          !building.demolition && factoryShips(building.type).length > 0,
+      ) && !state.projects.some((project) => Object.hasOwn(SHIPS, project.type))
+    );
   }
 
   // beslut-vantar-pa-paborjad-atgard: projections explain waiting without granting capacity or placing orders.
