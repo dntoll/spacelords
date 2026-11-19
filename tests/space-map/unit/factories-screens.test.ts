@@ -106,6 +106,43 @@ describe('Factories', () => {
     });
   });
 
+  it('byggtid-per-byggnad: shows each building’s own build rounds and counts them up while it is built', () => {
+    const { root, send, act, factories, group, turn } = setup();
+    send({ type: 'open-factories' });
+    act({ kind: 'open-site', planet: 'sol-0', site: 2 });
+    const rounds = Object.fromEntries(
+      factories().build!.options.map((option) => [
+        option.type,
+        option.buildRounds,
+      ]),
+    );
+    expect(rounds).toMatchObject({
+      'Research station': 3,
+      'Water extractor': 2,
+    });
+    expect(root.textContent).toContain('Build 3 rounds');
+    act({ kind: 'build', type: 'Research station' });
+    const site = () => group('Tellus').planets[0]!.sites[2]!;
+    expect(site().factory).toMatchObject({ roundsDone: 0, roundsTotal: 3 });
+    turn();
+    send({ type: 'open-factories' });
+    expect(site().factory).toMatchObject({
+      status: 'building',
+      roundsDone: 1,
+      roundsTotal: 3,
+    });
+    expect(root.textContent).toContain('Building 1/3');
+    turn();
+    send({ type: 'open-factories' });
+    expect(site().factory).toMatchObject({ roundsDone: 2, roundsTotal: 3 });
+    turn();
+    send({ type: 'open-factories' });
+    expect(site().factory).toMatchObject({
+      type: 'Research station',
+      status: 'working',
+    });
+  });
+
   it('Connect-skärmen / fraktskepp-ger-forbindelse: uses the own free transport and merges the groups once it is in place', () => {
     const { send, act, factories, freighters, turn } = setup();
     send({ type: 'open-factories' });

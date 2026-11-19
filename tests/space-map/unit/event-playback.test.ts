@@ -318,8 +318,11 @@ describe('handelser-pa-kartan', () => {
     const game = new Game(createExampleGalaxy());
     game.setDestination('fleet-home', new HexCoordinate(3, 0));
     game.scheduleBuild(game.galaxy.homePlanet, 'Research station');
-    collectTurnFrames(game);
-    game.finishTurn();
+    // byggtid-per-byggnad: the Research station is done after three rounds.
+    for (let round = 0; round < 3; round++) {
+      collectTurnFrames(game);
+      game.finishTurn();
+    }
     const arrival = game.events.find((event) =>
       event.text.includes('arrived'),
     )!;

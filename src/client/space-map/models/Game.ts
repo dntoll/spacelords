@@ -141,6 +141,10 @@ export interface NetworkConsumerSnapshot {
   readonly ready: boolean;
   /** Round the consumer first received goods, or null. */
   readonly startedRound: number | null;
+  /** byggtid-per-byggnad: construction rounds once the goods are in place. */
+  readonly buildRounds: number;
+  /** Round construction began with every good delivered, or null. */
+  readonly constructionRound: number | null;
 }
 export interface NetworkSnapshot {
   readonly groups: readonly (readonly string[])[];
@@ -424,6 +428,40 @@ export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
       ship: 'Raptor',
     },
   });
+/**
+ * byggtid-per-byggnad: rounds of construction once the goods are in place.
+ * Simple buildings take two rounds, advanced ones three.
+ */
+export const BUILD_ROUNDS: Readonly<Record<BuildType, number>> = Object.freeze({
+  'Orbital shipyard': 3,
+  'Salvage ship factory': 2,
+  'Telescope I factory': 2,
+  'Telescope II factory': 3,
+  'Telescope III factory': 3,
+  'Ice dome': 2,
+  'Ice terraforming factory': 3,
+  'Desert dome': 2,
+  'Desert terraforming factory': 3,
+  'Ocean dome': 2,
+  'Ocean terraforming factory': 3,
+  'Toxic dome': 2,
+  'Toxic terraforming factory': 3,
+  'Iron mine': 2,
+  'Rocket engine factory': 2,
+  'Ion pulse engine factory': 3,
+  'Weapons module factory': 2,
+  'Water extractor': 2,
+  'Oil extractor': 2,
+  'Transport ship factory': 2,
+  'Research station': 3,
+  'Colony ship factory': 3,
+  'Exploration ship factory': 2,
+  'Fighter factory': 2,
+  'Raptor factory': 3,
+});
+export function buildRounds(type: string): number {
+  return BUILD_ROUNDS[type as BuildType] ?? 1;
+}
 export const SHIPS: Readonly<
   Record<ShipType, { readonly crew: number; readonly speed: number }>
 > = Object.freeze({
@@ -824,6 +862,7 @@ export interface GameState {
   readonly componentOrders?: readonly unknown[];
   readonly network?: NetworkEconomyState;
   readonly networkStarted?: Readonly<Record<string, number>>;
+  readonly construction?: Readonly<Record<string, number>>;
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
   readonly version:
@@ -880,6 +919,8 @@ export class Game {
   // produktionsnatverk: shared stock and goods moving between planets.
   #network = new NetworkEconomy();
   #networkStarted: Record<string, number> = {};
+  // byggtid-per-byggnad: round each building's construction began.
+  #construction: Record<string, number> = {};
   #salvage: Salvage;
   #decisions = new DecisionBoard();
   #research = new ResearchPlan();
@@ -957,6 +998,7 @@ export class Game {
       version: 17,
       network: this.#network.snapshot(),
       networkStarted: { ...this.#networkStarted },
+      construction: { ...this.#construction },
       productionFleetSequences: { ...this.#productionFleetSequences },
       planetQueues: this.#planetQueues.snapshot(),
       attackQueue: [...this.#attackQueue],
@@ -1135,6 +1177,7 @@ export class Game {
     );
     game.#networkStarted =
       state.version >= 17 ? { ...(copy.networkStarted ?? {}) } : {};
+    game.#construction = { ...(copy.construction ?? {}) };
     game.#decisions = new DecisionBoard(
       new Set(copy.skippedDecisions),
       copy.mutedDecisions ?? [],
@@ -6345,10 +6388,34 @@ export class Game {
       )
         this.#networkStarted[consumer.id] = this.#round;
     for (const consumer of consumers)
-      if (this.#network.ready(consumer)) this.#finishConsumer(consumer);
+      if (this.#network.ready(consumer) && this.#constructed(consumer))
+        this.#finishConsumer(consumer);
     const waiting = new Set(this.#networkConsumers().map(({ id }) => id));
     for (const id of Object.keys(this.#networkStarted))
       if (!waiting.has(id)) delete this.#networkStarted[id];
+    for (const id of Object.keys(this.#construction))
+      if (!waiting.has(id)) delete this.#construction[id];
+  }
+
+  /**
+   * byggtid-per-byggnad: a building with its goods in place is under
+   * construction and finishes after its build rounds, counting this one.
+   */
+  #constructed(consumer: NetworkConsumer): boolean {
+    if (consumer.kind !== 'building') return true;
+    const started = (this.#construction[consumer.id] ??= this.#round);
+    return this.#round - started + 1 >= this.#consumerBuildRounds(consumer);
+  }
+
+  #consumerBuildRounds(consumer: NetworkConsumer): number {
+    if (consumer.kind !== 'building') return 1;
+    const planet = this.#ownedPlanets().find(
+      (item) => item.id === consumer.planetId,
+    );
+    const project =
+      planet &&
+      this.#state(planet).projects.find((item) => item.id === consumer.id);
+    return project ? buildRounds(project.type) : 1;
   }
 
   networkSnapshot(): NetworkSnapshot {
@@ -6383,6 +6450,8 @@ export class Game {
             ),
             ready: this.#network.ready(consumer),
             startedRound: this.#networkStarted[consumer.id] ?? null,
+            buildRounds: this.#consumerBuildRounds(consumer),
+            constructionRound: this.#construction[consumer.id] ?? null,
           });
         }),
       ),

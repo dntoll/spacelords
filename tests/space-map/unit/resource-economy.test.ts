@@ -44,6 +44,10 @@ describe('utvinningsbara-resurser / utvinningsbyggnader / planetlager / planetby
     expect(game.planetSnapshot(home)!.economy.stock.Iron).toBe(initial);
     game.scheduleBuild(home, 'Iron mine', 0);
     game.scheduleBuild(home, 'Water extractor', 1);
+    // byggtid-per-byggnad: paid when construction starts, built two rounds on.
+    turn(game);
+    expect(game.planetSnapshot(home)!.buildings).toHaveLength(0);
+    expect(game.planetSnapshot(home)!.economy.stock.Iron).toBe(initial - 5 - 4);
     turn(game);
     expect(game.planetSnapshot(home)!.buildings).toHaveLength(2);
     const afterBuild = game.planetSnapshot(home)!.economy;
@@ -68,7 +72,7 @@ describe('forskningsko / forskningsberoenden / transport-ship-efter-rocket-engin
   it('adds prerequisites once and researches in dependency order', () => {
     const game = new Game(createExampleGalaxy());
     game.scheduleBuild(game.galaxy.homePlanet, 'Research station');
-    turn(game);
+    for (let round = 0; round < 3; round++) turn(game);
     expect(game.research.completed).toEqual([]);
     game.selectResearch('Trade logistics');
     game.selectResearch('Trade logistics');
@@ -154,9 +158,12 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
       'Release',
     );
     const head = game.planetSnapshot(target)!.projects[0]!.id;
-    // en-runda-per-lank: the Iron crosses one link before the Dome is built.
-    turn(game);
-    expect(game.planetSnapshot(target)!.sites[0]!.hasDome).toBe(false);
+    // en-runda-per-lank: the Iron crosses one link, then the Dome takes two
+    // rounds (byggtid-per-byggnad).
+    for (let round = 0; round < 2; round++) {
+      turn(game);
+      expect(game.planetSnapshot(target)!.sites[0]!.hasDome).toBe(false);
+    }
     turn(game);
     expect(game.planetSnapshot(target)!.sites[0]!.hasDome).toBe(true);
     game.scheduleBuild(target, 'Iron mine');

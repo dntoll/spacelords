@@ -95,14 +95,23 @@ describe('gemensam-planetko / delfabriker / automatiska-delorder', () => {
     expect(snapshot().economy.stock['Rocket engine']).toBe(1);
     expect(snapshot().economy.stock['Weapons module']).toBe(1);
     expect(game.fleet('fleet-home')!.ships.Fighter).toBe(1);
-    expect(snapshot().buildings).toHaveLength(4);
-    expect(snapshot().projects.map((p) => p.type)).toEqual(['Fighter']);
+    // byggtid-per-byggnad: the Research station needs three rounds.
+    expect(snapshot().buildings).toHaveLength(3);
+    expect(snapshot().projects.map((p) => p.type)).toEqual([
+      'Fighter',
+      'Research station',
+    ]);
     turn();
     expect(game.fleet('fleet-home')!.ships.Fighter).toBe(2);
     expect(snapshot().economy.stock['Rocket engine']).toBe(0);
     expect(snapshot().economy.stock['Weapons module']).toBe(0);
+    expect(snapshot().projects.map((p) => p.type)).toEqual([
+      'Research station',
+    ]);
     turn();
     expect(snapshot().economy.stock['Rocket engine']).toBe(0);
+    expect(snapshot().buildings).toHaveLength(4);
+    expect(snapshot().projects).toHaveLength(0);
   });
 
   it('does not count component orders as reserved building sites', () => {

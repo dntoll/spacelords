@@ -146,6 +146,9 @@ describe('beslut-vantar-pa-paborjad-atgard', () => {
     game.scheduleBuild(planet, 'Transport ship factory');
     expect(active(game, 'route-idle-route-test')).toBe(false);
     expect(game.tradeRoutes[0]!.status).toContain('Waiting');
+    // byggtid-per-byggnad: still waiting while the factory is under construction.
+    turn(game);
+    expect(active(game, 'route-idle-route-test')).toBe(false);
     turn(game);
     expect(active(game, 'route-idle-route-test')).toBe(true);
     game.scheduleShip(planet, 'Transport ship');
@@ -187,6 +190,7 @@ describe('beslut-vantar-pa-paborjad-atgard', () => {
       game.decisions.find((d) => d.id === 'route-idle-route-test'),
     ).toMatchObject({ muted: true, current: false });
     const restored = Game.restore(game.exportState());
+    turn(restored);
     turn(restored);
     expect(
       restored.decisions.find((d) => d.id === 'route-idle-route-test'),

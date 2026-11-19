@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { turnFrames } from '../../fixtures/turn-steps.js';
+import { completeConstruction } from '../../fixtures/construction.js';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
@@ -188,8 +189,7 @@ describe('byggnaders-resursanvandning', () => {
   it('shows upkeep per completed building in Buildings', () => {
     const model = new AppModel();
     model.build('Research station');
-    for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
-    model.finishTurn();
+    completeConstruction(model, 'Research station');
 
     model.openPlanet();
     const controller = new MasterController(
@@ -210,23 +210,23 @@ function advance(model: AppModel): void {
 }
 function buildShipyard(model: AppModel): void {
   model.build('Research station');
-  advance(model);
+  completeConstruction(model, 'Research station');
   model.research('Colony ship factory');
   advance(model);
   advance(model);
   advance(model);
   advance(model);
   model.build('Colony ship factory');
-  advance(model);
+  completeConstruction(model, 'Colony ship factory');
   model.build('Rocket engine factory');
-  advance(model);
+  completeConstruction(model, 'Rocket engine factory');
 }
 
 describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () => {
   it('opens a site-specific menu with researched buildings, costs, effects and image placeholders', () => {
     const model = new AppModel();
     model.build('Research station');
-    advance(model);
+    completeConstruction(model, 'Research station');
     model.research('Colony ship factory');
     advance(model);
     advance(model);
@@ -383,7 +383,7 @@ describe('kompakta-koknappar', () => {
   it('uses symbols while preserving named research actions, boundaries and controller dispatch', () => {
     const model = new AppModel();
     model.build('Research station');
-    advance(model);
+    completeConstruction(model, 'Research station');
     model.research('Exploration ship factory');
     model.research('Colony ship factory');
     model.research('Transport ship factory');

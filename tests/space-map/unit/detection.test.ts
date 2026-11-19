@@ -1,6 +1,7 @@
 import { completeTacticalBattles } from '../../fixtures/tactical-combat.js';
 import { describe, expect, it } from 'vitest';
 import {
+  buildRounds,
   Game,
   type BuildType,
 } from '../../../src/client/space-map/models/Game.js';
@@ -224,7 +225,13 @@ describe('aktuell-detektionssikt', () => {
       factoryId: null,
       destinationFleetId: null,
     });
-    let game = Game.restore(state);
+    // byggtid-per-byggnad: construction is in its last round this year.
+    let game = Game.restore({
+      ...state,
+      construction: {
+        'factory-build': state.round - buildRounds('Telescope II factory') + 1,
+      },
+    });
     game.startTurn();
     while (game.phase === 'simulating') {
       const frame = game.nextTurnFrame();

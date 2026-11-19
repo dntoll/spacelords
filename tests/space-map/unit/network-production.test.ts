@@ -1,5 +1,8 @@
 import { expect, it } from 'vitest';
-import { Game } from '../../../src/client/space-map/models/Game.js';
+import {
+  buildRounds,
+  Game,
+} from '../../../src/client/space-map/models/Game.js';
 import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { turnFrames } from '../../fixtures/turn-steps.js';
 
@@ -33,6 +36,11 @@ it('fraktskepp-ger-forbindelse / fraktskepp-ligger-stilla / en-runda-per-lank: a
   const position = game.fleet('freighters')!.position;
   turn(game);
   expect(vesta(game).projects).toHaveLength(1);
+  // The Iron arrives after one round; then the mine takes its build rounds.
+  for (let round = 1; round < buildRounds('Iron mine'); round++) {
+    turn(game);
+    expect(vesta(game).projects).toHaveLength(1);
+  }
   turn(game);
   expect(vesta(game).projects).toHaveLength(0);
   expect(vesta(game).buildings.map((building) => building.type)).toEqual([
@@ -45,15 +53,25 @@ it('fraktskepp-ger-forbindelse / fraktskepp-ligger-stilla / en-runda-per-lank: a
   });
 });
 
-it('saves goods on their way and finishes the delivery after a reload', () => {
+function reload(game: Game): Game {
+  const saved = game.exportState();
+  return Game.restore(JSON.parse(JSON.stringify(saved)) as typeof saved);
+}
+
+it('byggtid-per-byggnad: saves goods on their way and construction under way, and finishes after a reload', () => {
   const game = Game.restore({ ...tradeNetworkState(), pirates: [] });
   game.assignTradeFleet('route-test', 'freighters');
   turn(game);
-  const saved = game.exportState();
-  expect(saved.network?.transits.length).toBeGreaterThan(0);
-  const restored = Game.restore(
-    JSON.parse(JSON.stringify(saved)) as typeof saved,
-  );
-  turn(restored);
-  expect(vesta(restored).projects).toHaveLength(0);
+  expect(game.exportState().network?.transits.length).toBeGreaterThan(0);
+  const travelling = reload(game);
+  turn(travelling);
+  expect(game.exportState().construction).toEqual({});
+  expect(travelling.exportState().construction).toEqual({ 'vesta-mine': 2 });
+  const building = reload(travelling);
+  expect(vesta(building).projects).toHaveLength(1);
+  turn(building);
+  expect(vesta(building).projects).toHaveLength(0);
+  expect(vesta(building).buildings.map(({ type }) => type)).toEqual([
+    'Iron mine',
+  ]);
 });

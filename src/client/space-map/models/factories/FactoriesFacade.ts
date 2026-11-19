@@ -2,6 +2,7 @@ import type { AppHost } from '../../../app/models/AppModel.js';
 import { RESOURCES, type Material, type Resource } from '../Economy.js';
 import {
   BUILDINGS,
+  buildRounds,
   factoryShips,
   projectDefinition,
   type BuildType,
@@ -471,6 +472,13 @@ export class FactoriesFacade {
       );
       const started = consumer?.startedRound ?? null;
       const done = started === null ? 0 : Math.max(0, round - started);
+      // byggtid-per-byggnad: goods first, then the construction rounds.
+      const construction = consumer?.constructionRound ?? null;
+      const length = consumer?.buildRounds ?? buildRounds(type);
+      const remaining =
+        construction === null
+          ? Math.max(1, consumer?.arrivalRounds ?? 1) + length - 1
+          : Math.max(1, length - (round - construction));
       return Object.freeze({
         index: site.index,
         kind: 'factory',
@@ -479,20 +487,21 @@ export class FactoriesFacade {
           tier: factoryTier(type),
           // parallella-byggen: it starts as soon as the group can pay.
           status:
-            consumer &&
-            consumer.waiting.every(
-              (material) =>
-                group.reduce(
-                  (sum, id) =>
-                    sum + this.#planet(context, id).economy.stock[material],
-                  0,
-                ) >= (consumer.needs[material] ?? 0),
-            )
+            construction !== null ||
+            (consumer &&
+              consumer.waiting.every(
+                (material) =>
+                  group.reduce(
+                    (sum, id) =>
+                      sum + this.#planet(context, id).economy.stock[material],
+                    0,
+                  ) >= (consumer.needs[material] ?? 0),
+              ))
               ? 'building'
               : 'queued',
           missing: Object.freeze([...(consumer?.waiting ?? [])]),
           roundsDone: done,
-          roundsTotal: done + Math.max(1, consumer?.arrivalRounds ?? 1),
+          roundsTotal: done + remaining,
           moreOrders: 0,
           makesShips: false,
         }),
@@ -718,7 +727,7 @@ export class FactoriesFacade {
           inGroup,
           buildingInGroup: building,
           here,
-          buildRounds: 1,
+          buildRounds: buildRounds(type),
           missingDeposit,
           inputRounds,
           missingInputs: Object.freeze(
