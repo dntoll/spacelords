@@ -6,7 +6,8 @@ pågående arbeten inte orsakar missvisande bristbesked.
 
 ## Förenklad produktion, utforskning 2026-11-18
 
-Gäller bara utforskningen `simple_production`. **Ej implementerat.**
+Gäller bara utforskningen `simple_production`. **Delvis implementerat:**
+allt utom mining ships är klart.
 Produktionen har tre nivåer: råvaror, delar och skepp. Planeter som förbinds
 med fraktskepp delar råvaror och delar. Varje länk tar en runda, oavsett kartavstånd. En byggnad tar två
 eller tre rundor att bygga, och eskort skyddar fraktskeppen. Varje fabrik gör en
@@ -1154,6 +1155,8 @@ Research station som inte är markerad för rivning krävs för att köa forskni
 beställd räcker inte. Endast fungerande stationer ger forskningsframsteg.
 Personalbrist stoppar framsteg men hindrar inte köläggning när stationen finns.
 Utan station är forskningsvalen spärrade och vyn förklarar vad som saknas.
+I utforskningen `simple_production` visar Research i stället inget träd
+förrän en station är byggd (`forskningsvy-utan-station`).
 Decisions föreslår inte att välja forskning innan en station finns. Befintliga
 forskningsköer bevaras om stationer försvinner och väntar tills driften återupptas;
 kön kan fortfarande ordnas och poster tas bort. Detta ersätter tidigare fri

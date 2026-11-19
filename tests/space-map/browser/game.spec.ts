@@ -107,9 +107,10 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
     await expect(
       page.getByRole('heading', { name: 'Research', exact: true }),
     ).toBeVisible();
-    await page.locator('.research-introduction summary').click();
+    // forskningsvy-utan-station: a new game shows the way to Factories.
     await expect(
-      page.getByText('Build a Research station to advance research.', {
+      page.getByRole('button', {
+        name: 'Build a Research station',
         exact: true,
       }),
     ).toBeVisible();

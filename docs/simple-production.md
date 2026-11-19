@@ -107,6 +107,26 @@ förenklad produktion är klar. De följs upp i
 | `mining-ships`           | Mining ships utvinner råvaror ur nebulosor och asteroidbälten. Utvinningen styrs på kartan.                                                                                       |
 | `mining-ship-anslutning` | Ett mining ship är anslutet till nätverket när ett fraktskepp har routen mellan skeppet och den ägda planet som ligger närmast på kartan. Flyttas mining ship flyttas routen med. |
 
+## Från testningen (2026-11-19)
+
+Krav från användarens mobiltest. Varje krav följs upp i ett issue.
+
+| Kravnamn                                  | Produktkrav                                                                                                                                                                                                                                     |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runda-avslutas-fran-factories`           | `Factories` har samma `End turn` och händelselogg som övriga skärmar, inklusive varningen om kvarvarande beslut ([issue 5](https://github.com/dntoll/spacelords/issues/5)).                                                                     |
+| `produktionsko-bara-skepp`                | `Build queue` i kartans Production visar bara skeppsorder. Köade byggnader syns och avbryts i `Factories` ([issue 3](https://github.com/dntoll/spacelords/issues/3)).                                                                           |
+| `produktionsbeslut-bara-for-skeppsfabrik` | Beslutet `<planet>: choose production` visas bara när planeten har en färdig skeppsfabrik utan order av sin egen typ. Tomma byggplatser och köade byggnader ger inget sådant beslut ([issue 2](https://github.com/dntoll/spacelords/issues/2)). |
+| `forskningsvy-utan-station`               | Utan någon färdig Research station visar Research inget forskningsträd och ingen kö, bara en förklaring och knappen `Build a Research station`, som öppnar `Factories` ([issue 4](https://github.com/dntoll/spacelords/issues/4)).              |
+
+`produktionsbeslut-bara-for-skeppsfabrik` ersätter att tomma byggplatser gav
+beslutet, och därmed den del av `beslut-vantar-pa-paborjad-atgard` där
+beslutet för tomma platser väntade på Dome-forskning. Production förklarar
+fortfarande väntan på Dome-forskning.
+`forskningsvy-utan-station` ersätter den del av `forskning-kraver-station`
+där trädet visades med spärrade val när ingen station fanns. Trädet med
+spärrade val visas fortfarande när den enda stationen är markerad för rivning.
+Regeln att forskning kräver en färdig station gäller som förut.
+
 ## Sparade spel
 
 `sparade-spel-bryts-i-utforskningen`: användaren har godkänt att utforskningen
@@ -258,6 +278,11 @@ Fas 1 (spelmodellen) och fas 2 (skärmarna) är klara 2026-11-18.
 
 - **Befolkning:** `befolkningsutjamning-i-grupp` (2026-11-19) enligt
   reglerna ovan. Gruppen i `Factories` visar ännu inte folk på väg.
+
+- **Från testningen:** `runda-avslutas-fran-factories`,
+  `produktionsko-bara-skepp`, `produktionsbeslut-bara-for-skeppsfabrik` och
+  `forskningsvy-utan-station` (2026-11-19). Den äldre planetvyn med
+  `Building sites` visar fortfarande både byggnader och skepp i sin kö.
 
 **Uppskjutet:** `mining-ships` och `mining-ship-anslutning` görs efter
 resten av utforskningen.

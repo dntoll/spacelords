@@ -93,26 +93,15 @@ describe('bygga-forskningsstation', () => {
 });
 
 describe('forskningsoversikt', () => {
-  it('shows factory research and its station prerequisite', () => {
+  // forskningsvy-utan-station replaces the disabled tree of a new game.
+  it('shows no research tree before a Research station exists, only the way to build one', () => {
     start();
     click('Research');
     expect(root.querySelector('h1')?.textContent).toBe('Research');
-    expect(root.textContent).toContain('Research station');
-    expect(root.textContent).toContain(
-      'Build a Research station to advance research.',
-    );
+    expect(root.textContent).toContain('Research needs a Research station.');
     expect(
       root.querySelector('[data-technology="Rocket engine factory"]'),
-    ).not.toBeNull();
-    click('Inspect Rocket engine factory');
-    expect(
-      root.querySelector<HTMLButtonElement>(
-        '[aria-label="Research Rocket engine factory"]',
-      )!.disabled,
-    ).toBe(true);
-    expect(root.textContent).toContain(
-      'Build a Research station before queuing research.',
-    );
+    ).toBeNull();
     click('Back to map');
     expect(root.querySelector('[data-testid="map-container"]')).not.toBeNull();
   });

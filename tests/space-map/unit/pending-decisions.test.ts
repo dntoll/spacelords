@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  Game,
-  type GameState,
-} from '../../../src/client/space-map/models/Game.js';
+import { Game } from '../../../src/client/space-map/models/Game.js';
 import { needsAttention } from '../../../src/client/space-map/models/Decisions.js';
 import { domeProductionState } from '../../fixtures/production-dome.js';
 import { tradeNetworkState } from '../../fixtures/trade-network.js';
@@ -53,7 +50,9 @@ describe('beslut-vantar-pa-paborjad-atgard', () => {
       ),
     ).toBe(true);
   });
-  it('waits for matching Dome research anywhere in the queue and restores the next choice on completion or cancellation', () => {
+  // produktionsbeslut-bara-for-skeppsfabrik replaces the empty-site reminder
+  // that used to wait for Dome research; the Production guidance still waits.
+  it('waits for matching Dome research anywhere in the queue in the Production guidance', () => {
     const state = domeProductionState(false);
     state.colonies[1]![1].buildings.push({
       id: 'research',
@@ -63,49 +62,18 @@ describe('beslut-vantar-pa-paborjad-atgard', () => {
     });
     const game = Game.restore(state);
     const planet = game.galaxy.homePlanet;
-    const id = `building-empty-${planet.id}`;
-    expect(active(game, id)).toBe(true);
+    expect(active(game, `building-empty-${planet.id}`)).toBe(false);
     game.selectResearch('Weapons module factory');
-    expect(active(game, id)).toBe(true);
     game.selectResearch('Desert dome');
-    expect(active(game, id)).toBe(false);
-    expect(
-      game.planetOrders().find((p) => p.planetId === planet.id)!.emptyQueues,
-    ).toBe(0);
     expect(game.productionGuidance(planet)).toMatchObject({
       kind: 'waiting',
       message: 'Waiting for Desert dome research.',
     });
-    const restored = Game.restore(
-      JSON.parse(JSON.stringify(game.exportState())) as GameState,
-    );
-    expect(active(restored, id)).toBe(false);
-    restored.removeResearch('Desert dome');
-    expect(active(restored, id)).toBe(true);
     for (let year = 0; year < 4 && game.research.queue.length; year++)
       turn(game);
     expect(game.research.completed).toContain('Desert dome');
-    expect(active(game, id)).toBe(true);
     game.scheduleBuild(planet, 'Desert dome');
-    expect(active(game, id)).toBe(false);
     expect(game.productionGuidance(planet).kind).toBe('waiting');
-  });
-
-  it('keeps choices for a prepared site or existing producer while Dome research is pending', () => {
-    for (const prepared of [true, false]) {
-      const state = domeProductionState(false);
-      state.researchQueue = ['Desert dome'];
-      if (prepared) state.colonies[0]![1].domes = [0];
-      else
-        state.colonies[0]![1].buildings.push({
-          id: 'engine',
-          type: 'Rocket engine factory',
-          slotIndex: 0,
-          demolition: false,
-        });
-      const game = Game.restore(state);
-      expect(active(game, 'building-empty-sol-0')).toBe(true);
-    }
   });
 
   it('waits on all empty routes during transport research but stops waiting when a fleet can be assigned', () => {

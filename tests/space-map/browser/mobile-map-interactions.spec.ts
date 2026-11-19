@@ -60,6 +60,13 @@ test('centrerat-kartfokus / kartpanel-till-events: Show centers Vesta above the 
   );
   const state = tradeNetworkState(false);
   state.colonies[1]![1].projects = [];
+  // produktionsbeslut-bara-for-skeppsfabrik: an idle ship factory asks for orders.
+  state.colonies[1]![1].buildings.push({
+    id: 'vesta-yard',
+    type: 'Transport ship factory',
+    slotIndex: 1,
+    demolition: false,
+  });
   await start(page, state);
   await page.getByRole('button', { name: 'Production', exact: true }).click();
   await page

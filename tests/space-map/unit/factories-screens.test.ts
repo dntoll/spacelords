@@ -442,3 +442,53 @@ it('eskort-pa-routes: Factories shows unescorted links and assigns a free armed 
   expect(factories().screen).toBe('sites');
   expect(group(key).unescortedLinks).toBe(0);
 });
+
+describe('runda-avslutas-fran-factories', () => {
+  it('shows the shared End turn bar in Factories and ends the turn from there', () => {
+    const { root, send, model } = setup();
+    send({ type: 'open-factories' });
+    const end = root.querySelector<HTMLButtonElement>(
+      '.game-turn-actions .end-turn',
+    );
+    expect(end?.disabled).toBe(false);
+    expect(root.querySelector('.game-turn-actions .turn-console')).not.toBe(
+      null,
+    );
+    // The tabs keep their decision markers and count while in Factories.
+    expect(root.querySelector('.decision-counter')?.textContent).toMatch(
+      /^Decisions \(\d+\)$/,
+    );
+    expect(root.querySelector('.nav-attention')).not.toBe(null);
+    end!.click();
+    // Either the turn starts or the unresolved-decisions warning opens here.
+    expect(
+      model.snapshot.phase !== 'planning' ||
+        root.querySelector('dialog.decision-dialog[open]') !== null,
+    ).toBe(true);
+  });
+});
+
+describe('produktionsko-bara-skepp', () => {
+  it('lists only ship orders in the Build queue of Production, while buildings stay in Factories', () => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    state.colonies[0]![1].buildings.push({
+      id: 'yard',
+      type: 'Transport ship factory',
+      slotIndex: 3,
+      demolition: false,
+    });
+    const { root, send, act, model } = setup(state);
+    send({ type: 'open-factories' });
+    act({ kind: 'open-site', planet: 'sol-0', site: 2 });
+    act({ kind: 'build', type: 'Research station' });
+    act({ kind: 'open-site', planet: 'sol-0', site: 3 });
+    send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
+    expect(model.snapshot.planet?.projects.map((p) => p.type)).toEqual(
+      expect.arrayContaining(['Research station', 'Transport ship']),
+    );
+    const rows = [
+      ...root.querySelectorAll('.map-build-queue .map-queue-choice'),
+    ].map((row) => row.textContent);
+    expect(rows).toEqual(['1. Transport ship']);
+  });
+});

@@ -6,7 +6,9 @@ import { MasterController } from '../../../src/client/app/controllers/MasterCont
 import { AppView } from '../../../src/client/app/views/AppView.js';
 import { domeProductionState } from '../../fixtures/production-dome.js';
 
-it('beslut-vantar-pa-paborjad-atgard: updates guidance, counter, map problems and turn warning after queuing and cancelling research', () => {
+// produktionsbeslut-bara-for-skeppsfabrik: empty sites no longer raise the
+// Production reminder, so only the guidance waits for the Dome research.
+it('beslut-vantar-pa-paborjad-atgard: Production explains the wait for Dome research without a reminder', () => {
   const state = domeProductionState(false);
   state.colonies[1]![1].buildings.push({
     id: 'research',
@@ -34,44 +36,19 @@ it('beslut-vantar-pa-paborjad-atgard: updates guidance, counter, map problems an
       .click();
   expect(
     root.querySelector('[data-screen="production"] .nav-attention'),
-  ).not.toBeNull();
+  ).toBeNull();
   click('Open research');
   click('Inspect Desert dome');
   click('Research Desert dome');
   click('Production');
   expect(root.textContent).toContain('Waiting for Desert dome research.');
-  expect(root.querySelector('.decision-guidance')).toBeNull();
-  expect(
-    root.querySelector('[data-screen="production"] .nav-attention'),
-  ).toBeNull();
-  expect(
-    model.snapshot.mapProblems.some(
-      (problem) => problem.decisionId === 'building-empty-sol-0',
-    ),
-  ).toBe(false);
   const expected = model.snapshot.decisions.filter(needsAttention).length;
   expect(root.querySelector('.decision-counter')?.textContent).toBe(
     `Decisions (${expected})`,
   );
-  model.openDecisions();
-  controller.start();
-  expect(
-    root.querySelector('[data-decision-id="building-empty-sol-0"]'),
-  ).toBeNull();
   root.querySelector<HTMLButtonElement>('.end-turn')!.click();
-  expect(root.querySelector('dialog')?.textContent).not.toContain(
+  expect(root.querySelector('dialog')?.textContent ?? '').not.toContain(
     'Tellus: choose production',
   );
-  [...root.querySelectorAll('button')]
-    .find((button) => button.textContent === 'Cancel')!
-    .click();
-  click('Research');
-  click('Remove Desert dome');
-  click('Remove research');
-  expect(model.snapshot.research.queue).not.toContain('Desert dome');
-  expect(model.snapshot.attentionScreens).toContain('production');
-  expect(
-    root.querySelector('[data-screen="production"] .nav-attention'),
-  ).not.toBeNull();
   controller.dispose();
 });

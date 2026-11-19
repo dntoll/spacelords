@@ -906,8 +906,9 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
 - **Förenklad produktion (utforskning `simple_production`):**
   `tre-produktionsnivaer`, `produktionsnatverk`, `fraktskepp-ger-forbindelse`,
   `delat-lager-i-natverket`, `en-enhet-per-fabrik-och-runda`,
-  `delar-tillverkas-pa-behov`, `mining-ships` med flera är
-  **Ej implementerat**. Råvaror och delar delas inom ett nätverk av planeter
+  `delar-tillverkas-pa-behov` med flera är
+  **Fullständigt implementerat** inom utforskningen; `mining-ships` och
+  `mining-ship-anslutning` är **Ej implementerat**. Råvaror och delar delas inom ett nätverk av planeter
   som är förbundna med fraktskepp. Bara utvinning och slutprodukter är
   platsbundna. Varje länk mellan planeter tar en runda (`en-runda-per-lank`). Vyn prototypas separat. Kraven ersätter Route, Production och
   den fysiska frakten när de implementeras. Skepp beställs fortsatt från kartans Production (`skeppsorder-pa-planeten`). Se
@@ -916,7 +917,9 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   implementerade** för nätverk, fabriker, byggen med byggtid
   (`byggtid-per-byggnad`), eskort (`eskort-pa-routes`) och utjämning av
   befolkning (`befolkningsutjamning-i-grupp`). Mining ships är uppskjutna
-  tills resten är klart.
+  tills resten är klart. Efter mobiltestet är `runda-avslutas-fran-factories`,
+  `produktionsko-bara-skepp`, `produktionsbeslut-bara-for-skeppsfabrik` och
+  `forskningsvy-utan-station` **Fullständigt implementerat**.
   `forsorjningsoversikt`, `relevanta-material` och `materialoversikt` ersätts;
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och

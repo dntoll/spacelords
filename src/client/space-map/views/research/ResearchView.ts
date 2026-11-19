@@ -46,6 +46,22 @@ export function renderResearch(
     heading,
     button('Back to map', () => emit({ type: 'open-map' }), 'back-button'),
   );
+  // forskningsvy-utan-station: no tree until a station exists to research with.
+  if (!research.builtStations) {
+    const missing = element('section', 'research-needs-station');
+    missing.append(
+      element(
+        'p',
+        '',
+        'Research needs a Research station. Build one on a free site in Factories.',
+      ),
+      button('Build a Research station', () =>
+        emit({ type: 'open-factories' }),
+      ),
+    );
+    page.append(header, missing);
+    return page;
+  }
   if (!research.stations)
     details.append(
       element(

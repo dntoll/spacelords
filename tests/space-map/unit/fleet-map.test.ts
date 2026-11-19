@@ -6,6 +6,7 @@ import {
   HexGeometry,
 } from '../../../src/client/common/HexCoordinate.js';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
+import { researchStationModel } from '../../fixtures/research-station-model.js';
 import { renderMapOverlays } from '../../../src/client/space-map/views/star-map/MapOverlayView.js';
 import { renderMapFleets } from '../../../src/client/space-map/views/star-map/FleetMapView.js';
 import { FleetMapLayout } from '../../../src/client/space-map/models/star-map/FleetMapLayout.js';
@@ -617,7 +618,8 @@ it('beslutsvagledning-i-vyn: idle fleet decisions have a solid amber ring and Pr
   );
   expect(sketch.stroke).toHaveBeenCalledWith('#ffdc88');
   expect(dash).toHaveBeenCalledWith([]);
-  const model = new AppModel();
+  // produktionsbeslut-bara-for-skeppsfabrik: only an idle ship factory is marked.
+  const model = researchStationModel({ shipFactory: true });
   model.openProduction();
   const text = vi.fn();
   renderMapOverlays(

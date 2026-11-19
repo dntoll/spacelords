@@ -9,7 +9,7 @@ describe('forskningstradets-utrymme', () => {
   it('places station information beside the heading and removes the reserved sidebar and zoom controls', () => {
     const model = new AppModel();
     const page = renderResearch(
-      { ...model.snapshot.research, stations: 5 },
+      { ...model.snapshot.research, stations: 5, builtStations: 5 },
       false,
       () => {},
     );

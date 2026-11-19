@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { completeConstruction } from '../../fixtures/construction.js';
+import { researchStationState } from '../../fixtures/research-station.js';
 import { turnFrames } from '../../fixtures/turn-steps.js';
 import { TECHNOLOGIES } from '../../../src/client/space-map/models/research/Research.js';
 import { expect, it, vi } from 'vitest';
@@ -16,6 +17,7 @@ it('forsknings-tradnavigation: distinguishes completed, active, queued and unava
       completed: ['Rocket engine factory', 'Exploration ship factory'],
       selected: 'Transport ship factory',
       stations: 1,
+      builtStations: 1,
       queueBlockedReason: null,
       queue: ['Transport ship factory', 'Trade logistics'],
     },
@@ -75,6 +77,7 @@ it('forskning-fran-bargade-delar: shows recovered technology as available while 
       completed: [],
       selected: null,
       stations: 1,
+      builtStations: 1,
       queueBlockedReason: null,
       queue: [],
       recovered: ['Telescope III factory'],
@@ -107,7 +110,8 @@ it('forskning-fran-bargade-delar: shows recovered technology as available while 
 
 it('planettypsforskning: omits hidden projects and sizes the diagram for only discovered technologies', () => {
   const game = new Game(createExampleGalaxy());
-  const research = game.research;
+  // forskningsvy-utan-station: the tree is drawn once a station is built.
+  const research = { ...game.research, builtStations: 1 };
   const view = renderResearch(research, false, vi.fn());
   const layout = new ResearchTreeLayout(research.available);
   expect(
@@ -131,7 +135,11 @@ it('planettypsforskning: omits hidden projects and sizes the diagram for only di
     ...state,
     surveyedPlanets: [...(state.surveyedPlanets ?? []), desert.id],
   }).research;
-  const unlocked = renderResearch(surveyed, false, vi.fn());
+  const unlocked = renderResearch(
+    { ...surveyed, builtStations: 1 },
+    false,
+    vi.fn(),
+  );
   expect(
     unlocked.querySelector('[data-technology="Desert dome"]'),
   ).not.toBeNull();
@@ -177,8 +185,12 @@ it('forskning-kraver-station: cannot queue research before a station is complete
 
 it('forskning-kraver-station: explains the missing station and disables queue actions in the research tree', () => {
   const emit = vi.fn();
+  // forskningsvy-utan-station: the tree needs a built station, here one that
+  // is being demolished and therefore cannot research.
+  const state = researchStationState();
+  state.colonies[0]![1].buildings[0]!.demolition = true;
   const view = renderResearch(
-    new Game(createExampleGalaxy()).research,
+    Game.restore(state).research,
     false,
     emit,
     'Rocket engine factory',
