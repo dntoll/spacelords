@@ -70,7 +70,7 @@ describe('Factories', () => {
     );
   });
 
-  it('Skärm 1 / blockerad-fabrik: counts factories per group and offers Connect only with a transport', () => {
+  it('Skärm 1 / blockerad-fabrik: counts factories per group and offers Connect where a transport can link it', () => {
     const { send, group } = setup();
     send({ type: 'open-factories' });
     expect(group('Tellus').counts).toEqual([
@@ -82,7 +82,8 @@ describe('Factories', () => {
       status: 'queued',
     });
     expect(group('Tellus').canConnect).toBe(true);
-    expect(group('Vesta').canConnect).toBe(false);
+    // Vesta has no transport but can join Tellus, which has one.
+    expect(group('Vesta').canConnect).toBe(true);
   });
 
   it('Skärm 2 / parallella-byggen: builds on the tapped site and starts at once when the group can pay', () => {
@@ -321,4 +322,34 @@ it('beslutsvagledning-i-vyn: Factories shows the guidance for its missing-goods 
   expect(
     root.querySelector('.factory-screens .decision-guidance')?.textContent,
   ).toContain('Connect the group to planets that make it');
+});
+
+it('parallella-byggen: a queued building can be cancelled from its site in Factories', () => {
+  const { send, act, factories, group } = setup();
+  send({ type: 'open-factories' });
+  act({ kind: 'open-site', planet: 'sol-0', site: 2 });
+  act({ kind: 'build', type: 'Research station' });
+  act({ kind: 'open-site', planet: 'sol-0', site: 2 });
+  expect(factories().build!.project).toBe('Research station');
+  expect(factories().build!.options).toEqual([]);
+  act({ kind: 'cancel-site' });
+  expect(factories().screen).toBe('sites');
+  expect(group('Tellus').planets[0]!.sites[2]!.kind).toBe('empty');
+});
+
+it('Connect-skärmen: a group without transport connects with a transport from the group it joins', () => {
+  const { send, act, factories, group, freighters } = setup();
+  send({ type: 'open-factories' });
+  expect(group('Vesta').canConnect).toBe(true);
+  act({ kind: 'open-connect', group: 'Vesta' });
+  const connect = factories().connect!;
+  expect(connect.proposals.map((proposal) => proposal.targetKey)).toEqual([
+    'Tellus',
+  ]);
+  expect(connect.transports[0]!.choice).toMatchObject({
+    kind: 'free',
+    fleetId: 'freighters',
+  });
+  act({ kind: 'connect', target: 'Tellus' });
+  expect(freighters().routeId).toBeDefined();
 });

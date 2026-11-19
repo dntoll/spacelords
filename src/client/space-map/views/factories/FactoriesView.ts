@@ -504,6 +504,20 @@ function buildScreen(
       emit,
     ),
     stock,
+    ...(build.project
+      ? [
+          element('p', 'factory-muted', `${build.project} is queued here.`),
+          ...(locked
+            ? []
+            : [
+                button(
+                  'Cancel construction',
+                  () => emit({ kind: 'cancel-site' }),
+                  'secondary-button factory-action',
+                ),
+              ]),
+        ]
+      : []),
     ...(build.research
       ? [
           element(
@@ -513,7 +527,7 @@ function buildScreen(
           ),
         ]
       : []),
-    ...(sections.length
+    ...(sections.length || build.project
       ? sections
       : [element('p', 'factory-muted', 'Nothing can be built here yet.')]),
     element(
