@@ -390,3 +390,55 @@ it('Connect-skärmen: a group without transport connects with a transport from t
   act({ kind: 'connect', target: 'Tellus' });
   expect(freighters().routeId).toBeDefined();
 });
+
+it('eskort-pa-routes: Factories shows unescorted links and assigns a free armed fleet as escort', () => {
+  const base = { ...tradeNetworkState(), pirates: [] };
+  const state = {
+    ...base,
+    fleets: base.fleets.map((fleet) =>
+      fleet.id === 'freighters'
+        ? { ...fleet, ships: { ...fleet.ships, Fighter: 0 } }
+        : fleet,
+    ),
+  };
+  const { model, root, send, act, factories, group } = setup(state);
+  send({ type: 'open-factories' });
+  act({ kind: 'open-connect', group: 'Tellus' });
+  act({ kind: 'connect', target: 'Vesta' });
+  const key = 'Tellus, Vesta';
+  expect(group(key).unescortedLinks).toBe(1);
+  expect(root.textContent).toContain('1 link without escort');
+  act({ kind: 'open-links', group: key });
+  const link = () => factories().links!.links[0]!;
+  expect(link().transport).not.toBeNull();
+  expect(link().escorts).toBe(0);
+  expect(link().canEscort).toBe(true);
+  act({ kind: 'escort-link', link: link().id });
+  const home = model.snapshot.fleets.find(
+    (fleet) => fleet.id === 'fleet-home',
+  )!;
+  const choice = factories().links!.escort!;
+  expect(choice.routeId).toBe(link().id);
+  expect(choice.fleets).toContainEqual(
+    expect.objectContaining({
+      fleetId: 'fleet-home',
+      armed: home.ships.Fighter,
+      distance: 0,
+    }),
+  );
+  // Fleets that carry transports are not offered as escorts.
+  expect(choice.fleets.map((fleet) => fleet.fleetId)).not.toContain(
+    'travellers',
+  );
+  act({ kind: 'assign-escort', fleet: 'fleet-home' });
+  const carrier = model.snapshot.fleets.find(
+    (fleet) => fleet.routeId === link().id && fleet.ships['Transport ship'],
+  )!;
+  expect(carrier.ships.Fighter).toBe(home.ships.Fighter);
+  expect(factories().screen).toBe('links');
+  expect(factories().links!.escort).toBeNull();
+  expect(link().escorts).toBe(home.ships.Fighter);
+  act({ kind: 'back' });
+  expect(factories().screen).toBe('sites');
+  expect(group(key).unescortedLinks).toBe(0);
+});
