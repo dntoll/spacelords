@@ -11,7 +11,6 @@ import {
   type Resource,
 } from '../../models/Game.js';
 import { COMPONENTS } from '../../models/Economy.js';
-import type { SupplyStep } from '../../models/ProjectSupply.js';
 import { renderProduction } from './PlanetProductionView.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { button, element, queueButton } from '../../../common/dom.js';
@@ -29,7 +28,6 @@ type PlanetMenus = Pick<AppReadModel, 'phase'> &
       | 'productionProduct'
       | 'productionFleetId'
       | 'expandedProjectIds'
-      | 'projectSupply'
       | 'shipyards'
     >
   >;
@@ -263,26 +261,6 @@ function buildQueue(
       emit,
       menus.phase !== 'planning',
     );
-    const supply = menus.projectSupply?.find(
-      (item) => item.projectId === project.id,
-    );
-    if (supply) {
-      const details = element('details', 'project-supply');
-      details.open =
-        menus.expandedProjectIds?.includes(project.id) ?? index === 0;
-      const summary = element('summary', '', 'Supply chain');
-      summary.setAttribute(
-        'aria-label',
-        `Supply chain: ${project.type}, position ${index + 1}`,
-      );
-      details.append(summary, supplySteps(supply.requirements, emit));
-      const renderedOpen = details.open;
-      details.addEventListener('toggle', () => {
-        if (details.isConnected && details.open !== renderedOpen)
-          emit({ type: 'project-supply', id: project.id, open: details.open });
-      });
-      row.append(details);
-    }
     list.append(row);
   }
   queue.append(list);
@@ -542,57 +520,4 @@ function buildingUsage(type: BuildType, demolition: boolean): string {
   const definition = BUILDINGS[type];
   if (demolition) return 'Workers released when demolished';
   return `${definition.workers} workers · No recurring material cost`;
-}
-
-function supplySteps(
-  steps: readonly SupplyStep[],
-  emit: IntentHandler,
-): HTMLOListElement {
-  const list = element('ol', 'supply-steps');
-  for (const step of steps) {
-    const item = element('li', 'supply-step');
-    item.append(element('span', '', `${step.label} · ${step.status}`));
-    const links = element('div', 'supply-step-links');
-    if (step.projectId && step.planetId)
-      links.append(
-        button(
-          'View production',
-          () =>
-            emit({
-              type: 'open-planet-project',
-              planetId: step.planetId!,
-              projectId: step.projectId!,
-            }),
-          'button secondary-button',
-        ),
-      );
-    else if (step.planetId)
-      links.append(
-        button(
-          'Open planet',
-          () => emit({ type: 'open-planet', id: step.planetId! }),
-          'button secondary-button',
-        ),
-      );
-    if (step.routeId)
-      links.append(
-        button(
-          'View route',
-          () => emit({ type: 'supply-open-route', id: step.routeId! }),
-          'button secondary-button',
-        ),
-      );
-    if (step.fleetId)
-      links.append(
-        button(
-          'View fleet',
-          () => emit({ type: 'open-fleet', id: step.fleetId! }),
-          'button secondary-button',
-        ),
-      );
-    item.append(links);
-    if (step.children.length) item.append(supplySteps(step.children, emit));
-    list.append(item);
-  }
-  return list;
 }

@@ -158,54 +158,6 @@ describe('beslut-vantar-pa-paborjad-atgard', () => {
     expect(active(game, 'route-idle-route-test')).toBe(false);
   });
 
-  it('transportbygge-i-forsorjningssteg: names the planet building the ship while a project waits for transport', () => {
-    const state = transportState();
-    state.colonies[0]![1].buildings.push({
-      id: 'transport',
-      type: 'Transport ship factory',
-      slotIndex: 3,
-      demolition: false,
-    });
-    const game = Game.restore(state);
-    game.scheduleShip(game.galaxy.homePlanet, 'Transport ship');
-    const details = JSON.stringify(game.projectSupply('sol-1'));
-    expect(details).toContain('Waiting for Iron transport');
-    expect(details).toContain('Transport ship');
-    expect(details).toContain('Tellus');
-    expect(Game.restore(game.exportState()).projectSupply('sol-1')).toEqual(
-      game.projectSupply('sol-1'),
-    );
-  });
-
-  it('transportbygge-i-forsorjningssteg: reports the actual research or factory and clears cancelled preparation', () => {
-    const state = transportState();
-    const researching = Game.restore({
-      ...state,
-      researched: state.researched.filter(
-        (t) => t !== 'Transport ship factory' && t !== 'Trade logistics',
-      ),
-      researchQueue: ['Transport ship factory'],
-    });
-    expect(JSON.stringify(researching.projectSupply('sol-1'))).toContain(
-      'Transport ship factory research',
-    );
-    const building = Game.restore(state);
-    building.scheduleBuild(
-      building.galaxy.homePlanet,
-      'Transport ship factory',
-    );
-    expect(JSON.stringify(building.projectSupply('sol-1'))).toContain(
-      'Transport ship factory queued at Tellus',
-    );
-    const project = building
-      .planetSnapshot(building.galaxy.homePlanet)!
-      .projects.find((p) => p.type === 'Transport ship factory')!;
-    building.cancelProject(building.galaxy.homePlanet, project.id);
-    expect(JSON.stringify(building.projectSupply('sol-1'))).not.toContain(
-      'Transport ship factory queued at Tellus',
-    );
-  });
-
   it('does not hide missing routes, unrelated shortages or an available transport assignment', () => {
     for (const obstacle of ['route', 'source', 'fleet'] as const) {
       const state = transportState();
@@ -225,42 +177,6 @@ describe('beslut-vantar-pa-paborjad-atgard', () => {
         );
       expect(active(Game.restore(state), 'supply-sol-1'), obstacle).toBe(true);
     }
-  });
-
-  it('waits for factory research but reports a factory queued behind its dependent product', () => {
-    const state = transportState();
-    state.researched = state.researched.filter(
-      (t) => t !== 'Transport ship factory' && t !== 'Trade logistics',
-    );
-    state.researchQueue = ['Transport ship factory'];
-    state.colonies[0]![1].projects.push({
-      id: 'blocked-transport',
-      type: 'Transport ship',
-      factoryId: null,
-      slotIndex: null,
-      destinationFleetId: null,
-    });
-    const researching = Game.restore(state);
-    expect(active(researching, 'production-sol-0')).toBe(false);
-    expect(researching.projectSupply('sol-0')[0]!.requirements[0]!.status).toBe(
-      'Waiting',
-    );
-    state.researchQueue = [];
-    state.researched = [...state.researched, 'Transport ship factory'];
-    state.colonies[0]![1].projects.push({
-      id: 'late-factory',
-      type: 'Transport ship factory',
-      factoryId: null,
-      slotIndex: 3,
-      destinationFleetId: null,
-    });
-    const blocked = Game.restore(state);
-    expect(active(blocked, 'production-sol-0')).toBe(true);
-    expect(
-      blocked.decisions.find((d) => d.id === 'production-sol-0')!.label,
-    ).toContain('before');
-    blocked.moveProject(blocked.galaxy.homePlanet, 'late-factory', 0);
-    expect(active(blocked, 'production-sol-0')).toBe(false);
   });
 
   it('preserves muted preferences while pending actions disappear and return', () => {

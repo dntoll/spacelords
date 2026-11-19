@@ -72,9 +72,6 @@ describe('planetundersidor / byggplatsrutnat', () => {
     expect(model.snapshot.returnSite).toBe(2);
     model.selectPlanetTab('queue');
     expect(render().querySelectorAll('.queue-order')).toHaveLength(1);
-    expect(model.snapshot.projectSupply[0]?.projectId).toBe(
-      model.snapshot.planet!.projects[0]?.id,
-    );
   });
 });
 describe('planetgemensamt-produktval', () => {

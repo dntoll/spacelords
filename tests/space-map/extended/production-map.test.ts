@@ -363,7 +363,6 @@ it('produktions-kartvy: clears controls after selecting space outside the galaxy
   emit({ type: 'open-production' });
   emit({ type: 'select', position: new HexCoordinate(100, 100) });
   expect(model.snapshot.planet).toBeNull();
-  expect(model.snapshot.supplyChain.projectIds).toEqual([]);
   expect(root.querySelector('.production-ring')).toBeNull();
   controller.dispose();
 });
