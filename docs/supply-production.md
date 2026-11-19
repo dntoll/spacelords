@@ -1,5 +1,13 @@
 # Försörjningsregler
 
+> **Förenklad produktion (utforskning `simple_production`, 2026-11-19):**
+> den fysiska frakten, reservationerna och försörjningsvyerna nedan är
+> borttagna. `forsorjningsstatus`, `leveransfloden`, `automatiska-delorder`,
+> `projektens-forsorjningssteg` och `transportbygge-i-forsorjningssteg` är
+> **Ersatta** av nätverket i [förenklad produktion](simple-production.md).
+> Ett köat projekt förklarar i stället vad det väntar på i sin grupp.
+> `produktionsformaga` gäller fortsatt, men bara för skepp.
+
 Route och Production ersätter den tidigare Supply & production-vyn enligt
 [kartkraven](route-production.md). Försörjningsbedömning och transportregler
 behålls. Första projektet i planetens Build queue styr sammanfattad status;
@@ -7,8 +15,8 @@ Production kan visa den valda köpostens verkliga försörjningskedja.
 
 | Kravnamn             | Status                     | Produktkrav                                                                                                                                                                                                                                        |
 | -------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `forsorjningsstatus` | Fullständigt implementerat | Skilj olösta behov från ordnade leveranser och tillräcklig lokal utvinning. Reservationer, ändliga fyndigheter, saknade fabriker och personal påverkar bedömningen. Decisions och kartmarkeringar använder samma underlag.                         |
-| `leveransfloden`     | Fullständigt implementerat | Visa verkliga leveranser och beställd delproduktion som steg i projektets försörjning, med status, källa, mottagare, aktuell transportplats, hinder och ankomstuppskattning när underlag finns. Production markerar berörda planeter och farleder. |
+| `forsorjningsstatus` | Ersatt                     | Skilj olösta behov från ordnade leveranser och tillräcklig lokal utvinning. Reservationer, ändliga fyndigheter, saknade fabriker och personal påverkar bedömningen. Decisions och kartmarkeringar använder samma underlag.                         |
+| `leveransfloden`     | Ersatt                     | Visa verkliga leveranser och beställd delproduktion som steg i projektets försörjning, med status, källa, mottagare, aktuell transportplats, hinder och ankomstuppskattning när underlag finns. Production markerar berörda planeter och farleder. |
 | `produktionsformaga` | Fullständigt implementerat | Production erbjuder produkter från färdigbyggda fabriker och förklarar hinder. Möjlig tillverkning räknas inte som ordnad försörjning. Planeten har fortsatt en enda Build queue.                                                                  |
 
 ## Ersatta Supply-gränssnittskrav

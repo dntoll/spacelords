@@ -347,38 +347,40 @@ class PlanetStock {
 class TradeRoute {
   closing
 }
-class Shipment {
-  resource
+class ProductionNetwork {
+  groups
+}
+class NetworkGroup {
+  sharedStock
+}
+class Transit {
+  material
   amount
-  recipient
   path
   stage
-  committed
 }
-class ComponentOrder {
-  component
-  amount
-  source
-  location
-  delivered
-  committed
+class NetworkConsumer {
+  kind
+  needs
+  since
 }
-ComponentOrder --> ConstructionProject : supplies
-ComponentOrder --> ConstructionProject : optional production order
-note right of ComponentOrder
-  Ett köprojekts materialbehov kan kräva delproduktion
-  på en annan planet och därefter fysisk transport.
-  Delproduktionen behåller sin verkliga köplats.
-  Byggkön visar samma beroenden under huvudprojektet.
-  Production visar projektets härledda försörjningskedja:
-  leverantörer, delproduktion, omlastning och faktiska farleder.
-  Kedjan följer order och leveranser, inte möjliga leverantörer.
-  Den är inte ett nytt sparat domänobjekt.
+ProductionNetwork "1" *-- "*" NetworkGroup
+NetworkGroup "1" o-- "1..*" Planet : linked by manned routes
+ProductionNetwork "1" *-- "*" Transit
+Transit --> TradeRoute : crosses one link per round
+Transit --> NetworkConsumer : reserved for
+NetworkConsumer --> ConstructionProject : building or ship order
+NetworkConsumer --> Building : part factory, one unit per round
+note right of ProductionNetwork
+  Förenklad produktion (utforskning simple_production):
+  planeter förbundna av routes med ett tilldelat Transport ship
+  delar råvaror och delar. Varje länk tar en runda och varor går
+  kortaste vägen. Byggnader byggs parallellt, varje skeppsfabrik
+  tar en order i taget och delar tillverkas bara på behov.
+  Vid brist får det som väntat längst först, slutprodukter före delar.
+  Varor på en länk vars fraktskepp förstörs går förlorade.
 end note
-ComponentOrder --> Planet : source and recipient
-ComponentOrder --> Shipment : reserved physical delivery
-ComponentOrder --> PlanetStock : protects until consumption
-SavedGame --> ComponentOrder
+SavedGame --> ProductionNetwork : transits and deliveries
 class Decision {
   context
   skippedThisTurn
@@ -391,26 +393,13 @@ Colony "1" *-- "1" BuildQueue : all production
 TradeRoute "*" --> "2" Planet : endpoints
 TradeRoute "0..1" <-- "0..*" Fleet : assigned
 note right of TradeRoute
-  Tilldelning på avstånd startar en fysisk resa
-  till närmaste ändplanet före vanlig ruttrafik.
+  Tilldelning på avstånd startar en resa till närmaste ändplanet.
+  Där ligger fraktskeppet stilla och länkar planeterna.
   Rutt utan aktiv transport visas streckad.
   rutt-eskortfordelning: Fighters tilldelas endast med aktiv transport.
   Fighters fördelas till transportflottan med minst eskort,
   inklusive väntande förstärkningar, via fysisk anslutning.
-  Fraktkapacitet kommer fortsatt bara från Transport ship.
 end note
-note right of Shipment
-  Awaiting pickup: reserverad mängd i ett planetlager.
-  Reservation sker redan under planeringen.
-  Ej påbörjad frakt skyddar källplanetens aktiva behov.
-  In transit: lastad mängd på en flotta.
-  Omlastat material är reserverat för slutmottagaren.
-  Projektets försörjningskedja läser dessa tillstånd och path.
-end note
-Shipment --> Fleet : in transit
-Shipment --> PlanetStock : awaiting pickup
-Shipment --> ConstructionProject : requested by
-Shipment --> TradeRoute : traverses
 Player --> Decision
 SavedGame --> Decision : muted preferences
 Decision --> Colony
@@ -425,7 +414,6 @@ note right of Decision
   Väntan skapar inga order eller materialreservationer.
 end note
 SavedGame --> TradeRoute
-SavedGame --> Shipment
 
 note bottom of Galaxy
   Första iterationen använder en fast exempelvärld.
@@ -674,7 +662,7 @@ FleetUpgradeOrder "1" *-- "1..*" ShipUpgradeTarget
 ShipUpgradeTarget --> ShipUnit : preserve identity and crew
 FleetUpgradeOrder --> Shipyard : nearest reachable suitable station
 FleetUpgradeOrder --> Planet : components ordered at yard planet
-FleetUpgradeOrder --> ComponentOrder : reserved supply
+FleetUpgradeOrder --> NetworkConsumer : parts through the network
 SavedGame --> FleetUpgradeOrder
 note right of FleetUpgradeOrder
   flottorder-upgrade / automatisk-uppgraderingsforsorjning:
@@ -770,6 +758,5 @@ class BattleShot {
 }
 GameEvent "1" *-- "0..*" EventLine
 EventLine "1" *-- "0..1" ProductionContext
-ProductionContext ..> ComponentOrder : huvudbeställning och reservationer
 TacticalBattle "1" *-- "0..1" BattleShot : senaste salvan
 @enduml

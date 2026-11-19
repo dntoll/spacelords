@@ -231,8 +231,10 @@ byggnader och nätverksfrakt, samt planetkön där bara första projektet byggs
 (ersatt av `parallella-byggen` och `skeppsorder-pa-planeten`).
 `radiella-byggval`, `dubbelklick-bygger-pa-kartan`, `byggknapp-vid-titel`
 och `produktionsorder-aterkoppling` gäller fortsatt, men bara för skepp.
-Kvarvarande gammal kod för logistik, delplanering och försörjningsvyer, och
-deras krav i övriga dokument, städas bort i ett senare steg.
+Den gamla koden för frakt, delplanering och försörjningsvyer är borttagen
+(fas 3, 2026-11-19). De ersatta kraven är markerade i
+[Route och Production](route-production.md) och
+[försörjningsreglerna](supply-production.md).
 
 ## Klickbar prototyp
 

@@ -874,7 +874,8 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Forskningskö med automatiska förkunskaper låser upp alla
   skeppsfabriker och Trade logistics. Grundutvinning och Research station finns
   från start.
-- **Route, Production och försörjning:** `farledskontrast`, `route-kartvy`,
+- **Route, Production och försörjning:** delvis ersatt av förenklad
+  produktion i utforskningen. `farledskontrast`, `route-kartvy`,
   `produktions-kartvy`, `radiella-byggval`, `byggprojektets-forsorjningskedja`
   och `forsorjningsproblem-pa-kartan` är **Fullständigt implementerat**.
   Route ersätter Supply & production. Production visar byggval runt en ägd
