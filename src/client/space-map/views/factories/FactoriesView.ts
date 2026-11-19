@@ -369,8 +369,20 @@ function sitesScreen(snapshot: FactoriesSnapshot, emit: Emit): Part[] {
     );
     legend.append(item);
   }
+  const receipt = snapshot.receipt;
+  const confirmation = receipt
+    ? element(
+        'p',
+        'factory-receipt',
+        receipt.transport
+          ? `${receipt.transport} now links ${receipt.from}–${receipt.to}.`
+          : `Link ${receipt.from}–${receipt.to} is ordered. It opens when the Transport ship from ${receipt.builtAt ?? receipt.from} is ready.`,
+      )
+    : null;
+  confirmation?.setAttribute('role', 'status');
   return [
     heading('Factories', 'Planets joined by transports share their goods.'),
+    ...(confirmation ? [confirmation] : []),
     ...snapshot.groups.map((group) => groupSection(group, emit)),
     legend,
   ];
@@ -492,6 +504,15 @@ function buildScreen(
       emit,
     ),
     stock,
+    ...(build.research
+      ? [
+          element(
+            'p',
+            'factory-notice',
+            `Research ${build.research} to prepare this site.`,
+          ),
+        ]
+      : []),
     ...(sections.length
       ? sections
       : [element('p', 'factory-muted', 'Nothing can be built here yet.')]),

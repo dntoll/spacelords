@@ -169,3 +169,102 @@ describe('Factories', () => {
     expect(model.snapshot.planet?.id).toBe('sol-0');
   });
 });
+
+describe('Factories feedback and engines', () => {
+  it('Connect-skärmen: confirms a link that waits for a new transport and shows it as pending', () => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    state.fleets = state.fleets.filter((fleet) => fleet.id !== 'freighters');
+    state.colonies[0]![1].buildings.push({
+      id: 'yard',
+      type: 'Transport ship factory',
+      slotIndex: 2,
+      demolition: false,
+    });
+    const { send, act, factories, group } = setup(state);
+    send({ type: 'open-factories' });
+    act({ kind: 'open-connect', group: 'Tellus' });
+    expect(factories().connect!.transports[0]!.choice.kind).toBe('build');
+    act({ kind: 'connect', target: 'Vesta' });
+    expect(factories().screen).toBe('sites');
+    expect(factories().receipt).toEqual({
+      from: 'Tellus',
+      to: 'Vesta',
+      transport: null,
+      builtAt: 'Tellus',
+    });
+    expect(group('Tellus').links).toContainEqual({
+      a: 'sol-0',
+      b: 'sol-1',
+      pending: true,
+    });
+  });
+
+  it('basta-tillgangliga-del: a ship factory with only Ion engines in its group is not marked as missing engines', () => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    const home = state.colonies[0]![1];
+    home.buildings = [
+      { id: 'mine', type: 'Iron mine', slotIndex: 0, demolition: false },
+      {
+        id: 'ion',
+        type: 'Ion pulse engine factory',
+        slotIndex: 1,
+        demolition: false,
+      },
+      {
+        id: 'yard',
+        type: 'Transport ship factory',
+        slotIndex: 2,
+        demolition: false,
+      },
+    ];
+    home.stock['Rocket engine'] = 0;
+    home.projects.push({
+      id: 'project-900',
+      type: 'Transport ship',
+      slotIndex: null,
+      factoryId: 'yard',
+      destinationFleetId: null,
+    });
+    const { send, group } = setup({
+      ...state,
+      researched: [...state.researched, 'Ion pulse engine factory'],
+    });
+    send({ type: 'open-factories' });
+    const yard = group('Tellus').planets[0]!.sites[2]!.factory!;
+    expect(yard.missing).toEqual([]);
+    expect(yard.status).not.toBe('missing');
+  });
+});
+
+it('Skärm 2 / ovriga-byggnader-pa-byggplatser: a site that needs a Dome offers the matching Dome and queues it', async () => {
+  const { domeProductionState } =
+    await import('../../fixtures/production-dome.js');
+  const { send, act, factories, group } = setup({
+    ...domeProductionState(),
+    pirates: [],
+  });
+  send({ type: 'open-factories' });
+  const site = group('Tellus').planets[0]!.sites[0]!;
+  expect(site.kind).toBe('dome');
+  act({ kind: 'open-site', planet: 'sol-0', site: 0 });
+  expect(factories().build!.options.map((option) => option.type)).toContain(
+    'Desert dome',
+  );
+  act({ kind: 'build', type: 'Desert dome' });
+  expect(group('Tellus').planets[0]!.sites[0]!.factory).toMatchObject({
+    type: 'Desert dome',
+  });
+});
+
+it('Skärm 2: a Dome site without the Dome research names the research to do', async () => {
+  const { domeProductionState } =
+    await import('../../fixtures/production-dome.js');
+  const { send, act, factories, root } = setup({
+    ...domeProductionState(false),
+    pirates: [],
+  });
+  send({ type: 'open-factories' });
+  act({ kind: 'open-site', planet: 'sol-0', site: 0 });
+  expect(factories().build!.research).toBe('Desert dome');
+  expect(root.textContent).toContain('Research Desert dome');
+});
