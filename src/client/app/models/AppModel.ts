@@ -157,6 +157,8 @@ export interface AppReadModel {
   readonly salvageQueue: Game['salvageQueue'];
   readonly attackQueue: Game['attackQueue'];
   readonly attentionScreens: readonly DecisionScreen[];
+  /** ny-fabrik-med-guldstjarna: researched factories nobody has built yet. */
+  readonly newFactories: readonly BuildType[];
   readonly tradeRoutes: readonly TradeRouteSnapshot[];
   readonly productionMap: ProductionMapSnapshot;
   readonly productionGuidance: ProductionGuidance | null;
@@ -470,6 +472,7 @@ export class AppModel {
             : []),
         ]),
       ]),
+      newFactories: this.factoriesCase.newFactories,
       tradeRoutes: this.#game.tradeRoutes,
       productionMap: this.#productionMapSnapshot(),
       productionGuidance:

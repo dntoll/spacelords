@@ -162,6 +162,9 @@ export class FactoriesFacade {
       case 'cancel-site':
         this.#cancelSite(context);
         return null;
+      case 'upgrade':
+        this.#upgrade(context);
+        return null;
       case 'open-connect':
         this.#openConnect(context, action.group);
         return null;
@@ -306,7 +309,9 @@ export class FactoriesFacade {
     if (!site) return null;
     if (site.building && factoryShips(site.building.type).length)
       return { kind: 'open-production', planetId };
-    if (site.building || site.locked) return null;
+    const { upgrade, upgrading } = this.#upgradeState(site);
+    if (site.building && !upgrade && !upgrading) return null;
+    if (site.locked) return null;
     this.#site = { planet: planetId, index };
     this.#screen = 'build';
     return null;
@@ -321,6 +326,18 @@ export class FactoriesFacade {
         ? this.host.game.freeShipyardHexes(planet.id)[0]
         : undefined;
     this.host.game.scheduleBuild(planet, type, site.index, station);
+    this.#site = null;
+    this.#screen = 'sites';
+  }
+
+  /** uppgradera-delfabrik-i-factories */
+  #upgrade(context: Context): void {
+    const site = this.#site;
+    if (!site) return;
+    const building = this.#planet(context, site.planet).sites[site.index]
+      ?.building;
+    if (!building) return;
+    this.host.game.scheduleUpgrade(this.#gamePlanet(site.planet), building.id);
     this.#site = null;
     this.#screen = 'sites';
   }
@@ -622,6 +639,8 @@ export class FactoriesFacade {
           roundsTotal: done + remaining,
           moreOrders: 0,
           makesShips: false,
+          upgrade: null,
+          upgrading: null,
         }),
       });
     }
@@ -699,8 +718,42 @@ export class FactoriesFacade {
         roundsTotal,
         moreOrders,
         makesShips: ships.length > 0,
+        ...this.#upgradeState(site),
       }),
     });
+  }
+
+  /** uppgradera-delfabrik-i-factories: an offered or a queued upgrade. */
+  #upgradeState(site: PlanetGameSnapshot['sites'][number]): {
+    readonly upgrade: BuildType | null;
+    readonly upgrading: BuildType | null;
+  } {
+    const upgrading =
+      site.project?.upgradeBuildingId === site.building?.id && site.project
+        ? (site.project.type as BuildType)
+        : null;
+    const offer = site.building?.upgrade;
+    return {
+      upgrade: !upgrading && offer && !offer.blockedReason ? offer.type : null,
+      upgrading,
+    };
+  }
+
+  /** ny-fabrik-med-guldstjarna: researched factories nobody has or builds. */
+  get newFactories(): readonly BuildType[] {
+    const context = this.#context();
+    const present = new Set(
+      context.planets.flatMap((planet) =>
+        planet.sites.flatMap((site) => [
+          ...(site.building ? [site.building.type] : []),
+          ...(site.project ? [site.project.type as BuildType] : []),
+        ]),
+      ),
+    );
+    const researched = new Set<string>(this.host.game.research.completed);
+    return Object.freeze(
+      BUILD_TYPES.filter((type) => researched.has(type) && !present.has(type)),
+    );
   }
 
   #groupSnapshot(
@@ -811,9 +864,11 @@ export class FactoriesFacade {
     const gamePlanet = this.#gamePlanet(planetId);
     const options: BuildOptionSnapshot[] = [];
     const queued = planet.sites[index]?.project;
+    const built = planet.sites[index]?.building ?? null;
+    const fresh = new Set(this.newFactories);
     const needs: ReadonlyMap<BuildType, readonly FactoryRecommendation[]> =
-      queued ? new Map() : this.#needs(context, group);
-    for (const type of queued ? [] : BUILD_TYPES) {
+      queued || built ? new Map() : this.#needs(context, group);
+    for (const type of queued || built ? [] : BUILD_TYPES) {
       const reason = this.host.game.canBuild(gamePlanet, type, index);
       if (reason && HIDDEN_REASONS.includes(reason)) continue;
       const definition = BUILDINGS[type];
@@ -856,6 +911,7 @@ export class FactoriesFacade {
               : (needs.get(type) ?? []),
           ),
           here,
+          isNew: fresh.has(type),
           buildRounds: buildRounds(type),
           missingDeposit,
           inputRounds,
@@ -891,8 +947,10 @@ export class FactoriesFacade {
         0,
       ),
       options: Object.freeze(options),
-      research: queued ? null : this.#domeResearch(gamePlanet, planet, index),
-      project: queued ? (queued.type as BuildType) : null,
+      research:
+        queued || built ? null : this.#domeResearch(gamePlanet, planet, index),
+      project: queued && !built ? (queued.type as BuildType) : null,
+      upgrade: built ? this.#upgradeScreen(gamePlanet, planet, index) : null,
     });
   }
 
@@ -1008,6 +1066,26 @@ export class FactoriesFacade {
         (group.includes(route.a) || group.includes(route.b)),
     );
     return unmanned || context.network.groups.length > 1;
+  }
+
+  #upgradeScreen(
+    gamePlanet: Planet,
+    planet: PlanetGameSnapshot,
+    index: number,
+  ): BuildScreenSnapshot['upgrade'] {
+    const site = planet.sites[index]!;
+    const building = site.building!;
+    const { upgrade, upgrading } = this.#upgradeState(site);
+    const to = upgrading ?? upgrade ?? building.upgrade?.type;
+    if (!to) return null;
+    return Object.freeze({
+      from: building.type,
+      to,
+      queued: upgrading !== null,
+      blockedReason: upgrading
+        ? null
+        : this.host.game.canUpgrade(gamePlanet, building.id),
+    });
   }
 
   /** ovriga-byggnader-pa-byggplatser: name the Dome research a site waits for. */

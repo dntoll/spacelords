@@ -743,3 +743,82 @@ describe('byggval-bara-framforskat', () => {
     );
   });
 });
+
+describe('uppgradera-delfabrik-i-factories', () => {
+  it('upgrades a Rocket engine factory to an Ion pulse engine factory from its site', () => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    const { root, send, act, factories, group, turn } = setup({
+      ...state,
+      researched: [...state.researched, 'Ion pulse engine factory'],
+    });
+    send({ type: 'open-factories' });
+    const site = () => group('Tellus').planets[0]!.sites[1]!.factory!;
+    expect(site()).toMatchObject({
+      type: 'Rocket engine factory',
+      upgrade: 'Ion pulse engine factory',
+      upgrading: null,
+    });
+    act({ kind: 'open-site', planet: 'sol-0', site: 1 });
+    expect(factories().screen).toBe('build');
+    expect(factories().build!.upgrade).toEqual({
+      from: 'Rocket engine factory',
+      to: 'Ion pulse engine factory',
+      queued: false,
+      blockedReason: null,
+    });
+    expect(root.textContent).toContain('Upgrade to Ion pulse engine factory');
+    act({ kind: 'upgrade' });
+    expect(factories().screen).toBe('sites');
+    expect(site()).toMatchObject({
+      type: 'Rocket engine factory',
+      upgrade: null,
+      upgrading: 'Ion pulse engine factory',
+    });
+    act({ kind: 'open-site', planet: 'sol-0', site: 1 });
+    expect(factories().build!.upgrade!.queued).toBe(true);
+    act({ kind: 'cancel-site' });
+    expect(site().upgrading).toBeNull();
+    act({ kind: 'open-site', planet: 'sol-0', site: 1 });
+    act({ kind: 'upgrade' });
+    for (
+      let round = 0;
+      round < 6 && site().type !== 'Ion pulse engine factory';
+      round++
+    ) {
+      turn();
+      send({ type: 'open-factories' });
+    }
+    expect(site()).toMatchObject({
+      type: 'Ion pulse engine factory',
+      upgrade: null,
+      upgrading: null,
+    });
+  });
+});
+
+describe('ny-fabrik-med-guldstjarna', () => {
+  it('marks Factories and the build choice with a gold star until a new factory is built', () => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    const { root, send, act, model, factories } = setup({
+      ...state,
+      researched: [...state.researched, 'Weapons module factory'],
+    });
+    send({ type: 'open-map' });
+    expect(model.snapshot.newFactories).toContain('Weapons module factory');
+    // Exploration ship factory is researched but never built here either.
+    expect(model.snapshot.newFactories).toContain('Exploration ship factory');
+    expect(model.snapshot.newFactories).not.toContain('Iron mine');
+    expect(
+      root.querySelector('[data-screen="factories"] .nav-new'),
+    ).not.toBeNull();
+    send({ type: 'open-factories' });
+    act({ kind: 'open-site', planet: 'sol-0', site: 2 });
+    const option = factories().build!.options.find(
+      (item) => item.type === 'Weapons module factory',
+    )!;
+    expect(option.isNew).toBe(true);
+    expect(root.querySelector('.factory-tag.new')?.textContent).toContain('★');
+    act({ kind: 'build', type: 'Weapons module factory' });
+    expect(model.snapshot.newFactories).not.toContain('Weapons module factory');
+  });
+});

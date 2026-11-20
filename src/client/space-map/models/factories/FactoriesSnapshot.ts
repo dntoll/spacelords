@@ -37,6 +37,10 @@ export interface FactorySiteSnapshot {
     /** Ship orders waiting behind the one in production. */
     readonly moreOrders: number;
     readonly makesShips: boolean;
+    /** uppgradera-delfabrik-i-factories: a researched successor to queue. */
+    readonly upgrade: BuildType | null;
+    /** uppgradera-delfabrik-i-factories: the queued successor. */
+    readonly upgrading: BuildType | null;
   } | null;
 }
 
@@ -108,6 +112,8 @@ export interface BuildOptionSnapshot {
   readonly presence: FactoryPresence;
   readonly recommendations: readonly FactoryRecommendation[];
   readonly here: number;
+  /** ny-fabrik-med-guldstjarna: researched but nowhere built or queued. */
+  readonly isNew: boolean;
   readonly buildRounds: number;
   readonly missingDeposit: Resource | null;
   /** Rounds to the nearest supply of every input; null when one is missing. */
@@ -134,6 +140,13 @@ export interface BuildScreenSnapshot {
   readonly research: BuildType | null;
   /** parallella-byggen: the building queued here, which can be cancelled. */
   readonly project: BuildType | null;
+  /** uppgradera-delfabrik-i-factories: the built factory's successor. */
+  readonly upgrade: {
+    readonly from: BuildType;
+    readonly to: BuildType;
+    readonly queued: boolean;
+    readonly blockedReason: string | null;
+  } | null;
 }
 
 export type TransportChoice =
@@ -251,6 +264,7 @@ export type FactoriesAction =
     }
   | { readonly kind: 'build'; readonly type: BuildType }
   | { readonly kind: 'cancel-site' }
+  | { readonly kind: 'upgrade' }
   | { readonly kind: 'open-connect'; readonly group: string }
   | { readonly kind: 'open-links'; readonly group?: string }
   | { readonly kind: 'pick-planet'; readonly planet: string }

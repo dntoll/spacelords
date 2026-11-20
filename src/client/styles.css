@@ -5497,3 +5497,15 @@ body:has(.discovery-controls) .selection-panel {
   text-align: left;
   white-space: normal;
 }
+
+/* ny-fabrik-med-guldstjarna: gold leads the player to a new factory. */
+.nav-new {
+  color: #ffd166;
+  margin-left: 4px;
+  font-weight: 800;
+}
+.factory-tag.new {
+  color: #2b2006;
+  background: #ffd166;
+  font-weight: 700;
+}
