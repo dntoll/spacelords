@@ -43,10 +43,8 @@ export function renderPlanet(
 ): HTMLElement {
   const page = element('section', 'planet-page');
   const header = element('div', 'screen-header');
-  header.append(
-    element('h1', '', planet.name),
-    button('Back to map', () => emit({ type: 'open-map' }), 'back-button'),
-  );
+  // inga-overflodiga-navigeringsknappar: the main navigation leads back.
+  header.append(element('h1', '', planet.name));
   page.append(header);
   const tab = menus.planetTab ?? 'overview';
   const tabs = element('nav', 'planet-tabs');

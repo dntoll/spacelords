@@ -37,7 +37,7 @@ it('beslut-vantar-pa-paborjad-atgard: Production explains the wait for Dome rese
   expect(
     root.querySelector('[data-screen="production"] .nav-attention'),
   ).toBeNull();
-  click('Open research');
+  click('Research');
   click('Inspect Desert dome');
   click('Research Desert dome');
   click('Production');

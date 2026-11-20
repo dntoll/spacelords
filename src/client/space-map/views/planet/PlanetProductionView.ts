@@ -219,10 +219,6 @@ export function renderProduction(
       }),
     );
   }
-  if (!products.length && menus.productionGuidance?.kind === 'research')
-    order.append(
-      button('Open research', () => emit({ type: 'open-research' })),
-    );
   if (products.length && !product)
     order.append(
       element('p', 'muted-note', 'Select a product for full details.'),

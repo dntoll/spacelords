@@ -178,10 +178,6 @@ export function renderProductionMapPanel(
           emit({ type: 'map-production-option', option: guidance.dome }),
         ),
       );
-    if (guidance.kind === 'research')
-      panel.append(
-        button('Open research', () => emit({ type: 'open-research' })),
-      );
   }
   const option = map.selectedOption;
   if (option) {
@@ -369,11 +365,6 @@ export function renderRoutePlanet(
     (p) => p.planetId === planet.id && p.screen === 'route',
   ))
     panel.append(element('p', 'blocked-reason', problem.explanation));
-  panel.append(
-    button('Open in Production', () =>
-      emit({ type: 'open-production', planetId: planet.id }),
-    ),
-  );
   const create = button('Create route', () =>
     emit({ type: 'begin-map-route', id: planet.id }),
   );

@@ -1904,11 +1904,6 @@ p {
 .research-heading h1 {
   font-size: 1.1rem;
 }
-.research-page > .screen-header .back-button {
-  min-height: 32px;
-  padding: 4px 8px;
-  font-size: 0.75rem;
-}
 .research-page .decision-guidance {
   padding: 5px 8px;
   font-size: 0.7rem;

@@ -62,7 +62,10 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
   await page.screenshot({
     path: testInfo.outputPath('research-building-images.png'),
   });
-  await page.getByRole('button', { name: 'Back to map', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('button', { name: 'Star map', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page
     .getByRole('button', { name: 'Building sites', exact: true })
@@ -101,7 +104,10 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
     .getByRole('button', { name: 'Building sites', exact: true })
     .click();
   await expect(site.getByRole('img')).toHaveAttribute('src', stationSource);
-  await page.getByRole('button', { name: 'Back to map', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('button', { name: 'Star map', exact: true })
+    .click();
   // byggtid-per-byggnad: a Research station takes three rounds.
   for (let round = 0; round < 3; round += 1) await endTurn(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();

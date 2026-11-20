@@ -21,16 +21,17 @@ function open(model: AppModel) {
 }
 
 describe('forskningsvy-utan-station', () => {
-  it('replaces the tree with a link to Factories until a Research station is built', () => {
+  it('replaces the tree with an explanation pointing to Factories until a Research station is built', () => {
     const model = new AppModel();
     const { root, controller } = open(model);
     expect(model.snapshot.screen).toBe('research');
     expect(root.querySelector('.research-tree-area')).toBeNull();
     expect(root.querySelector('.research-queue')).toBeNull();
-    const build = [...root.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Build a Research station',
+    expect(root.textContent).toContain(
+      'Build one on a free site in Factories.',
     );
-    build!.click();
+    // inga-overflodiga-navigeringsknappar: Factories is in the main navigation.
+    root.querySelector<HTMLButtonElement>('[data-screen="factories"]')!.click();
     expect(model.snapshot.screen).toBe('factories');
     controller.dispose();
   });
@@ -38,7 +39,7 @@ describe('forskningsvy-utan-station', () => {
   it('shows the tree once a Research station is built', () => {
     const { root, controller } = open(researchStationModel());
     expect(root.querySelector('.research-tree-area')).not.toBeNull();
-    expect(root.textContent).not.toContain('Build a Research station');
+    expect(root.textContent).not.toContain('Research needs a Research station');
     controller.dispose();
   });
 });

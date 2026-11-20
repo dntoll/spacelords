@@ -102,7 +102,7 @@ describe('forskningsoversikt', () => {
     expect(
       root.querySelector('[data-technology="Rocket engine factory"]'),
     ).toBeNull();
-    click('Back to map');
+    click('Star map');
     expect(root.querySelector('[data-testid="map-container"]')).not.toBeNull();
   });
 });
@@ -123,7 +123,7 @@ describe('vynavigation', () => {
     const controller = start();
     click('Research');
     expect(disposed).toBe(1);
-    click('Back to map');
+    click('Star map');
     controller.dispose();
     expect(disposed).toBe(2);
     expect(root.childElementCount).toBe(0);

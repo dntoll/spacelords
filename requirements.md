@@ -10,6 +10,13 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Navigering:** `inga-overflodiga-navigeringsknappar` (2026-11-20) är
+  **Fullständigt implementerat**. Skärmar har inga knappar tillbaka till kartan
+  eller till skärmar som huvudmenyn redan når: `Back to map` på Research och
+  planetsidan, `Open research` i Production, `Open in Production` i den gamla
+  ruttpanelen och `Build a Research station` på Research är borttagna. Det
+  ersätter knappen i `forskningsvy-utan-station`; förklaringen finns kvar.
+  Bakåtknappar inom en skärm, som `Back` i Factories, behålls.
 - **Startskärm och helskärm:** `startskarm-utan-scroll`, `separata-testlagen`
   och `helskarm-fran-sparade-spel` är **Fullständigt implementerade**. Tre
   sparplatser delar skärmens tillgängliga yta och testlägena finns under en
@@ -867,7 +874,9 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   selection visar redan i den kompakta listan befintliga byggnader per typ på
   vald planet och totalt på spelarens planeter. Köade byggprojekt ingår inte.
 - **Forskning:** `forsknings-tradnavigation` är **Fullständigt implementerat**:
-  ett zoom- och panorerbart forskningsträd med beroendepilar och bibehållen kamera.
+  ett zoom- och panorerbart forskningsträd med beroendelinjer och bibehållen kamera.
+  `forskningstrad-utan-pilspetsar` (2026-11-20) är **Fullständigt
+  implementerat**: linjerna saknar pilspetsar.
   `forskning-kraver-station` är **Fullständigt implementerat**: en färdig
   Research station krävs för nya forskningsbeställningar. Befintliga köer väntar
   utan drift; Decisions föreslår forskning först när en station finns. Detta

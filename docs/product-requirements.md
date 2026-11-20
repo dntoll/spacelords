@@ -589,7 +589,8 @@ stilla eller väntar på rivning; köade projekt räknas först när de är fär
 | `kompakta-bygghandlingar`   | Fullständigt implementerat | Byggplatser och byggval har kompakta, innehållsbreda knappar med minst 44 px klickhöjd. Byggande är primär handling, rivning och avbrytning sekundära. Status och fabrikens tillhörande kö framgår tydligt.                                                                                                                                     |
 
 `forsknings-tradnavigation` — **Fullständigt implementerat**: Research är ett
-forskningsträd med pilar från förkunskap till beroende teknik. Spelaren kan
+forskningsträd med linjer utan pilspetsar (`forskningstrad-utan-pilspetsar`)
+från förkunskap till beroende teknik. Spelaren kan
 panorera, zooma och få en översikt med mus, touch eller tangentbord. Kameran
 behålls vid köändringar och navigering mellan vyer. Byggnadsbilder och tydliga
 statusar visar valbar, köad, pågående och färdig forskning. Senare forskning
@@ -1789,6 +1790,9 @@ fram till målet, granater kastas i en synlig båge och interiörernas grundljus
   delar den tillgängliga skärmen utan att startsidan behöver scrollas.
 - `separata-testlagen` — **Fullständigt implementerat**: Test battle och Test
   boarding ligger under en egen rubrik med val för bordning.
+- `inga-overflodiga-navigeringsknappar` — **Fullständigt implementerat**
+  (2026-11-20): skärmarna har inga extra knappar till kartan eller till
+  skärmar i huvudmenyn; spelaren navigerar med huvudmenyn.
 - `helskarm-i-hela-spelet` — **Delvis ersatt** av `helskarm-fran-sparade-spel`.
 - `helskarm-fran-sparade-spel` — **Fullständigt implementerat** (2026-11-20):
   knappen för helskärm finns bara på `Saved games`. Spelet fortsätter i
