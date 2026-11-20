@@ -936,6 +936,13 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och
   gäller fortsatt, liksom fysisk frakt, automatiska delorder och sparade spel.
+  `rekommendation-i-menyn` är **Fullständigt implementerat**: Factories
+  markeras i menyn när en rekommenderad fabrik kan byggas.
+  `forskning-utan-rubrikrad`, `forskningslov-som-symbol`,
+  `forskningsikon-i-detaljer` och `forskningstid` är **Fullständigt
+  implementerade** inom utforskningen: Research saknar rubrikrad, lövnoder
+  visas som symboler, detaljerna har teknikens ikon och en teknik tar 1–3
+  rundor.
   `forsta-station-pa-vag` är **Fullständigt implementerat**: Research visar
   att den första stationen byggs och när forskningen kan börja.
   `flottkategorier` och `byggorsak-i-kon` är **Fullständigt implementerade**

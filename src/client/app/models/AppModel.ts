@@ -461,7 +461,14 @@ export class AppModel {
       salvageQueue: this.#game.salvageQueue,
       attackQueue: this.#game.attackQueue,
       attentionScreens: Object.freeze([
-        ...new Set(decisions.filter(needsAttention).map(decisionScreen)),
+        ...new Set([
+          ...decisions.filter(needsAttention).map(decisionScreen),
+          // rekommendation-i-menyn: a recommended factory marks Factories.
+          ...(this.#game.phase === 'planning' &&
+          this.factoriesCase.hasRecommendation
+            ? (['factories'] as const)
+            : []),
+        ]),
       ]),
       tradeRoutes: this.#game.tradeRoutes,
       productionMap: this.#productionMapSnapshot(),

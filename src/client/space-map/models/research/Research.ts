@@ -62,11 +62,26 @@ export const PREREQUISITES: Readonly<
   'Toxic terraforming factory': ['Toxic dome'],
 });
 
+function depth(technology: Technology): number {
+  const prerequisites = PREREQUISITES[technology];
+  return prerequisites.length ? 1 + Math.max(...prerequisites.map(depth)) : 0;
+}
+
+/**
+ * forskningstid: a technology takes 1 to 3 rounds. Starting technologies take
+ * one round, the next step two and anything deeper three.
+ */
+export function researchRounds(technology: Technology): number {
+  return Math.min(3, 1 + depth(technology));
+}
+
 export class ResearchPlan {
   constructor(
     readonly completed = new Set<Technology>(),
     public queue: Technology[] = [],
     readonly recovered = new Set<Technology>(),
+    /** forskningstid: rounds already spent on unfinished technologies. */
+    readonly progress = new Map<Technology, number>(),
   ) {}
 
   prerequisites(technology: Technology): readonly Technology[] {
@@ -87,6 +102,7 @@ export class ResearchPlan {
       if (this.prerequisites(item).some((p) => removed.has(p)))
         removed.add(item);
     this.queue = this.queue.filter((item) => !removed.has(item));
+    for (const item of removed) this.progress.delete(item);
   }
 
   move(technology: Technology, index: number): void {
@@ -110,9 +126,17 @@ export class ResearchPlan {
     this.queue = next;
   }
 
+  /** forskningstid: one round of work on the first queued technology. */
   advance(stations: number): Technology | null {
     if (stations < 1 || !this.queue.length) return null;
-    const item = this.queue.shift()!;
+    const item = this.queue[0]!;
+    const done = (this.progress.get(item) ?? 0) + 1;
+    if (done < researchRounds(item)) {
+      this.progress.set(item, done);
+      return null;
+    }
+    this.queue.shift();
+    this.progress.delete(item);
     this.completed.add(item);
     return item;
   }

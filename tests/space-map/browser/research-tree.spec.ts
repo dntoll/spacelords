@@ -267,30 +267,20 @@ for (const size of [
       exact: true,
     });
     const pageBounds = (await page.locator('.research-page').boundingBox())!;
-    const header = (await page
-      .locator('.research-page .screen-header')
-      .boundingBox())!;
+    // forskning-utan-rubrikrad: no heading row takes height from the tree.
+    await expect(page.locator('.research-page .screen-header')).toHaveCount(0);
     const bounds = (await tree.boundingBox())!;
     const details = (await page.locator('.research-details').boundingBox())!;
     expect(bounds.width).toBeGreaterThanOrEqual(
       pageBounds.width - (size.width > 640 ? details.width + 8 : 0) - 26,
     );
     expect(bounds.height).toBeGreaterThanOrEqual(
-      pageBounds.height -
-        header.height -
-        (size.width <= 640 ? details.height + 8 : 0) -
-        50,
+      pageBounds.height - (size.width <= 640 ? details.height + 8 : 0) - 50,
     );
-    const count = page.locator('.research-introduction summary');
-    await expect(count).toHaveAttribute('aria-label', 'Research stations · 0');
-    if (size.width <= 393) {
-      const heading = (await page
-        .getByRole('heading', { name: 'Research', exact: true })
-        .boundingBox())!;
-      const stations = (await count.boundingBox())!;
-      expect(stations.x).toBeGreaterThan(heading.x + heading.width);
-      expect(Math.abs(stations.y - heading.y)).toBeLessThan(16);
-    }
+    await expect(page.locator('.research-queue summary')).toHaveAttribute(
+      'aria-label',
+      /Research stations · \d+/,
+    );
     await expect(
       page.locator('.research-tree-tools, .research-sidebar'),
     ).toHaveCount(0);

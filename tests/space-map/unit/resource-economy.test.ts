@@ -81,13 +81,20 @@ describe('forskningsko / forskningsberoenden / transport-ship-efter-rocket-engin
       'Transport ship factory',
       'Trade logistics',
     ]);
+    // forskningstid: 1, 2 and 3 rounds by depth in the tree.
     turn(game);
     expect(game.research.completed).toEqual(['Rocket engine factory']);
+    turn(game);
+    expect(game.research.completed).toEqual(['Rocket engine factory']);
+    expect(game.research.progress).toEqual({ 'Transport ship factory': 1 });
     turn(game);
     expect(game.research.completed).toEqual([
       'Rocket engine factory',
       'Transport ship factory',
     ]);
+    turn(game);
+    turn(game);
+    expect(game.research.queue).toEqual(['Trade logistics']);
     turn(game);
     expect(game.research.completed).toEqual([
       'Rocket engine factory',
@@ -125,7 +132,8 @@ describe('automatisk-resursforsorjning / transportfabrik / sparat-spel', () => {
     game.selectResearch('Colony ship factory');
     game.selectResearch('Fighter factory');
     game.selectResearch('Desert dome');
-    for (let year = 0; year < 9; year++) turn(game);
+    // forskningstid: these take 17 rounds of research in all.
+    for (let year = 0; year < 18; year++) turn(game);
     for (const factory of [
       'Transport ship factory',
       'Exploration ship factory',

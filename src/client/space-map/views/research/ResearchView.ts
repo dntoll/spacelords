@@ -2,7 +2,7 @@ import { type ResearchSnapshot, type Technology } from '../../models/Game.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { buildingImage } from '../BuildingImage.js';
 import { renderResearchTree } from './ResearchTreeView.js';
-import { renderResearchSelection } from './ResearchDetailsView.js';
+import { renderResearchSelection, roundsText } from './ResearchDetailsView.js';
 import { element, queueButton } from '../../../common/dom.js';
 import { bindQueueOrder, decorateQueueRow } from '../QueueView.js';
 
@@ -13,37 +13,19 @@ export function renderResearch(
   inspected: Technology | null = null,
 ): HTMLElement {
   const page = element('section', 'research-page');
-  const header = element('div', 'screen-header');
+  // forskning-utan-rubrikrad: the main navigation names the screen, so the
+  // heading is only for assistive technology and the tree gets the height.
+  const header = element('h1', 'visually-hidden', 'Research');
   const panel = element('section', 'research-panel');
-  const introduction = element('details', 'research-introduction');
-  const summary = element('summary');
-  summary.setAttribute(
-    'aria-label',
-    `Research stations · ${research.stations}`,
-  );
-  summary.append(
-    buildingImage('Research station'),
-    element('span', '', `Stations · ${research.stations}`),
-  );
+  const stations = `${research.stations} ${research.stations === 1 ? 'station' : 'stations'}`;
   const details = element('div', 'research-introduction-details');
   details.append(
-    element('h2', '', 'Research station'),
-    element(
-      'p',
-      '',
-      'Research station needs no technology of its own. Unbreathable planets require a researched Dome at the site first. Each operating station contributes one research point per round. Each technology costs one point.',
-    ),
     element(
       'p',
       'muted-note',
-      `Operating research stations: ${research.stations}`,
+      `Research stations operating: ${research.stations}. A station needs no technology of its own; unbreathable planets need a researched Dome at the site first. Each technology takes 1 to 3 rounds while at least one station operates.`,
     ),
   );
-  introduction.append(summary, details);
-  const heading = element('div', 'research-heading');
-  heading.append(element('h1', '', 'Research'), introduction);
-  // inga-overflodiga-navigeringsknappar: the main navigation leads back.
-  header.append(heading);
   // forskningsvy-utan-station: no tree until a station exists to research with.
   if (!research.builtStations) {
     const missing = element('section', 'research-needs-station');
@@ -66,9 +48,17 @@ export function renderResearch(
       emit({ type: 'inspect-research', technology: null });
     }
   });
-  queue.append(
-    element('summary', '', `Research queue · ${research.queue.length}`),
+  const summary = element('summary', 'research-queue-summary');
+  summary.append(
+    element('span', '', `Research queue · ${research.queue.length}`),
+    buildingImage('Research station'),
+    element('span', '', stations),
   );
+  summary.setAttribute(
+    'aria-label',
+    `Research queue · ${research.queue.length} · Research stations · ${research.stations}`,
+  );
+  queue.append(summary);
   const orders = element('div', 'research-queue-content');
   if (!research.queue.length)
     orders.append(element('p', 'muted-note', 'No research queued.'));
@@ -78,7 +68,11 @@ export function renderResearch(
       element(
         'p',
         '',
-        `${index + 1}. ${technology} · ${index === 0 ? 'next' : 'queued'}`,
+        `${index + 1}. ${technology} · ${
+          index === 0
+            ? `${research.progress?.[technology] ?? 0}/${roundsText(technology)}`
+            : roundsText(technology)
+        }`,
       ),
     );
     const actions = element('div', 'queue-actions');
@@ -102,7 +96,7 @@ export function renderResearch(
       }),
     locked,
   );
-  queue.append(orders);
+  queue.append(orders, details);
   const tree = renderResearchTree(research, emit, inspected, locked);
   if (research.queueBlockedReason)
     tree.append(

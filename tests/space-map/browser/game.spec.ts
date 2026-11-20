@@ -373,7 +373,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     .locator('[data-technology="Colony ship factory"] img')
     .getAttribute('src');
   await expect(
-    page.getByText('Researching · 0/1 points', { exact: true }),
+    page.getByText('Researching · 0/2 rounds', { exact: true }),
   ).toBeVisible();
   await nextYear();
   await nextYear();

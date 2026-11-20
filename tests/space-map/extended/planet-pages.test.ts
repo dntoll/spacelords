@@ -290,7 +290,7 @@ describe('byggkategorier / symbolbaserade-kataloger', () => {
     const details = renderBuildSelection(model.snapshot, emit).querySelector(
       '.catalog-details',
     )!;
-    expect(details.textContent).toContain('Contributes one research point');
+    expect(details.textContent).toContain('Lets the queued research advance');
     expect(details.textContent).toContain('600 workers');
     expect(details.textContent).toContain('Already built');
     expect(

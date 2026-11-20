@@ -255,7 +255,8 @@ describe('kompakt-spelgranssnitt', () => {
     expect(rocket.querySelector('.research-node-details')).toBeNull();
     expect(details.textContent).toContain('Rocket engine factory');
     expect(details.textContent).toContain('Produces Rocket engines');
-    expect(details.textContent).toContain('1 research point');
+    // forskningstid: Rocket engine factory has no prerequisites.
+    expect(details.textContent).toContain('Research time: 1 round');
     expect(details.textContent).toContain('Requires:');
     expect(page.querySelectorAll('.research-node-details')).toHaveLength(1);
     details

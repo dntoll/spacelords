@@ -73,7 +73,7 @@ test('kompakt-forskningstrad / forskningsdetaljer-vid-val: compact tree tiles sh
     exact: true,
   });
   await expect(details).toContainText('Produces Rocket engines');
-  await expect(details).toContainText('1 research point');
+  await expect(details).toContainText('Research time: 1 round');
   await expect(details).toContainText('Requires: No prerequisites');
   await page.screenshot({
     path: testInfo.outputPath('research-selection-details.png'),

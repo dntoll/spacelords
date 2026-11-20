@@ -5447,3 +5447,53 @@ body:has(.discovery-controls) .selection-panel {
   color: #071a26;
   background: var(--fleet-category);
 }
+
+/* forskningslov-som-symbol: leaves are square tiles with only the symbol. */
+.research-tree-stage .research-node.leaf {
+  width: 36px;
+}
+.research-tree-stage .research-node.leaf .research-node-select {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  padding: 3px;
+}
+.research-tree-stage .research-node.leaf .building-image,
+.research-tree-stage .research-node.leaf .research-symbol {
+  width: 26px;
+  height: 26px;
+}
+
+/* forskningsikon-i-detaljer: the technology's symbol beside its name. */
+.research-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.research-detail-title .building-image,
+.research-detail-title .research-symbol,
+.research-detail-title .catalog-icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+.research-detail-title h2 {
+  min-width: 0;
+}
+.research-queue-summary .building-image {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* rekommendation-i-menyn: the group's recommended factories, one tap away. */
+.factory-recommended-link {
+  width: 100%;
+  margin-top: 6px;
+  border-color: var(--factory-time);
+  color: var(--factory-time);
+  text-align: left;
+  white-space: normal;
+}

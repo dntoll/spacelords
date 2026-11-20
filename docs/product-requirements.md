@@ -16,7 +16,8 @@ bara delar. Råvaror utvinns där de finns, även av mining ships i nebulosor oc
 asteroidbälten, och skepp tillverkas där deras fabrik står. Mining ships
 görs sist. Ett nytt spel uppmanar spelaren att börja med forskning och
 utvinning. Byggvalen visar tydligt vad gruppen redan har eller bygger och
-föreslår först de fabriker som behövs just nu. Flottor färgas efter vad de
+föreslår först de fabriker som behövs just nu. Forskning tar 1–3 rundor
+beroende på hur långt in i trädet tekniken ligger. Flottor färgas efter vad de
 gör och kategorier kan döljas. Byggkön visar varför varje skepp byggs men
 ordnas inte om, eftersom fabrikerna arbetar samtidigt. Se
 [förenklad produktion](simple-production.md).

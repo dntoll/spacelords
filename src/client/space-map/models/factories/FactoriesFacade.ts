@@ -783,6 +783,7 @@ export class FactoriesFacade {
       collapsed: this.#collapsedGroups.has(key),
       canConnect: this.#transports(context, group).length > 0,
       unescortedLinks: this.#unescorted(context, group),
+      recommended: this.#recommended(context, group),
       emptySites: planets.reduce(
         (sum, planet) =>
           sum + planet.sites.filter((site) => site.kind === 'empty').length,
@@ -893,6 +894,43 @@ export class FactoriesFacade {
       research: queued ? null : this.#domeResearch(gamePlanet, planet, index),
       project: queued ? (queued.type as BuildType) : null,
     });
+  }
+
+  /** rekommendation-i-menyn: true when some group has a factory to build. */
+  get hasRecommendation(): boolean {
+    const context = this.#context();
+    return context.network.groups.some(
+      (group) => this.#recommended(context, group).length > 0,
+    );
+  }
+
+  /** rekommendation-i-menyn: where each recommended factory can go first. */
+  #recommended(
+    context: Context,
+    group: readonly string[],
+  ): FactoryGroupSnapshot['recommended'] {
+    const found = new Map<
+      BuildType,
+      { type: BuildType; planet: string; site: number }
+    >();
+    for (const id of [...group].sort()) {
+      const planet = this.#planet(context, id);
+      const site = planet.sites.find(
+        (item) =>
+          !item.building &&
+          !item.project &&
+          !item.locked &&
+          !(item.domeRequired && !item.hasDome),
+      );
+      if (!site) continue;
+      for (const option of this.#buildScreen(context, id, site.index).options)
+        if (option.recommendations.length && !found.has(option.type))
+          found.set(
+            option.type,
+            Object.freeze({ type: option.type, planet: id, site: site.index }),
+          );
+    }
+    return Object.freeze([...found.values()]);
   }
 
   /**

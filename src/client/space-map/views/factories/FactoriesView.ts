@@ -318,6 +318,16 @@ function groupSection(group: FactoryGroupSnapshot, emit: Emit): HTMLElement {
     header.append(connect);
   }
   section.append(header);
+  // rekommendation-i-menyn: one tap leads to a site for the first one.
+  const first = group.recommended[0];
+  if (first) {
+    const recommended = button(
+      `Recommended: ${list(group.recommended.map((item) => item.type))}`,
+      () => emit({ kind: 'open-site', planet: first.planet, site: first.site }),
+      'secondary-button factory-recommended-link',
+    );
+    section.append(recommended);
+  }
   if (group.collapsed) return section;
   if (group.planets.length > 1)
     section.append(

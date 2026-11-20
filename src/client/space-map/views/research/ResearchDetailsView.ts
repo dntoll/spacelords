@@ -8,8 +8,10 @@ import {
   COMBAT_RESEARCH,
   PREREQUISITES,
   ORDER_RESEARCH,
+  researchRounds,
 } from '../../models/research/Research.js';
 import { isResearchIdentified } from '../../models/research/ResearchTree.js';
+import { researchArt } from './ResearchTreeView.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { button, element } from '../../../common/dom.js';
 
@@ -45,9 +47,12 @@ export function renderResearchDetails(
   const detail = element('div', 'research-node-details');
   const identified = isResearchIdentified(research, technology);
   const heading = element('div', 'research-detail-heading');
-  heading.append(
+  const title = element('div', 'research-detail-title');
+  title.append(
+    researchArt(technology, identified),
     element('h2', '', identified ? technology : 'Unknown technology'),
   );
+  heading.append(title);
   const content = element('div', 'research-detail-content');
   content.tabIndex = 0;
   content.setAttribute('role', 'region');
@@ -88,11 +93,11 @@ export function renderResearchDetails(
         ? 'Researched'
         : queue === 0
           ? research.stations
-            ? 'Researching · 0/1 points'
+            ? `Researching · ${research.progress?.[technology] ?? 0}/${roundsText(technology)}`
             : 'Waiting for an operating Research station'
           : queue > 0
-            ? `Queued · ${queue + 1}`
-            : 'Cost: 1 research point',
+            ? `Queued · ${queue + 1} · ${roundsText(technology)}`
+            : `Research time: ${roundsText(technology)}`,
     ),
     element(
       'p',
@@ -163,4 +168,10 @@ function bindResearchTouch(choose: HTMLButtonElement, order: () => void): void {
     },
     true,
   );
+}
+
+/** forskningstid: how long a technology takes. */
+export function roundsText(technology: Technology): string {
+  const rounds = researchRounds(technology);
+  return `${rounds} ${rounds === 1 ? 'round' : 'rounds'}`;
 }

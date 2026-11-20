@@ -161,6 +161,11 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
 
   Rekommenderade fabriker visas inte en gång till i nivålistan nedanför.
 
+- `rekommendation-i-menyn` (**Fullständigt implementerat**): så länge en
+  grupp har en rekommenderad fabrik som kan byggas på en tom plats visar
+  `Factories` i huvudmenyn `!`. Gruppen visar `Recommended: …` som en knapp
+  som öppnar byggvalet på första lediga plats där fabriken kan byggas.
+
 ## Flottfärger och byggorsak (2026-11-20)
 
 Krav inom utforskningen, båda **Fullständigt implementerade**.
@@ -195,6 +200,27 @@ uppmaningen att bygga en, att stationen byggs på planeten och om hur många
 rundor forskningen kan börja. Väntar stationen fortfarande på råvaror står det
 att den är köad och väntar på varor, med en uppskattning av rundorna. Trädet
 visas som förut först när stationen är färdig (`forskningsvy-utan-station`).
+
+## Kompaktare Research och forskningstid (2026-11-20)
+
+Krav inom utforskningen, alla **Fullständigt implementerade**.
+
+- `forskning-utan-rubrikrad`: Research har ingen synlig rubrikrad. Rubriken
+  finns kvar för skärmläsare. Antalet stationer står i sammanfattningen av
+  forskningskön (`Research queue · 2 · 1 station`) med stationens ikon, och
+  förklaringen av stationer ligger i den utfällda kön. Ersätter
+  stationsinformationen bredvid rubriken i `forskningstradets-utrymme`.
+- `forskningslov-som-symbol`: tekniker som ingen annan teknik bygger på
+  (lövnoder) visas som en kvadratisk ruta med bara symbolen. Namnet står i
+  detaljerna, i tooltip och för skärmläsare. Trädet blir smalare.
+- `forskningsikon-i-detaljer`: detaljerna längst ned visar teknikens symbol
+  bredvid namnet.
+- `forskningstid`: en teknik tar 1–3 rundor. Tekniker utan förkunskaper tar
+  en runda, nästa steg två och allt djupare tre. Varje runda med minst en
+  fungerande station räknas, och fler stationer gör det inte snabbare.
+  Detaljerna visar `Research time`, och den pågående tekniken visar framsteg
+  som `Researching · 1/2 rounds`. Påbörjade rundor sparas; äldre sparade spel
+  laddas utan framsteg. Ersätter att varje teknik kostar en forskningspoäng.
 
 ## Sparade spel
 
