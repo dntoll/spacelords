@@ -1656,10 +1656,9 @@ avväljs automatiskt när soldaten inte längre har tillräckligt med AP för at
 
 `bordningshud-i-botten` och `fullscreen-i-bordning` — **Fullständigt
 implementerat**: soldatval, namn, HP, AP och handlingar ligger längst ned.
-Loggen ligger uppe till vänster och stängning och fullscreen uppe till höger.
-Bordning försöker gå
-till fullscreen när den öppnas och har en Enter/Exit-knapp när ett uttryckligt
-tryck krävs.
+Loggen ligger uppe till vänster och stängning uppe till höger.
+Bordning försöker gå till fullscreen när den öppnas men har ingen egen
+fullscreenknapp (`helskarm-fran-sparade-spel`).
 
 `hallning-vid-vapnet`, `bordningslogg-i-hornet` och
 `senaste-raden-i-bordningsloggen` — **Fullständigt implementerat**:
@@ -1790,5 +1789,7 @@ fram till målet, granater kastas i en synlig båge och interiörernas grundljus
   delar den tillgängliga skärmen utan att startsidan behöver scrollas.
 - `separata-testlagen` — **Fullständigt implementerat**: Test battle och Test
   boarding ligger under en egen rubrik med val för bordning.
-- `helskarm-i-hela-spelet` — **Fullständigt implementerat**: Spelaren kan växla
-  helskärm från startsidan och spelet när webbläsaren stöder det.
+- `helskarm-i-hela-spelet` — **Delvis ersatt** av `helskarm-fran-sparade-spel`.
+- `helskarm-fran-sparade-spel` — **Fullständigt implementerat** (2026-11-20):
+  knappen för helskärm finns bara på `Saved games`. Spelet fortsätter i
+  helskärm på alla andra skärmar, som saknar egen knapp.

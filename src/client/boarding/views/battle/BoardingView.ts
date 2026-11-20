@@ -147,7 +147,6 @@ export class BoardingView {
     'Defenders are acting…',
   );
   readonly #close: HTMLButtonElement;
-  readonly #fullscreen: HTMLButtonElement;
   readonly #mapFactory: BoardingMapFactory | undefined;
   #map: BoardingMapPort | undefined;
   #mapName = '';
@@ -192,11 +191,6 @@ export class BoardingView {
     this.#close = iconButton('Close boarding', '×', () =>
       this.emit({ type: 'close-boarding' }),
     );
-    this.#fullscreen = iconButton(
-      'Enter fullscreen',
-      '⛶',
-      () => void this.#toggleFullscreen(),
-    );
     this.#dialog.setAttribute('aria-label', 'Boarding combat');
     this.#dialog.addEventListener('cancel', (event) => event.preventDefault());
     const board = element('section', 'boarding-board');
@@ -206,7 +200,8 @@ export class BoardingView {
     this.#details.append(element('summary', '', 'Combat details'));
     const layout = element('div', 'boarding-layout');
     const header = element('div', 'boarding-header-actions');
-    header.append(this.#fullscreen, this.#close);
+    // helskarm-fran-sparade-spel: no fullscreen control outside Saved games.
+    header.append(this.#close);
     const log = element('div', 'boarding-log-overlay');
     this.#logPreview.hidden = true;
     this.#logPreview.setAttribute('role', 'status');
@@ -231,27 +226,15 @@ export class BoardingView {
       this.#positionContextMenu(),
     );
     document.addEventListener('fullscreenchange', this.#fullscreenChanged);
-    this.#syncFullscreenButton();
     void this.#enterFullscreen();
   }
 
   readonly #fullscreenChanged = (): void => {
     if (document.fullscreenElement !== document.documentElement)
       this.#ownsFullscreen = false;
-    this.#syncFullscreenButton();
   };
 
-  #syncFullscreenButton(): void {
-    const supported =
-      typeof document.documentElement.requestFullscreen === 'function';
-    this.#fullscreen.hidden = !supported;
-    const active = document.fullscreenElement === document.documentElement;
-    this.#fullscreen.title = active ? 'Exit fullscreen' : 'Enter fullscreen';
-    this.#fullscreen.setAttribute('aria-label', this.#fullscreen.title);
-    this.#fullscreen.textContent = active ? '⤢' : '⛶';
-  }
-
-  async #enterFullscreen(reportFailure = false): Promise<void> {
+  async #enterFullscreen(): Promise<void> {
     if (
       document.fullscreenElement ||
       typeof document.documentElement.requestFullscreen !== 'function'
@@ -266,20 +249,7 @@ export class BoardingView {
       )
         await document.exitFullscreen();
     } catch {
-      if (reportFailure && this.#state)
-        this.render(this.#state, 'Fullscreen is unavailable in this browser.');
-    }
-  }
-
-  async #toggleFullscreen(): Promise<void> {
-    try {
-      if (document.fullscreenElement === document.documentElement) {
-        await document.exitFullscreen();
-        this.#ownsFullscreen = false;
-      } else await this.#enterFullscreen(true);
-    } catch {
-      if (this.#state)
-        this.render(this.#state, 'Fullscreen could not be changed.');
+      // Browsers may refuse without a gesture; Saved games offers the control.
     }
   }
 
@@ -309,7 +279,6 @@ export class BoardingView {
       this.#details,
       this.#logPreview,
       this.#close,
-      this.#fullscreen,
       this.#status,
       this.#team,
       this.#equipment,

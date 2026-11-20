@@ -11,9 +11,12 @@ Se [hela visionen](docs/game-vision.md).
 ## Kravkategorier
 
 - **Startskärm och helskärm:** `startskarm-utan-scroll`, `separata-testlagen`
-  och `helskarm-i-hela-spelet` är **Fullständigt implementerade**. Tre
-  sparplatser delar skärmens tillgängliga yta, testlägena finns under en egen
-  rubrik och helskärm kan växlas från startsidan och spelet.
+  och `helskarm-fran-sparade-spel` är **Fullständigt implementerade**. Tre
+  sparplatser delar skärmens tillgängliga yta och testlägena finns under en
+  egen rubrik. Helskärm väljs bara med knappen på `Saved games`; spelet
+  fortsätter i helskärm på alla andra skärmar utan egen knapp.
+  `helskarm-fran-sparade-spel` (2026-11-20) ersätter knappen i spelet från
+  `helskarm-i-hela-spelet` och reservknappen i `fullscreen-i-bordning`.
 
 - **Landgång och bordningsgränssnitt:** `landgang-med-bordningsstart`,
   `airlock-oppnar-at-blickriktning`, `ihopfallbar-bordningslogg` och
@@ -172,8 +175,8 @@ Se [hela visionen](docs/game-vision.md).
   `fullscreen-i-bordning` är **Fullständigt implementerat**. Varje soldat har
   ett `Rifle` och en roterande personlig pryl; granatbärare har tre granater.
   Soldatval och handlingar ligger längst ned; logg och fönsterknappar ligger i
-  övre hörnen. Bordning försöker öppna fullscreen automatiskt och har en
-  Enter/Exit-knapp som reserv. Se
+  övre hörnen. Bordning försöker öppna fullscreen automatiskt men har ingen
+  egen knapp (`helskarm-fran-sparade-spel`). Se
   [produktkrav](docs/product-requirements.md).
 
 - **Bordningshandlingar och flyt:** `stang-oppen-dorr`,

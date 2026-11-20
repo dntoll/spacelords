@@ -289,7 +289,7 @@ it('startskarm-utan-scroll / separata-testlagen: keeps three slots and groups th
   );
 });
 
-it('helskarm-i-hela-spelet: offers a fullscreen control on the start screen and in the game', () => {
+it('helskarm-fran-sparade-spel: offers the fullscreen control only on Saved games and stays fullscreen in the game', () => {
   const request = vi.fn().mockResolvedValue(undefined);
   Object.defineProperty(document.documentElement, 'requestFullscreen', {
     configurable: true,
@@ -305,7 +305,15 @@ it('helskarm-i-hela-spelet: offers a fullscreen control on the start screen and 
     .querySelector<HTMLButtonElement>('[aria-label="Toggle fullscreen"]')!
     .click();
   expect(request).toHaveBeenCalledOnce();
+  const exit = vi.fn().mockResolvedValue(undefined);
+  Object.defineProperty(document, 'exitFullscreen', {
+    configurable: true,
+    value: exit,
+  });
   root.querySelector<HTMLButtonElement>('.save-start')!.click();
-  expect(root.querySelector('[aria-label="Toggle fullscreen"]')).not.toBeNull();
+  expect(root.querySelector('.main-nav')).not.toBeNull();
+  expect(root.querySelector('[aria-label="Toggle fullscreen"]')).toBeNull();
+  expect(exit).not.toHaveBeenCalled();
   Reflect.deleteProperty(document.documentElement, 'requestFullscreen');
+  Reflect.deleteProperty(document, 'exitFullscreen');
 });

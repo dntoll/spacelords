@@ -386,8 +386,9 @@ testtransporten.
   fönsterknapparna till skärmens överkant och tar bort rundrubriken. Den
   aktiva soldatens namn och AP upprepas inte i en separat statusrad.
 - `fullscreen-i-bordning` — **Fullständigt implementerat**. Vyn försöker gå
-  till fullscreen när den öppnas. En Enter/Exit-knapp finns som reserv och
-  spelet fortsätter i vanlig helskärmsdialog om webbläsaren nekar begäran.
+  till fullscreen när den öppnas och fortsätter i vanlig helskärmsdialog om
+  webbläsaren nekar begäran. Reservknappen Enter/Exit är ersatt av
+  `helskarm-fran-sparade-spel`: helskärm väljs bara på `Saved games`.
 - `gang-knapp-till-avlagset-mal` — **Fullständigt implementerat**. `Move` är
   tillgänglig även när destinationen ligger för långt bort och går då mot målet
   (`gang-mot-avlagset-mal`).

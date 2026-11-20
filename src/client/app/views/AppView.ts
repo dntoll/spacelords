@@ -1245,7 +1245,8 @@ export class AppView implements AppPort {
       if (target === 'decisions') choice.classList.add('decision-counter');
       navigation.append(choice);
     }
-    header.append(brand, navigation, fullscreen);
+    // helskarm-fran-sparade-spel: fullscreen is chosen on Saved games only.
+    header.append(brand, navigation);
     return header;
   }
 
