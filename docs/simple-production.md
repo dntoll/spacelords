@@ -161,6 +161,11 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
 
   Rekommenderade fabriker visas inte en gång till i nivålistan nedanför.
 
+- `rekommendation-i-menyn` (**Fullständigt implementerat**): så länge en
+  grupp har en rekommenderad fabrik som kan byggas på en tom plats visar
+  `Factories` i huvudmenyn `!`. Gruppen visar `Recommended: …` som en knapp
+  som öppnar byggvalet på första lediga plats där fabriken kan byggas.
+
 ## Flottfärger och byggorsak (2026-11-20)
 
 Krav inom utforskningen, båda **Fullständigt implementerade**.

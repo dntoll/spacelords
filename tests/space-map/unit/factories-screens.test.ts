@@ -674,3 +674,44 @@ describe('byggorsak-i-kon', () => {
     ).toBeNull();
   });
 });
+
+describe('rekommendation-i-menyn', () => {
+  it('marks Factories while a recommended factory can be built and leads to a site for it', async () => {
+    const { Game } =
+      await import('../../../src/client/space-map/models/Game.js');
+    const { createExampleGalaxy } =
+      await import('../../../src/client/space-map/models/exampleGalaxy.js');
+    const { root, send, act, model, factories, group } = setup({
+      ...new Game(createExampleGalaxy()).exportState(),
+      pirates: [],
+    });
+    send({ type: 'open-factories' });
+    expect(model.snapshot.attentionScreens).toContain('factories');
+    expect(
+      root.querySelector('[data-screen="factories"] .nav-attention'),
+    ).not.toBeNull();
+    expect(group('Tellus').recommended.map((item) => item.type)).toEqual(
+      expect.arrayContaining([
+        'Research station',
+        'Iron mine',
+        'Water extractor',
+        'Oil extractor',
+      ]),
+    );
+    root.querySelector<HTMLButtonElement>('.factory-recommended-link')!.click();
+    expect(factories().screen).toBe('build');
+    expect(factories().build!.siteIndex).toBe(0);
+    for (const [site, type] of [
+      'Research station',
+      'Iron mine',
+      'Water extractor',
+      'Oil extractor',
+    ].entries()) {
+      act({ kind: 'open-site', planet: 'sol-0', site });
+      act({ kind: 'build', type: type as never });
+    }
+    expect(group('Tellus').recommended).toEqual([]);
+    expect(model.snapshot.attentionScreens).not.toContain('factories');
+    expect(root.querySelector('.factory-recommended-link')).toBeNull();
+  });
+});

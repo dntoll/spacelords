@@ -72,6 +72,15 @@ export interface FactoryGroupSnapshot {
   readonly emptySites: number;
   /** eskort-pa-routes: manned links in the group without armed escort. */
   readonly unescortedLinks: number;
+  /**
+   * rekommendation-i-menyn: recommended factories with the first empty site
+   * in the group where each can be built.
+   */
+  readonly recommended: readonly {
+    readonly type: BuildType;
+    readonly planet: string;
+    readonly site: number;
+  }[];
 }
 
 /** rekommenderade-fabriker: why a factory is offered first. */

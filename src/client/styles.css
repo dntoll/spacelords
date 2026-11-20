@@ -5487,3 +5487,13 @@ body:has(.discovery-controls) .selection-panel {
   margin-left: 6px;
   vertical-align: middle;
 }
+
+/* rekommendation-i-menyn: the group's recommended factories, one tap away. */
+.factory-recommended-link {
+  width: 100%;
+  margin-top: 6px;
+  border-color: var(--factory-time);
+  color: var(--factory-time);
+  text-align: left;
+  white-space: normal;
+}
