@@ -187,6 +187,15 @@ Krav inom utforskningen, båda **Fullständigt implementerade**.
 `kompakt-produktionsko` och `kompakta-koknappar`. Research queue,
 reparationskön och planetköerna kan fortfarande ordnas om.
 
+## Första stationen på väg (2026-11-20)
+
+`forsta-station-pa-vag` är **Fullständigt implementerat** inom utforskningen.
+När den första `Research station` är köad visar Research i stället för
+uppmaningen att bygga en, att stationen byggs på planeten och om hur många
+rundor forskningen kan börja. Väntar stationen fortfarande på råvaror står det
+att den är köad och väntar på varor, med en uppskattning av rundorna. Trädet
+visas som förut först när stationen är färdig (`forskningsvy-utan-station`).
+
 ## Sparade spel
 
 `sparade-spel-bryts-i-utforskningen`: användaren har godkänt att utforskningen

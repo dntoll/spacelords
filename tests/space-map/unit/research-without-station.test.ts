@@ -43,3 +43,26 @@ describe('forskningsvy-utan-station', () => {
     controller.dispose();
   });
 });
+
+describe('forsta-station-pa-vag', () => {
+  it('says the first Research station is on its way and when research can begin', () => {
+    const model = new AppModel();
+    const { root, controller } = open(model);
+    expect(root.textContent).toContain('Research needs a Research station.');
+    model.factoriesCase.open();
+    model.factoriesCase.apply({ kind: 'open-site', planet: 'sol-0', site: 0 });
+    model.factoriesCase.apply({ kind: 'build', type: 'Research station' });
+    model.openResearch();
+    controller.start();
+    const station = model.snapshot.research.stationConstruction!;
+    expect(station).toMatchObject({ planet: 'Tellus', roundsLeft: 3 });
+    expect(root.querySelector('.research-tree-area')).toBeNull();
+    expect(root.textContent).not.toContain(
+      'Research needs a Research station.',
+    );
+    expect(root.textContent).toContain('Research station');
+    expect(root.textContent).toContain('Tellus');
+    expect(root.textContent).toContain('3 rounds');
+    controller.dispose();
+  });
+});

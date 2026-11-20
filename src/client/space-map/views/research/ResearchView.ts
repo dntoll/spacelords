@@ -47,13 +47,7 @@ export function renderResearch(
   // forskningsvy-utan-station: no tree until a station exists to research with.
   if (!research.builtStations) {
     const missing = element('section', 'research-needs-station');
-    missing.append(
-      element(
-        'p',
-        '',
-        'Research needs a Research station. Build one on a free site in Factories.',
-      ),
-    );
+    missing.append(element('p', '', stationMessage(research)));
     page.append(header, missing);
     return page;
   }
@@ -125,4 +119,18 @@ export function renderResearch(
   );
   page.append(header, panel);
   return page;
+}
+
+/**
+ * forskningsvy-utan-station / forsta-station-pa-vag: before the first station
+ * is built, say whether one is on its way and when research can begin.
+ */
+function stationMessage(research: ResearchSnapshot): string {
+  const station = research.stationConstruction;
+  if (!station)
+    return 'Research needs a Research station. Build one on a free site in Factories.';
+  const rounds = `${station.roundsLeft} ${station.roundsLeft === 1 ? 'round' : 'rounds'}`;
+  return station.started
+    ? `A Research station is being built on ${station.planet}. Research can begin in ${rounds}.`
+    : `A Research station is queued on ${station.planet} and waits for goods. Research can begin in about ${rounds}.`;
 }

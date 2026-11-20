@@ -936,6 +936,8 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och
   gäller fortsatt, liksom fysisk frakt, automatiska delorder och sparade spel.
+  `forsta-station-pa-vag` är **Fullständigt implementerat**: Research visar
+  att den första stationen byggs och när forskningen kan börja.
   `flottkategorier` och `byggorsak-i-kon` är **Fullständigt implementerade**
   inom utforskningen: Fleets färgar flottor efter kategori och kan dölja
   kategorier, och Build queue visar varför varje skepp byggs i stället för att
