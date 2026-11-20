@@ -183,7 +183,7 @@ test('visa-byggalternativ / kompakta-bygghandlingar: selection preserves Overvie
   await search.fill('no such building');
   await expect(page.locator('.empty-results')).toBeVisible();
   await expect(search).toBeFocused();
-  await search.fill('research point');
+  await search.fill('queued research');
   await expect(page.locator('.catalog-item')).toHaveCount(1);
   await expectContentFits(page);
   await page.screenshot({ path: testInfo.outputPath('build-selection.png') });

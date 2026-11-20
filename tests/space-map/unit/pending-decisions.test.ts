@@ -104,6 +104,9 @@ describe('beslut-vantar-pa-paborjad-atgard', () => {
         'route-idle-route-test',
       ),
     ).toBe(true);
+    // forskningstid: Transport ship factory takes two rounds.
+    turn(game);
+    expect(active(game, 'route-idle-route-test')).toBe(false);
     turn(game);
     expect(active(game, 'route-idle-route-test')).toBe(true);
   });

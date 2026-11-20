@@ -290,7 +290,9 @@ it('automatisk-bargning: competing fleets reserve different wrecks and losing th
 it('forskade-automatiska-order: completing research in a station unlocks Auto salvage', () => {
   const game = Game.restore(salvageState());
   game.selectResearch('Automated salvage');
-  finishYear(game);
+  // forskningstid: deep technologies take three rounds.
+  for (let round = 0; round < 3 && game.research.queue.length; round++)
+    finishYear(game);
   expect(game.research.completed).toContain('Automated salvage');
   game.setAutomaticSalvage('fleet-home');
   expect(game.fleet('fleet-home')!.automation).toBe('salvage');

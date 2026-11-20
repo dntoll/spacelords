@@ -86,7 +86,10 @@ export function renderResearchTree(
           : ready
             ? 'available'
             : 'locked';
-    const card = element('article', `research-choice research-node ${state}`);
+    const card = element(
+      'article',
+      `research-choice research-node ${state}${node.leaf ? ' leaf' : ''}`,
+    );
     card.dataset.technology = type;
     card.dataset.state = state;
     card.dataset.identified = String(identified);
@@ -130,30 +133,20 @@ export function renderResearchTree(
     choose.replaceChildren();
     choose.id = `research-node-${index}`;
     choose.setAttribute('aria-pressed', String(inspected === type));
-    const art =
-      identified && type !== 'Trade logistics'
-        ? BUILDING_IMAGES[type as BuildType]
-          ? buildingImage(type as BuildType)
-          : catalogIcon(type)
-        : element(
-            'div',
-            'research-symbol',
-            !identified
-              ? '?'
-              : type === 'Trade logistics'
-                ? '↔'
-                : type === 'Transport ship factory'
-                  ? '△'
-                  : '⚙',
-          );
-    art.setAttribute('aria-hidden', 'true');
+    const art = researchArt(type, identified);
+    // forskningslov-som-symbol: a leaf shows only its symbol; the button
+    // label and tooltip still name it.
     choose.append(
       art,
-      element(
-        'span',
-        'research-node-name',
-        identified ? type.replace(/ factory$/, '') : 'Unknown',
-      ),
+      ...(node.leaf
+        ? []
+        : [
+            element(
+              'span',
+              'research-node-name',
+              identified ? type.replace(/ factory$/, '') : 'Unknown',
+            ),
+          ]),
     );
     const status = !identified
       ? 'Undiscovered'
@@ -220,4 +213,29 @@ function bindNavigation(viewport: HTMLElement, emit: IntentHandler): void {
     },
     '.research-node',
   );
+}
+
+/** forskningsikon-i-detaljer: the same symbol in the tree and the details. */
+export function researchArt(
+  type: Technology,
+  identified: boolean,
+): HTMLElement | SVGSVGElement {
+  const art =
+    identified && type !== 'Trade logistics'
+      ? BUILDING_IMAGES[type as BuildType]
+        ? buildingImage(type as BuildType)
+        : catalogIcon(type)
+      : element(
+          'div',
+          'research-symbol',
+          !identified
+            ? '?'
+            : type === 'Trade logistics'
+              ? '↔'
+              : type === 'Transport ship factory'
+                ? '△'
+                : '⚙',
+        );
+  art.setAttribute('aria-hidden', 'true');
+  return art;
 }

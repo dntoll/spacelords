@@ -16,13 +16,16 @@ export function isResearchIdentified(
 }
 
 export class ResearchTreeLayout {
-  readonly cardWidth = 108;
-  readonly cardHeight = 36;
+  readonly cardWidth: number = 108;
+  readonly cardHeight: number = 36;
   readonly edges: readonly Readonly<{ from: Technology; to: Technology }>[];
   readonly nodes: readonly Readonly<{
     technology: Technology;
     x: number;
     y: number;
+    /** forskningslov-som-symbol: leaves are square symbol tiles. */
+    width: number;
+    leaf: boolean;
   }>[];
   readonly width: number;
   readonly height: number;
@@ -53,13 +56,16 @@ export class ResearchTreeLayout {
       PREREQUISITES[technology].length
         ? 1 + Math.max(...PREREQUISITES[technology].map(depth))
         : 0;
-    const nodes = technologies.map((technology) =>
-      Object.freeze({
+    const nodes = technologies.map((technology) => {
+      const leaf = !this.edges.some((edge) => edge.from === technology);
+      return Object.freeze({
         technology,
         x: 32 + depth(technology) * (this.cardWidth + 24),
         y: 32 + row(technology) * (this.cardHeight + 12),
-      }),
-    );
+        width: leaf ? this.cardHeight : this.cardWidth,
+        leaf,
+      });
+    });
     this.nodes = nodes;
     // forsknings-tradnavigation: shared dependencies may place siblings on the same row.
     for (const x of new Set(this.nodes.map((node) => node.x))) {
@@ -74,7 +80,7 @@ export class ResearchTreeLayout {
       }
     }
     Object.freeze(nodes);
-    this.width = Math.max(...this.nodes.map((n) => n.x)) + this.cardWidth + 32;
+    this.width = Math.max(...this.nodes.map((n) => n.x + n.width)) + 32;
     this.height =
       Math.max(...this.nodes.map((n) => n.y)) + this.cardHeight + 32;
     Object.freeze(this.edges);

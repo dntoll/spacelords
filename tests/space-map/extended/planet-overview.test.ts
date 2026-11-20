@@ -286,7 +286,7 @@ describe('visa-byggalternativ', () => {
   it('matches descriptions as well as names', () => {
     const { model } = setup();
     model.openBuildSite(0);
-    model.searchBuildings('research point');
+    model.searchBuildings('queued research');
     expect(
       renderBuildSelection(model.snapshot, () => {}).querySelectorAll(
         '.catalog-item',

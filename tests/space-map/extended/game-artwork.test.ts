@@ -84,7 +84,11 @@ it('spelgrafik-symboler: unidentified research never reveals its symbol or name'
     '[data-technology="Salvage ship factory"]',
   )!;
   expect(unknown.querySelector('img')).toBeNull();
-  expect(unknown.textContent).toContain('Unknown');
+  // forskningslov-som-symbol: an unknown leaf shows only '?'.
+  expect(unknown.textContent).toContain('?');
+  expect(unknown.querySelector('button')!.getAttribute('aria-label')).toContain(
+    'unknown technology',
+  );
   expect(
     tree
       .querySelector('[data-technology="Rocket engine factory"] img')

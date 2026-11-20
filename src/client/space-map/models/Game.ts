@@ -392,7 +392,7 @@ export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
     'Research station': {
       permanent: true,
       description:
-        'Contributes one research point per round to the selected technology.',
+        'Lets the queued research advance each round. A technology takes 1 to 3 rounds.',
       workers: 600,
       cost: { Iron: 2, Water: 3, Oil: 1 },
       crew: 0,
@@ -574,6 +574,8 @@ export interface ResearchSnapshot {
   readonly stations: number;
   /** forskningsvy-utan-station: finished stations, operating or not. */
   readonly builtStations: number;
+  /** forskningstid: rounds spent per unfinished technology. */
+  readonly progress?: Readonly<Partial<Record<Technology, number>>>;
   /**
    * forsta-station-pa-vag: the Research station closest to completion, so
    * Research can say one is coming. Null when none is queued.
@@ -890,6 +892,8 @@ export interface GameState {
   readonly network?: NetworkEconomyState;
   readonly networkStarted?: Readonly<Record<string, number>>;
   readonly construction?: Readonly<Record<string, number>>;
+  /** forskningstid: rounds spent per unfinished technology; absent in older saves. */
+  readonly researchProgress?: Readonly<Record<string, number>>;
   readonly settlers?: readonly SettlerTransit[];
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
@@ -1038,6 +1042,7 @@ export class Game {
       knownTerrain: [...this.#knownTerrain],
       salvage: this.#salvage.snapshot(),
       recoveredResearch: [...this.#research.recovered],
+      researchProgress: Object.fromEntries(this.#research.progress),
       visiblePirates: [...this.#visiblePirates],
       chartedPirates: [...this.#chartedPirates],
       knownObjects: [...this.#knownObjects],
@@ -1183,6 +1188,15 @@ export class Game {
       new Set(researched),
       [...researchQueue],
       new Set(recoveredResearch),
+      new Map(
+        Object.entries(copy.researchProgress ?? {}).filter(
+          (entry): entry is [Technology, number] =>
+            isTechnology(entry[0]) &&
+            Number.isInteger(entry[1]) &&
+            entry[1] > 0 &&
+            !researched.includes(entry[0]),
+        ),
+      ),
     );
     if (state.version < 6) {
       if (
@@ -2248,6 +2262,7 @@ export class Game {
         0,
       ),
       stationConstruction: this.#stationConstruction(),
+      progress: Object.freeze(Object.fromEntries(this.#research.progress)),
     });
   }
 
