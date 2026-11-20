@@ -1733,7 +1733,8 @@ p {
 .research-tree-stage .research-node {
   position: absolute;
   width: 108px;
-  height: 36px;
+  /* storre-forskningstext: taller tiles fit a larger two-line name. */
+  height: 48px;
   padding: 0;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
@@ -1748,8 +1749,8 @@ p {
 .research-tree-stage .research-symbol {
   grid-column: 1;
   grid-row: 1 / -1;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   min-height: 0;
   pointer-events: none;
 }
@@ -1765,7 +1766,7 @@ p {
   grid-column: 1 / -1;
   display: grid;
   position: relative;
-  grid-template-columns: 18px minmax(0, 1fr);
+  grid-template-columns: 24px minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   align-items: center;
   gap: 4px;
@@ -1783,7 +1784,8 @@ p {
 .research-node-name {
   grid-column: 2;
   grid-row: 1;
-  font-size: 0.68rem;
+  font-size: 0.74rem;
+  line-height: 1.15;
   min-width: 0;
   white-space: normal;
   overflow-wrap: anywhere;

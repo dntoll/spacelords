@@ -90,7 +90,7 @@ for (const size of [
       await page
         .locator('[data-technology="Rocket engine factory"]')
         .evaluate((node) => (node as HTMLElement).offsetHeight),
-    ).toBe(36);
+    ).toBe(48);
     const selected = (await details.boundingBox())!;
     expect(before.height).toBeGreaterThan(100);
     if (size.width <= 640) {
