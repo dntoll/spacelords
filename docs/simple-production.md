@@ -161,6 +161,32 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
 
   Rekommenderade fabriker visas inte en gång till i nivålistan nedanför.
 
+## Flottfärger och byggorsak (2026-11-20)
+
+Krav inom utforskningen, båda **Fullständigt implementerade**.
+
+- `flottkategorier`: på `Fleets` har varje flotta en färg efter sin
+  kategori: `Transport` (lila), `Exploration` (turkos), `Colony` (limegrön),
+  `Combat` (blå), `Salvage` (sandfärgad), `Civilian` (grå) och `Mixed` (vit).
+  Rött används inte eftersom pirater är röda, och gult är kvar för vald flotta
+  och för flottor som väntar på order. Flottans order avgör kategorin, så en
+  blandad flotta på en rutt är `Transport`, en som koloniserar är `Colony`
+  och en som patrullerar är `Combat`. Utan order avgör skeppen; flera slags
+  skepp ger `Mixed`. Flottkorten har samma färg och kategorinamn. En rad med
+  kategorierna på kartan visar färgerna, och ett tryck döljer eller visar
+  kategorin. Dolda flottor kan inte väljas på kartan.
+- `byggorsak-i-kon`: `Build queue` i Production och på planetsidan kan inte
+  längre ordnas om, eftersom skepp byggs samtidigt i olika fabriker. Varje
+  skepp i kön visar varför det byggs, exempelvis
+  `For the link Tellus ↔ Vesta`, `To colonize <planet>`,
+  `To explore <planet>`, `Joins <flotta>`, `Mans a route without transport`
+  eller `Joins the planet home fleet`. Ett fraktskepp som `Factories` beställer
+  för en länk får order att bemanna just den länken.
+
+`byggorsak-i-kon` ersätter omordningen av Build queue i `dragbara-koer`,
+`kompakt-produktionsko` och `kompakta-koknappar`. Research queue,
+reparationskön och planetköerna kan fortfarande ordnas om.
+
 ## Sparade spel
 
 `sparade-spel-bryts-i-utforskningen`: användaren har godkänt att utforskningen

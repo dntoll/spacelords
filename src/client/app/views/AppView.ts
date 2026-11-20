@@ -26,6 +26,7 @@ import {
   renderEventContent,
   renderSalvageSelection,
   FactoriesView,
+  FLEET_CATEGORY_COLORS,
 } from '../../space-map/views/index.js';
 import {
   BattleView,
@@ -44,6 +45,8 @@ import {
   needsAttention,
   type MapCell,
   type TurnFrame,
+  FLEET_CATEGORIES,
+  fleetCategory,
 } from '../../space-map/models/index.js';
 import type { AppReadModel, Screen } from '../models/AppModel.js';
 import { playerNoticeText } from './playerNoticeText.js';
@@ -1447,6 +1450,7 @@ export class AppView implements AppPort {
         ?.insertBefore(legend, this.#root.querySelector('.main-nav'));
     }
     if (!show) legend?.remove();
+    this.#renderFleetCategories(model);
     this.#root.querySelector('.map-route-legend')?.remove();
     if (model.screen === 'route') {
       const routes = element('p', 'map-route-legend');
@@ -1457,6 +1461,55 @@ export class AppView implements AppPort {
       );
       this.#container?.append(routes);
     }
+  }
+
+  /** flottkategorier: a colour key that also shows or hides each category. */
+  #renderFleetCategories(model: AppReadModel): void {
+    const existing = this.#root.querySelector<HTMLElement>(
+      '.fleet-category-legend',
+    );
+    if (model.screen !== 'fleets' || !this.#container) {
+      existing?.remove();
+      return;
+    }
+    const present = new Set(model.fleets.map(fleetCategory));
+    const categories = FLEET_CATEGORIES.filter(
+      (category) =>
+        present.has(category) || model.hiddenFleetCategories.includes(category),
+    );
+    const key = JSON.stringify([categories, model.hiddenFleetCategories]);
+    if (existing?.dataset.key === key && existing.parentElement) return;
+    const focused =
+      document.activeElement instanceof HTMLElement &&
+      existing?.contains(document.activeElement)
+        ? document.activeElement.dataset.category
+        : undefined;
+    const legend = element('div', 'fleet-category-legend hud');
+    legend.dataset.key = key;
+    legend.setAttribute('role', 'group');
+    legend.setAttribute('aria-label', 'Fleet categories');
+    for (const category of categories) {
+      const shown = !model.hiddenFleetCategories.includes(category);
+      const toggle = button(
+        category,
+        () => this.#emit({ type: 'toggle-fleet-category', category }),
+        `fleet-category-toggle${shown ? '' : ' hidden-category'}`,
+      );
+      toggle.dataset.category = category;
+      toggle.style.setProperty(
+        '--fleet-category',
+        FLEET_CATEGORY_COLORS[category],
+      );
+      toggle.setAttribute('aria-pressed', String(shown));
+      toggle.title = `${shown ? 'Hide' : 'Show'} ${category.toLowerCase()} fleets`;
+      legend.append(toggle);
+    }
+    if (existing) existing.replaceWith(legend);
+    else this.#container.append(legend);
+    if (focused)
+      legend
+        .querySelector<HTMLElement>(`[data-category="${focused}"]`)
+        ?.focus({ preventScroll: true });
   }
 
   #renderProductionRing(model: AppReadModel): void {

@@ -6,6 +6,8 @@ import type { RouteFleetPlacement } from '../../models/star-map/FleetMapLayout.j
 import type { FleetSnapshot } from '../../models/Game.js';
 import type { ShipSpriteType } from '../ShipImages.js';
 import { HexGeometry, type Point } from '../../../common/HexCoordinate.js';
+import { fleetCategory } from '../../models/fleets/FleetCategory.js';
+import { FLEET_CATEGORY_COLORS } from '../FleetCategoryColors.js';
 
 export function renderMapFleets(
   sketch: p5,
@@ -103,6 +105,8 @@ export function renderMapFleets(
       !fleet.destination &&
       !fleet.joinFleetId &&
       fleet.ships['Transport ship'] > 0;
+    // flottkategorier: the Fleets map colours each fleet by its category;
+    // a fleet waiting for orders keeps its amber attention ring.
     const color = hostile
       ? '#ff8e85'
       : selected
@@ -111,9 +115,11 @@ export function renderMapFleets(
           ? '#d5fff6'
           : needsOrder
             ? '#ffdc88'
-            : availableTransport
-              ? '#d8a7ff'
-              : '#72d8ca';
+            : showUnselectedRings
+              ? FLEET_CATEGORY_COLORS[fleetCategory(fleet)]
+              : availableTransport
+                ? '#d8a7ff'
+                : '#72d8ca';
     if (
       hostile ||
       selected ||

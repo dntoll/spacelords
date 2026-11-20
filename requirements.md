@@ -936,6 +936,10 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och
   gäller fortsatt, liksom fysisk frakt, automatiska delorder och sparade spel.
+  `flottkategorier` och `byggorsak-i-kon` är **Fullständigt implementerade**
+  inom utforskningen: Fleets färgar flottor efter kategori och kan dölja
+  kategorier, och Build queue visar varför varje skepp byggs i stället för att
+  kunna ordnas om (ersätter omordningen i `dragbara-koer` för Build queue).
   `startuppmaning-fabriker`, `fabriksstatus-i-byggval` och
   `rekommenderade-fabriker` är **Fullständigt implementerade** inom
   utforskningen: ett nytt spel uppmanar till forskning och utvinning, byggvalen

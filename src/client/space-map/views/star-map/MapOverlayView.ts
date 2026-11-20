@@ -1,4 +1,5 @@
 import { pirateAsFleet } from '../../models/PirateFleet.js';
+import { fleetCategory } from '../../models/fleets/FleetCategory.js';
 import { decisionScreen, needsAttention } from '../../models/Decisions.js';
 import { HexGeometry, type Point } from '../../../common/HexCoordinate.js';
 import type p5 from 'p5';
@@ -41,12 +42,19 @@ export function renderMapOverlays(
   // kartflottor: colony badges must not hide selectable fleet markers.
   renderMapFleets(
     sketch,
-    [...model.fleets, ...(model.pirates ?? []).map(pirateAsFleet)].map(
-      (fleet) =>
-        (model.turnMovement || model.eventPlayback) &&
-        !model.turnMovements.some((movement) => movement.fleetId === fleet.id)
-          ? { ...fleet, destination: null }
-          : fleet,
+    [
+      // flottkategorier: hidden categories leave the Fleets map.
+      ...model.fleets.filter(
+        (fleet) =>
+          model.screen !== 'fleets' ||
+          !model.hiddenFleetCategories.includes(fleetCategory(fleet)),
+      ),
+      ...(model.pirates ?? []).map(pirateAsFleet),
+    ].map((fleet) =>
+      (model.turnMovement || model.eventPlayback) &&
+      !model.turnMovements.some((movement) => movement.fleetId === fleet.id)
+        ? { ...fleet, destination: null }
+        : fleet,
     ),
     model.camera.zoom,
     model,

@@ -69,23 +69,14 @@ test('planetundersidor / planetgemensamt-produktval / kompakt-produktionsko / pr
     page.getByRole('list', { name: 'Product list' }).getByRole('button'),
   ).toHaveText(['Fighter']);
   await expect(page.locator('.compact-queue-item').first()).toContainText(
-    '1. Rocket engine',
+    /^Rocket engine/,
   );
   await expect(page.locator('.compact-queue-item')).toHaveCount(26);
+  // byggorsak-i-kon: the queue shows its rows without reordering handles.
+  await expect(
+    page.locator('.compact-queue-list .queue-drag-handle'),
+  ).toHaveCount(0);
   const scroller = page.locator('.planet-content');
-  const handle = page.locator('.compact-queue-list .queue-drag-handle').first();
-  await handle.scrollIntoViewIfNeeded();
-  const start = (await handle.boundingBox())!;
-  const edge = (await scroller.boundingBox())!;
-  const before = await scroller.evaluate((node) => node.scrollTop);
-  await page.mouse.move(start.x + 22, start.y + 22);
-  await page.mouse.down();
-  await page.mouse.move(start.x + 22, edge.y + edge.height - 4, { steps: 8 });
-  await expect
-    .poll(() => scroller.evaluate((node) => node.scrollTop))
-    .toBeGreaterThan(before + 30);
-  await page.keyboard.press('Escape');
-  await page.mouse.up();
   await scroller.evaluate((node) => (node.scrollTop = 0));
   await page
     .getByRole('group', { name: 'Production categories' })
@@ -107,7 +98,7 @@ test('planetundersidor / planetgemensamt-produktval / kompakt-produktionsko / pr
     page.getByRole('button', { name: 'Show Rocket engine', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true');
   const lastGroup = page.locator('.compact-queue-item').last();
-  await expect(lastGroup).toContainText('28. Rocket engine');
+  await expect(lastGroup).toContainText(/^Rocket engine/);
   await lastGroup.click();
   await expect(page.locator('[aria-current="page"]')).toHaveText('Build queue');
   const rows = page.locator('.queue-order');

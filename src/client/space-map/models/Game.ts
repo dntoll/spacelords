@@ -604,8 +604,18 @@ export interface ProductionReceipt {
   readonly queuePosition: number;
 }
 
+/** byggorsak-i-kon: why a queued ship is built, as facts for the view. */
+export type ShipPurpose =
+  | { readonly kind: 'link'; readonly from: string; readonly to: string }
+  | { readonly kind: 'colonize' | 'explore'; readonly planet: string }
+  | { readonly kind: 'fleet'; readonly fleet: string }
+  | { readonly kind: 'order'; readonly order: ShipOrder['kind'] }
+  | { readonly kind: 'route-manning' | 'civilian' | 'home-fleet' };
+
 export interface ConstructionProjectSnapshot {
   readonly initialOrder?: ShipOrder;
+  /** byggorsak-i-kon: set for ship projects only. */
+  readonly purpose?: ShipPurpose;
   readonly upgradeBuildingId?: string;
   readonly parts?: Readonly<Partial<Record<Component, number>>>;
   readonly id: string;
@@ -2087,6 +2097,9 @@ export class Game {
           ? { parts: Object.freeze({ ...project.parts }) }
           : {}),
         blockedReason: this.#networkBlock(planet, state, project, blocks),
+        ...(Object.hasOwn(SHIPS, project.type)
+          ? { purpose: this.#shipPurpose(project) }
+          : {}),
       });
     const buildings = Object.freeze(
       state.buildings.map((building) =>
@@ -3373,6 +3386,39 @@ export class Game {
       throw new Error('Choose your shipyard.');
     this.#salvage.moveRepair(yardId, wreckId, index);
   }
+  /** byggorsak-i-kon: the order or fleet a queued ship is meant for. */
+  #shipPurpose(project: Project): ShipPurpose {
+    const order = project.initialOrder;
+    if (order?.kind === 'join-route') {
+      const route = this.tradeRoutes.find((item) => item.id === order.routeId);
+      if (route)
+        return Object.freeze({ kind: 'link', from: route.from, to: route.to });
+    }
+    if (order?.kind === 'colonize' || order?.kind === 'explore-planet')
+      return Object.freeze({
+        kind: order.kind === 'colonize' ? 'colonize' : 'explore',
+        planet: this.#planetById(order.planetId)?.name ?? 'Unknown planet',
+      });
+    if (order?.kind === 'join-fleet' || project.destinationFleetId) {
+      const id =
+        order?.kind === 'join-fleet'
+          ? order.fleetId
+          : project.destinationFleetId!;
+      const fleet = this.#fleets.find((item) => item.id === id);
+      if (fleet)
+        return Object.freeze({
+          kind: 'fleet',
+          fleet: this.#fleetDisplayName(fleet),
+        });
+    }
+    if (order) return Object.freeze({ kind: 'order', order: order.kind });
+    if (project.type === 'Transport ship')
+      return Object.freeze({ kind: 'route-manning' });
+    if (project.type === 'Civilian shuttle')
+      return Object.freeze({ kind: 'civilian' });
+    return Object.freeze({ kind: 'home-fleet' });
+  }
+
   #planetName(id: string): string {
     return this.#ownedPlanets().find((planet) => planet.id === id)!.name;
   }

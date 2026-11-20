@@ -66,6 +66,8 @@ import {
   type ResearchSnapshot,
   type PlanetOrderSnapshot,
   type MapCell,
+  FLEET_CATEGORIES,
+  type FleetCategory,
 } from '../../space-map/models/index.js';
 import {
   BoardingFacade,
@@ -198,6 +200,8 @@ export interface AppReadModel {
     readonly ship: ShipType;
   } | null;
   readonly mapFleetId: string | null;
+  /** flottkategorier: categories the player hid from the Fleets map. */
+  readonly hiddenFleetCategories: readonly FleetCategory[];
   readonly hoveredFleetId: string | null;
   readonly fleetDestinationPreview: HexCoordinate | null;
   readonly fleetDragging: boolean;
@@ -256,6 +260,7 @@ export class AppModel {
   #productionProduct: string | null = null;
   #productionFleetId: string | null = null;
   #closedProjectIds = new Set<string>();
+  #hiddenFleetCategories = new Set<FleetCategory>();
   #expandedProjectIds = new Set<string>();
   #focusedProjectId: string | null = null;
   #pendingEndTurn = false;
@@ -541,6 +546,11 @@ export class AppModel {
       shipTransfer: this.#shipTransfer,
       fleetNameEdit: this.#fleetNameEdit,
       mapFleetId: this.#mapFleetId,
+      hiddenFleetCategories: Object.freeze(
+        FLEET_CATEGORIES.filter((item) =>
+          this.#hiddenFleetCategories.has(item),
+        ),
+      ),
       hoveredFleetId: this.#hoveredFleetId,
       fleetDestinationPreview: this.#fleetDestinationPreview,
       fleetDragging: this.#fleetDragging,
@@ -1604,6 +1614,9 @@ export class AppModel {
       get productionFleetId() {
         return model.#productionFleetId;
       },
+      get hiddenFleetCategories() {
+        return model.#hiddenFleetCategories;
+      },
       get closedProjectIds() {
         return model.#closedProjectIds;
       },
@@ -2168,6 +2181,7 @@ export interface AppHost {
   productionProduct: string | null;
   productionFleetId: string | null;
   closedProjectIds: Set<string>;
+  readonly hiddenFleetCategories: Set<FleetCategory>;
   expandedProjectIds: Set<string>;
   focusedProjectId: string | null;
   pendingEndTurn: boolean;

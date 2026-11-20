@@ -1,6 +1,7 @@
 import type { MapViewport } from '../../models/ProductionMap.js';
 import type { HexCoordinate } from '../../../common/HexCoordinate.js';
 import { type Point } from '../../../common/HexCoordinate.js';
+import type { FleetCategory } from '../../models/fleets/FleetCategory.js';
 import type { StarMapFacade } from '../../models/star-map/StarMapFacade.js';
 
 export class StarMapController {
@@ -12,6 +13,10 @@ export class StarMapController {
 
   fleetAtPoint(point: Point): string | null {
     return this.facade.fleetAtPoint(point);
+  }
+
+  toggleFleetCategory(category: FleetCategory): void {
+    return this.facade.toggleFleetCategory(category);
   }
 
   selectMapFleet(id: string): void {

@@ -7,6 +7,8 @@ import type { FleetSnapshot } from '../models/Game.js';
 import type { IntentHandler } from '../../app/views/ViewContracts.js';
 import { button, element } from '../../common/dom.js';
 import { renderFleetShips } from './ShipView.js';
+import { fleetCategory } from '../models/fleets/FleetCategory.js';
+import { FLEET_CATEGORY_COLORS } from './FleetCategoryColors.js';
 
 export function renderFleetCard(
   fleet: FleetSnapshot,
@@ -20,7 +22,11 @@ export function renderFleetCard(
   card.classList.toggle('selected-fleet-card', fleet.id === model.mapFleetId);
   const heading = element('h3', 'fleet-card-heading');
   const header = element('div', 'fleet-card-header');
-  header.append(heading);
+  // flottkategorier: the card carries the fleet's map colour and category.
+  const category = fleetCategory(fleet);
+  card.dataset.category = category;
+  card.style.setProperty('--fleet-category', FLEET_CATEGORY_COLORS[category]);
+  header.append(heading, element('span', 'fleet-category-chip', category));
   let selectTimer: ReturnType<typeof setTimeout> | undefined;
   const title = button(
     fleet.name,

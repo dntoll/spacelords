@@ -11,7 +11,7 @@ import {
 } from '../CatalogControls.js';
 import { renderMapLocationHeading } from '../MapLocationHeading.js';
 import { button, element, queueButton } from '../../../common/dom.js';
-import { bindQueueOrder, decorateQueueRow } from '../QueueView.js';
+import { shipPurposeText } from '../ShipPurposeText.js';
 
 function presenceLabel(option: ProductionOption): string {
   return {
@@ -271,20 +271,11 @@ export function renderProductionMapPanel(
   const queue = element('section', 'map-build-queue');
   queue.setAttribute('aria-label', 'Build queue');
   queue.append(element('h2', '', 'Build queue'));
-  const list = element('ol', 'map-queue-list');
+  // byggorsak-i-kon: ships are built side by side in their own factories, so
+  // the queue has no order to change; each row says why the ship is built.
+  const list = element('ul', 'map-queue-list');
   // produktionsko-bara-skepp: buildings are queued and cancelled in Factories.
   const ships = planet.projects.filter((project) => project.type in SHIPS);
-  bindQueueOrder(
-    list,
-    ships.map((project) => project.id),
-    (id, index) =>
-      emit({
-        type: 'move-project',
-        id,
-        index: planet.projects.indexOf(ships[index]!),
-      }),
-    model.phase !== 'planning',
-  );
   ships.forEach((project, index) => {
     const item = element('li', 'map-queue-row');
     item.dataset.projectId = project.id;
@@ -293,7 +284,18 @@ export function renderProductionMapPanel(
       () => emit({ type: 'map-production-project', id: project.id }),
       'button secondary-button map-queue-choice',
     );
-    choose.textContent = `${index + 1}. ${project.type}`;
+    choose.replaceChildren(
+      element('span', 'map-queue-ship', project.type),
+      ...(project.purpose
+        ? [
+            element(
+              'span',
+              'map-queue-purpose',
+              shipPurposeText(project.purpose),
+            ),
+          ]
+        : []),
+    );
     choose.setAttribute(
       'aria-pressed',
       String(map.selectedProjectId === project.id),
@@ -308,12 +310,6 @@ export function renderProductionMapPanel(
     ] as const)
       control.dataset.focusKey = `project:${project.id}:${action}`;
     item.append(choose, cancel);
-    decorateQueueRow(
-      item,
-      project.id,
-      `${project.type}, position ${index + 1}`,
-      model.phase !== 'planning',
-    );
     list.append(item);
   });
   queue.append(list);

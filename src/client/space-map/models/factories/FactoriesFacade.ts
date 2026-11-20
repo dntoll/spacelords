@@ -451,7 +451,15 @@ export class FactoriesFacade {
           ((item.a === a && item.b === b) || (item.a === b && item.b === a)),
       )?.id ?? game.createTradeRoute(a, b);
     if (choice.kind === 'free') game.assignTradeFleet(route, choice.fleetId);
-    else game.scheduleShip(this.#gamePlanet(choice.planetId), 'Transport ship');
+    // byggorsak-i-kon: the new transport is ordered to this very link.
+    else
+      game.scheduleShip(
+        this.#gamePlanet(choice.planetId),
+        'Transport ship',
+        null,
+        undefined,
+        { kind: 'join-route', routeId: route },
+      );
     // Connect-skärmen: confirm the order on the overview, where it shows.
     this.#receipt = Object.freeze({
       from: this.#planet(context, a).name,

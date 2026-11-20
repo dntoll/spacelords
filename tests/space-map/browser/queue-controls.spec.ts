@@ -90,7 +90,7 @@ for (const width of [320, 900]) {
       .getByRole('button', { name: 'Build queue', exact: true })
       .click();
     const production = page.locator('.planet-building-queue');
-    await checkControls(production.locator('.queue-order').first());
+    await checkControls(production.locator('.queue-order').first(), false);
     await production.screenshot({
       path: testInfo.outputPath('build-queue.png'),
     });
@@ -102,9 +102,10 @@ for (const width of [320, 900]) {
   });
 }
 
-async function checkControls(row: Locator): Promise<void> {
+async function checkControls(row: Locator, sortable = true): Promise<void> {
   const controls = row.locator('.queue-actions button, .queue-drag-handle');
-  await expect(controls).toHaveText(['⠿', '×']);
+  // byggorsak-i-kon: Build queue has no drag handle; Research queue keeps it.
+  await expect(controls).toHaveText(sortable ? ['⠿', '×'] : ['×']);
   for (const control of await controls.all()) {
     await expect(control).toHaveAttribute('title', /.+/);
     const bounds = (await control.boundingBox())!;

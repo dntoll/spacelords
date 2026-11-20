@@ -214,12 +214,9 @@ test('gemensam-events-panel / planetinformation-pa-kartan: persistent footer, re
   await page.screenshot({ path: testInfo.outputPath('shared-footer.png') });
 });
 
-test('dragbara-koer: handles support pointer, keyboard, cancellation and save reload', async ({
+test('byggorsak-i-kon: the shared Build queue lists its projects without reordering handles', async ({
   page,
-  context,
-  browserName,
-  isMobile,
-}, testInfo) => {
+}) => {
   const state = researchStationState();
   state.colonies[0]![1].projects = [1, 2, 3].map((index) => ({
     id: `project-${index}`,
@@ -232,46 +229,10 @@ test('dragbara-koer: handles support pointer, keyboard, cancellation and save re
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page.getByRole('button', { name: 'Build queue', exact: true }).click();
   const rows = page.locator('.queue-order');
-  const first = rows.first().locator('.queue-drag-handle');
-  await first.focus();
-  await page.keyboard.press('Space');
-  await page.keyboard.press('ArrowDown');
-  expect((await saved(page)).colonies[0]![1].projects[0]!.id).toBe('project-1');
-  await page.keyboard.press('Escape');
-  expect((await saved(page)).colonies[0]![1].projects[0]!.id).toBe('project-1');
-  const from = (await first.boundingBox())!;
-  const to = (await rows.nth(1).locator('.queue-drag-handle').boundingBox())!;
-  if (isMobile && browserName === 'chromium') {
-    const cdp = await context.newCDPSession(page);
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [{ x: from.x + 22, y: from.y + 22, id: 1 }],
-    });
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchMove',
-      touchPoints: [{ x: to.x + 22, y: to.y + to.height - 1, id: 1 }],
-    });
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchEnd',
-      touchPoints: [],
-    });
-    await cdp.detach();
-  } else {
-    await page.mouse.move(from.x + 22, from.y + 22);
-    await page.mouse.down();
-    await page.mouse.move(to.x + 22, to.y + to.height - 1, { steps: 10 });
-    await page.mouse.up();
-  }
-  expect(
-    (await saved(page)).colonies[0]![1].projects.map((project) => project.id),
-  ).toEqual(['project-2', 'project-1', 'project-3']);
-  const handle = rows.first().locator('.queue-drag-handle');
-  await handle.focus();
-  await page.keyboard.press('Space');
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('Enter');
-  expect((await saved(page)).colonies[0]![1].projects[0]!.id).toBe('project-1');
-  await page.screenshot({ path: testInfo.outputPath('shared-queue.png') });
+  await expect(rows).toHaveCount(3);
+  await expect(
+    page.locator('.planet-building-queue .queue-drag-handle'),
+  ).toHaveCount(0);
   await page.reload();
   await startFirstSlot(page);
   expect(

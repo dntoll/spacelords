@@ -487,9 +487,9 @@ describe('produktionsko-bara-skepp', () => {
       expect.arrayContaining(['Research station', 'Transport ship']),
     );
     const rows = [
-      ...root.querySelectorAll('.map-build-queue .map-queue-choice'),
+      ...root.querySelectorAll('.map-build-queue .map-queue-ship'),
     ].map((row) => row.textContent);
-    expect(rows).toEqual(['1. Transport ship']);
+    expect(rows).toEqual(['Transport ship']);
   });
 });
 
@@ -635,5 +635,42 @@ describe('fabriksstatus-i-byggval', () => {
     expect(row('Research station').textContent).toContain(
       '1 under construction',
     );
+  });
+});
+
+describe('byggorsak-i-kon', () => {
+  it('a transport ordered for a link is built for that link and Production says so without reordering', () => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    state.fleets = state.fleets.filter((fleet) => fleet.id !== 'freighters');
+    state.colonies[0]![1].buildings.push({
+      id: 'yard',
+      type: 'Transport ship factory',
+      slotIndex: 2,
+      demolition: false,
+    });
+    const { root, send, act, model } = setup(state);
+    send({ type: 'open-factories' });
+    act({ kind: 'open-connect', group: 'Tellus' });
+    act({ kind: 'connect', target: 'Vesta' });
+    send({ type: 'open-production', planetId: 'sol-0' });
+    const transport = model.snapshot.planet!.projects.find(
+      (project) => project.type === 'Transport ship',
+    )!;
+    expect(transport.initialOrder).toEqual({
+      kind: 'join-route',
+      routeId: 'route-test',
+    });
+    expect(transport.purpose).toEqual({
+      kind: 'link',
+      from: 'Tellus',
+      to: 'Vesta',
+    });
+    const row = root.querySelector('.map-build-queue .map-queue-row')!;
+    expect(row.querySelector('.map-queue-purpose')?.textContent).toBe(
+      'For the link Tellus ↔ Vesta',
+    );
+    expect(
+      root.querySelector('.map-build-queue .queue-drag-handle'),
+    ).toBeNull();
   });
 });

@@ -253,7 +253,7 @@ describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () =>
 });
 
 describe('fabrikskoer / skepp-till-destinationsflotta', () => {
-  it('routes shared planet production, reordering, recipients and cancellation through the controller', () => {
+  it('routes shared planet production, reasons, recipients and cancellation through the controller', () => {
     const model = new AppModel();
     buildShipyard(model);
     const home = model.snapshot.fleets[0]!;
@@ -288,21 +288,13 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
       fleetId: target.id,
     });
     expect(production().querySelectorAll('.queue-order')).toHaveLength(2);
-    const second = queue()[1]!.id;
-    production()
-      .querySelectorAll<HTMLButtonElement>('.queue-drag-handle')[1]!
-      .dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
-    const handle =
-      production().querySelectorAll<HTMLButtonElement>(
-        '.queue-drag-handle',
-      )[1]!;
-    handle.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }),
-    );
-    handle.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
-    );
-    expect(queue()[0]!.id).toBe(second);
+    // byggorsak-i-kon: no reordering, but each ship says why it is built.
+    expect(production().querySelector('.queue-drag-handle')).toBeNull();
+    expect(
+      [...production().querySelectorAll('.queue-purpose')].map(
+        (item) => item.textContent,
+      ),
+    ).toEqual([`Joins ${target.name}`, `Joins ${target.name}`]);
     click('Orders for queued Colony ship');
     click('Join fleet');
     const queuedFleet = root.querySelector<HTMLSelectElement>(
@@ -315,13 +307,6 @@ describe('fabrikskoer / skepp-till-destinationsflotta', () => {
       kind: 'join-fleet',
       fleetId: target.id,
     });
-    const firstHandle =
-      production().querySelector<HTMLButtonElement>('.queue-drag-handle')!;
-    for (const key of [' ', 'ArrowDown', 'Enter'])
-      firstHandle.dispatchEvent(
-        new KeyboardEvent('keydown', { key, bubbles: true }),
-      );
-    expect(queue()[0]!.id).not.toBe(second);
     production()
       .querySelector<HTMLButtonElement>('[aria-label^="Cancel:"]')!
       .click();
@@ -426,13 +411,7 @@ describe('kompakta-koknappar', () => {
         .slice(0, 3)
         .map((b) => b.textContent),
     ).toEqual(['×', '×']);
-    const first = model.snapshot.planet!.projects[0]!.id;
-    const handle = root.querySelector<HTMLButtonElement>('.queue-drag-handle')!;
-    for (const key of [' ', 'ArrowDown', 'Enter'])
-      handle.dispatchEvent(
-        new KeyboardEvent('keydown', { key, bubbles: true }),
-      );
-    expect(model.snapshot.planet!.projects[1]!.id).toBe(first);
+    expect(root.querySelector('.queue-drag-handle')).toBeNull();
     expect(controls()[1]!.getAttribute('aria-label')).toContain('Colony ship');
     controls()[1]!.click();
     expect(model.snapshot.planet!.projects).toHaveLength(1);

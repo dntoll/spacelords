@@ -246,6 +246,8 @@ describe('riktad-koloniskeppsbestallning', () => {
     ).toMatchObject({
       factoryId: 'colony-factory',
       initialOrder: { kind: 'colonize', planetId: target.id },
+      // byggorsak-i-kon: the queue names the planet the ship is built for.
+      purpose: { kind: 'colonize', planet: target.name },
     });
     expect(() => game.requestColonyShip(target.id)).toThrow(
       'already being built',
