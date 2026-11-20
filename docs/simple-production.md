@@ -122,7 +122,7 @@ Krav från användarens mobiltest. Varje krav följs upp i ett issue.
 | `runda-avslutas-fran-factories`           | `Factories` har samma `End turn` och händelselogg som övriga skärmar, inklusive varningen om kvarvarande beslut ([issue 5](https://github.com/dntoll/spacelords/issues/5)).                                                                                                                                                             |
 | `produktionsko-bara-skepp`                | `Build queue` i kartans Production visar bara skeppsorder. Köade byggnader syns och avbryts i `Factories` ([issue 3](https://github.com/dntoll/spacelords/issues/3)).                                                                                                                                                                   |
 | `produktionsbeslut-bara-for-skeppsfabrik` | Beslutet `<planet>: choose production` visas bara när planeten har en färdig skeppsfabrik och ingen skeppsorder alls i kön (förtydligat 2026-11-19: en köad order räcker, oavsett vilken fabrik som tar den). Tomma byggplatser och köade byggnader ger inget sådant beslut ([issue 2](https://github.com/dntoll/spacelords/issues/2)). |
-| `forskningsvy-utan-station`               | Utan någon färdig Research station visar Research inget forskningsträd och ingen kö, bara en förklaring och knappen `Build a Research station`, som öppnar `Factories` ([issue 4](https://github.com/dntoll/spacelords/issues/4)).                                                                                                      |
+| `forskningsvy-utan-station`               | Utan någon färdig Research station visar Research inget forskningsträd och ingen kö, bara en förklaring som hänvisar till `Factories` (knappen `Build a Research station` är ersatt av `inga-overflodiga-navigeringsknappar`) ([issue 4](https://github.com/dntoll/spacelords/issues/4)).                                               |
 
 `produktionsbeslut-bara-for-skeppsfabrik` ersätter att tomma byggplatser gav
 beslutet, och därmed den del av `beslut-vantar-pa-paborjad-atgard` där
@@ -132,6 +132,60 @@ fortfarande väntan på Dome-forskning.
 där trädet visades med spärrade val när ingen station fanns. Trädet med
 spärrade val visas fortfarande när den enda stationen är markerad för rivning.
 Regeln att forskning kräver en färdig station gäller som förut.
+
+## Vägledning i byggvalen (2026-11-20)
+
+Krav inom utforskningen, alla **Fullständigt implementerade**.
+
+- `startuppmaning-fabriker`: ett nytt spel uppmanar spelaren att bygga en
+  `Research station` och utvinning av råvaror. Besluten
+  `Build a Research station in Factories` och
+  `Build mines and extractors in Factories` öppnar `Factories` och finns kvar
+  tills riket har eller bygger en sådan byggnad.
+- `fabriksstatus-i-byggval`: varje val under `Build factory` färgas efter om
+  fabriken finns i gruppen (grön), byggs i gruppen (gul) eller saknas (grå).
+  Etiketten säger samma sak, exempelvis `1 in group`,
+  `1 under construction` eller `Not in group`.
+- `rekommenderade-fabriker`: överst, under `Recommended`, står de fabriker
+  som behövs just nu och som gruppen varken har eller bygger, med skälet:
+  - `Research station` när riket saknar en.
+  - Utvinning av en råvara som planeten har men gruppen inte utvinner.
+  - `Transport ship factory` när en länk i gruppen saknar fraktskepp, eller
+    det finns fler grupper, och inget fritt fraktskepp finns i gruppen.
+  - `Colony ship factory` när en planet står i koloniseringskön och riket
+    saknar fabriken; `Exploration ship factory` på samma sätt för
+    utforskningskön.
+  - Fabriken för en del eller råvara som en fabrik i gruppen behöver men
+    som ingen fabrik i gruppen gör, exempelvis `Weapons module factory` för
+    en `Fighter factory`. En bättre motor eller ett bättre teleskop räcker.
+
+  Rekommenderade fabriker visas inte en gång till i nivålistan nedanför.
+
+## Flottfärger och byggorsak (2026-11-20)
+
+Krav inom utforskningen, båda **Fullständigt implementerade**.
+
+- `flottkategorier`: på `Fleets` har varje flotta en färg efter sin
+  kategori: `Transport` (lila), `Exploration` (turkos), `Colony` (limegrön),
+  `Combat` (blå), `Salvage` (sandfärgad), `Civilian` (grå) och `Mixed` (vit).
+  Rött används inte eftersom pirater är röda, och gult är kvar för vald flotta
+  och för flottor som väntar på order. Flottans order avgör kategorin, så en
+  blandad flotta på en rutt är `Transport`, en som koloniserar är `Colony`
+  och en som patrullerar är `Combat`. Utan order avgör skeppen; flera slags
+  skepp ger `Mixed`. Flottkorten har samma färg och kategorinamn. En rad med
+  kategorierna på kartan visar färgerna, och ett tryck döljer eller visar
+  kategorin. Dolda flottor kan inte väljas på kartan.
+- `byggorsak-i-kon`: `Build queue` i Production och på planetsidan kan inte
+  längre ordnas om, eftersom skepp byggs samtidigt i olika fabriker. Varje
+  skepp i kön visar varför det byggs, exempelvis
+  `For the link Tellus ↔ Vesta`, `To colonize <planet>`,
+  `To explore <planet>`, `Joins <flotta>`, `Mans a route without transport`
+  eller `Joins the planet home fleet`. Ett fraktskepp som `Factories` beställer
+  för en länk får order att bemanna just den länken.
+
+`byggorsak-i-kon` ersätter omordningen av Build queue i `dragbara-koer`,
+`kompakt-produktionsko` och `kompakta-koknappar`. Research queue,
+reparationskön och planetköerna kan fortfarande ordnas om.
 
 ## Sparade spel
 

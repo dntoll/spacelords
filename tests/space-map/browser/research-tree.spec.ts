@@ -115,7 +115,7 @@ test('forsknings-tradnavigation: native touch pans and pinches the tree', async 
   await cdp.detach();
 });
 
-test('forsknings-tradnavigation: dependency arrows, navigation and research preserve the camera', async ({
+test('forsknings-tradnavigation: dependency lines, navigation and research preserve the camera', async ({
   page,
 }, testInfo) => {
   await page.addInitScript((state) => {
@@ -141,7 +141,7 @@ test('forsknings-tradnavigation: dependency arrows, navigation and research pres
     page.locator(
       '[data-from="Weapons module factory"][data-to="Fighter factory"]',
     ),
-  ).toHaveAttribute('marker-end', 'url(#research-arrow)');
+  ).not.toHaveAttribute('marker-end');
   await tree.focus();
   const initial = await stage.getAttribute('style');
   await page.keyboard.press('+');

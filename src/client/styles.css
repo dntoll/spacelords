@@ -1904,11 +1904,6 @@ p {
 .research-heading h1 {
   font-size: 1.1rem;
 }
-.research-page > .screen-header .back-button {
-  min-height: 32px;
-  padding: 4px 8px;
-  font-size: 0.75rem;
-}
 .research-page .decision-guidance {
   padding: 5px 8px;
   font-size: 0.7rem;
@@ -2693,16 +2688,24 @@ p {
 }
 .map-queue-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) repeat(3, 44px);
+  grid-template-columns: minmax(0, 1fr) 44px;
   align-items: stretch;
   gap: 2px;
   margin: 4px 0;
 }
 .map-queue-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   text-align: left;
   white-space: normal;
   padding: 4px;
   font-size: 0.8rem;
+}
+/* byggorsak-i-kon: why each queued ship is built. */
+.map-queue-purpose {
+  font-size: 0.72rem;
+  color: var(--muted);
 }
 .map-queue-row .queue-icon-button {
   width: 44px;
@@ -5245,6 +5248,50 @@ body:has(.discovery-controls) .selection-panel {
 .factory-option.unavailable {
   opacity: 0.6;
 }
+/* fabriksstatus-i-byggval: built, under construction or absent in the group. */
+.factory-option.presence-built,
+.factory-option.presence-building,
+.factory-option.presence-absent {
+  border-left: 4px solid transparent;
+  padding-left: 8px;
+}
+.factory-option.presence-built {
+  border-left-color: var(--factory-success);
+  background: #9fe0b40f;
+}
+.factory-option.presence-building {
+  border-left-color: var(--factory-warning);
+  background: #ffdc880f;
+}
+.factory-option.presence-absent {
+  border-left-color: var(--line);
+}
+.factory-tag.presence-built {
+  color: #0c2c18;
+  background: var(--factory-success);
+}
+.factory-tag.presence-building {
+  color: #2b2006;
+  background: var(--factory-warning);
+}
+.factory-tag.presence-absent {
+  color: var(--muted);
+  background: none;
+  border: 1px dashed var(--line);
+}
+.factory-tag.recommended {
+  color: #071a26;
+  background: var(--factory-time);
+  font-weight: 600;
+}
+.factory-recommended {
+  border: 1px solid var(--factory-time);
+  border-radius: 8px;
+  padding: 0 8px 4px;
+}
+.factory-recommended h2 {
+  color: var(--factory-time);
+}
 .factory-option-body {
   min-width: 0;
   display: flex;
@@ -5341,4 +5388,62 @@ body:has(.discovery-controls) .selection-panel {
   align-content: start;
   justify-items: start;
   padding: 12px 0;
+}
+
+/* flottkategorier: colour key and filter on the Fleets map, card colour. */
+.fleet-category-legend {
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  right: 10px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: fit-content;
+  max-width: calc(100% - 20px);
+  padding: 4px;
+  background: #0a1520ed;
+  border-radius: 6px;
+}
+.fleet-category-toggle {
+  min-height: 32px;
+  padding: 2px 8px 2px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--fleet-category);
+  border-radius: 999px;
+  background: none;
+  color: var(--fleet-category);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.fleet-category-toggle::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--fleet-category);
+}
+.fleet-category-toggle.hidden-category {
+  border-style: dashed;
+  color: var(--muted);
+  opacity: 0.7;
+}
+.fleet-category-toggle.hidden-category::before {
+  background: none;
+  border: 1px solid var(--fleet-category);
+}
+.compact-fleet-card[data-category] {
+  border-left: 4px solid var(--fleet-category);
+}
+.fleet-category-chip {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  color: #071a26;
+  background: var(--fleet-category);
 }

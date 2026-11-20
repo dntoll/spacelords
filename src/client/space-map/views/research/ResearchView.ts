@@ -3,7 +3,7 @@ import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { buildingImage } from '../BuildingImage.js';
 import { renderResearchTree } from './ResearchTreeView.js';
 import { renderResearchSelection } from './ResearchDetailsView.js';
-import { button, element, queueButton } from '../../../common/dom.js';
+import { element, queueButton } from '../../../common/dom.js';
 import { bindQueueOrder, decorateQueueRow } from '../QueueView.js';
 
 export function renderResearch(
@@ -42,10 +42,8 @@ export function renderResearch(
   introduction.append(summary, details);
   const heading = element('div', 'research-heading');
   heading.append(element('h1', '', 'Research'), introduction);
-  header.append(
-    heading,
-    button('Back to map', () => emit({ type: 'open-map' }), 'back-button'),
-  );
+  // inga-overflodiga-navigeringsknappar: the main navigation leads back.
+  header.append(heading);
   // forskningsvy-utan-station: no tree until a station exists to research with.
   if (!research.builtStations) {
     const missing = element('section', 'research-needs-station');
@@ -54,9 +52,6 @@ export function renderResearch(
         'p',
         '',
         'Research needs a Research station. Build one on a free site in Factories.',
-      ),
-      button('Build a Research station', () =>
-        emit({ type: 'open-factories' }),
       ),
     );
     page.append(header, missing);

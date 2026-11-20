@@ -44,24 +44,7 @@ export function renderResearchTree(
   svg.setAttribute('width', String(layout.width));
   svg.setAttribute('height', String(layout.height));
   svg.setAttribute('aria-hidden', 'true');
-  const defs = document.createElementNS(svgNamespace, 'defs');
-  const marker = document.createElementNS(svgNamespace, 'marker');
-  marker.id = 'research-arrow';
-  for (const [key, value] of Object.entries({
-    viewBox: '0 0 10 10',
-    refX: '9',
-    refY: '5',
-    markerWidth: '7',
-    markerHeight: '7',
-    orient: 'auto',
-  }))
-    marker.setAttribute(key, value);
-  const tip = document.createElementNS(svgNamespace, 'path');
-  tip.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
-  tip.setAttribute('fill', '#83a8b7');
-  marker.append(tip);
-  defs.append(marker);
-  svg.append(defs);
+  // forskningstrad-utan-pilspetsar: plain lines, left to right.
   for (const edge of layout.edges) {
     const from = layout.nodes.find((n) => n.technology === edge.from)!;
     const to = layout.nodes.find((n) => n.technology === edge.to)!;
@@ -74,7 +57,7 @@ export function renderResearchTree(
     path.dataset.to = edge.to;
     path.setAttribute(
       'd',
-      `M ${x} ${y} C ${mid} ${y}, ${mid} ${endY}, ${to.x - 6} ${endY}`,
+      `M ${x} ${y} C ${mid} ${y}, ${mid} ${endY}, ${to.x} ${endY}`,
     );
     path.setAttribute(
       'class',
@@ -82,7 +65,6 @@ export function renderResearchTree(
         ? 'research-edge unlocked'
         : 'research-edge',
     );
-    path.setAttribute('marker-end', 'url(#research-arrow)');
     svg.append(path);
   }
   stage.append(svg);

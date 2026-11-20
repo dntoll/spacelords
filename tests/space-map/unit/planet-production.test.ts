@@ -123,13 +123,13 @@ describe('gemensam-planetko / delfabriker / automatiska-delorder', () => {
 
   it('offers one production decision per idle planet rather than one per factory', () => {
     const { game, home } = setup();
-    expect(
-      game.decisions.filter((decision) => decision.kind === 'planet'),
-    ).toHaveLength(1);
+    const production = () =>
+      game.decisions.filter((decision) =>
+        decision.id.startsWith('building-empty-'),
+      );
+    expect(production()).toHaveLength(1);
     game.scheduleShip(home, 'Fighter');
-    expect(
-      game.decisions.filter((decision) => decision.kind === 'planet'),
-    ).toHaveLength(0);
+    expect(production()).toHaveLength(0);
   });
 
   it('does not mark an idle queue when a full planet has no production capability', () => {

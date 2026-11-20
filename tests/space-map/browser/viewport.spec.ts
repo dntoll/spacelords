@@ -116,7 +116,8 @@ for (const size of [
       path: testInfo.outputPath('research-viewport.png'),
     });
     await page
-      .getByRole('button', { name: 'Back to map', exact: true })
+      .getByRole('navigation', { name: 'Main navigation' })
+      .getByRole('button', { name: 'Star map', exact: true })
       .click();
     await expect(page.locator('canvas[data-rendered="true"]')).toHaveCount(1);
     await expectContentFits(page);

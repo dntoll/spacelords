@@ -16,7 +16,7 @@ import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { button, element, queueButton } from '../../../common/dom.js';
 import { planetIllustration } from '../PlanetImages.js';
 import { buildingImage } from '../BuildingImage.js';
-import { bindQueueOrder, decorateQueueRow } from '../QueueView.js';
+import { shipPurposeText } from '../ShipPurposeText.js';
 import { catalogIcon } from '../CatalogControls.js';
 
 type PlanetMenus = Pick<AppReadModel, 'phase'> &
@@ -43,10 +43,8 @@ export function renderPlanet(
 ): HTMLElement {
   const page = element('section', 'planet-page');
   const header = element('div', 'screen-header');
-  header.append(
-    element('h1', '', planet.name),
-    button('Back to map', () => emit({ type: 'open-map' }), 'back-button'),
-  );
+  // inga-overflodiga-navigeringsknappar: the main navigation leads back.
+  header.append(element('h1', '', planet.name));
   page.append(header);
   const tab = menus.planetTab ?? 'overview';
   const tabs = element('nav', 'planet-tabs');
@@ -241,16 +239,11 @@ function buildQueue(
     element(
       'p',
       'muted-note',
-      'One shared queue for buildings, components and ships. One project completes per round.',
+      // byggorsak-i-kon: factories work side by side, so no order to change.
+      'Each factory builds its own orders at the same time.',
     ),
   );
-  const list = element('ol', 'queue-slots');
-  bindQueueOrder(
-    list,
-    planet.projects.map((project) => project.id),
-    (id, index) => emit({ type: 'move-project', id, index }),
-    menus.phase !== 'planning',
-  );
+  const list = element('ul', 'queue-slots');
   for (const [index, project] of planet.projects.entries()) {
     const row = element('li', 'order-row queue-order');
     renderQueueOrder(
@@ -476,9 +469,13 @@ function renderQueueOrder(
     element(
       'p',
       '',
-      `${index + 1}. ${project.type} · ${index === 0 ? 'next' : 'queued'}${project.slotIndex !== null ? ` · Site ${project.slotIndex + 1}` : ''}`,
+      `${project.type}${project.slotIndex !== null ? ` · Site ${project.slotIndex + 1}` : ''}`,
     ),
   );
+  if (project.purpose)
+    details.append(
+      element('p', 'queue-purpose', shipPurposeText(project.purpose)),
+    );
   if (project.blockedReason)
     details.append(element('p', 'muted-note', project.blockedReason));
   if (projectDefinition(project.type).ship) {
@@ -508,12 +505,6 @@ function renderQueueOrder(
   cancel.disabled = locked;
   actions.append(cancel);
   row.append(details, actions);
-  decorateQueueRow(
-    row,
-    project.id,
-    `${project.type}, position ${index + 1}`,
-    locked,
-  );
 }
 
 function buildingUsage(type: BuildType, demolition: boolean): string {

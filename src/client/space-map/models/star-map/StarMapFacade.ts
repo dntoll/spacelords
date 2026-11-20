@@ -2,6 +2,7 @@ import { pirateAsFleet } from '../PirateFleet.js';
 import type { MapViewport } from '../ProductionMap.js';
 import { hitSalvageMarker } from './SalvageMapLayout.js';
 import { FleetMapLayout } from './FleetMapLayout.js';
+import { fleetCategory, type FleetCategory } from '../fleets/FleetCategory.js';
 import {
   HexGeometry,
   type HexCoordinate,
@@ -126,6 +127,11 @@ export class StarMapFacade {
               this.host.screen !== 'orders' ||
               this.host.orderSelection?.page !== 'fleets' ||
               !fleet.routeId,
+          )
+          .filter(
+            (fleet) =>
+              this.host.screen !== 'fleets' ||
+              !this.host.hiddenFleetCategories.has(fleetCategory(fleet)),
           ),
         ...(this.host.screen === 'orders'
           ? []
@@ -138,6 +144,18 @@ export class StarMapFacade {
       this.host.camera.snapshot.zoom,
       this.host.screen === 'route' ? 'center' : 'endpoint',
     );
+  }
+
+  /** flottkategorier: show or hide one category on the Fleets map. */
+  toggleFleetCategory(category: FleetCategory): void {
+    const hidden = this.host.hiddenFleetCategories;
+    if (hidden.has(category)) hidden.delete(category);
+    else hidden.add(category);
+    const selected = this.host.mapFleetId
+      ? this.host.game.fleet(this.host.mapFleetId)
+      : null;
+    if (selected && hidden.has(fleetCategory(selected)))
+      this.host.mapFleetId = null;
   }
 
   selectMapFleet(id: string): void {

@@ -169,7 +169,7 @@ it('senaste-raden-i-bordningsloggen: previews new log entries briefly and autosc
   }
 });
 
-it('fullscreen-i-bordning: attempts fullscreen automatically and keeps an explicit fallback control', async () => {
+it('fullscreen-i-bordning / helskarm-fran-sparade-spel: attempts fullscreen automatically without its own control', async () => {
   const requestFullscreen = vi.fn().mockRejectedValue(new Error('blocked'));
   Object.defineProperty(HTMLElement.prototype, 'requestFullscreen', {
     configurable: true,
@@ -178,12 +178,6 @@ it('fullscreen-i-bordning: attempts fullscreen automatically and keeps an explic
   const setup = compactView();
   await Promise.resolve();
   expect(requestFullscreen).toHaveBeenCalledTimes(1);
-  const control = document.querySelector(
-    '[aria-label="Enter fullscreen"]',
-  ) as HTMLButtonElement;
-  expect(control).not.toBeNull();
-  control.click();
-  await Promise.resolve();
-  expect(requestFullscreen).toHaveBeenCalledTimes(2);
+  expect(document.querySelector('[aria-label$="fullscreen"]')).toBeNull();
   setup.view.dispose();
 });

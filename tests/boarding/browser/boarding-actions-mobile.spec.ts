@@ -2,7 +2,6 @@ import { expect, test } from '@playwright/test';
 
 test('bordningshud-i-botten / ihopfallbar-bordningslogg: controls fit and a scrolled log can close on mobile', async ({
   page,
-  browserName,
 }) => {
   await page.goto('./');
   await page.locator('.save-tests summary').click();
@@ -10,25 +9,10 @@ test('bordningshud-i-botten / ihopfallbar-bordningslogg: controls fit and a scro
     .getByRole('button', { name: 'Test boarding', exact: true })
     .click();
   const dialog = page.getByRole('dialog', { name: 'Boarding combat' });
-  const fullscreen = dialog.getByRole('button', {
-    name: /^(Enter|Exit) fullscreen$/,
-  });
-  if (browserName === 'chromium' && (await fullscreen.isVisible())) {
-    if ((await fullscreen.getAttribute('aria-label')) === 'Exit fullscreen')
-      await fullscreen.click();
-    await dialog.getByRole('button', { name: 'Enter fullscreen' }).click();
-    await expect
-      .poll(() =>
-        page.evaluate(
-          () => document.fullscreenElement === document.documentElement,
-        ),
-      )
-      .toBe(true);
-    await dialog.getByRole('button', { name: 'Exit fullscreen' }).click();
-    await expect
-      .poll(() => page.evaluate(() => document.fullscreenElement === null))
-      .toBe(true);
-  }
+  // helskarm-fran-sparade-spel: fullscreen is only offered on Saved games.
+  await expect(
+    dialog.getByRole('button', { name: /fullscreen$/i }),
+  ).toHaveCount(0);
   const controls = dialog.getByRole('region', { name: 'Soldier actions' });
   await expect(dialog.locator('.boarding-heading')).toHaveCount(0);
   await expect(controls.getByRole('button', { name: 'Crouch' })).toBeVisible();

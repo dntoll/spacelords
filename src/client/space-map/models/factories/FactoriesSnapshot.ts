@@ -74,12 +74,30 @@ export interface FactoryGroupSnapshot {
   readonly unescortedLinks: number;
 }
 
+/** rekommenderade-fabriker: why a factory is offered first. */
+export type FactoryRecommendation =
+  | { readonly kind: 'research' }
+  | { readonly kind: 'extraction'; readonly resource: Resource }
+  | { readonly kind: 'transport' }
+  | { readonly kind: 'colonization' }
+  | { readonly kind: 'exploration' }
+  | {
+      readonly kind: 'input';
+      readonly material: Material;
+      readonly consumer: BuildType;
+    };
+
+/** fabriksstatus-i-byggval: whether the group has the factory. */
+export type FactoryPresence = 'built' | 'building' | 'absent';
+
 export interface BuildOptionSnapshot {
   readonly type: BuildType;
   readonly tier: FactoryTier;
   readonly cost: Readonly<Record<Resource, number>>;
   readonly inGroup: number;
   readonly buildingInGroup: number;
+  readonly presence: FactoryPresence;
+  readonly recommendations: readonly FactoryRecommendation[];
   readonly here: number;
   readonly buildRounds: number;
   readonly missingDeposit: Resource | null;

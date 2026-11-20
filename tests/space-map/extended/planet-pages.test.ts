@@ -142,7 +142,7 @@ describe('planetgemensamt-produktval', () => {
   });
 });
 describe('kompakt-produktionsko', () => {
-  it('dragbara-koer: shows one row per project and links to its actual queue position', () => {
+  it('byggorsak-i-kon: shows one row per project without reordering and links to the project', () => {
     const projects = [
       project('a'),
       project('b'),
@@ -161,8 +161,9 @@ describe('kompakt-produktionsko', () => {
     const button = view.querySelector<HTMLButtonElement>(
       '.compact-queue-item',
     )!;
-    expect(view.querySelectorAll('.queue-item')).toHaveLength(5);
-    expect(button.textContent).toContain('1. Fighter');
+    expect(view.querySelectorAll('.compact-queue-list li')).toHaveLength(5);
+    expect(view.querySelector('.queue-drag-handle')).toBeNull();
+    expect(button.textContent).toMatch(/^Fighter/);
     button.click();
     expect(emit).toHaveBeenCalledWith({
       type: 'open-planet-project',

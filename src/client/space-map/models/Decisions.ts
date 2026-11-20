@@ -44,7 +44,9 @@ export function decisionScreen(decision: DecisionDescriptor): DecisionScreen {
   if (
     decision.routeId ||
     decision.kind === 'route' ||
-    decision.id.startsWith('supply-')
+    decision.id.startsWith('supply-') ||
+    // startuppmaning-fabriker: first buildings are placed in Factories.
+    decision.id.startsWith('factory-')
   )
     return 'factories';
   if (decision.fleetId || decision.kind === 'fleet') return 'fleets';

@@ -487,8 +487,190 @@ describe('produktionsko-bara-skepp', () => {
       expect.arrayContaining(['Research station', 'Transport ship']),
     );
     const rows = [
-      ...root.querySelectorAll('.map-build-queue .map-queue-choice'),
+      ...root.querySelectorAll('.map-build-queue .map-queue-ship'),
     ].map((row) => row.textContent);
-    expect(rows).toEqual(['1. Transport ship']);
+    expect(rows).toEqual(['Transport ship']);
+  });
+});
+
+describe('rekommenderade-fabriker', () => {
+  const recommended = (factories: ReturnType<typeof setup>['factories']) =>
+    Object.fromEntries(
+      factories()
+        .build!.options.filter((option) => option.recommendations.length)
+        .map((option) => [option.type, option.recommendations]),
+    );
+
+  it('startuppmaning-fabriker: a new game asks for a Research station and extraction in Factories', async () => {
+    const { Game } =
+      await import('../../../src/client/space-map/models/Game.js');
+    const { createExampleGalaxy } =
+      await import('../../../src/client/space-map/models/exampleGalaxy.js');
+    const { send, act, model, factories } = setup({
+      ...new Game(createExampleGalaxy()).exportState(),
+      pirates: [],
+    });
+    const ids = () => model.snapshot.decisions.map((item) => item.id);
+    expect(ids()).toEqual(
+      expect.arrayContaining(['factory-research', 'factory-extraction']),
+    );
+    send({ type: 'open-decision', id: 'factory-research' });
+    expect(model.snapshot.screen).toBe('factories');
+    act({ kind: 'open-site', planet: 'sol-0', site: 0 });
+    const first = recommended(factories);
+    expect(first['Research station']).toEqual([{ kind: 'research' }]);
+    for (const resource of factories().build!.deposits)
+      expect(Object.values(first).flat()).toContainEqual({
+        kind: 'extraction',
+        resource,
+      });
+    act({ kind: 'build', type: 'Research station' });
+    expect(ids()).not.toContain('factory-research');
+    expect(ids()).toContain('factory-extraction');
+    act({ kind: 'open-site', planet: 'sol-0', site: 1 });
+    expect(recommended(factories)['Research station']).toBeUndefined();
+  });
+
+  it('puts the missing part factory first when a ship factory in the group lacks it', () => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    state.colonies[0]![1].buildings.push({
+      id: 'fighters',
+      type: 'Fighter factory',
+      slotIndex: 2,
+      demolition: false,
+    });
+    const { send, act, factories, root } = setup({
+      ...state,
+      researched: [
+        ...state.researched,
+        'Fighter factory',
+        'Weapons module factory',
+      ],
+    });
+    send({ type: 'open-factories' });
+    act({ kind: 'open-site', planet: 'sol-0', site: 3 });
+    expect(recommended(factories)['Weapons module factory']).toEqual([
+      {
+        kind: 'input',
+        material: 'Weapons module',
+        consumer: 'Fighter factory',
+      },
+    ]);
+    // Rocket engines are already made in the group.
+    expect(recommended(factories)['Rocket engine factory']).toBeUndefined();
+    const first = root.querySelector('.factory-recommended .factory-option');
+    expect(first?.textContent).toContain('Weapons module factory');
+    expect(first?.textContent).toContain(
+      'Fighter factory needs Weapons module',
+    );
+    act({ kind: 'build', type: 'Weapons module factory' });
+    act({ kind: 'open-site', planet: 'sol-0', site: 4 });
+    const weapons = factories().build!.options.find(
+      (option) => option.type === 'Weapons module factory',
+    )!;
+    expect(weapons.recommendations).toEqual([]);
+    expect(weapons.presence).toBe('building');
+  });
+
+  it('recommends a Colony ship factory once a planet is queued for colonization', () => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    const { send, act, factories } = setup({
+      ...state,
+      researched: [...state.researched, 'Colony ship factory'],
+      planetQueues: { exploration: [], colonization: ['sol-2'] },
+    });
+    send({ type: 'open-factories' });
+    act({ kind: 'open-site', planet: 'sol-0', site: 2 });
+    expect(recommended(factories)['Colony ship factory']).toEqual([
+      { kind: 'colonization' },
+    ]);
+  });
+
+  it('recommends a Transport ship factory while a link has no transport to take', () => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    const withFree = setup(state);
+    withFree.send({ type: 'open-factories' });
+    withFree.act({ kind: 'open-site', planet: 'sol-0', site: 2 });
+    expect(recommended(withFree.factories)['Transport ship factory']).toBe(
+      undefined,
+    );
+    const { send, act, factories } = setup({
+      ...state,
+      fleets: state.fleets.filter((fleet) => fleet.id !== 'freighters'),
+    });
+    send({ type: 'open-factories' });
+    act({ kind: 'open-site', planet: 'sol-0', site: 2 });
+    expect(recommended(factories)['Transport ship factory']).toEqual([
+      { kind: 'transport' },
+    ]);
+  });
+});
+
+describe('fabriksstatus-i-byggval', () => {
+  it('colours each option by whether the group has it, builds it or lacks it', () => {
+    const { send, act, factories, root } = setup();
+    send({ type: 'open-factories' });
+    act({ kind: 'open-site', planet: 'sol-0', site: 2 });
+    const presence = Object.fromEntries(
+      factories().build!.options.map((option) => [
+        option.type,
+        option.presence,
+      ]),
+    );
+    expect(presence).toMatchObject({
+      'Iron mine': 'built',
+      'Rocket engine factory': 'built',
+      'Research station': 'absent',
+    });
+    const row = (type: string) =>
+      [...root.querySelectorAll('.factory-option')].find((item) =>
+        item.textContent?.includes(type),
+      )!;
+    expect(row('Iron mine').classList).toContain('presence-built');
+    expect(row('Research station').classList).toContain('presence-absent');
+    expect(row('Research station').textContent).toContain('Not in group');
+    act({ kind: 'build', type: 'Research station' });
+    act({ kind: 'open-site', planet: 'sol-0', site: 3 });
+    expect(row('Research station').classList).toContain('presence-building');
+    expect(row('Research station').textContent).toContain(
+      '1 under construction',
+    );
+  });
+});
+
+describe('byggorsak-i-kon', () => {
+  it('a transport ordered for a link is built for that link and Production says so without reordering', () => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    state.fleets = state.fleets.filter((fleet) => fleet.id !== 'freighters');
+    state.colonies[0]![1].buildings.push({
+      id: 'yard',
+      type: 'Transport ship factory',
+      slotIndex: 2,
+      demolition: false,
+    });
+    const { root, send, act, model } = setup(state);
+    send({ type: 'open-factories' });
+    act({ kind: 'open-connect', group: 'Tellus' });
+    act({ kind: 'connect', target: 'Vesta' });
+    send({ type: 'open-production', planetId: 'sol-0' });
+    const transport = model.snapshot.planet!.projects.find(
+      (project) => project.type === 'Transport ship',
+    )!;
+    expect(transport.initialOrder).toEqual({
+      kind: 'join-route',
+      routeId: 'route-test',
+    });
+    expect(transport.purpose).toEqual({
+      kind: 'link',
+      from: 'Tellus',
+      to: 'Vesta',
+    });
+    const row = root.querySelector('.map-build-queue .map-queue-row')!;
+    expect(row.querySelector('.map-queue-purpose')?.textContent).toBe(
+      'For the link Tellus ↔ Vesta',
+    );
+    expect(
+      root.querySelector('.map-build-queue .queue-drag-handle'),
+    ).toBeNull();
   });
 });

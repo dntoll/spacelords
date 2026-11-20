@@ -10,10 +10,20 @@ Se [hela visionen](docs/game-vision.md).
 
 ## Kravkategorier
 
+- **Navigering:** `inga-overflodiga-navigeringsknappar` (2026-11-20) är
+  **Fullständigt implementerat**. Skärmar har inga knappar tillbaka till kartan
+  eller till skärmar som huvudmenyn redan når: `Back to map` på Research och
+  planetsidan, `Open research` i Production, `Open in Production` i den gamla
+  ruttpanelen och `Build a Research station` på Research är borttagna. Det
+  ersätter knappen i `forskningsvy-utan-station`; förklaringen finns kvar.
+  Bakåtknappar inom en skärm, som `Back` i Factories, behålls.
 - **Startskärm och helskärm:** `startskarm-utan-scroll`, `separata-testlagen`
-  och `helskarm-i-hela-spelet` är **Fullständigt implementerade**. Tre
-  sparplatser delar skärmens tillgängliga yta, testlägena finns under en egen
-  rubrik och helskärm kan växlas från startsidan och spelet.
+  och `helskarm-fran-sparade-spel` är **Fullständigt implementerade**. Tre
+  sparplatser delar skärmens tillgängliga yta och testlägena finns under en
+  egen rubrik. Helskärm väljs bara med knappen på `Saved games`; spelet
+  fortsätter i helskärm på alla andra skärmar utan egen knapp.
+  `helskarm-fran-sparade-spel` (2026-11-20) ersätter knappen i spelet från
+  `helskarm-i-hela-spelet` och reservknappen i `fullscreen-i-bordning`.
 
 - **Landgång och bordningsgränssnitt:** `landgang-med-bordningsstart`,
   `airlock-oppnar-at-blickriktning`, `ihopfallbar-bordningslogg` och
@@ -172,8 +182,8 @@ Se [hela visionen](docs/game-vision.md).
   `fullscreen-i-bordning` är **Fullständigt implementerat**. Varje soldat har
   ett `Rifle` och en roterande personlig pryl; granatbärare har tre granater.
   Soldatval och handlingar ligger längst ned; logg och fönsterknappar ligger i
-  övre hörnen. Bordning försöker öppna fullscreen automatiskt och har en
-  Enter/Exit-knapp som reserv. Se
+  övre hörnen. Bordning försöker öppna fullscreen automatiskt men har ingen
+  egen knapp (`helskarm-fran-sparade-spel`). Se
   [produktkrav](docs/product-requirements.md).
 
 - **Bordningshandlingar och flyt:** `stang-oppen-dorr`,
@@ -864,7 +874,9 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   selection visar redan i den kompakta listan befintliga byggnader per typ på
   vald planet och totalt på spelarens planeter. Köade byggprojekt ingår inte.
 - **Forskning:** `forsknings-tradnavigation` är **Fullständigt implementerat**:
-  ett zoom- och panorerbart forskningsträd med beroendepilar och bibehållen kamera.
+  ett zoom- och panorerbart forskningsträd med beroendelinjer och bibehållen kamera.
+  `forskningstrad-utan-pilspetsar` (2026-11-20) är **Fullständigt
+  implementerat**: linjerna saknar pilspetsar.
   `forskning-kraver-station` är **Fullständigt implementerat**: en färdig
   Research station krävs för nya forskningsbeställningar. Befintliga köer väntar
   utan drift; Decisions föreslår forskning först när en station finns. Detta
@@ -924,6 +936,15 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och
   gäller fortsatt, liksom fysisk frakt, automatiska delorder och sparade spel.
+  `flottkategorier` och `byggorsak-i-kon` är **Fullständigt implementerade**
+  inom utforskningen: Fleets färgar flottor efter kategori och kan dölja
+  kategorier, och Build queue visar varför varje skepp byggs i stället för att
+  kunna ordnas om (ersätter omordningen i `dragbara-koer` för Build queue).
+  `startuppmaning-fabriker`, `fabriksstatus-i-byggval` och
+  `rekommenderade-fabriker` är **Fullständigt implementerade** inom
+  utforskningen: ett nytt spel uppmanar till forskning och utvinning, byggvalen
+  färgas efter om fabriken finns, byggs eller saknas i gruppen och det som
+  behövs just nu står överst under `Recommended`.
 - **Kartans utrymme:** `fokuserat-kartval` är **Fullständigt implementerat**.
   Kartan saknar objektmeny, S/Q-förklaring och kontrollruta för zoom/Homeworld.
   Tomma rutor utan flottor visar ingen informationspanel. Val av himlakropp,

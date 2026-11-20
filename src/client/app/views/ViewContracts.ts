@@ -12,6 +12,7 @@ import type {
   Technology,
   PlanetQueueKind,
   FactoriesAction,
+  FleetCategory,
 } from '../../space-map/models/index.js';
 import type {
   BattleCommand,
@@ -105,6 +106,7 @@ export type AppIntent =
       readonly id: string;
     }
   | { readonly type: 'cancel-map-trade' }
+  | { readonly type: 'toggle-fleet-category'; readonly category: FleetCategory }
   | {
       readonly type: 'open-route' | 'open-production';
       readonly planetId?: string;

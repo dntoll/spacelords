@@ -17,7 +17,7 @@ import {
   catalogHeading,
 } from '../CatalogControls.js';
 import { button, element } from '../../../common/dom.js';
-import { bindQueueOrder, decorateQueueRow } from '../QueueView.js';
+import { shipPurposeText } from '../ShipPurposeText.js';
 
 type Menus = Pick<AppReadModel, 'phase'> &
   Partial<
@@ -219,10 +219,6 @@ export function renderProduction(
       }),
     );
   }
-  if (!products.length && menus.productionGuidance?.kind === 'research')
-    order.append(
-      button('Open research', () => emit({ type: 'open-research' })),
-    );
   if (products.length && !product)
     order.append(
       element('p', 'muted-note', 'Select a product for full details.'),
@@ -237,25 +233,13 @@ export function renderProduction(
       'button secondary-button',
     ),
   );
-  const queueList = element('ol', 'compact-queue-list');
-  bindQueueOrder(
-    queueList,
-    planet.projects.map((project) => project.id),
-    (id, index) => emit({ type: 'move-project', id, index }),
-    menus.phase !== 'planning',
-  );
-  for (const [index, first] of planet.projects.entries()) {
-    const position = index + 1;
-    const fleet = first.destinationFleetId
-      ? (fleets.find((f) => f.id === first.destinationFleetId)?.name ??
-        'Unknown fleet')
-      : first.type === 'Civilian shuttle'
-        ? 'New Civilian transport fleet'
-        : ShipOrders.defaultAssignment(first.type);
+  // byggorsak-i-kon: no order to change; each row says why it is built.
+  const queueList = element('ul', 'compact-queue-list');
+  for (const first of planet.projects) {
     const item = element('li');
     item.append(
       button(
-        `${position}. ${first.type}${projectDefinition(first.type).ship ? ` · ${fleet}` : ''}${first.slotIndex === null ? '' : ` · Site ${first.slotIndex + 1}`}${first.blockedReason ? ` · ${first.blockedReason}` : ' · Queued'}`,
+        `${first.type}${first.purpose ? ` · ${shipPurposeText(first.purpose)}` : ''}${first.slotIndex === null ? '' : ` · Site ${first.slotIndex + 1}`}${first.blockedReason ? ` · ${first.blockedReason}` : ' · Queued'}`,
         () =>
           emit({
             type: 'open-planet-project',
@@ -264,12 +248,6 @@ export function renderProduction(
           }),
         'button secondary-button compact-queue-item',
       ),
-    );
-    decorateQueueRow(
-      item,
-      first.id,
-      `${first.type}, position ${position}`,
-      menus.phase !== 'planning',
     );
     queueList.append(item);
   }

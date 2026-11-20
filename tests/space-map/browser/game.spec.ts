@@ -96,7 +96,10 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
   await page
     .getByRole('button', { name: 'Back to Building sites', exact: true })
     .click();
-  await page.getByRole('button', { name: 'Back to map', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('button', { name: 'Star map', exact: true })
+    .click();
   await canvas(page);
   await expect(page.getByLabel('Map zoom')).toHaveText(zoom ?? '');
   for (let count = 0; count < 3; count += 1) {
@@ -109,10 +112,7 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
     ).toBeVisible();
     // forskningsvy-utan-station: a new game shows the way to Factories.
     await expect(
-      page.getByRole('button', {
-        name: 'Build a Research station',
-        exact: true,
-      }),
+      page.getByText('Research needs a Research station.', { exact: false }),
     ).toBeVisible();
     await expect(page.locator('canvas')).toHaveCount(0);
     if (count === 0)
@@ -121,7 +121,8 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
         fullPage: true,
       });
     await page
-      .getByRole('button', { name: 'Back to map', exact: true })
+      .getByRole('navigation', { name: 'Main navigation' })
+      .getByRole('button', { name: 'Star map', exact: true })
       .click();
     await canvas(page);
   }

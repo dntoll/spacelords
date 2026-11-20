@@ -14,7 +14,11 @@ eller tre rundor att bygga, och eskort skyddar fraktskeppen. Varje fabrik gör e
 enhet per runda, delar tillverkas bara när något behöver dem och skepp kostar
 bara delar. Råvaror utvinns där de finns, även av mining ships i nebulosor och
 asteroidbälten, och skepp tillverkas där deras fabrik står. Mining ships
-görs sist. Se
+görs sist. Ett nytt spel uppmanar spelaren att börja med forskning och
+utvinning. Byggvalen visar tydligt vad gruppen redan har eller bygger och
+föreslår först de fabriker som behövs just nu. Flottor färgas efter vad de
+gör och kategorier kan döljas. Byggkön visar varför varje skepp byggs men
+ordnas inte om, eftersom fabrikerna arbetar samtidigt. Se
 [förenklad produktion](simple-production.md).
 
 ## Kartobjekt och automatiska flottor, 2026-11-08
@@ -587,7 +591,8 @@ stilla eller väntar på rivning; köade projekt räknas först när de är fär
 | `kompakta-bygghandlingar`   | Fullständigt implementerat | Byggplatser och byggval har kompakta, innehållsbreda knappar med minst 44 px klickhöjd. Byggande är primär handling, rivning och avbrytning sekundära. Status och fabrikens tillhörande kö framgår tydligt.                                                                                                                                     |
 
 `forsknings-tradnavigation` — **Fullständigt implementerat**: Research är ett
-forskningsträd med pilar från förkunskap till beroende teknik. Spelaren kan
+forskningsträd med linjer utan pilspetsar (`forskningstrad-utan-pilspetsar`)
+från förkunskap till beroende teknik. Spelaren kan
 panorera, zooma och få en översikt med mus, touch eller tangentbord. Kameran
 behålls vid köändringar och navigering mellan vyer. Byggnadsbilder och tydliga
 statusar visar valbar, köad, pågående och färdig forskning. Senare forskning
@@ -1654,10 +1659,9 @@ avväljs automatiskt när soldaten inte längre har tillräckligt med AP för at
 
 `bordningshud-i-botten` och `fullscreen-i-bordning` — **Fullständigt
 implementerat**: soldatval, namn, HP, AP och handlingar ligger längst ned.
-Loggen ligger uppe till vänster och stängning och fullscreen uppe till höger.
-Bordning försöker gå
-till fullscreen när den öppnas och har en Enter/Exit-knapp när ett uttryckligt
-tryck krävs.
+Loggen ligger uppe till vänster och stängning uppe till höger.
+Bordning försöker gå till fullscreen när den öppnas men har ingen egen
+fullscreenknapp (`helskarm-fran-sparade-spel`).
 
 `hallning-vid-vapnet`, `bordningslogg-i-hornet` och
 `senaste-raden-i-bordningsloggen` — **Fullständigt implementerat**:
@@ -1788,5 +1792,10 @@ fram till målet, granater kastas i en synlig båge och interiörernas grundljus
   delar den tillgängliga skärmen utan att startsidan behöver scrollas.
 - `separata-testlagen` — **Fullständigt implementerat**: Test battle och Test
   boarding ligger under en egen rubrik med val för bordning.
-- `helskarm-i-hela-spelet` — **Fullständigt implementerat**: Spelaren kan växla
-  helskärm från startsidan och spelet när webbläsaren stöder det.
+- `inga-overflodiga-navigeringsknappar` — **Fullständigt implementerat**
+  (2026-11-20): skärmarna har inga extra knappar till kartan eller till
+  skärmar i huvudmenyn; spelaren navigerar med huvudmenyn.
+- `helskarm-i-hela-spelet` — **Delvis ersatt** av `helskarm-fran-sparade-spel`.
+- `helskarm-fran-sparade-spel` — **Fullständigt implementerat** (2026-11-20):
+  knappen för helskärm finns bara på `Saved games`. Spelet fortsätter i
+  helskärm på alla andra skärmar, som saknar egen knapp.

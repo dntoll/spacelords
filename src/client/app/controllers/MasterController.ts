@@ -515,6 +515,9 @@ export class MasterController {
       case 'map-select-fleet':
         this.#starMap.selectMapFleet(intent.id);
         break;
+      case 'toggle-fleet-category':
+        this.#starMap.toggleFleetCategory(intent.category);
+        break;
       case 'begin-map-route':
         this.#routes.beginMapRoute(intent.id);
         break;
@@ -1030,6 +1033,7 @@ export class MasterController {
         'map-size',
         'map-select-route',
         'map-select-fleet',
+        'toggle-fleet-category',
         'pointer-move',
         'pointer-start',
         'pan',

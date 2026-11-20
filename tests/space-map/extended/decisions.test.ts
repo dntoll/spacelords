@@ -75,7 +75,7 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
       model.snapshot.decisions.filter(
         (decision) => !isMessageSetting(decision.id),
       ),
-    ).toHaveLength(3);
+    ).toHaveLength(4);
     model.openDecision('research-empty');
     expect(model.snapshot.screen).toBe('research');
     model.openDecision('building-empty-sol-0');
@@ -172,7 +172,7 @@ describe('tysta-beslut', () => {
     const restored = Game.restore(
       JSON.parse(JSON.stringify(state)) as ReturnType<Game['exportState']>,
     );
-    expect(restored.decisions).toHaveLength(3);
+    expect(restored.decisions).toHaveLength(4);
     expect(restored.decisions.every((d) => !d.muted)).toBe(true);
   });
   it('keeps muted decisions quiet across turns and restores their warnings on unmute', () => {
@@ -250,11 +250,11 @@ describe('tysta-beslut', () => {
     control('Mute').click();
     expect(card().textContent).toContain('Muted for future turns');
     expect(root.querySelector('.decision-counter')?.textContent).toBe(
-      'Decisions (2)',
+      'Decisions (3)',
     );
     control('Unmute').click();
     expect(root.querySelector('.decision-counter')?.textContent).toBe(
-      'Decisions (3)',
+      'Decisions (4)',
     );
   });
 });
@@ -293,6 +293,8 @@ it('tystade-beslut-sist: keeps active and skipped decisions before muted decisio
   const game = Game.restore(researchStationState({ shipFactory: true }));
   game.muteDecision('research-empty');
   expect(game.decisions.map((decision) => decision.id)).toEqual([
+    // startuppmaning-fabriker: the fixture has no extraction yet.
+    'factory-extraction',
     'building-empty-sol-0',
     'fleet-idle-fleet-home',
     'research-empty',
@@ -306,6 +308,7 @@ it('tystade-beslut-sist: keeps active and skipped decisions before muted decisio
   });
   game.unmuteDecision('research-empty');
   expect(game.decisions.map((decision) => decision.id)).toEqual([
+    'factory-extraction',
     'building-empty-sol-0',
     'fleet-idle-fleet-home',
   ]);
@@ -324,7 +327,7 @@ it('beslutslista: removes Next decision and retains Review on each decision', ()
   expect(root.querySelector('[aria-label="Next decision"]')).toBeNull();
   expect(
     root.querySelectorAll('[data-decision-id] [aria-label="Review"]'),
-  ).toHaveLength(3);
+  ).toHaveLength(4);
   controller.dispose();
 });
 
