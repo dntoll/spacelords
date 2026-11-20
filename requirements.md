@@ -936,6 +936,9 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och
   gäller fortsatt, liksom fysisk frakt, automatiska delorder och sparade spel.
+  `byggkons-framsteg` och `byggko-eller-skeppsdetaljer` är **Fullständigt
+  implementerade**: byggkön visar varje skepps delar och väntan, och
+  Production visar antingen kön eller ett skepps detaljer.
   `ny-fabrik-med-guldstjarna` och `uppgradera-delfabrik-i-factories` är
   **Fullständigt implementerade**: nya fabriker märks med guldstjärna och
   delfabriker kan uppgraderas från Factories.

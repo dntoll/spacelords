@@ -822,3 +822,78 @@ describe('ny-fabrik-med-guldstjarna', () => {
     expect(model.snapshot.newFactories).not.toContain('Weapons module factory');
   });
 });
+
+describe('byggkons-framsteg / byggko-eller-skeppsdetaljer', () => {
+  const withFactories = () => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    state.colonies[0]![1].buildings.push(
+      {
+        id: 'yard',
+        type: 'Transport ship factory',
+        slotIndex: 2,
+        demolition: false,
+      },
+      {
+        id: 'fighters',
+        type: 'Fighter factory',
+        slotIndex: 3,
+        demolition: false,
+      },
+    );
+    return setup({
+      ...state,
+      researched: [
+        ...state.researched,
+        'Fighter factory',
+        'Weapons module factory',
+      ],
+    });
+  };
+
+  it('shows each queued ship’s parts and why it waits', () => {
+    const { root, send, model } = withFactories();
+    send({ type: 'open-production', planetId: 'sol-0' });
+    send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
+    send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
+    send({ type: 'queue-ship', ship: 'Fighter', fleetId: null });
+    send({ type: 'map-production-option', option: null });
+    const queue = model.snapshot.productionMap.queue;
+    expect(queue.map((entry) => [entry.type, entry.state])).toEqual([
+      ['Transport ship', 'parts'],
+      ['Transport ship', 'factory'],
+      ['Fighter', 'parts'],
+    ]);
+    expect(queue[0]!.parts).toEqual([
+      expect.objectContaining({ part: 'Rocket engine', needed: 1 }),
+    ]);
+    expect(queue[0]!.parts[0]!.status).not.toBe('missing');
+    // No Weapons module factory in the group: the Fighter cannot finish.
+    expect(queue[2]!.parts).toContainEqual(
+      expect.objectContaining({ part: 'Weapons module', status: 'missing' }),
+    );
+    expect(queue[2]!.roundsLeft).toBeNull();
+    const rows = [...root.querySelectorAll('.map-build-queue .map-queue-row')];
+    expect(rows[1]!.textContent).toContain('Waiting for its factory');
+    expect(
+      rows[2]!.querySelector('.map-queue-part.missing')?.textContent,
+    ).toContain('Weapons module');
+  });
+
+  it('shows either the build queue or one ship’s details, never both', () => {
+    const { root, send } = withFactories();
+    send({ type: 'open-production', planetId: 'sol-0' });
+    send({ type: 'map-production-option', option: null });
+    expect(root.querySelector('.map-build-queue')).not.toBeNull();
+    expect(root.querySelector('[aria-label="Build details"]')).toBeNull();
+    send({ type: 'map-production-option', option: 'Transport ship' });
+    expect(root.querySelector('[aria-label="Build details"]')).not.toBeNull();
+    expect(root.querySelector('.map-build-queue')).toBeNull();
+    root
+      .querySelector<HTMLButtonElement>(
+        '[aria-label="Back to the build queue"]',
+      )!
+      .click();
+    expect(root.querySelector('.map-build-queue')).not.toBeNull();
+    expect(root.querySelector('[aria-label="Build details"]')).toBeNull();
+  });
+});

@@ -203,6 +203,16 @@ Krav inom utforskningen, båda **Fullständigt implementerade**.
   eller `Joins the planet home fleet`. Ett fraktskepp som `Factories` beställer
   för en länk får order att bemanna just den länken.
 
+- `byggkons-framsteg` (2026-11-20, **Fullständigt implementerat**): varje
+  skepp i Production-kön visar var det står: `Waiting for its factory` när
+  ett annat skepp använder fabriken, annars `Parts 1/2 · ~2 rounds` eller
+  `All parts in place`. Under raden står varje del som `✓ … in place`,
+  `… coming` eller `! … no factory in group`. Saknas en del helt i gruppen
+  visas ingen tid.
+- `byggko-eller-skeppsdetaljer` (2026-11-20, **Fullständigt implementerat**):
+  Production visar antingen planetens byggkö eller detaljerna för ett valt
+  skepp, aldrig båda. Detaljerna stängs med `×`, och då visas kön igen.
+
 `byggorsak-i-kon` ersätter omordningen av Build queue i `dragbara-koer`,
 `kompakt-produktionsko` och `kompakta-koknappar`. Research queue,
 reparationskön och planetköerna kan fortfarande ordnas om.

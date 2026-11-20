@@ -28,6 +28,7 @@ export * from './orders/OrderFacade.js';
 export * from './orders/OrderSelection.js';
 export * from './planet/PlanetFacade.js';
 export * from './production/ProductionFacade.js';
+export * from './production/ShipProgress.js';
 export * from './research/ResearchFacade.js';
 export * from './research/ResearchTree.js';
 export * from './routes/RouteFacade.js';

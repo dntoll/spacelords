@@ -5509,3 +5509,40 @@ body:has(.discovery-controls) .selection-panel {
   background: #ffd166;
   font-weight: 700;
 }
+
+/* byggkons-framsteg: a queued ship's state and its parts. */
+.map-queue-state {
+  font-size: 0.72rem;
+  color: var(--factory-time);
+}
+.map-queue-parts {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0 0 2px;
+  list-style: none;
+}
+.map-queue-part {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  background: #ffffff10;
+  color: #d7e2e5;
+}
+.map-queue-part.delivered {
+  color: #0c2c18;
+  background: var(--factory-success);
+}
+.map-queue-part.coming {
+  color: var(--factory-time);
+  background: #9cc8ff1a;
+}
+.map-queue-part.missing {
+  color: #3a0d09;
+  background: var(--factory-danger);
+}
+.map-build-heading .queue-icon-button {
+  flex: none;
+}

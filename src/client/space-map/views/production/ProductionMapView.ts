@@ -3,6 +3,7 @@ import { SHIPS, type ShipType } from '../../models/Game.js';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import type { PlanetGameSnapshot } from '../../models/Game.js';
 import type { ProductionOption } from '../../models/ProductionMap.js';
+import type { ShipProgressSnapshot } from '../../models/production/ShipProgress.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import {
   catalogIcon,
@@ -127,6 +128,30 @@ export function renderProductionRing(
   return ring;
 }
 
+const PART_MARK = {
+  delivered: '✓',
+  coming: '…',
+  missing: '!',
+} as const;
+
+const PART_STATUS = {
+  delivered: 'in place',
+  coming: 'coming',
+  missing: 'no factory in group',
+} as const;
+
+/** byggkons-framsteg: one line on where a queued ship stands. */
+function progressText(progress: ShipProgressSnapshot): string {
+  if (progress.state === 'factory') return 'Waiting for its factory';
+  const rounds =
+    progress.roundsLeft === null
+      ? ''
+      : ` · ~${progress.roundsLeft} ${progress.roundsLeft === 1 ? 'round' : 'rounds'}`;
+  if (progress.state === 'ready') return `All parts in place${rounds}`;
+  const done = progress.parts.filter((part) => part.status === 'delivered');
+  return `Parts ${done.length}/${progress.parts.length}${rounds}`;
+}
+
 export function renderProductionMapPanel(
   model: AppReadModel,
   emit: IntentHandler,
@@ -186,7 +211,11 @@ export function renderProductionMapPanel(
     const heading = element('div', 'map-build-heading');
     const build = button('Build', () => emit({ type: 'map-production-build' }));
     build.disabled = !!option.blockedReason || model.phase !== 'planning';
-    heading.append(catalogHeading(option.type), build);
+    // byggko-eller-skeppsdetaljer: details replace the queue until closed.
+    const close = queueButton('×', 'Back to the build queue', () =>
+      emit({ type: 'map-production-option', option: null }),
+    );
+    heading.append(catalogHeading(option.type), build, close);
     detail.append(
       heading,
       element('p', '', option.description),
@@ -262,6 +291,7 @@ export function renderProductionMapPanel(
       detail.append(element('p', 'blocked-reason', option.blockedReason));
 
     panel.append(detail);
+    return panel;
   }
   const problems = model.mapProblems.filter(
     (p) => p.planetId === planet.id && p.screen === 'production',
@@ -279,6 +309,7 @@ export function renderProductionMapPanel(
   ships.forEach((project, index) => {
     const item = element('li', 'map-queue-row');
     item.dataset.projectId = project.id;
+    const progress = map.queue.find((entry) => entry.projectId === project.id);
     const choose = button(
       `Select project ${index + 1}: ${project.type}`,
       () => emit({ type: 'map-production-project', id: project.id }),
@@ -295,6 +326,9 @@ export function renderProductionMapPanel(
             ),
           ]
         : []),
+      ...(progress
+        ? [element('span', 'map-queue-state', progressText(progress))]
+        : []),
     );
     choose.setAttribute(
       'aria-pressed',
@@ -310,6 +344,22 @@ export function renderProductionMapPanel(
     ] as const)
       control.dataset.focusKey = `project:${project.id}:${action}`;
     item.append(choose, cancel);
+    // byggkons-framsteg: every part shows whether it is in place or awaited.
+    if (progress?.parts.length) {
+      const parts = element('ul', 'map-queue-parts');
+      parts.setAttribute('aria-label', `Parts for ${project.type}`);
+      for (const part of progress.parts)
+        parts.append(
+          element(
+            'li',
+            `map-queue-part ${part.status}`,
+            `${PART_MARK[part.status]} ${part.part}${
+              part.needed > 1 ? ` ${part.delivered}/${part.needed}` : ''
+            } · ${PART_STATUS[part.status]}`,
+          ),
+        );
+      item.append(parts);
+    }
     list.append(item);
   });
   queue.append(list);

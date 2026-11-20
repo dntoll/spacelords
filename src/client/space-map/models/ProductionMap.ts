@@ -1,6 +1,7 @@
 import type { BuildType, Cost, ProjectType } from './Game.js';
 import type { Point } from '../../common/HexCoordinate.js';
 import type { ProductionPresenceSnapshot } from './ProductionPresence.js';
+import type { ShipProgressSnapshot } from './production/ShipProgress.js';
 
 export type MapScreen = 'map' | 'fleets' | 'route' | 'production' | 'orders';
 export function isMapScreen(screen: string | null): screen is MapScreen {
@@ -37,6 +38,8 @@ export interface ProductionMapSnapshot {
   readonly radius: number;
   readonly selectedOption: ProductionOption | null;
   readonly selectedProjectId: string | null;
+  /** byggkons-framsteg: the planet's queued ships and their parts. */
+  readonly queue: readonly ShipProgressSnapshot[];
 }
 export interface MapProblem {
   readonly decisionId: string;

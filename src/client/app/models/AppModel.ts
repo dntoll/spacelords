@@ -68,6 +68,7 @@ import {
   type MapCell,
   FLEET_CATEGORIES,
   type FleetCategory,
+  shipProgress,
 } from '../../space-map/models/index.js';
 import {
   BoardingFacade,
@@ -965,6 +966,13 @@ export class AppModel {
         options.find((o) => o.type === this.#mapProductionOption) ?? null,
       selectedProjectId:
         this.#screen === 'production' ? this.#selectedMapProject() : null,
+      queue: planet
+        ? shipProgress(
+            planet.id,
+            this.#game.planetSnapshot(planet)!.projects,
+            this.#game.networkSnapshot(),
+          )
+        : Object.freeze([]),
     });
   }
   selectMapProductionCategory(category: MapProductionCategory): void {
