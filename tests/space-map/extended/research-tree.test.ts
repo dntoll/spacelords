@@ -88,8 +88,9 @@ describe('forsknings-tradnavigation', () => {
       for (const fact of facts) emit(fact);
     };
     emit({ type: 'open-research' });
-    emit({ type: 'research-size', width: 800, height: 600 });
-    emit({ type: 'research-zoom', factor: 1.2, anchor: { x: 400, y: 300 } });
+    // A phone-sized area, where the whole tree does not fit at full zoom.
+    emit({ type: 'research-size', width: 360, height: 300 });
+    emit({ type: 'research-zoom', factor: 1.2, anchor: { x: 180, y: 150 } });
     const initial = model.snapshot.researchCamera;
     point('start', 1, { x: 100, y: 100 });
     point('move', 1, { x: 160, y: 130 });
