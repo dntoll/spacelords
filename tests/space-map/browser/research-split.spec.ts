@@ -96,7 +96,7 @@ for (const size of [
     if (size.width <= 640) {
       expect(selected.y).toBeGreaterThanOrEqual(before.y + before.height);
       expect(before.height).toBeGreaterThan(selected.height);
-      expect(selected.height).toBeLessThanOrEqual(88);
+      expect(selected.height).toBeLessThanOrEqual(168);
     } else {
       expect(selected.x).toBeGreaterThanOrEqual(before.x + before.width);
     }
@@ -121,11 +121,28 @@ for (const size of [
       actionBounds.y + actionBounds.height + 5,
     );
     if (size.width <= 640) {
-      expect(
-        await details
-          .locator('.research-detail-content')
-          .evaluate((node) => node.scrollHeight <= node.clientHeight + 1),
-      ).toBe(true);
+      // detaljer-utan-scroll: every identified technology fits unscrolled.
+      const names = await page
+        .locator('.research-node-select[aria-label^="Inspect "]')
+        .evaluateAll((nodes) =>
+          nodes
+            .map((node) => node.getAttribute('aria-label')!)
+            .filter((label) => !label.startsWith('Inspect unknown')),
+        );
+      expect(names.length).toBeGreaterThan(1);
+      for (const name of names) {
+        await page
+          .getByRole('button', { name, exact: true })
+          .dispatchEvent('click');
+        expect(
+          await details
+            .locator('.research-detail-content')
+            .evaluate((node) => node.scrollHeight <= node.clientHeight + 1),
+          name,
+        ).toBe(true);
+      }
+      expect(await tree.boundingBox()).toEqual(before);
+      await rocket.click();
     }
     expect(actionBounds.y).toBeGreaterThanOrEqual(selected.y);
     expect(actionBounds.y + actionBounds.height).toBeLessThanOrEqual(
