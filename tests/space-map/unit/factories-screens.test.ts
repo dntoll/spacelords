@@ -715,3 +715,31 @@ describe('rekommendation-i-menyn', () => {
     expect(root.querySelector('.factory-recommended-link')).toBeNull();
   });
 });
+
+describe('byggval-bara-framforskat', () => {
+  it('offers a Civilian shuttle in Production only once Civilian transport is researched', async () => {
+    const { Game } =
+      await import('../../../src/client/space-map/models/Game.js');
+    const state = { ...tradeNetworkState(), pirates: [] };
+    state.colonies[0]![1].buildings.push({
+      id: 'yard',
+      type: 'Transport ship factory',
+      slotIndex: 2,
+      demolition: false,
+    });
+    const options = (researched: readonly string[]) => {
+      const game = Game.restore({
+        ...state,
+        researched: researched as typeof state.researched,
+      });
+      return game
+        .productionOptions(game.galaxy.homePlanet)
+        .map((option) => option.type);
+    };
+    expect(options(state.researched)).toContain('Transport ship');
+    expect(options(state.researched)).not.toContain('Civilian shuttle');
+    expect(options([...state.researched, 'Civilian transport'])).toContain(
+      'Civilian shuttle',
+    );
+  });
+});
