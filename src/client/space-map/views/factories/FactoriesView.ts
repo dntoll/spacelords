@@ -1028,8 +1028,6 @@ function escortHelpText(help: EscortHelp): string {
   switch (help.kind) {
     case 'assign':
       return 'Tap Escort and choose a free armed fleet to guard this link.';
-    case 'fleet-issue':
-      return `${help.fleet} could escort it: ${help.issue}.`;
     case 'build-ship':
       return `Order a ${help.ship} at ${help.planet}; it escorts this link when built.`;
     case 'ordered':

@@ -178,6 +178,11 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
   gruppen, och saknas forskning listas den i ordning, exempelvis
   `Research Weapons module factory, then Fighter factory`. Ersätter knappen
   som öppnade Production i `vagledning-mot-eskort`.
+- `eskort-utan-upptagna-flottor` (**Fullständigt implementerat**): en
+  beväpnad flotta som är upptagen med ett annat uppdrag, exempelvis en resa,
+  föreslås inte som eskort. Vägledningen föreslår i stället en ny Fighter,
+  fabriken eller forskningen. Ersätter förklaringen av varför närmaste
+  beväpnade flotta inte kan i `vagledning-mot-eskort`.
 - `ny-fabrik-med-guldstjarna` (**Fullständigt implementerat**): en
   framforskad fabrik som ingen planet har eller bygger räknas som ny.
   `Factories` i huvudmenyn visar då en guldstjärna (★), och valet under

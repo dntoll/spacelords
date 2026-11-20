@@ -938,7 +938,8 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   gäller fortsatt, liksom fysisk frakt, automatiska delorder och sparade spel.
   `vagledning-mot-eskort` och `bestall-eskort-pa-lanken` är **Fullständigt
   implementerade**: en oeskorterad länk visar nästa steg mot en eskort och
-  kan beställa en Fighter direkt.
+  kan beställa en Fighter direkt. `eskort-utan-upptagna-flottor` är
+  **Fullständigt implementerat**: upptagna flottor föreslås inte som eskort.
   `byggkons-framsteg` och `byggko-eller-skeppsdetaljer` är **Fullständigt
   implementerade**: byggkön visar varje skepps delar och väntan, och
   Production visar antingen kön eller ett skepps detaljer.
