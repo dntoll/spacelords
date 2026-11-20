@@ -60,7 +60,8 @@ export function researchEdgeCrossings(layout: {
 
 export class ResearchTreeLayout {
   readonly cardWidth: number = 108;
-  readonly cardHeight: number = 36;
+  /** storre-forskningstext: room for two lines of a larger name. */
+  readonly cardHeight: number = 48;
   readonly edges: readonly Edge[];
   readonly nodes: readonly Node[];
   readonly width: number;

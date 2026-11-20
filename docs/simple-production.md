@@ -264,6 +264,11 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
   flera kolumner måste ordnas om samtidigt. Armor ligger därför ovanför
   Fighter factory, och Armored Transport, Armored Fighter och Missiles
   ligger i den ordningen uppifrån.
+- `storre-forskningstext` (**Fullständigt implementerat**): korten i
+  forskningsträdet är 48 px höga i stället för 36 px, med större namn
+  (0.74rem i stället för 0.68rem) på upp till två rader och större ikon.
+  Ersätter den halverade korthöjden i `kompakt-forskningstrad`; bredden är
+  oförändrad.
 - `forskningsikon-i-detaljer`: detaljerna längst ned visar teknikens symbol
   bredvid namnet.
 - `forskningstid`: en teknik tar 1–3 rundor. Tekniker utan förkunskaper tar

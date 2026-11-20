@@ -14,16 +14,16 @@ import {
 } from '../../../src/client/space-map/models/research/Research.js';
 
 describe('forsknings-tradnavigation', () => {
-  it('kompakt-forskningstrad: halves tile height and packs independent branches without overlap', () => {
+  it('kompakt-forskningstrad / storre-forskningstext: two-line tiles pack independent branches without overlap', () => {
     const layout = new ResearchTreeLayout([
       'Rocket engine factory',
       'Telescope I factory',
     ]);
-    expect(layout.cardHeight).toBe(36);
+    expect(layout.cardHeight).toBe(48);
     expect(layout.cardWidth).toBeLessThanOrEqual(108);
     const [first, second] = layout.nodes;
     expect(second!.y - first!.y).toBe(layout.cardHeight + 12);
-    expect(layout.height).toBeLessThanOrEqual(148);
+    expect(layout.height).toBeLessThanOrEqual(172);
   });
   it('forskningskamerans-granser: stops at the complete tree and cannot pan it into empty space', () => {
     const camera = new ResearchTreeCamera();

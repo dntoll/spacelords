@@ -59,7 +59,7 @@ test('kompakt-forskningstrad / forskningsdetaljer-vid-val: compact tree tiles sh
     height: (node as HTMLElement).offsetHeight,
   }));
   expect(size.width).toBeLessThanOrEqual(108);
-  expect(size.height).toBe(36);
+  expect(size.height).toBe(48);
   await expect(card.locator('.research-node-name')).toHaveText('Rocket engine');
   await expect(card).not.toContainText('Available');
   await expect(rocket).toHaveAttribute('aria-description', 'Available');
