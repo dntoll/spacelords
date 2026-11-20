@@ -1430,6 +1430,13 @@ export class AppView implements AppPort {
         (screen) => screen === control.dataset.screen,
       );
       control.querySelector('.nav-attention')?.remove();
+      control.querySelector('.nav-new')?.remove();
+      // ny-fabrik-med-guldstjarna: a gold star leads to a new factory.
+      if (control.dataset.screen === 'factories' && model.newFactories.length) {
+        const star = element('span', 'nav-new', '★');
+        star.setAttribute('aria-hidden', 'true');
+        control.append(star);
+      }
       if (attention) {
         const marker = element('span', 'nav-attention', '!');
         marker.setAttribute('aria-hidden', 'true');

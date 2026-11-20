@@ -181,6 +181,9 @@ function graph(
 function siteStatus(site: FactorySiteSnapshot): string {
   const factory = site.factory;
   if (!factory) return '';
+  // uppgradera-delfabrik-i-factories
+  if (factory.upgrading) return `Upgrading to ${short(factory.upgrading)}`;
+  if (factory.upgrade) return `★ Upgrade to ${short(factory.upgrade)}`;
   switch (factory.status) {
     case 'working':
       return '';
@@ -486,6 +489,8 @@ function optionRow(
   }
   body.append(element('p', 'factory-muted', costText(option.cost)));
   const tags = element('div', 'factory-tags');
+  // ny-fabrik-med-guldstjarna
+  if (option.isNew) tags.append(tag('★ New', 'new'));
   for (const reason of option.recommendations)
     tags.append(tag(recommendationText(reason), 'recommended'));
   tags.append(
@@ -593,6 +598,7 @@ function buildScreen(
               ]),
         ]
       : []),
+    ...(build.upgrade ? upgradePart(build.upgrade, locked, emit) : []),
     ...(build.research
       ? [
           element(
@@ -602,7 +608,7 @@ function buildScreen(
           ),
         ]
       : []),
-    ...(sections.length || build.project
+    ...(sections.length || build.project || build.upgrade
       ? sections
       : [element('p', 'factory-muted', 'Nothing can be built here yet.')]),
     element(
@@ -939,4 +945,46 @@ export class FactoriesView {
   dispose(): void {
     this.#page.remove();
   }
+}
+
+/** uppgradera-delfabrik-i-factories: replace a factory with its successor. */
+function upgradePart(
+  upgrade: NonNullable<BuildScreenSnapshot['upgrade']>,
+  locked: boolean,
+  emit: Emit,
+): Part[] {
+  if (upgrade.queued)
+    return [
+      element(
+        'p',
+        'factory-muted',
+        `${upgrade.from} is being upgraded to ${upgrade.to}.`,
+      ),
+      ...(locked
+        ? []
+        : [
+            button(
+              'Cancel upgrade',
+              () => emit({ kind: 'cancel-site' }),
+              'secondary-button factory-action',
+            ),
+          ]),
+    ];
+  const action = button(
+    `Upgrade to ${upgrade.to}`,
+    () => emit({ kind: 'upgrade' }),
+    'button factory-action',
+  );
+  action.disabled = locked || upgrade.blockedReason !== null;
+  return [
+    element(
+      'p',
+      'factory-muted',
+      `${upgrade.to} replaces ${upgrade.from} on this site and makes the better part.`,
+    ),
+    action,
+    ...(upgrade.blockedReason
+      ? [element('p', 'factory-notice', upgrade.blockedReason)]
+      : []),
+  ];
 }

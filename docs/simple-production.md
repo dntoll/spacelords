@@ -165,6 +165,17 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
   erbjuds bara för det som är framforskat. Factories visar redan bara
   framforskade fabriker, och Production visar `Civilian shuttle` först när
   `Civilian transport` är framforskad.
+- `ny-fabrik-med-guldstjarna` (**Fullständigt implementerat**): en
+  framforskad fabrik som ingen planet har eller bygger räknas som ny.
+  `Factories` i huvudmenyn visar då en guldstjärna (★), och valet under
+  `Build factory` får etiketten `★ New`. Stjärnan försvinner när fabriken är
+  köad eller byggd någonstans.
+- `uppgradera-delfabrik-i-factories` (**Fullständigt implementerat**): en
+  fabrik vars del har en bättre framforskad variant (Rocket engine factory →
+  Ion pulse engine factory, Telescope I → II → III) visar
+  `★ Upgrade to …` på sin plats. Ett tryck öppnar platsen med
+  `Upgrade to …`; uppgraderingen byggs på samma plats och kan avbrytas med
+  `Cancel upgrade`. Bygger vidare på `uppgradera-obsoleta-fabriker`.
 - `rekommendation-i-menyn` (**Fullständigt implementerat**): så länge en
   grupp har en rekommenderad fabrik som kan byggas på en tom plats visar
   `Factories` i huvudmenyn `!`. Gruppen visar `Recommended: …` som en knapp
