@@ -222,6 +222,14 @@ test('forsknings-tradnavigation: mouse drag pans and wheel zooms without queuein
   isMobile,
 }) => {
   test.skip(isMobile, 'Mouse gestures are covered on desktop.');
+  // forskningsvy-utan-station: the tree needs a built Research station.
+  await page.addInitScript((state) => {
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
+    );
+  }, researchStationState());
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
@@ -255,6 +263,15 @@ for (const size of [
     page,
   }, testInfo) => {
     await page.setViewportSize(size);
+    // forskning-utan-rubrikrad: a built station shows the tree, and the empty
+    // queue adds the Choose research guidance above it.
+    await page.addInitScript((state) => {
+      localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
+      );
+    }, researchStationState());
     await page.goto('./');
     await startFirstSlot(page);
     if ('font' in size && size.font)
@@ -274,9 +291,16 @@ for (const size of [
     expect(bounds.width).toBeGreaterThanOrEqual(
       pageBounds.width - (size.width > 640 ? details.width + 8 : 0) - 26,
     );
+    const guidance = page.locator('.research-page .decision-guidance');
+    await expect(guidance).toBeVisible();
+    const guide = (await guidance.boundingBox())!;
     expect(bounds.height).toBeGreaterThanOrEqual(
-      pageBounds.height - (size.width <= 640 ? details.height + 8 : 0) - 50,
+      pageBounds.height -
+        guide.height -
+        (size.width <= 640 ? details.height + 8 : 0) -
+        50,
     );
+    expect(bounds.height).toBeGreaterThan(pageBounds.height * 0.3);
     await expect(page.locator('.research-queue summary')).toHaveAttribute(
       'aria-label',
       /Research stations · \d+/,
