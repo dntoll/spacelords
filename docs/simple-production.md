@@ -259,6 +259,11 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
   läggs ut i lager efter förkunskaper. Ordningen i varje lager väljs så att
   beroendelinjerna inte korsar varandra, och varje teknik ligger i höjd med
   sina förkunskaper och efterföljare.
+- `forskningstrad-raka-linjer` (**Fullständigt implementerat**): bland
+  ordningar utan korsningar väljs den med kortast lodräta linjer, även när
+  flera kolumner måste ordnas om samtidigt. Armor ligger därför ovanför
+  Fighter factory, och Armored Transport, Armored Fighter och Missiles
+  ligger i den ordningen uppifrån.
 - `forskningsikon-i-detaljer`: detaljerna längst ned visar teknikens symbol
   bredvid namnet.
 - `forskningstid`: en teknik tar 1–3 rundor. Tekniker utan förkunskaper tar

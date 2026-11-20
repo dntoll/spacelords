@@ -88,11 +88,13 @@ export class ResearchTreeLayout {
       (layers[depth(technology)] ??= []).push(technology);
     // forskningstrad-utan-korsningar: order each layer by the mean position of
     // its neighbours, then swap neighbours while that removes crossings.
+    // forskningstrad-raka-linjer: with equal crossings, shorter vertical
+    // runs win, so linked cards sit level with each other.
     let best = this.#place(layers);
-    let fewest = this.#crossings(best);
+    let fewest = this.#score(best);
     const consider = (candidate: Technology[][]) => {
       const placed = this.#place(candidate);
-      const count = this.#crossings(placed);
+      const count = this.#score(placed);
       if (count < fewest) {
         fewest = count;
         best = placed;
@@ -105,7 +107,7 @@ export class ResearchTreeLayout {
       }
       return false;
     };
-    for (let sweep = 0; sweep < 8 && fewest > 0; sweep++) {
+    for (let sweep = 0; sweep < 8; sweep++) {
       const down = sweep % 2 === 0;
       const order = layers.map((layer) => [...layer]);
       const indices = down
@@ -128,7 +130,7 @@ export class ResearchTreeLayout {
       consider(order);
     }
     let improved = true;
-    while (improved && fewest > 0) {
+    while (improved) {
       improved = false;
       for (const [index, layer] of layers.entries())
         for (let i = 0; i + 1 < layer.length; i++) {
@@ -136,6 +138,9 @@ export class ResearchTreeLayout {
           const swapped = candidate[index]!;
           [swapped[i], swapped[i + 1]] = [swapped[i + 1]!, swapped[i]!];
           if (consider(candidate)) improved = true;
+          // A swap may only pay off once later layers follow it.
+          else if (consider(this.#followParents(candidate, index)))
+            improved = true;
         }
     }
     this.nodes = best;
@@ -143,6 +148,28 @@ export class ResearchTreeLayout {
       Math.max(...this.nodes.map((node) => node.x)) + this.cardWidth + 32;
     this.height =
       Math.max(...this.nodes.map((node) => node.y)) + this.cardHeight + 32;
+  }
+
+  /** Re-sort the layers after `from` by their prerequisites' positions. */
+  #followParents(
+    layers: readonly (readonly Technology[])[],
+    from: number,
+  ): Technology[][] {
+    const order = layers.map((layer) => [...layer]);
+    for (let index = from + 1; index < order.length; index++) {
+      const position = new Map(
+        order.flatMap((layer) => layer.map((t, i) => [t, i] as const)),
+      );
+      const mean = (technology: Technology) => {
+        const parents = this.#parents(technology);
+        return parents.length
+          ? parents.reduce((sum, t) => sum + position.get(t)!, 0) /
+              parents.length
+          : position.get(technology)!;
+      };
+      order[index]!.sort((a, b) => mean(a) - mean(b));
+    }
+    return order;
   }
 
   #parents(technology: Technology): Technology[] {
@@ -157,13 +184,20 @@ export class ResearchTreeLayout {
       .map((edge) => edge.to);
   }
 
-  #crossings(nodes: readonly Node[]): number {
-    return researchEdgeCrossings({
+  /** Crossings first, then the total vertical run of the lines. */
+  #score(nodes: readonly Node[]): number {
+    const y = new Map(nodes.map((node) => [node.technology, node.y]));
+    const vertical = this.edges.reduce(
+      (sum, edge) => sum + Math.abs(y.get(edge.from)! - y.get(edge.to)!),
+      0,
+    );
+    const crossings = researchEdgeCrossings({
       cardWidth: this.cardWidth,
       cardHeight: this.cardHeight,
       edges: this.edges,
       nodes,
     });
+    return crossings * 100_000 + vertical;
   }
 
   /**
@@ -200,7 +234,7 @@ export class ResearchTreeLayout {
           Object.freeze({
             technology,
             x: 32 + depth * (this.cardWidth + 24),
-            y: 32 + y.get(technology)! - top,
+            y: Math.round(32 + y.get(technology)! - top),
           }),
         ),
       ),

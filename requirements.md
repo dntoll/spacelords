@@ -951,6 +951,7 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   `rekommendation-i-menyn` är **Fullständigt implementerat**: Factories
   markeras i menyn när en rekommenderad fabrik kan byggas.
   `forskning-utan-rubrikrad`, `forskningstrad-utan-korsningar`,
+  `forskningstrad-raka-linjer`,
   `forskningsikon-i-detaljer` och `forskningstid` är **Fullständigt
   implementerade** inom utforskningen: Research saknar rubrikrad, trädet har
   inga korsande linjer, detaljerna har teknikens ikon och en teknik tar 1–3
