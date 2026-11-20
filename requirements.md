@@ -924,6 +924,11 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och
   gäller fortsatt, liksom fysisk frakt, automatiska delorder och sparade spel.
+  `startuppmaning-fabriker`, `fabriksstatus-i-byggval` och
+  `rekommenderade-fabriker` är **Fullständigt implementerade** inom
+  utforskningen: ett nytt spel uppmanar till forskning och utvinning, byggvalen
+  färgas efter om fabriken finns, byggs eller saknas i gruppen och det som
+  behövs just nu står överst under `Recommended`.
 - **Kartans utrymme:** `fokuserat-kartval` är **Fullständigt implementerat**.
   Kartan saknar objektmeny, S/Q-förklaring och kontrollruta för zoom/Homeworld.
   Tomma rutor utan flottor visar ingen informationspanel. Val av himlakropp,

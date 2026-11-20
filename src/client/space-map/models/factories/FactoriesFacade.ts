@@ -34,6 +34,7 @@ import type {
   FactoriesScreen,
   FactoriesSnapshot,
   FactoryGroupSnapshot,
+  FactoryRecommendation,
   FactorySiteSnapshot,
   FactoryStatus,
   FactoryTier,
@@ -53,6 +54,30 @@ const HIDDEN_REASONS = [
   'This building requires a matching solid planet type.',
   'Domes are unnecessary in a breathable atmosphere.',
 ];
+
+const EXTRACTORS: Readonly<Record<Resource, BuildType>> = {
+  Iron: 'Iron mine',
+  Water: 'Water extractor',
+  Oil: 'Oil extractor',
+};
+
+/** basta-tillgangliga-del: a better engine or telescope also supplies. */
+function producesMaterial(type: BuildType, material: Material): boolean {
+  const definition = BUILDINGS[type];
+  const made = definition.component ?? definition.extraction;
+  if (made === material) return true;
+  if (material === 'Rocket engine') return made === 'Ion pulse engine';
+  if (material === 'Telescope I')
+    return made === 'Telescope II' || made === 'Telescope III';
+  return false;
+}
+
+function sameReason(
+  a: FactoryRecommendation,
+  b: FactoryRecommendation,
+): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
 
 export function factoryTier(type: BuildType): FactoryTier {
   const definition = BUILDINGS[type];
@@ -777,6 +802,8 @@ export class FactoriesFacade {
     const gamePlanet = this.#gamePlanet(planetId);
     const options: BuildOptionSnapshot[] = [];
     const queued = planet.sites[index]?.project;
+    const needs: ReadonlyMap<BuildType, readonly FactoryRecommendation[]> =
+      queued ? new Map() : this.#needs(context, group);
     for (const type of queued ? [] : BUILD_TYPES) {
       const reason = this.host.game.canBuild(gamePlanet, type, index);
       if (reason && HIDDEN_REASONS.includes(reason)) continue;
@@ -812,6 +839,13 @@ export class FactoriesFacade {
           cost: Object.freeze({ ...definition.cost }),
           inGroup,
           buildingInGroup: building,
+          presence:
+            inGroup > 0 ? 'built' : building > 0 ? 'building' : 'absent',
+          recommendations: Object.freeze(
+            missingDeposit || inGroup + building > 0
+              ? []
+              : (needs.get(type) ?? []),
+          ),
           here,
           buildRounds: buildRounds(type),
           missingDeposit,
@@ -851,6 +885,83 @@ export class FactoriesFacade {
       research: queued ? null : this.#domeResearch(gamePlanet, planet, index),
       project: queued ? (queued.type as BuildType) : null,
     });
+  }
+
+  /**
+   * rekommenderade-fabriker: the factories the group needs now, each with
+   * why. Empire-wide needs (research, colony and exploration ships) only
+   * count when no planet has or builds that factory.
+   */
+  #needs(
+    context: Context,
+    group: readonly string[],
+  ): ReadonlyMap<BuildType, readonly FactoryRecommendation[]> {
+    const needs = new Map<BuildType, FactoryRecommendation[]>();
+    const add = (type: BuildType, reason: FactoryRecommendation) => {
+      const reasons = needs.get(type) ?? [];
+      if (!reasons.some((item) => sameReason(item, reason)))
+        reasons.push(Object.freeze(reason));
+      needs.set(type, reasons);
+    };
+    const all = context.planets.map((planet) => planet.id);
+    const types = (ids: readonly string[]) =>
+      new Set(
+        ids.flatMap((id) =>
+          this.#planet(context, id).sites.flatMap((site) => [
+            ...(site.building && !site.building.scheduledForDemolition
+              ? [site.building.type]
+              : []),
+            ...(site.project ? [site.project.type as BuildType] : []),
+          ]),
+        ),
+      );
+    const inGroup = types(group);
+    const anywhere = types(all);
+    if (!anywhere.has('Research station'))
+      add('Research station', { kind: 'research' });
+    for (const resource of RESOURCES) {
+      const extractor = EXTRACTORS[resource];
+      if (!inGroup.has(extractor))
+        add(extractor, { kind: 'extraction', resource });
+    }
+    if (this.#needsTransport(context, group))
+      add('Transport ship factory', { kind: 'transport' });
+    const queues = this.host.game.planetQueues;
+    if (queues.colonization.length && !anywhere.has('Colony ship factory'))
+      add('Colony ship factory', { kind: 'colonization' });
+    if (
+      queues.exploration.some((entry) => !entry.assignedFleetId) &&
+      !anywhere.has('Exploration ship factory')
+    )
+      add('Exploration ship factory', { kind: 'exploration' });
+    const made = (material: Material) =>
+      [...inGroup].some((type) => producesMaterial(type, material));
+    for (const consumer of inGroup)
+      for (const material of this.#inputs(consumer))
+        if (!made(material))
+          for (const producer of BUILD_TYPES)
+            if (
+              BUILDINGS[producer].component === material ||
+              BUILDINGS[producer].extraction === material
+            )
+              add(producer, { kind: 'input', material, consumer });
+    return needs;
+  }
+
+  /** rekommenderade-fabriker: an unmanned link or a lone group lacks a ship. */
+  #needsTransport(context: Context, group: readonly string[]): boolean {
+    const free = this.#ownTransports(context, group).some(
+      (option) => option.choice.kind === 'free',
+    );
+    if (free) return false;
+    const unmanned = this.host.game.tradeRoutes.some(
+      (route) =>
+        !route.closing &&
+        !route.hasActiveTransport &&
+        !route.fleetIds.length &&
+        (group.includes(route.a) || group.includes(route.b)),
+    );
+    return unmanned || context.network.groups.length > 1;
   }
 
   /** ovriga-byggnader-pa-byggplatser: name the Dome research a site waits for. */

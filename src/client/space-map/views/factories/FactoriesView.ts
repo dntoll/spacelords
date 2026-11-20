@@ -3,6 +3,7 @@ import type { Resource } from '../../models/Economy.js';
 import {
   FACTORY_TIERS,
   type BuildOptionSnapshot,
+  type FactoryRecommendation,
   type BuildScreenSnapshot,
   type ConnectScreenSnapshot,
   type FactoriesAction,
@@ -413,15 +414,47 @@ const TIER_HINT: Readonly<
   Other: () => '',
 };
 
+function presenceText(option: BuildOptionSnapshot): string {
+  if (option.presence === 'absent') return 'Not in group';
+  const parts = [
+    ...(option.inGroup > 0 ? [`${option.inGroup} in group`] : []),
+    ...(option.buildingInGroup > 0
+      ? [`${option.buildingInGroup} under construction`]
+      : []),
+  ];
+  return `${parts.join(' + ')}${option.here > 0 ? ', here' : ''}`;
+}
+
+/** rekommenderade-fabriker: the sentence for why a factory comes first. */
+function recommendationText(reason: FactoryRecommendation): string {
+  switch (reason.kind) {
+    case 'research':
+      return 'Starts research';
+    case 'extraction':
+      return `No ${reason.resource} extraction in group`;
+    case 'transport':
+      return 'Links need a transport';
+    case 'colonization':
+      return 'Colony ships for queued planets';
+    case 'exploration':
+      return 'Exploration ships for queued planets';
+    case 'input':
+      return `${reason.consumer} needs ${reason.material}`;
+  }
+}
+
 function optionRow(
   build: BuildScreenSnapshot,
   option: BuildOptionSnapshot,
   locked: boolean,
   emit: Emit,
 ): HTMLElement {
+  // fabriksstatus-i-byggval: the row's colour tells built, building or absent.
   const row = element(
     'div',
-    `factory-option${option.missingDeposit ? ' unavailable' : ''}`,
+    `factory-option presence-${option.presence}${
+      option.missingDeposit ? ' unavailable' : ''
+    }`,
   );
   const body = element('div', 'factory-option-body');
   const title = element('div', 'factory-option-title');
@@ -443,10 +476,12 @@ function optionRow(
   }
   body.append(element('p', 'factory-muted', costText(option.cost)));
   const tags = element('div', 'factory-tags');
-  const count = `${option.inGroup} in group${
-    option.buildingInGroup > 0 ? ` + ${option.buildingInGroup} building` : ''
-  }${option.here > 0 ? ', here' : ''}`;
-  tags.append(tag(count), tag(`Build ${rounds(option.buildRounds)}`, 'time'));
+  for (const reason of option.recommendations)
+    tags.append(tag(recommendationText(reason), 'recommended'));
+  tags.append(
+    tag(presenceText(option), `presence-${option.presence}`),
+    tag(`Build ${rounds(option.buildRounds)}`, 'time'),
+  );
   if (option.tier === 'Parts')
     tags.append(
       option.inputRounds === null
@@ -500,8 +535,21 @@ function buildScreen(
       .map(([resource, amount]) => `${resource} ${amount}`)
       .join(' · ')} · Workers ${build.workers}`,
   );
-  const sections = FACTORY_TIERS.flatMap((tier) => {
-    const options = build.options.filter((entry) => entry.tier === tier);
+  // rekommenderade-fabriker: what the group needs now comes first.
+  const recommended = build.options.filter(
+    (entry) => entry.recommendations.length > 0,
+  );
+  const recommendedSection = element(
+    'section',
+    'factory-tier factory-recommended',
+  );
+  recommendedSection.append(element('h2', '', 'Recommended'));
+  for (const option of recommended)
+    recommendedSection.append(optionRow(build, option, locked, emit));
+  const tierSections = FACTORY_TIERS.flatMap((tier) => {
+    const options = build.options.filter(
+      (entry) => entry.tier === tier && !entry.recommendations.length,
+    );
     if (!options.length) return [];
     const section = element('section', 'factory-tier');
     const hint = TIER_HINT[tier](build);
@@ -510,6 +558,10 @@ function buildScreen(
       section.append(optionRow(build, option, locked, emit));
     return [section];
   });
+  const sections = [
+    ...(recommended.length ? [recommendedSection] : []),
+    ...tierSections,
+  ];
   return [
     heading(
       `${build.planet} · site ${build.siteIndex + 1}`,

@@ -5245,6 +5245,50 @@ body:has(.discovery-controls) .selection-panel {
 .factory-option.unavailable {
   opacity: 0.6;
 }
+/* fabriksstatus-i-byggval: built, under construction or absent in the group. */
+.factory-option.presence-built,
+.factory-option.presence-building,
+.factory-option.presence-absent {
+  border-left: 4px solid transparent;
+  padding-left: 8px;
+}
+.factory-option.presence-built {
+  border-left-color: var(--factory-success);
+  background: #9fe0b40f;
+}
+.factory-option.presence-building {
+  border-left-color: var(--factory-warning);
+  background: #ffdc880f;
+}
+.factory-option.presence-absent {
+  border-left-color: var(--line);
+}
+.factory-tag.presence-built {
+  color: #0c2c18;
+  background: var(--factory-success);
+}
+.factory-tag.presence-building {
+  color: #2b2006;
+  background: var(--factory-warning);
+}
+.factory-tag.presence-absent {
+  color: var(--muted);
+  background: none;
+  border: 1px dashed var(--line);
+}
+.factory-tag.recommended {
+  color: #071a26;
+  background: var(--factory-time);
+  font-weight: 600;
+}
+.factory-recommended {
+  border: 1px solid var(--factory-time);
+  border-radius: 8px;
+  padding: 0 8px 4px;
+}
+.factory-recommended h2 {
+  color: var(--factory-time);
+}
 .factory-option-body {
   min-width: 0;
   display: flex;

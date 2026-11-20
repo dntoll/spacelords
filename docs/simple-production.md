@@ -133,6 +133,34 @@ där trädet visades med spärrade val när ingen station fanns. Trädet med
 spärrade val visas fortfarande när den enda stationen är markerad för rivning.
 Regeln att forskning kräver en färdig station gäller som förut.
 
+## Vägledning i byggvalen (2026-11-20)
+
+Krav inom utforskningen, alla **Fullständigt implementerade**.
+
+- `startuppmaning-fabriker`: ett nytt spel uppmanar spelaren att bygga en
+  `Research station` och utvinning av råvaror. Besluten
+  `Build a Research station in Factories` och
+  `Build mines and extractors in Factories` öppnar `Factories` och finns kvar
+  tills riket har eller bygger en sådan byggnad.
+- `fabriksstatus-i-byggval`: varje val under `Build factory` färgas efter om
+  fabriken finns i gruppen (grön), byggs i gruppen (gul) eller saknas (grå).
+  Etiketten säger samma sak, exempelvis `1 in group`,
+  `1 under construction` eller `Not in group`.
+- `rekommenderade-fabriker`: överst, under `Recommended`, står de fabriker
+  som behövs just nu och som gruppen varken har eller bygger, med skälet:
+  - `Research station` när riket saknar en.
+  - Utvinning av en råvara som planeten har men gruppen inte utvinner.
+  - `Transport ship factory` när en länk i gruppen saknar fraktskepp, eller
+    det finns fler grupper, och inget fritt fraktskepp finns i gruppen.
+  - `Colony ship factory` när en planet står i koloniseringskön och riket
+    saknar fabriken; `Exploration ship factory` på samma sätt för
+    utforskningskön.
+  - Fabriken för en del eller råvara som en fabrik i gruppen behöver men
+    som ingen fabrik i gruppen gör, exempelvis `Weapons module factory` för
+    en `Fighter factory`. En bättre motor eller ett bättre teleskop räcker.
+
+  Rekommenderade fabriker visas inte en gång till i nivålistan nedanför.
+
 ## Sparade spel
 
 `sparade-spel-bryts-i-utforskningen`: användaren har godkänt att utforskningen

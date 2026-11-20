@@ -5765,6 +5765,38 @@ export class Game {
         kind: 'planet',
         planetId: this.#ownedPlanets()[0]!.id,
       });
+    // startuppmaning-fabriker: a new empire is asked to build its first
+    // Research station and resource extraction from Factories.
+    const owned = this.#ownedPlanets();
+    const anyBuilding = (types: readonly BuildType[]) =>
+      owned.some((planet) => {
+        const state = this.#state(planet);
+        return (
+          state.buildings.some(
+            (building) => !building.demolition && types.includes(building.type),
+          ) ||
+          state.projects.some((project) =>
+            types.includes(project.type as BuildType),
+          )
+        );
+      });
+    if (
+      !items.some((item) => item.id === 'research-stalled') &&
+      !anyBuilding(['Research station'])
+    )
+      items.push({
+        id: 'factory-research',
+        label: 'Build a Research station in Factories',
+        kind: 'planet',
+        planetId: owned[0]!.id,
+      });
+    if (!anyBuilding(['Iron mine', 'Water extractor', 'Oil extractor']))
+      items.push({
+        id: 'factory-extraction',
+        label: 'Build mines and extractors in Factories',
+        kind: 'planet',
+        planetId: owned[0]!.id,
+      });
     for (const order of this.#salvage.orders.filter((order) => order.issue))
       items.push({
         id: `salvage-${order.fleetId}`,
