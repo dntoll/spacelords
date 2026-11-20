@@ -116,6 +116,21 @@ describe('forskningstrad-utan-korsningar', () => {
     }
   });
 
+  it('forskningstrad-raka-linjer: keeps linked cards level, as with Armor and its armored hulls', () => {
+    const layout = new ResearchTreeLayout(TECHNOLOGIES);
+    const y = (type: string) =>
+      layout.nodes.find((node) => node.technology === type)!.y;
+    expect(y('Armor')).toBeLessThan(y('Fighter factory'));
+    expect(y('Armored Transport')).toBeLessThan(y('Armored Fighter'));
+    expect(y('Armored Fighter')).toBeLessThan(y('Missiles'));
+    // Armored Transport sits closer to Transport ship than to Missiles.
+    expect(
+      Math.abs(y('Armored Transport') - y('Transport ship factory')),
+    ).toBeLessThan(layout.cardHeight * 1.5);
+    for (const node of layout.nodes)
+      expect(Number.isInteger(node.y)).toBe(true);
+  });
+
   it('counts a crossing between two lines', () => {
     expect(
       researchEdgeCrossings({
