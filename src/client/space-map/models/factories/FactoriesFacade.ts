@@ -36,6 +36,7 @@ import type {
   FactoryGroupSnapshot,
   FactoryRecommendation,
   FactorySiteSnapshot,
+  EscortHelp,
   FactoryStatus,
   FactoryTier,
   LinksScreenSnapshot,
@@ -53,6 +54,12 @@ const HIDDEN_REASONS = [
   'Unknown building type.',
   'This building requires a matching solid planet type.',
   'Domes are unnecessary in a breathable atmosphere.',
+];
+
+/** vagledning-mot-eskort: factories whose ships can escort a link. */
+const ESCORT_FACTORIES: readonly BuildType[] = [
+  'Fighter factory',
+  'Raptor factory',
 ];
 
 const EXTRACTORS: Readonly<Record<Resource, BuildType>> = {
@@ -162,6 +169,9 @@ export class FactoriesFacade {
       case 'cancel-site':
         this.#cancelSite(context);
         return null;
+      case 'build-escort':
+        // vagledning-mot-eskort: armed ships are ordered in Production.
+        return { kind: 'open-production', planetId: action.planet };
       case 'upgrade':
         this.#upgrade(context);
         return null;
@@ -416,6 +426,51 @@ export class FactoriesFacade {
           this.#distance(route, a) - this.#distance(route, b) ||
           byName(a.name, b.name),
       );
+  }
+
+  /** vagledning-mot-eskort: what the player can do for an unescorted link. */
+  #escortHelp(context: Context, route: TradeRouteSnapshot): EscortHelp | null {
+    const fleets = this.host.game.fleetSnapshots();
+    if (
+      !context.links.some((link) => link.id === route.id) ||
+      routeEscortCount(route.id, fleets) > 0
+    )
+      return null;
+    if (this.#escortFleets(route.id).length)
+      return Object.freeze({ kind: 'assign' });
+    const armed = fleets
+      .filter(
+        (fleet) =>
+          !fleet.ships['Transport ship'] && armedShipCount(fleet.ships) > 0,
+      )
+      .sort((a, b) => this.#distance(route, a) - this.#distance(route, b));
+    const busy = armed[0];
+    if (busy)
+      return Object.freeze({
+        kind: 'fleet-issue',
+        fleet: busy.name,
+        issue: tradeAssignmentIssue(busy, route, fleets) ?? 'Not available',
+      });
+    for (const planet of context.planets) {
+      const factory = planet.buildings.find(
+        (building) =>
+          !building.scheduledForDemolition &&
+          ESCORT_FACTORIES.includes(building.type),
+      );
+      if (factory)
+        return Object.freeze({
+          kind: 'build-ship',
+          planetId: planet.id,
+          planet: planet.name,
+          ship: factoryShips(factory.type)[0]!,
+        });
+    }
+    const researched = new Set<string>(this.host.game.research.completed);
+    return Object.freeze({
+      kind: ESCORT_FACTORIES.some((type) => researched.has(type))
+        ? 'build-factory'
+        : 'research',
+    });
   }
 
   #distance(route: TradeRouteSnapshot, fleet: FleetSnapshot): number {
@@ -1030,6 +1085,18 @@ export class FactoriesFacade {
     }
     if (this.#needsTransport(context, group))
       add('Transport ship factory', { kind: 'transport' });
+    // vagledning-mot-eskort: an unescorted link wants armed ships.
+    if (
+      this.#unescorted(context, group) > 0 &&
+      !ESCORT_FACTORIES.some((type) => anywhere.has(type)) &&
+      !this.host.game
+        .fleetSnapshots()
+        .some(
+          (fleet) =>
+            !fleet.ships['Transport ship'] && armedShipCount(fleet.ships) > 0,
+        )
+    )
+      add('Fighter factory', { kind: 'escort' });
     const queues = this.host.game.planetQueues;
     if (queues.colonization.length && !anywhere.has('Colony ship factory'))
       add('Colony ship factory', { kind: 'colonization' });
@@ -1339,6 +1406,7 @@ export class FactoriesFacade {
               : null,
             escorts: routeEscortCount(route.id, fleets),
             canEscort: this.#escortFleets(route.id).length > 0,
+            escortHelp: this.#escortHelp(context, route),
           }),
         ),
       ),

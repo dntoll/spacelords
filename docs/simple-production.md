@@ -165,6 +165,12 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
   erbjuds bara för det som är framforskat. Factories visar redan bara
   framforskade fabriker, och Production visar `Civilian shuttle` först när
   `Civilian transport` är framforskad.
+- `vagledning-mot-eskort` (**Fullständigt implementerat**): en länk med
+  fraktskepp men utan eskort säger under `Links` vad nästa steg är:
+  `Escort` med en fri beväpnad flotta; varför närmaste beväpnade flotta inte
+  kan (exempelvis att den reser); `Build Fighter` som öppnar Production på
+  planeten med Fighter factory; att bygga en Fighter factory, som då också
+  rekommenderas under `Recommended`; eller att forska fram Fighter factory.
 - `ny-fabrik-med-guldstjarna` (**Fullständigt implementerat**): en
   framforskad fabrik som ingen planet har eller bygger räknas som ny.
   `Factories` i huvudmenyn visar då en guldstjärna (★), och valet under

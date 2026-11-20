@@ -897,3 +897,109 @@ describe('byggkons-framsteg / byggko-eller-skeppsdetaljer', () => {
     expect(root.querySelector('[aria-label="Build details"]')).toBeNull();
   });
 });
+
+describe('vagledning-mot-eskort', () => {
+  // Linked Tellus–Vesta with no armed ship anywhere, unless a test adds one.
+  const linked = (
+    change: (state: GameState) => GameState = (state) => state,
+  ) => {
+    const base = { ...tradeNetworkState(), pirates: [] };
+    const state = change({
+      ...base,
+      fleets: base.fleets.map((fleet) => ({
+        ...fleet,
+        ships: { ...fleet.ships, Fighter: 0 },
+        ...(fleet.shipUnits
+          ? {
+              shipUnits: fleet.shipUnits.filter(
+                (unit) => unit.type !== 'Fighter',
+              ),
+            }
+          : {}),
+      })),
+    });
+    const ui = setup(state);
+    ui.send({ type: 'open-factories' });
+    ui.act({ kind: 'open-connect', group: 'Tellus' });
+    ui.act({ kind: 'connect', target: 'Vesta' });
+    ui.act({ kind: 'open-links', group: 'Tellus, Vesta' });
+    return { ...ui, help: () => ui.factories().links!.links[0]!.escortHelp };
+  };
+
+  it('asks for Fighter factory research, then recommends building one', () => {
+    const { help, root } = linked();
+    expect(help()).toEqual({ kind: 'research' });
+    expect(root.textContent).toContain('Research Fighter factory');
+    const researched = linked((state) => ({
+      ...state,
+      researched: [
+        ...state.researched,
+        'Weapons module factory',
+        'Fighter factory',
+      ],
+    }));
+    expect(researched.help()).toEqual({ kind: 'build-factory' });
+    researched.act({ kind: 'back' });
+    expect(
+      researched.group('Tellus, Vesta').recommended.map((item) => item.type),
+    ).toContain('Fighter factory');
+  });
+
+  it('leads to Production where a Fighter factory exists', () => {
+    const { help, root, model } = linked((state) => {
+      state.colonies[0]![1].buildings.push({
+        id: 'fighters',
+        type: 'Fighter factory',
+        slotIndex: 2,
+        demolition: false,
+      });
+      return {
+        ...state,
+        researched: [
+          ...state.researched,
+          'Weapons module factory',
+          'Fighter factory',
+        ],
+      };
+    });
+    expect(help()).toEqual({
+      kind: 'build-ship',
+      planetId: 'sol-0',
+      planet: 'Tellus',
+      ship: 'Fighter',
+    });
+    root
+      .querySelector<HTMLButtonElement>(
+        '[aria-label="Build a Fighter at Tellus"]',
+      )!
+      .click();
+    expect(model.snapshot.screen).toBe('production');
+    expect(model.snapshot.planet?.id).toBe('sol-0');
+  });
+
+  it('points to Escort when a free armed fleet can guard the link', () => {
+    const base = { ...tradeNetworkState(), pirates: [] };
+    const ui = setup({
+      ...base,
+      fleets: base.fleets.map((fleet) =>
+        fleet.id === 'freighters'
+          ? { ...fleet, ships: { ...fleet.ships, Fighter: 0 } }
+          : fleet,
+      ),
+    });
+    ui.send({ type: 'open-factories' });
+    ui.act({ kind: 'open-connect', group: 'Tellus' });
+    ui.act({ kind: 'connect', target: 'Vesta' });
+    ui.act({ kind: 'open-links', group: 'Tellus, Vesta' });
+    expect(ui.factories().links!.links[0]!.escortHelp).toEqual({
+      kind: 'assign',
+    });
+    expect(ui.root.textContent).toContain('Tap Escort');
+    ui.act({
+      kind: 'escort-link',
+      link: ui.factories().links!.links[0]!.id,
+    });
+    ui.act({ kind: 'assign-escort', fleet: 'fleet-home' });
+    expect(ui.factories().links!.links[0]!.escortHelp).toBeNull();
+  });
+});

@@ -4,6 +4,7 @@ import {
   FACTORY_TIERS,
   type BuildOptionSnapshot,
   type FactoryRecommendation,
+  type EscortHelp,
   type BuildScreenSnapshot,
   type ConnectScreenSnapshot,
   type FactoriesAction,
@@ -447,6 +448,8 @@ function recommendationText(reason: FactoryRecommendation): string {
       return `No ${reason.resource} extraction in group`;
     case 'transport':
       return 'Links need a transport';
+    case 'escort':
+      return 'Armed ships to escort links';
     case 'colonization':
       return 'Colony ships for queued planets';
     case 'exploration':
@@ -869,7 +872,25 @@ function linksScreen(
       );
       body.append(tags);
     }
+    // vagledning-mot-eskort: say what to do next for an unescorted link.
+    if (link.escortHelp)
+      body.append(
+        element('p', 'factory-notice', escortHelpText(link.escortHelp)),
+      );
     row.append(body);
+    if (!locked && link.escortHelp?.kind === 'build-ship') {
+      const help = link.escortHelp;
+      const build = button(
+        `Build ${help.ship}`,
+        () => emit({ kind: 'build-escort', planet: help.planetId }),
+        'button factory-action',
+      );
+      build.setAttribute(
+        'aria-label',
+        `Build a ${help.ship} at ${help.planet}`,
+      );
+      row.append(build);
+    }
     if (!locked && link.canEscort) {
       const escort = button(
         'Escort',
@@ -987,4 +1008,20 @@ function upgradePart(
       ? [element('p', 'factory-notice', upgrade.blockedReason)]
       : []),
   ];
+}
+
+/** vagledning-mot-eskort: the sentence for the next step towards an escort. */
+function escortHelpText(help: EscortHelp): string {
+  switch (help.kind) {
+    case 'assign':
+      return 'Tap Escort and choose a free armed fleet to guard this link.';
+    case 'fleet-issue':
+      return `${help.fleet} could escort it: ${help.issue}.`;
+    case 'build-ship':
+      return `Build a ${help.ship} at ${help.planet} in Production, then escort this link with it.`;
+    case 'build-factory':
+      return 'Build a Fighter factory to make armed ships for an escort.';
+    case 'research':
+      return 'Research Fighter factory to build armed ships for an escort.';
+  }
 }

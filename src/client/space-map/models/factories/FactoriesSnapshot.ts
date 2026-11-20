@@ -87,9 +87,26 @@ export interface FactoryGroupSnapshot {
   }[];
 }
 
+/** vagledning-mot-eskort: the next step towards escorting a link. */
+export type EscortHelp =
+  | { readonly kind: 'assign' }
+  | {
+      readonly kind: 'fleet-issue';
+      readonly fleet: string;
+      readonly issue: string;
+    }
+  | {
+      readonly kind: 'build-ship';
+      readonly planetId: string;
+      readonly planet: string;
+      readonly ship: ShipType;
+    }
+  | { readonly kind: 'build-factory' | 'research' };
+
 /** rekommenderade-fabriker: why a factory is offered first. */
 export type FactoryRecommendation =
   | { readonly kind: 'research' }
+  | { readonly kind: 'escort' }
   | { readonly kind: 'extraction'; readonly resource: Resource }
   | { readonly kind: 'transport' }
   | { readonly kind: 'colonization' }
@@ -208,6 +225,8 @@ export interface LinksScreenSnapshot {
     /** eskort-pa-routes: armed ships guarding the link's transports. */
     readonly escorts: number;
     readonly canEscort: boolean;
+    /** vagledning-mot-eskort: set for a manned link without escort. */
+    readonly escortHelp: EscortHelp | null;
   }[];
   /** eskort-pa-routes: the free armed fleets offered for one link. */
   readonly escort: {
@@ -274,6 +293,7 @@ export type FactoriesAction =
   | { readonly kind: 'move-link'; readonly link: string }
   | { readonly kind: 'escort-link'; readonly link: string }
   | { readonly kind: 'assign-escort'; readonly fleet: string }
+  | { readonly kind: 'build-escort'; readonly planet: string }
   | { readonly kind: 'confirm-move' | 'cancel-move' };
 
 /** skeppsorder-pa-planeten: ship factories hand over to the map. */
