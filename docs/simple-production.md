@@ -161,6 +161,10 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
 
   Rekommenderade fabriker visas inte en gång till i nivålistan nedanför.
 
+- `byggval-bara-framforskat` (**Fullständigt implementerat**): byggval
+  erbjuds bara för det som är framforskat. Factories visar redan bara
+  framforskade fabriker, och Production visar `Civilian shuttle` först när
+  `Civilian transport` är framforskad.
 - `rekommendation-i-menyn` (**Fullständigt implementerat**): så länge en
   grupp har en rekommenderad fabrik som kan byggas på en tom plats visar
   `Factories` i huvudmenyn `!`. Gruppen visar `Recommended: …` som en knapp

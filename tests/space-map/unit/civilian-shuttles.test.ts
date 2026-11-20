@@ -54,10 +54,10 @@ describe('civil-skyttelforskning', () => {
     expect(() => game.scheduleShip(planet, 'Civilian shuttle')).toThrow(
       'Research Civilian transport first',
     );
-    expect(
-      game.productionOptions(planet).find((o) => o.type === 'Civilian shuttle')!
-        .blockedReason,
-    ).toContain('Research Civilian transport');
+    // byggval-bara-framforskat: no build choice until it is researched.
+    expect(game.productionOptions(planet).map((o) => o.type)).not.toContain(
+      'Civilian shuttle',
+    );
   });
 });
 

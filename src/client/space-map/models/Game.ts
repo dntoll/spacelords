@@ -549,6 +549,11 @@ export function projectDefinition(type: ProjectType): BuildDefinition {
     },
   };
 }
+/** byggval-bara-framforskat: ships that need research beyond their factory. */
+const SHIP_RESEARCH: Readonly<Partial<Record<ShipType, Technology>>> = {
+  'Civilian shuttle': 'Civilian transport',
+};
+
 export function factoryShips(type: BuildType): readonly ShipType[] {
   return (
     BUILDINGS[type].ships ??
@@ -3845,7 +3850,13 @@ export class Game {
       ...new Set(
         snapshot.buildings.flatMap<ProjectType>((b) => {
           const definition = BUILDINGS[b.type];
-          return definition.ship ? factoryShips(b.type) : [];
+          return definition.ship
+            ? factoryShips(b.type).filter((ship) => {
+                // byggval-bara-framforskat: offer only researched ships.
+                const technology = SHIP_RESEARCH[ship];
+                return !technology || this.#research.completed.has(technology);
+              })
+            : [];
         }),
       ),
     ];
@@ -4033,10 +4044,9 @@ export class Game {
     initialOrder?: ShipOrder,
   ): ProductionReceipt {
     if (!Object.hasOwn(SHIPS, type)) throw new Error('Unknown ship type.');
-    if (type === 'Civilian shuttle') {
-      this.#requireOrderResearch('Civilian transport');
-      destinationFleetId = null;
-    }
+    const technology = SHIP_RESEARCH[type];
+    if (technology) this.#requireOrderResearch(technology);
+    if (type === 'Civilian shuttle') destinationFleetId = null;
     if (initialOrder) {
       this.#validateShipOrder(initialOrder, { [type]: 1 });
       destinationFleetId = null;
