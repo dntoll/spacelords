@@ -13,7 +13,7 @@ note as about
 end note
 package "Publik yta (index.js)" as public_surface #FFFFEE {
   rectangle "<b>controllers/index.js</b>\nDecisionController\nFactoriesController\nFleetController\nOrderController\nPlanetController\nProductionController\nResearchController\nRouteController\nSaveController\nStarMapController\nTurnController" as public__controllers
-  rectangle "<b>models/index.js</b>\nBrowserSaveRepository\nCamera\nCameraFraming\nDecisionFacade\nDecisions\nEconomy\nEventPlayback\nFactoriesFacade\nFactoriesSnapshot\nFleetCategory\nFleetFacade\nFleetMapLayout\nGalaxy\nGame\nLogistics\nOrderFacade\nOrderSelection\nPirateFleet\nPlanetFacade\nPlanetQueues\nProductionFacade\nProductionMap\nResearchFacade\nResearchTree\nRouteFacade\nSalvage\nSaveFacade\nSaveRepository\nShipOrders\nStarMapFacade\nStarMapTrade\nTurnFacade\nTurnMovementPlayback\nTurnSimulation\nexampleGalaxy" as public__models
+  rectangle "<b>models/index.js</b>\nBrowserSaveRepository\nCamera\nCameraFraming\nDecisionFacade\nDecisions\nEconomy\nEventPlayback\nFactoriesFacade\nFactoriesSnapshot\nFleetCategory\nFleetFacade\nFleetMapLayout\nGalaxy\nGame\nLogistics\nOrderFacade\nOrderSelection\nPirateFleet\nPlanetFacade\nPlanetQueues\nProductionFacade\nProductionMap\nResearchFacade\nResearchTree\nRouteFacade\nSalvage\nSaveFacade\nSaveRepository\nShipOrders\nShipProgress\nStarMapFacade\nStarMapTrade\nTurnFacade\nTurnMovementPlayback\nTurnSimulation\nexampleGalaxy" as public__models
   rectangle "<b>views/index.js</b>\nBuildSelectionView\nDecisionGuidanceView\nDiscoveryView\nEmpireView\nEventContent\nEventsView\nFactoriesView\nFleetCategoryColors\nFleetMapPanel\nGalaxyMapView\nGameText\nMapGesture\nMapLocationHeading\nMapSelectionScroll\nOrdersView\nPlanetImages\nPlanetView\nProductionMapView\nResearchDetailsView\nResearchTreeView\nResearchView\nSalvageView\nSaveMapPreview\nSaveSlotsView\nShipImages\nShipView\nStarMapTradeView\nTurnActionsView" as public__views
 }
 package "(delat)" as space_map___delat_ {
@@ -48,7 +48,7 @@ package "planet" as space_map__planet {
 }
 package "production" as space_map__production {
   rectangle "<b>controllers</b>\nProductionController" as space_map__production__controllers
-  rectangle "<b>models</b>\nProductionFacade" as space_map__production__models
+  rectangle "<b>models</b>\nProductionFacade\nShipProgress" as space_map__production__models
   rectangle "<b>views</b>\nProductionMapView" as space_map__production__views
 }
 package "production-network" as space_map__production_network {
@@ -89,6 +89,7 @@ space_map__fleets__views --> space_map__fleets__models
 space_map__orders__controllers ..> space_map__orders__models : typer
 space_map__planet__controllers ..> space_map__planet__models : typer
 space_map__production__controllers ..> space_map__production__models : typer
+space_map__production__views ..> space_map__production__models : typer
 space_map__research__controllers ..> space_map__research__models : typer
 space_map__research__views --> space_map__research__models
 space_map__routes__controllers ..> space_map__routes__models : typer
@@ -98,6 +99,7 @@ space_map__star_map__views --> space_map__star_map__models
 space_map__turn__controllers ..> space_map__turn__models : typer
 space_map__turn__views ..> space_map__turn__models : typer
 space_map___delat_ --> space_map__fleets : 6
+space_map___delat_ ..> space_map__production : 1, typer
 space_map___delat_ --> space_map__production_network : 2
 space_map___delat_ --> space_map__research : 2
 space_map___delat_ ..> space_map__saves : 1, typer
@@ -110,7 +112,7 @@ space_map__factories --> space_map__star_map : 1
 space_map__fleets --> space_map___delat_ : 13
 space_map__orders ..> space_map___delat_ : 7, typer
 space_map__planet --> space_map___delat_ : 20
-space_map__production --> space_map___delat_ : 12
+space_map__production --> space_map___delat_ : 15
 space_map__production_network --> space_map___delat_ : 1
 space_map__research --> space_map___delat_ : 10
 space_map__research --> space_map__star_map : 1
