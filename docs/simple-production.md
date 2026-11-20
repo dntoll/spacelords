@@ -269,6 +269,10 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
   (0.74rem i stället för 0.68rem) på upp till två rader och större ikon.
   Ersätter den halverade korthöjden i `kompakt-forskningstrad`; bredden är
   oförändrad.
+- `detaljer-utan-scroll` (**Fullständigt implementerat**): på smala skärmar
+  har detaljrutan under trädet plats för hela beskrivningen utan att scrolla
+  (upp till 42 % av ytan, högst 168 px). Höjden är reserverad i förväg, så
+  trädet ändrar inte storlek när en teknik väljs.
 - `forskningsikon-i-detaljer`: detaljerna längst ned visar teknikens symbol
   bredvid namnet.
 - `forskningstid`: en teknik tar 1–3 rundor. Tekniker utan förkunskaper tar

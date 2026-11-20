@@ -1897,7 +1897,9 @@ p {
 @media (max-width: 640px) {
   .research-page .research-panel {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) minmax(0, min(32%, 88px));
+    /* detaljer-utan-scroll: room for a whole description without scrolling,
+       reserved up front so the tree keeps its size when a node is chosen. */
+    grid-template-rows: minmax(0, 1fr) minmax(0, min(42%, 168px));
   }
 }
 /* forskningstradets-utrymme: station and queue information stay compact. */
