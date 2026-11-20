@@ -878,17 +878,30 @@ function linksScreen(
         element('p', 'factory-notice', escortHelpText(link.escortHelp)),
       );
     row.append(body);
-    if (!locked && link.escortHelp?.kind === 'build-ship') {
-      const help = link.escortHelp;
-      const build = button(
-        `Build ${help.ship}`,
-        () => emit({ kind: 'build-escort', planet: help.planetId }),
+    // bestall-eskort-pa-lanken: order the escort, or go to build its factory.
+    const help = link.escortHelp;
+    if (!locked && help?.kind === 'build-ship') {
+      const order = button(
+        `Order ${help.ship}`,
+        () =>
+          emit({ kind: 'order-escort', link: link.id, planet: help.planetId }),
         'button factory-action',
       );
-      build.setAttribute(
+      order.setAttribute(
         'aria-label',
-        `Build a ${help.ship} at ${help.planet}`,
+        `Order a ${help.ship} at ${help.planet} to escort ${title}`,
       );
+      row.append(order);
+    }
+    if (!locked && help?.kind === 'build-factory' && help.site) {
+      const site = help.site;
+      const build = button(
+        'Build factory',
+        () =>
+          emit({ kind: 'open-site', planet: site.planet, site: site.index }),
+        'button factory-action',
+      );
+      build.setAttribute('aria-label', 'Build a Fighter factory');
       row.append(build);
     }
     if (!locked && link.canEscort) {
@@ -1018,10 +1031,14 @@ function escortHelpText(help: EscortHelp): string {
     case 'fleet-issue':
       return `${help.fleet} could escort it: ${help.issue}.`;
     case 'build-ship':
-      return `Build a ${help.ship} at ${help.planet} in Production, then escort this link with it.`;
+      return `Order a ${help.ship} at ${help.planet}; it escorts this link when built.`;
+    case 'ordered':
+      return `A ${help.ship} is ordered at ${help.planet} to escort this link.`;
     case 'build-factory':
-      return 'Build a Fighter factory to make armed ships for an escort.';
+      return help.site
+        ? 'Build a Fighter factory to make armed ships for an escort.'
+        : 'Build a Fighter factory on a free site to make armed ships for an escort.';
     case 'research':
-      return 'Research Fighter factory to build armed ships for an escort.';
+      return `Research ${help.technologies.join(', then ')} to build armed ships for an escort.`;
   }
 }

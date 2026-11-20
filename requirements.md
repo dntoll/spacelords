@@ -936,8 +936,9 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och
   gäller fortsatt, liksom fysisk frakt, automatiska delorder och sparade spel.
-  `vagledning-mot-eskort` är **Fullständigt implementerat**: en oeskorterad
-  länk visar nästa steg mot en eskort.
+  `vagledning-mot-eskort` och `bestall-eskort-pa-lanken` är **Fullständigt
+  implementerade**: en oeskorterad länk visar nästa steg mot en eskort och
+  kan beställa en Fighter direkt.
   `byggkons-framsteg` och `byggko-eller-skeppsdetaljer` är **Fullständigt
   implementerade**: byggkön visar varje skepps delar och väntan, och
   Production visar antingen kön eller ett skepps detaljer.

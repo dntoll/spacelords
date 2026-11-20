@@ -171,6 +171,13 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
   kan (exempelvis att den reser); `Build Fighter` som öppnar Production på
   planeten med Fighter factory; att bygga en Fighter factory, som då också
   rekommenderas under `Recommended`; eller att forska fram Fighter factory.
+- `bestall-eskort-pa-lanken` (**Fullständigt implementerat**): finns en
+  Fighter factory beställer `Order Fighter` en Fighter direkt från länken,
+  med order att eskortera just den länken; raden visar sedan att en Fighter
+  är beställd. Saknas fabriken leder `Build factory` till en ledig plats i
+  gruppen, och saknas forskning listas den i ordning, exempelvis
+  `Research Weapons module factory, then Fighter factory`. Ersätter knappen
+  som öppnade Production i `vagledning-mot-eskort`.
 - `ny-fabrik-med-guldstjarna` (**Fullständigt implementerat**): en
   framforskad fabrik som ingen planet har eller bygger räknas som ny.
   `Factories` i huvudmenyn visar då en guldstjärna (★), och valet under
