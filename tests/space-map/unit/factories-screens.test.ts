@@ -1040,3 +1040,47 @@ describe('vagledning-mot-eskort', () => {
     expect(ui.factories().links!.links[0]!.escortHelp).toBeNull();
   });
 });
+
+it('eskort-utan-upptagna-flottor: offers a new Fighter instead of an armed fleet busy elsewhere', async () => {
+  const { HexCoordinate } =
+    await import('../../../src/client/common/HexCoordinate.js');
+  const base = { ...tradeNetworkState(), pirates: [] };
+  base.colonies[0]![1].buildings.push(
+    {
+      id: 'fighters',
+      type: 'Fighter factory',
+      slotIndex: 2,
+      demolition: false,
+    },
+    {
+      id: 'weapons',
+      type: 'Weapons module factory',
+      slotIndex: 3,
+      demolition: false,
+    },
+  );
+  const { act, send, factories, root } = setup({
+    ...base,
+    researched: [
+      ...base.researched,
+      'Weapons module factory',
+      'Fighter factory',
+    ],
+    fleets: base.fleets.map((fleet) =>
+      fleet.id === 'freighters'
+        ? { ...fleet, ships: { ...fleet.ships, Fighter: 0 } }
+        : fleet.id === 'fleet-home'
+          ? { ...fleet, destination: new HexCoordinate(3, 0) }
+          : fleet,
+    ),
+  });
+  send({ type: 'open-factories' });
+  act({ kind: 'open-connect', group: 'Tellus' });
+  act({ kind: 'connect', target: 'Vesta' });
+  act({ kind: 'open-links', group: 'Tellus, Vesta' });
+  expect(factories().links!.links[0]!.escortHelp).toMatchObject({
+    kind: 'build-ship',
+    ship: 'Fighter',
+  });
+  expect(root.textContent).not.toContain('Home Fleet could escort');
+});

@@ -463,19 +463,8 @@ export class FactoriesFacade {
           ship: ordered.type as ShipType,
         });
     }
-    const armed = fleets
-      .filter(
-        (fleet) =>
-          !fleet.ships['Transport ship'] && armedShipCount(fleet.ships) > 0,
-      )
-      .sort((a, b) => this.#distance(route, a) - this.#distance(route, b));
-    const busy = armed[0];
-    if (busy)
-      return Object.freeze({
-        kind: 'fleet-issue',
-        fleet: busy.name,
-        issue: tradeAssignmentIssue(busy, route, fleets) ?? 'Not available',
-      });
+    // eskort-utan-upptagna-flottor: fleets busy elsewhere are not offered;
+    // a new armed ship is.
     const factory = context.planets.find((planet) =>
       planet.buildings.some(
         (building) =>
@@ -1149,12 +1138,10 @@ export class FactoriesFacade {
     if (
       this.#unescorted(context, group) > 0 &&
       !ESCORT_FACTORIES.some((type) => anywhere.has(type)) &&
-      !this.host.game
-        .fleetSnapshots()
-        .some(
-          (fleet) =>
-            !fleet.ships['Transport ship'] && armedShipCount(fleet.ships) > 0,
-        )
+      context.links.every(
+        (link) =>
+          !group.includes(link.a) || this.#escortFleets(link.id).length === 0,
+      )
     )
       add('Fighter factory', { kind: 'escort' });
     const queues = this.host.game.planetQueues;

@@ -91,11 +91,6 @@ export interface FactoryGroupSnapshot {
 export type EscortHelp =
   | { readonly kind: 'assign' }
   | {
-      readonly kind: 'fleet-issue';
-      readonly fleet: string;
-      readonly issue: string;
-    }
-  | {
       readonly kind: 'build-ship' | 'ordered';
       readonly planetId: string;
       readonly planet: string;
