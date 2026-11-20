@@ -560,6 +560,12 @@ export function projectCost(type: ProjectType): Stock {
   const definition = projectDefinition(type);
   return { ...emptyStock(), ...definition.cost, ...definition.parts };
 }
+export interface StationConstruction {
+  readonly planet: string;
+  readonly roundsLeft: number;
+  /** False while the station still waits for goods. */
+  readonly started: boolean;
+}
 export interface ResearchSnapshot {
   readonly recovered?: readonly Technology[];
   readonly available: readonly Technology[];
@@ -568,6 +574,11 @@ export interface ResearchSnapshot {
   readonly stations: number;
   /** forskningsvy-utan-station: finished stations, operating or not. */
   readonly builtStations: number;
+  /**
+   * forsta-station-pa-vag: the Research station closest to completion, so
+   * Research can say one is coming. Null when none is queued.
+   */
+  readonly stationConstruction?: StationConstruction | null;
   readonly queueBlockedReason: string | null;
   readonly queue: readonly Technology[];
 }
@@ -2236,7 +2247,32 @@ export class Game {
           ).length,
         0,
       ),
+      stationConstruction: this.#stationConstruction(),
     });
+  }
+
+  /** forsta-station-pa-vag: the queued Research station finished soonest. */
+  #stationConstruction(): StationConstruction | null {
+    const consumers = this.networkSnapshot().consumers;
+    let best: StationConstruction | null = null;
+    for (const planet of this.#ownedPlanets())
+      for (const project of this.#state(planet).projects) {
+        if (project.type !== 'Research station') continue;
+        const consumer = consumers.find((item) => item.id === project.id);
+        const length = consumer?.buildRounds ?? buildRounds(project.type);
+        const started = consumer?.constructionRound ?? null;
+        const roundsLeft =
+          started === null
+            ? Math.max(1, consumer?.arrivalRounds ?? 1) + length - 1
+            : Math.max(1, length - (this.#round - started));
+        if (!best || roundsLeft < best.roundsLeft)
+          best = Object.freeze({
+            planet: planet.name,
+            roundsLeft,
+            started: started !== null,
+          });
+      }
+    return best;
   }
   selectResearch(type: Technology | null): void {
     this.#requirePlanning();
