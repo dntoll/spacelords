@@ -948,11 +948,11 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   för sådant som inte är framforskat.
   `rekommendation-i-menyn` är **Fullständigt implementerat**: Factories
   markeras i menyn när en rekommenderad fabrik kan byggas.
-  `forskning-utan-rubrikrad`, `forskningslov-som-symbol`,
+  `forskning-utan-rubrikrad`, `forskningstrad-utan-korsningar`,
   `forskningsikon-i-detaljer` och `forskningstid` är **Fullständigt
-  implementerade** inom utforskningen: Research saknar rubrikrad, lövnoder
-  visas som symboler, detaljerna har teknikens ikon och en teknik tar 1–3
-  rundor.
+  implementerade** inom utforskningen: Research saknar rubrikrad, trädet har
+  inga korsande linjer, detaljerna har teknikens ikon och en teknik tar 1–3
+  rundor. `forskningslov-som-symbol` är ersatt: alla noder har namn igen.
   `forsta-station-pa-vag` är **Fullständigt implementerat**: Research visar
   att den första stationen byggs och när forskningen kan börja.
   `flottkategorier` och `byggorsak-i-kon` är **Fullständigt implementerade**

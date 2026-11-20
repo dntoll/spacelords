@@ -10,7 +10,10 @@ import {
   TECHNOLOGIES,
   researchRounds,
 } from '../../../src/client/space-map/models/research/Research.js';
-import { ResearchTreeLayout } from '../../../src/client/space-map/models/research/ResearchTree.js';
+import {
+  ResearchTreeLayout,
+  researchEdgeCrossings,
+} from '../../../src/client/space-map/models/research/ResearchTree.js';
 import { renderResearch } from '../../../src/client/space-map/views/research/ResearchView.js';
 import { renderResearchDetails } from '../../../src/client/space-map/views/research/ResearchDetailsView.js';
 
@@ -90,29 +93,55 @@ describe('forskningstid', () => {
   });
 });
 
-describe('forskningslov-som-symbol', () => {
-  it('draws leaves as square symbol tiles and keeps names on inner nodes', () => {
-    const layout = new ResearchTreeLayout(TECHNOLOGIES);
-    const node = (type: string) =>
-      layout.nodes.find((item) => item.technology === type)!;
-    expect(node('Trade logistics').leaf).toBe(false);
-    expect(node('Civilian transport')).toMatchObject({
-      leaf: true,
-      width: layout.cardHeight,
-    });
-    expect(node('Rocket engine factory').width).toBe(layout.cardWidth);
+describe('forskningstrad-utan-korsningar', () => {
+  it('lays out the whole tree and a new game’s tree without crossing lines', () => {
+    for (const technologies of [
+      TECHNOLOGIES,
+      new Game(createExampleGalaxy()).research.available,
+    ]) {
+      const layout = new ResearchTreeLayout(technologies);
+      expect(researchEdgeCrossings(layout)).toBe(0);
+      // Each dependency still runs left to right, and no cards overlap.
+      for (const edge of layout.edges) {
+        const from = layout.nodes.find((n) => n.technology === edge.from)!;
+        const to = layout.nodes.find((n) => n.technology === edge.to)!;
+        expect(to.x).toBeGreaterThan(from.x);
+      }
+      for (const [index, node] of layout.nodes.entries())
+        for (const other of layout.nodes.slice(index + 1))
+          expect(
+            node.x !== other.x ||
+              Math.abs(node.y - other.y) >= layout.cardHeight,
+          ).toBe(true);
+    }
+  });
+
+  it('counts a crossing between two lines', () => {
+    expect(
+      researchEdgeCrossings({
+        cardWidth: 10,
+        cardHeight: 0,
+        edges: [
+          { from: 'Rocket engine factory', to: 'Ion pulse engine factory' },
+          { from: 'Telescope I factory', to: 'Telescope II factory' },
+        ],
+        nodes: [
+          { technology: 'Rocket engine factory', x: 0, y: 0 },
+          { technology: 'Telescope I factory', x: 0, y: 100 },
+          { technology: 'Ion pulse engine factory', x: 50, y: 100 },
+          { technology: 'Telescope II factory', x: 50, y: 0 },
+        ],
+      }),
+    ).toBe(1);
+  });
+
+  it('names every technology in the tree, leaves included', () => {
     const view = renderResearch(allKnown, false, () => {});
-    const leaf = view.querySelector('[data-technology="Colony ship factory"]')!;
-    expect(leaf.classList).toContain('leaf');
-    expect(leaf.querySelector('.research-node-name')).toBeNull();
-    expect(leaf.querySelector('button')!.getAttribute('aria-label')).toBe(
-      'Inspect Colony ship factory',
-    );
     expect(
       view.querySelector(
-        '[data-technology="Rocket engine factory"] .research-node-name',
+        '[data-technology="Colony ship factory"] .research-node-name',
       )?.textContent,
-    ).toBe('Rocket engine');
+    ).toBe('Colony ship');
   });
 });
 

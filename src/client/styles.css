@@ -5449,21 +5449,6 @@ body:has(.discovery-controls) .selection-panel {
   background: var(--fleet-category);
 }
 
-/* forskningslov-som-symbol: leaves are square tiles with only the symbol. */
-.research-tree-stage .research-node.leaf {
-  width: 36px;
-}
-.research-tree-stage .research-node.leaf .research-node-select {
-  grid-template-columns: minmax(0, 1fr);
-  justify-items: center;
-  padding: 3px;
-}
-.research-tree-stage .research-node.leaf .building-image,
-.research-tree-stage .research-node.leaf .research-symbol {
-  width: 26px;
-  height: 26px;
-}
-
 /* forskningsikon-i-detaljer: the technology's symbol beside its name. */
 .research-detail-title {
   display: flex;

@@ -86,10 +86,7 @@ export function renderResearchTree(
           : ready
             ? 'available'
             : 'locked';
-    const card = element(
-      'article',
-      `research-choice research-node ${state}${node.leaf ? ' leaf' : ''}`,
-    );
+    const card = element('article', `research-choice research-node ${state}`);
     card.dataset.technology = type;
     card.dataset.state = state;
     card.dataset.identified = String(identified);
@@ -134,19 +131,13 @@ export function renderResearchTree(
     choose.id = `research-node-${index}`;
     choose.setAttribute('aria-pressed', String(inspected === type));
     const art = researchArt(type, identified);
-    // forskningslov-som-symbol: a leaf shows only its symbol; the button
-    // label and tooltip still name it.
     choose.append(
       art,
-      ...(node.leaf
-        ? []
-        : [
-            element(
-              'span',
-              'research-node-name',
-              identified ? type.replace(/ factory$/, '') : 'Unknown',
-            ),
-          ]),
+      element(
+        'span',
+        'research-node-name',
+        identified ? type.replace(/ factory$/, '') : 'Unknown',
+      ),
     );
     const status = !identified
       ? 'Undiscovered'
