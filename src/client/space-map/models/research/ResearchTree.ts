@@ -15,18 +15,54 @@ export function isResearchIdentified(
   );
 }
 
+type Edge = Readonly<{ from: Technology; to: Technology }>;
+type Node = Readonly<{ technology: Technology; x: number; y: number }>;
+
+/**
+ * forskningstrad-utan-korsningar: crossings between dependency lines, counted
+ * on straight lines from a card's right edge to the next card's left edge.
+ */
+export function researchEdgeCrossings(layout: {
+  readonly cardWidth: number;
+  readonly cardHeight: number;
+  readonly edges: readonly Edge[];
+  readonly nodes: readonly Node[];
+}): number {
+  const at = new Map(layout.nodes.map((node) => [node.technology, node]));
+  const lines = layout.edges.map((edge) => {
+    const from = at.get(edge.from)!;
+    const to = at.get(edge.to)!;
+    return {
+      edge,
+      a: { x: from.x + layout.cardWidth, y: from.y + layout.cardHeight / 2 },
+      b: { x: to.x, y: to.y + layout.cardHeight / 2 },
+    };
+  });
+  const side = (p: Point, q: Point, r: Point) =>
+    Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x));
+  let crossings = 0;
+  for (const [index, first] of lines.entries())
+    for (const second of lines.slice(index + 1)) {
+      const shared = [first.edge.from, first.edge.to].some(
+        (end) => end === second.edge.from || end === second.edge.to,
+      );
+      if (shared) continue;
+      if (
+        side(first.a, first.b, second.a) * side(first.a, first.b, second.b) <
+          0 &&
+        side(second.a, second.b, first.a) * side(second.a, second.b, first.b) <
+          0
+      )
+        crossings += 1;
+    }
+  return crossings;
+}
+
 export class ResearchTreeLayout {
   readonly cardWidth: number = 108;
   readonly cardHeight: number = 36;
-  readonly edges: readonly Readonly<{ from: Technology; to: Technology }>[];
-  readonly nodes: readonly Readonly<{
-    technology: Technology;
-    x: number;
-    y: number;
-    /** forskningslov-som-symbol: leaves are square symbol tiles. */
-    width: number;
-    leaf: boolean;
-  }>[];
+  readonly edges: readonly Edge[];
+  readonly nodes: readonly Node[];
   readonly width: number;
   readonly height: number;
 
@@ -38,52 +74,137 @@ export class ResearchTreeLayout {
           .map((from) => Object.freeze({ from, to })),
       ),
     );
-    const rows = new Map<Technology, number>();
-    let leaf = 0;
-    const row = (technology: Technology): number => {
-      const cached = rows.get(technology);
-      if (cached !== undefined) return cached;
-      const children = this.edges
-        .filter((e) => e.from === technology)
-        .map((e) => row(e.to));
-      const value = children.length
-        ? (Math.min(...children) + Math.max(...children)) / 2
-        : leaf++;
-      rows.set(technology, value);
+    const depths = new Map<Technology, number>();
+    const depth = (technology: Technology): number => {
+      const known = depths.get(technology);
+      if (known !== undefined) return known;
+      const parents = this.#parents(technology);
+      const value = parents.length ? 1 + Math.max(...parents.map(depth)) : 0;
+      depths.set(technology, value);
       return value;
     };
-    const depth = (technology: Technology): number =>
-      PREREQUISITES[technology].length
-        ? 1 + Math.max(...PREREQUISITES[technology].map(depth))
-        : 0;
-    const nodes = technologies.map((technology) => {
-      const leaf = !this.edges.some((edge) => edge.from === technology);
-      return Object.freeze({
-        technology,
-        x: 32 + depth(technology) * (this.cardWidth + 24),
-        y: 32 + row(technology) * (this.cardHeight + 12),
-        width: leaf ? this.cardHeight : this.cardWidth,
-        leaf,
-      });
-    });
-    this.nodes = nodes;
-    // forsknings-tradnavigation: shared dependencies may place siblings on the same row.
-    for (const x of new Set(this.nodes.map((node) => node.x))) {
-      let bottom = -Infinity;
-      for (const node of this.nodes
-        .filter((node) => node.x === x)
-        .toSorted((a, b) => a.y - b.y)) {
-        const y = Math.max(node.y, bottom + this.cardHeight + 12);
-        if (y !== node.y)
-          nodes[nodes.indexOf(node)] = Object.freeze({ ...node, y });
-        bottom = y;
+    const layers: Technology[][] = [];
+    for (const technology of technologies)
+      (layers[depth(technology)] ??= []).push(technology);
+    // forskningstrad-utan-korsningar: order each layer by the mean position of
+    // its neighbours, then swap neighbours while that removes crossings.
+    let best = this.#place(layers);
+    let fewest = this.#crossings(best);
+    const consider = (candidate: Technology[][]) => {
+      const placed = this.#place(candidate);
+      const count = this.#crossings(placed);
+      if (count < fewest) {
+        fewest = count;
+        best = placed;
+        layers.splice(
+          0,
+          layers.length,
+          ...candidate.map((layer) => [...layer]),
+        );
+        return true;
       }
+      return false;
+    };
+    for (let sweep = 0; sweep < 8 && fewest > 0; sweep++) {
+      const down = sweep % 2 === 0;
+      const order = layers.map((layer) => [...layer]);
+      const indices = down
+        ? order.keys()
+        : [...order.keys()].reverse().values();
+      for (const index of indices) {
+        const position = new Map(
+          order.flatMap((layer) => layer.map((t, i) => [t, i] as const)),
+        );
+        const barycenter = (technology: Technology) => {
+          const near = down
+            ? this.#parents(technology)
+            : this.#children(technology);
+          return near.length
+            ? near.reduce((sum, t) => sum + position.get(t)!, 0) / near.length
+            : position.get(technology)!;
+        };
+        order[index]!.sort((a, b) => barycenter(a) - barycenter(b));
+      }
+      consider(order);
     }
-    Object.freeze(nodes);
-    this.width = Math.max(...this.nodes.map((n) => n.x + n.width)) + 32;
+    let improved = true;
+    while (improved && fewest > 0) {
+      improved = false;
+      for (const [index, layer] of layers.entries())
+        for (let i = 0; i + 1 < layer.length; i++) {
+          const candidate = layers.map((item) => [...item]);
+          const swapped = candidate[index]!;
+          [swapped[i], swapped[i + 1]] = [swapped[i + 1]!, swapped[i]!];
+          if (consider(candidate)) improved = true;
+        }
+    }
+    this.nodes = best;
+    this.width =
+      Math.max(...this.nodes.map((node) => node.x)) + this.cardWidth + 32;
     this.height =
-      Math.max(...this.nodes.map((n) => n.y)) + this.cardHeight + 32;
-    Object.freeze(this.edges);
+      Math.max(...this.nodes.map((node) => node.y)) + this.cardHeight + 32;
+  }
+
+  #parents(technology: Technology): Technology[] {
+    return this.edges
+      .filter((edge) => edge.to === technology)
+      .map((edge) => edge.from);
+  }
+
+  #children(technology: Technology): Technology[] {
+    return this.edges
+      .filter((edge) => edge.from === technology)
+      .map((edge) => edge.to);
+  }
+
+  #crossings(nodes: readonly Node[]): number {
+    return researchEdgeCrossings({
+      cardWidth: this.cardWidth,
+      cardHeight: this.cardHeight,
+      edges: this.edges,
+      nodes,
+    });
+  }
+
+  /**
+   * Cards keep their layer order. Each sits level with the mean of its
+   * prerequisites, and prerequisites then move level with their dependants.
+   */
+  #place(layers: readonly (readonly Technology[])[]): readonly Node[] {
+    const step = this.cardHeight + 12;
+    const y = new Map<Technology, number>();
+    const settle = (
+      layer: readonly Technology[],
+      wanted: (t: Technology) => number,
+    ) => {
+      let bottom = -Infinity;
+      for (const technology of layer) {
+        const value = Math.max(wanted(technology), bottom + step);
+        y.set(technology, value);
+        bottom = value;
+      }
+    };
+    const mean = (items: readonly Technology[], fallback: number) =>
+      items.length
+        ? items.reduce((sum, t) => sum + y.get(t)!, 0) / items.length
+        : fallback;
+    settle(layers[0] ?? [], () => 0);
+    for (const layer of layers.slice(1))
+      settle(layer, (t) => mean(this.#parents(t), 0));
+    for (const layer of layers.slice(0, -1).reverse())
+      settle(layer, (t) => mean(this.#children(t), y.get(t)!));
+    const top = Math.min(...y.values());
+    return Object.freeze(
+      layers.flatMap((layer, depth) =>
+        layer.map((technology) =>
+          Object.freeze({
+            technology,
+            x: 32 + depth * (this.cardWidth + 24),
+            y: 32 + y.get(technology)! - top,
+          }),
+        ),
+      ),
+    );
   }
 }
 

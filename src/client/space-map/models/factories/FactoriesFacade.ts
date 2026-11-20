@@ -13,6 +13,7 @@ import {
 } from '../Game.js';
 import type { TradeRouteSnapshot } from '../Logistics.js';
 import type { Planet } from '../Planet.js';
+import { PREREQUISITES, type Technology } from '../research/Research.js';
 import { armedShipCount } from '../ShipEquipment.js';
 import {
   routeEscortCount,
@@ -61,6 +62,7 @@ const ESCORT_FACTORIES: readonly BuildType[] = [
   'Fighter factory',
   'Raptor factory',
 ];
+const ESCORT_SHIPS: readonly ShipType[] = ['Fighter', 'Raptor'];
 
 const EXTRACTORS: Readonly<Record<Resource, BuildType>> = {
   Iron: 'Iron mine',
@@ -169,9 +171,16 @@ export class FactoriesFacade {
       case 'cancel-site':
         this.#cancelSite(context);
         return null;
-      case 'build-escort':
-        // vagledning-mot-eskort: armed ships are ordered in Production.
-        return { kind: 'open-production', planetId: action.planet };
+      case 'order-escort':
+        // bestall-eskort-pa-lanken: the ship is built to guard this link.
+        this.host.game.scheduleShip(
+          this.#gamePlanet(action.planet),
+          'Fighter',
+          null,
+          undefined,
+          { kind: 'join-route', routeId: action.link },
+        );
+        return null;
       case 'upgrade':
         this.#upgrade(context);
         return null;
@@ -438,6 +447,22 @@ export class FactoriesFacade {
       return null;
     if (this.#escortFleets(route.id).length)
       return Object.freeze({ kind: 'assign' });
+    // bestall-eskort-pa-lanken: an armed ship already ordered for the link.
+    for (const planet of context.planets) {
+      const ordered = planet.projects.find(
+        (project) =>
+          ESCORT_SHIPS.includes(project.type as ShipType) &&
+          project.initialOrder?.kind === 'join-route' &&
+          project.initialOrder.routeId === route.id,
+      );
+      if (ordered)
+        return Object.freeze({
+          kind: 'ordered',
+          planetId: planet.id,
+          planet: planet.name,
+          ship: ordered.type as ShipType,
+        });
+    }
     const armed = fleets
       .filter(
         (fleet) =>
@@ -451,25 +476,60 @@ export class FactoriesFacade {
         fleet: busy.name,
         issue: tradeAssignmentIssue(busy, route, fleets) ?? 'Not available',
       });
-    for (const planet of context.planets) {
-      const factory = planet.buildings.find(
+    const factory = context.planets.find((planet) =>
+      planet.buildings.some(
         (building) =>
           !building.scheduledForDemolition &&
-          ESCORT_FACTORIES.includes(building.type),
-      );
-      if (factory)
-        return Object.freeze({
-          kind: 'build-ship',
-          planetId: planet.id,
-          planet: planet.name,
-          ship: factoryShips(factory.type)[0]!,
-        });
-    }
+          building.type === 'Fighter factory',
+      ),
+    );
+    if (factory)
+      return Object.freeze({
+        kind: 'build-ship',
+        planetId: factory.id,
+        planet: factory.name,
+        ship: 'Fighter',
+      });
     const researched = new Set<string>(this.host.game.research.completed);
+    if (researched.has('Fighter factory')) {
+      const group = this.#group(context, route.a);
+      const planet = group
+        .map((id) => this.#planet(context, id))
+        .find((item) =>
+          item.sites.some(
+            (site) =>
+              !site.building &&
+              !site.project &&
+              !site.locked &&
+              !(site.domeRequired && !site.hasDome),
+          ),
+        );
+      const site = planet?.sites.find(
+        (item) =>
+          !item.building &&
+          !item.project &&
+          !item.locked &&
+          !(item.domeRequired && !item.hasDome),
+      );
+      return Object.freeze({
+        kind: 'build-factory',
+        site:
+          planet && site
+            ? Object.freeze({ planet: planet.id, index: site.index })
+            : null,
+      });
+    }
+    const chain: BuildType[] = [];
+    const visit = (technology: BuildType) => {
+      for (const prerequisite of PREREQUISITES[technology as Technology])
+        visit(prerequisite as BuildType);
+      if (!researched.has(technology) && !chain.includes(technology))
+        chain.push(technology);
+    };
+    visit('Fighter factory');
     return Object.freeze({
-      kind: ESCORT_FACTORIES.some((type) => researched.has(type))
-        ? 'build-factory'
-        : 'research',
+      kind: 'research',
+      technologies: Object.freeze(chain),
     });
   }
 

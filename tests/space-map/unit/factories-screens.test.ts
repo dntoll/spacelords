@@ -926,10 +926,15 @@ describe('vagledning-mot-eskort', () => {
     return { ...ui, help: () => ui.factories().links!.links[0]!.escortHelp };
   };
 
-  it('asks for Fighter factory research, then recommends building one', () => {
+  it('bestall-eskort-pa-lanken: names the research, then leads to a site for a Fighter factory', () => {
     const { help, root } = linked();
-    expect(help()).toEqual({ kind: 'research' });
-    expect(root.textContent).toContain('Research Fighter factory');
+    expect(help()).toEqual({
+      kind: 'research',
+      technologies: ['Weapons module factory', 'Fighter factory'],
+    });
+    expect(root.textContent).toContain(
+      'Research Weapons module factory, then Fighter factory',
+    );
     const researched = linked((state) => ({
       ...state,
       researched: [
@@ -938,21 +943,40 @@ describe('vagledning-mot-eskort', () => {
         'Fighter factory',
       ],
     }));
-    expect(researched.help()).toEqual({ kind: 'build-factory' });
-    researched.act({ kind: 'back' });
+    expect(researched.help()).toEqual({
+      kind: 'build-factory',
+      site: { planet: 'sol-0', index: 2 },
+    });
+    researched.root
+      .querySelector<HTMLButtonElement>(
+        '[aria-label="Build a Fighter factory"]',
+      )!
+      .click();
+    expect(researched.factories().screen).toBe('build');
     expect(
-      researched.group('Tellus, Vesta').recommended.map((item) => item.type),
-    ).toContain('Fighter factory');
+      researched
+        .factories()
+        .build!.options.find((option) => option.type === 'Fighter factory')!
+        .recommendations,
+    ).toContainEqual({ kind: 'escort' });
   });
 
-  it('leads to Production where a Fighter factory exists', () => {
-    const { help, root, model } = linked((state) => {
-      state.colonies[0]![1].buildings.push({
-        id: 'fighters',
-        type: 'Fighter factory',
-        slotIndex: 2,
-        demolition: false,
-      });
+  it('bestall-eskort-pa-lanken: orders a Fighter for the link, which then escorts it', () => {
+    const { help, root, send, factories, turn } = linked((state) => {
+      state.colonies[0]![1].buildings.push(
+        {
+          id: 'fighters',
+          type: 'Fighter factory',
+          slotIndex: 2,
+          demolition: false,
+        },
+        {
+          id: 'weapons',
+          type: 'Weapons module factory',
+          slotIndex: 3,
+          demolition: false,
+        },
+      );
       return {
         ...state,
         researched: [
@@ -970,11 +994,24 @@ describe('vagledning-mot-eskort', () => {
     });
     root
       .querySelector<HTMLButtonElement>(
-        '[aria-label="Build a Fighter at Tellus"]',
+        '[aria-label="Order a Fighter at Tellus to escort Tellus–Vesta"]',
       )!
       .click();
-    expect(model.snapshot.screen).toBe('production');
-    expect(model.snapshot.planet?.id).toBe('sol-0');
+    expect(help()).toMatchObject({ kind: 'ordered', ship: 'Fighter' });
+    const link = factories().links!.links[0]!;
+    for (let round = 0; round < 8; round++) {
+      turn();
+      send({ type: 'open-factories' });
+      send({
+        type: 'factories',
+        action: { kind: 'open-links', group: 'Tellus, Vesta' },
+      });
+      if (factories().links!.links[0]!.escorts > 0) break;
+    }
+    expect(
+      factories().links!.links.find((item) => item.id === link.id)!.escorts,
+    ).toBe(1);
+    expect(help()).toBeNull();
   });
 
   it('points to Escort when a free armed fleet can guard the link', () => {

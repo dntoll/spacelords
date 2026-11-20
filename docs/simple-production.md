@@ -171,6 +171,13 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
   kan (exempelvis att den reser); `Build Fighter` som öppnar Production på
   planeten med Fighter factory; att bygga en Fighter factory, som då också
   rekommenderas under `Recommended`; eller att forska fram Fighter factory.
+- `bestall-eskort-pa-lanken` (**Fullständigt implementerat**): finns en
+  Fighter factory beställer `Order Fighter` en Fighter direkt från länken,
+  med order att eskortera just den länken; raden visar sedan att en Fighter
+  är beställd. Saknas fabriken leder `Build factory` till en ledig plats i
+  gruppen, och saknas forskning listas den i ordning, exempelvis
+  `Research Weapons module factory, then Fighter factory`. Ersätter knappen
+  som öppnade Production i `vagledning-mot-eskort`.
 - `ny-fabrik-med-guldstjarna` (**Fullständigt implementerat**): en
   framforskad fabrik som ingen planet har eller bygger räknas som ny.
   `Factories` i huvudmenyn visar då en guldstjärna (★), och valet under
@@ -241,9 +248,12 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
   forskningskön (`Research queue · 2 · 1 station`) med stationens ikon, och
   förklaringen av stationer ligger i den utfällda kön. Ersätter
   stationsinformationen bredvid rubriken i `forskningstradets-utrymme`.
-- `forskningslov-som-symbol`: tekniker som ingen annan teknik bygger på
-  (lövnoder) visas som en kvadratisk ruta med bara symbolen. Namnet står i
-  detaljerna, i tooltip och för skärmläsare. Trädet blir smalare.
+- `forskningslov-som-symbol` är **Ersatt** av användaren (2026-11-20):
+  alla noder visar åter sitt namn.
+- `forskningstrad-utan-korsningar` (**Fullständigt implementerat**): trädet
+  läggs ut i lager efter förkunskaper. Ordningen i varje lager väljs så att
+  beroendelinjerna inte korsar varandra, och varje teknik ligger i höjd med
+  sina förkunskaper och efterföljare.
 - `forskningsikon-i-detaljer`: detaljerna längst ned visar teknikens symbol
   bredvid namnet.
 - `forskningstid`: en teknik tar 1–3 rundor. Tekniker utan förkunskaper tar

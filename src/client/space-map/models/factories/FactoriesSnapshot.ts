@@ -96,12 +96,21 @@ export type EscortHelp =
       readonly issue: string;
     }
   | {
-      readonly kind: 'build-ship';
+      readonly kind: 'build-ship' | 'ordered';
       readonly planetId: string;
       readonly planet: string;
       readonly ship: ShipType;
     }
-  | { readonly kind: 'build-factory' | 'research' };
+  | {
+      readonly kind: 'build-factory';
+      /** The first empty site in the group, or null when none is free. */
+      readonly site: { readonly planet: string; readonly index: number } | null;
+    }
+  | {
+      readonly kind: 'research';
+      /** What to research, prerequisites first. */
+      readonly technologies: readonly BuildType[];
+    };
 
 /** rekommenderade-fabriker: why a factory is offered first. */
 export type FactoryRecommendation =
@@ -293,7 +302,11 @@ export type FactoriesAction =
   | { readonly kind: 'move-link'; readonly link: string }
   | { readonly kind: 'escort-link'; readonly link: string }
   | { readonly kind: 'assign-escort'; readonly fleet: string }
-  | { readonly kind: 'build-escort'; readonly planet: string }
+  | {
+      readonly kind: 'order-escort';
+      readonly link: string;
+      readonly planet: string;
+    }
   | { readonly kind: 'confirm-move' | 'cancel-move' };
 
 /** skeppsorder-pa-planeten: ship factories hand over to the map. */
