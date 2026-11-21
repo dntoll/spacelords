@@ -283,23 +283,7 @@ describe('spara-avbrutet-ar', () => {
       expect(loaded.exportState()).toEqual(game.exportState());
     },
   );
-  it('migrates existing visibility without retroactive discoveries and rejects corrupt checkpoints', () => {
-    const initial = new Game(createExampleGalaxy()).exportState();
-    const old: GameState = {
-      ...initial,
-      version: 7,
-      explored: new Game(createExampleGalaxy())
-        .mapSnapshot()
-        .map((cell) => cell.position.key),
-    };
-    const game = Game.restore(old);
-    finish(game);
-    expect(
-      game.events.some(
-        (event) =>
-          event.text.includes('discovered') || event.text.includes('in sight'),
-      ),
-    ).toBe(false);
+  it('rejects corrupt checkpoints', () => {
     const broken = contact();
     interrupt(broken);
     const saved = broken.exportState();

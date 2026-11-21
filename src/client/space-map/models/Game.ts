@@ -905,8 +905,8 @@ export interface GameState {
   readonly settlers?: readonly SettlerTransit[];
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
-  readonly version:
-    2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17;
+  // sparformat: only the current format loads; older saves are rejected.
+  readonly version: 17;
   readonly knownTerrain?: readonly string[];
   readonly salvage?: ReturnType<Salvage['snapshot']>;
   readonly recoveredResearch?: readonly (
@@ -932,8 +932,7 @@ export interface GameState {
     }[];
   };
   readonly round: number;
-  // summary is accepted only for backwards compatibility with older saves.
-  readonly phase: 'planning' | 'summary' | 'interrupted';
+  readonly phase: 'planning' | 'interrupted';
   readonly sequence: number;
   readonly researched: readonly (
     Technology | (typeof RETIRED_ORDER_TECHNOLOGIES)[number]
@@ -1091,18 +1090,12 @@ export class Game {
 
   static restore(state: GameState): Game {
     if (
-      ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].includes(
-        state.version,
-      ) ||
+      state.version !== 17 ||
       !Number.isSafeInteger(state.round) ||
       state.round < 1 ||
       !Number.isSafeInteger(state.sequence) ||
       state.sequence < 1 ||
-      ![
-        'planning',
-        'summary',
-        ...(state.version >= 8 ? ['interrupted'] : []),
-      ].includes(state.phase)
+      !['planning', 'interrupted'].includes(state.phase)
     )
       throw new Error('This saved game cannot be loaded.');
     const position = (point: {
@@ -1149,24 +1142,20 @@ export class Game {
       recoveredResearch: Technology[];
     };
     if (
-      state.version >= 15 &&
-      (!copy.productionFleetSequences ||
+      !copy.productionFleetSequences ||
         Object.entries(copy.productionFleetSequences).some(
-          ([key, next]) => !key || !Number.isSafeInteger(next) || next < 1,
-        ))
+        ([key, next]) => !key || !Number.isSafeInteger(next) || next < 1,
+      )
     )
       throw new Error('Invalid saved production fleet sequences.');
     game.#productionFleetSequences = {
       ...(copy.productionFleetSequences ?? {}),
     };
-    if (state.version >= 7 && !Array.isArray(state.pirates))
+    if (!Array.isArray(state.pirates))
       throw new Error('Missing saved pirate fleets.');
-    game.#pirates =
-      state.version >= 7
-        ? copy.pirates!.map((pirate) =>
-            PirateFleet.restore(pirate, galaxy, state.version < 14),
-          )
-        : [];
+    game.#pirates = copy.pirates!.map((pirate) =>
+      PirateFleet.restore(pirate, galaxy),
+    );
     const ids = [
       ...copy.fleets.map((fleet) => fleet.id),
       ...game.#pirates.map((pirate) => pirate.id),
@@ -1185,11 +1174,8 @@ export class Game {
       (technology) => !retired.has(technology),
     );
     if (
-      state.version >= 10 &&
-      (!Array.isArray(state.recoveredResearch) ||
-        recoveredResearch.some(
-          (technology) => !TECHNOLOGIES.includes(technology),
-        ))
+      !Array.isArray(state.recoveredResearch) ||
+      recoveredResearch.some((technology) => !TECHNOLOGIES.includes(technology))
     )
       throw new Error('Invalid recovered technology.');
     game.#research = new ResearchPlan(
@@ -1206,30 +1192,11 @@ export class Game {
         ),
       ),
     );
-    if (state.version < 6) {
-      if (
-        researched.some(
-          (technology) =>
-            technology.endsWith('ship factory') ||
-            technology === 'Fighter factory',
-        )
-      )
-        game.#research.completed.add('Rocket engine factory');
-      const queue = [...researchQueue];
-      game.#research.queue = [];
-      for (const technology of queue)
-        if (!game.#research.completed.has(technology))
-          game.#research.add(technology);
-    }
-    // produktionsnatverk: older saves lose goods in transit and part orders.
     game.#logistics = new Logistics([...copy.tradeRoutes]);
     game.#network = new NetworkEconomy(
-      state.version >= 17 && copy.network
-        ? copy.network
-        : { transits: [], deliveries: [] },
+      copy.network ?? { transits: [], deliveries: [] },
     );
-    game.#networkStarted =
-      state.version >= 17 ? { ...(copy.networkStarted ?? {}) } : {};
+    game.#networkStarted = { ...(copy.networkStarted ?? {}) };
     game.#construction = { ...(copy.construction ?? {}) };
     game.#decisions = new DecisionBoard(
       new Set(copy.skippedDecisions),
@@ -1244,24 +1211,6 @@ export class Game {
     for (const colony of game.#colonies.values()) {
       colony.stock = { ...emptyStock(), ...colony.stock };
       colony.deposits = { ...emptyStock(), ...colony.deposits };
-      if (state.version === 2) {
-        // gemensam-planetko: preserve each legacy queue's order when interleaving.
-        const queues = [
-          colony.projects,
-          ...colony.buildings.map((building) => building.queue ?? []),
-        ].map((queue) => [...queue]);
-        colony.projects = [];
-        while (queues.some((queue) => queue.length)) {
-          const next = queues
-            .filter((queue) => queue.length)
-            .sort(
-              (a, b) =>
-                Number(a[0]!.id.split('-').at(-1)) -
-                Number(b[0]!.id.split('-').at(-1)),
-            )[0]!;
-          colony.projects.push(next.shift()!);
-        }
-      }
       for (const building of colony.buildings) delete building.queue;
       for (const project of colony.projects)
         if (project.initialOrder) {
@@ -1557,21 +1506,18 @@ export class Game {
           ...(valid ? { position: Object.freeze({ ...eventPosition }) } : {}),
         });
       });
-    game.#salvage =
-      state.version >= 10
-        ? Salvage.restore(
-            copy.salvage,
-            (position) => !!galaxy.cellAt(position),
-            new Set(copy.fleets.map((fleet) => fleet.id)),
-            new Map(
-              [...game.#colonies].flatMap(([id, colony]) =>
-                colony.buildings
-                  .filter((building) => building.type === 'Orbital shipyard')
-                  .map((building) => [building.id, id]),
-              ),
-            ),
-          )
-        : new Salvage();
+    game.#salvage = Salvage.restore(
+      copy.salvage,
+      (position) => !!galaxy.cellAt(position),
+      new Set(copy.fleets.map((fleet) => fleet.id)),
+      new Map(
+        [...game.#colonies].flatMap(([id, colony]) =>
+          colony.buildings
+            .filter((building) => building.type === 'Orbital shipyard')
+            .map((building) => [building.id, id]),
+        ),
+      ),
+    );
     for (const fleet of game.#fleets)
       if (fleet.pendingOrder) ShipOrders.validate(fleet.pendingOrder);
     for (const fleet of game.#fleets)
@@ -1596,13 +1542,9 @@ export class Game {
       }
     game.#refreshReinforcements();
     game.#updateSight();
-    if (state.version >= 8 && !Array.isArray(copy.knownObjects))
+    if (!Array.isArray(copy.knownObjects))
       throw new Error('Missing discovered objects.');
-    game.#knownObjects = new Set(
-      state.version >= 8
-        ? copy.knownObjects
-        : game.#visibleDiscoveries().map((discovery) => discovery.id),
-    );
+    game.#knownObjects = new Set<string>(copy.knownObjects);
     if (state.phase === 'interrupted') {
       game.#simulation = TurnSimulation.restore(
         copy.simulation!,
@@ -1611,53 +1553,22 @@ export class Game {
           Number.isInteger(point?.q) &&
           Number.isInteger(point?.r) &&
           !!galaxy.cellAt(position(point)),
-        state.version < 10,
-        (id) => {
-          const fleet = game.#fleets.find((fleet) => fleet.id === id);
-          return fleet ? game.#speed(fleet) : 1;
-        },
       );
       game.#phase = 'interrupted';
       game.#validateTacticalParticipants();
       // avbryt-gammal-bordning-vid-laddning
       const boarding = game.#simulation.boarding;
       if (boarding?.outdated) game.#resolveBoarding(boarding);
-    } else if (state.version >= 8 && copy.simulation)
+    } else if (copy.simulation)
       throw new Error('Unexpected interrupted round.');
-    if (state.version < 9) {
-      if (game.#research.completed.has('Exploration ship factory'))
-        game.#research.completed.add('Telescope I factory');
-      const queue = [...game.#research.queue];
-      game.#research.queue = [];
-      for (const technology of queue)
-        if (!game.#research.completed.has(technology))
-          game.#research.add(technology);
-      game.#migrateTelescopeOrders();
-      if (game.#simulation) {
-        game.#simulation.discoveries = game.#simulation.discoveries.filter(
-          (discovery) =>
-            discovery.kind !== 'pirate' ||
-            game.#visible.has(
-              `${discovery.position.q},${discovery.position.r}`,
-            ),
-        );
-        if (!game.#simulation.discoveries.length)
-          game.#simulation.handling = true;
-      }
-    }
     if (
-      state.version >= 9 &&
-      (!Array.isArray(copy.visiblePirates) ||
-        copy.visiblePirates.some(
-          (id) => !game.#pirates.some((pirate) => pirate.id === id),
-        ))
+      !Array.isArray(copy.visiblePirates) ||
+      copy.visiblePirates.some(
+        (id) => !game.#pirates.some((pirate) => pirate.id === id),
+      )
     )
       throw new Error('Invalid saved pirate contacts.');
-    game.#visiblePirates = new Set(
-      state.version >= 9
-        ? copy.visiblePirates
-        : game.pirateSnapshots().map((pirate) => pirate.id),
-    );
+    game.#visiblePirates = new Set<string>(copy.visiblePirates);
     const chartedPirates = state.chartedPirates ?? [];
     if (
       state.chartedPirates !== undefined &&
@@ -4114,16 +4025,6 @@ export class Game {
     throw new Error('Parts are made automatically when ships need them.');
   }
 
-  #migrateTelescopeOrders(): void {
-    // teleskop-i-exploration-ships: legacy orders wait for a Telescope I.
-    for (const planet of this.#ownedPlanets())
-      for (const project of this.#state(planet).projects)
-        if (
-          project.type === 'Exploration ship' &&
-          !TELESCOPES.some((part) => project.parts?.[part])
-        )
-          project.parts = { ...project.parts, 'Telescope I': 1 };
-  }
   #scheduleProject(
     planet: Planet,
     type: ProjectType,

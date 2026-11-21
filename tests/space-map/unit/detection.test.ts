@@ -76,45 +76,6 @@ describe('aktuell-detektionssikt', () => {
     expect(game.pirateSnapshots()).toEqual([]);
   });
 
-  it('spara-avbrutet-ar: migrates an obsolete out-of-sight pirate pause without repeating spent movement', () => {
-    const state = new Game(createExampleGalaxy()).exportState();
-    const game = Game.restore({
-      ...state,
-      version: 8,
-      phase: 'interrupted',
-      knownObjects: [...state.knownObjects!, 'nadir-0', 'pirate-nadir'],
-      explored: [...state.explored, '8,-3'],
-      simulation: {
-        remaining: [
-          ['fleet-home', 2],
-          ['pirate-nadir', 0],
-          ['pirate-aster', 0],
-        ],
-        awaitingCombat: true,
-        handling: false,
-        otherFleets: false,
-        discoveries: [
-          {
-            id: 'pirate-nadir',
-            kind: 'pirate',
-            name: 'Space pirate',
-            position: { q: 8, r: -3 },
-            fleetId: null,
-          },
-        ],
-      },
-    });
-    expect(game.interruption!.discoveries).toEqual([]);
-    expect(game.interruption!.handling).toBe(true);
-    expect(game.fleet('fleet-home')!.remainingMovement).toBe(2);
-    expect(Game.restore(game.exportState()).interruption).toEqual(
-      game.interruption,
-    );
-    for (const frame of turnFrames(game, false)) game.applyFrame(frame);
-    game.finishTurn();
-    expect(game.round).toBe(2);
-  });
-
   it.each([1, 2, 3] as const)(
     'teleskopnivaer / kartans-sikttillstand: installed level %i controls sight, not map memory',
     (level) => {
@@ -430,58 +391,4 @@ describe('teleskop-i-exploration-ships', () => {
         .map((ship) => ship.telescope),
     ).toEqual([1, 2, 2]);
   });
-
-  it('migrates legacy ships, research and queued ship requirements without deleting an order', () => {
-    const state = shipyard();
-    state.colonies[0]![1].projects.push({
-      id: 'legacy-ship',
-      type: 'Exploration ship',
-      slotIndex: null,
-      factoryId: 'shipyard',
-      destinationFleetId: null,
-      parts: { 'Rocket engine': 2 },
-    });
-    const game = Game.restore({
-      ...state,
-      version: 8,
-      researched: ['Exploration ship factory'],
-      fleets: state.fleets.map((fleet) => ({ ...fleet, shipUnits: [] })),
-    });
-    expect(game.research.completed).toContain('Telescope I factory');
-    expect(game.fleet('fleet-home')!.shipUnits![0]!.telescope).toBe(1);
-    expect(
-      game.planetSnapshot(game.galaxy.homePlanet)!.projects[0]!.parts![
-        'Telescope I'
-      ],
-    ).toBe(1);
-    year(game);
-    expect(game.planetSnapshot(game.galaxy.homePlanet)!.projects[0]!.id).toBe(
-      'legacy-ship',
-    );
-    expect(game.fleet('fleet-home')!.ships['Exploration ship']).toBe(1);
-  });
-
-  it.each([2, 3, 4, 5, 6, 7, 8] as const)(
-    'saves version %i as version 14 without resetting explored memory or charging existing ships',
-    (version) => {
-      const state = shipyard();
-      const game = Game.restore({
-        ...state,
-        version,
-        explored: [...state.explored, '-6,6'],
-        fleets: state.fleets.map((fleet) => ({
-          ...fleet,
-          shipUnits: [],
-        })),
-      });
-      expect(game.exportState().version).toBe(17);
-      expect(game.exportState().explored).toContain('-6,6');
-      expect(
-        game.planetSnapshot(game.galaxy.homePlanet)!.economy.stock.Iron,
-      ).toBe(state.colonies[0]![1].stock.Iron);
-      expect(Game.restore(game.exportState()).exportState()).toEqual(
-        game.exportState(),
-      );
-    },
-  );
 });

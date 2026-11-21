@@ -150,8 +150,6 @@ export class TurnSimulation {
     saved: SavedTurnSimulation,
     ids: ReadonlySet<string>,
     contains: (position: { readonly q: number; readonly r: number }) => boolean,
-    legacy = false,
-    speed: (id: string) => number = () => 1,
   ): TurnSimulation {
     if (
       !saved ||
@@ -193,7 +191,7 @@ export class TurnSimulation {
           !ids.has(id) ||
           !Number.isSafeInteger(count) ||
           count < 0 ||
-          count > (legacy ? 5 : 60),
+          count > 60,
       ) ||
       saved.discoveries.some(
         (discovery: Discovery) =>
@@ -248,10 +246,7 @@ export class TurnSimulation {
       id,
       count,
     ] of saved.remaining as SavedTurnSimulation['remaining'])
-      simulation.remaining.set(
-        id,
-        legacy ? (count * 60) / Math.max(1, speed(id)) : count,
-      );
+      simulation.remaining.set(id, count);
     simulation.battles = structuredClone(saved.battles ?? []);
     simulation.economyApplied = saved.economyApplied ?? false;
     simulation.awaitingCombat = saved.awaitingCombat;
