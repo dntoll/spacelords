@@ -5965,7 +5965,8 @@ export class Game {
         });
       // blockerad-fabrik: something here needs goods its group cannot make.
       const missing = this.#missingInGroup(planet);
-      if (missing.length)
+      // forsorjning-vantar-pa-bestalld-lank: an ordered link will bring it.
+      if (missing.length && !this.#linkOrdered(planet))
         items.push({
           id: `supply-${planet.id}`,
           label: `${planet.name}: no ${missing.join(', ')} in its group`,
@@ -6817,6 +6818,27 @@ export class Game {
   }
 
   /** blockerad-fabrik: materials neither held nor made in the group. */
+  /** forsorjning-vantar-pa-bestalld-lank: a link to the group is on its way. */
+  #linkOrdered(planet: Planet): boolean {
+    const group = this.#networkGroup(planet.id);
+    const active = new Set(this.#networkLinks().map((link) => link.id));
+    const projects = this.#ownedPlanets().flatMap(
+      (owned) => this.#state(owned).projects,
+    );
+    return this.tradeRoutes.some(
+      (route) =>
+        !route.closing &&
+        !active.has(route.id) &&
+        (group.includes(route.a) || group.includes(route.b)) &&
+        (route.fleetIds.length > 0 ||
+          projects.some(
+            (project) =>
+              project.initialOrder?.kind === 'join-route' &&
+              project.initialOrder.routeId === route.id,
+          )),
+    );
+  }
+
   #missingInGroup(planet: Planet): readonly Material[] {
     const group = this.#networkGroup(planet.id);
     const planets = this.#ownedPlanets().filter((item) =>

@@ -22,8 +22,22 @@ import {
   isMapScreen,
 } from '../../space-map/models/index.js';
 import type { AppIntent, AppPort } from '../views/ViewContracts.js';
+import type { FactoriesAction } from '../../space-map/models/index.js';
 import type { Point } from '../../common/HexCoordinate.js';
 import { MapGesture } from '../../space-map/views/index.js';
+
+/** factories-sparas: Factories actions that change the saved game. */
+const FACTORY_ORDERS: ReadonlySet<FactoriesAction['kind']> = new Set([
+  'build',
+  'cancel-site',
+  'upgrade',
+  'connect',
+  'add-link',
+  'move-link',
+  'confirm-move',
+  'assign-escort',
+  'order-escort',
+]);
 
 export class MasterController {
   readonly #saveCase: SaveController;
@@ -265,6 +279,8 @@ export class MasterController {
       const outcome = this.#factories.handle(intent.action);
       if (outcome?.kind === 'open-production')
         this.#production.openProduction(outcome.planetId);
+      // factories-sparas: orders change the game; browsing does not.
+      if (FACTORY_ORDERS.has(intent.action.kind)) this.#model.save();
       this.#render();
       return;
     }

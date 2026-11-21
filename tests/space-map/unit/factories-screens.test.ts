@@ -1084,3 +1084,114 @@ it('eskort-utan-upptagna-flottor: offers a new Fighter instead of an armed fleet
   });
   expect(root.textContent).not.toContain('Home Fleet could escort');
 });
+
+describe('lankar-bara-i-grupper', () => {
+  it('does not open Links inside for a group of one planet', () => {
+    const { root, send, act, factories } = setup();
+    send({ type: 'open-factories' });
+    act({ kind: 'open-links', group: 'Tellus' });
+    expect(factories().screen).toBe('sites');
+    act({ kind: 'open-connect', group: 'Tellus' });
+    act({ kind: 'open-links' });
+    expect(factories().screen).toBe('connect');
+    expect(
+      root.querySelector('.factory-screens [aria-label="Links inside Tellus"]'),
+    ).toBeNull();
+  });
+
+  it('names a planet outside the group on a waiting link', async () => {
+    const { distantTradeNetworkState } =
+      await import('../../fixtures/trade-network.js');
+    const state = { ...distantTradeNetworkState(), pirates: [] };
+    const { send, act, factories, turn, root } = setup({
+      ...state,
+      // One transport: Tellus–Vesta gets it and the far link keeps waiting.
+      fleets: state.fleets
+        .filter((fleet) => fleet.id !== 'travellers')
+        .map((fleet) =>
+          fleet.id === 'freighters'
+            ? { ...fleet, ships: { ...fleet.ships, 'Transport ship': 1 } }
+            : fleet,
+        ),
+      tradeRoutes: [
+        ...state.tradeRoutes,
+        { id: 'route-far', a: 'sol-0', b: 'nadir-1', closing: false },
+      ],
+    });
+    send({ type: 'open-factories' });
+    act({ kind: 'open-connect', group: 'Tellus' });
+    act({ kind: 'connect', target: 'Vesta' });
+    for (
+      let round = 0;
+      round < 4 &&
+      !factories().groups.some((group) => group.key === 'Tellus, Vesta');
+      round++
+    ) {
+      turn();
+      send({ type: 'open-factories' });
+    }
+    act({ kind: 'open-links', group: 'Tellus, Vesta' });
+    const far = factories().links!.links.find(
+      (link) => link.id === 'route-far',
+    )!;
+    expect([far.aName, far.bName]).toEqual(['Tellus', 'Nadir II']);
+    expect(root.textContent).not.toContain('nadir-1');
+  });
+});
+
+it('forsorjning-vantar-pa-bestalld-lank: hides the missing-goods problem while an ordered link is on its way', () => {
+  const state = { ...tradeNetworkState(), pirates: [] };
+  state.fleets = state.fleets.filter((fleet) => fleet.id !== 'freighters');
+  state.colonies[0]![1].buildings.push({
+    id: 'yard',
+    type: 'Transport ship factory',
+    slotIndex: 2,
+    demolition: false,
+  });
+  const { send, act, model } = setup(state);
+  const supply = () =>
+    model.snapshot.decisions.some((item) => item.id === 'supply-sol-1');
+  expect(supply()).toBe(true);
+  send({ type: 'open-factories' });
+  act({ kind: 'open-connect', group: 'Tellus' });
+  act({ kind: 'connect', target: 'Vesta' });
+  expect(supply()).toBe(false);
+  expect(model.snapshot.attentionScreens).not.toContain('route');
+});
+
+it('factories-sparas: orders given in Factories are saved, browsing is not', () => {
+  const save = vi.fn();
+  const model = new AppModel(undefined, {
+    load: () => ({
+      lastPlayed: '2026-11-18T00:00:00Z',
+      state: { ...tradeNetworkState(), pirates: [] },
+    }),
+    save,
+    clear() {},
+  });
+  model.startSlot(1);
+  let emit: IntentHandler = () => {};
+  new MasterController(model, {
+    bind: (handler) => {
+      emit = handler;
+    },
+    render: () => {},
+    dispose: () => {},
+  }).start();
+  const act = (action: Action) => emit({ type: 'factories', action });
+  emit({ type: 'open-factories' });
+  save.mockClear();
+  act({ kind: 'toggle-group', group: 'Tellus' });
+  act({ kind: 'open-site', planet: 'sol-0', site: 2 });
+  expect(save).not.toHaveBeenCalled();
+  act({ kind: 'build', type: 'Research station' });
+  expect(save).toHaveBeenCalledTimes(1);
+  act({ kind: 'open-connect', group: 'Tellus' });
+  expect(save).toHaveBeenCalledTimes(1);
+  act({ kind: 'connect', target: 'Vesta' });
+  expect(save).toHaveBeenCalledTimes(2);
+  const saved = save.mock.lastCall![1] as { state: GameState };
+  expect(
+    saved.state.colonies[0]![1].projects.map((project) => project.type),
+  ).toContain('Research station');
+});
