@@ -552,6 +552,11 @@ eftersom `fraktskepp-pendlar` ersätter `fraktskepp-ligger-stilla`.
 Route-kartans variant av dragtestet och dess `Create route`-pekning tas
 inte längre upp: `Factories` ersätter Route i huvudmenyn och länkskapande
 testas i stället genom Connect. Motsvarande kontroller på Star map behålls.
+Det äldre sammanhängande logistiktestets manuella lastning och
+kapacitetskontroll (`automatisk-resursforsorjning`, `fysisk-frakt`) utgår
+när `delat-lager-i-natverket` och `fraktskepp-ger-forbindelse` ersätter den
+fysiska frakten. Testet behåller utvinning och forskningskö; länk och eskort
+testas separat genom Connect och `eskort-pa-routes`.
 
 ## Klickbar prototyp
 

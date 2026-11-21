@@ -116,62 +116,59 @@ test('ruttflotta-till-narmaste-andplanet: remote assignment saves an approach wi
   expect(fleet.routeId).toBe('route-test');
 });
 
-for (const mode of ['Star map', 'Route'] as const)
-  test(`${mode === 'Route' ? 'route-kartvy' : 'handelsrutt-skapande-pa-stjarnkartan'} / flottilldelning-pa-stjarnkartan: planet and fleet drags create and administer a route in ${mode} without moving fleets`, async ({
+test('handelsrutt-skapande-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: planet and fleet drags create and administer a route in Star map without moving fleets', async ({
+  page,
+}, testInfo) => {
+  const camera = await page.getByTestId('camera-position').textContent();
+  await drag(
     page,
-  }, testInfo) => {
-    if (mode === 'Route')
-      await page.getByRole('button', { name: 'Route', exact: true }).click();
-    const camera = await page.getByTestId('camera-position').textContent();
-    await drag(
-      page,
-      await screenPoint(page, start),
-      await screenPoint(page, end),
-    );
-    await expect(routePanel(page)).toContainText('Tellus ↔ Vesta');
-    await expect(routePanel(page)).toContainText('No fleet assigned');
-    const marker = FleetMapLayout.markers(game.fleetSnapshots()).find(
-      (m) => m.fleet.id === 'freighters',
-    )!;
-    await drag(
-      page,
-      await screenPoint(page, marker.point),
-      await screenPoint(page, midpoint),
-    );
-    await expect(routePanel(page)).toContainText('Assigned fleets · 1');
-    await expect(
-      routePanel(page).locator('.fleet-card[data-fleet-id="freighters"]'),
-    ).toContainText('Route Tellus <> Vesta');
-    await expect(page.getByTestId('camera-position')).toHaveText(camera!);
-    await page.screenshot({
-      path: testInfo.outputPath('star-map-trade-route.png'),
-    });
-    await routePanel(page)
-      .getByRole('button', {
-        name: 'Route Tellus <> Vesta',
-        exact: true,
-      })
-      .click();
-    const fleetPanel = page.getByRole('complementary', {
-      name: 'Selected fleet',
-      exact: true,
-    });
-    await expect(fleetPanel).not.toContainText('HEX 1,0');
-    await fleetPanel
-      .getByRole('button', {
-        name: 'Select route Tellus to Vesta',
-        exact: true,
-      })
-      .click();
-    await routePanel(page)
-      .getByRole('button', { name: 'Release from trade route', exact: true })
-      .click();
-    await expect(routePanel(page)).toContainText('Assigned fleets · 0');
-    await routePanel(page)
-      .getByRole('button', { name: 'Close route', exact: true })
-      .click();
-    await expect(routePanel(page)).toHaveCount(0);
+    await screenPoint(page, start),
+    await screenPoint(page, end),
+  );
+  await expect(routePanel(page)).toContainText('Tellus ↔ Vesta');
+  await expect(routePanel(page)).toContainText('No fleet assigned');
+  const marker = FleetMapLayout.markers(game.fleetSnapshots()).find(
+    (m) => m.fleet.id === 'freighters',
+  )!;
+  await drag(
+    page,
+    await screenPoint(page, marker.point),
+    await screenPoint(page, midpoint),
+  );
+  await expect(routePanel(page)).toContainText('Assigned fleets · 1');
+  await expect(
+    routePanel(page).locator('.fleet-card[data-fleet-id="freighters"]'),
+  ).toContainText('Route Tellus <> Vesta');
+  await expect(page.getByTestId('camera-position')).toHaveText(camera!);
+  await page.screenshot({
+    path: testInfo.outputPath('star-map-trade-route.png'),
   });
+  await routePanel(page)
+    .getByRole('button', {
+      name: 'Route Tellus <> Vesta',
+      exact: true,
+    })
+    .click();
+  const fleetPanel = page.getByRole('complementary', {
+    name: 'Selected fleet',
+    exact: true,
+  });
+  await expect(fleetPanel).not.toContainText('HEX 1,0');
+  await fleetPanel
+    .getByRole('button', {
+      name: 'Select route Tellus to Vesta',
+      exact: true,
+    })
+    .click();
+  await routePanel(page)
+    .getByRole('button', { name: 'Release from trade route', exact: true })
+    .click();
+  await expect(routePanel(page)).toContainText('Assigned fleets · 0');
+  await routePanel(page)
+    .getByRole('button', { name: 'Close route', exact: true })
+    .click();
+  await expect(routePanel(page)).toHaveCount(0);
+});
 
 test('handelsrutt-skapande-pa-stjarnkartan: missing research is visible before Create route and remains visible after a drag', async ({
   page,
@@ -194,16 +191,6 @@ test('handelsrutt-skapande-pa-stjarnkartan: missing research is visible before C
   );
   await page.reload();
   await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Route', exact: true }).tap();
-  const create = page.getByRole('button', {
-    name: 'Create route',
-    exact: true,
-  });
-  await expect(create).toBeDisabled();
-  await expect(create).toHaveAccessibleDescription(
-    'Research Trade logistics first.',
-  );
-  await page.getByRole('button', { name: 'Star map', exact: true }).tap();
   await drag(
     page,
     await screenPoint(page, start),
@@ -223,33 +210,7 @@ test('handelsrutt-skapande-pa-stjarnkartan: missing research is visible before C
   });
 });
 
-test('handelsrutt-skapande-pa-stjarnkartan: Create route and a target tap save a route after Trade logistics is completed', async ({
-  page,
-  isMobile,
-}) => {
-  test.skip(!isMobile, 'Native touch requires a mobile device.');
-  await page.getByRole('button', { name: 'Route', exact: true }).tap();
-  await page.getByRole('button', { name: 'Create route', exact: true }).tap();
-  const destination = await screenPoint(page, end);
-  await page.touchscreen.tap(destination.x, destination.y);
-  await expect(routePanel(page)).toContainText('Tellus ↔ Vesta');
-  await page.reload();
-  await startFirstSlot(page);
-  const routes = await page.evaluate(
-    () =>
-      (
-        JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as {
-          state: GameState;
-        }
-      ).state.tradeRoutes,
-  );
-  expect(routes).toHaveLength(1);
-  expect([routes[0]!.a, routes[0]!.b].sort()).toEqual(
-    [home!.id, target!.id].sort(),
-  );
-});
-
-test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives retain orders after visiting Route and reloading', async ({
+test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives retain orders after visiting Factories and reloading', async ({
   page,
 }) => {
   await expect(
@@ -258,9 +219,9 @@ test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives retain orders after
   await page.locator('canvas[data-rendered="true"]').press('r');
   await selectMapObject(page, 'Vesta');
   await assignFleetToRoute(page, 'Freighters', 'Tellus', 'Vesta');
-  await page.getByRole('button', { name: 'Route', exact: true }).click();
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Route', exact: true }),
+    page.getByRole('button', { name: 'Factories', exact: true }),
   ).toHaveAttribute('aria-current', 'page');
   await page.reload();
   await startFirstSlot(page);
