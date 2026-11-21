@@ -663,7 +663,10 @@ function connectScreen(
       position: node.position,
       radius: node.own ? 22 : node.planets.length > 1 ? 14 : 9,
       tone: node.own ? 'own' : node.connectable ? 'other' : 'muted',
-      ...(node.own ? { onClick: () => emit({ kind: 'open-links' }) } : {}),
+      // lankar-bara-i-grupper: only a group of planets has links inside.
+      ...(node.own && node.planets.length > 1
+        ? { onClick: () => emit({ kind: 'open-links' }) }
+        : {}),
     };
   });
   const own = connect.nodes.find((node) => node.own);
@@ -772,10 +775,6 @@ function linksScreen(
   locked: boolean,
   emit: Emit,
 ): Part[] {
-  const names = new Map(
-    links.planets.map((planet) => [planet.id, planet.name]),
-  );
-  const name = (id: string) => names.get(id) ?? id;
   const wrapper = element('div', 'factory-graph-wrap');
   wrapper.append(
     graph(
@@ -849,7 +848,7 @@ function linksScreen(
   for (const link of links.links) {
     const row = element('div', 'factory-option');
     const body = element('div', 'factory-option-body');
-    const title = `${name(link.a)}–${name(link.b)}`;
+    const title = `${link.aName}–${link.bName}`;
     body.append(
       element('div', 'factory-option-title', title),
       element(
@@ -923,10 +922,7 @@ function linksScreen(
         () => emit({ kind: 'move-link', link: link.id }),
         'secondary-button factory-action',
       );
-      move.setAttribute(
-        'aria-label',
-        `Move ${link.transport} from ${name(link.a)}–${name(link.b)}`,
-      );
+      move.setAttribute('aria-label', `Move ${link.transport} from ${title}`);
       row.append(move);
     }
     current.append(row);

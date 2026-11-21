@@ -387,15 +387,19 @@ export class FactoriesFacade {
 
   /** From Connect, or straight from a group on Skärm 1 (eskort-pa-routes). */
   #openLinks(context: Context, key: string | undefined): void {
+    const group = key
+      ? context.network.groups.find(
+          (members) => this.#key(context, members) === key,
+        )
+      : this.#connectFrom
+        ? this.#group(context, this.#connectFrom)
+        : undefined;
+    // lankar-bara-i-grupper: a lone planet has no links inside its group.
+    if (!group?.[0] || group.length < 2) return;
     if (key) {
-      const group = context.network.groups.find(
-        (members) => this.#key(context, members) === key,
-      );
-      if (!group?.[0]) return;
       this.#connectFrom = group[0];
       this.#transport = this.#transports(context, group)[0]?.choice ?? null;
     }
-    if (!this.#connectFrom) return;
     this.#linksFromSites = !!key;
     this.#screen = 'links';
     this.#picked = [];
@@ -1447,6 +1451,8 @@ export class FactoriesFacade {
             id: route.id,
             a: route.a,
             b: route.b,
+            aName: this.#gamePlanet(route.a).name,
+            bName: this.#gamePlanet(route.b).name,
             transport: context.links.some((link) => link.id === route.id)
               ? (fleets.find((fleet) => fleet.id === route.fleetIds[0])?.name ??
                 null)

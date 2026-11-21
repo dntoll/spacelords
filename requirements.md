@@ -936,6 +936,11 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och
   gäller fortsatt, liksom fysisk frakt, automatiska delorder och sparade spel.
+  `factories-sparas` är **Fullständigt implementerat**: order i Factories
+  sparas.
+  `lankar-bara-i-grupper` och `forsorjning-vantar-pa-bestalld-lank` är
+  **Fullständigt implementerade**: inga länkskärmar för ensamma planeter och
+  inget försörjningsproblem medan en beställd länk är på väg.
   `vagledning-mot-eskort` och `bestall-eskort-pa-lanken` är **Fullständigt
   implementerade**: en oeskorterad länk visar nästa steg mot en eskort och
   kan beställa en Fighter direkt. `eskort-utan-upptagna-flottor` är

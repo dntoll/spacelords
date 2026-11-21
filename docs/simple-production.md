@@ -183,6 +183,17 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
   föreslås inte som eskort. Vägledningen föreslår i stället en ny Fighter,
   fabriken eller forskningen. Ersätter förklaringen av varför närmaste
   beväpnade flotta inte kan i `vagledning-mot-eskort`.
+- `lankar-bara-i-grupper` (**Fullständigt implementerat**): `Links inside`
+  öppnas bara för grupper med flera planeter, varken från gruppen eller från
+  Connect. Länkar namnger planeter även utanför gruppen, i stället för deras
+  id.
+- `forsorjning-vantar-pa-bestalld-lank` (**Fullständigt implementerat**):
+  när en länk till gruppen är beställd (ett fraktskepp är på väg eller byggs
+  för den) visas inte problemet att gruppen saknar råvaror eller delar.
+- `factories-sparas` (**Fullständigt implementerat**, fel rättat
+  2026-11-21): beställningar i `Factories` (bygg, avbryt, uppgradera, länka,
+  flytta fraktskepp, eskortera, beställ eskort) sparas direkt som övriga
+  order. Att bläddra i Factories sparar inte.
 - `ny-fabrik-med-guldstjarna` (**Fullständigt implementerat**): en
   framforskad fabrik som ingen planet har eller bygger räknas som ny.
   `Factories` i huvudmenyn visar då en guldstjärna (★), och valet under

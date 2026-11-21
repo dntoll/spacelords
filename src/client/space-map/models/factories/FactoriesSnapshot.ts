@@ -225,6 +225,9 @@ export interface LinksScreenSnapshot {
     readonly id: string;
     readonly a: string;
     readonly b: string;
+    /** lankar-bara-i-grupper: names, also for planets outside the group. */
+    readonly aName: string;
+    readonly bName: string;
     readonly transport: string | null;
     /** eskort-pa-routes: armed ships guarding the link's transports. */
     readonly escorts: number;
