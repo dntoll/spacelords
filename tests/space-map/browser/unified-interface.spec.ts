@@ -182,12 +182,7 @@ test('gemensam-events-panel / planetinformation-pa-kartan: persistent footer, re
   await expect(page.locator('.planet-map-info')).toContainText('Habitability:');
   await panel.locator('summary').click();
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  for (const label of [
-    'Production',
-    'Build queue',
-    'Overview',
-    'Building sites',
-  ]) {
+  for (const label of ['Overview', 'Building sites']) {
     await page
       .getByRole('navigation', { name: 'Planet pages' })
       .getByRole('button', { name: label, exact: true })
@@ -196,10 +191,6 @@ test('gemensam-events-panel / planetinformation-pa-kartan: persistent footer, re
       await panel.evaluate((node, original) => node === original, identity),
     ).toBe(true);
   }
-  await page
-    .getByRole('button', { name: 'Build building at site 2', exact: true })
-    .click();
-  await expect(page.locator('.build-selection-page')).toBeVisible();
   await expect(panel).toBeVisible();
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await selectMapObject(page, 'Vesta');
@@ -214,7 +205,7 @@ test('gemensam-events-panel / planetinformation-pa-kartan: persistent footer, re
   await page.screenshot({ path: testInfo.outputPath('shared-footer.png') });
 });
 
-test('byggorsak-i-kon: the shared Build queue lists its projects without reordering handles', async ({
+test('planetsida-informerar: building sites show queued projects and retain them after reload', async ({
   page,
 }) => {
   const state = researchStationState();
@@ -227,12 +218,15 @@ test('byggorsak-i-kon: the shared Build queue lists its projects without reorder
   }));
   await seed(page, state);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
-  const rows = page.locator('.queue-order');
-  await expect(rows).toHaveCount(3);
+  await page
+    .getByRole('button', { name: 'Building sites', exact: true })
+    .click();
   await expect(
-    page.locator('.planet-building-queue .queue-drag-handle'),
-  ).toHaveCount(0);
+    page.locator('.building-site').filter({ hasText: 'Research station' }),
+  ).toHaveCount(4);
+  await expect(
+    page.locator('.building-site').filter({ hasText: 'Queued building' }),
+  ).toHaveCount(2);
   await page.reload();
   await startFirstSlot(page);
   expect(
