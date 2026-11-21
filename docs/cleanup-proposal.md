@@ -165,6 +165,9 @@ Beslut: git-historiken räcker för ersatta krav och historik. Genomfört
   orörd `simple_production`.
 - Webbläsartester som behöver skrivas om eller tas bort står under B2–B4 och
   B7 (`detection.spec.ts` miste ett test för ett gammalt sparformat).
+- `codex/fix-browser-tests` krockar bara i `docs/simple-production.md`: den
+  lägger ett stycke om webbläsartesterna i avsnittet som här är omordnat.
+  Vid merge flyttas stycket till den nya strukturen.
 - Kvar: att dela upp klassen `Game` enligt planen under B7.
 
 ## Föreslagen ordning
