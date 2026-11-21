@@ -33,19 +33,17 @@ function seededGame() {
   return game.exportState();
 }
 
-test('planetundersidor / planetgemensamt-produktval / byggorsak-i-kon: long ship queue and product orders stay usable', async ({
+test('planetsida-informerar / planetundersidor: overview and building sites remain informative', async ({
   page,
-}, testInfo) => {
+}) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.addInitScript((state) => {
-    if (localStorage.getItem('planet-pages-seeded')) return;
     localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     localStorage.setItem(
       'spacelords.save.v2.1',
       JSON.stringify({ lastPlayed: '2026-10-24T10:00:00Z', state }),
     );
-    localStorage.setItem('planet-pages-seeded', 'yes');
   }, seededGame());
   await page.goto('./');
   await startFirstSlot(page);
@@ -54,210 +52,22 @@ test('planetundersidor / planetgemensamt-produktval / byggorsak-i-kon: long ship
   await expect(page.locator('.planet-building-inventory')).toContainText(
     'Fighter factory ×2',
   );
-  await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
+  const navigation = page.getByRole('navigation', { name: 'Planet pages' });
+  await expect(navigation.getByRole('button')).toHaveText([
+    'Overview',
+    'Building sites',
+  ]);
+  await navigation.getByRole('button', { name: 'Building sites' }).click();
   const sites = page.locator('.building-sites-grid');
   await expect(sites.locator('.building-site')).toHaveCount(10);
-  await expect(sites.getByRole('button', { name: /^Queue / })).toHaveCount(0);
-  await page
-    .getByRole('navigation', { name: 'Planet pages' })
-    .getByRole('button', { name: 'Production', exact: true })
-    .click();
   await expect(
-    page.getByRole('list', { name: 'Product list' }).getByRole('button'),
-  ).toHaveText(['Fighter']);
-  await expect(page.locator('.compact-queue-item').first()).toContainText(
-    /^Fighter/,
-  );
-  await expect(page.locator('.compact-queue-item')).toHaveCount(25);
-  await expect(
-    page.locator('.compact-queue-list .queue-drag-handle'),
-  ).toHaveCount(0);
-  await page.getByRole('button', { name: 'Show Fighter', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Queue Fighter', exact: true })
-    .click();
-  await expect(page.locator('.compact-queue-item')).toHaveCount(26);
-  await page.locator('.compact-queue-item').last().click();
-  await expect(page.locator('[aria-current="page"]')).toHaveText('Build queue');
-  const rows = page.locator('.queue-order');
-  await expect(rows).toHaveCount(26);
-  await expect(rows.last()).toBeFocused();
-  await page
-    .getByRole('navigation', { name: 'Planet pages' })
-    .getByRole('button', { name: 'Production', exact: true })
-    .click();
-  await page.screenshot({ path: testInfo.outputPath('planet-production.png') });
-  expect(
-    await page.evaluate(() => ({
-      horizontal: document.documentElement.scrollWidth > innerWidth,
-      vertical: document.documentElement.scrollHeight > innerHeight,
-    })),
-  ).toEqual({ horizontal: false, vertical: false });
-  await page.reload();
-  await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
-  await expect(rows).toHaveCount(26);
-  await rows
-    .last()
-    .getByRole('button', { name: /^Cancel:/ })
-    .click();
-  await expect(rows).toHaveCount(25);
-  expect(errors).toEqual([]);
-});
-
-test('byggkategorier / symbolbaserade-kataloger: icon categories and compact lists reveal complete details with keyboard focus', async ({
-  page,
-}, testInfo) => {
-  await page.setViewportSize({ width: 320, height: 740 });
-  const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  await page.addInitScript((state) => {
-    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
-    localStorage.setItem(
-      'spacelords.save.v2.1',
-      JSON.stringify({ lastPlayed: '2026-10-24T10:00:00Z', state }),
-    );
-  }, seededGame());
-  await page.goto('./');
-  await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Build building at site 5', exact: true })
-    .click();
-  const categories = page.getByRole('group', { name: 'Building categories' });
-  await expect(page.locator('.catalog-details')).toHaveCount(0);
-  for (const category of await categories.getByRole('button').all()) {
-    await expect(category).toHaveText('');
-    await expect(category.locator('svg')).toHaveAttribute(
-      'aria-hidden',
-      'true',
-    );
-    const bounds = (await category.boundingBox())!;
-    expect(bounds.width).toBeGreaterThanOrEqual(44);
-    expect(bounds.height).toBeGreaterThanOrEqual(44);
-  }
-  const researchCategory = categories.getByRole('button', {
-    name: 'Research',
-    exact: true,
-  });
-  await researchCategory.focus();
-  await researchCategory.press('Enter');
-  await expect(researchCategory).toBeFocused();
-  await categories
-    .getByRole('button', { name: 'Shipyards', exact: true })
-    .click();
-  await expect(
-    page.locator('.catalog-item-button > span:first-of-type'),
-  ).toHaveText(['Exploration ship factory', 'Fighter factory']);
-  await page.screenshot({
-    path: testInfo.outputPath('building-catalog-list.png'),
-  });
-  const fighter = page.getByRole('button', {
-    name: 'Show Fighter factory',
-    exact: true,
-  });
-  await fighter.focus();
-  await fighter.press('Enter');
-  await expect(page.locator('.catalog-details h2')).toBeFocused();
-  await expect(
-    page.getByRole('navigation', { name: 'Main navigation' }),
-  ).toBeInViewport({ ratio: 1 });
-  await expect(page.locator('.catalog-details')).toContainText(
-    'Shipyard: builds Fighters for your fleets.',
-  );
-  await expect(page.locator('.catalog-details')).toContainText('800 workers');
-  await expect(page.locator('.building-inventory dd')).toHaveText(['2', '2']);
-  await page.screenshot({
-    path: testInfo.outputPath('building-catalog-details.png'),
-  });
-  await page
-    .getByRole('button', { name: 'Back to buildings', exact: true })
-    .click();
-  await expect(fighter).toBeFocused();
-  await categories
-    .getByRole('button', { name: 'Components', exact: true })
-    .click();
-  await expect(
-    page.locator('.catalog-item-button > span:first-of-type'),
-  ).toHaveText(['Rocket engine factory', 'Weapons module factory']);
-  const componentIcons = page.locator('.catalog-item .catalog-icon');
-  await expect(componentIcons).toHaveCount(2);
-  for (const icon of await componentIcons.all()) {
-    await expect(icon).toHaveAttribute('aria-hidden', 'true');
-    await expect(icon).toBeVisible();
-  }
-  await page
-    .getByRole('searchbox', { name: 'Search buildings' })
-    .fill('weapons');
-  await expect(
-    page.locator('.catalog-item-button > span:first-of-type'),
-  ).toHaveText(['Weapons module factory']);
-  await page.getByRole('searchbox', { name: 'Search buildings' }).fill('');
-  await page
-    .getByRole('button', { name: 'Show Rocket engine factory', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Build Rocket engine factory', exact: true })
-    .click();
-  await expect(page.locator('[data-site-index="4"]')).toBeFocused();
-  await expect(page.locator('[data-site-index="4"]')).toContainText(
-    'Rocket engine factory',
-  );
-  await page
-    .getByRole('navigation', { name: 'Planet pages' })
-    .getByRole('button', { name: 'Production', exact: true })
-    .click();
-  const saved = await page.evaluate(() =>
-    localStorage.getItem('spacelords.save.v2.1'),
-  );
-  await page
-    .getByRole('group', { name: 'Production categories' })
-    .getByRole('button', { name: 'Components', exact: true })
-    .click();
-  await expect(page.locator('.catalog-details')).toHaveCount(0);
-  const product = page.getByRole('button', {
-    name: 'Show Weapons module',
-    exact: true,
-  });
-  await product.focus();
-  await product.press('Enter');
-  await expect(page.locator('.catalog-details h2')).toBeFocused();
-  await expect(
-    page.getByRole('navigation', { name: 'Main navigation' }),
-  ).toBeInViewport({ ratio: 1 });
-  await expect(page.locator('.production-details')).toContainText(
-    'Iron 2, Water 1, Oil 1',
-  );
-  await expect(page.locator('.production-details')).toContainText(
-    'Factory staff:',
-  );
-  await expect(page.locator('.production-details')).toContainText('Stored');
-  await expect(page.locator('.compact-build-queue')).toHaveCount(1);
-  await expect(page.getByRole('combobox')).toHaveCount(0);
-  await page.screenshot({
-    path: testInfo.outputPath('production-catalog-details.png'),
-  });
-  await page
-    .getByRole('button', { name: 'Back to products', exact: true })
-    .click();
-  await expect(product).toBeFocused();
-  await page.screenshot({
-    path: testInfo.outputPath('production-catalog-list.png'),
-  });
-  expect(
-    await page.evaluate(() => localStorage.getItem('spacelords.save.v2.1')),
-  ).toBe(saved);
-  expect(
-    await page.evaluate(() => ({
-      horizontal: document.documentElement.scrollWidth > innerWidth,
-      vertical: document.documentElement.scrollHeight > innerHeight,
-    })),
-  ).toEqual({ horizontal: false, vertical: false });
+    page.getByText('Build, upgrade and cancel construction in Factories.'),
+  ).toBeVisible();
+  const first = sites.locator('.building-site').first();
+  await expect(first).toContainText('Fighter factory');
+  await first.getByRole('button', { name: 'Demolish' }).click();
+  await expect(first).toContainText('Demolition scheduled');
+  await first.getByRole('button', { name: 'Keep' }).click();
+  await expect(first.getByRole('button', { name: 'Demolish' })).toBeVisible();
   expect(errors).toEqual([]);
 });

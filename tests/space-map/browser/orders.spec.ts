@@ -123,11 +123,8 @@ test('startorder-for-nybyggda-skepp / ruttval-for-order: chooses a route before 
 }, testInfo) => {
   scenarioTimeout(45_000);
   const state = await seed(page, false);
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page
-    .locator('.planet-tabs')
-    .getByRole('button', { name: 'Production', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await selectMapObject(page, 'Tellus');
   await page
     .getByRole('button', { name: 'Show Transport ship', exact: true })
     .click();
@@ -142,12 +139,11 @@ test('startorder-for-nybyggda-skepp / ruttval-for-order: chooses a route before 
     path: testInfo.outputPath('start-order-route-mobile.png'),
   });
   await route.click();
-  await expect(page.locator('.production-order')).toContainText(
-    'Start order: Join route',
-  );
-  await page
-    .getByRole('button', { name: 'Queue Transport ship', exact: true })
-    .click();
+  const controls = page.getByRole('complementary', {
+    name: 'Production controls',
+  });
+  await expect(controls).toContainText('Start order: Join route');
+  await controls.getByRole('button', { name: 'Build', exact: true }).click();
   expect((await saved(page)).colonies[0]![1].projects[0]!.initialOrder).toEqual(
     { kind: 'join-route', routeId: 'route-test' },
   );
