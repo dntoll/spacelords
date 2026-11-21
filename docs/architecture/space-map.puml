@@ -18,7 +18,7 @@ package "Publik yta (index.js)" as public_surface #FFFFEE {
 }
 package "(delat)" as space_map___delat_ {
   rectangle "<b>models</b>\nCamera\nCivilianTraffic\nDecisions\nDetection\nEconomy\nFactoryTechnology\nFleetCombat\nFleetPatrol\nFleetPursuit\nGalaxy\nGalaxyTerrain\nGame\nHexNavigation\nLogistics\nPirateFleet\nPlanet\nPlanetEnvironment\nPlanetQueues\nProductionMap\nProductionPresence\nProductionPriorities\nSalvage\nShipEquipment\nShipOrders\nShipUpgrades\nSpiralGalaxyLayout\nTurnSimulation\nexampleGalaxy" as space_map___delat___models
-  rectangle "<b>views</b>\nBuildingImage\nBuildingSymbols\nCatalogControls\nFleetCard\nFleetCategoryColors\nMapArtwork\nMapLocationHeading\nPlanetGlyph\nPlanetImages\nQueueView\nSalvageView\nShipImages\nShipPurposeText\nShipView\nStarGlyph\nStarMapTradeView\nTerrainMapView\nTradeFleetView\nTradeRouteDetailsView" as space_map___delat___views
+  rectangle "<b>views</b>\nBuildingImage\nBuildingSymbols\nCatalogControls\nFleetCard\nFleetCategoryColors\nMapArtwork\nMapLocationHeading\nPlanetGlyph\nPlanetImages\nQueueView\nSalvageView\nShipImages\nShipPurposeText\nShipView\nStarGlyph\nStarMapTradeView\nTabPanels\nTerrainMapView\nTradeFleetView\nTradeRouteDetailsView" as space_map___delat___views
   rectangle "<b>storage</b>\nBrowserSaveRepository" as space_map___delat___storage
 }
 package "decisions" as space_map__decisions {
@@ -113,7 +113,7 @@ space_map__factories --> space_map__star_map : 1
 space_map__fleets --> space_map___delat_ : 13
 space_map__orders ..> space_map___delat_ : 7, typer
 space_map__planet --> space_map___delat_ : 20
-space_map__production --> space_map___delat_ : 15
+space_map__production --> space_map___delat_ : 16
 space_map__production_network --> space_map___delat_ : 1
 space_map__research --> space_map___delat_ : 10
 space_map__research --> space_map__star_map : 1

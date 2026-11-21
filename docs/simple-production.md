@@ -190,6 +190,11 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
 - `forsorjning-vantar-pa-bestalld-lank` (**Fullständigt implementerat**):
   när en länk till gruppen är beställd (ett fraktskepp är på väg eller byggs
   för den) visas inte problemet att gruppen saknar råvaror eller delar.
+- `produktionsflikar` (**Fullständigt implementerat**): Production har, som
+  Research, två flikar: det valda skeppet (fliken heter som skeppet, eller
+  `Selected` med en hjälptext) och `Queue · n` med byggkön. Ett nytt val i
+  ringen visar skeppets flik; annars ligger spelarens flik kvar. Ersätter
+  `×`-knappen i `byggko-eller-skeppsdetaljer`.
 - `planetsprites-i-factories` (**Fullständigt implementerat**): graferna i
   Factories, på Connect och under `Links inside` ritar varje planet med sin
   sprite i stället för en cirkel. På Connect är varje grupp ett kluster av

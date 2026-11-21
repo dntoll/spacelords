@@ -879,22 +879,31 @@ describe('byggkons-framsteg / byggko-eller-skeppsdetaljer', () => {
     ).toContain('Weapons module');
   });
 
-  it('shows either the build queue or one ship’s details, never both', () => {
+  it('produktionsflikar: shows the queue or the selected ship in tabs, one at a time', () => {
     const { root, send } = withFactories();
+    const visible = (selector: string) =>
+      !root.querySelector<HTMLElement>(selector)!.hidden;
+    const tab = (name: string) =>
+      root.querySelector<HTMLButtonElement>(
+        `.tab-panels-tab[data-tab="${name}"]`,
+      )!;
     send({ type: 'open-production', planetId: 'sol-0' });
     send({ type: 'map-production-option', option: null });
-    expect(root.querySelector('.map-build-queue')).not.toBeNull();
-    expect(root.querySelector('[aria-label="Build details"]')).toBeNull();
+    expect(visible('.map-build-queue')).toBe(true);
+    expect(visible('[aria-label="Build details"]')).toBe(false);
     send({ type: 'map-production-option', option: 'Transport ship' });
-    expect(root.querySelector('[aria-label="Build details"]')).not.toBeNull();
-    expect(root.querySelector('.map-build-queue')).toBeNull();
-    root
-      .querySelector<HTMLButtonElement>(
-        '[aria-label="Back to the build queue"]',
-      )!
-      .click();
-    expect(root.querySelector('.map-build-queue')).not.toBeNull();
-    expect(root.querySelector('[aria-label="Build details"]')).toBeNull();
+    expect(visible('[aria-label="Build details"]')).toBe(true);
+    expect(visible('.map-build-queue')).toBe(false);
+    expect(tab('selected').textContent).toBe('Transport ship');
+    tab('queue').click();
+    expect(visible('.map-build-queue')).toBe(true);
+    expect(visible('[aria-label="Build details"]')).toBe(false);
+    // The chosen tab stays while the view updates.
+    send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
+    expect(visible('.map-build-queue')).toBe(true);
+    expect(tab('queue').textContent).toBe('Queue · 1');
+    tab('selected').click();
+    expect(visible('[aria-label="Build details"]')).toBe(true);
   });
 });
 
