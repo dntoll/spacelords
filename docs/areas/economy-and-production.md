@@ -66,25 +66,26 @@ informerar om planeten (`planetsida-informerar`). Detaljerna per skärm står i
   till planetlager som delas i produktionsnätverket. Varje planet har en
   gemensam kö för byggnader och skepp (`gemensam-planetko`). Fabriker avgör
   vilka produkter som kan tillverkas, och delar tillverkas när ett skepp
-  behöver dem (`delar-tillverkas-pa-behov`). `automatiska-delorder` är
-  **Fullständigt implementerat**: saknade delar ordnas utan
-  dubbelreservationer, och en beställning som inte kan ordnas avvisas helt.
+  behöver dem (`delar-tillverkas-pa-behov`). Det ersätter
+  `automatiska-delorder`, där saknade delar beställdes som egna order.
 
 - **Production på kartan:** `produktions-kartvy`, `radiella-byggval`,
   `farledskontrast` och `forsorjningsproblem-pa-kartan` är **Fullständigt
   implementerat**. Production visar skeppsval runt en ägd planet och en kö
   med en rad per skepp (`kompakt-produktionsko`). Kartlägena delar
-  kartinstans och kamera. Problem markeras på kartan, och tystade eller
-  överhoppade problem ger inga markeringar. `dubbelklick-bygger-pa-kartan`
+  kartinstans och kamera (`delad-kartkamera`). Beslut om försörjning och
+  länkar öppnar Factories, beslut om skeppsorder öppnar Production, och
+  tystade eller överhoppade problem ger inga markeringar. `dubbelklick-bygger-pa-kartan`
   och `byggknapp-vid-titel` är **Fullständigt implementerat**: dubbelklick
-  köar en order och Build står bredvid titeln. `produktionsval-efter-forekomst`
-  och `produktionsberoenden-i-byggval` är **Fullständigt implementerat**:
-  saknade val kommer först och ! förklarar beroenden.
+  köar en order och Build står bredvid titeln. Ringen visar bara skepp.
+  `produktionsval-efter-forekomst` och `produktionsberoenden-i-byggval` är
+  ersatta av `rekommenderade-fabriker` och `fabriksstatus-i-byggval` i
+  Factories.
   `unika-flottnamn`, `rutt-eskortfordelning` och `ruttflottor-pa-kartan` är
   **Fullständigt implementerat**: flottor har unika namn, Fighters fördelas
   jämnt som eskort och flottor på en rutt visas vid ändpunkten.
-  `dome-fore-fabriksforslag` är **Fullständigt implementerat** i Factories:
-  rätt Dome föreslås före fabriken när platsen behöver det.
+  `dome-fore-fabriksforslag` är ersatt av `terraformering-forst`: Factories
+  rekommenderar rätt Dome när en plats behöver den.
   Route-skärmen (`route-kartvy`) och ruttskapandet på kartan
   (`handelsrutt-skapande-pa-stjarnkartan`) är ersatta av Factories och
   `rutter-endast-i-connect` (2026-11-21).
