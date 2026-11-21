@@ -673,7 +673,6 @@ fortsatt av befintlig GitHub CI.
   den gemensamma Events-raden, även med alternativa fontmått. Det ersätter
   tidigare 80 procent av hela telefonens skärmyta eftersom raden nu reserverar
   utrymme enligt `gemensam-events-panel`; CI verifierar också Linux/WebKit.
-- Spelgrundens kravkoppling beskrivs i [first-iteration.md](first-iteration.md).
 - `mvc-arkitektur`: enhetstest verifierar att modellens läsdata inte kan ändras
   utifrån. Typkontrollen begränsar vyn till modellens läsgränssnitt.
   `master-controller`, `use-case-controller` och `modell-facad` skyddar att ett
@@ -799,9 +798,7 @@ Inga konstlade enhetstester behövs för en dokumenterad publiceringsprocess.
 | `kravstatus`         | Fullständigt implementerat | Aktiva produktkrav och tekniska krav har en av de tre beslutade statusarna, med återstående arbete för delvisa krav. Processkravens status avser det stöd som finns i repot; efterlevnad granskas fortlöpande.                                                               | Kravlistor och AGENTS.md                                  |
 | `browserverifiering` | Fullständigt implementerat | Den utökade sviten kontrollerar mus, touch, canvasstorlek och vybyten mot Pages-bygget med Playwright i telefon Chromium, dator Chromium och telefon WebKit, med sex arbetstrådar. Surfplatta WebKit väntar tills fler plattformar väljs. Detta ersätter de fyra profilerna. | Lokal körning av `npm run test:extended`                  |
 
-2026-10-17: Spelvisionen ersätter den tomma startsidan. p5.js väljs i stället
-för planförslagets SVG. Se [första iterationen](first-iteration.md) för
-avgränsning och tekniska beslut. Ingen ny driftsättning ingår.
+p5.js används för kartan i stället för SVG.
 
 ## Språk och spelyta
 

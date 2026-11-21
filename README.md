@@ -91,7 +91,7 @@ Kameragesten bor i vyn. Kartans läsdata innehåller inga dolda planetuppgifter.
 p5 används i instance mode och ritar om vid förändringar. Kartvyn städar canvas,
 händelser och ResizeObserver vid vybyte och hot reload. Navigation sker inom
 klienten, så att Pages behöver inga nya serveradresser. Se
-[första iterationen](docs/first-iteration.md) för ansvar och testkopplingar.
+[kodkartan](docs/architecture/README.md) för modulernas ansvar.
 
 ## Språk och spelyta
 
