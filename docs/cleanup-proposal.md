@@ -134,47 +134,38 @@ produktionsval och planetkön. Mycket används fortfarande indirekt.
 
 ## Dokumentation
 
-**B8. `requirements.md` är 1115 rader.** `AGENTS.md` säger att den ska vara
-en vision och en sammanfattning per kravkategori. Nu innehåller den
-detaljer och historik för omkring 100 kategorier.
+Beslut: git-historiken räcker för ersatta krav och historik. Genomfört
+(B8–B12):
 
-- Rekommendation: skriv om den till cirka 150 rader med en kort status per
-  kategori och länkar. Detaljerna ligger redan i `docs/`.
-- Fråga: OK? Ska ersatta krav finnas kvar i översikten, eller bara i
-  detaljfilerna?
+- `requirements.md` har vision och en post per område (cirka 70 rader).
+  Varje område har en fil i `docs/areas/` med hur spelet fungerar nu och
+  kraven med namn och status. Krav för borttaget beteende anger vad som
+  ersatte dem.
+- `docs/product-requirements.md` är en kort, oteknisk beskrivning av spelet
+  (cirka 120 rader).
+- `docs/technical-requirements.md` saknar Route-avsnitten, ändringsloggen och
+  verifieringsanteckningarna och har ett avsnitt om sparformatet.
+- `docs/deployment.md` beskriver bara gällande process och felsökning
+  (cirka 300 rader).
+- `docs/simple-production.md` är ordnad efter regler och skärmar.
+- Borttagna: `route-production.md`, `supply-production.md`,
+  `economy-logistics.md`, `trade-route-graph.md`, `star-map-trade.md`,
+  `first-iteration.md`, `fleet-map-plan.md` och
+  `testresultat-utokad-03bf183.md`.
+- Alla kravnamn som testerna använder finns kvar i dokumentationen, utom
+  fyra som saknades redan före rensningen: `kompakt-spelgranssnitt`,
+  `melee-attacks`, `pansar-i-strid` och `round-trips`.
 
-**B9. `docs/product-requirements.md` (1800 rader) och
-`docs/technical-requirements.md` (1900 rader).** Produktkraven ska enligt
-`AGENTS.md` vara korta och otekniska. Båda filerna samlar också historik
-och ersatta krav.
+## Status och nästa steg
 
-- Rekommendation: produktkraven skrivs om till en kort beskrivning av spelet
-  som det är nu (cirka 200 rader). Historik och ersatta krav flyttas till en
-  arkivfil, `docs/archive/` eller en avslutande ersättningslogg.
-- Fråga: Ska historiken sparas i en arkivfil, eller räcker git-historiken?
-
-**B10. Dokument som beskriver ersatta koncept eller är historiska:**
-`route-production.md`, `supply-production.md`, `economy-logistics.md`,
-`trade-route-graph.md`, `star-map-trade.md`, `first-iteration.md`,
-`fleet-map-plan.md` (en historisk plan) och `testresultat-utokad-03bf183.md`
-(en gammal testrapport på 400 rader).
-
-- Rekommendation: flytta till `docs/archive/` med en rad om vad som ersatt
-  dem. Testrapporten tas bort.
-- Fråga: Arkivera eller ta bort?
-
-**B11. `docs/deployment.md` har 1028 rader.**
-
-- Rekommendation: korta den till den gällande processen (start, merge,
-  release, publicering, felsökning). Historik tas bort.
-- Fråga: OK?
-
-**B12. `docs/simple-production.md` (554 rader) har blivit en logg över
-många små krav.**
-
-- Rekommendation: ordna den efter skärm (Factories, Connect, Production,
-  Research, Decisions och turn-uppspelning) i stället för efter datum.
-- Fråga: OK?
+- Branchen `claude/cleanup-proposal` är pushad men inte mergad till
+  `simple_production` och inte publicerad, enligt beslut.
+- Hela Vitest-sviten går igenom. `test:tooling` har ett fel i den här
+  molncontainern (`a timed-out step stops descendant processes`), även på
+  orörd `simple_production`.
+- Webbläsartester som behöver skrivas om eller tas bort står under B2–B4 och
+  B7 (`detection.spec.ts` miste ett test för ett gammalt sparformat).
+- Kvar: att dela upp klassen `Game` enligt planen under B7.
 
 ## Föreslagen ordning
 
