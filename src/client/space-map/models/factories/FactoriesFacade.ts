@@ -809,7 +809,7 @@ export class FactoriesFacade {
         (consumer) => consumer.id === `part:${building.id}`,
       );
       // delfabrik-i-produktion: a factory making parts is in production.
-      const part = BUILDINGS[type].component!;
+      const part = BUILDINGS[type].component;
       making = working ? this.#partsNeeded(context, group, part) : 0;
       status = missing.length ? 'missing' : working ? 'producing' : 'idle';
     } else {
