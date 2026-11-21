@@ -24,24 +24,8 @@ export class RouteController {
     return this.facade.selectMapRoute(id);
   }
 
-  assignMapTradeFleet(routeId: string, fleetId: string): void {
-    return this.facade.assignMapTradeFleet(routeId, fleetId);
-  }
-
-  openSupplyPlanet(id: string): void {
-    return this.facade.openSupplyPlanet(id);
-  }
-
-  openSupplyRoute(id: string): void {
-    return this.facade.openSupplyRoute(id);
-  }
-
   openRoute(planetId?: string): void {
     return this.facade.openRoute(planetId);
-  }
-
-  createTradeRoute(a: string, b: string): void {
-    return this.facade.createTradeRoute(a, b);
   }
 
   assignTradeFleet(routeId: string, fleetId: string): void {

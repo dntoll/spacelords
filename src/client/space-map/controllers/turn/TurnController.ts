@@ -60,10 +60,6 @@ export class TurnController {
     return this.facade.finishCameraFraming();
   }
 
-  finishEventPlayback(): void {
-    return this.facade.finishEventPlayback();
-  }
-
   beginMovementPlayback(
     playback: TurnMovementPlayback,
     origin: AppReadModel,

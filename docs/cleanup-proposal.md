@@ -31,9 +31,10 @@ bara av tester.
   Förberett i commiten "Remove intents no view sends" för 20 av dem.
   `open-route` ingår i B2, eftersom testerna för Route-skärmen använder den.
   Tre enhetstester som skickade döda intents anropar nu modellen direkt.
-  Metoder i use-case-controllers och fasader som bara dessa intents
-  använde, till exempel `exploreFleet` och `patrolFleet`, finns kvar. De bör
-  tas bort i ett nästa steg.
+  Commiten "Remove controller methods nothing calls" tar sedan bort de 26
+  metoder i use-case-controllers som MasterController inte längre anropar
+  (109 rader). Fasadmetoderna finns kvar, eftersom AppModel och tester
+  använder dem som API. De kan rensas i B7.
 - Fråga: OK att merga?
 
 **B2. Route-skärmen går inte längre att nå.** `open-route` skickas inte,

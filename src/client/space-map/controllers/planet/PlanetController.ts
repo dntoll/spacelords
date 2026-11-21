@@ -26,10 +26,6 @@ export class PlanetController {
     return this.facade.selectProductionFleet(id);
   }
 
-  toggleProjectSupply(id: string, open: boolean): void {
-    return this.facade.toggleProjectSupply(id, open);
-  }
-
   openPlanetProject(planetId: string, projectId: string): void {
     return this.facade.openPlanetProject(planetId, projectId);
   }
@@ -66,16 +62,8 @@ export class PlanetController {
     return this.facade.scheduleShip(ship, fleetId, factoryId);
   }
 
-  moveProject(id: string, index: number): void {
-    return this.facade.moveProject(id, index);
-  }
-
   scheduleComponent(component: Component): void {
     return this.facade.scheduleComponent(component);
-  }
-
-  setProjectFleet(id: string, fleetId: string | null): void {
-    return this.facade.setProjectFleet(id, fleetId);
   }
 
   cancelProject(id: string): void {
@@ -88,13 +76,5 @@ export class PlanetController {
 
   upgradeBuilding(id: string): void {
     return this.facade.upgradeBuilding(id);
-  }
-
-  produceFighter(): void {
-    return this.facade.produceFighter();
-  }
-
-  canBuild(type: BuildType): string | null {
-    return this.facade.canBuild(type);
   }
 }

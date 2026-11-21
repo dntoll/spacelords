@@ -110,7 +110,7 @@ space_map__factories --> space_map___delat_ : 11
 space_map__factories --> space_map__production_network : 1
 space_map__factories --> space_map__research : 1
 space_map__factories --> space_map__star_map : 1
-space_map__fleets --> space_map___delat_ : 13
+space_map__fleets --> space_map___delat_ : 12
 space_map__orders ..> space_map___delat_ : 7, typer
 space_map__planet --> space_map___delat_ : 20
 space_map__production --> space_map___delat_ : 15

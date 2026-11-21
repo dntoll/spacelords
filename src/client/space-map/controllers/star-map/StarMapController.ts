@@ -83,20 +83,8 @@ export class StarMapController {
     return this.facade.previewSalvage(point);
   }
 
-  returnToShipyard(id: string): void {
-    return this.facade.returnToShipyard(id);
-  }
-
   releaseWreck(fleetId: string, id: string): void {
     return this.facade.releaseWreck(fleetId, id);
-  }
-
-  beginShipyardPlacement(
-    planetId: string,
-    site?: number,
-    yardId: string | null = null,
-  ): void {
-    return this.facade.beginShipyardPlacement(planetId, site, yardId);
   }
 
   rebuildShipyard(id: string): void {
