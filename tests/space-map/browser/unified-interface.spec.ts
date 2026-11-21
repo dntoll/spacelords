@@ -63,7 +63,7 @@ test('skeppssprites-pa-kartan / genererade-skeppssprites: all ship sprites load 
     ],
   };
   await seed(page, state);
-  for (const screen of ['Star map', 'Fleets', 'Route']) {
+  for (const screen of ['Star map', 'Fleets']) {
     await page
       .getByRole('navigation', { name: 'Main navigation' })
       .getByRole('button', { name: screen, exact: true })
@@ -162,7 +162,7 @@ test('gemensam-events-panel / planetinformation-pa-kartan: persistent footer, re
     'Research',
     'Decisions',
     'Fleets',
-    'Route',
+    'Factories',
     'Production',
     'Star map',
   ]) {

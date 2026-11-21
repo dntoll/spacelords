@@ -1308,6 +1308,10 @@ export class AppView implements AppPort {
 
   /** Förenklad produktion: the Factories screens under the main header. */
   #renderFactories(model: AppReadModel): void {
+    const previousActions = this.#turnActions;
+    const previousEventScroll =
+      previousActions?.querySelector<HTMLElement>('[role="log"]')?.scrollTop ??
+      0;
     if (this.#screen !== 'factories' || !this.#factoriesView) {
       this.#mapObserver?.disconnect();
       this.#mapObserver = null;
@@ -1330,10 +1334,6 @@ export class AppView implements AppPort {
       playerNoticeText(model.notice),
     );
     // runda-avslutas-fran-factories: the shared End turn bar and its warning.
-    const previousActions = this.#turnActions;
-    const previousEventScroll =
-      previousActions?.querySelector<HTMLElement>('[role="log"]')?.scrollTop ??
-      0;
     this.#attachTurnActions(previousActions, previousEventScroll);
     const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
     if (end) end.disabled = model.phase !== 'planning' || !!model.eventPlayback;
