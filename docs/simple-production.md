@@ -480,3 +480,7 @@ Patrullkortets tidigare höjdgräns ersätts av `synlig-flottorder`, som tillåt
 ett högre kort när ordertext visas. Testet behåller kontroll av synlig status
 och åtkomliga knappar. Lasttestets fixtur använder flottans kvarvarande last i
 stället för det borttagna försändelsesystemet.
+Byggnadsprioritering och beroenden i Production-ringen
+(`produktionsval-efter-forekomst` och `produktionsberoenden-i-byggval`)
+ersätts av rekommendationer och beroenden i Factories; testet kontrollerar nu
+saknade delar och byggmöjligheten där.

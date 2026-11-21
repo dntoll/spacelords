@@ -1,7 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { GameState } from '../../../src/client/space-map/models/Game.js';
-import { HexGeometry } from '../../../src/client/common/HexCoordinate.js';
-import { Game } from '../../../src/client/space-map/models/Game.js';
 import { researchStationState } from '../../fixtures/research-station.js';
 import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { startFirstSlot } from './save-helpers.js';
@@ -87,65 +85,15 @@ test('centrerat-kartfokus / kartpanel-till-events: Show centers Vesta above the 
   await page.screenshot({ path: testInfo.outputPath('centered-vesta.png') });
 });
 
-test('handelsrutt-skapande-pa-stjarnkartan: native touch drags an exposed selected planet into a route', async ({
+test('rutter-endast-i-connect: native touch connects planets in Factories', async ({
   page,
-  browserName,
   isMobile,
 }) => {
-  test.skip(
-    browserName !== 'chromium' || !isMobile,
-    'Native touch drag uses Chromium CDP on a touch device.',
-  );
-  const state = tradeNetworkState(false);
-  await start(page, state);
-  const [source, target] = Game.restore(state).ownedPlanetSnapshots();
-  const a = HexGeometry.toPoint(source!.position),
-    b = HexGeometry.toPoint(target!.position);
-  const map = page.locator('canvas');
-  await expect(map).toHaveAttribute('data-rendered', 'true');
-  await expect
-    .poll(async () => {
-      const bounds = (await map.boundingBox())!;
-      const camera = (await page.getByTestId('camera-position').textContent())!
-        .match(/-?\d+/g)!
-        .map(Number);
-      const y = bounds.y + bounds.height / 2 + a.y - camera[1]!;
-      return y < (await page.locator('.selection-panel').boundingBox())!.y - 20;
-    })
-    .toBe(true);
-  const bounds = (await map.boundingBox())!;
-  const camera = (await page.getByTestId('camera-position').textContent())!
-    .match(/-?\d+/g)!
-    .map(Number);
-  const point = (world: { x: number; y: number }) => ({
-    x: bounds.x + bounds.width / 2 + world.x - camera[0]!,
-    y: bounds.y + bounds.height / 2 + world.y - camera[1]!,
-  });
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send('Input.dispatchTouchEvent', {
-    type: 'touchStart',
-    touchPoints: [{ ...point(a), id: 1 }],
-  });
-  for (let step = 1; step <= 8; step++) {
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchMove',
-      touchPoints: [
-        {
-          ...point({
-            x: a.x + ((b.x - a.x) * step) / 8,
-            y: a.y + ((b.y - a.y) * step) / 8,
-          }),
-          id: 1,
-        },
-      ],
-    });
-  }
-  await cdp.send('Input.dispatchTouchEvent', {
-    type: 'touchEnd',
-    touchPoints: [],
-  });
-  await expect(
-    page.getByRole('complementary', { name: 'Selected route', exact: true }),
-  ).toContainText('Tellus ↔ Vesta');
-  await cdp.detach();
+  test.skip(!isMobile, 'Native touch requires a mobile device.');
+  await start(page, tradeNetworkState(false));
+  await page.getByRole('button', { name: 'Factories', exact: true }).tap();
+  await page.getByRole('button', { name: 'Connect Tellus', exact: true }).tap();
+  await page.getByRole('button', { name: 'Connect Vesta', exact: true }).tap();
+  await expect(page.locator('.factory-group')).toContainText('Tellus, Vesta');
+  await expect(page.locator('.factory-group')).toContainText('1 link');
 });
