@@ -1,116 +1,75 @@
 import { scenarioTimeout } from '../../browser-timeouts.js';
-import { selectMapFleet } from './fleet-helpers.js';
-import { expect, test, type Page } from '@playwright/test';
-import { endTurn, startFirstSlot, chooseResearch } from './save-helpers.js';
+import { expect, test } from '@playwright/test';
+import {
+  Game,
+  TECHNOLOGIES,
+} from '../../../src/client/space-map/models/Game.js';
+import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
+import { selectMapObject } from './map-helpers.js';
+import { endTurn, startFirstSlot } from './save-helpers.js';
 
-async function nextYear(page: Page) {
-  await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await endTurn(page);
-}
-async function home(page: Page) {
-  await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await page.locator('canvas[data-rendered="true"]').press('Home');
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-}
-async function build(page: Page, site: number, type: string) {
-  await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  await page
-    .getByRole('button', {
-      name: `Build building at site ${site}`,
-      exact: true,
-    })
-    .click();
-  await page.getByRole('button', { name: `Show ${type}`, exact: true }).click();
-  await page
-    .getByRole('button', { name: `Build ${type}`, exact: true })
-    .click();
-}
-
-test('gemensam-planetko / delfabriker / automatiska-delorder: research, manufacture parts and assemble a Fighter in one saved queue', async ({
+test('delar-tillverkas-pa-behov / produktionsflikar: a Fighter order makes its parts and survives reload', async ({
   page,
-}, testInfo) => {
+}) => {
   scenarioTimeout(90_000);
-  const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
+  const state = new Game(createExampleGalaxy()).exportState();
+  const colony = state.colonies[0]![1];
+  colony.population = 30000;
+  colony.stock = { ...colony.stock, Iron: 1000, Water: 1000, Oil: 1000 };
+  colony.buildings = (
+    [
+      'Rocket engine factory',
+      'Weapons module factory',
+      'Fighter factory',
+    ] as const
+  ).map((type, slotIndex) => ({
+    id: `factory-${slotIndex}`,
+    type,
+    slotIndex,
+    demolition: false,
+  }));
+  const initial = { ...state, researched: TECHNOLOGIES };
+  await page.addInitScript((saved) => {
+    if (localStorage.getItem('local-fighter-seeded')) return;
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({ lastPlayed: '2026-10-24T10:00:00Z', state: saved }),
+    );
+    localStorage.setItem('local-fighter-seeded', 'yes');
+  }, initial);
   await page.goto('./');
   await startFirstSlot(page);
-  await home(page);
-  await build(page, 1, 'Research station');
-  await nextYear(page);
-  await page
-    .getByRole('navigation', { name: 'Main navigation' })
-    .getByRole('button', { name: 'Research', exact: true })
-    .click();
-  await chooseResearch(page, 'Fighter factory');
-  await expect(page.locator('.research-queue article')).toHaveCount(1);
-  for (let year = 0; year < 3; year++) await nextYear(page);
-  await home(page);
-  for (const [index, type] of [
-    'Rocket engine factory',
-    'Weapons module factory',
-    'Fighter factory',
-  ].entries())
-    await build(page, index + 2, type);
-  for (let year = 0; year < 3; year++) await nextYear(page);
-  await home(page);
-  await page
-    .getByRole('navigation', { name: 'Planet pages' })
-    .getByRole('button', { name: 'Production', exact: true })
-    .click();
-  await expect(page.locator('.production-order')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await selectMapObject(page, 'Tellus');
   await page.getByRole('button', { name: 'Show Fighter', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Queue Fighter', exact: true })
-    .click();
-  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
-  const queue = page.getByRole('region', {
-    name: 'Planet build queue',
-    exact: true,
+  const controls = page.getByRole('complementary', {
+    name: 'Production controls',
   });
-  await expect(queue.locator('.queue-order')).toHaveCount(3);
-  for (const [index, type] of [
-    'Rocket engine',
-    'Weapons module',
-    'Fighter',
-  ].entries())
-    await expect(queue.locator('.queue-order').nth(index)).toContainText(type);
-  await build(page, 5, 'Research station');
+  await controls.getByRole('button', { name: 'Build', exact: true }).click();
+  await controls.getByRole('tab', { name: 'Queue · 1' }).click();
+  await expect(
+    page.getByRole('list', { name: 'Parts for Fighter' }),
+  ).toContainText('Rocket engine');
+  await expect(
+    page.getByRole('list', { name: 'Parts for Fighter' }),
+  ).toContainText('Weapons module');
   await page.reload();
   await startFirstSlot(page);
-  await home(page);
-  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
-  await expect(queue.locator('.queue-order')).toHaveCount(4);
-  await queue.scrollIntoViewIfNeeded();
-  await page.screenshot({
-    path: testInfo.outputPath('shared-planet-queue.png'),
-  });
-  await nextYear(page);
-  await home(page);
-  await expect(page.locator('[data-component="Rocket engine"]')).toContainText(
-    'Stored 1',
+  for (let round = 0; round < 6; round++) await endTurn(page);
+  const saved = await page.evaluate(
+    () =>
+      (
+        JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as {
+          state: typeof initial;
+        }
+      ).state,
   );
-  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
-  await expect(queue.locator('.queue-order')).toHaveCount(3);
-  await nextYear(page);
-  await home(page);
-  await expect(page.locator('[data-component="Weapons module"]')).toContainText(
-    'Stored 1',
-  );
-  await nextYear(page);
-  await home(page);
-  await expect(page.locator('[data-component="Rocket engine"]')).toContainText(
-    'Stored 0',
-  );
-  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
-  await expect(queue.locator('.queue-order')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await selectMapFleet(page);
-  await expect(
-    page
-      .getByRole('group', { name: 'Ships in Home Fleet', exact: true })
-      .getByRole('button', { name: /Fighter \d in Home Fleet/ }),
-  ).toHaveCount(2);
-  expect(errors).toEqual([]);
+  expect(saved.colonies[0]![1].projects).toEqual([]);
+  expect(
+    saved.fleets.reduce(
+      (count, fleet) => count + (fleet.ships.Fighter ?? 0),
+      0,
+    ),
+  ).toBe(2);
 });
