@@ -504,7 +504,8 @@ describe('produktionsko-bara-skepp', () => {
     act({ kind: 'open-site', planet: 'sol-0', site: 2 });
     act({ kind: 'build', type: 'Research station' });
     act({ kind: 'open-site', planet: 'sol-0', site: 3 });
-    send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
+    model.scheduleShip('Transport ship', null);
+    act({ kind: 'open-site', planet: 'sol-0', site: 3 });
     expect(model.snapshot.planet?.projects.map((p) => p.type)).toEqual(
       expect.arrayContaining(['Research station', 'Transport ship']),
     );
@@ -843,6 +844,20 @@ describe('ny-fabrik-med-guldstjarna', () => {
     act({ kind: 'build', type: 'Weapons module factory' });
     expect(model.snapshot.newFactories).not.toContain('Weapons module factory');
   });
+
+  it('an obsolete factory whose successor is researched is never new, even after its last one was upgraded', () => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    // The only Rocket engine factory has been upgraded to Ion pulse.
+    for (const building of state.colonies[0]![1].buildings)
+      if (building.type === 'Rocket engine factory')
+        building.type = 'Ion pulse engine factory';
+    const { send, model } = setup({
+      ...state,
+      researched: [...state.researched, 'Ion pulse engine factory'],
+    });
+    send({ type: 'open-map' });
+    expect(model.snapshot.newFactories).not.toContain('Rocket engine factory');
+  });
 });
 
 describe('byggkons-framsteg / byggko-eller-skeppsdetaljer', () => {
@@ -875,9 +890,9 @@ describe('byggkons-framsteg / byggko-eller-skeppsdetaljer', () => {
   it('shows each queued ship’s parts and why it waits', () => {
     const { root, send, model } = withFactories();
     send({ type: 'open-production', planetId: 'sol-0' });
-    send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
-    send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
-    send({ type: 'queue-ship', ship: 'Fighter', fleetId: null });
+    model.scheduleShip('Transport ship', null);
+    model.scheduleShip('Transport ship', null);
+    model.scheduleShip('Fighter', null);
     send({ type: 'map-production-option', option: null });
     const queue = model.snapshot.productionMap.queue;
     expect(queue.map((entry) => [entry.type, entry.state])).toEqual([
@@ -921,7 +936,7 @@ describe('byggkons-framsteg / byggko-eller-skeppsdetaljer', () => {
     expect(visible('.map-build-queue')).toBe(true);
     expect(visible('[aria-label="Build details"]')).toBe(false);
     // The chosen tab stays while the view updates.
-    send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
+    send({ type: 'map-production-build', option: 'Transport ship' });
     expect(visible('.map-build-queue')).toBe(true);
     expect(tab('queue').textContent).toBe('Queue · 1');
     tab('selected').click();
@@ -1346,9 +1361,9 @@ it('delfabrik-i-produktion: a part factory making parts shows In production and 
     slotIndex: 2,
     demolition: false,
   });
-  const { send, group, root } = setup(state);
+  const { send, group, root, model } = setup(state);
   send({ type: 'open-production', planetId: 'sol-0' });
-  send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
+  model.scheduleShip('Transport ship', null);
   send({ type: 'open-factories' });
   const engines = group('Tellus').planets[0]!.sites[1]!.factory!;
   expect(engines).toMatchObject({
@@ -1423,4 +1438,20 @@ it('skeppsbilder-i-produktion: the Production ring shows ship sprites', () => {
   expect(option.querySelector('img.ship-image')?.getAttribute('alt')).toBe(
     'Transport ship',
   );
+});
+
+it('produktionsvagledning-till-factories: Production points to Factories instead of a dead site button', async () => {
+  const { domeProductionState } =
+    await import('../../fixtures/production-dome.js');
+  const { send, root, model } = setup({
+    ...domeProductionState(),
+    pirates: [],
+  });
+  send({ type: 'open-production', planetId: 'sol-0' });
+  expect(model.snapshot.productionGuidance?.message).toContain('Factories');
+  expect(
+    [...root.querySelectorAll('button')].some(
+      (control) => control.textContent === 'Prepare building site',
+    ),
+  ).toBe(false);
 });

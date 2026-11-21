@@ -40,10 +40,7 @@ export class DecisionFacade {
       this.host.openFleet(decision.fleetId);
     else if (target === 'factories')
       this.host.openFactories(decision.planetId ?? decision.routeId);
-    else if (decision.planetId) {
-      if (target === 'route') this.host.openRoute(decision.planetId);
-      else this.host.openProduction(decision.planetId);
-    }
+    else if (decision.planetId) this.host.openProduction(decision.planetId);
   }
 
   skipDecision(id: string): void {

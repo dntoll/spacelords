@@ -128,7 +128,7 @@ describe('bargningsorder-fran-flotta', () => {
       dispose() {},
     });
     controller.start();
-    emit({ type: 'begin-salvage', id: 'fleet-home' });
+    model.beginSalvage('fleet-home');
     const snapshot = model.snapshot;
     const marker = salvageMarkers(
       snapshot.wrecks,
@@ -662,14 +662,11 @@ describe('spara-bargning-och-stridsavbrott / upptackbara-vrak', () => {
     expect(game.exportState().salvage!.wrecks).toHaveLength(0);
     expect(Game.restore(game.exportState()).round).toBe(1);
   });
-  it('seeds advanced derelicts only for new games and preserves old games without retroactive wrecks', () => {
+  it('seeds advanced derelicts for new games', () => {
     const state = salvageState();
     expect(
       new Game(Game.restore(state).galaxy).exportState().salvage!.wrecks,
     ).toHaveLength(2);
-    expect(
-      Game.restore({ ...state, version: 9 }).exportState().salvage!.wrecks,
-    ).toHaveLength(0);
   });
   it('rejects inconsistent docking, invalid engines and unknown recovered technologies', () => {
     const state = salvageState();

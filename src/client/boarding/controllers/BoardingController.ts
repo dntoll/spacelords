@@ -13,10 +13,6 @@ export class BoardingController {
     return this.facade.closeTestBoarding();
   }
 
-  finishBoarding(outcome: 'victory' | 'defeat' | 'aborted' = 'aborted'): void {
-    return this.facade.finishBoarding(outcome);
-  }
-
   commandBoarding(command: BoardingCommand): void {
     return this.facade.commandBoarding(command);
   }

@@ -13,7 +13,7 @@ export function renderMapOverlays(
   movementPoints: ReadonlyMap<string, Point> = new Map(),
   shipImages: ReadonlyMap<ShipSpriteType, p5.Image> = new Map(),
 ): void {
-  if (model.screen === 'route' || model.screen === 'production') {
+  if (model.screen === 'production') {
     for (const planet of model.ownedPlanets) {
       const point = HexGeometry.toPoint(planet.position);
       const attention = model.mapProblems.some(
@@ -59,9 +59,7 @@ export function renderMapOverlays(
     model.camera.zoom,
     model,
     model.screen === 'fleets',
-    ['map', 'fleets', 'route'].includes(model.screen)
-      ? model.tradeRoutes
-      : null,
+    ['map', 'fleets'].includes(model.screen) ? model.tradeRoutes : null,
     model.screen === 'fleets'
       ? model.decisions
           .filter(needsAttention)
@@ -71,6 +69,5 @@ export function renderMapOverlays(
     movementPoints,
     shipImages,
     model.screen === 'fleets',
-    model.screen === 'route' ? 'center' : 'endpoint',
   );
 }

@@ -103,7 +103,6 @@ describe('flottfokuserad-kartvy', () => {
       expect(
         root.querySelector('.selection-panel')?.hasAttribute('hidden'),
       ).toBe(true);
-      expect(model.mapRouteDragSource(point)).toBeNull();
     }
     const start = fleetPoint();
     emit({ type: 'pointer-start', id: 1, point: start });
@@ -190,8 +189,6 @@ describe('flottfokuserad-kartvy', () => {
     emit({ type: 'open-map' });
     expect(model.snapshot.mapTrade.routeId).toBe('route-test');
     emit({ type: 'open-fleets' });
-    emit({ type: 'begin-map-route', id: 'sol-0' });
-    expect(model.snapshot.mapTrade.sourcePlanetId).toBeNull();
     emit({ type: 'map-select-fleet', id: 'freighters' });
     root
       .querySelector<HTMLButtonElement>(

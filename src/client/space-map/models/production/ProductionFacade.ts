@@ -1,4 +1,3 @@
-import { type MapProductionCategory } from '../ProductionMap.js';
 import type { Component } from '../Economy.js';
 import {
   BUILDINGS,
@@ -15,12 +14,6 @@ export class ProductionFacade {
   openProduction(planetId?: string): void {
     if (planetId) this.host.focusMapPlanet(planetId);
     this.host.openMapScreen('production');
-  }
-
-  selectMapProductionCategory(category: MapProductionCategory): void {
-    this.host.mapProductionCategory = category;
-    this.host.mapProductionPage = 0;
-    this.host.mapProductionOption = null;
   }
 
   selectMapProductionPage(page: number): void {
@@ -43,11 +36,6 @@ export class ProductionFacade {
           .find((option) => option.type === type)
       : null;
     if (!option) return;
-    if (option.category !== this.host.mapProductionCategory) {
-      const categorized = this.host.productionMapSnapshot().categorized;
-      this.host.mapProductionCategory = option.category;
-      if (categorized) this.host.mapProductionPage = 0;
-    }
     this.host.mapProductionOption = type;
   }
 

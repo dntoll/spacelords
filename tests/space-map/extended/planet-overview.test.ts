@@ -1,13 +1,11 @@
 // @vitest-environment jsdom
 import { completeConstruction } from '../../fixtures/construction.js';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import { renderPlanet } from '../../../src/client/space-map/views/planet/PlanetView.js';
-import { renderBuildSelection } from '../../../src/client/space-map/views/planet/BuildSelectionView.js';
 import { renderResearch } from '../../../src/client/space-map/views/research/ResearchView.js';
 import {
-  BUILDINGS,
   TECHNOLOGIES,
   type BuildType,
 } from '../../../src/client/space-map/models/Game.js';
@@ -27,11 +25,6 @@ function setup() {
   );
   controller.start();
   const click = (text: string) => {
-    const action = /^(Build|Queue) (.+)$/.exec(text);
-    if (action && !root.querySelector(`[aria-label="${text}"]`))
-      root
-        .querySelector<HTMLButtonElement>(`[aria-label="Show ${action[2]}"]`)
-        ?.click();
     const button = [...root.querySelectorAll('button')].find(
       (b) => b.textContent === text || b.getAttribute('aria-label') === text,
     );
@@ -42,63 +35,23 @@ function setup() {
   return { root, model, click };
 }
 
-describe('visa-byggalternativ', () => {
-  it('opens a separate selection and returns to the original site after an order', () => {
-    const { root, model, click } = setup();
-    click('Building sites');
-    root
-      .querySelector<HTMLButtonElement>(
-        '[aria-label="Build building at site 3"]',
-      )!
-      .click();
-    expect(root.querySelector('h1')?.textContent).toBe('Build selection');
-    expect(root.textContent).not.toContain('\ufffd');
-    expect(root.querySelectorAll('.catalog-item')).toHaveLength(4);
-    expect(root.querySelector('.catalog-details')).toBeNull();
-    click('Show Research station');
-    expect(root.querySelectorAll('.cost-ok')).toHaveLength(4);
-    click('Build Research station');
-    expect(model.snapshot.planet?.sites[2]?.project?.type).toBe(
-      'Research station',
-    );
-    expect(document.activeElement?.getAttribute('data-site-index')).toBe('2');
-    expect(root.querySelector('h1')?.textContent).toBe('Tellus');
-  });
-  it('cancels without ordering and searches without losing input focus', () => {
-    const { root, model, click } = setup();
-    click('Building sites');
-    click('Build building');
-    const search = root.querySelector<HTMLInputElement>(
-      'input[type="search"]',
-    )!;
-    search.focus();
-    search.value = 'unknown';
-    search.dispatchEvent(new Event('input'));
-    expect(root.querySelectorAll('.catalog-item')).toHaveLength(0);
-    expect(document.activeElement?.getAttribute('type')).toBe('search');
-    click('Back to Building sites');
-    expect(model.snapshot.planet?.projects).toHaveLength(0);
-  });
-});
-
 describe('planetbudgetoversikt', () => {
   it('updates resource bars when construction is reserved and cancelled', () => {
-    const { root, click } = setup();
+    const { root, model, click } = setup();
     expect(root.querySelectorAll('.resource-budget')).toHaveLength(3);
     expect(
       root.querySelector<HTMLElement>('[data-resource="Iron"] .budget-used')
         ?.style.width,
     ).toBe('0%');
+    model.build('Research station', 2);
     click('Building sites');
-    click('Build building');
-    click('Build Research station');
     click('Overview');
     expect(
       root.querySelector<HTMLElement>('[data-resource="Iron"] .budget-used')
         ?.style.width,
     ).not.toBe('0%');
+    model.cancelProject(model.snapshot.planet!.projects[0]!.id);
     click('Building sites');
-    click('Cancel construction');
     click('Overview');
     expect(
       root.querySelector<HTMLElement>('[data-resource="Iron"] .budget-used')
@@ -136,21 +89,6 @@ describe('gemensamma-byggnadsbilder', () => {
     );
     expect(view.querySelectorAll('.research-node.queued')).toHaveLength(2);
     expect(view.querySelectorAll('.research-node-status')).toHaveLength(0);
-  });
-  it('uses the same supplied image for selection and construction', () => {
-    const { root, click } = setup();
-    click('Building sites');
-    click('Build building');
-    click('Show Research station');
-    const label = root
-      .querySelector('.catalog-details .building-image img')
-      ?.getAttribute('src');
-    click('Build Research station');
-    expect(
-      root
-        .querySelector('.site-details .building-image img')
-        ?.getAttribute('src'),
-    ).toBe(label);
   });
 });
 
@@ -229,72 +167,6 @@ describe('planetbudgetoversikt', () => {
   });
 });
 
-describe('visa-byggalternativ', () => {
-  it('marks missing resources independently and disables an unaffordable order', () => {
-    const { model } = setup();
-    model.openBuildSite(0);
-    const snapshot = model.snapshot;
-    const planet = snapshot.planet!;
-    const view = renderBuildSelection(
-      {
-        ...snapshot,
-        selectedBuilding: 'Research station',
-        planet: {
-          ...planet,
-          budget: {
-            ...planet.budget,
-            available: { Iron: 0, Water: 3, Oil: 1 },
-            availableWorkers: 599,
-          },
-          buildOptions: [
-            { type: 'Research station', blockedReason: 'Not enough Iron.' },
-          ],
-        },
-      },
-      () => {},
-    );
-    expect(view.querySelectorAll('.cost-ok')).toHaveLength(2);
-    expect(view.querySelectorAll('.cost-missing')).toHaveLength(2);
-    expect(
-      view.querySelector<HTMLButtonElement>('.building-choice button')!
-        .disabled,
-    ).toBe(true);
-  });
-  it('keeps a rejected order on selection without changing occupied sites', () => {
-    const { root, model, click } = setup();
-    click('Building sites');
-    click('Build building');
-    click('Show Research station');
-    const staleOrder = root.querySelector<HTMLButtonElement>(
-      '[aria-label="Build Research station"]',
-    )!;
-    model.build('Research station', 0);
-    model.openBuildSite(1);
-    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    try {
-      // Submit the old view's site 0 order after it has become occupied.
-      staleOrder.click();
-      expect(model.snapshot.screen).toBe('build-selection');
-      expect(model.snapshot.constructionSite).toBe(1);
-      expect(model.snapshot.planet?.projects).toHaveLength(1);
-      expect(root.textContent).toContain('No build slots are available');
-      expect(root.querySelector('.building-menu')).not.toBeNull();
-    } finally {
-      warning.mockRestore();
-    }
-  });
-  it('matches descriptions as well as names', () => {
-    const { model } = setup();
-    model.openBuildSite(0);
-    model.searchBuildings('queued research');
-    expect(
-      renderBuildSelection(model.snapshot, () => {}).querySelectorAll(
-        '.catalog-item',
-      ),
-    ).toHaveLength(1);
-  });
-});
-
 describe('gemensamma-byggnadsbilder', () => {
   it('resolves supplied images under the app base and falls back after a load error', () => {
     const view = buildingImage(
@@ -341,205 +213,5 @@ describe('gemensamma-byggnadsbilder', () => {
       ).toBe(image!.getAttribute('src'));
     }
     expect(new Set(sources).size).toBe(4);
-  });
-});
-
-describe('gemensam-planetko / fabrikskoer / kompakta-bygghandlingar', () => {
-  it.each([
-    'Colony ship factory',
-    'Exploration ship factory',
-    'Fighter factory',
-  ] as const)('exposes ordering but no independent queue for %s', (type) => {
-    const model = new AppModel();
-    model.openPlanet();
-    const planet = model.snapshot.planet!;
-    const building = {
-      id: 'yard',
-      type,
-      slotIndex: 0,
-      queue: [],
-      scheduledForDemolition: false,
-    };
-    const emit = vi.fn();
-    const view = renderPlanet(
-      {
-        ...planet,
-        buildings: [building],
-        sites: [{ ...planet.sites[0]!, index: 0, building, project: null }],
-      },
-      'You',
-      emit,
-      model.snapshot.fleets,
-      {
-        phase: 'planning',
-        planetTab: 'production',
-        productionProduct: BUILDINGS[type].ship!,
-      },
-    );
-    expect(
-      view.querySelector('[aria-label="Build ships at site 1"]'),
-    ).toBeNull();
-    const order = view.querySelector('.production-order')!;
-    expect(order).not.toBeNull();
-    expect(order.textContent).toContain('crew');
-    const orders = order.querySelector<HTMLButtonElement>(
-      '[aria-label="Orders"]',
-    )!;
-    orders.click();
-    expect(emit).toHaveBeenCalledWith({
-      type: 'open-ship-orders',
-      ship: BUILDINGS[type].ship,
-    });
-    const queue = order.querySelector<HTMLButtonElement>(
-      '[aria-label^="Queue "]',
-    )!;
-    expect(queue.textContent).toBe(`Queue ${BUILDINGS[type].ship}`);
-    queue.click();
-    expect(emit).toHaveBeenCalledWith({
-      type: 'queue-ship',
-      ship: BUILDINGS[type].ship,
-      fleetId: null,
-    });
-    expect(view.querySelectorAll('.compact-build-queue')).toHaveLength(1);
-    expect(view.querySelector('.queue-slots')).toBeNull();
-  });
-  it.each(['demolition', 'locked'])(
-    'keeps ordering visible but disabled for %s factories',
-    (state) => {
-      const model = new AppModel();
-      model.openPlanet();
-      const planet = model.snapshot.planet!;
-      const building = {
-        id: 'yard',
-        type: 'Colony ship factory' as const,
-        slotIndex: 0,
-        scheduledForDemolition: state === 'demolition',
-        queue: [],
-      };
-      const view = renderPlanet(
-        {
-          ...planet,
-          buildings: [building],
-          sites: [{ ...planet.sites[0]!, index: 0, building, project: null }],
-        },
-        'You',
-        vi.fn(),
-        [],
-        {
-          phase: state === 'locked' ? 'simulating' : 'planning',
-          planetTab: 'production',
-          productionProduct: 'Colony ship',
-        },
-      );
-      expect(
-        view.querySelector<HTMLButtonElement>(
-          '.production-details button[aria-label^="Queue "]',
-        )?.disabled,
-      ).toBe(true);
-      expect(
-        view.querySelector<HTMLButtonElement>('[aria-label="Orders"]')
-          ?.disabled,
-      ).toBe(true);
-      expect(
-        view.querySelector('.production-order .blocked-reason')?.textContent,
-      ).toBeTruthy();
-    },
-  );
-});
-
-describe('byggnadsantal-lokalt-och-globalt', () => {
-  it('shows completed buildings per selected planet and across the empire without counting queued projects twice', () => {
-    const { model } = setup();
-    model.build('Research station', 0);
-    model.openBuildSite(1);
-    const snapshot = model.snapshot;
-    const planet = snapshot.planet!;
-    const building = (
-      id: string,
-      type: BuildType,
-      scheduledForDemolition = false,
-    ) => ({
-      id,
-      type,
-      slotIndex: 2,
-      scheduledForDemolition,
-      operational: false,
-    });
-    const local = {
-      ...planet,
-      buildings: [
-        building('r1', 'Research station'),
-        building('r2', 'Research station', true),
-        building('i1', 'Iron mine'),
-      ],
-    };
-    const remote = {
-      ...planet,
-      id: 'another-colony',
-      name: 'Vesta',
-      buildings: [
-        building('r3', 'Research station'),
-        building('r4', 'Research station'),
-        building('r5', 'Research station'),
-        building('w1', 'Water extractor'),
-      ],
-    };
-    for (const [selected, expected] of [
-      [local, '2'],
-      [remote, '3'],
-    ] as const) {
-      const compact = renderBuildSelection(
-        {
-          ...snapshot,
-          selectedBuilding: null,
-          planet: selected,
-          ownedPlanets: [local, remote],
-        },
-        () => {},
-      );
-      const compactCounts = (type: BuildType) =>
-        compact.querySelector(
-          `[aria-label="Show ${type}"] .building-list-inventory`,
-        );
-      expect(compact.querySelector('.catalog-details')).toBeNull();
-      expect(compactCounts('Research station')?.textContent).toContain(
-        `On ${selected.name}: ${expected}`,
-      );
-      expect(compactCounts('Research station')?.textContent).toContain(
-        'All your planets: 5',
-      );
-      expect(compactCounts('Oil extractor')?.textContent).toContain(
-        `On ${selected.name}: 0`,
-      );
-      expect(compactCounts('Oil extractor')?.textContent).toContain(
-        'All your planets: 0',
-      );
-      const inventory = (type: BuildType) =>
-        renderBuildSelection(
-          {
-            ...snapshot,
-            selectedBuilding: type,
-            planet: selected,
-            ownedPlanets: [local, remote],
-          },
-          () => {},
-        ).querySelector(`[data-building-type="${type}"] .building-inventory`)!;
-      expect(inventory('Research station').textContent).toContain(
-        `On ${selected.name}`,
-      );
-      expect(inventory('Research station').textContent).toContain(
-        'All your planets',
-      );
-      expect(
-        [...inventory('Research station').querySelectorAll('dd')].map(
-          (n) => n.textContent,
-        ),
-      ).toEqual([expected, '5']);
-      expect(
-        [...inventory('Oil extractor').querySelectorAll('dd')].map(
-          (n) => n.textContent,
-        ),
-      ).toEqual(['0', '0']);
-    }
   });
 });

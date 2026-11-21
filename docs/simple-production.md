@@ -2,16 +2,16 @@
 
 **Utforskning på branchen `simple_production`.** Kraven gäller bara inom
 utforskningen. De följer med till `development` först när användaren ber om
-det, och försvinner om konceptet kastas. Låsta 2026-11-18.
+det, och försvinner om konceptet kastas.
 
-Dagens Route och Production styr för detaljerat, särskilt på mobil. Konceptet
-ersätter fysisk materialfrakt mellan enskilda planeter med ett nätverk där
-råvaror och delar delas. Det som fortfarande är platsbundet är var råvaror
-utvinns och var slutprodukter tillverkas.
+Råvaror och delar delas inom ett nätverk av planeter som förbinds av
+fraktskepp. Bara utvinning och slutprodukter är platsbundna. Filen beskriver
+reglerna och sedan skärmarna. Alla krav här är **Fullständigt implementerat**
+utom mining ships, som är **Ej implementerat** (se sist).
 
-Status per krav finns under [Implementationsstatus](#implementationsstatus).
+## Regler
 
-## Produktionsnivåer
+### Produktionsnivåer
 
 | Kravnamn                        | Produktkrav                                                                                                                                                                                                   |
 | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -35,7 +35,7 @@ shipyard, terraformingfabrikerna, Ion pulse engine factory, Telescope II
 och III factory, Colony ship factory och Raptor factory. Övriga byggnader tar
 två rundor. En uppgradering av en fabrik tar den nya fabrikens byggtid.
 
-## Plats
+### Plats
 
 | Kravnamn                   | Produktkrav                                                                                                                                                                                                              |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -53,7 +53,7 @@ Varje vara har i modellen en plats: en planet eller en länk där den är på v�
 Den behåller också sin ursprungsplanet. Det krävs för
 `varor-stannar-vid-delning` och `erovrad-last`.
 
-## Nätverk och fraktskepp
+### Nätverk och fraktskepp
 
 | Kravnamn                          | Produktkrav                                                                                                                                                               |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -63,8 +63,6 @@ Den behåller också sin ursprungsplanet. Det krävs för
 | `varor-stannar-vid-delning`       | Delas ett nätverk stannar varje vara i den del där den tillverkades.                                                                                                      |
 | `erovrad-last`                    | Förstörs eller erövras ett fraktskepp får erövraren lasten, det vill säga det som är på väg över routen just då. Nätverket delas om det inte finns någon annan väg.       |
 | `eskort-pa-routes`                | Eskort kan tilldelas en route och skyddar dess fraktskepp. Bygger vidare på `rutt-eskortfordelning`. Spelaren ser och tilldelar eskort i `Factories`.                     |
-
-Beslut inför implementationen (2026-11-18):
 
 - `fraktskepp-pendlar` (2026-11-19): ett tilldelat fraktskepp reser först
   till närmaste ände av sin route och pendlar sedan fram och tillbaka mellan
@@ -98,44 +96,78 @@ Beslut inför implementationen (2026-11-18):
     Närmaste planet i länkar skickar först. Under resan växer de inte. De
     kommer fram även om länken bryts. Ägs målet inte längre återvänder de,
     och finns ingen av planeterna kvar går de förlorade.
-  - Folk på väg sparas. Passagerare ombord i äldre sparningar stiger av vid
-    sitt mål när spelet laddas, och skytteln stannar där den är.
-- Testläget `Factory screens` tas bort när de riktiga skärmarna finns.
+  - Folk på väg sparas.
 
-## Mining ships
+## Factories
 
-**Uppskjutet (2026-11-19):** mining ships görs först när resten av
-förenklad produktion är klar. De följs upp i
-[issue 1](https://github.com/dntoll/spacelords/issues/1).
+`Factories` i huvudmenyn är platsen för allt byggande. Fabriker, Domes,
+terraforming och uppgraderingar byggs här, och här skapas länkar. De nya
+skärmarna använder spelets egna symboler och bilder
+(`befintliga-symboler-i-nya-vyer`).
 
-| Kravnamn                 | Produktkrav                                                                                                                                                                       |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `mining-ships`           | Mining ships utvinner råvaror ur nebulosor och asteroidbälten. Utvinningen styrs på kartan.                                                                                       |
-| `mining-ship-anslutning` | Ett mining ship är anslutet till nätverket när ett fraktskepp har routen mellan skeppet och den ägda planet som ligger närmast på kartan. Flyttas mining ship flyttas routen med. |
+Översikten:
 
-## Från testningen (2026-11-19)
+- Förbundna planeter visas som en grupp. Rubriken anger planeterna,
+  antalet planeter och antalet länkar.
+- Överst i varje grupp finns en liten graf över länkarna, där planeterna
+  ligger ungefär som i världen. Listan under visar inga länkar.
+- Gruppen visar antalet fabriker per typ. En fabrikstyp som saknar
+  insatsvaror i gruppen markeras röd med orsaken.
+- Planeterna står i bokstavsordning med råvaror och byggplatser.
+- Både grupper och planeter kan fällas ihop. En hopfälld planet
+  sammanfattar sina platser, till exempel `4/6 sites`.
+- En byggplats är tom (kan väljas), låst (`Needs Dome`) eller upptagen av
+  en fabrik.
+- En fabrik har ett av fyra tillstånd:
+  - arbetar
+  - byggs, med rundor, till exempel `Building 1/2`
+  - tillverkar, med rundor, till exempel `3/4 rounds`
+  - saknar insatsvaror (röd)
 
-Krav från användarens mobiltest. Varje krav följs upp i ett issue.
+  En fabrik utan order visas som `Idle`.
 
-| Kravnamn                                  | Produktkrav                                                                                                                                                                                                                                                                                                                             |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `runda-avslutas-fran-factories`           | `Factories` har samma `End turn` och händelselogg som övriga skärmar, inklusive varningen om kvarvarande beslut ([issue 5](https://github.com/dntoll/spacelords/issues/5)).                                                                                                                                                             |
-| `produktionsko-bara-skepp`                | `Build queue` i kartans Production visar bara skeppsorder. Köade byggnader syns och avbryts i `Factories` ([issue 3](https://github.com/dntoll/spacelords/issues/3)).                                                                                                                                                                   |
-| `produktionsbeslut-bara-for-skeppsfabrik` | Beslutet `<planet>: choose production` visas bara när planeten har en färdig skeppsfabrik och ingen skeppsorder alls i kön (förtydligat 2026-11-19: en köad order räcker, oavsett vilken fabrik som tar den). Tomma byggplatser och köade byggnader ger inget sådant beslut ([issue 2](https://github.com/dntoll/spacelords/issues/2)). |
-| `forskningsvy-utan-station`               | Utan någon färdig Research station visar Research inget forskningsträd och ingen kö, bara en förklaring som hänvisar till `Factories` (knappen `Build a Research station` är ersatt av `inga-overflodiga-navigeringsknappar`) ([issue 4](https://github.com/dntoll/spacelords/issues/4)).                                               |
+- Rundorna visar hur många som gått av totalen. Totalen räknas om vid
+  förseningar, till exempel när en länk bryts. Antalet rundor som gått
+  minskar aldrig.
+- Gruppen får en Connect-knapp till höger i rubriken när den själv eller
+  en grupp den kan ansluta till har ett ledigt fraktskepp eller kan bygga
+  transporter.
+- Ett köat bygge visas som en gul plats med `Queued`.
+- En grupp med bemannade länkar får knappen `Links and escorts`. Saknar
+  någon länk eskort visas i stället till exempel
+  `1 link without escort`. Knappen öppnar länkarna inom gruppen
+  (`eskort-pa-routes`).
 
-`produktionsbeslut-bara-for-skeppsfabrik` ersätter att tomma byggplatser gav
-beslutet, och därmed den del av `beslut-vantar-pa-paborjad-atgard` där
-beslutet för tomma platser väntade på Dome-forskning. Production förklarar
-fortfarande väntan på Dome-forskning.
-`forskningsvy-utan-station` ersätter den del av `forskning-kraver-station`
-där trädet visades med spärrade val när ingen station fanns. Trädet med
-spärrade val visas fortfarande när den enda stationen är markerad för rivning.
-Regeln att forskning kräver en färdig station gäller som förut.
+Byggvalet på en plats:
 
-## Vägledning i byggvalen (2026-11-20)
+- Skärmen öppnas genom tryck på en tom byggplats. Ett val fyller bara den
+  platsen, och man bygger på fler platser genom att trycka på var och en.
+- Rubriken visar planet, plats och grupp. Under den visas gruppens lager
+  och lediga arbetare.
+- Byggnaderna är grupperade efter nivå, med en ledtråd i rubriken, till
+  exempel `Lyra has Water` och `ships appear at Lyra`.
+- Varje rad visar:
+  - kostnad
+  - antal i gruppen, till exempel `2 in group`, `0 + 1 building` eller
+    `here`
+  - byggtid i rundor
+  - för delfabriker: hur många rundor bort insatsvarorna finns
+  - för slutproduktfabriker: en uppskattad produkttid, till exempel
+    `Fighter ~4 rounds`
 
-Krav inom utforskningen, alla **Fullständigt implementerade**.
+  Tiden med `~` ändras när länkarna ändras.
+
+- En byggnad som inte passar planeten grånas med orsaken, till exempel
+  `No Iron on Lyra`.
+- Räcker lagret visas `Build`. Annars visas `Queue` och en tagg med det
+  som fattas, till exempel `Short: Water 3, Oil 2`.
+- Köade byggen ligger i kö. Alla som har råvaror och arbetare byggs
+  samtidigt, och vid brist gäller `standardregel-vid-brist`.
+- Ett tryck på en köad eller pågående byggnad öppnar platsen med
+  `Cancel construction` (2026-11-19). Det ersätter att avbryta via
+  kartans Production, som bara hanterar skepp.
+
+Vägledning och status:
 
 - `startuppmaning-fabriker`: ett nytt spel uppmanar spelaren att bygga en
   `Research station` och utvinning av råvaror. Besluten
@@ -161,186 +193,199 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
 
   Rekommenderade fabriker visas inte en gång till i nivålistan nedanför.
 
-- `byggval-bara-framforskat` (**Fullständigt implementerat**): byggval
+- `byggval-bara-framforskat`: byggval
   erbjuds bara för det som är framforskat. Factories visar redan bara
   framforskade fabriker, och Production visar `Civilian shuttle` först när
   `Civilian transport` är framforskad.
-- `vagledning-mot-eskort` (**Fullständigt implementerat**): en länk med
-  fraktskepp men utan eskort säger under `Links` vad nästa steg är:
-  `Escort` med en fri beväpnad flotta; varför närmaste beväpnade flotta inte
-  kan (exempelvis att den reser); `Build Fighter` som öppnar Production på
-  planeten med Fighter factory; att bygga en Fighter factory, som då också
-  rekommenderas under `Recommended`; eller att forska fram Fighter factory.
-- `bestall-eskort-pa-lanken` (**Fullständigt implementerat**): finns en
-  Fighter factory beställer `Order Fighter` en Fighter direkt från länken,
-  med order att eskortera just den länken; raden visar sedan att en Fighter
-  är beställd. Saknas fabriken leder `Build factory` till en ledig plats i
-  gruppen, och saknas forskning listas den i ordning, exempelvis
-  `Research Weapons module factory, then Fighter factory`. Ersätter knappen
-  som öppnade Production i `vagledning-mot-eskort`.
-- `eskort-utan-upptagna-flottor` (**Fullständigt implementerat**): en
-  beväpnad flotta som är upptagen med ett annat uppdrag, exempelvis en resa,
-  föreslås inte som eskort. Vägledningen föreslår i stället en ny Fighter,
-  fabriken eller forskningen. Ersätter förklaringen av varför närmaste
-  beväpnade flotta inte kan i `vagledning-mot-eskort`.
-- `lankar-bara-i-grupper` (**Fullständigt implementerat**): `Links inside`
-  öppnas bara för grupper med flera planeter, varken från gruppen eller från
-  Connect. Länkar namnger planeter även utanför gruppen, i stället för deras
-  id.
-- `forsorjning-vantar-pa-bestalld-lank` (**Fullständigt implementerat**):
-  när en länk till gruppen är beställd (ett fraktskepp är på väg eller byggs
-  för den) visas inte problemet att gruppen saknar råvaror eller delar.
-- `skeppsbilder-i-produktion` (**Fullständigt implementerat**): ringen och
-  detaljrubriken i Production visar skeppens bilder i stället för symboler.
-- `terraformering-pa-planeten` (**Fullständigt implementerat**): en
+- `terraformering-pa-planeten`: en
   rekommendation vars enda skäl är planetens egen terraformering visas som
   `Recommended: …` på planeten i Factories, inte på gruppen. Gruppens knapp
   visar övriga rekommendationer, och markeringen i menyn räknar båda.
-- `produktionsflikar` (**Fullständigt implementerat**): Production har, som
-  Research, två flikar: det valda skeppet (fliken heter som skeppet, eller
-  `Selected` med en hjälptext) och `Queue · n` med byggkön. Ett nytt val i
-  ringen visar skeppets flik; annars ligger spelarens flik kvar. Ersätter
-  `×`-knappen i `byggko-eller-skeppsdetaljer`.
-- `planetsprites-i-factories` (**Fullständigt implementerat**): graferna i
-  Factories, på Connect och under `Links inside` ritar varje planet med sin
-  sprite i stället för en cirkel. På Connect är varje grupp ett kluster av
-  sina planeter med en mjuk bakgrund, och de streckade linjerna går mellan
-  de planeter som länken skulle förbinda.
-- `bestallda-lankar-syns` (**Fullständigt implementerat**): en länk vars
-  fraktskepp är beställt eller på väg visas i båda gruppernas översikt och på
-  Connect, exempelvis `Link to Vesta ordered · Transport ship being built at
-Tellus`, även efter att spelaren lämnat Factories.
-- `handelser-vid-ankomst` (**Fullständigt implementerat**): när ett skepp
-  kommer fram visas det som hände där, exempelvis `Planet explored`, direkt
-  efter det steget och innan andra flottor rör sig vidare eller kameran
-  flyttar. Det gäller även upptäckter som avbryter året. Övriga händelser
-  visas som förut när förflyttningarna är klara.
-- `delfabrik-i-produktion` (**Fullständigt implementerat**, fel rättat
-  2026-11-21): en delfabrik som tillverkar delar visas som `In production`
-  med `Making n`, där n är de delar gruppen fortfarande väntar på. Tidigare
-  såg den ut som en vilande byggnad.
-- `terraformering-forst` (**Fullständigt implementerat**): på en planet under
+- `terraformering-forst`: på en planet under
   100% habitability (inte `Temperate` eller gas) rekommenderas planetens
   terraformingfabrik, med skälet `Terraforms this planet`, och står först
   under `Recommended`. En plats som behöver en Dome rekommenderar Domen av
   samma skäl. Rekommendationen gäller per planet: en fabrik på en annan
   planet i gruppen tar inte bort den. Gruppens `Recommended`-knapp och
   markeringen av Factories räknar även med platser som behöver en Dome.
-- `en-order-ett-skepp` (**Fullständigt implementerat**): en order som
+- `ny-fabrik-med-guldstjarna`: en
+  framforskad fabrik som ingen planet har eller bygger räknas som ny.
+  `Factories` i huvudmenyn visar då en guldstjärna (★), och valet under
+  `Build factory` får etiketten `★ New`. Stjärnan försvinner när fabriken är
+  köad eller byggd någonstans. En föråldrad version, vars efterföljare är
+  framforskad, räknas aldrig som ny och erbjuds inte i byggvalet
+  (`senaste-teknik-i-byggval`), även när den sista har uppgraderats.
+- `uppgradera-delfabrik-i-factories`: en
+  fabrik vars del har en bättre framforskad variant (Rocket engine factory →
+  Ion pulse engine factory, Telescope I → II → III) visar
+  `★ Upgrade to …` på sin plats. Ett tryck öppnar platsen med
+  `Upgrade to …`; uppgraderingen byggs på samma plats och kan avbrytas med
+  `Cancel upgrade`. Bygger vidare på `uppgradera-obsoleta-fabriker`.
+- `rekommendation-i-menyn`: så länge en
+  grupp har en rekommenderad fabrik som kan byggas på en tom plats visar
+  `Factories` i huvudmenyn `!`. Gruppen visar `Recommended: …` som en knapp
+  som öppnar byggvalet på första lediga plats där fabriken kan byggas.
+- `delfabrik-i-produktion`: en delfabrik som tillverkar delar visas som `In production`
+  med `Making n`, där n är de delar gruppen fortfarande väntar på. Tidigare
+  såg den ut som en vilande byggnad.
+- `factories-sparas`: beställningar i `Factories` (bygg, avbryt, uppgradera, länka,
+  flytta fraktskepp, eskortera, beställ eskort) sparas direkt som övriga
+  order. Att bläddra i Factories sparar inte.
+- `planetsprites-i-factories`: graferna i
+  Factories, på Connect och under `Links inside` ritar varje planet med sin
+  sprite i stället för en cirkel. På Connect är varje grupp ett kluster av
+  sina planeter med en mjuk bakgrund, och de streckade linjerna går mellan
+  de planeter som länken skulle förbinda.
+
+## Connect och länkar
+
+- Skärmen öppnas från gruppens Connect-knapp i Factories. En grupp med eget
+  ledigt fraktskepp eller egen Transport ship factory använder det.
+  En grupp utan transport kan ansluta till en grupp som har det och
+  lånar då den gruppens fraktskepp eller fabrik.
+- En graf visar grupperna ungefär där de ligger i världen. Varje fullt
+  förbunden grupp visas som en enda nod, och möjliga förbindelser är
+  streckade.
+- Varje förslag anger vilka två planeter som förbinds. Det är alltid de
+  två närmaste, och de väljs automatiskt.
+- Varje förslag visar vad det ger. Förslag som löser ett problem står
+  först och anger vad de löser, till exempel
+  `Unblocks Rocket engine at Vega`. Övriga förslag står i bokstavsordning,
+  med till exempel `Adds Iron`.
+- Ett ledigt fraktskepp är förvalt. Annars byggs ett nytt, och den
+  uppskattade byggtiden visas.
+- Ett tryck på den egna gruppens nod visar länkarna inom gruppen. Där
+  väljer spelaren själv två planeter för en extra förbindelse. Förslaget
+  visar sparad tid och om gruppen då klarar att en länk försvinner.
+- `Current links` listar gruppens länkar med sina fraktskepp. `Move`
+  frigör skeppet och öppnar förslagen med skeppet förvalt. Om flytten
+  delar gruppen varnar skärmen först, till exempel
+  `Splits Lyra from group`.
+- Varje bemannad länk visar sin eskort, till exempel
+  `Escort: 2 armed ships`, eller `No escort`. `Escort` listar lediga
+  beväpnade flottor utan fraktskepp, närmast först, med antal beväpnade
+  skepp och avstånd. `Assign` skickar flottans beväpnade skepp till
+  länkens fraktskepp enligt `rutt-eskortfordelning`.
+
+- `vagledning-mot-eskort`: en länk med
+  fraktskepp men utan eskort säger under `Links` vad nästa steg är:
+  `Escort` med en fri beväpnad flotta; varför närmaste beväpnade flotta inte
+  kan (exempelvis att den reser); `Build Fighter` som öppnar Production på
+  planeten med Fighter factory; att bygga en Fighter factory, som då också
+  rekommenderas under `Recommended`; eller att forska fram Fighter factory.
+- `bestall-eskort-pa-lanken`: finns en
+  Fighter factory beställer `Order Fighter` en Fighter direkt från länken,
+  med order att eskortera just den länken; raden visar sedan att en Fighter
+  är beställd. Saknas fabriken leder `Build factory` till en ledig plats i
+  gruppen, och saknas forskning listas den i ordning, exempelvis
+  `Research Weapons module factory, then Fighter factory`. Ersätter knappen
+  som öppnade Production i `vagledning-mot-eskort`.
+- `eskort-utan-upptagna-flottor`: en
+  beväpnad flotta som är upptagen med ett annat uppdrag, exempelvis en resa,
+  föreslås inte som eskort. Vägledningen föreslår i stället en ny Fighter,
+  fabriken eller forskningen. Ersätter förklaringen av varför närmaste
+  beväpnade flotta inte kan i `vagledning-mot-eskort`.
+- `lankar-bara-i-grupper`: `Links inside`
+  öppnas bara för grupper med flera planeter, varken från gruppen eller från
+  Connect. Länkar namnger planeter även utanför gruppen, i stället för deras
+  id.
+- `forsorjning-vantar-pa-bestalld-lank`:
+  när en länk till gruppen är beställd (ett fraktskepp är på väg eller byggs
+  för den) visas inte problemet att gruppen saknar råvaror eller delar.
+- `bestallda-lankar-syns`: en länk vars
+  fraktskepp är beställt eller på väg visas i båda gruppernas översikt och på
+  Connect, exempelvis `Link to Vesta ordered · Transport ship being built at
+- `en-order-ett-skepp`: en order som
   behöver ett skepp tar inte emot fler. En länk får ett fraktskepp (inget
   nytt om den redan har ett eller ett är beställt), en planet ett
   koloniserings- eller utforskningsskepp. Eskorter får vara flera. Connect
   erbjuder inte en grupp vars länk redan har ett beställt fraktskepp.
   Dubbletter i sparade spel från tidigare fel ligger kvar och kan tas bort
   med `×` i byggkön.
-- `beslutssektioner` (**Fullständigt implementerat**): Decisions har
-  underrubrikerna `Needs attention`, `Muted`, `Messages` (meddelanden som
-  inte är avstängda) och `Queues`.
-- `stilla-beslutslista` (**Fullständigt implementerat**): medan Decisions är
-  öppen ligger varje beslut kvar på sin plats när spelaren trycker `Mute`,
-  `Unmute` eller `Skip this turn`. Rullningen och fokus behålls. Ett avstängt
-  beslut flyttar till `Muted` först när Decisions öppnas igen, enligt
-  `tystade-beslut-sist`.
-- `factories-sparas` (**Fullständigt implementerat**, fel rättat
-  2026-11-21): beställningar i `Factories` (bygg, avbryt, uppgradera, länka,
-  flytta fraktskepp, eskortera, beställ eskort) sparas direkt som övriga
-  order. Att bläddra i Factories sparar inte.
-- `ny-fabrik-med-guldstjarna` (**Fullständigt implementerat**): en
-  framforskad fabrik som ingen planet har eller bygger räknas som ny.
-  `Factories` i huvudmenyn visar då en guldstjärna (★), och valet under
-  `Build factory` får etiketten `★ New`. Stjärnan försvinner när fabriken är
-  köad eller byggd någonstans.
-- `uppgradera-delfabrik-i-factories` (**Fullständigt implementerat**): en
-  fabrik vars del har en bättre framforskad variant (Rocket engine factory →
-  Ion pulse engine factory, Telescope I → II → III) visar
-  `★ Upgrade to …` på sin plats. Ett tryck öppnar platsen med
-  `Upgrade to …`; uppgraderingen byggs på samma plats och kan avbrytas med
-  `Cancel upgrade`. Bygger vidare på `uppgradera-obsoleta-fabriker`.
-- `rekommendation-i-menyn` (**Fullständigt implementerat**): så länge en
-  grupp har en rekommenderad fabrik som kan byggas på en tom plats visar
-  `Factories` i huvudmenyn `!`. Gruppen visar `Recommended: …` som en knapp
-  som öppnar byggvalet på första lediga plats där fabriken kan byggas.
 
-## Flottfärger och byggorsak (2026-11-20)
+## Production
 
-Krav inom utforskningen, båda **Fullständigt implementerade**.
+Skepp beställs på planeten från kartans Production (`skeppsorder-pa-planeten`).
+Ett tryck på en slutproduktfabrik i Factories öppnar Production för planeten.
+Där visas bara skepp. Kostnaden visas i delar och tiden i rundor, till
+exempel `3/4 rounds` och `~4 rounds`. I stället för försörjningskedjan på
+kartan visas vilka delar som finns i gruppen och hur många rundor bort de
+är. I Factories visar en slutproduktfabrik med order sitt framsteg och hur
+många fler som är beställda, till exempel `3/4 rounds · 2 more`.
 
-- `flottkategorier`: på `Fleets` har varje flotta en färg efter sin
-  kategori: `Transport` (lila), `Exploration` (turkos), `Colony` (limegrön),
-  `Combat` (blå), `Salvage` (sandfärgad), `Civilian` (grå) och `Mixed` (vit).
-  Rött används inte eftersom pirater är röda, och gult är kvar för vald flotta
-  och för flottor som väntar på order. Flottans order avgör kategorin, så en
-  blandad flotta på en rutt är `Transport`, en som koloniserar är `Colony`
-  och en som patrullerar är `Combat`. Utan order avgör skeppen; flera slags
-  skepp ger `Mixed`. Flottkorten har samma färg och kategorinamn. En rad med
-  kategorierna på kartan visar färgerna, och ett tryck döljer eller visar
-  kategorin. Dolda flottor kan inte väljas på kartan.
-- `byggorsak-i-kon`: `Build queue` i Production och på planetsidan kan inte
+- `skeppsbilder-i-produktion`: ringen och
+  detaljrubriken i Production visar skeppens bilder i stället för symboler.
+- `produktionsflikar`: Production har, som
+  Research, två flikar: det valda skeppet (fliken heter som skeppet, eller
+  `Selected` med en hjälptext) och `Queue · n` med byggkön. Ett nytt val i
+  ringen visar skeppets flik; annars ligger spelarens flik kvar. Ersätter
+  `×`-knappen i `byggko-eller-skeppsdetaljer`.
+- `byggorsak-i-kon`: kön i Production kan inte
   längre ordnas om, eftersom skepp byggs samtidigt i olika fabriker. Varje
   skepp i kön visar varför det byggs, exempelvis
   `For the link Tellus ↔ Vesta`, `To colonize <planet>`,
   `To explore <planet>`, `Joins <flotta>`, `Mans a route without transport`
   eller `Joins the planet home fleet`. Ett fraktskepp som `Factories` beställer
   för en länk får order att bemanna just den länken.
-
-- `byggkons-framsteg` (2026-11-20, **Fullständigt implementerat**): varje
+- `byggkons-framsteg`: varje
   skepp i Production-kön visar var det står: `Waiting for its factory` när
   ett annat skepp använder fabriken, annars `Parts 1/2 · ~2 rounds` eller
   `All parts in place`. Under raden står varje del som `✓ … in place`,
   `… coming` eller `! … no factory in group`. Saknas en del helt i gruppen
   visas ingen tid.
-- `byggko-eller-skeppsdetaljer` (2026-11-20, **Fullständigt implementerat**):
+- `byggko-eller-skeppsdetaljer`:
   Production visar antingen planetens byggkö eller detaljerna för ett valt
   skepp, aldrig båda. Detaljerna stängs med `×`, och då visas kön igen.
 
-`byggorsak-i-kon` ersätter omordningen av Build queue i `dragbara-koer`,
+`byggorsak-i-kon` ersätter omordningen av kön i `dragbara-koer`,
 `kompakt-produktionsko` och `kompakta-koknappar`. Research queue,
 reparationskön och planetköerna kan fortfarande ordnas om.
 
-## Första stationen på väg (2026-11-20)
+## Från mobiltestet
 
-`forsta-station-pa-vag` är **Fullständigt implementerat** inom utforskningen.
-När den första `Research station` är köad visar Research i stället för
-uppmaningen att bygga en, att stationen byggs på planeten och om hur många
-rundor forskningen kan börja. Väntar stationen fortfarande på råvaror står det
-att den är köad och väntar på varor, med en uppskattning av rundorna. Trädet
-visas som förut först när stationen är färdig (`forskningsvy-utan-station`).
+| Kravnamn                                  | Produktkrav                                                                                                                                                                                                                                                                                                                             |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runda-avslutas-fran-factories`           | `Factories` har samma `End turn` och händelselogg som övriga skärmar, inklusive varningen om kvarvarande beslut ([issue 5](https://github.com/dntoll/spacelords/issues/5)).                                                                                                                                                             |
+| `produktionsko-bara-skepp`                | `Build queue` i kartans Production visar bara skeppsorder. Köade byggnader syns och avbryts i `Factories` ([issue 3](https://github.com/dntoll/spacelords/issues/3)).                                                                                                                                                                   |
+| `produktionsbeslut-bara-for-skeppsfabrik` | Beslutet `<planet>: choose production` visas bara när planeten har en färdig skeppsfabrik och ingen skeppsorder alls i kön (förtydligat 2026-11-19: en köad order räcker, oavsett vilken fabrik som tar den). Tomma byggplatser och köade byggnader ger inget sådant beslut ([issue 2](https://github.com/dntoll/spacelords/issues/2)). |
+| `forskningsvy-utan-station`               | Utan någon färdig Research station visar Research inget forskningsträd och ingen kö, bara en förklaring som hänvisar till `Factories` (knappen `Build a Research station` är ersatt av `inga-overflodiga-navigeringsknappar`) ([issue 4](https://github.com/dntoll/spacelords/issues/4)).                                               |
 
-## Kompaktare Research och forskningstid (2026-11-20)
+## Research
 
-Krav inom utforskningen, alla **Fullständigt implementerade**.
+`forsta-station-pa-vag`: När den första `Research station` är köad visar Research att stationen byggs
+på planeten och om hur många rundor forskningen kan börja. Väntar stationen på
+råvaror står det att den är köad och väntar på varor. Trädet visas först när
+stationen är färdig (`forskningsvy-utan-station`).
 
 - `forskning-utan-rubrikrad`: Research har ingen synlig rubrikrad. Rubriken
   finns kvar för skärmläsare. Antalet stationer står i sammanfattningen av
   forskningskön (`Research queue · 2 · 1 station`) med stationens ikon, och
   förklaringen av stationer ligger i den utfällda kön. Ersätter
   stationsinformationen bredvid rubriken i `forskningstradets-utrymme`.
-- `forskningslov-som-symbol` är **Ersatt** av användaren (2026-11-20):
-  alla noder visar åter sitt namn.
-- `forskningstrad-utan-korsningar` (**Fullständigt implementerat**): trädet
+- `forskningstrad-utan-korsningar`: trädet
   läggs ut i lager efter förkunskaper. Ordningen i varje lager väljs så att
   beroendelinjerna inte korsar varandra, och varje teknik ligger i höjd med
   sina förkunskaper och efterföljare.
-- `forskningstrad-raka-linjer` (**Fullständigt implementerat**): bland
+- `forskningstrad-raka-linjer`: bland
   ordningar utan korsningar väljs den med kortast lodräta linjer, även när
   flera kolumner måste ordnas om samtidigt. Armor ligger därför ovanför
   Fighter factory, och Armored Transport, Armored Fighter och Missiles
   ligger i den ordningen uppifrån.
-- `storre-forskningstext` (**Fullständigt implementerat**): korten i
+- `storre-forskningstext`: korten i
   forskningsträdet är 48 px höga i stället för 36 px, med större namn
   (0.74rem i stället för 0.68rem) på upp till två rader och större ikon.
   Ersätter den halverade korthöjden i `kompakt-forskningstrad`; bredden är
   oförändrad.
-- `forskningsflikar` (**Fullständigt implementerat**): forskningskön ligger
+- `forskningsflikar`: forskningskön ligger
   inte längre över trädet. Ytan under trädet har flikarna `Selected` (vald
   teknik) och `Queue · n` (kön, stationerna och hur forskning fungerar).
   Fliken behålls när kön ändras, och ett tryck på en teknik i trädet visar
   `Selected`. Ytan har plats för flikarna (upp till 48 % av höjden, högst
   204 px på smala skärmar).
-- `storre-text-dar-det-far-plats` (**Fullständigt implementerat**): namn vars
+- `storre-text-dar-det-far-plats`: namn vars
   ord är högst nio tecken långa (och högst 18 tecken totalt) visas i
   0.86rem; längre ord behåller 0.74rem så att alla namn ryms på två rader.
-- `detaljer-utan-scroll` (**Fullständigt implementerat**): på smala skärmar
+- `detaljer-utan-scroll`: på smala skärmar
   har detaljrutan under trädet plats för hela beskrivningen utan att scrolla
   (upp till 42 % av ytan, högst 168 px). Höjden är reserverad i förväg, så
   trädet ändrar inte storlek när en teknik väljs.
@@ -353,228 +398,60 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
   som `Researching · 1/2 rounds`. Påbörjade rundor sparas; äldre sparade spel
   laddas utan framsteg. Ersätter att varje teknik kostar en forskningspoäng.
 
+## Fleets
+
+- `flottkategorier`: på `Fleets` har varje flotta en färg efter sin
+  kategori: `Transport` (lila), `Exploration` (turkos), `Colony` (limegrön),
+  `Combat` (blå), `Salvage` (sandfärgad), `Civilian` (grå) och `Mixed` (vit).
+  Rött används inte eftersom pirater är röda, och gult är kvar för vald flotta
+  och för flottor som väntar på order. Flottans order avgör kategorin, så en
+  blandad flotta på en rutt är `Transport`, en som koloniserar är `Colony`
+  och en som patrullerar är `Combat`. Utan order avgör skeppen; flera slags
+  skepp ger `Mixed`. Flottkorten har samma färg och kategorinamn. En rad med
+  kategorierna på kartan visar färgerna, och ett tryck döljer eller visar
+  kategorin. Dolda flottor kan inte väljas på kartan.
+
+## Decisions och rundan
+
+- `beslutssektioner`: Decisions har
+  underrubrikerna `Needs attention`, `Muted`, `Messages` (meddelanden som
+  inte är avstängda) och `Queues`.
+- `stilla-beslutslista`: medan Decisions är
+  öppen ligger varje beslut kvar på sin plats när spelaren trycker `Mute`,
+  `Unmute` eller `Skip this turn`. Rullningen och fokus behålls. Ett avstängt
+  beslut flyttar till `Muted` först när Decisions öppnas igen, enligt
+  `tystade-beslut-sist`.
+- `handelser-vid-ankomst`: när ett skepp
+  kommer fram visas det som hände där, exempelvis `Planet explored`, direkt
+  efter det steget och innan andra flottor rör sig vidare eller kameran
+  flyttar. Det gäller även upptäckter som avbryter året. Övriga händelser
+  visas som förut när förflyttningarna är klara.
+
 ## Sparade spel
 
-`sparade-spel-bryts-i-utforskningen`: användaren har godkänt att utforskningen
-bryter tidigare sparade spel. `avstamning-sparkompatibilitet` gäller som vanligt
-för senare ändringar.
+`sparade-spel-bryts-i-utforskningen`: utforskningen bröt tidigare sparade
+spel. Därefter gäller `sparformat`: bara nuvarande format laddas.
 
-## Utanför denna omgång
+## Mining ships
 
-- **Vyn** prototypas separat, eventuellt på flera brancher. Den behöver inte
-  bygga på kartan. Byggandet av råvaru- och slutproduktfabriker och styrningen
-  av mining ships sker sannolikt kvar på kartan.
-  Underlag till vyn från prototyperna hittills:
-  - **Befintliga symboler (`befintliga-symboler-i-nya-vyer`):** de nya
-    skärmarna använder spelets nuvarande symboler och bilder för fabriker,
-    byggnader, delar, råvaror, skepp och planeter, till exempel
-    `BUILDING_SYMBOLS`, `buildingImage`, `SHIP_IMAGES` och
-    `renderPlanetGlyph`. Ikonerna i prototypbilderna är bara platshållare.
-  - **Skärm 1, `Build factories` (låst 2026-11-18):**
-    - Förbundna planeter visas som en grupp. Rubriken anger planeterna,
-      antalet planeter och antalet länkar.
-    - Överst i varje grupp finns en liten graf över länkarna, där planeterna
-      ligger ungefär som i världen. Listan under visar inga länkar.
-    - Gruppen visar antalet fabriker per typ. En fabrikstyp som saknar
-      insatsvaror i gruppen markeras röd med orsaken.
-    - Planeterna står i bokstavsordning med råvaror och byggplatser.
-    - Både grupper och planeter kan fällas ihop. En hopfälld planet
-      sammanfattar sina platser, till exempel `4/6 sites`.
-    - En byggplats är tom (kan väljas), låst (`Needs Dome`) eller upptagen av
-      en fabrik.
-    - En fabrik har ett av fyra tillstånd:
-      - arbetar
-      - byggs, med rundor, till exempel `Building 1/2`
-      - tillverkar, med rundor, till exempel `3/4 rounds`
-      - saknar insatsvaror (röd)
+**Uppskjutet (2026-11-19):** mining ships görs först när resten av
+förenklad produktion är klar. De följs upp i
+[issue 1](https://github.com/dntoll/spacelords/issues/1).
 
-      En fabrik utan order visas som `Idle`.
+| Kravnamn                 | Produktkrav                                                                                                                                                                       |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mining-ships`           | Mining ships utvinner råvaror ur nebulosor och asteroidbälten. Utvinningen styrs på kartan.                                                                                       |
+| `mining-ship-anslutning` | Ett mining ship är anslutet till nätverket när ett fraktskepp har routen mellan skeppet och den ägda planet som ligger närmast på kartan. Flyttas mining ship flyttas routen med. |
 
-    - Rundorna visar hur många som gått av totalen. Totalen räknas om vid
-      förseningar, till exempel när en länk bryts. Antalet rundor som gått
-      minskar aldrig.
-    - Gruppen får en Connect-knapp till höger i rubriken när den själv eller
-      en grupp den kan ansluta till har ett ledigt fraktskepp eller kan bygga
-      transporter.
-    - Ett köat bygge visas som en gul plats med `Queued`.
-    - En grupp med bemannade länkar får knappen `Links and escorts`. Saknar
-      någon länk eskort visas i stället till exempel
-      `1 link without escort`. Knappen öppnar länkarna inom gruppen
-      (`eskort-pa-routes`, 2026-11-19).
-  - **Skärm 2, val av byggnad (låst 2026-11-18):**
-    - Skärmen öppnas genom tryck på en tom byggplats. Ett val fyller bara den
-      platsen, och man bygger på fler platser genom att trycka på var och en.
-    - Rubriken visar planet, plats och grupp. Under den visas gruppens lager
-      och lediga arbetare.
-    - Byggnaderna är grupperade efter nivå, med en ledtråd i rubriken, till
-      exempel `Lyra has Water` och `ships appear at Lyra`.
-    - Varje rad visar:
-      - kostnad
-      - antal i gruppen, till exempel `2 in group`, `0 + 1 building` eller
-        `here`
-      - byggtid i rundor
-      - för delfabriker: hur många rundor bort insatsvarorna finns
-      - för slutproduktfabriker: en uppskattad produkttid, till exempel
-        `Fighter ~4 rounds`
+## Anpassning av webbläsartester
 
-      Tiden med `~` ändras när länkarna ändras.
-
-    - En byggnad som inte passar planeten grånas med orsaken, till exempel
-      `No Iron on Lyra`.
-    - Räcker lagret visas `Build`. Annars visas `Queue` och en tagg med det
-      som fattas, till exempel `Short: Water 3, Oil 2`.
-    - Köade byggen ligger i kö. Alla som har råvaror och arbetare byggs
-      samtidigt, och vid brist gäller `standardregel-vid-brist`.
-    - Ett tryck på en köad eller pågående byggnad öppnar platsen med
-      `Cancel construction` (2026-11-19). Det ersätter att avbryta via
-      kartans Production, som bara hanterar skepp.
-  - **Connect-skärmen (låst 2026-11-18):**
-    - Skärmen öppnas från Connect-knappen på skärm 1. En grupp med eget
-      ledigt fraktskepp eller egen Transport ship factory använder det.
-      En grupp utan transport kan ansluta till en grupp som har det och
-      lånar då den gruppens fraktskepp eller fabrik (ändrat 2026-11-19;
-      ersätter regeln att bara egna fraktskepp används).
-    - En graf visar grupperna ungefär där de ligger i världen. Varje fullt
-      förbunden grupp visas som en enda nod, och möjliga förbindelser är
-      streckade.
-    - Varje förslag anger vilka två planeter som förbinds. Det är alltid de
-      två närmaste, och de väljs automatiskt.
-    - Varje förslag visar vad det ger. Förslag som löser ett problem står
-      först och anger vad de löser, till exempel
-      `Unblocks Rocket engine at Vega`. Övriga förslag står i bokstavsordning,
-      med till exempel `Adds Iron`.
-    - Ett ledigt fraktskepp är förvalt. Annars byggs ett nytt, och den
-      uppskattade byggtiden visas.
-    - Ett tryck på den egna gruppens nod visar länkarna inom gruppen. Där
-      väljer spelaren själv två planeter för en extra förbindelse. Förslaget
-      visar sparad tid och om gruppen då klarar att en länk försvinner.
-    - `Current links` listar gruppens länkar med sina fraktskepp. `Move`
-      frigör skeppet och öppnar förslagen med skeppet förvalt. Om flytten
-      delar gruppen varnar skärmen först, till exempel
-      `Splits Lyra from group`.
-    - Varje bemannad länk visar sin eskort, till exempel
-      `Escort: 2 armed ships`, eller `No escort`. `Escort` listar lediga
-      beväpnade flottor utan fraktskepp, närmast först, med antal beväpnade
-      skepp och avstånd. `Assign` skickar flottans beväpnade skepp till
-      länkens fraktskepp enligt `rutt-eskortfordelning`.
-  - **Beställning av skepp (låst 2026-11-18):** ett tryck på en
-    slutproduktfabrik på skärm 1 öppnar kartans Production för planeten.
-    Där visas bara skepp. Kostnaden visas i delar och tiden i rundor, till
-    exempel `3/4 rounds` och `~4 rounds`. I stället för försörjningskedjan på
-    kartan visas vilka delar som finns i gruppen och hur många rundor bort de
-    är. På skärm 1 visar en slutproduktfabrik med order sitt framsteg och hur
-    många fler som är beställda, till exempel `3/4 rounds · 2 more`.
-  - Vyn visar tid, till exempel när en vara kommer fram, och vilken tid en ny
-    förbindelse sparar. Tiden visas också när en fabrik ska byggas.
-- Hur mycket ett mining ship utvinner per runda, och vilka råvaror nebulosor
-  och asteroidbälten har, bestäms senare.
-
-## Implementationsstatus
-
-Fas 1 (spelmodellen) och fas 2 (skärmarna) är klara 2026-11-18.
-
-**Fullständigt implementerat** (testerna knutna till kravnamnen):
-
-- **Nätverket:** `produktionsnatverk`, `fraktskepp-ger-forbindelse`,
-  `fraktskepp-pendlar`, `delat-lager-i-natverket`,
-  `en-runda-per-lank`, `kortaste-vag-i-lankar`,
-  `varor-stannar-vid-delning`, `erovrad-last` och
-  `flytta-fraktskepp-mellan-routes`.
-- **Fabriker och byggen:** `en-enhet-per-fabrik-och-runda`,
-  `blockerad-fabrik`, `delar-tillverkas-pa-behov`,
-  `slutproduktfabrik-utan-order`, `standardregel-vid-brist`,
-  `skepp-kostar-bara-delar`, `byggnader-kostar-raavaror`,
-  `parallella-byggen`, `utvinning-vid-fyndighet`,
-  `slutprodukt-vid-fabriken` och `skeppsorder-pa-planeten`.
-- **Del- och byggnadsval:** `basta-tillgangliga-del` och
-  `ovriga-byggnader-pa-byggplatser`.
-- **Byggtid:** `byggtid-per-byggnad` (2026-11-19). Skärm 2 visar varje
-  byggnads byggtid, och platsen räknar upp, till exempel `Building 1/3`.
-- **Eskort:** `eskort-pa-routes` (2026-11-19). Eskort tilldelas från
-  länkarna i `Factories`. Kartvyn Route finns kvar och öppnas bland annat
-  från beslut.
-- **Sparade spel:** `sparade-spel-bryts-i-utforskningen` (sparversion 17;
-  äldre spel tappar varor under transport).
-- **Skärmarna:** `Factories` ersätter `Route` i huvudmenyn och
-  innehåller skärm 1, skärm 2, Connect-skärmen och länkarna inom en grupp
-  enligt underlaget nedan, med spelets egna symboler
-  (`befintliga-symboler-i-nya-vyer`). Ett tryck på en skeppsfabrik öppnar
-  kartans Production, som bara erbjuder skepp. Delar kan inte längre
-  beställas för hand.
-
-- **Befolkning:** `befolkningsutjamning-i-grupp` (2026-11-19) enligt
-  reglerna ovan. Gruppen i `Factories` visar ännu inte folk på väg.
-
-- **Från testningen:** `runda-avslutas-fran-factories`,
-  `produktionsko-bara-skepp`, `produktionsbeslut-bara-for-skeppsfabrik` och
-  `forskningsvy-utan-station` (2026-11-19). Den äldre planetvyn med
-  `Building sites` visar fortfarande både byggnader och skepp i sin kö.
-
-**Uppskjutet:** `mining-ships` och `mining-ship-anslutning` görs efter
-resten av utforskningen.
-
-**Ersatta krav vars tester togs bort:** `automatisk-arbetskraftstrafik`,
-`civiltrafik-pa-handelsnatet`, passagerarresorna i `civiltrafik-sparning`
-och hemfarledsbytet i `civil-farledsbyte` (alla ersatta av
-`befolkningsutjamning-i-grupp`), `automatiska-delorder`,
-`delproduktion-med-sammanhang`, `grupperade-transporthandelser`,
-`leveransfloden`, `forsorjningsstatus`, `projektens-forsorjningssteg`,
-`automatisk-motormontering` (ersatt av `basta-tillgangliga-del`),
-`skepp-ur-olastad-ruttflotta` och `skeppsvis-retratt` för lastade
-transporter, `dome-fore-fabriksforslag`, `produktionsval-efter-forekomst`,
-`produktionsberoenden-i-byggval`, `produktionsvalens-statusfarger` för
-byggnader och nätverksfrakt, samt planetkön där bara första projektet byggs
-(ersatt av `parallella-byggen` och `skeppsorder-pa-planeten`).
-`radiella-byggval`, `dubbelklick-bygger-pa-kartan`, `byggknapp-vid-titel`
-och `produktionsorder-aterkoppling` gäller fortsatt, men bara för skepp.
-Den gamla koden för frakt, delplanering och försörjningsvyer är borttagen
-(fas 3, 2026-11-19). De ersatta kraven är markerade i
-[Route och Production](route-production.md) och
-[försörjningsreglerna](supply-production.md).
-
-Webbläsartestet för `route-kartvy` och `kompakt-produktionsko` kontrollerar
-inte längre övergången från Route, manuell beställning av delar eller
-omordning av skeppskön. Route har ersatts i huvudmenyn av Factories,
-`delar-tillverkas-pa-behov` ersätter manuell beställning och
-`byggorsak-i-kon` ersätter omordningen. Testet kontrollerar i stället
-skeppsbeställningar och `produktionsflikar`. Sprite-testet kontrollerar
-fortfarande kartorna Star map och Fleets, men inte den borttagna
-Route-knappen i huvudmenyn. Testerna för `automatiska-delorder` och
-`projektens-forsorjningssteg` visar inte längre separata delorder eller den
-gamla försörjningskedjan: delar tillverkas efter behov och kön visar i stället
-saknade delar enligt `byggkons-framsteg`. Planetkön testas med skeppsorder.
-Teleskoptestet kontrollerar fortfarande tillverkning och utrustning efter
-omladdning, men inte gränsen på 140 px för standardflottor med fyra skepp:
-testets flotta har tre skepp och omfattas inte av den gränsen.
-Eskorttestet använder nu `eskort-pa-routes` i Factories. Den tidigare
-kontrollen av ett stillaliggande fraktskepp vid ruttens mittpunkt utgår,
-eftersom `fraktskepp-pendlar` ersätter `fraktskepp-ligger-stilla`.
-Route-kartans variant av dragtestet och dess `Create route`-pekning tas
-inte längre upp: `Factories` ersätter Route i huvudmenyn och länkskapande
-testas i stället genom Connect. Motsvarande kontroller på Star map behålls.
-Det äldre sammanhängande logistiktestets manuella lastning och
-kapacitetskontroll (`automatisk-resursforsorjning`, `fysisk-frakt`) utgår
-när `delat-lager-i-natverket` och `fraktskepp-ger-forbindelse` ersätter den
-fysiska frakten. Testet behåller utvinning och forskningskö; länk och eskort
-testas separat genom Connect och `eskort-pa-routes`.
-
-## Klickbar prototyp
-
-`fabriksskarmar-prototyp` är **Ersatt** av de riktiga skärmarna under
-`Factories`. Testläget `Factory screens` och dess exempeldata är borttagna.
-
-## Krav som ersätts vid implementation
-
-Följande krav ersätts när motsvarande delar ovan implementeras. Deras tester
-ändras eller tas bort samtidigt: `route-kartvy`,
-`byggprojektets-forsorjningskedja`, `forsorjningsproblem-pa-kartan`,
-`dome-fore-fabriksforslag`, `produktionsval-efter-forekomst`,
-`produktionsberoenden-i-byggval`, `automatiska-delorder`, `leveransfloden`,
-`forsorjningsstatus`, `projektens-forsorjningssteg`,
-`transportbygge-i-forsorjningssteg` och de fysiska transportreglerna i
-[försörjningsreglerna](supply-production.md).
-
-`produktions-kartvy`, `radiella-byggval`, `kompakt-produktionsko` och
-`dubbelklick-bygger-pa-kartan` behålls men begränsas till skepp enligt
-`skeppsorder-pa-planeten`. Byggnader, Domes och fabriker byggs inte längre
-från kartan. Exakt omfattning bestäms per implementationssteg.
+Tester för `route-kartvy`, manuell delbeställning och omordning av skeppskön
+har ersatts av kontroller för Connect i `Factories`,
+`delar-tillverkas-pa-behov`, `byggkons-framsteg` och `produktionsflikar`.
+Den tidigare kontrollen av ett stillaliggande fraktskepp vid ruttens mittpunkt
+utgår eftersom `fraktskepp-pendlar` ersätter `fraktskepp-ligger-stilla`.
+Manuell lastning och kapacitetskontroll (`automatisk-resursforsorjning` och
+`fysisk-frakt`) ersätts av tester för nätverk, utvinning och eskort.
+Teleskoptestet kontrollerar tillverkning och utrustning efter omladdning; dess
+flotta har tre skepp och omfattas inte av höjdgränsen för standardflottor med
+fyra skepp.

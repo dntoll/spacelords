@@ -5,6 +5,15 @@ byggprojekt använder projektets egen kostnad; planetens samlade efterfrågan
 behålls för logistikplanering och ekonomivyn. Ett regressionstest skyddar
 statusen när en flottuppgradering beställer delar från lokal produktion.
 
+## Sparformat
+
+`sparformat` (2026-11-21) är **Fullständigt implementerat**: `Game.restore`
+laddar bara nuvarande format, version 17, och avvisar äldre versioner med
+`This saved game cannot be loaded.` Övergångarna från äldre format är
+borttagna efter uttryckligt beslut enligt `avstamning-sparkompatibilitet`.
+Meningar nedan om hur äldre format läses beskriver hur de nuvarande fälten
+kom till; de gäller inte längre som laddningsstöd.
+
 ## Planetköer, 2026-11-08
 
 - `PlanetQueues` äger de två beständiga prioritetslistorna. `Game` validerar
@@ -426,7 +435,7 @@ Detta är ett nytt uttryckligt beslut, inte en generell rensningspolicy.
 Namnen nedan är stabila referenser i tester, kod och dokumentation.
 Produktkraven finns separat i [product-requirements.md](product-requirements.md).
 
-## Patrol och sparformat 11
+## Patrol
 
 `flottpatrullering` — **Fullständigt implementerat**: FleetPatrol väljer mål
 och patrullpunkt oberoende av p5 och HTML. Game validerar ordern och använder
@@ -496,69 +505,6 @@ förbrukad rörelse och väntande strid bevaras.
 `dubbelklick-bygger-pa-kartan` behåller aktuell sida när ett produktval byter
 kategori i en okategoriserad produktionsring. Ett dubbelklick kan därmed inte
 beställa en annan produkt efter det första klickets omritning.
-
-## Kartbaserade Route och Production
-
-`route-kartvy`, `produktions-kartvy` och `delad-kartkamera` använder en gemensam
-GalaxyMapView-instans mellan map, fleets, route och production. AppModel håller
-Camera och tillfälliga kategori-, sid-, alternativ- och projektval. MasterController
-avbryter gester vid navigation. Production tillåter planetval och kameragester;
-rutt- och flottorder hör till andra tillämpliga kartlägen.
-
-`radiella-byggval` använder oföränderliga ProductionOption och
-ProductionMapSnapshot. Game använder samma rena ComponentPlanner-planering för
-förhandsbedömning och faktisk order. Förhandsbedömning ändrar varken order,
-reservationer eller ID-sekvens. Första giltiga byggplats och matchande fabrik
-väljs enligt befintliga domänoperationer; simuleringslåset gäller även här.
-HTML-vyer rapporterar kart- och kontrollmått till controller; Camera panoreras
-minimalt utan automatisk zoom. Smala kartytor använder färre alternativ per
-sida. Panelen rullas internt och kontroller har minst 44 px träffyta.
-
-`byggprojektets-forsorjningskedja` använder projekt-ID, ComponentOrder och
-Shipment.path. Registrerade leveranser behåller sin faktiska väg även när en
-etapp brutits. Beställd produktion utan Shipment får befintlig planerad väg.
-Traversal följer produktionsprojekt med besökta ID:n och unika planetroller och
-rutt-ID:n; inget leverantörsval görs av läsmodellen. ProjectSupply behåller
-projektens textuella försörjningssteg.
-
-`forsorjningsproblem-pa-kartan` bygger på aktiva Decisions och samma
-SupplyOverview-bedömning. Tystning och årets överhoppning filtrerar markeringar.
-Problemet får navigeringsmarkering i sin lösningsvy: Route för försörjning och
-rutter, Production för saknad fabrik och personal/besättning. Tom kö och normal
-väntan ger inga röda markeringar. Underliggande status går fortsatt att granska.
-
-`farledskontrast` verifieras mot kartans bakgrund och hexytor med minst 4,5:1
-för normal farled. Grundbredden är 2,5 skärmpixlar; markeringar och streckning
-kompenserar för zoom. Fleets behåller nedtonade bakgrundsrutter.
-
-SupplyView och SupplySelection är borttagna; SupplyOverview och transportregler
-behålls. Inga UI-val införs i GameState och ingen sparformatmigration behövs.
-Kravkopplade tester täcker modell, controller, rendering, mobilflöde och sparning.
-Full plattformsmatris körs vid separat beställt sluttest för explicit revision.
-`snabb-mobilpublicering` följer normalflödet i deployment.md: en vanlig
-ändringsbeställning innebär snabbkontroller och driftsättning av den committade
-arbetsbranchen, om användaren inte uttryckligen avstår. Detta ersätter den äldre
-formuleringen här om separat beställd driftsättning. Omfattande sluttest och
-merge till källrepots `main` beställs uttryckligen separat.
-
-## Handelsrutter på Star map
-
-`handelsrutt-skapande-pa-stjarnkartan`, `handelsrutt-val-pa-stjarnkartan` och
-`flottilldelning-pa-stjarnkartan` använder oföränderliga läsdata från modellen.
-StarMapTrade håller val och förhandsvisningar separat från sparade speldata.
-TradeRouteMapLayout gör p5-oberoende träffprovning med 14 skärmpixlar för val
-och 20 för tilldelning, oberoende av zoom. Kartans controller skiljer drag från
-panorering med befintlig tröskel och avbryter order vid Escape, pekaravbrott
-eller en andra touchpunkt. Förväntat avslut av pointer capture efter ett släpp
-får inte ta bort ett kvarvarande ruttval.
-
-p5 ritar ruttlinjer och förhandsvisning mellan hexmarkeringar och kartobjekt.
-HTML-rutor visar ruttinformation och använder den gemensamma tilldelningsvalideringen. Skapande, tilldelning, frigörande och stängning använder befintliga
-domänkommandon. Domänrelationerna och sparformatet ändras inte.
-
-Enhets- och webbläsartester skyddar zoom, överlappningar, träffprioritet,
-dragavbrott, ogiltiga släpp, tangentbordsalternativ, verkliga flottpositioner
-och återupptagning. Befintliga logistiktester skyddar lossning och stängning.
 
 ## Flottadministration på Star map
 
@@ -673,7 +619,6 @@ fortsatt av befintlig GitHub CI.
   den gemensamma Events-raden, även med alternativa fontmått. Det ersätter
   tidigare 80 procent av hela telefonens skärmyta eftersom raden nu reserverar
   utrymme enligt `gemensam-events-panel`; CI verifierar också Linux/WebKit.
-- Spelgrundens kravkoppling beskrivs i [first-iteration.md](first-iteration.md).
 - `mvc-arkitektur`: enhetstest verifierar att modellens läsdata inte kan ändras
   utifrån. Typkontrollen begränsar vyn till modellens läsgränssnitt.
   `master-controller`, `use-case-controller` och `modell-facad` skyddar att ett
@@ -756,52 +701,6 @@ verktygskontroller, CI och granskning enligt tabellen.
 Produktkravet `direktatkomst-utan-lankar` verifieras genom att driftsättningsdiffen
 bara omfattar appens egen katalog. Startsida och navigation ska inte ändras.
 Inga konstlade enhetstester behövs för en dokumenterad publiceringsprocess.
-
-## Beslut och ändringar
-
-- 2026-11-16: Branchflödet ändras på användarens begäran. Allt arbete ska finnas på origin, utgå från `development` och mergas tillbaka dit. Releaser körs på molndatorn och flyttar `main` först när hela sviten gått igenom. Det finns en enda testdeployment, och appen visar publicerad branch. `release-till-main` ersätter `sluttest-fore-merge` och dess separata ja före merge. `tester-i-github` utökas till `development`. Regeln att bara publicera arbetsbranchen ersätts av publicering av `development` via `work:merge`.
-- 2026-11-15: `kamera-utan-lage-i-editor` ersätter `Pan view`.
-  `fast-airlock-i-bordningskarta` ersätter varningen om airlock i högerkanten
-  och `dockning-sida-vid-sida` ersätter vänster–höger-placeringen i
-  `tva-skepp-pa-bordningskartan`. Användaren godkände att pågående bordningar i
-  äldre sparade spel avbryts (`avstamning-sparkompatibilitet`). Kampanjkartornas
-  airlock flyttades till underkantens skrov. Tester som byggde på redigerbara
-  kartor använder nu fixturer; bara `boarding-shipped-maps` läser de levererade
-  kartorna och kräver enbart att de är giltiga.
-- 2026-11-16: `skeppsbild-last-till-skeppsaxeln` läggs till. Skeppsbildens
-  höjdläge i editorn styrs inte längre fritt av draget utan följer
-  skeppsaxeln. Ersätter fri tvådimensionell förflyttning i
-  `lokal-bordningskarteditor`.
-- 2026-11-14: `helskarms-bordningseditor`, `zooma-panorera-bordningseditor`
-  och `direkt-penselstreck-i-editor` läggs till. Top-down passas nu in i
-  canvasen i stället för fast skala 1, och målning av `Outside` passar inte
-  längre om isometrisk vy.
-- 2026-11-07: `lokal-bordningskarteditor` och `isometrisk-bordningskarteditor`
-  återintegreras som ett eget fall ovanpå den nya MVC-strukturen. Kartfilernas
-  `[lights]`-lager rundtureras. Ingen publicering och ingen merge till `main`.
-- 2026-11-07: `mvc-arkitektur` förtydligas med master-controller, en controller
-  och en modell-facad per fall, vy som plattformsgräns och speltexter i vyn.
-  En gemensam bildruteloop och tomma vidarebefordrande facader ingår inte.
-  Sparformatet ändras inte.
-- 2026-10-17: ESLint med typescript-eslint ersätter det tidigare JSLint-kravet på
-  användarens förslag, eftersom projektet ska skrivas i TypeScript.
-- 2026-10-17: Läsbara kravnamn och en separat teknisk kravlista tillkommer på
-  användarens begäran.
-- 2026-10-17: GitHub Pages blir mål för den statiska klienten under `/spacelords/`.
-  Lokal Node-drift finns kvar; Pages kan inte köra servern. Befintlig webbplats
-  och andra projekt ska bevaras och inga länkar till appen ska läggas till där.
-
-## Första spelgrunden
-
-| Kravnamn             | Status                     | Krav                                                                                                                                                                                                                                                                         | Verifiering                                               |
-| -------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `p5-karta`           | Fullständigt implementerat | p5.js 2.3.4 i instance mode renderar en 2D-karta. Modeller och controllers beror inte på p5. HTML används för övriga vyer. Rita om vid förändring och städa instansen vid vybyte.                                                                                            | Enhetstester av modeller och browsertester av renderingen |
-| `kravstatus`         | Fullständigt implementerat | Aktiva produktkrav och tekniska krav har en av de tre beslutade statusarna, med återstående arbete för delvisa krav. Processkravens status avser det stöd som finns i repot; efterlevnad granskas fortlöpande.                                                               | Kravlistor och AGENTS.md                                  |
-| `browserverifiering` | Fullständigt implementerat | Den utökade sviten kontrollerar mus, touch, canvasstorlek och vybyten mot Pages-bygget med Playwright i telefon Chromium, dator Chromium och telefon WebKit, med sex arbetstrådar. Surfplatta WebKit väntar tills fler plattformar väljs. Detta ersätter de fyra profilerna. | Lokal körning av `npm run test:extended`                  |
-
-2026-10-17: Spelvisionen ersätter den tomma startsidan. p5.js väljs i stället
-för planförslagets SVG. Se [första iterationen](first-iteration.md) för
-avgränsning och tekniska beslut. Ingen ny driftsättning ingår.
 
 ## Språk och spelyta
 
@@ -985,62 +884,6 @@ väntan och fel, sparning och hela produktionskedjan. Snabbsviten behåller
   tidsbudget för två rundor, omladdning och kartinteraktioner i WebKit.
   Kontrollerna och CI-jobbets gräns på 20 minuter behålls.
 
-### Verifiering 2026-10-24
-
-- Snabbsviten: 319 godkända tester på 14,43 sekunder av högst 20.
-  Formatkontroll, ESLint, typkontroll, båda byggena och fem integrationstester
-  är godkända.
-- Den fullständiga lokala browserkörningen tog 22,5 minuter: 242 godkända,
-  25 plattformsanpassat överhoppade och ett tidsgränsfall i flottflödet.
-  Efter justerad tidsbudget passerade tolv riktade tester mot slutbygget:
-  terraforming, planet-/forskningsvyer och flottflödet på samtliga fyra profiler.
-  CI-jobbets gräns är fortsatt 20 minuter; denna lokala körning verifierar
-  inte CI:s exekveringstid.
-
-## Snabb mobilpublicering och sluttest
-
-Beslut 2026-10-24: `snabb-mobilpublicering` ersätter tidigare krav på fullständigt
-`check` inför varje driftsättning. Beslut 2026-11-11 ersätter därefter
-snabbkontroller vid varje push och pull request, manuellt sluttest i GitHub
-samt Playwright och livekontroll i driftsättningen. GitHub kör snabbkontrollerna
-endast vid push till `main`. Playwright ligger i den lokala utökade sviten.
-
-- `snabb-mobilpublicering` — **Fullständigt implementerat**: `check:quick` kontrollerar
-  kvalitet, typer, enhetstester, Pages-bygge, publiceringsskydd och Pages-integration.
-  Playwright ingår inte. `deploy:quick` kräver ren arbetsbranch, pushar exakt
-  källrevision och publicerar enbart `spacelords/` via isolerad checkout och vanlig
-  push. Den väntar tills Pages är klar. Livejämförelse och mobiltest mot adressen
-  är ersatta av manuell test. Gles hämtning av aktuell revision undviker
-  webbplatsrepots övriga innehåll och historik.
-- `sluttest-fore-merge` — **Ersatt 2026-11-16 av `release-till-main`**. Tidigare: hela sviten körs lokalt med
-  `npm run check` när den beställs. GitHub startar den inte. Separat ja krävs efter
-  godkänt sluttest innan merge till källrepots `main`. Inga branchskydd eller
-  Pages-inställningar ändras.
-- `avstamning-sparkompatibilitet` förtydligas: användaren accepterar förlust av
-  sparningar efter ny fråga inför varje inkompatibel ändring. Ingen generell
-  rensning införs med snabbflödet.
-
-Automatiska verktygskontroller i `tests/tooling/` använder tillfälliga Git-repon
-för avgränsning, okända filer, symboliska länkar, revisioner, avbrutna kontroller
-och samtidiga publiceringar. Mobiltestet använder kravnamnen
-`snabb-mobilpublicering`, `viewport-game-layout` och `sparat-spel`. Processkravet
-på begäran och mergegodkännande verifieras genom arbetsregler och granskning.
-
-### Verifiering av normalflödet 2026-10-24
-
-`deploy:quick` publicerade källrevision `1120d5104cfdc70aaef46f9f35be13ef644ccacf`
-och avslutades med `verified`. Snabbkontrollerna tog 56,88 sekunder;
-hela flödet tog 140,25 sekunder inklusive Git, Pages och livekontroll.
-328 enhetstester passerade på 15,46 sekunder inklusive verktygsstart,
-nio verktygskontroller och Pages-integration passerade. Två mobiltester
-passerade före publicering och två korta mobilkontroller passerade live.
-Kloning och sparse checkout tog tillsammans 3,18 sekunder.
-
-[Snabb-CI](https://github.com/dntoll/spacelords/actions/runs/40069893096) är
-verifierad separat. [Pages](https://github.com/dntoll/dntoll.github.io/actions/runs/40070361118)
-lyckades; tolv livefiler matchade bygget och revisionsmetadata. Sluttest och merge
-har inte beställts eller genomförts; inga nya tider för hela sluttestsviten finns.
-
 ## Motorbestyckning och sparkompatibilitet
 
 `automatisk-motormontering` — **Fullständigt implementerat**: Modellen bevarar varje
@@ -1219,23 +1062,7 @@ fokus även när WebKit släpper fokus före Back-handlingen. Vyn sparar
 återgångsmålet från indata, oberoende av webbläsarens aktiva element.
 Regressionstestet verifierar förlorat fokus före klicket.
 
-### Verifiering 2026-10-25
-
-- Snabbsviten omfattar 465 enhetstester och behåller gränsen 20 sekunder.
-- Typkontroll, ESLint, Prettier, klient/server-bygge och Pages-bygge kontrolleras.
-- Den utökade körningen omfattar 25 integrations-/utökade tester och 10
-  verktygstester. Windows-starten av npm och länkskyddet har verifierats.
-- Alla 340 webbläsarscenarier kördes i de fyra befintliga profilerna. Efter
-  rättningar och riktade omkörningar är 312 scenarier godkända; 28 hoppas över
-  enligt befintliga villkor för mus, touch och webbläsarprofil.
-- En sista körning av 24 scenarier verifierar den färdiga versionens flottkort,
-  produktionskvitton, utforskning, ruttmenyer och sparade upptäcktsavbrott. Handle provas
-  även i liggande läge. Ingen driftsättning har gjorts.
-
-Namnknappen i `kompakta-flottkort` behåller minst 88 px bredd. Ruttsymbolen
-delar den horisontellt rullbara orderraden för att ge namnet mer utrymme.
-
-### Bärgning och sparformat 10
+### Bärgning och strider i sparade spel
 
 `spara-bargning-och-stridsavbrott`: format 10 läser även format 2–9 utan rensning.
 Äldre spel får inga retroaktiva vrak. Vrakets ShipUnit, exklusiva reservationer,
@@ -1345,23 +1172,6 @@ Detta ersätter den seriella presentationen nedan för autonoma order och tidiga
 krav på kronologisk annonsering. Domänmodell och sparformat ändras inte.
 Kravkopplade regressionstester skyddar samtidighet, geografisk ordning,
 destinationspilar, mobil inramning, sikt och kameraåterställning.
-
-### Tidigare seriell presentation
-
-`en-flotta-i-taget`, `osynliga-flottor-utan-animation` och
-`handelseannonsering` är **Fullständigt implementerat**.
-TurnMovementPlayback samlar synliga förflyttningssteg fram till nästa
-upptäckts-/stridsavbrott eller årets avslut och grupperar dem per flotta.
-Alla steg tillämpas i simuleringens ordning exakt en gång. Resultatet sparas
-innan presentationen börjar. Flottornas visade färder ändrar inga order,
-rörelsebudgetar eller stridsresultat och sparas inte som pågående spelmekanik.
-
-Kontrollern visar hela en flottas inspelade färd före nästa. Endast egna
-flottor eller fientliga steg som finns i siktsnapshoten både före och efter
-steget lämnas till animationen. Dolda steg får ingen timer eller kameraflytt.
-AppModel lämnar en fryst läsmodell för presentationen, och vyerna interpolerar
-en markör med stillastående tillfällig kamera. Varje hexsteg tar 400 ms.
-Vid dispose avbryts requestAnimationFrame och väntande animationslöften löses.
 
 ### Händelseanpassad kamera
 

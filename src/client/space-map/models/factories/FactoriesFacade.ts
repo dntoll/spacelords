@@ -883,9 +883,15 @@ export class FactoriesFacade {
         ]),
       ),
     );
-    const researched = new Set<string>(this.host.game.research.completed);
+    const researched = new Set(this.host.game.research.completed);
+    // ny-fabrik-med-guldstjarna: an obsolete version is never new.
     return Object.freeze(
-      BUILD_TYPES.filter((type) => researched.has(type) && !present.has(type)),
+      BUILD_TYPES.filter(
+        (type) =>
+          researched.has(type as Technology) &&
+          !present.has(type) &&
+          !FactoryTechnology.successor(type, researched),
+      ),
     );
   }
 

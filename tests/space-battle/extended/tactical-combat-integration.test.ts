@@ -337,14 +337,4 @@ describe('tactical combat integration', () => {
     ).toBe(true);
     expect(TacticalBattle.restore(deployed).snapshot).toEqual(deployed);
   });
-
-  it('sparad-taktisk-strid: older saves retain ships, history and equipment without introducing a battle', () => {
-    const state = new Game(createExampleGalaxy()).exportState();
-    const older = { ...state, version: 12 as const };
-    const restored = Game.restore(older).exportState();
-    expect(restored.fleets).toEqual(state.fleets);
-    expect(restored.events).toEqual(state.events);
-    expect(restored.pirates).toEqual(state.pirates);
-    expect(restored.version).toBe(17);
-  });
 });

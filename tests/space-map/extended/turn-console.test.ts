@@ -134,13 +134,7 @@ describe('handelseannonsering / handelser-pa-kartan', () => {
     model.select(model.snapshot.selected!.position);
     view.render(model.snapshot);
     expect(panel.hidden).toBe(false);
-    for (const screen of [
-      'research',
-      'decisions',
-      'planet',
-      'build-selection',
-      'map',
-    ] as const) {
+    for (const screen of ['research', 'decisions', 'planet', 'map'] as const) {
       view.render({ ...model.snapshot, screen });
       expect(root.querySelector('.turn-console')).toBe(panel);
       expect(panel.open).toBe(true);
@@ -149,7 +143,7 @@ describe('handelseannonsering / handelser-pa-kartan', () => {
     }
     view.render({
       ...model.snapshot,
-      screen: 'build-selection',
+      screen: 'planet',
       phase: 'simulating',
     });
     expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
@@ -272,27 +266,6 @@ describe('handelser / arsrundor-och-order', () => {
     expect(game.events[1]!.text).toBe('Home Fleet arrived at HEX 3,0.');
     game.finishTurn();
     expect(game.events[2]!.text).toContain('Research station was completed');
-  });
-  it('resumes older saved summaries as planning without losing events', () => {
-    const game = new Game(createExampleGalaxy());
-    collectTurnFrames(game);
-    game.finishTurn();
-    const state = game.exportState();
-    const restored = Game.restore({
-      ...state,
-      phase: 'summary',
-      events: [
-        ...state.events,
-        { id: 'old-step', round: 1, text: 'Fleet Home Fleet moved to 2,0.' },
-        {
-          id: 'old-scan',
-          round: 1,
-          text: 'Exploration from Home Fleet revealed 3 hexes.',
-        },
-      ],
-    });
-    expect(restored.phase).toBe('planning');
-    expect(restored.events).toEqual(state.events);
   });
   it('shows a persistent console ordered by year instead of a dialog and disables End turn during animation', async () => {
     vi.useFakeTimers();

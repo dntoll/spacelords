@@ -134,49 +134,6 @@ test('teleskopfabriker / teleskop-i-exploration-ships / delar-tillverkas-pa-beho
   await page.screenshot({ path: testInfo.outputPath('telescope-fleet.png') });
 });
 
-test('spara-avbrutet-ar / aktuell-detektionssikt: an obsolete saved pirate warning becomes a resumable pause', async ({
-  page,
-}) => {
-  const state = new Game(createExampleGalaxy()).exportState();
-  await load(page, {
-    ...state,
-    version: 8,
-    phase: 'interrupted',
-    knownObjects: [...state.knownObjects!, 'nadir-0', 'pirate-nadir'],
-    explored: [...state.explored, '8,-3'],
-    simulation: {
-      remaining: [
-        ['fleet-home', 2],
-        ['pirate-nadir', 0],
-        ['pirate-aster', 0],
-      ],
-      awaitingCombat: true,
-      handling: false,
-      otherFleets: false,
-      discoveries: [
-        {
-          id: 'pirate-nadir',
-          kind: 'pirate',
-          name: 'Space pirate',
-          position: { q: 8, r: -3 },
-          fleetId: null,
-        },
-      ],
-    },
-  });
-  await expect(
-    page.getByRole('dialog', { name: 'Pirate ship in sight', exact: true }),
-  ).toHaveCount(0);
-  const controls = page.getByRole('region', {
-    name: 'Interrupted round',
-    exact: true,
-  });
-  await expect(controls).toBeVisible();
-  await controls.getByRole('button', { name: 'Continue', exact: true }).click();
-  await expect.poll(async () => (await saved(page)).phase).toBe('planning');
-  expect((await saved(page)).round).toBe(2);
-});
-
 test('upptacktsavbrott / spara-avbrutet-ar: reload a year-end discovery without repeating production', async ({
   page,
 }) => {

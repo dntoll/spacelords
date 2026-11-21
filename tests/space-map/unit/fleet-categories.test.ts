@@ -111,12 +111,9 @@ describe('flottkategorier', () => {
       )!;
     expect(toggle().getAttribute('aria-pressed')).toBe('true');
     const { camera, fleets, tradeRoutes } = model.snapshot;
-    const marker = FleetMapLayout.markers(
-      fleets,
-      tradeRoutes,
-      camera.zoom,
-      'endpoint',
-    ).find((item) => item.fleet.id === 'travellers')!;
+    const marker = FleetMapLayout.markers(fleets, tradeRoutes).find(
+      (item) => item.fleet.id === 'travellers',
+    )!;
     const point = {
       x: (marker.point.x - camera.center.x) * camera.zoom,
       y: (marker.point.y - camera.center.y) * camera.zoom,

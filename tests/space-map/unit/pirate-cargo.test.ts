@@ -26,27 +26,7 @@ describe('piratflotta-med-lastfartyg', () => {
     );
   });
 
-  it('migrates version 13 pirate fleets by adding a cargo ship without wiping saves', () => {
-    const fresh = new Game(createExampleGalaxy()).exportState();
-    const game = Game.restore({
-      ...fresh,
-      version: 13,
-      pirates: [
-        {
-          id: 'pirate-nadir',
-          systemId: 'nadir',
-          position: { q: 8, r: -3 },
-          count: 1,
-        },
-      ],
-    });
-    const pirate = game.exportState().pirates![0]!;
-    expect(pirate.transports).toBe(1);
-    expect(pirate.hold).toEqual(pirateHoldFromSeed('pirate-nadir'));
-    expect(game.exportState().version).toBe(17);
-  });
-
-  it('keeps an explicit empty cargo wing on version 14 saves', () => {
+  it('keeps an explicit empty cargo wing in saves', () => {
     const fresh = new Game(createExampleGalaxy()).exportState();
     const game = Game.restore({
       ...fresh,

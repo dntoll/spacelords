@@ -77,7 +77,6 @@ import {
   Player,
   Colony,
   type PlanetEnvironmentType,
-  type TerraformEnvironment,
   type PlanetSnapshot,
 } from './Planet.js';
 import {
@@ -129,6 +128,40 @@ import {
 import { FleetPursuit, type PursuingFleet } from './FleetPursuit.js';
 export { TECHNOLOGIES, type Technology } from './research/Research.js';
 
+import {
+  type ShipType,
+  type BuildType,
+  type ProjectType,
+  type Cost,
+  type BuildDefinition,
+  BUILDINGS,
+  buildRounds,
+  SHIPS,
+  type ShipUnit,
+  projectDefinition,
+  TRANSPORTS,
+  SHIP_RESEARCH,
+  factoryShips,
+  projectCost,
+} from './Catalog.js';
+import type {
+  FleetDetour,
+  StationConstruction,
+  ResearchSnapshot,
+  ProductionReceipt,
+  ShipPurpose,
+  ConstructionProjectSnapshot,
+  BudgetSnapshot,
+  PlanetGameSnapshot,
+  PlanetOrderSnapshot,
+  FleetSnapshot,
+  GameEvent,
+  PlanetQueueSnapshot,
+  AttackQueueEntrySnapshot,
+} from './GameSnapshots.js';
+export * from './Catalog.js';
+export * from './GameSnapshots.js';
+
 export type GamePhase = 'planning' | 'simulating' | 'interrupted';
 
 /** produktionsnatverk: read-only view of the production network. */
@@ -157,442 +190,6 @@ export interface NetworkSnapshot {
   /** Materials each planet needs that its group neither holds nor makes. */
   readonly missing: Readonly<Record<string, readonly Material[]>>;
 }
-export type Resource = 'Iron' | 'Water' | 'Oil';
-export type ShipType =
-  | 'Colony ship'
-  | 'Exploration ship'
-  | 'Fighter'
-  | 'Space pirate'
-  | 'Transport ship'
-  | 'Salvage ship'
-  | 'Civilian shuttle'
-  | 'Raptor';
-export type BuildType =
-  | 'Orbital shipyard'
-  | 'Salvage ship factory'
-  | 'Telescope I factory'
-  | 'Telescope II factory'
-  | 'Telescope III factory'
-  | 'Research station'
-  | 'Iron mine'
-  | 'Water extractor'
-  | 'Oil extractor'
-  | 'Transport ship factory'
-  | 'Colony ship factory'
-  | 'Exploration ship factory'
-  | 'Rocket engine factory'
-  | 'Ion pulse engine factory'
-  | 'Weapons module factory'
-  | 'Fighter factory'
-  | 'Raptor factory'
-  | `${TerraformEnvironment} dome`
-  | `${TerraformEnvironment} terraforming factory`;
-
-export type ProjectType = BuildType | ShipType | Component | 'Shipyard station';
-
-export interface Cost {
-  readonly Iron: number;
-  readonly Water: number;
-  readonly Oil: number;
-}
-export interface BuildDefinition {
-  readonly permanent: boolean;
-  readonly sitePreparation?: boolean;
-  readonly environment?: TerraformEnvironment;
-  readonly terraforming?: number;
-  readonly description: string;
-  readonly workers: number;
-  readonly cost: Cost;
-  readonly crew: number;
-  readonly ship?: ShipType;
-  readonly ships?: readonly ShipType[];
-  readonly component?: Component;
-  readonly parts?: Readonly<Partial<Record<Component, number>>>;
-  readonly extraction?: Resource;
-}
-export const BUILDINGS: Readonly<Record<BuildType, BuildDefinition>> =
-  Object.freeze({
-    'Orbital shipyard': {
-      permanent: true,
-      description:
-        'Builds a planetary facility, shuttles and an orbital station. Repairs one wreck per round.',
-      workers: 800,
-      cost: { Iron: 24, Water: 12, Oil: 6 },
-      crew: 0,
-    },
-    'Salvage ship factory': {
-      permanent: true,
-      description: 'Builds Salvage ships to tow wrecks to orbital shipyards.',
-      workers: 600,
-      cost: { Iron: 12, Water: 6, Oil: 3 },
-      crew: 0,
-      ship: 'Salvage ship',
-    },
-    'Telescope I factory': {
-      permanent: true,
-      description:
-        'Produces Telescope I and gives this planet detection range 1 hex.',
-      workers: 300,
-      cost: { Iron: 8, Water: 4, Oil: 2 },
-      crew: 0,
-      component: 'Telescope I',
-    },
-    'Telescope II factory': {
-      permanent: true,
-      description:
-        'Produces Telescope II and gives this planet detection range 2 hexes.',
-      workers: 300,
-      cost: { Iron: 16, Water: 8, Oil: 4 },
-      crew: 0,
-      component: 'Telescope II',
-    },
-    'Telescope III factory': {
-      permanent: true,
-      description:
-        'Produces Telescope III and gives this planet detection range 3 hexes.',
-      workers: 300,
-      cost: { Iron: 24, Water: 12, Oil: 6 },
-      crew: 0,
-      component: 'Telescope III',
-    },
-    'Ice dome': {
-      permanent: false,
-      sitePreparation: true,
-      environment: 'Ice',
-      description: 'Prepares one site for construction below 80% habitability.',
-      workers: 0,
-      cost: { Iron: 8, Water: 4, Oil: 2 },
-      crew: 0,
-    },
-    'Ice terraforming factory': {
-      permanent: true,
-      environment: 'Ice',
-      terraforming: 5,
-      description:
-        'Raises habitability by 5 percentage points per round when staffed, up to 100%.',
-      workers: 300,
-      cost: { Iron: 12, Water: 6, Oil: 3 },
-      crew: 0,
-    },
-    'Desert dome': {
-      permanent: false,
-      sitePreparation: true,
-      environment: 'Desert',
-      description: 'Prepares one site for construction below 80% habitability.',
-      workers: 0,
-      cost: { Iron: 8, Water: 4, Oil: 2 },
-      crew: 0,
-    },
-    'Desert terraforming factory': {
-      permanent: true,
-      environment: 'Desert',
-      terraforming: 5,
-      description:
-        'Raises habitability by 5 percentage points per round when staffed, up to 100%.',
-      workers: 300,
-      cost: { Iron: 12, Water: 6, Oil: 3 },
-      crew: 0,
-    },
-    'Ocean dome': {
-      permanent: false,
-      sitePreparation: true,
-      environment: 'Ocean',
-      description: 'Prepares one site for construction below 80% habitability.',
-      workers: 0,
-      cost: { Iron: 8, Water: 4, Oil: 2 },
-      crew: 0,
-    },
-    'Ocean terraforming factory': {
-      permanent: true,
-      environment: 'Ocean',
-      terraforming: 5,
-      description:
-        'Raises habitability by 5 percentage points per round when staffed, up to 100%.',
-      workers: 300,
-      cost: { Iron: 12, Water: 6, Oil: 3 },
-      crew: 0,
-    },
-    'Toxic dome': {
-      permanent: false,
-      sitePreparation: true,
-      environment: 'Toxic',
-      description: 'Prepares one site for construction below 80% habitability.',
-      workers: 0,
-      cost: { Iron: 8, Water: 4, Oil: 2 },
-      crew: 0,
-    },
-    'Toxic terraforming factory': {
-      permanent: true,
-      environment: 'Toxic',
-      terraforming: 5,
-      description:
-        'Raises habitability by 5 percentage points per round when staffed, up to 100%.',
-      workers: 300,
-      cost: { Iron: 12, Water: 6, Oil: 3 },
-      crew: 0,
-    },
-    'Iron mine': {
-      permanent: true,
-      description: 'Extracts Iron from the local finite deposit.',
-      workers: 100,
-      cost: { Iron: 5, Water: 2, Oil: 0 },
-      crew: 0,
-      extraction: 'Iron',
-    },
-    'Rocket engine factory': {
-      permanent: true,
-      description: 'Produces Rocket engines for ship construction.',
-      workers: 300,
-      cost: { Iron: 8, Water: 4, Oil: 2 },
-      crew: 0,
-      component: 'Rocket engine',
-    },
-    'Ion pulse engine factory': {
-      permanent: true,
-      description:
-        'Produces Ion pulse engines. At least one gives a ship +1 speed.',
-      workers: 300,
-      cost: { Iron: 16, Water: 8, Oil: 4 },
-      crew: 0,
-      component: 'Ion pulse engine',
-    },
-    'Weapons module factory': {
-      permanent: true,
-      description: 'Produces Weapons modules for Fighter construction.',
-      workers: 300,
-      cost: { Iron: 8, Water: 4, Oil: 2 },
-      crew: 0,
-      component: 'Weapons module',
-    },
-    'Water extractor': {
-      permanent: true,
-      description: 'Extracts Water from the local finite deposit.',
-      workers: 100,
-      cost: { Iron: 4, Water: 0, Oil: 0 },
-      crew: 0,
-      extraction: 'Water',
-    },
-    'Oil extractor': {
-      permanent: true,
-      description: 'Extracts Oil from the local finite deposit.',
-      workers: 100,
-      cost: { Iron: 6, Water: 2, Oil: 0 },
-      crew: 0,
-      extraction: 'Oil',
-    },
-    'Transport ship factory': {
-      permanent: true,
-      description: 'Builds Transport ships and researched Civilian shuttles.',
-      ships: ['Transport ship', 'Civilian shuttle'],
-      workers: 400,
-      cost: { Iron: 12, Water: 6, Oil: 3 },
-      crew: 0,
-      ship: 'Transport ship',
-    },
-    'Research station': {
-      permanent: true,
-      description:
-        'Lets the queued research advance each round. A technology takes 1 to 3 rounds.',
-      workers: 600,
-      cost: { Iron: 2, Water: 3, Oil: 1 },
-      crew: 0,
-    },
-    'Colony ship factory': {
-      permanent: true,
-      description:
-        'Shipyard: builds Colony ships for settling uninhabited planets.',
-      workers: 2000,
-      cost: { Iron: 18, Water: 10, Oil: 6 },
-      crew: 0,
-      ship: 'Colony ship',
-    },
-    'Exploration ship factory': {
-      permanent: true,
-      description:
-        'Shipyard: builds Exploration ships that reveal nearby space.',
-      workers: 1200,
-      cost: { Iron: 10, Water: 8, Oil: 3 },
-      crew: 0,
-      ship: 'Exploration ship',
-    },
-    'Fighter factory': {
-      permanent: true,
-      description: 'Shipyard: builds Fighters for your fleets.',
-      workers: 800,
-      cost: { Iron: 8, Water: 5, Oil: 2 },
-      crew: 0,
-      ship: 'Fighter',
-    },
-    'Raptor factory': {
-      permanent: true,
-      description: 'Shipyard: builds Raptors that can dock and board.',
-      workers: 800,
-      cost: { Iron: 8, Water: 5, Oil: 2 },
-      crew: 0,
-      ship: 'Raptor',
-    },
-  });
-/**
- * byggtid-per-byggnad: rounds of construction once the goods are in place.
- * Simple buildings take two rounds, advanced ones three.
- */
-export const BUILD_ROUNDS: Readonly<Record<BuildType, number>> = Object.freeze({
-  'Orbital shipyard': 3,
-  'Salvage ship factory': 2,
-  'Telescope I factory': 2,
-  'Telescope II factory': 3,
-  'Telescope III factory': 3,
-  'Ice dome': 2,
-  'Ice terraforming factory': 3,
-  'Desert dome': 2,
-  'Desert terraforming factory': 3,
-  'Ocean dome': 2,
-  'Ocean terraforming factory': 3,
-  'Toxic dome': 2,
-  'Toxic terraforming factory': 3,
-  'Iron mine': 2,
-  'Rocket engine factory': 2,
-  'Ion pulse engine factory': 3,
-  'Weapons module factory': 2,
-  'Water extractor': 2,
-  'Oil extractor': 2,
-  'Transport ship factory': 2,
-  'Research station': 3,
-  'Colony ship factory': 3,
-  'Exploration ship factory': 2,
-  'Fighter factory': 2,
-  'Raptor factory': 3,
-});
-export function buildRounds(type: string): number {
-  return BUILD_ROUNDS[type as BuildType] ?? 1;
-}
-export const SHIPS: Readonly<
-  Record<ShipType, { readonly crew: number; readonly speed: number }>
-> = Object.freeze({
-  'Salvage ship': { crew: 100, speed: 5 },
-  'Colony ship': { crew: 1000, speed: 2 },
-  'Exploration ship': { crew: 200, speed: 4 },
-  Fighter: { crew: 50, speed: 3 },
-  'Space pirate': { crew: 50, speed: 1 },
-  'Transport ship': { crew: 50, speed: 2 },
-  'Civilian shuttle': { crew: 50, speed: 2 },
-  Raptor: { crew: 50, speed: 2 },
-});
-
-export interface ShipUnit {
-  readonly telescope?: TelescopeLevel;
-  readonly id: string;
-  readonly type: ShipType;
-  /** Fighter missile salvos. Absent means the legacy pair of two. */
-  readonly missiles?: number;
-  readonly armored?: boolean;
-  readonly engines: Readonly<{
-    'Rocket engine': number;
-    'Ion pulse engine': number;
-  }>;
-}
-
-export function projectDefinition(type: ProjectType): BuildDefinition {
-  if (type === 'Shipyard station')
-    return {
-      permanent: false,
-      description:
-        'Rebuilds a destroyed orbital station using its existing planetary facility.',
-      workers: 0,
-      crew: 0,
-      cost: { Iron: 12, Water: 6, Oil: 3 },
-    };
-  if (type in BUILDINGS) return BUILDINGS[type as BuildType];
-  if (COMPONENTS.includes(type as Component))
-    return {
-      permanent: false,
-      description: `Produces one ${type} for local storage or shipment.`,
-      workers: 0,
-      crew: 0,
-      component: type as Component,
-      cost: TELESCOPES.includes(type as (typeof TELESCOPES)[number])
-        ? {
-            Iron:
-              3 * (TELESCOPES.indexOf(type as (typeof TELESCOPES)[number]) + 1),
-            Water: TELESCOPES.indexOf(type as (typeof TELESCOPES)[number]) + 1,
-            Oil: TELESCOPES.indexOf(type as (typeof TELESCOPES)[number]) + 1,
-          }
-        : type === 'Ion pulse engine'
-          ? { Iron: 6, Water: 2, Oil: 2 }
-          : { Iron: type === 'Rocket engine' ? 3 : 2, Water: 1, Oil: 1 },
-    };
-  return {
-    permanent: false,
-    description:
-      type === 'Civilian shuttle'
-        ? 'Carries up to 500 passengers to available jobs through open Trade routes. Starts Civilian transport automatically in its own fleet.'
-        : `Produces one ${type}. Factory staff operate the shipyard.`,
-    cost:
-      type === 'Salvage ship'
-        ? { Iron: 5, Water: 3, Oil: 2 }
-        : type === 'Transport ship' || type === 'Civilian shuttle'
-          ? { Iron: 4, Water: 2, Oil: 1 }
-          : type === 'Colony ship'
-            ? { Iron: 6, Water: 3, Oil: 1 }
-            : type === 'Exploration ship'
-              ? { Iron: 3, Water: 2, Oil: 1 }
-              : { Iron: 2, Water: 1, Oil: 1 },
-    workers: 0,
-    crew: SHIPS[type as ShipType].crew,
-    ship: type as ShipType,
-    parts: {
-      'Rocket engine': engineCount(type as ShipType),
-      ...(type === 'Fighter' || type === 'Space pirate' || type === 'Raptor'
-        ? { 'Weapons module': 1 }
-        : {}),
-      ...(type === 'Exploration ship' ? { 'Telescope I': 1 } : {}),
-    },
-  };
-}
-/** en-order-ett-skepp: ships that man a link rather than escort it. */
-const TRANSPORTS: readonly ShipType[] = ['Transport ship', 'Civilian shuttle'];
-
-/** byggval-bara-framforskat: ships that need research beyond their factory. */
-const SHIP_RESEARCH: Readonly<Partial<Record<ShipType, Technology>>> = {
-  'Civilian shuttle': 'Civilian transport',
-};
-
-export function factoryShips(type: BuildType): readonly ShipType[] {
-  return (
-    BUILDINGS[type].ships ??
-    (BUILDINGS[type].ship ? [BUILDINGS[type].ship] : [])
-  );
-}
-
-export function projectCost(type: ProjectType): Stock {
-  const definition = projectDefinition(type);
-  return { ...emptyStock(), ...definition.cost, ...definition.parts };
-}
-export interface StationConstruction {
-  readonly planet: string;
-  readonly roundsLeft: number;
-  /** False while the station still waits for goods. */
-  readonly started: boolean;
-}
-export interface ResearchSnapshot {
-  readonly recovered?: readonly Technology[];
-  readonly available: readonly Technology[];
-  readonly completed: readonly Technology[];
-  readonly selected: Technology | null;
-  readonly stations: number;
-  /** forskningsvy-utan-station: finished stations, operating or not. */
-  readonly builtStations: number;
-  /** forskningstid: rounds spent per unfinished technology. */
-  readonly progress?: Readonly<Partial<Record<Technology, number>>>;
-  /**
-   * forsta-station-pa-vag: the Research station closest to completion, so
-   * Research can say one is coming. Null when none is queued.
-   */
-  readonly stationConstruction?: StationConstruction | null;
-  readonly queueBlockedReason: string | null;
-  readonly queue: readonly Technology[];
-}
-
 const emptyCost = (): { Iron: number; Water: number; Oil: number } => ({
   Iron: 0,
   Water: 0,
@@ -607,179 +204,6 @@ const addCost = (
   target.Oil += amount.Oil;
 };
 
-export interface BuildingSnapshot {
-  readonly upgrade?: Readonly<{
-    type: BuildType;
-    blockedReason: string | null;
-  }>;
-  readonly operational?: boolean;
-  readonly id: string;
-  readonly type: BuildType;
-  readonly slotIndex: number;
-  readonly scheduledForDemolition: boolean;
-}
-export interface ProductionReceipt {
-  readonly projectId: string;
-  readonly planetId: string;
-  readonly product: ProjectType;
-  readonly queuePosition: number;
-}
-
-/** byggorsak-i-kon: why a queued ship is built, as facts for the view. */
-export type ShipPurpose =
-  | { readonly kind: 'link'; readonly from: string; readonly to: string }
-  | { readonly kind: 'colonize' | 'explore'; readonly planet: string }
-  | { readonly kind: 'fleet'; readonly fleet: string }
-  | { readonly kind: 'order'; readonly order: ShipOrder['kind'] }
-  | { readonly kind: 'route-manning' | 'civilian' | 'home-fleet' };
-
-export interface ConstructionProjectSnapshot {
-  readonly initialOrder?: ShipOrder;
-  /** byggorsak-i-kon: set for ship projects only. */
-  readonly purpose?: ShipPurpose;
-  readonly upgradeBuildingId?: string;
-  readonly parts?: Readonly<Partial<Record<Component, number>>>;
-  readonly id: string;
-  readonly type: ProjectType;
-  readonly destinationFleetId: string | null;
-  readonly blockedReason: string | null;
-  readonly slotIndex: number | null;
-  readonly factoryId: string | null;
-}
-export interface BudgetSnapshot {
-  readonly production: Cost;
-  readonly reserved: Cost;
-  readonly available: Cost;
-  readonly workers: number;
-  readonly reservedWorkers: number;
-  readonly availableWorkers: number;
-  readonly reservedCrew: number;
-  readonly availableCrew: number;
-  readonly slots: number;
-  readonly reservedSlots: number;
-  readonly availableSlots: number;
-}
-export interface PlanetGameSnapshot {
-  readonly availableComponents?: readonly Component[];
-  readonly detectionRange?: number;
-  readonly environment: PlanetEnvironmentType | 'Gas';
-  readonly breathable: boolean;
-  readonly populationCapacity: number;
-  readonly potentialBuildSlots: number;
-  readonly id: string;
-  readonly name: string;
-  readonly population: number;
-  readonly habitability: number;
-  readonly buildSlots: number;
-  readonly budget: BudgetSnapshot;
-  readonly economy: EconomySnapshot;
-  readonly buildings: readonly BuildingSnapshot[];
-  readonly projects: readonly ConstructionProjectSnapshot[];
-  readonly position: HexCoordinate;
-  readonly sites: readonly BuildingSiteSnapshot[];
-  readonly buildOptions: readonly {
-    readonly type: BuildType;
-    readonly blockedReason: string | null;
-  }[];
-}
-export interface BuildingSiteSnapshot {
-  readonly locked: boolean;
-  readonly requiredHabitability: number;
-  readonly hasDome: boolean;
-  readonly domeRequired: boolean;
-  readonly domeType: BuildType | null;
-  readonly domeBlockedReason: string | null;
-  readonly index: number;
-  readonly building: BuildingSnapshot | null;
-  readonly project: ConstructionProjectSnapshot | null;
-}
-export interface PlanetOrderSnapshot {
-  readonly planetId: string;
-  readonly position: HexCoordinate;
-  readonly emptySites: number;
-  readonly emptyQueues: number;
-}
-export interface FleetSnapshot {
-  readonly pendingOrder?: ShipOrder;
-  readonly upgradeable?: boolean;
-  readonly upgrade?: Readonly<FleetUpgradeOrder>;
-
-  readonly ordersPaused?: boolean;
-  readonly civilian?: Readonly<
-    Omit<CivilianOrder, 'path'> & { readonly path: readonly string[] }
-  >;
-  readonly automation?: 'salvage' | 'transport' | 'guard';
-  readonly homeRouteId?: string;
-  readonly colonizationTargetId?: string;
-  readonly explorationTargetId?: string;
-  readonly planetQueue?: PlanetQueueKind;
-  readonly detour?: Readonly<FleetDetour>;
-  readonly navigationIssue?: string | undefined;
-  readonly patrol?: Readonly<{
-    center: HexCoordinate;
-    range: number;
-    targetPirateId?: string;
-  }>;
-  readonly salvage?: Readonly<{
-    targets: readonly string[];
-    yardId: string | null;
-    issue: string | null;
-  }> | null;
-  readonly towing?: readonly string[];
-  readonly detectionRange?: number;
-  readonly exploration?: ExplorationOrder | undefined;
-  readonly remainingMovement?: number | undefined;
-  readonly canIssueOrders?: boolean;
-  readonly ownName?: string;
-  readonly joinFleetId?: string | undefined;
-  readonly routeId?: string | undefined;
-  readonly releaseRequested?: boolean | undefined;
-  readonly cargo?: Readonly<Stock>;
-  readonly id: string;
-  readonly name: string;
-  readonly position: HexCoordinate | null;
-  readonly destination: HexCoordinate | null;
-  readonly ships: Readonly<Record<ShipType, number>>;
-  readonly shipUnits?: readonly ShipUnit[];
-  readonly speed: number;
-  readonly crew: number;
-}
-export interface GameEvent {
-  readonly heading?: string;
-  readonly illustration?: EventIllustration;
-  readonly lines?: readonly EventLine[];
-  readonly planetId?: string;
-  readonly combatLog?: readonly string[];
-  readonly id: string;
-  readonly round: number;
-  readonly text: string;
-  readonly position?: { readonly q: number; readonly r: number };
-}
-export interface PlanetQueueEntrySnapshot {
-  readonly planetId: string;
-  readonly name: string;
-  readonly position: HexCoordinate;
-  readonly assignedFleetId: string | null;
-  readonly assignedFleetName: string | null;
-  readonly colonyShipBuildReason?: string | null;
-  readonly colonyShipBuildingAt?: string | null;
-}
-export interface PlanetQueueSnapshot {
-  readonly exploration: readonly PlanetQueueEntrySnapshot[];
-  readonly colonization: readonly PlanetQueueEntrySnapshot[];
-}
-export interface AttackQueueEntrySnapshot {
-  readonly pirateId: string;
-  readonly name: string;
-  readonly position: HexCoordinate;
-  readonly assignedFleetId: string | null;
-  readonly assignedFleetName: string | null;
-}
-
-interface FleetDetour {
-  readonly kind: 'explore-planet' | 'attack-pirate';
-  readonly targetId: string;
-}
 export interface TurnFrame {
   readonly encounters?: boolean;
   readonly settlement?: boolean;
@@ -905,8 +329,8 @@ export interface GameState {
   readonly settlers?: readonly SettlerTransit[];
   readonly skippedDecisions: readonly string[];
   readonly mutedDecisions?: readonly DecisionDescriptor[];
-  readonly version:
-    2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17;
+  // sparformat: only the current format loads; older saves are rejected.
+  readonly version: 17;
   readonly knownTerrain?: readonly string[];
   readonly salvage?: ReturnType<Salvage['snapshot']>;
   readonly recoveredResearch?: readonly (
@@ -932,8 +356,7 @@ export interface GameState {
     }[];
   };
   readonly round: number;
-  // summary is accepted only for backwards compatibility with older saves.
-  readonly phase: 'planning' | 'summary' | 'interrupted';
+  readonly phase: 'planning' | 'interrupted';
   readonly sequence: number;
   readonly researched: readonly (
     Technology | (typeof RETIRED_ORDER_TECHNOLOGIES)[number]
@@ -1091,18 +514,12 @@ export class Game {
 
   static restore(state: GameState): Game {
     if (
-      ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].includes(
-        state.version,
-      ) ||
+      state.version !== 17 ||
       !Number.isSafeInteger(state.round) ||
       state.round < 1 ||
       !Number.isSafeInteger(state.sequence) ||
       state.sequence < 1 ||
-      ![
-        'planning',
-        'summary',
-        ...(state.version >= 8 ? ['interrupted'] : []),
-      ].includes(state.phase)
+      !['planning', 'interrupted'].includes(state.phase)
     )
       throw new Error('This saved game cannot be loaded.');
     const position = (point: {
@@ -1149,24 +566,20 @@ export class Game {
       recoveredResearch: Technology[];
     };
     if (
-      state.version >= 15 &&
-      (!copy.productionFleetSequences ||
-        Object.entries(copy.productionFleetSequences).some(
-          ([key, next]) => !key || !Number.isSafeInteger(next) || next < 1,
-        ))
+      !copy.productionFleetSequences ||
+      Object.entries(copy.productionFleetSequences).some(
+        ([key, next]) => !key || !Number.isSafeInteger(next) || next < 1,
+      )
     )
       throw new Error('Invalid saved production fleet sequences.');
     game.#productionFleetSequences = {
       ...(copy.productionFleetSequences ?? {}),
     };
-    if (state.version >= 7 && !Array.isArray(state.pirates))
+    if (!Array.isArray(state.pirates))
       throw new Error('Missing saved pirate fleets.');
-    game.#pirates =
-      state.version >= 7
-        ? copy.pirates!.map((pirate) =>
-            PirateFleet.restore(pirate, galaxy, state.version < 14),
-          )
-        : [];
+    game.#pirates = copy.pirates!.map((pirate) =>
+      PirateFleet.restore(pirate, galaxy),
+    );
     const ids = [
       ...copy.fleets.map((fleet) => fleet.id),
       ...game.#pirates.map((pirate) => pirate.id),
@@ -1185,11 +598,8 @@ export class Game {
       (technology) => !retired.has(technology),
     );
     if (
-      state.version >= 10 &&
-      (!Array.isArray(state.recoveredResearch) ||
-        recoveredResearch.some(
-          (technology) => !TECHNOLOGIES.includes(technology),
-        ))
+      !Array.isArray(state.recoveredResearch) ||
+      recoveredResearch.some((technology) => !TECHNOLOGIES.includes(technology))
     )
       throw new Error('Invalid recovered technology.');
     game.#research = new ResearchPlan(
@@ -1206,30 +616,11 @@ export class Game {
         ),
       ),
     );
-    if (state.version < 6) {
-      if (
-        researched.some(
-          (technology) =>
-            technology.endsWith('ship factory') ||
-            technology === 'Fighter factory',
-        )
-      )
-        game.#research.completed.add('Rocket engine factory');
-      const queue = [...researchQueue];
-      game.#research.queue = [];
-      for (const technology of queue)
-        if (!game.#research.completed.has(technology))
-          game.#research.add(technology);
-    }
-    // produktionsnatverk: older saves lose goods in transit and part orders.
     game.#logistics = new Logistics([...copy.tradeRoutes]);
     game.#network = new NetworkEconomy(
-      state.version >= 17 && copy.network
-        ? copy.network
-        : { transits: [], deliveries: [] },
+      copy.network ?? { transits: [], deliveries: [] },
     );
-    game.#networkStarted =
-      state.version >= 17 ? { ...(copy.networkStarted ?? {}) } : {};
+    game.#networkStarted = { ...(copy.networkStarted ?? {}) };
     game.#construction = { ...(copy.construction ?? {}) };
     game.#decisions = new DecisionBoard(
       new Set(copy.skippedDecisions),
@@ -1244,24 +635,6 @@ export class Game {
     for (const colony of game.#colonies.values()) {
       colony.stock = { ...emptyStock(), ...colony.stock };
       colony.deposits = { ...emptyStock(), ...colony.deposits };
-      if (state.version === 2) {
-        // gemensam-planetko: preserve each legacy queue's order when interleaving.
-        const queues = [
-          colony.projects,
-          ...colony.buildings.map((building) => building.queue ?? []),
-        ].map((queue) => [...queue]);
-        colony.projects = [];
-        while (queues.some((queue) => queue.length)) {
-          const next = queues
-            .filter((queue) => queue.length)
-            .sort(
-              (a, b) =>
-                Number(a[0]!.id.split('-').at(-1)) -
-                Number(b[0]!.id.split('-').at(-1)),
-            )[0]!;
-          colony.projects.push(next.shift()!);
-        }
-      }
       for (const building of colony.buildings) delete building.queue;
       for (const project of colony.projects)
         if (project.initialOrder) {
@@ -1557,21 +930,18 @@ export class Game {
           ...(valid ? { position: Object.freeze({ ...eventPosition }) } : {}),
         });
       });
-    game.#salvage =
-      state.version >= 10
-        ? Salvage.restore(
-            copy.salvage,
-            (position) => !!galaxy.cellAt(position),
-            new Set(copy.fleets.map((fleet) => fleet.id)),
-            new Map(
-              [...game.#colonies].flatMap(([id, colony]) =>
-                colony.buildings
-                  .filter((building) => building.type === 'Orbital shipyard')
-                  .map((building) => [building.id, id]),
-              ),
-            ),
-          )
-        : new Salvage();
+    game.#salvage = Salvage.restore(
+      copy.salvage,
+      (position) => !!galaxy.cellAt(position),
+      new Set(copy.fleets.map((fleet) => fleet.id)),
+      new Map(
+        [...game.#colonies].flatMap(([id, colony]) =>
+          colony.buildings
+            .filter((building) => building.type === 'Orbital shipyard')
+            .map((building) => [building.id, id]),
+        ),
+      ),
+    );
     for (const fleet of game.#fleets)
       if (fleet.pendingOrder) ShipOrders.validate(fleet.pendingOrder);
     for (const fleet of game.#fleets)
@@ -1596,13 +966,9 @@ export class Game {
       }
     game.#refreshReinforcements();
     game.#updateSight();
-    if (state.version >= 8 && !Array.isArray(copy.knownObjects))
+    if (!Array.isArray(copy.knownObjects))
       throw new Error('Missing discovered objects.');
-    game.#knownObjects = new Set(
-      state.version >= 8
-        ? copy.knownObjects
-        : game.#visibleDiscoveries().map((discovery) => discovery.id),
-    );
+    game.#knownObjects = new Set<string>(copy.knownObjects);
     if (state.phase === 'interrupted') {
       game.#simulation = TurnSimulation.restore(
         copy.simulation!,
@@ -1611,53 +977,22 @@ export class Game {
           Number.isInteger(point?.q) &&
           Number.isInteger(point?.r) &&
           !!galaxy.cellAt(position(point)),
-        state.version < 10,
-        (id) => {
-          const fleet = game.#fleets.find((fleet) => fleet.id === id);
-          return fleet ? game.#speed(fleet) : 1;
-        },
       );
       game.#phase = 'interrupted';
       game.#validateTacticalParticipants();
       // avbryt-gammal-bordning-vid-laddning
       const boarding = game.#simulation.boarding;
       if (boarding?.outdated) game.#resolveBoarding(boarding);
-    } else if (state.version >= 8 && copy.simulation)
+    } else if (copy.simulation)
       throw new Error('Unexpected interrupted round.');
-    if (state.version < 9) {
-      if (game.#research.completed.has('Exploration ship factory'))
-        game.#research.completed.add('Telescope I factory');
-      const queue = [...game.#research.queue];
-      game.#research.queue = [];
-      for (const technology of queue)
-        if (!game.#research.completed.has(technology))
-          game.#research.add(technology);
-      game.#migrateTelescopeOrders();
-      if (game.#simulation) {
-        game.#simulation.discoveries = game.#simulation.discoveries.filter(
-          (discovery) =>
-            discovery.kind !== 'pirate' ||
-            game.#visible.has(
-              `${discovery.position.q},${discovery.position.r}`,
-            ),
-        );
-        if (!game.#simulation.discoveries.length)
-          game.#simulation.handling = true;
-      }
-    }
     if (
-      state.version >= 9 &&
-      (!Array.isArray(copy.visiblePirates) ||
-        copy.visiblePirates.some(
-          (id) => !game.#pirates.some((pirate) => pirate.id === id),
-        ))
+      !Array.isArray(copy.visiblePirates) ||
+      copy.visiblePirates.some(
+        (id) => !game.#pirates.some((pirate) => pirate.id === id),
+      )
     )
       throw new Error('Invalid saved pirate contacts.');
-    game.#visiblePirates = new Set(
-      state.version >= 9
-        ? copy.visiblePirates
-        : game.pirateSnapshots().map((pirate) => pirate.id),
-    );
+    game.#visiblePirates = new Set<string>(copy.visiblePirates);
     const chartedPirates = state.chartedPirates ?? [];
     if (
       state.chartedPirates !== undefined &&
@@ -3823,7 +3158,8 @@ export class Game {
     if (prepared)
       return Object.freeze({
         kind: 'factory',
-        message: 'Build a matching factory at an available building site.',
+        // produktionsvagledning-till-factories: buildings are built there.
+        message: 'Build a ship factory in Factories to order ships here.',
         dome: null,
       });
     const domeResearch = this.#pendingDomeResearch(planet, this.#state(planet));
@@ -3850,7 +3186,7 @@ export class Game {
       return Object.freeze({
         kind: unlocked ? 'dome' : 'research',
         message: unlocked
-          ? `Build a ${type} to prepare a building site.`
+          ? `Build a ${type} in Factories to prepare a building site.`
           : `Research ${type} before preparing a building site.`,
         dome: unlocked ? type : null,
       });
@@ -4113,16 +3449,6 @@ export class Game {
     throw new Error('Parts are made automatically when ships need them.');
   }
 
-  #migrateTelescopeOrders(): void {
-    // teleskop-i-exploration-ships: legacy orders wait for a Telescope I.
-    for (const planet of this.#ownedPlanets())
-      for (const project of this.#state(planet).projects)
-        if (
-          project.type === 'Exploration ship' &&
-          !TELESCOPES.some((part) => project.parts?.[part])
-        )
-          project.parts = { ...project.parts, 'Telescope I': 1 };
-  }
   #scheduleProject(
     planet: Planet,
     type: ProjectType,

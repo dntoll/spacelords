@@ -206,25 +206,15 @@ describe('flottstrid-per-hex', () => {
 });
 
 describe('rymdpiraters-sparning', () => {
-  it.each([2, 3, 4, 5, 6] as const)(
-    'loads version %i without introducing pirates and preserves defeated pirates on reload',
-    (version) => {
-      const state = new Game(createExampleGalaxy()).exportState();
-      const old: GameState = { ...state, version };
-      delete (old as { pirates?: unknown }).pirates;
-      const restored = Game.restore(old);
-      expect(restored.exportState().pirates).toEqual([]);
-      const game = battle(1, 1);
-      turn(game);
-      const saved = game.exportState();
-      const loaded = Game.restore(
-        JSON.parse(JSON.stringify(saved)) as GameState,
-      );
-      expect(loaded.exportState()).toEqual(saved);
-      turn(loaded);
-      expect(loaded.exportState().pirates).toEqual([]);
-    },
-  );
+  it('preserves defeated pirates on reload', () => {
+    const game = battle(1, 1);
+    turn(game);
+    const saved = game.exportState();
+    const loaded = Game.restore(JSON.parse(JSON.stringify(saved)) as GameState);
+    expect(loaded.exportState()).toEqual(saved);
+    turn(loaded);
+    expect(loaded.exportState().pirates).toEqual([]);
+  });
 });
 
 describe('flottstrid-per-hex / handelsnatverk', () => {
