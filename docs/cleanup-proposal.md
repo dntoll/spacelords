@@ -109,10 +109,28 @@ matching factory at an available building site." pekar också fel.
 (`Logistics`, last, `#transportWaiting`, `route-idle`-beslut), gamla
 produktionsval och planetkön. Mycket används fortfarande indirekt.
 
-- Rekommendation: efter B1–B5, gör en genomgång med tester som skydd och
-  bryt ut spelmodellen i mindre delar per område (ekonomi, flottor,
-  forskning, beslut).
-- Fråga: Prioriteras det före mining ships?
+- Beslut: ja, före nya funktioner. Mining ships väntar.
+- Genomfört:
+  - "Load only the current save format" (`sparformat`): bara version 17
+    laddas. Övergångarna från äldre format är borttagna, liksom fasen
+    `summary`. Spel som sparats av nuvarande bygge laddas som förut.
+  - "Move the catalog and snapshot types out of Game.ts": byggnader och
+    skepp ligger i `Catalog.ts` (`spelkatalog`), ögonblicksbilderna i
+    `GameSnapshots.ts`. `Game.ts` gick från 8012 till 7337 rader.
+- Den fysiska frakten var redan borta. `Logistics` håller bara rutterna, och
+  varorna flyttas av `NetworkEconomy`. Last som finns kvar gäller piraters
+  byte, som är en levande spelmekanik.
+- Kvar: dela upp klassen `Game`. Områdena skriver i samma privata tillstånd,
+  så uppdelningen kräver ett gemensamt tillståndsobjekt som delarna får
+  genom ett smalt gränssnitt. Föreslagen ordning, med enhetstesterna som
+  skydd:
+  1. ett tillståndsobjekt (`GameWorld`) med kolonier, flottor, pirater och
+     händelser, som `Game` äger;
+  2. strid och bordning (cirka 700 rader) till `GameCombat`;
+  3. produktionsnätverket (cirka 600 rader) till `GameNetwork`;
+  4. beslut och vägledning till `GameDecisions`;
+  5. bärgning och varv till `GameSalvage`;
+  6. sparning och laddning sist, när tillståndet har ett eget objekt.
 
 ## Dokumentation
 
