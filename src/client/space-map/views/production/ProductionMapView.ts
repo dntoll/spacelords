@@ -13,6 +13,7 @@ import {
 import { renderMapLocationHeading } from '../MapLocationHeading.js';
 import { button, element, queueButton } from '../../../common/dom.js';
 import { shipPurposeText } from '../ShipPurposeText.js';
+import { tabPanels } from '../TabPanels.js';
 
 function presenceLabel(option: ProductionOption): string {
   return {
@@ -152,9 +153,15 @@ function progressText(progress: ShipProgressSnapshot): string {
   return `Parts ${done.length}/${progress.parts.length}${rounds}`;
 }
 
+export type ProductionTab = 'selected' | 'queue';
+
 export function renderProductionMapPanel(
   model: AppReadModel,
   emit: IntentHandler,
+  tab: ProductionTab = model.productionMap.selectedOption
+    ? 'selected'
+    : 'queue',
+  onTab: (tab: ProductionTab) => void = () => {},
 ): HTMLElement {
   const planet = model.planet!;
   const panel = element('div', 'production-map-controls');
@@ -205,17 +212,23 @@ export function renderProductionMapPanel(
       );
   }
   const option = map.selectedOption;
+  // produktionsflikar: the selected ship and the queue share one tabbed area.
+  let detail = element('section', 'map-build-details');
+  detail.setAttribute('aria-label', 'Build details');
+  detail.append(
+    element(
+      'p',
+      'muted-note',
+      'Tap a ship in the ring around the planet to see its details.',
+    ),
+  );
   if (option) {
-    const detail = element('section', 'map-build-details');
+    detail = element('section', 'map-build-details');
     detail.setAttribute('aria-label', 'Build details');
     const heading = element('div', 'map-build-heading');
     const build = button('Build', () => emit({ type: 'map-production-build' }));
     build.disabled = !!option.blockedReason || model.phase !== 'planning';
-    // byggko-eller-skeppsdetaljer: details replace the queue until closed.
-    const close = queueButton('×', 'Back to the build queue', () =>
-      emit({ type: 'map-production-option', option: null }),
-    );
-    heading.append(catalogHeading(option.type), build, close);
+    heading.append(catalogHeading(option.type), build);
     detail.append(
       heading,
       element('p', '', option.description),
@@ -289,9 +302,6 @@ export function renderProductionMapPanel(
     }
     if (option.blockedReason)
       detail.append(element('p', 'blocked-reason', option.blockedReason));
-
-    panel.append(detail);
-    return panel;
   }
   const problems = model.mapProblems.filter(
     (p) => p.planetId === planet.id && p.screen === 'production',
@@ -300,7 +310,6 @@ export function renderProductionMapPanel(
     panel.append(element('p', 'blocked-reason', problem.explanation));
   const queue = element('section', 'map-build-queue');
   queue.setAttribute('aria-label', 'Build queue');
-  queue.append(element('h2', '', 'Build queue'));
   // byggorsak-i-kon: ships are built side by side in their own factories, so
   // the queue has no order to change; each row says why the ship is built.
   const list = element('ul', 'map-queue-list');
@@ -396,7 +405,20 @@ export function renderProductionMapPanel(
     orders.disabled = model.phase !== 'planning';
     queue.append(orders);
   }
-  panel.append(queue);
+  panel.append(
+    tabPanels(
+      [
+        {
+          name: 'selected',
+          label: option ? option.type : 'Selected',
+          panel: detail,
+        },
+        { name: 'queue', label: `Queue · ${ships.length}`, panel: queue },
+      ],
+      tab,
+      (name) => onTab(name as ProductionTab),
+    ),
+  );
   return panel;
 }
 

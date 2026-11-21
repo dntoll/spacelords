@@ -4,6 +4,7 @@ import {
   discoveryControls,
   updateDecisionGuidance,
   renderProductionRing,
+  type ProductionTab,
   renderProductionMapPanel,
   renderRoutePlanet,
   bindMapSelectionScroll,
@@ -71,6 +72,8 @@ export class AppView implements AppPort {
   #battleView: BattleView | null = null;
   #boardingView: BoardingView | null = null;
   #editorView: BoardingEditorView | null = null;
+  #productionTab: ProductionTab = 'queue';
+  #productionOption: string | null = null;
   #decisionLayout = new DecisionLayout();
   #factoriesView: FactoriesView | null = null;
   readonly #root: HTMLElement;
@@ -1654,8 +1657,25 @@ export class AppView implements AppPort {
     }
     if (model.screen === 'production') {
       this.#panel.setAttribute('aria-label', 'Production controls');
+      // produktionsflikar: a newly chosen ship shows its details; otherwise
+      // the player's tab stays.
+      const option = model.productionMap.selectedOption?.type ?? null;
+      if (option !== this.#productionOption)
+        this.#productionTab = option ? 'selected' : 'queue';
+      this.#productionOption = option;
       this.#panel.replaceChildren(
-        ...(model.planet ? [renderProductionMapPanel(model, this.#emit)] : []),
+        ...(model.planet
+          ? [
+              renderProductionMapPanel(
+                model,
+                this.#emit,
+                this.#productionTab,
+                (tab) => {
+                  this.#productionTab = tab;
+                },
+              ),
+            ]
+          : []),
       );
       this.#panel.hidden = !model.planet;
       return;
