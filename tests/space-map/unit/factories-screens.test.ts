@@ -1402,3 +1402,19 @@ it('skeppsbilder-i-produktion: the Production ring shows ship sprites', () => {
     'Transport ship',
   );
 });
+
+it('produktionsvagledning-till-factories: Production points to Factories instead of a dead site button', async () => {
+  const { domeProductionState } =
+    await import('../../fixtures/production-dome.js');
+  const { send, root, model } = setup({
+    ...domeProductionState(),
+    pirates: [],
+  });
+  send({ type: 'open-production', planetId: 'sol-0' });
+  expect(model.snapshot.productionGuidance?.message).toContain('Factories');
+  expect(
+    [...root.querySelectorAll('button')].some(
+      (control) => control.textContent === 'Prepare building site',
+    ),
+  ).toBe(false);
+});

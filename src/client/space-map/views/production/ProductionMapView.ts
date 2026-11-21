@@ -214,12 +214,6 @@ export function renderProductionMapPanel(
     panel.append(
       element('p', 'production-guidance muted-note', guidance.message),
     );
-    if (guidance.dome)
-      panel.append(
-        button('Prepare building site', () =>
-          emit({ type: 'map-production-option', option: guidance.dome }),
-        ),
-      );
   }
   const option = map.selectedOption;
   // produktionsflikar: the selected ship and the queue share one tabbed area.

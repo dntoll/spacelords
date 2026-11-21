@@ -210,15 +210,6 @@ export function renderProduction(
         `No ${category.toLowerCase()} can be produced here. ${menus.productionGuidance?.message ?? ''}`.trim(),
       ),
     );
-  if (!products.length && menus.productionGuidance?.dome) {
-    const dome = menus.productionGuidance.dome;
-    order.append(
-      button('Prepare building site', () => {
-        emit({ type: 'open-production', planetId: planet.id });
-        emit({ type: 'map-production-option', option: dome });
-      }),
-    );
-  }
   if (products.length && !product)
     order.append(
       element('p', 'muted-note', 'Select a product for full details.'),

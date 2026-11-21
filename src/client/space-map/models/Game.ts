@@ -3823,7 +3823,8 @@ export class Game {
     if (prepared)
       return Object.freeze({
         kind: 'factory',
-        message: 'Build a matching factory at an available building site.',
+        // produktionsvagledning-till-factories: buildings are built there.
+        message: 'Build a ship factory in Factories to order ships here.',
         dome: null,
       });
     const domeResearch = this.#pendingDomeResearch(planet, this.#state(planet));
@@ -3850,7 +3851,7 @@ export class Game {
       return Object.freeze({
         kind: unlocked ? 'dome' : 'research',
         message: unlocked
-          ? `Build a ${type} to prepare a building site.`
+          ? `Build a ${type} in Factories to prepare a building site.`
           : `Research ${type} before preparing a building site.`,
         dome: unlocked ? type : null,
       });

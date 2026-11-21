@@ -72,7 +72,10 @@ Den väljer en Dome, men ringen visar inte Domes. Vägledningen "Build a
 matching factory at an available building site." pekar också fel.
 
 - Rekommendation: ersätt med en vägledningstext som pekar på Factories.
-  Förberett som en egen commit på branchen.
+  Förberett i commiten "Point Production guidance to Factories" på branchen
+  (regressionstest `produktionsvagledning-till-factories`). Webbläsartestet
+  `production-domes.spec.ts` klickar på den borttagna knappen och behöver
+  skrivas om. Det lämnas till agenten som lagar webbläsartesterna.
 - Fråga: OK att merga?
 
 **B7. Game.ts har 8000 rader.** Där finns kvar logik för fysisk frakt
