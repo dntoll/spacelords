@@ -8,6 +8,11 @@ repareras eller ger forskning. Detaljerna står i
 
 ## Krav
 
+- **Automatisk varvsplacering:** `automatisk-varvsplacering` är
+  **Fullständigt implementerat** i utforskningen `simple_production`.
+  Factories väljer automatiskt en ledig grannhex för en ny station; se
+  [förenklad produktion](../simple-production.md).
+
 - **Bärgade pirater och civila skeppsbilder:** `bargat-piratskepp-behaller-typ`
   och `unik-bild-for-civila-transporter` är **Fullständigt implementerat**.
   Nyförstörda pirater ger Space pirate-vrak som behåller typ, Raider cannon och

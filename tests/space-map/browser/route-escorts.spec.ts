@@ -7,7 +7,7 @@ import {
   type GameState,
 } from '../../../src/client/space-map/models/Game.js';
 
-test('unika-flottnamn / eskort-pa-routes: assign an armed fleet from Factories and retain its escort after reload', async ({
+test('unika-flottnamn / eskort-pa-routes / spelnotis-synlig: assign an armed fleet from Factories and retain its escort after reload', async ({
   page,
 }) => {
   const initial = routeEscortState();
@@ -35,9 +35,20 @@ test('unika-flottnamn / eskort-pa-routes: assign an armed fleet from Factories a
   const name = page.getByRole('textbox', { name: 'Fleet name', exact: true });
   await name.fill('Carrier A');
   await name.press('Enter');
-  await expect(page.locator('.game-notice')).toContainText(
-    'Fleet names must be unique',
-  );
+  const notice = page.locator('.game-notice');
+  await expect(notice).toContainText('Fleet names must be unique');
+  await expect(notice).toBeInViewport({ ratio: 1 });
+  expect(
+    await notice.evaluate((node) => {
+      const bounds = node.getBoundingClientRect();
+      return node.contains(
+        document.elementFromPoint(
+          bounds.left + bounds.width / 2,
+          bounds.top + bounds.height / 2,
+        ),
+      );
+    }),
+  ).toBe(true);
   await name.press('Escape');
   await page.getByRole('button', { name: 'Factories', exact: true }).click();
   await page

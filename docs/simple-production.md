@@ -443,6 +443,14 @@ förenklad produktion är klar. De följs upp i
 | `mining-ships`           | Mining ships utvinner råvaror ur nebulosor och asteroidbälten. Utvinningen styrs på kartan.                                                                                       |
 | `mining-ship-anslutning` | Ett mining ship är anslutet till nätverket när ett fraktskepp har routen mellan skeppet och den ägda planet som ligger närmast på kartan. Flyttas mining ship flyttas routen med. |
 
+## Automatisk placering av orbitalt varv
+
+`automatisk-varvsplacering` — **Fullständigt implementerat** (utforskning):
+När Orbital shipyard beställs i Factories väljs en ledig grannhex automatiskt
+och reserveras för stationen. Anläggningen och stationen färdigställs
+tillsammans. Detta ersätter spelarens val av grannhex i `orbitalt-varv`.
+Sparformatet ändras inte.
+
 ## Anpassning av webbläsartester
 
 Tester för `route-kartvy`, manuell delbeställning och omordning av skeppskön
@@ -484,3 +492,8 @@ Byggnadsprioritering och beroenden i Production-ringen
 (`produktionsval-efter-forekomst` och `produktionsberoenden-i-byggval`)
 ersätts av rekommendationer och beroenden i Factories; testet kontrollerar nu
 saknade delar och byggmöjligheten där.
+
+Det tidigare testet av placeringsdialogen utgår eftersom dialogen ersatts av
+`automatisk-varvsplacering`. Den nya webbläsarkontrollen verifierar reservation,
+omladdning och färdig station. `spelnotis-synlig` kontrolleras i stället med
+felmeddelandet för ett upptaget flottans namn.

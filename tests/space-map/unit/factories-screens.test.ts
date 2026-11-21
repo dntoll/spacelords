@@ -1455,3 +1455,22 @@ it('produktionsvagledning-till-factories: Production points to Factories instead
     ),
   ).toBe(false);
 });
+
+it('automatisk-varvsplacering / orbitalt-varv: Factories builds the station on a free neighboring hex', async () => {
+  const { salvageState } = await import('../../fixtures/salvage.js');
+  const { Game } = await import('../../../src/client/space-map/models/Game.js');
+  const state = salvageState();
+  state.salvage.yards = [];
+  state.colonies[0]![1].buildings.shift();
+  const before = Game.restore(state);
+  const free = before
+    .freeShipyardHexes(before.galaxy.homePlanet.id)
+    .map((hex) => hex.key);
+  const { send, act, model, turn } = setup(state);
+  send({ type: 'open-factories' });
+  act({ kind: 'open-site', planet: 'sol-0', site: 0 });
+  act({ kind: 'build', type: 'Orbital shipyard' });
+  for (let round = 0; round < 3; round++) turn();
+  expect(model.snapshot.shipyards).toHaveLength(1);
+  expect(free).toContain(model.snapshot.shipyards[0]!.position.key);
+});

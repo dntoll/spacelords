@@ -26,13 +26,11 @@ test('rekommenderade-fabriker / fabriksstatus-i-byggval: Factories shows missing
   await page
     .getByRole('button', { name: 'Empty site 3 on Tellus', exact: true })
     .click();
-  const fighter = page
-    .locator('.factory-option')
-    .filter({
-      has: page.locator('.factory-option-title', {
-        hasText: /^Fighter factory$/,
-      }),
-    });
+  const fighter = page.locator('.factory-option').filter({
+    has: page.locator('.factory-option-title', {
+      hasText: /^Fighter factory$/,
+    }),
+  });
   await expect(fighter).toContainText('Weapons module');
   await expect(
     fighter.getByRole('button', { name: /^(Build|Queue) Fighter factory$/ }),
