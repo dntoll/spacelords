@@ -1318,8 +1318,26 @@ export class FactoriesFacade {
         .map((definition) => definition.component)
         .filter((component) => component !== undefined) as Material[]),
     ];
+    // en-order-ett-skepp: a group already linked by an ordered transport is
+    // not offered again.
+    const ordered = (other: readonly string[]) =>
+      this.host.game.tradeRoutes.some(
+        (route) =>
+          !route.closing &&
+          ((group.includes(route.a) && other.includes(route.b)) ||
+            (group.includes(route.b) && other.includes(route.a))) &&
+          (route.fleetIds.length > 0 ||
+            context.planets.some((planet) =>
+              planet.projects.some(
+                (project) =>
+                  project.type === 'Transport ship' &&
+                  project.initialOrder?.kind === 'join-route' &&
+                  project.initialOrder.routeId === route.id,
+              ),
+            )),
+      );
     return context.network.groups
-      .filter((other) => other[0] !== group[0])
+      .filter((other) => other[0] !== group[0] && !ordered(other))
       .map((other) => {
         let best: readonly [string, string] = [group[0]!, other[0]!];
         let distance = Infinity;
