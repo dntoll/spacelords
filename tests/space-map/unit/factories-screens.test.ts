@@ -106,6 +106,28 @@ describe('Factories', () => {
     });
   });
 
+  it('senaste-teknik-i-byggval: Factories offers only the latest researched factory in each upgrade chain', () => {
+    const state = {
+      ...tradeNetworkState(),
+      researched: [
+        'Rocket engine factory',
+        'Ion pulse engine factory',
+        'Telescope I factory',
+        'Telescope II factory',
+        'Telescope III factory',
+      ] as const,
+    };
+    const { send, act, factories } = setup(state);
+    send({ type: 'open-factories' });
+    act({ kind: 'open-site', planet: 'sol-0', site: 2 });
+    const types = factories().build!.options.map((option) => option.type);
+    expect(types).toContain('Ion pulse engine factory');
+    expect(types).toContain('Telescope III factory');
+    expect(types).not.toContain('Rocket engine factory');
+    expect(types).not.toContain('Telescope I factory');
+    expect(types).not.toContain('Telescope II factory');
+  });
+
   it('byggtid-per-byggnad: shows each building’s own build rounds and counts them up while it is built', () => {
     const { root, send, act, factories, group, turn } = setup();
     send({ type: 'open-factories' });
@@ -821,6 +843,20 @@ describe('ny-fabrik-med-guldstjarna', () => {
     expect(root.querySelector('.factory-tag.new')?.textContent).toContain('★');
     act({ kind: 'build', type: 'Weapons module factory' });
     expect(model.snapshot.newFactories).not.toContain('Weapons module factory');
+  });
+
+  it('an obsolete factory whose successor is researched is never new, even after its last one was upgraded', () => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    // The only Rocket engine factory has been upgraded to Ion pulse.
+    for (const building of state.colonies[0]![1].buildings)
+      if (building.type === 'Rocket engine factory')
+        building.type = 'Ion pulse engine factory';
+    const { send, model } = setup({
+      ...state,
+      researched: [...state.researched, 'Ion pulse engine factory'],
+    });
+    send({ type: 'open-map' });
+    expect(model.snapshot.newFactories).not.toContain('Rocket engine factory');
   });
 });
 
