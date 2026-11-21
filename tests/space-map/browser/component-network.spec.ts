@@ -1,5 +1,5 @@
 import { scenarioTimeout } from '../../browser-timeouts.js';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import {
   TECHNOLOGIES,
   type BuildType,
@@ -11,8 +11,7 @@ import { selectMapObject } from './map-helpers.js';
 import { endTurn, startFirstSlot } from './save-helpers.js';
 
 function initialState() {
-  const state = tradeNetworkState();
-  state.researched = [...TECHNOLOGIES];
+  const state = { ...tradeNetworkState(), researched: [...TECHNOLOGIES] };
   for (const [index, [, colony]] of state.colonies.entries()) {
     colony.population = 10000;
     colony.stock = { ...emptyStock(), Iron: 1000, Water: 1000, Oil: 1000 };
@@ -33,10 +32,7 @@ function initialState() {
   return state;
 }
 
-async function openFighterOrder(
-  page: import('@playwright/test').Page,
-  state: GameState,
-) {
+async function openFighterOrder(page: Page, state: GameState) {
   await page.addInitScript((state) => {
     if (localStorage.getItem('components-seeded')) return;
     localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
