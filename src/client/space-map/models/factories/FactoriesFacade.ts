@@ -975,7 +975,7 @@ export class FactoriesFacade {
     const built = planet.sites[index]?.building ?? null;
     const fresh = new Set(this.newFactories);
     const needs: ReadonlyMap<BuildType, readonly FactoryRecommendation[]> =
-      queued || built ? new Map() : this.#needs(context, group);
+      queued || built ? new Map() : this.#needs(context, group, planetId);
     for (const type of queued || built ? [] : BUILD_TYPES) {
       const reason = this.host.game.canBuild(gamePlanet, type, index);
       if (reason && HIDDEN_REASONS.includes(reason)) continue;
@@ -1014,9 +1014,19 @@ export class FactoriesFacade {
           presence:
             inGroup > 0 ? 'built' : building > 0 ? 'building' : 'absent',
           recommendations: Object.freeze(
-            missingDeposit || inGroup + building > 0
-              ? []
-              : (needs.get(type) ?? []),
+            (needs.get(type) ?? []).filter((reason) =>
+              missingDeposit
+                ? false
+                : reason.kind === 'terraforming'
+                  ? // Terraforming works per planet; Domes prepare each site.
+                    !!BUILDINGS[type].sitePreparation ||
+                    !this.#planet(context, planetId).sites.some(
+                      (site) =>
+                        site.building?.type === type ||
+                        site.project?.type === type,
+                    )
+                  : inGroup + building === 0,
+            ),
           ),
           here,
           isNew: fresh.has(type),
@@ -1081,13 +1091,12 @@ export class FactoriesFacade {
     >();
     for (const id of [...group].sort()) {
       const planet = this.#planet(context, id);
-      const site = planet.sites.find(
-        (item) =>
-          !item.building &&
-          !item.project &&
-          !item.locked &&
-          !(item.domeRequired && !item.hasDome),
+      const free = planet.sites.filter(
+        (item) => !item.building && !item.project && !item.locked,
       );
+      // terraformering-forst: a site that needs a Dome still offers one.
+      const site =
+        free.find((item) => !(item.domeRequired && !item.hasDome)) ?? free[0];
       if (!site) continue;
       for (const option of this.#buildScreen(context, id, site.index).options)
         if (option.recommendations.length && !found.has(option.type))
@@ -1107,6 +1116,7 @@ export class FactoriesFacade {
   #needs(
     context: Context,
     group: readonly string[],
+    planetId: string,
   ): ReadonlyMap<BuildType, readonly FactoryRecommendation[]> {
     const needs = new Map<BuildType, FactoryRecommendation[]>();
     const add = (type: BuildType, reason: FactoryRecommendation) => {
@@ -1131,6 +1141,19 @@ export class FactoriesFacade {
     const anywhere = types(all);
     if (!anywhere.has('Research station'))
       add('Research station', { kind: 'research' });
+    // terraformering-forst: a planet below full habitability first wants its
+    // own terraforming factory, and a Dome where a site needs one.
+    const planet = this.#planet(context, planetId);
+    if (
+      planet.habitability < 100 &&
+      planet.environment !== 'Gas' &&
+      planet.environment !== 'Temperate'
+    ) {
+      add(`${planet.environment} terraforming factory` as BuildType, {
+        kind: 'terraforming',
+      });
+      add(`${planet.environment} dome` as BuildType, { kind: 'terraforming' });
+    }
     for (const resource of RESOURCES) {
       const extractor = EXTRACTORS[resource];
       if (!inGroup.has(extractor))

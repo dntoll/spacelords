@@ -450,6 +450,8 @@ function recommendationText(reason: FactoryRecommendation): string {
       return 'Links need a transport';
     case 'escort':
       return 'Armed ships to escort links';
+    case 'terraforming':
+      return 'Terraforms this planet';
     case 'colonization':
       return 'Colony ships for queued planets';
     case 'exploration':
@@ -554,9 +556,12 @@ function buildScreen(
       .join(' · ')} · Workers ${build.workers}`,
   );
   // rekommenderade-fabriker: what the group needs now comes first.
-  const recommended = build.options.filter(
-    (entry) => entry.recommendations.length > 0,
-  );
+  // terraformering-forst: terraforming leads the recommendations.
+  const terraforms = (entry: BuildOptionSnapshot) =>
+    entry.recommendations.some((reason) => reason.kind === 'terraforming');
+  const recommended = build.options
+    .filter((entry) => entry.recommendations.length > 0)
+    .sort((a, b) => Number(terraforms(b)) - Number(terraforms(a)));
   const recommendedSection = element(
     'section',
     'factory-tier factory-recommended',

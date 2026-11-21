@@ -190,6 +190,13 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
 - `forsorjning-vantar-pa-bestalld-lank` (**Fullständigt implementerat**):
   när en länk till gruppen är beställd (ett fraktskepp är på väg eller byggs
   för den) visas inte problemet att gruppen saknar råvaror eller delar.
+- `terraformering-forst` (**Fullständigt implementerat**): på en planet under
+  100% habitability (inte `Temperate` eller gas) rekommenderas planetens
+  terraformingfabrik, med skälet `Terraforms this planet`, och står först
+  under `Recommended`. En plats som behöver en Dome rekommenderar Domen av
+  samma skäl. Rekommendationen gäller per planet: en fabrik på en annan
+  planet i gruppen tar inte bort den. Gruppens `Recommended`-knapp och
+  markeringen av Factories räknar även med platser som behöver en Dome.
 - `en-order-ett-skepp` (**Fullständigt implementerat**): en order som
   behöver ett skepp tar inte emot fler. En länk får ett fraktskepp (inget
   nytt om den redan har ett eller ett är beställt), en planet ett
