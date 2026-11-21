@@ -15,6 +15,7 @@ import type { TradeRouteSnapshot } from '../Logistics.js';
 import type { Planet } from '../Planet.js';
 import { PREREQUISITES, type Technology } from '../research/Research.js';
 import { armedShipCount } from '../ShipEquipment.js';
+import { FactoryTechnology } from '../FactoryTechnology.js';
 import {
   routeEscortCount,
   routeEscortTargets,
@@ -1011,7 +1012,9 @@ export class FactoriesFacade {
     const fresh = new Set(this.newFactories);
     const needs: ReadonlyMap<BuildType, readonly FactoryRecommendation[]> =
       queued || built ? new Map() : this.#needs(context, group, planetId);
+    const researched = new Set(this.host.game.research.completed);
     for (const type of queued || built ? [] : BUILD_TYPES) {
+      if (FactoryTechnology.successor(type, researched)) continue;
       const reason = this.host.game.canBuild(gamePlanet, type, index);
       if (reason && HIDDEN_REASONS.includes(reason)) continue;
       const definition = BUILDINGS[type];
