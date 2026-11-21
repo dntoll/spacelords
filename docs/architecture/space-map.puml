@@ -106,7 +106,7 @@ space_map___delat_ ..> space_map__saves : 1, typer
 space_map___delat_ --> space_map__star_map : 4
 space_map___delat_ ..> space_map__turn : 1, typer
 space_map__decisions --> space_map___delat_ : 5
-space_map__factories --> space_map___delat_ : 11
+space_map__factories --> space_map___delat_ : 12
 space_map__factories --> space_map__production_network : 1
 space_map__factories --> space_map__research : 1
 space_map__factories --> space_map__star_map : 1
