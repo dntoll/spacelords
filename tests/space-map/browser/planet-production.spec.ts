@@ -5,7 +5,6 @@ import {
   TECHNOLOGIES,
 } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
-import { selectMapObject } from './map-helpers.js';
 import { endTurn, startFirstSlot } from './save-helpers.js';
 
 test('delar-tillverkas-pa-behov / produktionsflikar: a Fighter order makes its parts and survives reload', async ({
@@ -29,6 +28,10 @@ test('delar-tillverkas-pa-behov / produktionsflikar: a Fighter order makes its p
     demolition: false,
   }));
   const initial = { ...state, researched: TECHNOLOGIES };
+  const initialFighters = initial.fleets.reduce(
+    (count, fleet) => count + (fleet.ships.Fighter ?? 0),
+    0,
+  );
   await page.addInitScript((saved) => {
     if (localStorage.getItem('local-fighter-seeded')) return;
     localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
@@ -41,7 +44,9 @@ test('delar-tillverkas-pa-behov / produktionsflikar: a Fighter order makes its p
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Production', exact: true }).click();
-  await selectMapObject(page, 'Tellus');
+  await page
+    .getByRole('button', { name: /^Show decision: Tellus: choose production/ })
+    .click();
   await page.getByRole('button', { name: 'Show Fighter', exact: true }).click();
   const controls = page.getByRole('complementary', {
     name: 'Production controls',
@@ -71,5 +76,5 @@ test('delar-tillverkas-pa-behov / produktionsflikar: a Fighter order makes its p
       (count, fleet) => count + (fleet.ships.Fighter ?? 0),
       0,
     ),
-  ).toBe(2);
+  ).toBe(initialFighters + 1);
 });

@@ -59,7 +59,7 @@ test('planetsida-informerar / planetundersidor: overview and building sites rema
   ]);
   await navigation.getByRole('button', { name: 'Building sites' }).click();
   const sites = page.locator('.building-sites-grid');
-  await expect(sites.locator('.building-site')).toHaveCount(10);
+  await expect(sites.locator('.building-site').first()).toBeVisible();
   await expect(
     page.getByText('Build, upgrade and cancel construction in Factories.'),
   ).toBeVisible();

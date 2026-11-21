@@ -320,8 +320,10 @@ test('samtidig-farledsanimation / destinationer-for-aktiva-skepp: route fleets m
 test('en-flotta-i-taget / osynliga-flottor-utan-animation: full fleet routes are framed, unseen pirates are omitted and the original camera returns', async ({
   page,
 }, testInfo) => {
+  await page.clock.install({ time: new Date('2026-10-30T00:00:00Z') });
   await page.setViewportSize({ width: 393, height: 851 });
   const { secondId } = await seed(page, true);
+  await page.clock.pauseAt(new Date('2026-10-30T01:00:00Z'));
   const camera = await page.getByTestId('camera-position').textContent();
   const canvas = page.locator('canvas[data-rendered="true"]');
   await canvas.evaluate((node) => {
@@ -336,16 +338,11 @@ test('en-flotta-i-taget / osynliga-flottor-utan-animation: full fleet routes are
     });
   });
   await requestTurn(page);
-  await expect(canvas).toHaveAttribute('data-moving-fleet', 'fleet-home');
-  // Read once per poll: under load the movement may end between two reads.
-  await expect
-    .poll(async () => {
-      const progress = Number(
-        await canvas.getAttribute('data-moving-progress'),
-      );
-      return progress > 0 && progress < 1;
-    })
-    .toBe(true);
+  await advanceUntil(page, async () => {
+    const id = await canvas.getAttribute('data-moving-fleet');
+    const progress = Number(await canvas.getAttribute('data-moving-progress'));
+    return id === 'fleet-home' && progress > 0 && progress < 1;
+  });
   await noMenu(page);
   await expect(
     page.getByRole('button', { name: 'End turn', exact: true }),
@@ -363,9 +360,10 @@ test('en-flotta-i-taget / osynliga-flottor-utan-animation: full fleet routes are
   await page.screenshot({
     path: testInfo.outputPath('single-fleet-movement.png'),
   });
-  await expect(
-    page.getByRole('button', { name: 'End turn', exact: true }),
-  ).toBeEnabled({ timeout: 15000 });
+  await advanceUntil(page, () =>
+    page.getByRole('button', { name: 'End turn', exact: true }).isEnabled(),
+  );
+  await page.clock.runFor(32);
   await expect(canvas).toHaveAttribute(
     'data-observed-movement',
     JSON.stringify(['fleet-home', secondId]),

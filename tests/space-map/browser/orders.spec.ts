@@ -124,7 +124,9 @@ test('startorder-for-nybyggda-skepp / ruttval-for-order: chooses a route before 
   scenarioTimeout(45_000);
   const state = await seed(page, false);
   await page.getByRole('button', { name: 'Production', exact: true }).click();
-  await selectMapObject(page, 'Tellus');
+  await page
+    .getByRole('button', { name: /^Show decision: Tellus: choose production/ })
+    .click();
   await page
     .getByRole('button', { name: 'Show Transport ship', exact: true })
     .click();
