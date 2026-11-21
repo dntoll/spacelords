@@ -23,6 +23,8 @@ export function renderResearchSelection(
 ): HTMLElement {
   const panel = element('section', 'research-details');
   panel.setAttribute('aria-label', 'Selected research');
+  // forskningsflikar: the Selected tab's panel, still a named region.
+  panel.id = 'research-selected-panel';
   if (technology) {
     panel.append(renderResearchDetails(research, technology, locked, emit));
   } else {

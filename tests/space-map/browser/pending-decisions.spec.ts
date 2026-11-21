@@ -43,7 +43,7 @@ test('beslut-vantar-pa-paborjad-atgard: queued Dome research keeps Production wa
   await page.reload();
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
-  await page.locator('.research-queue > summary').click();
+  await page.locator('.research-tab[data-tab="queue"]').click();
   await page
     .getByRole('button', { name: 'Remove Desert dome', exact: true })
     .click();

@@ -131,13 +131,13 @@ export function renderResearchTree(
     choose.id = `research-node-${index}`;
     choose.setAttribute('aria-pressed', String(inspected === type));
     const art = researchArt(type, identified);
+    const name = identified ? type.replace(/ factory$/, '') : 'Unknown';
+    // storre-text-dar-det-far-plats: short words take a larger font.
+    const roomy =
+      name.length <= 18 && name.split(' ').every((word) => word.length <= 9);
     choose.append(
       art,
-      element(
-        'span',
-        'research-node-name',
-        identified ? type.replace(/ factory$/, '') : 'Unknown',
-      ),
+      element('span', `research-node-name${roomy ? ' roomy' : ''}`, name),
     );
     const status = !identified
       ? 'Undiscovered'

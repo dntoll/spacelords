@@ -15,7 +15,7 @@ describe('forskningstradets-utrymme', () => {
     );
     expect(page.querySelector('.screen-header')).toBeNull();
     expect(page.querySelector('h1')?.classList).toContain('visually-hidden');
-    const summary = page.querySelector('.research-queue summary')!;
+    const summary = page.querySelector('.research-queue-summary')!;
     expect(summary.getAttribute('aria-label')).toContain(
       'Research stations · 5',
     );
@@ -24,9 +24,12 @@ describe('forskningstradets-utrymme', () => {
     expect(page.querySelector('.research-tree-tools')).toBeNull();
     expect(page.querySelector('[aria-label="Research tree zoom"]')).toBeNull();
     expect(page.querySelector('[aria-label="Research tree"]')).not.toBeNull();
-    const queue = page.querySelector<HTMLDetailsElement>('.research-queue');
-    expect(queue?.tagName).toBe('DETAILS');
-    expect(queue?.open).toBe(false);
+    // forskningsflikar: the queue is a tab below the tree, Selected first.
+    const queue = page.querySelector('.research-bottom > .research-queue');
+    expect(queue?.hasAttribute('hidden')).toBe(true);
+    expect(
+      [...page.querySelectorAll('.research-tab')].map((tab) => tab.textContent),
+    ).toEqual(['Selected', 'Queue · 0']);
   });
 
   it('keeps an opened queue available while its orders change without changing the camera', () => {
@@ -36,14 +39,15 @@ describe('forskningstradets-utrymme', () => {
     document.body.replaceChildren(root);
     const view = new AppView(root, () => ({ render() {}, dispose() {} }));
     view.render(model.snapshot);
-    const queue = root.querySelector<HTMLDetailsElement>('.research-queue')!;
-    queue.open = true;
+    root
+      .querySelector<HTMLButtonElement>('.research-tab[data-tab="queue"]')!
+      .click();
     const camera = model.snapshot.researchCamera;
     model.research('Colony ship factory');
     view.render(model.snapshot);
-    expect(
-      root.querySelector<HTMLDetailsElement>('.research-queue')!.open,
-    ).toBe(true);
+    expect(root.querySelector('.research-queue')!.hasAttribute('hidden')).toBe(
+      false,
+    );
     expect(
       root.querySelectorAll('.research-queue article').length,
     ).toBeGreaterThan(0);

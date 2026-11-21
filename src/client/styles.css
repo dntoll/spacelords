@@ -1899,7 +1899,7 @@ p {
     grid-template-columns: minmax(0, 1fr);
     /* detaljer-utan-scroll: room for a whole description without scrolling,
        reserved up front so the tree keeps its size when a node is chosen. */
-    grid-template-rows: minmax(0, 1fr) minmax(0, min(42%, 168px));
+    grid-template-rows: minmax(0, 1fr) minmax(0, min(48%, 204px));
   }
 }
 /* forskningstradets-utrymme: station and queue information stay compact. */
@@ -1959,27 +1959,57 @@ p {
   font-size: 0.8rem;
   box-shadow: 0 4px 24px #0005;
 }
-.research-queue {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  max-width: calc(100% - 16px);
-  z-index: 3;
+/* forskningsflikar: Selected and Queue share the area below the tree. */
+.research-bottom {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #10232e;
+  overflow: hidden;
 }
-.research-queue > summary {
-  min-height: 44px;
-  padding: 12px;
-  cursor: pointer;
+.research-bottom > .research-details {
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+.research-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+}
+.research-tab {
+  flex: 1;
+  min-height: 32px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
   font-size: 0.8rem;
+  cursor: pointer;
 }
-.research-queue[open] {
-  width: min(340px, calc(100% - 16px));
+.research-tab[aria-selected='true'] {
+  color: var(--accent);
+  box-shadow: inset 0 -2px var(--accent);
 }
-.research-queue-content {
-  max-height: min(40dvh, 280px);
+.research-queue {
+  min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  padding: 0 8px 8px;
+  padding: 6px 8px;
+}
+.research-queue[hidden],
+.research-bottom > [hidden] {
+  display: none;
+}
+.research-queue-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  color: var(--muted);
 }
 .research-queue-order {
   padding: 8px;
@@ -5552,4 +5582,8 @@ body:has(.discovery-controls) .selection-panel {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);
+}
+/* storre-text-dar-det-far-plats: names with short words fit a larger font. */
+.research-node-name.roomy {
+  font-size: 0.86rem;
 }

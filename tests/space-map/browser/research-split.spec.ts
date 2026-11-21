@@ -96,7 +96,7 @@ for (const size of [
     if (size.width <= 640) {
       expect(selected.y).toBeGreaterThanOrEqual(before.y + before.height);
       expect(before.height).toBeGreaterThan(selected.height);
-      expect(selected.height).toBeLessThanOrEqual(168);
+      expect(selected.height).toBeLessThanOrEqual(172);
     } else {
       expect(selected.x).toBeGreaterThanOrEqual(before.x + before.width);
     }
@@ -151,7 +151,6 @@ for (const size of [
     await page.screenshot({
       path: testInfo.outputPath('research-split-selection.png'),
     });
-    await page.locator('.research-queue summary').click();
     await expect(action).toBeInViewport({ ratio: 1 });
     expect(await tree.boundingBox()).toEqual(before);
     await action.click();

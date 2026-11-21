@@ -60,7 +60,7 @@ for (const width of [320, 900]) {
       .click();
     await chooseResearch(page, 'Colony ship factory');
     const research = page.locator('.research-queue');
-    await research.locator('summary').click();
+    await page.locator('.research-tab[data-tab="queue"]').click();
     await checkControls(research.locator('article').first());
     await research.screenshot({
       path: testInfo.outputPath('research-queue.png'),

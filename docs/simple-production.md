@@ -302,6 +302,15 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
   (0.74rem i stället för 0.68rem) på upp till två rader och större ikon.
   Ersätter den halverade korthöjden i `kompakt-forskningstrad`; bredden är
   oförändrad.
+- `forskningsflikar` (**Fullständigt implementerat**): forskningskön ligger
+  inte längre över trädet. Ytan under trädet har flikarna `Selected` (vald
+  teknik) och `Queue · n` (kön, stationerna och hur forskning fungerar).
+  Fliken behålls när kön ändras, och ett tryck på en teknik i trädet visar
+  `Selected`. Ytan har plats för flikarna (upp till 48 % av höjden, högst
+  204 px på smala skärmar).
+- `storre-text-dar-det-far-plats` (**Fullständigt implementerat**): namn vars
+  ord är högst nio tecken långa (och högst 18 tecken totalt) visas i
+  0.86rem; längre ord behåller 0.74rem så att alla namn ryms på två rader.
 - `detaljer-utan-scroll` (**Fullständigt implementerat**): på smala skärmar
   har detaljrutan under trädet plats för hela beskrivningen utan att scrolla
   (upp till 42 % av ytan, högst 168 px). Höjden är reserverad i förväg, så

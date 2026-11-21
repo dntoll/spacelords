@@ -125,7 +125,7 @@ test('dragbara-koer: research dependencies reject invalid reordering without par
   };
   await seed(page, state);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
-  await page.locator('.research-queue summary').click();
+  await page.locator('.research-tab[data-tab="queue"]').click();
   const handle = page.locator('.research-queue .queue-drag-handle').nth(1);
   await handle.focus();
   for (const key of ['Space', 'ArrowUp', 'Enter'])
