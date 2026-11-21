@@ -209,23 +209,14 @@ for (const cargo of [false, true]) {
     const state = {
       ...original,
       fleets: original.fleets.map((fleet) =>
-        fleet.id === 'freighters' ? { ...fleet, routeId: 'route-test' } : fleet,
+        fleet.id === 'freighters'
+          ? {
+              ...fleet,
+              routeId: 'route-test',
+              ...(cargo ? { hold: { Iron: 5, Water: 0, Oil: 0 } } : {}),
+            }
+          : fleet,
       ),
-      shipments: cargo
-        ? [
-            {
-              id: 'cargo-test',
-              resource: 'Iron' as const,
-              amount: 5,
-              path: ['sol-0', 'sol-1'],
-              stage: 0,
-              projectId: 'vesta-mine',
-              recipient: 'sol-1',
-              fleetId: 'freighters',
-              committed: true,
-            },
-          ]
-        : [],
     };
     await page.addInitScript((state) => {
       if (localStorage.getItem('fleet-transfer-seeded')) return;

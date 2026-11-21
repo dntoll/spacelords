@@ -476,3 +476,7 @@ med en skeppsorder enligt `produktionsorder-aterkoppling`.
 Det tidigare scenariot med manuellt beställda blandade motorer ersätts av
 `delar-tillverkas-pa-behov` och valet av senaste tillgängliga teknik: skeppet
 får tre Ion pulse engines när fabriken finns, och behåller dem vid flytt.
+Patrullkortets tidigare höjdgräns ersätts av `synlig-flottorder`, som tillåter
+ett högre kort när ordertext visas. Testet behåller kontroll av synlig status
+och åtkomliga knappar. Lasttestets fixtur använder flottans kvarvarande last i
+stället för det borttagna försändelsesystemet.

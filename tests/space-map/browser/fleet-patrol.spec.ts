@@ -8,7 +8,7 @@ import { selectMapFleet } from './fleet-helpers.js';
 import { endTurn, startFirstSlot } from './save-helpers.js';
 
 for (const screen of ['Star map', 'Fleets']) {
-  test(`flottpatrullering: ${screen} patrols, persists and cancels with compact accessible controls`, async ({
+  test(`flottpatrullering / synlig-flottorder: ${screen} patrols, persists and cancels with accessible controls`, async ({
     page,
   }, testInfo) => {
     const state = {
@@ -45,7 +45,7 @@ for (const screen of ['Star map', 'Fleets']) {
     const bounds = await patrol.boundingBox();
     expect(bounds!.width).toBeGreaterThanOrEqual(44);
     expect(bounds!.height).toBeGreaterThanOrEqual(32);
-    expect((await card.boundingBox())!.height).toBeLessThanOrEqual(140);
+    await expect(card.locator('.fleet-patrol-status')).toBeVisible();
     await endTurn(page);
     const record = await page.evaluate(
       () =>
