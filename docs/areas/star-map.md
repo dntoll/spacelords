@@ -114,3 +114,11 @@ visas vid ruttens ändpunkt.
   först vid maximal panelhöjd. Vid återgång rullas innehållet först till toppen
   innan panelen krymper.
   En del av kartan förblir synlig.
+
+- **Grundkrav för kartan:** `statisk-planetplacering`, `synliga-stjarnor`
+  och `synliga-handelsrutter` är **Fullständigt implementerat**. Stjärnor och
+  planeter ligger stilla, alla stjärnpositioner syns även utanför sikten och
+  rutter syns även inne i markerade hexrutor utan att dölja planeter och
+  flottor. `stjarnsystem-och-asteroidbalten` är **Delvis implementerat**:
+  stjärnsystem med fasta planeter och gasplaneter finns; asteroidbälten
+  återstår.

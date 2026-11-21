@@ -134,3 +134,10 @@ uppdrag till lediga flottor.
   sparade flottor och förstärkningsregler bevaras. Se [produktkraven](../product-requirements.md).
   Ruttpanelen visar bara redan tilldelade flottor; den globala Assign fleet-listan
   är borttagen. På Star map kan flottor fortsatt dras till ruttlinjen för tilldelning.
+
+- **Grundkrav för flottor:** `tomma-flottor`, `arbetskraft-och-besattning`
+  och `ruttflotta-till-narmaste-andplanet` är **Fullständigt implementerat**.
+  Tomma flottor behåller namn, saknar position och kan ta emot skepp men visas
+  inte på kartan. Byggnader, projekt och skepp reserverar arbetare och
+  besättning. En ledig transportflotta som tilldelas en rutt reser först till
+  närmaste ändplanet, vid lika avstånd ruttens första.

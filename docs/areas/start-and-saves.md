@@ -58,3 +58,6 @@ att översättas.
   implementerat**: bara nuvarande sparformat (version 17) laddas, och äldre
   sparade spel avvisas. Det ersätter övergångarna från äldre format, efter
   uttryckligt beslut enligt `avstamning-sparkompatibilitet`.
+
+- **Grundkrav:** `flera-skarmstorlekar` är **Fullständigt implementerat**:
+  spelet går att använda på mobil, surfplatta och dator.

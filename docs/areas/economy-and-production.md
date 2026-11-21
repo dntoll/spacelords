@@ -165,3 +165,8 @@ informerar om planeten (`planetsida-informerar`). Detaljerna per skärm står i
   utforskningen: ett nytt spel uppmanar till forskning och utvinning, byggvalen
   färgas efter om fabriken finns, byggs eller saknas i gruppen och det som
   behövs just nu står överst under `Recommended`.
+
+- **Grundkrav för byggande:** `bygga-forskningsstation` och
+  `gemensam-byggko` är **Fullständigt implementerat**. Research station kräver
+  ingen egen forskning och kan byggas flera gånger per planet. Planetens
+  byggnader och skepp delar en kö.

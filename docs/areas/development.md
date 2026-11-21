@@ -62,3 +62,6 @@ Arbetsreglerna står i [AGENTS.md](../../AGENTS.md) och de tekniska kraven i
 
 - **Driftsättning:** endast klientbygget under `spacelords/` i målrepot;
   befintlig webbplats, navigation, DNS och Pages-inställningar bevaras.
+
+- **Utvecklingsstöd:** `manuell-rundstyrning` är **Ej implementerat**:
+  under utveckling ska spelåren kunna styras manuellt.
