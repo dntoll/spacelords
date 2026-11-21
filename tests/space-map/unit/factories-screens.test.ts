@@ -1258,3 +1258,39 @@ describe('en-order-ett-skepp', () => {
     ).not.toContain('Vesta');
   });
 });
+
+describe('terraformering-forst', () => {
+  const desert = async (withDome: boolean) => {
+    const { domeProductionState } =
+      await import('../../fixtures/production-dome.js');
+    const state = domeProductionState();
+    if (withDome) state.colonies[0]![1].domes = [0];
+    return setup({
+      ...state,
+      pirates: [],
+      researched: [...state.researched, 'Desert terraforming factory'],
+    });
+  };
+
+  it('recommends the planet’s terraforming factory first, and its Dome on an unprepared site', async () => {
+    const unprepared = await desert(false);
+    unprepared.send({ type: 'open-factories' });
+    expect(
+      unprepared.group('Tellus').recommended.map((item) => item.type),
+    ).toContain('Desert dome');
+    unprepared.act({ kind: 'open-site', planet: 'sol-0', site: 0 });
+    const dome = unprepared
+      .factories()
+      .build!.options.find((option) => option.type === 'Desert dome')!;
+    expect(dome.recommendations).toEqual([{ kind: 'terraforming' }]);
+
+    const prepared = await desert(true);
+    prepared.send({ type: 'open-factories' });
+    prepared.act({ kind: 'open-site', planet: 'sol-0', site: 0 });
+    const first = prepared.root.querySelector(
+      '.factory-recommended .factory-option',
+    );
+    expect(first?.textContent).toContain('Desert terraforming factory');
+    expect(first?.textContent).toContain('Terraforms this planet');
+  });
+});

@@ -111,6 +111,7 @@ export type EscortHelp =
 export type FactoryRecommendation =
   | { readonly kind: 'research' }
   | { readonly kind: 'escort' }
+  | { readonly kind: 'terraforming' }
   | { readonly kind: 'extraction'; readonly resource: Resource }
   | { readonly kind: 'transport' }
   | { readonly kind: 'colonization' }
