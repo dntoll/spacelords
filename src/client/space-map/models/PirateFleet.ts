@@ -88,10 +88,7 @@ export class PirateFleet {
       );
   }
 
-  static restore(
-    saved: SavedPirateFleet,
-    galaxy: Galaxy,
-  ): PirateFleet {
+  static restore(saved: SavedPirateFleet, galaxy: Galaxy): PirateFleet {
     const system = galaxy.systems.find(
       (system) => system.star.id === saved.systemId,
     );
