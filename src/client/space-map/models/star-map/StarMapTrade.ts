@@ -1,21 +1,11 @@
 import type { Camera } from '../Camera.js';
 import type { Game } from '../Game.js';
-import { HexGeometry, type Point } from '../../../common/HexCoordinate.js';
+import type { Point } from '../../../common/HexCoordinate.js';
 import { tradeAssignmentIssue } from './TradeAssignment.js';
 import { TradeRouteMapLayout } from './TradeRouteMapLayout.js';
 
-export interface MapRoutePreview {
-  readonly start: Point;
-  readonly end: Point;
-  readonly targetId: string | null;
-  readonly label: string;
-  readonly issue: string | null;
-}
 export interface MapTradeSnapshot {
-  readonly creationIssue: string | null;
   readonly routeId: string | null;
-  readonly sourcePlanetId: string | null;
-  readonly preview: MapRoutePreview | null;
   readonly candidateRouteIds: readonly string[];
   readonly assignmentFleetId: string | null;
   readonly hoveredRouteIds: readonly string[];
@@ -24,8 +14,6 @@ export interface MapTradeSnapshot {
 // Transient map interaction only; the Game remains the authority for orders.
 export class StarMapTrade {
   #routeId: string | null = null;
-  #sourcePlanetId: string | null = null;
-  #preview: MapRoutePreview | null = null;
   #candidateRouteIds: readonly string[] = [];
   #assignmentFleetId: string | null = null;
   #hoveredRouteIds: readonly string[] = [];
@@ -38,12 +26,9 @@ export class StarMapTrade {
   get snapshot(): MapTradeSnapshot {
     const routes = this.game().tradeRoutes;
     return Object.freeze({
-      creationIssue: this.creationIssue(),
       routeId: routes.some((r) => r.id === this.#routeId)
         ? this.#routeId
         : null,
-      sourcePlanetId: this.#sourcePlanetId,
-      preview: this.#preview,
       candidateRouteIds: Object.freeze(
         this.#candidateRouteIds.filter((id) => routes.some((r) => r.id === id)),
       ),
@@ -51,9 +36,7 @@ export class StarMapTrade {
       hoveredRouteIds: Object.freeze([...this.#hoveredRouteIds]),
     });
   }
-  cancel(keepSource = false): void {
-    if (!keepSource) this.#sourcePlanetId = null;
-    this.#preview = null;
+  cancel(): void {
     this.#candidateRouteIds = [];
     this.#assignmentFleetId = null;
     this.#hoveredRouteIds = [];
@@ -66,59 +49,6 @@ export class StarMapTrade {
     if (!this.game().tradeRoutes.some((r) => r.id === id)) return;
     this.clearSelection();
     this.#routeId = id;
-  }
-  begin(sourceId: string): void {
-    this.clearSelection();
-    this.#sourcePlanetId = sourceId;
-  }
-  creationIssue(): string | null {
-    if (this.game().phase !== 'planning')
-      return 'Wait until planning to create a route.';
-    if (!this.game().research.completed.includes('Trade logistics'))
-      return 'Research Trade logistics first.';
-    return null;
-  }
-  preview(point: Point): void {
-    const source = this.game()
-      .ownedPlanetSnapshots()
-      .find((p) => p.id === this.#sourcePlanetId);
-    if (!source) return;
-    const world = this.camera().screenToWorld(point);
-    const hex = HexGeometry.fromPoint(world);
-    const target = this.game()
-      .ownedPlanetSnapshots()
-      .find((p) => p.position.key === hex.key);
-    const issue =
-      this.creationIssue() ??
-      (!target
-        ? 'Choose another owned planet.'
-        : target.id === source.id
-          ? 'Choose a different planet.'
-          : this.game().tradeRoutes.some(
-                (r) =>
-                  [r.a, r.b].includes(source.id) &&
-                  [r.a, r.b].includes(target.id),
-              )
-            ? 'A trade route already connects these planets.'
-            : null);
-    this.#preview = Object.freeze({
-      start: HexGeometry.toPoint(source.position),
-      end: target
-        ? HexGeometry.toPoint(target.position)
-        : Object.freeze({ ...world }),
-      targetId: target?.id ?? null,
-      label: `${source.name} → ${target?.name ?? 'Choose an owned planet'}`,
-      issue,
-    });
-  }
-  commit(): string | null {
-    const preview = this.#preview,
-      source = this.#sourcePlanetId;
-    // handelsrutt-skapande-pa-stjarnkartan: keep rejected orders explained and editable.
-    if (!preview || preview.issue || !preview.targetId || !source) return null;
-    const id = this.game().createTradeRoute(source, preview.targetId);
-    this.selectRoute(id);
-    return id;
   }
   hits(point: Point, radius = 14): readonly string[] {
     return TradeRouteMapLayout.hit(

@@ -110,7 +110,6 @@ export type Screen =
   | 'build-selection'
   | 'research'
   | 'fleets'
-  | 'route'
   | 'factories'
   | 'production'
   | 'decisions'
@@ -484,12 +483,10 @@ export class AppModel {
       mapProblems: Object.freeze(
         decisions.filter(needsAttention).flatMap((decision): MapProblem[] => {
           const screen =
-            decision.id.startsWith('supply-') || decision.kind === 'route'
-              ? 'route'
-              : decision.id.startsWith('staff-') ||
-                  decision.id.startsWith('production-')
-                ? 'production'
-                : null;
+            decision.id.startsWith('staff-') ||
+            decision.id.startsWith('production-')
+              ? 'production'
+              : null;
           return screen
             ? [
                 Object.freeze({
@@ -649,24 +646,12 @@ export class AppModel {
   commitFleetDestination(): void {
     return this.starMap.commitFleetDestination();
   }
-  cancelMapPointer(keepRouteSource = false): void {
-    return this.starMap.cancelMapPointer(keepRouteSource);
+  cancelMapPointer(): void {
+    return this.starMap.cancelMapPointer();
   }
 
   selectPoint(point: Point): void {
     return this.starMap.selectPoint(point);
-  }
-  mapRouteDragSource(point: Point): string | null {
-    return this.routes.mapRouteDragSource(point);
-  }
-  beginMapRoute(id: string): void {
-    return this.routes.beginMapRoute(id);
-  }
-  previewMapRoute(point: Point): void {
-    return this.routes.previewMapRoute(point);
-  }
-  commitMapRoute(): void {
-    return this.routes.commitMapRoute();
   }
   selectMapRoute(id: string): void {
     return this.routes.selectMapRoute(id);
@@ -859,12 +844,6 @@ export class AppModel {
   fitResearch(): void {
     return this.researchCase.fitResearch();
   }
-  openSupplyPlanet(id: string): void {
-    return this.routes.openSupplyPlanet(id);
-  }
-  openSupplyRoute(id: string): void {
-    return this.routes.openSupplyRoute(id);
-  }
   moveResearch(type: Technology, index: number): void {
     return this.researchCase.moveResearch(type, index);
   }
@@ -886,9 +865,6 @@ export class AppModel {
     index: number,
   ): void {
     this.#game.movePlanetQueue(kind, planetId, index);
-  }
-  openRoute(planetId?: string): void {
-    return this.routes.openRoute(planetId);
   }
   openProduction(planetId?: string): void {
     return this.production.openProduction(planetId);
@@ -1033,7 +1009,7 @@ export class AppModel {
     return this.decisions.cancelEndTurn();
   }
   createTradeRoute(a: string, b: string): void {
-    return this.routes.createTradeRoute(a, b);
+    this.#game.createTradeRoute(a, b);
   }
   assignTradeFleet(routeId: string, fleetId: string): void {
     return this.routes.assignTradeFleet(routeId, fleetId);
@@ -1525,11 +1501,7 @@ export class AppModel {
   #salvageDropTarget(point: Point): string | null {
     const world = this.#camera.screenToWorld(point);
     return (
-      FleetMapLayout.markers(
-        this.#game.fleetSnapshots(),
-        [],
-        this.#camera.snapshot.zoom,
-      )
+      FleetMapLayout.markers(this.#game.fleetSnapshots())
         .filter(
           ({ fleet }) =>
             this.#game.canIssueFleetOrders(fleet.id) &&
@@ -1934,13 +1906,8 @@ export class AppModel {
       previewFleetDestination: (point: Point) =>
         model.previewFleetDestination(point),
       commitFleetDestination: () => model.commitFleetDestination(),
-      cancelMapPointer: (keepRouteSource = false) =>
-        model.cancelMapPointer(keepRouteSource),
+      cancelMapPointer: () => model.cancelMapPointer(),
       selectPoint: (point: Point) => model.selectPoint(point),
-      mapRouteDragSource: (point: Point) => model.mapRouteDragSource(point),
-      beginMapRoute: (id: string) => model.beginMapRoute(id),
-      previewMapRoute: (point: Point) => model.previewMapRoute(point),
-      commitMapRoute: () => model.commitMapRoute(),
       selectMapRoute: (id: string) => model.selectMapRoute(id),
       assignMapTradeFleet: (routeId: string, fleetId: string) =>
         model.assignMapTradeFleet(routeId, fleetId),
@@ -1989,14 +1956,11 @@ export class AppModel {
       zoomResearch: (factor: number, anchor: Point) =>
         model.zoomResearch(factor, anchor),
       fitResearch: () => model.fitResearch(),
-      openSupplyPlanet: (id: string) => model.openSupplyPlanet(id),
-      openSupplyRoute: (id: string) => model.openSupplyRoute(id),
       moveResearch: (type: Technology, index: number) =>
         model.moveResearch(type, index),
       requestResearchRemoval: (type: Technology | null) =>
         model.requestResearchRemoval(type),
       confirmResearchRemoval: () => model.confirmResearchRemoval(),
-      openRoute: (planetId?: string) => model.openRoute(planetId),
       openFactories: (focus?: string) => model.factoriesCase.open(focus),
       openProduction: (planetId?: string) => model.openProduction(planetId),
       focusMapPlanet: (id: string) => model.#focusMapPlanet(id),
@@ -2247,12 +2211,8 @@ export interface AppHost {
   hoverMapFleet(point: Point | null): boolean;
   previewFleetDestination(point: Point): void;
   commitFleetDestination(): void;
-  cancelMapPointer(keepRouteSource?: boolean): void;
+  cancelMapPointer(): void;
   selectPoint(point: Point): void;
-  mapRouteDragSource(point: Point): string | null;
-  beginMapRoute(id: string): void;
-  previewMapRoute(point: Point): void;
-  commitMapRoute(): void;
   selectMapRoute(id: string): void;
   assignMapTradeFleet(routeId: string, fleetId: string): void;
   openPlanet(id?: string): void;
@@ -2288,12 +2248,9 @@ export interface AppHost {
   panResearch(delta: Point): void;
   zoomResearch(factor: number, anchor: Point): void;
   fitResearch(): void;
-  openSupplyPlanet(id: string): void;
-  openSupplyRoute(id: string): void;
   moveResearch(type: Technology, index: number): void;
   requestResearchRemoval(type: Technology | null): void;
   confirmResearchRemoval(): void;
-  openRoute(planetId?: string): void;
   /** Opens Factories, focused on a planet's or a route's group. */
   openFactories(focus?: string): void;
   openProduction(planetId?: string): void;

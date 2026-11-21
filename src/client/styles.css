@@ -2595,20 +2595,6 @@ p {
   margin-left: 5px;
   font-weight: 800;
 }
-.map-route-legend {
-  position: absolute;
-  right: 10px;
-  width: fit-content;
-  max-width: calc(100% - 20px);
-  left: 10px;
-  top: 6px;
-  margin: 0;
-  padding: 4px 8px;
-  color: #ffaaa2;
-  background: #0a1520ed;
-  pointer-events: none;
-  font-size: 0.8rem;
-}
 .production-ring {
   position: absolute;
   width: 0;

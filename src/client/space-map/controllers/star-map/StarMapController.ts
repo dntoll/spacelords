@@ -35,8 +35,8 @@ export class StarMapController {
     return this.facade.commitFleetDestination();
   }
 
-  cancelMapPointer(keepRouteSource = false): void {
-    return this.facade.cancelMapPointer(keepRouteSource);
+  cancelMapPointer(): void {
+    return this.facade.cancelMapPointer();
   }
 
   selectPoint(point: Point): void {

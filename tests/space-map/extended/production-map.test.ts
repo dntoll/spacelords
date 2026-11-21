@@ -113,42 +113,19 @@ it('produktionsorder-aterkoppling: replaces a previous success with the reason w
   controller.dispose();
 });
 
-describe('route-kartvy / delad-kartkamera', () => {
-  it('keeps one map instance and camera across all four modes, cancelling an unfinished route', () => {
+describe('delad-kartkamera', () => {
+  it('keeps one map instance and camera across the map modes', () => {
     const { model, factory, dispose, emit, click, save, controller } = setup();
     emit({ type: 'pan', delta: { x: 40, y: -12 } });
     emit({ type: 'zoom', factor: 1.5, anchor: { x: 0, y: 0 } });
     const camera = model.snapshot.camera;
-    // Factories replaces Route in the navigation; the Route map remains.
-    emit({ type: 'open-route' });
-    emit({ type: 'begin-map-route', id: 'sol-0' });
-    expect(model.snapshot.mapTrade.sourcePlanetId).toBe('sol-0');
-    click('Production');
-    expect(model.snapshot.mapTrade.sourcePlanetId).toBeNull();
-    for (const name of ['Fleets', 'Star map']) {
+    for (const name of ['Production', 'Fleets', 'Star map']) {
       click(name);
       expect(model.snapshot.camera).toEqual(camera);
     }
-    emit({ type: 'open-route' });
-    expect(model.snapshot.camera).toEqual(camera);
     expect(factory).toHaveBeenCalledTimes(1);
     expect(dispose).not.toHaveBeenCalled();
     expect(save).not.toHaveBeenCalled();
-    controller.dispose();
-  });
-  it('creates routes with click alternatives, assigns transport and rejects invalid assignment', () => {
-    const { model, emit, click, controller } = setup(tradeNetworkState(false));
-    emit({ type: 'open-route' });
-    click('Create route');
-    emit({ type: 'select', position: new HexCoordinate(0, 1) });
-    expect(model.snapshot.tradeRoutes).toHaveLength(1);
-    const id = model.snapshot.tradeRoutes[0]!.id;
-    emit({ type: 'assign-trade-fleet', routeId: id, fleetId: 'fleet-home' });
-    expect(playerNoticeText(model.snapshot.notice)).toContain(
-      'Assign a transport fleet to this route before adding escorts',
-    );
-    emit({ type: 'assign-trade-fleet', routeId: id, fleetId: 'freighters' });
-    expect(model.snapshot.tradeRoutes[0]!.hasActiveTransport).toBe(true);
     controller.dispose();
   });
 });
@@ -184,7 +161,6 @@ describe('produktions-kartvy / radiella-byggval / kompakt-produktionsko', () => 
     emit({ type: 'open-production' });
     emit({ type: 'map-select-fleet', id: 'freighters' });
     expect(model.snapshot.mapFleetId).toBeNull();
-    expect(model.mapRouteDragSource({ x: 0, y: 0 })).toBeNull();
     expect(model.fleetAtPoint({ x: 0, y: 0 })).toBeNull();
     emit({ type: 'zoom', factor: 1.5, anchor: { x: 0, y: 0 } });
     emit({ type: 'pan', delta: { x: 150, y: 130 } });
@@ -218,25 +194,6 @@ describe('produktions-kartvy / radiella-byggval / kompakt-produktionsko', () => 
     expect(model.snapshot.camera).toEqual(fitted);
     controller.dispose();
   });
-});
-
-it('handelsrutt-skapande-pa-stjarnkartan: Route explains and disables Create route until Trade logistics is completed', () => {
-  const state = { ...tradeNetworkState(false), researched: [] };
-  const { root, emit, controller } = setup(state);
-  emit({ type: 'open-route' });
-  const create = root.querySelector<HTMLButtonElement>(
-    '[aria-label="Create route"]',
-  )!;
-  expect(create.disabled).toBe(true);
-  const reason = root.querySelector(
-    `#${create.getAttribute('aria-describedby')}`,
-  );
-  expect(reason?.textContent).toBe('Research Trade logistics first.');
-  emit({ type: 'begin-map-route', id: 'sol-0' });
-  expect(root.querySelector('.map-route-feedback')?.textContent).toBe(
-    'Research Trade logistics first.',
-  );
-  controller.dispose();
 });
 
 it('centrerat-kartfokus: Show centers the planet in the unobscured area after measuring the new screen', () => {

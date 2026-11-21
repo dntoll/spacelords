@@ -2,7 +2,6 @@ import type p5 from 'p5';
 import type { TradeRouteSnapshot } from '../../models/Logistics.js';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import { FleetMapLayout } from '../../models/star-map/FleetMapLayout.js';
-import type { RouteFleetPlacement } from '../../models/star-map/FleetMapLayout.js';
 import type { FleetSnapshot } from '../../models/Game.js';
 import type { ShipSpriteType } from '../ShipImages.js';
 import { HexGeometry, type Point } from '../../../common/HexCoordinate.js';
@@ -32,17 +31,13 @@ export function renderMapFleets(
   movementPoints: ReadonlyMap<string, Point> = new Map(),
   shipImages: ReadonlyMap<ShipSpriteType, p5.Image> = new Map(),
   showDestinationArrows = true,
-  routePlacement: RouteFleetPlacement = 'center',
 ): void {
-  const markers = FleetMapLayout.markers(
-    fleets,
-    routeView ?? [],
-    zoom,
-    routePlacement,
-  ).map((marker) => ({
-    ...marker,
-    point: movementPoints.get(marker.fleet.id) ?? marker.point,
-  }));
+  const markers = FleetMapLayout.markers(fleets, routeView ?? []).map(
+    (marker) => ({
+      ...marker,
+      point: movementPoints.get(marker.fleet.id) ?? marker.point,
+    }),
+  );
   const destinationFor = (fleet: FleetSnapshot) =>
     interaction.fleetDragging && interaction.mapFleetId === fleet.id
       ? interaction.fleetDestinationPreview
@@ -50,18 +45,6 @@ export function renderMapFleets(
 
   // kartflottor: draw routes underneath the separate fleet swarms.
   for (const { fleet, point } of markers) {
-    const route = routeView?.find((route) => route.id === fleet.routeId);
-    if (route && routePlacement === 'center') {
-      const start = HexGeometry.toPoint(route.start),
-        end = HexGeometry.toPoint(route.end);
-      const center = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
-      if (Math.hypot(point.x - center.x, point.y - center.y) > 1) {
-        sketch.stroke('#72d8ca');
-        sketch.strokeWeight(1 / zoom);
-        sketch.line(point.x, point.y, center.x, center.y);
-      }
-      continue;
-    }
     // ruttflottor-utan-destinationspilar / destinationspilar-endast-i-flottvyn
     // vald-flotta-visar-destinationspil: the selected fleet keeps its arrow.
     if (
@@ -98,13 +81,6 @@ export function renderMapFleets(
     const selected = interaction.mapFleetId === fleet.id;
     const hovered = interaction.hoveredFleetId === fleet.id;
     const needsOrder = attentionFleetIds.includes(fleet.id);
-    const availableTransport =
-      routePlacement === 'center' &&
-      !fleet.routeId &&
-      !fleet.upgrade &&
-      !fleet.destination &&
-      !fleet.joinFleetId &&
-      fleet.ships['Transport ship'] > 0;
     // flottkategorier: the Fleets map colours each fleet by its category;
     // a fleet waiting for orders keeps its amber attention ring.
     const color = hostile
@@ -117,18 +93,8 @@ export function renderMapFleets(
             ? '#ffdc88'
             : showUnselectedRings
               ? FLEET_CATEGORY_COLORS[fleetCategory(fleet)]
-              : availableTransport
-                ? '#d8a7ff'
-                : '#72d8ca';
-    if (
-      hostile ||
-      selected ||
-      hovered ||
-      showUnselectedRings ||
-      availableTransport ||
-      needsOrder ||
-      (routePlacement === 'center' && routeView && fleet.routeId)
-    ) {
+              : '#72d8ca';
+    if (hostile || selected || hovered || showUnselectedRings || needsOrder) {
       const context = sketch.drawingContext as
         CanvasRenderingContext2D | undefined;
       context?.setLineDash(
@@ -148,13 +114,7 @@ export function renderMapFleets(
       );
       context?.setLineDash([]);
     }
-    if (
-      hostile ||
-      movementPoints.has(fleet.id) ||
-      (routePlacement === 'center' &&
-        routeView &&
-        (fleet.routeId || availableTransport))
-    ) {
+    if (hostile || movementPoints.has(fleet.id)) {
       sketch.noStroke();
       const width = (fleet.name.length * 6.5 + 10) / zoom;
       sketch.fill('#0a1520ed');

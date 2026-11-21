@@ -68,15 +68,7 @@ export async function selectMapFleet(
   );
   const game = Game.restore(record.state);
   const fleets = game.fleetSnapshots();
-  const routeView = await page
-    .locator('.nav-button[data-screen="route"][aria-current="page"]')
-    .count();
-  const marker = FleetMapLayout.markers(
-    fleets,
-    game.tradeRoutes,
-    1,
-    routeView ? 'center' : 'endpoint',
-  ).find(
+  const marker = FleetMapLayout.markers(fleets, game.tradeRoutes).find(
     (marker) => marker.fleet.name === name || marker.fleet.ownName === name,
   );
   if (!marker) throw new Error(`No positioned fleet: ${name}`);
@@ -140,7 +132,7 @@ export async function fleetMarkerPoint(
     Number(
       (await page.getByLabel('Map zoom').textContent())!.replace('%', ''),
     ) / 100;
-  const marker = FleetMapLayout.markers(game.fleetSnapshots(), [], zoom).find(
+  const marker = FleetMapLayout.markers(game.fleetSnapshots()).find(
     (item) => item.fleet.name === name || item.fleet.ownName === name,
   );
   if (!marker) throw new Error(`No positioned fleet: ${name}`);

@@ -41,19 +41,26 @@ bara av tester.
 och beslut leder till Factories. Kvar finns skärmen `route`, `renderRoutePlanet`,
 ruttlegenden, `RouteFacade` med flera.
 
-- Rekommendation: ta bort skärmen och allt som bara används av den.
-  `TradeAssignment` används av Factories och behålls.
-- Fråga: OK att ta bort Route helt?
+- Beslut: ta bort. Genomfört tillsammans med B3 i commiten "Remove the
+  Route screen and route creation on the Star map". Skärmen, dess panel,
+  legend och kartbeskrivningar, `openRoute`, `openSupplyRoute` och
+  mittplaceringen av ruttflottor försvann. Beslut om rutter och försörjning
+  leder till Factories, och kartan visar ruttflottor vid ändpunkten.
 
 **B3. Två sätt att skapa rutter.** Star map låter fortfarande spelaren
 skapa rutter (dra mellan planeter eller tangenten R), vid sidan av Connect i
 Factories. Kartans väg tar inte hänsyn till de nya reglerna, som en order
 per skepp och beställda länkar.
 
-- Alternativ: (a) ta bort ruttskapandet på kartan, (b) låt kartan öppna
-  Connect för planetens grupp, (c) behåll som det är.
-- Rekommendation: (a) eller (b).
-- Fråga: Vilket?
+- Beslut: (a) ta bort. Dragning mellan planeter, tangenten R och panelen
+  `Create trade route` finns inte längre. Rutter skapas bara med Connect i
+  Factories (`rutter-endast-i-connect`). Att välja rutter och tilldela
+  flottor på kartan finns kvar.
+- Webbläsartester som använder Route eller ruttskapande på kartan och
+  behöver skrivas om eller tas bort: `route-escorts`, `component-network`,
+  `decision-muting`, `supply-production`, `unified-interface`,
+  `star-map-trade`, `production-map`, `fleet-map-management` och
+  `logistics`. Det samordnas med agenten som lagar webbläsartesterna.
 
 **B4. Planetsidan bygger fortfarande byggnader.** Planetsidans
 `Building sites` och `build-selection` låter spelaren bygga byggnader, vid

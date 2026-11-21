@@ -126,8 +126,9 @@ export class FleetFacade {
     this.host.destinationOrder = 'move';
     this.host.cancelShipTransfer();
     this.host.cancelFleetRename();
-    if (this.host.game.fleet(id)?.routeId) {
-      this.host.openSupplyRoute(this.host.game.fleet(id)!.routeId!);
+    const routeId = this.host.game.fleet(id)?.routeId;
+    if (routeId) {
+      this.host.openFactories(routeId);
       return;
     }
     if (this.host.game.canIssueFleetOrders(id)) {

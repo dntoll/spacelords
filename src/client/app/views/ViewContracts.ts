@@ -93,14 +93,13 @@ export type AppIntent =
         | 'allow-other-fleet-orders';
     }
   | {
-      readonly type:
-        'map-select-route' | 'map-select-fleet' | 'begin-map-route';
+      readonly type: 'map-select-route' | 'map-select-fleet';
       readonly id: string;
     }
   | { readonly type: 'cancel-map-trade' }
   | { readonly type: 'toggle-fleet-category'; readonly category: FleetCategory }
   | {
-      readonly type: 'open-route' | 'open-production';
+      readonly type: 'open-production';
       readonly planetId?: string;
     }
   | { readonly type: 'map-production-page'; readonly page: number }

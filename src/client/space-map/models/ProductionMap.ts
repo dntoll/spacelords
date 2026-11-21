@@ -3,11 +3,11 @@ import type { Point } from '../../common/HexCoordinate.js';
 import type { ProductionPresenceSnapshot } from './ProductionPresence.js';
 import type { ShipProgressSnapshot } from './production/ShipProgress.js';
 
-export type MapScreen = 'map' | 'fleets' | 'route' | 'production' | 'orders';
+export type MapScreen = 'map' | 'fleets' | 'production' | 'orders';
 export function isMapScreen(screen: string | null): screen is MapScreen {
   return (
     screen !== null &&
-    ['map', 'fleets', 'route', 'production', 'orders'].includes(screen)
+    ['map', 'fleets', 'production', 'orders'].includes(screen)
   );
 }
 export type MapProductionCategory = 'Buildings' | 'Components' | 'Ships';
@@ -43,7 +43,7 @@ export interface MapProblem {
   readonly decisionId: string;
   readonly planetId?: string | undefined;
   readonly routeId?: string | undefined;
-  readonly screen: 'route' | 'production';
+  readonly screen: 'production';
   readonly explanation: string;
 }
 export interface MapViewport {

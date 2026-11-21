@@ -1,7 +1,6 @@
 import { ShipOrders } from '../../models/ShipOrders.js';
 import { SHIPS, type ShipType } from '../../models/Game.js';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
-import type { PlanetGameSnapshot } from '../../models/Game.js';
 import type { ProductionOption } from '../../models/ProductionMap.js';
 import type { ShipProgressSnapshot } from '../../models/production/ShipProgress.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
@@ -415,40 +414,5 @@ export function renderProductionMapPanel(
       (name) => onTab(name as ProductionTab),
     ),
   );
-  return panel;
-}
-
-export function renderRoutePlanet(
-  model: AppReadModel,
-  planet: PlanetGameSnapshot,
-  emit: IntentHandler,
-): HTMLElement {
-  const panel = element('div', 'route-planet-controls');
-  panel.append(renderMapLocationHeading(planet.name, planet.id, emit));
-  for (const problem of model.mapProblems.filter(
-    (p) => p.planetId === planet.id && p.screen === 'route',
-  ))
-    panel.append(element('p', 'blocked-reason', problem.explanation));
-  const create = button('Create route', () =>
-    emit({ type: 'begin-map-route', id: planet.id }),
-  );
-  create.disabled = model.mapTrade.creationIssue !== null;
-  panel.append(create);
-  if (model.mapTrade.creationIssue) {
-    const reason = element('p', 'blocked-reason', model.mapTrade.creationIssue);
-    reason.id = 'route-creation-issue';
-    create.setAttribute('aria-describedby', reason.id);
-    panel.append(reason);
-  }
-  for (const route of model.tradeRoutes.filter(
-    (r) => r.a === planet.id || r.b === planet.id,
-  ))
-    panel.append(
-      button(
-        `${route.from} ↔ ${route.to}`,
-        () => emit({ type: 'map-select-route', id: route.id }),
-        'button secondary-button',
-      ),
-    );
   return panel;
 }
