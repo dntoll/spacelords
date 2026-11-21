@@ -66,11 +66,21 @@ per skepp och beställda länkar.
 `Building sites` och `build-selection` låter spelaren bygga byggnader, vid
 sidan av Factories.
 
-- Rekommendation: ta bort byggandet från planetsidan och låt den bara
-  informera. Skärmen `build-selection` försvinner.
-- Fråga: Ska planetsidan finnas kvar alls? Den har Overview, Building sites,
-  Build queue och Production, där kö och produktion dubblerar Production på
-  kartan.
+- Beslut: förenkla och ta bort det som dubblerar Factories och Production.
+  Genomfört i commiten "Make the planet page informational"
+  (`planetsida-informerar`). Planetsidan har nu flikarna `Overview` och
+  `Building sites`. Byggplatserna visar status och har kvar `Demolish`/`Keep`,
+  som inte finns i Factories. Byggande, kupoler, uppgraderingar och
+  avbrytande sker i Factories. Skärmen `build-selection`, flikarna
+  `Build queue` och `Production`, deras tillstånd, intents och CSS är borta.
+  Byggnadsantalet för hela imperiet, som bara visades i byggvalet, försvann
+  med det.
+- Webbläsartester som använder det borttagna och behöver skrivas om eller
+  tas bort: `component-network`, `viewport`, `exploration-interruptions`,
+  `terraforming`, `factory-upgrades`, `planet-production`,
+  `building-inventory`, `production-controls`, `game-artwork`,
+  `unified-interface`, `production-map`, `queue-controls`, `planet-pages`,
+  `ship-engines`, `logistics`, `game`, `building-images` och `orders`.
 
 **B5. Production-ringens kategorier är döda.** Ringen visar bara skepp, men
 koden för kategorierna `Buildings` och `Components` fanns kvar. Dessutom

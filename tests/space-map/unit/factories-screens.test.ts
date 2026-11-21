@@ -482,7 +482,8 @@ describe('produktionsko-bara-skepp', () => {
     act({ kind: 'open-site', planet: 'sol-0', site: 2 });
     act({ kind: 'build', type: 'Research station' });
     act({ kind: 'open-site', planet: 'sol-0', site: 3 });
-    send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
+    model.scheduleShip('Transport ship', null);
+    act({ kind: 'open-site', planet: 'sol-0', site: 3 });
     expect(model.snapshot.planet?.projects.map((p) => p.type)).toEqual(
       expect.arrayContaining(['Research station', 'Transport ship']),
     );
@@ -853,9 +854,9 @@ describe('byggkons-framsteg / byggko-eller-skeppsdetaljer', () => {
   it('shows each queued ship’s parts and why it waits', () => {
     const { root, send, model } = withFactories();
     send({ type: 'open-production', planetId: 'sol-0' });
-    send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
-    send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
-    send({ type: 'queue-ship', ship: 'Fighter', fleetId: null });
+    model.scheduleShip('Transport ship', null);
+    model.scheduleShip('Transport ship', null);
+    model.scheduleShip('Fighter', null);
     send({ type: 'map-production-option', option: null });
     const queue = model.snapshot.productionMap.queue;
     expect(queue.map((entry) => [entry.type, entry.state])).toEqual([
@@ -899,7 +900,7 @@ describe('byggkons-framsteg / byggko-eller-skeppsdetaljer', () => {
     expect(visible('.map-build-queue')).toBe(true);
     expect(visible('[aria-label="Build details"]')).toBe(false);
     // The chosen tab stays while the view updates.
-    send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
+    send({ type: 'map-production-build', option: 'Transport ship' });
     expect(visible('.map-build-queue')).toBe(true);
     expect(tab('queue').textContent).toBe('Queue · 1');
     tab('selected').click();
@@ -1324,9 +1325,9 @@ it('delfabrik-i-produktion: a part factory making parts shows In production and 
     slotIndex: 2,
     demolition: false,
   });
-  const { send, group, root } = setup(state);
+  const { send, group, root, model } = setup(state);
   send({ type: 'open-production', planetId: 'sol-0' });
-  send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
+  model.scheduleShip('Transport ship', null);
   send({ type: 'open-factories' });
   const engines = group('Tellus').planets[0]!.sites[1]!.factory!;
   expect(engines).toMatchObject({

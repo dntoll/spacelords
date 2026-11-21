@@ -707,15 +707,6 @@ export class MasterController {
       case 'open-fleets':
         this.#fleets.openFleets();
         break;
-      case 'building-category':
-        this.#planet.selectBuildingCategory(intent.category);
-        break;
-      case 'building-selection':
-        this.#planet.selectBuilding(intent.building);
-        break;
-      case 'build-search':
-        this.#planet.searchBuildings(intent.query);
-        break;
       case 'home':
         this.#starMap.home();
         break;
@@ -734,23 +725,8 @@ export class MasterController {
       case 'zoom':
         this.#starMap.zoom(intent.factor, intent.anchor);
         break;
-      case 'build':
-        this.#planet.build(intent.building, intent.slotIndex);
-        break;
       case 'planet-tab':
         this.#planet.selectPlanetTab(intent.tab);
-        break;
-      case 'production-selection':
-        this.#planet.selectProduction(intent.category, intent.product);
-        break;
-      case 'production-fleet':
-        this.#planet.selectProductionFleet(intent.id);
-        break;
-      case 'open-planet-project':
-        this.#planet.openPlanetProject(intent.planetId, intent.projectId);
-        break;
-      case 'build-site':
-        this.#planet.openBuildSite(intent.index);
         break;
       case 'research':
         this.#research.research(intent.technology);
@@ -758,24 +734,11 @@ export class MasterController {
       case 'colonize':
         this.#planet.colonize(intent.id);
         break;
-      case 'queue-ship':
-        this.#planet.scheduleShip(
-          intent.ship,
-          intent.fleetId,
-          intent.factoryId,
-        );
-        break;
-      case 'queue-component':
-        this.#planet.scheduleComponent(intent.component);
-        break;
       case 'cancel-project':
         this.#planet.cancelProject(intent.id);
         break;
       case 'toggle-demolition':
         this.#planet.toggleDemolition(intent.id);
-        break;
-      case 'upgrade-building':
-        this.#planet.upgradeBuilding(intent.id);
         break;
       case 'open-fleet':
         this.#fleets.openFleet(intent.id);

@@ -1,6 +1,5 @@
-import type { BuildingCategory } from '../../app/models/AppModel.js';
 import { BUILDINGS, type BuildType } from '../models/Game.js';
-import { button, element } from '../../common/dom.js';
+import { element } from '../../common/dom.js';
 import { BUILDING_SYMBOLS } from './BuildingSymbols.js';
 
 const paths = {
@@ -76,70 +75,6 @@ function catalogFallback(name: string): SVGSVGElement {
   path.setAttribute('d', paths[symbolFor(name)]);
   icon.append(path);
   return icon;
-}
-
-export const BUILDING_CATEGORIES: readonly BuildingCategory[] = [
-  'All',
-  'Resources',
-  'Research',
-  'Shipyards',
-  'Components',
-  'Terraforming',
-];
-export function buildingCategory(type: BuildType): BuildingCategory {
-  if (type === 'Orbital shipyard') return 'Shipyards';
-  const definition = BUILDINGS[type];
-  return definition.ship
-    ? 'Shipyards'
-    : definition.component
-      ? 'Components'
-      : definition.extraction
-        ? 'Resources'
-        : definition.terraforming
-          ? 'Terraforming'
-          : 'Research';
-}
-
-export function categoryButtons<T extends string>(
-  label: string,
-  categories: readonly T[],
-  selected: T,
-  select: (category: T) => void,
-): HTMLElement {
-  const group = element('div', 'catalog-categories');
-  group.setAttribute('role', 'group');
-  group.setAttribute('aria-label', label);
-  for (const category of categories) {
-    const control = button(
-      category,
-      () => select(category),
-      'button secondary-button catalog-category',
-    );
-    control.replaceChildren(catalogIcon(category));
-    control.title = category;
-    control.setAttribute('aria-pressed', String(selected === category));
-    group.append(control);
-  }
-  return group;
-}
-
-export function catalogItem(
-  name: string,
-  key: string,
-  selected: boolean,
-  choose: () => void,
-): HTMLLIElement {
-  const item = element('li', 'catalog-item');
-  const control = button(
-    `Show ${name}`,
-    choose,
-    'button secondary-button catalog-item-button',
-  );
-  control.replaceChildren(catalogIcon(name), element('span', '', name));
-  control.dataset.catalogItem = key;
-  control.setAttribute('aria-pressed', String(selected));
-  item.append(control);
-  return item;
 }
 
 export function catalogHeading(name: string): HTMLElement {

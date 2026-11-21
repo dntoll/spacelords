@@ -75,19 +75,3 @@ describe('fast-exempelvarld', () => {
     expect(restarted.snapshot.selected?.position.key).toBe('1,0');
   });
 });
-
-describe('viewport-game-layout', () => {
-  it('routes build selection and returns to Overview without retaining an old site', () => {
-    const model = new AppModel();
-    const view = new TestView();
-    new MasterController(model, view).start();
-    view.handler({ type: 'open-planet' });
-    view.handler({ type: 'build-site', index: 2 });
-    expect(model.snapshot.screen).toBe('build-selection');
-    expect(model.snapshot.constructionSite).toBe(2);
-    view.handler({ type: 'open-map' });
-    view.handler({ type: 'open-planet' });
-    expect(model.snapshot.screen).toBe('planet');
-    expect(model.snapshot.constructionSite).toBeNull();
-  });
-});

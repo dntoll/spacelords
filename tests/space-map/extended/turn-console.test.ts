@@ -134,13 +134,7 @@ describe('handelseannonsering / handelser-pa-kartan', () => {
     model.select(model.snapshot.selected!.position);
     view.render(model.snapshot);
     expect(panel.hidden).toBe(false);
-    for (const screen of [
-      'research',
-      'decisions',
-      'planet',
-      'build-selection',
-      'map',
-    ] as const) {
+    for (const screen of ['research', 'decisions', 'planet', 'map'] as const) {
       view.render({ ...model.snapshot, screen });
       expect(root.querySelector('.turn-console')).toBe(panel);
       expect(panel.open).toBe(true);
@@ -149,7 +143,7 @@ describe('handelseannonsering / handelser-pa-kartan', () => {
     }
     view.render({
       ...model.snapshot,
-      screen: 'build-selection',
+      screen: 'planet',
       phase: 'simulating',
     });
     expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(

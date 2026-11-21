@@ -3,8 +3,6 @@ import type {
   OrderKind,
   MapViewport,
   ProjectType,
-  Component,
-  BuildType,
   ShipType,
   TurnFrame,
   Technology,
@@ -17,12 +15,7 @@ import type {
   BattleManeuver,
   BattleShot,
 } from '../../space-battle/models/index.js';
-import type {
-  AppReadModel,
-  BuildingCategory,
-  PlanetTab,
-  ProductionCategory,
-} from '../models/AppModel.js';
+import type { AppReadModel, PlanetTab } from '../models/AppModel.js';
 import type { HexCoordinate, Point } from '../../common/HexCoordinate.js';
 import type {
   BoardingCommand,
@@ -198,17 +191,6 @@ export type AppIntent =
       readonly type: 'planet-tab';
       readonly tab: PlanetTab;
     }
-  | {
-      readonly type: 'production-selection';
-      readonly category: ProductionCategory;
-      readonly product: string | null;
-    }
-  | { readonly type: 'production-fleet'; readonly id: string | null }
-  | {
-      readonly type: 'open-planet-project';
-      readonly planetId: string;
-      readonly projectId: string;
-    }
   | { readonly type: 'open-planet'; readonly id?: string }
   | {
       readonly type: 'choose-ship-transfer';
@@ -225,30 +207,13 @@ export type AppIntent =
   | { readonly type: 'cancel-fleet-rename'; readonly reason?: 'blur' }
   | { readonly type: 'submit-fleet-name' }
   | { readonly type: 'cancel-ship-transfer' }
-  | { readonly type: 'queue-component'; readonly component: Component }
-  | { readonly type: 'building-category'; readonly category: BuildingCategory }
-  | { readonly type: 'building-selection'; readonly building: BuildType | null }
-  | { readonly type: 'build-search'; readonly query: string }
   | { readonly type: 'select'; readonly position: HexCoordinate }
   | { readonly type: 'pan'; readonly delta: Point }
   | { readonly type: 'zoom'; readonly factor: number; readonly anchor: Point }
-  | {
-      readonly type: 'queue-ship';
-      readonly ship: ShipType;
-      readonly factoryId?: string;
-      readonly fleetId: string | null;
-    }
-  | {
-      readonly type: 'build';
-      readonly building: BuildType;
-      readonly slotIndex?: number;
-    }
-  | { readonly type: 'build-site'; readonly index: number | null }
   | { readonly type: 'research'; readonly technology: Technology | null }
   | { readonly type: 'colonize'; readonly id: string }
   | {
-      readonly type:
-        'cancel-project' | 'toggle-demolition' | 'upgrade-building';
+      readonly type: 'cancel-project' | 'toggle-demolition';
       readonly id: string;
     }
   | {

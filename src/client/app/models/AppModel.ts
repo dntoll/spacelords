@@ -93,21 +93,12 @@ import {
 } from '../../common/HexCoordinate.js';
 import { actionFailed, type PlayerNotice } from './PlayerNotice.js';
 
-export type PlanetTab = 'overview' | 'sites' | 'queue' | 'production';
-export type ProductionCategory = 'Ships' | 'Components';
-export type BuildingCategory =
-  | 'All'
-  | 'Resources'
-  | 'Research'
-  | 'Shipyards'
-  | 'Components'
-  | 'Terraforming';
+export type PlanetTab = 'overview' | 'sites';
 
 export type Screen =
   | 'saves'
   | 'map'
   | 'planet'
-  | 'build-selection'
   | 'research'
   | 'fleets'
   | 'factories'
@@ -145,11 +136,6 @@ export interface AppReadModel {
     readonly choices: readonly HexCoordinate[];
   } | null;
   readonly planetTab: PlanetTab;
-  readonly productionCategory: ProductionCategory;
-  readonly productionProduct: string | null;
-  readonly productionFleetId: string | null;
-  readonly expandedProjectIds: readonly string[];
-  readonly focusedProjectId: string | null;
   readonly mapFocusRevision: number;
   readonly decisions: readonly Decision[];
   readonly planetQueues: Game['planetQueues'];
@@ -172,12 +158,7 @@ export interface AppReadModel {
   readonly researchCamera: ResearchCameraSnapshot;
   readonly inspectedResearch: Technology | null;
   readonly planetOrders: readonly PlanetOrderSnapshot[];
-  readonly constructionSite: number | null;
   readonly screen: Screen;
-  readonly buildSearch: string;
-  readonly buildingCategory: BuildingCategory;
-  readonly selectedBuilding: BuildType | null;
-  readonly returnSite: number | null;
   readonly playerName: string;
   readonly radius: number;
   readonly cells: readonly MapCell[];
@@ -257,13 +238,7 @@ export class AppModel {
   #salvageSelection: string | null = null;
   #shipyardPlacement: AppReadModel['shipyardPlacement'] = null;
   #planetTab: PlanetTab = 'overview';
-  #productionCategory: ProductionCategory = 'Ships';
-  #productionProduct: string | null = null;
-  #productionFleetId: string | null = null;
-  #closedProjectIds = new Set<string>();
   #hiddenFleetCategories = new Set<FleetCategory>();
-  #expandedProjectIds = new Set<string>();
-  #focusedProjectId: string | null = null;
   #pendingEndTurn = false;
   #pendingResearchRemoval: Technology | null = null;
   #game: Game;
@@ -272,11 +247,7 @@ export class AppModel {
   #battleFeedback: BattleState | null = null;
   #camera: Camera;
   #selected: HexCoordinate;
-  #constructionSite: number | null = null;
   #screen: Screen = 'map';
-  #buildSearch = '';
-  #buildingCategory: BuildingCategory = 'All';
-  #selectedBuilding: BuildType | null = null;
   readonly #researchCamera = new ResearchTreeCamera();
   #inspectedResearch: Technology | null = null;
   #mapProductionPage = 0;
@@ -289,7 +260,6 @@ export class AppModel {
     () => this.#game,
     () => this.#camera,
   );
-  #returnSite: number | null = null;
   #selectedFleetId: string | null = null;
   #fleetNameEdit: { readonly id: string; readonly draft: string } | null = null;
   #shipTransfer: {
@@ -444,19 +414,11 @@ export class AppModel {
       salvageSelection: this.#salvageSelection,
       shipyardPlacement: this.#shipyardPlacement,
       planetTab: this.#planetTab,
-      productionCategory: this.#productionCategory,
-      productionProduct: this.#productionProduct,
-      productionFleetId: this.#productionFleetId,
       orderView: this.#orderSnapshot(),
       productionStartOrder:
-        this.#shipStartOrder?.ship ===
-        (this.#screen === 'production'
-          ? this.#mapProductionOption
-          : this.#productionProduct)
+        this.#shipStartOrder?.ship === this.#mapProductionOption
           ? this.#shipStartOrder.order
           : null,
-      expandedProjectIds: Object.freeze([...this.#expandedProjectIds]),
-      focusedProjectId: this.#focusedProjectId,
       mapFocusRevision: this.#mapFocusRevision,
       decisions: Object.freeze([...decisions, ...this.#game.messageSettings]),
       planetQueues: this.#game.planetQueues,
@@ -510,12 +472,7 @@ export class AppModel {
       researchCamera: this.#researchCamera.snapshot,
       inspectedResearch: this.#inspectedResearch,
       planetOrders: this.#game.planetOrders(),
-      constructionSite: this.#constructionSite,
       screen: this.#eventCamera ? 'map' : this.#screen,
-      buildSearch: this.#buildSearch,
-      buildingCategory: this.#buildingCategory,
-      selectedBuilding: this.#selectedBuilding,
-      returnSite: this.#returnSite,
       playerName: this.#game.galaxy.player.name,
       radius: this.#game.galaxy.radius,
       cells: this.#game.mapSnapshot(),
@@ -526,14 +483,9 @@ export class AppModel {
       camera: this.#eventCamera?.snapshot ?? this.#camera.snapshot,
       selectedPlanetInfo: this.#game.planetIntel(this.#selected),
       planet:
-        this.#screen === 'planet' ||
-        this.#screen === 'build-selection' ||
-        this.#screen === 'production'
+        this.#screen === 'planet' || this.#screen === 'production'
           ? this.#game.planetAt(this.#selected)
-            ? this.#game.planetSnapshot(
-                this.#game.planetAt(this.#selected)!,
-                this.#constructionSite ?? undefined,
-              )
+            ? this.#game.planetSnapshot(this.#game.planetAt(this.#selected)!)
             : null
           : null,
       round: this.#game.round,
@@ -666,18 +618,6 @@ export class AppModel {
 
   selectPlanetTab(tab: PlanetTab): void {
     return this.planet.selectPlanetTab(tab);
-  }
-  selectProduction(category: ProductionCategory, product: string | null): void {
-    return this.planet.selectProduction(category, product);
-  }
-  selectProductionFleet(id: string | null): void {
-    return this.planet.selectProductionFleet(id);
-  }
-  toggleProjectSupply(id: string, open: boolean): void {
-    return this.planet.toggleProjectSupply(id, open);
-  }
-  openPlanetProject(planetId: string, projectId: string): void {
-    return this.planet.openPlanetProject(planetId, projectId);
   }
 
   inspectResearch(technology: Technology | null): void {
@@ -817,18 +757,6 @@ export class AppModel {
     return this.starMap.home();
   }
 
-  openBuildSite(index: number | null): void {
-    return this.planet.openBuildSite(index);
-  }
-  searchBuildings(query: string): void {
-    return this.planet.searchBuildings(query);
-  }
-  selectBuildingCategory(category: BuildingCategory): void {
-    return this.planet.selectBuildingCategory(category);
-  }
-  selectBuilding(type: BuildType | null): void {
-    return this.planet.selectBuilding(type);
-  }
   research(type: Technology | null): void {
     return this.researchCase.research(type);
   }
@@ -1588,26 +1516,8 @@ export class AppModel {
       get planetTab() {
         return model.#planetTab;
       },
-      get productionCategory() {
-        return model.#productionCategory;
-      },
-      get productionProduct() {
-        return model.#productionProduct;
-      },
-      get productionFleetId() {
-        return model.#productionFleetId;
-      },
       get hiddenFleetCategories() {
         return model.#hiddenFleetCategories;
-      },
-      get closedProjectIds() {
-        return model.#closedProjectIds;
-      },
-      get expandedProjectIds() {
-        return model.#expandedProjectIds;
-      },
-      get focusedProjectId() {
-        return model.#focusedProjectId;
       },
       get pendingEndTurn() {
         return model.#pendingEndTurn;
@@ -1633,20 +1543,8 @@ export class AppModel {
       get selected() {
         return model.#selected;
       },
-      get constructionSite() {
-        return model.#constructionSite;
-      },
       get screen() {
         return model.#screen;
-      },
-      get buildSearch() {
-        return model.#buildSearch;
-      },
-      get buildingCategory() {
-        return model.#buildingCategory;
-      },
-      get selectedBuilding() {
-        return model.#selectedBuilding;
       },
       get researchCamera() {
         return model.#researchCamera;
@@ -1674,9 +1572,6 @@ export class AppModel {
       },
       get mapTrade() {
         return model.#mapTrade;
-      },
-      get returnSite() {
-        return model.#returnSite;
       },
       get selectedFleetId() {
         return model.#selectedFleetId;
@@ -1756,24 +1651,6 @@ export class AppModel {
       set planetTab(value) {
         model.#planetTab = value;
       },
-      set productionCategory(value) {
-        model.#productionCategory = value;
-      },
-      set productionProduct(value) {
-        model.#productionProduct = value;
-      },
-      set productionFleetId(value) {
-        model.#productionFleetId = value;
-      },
-      set closedProjectIds(value) {
-        model.#closedProjectIds = value;
-      },
-      set expandedProjectIds(value) {
-        model.#expandedProjectIds = value;
-      },
-      set focusedProjectId(value) {
-        model.#focusedProjectId = value;
-      },
       set pendingEndTurn(value) {
         model.#pendingEndTurn = value;
       },
@@ -1798,20 +1675,8 @@ export class AppModel {
       set selected(value) {
         model.#selected = value;
       },
-      set constructionSite(value) {
-        model.#constructionSite = value;
-      },
       set screen(value) {
         model.#screen = value;
-      },
-      set buildSearch(value) {
-        model.#buildSearch = value;
-      },
-      set buildingCategory(value) {
-        model.#buildingCategory = value;
-      },
-      set selectedBuilding(value) {
-        model.#selectedBuilding = value;
       },
       set inspectedResearch(value) {
         model.#inspectedResearch = value;
@@ -1833,9 +1698,6 @@ export class AppModel {
       },
       set pendingMapFocus(value) {
         model.#pendingMapFocus = value;
-      },
-      set returnSite(value) {
-        model.#returnSite = value;
       },
       set selectedFleetId(value) {
         model.#selectedFleetId = value;
@@ -1913,16 +1775,6 @@ export class AppModel {
         model.assignMapTradeFleet(routeId, fleetId),
       openPlanet: (id?: string) => model.openPlanet(id),
       selectPlanetTab: (tab: PlanetTab) => model.selectPlanetTab(tab),
-      selectProduction: (
-        category: ProductionCategory,
-        product: string | null,
-      ) => model.selectProduction(category, product),
-      selectProductionFleet: (id: string | null) =>
-        model.selectProductionFleet(id),
-      toggleProjectSupply: (id: string, open: boolean) =>
-        model.toggleProjectSupply(id, open),
-      openPlanetProject: (planetId: string, projectId: string) =>
-        model.openPlanetProject(planetId, projectId),
       inspectResearch: (technology: Technology | null) =>
         model.inspectResearch(technology),
       openResearch: () => model.openResearch(),
@@ -1944,11 +1796,6 @@ export class AppModel {
       pan: (delta: Point) => model.pan(delta),
       zoom: (factor: number, anchor: Point) => model.zoom(factor, anchor),
       home: () => model.home(),
-      openBuildSite: (index: number | null) => model.openBuildSite(index),
-      searchBuildings: (query: string) => model.searchBuildings(query),
-      selectBuildingCategory: (category: BuildingCategory) =>
-        model.selectBuildingCategory(category),
-      selectBuilding: (type: BuildType | null) => model.selectBuilding(type),
       research: (type: Technology | null) => model.research(type),
       resizeResearch: (width: number, height: number) =>
         model.resizeResearch(width, height),
@@ -2144,13 +1991,7 @@ export interface AppHost {
   salvageSelection: string | null;
   shipyardPlacement: AppReadModel['shipyardPlacement'];
   planetTab: PlanetTab;
-  productionCategory: ProductionCategory;
-  productionProduct: string | null;
-  productionFleetId: string | null;
-  closedProjectIds: Set<string>;
   readonly hiddenFleetCategories: Set<FleetCategory>;
-  expandedProjectIds: Set<string>;
-  focusedProjectId: string | null;
   pendingEndTurn: boolean;
   pendingResearchRemoval: Technology | null;
   game: Game;
@@ -2159,11 +2000,7 @@ export interface AppHost {
   battleFeedback: BattleState | null;
   camera: Camera;
   selected: HexCoordinate;
-  constructionSite: number | null;
   screen: Screen;
-  buildSearch: string;
-  buildingCategory: BuildingCategory;
-  selectedBuilding: BuildType | null;
   researchCamera: ResearchTreeCamera;
   inspectedResearch: Technology | null;
   mapProductionPage: number;
@@ -2173,7 +2010,6 @@ export interface AppHost {
   mapFocusRevision: number;
   pendingMapFocus: HexCoordinate | null;
   mapTrade: StarMapTrade;
-  returnSite: number | null;
   selectedFleetId: string | null;
   fleetNameEdit: { readonly id: string; readonly draft: string } | null;
   shipTransfer: {
@@ -2217,10 +2053,6 @@ export interface AppHost {
   assignMapTradeFleet(routeId: string, fleetId: string): void;
   openPlanet(id?: string): void;
   selectPlanetTab(tab: PlanetTab): void;
-  selectProduction(category: ProductionCategory, product: string | null): void;
-  selectProductionFleet(id: string | null): void;
-  toggleProjectSupply(id: string, open: boolean): void;
-  openPlanetProject(planetId: string, projectId: string): void;
   inspectResearch(technology: Technology | null): void;
   openResearch(): void;
   isMapScreen(): boolean;
@@ -2239,10 +2071,6 @@ export interface AppHost {
   pan(delta: Point): void;
   zoom(factor: number, anchor: Point): void;
   home(): void;
-  openBuildSite(index: number | null): void;
-  searchBuildings(query: string): void;
-  selectBuildingCategory(category: BuildingCategory): void;
-  selectBuilding(type: BuildType | null): void;
   research(type: Technology | null): void;
   resizeResearch(width: number, height: number): void;
   panResearch(delta: Point): void;

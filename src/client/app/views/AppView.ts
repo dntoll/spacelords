@@ -12,7 +12,6 @@ import {
   renderMapLocationHeading,
   renderSaveSlots,
   clearSlotDialog,
-  renderBuildSelection,
   renderPlanet,
   renderResearch,
   showResearchTab,
@@ -92,7 +91,6 @@ export class AppView implements AppPort {
   #dialog: HTMLDialogElement | null = null;
   #clearReturnSlot: number | null = null;
   #planetScroll = new Map<string, number>();
-  #planetFocusTarget: string | null = null;
   #catalogDetailKey: string | null = null;
   #catalogReturnKey: string | null = null;
   #decisionDialog: HTMLDialogElement | null = null;
@@ -134,11 +132,6 @@ export class AppView implements AppPort {
   bind(handler: IntentHandler): void {
     this.#emit = (intent) => {
       // symbolbaserade-kataloger: touch browsers can blur before the Back click.
-      if (
-        (intent.type === 'building-selection' && intent.building === null) ||
-        (intent.type === 'production-selection' && intent.product === null)
-      )
-        this.#catalogReturnKey = this.#catalogDetailKey;
       handler(intent);
     };
   }
@@ -367,16 +360,8 @@ export class AppView implements AppPort {
       if (isMapScreen(model.screen)) main.append(this.#mapPage(model.screen));
       else if (model.screen === 'planet' && model.planet)
         main.append(
-          renderPlanet(
-            model.planet,
-            model.playerName,
-            this.#emit,
-            model.fleets,
-            model,
-          ),
+          renderPlanet(model.planet, model.playerName, this.#emit, model),
         );
-      else if (model.screen === 'build-selection' && model.planet)
-        main.append(renderBuildSelection(model, this.#emit));
       else if (model.screen === 'decisions')
         main.append(
           renderDecisions(
@@ -410,41 +395,10 @@ export class AppView implements AppPort {
       this.#root
         .querySelector('main')
         ?.replaceChildren(
-          renderPlanet(
-            model.planet,
-            model.playerName,
-            this.#emit,
-            model.fleets,
-            model,
-          ),
+          renderPlanet(model.planet, model.playerName, this.#emit, model),
         );
-    } else if (model.screen === 'build-selection') {
-      const focused =
-        document.activeElement instanceof HTMLInputElement &&
-        document.activeElement.type === 'search';
-      const selection = focused
-        ? (document.activeElement as HTMLInputElement).selectionStart
-        : null;
-      const scroll =
-        this.#root.querySelector('.planet-content')?.scrollTop ?? 0;
-      this.#root
-        .querySelector('main')
-        ?.replaceChildren(renderBuildSelection(model, this.#emit));
-      const panel = this.#root.querySelector('.planet-content');
-      if (panel) panel.scrollTop = scroll;
-      if (focused) {
-        const search = this.#root.querySelector<HTMLInputElement>(
-          'input[type="search"]',
-        );
-        search?.focus({ preventScroll: true });
-        if (selection !== null) search?.setSelectionRange(selection, selection);
-      }
     }
-    if (
-      !changedScreen &&
-      (model.screen === 'planet' || model.screen === 'build-selection') &&
-      focusLabel
-    ) {
+    if (!changedScreen && model.screen === 'planet' && focusLabel) {
       const scope = scopeSelector
         ? this.#root.querySelector(scopeSelector)
         : this.#root;
@@ -465,26 +419,6 @@ export class AppView implements AppPort {
         panel.scrollTop =
           this.#planetScroll.get(`${model.planet.id}:${model.planetTab}`) ?? 0;
       }
-      const focusKey = model.focusedProjectId
-        ? `${model.planet.id}:${model.focusedProjectId}`
-        : null;
-      if (
-        model.planetTab === 'queue' &&
-        focusKey &&
-        focusKey !== this.#planetFocusTarget
-      ) {
-        const row = [
-          ...this.#root.querySelectorAll<HTMLElement>('[data-project-id]'),
-        ].find((item) => item.dataset.projectId === model.focusedProjectId);
-        row?.setAttribute('tabindex', '-1');
-        row?.focus({ preventScroll: true });
-        row?.scrollIntoView?.({ block: 'nearest' });
-      }
-      this.#planetFocusTarget = focusKey;
-      if (changedScreen && model.returnSite !== null)
-        this.#root
-          .querySelector<HTMLElement>(`[data-site-index="${model.returnSite}"]`)
-          ?.focus({ preventScroll: true });
     }
     const detail = this.#root.querySelector<HTMLElement>('.catalog-details');
     const detailKey = detail?.dataset.detailKey ?? null;
