@@ -190,6 +190,11 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
 - `forsorjning-vantar-pa-bestalld-lank` (**Fullständigt implementerat**):
   när en länk till gruppen är beställd (ett fraktskepp är på väg eller byggs
   för den) visas inte problemet att gruppen saknar råvaror eller delar.
+- `planetsprites-i-factories` (**Fullständigt implementerat**): graferna i
+  Factories, på Connect och under `Links inside` ritar varje planet med sin
+  sprite i stället för en cirkel. På Connect är varje grupp ett kluster av
+  sina planeter med en mjuk bakgrund, och de streckade linjerna går mellan
+  de planeter som länken skulle förbinda.
 - `bestallda-lankar-syns` (**Fullständigt implementerat**): en länk vars
   fraktskepp är beställt eller på väg visas i båda gruppernas översikt och på
   Connect, exempelvis `Link to Vesta ordered · Transport ship being built at

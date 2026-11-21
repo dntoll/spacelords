@@ -5597,3 +5597,28 @@ body:has(.discovery-controls) .selection-panel {
   color: var(--factory-time);
   font-size: 0.8rem;
 }
+
+/* planetsprites-i-factories: a group is a cluster of planet sprites. */
+.factory-cluster {
+  fill: #b0e5ce14;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.factory-cluster.other {
+  fill: #ffffff0c;
+  stroke: #d7e2e5;
+  stroke-dasharray: 4 3;
+}
+.factory-cluster.muted {
+  fill: #ffffff06;
+  stroke: var(--line);
+}
+.factory-cluster[role='button'] {
+  cursor: pointer;
+}
+.factory-node.muted image {
+  opacity: 0.55;
+}
+.factory-node.picked circle {
+  fill: none;
+}
