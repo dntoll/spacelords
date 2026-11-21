@@ -254,7 +254,8 @@ describe('frontend-backend-mock', () => {
     const controller = new MasterController(model, view);
     controller.start();
     emit({ type: 'start-slot', id: 1 });
-    emit({ type: 'rename-fleet', id: 'fleet-home', name: 'Saved expedition' });
+    model.renameFleet('fleet-home', 'Saved expedition');
+    model.save();
     expect(Game.restore(repo.load(1)!.state).fleetSnapshots()[0]?.name).toBe(
       'Saved expedition',
     );

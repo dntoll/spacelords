@@ -128,7 +128,7 @@ describe('bargningsorder-fran-flotta', () => {
       dispose() {},
     });
     controller.start();
-    emit({ type: 'begin-salvage', id: 'fleet-home' });
+    model.beginSalvage('fleet-home');
     const snapshot = model.snapshot;
     const marker = salvageMarkers(
       snapshot.wrecks,

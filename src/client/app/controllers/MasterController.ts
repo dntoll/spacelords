@@ -387,15 +387,9 @@ export class MasterController {
     }
     if (
       intent.type.startsWith('open-') ||
-      [
-        'home',
-        'pan',
-        'zoom',
-        'begin-destination',
-        'begin-colonization',
-        'begin-salvage',
-        'end-turn',
-      ].includes(intent.type)
+      ['home', 'pan', 'zoom', 'begin-destination', 'end-turn'].includes(
+        intent.type,
+      )
     )
       this.#cancelPointer(['pan', 'zoom'].includes(intent.type));
     if (
@@ -445,9 +439,6 @@ export class MasterController {
       case 'release-wreck':
         this.#starMap.releaseWreck(intent.fleetId, intent.id);
         break;
-      case 'return-shipyard':
-        this.#starMap.returnToShipyard(intent.id);
-        break;
       case 'select-salvage':
         this.#starMap.selectSalvage(intent.id);
         break;
@@ -462,15 +453,6 @@ export class MasterController {
         break;
       case 'place-shipyard':
         this.#starMap.placeShipyard(intent.position);
-        break;
-      case 'explore-fleet':
-        this.#fleets.exploreFleet(intent.id, intent.order);
-        break;
-      case 'auto-salvage':
-        this.#fleets.automateSalvage(intent.id);
-        break;
-      case 'civilian-transport':
-        this.#fleets.civilianTransport(intent.id);
         break;
       case 'open-fleet-orders':
         this.#orders.openFleetOrders(intent.id);
@@ -489,15 +471,6 @@ export class MasterController {
         break;
       case 'clear-start-order':
         this.#orders.clearStartOrder();
-        break;
-      case 'guard-routes':
-        this.#fleets.automateTransport(intent.id);
-        break;
-      case 'upgrade-fleet':
-        this.#fleets.upgradeFleet(intent.id);
-        break;
-      case 'patrol-fleet':
-        this.#fleets.patrolFleet(intent.id);
         break;
       case 'handle-discoveries':
         this.#decisions.handleDiscoveries();
@@ -571,12 +544,6 @@ export class MasterController {
       case 'map-production-build':
         this.#production.orderMapProduction(intent.option);
         break;
-      case 'supply-open-planet':
-        this.#routes.openSupplyPlanet(intent.id);
-        break;
-      case 'supply-open-route':
-        this.#routes.openSupplyRoute(intent.id);
-        break;
       case 'research-size':
         this.#research.resizeResearch(intent.width, intent.height);
         break;
@@ -606,9 +573,6 @@ export class MasterController {
         break;
       case 'unmute-decision':
         this.#decisions.unmuteDecision(intent.id);
-        break;
-      case 'create-trade-route':
-        this.#routes.createTradeRoute(intent.a, intent.b);
         break;
       case 'assign-trade-fleet':
         this.#routes.assignTradeFleet(intent.routeId, intent.fleetId);
@@ -794,9 +758,6 @@ export class MasterController {
       case 'production-fleet':
         this.#planet.selectProductionFleet(intent.id);
         break;
-      case 'project-supply':
-        this.#planet.toggleProjectSupply(intent.id, intent.open);
-        break;
       case 'open-planet-project':
         this.#planet.openPlanetProject(intent.planetId, intent.projectId);
         break;
@@ -819,12 +780,6 @@ export class MasterController {
       case 'queue-component':
         this.#planet.scheduleComponent(intent.component);
         break;
-      case 'move-project':
-        this.#planet.moveProject(intent.id, intent.index);
-        break;
-      case 'project-fleet':
-        this.#planet.setProjectFleet(intent.id, intent.fleetId);
-        break;
       case 'cancel-project':
         this.#planet.cancelProject(intent.id);
         break;
@@ -834,17 +789,8 @@ export class MasterController {
       case 'upgrade-building':
         this.#planet.upgradeBuilding(intent.id);
         break;
-      case 'produce-fighter':
-        this.#planet.produceFighter();
-        break;
-      case 'select-fleet':
-        this.#fleets.selectFleet(intent.id);
-        break;
       case 'open-fleet':
         this.#fleets.openFleet(intent.id);
-        break;
-      case 'rename-fleet':
-        this.#fleets.renameFleet(intent.id, intent.name);
         break;
       case 'choose-ship-transfer':
         this.#fleets.chooseShipTransfer(
@@ -871,20 +817,8 @@ export class MasterController {
       case 'begin-destination':
         this.#fleets.beginDestination(intent.id);
         break;
-      case 'begin-colonization':
-        this.#fleets.beginColonization(intent.id);
-        break;
-      case 'begin-salvage':
-        this.#fleets.beginSalvage(intent.id);
-        break;
       case 'clear-destination':
         this.#fleets.clearDestination(intent.id);
-        break;
-      case 'create-fleet':
-        this.#fleets.createFleet(intent.id);
-        break;
-      case 'delete-fleet':
-        this.#fleets.deleteFleet(intent.id);
         break;
       case 'end-turn':
         if (this.#decisions.requestEndTurn()) {
@@ -1072,7 +1006,6 @@ export class MasterController {
         'build-search',
         'production-selection',
         'production-fleet',
-        'project-supply',
         'open-planet-project',
       ].includes(intent.type)
     )

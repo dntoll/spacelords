@@ -28,8 +28,13 @@ i gränssnittet skickar dem: `auto-salvage`, `begin-colonization`,
 bara av tester.
 
 - Rekommendation: ta bort dem ur `ViewContracts` och `MasterController`.
-  Tester som skickar dem skrivs om mot gränssnittet.
-- Fråga: OK att ta bort?
+  Förberett i commiten "Remove intents no view sends" för 20 av dem.
+  `open-route` ingår i B2, eftersom testerna för Route-skärmen använder den.
+  Tre enhetstester som skickade döda intents anropar nu modellen direkt.
+  Metoder i use-case-controllers och fasader som bara dessa intents
+  använde, till exempel `exploreFleet` och `patrolFleet`, finns kvar. De bör
+  tas bort i ett nästa steg.
+- Fråga: OK att merga?
 
 **B2. Route-skärmen går inte längre att nå.** `open-route` skickas inte,
 och beslut leder till Factories. Kvar finns skärmen `route`, `renderRoutePlanet`,

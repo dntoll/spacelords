@@ -206,7 +206,6 @@ it('planetundersidor / sparat-spel: browsing pages, products and supply steps ne
     planetId: planet.id,
     projectId: planet.projects[0]!.id,
   });
-  emit({ type: 'project-supply', id: planet.projects[0]!.id, open: false });
   expect(save).not.toHaveBeenCalled();
 });
 

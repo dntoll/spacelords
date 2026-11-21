@@ -1,5 +1,4 @@
 import type {
-  ExplorationOrder,
   ShipOrder,
   OrderKind,
   MapProductionCategory,
@@ -71,7 +70,6 @@ export type AppIntent =
       readonly type: 'inspect-research';
       readonly technology: Technology | null;
     }
-  | { readonly type: 'patrol-fleet'; readonly id: string }
   | {
       readonly type: 'salvage-wreck';
       readonly fleetId: string;
@@ -83,16 +81,11 @@ export type AppIntent =
       readonly id: string;
     }
   | {
-      readonly type: 'return-shipyard' | 'select-salvage' | 'rebuild-shipyard';
+      readonly type: 'select-salvage' | 'rebuild-shipyard';
       readonly id: string;
     }
   | { readonly type: 'cancel-shipyard-placement' }
   | { readonly type: 'place-shipyard'; readonly position: HexCoordinate }
-  | {
-      readonly type: 'explore-fleet';
-      readonly id: string;
-      readonly order: ExplorationOrder;
-    }
   | {
       readonly type:
         | 'handle-discoveries'
@@ -123,10 +116,6 @@ export type AppIntent =
   | { readonly type: 'map-production-project'; readonly id: string }
   | { readonly type: 'map-production-build'; readonly option?: ProjectType }
   | { readonly type: 'map-size'; readonly viewport: MapViewport }
-  | {
-      readonly type: 'supply-open-planet' | 'supply-open-route';
-      readonly id: string;
-    }
   | { readonly type: 'research-pan'; readonly delta: Point }
   | {
       readonly type: 'research-zoom';
@@ -166,11 +155,6 @@ export type AppIntent =
         | 'release-trade-fleet'
         | 'close-trade-route';
       readonly id: string;
-    }
-  | {
-      readonly type: 'create-trade-route';
-      readonly a: string;
-      readonly b: string;
     }
   | {
       readonly type: 'assign-trade-fleet';
@@ -214,8 +198,7 @@ export type AppIntent =
         | 'home'
         | 'pointer-cancel'
         | 'map-leave'
-        | 'end-turn'
-        | 'produce-fighter';
+        | 'end-turn';
     }
   | {
       readonly type: 'planet-tab';
@@ -227,11 +210,6 @@ export type AppIntent =
       readonly product: string | null;
     }
   | { readonly type: 'production-fleet'; readonly id: string | null }
-  | {
-      readonly type: 'project-supply';
-      readonly id: string;
-      readonly open: boolean;
-    }
   | {
       readonly type: 'open-planet-project';
       readonly planetId: string;
@@ -267,16 +245,6 @@ export type AppIntent =
       readonly fleetId: string | null;
     }
   | {
-      readonly type: 'move-project';
-      readonly id: string;
-      readonly index: number;
-    }
-  | {
-      readonly type: 'project-fleet';
-      readonly id: string;
-      readonly fleetId: string | null;
-    }
-  | {
       readonly type: 'build';
       readonly building: BuildType;
       readonly slotIndex?: number;
@@ -290,25 +258,8 @@ export type AppIntent =
       readonly id: string;
     }
   | {
-      readonly type:
-        | 'select-fleet'
-        | 'open-fleet'
-        | 'begin-destination'
-        | 'begin-colonization'
-        | 'begin-salvage'
-        | 'auto-salvage'
-        | 'guard-routes'
-        | 'upgrade-fleet'
-        | 'civilian-transport'
-        | 'clear-destination'
-        | 'delete-fleet';
+      readonly type: 'open-fleet' | 'begin-destination' | 'clear-destination';
       readonly id: string;
-    }
-  | { readonly type: 'create-fleet'; readonly id?: string }
-  | {
-      readonly type: 'rename-fleet';
-      readonly id: string;
-      readonly name: string;
     }
   | {
       readonly type: 'transfer-ships';
