@@ -1,5 +1,9 @@
 import type { AppReadModel } from '../../../app/models/AppModel.js';
-import { isMessageSetting, needsAttention } from '../../models/Decisions.js';
+import {
+  isMessageSetting,
+  needsAttention,
+  type Decision,
+} from '../../models/Decisions.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { button, element } from '../../../common/dom.js';
 import { bindQueueOrder, decorateQueueRow } from '../QueueView.js';
@@ -173,59 +177,115 @@ function renderSalvageQueue(
   return section;
 }
 
-export function renderDecisions(
+/**
+ * stilla-beslutslista: while Decisions stays open, each decision keeps the
+ * section and place it was first shown in, so pressing Mute or Skip does not
+ * move the list. A new layout is made each time Decisions opens.
+ */
+export class DecisionLayout {
+  readonly #order: string[] = [];
+  readonly #muted = new Map<string, boolean>();
+
+  arrange(decisions: readonly Decision[]): {
+    readonly attention: readonly Decision[];
+    readonly muted: readonly Decision[];
+    readonly messages: readonly Decision[];
+  } {
+    for (const item of decisions)
+      if (!this.#muted.has(item.id)) {
+        this.#muted.set(item.id, item.muted);
+        this.#order.push(item.id);
+      }
+    const ordered = [...decisions].sort(
+      (a, b) => this.#order.indexOf(a.id) - this.#order.indexOf(b.id),
+    );
+    return {
+      attention: ordered.filter(
+        (item) => !this.#muted.get(item.id) && !isMessageSetting(item.id),
+      ),
+      muted: ordered.filter((item) => this.#muted.get(item.id)),
+      messages: ordered.filter(
+        (item) => !this.#muted.get(item.id) && isMessageSetting(item.id),
+      ),
+    };
+  }
+}
+
+function decisionCard(
+  item: Decision,
   model: AppReadModel,
   emit: IntentHandler,
 ): HTMLElement {
-  const page = element('section', 'empire-page decisions-page');
-  page.append(element('h1', '', 'Decisions'));
-  const panel = element('div', 'empire-content');
-
-  if (!model.decisions.some((item) => !isMessageSetting(item.id)))
-    panel.append(element('p', '', 'No decisions need your attention.'));
-  for (const item of model.decisions) {
-    const card = element('article', 'empire-card');
-    card.dataset.decisionId = item.id;
-    card.append(element('h2', '', item.label));
-    if (item.muted)
-      card.append(element('p', 'muted-note', 'Muted for future turns'));
-    else if (item.skipped)
-      card.append(element('p', 'muted-note', 'Skipped this turn'));
-    if (isMessageSetting(item.id)) {
-      const toggle = button(item.muted ? 'Unmute' : 'Mute', () =>
-        emit({
-          type: item.muted ? 'unmute-decision' : 'mute-decision',
-          id: item.id,
-        }),
-      );
-      toggle.disabled = model.phase !== 'planning';
-      card.append(toggle);
-      panel.append(card);
-      continue;
-    }
-    const review = button('Review', () =>
-      emit({ type: 'open-decision', id: item.id }),
-    );
-    review.disabled = !item.current;
-    card.append(review);
-    const skip = button('Skip this turn', () =>
-      emit({ type: 'skip-decision', id: item.id }),
-    );
-    skip.disabled = item.skipped || item.muted || model.phase !== 'planning';
-    const mute = button(item.muted ? 'Unmute' : 'Mute', () =>
+  const card = element('article', 'empire-card');
+  card.dataset.decisionId = item.id;
+  card.append(element('h2', '', item.label));
+  if (item.muted)
+    card.append(element('p', 'muted-note', 'Muted for future turns'));
+  else if (item.skipped)
+    card.append(element('p', 'muted-note', 'Skipped this turn'));
+  if (isMessageSetting(item.id)) {
+    const toggle = button(item.muted ? 'Unmute' : 'Mute', () =>
       emit({
         type: item.muted ? 'unmute-decision' : 'mute-decision',
         id: item.id,
       }),
     );
-    mute.title = item.muted
-      ? 'Restore reminders for this decision'
-      : 'Silence this decision until you unmute it';
-    mute.disabled = model.phase !== 'planning';
-    card.append(skip, mute);
-    panel.append(card);
+    toggle.disabled = model.phase !== 'planning';
+    card.append(toggle);
+    return card;
   }
-  panel.append(
+  const review = button('Review', () =>
+    emit({ type: 'open-decision', id: item.id }),
+  );
+  review.disabled = !item.current;
+  card.append(review);
+  const skip = button('Skip this turn', () =>
+    emit({ type: 'skip-decision', id: item.id }),
+  );
+  skip.disabled = item.skipped || item.muted || model.phase !== 'planning';
+  const mute = button(item.muted ? 'Unmute' : 'Mute', () =>
+    emit({
+      type: item.muted ? 'unmute-decision' : 'mute-decision',
+      id: item.id,
+    }),
+  );
+  mute.title = item.muted
+    ? 'Restore reminders for this decision'
+    : 'Silence this decision until you unmute it';
+  mute.disabled = model.phase !== 'planning';
+  card.append(skip, mute);
+  return card;
+}
+
+export function renderDecisions(
+  model: AppReadModel,
+  emit: IntentHandler,
+  layout: DecisionLayout = new DecisionLayout(),
+): HTMLElement {
+  const page = element('section', 'empire-page decisions-page');
+  page.append(element('h1', '', 'Decisions'));
+  const panel = element('div', 'empire-content');
+  // beslutssektioner: attention first, then muted reminders, then queues.
+  const { attention, muted, messages } = layout.arrange(model.decisions);
+  const section = (title: string) => {
+    const part = element('section', 'decision-section');
+    part.append(element('h2', 'decision-section-title', title));
+    panel.append(part);
+    return part;
+  };
+  const needs = section('Needs attention');
+  if (!attention.length)
+    needs.append(element('p', '', 'No decisions need your attention.'));
+  for (const item of attention) needs.append(decisionCard(item, model, emit));
+  if (muted.length) {
+    const quiet = section('Muted');
+    for (const item of muted) quiet.append(decisionCard(item, model, emit));
+  }
+  if (messages.length) {
+    const notes = section('Messages');
+    for (const item of messages) notes.append(decisionCard(item, model, emit));
+  }
+  section('Queues').append(
     renderPlanetQueue(model, emit, 'exploration'),
     renderPlanetQueue(model, emit, 'colonization'),
     renderAttackQueue(model, emit),

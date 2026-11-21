@@ -190,6 +190,14 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
 - `forsorjning-vantar-pa-bestalld-lank` (**Fullständigt implementerat**):
   när en länk till gruppen är beställd (ett fraktskepp är på väg eller byggs
   för den) visas inte problemet att gruppen saknar råvaror eller delar.
+- `beslutssektioner` (**Fullständigt implementerat**): Decisions har
+  underrubrikerna `Needs attention`, `Muted`, `Messages` (meddelanden som
+  inte är avstängda) och `Queues`.
+- `stilla-beslutslista` (**Fullständigt implementerat**): medan Decisions är
+  öppen ligger varje beslut kvar på sin plats när spelaren trycker `Mute`,
+  `Unmute` eller `Skip this turn`. Rullningen och fokus behålls. Ett avstängt
+  beslut flyttar till `Muted` först när Decisions öppnas igen, enligt
+  `tystade-beslut-sist`.
 - `factories-sparas` (**Fullständigt implementerat**, fel rättat
   2026-11-21): beställningar i `Factories` (bygg, avbryt, uppgradera, länka,
   flytta fraktskepp, eskortera, beställ eskort) sparas direkt som övriga

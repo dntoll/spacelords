@@ -5536,3 +5536,20 @@ body:has(.discovery-controls) .selection-panel {
 .map-build-heading .queue-icon-button {
   flex: none;
 }
+
+/* beslutssektioner: subheaders for attention, muted items, messages and queues. */
+.decision-section {
+  display: grid;
+  gap: 10px;
+}
+.decision-section + .decision-section {
+  margin-top: 14px;
+}
+.decision-section-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}

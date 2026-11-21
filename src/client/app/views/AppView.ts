@@ -18,6 +18,7 @@ import {
   renderResearchSelection,
   updateResearchCamera,
   planetIllustration,
+  DecisionLayout,
   renderDecisions,
   renderTurnWarning,
   renderTurnActions,
@@ -68,6 +69,7 @@ export class AppView implements AppPort {
   #battleView: BattleView | null = null;
   #boardingView: BoardingView | null = null;
   #editorView: BoardingEditorView | null = null;
+  #decisionLayout = new DecisionLayout();
   #factoriesView: FactoriesView | null = null;
   readonly #root: HTMLElement;
   readonly #mapFactory: MapFactory;
@@ -374,7 +376,13 @@ export class AppView implements AppPort {
       else if (model.screen === 'build-selection' && model.planet)
         main.append(renderBuildSelection(model, this.#emit));
       else if (model.screen === 'decisions')
-        main.append(renderDecisions(model, this.#emit));
+        main.append(
+          renderDecisions(
+            model,
+            this.#emit,
+            (this.#decisionLayout = new DecisionLayout()),
+          ),
+        );
       else
         main.append(
           renderResearch(
@@ -615,10 +623,41 @@ export class AppView implements AppPort {
     }
     if (!changedScreen && model.screen === 'decisions') {
       // senaste-aret-i-events: keep the log attached while decisions change.
-      const page = renderDecisions(model, this.#emit);
-      this.#root
-        .querySelector('.decisions-page .empire-content')
-        ?.replaceWith(page.querySelector('.empire-content')!);
+      // stilla-beslutslista: the list keeps its layout, scroll and focus.
+      const previous = this.#root.querySelector<HTMLElement>(
+        '.decisions-page .empire-content',
+      );
+      const scroll = previous?.scrollTop ?? 0;
+      const focused =
+        document.activeElement instanceof HTMLElement &&
+        previous?.contains(document.activeElement)
+          ? {
+              card: document.activeElement.closest<HTMLElement>(
+                '[data-decision-id]',
+              )?.dataset.decisionId,
+              label: document.activeElement.textContent,
+            }
+          : null;
+      const page = renderDecisions(model, this.#emit, this.#decisionLayout);
+      const content = page.querySelector<HTMLElement>('.empire-content')!;
+      previous?.replaceWith(content);
+      content.scrollTop = scroll;
+      if (focused?.card) {
+        const card = content.querySelector(
+          `[data-decision-id="${focused.card}"]`,
+        );
+        const buttons = [
+          ...(card?.querySelectorAll<HTMLButtonElement>('button') ?? []),
+        ].filter((item) => !item.disabled);
+        const twin: Record<string, string> = { Mute: 'Unmute', Unmute: 'Mute' };
+        const control =
+          buttons.find((item) => item.textContent === focused.label) ??
+          buttons.find(
+            (item) => item.textContent === twin[focused.label ?? ''],
+          ) ??
+          buttons[0];
+        control?.focus({ preventScroll: true });
+      }
     }
     this.#attachTurnActions(previousActions, previousEventScroll);
     this.#syncLocalEditorNav(model);
