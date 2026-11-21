@@ -8,7 +8,7 @@ import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { startFirstSlot } from './save-helpers.js';
 import { selectMapObject } from './map-helpers.js';
 
-test('route-kartvy / produktions-kartvy / radiella-byggval / kompakt-produktionsko: shared map, radial orders and queue work with touch, keyboard and larger text', async ({
+test('produktions-kartvy / radiella-byggval / produktionsflikar / byggorsak-i-kon: ship orders and queue work with touch, keyboard and larger text', async ({
   page,
 }, testInfo) => {
   scenarioTimeout(60_000);
@@ -50,26 +50,11 @@ test('route-kartvy / produktions-kartvy / radiella-byggval / kompakt-produktions
   await canvas.evaluate((node) => {
     node.dataset.instanceMarker = 'original';
   });
-  await page.getByRole('button', { name: 'Route', exact: true }).click();
-  await expect(page.locator('[data-screen="route"] .nav-attention')).toHaveText(
-    '!',
-  );
-  await selectMapObject(page, 'Vesta');
-  await expect(page.locator('.route-supply-summary')).toContainText(
-    'Needs attention',
-  );
-  await page.getByRole('button', { name: 'Open in Production' }).click();
-  await expect(page.locator('.map-queue-row')).toHaveCount(1);
-  await expect(page.locator('.map-queue-choice')).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await canvas.press('Home');
   await page
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('button', { name: 'Production', exact: true })
     .click();
+  await selectMapObject(page, 'Tellus');
   await expect(canvas).toHaveAttribute('data-instance-marker', 'original');
   const ring = page.getByRole('group', { name: 'Build options' });
   expect(await ring.getByRole('button').count()).toBeLessThanOrEqual(8);
@@ -111,61 +96,37 @@ test('route-kartvy / produktions-kartvy / radiella-byggval / kompakt-produktions
     }).toPass({ timeout: 3000 });
   };
   await assertRingFits();
-  await page.getByRole('button', { name: 'Next build options' }).click();
-  await expect(page.locator('.production-pages')).toContainText('Page 2');
-  const categories = page.getByRole('group', { name: 'Build categories' });
-  await categories
-    .getByRole('button', { name: 'Components', exact: true })
-    .click();
-  const engine = ring.getByRole('button', { name: 'Show Rocket engine' });
-  if (testInfo.project.use.isMobile) await engine.tap();
-  else await engine.click();
+  const ship = ring.getByRole('button', { name: 'Show Transport ship' });
+  if (testInfo.project.use.isMobile) await ship.tap();
+  else await ship.click();
   const panel = page.getByRole('complementary', {
     name: 'Production controls',
   });
   await expect(
     panel.getByRole('region', { name: 'Build details' }),
-  ).toContainText('Rocket engine');
+  ).toContainText('Transport ship');
   await panel.getByRole('button', { name: 'Build', exact: true }).click();
   await panel
     .getByRole('button', { name: 'Build', exact: true })
     .press('Enter');
+  await panel.getByRole('tab', { name: 'Queue · 2' }).click();
   await expect(page.locator('.map-queue-row')).toHaveCount(2);
+  await expect(panel.locator('.queue-drag-handle')).toHaveCount(0);
   await panel
-    .getByRole('button', { name: 'Select project 2: Rocket engine' })
+    .getByRole('button', { name: 'Select project 2: Transport ship' })
     .click();
   await expect(
-    panel.getByRole('button', { name: 'Select project 2: Rocket engine' }),
+    panel.getByRole('button', { name: 'Select project 2: Transport ship' }),
   ).toHaveAttribute('aria-pressed', 'true');
-  const handle = panel.locator('.queue-drag-handle').nth(1);
-  await handle.focus();
-  for (const key of ['Space', 'ArrowUp', 'Enter'])
-    await page.keyboard.press(key);
   await panel.getByRole('button', { name: 'Cancel project 1' }).click();
   await expect(page.locator('.map-queue-row')).toHaveCount(1);
-  await categories.getByRole('button', { name: 'Ships', exact: true }).click();
-  await ring.getByRole('button', { name: 'Show Transport ship' }).click();
-  await expect(
-    panel.getByRole('region', { name: 'Build details' }),
-  ).toContainText('engines');
-  await panel.getByRole('button', { name: 'Build', exact: true }).click();
-  await expect(page.locator('.map-queue-row')).toHaveCount(2);
   await page.evaluate(() => {
     document.documentElement.style.fontSize = '125%';
   });
-  await categories
-    .getByRole('button', { name: 'Buildings', exact: true })
-    .click();
+  await ship.focus();
+  await ship.press('Enter');
+  await expect(ship).toBeFocused();
   await assertRingFits();
-  const option = ring.getByRole('button', { name: 'Show Research station' });
-  await option.focus();
-  await option.press('Enter');
-  await expect(option).toBeFocused();
-  await expect(
-    panel.getByRole('region', { name: 'Build details' }),
-  ).toContainText('Research station');
-  await panel.getByRole('button', { name: 'Build', exact: true }).click();
-  await expect(page.locator('.map-queue-row')).toHaveCount(3);
   expect(
     await page.evaluate(
       () =>

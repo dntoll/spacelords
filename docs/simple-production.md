@@ -532,6 +532,15 @@ Den gamla koden för frakt, delplanering och försörjningsvyer är borttagen
 [Route och Production](route-production.md) och
 [försörjningsreglerna](supply-production.md).
 
+Webbläsartestet för `route-kartvy` och `kompakt-produktionsko` kontrollerar
+inte längre övergången från Route, manuell beställning av delar eller
+omordning av skeppskön. Route har ersatts i huvudmenyn av Factories,
+`delar-tillverkas-pa-behov` ersätter manuell beställning och
+`byggorsak-i-kon` ersätter omordningen. Testet kontrollerar i stället
+skeppsbeställningar och `produktionsflikar`. Sprite-testet kontrollerar
+fortfarande kartorna Star map och Fleets, men inte den borttagna
+Route-knappen i huvudmenyn.
+
 ## Klickbar prototyp
 
 `fabriksskarmar-prototyp` är **Ersatt** av de riktiga skärmarna under
