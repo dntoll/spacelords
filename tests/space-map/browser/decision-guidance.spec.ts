@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { researchStationState } from '../../fixtures/research-station.js';
 import { startFirstSlot } from './save-helpers.js';
 
-test('beslutsvagledning-i-vyn: navigation warnings lead to highlighted controls and actionable help', async ({
+test('beslutsvagledning-i-vyn / produktionsbeslut-bara-for-skeppsfabrik: navigation warnings lead to highlighted controls and actionable help', async ({
   page,
 }, testInfo) => {
   await page.addInitScript(
@@ -58,7 +58,7 @@ test('beslutsvagledning-i-vyn: navigation warnings lead to highlighted controls 
   await page.getByRole('button', { name: 'Production', exact: true }).click();
   await expect(guidance).toContainText('Tellus: choose production.');
   await expect(
-    page.getByRole('button', { name: 'Show Iron mine', exact: true }),
+    page.getByRole('button', { name: 'Show Transport ship', exact: true }),
   ).toHaveClass(/decision-target/);
   await expect(async () => {
     const help = (await guidance.boundingBox())!;
@@ -72,7 +72,7 @@ test('beslutsvagledning-i-vyn: navigation warnings lead to highlighted controls 
     path: testInfo.outputPath('production-guidance.png'),
   });
   await page
-    .getByRole('button', { name: 'Show Iron mine', exact: true })
+    .getByRole('button', { name: 'Show Transport ship', exact: true })
     .dblclick();
   await expect(guidance).toHaveCount(0);
   await expect(

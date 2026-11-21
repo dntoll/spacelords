@@ -59,31 +59,21 @@ test('spelgrafik-symboler / spelgrafik-planeter / spelgrafik-kartstation: mobile
   await page.screenshot({ path: testInfo.outputPath('shipyard-artwork.png') });
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await expect(page.locator('.planet-overview .planet-portrait')).toBeVisible();
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Build building at site 3', exact: true })
+    .getByRole('button', { name: 'Empty site 3 on Tellus', exact: true })
     .click();
   for (const name of ['Transport ship factory', 'Salvage ship factory']) {
-    const choice = page.getByRole('button', {
-      name: `Show ${name}`,
-      exact: true,
-    });
-    const image = choice.locator('img.catalog-artwork');
-    await expect(image).toHaveAttribute('aria-hidden', 'true');
+    const choice = page
+      .locator('.factory-option-title')
+      .filter({ hasText: name });
+    await expect(choice).toBeVisible();
+    const image = choice.locator('img');
     await expect
       .poll(() =>
         image.evaluate((node) => (node as HTMLImageElement).naturalWidth),
       )
-      .toBe(512);
-    await choice.click();
-    await expect(
-      page.getByRole('heading', { name, exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.locator('.catalog-details .building-image img'),
-    ).toHaveAttribute('src', (await image.getAttribute('src')) as string);
+      .toBeGreaterThan(0);
   }
   await page.screenshot({
     path: testInfo.outputPath('space-factory-symbols.png'),

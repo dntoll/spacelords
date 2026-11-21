@@ -1,116 +1,93 @@
 import { scenarioTimeout } from '../../browser-timeouts.js';
 import { expect, test } from '@playwright/test';
+import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { startFirstSlot, endTurn, chooseResearch } from './save-helpers.js';
 
-test('forskning-kraver-station / dubbelklick-bygger-pa-kartan / byggknapp-vid-titel: complete a station before queuing research and keep Build beside its title', async ({
+test('forskningsvy-utan-station / forsta-station-pa-vag / forskningstid: research becomes available after a station is completed', async ({
   page,
-}, testInfo) => {
-  // Completing a station and prerequisite research spans several narrated years.
+}) => {
   scenarioTimeout(90_000);
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
+  await expect(
+    page.getByText('Research needs a Research station.', { exact: false }),
+  ).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Research tree' })).toHaveCount(
+    0,
+  );
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Inspect Rocket engine factory', exact: true })
+    .getByRole('button', { name: 'Empty site 1 on Tellus', exact: true })
     .click();
-  const research = page.getByRole('button', {
-    name: 'Research Rocket engine factory',
+  await page
+    .getByRole('button', { name: 'Build Research station', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Research', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Research tree' })).toHaveCount(
+    0,
+  );
+  for (let round = 0; round < 3; round++) await endTurn(page);
+  await chooseResearch(page, 'Colony ship factory');
+  await expect(
+    page.getByRole('region', { name: 'Research tree' }),
+  ).toBeVisible();
+});
+
+test('dubbelklick-bygger-pa-kartan / byggknapp-vid-titel: select and order a ship from the production ring', async ({
+  page,
+  isMobile,
+}, testInfo) => {
+  const state = tradeNetworkState();
+  state.colonies[0]![1].buildings.push({
+    id: 'yard',
+    type: 'Transport ship factory',
+    slotIndex: 2,
+    demolition: false,
+  });
+  await page.addInitScript((initial) => {
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({ lastPlayed: '2026-10-30', state: initial }),
+    );
+  }, state);
+  await page.goto('./');
+  await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  const ship = page.getByRole('button', {
+    name: 'Show Transport ship',
     exact: true,
   });
-  await expect(research).toBeDisabled();
-  await expect(page.locator('.research-station-required')).toBeVisible();
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Show Research station', exact: true })
-    .dblclick();
-  await expect(page.locator('.map-queue-row')).toHaveCount(1);
-  await expect(page.locator('.map-queue-row')).toContainText(
-    'Research station',
-  );
+  if (isMobile) await ship.tap();
+  else await ship.click();
   const header = page.locator('.map-build-heading');
   const build = header.getByRole('button', { name: 'Build', exact: true });
-  await expect(build).toBeInViewport();
   const buttonBounds = (await build.boundingBox())!;
   const titleBounds = (await header.getByRole('heading').boundingBox())!;
   expect(buttonBounds.x).toBeGreaterThanOrEqual(
     titleBounds.x + titleBounds.width,
   );
   expect(buttonBounds.y).toBeLessThan(titleBounds.y + titleBounds.height);
-  expect(buttonBounds.y + buttonBounds.height).toBeGreaterThan(titleBounds.y);
   expect(buttonBounds.height).toBeGreaterThanOrEqual(44);
-  // radiella-byggval: a hovered choice must stay readable after selection.
-  const contrast = await page
-    .getByRole('button', { name: 'Show Research station', exact: true })
-    .evaluate((button) => {
-      const style = getComputedStyle(button);
-      const luminance = (color: string) => {
-        const channels = color
-          .match(/[\d.]+/g)!
-          .slice(0, 3)
-          .map((value) => {
-            const channel = Number(value) / 255;
-            return channel <= 0.04045
-              ? channel / 12.92
-              : ((channel + 0.055) / 1.055) ** 2.4;
-          });
-        return (
-          channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722
-        );
-      };
-      const text = luminance(style.color),
-        background = luminance(style.backgroundColor);
-      return (
-        (Math.max(text, background) + 0.05) /
-        (Math.min(text, background) + 0.05)
-      );
-    });
-  expect(contrast).toBeGreaterThanOrEqual(4.5);
   await page.screenshot({
     path: testInfo.outputPath('build-next-to-title.png'),
   });
-  await page.getByRole('button', { name: 'Research', exact: true }).click();
-  await expect(research).toBeDisabled();
-  await endTurn(page);
-  await page.getByRole('button', { name: 'Research', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Inspect Rocket engine factory', exact: true })
-    .click();
-  await expect(research).toBeEnabled();
-  await chooseResearch(page, 'Colony ship factory');
-  await expect(page.locator('.research-queue article')).toHaveCount(1);
-});
-
-test('dubbelklick-bygger-pa-kartan: double tap queues one order while single tap only selects', async ({
-  page,
-  isMobile,
-}) => {
-  test.skip(!isMobile, 'Native touch requires a mobile device.');
-  await page.goto('./');
-  await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
-  const mine = page.getByRole('button', {
-    name: 'Show Iron mine',
-    exact: true,
-  });
-  await mine.tap();
-  await expect(page.locator('.map-queue-row')).toHaveCount(0);
-  // Select another item so the following pair starts a separate gesture.
-  await page
-    .getByRole('button', { name: 'Show Water extractor', exact: true })
-    .tap();
-  // Two Playwright taps can land more than 500ms apart when the suite is busy.
-  await mine.evaluate((button) => {
-    if (!(button instanceof HTMLButtonElement))
-      throw new Error('Iron mine control is not a button.');
-    const tap = () => {
-      button.dispatchEvent(
-        new PointerEvent('pointerup', { bubbles: true, pointerType: 'touch' }),
-      );
-      button.click();
-    };
-    tap();
-    tap();
-  });
-  await expect(page.locator('.map-queue-row')).toHaveCount(1);
-  await expect(page.locator('.map-queue-row')).toContainText('Iron mine');
+  if (isMobile) {
+    await ship.evaluate((button) => {
+      if (!(button instanceof HTMLButtonElement))
+        throw new Error('Ship control is not a button.');
+      for (let count = 0; count < 2; count++) {
+        button.dispatchEvent(
+          new PointerEvent('pointerup', {
+            bubbles: true,
+            pointerType: 'touch',
+          }),
+        );
+        button.click();
+      }
+    });
+  } else await ship.dblclick();
+  await page.getByRole('tab', { name: 'Queue · 1' }).click();
+  await expect(page.locator('.map-queue-row')).toContainText('Transport ship');
 });

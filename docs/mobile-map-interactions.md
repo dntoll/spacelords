@@ -9,8 +9,8 @@ Förtydliganden 2026-10-27. Befintliga sparade spel bevaras.
   Detta kompletterar `rullningsbar-kartpanel` och `gemensam-events-panel` och
   ersätter det tidigare tomma avståndet för en separat kartlogg.
 - `spelnotis-synlig` — **Fullständigt implementerat**: Korta spelnotiser,
-  exempelvis `Shipyard construction queued.` efter `Build here` för ett
-  Orbital shipyard, visas överst i innehållsytan under flikarna, ovanför kartan
+  exempelvis felmeddelandet för ett upptaget flottans namn, visas överst i
+  innehållsytan under flikarna, ovanför kartan
   och detaljpanelen. De ryms helt inom skärmen på både mobil och dator och döljs
   inte av Events eller End turn. Buggrättning 2026-11-17: notisen låg tidigare
   vid nederkanten bakom den gemensamma sidfoten.
@@ -18,8 +18,7 @@ Förtydliganden 2026-10-27. Befintliga sparade spel bevaras.
   berörda planeten eller flottan mitt i kartytan som återstår bredvid eller
   ovanför detaljpanelen. Production håller även byggvalen synliga; om de inte
   ryms runt mittpunkten justeras placeringen så att de kan nås. Befintlig zoom
-  behålls. Hemvyn visar den markerade planeten fritt från detaljpanelen, så att
-  spelaren kan dra en handelsrutt enligt `handelsrutt-skapande-pa-stjarnkartan`.
+  behålls. Rutter skapas i Factories enligt `rutter-endast-i-connect`.
 - `dubbelklick-koar-forskning` — **Fullständigt implementerat**: Dubbelklick
   eller dubbeltryck på en identifierad research-ruta köar tekniken och dess
   saknade förkunskaper en gång. Ett enkelt tryck öppnar fortsatt detaljer och

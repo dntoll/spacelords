@@ -442,3 +442,58 @@ förenklad produktion är klar. De följs upp i
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `mining-ships`           | Mining ships utvinner råvaror ur nebulosor och asteroidbälten. Utvinningen styrs på kartan.                                                                                       |
 | `mining-ship-anslutning` | Ett mining ship är anslutet till nätverket när ett fraktskepp har routen mellan skeppet och den ägda planet som ligger närmast på kartan. Flyttas mining ship flyttas routen med. |
+
+## Automatisk placering av orbitalt varv
+
+`automatisk-varvsplacering` — **Fullständigt implementerat** (utforskning):
+När Orbital shipyard beställs i Factories väljs en ledig grannhex automatiskt
+och reserveras för stationen. Anläggningen och stationen färdigställs
+tillsammans. Detta ersätter spelarens val av grannhex i `orbitalt-varv`.
+Sparformatet ändras inte.
+
+## Anpassning av webbläsartester
+
+Tester för `route-kartvy`, manuell delbeställning och omordning av skeppskön
+har ersatts av kontroller för Connect i `Factories`,
+`delar-tillverkas-pa-behov`, `byggkons-framsteg` och `produktionsflikar`.
+Den tidigare kontrollen av ett stillaliggande fraktskepp vid ruttens mittpunkt
+utgår eftersom `fraktskepp-pendlar` ersätter `fraktskepp-ligger-stilla`.
+Manuell lastning och kapacitetskontroll (`automatisk-resursforsorjning` och
+`fysisk-frakt`) ersätts av tester för nätverk, utvinning och eskort.
+Teleskoptestet kontrollerar tillverkning och utrustning efter omladdning; dess
+flotta har tre skepp och omfattas inte av höjdgränsen för standardflottor med
+fyra skepp.
+Kontrollerna för att skapa rutter genom dragning eller `R` på Star map utgår
+också: `rutter-endast-i-connect` ersätter dessa vägar. Tester för val och
+tilldelning på befintliga rutter behålls.
+Planetens tidigare produktions- och byggkatalogtester utgår enligt
+`planetsida-informerar`: produktion styrs i Production och byggnation i
+Factories. Den borttagna globala byggnadsräknaren i byggkatalogen
+(`byggnadsantal-lokalt-och-globalt`) testas inte längre; planetöversiktens
+lokala inventarium och slutförd byggnation kontrolleras fortfarande.
+Den borttagna byggkön på planetsidan omfattas inte längre av
+`kompakta-koknappar`; motsvarande kontroll för forskningskön behålls.
+Den tidigare planetköns separata order för Rocket engine och Weapons module
+ersätts av `delar-tillverkas-pa-behov`; testet kontrollerar nu skeppsorderns
+delbehov och färdiga Fighter efter omladdning.
+Planetens katalogkontroller för `byggkategorier`, `symbolbaserade-kataloger`,
+`visa-byggalternativ` och `kompakta-bygghandlingar` utgår när byggkatalogen
+tas bort. Bilder på befintliga byggplatser och i Research kontrolleras fortsatt,
+liksom byggvalens symboler i Factories. Återkoppling vid dubbelklick kontrolleras
+med en skeppsorder enligt `produktionsorder-aterkoppling`.
+Det tidigare scenariot med manuellt beställda blandade motorer ersätts av
+`delar-tillverkas-pa-behov` och valet av senaste tillgängliga teknik: skeppet
+får tre Ion pulse engines när fabriken finns, och behåller dem vid flytt.
+Patrullkortets tidigare höjdgräns ersätts av `synlig-flottorder`, som tillåter
+ett högre kort när ordertext visas. Testet behåller kontroll av synlig status
+och åtkomliga knappar. Lasttestets fixtur använder flottans kvarvarande last i
+stället för det borttagna försändelsesystemet.
+Byggnadsprioritering och beroenden i Production-ringen
+(`produktionsval-efter-forekomst` och `produktionsberoenden-i-byggval`)
+ersätts av rekommendationer och beroenden i Factories; testet kontrollerar nu
+saknade delar och byggmöjligheten där.
+
+Det tidigare testet av placeringsdialogen utgår eftersom dialogen ersatts av
+`automatisk-varvsplacering`. Den nya webbläsarkontrollen verifierar reservation,
+omladdning och färdig station. `spelnotis-synlig` kontrolleras i stället med
+felmeddelandet för ett upptaget flottans namn.

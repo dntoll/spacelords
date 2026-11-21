@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { expect, test, type Page } from '@playwright/test';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import {
@@ -8,13 +9,13 @@ import { createExampleGalaxy } from '../../../src/client/space-map/models/exampl
 import { collectTurnFrames } from '../../fixtures/turn-steps.js';
 import { startFirstSlot } from './save-helpers.js';
 import { routePlaybackState } from '../../fixtures/route-playback.js';
+import { researchStationState } from '../../fixtures/research-station.js';
 
 async function seed(page: Page, twoFleets = false) {
-  const game = new Game(createExampleGalaxy());
-  game.scheduleBuild(game.galaxy.homePlanet, 'Research station');
+  const game = Game.restore(researchStationState());
+  game.scheduleBuild(game.galaxy.homePlanet, 'Iron mine');
   collectTurnFrames(game);
   game.finishTurn();
-  game.scheduleBuild(game.galaxy.homePlanet, 'Iron mine');
   game.selectResearch('Rocket engine factory');
   let secondId: string | null = null;
   if (twoFleets) {
@@ -147,9 +148,10 @@ async function noMenu(page: Page) {
     );
 }
 
-test('handelseannonsering / handelser-pa-kartan: announcements stay below the event and fly into the list across orientation changes', async ({
+test('handelseannonsering / handelser-pa-kartan / handelser-vid-ankomst: announcements stay below the event and fly into the list across orientation changes', async ({
   page,
 }, testInfo) => {
+  scenarioTimeout(90_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.setViewportSize({ width: 393, height: 851 });
@@ -163,23 +165,10 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   const log = page.getByRole('log', { name: 'Game events' });
   const console = page.getByRole('region', { name: 'Turn console' });
   await expect(announcement).toContainText(
-    'Iron mine was completed on Tellus.',
-  );
-  const reportBox = (await announcement.boundingBox())!;
-  const endBox = (await page
-    .getByRole('button', { name: 'End turn', exact: true })
-    .boundingBox())!;
-  expect(reportBox.y + reportBox.height).toBeLessThanOrEqual(endBox.y - 8);
-  await page.screenshot({
-    path: testInfo.outputPath('planet-report-portrait.png'),
-  });
-  await advanceUntil(page, async () =>
-    (await announcement.allTextContents())
-      .join('')
-      .includes('Home Fleet arrived at selected location.'),
+    'Home Fleet arrived at selected location.',
   );
   await expect(announcement).toHaveAttribute('data-stage', 'announcing');
-  await expect(log.locator('[data-event-id]')).toHaveCount(1);
+  await expect(log.locator('[data-event-id]')).toHaveCount(0);
   await noMenu(page);
   const placed = (await announcement.boundingBox())!;
   const portraitMap = (await page.getByTestId('map-container').boundingBox())!;
@@ -229,7 +218,7 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   expect(landscape.y + landscape.height).toBeLessThanOrEqual(393 - 8);
   await page.clock.runFor(1400);
   await expect(announcement).toHaveAttribute('data-stage', 'filing');
-  await expect(log.locator('[data-event-id]')).toHaveCount(1);
+  await expect(log.locator('[data-event-id]')).toHaveCount(0);
   await page.waitForTimeout(220);
   const flying = (await announcement.boundingBox())!;
   expect(flying.y).toBeGreaterThan(shortAnnouncement.y);
@@ -237,7 +226,7 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
     path: testInfo.outputPath('announcement-filing-landscape.png'),
   });
   await page.clock.runFor(500);
-  await expect(log.locator('[data-event-id]')).toHaveCount(2);
+  await expect(log.locator('[data-event-id]')).toHaveCount(1);
   await advanceUntil(page, () =>
     page.getByRole('heading', { name: 'Research', exact: true }).isVisible(),
   );
@@ -251,8 +240,8 @@ test('handelseannonsering / handelser-pa-kartan: announcements stay below the ev
   await expect(log).toContainText('Round 2');
   await noOverflow(page);
   await page.reload();
+  await page.clock.resume();
   await startFirstSlot(page);
-  await page.clock.runFor(100);
   await expect(announcement).toHaveCount(0);
   await page.getByRole('button', { name: 'Decisions', exact: true }).click();
   await console.locator('summary').click();
@@ -331,8 +320,10 @@ test('samtidig-farledsanimation / destinationer-for-aktiva-skepp: route fleets m
 test('en-flotta-i-taget / osynliga-flottor-utan-animation: full fleet routes are framed, unseen pirates are omitted and the original camera returns', async ({
   page,
 }, testInfo) => {
+  await page.clock.install({ time: new Date('2026-10-30T00:00:00Z') });
   await page.setViewportSize({ width: 393, height: 851 });
   const { secondId } = await seed(page, true);
+  await page.clock.pauseAt(new Date('2026-10-30T01:00:00Z'));
   const camera = await page.getByTestId('camera-position').textContent();
   const canvas = page.locator('canvas[data-rendered="true"]');
   await canvas.evaluate((node) => {
@@ -347,16 +338,11 @@ test('en-flotta-i-taget / osynliga-flottor-utan-animation: full fleet routes are
     });
   });
   await requestTurn(page);
-  await expect(canvas).toHaveAttribute('data-moving-fleet', 'fleet-home');
-  // Read once per poll: under load the movement may end between two reads.
-  await expect
-    .poll(async () => {
-      const progress = Number(
-        await canvas.getAttribute('data-moving-progress'),
-      );
-      return progress > 0 && progress < 1;
-    })
-    .toBe(true);
+  await advanceUntil(page, async () => {
+    const id = await canvas.getAttribute('data-moving-fleet');
+    const progress = Number(await canvas.getAttribute('data-moving-progress'));
+    return id === 'fleet-home' && progress > 0 && progress < 1;
+  });
   await noMenu(page);
   await expect(
     page.getByRole('button', { name: 'End turn', exact: true }),
@@ -374,10 +360,10 @@ test('en-flotta-i-taget / osynliga-flottor-utan-animation: full fleet routes are
   await page.screenshot({
     path: testInfo.outputPath('single-fleet-movement.png'),
   });
-  await expect(canvas).toHaveAttribute('data-moving-fleet', secondId!);
-  await expect(
-    page.getByRole('button', { name: 'End turn', exact: true }),
-  ).toBeEnabled({ timeout: 15000 });
+  await advanceUntil(page, () =>
+    page.getByRole('button', { name: 'End turn', exact: true }).isEnabled(),
+  );
+  await page.clock.runFor(32);
   await expect(canvas).toHaveAttribute(
     'data-observed-movement',
     JSON.stringify(['fleet-home', secondId]),

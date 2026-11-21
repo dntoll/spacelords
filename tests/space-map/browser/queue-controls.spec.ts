@@ -41,7 +41,7 @@ test('utforskningsko: Decisions shows the assigned planet and can remove it', as
 });
 
 for (const width of [320, 900]) {
-  test(`kompakta-koknappar: research and build queues use compact controls at ${width}px`, async ({
+  test(`kompakta-koknappar: the research queue uses compact controls at ${width}px`, async ({
     page,
   }, testInfo) => {
     await page.setViewportSize({ width, height: 800 });
@@ -65,35 +65,6 @@ for (const width of [320, 900]) {
     await research.screenshot({
       path: testInfo.outputPath('research-queue.png'),
     });
-    await page.getByRole('button', { name: 'Star map', exact: true }).click();
-    await page
-      .getByRole('button', { name: 'Open planet', exact: true })
-      .click();
-    for (const [index, type] of ['Research station', 'Iron mine'].entries()) {
-      await page
-        .getByRole('button', { name: 'Building sites', exact: true })
-        .click();
-      await page
-        .getByRole('button', {
-          name: `Build building at site ${index + 2}`,
-          exact: true,
-        })
-        .click();
-      await page
-        .getByRole('button', { name: `Show ${type}`, exact: true })
-        .click();
-      await page
-        .getByRole('button', { name: `Build ${type}`, exact: true })
-        .click();
-    }
-    await page
-      .getByRole('button', { name: 'Build queue', exact: true })
-      .click();
-    const production = page.locator('.planet-building-queue');
-    await checkControls(production.locator('.queue-order').first(), false);
-    await production.screenshot({
-      path: testInfo.outputPath('build-queue.png'),
-    });
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -102,10 +73,9 @@ for (const width of [320, 900]) {
   });
 }
 
-async function checkControls(row: Locator, sortable = true): Promise<void> {
+async function checkControls(row: Locator): Promise<void> {
   const controls = row.locator('.queue-actions button, .queue-drag-handle');
-  // byggorsak-i-kon: Build queue has no drag handle; Research queue keeps it.
-  await expect(controls).toHaveText(sortable ? ['⠿', '×'] : ['×']);
+  await expect(controls).toHaveText(['⠿', '×']);
   for (const control of await controls.all()) {
     await expect(control).toHaveAttribute('title', /.+/);
     const bounds = (await control.boundingBox())!;

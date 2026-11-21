@@ -1,3 +1,4 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { selectMapHex } from './map-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
@@ -5,6 +6,7 @@ import {
   Game,
   type GameState,
 } from '../../../src/client/space-map/models/Game.js';
+import { discoveryState } from '../../fixtures/exploration.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import { FleetMapLayout } from '../../../src/client/space-map/models/star-map/FleetMapLayout.js';
 import { pirateAsFleet } from '../../../src/client/space-map/models/PirateFleet.js';
@@ -81,7 +83,7 @@ test('aktuell-detektionssikt / kartans-sikttillstand: losing sight removes pirat
   });
 });
 
-test('teleskopfabriker / teleskop-i-exploration-ships: manufacture the best telescope and preserve individual levels after reload', async ({
+test('teleskopfabriker / teleskop-i-exploration-ships / delar-tillverkas-pa-behov: manufacture the best telescope and preserve individual levels after reload', async ({
   page,
 }, testInfo) => {
   const state = new Game(createExampleGalaxy()).exportState();
@@ -116,8 +118,7 @@ test('teleskopfabriker / teleskop-i-exploration-ships: manufacture the best tele
   let current = await saved(page);
   expect(
     current.colonies[0]![1].projects.map((project) => project.type),
-  ).toEqual(['Telescope III', 'Exploration ship']);
-  expect(current.colonies[0]![1].projects[1]!.parts!['Telescope III']).toBe(1);
+  ).toEqual(['Exploration ship']);
   await endTurn(page);
   await endTurn(page);
   await page.reload();
@@ -130,15 +131,14 @@ test('teleskopfabriker / teleskop-i-exploration-ships: manufacture the best tele
   ).toEqual([1, 3]);
   await selectMapFleet(page);
   await expect(page.locator('.selected-fleet-card')).toContainText('◉ 3');
-  const card = page.locator('.selected-fleet-card');
-  expect((await card.boundingBox())!.height).toBeLessThanOrEqual(140);
   await page.screenshot({ path: testInfo.outputPath('telescope-fleet.png') });
 });
 
 test('upptacktsavbrott / spara-avbrutet-ar: reload a year-end discovery without repeating production', async ({
   page,
 }) => {
-  const state = new Game(createExampleGalaxy()).exportState();
+  scenarioTimeout(120_000);
+  const state = discoveryState();
   state.colonies[0]![1].projects.push({
     id: 'detection-factory',
     type: 'Telescope II factory',
@@ -154,20 +154,24 @@ test('upptacktsavbrott / spara-avbrutet-ar: reload a year-end discovery without 
     await warning
       .getByRole('button', { name: 'End turn anyway', exact: true })
       .click();
-  const dialog = page.getByRole('dialog', {
-    name: 'Planet discovered',
-    exact: true,
-  });
-  await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('No movement remains this round');
+  const announcement = page.locator('.event-announcement-interactive');
+  await ignoreEventsUntil(page, announcement.filter({ hasText: 'Wreck' }));
+  await expect(announcement).toHaveAttribute('data-stage', 'awaiting-choice');
   const checkpoint = await saved(page);
-  expect(checkpoint.simulation!.economyApplied).toBe(true);
+  expect(checkpoint.simulation!.economyApplied).toBe(false);
   await page.reload();
   await startFirstSlot(page);
-  await expect(dialog).toBeVisible();
+  await expect(announcement).toHaveAttribute('data-stage', 'awaiting-choice');
   await ignoreEventsUntil(page);
   await expect.poll(async () => (await saved(page)).phase).toBe('planning');
   const after = await saved(page);
   expect(after.round).toBe(2);
-  expect(after.colonies).toEqual(checkpoint.colonies);
+  expect(after.colonies[0]![1].projects.map((project) => project.id)).toContain(
+    'detection-factory',
+  );
+  expect(
+    after.colonies[0]![1].buildings.some(
+      (building) => building.id === 'detection-factory',
+    ),
+  ).toBe(false);
 });

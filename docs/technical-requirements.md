@@ -1077,9 +1077,10 @@ ger ingen ny tidsbudget. Äldre sparningars återstående hexantal omvandlas til
 Controller sparar resultaten före visning. Handle ger orderbehörighet; Continue
 återupptar kvarvarande rörelse och applicerar årets ekonomi exakt en gång.
 
-`orbitalt-varv` och `automatisk-vrakreparation`: stationens grannhex reserveras
-vid köläggning. Reparationsköer är separata från planetens Build queue och behandlas
-i stabil varvsordning efter ordinarie produktion. Material och personer debiteras
+`orbitalt-varv`, `automatisk-varvsplacering` och `automatisk-vrakreparation`:
+Factories väljer en ledig grannhex automatiskt och reserverar den vid köläggning.
+Reparationsköer är separata från planetens Build queue och behandlas i stabil
+varvsordning efter ordinarie produktion. Material och personer debiteras
 först vid färdig reparation; inga nya komponenter tillverkas för det gamla skrovet.
 Salvage håller vrak, dockning och order samlade. Vyer läser frysta ögonblicksbilder.
 Kartmarkörer och träffytor delar geometri; order nås också utan dragning.

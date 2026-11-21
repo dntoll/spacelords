@@ -80,22 +80,13 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
   await page
     .getByRole('button', { name: 'Building sites', exact: true })
     .click();
-  await page
-    .getByRole('button', { name: 'Build building at site 1', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Show Research station', exact: true })
-    .click();
   await expect(
-    page.getByRole('button', { name: 'Build Research station' }),
-  ).toBeEnabled();
+    page.getByText('Build, upgrade and cancel construction in Factories.'),
+  ).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('planet.png'),
     fullPage: true,
   });
-  await page
-    .getByRole('button', { name: 'Back to Building sites', exact: true })
-    .click();
   await page
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('button', { name: 'Star map', exact: true })
@@ -330,7 +321,7 @@ test('flera-skarmstorlekar: canvas follows its container without horizontal over
   ).toBe(false);
 });
 
-test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: research, build ships and settle a new colony', async ({
+test('byggtid-per-byggnad / skeppsorder-pa-planeten / forska-fram-fabriker / kolonisation: research, build ships and settle a new colony', async ({
   page,
 }, testInfo) => {
   scenarioTimeout(120_000);
@@ -343,166 +334,47 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
       .getByRole('button', { name: 'Open planet', exact: true })
       .click();
   };
-  await expect(page.locator('.order-status')).toContainText(
-    '10 empty building sites',
-  );
-  await construction();
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Build building at site 1', exact: true })
-    .click();
-  await expect(page.locator('.building-menu .catalog-item')).toHaveCount(4);
-  await expect(
-    page.getByRole('button', { name: 'Queue Colony ship', exact: true }),
-  ).toHaveCount(0);
-  await page
-    .getByRole('button', { name: 'Show Research station', exact: true })
+    .getByRole('button', { name: 'Empty site 1 on Tellus', exact: true })
     .click();
   await page
     .getByRole('button', { name: 'Build Research station', exact: true })
     .click();
-  await nextYear();
+  for (let round = 0; round < 3; round++) await nextYear();
   await page
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('button', { name: 'Research', exact: true })
     .click();
   await chooseResearch(page, 'Colony ship factory');
-  const factorySource = await page
-    .locator('[data-technology="Colony ship factory"] img')
-    .getAttribute('src');
-  await expect(
-    page.getByText('Researching · 0/2 rounds', { exact: true }),
-  ).toBeVisible();
-  await nextYear();
-  await nextYear();
-  await nextYear();
-  await construction();
+  for (let round = 0; round < 3; round++) await nextYear();
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Build building at site 2', exact: true })
-    .click();
-  await expect(
-    page.getByRole('button', { name: 'Show Colony ship factory', exact: true }),
-  ).toBeVisible();
-  await page
-    .getByRole('button', { name: 'Show Colony ship factory', exact: true })
-    .click();
-  await expect(
-    page.getByRole('img', { name: 'Colony ship factory', exact: true }),
-  ).toHaveAttribute('src', factorySource!);
-
-  await page
-    .getByRole('button', { name: 'Show Colony ship factory', exact: true })
+    .getByRole('button', { name: 'Empty site 2 on Tellus', exact: true })
     .click();
   await page
     .getByRole('button', { name: 'Build Colony ship factory', exact: true })
     .click();
-  await nextYear();
-  await construction();
   await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Build building at site 3', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Show Rocket engine factory', exact: true })
+    .getByRole('button', { name: 'Empty site 3 on Tellus', exact: true })
     .click();
   await page
     .getByRole('button', { name: 'Build Rocket engine factory', exact: true })
     .click();
-  await nextYear();
-  await expect(page.locator('.order-status')).toContainText(
-    '1 idle planet build queue',
-  );
+  for (let round = 0; round < 3; round++) await nextYear();
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await formFleet(page);
-  await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await construction();
-  await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  const yard = page.getByRole('article', {
-    name: 'Building site 2',
-    exact: true,
-  });
-  await expect(
-    yard.getByRole('img', { name: 'Colony ship factory', exact: true }),
-  ).toHaveAttribute('src', factorySource!);
-  const planetQueue = page.getByRole('region', {
-    name: 'Planet build queue',
-    exact: true,
-  });
-  await expect(page.locator('.queue-slots')).toHaveCount(0);
-  const detailsBounds = (await yard.locator('.site-details').boundingBox())!;
-  for (const action of await yard.locator('.site-actions button').all()) {
-    const bounds = (await action.boundingBox())!;
-    expect(bounds.width).toBeLessThan(detailsBounds.width);
-    expect(bounds.height).toBeGreaterThanOrEqual(44);
-  }
-  await yard.scrollIntoViewIfNeeded();
-  await page.screenshot({
-    path: testInfo.outputPath('overview-factory-queue.png'),
-  });
-
-  await expect(
-    yard.getByRole('button', { name: 'Build ships at site 2', exact: true }),
-  ).toHaveCount(0);
-  await expect(yard.locator('.factory-order')).toHaveCount(0);
-  await page
-    .getByRole('navigation', { name: 'Planet pages' })
-    .getByRole('button', { name: 'Production', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Show Colony ship', exact: true })
-    .click();
-  await expect(page.locator('.production-order')).toContainText(
-    'Iron 6, Water 3, Oil 1',
-  );
-  await page
-    .getByRole('navigation', { name: 'Planet pages' })
-    .getByRole('button', { name: 'Production', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
   await page
     .getByRole('button', { name: 'Show Colony ship', exact: true })
     .click();
   await chooseShipStartFleet(page, 'Fleet 1');
-  await page
-    .getByRole('button', { name: 'Show Colony ship', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Queue Colony ship', exact: true })
-    .click();
-  for (let index = 0; index < 4; index += 1) {
-    await page
-      .getByRole('button', { name: 'Show Colony ship', exact: true })
-      .click();
-    await page
-      .getByRole('button', { name: 'Queue Colony ship', exact: true })
-      .click();
-  }
-  await expect(
-    page.getByRole('button', { name: 'Queue Colony ship', exact: true }),
-  ).toBeEnabled();
-  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
-  await expect(planetQueue.locator('.queue-order')).toHaveCount(20);
-  for (let index = 0; index < 2; index++) {
-    await planetQueue
-      .locator('.queue-order')
-      .nth(1)
-      .locator('.queue-drag-handle')
-      .focus();
-    for (const key of ['Space', 'ArrowUp', 'Enter'])
-      await page.keyboard.press(key);
-  }
-  await page.screenshot({
-    path: testInfo.outputPath('shipyard-queue.png'),
-    fullPage: true,
-  });
+  await page.getByRole('button', { name: 'Build', exact: true }).click();
+  await page.getByRole('tab', { name: 'Queue · 1' }).click();
+  await expect(page.locator('.map-queue-row')).toContainText('Colony ship');
+  await expect(page.locator('.map-queue-row .queue-drag-handle')).toHaveCount(
+    0,
+  );
   for (let year = 0; year < 4; year++) await nextYear();
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page, 'Fleet 1');
@@ -538,13 +410,7 @@ test('planetbyggplatser / fabrikskoer / forska-fram-fabriker / kolonisation: res
     .click();
   await expect(page.locator('.building-site')).toHaveCount(6);
   await expect(
-    page.getByRole('button', { name: 'Build building at site 1', exact: true }),
-  ).toBeDisabled();
-  await expect(
-    page.getByRole('button', { name: 'Build dome at site 1', exact: true }),
-  ).toBeDisabled();
-  await expect(page.locator('.blocked-reason')).toContainText(
-    'Research this building first.',
-  );
+    page.getByText('Build, upgrade and cancel construction in Factories.'),
+  ).toBeVisible();
   await expect(page.locator('.locked-site')).toHaveCount(5);
 });

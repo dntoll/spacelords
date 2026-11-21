@@ -196,9 +196,9 @@ test('valbar-roll-i-testbordning: choose and replay both roles without changing 
   const before = await page.evaluate(() => ({ ...localStorage }));
   const role = page.getByRole('combobox', { name: 'Boarding role' });
   const ship = page.getByRole('combobox', { name: 'Boarded ship' });
+  await page.locator('.save-tests summary').click();
   await ship.selectOption('Salvage ship');
   await role.selectOption('defender');
-  await page.locator('.save-tests summary').click();
   await page.getByRole('button', { name: 'Test boarding' }).click();
   const dialog = page.getByRole('dialog', { name: 'Boarding combat' });
   await expect(dialog).toBeVisible();
@@ -209,7 +209,6 @@ test('valbar-roll-i-testbordning: choose and replay both roles without changing 
   await expect(role).toHaveValue('defender');
   await expect(ship).toHaveValue('Salvage ship');
   await role.selectOption('attacker');
-  await page.locator('.save-tests summary').click();
   await page.getByRole('button', { name: 'Test boarding' }).click();
   await expect(
     dialog.getByRole('region', { name: 'Boarding team' }),

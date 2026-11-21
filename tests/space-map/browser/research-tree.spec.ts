@@ -67,6 +67,13 @@ test('forsknings-tradnavigation: native touch pans and pinches the tree', async 
     browserName !== 'chromium' || !isMobile,
     'Native touch uses the mobile Chromium input channel.',
   );
+  await page.addInitScript((state) => {
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+    localStorage.setItem(
+      'spacelords.save.v2.1',
+      JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
+    );
+  }, researchStationState());
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();

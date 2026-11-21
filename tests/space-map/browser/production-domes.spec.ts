@@ -1,10 +1,12 @@
+import { scenarioTimeout } from '../../browser-timeouts.js';
 import { expect, test } from '@playwright/test';
 import { domeProductionState } from '../../fixtures/production-dome.js';
 import { startFirstSlot, endTurn } from './save-helpers.js';
 
-test('dome-fore-fabriksforslag / domes-per-byggplats: Production builds a Dome before offering factories for its prepared site', async ({
+test('produktionsvagledning-till-factories / domes-per-byggplats: Factories builds a Dome before offering factories', async ({
   page,
 }) => {
+  scenarioTimeout(90_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.addInitScript((state) => {
@@ -23,37 +25,25 @@ test('dome-fore-fabriksforslag / domes-per-byggplats: Production builds a Dome b
     .getByRole('button', { name: 'Production', exact: true });
   await production.click();
   const options = page.getByRole('group', { name: 'Build options' });
-  await expect(options.getByRole('button').first()).toHaveAccessibleName(
-    'Show Desert dome',
-  );
-  await expect(options.getByRole('button', { name: /factory/ })).toHaveCount(0);
-  await expect(page.locator('.production-guidance')).toContainText(
-    'Build a Desert dome',
-  );
+  await expect(
+    options.getByRole('button', { name: /dome|factory/i }),
+  ).toHaveCount(0);
+  await expect(page.locator('.production-guidance')).toContainText('Factories');
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Prepare building site', exact: true })
+    .getByRole('button', { name: 'Site 1 on Tellus needs a Dome', exact: true })
     .click();
-  await expect(
-    page.getByRole('region', { name: 'Build details' }),
-  ).toContainText('Desert dome');
-  await page.getByRole('button', { name: 'Build', exact: true }).click();
-  await expect(page.locator('.map-queue-row')).toContainText('Desert dome');
-  await endTurn(page);
-  await production.click();
-  const factory = options.getByRole('button', {
-    name: 'Show Rocket engine factory',
-  });
-  if (!(await factory.isVisible())) {
-    await page.getByRole('button', { name: 'Next build options' }).click();
-  }
-  await factory.click();
-  await expect(
-    page.getByRole('button', { name: 'Build', exact: true }),
-  ).toBeEnabled();
-  await page.getByRole('button', { name: 'Build', exact: true }).click();
-  await expect(page.locator('.map-queue-row')).toContainText(
-    'Rocket engine factory',
-  );
+  await page
+    .getByRole('button', { name: 'Build Desert dome', exact: true })
+    .click();
+  for (let round = 0; round < 2; round++) await endTurn(page);
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Empty site 1 on Tellus', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Build Rocket engine factory', exact: true })
+    .click();
   const project = await page.evaluate(
     () =>
       (

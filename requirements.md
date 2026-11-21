@@ -40,8 +40,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   uppspelningen av året, händelser, avbrott och `Decisions`. Allt är
   **Fullständigt implementerat**.
 - **[Space pirates, bärgning och varv](docs/areas/pirates-and-salvage.md):**
-  pirater, vrak, bärgning och orbitala varv. Allt är **Fullständigt
-  implementerat**.
+  pirater, vrak, bärgning och orbitala varv med `automatisk-varvsplacering`
+  i utforskningen. Allt är **Fullständigt implementerat**.
 - **[Rymdstrid](docs/areas/space-battle.md):** taktisk strid och testläget.
   Allt är **Fullständigt implementerat**.
 - **[Bordning](docs/areas/boarding.md):** bordningsstrid, grafik, ljus och

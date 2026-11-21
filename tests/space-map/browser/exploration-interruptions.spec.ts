@@ -8,6 +8,7 @@ import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveR
 import { startFirstSlot, endTurn, ignoreEventsUntil } from './save-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import { Game } from '../../../src/client/space-map/models/Game.js';
+import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 
 test('centrerade-handelseval-pa-dator / upptacktsbesked-utan-pausmening: event choices stay near the desktop map center when resized', async ({
   page,
@@ -286,14 +287,29 @@ test('automatisk-stjarnutforskning / flottorder-som-symboler: explores persisten
 test('produktionsorder-aterkoppling: double-click gives a visible receipt while the queue is below the selected details', async ({
   page,
 }) => {
+  const state = new Game(createExampleGalaxy()).exportState();
+  state.colonies[0]![1].buildings.push({
+    id: 'yard',
+    type: 'Exploration ship factory',
+    slotIndex: 0,
+    demolition: false,
+  });
+  await page.addInitScript((saved) => {
+    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
+    if (!localStorage.getItem('spacelords.save.v2.1'))
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-10-24T10:00:00Z', state: saved }),
+      );
+  }, state);
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Production', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Show Research station', exact: true })
+    .getByRole('button', { name: 'Show Exploration ship', exact: true })
     .dblclick();
   const receipt = page.locator('.production-receipt[role="status"]');
-  await expect(receipt).toHaveText('Queued Research station · #1');
+  await expect(receipt).toHaveText('Queued Exploration ship · #1');
   await expect(receipt).toBeInViewport();
   const saved = await page.evaluate(
     () =>

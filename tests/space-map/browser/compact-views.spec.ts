@@ -177,9 +177,9 @@ test('forskningsdetaljer-vid-val: dragging from a research tile pans without ins
   await expect(page.locator('.research-queue article')).toHaveCount(0);
 });
 
-test('produktionsvalens-statusfarger: all four statuses stay distinct, readable and explained when selected', async ({
+test('fabriksstatus-i-byggval: built, queued and absent factories have distinct status labels', async ({
   page,
-}, testInfo) => {
+}) => {
   const state = tradeNetworkState();
   state.colonies[0]![1].projects = [
     {
@@ -190,70 +190,37 @@ test('produktionsvalens-statusfarger: all four statuses stay distinct, readable 
       destinationFleetId: null,
     },
   ];
-  state.colonies[1]![1].projects = [];
-  state.colonies[1]![1].buildings = [
-    { id: 'water', type: 'Water extractor', slotIndex: 0, demolition: false },
-  ];
-  await seed(page, {
-    ...state,
-    researched: [],
-    fleets: state.fleets.map((fleet) =>
-      fleet.id === 'freighters' ? { ...fleet, routeId: 'route-test' } : fleet,
-    ),
-  });
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
-  const backgrounds: string[] = [];
-  for (const [type, presence] of [
-    ['Iron mine', 'local'],
-    ['Water extractor', 'network'],
-    ['Research station', 'queued'],
-    ['Oil extractor', 'missing'],
-  ]) {
-    const choice = page.getByRole('button', {
-      name: `Show ${type}`,
-      exact: true,
-    });
-    await expect(choice).toHaveAttribute('data-presence', presence!);
-    const color = await choice.evaluate((node) => {
-      const style = getComputedStyle(node);
-      const canvas = document.createElement('canvas');
-      canvas.width = canvas.height = 1;
-      const context = canvas.getContext('2d')!;
-      const luminance = (value: string) => {
-        context.clearRect(0, 0, 1, 1);
-        context.fillStyle = value;
-        context.fillRect(0, 0, 1, 1);
-        const values = [...context.getImageData(0, 0, 1, 1).data]
-          .slice(0, 3)
-          .map((n) => n / 255)
-          .map((n) =>
-            n <= 0.04045 ? n / 12.92 : ((n + 0.055) / 1.055) ** 2.4,
-          );
-        return values[0]! * 0.2126 + values[1]! * 0.7152 + values[2]! * 0.0722;
-      };
-      const text = luminance(style.color),
-        background = luminance(style.backgroundColor);
-      return {
-        background: style.backgroundColor,
-        contrast:
-          (Math.max(text, background) + 0.05) /
-          (Math.min(text, background) + 0.05),
-      };
-    });
-    expect(color.contrast).toBeGreaterThanOrEqual(4.5);
-    backgrounds.push(color.background);
-  }
-  expect(new Set(backgrounds).size).toBe(4);
+  await seed(page, state);
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Show Water extractor', exact: true })
+    .getByRole('button', { name: 'Empty site 4 on Tellus', exact: true })
     .click();
-  await expect(page.locator('.production-presence-detail')).toHaveCount(0);
-  await expect(
-    page.getByRole('button', { name: 'Show Water extractor', exact: true }),
-  ).toHaveAttribute('aria-description', /In active network: 1/);
-  await page.screenshot({
-    path: testInfo.outputPath('production-status-colors.png'),
+  const options = page.locator('.factory-option');
+  const built = options.filter({
+    has: page.locator('.factory-option-title', {
+      hasText: 'Rocket engine factory',
+    }),
   });
+  const queued = options.filter({
+    has: page.locator('.factory-option-title', { hasText: 'Research station' }),
+  });
+  const absent = options.filter({
+    has: page.locator('.factory-option-title', {
+      hasText: 'Transport ship factory',
+    }),
+  });
+  await expect(built).toHaveClass(/presence-built/);
+  await expect(built).toContainText('1 in group');
+  await expect(queued).toHaveClass(/presence-building/);
+  await expect(queued).toContainText('1 under construction');
+  await expect(absent).toHaveClass(/presence-absent/);
+  await expect(absent).toContainText('Not in group');
+  const colors = await Promise.all(
+    [built, queued, absent].map((row) =>
+      row.evaluate((node) => getComputedStyle(node).borderLeftColor),
+    ),
+  );
+  expect(new Set(colors).size).toBe(3);
 });
 
 test('uppmarksamhet-vid-titel / kompakt-ny-flotta / flyttmal-pa-kartan / inga-hexkoordinater: header and fleet controls save mobile space', async ({

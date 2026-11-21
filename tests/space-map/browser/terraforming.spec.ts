@@ -91,9 +91,7 @@ test('fardig-terraformning-till-temperate: changes the planet portrait, frees th
     name: 'Building site 1',
     exact: true,
   });
-  await expect(
-    site.getByRole('button', { name: 'Build building at site 1', exact: true }),
-  ).toBeEnabled();
+  await expect(site).toContainText('Empty site');
   await expect(site).not.toContainText('Desert terraforming factory');
   await page.screenshot({
     path: testInfo.outputPath('completed-terraforming.png'),
@@ -157,42 +155,37 @@ test('planettypsforskning / domes-per-byggplats / terraformning / andningsbar-at
     name: 'Building site 1',
     exact: true,
   });
-  await expect(
-    first.getByRole('button', {
-      name: 'Build building at site 1',
-      exact: true,
-    }),
-  ).toBeDisabled();
-  await first
-    .getByRole('button', { name: 'Build dome at site 1', exact: true })
+  await expect(first).toContainText('Dome');
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Site 1 on Vesta needs a Dome', exact: true })
     .click();
+  await page
+    .getByRole('button', { name: 'Build Desert dome', exact: true })
+    .click();
+  await nextYear();
   await nextYear();
   await page
     .getByRole('button', { name: 'Building sites', exact: true })
     .click();
   await expect(first).toContainText('Dome ready');
-  await first
-    .getByRole('button', { name: 'Build building at site 1', exact: true })
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Empty site 1 on Vesta', exact: true })
     .click();
   await expect(
     page.getByRole('button', {
-      name: 'Show Ice terraforming factory',
+      name: 'Build Ice terraforming factory',
       exact: true,
     }),
   ).toHaveCount(0);
-  await page
-    .getByRole('button', {
-      name: 'Show Desert terraforming factory',
-      exact: true,
-    })
-    .click();
   await page
     .getByRole('button', {
       name: 'Build Desert terraforming factory',
       exact: true,
     })
     .click();
-  await nextYear();
+  for (let round = 0; round < 3; round++) await nextYear();
   await expect(page.locator('.planet-stats')).toContainText('75%');
   await nextYear();
   await expect(page.locator('.planet-stats')).toContainText('80%');
@@ -201,10 +194,8 @@ test('planettypsforskning / domes-per-byggplats / terraformning / andningsbar-at
     .getByRole('button', { name: 'Building sites', exact: true })
     .click();
   await expect(
-    page
-      .getByRole('article', { name: 'Building site 2', exact: true })
-      .getByRole('button', { name: 'Build building at site 2', exact: true }),
-  ).toBeEnabled();
+    page.getByRole('article', { name: 'Building site 2', exact: true }),
+  ).toContainText('Empty site');
   await page.screenshot({
     path: testInfo.outputPath('terraforming-colony.png'),
     fullPage: true,

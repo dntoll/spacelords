@@ -1,12 +1,13 @@
+import { selectMapObject } from './map-helpers.js';
 import { scenarioTimeout } from '../../browser-timeouts.js';
-import { selectMapFleet } from './fleet-helpers.js';
+import { chooseShipStartFleet, selectMapFleet } from './fleet-helpers.js';
 import { expect, test } from '@playwright/test';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import { emptyStock } from '../../../src/client/space-map/models/Economy.js';
 import { chooseResearch, endTurn, startFirstSlot } from './save-helpers.js';
 
-test('motorbehov-for-alla-skepp / ion-pulse-engine / automatisk-motormontering: research, manufacture, fit and retain mixed engines on mobile', async ({
+test('motorbehov-for-alla-skepp / ion-pulse-engine / automatisk-motormontering: research, automatically fit and retain the best available engines on mobile', async ({
   page,
 }, testInfo) => {
   scenarioTimeout(90_000);
@@ -19,6 +20,7 @@ test('motorbehov-for-alla-skepp / ion-pulse-engine / automatisk-motormontering: 
     Water: 1000,
     Oil: 1000,
     'Rocket engine': 2,
+    'Ion pulse engine': 1,
   };
   colony.buildings = (
     [
@@ -55,17 +57,10 @@ test('motorbehov-for-alla-skepp / ion-pulse-engine / automatisk-motormontering: 
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   await chooseResearch(page, 'Ion pulse engine factory');
   await expect(page.locator('.research-queue article')).toHaveCount(1);
-  await endTurn(page);
-  await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  for (let round = 0; round < 3; round++) await endTurn(page);
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Build building at site 4', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Show Ion pulse engine factory', exact: true })
+    .getByRole('button', { name: 'Empty site 4 on Tellus', exact: true })
     .click();
   await page
     .getByRole('button', {
@@ -73,39 +68,21 @@ test('motorbehov-for-alla-skepp / ion-pulse-engine / automatisk-motormontering: 
       exact: true,
     })
     .click();
-  await endTurn(page);
-  await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page
-    .getByRole('navigation', { name: 'Planet pages' })
-    .getByRole('button', { name: 'Production', exact: true })
-    .click();
-  await page.getByRole('button', { name: 'Components', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Show Ion pulse engine', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Queue Ion pulse engine', exact: true })
-    .click();
-  await endTurn(page);
-  await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page
-    .getByRole('navigation', { name: 'Planet pages' })
-    .getByRole('button', { name: 'Production', exact: true })
-    .click();
-  await page.getByRole('button', { name: 'Ships', exact: true }).click();
+  for (let round = 0; round < 3; round++) await endTurn(page);
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await selectMapObject(page, 'Tellus');
   await page
     .getByRole('button', { name: 'Show Colony ship', exact: true })
     .click();
-  await expect(page.locator('.planet-production')).toContainText('3 engines');
-  await page
-    .getByRole('button', { name: 'Queue Colony ship', exact: true })
-    .click();
+  const controls = page.getByRole('complementary', {
+    name: 'Production controls',
+  });
+  await chooseShipStartFleet(page, 'Home Fleet');
+  await controls.getByRole('button', { name: 'Build', exact: true }).click();
   await page.screenshot({
     path: testInfo.outputPath('mixed-engine-production.png'),
   });
-  await endTurn(page);
+  for (let round = 0; round < 4; round++) await endTurn(page);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page, 'Home Fleet');
   const card = page.locator('.fleet-card').filter({
@@ -143,7 +120,7 @@ test('motorbehov-for-alla-skepp / ion-pulse-engine / automatisk-motormontering: 
       .find((fleet) => fleet.name === 'Fleet 1')!
       .shipUnits.find((unit) => unit.type === 'Colony ship')!.engines;
   });
-  expect(installed).toEqual({ 'Rocket engine': 2, 'Ion pulse engine': 1 });
+  expect(installed).toEqual({ 'Rocket engine': 0, 'Ion pulse engine': 3 });
   await page.screenshot({
     path: testInfo.outputPath('mixed-engine-fleet.png'),
   });

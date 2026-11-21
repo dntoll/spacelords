@@ -51,6 +51,10 @@ test('bordningshud-i-botten / ihopfallbar-bordningslogg: controls fit and a scro
   await fourth.click();
   await expect(fourth).toHaveClass(/boarding-unit-active/);
   const originalViewport = page.viewportSize()!;
+  // Chromium cannot resize its emulated viewport while its window is fullscreen.
+  await page.evaluate(async () => {
+    if (document.fullscreenElement) await document.exitFullscreen();
+  });
   await page.setViewportSize({ width: 844, height: 390 });
   const first = dialog
     .getByRole('region', { name: 'Boarding team' })

@@ -55,7 +55,7 @@ bevaras och sparformatet ändras inte.
 | `bargningsskepp`                   | Fullständigt implementerat | Salvage ship och dess egen fabrik forskas fram. Varje skepp kan bogsera ett vrak.                                                              |
 | `bargningsorder`                   | Fullständigt implementerat | Dra vrak till flottan eller använd Salvage with. Närmaste tilldelade vrak hämtas först, därefter närmaste egna varv.                           |
 | `bogsering-av-vrak`                | Fullständigt implementerat | Grundfart 5 utan släp och 1 med släp; vanlig Ion-bonus gäller. Stop och rörelseorder behåller släp. Release wreck lossar.                      |
-| `orbitalt-varv`                    | Fullständigt implementerat | Planetens anläggning med skyttlar och stationen i vald grannhex skapas tillsammans.                                                            |
+| `orbitalt-varv`                    | Fullständigt implementerat | Planetens anläggning med skyttlar och stationen i en automatiskt vald ledig grannhex skapas tillsammans.                                       |
 | `automatisk-vrakreparation`        | Fullständigt implementerat | Varvets separata kö reparerar ett skepp per år med nya personer och en tredjedel av hela skeppets råvarukostnad.                               |
 | `forstort-varv`                    | Fullständigt implementerat | Överlevande pirater förstör stationen; anläggningen finns kvar och vrak frigörs. Ersättningsstation beställs manuellt.                         |
 | `forskning-fran-bargade-delar`     | Fullständigt implementerat | Hemförda komponenter öppnar direkt forskning på motsvarande fabrik. Research station och vanlig forskning krävs fortfarande.                   |
