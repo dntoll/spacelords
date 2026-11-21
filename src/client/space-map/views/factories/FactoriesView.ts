@@ -81,6 +81,14 @@ interface GraphNode {
   readonly onClick?: () => void;
 }
 
+/** planetsprites-i-factories: a group drawn as a soft area behind its planets. */
+interface GraphCluster {
+  readonly ids: readonly string[];
+  readonly tone: GraphNode['tone'];
+  readonly label: string;
+  readonly onClick?: () => void;
+}
+
 interface GraphEdge {
   readonly a: string;
   readonly b: string;
@@ -93,6 +101,7 @@ function graph(
   edges: readonly GraphEdge[],
   height: number,
   label: string,
+  clusters: readonly GraphCluster[] = [],
 ): SVGSVGElement {
   const width = 320;
   const pad = 34;
@@ -116,6 +125,40 @@ function graph(
   svg.setAttribute('role', 'img');
   svg.setAttribute('aria-label', label);
   const positions = new Map(nodes.map((node) => [node.id, at(node.position)]));
+  for (const cluster of clusters) {
+    const points = cluster.ids.flatMap((id) => {
+      const point = positions.get(id);
+      const node = nodes.find((item) => item.id === id);
+      return point && node ? [{ ...point, radius: node.radius }] : [];
+    });
+    if (!points.length) continue;
+    const margin = 6;
+    const left = Math.min(...points.map((p) => p.x - p.radius)) - margin;
+    const right = Math.max(...points.map((p) => p.x + p.radius)) + margin;
+    const top = Math.min(...points.map((p) => p.y - p.radius)) - margin;
+    const bottom = Math.max(...points.map((p) => p.y + p.radius)) + margin;
+    const area = document.createElementNS(SVG, 'rect');
+    area.setAttribute('x', String(left));
+    area.setAttribute('y', String(top));
+    area.setAttribute('width', String(right - left));
+    area.setAttribute('height', String(bottom - top));
+    area.setAttribute('rx', String(Math.min(18, (bottom - top) / 2)));
+    area.setAttribute('class', `factory-cluster ${cluster.tone}`);
+    if (cluster.onClick) {
+      const click = cluster.onClick;
+      area.setAttribute('role', 'button');
+      area.setAttribute('tabindex', '0');
+      area.setAttribute('aria-label', cluster.label);
+      area.addEventListener('click', click);
+      area.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          click();
+        }
+      });
+    }
+    svg.append(area);
+  }
   for (const edge of edges) {
     const a = positions.get(edge.a);
     const b = positions.get(edge.b);
@@ -133,14 +176,18 @@ function graph(
     if (!point) continue;
     const group = document.createElementNS(SVG, 'g');
     group.setAttribute('class', `factory-node ${node.tone}`);
-    const ring = document.createElementNS(SVG, 'circle');
-    ring.setAttribute('cx', String(point.x));
-    ring.setAttribute('cy', String(point.y));
-    ring.setAttribute('r', String(node.radius));
-    group.append(ring);
+    // planetsprites-i-factories: a sprite replaces the circle, which only
+    // marks a picked planet.
+    if (!node.image || node.tone === 'picked') {
+      const ring = document.createElementNS(SVG, 'circle');
+      ring.setAttribute('cx', String(point.x));
+      ring.setAttribute('cy', String(point.y));
+      ring.setAttribute('r', String(node.radius));
+      group.append(ring);
+    }
     if (node.image) {
       const image = document.createElementNS(SVG, 'image');
-      const size = node.radius * 1.7;
+      const size = node.radius * 2;
       image.setAttribute('href', node.image);
       image.setAttribute('x', String(point.x - size / 2));
       image.setAttribute('y', String(point.y - size / 2));
@@ -661,30 +708,33 @@ function connectScreen(
   locked: boolean,
   emit: Emit,
 ): Part[] {
-  const nodes: GraphNode[] = connect.nodes.map((node) => {
-    const extra = node.planets.length > 1 ? ` +${node.planets.length - 1}` : '';
-    return {
-      id: node.key,
-      label: node.own
-        ? node.planets.length > 1
-          ? `${node.planets.length} planets`
-          : (node.planets[0] ?? '')
-        : `${node.planets[0] ?? ''}${extra}`,
-      position: node.position,
-      radius: node.own ? 22 : node.planets.length > 1 ? 14 : 9,
-      tone: node.own ? 'own' : node.connectable ? 'other' : 'muted',
-      // lankar-bara-i-grupper: only a group of planets has links inside.
-      ...(node.own && node.planets.length > 1
-        ? { onClick: () => emit({ kind: 'open-links' }) }
-        : {}),
-    };
-  });
-  const own = connect.nodes.find((node) => node.own);
-  const edges: GraphEdge[] = own
-    ? connect.nodes
-        .filter((node) => !node.own && node.connectable)
-        .map((node) => ({ a: own.key, b: node.key, dashed: true }))
-    : [];
+  // planetsprites-i-factories: every planet with its sprite, each group a cluster.
+  const tone = (node: ConnectScreenSnapshot['nodes'][number]) =>
+    node.own ? 'own' : node.connectable ? 'other' : 'muted';
+  const nodes: GraphNode[] = connect.nodes.flatMap((node) =>
+    node.members.map((planet) => ({
+      id: planet.id,
+      label: planet.name,
+      position: planet.position,
+      radius: node.own ? 13 : 10,
+      image: PLANET_IMAGES[planet.environment],
+      tone: tone(node),
+    })),
+  );
+  const clusters: GraphCluster[] = connect.nodes.map((node) => ({
+    ids: node.members.map((planet) => planet.id),
+    tone: tone(node),
+    label: node.own ? `Links inside ${list(node.planets)}` : list(node.planets),
+    // lankar-bara-i-grupper: only a group of planets has links inside.
+    ...(node.own && node.planets.length > 1
+      ? { onClick: () => emit({ kind: 'open-links' }) }
+      : {}),
+  }));
+  const edges: GraphEdge[] = connect.proposals.map((proposal) => ({
+    a: proposal.fromId,
+    b: proposal.toId,
+    dashed: true,
+  }));
   const proposals = element('section', 'factory-proposals');
   // bestallda-lankar-syns: ordered links stay visible, so none is ordered twice.
   for (const link of connect.orderedLinks)
@@ -739,8 +789,23 @@ function connectScreen(
   }
   return [
     heading(`Connect ${list(connect.group)}`, '', emit),
-    graph(nodes, edges, 190, 'Groups placed by their position on the map'),
-    element('p', 'factory-muted', 'Tap your group to see the links inside it.'),
+    graph(
+      nodes,
+      edges,
+      190,
+      'Groups placed by their position on the map',
+      clusters,
+    ),
+    // lankar-bara-i-grupper: a lone planet has no links inside to show.
+    ...((connect.nodes.find((node) => node.own)?.planets.length ?? 0) > 1
+      ? [
+          element(
+            'p',
+            'factory-muted',
+            'Tap your group to see the links inside it.',
+          ),
+        ]
+      : []),
     proposals,
     transportPicker(connect.transports, emit),
   ];
@@ -804,6 +869,7 @@ function linksScreen(
         label: planet.name,
         position: planet.position,
         radius: 12,
+        image: PLANET_IMAGES[planet.environment],
         tone: planet.picked ? 'picked' : 'own',
         onClick: () => emit({ kind: 'pick-planet', planet: planet.id }),
       })),

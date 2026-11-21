@@ -936,6 +936,8 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och
   gäller fortsatt, liksom fysisk frakt, automatiska delorder och sparade spel.
+  `planetsprites-i-factories` är **Fullständigt implementerat**: graferna i
+  Factories visar planetsprites och grupper som kluster.
   `bestallda-lankar-syns` och `handelser-vid-ankomst` är **Fullständigt
   implementerade**: beställda länkar syns i Factories och händelser visas när
   skeppet anländer.

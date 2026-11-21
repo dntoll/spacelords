@@ -194,9 +194,19 @@ export interface TransportOptionSnapshot {
   readonly selected: boolean;
 }
 
+/** planetsprites-i-factories: a planet drawn with its own sprite. */
+export interface FactoryGraphPlanet {
+  readonly id: string;
+  readonly name: string;
+  readonly environment: PlanetEnvironmentType | 'Gas';
+  readonly position: MapPosition;
+}
+
 export interface ConnectNodeSnapshot {
   readonly key: string;
   readonly planets: readonly string[];
+  /** planetsprites-i-factories: the group's planets, drawn as a cluster. */
+  readonly members: readonly FactoryGraphPlanet[];
   readonly position: MapPosition;
   readonly own: boolean;
   readonly connectable: boolean;
@@ -207,6 +217,9 @@ export interface ConnectionProposalSnapshot {
   readonly target: readonly string[];
   readonly from: string;
   readonly to: string;
+  /** planetsprites-i-factories: the planets the link would join. */
+  readonly fromId: string;
+  readonly toId: string;
   /** blockerad-fabrik: materials the link brings to a planet lacking them. */
   readonly unblocks: readonly {
     readonly planet: string;
@@ -231,6 +244,7 @@ export interface LinksScreenSnapshot {
   readonly planets: readonly {
     readonly id: string;
     readonly name: string;
+    readonly environment: PlanetEnvironmentType | 'Gas';
     readonly position: MapPosition;
     readonly picked: boolean;
   }[];

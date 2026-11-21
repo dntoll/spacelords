@@ -1492,6 +1492,17 @@ export class FactoriesFacade {
           return Object.freeze({
             key: this.#key(context, members),
             planets: this.#names(context, members),
+            members: Object.freeze(
+              members.map((id) => {
+                const planet = this.#planet(context, id);
+                return Object.freeze({
+                  id,
+                  name: planet.name,
+                  environment: planet.environment,
+                  position: this.#position(planet),
+                });
+              }),
+            ),
             position: {
               x:
                 points.reduce((sum, point) => sum + point.x, 0) / points.length,
@@ -1512,6 +1523,8 @@ export class FactoriesFacade {
             target: proposal.target,
             from: proposal.from,
             to: proposal.to,
+            fromId: proposal.fromId,
+            toId: proposal.toId,
             unblocks: proposal.unblocks,
             adds: proposal.adds,
             canBuildTransports: proposal.canBuildTransports,
@@ -1542,6 +1555,7 @@ export class FactoriesFacade {
           return Object.freeze({
             id,
             name: planet.name,
+            environment: planet.environment,
             position: this.#position(planet),
             picked: this.#picked.includes(id),
           });

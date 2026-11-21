@@ -1345,3 +1345,23 @@ it('bestallda-lankar-syns: each group shows its ordered links after leaving Fact
   act({ kind: 'open-connect', group: 'Vesta' });
   expect(root.textContent).toContain('Link to Tellus ordered');
 });
+
+it('planetsprites-i-factories: Connect draws each planet with its sprite and groups as clusters', () => {
+  const { send, act, root, factories } = setup();
+  send({ type: 'open-factories' });
+  act({ kind: 'open-connect', group: 'Tellus' });
+  const tellus = factories().connect!.nodes.find((node) => node.own)!;
+  expect(tellus.members).toEqual([
+    expect.objectContaining({
+      id: 'sol-0',
+      name: 'Tellus',
+      environment: 'Temperate',
+    }),
+  ]);
+  const graph = root.querySelector('.factory-screens .factory-graph')!;
+  expect(graph.querySelectorAll('.factory-cluster')).toHaveLength(2);
+  expect(graph.querySelectorAll('.factory-node image')).toHaveLength(2);
+  expect(graph.querySelector('.factory-node circle')).toBeNull();
+  // lankar-bara-i-grupper: no hint about links inside a lone planet.
+  expect(root.textContent).not.toContain('Tap your group');
+});
