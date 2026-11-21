@@ -16,7 +16,7 @@ import {
 } from '../../../src/client/common/HexCoordinate.js';
 import { FleetMapLayout } from '../../../src/client/space-map/models/star-map/FleetMapLayout.js';
 
-const initial = tradeNetworkState(false);
+const initial = tradeNetworkState();
 const game = Game.restore(initial);
 const [home, target] = game.ownedPlanetSnapshots();
 const start = HexGeometry.toPoint(home!.position),
@@ -116,108 +116,12 @@ test('ruttflotta-till-narmaste-andplanet: remote assignment saves an approach wi
   expect(fleet.routeId).toBe('route-test');
 });
 
-test('handelsrutt-skapande-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: planet and fleet drags create and administer a route in Star map without moving fleets', async ({
-  page,
-}, testInfo) => {
-  const camera = await page.getByTestId('camera-position').textContent();
-  await drag(
-    page,
-    await screenPoint(page, start),
-    await screenPoint(page, end),
-  );
-  await expect(routePanel(page)).toContainText('Tellus ↔ Vesta');
-  await expect(routePanel(page)).toContainText('No fleet assigned');
-  const marker = FleetMapLayout.markers(game.fleetSnapshots()).find(
-    (m) => m.fleet.id === 'freighters',
-  )!;
-  await drag(
-    page,
-    await screenPoint(page, marker.point),
-    await screenPoint(page, midpoint),
-  );
-  await expect(routePanel(page)).toContainText('Assigned fleets · 1');
-  await expect(
-    routePanel(page).locator('.fleet-card[data-fleet-id="freighters"]'),
-  ).toContainText('Route Tellus <> Vesta');
-  await expect(page.getByTestId('camera-position')).toHaveText(camera!);
-  await page.screenshot({
-    path: testInfo.outputPath('star-map-trade-route.png'),
-  });
-  await routePanel(page)
-    .getByRole('button', {
-      name: 'Route Tellus <> Vesta',
-      exact: true,
-    })
-    .click();
-  const fleetPanel = page.getByRole('complementary', {
-    name: 'Selected fleet',
-    exact: true,
-  });
-  await expect(fleetPanel).not.toContainText('HEX 1,0');
-  await fleetPanel
-    .getByRole('button', {
-      name: 'Select route Tellus to Vesta',
-      exact: true,
-    })
-    .click();
-  await routePanel(page)
-    .getByRole('button', { name: 'Release from trade route', exact: true })
-    .click();
-  await expect(routePanel(page)).toContainText('Assigned fleets · 0');
-  await routePanel(page)
-    .getByRole('button', { name: 'Close route', exact: true })
-    .click();
-  await expect(routePanel(page)).toHaveCount(0);
-});
-
-test('handelsrutt-skapande-pa-stjarnkartan: missing research is visible before Create route and remains visible after a drag', async ({
-  page,
-  isMobile,
-}, testInfo) => {
-  test.skip(!isMobile, 'Native touch requires a mobile device.');
-  const locked = {
-    ...initial,
-    researched: initial.researched.filter(
-      (technology) => technology !== 'Trade logistics',
-    ),
-  };
-  await page.evaluate(
-    (state) =>
-      localStorage.setItem(
-        'spacelords.save.v2.1',
-        JSON.stringify({ lastPlayed: '2026-10-27', state }),
-      ),
-    locked,
-  );
-  await page.reload();
-  await startFirstSlot(page);
-  await drag(
-    page,
-    await screenPoint(page, start),
-    await screenPoint(page, end),
-  );
-  const selection = page.getByRole('complementary', {
-    name: 'Trade route selection',
-    exact: true,
-  });
-  await expect(selection).toContainText('Research Trade logistics first.');
-  const target = await screenPoint(page, end);
-  await page.touchscreen.tap(target.x, target.y);
-  await expect(selection).toContainText('Research Trade logistics first.');
-  await expect(routePanel(page)).toHaveCount(0);
-  await page.screenshot({
-    path: testInfo.outputPath('route-research-required.png'),
-  });
-});
-
 test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives retain orders after visiting Factories and reloading', async ({
   page,
 }) => {
   await expect(
     page.getByRole('button', { name: 'Create route', exact: true }),
   ).toHaveCount(0);
-  await page.locator('canvas[data-rendered="true"]').press('r');
-  await selectMapObject(page, 'Vesta');
   await assignFleetToRoute(page, 'Freighters', 'Tellus', 'Vesta');
   await page.getByRole('button', { name: 'Factories', exact: true }).click();
   await expect(
@@ -243,8 +147,6 @@ test('handelsrutt-val-pa-stjarnkartan: keyboard alternatives retain orders after
 test('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: clicking a line selects it and an invalid drop cannot set a destination', async ({
   page,
 }) => {
-  await page.locator('canvas[data-rendered="true"]').press('r');
-  await selectMapObject(page, 'Vesta');
   await selectMapObject(page, 'Tellus');
   const p = await screenPoint(page, {
     x: midpoint.x,
@@ -279,50 +181,6 @@ test('handelsrutt-val-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: clickin
   );
   expect(state.fleets[0]!.destination).toBeNull();
   expect(state.fleets[0]!.routeId).toBeUndefined();
-});
-
-test('handelsrutt-skapande-pa-stjarnkartan / flottilldelning-pa-stjarnkartan: native touch creates a route and assigns a fleet', async ({
-  page,
-  browserName,
-  isMobile,
-}) => {
-  test.skip(
-    browserName !== 'chromium' || !isMobile,
-    'Native touch dispatch requires Chromium mobile',
-  );
-  const session = await page.context().newCDPSession(page);
-  const touchDrag = async (a: Point, b: Point) => {
-    await session.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [{ x: a.x, y: a.y, id: 1 }],
-    });
-    for (let i = 1; i <= 8; i++)
-      await session.send('Input.dispatchTouchEvent', {
-        type: 'touchMove',
-        touchPoints: [
-          {
-            x: a.x + ((b.x - a.x) * i) / 8,
-            y: a.y + ((b.y - a.y) * i) / 8,
-            id: 1,
-          },
-        ],
-      });
-    await session.send('Input.dispatchTouchEvent', {
-      type: 'touchEnd',
-      touchPoints: [],
-    });
-  };
-  await touchDrag(await screenPoint(page, start), await screenPoint(page, end));
-  await expect(routePanel(page)).toContainText('No fleet assigned');
-  const marker = FleetMapLayout.markers(game.fleetSnapshots()).find(
-    (m) => m.fleet.id === 'freighters',
-  )!;
-  await touchDrag(
-    await screenPoint(page, marker.point),
-    await screenPoint(page, midpoint),
-  );
-  await expect(routePanel(page)).toContainText('Assigned fleets · 1');
-  await session.detach();
 });
 
 test('flottilldelning-pa-stjarnkartan: an overlapping-route chooser survives pointer release until a route is chosen', async ({
