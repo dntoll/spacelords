@@ -1195,3 +1195,66 @@ it('factories-sparas: orders given in Factories are saved, browsing is not', () 
     saved.state.colonies[0]![1].projects.map((project) => project.type),
   ).toContain('Research station');
 });
+
+describe('en-order-ett-skepp', () => {
+  const ordering = (): GameState => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    state.fleets = state.fleets.filter((fleet) => fleet.id !== 'freighters');
+    state.colonies[0]![1].buildings.push(
+      {
+        id: 'yard',
+        type: 'Transport ship factory',
+        slotIndex: 2,
+        demolition: false,
+      },
+      {
+        id: 'fighters',
+        type: 'Fighter factory',
+        slotIndex: 3,
+        demolition: false,
+      },
+    );
+    return {
+      ...state,
+      researched: [
+        ...state.researched,
+        'Fighter factory',
+        'Weapons module factory',
+      ],
+    };
+  };
+
+  it('queues one transport per link', async () => {
+    const { Game } =
+      await import('../../../src/client/space-map/models/Game.js');
+    const game = Game.restore(ordering());
+    const home = game.galaxy.homePlanet;
+    const link = { kind: 'join-route', routeId: 'route-test' } as const;
+    game.scheduleShip(home, 'Transport ship', null, undefined, link);
+    expect(() =>
+      game.scheduleShip(home, 'Transport ship', null, undefined, link),
+    ).toThrow('already ordered');
+    expect(
+      game
+        .planetSnapshot(home)!
+        .projects.filter(
+          (project) => project.initialOrder?.kind === 'join-route',
+        )
+        .map((project) => project.type),
+    ).toEqual(['Transport ship']);
+  });
+
+  it('does not offer a link again in Connect once its transport is ordered', () => {
+    const { send, act, factories } = setup(ordering());
+    send({ type: 'open-factories' });
+    act({ kind: 'open-connect', group: 'Tellus' });
+    expect(
+      factories().connect!.proposals.map((item) => item.targetKey),
+    ).toContain('Vesta');
+    act({ kind: 'connect', target: 'Vesta' });
+    act({ kind: 'open-connect', group: 'Tellus' });
+    expect(
+      factories().connect!.proposals.map((item) => item.targetKey),
+    ).not.toContain('Vesta');
+  });
+});

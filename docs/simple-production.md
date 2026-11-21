@@ -190,6 +190,13 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
 - `forsorjning-vantar-pa-bestalld-lank` (**Fullständigt implementerat**):
   när en länk till gruppen är beställd (ett fraktskepp är på väg eller byggs
   för den) visas inte problemet att gruppen saknar råvaror eller delar.
+- `en-order-ett-skepp` (**Fullständigt implementerat**): en order som
+  behöver ett skepp tar inte emot fler. En länk får ett fraktskepp (inget
+  nytt om den redan har ett eller ett är beställt), en planet ett
+  koloniserings- eller utforskningsskepp. Eskorter får vara flera. Connect
+  erbjuder inte en grupp vars länk redan har ett beställt fraktskepp.
+  Dubbletter i sparade spel från tidigare fel ligger kvar och kan tas bort
+  med `×` i byggkön.
 - `beslutssektioner` (**Fullständigt implementerat**): Decisions har
   underrubrikerna `Needs attention`, `Muted`, `Messages` (meddelanden som
   inte är avstängda) och `Queues`.

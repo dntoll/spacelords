@@ -549,6 +549,9 @@ export function projectDefinition(type: ProjectType): BuildDefinition {
     },
   };
 }
+/** en-order-ett-skepp: ships that man a link rather than escort it. */
+const TRANSPORTS: readonly ShipType[] = ['Transport ship', 'Civilian shuttle'];
+
 /** byggval-bara-framforskat: ships that need research beyond their factory. */
 const SHIP_RESEARCH: Readonly<Partial<Record<ShipType, Technology>>> = {
   'Civilian shuttle': 'Civilian transport',
@@ -3442,6 +3445,34 @@ export class Game {
       throw new Error('Choose your shipyard.');
     this.#salvage.moveRepair(yardId, wreckId, index);
   }
+  /**
+   * en-order-ett-skepp: an order that needs one ship takes no second one. A
+   * link wants one transport, a planet one colony or exploration ship;
+   * escorts may add up.
+   */
+  #orderTaken(type: ShipType, order: ShipOrder): boolean {
+    const queued = this.#ownedPlanets().flatMap(
+      (planet) => this.#state(planet).projects,
+    );
+    const same = (other: ShipOrder | undefined) =>
+      !!other && JSON.stringify(other) === JSON.stringify(order);
+    if (order.kind === 'join-route') {
+      if (!TRANSPORTS.includes(type)) return false;
+      const route = this.tradeRoutes.find((item) => item.id === order.routeId);
+      return (
+        !!route?.hasActiveTransport ||
+        queued.some(
+          (project) =>
+            TRANSPORTS.includes(project.type as ShipType) &&
+            same(project.initialOrder),
+        )
+      );
+    }
+    if (order.kind === 'colonize' || order.kind === 'explore-planet')
+      return queued.some((project) => same(project.initialOrder));
+    return false;
+  }
+
   /** byggorsak-i-kon: the order or fleet a queued ship is meant for. */
   #shipPurpose(project: Project): ShipPurpose {
     const order = project.initialOrder;
@@ -4049,6 +4080,8 @@ export class Game {
     if (type === 'Civilian shuttle') destinationFleetId = null;
     if (initialOrder) {
       this.#validateShipOrder(initialOrder, { [type]: 1 });
+      if (this.#orderTaken(type, initialOrder))
+        throw new Error(`A ${type} is already ordered for this.`);
       destinationFleetId = null;
     }
     this.#validateProjectFleet(planet, destinationFleetId);
