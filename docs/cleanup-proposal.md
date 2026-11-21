@@ -65,12 +65,16 @@ sidan av Factories.
   kartan.
 
 **B5. Production-ringens kategorier är döda.** Ringen visar bara skepp, men
-koden för kategorierna `Buildings` och `Components` och för
-sidbläddring finns kvar.
+koden för kategorierna `Buildings` och `Components` fanns kvar. Dessutom
+fanns ett dolt fel: med fler än åtta skeppsalternativ filtrerades ringen
+på den förvalda kategorin `Buildings` och visade inga skepp.
 
-- Rekommendation: ta bort kategorierna. Behåll sidbläddringen bara om det
-  kan bli fler än åtta skeppstyper.
-- Fråga: OK?
+- Förberett i commiten "Drop the Production ring categories"
+  (`produktionsring-utan-kategorier`). Kategorierna, deras tillstånd och
+  intenten `map-production-category` tas bort. Sidbläddringen behålls.
+  Webbläsartestet `production-map.spec.ts` använder kategorierna, men det
+  testet är redan trasigt.
+- Fråga: OK att merga?
 
 **B6. Knappen "Prepare building site" i Production gör ingenting (bugg).**
 Den väljer en Dome, men ringen visar inte Domes. Vägledningen "Build a

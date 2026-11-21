@@ -28,7 +28,6 @@ import {
   BUILD_RING_EXTENT,
   type MapScreen,
   type MapViewport,
-  type MapProductionCategory,
   type ProductionMapSnapshot,
   type ProductionGuidance,
   type MapProblem,
@@ -281,7 +280,6 @@ export class AppModel {
   #selectedBuilding: BuildType | null = null;
   readonly #researchCamera = new ResearchTreeCamera();
   #inspectedResearch: Technology | null = null;
-  #mapProductionCategory: MapProductionCategory = 'Buildings';
   #mapProductionPage = 0;
   #mapProductionOption: ProjectType | null = null;
   #mapProjectId: string | null = null;
@@ -928,10 +926,8 @@ export class AppModel {
         ? this.#game.planetAt(this.#selected)
         : null;
     const options = planet ? this.#game.productionOptions(planet) : [];
-    const categorized = options.length > 8;
-    const filtered = categorized
-      ? options.filter((o) => o.category === this.#mapProductionCategory)
-      : options;
+    // produktionsring-utan-kategorier: the ring shows only ships, paged.
+    const filtered = options;
     const viewport = this.#mapViewport;
     const pageSize =
       (viewport?.fontScale ?? 1) > 1.5 ||
@@ -956,8 +952,6 @@ export class AppModel {
     const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const page = Math.min(this.#mapProductionPage, pages - 1);
     return Object.freeze({
-      category: this.#mapProductionCategory,
-      categorized,
       page,
       pages,
       radius,
@@ -976,9 +970,6 @@ export class AppModel {
           )
         : Object.freeze([]),
     });
-  }
-  selectMapProductionCategory(category: MapProductionCategory): void {
-    return this.production.selectMapProductionCategory(category);
   }
   selectMapProductionPage(page: number): void {
     return this.production.selectMapProductionPage(page);
@@ -1691,9 +1682,6 @@ export class AppModel {
       get inspectedResearch() {
         return model.#inspectedResearch;
       },
-      get mapProductionCategory() {
-        return model.#mapProductionCategory;
-      },
       get mapProductionPage() {
         return model.#mapProductionPage;
       },
@@ -1856,9 +1844,6 @@ export class AppModel {
       set inspectedResearch(value) {
         model.#inspectedResearch = value;
       },
-      set mapProductionCategory(value) {
-        model.#mapProductionCategory = value;
-      },
       set mapProductionPage(value) {
         model.#mapProductionPage = value;
       },
@@ -2019,8 +2004,6 @@ export class AppModel {
         model.#requestMapFocus(position),
       selectedMapProject: () => model.#selectedMapProject(),
       productionMapSnapshot: () => model.#productionMapSnapshot(),
-      selectMapProductionCategory: (category: MapProductionCategory) =>
-        model.selectMapProductionCategory(category),
       selectMapProductionPage: (page: number) =>
         model.selectMapProductionPage(page),
       selectMapProductionOption: (type: ProjectType | null) =>
@@ -2219,7 +2202,6 @@ export interface AppHost {
   selectedBuilding: BuildType | null;
   researchCamera: ResearchTreeCamera;
   inspectedResearch: Technology | null;
-  mapProductionCategory: MapProductionCategory;
   mapProductionPage: number;
   mapProductionOption: ProjectType | null;
   mapProjectId: string | null;
@@ -2319,7 +2301,6 @@ export interface AppHost {
   requestMapFocus(position: HexCoordinate): void;
   selectedMapProject(): string | null;
   productionMapSnapshot(): ProductionMapSnapshot;
-  selectMapProductionCategory(category: MapProductionCategory): void;
   selectMapProductionPage(page: number): void;
   selectMapProductionOption(type: ProjectType | null): void;
   selectMapProject(id: string): void;

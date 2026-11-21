@@ -22,7 +22,6 @@ export class SaveFacade {
       state: game.exportState(),
     });
     this.host.mapTrade.clearSelection();
-    this.host.mapProductionCategory = 'Buildings';
     this.host.mapProductionPage = 0;
     this.host.mapProductionOption = null;
     this.host.mapProjectId = null;

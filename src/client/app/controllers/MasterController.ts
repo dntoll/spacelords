@@ -526,9 +526,6 @@ export class MasterController {
       case 'open-production':
         this.#production.openProduction(intent.planetId);
         break;
-      case 'map-production-category':
-        this.#production.selectMapProductionCategory(intent.category);
-        break;
       case 'map-production-page':
         this.#production.selectMapProductionPage(intent.page);
         break;

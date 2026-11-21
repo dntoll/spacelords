@@ -1,7 +1,6 @@
 import type {
   ShipOrder,
   OrderKind,
-  MapProductionCategory,
   MapViewport,
   ProjectType,
   Component,
@@ -103,10 +102,6 @@ export type AppIntent =
   | {
       readonly type: 'open-route' | 'open-production';
       readonly planetId?: string;
-    }
-  | {
-      readonly type: 'map-production-category';
-      readonly category: MapProductionCategory;
     }
   | { readonly type: 'map-production-page'; readonly page: number }
   | {

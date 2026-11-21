@@ -307,7 +307,7 @@ it('radiella-byggval: all product kinds use existing factories, workers/resource
   ).toEqual(projectIds);
 });
 
-it('radiella-byggval / skeppsorder-pa-planeten: every ship from existing factories is reachable through category and page navigation', () => {
+it('radiella-byggval / skeppsorder-pa-planeten / produktionsring-utan-kategorier: every ship from existing factories is reachable through page navigation', () => {
   const { model, emit, controller } = setup({
     ...shipyardState(),
     researched: TECHNOLOGIES,
@@ -323,16 +323,11 @@ it('radiella-byggval / skeppsorder-pa-planeten: every ship from existing factori
     },
   });
   const found = new Set<string>();
-  for (const category of ['Buildings', 'Components', 'Ships'] as const) {
-    emit({ type: 'map-production-category', category });
-    for (let page = 0; page < model.snapshot.productionMap.pages; page++) {
-      emit({ type: 'map-production-page', page });
-      expect(model.snapshot.productionMap.options.length).toBeLessThanOrEqual(
-        4,
-      );
-      for (const option of model.snapshot.productionMap.options)
-        found.add(option.type);
-    }
+  for (let page = 0; page < model.snapshot.productionMap.pages; page++) {
+    emit({ type: 'map-production-page', page });
+    expect(model.snapshot.productionMap.options.length).toBeLessThanOrEqual(4);
+    for (const option of model.snapshot.productionMap.options)
+      found.add(option.type);
   }
   const game = Game.restore({
     ...shipyardState(),

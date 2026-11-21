@@ -30,10 +30,8 @@ export interface ProductionOption extends ProductionPresenceSnapshot {
   readonly empireCount: number;
 }
 export interface ProductionMapSnapshot {
-  readonly category: MapProductionCategory;
   readonly page: number;
   readonly pages: number;
-  readonly categorized: boolean;
   readonly options: readonly ProductionOption[];
   readonly radius: number;
   readonly selectedOption: ProductionOption | null;

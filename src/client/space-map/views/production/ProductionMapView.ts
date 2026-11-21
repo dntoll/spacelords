@@ -5,11 +5,7 @@ import type { PlanetGameSnapshot } from '../../models/Game.js';
 import type { ProductionOption } from '../../models/ProductionMap.js';
 import type { ShipProgressSnapshot } from '../../models/production/ShipProgress.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
-import {
-  catalogIcon,
-  catalogHeading,
-  categoryButtons,
-} from '../CatalogControls.js';
+import { catalogIcon, catalogHeading } from '../CatalogControls.js';
 import { renderMapLocationHeading } from '../MapLocationHeading.js';
 import { button, element, queueButton } from '../../../common/dom.js';
 import { shipPurposeText } from '../ShipPurposeText.js';
@@ -177,15 +173,6 @@ export function renderProductionMapPanel(
   const panel = element('div', 'production-map-controls');
   panel.append(renderMapLocationHeading(planet.name, planet.id, emit));
   const map = model.productionMap;
-  if (map.categorized)
-    panel.append(
-      categoryButtons(
-        'Build categories',
-        ['Buildings', 'Components', 'Ships'] as const,
-        map.category,
-        (category) => emit({ type: 'map-production-category', category }),
-      ),
-    );
   if (map.pages > 1) {
     const pages = element('div', 'production-pages');
     const previous = button(
