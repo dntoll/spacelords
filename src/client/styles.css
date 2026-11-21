@@ -5654,3 +5654,15 @@ body:has(.discovery-controls) .selection-panel {
 .tab-panels > [hidden] {
   display: none;
 }
+
+/* skeppsbilder-i-produktion: ship sprites in the Production ring. */
+.radial-build-option .production-ship-image {
+  width: 36px;
+  height: 28px;
+  object-fit: contain;
+}
+.catalog-detail-heading .production-ship-image {
+  width: 44px;
+  height: 32px;
+  object-fit: contain;
+}

@@ -1284,8 +1284,18 @@ describe('terraformering-forst', () => {
   it('recommends the planet’s terraforming factory first, and its Dome on an unprepared site', async () => {
     const unprepared = await desert(false);
     unprepared.send({ type: 'open-factories' });
+    // terraformering-pa-planeten: the planet, not its group, recommends it.
+    expect(
+      unprepared
+        .group('Tellus')
+        .planets[0]!.recommended.map((item) => item.type),
+    ).toContain('Desert dome');
     expect(
       unprepared.group('Tellus').recommended.map((item) => item.type),
+    ).not.toContain('Desert dome');
+    expect(
+      unprepared.root.querySelector('.factory-planet .factory-recommended-link')
+        ?.textContent,
     ).toContain('Desert dome');
     unprepared.act({ kind: 'open-site', planet: 'sol-0', site: 0 });
     const dome = unprepared
@@ -1373,4 +1383,22 @@ it('planetsprites-i-factories: Connect draws each planet with its sprite and gro
   expect(graph.querySelector('.factory-node circle')).toBeNull();
   // lankar-bara-i-grupper: no hint about links inside a lone planet.
   expect(root.textContent).not.toContain('Tap your group');
+});
+
+it('skeppsbilder-i-produktion: the Production ring shows ship sprites', () => {
+  const state = { ...tradeNetworkState(), pirates: [] };
+  state.colonies[0]![1].buildings.push({
+    id: 'yard',
+    type: 'Transport ship factory',
+    slotIndex: 2,
+    demolition: false,
+  });
+  const { send, root } = setup(state);
+  send({ type: 'open-production', planetId: 'sol-0' });
+  const option = root.querySelector(
+    '[data-production-option="Transport ship"]',
+  )!;
+  expect(option.querySelector('img.ship-image')?.getAttribute('alt')).toBe(
+    'Transport ship',
+  );
 });
