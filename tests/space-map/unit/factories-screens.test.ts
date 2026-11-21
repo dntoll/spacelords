@@ -1294,3 +1294,27 @@ describe('terraformering-forst', () => {
     expect(first?.textContent).toContain('Terraforms this planet');
   });
 });
+
+it('delfabrik-i-produktion: a part factory making parts shows In production and how many', () => {
+  const state = { ...tradeNetworkState(), pirates: [] };
+  const home = state.colonies[0]![1];
+  home.stock['Rocket engine'] = 0;
+  home.buildings.push({
+    id: 'yard',
+    type: 'Transport ship factory',
+    slotIndex: 2,
+    demolition: false,
+  });
+  const { send, group, root } = setup(state);
+  send({ type: 'open-production', planetId: 'sol-0' });
+  send({ type: 'queue-ship', ship: 'Transport ship', fleetId: null });
+  send({ type: 'open-factories' });
+  const engines = group('Tellus').planets[0]!.sites[1]!.factory!;
+  expect(engines).toMatchObject({
+    type: 'Rocket engine factory',
+    status: 'producing',
+    making: 1,
+  });
+  const site = root.querySelector('.factory-site.producing');
+  expect(site?.textContent).toContain('Making 1');
+});

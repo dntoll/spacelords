@@ -936,6 +936,8 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och
   gäller fortsatt, liksom fysisk frakt, automatiska delorder och sparade spel.
+  `delfabrik-i-produktion` är **Fullständigt implementerat**: delfabriker
+  som tillverkar visas som In production.
   `terraformering-forst` är **Fullständigt implementerat**: planeter som
   behöver terraformering rekommenderar först sin terraformingfabrik.
   `en-order-ett-skepp` är **Fullständigt implementerat**: samma order köar

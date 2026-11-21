@@ -746,6 +746,7 @@ export class FactoriesFacade {
           roundsDone: done,
           roundsTotal: done + remaining,
           moreOrders: 0,
+          making: 0,
           makesShips: false,
           upgrade: null,
           upgrading: null,
@@ -769,6 +770,7 @@ export class FactoriesFacade {
     let roundsDone = 0;
     let roundsTotal = 0;
     let moreOrders = 0;
+    let making = 0;
     if (ships.length) {
       const orders = planet.projects.filter((project) =>
         (ships as readonly string[]).includes(project.type),
@@ -806,7 +808,10 @@ export class FactoriesFacade {
       const working = context.network.consumers.some(
         (consumer) => consumer.id === `part:${building.id}`,
       );
-      status = missing.length ? 'missing' : working ? 'working' : 'idle';
+      // delfabrik-i-produktion: a factory making parts is in production.
+      const part = BUILDINGS[type].component!;
+      making = working ? this.#partsNeeded(context, group, part) : 0;
+      status = missing.length ? 'missing' : working ? 'producing' : 'idle';
     } else {
       const resource = BUILDINGS[type].extraction;
       if (resource && planet.economy.deposits[resource] <= 0) {
@@ -825,10 +830,29 @@ export class FactoriesFacade {
         roundsDone,
         roundsTotal,
         moreOrders,
+        making,
         makesShips: ships.length > 0,
         ...this.#upgradeState(site),
       }),
     });
+  }
+
+  /** delfabrik-i-produktion: units of a part the group still waits for. */
+  #partsNeeded(
+    context: Context,
+    group: readonly string[],
+    part: Material,
+  ): number {
+    let need = 0;
+    for (const consumer of context.network.consumers)
+      if (consumer.kind !== 'part' && group.includes(consumer.planetId))
+        need += Math.max(
+          0,
+          (consumer.needs[part] ?? 0) - (consumer.delivered[part] ?? 0),
+        );
+    for (const id of group)
+      need -= this.#planet(context, id).economy.stock[part];
+    return Math.max(1, need);
   }
 
   /** uppgradera-delfabrik-i-factories: an offered or a queued upgrade. */
