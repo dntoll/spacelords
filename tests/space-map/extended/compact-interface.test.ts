@@ -248,7 +248,10 @@ describe('kompakt-spelgranssnitt', () => {
       emit,
       'Rocket engine factory',
     );
-    const details = page.querySelector('.research-panel > .research-details')!;
+    // forskningsflikar: the details are the Selected tab below the tree.
+    const details = page.querySelector(
+      '.research-panel > .research-bottom > .research-details',
+    )!;
     const rocket = page.querySelector(
       '[data-technology="Rocket engine factory"]',
     )!;

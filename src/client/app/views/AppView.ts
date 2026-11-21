@@ -15,6 +15,8 @@ import {
   renderBuildSelection,
   renderPlanet,
   renderResearch,
+  showResearchTab,
+  type ResearchTab,
   renderResearchSelection,
   updateResearchCamera,
   planetIllustration,
@@ -504,12 +506,12 @@ export class AppView implements AppPort {
     }
     this.#catalogDetailKey = detailKey;
     this.#catalogReturnKey = null;
-    const previousResearchQueue =
-      this.#root.querySelector<HTMLDetailsElement>('.research-queue');
-    const researchQueueOpen = previousResearchQueue?.open ?? false;
+    // forskningsflikar: the chosen tab and queue scroll survive re-renders.
+    const researchTab = (this.#root.querySelector<HTMLElement>(
+      '.research-bottom',
+    )?.dataset.tab ?? 'selected') as ResearchTab;
     const researchQueueScroll =
-      previousResearchQueue?.querySelector('.research-queue-content')
-        ?.scrollTop ?? 0;
+      this.#root.querySelector('.research-queue')?.scrollTop ?? 0;
     const researchKey = JSON.stringify([model.research, model.phase]);
     if (
       !changedScreen &&
@@ -553,11 +555,15 @@ export class AppView implements AppPort {
     }
     if (model.screen === 'research') {
       if (!changedScreen) {
-        const queue =
-          this.#root.querySelector<HTMLDetailsElement>('.research-queue');
-        if (queue) queue.open = researchQueueOpen;
-        const content = queue?.querySelector('.research-queue-content');
-        if (content) content.scrollTop = researchQueueScroll;
+        const queue = this.#root.querySelector<HTMLElement>('.research-queue');
+        showResearchTab(
+          this.#root,
+          model.inspectedResearch !== null &&
+            model.inspectedResearch !== this.#inspectedResearch
+            ? 'selected'
+            : researchTab,
+        );
+        if (queue) queue.scrollTop = researchQueueScroll;
         if (
           active instanceof HTMLElement &&
           !active.isConnected &&
@@ -568,7 +574,12 @@ export class AppView implements AppPort {
           ].find(
             (control) => control.getAttribute('aria-label') === focusLabel,
           );
-          (control ?? queue?.querySelector<HTMLElement>('summary'))?.focus({
+          (
+            control ??
+            this.#root.querySelector<HTMLElement>(
+              '.research-tab[data-tab="queue"]',
+            )
+          )?.focus({
             preventScroll: true,
           });
         }

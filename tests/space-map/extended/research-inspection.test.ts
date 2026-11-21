@@ -172,18 +172,33 @@ describe('kompakt-forskningstrad / forskningens-avslojande / forskningsdetaljer-
     expect(model.snapshot.research.queue).toEqual([]);
     controller.dispose();
   });
-  it('retains an open queue during inspection and order updates', () => {
-    const { root, model, click, controller } = setup();
-    root.querySelector<HTMLDetailsElement>('.research-queue')!.open = true;
-    click('Inspect Rocket engine factory');
+  it('forskningsflikar: keeps the Queue tab through order updates and shows Selected on inspection', () => {
+    const { root, model, controller } = setup();
+    const shown = () =>
+      root.querySelector<HTMLElement>('.research-bottom')!.dataset.tab;
+    root
+      .querySelector<HTMLButtonElement>('.research-tab[data-tab="queue"]')!
+      .click();
+    expect(shown()).toBe('queue');
+    expect(root.querySelector('.research-queue')!.hasAttribute('hidden')).toBe(
+      false,
+    );
     expect(
-      root.querySelector<HTMLDetailsElement>('.research-queue')!.open,
+      root.querySelector('.research-details')!.hasAttribute('hidden'),
     ).toBe(true);
     model.research('Rocket engine factory');
     controller.start();
+    expect(shown()).toBe('queue');
+    expect(root.querySelectorAll('.research-queue article')).toHaveLength(1);
+    root
+      .querySelector<HTMLButtonElement>(
+        '[aria-label="Inspect Rocket engine factory"]',
+      )!
+      .click();
+    expect(shown()).toBe('selected');
     expect(
-      root.querySelector<HTMLDetailsElement>('.research-queue')!.open,
-    ).toBe(true);
+      root.querySelector('.research-details')!.hasAttribute('hidden'),
+    ).toBe(false);
     controller.dispose();
   });
 });

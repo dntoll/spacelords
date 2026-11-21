@@ -41,16 +41,18 @@ export function renderResearch(
         'Build a Research station to advance research.',
       ),
     );
-  const queue = element('details', 'research-queue hud');
+  // forskningsflikar: the queue is a tab beside the selected research.
+  const queue = element('section', 'research-queue');
+  queue.setAttribute('aria-label', 'Research queue');
+  queue.id = 'research-queue-panel';
   page.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       event.preventDefault();
       emit({ type: 'inspect-research', technology: null });
     }
   });
-  const summary = element('summary', 'research-queue-summary');
+  const summary = element('p', 'research-queue-summary');
   summary.append(
-    element('span', '', `Research queue · ${research.queue.length}`),
     buildingImage('Research station'),
     element('span', '', stations),
   );
@@ -106,10 +108,13 @@ export function renderResearch(
         research.queueBlockedReason,
       ),
     );
-  tree.append(queue);
   panel.append(
     tree,
-    renderResearchSelection(research, inspected, locked, emit),
+    researchTabs(
+      renderResearchSelection(research, inspected, locked, emit),
+      queue,
+      research.queue.length,
+    ),
   );
   page.append(header, panel);
   return page;
@@ -127,4 +132,53 @@ function stationMessage(research: ResearchSnapshot): string {
   return station.started
     ? `A Research station is being built on ${station.planet}. Research can begin in ${rounds}.`
     : `A Research station is queued on ${station.planet} and waits for goods. Research can begin in about ${rounds}.`;
+}
+
+export type ResearchTab = 'selected' | 'queue';
+
+/** forskningsflikar: Selected and Queue share the area below the tree. */
+function researchTabs(
+  selected: HTMLElement,
+  queue: HTMLElement,
+  queued: number,
+): HTMLElement {
+  const area = element('section', 'research-bottom');
+  area.dataset.tab = 'selected';
+  const tabs = element('div', 'research-tabs');
+  tabs.setAttribute('role', 'tablist');
+  tabs.setAttribute('aria-label', 'Research panels');
+  const tab = (name: ResearchTab, label: string, panel: HTMLElement) => {
+    const control = element('button', 'research-tab', label);
+    control.type = 'button';
+    control.dataset.tab = name;
+    control.setAttribute('role', 'tab');
+    control.setAttribute('aria-controls', panel.id);
+    control.addEventListener('click', () => showResearchTab(area, name));
+    return control;
+  };
+  tabs.append(
+    tab('selected', 'Selected', selected),
+    tab('queue', `Queue · ${queued}`, queue),
+  );
+  area.append(tabs, selected, queue);
+  showResearchTab(area, 'selected');
+  return area;
+}
+
+/** forskningsflikar: show one tab; the view keeps it across re-renders. */
+export function showResearchTab(root: ParentNode, name: ResearchTab): void {
+  const area =
+    root instanceof HTMLElement && root.classList.contains('research-bottom')
+      ? root
+      : root.querySelector<HTMLElement>('.research-bottom');
+  if (!area) return;
+  area.dataset.tab = name;
+  for (const control of area.querySelectorAll<HTMLElement>('.research-tab'))
+    control.setAttribute('aria-selected', String(control.dataset.tab === name));
+  area
+    .querySelector('.research-details')
+    ?.toggleAttribute('hidden', name !== 'selected');
+  area
+    .querySelector('.research-queue')
+    ?.toggleAttribute('hidden', name !== 'queue');
 }

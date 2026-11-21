@@ -287,7 +287,8 @@ for (const size of [
     // forskning-utan-rubrikrad: no heading row takes height from the tree.
     await expect(page.locator('.research-page .screen-header')).toHaveCount(0);
     const bounds = (await tree.boundingBox())!;
-    const details = (await page.locator('.research-details').boundingBox())!;
+    // forskningsflikar: the tabs and their panel share the area below.
+    const details = (await page.locator('.research-bottom').boundingBox())!;
     expect(bounds.width).toBeGreaterThanOrEqual(
       pageBounds.width - (size.width > 640 ? details.width + 8 : 0) - 26,
     );
@@ -301,7 +302,7 @@ for (const size of [
         50,
     );
     expect(bounds.height).toBeGreaterThan(pageBounds.height * 0.3);
-    await expect(page.locator('.research-queue summary')).toHaveAttribute(
+    await expect(page.locator('.research-queue-summary')).toHaveAttribute(
       'aria-label',
       /Research stations · \d+/,
     );
@@ -312,12 +313,14 @@ for (const size of [
       page.getByRole('button', { name: /Zoom .*research tree/ }),
     ).toHaveCount(0);
     await expect(page.getByLabel('Research tree zoom')).toHaveCount(0);
-    const queue = page.locator('details.research-queue');
-    await expect(queue).not.toHaveAttribute('open');
-    await queue.locator('summary').click();
+    // forskningsflikar: switching to the Queue tab leaves the tree alone.
+    const queue = page.locator('.research-queue');
+    await expect(queue).toBeHidden();
+    await page.locator('.research-tab[data-tab="queue"]').click();
+    await expect(queue).toBeVisible();
     const opened = (await tree.boundingBox())!;
     expect(opened).toEqual(bounds);
-    await queue.locator('summary').click();
+    await page.locator('.research-tab[data-tab="selected"]').click();
     await page.screenshot({
       path: testInfo.outputPath('research-full-tree.png'),
     });
