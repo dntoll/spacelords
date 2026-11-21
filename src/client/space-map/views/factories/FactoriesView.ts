@@ -320,6 +320,16 @@ function planetSection(planet: FactoryPlanetSnapshot, emit: Emit): HTMLElement {
     emit({ kind: 'toggle-planet', planet: planet.id }),
   );
   section.append(toggle);
+  // terraformering-pa-planeten: what only this planet needs is shown on it.
+  const first = planet.recommended[0];
+  if (first)
+    section.append(
+      button(
+        `Recommended: ${list(planet.recommended.map((item) => item.type))}`,
+        () => emit({ kind: 'open-site', planet: planet.id, site: first.site }),
+        'secondary-button factory-recommended-link',
+      ),
+    );
   if (!planet.collapsed) {
     const sites = element('div', 'factory-sites');
     for (const site of planet.sites)

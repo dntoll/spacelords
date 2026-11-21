@@ -893,6 +893,7 @@ export class FactoriesFacade {
     group: readonly string[],
   ): FactoryGroupSnapshot {
     const key = this.#key(context, group);
+    const planetRecommendations = this.#recommendations(context, group);
     const planets = group
       .map((id) => this.#planet(context, id))
       .sort((a, b) => byName(a.name, b.name))
@@ -909,6 +910,13 @@ export class FactoriesFacade {
             RESOURCES.filter(
               (resource) => planet.economy.deposits[resource] > 0,
             ),
+          ),
+          recommended: Object.freeze(
+            planetRecommendations
+              .filter((item) => item.planetOnly && item.planet === planet.id)
+              .map((item) =>
+                Object.freeze({ type: item.type, site: item.site }),
+              ),
           ),
           collapsed: this.#collapsedPlanets.has(planet.id),
           usedSites: sites.filter((site) => site.kind === 'factory').length,
@@ -968,7 +976,9 @@ export class FactoriesFacade {
       collapsed: this.#collapsedGroups.has(key),
       canConnect: this.#transports(context, group).length > 0,
       unescortedLinks: this.#unescorted(context, group),
-      recommended: this.#recommended(context, group),
+      recommended: Object.freeze(
+        planetRecommendations.filter((item) => !item.planetOnly),
+      ),
       orderedLinks: this.#orderedLinks(context, group),
       emptySites: planets.reduce(
         (sum, planet) =>
@@ -1136,18 +1146,27 @@ export class FactoriesFacade {
   get hasRecommendation(): boolean {
     const context = this.#context();
     return context.network.groups.some(
-      (group) => this.#recommended(context, group).length > 0,
+      (group) => this.#recommendations(context, group).length > 0,
     );
   }
 
   /** rekommendation-i-menyn: where each recommended factory can go first. */
-  #recommended(
+  /**
+   * terraformering-pa-planeten: a recommendation whose only reason is the
+   * planet's own terraforming belongs to that planet, not to its group.
+   */
+  #recommendations(
     context: Context,
     group: readonly string[],
-  ): FactoryGroupSnapshot['recommended'] {
+  ): readonly {
+    readonly type: BuildType;
+    readonly planet: string;
+    readonly site: number;
+    readonly planetOnly: boolean;
+  }[] {
     const found = new Map<
-      BuildType,
-      { type: BuildType; planet: string; site: number }
+      string,
+      { type: BuildType; planet: string; site: number; planetOnly: boolean }
     >();
     for (const id of [...group].sort()) {
       const planet = this.#planet(context, id);
@@ -1158,12 +1177,23 @@ export class FactoriesFacade {
       const site =
         free.find((item) => !(item.domeRequired && !item.hasDome)) ?? free[0];
       if (!site) continue;
-      for (const option of this.#buildScreen(context, id, site.index).options)
-        if (option.recommendations.length && !found.has(option.type))
+      for (const option of this.#buildScreen(context, id, site.index).options) {
+        if (!option.recommendations.length) continue;
+        const planetOnly = option.recommendations.every(
+          (reason) => reason.kind === 'terraforming',
+        );
+        const key = planetOnly ? `${id}:${option.type}` : option.type;
+        if (!found.has(key))
           found.set(
-            option.type,
-            Object.freeze({ type: option.type, planet: id, site: site.index }),
+            key,
+            Object.freeze({
+              type: option.type,
+              planet: id,
+              site: site.index,
+              planetOnly,
+            }),
           );
+      }
     }
     return Object.freeze([...found.values()]);
   }

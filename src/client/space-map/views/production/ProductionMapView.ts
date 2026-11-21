@@ -14,6 +14,7 @@ import { renderMapLocationHeading } from '../MapLocationHeading.js';
 import { button, element, queueButton } from '../../../common/dom.js';
 import { shipPurposeText } from '../ShipPurposeText.js';
 import { tabPanels } from '../TabPanels.js';
+import { shipImage } from '../ShipView.js';
 
 function presenceLabel(option: ProductionOption): string {
   return {
@@ -85,8 +86,9 @@ export function renderProductionRing(
       String(model.productionMap.selectedOption?.type === option.type),
     );
     choice.title = option.type;
+    // skeppsbilder-i-produktion: ships show their sprite, not a symbol.
     choice.replaceChildren(
-      catalogIcon(option.type),
+      productIcon(option.type),
       element('span', '', option.type),
     );
     const status = element(
@@ -154,6 +156,14 @@ function progressText(progress: ShipProgressSnapshot): string {
 }
 
 export type ProductionTab = 'selected' | 'queue';
+
+/** skeppsbilder-i-produktion: a ship's sprite, other products' symbols. */
+function productIcon(type: string): HTMLElement | SVGSVGElement {
+  if (!(type in SHIPS)) return catalogIcon(type);
+  const image = shipImage(type as ShipType);
+  image.classList.add('catalog-icon', 'production-ship-image');
+  return image;
+}
 
 export function renderProductionMapPanel(
   model: AppReadModel,
@@ -228,7 +238,12 @@ export function renderProductionMapPanel(
     const heading = element('div', 'map-build-heading');
     const build = button('Build', () => emit({ type: 'map-production-build' }));
     build.disabled = !!option.blockedReason || model.phase !== 'planning';
-    heading.append(catalogHeading(option.type), build);
+    const title = catalogHeading(option.type);
+    if (option.type in SHIPS)
+      title
+        .querySelector('.catalog-icon')
+        ?.replaceWith(productIcon(option.type));
+    heading.append(title, build);
     detail.append(
       heading,
       element('p', '', option.description),

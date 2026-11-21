@@ -53,6 +53,14 @@ export interface FactoryPlanetSnapshot {
   readonly position: MapPosition;
   readonly deposits: readonly Resource[];
   readonly collapsed: boolean;
+  /**
+   * terraformering-pa-planeten: factories this planet needs for itself, with
+   * the site to build on.
+   */
+  readonly recommended: readonly {
+    readonly type: BuildType;
+    readonly site: number;
+  }[];
   readonly usedSites: number;
   readonly sites: readonly FactorySiteSnapshot[];
 }

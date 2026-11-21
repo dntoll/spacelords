@@ -190,6 +190,12 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
 - `forsorjning-vantar-pa-bestalld-lank` (**Fullständigt implementerat**):
   när en länk till gruppen är beställd (ett fraktskepp är på väg eller byggs
   för den) visas inte problemet att gruppen saknar råvaror eller delar.
+- `skeppsbilder-i-produktion` (**Fullständigt implementerat**): ringen och
+  detaljrubriken i Production visar skeppens bilder i stället för symboler.
+- `terraformering-pa-planeten` (**Fullständigt implementerat**): en
+  rekommendation vars enda skäl är planetens egen terraformering visas som
+  `Recommended: …` på planeten i Factories, inte på gruppen. Gruppens knapp
+  visar övriga rekommendationer, och markeringen i menyn räknar båda.
 - `produktionsflikar` (**Fullständigt implementerat**): Production har, som
   Research, två flikar: det valda skeppet (fliken heter som skeppet, eller
   `Selected` med en hjälptext) och `Queue · n` med byggkön. Ett nytt val i
