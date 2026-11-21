@@ -36,6 +36,8 @@ export interface FactorySiteSnapshot {
     readonly roundsTotal: number;
     /** Ship orders waiting behind the one in production. */
     readonly moreOrders: number;
+    /** delfabrik-i-produktion: parts the group still needs from it. */
+    readonly making: number;
     readonly makesShips: boolean;
     /** uppgradera-delfabrik-i-factories: a researched successor to queue. */
     readonly upgrade: BuildType | null;

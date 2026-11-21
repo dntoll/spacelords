@@ -195,6 +195,8 @@ function siteStatus(site: FactorySiteSnapshot): string {
     case 'queued':
       return 'Queued';
     case 'producing':
+      // delfabrik-i-produktion: part factories say how many they still make.
+      if (factory.making > 0) return `Making ${factory.making}`;
       return `${factory.roundsDone}/${rounds(factory.roundsTotal)}${
         factory.moreOrders > 0 ? ` · ${factory.moreOrders} more` : ''
       }`;

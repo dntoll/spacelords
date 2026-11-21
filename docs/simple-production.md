@@ -190,6 +190,10 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
 - `forsorjning-vantar-pa-bestalld-lank` (**Fullständigt implementerat**):
   när en länk till gruppen är beställd (ett fraktskepp är på väg eller byggs
   för den) visas inte problemet att gruppen saknar råvaror eller delar.
+- `delfabrik-i-produktion` (**Fullständigt implementerat**, fel rättat
+  2026-11-21): en delfabrik som tillverkar delar visas som `In production`
+  med `Making n`, där n är de delar gruppen fortfarande väntar på. Tidigare
+  såg den ut som en vilande byggnad.
 - `terraformering-forst` (**Fullständigt implementerat**): på en planet under
   100% habitability (inte `Temperate` eller gas) rekommenderas planetens
   terraformingfabrik, med skälet `Terraforms this planet`, och står först
