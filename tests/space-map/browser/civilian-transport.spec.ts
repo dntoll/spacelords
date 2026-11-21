@@ -1,3 +1,4 @@
+import { selectMapObject } from './map-helpers.js';
 import { scenarioTimeout } from '../../browser-timeouts.js';
 import { expect, test } from '@playwright/test';
 import {
@@ -66,26 +67,21 @@ test('civil-skyttelforskning / civil-skytteltillverkning / befolkningsutjamning-
   await startFirstSlot(page);
   await chooseResearch(page, 'Civilian transport');
   for (let round = 0; round < 3; round++) await endTurn(page);
-  await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page
-    .getByRole('navigation', { name: 'Planet pages' })
-    .getByRole('button', { name: 'Production', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Production', exact: true }).click();
+  await selectMapObject(page, homeName);
   await page
     .getByRole('button', { name: 'Show Civilian shuttle', exact: true })
     .click();
-  await expect(page.locator('.planet-production')).toContainText(
-    '500 passengers',
-  );
+  const controls = page.getByRole('complementary', {
+    name: 'Production controls',
+  });
+  await expect(controls).toContainText('500 passengers');
   await expect(
-    page.getByRole('combobox', {
+    controls.getByRole('combobox', {
       name: 'Destination fleet for Civilian shuttle',
     }),
   ).toHaveCount(0);
-  await page
-    .getByRole('button', { name: 'Queue Civilian shuttle', exact: true })
-    .click();
+  await controls.getByRole('button', { name: 'Build', exact: true }).click();
   await endTurn(page);
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await selectMapFleet(page, `Civilian shuttle ${homeName} 1`);

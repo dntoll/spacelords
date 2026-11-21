@@ -455,3 +455,21 @@ Manuell lastning och kapacitetskontroll (`automatisk-resursforsorjning` och
 Teleskoptestet kontrollerar tillverkning och utrustning efter omladdning; dess
 flotta har tre skepp och omfattas inte av höjdgränsen för standardflottor med
 fyra skepp.
+Kontrollerna för att skapa rutter genom dragning eller `R` på Star map utgår
+också: `rutter-endast-i-connect` ersätter dessa vägar. Tester för val och
+tilldelning på befintliga rutter behålls.
+Planetens tidigare produktions- och byggkatalogtester utgår enligt
+`planetsida-informerar`: produktion styrs i Production och byggnation i
+Factories. Den borttagna globala byggnadsräknaren i byggkatalogen
+(`byggnadsantal-lokalt-och-globalt`) testas inte längre; planetöversiktens
+lokala inventarium och slutförd byggnation kontrolleras fortfarande.
+Den borttagna byggkön på planetsidan omfattas inte längre av
+`kompakta-koknappar`; motsvarande kontroll för forskningskön behålls.
+Den tidigare planetköns separata order för Rocket engine och Weapons module
+ersätts av `delar-tillverkas-pa-behov`; testet kontrollerar nu skeppsorderns
+delbehov och färdiga Fighter efter omladdning.
+Planetens katalogkontroller för `byggkategorier`, `symbolbaserade-kataloger`,
+`visa-byggalternativ` och `kompakta-bygghandlingar` utgår när byggkatalogen
+tas bort. Bilder på befintliga byggplatser och i Research kontrolleras fortsatt,
+liksom byggvalens symboler i Factories. Återkoppling vid dubbelklick kontrolleras
+med en skeppsorder enligt `produktionsorder-aterkoppling`.

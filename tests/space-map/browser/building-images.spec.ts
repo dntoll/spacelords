@@ -1,4 +1,4 @@
-import { startFirstSlot, endTurn } from './save-helpers.js';
+import { startFirstSlot } from './save-helpers.js';
 import { expect, test } from '@playwright/test';
 import {
   Game,
@@ -6,7 +6,7 @@ import {
 } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 
-test('gemensamma-byggnadsbilder: supplied images load in Research, selection and building sites', async ({
+test('gemensamma-byggnadsbilder: supplied images load in Research and building sites', async ({
   page,
 }, testInfo) => {
   const state = {
@@ -70,52 +70,21 @@ test('gemensamma-byggnadsbilder: supplied images load in Research, selection and
   await page
     .getByRole('button', { name: 'Building sites', exact: true })
     .click();
-  await page
-    .getByRole('button', { name: 'Build building at site 1', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Show Research station', exact: true })
-    .click();
-  const selected = page.getByRole('img', {
+  const site = page.getByRole('article', {
+    name: 'Building site 3',
+    exact: true,
+  });
+  const image = site.getByRole('img', {
     name: 'Research station',
     exact: true,
   });
-  await expect(selected).toHaveAttribute('src', stationSource);
+  await expect(image).toHaveAttribute('src', stationSource);
   await expect
     .poll(() =>
-      selected.evaluate((image) => (image as HTMLImageElement).naturalWidth),
+      image.evaluate((node) => (node as HTMLImageElement).naturalWidth),
     )
     .toBe(512);
-  expect((await selected.boundingBox())!.height).toBeLessThanOrEqual(220);
-  await page.screenshot({
-    path: testInfo.outputPath('build-selection-image.png'),
-  });
-  await page
-    .getByRole('button', { name: 'Show Research station', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Build Research station', exact: true })
-    .click();
-  const site = page.getByRole('article', {
-    name: 'Building site 1',
-    exact: true,
-  });
-  await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  await expect(site.getByRole('img')).toHaveAttribute('src', stationSource);
-  await page
-    .getByRole('navigation', { name: 'Main navigation' })
-    .getByRole('button', { name: 'Star map', exact: true })
-    .click();
-  // byggtid-per-byggnad: a Research station takes three rounds.
-  for (let round = 0; round < 3; round += 1) await endTurn(page);
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  await expect(site.getByRole('img')).toHaveAttribute('src', stationSource);
-  await expect(site).toContainText('Operational');
+  await expect(site).toContainText('Research station');
   await site.scrollIntoViewIfNeeded();
   await page.screenshot({
     path: testInfo.outputPath('completed-building-image.png'),
