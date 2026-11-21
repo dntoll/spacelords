@@ -17,7 +17,6 @@ function setup(
   const colony = state.colonies[0]![1];
   const game = Game.restore({
     ...state,
-    version: 3,
     colonies: [
       [
         state.colonies[0]![0],
@@ -140,72 +139,6 @@ describe('gemensam-planetko / delfabriker / automatiska-delorder', () => {
       emptySites: 0,
       emptyQueues: 0,
     });
-  });
-});
-
-describe('gemensam-planetko / sparat-spel / bevara-aldre-produktionskoer', () => {
-  it('migrates separate legacy queues without losing or reversing their orders, fleets or stock', () => {
-    const base = setup([
-      'Colony ship factory',
-      'Exploration ship factory',
-    ]).game.exportState();
-    const colony = base.colonies[0]![1];
-    const order = (
-      id: string,
-      type: 'Colony ship' | 'Exploration ship' | 'Research station',
-    ) => ({
-      id,
-      type,
-      slotIndex: type === 'Research station' ? 3 : null,
-      destinationFleetId: null,
-      factoryId: null,
-    });
-    const legacy = {
-      ...base,
-      version: 2 as const,
-      sequence: 10,
-      colonies: [
-        [
-          base.colonies[0]![0],
-          {
-            ...colony,
-            stock: { Iron: 20, Water: 20, Oil: 20 } as typeof colony.stock,
-            projects: [order('project-6', 'Research station')],
-            buildings: colony.buildings.map((building, index) => ({
-              ...building,
-              queue:
-                index === 0
-                  ? [
-                      order('project-3', 'Colony ship'),
-                      order('project-1', 'Colony ship'),
-                    ]
-                  : [order('project-2', 'Exploration ship')],
-            })),
-          },
-        ],
-      ] as typeof base.colonies,
-    };
-    const restored = Game.restore(legacy);
-    expect(
-      restored
-        .planetSnapshot(restored.galaxy.homePlanet)!
-        .projects.map((p) => p.id),
-    ).toEqual(['project-2', 'project-3', 'project-1', 'project-6']);
-    expect(restored.exportState().version).toBe(17);
-    expect(restored.fleetSnapshots()).toEqual(
-      Game.restore(base).fleetSnapshots(),
-    );
-    expect(
-      restored.planetSnapshot(restored.galaxy.homePlanet)!.economy.stock,
-    ).toMatchObject({
-      Iron: 20,
-      Water: 20,
-      Oil: 20,
-      'Rocket engine': 0,
-      'Weapons module': 0,
-    });
-    const saved = restored.exportState();
-    expect(Game.restore(saved).exportState()).toEqual(saved);
   });
 });
 

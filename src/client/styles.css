@@ -57,11 +57,7 @@
   margin: 4px;
   max-width: 100%;
 }
-.route-form {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
+
 .decision-dialog {
   color: #e5e8e6;
   background: #10232e;
@@ -95,9 +91,7 @@
   min-height: 44px;
   margin: 0;
 }
-.planet-building-queue {
-  margin-bottom: 16px;
-}
+
 @media (max-width: 700px) {
   .app-header {
     flex-wrap: wrap;
@@ -478,11 +472,7 @@ p {
 .budget-panel td:first-child {
   text-align: left;
 }
-.existing-buildings {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 8px;
-}
+
 .muted-note {
   color: var(--muted);
   font-size: 0.85rem;
@@ -717,8 +707,7 @@ p {
   .budget-panel td {
     padding: 4px 3px;
   }
-  .budget-panel h2,
-  .existing-buildings h2 {
+  .budget-panel h2 {
     font-size: 1rem;
   }
 
@@ -813,8 +802,7 @@ p {
     padding: 3px 5px;
     font-size: 0.65rem;
   }
-  .budget-panel h2,
-  .existing-buildings h2 {
+  .budget-panel h2 {
     font-size: 0.85rem;
   }
   .budget-panel table {
@@ -847,18 +835,6 @@ p {
   }
 }
 
-.queue-order {
-  flex-wrap: wrap;
-  padding: 8px;
-  border: 1px solid var(--muted);
-  border-radius: 6px;
-  cursor: grab;
-}
-.queue-details {
-  min-width: 0;
-  flex: 1 1 180px;
-  overflow-wrap: anywhere;
-}
 .queue-actions {
   display: flex;
   flex-wrap: wrap;
@@ -869,7 +845,6 @@ p {
 }
 
 .building-site,
-.building-choice,
 .research-choice {
   min-width: 0;
   display: grid;
@@ -894,12 +869,7 @@ p {
 .locked-site {
   background: #0c1922;
 }
-.building-menu,
-.factory-production {
-  display: grid;
-  gap: 12px;
-  min-width: 0;
-}
+
 .building-placeholder {
   min-height: 70px;
   display: grid;
@@ -910,23 +880,7 @@ p {
   color: var(--muted);
   font-size: 0.75rem;
 }
-.building-choice.unaffordable {
-  opacity: 0.5;
-  filter: grayscale(1);
-}
-.queue-slots {
-  display: grid;
-  gap: 6px;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.empty-queue-slot {
-  min-height: 32px;
-  padding: 6px 10px;
-  border: 1px dashed var(--line);
-  border-radius: 4px;
-}
+
 .research-panel {
   min-height: 0;
   max-height: 100%;
@@ -943,7 +897,6 @@ p {
 }
 @media (max-width: 600px) {
   .building-site,
-  .building-choice,
   .research-choice {
     padding: 10px;
   }
@@ -953,7 +906,6 @@ p {
     grid-template-columns: minmax(0, 1fr);
   }
   .building-site p,
-  .building-choice p,
   .research-choice p {
     display: block;
   }
@@ -1012,7 +964,6 @@ p {
   align-items: center;
 }
 .site-actions .button,
-.building-choice > .button,
 .site-details > .button,
 .queue-actions .button {
   width: fit-content;
@@ -1050,14 +1001,7 @@ p {
   height: 100%;
   object-fit: contain;
 }
-.factory-production {
-  align-content: start;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-}
-.queue-details select {
-  width: 100%;
-}
+
 .research-queue-order {
   display: flex;
   flex-wrap: wrap;
@@ -1080,95 +1024,7 @@ p {
   font-size: 1.25rem;
   line-height: 1;
 }
-.queue-order {
-  cursor: grab;
-}
-.build-selection-page {
-  grid-template-rows: auto auto minmax(0, 1fr);
-}
-.build-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 8px;
-  align-items: center;
-}
-.build-search-label {
-  display: grid;
-  gap: 4px;
-  font-size: 0.8rem;
-  min-width: 0;
-  max-width: 100%;
-}
-.build-search-label input {
-  min-width: 0;
-  max-width: 100%;
-  min-height: 44px;
-  padding: 8px;
-  color: inherit;
-  background: #091923;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  font: inherit;
-}
-.planet-content.building-menu {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
-  align-content: start;
-  align-items: start;
-  overflow: auto;
-  gap: 12px;
-  padding: 12px;
-}
-.building-choice {
-  gap: 8px;
-}
-.building-choice .building-placeholder,
-.building-choice .building-image {
-  height: 140px;
-}
-.building-choice.unaffordable {
-  opacity: 1;
-  filter: none;
-}
-.building-costs {
-  display: grid;
-  gap: 4px;
-  font-size: 0.8rem;
-}
-.building-inventory {
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #091923;
-}
-.building-inventory h3 {
-  margin: 0 0 6px;
-  font-size: 0.75rem;
-  color: var(--accent);
-}
-.building-inventory dl {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin: 0;
-}
-.building-inventory .stat {
-  min-width: 0;
-  gap: 2px;
-}
-.building-inventory .stat-label {
-  font-size: 0.7rem;
-  overflow-wrap: anywhere;
-}
-.building-inventory .stat-value {
-  margin: 0;
-  font-size: 1rem;
-}
-.cost-ok {
-  color: #a4e4ba;
-}
-.cost-missing,
+
 .blocked-reason {
   color: #ffacac;
 }
@@ -1217,12 +1073,6 @@ p {
 @container (min-width: 720px) {
   .factory-site {
     grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-  }
-  .factory-production {
-    border-top: 0;
-    border-left: 1px solid var(--line);
-    padding-top: 0;
-    padding-left: 16px;
   }
 }
 @media (max-width: 700px) {
@@ -1277,9 +1127,7 @@ p {
   width: 112px;
   height: 112px;
 }
-.building-choice .building-image {
-  height: 180px;
-}
+
 .research-introduction-details {
   display: grid;
   gap: 8px;
@@ -1559,38 +1407,6 @@ p {
 }
 
 /* fabrikskoer / kompakta-bygghandlingar: always-visible ship ordering. */
-.factory-order {
-  display: grid;
-  gap: 8px;
-  padding-bottom: 12px;
-  margin-bottom: 12px;
-  border-bottom: 1px solid var(--line);
-}
-.factory-order-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 8px;
-}
-.factory-destination {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-  max-width: 100%;
-  font-size: 0.8rem;
-}
-.factory-destination select {
-  min-width: 0;
-  max-width: 100%;
-  min-height: 44px;
-}
-.factory-order-actions .button {
-  width: fit-content;
-  max-width: 100%;
-  min-height: 44px;
-  padding: 6px 12px;
-  flex: 0 1 auto;
-}
 
 /* handelser: reserve space for Events while keeping map controls separate. */
 .turn-console {
@@ -2358,79 +2174,11 @@ p {
   gap: 12px;
   align-items: start;
 }
-.planet-production {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 20px;
-  align-items: start;
-}
-.production-order,
-.production-field {
-  display: grid;
-  gap: 10px;
-}
-.production-field select {
-  min-width: 0;
-  width: 100%;
-  min-height: 44px;
-}
-.production-order > .button {
-  justify-self: start;
-}
-.compact-queue-list {
-  padding: 0;
-  list-style: none;
-}
-.compact-queue-item {
-  width: 100%;
-  text-align: left;
-  margin-block: 3px;
-  white-space: normal;
-}
-.project-supply {
-  grid-column: 1 / -1;
-  min-width: 0;
-}
-.project-supply > summary {
-  cursor: pointer;
-  padding-block: 12px;
-}
-.supply-steps {
-  padding-left: 20px;
-  overflow-wrap: anywhere;
-}
-.supply-step {
-  margin-block: 8px;
-}
-.supply-step-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-block: 4px;
-}
-.supply-step-links .button {
-  min-height: 44px;
-  padding: 4px 8px;
-}
+
 @media (max-width: 600px) {
   .planet-tabs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .planet-production {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-.project-supply {
-  flex: 1 1 100%;
-}
-
-.production-field select {
-  padding: 8px;
-  color: inherit;
-  background: #091923;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  font: inherit;
 }
 
 /* symbolbaserade-kataloger: compact choices, with full information on selection. */
@@ -2484,45 +2232,7 @@ p {
   flex-wrap: wrap;
   gap: 6px;
 }
-.build-toolbar .catalog-categories {
-  flex: 1 0 100%;
-}
-.catalog-category {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  min-height: 44px;
-  padding: 8px;
-}
-.catalog-category[aria-pressed='true'],
-.catalog-item-button[aria-pressed='true'] {
-  border-color: var(--accent);
-  background: #29434b;
-}
-.planet-content.building-menu.catalog-browser {
-  grid-template-columns: minmax(0, 1fr);
-}
-.catalog-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-  gap: 6px;
-  align-content: start;
-}
-.catalog-item-button {
-  width: 100%;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
-  text-align: left;
-  white-space: normal;
-  padding: 8px 10px;
-}
+
 .catalog-details {
   display: grid;
   gap: 10px;
@@ -2552,9 +2262,6 @@ p {
   margin: 0;
   overflow-wrap: anywhere;
 }
-.catalog-details .production-field {
-  margin-block: 4px;
-}
 
 .ship-engine-details {
   flex-basis: 100%;
@@ -2569,22 +2276,6 @@ p {
 }
 
 /* byggnadsantal-lokalt-och-globalt: keep counts visible without opening details. */
-.catalog-item-button:has(> .building-list-inventory) {
-  display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
-  gap: 4px 10px;
-}
-.catalog-item-button:has(> .building-list-inventory) > .catalog-icon {
-  grid-row: 1 / span 2;
-}
-.building-list-inventory {
-  grid-column: 2;
-  color: var(--muted);
-  font-size: 0.75rem;
-  font-weight: normal;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
 
 /* route-kartvy / produktions-kartvy: controls share the existing map surface. */
 .nav-button {
@@ -2594,20 +2285,6 @@ p {
   color: #ffaaa2;
   margin-left: 5px;
   font-weight: 800;
-}
-.map-route-legend {
-  position: absolute;
-  right: 10px;
-  width: fit-content;
-  max-width: calc(100% - 20px);
-  left: 10px;
-  top: 6px;
-  margin: 0;
-  padding: 4px 8px;
-  color: #ffaaa2;
-  background: #0a1520ed;
-  pointer-events: none;
-  font-size: 0.8rem;
 }
 .production-ring {
   position: absolute;
@@ -2749,17 +2426,7 @@ p {
   min-height: 44px;
   padding: 2px;
 }
-.map-supply-chain {
-  font-size: 0.8rem;
-  overflow-wrap: anywhere;
-}
-.map-supply-chain ul {
-  padding-left: 14px;
-}
-.route-planet-controls {
-  display: grid;
-  gap: 6px;
-}
+
 @media (max-width: 600px) {
   .map-page[data-map-screen='production'] .selection-panel {
     top: auto;
@@ -2782,13 +2449,6 @@ p {
     max-height: none;
     width: min(350px, 40%);
   }
-}
-
-.route-available-legend {
-  color: #d8a7ff;
-}
-.route-assigned-legend {
-  color: #72d8ca;
 }
 
 .map-build-heading {
@@ -3024,8 +2684,7 @@ p {
   cursor: grabbing;
 }
 .fleet-order-button,
-.fleet-rename-button,
-.fleet-route-menu > summary {
+.fleet-rename-button {
   box-sizing: border-box;
   flex: 0 0 44px;
   width: 44px;
@@ -3047,16 +2706,7 @@ p {
   color: var(--accent);
   background: #23434c;
 }
-.fleet-route-menu {
-  flex: 0 0 44px;
-}
-.fleet-route-menu > summary {
-  list-style: none;
-  cursor: pointer;
-}
-.fleet-route-menu > summary::-webkit-details-marker {
-  display: none;
-}
+
 .fleet-route-menu-choices {
   position: absolute;
   z-index: 8;
@@ -3068,9 +2718,7 @@ p {
   border: 1px solid var(--line);
   background: #10222e;
 }
-.fleet-route-menu:not([open]) .fleet-route-menu-choices {
-  display: none;
-}
+
 .fleet-card-footer {
   display: flex;
   gap: 0.5rem;
@@ -3377,13 +3025,6 @@ body:has(.discovery-controls) .selection-panel {
   }
   /* viewport-game-layout: on short screens Build selection scrolls as one page
      so the catalog is not squeezed to nothing under its heading and search. */
-  .build-selection-page {
-    grid-template-rows: auto auto auto;
-    overflow: auto;
-  }
-  .build-selection-page > .planet-content.building-menu {
-    overflow: visible;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .event-announcement {
@@ -3514,9 +3155,7 @@ body:has(.discovery-controls) .selection-panel {
   width: 24px;
   height: 24px;
 }
-.queue-item > .project-supply {
-  grid-column: 3 / -1;
-}
+
 .queue-item > .queue-actions {
   margin: 0;
 }
@@ -5380,15 +5019,6 @@ body:has(.discovery-controls) .selection-panel {
   margin: 0;
   flex-basis: 100%;
   color: var(--factory-warning);
-}
-.factory-order-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.factory-order-actions .button,
-.factory-order-actions .secondary-button {
-  min-height: 44px;
 }
 
 /* Factories: the screen scrolls inside the app's middle row. */

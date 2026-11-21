@@ -141,60 +141,15 @@ describe('automatisk-motormontering / automatiska-delorder', () => {
   });
 });
 
-describe('avstamning-sparkompatibilitet / motorbehov-for-alla-skepp', () => {
-  it.each([2, 3, 4, 5] as const)(
-    'loads version %s without charging existing ships or deleting queued ships',
-    (version) => {
-      const state = prepared().exportState();
-      for (const fleet of state.fleets) delete fleet.shipUnits;
-      state.colonies[0]![1].projects.push({
-        id: 'legacy-ship',
-        type: 'Colony ship',
-        slotIndex: null,
-        factoryId: 'yard-0',
-        destinationFleetId: null,
-      });
-      const game = Game.restore({
-        ...state,
-        version,
-        researched: ['Exploration ship factory'],
-      });
-      expect(game.fleet('fleet-home')!.speed).toBe(3);
-      expect(
-        game
-          .fleet('fleet-home')!
-          .shipUnits!.every((u) => u.engines['Ion pulse engine'] === 0),
-      ).toBe(true);
-      expect(game.research.completed).toContain('Rocket engine factory');
-      expect(
-        game.planetSnapshot(game.galaxy.homePlanet)!.economy.stock.Iron,
-      ).toBe(1000);
-      expect(
-        game.planetSnapshot(game.galaxy.homePlanet)!.projects,
-      ).toHaveLength(1);
-      expect(
-        game.planetSnapshot(game.galaxy.homePlanet)!.projects[0]!.blockedReason,
-      ).not.toBeNull();
-      expect(game.exportState().version).toBe(17);
-    },
-  );
-
-  it('inserts missing prerequisites into legacy research queues while preserving their dependent order', () => {
-    const state = prepared().exportState();
-    const game = Game.restore({
-      ...state,
-      version: 5,
-      researched: [],
-      researchQueue: ['Exploration ship factory', 'Colony ship factory'],
-      researchTarget: 'Exploration ship factory',
-    });
-    expect(game.research.queue).toEqual([
-      'Rocket engine factory',
-      'Telescope I factory',
-      'Exploration ship factory',
-      'Colony ship factory',
-    ]);
-  });
+it('automatisk-motormontering: exposes immutable project reservations and ship loadouts', () => {
+  const game = prepared(2, 1);
+  const home = game.galaxy.homePlanet;
+  game.scheduleShip(home, 'Colony ship');
+  const project = game.planetSnapshot(home)!.projects[0]!;
+  expect(Object.isFrozen(project.parts)).toBe(true);
+  const fleet = game.fleet('fleet-home')!;
+  expect(Object.isFrozen(fleet.shipUnits)).toBe(true);
+  expect(Object.isFrozen(fleet.shipUnits![0]!.engines)).toBe(true);
 });
 
 describe('automatisk-motormontering / flottdestinationer / kolonisation', () => {
@@ -209,15 +164,4 @@ describe('automatisk-motormontering / flottdestinationer / kolonisation', () => 
     expect(game.fleet(fleet.id)!.position).toEqual(destination);
     expect(game.fleet(fleet.id)!.destination).toBeNull();
   });
-});
-
-it('automatisk-motormontering: exposes immutable project reservations and ship loadouts', () => {
-  const game = prepared(2, 1);
-  const home = game.galaxy.homePlanet;
-  game.scheduleShip(home, 'Colony ship');
-  const project = game.planetSnapshot(home)!.projects[0]!;
-  expect(Object.isFrozen(project.parts)).toBe(true);
-  const fleet = game.fleet('fleet-home')!;
-  expect(Object.isFrozen(fleet.shipUnits)).toBe(true);
-  expect(Object.isFrozen(fleet.shipUnits![0]!.engines)).toBe(true);
 });

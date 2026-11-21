@@ -24,7 +24,7 @@ import { MapArtwork } from '../MapArtwork.js';
 import { renderPlanetGlyph, renderSalvageGlyph } from '../PlanetGlyph.js';
 
 const STAR_MAP_LABEL =
-  'Star map. Click a fleet or trade route to select it. Drag a selected owned planet to another owned planet to create a route. Press R to start a route from the selected owned planet, then choose its target. Drag a fleet onto a route to assign it, or elsewhere to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.';
+  'Star map. Click a fleet or trade route to select it. Drag a fleet onto a route to assign it, or elsewhere to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.';
 
 export class GalaxyMapView implements MapPort {
   readonly #container: HTMLElement;
@@ -204,11 +204,10 @@ export class GalaxyMapView implements MapPort {
     const model = original;
     if (this.#movement) {
       const { movements, progress } = this.#movement;
-      const markers = FleetMapLayout.markers(
-        [...original.fleets, ...original.pirates.map(pirateAsFleet)],
-        [],
-        original.camera.zoom,
-      );
+      const markers = FleetMapLayout.markers([
+        ...original.fleets,
+        ...original.pirates.map(pirateAsFleet),
+      ]);
       for (const movement of movements) {
         const from = HexGeometry.toPoint(movement.from),
           to = HexGeometry.toPoint(movement.to);
@@ -251,11 +250,9 @@ export class GalaxyMapView implements MapPort {
           ? 'Orders map. Choose a target for the selected order.'
           : model.screen === 'fleets'
             ? 'Fleets map. Fleet positions and destinations are highlighted; planets and trade routes are background landmarks.'
-            : model.screen === 'route'
-              ? 'Route map. Select planets, create routes and assign transport fleets.'
-              : model.screen === 'production'
-                ? 'Production map. Select an owned planet to build and inspect its project supply chain.'
-                : 'Star map. Your homeworld and its surroundings are visible. Stars are visible in unexplored space.',
+            : model.screen === 'production'
+              ? 'Production map. Select an owned planet to build and inspect its project supply chain.'
+              : 'Star map. Your homeworld and its surroundings are visible. Stars are visible in unexplored space.',
       );
       this.#descriptionScreen = model.screen;
     }
@@ -272,9 +269,7 @@ export class GalaxyMapView implements MapPort {
             ? 'Fleets map. Click a fleet to select it; drag a fleet to set its destination. Planets and trade routes are background landmarks. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.'
             : model.screen === 'production'
               ? 'Production map. Select an owned planet to show build options and its queue. Drag empty space to pan; pinch or use the mouse wheel to zoom. Arrow keys pan; Enter selects the central hex.'
-              : model.screen === 'route'
-                ? STAR_MAP_LABEL.replace('Star map.', 'Route map.')
-                : STAR_MAP_LABEL,
+              : STAR_MAP_LABEL,
       );
     }
     sketch.background('#0a1520');
@@ -557,25 +552,7 @@ export class GalaxyMapView implements MapPort {
             anchor: { x: 0, y: 0 },
           });
         else if (event.key === 'Home') this.#emit({ type: 'home' });
-        else if (
-          event.key.toLowerCase() === 'r' &&
-          !event.ctrlKey &&
-          !event.altKey &&
-          !event.metaKey
-        ) {
-          const source = this.#model?.ownedPlanets.find(
-            (planet) =>
-              planet.position.key === this.#model?.selected?.position.key,
-          );
-          if (
-            (this.#model?.screen === 'map' ||
-              this.#model?.screen === 'route') &&
-            source &&
-            this.#model?.phase === 'planning' &&
-            this.#model.research.completed.includes('Trade logistics')
-          )
-            this.#emit({ type: 'begin-map-route', id: source.id });
-        } else if (event.key === 'Enter') {
+        else if (event.key === 'Enter') {
           this.#emit({ type: 'pointer-start', id: -1, point: { x: 0, y: 0 } });
           this.#emit({ type: 'pointer-end', id: -1, point: { x: 0, y: 0 } });
         } else return;

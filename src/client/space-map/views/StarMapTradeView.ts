@@ -50,37 +50,6 @@ export function renderMapTradeSelection(
     );
     return panel;
   }
-  if (state.sourcePlanetId) {
-    const source = model.ownedPlanets.find(
-      (p) => p.id === state.sourcePlanetId,
-    );
-    panel.append(
-      element('h2', '', 'Create trade route'),
-      element(
-        'p',
-        '',
-        state.preview?.label ??
-          `${source?.name ?? 'Planet'} → Choose an owned planet`,
-      ),
-      element(
-        'p',
-        'map-route-feedback',
-        state.preview?.issue ??
-          state.creationIssue ??
-          (state.preview
-            ? 'Release to create route'
-            : 'Select another owned planet on the map.'),
-      ),
-    );
-    panel.append(
-      button(
-        'Cancel',
-        () => emit({ type: 'cancel-map-trade' }),
-        'button secondary-button',
-      ),
-    );
-    return panel;
-  }
   const route = model.tradeRoutes.find((r) => r.id === state.routeId);
   return route ? renderTradeRouteDetails(route, model, emit) : null;
 }

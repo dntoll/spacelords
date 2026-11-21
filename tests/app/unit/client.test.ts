@@ -34,11 +34,6 @@ function start(): MasterController {
 }
 
 function click(label: string): void {
-  const action = /^(Build|Queue) (.+)$/.exec(label);
-  if (action && !root.querySelector(`[aria-label="${label}"]`))
-    root
-      .querySelector<HTMLButtonElement>(`[aria-label="Show ${action[2]}"]`)
-      ?.click();
   const button = [...root.querySelectorAll('button')].find(
     (candidate) =>
       candidate.textContent === label ||
@@ -75,20 +70,6 @@ describe('planetinformation', () => {
       '<img src=x onerror="alert(1)">',
     );
     expect(root.querySelector('img[src="x"], [onerror]')).toBeNull();
-  });
-});
-
-describe('bygga-forskningsstation', () => {
-  it('offers a research station build order', () => {
-    start();
-    click('Open planet');
-    click('Building sites');
-    click('Build building');
-    click('Show Research station');
-    const build = [...root.querySelectorAll('button')].find(
-      (button) => button.textContent === 'Build Research station',
-    );
-    expect(build?.disabled).toBe(false);
   });
 });
 
@@ -211,109 +192,6 @@ function buildShipyard(model: AppModel): void {
   completeConstruction(model, 'Rocket engine factory');
 }
 
-describe('planetbyggplatser / visa-byggalternativ / forska-fram-fabriker', () => {
-  it('opens a site-specific menu with researched buildings, costs, effects and image placeholders', () => {
-    const model = new AppModel();
-    model.build('Research station');
-    completeConstruction(model, 'Research station');
-    model.research('Colony ship factory');
-    advance(model);
-    advance(model);
-    advance(model);
-    advance(model);
-    model.openPlanet();
-    new MasterController(model, new AppView(root, mapFactory)).start();
-    click('Building sites');
-    expect(root.querySelectorAll('.building-site')).toHaveLength(10);
-    expect(root.querySelector('.building-menu')).toBeNull();
-    click('Building sites');
-    click('Build building');
-    click('Show Colony ship factory');
-    const menu = root.querySelector('.building-menu')!;
-    expect(menu.textContent).toContain('Colony ship factory');
-    expect(menu.textContent).not.toContain('Exploration ship factory');
-    expect(menu.textContent).not.toContain('Queue Colony ship');
-    expect(menu.textContent).toContain('Iron 18 units at build start');
-    expect(menu.textContent).toContain('Water 10 units at build start');
-    expect(menu.textContent).toContain('Oil 6 units at build start');
-    expect(menu.textContent).toContain('2000 workers');
-    expect(menu.querySelector('img')).not.toBeNull();
-    click('Build Colony ship factory');
-    expect(model.snapshot.planet!.sites[1]!.project?.type).toBe(
-      'Colony ship factory',
-    );
-    click('Building sites');
-    click('Build building');
-    click('Show Colony ship factory');
-    const queuedAgain = [
-      ...root.querySelectorAll<HTMLButtonElement>('.building-choice button'),
-    ].find((b) => b.textContent === 'Build Colony ship factory')!;
-    expect(queuedAgain.disabled).toBe(false);
-  });
-});
-
-describe('fabrikskoer / skepp-till-destinationsflotta', () => {
-  it('routes shared planet production, reasons, recipients and cancellation through the controller', () => {
-    const model = new AppModel();
-    buildShipyard(model);
-    const home = model.snapshot.fleets[0]!;
-    model.createFleet(home.id);
-    const target = model.snapshot.fleets[1]!;
-    model.transferShips(home.id, 'Fighter', 1, target.id);
-    model.openPlanet();
-    new MasterController(model, new AppView(root, mapFactory)).start();
-    root
-      .querySelector<HTMLButtonElement>(
-        '.planet-tabs [aria-label="Production"]',
-      )!
-      .click();
-    const production = () => root.querySelector('.planet-building-queue')!;
-    expect(root.querySelectorAll('.compact-build-queue')).toHaveLength(1);
-    expect(root.querySelector('.building-site')).toBeNull();
-    click('Show Colony ship');
-    click('Orders');
-    click('Join fleet');
-    const select = root.querySelector<HTMLSelectElement>(
-      '[aria-label="Fleet target"]',
-    )!;
-    select.value = target.id;
-    select.dispatchEvent(new Event('change'));
-    click(`Join ${target.name}`);
-    click('Queue Colony ship');
-    click('Queue Colony ship');
-    click('Build queue');
-    const queue = () => model.snapshot.planet!.projects;
-    expect(queue()[0]!.initialOrder).toEqual({
-      kind: 'join-fleet',
-      fleetId: target.id,
-    });
-    expect(production().querySelectorAll('.queue-order')).toHaveLength(2);
-    // byggorsak-i-kon: no reordering, but each ship says why it is built.
-    expect(production().querySelector('.queue-drag-handle')).toBeNull();
-    expect(
-      [...production().querySelectorAll('.queue-purpose')].map(
-        (item) => item.textContent,
-      ),
-    ).toEqual([`Joins ${target.name}`, `Joins ${target.name}`]);
-    click('Orders for queued Colony ship');
-    click('Join fleet');
-    const queuedFleet = root.querySelector<HTMLSelectElement>(
-      '[aria-label="Fleet target"]',
-    )!;
-    queuedFleet.value = target.id;
-    queuedFleet.dispatchEvent(new Event('change'));
-    click(`Join ${target.name}`);
-    expect(queue()[0]!.initialOrder).toEqual({
-      kind: 'join-fleet',
-      fleetId: target.id,
-    });
-    production()
-      .querySelector<HTMLButtonElement>('[aria-label^="Cancel:"]')!
-      .click();
-    expect(queue()).toHaveLength(1);
-  });
-});
-
 describe('kolonisation / kartorderstatus', () => {
   it('offers Colonize at an uninhabited destination and opens the resulting colony', () => {
     const model = new AppModel();
@@ -338,17 +216,9 @@ describe('kolonisation / kartorderstatus', () => {
     expect(root.textContent).toContain('1,000');
     click('Building sites');
     expect(root.querySelectorAll('.building-site')).toHaveLength(6);
-    expect(
-      root.querySelector<HTMLButtonElement>(
-        '[aria-label="Build building at site 1"]',
-      )!.disabled,
-    ).toBe(true);
-    expect(
-      root.querySelector<HTMLButtonElement>(
-        '[aria-label="Build dome at site 1"]',
-      )!.disabled,
-    ).toBe(true);
-    expect(root.textContent).toContain('Research this building first.');
+    expect(root.textContent).toContain(
+      'A Dome is required before this site can be used.',
+    );
     expect(root.querySelectorAll('.locked-site')).toHaveLength(5);
   });
 });
@@ -386,34 +256,5 @@ describe('kompakta-koknappar', () => {
     expect(model.snapshot.research.queue).toContain('Colony ship factory');
     click('Remove research');
     expect(model.snapshot.research.queue).not.toContain('Colony ship factory');
-  });
-
-  it('uses symbols for planet production without losing project actions', () => {
-    const model = new AppModel();
-    buildShipyard(model);
-    model.openPlanet();
-    new MasterController(model, new AppView(root, mapFactory)).start();
-    root
-      .querySelector<HTMLButtonElement>(
-        '.planet-tabs [aria-label="Production"]',
-      )!
-      .click();
-    click('Queue Colony ship');
-    click('Queue Colony ship');
-    click('Build queue');
-    const controls = () => [
-      ...root.querySelectorAll<HTMLButtonElement>(
-        '.queue-order .queue-actions button',
-      ),
-    ];
-    expect(
-      controls()
-        .slice(0, 3)
-        .map((b) => b.textContent),
-    ).toEqual(['×', '×']);
-    expect(root.querySelector('.queue-drag-handle')).toBeNull();
-    expect(controls()[1]!.getAttribute('aria-label')).toContain('Colony ship');
-    controls()[1]!.click();
-    expect(model.snapshot.planet!.projects).toHaveLength(1);
   });
 });

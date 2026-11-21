@@ -68,7 +68,7 @@ export class MasterController {
     id: number;
     start: Point;
     dragged: boolean;
-    kind: 'fleet' | 'route' | 'wreck' | 'salvage-target';
+    kind: 'fleet' | 'wreck' | 'salvage-target';
     wreckId?: string;
   } | null = null;
 
@@ -218,7 +218,6 @@ export class MasterController {
         (this.#fleetPointer ||
           previous.fleetDragging ||
           previous.fleetDestinationPreview ||
-          previous.mapTrade.preview ||
           previous.mapTrade.candidateRouteIds.length ||
           previous.mapTrade.assignmentFleetId))
     )
@@ -227,8 +226,7 @@ export class MasterController {
       if (!startingPinch) {
         if (
           this.#starMap.salvageAtPoint(intent.point) ||
-          this.#starMap.fleetAtPoint(intent.point) ||
-          this.#routes.mapRouteDragSource(intent.point)
+          this.#starMap.fleetAtPoint(intent.point)
         )
           return false;
         this.#gesture.start(intent.id, intent.point);
@@ -245,7 +243,7 @@ export class MasterController {
       this.#gesture.end(intent.id);
       return true;
     } else if (intent.type === 'pan' || intent.type === 'zoom') {
-      this.#cancelPointer(true);
+      this.#cancelPointer();
       if (intent.type === 'pan') this.#starMap.pan(intent.delta);
       else this.#starMap.zoom(intent.factor, intent.anchor);
     } else if (
@@ -387,17 +385,11 @@ export class MasterController {
     }
     if (
       intent.type.startsWith('open-') ||
-      [
-        'home',
-        'pan',
-        'zoom',
-        'begin-destination',
-        'begin-colonization',
-        'begin-salvage',
-        'end-turn',
-      ].includes(intent.type)
+      ['home', 'pan', 'zoom', 'begin-destination', 'end-turn'].includes(
+        intent.type,
+      )
     )
-      this.#cancelPointer(['pan', 'zoom'].includes(intent.type));
+      this.#cancelPointer();
     if (
       before.screen === 'saves' &&
       ![
@@ -445,9 +437,6 @@ export class MasterController {
       case 'release-wreck':
         this.#starMap.releaseWreck(intent.fleetId, intent.id);
         break;
-      case 'return-shipyard':
-        this.#starMap.returnToShipyard(intent.id);
-        break;
       case 'select-salvage':
         this.#starMap.selectSalvage(intent.id);
         break;
@@ -462,15 +451,6 @@ export class MasterController {
         break;
       case 'place-shipyard':
         this.#starMap.placeShipyard(intent.position);
-        break;
-      case 'explore-fleet':
-        this.#fleets.exploreFleet(intent.id, intent.order);
-        break;
-      case 'auto-salvage':
-        this.#fleets.automateSalvage(intent.id);
-        break;
-      case 'civilian-transport':
-        this.#fleets.civilianTransport(intent.id);
         break;
       case 'open-fleet-orders':
         this.#orders.openFleetOrders(intent.id);
@@ -489,15 +469,6 @@ export class MasterController {
         break;
       case 'clear-start-order':
         this.#orders.clearStartOrder();
-        break;
-      case 'guard-routes':
-        this.#fleets.automateTransport(intent.id);
-        break;
-      case 'upgrade-fleet':
-        this.#fleets.upgradeFleet(intent.id);
-        break;
-      case 'patrol-fleet':
-        this.#fleets.patrolFleet(intent.id);
         break;
       case 'handle-discoveries':
         this.#decisions.handleDiscoveries();
@@ -541,20 +512,11 @@ export class MasterController {
       case 'toggle-fleet-category':
         this.#starMap.toggleFleetCategory(intent.category);
         break;
-      case 'begin-map-route':
-        this.#routes.beginMapRoute(intent.id);
-        break;
       case 'cancel-map-trade':
         this.#cancelPointer();
         break;
-      case 'open-route':
-        this.#routes.openRoute(intent.planetId);
-        break;
       case 'open-production':
         this.#production.openProduction(intent.planetId);
-        break;
-      case 'map-production-category':
-        this.#production.selectMapProductionCategory(intent.category);
         break;
       case 'map-production-page':
         this.#production.selectMapProductionPage(intent.page);
@@ -570,12 +532,6 @@ export class MasterController {
         break;
       case 'map-production-build':
         this.#production.orderMapProduction(intent.option);
-        break;
-      case 'supply-open-planet':
-        this.#routes.openSupplyPlanet(intent.id);
-        break;
-      case 'supply-open-route':
-        this.#routes.openSupplyRoute(intent.id);
         break;
       case 'research-size':
         this.#research.resizeResearch(intent.width, intent.height);
@@ -606,9 +562,6 @@ export class MasterController {
         break;
       case 'unmute-decision':
         this.#decisions.unmuteDecision(intent.id);
-        break;
-      case 'create-trade-route':
-        this.#routes.createTradeRoute(intent.a, intent.b);
         break;
       case 'assign-trade-fleet':
         this.#routes.assignTradeFleet(intent.routeId, intent.fleetId);
@@ -754,15 +707,6 @@ export class MasterController {
       case 'open-fleets':
         this.#fleets.openFleets();
         break;
-      case 'building-category':
-        this.#planet.selectBuildingCategory(intent.category);
-        break;
-      case 'building-selection':
-        this.#planet.selectBuilding(intent.building);
-        break;
-      case 'build-search':
-        this.#planet.searchBuildings(intent.query);
-        break;
       case 'home':
         this.#starMap.home();
         break;
@@ -770,7 +714,6 @@ export class MasterController {
         const snapshot = this.#model.snapshot;
         mapOrder =
           !!snapshot.destinationFleetId ||
-          !!snapshot.mapTrade.sourcePlanetId ||
           snapshot.orderView?.page === 'patrol' ||
           snapshot.orderView?.page === 'colonize';
         this.#starMap.select(intent.position);
@@ -782,26 +725,8 @@ export class MasterController {
       case 'zoom':
         this.#starMap.zoom(intent.factor, intent.anchor);
         break;
-      case 'build':
-        this.#planet.build(intent.building, intent.slotIndex);
-        break;
       case 'planet-tab':
         this.#planet.selectPlanetTab(intent.tab);
-        break;
-      case 'production-selection':
-        this.#planet.selectProduction(intent.category, intent.product);
-        break;
-      case 'production-fleet':
-        this.#planet.selectProductionFleet(intent.id);
-        break;
-      case 'project-supply':
-        this.#planet.toggleProjectSupply(intent.id, intent.open);
-        break;
-      case 'open-planet-project':
-        this.#planet.openPlanetProject(intent.planetId, intent.projectId);
-        break;
-      case 'build-site':
-        this.#planet.openBuildSite(intent.index);
         break;
       case 'research':
         this.#research.research(intent.technology);
@@ -809,42 +734,14 @@ export class MasterController {
       case 'colonize':
         this.#planet.colonize(intent.id);
         break;
-      case 'queue-ship':
-        this.#planet.scheduleShip(
-          intent.ship,
-          intent.fleetId,
-          intent.factoryId,
-        );
-        break;
-      case 'queue-component':
-        this.#planet.scheduleComponent(intent.component);
-        break;
-      case 'move-project':
-        this.#planet.moveProject(intent.id, intent.index);
-        break;
-      case 'project-fleet':
-        this.#planet.setProjectFleet(intent.id, intent.fleetId);
-        break;
       case 'cancel-project':
         this.#planet.cancelProject(intent.id);
         break;
       case 'toggle-demolition':
         this.#planet.toggleDemolition(intent.id);
         break;
-      case 'upgrade-building':
-        this.#planet.upgradeBuilding(intent.id);
-        break;
-      case 'produce-fighter':
-        this.#planet.produceFighter();
-        break;
-      case 'select-fleet':
-        this.#fleets.selectFleet(intent.id);
-        break;
       case 'open-fleet':
         this.#fleets.openFleet(intent.id);
-        break;
-      case 'rename-fleet':
-        this.#fleets.renameFleet(intent.id, intent.name);
         break;
       case 'choose-ship-transfer':
         this.#fleets.chooseShipTransfer(
@@ -871,20 +768,8 @@ export class MasterController {
       case 'begin-destination':
         this.#fleets.beginDestination(intent.id);
         break;
-      case 'begin-colonization':
-        this.#fleets.beginColonization(intent.id);
-        break;
-      case 'begin-salvage':
-        this.#fleets.beginSalvage(intent.id);
-        break;
       case 'clear-destination':
         this.#fleets.clearDestination(intent.id);
-        break;
-      case 'create-fleet':
-        this.#fleets.createFleet(intent.id);
-        break;
-      case 'delete-fleet':
-        this.#fleets.deleteFleet(intent.id);
         break;
       case 'end-turn':
         if (this.#decisions.requestEndTurn()) {
@@ -923,17 +808,15 @@ export class MasterController {
             };
             break;
           }
+          // Routes are made in Factories (Connect), not by dragging on the map.
           const fleetId = this.#starMap.fleetAtPoint(intent.point);
-          const source = fleetId
-            ? null
-            : this.#routes.mapRouteDragSource(intent.point);
-          if (!fleetId && !source) return;
-          if (fleetId) this.#starMap.selectMapFleet(fleetId);
+          if (!fleetId) return;
+          this.#starMap.selectMapFleet(fleetId);
           this.#fleetPointer = {
             id: intent.id,
             start: intent.point,
             dragged: false,
-            kind: fleetId ? 'fleet' : 'route',
+            kind: 'fleet',
           };
         }
         break;
@@ -962,13 +845,7 @@ export class MasterController {
               this.#starMap.previewSalvage(intent.point);
               break;
             }
-            if (this.#fleetPointer.kind === 'route') {
-              const source = this.#routes.mapRouteDragSource(
-                this.#fleetPointer.start,
-              );
-              if (source) this.#routes.beginMapRoute(source);
-              this.#routes.previewMapRoute(intent.point);
-            } else this.#starMap.previewFleetDestination(intent.point);
+            this.#starMap.previewFleetDestination(intent.point);
           }
           break;
         }
@@ -1011,11 +888,6 @@ export class MasterController {
             mapOrder = true;
             if (pointer.kind === 'wreck') {
               this.#starMap.dropSalvage(intent.point);
-            } else if (pointer.kind === 'route') {
-              const source = this.#routes.mapRouteDragSource(pointer.start);
-              if (source) this.#routes.beginMapRoute(source);
-              this.#routes.previewMapRoute(intent.point);
-              this.#routes.commitMapRoute();
             } else {
               this.#starMap.previewFleetDestination(intent.point);
               this.#starMap.commitFleetDestination();
@@ -1029,7 +901,6 @@ export class MasterController {
           const snapshot = this.#model.snapshot;
           mapOrder =
             !!snapshot.destinationFleetId ||
-            !!snapshot.mapTrade.sourcePlanetId ||
             snapshot.orderView?.page === 'patrol' ||
             snapshot.orderView?.page === 'colonize';
           this.#starMap.selectPoint(selected);
@@ -1072,7 +943,6 @@ export class MasterController {
         'build-search',
         'production-selection',
         'production-fleet',
-        'project-supply',
         'open-planet-project',
       ].includes(intent.type)
     )
@@ -1091,10 +961,10 @@ export class MasterController {
     this.#render();
   }
 
-  #cancelPointer(keepRouteSource = false): void {
+  #cancelPointer(): void {
     this.#gesture.cancel();
     this.#fleetPointer = null;
-    this.#starMap.cancelMapPointer(keepRouteSource);
+    this.#starMap.cancelMapPointer();
   }
 
   #schedulePlayback(): void {

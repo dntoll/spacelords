@@ -88,18 +88,12 @@ export class PirateFleet {
       );
   }
 
-  static restore(
-    saved: SavedPirateFleet,
-    galaxy: Galaxy,
-    migrateCargo = false,
-  ): PirateFleet {
+  static restore(saved: SavedPirateFleet, galaxy: Galaxy): PirateFleet {
     const system = galaxy.systems.find(
       (system) => system.star.id === saved.systemId,
     );
     const position = new HexCoordinate(saved.position.q, saved.position.r);
-    const transports = migrateCargo
-      ? Math.max(1, saved.transports ?? 0)
-      : (saved.transports ?? 0);
+    const transports = saved.transports ?? 0;
     if (
       !system ||
       position.distanceTo(system.star.position) !== 1 ||

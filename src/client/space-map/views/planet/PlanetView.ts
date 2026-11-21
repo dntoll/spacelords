@@ -1,42 +1,24 @@
-import { ShipOrders } from '../../models/ShipOrders.js';
-import type { ShipType } from '../../models/Game.js';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import {
   BUILDINGS,
-  type ConstructionProjectSnapshot,
-  projectDefinition,
-  type FleetSnapshot,
   type BuildType,
   type PlanetGameSnapshot,
   type Resource,
 } from '../../models/Game.js';
 import { COMPONENTS } from '../../models/Economy.js';
-import { renderProduction } from './PlanetProductionView.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
-import { button, element, queueButton } from '../../../common/dom.js';
+import { button, element } from '../../../common/dom.js';
 import { planetIllustration } from '../PlanetImages.js';
 import { buildingImage } from '../BuildingImage.js';
-import { shipPurposeText } from '../ShipPurposeText.js';
 import { catalogIcon } from '../CatalogControls.js';
 
 type PlanetMenus = Pick<AppReadModel, 'phase'> &
-  Partial<
-    Pick<
-      AppReadModel,
-      | 'planetTab'
-      | 'productionCategory'
-      | 'productionProduct'
-      | 'productionFleetId'
-      | 'expandedProjectIds'
-      | 'shipyards'
-    >
-  >;
+  Partial<Pick<AppReadModel, 'planetTab' | 'shipyards'>>;
 
 export function renderPlanet(
   planet: PlanetGameSnapshot,
   owner: string,
   emit: IntentHandler,
-  fleets: readonly FleetSnapshot[] = [],
   menus: PlanetMenus = {
     phase: 'planning',
   },
@@ -52,8 +34,6 @@ export function renderPlanet(
   for (const [id, label] of [
     ['overview', 'Overview'],
     ['sites', 'Building sites'],
-    ['queue', 'Build queue'],
-    ['production', 'Production'],
   ] as const) {
     const control = button(
       label,
@@ -82,8 +62,6 @@ export function renderPlanet(
     {
       overview: 'Overview',
       sites: 'Building sites',
-      queue: 'Build queue',
-      production: 'Production',
     }[tab],
   );
   if (tab === 'overview') {
@@ -103,11 +81,7 @@ export function renderPlanet(
     if (!counts.size)
       inventory.append(element('p', 'muted-note', 'No buildings yet.'));
     panel.append(inventory);
-  } else if (tab === 'production')
-    panel.append(renderProduction(planet, fleets, emit, menus));
-  else if (tab === 'queue')
-    panel.append(buildQueue(planet, emit, fleets, menus));
-  else panel.append(buildingSites(planet, emit, menus));
+  } else panel.append(buildingSites(planet, emit, menus));
   page.append(panel);
   return page;
 }
@@ -226,48 +200,6 @@ function budgetRow(
   body.append(row);
 }
 
-function buildQueue(
-  planet: PlanetGameSnapshot,
-  emit: IntentHandler,
-  fleets: readonly FleetSnapshot[],
-  menus: PlanetMenus,
-): HTMLElement {
-  const queue = element('section', 'planet-building-queue');
-  queue.setAttribute('aria-label', 'Planet build queue');
-  queue.append(
-    element('h2', '', 'Build queue'),
-    element(
-      'p',
-      'muted-note',
-      // byggorsak-i-kon: factories work side by side, so no order to change.
-      'Each factory builds its own orders at the same time.',
-    ),
-  );
-  const list = element('ul', 'queue-slots');
-  for (const [index, project] of planet.projects.entries()) {
-    const row = element('li', 'order-row queue-order');
-    renderQueueOrder(
-      row,
-      project,
-      index,
-      fleets,
-      emit,
-      menus.phase !== 'planning',
-    );
-    list.append(row);
-  }
-  queue.append(list);
-  if (!planet.projects.length)
-    queue.append(
-      element(
-        'p',
-        'muted-note',
-        'No production queued. Choose a building in Building sites or a product in Production.',
-      ),
-    );
-  return queue;
-}
-
 function buildingSites(
   planet: PlanetGameSnapshot,
   emit: IntentHandler,
@@ -275,7 +207,16 @@ function buildingSites(
 ): HTMLElement {
   const box = element('section', 'building-panel');
   const grid = element('div', 'building-sites-grid');
-  box.append(element('h2', '', 'Building sites'), grid);
+  // planetsida-informerar: building, upgrades and cancelling live in Factories.
+  box.append(
+    element('h2', '', 'Building sites'),
+    element(
+      'p',
+      'muted-note',
+      'Build, upgrade and cancel construction in Factories.',
+    ),
+    grid,
+  );
   for (const site of planet.sites) {
     const card = element('article', 'building-site');
     card.setAttribute('aria-label', `Building site ${site.index + 1}`);
@@ -324,43 +265,13 @@ function buildingSites(
       );
       const upgradeProject =
         site.project?.upgradeBuildingId === building.id ? site.project : null;
-      if (upgradeProject) {
+      if (upgradeProject)
         details.append(
           element('p', 'muted-note', `Upgrade queued: ${upgradeProject.type}`),
         );
-        if (upgradeProject.blockedReason)
-          details.append(
-            element('p', 'muted-note', upgradeProject.blockedReason),
-          );
-        const cancel = button(
-          'Cancel upgrade',
-          () => emit({ type: 'cancel-project', id: upgradeProject.id }),
-          'button secondary-button',
-        );
-        cancel.disabled = menus.phase !== 'planning';
-        actions.append(cancel);
-      } else if (building.upgrade) {
-        const target = building.upgrade.type;
-        const cost = BUILDINGS[target].cost;
-        details.append(
-          element(
-            'p',
-            'muted-note',
-            `Upgrade: Iron ${cost.Iron}, Water ${cost.Water}, Oil ${cost.Oil} · Uses the same site`,
-          ),
-        );
-        const upgrade = button(`Upgrade to ${target}`, () =>
-          emit({ type: 'upgrade-building', id: building.id }),
-        );
-        upgrade.disabled =
-          menus.phase !== 'planning' || !!building.upgrade.blockedReason;
-        if (building.upgrade.blockedReason)
-          upgrade.title = building.upgrade.blockedReason;
-        actions.append(upgrade);
-      }
       demolish.disabled = menus.phase !== 'planning' || !!upgradeProject;
       if (upgradeProject)
-        demolish.title = 'Cancel the queued upgrade before demolition.';
+        demolish.title = 'Cancel the queued upgrade in Factories first.';
       actions.append(demolish);
     } else if (site.project) {
       details.append(
@@ -376,17 +287,10 @@ function buildingSites(
       );
       if (site.project.blockedReason)
         details.append(element('p', 'muted-note', site.project.blockedReason));
-      const cancel = button(
-        'Cancel construction',
-        () => emit({ type: 'cancel-project', id: site.project!.id }),
-        'button secondary-button',
-      );
-      cancel.disabled = menus.phase !== 'planning';
-      actions.append(cancel);
     } else {
       card.classList.add('empty-site');
       details.append(element('h3', '', 'Empty site'));
-      if (site.domeRequired && !site.hasDome) {
+      if (site.domeRequired && !site.hasDome)
         details.append(
           element(
             'p',
@@ -394,47 +298,6 @@ function buildingSites(
             'A Dome is required before this site can be used.',
           ),
         );
-        const dome = button('Build dome', () => {
-          if (site.domeType)
-            emit({
-              type: 'build',
-              building: site.domeType,
-              slotIndex: site.index,
-            });
-        });
-        dome.setAttribute('aria-label', `Build dome at site ${site.index + 1}`);
-        dome.disabled = menus.phase !== 'planning' || !!site.domeBlockedReason;
-        actions.append(dome);
-        if (site.domeType)
-          details.append(
-            element(
-              'p',
-              'muted-note',
-              `${site.domeType} · ${costText(BUILDINGS[site.domeType].cost)} · No permanent workers`,
-            ),
-          );
-        if (site.domeBlockedReason)
-          details.append(
-            element('p', 'blocked-reason', site.domeBlockedReason),
-          );
-      }
-      const build = button(
-        'Build building',
-        () =>
-          emit({
-            type: 'build-site',
-            index: site.index,
-          }),
-        'button',
-      );
-      build.setAttribute(
-        'aria-label',
-        `Build building at site ${site.index + 1}`,
-      );
-
-      build.disabled =
-        menus.phase !== 'planning' || (site.domeRequired && !site.hasDome);
-      actions.prepend(build);
     }
     details.append(actions);
     card.prepend(details);
@@ -445,66 +308,6 @@ function buildingSites(
       element('p', 'muted-note', 'This planet has no building sites.'),
     );
   return box;
-}
-
-function costText(cost: {
-  readonly Iron: number;
-  readonly Water: number;
-  readonly Oil: number;
-}): string {
-  return `Iron ${cost.Iron}, Water ${cost.Water}, Oil ${cost.Oil}`;
-}
-
-function renderQueueOrder(
-  row: HTMLElement,
-  project: ConstructionProjectSnapshot,
-  index: number,
-  fleets: readonly FleetSnapshot[],
-  emit: IntentHandler,
-  locked: boolean,
-): void {
-  row.dataset.projectId = project.id;
-  const details = element('div', 'queue-details');
-  details.append(
-    element(
-      'p',
-      '',
-      `${project.type}${project.slotIndex !== null ? ` · Site ${project.slotIndex + 1}` : ''}`,
-    ),
-  );
-  if (project.purpose)
-    details.append(
-      element('p', 'queue-purpose', shipPurposeText(project.purpose)),
-    );
-  if (project.blockedReason)
-    details.append(element('p', 'muted-note', project.blockedReason));
-  if (projectDefinition(project.type).ship) {
-    details.append(
-      element(
-        'p',
-        '',
-        `Start order: ${project.initialOrder ? ShipOrders.label(project.initialOrder) : project.destinationFleetId ? (fleets.find((fleet) => fleet.id === project.destinationFleetId)?.name ?? 'Unknown fleet') : ShipOrders.defaultAssignment(project.type)}`,
-      ),
-    );
-    const orders = button(`Orders for queued ${project.type}`, () =>
-      emit({
-        type: 'open-ship-orders',
-        ship: project.type as ShipType,
-        projectId: project.id,
-      }),
-    );
-    orders.disabled = locked;
-    details.append(orders);
-  }
-  const actions = element('div', 'queue-actions');
-  const cancel = queueButton(
-    '×',
-    `Cancel: ${project.type}, position ${index + 1}`,
-    () => emit({ type: 'cancel-project', id: project.id }),
-  );
-  cancel.disabled = locked;
-  actions.append(cancel);
-  row.append(details, actions);
 }
 
 function buildingUsage(type: BuildType, demolition: boolean): string {

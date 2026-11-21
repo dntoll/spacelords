@@ -22,7 +22,6 @@ export class SaveFacade {
       state: game.exportState(),
     });
     this.host.mapTrade.clearSelection();
-    this.host.mapProductionCategory = 'Buildings';
     this.host.mapProductionPage = 0;
     this.host.mapProductionOption = null;
     this.host.mapProjectId = null;
@@ -56,14 +55,11 @@ export class SaveFacade {
     this.host.requestMapFocus(this.host.selected);
     this.host.screen = 'map';
     this.host.pendingClearSlot = null;
-    this.host.constructionSite = null;
     this.host.selectedFleetId = null;
     this.host.fleetNameEdit = null;
     this.host.shipTransfer = null;
     this.host.mapFleetId = null;
     this.host.destinationFleetId = null;
-    this.host.returnSite = null;
-    this.host.buildSearch = '';
     this.host.cancelMapPointer();
     this.host.productionReceipt = null;
     if (game.interruption?.handling) this.host.focusInterruptedFleet();

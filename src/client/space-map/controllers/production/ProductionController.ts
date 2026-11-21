@@ -1,4 +1,3 @@
-import { type MapProductionCategory } from '../../models/ProductionMap.js';
 import { type ProjectType } from '../../models/Game.js';
 import type { ProductionFacade } from '../../models/production/ProductionFacade.js';
 
@@ -7,10 +6,6 @@ export class ProductionController {
 
   openProduction(planetId?: string): void {
     return this.facade.openProduction(planetId);
-  }
-
-  selectMapProductionCategory(category: MapProductionCategory): void {
-    return this.facade.selectMapProductionCategory(category);
   }
 
   selectMapProductionPage(page: number): void {

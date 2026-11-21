@@ -2,7 +2,7 @@
 import { expect, it, vi } from 'vitest';
 import { BUILDINGS } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
-import { catalogItem } from '../../../src/client/space-map/views/CatalogControls.js';
+import { catalogIcon } from '../../../src/client/space-map/views/CatalogControls.js';
 import { buildingImage } from '../../../src/client/space-map/views/BuildingImage.js';
 import { planetIllustration } from '../../../src/client/space-map/views/PlanetImages.js';
 import { renderResearchTree } from '../../../src/client/space-map/views/research/ResearchTreeView.js';
@@ -33,23 +33,18 @@ it('kartobjekt-foljer-zoom / spelgrafik-kartstation: shipyards and wreck markers
   expect(sketch.line).toHaveBeenCalledWith(-8, -7, 8, 7);
 });
 
-it('spelgrafik-symboler: every building has a distinct decorative symbol while its action stays accessible', () => {
+it('spelgrafik-symboler: every building has a distinct decorative symbol with a fallback', () => {
   const sources = new Set<string>();
   for (const type of Object.keys(BUILDINGS)) {
-    const choose = vi.fn();
-    const item = catalogItem(type, type, false, choose);
-    const image = item.querySelector('img');
+    const holder = document.createElement('span');
+    holder.append(catalogIcon(type));
+    const image = holder.querySelector('img');
     expect(image, type).not.toBeNull();
     expect(image!.getAttribute('aria-hidden')).toBe('true');
     expect(image!.alt).toBe('');
     sources.add(image!.src);
-    const control = item.querySelector('button')!;
-    expect(control.getAttribute('aria-label')).toBe(`Show ${type}`);
-    control.click();
-    expect(choose).toHaveBeenCalledTimes(1);
     image!.dispatchEvent(new Event('error'));
-    expect(item.querySelector('svg')).not.toBeNull();
-    expect(control.getAttribute('aria-label')).toBe(`Show ${type}`);
+    expect(holder.querySelector('svg')).not.toBeNull();
   }
   expect(sources.size).toBe(Object.keys(BUILDINGS).length);
 });

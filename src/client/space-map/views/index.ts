@@ -12,7 +12,6 @@ export * from './decisions/EmpireView.js';
 export * from './factories/FactoriesView.js';
 export * from './fleets/FleetMapPanel.js';
 export * from './orders/OrdersView.js';
-export * from './planet/BuildSelectionView.js';
 export * from './planet/PlanetView.js';
 export * from './production/ProductionMapView.js';
 export * from './research/ResearchDetailsView.js';

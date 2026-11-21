@@ -68,26 +68,17 @@ it('handelsrutt-val-pa-stjarnkartan: route hit widths stay in screen pixels acro
   }
 });
 
-it('handelsrutt-skapande-pa-stjarnkartan: a selected planet creates one route by dragging, keeps the camera and selects its details', () => {
-  const { model, point, drag } = session(false);
+it('rutter-endast-i-connect: dragging and clicks between owned planets on the Star map create no route', () => {
+  const { model, emit, point, drag } = session(false);
   const [a, b] = model.snapshot.ownedPlanets;
   model.select(a!.position);
-  const camera = model.snapshot.camera;
   drag(
     point(HexGeometry.toPoint(a!.position)),
     point(HexGeometry.toPoint(b!.position)),
   );
-  expect(model.snapshot.tradeRoutes).toHaveLength(1);
-  expect(model.snapshot.mapTrade.routeId).toBe(
-    model.snapshot.tradeRoutes[0]!.id,
-  );
-  expect(model.snapshot.camera).toEqual(camera);
-  model.select(a!.position);
-  drag(
-    point(HexGeometry.toPoint(a!.position)),
-    point(HexGeometry.toPoint(b!.position)),
-  );
-  expect(model.snapshot.tradeRoutes).toHaveLength(1);
+  emit({ type: 'select', position: b!.position });
+  expect(model.snapshot.tradeRoutes).toHaveLength(0);
+  expect(model.snapshot.mapTrade.routeId).toBeNull();
 });
 
 it('flottilldelning-pa-stjarnkartan: dropping ships on a route assigns without changing their physical position or giving a move order', () => {
@@ -129,81 +120,6 @@ it('flottilldelning-pa-stjarnkartan: an invalid route drop and cancelled drag ca
   emit({ type: 'pointer-end', id: 1, point: end });
   expect(model.snapshot.fleets[0]!.destination).toEqual(before.destination);
   expect(model.snapshot.mapTrade.candidateRouteIds).toEqual([]);
-});
-
-it('handelsrutt-skapande-pa-stjarnkartan: click/keyboard creation survives panning and obeys research and ownership rules', () => {
-  const { model, emit } = session(false);
-  const [home, target] = model.snapshot.ownedPlanets;
-  emit({ type: 'begin-map-route', id: home!.id });
-  emit({ type: 'pan', delta: { x: 10, y: 10 } });
-  expect(model.snapshot.mapTrade.sourcePlanetId).toBe(home!.id);
-  emit({ type: 'select', position: target!.position });
-  expect(model.snapshot.tradeRoutes).toHaveLength(1);
-  expect(model.snapshot.mapTrade.sourcePlanetId).toBeNull();
-  const locked = { ...tradeNetworkState(false), researched: [] };
-  const other = session(false, locked);
-  other.emit({ type: 'begin-map-route', id: home!.id });
-  other.emit({ type: 'select', position: target!.position });
-  expect(other.model.snapshot.tradeRoutes).toHaveLength(0);
-});
-
-it('handelsrutt-skapande-pa-stjarnkartan: missing Trade logistics stays explained after both drag and target click', () => {
-  for (const mode of ['drag', 'click'] as const) {
-    const state = { ...tradeNetworkState(false), researched: [] };
-    const { model, emit, point, drag } = session(false, state);
-    const [source, target] = model.snapshot.ownedPlanets;
-    if (mode === 'drag')
-      drag(
-        point(HexGeometry.toPoint(source!.position)),
-        point(HexGeometry.toPoint(target!.position)),
-      );
-    else {
-      emit({ type: 'begin-map-route', id: source!.id });
-      const end = point(HexGeometry.toPoint(target!.position));
-      emit({ type: 'pointer-start', id: 1, point: end });
-      emit({ type: 'pointer-end', id: 1, point: end });
-    }
-    expect(model.snapshot.tradeRoutes).toHaveLength(0);
-    expect(model.snapshot.mapTrade.preview?.issue).toBe(
-      'Research Trade logistics first.',
-    );
-    expect(model.snapshot.mapTrade.sourcePlanetId).toBe(source!.id);
-  }
-});
-
-it('handelsrutt-skapande-pa-stjarnkartan: an invalid destination keeps the source for a corrected target click', () => {
-  const { model, emit, point } = session(false);
-  const [source, target] = model.snapshot.ownedPlanets;
-  emit({ type: 'begin-map-route', id: source!.id });
-  const click = (world: { x: number; y: number }) => {
-    const end = point(world);
-    emit({ type: 'pointer-start', id: 1, point: end });
-    emit({ type: 'pointer-end', id: 1, point: end });
-  };
-  click(HexGeometry.toPoint(source!.position));
-  expect(model.snapshot.mapTrade.preview?.issue).toBe(
-    'Choose a different planet.',
-  );
-  click(HexGeometry.toPoint(target!.position));
-  expect(model.snapshot.tradeRoutes).toHaveLength(1);
-  expect(model.snapshot.mapTrade.routeId).toBe(
-    model.snapshot.tradeRoutes[0]!.id,
-  );
-});
-
-it('handelsrutt-skapande-pa-stjarnkartan: a second pointer cancels creation and cannot commit when the first pointer ends', () => {
-  const { model, emit, point } = session(false);
-  const [home, target] = model.snapshot.ownedPlanets;
-  const start = point(HexGeometry.toPoint(home!.position));
-  const end = point(HexGeometry.toPoint(target!.position));
-  emit({ type: 'pointer-start', id: 1, point: start });
-  emit({ type: 'pointer-move', id: 1, point: end });
-  expect(model.snapshot.mapTrade.preview?.targetId).toBe(target!.id);
-  emit({ type: 'pointer-start', id: 2, point: { x: 100, y: 100 } });
-  emit({ type: 'pointer-end', id: 1, point: end });
-  emit({ type: 'pointer-end', id: 2, point: end });
-  expect(model.snapshot.tradeRoutes).toHaveLength(0);
-  expect(model.snapshot.mapTrade.preview).toBeNull();
 });
 
 it('flottilldelning-pa-stjarnkartan: ambiguous drops wait for an explicit route choice', () => {

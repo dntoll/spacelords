@@ -213,7 +213,7 @@ describe('flottpatrullering', () => {
     expect(() => game.setPatrol('fleet-home')).toThrow('armed ship');
   });
 
-  it('keeps all steps on the map at the boundary and preserves older saves', () => {
+  it('keeps all steps on the map at the boundary', () => {
     const game = setup(hex(10, 0));
     game.setPatrol('fleet-home');
     const steps = [...turn(game), ...turn(game), ...turn(game)];
@@ -222,10 +222,6 @@ describe('flottpatrullering', () => {
       expect(game.galaxy.cellAt(step.to)).toBeTruthy();
       expect(step.from.distanceTo(step.to)).toBe(1);
     }
-    const state = setup().exportState();
-    expect(
-      Game.restore({ ...state, version: 10 }).fleet('fleet-home')!.patrol,
-    ).toBeUndefined();
   });
 
   it('keeps a valid target, selects nearest with stable ties, and drops targets leaving movement range', () => {

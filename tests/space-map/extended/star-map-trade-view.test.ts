@@ -102,7 +102,7 @@ it('route-kartvy / handelsrutt-val-pa-stjarnkartan: opens the assigned route fro
     clear() {},
   });
   model.startSlot(1);
-  model.openRoute();
+  model.openMap();
   model.selectMapFleet('freighters');
   const root = document.createElement('div');
   document.body.replaceChildren(root);

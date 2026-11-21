@@ -40,7 +40,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 it.each(
   [0.5, 1, 2].flatMap((zoom) =>
-    (['map', 'fleets', 'route', 'production'] as const).map((screen) => ({
+    (['map', 'fleets', 'production'] as const).map((screen) => ({
       screen,
       zoom,
     })),
@@ -174,11 +174,9 @@ it.each(
       expect(sketch.describe).toHaveBeenLastCalledWith(
         screen === 'fleets'
           ? 'Fleets map. Fleet positions and destinations are highlighted; planets and trade routes are background landmarks.'
-          : screen === 'route'
-            ? 'Route map. Select planets, create routes and assign transport fleets.'
-            : screen === 'production'
-              ? 'Production map. Select an owned planet to build and inspect its project supply chain.'
-              : 'Star map. Your homeworld and its surroundings are visible. Stars are visible in unexplored space.',
+          : screen === 'production'
+            ? 'Production map. Select an owned planet to build and inspect its project supply chain.'
+            : 'Star map. Your homeworld and its surroundings are visible. Stars are visible in unexplored space.',
       );
       const selection = runtime.events.indexOf('hex:#1b3e41');
       const route = runtime.events.indexOf(
@@ -197,11 +195,9 @@ it.each(
       ).toContain(
         screen === 'fleets'
           ? 'Fleets map.'
-          : screen === 'route'
-            ? 'Route map.'
-            : screen === 'production'
-              ? 'Production map.'
-              : 'Star map.',
+          : screen === 'production'
+            ? 'Production map.'
+            : 'Star map.',
       );
       expect(route).toBeGreaterThan(selection);
       expect(runtime.events.indexOf('circle:#b1e4d1')).toBeGreaterThan(route);

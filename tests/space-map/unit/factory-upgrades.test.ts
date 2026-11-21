@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   Game,
   BUILDINGS,
@@ -268,11 +268,10 @@ describe('uppgradera-obsoleta-fabriker', () => {
       expect(game.exportState()).toEqual(before);
     }
   });
-  it('queues through the controller, persists the order and exposes cancellation on the occupied site', () => {
-    const save = vi.fn();
+  it('planetsida-informerar: the planet page shows a queued upgrade as status only', () => {
     const model = new AppModel(undefined, {
       load: () => ({ lastPlayed: '2026-10-31T12:00:00Z', state: saved() }),
-      save,
+      save() {},
       clear() {},
     });
     model.startSlot(1);
@@ -280,22 +279,19 @@ describe('uppgradera-obsoleta-fabriker', () => {
     document.body.replaceChildren(root);
     const view = new AppView(root, () => ({ render() {}, dispose() {} }));
     const controller = new MasterController(model, view);
-    controller.start();
     model.openPlanet();
     model.selectPlanetTab('sites');
+    const site = model.snapshot.planet!.sites[0]!;
+    model.upgradeBuilding(site.building!.id);
     controller.start();
-    const find = (label: string) =>
-      Array.from(root.querySelectorAll('button')).find(
-        (b) => b.textContent === label,
-      )!;
-    expect(find('Upgrade to Telescope III factory')).toBeDefined();
-    find('Upgrade to Telescope III factory').click();
-    expect(save).toHaveBeenCalled();
+    const labels = Array.from(root.querySelectorAll('button')).map(
+      (b) => b.textContent,
+    );
     expect(root.querySelector('[data-site-index="0"]')!.textContent).toContain(
       'Upgrade queued: Telescope III factory',
     );
-    find('Cancel upgrade').click();
-    expect(find('Upgrade to Telescope III factory')).toBeDefined();
+    expect(labels).not.toContain('Cancel upgrade');
+    expect(labels).not.toContain('Upgrade to Telescope III factory');
     controller.dispose();
   });
 });

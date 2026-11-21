@@ -154,15 +154,6 @@ export function updateDecisionGuidance(
       if (decision.id.startsWith('building-empty-'))
         for (const choice of root.querySelectorAll('.radial-build-option'))
           highlight(choice);
-    } else if (model.screen === 'route') {
-      if (decision.routeId === model.mapTrade.routeId)
-        highlight(root.querySelector('.trade-route-details'));
-      if (decision.planetId === model.planet?.id)
-        highlight(root.querySelector('.route-supply-summary'));
-      for (const summary of root.querySelectorAll(
-        '.fleet-route-menu > summary',
-      ))
-        highlight(summary);
     }
   }
 }
