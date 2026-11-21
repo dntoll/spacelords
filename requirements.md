@@ -936,6 +936,9 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   Supply-lista, materialsökning och global materialdetaljvy är borttagna.
   `streckade-rutter-utan-transporter` är **Fullständigt implementerat** och
   gäller fortsatt, liksom fysisk frakt, automatiska delorder och sparade spel.
+  `beslutssektioner` och `stilla-beslutslista` är **Fullständigt
+  implementerade**: Decisions har underrubriker och flyttar eller rullar inte
+  när något trycks.
   `factories-sparas` är **Fullständigt implementerat**: order i Factories
   sparas.
   `lankar-bara-i-grupper` och `forsorjning-vantar-pa-bestalld-lank` är
