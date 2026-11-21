@@ -324,6 +324,9 @@ function groupSection(group: FactoryGroupSnapshot, emit: Emit): HTMLElement {
     header.append(connect);
   }
   section.append(header);
+  // bestallda-lankar-syns: ordered links stay visible after leaving Factories.
+  for (const link of group.orderedLinks)
+    section.append(element('p', 'factory-ordered-link', orderedLinkText(link)));
   // rekommendation-i-menyn: one tap leads to a site for the first one.
   const first = group.recommended[0];
   if (first) {
@@ -683,6 +686,11 @@ function connectScreen(
         .map((node) => ({ a: own.key, b: node.key, dashed: true }))
     : [];
   const proposals = element('section', 'factory-proposals');
+  // bestallda-lankar-syns: ordered links stay visible, so none is ordered twice.
+  for (const link of connect.orderedLinks)
+    proposals.append(
+      element('p', 'factory-ordered-link', orderedLinkText(link)),
+    );
   proposals.append(element('h2', '', 'Connect to'));
   if (connect.needsResearch)
     proposals.append(
@@ -690,7 +698,13 @@ function connectScreen(
     );
   if (connect.proposals.length === 0)
     proposals.append(
-      element('p', 'factory-muted', 'No other groups to connect.'),
+      element(
+        'p',
+        'factory-muted',
+        connect.orderedLinks.length
+          ? 'No other groups to connect beyond the ordered links.'
+          : 'No other groups to connect.',
+      ),
     );
   for (const proposal of connect.proposals) {
     const row = element('div', 'factory-option');
@@ -1042,4 +1056,15 @@ function escortHelpText(help: EscortHelp): string {
     case 'research':
       return `Research ${help.technologies.join(', then ')} to build armed ships for an escort.`;
   }
+}
+
+/** bestallda-lankar-syns: what an ordered link waits for. */
+function orderedLinkText(
+  link: FactoryGroupSnapshot['orderedLinks'][number],
+): string {
+  return `Link to ${link.to} ordered · ${
+    link.transportAt
+      ? `Transport ship being built at ${link.transportAt}`
+      : 'transport on its way'
+  }`;
 }

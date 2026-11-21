@@ -79,6 +79,14 @@ export interface FactoryGroupSnapshot {
   /** eskort-pa-routes: manned links in the group without armed escort. */
   readonly unescortedLinks: number;
   /**
+   * bestallda-lankar-syns: links ordered but not yet manned, with where the
+   * transport is built (null when one is already on its way).
+   */
+  readonly orderedLinks: readonly {
+    readonly to: string;
+    readonly transportAt: string | null;
+  }[];
+  /**
    * rekommendation-i-menyn: recommended factories with the first empty site
    * in the group where each can be built.
    */
@@ -212,6 +220,8 @@ export interface ConnectScreenSnapshot {
   readonly group: readonly string[];
   readonly nodes: readonly ConnectNodeSnapshot[];
   readonly proposals: readonly ConnectionProposalSnapshot[];
+  /** bestallda-lankar-syns: the group's ordered links, as on the overview. */
+  readonly orderedLinks: FactoryGroupSnapshot['orderedLinks'];
   readonly transports: readonly TransportOptionSnapshot[];
   readonly needsResearch: boolean;
 }

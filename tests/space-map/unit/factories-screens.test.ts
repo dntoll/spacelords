@@ -1318,3 +1318,30 @@ it('delfabrik-i-produktion: a part factory making parts shows In production and 
   const site = root.querySelector('.factory-site.producing');
   expect(site?.textContent).toContain('Making 1');
 });
+
+it('bestallda-lankar-syns: each group shows its ordered links after leaving Factories', () => {
+  const state = { ...tradeNetworkState(), pirates: [] };
+  state.fleets = state.fleets.filter((fleet) => fleet.id !== 'freighters');
+  state.colonies[0]![1].buildings.push({
+    id: 'yard',
+    type: 'Transport ship factory',
+    slotIndex: 2,
+    demolition: false,
+  });
+  const { send, act, group, root, factories } = setup(state);
+  send({ type: 'open-factories' });
+  act({ kind: 'open-connect', group: 'Tellus' });
+  act({ kind: 'connect', target: 'Vesta' });
+  send({ type: 'open-map' });
+  send({ type: 'open-factories' });
+  expect(factories().receipt).toBeNull();
+  expect(group('Tellus').orderedLinks).toEqual([
+    { to: 'Vesta', transportAt: 'Tellus' },
+  ]);
+  expect(group('Vesta').orderedLinks).toEqual([
+    { to: 'Tellus', transportAt: 'Tellus' },
+  ]);
+  expect(root.textContent).toContain('Link to Vesta ordered');
+  act({ kind: 'open-connect', group: 'Vesta' });
+  expect(root.textContent).toContain('Link to Tellus ordered');
+});

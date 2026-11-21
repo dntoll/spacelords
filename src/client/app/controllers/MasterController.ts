@@ -104,6 +104,7 @@ export class MasterController {
 
   dispose(): void {
     this.#disposed = true;
+    for (const resolve of this.#eventWaiters.splice(0)) resolve();
     clearTimeout(this.#receiptTimer);
     clearTimeout(this.#playbackTimer);
     this.#cancelPointer();
@@ -136,7 +137,13 @@ export class MasterController {
     }
   }
 
+  /** handelser-vid-ankomst: turn playback waits for arrival events to close. */
+  #eventWaiters: (() => void)[] = [];
+
   #render(snapshot = this.#model.snapshot): void {
+    if (!snapshot.eventPlayback && this.#eventWaiters.length)
+      for (const resolve of this.#eventWaiters.splice(0))
+        queueMicrotask(resolve);
     const previous =
       this.#presented?.battleFeedback ?? this.#presented?.tacticalBattle;
     const battle = snapshot.battleFeedback ?? snapshot.tacticalBattle;
@@ -1272,6 +1279,22 @@ export class MasterController {
             ) ?? Promise.resolve());
             if (this.#disposed) return;
             this.#turn.completeTurnMovement();
+            // handelser-vid-ankomst: what a ship found is shown as soon as it
+            // arrives, before other fleets move on and the camera leaves.
+            const arrived = batch
+              .filter((track) => track.length === index + 1)
+              .map((track) => track.at(-1)!.to);
+            if (arrived.length) {
+              this.#turn.beginEventPlayback(arrived);
+              if (this.#model.snapshot.eventPlayback) {
+                this.#render();
+                this.#schedulePlayback();
+                await new Promise<void>((resolve) =>
+                  this.#eventWaiters.push(resolve),
+                );
+                if (this.#disposed) return;
+              }
+            }
           }
         }
         this.#turn.endMovementPlayback(true);

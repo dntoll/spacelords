@@ -271,7 +271,8 @@ describe('sekventiella-arshandelser', () => {
     controller.start();
     emit({ type: 'confirm-end-turn' });
     await vi.advanceTimersByTimeAsync(0);
-    expect(model.snapshot.phase).toBe('interrupted');
+    // handelser-vid-ankomst: the discovery shows during movement playback.
+    expect(['interrupted', 'simulating']).toContain(model.snapshot.phase);
     expect(model.snapshot.eventPlayback?.stage).toBe('awaiting-choice');
     expect(saved.state.phase).toBe('interrupted');
     const discovery = saved.state.events.find((event) =>
@@ -280,7 +281,7 @@ describe('sekventiella-arshandelser', () => {
     expect(discovery.position).toBeDefined();
     for (
       let attempt = 0;
-      attempt < 100 && model.snapshot.phase === 'interrupted';
+      attempt < 100 && model.snapshot.phase !== 'planning';
       attempt++
     ) {
       if (model.snapshot.eventPlayback?.stage === 'awaiting-choice')

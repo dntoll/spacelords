@@ -551,7 +551,16 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     });
     controller.start();
     emit({ type: 'confirm-end-turn' });
-    await vi.advanceTimersByTimeAsync(0);
+    // handelser-vid-ankomst: arrival events pause movement until they close.
+    for (
+      let step = 0;
+      step < 40 && model.snapshot.phase !== 'planning';
+      step++
+    ) {
+      if (model.snapshot.eventPlayback?.stage === 'awaiting-choice')
+        emit({ type: 'ignore-discoveries' });
+      await vi.advanceTimersByTimeAsync(1000);
+    }
     expect(order.length).toBeGreaterThan(3);
     expect([...new Set(order)]).toHaveLength(2);
     let switches = 0;
@@ -583,4 +592,44 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     expect(model.snapshot.eventPlayback?.stage).toBe('announcing');
     controller.dispose();
   });
+});
+
+it('handelser-vid-ankomst: shows what a ship found as soon as it arrives, before other fleets move', async () => {
+  vi.useFakeTimers();
+  const model = new AppModel();
+  model.transferShips('fleet-home', 'Fighter', 1, null);
+  const other = model.snapshot.fleets[1]!;
+  model.setDestination('fleet-home', 0, 1);
+  model.setDestination(other.id, 3, 0);
+  let emit!: IntentHandler;
+  const moved: string[] = [];
+  let shownAfter: readonly string[] | null = null;
+  const controller = new MasterController(model, {
+    bind(handler) {
+      emit = handler;
+    },
+    render(snapshot) {
+      const current =
+        snapshot.eventPlayback?.events[snapshot.eventPlayback.index];
+      if (shownAfter === null && current?.text.includes('Vesta'))
+        shownAfter = [...moved];
+    },
+    animateTurnStep(frame: TurnFrame) {
+      moved.push(...frame.movements.map((movement) => movement.fleetId));
+      return Promise.resolve();
+    },
+    dispose() {},
+  });
+  controller.start();
+  emit({ type: 'confirm-end-turn' });
+  for (let step = 0; step < 40 && model.snapshot.phase !== 'planning'; step++) {
+    if (model.snapshot.eventPlayback?.stage === 'awaiting-choice')
+      emit({ type: 'ignore-discoveries' });
+    await vi.advanceTimersByTimeAsync(1000);
+  }
+  expect(shownAfter).not.toBeNull();
+  // Shown right after Home Fleet arrived, before the other fleet moved.
+  expect(shownAfter).toEqual(['fleet-home']);
+  expect(moved).toContain(other.id);
+  controller.dispose();
 });

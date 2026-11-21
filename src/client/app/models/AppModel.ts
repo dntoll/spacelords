@@ -417,6 +417,8 @@ export class AppModel {
         cells: this.#movementPlayback.cells,
         destinationFleetId: null,
         destinationOrder: 'move',
+        // handelser-vid-ankomst: arrival events show during movement.
+        eventPlayback: this.#eventPlayback?.snapshot ?? null,
       });
     }
     const decisions = this.#game.decisions;
