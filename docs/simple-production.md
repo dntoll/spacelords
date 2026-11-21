@@ -212,7 +212,9 @@ Vägledning och status:
   framforskad fabrik som ingen planet har eller bygger räknas som ny.
   `Factories` i huvudmenyn visar då en guldstjärna (★), och valet under
   `Build factory` får etiketten `★ New`. Stjärnan försvinner när fabriken är
-  köad eller byggd någonstans.
+  köad eller byggd någonstans. En föråldrad version, vars efterföljare är
+  framforskad, räknas aldrig som ny och erbjuds inte i byggvalet
+  (`senaste-teknik-i-byggval`), även när den sista har uppgraderats.
 - `uppgradera-delfabrik-i-factories`: en
   fabrik vars del har en bättre framforskad variant (Rocket engine factory →
   Ion pulse engine factory, Telescope I → II → III) visar

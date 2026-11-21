@@ -844,6 +844,20 @@ describe('ny-fabrik-med-guldstjarna', () => {
     act({ kind: 'build', type: 'Weapons module factory' });
     expect(model.snapshot.newFactories).not.toContain('Weapons module factory');
   });
+
+  it('an obsolete factory whose successor is researched is never new, even after its last one was upgraded', () => {
+    const state = { ...tradeNetworkState(), pirates: [] };
+    // The only Rocket engine factory has been upgraded to Ion pulse.
+    for (const building of state.colonies[0]![1].buildings)
+      if (building.type === 'Rocket engine factory')
+        building.type = 'Ion pulse engine factory';
+    const { send, model } = setup({
+      ...state,
+      researched: [...state.researched, 'Ion pulse engine factory'],
+    });
+    send({ type: 'open-map' });
+    expect(model.snapshot.newFactories).not.toContain('Rocket engine factory');
+  });
 });
 
 describe('byggkons-framsteg / byggko-eller-skeppsdetaljer', () => {

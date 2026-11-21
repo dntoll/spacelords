@@ -283,8 +283,9 @@ webbplatsrepot och använd inte force-push.
   `git merge origin/development` (eller utforskningsbranchen), lös konflikter
   och kör snabbkontrollerna igen.
 - I en molncontainer kan `test:tooling` misslyckas på kvarlämnade
-  zombieprocesser. Kör då kommandot i en egen processnamnrymd, exempelvis
-  `unshare -fp --mount-proc bash -c 'npm run work:merge'`, och stoppa först
+  zombieprocesser. Kör då kommandot i en egen processnamnrymd, där `bash`
+  måste stanna som process 1 för att städa upp, exempelvis
+  `unshare -fp --mount-proc bash -c 'npm run work:merge; e=$?; exit $e'`, och stoppa först
   en kvarlämnad förhandsserver (`preview-pages.mjs`).
 - Vid avbrott efter push: läs rapporten i `dist/deployments/` och följ
   Pages-körningen innan ett nytt försök.
