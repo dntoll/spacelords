@@ -122,3 +122,9 @@ visas vid ruttens ändpunkt.
   flottor. `stjarnsystem-och-asteroidbalten` är **Delvis implementerat**:
   stjärnsystem med fasta planeter och gasplaneter finns; asteroidbälten
   återstår.
+
+- **Rutter och flottor på kartan:** `handelsrutt-val-pa-stjarnkartan` och
+  `flottilldelning-pa-stjarnkartan` är **Fullständigt implementerat**. En
+  rutt väljs genom att trycka på linjen, med träffyta i skärmpixlar oberoende
+  av zoom. En flotta som släpps på en rutt tilldelas den utan att få en
+  flyttorder; vid flera möjliga rutter väljer spelaren uttryckligen.

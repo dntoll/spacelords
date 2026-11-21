@@ -65,3 +65,8 @@ Arbetsreglerna står i [AGENTS.md](../../AGENTS.md) och de tekniska kraven i
 
 - **Utvecklingsstöd:** `manuell-rundstyrning` är **Ej implementerat**:
   under utveckling ska spelåren kunna styras manuellt.
+
+- **Karta och kartfiler:** `p5-karta` är **Fullständigt implementerat**:
+  p5.js i instance mode ritar 2D-kartan, och modeller och controllers beror
+  inte på p5. Testet `boarding-shipped-maps` kräver bara att de levererade
+  bordningskartorna är giltiga; övriga bordningstester använder fixturer.
