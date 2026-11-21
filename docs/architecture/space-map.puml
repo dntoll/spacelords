@@ -17,7 +17,7 @@ package "Publik yta (index.js)" as public_surface #FFFFEE {
   rectangle "<b>views/index.js</b>\nDecisionGuidanceView\nDiscoveryView\nEmpireView\nEventContent\nEventsView\nFactoriesView\nFleetCategoryColors\nFleetMapPanel\nGalaxyMapView\nGameText\nMapGesture\nMapLocationHeading\nMapSelectionScroll\nOrdersView\nPlanetImages\nPlanetView\nProductionMapView\nResearchDetailsView\nResearchTreeView\nResearchView\nSalvageView\nSaveMapPreview\nSaveSlotsView\nShipImages\nShipView\nStarMapTradeView\nTurnActionsView" as public__views
 }
 package "(delat)" as space_map___delat_ {
-  rectangle "<b>models</b>\nCamera\nCivilianTraffic\nDecisions\nDetection\nEconomy\nFactoryTechnology\nFleetCombat\nFleetPatrol\nFleetPursuit\nGalaxy\nGalaxyTerrain\nGame\nHexNavigation\nLogistics\nPirateFleet\nPlanet\nPlanetEnvironment\nPlanetQueues\nProductionMap\nProductionPresence\nProductionPriorities\nSalvage\nShipEquipment\nShipOrders\nShipUpgrades\nSpiralGalaxyLayout\nTurnSimulation\nexampleGalaxy" as space_map___delat___models
+  rectangle "<b>models</b>\nCamera\nCatalog\nCivilianTraffic\nDecisions\nDetection\nEconomy\nFactoryTechnology\nFleetCombat\nFleetPatrol\nFleetPursuit\nGalaxy\nGalaxyTerrain\nGame\nGameSnapshots\nHexNavigation\nLogistics\nPirateFleet\nPlanet\nPlanetEnvironment\nPlanetQueues\nProductionMap\nProductionPresence\nProductionPriorities\nSalvage\nShipEquipment\nShipOrders\nShipUpgrades\nSpiralGalaxyLayout\nTurnSimulation\nexampleGalaxy" as space_map___delat___models
   rectangle "<b>views</b>\nBuildingImage\nBuildingSymbols\nCatalogControls\nFleetCard\nFleetCategoryColors\nMapArtwork\nMapLocationHeading\nPlanetGlyph\nPlanetImages\nQueueView\nSalvageView\nShipImages\nShipPurposeText\nShipView\nStarGlyph\nStarMapTradeView\nTabPanels\nTerrainMapView\nTradeFleetView\nTradeRouteDetailsView" as space_map___delat___views
   rectangle "<b>storage</b>\nBrowserSaveRepository" as space_map___delat___storage
 }
@@ -101,10 +101,10 @@ space_map__turn__views ..> space_map__turn__models : typer
 space_map___delat_ --> space_map__fleets : 6
 space_map___delat_ ..> space_map__production : 1, typer
 space_map___delat_ --> space_map__production_network : 2
-space_map___delat_ --> space_map__research : 2
+space_map___delat_ --> space_map__research : 4
 space_map___delat_ ..> space_map__saves : 1, typer
 space_map___delat_ --> space_map__star_map : 4
-space_map___delat_ ..> space_map__turn : 1, typer
+space_map___delat_ ..> space_map__turn : 2, typer
 space_map__decisions --> space_map___delat_ : 5
 space_map__factories --> space_map___delat_ : 11
 space_map__factories --> space_map__production_network : 1
