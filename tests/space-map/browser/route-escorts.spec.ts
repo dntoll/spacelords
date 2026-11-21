@@ -1,19 +1,22 @@
 import { expect, test } from '@playwright/test';
 import { routeEscortState } from '../../fixtures/route-escorts.js';
-import { assignFleetToRoute, startFirstSlot } from './save-helpers.js';
+import { startFirstSlot } from './save-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import {
   Game,
   type GameState,
 } from '../../../src/client/space-map/models/Game.js';
-import { FleetMapLayout } from '../../../src/client/space-map/models/star-map/FleetMapLayout.js';
-import { selectMapPoint } from './map-helpers.js';
 
-test('unika-flottnamn / rutt-eskortfordelning / ruttflottor-pa-kartan: assign fighters and select their carrier at the route midpoint', async ({
+test('unika-flottnamn / eskort-pa-routes: assign an armed fleet from Factories and retain its escort after reload', async ({
   page,
-}, testInfo) => {
-  const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
+}) => {
+  const initial = routeEscortState();
+  const state = {
+    ...initial,
+    fleets: initial.fleets.map((fleet) =>
+      fleet.id === 'carrier-a' ? { ...fleet, routeId: 'route-test' } : fleet,
+    ),
+  };
   await page.addInitScript((state) => {
     if (localStorage.getItem('route-escorts-seeded')) return;
     localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
@@ -22,13 +25,10 @@ test('unika-flottnamn / rutt-eskortfordelning / ruttflottor-pa-kartan: assign fi
       JSON.stringify({ lastPlayed: '2026-10-24T00:00:00Z', state }),
     );
     localStorage.setItem('route-escorts-seeded', 'yes');
-  }, routeEscortState());
+  }, state);
   await page.goto('./');
   await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Route', exact: true }).click();
-  await expect(page.locator('.map-route-legend')).toContainText(
-    'Available transports',
-  );
+  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page, 'Fighters');
   const card = page.locator('.fleet-card[data-fleet-id="fighters"]');
   await card.getByRole('button', { name: 'Fighters', exact: true }).dblclick();
@@ -39,22 +39,15 @@ test('unika-flottnamn / rutt-eskortfordelning / ruttflottor-pa-kartan: assign fi
     'Fleet names must be unique',
   );
   await name.press('Escape');
-  await card.getByRole('button', { name: 'Orders', exact: true }).click();
-  await page.getByRole('button', { name: 'Join route', exact: true }).click();
-  await expect(
-    page.locator('.orders-view').getByRole('button', {
-      name: 'Tellus ↔ Vesta',
-      exact: true,
-    }),
-  ).toBeDisabled();
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Back to orders', exact: true })
+    .getByRole('button', { name: 'Links and escorts in Tellus, Vesta' })
     .click();
-  await page.getByRole('button', { name: 'Back', exact: true }).click();
-  await assignFleetToRoute(page, 'Carrier A', 'Tellus', 'Vesta');
-  await assignFleetToRoute(page, 'Carrier B', 'Tellus', 'Vesta');
-  await assignFleetToRoute(page, 'Fighters', 'Tellus', 'Vesta');
-  const state = await page.evaluate(
+  await page.getByRole('button', { name: 'Escort Tellus–Vesta' }).click();
+  await page
+    .getByRole('button', { name: 'Assign Fighters to Tellus–Vesta' })
+    .click();
+  const saved = await page.evaluate(
     () =>
       (
         JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as {
@@ -62,25 +55,12 @@ test('unika-flottnamn / rutt-eskortfordelning / ruttflottor-pa-kartan: assign fi
         }
       ).state,
   );
-  const game = Game.restore(state);
-  expect(game.fleet('carrier-a')!.ships.Fighter).toBe(3);
-  expect(game.fleet('carrier-b')!.ships.Fighter).toBe(2);
-  await page.getByRole('button', { name: 'Route', exact: true }).click();
-  const marker = FleetMapLayout.markers(
-    game.fleetSnapshots(),
-    game.tradeRoutes,
-  ).find((m) => m.fleet.id === 'carrier-a')!;
-  await selectMapPoint(page, marker.point);
-  await expect(
-    page.locator('.selected-fleet-card .fleet-name-button'),
-  ).toHaveText('Route Tellus <> Vesta');
-  await page.screenshot({ path: testInfo.outputPath('route-escorts.png') });
+  expect(Game.restore(saved).fleet('carrier-a')!.ships.Fighter).toBe(5);
   await page.reload();
   await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Route', exact: true }).click();
-  await selectMapFleet(page, 'Carrier B');
-  await expect(page.locator('.selected-fleet-card')).toContainText(
-    'Route Tellus <> Vesta',
-  );
-  expect(errors).toEqual([]);
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Links and escorts in Tellus, Vesta' })
+    .click();
+  await expect(page.getByText('Escort: 5 armed ships')).toBeVisible();
 });

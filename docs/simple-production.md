@@ -549,6 +549,9 @@ testets flotta har tre skepp och omfattas inte av den gränsen.
 Eskorttestet använder nu `eskort-pa-routes` i Factories. Den tidigare
 kontrollen av ett stillaliggande fraktskepp vid ruttens mittpunkt utgår,
 eftersom `fraktskepp-pendlar` ersätter `fraktskepp-ligger-stilla`.
+Route-kartans variant av dragtestet och dess `Create route`-pekning tas
+inte längre upp: `Factories` ersätter Route i huvudmenyn och länkskapande
+testas i stället genom Connect. Motsvarande kontroller på Star map behålls.
 
 ## Klickbar prototyp
 
