@@ -80,22 +80,13 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
   await page
     .getByRole('button', { name: 'Building sites', exact: true })
     .click();
-  await page
-    .getByRole('button', { name: 'Build building at site 1', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Show Research station', exact: true })
-    .click();
   await expect(
-    page.getByRole('button', { name: 'Build Research station' }),
-  ).toBeEnabled();
+    page.getByText('Build, upgrade and cancel construction in Factories.'),
+  ).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('planet.png'),
     fullPage: true,
   });
-  await page
-    .getByRole('button', { name: 'Back to Building sites', exact: true })
-    .click();
   await page
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('button', { name: 'Star map', exact: true })
@@ -419,13 +410,7 @@ test('byggtid-per-byggnad / skeppsorder-pa-planeten / forska-fram-fabriker / kol
     .click();
   await expect(page.locator('.building-site')).toHaveCount(6);
   await expect(
-    page.getByRole('button', { name: 'Build building at site 1', exact: true }),
-  ).toBeDisabled();
-  await expect(
-    page.getByRole('button', { name: 'Build dome at site 1', exact: true }),
-  ).toBeDisabled();
-  await expect(page.locator('.blocked-reason')).toContainText(
-    'Research this building first.',
-  );
+    page.getByText('Build, upgrade and cancel construction in Factories.'),
+  ).toBeVisible();
   await expect(page.locator('.locked-site')).toHaveCount(5);
 });
