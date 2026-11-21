@@ -543,6 +543,12 @@ Route-knappen i huvudmenyn. Testerna för `automatiska-delorder` och
 `projektens-forsorjningssteg` visar inte längre separata delorder eller den
 gamla försörjningskedjan: delar tillverkas efter behov och kön visar i stället
 saknade delar enligt `byggkons-framsteg`. Planetkön testas med skeppsorder.
+Teleskoptestet kontrollerar fortfarande tillverkning och utrustning efter
+omladdning, men inte gränsen på 140 px för standardflottor med fyra skepp:
+testets flotta har tre skepp och omfattas inte av den gränsen.
+Eskorttestet använder nu `eskort-pa-routes` i Factories. Den tidigare
+kontrollen av ett stillaliggande fraktskepp vid ruttens mittpunkt utgår,
+eftersom `fraktskepp-pendlar` ersätter `fraktskepp-ligger-stilla`.
 
 ## Klickbar prototyp
 

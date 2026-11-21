@@ -8,7 +8,7 @@ import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { chooseResearch, endTurn, startFirstSlot } from './save-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 
-test('civil-skyttelforskning / civil-skytteltillverkning / civiltrafik-sparning: research, build and keep a shuttle on Civilian transport', async ({
+test('civil-skyttelforskning / civil-skytteltillverkning / befolkningsutjamning-i-grupp / forskningstid: research, build and keep a shuttle on Civilian transport', async ({
   page,
 }) => {
   scenarioTimeout(90_000);
@@ -65,7 +65,7 @@ test('civil-skyttelforskning / civil-skytteltillverkning / civiltrafik-sparning:
   await page.goto('./');
   await startFirstSlot(page);
   await chooseResearch(page, 'Civilian transport');
-  await endTurn(page);
+  for (let round = 0; round < 3; round++) await endTurn(page);
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page

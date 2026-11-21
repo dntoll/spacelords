@@ -7,6 +7,7 @@ import {
 } from '../../fixtures/battle-checkpoint.js';
 import { fireAtBattleHex, showBattleHex } from './battle-helpers.js';
 import { startFirstSlot } from './save-helpers.js';
+import { collectTurnFrames } from '../../fixtures/turn-steps.js';
 
 async function seed(page: Page, game: Game) {
   const errors: string[] = [];
@@ -30,6 +31,10 @@ test('bilder-i-events / flottor-fore-planetdetaljer: pictures survive mobile rot
   await page.clock.install({ time: new Date('2026-11-01T00:00:00Z') });
   const game = new Game(createExampleGalaxy());
   game.scheduleBuild(game.galaxy.homePlanet, 'Research station');
+  for (let round = 0; round < 2; round++) {
+    collectTurnFrames(game);
+    game.finishTurn();
+  }
   const errors = await seed(page, game);
   await expect(page.locator('canvas[data-rendered="true"]')).toBeVisible();
   const fleets = page.locator('.map-fleet-management');

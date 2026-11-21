@@ -3,7 +3,7 @@ import { Game } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import { startFirstSlot, endTurn } from './save-helpers.js';
 
-test('senaste-teknik-i-byggval / uppgradera-obsoleta-fabriker: upgrade an occupied site, reload and finish in place', async ({
+test('senaste-teknik-i-byggval / uppgradera-delfabrik-i-factories / byggtid-per-byggnad: upgrade an occupied site, reload and finish in place', async ({
   page,
 }, testInfo) => {
   const initial = new Game(createExampleGalaxy()).exportState();
@@ -39,79 +39,55 @@ test('senaste-teknik-i-byggval / uppgradera-obsoleta-fabriker: upgrade an occupi
   }, state);
   await page.goto('./');
   await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  const site = page.getByRole('article', {
-    name: 'Building site 1',
-    exact: true,
-  });
-  await expect(
-    site.getByRole('button', {
-      name: 'Upgrade to Telescope III factory',
-      exact: true,
-    }),
-  ).toBeEnabled();
-  await site
-    .getByRole('button', {
-      name: 'Upgrade to Telescope III factory',
-      exact: true,
-    })
-    .scrollIntoViewIfNeeded();
-  await page.screenshot({
-    path: testInfo.outputPath('factory-upgrade-mobile.png'),
-  });
-  // The build catalog must hide predecessors even though the existing factory still operates.
-  await page
-    .getByRole('article', { name: 'Building site 2', exact: true })
-    .getByRole('button', { name: 'Build building at site 2', exact: true })
+    .getByRole('button', { name: 'Empty site 2 on Tellus', exact: true })
     .click();
   await expect(
-    page.getByRole('button', {
-      name: 'Show Telescope III factory',
-      exact: true,
-    }),
-  ).toBeVisible();
+    page.locator('.factory-option-title', { hasText: 'Telescope III factory' }),
+  ).toHaveCount(1);
   await expect(
-    page.getByRole('button', { name: 'Show Telescope I factory', exact: true }),
+    page.locator('.factory-option-title', { hasText: /^Telescope I factory$/ }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole('button', {
-      name: 'Show Telescope II factory',
-      exact: true,
+    page.locator('.factory-option-title', {
+      hasText: /^Telescope II factory$/,
     }),
   ).toHaveCount(0);
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  const site = page.getByRole('button', {
+    name: /^Telescope I factory on Tellus/,
+  });
+  await expect(site).toContainText('Upgrade to');
+  await site.click();
   await page
-    .getByRole('button', { name: 'Back to Building sites', exact: true })
-    .click();
-  await site
     .getByRole('button', {
       name: 'Upgrade to Telescope III factory',
       exact: true,
     })
     .click();
-  await expect(site).toContainText('Upgrade queued: Telescope III factory');
-  await expect(
-    site.getByRole('button', { name: 'Demolish', exact: true }),
-  ).toBeDisabled();
   await page.reload();
   await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Building sites', exact: true })
+    .getByRole('button', { name: /^Telescope I factory on Tellus/ })
     .click();
-  await expect(site).toContainText('Upgrade queued: Telescope III factory');
-  await site
+  await expect(
+    page.getByRole('button', { name: 'Cancel upgrade', exact: true }),
+  ).toBeVisible();
+  await page
     .getByRole('button', { name: 'Cancel upgrade', exact: true })
     .click();
-  await site
+  await page
+    .getByRole('button', { name: /^Telescope I factory on Tellus/ })
+    .click();
+  await page
     .getByRole('button', {
       name: 'Upgrade to Telescope III factory',
       exact: true,
     })
     .click();
-  await endTurn(page);
+  for (let round = 0; round < 3; round++) await endTurn(page);
   const completed = await page.evaluate(
     () =>
       (
@@ -143,21 +119,12 @@ test('senaste-teknik-i-byggval / uppgradera-obsoleta-fabriker: upgrade an occupi
     Water: 88,
     Oil: 94,
   });
-  await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page
-    .getByRole('navigation', { name: 'Planet pages' })
-    .getByRole('button', { name: 'Production', exact: true })
-    .click();
-  await page.getByRole('button', { name: 'Components', exact: true }).click();
+  await page.getByRole('button', { name: 'Factories', exact: true }).click();
   await expect(
-    page.getByRole('button', { name: 'Show Telescope III', exact: true }),
+    page.getByRole('button', { name: /^Telescope III factory on Tellus/ }),
   ).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: 'Show Telescope I', exact: true }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole('button', { name: 'Show Telescope II', exact: true }),
-  ).toHaveCount(0);
+  await page.screenshot({
+    path: testInfo.outputPath('factory-upgrade-mobile.png'),
+  });
   expect(errors).toEqual([]);
 });
