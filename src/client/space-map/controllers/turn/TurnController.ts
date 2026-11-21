@@ -30,8 +30,10 @@ export class TurnController {
     return this.facade.finishTurn();
   }
 
-  beginEventPlayback(): void {
-    return this.facade.beginEventPlayback();
+  beginEventPlayback(
+    at?: readonly { readonly q: number; readonly r: number }[],
+  ): void {
+    return this.facade.beginEventPlayback(at);
   }
 
   chooseEvent(choice: 'handle' | 'ignore'): void {

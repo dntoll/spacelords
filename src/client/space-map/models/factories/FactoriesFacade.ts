@@ -969,6 +969,7 @@ export class FactoriesFacade {
       canConnect: this.#transports(context, group).length > 0,
       unescortedLinks: this.#unescorted(context, group),
       recommended: this.#recommended(context, group),
+      orderedLinks: this.#orderedLinks(context, group),
       emptySites: planets.reduce(
         (sum, planet) =>
           sum + planet.sites.filter((site) => site.kind === 'empty').length,
@@ -1094,6 +1095,41 @@ export class FactoriesFacade {
       project: queued && !built ? (queued.type as BuildType) : null,
       upgrade: built ? this.#upgradeScreen(gamePlanet, planet, index) : null,
     });
+  }
+
+  /** bestallda-lankar-syns: links whose transport is ordered or on its way. */
+  #orderedLinks(
+    context: Context,
+    group: readonly string[],
+  ): FactoryGroupSnapshot['orderedLinks'] {
+    const active = new Set(context.links.map((link) => link.id));
+    return Object.freeze(
+      this.host.game.tradeRoutes.flatMap((route) => {
+        if (route.closing || active.has(route.id)) return [];
+        const inside = group.includes(route.a)
+          ? route.a
+          : group.includes(route.b)
+            ? route.b
+            : null;
+        if (!inside) return [];
+        const other = inside === route.a ? route.b : route.a;
+        const building = context.planets.find((planet) =>
+          planet.projects.some(
+            (project) =>
+              project.type === 'Transport ship' &&
+              project.initialOrder?.kind === 'join-route' &&
+              project.initialOrder.routeId === route.id,
+          ),
+        );
+        if (!building && !route.fleetIds.length) return [];
+        return [
+          Object.freeze({
+            to: this.#gamePlanet(other).name,
+            transportAt: building?.name ?? null,
+          }),
+        ];
+      }),
+    );
   }
 
   /** rekommendation-i-menyn: true when some group has a factory to build. */
@@ -1447,6 +1483,7 @@ export class FactoriesFacade {
     const proposals = this.#proposals(context, group);
     return Object.freeze({
       group: this.#names(context, group),
+      orderedLinks: this.#orderedLinks(context, group),
       nodes: Object.freeze(
         context.network.groups.map((members) => {
           const points = members.map((id) =>

@@ -190,6 +190,15 @@ Krav inom utforskningen, alla **Fullständigt implementerade**.
 - `forsorjning-vantar-pa-bestalld-lank` (**Fullständigt implementerat**):
   när en länk till gruppen är beställd (ett fraktskepp är på väg eller byggs
   för den) visas inte problemet att gruppen saknar råvaror eller delar.
+- `bestallda-lankar-syns` (**Fullständigt implementerat**): en länk vars
+  fraktskepp är beställt eller på väg visas i båda gruppernas översikt och på
+  Connect, exempelvis `Link to Vesta ordered · Transport ship being built at
+Tellus`, även efter att spelaren lämnat Factories.
+- `handelser-vid-ankomst` (**Fullständigt implementerat**): när ett skepp
+  kommer fram visas det som hände där, exempelvis `Planet explored`, direkt
+  efter det steget och innan andra flottor rör sig vidare eller kameran
+  flyttar. Det gäller även upptäckter som avbryter året. Övriga händelser
+  visas som förut när förflyttningarna är klara.
 - `delfabrik-i-produktion` (**Fullständigt implementerat**, fel rättat
   2026-11-21): en delfabrik som tillverkar delar visas som `In production`
   med `Making n`, där n är de delar gruppen fortfarande väntar på. Tidigare

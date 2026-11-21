@@ -53,7 +53,24 @@ export class TurnFacade {
     this.host.game.finishTurn();
   }
 
-  beginEventPlayback(): void {
+  /**
+   * handelser-vid-ankomst: with `at`, only events at those positions play,
+   * right after the ships arrive there, while movement playback goes on.
+   */
+  beginEventPlayback(
+    at?: readonly { readonly q: number; readonly r: number }[],
+  ): void {
+    // An exploration interrupts the year; its event still shows on arrival.
+    if (at && !['planning', 'interrupted'].includes(this.host.game.phase))
+      return;
+    const here = at
+      ? (event: PlaybackEvent) =>
+          !!event.position &&
+          at.some(
+            (point) =>
+              point.q === event.position!.q && point.r === event.position!.r,
+          )
+      : () => true;
     if (
       this.host.game.tacticalBattle ||
       this.host.battleFeedback ||
@@ -87,11 +104,13 @@ export class TurnFacade {
         })
         .filter(
           (event) => this.host.game.phase !== 'interrupted' || event.decision,
-        ),
+        )
+        .filter(here),
       events.filter((event) => this.host.presentedEventIds.has(event.id)),
     );
     if (!playback.current) {
-      if (this.host.game.phase === 'planning') this.host.finishEventPlayback();
+      if (this.host.game.phase === 'planning' && !this.host.movementPlayback)
+        this.host.finishEventPlayback();
       return;
     }
     this.host.eventPlayback = playback;
@@ -132,7 +151,8 @@ export class TurnFacade {
       this.host.game.presentEvent(playback.current.id);
       if (playback.snapshot.choice === 'handle') {
         this.host.eventPlayback = null;
-        this.host.eventCamera = null;
+        // handelser-vid-ankomst: movement still plays on the event camera.
+        if (!this.host.movementPlayback) this.host.eventCamera = null;
         this.host.cameraFraming = null;
         this.host.playbackPositions = [];
         this.host.focusInterruptedFleet();
@@ -140,7 +160,8 @@ export class TurnFacade {
       }
     }
     if (!playback.advance()) {
-      if (this.host.game.phase === 'planning') this.host.finishEventPlayback();
+      if (this.host.game.phase === 'planning' && !this.host.movementPlayback)
+        this.host.finishEventPlayback();
       else {
         this.host.eventPlayback = null;
         this.host.cameraFraming = null;

@@ -5587,3 +5587,13 @@ body:has(.discovery-controls) .selection-panel {
 .research-node-name.roomy {
   font-size: 0.86rem;
 }
+
+/* bestallda-lankar-syns: an ordered link, waiting for its transport. */
+.factory-ordered-link {
+  margin: 6px 0 0;
+  padding: 6px 8px;
+  border: 1px dashed var(--factory-time);
+  border-radius: 6px;
+  color: var(--factory-time);
+  font-size: 0.8rem;
+}
