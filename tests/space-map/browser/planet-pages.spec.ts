@@ -28,13 +28,12 @@ function seededGame() {
     demolition: false,
   }));
   const game = Game.restore(state);
-  for (let i = 0; i < 24; i++)
-    game.scheduleComponent(game.galaxy.homePlanet, 'Rocket engine');
-  game.scheduleShip(game.galaxy.homePlanet, 'Fighter');
+  for (let i = 0; i < 25; i++)
+    game.scheduleShip(game.galaxy.homePlanet, 'Fighter');
   return game.exportState();
 }
 
-test('planetundersidor / planetgemensamt-produktval / kompakt-produktionsko / projektens-forsorjningssteg: long queue and product orders stay usable', async ({
+test('planetundersidor / planetgemensamt-produktval / byggorsak-i-kon: long ship queue and product orders stay usable', async ({
   page,
 }, testInfo) => {
   const errors: string[] = [];
@@ -69,72 +68,26 @@ test('planetundersidor / planetgemensamt-produktval / kompakt-produktionsko / pr
     page.getByRole('list', { name: 'Product list' }).getByRole('button'),
   ).toHaveText(['Fighter']);
   await expect(page.locator('.compact-queue-item').first()).toContainText(
-    /^Rocket engine/,
+    /^Fighter/,
   );
-  await expect(page.locator('.compact-queue-item')).toHaveCount(26);
-  // byggorsak-i-kon: the queue shows its rows without reordering handles.
+  await expect(page.locator('.compact-queue-item')).toHaveCount(25);
   await expect(
     page.locator('.compact-queue-list .queue-drag-handle'),
   ).toHaveCount(0);
-  const scroller = page.locator('.planet-content');
-  await scroller.evaluate((node) => (node.scrollTop = 0));
+  await page.getByRole('button', { name: 'Show Fighter', exact: true }).click();
   await page
-    .getByRole('group', { name: 'Production categories' })
-    .getByRole('button', { name: 'Components', exact: true })
+    .getByRole('button', { name: 'Queue Fighter', exact: true })
     .click();
-  await page
-    .getByRole('button', { name: 'Show Rocket engine', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Queue Rocket engine', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Show Rocket engine', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Queue Rocket engine', exact: true })
-    .click();
-  await expect(
-    page.getByRole('button', { name: 'Show Rocket engine', exact: true }),
-  ).toHaveAttribute('aria-pressed', 'true');
-  const lastGroup = page.locator('.compact-queue-item').last();
-  await expect(lastGroup).toContainText(/^Rocket engine/);
-  await lastGroup.click();
+  await expect(page.locator('.compact-queue-item')).toHaveCount(26);
+  await page.locator('.compact-queue-item').last().click();
   await expect(page.locator('[aria-current="page"]')).toHaveText('Build queue');
   const rows = page.locator('.queue-order');
-  await expect(rows).toHaveCount(28);
-  await expect(rows.nth(27)).toBeFocused();
-  const fighter = rows.filter({
-    has: page.locator('.queue-details > p', { hasText: 'Fighter' }),
-  });
-  await fighter.locator('.project-supply > summary').click();
-  await expect(fighter.locator('.project-supply')).toContainText(
-    'Produce 1 Rocket engine at Tellus',
-  );
-  await expect(fighter.locator('.project-supply')).toContainText(
-    'Produce 1 Weapons module at Tellus',
-  );
-  await expect(fighter.locator('.project-supply')).toContainText('Require');
-  await fighter.scrollIntoViewIfNeeded();
-  await page.screenshot({
-    path: testInfo.outputPath('planet-project-supply.png'),
-  });
-  await fighter
-    .getByRole('button', { name: 'View production', exact: true })
-    .first()
-    .click();
-  await expect(rows.first()).toBeFocused();
-  await expect(rows.first().locator('.project-supply')).toHaveAttribute(
-    'open',
-    '',
-  );
+  await expect(rows).toHaveCount(26);
+  await expect(rows.last()).toBeFocused();
   await page
     .getByRole('navigation', { name: 'Planet pages' })
     .getByRole('button', { name: 'Production', exact: true })
     .click();
-  await expect(
-    page.getByRole('button', { name: 'Show Rocket engine', exact: true }),
-  ).toHaveAttribute('aria-pressed', 'true');
   await page.screenshot({ path: testInfo.outputPath('planet-production.png') });
   expect(
     await page.evaluate(() => ({
@@ -146,12 +99,12 @@ test('planetundersidor / planetgemensamt-produktval / kompakt-produktionsko / pr
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page.getByRole('button', { name: 'Build queue', exact: true }).click();
-  await expect(rows).toHaveCount(28);
+  await expect(rows).toHaveCount(26);
   await rows
     .last()
     .getByRole('button', { name: /^Cancel:/ })
     .click();
-  await expect(rows).toHaveCount(27);
+  await expect(rows).toHaveCount(25);
   expect(errors).toEqual([]);
 });
 

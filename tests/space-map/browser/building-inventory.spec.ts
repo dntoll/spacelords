@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { startFirstSlot, endTurn } from './save-helpers.js';
 
-test('byggnadsantal-lokalt-och-globalt: Build selection counts completed buildings and excludes queued projects', async ({
+test('byggnadsantal-lokalt-och-globalt / byggtid-per-byggnad: Build selection counts completed buildings and excludes queued projects', async ({
   page,
 }, testInfo) => {
   await page.goto('./');
@@ -52,7 +52,7 @@ test('byggnadsantal-lokalt-och-globalt: Build selection counts completed buildin
     .click();
   await expect(inventory.locator('dd')).toHaveText(['0', '0']);
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await endTurn(page);
+  for (let round = 0; round < 3; round++) await endTurn(page);
   await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page
     .getByRole('button', { name: 'Building sites', exact: true })

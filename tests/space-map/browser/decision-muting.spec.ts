@@ -59,7 +59,7 @@ test('direkt-atgard-fran-rundvarning: reviews open Research, Production and Flee
   }
 });
 
-test('tysta-beslut / beslutsmarkering-pa-flikar / tystade-beslut-sist: Mute persists across turns and reload, Unmute restores warnings', async ({
+test('tysta-beslut / beslutsmarkering-pa-flikar / stilla-beslutslista: Mute persists across turns and reload, Unmute restores warnings', async ({
   page,
 }, testInfo) => {
   await page.addInitScript(
@@ -72,7 +72,16 @@ test('tysta-beslut / beslutsmarkering-pa-flikar / tystade-beslut-sist: Mute pers
       );
       localStorage.setItem('decision-station-seeded', 'yes');
     },
-    researchStationState({ shipFactory: true }),
+    (() => {
+      const state = researchStationState({ shipFactory: true });
+      state.colonies[0]![1].buildings.push({
+        id: 'test-mine',
+        type: 'Iron mine',
+        slotIndex: 2,
+        demolition: false,
+      });
+      return state;
+    })(),
   );
   await page.goto('./');
   await startFirstSlot(page);
@@ -89,6 +98,11 @@ test('tysta-beslut / beslutsmarkering-pa-flikar / tystade-beslut-sist: Mute pers
   await expect(
     page.locator('[data-screen="route"] .nav-attention'),
   ).toHaveCount(0);
+  const decisionOrder = await page
+    .locator('[data-decision-id]')
+    .evaluateAll((nodes) =>
+      nodes.map((node) => node.getAttribute('data-decision-id')),
+    );
   for (const id of [
     'research-empty',
     'building-empty-sol-0',
@@ -98,14 +112,13 @@ test('tysta-beslut / beslutsmarkering-pa-flikar / tystade-beslut-sist: Mute pers
       .locator(`[data-decision-id="${id}"]`)
       .getByRole('button', { name: 'Mute', exact: true })
       .click();
-    // tystade-beslut-sist: message settings stay after the muted decisions.
-    await expect(
-      page
-        .locator(
-          '[data-decision-id]:not([data-decision-id="message-population"]):not([data-decision-id="message-habitability"])',
-        )
-        .last(),
-    ).toHaveAttribute('data-decision-id', id);
+    expect(
+      await page
+        .locator('[data-decision-id]')
+        .evaluateAll((nodes) =>
+          nodes.map((node) => node.getAttribute('data-decision-id')),
+        ),
+    ).toEqual(decisionOrder);
   }
   await expect(
     page.locator('[data-screen="fleets"] .nav-attention'),
@@ -131,10 +144,7 @@ test('tysta-beslut / beslutsmarkering-pa-flikar / tystade-beslut-sist: Mute pers
   await expect(
     page.locator('[data-screen="fleets"] .nav-attention'),
   ).toHaveCount(1);
-  await expect(page.locator('[data-decision-id]').first()).toHaveAttribute(
-    'data-decision-id',
-    'fleet-idle-fleet-home',
-  );
+  await expect(fleet).toContainText('choose an assignment');
   await page.screenshot({ path: testInfo.outputPath('decision-muting.png') });
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await page.getByRole('button', { name: 'Decisions', exact: true }).click();

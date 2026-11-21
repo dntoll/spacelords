@@ -539,7 +539,10 @@ omordning av skeppskön. Route har ersatts i huvudmenyn av Factories,
 `byggorsak-i-kon` ersätter omordningen. Testet kontrollerar i stället
 skeppsbeställningar och `produktionsflikar`. Sprite-testet kontrollerar
 fortfarande kartorna Star map och Fleets, men inte den borttagna
-Route-knappen i huvudmenyn.
+Route-knappen i huvudmenyn. Testerna för `automatiska-delorder` och
+`projektens-forsorjningssteg` visar inte längre separata delorder eller den
+gamla försörjningskedjan: delar tillverkas efter behov och kön visar i stället
+saknade delar enligt `byggkons-framsteg`. Planetkön testas med skeppsorder.
 
 ## Klickbar prototyp
 

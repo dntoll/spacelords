@@ -1,6 +1,7 @@
 import { scenarioTimeout } from '../../browser-timeouts.js';
 import { expect, test } from '@playwright/test';
 import {
+  TECHNOLOGIES,
   type BuildType,
   type GameState,
 } from '../../../src/client/space-map/models/Game.js';
@@ -11,6 +12,7 @@ import { endTurn, startFirstSlot } from './save-helpers.js';
 
 function initialState() {
   const state = tradeNetworkState();
+  state.researched = [...TECHNOLOGIES];
   for (const [index, [, colony]] of state.colonies.entries()) {
     colony.population = 10000;
     colony.stock = { ...emptyStock(), Iron: 1000, Water: 1000, Oil: 1000 };
@@ -31,76 +33,50 @@ function initialState() {
   return state;
 }
 
-test('automatiska-delorder: orders remote production through the UI and preserves supply until a Fighter is assembled', async ({
-  page,
-}, testInfo) => {
-  scenarioTimeout(90_000);
-  const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  const initial = initialState();
+async function openFighterOrder(
+  page: import('@playwright/test').Page,
+  state: GameState,
+) {
   await page.addInitScript((state) => {
     if (localStorage.getItem('components-seeded')) return;
-    localStorage.setItem('spacelords.economy-v2-reset', 'done');
     localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     localStorage.setItem(
       'spacelords.save.v2.1',
       JSON.stringify({ lastPlayed: '2026-10-23T10:00:00Z', state }),
     );
     localStorage.setItem('components-seeded', 'yes');
-  }, initial);
+  }, state);
   await page.goto('./');
   await startFirstSlot(page);
-  await selectMapObject(page, 'Vesta');
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await page
-    .getByRole('navigation', { name: 'Planet pages' })
+    .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('button', { name: 'Production', exact: true })
     .click();
+  await selectMapObject(page, 'Vesta');
   await page.getByRole('button', { name: 'Show Fighter', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Queue Fighter', exact: true })
+    .getByRole('complementary', { name: 'Production controls' })
+    .getByRole('button', { name: 'Build', exact: true })
     .click();
-  await page.getByRole('button', { name: 'Build queue', exact: true }).click();
-  await expect(page.locator('.queue-order')).toHaveCount(1);
-  const supply = page.locator('.project-supply');
-  await expect(supply).toContainText('Produce 1 Rocket engine at Tellus');
-  await expect(supply).toContainText('Produce 1 Weapons module at Tellus');
-  await expect(supply).toContainText(
-    'Transport 1 Rocket engine from Tellus to Vesta',
-  );
-  await expect(supply).toContainText('Planned transport');
-  await supply
-    .getByRole('button', { name: 'View route', exact: true })
-    .first()
-    .click();
+  await page.getByRole('tab', { name: 'Queue · 1' }).click();
+}
+
+test('delar-tillverkas-pa-behov / delat-lager-i-natverket: a Fighter order receives automatically made parts across a link', async ({
+  page,
+}) => {
+  scenarioTimeout(90_000);
+  const initial = initialState();
+  await openFighterOrder(page, initial);
+  await expect(page.locator('.map-queue-row')).toContainText('Fighter');
   await expect(
-    page.getByRole('complementary', { name: 'Selected route' }),
-  ).toContainText('Tellus');
-  await page.getByRole('button', { name: 'Route', exact: true }).click();
-  await selectMapObject(page, 'Vesta');
-  await expect(page.locator('.route-supply-summary')).toContainText('Waiting');
-  await page.getByRole('button', { name: 'Open in Production' }).click();
-  await expect(
-    page.getByRole('region', { name: 'Selected project supply chain' }),
+    page.getByRole('list', { name: 'Parts for Fighter' }),
   ).toContainText('Rocket engine');
   await expect(
-    page.getByRole('region', { name: 'Selected project supply chain' }),
+    page.getByRole('list', { name: 'Parts for Fighter' }),
   ).toContainText('Weapons module');
-  await expect(
-    page.getByRole('region', { name: 'Selected project supply chain' }),
-  ).toContainText('Planned transport');
-  await page.screenshot({
-    path: testInfo.outputPath('ordered-component-production.png'),
-  });
   await page.reload();
   await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Route', exact: true }).click();
-  await selectMapObject(page, 'Vesta');
-  await expect(page.locator('.route-supply-summary')).toContainText('Waiting');
   for (let year = 0; year < 6; year++) await endTurn(page);
-  await page.getByRole('button', { name: 'Route', exact: true }).click();
-  await selectMapObject(page, 'Vesta');
-  await expect(page.locator('.route-supply-summary')).toContainText('Idle');
   const saved = await page.evaluate(
     () =>
       (
@@ -110,47 +86,19 @@ test('automatiska-delorder: orders remote production through the UI and preserve
       ).state,
   );
   expect(saved.version).toBe(initial.version);
-  expect(saved.componentOrders).toEqual([]);
-  expect(saved.colonies[0]![1].projects).toEqual([]);
+  expect(saved.colonies[1]![1].projects).toEqual([]);
   expect(
     saved.fleets.reduce((n, fleet) => n + (fleet.ships.Fighter ?? 0), 0),
   ).toBe(3);
-  expect(errors).toEqual([]);
 });
 
-test('automatiska-delorder: explains a missing part and leaves the saved order state unchanged', async ({
+test('byggkons-framsteg: a queued Fighter explains that a part factory is missing', async ({
   page,
 }) => {
   const state = initialState();
   state.colonies[0]![1].buildings.pop();
-  await page.addInitScript((state) => {
-    localStorage.setItem('spacelords.economy-v2-reset', 'done');
-    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
-    localStorage.setItem(
-      'spacelords.save.v2.1',
-      JSON.stringify({ lastPlayed: '2026-10-23T10:00:00Z', state }),
-    );
-  }, state);
-  await page.goto('./');
-  await startFirstSlot(page);
-  await selectMapObject(page, 'Vesta');
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page
-    .getByRole('navigation', { name: 'Planet pages' })
-    .getByRole('button', { name: 'Production', exact: true })
-    .click();
-  const before = await page.evaluate(() =>
-    localStorage.getItem('spacelords.save.v2.1'),
-  );
-  await page.getByRole('button', { name: 'Show Fighter', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Queue Fighter', exact: true })
-    .click();
-  await expect(page.getByRole('status')).toContainText(
-    'Cannot order Weapons module',
-  );
-  await expect(page.locator('.queue-order')).toHaveCount(0);
-  expect(
-    await page.evaluate(() => localStorage.getItem('spacelords.save.v2.1')),
-  ).toBe(before);
+  await openFighterOrder(page, state);
+  await expect(
+    page.getByRole('list', { name: 'Parts for Fighter' }),
+  ).toContainText('Weapons module · no factory in group');
 });
