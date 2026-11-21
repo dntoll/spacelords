@@ -473,3 +473,6 @@ Planetens katalogkontroller för `byggkategorier`, `symbolbaserade-kataloger`,
 tas bort. Bilder på befintliga byggplatser och i Research kontrolleras fortsatt,
 liksom byggvalens symboler i Factories. Återkoppling vid dubbelklick kontrolleras
 med en skeppsorder enligt `produktionsorder-aterkoppling`.
+Det tidigare scenariot med manuellt beställda blandade motorer ersätts av
+`delar-tillverkas-pa-behov` och valet av senaste tillgängliga teknik: skeppet
+får tre Ion pulse engines när fabriken finns, och behåller dem vid flytt.
