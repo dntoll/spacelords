@@ -1,23 +1,10 @@
 import type { GameEvent } from '../Game.js';
-import type { PlanetQueueKind } from '../PlanetQueues.js';
 import { comparePlaybackPositions } from './PlaybackOrder.js';
 
 export interface EventDecision {
   readonly title: string;
   readonly details: readonly string[];
   readonly fleetId: string | null;
-  readonly queueAction?: Readonly<{
-    kind: PlanetQueueKind;
-    planetId: string;
-    label: string;
-  }>;
-  readonly salvageAction?: Readonly<{ wreckId: string; label: string }>;
-  readonly attackAction?: Readonly<{ pirateId: string; label: string }>;
-  readonly colonyShipAction?: Readonly<{
-    planetId: string;
-    label: string;
-    blockedReason: string | null;
-  }>;
 }
 
 export interface PlaybackEvent extends GameEvent {

@@ -134,7 +134,7 @@ describe('handelseannonsering / handelser-pa-kartan', () => {
     model.select(model.snapshot.selected!.position);
     view.render(model.snapshot);
     expect(panel.hidden).toBe(false);
-    for (const screen of ['research', 'decisions', 'planet', 'map'] as const) {
+    for (const screen of ['research', 'planet', 'map'] as const) {
       view.render({ ...model.snapshot, screen });
       expect(root.querySelector('.turn-console')).toBe(panel);
       expect(panel.open).toBe(true);
@@ -283,8 +283,6 @@ describe('handelser / arsrundor-och-order', () => {
       dispose() {},
       animateTurnStep: () => animation,
     }));
-    for (const decision of model.snapshot.decisions)
-      model.skipDecision(decision.id);
     const controller = new MasterController(model, view);
     controller.start();
     const end = root.querySelector<HTMLButtonElement>('.end-turn')!;
@@ -373,7 +371,7 @@ it('utvikbara-events / senaste-aret-i-events: retains every event in the latest 
   const root = document.createElement('div');
   document.body.replaceChildren(root);
   const model = new AppModel();
-  model.openDecisions();
+  model.openResearch();
   const view = new AppView(root, () => ({ render() {}, dispose() {} }));
   const events = Array.from({ length: 140 }, (_, index) => ({
     id: `latest-${index}`,

@@ -1,8 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import { researchStationModel } from '../../fixtures/research-station-model.js';
-import { AppView } from '../../../src/client/app/views/AppView.js';
-import { renderDecisionGuidance } from '../../../src/client/space-map/views/decisions/DecisionGuidanceView.js';
 import { renderResearch } from '../../../src/client/space-map/views/research/ResearchView.js';
 import { isResearchIdentified } from '../../../src/client/space-map/models/research/ResearchTree.js';
 import { gameText } from '../../../src/client/space-map/views/turn/GameText.js';
@@ -169,55 +167,11 @@ describe('kompakt-spelgranssnitt', () => {
     },
   );
 
-  it('korta-beslutsinstruktioner: retains the decision and action without repetitive instructions', () => {
-    const model = researchStationModel({ shipFactory: true });
-    for (const open of [
-      () => model.openProduction(),
-      () => model.openFleets(),
-      () => model.openResearch(),
-    ]) {
-      open();
-      const guidance = renderDecisionGuidance(model.snapshot, vi.fn())!;
-      for (const row of guidance.querySelectorAll('.decision-guidance-row')) {
-        const label =
-          row
-            .querySelector('button')
-            ?.getAttribute('aria-label')
-            ?.replace('Show decision: ', '') ?? 'Choose research';
-        expect(row.querySelector('p')!.textContent).toBe(`${label}.`);
-      }
-    }
-  });
-
   it('inga-hexkoordinater: legacy event coordinates stay readable without changing saved text', () => {
     expect(gameText('Home Fleet arrived at HEX -3,12.')).toBe(
       'Home Fleet arrived at selected location.',
     );
     expect(gameText('Tellus · 2 wrecks')).toBe('Tellus · 2 wrecks');
-  });
-
-  it('flyttmal-pa-kartan / inga-hexkoordinater / uppmarksamhet-vid-titel: movement uses the map and the header warning disappears when attention is resolved', () => {
-    const model = researchStationModel({ shipFactory: true });
-    model.openFleets();
-    model.selectMapFleet('fleet-home');
-    model.beginDestination('fleet-home');
-    const root = document.createElement('div');
-    const view = new AppView(root, () => ({ render() {}, dispose() {} }));
-    view.render(model.snapshot);
-    expect(root.querySelector('[aria-label="Destination hex"]')).toBeNull();
-    expect(root.querySelector('.coordinate-label')).toBeNull();
-    expect(root.textContent).not.toMatch(/Choose destination hex|HEX -?\d/);
-    expect(
-      root.querySelector('.app-header .map-attention-legend')?.textContent,
-    ).toBe('! Needs attention');
-    view.render({
-      ...model.snapshot,
-      attentionScreens: [],
-      decisions: [],
-      mapProblems: [],
-    });
-    expect(root.querySelector('.map-attention-legend')).toBeNull();
-    view.dispose();
   });
 
   it('colony-ship-efter-rocket-engine: reveals Colony ship after engines without requiring exploration or telescopes', () => {

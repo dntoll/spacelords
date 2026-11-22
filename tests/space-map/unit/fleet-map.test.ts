@@ -6,7 +6,6 @@ import {
   HexGeometry,
 } from '../../../src/client/common/HexCoordinate.js';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
-import { researchStationModel } from '../../fixtures/research-station-model.js';
 import { renderMapOverlays } from '../../../src/client/space-map/views/star-map/MapOverlayView.js';
 import { renderMapFleets } from '../../../src/client/space-map/views/star-map/FleetMapView.js';
 import { FleetMapLayout } from '../../../src/client/space-map/models/star-map/FleetMapLayout.js';
@@ -197,7 +196,6 @@ describe('kartflottor', () => {
         zoom,
         undefined,
         false,
-        [],
         [],
         new Map(),
         images,
@@ -434,41 +432,6 @@ describe('flottfokuserad-kartvy', () => {
   );
 });
 
-it('beslutsvagledning-i-vyn: idle fleet decisions have a solid amber ring and Production marks the planet needing an order', () => {
-  const { sketch } = drawing();
-  const dash = vi.fn();
-  renderMapFleets(
-    { ...sketch, drawingContext: { setLineDash: dash } } as unknown as p5,
-    [{ ...fleet('idle'), destination: null }],
-    1,
-    undefined,
-    true,
-    ['idle'],
-  );
-  expect(sketch.stroke).toHaveBeenCalledWith('#ffdc88');
-  expect(dash).toHaveBeenCalledWith([]);
-  // produktionsbeslut-bara-for-skeppsfabrik: only an idle ship factory is marked.
-  const model = researchStationModel({ shipFactory: true });
-  model.openProduction();
-  const text = vi.fn();
-  renderMapOverlays(
-    {
-      ...sketch,
-      text,
-      textSize: vi.fn(),
-      textAlign: vi.fn(),
-      CENTER: 'center',
-      BOTTOM: 'bottom',
-    } as unknown as p5,
-    model.snapshot,
-  );
-  expect(text).toHaveBeenCalledWith(
-    '!',
-    expect.any(Number),
-    expect.any(Number),
-  );
-});
-
 it('genererade-skeppssprites: pirates use their own sprite at close and medium zoom while Fighters keep theirs', () => {
   const fighter = { width: 100, height: 50 } as p5.Image;
   const pirate = { width: 90, height: 70 } as p5.Image;
@@ -496,7 +459,6 @@ it('genererade-skeppssprites: pirates use their own sprite at close and medium z
       zoom,
       undefined,
       false,
-      [],
       ['hostile'],
       new Map(),
       new Map([

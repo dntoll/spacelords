@@ -8,7 +8,7 @@ function setup() {
   const root = document.createElement('div');
   document.body.replaceChildren(root);
   const model = new AppModel();
-  model.openDecisions();
+  model.openResearch();
   const view = new AppView(root, () => ({ render() {}, dispose() {} }));
   return { root, model, view };
 }

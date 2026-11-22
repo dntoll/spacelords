@@ -9,17 +9,12 @@ import type {
 } from './Catalog.js';
 import type { Component, EconomySnapshot, Stock } from './Economy.js';
 import type { PlanetEnvironmentType } from './Planet.js';
-import type { PlanetQueueKind } from './PlanetQueues.js';
 import type { ShipOrder } from './ShipOrders.js';
 import type { FleetUpgradeOrder } from './ShipUpgrades.js';
 import type { ExplorationOrder } from './TurnSimulation.js';
 import type { Technology } from './research/Research.js';
 import type { EventIllustration, EventLine } from './turn/EventDetails.js';
 
-export interface FleetDetour {
-  readonly kind: 'explore-planet' | 'attack-pirate';
-  readonly targetId: string;
-}
 export interface StationConstruction {
   readonly planet: string;
   readonly roundsLeft: number;
@@ -145,8 +140,6 @@ export interface FleetSnapshot {
   readonly automation?: 'salvage';
   readonly colonizationTargetId?: string;
   readonly explorationTargetId?: string;
-  readonly planetQueue?: PlanetQueueKind;
-  readonly detour?: Readonly<FleetDetour>;
   readonly navigationIssue?: string | undefined;
   readonly patrol?: Readonly<{
     center: HexCoordinate;
@@ -185,24 +178,4 @@ export interface GameEvent {
   readonly round: number;
   readonly text: string;
   readonly position?: { readonly q: number; readonly r: number };
-}
-export interface PlanetQueueEntrySnapshot {
-  readonly planetId: string;
-  readonly name: string;
-  readonly position: HexCoordinate;
-  readonly assignedFleetId: string | null;
-  readonly assignedFleetName: string | null;
-  readonly colonyShipBuildReason?: string | null;
-  readonly colonyShipBuildingAt?: string | null;
-}
-export interface PlanetQueueSnapshot {
-  readonly exploration: readonly PlanetQueueEntrySnapshot[];
-  readonly colonization: readonly PlanetQueueEntrySnapshot[];
-}
-export interface AttackQueueEntrySnapshot {
-  readonly pirateId: string;
-  readonly name: string;
-  readonly position: HexCoordinate;
-  readonly assignedFleetId: string | null;
-  readonly assignedFleetName: string | null;
 }

@@ -5,7 +5,6 @@ import {
   FleetController,
   ProductionController,
   OrderController,
-  DecisionController,
   StarMapController,
   TurnController,
 } from '../../space-map/controllers/index.js';
@@ -33,7 +32,6 @@ export class MasterController {
   readonly #fleets: FleetController;
   readonly #production: ProductionController;
   readonly #orders: OrderController;
-  readonly #decisions: DecisionController;
   readonly #starMap: StarMapController;
   readonly #turn: TurnController;
   readonly #model: AppModel;
@@ -66,7 +64,6 @@ export class MasterController {
     this.#fleets = new FleetController(model.fleets);
     this.#production = new ProductionController(model.production);
     this.#orders = new OrderController(model.orders);
-    this.#decisions = new DecisionController(model.decisions);
     this.#starMap = new StarMapController(model.starMap);
     this.#turn = new TurnController(model.turn);
   }
@@ -284,7 +281,6 @@ export class MasterController {
     const before = this.#presented ?? this.#model.snapshot;
     const playback = before.eventPlayback;
     if (playback) {
-      const current = playback.events[playback.index];
       if (
         playback.stage === 'awaiting-choice' &&
         ['handle-discoveries', 'ignore-discoveries'].includes(intent.type)
@@ -292,52 +288,6 @@ export class MasterController {
         this.#turn.chooseEvent(
           intent.type === 'handle-discoveries' ? 'handle' : 'ignore',
         );
-        this.#model.save();
-        this.#render();
-        this.#schedulePlayback();
-      }
-      if (
-        playback.stage === 'awaiting-choice' &&
-        intent.type === 'add-planet-queue' &&
-        current?.decision?.queueAction?.kind === intent.kind &&
-        current.decision.queueAction.planetId === intent.planetId
-      ) {
-        this.#model.addPlanetToQueue(intent.kind, intent.planetId);
-        this.#turn.chooseEvent('ignore');
-        this.#model.save();
-        this.#render();
-        this.#schedulePlayback();
-      }
-      if (
-        playback.stage === 'awaiting-choice' &&
-        intent.type === 'add-salvage-queue' &&
-        current?.decision?.salvageAction?.wreckId === intent.wreckId
-      ) {
-        this.#decisions.addWreckToSalvageQueue(intent.wreckId);
-        this.#turn.chooseEvent('ignore');
-        this.#model.save();
-        this.#render();
-        this.#schedulePlayback();
-      }
-      if (
-        playback.stage === 'awaiting-choice' &&
-        intent.type === 'add-attack-queue' &&
-        current?.decision?.attackAction?.pirateId === intent.pirateId
-      ) {
-        this.#decisions.addPirateToAttackQueue(intent.pirateId);
-        this.#turn.chooseEvent('ignore');
-        this.#model.save();
-        this.#render();
-        this.#schedulePlayback();
-      }
-      if (
-        playback.stage === 'awaiting-choice' &&
-        intent.type === 'request-colony-ship' &&
-        current?.decision?.colonyShipAction?.planetId === intent.planetId &&
-        !current.decision.colonyShipAction.blockedReason
-      ) {
-        this.#decisions.requestColonyShip(intent.planetId);
-        this.#turn.chooseEvent('ignore');
         this.#model.save();
         this.#render();
         this.#schedulePlayback();
@@ -439,10 +389,10 @@ export class MasterController {
         this.#orders.clearStartOrder();
         break;
       case 'handle-discoveries':
-        this.#decisions.handleDiscoveries();
+        this.#turn.handleDiscoveries();
         break;
       case 'allow-other-fleet-orders':
-        this.#decisions.allowOtherFleetOrders();
+        this.#turn.allowOtherFleetOrders();
         break;
       case 'continue-turn':
         if (this.#model.snapshot.interruption?.handling) {
@@ -507,21 +457,6 @@ export class MasterController {
       case 'inspect-research':
         this.#research.inspectResearch(intent.technology);
         break;
-      case 'open-decisions':
-        this.#decisions.openDecisions();
-        break;
-      case 'open-decision':
-        this.#decisions.openDecision(intent.id);
-        break;
-      case 'skip-decision':
-        this.#decisions.skipDecision(intent.id);
-        break;
-      case 'mute-decision':
-        this.#decisions.muteDecision(intent.id);
-        break;
-      case 'unmute-decision':
-        this.#decisions.unmuteDecision(intent.id);
-        break;
       case 'resume-fleet-orders':
         this.#fleets.resumeFleetOrders(intent.id);
         break;
@@ -531,48 +466,12 @@ export class MasterController {
       case 'remove-research':
         this.#research.requestResearchRemoval(intent.technology);
         break;
-      case 'add-planet-queue':
-        this.#model.addPlanetToQueue(intent.kind, intent.planetId);
-        break;
-      case 'remove-planet-queue':
-        this.#model.removePlanetFromQueue(intent.kind, intent.planetId);
-        break;
-      case 'move-planet-queue':
-        this.#model.movePlanetQueue(intent.kind, intent.planetId, intent.index);
-        break;
-      case 'add-salvage-queue':
-        this.#decisions.addWreckToSalvageQueue(intent.wreckId);
-        break;
-      case 'remove-salvage-queue':
-        this.#decisions.removeWreckFromSalvageQueue(intent.wreckId);
-        break;
-      case 'move-salvage-queue':
-        this.#decisions.moveWreckInSalvageQueue(intent.wreckId, intent.index);
-        break;
-      case 'add-attack-queue':
-        this.#decisions.addPirateToAttackQueue(intent.pirateId);
-        break;
-      case 'remove-attack-queue':
-        this.#decisions.removePirateFromAttackQueue(intent.pirateId);
-        break;
-      case 'move-attack-queue':
-        this.#decisions.movePirateAttackQueue(intent.pirateId, intent.index);
-        break;
-      case 'request-colony-ship':
-        this.#decisions.requestColonyShip(intent.planetId);
-        break;
       case 'confirm-research-removal':
         this.#research.confirmResearchRemoval();
         break;
       case 'cancel-research-removal':
         this.#research.requestResearchRemoval(null);
         break;
-      case 'cancel-end-turn':
-        this.#decisions.cancelEndTurn();
-        break;
-      case 'confirm-end-turn':
-        void this.#runTurn();
-        return;
       case 'open-saves':
         this.#cancelPointer();
         this.#saveCase.openSaves();
@@ -719,7 +618,7 @@ export class MasterController {
         this.#fleets.clearDestination(intent.id);
         break;
       case 'end-turn':
-        if (this.#decisions.requestEndTurn()) {
+        if (this.#turn.requestEndTurn()) {
           void this.#runTurn();
           return;
         }

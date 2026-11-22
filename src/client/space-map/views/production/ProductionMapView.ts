@@ -298,11 +298,6 @@ export function renderProductionMapPanel(
     if (option.blockedReason)
       detail.append(element('p', 'blocked-reason', option.blockedReason));
   }
-  const problems = model.mapProblems.filter(
-    (p) => p.planetId === planet.id && p.screen === 'production',
-  );
-  for (const problem of problems)
-    panel.append(element('p', 'blocked-reason', problem.explanation));
   const queue = element('section', 'map-build-queue');
   queue.setAttribute('aria-label', 'Build queue');
   // byggorsak-i-kon: ships are built side by side in their own factories, so

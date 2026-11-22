@@ -43,7 +43,6 @@ export class SaveFacade {
     this.host.turnContext = null;
     this.host.salvageSelection = null;
     this.host.shipyardPlacement = null;
-    this.host.pendingEndTurn = false;
     this.host.pendingResearchRemoval = null;
     this.host.activeSlot = id;
     this.host.camera = new Camera(

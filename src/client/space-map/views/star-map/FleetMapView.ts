@@ -24,7 +24,6 @@ export function renderMapFleets(
     fleetDestinationPreview: null,
   },
   showUnselectedRings = false,
-  attentionFleetIds: readonly string[] = [],
   pirateIds: readonly string[] = [],
   movementPoints: ReadonlyMap<string, Point> = new Map(),
   shipImages: ReadonlyMap<ShipSpriteType, p5.Image> = new Map(),
@@ -72,30 +71,24 @@ export function renderMapFleets(
     const hostile = pirateIds.includes(fleet.id);
     const selected = interaction.mapFleetId === fleet.id;
     const hovered = interaction.hoveredFleetId === fleet.id;
-    const needsOrder = attentionFleetIds.includes(fleet.id);
-    // flottkategorier: the Fleets map colours each fleet by its category;
-    // a fleet waiting for orders keeps its amber attention ring.
+    // flottkategorier: the Fleets map colours each fleet by its category.
     const color = hostile
       ? '#ff8e85'
       : selected
         ? '#ffdc88'
         : hovered
           ? '#d5fff6'
-          : needsOrder
-            ? '#ffdc88'
-            : showUnselectedRings
-              ? FLEET_CATEGORY_COLORS[fleetCategory(fleet)]
-              : '#72d8ca';
-    if (hostile || selected || hovered || showUnselectedRings || needsOrder) {
+          : showUnselectedRings
+            ? FLEET_CATEGORY_COLORS[fleetCategory(fleet)]
+            : '#72d8ca';
+    if (hostile || selected || hovered || showUnselectedRings) {
       const context = sketch.drawingContext as
         CanvasRenderingContext2D | undefined;
       context?.setLineDash(
-        showUnselectedRings && !selected && !needsOrder
-          ? [3 / zoom, 3 / zoom]
-          : [],
+        showUnselectedRings && !selected ? [3 / zoom, 3 / zoom] : [],
       );
       sketch.stroke(color);
-      sketch.strokeWeight((selected || needsOrder ? 2.5 : 1.5) / zoom);
+      sketch.strokeWeight((selected ? 2.5 : 1.5) / zoom);
       if (selected || hovered)
         sketch.fill(selected ? '#ffdc8833' : '#72d8ca33');
       else sketch.noFill();

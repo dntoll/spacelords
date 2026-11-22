@@ -6,7 +6,6 @@ import type {
   ShipType,
   TurnFrame,
   Technology,
-  PlanetQueueKind,
   FleetCategory,
 } from '../../space-map/models/index.js';
 import type {
@@ -107,28 +106,9 @@ export type AppIntent =
       readonly width: number;
       readonly height: number;
     }
-  | {
-      readonly type: 'add-salvage-queue' | 'remove-salvage-queue';
-      readonly wreckId: string;
-    }
-  | {
-      readonly type: 'move-salvage-queue';
-      readonly wreckId: string;
-      readonly index: number;
-    }
   | { readonly type: 'research-fit' }
   | {
-      readonly type:
-        | 'open-decisions'
-        | 'confirm-end-turn'
-        | 'cancel-end-turn'
-        | 'confirm-research-removal'
-        | 'cancel-research-removal';
-    }
-  | {
-      readonly type:
-        'open-decision' | 'skip-decision' | 'mute-decision' | 'unmute-decision';
-      readonly id: string;
+      readonly type: 'confirm-research-removal' | 'cancel-research-removal';
     }
   | {
       readonly type: 'move-research';
@@ -136,27 +116,6 @@ export type AppIntent =
       readonly index: number;
     }
   | { readonly type: 'remove-research'; readonly technology: Technology }
-  | {
-      readonly type: 'add-planet-queue' | 'remove-planet-queue';
-      readonly kind: PlanetQueueKind;
-      readonly planetId: string;
-    }
-  | {
-      readonly type: 'move-planet-queue';
-      readonly kind: PlanetQueueKind;
-      readonly planetId: string;
-      readonly index: number;
-    }
-  | {
-      readonly type: 'add-attack-queue' | 'remove-attack-queue';
-      readonly pirateId: string;
-    }
-  | {
-      readonly type: 'move-attack-queue';
-      readonly pirateId: string;
-      readonly index: number;
-    }
-  | { readonly type: 'request-colony-ship'; readonly planetId: string }
   | { readonly type: 'start-slot' | 'request-clear-slot'; readonly id: number }
   | { readonly type: 'open-saves' | 'cancel-clear-slot' | 'confirm-clear-slot' }
   | {

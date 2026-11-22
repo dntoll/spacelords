@@ -5,7 +5,6 @@ import {
   FleetFacade,
   ProductionFacade,
   OrderFacade,
-  DecisionFacade,
   StarMapFacade,
   TurnFacade,
   ShipOrders,
@@ -27,7 +26,6 @@ import {
   type MapViewport,
   type ProductionMapSnapshot,
   type ProductionGuidance,
-  type MapProblem,
   type SaveRepository,
   ResearchTreeCamera,
   type ResearchCameraSnapshot,
@@ -35,15 +33,10 @@ import {
   Salvage,
   type WreckSnapshot,
   type ShipyardSnapshot,
-  decisionScreen,
-  needsAttention,
-  type Decision,
-  type DecisionScreen,
   FleetMapLayout,
   Camera,
   type CameraSnapshot,
   CameraFraming,
-  type PlanetQueueKind,
   createExampleGalaxy,
   Game,
   type ProjectType,
@@ -90,14 +83,7 @@ import { actionFailed, type PlayerNotice } from './PlayerNotice.js';
 export type PlanetTab = 'overview' | 'sites';
 
 export type Screen =
-  | 'saves'
-  | 'map'
-  | 'planet'
-  | 'research'
-  | 'fleets'
-  | 'production'
-  | 'decisions'
-  | 'orders';
+  'saves' | 'map' | 'planet' | 'research' | 'fleets' | 'production' | 'orders';
 
 export interface SaveSlotSnapshot {
   readonly id: number;
@@ -130,16 +116,9 @@ export interface AppReadModel {
   } | null;
   readonly planetTab: PlanetTab;
   readonly mapFocusRevision: number;
-  readonly decisions: readonly Decision[];
-  readonly planetQueues: Game['planetQueues'];
-  readonly salvageQueue: Game['salvageQueue'];
-  readonly attackQueue: Game['attackQueue'];
-  readonly attentionScreens: readonly DecisionScreen[];
   readonly productionMap: ProductionMapSnapshot;
   readonly productionGuidance: ProductionGuidance | null;
-  readonly mapProblems: readonly MapProblem[];
   readonly ownedPlanets: readonly PlanetGameSnapshot[];
-  readonly pendingEndTurn: boolean;
   readonly pendingResearchRemoval: Technology | null;
   readonly saveSlots: readonly SaveSlotSnapshot[];
   readonly pendingClearSlot: number | null;
@@ -197,7 +176,6 @@ export class AppModel {
   readonly fleets: FleetFacade;
   readonly production: ProductionFacade;
   readonly orders: OrderFacade;
-  readonly decisions: DecisionFacade;
   readonly starMap: StarMapFacade;
   readonly turn: TurnFacade;
 
@@ -225,7 +203,6 @@ export class AppModel {
   #shipyardPlacement: AppReadModel['shipyardPlacement'] = null;
   #planetTab: PlanetTab = 'overview';
   #hiddenFleetCategories = new Set<FleetCategory>();
-  #pendingEndTurn = false;
   #pendingResearchRemoval: Technology | null = null;
   #game: Game;
   #testBattle: TacticalBattle | null = null;
@@ -283,7 +260,6 @@ export class AppModel {
     this.fleets = new FleetFacade(host);
     this.production = new ProductionFacade(host);
     this.orders = new OrderFacade(host);
-    this.decisions = new DecisionFacade(host);
     this.starMap = new StarMapFacade(host);
     this.turn = new TurnFacade(host);
   }
@@ -368,7 +344,6 @@ export class AppModel {
         eventPlayback: this.#eventPlayback?.snapshot ?? null,
       });
     }
-    const decisions = this.#game.decisions;
     return Object.freeze({
       turnMovement: null,
       turnMovements: Object.freeze([]),
@@ -400,40 +375,13 @@ export class AppModel {
           ? this.#shipStartOrder.order
           : null,
       mapFocusRevision: this.#mapFocusRevision,
-      decisions: Object.freeze([...decisions, ...this.#game.messageSettings]),
-      planetQueues: this.#game.planetQueues,
-      salvageQueue: this.#game.salvageQueue,
-      attackQueue: this.#game.attackQueue,
-      attentionScreens: Object.freeze([
-        ...new Set([...decisions.filter(needsAttention).map(decisionScreen)]),
-      ]),
       productionMap: this.#productionMapSnapshot(),
       productionGuidance:
         (this.#screen === 'production' || this.#screen === 'planet') &&
         this.#game.planetAt(this.#selected)
           ? this.#game.productionGuidance(this.#game.planetAt(this.#selected)!)
           : null,
-      mapProblems: Object.freeze(
-        decisions.filter(needsAttention).flatMap((decision): MapProblem[] => {
-          const screen =
-            decision.id.startsWith('staff-') ||
-            decision.id.startsWith('production-')
-              ? 'production'
-              : null;
-          return screen
-            ? [
-                Object.freeze({
-                  decisionId: decision.id,
-                  planetId: decision.planetId,
-                  screen,
-                  explanation: decision.label,
-                }),
-              ]
-            : [];
-        }),
-      ),
       ownedPlanets: this.#game.ownedPlanetSnapshots(),
-      pendingEndTurn: this.#pendingEndTurn,
       pendingResearchRemoval: this.#pendingResearchRemoval,
       saveSlots: this.#saveSlots,
       pendingClearSlot: this.#pendingClearSlot,
@@ -714,19 +662,6 @@ export class AppModel {
   confirmResearchRemoval(): void {
     return this.researchCase.confirmResearchRemoval();
   }
-  addPlanetToQueue(kind: PlanetQueueKind, planetId: string): void {
-    this.#game.addPlanetToQueue(kind, planetId);
-  }
-  removePlanetFromQueue(kind: PlanetQueueKind, planetId: string): void {
-    this.#game.removePlanetFromQueue(kind, planetId);
-  }
-  movePlanetQueue(
-    kind: PlanetQueueKind,
-    planetId: string,
-    index: number,
-  ): void {
-    this.#game.movePlanetQueue(kind, planetId, index);
-  }
   openProduction(planetId?: string): void {
     return this.production.openProduction(planetId);
   }
@@ -848,26 +783,8 @@ export class AppModel {
     });
   }
 
-  openDecisions(): void {
-    return this.decisions.openDecisions();
-  }
-  openDecision(id?: string): void {
-    return this.decisions.openDecision(id);
-  }
-  skipDecision(id: string): void {
-    return this.decisions.skipDecision(id);
-  }
-  muteDecision(id: string): void {
-    return this.decisions.muteDecision(id);
-  }
-  unmuteDecision(id: string): void {
-    return this.decisions.unmuteDecision(id);
-  }
   requestEndTurn(): boolean {
-    return this.decisions.requestEndTurn();
-  }
-  cancelEndTurn(): void {
-    return this.decisions.cancelEndTurn();
+    return this.turn.requestEndTurn();
   }
   colonize(id: string): void {
     return this.planet.colonize(id);
@@ -982,7 +899,7 @@ export class AppModel {
     return this.fleets.patrolFleet(id);
   }
   handleDiscoveries(): void {
-    return this.decisions.handleDiscoveries();
+    return this.turn.handleDiscoveries();
   }
   #focusInterruptedFleet(): void {
     this.cancelMapPointer();
@@ -1014,7 +931,7 @@ export class AppModel {
     }
   }
   allowOtherFleetOrders(): void {
-    return this.decisions.allowOtherFleetOrders();
+    return this.turn.allowOtherFleetOrders();
   }
   continueTurn(): void {
     return this.turn.continueTurn();
@@ -1122,79 +1039,10 @@ export class AppModel {
       details.push(
         'The round is paused after production. No movement remains this round.',
       );
-    const queueKind =
-      discovery.kind === 'planet'
-        ? ('exploration' as const)
-        : discovery.kind === 'planet-explored'
-          ? ('colonization' as const)
-          : null;
-    const queued = queueKind
-      ? this.#game.planetQueues[queueKind].some(
-          (entry) => entry.planetId === discovery.id,
-        )
-      : false;
-    const attackQueued =
-      discovery.kind === 'pirate' &&
-      this.#game.attackQueue.some((entry) => entry.pirateId === discovery.id);
-    const colonyShip =
-      discovery.kind === 'planet-explored'
-        ? this.#game.colonyShipRequest(discovery.id)
-        : null;
-    const offerColonyShip =
-      colonyShip &&
-      (!colonyShip.colonyShipBuildReason ||
-        colonyShip.colonyShipBuildReason.startsWith('No reachable'));
     return Object.freeze({
       title,
       details: Object.freeze(details),
       fleetId: item.fleetId,
-      ...(queueKind && !queued
-        ? {
-            queueAction: Object.freeze({
-              kind: queueKind,
-              planetId: discovery.id,
-              label:
-                queueKind === 'exploration'
-                  ? 'Add to Exploration queue'
-                  : 'Add to Colonization queue',
-            }),
-          }
-        : {}),
-      ...(discovery.kind === 'pirate' && !attackQueued
-        ? {
-            attackAction: Object.freeze({
-              pirateId: discovery.id,
-              label: 'Add to Attack queue',
-            }),
-          }
-        : {}),
-      ...(discovery.kind === 'wreck' &&
-      !this.#game.salvageQueue.some(
-        (entry) => entry.wreckId === discovery.id,
-      ) &&
-      this.#game.wrecks.some(
-        (wreck) =>
-          wreck.id === discovery.id &&
-          !wreck.yardId &&
-          !wreck.reservedBy &&
-          !wreck.towedBy,
-      )
-        ? {
-            salvageAction: Object.freeze({
-              wreckId: discovery.id,
-              label: 'Add to Salvage queue',
-            }),
-          }
-        : {}),
-      ...(offerColonyShip
-        ? {
-            colonyShipAction: Object.freeze({
-              planetId: discovery.id,
-              label: 'Build Colony ship',
-              blockedReason: colonyShip.colonyShipBuildReason,
-            }),
-          }
-        : {}),
     });
   }
 
@@ -1434,9 +1282,6 @@ export class AppModel {
       get hiddenFleetCategories() {
         return model.#hiddenFleetCategories;
       },
-      get pendingEndTurn() {
-        return model.#pendingEndTurn;
-      },
       get pendingResearchRemoval() {
         return model.#pendingResearchRemoval;
       },
@@ -1562,9 +1407,6 @@ export class AppModel {
       },
       set planetTab(value) {
         model.#planetTab = value;
-      },
-      set pendingEndTurn(value) {
-        model.#pendingEndTurn = value;
       },
       set pendingResearchRemoval(value) {
         model.#pendingResearchRemoval = value;
@@ -1733,13 +1575,7 @@ export class AppModel {
       clearProductionReceipt: () => model.clearProductionReceipt(),
       resizeMap: (viewport: MapViewport) => model.resizeMap(viewport),
       fitProduction: () => model.#fitProduction(),
-      openDecisions: () => model.openDecisions(),
-      openDecision: (id?: string) => model.openDecision(id),
-      skipDecision: (id: string) => model.skipDecision(id),
-      muteDecision: (id: string) => model.muteDecision(id),
-      unmuteDecision: (id: string) => model.unmuteDecision(id),
       requestEndTurn: () => model.requestEndTurn(),
-      cancelEndTurn: () => model.cancelEndTurn(),
       colonize: (id: string) => model.colonize(id),
       build: (type: BuildType, slotIndex?: number) =>
         model.build(type, slotIndex),
@@ -1893,7 +1729,6 @@ export interface AppHost {
   shipyardPlacement: AppReadModel['shipyardPlacement'];
   planetTab: PlanetTab;
   readonly hiddenFleetCategories: Set<FleetCategory>;
-  pendingEndTurn: boolean;
   pendingResearchRemoval: Technology | null;
   game: Game;
   testBattle: TacticalBattle | null;
@@ -1989,13 +1824,7 @@ export interface AppHost {
   clearProductionReceipt(): void;
   resizeMap(viewport: MapViewport): void;
   fitProduction(): void;
-  openDecisions(): void;
-  openDecision(id?: string): void;
-  skipDecision(id: string): void;
-  muteDecision(id: string): void;
-  unmuteDecision(id: string): void;
   requestEndTurn(): boolean;
-  cancelEndTurn(): void;
   colonize(id: string): void;
   build(type: BuildType, slotIndex?: number): void;
   scheduleShip(

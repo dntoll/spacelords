@@ -79,9 +79,6 @@ describe('automatisk-bargning', () => {
     });
     game.setAutomaticSalvage('fleet-home');
     expect(game.fleet('fleet-home')!.destination).toBeNull();
-    expect(game.decisions.some((d) => d.id === 'fleet-idle-fleet-home')).toBe(
-      false,
-    );
     const waiting = game.exportState();
     game = Game.restore({
       ...waiting,

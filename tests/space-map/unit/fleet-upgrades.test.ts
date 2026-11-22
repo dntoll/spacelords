@@ -194,11 +194,6 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
     expect(resumed.fleet('fleet-home')!.upgrade!.issue).toContain(
       'No working shipyard',
     );
-    expect(
-      resumed.decisions.some(
-        (decision) => decision.id === 'upgrade-fleet-home',
-      ),
-    ).toBe(true);
     resumed.clearDestination('fleet-home');
     expect(resumed.fleet('fleet-home')!.upgrade).toBeUndefined();
   });
@@ -299,11 +294,6 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
     finishYear(game);
     expect(game.fleet('fleet-home')!.upgrade).toBeDefined();
     expect(game.fleet('fleet-home')!.shipUnits![0]!.telescope).toBe(1);
-    expect(
-      game.decisions.some(
-        (decision) => decision.id === 'fleet-idle-fleet-home',
-      ),
-    ).toBe(false);
     const restored = Game.restore(game.exportState());
     finishYear(restored);
     finishYear(restored);

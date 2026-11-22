@@ -1,10 +1,5 @@
 import { ShipOrders, type ShipOrder } from './ShipOrders.js';
 import {
-  PlanetQueues,
-  type PlanetQueueKind,
-  type PlanetQueuesSnapshot,
-} from './PlanetQueues.js';
-import {
   ShipUpgrades,
   type FleetUpgradeOrder,
   type ShipUpgradeTarget,
@@ -95,12 +90,6 @@ import type {
   EventLine,
   ProductionContext,
 } from './turn/EventDetails.js';
-import {
-  DecisionBoard,
-  isMessageSetting,
-  type Decision,
-  type DecisionDescriptor,
-} from './Decisions.js';
 import { FleetPursuit, type PursuingFleet } from './FleetPursuit.js';
 export { TECHNOLOGIES, type Technology } from './research/Research.js';
 
@@ -120,7 +109,6 @@ import {
   projectCost,
 } from './Catalog.js';
 import type {
-  FleetDetour,
   StationConstruction,
   ResearchSnapshot,
   ProductionReceipt,
@@ -131,8 +119,6 @@ import type {
   PlanetOrderSnapshot,
   FleetSnapshot,
   GameEvent,
-  PlanetQueueSnapshot,
-  AttackQueueEntrySnapshot,
 } from './GameSnapshots.js';
 export * from './Catalog.js';
 export * from './GameSnapshots.js';
@@ -229,8 +215,6 @@ interface Fleet {
   automation?: 'salvage';
   colonizationTargetId?: string;
   explorationTargetId?: string;
-  planetQueue?: PlanetQueueKind;
-  detour?: FleetDetour;
   navigationIssue?: string;
   starSurvey?: {
     starId: string;
@@ -284,9 +268,6 @@ interface SavedFleet extends Omit<
 
 export interface GameState {
   readonly productionFleetSequences?: Readonly<Record<string, number>>;
-  readonly planetQueues?: PlanetQueuesSnapshot;
-  readonly attackQueue?: readonly string[];
-  readonly salvageQueue?: readonly string[];
   readonly surveyedPlanets?: readonly string[];
   /** Older saves only: replaced by the production network. */
   readonly shipments?: readonly unknown[];
@@ -296,8 +277,6 @@ export interface GameState {
   readonly construction?: Readonly<Record<string, number>>;
   /** forskningstid: rounds spent per unfinished technology; absent in older saves. */
   readonly researchProgress?: Readonly<Record<string, number>>;
-  readonly skippedDecisions: readonly string[];
-  readonly mutedDecisions?: readonly DecisionDescriptor[];
   // sparformat: only the current format loads; older saves are rejected.
   readonly version: 17;
   readonly knownTerrain?: readonly string[];
@@ -342,9 +321,6 @@ export interface GameState {
 
 /** Private mutable game state; views receive only immutable snapshots. */
 export class Game {
-  #planetQueues = new PlanetQueues();
-  #attackQueue: string[] = [];
-  #salvageQueue: string[] = [];
   #surveyedPlanets = new Set<string>();
   // produktionsnatverk: shared stock and goods moving between planets.
   #network = new NetworkEconomy();
@@ -352,7 +328,6 @@ export class Game {
   // byggtid-per-byggnad: round each building's construction began.
   #construction: Record<string, number> = {};
   #salvage: Salvage;
-  #decisions = new DecisionBoard();
   #research = new ResearchPlan();
   #round = 1;
   #phase: GamePhase = 'planning';
@@ -430,9 +405,6 @@ export class Game {
       networkStarted: { ...this.#networkStarted },
       construction: { ...this.#construction },
       productionFleetSequences: { ...this.#productionFleetSequences },
-      planetQueues: this.#planetQueues.snapshot(),
-      attackQueue: [...this.#attackQueue],
-      salvageQueue: [...this.#salvageQueue],
       surveyedPlanets: [...this.#surveyedPlanets],
       knownTerrain: [...this.#knownTerrain],
       salvage: this.#salvage.snapshot(),
@@ -466,8 +438,6 @@ export class Game {
       researched: [...this.#research.completed],
       researchTarget: this.#research.queue[0] ?? null,
       researchQueue: this.#research.queue,
-      skippedDecisions: [...this.#decisions.skipped],
-      mutedDecisions: this.#decisions.muted,
       colonies: [...this.#colonies],
       fleets: this.#fleets,
       explored: [...this.#explored],
@@ -584,10 +554,6 @@ export class Game {
     );
     game.#networkStarted = { ...(copy.networkStarted ?? {}) };
     game.#construction = { ...(copy.construction ?? {}) };
-    game.#decisions = new DecisionBoard(
-      new Set(copy.skippedDecisions),
-      copy.mutedDecisions ?? [],
-    );
     game.#colonies = new Map(copy.colonies);
     for (const colony of game.#colonies.values()) {
       colony.stock = { ...emptyStock(), ...colony.stock };
@@ -663,15 +629,6 @@ export class Game {
             fleet.joinFleetId)
         )
           throw new Error('Invalid saved planet exploration order.');
-        if (
-          fleet.planetQueue !== undefined &&
-          (fleet.planetQueue === 'exploration'
-            ? !fleet.explorationTargetId || !!fleet.colonizationTargetId
-            : fleet.planetQueue === 'colonization'
-              ? !fleet.colonizationTargetId || !!fleet.explorationTargetId
-              : true)
-        )
-          throw new Error('Invalid saved planet queue assignment.');
         if (fleet.patrol !== undefined) {
           FleetPatrol.validate(fleet.patrol, (point) => !!galaxy.cellAt(point));
           if (
@@ -704,25 +661,6 @@ export class Game {
       fleet.ships = { ...zeroShips(), ...fleet.ships };
     game.#normalizeShips();
     game.#explored = new Set(copy.explored);
-    game.#planetQueues = new PlanetQueues(copy.planetQueues);
-    if (
-      copy.attackQueue !== undefined &&
-      (!Array.isArray(copy.attackQueue) ||
-        copy.attackQueue.some((id: unknown) => typeof id !== 'string' || !id) ||
-        new Set(copy.attackQueue).size !== copy.attackQueue.length)
-    )
-      throw new Error('Invalid saved attack queue.');
-    game.#attackQueue = [...((copy.attackQueue ?? []) as string[])];
-    if (
-      copy.salvageQueue !== undefined &&
-      (!Array.isArray(copy.salvageQueue) ||
-        copy.salvageQueue.some(
-          (id: unknown) => typeof id !== 'string' || !id,
-        ) ||
-        new Set(copy.salvageQueue).size !== copy.salvageQueue.length)
-    )
-      throw new Error('Invalid saved salvage queue.');
-    game.#salvageQueue = [...((copy.salvageQueue ?? []) as string[])];
     const planetIds = new Set(
       galaxy.systems.flatMap((system) =>
         system.planets.map((planet) => planet.id),
@@ -744,9 +682,6 @@ export class Game {
     game.#surveyedPlanets = new Set(restoredSurveyed);
     for (const planet of game.#ownedPlanets())
       game.#surveyedPlanets.add(planet.id);
-    for (const kind of ['exploration', 'colonization'] as const)
-      for (const id of game.#planetQueues.snapshot()[kind])
-        if (!planetIds.has(id)) throw new Error('Invalid saved planet queue.');
     game.#knownTerrain = new Set(copy.knownTerrain ?? copy.explored);
     for (const key of game.#knownTerrain) {
       const coordinates = key.split(',').map(Number);
@@ -758,15 +693,6 @@ export class Game {
         throw new Error('Invalid known terrain.');
     }
     for (const fleet of game.#fleets) {
-      if (
-        fleet.detour &&
-        (!(['explore-planet', 'attack-pirate'] as const).includes(
-          fleet.detour.kind,
-        ) ||
-          typeof fleet.detour.targetId !== 'string' ||
-          !fleet.detour.targetId)
-      )
-        throw new Error('Invalid saved fleet detour.');
       const survey = fleet.starSurvey;
       if (
         survey &&
@@ -900,20 +826,6 @@ export class Game {
       throw new Error('Invalid charted pirate contacts.');
     game.#chartedPirates = new Set(chartedPirates);
     game.#linkInterruptionEvents();
-    for (const fleet of game.#fleets) {
-      if (!fleet.planetQueue) continue;
-      const target =
-        fleet.planetQueue === 'exploration'
-          ? fleet.explorationTargetId
-          : fleet.colonizationTargetId;
-      if (
-        !target ||
-        !game.#planetQueues.snapshot()[fleet.planetQueue].includes(target)
-      )
-        throw new Error('Invalid saved planet queue assignment.');
-    }
-    if (['planning', 'interrupted'].includes(game.#phase))
-      game.#assignTaskQueues();
     // Exercise derived data before accepting a stored record.
     game.mapSnapshot();
     game.fleetSnapshots();
@@ -931,334 +843,7 @@ export class Game {
   get events(): readonly GameEvent[] {
     return Object.freeze([...this.#events]);
   }
-  get planetQueues(): PlanetQueueSnapshot {
-    const saved = this.#planetQueues.snapshot();
-    const entries = (kind: PlanetQueueKind) =>
-      Object.freeze(
-        saved[kind].flatMap((planetId) => {
-          const planet = this.#planetById(planetId);
-          if (!planet) return [];
-          const fleet = this.#fleets.find((candidate) =>
-            kind === 'exploration'
-              ? candidate.explorationTargetId === planetId
-              : candidate.colonizationTargetId === planetId,
-          );
-          return [
-            Object.freeze({
-              planetId,
-              name: planet.name,
-              position: planet.position,
-              assignedFleetId: fleet?.id ?? null,
-              assignedFleetName: fleet?.name ?? null,
-              ...(kind === 'colonization'
-                ? this.colonyShipRequest(planetId)
-                : {}),
-            }),
-          ];
-        }),
-      );
-    return Object.freeze({
-      exploration: entries('exploration'),
-      colonization: entries('colonization'),
-    });
-  }
 
-  get salvageQueue() {
-    return Object.freeze(
-      this.#salvageQueue.flatMap((wreckId) => {
-        const wreck = this.#salvage.wrecks.find(
-          (item) => item.id === wreckId && item.known && !item.yardId,
-        );
-        if (!wreck) return [];
-        const fleet = this.#fleets.find(
-          (item) => item.id === (wreck.towedBy ?? wreck.reservedBy),
-        );
-        return [
-          Object.freeze({
-            wreckId,
-            name: `${wreck.ship.type} wreck`,
-            position: wreck.position,
-            assignedFleetId: fleet?.id ?? null,
-            assignedFleetName: fleet?.name ?? null,
-          }),
-        ];
-      }),
-    );
-  }
-
-  addWreckToSalvageQueue(wreckId: string): void {
-    this.#requirePlanetQueueEditing();
-    const wreck = this.#salvage.wrecks.find(
-      (item) =>
-        item.id === wreckId &&
-        item.known &&
-        !item.yardId &&
-        !item.reservedBy &&
-        !item.towedBy,
-    );
-    if (this.#salvageQueue.includes(wreckId)) return;
-    if (!wreck) throw new Error('Choose an available discovered wreck.');
-    this.#salvageQueue.push(wreckId);
-    this.#updateSalvage();
-  }
-
-  removeWreckFromSalvageQueue(wreckId: string): void {
-    this.#requirePlanetQueueEditing();
-    if (!this.#salvageQueue.includes(wreckId)) return;
-    this.#salvageQueue = this.#salvageQueue.filter((id) => id !== wreckId);
-    const wreck = this.#salvage.wrecks.find((item) => item.id === wreckId);
-    if (wreck?.reservedBy && !wreck.towedBy) {
-      const order = this.#salvage.order(wreck.reservedBy);
-      if (order) order.targets = order.targets.filter((id) => id !== wreckId);
-      wreck.reservedBy = null;
-    }
-    this.#updateSalvage();
-  }
-
-  moveWreckInSalvageQueue(wreckId: string, index: number): void {
-    this.#requirePlanetQueueEditing();
-    const from = this.#salvageQueue.indexOf(wreckId);
-    if (
-      from < 0 ||
-      !Number.isInteger(index) ||
-      index < 0 ||
-      index >= this.#salvageQueue.length
-    )
-      throw new Error('Choose a valid salvage queue position.');
-    this.#salvageQueue.splice(from, 1);
-    this.#salvageQueue.splice(index, 0, wreckId);
-    this.#updateSalvage();
-  }
-
-  get attackQueue(): readonly AttackQueueEntrySnapshot[] {
-    return Object.freeze(
-      this.#attackQueue.flatMap((pirateId) => {
-        const pirate = this.#pirates.find(
-          (candidate) => candidate.id === pirateId,
-        );
-        if (!pirate) return [];
-        const fleet = this.#fleets.find(
-          (candidate) =>
-            candidate.detour?.kind === 'attack-pirate' &&
-            candidate.detour.targetId === pirateId,
-        );
-        return [
-          Object.freeze({
-            pirateId,
-            name: 'Space pirate',
-            position: pirate.position,
-            assignedFleetId: fleet?.id ?? null,
-            assignedFleetName: fleet?.name ?? null,
-          }),
-        ];
-      }),
-    );
-  }
-
-  addPirateToAttackQueue(pirateId: string): void {
-    this.#requirePlanetQueueEditing();
-    if (
-      !this.#pirates.some(
-        (pirate) =>
-          pirate.id === pirateId && this.#visible.has(pirate.position.key),
-      )
-    )
-      throw new Error('Choose a visible pirate.');
-    if (!this.#attackQueue.includes(pirateId)) this.#attackQueue.push(pirateId);
-    this.#assignTaskQueues();
-  }
-
-  removePirateFromAttackQueue(pirateId: string): void {
-    this.#requirePlanetQueueEditing();
-    this.#attackQueue = this.#attackQueue.filter((id) => id !== pirateId);
-    for (const fleet of this.#fleets)
-      if (
-        fleet.detour?.kind === 'attack-pirate' &&
-        fleet.detour.targetId === pirateId
-      )
-        this.#resumeDetour(fleet);
-    this.#assignTaskQueues();
-  }
-
-  movePirateAttackQueue(pirateId: string, index: number): void {
-    this.#requirePlanetQueueEditing();
-    const from = this.#attackQueue.indexOf(pirateId);
-    if (
-      from < 0 ||
-      !Number.isInteger(index) ||
-      index < 0 ||
-      index >= this.#attackQueue.length
-    )
-      throw new Error('Choose a valid attack queue position.');
-    this.#attackQueue.splice(from, 1);
-    this.#attackQueue.splice(index, 0, pirateId);
-    this.#assignTaskQueues();
-  }
-
-  addPlanetToQueue(kind: PlanetQueueKind, planetId: string): void {
-    this.#requirePlanetQueueEditing();
-    const planet = this.#planetById(planetId);
-    if (!planet || !this.#knownObjects.has(planetId))
-      throw new Error('Choose a discovered planet.');
-    if (kind === 'exploration') {
-      if (this.#surveyedPlanets.has(planetId))
-        throw new Error('Choose a planet that has not been explored.');
-    } else if (
-      !this.#surveyedPlanets.has(planetId) ||
-      planet.colony ||
-      this.#colonies.has(planetId)
-    )
-      throw new Error('Choose an explored uninhabited planet.');
-    this.#planetQueues.add(kind, planetId);
-    this.#assignTaskQueues();
-  }
-
-  colonyShipRequest(planetId: string): Readonly<{
-    colonyShipBuildReason: string | null;
-    colonyShipBuildingAt: string | null;
-  }> {
-    const planet = this.#planetById(planetId);
-    if (
-      !planet ||
-      !this.#surveyedPlanets.has(planetId) ||
-      planet.colony ||
-      this.#colonies.has(planetId)
-    )
-      return Object.freeze({
-        colonyShipBuildReason: 'Choose an explored uninhabited planet.',
-        colonyShipBuildingAt: null,
-      });
-    const assigned = this.#fleets.some(
-      (fleet) => fleet.colonizationTargetId === planetId,
-    );
-    if (assigned)
-      return Object.freeze({
-        colonyShipBuildReason: 'A Colony ship is already assigned.',
-        colonyShipBuildingAt: null,
-      });
-    const available = this.#fleets.some((fleet) => {
-      if (!this.#isIdleFleet(fleet) || !fleet.ships['Colony ship'])
-        return false;
-      const path = this.#navigation.path(
-        fleet.position!,
-        planet.position,
-        this.#speed(fleet),
-        this.#knownTerrain,
-      );
-      return fleet.position!.key === planet.position.key || path.length > 0;
-    });
-    if (available)
-      return Object.freeze({
-        colonyShipBuildReason: 'An available Colony ship can take this target.',
-        colonyShipBuildingAt: null,
-      });
-    const existing = [...this.#colonies].flatMap(([id, state]) =>
-      state.projects
-        .filter(
-          (project) =>
-            project.type === 'Colony ship' &&
-            project.initialOrder?.kind === 'colonize' &&
-            project.initialOrder.planetId === planetId,
-        )
-        .map(() => this.#planetById(id)!),
-    )[0];
-    if (existing)
-      return Object.freeze({
-        colonyShipBuildReason: 'A Colony ship is already being built.',
-        colonyShipBuildingAt: existing.name,
-      });
-    const factory = this.#nearestColonyShipFactory(planet);
-    return Object.freeze({
-      colonyShipBuildReason: factory
-        ? null
-        : 'No reachable completed Colony ship factory.',
-      colonyShipBuildingAt: factory?.planet.name ?? null,
-    });
-  }
-
-  requestColonyShip(planetId: string): ProductionReceipt {
-    this.#requirePlanetQueueEditing();
-    const status = this.colonyShipRequest(planetId);
-    if (status.colonyShipBuildReason)
-      throw new Error(status.colonyShipBuildReason);
-    const target = this.#planetById(planetId)!;
-    const factory = this.#nearestColonyShipFactory(target)!;
-    const receipt = this.#scheduleShip(
-      factory.planet,
-      'Colony ship',
-      null,
-      factory.factoryId,
-      { kind: 'colonize', planetId },
-    );
-    if (!this.#planetQueues.snapshot().colonization.includes(planetId)) {
-      this.#planetQueues.add('colonization', planetId);
-      this.#assignTaskQueues();
-    }
-    return receipt;
-  }
-
-  #nearestColonyShipFactory(target: Planet): {
-    planet: Planet;
-    factoryId: string;
-  } | null {
-    return (
-      this.#ownedPlanets()
-        .flatMap((planet) =>
-          this.#state(planet)
-            .buildings.filter(
-              (building) =>
-                building.type === 'Colony ship factory' && !building.demolition,
-            )
-            .map((building) => {
-              const path = this.#navigation.path(
-                planet.position,
-                target.position,
-                SHIPS['Colony ship'].speed,
-                this.#knownTerrain,
-              );
-              return {
-                planet,
-                factoryId: building.id,
-                distance:
-                  planet.position.key === target.position.key
-                    ? 0
-                    : path.length || Number.POSITIVE_INFINITY,
-              };
-            }),
-        )
-        .filter((item) => Number.isFinite(item.distance))
-        .sort(
-          (a, b) =>
-            a.distance - b.distance ||
-            a.planet.id.localeCompare(b.planet.id) ||
-            a.factoryId.localeCompare(b.factoryId),
-        )[0] ?? null
-    );
-  }
-
-  movePlanetQueue(
-    kind: PlanetQueueKind,
-    planetId: string,
-    index: number,
-  ): void {
-    this.#requirePlanetQueueEditing();
-    this.#planetQueues.move(kind, planetId, index);
-    this.#assignTaskQueues();
-  }
-
-  removePlanetFromQueue(kind: PlanetQueueKind, planetId: string): void {
-    this.#requirePlanetQueueEditing();
-    this.#planetQueues.remove(kind, planetId);
-    for (const fleet of this.#fleets)
-      if (
-        fleet.planetQueue === kind &&
-        (kind === 'exploration'
-          ? fleet.explorationTargetId === planetId
-          : fleet.colonizationTargetId === planetId)
-      )
-        this.#clearPlanetQueueOrder(fleet);
-    this.#assignTaskQueues();
-  }
   mapSnapshot(): readonly MapCell[] {
     this.#mapCells ??= this.galaxy.mapSnapshot(
       this.#explored,
@@ -1641,10 +1226,8 @@ export class Game {
   }
   #foundColony(fleet: Fleet, planet: Planet): readonly Discovery[] {
     this.#surveyedPlanets.add(planet.id);
-    this.#planetQueues.remove('colonization', planet.id);
     delete fleet.colonizationTargetId;
     delete fleet.explorationTargetId;
-    delete fleet.planetQueue;
     if (fleet.destination?.key === planet.position.key) {
       fleet.destination = null;
       delete fleet.courseOrigin;
@@ -1698,7 +1281,6 @@ export class Game {
         continue;
       if (planet.colony || this.#colonies.has(planet.id)) {
         delete fleet.colonizationTargetId;
-        delete fleet.planetQueue;
         fleet.destination = null;
         delete fleet.courseOrigin;
         this.#event(
@@ -1731,15 +1313,12 @@ export class Game {
       )
         continue;
       this.#surveyedPlanets.add(planet.id);
-      this.#planetQueues.remove('exploration', planet.id);
       if (fleet.explorationTargetId === planet.id) {
         delete fleet.explorationTargetId;
-        delete fleet.planetQueue;
         if (fleet.destination?.key === planet.position.key) {
           fleet.destination = null;
           delete fleet.courseOrigin;
         }
-        if (fleet.detour?.kind === 'explore-planet') this.#resumeDetour(fleet);
       }
       const eventId = this.#event(
         `Planet explored: ${planet.name} at HEX ${planet.position.key}.`,
@@ -1806,10 +1385,6 @@ export class Game {
             : {}),
           ...(fleet.explorationTargetId
             ? { explorationTargetId: fleet.explorationTargetId }
-            : {}),
-          ...(fleet.planetQueue ? { planetQueue: fleet.planetQueue } : {}),
-          ...(fleet.detour
-            ? { detour: Object.freeze({ ...fleet.detour }) }
             : {}),
           ...(fleet.automation ? { automation: fleet.automation } : {}),
           ...(fleet.ordersPaused ? { ordersPaused: true } : {}),
@@ -2288,8 +1863,6 @@ export class Game {
     delete fleet.automation;
     delete fleet.colonizationTargetId;
     delete fleet.explorationTargetId;
-    delete fleet.planetQueue;
-    delete fleet.detour;
     delete fleet.patrol;
     delete fleet.exploration;
     delete fleet.starSurvey;
@@ -2354,57 +1927,15 @@ export class Game {
       stationPosition: position,
     });
   }
-  #assignSalvageQueue(): void {
-    this.#salvageQueue = this.#salvageQueue.filter((id) =>
-      this.#salvage.wrecks.some(
-        (wreck) => wreck.id === id && wreck.known && !wreck.yardId,
-      ),
-    );
-    for (const id of this.#salvageQueue) {
-      const wreck = this.#salvage.wrecks.find((item) => item.id === id)!;
-      if (wreck.reservedBy || wreck.towedBy) continue;
-      const fleet = this.#fleets
-        .filter(
-          (item) =>
-            item.ships['Salvage ship'] > 0 &&
-            (this.#isIdleFleet(item) ||
-              (item.automation === 'salvage' &&
-                !!item.position &&
-                !item.destination &&
-                !this.#salvage.order(item.id) &&
-                !this.#salvage.towing(item.id).length)),
-        )
-        .flatMap((item) => {
-          const path = this.#navigation.path(
-            item.position!,
-            wreck.position,
-            this.#speed(item),
-            this.#knownTerrain,
-          );
-          return item.position!.key === wreck.position.key || path.length
-            ? [{ fleet: item, distance: path.length }]
-            : [];
-        })
-        .sort(
-          (a, b) =>
-            a.distance - b.distance || a.fleet.id.localeCompare(b.fleet.id),
-        )[0]?.fleet;
-      if (fleet) this.#salvage.assign(fleet, id);
-    }
-  }
 
   #updateSalvage(): void {
     this.#updateFleetUpgrades();
     for (let pass = 0; pass < 2; pass++) {
-      this.#assignSalvageQueue();
       this.#updateAutomaticSalvage();
       this.#salvage.update(
         this.#fleets,
         (position) => this.#hostileAt(position),
         (wreck, yard) => {
-          this.#salvageQueue = this.#salvageQueue.filter(
-            (id) => id !== wreck.id,
-          );
           for (const [part, amount] of Object.entries(
             Salvage.components(wreck.ship),
           )) {
@@ -3254,7 +2785,6 @@ export class Game {
         this.#fleets.push(group);
         this.#releaseEmptyFleet(source);
         this.#refreshReinforcements();
-        this.#assignTaskQueues();
         return this.fleet(group.id)!;
       }
     } else {
@@ -3274,7 +2804,6 @@ export class Game {
     target.ships[ship] += amount;
     this.#releaseEmptyFleet(source);
     this.#refreshReinforcements();
-    this.#assignTaskQueues();
     return this.fleet(target.id)!;
   }
   createFleet(sourceId?: string): FleetSnapshot {
@@ -3321,7 +2850,6 @@ export class Game {
     delete fleet.automation;
     delete fleet.colonizationTargetId;
     delete fleet.explorationTargetId;
-    delete fleet.planetQueue;
     fleet.destination = destination;
     delete fleet.navigationIssue;
     delete fleet.patrol;
@@ -3335,8 +2863,6 @@ export class Game {
     delete this.#fleetState(id).automation;
     delete this.#fleetState(id).colonizationTargetId;
     delete this.#fleetState(id).explorationTargetId;
-    delete this.#fleetState(id).planetQueue;
-    delete this.#fleetState(id).detour;
     delete this.#fleetState(id).exploration;
     delete this.#fleetState(id).starSurvey;
     delete this.#fleetState(id).patrol;
@@ -3849,7 +3375,6 @@ export class Game {
         continue;
       }
       const fleet = this.#fleetState(participant.id);
-      const attackDetour = fleet.detour?.kind === 'attack-pirate';
       const lostUnits = fleet.shipUnits!.filter((unit) => killed.has(unit.id));
       for (const unit of lostUnits) {
         fleet.ships[unit.type]--;
@@ -3868,11 +3393,9 @@ export class Game {
         fleet.destination = null;
         delete fleet.courseOrigin;
         delete fleet.joinFleetId;
-        if (!attackDetour) {
-          delete fleet.patrol;
-          delete fleet.exploration;
-          delete fleet.starSurvey;
-        }
+        delete fleet.patrol;
+        delete fleet.exploration;
+        delete fleet.starSurvey;
         this.#cancelFleetUpgrade(fleet);
         delete fleet.pendingOrder;
         delete fleet.automation;
@@ -3882,14 +3405,6 @@ export class Game {
         this.#salvage.follow(fleet);
       }
       this.#releaseEmptyFleet(fleet);
-    }
-    for (const id of playerIds) {
-      const fleet = this.#fleets.find((candidate) => candidate.id === id);
-      if (fleet?.detour?.kind !== 'attack-pirate') continue;
-      this.#attackQueue = this.#attackQueue.filter(
-        (pirateId) => pirateId !== fleet.detour!.targetId,
-      );
-      this.#resumeDetour(fleet);
     }
     this.#updateFleetUpgrades();
     for (const id of wreckIds) this.#knownObjects.add(id);
@@ -4004,7 +3519,6 @@ export class Game {
       ...this.#destroyHostileShipyards(),
     ];
     this.#updateSalvage();
-    this.#assignTaskQueues();
   }
   canIssueFleetOrders(id: string): boolean {
     const fleet = this.#fleets.find((candidate) => candidate.id === id);
@@ -4039,7 +3553,6 @@ export class Game {
     delete fleet.automation;
     delete fleet.colonizationTargetId;
     delete fleet.explorationTargetId;
-    delete fleet.planetQueue;
     delete fleet.starSurvey;
     fleet.destination = null;
     delete fleet.courseOrigin;
@@ -4217,7 +3730,6 @@ export class Game {
   startTurn(): void {
     this.#requirePlanning();
     this.#updateSalvage();
-    this.#assignTaskQueues();
     this.#refreshReinforcements();
     this.#mergeReinforcements();
     this.#simulation = new TurnSimulation([
@@ -4240,7 +3752,6 @@ export class Game {
     this.#updateSalvage();
     for (const fleet of this.#fleets) this.#updateExploration(fleet);
     for (const fleet of this.#fleets) this.#updatePatrol(fleet);
-    this.#assignTaskQueues();
     const pirates = new Map(this.#pirates.map((pirate) => [pirate.id, pirate]));
     const frame = FleetPursuit.plan(
       this.#movingFleets(),
@@ -4347,11 +3858,9 @@ export class Game {
     if (this.#simulation?.awaitingCombat || this.nextTurnFrame())
       throw new Error('Complete the remaining turn steps first.');
     this.#round += 1;
-    this.#decisions.skipped.clear();
     this.#phase = 'planning';
     this.#simulation = null;
     this.#activateShipOrders();
-    this.#assignTaskQueues();
   }
   #settleYear(): void {
     for (const fleet of this.#fleets) this.#recordArrival(fleet);
@@ -4405,12 +3914,7 @@ export class Game {
           : 0;
       const previousHabitability = previousEnvironment.habitability;
       state.habitability = Math.min(100, previousHabitability + improvement);
-      if (
-        state.habitability !== previousHabitability &&
-        !this.#decisions.muted.some(
-          (item) => item.id === 'message-habitability',
-        )
-      )
+      if (state.habitability !== previousHabitability)
         this.#planetEvent(
           `Habitability on ${planet.name} increased to ${state.habitability}%.`,
           planet,
@@ -4445,10 +3949,7 @@ export class Game {
         ),
       );
       state.population += growth;
-      if (
-        growth !== 0 &&
-        !this.#decisions.muted.some((item) => item.id === 'message-population')
-      )
+      if (growth !== 0)
         this.#planetEvent(
           `Population on ${planet.name} changed by +${growth}.`,
           planet,
@@ -4616,144 +4117,6 @@ export class Game {
     return Object.freeze(
       this.#ownedPlanets().map((p) => this.planetSnapshot(p)!),
     );
-  }
-  skipDecision(id: string): void {
-    this.#requirePlanning();
-    if (this.decisions.some((item) => item.id === id))
-      this.#decisions.skipped.add(id);
-  }
-  muteDecision(id: string): void {
-    this.#requirePlanning();
-    const decision = [...this.decisions, ...this.messageSettings].find(
-      (item) => item.id === id,
-    );
-    if (decision) this.#decisions.mute(decision);
-  }
-  unmuteDecision(id: string): void {
-    this.#requirePlanning();
-    this.#decisions.unmute(id);
-  }
-  get messageSettings(): readonly Decision[] {
-    return this.#decisions
-      .snapshot([
-        {
-          id: 'message-population',
-          label: 'Population messages',
-          kind: 'planet',
-        },
-        {
-          id: 'message-habitability',
-          label: 'Habitability messages',
-          kind: 'planet',
-        },
-      ])
-      .filter((item) => isMessageSetting(item.id));
-  }
-  get decisions(): readonly Decision[] {
-    const items: DecisionDescriptor[] = [];
-    if (
-      !this.#research.queue.length &&
-      !this.#researchQueueIssue() &&
-      this.#availableResearch().some(
-        (type) => !this.#research.completed.has(type),
-      )
-    )
-      items.push({
-        id: 'research-empty',
-        label: 'Choose research',
-        kind: 'research',
-      });
-    if (
-      this.#research.queue.length &&
-      this.#researchQueueIssue() &&
-      ![...this.#colonies.values()].some((state) =>
-        state.projects.some((project) => project.type === 'Research station'),
-      )
-    )
-      items.push({
-        id: 'research-stalled',
-        label: 'Build a Research station to resume queued research',
-        kind: 'planet',
-        planetId: this.#ownedPlanets()[0]!.id,
-      });
-    for (const order of this.#salvage.orders.filter((order) => order.issue))
-      items.push({
-        id: `salvage-${order.fleetId}`,
-        label: `${this.#fleetDisplayName(this.#fleetState(order.fleetId))}: ${order.issue}`,
-        kind: 'fleet',
-        fleetId: order.fleetId,
-      });
-    for (const fleet of this.#fleets.filter(
-      (fleet) =>
-        fleet.upgrade?.issue && !fleet.upgrade.issue.startsWith('Waiting for '),
-    ))
-      items.push({
-        id: `upgrade-${fleet.id}`,
-        label: `${fleet.name}: ${fleet.upgrade!.issue}`,
-        kind: 'fleet',
-        fleetId: fleet.id,
-      });
-    for (const yard of this.#salvage.yards.filter(
-      (yard) => yard.destroyed || yard.issue,
-    ))
-      items.push({
-        id: `shipyard-${yard.id}`,
-        label: `${this.#planetName(yard.planetId)} shipyard: ${yard.destroyed ? 'station destroyed; rebuild required' : yard.issue}`,
-        kind: 'planet',
-        planetId: yard.planetId,
-      });
-    for (const planet of this.#ownedPlanets()) {
-      const state = this.#state(planet);
-      if (this.#hasIdleShipFactory(state))
-        items.push({
-          id: `building-empty-${planet.id}`,
-          label: `${planet.name}: choose production`,
-          kind: 'planet',
-          planetId: planet.id,
-        });
-      const { blocks } = this.#allocation(planet, state);
-      const project = state.projects[0];
-      const factory = project
-        ? this.#factoryRequirement(planet, state, project)
-        : null;
-      if (factory?.status === 'Needs attention')
-        items.push({
-          id: `production-${planet.id}`,
-          label: `${planet.name}: ${factory.message}`,
-          kind: 'planet',
-          planetId: planet.id,
-        });
-      if (
-        [...blocks.values()].some((s) => s.includes('population')) ||
-        state.buildings
-          .filter((b) => !b.demolition)
-          .reduce((n, b) => n + BUILDINGS[b.type].workers, 0) > state.population
-      )
-        items.push({
-          id: `staff-${planet.id}`,
-          label: `${planet.name}: not enough workers or crew`,
-          kind: 'planet',
-          planetId: planet.id,
-        });
-    }
-    for (const fleet of this.#fleets.filter(
-      (f) =>
-        !f.joinFleetId &&
-        !f.patrol &&
-        !f.automation &&
-        !f.upgrade &&
-        !f.destination &&
-        this.#shipCount(f.ships),
-    ))
-      items.push({
-        id: `fleet-idle-${fleet.id}`,
-        label: `${this.#fleetDisplayName(fleet)}: choose an assignment`,
-        kind: 'fleet',
-        fleetId: fleet.id,
-      });
-    return this.#decisions
-      .snapshot(items)
-      .filter((item) => !isMessageSetting(item.id));
   }
   #cargo(fleetId: string): Stock {
     const stock = emptyStock();
@@ -5545,7 +4908,6 @@ export class Game {
     return fleet.name;
   }
   #updateExploration(fleet: Fleet): void {
-    if (fleet.detour) return;
     if (!fleet.exploration) return;
     let target: HexCoordinate | null = null;
     if (fleet.position && fleet.ships['Exploration ship'] > 0) {
@@ -5652,179 +5014,7 @@ export class Game {
       fleet.courseOrigin = fleet.position!;
     }
   }
-  #assignTaskQueues(): void {
-    this.#updateAttackDetours();
-    this.#assignPlanetQueues();
-    this.#assignAttackQueue();
-  }
 
-  // automatisk-tilldelning-av-planetkoer / utforskningsko-som-avstickare:
-  // queue priority chooses the target and Explore orders are preserved.
-  #assignPlanetQueues(): void {
-    this.#prunePlanetQueues();
-    for (const kind of ['colonization', 'exploration'] as const) {
-      for (const planetId of this.#planetQueues.snapshot()[kind]) {
-        const reserved = this.#fleets.some(
-          (fleet) =>
-            (kind === 'exploration'
-              ? fleet.explorationTargetId
-              : fleet.colonizationTargetId) === planetId,
-        );
-        if (reserved) continue;
-        const planet = this.#planetById(planetId)!;
-        const candidates = this.#fleets
-          .filter(
-            (fleet) =>
-              !fleet.detour &&
-              (this.#isIdleFleet(fleet) ||
-                (kind === 'exploration' && !!fleet.exploration)) &&
-              (kind === 'colonization'
-                ? fleet.ships['Colony ship'] > 0
-                : fleet.ships['Exploration ship'] > 0),
-          )
-          .flatMap((fleet) => {
-            const path = this.#navigation.path(
-              fleet.position!,
-              planet.position,
-              this.#speed(fleet),
-              this.#knownTerrain,
-            );
-            return fleet.position!.key === planet.position.key || path.length
-              ? [{ fleet, distance: path.length }]
-              : [];
-          })
-          .sort(
-            (a, b) =>
-              a.distance - b.distance || a.fleet.id.localeCompare(b.fleet.id),
-          );
-        const fleet = candidates[0]?.fleet;
-        if (!fleet) continue;
-        fleet.planetQueue = kind;
-        if (kind === 'exploration')
-          fleet.detour = { kind: 'explore-planet', targetId: planetId };
-        fleet.destination = planet.position;
-        fleet.courseOrigin = fleet.position!;
-        if (kind === 'exploration') fleet.explorationTargetId = planetId;
-        else fleet.colonizationTargetId = planetId;
-      }
-    }
-  }
-
-  #assignAttackQueue(): void {
-    for (const pirateId of this.#attackQueue) {
-      if (
-        this.#fleets.some(
-          (fleet) =>
-            fleet.detour?.kind === 'attack-pirate' &&
-            fleet.detour.targetId === pirateId,
-        )
-      )
-        continue;
-      const pirate = this.#pirates.find(
-        (candidate) => candidate.id === pirateId,
-      );
-      if (!pirate || !this.#visible.has(pirate.position.key)) continue;
-      const fleet = this.#fleets
-        .filter(
-          (candidate) =>
-            !candidate.detour &&
-            candidate.ships.Fighter > 0 &&
-            (this.#isIdleFleet(candidate) || !!candidate.patrol),
-        )
-        .flatMap((candidate) => {
-          const path = this.#navigation.path(
-            candidate.position!,
-            pirate.position,
-            this.#speed(candidate),
-            this.#knownTerrain,
-          );
-          return candidate.position!.key === pirate.position.key || path.length
-            ? [{ fleet: candidate, distance: path.length }]
-            : [];
-        })
-        .sort(
-          (a, b) =>
-            a.distance - b.distance || a.fleet.id.localeCompare(b.fleet.id),
-        )[0]?.fleet;
-      if (!fleet) continue;
-      fleet.detour = { kind: 'attack-pirate', targetId: pirateId };
-      fleet.destination = pirate.position;
-      fleet.courseOrigin = fleet.position!;
-    }
-  }
-
-  #updateAttackDetours(): void {
-    const visible = new Map(
-      this.#pirates
-        .filter((pirate) => this.#visible.has(pirate.position.key))
-        .map((pirate) => [pirate.id, pirate.snapshot()]),
-    );
-    for (const pirateId of [...this.#attackQueue])
-      if (!visible.has(pirateId)) {
-        this.#attackQueue = this.#attackQueue.filter((id) => id !== pirateId);
-        for (const fleet of this.#fleets)
-          if (
-            fleet.detour?.kind === 'attack-pirate' &&
-            fleet.detour.targetId === pirateId
-          )
-            this.#resumeDetour(fleet);
-      }
-    for (const fleet of this.#fleets) {
-      if (fleet.detour?.kind !== 'attack-pirate') continue;
-      const pirate = visible.get(fleet.detour.targetId);
-      if (!pirate) continue;
-      fleet.destination = pirate.position;
-      fleet.courseOrigin ??= fleet.position!;
-    }
-  }
-
-  #isIdleFleet(fleet: Fleet): boolean {
-    return !!(
-      fleet.position &&
-      !fleet.destination &&
-      !fleet.pendingOrder &&
-      !fleet.patrol &&
-      !fleet.exploration &&
-      !fleet.automation &&
-      !fleet.upgrade &&
-      !fleet.joinFleetId &&
-      !fleet.ordersPaused &&
-      !this.#salvage.order(fleet.id)
-    );
-  }
-
-  #clearPlanetQueueOrder(fleet: Fleet): void {
-    if (fleet.detour?.kind === 'explore-planet') {
-      this.#resumeDetour(fleet);
-      return;
-    }
-    delete fleet.planetQueue;
-    delete fleet.explorationTargetId;
-    delete fleet.colonizationTargetId;
-    fleet.destination = null;
-    delete fleet.courseOrigin;
-  }
-
-  #resumeDetour(fleet: Fleet): void {
-    delete fleet.detour;
-    delete fleet.planetQueue;
-    delete fleet.explorationTargetId;
-    fleet.destination = null;
-    delete fleet.courseOrigin;
-    if (fleet.exploration) this.#updateExploration(fleet);
-    else if (fleet.patrol) this.#updatePatrol(fleet);
-  }
-
-  #prunePlanetQueues(): void {
-    for (const planetId of this.#planetQueues.snapshot().exploration)
-      if (this.#surveyedPlanets.has(planetId))
-        this.#planetQueues.remove('exploration', planetId);
-    for (const planetId of this.#planetQueues.snapshot().colonization) {
-      const planet = this.#planetById(planetId);
-      if (!planet || planet.colony || this.#colonies.has(planetId))
-        this.#planetQueues.remove('colonization', planetId);
-    }
-  }
   #starSurveyDestination(fleet: Fleet): HexCoordinate | null {
     if (!fleet.position) return null;
     if (!fleet.starSurvey) {
@@ -5887,7 +5077,6 @@ export class Game {
     return ring[(survey.startIndex + survey.completed + 1) % 6]!;
   }
   #updatePatrol(fleet: Fleet): void {
-    if (fleet.detour) return;
     if (!fleet.patrol) return;
     if (!armedShipCount(fleet.ships) || !fleet.position) {
       delete fleet.patrol;
@@ -6085,7 +5274,6 @@ export class Game {
     }
     if (fleet.colonizationTargetId && !fleet.ships['Colony ship']) {
       delete fleet.colonizationTargetId;
-      delete fleet.planetQueue;
       fleet.destination = null;
       delete fleet.courseOrigin;
       this.#event(
@@ -6095,19 +5283,12 @@ export class Game {
     }
     if (fleet.explorationTargetId && !fleet.ships['Exploration ship']) {
       delete fleet.explorationTargetId;
-      delete fleet.planetQueue;
       fleet.destination = null;
       delete fleet.courseOrigin;
-      delete fleet.detour;
       this.#event(
         `${fleet.name}: planet exploration cancelled; no Exploration ship remains.`,
         fleet.position ?? undefined,
       );
-    }
-    if (fleet.detour?.kind === 'attack-pirate' && !fleet.ships.Fighter) {
-      const targetId = fleet.detour.targetId;
-      this.#attackQueue = this.#attackQueue.filter((id) => id !== targetId);
-      this.#resumeDetour(fleet);
     }
     if (fleet.patrol && !armedShipCount(fleet.ships)) this.#updatePatrol(fleet);
     if (fleet.exploration && !fleet.ships['Exploration ship'])
@@ -6263,10 +5444,6 @@ export class Game {
       .find((planet) => planet.id === id);
   }
 
-  #requirePlanetQueueEditing(): void {
-    if (!['planning', 'interrupted'].includes(this.#phase))
-      throw new Error('Planet queues can only be edited during decisions.');
-  }
   // handelser: report arrival once, at the point it happens, with a usable place name.
   #recordArrival(fleet: Fleet): void {
     if (fleet.patrol) return;
@@ -6283,7 +5460,7 @@ export class Game {
     // flottorder-upgrade: arrival does not finish this order.
     if (fleet.upgrade) return;
     // ankomstbesked-endast-vid-manuell-forflyttning: automatic legs arrive silently.
-    if (fleet.exploration || fleet.automation || fleet.detour) return;
+    if (fleet.exploration || fleet.automation) return;
     this.#event(
       `${this.#fleetDisplayName(fleet)} arrived at ${place}.`,
       fleet.position,

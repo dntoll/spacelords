@@ -67,11 +67,17 @@ spelbar, men bevara fristående strids- och bordningstester.
 - [ ] Ta bort flera spelarflottor, flottadministration, automatiska order
       och planetköer med deras vyer, tester och krav; behåll skepps- och
       stridsfunktioner som behövs för den kommande flottan.
+  - [x] Ta bort skärmen `Decisions` med beslutslistan, tysta beslut,
+        varningen vid rundslut, beslutsvägledning, uppmärksamhetsmarkeringar
+        och kartproblem, samt Exploration-, Colonization-, Attack- och
+        Salvage-köerna, köåtgärder i händelser och beställning av Colony ship.
 - [ ] Ta bort planet- och fabriksforskning samt planetbunden produktion och
       anpassa återstående forsknings- och produktionsytor till att invänta
       beslutade ersättningar.
 - [ ] Ta bort händelser, beslut, vägledning och navigation som bara stöder
-      borttagna funktioner; granska kvarvarande användartexter.
+      borttagna funktioner; granska kvarvarande användartexter. Beslut,
+      vägledning och köer är borta. Webbläsartesterna (`tests/*/browser`)
+      och `styles.css` har bara rensats delvis och behöver granskas.
 - [ ] Rensa aktiva krav, produktdokumentation, domänmodell och tester så att
       endast aktuell eller uttryckligen planerad funktion återstår. Behåll
       stabila namn för krav som fortfarande gäller och ange deras status.

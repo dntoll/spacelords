@@ -52,7 +52,7 @@ it('geografisk-arsuppspelning / gemensamt-handelseflode / upptacktsavbrott / ord
     return { model, controller, emit, view };
   }
   const first = setup();
-  first.emit({ type: 'confirm-end-turn' });
+  first.emit({ type: 'end-turn' });
   await vi.advanceTimersByTimeAsync(0);
   expect(
     root.querySelector('.event-announcement[data-stage="awaiting-choice"]'),

@@ -125,11 +125,6 @@ it('samtidig-automatisk-flottanimation: groups every autonomous order while manu
       patrol: { center: new HexCoordinate(0, 0), range: 1 },
     },
     { ...base, id: 'salvage', automation: 'salvage' as const },
-    {
-      ...base,
-      id: 'planet-queue',
-      planetQueue: 'exploration' as const,
-    },
     { ...base, id: 'manual' },
   ].map((fleet, index) => ({
     ...fleet,
@@ -150,7 +145,7 @@ it('samtidig-automatisk-flottanimation: groups every autonomous order while manu
   );
   expect(
     playback.batches.map((batch) => batch.map((track) => track[0]!.fleetId)),
-  ).toEqual([['explore', 'patrol', 'salvage', 'planet-queue'], ['manual']]);
+  ).toEqual([['explore', 'patrol', 'salvage'], ['manual']]);
 });
 
 function scene(game: Game): MovementScene {
@@ -342,7 +337,7 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
       dispose() {},
     });
     controller.start();
-    emit({ type: 'confirm-end-turn' });
+    emit({ type: 'end-turn' });
     await vi.advanceTimersByTimeAsync(0);
     expect(steps).toBeGreaterThan(1);
     controller.dispose();
@@ -461,7 +456,7 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
       dispose() {},
     });
     controller.start();
-    emit({ type: 'confirm-end-turn' });
+    emit({ type: 'end-turn' });
     // handelser-vid-ankomst: arrival events pause movement until they close.
     for (
       let step = 0;
@@ -497,7 +492,7 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
       dispose() {},
     });
     controller.start();
-    emit({ type: 'confirm-end-turn' });
+    emit({ type: 'end-turn' });
     expect(animate).not.toHaveBeenCalled();
     expect(model.snapshot.turnMovement).toBeNull();
     expect(model.snapshot.eventPlayback?.stage).toBe('announcing');
@@ -532,7 +527,7 @@ it('handelser-vid-ankomst: shows what a ship found as soon as it arrives, before
     dispose() {},
   });
   controller.start();
-  emit({ type: 'confirm-end-turn' });
+  emit({ type: 'end-turn' });
   for (let step = 0; step < 40 && model.snapshot.phase !== 'planning'; step++) {
     if (model.snapshot.eventPlayback?.stage === 'awaiting-choice')
       emit({ type: 'ignore-discoveries' });

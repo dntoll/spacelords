@@ -180,8 +180,6 @@ describe('sekventiella-arshandelser', () => {
     const model = new AppModel();
     model.build('Research station');
     model.openResearch();
-    for (const decision of model.snapshot.decisions)
-      model.skipDecision(decision.id);
     let emit!: IntentHandler;
     const render = vi.fn();
     const port: AppPort = {
@@ -269,7 +267,7 @@ describe('sekventiella-arshandelser', () => {
       dispose() {},
     });
     controller.start();
-    emit({ type: 'confirm-end-turn' });
+    emit({ type: 'end-turn' });
     await vi.advanceTimersByTimeAsync(0);
     // handelser-vid-ankomst: the discovery shows during movement playback.
     expect(['interrupted', 'simulating']).toContain(model.snapshot.phase);

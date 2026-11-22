@@ -12,19 +12,14 @@ note as about
   Beroenden på app/ och common/ visas i overview.puml.
 end note
 package "Publik yta (index.js)" as public_surface #FFFFEE {
-  rectangle "<b>controllers/index.js</b>\nDecisionController\nFleetController\nOrderController\nPlanetController\nProductionController\nResearchController\nSaveController\nStarMapController\nTurnController" as public__controllers
-  rectangle "<b>models/index.js</b>\nBrowserSaveRepository\nCamera\nCameraFraming\nDecisionFacade\nDecisions\nEconomy\nEventPlayback\nFleetCategory\nFleetFacade\nFleetMapLayout\nGalaxy\nGame\nOrderFacade\nOrderSelection\nPirateFleet\nPlanetFacade\nPlanetQueues\nProductionFacade\nProductionMap\nResearchFacade\nResearchTree\nSalvage\nSaveFacade\nSaveRepository\nShipOrders\nShipProgress\nStarMapFacade\nTurnFacade\nTurnMovementPlayback\nTurnSimulation\nexampleGalaxy" as public__models
-  rectangle "<b>views/index.js</b>\nDecisionGuidanceView\nDiscoveryView\nEmpireView\nEventContent\nEventsView\nFleetCategoryColors\nFleetMapPanel\nGalaxyMapView\nGameText\nMapGesture\nMapLocationHeading\nMapSelectionScroll\nOrdersView\nPlanetImages\nPlanetView\nProductionMapView\nResearchDetailsView\nResearchTreeView\nResearchView\nSalvageView\nSaveMapPreview\nSaveSlotsView\nShipImages\nShipView\nTurnActionsView" as public__views
+  rectangle "<b>controllers/index.js</b>\nFleetController\nOrderController\nPlanetController\nProductionController\nResearchController\nSaveController\nStarMapController\nTurnController" as public__controllers
+  rectangle "<b>models/index.js</b>\nBrowserSaveRepository\nCamera\nCameraFraming\nEconomy\nEventPlayback\nFleetCategory\nFleetFacade\nFleetMapLayout\nGalaxy\nGame\nOrderFacade\nOrderSelection\nPirateFleet\nPlanetFacade\nProductionFacade\nProductionMap\nResearchFacade\nResearchTree\nSalvage\nSaveFacade\nSaveRepository\nShipOrders\nShipProgress\nStarMapFacade\nTurnFacade\nTurnMovementPlayback\nTurnSimulation\nexampleGalaxy" as public__models
+  rectangle "<b>views/index.js</b>\nDiscoveryView\nEventContent\nEventsView\nFleetCategoryColors\nFleetMapPanel\nGalaxyMapView\nGameText\nMapGesture\nMapLocationHeading\nMapSelectionScroll\nOrdersView\nPlanetImages\nPlanetView\nProductionMapView\nResearchDetailsView\nResearchTreeView\nResearchView\nSalvageView\nSaveMapPreview\nSaveSlotsView\nShipImages\nShipView\nTurnActionsView" as public__views
 }
 package "(delat)" as space_map___delat_ {
-  rectangle "<b>models</b>\nCamera\nCatalog\nDecisions\nDetection\nEconomy\nFactoryTechnology\nFleetCombat\nFleetPatrol\nFleetPursuit\nGalaxy\nGalaxyTerrain\nGame\nGameSnapshots\nHexNavigation\nPirateFleet\nPlanet\nPlanetEnvironment\nPlanetQueues\nProductionMap\nProductionPresence\nProductionPriorities\nSalvage\nShipEquipment\nShipOrders\nShipUpgrades\nSpiralGalaxyLayout\nTurnSimulation\nexampleGalaxy" as space_map___delat___models
+  rectangle "<b>models</b>\nCamera\nCatalog\nDetection\nEconomy\nFactoryTechnology\nFleetCombat\nFleetPatrol\nFleetPursuit\nGalaxy\nGalaxyTerrain\nGame\nGameSnapshots\nHexNavigation\nPirateFleet\nPlanet\nPlanetEnvironment\nProductionMap\nProductionPresence\nProductionPriorities\nSalvage\nShipEquipment\nShipOrders\nShipUpgrades\nSpiralGalaxyLayout\nTurnSimulation\nexampleGalaxy" as space_map___delat___models
   rectangle "<b>views</b>\nBuildingImage\nBuildingSymbols\nCatalogControls\nFleetCard\nFleetCategoryColors\nMapArtwork\nMapLocationHeading\nPlanetGlyph\nPlanetImages\nQueueView\nSalvageView\nShipImages\nShipPurposeText\nShipView\nStarGlyph\nTabPanels\nTerrainMapView" as space_map___delat___views
   rectangle "<b>storage</b>\nBrowserSaveRepository" as space_map___delat___storage
-}
-package "decisions" as space_map__decisions {
-  rectangle "<b>controllers</b>\nDecisionController" as space_map__decisions__controllers
-  rectangle "<b>models</b>\nDecisionFacade" as space_map__decisions__models
-  rectangle "<b>views</b>\nDecisionGuidanceView\nEmpireView" as space_map__decisions__views
 }
 package "fleets" as space_map__fleets {
   rectangle "<b>controllers</b>\nFleetController" as space_map__fleets__controllers
@@ -72,7 +67,6 @@ package "turn" as space_map__turn {
 rectangle "boarding" as ext__boarding #EEEEEE
 rectangle "space-battle" as ext__space_battle #EEEEEE
 space_map___delat___views --> space_map___delat___models
-space_map__decisions__controllers ..> space_map__decisions__models : typer
 space_map__fleets__controllers ..> space_map__fleets__models : typer
 space_map__fleets__views --> space_map__fleets__models
 space_map__orders__controllers ..> space_map__orders__models : typer
@@ -93,7 +87,6 @@ space_map___delat_ --> space_map__research : 4
 space_map___delat_ ..> space_map__saves : 1, typer
 space_map___delat_ --> space_map__star_map : 1
 space_map___delat_ ..> space_map__turn : 2, typer
-space_map__decisions --> space_map___delat_ : 5
 space_map__fleets --> space_map___delat_ : 11
 space_map__orders ..> space_map___delat_ : 7, typer
 space_map__planet --> space_map___delat_ : 7
@@ -102,9 +95,9 @@ space_map__production_network --> space_map___delat_ : 1
 space_map__research --> space_map___delat_ : 10
 space_map__research --> space_map__star_map : 1
 space_map__saves --> space_map___delat_ : 8
-space_map__star_map --> space_map___delat_ : 22
+space_map__star_map --> space_map___delat_ : 21
 space_map__star_map --> space_map__fleets : 4
-space_map__turn --> space_map___delat_ : 19
+space_map__turn --> space_map___delat_ : 18
 space_map___delat_ --> ext__boarding : models
 space_map___delat_ --> ext__space_battle : models
 space_map__saves --> ext__boarding : models

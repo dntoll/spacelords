@@ -24,10 +24,9 @@ export class TurnFacade {
       salvageSelection: this.host.salvageSelection,
       camera: this.host.camera.snapshot,
     };
-    this.host.pendingEndTurn = false;
     this.host.cancelMapPointer();
     if (
-      !['decisions', 'research', 'planet'].includes(this.host.screen) &&
+      !['research', 'planet'].includes(this.host.screen) &&
       !this.host.isMapScreen()
     )
       this.host.screen = 'map';
@@ -37,6 +36,23 @@ export class TurnFacade {
 
   nextTurnFrame(): TurnFrame | null {
     return this.host.game.nextTurnFrame();
+  }
+
+  requestEndTurn(): boolean {
+    return (
+      !this.host.eventPlayback &&
+      !this.host.movementPlayback &&
+      this.host.game.phase === 'planning'
+    );
+  }
+
+  handleDiscoveries(): void {
+    this.host.game.handleDiscoveries();
+    this.host.focusInterruptedFleet();
+  }
+
+  allowOtherFleetOrders(): void {
+    this.host.game.allowOtherFleetOrders();
   }
 
   continueTurn(): void {

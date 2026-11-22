@@ -101,12 +101,7 @@ export class TurnMovementPlayback {
       const fleet = this.#tracks.get(track[0]!.fleetId)!.fleet;
       const autonomous =
         'speed' in fleet &&
-        !!(
-          fleet.exploration ||
-          fleet.patrol ||
-          fleet.automation ||
-          fleet.planetQueue
-        );
+        !!(fleet.exploration || fleet.patrol || fleet.automation);
       (autonomous ? automatic : manual).push(track);
     }
     manual.sort((a, b) => comparePlaybackPositions(a[0]!.from, b[0]!.from));
@@ -121,10 +116,7 @@ export class TurnMovementPlayback {
     return !!(
       fleet &&
       'speed' in fleet &&
-      (fleet.exploration ||
-        fleet.patrol ||
-        fleet.automation ||
-        fleet.planetQueue)
+      (fleet.exploration || fleet.patrol || fleet.automation)
     );
   }
 

@@ -98,9 +98,6 @@ describe('flottpatrullering', () => {
     const game = setup(hex(3, 0));
     const center = game.fleet('fleet-home')!.position!;
     game.setPatrol('fleet-home');
-    expect(
-      game.decisions.some((item) => item.id === 'fleet-idle-fleet-home'),
-    ).toBe(false);
     const visited = [...turn(game), ...turn(game), ...turn(game)].map(
       (step) => step.to.key,
     );

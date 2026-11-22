@@ -37,12 +37,6 @@ describe('synlig-flottorder', () => {
     expect(status({ exploration: 'explore', ordersPaused: true })).toBe(
       'Explore · paused',
     );
-    expect(
-      status({
-        exploration: 'explore',
-        detour: { kind: 'attack-pirate', targetId: 'pirate' },
-      }),
-    ).toBe('Attack Space pirate');
     expect(status({ destination: fleet.position })).toMatch(/^Move:/);
     expect(status({ automation: 'salvage' })).toContain('Auto salvage');
   });

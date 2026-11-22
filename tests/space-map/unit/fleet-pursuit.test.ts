@@ -71,9 +71,6 @@ describe('skepp-till-rorlig-flotta', () => {
       ships: { Fighter: 1 },
     });
     const group = reinforcement(game).id;
-    expect(game.decisions.some((decision) => decision.fleetId === group)).toBe(
-      false,
-    );
     turn(game);
     expect(game.fleet(group)!.position?.key).toBe('4,0');
     expect(game.fleet('target')!.ships.Fighter).toBe(0);
@@ -125,9 +122,6 @@ describe('skepp-till-rorlig-flotta', () => {
     game.clearDestination(group);
     expect(game.fleet(group)!.joinFleetId).toBeUndefined();
     expect(game.fleet(group)!.destination).toBeNull();
-    expect(game.decisions.some((decision) => decision.fleetId === group)).toBe(
-      true,
-    );
     game.transferShips(group, 'Fighter', 1, 'target');
     const next = reinforcement(game).id;
     game.setDestination(next, new HexCoordinate(0, 1));
@@ -151,9 +145,6 @@ describe('skepp-till-rorlig-flotta', () => {
       ships: { Fighter: 1 },
     });
     expect(game.fleet(group)!.joinFleetId).toBeUndefined();
-    expect(game.decisions.some((decision) => decision.fleetId === group)).toBe(
-      true,
-    );
   });
 
   it('preserves a partial source fleet and rejects self-transfers without mutation', () => {

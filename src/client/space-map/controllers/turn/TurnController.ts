@@ -22,6 +22,18 @@ export class TurnController {
     return this.facade.continueTurn();
   }
 
+  requestEndTurn(): boolean {
+    return this.facade.requestEndTurn();
+  }
+
+  handleDiscoveries(): void {
+    return this.facade.handleDiscoveries();
+  }
+
+  allowOtherFleetOrders(): void {
+    return this.facade.allowOtherFleetOrders();
+  }
+
   applyTurnFrame(frame: TurnFrame): void {
     return this.facade.applyTurnFrame(frame);
   }

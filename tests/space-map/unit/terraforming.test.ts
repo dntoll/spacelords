@@ -401,31 +401,6 @@ describe('planettypsforskning', () => {
     expect(game.planetSnapshot(planet)!.environment).toBe('Gas');
   });
 
-  it('requests more research only when an unfinished discovered project exists', () => {
-    const initial = Game.restore(researchStationState());
-    const state = {
-      ...initial.exportState(),
-      researched: initial.research.available,
-    };
-    const finished = Game.restore(state);
-    expect(
-      finished.decisions.some(
-        (decision) => decision.id === 'research-empty' && decision.current,
-      ),
-    ).toBe(false);
-    const ice = finished.galaxy.systems[1]!.planets[0]!;
-    const discovered = Game.restore({
-      ...state,
-      explored: [...state.explored, ice.position.key],
-      surveyedPlanets: [...(state.surveyedPlanets ?? []), ice.id],
-    });
-    expect(
-      discovered.decisions.some(
-        (decision) => decision.id === 'research-empty' && decision.current,
-      ),
-    ).toBe(true);
-  });
-
   it('reveals both projects through visibility and queues the matching Dome prerequisite', () => {
     const game = Game.restore(researchStationState());
     expect(game.research.available).toContain('Desert dome');

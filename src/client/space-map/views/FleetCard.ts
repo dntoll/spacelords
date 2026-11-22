@@ -236,14 +236,6 @@ export function fleetAssignmentLabel(
   fleet: FleetSnapshot,
   model: AppReadModel,
 ): string {
-  if (fleet.detour?.kind === 'attack-pirate')
-    return `Attack Space pirate${fleet.ordersPaused ? ' · paused' : ''}`;
-  if (fleet.detour?.kind === 'explore-planet') {
-    const target = model.cells.find(
-      (cell) => cell.position.key === fleet.destination?.key,
-    )?.object?.name;
-    return `Explore planet: ${target ?? 'selected planet'}${fleet.ordersPaused ? ' · paused' : ''}`;
-  }
   if (fleet.ordersPaused) {
     const active = fleetAssignmentLabel(
       { ...fleet, ordersPaused: false },

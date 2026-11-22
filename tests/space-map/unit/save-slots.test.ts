@@ -255,7 +255,7 @@ describe('frontend-backend-mock', () => {
     );
     model.setDestination('fleet-home', 3, 0);
     model.save();
-    emit({ type: 'confirm-end-turn' });
+    emit({ type: 'end-turn' });
     expect(model.snapshot.phase).toBe('simulating');
     expect(repo.load(1)?.state.phase).toBe('planning');
     finishAnimation();

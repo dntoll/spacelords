@@ -305,9 +305,6 @@ describe('bargningsorder / bogsering-av-vrak', () => {
     expect(game.fleet('fleet-home')!.salvage!.issue).toContain(
       'No completed shipyard',
     );
-    expect(
-      game.decisions.some((decision) => decision.id === 'salvage-fleet-home'),
-    ).toBe(true);
     expect(Game.restore(game.exportState()).wrecks).toEqual(game.wrecks);
   });
 });

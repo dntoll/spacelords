@@ -37,14 +37,8 @@ const SHIP_CATEGORY: Readonly<Record<ShipType, FleetCategory>> = {
  * ships of several kinds make it Mixed.
  */
 export function fleetCategory(fleet: FleetSnapshot): FleetCategory {
-  if (fleet.colonizationTargetId || fleet.planetQueue === 'colonization')
-    return 'Colony';
-  if (
-    fleet.exploration ||
-    fleet.explorationTargetId ||
-    fleet.planetQueue === 'exploration'
-  )
-    return 'Exploration';
+  if (fleet.colonizationTargetId) return 'Colony';
+  if (fleet.exploration || fleet.explorationTargetId) return 'Exploration';
   if (fleet.salvage || fleet.automation === 'salvage' || fleet.towing?.length)
     return 'Salvage';
   if (fleet.patrol) return 'Combat';

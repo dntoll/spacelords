@@ -100,41 +100,6 @@ describe('fokuserat-kartval', () => {
   });
 });
 
-describe('rundkontroller-i-decisions', () => {
-  it('keeps Decisions open while advancing the year so Events and End turn stay available', () => {
-    model.openDecisions();
-    model.startTurn();
-    const frames = turnFrames(model, false);
-    expect(model.snapshot.screen).toBe('decisions');
-    for (const frame of frames) model.applyTurnFrame(frame);
-    model.finishTurn();
-    expect(model.snapshot.screen).toBe('decisions');
-    expect(model.snapshot.phase).toBe('planning');
-    expect(model.snapshot.events.length).toBeGreaterThan(0);
-  });
-  it('shows the event history and emits End turn from Decisions', () => {
-    const intents: unknown[] = [];
-    view.bind((intent) => intents.push(intent));
-    model.openDecisions();
-    view.render({
-      ...model.snapshot,
-      events: [{ id: 'arrival', round: 1, text: 'Fleet arrived.' }],
-    });
-    expect(root.querySelector('.event-year h3')?.textContent).toBe('Round 1');
-    expect(root.querySelector('[data-event-id="arrival"]')?.textContent).toBe(
-      'Fleet arrived.',
-    );
-    const end = root.querySelector<HTMLButtonElement>('.end-turn')!;
-    expect(end).not.toBeNull();
-    end.click();
-    expect(intents).toContainEqual({ type: 'end-turn' });
-    view.render({ ...model.snapshot, phase: 'simulating' });
-    expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
-      true,
-    );
-  });
-});
-
 describe('rullningsbar-kartpanel', () => {
   function panelWithContent(contentHeight = 1200) {
     view.render(model.snapshot);

@@ -2,7 +2,6 @@ import {
   renderOrders,
   gameText,
   discoveryControls,
-  updateDecisionGuidance,
   renderProductionRing,
   type ProductionTab,
   renderProductionMapPanel,
@@ -18,9 +17,6 @@ import {
   renderResearchSelection,
   updateResearchCamera,
   planetIllustration,
-  DecisionLayout,
-  renderDecisions,
-  renderTurnWarning,
   renderTurnActions,
   renderEvents,
   renderCombatLog,
@@ -42,7 +38,6 @@ import {
   isMapScreen,
   productionPosition,
   type MapScreen,
-  needsAttention,
   type MapCell,
   type TurnFrame,
   FLEET_CATEGORIES,
@@ -70,7 +65,6 @@ export class AppView implements AppPort {
   #editorView: BoardingEditorView | null = null;
   #productionTab: ProductionTab = 'queue';
   #productionOption: string | null = null;
-  #decisionLayout = new DecisionLayout();
   readonly #root: HTMLElement;
   readonly #mapFactory: MapFactory;
   #emit: IntentHandler = () => undefined;
@@ -349,14 +343,6 @@ export class AppView implements AppPort {
         main.append(
           renderPlanet(model.planet, model.playerName, this.#emit, model),
         );
-      else if (model.screen === 'decisions')
-        main.append(
-          renderDecisions(
-            model,
-            this.#emit,
-            (this.#decisionLayout = new DecisionLayout()),
-          ),
-        );
       else
         main.append(
           renderResearch(
@@ -553,50 +539,9 @@ export class AppView implements AppPort {
         }
       }
     }
-    if (!changedScreen && model.screen === 'decisions') {
-      // senaste-aret-i-events: keep the log attached while decisions change.
-      // stilla-beslutslista: the list keeps its layout, scroll and focus.
-      const previous = this.#root.querySelector<HTMLElement>(
-        '.decisions-page .empire-content',
-      );
-      const scroll = previous?.scrollTop ?? 0;
-      const focused =
-        document.activeElement instanceof HTMLElement &&
-        previous?.contains(document.activeElement)
-          ? {
-              card: document.activeElement.closest<HTMLElement>(
-                '[data-decision-id]',
-              )?.dataset.decisionId,
-              label: document.activeElement.textContent,
-            }
-          : null;
-      const page = renderDecisions(model, this.#emit, this.#decisionLayout);
-      const content = page.querySelector<HTMLElement>('.empire-content')!;
-      previous?.replaceWith(content);
-      content.scrollTop = scroll;
-      if (focused?.card) {
-        const card = content.querySelector(
-          `[data-decision-id="${focused.card}"]`,
-        );
-        const buttons = [
-          ...(card?.querySelectorAll<HTMLButtonElement>('button') ?? []),
-        ].filter((item) => !item.disabled);
-        const twin: Record<string, string> = { Mute: 'Unmute', Unmute: 'Mute' };
-        const control =
-          buttons.find((item) => item.textContent === focused.label) ??
-          buttons.find(
-            (item) => item.textContent === twin[focused.label ?? ''],
-          ) ??
-          buttons[0];
-        control?.focus({ preventScroll: true });
-      }
-    }
     this.#attachTurnActions(previousActions, previousEventScroll);
     this.#syncLocalEditorNav(model);
-    this.#renderMapProblems(model);
-    const counter = this.#root.querySelector('.decision-counter');
-    if (counter)
-      counter.textContent = `Decisions (${model.decisions.filter(needsAttention).length})`;
+    this.#renderFleetCategories(model);
     if (isMapScreen(model.screen)) {
       this.#root
         .querySelector('.map-page')
@@ -627,7 +572,6 @@ export class AppView implements AppPort {
         productionStartOrder: model.productionStartOrder,
         productionMap: model.productionMap,
         productionGuidance: model.productionGuidance,
-        mapProblems: model.mapProblems,
         pirates: model.pirates,
         mapFleetId: model.mapFleetId,
         research: model.research.completed,
@@ -680,7 +624,6 @@ export class AppView implements AppPort {
     const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
     if (end) end.disabled = model.phase !== 'planning' || !!model.eventPlayback;
     this.#renderTurnConsole(model);
-    updateDecisionGuidance(this.#root, model, this.#emit);
     if (isMapScreen(model.screen)) this.#measureMap();
     for (const control of this.#root.querySelectorAll<HTMLButtonElement>(
       'header button',
@@ -744,8 +687,6 @@ export class AppView implements AppPort {
         !model.turnMovement
       )
         this.#root.append(discoveryControls(model, this.#emit));
-    } else if (model.pendingEndTurn) {
-      this.#decisionDialog = renderTurnWarning(model, this.#emit);
     } else if (model.pendingResearchRemoval) {
       const dialog = element('dialog', 'decision-dialog');
       dialog.setAttribute('aria-label', 'Remove research');
@@ -890,55 +831,6 @@ export class AppView implements AppPort {
           details.append(renderCombatLog(current.combatLog));
         }
         const actions = element('div', 'event-actions');
-        if (current.decision.queueAction) {
-          const action = current.decision.queueAction;
-          actions.append(
-            button(action.label, () =>
-              this.#emit({
-                type: 'add-planet-queue',
-                kind: action.kind,
-                planetId: action.planetId,
-              }),
-            ),
-          );
-        }
-        if (current.decision.salvageAction) {
-          const action = current.decision.salvageAction;
-          actions.append(
-            button(action.label, () =>
-              this.#emit({
-                type: 'add-salvage-queue',
-                wreckId: action.wreckId,
-              }),
-            ),
-          );
-        }
-        if (current.decision.attackAction) {
-          const action = current.decision.attackAction;
-          actions.append(
-            button(action.label, () =>
-              this.#emit({
-                type: 'add-attack-queue',
-                pirateId: action.pirateId,
-              }),
-            ),
-          );
-        }
-        if (current.decision.colonyShipAction) {
-          const action = current.decision.colonyShipAction;
-          const build = button(action.label, () =>
-            this.#emit({
-              type: 'request-colony-ship',
-              planetId: action.planetId,
-            }),
-          );
-          build.disabled = !!action.blockedReason;
-          if (action.blockedReason) {
-            build.title = action.blockedReason;
-            build.dataset.blocked = 'true';
-          }
-          actions.append(build);
-        }
         actions.append(
           button('Handle', () => this.#emit({ type: 'handle-discoveries' })),
           button('Ignore', () => this.#emit({ type: 'ignore-discoveries' })),
@@ -1187,7 +1079,6 @@ export class AppView implements AppPort {
       ['research', 'Research'],
       ['fleets', 'Fleets'],
       ['production', 'Production'],
-      ['decisions', 'Decisions'],
     ] as const) {
       const choice = button(
         label,
@@ -1200,15 +1091,12 @@ export class AppView implements AppPort {
                   ? 'open-research'
                   : target === 'fleets'
                     ? 'open-fleets'
-                    : target === 'production'
-                      ? 'open-production'
-                      : 'open-decisions',
+                    : 'open-production',
           }),
         'nav-button',
       );
       choice.dataset.screen = target;
       if (screen === target) choice.setAttribute('aria-current', 'page');
-      if (target === 'decisions') choice.classList.add('decision-counter');
       navigation.append(choice);
     }
     // helskarm-fran-sparade-spel: fullscreen is chosen on Saved games only.
@@ -1333,38 +1221,6 @@ export class AppView implements AppPort {
     this.#resizeFrame = requestAnimationFrame(() =>
       this.#emit({ type: 'map-size', viewport }),
     );
-  }
-
-  #renderMapProblems(model: AppReadModel): void {
-    for (const control of this.#root.querySelectorAll<HTMLElement>(
-      '.nav-button[data-screen]',
-    )) {
-      const attention = model.attentionScreens.some(
-        (screen) => screen === control.dataset.screen,
-      );
-      control.querySelector('.nav-attention')?.remove();
-      control.querySelector('.nav-new')?.remove();
-      if (attention) {
-        const marker = element('span', 'nav-attention', '!');
-        marker.setAttribute('aria-hidden', 'true');
-        control.append(marker);
-        control.title = `${control.getAttribute('aria-label')}: Needs attention`;
-      } else control.removeAttribute('title');
-      control.setAttribute(
-        'aria-description',
-        attention ? 'Needs attention' : '',
-      );
-    }
-    let legend = this.#root.querySelector<HTMLElement>('.map-attention-legend');
-    const show = model.attentionScreens.length > 0;
-    if (show && !legend) {
-      legend = element('p', 'map-attention-legend', '! Needs attention');
-      this.#root
-        .querySelector('.app-header')
-        ?.insertBefore(legend, this.#root.querySelector('.main-nav'));
-    }
-    if (!show) legend?.remove();
-    this.#renderFleetCategories(model);
   }
 
   /** flottkategorier: a colour key that also shows or hides each category. */
@@ -1595,21 +1451,6 @@ export class AppView implements AppPort {
             `Resources: ${model.selectedPlanetInfo.resources.map((resource) => `${resource.name} ${resource.perYear}/round`).join(', ') || 'None'}`,
           ),
         );
-        if (
-          !owned &&
-          !model.planetQueues.colonization.some(
-            (item) => item.planetId === model.selectedPlanetInfo!.id,
-          )
-        )
-          summary.append(
-            button('Add to Colonization queue', () =>
-              this.#emit({
-                type: 'add-planet-queue',
-                kind: 'colonization',
-                planetId: model.selectedPlanetInfo!.id,
-              }),
-            ),
-          );
       } else {
         summary.append(
           element(
@@ -1618,20 +1459,6 @@ export class AppView implements AppPort {
             'Planet details have not been explored.',
           ),
         );
-        if (
-          !model.planetQueues.exploration.some(
-            (item) => item.planetId === model.selectedPlanetInfo!.id,
-          )
-        )
-          summary.append(
-            button('Add to Exploration queue', () =>
-              this.#emit({
-                type: 'add-planet-queue',
-                kind: 'exploration',
-                planetId: model.selectedPlanetInfo!.id,
-              }),
-            ),
-          );
       }
       contents.push(summary);
     } else if (model.screen === 'map' && cell && !cell.explored && !object) {

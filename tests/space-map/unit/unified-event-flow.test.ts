@@ -42,90 +42,6 @@ function session(initial: GameState = discoveryState()) {
 }
 
 describe('gemensamt-handelseflode', () => {
-  it('planetupptackt-fore-utforskning / utforskningsko: adding a discovery to the queue confirms the action and closes the choice', async () => {
-    const current = session().open();
-    current.emit({ type: 'confirm-end-turn' });
-    await vi.advanceTimersByTimeAsync(0);
-
-    for (let attempt = 0; attempt < 20; attempt++) {
-      const playback = current.model.snapshot.eventPlayback;
-      const action = playback?.events[playback.index]?.decision?.queueAction;
-      if (action) break;
-      if (playback?.stage === 'awaiting-choice')
-        current.emit({ type: 'ignore-discoveries' });
-      await vi.advanceTimersByTimeAsync(2_000);
-    }
-
-    const playback = current.model.snapshot.eventPlayback!;
-    const action = playback.events[playback.index]!.decision!.queueAction!;
-    expect(playback.stage).toBe('awaiting-choice');
-
-    current.emit({
-      type: 'add-planet-queue',
-      kind: action.kind,
-      planetId: action.planetId,
-    });
-
-    expect(
-      current.model.snapshot.planetQueues[action.kind].map(
-        (entry) => entry.planetId,
-      ),
-    ).toContain(action.planetId);
-    expect(current.model.snapshot.eventPlayback?.stage).toBe('filing');
-    await vi.advanceTimersByTimeAsync(500);
-    expect(
-      current.model.snapshot.eventPlayback?.events[
-        current.model.snapshot.eventPlayback.index
-      ]?.id,
-    ).not.toBe(playback.events[playback.index]!.id);
-    current.controller.dispose();
-  });
-
-  it('bargningsko: a wreck discovery can be queued and the choice is saved', () => {
-    const game = Game.restore(discoveryState());
-    game.startTurn();
-    while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
-    const checkpoint = game.exportState();
-    const wreck = checkpoint.salvage!.wrecks[0]!;
-    const discovery = checkpoint.simulation!.discoveries[0]!;
-    const state: GameState = {
-      ...checkpoint,
-      salvage: {
-        ...checkpoint.salvage!,
-        wrecks: checkpoint.salvage!.wrecks.map((item) =>
-          item.id === wreck.id ? { ...item, known: true } : item,
-        ),
-      },
-      simulation: {
-        ...checkpoint.simulation!,
-        discoveries: [
-          {
-            ...discovery,
-            id: wreck.id,
-            kind: 'wreck',
-            position: wreck.position,
-          },
-        ],
-      },
-    };
-    const slot = session(state);
-    const current = slot.open();
-    current.model.beginEventPlayback();
-    const playback = current.model.snapshot.eventPlayback!;
-    const event = playback.events[playback.index]!;
-    expect(event.decision?.salvageAction).toMatchObject({
-      wreckId: wreck.id,
-      label: 'Add to Salvage queue',
-    });
-    current.emit({ type: 'add-salvage-queue', wreckId: wreck.id });
-    expect(
-      current.model.snapshot.salvageQueue.map((item) => item.wreckId),
-    ).toContain(wreck.id);
-    expect(current.model.snapshot.eventPlayback?.stage).toBe('filing');
-    expect(slot.saved().state.salvageQueue).toContain(wreck.id);
-    current.controller.dispose();
-  });
-
   it.each([0, 1])(
     'stridsresultat-utan-upprepning: shows losses and survivors once while retaining wrecks and saved history (%s Fighters)',
     (fighters) => {
@@ -218,46 +134,10 @@ describe('gemensamt-handelseflode', () => {
     expect(playback.snapshot.stage).toBe('announcing');
   });
 
-  it('utforskad-planet-visar-kolonisationsdata: includes type, build slots and the dedicated Colony ship action', () => {
-    const game = Game.restore(discoveryState());
-    game.startTurn();
-    while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
-    const checkpoint = game.exportState();
-    const discovery = checkpoint.simulation!.discoveries.find(
-      (item) => item.kind === 'planet',
-    )!;
-    const state: GameState = {
-      ...checkpoint,
-      surveyedPlanets: [...(checkpoint.surveyedPlanets ?? []), discovery.id],
-      simulation: {
-        ...checkpoint.simulation!,
-        discoveries: checkpoint.simulation!.discoveries.map((item) =>
-          item.id === discovery.id
-            ? { ...item, kind: 'planet-explored' as const }
-            : item,
-        ),
-      },
-    };
-    const current = session(state).open();
-    current.model.beginEventPlayback();
-    const event = current.model.snapshot.eventPlayback?.events.find(
-      (item) => item.decision?.title === 'Planet explored',
-    );
-    const planet = state.world.systems
-      .flatMap((system) => system.planets)
-      .find((item) => item.id === discovery.id)!;
-
-    expect(event?.decision?.details).toContain(
-      `Type: ${planet.environment} · Build slots: ${planet.buildSlots}.`,
-    );
-    expect(event?.decision?.colonyShipAction?.label).toBe('Build Colony ship');
-    current.controller.dispose();
-  });
-
   it('spara-avbrutet-ar: restores each choice and handling without replaying movement, combat or announcements', async () => {
     const slot = session();
     let current = slot.open();
-    current.emit({ type: 'confirm-end-turn' });
+    current.emit({ type: 'end-turn' });
     await vi.advanceTimersByTimeAsync(0);
     const first = current.model.snapshot.eventPlayback!;
     expect(first.stage).toBe('awaiting-choice');

@@ -39,12 +39,6 @@ export interface ProductionMapSnapshot {
   /** byggkons-framsteg: the planet's queued ships and their parts. */
   readonly queue: readonly ShipProgressSnapshot[];
 }
-export interface MapProblem {
-  readonly decisionId: string;
-  readonly planetId?: string | undefined;
-  readonly screen: 'production';
-  readonly explanation: string;
-}
 export interface MapViewport {
   readonly width: number;
   readonly height: number;
