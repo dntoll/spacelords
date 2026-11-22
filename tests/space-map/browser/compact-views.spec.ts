@@ -152,9 +152,10 @@ test('forskningsdetaljer-vid-val: dragging from a research tile pans without ins
   const box = (await tile.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
+  // Drag towards the hidden part of the zoomed tree.
   await page.mouse.move(
-    box.x + box.width / 2 + 70,
-    box.y + box.height / 2 + 30,
+    box.x + box.width / 2 - 70,
+    box.y + box.height / 2 - 30,
     { steps: 8 },
   );
   await page.mouse.up();

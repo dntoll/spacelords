@@ -322,7 +322,7 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   eller styrbord. Skeppen låses med en brygga, rymdstridsrundan körs färdigt
   och bordning växlar sedan två rundor i taget mot rymdstrid. Vinst ger
   båda skeppen, last och en kartplaceholder. Den återvunna tekniken `Raptor
-  factory` och `raptor-efter-dockningsteknik` är borttagna med fabrikerna
+factory` och `raptor-efter-dockningsteknik` är borttagna med fabrikerna
   (`single-fleet-rensning`).
   `dockning-sida-vid-sida` är **Fullständigt implementerat** och ersätter att
   försvararen låg spegelvänd till höger: anfallaren ligger ovanför,

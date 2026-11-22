@@ -13,12 +13,12 @@ och nebulosornas sikthinder gäller också under rörelsen. Utan animation visas
 samma uppdaterade resultat. Kravet förtydligar `aktuell-detektionssikt`,
 `kartans-sikttillstand` och `en-flotta-i-taget`; sparade spel bevaras.
 
-| Krav                           | Status                     | Spelarens beteende                                                                                                                                              |
-| ------------------------------ | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `aktuell-detektionssikt`       | Fullständigt implementerat | Flottorna bidrar med ett gemensamt synfält. Pirater kan bara ses och inspekteras inom det.                                                                      |
-| `kartans-sikttillstand`        | Fullständigt implementerat | Synliga hexar är ljusast, tidigare utforskade mörkare och okända mörkast. En diskret kant visar det samlade synfältet. Kända planeter och stjärnor ligger kvar. |
-| `teleskopnivaer`               | Fullständigt implementerat | Nivå I, II och III ger 1, 2 och 3 hex räckvidd. Flottans bästa monterade teleskop avgör räckvidden.                                                            |
-| `pirat-aterupptackt`           | Fullständigt implementerat | Varje övergång från osynlig till synlig pirat pausar rundan med Handle/Ignore. Fortsatt sikt och omladdning upprepar inte observationen.                        |
+| Krav                     | Status                     | Spelarens beteende                                                                                                                                              |
+| ------------------------ | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `aktuell-detektionssikt` | Fullständigt implementerat | Flottorna bidrar med ett gemensamt synfält. Pirater kan bara ses och inspekteras inom det.                                                                      |
+| `kartans-sikttillstand`  | Fullständigt implementerat | Synliga hexar är ljusast, tidigare utforskade mörkare och okända mörkast. En diskret kant visar det samlade synfältet. Kända planeter och stjärnor ligger kvar. |
+| `teleskopnivaer`         | Fullständigt implementerat | Nivå I, II och III ger 1, 2 och 3 hex räckvidd. Flottans bästa monterade teleskop avgör räckvidden.                                                             |
+| `pirat-aterupptackt`     | Fullständigt implementerat | Varje övergång från osynlig till synlig pirat pausar rundan med Handle/Ignore. Fortsatt sikt och omladdning upprepar inte observationen.                        |
 
 ## Räckvidd
 

@@ -26,8 +26,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   före implementation (`single-fleet-beslut-fore-implementation`).
   [Rensningsplanen](docs/single-fleet-cleanup.md) följer borttagningen av den
   tidigare spelmekaniken (`single-fleet-rensning`, **Delvis implementerat**:
-  koden hanterar fortfarande en lista med flottor, och webbläsartesterna är
-  inte helt rensade).
+  rensningen är klar, men koden hanterar fortfarande en lista med flottor
+  och pirattestet i webbläsaren väntar på nya Star map).
 - **[Start, sparade spel och navigering](docs/areas/start-and-saves.md):**
   `Saved games`, helskärm, huvudmenyn och sparformatet (`sparformat`,
   version 18). Allt är **Fullständigt implementerat**.

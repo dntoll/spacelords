@@ -110,8 +110,8 @@ spelbar, men bevara fristående strids- och bordningstester.
       borttagna funktioner; granska kvarvarande användartexter. Beslut,
       vägledning och köer är borta. `styles.css` saknar regler för
       borttagna vyer, och döda meddelandetyper och hjälpfunktioner är
-      borttagna. Webbläsartesterna (`tests/*/browser`) har bara rensats
-      delvis och behöver granskas.
+      borttagna. Webbläsartesterna för borttagna funktioner är borttagna
+      eller omskrivna; se Fortsätt här för kvarvarande fel.
 - [x] Rensa aktiva krav, produktdokumentation, domänmodell och tester så att
       endast aktuell eller uttryckligen planerad funktion återstår. Behåll
       stabila namn för krav som fortfarande gäller och ange deras status.
@@ -132,7 +132,7 @@ spelbar, men bevara fristående strids- och bordningstester.
         rensas, varefter ett nytt spel startar med en flotta vid Tellus.
         Enhetstestet `sparformat / single-fleet-rensning` skyddar hela
         flödet.
-- [ ] Kör enhetssviten, relevanta riktade tester och verktygskontroller;
+- [x] Kör enhetssviten, relevanta riktade tester och verktygskontroller;
       granska rensningen och dokumentera återstående begränsningar.
 
 ## Arbetsläge och överlämning
@@ -184,22 +184,47 @@ Den gamla sparversionen avvisas ännu inte uttryckligen; se checklistan.
 
 ## Fortsätt här
 
-Genomfört och pushat: befolkningsutjämning, gamla engångsrensningar,
-automatisk rutteskort, automatisk ombemanning, automatisk rutttilldelning,
-samt den gamla persontransportordern och dess modell och visning är borta.
-Nybyggda transportskepp får ingen automatisk rutt. Den äldre migreringen av
-`auto-transport` i sparade produktionsorder är också borttagen. Civilian shuttle som
-skepp behålls tills dess framtida roll har diskuterats. Kvarvarande manuell
-handel, fabriksekonomi, planetägande, kolonisation, population och övriga
-automatiska order ska rensas enligt checklistan.
+Rensningen är genomförd på `claude/single-fleet-cleanup` och pushad, men
+inte mergad till `single_fleet`, `development` eller `main` och inte
+driftsatt. Planetägande, kolonisation, befolkning, Domes, terraforming,
+fabriker, planetproduktion, handel, transporter, varv, bärgning, Decisions,
+planetköer, automatiska order, flera flottor att administrera och planet-
+och fabriksforskning är borta. Kvar är planeter som platser, kartan,
+rymdstrid, bordning, skepp, utrustning, Research med fyra skeppstekniker
+(går inte framåt) och en tom Production.
 
-Gamla sparningar raderas inte och avvisas ännu inte uttryckligen: de kan
-fortfarande öppnas med ofullständigt stöd. Det är en tillfällig begränsning;
-hantera godkänd inkompatibilitet innan rensningen avslutas. Ytterligare
-framtida inkompatibla ändringar kräver ny avstämning.
+Kontroller vid avslut (2026-11-22):
 
-Senaste kodsteget: typkontroll och 14 riktade tester för order och sparformat
-passerade efter att migreringen av `auto-transport` togs bort. Även 74
-riktade tester för produktion och fabriksvyer passerade i steget före det.
-Hela sviten har inte körts om efter varje delsteg. Tidigare delsteg finns
-som individuella commits i `single_fleet`.
+- Typkontroll, ESLint och Prettier passerar.
+- Vitest utan HTTP-integrationen: 883 tester i 114 filer passerar.
+- `test:tooling`: 26 av 27 passerar. `check-runner` (att en avbruten körning
+  stoppar underprocesser) misslyckas i sandlådan även på startcommiten,
+  alltså miljöberoende.
+- Playwright, endast `desktop-chromium` med sandlådans Chromium: 77 passerar,
+  7 hoppas över och 2 misslyckas. WebKit och telefonprofilerna har inte körts.
+
+Kända begränsningar:
+
+- `space-pirates.spec.ts` (båda kartlägena) misslyckas. Striden slumpas
+  annorlunda efter rensningen: piraten börjar, Fightern förstörs och bara
+  ett obeväpnat Exploration ship återstår. Testhjälparen
+  `finishTacticalCombat` klarar inte det fallet, trots ett påbörjat stöd för
+  att vänta medan spelet spelar en sida utan beväpnade skepp. Rymdstridens
+  egna tester passerar. Enligt beslut med användaren lagas inte
+  Star map-testerna nu, eftersom Star map ska byggas om
+  ([visionen](vision-2026-11-22.md)); skriv om testet med nya Star map.
+- När en runda bara har en händelse är Events-listan tom en kort stund mellan
+  att händelsen arkiveras och att rundan avslutas. Testet väntar nu på att
+  rundan avslutas i stället för att kontrollera mellanläget.
+- Kod och sparformat hanterar fortfarande en lista med flottor
+  (`enda-spelarflottan`), och Fleets är en karta utan panel tills en flotta
+  väljs (`fleet-som-skeppsoversikt`). Båda väntar på beslut.
+- Uppgraderingar (Missiles, Armor) kan inte monteras eftersom Upgrade vid
+  varv är borttagen (`utforskade-stridsuppgraderingar`, **Delvis
+  implementerat**).
+- Originalbilder för byggnader och byggnadssymboler finns kvar under
+  `assets/original/` som källmaterial.
+
+Lokalt i sandlådan krävde Playwright en tillfällig konfiguration med
+`launchOptions.executablePath: '/opt/pw-browsers/chromium'` och
+`npm run build:pages` före körning. Konfigurationen är inte committad.

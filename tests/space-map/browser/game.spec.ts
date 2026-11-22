@@ -75,9 +75,10 @@ test('vynavigation: preserves the map camera through Research', async ({
     await expect(
       page.getByRole('heading', { name: 'Research', exact: true }),
     ).toBeVisible();
+    // flottforskning-av-tekniker: the Queue tab explains the paused research.
     await expect(
       page.getByText('Research does not advance yet.'),
-    ).toBeVisible();
+    ).toBeAttached();
     await expect(page.locator('canvas')).toHaveCount(0);
     if (count === 0)
       await page.screenshot({
