@@ -4824,42 +4824,6 @@ export class Game {
     initialOrder?: ShipOrder,
   ): void {
     state.population -= SHIPS[ship].crew;
-    if (
-      !initialOrder &&
-      (ship === 'Civilian shuttle' ||
-        (ship === 'Transport ship' && !destinationFleetId))
-    ) {
-      const fleet: Fleet = {
-        id: this.#id('fleet'),
-        name: this.#productionFleetName(ship, planet),
-        position: planet.position,
-        destination: null,
-        ships: { ...zeroShips(), [ship]: 1 },
-        shipUnits: [
-          {
-            id: this.#id('ship'),
-            type: ship,
-            engines: {
-              'Rocket engine': parts['Rocket engine'] ?? engineCount(ship),
-              'Ion pulse engine': parts['Ion pulse engine'] ?? 0,
-            },
-          },
-        ],
-        automation: 'transport',
-        ...(ship === 'Civilian shuttle'
-          ? { civilian: CivilianTraffic.order() }
-          : {}),
-      };
-      this.#fleets.push(fleet);
-      this.#planetEvent(
-        ship === 'Civilian shuttle'
-          ? `${ship} was produced at ${planet.name} and started Civilian transport.`
-          : `${ship} was produced at ${planet.name}.`,
-        planet,
-        { kind: 'ship', type: ship },
-      );
-      return;
-    }
     // nybyggda-skepp-utan-ruttflotta: recheck assignments made after the order was queued.
     // produktionsflotta-efter-kolonisering: an implicit home fleet must be local.
     let reserve = initialOrder

@@ -175,18 +175,7 @@ describe('gemensam-planetko / fabrikskoer / skepp-i-byggko', () => {
       const before = game.fleet('fleet-home')!.ships[ship];
       for (const frame of turnFrames(game)) game.applyFrame(frame);
       game.finishTurn();
-      if (ship === 'Transport ship') {
-        expect(game.fleet('fleet-home')!.ships[ship]).toBe(before);
-        expect(
-          game
-            .fleetSnapshots()
-            .some(
-              (fleet) =>
-                fleet.id !== 'fleet-home' &&
-                fleet.ships['Transport ship'] === 1,
-            ),
-        ).toBe(true);
-      } else expect(game.fleet('fleet-home')!.ships[ship]).toBe(before + 1);
+      expect(game.fleet('fleet-home')!.ships[ship]).toBe(before + 1);
       const events = game.events.filter(
         (event) =>
           event.round === year && event.text.includes(`${ship} was produced`),
@@ -339,41 +328,6 @@ describe('skepp-till-destinationsflotta', () => {
     expect(() =>
       game.scheduleShip(planet, 'Transport ship', 'fleet-home'),
     ).toThrow('without a trade route');
-  });
-
-  it('automatisk-farledsbemanning: a default Transport ship mans the open route instead of the home fleet', () => {
-    const { game: original, planet, factory } = setup();
-    factory('Transport ship factory');
-    original.scheduleShip(planet, 'Transport ship');
-    const state = original.exportState();
-    const target = state.world.systems[0]!.planets.find(
-      (item) => item.id !== planet.id,
-    )!;
-    const game = Game.restore({
-      ...state,
-      tradeRoutes: [
-        { id: 'home-route', a: planet.id, b: target.id, closing: false },
-      ],
-      colonies: [
-        ...state.colonies,
-        [
-          target.id,
-          {
-            ...structuredClone(state.colonies[0]![1]),
-            projects: [],
-            buildings: [],
-            homeFleetId: null,
-          },
-        ],
-      ],
-    });
-    for (const frame of turnFrames(game)) game.applyFrame(frame);
-    game.finishTurn();
-    const built = game
-      .fleetSnapshots()
-      .find((fleet) => fleet.routeId === 'home-route')!;
-    expect(built.ships['Transport ship']).toBe(1);
-    expect(built.id).not.toBe('fleet-home');
   });
 
   it('delivers each queued ship to its chosen local fleet and permits destination changes', () => {
