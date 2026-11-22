@@ -1,8 +1,29 @@
 # Produktkrav
 
-Kort och otekniskt om spelet som det är nu. Kraven med stabila namn och
+Kort och otekniskt om spelet och den nya riktningen. Kraven med stabila namn och
 status står i områdesfilerna under [docs/areas](areas/), som
 [kravöversikten](../requirements.md) länkar till.
+
+## Ny riktning: Single fleet
+
+Spelaren leder en enda flotta och börjar med en Raptor. Allt spelaren har
+finns i flottan, utan egna planeter eller fasta resurser. Utforskning,
+rymdstrid, bordningar och utveckling av skepp och besättning står i centrum.
+
+- `Star map` används för direkt styrning av flottan med AP. Spelaren och
+  motståndarna turas om; utan motståndare inom räckhåll fortsätter spelarens tur.
+- `Fleet` ersätter `Fleets` och visar skeppen och deras egenskaper utan karta.
+  Personer, vapensystem och motorer kan flyttas mellan skeppens slots.
+  Cargo ships kan förvara oanvänd utrustning och Civilian transports har
+  plats för människor.
+- `Crew` visar personer som kan utrustas och flyttas mellan skepp.
+- `Research` gäller tekniker för skepp och bordning. Planetforskning tas bort
+  och forskningen låser upp tekniker i stället för fabriker.
+- `Production` har en gemensam kö för skepp, utrustning, uppgraderingar och
+  reparationer.
+
+Riktningen är ännu inte implementerad. Se [Single fleet](single-fleet.md)
+för krav och öppna frågor. Följande avsnitt beskriver den ärvda spelversionen.
 
 ## Spelidé
 

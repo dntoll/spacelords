@@ -2,22 +2,26 @@
 
 ## Vision
 
-Spelaren förvaltar och expanderar ett rymdimperium över lång tid. Ett spelår är
-en runda: spelaren ger order och får sedan se resultatet. Spelet ska fungera på
-mobil, surfplatta och dator. Det börjar som en lokal enspelarupplevelse;
-multiplayer och en eller två rundor per verkligt dygn är en senare riktning.
-Se [hela visionen](docs/game-vision.md).
+Utforskningen `single_fleet` prövar ett spel där spelaren leder en enda
+flotta genom rymden, med rymdstrid och bordning i centrum. Spelaren äger inga
+planeter eller fasta resurser; allt spelaren har följer med flottan.
+Spelet ska fungera på mobil, surfplatta och dator.
 
-Utforskningen `simple_production` prövar en förenklad ekonomi där planeter
-som förbinds av fraktskepp delar råvaror och delar. Factories, Connect och
-Production har ersatt Route, försörjningsvyerna och byggandet från
-planetsidan.
+Utforskningen bygger vidare på `simple_production`. Den nya riktningen och
+kraven finns i [Single fleet](docs/single-fleet.md). Speländringarna är
+**Ej implementerat**. Beskrivningarna och statusarna i de äldre områdesfilerna
+avser den ärvda implementationen; där de motsäger den nya riktningen gäller
+ersättningarna i Single fleet. [Den tidigare visionen](docs/game-vision.md)
+behålls som bakgrund.
 
 ## Kravkategorier
 
 Varje område har en egen fil med en beskrivning av hur spelet fungerar nu och
 kraven med stabila namn och status. Statusen nedan sammanfattar området.
 
+- **[Single fleet — utforskning](docs/single-fleet.md):** en enda flotta,
+  AP på Star map, Fleet, Crew, teknikforskning och en gemensam
+  produktionskö. Samtliga nya beteendekrav är **Ej implementerat**.
 - **[Start, sparade spel och navigering](docs/areas/start-and-saves.md):**
   `Saved games`, helskärm, huvudmenyn och sparformatet (`sparformat`).
   Allt är **Fullständigt implementerat**.

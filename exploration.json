@@ -1,4 +1,4 @@
 {
-  "branch": "simple_production",
-  "purpose": "Explore a simpler production concept separately from development."
+  "branch": "single_fleet",
+  "purpose": "Explore a single player fleet focused on space battles, boarding, crew and ship development, starting from simple_production."
 }
