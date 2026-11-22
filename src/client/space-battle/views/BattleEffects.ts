@@ -11,8 +11,11 @@ import {
 
 const point = (hex: BattleHex) =>
   HexGeometry.toPoint(new HexCoordinate(hex.q, hex.r));
-export const BATTLE_SHOT_DURATION = 620;
-const flight = 220;
+export const BATTLE_SHOT_DURATION = 900;
+export const BATTLE_SHOT_FLIGHT = 400;
+const flight = BATTLE_SHOT_FLIGHT;
+
+type ParticleShape = 'glow' | 'spark' | 'shard';
 
 interface Particle {
   readonly origin: Point;
@@ -21,17 +24,22 @@ interface Particle {
   readonly life: number;
   readonly size: number;
   readonly color: string;
+  readonly shape: ParticleShape;
 }
 export interface BattleEffectFrame {
   readonly complete: boolean;
   readonly impacted: boolean;
   readonly projectile: Point | null;
+  /** animerade-stridsskott: the bright streak behind a cannon round. */
+  readonly streak: { readonly from: Point; readonly to: Point } | null;
+  readonly body: number;
   readonly trail: readonly Point[];
   readonly particles: readonly {
     position: Point;
     radius: number;
     alpha: number;
     color: string;
+    shape: ParticleShape;
   }[];
   readonly rings: readonly { position: Point; radius: number; alpha: number }[];
 }
@@ -44,35 +52,40 @@ export class BattleEffects {
   constructor(readonly shot: BattleShot) {
     this.#from = point(shot.from);
     this.#to = point(shot.at);
-    this.#burst(this.#from, 8, 0, '#fff1ad', false);
+    this.#burst(this.#from, 6, 0, '#fff1ad', 'glow', false);
     for (const impact of shot.impacts) {
-      if (impact.damage > 0)
-        this.#burst(
-          point(impact.position),
-          impact.destroyed ? 28 : 12,
-          flight,
-          impact.destroyed ? '#ff9354' : '#ffd77a',
-          impact.destroyed,
-        );
+      if (impact.damage <= 0) continue;
+      this.#burst(
+        point(impact.position),
+        impact.destroyed ? 36 : 14,
+        flight,
+        impact.destroyed ? '#ff9354' : '#ffd77a',
+        impact.destroyed ? 'shard' : 'spark',
+        impact.destroyed,
+      );
     }
+    for (const asteroid of shot.asteroids ?? [])
+      this.#burst(point(asteroid), 16, flight, '#c8b49a', 'shard', true);
   }
   #burst(
     origin: Point,
     count: number,
     start: number,
     color: string,
+    shape: ParticleShape,
     explosion: boolean,
   ): void {
     for (let i = 0; i < count && this.#particles.length < 128; i++) {
       const angle = i * 2.39996 + origin.x;
-      const speed = (explosion ? 130 : 70) * (0.5 + (i % 7) / 7);
+      const speed = (explosion ? 150 : 80) * (0.5 + (i % 7) / 7);
       this.#particles.push({
         origin,
         velocity: { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed },
         start,
-        life: start ? 400 : 160,
-        size: explosion ? 5 : 2.5,
+        life: start ? 480 : 140,
+        size: shape === 'shard' ? 6 : shape === 'glow' ? 4 : 2.5,
         color,
+        shape,
       });
     }
   }
@@ -84,16 +97,22 @@ export class BattleEffects {
     });
     const moving = t < flight;
     const missile = this.shot.weapon === 'Missiles';
-    const impactProgress = Math.max(0, Math.min(1, (t - flight) / 400));
+    const fraction = Math.max(0, Math.min(1, t / flight));
+    const nose = at(fraction);
+    const tail = at(Math.max(0, fraction - (missile ? 0.12 : 0.18)));
+    const impactProgress = Math.max(0, Math.min(1, (t - flight) / 500));
     return {
       complete: t >= BATTLE_SHOT_DURATION,
       impacted: !moving,
-      projectile: moving ? at(t / flight) : null,
-      trail: moving
-        ? Array.from({ length: missile ? 9 : 3 }, (_, i) =>
-            at(Math.max(0, t / flight - (i + 1) * 0.035)),
-          )
-        : [],
+      projectile: moving ? nose : null,
+      streak: moving ? { from: tail, to: nose } : null,
+      body: missile ? 11 : 0,
+      trail:
+        moving && missile
+          ? Array.from({ length: 10 }, (_, i) =>
+              at(Math.max(0, fraction - (i + 1) * 0.04)),
+            )
+          : [],
       particles: this.#particles.flatMap((particle) => {
         const age = t - particle.start;
         if (age < 0 || age >= particle.life) return [];
@@ -107,6 +126,7 @@ export class BattleEffects {
             radius: particle.size * (0.4 + alpha),
             alpha,
             color: particle.color,
+            shape: particle.shape,
           },
         ];
       }),

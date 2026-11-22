@@ -25,7 +25,11 @@ import {
   SHIP_SPRITES,
   type ShipSpriteType,
 } from '../../space-map/views/index.js';
-import { BattleEffects, type BattleEffectFrame } from './BattleEffects.js';
+import {
+  BattleEffects,
+  BATTLE_SHOT_FLIGHT,
+  type BattleEffectFrame,
+} from './BattleEffects.js';
 import { ShipFootprint } from '../models/ShipFootprint.js';
 import {
   BattleCameraController,
@@ -145,9 +149,17 @@ export class BattleMapView implements BattleMapPort {
     const reduced =
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
     if (reduced) {
-      const frame = this.#effect.sample(300);
+      // The still frame is the impact mark. Sampling during the flight left
+      // the projectile hanging between the ships, with the muzzle already gone.
+      const frame = this.#effect.sample(BATTLE_SHOT_FLIGHT);
       this.#effect = null;
-      this.#effectFrame = { ...frame, particles: [], trail: [] };
+      this.#effectFrame = {
+        ...frame,
+        projectile: null,
+        streak: null,
+        trail: [],
+        particles: [],
+      };
       this.container.dataset.shotStage = 'static';
       void this.#p5.redraw();
       return Promise.resolve();
@@ -589,7 +601,11 @@ export class BattleMapView implements BattleMapPort {
           : !this.#preview && this.#previewPose?.shipId === currentShip.id
             ? this.#previewPose
             : null);
-      if (!motion && currentShip.status === 'destroyed') {
+      const impact =
+        !this.#effectFrame?.impacted &&
+        this.#effect?.shot.impacts.find((item) => item.id === currentShip.id);
+      // animerade-stridsskott: the hull stays until the round arrives.
+      if (!motion && currentShip.status === 'destroyed' && !impact) {
         if (currentShip.position)
           this.#drawDebris(p, currentShip.position, currentShip.id);
         continue;
@@ -597,12 +613,10 @@ export class BattleMapView implements BattleMapPort {
       if (
         !motion &&
         currentShip.status !== 'active' &&
-        currentShip.status !== 'wreck'
+        currentShip.status !== 'wreck' &&
+        !impact
       )
         continue;
-      const impact =
-        !this.#effectFrame?.impacted &&
-        this.#effect?.shot.impacts.find((item) => item.id === currentShip.id);
       const ship = {
         ...(impact
           ? {
@@ -758,19 +772,43 @@ export class BattleMapView implements BattleMapPort {
         this.#effect?.shot.weapon === 'Missiles' ? 7 : 3,
       );
     }
+    if (frame.streak) {
+      const cannon = this.#effect?.shot.weapon !== 'Missiles';
+      p.stroke(cannon ? '#fff7cf' : '#ffb15a');
+      p.strokeWeight(cannon ? 3 : 5);
+      p.line(
+        frame.streak.from.x,
+        frame.streak.from.y,
+        frame.streak.to.x,
+        frame.streak.to.y,
+      );
+      p.noStroke();
+    }
     if (frame.projectile) {
-      p.fill('#fff7cf');
+      p.fill(this.#effect?.shot.weapon === 'Missiles' ? '#ffd7a1' : '#fff7cf');
       p.circle(
         frame.projectile.x,
         frame.projectile.y,
-        this.#effect?.shot.weapon === 'Missiles' ? 10 : 6,
+        frame.body > 0 ? frame.body : 5,
       );
     }
     const context = p.drawingContext as CanvasRenderingContext2D;
     for (const particle of frame.particles) {
       context.globalAlpha = particle.alpha;
       p.fill(particle.color);
-      p.circle(particle.position.x, particle.position.y, particle.radius * 2);
+      if (particle.shape === 'shard') {
+        p.push();
+        p.translate(particle.position.x, particle.position.y);
+        p.rotate(particle.position.x + particle.position.y);
+        p.rect(
+          -particle.radius,
+          -particle.radius / 3,
+          particle.radius * 2,
+          particle.radius,
+        );
+        p.pop();
+      } else
+        p.circle(particle.position.x, particle.position.y, particle.radius * 2);
     }
     context.globalAlpha = 1;
     p.noFill();

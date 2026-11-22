@@ -38,10 +38,36 @@ export class TurnFacade {
   }
 
   requestEndTurn(): boolean {
+    // game-over-utan-skepp: a lost home fleet cannot start another round.
+    if (this.host.game.defeated) return false;
     return (
       !this.host.eventPlayback &&
       !this.host.movementPlayback &&
-      this.host.game.phase === 'planning'
+      (this.host.game.phase === 'planning' || this.host.game.discoveryPause())
+    );
+  }
+
+  discoveryPause(): boolean {
+    return this.host.game.discoveryPause();
+  }
+
+  enemyDiscoveryResume(): boolean {
+    return this.host.game.enemyDiscoveryResume();
+  }
+
+  /** upptackt-stannar-resan: log the discoveries and flash them, without a choice. */
+  publishDiscoveryFlashes(): void {
+    const interruption = this.host.game.interruption;
+    if (!this.host.game.discoveryPause() || !interruption) return;
+    this.host.noteDiscoveries(
+      interruption.discoveries.map((discovery) =>
+        Object.freeze({
+          kind: discovery.kind,
+          name: discovery.name,
+          hex: `${discovery.position.q},${discovery.position.r}`,
+          ...(discovery.eventId ? { eventId: discovery.eventId } : {}),
+        }),
+      ),
     );
   }
 
@@ -242,7 +268,7 @@ export class TurnFacade {
       context.selectedFleetId && this.host.game.fleet(context.selectedFleetId)
         ? context.selectedFleetId
         : null;
-    this.host.camera.restore(context.camera);
+    // kamera-foljer-skepp: the voyage leaves the camera on the ship.
   }
 
   beginMovementPlayback(
@@ -270,6 +296,27 @@ export class TurnFacade {
 
   focusTurnMovement(movement: TurnMovement | readonly TurnMovement[]): void {
     this.host.movementPlayback!.begin(movement);
+  }
+
+  /** kamera-foljer-skepp: slide the visible camera with the player's ship. */
+  followTurnMovement(progress: number): void {
+    const step = this.host.movementPlayback?.currents.find(
+      (movement) => movement.fleetId === 'fleet-home',
+    );
+    const camera = this.host.eventCamera;
+    if (!step || !camera) return;
+    const from = HexGeometry.toPoint(step.from);
+    const to = HexGeometry.toPoint(step.to);
+    const t = Math.max(0, Math.min(1, progress));
+    const eased = t * t * (3 - 2 * t);
+    // The selection panel is hidden during the voyage, so the canvas center
+    // is the visible middle. Keeping the planning offset draws one shifted frame.
+    const point = {
+      x: from.x + (to.x - from.x) * eased,
+      y: from.y + (to.y - from.y) * eased,
+    };
+    camera.focusPoint(point);
+    this.host.camera.focusPoint(point);
   }
 
   completeTurnMovement(): void {

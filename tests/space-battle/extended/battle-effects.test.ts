@@ -31,7 +31,7 @@ it('animerade-stridsskott / skadepartiklar-i-strid: separates flight, impact and
   expect(flight.projectile).not.toBeNull();
   expect(flight.impacted).toBe(false);
   expect(flight.rings).toHaveLength(0);
-  const impact = effects.sample(250);
+  const impact = effects.sample(500);
   expect(impact.impacted).toBe(true);
   expect(impact.projectile).toBeNull();
   expect(impact.rings).toHaveLength(7);
@@ -49,14 +49,28 @@ it('animerade-stridsskott / skadepartiklar-i-strid: separates flight, impact and
       id: `ship-${i}`,
     })),
   });
-  expect(crowded.sample(250).particles.length).toBeLessThanOrEqual(128);
+  expect(crowded.sample(500).particles.length).toBeLessThanOrEqual(128);
+  const flightCannon = new BattleEffects({
+    ...salvo,
+    weapon: 'Cannon',
+    impacts: [{ ...salvo.impacts[0]!, damage: 0, destroyed: false }],
+  }).sample(100);
+  expect(flightCannon.streak).not.toBeNull();
+  expect(flightCannon.projectile).not.toBeNull();
   const miss = new BattleEffects({
     ...salvo,
     weapon: 'Cannon',
     impacts: [{ ...salvo.impacts[0]!, damage: 0, destroyed: false }],
-  }).sample(250);
-  expect(miss.rings).toHaveLength(1);
-  expect(miss.particles).toHaveLength(0);
+    asteroids: [{ q: 4, r: 3 }],
+  }).sample(500);
+  expect(miss.particles.length).toBeGreaterThan(0);
+  const cleanMiss = new BattleEffects({
+    ...salvo,
+    weapon: 'Cannon',
+    impacts: [{ ...salvo.impacts[0]!, damage: 0, destroyed: false }],
+  }).sample(500);
+  expect(cleanMiss.rings).toHaveLength(1);
+  expect(cleanMiss.particles).toHaveLength(0);
 });
 
 it.each(['player', 'enemy'] as const)(

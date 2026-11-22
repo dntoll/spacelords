@@ -132,18 +132,14 @@ test('kompakt-flottkort-med-order: fleet stats share the hangar and compact cont
   expect(layout.nameWidth).toBeGreaterThanOrEqual(88);
   await expect(card.locator('.fleet-hangar .fleet-stats')).toBeVisible();
   await expect(
-    card.locator('.fleet-order-row .fleet-primary-orders'),
-  ).toBeVisible();
-  expect(
-    layout.targets.every(({ width, height }) => width > 0 && height > 0),
-  ).toBe(true);
-
-  await expect(
     card.getByRole('button', {
       name: 'Choose destination for Compact 0',
       exact: true,
     }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  expect(
+    layout.targets.every(({ width, height }) => width > 0 && height > 0),
+  ).toBe(true);
   await page.screenshot({
     path: `test-results/compact-fleets-${test.info().project.name}.png`,
   });

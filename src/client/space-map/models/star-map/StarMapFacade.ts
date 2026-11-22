@@ -10,7 +10,8 @@ import {
 import type { AppHost } from '../../../app/models/AppModel.js';
 
 /** What a tap on the map did; the master starts a journey on `travel`. */
-export type MapSelection = 'ignored' | 'selected' | 'destination' | 'travel';
+export type MapSelection =
+  'ignored' | 'selected' | 'destination' | 'travel' | 'resume';
 
 export class StarMapFacade {
   constructor(private readonly host: AppHost) {}
@@ -34,15 +35,17 @@ export class StarMapFacade {
       return 'destination';
     }
     const fleet = travelFleet(this.host.game, this.host.mapFleetId);
+    const paused = this.host.game.discoveryPause();
     if (
       position.key === this.host.selected.key &&
       fleet &&
-      this.host.game.phase === 'planning' &&
+      (this.host.game.phase === 'planning' || paused) &&
       this.host.game.routePreview(fleet.id, position).length
     ) {
       this.host.game.setDestination(fleet.id, position);
-      this.host.voyage = true;
-      return 'travel';
+      // upptackt-stannar-resan: a new hex continues this round only.
+      this.host.voyage = !paused;
+      return paused ? 'resume' : 'travel';
     }
     this.host.cancelFleetRename();
     this.host.voyage = false;
@@ -58,8 +61,8 @@ export class StarMapFacade {
         ...this.host.game.fleetSnapshots(),
         ...this.host.game.pirateSnapshots().map(pirateAsFleet),
       ],
-      this.host.camera.screenToWorld(point),
-      this.host.camera.snapshot.zoom,
+      this.#shownCamera().screenToWorld(point),
+      this.#shownCamera().snapshot.zoom,
     );
   }
 
@@ -91,7 +94,9 @@ export class StarMapFacade {
     )
       return;
     this.host.fleetDragging = true;
-    const target = HexGeometry.fromPoint(this.host.camera.screenToWorld(point));
+    const target = HexGeometry.fromPoint(
+      this.#shownCamera().screenToWorld(point),
+    );
     this.host.fleetDestinationPreview = this.host.game.galaxy.cellAt(target)
       ? target
       : null;
@@ -120,8 +125,13 @@ export class StarMapFacade {
   }
 
   selectPoint(point: Point): MapSelection {
-    const world = this.host.camera.screenToWorld(point);
+    const world = this.#shownCamera().screenToWorld(point);
     return this.select(HexGeometry.fromPoint(world));
+  }
+
+  /** klick-pa-synlig-hex: hits use the camera the map is drawing. */
+  #shownCamera() {
+    return this.host.eventCamera ?? this.host.camera;
   }
 
   openMap(): void {
@@ -130,12 +140,12 @@ export class StarMapFacade {
 
   pan(delta: Point): void {
     this.host.pendingMapFocus = null;
-    this.host.camera.panBy(delta);
+    this.#shownCamera().panBy(delta);
   }
 
   zoom(factor: number, anchor: Point): void {
     this.host.pendingMapFocus = null;
-    this.host.camera.zoomAt(factor, anchor);
+    this.#shownCamera().zoomAt(factor, anchor);
   }
 
   home(): void {

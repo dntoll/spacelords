@@ -115,7 +115,8 @@ kom till; de gäller inte längre som laddningsstöd.
 - `flottor-fore-planetdetaljer`: hexpanelen bygger separata flottdelar och
   planetdelar; planetens rubrik tillhör planetdelen.
 - `animerade-stridsskott` och `skadepartiklar-i-strid`: TacticalBattle lämnar
-  en typad BattleShot med avfyrningsposition, vapen, mål och skaderesultat.
+  en typad BattleShot med avfyrningsposition, vapen, mål, skaderesultat och
+  valfria asteroidhexar som försvann. Äldre skott utan fältet läses som förut.
   Controller samordnar effekten genom ett asynkront vygränssnitt och spärrar
   stridshandlingar under presentationen. P5-vyn använder högst 128 partiklar
   och beställer bildrutor bara medan effekten lever. Effekterna använder inte
@@ -275,11 +276,12 @@ manifest med referenser, användning och filnamn.
 
 ## Kompakta vyer, 2026-10-27
 
-`dragbara-flottorder`: FleetOrderDrag använder pekarhändelser endast för vänster
-musknapp. Sex pixlars horisontell rörelse startar dragning och pekarfångst;
-efterföljande klick stoppas före orderknappen eller ruttmenyn. Touch använder
-fortsatt webbläsarens inbyggda scroll. AppView bevarar scrollLeft per flott-ID
-vid omrendering. Träffytorna är fortsatt minst 44 × 44 px.
+`dragbara-flottorder`: Move- och Stop-knapparna är borttagna
+(`inga-move-stop-knappar`). Statusraden kan fortfarande dras i sidled.
+FleetOrderDrag använder pekarhändelser endast för vänster musknapp. Sex
+pixlars horisontell rörelse startar dragning och pekarfångst. Touch använder
+webbläsarens inbyggda scroll. AppView bevarar scrollLeft per flott-ID vid
+omrendering.
 
 `kompakt-forskningstrad`: ResearchTreeLayout och CSS använder 108 × 36 px,
 24 px horisontellt mellanrum och minst 12 px vertikalt. Layouten undviker
@@ -689,8 +691,10 @@ rensning. Händelser med ogiltig valfri position behåller sin text utan kartmå
 Globala forskningshändelser får ingen konstruerad position. p5 i instance mode
 ritar ring och etikett från läsmodellen; HTML visar lista och kontroller.
 
-Uppspelningens kamera är separat från planeringskameran. Föregående vy,
-giltiga val och kamerans exakta centrum och zoom återställs vid avslut.
+Uppspelningens kamera är separat från planeringskameran. Föregående vy och
+giltiga val återställs vid avslut. Efter en färd stannar kameran på skeppet.
+En ren händelseuppspelning rör bara uppspelningskameran, så planeringskameran
+syns igen när händelsen är slut.
 Orienteringsbyte ändrar layout utan att återställa aktuell händelse.
 Listan växer med senaste årets innehåll och rullas internt vid maxhöjd.
 Enhetstester skyddar ordning, timer, spärrar, sparkompatibilitet, positioner
@@ -708,33 +712,38 @@ samtidiga presentationen av autonoma flottor är borttagen med de automatiska
 orderna (`single-fleet-rensning`). AppModel lämnar frysta turnMovements till
 vyerna; sikt uppdateras när markören passerar hexkanten. Destinationspilar
 begränsas till flottan som rör sig och till vald flotta, och döljs under
-händelser. Kameran står stilla under färden. Domänmodell och sparformat
-ändras inte.
+händelser. `kamera-foljer-skepp` ersätter stillaståendet i
+`stillastaende-kamera-vid-forflyttning`: kameran följer spelarens skepp
+under färden och behåller zoom. `klick-pa-synlig-hex` träffar hexen i den
+kamera som ritas, även när uppspelningskameran skiljer sig från
+planeringskameran. Domänmodell och sparformat ändras inte.
 
 ### Händelseanpassad kamera
 
-`handelseanpassad-kartkamera` och `stillastaende-kamera-vid-forflyttning`
-är **Fullständigt implementerat**.
-Detta ersätter kameraföljningen i `en-flotta-i-taget` från 2026-10-30.
+`handelseanpassad-kartkamera` är **Fullständigt implementerat** för
+händelser. `kamera-foljer-skepp` ersätter stillaståendet under färd i
+`stillastaende-kamera-vid-forflyttning`, som i sin tur ersatte
+kameraföljningen i `en-flotta-i-taget` från 2026-10-30. Färden zoomar inte
+ut för att rymma hela rutten.
 CameraFraming beräknar oföränderliga kamerafaser från världspunkter och fri
-kartrektangel, oberoende av p5. En färds samtliga inspelade synliga ändpunkter
-ingår, så även mellanliggande svängar ryms. Dolda rörelser ingår aldrig.
+kartrektangel, oberoende av p5. Det används för händelser. En färd följer
+skeppet i stället för att rama in hela rutten. Dolda rörelser ingår aldrig.
 
-Utzoomning kring aktuellt centrum tar 300 ms och hoppas över när målen redan
-syns. Därefter panoreras och zoomas kameran samtidigt under 450 ms till
-största inramning upp till zoom 1. Hexarnas utbredning och 24 skärmpixlars
+Händelsens utzoomning kring aktuellt centrum tar 300 ms och hoppas över när
+målen redan syns. Därefter panoreras och zoomas kameran samtidigt under 450 ms
+till största inramning upp till zoom 1. Hexarnas utbredning och 24 skärmpixlars
 marginal ingår; på extremt små ytor minskas marginalen till en fjärdedel av
 ytans mått. Zoom interpoleras logaritmiskt och båda faserna använder mjuk
 acceleration och inbromsning. Målområdets skärmläge interpoleras så att målen
 förblir synliga även under en stor samtidig panorering och inzoomning.
-Uppspelningskameran får underskrida den manuella
-minzoomen för att hela färden ska rymmas. Spelarens zoomgränser ändras inte.
+Uppspelningskameran får underskrida den manuella minzoomen för att händelsens
+mål ska rymmas. Spelarens zoomgränser ändras inte. En färd använder inte den
+inramningen.
 
-MasterController inväntar kamerafaserna före skeppets första rörelsesteg.
-Vyns animationsklocka rapporterar progression; controllern uppdaterar modellen
-och vyn renderar dess läsmodell. GalaxyMapView ändrar enbart skeppsmarkörens
-position under färden. Kameran är gemensam genom rörelser och efterföljande
-händelser och är separat från planeringskameran. EventPlayback får den
+Under färden flyttar controllern kameran till skeppets glidpunkt och behåller
+zoomen. Vyns animationsklocka rapporterar progression; controllern uppdaterar
+modellen och vyn renderar dess läsmodell. Klick, panorering och zoom använder
+samma kamera som bilden. EventPlayback får den
 sessionsbundna fasen framing före announcing eller awaiting-choice; lästid
 och beslut börjar efter inramningen. Globala och äldre positionslösa
 händelser får ingen kamerafas.
@@ -745,8 +754,9 @@ skeppsrörelse eller annonsering tillämpas den
 nya inramningen direkt utan att uppspelningen startas om. Vid minskad rörelse
 tillämpas slutläget direkt. Dispose avbryter animationsklockan och löser dess
 väntande löfte utan fortsatt modelluppdatering. Sparformat och domänmodell
-ändras inte. Enhets- och riktade mobiltester skyddar inramning, stillastående
-kamera, kontinuitet, rotation, minskad rörelse, beslut och återställning.
+ändras inte. Enhets- och riktade mobiltester skyddar inramning, att kameran
+följer skeppet, klick i den synliga kameran, kontinuitet, rotation, minskad
+rörelse, beslut och återställning.
 
 EventPlayback har stegen announcing (1 400 ms) och filing (450 ms).
 AppView visar den aktuella texten i ett fast HTML-lager ovanpå gränssnittet,

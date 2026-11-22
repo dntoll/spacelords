@@ -20,9 +20,10 @@ informationen kan rullas inom rutan. End turn får inte täckas.
 - `round-i-speltexter` — **Fullständigt implementerat**: Spelets synliga texter
   och tillgänglighetstexter använder `round` för tidssteg i stället för `year`.
 
-- `ankomstbesked-endast-vid-manuell-forflyttning`: ankomstbeskedet
-  (`<fleet> arrived at <place>.`) ges bara när en flotta når målet för en
-  Move-order. Kravet är **Fullständigt implementerat**.
+- `ingen-ankomstbesked`: ankomstmeningen skapas inte, annonseras inte och
+  hamnar inte i Events. Målet rensas när flottan är framme. Kravet är
+  **Fullständigt implementerat** och ersätter
+  `ankomstbesked-endast-vid-manuell-forflyttning`.
 
 - `stridsresultat-utan-upprepning`: stridsrutans huvudtext visar förluster,
   förstörda pirater och överlevande en gång. Detaljerna behåller plats,
@@ -31,11 +32,9 @@ informationen kan rullas inom rutan. End turn får inte täckas.
   `gemensamt-handelseflode` och `stridsrapport-i-dialog`. Sparad historik och
   stridsresultat bevaras.
 
-- `upptacktsbesked-utan-pausmening`: upptäcktsrutan visar inte längre
-  meningen “The year is paused. Fleets already sharing a hex will fight
-  before the next movement.” Plats, flotta, återstående rörelse och
-  Handle/Ignore behålls. Kravet är **Fullständigt implementerat** och
-  förtydligar textinnehållet i `gemensamt-handelseflode`.
+- `upptacktsbesked-utan-pausmening`: upptäckten visas som en kort blänkare
+  utan pausmening och utan Handle eller Ignore (`upptackt-stannar-resan`).
+  Kravet är **Fullständigt implementerat**.
 
 - `centrerade-handelseval-pa-dator`: på stora datorskärmar ligger händelsens
   plats och valruta tillsammans kring kartans mitt i stället för vid

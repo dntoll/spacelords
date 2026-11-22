@@ -65,10 +65,10 @@ for (const reduced of [false, true]) {
       ).toBe(true);
       await page.clock.runFor(100);
       await page.screenshot({ path: testInfo.outputPath('shot-flight.png') });
-      await page.clock.runFor(200);
+      await page.clock.runFor(400);
       await expect(surface).toHaveAttribute('data-shot-stage', 'impact');
       await page.screenshot({ path: testInfo.outputPath('shot-impact.png') });
-      await page.clock.runFor(400);
+      await page.clock.runFor(500);
       await expect(surface).not.toHaveAttribute('data-shot-stage');
     } else await expect(surface).toHaveAttribute('data-shot-stage', 'static');
     await expect(page.locator('.battle-feedback')).toBeVisible();

@@ -43,27 +43,6 @@ async function advanceUntil(page: Page, ready: () => Promise<boolean>) {
   throw new Error('Playback did not reach the expected stage.');
 }
 
-async function eventScreenY(page: Page) {
-  const [q, r] = (await page
-    .locator('canvas[data-rendered="true"]')
-    .getAttribute('data-event-hex'))!
-    .split(',')
-    .map(Number);
-  return page.locator('canvas[data-rendered="true"]').evaluate(
-    (node, point) => {
-      const canvas = node as HTMLCanvasElement;
-      const rect = canvas.getBoundingClientRect();
-      return (
-        rect.y +
-        rect.height / 2 +
-        (point.y - Number(canvas.dataset.cameraY)) *
-          Number(canvas.dataset.cameraZoom)
-      );
-    },
-    HexGeometry.toPoint(new HexCoordinate(q!, r!)),
-  );
-}
-
 test('sikt-under-forflyttning: a newly observed hex brightens before the moving ship finishes its step', async ({
   page,
 }, testInfo) => {
@@ -135,9 +114,9 @@ async function noMenu(page: Page) {
     );
 }
 
-test('handelseannonsering / handelser-pa-kartan / handelser-vid-ankomst: announcements stay below the event and fly into the list across orientation changes', async ({
+test('handelseannonsering / handelser-pa-kartan / handelser-vid-ankomst: a finished move has no arrival announcement', async ({
   page,
-}, testInfo) => {
+}) => {
   scenarioTimeout(90_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -147,90 +126,32 @@ test('handelseannonsering / handelser-pa-kartan / handelser-vid-ankomst: announc
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   await page.clock.pauseAt(new Date('2026-10-27T01:00:00Z'));
   await requestTurn(page);
-  const announcement = page.locator('.event-announcement');
-  await advanceUntil(page, () => announcement.isVisible());
   const log = page.getByRole('log', { name: 'Game events' });
   const console = page.getByRole('region', { name: 'Turn console' });
-  await expect(announcement).toContainText(
-    'Home Fleet arrived at selected location.',
-  );
-  await expect(announcement).toHaveAttribute('data-stage', 'announcing');
-  await expect(log.locator('[data-event-id]')).toHaveCount(0);
+  const end = page.getByRole('button', { name: 'End turn', exact: true });
+  await advanceUntil(page, async () => {
+    const notice = page.locator('.game-notice');
+    if ((await notice.isVisible()) && (await end.isEnabled())) {
+      const text = (await notice.textContent()) ?? '';
+      if (!text.includes('Pirate ship in sight')) await end.click();
+      return false;
+    }
+    return (await end.isEnabled()) && !(await notice.isVisible());
+  });
+  await expect(page.locator('.event-announcement')).toHaveCount(0);
+  await expect(log).not.toContainText('arrived at');
   await noMenu(page);
-  const placed = (await announcement.boundingBox())!;
-  const portraitMap = (await page.getByTestId('map-container').boundingBox())!;
-  expect(
-    Math.abs(
-      placed.x + placed.width / 2 - portraitMap.x - portraitMap.width / 2,
-    ),
-  ).toBeLessThan(2);
-  expect(placed.y).toBeGreaterThanOrEqual((await eventScreenY(page)) + 80);
-  expect(placed.y + placed.height).toBeLessThanOrEqual(851 - 8);
-  expect(
-    await announcement.evaluate((node) =>
-      Number(getComputedStyle(node).zIndex),
-    ),
-  ).toBeGreaterThan(100);
-  await page.screenshot({
-    path: testInfo.outputPath('announcement-portrait.png'),
-  });
-  await page.setViewportSize({ width: 667, height: 320 });
-  await page.clock.runFor(32);
-  const shortMap = (await page.getByTestId('map-container').boundingBox())!;
-  const shortAnnouncement = (await announcement.boundingBox())!;
-  expect(shortAnnouncement.y).toBeGreaterThanOrEqual(
-    (await eventScreenY(page)) + 70,
-  );
-  expect(
-    shortAnnouncement.y + shortAnnouncement.height,
-    JSON.stringify({ shortMap, shortAnnouncement }),
-  ).toBeLessThanOrEqual(320);
-  await page.setViewportSize({ width: 851, height: 393 });
-  await page.clock.runFor(32);
-  const mapBox = (await page.getByTestId('map-container').boundingBox())!,
-    listBox = (await console.boundingBox())!;
-  expect(mapBox.y + mapBox.height).toBeLessThanOrEqual(listBox.y);
-  // handelseannonsering: WebKit can place the box a frame late after rotation.
-  await expect
-    .poll(async () => {
-      await page.clock.runFor(32);
-      const box = await announcement.boundingBox();
-      return box ? box.y - (await eventScreenY(page)) : -1;
-    })
-    .toBeGreaterThanOrEqual(80);
-  const landscape = (await announcement.boundingBox())!;
-  expect(
-    Math.abs(landscape.x + landscape.width / 2 - mapBox.x - mapBox.width / 2),
-  ).toBeLessThan(2);
-  expect(landscape.y + landscape.height).toBeLessThanOrEqual(393 - 8);
-  await page.clock.runFor(1400);
-  await expect(announcement).toHaveAttribute('data-stage', 'filing');
-  await expect(log.locator('[data-event-id]')).toHaveCount(0);
-  await page.waitForTimeout(220);
-  const flying = (await announcement.boundingBox())!;
-  expect(flying.y).toBeGreaterThan(shortAnnouncement.y);
-  await page.screenshot({
-    path: testInfo.outputPath('announcement-filing-landscape.png'),
-  });
-  await page.clock.runFor(500);
-  await advanceUntil(page, () =>
-    page.getByRole('heading', { name: 'Research', exact: true }).isVisible(),
-  );
-  await expect(announcement).toHaveCount(0);
   await expect(
     page.getByRole('heading', { name: 'Research', exact: true }),
   ).toBeVisible();
   await console.locator('summary').click();
-  await expect(log.locator('[data-event-id]')).toHaveCount(1);
-  await expect(log).not.toContainText('Round 1');
   await expect(log).toContainText('Round 2');
   await noOverflow(page);
   await page.reload();
   await page.clock.resume();
   await startFirstSlot(page);
-  await expect(announcement).toHaveCount(0);
   await console.locator('summary').click();
-  await expect(log.locator('[data-event-id]')).toHaveCount(1);
+  await expect(log).not.toContainText('arrived at');
   expect(errors).toEqual([]);
 });
 
@@ -238,9 +159,9 @@ for (const size of [
   { width: 393, height: 851 },
   { width: 851, height: 393 },
 ]) {
-  test(`handelseanpassad-kartkamera / stillastaende-kamera-vid-forflyttning: zooms out from the player's view then holds the full route (${size.width}x${size.height})`, async ({
+  test(`kamera-foljer-skepp: the camera stays with the ship at the player's zoom (${size.width}x${size.height})`, async ({
     page,
-  }, testInfo) => {
+  }) => {
     await page.setViewportSize(size);
     await page.clock.install({ time: new Date('2026-10-30T00:00:00Z') });
     await seed(page);
@@ -260,44 +181,18 @@ for (const size of [
       });
     const initial = await camera();
     await requestTurn(page);
-    await advanceUntil(page, async () => (await camera()).zoom < initial.zoom);
-    const overview = await camera();
-    expect(overview.x).toBeCloseTo(initial.x);
-    expect(overview.y).toBeCloseTo(initial.y);
-    expect(overview.zoom).toBeLessThan(initial.zoom);
-    await expect(canvas).not.toHaveAttribute('data-moving-fleet');
     await advanceUntil(
       page,
       async () =>
         (await canvas.getAttribute('data-moving-fleet')) === 'fleet-home',
     );
-    const framed = await camera();
-    const map = (await canvas.boundingBox())!;
-    for (const hex of [
-      new HexCoordinate(1, 0),
-      new HexCoordinate(2, 0),
-      new HexCoordinate(3, 0),
-    ]) {
-      const point = HexGeometry.toPoint(hex);
-      const x = map.width / 2 + (point.x - framed.x) * framed.zoom;
-      const y = map.height / 2 + (point.y - framed.y) * framed.zoom;
-      expect(x - 36 * framed.zoom).toBeGreaterThanOrEqual(24 - 0.01);
-      expect(x + 36 * framed.zoom).toBeLessThanOrEqual(map.width - 24 + 0.01);
-      expect(y - 36 * framed.zoom).toBeGreaterThanOrEqual(24 - 0.01);
-      expect(y + 36 * framed.zoom).toBeLessThanOrEqual(map.height - 24 + 0.01);
-    }
-    for (let sample = 0; sample < 6; sample++) {
-      await page.clock.runFor(100);
-      await advanceUntil(
-        page,
-        async () =>
-          (await canvas.getAttribute('data-moving-fleet')) === 'fleet-home',
-      );
-      expect(await camera()).toEqual(framed);
-    }
-    await page.screenshot({
-      path: testInfo.outputPath('stationary-route-camera.png'),
-    });
+    const followed = await camera();
+    expect(followed.zoom).toBeCloseTo(initial.zoom);
+    expect(
+      Math.hypot(followed.x - initial.x, followed.y - initial.y),
+    ).toBeGreaterThan(20);
+    await page.clock.runFor(200);
+    expect((await camera()).zoom).toBeCloseTo(initial.zoom);
     await advanceUntil(
       page,
       async () =>
@@ -306,7 +201,11 @@ for (const size of [
           .isDisabled()),
     );
     await page.clock.runFor(32);
-    expect(await camera()).toEqual(initial);
+    const settled = await camera();
+    expect(settled.zoom).toBeCloseTo(initial.zoom);
+    expect(Math.hypot(settled.x - initial.x, settled.y - initial.y)).toBeGreaterThan(
+      20,
+    );
     await noOverflow(page);
   });
 }

@@ -14,26 +14,34 @@ flotta till ett mål. Planeter är platser; spelaren äger dem inte
   en punkt där varje runda slutar. Panelen anger antal hex och ungefär hur
   många rundor resan tar. Ett andra tryck på den markerade hexen ger flottan
   målet och startar rundan direkt. Ett tryck på en annan hex flyttar bara
-  markeringen. Move, dragning till mål och Stop finns kvar.
+  markeringen. Move- och Stop-knapparna finns inte kvar
+  (`inga-move-stop-knappar`). Skeppet glider en hex i taget
+  (`glidande-hexsteg`). Kameran följer skeppet så att det ligger nära mitten
+  (`kamera-foljer-skepp`), och ett klick träffar hexen under musen
+  (`klick-pa-synlig-hex`).
 
 - **Resa utan synliga pirater:** `resa-utan-synliga-pirater` (2026-11-22) är
   **Fullständigt implementerat**. Flottan rör sig varje runda så många hex som
   dess långsammaste skepp tillåter. Syns ingen pirat tar motståndarnas tur
   ingen tid, och nästa runda börjar av sig själv tills flottan är framme.
   Syns en pirat stannar resan efter rundan; målet finns kvar och End turn tar
-  flottan vidare medan piraterna agerar. Upptäckter och strider pausar som
-  förut; när de är avklarade fortsätter resan. Asteroidhexar som kräver en
+  flottan vidare medan piraterna agerar. En ny upptäckt stannar resan
+  (`upptackt-stannar-resan`). Asteroidhexar som kräver en
   hel runda avbryter inte resan, men en resa utan känd väg gör det.
-  Ett nytt hexval eller Stop avbryter resan.
+  Ett nytt hexval avbryter resan. `glidande-hexsteg` är **Fullständigt
+  implementerat**: varje steg är en hex och markören glider mellan
+  hexcentrumen. `fiendeupptackt-utan-end-turn` är **Fullständigt
+  implementerat**: en paus som innehåller en pirat fortsätter rundan
+  efter blänkarna utan End turn.
 
 - **Kartobjekt:** `kartobjekt-foljer-zoom` är **Fullständigt implementerat**.
   Flottor följer kartans skala.
 
 - **Vald flotta och stjärnupptäckt:** `vald-flotta-visar-destinationspil` och
   `stjarnupptackt-utan-avbrott` är **Fullständigt implementerat**. En vald
-  flotta visar sin destinationspil även på Star map. Utforskad stjärna ger ett
-  händelsebesked utan Handle/Ignore och pausar inte rundan. Se
-  [utforskning](../exploration-interruptions.md).
+  flotta visar sin destinationspil även på Star map. Utforskad stjärna ger
+  händelsen Star explored och stannar resan enligt `upptackt-stannar-resan`.
+  Se [utforskning](../exploration-interruptions.md).
 
 - **Destinationspilar:** `destinationspilar-endast-i-flottvyn` är
   **Fullständigt implementerat**. Star map visar destinationspilen bara för

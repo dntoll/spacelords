@@ -105,6 +105,14 @@ export async function ignoreEventsUntil(
           .isVisible()
       )
         return 'event';
+      const noticeText =
+        (await page.locator('.game-notice').textContent()) ?? '';
+      if (
+        /Pirate ship in sight|Star explored|Planet discovered|Planet explored|Wreck discovered/.test(
+          noticeText,
+        )
+      )
+        return 'discovery';
       return (await page
         .getByRole('button', { name: 'End turn', exact: true })
         .isEnabled())
@@ -114,6 +122,17 @@ export async function ignoreEventsUntil(
     await expect.poll(status, { timeout: 25000 }).not.toBe('running');
     if ((await status()) === 'battle') {
       await finishTacticalCombat(page);
+      continue;
+    }
+    if ((await status()) === 'discovery') {
+      const text = (await page.locator('.game-notice').textContent()) ?? '';
+      if (text.includes('Pirate ship in sight')) {
+        await expect(page.locator('.game-notice')).toBeHidden({
+          timeout: 8000,
+        });
+        continue;
+      }
+      await page.getByRole('button', { name: 'End turn', exact: true }).click();
       continue;
     }
     if ((await status()) !== 'event') return;

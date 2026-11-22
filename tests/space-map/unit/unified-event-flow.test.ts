@@ -76,7 +76,7 @@ describe('gemensamt-handelseflode', () => {
     },
   );
 
-  it('geografisk-arsuppspelning / upptacktsbesked-utan-pausmening: discoveries retain location and fleet details without the generic pause sentence', () => {
+  it('upptackt-stannar-resan: a loaded discovery is a top flash without Handle or Ignore', () => {
     const game = Game.restore(discoveryState());
     game.startTurn();
     while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
@@ -86,21 +86,13 @@ describe('gemensamt-handelseflode', () => {
       clear() {},
     });
     model.startSlot(1);
-    const events = model.snapshot.eventPlayback!.events.filter(
-      (event) => event.decision,
-    );
-    expect(events.length).toBeGreaterThan(0);
-    for (const event of events)
-      expect(event.decision!.details.join('\n')).not.toContain(
-        'The round is paused',
-      );
+    expect(model.snapshot.phase).toBe('interrupted');
+    expect(model.snapshot.notice?.kind).toBe('discovery');
+    expect(model.snapshot.travelling).toBe(false);
     expect(
-      events.some((event) =>
-        /^HEX .+ · Home Fleet · \d+ hex remaining$/.test(
-          event.decision!.details[0] ?? '',
-        ),
-      ),
-    ).toBe(true);
+      model.snapshot.eventPlayback?.events.some((event) => event.decision),
+    ).not.toBe(true);
+    expect(model.snapshot.events.some((event) => event.position)).toBe(true);
   });
 
   it('waits for an explicit choice and files each interactive event once', () => {
@@ -129,58 +121,28 @@ describe('gemensamt-handelseflode', () => {
     expect(playback.snapshot.stage).toBe('announcing');
   });
 
-  it('spara-avbrutet-ar: restores each choice and handling without replaying movement, combat or announcements', async () => {
+  it('upptackt-stannar-resan / spara-avbrutet-ar: a discovery flash pauses the round and reload does not replay movement', async () => {
     const slot = session();
     let current = slot.open();
     current.emit({ type: 'end-turn' });
     await vi.advanceTimersByTimeAsync(0);
-    const first = current.model.snapshot.eventPlayback!;
-    expect(first.stage).toBe('awaiting-choice');
+    expect(current.model.snapshot.phase).toBe('interrupted');
+    expect(current.model.snapshot.notice?.kind).toBe('discovery');
+    expect(current.model.snapshot.travelling).toBe(false);
     const pausedPosition = slot.saved().state.fleets[0]!.position;
     const pausedMovement = slot.saved().state.simulation!.remaining;
-    await vi.advanceTimersByTimeAsync(20000);
-    expect(current.model.snapshot.eventPlayback?.index).toBe(0);
-    expect(slot.saved().state.simulation!.remaining).toEqual(pausedMovement);
-    current.emit({ type: 'ignore-discoveries' });
-    current.emit({ type: 'handle-discoveries' });
-    expect(current.model.snapshot.eventPlayback?.choice).toBe('ignore');
     current.controller.dispose();
     current = slot.open();
-    expect(current.model.snapshot.eventPlayback?.events[0]?.id).not.toBe(
-      first.events[0]!.id,
-    );
-    expect(
-      current.model.snapshot.eventPlayback?.history?.map((event) => event.id),
-    ).toContain(first.events[0]!.id);
-    expect(slot.saved().state.fleets[0]!.position).toEqual(pausedPosition);
-    const handled = current.model.snapshot.eventPlayback!.events[0]!;
-    current.emit({ type: 'handle-discoveries' });
-    // Reload during the filing animation must restore order handling, not ask again.
-    current.controller.dispose();
-    current = slot.open();
+    expect(current.model.snapshot.notice?.kind).toBe('discovery');
     expect(current.model.snapshot.eventPlayback).toBeNull();
-    expect(current.model.snapshot.interruption?.activeEventId).toBe(handled.id);
-    expect(current.model.snapshot.interruption?.handling).toBe(true);
-    expect(current.model.snapshot.mapFleetId).toBe(handled.decision!.fleetId);
+    expect(slot.saved().state.fleets[0]!.position).toEqual(pausedPosition);
     expect(slot.saved().state.simulation!.remaining).toEqual(pausedMovement);
-    current.emit({ type: 'continue-turn' });
-    expect(current.model.snapshot.phase).toBe('interrupted');
-    expect(
-      slot
-        .saved()
-        .state.events.some((event) => event.text.startsWith('Combat at')),
-    ).toBe(false);
-    const seen = [first.events[0]!.id, handled.id];
+    // fiendeupptackt-utan-end-turn: the pirate flash continues the round.
     for (let attempt = 0; attempt < 100; attempt++) {
       if (current.model.snapshot.tacticalBattle) {
         completeTacticalBattles(current.model);
         current.controller.dispose();
         current = slot.open();
-      }
-      const playback = current.model.snapshot.eventPlayback;
-      if (playback?.stage === 'awaiting-choice') {
-        seen.push(playback.events[playback.index]!.id);
-        current.emit({ type: 'ignore-discoveries' });
       }
       await vi.advanceTimersByTimeAsync(1850);
       if (
@@ -192,15 +154,11 @@ describe('gemensamt-handelseflode', () => {
     expect(current.model.snapshot.phase).toBe('planning');
     expect(current.model.snapshot.eventPlayback).toBeNull();
     expect(current.model.snapshot.round).toBe(2);
-    expect(new Set(seen).size).toBe(seen.length);
     expect(
       slot
         .saved()
         .state.events.filter((event) => event.text.startsWith('Combat at')),
     ).toHaveLength(1);
-    expect(
-      current.model.snapshot.events.map((event) => event.id).sort(),
-    ).toEqual([...current.model.snapshot.presentedEventIds].sort());
     current.controller.dispose();
     current = slot.open();
     expect(current.model.snapshot.eventPlayback).toBeNull();

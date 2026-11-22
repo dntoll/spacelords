@@ -21,6 +21,7 @@ import { FleetMapLayout } from '../../models/star-map/FleetMapLayout.js';
 import { pirateAsFleet } from '../../models/PirateFleet.js';
 import { MapArtwork } from '../MapArtwork.js';
 import { renderPlanetGlyph } from '../PlanetGlyph.js';
+import { fleetGlidePoint } from './FleetGlide.js';
 
 const STAR_MAP_LABEL =
   'Star map. Select a hex to see it and the route there; select it again to travel. Click a fleet to select it. Drag a fleet to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to the start planet; Enter selects the central hex.';
@@ -206,10 +207,7 @@ export class GalaxyMapView implements MapPort {
       for (const movement of movements) {
         const from = HexGeometry.toPoint(movement.from),
           to = HexGeometry.toPoint(movement.to);
-        const center = {
-          x: from.x + (to.x - from.x) * progress,
-          y: from.y + (to.y - from.y) * progress,
-        };
+        const center = fleetGlidePoint(from, to, progress);
         const marker = markers.find(
           (candidate) => candidate.fleet.id === movement.fleetId,
         );
@@ -221,7 +219,7 @@ export class GalaxyMapView implements MapPort {
           });
         }
       }
-      // stillastaende-kamera-vid-forflyttning: only the ship marker moves.
+      // kamera-foljer-skepp: the marker glides; the camera snapshot follows it.
     }
     if (this.#canvas) {
       this.#canvas.dataset.cameraX = String(model.camera.center.x);

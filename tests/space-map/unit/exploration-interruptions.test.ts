@@ -74,11 +74,10 @@ describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
       game.events.some((event) => event.text.startsWith('Combat at')),
     ).toBe(false);
     expect(game.fleet('fleet-home')!.remainingMovement).toBe(3);
-    expect(() =>
-      game.setDestination('fleet-home', new HexCoordinate(7, -4)),
-    ).toThrow();
-    game.handleDiscoveries();
+    expect(game.discoveryPause()).toBe(true);
+    expect(game.enemyDiscoveryResume()).toBe(true);
     game.setDestination('fleet-home', new HexCoordinate(7, -4));
+    expect(game.fleet('fleet-home')!.destination?.key).toBe('7,-4');
     expect(() =>
       game.setDestination('other', new HexCoordinate(2, 0)),
     ).toThrow();
@@ -120,9 +119,12 @@ describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
       expect(game.phase).toBe('simulating');
     }
     game.finishTurn();
+    expect(game.events.some((event) => event.text.includes('arrived at'))).toBe(
+      false,
+    );
   });
 
-  it('stjarnupptackt-utan-avbrott: logs an explored star without pausing for Handle or Ignore', () => {
+  it('upptackt-stannar-resan: an explored star stops the round without Handle or Ignore', () => {
     const state = new Game(createExampleGalaxy()).exportState();
     const game = Game.restore({
       ...state,
@@ -143,20 +145,24 @@ describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
       ],
     });
     game.startTurn();
+    let paused = false;
     for (let count = 0; count < 20 && game.phase === 'simulating'; count++) {
       const frame = game.nextTurnFrame();
       if (!frame) break;
       game.applyFrame(frame);
-      expect(game.phase).not.toBe('interrupted');
-      expect(game.interruption).toBeNull();
+      if (game.phase === 'interrupted') paused = true;
     }
+    expect(paused).toBe(true);
+    expect(game.discoveryPause()).toBe(true);
+    expect(game.enemyDiscoveryResume()).toBe(false);
     expect(
       game.events.some((event) =>
         event.text.startsWith('Star explored: Nadir'),
       ),
     ).toBe(true);
-    expect(game.phase).toBe('simulating');
-    game.finishTurn();
+    game.setDestination('fleet-home', new HexCoordinate(5, -4));
+    finish(game, false);
+    expect(game.phase).toBe('planning');
   });
 });
 

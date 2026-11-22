@@ -10,7 +10,7 @@ import { FleetMapLayout } from '../../../src/client/space-map/models/star-map/Fl
 import { pirateAsFleet } from '../../../src/client/space-map/models/PirateFleet.js';
 import { selectMapPoint } from './map-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
-import { endTurn, startFirstSlot } from './save-helpers.js';
+import { ignoreEventsUntil, startFirstSlot } from './save-helpers.js';
 import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 
 async function load(page: Page, state: GameState) {
@@ -54,14 +54,10 @@ test('aktuell-detektionssikt / kartans-sikttillstand: losing sight removes pirat
     page.getByRole('article', { name: 'Space pirate', exact: true }),
   ).toBeVisible();
   await selectMapFleet(page);
-  await page
-    .getByRole('button', {
-      name: 'Choose destination for Home Fleet',
-      exact: true,
-    })
-    .click();
-  await selectMapHex(page, new HexCoordinate(10, -4));
-  await endTurn(page);
+  const hex = new HexCoordinate(10, -4);
+  await selectMapHex(page, hex);
+  await selectMapHex(page, hex);
+  await ignoreEventsUntil(page);
   await selectMapPoint(page, marker.point);
   await expect(
     page.getByRole('article', { name: 'Space pirate', exact: true }),

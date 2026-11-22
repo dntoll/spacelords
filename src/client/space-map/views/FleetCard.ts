@@ -1,4 +1,3 @@
-import { renderFleetOrders } from './fleets/FleetOrdersView.js';
 import { bindFleetOrderDrag } from './fleets/FleetOrderDrag.js';
 import type { AppReadModel } from '../../app/models/AppModel.js';
 import type { FleetSnapshot } from '../models/Game.js';
@@ -93,7 +92,6 @@ export function renderFleetCard(
     if ((event.target as Element).closest('button')) return;
     emit({ type: 'map-select-fleet', id: fleet.id });
   });
-  const orders = renderFleetOrders(fleet, model, emit);
   const orderRow = element('div', 'fleet-order-row');
   bindFleetOrderDrag(orderRow);
   const assignment = fleetAssignmentLabel(fleet, model);
@@ -101,7 +99,6 @@ export function renderFleetCard(
     const status = element('span', 'fleet-order-status', assignment);
     orderRow.append(status);
   }
-  orderRow.append(orders);
   const footer = element('div', 'fleet-card-footer');
   if (
     fleet.navigationIssue &&

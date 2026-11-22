@@ -81,7 +81,8 @@ spelbar, men bevara fristående strids- och bordningstester.
         stars, Explore planet, Patrol, Join fleet, väntande startorder och
         pausade order), förstärkningar, skeppsöverföring, nya och raderade
         flottor, flottkategorier och val av order för andra flottor under
-        avbrott. Kvar är Move och Stop. Ett Exploration ship utforskar
+        avbrott. Move och Stop är senare borttagna
+        (`inga-move-stop-knappar`). Ett Exploration ship utforskar
         fortfarande planeter det står på.
   - [ ] `Game` och vyerna hanterar fortfarande en lista med flottor
         (`fleets`). Att göra om till en enda flotta och att ersätta `Fleets`

@@ -2,7 +2,6 @@ import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { selectMapHex } from './map-helpers.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot } from './save-helpers.js';
-import { chooseFleetDestination } from './fleet-helpers.js';
 
 test('flottnamn-direktredigering / flottknappar-pa-kartan: rename the fleet and set a destination on the map, then restore them', async ({
   page,
@@ -36,12 +35,8 @@ test('flottnamn-direktredigering / flottknappar-pa-kartan: rename the fleet and 
     panel.getByRole('heading', { name: 'Vanguard', exact: true }),
   ).toBeVisible();
   await expect(page.getByTestId('camera-position')).toHaveText(camera!);
-  await chooseFleetDestination(page, 'Vanguard');
   await selectMapHex(page, new HexCoordinate(0, 1));
-  await expect(panel.locator('.fleet-card')).toHaveAttribute(
-    'aria-description',
-    /Destination: selected location on map/,
-  );
+  await expect(panel).toContainText('Select the hex again to travel.');
   const dimensions = await page.evaluate(() => ({
     overflow:
       document.documentElement.scrollWidth > innerWidth ||
