@@ -22,26 +22,24 @@ export async function chooseResearch(
       return {
         completed: slot.state.researched,
         queue: slot.state.researchQueue,
-        recovered: slot.state.recoveredResearch ?? [],
       };
     });
   const state = await saved();
   if (state.completed.includes(target) || state.queue.includes(target)) return;
   // forskningens-avslojande: campaigns research through the visible frontier.
-  if (!state.recovered.includes(target))
-    for (const prerequisite of PREREQUISITES[target]) {
-      if ((await saved()).completed.includes(prerequisite)) continue;
-      await chooseResearch(page, prerequisite);
-      for (
-        let turn = 0;
-        !(await saved()).completed.includes(prerequisite);
-        turn++
-      ) {
-        if (turn >= TECHNOLOGIES.length)
-          throw new Error(`Research stalled: ${prerequisite}`);
-        await endTurn(page);
-      }
+  for (const prerequisite of PREREQUISITES[target]) {
+    if ((await saved()).completed.includes(prerequisite)) continue;
+    await chooseResearch(page, prerequisite);
+    for (
+      let turn = 0;
+      !(await saved()).completed.includes(prerequisite);
+      turn++
+    ) {
+      if (turn >= TECHNOLOGIES.length)
+        throw new Error(`Research stalled: ${prerequisite}`);
+      await endTurn(page);
     }
+  }
   await page
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('button', { name: 'Research', exact: true })

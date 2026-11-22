@@ -24,11 +24,6 @@ export function tradeNetworkState(): GameState {
   };
   return {
     ...state,
-    researched: [
-      'Exploration ship factory',
-      'Transport ship factory',
-      'Rocket engine factory',
-    ],
     fleets: [
       fleet,
       {

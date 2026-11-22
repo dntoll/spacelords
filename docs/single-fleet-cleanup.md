@@ -94,15 +94,18 @@ spelbar, men bevara fristående strids- och bordningstester.
         varningen vid rundslut, beslutsvägledning, uppmärksamhetsmarkeringar
         och kartproblem, samt Exploration-, Colonization-, Attack- och
         Salvage-köerna, köåtgärder i händelser och beställning av Colony ship.
-- [ ] Ta bort planet- och fabriksforskning samt planetbunden produktion och
+- [x] Ta bort planet- och fabriksforskning samt planetbunden produktion och
       anpassa återstående forsknings- och produktionsytor till att invänta
       beslutade ersättningar.
   - [x] Research kräver inte längre en Research station. Trädet visas och
         kan köas, men forskningen går inte framåt (`advance(0)`) tills
         forskningskapaciteten är beslutad.
-  - [ ] Ta bort fabriks-, Dome-, terraformings-, handels- och
-        bärgningsteknikerna ur trädet och `Catalog` (byggnaderna finns kvar
-        som data för trädets bilder och förkunskaper).
+  - [x] Ta bort fabriks-, Dome-, terraformings-, handels-, order- och
+        bärgningsteknikerna ur trädet och byggnaderna ur `Catalog`, med
+        byggnadsbilderna och byggnadssymbolerna. Kvar är `Missiles`,
+        `Armor`, `Armored Transport` och `Armored Fighter`. Bordning ger
+        inte längre `Raptor factory` som återvunnen teknik; `Raptor` finns
+        kvar som skeppstyp.
 - [ ] Ta bort händelser, beslut, vägledning och navigation som bara stöder
       borttagna funktioner; granska kvarvarande användartexter. Beslut,
       vägledning och köer är borta. Webbläsartesterna (`tests/*/browser`)

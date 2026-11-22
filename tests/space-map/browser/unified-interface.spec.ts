@@ -77,10 +77,7 @@ test('dragbara-koer: research dependencies reject invalid reordering without par
 }) => {
   const state = {
     ...researchStationState(),
-    researchQueue: [
-      'Rocket engine factory',
-      'Exploration ship factory',
-    ] as const,
+    researchQueue: ['Armor', 'Armored Fighter'] as const,
   };
   await seed(page, state);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
@@ -93,8 +90,8 @@ test('dragbara-koer: research dependencies reject invalid reordering without par
     /prerequisite|depend|before/i,
   );
   expect((await saved(page)).researchQueue).toEqual([
-    'Rocket engine factory',
-    'Exploration ship factory',
+    'Armor',
+    'Armored Fighter',
   ]);
 });
 test('gemensam-events-panel / planetinformation-pa-kartan: persistent footer, reading position and known facts across all views', async ({

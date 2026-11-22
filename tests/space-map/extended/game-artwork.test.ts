@@ -1,68 +1,30 @@
 // @vitest-environment jsdom
 import { expect, it, vi } from 'vitest';
-import { BUILDINGS } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
-import { catalogIcon } from '../../../src/client/space-map/views/CatalogControls.js';
-import { buildingImage } from '../../../src/client/space-map/views/BuildingImage.js';
 import { planetIllustration } from '../../../src/client/space-map/views/PlanetImages.js';
 import { renderResearchTree } from '../../../src/client/space-map/views/research/ResearchTreeView.js';
 import type p5 from 'p5';
 import { MapArtwork } from '../../../src/client/space-map/views/MapArtwork.js';
 import { renderPlanetGlyph } from '../../../src/client/space-map/views/PlanetGlyph.js';
 
-it('spelgrafik-symboler: every building has a distinct decorative symbol with a fallback', () => {
-  const sources = new Set<string>();
-  for (const type of Object.keys(BUILDINGS)) {
-    const holder = document.createElement('span');
-    holder.append(catalogIcon(type));
-    const image = holder.querySelector('img');
-    expect(image, type).not.toBeNull();
-    expect(image!.getAttribute('aria-hidden')).toBe('true');
-    expect(image!.alt).toBe('');
-    sources.add(image!.src);
-    image!.dispatchEvent(new Event('error'));
-    expect(holder.querySelector('svg')).not.toBeNull();
-  }
-  expect(sources.size).toBe(Object.keys(BUILDINGS).length);
-});
-
-it('spelgrafik-symboler: a missing portrait uses its symbol while supplied portraits stay intact', () => {
-  expect(buildingImage('Iron mine').querySelector('img')?.src).toContain(
-    'iron-mine-symbol',
-  );
-  expect(buildingImage('Research station').querySelector('img')?.src).toContain(
-    'research-station.webp',
-  );
-});
-
 it('spelgrafik-symboler: unidentified research never reveals its symbol or name', () => {
   const tree = renderResearchTree(
     {
-      available: [
-        'Rocket engine factory',
-        'Orbital shipyard',
-        'Salvage ship factory',
-      ],
+      available: ['Missiles', 'Armor', 'Armored Fighter'],
       completed: [],
       selected: null,
       queue: [],
     },
     () => {},
   );
-  const unknown = tree.querySelector(
-    '[data-technology="Salvage ship factory"]',
-  )!;
-  expect(unknown.querySelector('img')).toBeNull();
+  const unknown = tree.querySelector('[data-technology="Armored Fighter"]')!;
+  expect(unknown.querySelector('img, svg')).toBeNull();
   // forskningslov-som-symbol: an unknown leaf shows only '?'.
   expect(unknown.textContent).toContain('?');
   expect(unknown.querySelector('button')!.getAttribute('aria-label')).toContain(
     'unknown technology',
   );
-  expect(
-    tree
-      .querySelector('[data-technology="Rocket engine factory"] img')
-      ?.getAttribute('src'),
-  ).toContain('rocket-engine-factory-symbol');
+  expect(tree.querySelector('[data-technology="Missiles"] svg')).not.toBeNull();
 });
 
 it('spelgrafik-planeter: all six detail illustrations are distinct and recover from a loading failure', () => {

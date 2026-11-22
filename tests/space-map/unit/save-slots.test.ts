@@ -29,7 +29,7 @@ function repository() {
 describe('sparat-spel / frontend-backend-mock', () => {
   it('round-trips research, fleets, exploration, events and future IDs', () => {
     const game = new Game(createExampleGalaxy());
-    game.selectResearch('Colony ship factory');
+    game.selectResearch('Armor');
     game.setDestination('fleet-home', new HexCoordinate(3, 0));
     for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();

@@ -14,7 +14,7 @@ async function seed(page: Page) {
   const game = Game.restore(researchStationState());
   collectTurnFrames(game);
   game.finishTurn();
-  game.selectResearch('Rocket engine factory');
+  game.selectResearch('Missiles');
   game.setDestination('fleet-home', new HexCoordinate(3, 0));
   await page.addInitScript((state) => {
     if (localStorage.getItem('event-playback-seeded')) return;

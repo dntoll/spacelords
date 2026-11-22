@@ -1,13 +1,7 @@
-import {
-  BUILDINGS,
-  type ResearchSnapshot,
-  type Technology,
-  type BuildType,
-} from '../../models/Game.js';
+import { type ResearchSnapshot, type Technology } from '../../models/Game.js';
 import {
   COMBAT_RESEARCH,
   PREREQUISITES,
-  ORDER_RESEARCH,
   researchRounds,
 } from '../../models/research/Research.js';
 import { isResearchIdentified } from '../../models/research/ResearchTree.js';
@@ -72,20 +66,7 @@ export function renderResearchDetails(
   }
   const completed = research.completed.includes(technology);
   const queue = research.queue.indexOf(technology);
-  const recovered = research.recovered?.includes(technology);
-  content.append(
-    element(
-      'p',
-      '',
-      technology in COMBAT_RESEARCH
-        ? COMBAT_RESEARCH[technology as keyof typeof COMBAT_RESEARCH]
-        : technology === 'Trade logistics'
-          ? 'Connect owned planets with automated transport fleets.'
-          : technology in ORDER_RESEARCH
-            ? ORDER_RESEARCH[technology as keyof typeof ORDER_RESEARCH]
-            : BUILDINGS[technology as BuildType].description,
-    ),
-  );
+  content.append(element('p', '', COMBAT_RESEARCH[technology]));
   const metadata = element('div', 'research-detail-meta');
   metadata.append(
     element(
@@ -102,9 +83,7 @@ export function renderResearchDetails(
     element(
       'p',
       'research-requires',
-      recovered
-        ? 'Recovered technology · Prerequisites bypassed'
-        : `Requires: ${PREREQUISITES[technology].join(', ') || 'No prerequisites'}`,
+      `Requires: ${PREREQUISITES[technology].join(', ') || 'No prerequisites'}`,
     ),
   );
   content.append(metadata);

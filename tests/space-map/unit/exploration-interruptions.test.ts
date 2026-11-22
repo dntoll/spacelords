@@ -9,11 +9,7 @@ import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { collectTurnFrames } from '../../fixtures/turn-steps.js';
 
 function explorationGame() {
-  const state = new Game(createExampleGalaxy()).exportState();
-  return Game.restore({
-    ...state,
-    researched: [...state.researched, 'Automated exploration'],
-  });
+  return new Game(createExampleGalaxy());
 }
 
 const empty = {

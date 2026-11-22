@@ -15,7 +15,7 @@ describe('forskningstradets-utrymme', () => {
       .querySelector<HTMLButtonElement>('.research-tab[data-tab="queue"]')!
       .click();
     const camera = model.snapshot.researchCamera;
-    model.research('Colony ship factory');
+    model.research('Armored Fighter');
     view.render(model.snapshot);
     expect(root.querySelector('.research-queue')!.hasAttribute('hidden')).toBe(
       false,

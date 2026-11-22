@@ -2,7 +2,7 @@ import { PREREQUISITES, TECHNOLOGIES, type Technology } from './Research.js';
 import type { Point } from '../../../common/HexCoordinate.js';
 import type { ResearchSnapshot } from '../Game.js';
 
-/** forskningens-avslojande: queued and recovered knowledge remains identifiable. */
+/** forskningens-avslojande: queued knowledge remains identifiable. */
 export function isResearchIdentified(
   research: ResearchSnapshot,
   technology: Technology,
@@ -10,7 +10,6 @@ export function isResearchIdentified(
   return (
     research.completed.includes(technology) ||
     research.queue.includes(technology) ||
-    !!research.recovered?.includes(technology) ||
     PREREQUISITES[technology].every((type) => research.completed.includes(type))
   );
 }

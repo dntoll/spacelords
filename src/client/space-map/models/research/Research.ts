@@ -1,65 +1,19 @@
+// flottforskning-av-tekniker: only ship technologies remain. Planet and
+// factory research is gone; what else Research holds is not decided yet.
 export const TECHNOLOGIES = [
-  'Orbital shipyard',
-  'Salvage ship factory',
-  'Telescope I factory',
-  'Telescope II factory',
-  'Telescope III factory',
-  'Exploration ship factory',
-  'Colony ship factory',
-  'Fighter factory',
-  'Raptor factory',
-  'Transport ship factory',
-  'Trade logistics',
-  'Civilian transport',
-  'Automated salvage',
-  'Rocket engine factory',
-  'Ion pulse engine factory',
-  'Weapons module factory',
   'Missiles',
   'Armor',
   'Armored Transport',
   'Armored Fighter',
-  'Ice dome',
-  'Ice terraforming factory',
-  'Desert dome',
-  'Desert terraforming factory',
-  'Ocean dome',
-  'Ocean terraforming factory',
-  'Toxic dome',
-  'Toxic terraforming factory',
 ] as const;
 export type Technology = (typeof TECHNOLOGIES)[number];
 export const PREREQUISITES: Readonly<
   Record<Technology, readonly Technology[]>
 > = Object.freeze({
-  'Orbital shipyard': ['Rocket engine factory'],
-  'Salvage ship factory': ['Orbital shipyard'],
-  'Telescope I factory': [],
-  'Telescope II factory': ['Telescope I factory'],
-  'Telescope III factory': ['Telescope II factory'],
-  'Exploration ship factory': ['Rocket engine factory', 'Telescope I factory'],
-  'Colony ship factory': ['Rocket engine factory'],
-  'Fighter factory': ['Weapons module factory'],
-  'Raptor factory': ['Weapons module factory'],
-  'Transport ship factory': ['Rocket engine factory'],
-  'Trade logistics': ['Transport ship factory'],
-  'Civilian transport': ['Trade logistics'],
-  'Automated salvage': ['Salvage ship factory'],
-  'Rocket engine factory': [],
-  'Ion pulse engine factory': ['Rocket engine factory'],
-  'Weapons module factory': ['Rocket engine factory'],
-  Missiles: ['Fighter factory'],
-  Armor: ['Weapons module factory'],
-  'Armored Transport': ['Armor', 'Transport ship factory'],
-  'Armored Fighter': ['Armor', 'Fighter factory'],
-  'Ice dome': [],
-  'Ice terraforming factory': ['Ice dome'],
-  'Desert dome': [],
-  'Desert terraforming factory': ['Desert dome'],
-  'Ocean dome': [],
-  'Ocean terraforming factory': ['Ocean dome'],
-  'Toxic dome': [],
-  'Toxic terraforming factory': ['Toxic dome'],
+  Missiles: [],
+  Armor: [],
+  'Armored Transport': ['Armor'],
+  'Armored Fighter': ['Armor'],
 });
 
 function depth(technology: Technology): number {
@@ -79,13 +33,12 @@ export class ResearchPlan {
   constructor(
     readonly completed = new Set<Technology>(),
     public queue: Technology[] = [],
-    readonly recovered = new Set<Technology>(),
     /** forskningstid: rounds already spent on unfinished technologies. */
     readonly progress = new Map<Technology, number>(),
   ) {}
 
   prerequisites(technology: Technology): readonly Technology[] {
-    return this.recovered.has(technology) ? [] : PREREQUISITES[technology];
+    return PREREQUISITES[technology];
   }
 
   add(technology: Technology): void {
@@ -150,19 +103,4 @@ export const COMBAT_RESEARCH = {
     'Upgrade a Transport ship into an Armored Transport. Hull becomes 9. Cargo, size and speed stay the same.',
   'Armored Fighter':
     'Upgrade a Fighter into an Armored Fighter. Hull becomes 5. Weapons, size and movement stay the same.',
-  'Raptor factory':
-    'Docking technology. Builds Raptors: small troop transports with a light cannon that can board enemy ships.',
-} as const;
-
-export const RETIRED_ORDER_TECHNOLOGIES = [
-  'Automated transport',
-  'Fleet patrol',
-  'Automated exploration',
-] as const;
-
-export const ORDER_RESEARCH = {
-  'Civilian transport':
-    'Unlock Civilian shuttle production in Transport ship factory. New shuttles automatically move up to 500 passengers per ship to available jobs through open Trade routes.',
-  'Automated salvage':
-    'Unlock Auto salvage: repeatedly collect the nearest known available wreck and tow it to the nearest surviving shipyard.',
 } as const;

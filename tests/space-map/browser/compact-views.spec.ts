@@ -19,10 +19,7 @@ async function seed(page: Page, state: GameState) {
 test('egen-ordervy: compact fleet controls remain readable and named special orders open separately', async ({
   page,
 }, testInfo) => {
-  await seed(page, {
-    ...researchStationState(),
-    researched: ['Automated exploration'],
-  });
+  await seed(page, researchStationState());
   const card = page.locator('.fleet-card').first();
   await expect(card.locator('.fleet-primary-orders button')).toHaveText([
     'Move',

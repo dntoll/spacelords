@@ -59,9 +59,7 @@ describe('forskningsoversikt', () => {
     click('Research');
     expect(root.querySelector('h1')?.textContent).toBe('Research');
     expect(root.textContent).toContain('Research does not advance yet.');
-    expect(
-      root.querySelector('[data-technology="Rocket engine factory"]'),
-    ).not.toBeNull();
+    expect(root.querySelector('[data-technology="Missiles"]')).not.toBeNull();
     click('Star map');
     expect(root.querySelector('[data-testid="map-container"]')).not.toBeNull();
   });
@@ -125,9 +123,8 @@ describe('focused-interface', () => {
 describe('kompakta-koknappar', () => {
   it('uses symbols while preserving named research actions, boundaries and controller dispatch', () => {
     const model = new AppModel();
-    model.research('Exploration ship factory');
-    model.research('Colony ship factory');
-    model.research('Transport ship factory');
+    model.research('Missiles');
+    model.research('Armored Transport');
     model.openResearch();
     new MasterController(model, new AppView(root, mapFactory)).start();
     const rows = () => [...root.querySelectorAll('.research-queue article')];
@@ -137,21 +134,19 @@ describe('kompakta-koknappar', () => {
     expect(buttons().map((b) => b.textContent)).toEqual(['⠿', '×']);
     expect(buttons()[0]!.disabled).toBe(false);
     for (const control of buttons()) {
-      expect(control.getAttribute('aria-label')).toContain(
-        'Rocket engine factory',
-      );
+      expect(control.getAttribute('aria-label')).toContain('Missiles');
       expect(control.title.length).toBeGreaterThan(0);
     }
     const handle =
-      rows()[3]!.querySelector<HTMLButtonElement>('.queue-drag-handle')!;
+      rows()[0]!.querySelector<HTMLButtonElement>('.queue-drag-handle')!;
     for (const key of [' ', 'ArrowDown', 'Enter'])
       handle.dispatchEvent(
         new KeyboardEvent('keydown', { key, bubbles: true }),
       );
-    expect(model.snapshot.research.queue[3]).toBe('Transport ship factory');
-    rows()[4]!.querySelector<HTMLButtonElement>('.queue-icon-button')!.click();
-    expect(model.snapshot.research.queue).toContain('Colony ship factory');
+    expect(model.snapshot.research.queue[1]).toBe('Missiles');
+    rows()[2]!.querySelector<HTMLButtonElement>('.queue-icon-button')!.click();
+    expect(model.snapshot.research.queue).toContain('Armored Transport');
     click('Remove research');
-    expect(model.snapshot.research.queue).not.toContain('Colony ship factory');
+    expect(model.snapshot.research.queue).not.toContain('Armored Transport');
   });
 });

@@ -1,7 +1,5 @@
 import type { GameEvent } from '../../models/Game.js';
 import type { EventIllustration } from '../../models/turn/EventDetails.js';
-import { BUILDING_IMAGES } from '../BuildingImage.js';
-import { BUILDING_SYMBOLS } from '../BuildingSymbols.js';
 import { SHIP_IMAGES } from '../ShipImages.js';
 import { PLANET_IMAGES } from '../PlanetImages.js';
 import { element } from '../../../common/dom.js';
@@ -12,18 +10,13 @@ function artwork(art: EventIllustration): string | undefined {
   if (art.kind === 'star') return starImage;
   if (art.kind === 'ship') return SHIP_IMAGES[art.type];
   if (art.kind === 'planet') return PLANET_IMAGES[art.type];
-  if (art.kind === 'building')
-    return BUILDING_IMAGES[art.type] ?? BUILDING_SYMBOLS[art.type];
-  if (art.kind === 'research')
-    return BUILDING_SYMBOLS[art.type as keyof typeof BUILDING_SYMBOLS];
   return undefined;
 }
 
 function illustration(art?: EventIllustration): HTMLElement {
   const frame = element('span', 'event-illustration');
   frame.setAttribute('aria-hidden', 'true');
-  const symbol =
-    art?.kind === 'component' ? '⚙' : art?.kind === 'research' ? '✧' : '◆';
+  const symbol = art?.kind === 'research' ? '✧' : '◆';
   frame.dataset.symbol = symbol;
   const source = art && artwork(art);
   if (source) {

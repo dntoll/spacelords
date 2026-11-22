@@ -19,36 +19,32 @@ import { renderResearchDetails } from '../../../src/client/space-map/views/resea
 
 const allKnown = {
   available: TECHNOLOGIES,
-  completed: ['Rocket engine factory' as const],
+  completed: ['Missiles', 'Armor'] as const,
   selected: null,
-  stations: 1,
-  builtStations: 1,
-  queueBlockedReason: null,
   queue: [],
 };
 
 describe('forskningstid', () => {
   it('takes one to three rounds by depth in the tree', () => {
-    expect(researchRounds('Rocket engine factory')).toBe(1);
-    expect(researchRounds('Transport ship factory')).toBe(2);
-    expect(researchRounds('Trade logistics')).toBe(3);
-    expect(researchRounds('Automated salvage')).toBe(3);
+    expect(researchRounds('Missiles')).toBe(1);
+    expect(researchRounds('Armor')).toBe(1);
+    expect(researchRounds('Armored Transport')).toBe(2);
     for (const technology of TECHNOLOGIES)
       expect([1, 2, 3]).toContain(researchRounds(technology));
   });
 
-  it('needs an operating station every round and forgets progress of removed research', () => {
-    const plan = new ResearchPlan(new Set(['Rocket engine factory']));
-    plan.add('Transport ship factory');
+  it('advances only with research effort and forgets progress of removed research', () => {
+    const plan = new ResearchPlan(new Set(['Armor']));
+    plan.add('Armored Transport');
     expect(plan.advance(0)).toBeNull();
     expect(plan.progress.size).toBe(0);
     expect(plan.advance(1)).toBeNull();
-    expect(plan.progress.get('Transport ship factory')).toBe(1);
-    plan.remove('Transport ship factory');
+    expect(plan.progress.get('Armored Transport')).toBe(1);
+    plan.remove('Armored Transport');
     expect(plan.progress.size).toBe(0);
-    plan.add('Transport ship factory');
+    plan.add('Armored Transport');
     expect(plan.advance(1)).toBeNull();
-    expect(plan.advance(1)).toBe('Transport ship factory');
+    expect(plan.advance(1)).toBe('Armored Transport');
   });
 
   it('keeps started research in a saved game and loads older saves without it', () => {
@@ -56,15 +52,15 @@ describe('forskningstid', () => {
     const state = game.exportState();
     const saved: GameState = {
       ...state,
-      researched: ['Rocket engine factory'],
-      researchQueue: ['Transport ship factory'],
-      researchProgress: { 'Transport ship factory': 1 },
+      researched: ['Armor'],
+      researchQueue: ['Armored Transport'],
+      researchProgress: { 'Armored Transport': 1 },
     };
     expect(Game.restore(saved).research.progress).toEqual({
-      'Transport ship factory': 1,
+      'Armored Transport': 1,
     });
     expect(Game.restore(saved).exportState().researchProgress).toEqual({
-      'Transport ship factory': 1,
+      'Armored Transport': 1,
     });
     const older = { ...saved };
     delete (older as { researchProgress?: unknown }).researchProgress;
@@ -74,7 +70,7 @@ describe('forskningstid', () => {
   it('shows research time in the details and progress for the active technology', () => {
     const idle = renderResearchDetails(
       allKnown,
-      'Transport ship factory',
+      'Armored Transport',
       false,
       () => {},
     );
@@ -82,10 +78,10 @@ describe('forskningstid', () => {
     const active = renderResearchDetails(
       {
         ...allKnown,
-        queue: ['Transport ship factory'],
-        progress: { 'Transport ship factory': 1 },
+        queue: ['Armored Transport'],
+        progress: { 'Armored Transport': 1 },
       },
-      'Transport ship factory',
+      'Armored Transport',
       false,
       () => {},
     );
@@ -120,13 +116,13 @@ describe('forskningstrad-utan-korsningar', () => {
     const layout = new ResearchTreeLayout(TECHNOLOGIES);
     const y = (type: string) =>
       layout.nodes.find((node) => node.technology === type)!.y;
-    expect(y('Armor')).toBeLessThan(y('Fighter factory'));
     expect(y('Armored Transport')).toBeLessThan(y('Armored Fighter'));
-    expect(y('Armored Fighter')).toBeLessThan(y('Missiles'));
-    // Armored Transport sits closer to Transport ship than to Missiles.
     expect(
-      Math.abs(y('Armored Transport') - y('Transport ship factory')),
-    ).toBeLessThan(layout.cardHeight * 1.5);
+      Math.min(
+        Math.abs(y('Armor') - y('Armored Transport')),
+        Math.abs(y('Armor') - y('Armored Fighter')),
+      ),
+    ).toBeLessThan(layout.cardHeight);
     for (const node of layout.nodes)
       expect(Number.isInteger(node.y)).toBe(true);
   });
@@ -137,14 +133,14 @@ describe('forskningstrad-utan-korsningar', () => {
         cardWidth: 10,
         cardHeight: 0,
         edges: [
-          { from: 'Rocket engine factory', to: 'Ion pulse engine factory' },
-          { from: 'Telescope I factory', to: 'Telescope II factory' },
+          { from: 'Missiles', to: 'Armored Transport' },
+          { from: 'Armor', to: 'Armored Fighter' },
         ],
         nodes: [
-          { technology: 'Rocket engine factory', x: 0, y: 0 },
-          { technology: 'Telescope I factory', x: 0, y: 100 },
-          { technology: 'Ion pulse engine factory', x: 50, y: 100 },
-          { technology: 'Telescope II factory', x: 50, y: 0 },
+          { technology: 'Missiles', x: 0, y: 0 },
+          { technology: 'Armor', x: 0, y: 100 },
+          { technology: 'Armored Transport', x: 50, y: 100 },
+          { technology: 'Armored Fighter', x: 50, y: 0 },
         ],
       }),
     ).toBe(1);
@@ -154,20 +150,15 @@ describe('forskningstrad-utan-korsningar', () => {
     const view = renderResearch(allKnown, false, () => {});
     expect(
       view.querySelector(
-        '[data-technology="Colony ship factory"] .research-node-name',
+        '[data-technology="Armored Fighter"] .research-node-name',
       )?.textContent,
-    ).toBe('Colony ship');
+    ).toBe('Armored Fighter');
   });
 });
 
 it('forskningsikon-i-detaljer: the details show the technology’s symbol beside its name', () => {
-  const details = renderResearchDetails(
-    allKnown,
-    'Rocket engine factory',
-    false,
-    () => {},
-  );
+  const details = renderResearchDetails(allKnown, 'Missiles', false, () => {});
   const title = details.querySelector('.research-detail-title')!;
-  expect(title.querySelector('img')).not.toBeNull();
-  expect(title.textContent).toContain('Rocket engine factory');
+  expect(title.querySelector('img, svg')).not.toBeNull();
+  expect(title.textContent).toContain('Missiles');
 });

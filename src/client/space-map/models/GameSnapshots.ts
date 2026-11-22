@@ -6,7 +6,6 @@ import type { Technology } from './research/Research.js';
 import type { EventIllustration, EventLine } from './turn/EventDetails.js';
 
 export interface ResearchSnapshot {
-  readonly recovered?: readonly Technology[];
   readonly available: readonly Technology[];
   readonly completed: readonly Technology[];
   readonly selected: Technology | null;

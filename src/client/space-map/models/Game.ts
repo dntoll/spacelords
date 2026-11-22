@@ -39,7 +39,6 @@ import {
 import { MATERIALS, emptyStock, type Stock } from './Economy.js';
 import {
   ResearchPlan,
-  RETIRED_ORDER_TECHNOLOGIES,
   TECHNOLOGIES,
   type Technology,
 } from './research/Research.js';
@@ -47,13 +46,7 @@ import type { EventIllustration } from './turn/EventDetails.js';
 import { FleetPursuit, type PursuingFleet } from './FleetPursuit.js';
 export { TECHNOLOGIES, type Technology } from './research/Research.js';
 
-import {
-  type ShipType,
-  type BuildType,
-  BUILDINGS,
-  SHIPS,
-  type ShipUnit,
-} from './Catalog.js';
+import { type ShipType, SHIPS, type ShipUnit } from './Catalog.js';
 import type {
   ResearchSnapshot,
   FleetSnapshot,
@@ -122,9 +115,6 @@ export interface GameState {
   // single-fleet-rensning: version 18 drops the planet economy.
   readonly version: 18;
   readonly knownTerrain?: readonly string[];
-  readonly recoveredResearch?: readonly (
-    Technology | (typeof RETIRED_ORDER_TECHNOLOGIES)[number]
-  )[];
   readonly visiblePirates?: readonly string[];
   readonly chartedPirates?: readonly string[];
   readonly knownObjects?: readonly string[];
@@ -148,13 +138,9 @@ export interface GameState {
   readonly round: number;
   readonly phase: 'planning' | 'interrupted';
   readonly sequence: number;
-  readonly researched: readonly (
-    Technology | (typeof RETIRED_ORDER_TECHNOLOGIES)[number]
-  )[];
+  readonly researched: readonly Technology[];
   readonly researchTarget: Technology | null;
-  readonly researchQueue: readonly (
-    Technology | (typeof RETIRED_ORDER_TECHNOLOGIES)[number]
-  )[];
+  readonly researchQueue: readonly Technology[];
   readonly fleets: readonly SavedFleet[];
   readonly explored: readonly string[];
   readonly events: readonly GameEvent[];
@@ -221,7 +207,6 @@ export class Game {
       version: 18,
       surveyedPlanets: [...this.#surveyedPlanets],
       knownTerrain: [...this.#knownTerrain],
-      recoveredResearch: [...this.#research.recovered],
       researchProgress: Object.fromEntries(this.#research.progress),
       visiblePirates: [...this.#visiblePirates],
       chartedPirates: [...this.#chartedPirates],
@@ -297,11 +282,10 @@ export class Game {
     const game = new Game(galaxy);
     const copy = structuredClone(state) as Omit<
       GameState,
-      'researched' | 'researchQueue' | 'recoveredResearch'
+      'researched' | 'researchQueue'
     > & {
       researched: string[];
       researchQueue: string[];
-      recoveredResearch: Technology[];
     };
     if (!Array.isArray(state.pirates))
       throw new Error('Missing saved pirate fleets.');
@@ -317,23 +301,13 @@ export class Game {
     game.#round = copy.round;
     game.#phase = 'planning';
     game.#sequence = copy.sequence;
-    const retired = new Set<string>(RETIRED_ORDER_TECHNOLOGIES);
     const isTechnology = (technology: string): technology is Technology =>
       TECHNOLOGIES.includes(technology as Technology);
     const researched = copy.researched.filter(isTechnology);
     const researchQueue = copy.researchQueue.filter(isTechnology);
-    const recoveredResearch = (copy.recoveredResearch ?? []).filter(
-      (technology) => !retired.has(technology),
-    );
-    if (
-      !Array.isArray(state.recoveredResearch) ||
-      recoveredResearch.some((technology) => !TECHNOLOGIES.includes(technology))
-    )
-      throw new Error('Invalid recovered technology.');
     game.#research = new ResearchPlan(
       new Set(researched),
       [...researchQueue],
-      new Set(recoveredResearch),
       new Map(
         Object.entries(copy.researchProgress ?? {}).filter(
           (entry): entry is [Technology, number] =>
@@ -430,9 +404,6 @@ export class Game {
                               ...line.illustration,
                             }),
                           }
-                        : {}),
-                      ...(line.production
-                        ? { production: Object.freeze({ ...line.production }) }
                         : {}),
                     }),
                   ),
@@ -568,8 +539,7 @@ export class Game {
   }
   get research(): ResearchSnapshot {
     return Object.freeze({
-      recovered: Object.freeze([...this.#research.recovered]),
-      available: Object.freeze(this.#availableResearch()),
+      available: TECHNOLOGIES,
       completed: Object.freeze([...this.#research.completed]),
       selected: this.#research.queue[0] ?? null,
       queue: Object.freeze([...this.#research.queue]),
@@ -580,13 +550,7 @@ export class Game {
   selectResearch(type: Technology | null): void {
     this.#requirePlanning();
     if (type === null) this.#research.queue = [];
-    else {
-      if (!this.#availableResearch().includes(type))
-        throw new Error(
-          'Discover this planet type before researching its technology.',
-        );
-      this.#research.add(type);
-    }
+    else this.#research.add(type);
   }
   moveResearch(type: Technology, index: number): void {
     this.#requirePlanning();
@@ -1057,12 +1021,6 @@ export class Game {
   }
   #grantBoardingRewards(winner: 'player' | 'enemy'): void {
     if (winner !== 'player') return;
-    if (!this.#research.completed.has('Raptor factory')) {
-      this.#research.recovered.add('Raptor factory');
-      this.#event(
-        'Recovered technology: Raptor factory. Research is available without its usual prerequisites.',
-      );
-    }
     const here = new HexCoordinate(
       this.#simulation!.tacticalBattles[0]!.snapshot.position.q,
       this.#simulation!.tacticalBattles[0]!.snapshot.position.r,
@@ -1959,23 +1917,6 @@ export class Game {
       name = clean.slice(0, 40 - suffix.length) + suffix;
     }
     return name;
-  }
-  #availableResearch(): Technology[] {
-    const discovered = new Set(
-      this.galaxy.systems
-        .flatMap((system) => system.planets)
-        .filter(
-          (planet) =>
-            planet.type === 'solid' && this.#surveyedPlanets.has(planet.id),
-        )
-        .map((planet) => planet.environment),
-    );
-    return TECHNOLOGIES.filter(
-      (type) =>
-        !(type in BUILDINGS) ||
-        !BUILDINGS[type as BuildType].environment ||
-        discovered.has(BUILDINGS[type as BuildType].environment!),
-    );
   }
   #requirePlanning(): void {
     if (this.#phase !== 'planning')

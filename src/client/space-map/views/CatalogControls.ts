@@ -1,6 +1,4 @@
-import { BUILDINGS, type BuildType } from '../models/Game.js';
 import { element } from '../../common/dom.js';
-import { BUILDING_SYMBOLS } from './BuildingSymbols.js';
 
 const paths = {
   All: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
@@ -20,18 +18,6 @@ const paths = {
 type SymbolName = keyof typeof paths;
 
 function symbolFor(name: string): SymbolName {
-  if (name in BUILDINGS) {
-    const definition = BUILDINGS[name as BuildType];
-    if (definition.ship || definition.component)
-      return symbolFor((definition.ship ?? definition.component)!);
-    if (definition.terraforming) return 'Terraforming';
-  }
-  if (name === 'Shipyards') return 'Ships';
-  if (name === 'Buildings') return 'All';
-  if (name === 'Research station') return 'Research';
-  if (name === 'Iron mine') return 'Resources';
-  if (name === 'Water extractor') return 'Water';
-  if (name === 'Oil extractor') return 'Oil';
   if (name === 'Rocket engine' || name === 'Ion pulse engine') return 'Engine';
   if (name === 'Weapons module') return 'Weapons';
   if (name === 'Colony ship') return 'Colony';
@@ -39,29 +25,12 @@ function symbolFor(name: string): SymbolName {
   if (name === 'Transport ship' || name === 'Civilian shuttle')
     return 'Transport';
   if (name === 'Fighter' || name === 'Space pirate') return 'Ships';
+  if (name === 'Missiles' || name.startsWith('Armor')) return 'Weapons';
   return name in paths ? (name as SymbolName) : 'Components';
 }
 
 // symbolbaserade-kataloger: symbols are decorative; accessible names remain explicit.
-export function catalogIcon(name: string): SVGSVGElement | HTMLImageElement {
-  const source = Object.hasOwn(BUILDING_SYMBOLS, name)
-    ? BUILDING_SYMBOLS[name as BuildType]
-    : undefined;
-  if (source) {
-    const image = element('img', 'catalog-icon catalog-artwork');
-    image.src = source;
-    image.alt = '';
-    image.width = 24;
-    image.height = 24;
-    image.decoding = 'async';
-    image.setAttribute('aria-hidden', 'true');
-    image.addEventListener(
-      'error',
-      () => image.replaceWith(catalogFallback(name)),
-      { once: true },
-    );
-    return image;
-  }
+export function catalogIcon(name: string): SVGSVGElement {
   return catalogFallback(name);
 }
 

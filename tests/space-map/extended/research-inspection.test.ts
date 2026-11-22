@@ -29,74 +29,56 @@ describe('kompakt-forskningstrad / forskningens-avslojande / forskningsdetaljer-
   it('dubbelklick-koar-forskning: retains the tile through inspection and queues once on double click', () => {
     const { model, root, click, controller } = setup();
     const tile = root.querySelector<HTMLButtonElement>(
-      '[aria-label="Inspect Rocket engine factory"]',
+      '[aria-label="Inspect Missiles"]',
     )!;
-    click('Inspect Rocket engine factory');
+    click('Inspect Missiles');
     expect(model.snapshot.research.queue).toEqual([]);
     expect(tile.isConnected).toBe(true);
     tile.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    expect(model.snapshot.research.queue).toEqual(['Rocket engine factory']);
+    expect(model.snapshot.research.queue).toEqual(['Missiles']);
     controller.dispose();
   });
 
-  it('reveals only the completed prerequisite frontier, with queued and recovered exceptions', () => {
+  it('reveals only the completed prerequisite frontier and queued technologies', () => {
     const research = researchStationModel().snapshot.research;
-    expect(isResearchIdentified(research, 'Rocket engine factory')).toBe(true);
-    expect(isResearchIdentified(research, 'Fighter factory')).toBe(false);
-    const partial = {
-      ...research,
-      completed: ['Rocket engine factory' as const],
-    };
-    expect(isResearchIdentified(partial, 'Exploration ship factory')).toBe(
-      false,
-    );
+    expect(isResearchIdentified(research, 'Missiles')).toBe(true);
+    expect(isResearchIdentified(research, 'Armored Fighter')).toBe(false);
     expect(
       isResearchIdentified(
-        {
-          ...partial,
-          completed: [...partial.completed, 'Telescope I factory'],
-        },
-        'Exploration ship factory',
+        { ...research, completed: ['Armor'] },
+        'Armored Fighter',
       ),
     ).toBe(true);
     expect(
       isResearchIdentified(
-        { ...research, queue: ['Fighter factory'] },
-        'Fighter factory',
-      ),
-    ).toBe(true);
-    expect(
-      isResearchIdentified(
-        { ...research, recovered: ['Telescope III factory'] },
-        'Telescope III factory',
+        { ...research, queue: ['Armored Fighter'] },
+        'Armored Fighter',
       ),
     ).toBe(true);
   });
   it('forskningsdetaljer-vid-val: selection updates the separate details while preserving the tile, viewport and camera', () => {
     const { model, root, click, controller } = setup();
     const camera = model.snapshot.researchCamera;
-    const tile = root.querySelector(
-      '[data-technology="Rocket engine factory"]',
-    )!;
+    const tile = root.querySelector('[data-technology="Missiles"]')!;
     const viewport = root.querySelector('.research-tree-viewport');
-    click('Inspect Rocket engine factory');
-    expect(model.snapshot.inspectedResearch).toBe('Rocket engine factory');
+    click('Inspect Missiles');
+    expect(model.snapshot.inspectedResearch).toBe('Missiles');
     expect(model.snapshot.research.queue).toEqual([]);
     expect(root.querySelector('.research-tree-viewport')).toBe(viewport);
     expect(tile.isConnected).toBe(true);
     expect(tile.querySelector('.research-node-details')).toBeNull();
     expect(root.querySelector('.research-details')!.textContent).toContain(
-      'Produces Rocket engines',
+      'two missile salvos',
     );
-    click('Inspect Telescope I factory');
+    click('Inspect Armor');
     expect(root.querySelector('.research-details')!.textContent).toContain(
-      'Telescope I factory',
+      'Armor',
     );
     expect(root.querySelectorAll('.research-node-details')).toHaveLength(1);
     expect(model.snapshot.researchCamera).toEqual(camera);
-    click('Inspect Rocket engine factory');
-    click('Research Rocket engine factory');
-    expect(model.snapshot.research.queue).toEqual(['Rocket engine factory']);
+    click('Inspect Missiles');
+    click('Research Missiles');
+    expect(model.snapshot.research.queue).toEqual(['Missiles']);
     expect(model.snapshot.researchCamera).toEqual(camera);
     root
       .querySelector('.research-page')!
@@ -105,18 +87,18 @@ describe('kompakt-forskningstrad / forskningens-avslojande / forskningsdetaljer-
       );
     expect(model.snapshot.inspectedResearch).toBeNull();
     expect(document.activeElement?.getAttribute('aria-label')).toBe(
-      'Inspect Rocket engine factory',
+      'Inspect Missiles',
     );
     controller.dispose();
   });
   it('anonymous tiles expose no future name, image, description or research action', () => {
     const { root, model, controller } = setup();
     const tile = root.querySelector<HTMLElement>(
-      '[data-technology="Fighter factory"]',
+      '[data-technology="Armored Fighter"]',
     )!;
     tile.querySelector('button')!.click();
-    expect(tile.textContent).not.toContain('Fighter');
-    expect(tile.querySelector('img')).toBeNull();
+    expect(tile.textContent).not.toContain('Armored');
+    expect(tile.querySelector('img, svg')).toBeNull();
     expect(tile.querySelector('.research-node-details')).toBeNull();
     expect(tile.querySelectorAll('button')).toHaveLength(1);
     expect(model.snapshot.research.queue).toEqual([]);
@@ -136,14 +118,12 @@ describe('kompakt-forskningstrad / forskningens-avslojande / forskningsdetaljer-
     expect(
       root.querySelector('.research-details')!.hasAttribute('hidden'),
     ).toBe(true);
-    model.research('Rocket engine factory');
+    model.research('Missiles');
     controller.start();
     expect(shown()).toBe('queue');
     expect(root.querySelectorAll('.research-queue article')).toHaveLength(1);
     root
-      .querySelector<HTMLButtonElement>(
-        '[aria-label="Inspect Rocket engine factory"]',
-      )!
+      .querySelector<HTMLButtonElement>('[aria-label="Inspect Missiles"]')!
       .click();
     expect(shown()).toBe('selected');
     expect(
