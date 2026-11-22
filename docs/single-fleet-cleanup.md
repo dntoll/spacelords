@@ -41,6 +41,7 @@ spelbar, men bevara fristående strids- och bordningstester.
 - [x] Ta bort automatisk tilldelning av transporter till handelsrutter.
 - [x] Ta bort möjligheten att starta äldre Civilian transport-order.
 - [x] Ta bort gammal migrering som placerade sparade passagerare på planeter.
+- [x] Ta bort transportpassagerares förluster och fortsatta färder efter strid.
 - [x] Låt nybyggda transportskepp sluta starta automatiska handelsorder.
 - [x] Ta bort `guard-routes`, dess automatiska eskortval och tillhörande tester.
 - [x] Ta bort historiska engångsrensningar för terraforming och utökad galax
@@ -127,3 +128,6 @@ manuella handelsrutter finns kvar tills de rensas.
 
 Äldre sparningar migrerar inte längre passagerare till planetbefolkning.
 Den separata hanteringen för gamla Civilian transport-ordrar återstår.
+
+Kvarvarande passagerarfält påverkar inte längre stridsförluster eller
+återupptagning efter reträtt. Fälten och visningen ska fortfarande rensas.

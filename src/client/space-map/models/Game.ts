@@ -3652,15 +3652,6 @@ export class Game {
     if (this.#phase !== 'planning' || !fleet.ordersPaused)
       throw new Error('Resume this fleet while planning.');
     delete fleet.ordersPaused;
-    if (fleet.civilian?.passengers && !fleet.destination) {
-      const target = this.#ownedPlanets().find(
-        (p) => p.id === fleet.civilian!.targetId,
-      );
-      if (target) {
-        fleet.destination = target.position;
-        fleet.courseOrigin = fleet.position!;
-      }
-    }
   }
   playBattleActivation(
     singleStep = false,
@@ -4015,22 +4006,6 @@ export class Game {
       this.#salvage.releaseLostCapacity(fleet, position);
       if (lostUnits.some((unit) => unit.type === 'Transport ship'))
         this.#captureRouteCargo(fleet);
-      if (
-        lostUnits.some((unit) => unit.type === 'Civilian shuttle') &&
-        fleet.civilian
-      ) {
-        const passengers = Math.min(
-          fleet.civilian.passengers,
-          lostUnits.filter((unit) => unit.type === 'Civilian shuttle').length *
-            SHUTTLE_CAPACITY,
-        );
-        fleet.civilian.passengers -= passengers;
-        if (passengers)
-          this.#event(
-            `${fleet.name} lost ${passengers} passengers in combat.`,
-            position,
-          );
-      }
       if (escaped && participant.retreat && this.#shipCount(fleet.ships)) {
         fleet.position = new HexCoordinate(
           participant.retreat.q,
@@ -4049,9 +4024,8 @@ export class Game {
         delete fleet.automation;
         delete fleet.colonizationTargetId;
         this.#salvage.stop(fleet.id);
-        if (fleet.routeId || fleet.civilian?.passengers)
-          fleet.ordersPaused = true;
-        else delete fleet.civilian;
+        if (fleet.routeId) fleet.ordersPaused = true;
+        delete fleet.civilian;
         simulation.remaining.set(fleet.id, 0);
         this.#salvage.follow(fleet);
       }
