@@ -14,10 +14,6 @@ export function shipPurposeText(purpose: ShipPurpose): string {
       return `Joins ${purpose.fleet}`;
     case 'order':
       return ShipOrders.label({ kind: purpose.order } as ShipOrder);
-    case 'route-manning':
-      return 'Mans a route without transport';
-    case 'civilian':
-      return 'Civilian transport';
     case 'home-fleet':
       return 'Joins the planet home fleet';
   }

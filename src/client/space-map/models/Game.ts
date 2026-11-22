@@ -2553,10 +2553,6 @@ export class Game {
         });
     }
     if (order) return Object.freeze({ kind: 'order', order: order.kind });
-    if (project.type === 'Transport ship')
-      return Object.freeze({ kind: 'route-manning' });
-    if (project.type === 'Civilian shuttle')
-      return Object.freeze({ kind: 'civilian' });
     return Object.freeze({ kind: 'home-fleet' });
   }
 

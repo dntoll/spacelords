@@ -45,7 +45,8 @@ spelbar, men bevara fristående strids- och bordningstester.
 - [x] Ta bort passagerarbaserade spärrar för förflyttning och skeppsbyte.
 - [x] Ta bort särskild stopp- och statusvisning för gamla transportorder.
 - [x] Ta bort modell och sparfält för de gamla persontransportorderna.
-- [x] Låt nybyggda transportskepp sluta starta automatiska handelsorder.
+- [x] Låt nybyggda transportskepp sluta starta automatiska handelsorder
+      och ta bort de inaktuella syftestexterna i produktionskön.
 - [x] Ta bort `guard-routes`, dess automatiska eskortval och tillhörande tester.
 - [x] Ta bort historiska engångsrensningar för terraforming och utökad galax
       samt deras tester; hantera det nya sparformatet i ett senare steg.

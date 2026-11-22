@@ -69,7 +69,7 @@ export type ShipPurpose =
   | { readonly kind: 'colonize' | 'explore'; readonly planet: string }
   | { readonly kind: 'fleet'; readonly fleet: string }
   | { readonly kind: 'order'; readonly order: ShipOrder['kind'] }
-  | { readonly kind: 'route-manning' | 'civilian' | 'home-fleet' };
+  | { readonly kind: 'home-fleet' };
 
 export interface ConstructionProjectSnapshot {
   readonly initialOrder?: ShipOrder;
