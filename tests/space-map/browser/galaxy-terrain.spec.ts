@@ -80,7 +80,7 @@ test('asteroidbalten / nebulosornas-sikt: discovered terrain explains movement a
 }, testInfo) => {
   const example = createExampleGalaxy();
   const state = new Game(
-    new Galaxy(example.player, example.systems, 10, [
+    new Galaxy(example.player, example.systems, example.homePlanet.id, 10, [
       { position: { q: 5, r: -3 }, type: 'nebula' },
       { position: { q: 3, r: -3 }, type: 'dense-asteroids' },
       { position: { q: 3, r: -2 }, type: 'sparse-asteroids' },

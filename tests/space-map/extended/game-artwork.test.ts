@@ -101,7 +101,6 @@ it('spelgrafik-planeter: map snapshots expose environment only for surveyed plan
   }
   const revealed = galaxy.mapSnapshot(
     explored,
-    undefined,
     explored,
     explored,
     new Map(),

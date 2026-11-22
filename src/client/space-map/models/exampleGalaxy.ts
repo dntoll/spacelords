@@ -2,16 +2,11 @@ import { Galaxy, Star, StarSystem } from './Galaxy.js';
 import { HexCoordinate } from '../../common/HexCoordinate.js';
 import { createGalaxyTerrain } from './GalaxyTerrain.js';
 import { SpiralGalaxyLayout } from './SpiralGalaxyLayout.js';
-import {
-  Colony,
-  Planet,
-  Player,
-  type PlanetEnvironmentType,
-} from './Planet.js';
+import { Planet, Player, type PlanetEnvironmentType } from './Planet.js';
 
 // fast-exempelvarld: illustrative values, not economic or research balance.
 export function createExampleGalaxy(expanded = false): Galaxy {
-  const player = new Player('player', 'Your empire');
+  const player = new Player('player', 'Your fleet');
   const definitions = [
     {
       id: 'sol',
@@ -85,7 +80,6 @@ export function createExampleGalaxy(expanded = false): Galaxy {
               { name: 'Water', perYear: home ? 8 : index === 0 ? 3 : 10 },
               { name: 'Oil', perYear: home ? 4 : index === 0 ? 0 : 6 },
             ],
-            colony: home ? new Colony(player.id, 12_000) : null,
           });
         }),
         expanded ? 2 : 1,
@@ -94,6 +88,7 @@ export function createExampleGalaxy(expanded = false): Galaxy {
   return new Galaxy(
     player,
     systems,
+    `${definitions[0]!.id}-0`,
     expanded ? 100 : 10,
     expanded ? createGalaxyTerrain(systems, 100) : [],
   );

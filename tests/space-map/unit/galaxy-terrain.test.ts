@@ -20,7 +20,13 @@ function terrainGame(
   known = false,
 ): Game {
   const example = createExampleGalaxy();
-  const galaxy = new Galaxy(example.player, example.systems, 10, terrain);
+  const galaxy = new Galaxy(
+    example.player,
+    example.systems,
+    example.homePlanet.id,
+    10,
+    terrain,
+  );
   const state = new Game(galaxy).exportState();
   return Game.restore({
     ...state,

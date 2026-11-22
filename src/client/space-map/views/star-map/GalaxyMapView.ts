@@ -22,7 +22,7 @@ import { MapArtwork } from '../MapArtwork.js';
 import { renderPlanetGlyph } from '../PlanetGlyph.js';
 
 const STAR_MAP_LABEL =
-  'Star map. Click a fleet or trade route to select it. Drag a fleet onto a route to assign it, or elsewhere to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.';
+  'Star map. Click a fleet to select it. Drag a fleet to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to the start planet; Enter selects the central hex.';
 
 export class GalaxyMapView implements MapPort {
   readonly #container: HTMLElement;
@@ -243,10 +243,8 @@ export class GalaxyMapView implements MapPort {
         model.screen === 'orders'
           ? 'Orders map. Choose a target for the selected order.'
           : model.screen === 'fleets'
-            ? 'Fleets map. Fleet positions and destinations are highlighted; planets and trade routes are background landmarks.'
-            : model.screen === 'production'
-              ? 'Production map. Select an owned planet to build and inspect its project supply chain.'
-              : 'Star map. Your homeworld and its surroundings are visible. Stars are visible in unexplored space.',
+            ? 'Fleets map. Fleet positions and destinations are highlighted; planets are background landmarks.'
+            : 'Star map. The start planet and its surroundings are visible. Stars are visible in unexplored space.',
       );
       this.#descriptionScreen = model.screen;
     }
@@ -260,10 +258,8 @@ export class GalaxyMapView implements MapPort {
         model.screen === 'orders'
           ? 'Orders map. Choose the requested fleet, planet or Patrol center. Drag empty space to pan; pinch or use the wheel to zoom. Enter selects the central hex.'
           : model.screen === 'fleets'
-            ? 'Fleets map. Click a fleet to select it; drag a fleet to set its destination. Planets and trade routes are background landmarks. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.'
-            : model.screen === 'production'
-              ? 'Production map. Select an owned planet to show build options and its queue. Drag empty space to pan; pinch or use the mouse wheel to zoom. Arrow keys pan; Enter selects the central hex.'
-              : STAR_MAP_LABEL,
+            ? 'Fleets map. Click a fleet to select it; drag a fleet to set its destination. Planets are background landmarks. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to the start planet; Enter selects the central hex.'
+            : STAR_MAP_LABEL,
       );
     }
     sketch.background('#0a1520');
@@ -362,20 +358,12 @@ export class GalaxyMapView implements MapPort {
     if (context && cell.explored && !cell.visible) context.globalAlpha *= 0.65;
     const color = star
       ? '#e9c78b'
-      : object.owned
-        ? '#b1e4d1'
-        : object.type === 'gas'
-          ? '#b8a7d6'
-          : '#b88870';
+      : object.type === 'gas'
+        ? '#b8a7d6'
+        : '#b88870';
     sketch.noStroke();
-    if (star) {
+    if (star)
       renderStarGlyph(sketch, point, zoom, cell.position, this.#starTextures);
-    } else if (object.owned) {
-      sketch.noFill();
-      sketch.stroke('#476f68');
-      sketch.strokeWeight(1 / zoom);
-      sketch.ellipse(point.x, point.y, 34, 26);
-    }
     sketch.noStroke();
     sketch.fill(color);
     if (!star) {
@@ -397,7 +385,7 @@ export class GalaxyMapView implements MapPort {
     if (zoom < 0.2 && cell.position.key !== this.#model?.selected?.position.key)
       return;
     sketch.noStroke();
-    sketch.fill(star ? '#d7c49e' : object.owned ? '#d5f5e5' : '#b9c4c5');
+    sketch.fill(star ? '#d7c49e' : '#b9c4c5');
     sketch.textAlign(sketch.CENTER, sketch.TOP);
     sketch.textSize(11 / zoom);
     sketch.text(

@@ -95,7 +95,6 @@ export interface AppReadModel {
   readonly researchCamera: ResearchCameraSnapshot;
   readonly inspectedResearch: Technology | null;
   readonly screen: Screen;
-  readonly playerName: string;
   readonly radius: number;
   readonly cells: readonly MapCell[];
   readonly selected: MapCell | null;
@@ -322,7 +321,6 @@ export class AppModel {
       researchCamera: this.#researchCamera.snapshot,
       inspectedResearch: this.#inspectedResearch,
       screen: this.#eventCamera ? 'map' : this.#screen,
-      playerName: this.#game.galaxy.player.name,
       radius: this.#game.galaxy.radius,
       cells: this.#game.mapSnapshot(),
       selected:

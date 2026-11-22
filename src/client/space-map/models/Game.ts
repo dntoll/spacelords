@@ -37,7 +37,6 @@ import type { TerrainHex } from './Galaxy.js';
 import {
   Planet,
   Player,
-  Colony,
   type PlanetEnvironmentType,
   type PlanetSnapshot,
 } from './Planet.js';
@@ -118,12 +117,8 @@ interface SavedCoordinate {
   readonly q: number;
   readonly r: number;
 }
-interface SavedPlanet extends Omit<PlanetSnapshot, 'position' | 'colony'> {
+interface SavedPlanet extends Omit<PlanetSnapshot, 'position'> {
   readonly position: SavedCoordinate;
-  readonly colony: {
-    readonly ownerId: string;
-    readonly population: number;
-  } | null;
 }
 interface SavedFleet extends Omit<
   Fleet,
@@ -153,6 +148,7 @@ export interface GameState {
   readonly pirates?: readonly SavedPirateFleet[];
   readonly world: {
     readonly player: { readonly id: string; readonly name: string };
+    readonly homePlanetId: string;
     readonly radius: number;
     readonly terrain?: readonly TerrainHex[];
     readonly systems: readonly {
@@ -250,6 +246,7 @@ export class Game {
       pirates: this.#pirates.map((pirate) => pirate.snapshot()),
       world: {
         player: { id: this.galaxy.player.id, name: this.galaxy.player.name },
+        homePlanetId: this.galaxy.homePlanet.id,
         radius: this.galaxy.radius,
         terrain: this.galaxy.terrain,
         systems: this.galaxy.systems.map((system) => ({
@@ -259,10 +256,7 @@ export class Game {
             name: system.star.name,
             position: system.star.position,
           },
-          planets: system.planets.map((planet) => ({
-            ...planet,
-            colony: planet.colony ? { ...planet.colony } : null,
-          })),
+          planets: system.planets.map((planet) => ({ ...planet })),
         })),
       },
       round: this.#round,
@@ -307,17 +301,12 @@ export class Game {
                 new Planet({
                   ...planet,
                   position: position(planet.position),
-                  colony: planet.colony
-                    ? new Colony(
-                        planet.colony.ownerId,
-                        planet.colony.population,
-                      )
-                    : null,
                 }),
             ),
             system.planetDistance ?? 1,
           ),
       ),
+      world.homePlanetId,
       world.radius,
       world.terrain ?? [],
     );
@@ -573,7 +562,6 @@ export class Game {
   mapSnapshot(): readonly MapCell[] {
     this.#mapCells ??= this.galaxy.mapSnapshot(
       this.#explored,
-      new Set(),
       this.#visible,
       this.#knownTerrain,
       new Map(

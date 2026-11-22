@@ -66,14 +66,14 @@ spelbar, men bevara fristående strids- och bordningstester.
         planetproduktion i `Game`, kartans produktionsring och planetsidan.
         `Production` är tills vidare en sida som säger att produktion inte
         finns än.
-- [ ] Ta bort kolonisation, planetägande, befolkning, Domes och terraforming
+- [x] Ta bort kolonisation, planetägande, befolkning, Domes och terraforming
       med deras vyer, tester och krav; behåll planeter som platser.
   - [x] Kolonier, befolkning, Domes, terraforming, kolonisationsordern och
         Colony ship-beställning är borta ur `Game` och vyerna. Planeter visar
         typ, habitability och resurser som platsfakta.
-  - [ ] `Planet.colony`, `Colony` och `owned` i kartcellerna finns kvar
-        eftersom startplaneten (`homePlanet`) hittas via sin koloni. Ersätt
-        med en uttrycklig startplats och ta bort ägandet.
+  - [x] `Colony`, `Planet.colony` och `owned` i kartcellerna är borta.
+        Galaxen anger startplaneten uttryckligen (`homePlanetId`, sparas i
+        `world`); ingen äger den.
 - [ ] Ta bort flera spelarflottor, flottadministration, automatiska order
       och planetköer med deras vyer, tester och krav; behåll skepps- och
       stridsfunktioner som behövs för den kommande flottan.

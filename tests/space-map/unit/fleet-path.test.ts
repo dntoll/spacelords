@@ -17,7 +17,7 @@ describe('rakare-hexforflyttning', () => {
   ])('distributes direction changes toward offset %i,%i', (q, r) => {
     const example = createExampleGalaxy();
     const model = new AppModel(
-      new Galaxy(example.player, [example.systems[0]!]),
+      new Galaxy(example.player, [example.systems[0]!], example.homePlanet.id),
     );
     const fleet = model.snapshot.fleets[0]!;
     const start = fleet.position!;

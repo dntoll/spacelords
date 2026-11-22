@@ -13,7 +13,6 @@ export function renderMapOverlays(
   shipImages: ReadonlyMap<ShipSpriteType, p5.Image> = new Map(),
 ): void {
   if (model.screen === 'production') return;
-  // kartflottor: colony badges must not hide selectable fleet markers.
   renderMapFleets(
     sketch,
     [
