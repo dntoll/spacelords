@@ -43,9 +43,9 @@ att översättas.
 
 - **Sparade spel:** tre separata spel med senaste speldatum, utforskad karta
   och automatisk sparning. `sparformat` (2026-11-21) är **Fullständigt
-  implementerat**: bara nuvarande sparformat (version 18) laddas, och äldre
-  sparade spel avvisas med `This saved game cannot be loaded.` Platsen kan
-  rensas. Version 18 saknar kolonier, nätverk, bärgning och planetköer och
+  implementerat**: bara nuvarande sparformat (version 18) laddas. En äldre
+  sparning visas som `Saved game unavailable. Clear this slot to start again.`
+  och bevaras tills spelaren rensar platsen. Version 18 saknar kolonier, nätverk, bärgning och planetköer och
   ersatte version 17 med den godkända inkompatibiliteten i
   `single-fleet-rensning`. Framtida inkompatibla ändringar stäms av enligt
   `avstamning-sparkompatibilitet`.

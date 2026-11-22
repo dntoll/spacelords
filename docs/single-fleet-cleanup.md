@@ -124,11 +124,14 @@ spelbar, men bevara fristående strids- och bordningstester.
         rensningsförslaget är borttagna.
   - [ ] Originalbilderna för byggnader och byggnadssymboler under
         `assets/original/` och bildpromptpaketet finns kvar som källmaterial.
-- [ ] Hantera godkänd inkompatibilitet för sparningar och verifiera ny start
+- [x] Hantera godkänd inkompatibilitet för sparningar och verifiera ny start
       när det går utan att föregripa öppna speldesignbeslut.
   - [x] Sparformatet är version 18 utan kolonier, nätverk, bärgning och
-        produktionsflottor. Version 17 och äldre avvisas med
-        `This saved game cannot be loaded.` och platsen kan rensas.
+        produktionsflottor. Version 17 och äldre avvisas: platsen visar
+        `Saved game unavailable. Clear this slot to start again.` och kan
+        rensas, varefter ett nytt spel startar med en flotta vid Tellus.
+        Enhetstestet `sparformat / single-fleet-rensning` skyddar hela
+        flödet.
 - [ ] Kör enhetssviten, relevanta riktade tester och verktygskontroller;
       granska rensningen och dokumentera återstående begränsningar.
 
