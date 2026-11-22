@@ -98,7 +98,7 @@ it.each([0, 1])(
   },
 );
 
-it('centrerade-handelseval-pa-dator: centers desktop choices while retaining compact placement after resizing to a phone', () => {
+it('upptackt-stannar-resan: a discovery pause has a flash and no Handle or Ignore choice', () => {
   const game = Game.restore(discoveryState());
   game.startTurn();
   while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
@@ -124,19 +124,11 @@ it('centrerade-handelseval-pa-dator: centers desktop choices while retaining com
     });
     model.finishCameraFraming();
     const snapshot = model.snapshot;
-    const event =
-      snapshot.eventPlayback!.events[snapshot.eventPlayback!.index]!;
-    expect(event.decision).toBeDefined();
-    const point = HexGeometry.toPoint(
-      new HexCoordinate(event.position!.q, event.position!.r),
-    );
-    const markerY =
-      height / 2 + (point.y - snapshot.camera.center.y) * snapshot.camera.zoom;
-    expect(point.x - snapshot.camera.center.x).toBe(0);
-    if (width > 900 && height > 500) {
-      expect(markerY).toBeGreaterThan(height * 0.25);
-      expect(markerY).toBeLessThan(height / 2);
-    } else expect(markerY).toBe(height > 360 ? height / 2 - 120 : 60);
+    expect(snapshot.phase).toBe('interrupted');
+    expect(snapshot.notice?.kind).toBe('discovery');
+    expect(
+      snapshot.eventPlayback?.events.some((event) => event.decision),
+    ).not.toBe(true);
   }
 });
 
@@ -178,7 +170,7 @@ describe('sekventiella-arshandelser', () => {
   function controlledTurn() {
     vi.useFakeTimers();
     const model = new AppModel();
-    // A year with an event: the home fleet arrives one hex away.
+    // ingen-ankomstbesked: arriving one hex away no longer creates an announcement.
     model.setDestination('fleet-home', 1, 0);
     model.openResearch();
     let emit!: IntentHandler;
@@ -197,29 +189,14 @@ describe('sekventiella-arshandelser', () => {
   }
 
   it('handelseannonsering: holds announcements before filing, blocks orders, restores the screen and stops on disposal', async () => {
-    const { model, controller, emit, render } = controlledTurn();
+    const { model, controller, render } = controlledTurn();
     await vi.advanceTimersByTimeAsync(0);
-    expect(model.snapshot.eventPlayback?.index).toBe(0);
-    expect(model.snapshot.screen).toBe('map');
-    const round = model.snapshot.round;
-    const history = model.snapshot.events;
-    emit({ type: 'end-turn' });
-    emit({ type: 'open-fleets' });
-    expect(model.snapshot.round).toBe(round);
-    expect(model.snapshot.screen).toBe('map');
-    await vi.advanceTimersByTimeAsync(1399);
-    expect(model.snapshot.eventPlayback?.stage).toBe('announcing');
-    await vi.advanceTimersByTimeAsync(1);
-    expect(model.snapshot.eventPlayback?.stage).toBe('filing');
-    expect(model.snapshot.eventPlayback?.index).toBe(0);
-    await vi.advanceTimersByTimeAsync(449);
-    expect(model.snapshot.eventPlayback?.index).toBe(0);
-    await vi.advanceTimersByTimeAsync(1);
     expect(model.snapshot.eventPlayback).toBeNull();
+    expect(model.snapshot.phase).toBe('planning');
+    expect(
+      model.snapshot.events.some((event) => event.text.includes('arrived')),
+    ).toBe(false);
     expect(model.snapshot.screen).toBe('research');
-    expect(model.snapshot.events).toEqual(history);
-    emit({ type: 'end-turn' });
-    await vi.advanceTimersByTimeAsync(0);
     controller.dispose();
     const renders = render.mock.calls.length;
     await vi.advanceTimersByTimeAsync(10000);
@@ -235,9 +212,8 @@ describe('sekventiella-arshandelser', () => {
     for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
     model.finishTurn();
     model.beginEventPlayback();
-    expect(model.snapshot.eventPlayback).not.toBeNull();
-    expect(model.requestEndTurn()).toBe(false);
-    while (model.snapshot.eventPlayback) model.advanceEventPlayback();
+    expect(model.snapshot.eventPlayback).toBeNull();
+    expect(model.requestEndTurn()).toBe(true);
     expect(model.snapshot.camera).toEqual(before.camera);
     expect(model.snapshot.selected?.position).toEqual(
       before.selected?.position,
@@ -271,8 +247,9 @@ describe('sekventiella-arshandelser', () => {
     emit({ type: 'end-turn' });
     await vi.advanceTimersByTimeAsync(0);
     // handelser-vid-ankomst: the discovery shows during movement playback.
-    expect(['interrupted', 'simulating']).toContain(model.snapshot.phase);
-    expect(model.snapshot.eventPlayback?.stage).toBe('awaiting-choice');
+    expect(model.snapshot.phase).toBe('interrupted');
+    expect(model.snapshot.notice?.kind).toBe('discovery');
+    expect(model.snapshot.travelling).toBe(false);
     expect(saved.state.phase).toBe('interrupted');
     const discovery = saved.state.events.find((event) =>
       event.text.startsWith('Pirate ship in sight'),
@@ -283,8 +260,11 @@ describe('sekventiella-arshandelser', () => {
       attempt < 100 && model.snapshot.phase !== 'planning';
       attempt++
     ) {
-      if (model.snapshot.eventPlayback?.stage === 'awaiting-choice')
-        emit({ type: 'ignore-discoveries' });
+      if (
+        model.snapshot.phase === 'interrupted' &&
+        !model.snapshot.tacticalBattle
+      )
+        emit({ type: 'end-turn' });
       await vi.advanceTimersByTimeAsync(1850);
       if (model.snapshot.tacticalBattle) {
         completeTacticalBattles(model);
@@ -314,19 +294,18 @@ describe('sekventiella-arshandelser', () => {
 });
 
 describe('handelser-pa-kartan', () => {
-  it('records the event-time arrival position', () => {
+  it('ingen-ankomstbesked: arriving does not record an arrival sentence', () => {
     const game = new Game(createExampleGalaxy());
     game.setDestination('fleet-home', new HexCoordinate(3, 0));
     collectTurnFrames(game);
     game.finishTurn();
-    const arrival = game.events.find((event) =>
-      event.text.includes('arrived'),
-    )!;
-    expect(arrival.position).toEqual({ q: 3, r: 0 });
-    expect(Object.isFrozen(arrival.position)).toBe(true);
+    expect(game.fleet('fleet-home')!.position).toEqual({ q: 3, r: 0 });
+    expect(game.fleet('fleet-home')!.destination).toBeNull();
+    expect(game.events.some((event) => event.text.includes('arrived'))).toBe(
+      false,
+    );
     const restored = Game.restore(game.exportState());
     expect(restored.events).toEqual(game.events);
-    expect(Object.isFrozen(restored.events[0]?.position)).toBe(true);
   });
 
   it('loads legacy events without positions and does not replay an already saved year', () => {
@@ -349,11 +328,38 @@ describe('handelser-pa-kartan', () => {
   });
 
   it('focuses the event coordinates independently of the planning camera', () => {
-    const model = new AppModel();
-    model.setDestination('fleet-home', 3, 0);
+    const prepared = new Game(createExampleGalaxy());
+    const state = prepared.exportState();
+    const travelled = Game.restore({
+      ...state,
+      pirates: [],
+      knownObjects: [
+        ...state.knownObjects!,
+        'nadir-0',
+        'nadir-1',
+        'nadir-2',
+        'wreck-nadir-explorer',
+      ],
+      fleets: [
+        {
+          ...state.fleets[0]!,
+          position: { q: 5, r: -4 },
+          destination: { q: 7, r: -4 },
+        },
+      ],
+    });
+    collectTurnFrames(travelled);
+    travelled.finishTurn();
+    const model = new AppModel(undefined, {
+      load: () => ({
+        lastPlayed: '2026-10-26',
+        state: travelled.exportState(),
+      }),
+      save() {},
+      clear() {},
+    });
+    model.startSlot(1);
     const before = model.snapshot.camera;
-    for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
-    model.finishTurn();
     model.beginEventPlayback();
     expect(model.snapshot.camera).toEqual(before);
     expect(model.snapshot.eventPlayback?.stage).toBe('framing');

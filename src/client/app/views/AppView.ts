@@ -71,6 +71,7 @@ export class AppView implements AppPort {
   #dialog: HTMLDialogElement | null = null;
   #clearReturnSlot: number | null = null;
   #decisionDialog: HTMLDialogElement | null = null;
+  #gameOverDialog: HTMLDialogElement | null = null;
   #researchKey = '';
   #inspectedResearch: AppReadModel['inspectedResearch'] = null;
   #researchViewport: HTMLElement | null = null;
@@ -520,7 +521,16 @@ export class AppView implements AppPort {
         ?.classList.toggle('has-selection', selected);
     }
     const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
-    if (end) end.disabled = model.phase !== 'planning' || !!model.eventPlayback;
+    const discoveryPause =
+      model.phase === 'interrupted' &&
+      !model.tacticalBattle &&
+      !!model.interruption?.discoveries.length;
+    if (end)
+      end.disabled =
+        !!model.defeated ||
+        !!model.eventPlayback ||
+        !!model.turnMovement ||
+        (model.phase !== 'planning' && !discoveryPause);
     this.#renderTurnConsole(model);
     if (isMapScreen(model.screen)) this.#measureMap();
     for (const control of this.#root.querySelectorAll<HTMLButtonElement>(
@@ -568,6 +578,7 @@ export class AppView implements AppPort {
       focusTarget?.focus({ preventScroll: true });
     }
     this.#renderNotice(model);
+    this.#renderGameOver(model);
     if (editingName) delete active.dataset.rendering;
     this.#root.querySelector('.discovery-controls')?.remove();
     if (model.phase === 'interrupted' && model.interruption) {
@@ -858,6 +869,39 @@ export class AppView implements AppPort {
     } else existingNotice?.remove();
   }
 
+  /** game-over-utan-skepp: the lost home fleet ends the game. */
+  #renderGameOver(model: AppReadModel): void {
+    const show =
+      model.defeated &&
+      model.screen !== 'saves' &&
+      !model.tacticalBattle &&
+      !model.boardingBattle &&
+      !model.battleFeedback;
+    if (!show) {
+      this.#gameOverDialog?.close();
+      this.#gameOverDialog?.remove();
+      this.#gameOverDialog = null;
+      return;
+    }
+    if (this.#gameOverDialog?.isConnected) return;
+    const dialog = element('dialog', 'game-over-dialog');
+    dialog.setAttribute('aria-labelledby', 'game-over-title');
+    const title = element('h2', '', 'Game over');
+    title.id = 'game-over-title';
+    const fleet =
+      model.fleets.find((candidate) => candidate.id === 'fleet-home') ??
+      model.fleets[0];
+    dialog.append(
+      title,
+      element('p', '', `${fleet?.name ?? 'Home Fleet'} has no ships left.`),
+      button('Saved games', () => this.#emit({ type: 'open-saves' }), 'button'),
+    );
+    dialog.addEventListener('cancel', (event) => event.preventDefault());
+    this.#gameOverDialog = dialog;
+    this.#root.append(dialog);
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+  }
+
   dispose(): void {
     this.#editorView?.dispose();
     this.#editorView = null;
@@ -878,6 +922,9 @@ export class AppView implements AppPort {
     this.#decisionDialog?.close();
     this.#decisionDialog?.remove();
     this.#decisionDialog = null;
+    this.#gameOverDialog?.close();
+    this.#gameOverDialog?.remove();
+    this.#gameOverDialog = null;
     this.#previews.forEach((preview) => preview.dispose());
     this.#previews = [];
     this.#dialog?.close();

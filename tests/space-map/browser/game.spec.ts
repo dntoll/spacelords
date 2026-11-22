@@ -1,5 +1,4 @@
 import { selectMapObject } from './map-helpers.js';
-import { chooseFleetDestination } from './fleet-helpers.js';
 import { startFirstSlot } from './save-helpers.js';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
@@ -102,17 +101,18 @@ test('vynavigation: preserves the map camera through Research', async ({
   await expect(page.getByLabel('Map zoom')).toHaveText('100%');
 });
 
-test('flottdestinationer: a map order sets and clears the destination', async ({
+test('inga-move-stop-knappar: Home Fleet has no Move or Stop', async ({
   page,
 }) => {
-  await chooseFleetDestination(page);
   await expect(
-    page.getByText('Choose a destination for Home Fleet.'),
-  ).toBeVisible();
-  await selectMapObject(page, 'Vesta');
+    page.getByRole('button', { name: 'Move', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Stop', exact: true }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole('button', { name: 'Clear destination', exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
 });
 
 test('kartnavigation: keyboard pans and zooms, canvas hit-testing selects the home planet', async ({

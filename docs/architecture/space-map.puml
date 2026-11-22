@@ -24,7 +24,7 @@ package "(delat)" as space_map___delat_ {
 package "fleets" as space_map__fleets {
   rectangle "<b>controllers</b>\nFleetController" as space_map__fleets__controllers
   rectangle "<b>models</b>\nFleetFacade" as space_map__fleets__models
-  rectangle "<b>views</b>\nFleetMapPanel\nFleetOrderDrag\nFleetOrdersView" as space_map__fleets__views
+  rectangle "<b>views</b>\nFleetMapPanel\nFleetOrderDrag" as space_map__fleets__views
 }
 package "production" as space_map__production {
   rectangle "<b>controllers</b>\nProductionController" as space_map__production__controllers
@@ -44,7 +44,7 @@ package "saves" as space_map__saves {
 package "star-map" as space_map__star_map {
   rectangle "<b>controllers</b>\nStarMapController" as space_map__star_map__controllers
   rectangle "<b>models</b>\nFleetMapLayout\nMapViewport\nStarAppearance\nStarMapFacade\nTravel" as space_map__star_map__models
-  rectangle "<b>views</b>\nDetectionMapView\nFleetMapView\nGalaxyMapView\nMapEventView\nMapGesture\nMapOverlayView\nMapSelectionScroll\nTravelRouteView" as space_map__star_map__views
+  rectangle "<b>views</b>\nDetectionMapView\nFleetGlide\nFleetMapView\nGalaxyMapView\nMapEventView\nMapGesture\nMapOverlayView\nMapSelectionScroll\nTravelRouteView" as space_map__star_map__views
 }
 package "turn" as space_map__turn {
   rectangle "<b>controllers</b>\nTurnController" as space_map__turn__controllers
@@ -63,12 +63,12 @@ space_map__star_map__controllers ..> space_map__star_map__models : typer
 space_map__star_map__views --> space_map__star_map__models
 space_map__turn__controllers ..> space_map__turn__models : typer
 space_map__turn__views ..> space_map__turn__models : typer
-space_map___delat_ --> space_map__fleets : 2
+space_map___delat_ --> space_map__fleets : 1
 space_map___delat_ --> space_map__research : 3
 space_map___delat_ ..> space_map__saves : 1, typer
 space_map___delat_ --> space_map__star_map : 1
 space_map___delat_ ..> space_map__turn : 2, typer
-space_map__fleets --> space_map___delat_ : 4
+space_map__fleets --> space_map___delat_ : 3
 space_map__research --> space_map___delat_ : 8
 space_map__research --> space_map__star_map : 1
 space_map__saves --> space_map___delat_ : 8

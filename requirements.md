@@ -33,12 +33,17 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   version 18). Allt är **Fullständigt implementerat**.
 - **[Stjärnkartan och grafiken](docs/areas/star-map.md):** hexkartan, sikt,
   terräng, kamera, kartobjekt och genererade bilder, samt styrningen med
-  hexval och väg (`hexval-med-vag`) och resor som fortsätter när ingen pirat
-  syns (`resa-utan-synliga-pirater`). **Fullständigt implementerat** utom
+  hexval och väg (`hexval-med-vag`), glidande hexsteg
+  (`glidande-hexsteg`), kamera som följer skeppet
+  (`kamera-foljer-skepp`), upptäckter som stannar resan
+  (`upptackt-stannar-resan`) och resor som fortsätter när ingen pirat syns
+  (`resa-utan-synliga-pirater`). **Fullständigt implementerat** utom
   `stjarnsystem-och-asteroidbalten`, som är **Delvis implementerat**.
-- **[Flottor och order](docs/areas/fleets.md):** `Fleets`, Move och Stop,
-  utforskning av planeter och motorer. Allt kvarvarande är **Fullständigt
-  implementerat**.
+- **[Flottor och order](docs/areas/fleets.md):** `Fleets`, hexval utan
+  Move- och Stop-knappar (`inga-move-stop-knappar`),
+  utforskning av planeter och motorer och
+  `game-over-utan-skepp` när Home Fleet inte har några skepp kvar. Allt
+  kvarvarande är **Fullständigt implementerat**.
 - **[Production och planeter](docs/areas/economy-and-production.md):**
   planeter som platser med typ, miljö och resurser. `Production` väntar på
   `gemensam-produktionsko-i-flottan`, som är **Ej implementerat**.

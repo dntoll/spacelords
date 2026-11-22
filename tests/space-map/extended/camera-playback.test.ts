@@ -4,13 +4,14 @@ import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import { TurnMovementPlayback } from '../../../src/client/space-map/models/turn/TurnMovementPlayback.js';
+import { HexGeometry } from '../../../src/client/common/HexCoordinate.js';
 import type { IntentHandler } from '../../../src/client/app/views/ViewContracts.js';
 import { discoveryState } from '../../fixtures/exploration.js';
 
 afterEach(() => vi.useRealTimers());
 
-describe('handelseanpassad-kartkamera / stillastaende-kamera-vid-forflyttning', () => {
-  it('starts from the player camera, chains movement and events and restores the exact original state', () => {
+describe('handelseanpassad-kartkamera / kamera-foljer-skepp', () => {
+  it('follows the ship and keeps clicks on the camera the map is showing', () => {
     const model = new AppModel();
     model.pan({ x: -240, y: 160 });
     model.zoom(1.5, { x: 50, y: -20 });
@@ -29,24 +30,56 @@ describe('handelseanpassad-kartkamera / stillastaende-kamera-vid-forflyttning', 
     model.beginMovementPlayback(playback, origin);
     expect(model.snapshot.camera).toEqual(original.camera);
     const track = playback.tracks[0]!;
-    model.focusTurnMovement(track[0]!);
+    model.focusTurnMovement(track);
     model.frameTurnTrack(track);
-    expect(model.snapshot.camera).toEqual(original.camera);
     model.finishCameraFraming();
-    const framed = model.snapshot.camera;
+    const shown = model.snapshot.camera;
+    expect(
+      Math.hypot(
+        shown.center.x - original.camera.center.x,
+        shown.center.y - original.camera.center.y,
+      ),
+    ).toBeGreaterThan(1);
+    model.selectPoint({ x: 0, y: 0 });
+    model.endMovementPlayback();
+    const hit = HexGeometry.toPoint(model.snapshot.selected!.position);
+    expect(
+      Math.hypot(hit.x - shown.center.x, hit.y - shown.center.y),
+    ).toBeLessThan(HexGeometry.size);
+    model.beginMovementPlayback(playback, origin);
+    let checkedVisibleMiddle = false;
     for (const movement of track) {
       model.focusTurnMovement(movement);
-      for (const progress of [0, 0.25, 0.5, 0.75, 1]) {
-        model.advanceTurnMovement(progress);
-        expect(model.snapshot.camera).toEqual(framed);
+      const from = HexGeometry.toPoint(movement.from);
+      const to = HexGeometry.toPoint(movement.to);
+      model.followTurnMovement(0);
+      expect(model.snapshot.camera.zoom).toBe(original.camera.zoom);
+      expect(model.snapshot.camera.center.x).toBeCloseTo(from.x);
+      expect(model.snapshot.camera.center.y).toBeCloseTo(from.y);
+      model.followTurnMovement(1);
+      expect(model.snapshot.camera.center.x).toBeCloseTo(to.x);
+      expect(model.snapshot.camera.center.y).toBeCloseTo(to.y);
+      if (!checkedVisibleMiddle) {
+        model.resizeMap({
+          width: 1000,
+          height: 800,
+          availableWidth: 600,
+          availableHeight: 800,
+        });
+        model.followTurnMovement(1);
+        expect(model.snapshot.camera.center.x).toBeCloseTo(to.x);
+        expect(model.snapshot.camera.center.y).toBeCloseTo(to.y);
+        checkedVisibleMiddle = true;
       }
+      model.advanceTurnMovement(1);
       model.completeTurnMovement();
     }
+    const followed = model.snapshot.camera;
     model.endMovementPlayback(true);
     model.beginEventPlayback();
-    expect(model.snapshot.camera).toEqual(framed);
     while (model.snapshot.eventPlayback) model.advanceEventPlayback();
-    expect(model.snapshot.camera).toEqual(original.camera);
+    expect(model.snapshot.camera.zoom).toBe(followed.zoom);
+    expect(model.snapshot.camera.center).toEqual(followed.center);
     expect(model.snapshot.screen).toBe(original.screen);
     expect(model.snapshot.selected?.position).toEqual(
       original.selected?.position,
@@ -54,15 +87,20 @@ describe('handelseanpassad-kartkamera / stillastaende-kamera-vid-forflyttning', 
   });
 
   it('reframes after rotation and rejects callbacks from the previous camera transition', () => {
-    const game = Game.restore(discoveryState());
-    game.startTurn();
-    while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
+    const state = {
+      ...new Game(createExampleGalaxy()).exportState(),
+      round: 2,
+      events: [
+        { id: 'arrival', round: 1, text: 'Arrival.', position: { q: 3, r: 0 } },
+      ],
+    };
     const model = new AppModel(undefined, {
-      load: () => ({ lastPlayed: '2026-10-30', state: game.exportState() }),
+      load: () => ({ lastPlayed: '2026-10-30', state }),
       save() {},
       clear() {},
     });
     model.startSlot(1);
+    model.beginEventPlayback();
     const previous = model.cameraFraming!;
     model.advanceCameraFraming(previous, 0, 0.4);
     model.resizeMap({
@@ -77,7 +115,7 @@ describe('handelseanpassad-kartkamera / stillastaende-kamera-vid-forflyttning', 
     expect(model.advanceCameraFraming(previous, 0, 1)).toBe(false);
     expect(model.snapshot.camera).toEqual(before);
     model.finishCameraFraming();
-    expect(model.snapshot.eventPlayback?.stage).toBe('awaiting-choice');
+    expect(model.snapshot.eventPlayback?.stage).toBe('announcing');
     const eventId =
       model.snapshot.eventPlayback!.events[model.snapshot.eventPlayback!.index]!
         .id;
@@ -88,7 +126,7 @@ describe('handelseanpassad-kartkamera / stillastaende-kamera-vid-forflyttning', 
       availableHeight: 393,
     });
     expect(model.cameraFraming).toBeNull();
-    expect(model.snapshot.eventPlayback?.stage).toBe('awaiting-choice');
+    expect(model.snapshot.eventPlayback?.stage).toBe('announcing');
     expect(
       model.snapshot.eventPlayback!.events[model.snapshot.eventPlayback!.index]!
         .id,
@@ -200,15 +238,20 @@ describe('handelseanpassad-kartkamera / stillastaende-kamera-vid-forflyttning', 
 
   it('withholds decisions during framing and ignores pending camera callbacks after disposal', async () => {
     vi.useFakeTimers();
-    const game = Game.restore(discoveryState());
-    game.startTurn();
-    while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
+    const state = {
+      ...new Game(createExampleGalaxy()).exportState(),
+      round: 2,
+      events: [
+        { id: 'arrival', round: 1, text: 'Arrival.', position: { q: 3, r: 0 } },
+      ],
+    };
     const model = new AppModel(undefined, {
-      load: () => ({ lastPlayed: '2026-10-30', state: game.exportState() }),
+      load: () => ({ lastPlayed: '2026-10-30', state }),
       save() {},
       clear() {},
     });
     model.startSlot(1);
+    model.beginEventPlayback();
     let emit!: IntentHandler;
     let tick!: (progress: number) => void;
     let complete!: () => void;
@@ -231,7 +274,7 @@ describe('handelseanpassad-kartkamera / stillastaende-kamera-vid-forflyttning', 
     controller.start();
     expect(model.snapshot.eventPlayback?.stage).toBe('framing');
     emit({ type: 'handle-discoveries' });
-    expect(model.snapshot.interruption?.handling).toBe(false);
+    expect(model.snapshot.interruption?.handling ?? false).toBe(false);
     await vi.advanceTimersByTimeAsync(10000);
     expect(model.snapshot.eventPlayback?.stage).toBe('framing');
     tick(0.5);

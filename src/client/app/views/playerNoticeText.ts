@@ -6,5 +6,18 @@ export function playerNoticeText(notice: PlayerNotice): string | null {
   switch (notice.kind) {
     case 'action-failed':
       return notice.reason;
+    case 'discovery': {
+      const label =
+        notice.flash.kind === 'pirate'
+          ? 'Pirate ship in sight'
+          : notice.flash.kind === 'star'
+            ? 'Star explored'
+            : notice.flash.kind === 'planet-explored'
+              ? 'Planet explored'
+              : notice.flash.kind === 'wreck'
+                ? 'Wreck discovered'
+                : 'Planet discovered';
+      return `${label}: ${notice.flash.name} at HEX ${notice.flash.hex}.`;
+    }
   }
 }

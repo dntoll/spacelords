@@ -17,15 +17,17 @@ async function seed(page: Page, state: GameState) {
   await startFirstSlot(page);
 }
 
-test('synlig-flottorder: compact fleet controls offer Move and Stop', async ({
+test('inga-move-stop-knappar: the home fleet has no Move or Stop button', async ({
   page,
 }, testInfo) => {
   await seed(page, researchStationState());
   const card = page.locator('.fleet-card').first();
-  await expect(card.locator('.fleet-primary-orders button')).toHaveText([
-    'Move',
-    'Stop',
-  ]);
+  await expect(
+    card.getByRole('button', { name: 'Move', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    card.getByRole('button', { name: 'Stop', exact: true }),
+  ).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath('readable-orders.png') });
 });
 
@@ -176,18 +178,15 @@ test('flyttmal-pa-kartan / inga-hexkoordinater: fleet controls save mobile space
   await page.screenshot({
     path: testInfo.outputPath('compact-fleet-header.png'),
   });
-  await page
-    .getByRole('button', {
+  await expect(
+    page.getByRole('button', {
       name: 'Choose destination for Home Fleet',
       exact: true,
-    })
-    .click();
+    }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole('combobox', { name: 'Destination hex', exact: true }),
   ).toHaveCount(0);
-  await expect(page.locator('.destination-mode')).toContainText(
-    'Choose a destination',
-  );
   await expect(page.locator('body')).not.toContainText(
     'Choose destination hex',
   );

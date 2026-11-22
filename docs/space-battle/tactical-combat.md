@@ -173,15 +173,19 @@ placeringar och tidigare storlek och går att spela färdigt utan rensning.
 ## Skott och partiklar, 2026-11-01
 
 `animerade-stridsskott` och `skadepartiklar-i-strid` är **Fullständigt
-implementerat**. Cannon och Raider cannon visar projektil och mynningsblixt.
-Missiles visar partikelspår och områdesexplosion. Skada ger gnistor och en
-träffblixt; förstörda skepp ger explosion och splitter. Effekterna varar
-620 ms och klingar av utan bestående rök. Miss ger inget skadepartikelsprut.
+implementerat**. Cannon och Raider cannon visar ett ljust streck längs
+skottets riktning och en kort mynningsblixt under färden. Missiles har en
+större kropp och ett partikelspår; områdesringen finns kvar. Träff ger
+gnistor. Ett förstört skepp syns tills skottet träffar och ger då fler
+och varmare skärvor. En sprängd asteroid
+ger skärvor på sin hex. Färden tar cirka 400 ms och hela effekten cirka
+900 ms. Miss ger projektil och träffring men inget skadepartikelsprut.
 Träfftext och tärningslogg behålls. Nästa handling och Battle complete-beskedet
 väntar tills effekten avslutats, även efter den sista salvan.
 
 Effekterna följer kartans panorering och zoom. Vid minskad rörelse visas
-resultatet direkt med stilla träffmarkering. Omladdning spelar inte gamla
+resultatet direkt som en stilla träffring, utan projektil eller partiklar.
+Omladdning spelar inte gamla
 skott igen och påverkar inte tärningar, skador eller ammunition.
 
 Spelaren leder varje skepp i en turbaserad strid på en egen hexkarta.

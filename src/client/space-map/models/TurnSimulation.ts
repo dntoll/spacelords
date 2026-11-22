@@ -89,8 +89,11 @@ export class TurnSimulation {
   }
 
   permits(id: string): boolean {
+    if (this.tacticalBattles.length) return false;
+    // upptackt-stannar-resan: a discovery pause accepts a new destination without Handle.
+    if (this.discoveries.some((discovery) => discovery.fleetId === id))
+      return true;
     return (
-      !this.tacticalBattles.length &&
       this.handling &&
       (this.discoveries.some(
         (discovery) =>

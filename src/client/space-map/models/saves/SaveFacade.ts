@@ -50,9 +50,22 @@ export class SaveFacade {
     this.host.fleetNameEdit = null;
     this.host.mapFleetId = null;
     this.host.destinationFleetId = null;
+    this.host.voyage = false;
+    this.host.resetDiscoveryFlashes();
     this.host.cancelMapPointer();
     if (game.interruption?.handling) this.host.focusInterruptedFleet();
     else if (game.phase === 'interrupted') this.host.beginEventPlayback();
+    if (game.discoveryPause())
+      this.host.noteDiscoveries(
+        game.interruption!.discoveries.map((discovery) =>
+          Object.freeze({
+            kind: discovery.kind,
+            name: discovery.name,
+            hex: `${discovery.position.q},${discovery.position.r}`,
+            ...(discovery.eventId ? { eventId: discovery.eventId } : {}),
+          }),
+        ),
+      );
   }
 
   openSaves(): void {

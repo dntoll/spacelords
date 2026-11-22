@@ -473,6 +473,7 @@ export class MasterController {
         const selection = this.#starMap.select(intent.position);
         mapOrder = selection === 'destination';
         if (selection === 'travel') return this.#travel();
+        if (selection === 'resume') return this.#resumePausedTurn();
         break;
       }
       case 'pan':
@@ -495,7 +496,8 @@ export class MasterController {
         break;
       case 'end-turn':
         if (this.#turn.requestEndTurn()) {
-          void this.#runTurn();
+          // upptackt-stannar-resan: End turn finishes the paused round only.
+          void this.#runTurn(this.#model.snapshot.phase === 'interrupted');
           return;
         }
         break;
@@ -588,6 +590,7 @@ export class MasterController {
           const selection = this.#starMap.selectPoint(selected);
           mapOrder = selection === 'destination';
           if (selection === 'travel') return this.#travel();
+          if (selection === 'resume') return this.#resumePausedTurn();
         }
         break;
       }
@@ -619,10 +622,43 @@ export class MasterController {
     this.#schedulePlayback();
   }
 
+  /** fiendeupptackt-utan-end-turn: show each flash, then continue without End turn. */
+  #scheduleEnemyResume(): void {
+    const wait = this.#model.snapshot.notice?.kind === 'discovery' ? 1600 : 0;
+    this.#playbackTimer = setTimeout(() => {
+      if (this.#disposed || !this.#turn.enemyDiscoveryResume()) return;
+      this.#model.advanceDiscoveryFlash();
+      this.#render();
+      if (this.#model.snapshot.notice?.kind === 'discovery') {
+        this.#scheduleEnemyResume();
+        return;
+      }
+      void this.#runTurn(true);
+    }, wait);
+  }
+
+  /** upptackt-stannar-resan: each discovery stays briefly, then the next one. */
+  #scheduleDiscoveryFlash(): void {
+    if (this.#model.snapshot.notice?.kind !== 'discovery') return;
+    this.#playbackTimer = setTimeout(() => {
+      if (this.#disposed) return;
+      this.#model.advanceDiscoveryFlash();
+      this.#render();
+      this.#schedulePlayback();
+    }, 1600);
+  }
+
   /** hexval-med-vag: the confirmed hex starts the round at once. */
   #travel(): void {
     this.#model.save();
     if (this.#turn.requestEndTurn()) void this.#runTurn();
+    else this.#render();
+  }
+
+  /** upptackt-stannar-resan: a new hex continues the paused round, not the chain. */
+  #resumePausedTurn(): void {
+    this.#model.save();
+    if (this.#model.snapshot.phase === 'interrupted') void this.#runTurn(true);
     else this.#render();
   }
 
@@ -670,6 +706,9 @@ export class MasterController {
       }, 450);
       return;
     }
+    // The boarding view hides the tactical battle. Continuing the round here
+    // reports an error and rebuilds the controls, so clicks never land.
+    if (snapshot.boardingBattle) return;
     if (snapshot.screen === 'saves') return;
     if (snapshot.battleFeedback) {
       this.#playbackTimer = setTimeout(() => {
@@ -702,7 +741,22 @@ export class MasterController {
       return;
     }
     if (!playback) {
-      if (snapshot.phase === 'interrupted' && !snapshot.interruption?.handling)
+      if (this.#turn.discoveryPause()) {
+        this.#turn.publishDiscoveryFlashes();
+        this.#render();
+        // fiendeupptackt-utan-end-turn: the pirate flash continues the round.
+        if (this.#turn.enemyDiscoveryResume()) {
+          this.#scheduleEnemyResume();
+          return;
+        }
+        this.#scheduleDiscoveryFlash();
+        return;
+      }
+      if (
+        snapshot.phase === 'interrupted' &&
+        !snapshot.interruption?.handling &&
+        !snapshot.interruption?.tacticalBattles?.length
+      )
         this.#playbackTimer = setTimeout(() => {
           void this.#runTurn(true);
         }, 0);
@@ -803,12 +857,12 @@ export class MasterController {
         this.#turn.beginMovementPlayback(movementPlayback, origin);
         for (const batch of batches) {
           this.#turn.focusTurnMovement(batch.map((track) => track[0]!));
-          this.#turn.frameTurnTrack(batch.flat());
+          // kamera-foljer-skepp: stay on the ship instead of framing the route.
+          this.#turn.followTurnMovement(0);
           this.#render();
-          await this.#animateCamera();
           if (this.#disposed) return;
           const steps = Math.max(...batch.map((track) => track.length));
-          const stepDuration = 400;
+          const stepDuration = 480;
           for (let index = 0; index < steps; index++) {
             const movements = batch.flatMap((track) =>
               track[index] ? [track[index]!] : [],
@@ -818,8 +872,10 @@ export class MasterController {
             await (this.#view.animateTurnStep?.(
               { movements },
               (progress) => {
-                if (!this.#disposed && this.#turn.advanceTurnMovement(progress))
-                  this.#render();
+                if (this.#disposed) return;
+                this.#turn.followTurnMovement(progress);
+                if (this.#turn.advanceTurnMovement(progress)) this.#render();
+                else this.#view.renderCamera?.(this.#model.snapshot);
               },
               stepDuration,
             ) ?? Promise.resolve());

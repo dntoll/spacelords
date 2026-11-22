@@ -225,6 +225,8 @@ export interface BattleShot {
     readonly previousHull: number;
     readonly destroyed: boolean;
   }[];
+  /** skadepartiklar-i-strid: hexes whose asteroid broke. Absent in older shots. */
+  readonly asteroids?: readonly BattleHex[];
 }
 export type BattleCommand =
   | { readonly type: 'auto-deploy' | 'start' | 'forward' | 'end-activation' }
@@ -1922,12 +1924,20 @@ export class TacticalBattle {
       if (index >= 0) this.#asteroids.splice(index, 1);
       notes.push(`Asteroid at ${asteroid.q},${asteroid.r} breaks.`);
     }
+    const broken = preview.asteroids ?? [];
     this.#lastShot = {
       id: `${this.#base.id}:shot:${this.#log.length}`,
       weapon: command.weapon,
       from: { ...p.position! },
       at: { ...command.at },
       impacts,
+      ...(broken.length
+        ? {
+            asteroids: Object.freeze(
+              broken.map((asteroid) => ({ ...asteroid })),
+            ),
+          }
+        : {}),
     };
     const shipNote = preview.hits[0]
       ? battlePieceLabel(this.#piece(preview.hits[0].id), this.#pieces)

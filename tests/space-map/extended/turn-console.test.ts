@@ -213,32 +213,19 @@ describe('handelser / arsrundor-och-order', () => {
     expect(game.phase).toBe('planning');
     expect(() => game.startTurn()).not.toThrow();
   });
-  it('publishes one useful arrival when the destination is reached, without movement noise', () => {
+  it('ingen-ankomstbesked: reaching the destination adds no arrival or movement noise', () => {
     const game = new Game(createExampleGalaxy());
     game.setDestination('fleet-home', new HexCoordinate(7, 0));
     for (const frame of turnFrames(game)) game.applyFrame(frame);
-    expect(
-      game.events.filter((event) =>
-        /arrived|moved to|revealed/.test(event.text),
-      ),
-    ).toHaveLength(0);
     game.finishTurn();
     for (const frame of turnFrames(game)) game.applyFrame(frame);
-    const arrivals = game.events.filter((event) =>
-      /arrived|reached its destination/.test(event.text),
-    );
-    expect(arrivals).toHaveLength(1);
-    expect(arrivals[0]!.text).toContain('Home Fleet');
-    expect(arrivals[0]!.text).toContain('7,0');
     game.finishTurn();
-    expect(
-      game.events.filter((event) =>
-        /arrived|reached its destination/.test(event.text),
-      ),
-    ).toHaveLength(1);
+    expect(game.fleet('fleet-home')!.destination).toBeNull();
     expect(
       game.events.some((event) =>
-        /moved to|revealed \d+ hexes/.test(event.text),
+        /arrived|reached its destination|moved to|revealed \d+ hexes/.test(
+          event.text,
+        ),
       ),
     ).toBe(false);
   });
@@ -267,22 +254,10 @@ describe('handelser / arsrundor-och-order', () => {
     );
     resume();
     await vi.advanceTimersByTimeAsync(0);
-    // handelseanpassad-kartkamera: announcements follow the camera framing.
-    for (
-      let step = 0;
-      step < 40 && !root.querySelector('.event-announcement');
-      step++
-    )
-      await vi.advanceTimersByTimeAsync(50);
-    const announcement = root.querySelector('.event-announcement');
-    expect(announcement?.textContent).toContain('Vesta');
-    expect(root.querySelector('[role="dialog"]')).toBe(announcement);
+    // upptackt-stannar-resan: discoveries flash briefly instead of a dialog.
     expect(root.textContent).not.toContain('Continue');
     const log = root.querySelector('[role="log"]')!;
     expect(log).not.toBeNull();
-    expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
-      true,
-    );
     const dismiss = () => {
       const choice = root.querySelector<HTMLButtonElement>(
         'button[aria-label="Ignore"]',

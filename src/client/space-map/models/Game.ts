@@ -1432,7 +1432,15 @@ export class Game {
     this.#simulation!.handling = false;
     this.#phase = 'simulating';
   }
+  /** game-over-utan-skepp: the home fleet is lost when none of its ships remain. */
+  get defeated(): boolean {
+    const home =
+      this.#fleets.find((fleet) => fleet.id === 'fleet-home') ??
+      this.#fleets[0];
+    return !home || this.#shipCount(home.ships) === 0;
+  }
   startTurn(): void {
+    if (this.defeated) throw new Error('The game is over.');
     this.#requirePlanning();
     this.#simulation = new TurnSimulation([
       ...this.#fleets.map((fleet) => [fleet.id, this.#speed(fleet)] as const),
@@ -1741,9 +1749,25 @@ export class Game {
       ),
     );
   }
-  // stjarnupptackt-utan-avbrott: stars are logged, not Handle/Ignore pauses.
+  // upptackt-stannar-resan: every new discovery stops the journey for the player.
   #pausingDiscoveries(discoveries: readonly Discovery[]): readonly Discovery[] {
-    return discoveries.filter((discovery) => discovery.kind !== 'star');
+    return discoveries;
+  }
+  /** upptackt-stannar-resan: the round is waiting on a discovery, not a battle. */
+  discoveryPause(): boolean {
+    return (
+      this.#phase === 'interrupted' &&
+      !this.#simulation?.tacticalBattles.length &&
+      this.#pausingDiscoveries(this.#simulation?.discoveries ?? []).length > 0
+    );
+  }
+  /** fiendeupptackt-utan-end-turn: a pirate sighting continues without End turn. */
+  enemyDiscoveryResume(): boolean {
+    const discoveries = this.#simulation?.discoveries ?? [];
+    return (
+      this.discoveryPause() &&
+      discoveries.some((discovery) => discovery.kind === 'pirate')
+    );
   }
   #fleetDetectionRange(fleet: Fleet): number {
     return Math.max(
@@ -1875,20 +1899,12 @@ export class Game {
     return fleet;
   }
 
-  // handelser: report arrival once, at the point it happens, with a usable place name.
+  // ingen-ankomstbesked: arriving clears the order and does not announce it.
   #recordArrival(fleet: Fleet): void {
     if (!fleet.destination || fleet.destination.key !== fleet.position?.key)
       return;
-    const place =
-      this.mapSnapshot().find(
-        (cell) => cell.position.key === fleet.position!.key,
-      )?.object?.name ?? `HEX ${fleet.position.key}`;
     fleet.destination = null;
     delete fleet.courseOrigin;
-    this.#event(
-      `${this.#fleetDisplayName(fleet)} arrived at ${place}.`,
-      fleet.position,
-    );
   }
   #event(
     text: string,

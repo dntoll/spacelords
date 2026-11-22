@@ -1,6 +1,6 @@
 # Flottor och order
 
-`Fleets` visar spelarens flotta på kartan. Flottan har Move och Stop, kan
+`Fleets` visar spelarens flotta på kartan. Flottan styrs med hexval, kan
 byta namn och utforskar planeter som ett Exploration ship står på. Kod och
 sparformat hanterar fortfarande en lista med flottor; att göra om dem till en
 enda flotta hör till `enda-spelarflottan` och `fleet-som-skeppsoversikt` i
@@ -11,15 +11,16 @@ enda flotta hör till `enda-spelarflottan` och `fleet-som-skeppsoversikt` i
 - **Synlig flottorder:** `synlig-flottorder` är **Fullständigt
   implementerat**. Flottkortet visar destinationen direkt, även på mobil.
 
-- **Move och Stop:** `dragbara-flottorder` och `flottnamn-direktredigering`
-  är **Fullständigt implementerat**. En flotta flyttas genom att välja eller
-  dra till ett mål på kartan och stannar med Stop. Namnet ändras med
-  dubbelklick.
+- **Inga Move- och Stop-knappar:** `inga-move-stop-knappar` är
+  **Fullständigt implementerat**. Home Fleet styrs med hexval. Knapparna
+  Move och Stop visas inte. Det ersätter knapparna i `dragbara-flottorder`
+  och `flottknappar-pa-kartan`. `flottnamn-direktredigering` är
+  **Fullständigt implementerat**: namnet ändras med dubbelklick.
 
 - **Utforskning och avbrott:** `planetutforskning-vid-ankomst` är
   **Fullständigt implementerat**: ett Exploration ship avslöjar en planets
-  detaljer vid ankomst. Rundan avbryts vid nya planeter och pirater men inte
-  vid utforskad stjärna (`stjarnupptackt-utan-avbrott`). Avbrutna rundor
+  detaljer vid ankomst. Varje ny upptäckt stannar resan
+  (`upptackt-stannar-resan`). Avbrutna rundor
   återupptas med bevarad förflyttning, även efter omladdning. Se
   [utforskning och upptäckter](../exploration-interruptions.md).
 
@@ -29,8 +30,8 @@ enda flotta hör till `enda-spelarflottan` och `fleet-som-skeppsoversikt` i
 
 - **Kompakta flottkort:** `kompakta-flottkort`, `kompakt-flottkort-med-order`
   och `flottknappar-pa-kartan` är **Fullständigt implementerat**. Flottkorten
-  visas direkt på Star map med skeppsrutor, Move och Stop och
-  statistikikoner bredvid skeppen.
+  visas direkt på Star map med skeppsrutor och statistikikoner bredvid
+  skeppen. Move och Stop visas inte (`inga-move-stop-knappar`).
 
 - **Fleets på kartan:** `flottfokuserad-kartvy` och `delad-kartkamera` är
   **Fullständigt implementerat**. Fleets visar en karta för flottval och
@@ -39,6 +40,10 @@ enda flotta hör till `enda-spelarflottan` och `fleet-som-skeppsoversikt` i
 - **Tomma flottor:** `tomma-flottor` är **Fullständigt implementerat**. En
   flotta utan skepp behåller sitt namn men saknar position och visas inte på
   kartan.
+
+- **Game over:** `game-over-utan-skepp` är **Fullständigt implementerat**.
+  När Home Fleet inte har några skepp kvar är spelet över. Spelaren ser
+  Game over och kan bara gå till Saved games. Ingen ny runda kan startas.
 
 ## Borttaget med `single-fleet-rensning`
 

@@ -56,7 +56,11 @@ import {
   HexGeometry,
   type Point,
 } from '../../common/HexCoordinate.js';
-import { actionFailed, type PlayerNotice } from './PlayerNotice.js';
+import {
+  actionFailed,
+  type DiscoveryFlash,
+  type PlayerNotice,
+} from './PlayerNotice.js';
 
 export type Screen = 'saves' | 'map' | 'research' | 'fleets' | 'production';
 
@@ -93,6 +97,8 @@ export interface AppReadModel {
   readonly camera: CameraSnapshot;
   readonly round: number;
   readonly phase: GamePhase;
+  /** game-over-utan-skepp: the home fleet has no ships left. */
+  readonly defeated: boolean;
   readonly interruption: SavedTurnSimulation | null;
   readonly fleets: readonly FleetSnapshot[];
   readonly pirates: readonly PirateSnapshot[];
@@ -165,6 +171,8 @@ export class AppModel {
   #destinationFleetId: string | null = null;
   #voyage = false;
   #notice: PlayerNotice = null;
+  #discoveryQueue: DiscoveryFlash[] = [];
+  readonly #flashedDiscoveryIds = new Set<string>();
 
   #activeSlot: number | null = null;
   #pendingClearSlot: number | null = null;
@@ -268,6 +276,7 @@ export class AppModel {
         pirates: this.#movementPlayback.pirates,
         cells: this.#movementPlayback.cells,
         destinationFleetId: null,
+        defeated: this.#game.defeated,
         // handelser-vid-ankomst: arrival events show during movement.
         eventPlayback: this.#eventPlayback?.snapshot ?? null,
       });
@@ -310,6 +319,7 @@ export class AppModel {
       selectedPlanetInfo: this.#game.planetIntel(this.#selected),
       round: this.#game.round,
       phase: this.#game.phase,
+      defeated: this.#game.defeated,
       interruption: this.#game.interruption,
       fleets: this.#game.fleetSnapshots(),
       pirates: this.#game.pirateSnapshots(),
@@ -338,7 +348,7 @@ export class AppModel {
     if (
       !this.#isMapScreen() ||
       this.#eventCamera ||
-      this.#game.phase !== 'planning'
+      (this.#game.phase !== 'planning' && !this.#game.discoveryPause())
     )
       return null;
     const fleet = travelFleet(this.#game, this.#mapFleetId);
@@ -374,6 +384,48 @@ export class AppModel {
   }
   clearNotice(): void {
     this.#notice = null;
+    this.#discoveryQueue = [];
+  }
+  /** upptackt-stannar-resan: show each discovery once, as a short top flash. */
+  noteDiscoveries(
+    flashes: readonly (DiscoveryFlash & { readonly eventId?: string })[],
+  ): void {
+    const pending = flashes.filter(
+      (flash) =>
+        !flash.eventId || !this.#flashedDiscoveryIds.has(flash.eventId),
+    );
+    if (!pending.length) return;
+    for (const flash of pending) {
+      if (!flash.eventId) continue;
+      this.#flashedDiscoveryIds.add(flash.eventId);
+      this.#presentedEventIds.add(flash.eventId);
+      this.#game.presentEvent(flash.eventId);
+    }
+    this.#voyage = false;
+    if (this.#notice?.kind === 'discovery') return;
+    this.#discoveryQueue = pending.map((flash) =>
+      Object.freeze({
+        kind: flash.kind,
+        name: flash.name,
+        hex: flash.hex,
+      }),
+    );
+    const first = this.#discoveryQueue[0];
+    if (first)
+      this.#notice = Object.freeze({ kind: 'discovery', flash: first });
+  }
+  advanceDiscoveryFlash(): void {
+    if (this.#notice?.kind !== 'discovery') return;
+    this.#discoveryQueue.shift();
+    const next = this.#discoveryQueue[0];
+    this.#notice = next
+      ? Object.freeze({ kind: 'discovery', flash: next })
+      : null;
+  }
+  resetDiscoveryFlashes(): void {
+    this.#flashedDiscoveryIds.clear();
+    this.#discoveryQueue = [];
+    if (this.#notice?.kind === 'discovery') this.#notice = null;
   }
   setEditorCatalog(maps: readonly BoardingEditorCatalogItem[]): void {
     this.editorCase.setCatalog(maps);
@@ -630,48 +682,8 @@ export class AppModel {
   }
 
   #eventDecision(id: string): EventDecision | undefined {
-    const interruption = this.#game.interruption;
-    const discovery = interruption?.discoveries.find(
-      (discovery) => discovery.eventId === id,
-    );
-    const item = discovery;
-    if (!item || discovery.kind === 'star') return undefined;
-    const fleet = item.fleetId
-      ? this.#game.fleetSnapshots().find((fleet) => fleet.id === item.fleetId)
-      : null;
-    const title =
-      discovery.kind === 'pirate'
-        ? 'Pirate ship in sight'
-        : discovery.kind === 'planet-explored'
-          ? 'Planet explored'
-          : 'Planet discovered';
-    const details = [
-      `HEX ${item.position.q},${item.position.r}${fleet ? ` · ${fleet.name} · ${fleet.remainingMovement ?? 0} hex remaining` : ''}`,
-    ];
-    if (discovery?.kind === 'pirate') {
-      const pirate = this.#game
-        .pirateSnapshots()
-        .find((pirate) => pirate.id === discovery.id);
-      if (pirate)
-        details.push(
-          `${pirate.count} raider${pirate.count === 1 ? '' : 's'}${pirate.transports ? ` and ${pirate.transports} transport` : ''} in sight.`,
-        );
-    }
-    if (discovery.kind === 'planet-explored') {
-      const intel = this.#game.planetIntel(
-        new HexCoordinate(item.position.q, item.position.r),
-      );
-      if (intel?.surveyed) details.push(`Type: ${intel.environment}.`);
-    }
-    if (interruption!.economyApplied)
-      details.push(
-        'The round is paused at the end of the year. No movement remains this round.',
-      );
-    return Object.freeze({
-      title,
-      details: Object.freeze(details),
-      fleetId: item.fleetId,
-    });
+    // upptackt-stannar-resan: discoveries are top flashes, not Handle or Ignore.
+    return id ? undefined : undefined;
   }
 
   chooseEvent(choice: 'handle' | 'ignore'): void {
@@ -788,6 +800,9 @@ export class AppModel {
 
   focusTurnMovement(movement: TurnMovement | readonly TurnMovement[]): void {
     return this.turn.focusTurnMovement(movement);
+  }
+  followTurnMovement(progress: number): void {
+    return this.turn.followTurnMovement(progress);
   }
 
   completeTurnMovement(): void {
@@ -1020,6 +1035,11 @@ export class AppModel {
       select: (position: HexCoordinate) => model.select(position),
       reportError: (error: unknown) => model.reportError(error),
       clearNotice: () => model.clearNotice(),
+      noteDiscoveries: (
+        flashes: readonly (DiscoveryFlash & { readonly eventId?: string })[],
+      ) => model.noteDiscoveries(flashes),
+      advanceDiscoveryFlash: () => model.advanceDiscoveryFlash(),
+      resetDiscoveryFlashes: () => model.resetDiscoveryFlashes(),
       fleetAtPoint: (point: Point) => model.fleetAtPoint(point),
       selectMapFleet: (id: string) => model.selectMapFleet(id),
       hoverMapFleet: (point: Point | null) => model.hoverMapFleet(point),
@@ -1114,6 +1134,8 @@ export class AppModel {
         model.frameTurnTrack(track),
       focusTurnMovement: (movement: TurnMovement | readonly TurnMovement[]) =>
         model.focusTurnMovement(movement),
+      followTurnMovement: (progress: number) =>
+        model.followTurnMovement(progress),
       completeTurnMovement: () => model.completeTurnMovement(),
       advanceTurnMovement: (progress: number) =>
         model.advanceTurnMovement(progress),
@@ -1178,6 +1200,11 @@ export interface AppHost {
   select(position: HexCoordinate): MapSelection;
   reportError(error: unknown): void;
   clearNotice(): void;
+  noteDiscoveries(
+    flashes: readonly (DiscoveryFlash & { readonly eventId?: string })[],
+  ): void;
+  advanceDiscoveryFlash(): void;
+  resetDiscoveryFlashes(): void;
   fleetAtPoint(point: Point): string | null;
   selectMapFleet(id: string): MapSelection;
   hoverMapFleet(point: Point | null): boolean;
@@ -1258,6 +1285,7 @@ export interface AppHost {
   ): void;
   frameTurnTrack(track: readonly TurnMovement[]): void;
   focusTurnMovement(movement: TurnMovement | readonly TurnMovement[]): void;
+  followTurnMovement(progress: number): void;
   completeTurnMovement(): void;
   advanceTurnMovement(progress: number): boolean;
   endMovementPlayback(preserveCamera?: boolean): void;

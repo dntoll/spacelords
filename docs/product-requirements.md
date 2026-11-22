@@ -58,8 +58,9 @@ engelska.
 
 ## Flottor
 
-- Flottan har Move och Stop och kan byta namn. Ett Exploration ship
-  utforskar planeten det står på.
+- Flottan styrs med hexval och kan byta namn. Den har inga Move- eller
+  Stop-knappar. Ett Exploration ship utforskar planeten det står på.
+- Förlorar Home Fleet alla sina skepp är spelet över.
 
 ## Research och Production
 

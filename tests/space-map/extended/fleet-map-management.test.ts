@@ -102,16 +102,17 @@ describe('flottnamn-direktredigering', () => {
 
 describe('flottknappar-pa-kartan / flottadministration', () => {
   it('provides destination selection without drag and removes the old map buttons', () => {
-    const { model, root, click, view } = setup();
+    const { model, root, view } = setup();
     expect(root.querySelector('[aria-label="Set destination"]')).toBeNull();
     expect(root.querySelector('[aria-label="Edit fleet"]')).toBeNull();
-    click('Choose destination for Home Fleet');
-    expect(root.querySelector('[aria-label="Destination hex"]')).toBeNull();
+    expect(
+      root.querySelector('[aria-label="Choose destination for Home Fleet"]'),
+    ).toBeNull();
+    expect(root.querySelector('[aria-label="Clear destination"]')).toBeNull();
+    model.select(new HexCoordinate(0, 1));
     model.select(new HexCoordinate(0, 1));
     view.render(model.snapshot);
     expect(model.snapshot.fleets[0]!.destination?.key).toBe('0,1');
-    click('Clear destination');
-    expect(model.snapshot.fleets[0]!.destination).toBeNull();
   });
 
   it('delad-kartkamera: explicitly opens a fleet without resetting zoom', () => {

@@ -18,21 +18,21 @@ kan avbryta rundan. Skärmen `Decisions` med beslutslistan finns inte längre
 - **Rundtexter:** `round-i-speltexter` är **Fullständigt implementerat**:
   spelet använder `round` i stället för `year` i synliga texter.
 
-- **Ankomstbesked:** `ankomstbesked-endast-vid-manuell-forflyttning` är
-  **Fullständigt implementerat**: ankomstbesked ges för Move-order.
+- **Ankomstbesked:** `ingen-ankomstbesked` är **Fullständigt
+  implementerat**. Ingen ankomstmening skapas. Det ersätter
+  `ankomstbesked-endast-vid-manuell-forflyttning`.
 
 - **Händelseval på dator:** `centrerade-handelseval-pa-dator`,
   `upptacktsbesked-utan-pausmening` och `stridsresultat-utan-upprepning` är
-  **Fullständigt implementerat**. Händelsens plats och Handle/Ignore-ruta
-  ligger kring kartans mitt på stora skärmar, upptäcktsrutan saknar den
-  generella pausmeningen och stridsresultatet visas en gång.
+  **Fullständigt implementerat**. Stridsresultatet visas en gång.
+  Upptäckter visas som korta blänkare (`upptackt-stannar-resan`) i stället
+  för en Handle/Ignore-ruta.
 
 - **Gemensamt händelseflöde:** `gemensamt-handelseflode` är **Fullständigt
-  implementerat**. Upptäckter, piratkontakter och stridsrapporter använder
-  Events med ett eget Handle eller Ignore för varje händelse. Rundan förblir
-  pausad tills avbrottets händelser är avklarade. Val och pågående hantering
-  bevaras vid omladdning. Händelserutan ligger ovanför End turn även på låga,
-  liggande telefoner.
+  implementerat** för stridsrapporter i Events. Beslutsdelen för upptäckter
+  är ersatt av `upptackt-stannar-resan`: blänkare högst upp, utan Handle
+  eller Ignore. En paus med pirat fortsätter utan End turn
+  (`fiendeupptackt-utan-end-turn`).
 
 - **Flottanimation och händelseannonser:** `en-flotta-i-taget`,
   `osynliga-flottor-utan-animation` och `handelseannonsering` är
@@ -46,10 +46,14 @@ kan avbryta rundan. Skärmen `Decisions` med beslutslistan finns inte längre
   händelser spelas från vänster till höger och vid samma horisontella läge
   nerifrån och upp.
 
-- **Händelsekamera:** `handelseanpassad-kartkamera` och
-  `stillastaende-kamera-vid-forflyttning` är **Fullständigt implementerat**.
-  Kameran ramar mjukt in nästa färd eller händelse, står stilla medan skeppet
-  färdas och återställer spelarens kartläge efteråt.
+- **Händelsekamera:** `handelseanpassad-kartkamera` är **Fullständigt
+  implementerat** för händelser. `kamera-foljer-skepp` är **Fullständigt
+  implementerat** och ersätter stillaståendet i
+  `stillastaende-kamera-vid-forflyttning`: under färden följer kameran
+  skeppet så att det ligger i mitten av kartan, med spelarens zoom.
+  Panelens planeringsförskjutning används inte under färden. `klick-pa-synlig-hex`
+  är **Fullständigt implementerat**: ett klick träffar hexen under musen i
+  den kamera som syns.
 
 - **Events:** `end-turn-vid-kartval`, `sekventiella-arshandelser`,
   `handelser-pa-kartan`, `handelser`, `senaste-aret-i-events` och
