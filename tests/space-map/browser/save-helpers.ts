@@ -115,11 +115,15 @@ export async function finishRound(page: Page): Promise<void> {
           fleet.position!.r + offset.r,
         ),
     )
-    .find(
+    .filter(
       (hex) =>
         fleet.position!.distanceTo(hex) >= reach &&
         game.routePreview(fleet.id, hex).length >= reach,
-    );
+    )
+    // The nearest such hex stays in view on small screens.
+    .sort(
+      (a, b) => fleet.position!.distanceTo(a) - fleet.position!.distanceTo(b),
+    )[0];
   if (!target) throw new Error('No hex beyond the fleet’s AP.');
   await selectMapHex(page, target);
   await selectMapHex(page, target);
@@ -179,10 +183,10 @@ export async function ignoreEventsUntil(
         });
         continue;
       }
-      // upptackt-stannar-resan: two taps on the destination continue the round.
+      // upptackt-stannar-resan: the destination is still selected, so one
+      // tap on it continues the round.
       const destination = await pausedDestination(page);
       if (!destination) return;
-      await selectMapHex(page, destination);
       await selectMapHex(page, destination);
       continue;
     }
