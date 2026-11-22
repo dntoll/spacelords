@@ -1,5 +1,14 @@
 # Tekniska krav och arbetsregler
 
+## Beslut före implementation av Single fleet
+
+`single-fleet-beslut-fore-implementation` är **Fullständigt implementerat**
+som dokumenterad arbetsregel. Oklara delar av utforskningen `single_fleet`
+ska diskuteras med användaren och uttryckligen låsas före berörd
+spelimplementation. Agentförslag är inte beslut. Se
+[planen och beslutslistan](single-fleet.md#plan-och-beslut-före-implementation).
+Spelbeteendena är fortfarande **Ej implementerat**.
+
 `produktionsstatus-for-separata-behov`: försörjningsöversikten för aktivt
 byggprojekt använder projektets egen kostnad; planetens samlade efterfrågan
 behålls för logistikplanering och ekonomivyn. Ett regressionstest skyddar

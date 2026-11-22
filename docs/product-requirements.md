@@ -16,7 +16,11 @@ rymdstrid, bordningar och utveckling av skepp och besättning står i centrum.
   Personer, vapensystem och motorer kan flyttas mellan skeppens slots.
   Cargo ships kan förvara oanvänd utrustning och Civilian transports har
   plats för människor.
-- `Crew` visar personer som kan utrustas och flyttas mellan skepp.
+- Flottans drift förbrukar ändliga resurser, inklusive bränsle. Spelaren
+  behöver förflytta sig för att hitta ny försörjning.
+- `Crew` visar personer som kan utrustas och flyttas mellan skepp. Samma
+  person kan ha flera roller, även i bordningsstyrkan. Personer börjar
+  med samma egenskapsvärden.
 - `Research` gäller tekniker för skepp och bordning. Planetforskning tas bort
   och forskningen låser upp tekniker i stället för fabriker.
 - `Production` har en gemensam kö för skepp, utrustning, uppgraderingar och

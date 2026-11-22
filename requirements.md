@@ -21,7 +21,10 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
 
 - **[Single fleet — utforskning](docs/single-fleet.md):** en enda flotta,
   AP på Star map, Fleet, Crew, teknikforskning och en gemensam
-  produktionskö. Samtliga nya beteendekrav är **Ej implementerat**.
+  produktionskö, ändliga förbrukningsresurser och personer med flera roller
+  och lika startegenskaper. Samtliga nya beteendekrav är **Ej implementerat**.
+  Planen anger vilka delar som måste diskuteras och låsas med användaren
+  före implementation (`single-fleet-beslut-fore-implementation`).
 - **[Start, sparade spel och navigering](docs/areas/start-and-saves.md):**
   `Saved games`, helskärm, huvudmenyn och sparformatet (`sparformat`).
   Allt är **Fullständigt implementerat**.
