@@ -25,6 +25,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   och lika startegenskaper. Samtliga nya beteendekrav är **Ej implementerat**.
   Planen anger vilka delar som måste diskuteras och låsas med användaren
   före implementation (`single-fleet-beslut-fore-implementation`).
+  [Rensningsplanen](docs/single-fleet-cleanup.md) följer borttagning av den
+  tidigare spelmekaniken (`single-fleet-rensning`).
 - **[Start, sparade spel och navigering](docs/areas/start-and-saves.md):**
   `Saved games`, helskärm, huvudmenyn och sparformatet (`sparformat`).
   Allt är **Fullständigt implementerat**.

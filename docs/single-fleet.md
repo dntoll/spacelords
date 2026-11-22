@@ -6,7 +6,7 @@ Utforskning på `single_fleet`, med `simple_production` som utgångspunkt.
 Spelaren leder en enda flotta. Utforskning och uppdrag på planeter,
 asteroidbälten och andra platser leder till fynd, rymdstrider och bordningar.
 Forskning och utveckling ska främst handla om skeppen och bordningsspelet.
-Den här leveransen dokumenterar riktningen och ändrar inget spelbeteende.
+Rensningen inför riktningen följs upp i [rensningsplanen](single-fleet-cleanup.md).
 
 ## Krav — utforskning
 
@@ -116,7 +116,7 @@ användaren före implementation**. Frågorna är inga föreslagna standardregle
 | Production och reparation          | Vilka resurser och kapaciteter kräver jobben? Hur går tiden, hur prioriteras kön och vad gäller vid paus eller avbrott? Vad kan Raptor göra själv och vad kräver Construction ship?                                                                   | `gemensam-produktionsko-i-flottan`                                                                         |
 | Möten, uppdrag och erövring        | Hur väljs och varieras möten? När behövs rymdstrid, bordning eller båda? Hur förs skador, besättning, utrustning och byte mellan kartan och striderna? Hur behålls ett erövrat skepp?                                                                 | `flottaventyr-med-strid-och-bordning`, `enda-spelarflottan`                                                |
 | Resans mål och nederlag            | Vad driver resan utöver försörjning? Hur fungerar reträtt, förlorade skepp och återhämtning? När är spelet vunnet eller förlorat?                                                                                                                     | `flottaventyr-med-strid-och-bordning`, `enda-spelarflottan`                                                |
-| Övergång från tidigare spel        | Vilka gamla funktioner tas bort eller behålls? Hur behandlas befintliga sparningar? Varje inkompatibel ändring kräver separat avstämning.                                                                                                             | `avstamning-sparkompatibilitet`, berörda ersättningar ovan                                                 |
+| Övergång från tidigare spel        | Rensningens omfattning och inkompatibilitet för tidigare sparningar är beslutade för denna utforskning; se rensningsplanen. Ytterligare framtida inkompatibla ändringar ska stämmas av separat.                                                       | `avstamning-sparkompatibilitet`, berörda ersättningar ovan                                                 |
 
 ### Föreslagen diskussionsordning
 

@@ -1,0 +1,69 @@
+# Rensningsplan för Single fleet
+
+`single-fleet-rensning` är **Ej implementerat**: tidigare mekanik som inte
+hör till Single fleet ska tas bort tillsammans med tester, gränssnitt och
+aktiva krav som bara gäller den. Rensningen görs i små sammanhängande commits
+som pushas en i taget. Uppdatera checklistan i samma commit som arbetet.
+En annan agent ska kunna fortsätta från den pushade arbetsbranchen.
+
+## Beslut och avgränsning
+
+Användaren har godkänt att ta bort ägda planeter, kolonisation, befolkning,
+Domes och terraforming; fabriker, planetproduktion, handelsnätverk och
+automatiska transporter; flera spelarflottor, delning och sammanslagning,
+automatiska flottorder och planetköer; planetforskning och fabrikslås;
+samt händelser och gränssnitt som enbart stöder dessa funktioner.
+
+Planeter som platser, kartan, rymdstrid, bordning, skepp och utrustning
+behålls, liksom relevanta delar av Research och Production. Framtida handel
+med besökta platser är en öppen fråga. Skärmar får tillfälligt förenklas
+eller tas bort under omställningen. Arbetsregler, arkitektur och kvalitet
+behålls. Ingen ny obestämd Single fleet-mekanik implementeras under rensningen.
+
+Användaren har uttryckligen godkänt att gamla sparningar blir inkompatibla
+på `single_fleet` för denna omställning och att en ny spelstart används.
+Senare, separata inkompatibla ändringar kräver ny avstämning enligt
+`avstamning-sparkompatibilitet`.
+
+## Checklista
+
+Varje punkt är klar först när kod, tillhörande tester och aktiva krav har
+stämts av, kartdiagram har genererats vid strukturändringar och relevanta
+kontroller har körts. Dela punkter i mindre commits vid behov och notera
+återstående arbete. Rensningen kan tillfälligt innebära att kampanjen inte är
+spelbar, men bevara fristående strids- och bordningstester.
+
+- [x] Dokumentera beslut, omfattning och fortsättningsbar checklista.
+- [ ] Inventera kopplingar och välj små, byggbara borttagningssteg; notera
+      beroenden och tillfälliga begränsningar nedan.
+- [ ] Ta bort planetbaserade fabriker, produktionsnätverk, handelsrutter och
+      automatiska transporter med deras vyer, tester och krav.
+- [ ] Ta bort kolonisation, planetägande, befolkning, Domes och terraforming
+      med deras vyer, tester och krav; behåll planeter som platser.
+- [ ] Ta bort flera spelarflottor, flottadministration, automatiska order
+      och planetköer med deras vyer, tester och krav; behåll skepps- och
+      stridsfunktioner som behövs för den kommande flottan.
+- [ ] Ta bort planet- och fabriksforskning samt planetbunden produktion och
+      anpassa återstående forsknings- och produktionsytor till att invänta
+      beslutade ersättningar.
+- [ ] Ta bort händelser, beslut, vägledning och navigation som bara stöder
+      borttagna funktioner; granska kvarvarande användartexter.
+- [ ] Rensa aktiva krav, produktdokumentation, domänmodell och tester så att
+      endast aktuell eller uttryckligen planerad funktion återstår. Behåll
+      stabila namn för krav som fortfarande gäller och ange deras status.
+- [ ] Hantera godkänd inkompatibilitet för sparningar och verifiera ny start
+      när det går utan att föregripa öppna speldesignbeslut.
+- [ ] Kör enhetssviten, relevanta riktade tester och verktygskontroller;
+      granska rensningen och dokumentera återstående begränsningar.
+
+## Arbetsläge och överlämning
+
+Utgångspunkt: `origin/single_fleet` vid planens skapande. Arbetet görs på
+`codex/single-fleet-cleanup` och pushas efter varje commit. Före fortsatt
+arbete: hämta origin, läs denna fil och `docs/single-fleet.md`, kontrollera
+senaste commit och lokalt arbetsläge. Integrera till `single_fleet` enligt
+projektets utforskningsflöde när en sammanhängande ändring är klar.
+
+Inga rensningssteg har ännu slutförts. Tid, AP, resursernas detaljer,
+startbesättning och övriga öppna designfrågor ska diskuteras och låsas med
+användaren innan ny spelmekanik implementeras.
