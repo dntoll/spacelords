@@ -5,10 +5,7 @@ import {
 } from '../../../src/client/space-map/models/Game.js';
 import { ResearchPlan } from '../../../src/client/space-map/models/research/Research.js';
 import { salvageState, finishYear } from '../../fixtures/salvage.js';
-import {
-  tradeNetworkState,
-  distantTradeNetworkState,
-} from '../../fixtures/trade-network.js';
+import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import {
   HexCoordinate,
   HexGeometry,
@@ -165,45 +162,6 @@ it('radiell-automatisk-hexutforskning: explorers at Tellus reserve different fro
   expect(new Set(directions.map((angle) => angle.toFixed(3))).size).toBe(3);
 });
 
-describe('automatisk-farledsbemanning', () => {
-  it('assigns a waiting transport to the nearest open route without research', () => {
-    const game = Game.restore(tradeNetworkState());
-    game.setAutomaticTransport('freighters');
-    expect(game.fleet('freighters')!.routeId).toBe('route-test');
-    expect(game.fleet('freighters')!.automation).toBeUndefined();
-    expect(Game.restore(game.exportState()).fleet('freighters')!.routeId).toBe(
-      'route-test',
-    );
-  });
-  it('joins the least-manned route even when it already has ships, survives reload and keeps the assignment', () => {
-    const state = tradeNetworkState();
-    let game = Game.restore({
-      ...state,
-      fleets: state.fleets.map((f) =>
-        f.id === 'travellers' ? { ...f, destination: null } : f,
-      ),
-    });
-    game.assignTradeFleet('route-test', 'freighters');
-    game.setAutomaticTransport('travellers');
-    expect(game.fleet('travellers')!.routeId).toBe('route-test');
-    expect(game.fleet('travellers')!.automation).toBeUndefined();
-    expect(game.decisions.some((d) => d.id === 'fleet-idle-travellers')).toBe(
-      false,
-    );
-    game = Game.restore(game.exportState());
-    expect(game.fleet('travellers')!.routeId).toBe('route-test');
-  });
-  it('replaces a previous movement order and allows Stop while waiting', () => {
-    const game = Game.restore(tradeNetworkState(false));
-    game.setAutomaticTransport('travellers');
-    expect(game.fleet('travellers')!.destination).toBeNull();
-    game.clearDestination('travellers');
-    expect(game.fleet('travellers')!.automation).toBeUndefined();
-    game.setDestination('travellers', new HexCoordinate(1, 0));
-    expect(game.fleet('travellers')!.destination!.key).toBe('1,0');
-  });
-});
-
 describe('fria-utforsknings-och-patrullorder', () => {
   it('keeps older active Patrol and Explore orders operational without granting retired research', () => {
     const state = tradeNetworkState();
@@ -229,34 +187,6 @@ describe('fria-utforsknings-och-patrullorder', () => {
       plan.queue.indexOf('Automated salvage'),
     );
   });
-});
-
-it('automatisk-farledsbemanning: compares both endpoints, skips closing routes and spreads waiting fleets onto the least-manned routes', () => {
-  const state = distantTradeNetworkState();
-  const fleets = state.fleets.map((f) => {
-    const copy = { ...f, destination: null };
-    delete copy.routeId;
-    return copy;
-  });
-  const game = Game.restore({
-    ...state,
-    fleets,
-  });
-  game.setAutomaticTransport('travellers');
-  expect(game.fleet('travellers')!.routeId).toBe('route-distant');
-  game.setAutomaticTransport('freighters');
-  expect(game.fleet('freighters')!.routeId).toBe('route-test');
-  const closing = Game.restore({
-    ...state,
-    fleets,
-    tradeRoutes: state.tradeRoutes.map((r) => ({
-      ...r,
-      closing: r.id === 'route-distant',
-    })),
-  });
-  closing.setAutomaticTransport('travellers');
-  expect(closing.fleet('travellers')!.routeId).toBe('route-test');
-  expect(closing.fleet('travellers')!.destination?.key).toBe('1,0');
 });
 
 it('automatisk-bargning: competing fleets reserve different wrecks and losing the last Salvage ship cancels automation', () => {
@@ -305,17 +235,7 @@ it('forskade-automatiska-order: completing research in a station unlocks Auto sa
   ).toBe(false);
 });
 
-it('automatisk-farledsbemanning: a newly created route wakes waiting transports and spreads them onto that route', () => {
-  const state = tradeNetworkState(false);
-  const game = Game.restore(state);
-  game.setAutomaticTransport('freighters');
-  game.setAutomaticTransport('travellers');
-  const route = game.createTradeRoute('sol-0', 'sol-1');
-  expect(game.fleet('freighters')!.routeId).toBe(route);
-  expect(game.fleet('travellers')!.routeId).toBe(route);
-});
-
-it.each(['salvage', 'transport'] as const)(
+it.each(['salvage'] as const)(
   'forskade-automatiska-order: rejects incompatible saved %s orders',
   (automation) => {
     const state = automaticSalvage();

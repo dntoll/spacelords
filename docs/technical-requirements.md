@@ -19,7 +19,8 @@ statusen när en flottuppgradering beställer delar från lokal produktion.
 `single-fleet-rensning`: de historiska engångsrensningarna
 `engangsreset-terraformning` och `engangsreset-utokad-galax` har tagits bort.
 Äldre avsnitt nedan beskriver historiken, inte aktuellt beteende. Även
-`guard-routes` har tagits bort i denna utforskning.
+`guard-routes`, `ombemanning-vid-stangd-farled` och
+`automatisk-farledsbemanning` har tagits bort i denna utforskning.
 Sparkompatibiliteten för den pågående omställningen är ännu inte färdig.
 
 ## Sparformat

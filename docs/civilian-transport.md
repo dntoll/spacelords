@@ -1,7 +1,7 @@
 # Civilian transport
 
 > Historisk beskrivning från `simple_production`: `befolkningsutjamning-i-grupp`
-> har tagits bort i `single_fleet`. Övrig äldre mekanik rensas stegvis enligt
+> och `automatisk-farledsbemanning` har tagits bort i `single_fleet`. Övrig äldre mekanik rensas stegvis enligt
 > [rensningsplanen](single-fleet-cleanup.md).
 
 Samtliga krav nedan är **Fullständigt implementerat**.

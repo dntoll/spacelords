@@ -275,7 +275,6 @@ export function fleetAssignmentLabel(
     return `Civilian transport: ${fleet.civilian.status} · ${fleet.civilian.passengers} passengers aboard`;
   if (fleet.automation === 'salvage')
     return `Auto salvage: ${fleet.towing?.length ? 'returning to shipyard' : fleet.salvage?.targets.length ? 'collecting a wreck' : 'waiting for an available wreck'}`;
-  if (fleet.automation === 'transport') return 'Waiting for a trade route';
   if (fleet.colonizationTargetId) {
     const position = fleet.destination ?? fleet.position;
     const target = model.cells.find(

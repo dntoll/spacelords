@@ -55,7 +55,6 @@ import {
 } from './Salvage.js';
 import { prioritizeProduction } from './ProductionPriorities.js';
 import {
-  nearestLeastMannedRoute,
   routeEscortTargets,
   tradeAssignmentIssue,
 } from './star-map/TradeAssignment.js';
@@ -246,7 +245,7 @@ interface Fleet {
   upgrade?: FleetUpgradeOrder;
   ordersPaused?: boolean;
   civilian?: CivilianOrder;
-  automation?: 'salvage' | 'transport';
+  automation?: 'salvage';
   homeRouteId?: string;
   colonizationTargetId?: string;
   explorationTargetId?: string;
@@ -658,13 +657,6 @@ export class Game {
     game.#fleets = copy.fleets.map(
       ({ position: current, destination, courseOrigin, ships, ...rest }) => {
         const fleet = { ...rest, ships: { ...zeroShips(), ...ships } };
-        if (
-          (fleet.pendingOrder as { kind?: string } | undefined)?.kind ===
-          'auto-transport'
-        ) {
-          delete fleet.pendingOrder;
-          fleet.automation ??= 'transport';
-        }
         const empty = game.#shipCount(fleet.ships) === 0;
         let landed = false;
         if (fleet.civilian !== undefined) {
@@ -677,7 +669,7 @@ export class Game {
             empty ||
             !fleet.ships['Civilian shuttle'] ||
             fleet.routeId ||
-            (fleet.automation && fleet.automation !== 'transport') ||
+            fleet.automation ||
             fleet.patrol ||
             fleet.exploration ||
             fleet.joinFleetId ||
@@ -697,14 +689,10 @@ export class Game {
         }
         if (
           fleet.automation !== undefined &&
-          (!['salvage', 'transport'].includes(fleet.automation) ||
+          (fleet.automation !== 'salvage' ||
             empty ||
-            (fleet.automation === 'salvage'
-              ? !fleet.ships['Salvage ship']
-              : !fleet.ships['Transport ship'] &&
-                !fleet.ships['Civilian shuttle']) ||
-            (fleet.routeId &&
-              !(fleet.automation === 'transport' && fleet.releaseRequested)) ||
+            !fleet.ships['Salvage ship'] ||
+            fleet.routeId ||
             fleet.patrol ||
             fleet.exploration ||
             fleet.joinFleetId ||
@@ -2379,8 +2367,6 @@ export class Game {
       throw new Error('Release towed wrecks first.');
     this.clearDestination(fleetId);
     fleet.civilian = CivilianTraffic.order();
-    fleet.automation = 'transport';
-    this.#updateAutomaticTransport();
   }
 
   setAutomaticSalvage(fleetId: string): void {
@@ -2416,57 +2402,6 @@ export class Game {
             a.id.localeCompare(b.id),
         )[0];
       if (target) this.#salvage.assign(fleet, target.id);
-    }
-  }
-  setAutomaticTransport(fleetId: string): void {
-    this.#requirePlanning();
-    this.#requireFleetOrders(fleetId);
-    const fleet = this.#fleetState(fleetId);
-    if (!fleet.ships['Transport ship'] && !fleet.ships['Civilian shuttle'])
-      throw new Error('A Transport ship or Civilian shuttle is required.');
-    if (this.#salvage.towing(fleetId).length)
-      throw new Error('Deliver towed wrecks first.');
-    this.clearDestination(fleetId);
-    if (fleet.ships['Civilian shuttle'] && !fleet.civilian)
-      fleet.civilian = CivilianTraffic.order();
-    fleet.automation = 'transport';
-    this.#updateAutomaticTransport();
-  }
-  // automatisk-farledsbemanning: assign one waiting fleet at a time so manning stays current.
-  #updateAutomaticTransport(): void {
-    for (const fleet of this.#fleets) {
-      if (fleet.automation !== 'transport' || !fleet.position) continue;
-      if (this.#salvage.towing(fleet.id).length) continue;
-      if (fleet.civilian?.passengers) continue;
-      if (fleet.routeId) continue;
-      if (fleet.ships['Transport ship'] && fleet.destination && !fleet.patrol)
-        continue;
-      const route = nearestLeastMannedRoute(
-        fleet.position,
-        this.tradeRoutes,
-        this.fleetSnapshots(),
-      );
-      if (!route) continue;
-      if (fleet.ships['Transport ship'])
-        this.assignTradeFleet(route.id, fleet.id);
-      else if (fleet.ships['Civilian shuttle'])
-        this.#assignHomeRoute(fleet, route);
-    }
-  }
-  #assignHomeRoute(fleet: Fleet, route: TradeRouteSnapshot): void {
-    fleet.homeRouteId = route.id;
-    delete fleet.automation;
-    const a = this.#ownedPlanets().find((planet) => planet.id === route.a);
-    const b = this.#ownedPlanets().find((planet) => planet.id === route.b);
-    if (!a || !b || !fleet.position) return;
-    const endpoint =
-      fleet.position.distanceTo(a.position) <=
-      fleet.position.distanceTo(b.position)
-        ? a
-        : b;
-    if (fleet.position.key !== endpoint.position.key) {
-      fleet.courseOrigin = fleet.position;
-      fleet.destination = endpoint.position;
     }
   }
   orderSalvage(fleetId: string, wreckId: string): void {
@@ -4487,7 +4422,6 @@ export class Game {
   }
   startTurn(): void {
     this.#requirePlanning();
-    this.#updateAutomaticTransport();
     this.#updateSalvage();
     this.#plyRoutes();
     this.#assignTaskQueues();
@@ -4624,7 +4558,6 @@ export class Game {
     this.#phase = 'planning';
     this.#simulation = null;
     this.#activateShipOrders();
-    this.#updateAutomaticTransport();
     this.#assignTaskQueues();
   }
   #settleYear(): void {
@@ -4912,7 +4845,6 @@ export class Game {
     if (!this.#research.completed.has('Trade logistics'))
       throw new Error('Research Trade logistics first.');
     const id = this.#logistics.create(a, b, this.#logisticsPort());
-    this.#updateAutomaticTransport();
     return id;
   }
   assignTradeFleet(routeId: string, fleetId: string): void {
@@ -6734,12 +6666,7 @@ export class Game {
       fleet.destination = null;
       delete fleet.courseOrigin;
     }
-    if (
-      fleet.automation &&
-      !(fleet.automation === 'salvage'
-        ? fleet.ships['Salvage ship']
-        : fleet.ships['Transport ship'] || fleet.ships['Civilian shuttle'])
-    ) {
+    if (fleet.automation && !fleet.ships['Salvage ship']) {
       this.#cancelFleetUpgrade(fleet);
       delete fleet.pendingOrder;
       delete fleet.automation;
