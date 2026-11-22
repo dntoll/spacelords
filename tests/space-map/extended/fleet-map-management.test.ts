@@ -94,36 +94,6 @@ it('forskade-automatiska-order: Auto salvage is visible but locked before resear
   second.view.dispose();
 });
 
-it('guard-routes: is available without research and waits when no transport route exists', () => {
-  const initial = tradeNetworkState(false);
-  let saved: GameState = {
-    ...initial,
-    researched: [...initial.researched],
-    pirates: [],
-  };
-  const model = new AppModel(undefined, {
-    load: () => ({ lastPlayed: '2026-10-30', state: saved }),
-    save(_slot, next) {
-      saved = { ...next.state, researched: [...next.state.researched] };
-    },
-    clear() {},
-  });
-  model.startSlot(1);
-  model.openFleet('fleet-home');
-  const { root, click, view } = setup(model);
-  click('Orders');
-  const guard = root.querySelector<HTMLButtonElement>(
-    '[aria-label="Guard routes"]',
-  )!;
-  expect(guard.disabled).toBe(false);
-  click('Guard routes');
-  expect(
-    model.snapshot.fleets.find((fleet) => fleet.id === 'fleet-home')!
-      .automation,
-  ).toBe('guard');
-  view.dispose();
-});
-
 function setup(model = new AppModel()) {
   const root = document.createElement('div');
   document.body.append(root);

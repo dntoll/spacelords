@@ -70,7 +70,6 @@ export class OrderFacade {
     } else if (
       kind === 'auto-salvage' ||
       kind === 'civilian-transport' ||
-      kind === 'guard-routes' ||
       kind === 'explore' ||
       kind === 'explore-stars'
     )

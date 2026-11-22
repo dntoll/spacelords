@@ -95,22 +95,3 @@ export function nearestLeastMannedRoute(
         a.id.localeCompare(b.id),
     )[0];
 }
-
-/** guard-routes: only routes that already have a Transport ship. */
-export function nearestUnguardedRoute(
-  origin: HexCoordinate,
-  routes: readonly TradeRouteSnapshot[],
-  fleets: readonly FleetSnapshot[],
-): TradeRouteSnapshot | undefined {
-  return [...routes]
-    .filter(
-      (route) =>
-        !route.closing && routeEscortTargets(route.id, fleets).length > 0,
-    )
-    .sort(
-      (a, b) =>
-        routeEscortCount(a.id, fleets) - routeEscortCount(b.id, fleets) ||
-        routeDistance(a, origin) - routeDistance(b, origin) ||
-        a.id.localeCompare(b.id),
-    )[0];
-}

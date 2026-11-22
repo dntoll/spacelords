@@ -15,11 +15,7 @@ export type ShipOrder =
   | { readonly kind: 'explore-planet'; readonly planetId: string }
   | {
       readonly kind:
-        | 'auto-salvage'
-        | 'civilian-transport'
-        | 'guard-routes'
-        | 'explore'
-        | 'explore-stars';
+        'auto-salvage' | 'civilian-transport' | 'explore' | 'explore-stars';
     };
 export type OrderKind = ShipOrder['kind'] | 'upgrade' | 'return-shipyard';
 export interface OrderOption {
@@ -106,11 +102,6 @@ export class ShipOrders {
     }
     if (armedShipCount(ships)) {
       add(
-        'guard-routes',
-        'Guard routes',
-        'Join the nearest trade route that has transports but few escorts.',
-      );
-      add(
         'patrol',
         'Patrol',
         'Choose a position on the map, then patrol around it.',
@@ -183,7 +174,6 @@ export class ShipOrders {
       'explore-planet': 'Explore planet',
       'auto-salvage': 'Auto salvage',
       'civilian-transport': 'Civilian transport',
-      'guard-routes': 'Guard routes',
       explore: 'Explore',
       'explore-stars': 'Explore stars',
     }[order.kind];
@@ -223,7 +213,6 @@ export class ShipOrders {
       ![
         'auto-salvage',
         'civilian-transport',
-        'guard-routes',
         'explore',
         'explore-stars',
       ].includes(order.kind)

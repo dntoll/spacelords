@@ -1,6 +1,6 @@
 # Flottor och order
 
-> Historisk beskrivning från `simple_production`: `befolkningsutjamning-i-grupp`
+> Historisk beskrivning från `simple_production`: `befolkningsutjamning-i-grupp` och `guard-routes`
 > har tagits bort i `single_fleet`. Övrig äldre mekanik rensas stegvis enligt
 > [rensningsplanen](../single-fleet-cleanup.md).
 
@@ -36,8 +36,8 @@ uppdrag till lediga flottor.
 
 - **Orders och startorder:** `egen-ordervy`, `ruttval-for-order`,
   `flottval-pa-orderkarta`, `skeppsanpassade-specialorder`,
-  `patrullcentrum-vid-order`, `startorder-for-nybyggda-skepp` och
-  `guard-routes` är **Fullständigt implementerat**. Orders samlar
+  `patrullcentrum-vid-order` och `startorder-for-nybyggda-skepp` är
+  **Fullständigt implementerat**. `guard-routes` är borttaget i `single_fleet`. Orders samlar
   specialorder med tydliga namn, ruttlista och val av mottagande flotta på
   kartan. Fighters har Guard routes som startorder. Move och Stop behålls i
   flottvyn. Samma val kan göras för skepp som beställs. Se

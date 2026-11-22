@@ -82,7 +82,6 @@ describe('startorder-for-nybyggda-skepp / flottval-pa-orderkarta', () => {
   });
   it.each<{ ship: Exclude<ShipType, 'Space pirate'>; order: ShipOrder }>([
     { ship: 'Salvage ship', order: { kind: 'auto-salvage' } },
-    { ship: 'Fighter', order: { kind: 'guard-routes' } },
     { ship: 'Exploration ship', order: { kind: 'explore' } },
     { ship: 'Exploration ship', order: { kind: 'explore-stars' } },
     { ship: 'Fighter', order: { kind: 'patrol', position: { q: 7, r: 0 } } },
@@ -138,8 +137,6 @@ describe('startorder-for-nybyggda-skepp / flottval-pa-orderkarta', () => {
       expect(fleet.pendingOrder).toBeUndefined();
       if (order.kind === 'auto-salvage')
         expect(fleet.automation).toBe('salvage');
-      else if (order.kind === 'guard-routes')
-        expect(fleet.automation).toBe('guard');
       else if (order.kind === 'patrol')
         expect(fleet.patrol!.center).toEqual(order.position);
       else if (order.kind === 'civilian-transport')

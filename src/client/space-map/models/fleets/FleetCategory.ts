@@ -49,7 +49,7 @@ export function fleetCategory(fleet: FleetSnapshot): FleetCategory {
     return 'Exploration';
   if (fleet.salvage || fleet.automation === 'salvage' || fleet.towing?.length)
     return 'Salvage';
-  if (fleet.patrol || fleet.automation === 'guard') return 'Combat';
+  if (fleet.patrol) return 'Combat';
   const kinds = new Set(
     (Object.keys(fleet.ships) as ShipType[])
       .filter((type) => fleet.ships[type] > 0)

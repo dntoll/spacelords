@@ -147,7 +147,7 @@ export interface FleetSnapshot {
   readonly civilian?: Readonly<
     Omit<CivilianOrder, 'path'> & { readonly path: readonly string[] }
   >;
-  readonly automation?: 'salvage' | 'transport' | 'guard';
+  readonly automation?: 'salvage' | 'transport';
   readonly homeRouteId?: string;
   readonly colonizationTargetId?: string;
   readonly explorationTargetId?: string;

@@ -4,7 +4,6 @@ import {
   TECHNOLOGIES,
 } from '../../../src/client/space-map/models/Game.js';
 import { RETIRED_ORDER_TECHNOLOGIES } from '../../../src/client/space-map/models/research/Research.js';
-import { ShipOrders } from '../../../src/client/space-map/models/ShipOrders.js';
 import {
   distantTradeNetworkState,
   tradeNetworkState,
@@ -172,73 +171,6 @@ describe('ombemanning-vid-stangd-farled', () => {
     game.closeTradeRoute('route-test');
     expect(game.fleet('freighters')!.routeId).toBeUndefined();
     expect(game.fleet('freighters')!.automation).toBe('transport');
-  });
-});
-
-describe('guard-routes', () => {
-  it('is available at construction without research and waits when no escorted transport exists', () => {
-    const options = ShipOrders.options({ Fighter: 1 }, []);
-    const guard = options.find((option) => option.kind === 'guard-routes')!;
-    expect(guard.blockedReason).toBeNull();
-    const game = Game.restore({ ...tradeNetworkState(false), pirates: [] });
-    game.issueFleetOrder('fleet-home', { kind: 'guard-routes' });
-    expect(game.fleet('fleet-home')!.automation).toBe('guard');
-    expect(game.fleet('fleet-home')!.routeId).toBeUndefined();
-  });
-
-  it('joins the nearest route that has transports and the fewest escorts', () => {
-    const state = distantTradeNetworkState();
-    const game = Game.restore({
-      ...state,
-      pirates: [],
-      fleets: [
-        ...state.fleets.map((fleet) =>
-          fleet.id === 'freighters'
-            ? {
-                ...fleet,
-                ships: { ...fleet.ships, Fighter: 2 },
-              }
-            : fleet,
-        ),
-        {
-          ...state.fleets[0]!,
-          id: 'escorts',
-          name: 'Escorts',
-          ships: {
-            Fighter: 1,
-            'Exploration ship': 0,
-            'Colony ship': 0,
-            'Transport ship': 0,
-            'Civilian shuttle': 0,
-            'Space pirate': 0,
-            'Salvage ship': 0,
-            Raptor: 0,
-          },
-          shipUnits: [
-            {
-              id: 'escort-fighter',
-              type: 'Fighter' as const,
-              engines: { 'Rocket engine': 1, 'Ion pulse engine': 0 },
-              missiles: 0,
-            },
-          ],
-          position: { q: 0, r: 0 },
-          destination: null,
-        },
-      ],
-    });
-    game.issueFleetOrder('escorts', { kind: 'guard-routes' });
-    expect(
-      game
-        .fleetSnapshots()
-        .some(
-          (fleet) =>
-            fleet.joinFleetId === 'travellers' && fleet.ships.Fighter === 1,
-        ),
-    ).toBe(true);
-    expect(
-      game.fleetSnapshots().some((fleet) => fleet.joinFleetId === 'freighters'),
-    ).toBe(false);
   });
 });
 

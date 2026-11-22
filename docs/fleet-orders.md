@@ -1,5 +1,8 @@
 # Orders för flottor och nybyggda skepp
 
+> `guard-routes` har tagits bort i `single_fleet`. Övriga äldre order
+> rensas stegvis enligt [rensningsplanen](single-fleet-cleanup.md).
+
 Kraven nedan är **Fullständigt implementerat**.
 
 - `egen-ordervy`: flottans orderrad har Move, Stop och Orders. Orders öppnar

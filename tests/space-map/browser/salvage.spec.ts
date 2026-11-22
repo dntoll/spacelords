@@ -10,7 +10,6 @@ import { FleetMapLayout } from '../../../src/client/space-map/models/star-map/Fl
 import { salvageMarkers } from '../../../src/client/space-map/models/star-map/SalvageMapLayout.js';
 import { salvageState } from '../../fixtures/salvage.js';
 import { discoveryState } from '../../fixtures/exploration.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { selectMapPoint } from './map-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 import { endTurn, startFirstSlot, ignoreEventsUntil } from './save-helpers.js';
@@ -100,35 +99,6 @@ test('automatisk-bargning: Auto salvage persists, delivers a wreck and then rese
     .getByRole('button', { name: 'Cancel automatic order', exact: true })
     .click();
   expect((await saved(page)).fleets[0]!.automation).toBeUndefined();
-});
-
-test('guard-routes: Guard routes joins a transport route and preserves the assignment on reload', async ({
-  page,
-}, testInfo) => {
-  const initial = tradeNetworkState();
-  await load(page, {
-    ...initial,
-    pirates: [],
-    fleets: initial.fleets.map((fleet) =>
-      fleet.id === 'freighters' ? { ...fleet, routeId: 'route-test' } : fleet,
-    ),
-  });
-  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await selectMapFleet(page, 'Home Fleet');
-  await chooseFleetOrder(page, 'Guard routes');
-  const after = await saved(page);
-  expect(
-    after.fleets.find((fleet) => fleet.id === 'freighters')!.ships.Fighter,
-  ).toBeGreaterThan(0);
-  await page.screenshot({
-    path: testInfo.outputPath('guard-routes.png'),
-  });
-  await page.reload();
-  await startFirstSlot(page);
-  expect(
-    (await saved(page)).fleets.find((fleet) => fleet.id === 'freighters')!.ships
-      .Fighter,
-  ).toBeGreaterThan(0);
 });
 
 test('bargningsorder-fran-flotta: choose Salvage and a wreck, reload and pick it up automatically', async ({
