@@ -4,8 +4,6 @@ import { FleetMapLayout } from '../../models/star-map/FleetMapLayout.js';
 import type { FleetSnapshot } from '../../models/Game.js';
 import type { ShipSpriteType } from '../ShipImages.js';
 import { HexGeometry, type Point } from '../../../common/HexCoordinate.js';
-import { fleetCategory } from '../../models/fleets/FleetCategory.js';
-import { FLEET_CATEGORY_COLORS } from '../FleetCategoryColors.js';
 
 export function renderMapFleets(
   sketch: p5,
@@ -71,16 +69,13 @@ export function renderMapFleets(
     const hostile = pirateIds.includes(fleet.id);
     const selected = interaction.mapFleetId === fleet.id;
     const hovered = interaction.hoveredFleetId === fleet.id;
-    // flottkategorier: the Fleets map colours each fleet by its category.
     const color = hostile
       ? '#ff8e85'
       : selected
         ? '#ffdc88'
         : hovered
           ? '#d5fff6'
-          : showUnselectedRings
-            ? FLEET_CATEGORY_COLORS[fleetCategory(fleet)]
-            : '#72d8ca';
+          : '#72d8ca';
     if (hostile || selected || hovered || showUnselectedRings) {
       const context = sketch.drawingContext as
         CanvasRenderingContext2D | undefined;

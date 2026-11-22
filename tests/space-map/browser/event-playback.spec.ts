@@ -10,18 +10,12 @@ import { collectTurnFrames } from '../../fixtures/turn-steps.js';
 import { startFirstSlot } from './save-helpers.js';
 import { researchStationState } from '../../fixtures/research-station.js';
 
-async function seed(page: Page, twoFleets = false) {
+async function seed(page: Page) {
   const game = Game.restore(researchStationState());
   collectTurnFrames(game);
   game.finishTurn();
   game.selectResearch('Rocket engine factory');
-  let secondId: string | null = null;
-  if (twoFleets) {
-    game.transferShips('fleet-home', 'Fighter', 1, null);
-    secondId = game.fleetSnapshots()[1]!.id;
-    game.setDestination(secondId, new HexCoordinate(0, 3));
-  }
-  game.setDestination('fleet-home', new HexCoordinate(twoFleets ? 4 : 3, 0));
+  game.setDestination('fleet-home', new HexCoordinate(3, 0));
   await page.addInitScript((state) => {
     if (localStorage.getItem('event-playback-seeded')) return;
     localStorage.setItem('event-playback-seeded', 'yes');
@@ -34,7 +28,7 @@ async function seed(page: Page, twoFleets = false) {
   await page.goto('./');
   await startFirstSlot(page);
   await expect(page.locator('canvas[data-rendered="true"]')).toBeVisible();
-  return { secondId, homeHex: game.galaxy.homePlanet.position.key };
+  return { homeHex: game.galaxy.homePlanet.position.key };
 }
 
 async function requestTurn(page: Page) {
@@ -245,62 +239,6 @@ test('handelseannonsering / handelser-pa-kartan / handelser-vid-ankomst: announc
   await console.locator('summary').click();
   await expect(log.locator('[data-event-id]')).toHaveCount(3);
   expect(errors).toEqual([]);
-});
-
-test('en-flotta-i-taget / osynliga-flottor-utan-animation: full fleet routes are framed, unseen pirates are omitted and the original camera returns', async ({
-  page,
-}, testInfo) => {
-  await page.clock.install({ time: new Date('2026-10-30T00:00:00Z') });
-  await page.setViewportSize({ width: 393, height: 851 });
-  const { secondId } = await seed(page, true);
-  await page.clock.pauseAt(new Date('2026-10-30T01:00:00Z'));
-  const camera = await page.getByTestId('camera-position').textContent();
-  const canvas = page.locator('canvas[data-rendered="true"]');
-  await canvas.evaluate((node) => {
-    const seen: string[] = [];
-    new MutationObserver(() => {
-      const id = (node as HTMLElement).dataset.movingFleet;
-      if (id && seen.at(-1) !== id) seen.push(id);
-      (node as HTMLElement).dataset.observedMovement = JSON.stringify(seen);
-    }).observe(node, {
-      attributes: true,
-      attributeFilter: ['data-moving-fleet'],
-    });
-  });
-  await requestTurn(page);
-  await advanceUntil(page, async () => {
-    const id = await canvas.getAttribute('data-moving-fleet');
-    const progress = Number(await canvas.getAttribute('data-moving-progress'));
-    return id === 'fleet-home' && progress > 0 && progress < 1;
-  });
-  await noMenu(page);
-  await expect(
-    page.getByRole('button', { name: 'End turn', exact: true }),
-  ).toBeDisabled();
-  expect(
-    await page.evaluate(
-      () =>
-        (
-          JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as {
-            state: { round: number };
-          }
-        ).state.round,
-    ),
-  ).toBe(3);
-  await page.screenshot({
-    path: testInfo.outputPath('single-fleet-movement.png'),
-  });
-  await advanceUntil(page, () =>
-    page.getByRole('button', { name: 'End turn', exact: true }).isEnabled(),
-  );
-  await page.clock.runFor(32);
-  await expect(canvas).toHaveAttribute(
-    'data-observed-movement',
-    JSON.stringify(['fleet-home', secondId]),
-  );
-  await expect(page.locator('.selection-panel')).toBeVisible();
-  await expect(page.getByTestId('camera-position')).toHaveText(camera!);
-  await noOverflow(page);
 });
 
 for (const size of [

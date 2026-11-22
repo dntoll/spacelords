@@ -68,40 +68,6 @@ describe('tactical combat integration', () => {
     expect(restored.interruption!.battles).toHaveLength(2);
   });
 
-  it('gemensamt-stridsdeltagande / sparad-taktisk-strid: a merged reinforcement report still restores and points at its surviving fleet', () => {
-    const state = encounterGame().exportState();
-    const fleet = state.fleets[0]!;
-    const game = Game.restore({
-      ...state,
-      phase: 'planning',
-      simulation: null,
-      pirates: [{ ...state.pirates![0]!, position: { q: 8, r: -3 } }],
-      fleets: [
-        {
-          ...fleet,
-          id: 'a',
-          name: 'Incoming',
-          shipUnits: [],
-          position: { q: 7, r: -4 },
-          destination: { q: 8, r: -4 },
-          joinFleetId: 'b',
-        },
-        { ...fleet, id: 'b', name: 'Target', shipUnits: [] },
-      ],
-    });
-    game.startTurn();
-    for (let step = 0; !game.tacticalBattle && step < 20; step++) {
-      if (game.phase === 'interrupted') game.continueTurn();
-      game.applyFrame(game.nextTurnFrame()!);
-    }
-    completeTacticalBattles(game);
-    expect(game.fleet('a')).toBeNull();
-    expect(game.interruption!.battles![0]!.fleetId).toBe('b');
-    expect(Game.restore(game.exportState()).exportState()).toEqual(
-      game.exportState(),
-    );
-  });
-
   it('gemensamt-stridsdeltagande / sparad-taktisk-strid: pauses with all ships, locks orders, and cannot skip a battle', () => {
     const game = encounterGame();
     const state = game.exportState();

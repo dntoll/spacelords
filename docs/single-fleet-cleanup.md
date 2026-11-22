@@ -74,9 +74,19 @@ spelbar, men bevara fristående strids- och bordningstester.
   - [x] `Colony`, `Planet.colony` och `owned` i kartcellerna är borta.
         Galaxen anger startplaneten uttryckligen (`homePlanetId`, sparas i
         `world`); ingen äger den.
-- [ ] Ta bort flera spelarflottor, flottadministration, automatiska order
+- [x] Ta bort flera spelarflottor, flottadministration, automatiska order
       och planetköer med deras vyer, tester och krav; behåll skepps- och
       stridsfunktioner som behövs för den kommande flottan.
+  - [x] Ta bort `Orders` och alla automatiska order (Explore, Explore
+        stars, Explore planet, Patrol, Join fleet, väntande startorder och
+        pausade order), förstärkningar, skeppsöverföring, nya och raderade
+        flottor, flottkategorier och val av order för andra flottor under
+        avbrott. Kvar är Move och Stop. Ett Exploration ship utforskar
+        fortfarande planeter det står på.
+  - [ ] `Game` och vyerna hanterar fortfarande en lista med flottor
+        (`fleets`). Att göra om till en enda flotta och att ersätta `Fleets`
+        med en skeppsöversikt hör till `enda-spelarflottan` och
+        `fleet-som-skeppsoversikt`, som väntar på beslut.
   - [x] Ta bort bärgning, vrak, orbitala varv, reparationer och
         uppgraderingsordern vid varv, som alla krävde spelarens planeter.
         `Salvage ship` finns kvar som skeppstyp.

@@ -1,16 +1,9 @@
-import { Game } from '../../../src/client/space-map/models/Game.js';
-import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderFleetCard } from '../../../src/client/space-map/views/FleetCard.js';
-import { renderFleetOrders } from '../../../src/client/space-map/views/fleets/FleetOrdersView.js';
-import type { IntentHandler } from '../../../src/client/app/views/ViewContracts.js';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import { playerNoticeText } from '../../../src/client/app/views/playerNoticeText.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
-import { BrowserSaveRepository } from '../../../src/client/space-map/storage/BrowserSaveRepository.js';
 import {
   HexCoordinate,
   HexGeometry,
@@ -40,99 +33,13 @@ describe('flottadministration / flottval-pa-kartan', () => {
   it('shows ships directly without an expansion control or help disclosure', () => {
     const { root } = setup();
     const panel = root.querySelector('.map-fleet-management')!;
-    expect(panel.querySelectorAll('.ship-token')).toHaveLength(2);
+    expect(
+      panel.querySelectorAll('.ship-manifest .ship-portrait'),
+    ).toHaveLength(2);
     expect(panel.querySelector('.fleet-panel-sizing')).toBeNull();
     expect(panel.querySelector('.fleet-panel-help')).toBeNull();
     expect(panel.textContent).not.toContain('Expand fleet panel');
     expect(panel.textContent).not.toContain('Help');
-  });
-  it('shows only fleets at the panel location and preserves hex selection on fleet selection', () => {
-    const { model, root, view } = setup();
-    model.transferShips('fleet-home', 'Fighter', 1, null);
-    const other = model.snapshot.fleets[1]!;
-    model.select(new HexCoordinate(0, 1));
-    view.render(model.snapshot);
-    expect(root.querySelectorAll('.map-fleet-cards .fleet-card')).toHaveLength(
-      0,
-    );
-    model.selectMapFleet(other.id);
-    view.render(model.snapshot);
-    expect(model.snapshot.selected?.position.key).toBe('0,1');
-    expect(root.querySelectorAll('.map-fleet-cards .fleet-card')).toHaveLength(
-      2,
-    );
-    expect(root.querySelector('.fleet-place')?.textContent).toContain('Tellus');
-    expect(root.querySelector('.fleet-place')?.textContent).not.toContain(
-      '1,0',
-    );
-    expect(
-      root.querySelector('.selected-fleet-card')?.getAttribute('data-fleet-id'),
-    ).toBe(other.id);
-  });
-
-  it('creates a fleet atomically from a chosen ship and can move it back on the map', () => {
-    const { model, root, click } = setup();
-    click('Fighter 1 in Home Fleet');
-    click('Move ship to new fleet');
-    expect(model.snapshot.screen).toBe('map');
-    const created = model.snapshot.fleets[1]!;
-    expect(created.ships.Fighter).toBe(1);
-    expect(created.position?.key).toBe('1,0');
-    expect(model.snapshot.shipTransfer).toBeNull();
-    expect(
-      root.querySelector<HTMLInputElement>('[aria-label="Fleet name"]')?.value,
-    ).toBe(created.name);
-    const input = root.querySelector<HTMLInputElement>(
-      '[aria-label="Fleet name"]',
-    )!;
-    input.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
-    );
-    click(`Fighter 1 in ${created.name}`);
-    click('Move ship to Home Fleet');
-    expect(model.snapshot.fleets[0]!.ships.Fighter).toBe(1);
-    expect(model.snapshot.fleets[1]!.position).toBeNull();
-    expect(root.querySelectorAll('.map-fleet-cards .fleet-card')).toHaveLength(
-      1,
-    );
-  });
-
-  it('keeps invalid and cancelled drops from creating empty fleets', () => {
-    const { model, root, click } = setup();
-    const token = root.querySelector<HTMLElement>(
-      '[aria-label="Fighter 1 in Home Fleet"]',
-    )!;
-    expect(token).not.toBeNull();
-    token.setPointerCapture = vi.fn();
-    token.hasPointerCapture = () => false;
-    const panel = root.querySelector<HTMLElement>('.map-fleet-management')!;
-    Object.defineProperty(document, 'elementFromPoint', {
-      configurable: true,
-      value: () => root.querySelector('[data-new-fleet]'),
-    });
-    const pointer = (type: string, x: number) => {
-      const event = new MouseEvent(type, {
-        bubbles: true,
-        clientX: x,
-        clientY: 10,
-      });
-      Object.defineProperties(event, {
-        pointerId: { value: 1 },
-        pointerType: { value: 'mouse' },
-      });
-      return event;
-    };
-    token.dispatchEvent(pointer('pointerdown', 10));
-    panel.dispatchEvent(pointer('pointermove', 70));
-    panel.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
-    );
-    panel.dispatchEvent(pointer('pointerup', 70));
-    expect(model.snapshot.fleets).toHaveLength(1);
-    click('Fighter 1 in Home Fleet');
-    click('Cancel ship transfer');
-    expect(model.snapshot.shipTransfer).toBeNull();
-    expect(model.snapshot.fleets).toHaveLength(1);
   });
 });
 
@@ -225,165 +132,5 @@ describe('flottknappar-pa-kartan / flottadministration', () => {
       HexGeometry.toPoint(model.snapshot.fleets[0]!.position!),
     );
     expect(model.snapshot.camera.zoom).toBe(1.5);
-  });
-});
-
-describe('flottadministration / skepp-till-rorlig-flotta / forstarka-ruttflotta', () => {
-  function network() {
-    const state = tradeNetworkState();
-    const model = new AppModel(undefined, {
-      load: () => ({ lastPlayed: '2026-10-21T10:00:00Z', state }),
-      save() {},
-      clear() {},
-    });
-    model.startSlot(1);
-    return setup(model);
-  }
-
-  it('sends a chosen map ship to a distant fleet as a real reinforcement', () => {
-    const { model, root, click } = network();
-    click('Fighter 1 in Home Fleet');
-    const receiving = root.querySelector<HTMLSelectElement>(
-      '[aria-label="Receiving fleet"]',
-    )!;
-    expect(receiving.textContent).toContain('Travellers · En route');
-    receiving.value = 'travellers';
-    receiving.dispatchEvent(new Event('change', { bubbles: true }));
-    const reinforcement = model.snapshot.fleets.find(
-      (fleet) => fleet.joinFleetId === 'travellers',
-    )!;
-    expect(reinforcement.position?.key).toBe('1,0');
-    expect(reinforcement.ships.Fighter).toBe(1);
-    expect(
-      model.snapshot.fleets.find((fleet) => fleet.id === 'travellers')!.ships
-        .Fighter,
-    ).toBe(0);
-    expect(
-      root
-        .querySelector(`[data-fleet-id="${reinforcement.id}"]`)!
-        .getAttribute('aria-description'),
-    ).toContain('En route to Travellers');
-  });
-});
-
-describe('flottadministration / flottnamn-direktredigering / sparat-spel', () => {
-  it('restores the new fleet and its name without persisting an unfinished edit', () => {
-    const storage = new Map<string, string>();
-    const repository = new BrowserSaveRepository({
-      getItem: (key) => storage.get(key) ?? null,
-      setItem: (key, value) => {
-        storage.set(key, value);
-      },
-      removeItem: (key) => {
-        storage.delete(key);
-      },
-    });
-    const model = new AppModel(undefined, repository);
-    model.startSlot(1);
-    const { root, click } = setup(model);
-    click('Fighter 1 in Home Fleet');
-    click('Move ship to new fleet');
-    let input = root.querySelector<HTMLInputElement>(
-      '[aria-label="Fleet name"]',
-    )!;
-    input.value = 'Vanguard';
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input = root.querySelector<HTMLInputElement>('[aria-label="Fleet name"]')!;
-    input.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
-    );
-    root
-      .querySelector('[aria-label="Fleet Vanguard"] .fleet-name-button')!
-      .dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-    input = root.querySelector<HTMLInputElement>('[aria-label="Fleet name"]')!;
-    input.value = 'Unsaved name';
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    const restored = new AppModel(undefined, repository);
-    restored.startSlot(1);
-    expect(restored.snapshot.fleets[1]!.name).toBe('Vanguard');
-    expect(restored.snapshot.fleets[1]!.ships.Fighter).toBe(1);
-    expect(restored.snapshot.fleetNameEdit).toBeNull();
-  });
-});
-
-describe('flottpatrullering', () => {
-  it('routes Patrol and Cancel patrol through the controller and exposes a frozen readable status', () => {
-    const model = new AppModel(undefined, {
-      load: () => ({
-        lastPlayed: '2026-10-30',
-        state: {
-          ...new Game(createExampleGalaxy()).exportState(),
-          researched: ['Fleet patrol'],
-        },
-      }),
-      save() {},
-      clear() {},
-    });
-    model.startSlot(1);
-    let emit: IntentHandler = () => {};
-    const controller = new MasterController(model, {
-      bind(handler) {
-        emit = handler;
-      },
-      render() {},
-      dispose() {},
-    });
-    controller.start();
-    const card = () =>
-      renderFleetCard(model.snapshot.fleets[0]!, model.snapshot, emit);
-    const control = card().querySelector<HTMLButtonElement>(
-      '[aria-label="Orders"]',
-    )!;
-    expect(control.disabled).toBe(false);
-    control.click();
-    emit({ type: 'order-kind', kind: 'patrol' });
-    emit({ type: 'select', position: model.snapshot.fleets[0]!.position! });
-    const fleet = model.snapshot.fleets[0]!;
-    expect(fleet.patrol?.center).toEqual(fleet.position);
-    expect(Object.isFrozen(fleet.patrol)).toBe(true);
-    expect(Object.isFrozen(fleet.patrol!.center)).toBe(true);
-    const active = card();
-    expect(active.querySelector('[aria-label="Patrol"]')).toBeNull();
-    expect(active.querySelector('.fleet-patrol-status')?.textContent).toBe(
-      'Patrol: range 3 hex',
-    );
-    expect(active.getAttribute('aria-description')).toContain(
-      'Patrol: range 3 hex',
-    );
-    expect(
-      active
-        .querySelector('[aria-label="Choose destination for Home Fleet"]')
-        ?.getAttribute('aria-pressed'),
-    ).toBe('false');
-    active
-      .querySelector<HTMLButtonElement>('[aria-label="Cancel patrol"]')!
-      .click();
-    expect(model.snapshot.fleets[0]!.patrol).toBeUndefined();
-    expect(model.snapshot.fleets[0]!.destination).toBeNull();
-    controller.dispose();
-  });
-
-  it('offers Patrol only for non-route Fighter fleets and respects order locks', () => {
-    const model = new AppModel();
-    const fleet = model.snapshot.fleets[0]!;
-    for (const unavailable of [
-      { ...fleet, ships: { ...fleet.ships, Fighter: 0 } },
-      { ...fleet, routeId: 'route-test' },
-    ]) {
-      expect(
-        renderFleetOrders(unavailable, model.snapshot, () => {}).querySelector(
-          '[aria-label="Patrol"]',
-        ),
-      ).toBeNull();
-    }
-    const locked = renderFleetOrders(
-      { ...fleet, canIssueOrders: false },
-      model.snapshot,
-      () => {},
-    );
-    expect(
-      locked.querySelector<HTMLButtonElement>('[aria-label="Orders"]')!
-        .disabled,
-    ).toBe(true);
   });
 });

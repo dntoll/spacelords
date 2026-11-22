@@ -6,7 +6,6 @@ import {
 } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
-import { nearestUnexplored } from '../../../src/client/space-map/models/TurnSimulation.js';
 import { collectTurnFrames } from '../../fixtures/turn-steps.js';
 
 function explorationGame() {
@@ -65,84 +64,6 @@ function finish(game: Game, start = true) {
   game.finishTurn();
 }
 
-describe('automatisk-hexutforskning / automatisk-stjarnutforskning', () => {
-  it('chooses minimum distance and coordinate ties independently of candidate order', () => {
-    const origin = new HexCoordinate(0, 0);
-    const candidates = [
-      new HexCoordinate(2, 0),
-      new HexCoordinate(1, 0),
-      new HexCoordinate(-1, 1),
-    ];
-    expect(nearestUnexplored(origin, candidates, new Set())?.key).toBe('-1,1');
-    expect(
-      nearestUnexplored(origin, candidates.reverse(), new Set(['-1,1']))?.key,
-    ).toBe('1,0');
-  });
-  it('retargets within the year and persists Explore until a manual order replaces it', () => {
-    const game = explorationGame();
-    game.setExploration('fleet-home', 'explore');
-    const before = game.fleet('fleet-home')!;
-    expect(before.destination).not.toBeNull();
-    const frames = collectTurnFrames(game);
-    expect(
-      frames
-        .flatMap((frame) => frame.movements)
-        .filter((movement) => movement.fleetId === before.id),
-    ).toHaveLength(before.speed);
-    game.finishTurn();
-    expect(game.fleet(before.id)!.exploration).toBe('explore');
-    const loaded = Game.restore(game.exportState());
-    expect(loaded.fleet(before.id)!.exploration).toBe('explore');
-    loaded.setDestination(before.id, new HexCoordinate(0, -1));
-    expect(loaded.fleet(before.id)!.exploration).toBeUndefined();
-    loaded.setExploration(before.id, 'explore');
-    loaded.clearDestination(before.id);
-    expect(loaded.fleet(before.id)!.exploration).toBeUndefined();
-  });
-  it('targets a known star position without exposing hidden planet details and stops when all stars are explored', () => {
-    const game = explorationGame();
-    game.setExploration('fleet-home', 'explore-stars');
-    const destination = game.fleet('fleet-home')!.destination!;
-    expect(
-      game.galaxy.systems.some(
-        (system) => system.star.position.distanceTo(destination) === 1,
-      ),
-    ).toBe(true);
-    expect(
-      game.mapSnapshot().find((cell) => cell.position.key === destination.key)!
-        .visible,
-    ).toBe(false);
-    const state = game.exportState();
-    const complete = Game.restore({
-      ...state,
-      explored: game.mapSnapshot().map((cell) => cell.position.key),
-      fleets: state.fleets.map((fleet) => {
-        const rest = { ...fleet };
-        delete rest.starSurvey;
-        return rest;
-      }),
-    });
-    finish(complete);
-    expect(complete.fleet('fleet-home')!.exploration).toBeUndefined();
-    expect(
-      complete.events.some((event) =>
-        event.text.includes('exploration stopped'),
-      ),
-    ).toBe(true);
-  });
-  it('rejects ships without explorers and stops an existing order when its explorer leaves', () => {
-    const game = explorationGame();
-    game.setExploration('fleet-home', 'explore');
-    game.transferShips('fleet-home', 'Exploration ship', 1, null);
-    expect(game.fleet('fleet-home')!.destination).toBeNull();
-    expect(() => game.setExploration('fleet-home', 'explore-stars')).toThrow(
-      'Exploration ship',
-    );
-    finish(game);
-    expect(game.fleet('fleet-home')!.exploration).toBeUndefined();
-  });
-});
-
 describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
   it('interrupts after simultaneous movement, before contact combat, and resolves that contact before new orders move', () => {
     const game = contact(0);
@@ -165,8 +86,6 @@ describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
     expect(() =>
       game.setDestination('other', new HexCoordinate(2, 0)),
     ).toThrow();
-    game.allowOtherFleetOrders();
-    game.setDestination('other', new HexCoordinate(2, 0));
     completeTacticalBattles(game);
     game.continueTurn();
     const combat = game.nextTurnFrame()!;
@@ -177,7 +96,6 @@ describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
     expect(game.fleet('fleet-home')!.position).toBeNull();
     finish(game, false);
     expect(game.round).toBe(2);
-    expect(game.fleet('other')!.position?.key).toBe('2,0');
     expect(() => game.finishTurn()).toThrow();
   });
   it('Ignore preserves orders and never grants another pirate step or another movement budget', () => {
@@ -254,8 +172,7 @@ describe('spara-avbrutet-ar', () => {
       interrupt(game);
       if (handling) {
         game.handleDiscoveries();
-        game.allowOtherFleetOrders();
-        game.setDestination('other', new HexCoordinate(2, 0));
+        game.setDestination('fleet-home', new HexCoordinate(2, 0));
       }
       const saved = JSON.parse(JSON.stringify(game.exportState())) as GameState;
       const loaded = Game.restore(saved);

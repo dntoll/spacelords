@@ -40,8 +40,8 @@ describe('sparat-spel / frontend-backend-mock', () => {
     expect(restored.exportState()).toEqual(game.exportState());
     expect(restored.mapSnapshot()).toEqual(game.mapSnapshot());
     expect(restored.fleetSnapshots()).toEqual(game.fleetSnapshots());
-    restored.transferShips('fleet-home', 'Fighter', 1, null);
-    game.transferShips('fleet-home', 'Fighter', 1, null);
+    restored.setDestination('fleet-home', new HexCoordinate(4, 0));
+    game.setDestination('fleet-home', new HexCoordinate(4, 0));
     expect(restored.exportState()).toEqual(game.exportState());
   });
   it('keeps three slots independent across application instances', () => {

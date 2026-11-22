@@ -1,13 +1,9 @@
-import { ShipOrders, type ShipOrder } from './ShipOrders.js';
-import { engineCount, armedShipCount } from './ShipEquipment.js';
-import { FleetPatrol, type PatrolOrder } from './FleetPatrol.js';
+import { engineCount } from './ShipEquipment.js';
 export { engineCount } from './ShipEquipment.js';
 import {
   TurnSimulation,
-  nearestUnexplored,
   type BattleReport,
   type Discovery,
-  type ExplorationOrder,
   type SavedTurnSimulation,
 } from './TurnSimulation.js';
 import { Detection } from './Detection.js';
@@ -31,7 +27,7 @@ import {
   type BoardingShot,
 } from '../../boarding/models/index.js';
 import { Galaxy, Star, StarSystem, type MapCell } from './Galaxy.js';
-import { HexCoordinate, HexGeometry } from '../../common/HexCoordinate.js';
+import { HexCoordinate } from '../../common/HexCoordinate.js';
 import { HexNavigation } from './HexNavigation.js';
 import type { TerrainHex } from './Galaxy.js';
 import {
@@ -80,20 +76,8 @@ export interface TurnFrame {
 }
 
 interface Fleet {
-  pendingOrder?: ShipOrder;
-  ordersPaused?: boolean;
-  explorationTargetId?: string;
   navigationIssue?: string;
-  starSurvey?: {
-    starId: string;
-    startIndex: number;
-    completed: number;
-    arrived: boolean;
-  };
-  patrol?: PatrolOrder;
-  exploration?: ExplorationOrder;
   shipUnits?: ShipUnit[];
-  joinFleetId?: string;
   id: string;
   name: string;
   position: HexCoordinate | null;
@@ -364,30 +348,6 @@ export class Game {
       ({ position: current, destination, courseOrigin, ships, ...rest }) => {
         const fleet = { ...rest, ships: { ...zeroShips(), ...ships } };
         const empty = game.#shipCount(fleet.ships) === 0;
-        if (
-          fleet.explorationTargetId !== undefined &&
-          (typeof fleet.explorationTargetId !== 'string' ||
-            !galaxy.systems.some((system) =>
-              system.planets.some(
-                (planet) => planet.id === fleet.explorationTargetId,
-              ),
-            ) ||
-            !fleet.ships['Exploration ship'] ||
-            fleet.patrol ||
-            fleet.exploration ||
-            fleet.joinFleetId)
-        )
-          throw new Error('Invalid saved planet exploration order.');
-        if (fleet.patrol !== undefined) {
-          FleetPatrol.validate(fleet.patrol, (point) => !!galaxy.cellAt(point));
-          if (
-            empty ||
-            !armedShipCount(fleet.ships) ||
-            fleet.joinFleetId ||
-            fleet.exploration
-          )
-            throw new Error('Invalid saved Patrol fleet.');
-        }
         if (!empty && !current)
           throw new Error('A fleet with ships needs a position.');
         return {
@@ -439,22 +399,6 @@ export class Game {
       )
         throw new Error('Invalid known terrain.');
     }
-    for (const fleet of game.#fleets) {
-      const survey = fleet.starSurvey;
-      if (
-        survey &&
-        (fleet.exploration !== 'explore-stars' ||
-          !galaxy.systems.some((system) => system.star.id === survey.starId) ||
-          !Number.isInteger(survey.startIndex) ||
-          survey.startIndex < 0 ||
-          survey.startIndex > 5 ||
-          !Number.isInteger(survey.completed) ||
-          survey.completed < 0 ||
-          survey.completed > 6 ||
-          typeof survey.arrived !== 'boolean')
-      )
-        throw new Error('Invalid star survey.');
-    }
     game.#events = copy.events
       .filter(
         (event) =>
@@ -501,9 +445,6 @@ export class Game {
           ...(valid ? { position: Object.freeze({ ...eventPosition }) } : {}),
         });
       });
-    for (const fleet of game.#fleets)
-      if (fleet.pendingOrder) ShipOrders.validate(fleet.pendingOrder);
-    game.#refreshReinforcements();
     game.#updateSight();
     if (!Array.isArray(copy.knownObjects))
       throw new Error('Missing discovered objects.');
@@ -655,23 +596,6 @@ export class Game {
     this.#requirePlanning();
     this.#research.remove(type);
   }
-  setPlanetExploration(fleetId: string, position: HexCoordinate): void {
-    this.#requireFleetOrders(fleetId);
-    const fleet = this.#fleetState(fleetId);
-    if (!fleet.ships['Exploration ship'])
-      throw new Error('An Exploration ship is required.');
-    const planet = this.galaxy.systems
-      .flatMap((system) => system.planets)
-      .find((candidate) => candidate.position.key === position.key);
-    if (
-      !planet ||
-      !this.#knownObjects.has(planet.id) ||
-      this.#surveyedPlanets.has(planet.id)
-    )
-      throw new Error('Choose a discovered unexplored planet.');
-    this.setDestination(fleetId, position);
-    fleet.explorationTargetId = planet.id;
-  }
 
   // planetutforskning-vid-ankomst: details are learned only after an
   // Exploration ship survives arrival and any combat at the planet.
@@ -690,13 +614,6 @@ export class Game {
       )
         continue;
       this.#surveyedPlanets.add(planet.id);
-      if (fleet.explorationTargetId === planet.id) {
-        delete fleet.explorationTargetId;
-        if (fleet.destination?.key === planet.position.key) {
-          fleet.destination = null;
-          delete fleet.courseOrigin;
-        }
-      }
       const eventId = this.#event(
         `Planet explored: ${planet.name} at HEX ${planet.position.key}.`,
         planet.position,
@@ -732,33 +649,7 @@ export class Game {
           id: fleet.id,
           name: this.#fleetDisplayName(fleet),
           ownName: fleet.name,
-          ...(fleet.pendingOrder
-            ? {
-                pendingOrder: Object.freeze(
-                  structuredClone(fleet.pendingOrder),
-                ),
-              }
-            : {}),
-          ...(fleet.explorationTargetId
-            ? { explorationTargetId: fleet.explorationTargetId }
-            : {}),
-          ...(fleet.ordersPaused ? { ordersPaused: true } : {}),
           detectionRange: this.#fleetDetectionRange(fleet),
-          ...(fleet.patrol
-            ? {
-                patrol: Object.freeze({
-                  center: new HexCoordinate(
-                    fleet.patrol.center.q,
-                    fleet.patrol.center.r,
-                  ),
-                  range: this.#speed(fleet),
-                  ...(fleet.patrol.targetPirateId
-                    ? { targetPirateId: fleet.patrol.targetPirateId }
-                    : {}),
-                }),
-              }
-            : {}),
-          exploration: fleet.exploration,
           navigationIssue: fleet.navigationIssue,
           remainingMovement: this.#simulation
             ? this.#simulation.movement(
@@ -786,7 +677,6 @@ export class Game {
           ),
           speed: this.#speed(fleet),
           crew: this.#crew(fleet.ships),
-          joinFleetId: fleet.joinFleetId,
           cargo: Object.freeze(this.#cargo(fleet.id)),
         }),
       ),
@@ -794,85 +684,6 @@ export class Game {
   }
   fleet(id: string): FleetSnapshot | null {
     return this.fleetSnapshots().find((fleet) => fleet.id === id) ?? null;
-  }
-
-  #validateShipOrder(
-    order: ShipOrder,
-    ships: Readonly<Partial<Record<ShipType, number>>>,
-  ): void {
-    ShipOrders.validate(order);
-    const option = ShipOrders.options(ships).find(
-      (option) => option.kind === order.kind,
-    );
-    if (!option) throw new Error('This ship cannot receive that order.');
-    if (option.blockedReason) throw new Error(option.blockedReason);
-    if (order.kind === 'join-fleet') {
-      const target = this.#fleets.find((fleet) => fleet.id === order.fleetId);
-      if (!target?.position) throw new Error('Choose a positioned fleet.');
-    } else if (order.kind === 'patrol') {
-      const center = new HexCoordinate(order.position.q, order.position.r);
-      if (!this.galaxy.cellAt(center) || !this.galaxy.isPassable(center))
-        throw new Error('Choose a passable Patrol center.');
-    } else if (order.kind === 'explore-planet') {
-      const planet = this.#planetById(order.planetId);
-      if (
-        !planet ||
-        !this.#knownObjects.has(planet.id) ||
-        this.#surveyedPlanets.has(planet.id)
-      )
-        throw new Error('Choose a discovered unexplored planet.');
-    }
-  }
-
-  issueFleetOrder(id: string, order: ShipOrder): void {
-    this.#requireFleetOrders(id);
-    const fleet = this.#fleetState(id);
-    this.#validateShipOrder(order, fleet.ships);
-    if (order.kind === 'join-fleet') {
-      if (order.fleetId === id) throw new Error('Choose another fleet.');
-      const target = this.#fleetState(order.fleetId);
-      // Validate the chain before replacing the current order.
-      for (
-        let cursor: Fleet | undefined = target;
-        cursor;
-        cursor = cursor.joinFleetId
-          ? this.#fleets.find((fleet) => fleet.id === cursor.joinFleetId)
-          : undefined
-      )
-        if (cursor.id === id)
-          throw new Error('Reinforcement orders cannot form a cycle.');
-      this.clearDestination(id);
-      fleet.joinFleetId = target.id;
-      fleet.destination = target.position;
-      fleet.courseOrigin = fleet.position!;
-      this.#refreshReinforcements();
-      this.#mergeReinforcements();
-    } else if (order.kind === 'patrol')
-      this.setPatrol(id, new HexCoordinate(order.position.q, order.position.r));
-    else if (order.kind === 'explore-planet') {
-      const planet = this.#planetById(order.planetId)!;
-      this.setPlanetExploration(id, planet.position);
-    } else this.setExploration(id, order.kind);
-  }
-
-  #activateShipOrders(): void {
-    for (const fleet of [...this.#fleets]) {
-      const order = fleet.pendingOrder;
-      if (!order) continue;
-      delete fleet.pendingOrder;
-      try {
-        this.issueFleetOrder(fleet.id, order);
-      } catch (error) {
-        fleet.navigationIssue = `Start order could not begin: ${error instanceof Error ? error.message : 'Choose another order.'}`;
-        this.#event(
-          `${fleet.name}: ${fleet.navigationIssue}`,
-          fleet.position ?? undefined,
-          undefined,
-          undefined,
-          this.#round - 1,
-        );
-      }
-    }
   }
 
   #hostileAt(position: HexCoordinate): boolean {
@@ -896,93 +707,6 @@ export class Game {
       throw new Error('Fleet names must be unique.');
     fleet.name = clean;
   }
-  transferShips(
-    sourceId: string,
-    ship: ShipType,
-    amount: number,
-    targetId: string | null,
-    shipId?: string,
-  ): FleetSnapshot {
-    this.#requirePlanning();
-    const source = this.#fleetState(sourceId);
-    if (!Number.isInteger(amount) || amount < 1 || source.ships[ship] < amount)
-      throw new Error('Choose an available number of ships.');
-    const selected = source
-      .shipUnits!.filter(
-        (unit) => unit.type === ship && (!shipId || unit.id === shipId),
-      )
-      .toSorted((a, b) => a.id.localeCompare(b.id))
-      .slice(0, amount);
-    if (selected.length !== amount)
-      throw new Error('Choose an available ship.');
-    const moveUnits = (target: Fleet) => {
-      source.shipUnits = source.shipUnits!.filter(
-        (unit) => !selected.includes(unit),
-      );
-      (target.shipUnits ??= []).push(...selected);
-    };
-    let target: Fleet;
-    if (targetId) {
-      target = this.#fleetState(targetId);
-      if (target.id === source.id) throw new Error('Choose another fleet.');
-      if (target.position && target.position.key !== source.position?.key) {
-        const group: Fleet = {
-          id: this.#id('fleet'),
-          name: this.#nextFleetName(),
-          position: source.position,
-          destination: target.position,
-          courseOrigin: source.position!,
-          joinFleetId: target.id,
-          ships: { ...zeroShips(), [ship]: amount },
-        };
-        moveUnits(group);
-        source.ships[ship] -= amount;
-        this.#fleets.push(group);
-        this.#releaseEmptyFleet(source);
-        this.#refreshReinforcements();
-        return this.fleet(group.id)!;
-      }
-    } else {
-      target = {
-        id: this.#id('fleet'),
-        name: this.#nextFleetName(),
-        position: source.position,
-        destination: null,
-        ships: zeroShips(),
-      };
-      this.#fleets.push(target);
-    }
-    if (target.id === source.id) throw new Error('Choose another fleet.');
-    target.position = source.position;
-    moveUnits(target);
-    source.ships[ship] -= amount;
-    target.ships[ship] += amount;
-    this.#releaseEmptyFleet(source);
-    this.#refreshReinforcements();
-    return this.fleet(target.id)!;
-  }
-  createFleet(sourceId?: string): FleetSnapshot {
-    this.#requirePlanning();
-    if (sourceId) this.#fleetState(sourceId);
-    const fleet: Fleet = {
-      id: this.#id('fleet'),
-      name: this.#nextFleetName(),
-      position: null,
-      destination: null,
-      ships: zeroShips(),
-      shipUnits: [],
-    };
-    this.#fleets.push(fleet);
-    return this.fleet(fleet.id)!;
-  }
-  deleteFleet(id: string): void {
-    this.#requirePlanning();
-    const fleet = this.#fleetState(id);
-    if (this.#shipCount(fleet.ships) !== 0)
-      throw new Error('Only empty fleets can be deleted.');
-    this.#fleets = this.#fleets.filter((candidate) => candidate.id !== id);
-    this.#refreshReinforcements();
-  }
   setDestination(id: string, destination: HexCoordinate): void {
     this.#requireFleetOrders(id);
     if (!this.galaxy.cellAt(destination))
@@ -996,25 +720,13 @@ export class Game {
     const fleet = this.#fleetState(id);
     if (this.#shipCount(fleet.ships) === 0)
       throw new Error('Empty fleets cannot receive destinations.');
-    delete fleet.joinFleetId;
-    delete fleet.exploration;
-    delete fleet.starSurvey;
-    delete fleet.pendingOrder;
-    delete fleet.explorationTargetId;
     fleet.destination = destination;
     delete fleet.navigationIssue;
-    delete fleet.patrol;
     fleet.courseOrigin = fleet.position!;
   }
   clearDestination(id: string): void {
     this.#requireFleetOrders(id);
-    delete this.#fleetState(id).pendingOrder;
-    delete this.#fleetState(id).explorationTargetId;
-    delete this.#fleetState(id).exploration;
-    delete this.#fleetState(id).starSurvey;
-    delete this.#fleetState(id).patrol;
     this.#fleetState(id).destination = null;
-    delete this.#fleetState(id).joinFleetId;
     delete this.#fleetState(id).courseOrigin;
   }
   get interruption(): SavedTurnSimulation | null {
@@ -1175,12 +887,6 @@ export class Game {
     }
     if (state.phase === 'complete') this.#resolveBoarding(engagement);
     return engagement.battle.visibleSnapshot;
-  }
-  resumeFleetOrders(id: string): void {
-    const fleet = this.#fleetState(id);
-    if (this.#phase !== 'planning' || !fleet.ordersPaused)
-      throw new Error('Resume this fleet while planning.');
-    delete fleet.ordersPaused;
   }
   playBattleActivation(
     singleStep = false,
@@ -1509,11 +1215,6 @@ export class Game {
         );
         fleet.destination = null;
         delete fleet.courseOrigin;
-        delete fleet.joinFleetId;
-        delete fleet.patrol;
-        delete fleet.exploration;
-        delete fleet.starSurvey;
-        delete fleet.pendingOrder;
         simulation.remaining.set(fleet.id, 0);
       }
       this.#releaseEmptyFleet(fleet);
@@ -1586,7 +1287,6 @@ export class Game {
     }
   }
   #afterCombat(): void {
-    this.#mergeReinforcements();
     this.#simulation!.battles = this.#simulation!.battles.map((report) => ({
       ...report,
       fleetId:
@@ -1597,7 +1297,6 @@ export class Game {
           ? report.fleetId
           : null),
     }));
-    this.#refreshReinforcements();
     this.#updateSight();
     const exploredPlanets = this.#completePlanetExplorations();
     if (exploredPlanets.length)
@@ -1610,10 +1309,6 @@ export class Game {
         .map((p) => p.id)
         .filter((id) => this.#visiblePirates.has(id)),
     );
-    for (const fleet of this.#fleets) {
-      this.#updateExploration(fleet);
-      this.#updatePatrol(fleet);
-    }
   }
   canIssueFleetOrders(id: string): boolean {
     const fleet = this.#fleets.find((candidate) => candidate.id === id);
@@ -1631,47 +1326,6 @@ export class Game {
       throw new Error(
         'Orders are only available while planning or handling a discovery.',
       );
-  }
-  setExploration(id: string, order: ExplorationOrder): void {
-    this.#requireFleetOrders(id);
-    if (!['explore', 'explore-stars'].includes(order))
-      throw new Error('Unknown exploration order.');
-    const fleet = this.#fleetState(id);
-    if (!fleet.ships['Exploration ship'])
-      throw new Error('An Exploration ship is required.');
-    delete fleet.patrol;
-    delete fleet.joinFleetId;
-    fleet.exploration = order;
-    delete fleet.pendingOrder;
-    delete fleet.explorationTargetId;
-    delete fleet.starSurvey;
-    fleet.destination = null;
-    delete fleet.courseOrigin;
-    this.#updateExploration(fleet);
-  }
-  setPatrol(id: string, center?: HexCoordinate): void {
-    this.#requireFleetOrders(id);
-    const fleet = this.#fleetState(id);
-    if (!armedShipCount(fleet.ships))
-      throw new Error('An armed ship is required for Patrol.');
-    if (
-      center &&
-      (!this.galaxy.cellAt(center) || !this.galaxy.isPassable(center))
-    )
-      throw new Error('Choose a passable Patrol center.');
-    if (fleet.patrol && !center) return;
-    delete fleet.exploration;
-    delete fleet.joinFleetId;
-    fleet.patrol = {
-      center: center ?? fleet.position!,
-      nextIndex: 0,
-      ...(center && center.key !== fleet.position!.key
-        ? { approaching: true }
-        : {}),
-    };
-    delete fleet.pendingOrder;
-    delete fleet.starSurvey;
-    this.#updatePatrol(fleet);
   }
   // gemensamt-handelseflode: retain event identity and review progress at checkpoints.
   presentEvent(id: string): void {
@@ -1702,7 +1356,6 @@ export class Game {
       throw new Error('No event is being handled.');
     this.#simulation!.handling = false;
     this.#simulation!.activeEventId = undefined;
-    this.#simulation!.otherFleets = false;
   }
   #linkInterruptionEvents(): void {
     const simulation = this.#simulation;
@@ -1797,11 +1450,6 @@ export class Game {
         this.presentEvent(this.#simulation!.activeEventId);
     }
   }
-  allowOtherFleetOrders(): void {
-    if (this.#phase !== 'interrupted' || !this.#simulation!.handling)
-      throw new Error('Handle the discovery first.');
-    this.#simulation!.otherFleets = true;
-  }
   continueTurn(): void {
     if (this.#phase !== 'interrupted') throw new Error('No interrupted round.');
     if (this.#simulation!.tacticalBattles.length)
@@ -1810,13 +1458,10 @@ export class Game {
     this.#simulation!.battles = [];
     this.#simulation!.activeEventId = undefined;
     this.#simulation!.handling = false;
-    this.#simulation!.otherFleets = false;
     this.#phase = 'simulating';
   }
   startTurn(): void {
     this.#requirePlanning();
-    this.#refreshReinforcements();
-    this.#mergeReinforcements();
     this.#simulation = new TurnSimulation([
       ...this.#fleets.map((fleet) => [fleet.id, this.#speed(fleet)] as const),
       ...this.#pirates.map((pirate) => [pirate.id, 1] as const),
@@ -1834,8 +1479,6 @@ export class Game {
         combats: Object.freeze([]),
       }));
     }
-    for (const fleet of this.#fleets) this.#updateExploration(fleet);
-    for (const fleet of this.#fleets) this.#updatePatrol(fleet);
     const pirates = new Map(this.#pirates.map((pirate) => [pirate.id, pirate]));
     const frame = FleetPursuit.plan(
       this.#movingFleets(),
@@ -1940,7 +1583,6 @@ export class Game {
     this.#round += 1;
     this.#phase = 'planning';
     this.#simulation = null;
-    this.#activateShipOrders();
   }
   #settleYear(): void {
     for (const fleet of this.#fleets) this.#recordArrival(fleet);
@@ -1961,7 +1603,6 @@ export class Game {
         this.#round,
         { illustration: { kind: 'research', type: researched } },
       );
-    this.#refreshReinforcements();
   }
   #cargo(fleetId: string): Stock {
     const stock = emptyStock();
@@ -1969,24 +1610,6 @@ export class Game {
     if (hold)
       for (const material of MATERIALS) stock[material] += hold[material];
     return stock;
-  }
-  #refreshReinforcements(): void {
-    FleetPursuit.refresh(this.#fleets, (fleet) =>
-      this.#event(
-        `${fleet.name}: reinforcement target unavailable; choose new orders.`,
-        fleet.position ?? undefined,
-      ),
-    );
-    this.#updateSight();
-  }
-  #mergeReinforcements(): void {
-    FleetPursuit.merge(this.#fleets, (group, target) => {
-      this.#simulation?.merge(group.id, target.id);
-      this.#event(
-        `${group.name} joined ${target.name}.`,
-        target.position ?? undefined,
-      );
-    });
   }
 
   #route(fleet: PursuingFleet): {
@@ -2046,213 +1669,7 @@ export class Game {
   #fleetDisplayName(fleet: Fleet): string {
     return fleet.name;
   }
-  #updateExploration(fleet: Fleet): void {
-    if (!fleet.exploration) return;
-    let target: HexCoordinate | null = null;
-    if (fleet.position && fleet.ships['Exploration ship'] > 0) {
-      if (fleet.exploration === 'explore-stars')
-        target = this.#starSurveyDestination(fleet);
-      else {
-        delete fleet.starSurvey;
-        const home = this.galaxy.homePlanet.position;
-        const homePoint = HexGeometry.toPoint(home);
-        const angleFromHome = (point: HexCoordinate): number | null => {
-          if (point.key === home.key) return null;
-          const target = HexGeometry.toPoint(point);
-          return Math.atan2(target.y - homePoint.y, target.x - homePoint.x);
-        };
-        const angleDistance = (a: number, b: number) => {
-          const difference = Math.abs(a - b) % (Math.PI * 2);
-          return Math.min(difference, Math.PI * 2 - difference);
-        };
-        const otherExplorers = this.#fleets.filter(
-          (candidate) =>
-            candidate.id !== fleet.id && candidate.exploration === 'explore',
-        );
-        const occupiedTargets = new Set(
-          otherExplorers.flatMap((candidate) =>
-            candidate.destination ? [candidate.destination.key] : [],
-          ),
-        );
-        const occupiedAngles = otherExplorers.flatMap((candidate) => {
-          const point = candidate.destination ?? candidate.position;
-          const angle = point ? angleFromHome(point) : null;
-          return angle === null ? [] : [angle];
-        });
-        const preferredPoint =
-          fleet.position.key === home.key ? fleet.destination : fleet.position;
-        const preferredAngle = preferredPoint
-          ? angleFromHome(preferredPoint)
-          : null;
-        const frontier = this.galaxy
-          .mapSnapshot()
-          .map((cell) => cell.position)
-          .filter(
-            (point) =>
-              !this.#explored.has(point.key) &&
-              !this.galaxy.isStar(point) &&
-              (!this.#knownTerrain.has(point.key) ||
-                this.galaxy.isPassable(point)) &&
-              point
-                .neighbors()
-                .some((neighbor) => this.#explored.has(neighbor.key)),
-          );
-        const unclaimed = frontier.filter(
-          (point) => !occupiedTargets.has(point.key),
-        );
-        const candidates = unclaimed.length ? unclaimed : frontier;
-        candidates.sort((a, b) => {
-          const aAngle = angleFromHome(a) ?? 0;
-          const bAngle = angleFromHome(b) ?? 0;
-          const direction =
-            preferredAngle !== null
-              ? angleDistance(aAngle, preferredAngle) -
-                angleDistance(bAngle, preferredAngle)
-              : Math.min(
-                  ...occupiedAngles.map((angle) =>
-                    angleDistance(bAngle, angle),
-                  ),
-                  Math.PI,
-                ) -
-                Math.min(
-                  ...occupiedAngles.map((angle) =>
-                    angleDistance(aAngle, angle),
-                  ),
-                  Math.PI,
-                );
-          return (
-            home.distanceTo(a) - home.distanceTo(b) ||
-            direction ||
-            fleet.position!.distanceTo(a) - fleet.position!.distanceTo(b) ||
-            a.key.localeCompare(b.key)
-          );
-        });
-        target =
-          candidates.find(
-            (point) =>
-              this.#navigation.path(
-                fleet.position!,
-                point,
-                this.#speed(fleet),
-                this.#knownTerrain,
-              ).length,
-          ) ?? null;
-      }
-    }
-    if (!target) {
-      delete fleet.exploration;
-      delete fleet.starSurvey;
-      fleet.destination = null;
-      delete fleet.courseOrigin;
-      this.#event(
-        `${this.#fleetDisplayName(fleet)}: exploration stopped; no unexplored targets or Exploration ship available.`,
-        fleet.position ?? undefined,
-      );
-    } else if (fleet.destination?.key !== target.key) {
-      fleet.destination = target;
-      fleet.courseOrigin = fleet.position!;
-    }
-  }
 
-  #starSurveyDestination(fleet: Fleet): HexCoordinate | null {
-    if (!fleet.position) return null;
-    if (!fleet.starSurvey) {
-      const stars = this.galaxy.systems.map((system) => system.star.position);
-      const remaining = new Set(this.#explored);
-      for (let attempts = 0; attempts < stars.length; attempts++) {
-        const target = nearestUnexplored(fleet.position, stars, remaining);
-        if (!target) return null;
-        const ring = target.neighbors();
-        const approaches = ring
-          .map((point, index) => ({
-            point,
-            index,
-            path: this.#navigation.path(
-              fleet.position!,
-              point,
-              this.#speed(fleet),
-              this.#knownTerrain,
-            ),
-          }))
-          .filter(
-            ({ point, path }) =>
-              this.galaxy.isPassable(point) &&
-              (path.length || point.key === fleet.position!.key),
-          )
-          .sort((a, b) => a.path.length - b.path.length || a.index - b.index);
-        const approach = approaches[0];
-        if (approach) {
-          const star = this.galaxy.systems.find(
-            (system) => system.star.position.key === target.key,
-          )!.star;
-          fleet.starSurvey = {
-            starId: star.id,
-            startIndex: approach.index,
-            completed: 0,
-            arrived: false,
-          };
-          break;
-        }
-        remaining.add(target.key);
-      }
-    }
-    const survey = fleet.starSurvey;
-    if (!survey) return null;
-    const star = this.galaxy.systems.find(
-      (system) => system.star.id === survey.starId,
-    )!.star;
-    const ring = star.position.neighbors();
-    if (!survey.arrived) {
-      if (fleet.position.key !== ring[survey.startIndex]!.key)
-        return ring[survey.startIndex]!;
-      survey.arrived = true;
-    }
-    const next = ring[(survey.startIndex + survey.completed + 1) % 6]!;
-    if (fleet.position.key === next.key) survey.completed++;
-    if (survey.completed >= 6) {
-      delete fleet.starSurvey;
-      return this.#starSurveyDestination(fleet);
-    }
-    return ring[(survey.startIndex + survey.completed + 1) % 6]!;
-  }
-  #updatePatrol(fleet: Fleet): void {
-    if (!fleet.patrol) return;
-    if (!armedShipCount(fleet.ships) || !fleet.position) {
-      delete fleet.patrol;
-      fleet.destination = null;
-      delete fleet.courseOrigin;
-      this.#event(
-        `${this.#fleetDisplayName(fleet)}: Patrol stopped; no armed ship available.`,
-        fleet.position ?? undefined,
-      );
-      return;
-    }
-    if (fleet.patrol.approaching) {
-      const center = new HexCoordinate(
-        fleet.patrol.center.q,
-        fleet.patrol.center.r,
-      );
-      if (fleet.position.key !== center.key) {
-        fleet.destination = center;
-        fleet.courseOrigin ??= fleet.position;
-        return;
-      }
-      delete fleet.patrol.approaching;
-    }
-    const destination = FleetPatrol.destination(
-      fleet.patrol,
-      fleet.position,
-      this.#speed(fleet),
-      this.pirateSnapshots(),
-      (point) =>
-        this.galaxy.contains(point) &&
-        !this.galaxy.isStar(point) &&
-        (!this.#knownTerrain.has(point.key) || this.galaxy.isPassable(point)),
-    );
-    fleet.destination = destination;
-    if (destination) fleet.courseOrigin = fleet.position;
-    else delete fleet.courseOrigin;
-  }
   #visibleDiscoveries(): Discovery[] {
     const discoveries: Discovery[] = [];
     for (const system of this.galaxy.systems) {
@@ -2319,7 +1736,7 @@ export class Game {
         )[0];
       (discovery as { fleetId: string | null }).fleetId = observer?.id ?? null;
       const eventId = this.#event(
-        `${discovery.kind === 'wreck' ? 'Wreck discovered' : discovery.kind === 'pirate' ? 'Pirate ship in sight' : discovery.kind === 'star' ? 'Star explored' : 'Planet discovered'}: ${discovery.name} at HEX ${position.key}.`,
+        `${discovery.kind === 'pirate' ? 'Pirate ship in sight' : discovery.kind === 'star' ? 'Star explored' : 'Planet discovered'}: ${discovery.name} at HEX ${position.key}.`,
         position,
       );
       (discovery as { eventId: string }).eventId = eventId;
@@ -2384,23 +1801,10 @@ export class Game {
   }
   // tomma-flottor-utan-position: the last ship releases both location and course.
   #releaseEmptyFleet(fleet: Fleet): void {
-    if (fleet.explorationTargetId && !fleet.ships['Exploration ship']) {
-      delete fleet.explorationTargetId;
-      fleet.destination = null;
-      delete fleet.courseOrigin;
-      this.#event(
-        `${fleet.name}: planet exploration cancelled; no Exploration ship remains.`,
-        fleet.position ?? undefined,
-      );
-    }
-    if (fleet.patrol && !armedShipCount(fleet.ships)) this.#updatePatrol(fleet);
-    if (fleet.exploration && !fleet.ships['Exploration ship'])
-      this.#updateExploration(fleet);
     if (this.#shipCount(fleet.ships) !== 0) return;
     fleet.position = null;
     fleet.destination = null;
     delete fleet.courseOrigin;
-    delete fleet.joinFleetId;
   }
 
   #normalizeShips(): void {
@@ -2478,16 +1882,9 @@ export class Game {
     if (!fleet) throw new Error('Fleet was not found.');
     return fleet;
   }
-  #planetById(id: string): Planet | undefined {
-    return this.galaxy.systems
-      .flatMap((system) => system.planets)
-      .find((planet) => planet.id === id);
-  }
 
   // handelser: report arrival once, at the point it happens, with a usable place name.
   #recordArrival(fleet: Fleet): void {
-    if (fleet.patrol) return;
-    if (fleet.joinFleetId) return;
     if (!fleet.destination || fleet.destination.key !== fleet.position?.key)
       return;
     const place =
@@ -2496,9 +1893,6 @@ export class Game {
       )?.object?.name ?? `HEX ${fleet.position.key}`;
     fleet.destination = null;
     delete fleet.courseOrigin;
-    if (fleet.explorationTargetId) return;
-    // ankomstbesked-endast-vid-manuell-forflyttning: automatic legs arrive silently.
-    if (fleet.exploration) return;
     this.#event(
       `${this.#fleetDisplayName(fleet)} arrived at ${place}.`,
       fleet.position,
@@ -2565,16 +1959,6 @@ export class Game {
       name = clean.slice(0, 40 - suffix.length) + suffix;
     }
     return name;
-  }
-  #nextFleetName(): string {
-    let number = 1;
-    while (
-      this.#fleets.some(
-        (fleet) => fleet.name.toLowerCase() === `fleet ${number}`,
-      )
-    )
-      number += 1;
-    return `Fleet ${number}`;
   }
   #availableResearch(): Technology[] {
     const discovered = new Set(

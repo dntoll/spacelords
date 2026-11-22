@@ -1,11 +1,7 @@
 import type {
-  ShipOrder,
-  OrderKind,
   MapViewport,
-  ShipType,
   TurnFrame,
   Technology,
-  FleetCategory,
 } from '../../space-map/models/index.js';
 import type {
   BattleCommand,
@@ -33,28 +29,19 @@ export type AppIntent =
     }
   | { readonly type: 'close-boarding' }
   | { readonly type: 'boarding-command'; readonly command: BoardingCommand }
-  | { readonly type: 'open-fleet-orders'; readonly id: string }
-  | { readonly type: 'order-kind'; readonly kind: OrderKind }
-  | { readonly type: 'apply-ship-order'; readonly order: ShipOrder }
-  | { readonly type: 'order-back' }
   | { readonly type: 'battle-command'; readonly command: BattleCommand }
-  | { readonly type: 'resume-fleet-orders'; readonly id: string }
   | {
       readonly type: 'inspect-research';
       readonly technology: Technology | null;
     }
   | {
       readonly type:
-        | 'handle-discoveries'
-        | 'ignore-discoveries'
-        | 'continue-turn'
-        | 'allow-other-fleet-orders';
+        'handle-discoveries' | 'ignore-discoveries' | 'continue-turn';
     }
   | {
       readonly type: 'map-select-fleet';
       readonly id: string;
     }
-  | { readonly type: 'toggle-fleet-category'; readonly category: FleetCategory }
   | { readonly type: 'open-production' }
   | { readonly type: 'map-size'; readonly viewport: MapViewport }
   | { readonly type: 'research-pan'; readonly delta: Point }
@@ -91,20 +78,12 @@ export type AppIntent =
         | 'end-turn';
     }
   | {
-      readonly type: 'choose-ship-transfer';
-      readonly shipId?: string | undefined;
-      readonly fleetId: string;
-      readonly ship: ShipType;
-    }
-  | { readonly type: 'transfer-chosen-ship'; readonly target: string | null }
-  | {
       readonly type: 'begin-fleet-rename';
       readonly id: string;
     }
   | { readonly type: 'edit-fleet-name'; readonly draft: string }
   | { readonly type: 'cancel-fleet-rename'; readonly reason?: 'blur' }
   | { readonly type: 'submit-fleet-name' }
-  | { readonly type: 'cancel-ship-transfer' }
   | { readonly type: 'select'; readonly position: HexCoordinate }
   | { readonly type: 'pan'; readonly delta: Point }
   | { readonly type: 'zoom'; readonly factor: number; readonly anchor: Point }
@@ -112,14 +91,6 @@ export type AppIntent =
   | {
       readonly type: 'open-fleet' | 'begin-destination' | 'clear-destination';
       readonly id: string;
-    }
-  | {
-      readonly type: 'transfer-ships';
-      readonly shipId?: string | undefined;
-      readonly source: string;
-      readonly ship: ShipType;
-      readonly amount: number;
-      readonly target: string | null;
     }
   | { readonly type: 'open-editor' | 'close-editor' }
   | { readonly type: 'editor-undo' | 'editor-redo' | 'editor-save' }

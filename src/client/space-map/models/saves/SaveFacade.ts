@@ -25,7 +25,6 @@ export class SaveFacade {
     this.host.testBattle = null;
     this.host.testBoarding = null;
     this.host.battleFeedback = null;
-    this.host.orderSelection = null;
     this.host.inspectedResearch = null;
     this.host.eventPlayback = null;
     this.host.presentedEventIds.clear();
@@ -49,7 +48,6 @@ export class SaveFacade {
     this.host.pendingClearSlot = null;
     this.host.selectedFleetId = null;
     this.host.fleetNameEdit = null;
-    this.host.shipTransfer = null;
     this.host.mapFleetId = null;
     this.host.destinationFleetId = null;
     this.host.cancelMapPointer();

@@ -1,5 +1,4 @@
 import {
-  renderOrders,
   gameText,
   discoveryControls,
   renderProduction,
@@ -18,7 +17,6 @@ import {
   renderEvents,
   renderCombatLog,
   renderEventContent,
-  FLEET_CATEGORY_COLORS,
 } from '../../space-map/views/index.js';
 import {
   BattleView,
@@ -35,8 +33,6 @@ import {
   type MapScreen,
   type MapCell,
   type TurnFrame,
-  FLEET_CATEGORIES,
-  fleetCategory,
 } from '../../space-map/models/index.js';
 import type { AppReadModel, Screen } from '../models/AppModel.js';
 import { playerNoticeText } from './playerNoticeText.js';
@@ -294,12 +290,7 @@ export class AppView implements AppPort {
       if (page) page.dataset.mapScreen = model.screen;
       const heading = page?.querySelector('h1');
       if (heading)
-        heading.textContent =
-          model.screen === 'map'
-            ? 'Star map'
-            : model.screen === 'fleets'
-              ? 'Fleets'
-              : 'Orders';
+        heading.textContent = model.screen === 'map' ? 'Star map' : 'Fleets';
       this.#selectionKey = '';
       this.#screen = model.screen;
     } else if (changedScreen) {
@@ -463,7 +454,6 @@ export class AppView implements AppPort {
     }
     this.#attachTurnActions(previousActions, previousEventScroll);
     this.#syncLocalEditorNav(model);
-    this.#renderFleetCategories(model);
     if (isMapScreen(model.screen)) {
       this.#root
         .querySelector('.map-page')
@@ -481,7 +471,6 @@ export class AppView implements AppPort {
         eventPlayback: !!model.eventPlayback,
         turnMovement: !!model.turnMovement,
         screen: model.screen,
-        orderView: model.orderView,
         pirates: model.pirates,
         mapFleetId: model.mapFleetId,
         research: model.research.completed,
@@ -495,7 +484,6 @@ export class AppView implements AppPort {
           (fleet) => fleet.position?.key === model.selected?.position.key,
         ),
         destination: model.destinationFleetId,
-        shipTransfer: model.shipTransfer,
         fleetNameEdit: model.fleetNameEdit,
       });
       if (key !== this.#selectionKey) {
@@ -1013,11 +1001,7 @@ export class AppView implements AppPort {
       element(
         'h1',
         'visually-hidden',
-        screen === 'fleets'
-          ? 'Fleets'
-          : screen === 'orders'
-            ? 'Orders'
-            : 'Star map',
+        screen === 'fleets' ? 'Fleets' : 'Star map',
       ),
     );
     this.#container = element('div', 'map-container');
@@ -1072,66 +1056,10 @@ export class AppView implements AppPort {
     );
   }
 
-  /** flottkategorier: a colour key that also shows or hides each category. */
-  #renderFleetCategories(model: AppReadModel): void {
-    const existing = this.#root.querySelector<HTMLElement>(
-      '.fleet-category-legend',
-    );
-    if (model.screen !== 'fleets' || !this.#container) {
-      existing?.remove();
-      return;
-    }
-    const present = new Set(model.fleets.map(fleetCategory));
-    const categories = FLEET_CATEGORIES.filter(
-      (category) =>
-        present.has(category) || model.hiddenFleetCategories.includes(category),
-    );
-    const key = JSON.stringify([categories, model.hiddenFleetCategories]);
-    if (existing?.dataset.key === key && existing.parentElement) return;
-    const focused =
-      document.activeElement instanceof HTMLElement &&
-      existing?.contains(document.activeElement)
-        ? document.activeElement.dataset.category
-        : undefined;
-    const legend = element('div', 'fleet-category-legend hud');
-    legend.dataset.key = key;
-    legend.setAttribute('role', 'group');
-    legend.setAttribute('aria-label', 'Fleet categories');
-    for (const category of categories) {
-      const shown = !model.hiddenFleetCategories.includes(category);
-      const toggle = button(
-        category,
-        () => this.#emit({ type: 'toggle-fleet-category', category }),
-        `fleet-category-toggle${shown ? '' : ' hidden-category'}`,
-      );
-      toggle.dataset.category = category;
-      toggle.style.setProperty(
-        '--fleet-category',
-        FLEET_CATEGORY_COLORS[category],
-      );
-      toggle.setAttribute('aria-pressed', String(shown));
-      toggle.title = `${shown ? 'Hide' : 'Show'} ${category.toLowerCase()} fleets`;
-      legend.append(toggle);
-    }
-    if (existing) existing.replaceWith(legend);
-    else this.#container.append(legend);
-    if (focused)
-      legend
-        .querySelector<HTMLElement>(`[data-category="${focused}"]`)
-        ?.focus({ preventScroll: true });
-  }
-
   #renderSelection(model: AppReadModel): void {
     if (!this.#panel) return;
     this.#cancelSelectionGesture?.();
     this.#panel.hidden = false;
-    if (model.screen === 'orders') {
-      const page = this.#root.querySelector<HTMLElement>('.map-page');
-      if (page) page.dataset.orderPage = model.orderView?.page ?? 'menu';
-      this.#panel.setAttribute('aria-label', 'Orders');
-      this.#panel.replaceChildren(renderOrders(model, this.#emit));
-      return;
-    }
     const selectedFleet = [
       ...model.fleets,
       ...(model.pirates ?? []).map(pirateAsFleet),

@@ -1,5 +1,4 @@
 import { pirateAsFleet } from '../../models/PirateFleet.js';
-import { fleetCategory } from '../../models/fleets/FleetCategory.js';
 import { type Point } from '../../../common/HexCoordinate.js';
 import type p5 from 'p5';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
@@ -15,19 +14,12 @@ export function renderMapOverlays(
   if (model.screen === 'production') return;
   renderMapFleets(
     sketch,
-    [
-      // flottkategorier: hidden categories leave the Fleets map.
-      ...model.fleets.filter(
-        (fleet) =>
-          model.screen !== 'fleets' ||
-          !model.hiddenFleetCategories.includes(fleetCategory(fleet)),
-      ),
-      ...(model.pirates ?? []).map(pirateAsFleet),
-    ].map((fleet) =>
-      (model.turnMovement || model.eventPlayback) &&
-      !model.turnMovements.some((movement) => movement.fleetId === fleet.id)
-        ? { ...fleet, destination: null }
-        : fleet,
+    [...model.fleets, ...(model.pirates ?? []).map(pirateAsFleet)].map(
+      (fleet) =>
+        (model.turnMovement || model.eventPlayback) &&
+        !model.turnMovements.some((movement) => movement.fleetId === fleet.id)
+          ? { ...fleet, destination: null }
+          : fleet,
     ),
     model.camera.zoom,
     model,

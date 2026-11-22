@@ -1,6 +1,6 @@
-export type MapScreen = 'map' | 'fleets' | 'orders';
+export type MapScreen = 'map' | 'fleets';
 export function isMapScreen(screen: string | null): screen is MapScreen {
-  return screen !== null && ['map', 'fleets', 'orders'].includes(screen);
+  return screen !== null && ['map', 'fleets'].includes(screen);
 }
 /** The map canvas size and the free space around overlays, in CSS pixels. */
 export interface MapViewport {

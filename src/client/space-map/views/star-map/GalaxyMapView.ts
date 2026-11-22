@@ -240,11 +240,9 @@ export class GalaxyMapView implements MapPort {
     }
     if (this.#descriptionScreen !== model.screen) {
       sketch.describe(
-        model.screen === 'orders'
-          ? 'Orders map. Choose a target for the selected order.'
-          : model.screen === 'fleets'
-            ? 'Fleets map. Fleet positions and destinations are highlighted; planets are background landmarks.'
-            : 'Star map. The start planet and its surroundings are visible. Stars are visible in unexplored space.',
+        model.screen === 'fleets'
+          ? 'Fleets map. Fleet positions and destinations are highlighted; planets are background landmarks.'
+          : 'Star map. The start planet and its surroundings are visible. Stars are visible in unexplored space.',
       );
       this.#descriptionScreen = model.screen;
     }
@@ -255,11 +253,9 @@ export class GalaxyMapView implements MapPort {
       );
       this.#canvas.setAttribute(
         'aria-label',
-        model.screen === 'orders'
-          ? 'Orders map. Choose the requested fleet, planet or Patrol center. Drag empty space to pan; pinch or use the wheel to zoom. Enter selects the central hex.'
-          : model.screen === 'fleets'
-            ? 'Fleets map. Click a fleet to select it; drag a fleet to set its destination. Planets are background landmarks. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to the start planet; Enter selects the central hex.'
-            : STAR_MAP_LABEL,
+        model.screen === 'fleets'
+          ? 'Fleets map. Click a fleet to select it; drag a fleet to set its destination. Planets are background landmarks. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to the start planet; Enter selects the central hex.'
+          : STAR_MAP_LABEL,
       );
     }
     sketch.background('#0a1520');

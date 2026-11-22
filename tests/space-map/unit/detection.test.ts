@@ -78,24 +78,6 @@ describe('aktuell-detektionssikt', () => {
     },
   );
 
-  it('other ships only see their own hex; transferring the explorer preserves its telescope', () => {
-    const game = equipped(3);
-    const split = game.transferShips('fleet-home', 'Exploration ship', 1, null);
-    expect(split.shipUnits![0]!.telescope).toBe(3);
-    game.setDestination(split.id, new HexCoordinate(4, 4));
-    year(game);
-    expect(
-      game.mapSnapshot().find((cell) => cell.position.key === '4,0')!.visible,
-    ).toBe(true);
-    expect(
-      game.mapSnapshot().find((cell) => cell.position.key === '4,-1')!.visible,
-    ).toBe(false);
-    expect(
-      Game.restore(game.exportState()).fleet(split.id)!.shipUnits![0]!
-        .telescope,
-    ).toBe(3);
-  });
-
   it('pirat-aterupptackt: reports each re-entry, never continued visibility or reload', () => {
     const state = equipped(1).exportState();
     let game = Game.restore({

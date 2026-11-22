@@ -1,79 +1,10 @@
-import { scenarioTimeout } from '../../browser-timeouts.js';
-import { chooseFleetOrder } from './fleet-helpers.js';
 import { expect, test } from '@playwright/test';
-import { startFirstSlot, endTurn } from './save-helpers.js';
-import { selectMapFleet } from './fleet-helpers.js';
+import { startFirstSlot } from './save-helpers.js';
 import { selectMapHex } from './map-helpers.js';
-import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { Galaxy } from '../../../src/client/space-map/models/Galaxy.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
-
-test('utokad-galax / stjarnornas-hexutseende / automatisk-stjarnutforskning: new galaxy and orbit survive reload on mobile', async ({
-  page,
-}, testInfo) => {
-  // The three years include the full serial event announcements.
-  scenarioTimeout(90_000);
-  const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('./');
-  await startFirstSlot(page);
-  const saved = () =>
-    page.evaluate(
-      () =>
-        JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
-    );
-  const initial = await saved();
-  expect(initial.state.world.radius).toBe(100);
-  expect(initial.state.world.systems).toHaveLength(150);
-  expect(initial.state.world.systems[0]!.planets[0]!.position).toEqual({
-    q: 2,
-    r: 0,
-  });
-  await page.evaluate(() => {
-    const saved = JSON.parse(
-      localStorage.getItem('spacelords.save.v2.1')!,
-    ) as SavedGame;
-    const next = {
-      ...saved,
-      state: {
-        ...saved.state,
-        researched: [...saved.state.researched, 'Automated exploration'],
-      },
-    };
-    localStorage.setItem('spacelords.save.v2.1', JSON.stringify(next));
-  });
-  await page.reload();
-  await startFirstSlot(page);
-  await page.screenshot({ path: testInfo.outputPath('large-stars.png') });
-  await selectMapFleet(page, 'Home Fleet');
-  await chooseFleetOrder(page, 'Explore stars');
-  await endTurn(page);
-  const checkpoint = (await saved()).state.fleets.find(
-    (fleet) => fleet.id === 'fleet-home',
-  )!;
-  expect(checkpoint.starSurvey?.starId).toBe('sol');
-  await page.reload();
-  await startFirstSlot(page);
-  expect(
-    (await saved()).state.fleets.find((fleet) => fleet.id === 'fleet-home')!
-      .starSurvey,
-  ).toEqual(checkpoint.starSurvey);
-  await endTurn(page);
-  await endTurn(page);
-  const completed = await saved();
-  for (const planet of completed.state.world.systems[0]!.planets)
-    expect(completed.state.explored).toContain(
-      `${planet.position.q},${planet.position.r}`,
-    );
-  const map = page.locator('canvas[data-rendered="true"]');
-  await map.press('ArrowRight');
-  await map.press('+');
-  await map.press('Home');
-  await page.screenshot({ path: testInfo.outputPath('explored-system.png') });
-  expect(errors).toEqual([]);
-});
 
 test('asteroidbalten / nebulosornas-sikt: discovered terrain explains movement and concealment', async ({
   page,

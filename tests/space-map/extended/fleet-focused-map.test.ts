@@ -83,45 +83,6 @@ describe('delad-kartkamera', () => {
 });
 
 describe('flottfokuserad-kartvy', () => {
-  it('keeps map destinations, cancellation, local and distant transfers on Fleets', () => {
-    const { model, root, emit, click } = setup();
-    emit({ type: 'open-fleets' });
-    emit({ type: 'map-select-fleet', id: 'fleet-home' });
-    click('Choose destination for Home Fleet');
-    expect(model.snapshot.screen).toBe('fleets');
-    click('Cancel');
-    expect(model.snapshot.screen).toBe('fleets');
-    expect(model.snapshot.destinationFleetId).toBeNull();
-    click('Choose destination for Home Fleet');
-    expect(root.querySelector('[aria-label="Destination hex"]')).toBeNull();
-    emit({ type: 'select', position: new HexCoordinate(0, 1) });
-    expect(model.snapshot.fleets[0]!.destination?.key).toBe('0,1');
-    expect(model.snapshot.screen).toBe('fleets');
-    click('Fighter 1 in Home Fleet');
-    click('Move ship to new fleet');
-    expect(model.snapshot.mapFleetId).not.toBe('fleet-home');
-    expect(model.snapshot.fleetNameEdit).not.toBeNull();
-    emit({ type: 'cancel-fleet-rename' });
-    emit({ type: 'map-select-fleet', id: 'fleet-home' });
-    click('Exploration ship 1 in Home Fleet');
-    const select = root.querySelector<HTMLSelectElement>(
-      '[aria-label="Receiving fleet"]',
-    )!;
-    expect(select.textContent).toContain('Reserve');
-    select.value = 'travellers';
-    select.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(
-      model.snapshot.fleets.some((f) => f.joinFleetId === 'travellers'),
-    ).toBe(true);
-    expect(model.snapshot.screen).toBe('fleets');
-    expect(
-      root.querySelector('[aria-label="Cancel reinforcement"]'),
-    ).not.toBeNull();
-    expect(root.querySelector('.fleet-location-map')).toBeNull();
-    expect(root.querySelector('[aria-label="Delete fleet"]')).toBeNull();
-    expect(root.querySelector('button[aria-label="New fleet"]')).toBeNull();
-  });
-
   it('dismisses selection outside the hex field and cancels the destination picker with canvas Escape', () => {
     const { model, root, emit } = setup();
     emit({ type: 'open-fleets' });

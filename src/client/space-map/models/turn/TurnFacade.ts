@@ -13,7 +13,6 @@ export class TurnFacade {
   constructor(private readonly host: AppHost) {}
 
   startTurn(): void {
-    if (this.host.screen === 'orders') this.host.closeOrders();
     if (this.host.eventPlayback || this.host.movementPlayback) return;
     this.host.presentedEventIds.clear();
     this.host.turnContext = {
@@ -48,10 +47,6 @@ export class TurnFacade {
   handleDiscoveries(): void {
     this.host.game.handleDiscoveries();
     this.host.focusInterruptedFleet();
-  }
-
-  allowOtherFleetOrders(): void {
-    this.host.game.allowOtherFleetOrders();
   }
 
   continueTurn(): void {

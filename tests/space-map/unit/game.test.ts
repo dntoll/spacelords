@@ -13,38 +13,6 @@ describe('rundsimulering', () => {
   });
 });
 
-describe('flottadministration', () => {
-  it('keeps an emptied fleet and its name when its final ship is transferred', () => {
-    const model = new AppModel();
-    const fleet = model.snapshot.fleets[0]!;
-    model.transferShips(fleet.id, 'Exploration ship', 1, null);
-    expect(model.snapshot.fleets).toHaveLength(2);
-    model.transferShips(fleet.id, 'Fighter', 1, model.snapshot.fleets[1]!.id);
-    expect(model.snapshot.fleets).toHaveLength(2);
-    expect(model.snapshot.fleets[0]?.name).toBe('Home Fleet');
-  });
-
-  it('moves exactly one ship between fleets on the same hex', () => {
-    const model = new AppModel();
-    const home = model.snapshot.fleets[0]!;
-    model.createFleet(home.id);
-    const target = model.snapshot.fleets[1]!;
-    model.transferShips(home.id, 'Fighter', 1, target.id);
-    expect(model.snapshot.fleets[0]?.ships.Fighter).toBe(0);
-    expect(model.snapshot.fleets[1]?.ships.Fighter).toBe(1);
-  });
-
-  it('only deletes empty fleets', () => {
-    const model = new AppModel();
-    const home = model.snapshot.fleets[0]!;
-    expect(() => model.deleteFleet(home.id)).toThrow('Only empty fleets');
-    model.createFleet(home.id);
-    const empty = model.snapshot.fleets[1]!;
-    model.deleteFleet(empty.id);
-    expect(model.snapshot.fleets).toHaveLength(1);
-  });
-});
-
 describe('skeppsutforskning', () => {
   it('reveals every visited hex and explorers reveal neighboring hexes permanently', () => {
     const model = new AppModel();

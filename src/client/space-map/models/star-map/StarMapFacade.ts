@@ -1,7 +1,6 @@
 import { pirateAsFleet } from '../PirateFleet.js';
 import type { MapViewport } from '../MapScreen.js';
 import { FleetMapLayout } from './FleetMapLayout.js';
-import { fleetCategory, type FleetCategory } from '../fleets/FleetCategory.js';
 import {
   HexGeometry,
   type HexCoordinate,
@@ -14,31 +13,8 @@ export class StarMapFacade {
 
   select(position: HexCoordinate): void {
     if (!this.host.isMapScreen()) return;
-    if (this.host.screen === 'orders' && this.host.orderSelection) {
-      if (this.host.orderSelection.page === 'patrol')
-        this.host.completeOrder({
-          kind: 'patrol',
-          position: { q: position.q, r: position.r },
-        });
-      else if (this.host.orderSelection.page === 'explore-planet') {
-        const intel = this.host.game.planetIntel(position);
-        const planet =
-          intel && !intel.surveyed
-            ? this.host.game.galaxy.systems
-                .flatMap((system) => system.planets)
-                .find((planet) => planet.position.key === position.key)
-            : null;
-        if (planet)
-          this.host.completeOrder({
-            kind: this.host.orderSelection.page,
-            planetId: planet.id,
-          });
-      }
-      return;
-    }
     if (!this.host.game.galaxy.cellAt(position)) {
       if (this.host.screen === 'fleets' && !this.host.destinationFleetId) {
-        this.host.cancelShipTransfer();
         this.host.cancelFleetRename();
         this.host.mapFleetId = null;
       }
@@ -48,7 +24,6 @@ export class StarMapFacade {
       this.host.game.setDestination(this.host.destinationFleetId, position);
       this.host.destinationFleetId = null;
     } else {
-      this.host.cancelShipTransfer();
       this.host.cancelFleetRename();
       this.host.selected = position;
       this.host.mapFleetId = null;
@@ -56,57 +31,19 @@ export class StarMapFacade {
   }
 
   fleetAtPoint(point: Point): string | null {
-    if (
-      this.host.screen === 'orders' &&
-      this.host.orderSelection?.page !== 'fleets'
-    )
-      return null;
     if (!this.host.isMapScreen() || this.host.destinationFleetId) return null;
     return FleetMapLayout.hit(
       [
-        ...this.host.game
-          .fleetSnapshots()
-          .filter(
-            (fleet) =>
-              this.host.screen !== 'fleets' ||
-              !this.host.hiddenFleetCategories.has(fleetCategory(fleet)),
-          ),
-        ...(this.host.screen === 'orders'
-          ? []
-          : this.host.game.pirateSnapshots().map(pirateAsFleet)),
+        ...this.host.game.fleetSnapshots(),
+        ...this.host.game.pirateSnapshots().map(pirateAsFleet),
       ],
       this.host.camera.screenToWorld(point),
       this.host.camera.snapshot.zoom,
     );
   }
 
-  /** flottkategorier: show or hide one category on the Fleets map. */
-  toggleFleetCategory(category: FleetCategory): void {
-    const hidden = this.host.hiddenFleetCategories;
-    if (hidden.has(category)) hidden.delete(category);
-    else hidden.add(category);
-    const selected = this.host.mapFleetId
-      ? this.host.game.fleet(this.host.mapFleetId)
-      : null;
-    if (selected && hidden.has(fleetCategory(selected)))
-      this.host.mapFleetId = null;
-  }
-
   selectMapFleet(id: string): void {
-    if (this.host.screen === 'orders') {
-      if (
-        this.host.orderSelection?.page === 'fleets' &&
-        this.host.orderSnapshot()?.fleetTargets.some((fleet) => fleet.id === id)
-      ) {
-        this.host.orderSelection = {
-          ...this.host.orderSelection,
-          selectedFleetId: id,
-        };
-        this.host.mapFleetId = id;
-      }
-      return;
-    }
-    if (!this.host.isMapScreen() || this.host.screen === 'production') return;
+    if (!this.host.isMapScreen()) return;
     const pirate = this.host.game
       .pirateSnapshots()
       .find((pirate) => pirate.id === id);
@@ -125,10 +62,8 @@ export class StarMapFacade {
   }
 
   previewFleetDestination(point: Point): void {
-    if (this.host.screen === 'orders') return;
     if (
       !this.host.isMapScreen() ||
-      this.host.screen === 'production' ||
       !this.host.mapFleetId ||
       !this.host.game.fleet(this.host.mapFleetId) ||
       !this.host.game.canIssueFleetOrders(this.host.mapFleetId)

@@ -1,12 +1,10 @@
 // isolerad-rymdkartmodul: public view surface of the space map module.
 // Code outside `space-map/` imports it only from here.
-export * from './FleetCategoryColors.js';
 export * from './MapLocationHeading.js';
 export * from './PlanetImages.js';
 export * from './ShipImages.js';
 export * from './ShipView.js';
 export * from './fleets/FleetMapPanel.js';
-export * from './orders/OrdersView.js';
 export * from './production/ProductionView.js';
 export * from './research/ResearchDetailsView.js';
 export * from './research/ResearchTreeView.js';

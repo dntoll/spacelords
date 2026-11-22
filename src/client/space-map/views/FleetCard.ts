@@ -1,4 +1,3 @@
-import { ShipOrders } from '../models/ShipOrders.js';
 import { renderFleetOrders } from './fleets/FleetOrdersView.js';
 import { bindFleetOrderDrag } from './fleets/FleetOrderDrag.js';
 import type { AppReadModel } from '../../app/models/AppModel.js';
@@ -6,8 +5,6 @@ import type { FleetSnapshot } from '../models/Game.js';
 import type { IntentHandler } from '../../app/views/ViewContracts.js';
 import { button, element } from '../../common/dom.js';
 import { renderFleetShips } from './ShipView.js';
-import { fleetCategory } from '../models/fleets/FleetCategory.js';
-import { FLEET_CATEGORY_COLORS } from './FleetCategoryColors.js';
 
 export function renderFleetCard(
   fleet: FleetSnapshot,
@@ -21,11 +18,7 @@ export function renderFleetCard(
   card.classList.toggle('selected-fleet-card', fleet.id === model.mapFleetId);
   const heading = element('h3', 'fleet-card-heading');
   const header = element('div', 'fleet-card-header');
-  // flottkategorier: the card carries the fleet's map colour and category.
-  const category = fleetCategory(fleet);
-  card.dataset.category = category;
-  card.style.setProperty('--fleet-category', FLEET_CATEGORY_COLORS[category]);
-  header.append(heading, element('span', 'fleet-category-chip', category));
+  header.append(heading);
   let selectTimer: ReturnType<typeof setTimeout> | undefined;
   const title = button(
     fleet.name,
@@ -79,23 +72,7 @@ export function renderFleetCard(
   hangar.dataset.fleetId = fleet.id;
   hangar.setAttribute('role', 'group');
   hangar.setAttribute('aria-label', `Ships in ${fleet.name}`);
-  const manifest = renderFleetShips(
-    fleet,
-    (ship, shipId) =>
-      emit({ type: 'choose-ship-transfer', fleetId: fleet.id, ship, shipId }),
-    12,
-  );
-  for (const token of manifest.querySelectorAll<HTMLButtonElement>('button')) {
-    token.disabled = locked;
-    token.draggable = false;
-    token.classList.toggle(
-      'transfer-source',
-      model.shipTransfer?.fleetId === fleet.id &&
-        model.shipTransfer.ship === token.dataset.ship &&
-        (!model.shipTransfer.shipId ||
-          model.shipTransfer.shipId === token.dataset.shipId),
-    );
-  }
+  const manifest = renderFleetShips(fleet, undefined, 12);
   const stats = element('div', 'fleet-stats');
   const speed = element('small', 'fleet-speed', `➤ ${fleet.speed}`);
   speed.title = `Fleet speed: ${fleet.speed} hexes/round${fleet.remainingMovement === undefined ? '' : ` · ${fleet.remainingMovement} hex remaining this round`}`;
@@ -112,59 +89,16 @@ export function renderFleetCard(
     stats.append(detection);
   }
   hangar.append(manifest, stats);
-  if (model.shipTransfer) {
-    const source = model.fleets.find(
-      (candidate) => candidate.id === model.shipTransfer!.fleetId,
-    );
-    const available = !locked && !!source && source.id !== fleet.id;
-    hangar.classList.toggle('transfer-available', available);
-    const move = button(`Move ship to ${fleet.name}`, () =>
-      emit({ type: 'transfer-chosen-ship', target: fleet.id }),
-    );
-    move.disabled = !available;
-    hangar.append(move);
-    if (
-      available &&
-      fleet.position &&
-      source.position?.key !== fleet.position.key
-    )
-      hangar.append(
-        element(
-          'p',
-          'muted-note',
-          'Sends reinforcements to follow this fleet until they meet.',
-        ),
-      );
-  }
   hangar.addEventListener('click', (event) => {
     if ((event.target as Element).closest('button')) return;
-    if (model.shipTransfer) {
-      const source = model.fleets.find(
-        (candidate) => candidate.id === model.shipTransfer!.fleetId,
-      );
-      if (!locked && !!source && source.id !== fleet.id)
-        emit({ type: 'transfer-chosen-ship', target: fleet.id });
-    } else emit({ type: 'map-select-fleet', id: fleet.id });
+    emit({ type: 'map-select-fleet', id: fleet.id });
   });
   const orders = renderFleetOrders(fleet, model, emit);
   const orderRow = element('div', 'fleet-order-row');
   bindFleetOrderDrag(orderRow);
   const assignment = fleetAssignmentLabel(fleet, model);
   if (assignment) {
-    const targetFleet =
-      assignment.startsWith('En route to ') && fleet.joinFleetId
-        ? model.fleets.find((item) => item.id === fleet.joinFleetId)
-        : undefined;
-    const status = targetFleet
-      ? button(
-          `Select fleet ${targetFleet.name}`,
-          () => emit({ type: 'map-select-fleet', id: targetFleet.id }),
-          'fleet-order-status',
-        )
-      : element('span', 'fleet-order-status');
-    status.textContent = assignment;
-    if (fleet.patrol && assignment.startsWith('Patrol:'))
-      status.classList.add('fleet-patrol-status');
+    const status = element('span', 'fleet-order-status', assignment);
     orderRow.append(status);
   }
   orderRow.append(orders);
@@ -196,33 +130,6 @@ export function fleetAssignmentLabel(
   fleet: FleetSnapshot,
   model: AppReadModel,
 ): string {
-  if (fleet.ordersPaused) {
-    const active = fleetAssignmentLabel(
-      { ...fleet, ordersPaused: false },
-      model,
-    );
-    return active ? `${active} · paused` : 'Orders paused';
-  }
-  if (fleet.pendingOrder)
-    return `Pending: ${ShipOrders.label(fleet.pendingOrder)}`;
-  if (fleet.explorationTargetId) {
-    const position = fleet.destination ?? fleet.position;
-    const target = model.cells.find(
-      (cell) => cell.position.key === position?.key,
-    )?.object?.name;
-    return `Explore planet: ${target ?? 'selected planet'}`;
-  }
-  if (fleet.exploration)
-    return fleet.exploration === 'explore-stars' ? 'Explore stars' : 'Explore';
-  if (fleet.patrol) {
-    return `Patrol: range ${fleet.patrol.range} hex${fleet.patrol.targetPirateId ? ', pursuing Space pirate' : ''}`;
-  }
-  if (fleet.joinFleetId) {
-    const target = model.fleets.find(
-      (target) => target.id === fleet.joinFleetId,
-    );
-    return `En route to ${target?.name ?? fleet.joinFleetId}`;
-  }
   if (fleet.destination) {
     const target = model.cells.find(
       (cell) => cell.position.key === fleet.destination?.key,

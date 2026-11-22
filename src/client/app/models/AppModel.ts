@@ -2,21 +2,14 @@ import {
   SaveFacade,
   ResearchFacade,
   FleetFacade,
-  OrderFacade,
   ProductionFacade,
   StarMapFacade,
   TurnFacade,
-  ShipOrders,
-  type ShipOrder,
-  type OrderKind,
-  type OrderSelection,
-  type OrderSelectionSnapshot,
   type EventPlayback,
   type EventPlaybackSnapshot,
   type EventDecision,
   type TurnMovementPlayback,
   type TurnMovement,
-  type ExplorationOrder,
   type SavedTurnSimulation,
   type PirateSnapshot,
   isMapScreen,
@@ -33,13 +26,10 @@ import {
   type FleetSnapshot,
   type GameEvent,
   type GamePhase,
-  type ShipType,
   type TurnFrame,
   type Technology,
   type ResearchSnapshot,
   type MapCell,
-  FLEET_CATEGORIES,
-  type FleetCategory,
 } from '../../space-map/models/index.js';
 import {
   BoardingFacade,
@@ -65,8 +55,7 @@ import {
 } from '../../common/HexCoordinate.js';
 import { actionFailed, type PlayerNotice } from './PlayerNotice.js';
 
-export type Screen =
-  'saves' | 'map' | 'research' | 'fleets' | 'production' | 'orders';
+export type Screen = 'saves' | 'map' | 'research' | 'fleets' | 'production';
 
 export interface SaveSlotSnapshot {
   readonly id: number;
@@ -77,7 +66,6 @@ export interface SaveSlotSnapshot {
 }
 
 export interface AppReadModel {
-  readonly orderView?: OrderSelectionSnapshot | null;
   readonly boardingBattle?: BoardingBattleState | null;
   readonly boardingPresentation?: readonly BoardingBattleState[];
   readonly boardingShot?: BoardingShot | null;
@@ -110,14 +98,7 @@ export interface AppReadModel {
     readonly id: string;
     readonly draft: string;
   } | null;
-  readonly shipTransfer: {
-    readonly fleetId: string;
-    readonly shipId?: string | undefined;
-    readonly ship: ShipType;
-  } | null;
   readonly mapFleetId: string | null;
-  /** flottkategorier: categories the player hid from the Fleets map. */
-  readonly hiddenFleetCategories: readonly FleetCategory[];
   readonly hoveredFleetId: string | null;
   readonly fleetDestinationPreview: HexCoordinate | null;
   readonly fleetDragging: boolean;
@@ -137,12 +118,10 @@ export class AppModel {
   readonly battle: BattleFacade;
   readonly researchCase: ResearchFacade;
   readonly fleets: FleetFacade;
-  readonly orders: OrderFacade;
   readonly production: ProductionFacade;
   readonly starMap: StarMapFacade;
   readonly turn: TurnFacade;
 
-  #orderSelection: OrderSelection | null = null;
   #movementPlayback: TurnMovementPlayback | null = null;
   #movementOrigin: AppReadModel | null = null;
   #eventPlayback: EventPlayback | null = null;
@@ -157,7 +136,6 @@ export class AppModel {
     readonly selectedFleetId: string | null;
     readonly camera: CameraSnapshot;
   } | null = null;
-  #hiddenFleetCategories = new Set<FleetCategory>();
   #pendingResearchRemoval: Technology | null = null;
   #game: Game;
   #testBattle: TacticalBattle | null = null;
@@ -173,11 +151,6 @@ export class AppModel {
   #pendingMapFocus: HexCoordinate | null = null;
   #selectedFleetId: string | null = null;
   #fleetNameEdit: { readonly id: string; readonly draft: string } | null = null;
-  #shipTransfer: {
-    readonly fleetId: string;
-    readonly ship: ShipType;
-    readonly shipId?: string | undefined;
-  } | null = null;
   #mapFleetId: string | null = null;
   #hoveredFleetId: string | null = null;
   #fleetDestinationPreview: HexCoordinate | null = null;
@@ -207,7 +180,6 @@ export class AppModel {
     this.battle = new BattleFacade(host);
     this.researchCase = new ResearchFacade(host);
     this.fleets = new FleetFacade(host);
-    this.orders = new OrderFacade(host);
     this.production = new ProductionFacade(host);
     this.starMap = new StarMapFacade(host);
     this.turn = new TurnFacade(host);
@@ -312,7 +284,6 @@ export class AppModel {
           ...(this.#game.interruption?.presentedEventIds ?? []),
         ]),
       ]),
-      orderView: this.#orderSnapshot(),
       mapFocusRevision: this.#mapFocusRevision,
       pendingResearchRemoval: this.#pendingResearchRemoval,
       saveSlots: this.#saveSlots,
@@ -337,14 +308,9 @@ export class AppModel {
       selectedFleet: this.#selectedFleetId
         ? this.#game.fleet(this.#selectedFleetId)
         : null,
-      shipTransfer: this.#shipTransfer,
       fleetNameEdit: this.#fleetNameEdit,
       mapFleetId: this.#mapFleetId,
-      hiddenFleetCategories: Object.freeze(
-        FLEET_CATEGORIES.filter((item) =>
-          this.#hiddenFleetCategories.has(item),
-        ),
-      ),
+
       hoveredFleetId: this.#hoveredFleetId,
       fleetDestinationPreview: this.#fleetDestinationPreview,
       fleetDragging: this.#fleetDragging,
@@ -445,57 +411,15 @@ export class AppModel {
   }
   #openMapScreen(screen: MapScreen): void {
     this.cancelMapPointer();
-    this.cancelShipTransfer();
     this.cancelFleetRename();
     this.#destinationFleetId = null;
     this.#screen = screen;
-    if (screen !== 'orders') this.#orderSelection = null;
   }
   openMap(): void {
     return this.starMap.openMap();
   }
   openFleets(): void {
     return this.fleets.openFleets();
-  }
-  #orderSnapshot(): OrderSelectionSnapshot | null {
-    const selection = this.#screen === 'orders' ? this.#orderSelection : null;
-    if (!selection) return null;
-    const fleet = this.#game.fleet(selection.fleetId);
-    return Object.freeze({
-      ...selection,
-      options: ShipOrders.options(fleet?.ships ?? {}),
-      fleetTargets: Object.freeze(
-        this.#game
-          .fleetSnapshots()
-          .filter(
-            (target) => target.id !== selection.fleetId && target.position,
-          ),
-      ),
-    });
-  }
-  openFleetOrders(id: string): void {
-    return this.orders.openFleetOrders(id);
-  }
-  chooseOrder(kind: OrderKind): void {
-    return this.orders.chooseOrder(kind);
-  }
-  completeOrder(order: ShipOrder): void {
-    return this.orders.completeOrder(order);
-  }
-  orderBack(): void {
-    return this.orders.orderBack();
-  }
-  #closeOrders(joinedFleetId?: string): void {
-    const selection = this.#orderSelection;
-    if (!selection) return;
-    this.#orderSelection = null;
-    this.#screen =
-      selection.returnScreen === 'orders' ? 'fleets' : selection.returnScreen;
-    const fleet =
-      this.#game.fleet(selection.fleetId) ??
-      (joinedFleetId ? this.#game.fleet(joinedFleetId) : null);
-    this.#mapFleetId = fleet?.id ?? null;
-    this.#selected = fleet?.position ?? selection.origin;
   }
   openFleet(id: string): void {
     return this.fleets.openFleet(id);
@@ -567,30 +491,6 @@ export class AppModel {
   submitFleetName(): void {
     return this.fleets.submitFleetName();
   }
-  chooseShipTransfer(fleetId: string, ship: ShipType, shipId?: string): void {
-    return this.fleets.chooseShipTransfer(fleetId, ship, shipId);
-  }
-  cancelShipTransfer(): void {
-    return this.fleets.cancelShipTransfer();
-  }
-  transferChosenShip(target: string | null): void {
-    return this.fleets.transferChosenShip(target);
-  }
-  transferShips(
-    source: string,
-    ship: ShipType,
-    amount: number,
-    target: string | null,
-    shipId?: string,
-  ): void {
-    return this.fleets.transferShips(source, ship, amount, target, shipId);
-  }
-  createFleet(source?: string): void {
-    return this.fleets.createFleet(source);
-  }
-  deleteFleet(id: string): void {
-    return this.fleets.deleteFleet(id);
-  }
   beginDestination(id: string): void {
     return this.fleets.beginDestination(id);
   }
@@ -605,12 +505,6 @@ export class AppModel {
   }
   nextTurnFrame(): TurnFrame | null {
     return this.turn.nextTurnFrame();
-  }
-  exploreFleet(id: string, order: ExplorationOrder): void {
-    return this.fleets.exploreFleet(id, order);
-  }
-  patrolFleet(id: string): void {
-    return this.fleets.patrolFleet(id);
   }
   handleDiscoveries(): void {
     return this.turn.handleDiscoveries();
@@ -643,9 +537,6 @@ export class AppModel {
       this.#mapFleetId = fleet.id;
       this.#camera.focus(fleet.position);
     }
-  }
-  allowOtherFleetOrders(): void {
-    return this.turn.allowOtherFleetOrders();
   }
   continueTurn(): void {
     return this.turn.continueTurn();
@@ -696,9 +587,6 @@ export class AppModel {
   finishBattleFeedback(): void {
     return this.battle.finishBattleFeedback();
   }
-  resumeFleetOrders(id: string): void {
-    return this.fleets.resumeFleetOrders(id);
-  }
   applyTurnFrame(frame: TurnFrame): void {
     return this.turn.applyTurnFrame(frame);
   }
@@ -723,11 +611,9 @@ export class AppModel {
     const title =
       discovery.kind === 'pirate'
         ? 'Pirate ship in sight'
-        : discovery.kind === 'wreck'
-          ? 'Wreck discovered'
-          : discovery.kind === 'planet-explored'
-            ? 'Planet explored'
-            : 'Planet discovered';
+        : discovery.kind === 'planet-explored'
+          ? 'Planet explored'
+          : 'Planet discovered';
     const details = [
       `HEX ${item.position.q},${item.position.r}${fleet ? ` · ${fleet.name} · ${fleet.remainingMovement ?? 0} hex remaining` : ''}`,
     ];
@@ -890,9 +776,6 @@ export class AppModel {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const model = this;
     return {
-      get orderSelection() {
-        return model.#orderSelection;
-      },
       get movementPlayback() {
         return model.#movementPlayback;
       },
@@ -916,9 +799,6 @@ export class AppModel {
       },
       get turnContext() {
         return model.#turnContext;
-      },
-      get hiddenFleetCategories() {
-        return model.#hiddenFleetCategories;
       },
       get pendingResearchRemoval() {
         return model.#pendingResearchRemoval;
@@ -965,9 +845,6 @@ export class AppModel {
       get fleetNameEdit() {
         return model.#fleetNameEdit;
       },
-      get shipTransfer() {
-        return model.#shipTransfer;
-      },
       get mapFleetId() {
         return model.#mapFleetId;
       },
@@ -994,9 +871,6 @@ export class AppModel {
       },
       get saveSlots() {
         return model.#saveSlots;
-      },
-      set orderSelection(value) {
-        model.#orderSelection = value;
       },
       set movementPlayback(value) {
         model.#movementPlayback = value;
@@ -1061,9 +935,6 @@ export class AppModel {
       set fleetNameEdit(value) {
         model.#fleetNameEdit = value;
       },
-      set shipTransfer(value) {
-        model.#shipTransfer = value;
-      },
       set mapFleetId(value) {
         model.#mapFleetId = value;
       },
@@ -1127,13 +998,6 @@ export class AppModel {
       openMapScreen: (screen: MapScreen) => model.#openMapScreen(screen),
       openMap: () => model.openMap(),
       openFleets: () => model.openFleets(),
-      orderSnapshot: () => model.#orderSnapshot(),
-      openFleetOrders: (id: string) => model.openFleetOrders(id),
-      chooseOrder: (kind: OrderKind) => model.chooseOrder(kind),
-      completeOrder: (order: ShipOrder) => model.completeOrder(order),
-      orderBack: () => model.orderBack(),
-      closeOrders: (joinedFleetId?: string) =>
-        model.#closeOrders(joinedFleetId),
       openFleet: (id: string) => model.openFleet(id),
       pan: (delta: Point) => model.pan(delta),
       zoom: (factor: number, anchor: Point) => model.zoom(factor, anchor),
@@ -1161,32 +1025,14 @@ export class AppModel {
       editFleetName: (draft: string) => model.editFleetName(draft),
       cancelFleetRename: () => model.cancelFleetRename(),
       submitFleetName: () => model.submitFleetName(),
-      chooseShipTransfer: (fleetId: string, ship: ShipType, shipId?: string) =>
-        model.chooseShipTransfer(fleetId, ship, shipId),
-      cancelShipTransfer: () => model.cancelShipTransfer(),
-      transferChosenShip: (target: string | null) =>
-        model.transferChosenShip(target),
-      transferShips: (
-        source: string,
-        ship: ShipType,
-        amount: number,
-        target: string | null,
-        shipId?: string,
-      ) => model.transferShips(source, ship, amount, target, shipId),
-      createFleet: (source?: string) => model.createFleet(source),
-      deleteFleet: (id: string) => model.deleteFleet(id),
       beginDestination: (id: string) => model.beginDestination(id),
       setDestination: (id: string, q: number, r: number) =>
         model.setDestination(id, q, r),
       clearDestination: (id: string) => model.clearDestination(id),
       startTurn: () => model.startTurn(),
       nextTurnFrame: () => model.nextTurnFrame(),
-      exploreFleet: (id: string, order: ExplorationOrder) =>
-        model.exploreFleet(id, order),
-      patrolFleet: (id: string) => model.patrolFleet(id),
       handleDiscoveries: () => model.handleDiscoveries(),
       focusInterruptedFleet: () => model.#focusInterruptedFleet(),
-      allowOtherFleetOrders: () => model.allowOtherFleetOrders(),
       continueTurn: () => model.continueTurn(),
       commandBattle: (command: BattleCommand) => model.commandBattle(command),
       startTestBoarding: (selection?: TestBoardingSelection) =>
@@ -1207,7 +1053,6 @@ export class AppModel {
         options?: { readonly allowDock?: boolean },
       ) => model.playBattleActivation(singleStep, options),
       finishBattleFeedback: () => model.finishBattleFeedback(),
-      resumeFleetOrders: (id: string) => model.resumeFleetOrders(id),
       applyTurnFrame: (frame: TurnFrame) => model.applyTurnFrame(frame),
       finishTurn: () => model.finishTurn(),
       beginEventPlayback: () => model.beginEventPlayback(),
@@ -1242,7 +1087,6 @@ export class AppModel {
 }
 
 export interface AppHost {
-  orderSelection: OrderSelection | null;
   movementPlayback: TurnMovementPlayback | null;
   movementOrigin: AppReadModel | null;
   eventPlayback: EventPlayback | null;
@@ -1257,7 +1101,6 @@ export interface AppHost {
     readonly selectedFleetId: string | null;
     readonly camera: CameraSnapshot;
   } | null;
-  readonly hiddenFleetCategories: Set<FleetCategory>;
   pendingResearchRemoval: Technology | null;
   game: Game;
   testBattle: TacticalBattle | null;
@@ -1273,11 +1116,6 @@ export interface AppHost {
   pendingMapFocus: HexCoordinate | null;
   selectedFleetId: string | null;
   fleetNameEdit: { readonly id: string; readonly draft: string } | null;
-  shipTransfer: {
-    readonly fleetId: string;
-    readonly ship: ShipType;
-    readonly shipId?: string | undefined;
-  } | null;
   mapFleetId: string | null;
   hoveredFleetId: string | null;
   fleetDestinationPreview: HexCoordinate | null;
@@ -1314,12 +1152,6 @@ export interface AppHost {
   openMapScreen(screen: MapScreen): void;
   openMap(): void;
   openFleets(): void;
-  orderSnapshot(): OrderSelectionSnapshot | null;
-  openFleetOrders(id: string): void;
-  chooseOrder(kind: OrderKind): void;
-  completeOrder(order: ShipOrder): void;
-  orderBack(): void;
-  closeOrders(joinedFleetId?: string): void;
   openFleet(id: string): void;
   pan(delta: Point): void;
   zoom(factor: number, anchor: Point): void;
@@ -1342,28 +1174,13 @@ export interface AppHost {
   editFleetName(draft: string): void;
   cancelFleetRename(): void;
   submitFleetName(): void;
-  chooseShipTransfer(fleetId: string, ship: ShipType, shipId?: string): void;
-  cancelShipTransfer(): void;
-  transferChosenShip(target: string | null): void;
-  transferShips(
-    source: string,
-    ship: ShipType,
-    amount: number,
-    target: string | null,
-    shipId?: string,
-  ): void;
-  createFleet(source?: string): void;
-  deleteFleet(id: string): void;
   beginDestination(id: string): void;
   setDestination(id: string, q: number, r: number): void;
   clearDestination(id: string): void;
   startTurn(): void;
   nextTurnFrame(): TurnFrame | null;
-  exploreFleet(id: string, order: ExplorationOrder): void;
-  patrolFleet(id: string): void;
   handleDiscoveries(): void;
   focusInterruptedFleet(): void;
-  allowOtherFleetOrders(): void;
   continueTurn(): void;
   commandBattle(command: BattleCommand): void;
   startTestBoarding(selection?: TestBoardingSelection): void;
@@ -1380,7 +1197,6 @@ export interface AppHost {
     options?: { readonly allowDock?: boolean },
   ): void;
   finishBattleFeedback(): void;
-  resumeFleetOrders(id: string): void;
   applyTurnFrame(frame: TurnFrame): void;
   finishTurn(): void;
   beginEventPlayback(): void;

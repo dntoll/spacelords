@@ -1,4 +1,3 @@
-import { completeTacticalBattles } from '../../fixtures/tactical-combat.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   TurnMovementPlayback,
@@ -55,7 +54,7 @@ it('destinationer-for-aktiva-skepp: retains the current order target beyond the 
   expect(playback.fleets[0]!.destination).toEqual(from);
 });
 
-it('samtidig-automatisk-flottanimation / geografisk-arsuppspelning: groups automatic traffic first and orders other tracks west to east, then south to north', () => {
+it('geografisk-arsuppspelning: plays tracks west to east, then south to north', () => {
   const base = new Game(createExampleGalaxy()).fleetSnapshots()[0]!;
   const fleets = [
     { ...base, id: 'east', position: new HexCoordinate(4, 0) },
@@ -90,7 +89,7 @@ it('samtidig-automatisk-flottanimation / geografisk-arsuppspelning: groups autom
   playback.record({ movements: [extra] }, origin, origin);
   expect(
     playback.batches.map((batch) => batch.map((track) => track[0]!.fleetId)),
-  ).toEqual([['route-a', 'route-b'], ['south'], ['north'], ['east']]);
+  ).toEqual([['route-a'], ['south'], ['north'], ['east'], ['route-b']]);
   const simultaneous = [moves[2]!, moves[4]!];
   playback.begin(simultaneous);
   expect(playback.currents).toEqual(simultaneous);
@@ -113,46 +112,6 @@ it('samtidig-automatisk-flottanimation / geografisk-arsuppspelning: groups autom
   ).toBeNull();
   expect(Object.isFrozen(playback.currents)).toBe(true);
 });
-
-it('samtidig-automatisk-flottanimation: groups every autonomous order while manual Move remains separate', () => {
-  const base = new Game(createExampleGalaxy()).fleetSnapshots()[0]!;
-  const fleets = [
-    { ...base, id: 'explore', exploration: 'explore' as const },
-    {
-      ...base,
-      id: 'patrol',
-      patrol: { center: new HexCoordinate(0, 0), range: 1 },
-    },
-    { ...base, id: 'manual' },
-  ].map((fleet, index) => ({
-    ...fleet,
-    position: new HexCoordinate(index, 0),
-  }));
-  const origin = { fleets, pirates: [], cells: [] };
-  const playback = new TurnMovementPlayback(origin);
-  playback.record(
-    {
-      movements: fleets.map((fleet) => ({
-        fleetId: fleet.id,
-        from: fleet.position,
-        to: fleet.position.neighbors()[0]!,
-      })),
-    },
-    origin,
-    origin,
-  );
-  expect(
-    playback.batches.map((batch) => batch.map((track) => track[0]!.fleetId)),
-  ).toEqual([['explore', 'patrol'], ['manual']]);
-});
-
-function scene(game: Game): MovementScene {
-  return {
-    fleets: game.fleetSnapshots(),
-    pirates: game.pirateSnapshots(),
-    cells: game.mapSnapshot(),
-  };
-}
 
 describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
   it.each([false, true])(
@@ -335,61 +294,6 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     controller.dispose();
   });
 
-  it('groups interleaved simulation steps into complete fleet tracks and keeps other markers still', () => {
-    const game = new Game(createExampleGalaxy());
-    game.transferShips('fleet-home', 'Fighter', 1, null);
-    const second = game.fleetSnapshots()[1]!;
-    game.setDestination('fleet-home', new HexCoordinate(3, 0));
-    game.setDestination(second.id, new HexCoordinate(0, 3));
-    game.startTurn();
-    const origin = scene(game),
-      playback = new TurnMovementPlayback(origin);
-    const hiddenIds = new Set<string>();
-    for (let index = 0; index < 50; index++) {
-      if (game.phase === 'interrupted') {
-        completeTacticalBattles(game);
-        game.continueTurn();
-      }
-      const frame = game.nextTurnFrame();
-      if (!frame) break;
-      const before = scene(game);
-      game.applyFrame(frame);
-      playback.record(frame, before, scene(game));
-      for (const move of frame.movements)
-        if (
-          !before.fleets.some((fleet) => fleet.id === move.fleetId) &&
-          !before.pirates.some((fleet) => fleet.id === move.fleetId)
-        )
-          hiddenIds.add(move.fleetId);
-    }
-    game.finishTurn();
-    const final = game.exportState();
-    expect(hiddenIds.size).toBeGreaterThan(0);
-    expect(playback.tracks).toHaveLength(2);
-    expect(
-      playback.tracks.every(
-        (track) =>
-          track.length > 1 &&
-          track.every((move) => move.fleetId === track[0]!.fleetId),
-      ),
-    ).toBe(true);
-    const first = playback.tracks[0]![0]!;
-    playback.begin(first);
-    expect(playback.current).toBe(first);
-    playback.complete();
-    expect(
-      playback.fleets.find((fleet) => fleet.id === first.fleetId)?.position,
-    ).toEqual(first.to);
-    const idle = origin.fleets.find((fleet) => fleet.id !== first.fleetId)!;
-    expect(
-      playback.fleets.find((fleet) => fleet.id === idle.id)?.position,
-    ).toEqual(idle.position);
-    expect(
-      playback.tracks.flat().some((move) => hiddenIds.has(move.fleetId)),
-    ).toBe(false);
-    expect(game.exportState()).toEqual(final);
-  });
-
   it('does not reveal either endpoint of a hostile step with a hidden endpoint', () => {
     const game = new Game(createExampleGalaxy());
     const saved = game.exportState().pirates![0]!;
@@ -416,59 +320,6 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     expect(playback.tracks).toHaveLength(1);
   });
 
-  it('stillastaende-kamera-vid-forflyttning: frames each full route and keeps its camera fixed while ships move', async () => {
-    vi.useFakeTimers();
-    const model = new AppModel();
-    model.transferShips('fleet-home', 'Fighter', 1, null);
-    const other = model.snapshot.fleets[1]!;
-    model.setDestination('fleet-home', 3, 0);
-    model.setDestination(other.id, 0, 3);
-    let emit!: IntentHandler;
-    const order: string[] = [];
-    const cameras = new Map<string, typeof model.snapshot.camera>();
-    const controller = new MasterController(model, {
-      bind(handler) {
-        emit = handler;
-      },
-      render(snapshot) {
-        if (snapshot.turnMovement) {
-          expect(snapshot.phase).toBe('simulating');
-        }
-      },
-      animateTurnStep(frame: TurnFrame) {
-        expect(frame.movements).toHaveLength(1);
-        const movement = frame.movements[0]!;
-        const camera = model.snapshot.camera;
-        if (cameras.has(movement.fleetId))
-          expect(camera).toEqual(cameras.get(movement.fleetId));
-        cameras.set(movement.fleetId, camera);
-        order.push(movement.fleetId);
-        return Promise.resolve();
-      },
-      dispose() {},
-    });
-    controller.start();
-    emit({ type: 'end-turn' });
-    // handelser-vid-ankomst: arrival events pause movement until they close.
-    for (
-      let step = 0;
-      step < 40 && model.snapshot.phase !== 'planning';
-      step++
-    ) {
-      if (model.snapshot.eventPlayback?.stage === 'awaiting-choice')
-        emit({ type: 'ignore-discoveries' });
-      await vi.advanceTimersByTimeAsync(1000);
-    }
-    expect(order.length).toBeGreaterThan(3);
-    expect([...new Set(order)]).toHaveLength(2);
-    let switches = 0;
-    for (let index = 1; index < order.length; index++)
-      if (order[index] !== order[index - 1]) switches++;
-    expect(switches).toBe(1);
-    expect(order.every((id) => !id.startsWith('pirate-'))).toBe(true);
-    controller.dispose();
-  });
-
   it('introduces no animation or presentation wait for a year with only hidden movement', () => {
     vi.useFakeTimers();
     const model = new AppModel();
@@ -488,44 +339,4 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     expect(model.snapshot.turnMovement).toBeNull();
     controller.dispose();
   });
-});
-
-it('handelser-vid-ankomst: shows what a ship found as soon as it arrives, before other fleets move', async () => {
-  vi.useFakeTimers();
-  const model = new AppModel();
-  model.transferShips('fleet-home', 'Fighter', 1, null);
-  const other = model.snapshot.fleets[1]!;
-  model.setDestination('fleet-home', 0, 1);
-  model.setDestination(other.id, 3, 0);
-  let emit!: IntentHandler;
-  const moved: string[] = [];
-  let shownAfter: readonly string[] | null = null;
-  const controller = new MasterController(model, {
-    bind(handler) {
-      emit = handler;
-    },
-    render(snapshot) {
-      const current =
-        snapshot.eventPlayback?.events[snapshot.eventPlayback.index];
-      if (shownAfter === null && current?.text.includes('Vesta'))
-        shownAfter = [...moved];
-    },
-    animateTurnStep(frame: TurnFrame) {
-      moved.push(...frame.movements.map((movement) => movement.fleetId));
-      return Promise.resolve();
-    },
-    dispose() {},
-  });
-  controller.start();
-  emit({ type: 'end-turn' });
-  for (let step = 0; step < 40 && model.snapshot.phase !== 'planning'; step++) {
-    if (model.snapshot.eventPlayback?.stage === 'awaiting-choice')
-      emit({ type: 'ignore-discoveries' });
-    await vi.advanceTimersByTimeAsync(1000);
-  }
-  expect(shownAfter).not.toBeNull();
-  // Shown right after Home Fleet arrived, before the other fleet moved.
-  expect(shownAfter).toEqual(['fleet-home']);
-  expect(moved).toContain(other.id);
-  controller.dispose();
 });

@@ -242,21 +242,6 @@ describe('handelser / arsrundor-och-order', () => {
       ),
     ).toBe(false);
   });
-  it('keeps arrivals in actual movement order', () => {
-    const start = new Game(createExampleGalaxy());
-    start.transferShips('fleet-home', 'Fighter', 1, null);
-    start.setDestination('fleet-home', new HexCoordinate(3, 0));
-    const game = Game.restore(start.exportState());
-    const scout = game.fleetSnapshots()[1]!;
-    game.setDestination(scout.id, new HexCoordinate(0, 1));
-    game.startTurn();
-    game.applyFrame(game.nextTurnFrame()!);
-    expect(game.events.map((event) => event.text)).toEqual([
-      `${scout.name} arrived at Vesta.`,
-    ]);
-    collectTurnFrames(game, false);
-    expect(game.events[1]!.text).toBe('Home Fleet arrived at HEX 3,0.');
-  });
   it('shows a persistent console ordered by year instead of a dialog and disables End turn during animation', async () => {
     vi.useFakeTimers();
     const root = document.createElement('div');

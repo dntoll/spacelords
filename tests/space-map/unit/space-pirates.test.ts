@@ -217,38 +217,6 @@ describe('rymdpiraters-sparning', () => {
   });
 });
 
-describe('flottstrid-per-hex / handelsnatverk', () => {
-  it('gemensamt-stridsdeltagande: fights together before merging reinforcements at their meeting hex', () => {
-    const state = battle(3, 3).exportState();
-    const fleet = state.fleets[0]!;
-    const game = Game.restore({
-      ...state,
-      fleets: [
-        {
-          ...fleet,
-          id: 'a',
-          name: 'Incoming',
-          shipUnits: [],
-          position: { q: 7, r: -4 },
-          destination: { q: 8, r: -4 },
-          joinFleetId: 'b',
-        },
-        { ...fleet, id: 'b', name: 'Target', ships: { ...fleet.ships } },
-      ],
-    });
-    turn(game);
-    expect(game.fleet('a')).toBeNull();
-    expect(game.fleet('b')!.ships.Fighter).toBeGreaterThan(0);
-    expect(game.exportState().pirates).toEqual([]);
-    expect(
-      game.events.find((event) => event.text.startsWith('Combat at HEX'))!.text,
-    ).toContain('Incoming, Target versus Space pirate');
-    expect(
-      game.events.filter((event) => event.text.startsWith('Combat at HEX')),
-    ).toHaveLength(1);
-  });
-});
-
 describe('flottstrid-per-hex / motorbehov-for-alla-skepp', () => {
   it('retains surviving ship equipment and the original strategic travel budget', () => {
     const state = battle(2, 2).exportState();
@@ -325,9 +293,6 @@ describe('rymdpirater-per-stjarna / lokal-sikt', () => {
     expect(() =>
       game.setDestination('pirate-nadir', new HexCoordinate(1, 0)),
     ).toThrow();
-    expect(() =>
-      game.transferShips('fleet-home', 'Fighter', 1, 'pirate-nadir'),
-    ).toThrow();
     expect(game.exportState()).toEqual(before);
     turn(game);
     expect(game.pirateSnapshots()).toEqual([]);
@@ -347,40 +312,5 @@ describe('rymdpirater-per-stjarna / lokal-sikt', () => {
     expect(
       game.events.some((event) => event.text.startsWith('Combat at HEX')),
     ).toBe(false);
-  });
-});
-
-describe('flottstrid-per-hex / skepp-till-rorlig-flotta', () => {
-  it('cancels pursuit when pirates destroy its target without advancing the follower again', () => {
-    const state = battle(0, 1, 1).exportState();
-    const game = Game.restore({
-      ...state,
-      fleets: [
-        ...state.fleets,
-        {
-          ...state.fleets[0]!,
-          id: 'follower',
-          name: 'Follower',
-          position: { q: 6, r: -4 },
-          destination: { q: 8, r: -4 },
-          joinFleetId: 'fleet-home',
-          shipUnits: [],
-          ships: { ...empty, Fighter: 1 },
-        },
-      ],
-    });
-    turn(game);
-    expect(game.fleet('fleet-home')!.position).toBeNull();
-    expect(game.fleet('follower')).toMatchObject({
-      position: new HexCoordinate(7, -4),
-      destination: null,
-      joinFleetId: undefined,
-    });
-    expect(game.fleet('follower')!.ships.Fighter).toBe(1);
-    expect(
-      game.events.some((event) =>
-        event.text.includes('reinforcement target unavailable'),
-      ),
-    ).toBe(true);
   });
 });

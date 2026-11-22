@@ -2,8 +2,6 @@
 import type { HexCoordinate } from '../../common/HexCoordinate.js';
 import type { ShipType, ShipUnit } from './Catalog.js';
 import type { Stock } from './Economy.js';
-import type { ShipOrder } from './ShipOrders.js';
-import type { ExplorationOrder } from './TurnSimulation.js';
 import type { Technology } from './research/Research.js';
 import type { EventIllustration, EventLine } from './turn/EventDetails.js';
 
@@ -18,21 +16,11 @@ export interface ResearchSnapshot {
 }
 
 export interface FleetSnapshot {
-  readonly pendingOrder?: ShipOrder;
-  readonly ordersPaused?: boolean;
-  readonly explorationTargetId?: string;
   readonly navigationIssue?: string | undefined;
-  readonly patrol?: Readonly<{
-    center: HexCoordinate;
-    range: number;
-    targetPirateId?: string;
-  }>;
   readonly detectionRange?: number;
-  readonly exploration?: ExplorationOrder | undefined;
   readonly remainingMovement?: number | undefined;
   readonly canIssueOrders?: boolean;
   readonly ownName?: string;
-  readonly joinFleetId?: string | undefined;
   readonly cargo?: Readonly<Stock>;
   readonly id: string;
   readonly name: string;

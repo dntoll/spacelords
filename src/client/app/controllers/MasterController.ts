@@ -3,7 +3,6 @@ import {
   ResearchController,
   FleetController,
   ProductionController,
-  OrderController,
   StarMapController,
   TurnController,
 } from '../../space-map/controllers/index.js';
@@ -29,7 +28,6 @@ export class MasterController {
   readonly #research: ResearchController;
   readonly #fleets: FleetController;
   readonly #production: ProductionController;
-  readonly #orders: OrderController;
   readonly #starMap: StarMapController;
   readonly #turn: TurnController;
   readonly #model: AppModel;
@@ -57,7 +55,6 @@ export class MasterController {
     this.#research = new ResearchController(model.researchCase);
     this.#fleets = new FleetController(model.fleets);
     this.#production = new ProductionController(model.production);
-    this.#orders = new OrderController(model.orders);
     this.#starMap = new StarMapController(model.starMap);
     this.#turn = new TurnController(model.turn);
   }
@@ -276,7 +273,6 @@ export class MasterController {
     if (before.turnMovement) return;
     let mapOrder = false;
     if (intent.type.startsWith('open-') || intent.type === 'end-turn') {
-      this.#fleets.cancelShipTransfer();
       this.#fleets.cancelFleetRename();
     }
     if (
@@ -327,23 +323,8 @@ export class MasterController {
         this.#boarding.startTestBoarding(intent.selection);
         this.#schedulePlayback();
         break;
-      case 'open-fleet-orders':
-        this.#orders.openFleetOrders(intent.id);
-        break;
-      case 'order-kind':
-        this.#orders.chooseOrder(intent.kind);
-        break;
-      case 'apply-ship-order':
-        this.#orders.completeOrder(intent.order);
-        break;
-      case 'order-back':
-        this.#orders.orderBack();
-        break;
       case 'handle-discoveries':
         this.#turn.handleDiscoveries();
-        break;
-      case 'allow-other-fleet-orders':
-        this.#turn.allowOtherFleetOrders();
         break;
       case 'continue-turn':
         if (this.#model.snapshot.interruption?.handling) {
@@ -375,9 +356,6 @@ export class MasterController {
       case 'map-select-fleet':
         this.#starMap.selectMapFleet(intent.id);
         break;
-      case 'toggle-fleet-category':
-        this.#starMap.toggleFleetCategory(intent.category);
-        break;
       case 'open-production':
         this.#production.openProduction();
         break;
@@ -395,9 +373,6 @@ export class MasterController {
         break;
       case 'inspect-research':
         this.#research.inspectResearch(intent.technology);
-        break;
-      case 'resume-fleet-orders':
-        this.#fleets.resumeFleetOrders(intent.id);
         break;
       case 'move-research':
         this.#research.moveResearch(intent.technology, intent.index);
@@ -494,10 +469,7 @@ export class MasterController {
         break;
       case 'select': {
         const snapshot = this.#model.snapshot;
-        mapOrder =
-          !!snapshot.destinationFleetId ||
-          snapshot.orderView?.page === 'patrol' ||
-          snapshot.orderView?.page === 'explore-planet';
+        mapOrder = !!snapshot.destinationFleetId;
         this.#starMap.select(intent.position);
         break;
       }
@@ -512,28 +484,6 @@ export class MasterController {
         break;
       case 'open-fleet':
         this.#fleets.openFleet(intent.id);
-        break;
-      case 'choose-ship-transfer':
-        this.#fleets.chooseShipTransfer(
-          intent.fleetId,
-          intent.ship,
-          intent.shipId,
-        );
-        break;
-      case 'transfer-chosen-ship':
-        this.#fleets.transferChosenShip(intent.target);
-        break;
-      case 'cancel-ship-transfer':
-        this.#fleets.cancelShipTransfer();
-        break;
-      case 'transfer-ships':
-        this.#fleets.transferShips(
-          intent.source,
-          intent.ship,
-          intent.amount,
-          intent.target,
-          intent.shipId,
-        );
         break;
       case 'begin-destination':
         this.#fleets.beginDestination(intent.id);
@@ -623,10 +573,7 @@ export class MasterController {
         const selected = this.#gesture.end(intent.id);
         if (selected) {
           const snapshot = this.#model.snapshot;
-          mapOrder =
-            !!snapshot.destinationFleetId ||
-            snapshot.orderView?.page === 'patrol' ||
-            snapshot.orderView?.page === 'explore-planet';
+          mapOrder = !!snapshot.destinationFleetId;
           this.#starMap.selectPoint(selected);
         }
         break;
@@ -643,7 +590,6 @@ export class MasterController {
         'pointer-cancel',
         'map-size',
         'map-select-fleet',
-        'toggle-fleet-category',
         'pointer-move',
         'pointer-start',
         'pan',
@@ -837,11 +783,7 @@ export class MasterController {
           await this.#animateCamera();
           if (this.#disposed) return;
           const steps = Math.max(...batch.map((track) => track.length));
-          const stepDuration = movementPlayback.isAutonomous(
-            batch[0]![0]!.fleetId,
-          )
-            ? Math.min(400, 4000 / steps)
-            : 400;
+          const stepDuration = 400;
           for (let index = 0; index < steps; index++) {
             const movements = batch.flatMap((track) =>
               track[index] ? [track[index]!] : [],

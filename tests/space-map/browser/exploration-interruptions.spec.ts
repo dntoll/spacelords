@@ -1,12 +1,10 @@
 import { scenarioTimeout } from '../../browser-timeouts.js';
-import { chooseFleetOrder } from './fleet-helpers.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { selectMapHex } from './map-helpers.js';
 import { expect, test } from '@playwright/test';
 import { discoveryState } from '../../fixtures/exploration.js';
 import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
-import { startFirstSlot, endTurn, ignoreEventsUntil } from './save-helpers.js';
-import { selectMapFleet } from './fleet-helpers.js';
+import { startFirstSlot, ignoreEventsUntil } from './save-helpers.js';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 
 test('centrerade-handelseval-pa-dator / upptacktsbesked-utan-pausmening: event choices stay near the desktop map center when resized', async ({
@@ -241,44 +239,4 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
     ),
   ).toHaveLength(1);
   expect(errors).toEqual([]);
-});
-
-test('automatisk-stjarnutforskning / flottorder-som-symboler: explores persistently from the compact card and saves the order', async ({
-  page,
-}) => {
-  scenarioTimeout(60_000);
-  await page.goto('./');
-  await startFirstSlot(page);
-  await page.evaluate(() => {
-    const saved = JSON.parse(
-      localStorage.getItem('spacelords.save.v2.1')!,
-    ) as SavedGame;
-    const next = {
-      ...saved,
-      state: {
-        ...saved.state,
-        researched: [...saved.state.researched, 'Automated exploration'],
-      },
-    };
-    localStorage.setItem('spacelords.save.v2.1', JSON.stringify(next));
-  });
-  await page.reload();
-  await startFirstSlot(page);
-  await selectMapFleet(page);
-  await chooseFleetOrder(page, 'Explore stars');
-  await endTurn(page);
-  const saved = await page.evaluate(
-    () =>
-      JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
-  );
-  expect(saved.state.fleets[0]!.exploration).toBe('explore-stars');
-  expect(saved.state.explored.length).toBeGreaterThan(7);
-  await page.reload();
-  await startFirstSlot(page);
-  await selectMapFleet(page);
-  await expect(
-    page
-      .locator('.selected-fleet-card')
-      .getByRole('button', { name: 'Orders', exact: true }),
-  ).toBeVisible();
 });

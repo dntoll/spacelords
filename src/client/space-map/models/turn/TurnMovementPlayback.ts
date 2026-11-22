@@ -83,25 +83,13 @@ export class TurnMovementPlayback {
     return this.#current;
   }
 
+  /** geografisk-arsuppspelning: one track at a time, west to east. */
   get batches(): readonly (readonly (readonly TurnMovement[])[])[] {
-    const automatic: (readonly TurnMovement[])[] = [];
-    const manual: (readonly TurnMovement[])[] = [];
-    for (const track of this.tracks) {
-      const fleet = this.#tracks.get(track[0]!.fleetId)!.fleet;
-      const autonomous =
-        'speed' in fleet && !!(fleet.exploration || fleet.patrol);
-      (autonomous ? automatic : manual).push(track);
-    }
-    manual.sort((a, b) => comparePlaybackPositions(a[0]!.from, b[0]!.from));
-    return Object.freeze([
-      ...(automatic.length ? [Object.freeze(automatic)] : []),
-      ...manual.map((track) => Object.freeze([track])),
-    ]);
-  }
-
-  isAutonomous(fleetId: string): boolean {
-    const fleet = this.#tracks.get(fleetId)?.fleet;
-    return !!(fleet && 'speed' in fleet && (fleet.exploration || fleet.patrol));
+    return Object.freeze(
+      [...this.tracks]
+        .sort((a, b) => comparePlaybackPositions(a[0]!.from, b[0]!.from))
+        .map((track) => Object.freeze([track])),
+    );
   }
 
   begin(movements: TurnMovement | readonly TurnMovement[]): void {
