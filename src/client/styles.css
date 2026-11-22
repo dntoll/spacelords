@@ -9,14 +9,7 @@
   --accent: #b0e5ce;
   --line: #293b43;
 }
-.empire-page {
-  height: 100%;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  gap: 12px;
-}
+
 /* viewport-game-layout: keep navigation independent of brand font metrics. */
 @media (max-width: 700px) {
   #app > .app-header {
@@ -38,13 +31,7 @@
     text-align: center;
   }
 }
-.empire-content {
-  overflow: auto;
-  min-height: 0;
-  display: grid;
-  align-content: start;
-  gap: 12px;
-}
+
 .empire-card {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -72,24 +59,6 @@
 }
 .decision-dialog button {
   margin: 6px;
-}
-.decision-warning-list {
-  display: grid;
-  gap: 8px;
-  padding: 0;
-  list-style: none;
-}
-.decision-warning-list li {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  overflow-wrap: anywhere;
-}
-.decision-warning-list button {
-  min-width: 88px;
-  min-height: 44px;
-  margin: 0;
 }
 
 @media (max-width: 700px) {
@@ -230,22 +199,17 @@ p {
   display: flex;
   gap: 4px;
 }
-.nav-button,
-.back-button,
-.tab-button {
+.nav-button {
   border: 0;
   background: transparent;
   color: var(--muted);
   padding: 8px 14px;
 }
-.nav-button[aria-current],
-.tab-button[aria-selected='true'] {
+.nav-button[aria-current] {
   color: var(--accent);
   box-shadow: inset 0 -2px var(--accent);
 }
-.nav-button:hover,
-.back-button:hover,
-.tab-button:hover {
+.nav-button:hover {
   color: #fff;
   background: #ffffff08;
 }
@@ -302,13 +266,7 @@ p {
   grid-column: 1 / -1;
   margin: 0;
 }
-.coordinate-label {
-  font:
-    0.65rem ui-monospace,
-    monospace;
-  color: var(--muted);
-  white-space: nowrap;
-}
+
 .selection-panel .selection-description.terrain-description {
   display: block;
   font-size: 0.75rem;
@@ -327,10 +285,7 @@ p {
   color: var(--accent);
   font-size: 0.75rem;
 }
-.pill-warm {
-  color: #ddc79a;
-  border-color: #665a40;
-}
+
 .button {
   background: var(--accent);
   border: 1px solid var(--accent);
@@ -343,10 +298,7 @@ p {
 .button:hover:enabled {
   background: #d1f5e5;
 }
-.open-planet {
-  width: 100%;
-}
-.planet-page,
+
 .research-page {
   width: 100%;
   min-width: 0;
@@ -360,70 +312,14 @@ p {
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 14px;
 }
-.screen-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.planet-identity {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.back-button {
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  font-size: 0.85rem;
-  white-space: nowrap;
-}
-.planet-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--line);
-}
-.tab-button {
-  flex: 1;
-  min-width: 0;
-}
-.planet-content {
-  min-height: 0;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  background: radial-gradient(ellipse at 10% 10%, #1c3a41, #0d1b26 65%);
-  padding: clamp(18px, 4vw, 40px);
-}
-.overview,
-.construction {
+
+.overview {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 20px;
   overflow: auto;
 }
-.planet-overview {
-  display: grid;
-  grid-template-columns: 0.8fr 1fr;
-  gap: 20px;
-  align-content: start;
-}
-.planet-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 32px 20px;
-}
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.stat-label {
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-.stat-value {
-  font-size: clamp(1rem, 2vw, 1.5rem);
-  font-variant-numeric: tabular-nums;
-}
+
 .planet-art {
   width: min(100%, 280px);
   aspect-ratio: 1;
@@ -453,104 +349,16 @@ p {
     inset -20px -10px 30px #020915b0,
     0 0 60px #619d9c24;
 }
-.budget-panel {
-  min-width: 0;
-}
-.budget-panel table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.82rem;
-}
-.budget-panel th,
-.budget-panel td {
-  padding: 9px 7px;
-  border-bottom: 1px solid var(--line);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-.budget-panel th:first-child,
-.budget-panel td:first-child {
-  text-align: left;
-}
 
 .muted-note {
   color: var(--muted);
   font-size: 0.85rem;
 }
-.building-panel,
-.fleet-list,
-.fleet-detail {
-  min-height: 0;
-  overflow: auto;
-}
-.building-panel {
-  display: grid;
-  gap: 12px;
-  align-content: start;
-}
-.order-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-}
 
-.fleet-grid {
-  overflow: auto;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-}
-.fleet-grid-row {
-  min-width: 620px;
-  display: grid;
-  grid-template-columns: minmax(140px, 1.3fr) minmax(120px, 1fr) repeat(
-      3,
-      minmax(100px, 1fr)
-    );
-  border-bottom: 1px solid var(--line);
-}
-.fleet-grid-row > * {
-  min-height: 48px;
-  padding: 10px;
-  display: flex;
-  align-items: center;
-  border: 0;
-  border-right: 1px solid var(--line);
-  background: transparent;
-  color: inherit;
-  text-align: left;
-}
-.fleet-grid-header {
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-.fleet-name-button:hover,
-.ship-cell:hover {
+.fleet-name-button:hover {
   background: #ffffff12;
 }
-.selected-fleet-row {
-  background: #79d7bd10;
-}
-.ship-cell {
-  justify-content: center;
-  font-variant-numeric: tabular-nums;
-}
-.transfer-source {
-  outline: 2px solid var(--accent);
-  outline-offset: -3px;
-  background: #79d7bd22;
-}
-.destructive-button {
-  color: #4d1111;
-  background: #f1b0a9;
-  border-color: #f1b0a9;
-}
-.fleet-summary {
-  display: grid;
-  gap: 8px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-}
+
 .destination-mode {
   color: var(--accent);
 }
@@ -585,17 +393,7 @@ p {
   bottom: 12px;
   z-index: 2;
 }
-.station-card {
-  width: 100%;
-  max-width: 580px;
-  margin: auto;
-  display: grid;
-  justify-items: start;
-  gap: 16px;
-}
-.station-card .button {
-  width: 100%;
-}
+
 .research-page {
   grid-template-rows: auto minmax(0, 1fr);
 }
@@ -612,10 +410,6 @@ p {
   background: #10222e;
 }
 @media (max-width: 600px) {
-  .tab-button {
-    padding-inline: 8px;
-    font-size: 0.9rem;
-  }
   .app-header {
     gap: 4px;
     padding-right: max(8px, env(safe-area-inset-right));
@@ -655,30 +449,19 @@ p {
     min-height: 34px;
     padding-block: 4px;
   }
-  .fleet-summary {
-    gap: 4px;
-    padding-top: 6px;
-  }
-  .open-planet {
-    width: auto;
-  }
+
   .map-coordinates {
     bottom: max(28px, env(safe-area-inset-bottom));
     font-size: 0.6rem;
   }
 
-  .planet-page,
   .research-page {
     padding: 10px max(12px, env(safe-area-inset-right))
       max(12px, env(safe-area-inset-bottom))
       max(12px, env(safe-area-inset-left));
     gap: 10px;
   }
-  .planet-identity {
-    flex-direction: column;
-    align-items: start;
-    gap: 5px;
-  }
+
   h1 {
     font-size: 1.4rem;
   }
@@ -687,57 +470,17 @@ p {
     grid-template-rows: minmax(0, 1fr) auto;
     gap: 12px;
   }
-  .construction,
-  .planet-overview {
-    grid-template-columns: 1fr;
-  }
+
   .planet-art {
     display: none;
   }
-  .planet-stats {
-    gap: 10px 12px;
-  }
-  .planet-content {
-    padding: 10px;
-  }
-  .budget-panel table {
-    font-size: 0.68rem;
-  }
-  .budget-panel th,
-  .budget-panel td {
-    padding: 4px 3px;
-  }
-  .budget-panel h2 {
-    font-size: 1rem;
-  }
-
-  .fleet-list {
-    grid-row: 2;
-    max-height: 120px;
-  }
-  .fleet-detail {
-    grid-row: 3;
-  }
-  .stat {
-    gap: 5px;
-  }
-  .stat-value {
-    font-size: 1.1rem;
-  }
 }
 @media (max-height: 500px) {
-  .planet-page,
   .research-page {
     padding-block: 8px;
     gap: 8px;
   }
-  .planet-identity {
-    flex-direction: row;
-    align-items: center;
-  }
-  .planet-content {
-    padding: 7px 10px;
-  }
+
   .overview {
     grid-template-columns: 0.7fr 1.3fr;
     grid-template-rows: 1fr;
@@ -745,73 +488,11 @@ p {
   .planet-art {
     display: none;
   }
-  .planet-stats {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 5px;
-  }
-  .stat {
-    gap: 3px;
-  }
-  .stat-value {
-    font-size: 1.05rem;
-  }
-  .resource-list {
-    gap: 10px;
-  }
-  .resource-list .stat {
-    padding-bottom: 6px;
-  }
+
   .resources {
     gap: 10px;
   }
-  .station-card {
-    grid-template-columns: 1fr;
-    align-items: center;
-    gap: 10px 20px;
-  }
-  .station-card h2 {
-    font-size: 1.05rem;
-  }
-  .station-card .muted-note {
-    grid-column: 1 / -1;
-  }
-  .construction {
-    grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
-    gap: 8px;
-  }
-  .construction .building-panel {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 5px;
-  }
-  .construction .building-panel > h2,
-  .construction .order-row {
-    grid-column: 1 / -1;
-  }
-  .station-card {
-    gap: 2px;
-    padding: 4px;
-  }
-  .station-card p {
-    display: none;
-  }
-  .station-card h3 {
-    font-size: 0.72rem;
-  }
-  .station-card .button {
-    min-height: 28px;
-    padding: 3px 5px;
-    font-size: 0.65rem;
-  }
-  .budget-panel h2 {
-    font-size: 0.85rem;
-  }
-  .budget-panel table {
-    font-size: 0.58rem;
-  }
-  .budget-panel th,
-  .budget-panel td {
-    padding: 2px;
-  }
+
   .research-panel {
     padding: 16px 20px;
     gap: 10px;
@@ -829,10 +510,6 @@ p {
     min-height: 32px;
     padding: 5px 8px;
   }
-  .fleet-summary {
-    gap: 4px;
-    padding-top: 6px;
-  }
 }
 
 .queue-actions {
@@ -840,11 +517,7 @@ p {
   flex-wrap: wrap;
   gap: 6px;
 }
-.building-panel select {
-  max-width: 100%;
-}
 
-.building-site,
 .research-choice {
   min-width: 0;
   display: grid;
@@ -855,31 +528,6 @@ p {
   background: #10222e;
   overflow-wrap: anywhere;
 }
-.site-number {
-  color: var(--muted);
-  font:
-    0.7rem ui-monospace,
-    monospace;
-  letter-spacing: 0.08em;
-}
-.empty-site,
-.locked-site {
-  border-style: dashed;
-}
-.locked-site {
-  background: #0c1922;
-}
-
-.building-placeholder {
-  min-height: 70px;
-  display: grid;
-  place-items: center;
-  border: 1px dashed var(--line);
-  border-radius: 4px;
-  background: #091923;
-  color: var(--muted);
-  font-size: 0.75rem;
-}
 
 .research-panel {
   min-height: 0;
@@ -887,84 +535,28 @@ p {
   overflow: auto;
   align-self: stretch;
 }
-.building-panel {
-  overflow: visible;
-}
 
 .selection-panel {
   max-height: calc(100% - 100px);
   overflow: auto;
 }
 @media (max-width: 600px) {
-  .building-site,
   .research-choice {
     padding: 10px;
   }
 }
 @media (max-height: 500px) {
-  .construction .building-panel {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .building-site p,
   .research-choice p {
     display: block;
   }
 }
 
-/* kompakta-bygghandlingar: actions keep their intrinsic width in game panels. */
-.planet-page {
-  grid-template-rows: auto minmax(0, 1fr);
-}
-.planet-content.overview {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto;
-  align-content: start;
-  gap: 20px;
-  container-type: inline-size;
-  overflow: auto;
-  padding: 14px;
-}
-.planet-summary {
-  display: grid;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-  gap: 20px;
-}
-.planet-overview {
-  grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
-}
-.planet-overview .planet-art {
-  width: 100px;
-}
-.planet-stats {
-  gap: 10px;
-}
-.building-site {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  padding: 12px;
-  gap: 16px;
-}
-.building-site h3,
-.building-site h4 {
-  margin: 0;
-}
-.site-details {
-  min-width: 0;
-  display: grid;
-  gap: 8px;
-  align-content: start;
-}
-.site-actions,
 .queue-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
 }
-.site-actions .button,
-.site-details > .button,
 .queue-actions .button {
   width: fit-content;
   max-width: 100%;
@@ -973,33 +565,13 @@ p {
   justify-self: start;
   flex: 0 1 auto;
 }
-.secondary-button,
 .queue-actions .button {
   background: #142d3b;
   border-color: #466071;
   color: #e2ecf0;
 }
-.secondary-button:hover:enabled,
 .queue-actions .button:hover:enabled {
   background: #234455;
-}
-.destructive-button {
-  border-color: #ad7070;
-}
-.site-status {
-  color: var(--accent);
-  font-size: 0.8rem;
-}
-.site-details .building-placeholder,
-.site-details .building-image {
-  width: 112px;
-  height: 72px;
-  min-height: 72px;
-}
-.building-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
 }
 
 .research-queue-order {
@@ -1025,107 +597,15 @@ p {
   line-height: 1;
 }
 
-.blocked-reason {
-  color: #ffacac;
-}
-.resource-budget {
-  display: grid;
-  gap: 5px;
-  margin: 12px 0;
-}
-.resource-budget h3 {
-  margin: 0;
-  font-size: 0.9rem;
-}
-.budget-values {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  font-size: 0.75rem;
-}
-.budget-total-label {
-  color: #b1d5ff;
-}
-.budget-used-label {
-  color: #efb76a;
-}
-.budget-available-label {
-  color: #a4e4ba;
-}
-.budget-bar {
-  display: flex;
-  overflow: hidden;
-  height: 12px;
-  border: 2px solid #75a6da;
-  border-radius: 3px;
-  background: #091923;
-}
-.budget-used {
-  background: #d9963c;
-}
-.budget-available {
-  background: #6cbb8c;
-}
-.budget-panel table {
-  table-layout: fixed;
-  overflow-wrap: anywhere;
-}
-@container (min-width: 720px) {
-  .factory-site {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
-  }
-}
-@media (max-width: 700px) {
-  .planet-summary {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .planet-content.overview {
-    padding: 10px;
-    gap: 14px;
-  }
-}
-
-.fleet-map-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.fleet-map-actions .button {
-  width: fit-content;
-  flex: 0 1 auto;
-  min-height: 44px;
-  padding: 6px 10px;
-}
-.fleet-destination-status {
-  color: #ffdc88;
-  font-size: 0.85rem;
-}
-
 .selection-panel[aria-label='Selected fleet'] {
   grid-template-columns: minmax(0, 1fr);
 }
-.selection-panel .fleet-summary h3 {
-  margin: 0;
-}
+
 @media (max-width: 600px) {
   /* flottval-pa-kartan: keep central fleet markers clear of the information HUD. */
   .selection-panel {
     max-height: calc(50% - 108px);
   }
-}
-
-/* gemensamma-byggnadsbilder: retain the complete square artwork in every view. */
-.building-image {
-  overflow: hidden;
-  border-radius: 4px;
-  background: #091923;
-}
-.building-image img {
-  display: block;
-}
-.site-details .building-image {
-  width: 112px;
-  height: 112px;
 }
 
 .research-introduction-details {
@@ -1137,15 +617,7 @@ p {
   gap: 8px 12px;
   align-content: start;
 }
-.research-choice .building-image {
-  grid-column: 1;
-  grid-row: 1 / span 4;
-  width: 112px;
-  height: 112px;
-}
-.research-choice > :not(.building-image) {
-  grid-column: 2;
-}
+
 .research-choice h3 {
   margin: 0;
 }
@@ -1157,10 +629,6 @@ p {
 @media (max-width: 400px) {
   .research-choice {
     grid-template-columns: 72px minmax(0, 1fr);
-  }
-  .research-choice .building-image {
-    width: 72px;
-    height: 72px;
   }
 }
 
@@ -1178,11 +646,7 @@ p {
   font-size: clamp(1.8rem, 4vw, 3rem);
   margin: 10px 0;
 }
-.save-storage-note {
-  color: var(--muted);
-  font-size: 0.8rem;
-  margin-top: 8px;
-}
+
 .save-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1366,23 +830,6 @@ p {
 .ship-overflow {
   border-style: dashed;
 }
-.transfer-available {
-  border-color: #9cceae;
-}
-.drop-target {
-  outline: 2px solid #ffdc88;
-  background: #284239;
-}
-.ship-drag-ghost {
-  position: fixed;
-  width: 112px;
-  height: 80px;
-  object-fit: contain;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 20;
-  filter: drop-shadow(0 0 8px #97edd7);
-}
 
 .selection-panel .ship-portrait {
   width: 86px;
@@ -1561,7 +1008,6 @@ p {
   box-shadow: 0 2px 4px #0006;
   user-select: none;
 }
-.research-tree-stage .research-node .building-image,
 .research-tree-stage .research-symbol {
   grid-column: 1;
   grid-row: 1 / -1;
@@ -1718,50 +1164,7 @@ p {
     grid-template-rows: minmax(0, 1fr) minmax(0, min(48%, 204px));
   }
 }
-/* forskningstradets-utrymme: station and queue information stay compact. */
-.research-page > .screen-header {
-  flex-wrap: wrap;
-}
-.research-heading h1 {
-  font-size: 1.1rem;
-}
-.research-page .decision-guidance {
-  padding: 5px 8px;
-  font-size: 0.7rem;
-}
-.research-page .decision-guidance-actions {
-  flex-wrap: wrap;
-}
-.decision-guidance-row p {
-  margin: 0;
-}
-.research-heading {
-  position: relative;
-  display: flex;
-  flex-wrap: nowrap;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 4px 8px;
-  min-width: 0;
-}
-.research-heading .research-introduction {
-  display: block;
-  position: static;
-  min-width: 0;
-}
-.research-introduction summary {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  cursor: pointer;
-  font-size: 0.75rem;
-  min-height: 32px;
-}
-.research-introduction summary .building-image {
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-}
+
 .research-introduction-details {
   position: absolute;
   top: calc(100% + 6px);
@@ -1819,14 +1222,7 @@ p {
 .research-bottom > [hidden] {
   display: none;
 }
-.research-queue-summary {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 6px;
-  font-size: 0.75rem;
-  color: var(--muted);
-}
+
 .research-queue-order {
   padding: 8px;
   margin-bottom: 6px;
@@ -1840,100 +1236,6 @@ p {
     padding: 8px;
     gap: 6px;
   }
-}
-
-@media (max-width: 400px) {
-  .research-introduction summary {
-    font-size: 0.7rem;
-  }
-}
-
-/* Star map route details. */
-.trade-fleet-box {
-  padding: 10px;
-  min-width: 0;
-  margin: 0;
-}
-.trade-fleet-box .fleet-name-button {
-  font-size: 0.95rem;
-  overflow-wrap: anywhere;
-}
-.trade-fleet-position,
-.trade-fleet-assignment,
-.trade-cargo,
-.trade-assignment-issue {
-  font-size: 0.8rem;
-  line-height: 1.3;
-  margin: 5px 0;
-  overflow-wrap: anywhere;
-}
-.trade-fleet-position {
-  color: #b7d1de;
-}
-.trade-fleet-assignment {
-  color: #b0e5ce;
-}
-.trade-assignment-issue {
-  color: #c4b9a2;
-}
-.trade-ship-manifest {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-block: 5px;
-}
-.trade-ship-token {
-  position: relative;
-  width: 64px;
-  height: 76px;
-  padding: 0;
-  min-height: 0;
-  margin: 0;
-  border-radius: 5px;
-  background: #071924;
-  border: 1px solid #37515e;
-  overflow: hidden;
-}
-.trade-ship-token .ship-image {
-  width: 100%;
-  height: 42px;
-  object-fit: contain;
-}
-.trade-ship-count {
-  position: absolute;
-  right: 2px;
-  top: 1px;
-  padding: 0 3px;
-  border-radius: 3px;
-  background: #07111be6;
-  color: #d9f1e6;
-  font-size: 0.75rem;
-}
-.trade-ship-token .ship-token-label {
-  display: block;
-  position: static;
-  padding: 2px;
-  font-size: 0.55rem;
-  line-height: 1;
-  text-align: center;
-  overflow-wrap: normal;
-  word-break: normal;
-}
-.trade-fleet-box > .button {
-  min-height: 36px;
-  padding: 4px 10px;
-  font-size: 0.75rem;
-  margin: 4px 4px 0 0;
-}
-.trade-assigned-fleets {
-  display: grid;
-  gap: 8px;
-}
-.trade-assignment-option {
-  display: grid;
-  gap: 4px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line);
 }
 
 /* flottadministration: local fleet cards keep current position beside the ships. */
@@ -1957,18 +1259,7 @@ p {
   overflow-wrap: anywhere;
   font-size: 1rem;
 }
-.map-location-heading .open-planet {
-  flex: 0 0 auto;
-  width: auto;
-  min-height: 44px;
-  margin-left: auto;
-  padding: 4px 8px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: transparent;
-  color: var(--accent);
-  font-size: 0.75rem;
-}
+
 .map-fleet-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
@@ -2002,14 +1293,7 @@ p {
   width: 100%;
   overflow-wrap: anywhere;
 }
-.fleet-rename-button {
-  min-width: 44px;
-  min-height: 44px;
-  background: transparent;
-  color: var(--muted);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-}
+
 .fleet-name-input {
   min-width: 0;
   width: 100%;
@@ -2020,35 +1304,7 @@ p {
   border-radius: 4px;
   padding: 6px;
 }
-.fleet-current-position {
-  margin: 6px 0;
-  color: var(--muted);
-  font-size: 0.75rem;
-  overflow-wrap: anywhere;
-}
-.new-fleet-drop {
-  min-height: 62px;
-  gap: 2px;
-  padding: 6px 10px;
-  align-content: center;
-}
-.new-fleet-drop h3 {
-  margin: 0;
-  font-size: 0.9rem;
-}
-.fleet-orders summary,
-.map-fleet-route-options summary {
-  min-height: 44px;
-  display: list-item;
-  align-content: center;
-  cursor: pointer;
-}
-.fleet-remote-targets {
-  display: grid;
-  min-width: 0;
-  gap: 8px;
-}
-.fleet-remote-targets select,
+
 .selection-panel select {
   min-width: 0;
   max-width: 100%;
@@ -2079,27 +1335,7 @@ p {
 .compact-fleet-card .ship-image {
   height: 24px;
 }
-.map-fleet-management .fleet-current-position {
-  margin: 2px 0 4px;
-}
-.map-fleet-management .fleet-destination-status,
-.map-fleet-management .fleet-assignment {
-  margin: 3px 0;
-  font-size: 0.75rem;
-}
-.map-fleet-management .fleet-orders,
-.map-fleet-management .map-fleet-route-options {
-  display: inline-block;
-  max-width: 100%;
-  margin-right: 12px;
-  vertical-align: top;
-  font-size: 0.8rem;
-}
-.map-fleet-management .fleet-orders[open],
-.map-fleet-management .map-fleet-route-options[open] {
-  display: block;
-  margin-right: 0;
-}
+
 @media (max-width: 600px) {
   .selection-panel:has(.map-fleet-management) {
     width: auto;
@@ -2131,55 +1367,6 @@ p {
     align-items: start;
   }
 }
-.decisions-page {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-}
-.decisions-page .turn-actions {
-  min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 12px;
-}
-.decisions-page .turn-console {
-  position: static;
-  width: 100%;
-  height: clamp(64px, 18dvh, 180px);
-}
-.decisions-page .end-turn {
-  position: static;
-}
-
-/* planetundersidor / byggplatsrutnat: fixed navigation, independently scrolling content. */
-.planet-page:has(.planet-tabs) {
-  grid-template-rows: auto auto minmax(0, 1fr);
-}
-.planet-tabs {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-}
-.planet-tabs .button {
-  min-height: 44px;
-  white-space: normal;
-}
-.planet-tabs [aria-current='page'] {
-  border-color: var(--accent, #e9c78b);
-  background: #29434b;
-}
-.building-sites-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
-  gap: 12px;
-  align-items: start;
-}
-
-@media (max-width: 600px) {
-  .planet-tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 
 /* symbolbaserade-kataloger: compact choices, with full information on selection. */
 .catalog-icon {
@@ -2192,7 +1379,6 @@ p {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.catalog-artwork,
 .planet-portrait {
   object-fit: contain;
 }
@@ -2206,73 +1392,17 @@ p {
   align-items: center;
   gap: 8px;
 }
-.planet-overview .planet-art {
-  display: block;
-  width: 84px;
-}
-.planet-building-count {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+
 .planet-selection-summary .planet-art {
   display: block;
   width: 64px;
   flex: 0 0 64px;
 }
-.research-tree-stage .research-node-select > .catalog-artwork {
-  grid-column: 1;
-  grid-row: 1 / -1;
-  width: 18px;
-  height: 18px;
-  pointer-events: none;
-}
+
 .catalog-categories {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-}
-
-.catalog-details {
-  display: grid;
-  gap: 10px;
-  min-width: 0;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #10232d;
-  scroll-margin-top: 8px;
-}
-.catalog-details > .button {
-  justify-self: start;
-}
-.catalog-detail-heading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.catalog-detail-heading h2 {
-  margin: 0;
-}
-.catalog-details .building-image {
-  width: 140px;
-  max-width: 100%;
-}
-.catalog-details p {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.ship-engine-details {
-  flex-basis: 100%;
-  width: 100%;
-  font-size: 0.8rem;
-  overflow-wrap: anywhere;
-}
-.ship-engine-details summary {
-  min-height: 44px;
-  cursor: pointer;
-  padding-block: 0.4rem;
 }
 
 /* byggnadsantal-lokalt-och-globalt: keep counts visible without opening details. */
@@ -2281,75 +1411,7 @@ p {
 .nav-button {
   position: relative;
 }
-.nav-attention {
-  color: #ffaaa2;
-  margin-left: 5px;
-  font-weight: 800;
-}
-.production-ring {
-  position: absolute;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-  z-index: 3;
-}
-.radial-build-option {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  pointer-events: auto;
-  width: 84px;
-  min-height: 56px;
-  padding: 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  font-size: 0.65rem;
-  line-height: 1.1;
-  background: #102d42f5;
-  color: #e5e8e6;
-  border: 1px solid #83b8ed;
-}
-.radial-build-option:hover:enabled {
-  background: #1b4059;
-  color: #e5e8e6;
-}
-.radial-build-option[data-presence='local'] {
-  background: #163d30f5;
-  border-color: #8bddaa;
-}
-.radial-build-option[data-presence='network'] {
-  background: #173850f5;
-  border-color: #8acbff;
-}
-.radial-build-option[data-presence='queued'] {
-  background: #423518f5;
-  border-color: #f4d47a;
-}
-.radial-build-option[data-presence='missing'] {
-  background: #252c34f5;
-  border-color: #91a0af;
-}
-.radial-build-option[data-presence]:hover:enabled {
-  color: #ffffff;
-  filter: brightness(1.15);
-}
-.production-presence {
-  font-weight: 700;
-}
-.production-queued-marker {
-  color: #ffe19a;
-}
-.radial-build-option .catalog-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
-.radial-build-option small {
-  font-size: 0.6rem;
-}
-.radial-build-option[aria-pressed='true'],
+
 .map-queue-choice[aria-pressed='true'] {
   outline: 2px solid #ffffff;
   outline-offset: 2px;
@@ -2363,48 +1425,7 @@ p {
   max-height: none;
   overflow: auto;
 }
-.production-map-controls {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-}
-.production-map-controls p {
-  margin: 4px 0;
-}
-.production-map-controls h2 {
-  font-size: 1rem;
-  margin: 5px 0;
-}
-.production-map-controls h3 {
-  font-size: 0.9rem;
-}
-.production-pages {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-.production-pages button,
-.production-map-controls button {
-  min-width: 44px;
-  min-height: 44px;
-}
-.map-build-details {
-  border-block: 1px solid #476f68;
-  padding: 6px 0;
-}
-.map-queue-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.map-queue-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px;
-  align-items: stretch;
-  gap: 2px;
-  margin: 4px 0;
-}
+
 .map-queue-choice {
   display: flex;
   flex-direction: column;
@@ -2413,18 +1434,6 @@ p {
   white-space: normal;
   padding: 4px;
   font-size: 0.8rem;
-}
-/* byggorsak-i-kon: why each queued ship is built. */
-.map-queue-purpose {
-  font-size: 0.72rem;
-  color: var(--muted);
-}
-.map-queue-row .queue-icon-button {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 2px;
 }
 
 @media (max-width: 600px) {
@@ -2451,37 +1460,8 @@ p {
   }
 }
 
-.map-build-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-.map-build-heading .catalog-detail-heading {
-  min-width: 0;
-}
-.map-build-heading > button {
-  flex-shrink: 0;
-}
-
-.production-dependency-marker {
-  position: absolute;
-  top: 3px;
-  right: 5px;
-  color: #ffdc88;
-  background: #102d42;
-  border-radius: 50%;
-  padding: 0 4px;
-  font-size: 0.85rem;
-  font-weight: 800;
-}
-.production-dependency-warning {
-  color: #ffdc88;
-}
-
 /* utvikbara-events / rundkontroller-pa-fler-vyer */
-.turn-console,
-.decisions-page .turn-console {
+.turn-console {
   height: auto;
   max-height: min(var(--events-max-height, 260px), calc(100dvh - 130px));
   display: block;
@@ -2514,83 +1494,6 @@ p {
 .turn-console[open] {
   display: flex;
   flex-direction: column;
-}
-.screen-turn-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 8px;
-  min-height: 0;
-}
-.screen-turn-actions .turn-console {
-  position: static;
-  width: 100%;
-}
-.screen-turn-actions .end-turn {
-  position: static;
-  min-height: 44px;
-}
-.research-page.has-turn-actions {
-  grid-template-rows: minmax(0, 1fr) auto;
-}
-.planet-page.has-turn-actions {
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-}
-
-/* beslutsvagledning-i-vyn: visible targets share the navigation warning color. */
-.decision-guidance {
-  padding: 6px 8px;
-  border: 1px solid #ffdc88;
-  color: #e5e8e6;
-  background: #0a1520f5;
-  max-height: 120px;
-  overflow: auto;
-  font-size: 0.75rem;
-}
-.decision-guidance-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.decision-guidance-actions {
-  flex-wrap: wrap;
-}
-.decision-guidance-row p {
-  margin: 4px 0;
-  flex: 1;
-}
-.decision-guidance-actions p {
-  flex-basis: 100%;
-}
-.decision-guidance-row button {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 4px 8px;
-}
-.page.has-map-guidance > .map-page {
-  top: var(--decision-guide-height);
-}
-.page > .decision-guidance {
-  position: absolute;
-  top: 6px;
-  left: 10px;
-  width: calc(100% - 20px);
-  z-index: 3;
-}
-.decision-target:not(.production-ring) {
-  outline: 2px solid #ffdc88;
-  outline-offset: -2px;
-}
-.research-page.has-decision-guidance {
-  grid-template-rows: auto minmax(0, 1fr);
-}
-.research-page.has-decision-guidance.has-turn-actions {
-  grid-template-rows: auto minmax(0, 1fr) auto;
-}
-@media (max-height: 500px) {
-  .page > .decision-guidance {
-    max-height: 76px;
-  }
 }
 
 /* kompakta-flottkort / flottorder-som-symboler: keep one header and one ship row. */
@@ -2632,43 +1535,7 @@ p {
   padding: 0 10px;
   font-size: 0.875rem;
 }
-.orders-view {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-}
-.orders-view h3,
-.orders-view p {
-  margin: 0;
-}
-.orders-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.orders-heading h2 {
-  margin: 0;
-  font-size: 1.1rem;
-  overflow-wrap: anywhere;
-}
-.order-choices {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
-  gap: 10px;
-}
-.order-choice {
-  display: grid;
-  align-content: start;
-  gap: 5px;
-  min-height: 64px;
-  text-align: left;
-  white-space: normal;
-}
-.order-choice small {
-  font-weight: 400;
-  font-size: 0.875rem;
-}
+
 .map-page[data-map-screen='orders'][data-order-page='menu'] .selection-panel,
 .map-page[data-map-screen='orders'][data-order-page='routes'] .selection-panel {
   inset: 12px;
@@ -2683,8 +1550,7 @@ p {
 .fleet-order-toolbar.dragging-orders * {
   cursor: grabbing;
 }
-.fleet-order-button,
-.fleet-rename-button {
+.fleet-order-button {
   box-sizing: border-box;
   flex: 0 0 44px;
   width: 44px;
@@ -2727,35 +1593,10 @@ p {
   line-height: 1;
 }
 .fleet-speed,
-.fleet-detection,
-.fleet-patrol-status {
+.fleet-detection {
   font-size: 0.65rem;
 }
-.fleet-patrol-status {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.production-receipt {
-  position: fixed;
-  top: 76px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 30;
-  max-width: calc(100vw - 24px);
-  margin: 0;
-  padding: 8px 12px;
-  border: 1px solid var(--accent);
-  border-radius: 6px;
-  background: #102e34;
-  color: #e8fff5;
-  pointer-events: none;
-}
-/* spelnotis-synlig: stack a notice below a simultaneous production receipt. */
-.production-receipt ~ .game-notice {
-  top: 72px;
-}
+
 .discovery-controls {
   position: fixed;
   bottom: 8px;
@@ -2777,57 +1618,6 @@ p {
 }
 body:has(.discovery-controls) .selection-panel {
   padding-bottom: 170px;
-}
-.discovery-dialog {
-  max-height: calc(100dvh - 24px);
-  overflow-y: auto;
-}
-
-/* forskningstradets-utrymme: the station warning must not reserve the tree's flexible row. */
-.research-page .research-station-required {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  right: 6px;
-  z-index: 2;
-  margin: 0;
-  padding: 6px;
-  background: #09151fe8;
-  pointer-events: none;
-}
-
-/* bargningsorder: controls remain usable on touch screens. */
-.salvage-panel {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-.salvage-panel h3,
-.salvage-panel p {
-  width: 100%;
-  margin: 4px 0;
-}
-.salvage-panel .ship-image {
-  width: 88px;
-  height: 56px;
-  object-fit: contain;
-}
-.salvage-panel button,
-.salvage-panel select,
-.towed-wrecks button,
-.towed-wrecks summary {
-  min-height: 44px;
-}
-.salvage-panel select {
-  max-width: 100%;
-  min-width: 0;
-}
-.towed-wrecks {
-  max-width: 100%;
-}
-.towed-wrecks button {
-  display: block;
 }
 
 /* end-turn-vid-kartval: keep the footer outside the scrolling selection. */
@@ -3195,12 +1985,7 @@ body:has(.discovery-controls) .selection-panel {
 .app-header > .main-nav {
   grid-column: 1 / -1;
 }
-.map-attention-legend {
-  margin: 0 0 0 auto;
-  color: #ffaaa2;
-  font-size: 0.7rem;
-  white-space: nowrap;
-}
+
 /* taktisk-stridskarta: keep the map and commands usable on portrait phones. */
 /* fullskarms-stridskarta: a full viewport battlefield with ship-anchored orders. */
 .battle-dialog {
@@ -3403,9 +2188,7 @@ body:has(.discovery-controls) .selection-panel {
   min-height: var(--maneuver-button, 28px);
   padding: 4px;
 }
-.battle-controls > button.is-blocked {
-  opacity: 0.45;
-}
+
 .battle-speed {
   position: absolute;
   inset: 0;
@@ -3421,16 +2204,7 @@ body:has(.discovery-controls) .selection-panel {
 .battle-speed > output {
   pointer-events: none;
 }
-.battle-speed-value {
-  display: grid;
-  place-items: center;
-  min-width: var(--maneuver-button, 28px);
-  height: var(--maneuver-button, 28px);
-  color: #ffd486;
-  font-weight: 700;
-  pointer-events: none;
-  text-shadow: 0 1px 2px #000;
-}
+
 .battle-speed[hidden] {
   display: none;
 }
@@ -3601,22 +2375,6 @@ body:has(.discovery-controls) .selection-panel {
   background: rgb(1 5 12 / 88%);
 }
 
-.boarding-heading,
-.boarding-zoom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-}
-
-.boarding-heading h1 {
-  margin: 0;
-  padding-left: 4px;
-  font-size: 0.95rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .boarding-icon-button,
 .boarding-action {
   display: inline-grid;
@@ -3658,18 +2416,6 @@ body:has(.discovery-controls) .selection-panel {
 .boarding-canvas canvas {
   display: block;
   touch-action: none;
-}
-
-.boarding-hud {
-  position: absolute;
-  z-index: 2;
-  top: 6px;
-  left: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-width: calc(100% - 60px);
-  pointer-events: none;
 }
 
 .boarding-status {
@@ -3762,68 +2508,6 @@ body:has(.discovery-controls) .selection-panel {
   transform: translateX(-50%);
 }
 
-.boarding-selection {
-  flex: 1 0 100%;
-  margin: 0;
-  color: #d9e7f8;
-  font-size: 0.72rem;
-  text-align: center;
-}
-
-.boarding-zoom {
-  position: absolute;
-  z-index: 2;
-  right: 6px;
-  bottom: 6px;
-  justify-content: flex-end;
-}
-
-.boarding-legend {
-  position: absolute;
-  z-index: 2;
-  left: 6px;
-  bottom: 6px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  max-width: calc(100% - 190px);
-  padding: 4px 7px;
-  border: 1px solid rgb(82 104 137 / 70%);
-  border-radius: 6px;
-  color: #dce7f7;
-  background: rgb(6 9 20 / 86%);
-  font-size: 0.72rem;
-  pointer-events: none;
-}
-
-.boarding-legend-selected {
-  color: #f4cf5a;
-}
-
-.boarding-legend-cover {
-  color: #d5a86e;
-}
-
-.boarding-legend-facing {
-  color: #fff;
-}
-
-.boarding-legend-sight {
-  color: #5ac8fa;
-}
-
-.boarding-legend-shot {
-  color: #ef6461;
-}
-
-.boarding-legend-fire {
-  color: #62d48a;
-}
-
-.boarding-legend-reach {
-  color: #f0b35a;
-}
-
 .boarding-details {
   position: absolute;
   z-index: 4;
@@ -3868,18 +2552,9 @@ body:has(.discovery-controls) .selection-panel {
   .boarding-unit {
     grid-template-columns: minmax(48px, auto) minmax(38px, 1fr) auto;
   }
-
-  .boarding-legend {
-    max-width: calc(100% - 142px);
-    font-size: 0.65rem;
-  }
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
-  .boarding-hud {
-    max-width: 74%;
-  }
-
   .boarding-team {
     display: flex;
   }
@@ -3892,10 +2567,6 @@ body:has(.discovery-controls) .selection-panel {
   .boarding-controls {
     bottom: 6px;
     max-width: calc(100% - 12px);
-  }
-
-  .boarding-legend {
-    display: none;
   }
 }
 
@@ -4114,14 +2785,6 @@ body:has(.discovery-controls) .selection-panel {
 
 .boarding-action-symbol {
   font-size: 1.35rem;
-}
-
-.boarding-action-caption {
-  max-width: 100%;
-  overflow: hidden;
-  font-size: 0.55rem;
-  line-height: 1;
-  text-align: center;
 }
 
 /* bordningshud-i-botten / kontextstyrda-bordningshandlingar */
@@ -4597,520 +3260,8 @@ body:has(.discovery-controls) .selection-panel {
   grid-column: 1 / -1;
 }
 
-/* Klickbar prototyp av fabriksskärmarna (utforskning simple_production). */
-#app.has-factory-screens {
-  grid-template-rows: minmax(0, 1fr);
-}
-.factory-screens {
-  --factory-time: #9cc8ff;
-  --factory-warning: #ffdc88;
-  --factory-danger: #ffaaa2;
-  --factory-success: #9fe0b4;
-  overflow-y: auto;
-  padding: 12px 16px 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-width: 560px;
-  width: 100%;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
-.factory-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.factory-heading-text {
-  flex: 1;
-  min-width: 0;
-}
-.factory-heading h1 {
-  margin: 0;
-  font-size: 1.2rem;
-}
-.factory-heading p {
-  margin: 2px 0 0;
-}
-.factory-back,
-.factory-connect,
-.factory-action {
-  min-height: 44px;
-  white-space: nowrap;
-}
-/* eskort-pa-routes */
-.factory-links {
-  min-height: 44px;
-  align-self: flex-start;
-}
-.factory-links.warning {
-  border-color: var(--factory-warning);
-  color: var(--factory-warning);
-}
-.factory-escorts {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 0 0 6px 12px;
-  padding-left: 10px;
-  border-left: 2px solid var(--factory-time);
-}
-.factory-muted {
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-.factory-notice {
-  margin: 0;
-  padding: 8px 12px;
-  border: 1px solid var(--factory-warning);
-  border-radius: 6px;
-  color: var(--factory-warning);
-}
-.factory-group {
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.factory-group-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.factory-group-toggle,
-.factory-planet-toggle {
-  flex: 1;
-  min-width: 0;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: 0;
-  color: inherit;
-  text-align: left;
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
-}
-.factory-group-text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.factory-group-name {
-  font-weight: 600;
-}
-.factory-chevron {
-  color: var(--muted);
-  width: 14px;
-  text-align: center;
-}
-.factory-graph {
-  width: 100%;
-  height: auto;
-  background: #ffffff08;
-  border-radius: 8px;
-}
-.factory-edge {
-  stroke: var(--accent);
-  stroke-width: 2.5;
-}
-.factory-edge.dashed {
-  stroke-dasharray: 6 5;
-  stroke-width: 2;
-}
-.factory-node circle {
-  fill: #b0e5ce33;
-  stroke: var(--accent);
-  stroke-width: 2;
-}
-.factory-node.other circle {
-  fill: #ffffff14;
-  stroke: #d7e2e5;
-}
-.factory-node.muted circle {
-  fill: #ffffff0a;
-  stroke: var(--line);
-}
-.factory-node.picked circle {
-  stroke: var(--factory-time);
-  stroke-width: 4;
-}
-.factory-node text {
-  fill: #e5e8e6;
-  font-size: 11px;
-}
-.factory-node[role='button'] {
-  cursor: pointer;
-}
-.factory-counts,
-.factory-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-.factory-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.72rem;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: #ffffff10;
-  color: #d7e2e5;
-}
-.factory-tag .factory-symbol {
-  width: 16px;
-  height: 16px;
-}
-.factory-tag.time {
-  color: var(--factory-time);
-  background: #9cc8ff1a;
-}
-.factory-tag.warning {
-  color: #2b2006;
-  background: var(--factory-warning);
-}
-.factory-tag.danger {
-  color: #3a0d09;
-  background: var(--factory-danger);
-}
-.factory-tag.success {
-  color: #0c2c18;
-  background: var(--factory-success);
-}
-.factory-planet {
-  border-top: 1px solid var(--line);
-  padding-top: 4px;
-}
-.factory-planet-image {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-}
-.factory-planet-name {
-  font-weight: 600;
-}
-.factory-planet-toggle .factory-muted {
-  flex: 1;
-}
-.factory-sites {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
-  gap: 6px;
-  padding-bottom: 4px;
-}
-.factory-site {
-  min-height: 74px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  padding: 4px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #ffffff08;
-  color: inherit;
-  font: inherit;
-  font-size: 0.68rem;
-  line-height: 1.2;
-  text-align: center;
-  cursor: pointer;
-}
-.factory-site .factory-symbol {
-  width: 30px;
-  height: 30px;
-}
-.factory-site-plus {
-  font-size: 1.1rem;
-}
-.factory-site-status {
-  font-size: 0.64rem;
-}
-.factory-site.empty {
-  border: 1px dashed var(--accent);
-  color: var(--accent);
-}
-.factory-site.locked {
-  color: var(--muted);
-  cursor: default;
-}
-.factory-site.producing {
-  border-color: var(--factory-time);
-}
-.factory-site.producing .factory-site-status {
-  color: var(--factory-time);
-}
-.factory-site.building {
-  background: #ffdc8826;
-  border-color: var(--factory-warning);
-  color: var(--factory-warning);
-}
-.factory-site.queued {
-  border: 1px dashed var(--factory-warning);
-  color: var(--factory-warning);
-}
-.factory-site.missing {
-  background: #ffaaa226;
-  border-color: var(--factory-danger);
-  color: var(--factory-danger);
-}
-.factory-site.idle .factory-site-status {
-  color: var(--muted);
-}
-.factory-legend {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 4px 10px;
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-.factory-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.factory-swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  border: 1px solid var(--line);
-}
-.factory-swatch.producing {
-  border-color: var(--factory-time);
-}
-.factory-swatch.building {
-  background: #ffdc8855;
-  border-color: var(--factory-warning);
-}
-.factory-swatch.queued {
-  border: 1px dashed var(--factory-warning);
-}
-.factory-swatch.missing {
-  background: #ffaaa255;
-  border-color: var(--factory-danger);
-}
-.factory-swatch.empty {
-  border: 1px dashed var(--accent);
-}
-.factory-stock {
-  margin: 0;
-  font-size: 0.8rem;
-  color: #d7e2e5;
-}
-.factory-tier h2,
-.factory-proposals h2,
-.factory-transports h2 {
-  margin: 8px 0 2px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--muted);
-}
-.factory-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--line);
-}
-.factory-option.unavailable {
-  opacity: 0.6;
-}
-/* fabriksstatus-i-byggval: built, under construction or absent in the group. */
-.factory-option.presence-built,
-.factory-option.presence-building,
-.factory-option.presence-absent {
-  border-left: 4px solid transparent;
-  padding-left: 8px;
-}
-.factory-option.presence-built {
-  border-left-color: var(--factory-success);
-  background: #9fe0b40f;
-}
-.factory-option.presence-building {
-  border-left-color: var(--factory-warning);
-  background: #ffdc880f;
-}
-.factory-option.presence-absent {
-  border-left-color: var(--line);
-}
-.factory-tag.presence-built {
-  color: #0c2c18;
-  background: var(--factory-success);
-}
-.factory-tag.presence-building {
-  color: #2b2006;
-  background: var(--factory-warning);
-}
-.factory-tag.presence-absent {
-  color: var(--muted);
-  background: none;
-  border: 1px dashed var(--line);
-}
-.factory-tag.recommended {
-  color: #071a26;
-  background: var(--factory-time);
-  font-weight: 600;
-}
-.factory-recommended {
-  border: 1px solid var(--factory-time);
-  border-radius: 8px;
-  padding: 0 8px 4px;
-}
-.factory-recommended h2 {
-  color: var(--factory-time);
-}
-.factory-option-body {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-.factory-option-body p {
-  margin: 0;
-}
-.factory-option-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-}
-.factory-option-title .factory-symbol {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-}
-.factory-segments {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.factory-segment {
-  flex: 1 1 140px;
-  min-height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: none;
-  color: inherit;
-  font: inherit;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-.factory-segment.selected {
-  border: 2px solid var(--accent);
-  color: var(--accent);
-}
-.factory-warning {
-  border: 1px solid var(--factory-warning);
-  border-radius: 8px;
-  padding: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-.factory-warning p {
-  margin: 0;
-  flex-basis: 100%;
-  color: var(--factory-warning);
-}
-
-/* Factories: the screen scrolls inside the app's middle row. */
-.factories-page {
-  min-height: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-.factories-page > .factory-screens {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.factory-receipt {
-  margin: 0;
-  padding: 8px 12px;
-  border: 1px solid var(--accent);
-  border-radius: 6px;
-  color: var(--accent);
-}
-/* Factories: sections keep their height so the screen scrolls, not squeezes. */
-.factory-screens > * {
-  flex-shrink: 0;
-}
-
-/* forskningsvy-utan-station: a short note and one button instead of the tree. */
-.research-needs-station {
-  display: grid;
-  gap: 12px;
-  align-content: start;
-  justify-items: start;
-  padding: 12px 0;
-}
-
-/* flottkategorier: colour key and filter on the Fleets map, card colour. */
-.fleet-category-legend {
-  position: absolute;
-  top: 6px;
-  left: 10px;
-  right: 10px;
-  z-index: 2;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  width: fit-content;
-  max-width: calc(100% - 20px);
-  padding: 4px;
-  background: #0a1520ed;
-  border-radius: 6px;
-}
-.fleet-category-toggle {
-  min-height: 32px;
-  padding: 2px 8px 2px 6px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  border: 1px solid var(--fleet-category);
-  border-radius: 999px;
-  background: none;
-  color: var(--fleet-category);
-  font: inherit;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-.fleet-category-toggle::before {
-  content: '';
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--fleet-category);
-}
-.fleet-category-toggle.hidden-category {
-  border-style: dashed;
-  color: var(--muted);
-  opacity: 0.7;
-}
-.fleet-category-toggle.hidden-category::before {
-  background: none;
-  border: 1px solid var(--fleet-category);
-}
 .compact-fleet-card[data-category] {
   border-left: 4px solid var(--fleet-category);
-}
-.fleet-category-chip {
-  flex: none;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  color: #071a26;
-  background: var(--fleet-category);
 }
 
 /* forskningsikon-i-detaljer: the technology's symbol beside its name. */
@@ -5120,7 +3271,6 @@ body:has(.discovery-controls) .selection-panel {
   gap: 8px;
   min-width: 0;
 }
-.research-detail-title .building-image,
 .research-detail-title .research-symbol,
 .research-detail-title .catalog-icon {
   flex: none;
@@ -5130,171 +3280,10 @@ body:has(.discovery-controls) .selection-panel {
 .research-detail-title h2 {
   min-width: 0;
 }
-.research-queue-summary .building-image {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  margin-left: 6px;
-  vertical-align: middle;
-}
 
-/* rekommendation-i-menyn: the group's recommended factories, one tap away. */
-.factory-recommended-link {
-  width: 100%;
-  margin-top: 6px;
-  border-color: var(--factory-time);
-  color: var(--factory-time);
-  text-align: left;
-  white-space: normal;
-}
-
-/* ny-fabrik-med-guldstjarna: gold leads the player to a new factory. */
-.nav-new {
-  color: #ffd166;
-  margin-left: 4px;
-  font-weight: 800;
-}
-.factory-tag.new {
-  color: #2b2006;
-  background: #ffd166;
-  font-weight: 700;
-}
-
-/* byggkons-framsteg: a queued ship's state and its parts. */
-.map-queue-state {
-  font-size: 0.72rem;
-  color: var(--factory-time);
-}
-.map-queue-parts {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin: 0;
-  padding: 0 0 2px;
-  list-style: none;
-}
-.map-queue-part {
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  background: #ffffff10;
-  color: #d7e2e5;
-}
-.map-queue-part.delivered {
-  color: #0c2c18;
-  background: var(--factory-success);
-}
-.map-queue-part.coming {
-  color: var(--factory-time);
-  background: #9cc8ff1a;
-}
-.map-queue-part.missing {
-  color: #3a0d09;
-  background: var(--factory-danger);
-}
-.map-build-heading .queue-icon-button {
-  flex: none;
-}
-
-/* beslutssektioner: subheaders for attention, muted items, messages and queues. */
-.decision-section {
-  display: grid;
-  gap: 10px;
-}
-.decision-section + .decision-section {
-  margin-top: 14px;
-}
-.decision-section-title {
-  margin: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
 /* storre-text-dar-det-far-plats: names with short words fit a larger font. */
 .research-node-name.roomy {
   font-size: 0.86rem;
-}
-
-/* bestallda-lankar-syns: an ordered link, waiting for its transport. */
-.factory-ordered-link {
-  margin: 6px 0 0;
-  padding: 6px 8px;
-  border: 1px dashed var(--factory-time);
-  border-radius: 6px;
-  color: var(--factory-time);
-  font-size: 0.8rem;
-}
-
-/* planetsprites-i-factories: a group is a cluster of planet sprites. */
-.factory-cluster {
-  fill: #b0e5ce14;
-  stroke: var(--accent);
-  stroke-width: 1.5;
-}
-.factory-cluster.other {
-  fill: #ffffff0c;
-  stroke: #d7e2e5;
-  stroke-dasharray: 4 3;
-}
-.factory-cluster.muted {
-  fill: #ffffff06;
-  stroke: var(--line);
-}
-.factory-cluster[role='button'] {
-  cursor: pointer;
-}
-.factory-node.muted image {
-  opacity: 0.55;
-}
-.factory-node.picked circle {
-  fill: none;
-}
-
-/* produktionsflikar: the selected ship and the build queue share one area. */
-.tab-panels {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
-}
-.tab-panels-bar {
-  display: flex;
-  border-bottom: 1px solid var(--line);
-}
-.tab-panels-tab {
-  flex: 1;
-  min-width: 0;
-  min-height: 36px;
-  border: 0;
-  background: none;
-  color: var(--muted);
-  font: inherit;
-  font-size: 0.85rem;
-  cursor: pointer;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.tab-panels-tab[aria-selected='true'] {
-  color: var(--accent);
-  box-shadow: inset 0 -2px var(--accent);
-}
-.tab-panels > [hidden] {
-  display: none;
-}
-
-/* skeppsbilder-i-produktion: ship sprites in the Production ring. */
-.radial-build-option .production-ship-image {
-  width: 36px;
-  height: 28px;
-  object-fit: contain;
-}
-.catalog-detail-heading .production-ship-image {
-  width: 44px;
-  height: 32px;
-  object-fit: contain;
 }
 
 /* startskarm-utan-scroll: short landscape screens need one row per save slot. */

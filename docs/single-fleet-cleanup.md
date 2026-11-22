@@ -108,8 +108,10 @@ spelbar, men bevara fristående strids- och bordningstester.
         kvar som skeppstyp.
 - [ ] Ta bort händelser, beslut, vägledning och navigation som bara stöder
       borttagna funktioner; granska kvarvarande användartexter. Beslut,
-      vägledning och köer är borta. Webbläsartesterna (`tests/*/browser`)
-      och `styles.css` har bara rensats delvis och behöver granskas.
+      vägledning och köer är borta. `styles.css` saknar regler för
+      borttagna vyer, och döda meddelandetyper och hjälpfunktioner är
+      borttagna. Webbläsartesterna (`tests/*/browser`) har bara rensats
+      delvis och behöver granskas.
 - [ ] Rensa aktiva krav, produktdokumentation, domänmodell och tester så att
       endast aktuell eller uttryckligen planerad funktion återstår. Behåll
       stabila namn för krav som fortfarande gäller och ange deras status.

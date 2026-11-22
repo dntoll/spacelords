@@ -21,15 +21,6 @@ export function button(
   return node;
 }
 
-export function labelValue(label: string, value: string): HTMLElement {
-  const pair = element('div', 'stat');
-  pair.append(
-    element('dt', 'stat-label', label),
-    element('dd', 'stat-value', value),
-  );
-  return pair;
-}
-
 export function queueButton(
   symbol: '↑' | '↓' | '×',
   label: string,
