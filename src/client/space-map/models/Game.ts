@@ -5012,18 +5012,7 @@ export class Game {
   }
   closeTradeRoute(id: string): void {
     this.#requirePlanning();
-    const displaced = this.#fleets.filter(
-      (fleet) => fleet.routeId === id || fleet.homeRouteId === id,
-    );
     this.#logistics.close(id, this.#logisticsPort());
-    for (const fleet of displaced) {
-      if (fleet.ships['Transport ship'] || fleet.ships['Civilian shuttle']) {
-        if (fleet.ships['Civilian shuttle'] && !fleet.civilian)
-          fleet.civilian = CivilianTraffic.order();
-        fleet.automation = 'transport';
-      }
-    }
-    this.#updateAutomaticTransport();
   }
   skipDecision(id: string): void {
     this.#requirePlanning();

@@ -37,6 +37,7 @@ spelbar, men bevara fristående strids- och bordningstester.
 - [x] Inventera kopplingar och välj små, byggbara borttagningssteg; notera
       beroenden och tillfälliga begränsningar nedan.
 - [x] Ta bort automatisk befolkningsutjämning och dess isolerade tester.
+- [x] Ta bort automatisk ombemanning när en handelsrutt stängs.
 - [x] Ta bort `guard-routes`, dess automatiska eskortval och tillhörande tester.
 - [x] Ta bort historiska engångsrensningar för terraforming och utökad galax
       samt deras tester; hantera det nya sparformatet i ett senare steg.
@@ -108,3 +109,6 @@ checklistan; gamla spel kan tills dess öppnas med ofullständigt stöd.
 
 Automatisk eskort via `guard-routes` är borttagen. Övriga automatiska
 order, manuell eskort och handelsnätverket finns kvar tills deras steg rensas.
+
+Stängning av handelsrutter startar inte längre automatisk ombemanning
+(`ombemanning-vid-stangd-farled`). Själva rutterna återstår att ta bort.

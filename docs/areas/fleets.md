@@ -1,6 +1,7 @@
 # Flottor och order
 
-> Historisk beskrivning från `simple_production`: `befolkningsutjamning-i-grupp` och `guard-routes`
+> Historisk beskrivning från `simple_production`: `befolkningsutjamning-i-grupp`, `guard-routes` och
+> `ombemanning-vid-stangd-farled`
 > har tagits bort i `single_fleet`. Övrig äldre mekanik rensas stegvis enligt
 > [rensningsplanen](../single-fleet-cleanup.md).
 
@@ -66,7 +67,7 @@ uppdrag till lediga flottor.
   [civiltrafik](../civilian-transport.md).
 
 - **Automatiska flottorder:** `automatisk-bargning`,
-  `automatisk-farledsbemanning`, `ombemanning-vid-stangd-farled` och
+  `automatisk-farledsbemanning` och
   `fria-utforsknings-och-patrullorder` är **Fullständigt implementerat**.
   Auto salvage hämtar och levererar ett vrak i taget och fortsätter med
   nästa. Färdigbyggda Transport ships och Civilian shuttles bemannar

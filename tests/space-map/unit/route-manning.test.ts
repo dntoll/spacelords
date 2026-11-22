@@ -151,29 +151,6 @@ describe('automatisk-farledsbemanning', () => {
   });
 });
 
-describe('ombemanning-vid-stangd-farled', () => {
-  it('sends idle transports from a closed route to the remaining least-manned route', () => {
-    const state = distantTradeNetworkState();
-    const game = Game.restore({
-      ...state,
-      fleets: state.fleets.map((fleet) =>
-        fleet.id === 'travellers' ? { ...fleet, destination: null } : fleet,
-      ),
-    });
-    game.closeTradeRoute('route-distant');
-    expect(game.fleet('travellers')!.routeId).toBe('route-test');
-    expect(game.fleet('freighters')!.routeId).toBe('route-test');
-  });
-
-  it('keeps waiting when the closed route is the last one', () => {
-    const game = Game.restore(tradeNetworkState());
-    game.assignTradeFleet('route-test', 'freighters');
-    game.closeTradeRoute('route-test');
-    expect(game.fleet('freighters')!.routeId).toBeUndefined();
-    expect(game.fleet('freighters')!.automation).toBe('transport');
-  });
-});
-
 describe('fria-utforsknings-och-patrullorder', () => {
   it('lets Explore, Explore stars and Patrol start without the retired technologies', () => {
     const game = Game.restore({
