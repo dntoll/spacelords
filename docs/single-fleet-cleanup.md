@@ -92,9 +92,8 @@ användaren innan ny spelmekanik implementeras.
 rundsimulering. `Factories`, `Production`, `Orders`, `Fleets` och kartan
 har egna fasader och vyer, men delar modell och navigering via app-skalet.
 Rensa ett sammanhängande beteende åt gången och kontrollera kompilering och
-tester innan nästa steg. `CivilianTraffic` och transportorder är kvar efter
-utjämningen; ta bort dem tillsammans med anrop, vyer och beroende tester.
-Rymdstrid och bordning delar delar av skeppsmodellen och ska bevaras.
+tester innan nästa steg. Rymdstrid och bordning delar delar av skeppsmodellen
+och ska bevaras.
 
 Den befintliga `test:fast`-konfigurationen inkluderar för närvarande
 `tests/boarding/extended/boarding-maps-http.test.ts` trots regeln att hålla
@@ -111,38 +110,24 @@ också `EPERM`. Miljön använder Node 24 medan projektet anger Node 26; följ
 upp kontrollerna i en miljö med rätt version och tillåtna processer.
 Den gamla sparversionen avvisas ännu inte uttryckligen; se checklistan.
 
-Historiska engångsrensningar av webbläsarens sparplatser är borttagna.
-Befintliga sparningar raderas inte automatiskt vid lagringsåtkomst. Den
-framtida inkompatibiliteten ska fortfarande hanteras uttryckligt enligt
-checklistan; gamla spel kan tills dess öppnas med ofullständigt stöd.
+## Fortsätt här
 
-Automatisk eskort via `guard-routes` är borttagen. Övriga automatiska
-order, manuell eskort och handelsnätverket finns kvar tills deras steg rensas.
+Genomfört och pushat: befolkningsutjämning, gamla engångsrensningar,
+automatisk rutteskort, automatisk ombemanning, automatisk rutttilldelning,
+samt den gamla persontransportordern och dess modell och visning är borta.
+Nybyggda transportskepp får ingen automatisk rutt. Civilian shuttle som
+skepp behålls tills dess framtida roll har diskuterats. Kvarvarande manuell
+handel, fabriksekonomi, planetägande, kolonisation, population och övriga
+automatiska order ska rensas enligt checklistan.
 
-Stängning av handelsrutter startar inte längre automatisk ombemanning
-(`ombemanning-vid-stangd-farled`). Själva rutterna återstår att ta bort.
+Gamla sparningar raderas inte och avvisas ännu inte uttryckligen: de kan
+fortfarande öppnas med ofullständigt stöd. Det är en tillfällig begränsning;
+hantera godkänd inkompatibilitet innan rensningen avslutas. Ytterligare
+framtida inkompatibla ändringar kräver ny avstämning.
 
-Nybyggda Transport ships och Civilian shuttles får inte längre automatisk
-handels- eller transportorder. Produktion på planeter finns tills vidare
-kvar och tas bort i senare steg.
-
-Automatisk tilldelning av handelsrutter (`automatisk-farledsbemanning`)
-är borttagen. Sparat tillstånd och visning för äldre Civilian transport-order samt
-manuella handelsrutter finns kvar tills de rensas.
-
-Äldre sparningar migrerar inte längre passagerare till planetbefolkning.
-Den separata hanteringen för gamla Civilian transport-ordrar återstår.
-
-Kvarvarande passagerarfält påverkar inte längre stridsförluster eller
-återupptagning efter reträtt. Fälten och visningen ska fortfarande rensas.
-
-Passagerarfält stoppar inte längre förflyttning eller skeppsbyten. Övriga
-kopplingar till Civilian transport finns kvar tills hela tillståndet rensas.
-
-Civilian transport har inte längre en särskild stoppkontroll, statusvisning
-eller spärr för nya skepp och rutter. Äldre sparfält och kontroll av dessa
-återstår.
-
-Modellen för gamla Civilian transport-order, dess validering och fälten
-för passagerare och hemrutt har tagits bort. Civilian shuttle som skepp
-behålls tills dess roll har diskuterats.
+Senaste verifierade steg: typkontroll och 74 riktade tester för produktion
+och fabriksvyer passerade efter att de inaktuella syftestexterna tagits bort.
+Tidigare riktade kontroller finns i commitarnas historik. Hela sviten har inte
+körts om efter varje delsteg. Alla commits har pushats en och en till
+`origin/codex/single-fleet-cleanup`; branchen är ännu inte integrerad i
+`single_fleet`. Användaren har bett att ingen driftsättning sker ännu.
