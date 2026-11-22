@@ -21,17 +21,6 @@ function vesta(game: Game) {
   return game.planetSnapshot(game.galaxy.systems[0]!.planets[1]!)!;
 }
 
-it('produktionsnatverk: a planet without a route cannot use another planet’s stock', () => {
-  const game = Game.restore({ ...tradeNetworkState(), pirates: [] });
-  turn(game);
-  turn(game);
-  expect(vesta(game).projects.map((project) => project.id)).toEqual([
-    'vesta-mine',
-  ]);
-  expect(
-    game.decisions.find((decision) => decision.id === 'supply-sol-1')?.label,
-  ).toContain('no Iron');
-});
 
 it('fraktskepp-ger-forbindelse / fraktskepp-pendlar / en-runda-per-lank: an assigned transport links the planets while it travels between them', () => {
   const game = Game.restore({ ...tradeNetworkState(), pirates: [] });

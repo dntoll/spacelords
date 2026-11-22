@@ -66,22 +66,6 @@ describe('gemensam-planetko / delfabriker / automatiska-delorder', () => {
     ).toEqual(['Fighter', 'Fighter']);
   });
 
-  it('blockerad-fabrik: keeps invalid orders atomic and lets a ship wait for a part its group cannot make', () => {
-    const { game, home, snapshot, turn } = setup([
-      'Fighter factory',
-      'Rocket engine factory',
-    ]);
-    const before = game.exportState();
-    expect(() => game.scheduleShip(home, 'Fighter', 'missing')).toThrow();
-    expect(game.exportState()).toEqual(before);
-    game.scheduleShip(home, 'Fighter');
-    turn();
-    expect(snapshot().projects.map((p) => p.type)).toEqual(['Fighter']);
-    expect(
-      game.decisions.find((decision) => decision.id === `supply-${home.id}`)
-        ?.label,
-    ).toContain('no Weapons module');
-  });
   it('en-enhet-per-fabrik-och-runda / parallella-byggen: makes the parts in one round and the ship in the next while a building builds alongside', () => {
     const { game, home, snapshot, turn } = setup();
     game.scheduleShip(home, 'Fighter');

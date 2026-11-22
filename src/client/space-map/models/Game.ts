@@ -4836,38 +4836,6 @@ export class Game {
         kind: 'planet',
         planetId: this.#ownedPlanets()[0]!.id,
       });
-    // startuppmaning-fabriker: a new empire is asked to build its first
-    // Research station and resource extraction from Factories.
-    const owned = this.#ownedPlanets();
-    const anyBuilding = (types: readonly BuildType[]) =>
-      owned.some((planet) => {
-        const state = this.#state(planet);
-        return (
-          state.buildings.some(
-            (building) => !building.demolition && types.includes(building.type),
-          ) ||
-          state.projects.some((project) =>
-            types.includes(project.type as BuildType),
-          )
-        );
-      });
-    if (
-      !items.some((item) => item.id === 'research-stalled') &&
-      !anyBuilding(['Research station'])
-    )
-      items.push({
-        id: 'factory-research',
-        label: 'Build a Research station in Factories',
-        kind: 'planet',
-        planetId: owned[0]!.id,
-      });
-    if (!anyBuilding(['Iron mine', 'Water extractor', 'Oil extractor']))
-      items.push({
-        id: 'factory-extraction',
-        label: 'Build mines and extractors in Factories',
-        kind: 'planet',
-        planetId: owned[0]!.id,
-      });
     for (const order of this.#salvage.orders.filter((order) => order.issue))
       items.push({
         id: `salvage-${order.fleetId}`,
@@ -4927,16 +4895,6 @@ export class Game {
           kind: 'planet',
           planetId: planet.id,
         });
-      // blockerad-fabrik: something here needs goods its group cannot make.
-      const missing = this.#missingInGroup(planet);
-      // forsorjning-vantar-pa-bestalld-lank: an ordered link will bring it.
-      if (missing.length && !this.#linkOrdered(planet))
-        items.push({
-          id: `supply-${planet.id}`,
-          label: `${planet.name}: no ${missing.join(', ')} in its group`,
-          kind: 'planet',
-          planetId: planet.id,
-        });
     }
     for (const fleet of this.#fleets.filter(
       (f) =>
@@ -4953,16 +4911,6 @@ export class Game {
         label: `${this.#fleetDisplayName(fleet)}: choose an assignment`,
         kind: 'fleet',
         fleetId: fleet.id,
-      });
-    for (const route of this.tradeRoutes.filter(
-      (r) => !r.closing && !r.capacity && !this.#transportWaiting(r),
-    ))
-      items.push({
-        id: `route-idle-${route.id}`,
-        label: `${route.from} ↔ ${route.to}: ${this.#transportNextStep(route)}`,
-        kind: 'route',
-        routeId: route.id,
-        transportAction: this.#routeTransportAction(route),
       });
     return this.#decisions
       .snapshot(items)
@@ -5304,20 +5252,6 @@ export class Game {
       : this.scheduleShip(planet, 'Transport ship');
   }
 
-  #transportNextStep(route: TradeRouteSnapshot): string {
-    if (this.#availableTransport(route)) return 'assign transport fleet';
-    if (!this.#research.completed.has('Transport ship factory'))
-      return 'research Transport ship factory in Research';
-    const factory = [...this.#colonies.values()].some((state) =>
-      state.buildings.some(
-        (building) =>
-          building.type === 'Transport ship factory' && !building.demolition,
-      ),
-    );
-    return factory
-      ? 'build a Transport ship in Production'
-      : 'build a Transport ship factory in Production';
-  }
 
   /** fraktskepp-ger-forbindelse / fraktskepp-pendlar */
   #networkLinks(): NetworkLink[] {
@@ -5780,27 +5714,6 @@ export class Game {
       : null;
   }
 
-  /** blockerad-fabrik: materials neither held nor made in the group. */
-  /** forsorjning-vantar-pa-bestalld-lank: a link to the group is on its way. */
-  #linkOrdered(planet: Planet): boolean {
-    const group = this.#networkGroup(planet.id);
-    const active = new Set(this.#networkLinks().map((link) => link.id));
-    const projects = this.#ownedPlanets().flatMap(
-      (owned) => this.#state(owned).projects,
-    );
-    return this.tradeRoutes.some(
-      (route) =>
-        !route.closing &&
-        !active.has(route.id) &&
-        (group.includes(route.a) || group.includes(route.b)) &&
-        (route.fleetIds.length > 0 ||
-          projects.some(
-            (project) =>
-              project.initialOrder?.kind === 'join-route' &&
-              project.initialOrder.routeId === route.id,
-          )),
-    );
-  }
 
   #missingInGroup(planet: Planet): readonly Material[] {
     const group = this.#networkGroup(planet.id);

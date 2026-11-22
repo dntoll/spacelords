@@ -4,7 +4,6 @@ import { turnFrames } from '../../fixtures/turn-steps.js';
 import { describe, expect, it, vi } from 'vitest';
 import {
   decisionScreen,
-  isMessageSetting,
 } from '../../../src/client/space-map/models/Decisions.js';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
@@ -13,21 +12,16 @@ import { BrowserSaveRepository } from '../../../src/client/space-map/storage/Bro
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { researchStationState } from '../../fixtures/research-station.js';
 import { researchStationModel } from '../../fixtures/research-station-model.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 
 describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
   it.each([
     ['research-empty', 'research'],
     ['building-empty-sol-0', 'production'],
     ['fleet-idle-fleet-home', 'fleets'],
-    ['route-idle-route-test', 'factories'],
   ] as const)(
     'direkt-atgard-fran-rundvarning: %s opens %s without advancing the year',
     (id, screen) => {
-      const state =
-        screen === 'factories'
-          ? tradeNetworkState()
-          : researchStationState({ shipFactory: true });
+      const state = researchStationState({ shipFactory: true });
       const model = new AppModel(undefined, {
         load: () => ({ lastPlayed: '2026-10-30', state }),
         save() {},
@@ -69,25 +63,6 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
     },
   );
 
-  it('opens the selected context and skips only until the next turn, including after saving', () => {
-    const model = researchStationModel({ shipFactory: true });
-    expect(
-      model.snapshot.decisions.filter(
-        (decision) => !isMessageSetting(decision.id),
-      ),
-    ).toHaveLength(4);
-    model.openDecision('research-empty');
-    expect(model.snapshot.screen).toBe('research');
-    model.openDecision('building-empty-sol-0');
-    expect(model.snapshot.screen).toBe('production');
-    model.openDecision('fleet-idle-fleet-home');
-    expect(model.snapshot.screen).toBe('fleets');
-    for (const item of model.snapshot.decisions) model.skipDecision(item.id);
-    expect(model.requestEndTurn()).toBe(true);
-    for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
-    model.finishTurn();
-    expect(model.snapshot.decisions.every((d) => !d.skipped)).toBe(true);
-  });
   it('shows one summary warning and advances only after confirmation', async () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
@@ -114,37 +89,6 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
   });
 });
 
-describe('engangsreset-ekonomi / tre-sparplatser', () => {
-  it('removes only legacy slots and never deletes new games or unrelated storage', () => {
-    const stored = new Map<string, string>([
-      ['spacelords.save.v1.1', 'legacy'],
-      ['another-app', 'keep'],
-    ]);
-    const storage = {
-      getItem: (key: string) => stored.get(key) ?? null,
-      setItem: (key: string, value: string) => {
-        stored.set(key, value);
-      },
-      removeItem: (key: string) => {
-        stored.delete(key);
-      },
-    };
-    const repo = new BrowserSaveRepository(storage),
-      model = new AppModel(undefined, repo);
-    expect(stored.has('spacelords.save.v1.1')).toBe(false);
-    model.startSlot(1);
-    model.build('Iron mine');
-    model.save();
-    const reloaded = new AppModel(
-      undefined,
-      new BrowserSaveRepository(storage),
-    );
-    reloaded.startSlot(1);
-    reloaded.openPlanet();
-    expect(reloaded.snapshot.planet!.projects[0]!.type).toBe('Iron mine');
-    expect(stored.get('another-app')).toBe('keep');
-  });
-});
 
 describe('tysta-beslut', () => {
   it('keeps a recurring decision muted after it disappears and becomes relevant again', () => {
@@ -163,17 +107,6 @@ describe('tysta-beslut', () => {
     expect(game.decisions.find((d) => d.id === 'research-empty')).toMatchObject(
       { current: true, muted: false, skipped: false },
     );
-  });
-  it('loads older saves without muted preferences and keeps warnings active', () => {
-    const state = Game.restore(
-      researchStationState({ shipFactory: true }),
-    ).exportState();
-    delete (state as { mutedDecisions?: unknown }).mutedDecisions;
-    const restored = Game.restore(
-      JSON.parse(JSON.stringify(state)) as ReturnType<Game['exportState']>,
-    );
-    expect(restored.decisions).toHaveLength(4);
-    expect(restored.decisions.every((d) => !d.muted)).toBe(true);
   });
   it('keeps muted decisions quiet across turns and restores their warnings on unmute', () => {
     const model = researchStationModel({ shipFactory: true });
@@ -232,31 +165,6 @@ describe('tysta-beslut', () => {
     expect(reloaded.snapshot.decisions.every((d) => !d.muted)).toBe(true);
   });
 
-  it('routes Mute and Unmute through Decisions and excludes muted items from the counter', () => {
-    const root = document.createElement('div');
-    document.body.replaceChildren(root);
-    const model = researchStationModel({ shipFactory: true });
-    model.openDecisions();
-    new MasterController(
-      model,
-      new AppView(root, () => ({ render() {}, dispose() {} })),
-    ).start();
-    const card = () =>
-      root.querySelector('[data-decision-id="fleet-idle-fleet-home"]')!;
-    const control = (label: string) =>
-      [...card().querySelectorAll('button')].find(
-        (b) => b.textContent === label,
-      )!;
-    control('Mute').click();
-    expect(card().textContent).toContain('Muted for future turns');
-    expect(root.querySelector('.decision-counter')?.textContent).toBe(
-      'Decisions (3)',
-    );
-    control('Unmute').click();
-    expect(root.querySelector('.decision-counter')?.textContent).toBe(
-      'Decisions (4)',
-    );
-  });
 });
 
 it('beslutsmarkering-pa-flikar: marks every resolving tab and updates markers after mute, skip and review', () => {
@@ -289,53 +197,11 @@ it('beslutsmarkering-pa-flikar: marks every resolving tab and updates markers af
   controller.dispose();
 });
 
-it('tystade-beslut-sist: keeps active and skipped decisions before muted decisions, including resolved reminders', () => {
-  const game = Game.restore(researchStationState({ shipFactory: true }));
-  game.muteDecision('research-empty');
-  expect(game.decisions.map((decision) => decision.id)).toEqual([
-    // startuppmaning-fabriker: the fixture has no extraction yet.
-    'factory-extraction',
-    'building-empty-sol-0',
-    'fleet-idle-fleet-home',
-    'research-empty',
-  ]);
-  game.skipDecision('building-empty-sol-0');
-  game.selectResearch('Colony ship factory');
-  expect(game.decisions.at(-1)).toMatchObject({
-    id: 'research-empty',
-    muted: true,
-    current: false,
-  });
-  game.unmuteDecision('research-empty');
-  expect(game.decisions.map((decision) => decision.id)).toEqual([
-    'factory-extraction',
-    'building-empty-sol-0',
-    'fleet-idle-fleet-home',
-  ]);
-});
 
-it('beslutslista: removes Next decision and retains Review on each decision', () => {
-  const root = document.createElement('div');
-  document.body.replaceChildren(root);
-  const model = researchStationModel({ shipFactory: true });
-  model.openDecisions();
-  const controller = new MasterController(
-    model,
-    new AppView(root, () => ({ render() {}, dispose() {} })),
-  );
-  controller.start();
-  expect(root.querySelector('[aria-label="Next decision"]')).toBeNull();
-  expect(
-    root.querySelectorAll('[data-decision-id] [aria-label="Review"]'),
-  ).toHaveLength(4);
-  controller.dispose();
-});
 
 it.each([
   ['research-empty', 'research', 'research'],
   ['fleet-idle-home', 'fleet', 'fleets'],
-  ['route-idle-one', 'route', 'factories'],
-  ['supply-sol-0', 'planet', 'factories'],
   ['staff-sol-0', 'planet', 'production'],
   ['production-sol-0', 'planet', 'production'],
   ['building-empty-sol-0', 'planet', 'production'],

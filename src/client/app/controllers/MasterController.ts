@@ -7,7 +7,6 @@ import {
   ProductionController,
   OrderController,
   DecisionController,
-  FactoriesController,
   StarMapController,
   TurnController,
 } from '../../space-map/controllers/index.js';
@@ -22,28 +21,13 @@ import {
   isMapScreen,
 } from '../../space-map/models/index.js';
 import type { AppIntent, AppPort } from '../views/ViewContracts.js';
-import type { FactoriesAction } from '../../space-map/models/index.js';
 import type { Point } from '../../common/HexCoordinate.js';
 import { MapGesture } from '../../space-map/views/index.js';
-
-/** factories-sparas: Factories actions that change the saved game. */
-const FACTORY_ORDERS: ReadonlySet<FactoriesAction['kind']> = new Set([
-  'build',
-  'cancel-site',
-  'upgrade',
-  'connect',
-  'add-link',
-  'move-link',
-  'confirm-move',
-  'assign-escort',
-  'order-escort',
-]);
 
 export class MasterController {
   readonly #saveCase: SaveController;
   readonly #boarding: BoardingController;
   readonly #editor: BoardingEditorController;
-  readonly #factories: FactoriesController;
   readonly #battle: BattleController;
   readonly #research: ResearchController;
   readonly #planet: PlanetController;
@@ -78,7 +62,6 @@ export class MasterController {
     this.#saveCase = new SaveController(model.saveCase);
     this.#boarding = new BoardingController(model.boarding);
     this.#editor = new BoardingEditorController(model.editorCase);
-    this.#factories = new FactoriesController(model.factoriesCase);
     this.#battle = new BattleController(model.battle);
     this.#research = new ResearchController(model.researchCase);
     this.#planet = new PlanetController(model.planet);
@@ -279,16 +262,6 @@ export class MasterController {
   }
 
   #handleIntent(intent: AppIntent): void {
-    if (intent.type === 'factories') {
-      // skeppsorder-pa-planeten: ship factories hand over to the map.
-      const outcome = this.#factories.handle(intent.action);
-      if (outcome?.kind === 'open-production')
-        this.#production.openProduction(outcome.planetId);
-      // factories-sparas: orders change the game; browsing does not.
-      if (FACTORY_ORDERS.has(intent.action.kind)) this.#model.save();
-      this.#render();
-      return;
-    }
     if (intent.type === 'boarding-command') {
       this.#boarding.commandBoarding(intent.command);
       this.#render();
@@ -700,9 +673,6 @@ export class MasterController {
         break;
       case 'open-research':
         this.#research.openResearch();
-        break;
-      case 'open-factories':
-        this.#factories.open();
         break;
       case 'open-fleets':
         this.#fleets.openFleets();

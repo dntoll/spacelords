@@ -130,31 +130,6 @@ describe('delad-kartkamera', () => {
   });
 });
 
-describe('forsorjningsproblem-pa-kartan', () => {
-  it('blockerad-fabrik: routes decisions to Factories or Production with the affected object in view', () => {
-    const state = tradeNetworkState();
-    state.colonies[0]![1].buildings.push({
-      id: 'yard',
-      type: 'Transport ship factory',
-      slotIndex: 3,
-      demolition: false,
-    });
-    const { model, emit, controller } = setup(state);
-    emit({ type: 'open-decision', id: 'supply-sol-1' });
-    expect(model.snapshot.screen).toBe('factories');
-    expect(
-      model.snapshot.factories!.groups.find((group) => group.key === 'Vesta')!
-        .collapsed,
-    ).toBe(false);
-    emit({ type: 'open-decision', id: 'route-idle-route-test' });
-    expect(model.snapshot.screen).toBe('factories');
-    emit({ type: 'open-decision', id: 'building-empty-sol-0' });
-    expect(model.snapshot.screen).toBe('production');
-    expect(model.snapshot.planet?.name).toBe('Tellus');
-    controller.dispose();
-  });
-});
-
 describe('produktions-kartvy / radiella-byggval / kompakt-produktionsko', () => {
   it('gives planet selection priority, ignores fleet/route gestures, and minimally fits the ring without changing zoom', () => {
     const { model, emit, controller } = setup();

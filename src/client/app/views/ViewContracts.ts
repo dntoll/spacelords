@@ -7,7 +7,6 @@ import type {
   TurnFrame,
   Technology,
   PlanetQueueKind,
-  FactoriesAction,
   FleetCategory,
 } from '../../space-map/models/index.js';
 import type {
@@ -30,11 +29,6 @@ import type {
 
 export type AppIntent =
   | { readonly type: 'test-battle' }
-  | { readonly type: 'open-factories' }
-  | {
-      readonly type: 'factories';
-      readonly action: FactoriesAction;
-    }
   | {
       readonly type: 'test-boarding';
       readonly selection?: TestBoardingSelection;

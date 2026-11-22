@@ -5,8 +5,6 @@ import {
   FleetFacade,
   RouteFacade,
   ProductionFacade,
-  FactoriesFacade,
-  type FactoriesSnapshot,
   OrderFacade,
   DecisionFacade,
   StarMapFacade,
@@ -101,7 +99,6 @@ export type Screen =
   | 'planet'
   | 'research'
   | 'fleets'
-  | 'factories'
   | 'production'
   | 'decisions'
   | 'orders';
@@ -142,8 +139,6 @@ export interface AppReadModel {
   readonly salvageQueue: Game['salvageQueue'];
   readonly attackQueue: Game['attackQueue'];
   readonly attentionScreens: readonly DecisionScreen[];
-  /** ny-fabrik-med-guldstjarna: researched factories nobody has built yet. */
-  readonly newFactories: readonly BuildType[];
   readonly tradeRoutes: readonly TradeRouteSnapshot[];
   readonly productionMap: ProductionMapSnapshot;
   readonly productionGuidance: ProductionGuidance | null;
@@ -195,14 +190,12 @@ export interface AppReadModel {
   readonly editorAvailable: boolean;
   readonly editorCatalog: readonly BoardingEditorCatalogItem[];
   readonly editor: BoardingEditorSnapshot | null;
-  readonly factories: FactoriesSnapshot | null;
   readonly pendingEditorDiscard: BoardingEditorCatalogItem['id'] | null;
 }
 
 export class AppModel {
   readonly saveCase: SaveFacade;
   readonly editorCase = new BoardingEditorFacade();
-  readonly factoriesCase: FactoriesFacade;
   readonly boarding: BoardingFacade;
   readonly battle: BattleFacade;
   readonly researchCase: ResearchFacade;
@@ -297,7 +290,6 @@ export class AppModel {
     this.boarding = new BoardingFacade(host);
     this.battle = new BattleFacade(host);
     this.researchCase = new ResearchFacade(host);
-    this.factoriesCase = new FactoriesFacade(host);
     this.planet = new PlanetFacade(host);
     this.fleets = new FleetFacade(host);
     this.routes = new RouteFacade(host);
@@ -427,14 +419,8 @@ export class AppModel {
       attentionScreens: Object.freeze([
         ...new Set([
           ...decisions.filter(needsAttention).map(decisionScreen),
-          // rekommendation-i-menyn: a recommended factory marks Factories.
-          ...(this.#game.phase === 'planning' &&
-          this.factoriesCase.hasRecommendation
-            ? (['factories'] as const)
-            : []),
         ]),
       ]),
-      newFactories: this.factoriesCase.newFactories,
       tradeRoutes: this.#game.tradeRoutes,
       productionMap: this.#productionMapSnapshot(),
       productionGuidance:
@@ -524,8 +510,6 @@ export class AppModel {
       editorAvailable: this.editorCase.available,
       editorCatalog: this.editorCase.catalog,
       editor: this.editorCase.editor,
-      factories:
-        this.#screen === 'factories' ? this.factoriesCase.snapshot : null,
       pendingEditorDiscard: this.editorCase.pendingDiscard,
     });
   }
@@ -1801,7 +1785,6 @@ export class AppModel {
       requestResearchRemoval: (type: Technology | null) =>
         model.requestResearchRemoval(type),
       confirmResearchRemoval: () => model.confirmResearchRemoval(),
-      openFactories: (focus?: string) => model.factoriesCase.open(focus),
       openProduction: (planetId?: string) => model.openProduction(planetId),
       focusMapPlanet: (id: string) => model.#focusMapPlanet(id),
       requestMapFocus: (position: HexCoordinate) =>
@@ -2070,8 +2053,6 @@ export interface AppHost {
   moveResearch(type: Technology, index: number): void;
   requestResearchRemoval(type: Technology | null): void;
   confirmResearchRemoval(): void;
-  /** Opens Factories, focused on a planet's or a route's group. */
-  openFactories(focus?: string): void;
   openProduction(planetId?: string): void;
   focusMapPlanet(id: string): void;
   requestMapFocus(position: HexCoordinate): void;

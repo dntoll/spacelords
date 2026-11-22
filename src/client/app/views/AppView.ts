@@ -27,7 +27,6 @@ import {
   renderCombatLog,
   renderEventContent,
   renderSalvageSelection,
-  FactoriesView,
   FLEET_CATEGORY_COLORS,
 } from '../../space-map/views/index.js';
 import {
@@ -73,7 +72,6 @@ export class AppView implements AppPort {
   #productionTab: ProductionTab = 'queue';
   #productionOption: string | null = null;
   #decisionLayout = new DecisionLayout();
-  #factoriesView: FactoriesView | null = null;
   readonly #root: HTMLElement;
   readonly #mapFactory: MapFactory;
   #emit: IntentHandler = () => undefined;
@@ -147,16 +145,6 @@ export class AppView implements AppPort {
     if (this.#editorView) {
       this.#editorView.dispose();
       this.#editorView = null;
-      this.#screen = null;
-      this.#saveKey = '';
-    }
-    if (model.screen === 'factories' && model.factories) {
-      this.#renderFactories(model);
-      return;
-    }
-    if (this.#factoriesView) {
-      this.#factoriesView.dispose();
-      this.#factoriesView = null;
       this.#screen = null;
       this.#saveKey = '';
     }
@@ -1110,8 +1098,6 @@ export class AppView implements AppPort {
   dispose(): void {
     this.#editorView?.dispose();
     this.#editorView = null;
-    this.#factoriesView?.dispose();
-    this.#factoriesView = null;
     this.#boardingView?.dispose();
     this.#battleView?.dispose();
     this.#disposed = true;
@@ -1204,7 +1190,6 @@ export class AppView implements AppPort {
       ['map', 'Star map'],
       ['research', 'Research'],
       ['fleets', 'Fleets'],
-      ['factories', 'Factories'],
       ['production', 'Production'],
       ['decisions', 'Decisions'],
     ] as const) {
@@ -1219,11 +1204,9 @@ export class AppView implements AppPort {
                   ? 'open-research'
                   : target === 'fleets'
                     ? 'open-fleets'
-                    : target === 'factories'
-                      ? 'open-factories'
-                      : target === 'production'
-                        ? 'open-production'
-                        : 'open-decisions',
+                    : target === 'production'
+                      ? 'open-production'
+                      : 'open-decisions',
           }),
         'nav-button',
       );
@@ -1235,54 +1218,6 @@ export class AppView implements AppPort {
     // helskarm-fran-sparade-spel: fullscreen is chosen on Saved games only.
     header.append(brand, navigation);
     return header;
-  }
-
-  /** Förenklad produktion: the Factories screens under the main header. */
-  #renderFactories(model: AppReadModel): void {
-    const previousActions = this.#turnActions;
-    const previousEventScroll =
-      previousActions?.querySelector<HTMLElement>('[role="log"]')?.scrollTop ??
-      0;
-    if (this.#screen !== 'factories' || !this.#factoriesView) {
-      this.#mapObserver?.disconnect();
-      this.#mapObserver = null;
-      this.#ring?.remove();
-      this.#ring = null;
-      this.#ringKey = '';
-      this.#viewportKey = '';
-      this.#map?.dispose();
-      this.#map = null;
-      this.#selectionKey = '';
-      const main = element('main', 'page factories-page');
-      this.#root.replaceChildren(this.#header('factories'), main);
-      this.#factoriesView = new FactoriesView(main, (action) =>
-        this.#emit({ type: 'factories', action }),
-      );
-      this.#screen = 'factories';
-    }
-    this.#factoriesView.render(
-      model.factories!,
-      playerNoticeText(model.notice),
-    );
-    // runda-avslutas-fran-factories: the shared End turn bar and its warning.
-    this.#attachTurnActions(previousActions, previousEventScroll);
-    const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
-    if (end) end.disabled = model.phase !== 'planning' || !!model.eventPlayback;
-    this.#renderTurnConsole(model);
-    this.#renderMapProblems(model);
-    const counter = this.#root.querySelector('.decision-counter');
-    if (counter)
-      counter.textContent = `Decisions (${model.decisions.filter(needsAttention).length})`;
-    // beslutsvagledning-i-vyn: route and missing-goods decisions live here.
-    updateDecisionGuidance(this.#root, model, this.#emit);
-    this.#decisionDialog?.close();
-    this.#decisionDialog?.remove();
-    this.#decisionDialog = null;
-    if (model.pendingEndTurn) {
-      this.#decisionDialog = renderTurnWarning(model, this.#emit);
-      this.#root.append(this.#decisionDialog);
-      this.#decisionDialog.showModal();
-    }
   }
 
   // gemensam-events-panel: retain one log and its reading position across screens.
@@ -1413,12 +1348,6 @@ export class AppView implements AppPort {
       );
       control.querySelector('.nav-attention')?.remove();
       control.querySelector('.nav-new')?.remove();
-      // ny-fabrik-med-guldstjarna: a gold star leads to a new factory.
-      if (control.dataset.screen === 'factories' && model.newFactories.length) {
-        const star = element('span', 'nav-new', '★');
-        star.setAttribute('aria-hidden', 'true');
-        control.append(star);
-      }
       if (attention) {
         const marker = element('span', 'nav-attention', '!');
         marker.setAttribute('aria-hidden', 'true');

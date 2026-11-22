@@ -53,6 +53,12 @@ spelbar, men bevara fristående strids- och bordningstester.
       samt deras tester; hantera det nya sparformatet i ett senare steg.
 - [ ] Ta bort planetbaserade fabriker, produktionsnätverk, handelsrutter och
       automatiska transporter med deras vyer, tester och krav.
+  - [x] Ta bort skärmen `Factories` (fasad, controller, vy, navigering och
+        tester) samt beslut som bara hänvisade dit (`factory-`, `supply-`,
+        `route-idle-`). Byggnader kan därmed inte längre beställas; spelets
+        ekonomi står still tills resten av modellen är borttagen.
+  - [ ] Ta bort handelsrutter, `Logistics` och ruttvisning på kartan.
+  - [ ] Ta bort produktionsnätverket, byggnader och planetproduktion i `Game`.
 - [ ] Ta bort kolonisation, planetägande, befolkning, Domes och terraforming
       med deras vyer, tester och krav; behåll planeter som platser.
 - [ ] Ta bort flera spelarflottor, flottadministration, automatiska order
