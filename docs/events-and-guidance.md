@@ -1,21 +1,14 @@
-# Events och beslutsguidning
+# Events
 
-## Bilder och delproduktion, 2026-11-01
+## Bilder i händelser
 
-`bilder-i-events` och `delproduktion-med-sammanhang` är **Fullständigt
-implementerat**. Events-listan och årsuppspelningen visar samma grupperade
-planetbesked med planetbild och illustration per underrad. Byggnader använder
-porträtt eller befintlig byggnadssymbol; skepp använder sina skeppsbilder.
-Komponenter använder en komponentsymbol. Texten bevaras vid bildfel.
+`bilder-i-events` är **Fullständigt implementerat**. Events-listan och
+rundans uppspelning visar en illustration per rad: stjärnor, planeter,
+skepp och forskning. Texten bevaras vid bildfel. Planetbesked,
+delproduktion (`delproduktion-med-sammanhang`), byggnadsbilder och
+komponentsymboler är borttagna med planetekonomin (`single-fleet-rensning`).
 
-Delproduktion anger huvudbeställning, mottagande planet och färdiga delar av
-totalt komponentbehov, inklusive redan reserverade delar och delar under
-transport. Pågående produktion räknas inte. Beställningar blandas aldrig,
-och produktion till allmänt lager får inget påhittat sammanhang.
-Siffrorna beskriver läget vid färdigställandet och ändras inte senare.
-Äldre sparade texthändelser visas fortsatt utan krav på nya uppgifter.
-
-Kraven nedan är **Fullständigt implementerat**.
+Kraven nedan är **Fullständigt implementerat** om inget annat anges.
 
 Förtydligande efter sluttest 2026-10-30: `gemensamt-handelseflode` behåller
 händelserutans Handle och Ignore ovanför End turn även på låga, liggande
@@ -27,57 +20,9 @@ informationen kan rullas inom rutan. End turn får inte täckas.
 - `round-i-speltexter` — **Fullständigt implementerat**: Spelets synliga texter
   och tillgänglighetstexter använder `round` för tidssteg i stället för `year`.
 
-- `tysta-planetbesked` — **Fullständigt implementerat**: Decisions erbjuder
-  separata Mute och Unmute för Population och Habitability på alla planeter.
-  Inställningarna sparas, gäller framtida årsbesked och lämnar andra rader och
-  tidigare händelser oförändrade. Tomma besked skapas inte.
-
-- `ruttflottor-utan-ankomstbesked`: en flotta på Route ger inget ankomstbesked
-  när den når en ändplanet, vare sig med last eller utan. Uppdraget fortsätter.
-  Verklig lossning redovisas som levererat material i planetens årsbesked,
-  med flottans namn och mängder. Vanliga flottor med avslutad reseorder
-  behåller sina ankomstbesked. Kravet är **Fullständigt implementerat**.
-  Ändring 2026-10-31: detta ersätter ankomsttexten och undantaget för tomma
-  ruttankomster i `grupperade-transporthandelser`.
-
 - `ankomstbesked-endast-vid-manuell-forflyttning`: ankomstbeskedet
   (`<fleet> arrived at <place>.`) ges bara när en flotta når målet för en
-  manuell förflyttningsorder. Delmål under Explore, Explore stars, automatiska
-  order (Salvage, Transport, Guard) och avstickare från planetköer eller
-  attackkön ger inget ankomstbesked. Kravet är **Fullständigt implementerat**.
-  Ändring 2026-11-17: förtydligar att "vanliga flottor med avslutad
-  reseorder" i `ruttflottor-utan-ankomstbesked` avser manuella order.
-
-- `grupperade-planethandelser`: material som lossats, färdig produktion,
-  Population och ändrad Habitability samlas i ett enda årsbesked per planet.
-  Alla levererande flottors namn och materialmängder behålls. Även färdiga
-  fabriksuppgraderingar, rivningar och åtgärdskrävande produktionshinder ingår. Population
-  visas bara när antalet ändras. Olika planeter och år hålls isär. Samma besked annonseras
-  på kartan och visas som en post i Events, med planetens namn och position.
-  Raderna behåller sin inbördes händelseordning. Långa besked kan rullas och
-  ligger ovanför End turn även på liggande mobil. Kravet är
-  **Fullständigt implementerat**.
-
-- `passiva-vantehandelser`: produktion som väntar utan att kräva åtgärd ger
-  inget händelsebesked. Status finns kvar i produktion och försörjningsöversikt.
-  Tidigare sparade händelser bevaras. Kravet ersätter passiva väntemeddelanden i
-  `grupperade-planethandelser` och är **Fullständigt implementerat**.
-
-- `population-besked-endast-vid-andring` — **Fullständigt implementerat**:
-  oförändrad Population ger varken en rad i planetbeskedet eller ett eget
-  besked. Andra planetändringar visas fortfarande. Om ingenting behöver
-  rapporteras skapas inget tomt planetbesked. Tidigare sparad historik bevaras.
-  Ändring 2026-10-31: detta ersätter regeln om Population vid +0 i
-  `grupperade-planethandelser` och `senaste-aret-i-events`.
-
-Ändring 2026-10-31: `grupperade-planethandelser` ersätter separata besked per
-flotta i `grupperade-transporthandelser` och separata produktionsbesked i
-`ett-meddelande-per-skeppsbygge`. Varje skeppsbygge omnämns fortfarande exakt
-en gång. `senaste-aret-i-events`, `sekventiella-arshandelser` och
-`gemensamt-handelseflode` förtydligas: årets planetuppdateringar samlas vid
-årets avräkning; övriga händelser, upptäckter och strider behåller sin ordning
-och sina avbrott. Äldre sparade händelser bevaras utan omgruppering och
-sparade spel behöver inte rensas.
+  Move-order. Kravet är **Fullständigt implementerat**.
 
 - `stridsresultat-utan-upprepning`: stridsrutans huvudtext visar förluster,
   förstörda pirater och överlevande en gång. Detaljerna behåller plats,
@@ -100,15 +45,6 @@ sparade spel behöver inte rensas.
   Kravet är **Fullständigt implementerat** och förtydligar
   `gemensamt-handelseflode` och `handelseannonsering`; det ersätter den
   överkantnära placeringen på stora skärmar från 2026-10-27.
-
-- `grupperade-transporthandelser`: en transportflottas hela
-  lossade last visas samlat med flottans namn, planet och mängd
-  per råvara eller komponent. Flera lastposter av samma material summeras.
-  Från 2026-10-31 ingår flottornas leveranser i samma planetbesked enligt
-  `grupperade-planethandelser`. Uppgifterna kommer
-  när lasten faktiskt lossas. Ruttankomster utan last ger inget besked.
-- `ett-meddelande-per-skeppsbygge`: varje färdigbyggt skepp omnämns en gång
-  med skeppstyp och planet i planetbeskedet. Det gäller alla skeppstyper.
 
 Ändring 2026-10-30: dessa krav förtydligar `handelser` och ersätter separata
 ankomst- och lastbesked för samma leverans samt dubbla besked för samma
@@ -147,42 +83,24 @@ händelsetexter bevaras.
   hela senaste året syns när det får plats, annars rullas listan internt.
   End turn och navigation förblir åtkomliga. Utfällningsvalet följer med mellan
   vyer under sessionen och återställs vid omladdning; det sparas inte i spelet.
-- `rundkontroller-pa-fler-vyer`: alla spelvyer, inklusive planetens undersidor
-  och Build selection, har samma Events och End turn i en avsatt nedre rad.
-  Kartan visas tillfälligt under årets uppspelning; därefter återkommer den
-  tidigare vyn. På andra vyer ersätter kontrollerna inte formulär eller modaler.
-- `end-turn-vid-kartval`: End turn förblir synlig vid planet-, flott-, rutt-
+- `end-turn-vid-kartval`: End turn förblir synlig vid planet-, flott-
   och destinationsval i samtliga kartlägen. Informationspanelen lämnar egen
   plats för knappen och kan rullas utan att täcka den. Events kan fortfarande
-  användas vid kartval enligt `gemensam-events-panel`. Beslutsvarningen behålls.
+  användas vid kartval enligt `gemensam-events-panel`.
 - `sekventiella-arshandelser`: nya händelser visas en i taget enligt
   `geografisk-arsuppspelning` fram till varje avbrott och efter årets slut. End turn är synlig men spärrad under simulering och
   presentation. Inga nya order utförs medan presentationen pågår.
   Upptäckts- och stridsavbrott behålls före årets avslut.
 - `en-flotta-i-taget`: manuella Move-flottor följer var och en hela sin färd
-  innan nästa manuella flottmarkör animeras. Kameran står stilla under färden.
-  Autonoma order omfattas i stället av `samtidig-automatisk-flottanimation`.
-- `samtidig-farledsanimation`: synliga flottor på Route och Civilian shuttles
-  animeras först tillsammans. Kameran zoomar ut vid behov så samtliga visade
-  färder ryms, även deras svängar, och står sedan stilla. En flotta som når
-  slutet av sin färd stannar medan de andra fortsätter. Kravet är
-  **Fullständigt implementerat**.
-- `samtidig-automatisk-flottanimation`: Route/Civilian, Explore,
-  Explore stars, Patrol, Guard routes, Auto salvage och automatiskt tilldelade
-  planetköer animeras tillsammans i en gemensam utzoomad vy. Kameran står
-  stilla under färden. Endast steg fram till ett upptäcktsavbrott ingår;
-  därefter fokuserar eventkameran upptäckten. Kravet är
-  **Fullständigt implementerat** och utökar `samtidig-farledsanimation`.
+  innan nästa flottmarkör animeras. Kameran står stilla under färden.
 - `destinationer-for-aktiva-skepp`: under årets presentation kan bara
   flottorna som rör sig i det aktuella steget visa destinationspilar.
-  Pilar visas i Fleets för flottor utan Route, och för vald flotta utan
-  Route även på Star map, enligt `destinationspilar-endast-i-flottvyn`,
-  `vald-flotta-visar-destinationspil` och
-  `ruttflottor-utan-destinationspilar`.
+  Pilar visas i Fleets och för vald flotta även på Star map, enligt
+  `destinationspilar-endast-i-flottvyn` och
+  `vald-flotta-visar-destinationspil`.
   Stillastående flottors pilar döljs under uppspelning och händelseannonsering. Kravet är
   **Fullständigt implementerat**.
-- `geografisk-arsuppspelning`: efter den samtidiga autonoma gruppen visas
-  manuella färder från vänster till höger utifrån startplatsen. Vid samma
+- `geografisk-arsuppspelning`: färder visas från vänster till höger utifrån startplatsen. Vid samma
   horisontella läge visas den nedre först. Därefter annonseras platsbundna
   händelser i samma geografiska ordning; händelser på samma plats behåller
   sin inbördes ordning. Globala och äldre positionslösa händelser visas sist
@@ -208,16 +126,9 @@ händelsetexter bevaras.
   kartan på stående mobil och bredvid på liggande mobil och bredare skärmar.
   Den växer efter årets innehåll upp till tillgängligt utrymme, med intern
   rullning därefter. Tidigare vy, giltiga objektval och kamera återställs när
-  presentationen är klar. Det gäller även Research,
-  Decisions och planetvyn. Händelser avslöjar ingen dold information.
+  presentationen är klar. Det gäller även Research. Händelser avslöjar ingen dold information.
 
-Ändring 2026-11-08: `samtidig-automatisk-flottanimation` ersätter
-`en-flotta-i-taget` för alla autonoma order och utökar
-`samtidig-farledsanimation`. Manuella Move-order behåller den seriella
-presentationen.
-
-Ändring 2026-10-31: `samtidig-farledsanimation` ersätter `en-flotta-i-taget`
-för farledstrafiken. `geografisk-arsuppspelning` ersätter kravet på verklig
+Ändring 2026-10-31: `geografisk-arsuppspelning` ersätter kravet på verklig
 presentationsordning i `sekventiella-arshandelser` och
 `gemensamt-handelseflode`. Sparad kronologi i `senaste-aret-i-events` behålls.
 `destinationer-for-aktiva-skepp` begränsar `kartflottor` under uppspelningen.
@@ -247,89 +158,14 @@ Tidigare ändringar ersatte den fasta/kompakta konsolhöjden under `handelser`,
 dess absoluta gräns på 100 visade händelser och utrymmeskravet i
 `forskningstradets-utrymme` att inga nedre kontroller reserverar utrymme.
 Trädet fyller nu återstående yta efter rubrik, eventuell beslutshjälp och
-rundkontroller. `rundkontroller-i-decisions`, sparad kronologi och befintlig
-bekräftelse vid obesvarade beslut behålls. Årets resultat sparas före
+rundkontroller. Sparad kronologi behålls. Årets resultat sparas före
 uppspelningen; omladdning visar senaste årets fullständiga lista utan att
 genomföra året igen. Äldre sparningar utan händelsepositioner kan fortfarande
 läsas. Sparade spel rensas inte.
 
-## Vägledning vid beslut
+## Borttaget med `single-fleet-rensning`
 
-`direkt-atgard-fran-rundvarning` — **Fullständigt implementerat**:
-varje aktivt beslut i Decisions remaining har en egen Review-knapp efter
-beskrivningen. Den stänger varningen och öppnar beslutets relevanta vy och
-objekt direkt: exempelvis Choose research till forskningsträdet, byggval till
-Production, flottorder till Fleets och ruttproblem till Route. Samma
-beslutsmål används som i Decisions. Året avslutas inte av Review.
-End turn anyway och Cancel behålls. Tystade och överhoppade beslut tas
-fortsatt inte med. Knapparna har tydliga tillgänglighetsnamn och minst 44 px
-träffyta; längre beskrivningar radbryts.
-
-Ändring 2026-10-30: detta ersätter den gemensamma knappen Review decisions
-som tidigare skickade spelaren via Decisions, och förtydligar `rundvarning`
-och `beslutslista`.
-
-`beslutsvagledning-i-vyn` kompletterar `beslutsmarkering-pa-flikar`:
-
-- Hjälpen har egen plats ovanför kartan så att den inte täcker byggval eller
-  andra kartkontroller. Flera råd kan rullas internt.
-- Bara aktuella beslut som varken är tystade eller överhoppade ger vägledning.
-  Samma målfunktion används för ! på fliken, Review, Show och hjälpen i vyn.
-- Fleets ringar in flottan som behöver en order. Show väljer den och dess
-  kort samt Orders markeras. Hjälpen beskriver destination, skeppsöverföring
-  och tilldelning av transport till en rutt.
-- Research markerar forskningsträdet och tillgängliga forskningsval samt
-  förklarar att spelaren väljer en teknik för att köa forskning.
-- Production ringar in planeten som saknar ett byggval. Vald planets byggval
-  och kö markeras, med hjälp att välja ett alternativ och beställa. Befintliga
-  problem med material eller personal har fortsatt sina problemmarkeringar och
-  får kort åtgärdshjälp för projekt, fabrik eller bemanning.
-- Route behåller markeringar av berörda rutter och planeter. Show öppnar rätt
-  information. Hjälpen förklarar hur en lila ledig transportflotta väljs och
-  tilldelas via Trade routes eller hur planetens försörjning granskas.
-- När beslutet blir löst, tystat eller överhoppat försvinner vägledningen och
-  riktade markeringar. Normala val-/hovringsmarkeringar behålls. Röd ring
-  betyder fortsatt ett verkligt försörjningsproblem; gul markering guidar till
-  ett orderval eller en kontroll. Förklaringen finns som text och markeringar
-  hänvisar till den även för hjälpmedel.
-
-Guidningen utför inte någon order automatiskt. Alla navigerings- och
-spelhandlingar går via befintliga controllers. Kartan, kameran och
-försörjningsreglerna behålls.
-
-## Väntan på påbörjade åtgärder
-
-`beslut-vantar-pa-paborjad-atgard` förtydligar `beslutslista`:
-
-- En planet utan andra produktionsval väntar på köad forskning av rätt Dome.
-  En förberedd byggplats eller befintlig produktionsfabrik behåller sitt val.
-  Köad Dome visas som väntan; när forskning eller bygge är klart visas nästa
-  manuella steg. Avbrutna åtgärder återaktiverar beslutet direkt.
-- Relevant fabriksforskning eller ett tidigare beställt fabriksbygge ersätter
-  uppmaningen att påbörja samma åtgärd. En fabrik bakom sitt beroende projekt
-  ger i stället ett beslut om att ändra köordningen.
-- Rutter utan kapacitet väntar när Transport ship factory forskas fram,
-  fabriken byggs eller Transport ship tillverkas. Detta gäller alla berörda
-  rutter. Ett transportskepp som kan tilldelas ger alltid ett nytt ruttbeslut,
-  även när fler skepp byggs. Efter varje avslutad förberedelse uppmärksammas
-  nästa manuella steg.
-- Följdproblem med material visar Waiting när en befintlig ruttförbindelse
-  väntar på transportförberedelsen och tillräckligt tillgängligt lager finns,
-  eller när beställd komponentproduktion väntar på en relevant åtgärd.
-  Samma lager får inte täcka flera behov. Mängder, reservationer och verklig
-  fraktkapacitet ändras inte av väntestatusen.
-- Beslut finns kvar för grundproblemet i en blockerad förberedelse och för
-  oberoende brister. Saknad rutt, otillräckligt material, avbruten produktion
-  och fel köordning får inte beskrivas som ordnad försörjning. Saknad sista
-  Research station ger ett byggbeslut om ingen ersättning redan beställts.
-- Väntande följdproblem ger ingen beslutsräkning, flikmarkering, riktad
-  vägledning, problemmarkering eller rundvarning. Vanlig statusinformation
-  finns kvar. Mute och Unmute behåller sina sparade inställningar.
-
-Regeln gäller produktion och transport. Personal, varv och bärgning behåller
-sina tidigare beslutsregler. Ett hinder hos en komponentleverantör visas vid
-källan; mottagaren väntar på sin beställda produktion.
-
-## Åtgärder för rutttransport
-
-`atgarder-for-rutttransport` är **Fullständigt implementerat**. Vägledningen för en rutt utan kapacitet erbjuder nästa steg utifrån rikets forskning, fabriker och tillgängliga transportskepp. Forskning, fabrik eller skepp kan köas direkt; vald planet, hinder och resultat visas. Befintliga regler för forsknings- och byggköer gäller.
+Beslutsvägledningen, väntan på påbörjade åtgärder, åtgärder för
+rutttransport och planetbeskeden är borttagna med `Decisions` och
+planetekonomin. Kravnamnen listas i
+[Rundan och händelser](areas/turn-and-decisions.md).

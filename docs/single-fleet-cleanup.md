@@ -112,9 +112,18 @@ spelbar, men bevara fristående strids- och bordningstester.
       borttagna vyer, och döda meddelandetyper och hjälpfunktioner är
       borttagna. Webbläsartesterna (`tests/*/browser`) har bara rensats
       delvis och behöver granskas.
-- [ ] Rensa aktiva krav, produktdokumentation, domänmodell och tester så att
+- [x] Rensa aktiva krav, produktdokumentation, domänmodell och tester så att
       endast aktuell eller uttryckligen planerad funktion återstår. Behåll
       stabila namn för krav som fortfarande gäller och ange deras status.
+  - [x] Områdesfilerna, `requirements.md`, produktkraven, de tekniska kraven
+        och domänmodellen beskriver bara det som finns kvar. Varje områdesfil
+        listar borttagna kravnamn under `Borttaget med single-fleet-rensning`.
+  - [x] Detaljfilerna om förenklad produktion, terraforming,
+        fabriksuppgraderingar, civiltrafik, planetköer, kolonisationsorder,
+        automatiska order, flottuppgradering, bärgning, Orders och det gamla
+        rensningsförslaget är borttagna.
+  - [ ] Originalbilderna för byggnader och byggnadssymboler under
+        `assets/original/` och bildpromptpaketet finns kvar som källmaterial.
 - [ ] Hantera godkänd inkompatibilitet för sparningar och verifiera ny start
       när det går utan att föregripa öppna speldesignbeslut.
   - [x] Sparformatet är version 18 utan kolonier, nätverk, bärgning och

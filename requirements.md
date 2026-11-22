@@ -8,10 +8,9 @@ planeter eller fasta resurser; allt spelaren har följer med flottan.
 Spelet ska fungera på mobil, surfplatta och dator.
 
 Utforskningen bygger vidare på `simple_production`. Den nya riktningen och
-kraven finns i [Single fleet](docs/single-fleet.md). Speländringarna är
-**Ej implementerat**. Beskrivningarna och statusarna i de äldre områdesfilerna
-avser den ärvda implementationen; där de motsäger den nya riktningen gäller
-ersättningarna i Single fleet. [Den tidigare visionen](docs/game-vision.md)
+kraven finns i [Single fleet](docs/single-fleet.md). De nya speländringarna
+är **Ej implementerat**. Den tidigare planetekonomin är borttagen;
+områdesfilerna beskriver det som finns kvar. [Den tidigare visionen](docs/game-vision.md)
 behålls som bakgrund.
 
 ## Kravkategorier
@@ -25,35 +24,36 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   och lika startegenskaper. Samtliga nya beteendekrav är **Ej implementerat**.
   Planen anger vilka delar som måste diskuteras och låsas med användaren
   före implementation (`single-fleet-beslut-fore-implementation`).
-  [Rensningsplanen](docs/single-fleet-cleanup.md) följer borttagning av den
+  [Rensningsplanen](docs/single-fleet-cleanup.md) följer borttagningen av den
   tidigare spelmekaniken (`single-fleet-rensning`, **Delvis implementerat**:
-  planetekonomi, kolonisation, handelsrutter och flera flottor återstår).
+  koden hanterar fortfarande en lista med flottor, och webbläsartesterna är
+  inte helt rensade).
 - **[Start, sparade spel och navigering](docs/areas/start-and-saves.md):**
-  `Saved games`, helskärm, huvudmenyn och sparformatet (`sparformat`).
-  Allt är **Fullständigt implementerat**.
+  `Saved games`, helskärm, huvudmenyn och sparformatet (`sparformat`,
+  version 18). Allt är **Fullständigt implementerat**.
 - **[Stjärnkartan och grafiken](docs/areas/star-map.md):** hexkartan, sikt,
-  terräng, kamera, kartobjekt och genererade bilder. Rutter skapas bara i
-  Factories (`rutter-endast-i-connect`). Allt är **Fullständigt
+  terräng, kamera, kartobjekt och genererade bilder. **Fullständigt
+  implementerat** utom `stjarnsystem-och-asteroidbalten`, som är **Delvis
   implementerat**.
-- **[Flottor och order](docs/areas/fleets.md):** `Fleets`, order och
-  startorder, automatiska order, planetköer, Patrol, motorer, uppgraderingar
-  och civiltrafik. Allt är **Fullständigt implementerat**.
-- **[Ekonomi, Factories, Production och planeter](docs/areas/economy-and-production.md):**
-  produktionsnätverket, Factories, Production på kartan, planetsidan
-  (`planetsida-informerar`), terraforming och Domes. **Fullständigt
-  implementerat** utom `mining-ships` och `mining-ship-anslutning`, som är
-  **Ej implementerat** och väntar tills resten är klart. Skärmarna beskrivs i
-  [förenklad produktion](docs/simple-production.md).
-- **[Research](docs/areas/research.md):** forskningsträdet, kön och
-  forskningstiden. Allt är **Fullständigt implementerat**.
-- **[Rundan, händelser och beslut](docs/areas/turn-and-decisions.md):**
-  uppspelningen av året, händelser, avbrott och `Decisions`. Allt är
-  **Fullständigt implementerat**.
-- **[Space pirates, bärgning och varv](docs/areas/pirates-and-salvage.md):**
-  pirater, vrak, bärgning och orbitala varv med `automatisk-varvsplacering`
-  i utforskningen. Allt är **Fullständigt implementerat**.
+- **[Flottor och order](docs/areas/fleets.md):** `Fleets`, Move och Stop,
+  utforskning av planeter och motorer. Allt kvarvarande är **Fullständigt
+  implementerat**.
+- **[Production och planeter](docs/areas/economy-and-production.md):**
+  planeter som platser med typ, miljö och resurser. `Production` väntar på
+  `gemensam-produktionsko-i-flottan`, som är **Ej implementerat**.
+- **[Research](docs/areas/research.md):** forskningsträdet med
+  skeppsteknikerna, kön och forskningstiden. Trädet och kön är **Fullständigt
+  implementerat**; forskningen går inte framåt förrän
+  `flottforskning-av-tekniker` är beslutad (**Ej implementerat**).
+- **[Rundan och händelser](docs/areas/turn-and-decisions.md):** uppspelningen
+  av rundan, händelser och avbrott. Allt kvarvarande är **Fullständigt
+  implementerat**.
+- **[Space pirates](docs/areas/pirates-and-salvage.md):** pirater,
+  patrullering och strid per hex. Allt kvarvarande är **Fullständigt
+  implementerat**.
 - **[Rymdstrid](docs/areas/space-battle.md):** taktisk strid och testläget.
-  Allt är **Fullständigt implementerat**.
+  **Fullständigt implementerat** utom `utforskade-stridsuppgraderingar`, som
+  är **Delvis implementerat** eftersom uppgraderingar inte kan monteras.
 - **[Bordning](docs/areas/boarding.md):** bordningsstrid, grafik, ljus och
   karteditor. **Delvis implementerat**: `skeppsbild-under-bordning`,
   `illustrerade-bordningshandlingar`, `ljuskarta-i-bordning` och
@@ -64,6 +64,9 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   `mvc-arkitektur`, `vy-plattformsgrans`, branchflödet och
   `utforskningsbranch` har delar kvar; se områdesfilen.
 
+Varje områdesfil listar under `Borttaget med single-fleet-rensning` de krav
+som har tagits bort med planetekonomin, så att deras namn går att spåra.
+
 ## Övriga dokument
 
 - [Produktkrav](docs/product-requirements.md): kort och otekniskt om spelet.
@@ -72,7 +75,7 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
 - [Domänmodell](docs/domain-model.puml) och
   [kodkarta](docs/architecture/README.md).
 - [Driftsättning](docs/deployment.md).
-- Detaljfiler per spelmekanik, som [terraforming](docs/terraforming.md),
+- Detaljfiler per spelmekanik, som
   [sikt och teleskop](docs/detection-telescopes.md) och
-  [Events och vägledning](docs/events-and-guidance.md), länkas från
+  [Events](docs/events-and-guidance.md), länkas från
   områdesfilerna.

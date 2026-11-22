@@ -6,29 +6,31 @@ class SaveSlot {
   lastPlayed
 }
 class SavedGame {
+  version: 18
   round
   phase
   exploredSpace
+  knownObjects
+  surveyedPlanets
 }
 SaveSlot "1" o-- "0..1" SavedGame
 SavedGame --> Galaxy
 SavedGame --> Fleet
-SavedGame --> Colony
 SavedGame --> Research
 SavedGame --> GameEvent
-SavedGame --> PlanetQueues
-SavedGame --> SalvageQueue
+SavedGame --> PirateFleet
 
 class Galaxy {
   radius
-  homePlanet
+  homePlanetId
   mapSnapshot()
 }
 note left of Galaxy
   Nya galaxer: radie 100, 150 system
-  i tre diffusa spiralarmar med
-  en mindre andel system mellan armarna.
-  Sparade galaxer behåller sina system.
+  i tre diffusa spiralarmar.
+  Spelet startar vid startplaneten.
+  Planeter är platser; spelaren äger inga
+  (single-fleet-rensning).
 end note
 class StarSystem
 class Star {
@@ -38,229 +40,13 @@ class Planet {
   name
   type: solid | gas
   environment: Temperate | Ice | Desert | Ocean | Toxic
-  buildSlotPotential: 0..10
-  deposits: finite resources
-  extractionPotential
-}
-class PlanetQueues {
-  exploration : ordered Planet ids
-  colonization : ordered Planet ids
-}
-class SalvageQueue {
-  targets : ordered discovered Wreck ids
-}
-SalvageQueue --> Wreck : prioritized targets
-
-class AttackQueue {
-  targets : ordered visible PirateFleet ids
-}
-class FleetDetour {
-  kind : explore-planet | attack-pirate
-  targetId
-}
-class PlanetKnowledge {
-  detected
-  surveyed
-}
-PlanetQueues --> Planet : prioritized targets
-AttackQueue --> PirateFleet : prioritized visible targets
-Fleet "1" o-- "0..1" FleetDetour
-FleetDetour --> Planet : temporary exploration target
-FleetDetour --> PirateFleet : temporary attack target
-PlanetKnowledge --> Planet
-Fleet --> "0..1" Planet : queued exploration target
-class Colony {
-  habitability: 0..100
-  populationCapacity
-  population
-  buildings
-}
-class Building {
-  type
-  workers
-  constructionCost
-  demolition
-}
-class ConstructionProject {
-  type
-  reservedCrew
-  destinationFleetId
-  upgradeBuildingId : optional
-}
-ConstructionProject "0..1" --> "0..1" Building : upgrades in place
-class BuildingSite {
-  index
-  requiredHabitability
-  domePrepared
-}
-class PlanetEnvironment {
-  currentType: Temperate at habitability 100
   habitability
-  breathable: habitability >= 80
-  populationCapacity
-  buildSlots
+  resources
 }
-class DomePreparation
-class TerraformingFactory {
-  environment
-  improvementPerYear: 5
+class TerrainHex {
+  type: dense-asteroids | sparse-asteroids | nebula
+  position
 }
-Colony --> PlanetEnvironment
-PlanetEnvironment --> Planet
-BuildingSite "1" o-- "0..1" DomePreparation
-TerraformingFactory --|> Building
-DomePreparation --> Technology
-TerraformingFactory --> Technology
-note right of TerraformingFactory
-  fardig-terraformning-till-temperate:
-  Vid 100% blir stenplaneten Temperate.
-  Fabriker avvecklas och köade sådana avbeställs.
-end note
-class Technology {
-  researched
-}
-Technology --> Technology : newer factory version
-note on link
-  senaste-teknik-i-byggval / uppgradera-obsoleta-fabriker:
-  Endast högsta utforskade komponent och fabrik erbjuds vid nybygge.
-  Äldre fabrik kan uppgraderas direkt med bevarad plats och personal.
-end note
-class Research {
-  technologyQueue
-  completeSelectedPerYear()
-}
-class BuildQueue {
-  moveProject()
-  cancelProject()
-  completeFirstPerYear()
-}
-class Ship {
-  id
-  installedEngines
-  installedTelescope: I | II | III [0..1]
-  missiles: 0 | 2 [0..1]
-  armored [0..1]
-  type
-  speed
-  crew
-}
-class Component {
-  type: Rocket engine | Ion pulse engine | Weapons module | Telescope I | Telescope II | Telescope III
-}
-class Detection {
-  currentVisibleHexes
-  visiblePirateContacts
-}
-class TelescopeFactory {
-  level: I | II | III
-  detectionRange: 1..3
-}
-TelescopeFactory --|> Building
-TelescopeFactory --> Component : produces matching telescope
-Detection --> Colony : highest completed telescope factory
-Detection --> Fleet : best installed telescope
-note on link
-  sikt-under-forflyttning:
-  Synfältet följer visad position under rörelsen.
-  Övriga observatörer och kartminnet behålls.
-end note
-SavedGame --> Detection : pirate contacts
-Ship "1" *-- "1..3" Component : installed engines
-note right of Ship
-  utforskade-stridsuppgraderingar:
-  Missiles och pansar forskas fram.
-  Saknat missilfält på Fighter är två salvor.
-end note
-
-class Fleet {
-  position : HexCoordinate [0..1]
-  name
-  courseOrigin
-  destination
-  automation : salvage | transport | guard [0..1]
-  homeRouteId : optional civilian home route
-  colonizationTargetId : optional planet target
-  joinFleetId : optional reinforcement target
-  ships: 0..*
-}
-Fleet "0..*" --> "0..1" Planet : colonization target
-note on link
-  koloniseringsorder: fysisk färd följs av grundning efter strid.
-  Exakt ett Colony ship förbrukas; ordern sparas och kan avbrytas.
-end note
-class AutomaticFleetOrder {
-  mode: Auto salvage | Guard routes | automatic route manning
-  waitingForTarget
-}
-Fleet "1" o-- "0..1" AutomaticFleetOrder
-AutomaticFleetOrder --> Technology : Auto salvage requires research
-AutomaticFleetOrder --> SalvageOrder : repeats after delivery
-AutomaticFleetOrder --> TradeRoute : nearest least-manned open route
-Fleet --> TradeRoute : homeRouteId for Civilian shuttle
-class ExplorationOrder {
-  mode: Explore | Explore stars
-}
-class PatrolOrder {
-  approaching : optional journey to chosen center
-  center : HexCoordinate
-  nextNeighborIndex
-  targetPirateId
-  range : effective fleet speed
-}
-Fleet "1" o-- "0..1" PatrolOrder
-PatrolOrder --> HexCoordinate : fixed center
-PatrolOrder --> PirateFleet : visible target within range
-PatrolOrder --> Detection : shared visible contacts
-class Discovery {
-  kind: planet | star | pirate
-  observerFleet
-}
-class TurnSimulation {
-  economyApplied
-  remainingMovement
-  awaitingCombat
-  handling
-  otherFleetOrdersEnabled
-}
-Fleet "1" o-- "0..1" ExplorationOrder
-TurnSimulation "1" o-- "0..*" Discovery
-TurnSimulation --> Fleet : remaining movement
-SavedGame "1" o-- "0..1" TurnSimulation
-class TurnOrder
-class ShipOrder {
-  kind
-  recipientFleetOrRoute
-  targetPositionOrWreck
-}
-ConstructionProject "1" o-- "0..1" ShipOrder : initialOrder
-Fleet "1" o-- "0..1" ShipOrder : pendingOrder after construction
-ShipOrder --> Fleet : join recipient
-ShipOrder --> TradeRoute : join route
-ShipOrder --> HexCoordinate : Patrol center
-ShipOrder --> Wreck : deliberate salvage
-SavedGame --> ShipOrder
-note right of ShipOrder
-  startorder-for-nybyggda-skepp:
-  Nytt skepp får egen avgående flotta.
-  Målet valideras igen efter färdigställandet.
-end note
-class GameEvent {
-  round
-  text
-  planetId [0..1]
-  position : HexCoordinate [0..1]
-}
-GameEvent --> HexCoordinate : plats när händelsen inträffade
-GameEvent --> "0..1" Planet : samlat årsbesked
-note right of GameEvent
-  grupperade-planethandelser: leveranser, produktion,
-  population och habitability samlas per planet och år.
-  Publiceras när händelsen inträffar.
-  Simulering återgår direkt till planering.
-  Synliga flottfärder visas en flotta åt gången.
-  Händelser annonseras därefter centralt och flyttas till loggen.
-  Globala och äldre händelser kan sakna position.
-end note
 class Player {
   name
 }
@@ -270,157 +56,101 @@ class HexCoordinate <<value object>> {
   neighbors()
   distanceTo()
 }
-
 Galaxy "1" o-- "1..*" StarSystem
 Galaxy "1" --> "1" Player
+Galaxy "1" --> "1" Planet : home planet
+Galaxy "1" *-- "0..*" TerrainHex
 StarSystem "1" *-- "1" Star
 StarSystem "1" *-- "0..6" Planet
 Star --> HexCoordinate : position
 Planet --> HexCoordinate : position
-Planet "1" *-- "0..1" Colony
-Colony --> Player : ownerId
-Colony "1" *-- "0..10" BuildingSite
-BuildingSite "1" o-- "0..1" Building
-BuildingSite "1" o-- "0..1" ConstructionProject : building construction
-Building --> Ship : enables production
-Building --> Component : enables production
-ConstructionProject --> Component : produces or consumes
-Ship --> Component : construction requires
-BuildQueue "1" o-- "0..*" ConstructionProject : ordered projects
+
+class Technology {
+  name: Missiles | Armor | Armored Transport | Armored Fighter
+  prerequisites
+}
+class Research {
+  completed
+  queue
+  progress
+}
 Player "1" *-- "1" Research
 Research --> Technology : selects
-note right of Research
-  forskning-kraver-station:
-  Nya köposter kräver en färdig, ägd Research station utan rivningsorder.
-  Endast stationer i drift ger framsteg.
-  Befintliga köposter väntar när stationer saknas.
-  colony-ship-efter-rocket-engine:
-  Colony ship factory kräver direkt Rocket engine factory.
-end note
-Technology --> Building : unlocks
 Technology --> Technology : prerequisites
-Building --> Research : Research station contributes
-ConstructionProject --> Fleet : ship recipient
-note on link
-  nybyggda-skepp-utan-ruttflotta:
-  Mottagaren saknar ruttuppdrag vid färdigställandet.
-  Annars används eller skapas en vanlig lokal hemflotta.
+note right of Research
+  flottforskning-av-tekniker (Ej implementerat):
+  trädet och kön finns, men forskningen går inte
+  framåt förrän forskningskapaciteten är beslutad.
 end note
-Colony --> Fleet : home fleet
-Fleet "1" o-- "0..*" Ship
+
+class Fleet {
+  position : HexCoordinate [0..1]
+  name
+  courseOrigin
+  destination
+  ships: 0..*
+}
 note right of Fleet
-  unika-flottnamn: namnet är unikt inom spelet.
+  Order: Move och Stop.
   Tom flotta saknar position.
-  Första skeppet bestämmer positionen.
-  Sista skeppet släpper positionen.
-  Ruttflotta kan ta emot skepp på samma hex.
-  skepp-ur-olastad-ruttflotta:
-  Skepp lämnar ruttflottan endast utan last.
-  Sista Transport ship frigör ruttuppdraget.
-  Förstärkning reser som egen flotta (En route).
-  Skeppen ansluter fysiskt vid möte på samma hex.
+  enda-spelarflottan (Ej implementerat):
+  koden hanterar fortfarande en lista med flottor.
 end note
-Fleet "0..*" --> "0..1" Fleet : follows to join
-Ship --> Colony : Colony ship consumed to settle
-TurnOrder --> ConstructionProject
-TurnOrder --> Fleet
-GameEvent --> TurnOrder
+class Ship {
+  id
+  type
+  installedEngines
+  installedTelescope: I | II | III [0..1]
+  missiles: 0 | 2 [0..1]
+  armored [0..1]
+  speed
+  crew
+}
+class Component {
+  type: Rocket engine | Ion pulse engine | Weapons module | Telescope I | Telescope II | Telescope III
+}
+Fleet "1" o-- "0..*" Ship
+Ship "1" *-- "1..3" Component : installed equipment
+class Detection {
+  currentVisibleHexes
+  visiblePirateContacts
+}
+Detection --> Fleet : best installed telescope
+note on link
+  sikt-under-forflyttning:
+  Synfältet följer visad position under rörelsen.
+  Kartminnet behålls.
+end note
 
-note bottom of BuildQueue
-  En gemensam kö för byggnader, delar och skepp per planet.
-  Högst ett färdigt projekt per planet och år.
-  Fabriker avgör vilka produkter som kan byggas.
-  Saknade lokalt byggbara delar köas före huvudordern.
-  Annars beställs delar genom aktiva handelsrutter.
-  Om en del inte kan ordnas avvisas hela beställningen.
-  Material betalas en gång vid byggstart.
+class Discovery {
+  kind: planet | star | pirate
+  observerFleet
+}
+class TurnSimulation {
+  remainingMovement
+  awaitingCombat
+  handling
+}
+SavedGame "1" o-- "0..1" TurnSimulation
+TurnSimulation "1" o-- "0..*" Discovery
+TurnSimulation --> Fleet : remaining movement
+note right of TurnSimulation
+  gemensamt-handelseflode:
+  Visade händelser och aktiv hantering bevaras.
+  Alla val från avbrottet avslutas före fortsatt simulering.
 end note
-
-class ResourceDeposit {
-  resource
-  remaining
+class GameEvent {
+  round
+  text
+  position : HexCoordinate [0..1]
 }
-class PlanetStock {
-  resource
-  amount
+class EventLine {
+  text
+  illustration: star | planet | ship | research
 }
-class TradeRoute {
-  closing
-}
-class ProductionNetwork {
-  groups
-}
-class NetworkGroup {
-  sharedStock
-}
-class Transit {
-  material
-  amount
-  path
-  stage
-}
-class NetworkConsumer {
-  kind
-  needs
-  since
-}
-ProductionNetwork "1" *-- "*" NetworkGroup
-NetworkGroup "1" o-- "1..*" Planet : linked by manned routes
-ProductionNetwork "1" *-- "*" Transit
-Transit --> TradeRoute : crosses one link per round
-Transit --> NetworkConsumer : reserved for
-NetworkConsumer --> ConstructionProject : building or ship order
-NetworkConsumer --> Building : part factory, one unit per round
-note right of ProductionNetwork
-  Förenklad produktion (utforskning simple_production):
-  planeter förbundna av routes med ett tilldelat Transport ship
-  delar råvaror och delar. Varje länk tar en runda och varor går
-  kortaste vägen. Byggnader byggs parallellt, varje skeppsfabrik
-  tar en order i taget och delar tillverkas bara på behov.
-  Vid brist får det som väntat längst först, slutprodukter före delar.
-  Varor på en länk vars fraktskepp förstörs går förlorade.
-end note
-SavedGame --> ProductionNetwork : transits and deliveries
-class Decision {
-  context
-  skippedThisTurn
-  mutedUntilUnmuted
-}
-Planet "1" *-- "3" ResourceDeposit
-Colony "1" *-- "*" PlanetStock
-Building --> ResourceDeposit : extracts
-Colony "1" *-- "1" BuildQueue : all production
-TradeRoute "*" --> "2" Planet : endpoints
-TradeRoute "0..1" <-- "0..*" Fleet : assigned
-note right of TradeRoute
-  Tilldelning på avstånd startar en resa till närmaste ändplanet.
-  Därefter pendlar fraktskeppet mellan ändarna och länkar planeterna
-  hela tiden (fraktskepp-pendlar).
-  Rutt utan aktiv transport visas streckad.
-  rutt-eskortfordelning: Fighters tilldelas endast med aktiv transport.
-  Fighters fördelas till transportflottan med minst eskort,
-  inklusive väntande förstärkningar, via fysisk anslutning.
-end note
-Player --> Decision
-SavedGame --> Decision : muted preferences
-Decision --> Colony
-Decision --> Fleet
-Decision --> Research
-Decision --> TradeRoute
-Decision --> ConstructionProject : påbörjad åtgärd ger väntan
-note right of Decision
-  beslut-vantar-pa-paborjad-atgard:
-  relevant forskning och produktion kan lösa ett följdproblem.
-  Nästa manuella steg eller grundproblemet kräver nytt beslut.
-  Väntan skapar inga order eller materialreservationer.
-end note
-SavedGame --> TradeRoute
-
-note bottom of Galaxy
-  Första iterationen använder en fast exempelvärld.
-  Kartans läsdata döljer planeter utanför utforskad rymd.
-  Skepp utforskar besökta hexagoner; explorers inom monterat teleskops 1–3 hex.
-end note
+GameEvent "1" *-- "0..*" EventLine
+GameEvent --> HexCoordinate : plats när händelsen inträffade
+Discovery --> GameEvent : händelseidentitet
 
 package "Framtida domän – ej implementerad" {
   class AsteroidBelt <<planned>>
@@ -600,11 +330,6 @@ note right of BattleActivation
   ett oanvänt eget skepp när spelarsidan får turen.
   Skeppet spelar klart innan nästa kan väljas.
 end note
-note right of BattlePiece
-  bargat-piratskepp-behaller-typ:
-  Space pirate kan tillhöra spelaren efter bärgning.
-  Typ, bild och Raider cannon följer skeppet.
-end note
 note left of BattlePiece
   flyktzoner-i-rymdstrid:
   ett stort skepp är aktivt och beskjutbart
@@ -624,7 +349,7 @@ TacticalBattle "1" *-- "1..*" BattlePiece
 TacticalBattle "1" *-- "0..1" BattleActivation
 TacticalBattle "1" *-- "0..*" BattleAsteroid
 BattlePiece --> Fleet : origin and retreat destination
-BattlePiece --> "0..1" ShipUnit : strategic identity
+BattlePiece --> "0..1" Ship : strategic identity
 BattlePiece --> Weapon : fixed by ship type
 TacticalBattle --> HexCoordinate : distinct tactical map
 BattleReport --> Fleet : participating fleets
@@ -633,131 +358,19 @@ StarSystem "1" <-- "0..*" PirateFleet : patrols
 TacticalBattle --> Fleet
 TacticalBattle --> PirateFleet
 TacticalBattle --> GameEvent : combat outcome
-class Wreck {
-  ship : ShipUnit
-  position : HexCoordinate
-  reservedBy
-  towedBy
-  yardId
-}
-class Shipyard {
-  position : HexCoordinate
-  builtRound
-  destroyed
-  repairQueue
-}
-class FleetUpgradeOrder {
-  id
-  issue
-  productionIds
-}
-class ShipUpgradeTarget {
-  shipId
-  ionEngines
-  telescope
-  missiles
-  armored
-}
-Fleet "1" o-- "0..1" FleetUpgradeOrder : Upgrade
-FleetUpgradeOrder "1" *-- "1..*" ShipUpgradeTarget
-ShipUpgradeTarget --> ShipUnit : preserve identity and crew
-FleetUpgradeOrder --> Shipyard : nearest reachable suitable station
-FleetUpgradeOrder --> Planet : components ordered at yard planet
-FleetUpgradeOrder --> NetworkConsumer : parts through the network
-SavedGame --> FleetUpgradeOrder
-note right of FleetUpgradeOrder
-  flottorder-upgrade / automatisk-uppgraderingsforsorjning:
-  Resan fortsätter tills alla beställda delar kan monteras.
-  Äldre komponenter återgår till planetens lager.
-end note
-class SalvageOrder {
-  targets
-  destinationShipyard
-}
 class BattleReport {
   position
   losses
   survivors
-  wrecks
 }
-Fleet "0..1" <-- "0..*" Wreck : tows with Salvage ships
-Wreck "1" *-- "1" ShipUnit : retains installed equipment
-note right of Wreck
-  vrak-utanfor-stjarnor:
-  Startvrak placeras på närmaste framkomliga hex vid sin stjärna.
-  Befintliga sparade vraks positioner behålls.
-end note
-Shipyard "1" --> "1" Building : planetary facility and shuttles
-Shipyard "1" --> "1" Planet : resources and fresh crew
-Shipyard "1" o-- "0..*" Wreck : ordered repair queue
-Fleet "1" -- "0..1" SalvageOrder
-SalvageOrder --> Wreck : exclusive reservation
-SalvageOrder --> Shipyard : nearest home station
-Wreck --> Research : recovered component unlocks prerequisites exception
-TacticalBattle --> Wreck : lost ships
 TacticalBattle --> BattleReport
-SavedGame --> Wreck
-SavedGame --> Shipyard
-SavedGame --> SalvageOrder
 SavedGame --> BattleReport
-class TerrainHex {
-  type: dense-asteroids | sparse-asteroids | nebula
-  position
-}
-class StarSurvey {
-  starId
-  startIndex
-  completedSteps
-}
-Galaxy "1" *-- "0..*" TerrainHex
-Fleet "1" *-- "0..1" StarSurvey
-StarSurvey --> Star
-SavedGame --> TerrainHex
-SavedGame --> StarSurvey
-Discovery --> GameEvent : händelseidentitet
 BattleReport --> GameEvent : händelseidentitet
-note right of TurnSimulation
-  gemensamt-handelseflode:
-  Visade händelser och aktiv hantering bevaras.
-  Alla val från avbrottet avslutas före fortsatt simulering.
-end note
-class CivilianTraffic {
-  prepare()
-  arrive()
-  stop()
-}
-class CivilianOrder {
-  passengers
-  reserved
-  sourceId
-  targetId
-  nextPlanetId
-  path
-  stopping
-}
-Game *-- CivilianTraffic
-Fleet "1" o-- "0..1" CivilianOrder
-CivilianTraffic ..> CivilianOrder
-CivilianTraffic ..> TradeRoute
-CivilianTraffic ..> Colony
-class EventLine {
-  text
-  illustration
-}
-class ProductionContext {
-  projectId
-  target
-  recipient
-  ready
-  total
-}
 class BattleShot {
   weapon
   from
   at
   impacts
 }
-GameEvent "1" *-- "0..*" EventLine
-EventLine "1" *-- "0..1" ProductionContext
 TacticalBattle "1" *-- "0..1" BattleShot : senaste salvan
 @enduml
