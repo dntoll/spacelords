@@ -6,7 +6,7 @@ import { startFirstSlot } from './save-helpers.js';
 test('flottadministration / skeppsbilder / viewport-game-layout: long fleet lists stay bounded and the selected fleet is reachable', async ({
   page,
 }) => {
-  const initial = tradeNetworkState(false);
+  const initial = tradeNetworkState();
   const original = initial.fleets[0]!;
   const state = {
     ...initial,
@@ -81,7 +81,7 @@ test('flottadministration / skeppsbilder / viewport-game-layout: long fleet list
 test('kompakt-flottkort-med-order: fleet stats share the hangar and compact controls remain accessible', async ({
   page,
 }) => {
-  const initial = tradeNetworkState(false);
+  const initial = tradeNetworkState();
   const original = initial.fleets[0]!;
   const state = {
     ...initial,

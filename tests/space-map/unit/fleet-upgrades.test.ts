@@ -70,7 +70,7 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
   });
 
   it('skips a nearer yard that cannot obtain parts and chooses a supplied yard on another planet', () => {
-    const state = tradeNetworkState(false);
+    const state = tradeNetworkState();
     const ready = upgradeState();
     state.colonies[0]![1].buildings = ready.colonies[0]![1].buildings;
     const source = state.colonies[1]![1];
@@ -109,73 +109,6 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
     expect(game.fleet('fleet-home')!.destination).toEqual(
       new HexCoordinate(0, 2),
     );
-  });
-
-  it('delar-tillverkas-pa-behov / en-runda-per-lank: makes remote parts on demand and brings them to the shipyard planet', () => {
-    const state = tradeNetworkState();
-    const ready = upgradeState();
-    const home = state.colonies[0]![1];
-    home.buildings = ready.colonies[0]![1].buildings;
-    const source = state.colonies[1]![1];
-    source.projects = [];
-    source.population = 10_000;
-    source.stock = { ...source.stock, Iron: 200, Water: 200, Oil: 200 };
-    source.buildings = [
-      {
-        id: 'ion',
-        type: 'Ion pulse engine factory',
-        slotIndex: 0,
-        demolition: false,
-      },
-      {
-        id: 'telescope',
-        type: 'Telescope III factory',
-        slotIndex: 1,
-        demolition: false,
-      },
-    ];
-    const game = Game.restore({
-      ...state,
-      round: 2,
-      researched: [...ready.researched, 'Trade logistics'],
-      salvage: ready.salvage!,
-      fleets: [
-        ready.fleets[0]!,
-        {
-          ...state.fleets[1]!,
-          routeId: 'route-test',
-          position: state.world.systems[0]!.planets[1]!.position,
-          destination: null,
-        },
-      ],
-    });
-    game.upgradeFleet('fleet-home');
-    expect(
-      game.planetSnapshot(game.galaxy.homePlanet)!.economy.demand[
-        'Ion pulse engine'
-      ],
-    ).toBe(2);
-    expect(game.exportState().colonies[1]![1].projects).toEqual([]);
-    finishYear(game);
-    expect(game.fleet('fleet-home')!.upgrade).toBeDefined();
-    expect(game.fleet('fleet-home')!.shipUnits![0]!.telescope).toBe(1);
-    const restored = Game.restore(game.exportState());
-    for (
-      let year = 0;
-      year < 8 && restored.fleet('fleet-home')!.upgrade;
-      year++
-    )
-      finishYear(restored);
-    expect(restored.fleet('fleet-home')!.shipUnits![0]).toMatchObject({
-      telescope: 3,
-      engines: { 'Ion pulse engine': 2 },
-    });
-    expect(restored.fleet('fleet-home')!.upgrade).toBeUndefined();
-    expect(
-      restored.planetSnapshot(restored.galaxy.homePlanet)!.economy.demand[
-        'Ion pulse engine'
-      ],
-    ).toBe(0);
   });
 
   it('never reserves the same equipment for two fleets', () => {
@@ -285,7 +218,7 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
     ).toBe(2);
   });
 
-  it('rejects an invalid saved downgrade and incompatible saved route assignment', () => {
+  it('rejects an invalid saved downgrade', () => {
     const game = Game.restore(upgradeState());
     game.upgradeFleet('fleet-home');
     const checkpoint = game.exportState();
@@ -298,15 +231,6 @@ describe('flottorder-upgrade / automatisk-uppgraderingsforsorjning / spara-flott
             ...fleet.upgrade!,
             targets: [{ ...fleet.upgrade!.targets[0]!, telescope: 1 }],
           },
-        })),
-      }),
-    ).toThrow('Invalid saved fleet upgrade');
-    expect(() =>
-      Game.restore({
-        ...checkpoint,
-        fleets: checkpoint.fleets.map((fleet) => ({
-          ...fleet,
-          routeId: 'route-test',
         })),
       }),
     ).toThrow('Invalid saved fleet upgrade');

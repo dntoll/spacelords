@@ -143,54 +143,6 @@ describe('vald-flotta-visar-destinationspil', () => {
       }
     },
   );
-
-  it('omits the destination arrow of a selected route fleet', () => {
-    const ship = { ...fleet('transport'), routeId: 'route-test' };
-    const { sketch } = drawing();
-    renderMapOverlays({ ...sketch, rect: vi.fn() } as unknown as p5, {
-      ...new AppModel().snapshot,
-      screen: 'map',
-      fleets: [ship],
-      pirates: [],
-      ownedPlanets: [],
-      tradeRoutes: [],
-      mapFleetId: ship.id,
-    });
-    expect(sketch.line).not.toHaveBeenCalled();
-  });
-});
-
-describe('ruttflottor-utan-destinationspilar', () => {
-  it.each(['map', 'fleets'] as const)(
-    'omits route fleet arrows during planning, movement and event playback (%s)',
-    (screen) => {
-      const ship = { ...fleet('transport'), routeId: 'route-test' };
-      const move = {
-        fleetId: ship.id,
-        from: ship.position!,
-        to: ship.destination!,
-      };
-      for (const stage of ['planning', 'movement', 'events']) {
-        const { sketch } = drawing();
-        renderMapOverlays({ ...sketch, rect: vi.fn() } as unknown as p5, {
-          ...new AppModel().snapshot,
-          screen,
-          fleets: [ship],
-          pirates: [],
-          ownedPlanets: [],
-          tradeRoutes: [],
-          turnMovement: stage === 'movement' ? move : null,
-          turnMovements: stage === 'movement' ? [move] : [],
-          eventPlayback:
-            stage === 'events'
-              ? { round: 1, events: [], index: 0, stage: 'announcing' }
-              : null,
-        });
-        expect(sketch.line).not.toHaveBeenCalled();
-        expect(sketch.triangle).toHaveBeenCalledTimes(1);
-      }
-    },
-  );
 });
 
 describe('kartflottor', () => {
@@ -245,7 +197,6 @@ describe('kartflottor', () => {
         zoom,
         undefined,
         false,
-        null,
         [],
         [],
         new Map(),
@@ -255,9 +206,7 @@ describe('kartflottor', () => {
       for (const call of image.mock.calls) expect(call[3] / call[4]).toBe(2);
       expect(new Set(image.mock.calls.map((call) => call[0])).size).toBe(count);
       for (const glyph of FleetMapLayout.glyphs(marker, zoom))
-        expect(FleetMapLayout.hit([mixed], glyph.point, [], zoom)).toBe(
-          'mixed',
-        );
+        expect(FleetMapLayout.hit([mixed], glyph.point, zoom)).toBe('mixed');
       if (zoom === 0.4)
         expect(sketch.text).toHaveBeenCalledWith(
           '114',
@@ -485,44 +434,6 @@ describe('flottfokuserad-kartvy', () => {
   );
 });
 
-it('ruttflottor-vid-ruttanslutning: places an endpoint fleet toward its route on Star map and Fleets but keeps travel positions real', () => {
-  const route = {
-    id: 'route-test',
-    a: 'a',
-    b: 'b',
-    from: 'A',
-    to: 'B',
-    start: new HexCoordinate(0, 0),
-    end: new HexCoordinate(4, 0),
-    closing: false,
-    fleetIds: ['assigned'],
-    capacity: 10,
-    hasActiveTransport: true,
-    waiting: 0,
-    status: 'Ready',
-  };
-  const assigned = {
-    ...fleet('assigned'),
-    routeId: route.id,
-    destination: route.end,
-  };
-  const endpoint = FleetMapLayout.markers([assigned], [route])[0]!;
-  const start = HexGeometry.toPoint(route.start);
-  expect(endpoint.point.y).toBeCloseTo(start.y);
-  expect(endpoint.point.x).toBeGreaterThan(start.x);
-  expect(endpoint.point.x - start.x).toBeCloseTo(FleetMapLayout.orbitRadius);
-  const travelling = {
-    ...assigned,
-    position: new HexCoordinate(2, 0),
-  };
-  expect(FleetMapLayout.markers([travelling], [route])[0]!.point).toEqual(
-    FleetMapLayout.markers([travelling])[0]!.point,
-  );
-  expect(FleetMapLayout.hit([assigned], endpoint.point, [route], 0.35)).toBe(
-    assigned.id,
-  );
-});
-
 it('beslutsvagledning-i-vyn: idle fleet decisions have a solid amber ring and Production marks the planet needing an order', () => {
   const { sketch } = drawing();
   const dash = vi.fn();
@@ -532,7 +443,6 @@ it('beslutsvagledning-i-vyn: idle fleet decisions have a solid amber ring and Pr
     1,
     undefined,
     true,
-    null,
     ['idle'],
   );
   expect(sketch.stroke).toHaveBeenCalledWith('#ffdc88');
@@ -586,7 +496,6 @@ it('genererade-skeppssprites: pirates use their own sprite at close and medium z
       zoom,
       undefined,
       false,
-      null,
       [],
       ['hostile'],
       new Map(),

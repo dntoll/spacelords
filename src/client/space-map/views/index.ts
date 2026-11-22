@@ -6,7 +6,6 @@ export * from './PlanetImages.js';
 export * from './SalvageView.js';
 export * from './ShipImages.js';
 export * from './ShipView.js';
-export * from './StarMapTradeView.js';
 export * from './decisions/DecisionGuidanceView.js';
 export * from './decisions/EmpireView.js';
 export * from './fleets/FleetMapPanel.js';

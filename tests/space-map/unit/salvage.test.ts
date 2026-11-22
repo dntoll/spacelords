@@ -22,7 +22,6 @@ import {
   salvageMarkers,
 } from '../../../src/client/space-map/models/star-map/SalvageMapLayout.js';
 import type { IntentHandler } from '../../../src/client/app/views/ViewContracts.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 
 it('spelgrafik-kartstation: shipyards stay anchored to their hex and remain selectable at different zoom levels', () => {
   const game = Game.restore(salvageState());
@@ -328,41 +327,6 @@ describe('automatisk-vrakreparation / forskning-fran-bargade-delar', () => {
     expect(demand.Iron).toBe(cost.Iron);
     expect(demand.Water).toBe(cost.Water);
     expect(demand.Oil).toBe(cost.Oil);
-  });
-  it('varvets-automatiska-materialforsorjning / delat-lager-i-natverket: brings missing resources over the network and completes the repair after a reload', () => {
-    const state = tradeNetworkState();
-    const salvage = salvageState();
-    state.colonies[0]![1].buildings = salvage.colonies[0]![1].buildings;
-    state.colonies[0]![1].stock = {
-      ...state.colonies[0]![1].stock,
-      Iron: 0,
-      Water: 0,
-      Oil: 0,
-    };
-    state.colonies[1]![1].projects = [];
-    state.colonies[1]![1].stock = {
-      ...state.colonies[1]![1].stock,
-      Iron: 100,
-      Water: 100,
-      Oil: 100,
-    };
-    salvage.salvage.yards[0]!.queue = ['advanced-wreck'];
-    salvage.salvage.wrecks[0]!.yardId = 'yard';
-    salvage.salvage.wrecks[0]!.position = new HexCoordinate(2, 0);
-    const game = Game.restore({
-      ...state,
-      round: 2,
-      pirates: [],
-      salvage: salvage.salvage,
-    });
-    game.assignTradeFleet('route-test', 'freighters');
-    let restored = Game.restore(game.exportState());
-    for (let year = 0; year < 12 && restored.wrecks.length; year++) {
-      finishYear(restored);
-      restored = Game.restore(restored.exportState());
-    }
-    expect(restored.wrecks).toHaveLength(0);
-    expect(restored.shipyards[0]!.queue).toHaveLength(0);
   });
   it('uses resources remaining after this year production without reserving next year production twice', () => {
     const state = salvageState();

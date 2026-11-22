@@ -78,7 +78,6 @@ export function renderSalvageSelection(
       const fleets = model.fleets.filter(
         (fleet) =>
           fleet.position &&
-          !fleet.routeId &&
           (fleet.canIssueOrders ?? model.phase === 'planning') &&
           Salvage.availableCapacity(fleet, model.wrecks) > 0,
       );

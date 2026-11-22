@@ -36,36 +36,26 @@ export function renderFleetOrders(
   );
   move.disabled = locked;
   const stop = button(
-    fleet.routeId
-      ? fleet.releaseRequested
-        ? 'Release pending'
-        : 'Release from trade route'
-      : fleet.upgrade
-        ? 'Cancel Upgrade'
-        : fleet.automation
-          ? 'Cancel automatic order'
-          : fleet.salvage
-            ? 'Cancel salvage'
-            : fleet.colonizationTargetId
-              ? 'Cancel colonization'
-              : fleet.explorationTargetId
-                ? 'Cancel planet exploration'
-                : fleet.patrol
-                  ? 'Cancel patrol'
-                  : fleet.joinFleetId
-                    ? 'Cancel reinforcement'
-                    : 'Clear destination',
-    () =>
-      emit({
-        type: fleet.routeId ? 'release-trade-fleet' : 'clear-destination',
-        id: fleet.id,
-      }),
+    fleet.upgrade
+      ? 'Cancel Upgrade'
+      : fleet.automation
+        ? 'Cancel automatic order'
+        : fleet.salvage
+          ? 'Cancel salvage'
+          : fleet.colonizationTargetId
+            ? 'Cancel colonization'
+            : fleet.explorationTargetId
+              ? 'Cancel planet exploration'
+              : fleet.patrol
+                ? 'Cancel patrol'
+                : fleet.joinFleetId
+                  ? 'Cancel reinforcement'
+                  : 'Clear destination',
+    () => emit({ type: 'clear-destination', id: fleet.id }),
     'fleet-order-button',
   );
   stop.textContent = 'Stop';
-  stop.disabled = fleet.routeId
-    ? model.phase !== 'planning' || !!fleet.releaseRequested
-    : locked;
+  stop.disabled = locked;
   const open = button(
     'Orders',
     () => emit({ type: 'open-fleet-orders', id: fleet.id }),

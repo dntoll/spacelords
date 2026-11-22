@@ -52,7 +52,7 @@ describe('grupperade-planethandelser / grupperade-transporthandelser', () => {
   ])(
     'population-besked-endast-vid-andring: emits no empty report for %s people at %s habitability',
     (population, habitability) => {
-      const state = tradeNetworkState(false);
+      const state = tradeNetworkState();
       const game = Game.restore({
         ...state,
         fleets: [],
@@ -71,19 +71,6 @@ describe('grupperade-planethandelser / grupperade-transporthandelser', () => {
       ).toBe(true);
     },
   );
-
-  it('ruttflottor-utan-ankomstbesked: reaches route endpoints silently while its route order continues', () => {
-    const state = loadedTransports();
-    const game = Game.restore({ ...state, shipments: [] });
-    collectTurnFrames(game);
-    game.finishTurn();
-    const events = game.events.filter((event) =>
-      event.text.includes('arrived'),
-    );
-    expect(events).toHaveLength(0);
-    expect(game.fleet('travellers')!.routeId).toBe('route-test');
-    expect(game.fleet('travellers')!.destination).toBeNull();
-  });
 
   it('ankomstbesked-endast-vid-manuell-forflyttning: automatic Explore legs arrive silently while a manual move still reports arrival', () => {
     const state = tradeNetworkState();
@@ -165,7 +152,7 @@ describe('grupperade-planethandelser / grupperade-transporthandelser', () => {
 });
 
 it('tysta-planetbesked: independently mutes future population and habitability messages across saves', () => {
-  const state = tradeNetworkState(false);
+  const state = tradeNetworkState();
   const game = Game.restore({
     ...state,
     fleets: [],

@@ -12,7 +12,6 @@ import {
   FleetPatrol,
   type PatrolOrder,
 } from '../../../src/client/space-map/models/FleetPatrol.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 
 const hex = (q: number, r: number) => new HexCoordinate(q, r);
 const empty = {
@@ -274,20 +273,6 @@ describe('flottpatrullering', () => {
     });
     expect(game.fleet('fleet-home')!.patrol).toBeUndefined();
     expect(game.fleet('fleet-home')!.destination).toBeNull();
-  });
-
-  it('replaces Explore and is replaced by Explore or a trade route', () => {
-    const game = Game.restore(tradeNetworkState());
-    game.transferShips('freighters', 'Transport ship', 1, 'fleet-home');
-    game.setExploration('fleet-home', 'explore');
-    game.setPatrol('fleet-home');
-    expect(game.fleet('fleet-home')!.exploration).toBeUndefined();
-    game.setExploration('fleet-home', 'explore-stars');
-    expect(game.fleet('fleet-home')!.patrol).toBeUndefined();
-    game.setPatrol('fleet-home');
-    game.assignTradeFleet('route-test', 'fleet-home');
-    expect(game.fleet('fleet-home')!.patrol).toBeUndefined();
-    expect(() => game.setPatrol('fleet-home')).toThrow('trade route');
   });
 
   it('preserves a receiving patrol when reinforcement joins and does not reset its center on repeated activation', () => {

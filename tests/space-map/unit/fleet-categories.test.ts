@@ -1,16 +1,10 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
 import type p5 from 'p5';
-import { AppModel } from '../../../src/client/app/models/AppModel.js';
-import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
-import { AppView } from '../../../src/client/app/views/AppView.js';
 import type { FleetSnapshot } from '../../../src/client/space-map/models/Game.js';
-import { fleetCategory } from '../../../src/client/space-map/models/fleets/FleetCategory.js';
-import { FleetMapLayout } from '../../../src/client/space-map/models/star-map/FleetMapLayout.js';
 import { FLEET_CATEGORY_COLORS } from '../../../src/client/space-map/views/FleetCategoryColors.js';
 import { renderMapFleets } from '../../../src/client/space-map/views/star-map/FleetMapView.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 
 const noShips: FleetSnapshot['ships'] = {
   Fighter: 0,
@@ -40,23 +34,6 @@ function fleet(
 }
 
 describe('flottkategorier', () => {
-  it('lets the order decide a mixed fleet and the ships decide otherwise', () => {
-    const mixed = { 'Transport ship': 1, Fighter: 2, 'Colony ship': 1 };
-    expect(fleetCategory(fleet(mixed))).toBe('Mixed');
-    expect(fleetCategory(fleet(mixed, { routeId: 'r' }))).toBe('Transport');
-    expect(fleetCategory(fleet(mixed, { colonizationTargetId: 'sol-2' }))).toBe(
-      'Colony',
-    );
-    expect(
-      fleetCategory(
-        fleet(mixed, { patrol: { center: new HexCoordinate(0, 0), range: 1 } }),
-      ),
-    ).toBe('Combat');
-    expect(fleetCategory(fleet({ 'Exploration ship': 2 }))).toBe('Exploration');
-    expect(fleetCategory(fleet({ Fighter: 1, Raptor: 1 }))).toBe('Combat');
-    expect(fleetCategory(fleet({ 'Salvage ship': 1 }))).toBe('Salvage');
-  });
-
   it('gives every category its own colour and none of them the pirate red', () => {
     const colours = Object.values(FLEET_CATEGORY_COLORS);
     expect(new Set(colours).size).toBe(colours.length);
@@ -85,47 +62,5 @@ describe('flottkategorier', () => {
     );
     expect(stroke).toHaveBeenCalledWith(FLEET_CATEGORY_COLORS.Transport);
     expect(stroke).toHaveBeenCalledWith(FLEET_CATEGORY_COLORS.Combat);
-  });
-
-  it('hides a chosen category from the Fleets map and shows it again', () => {
-    const model = new AppModel(undefined, {
-      load: () => ({
-        lastPlayed: '2026-11-20T00:00:00Z',
-        state: { ...tradeNetworkState(), pirates: [] },
-      }),
-      save: vi.fn(),
-      clear() {},
-    });
-    model.startSlot(1);
-    const root = document.createElement('div');
-    document.body.replaceChildren(root);
-    const controller = new MasterController(
-      model,
-      new AppView(root, () => ({ render() {}, dispose() {} })),
-    );
-    controller.start();
-    root.querySelector<HTMLButtonElement>('[data-screen="fleets"]')!.click();
-    const toggle = () =>
-      root.querySelector<HTMLButtonElement>(
-        '.fleet-category-legend [data-category="Transport"]',
-      )!;
-    expect(toggle().getAttribute('aria-pressed')).toBe('true');
-    const { camera, fleets, tradeRoutes } = model.snapshot;
-    const marker = FleetMapLayout.markers(fleets, tradeRoutes).find(
-      (item) => item.fleet.id === 'travellers',
-    )!;
-    const point = {
-      x: (marker.point.x - camera.center.x) * camera.zoom,
-      y: (marker.point.y - camera.center.y) * camera.zoom,
-    };
-    expect(model.fleetAtPoint(point)).toBe('travellers');
-    toggle().click();
-    expect(model.snapshot.hiddenFleetCategories).toEqual(['Transport']);
-    expect(toggle().getAttribute('aria-pressed')).toBe('false');
-    expect(model.fleetAtPoint(point)).not.toBe('travellers');
-    toggle().click();
-    expect(model.snapshot.hiddenFleetCategories).toEqual([]);
-    expect(model.fleetAtPoint(point)).toBe('travellers');
-    controller.dispose();
   });
 });

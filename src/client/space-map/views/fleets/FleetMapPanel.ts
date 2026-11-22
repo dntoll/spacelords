@@ -6,7 +6,6 @@ import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { renderFleetCard } from '../FleetCard.js';
 import { bindShipTransfers } from './ShipTransferInput.js';
 import { button, element } from '../../../common/dom.js';
-import { mapFleetRouteFeedback } from '../StarMapTradeView.js';
 import { renderMapLocationHeading } from '../MapLocationHeading.js';
 
 export function renderMapFleetPanel(
@@ -96,8 +95,6 @@ export function renderMapFleetPanel(
   }
   cards.append(create);
   panel.append(cards);
-  const feedback = mapFleetRouteFeedback(model);
-  if (feedback) panel.append(element('p', 'map-route-feedback', feedback));
   if (model.shipTransfer) {
     const transfer = model.shipTransfer;
     const destinations = element('section', 'fleet-remote-targets');

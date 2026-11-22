@@ -8,7 +8,6 @@ import { createExampleGalaxy } from '../../../src/client/space-map/models/exampl
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { nearestUnexplored } from '../../../src/client/space-map/models/TurnSimulation.js';
 import { collectTurnFrames } from '../../fixtures/turn-steps.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 
 function explorationGame() {
   const state = new Game(createExampleGalaxy()).exportState();
@@ -67,20 +66,6 @@ function finish(game: Game, start = true) {
 }
 
 describe('automatisk-hexutforskning / automatisk-stjarnutforskning', () => {
-  it('flottans-handelsrutt: route assignment after Stop replaces exploration and temporarily changes the display name', () => {
-    const game = Game.restore(tradeNetworkState());
-    game.transferShips('freighters', 'Transport ship', 1, 'fleet-home');
-    game.setExploration('fleet-home', 'explore-stars');
-    game.clearDestination('fleet-home');
-    game.assignTradeFleet('route-test', 'fleet-home');
-    expect(game.fleet('fleet-home')!.exploration).toBeUndefined();
-    expect(game.fleet('fleet-home')!.name).toBe('Route Tellus <> Vesta');
-    expect(game.exportState().fleets[0]!.name).toBe('Home Fleet');
-    const loaded = Game.restore(game.exportState());
-    expect(loaded.fleet('fleet-home')!.name).toBe('Route Tellus <> Vesta');
-    loaded.releaseTradeFleet('fleet-home');
-    expect(loaded.fleet('fleet-home')!.name).toBe('Home Fleet');
-  });
   it('chooses minimum distance and coordinate ties independently of candidate order', () => {
     const origin = new HexCoordinate(0, 0);
     const candidates = [

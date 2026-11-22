@@ -11,13 +11,9 @@ import {
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
-import {
-  HexCoordinate,
-  HexGeometry,
-} from '../../../src/client/common/HexCoordinate.js';
+import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import type { IntentHandler } from '../../../src/client/app/views/ViewContracts.js';
 import { Detection } from '../../../src/client/space-map/models/Detection.js';
-import { routePlaybackState } from '../../fixtures/route-playback.js';
 
 afterEach(() => vi.useRealTimers());
 
@@ -60,7 +56,7 @@ it('destinationer-for-aktiva-skepp: retains the current order target beyond the 
   expect(playback.fleets[0]!.destination).toEqual(from);
 });
 
-it('samtidig-farledsanimation / geografisk-arsuppspelning: groups route traffic first and orders other tracks west to east, then south to north', () => {
+it('samtidig-automatisk-flottanimation / geografisk-arsuppspelning: groups automatic traffic first and orders other tracks west to east, then south to north', () => {
   const base = new Game(createExampleGalaxy()).fleetSnapshots()[0]!;
   const fleets = [
     { ...base, id: 'east', position: new HexCoordinate(4, 0) },
@@ -68,11 +64,16 @@ it('samtidig-farledsanimation / geografisk-arsuppspelning: groups route traffic 
     {
       ...base,
       id: 'route-a',
-      routeId: 'a',
+      exploration: 'explore' as const,
       position: new HexCoordinate(-8, 0),
     },
     { ...base, id: 'south', position: new HexCoordinate(-2, 2) },
-    { ...base, id: 'route-b', routeId: 'b', position: new HexCoordinate(8, 0) },
+    {
+      ...base,
+      id: 'route-b',
+      exploration: 'explore' as const,
+      position: new HexCoordinate(8, 0),
+    },
   ];
   const origin = { fleets, pirates: [], cells: [], ownedPlanets: [] };
   const playback = new TurnMovementPlayback(origin);
@@ -117,7 +118,6 @@ it('samtidig-farledsanimation / geografisk-arsuppspelning: groups route traffic 
 it('samtidig-automatisk-flottanimation: groups every autonomous order while manual Move remains separate', () => {
   const base = new Game(createExampleGalaxy()).fleetSnapshots()[0]!;
   const fleets = [
-    { ...base, id: 'route', routeId: 'route-a' },
     { ...base, id: 'explore', exploration: 'explore' as const },
     {
       ...base,
@@ -150,10 +150,7 @@ it('samtidig-automatisk-flottanimation: groups every autonomous order while manu
   );
   expect(
     playback.batches.map((batch) => batch.map((track) => track[0]!.fleetId)),
-  ).toEqual([
-    ['route', 'explore', 'patrol', 'salvage', 'planet-queue'],
-    ['manual'],
-  ]);
+  ).toEqual([['explore', 'patrol', 'salvage', 'planet-queue'], ['manual']]);
 });
 
 function scene(game: Game): MovementScene {
@@ -164,81 +161,6 @@ function scene(game: Game): MovementScene {
     ownedPlanets: game.ownedPlanetSnapshots(),
   };
 }
-
-it('samtidig-farledsanimation: controller frames every route together, animates each step once and restores the mobile camera', async () => {
-  vi.useFakeTimers();
-  const state = routePlaybackState();
-  const model = new AppModel(undefined, {
-    load: () => ({ lastPlayed: '2026-10-31', state }),
-    save() {},
-    clear() {},
-  });
-  model.startSlot(1);
-  model.resizeMap({
-    width: 393,
-    height: 400,
-    availableWidth: 393,
-    availableHeight: 400,
-  });
-  const original = model.snapshot.camera;
-  let emit!: IntentHandler;
-  const frames: TurnFrame[] = [];
-  const durations: number[] = [];
-  let fixedCamera: typeof original | null = null;
-  const controller = new MasterController(model, {
-    bind(handler) {
-      emit = handler;
-    },
-    render() {},
-    dispose() {},
-    animateTurnStep(frame, onProgress, duration) {
-      frames.push(frame);
-      durations.push(duration!);
-      fixedCamera ??= model.snapshot.camera;
-      expect(model.snapshot.camera).toEqual(fixedCamera);
-      expect(model.snapshot.turnMovements).toEqual(frame.movements);
-      for (const fleet of model.snapshot.fleets)
-        if (!frame.movements.some((move) => move.fleetId === fleet.id))
-          expect(fleet.destination).toBeNull();
-      for (const move of frame.movements)
-        for (const hex of [move.from, move.to]) {
-          const point = HexGeometry.toPoint(hex);
-          expect(
-            Math.abs((point.x - fixedCamera.center.x) * fixedCamera.zoom),
-          ).toBeLessThan(393 / 2 - 24);
-          expect(
-            Math.abs((point.y - fixedCamera.center.y) * fixedCamera.zoom),
-          ).toBeLessThan(400 / 2 - 24);
-        }
-      onProgress?.(0.75);
-      for (const move of frame.movements)
-        expect(
-          model.snapshot.fleets.find((fleet) => fleet.id === move.fleetId)!
-            .position,
-        ).toEqual(move.to);
-      return Promise.resolve();
-    },
-  });
-  controller.start();
-  emit({ type: 'confirm-end-turn' });
-  await vi.advanceTimersByTimeAsync(0);
-  expect(frames[0]!.movements.map((move) => move.fleetId).sort()).toEqual([
-    'freighters',
-    'travellers',
-  ]);
-  const moves = frames.flatMap((frame) => frame.movements);
-  expect(
-    new Set(
-      moves.map((move) => `${move.fleetId}:${move.from.key}:${move.to.key}`),
-    ).size,
-  ).toBe(moves.length);
-  expect(
-    durations.reduce((sum, duration) => sum + duration, 0),
-  ).toBeLessThanOrEqual(4000);
-  await vi.advanceTimersByTimeAsync(30000);
-  expect(model.snapshot.camera).toEqual(original);
-  controller.dispose();
-});
 
 describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
   it.each([false, true])(

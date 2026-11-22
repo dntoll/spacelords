@@ -1,10 +1,7 @@
-import type { FleetSnapshot, ShipType, Technology } from './Game.js';
-import type { TradeRouteSnapshot } from './Logistics.js';
-import type { HexCoordinate } from '../../common/HexCoordinate.js';
+import type { ShipType, Technology } from './Game.js';
 import { armedShipCount } from './ShipEquipment.js';
 
 export type ShipOrder =
-  | { readonly kind: 'join-route'; readonly routeId: string }
   | { readonly kind: 'join-fleet'; readonly fleetId: string }
   | {
       readonly kind: 'patrol';
@@ -23,13 +20,6 @@ export interface OrderOption {
   readonly description: string;
   readonly blockedReason: string | null;
 }
-export interface RouteOrderChoice {
-  readonly route: TradeRouteSnapshot;
-  readonly distance: number;
-  readonly matchingShips: number;
-  readonly ships: Readonly<Partial<Record<ShipType, number>>>;
-}
-
 /** egen-ordervy / startorder-for-nybyggda-skepp: shared names and capabilities. */
 export class ShipOrders {
   static options(
@@ -61,12 +51,6 @@ export class ShipOrders {
       'Join fleet',
       'Choose a fleet on the map. Travel to it and join when you meet.',
     );
-    if (ships['Transport ship'] || armedShipCount(ships))
-      add(
-        'join-route',
-        'Join route',
-        'Choose a trade route. Existing transports and escorts are shown.',
-      );
     if (ships['Salvage ship']) {
       add(
         'auto-salvage',
@@ -117,48 +101,13 @@ export class ShipOrders {
     return Object.freeze(options);
   }
 
-  static routes(
-    type: ShipType,
-    origin: HexCoordinate,
-    routes: readonly TradeRouteSnapshot[],
-    fleets: readonly FleetSnapshot[],
-    distance: (route: TradeRouteSnapshot, origin: HexCoordinate) => number,
-  ): readonly RouteOrderChoice[] {
-    return Object.freeze(
-      routes
-        .filter((route) => !route.closing)
-        .map((route) => {
-          const ships: Partial<Record<ShipType, number>> = {};
-          for (const fleet of fleets.filter(
-            (fleet) => fleet.routeId === route.id && !fleet.releaseRequested,
-          ))
-            for (const [ship, count] of Object.entries(fleet.ships))
-              ships[ship as ShipType] = (ships[ship as ShipType] ?? 0) + count;
-          return Object.freeze({
-            route,
-            distance: distance(route, origin),
-            matchingShips: ships[type] ?? 0,
-            ships: Object.freeze(ships),
-          });
-        })
-        .sort(
-          (a, b) =>
-            Number(a.matchingShips > 0) - Number(b.matchingShips > 0) ||
-            a.distance - b.distance ||
-            a.route.id.localeCompare(b.route.id),
-        ),
-    );
-  }
-
   static defaultAssignment(ship: string): string {
     if (ship === 'Civilian shuttle') return 'Civilian transport';
-    if (ship === 'Transport ship') return 'Automatic route manning';
     return 'Planet home fleet';
   }
 
   static label(order: ShipOrder): string {
     return {
-      'join-route': 'Join route',
       'join-fleet': 'Join fleet',
       patrol: 'Patrol',
       salvage: 'Deliberate salvage',
@@ -174,23 +123,17 @@ export class ShipOrders {
     if (!order || typeof order !== 'object')
       throw new Error('Invalid saved ship order.');
     const id =
-      order.kind === 'join-route'
-        ? order.routeId
-        : order.kind === 'join-fleet'
-          ? order.fleetId
-          : order.kind === 'salvage'
-            ? order.wreckId
-            : order.kind === 'colonize' || order.kind === 'explore-planet'
-              ? order.planetId
-              : null;
+      order.kind === 'join-fleet'
+        ? order.fleetId
+        : order.kind === 'salvage'
+          ? order.wreckId
+          : order.kind === 'colonize' || order.kind === 'explore-planet'
+            ? order.planetId
+            : null;
     if (
-      [
-        'join-route',
-        'join-fleet',
-        'salvage',
-        'colonize',
-        'explore-planet',
-      ].includes(order.kind)
+      ['join-fleet', 'salvage', 'colonize', 'explore-planet'].includes(
+        order.kind,
+      )
     ) {
       if (typeof id !== 'string' || !id)
         throw new Error('Invalid saved ship order.');

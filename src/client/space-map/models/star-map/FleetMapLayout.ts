@@ -1,5 +1,4 @@
 import type { FleetSnapshot, ShipType } from '../Game.js';
-import type { TradeRouteSnapshot } from '../Logistics.js';
 import { HexGeometry, type Point } from '../../../common/HexCoordinate.js';
 
 export interface FleetMapMarker {
@@ -56,10 +55,7 @@ export class FleetMapLayout {
     );
   }
 
-  static markers(
-    fleets: readonly FleetSnapshot[],
-    routes: readonly TradeRouteSnapshot[] = [],
-  ): readonly FleetMapMarker[] {
+  static markers(fleets: readonly FleetSnapshot[]): readonly FleetMapMarker[] {
     const groups = new Map<string, FleetSnapshot[]>();
     for (const fleet of fleets) {
       if (
@@ -67,14 +63,7 @@ export class FleetMapLayout {
         !Object.values(fleet.ships).some((count) => count > 0)
       )
         continue;
-      const route = routes.find((candidate) => candidate.id === fleet.routeId);
-      const atEndpoint =
-        route && [route.start.key, route.end.key].includes(fleet.position.key);
-      // ruttflottor-pa-kartan: route fleets gather beside their endpoint.
-      const key =
-        route && atEndpoint
-          ? `route-endpoint:${route.id}:${fleet.position.key}`
-          : fleet.position.key;
+      const key = fleet.position.key;
       const group = groups.get(key) ?? [];
       group.push(fleet);
       groups.set(key, group);
@@ -82,45 +71,10 @@ export class FleetMapLayout {
     return Object.freeze(
       [...groups.entries()]
         .sort(([a], [b]) => a.localeCompare(b))
-        .flatMap(([key, group]) =>
+        .flatMap(([, group]) =>
           group
             .sort((a, b) => a.id.localeCompare(b.id))
             .map((fleet, index) => {
-              const endpointRoute = routes.find(
-                (route) =>
-                  key === `route-endpoint:${route.id}:${fleet.position!.key}`,
-              );
-              if (endpointRoute) {
-                const endpoint = HexGeometry.toPoint(fleet.position!);
-                const other = HexGeometry.toPoint(
-                  endpointRoute.start.key === fleet.position!.key
-                    ? endpointRoute.end
-                    : endpointRoute.start,
-                );
-                const length = Math.hypot(
-                  other.x - endpoint.x,
-                  other.y - endpoint.y,
-                );
-                const direction = {
-                  x: (other.x - endpoint.x) / length,
-                  y: (other.y - endpoint.y) / length,
-                };
-                const offset = (index - (group.length - 1) / 2) * 18;
-                return Object.freeze({
-                  fleet,
-                  point: Object.freeze({
-                    x:
-                      endpoint.x +
-                      direction.x * this.orbitRadius -
-                      direction.y * offset,
-                    y:
-                      endpoint.y +
-                      direction.y * this.orbitRadius +
-                      direction.x * offset,
-                  }),
-                  scale: 0.6,
-                });
-              }
               const center = HexGeometry.toPoint(fleet.position!);
               const angle = -Math.PI / 2 + (index * 2 * Math.PI) / group.length;
               const spacing =
@@ -143,22 +97,16 @@ export class FleetMapLayout {
   static hit(
     fleets: readonly FleetSnapshot[],
     point: Point,
-    routes: readonly TradeRouteSnapshot[] = [],
     zoom = 1,
   ): string | null {
     let nearest: string | null = null;
     let distance = Infinity;
-    for (const marker of this.markers(fleets, routes)) {
+    for (const marker of this.markers(fleets)) {
       const next = Math.hypot(
         point.x - marker.point.x,
         point.y - marker.point.y,
       );
-      const radius = Math.max(
-        this.radius(marker, zoom),
-        routes.some((route) => route.id === marker.fleet.routeId)
-          ? 22 / zoom
-          : 0,
-      );
+      const radius = this.radius(marker, zoom);
       if (next <= radius && next < distance) {
         nearest = marker.fleet.id;
         distance = next;

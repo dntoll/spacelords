@@ -21,7 +21,6 @@ export class SaveFacade {
       lastPlayed: new Date().toISOString(),
       state: game.exportState(),
     });
-    this.host.mapTrade.clearSelection();
     this.host.mapProductionPage = 0;
     this.host.mapProductionOption = null;
     this.host.mapProjectId = null;

@@ -44,53 +44,6 @@ export function renderOrders(
           'button secondary-button',
         ),
       );
-  } else if (view.page === 'routes') {
-    section.append(
-      element('h3', '', 'Join route'),
-      element(
-        'p',
-        'muted-note',
-        'Routes without this ship type come first, then nearest routes.',
-      ),
-    );
-    const choices = element('div', 'order-choices');
-    const transport =
-      view.ship === 'Transport ship' ||
-      !!model.fleets.find((fleet) => fleet.id === view.fleetId)?.ships[
-        'Transport ship'
-      ];
-    for (const item of view.routes) {
-      const ships =
-        Object.entries(item.ships)
-          .filter(([, count]) => count > 0)
-          .map(([type, count]) => `${count} ${type}`)
-          .join(', ') || 'No ships assigned';
-      const choice = button(
-        `${item.route.from} ↔ ${item.route.to}`,
-        () =>
-          emit({
-            type: 'apply-ship-order',
-            order: { kind: 'join-route', routeId: item.route.id },
-          }),
-        'button order-choice',
-      );
-      choice.append(
-        element('small', '', `${item.distance} hex away · ${ships}`),
-      );
-      choice.disabled = locked || (!transport && !item.ships['Transport ship']);
-      if (!transport && !item.ships['Transport ship'])
-        choice.append(
-          element(
-            'small',
-            '',
-            'Requires an assigned Transport ship before adding Fighters.',
-          ),
-        );
-      choices.append(choice);
-    }
-    section.append(choices);
-    if (!view.routes.length)
-      section.append(element('p', '', 'No open trade routes.'));
   } else if (view.page === 'fleets') {
     section.append(
       element('h3', '', 'Join fleet'),

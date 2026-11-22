@@ -5,7 +5,7 @@ import {
 import { createExampleGalaxy } from '../../src/client/space-map/models/exampleGalaxy.js';
 import { emptyStock } from '../../src/client/space-map/models/Economy.js';
 
-export function tradeNetworkState(withRoute = true): GameState {
+export function tradeNetworkState(): GameState {
   const state = new Game(createExampleGalaxy()).exportState();
   const home = state.colonies[0]![1];
   const fleet = state.fleets[0]!;
@@ -83,9 +83,6 @@ export function tradeNetworkState(withRoute = true): GameState {
         },
       ],
     ],
-    tradeRoutes: withRoute
-      ? [{ id: 'route-test', a: 'sol-0', b: 'sol-1', closing: false }]
-      : [],
     fleets: [
       fleet,
       {
@@ -146,23 +143,12 @@ export function distantTradeNetworkState(): GameState {
         },
       ],
     ],
-    tradeRoutes: [
-      ...state.tradeRoutes,
-      { id: 'route-distant', a: 'sol-0', b: distant.id, closing: false },
-    ],
     fleets: state.fleets.map((fleet) =>
-      fleet.id === 'freighters'
-        ? { ...fleet, routeId: 'route-test' }
-        : fleet.id === 'travellers'
-          ? {
-              ...fleet,
-              position: distant.position,
-              destination: null,
-              routeId: 'route-distant',
-            }
-          : fleet.id === state.fleets[0]!.id
-            ? { ...fleet, position: distant.position }
-            : fleet,
+      fleet.id === 'travellers'
+        ? { ...fleet, position: distant.position, destination: null }
+        : fleet.id === state.fleets[0]!.id
+          ? { ...fleet, position: distant.position }
+          : fleet,
     ),
   };
 }

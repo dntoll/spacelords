@@ -6,16 +6,13 @@ import {
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { finishYear } from '../../fixtures/salvage.js';
-import {
-  ShipOrders,
-  type ShipOrder,
-} from '../../../src/client/space-map/models/ShipOrders.js';
+import { type ShipOrder } from '../../../src/client/space-map/models/ShipOrders.js';
 
 describe('startorder-for-nybyggda-skepp / flottval-pa-orderkarta', () => {
   it.each([false, true])(
     'produktionsflotta-efter-kolonisering: uses an empty colonizer only when explicitly selected (%s)',
     (selected) => {
-      const state = tradeNetworkState(false);
+      const state = tradeNetworkState();
       const colony = state.colonies[0]![1];
       colony.stock = {
         ...colony.stock,
@@ -88,7 +85,7 @@ describe('startorder-for-nybyggda-skepp / flottval-pa-orderkarta', () => {
   ])(
     'activates $order.kind for the new $ship only after construction',
     ({ ship, order }) => {
-      const state = tradeNetworkState(false);
+      const state = tradeNetworkState();
       const colony = state.colonies[0]![1];
       colony.stock = {
         ...colony.stock,
@@ -148,7 +145,7 @@ describe('startorder-for-nybyggda-skepp / flottval-pa-orderkarta', () => {
   );
 
   it('produktionsflottors-automatiska-namn: persists a separate type-and-planet sequence across renaming and reload', () => {
-    const state = tradeNetworkState(false);
+    const state = tradeNetworkState();
     const colony = state.colonies[0]![1];
     colony.stock = {
       ...colony.stock,
@@ -231,37 +228,7 @@ describe('startorder-for-nybyggda-skepp / flottval-pa-orderkarta', () => {
     ).toBe(true);
   });
 
-  it('starts a new transport on its selected route while leaving the home fleet unchanged, including after reload', () => {
-    const state = tradeNetworkState();
-    state.colonies[0]![1].buildings.push({
-      id: 'transport-yard',
-      type: 'Transport ship factory',
-      slotIndex: 2,
-      demolition: false,
-    });
-    const game = Game.restore(state);
-    const before = game.fleet('fleet-home')!;
-    game.scheduleShip(
-      game.galaxy.homePlanet,
-      'Transport ship',
-      null,
-      'transport-yard',
-      { kind: 'join-route', routeId: 'route-test' },
-    );
-    const restored = Game.restore(game.exportState());
-    finishYear(restored);
-    expect(restored.fleet('fleet-home')!.ships).toEqual(before.ships);
-    const newFleet = restored
-      .fleetSnapshots()
-      .find(
-        (fleet) => fleet.id !== 'fleet-home' && fleet.routeId === 'route-test',
-      )!;
-    expect(newFleet.ships['Transport ship']).toBe(1);
-    expect(newFleet.position).toEqual(game.galaxy.homePlanet.position);
-    expect(newFleet.pendingOrder).toBeUndefined();
-  });
-
-  it('joins a moving non-route fleet physically and rejects a route fleet as recipient', () => {
+  it('joins a moving fleet physically', () => {
     const game = Game.restore(tradeNetworkState());
     game.issueFleetOrder('fleet-home', {
       kind: 'join-fleet',
@@ -274,19 +241,6 @@ describe('startorder-for-nybyggda-skepp / flottval-pa-orderkarta', () => {
     const restored = Game.restore(game.exportState());
     finishYear(restored);
     expect(restored.fleet('fleet-home')).toBeNull();
-    const state = tradeNetworkState();
-    const routed = Game.restore({
-      ...state,
-      fleets: state.fleets.map((fleet) =>
-        fleet.id === 'travellers' ? { ...fleet, routeId: 'route-test' } : fleet,
-      ),
-    });
-    expect(() =>
-      routed.issueFleetOrder('fleet-home', {
-        kind: 'join-fleet',
-        fleetId: 'travellers',
-      }),
-    ).toThrow();
   });
 });
 
@@ -302,29 +256,5 @@ describe('patrullcentrum-vid-order', () => {
     finishYear(restored);
     expect(restored.fleet('fleet-home')!.destination).toEqual(center);
     expect(restored.fleet('fleet-home')!.patrol!.center).toEqual(center);
-  });
-});
-
-describe('ruttval-for-order', () => {
-  it('sorts routes with the same ship type last, then by distance, and reports their ships', () => {
-    const game = Game.restore(tradeNetworkState());
-    const origin = new HexCoordinate(0, 0);
-    const choices = ShipOrders.routes(
-      'Transport ship',
-      origin,
-      [
-        { ...game.tradeRoutes[0]!, id: 'near-served' },
-        { ...game.tradeRoutes[0]!, id: 'far-unserved' },
-        { ...game.tradeRoutes[0]!, id: 'near-unserved' },
-      ],
-      [{ ...game.fleet('freighters')!, routeId: 'near-served' }],
-      (route) => (route.id === 'far-unserved' ? 8 : 1),
-    );
-    expect(choices.map((choice) => choice.route.id)).toEqual([
-      'near-unserved',
-      'far-unserved',
-      'near-served',
-    ]);
-    expect(choices[2]!.ships['Transport ship']).toBe(2);
   });
 });

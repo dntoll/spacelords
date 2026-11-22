@@ -85,7 +85,6 @@ export class StarMapFacade {
     } else {
       this.host.cancelShipTransfer();
       this.host.cancelFleetRename();
-      this.host.mapTrade.clearSelection();
       if (this.host.selected.key !== position.key) {
         this.host.mapProductionOption = null;
         this.host.mapProductionPage = 0;
@@ -115,12 +114,6 @@ export class StarMapFacade {
           .fleetSnapshots()
           .filter(
             (fleet) =>
-              this.host.screen !== 'orders' ||
-              this.host.orderSelection?.page !== 'fleets' ||
-              !fleet.routeId,
-          )
-          .filter(
-            (fleet) =>
               this.host.screen !== 'fleets' ||
               !this.host.hiddenFleetCategories.has(fleetCategory(fleet)),
           ),
@@ -129,9 +122,6 @@ export class StarMapFacade {
           : this.host.game.pirateSnapshots().map(pirateAsFleet)),
       ],
       this.host.camera.screenToWorld(point),
-      ['map', 'fleets'].includes(this.host.screen)
-        ? this.host.game.tradeRoutes
-        : [],
       this.host.camera.snapshot.zoom,
     );
   }
@@ -170,19 +160,13 @@ export class StarMapFacade {
     const fleet =
       this.host.game.fleet(id) ?? (pirate ? pirateAsFleet(pirate) : null);
     if (fleet && Object.values(fleet.ships).some((count) => count > 0)) {
-      this.host.mapTrade.clearSelection();
       this.host.mapFleetId = id;
     }
   }
 
   hoverMapFleet(point: Point | null): boolean {
     const next = point ? this.host.fleetAtPoint(point) : null;
-    const changed = this.host.mapTrade.hover(
-      this.host.screen === 'fleets' || this.host.screen === 'production' || next
-        ? null
-        : point,
-    );
-    if (next === this.host.hoveredFleetId) return changed;
+    if (next === this.host.hoveredFleetId) return false;
     this.host.hoveredFleetId = next;
     return true;
   }
@@ -198,36 +182,13 @@ export class StarMapFacade {
     )
       return;
     this.host.fleetDragging = true;
-    if (
-      this.host.game.phase === 'planning' &&
-      this.host.screen === 'map' &&
-      this.host.mapTrade.hoverAssignment(this.host.mapFleetId, point)
-    ) {
-      this.host.fleetDestinationPreview = null;
-      return;
-    }
     const target = HexGeometry.fromPoint(this.host.camera.screenToWorld(point));
-    this.host.fleetDestinationPreview =
-      !this.host.game.fleet(this.host.mapFleetId)?.routeId &&
-      this.host.game.galaxy.cellAt(target)
-        ? target
-        : null;
+    this.host.fleetDestinationPreview = this.host.game.galaxy.cellAt(target)
+      ? target
+      : null;
   }
 
   commitFleetDestination(): void {
-    const trade = this.host.mapTrade.snapshot;
-    if (
-      this.host.screen === 'map' &&
-      this.host.mapFleetId &&
-      trade.hoveredRouteIds.length
-    ) {
-      const id = this.host.mapFleetId;
-      const candidates = trade.hoveredRouteIds;
-      this.host.cancelMapPointer();
-      if (candidates.length > 1) this.host.mapTrade.choose(candidates, id);
-      else this.host.assignMapTradeFleet(candidates[0]!, id);
-      return;
-    }
     try {
       if (
         this.host.mapFleetId &&
@@ -244,7 +205,6 @@ export class StarMapFacade {
   }
 
   cancelMapPointer(): void {
-    this.host.mapTrade.cancel();
     this.host.hoveredFleetId = null;
     this.host.fleetDestinationPreview = null;
     this.host.fleetDragging = false;
@@ -253,27 +213,6 @@ export class StarMapFacade {
   selectPoint(point: Point): void {
     const world = this.host.camera.screenToWorld(point);
     const hex = HexGeometry.fromPoint(world);
-    if (this.host.screen === 'map' && !this.host.destinationFleetId) {
-      const cell = this.host.game
-        .mapSnapshot()
-        .find((c) => c.position.key === hex.key);
-      const center = HexGeometry.toPoint(hex);
-      const onPlanet =
-        cell?.object?.kind === 'planet' &&
-        Math.hypot(world.x - center.x, world.y - center.y) <=
-          Math.max(8.5, 12 / this.host.camera.snapshot.zoom);
-      const routes = onPlanet ? [] : this.host.mapTrade.hits(point);
-      if (routes.length === 1) {
-        this.host.selectMapRoute(routes[0]!);
-        return;
-      }
-      if (routes.length > 1) {
-        this.host.mapFleetId = null;
-        this.host.mapTrade.clearSelection();
-        this.host.mapTrade.choose(routes);
-        return;
-      }
-    }
     this.host.select(hex);
   }
 
@@ -292,7 +231,6 @@ export class StarMapFacade {
   }
 
   home(): void {
-    this.host.mapTrade.clearSelection();
     this.host.camera.reset();
     this.host.selected = this.host.game.galaxy.homePlanet.position;
     this.host.requestMapFocus(this.host.selected);

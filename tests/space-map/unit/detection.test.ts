@@ -10,7 +10,6 @@ import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { TELESCOPES } from '../../../src/client/space-map/models/Detection.js';
 import { ResearchPlan } from '../../../src/client/space-map/models/research/Research.js';
 import { turnFrames } from '../../fixtures/turn-steps.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { renderDetectionBoundary } from '../../../src/client/space-map/views/star-map/DetectionMapView.js';
 import type p5 from 'p5';
 
@@ -216,72 +215,6 @@ describe('aktuell-detektionssikt', () => {
 });
 
 describe('teleskop-i-exploration-ships', () => {
-  it('prefers a higher remote telescope, physically delivers it, and excludes disconnected factories', () => {
-    const state = tradeNetworkState();
-    const home = state.colonies[0]![1];
-    const destination = state.colonies[1]![1];
-    home.buildings.push({
-      id: 'remote-telescope',
-      type: 'Telescope III factory',
-      slotIndex: 2,
-      demolition: false,
-    });
-    destination.population = 5000;
-    destination.projects = [];
-    Object.assign(destination.stock, {
-      Iron: 100,
-      Water: 100,
-      Oil: 100,
-      'Rocket engine': 2,
-      'Telescope I': 1,
-    });
-    destination.buildings.push({
-      id: 'remote-yard',
-      type: 'Exploration ship factory',
-      slotIndex: 0,
-      demolition: false,
-    });
-    const disconnected = Game.restore({ ...state, tradeRoutes: [] });
-    disconnected.scheduleShip(
-      disconnected.galaxy.systems[0]!.planets[1]!,
-      'Exploration ship',
-    );
-    expect(
-      disconnected.exportState().colonies[1]![1].projects[0]!.parts![
-        'Telescope I'
-      ],
-    ).toBe(1);
-    const game = Game.restore(state);
-    game.assignTradeFleet('route-test', 'freighters');
-    const target = game.galaxy.systems[0]!.planets[1]!;
-    game.scheduleShip(target, 'Exploration ship');
-    expect(
-      game.planetSnapshot(target)!.projects[0]!.parts!['Telescope III'],
-    ).toBe(1);
-    for (
-      let count = 0;
-      count < 8 &&
-      !game
-        .fleetSnapshots()
-        .some(
-          (fleet) =>
-            fleet.position?.key === target.position.key &&
-            fleet.ships['Exploration ship'],
-        );
-      count++
-    )
-      year(game);
-    const explorer = game
-      .fleetSnapshots()
-      .flatMap((fleet) =>
-        fleet.position?.key === target.position.key
-          ? (fleet.shipUnits ?? [])
-          : [],
-      )
-      .find((ship) => ship.type === 'Exploration ship');
-    expect(explorer?.telescope).toBe(3);
-    expect(game.planetSnapshot(target)!.economy.stock['Telescope I']).toBe(1);
-  });
   function shipyard() {
     const state = new Game(createExampleGalaxy()).exportState();
     const colony = state.colonies[0]![1];

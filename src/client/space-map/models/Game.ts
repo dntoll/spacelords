@@ -1,4 +1,3 @@
-import type { TransportAction } from './Decisions.js';
 import { ShipOrders, type ShipOrder } from './ShipOrders.js';
 import {
   PlanetQueues,
@@ -49,10 +48,6 @@ import {
   type BattleReport,
 } from './Salvage.js';
 import { prioritizeProduction } from './ProductionPriorities.js';
-import {
-  routeEscortTargets,
-  tradeAssignmentIssue,
-} from './star-map/TradeAssignment.js';
 import type { ProductionOption, ProductionGuidance } from './ProductionMap.js';
 import {
   ProductionPresence,
@@ -89,13 +84,6 @@ import {
   type Technology,
 } from './research/Research.js';
 import {
-  Logistics,
-  type LogisticsPort,
-  type TransportFleet,
-  type TradeRoute,
-  type TradeRouteSnapshot,
-} from './Logistics.js';
-import {
   NetworkEconomy,
   type NetworkConsumer,
   type NetworkEconomyState,
@@ -127,7 +115,6 @@ import {
   SHIPS,
   type ShipUnit,
   projectDefinition,
-  TRANSPORTS,
   SHIP_RESEARCH,
   factoryShips,
   projectCost,
@@ -255,8 +242,6 @@ interface Fleet {
   exploration?: ExplorationOrder;
   shipUnits?: ShipUnit[];
   joinFleetId?: string;
-  routeId?: string;
-  releaseRequested?: boolean;
   id: string;
   name: string;
   position: HexCoordinate | null;
@@ -303,7 +288,6 @@ export interface GameState {
   readonly attackQueue?: readonly string[];
   readonly salvageQueue?: readonly string[];
   readonly surveyedPlanets?: readonly string[];
-  readonly tradeRoutes: readonly TradeRoute[];
   /** Older saves only: replaced by the production network. */
   readonly shipments?: readonly unknown[];
   readonly componentOrders?: readonly unknown[];
@@ -362,7 +346,6 @@ export class Game {
   #attackQueue: string[] = [];
   #salvageQueue: string[] = [];
   #surveyedPlanets = new Set<string>();
-  #logistics = new Logistics();
   // produktionsnatverk: shared stock and goods moving between planets.
   #network = new NetworkEconomy();
   #networkStarted: Record<string, number> = {};
@@ -483,7 +466,6 @@ export class Game {
       researched: [...this.#research.completed],
       researchTarget: this.#research.queue[0] ?? null,
       researchQueue: this.#research.queue,
-      tradeRoutes: this.#logistics.routes,
       skippedDecisions: [...this.#decisions.skipped],
       mutedDecisions: this.#decisions.muted,
       colonies: [...this.#colonies],
@@ -597,7 +579,6 @@ export class Game {
         ),
       ),
     );
-    game.#logistics = new Logistics([...copy.tradeRoutes]);
     game.#network = new NetworkEconomy(
       copy.network ?? { transits: [], deliveries: [] },
     );
@@ -648,7 +629,6 @@ export class Game {
           (fleet.automation !== 'salvage' ||
             empty ||
             !fleet.ships['Salvage ship'] ||
-            fleet.routeId ||
             fleet.patrol ||
             fleet.exploration ||
             fleet.joinFleetId ||
@@ -664,7 +644,6 @@ export class Game {
               ),
             ) ||
             !fleet.ships['Colony ship'] ||
-            fleet.routeId ||
             fleet.patrol ||
             fleet.exploration ||
             fleet.joinFleetId)
@@ -679,7 +658,6 @@ export class Game {
               ),
             ) ||
             !fleet.ships['Exploration ship'] ||
-            fleet.routeId ||
             fleet.patrol ||
             fleet.exploration ||
             fleet.joinFleetId)
@@ -699,7 +677,6 @@ export class Game {
           if (
             empty ||
             !armedShipCount(fleet.ships) ||
-            fleet.routeId ||
             fleet.joinFleetId ||
             fleet.exploration
           )
@@ -873,7 +850,6 @@ export class Game {
           game.#research.completed,
         );
         if (
-          fleet.routeId ||
           fleet.automation ||
           fleet.patrol ||
           fleet.exploration ||
@@ -1595,7 +1571,6 @@ export class Game {
     if (this.#phase !== 'planning')
       return 'Orders are locked during simulation.';
     const fleet = this.#fleetState(fleetId);
-    if (fleet.routeId) return 'Release this fleet from its trade route first.';
     const planet = this.galaxy.systems
       .flatMap((system) => system.planets)
       .find((p) => p.position.key === fleet.position?.key);
@@ -1892,9 +1867,7 @@ export class Game {
           ),
           speed: this.#speed(fleet),
           crew: this.#crew(fleet.ships),
-          routeId: fleet.routeId,
           joinFleetId: fleet.joinFleetId,
-          releaseRequested: fleet.releaseRequested,
           cargo: Object.freeze(this.#cargo(fleet.id)),
         }),
       ),
@@ -1954,22 +1927,8 @@ export class Game {
     if (option.blockedReason) throw new Error(option.blockedReason);
     if (order.kind === 'join-fleet') {
       const target = this.#fleets.find((fleet) => fleet.id === order.fleetId);
-      if (!target?.position || target.routeId || target.upgrade)
-        throw new Error(
-          'Choose a positioned fleet without a trade route or Upgrade.',
-        );
-    } else if (order.kind === 'join-route') {
-      const route = this.#logistics.routes.find(
-        (route) => route.id === order.routeId && !route.closing,
-      );
-      if (!route) throw new Error('Choose an open trade route.');
-      if (
-        !ships['Transport ship'] &&
-        !routeEscortTargets(route.id, this.fleetSnapshots()).length
-      )
-        throw new Error(
-          'Assign a transport to this route before adding Fighters.',
-        );
+      if (!target?.position || target.upgrade)
+        throw new Error('Choose a positioned fleet without an Upgrade.');
     } else if (order.kind === 'patrol') {
       const center = new HexCoordinate(order.position.q, order.position.r);
       if (!this.galaxy.cellAt(center) || !this.galaxy.isPassable(center))
@@ -2036,11 +1995,6 @@ export class Game {
       fleet.courseOrigin = fleet.position!;
       this.#refreshReinforcements();
       this.#mergeReinforcements();
-    } else if (order.kind === 'join-route') {
-      if (this.#salvage.towing(id).length)
-        throw new Error('Deliver or release towed wrecks first.');
-      this.clearDestination(id);
-      this.assignTradeFleet(order.routeId, id);
     } else if (order.kind === 'patrol')
       this.setPatrol(id, new HexCoordinate(order.position.q, order.position.r));
     else if (order.kind === 'salvage') this.orderSalvage(id, order.wreckId);
@@ -2494,27 +2448,14 @@ export class Game {
   }
   /**
    * en-order-ett-skepp: an order that needs one ship takes no second one. A
-   * link wants one transport, a planet one colony or exploration ship;
-   * escorts may add up.
+   * planet wants one colony or exploration ship.
    */
-  #orderTaken(type: ShipType, order: ShipOrder): boolean {
+  #orderTaken(order: ShipOrder): boolean {
     const queued = this.#ownedPlanets().flatMap(
       (planet) => this.#state(planet).projects,
     );
     const same = (other: ShipOrder | undefined) =>
       !!other && JSON.stringify(other) === JSON.stringify(order);
-    if (order.kind === 'join-route') {
-      if (!TRANSPORTS.includes(type)) return false;
-      const route = this.tradeRoutes.find((item) => item.id === order.routeId);
-      return (
-        !!route?.hasActiveTransport ||
-        queued.some(
-          (project) =>
-            TRANSPORTS.includes(project.type as ShipType) &&
-            same(project.initialOrder),
-        )
-      );
-    }
     if (order.kind === 'colonize' || order.kind === 'explore-planet')
       return queued.some((project) => same(project.initialOrder));
     return false;
@@ -2523,11 +2464,6 @@ export class Game {
   /** byggorsak-i-kon: the order or fleet a queued ship is meant for. */
   #shipPurpose(project: Project): ShipPurpose {
     const order = project.initialOrder;
-    if (order?.kind === 'join-route') {
-      const route = this.tradeRoutes.find((item) => item.id === order.routeId);
-      if (route)
-        return Object.freeze({ kind: 'link', from: route.from, to: route.to });
-    }
     if (order?.kind === 'colonize' || order?.kind === 'explore-planet')
       return Object.freeze({
         kind: order.kind === 'colonize' ? 'colonize' : 'explore',
@@ -3124,7 +3060,7 @@ export class Game {
     if (type === 'Civilian shuttle') destinationFleetId = null;
     if (initialOrder) {
       this.#validateShipOrder(initialOrder, { [type]: 1 });
-      if (this.#orderTaken(type, initialOrder))
+      if (this.#orderTaken(initialOrder))
         throw new Error(`A ${type} is already ordered for this.`);
       destinationFleetId = null;
     }
@@ -3243,8 +3179,6 @@ export class Game {
   }
   #validateProjectFleet(planet: Planet, id: string | null): void {
     const fleet = id ? this.#fleetState(id) : null;
-    if (fleet?.routeId)
-      throw new Error('Choose a fleet without a trade route for new ships.');
     if (fleet?.position && fleet.position.key !== planet.position.key)
       throw new Error('Choose an empty fleet or a fleet at this planet.');
   }
@@ -3281,8 +3215,6 @@ export class Game {
       );
     const issue = shipTransferIssue({
       ...(source.upgrade ? { upgrade: source.upgrade } : {}),
-      routeId: source.routeId,
-      cargo: this.#cargo(source.id),
     });
     if (issue) throw new Error(issue);
     if (!Number.isInteger(amount) || amount < 1 || source.ships[ship] < amount)
@@ -3379,7 +3311,6 @@ export class Game {
       throw new Error('This hex is impassable.');
     const fleet = this.#fleetState(id);
     this.#salvage.stop(id);
-    this.#requireManualFleet(fleet);
     if (this.#shipCount(fleet.ships) === 0)
       throw new Error('Empty fleets cannot receive destinations.');
     delete fleet.joinFleetId;
@@ -3408,7 +3339,6 @@ export class Game {
     delete this.#fleetState(id).detour;
     delete this.#fleetState(id).exploration;
     delete this.#fleetState(id).starSurvey;
-    this.#requireManualFleet(this.#fleetState(id));
     delete this.#fleetState(id).patrol;
     this.#fleetState(id).destination = null;
     delete this.#fleetState(id).joinFleetId;
@@ -3930,8 +3860,6 @@ export class Game {
       }
       fleet.shipUnits = fleet.shipUnits!.filter((unit) => !killed.has(unit.id));
       this.#salvage.releaseLostCapacity(fleet, position);
-      if (lostUnits.some((unit) => unit.type === 'Transport ship'))
-        this.#captureRouteCargo(fleet);
       if (escaped && participant.retreat && this.#shipCount(fleet.ships)) {
         fleet.position = new HexCoordinate(
           participant.retreat.q,
@@ -3950,7 +3878,6 @@ export class Game {
         delete fleet.automation;
         delete fleet.colonizationTargetId;
         this.#salvage.stop(fleet.id);
-        if (fleet.routeId) fleet.ordersPaused = true;
         simulation.remaining.set(fleet.id, 0);
         this.#salvage.follow(fleet);
       }
@@ -4083,7 +4010,6 @@ export class Game {
     const fleet = this.#fleets.find((candidate) => candidate.id === id);
     return (
       !!fleet?.position &&
-      !fleet.routeId &&
       (this.#phase === 'planning' ||
         (this.#phase === 'interrupted' && !!this.#simulation?.permits(id)))
     );
@@ -4092,7 +4018,6 @@ export class Game {
     const fleet = this.#fleetState(id);
     if (!fleet.position)
       throw new Error('Empty fleets cannot receive destinations.');
-    this.#requireManualFleet(fleet);
     if (!this.canIssueFleetOrders(id))
       throw new Error(
         'Orders are only available while planning or handling a discovery.',
@@ -4292,7 +4217,6 @@ export class Game {
   startTurn(): void {
     this.#requirePlanning();
     this.#updateSalvage();
-    this.#plyRoutes();
     this.#assignTaskQueues();
     this.#refreshReinforcements();
     this.#mergeReinforcements();
@@ -4543,7 +4467,6 @@ export class Game {
       );
     this.#completeFleetUpgrades();
     this.#repairShipyards();
-    this.#logistics.cleanup(this.#logisticsPort());
     this.#refreshReinforcements();
   }
   #completeProject(planet: Planet, state: ColonyState, project: Project): void {
@@ -4633,13 +4556,11 @@ export class Game {
       : (this.#fleets.find(
           (fleet) =>
             fleet.id === destinationFleetId &&
-            !fleet.routeId &&
             (!fleet.position || fleet.position.key === planet.position.key),
         ) ??
         this.#fleets.find(
           (fleet) =>
             fleet.id === state.homeFleetId &&
-            !fleet.routeId &&
             fleet.position?.key === planet.position.key,
         ));
     if (!reserve) {
@@ -4695,87 +4616,6 @@ export class Game {
     return Object.freeze(
       this.#ownedPlanets().map((p) => this.planetSnapshot(p)!),
     );
-  }
-  get tradeRoutes(): readonly TradeRouteSnapshot[] {
-    return Object.freeze(
-      this.#logistics.snapshots(this.#logisticsPort()).map((route) => {
-        const waiting =
-          !route.closing && !route.capacity
-            ? this.#transportWaiting(route)
-            : null;
-        return waiting ? Object.freeze({ ...route, status: waiting }) : route;
-      }),
-    );
-  }
-  createTradeRoute(a: string, b: string): string {
-    this.#requirePlanning();
-    if (!this.#research.completed.has('Trade logistics'))
-      throw new Error('Research Trade logistics first.');
-    const id = this.#logistics.create(a, b, this.#logisticsPort());
-    return id;
-  }
-  assignTradeFleet(routeId: string, fleetId: string): void {
-    this.#requirePlanning();
-    const snapshots = this.fleetSnapshots();
-    const source = this.#fleetState(fleetId);
-    const route = this.tradeRoutes.find((route) => route.id === routeId);
-    if (!route) throw new Error('Route is no longer available.');
-    const issue = tradeAssignmentIssue(this.fleet(fleetId)!, route, snapshots);
-    if (issue) throw new Error(issue);
-    if (source.ships['Transport ship']) {
-      if (source.patrol) {
-        source.destination = null;
-        delete source.courseOrigin;
-      }
-      this.#logistics.assign(routeId, source, this.#logisticsPort());
-      delete source.automation;
-      delete source.colonizationTargetId;
-      delete source.explorationTargetId;
-      delete source.planetQueue;
-      delete source.patrol;
-      delete source.exploration;
-      delete source.starSurvey;
-    } else {
-      // rutt-eskortfordelning: include reinforcements already on their way.
-      const targets = routeEscortTargets(routeId, snapshots).map((fleet) => ({
-        id: fleet.id,
-        fighters:
-          armedShipCount(fleet.ships) +
-          snapshots
-            .filter((group) => group.joinFleetId === fleet.id)
-            .reduce((total, group) => total + armedShipCount(group.ships), 0),
-        ships: { Fighter: 0, 'Space pirate': 0 },
-      }));
-      for (const type of ['Fighter', 'Space pirate'] as const) {
-        for (let count = source.ships[type]; count > 0; count--) {
-          targets.sort(
-            (a, b) => a.fighters - b.fighters || a.id.localeCompare(b.id),
-          );
-          targets[0]!.fighters++;
-          targets[0]!.ships[type]++;
-        }
-      }
-      for (const target of targets) {
-        for (const type of ['Fighter', 'Space pirate'] as const)
-          if (target.ships[type])
-            this.transferShips(fleetId, type, target.ships[type], target.id);
-      }
-      delete source.automation;
-    }
-  }
-  releaseTradeFleet(fleetId: string): void {
-    this.#requirePlanning();
-    const fleet = this.#fleetState(fleetId);
-    // fraktskepp-pendlar: a transport between the ends stops where it is.
-    if (fleet.destination && this.#onRoute(fleet)) {
-      fleet.destination = null;
-      delete fleet.courseOrigin;
-    }
-    this.#logistics.release(fleet);
-  }
-  closeTradeRoute(id: string): void {
-    this.#requirePlanning();
-    this.#logistics.close(id, this.#logisticsPort());
   }
   skipDecision(id: string): void {
     this.#requirePlanning();
@@ -4898,7 +4738,6 @@ export class Game {
     }
     for (const fleet of this.#fleets.filter(
       (f) =>
-        !f.routeId &&
         !f.joinFleetId &&
         !f.patrol &&
         !f.automation &&
@@ -4945,32 +4784,6 @@ export class Game {
         );
       delete fleet.hold;
     }
-  }
-  #logisticsPort(): LogisticsPort {
-    return {
-      planets: this.#ownedPlanets().map((planet) => ({
-        id: planet.id,
-        name: planet.name,
-        position: planet.position,
-      })),
-      fleets: this.#fleets,
-      speed: (fleet: TransportFleet) => this.#speed(this.#fleetState(fleet.id)),
-      travelYears: (fleet, from, to) => {
-        if (from.key === to.key) return 0;
-        const speed = this.#speed(this.#fleetState(fleet.id));
-        const path = this.#navigation.path(from, to, speed, this.#knownTerrain);
-        return path.length
-          ? this.#navigation.years(path, from, speed, this.#knownTerrain)
-          : Infinity;
-      },
-      id: (prefix: string) => this.#id(prefix),
-    };
-  }
-  #requireManualFleet(fleet: Fleet): void {
-    if (fleet.routeId)
-      throw new Error(
-        'Release this fleet from its trade route before issuing manual orders.',
-      );
   }
   #refreshReinforcements(): void {
     FleetPursuit.refresh(this.#fleets, (fleet) =>
@@ -5159,156 +4972,9 @@ export class Game {
         };
   }
 
-  #transportPreparation(excludePlanetId?: string): string | null {
-    if (this.#research.queue.includes('Transport ship factory'))
-      return 'Waiting for Transport ship factory research.';
-    for (const [id, state] of this.#colonies) {
-      if (id === excludePlanetId) continue;
-      const project = state.projects.find(
-        (item) =>
-          item.type === 'Transport ship' ||
-          item.type === 'Transport ship factory',
-      );
-      if (project) {
-        const planet = this.#planetById(id);
-        return `Waiting for ${project.type} queued at ${planet?.name ?? id}.`;
-      }
-    }
-    return null;
-  }
-
-  #availableTransport(route: TradeRouteSnapshot): boolean {
-    return this.fleetSnapshots().some(
-      (fleet) =>
-        fleet.ships['Transport ship'] > 0 &&
-        !tradeAssignmentIssue(fleet, route),
-    );
-  }
-
-  #transportWaiting(
-    route: TradeRouteSnapshot,
-    excludePlanetId?: string,
-  ): string | null {
-    return this.#availableTransport(route)
-      ? null
-      : this.#transportPreparation(excludePlanetId);
-  }
-
-  #routeTransportAction(route: TradeRouteSnapshot): TransportAction {
-    if (this.#availableTransport(route)) return { kind: 'assign' };
-    if (!this.#research.completed.has('Transport ship factory')) {
-      const issue = this.#researchQueueIssue();
-      return { kind: 'research', ...(issue ? { blockedReason: issue } : {}) };
-    }
-    const planets = this.#ownedPlanets().sort(
-      (a, b) =>
-        Number(![route.a, route.b].includes(a.id)) -
-          Number(![route.a, route.b].includes(b.id)) ||
-        a.id.localeCompare(b.id),
-    );
-    const factory = planets.find((planet) =>
-      this.#state(planet).buildings.some(
-        (building) =>
-          building.type === 'Transport ship factory' && !building.demolition,
-      ),
-    );
-    if (factory)
-      return { kind: 'ship', planetId: factory.id, planetName: factory.name };
-    const buildable = planets.find(
-      (planet) => !this.canBuild(planet, 'Transport ship factory'),
-    );
-    if (buildable)
-      return {
-        kind: 'factory',
-        planetId: buildable.id,
-        planetName: buildable.name,
-      };
-    return {
-      kind: 'factory',
-      blockedReason:
-        'No owned planet can build a Transport ship factory. Check available building sites and Domes.',
-    };
-  }
-
-  prepareRouteTransport(routeId: string): ProductionReceipt | null {
-    this.#requirePlanning();
-    const route = this.tradeRoutes.find(
-      (candidate) =>
-        candidate.id === routeId && !candidate.closing && !candidate.capacity,
-    );
-    if (!route || this.#transportWaiting(route))
-      throw new Error('This route no longer needs transport preparation.');
-    const action = this.#routeTransportAction(route);
-    if (action.blockedReason) throw new Error(action.blockedReason);
-    if (action.kind === 'research') {
-      this.selectResearch('Transport ship factory');
-      return null;
-    }
-    if (action.kind === 'assign')
-      throw new Error('Select an available transport fleet to assign it.');
-    const planet = this.#planetById(action.planetId!)!;
-    return action.kind === 'factory'
-      ? this.scheduleBuild(planet, 'Transport ship factory')
-      : this.scheduleShip(planet, 'Transport ship');
-  }
-
-
-  /** fraktskepp-ger-forbindelse / fraktskepp-pendlar */
+  /** Trade routes are gone, so no planets are linked. */
   #networkLinks(): NetworkLink[] {
-    return this.#logistics.routes
-      .filter(
-        (route) =>
-          !route.closing &&
-          this.#fleets.some(
-            (fleet) => fleet.routeId === route.id && this.#onRoute(fleet),
-          ),
-      )
-      .map(({ id, a, b }) => ({ id, a, b }));
-  }
-
-  /** The two end positions of the fleet's route. */
-  #routeEnds(fleet: Fleet): readonly [HexCoordinate, HexCoordinate] | null {
-    const route = this.#logistics.routes.find((r) => r.id === fleet.routeId);
-    const a = route && this.#planetById(route.a);
-    const b = route && this.#planetById(route.b);
-    return a && b ? [a.position, b.position] : null;
-  }
-
-  /**
-   * fraktskepp-pendlar: a transport serves its route once it has reached it,
-   * whether it waits at an end or travels from one end to the other. Only
-   * the first trip to the route leaves the link inactive.
-   */
-  #onRoute(fleet: Fleet): boolean {
-    if (
-      !fleet.routeId ||
-      fleet.ships['Transport ship'] < 1 ||
-      fleet.position === null ||
-      fleet.releaseRequested
-    )
-      return false;
-    if (!fleet.destination) return true;
-    const ends = this.#routeEnds(fleet)?.map((end) => end.key) ?? [];
-    return (
-      !!fleet.courseOrigin &&
-      fleet.courseOrigin.key !== fleet.destination.key &&
-      ends.includes(fleet.courseOrigin.key) &&
-      ends.includes(fleet.destination.key)
-    );
-  }
-
-  /** fraktskepp-pendlar: each round a waiting transport sets off for the other end. */
-  #plyRoutes(): void {
-    for (const fleet of this.#fleets) {
-      if (fleet.destination || fleet.joinFleetId || !this.#onRoute(fleet))
-        continue;
-      const ends = this.#routeEnds(fleet);
-      const here = fleet.position!.key;
-      const other = ends?.find((end) => end.key !== here);
-      if (!ends?.some((end) => end.key === here) || !other) continue;
-      fleet.courseOrigin = fleet.position!;
-      fleet.destination = other;
-    }
+    return [];
   }
 
   #networkPort(): NetworkPort {
@@ -5714,7 +5380,6 @@ export class Game {
       : null;
   }
 
-
   #missingInGroup(planet: Planet): readonly Material[] {
     const group = this.#networkGroup(planet.id);
     const planets = this.#ownedPlanets().filter((item) =>
@@ -5749,24 +5414,6 @@ export class Game {
                 .some((transit) => transit.material === material)),
         ),
     );
-  }
-
-  #captureRouteCargo(fleet: Fleet): void {
-    const route = this.#logistics.routes.find(
-      (item) => item.id === fleet.routeId,
-    );
-    if (!route) return;
-    const lost = this.#network.capture({
-      id: route.id,
-      a: route.a,
-      b: route.b,
-    });
-    if (lost.length)
-      this.#event(
-        `Cargo was lost on a route: ${lost
-          .map(({ material, amount }) => `${amount} ${material}`)
-          .join(', ')}.`,
-      );
   }
 
   #allocation(
@@ -5895,12 +5542,7 @@ export class Game {
     return path;
   }
   #fleetDisplayName(fleet: Fleet): string {
-    const route = this.#logistics.routes.find(
-      (route) => route.id === fleet.routeId,
-    );
-    return route
-      ? `Route ${this.#planetName(route.a)} <> ${this.#planetName(route.b)}`
-      : fleet.name;
+    return fleet.name;
   }
   #updateExploration(fleet: Fleet): void {
     if (fleet.detour) return;
@@ -6141,7 +5783,6 @@ export class Game {
       fleet.position &&
       !fleet.destination &&
       !fleet.pendingOrder &&
-      !fleet.routeId &&
       !fleet.patrol &&
       !fleet.exploration &&
       !fleet.automation &&
@@ -6471,12 +6112,6 @@ export class Game {
     if (fleet.patrol && !armedShipCount(fleet.ships)) this.#updatePatrol(fleet);
     if (fleet.exploration && !fleet.ships['Exploration ship'])
       this.#updateExploration(fleet);
-    // skepp-ur-olastad-ruttflotta: a route needs at least one transport ship.
-    if (fleet.routeId && fleet.ships['Transport ship'] === 0) {
-      delete fleet.routeId;
-      delete fleet.releaseRequested;
-      this.#logistics.cleanup(this.#logisticsPort());
-    }
     if (this.#shipCount(fleet.ships) !== 0) return;
     fleet.position = null;
     fleet.destination = null;
@@ -6645,8 +6280,8 @@ export class Game {
     fleet.destination = null;
     delete fleet.courseOrigin;
     if (fleet.colonizationTargetId || fleet.explorationTargetId) return;
-    // ruttflottor-utan-ankomstbesked / flottorder-upgrade: arrival does not finish these orders.
-    if (fleet.routeId || fleet.upgrade) return;
+    // flottorder-upgrade: arrival does not finish this order.
+    if (fleet.upgrade) return;
     // ankomstbesked-endast-vid-manuell-forflyttning: automatic legs arrive silently.
     if (fleet.exploration || fleet.automation || fleet.detour) return;
     this.#event(

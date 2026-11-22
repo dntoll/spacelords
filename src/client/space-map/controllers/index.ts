@@ -6,7 +6,6 @@ export * from './orders/OrderController.js';
 export * from './planet/PlanetController.js';
 export * from './production/ProductionController.js';
 export * from './research/ResearchController.js';
-export * from './routes/RouteController.js';
 export * from './saves/SaveController.js';
 export * from './star-map/StarMapController.js';
 export * from './turn/TurnController.js';

@@ -2,9 +2,7 @@
 import { completeConstruction } from '../../fixtures/construction.js';
 import { turnFrames } from '../../fixtures/turn-steps.js';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  decisionScreen,
-} from '../../../src/client/space-map/models/Decisions.js';
+import { decisionScreen } from '../../../src/client/space-map/models/Decisions.js';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
@@ -89,7 +87,6 @@ describe('beslutslista / rundvarning / hoppa-over-beslut', () => {
   });
 });
 
-
 describe('tysta-beslut', () => {
   it('keeps a recurring decision muted after it disappears and becomes relevant again', () => {
     const game = Game.restore(researchStationState({ shipFactory: true }));
@@ -164,7 +161,6 @@ describe('tysta-beslut', () => {
     reloaded.startSlot(2);
     expect(reloaded.snapshot.decisions.every((d) => !d.muted)).toBe(true);
   });
-
 });
 
 it('beslutsmarkering-pa-flikar: marks every resolving tab and updates markers after mute, skip and review', () => {
@@ -196,8 +192,6 @@ it('beslutsmarkering-pa-flikar: marks every resolving tab and updates markers af
   expect(marker('fleets')).toBeNull();
   controller.dispose();
 });
-
-
 
 it.each([
   ['research-empty', 'research', 'research'],

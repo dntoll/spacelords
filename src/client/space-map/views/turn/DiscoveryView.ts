@@ -34,7 +34,7 @@ export function discoveryControls(
       const option = element(
         'option',
         '',
-        `${fleet.name} · ${fleet.remainingMovement ?? 0} hex remaining${fleet.routeId ? ' · Trade route orders locked' : ''}`,
+        `${fleet.name} · ${fleet.remainingMovement ?? 0} hex remaining`,
       );
       option.value = fleet.id;
       option.selected = model.mapFleetId === fleet.id;

@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 
 let root: HTMLElement;
 let model: AppModel;
@@ -14,34 +13,6 @@ beforeEach(() => {
   document.body.replaceChildren(root);
   model = new AppModel();
   view = new AppView(root, () => ({ render() {}, dispose() {} }));
-});
-
-it('end-turn-vid-kartval: keeps End turn available with a selected planet, fleet and route', () => {
-  const state = tradeNetworkState();
-  model = new AppModel(undefined, {
-    load: () => ({ lastPlayed: '2026-10-26T10:00:00Z', state }),
-    save() {},
-    clear() {},
-  });
-  model.startSlot(1);
-  const intents: unknown[] = [];
-  view.bind((intent) => intents.push(intent));
-  for (const select of [
-    () => model.home(),
-    () => model.selectMapFleet('fleet-home'),
-    () => model.selectMapRoute('route-test'),
-  ]) {
-    select();
-    view.render(model.snapshot);
-    const end = root.querySelector<HTMLButtonElement>('.end-turn')!;
-    expect(end.hidden).toBe(false);
-    expect(end.disabled).toBe(false);
-    end.click();
-  }
-  expect(intents).toEqual(
-    Array.from({ length: 3 }, () => ({ type: 'end-turn' })),
-  );
-  view.dispose();
 });
 
 function expectSelection(active: boolean) {
@@ -126,31 +97,6 @@ describe('fokuserat-kartval', () => {
     expect(root.querySelector('.selection-panel')!.textContent).not.toMatch(
       /Empty space|Unexplored space|No known celestial/,
     );
-  });
-
-  it('gemensam-events-panel: keeps Events available while entering and leaving a selected trade route', () => {
-    const state = tradeNetworkState();
-    model = new AppModel(undefined, {
-      load: () => ({ lastPlayed: '2026-10-21T10:00:00Z', state }),
-      save() {},
-      clear() {},
-    });
-    model.startSlot(1);
-    model.selectMapRoute('route-test');
-    view.render(model.snapshot);
-    expectSelection(true);
-    expect(root.querySelector('[aria-label="Selected route"]')).not.toBeNull();
-    const empty = model.snapshot.cells.find(
-      (cell) =>
-        cell.explored &&
-        !cell.object &&
-        !model.snapshot.fleets.some(
-          (fleet) => fleet.position?.key === cell.position.key,
-        ),
-    )!;
-    model.select(empty.position);
-    view.render(model.snapshot);
-    expectSelection(false);
   });
 });
 

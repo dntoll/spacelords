@@ -1,6 +1,5 @@
 import { MapViewport } from '../../models/star-map/MapViewport.js';
 import { renderMapEvent } from './MapEventView.js';
-import { renderMapTradeRoutes } from './MapTradeRoutesView.js';
 import { renderDetectionBoundary } from './DetectionMapView.js';
 import { renderTerrain } from '../TerrainMapView.js';
 import { createStarTextures, renderStarGlyph } from '../StarGlyph.js';
@@ -296,8 +295,6 @@ export class GalaxyMapView implements MapPort {
     if (selected) this.#hex(sketch, selected, true, model.camera.zoom);
     renderTerrain(sketch, cells);
     renderDetectionBoundary(sketch, cells, model.camera.zoom);
-    // synliga-handelsrutter: selection fills stay below routes; objects stay above.
-    renderMapTradeRoutes(sketch, model);
     for (const cell of cells)
       if (cell.object)
         this.#object(
@@ -338,7 +335,7 @@ export class GalaxyMapView implements MapPort {
     if (this.#canvas)
       this.#canvas.style.cursor = model.fleetDragging
         ? 'grabbing'
-        : model.hoveredFleetId || model.mapTrade.hoveredRouteIds.length
+        : model.hoveredFleetId
           ? 'pointer'
           : 'grab';
     renderMapEvent(sketch, model);

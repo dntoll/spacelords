@@ -100,9 +100,8 @@ export class TurnMovementPlayback {
     for (const track of this.tracks) {
       const fleet = this.#tracks.get(track[0]!.fleetId)!.fleet;
       const autonomous =
-        'routeId' in fleet &&
+        'speed' in fleet &&
         !!(
-          fleet.routeId ||
           fleet.exploration ||
           fleet.patrol ||
           fleet.automation ||
@@ -121,9 +120,8 @@ export class TurnMovementPlayback {
     const fleet = this.#tracks.get(fleetId)?.fleet;
     return !!(
       fleet &&
-      'routeId' in fleet &&
-      (fleet.routeId ||
-        fleet.exploration ||
+      'speed' in fleet &&
+      (fleet.exploration ||
         fleet.patrol ||
         fleet.automation ||
         fleet.planetQueue)

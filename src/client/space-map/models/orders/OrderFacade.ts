@@ -50,13 +50,11 @@ export class OrderFacade {
     if (!view || !option) throw new Error('Choose an available order.');
     if (option.blockedReason) throw new Error(option.blockedReason);
     const page =
-      kind === 'join-route'
-        ? 'routes'
-        : kind === 'join-fleet'
-          ? 'fleets'
-          : ['patrol', 'salvage', 'colonize', 'explore-planet'].includes(kind)
-            ? (kind as 'patrol' | 'salvage' | 'colonize' | 'explore-planet')
-            : null;
+      kind === 'join-fleet'
+        ? 'fleets'
+        : ['patrol', 'salvage', 'colonize', 'explore-planet'].includes(kind)
+          ? (kind as 'patrol' | 'salvage' | 'colonize' | 'explore-planet')
+          : null;
     if (page) {
       this.host.orderSelection = { ...view, page, selectedFleetId: null };
       this.host.mapFleetId = null;

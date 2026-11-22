@@ -37,7 +37,6 @@ const SHIP_CATEGORY: Readonly<Record<ShipType, FleetCategory>> = {
  * ships of several kinds make it Mixed.
  */
 export function fleetCategory(fleet: FleetSnapshot): FleetCategory {
-  if (fleet.routeId) return 'Transport';
   if (fleet.colonizationTargetId || fleet.planetQueue === 'colonization')
     return 'Colony';
   if (

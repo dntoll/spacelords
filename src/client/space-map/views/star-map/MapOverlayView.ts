@@ -59,7 +59,6 @@ export function renderMapOverlays(
     model.camera.zoom,
     model,
     model.screen === 'fleets',
-    ['map', 'fleets'].includes(model.screen) ? model.tradeRoutes : null,
     model.screen === 'fleets'
       ? model.decisions
           .filter(needsAttention)

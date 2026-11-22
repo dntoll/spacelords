@@ -69,23 +69,6 @@ describe('egen-ordervy / skeppsanpassade-specialorder / flottval-pa-orderkarta /
     controller.dispose();
   });
 
-  it('shows eligible fleets on the order map and excludes route fleets from targets and markers', () => {
-    const { model, click, controller } = setup();
-    click('Orders');
-    click('Join fleet');
-    expect(
-      model.snapshot.orderView!.fleetTargets.map((fleet) => fleet.id),
-    ).not.toContain('freighters');
-    expect(model.snapshot.fleets.map((fleet) => fleet.id)).not.toContain(
-      'freighters',
-    );
-    model.selectMapFleet('travellers');
-    expect(model.snapshot.orderView!.selectedFleetId).toBe('travellers');
-    model.completeOrder({ kind: 'join-fleet', fleetId: 'travellers' });
-    expect(model.snapshot.fleets[0]!.joinFleetId).toBe('travellers');
-    controller.dispose();
-  });
-
   it('waits for a Patrol position before changing the order', () => {
     const { model, click, controller, save, emitMap } = setup();
     click('Orders');

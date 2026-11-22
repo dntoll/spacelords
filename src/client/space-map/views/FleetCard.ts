@@ -39,7 +39,7 @@ export function renderFleetCard(
     'fleet-name-button',
   );
   title.setAttribute('aria-pressed', String(fleet.id === model.mapFleetId));
-  title.title = `${fleet.name}. Double-click or press F2 to rename${fleet.routeId ? ' the original fleet name' : ''}`;
+  title.title = `${fleet.name}. Double-click or press F2 to rename`;
   title.addEventListener('dblclick', () => {
     clearTimeout(selectTimer);
     emit({ type: 'begin-fleet-rename', id: fleet.id });
@@ -161,10 +161,6 @@ export function renderFleetCard(
   bindFleetOrderDrag(orderRow);
   const assignment = fleetAssignmentLabel(fleet, model);
   if (assignment) {
-    const route =
-      assignment.startsWith('Trade route:') && fleet.routeId
-        ? model.tradeRoutes.find((item) => item.id === fleet.routeId)
-        : undefined;
     const targetFleet =
       assignment.startsWith('En route to ') && fleet.joinFleetId
         ? model.fleets.find((item) => item.id === fleet.joinFleetId)
@@ -174,26 +170,19 @@ export function renderFleetCard(
         fleet.explorationTargetId ??
         fleet.upgrade?.planetId)
       : undefined;
-    const status = route
+    const status = targetFleet
       ? button(
-          `Select route ${route.from} to ${route.to}`,
-          () => emit({ type: 'map-select-route', id: route.id }),
+          `Select fleet ${targetFleet.name}`,
+          () => emit({ type: 'map-select-fleet', id: targetFleet.id }),
           'fleet-order-status',
         )
-      : targetFleet
+      : planetId && model.ownedPlanets.some((planet) => planet.id === planetId)
         ? button(
-            `Select fleet ${targetFleet.name}`,
-            () => emit({ type: 'map-select-fleet', id: targetFleet.id }),
+            `Open order planet`,
+            () => emit({ type: 'open-planet', id: planetId }),
             'fleet-order-status',
           )
-        : planetId &&
-            model.ownedPlanets.some((planet) => planet.id === planetId)
-          ? button(
-              `Open order planet`,
-              () => emit({ type: 'open-planet', id: planetId }),
-              'fleet-order-status',
-            )
-          : element('span', 'fleet-order-status');
+        : element('span', 'fleet-order-status');
     status.textContent = assignment;
     if (fleet.patrol && assignment.startsWith('Patrol:'))
       status.classList.add('fleet-patrol-status');
@@ -298,10 +287,6 @@ export function fleetAssignmentLabel(
       (target) => target.id === fleet.joinFleetId,
     );
     return `En route to ${target?.name ?? fleet.joinFleetId}`;
-  }
-  if (fleet.routeId) {
-    const route = model.tradeRoutes.find((route) => route.id === fleet.routeId);
-    return `Trade route: ${route ? `${route.from} ↔ ${route.to}` : fleet.routeId}`;
   }
   if (fleet.destination) {
     const target = model.cells.find(

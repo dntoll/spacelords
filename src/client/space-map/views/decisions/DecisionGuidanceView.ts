@@ -8,12 +8,6 @@ import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { button, element } from '../../../common/dom.js';
 
 function nextStep(decision: Decision): string {
-  if (decision.kind === 'route')
-    return decision.transportAction?.kind === 'assign'
-      ? ' Use Connect in Factories to give the route a free transport.'
-      : '';
-  if (decision.id.startsWith('supply-'))
-    return ' Connect the group to planets that make it, or build what is missing.';
   if (decision.id.startsWith('staff-'))
     return ' Inspect workers and crew. Free workers or wait for population growth.';
   if (decision.id.startsWith('production-'))
@@ -38,35 +32,6 @@ export function renderDecisionGuidance(
   for (const decision of decisions) {
     const row = element('div', 'decision-guidance-row');
     row.append(element('p', '', `${decision.label}.${nextStep(decision)}`));
-    const action = decision.transportAction;
-    if (
-      decision.kind === 'route' &&
-      decision.routeId &&
-      action &&
-      action.kind !== 'assign'
-    ) {
-      row.classList.add('decision-guidance-actions');
-      const label =
-        action.kind === 'research'
-          ? 'Queue transport research'
-          : action.kind === 'factory'
-            ? 'Build transport factory'
-            : 'Queue Transport ship';
-      const control = button(
-        label,
-        () =>
-          emit({ type: 'prepare-route-transport', routeId: decision.routeId! }),
-        'button secondary-button',
-      );
-      control.disabled = !!action.blockedReason;
-      if (action.planetName)
-        control.textContent = `${label} · ${action.planetName}`;
-      if (action.blockedReason) {
-        control.title = action.blockedReason;
-        row.append(element('p', 'muted-note', action.blockedReason));
-      }
-      row.append(control);
-    }
     if (decision.kind !== 'research') {
       const show = button(
         `Show decision: ${decision.label}`,

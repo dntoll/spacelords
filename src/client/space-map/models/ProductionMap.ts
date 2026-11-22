@@ -42,7 +42,6 @@ export interface ProductionMapSnapshot {
 export interface MapProblem {
   readonly decisionId: string;
   readonly planetId?: string | undefined;
-  readonly routeId?: string | undefined;
   readonly screen: 'production';
   readonly explanation: string;
 }

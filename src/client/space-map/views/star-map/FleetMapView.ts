@@ -1,5 +1,4 @@
 import type p5 from 'p5';
-import type { TradeRouteSnapshot } from '../../models/Logistics.js';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import { FleetMapLayout } from '../../models/star-map/FleetMapLayout.js';
 import type { FleetSnapshot } from '../../models/Game.js';
@@ -25,19 +24,16 @@ export function renderMapFleets(
     fleetDestinationPreview: null,
   },
   showUnselectedRings = false,
-  routeView: readonly TradeRouteSnapshot[] | null = null,
   attentionFleetIds: readonly string[] = [],
   pirateIds: readonly string[] = [],
   movementPoints: ReadonlyMap<string, Point> = new Map(),
   shipImages: ReadonlyMap<ShipSpriteType, p5.Image> = new Map(),
   showDestinationArrows = true,
 ): void {
-  const markers = FleetMapLayout.markers(fleets, routeView ?? []).map(
-    (marker) => ({
-      ...marker,
-      point: movementPoints.get(marker.fleet.id) ?? marker.point,
-    }),
-  );
+  const markers = FleetMapLayout.markers(fleets).map((marker) => ({
+    ...marker,
+    point: movementPoints.get(marker.fleet.id) ?? marker.point,
+  }));
   const destinationFor = (fleet: FleetSnapshot) =>
     interaction.fleetDragging && interaction.mapFleetId === fleet.id
       ? interaction.fleetDestinationPreview
@@ -45,13 +41,9 @@ export function renderMapFleets(
 
   // kartflottor: draw routes underneath the separate fleet swarms.
   for (const { fleet, point } of markers) {
-    // ruttflottor-utan-destinationspilar / destinationspilar-endast-i-flottvyn
+    // destinationspilar-endast-i-flottvyn
     // vald-flotta-visar-destinationspil: the selected fleet keeps its arrow.
-    if (
-      fleet.routeId ||
-      (!showDestinationArrows && interaction.mapFleetId !== fleet.id)
-    )
-      continue;
+    if (!showDestinationArrows && interaction.mapFleetId !== fleet.id) continue;
     const target = destinationFor(fleet);
     if (!target) continue;
     const destination = HexGeometry.toPoint(target);

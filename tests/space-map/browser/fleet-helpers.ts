@@ -68,7 +68,7 @@ export async function selectMapFleet(
   );
   const game = Game.restore(record.state);
   const fleets = game.fleetSnapshots();
-  const marker = FleetMapLayout.markers(fleets, game.tradeRoutes).find(
+  const marker = FleetMapLayout.markers(fleets).find(
     (marker) => marker.fleet.name === name || marker.fleet.ownName === name,
   );
   if (!marker) throw new Error(`No positioned fleet: ${name}`);

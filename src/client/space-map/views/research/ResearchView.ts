@@ -126,8 +126,7 @@ export function renderResearch(
  */
 function stationMessage(research: ResearchSnapshot): string {
   const station = research.stationConstruction;
-  if (!station)
-    return 'Research needs a Research station.';
+  if (!station) return 'Research needs a Research station.';
   const rounds = `${station.roundsLeft} ${station.roundsLeft === 1 ? 'round' : 'rounds'}`;
   return station.started
     ? `A Research station is being built on ${station.planet}. Research can begin in ${rounds}.`

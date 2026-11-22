@@ -3,7 +3,6 @@ import {
   ResearchController,
   PlanetController,
   FleetController,
-  RouteController,
   ProductionController,
   OrderController,
   DecisionController,
@@ -32,7 +31,6 @@ export class MasterController {
   readonly #research: ResearchController;
   readonly #planet: PlanetController;
   readonly #fleets: FleetController;
-  readonly #routes: RouteController;
   readonly #production: ProductionController;
   readonly #orders: OrderController;
   readonly #decisions: DecisionController;
@@ -66,7 +64,6 @@ export class MasterController {
     this.#research = new ResearchController(model.researchCase);
     this.#planet = new PlanetController(model.planet);
     this.#fleets = new FleetController(model.fleets);
-    this.#routes = new RouteController(model.routes);
     this.#production = new ProductionController(model.production);
     this.#orders = new OrderController(model.orders);
     this.#decisions = new DecisionController(model.decisions);
@@ -200,9 +197,7 @@ export class MasterController {
       (!startingPinch &&
         (this.#fleetPointer ||
           previous.fleetDragging ||
-          previous.fleetDestinationPreview ||
-          previous.mapTrade.candidateRouteIds.length ||
-          previous.mapTrade.assignmentFleetId))
+          previous.fleetDestinationPreview))
     )
       return false;
     if (intent.type === 'pointer-start') {
@@ -476,26 +471,17 @@ export class MasterController {
       case 'submit-fleet-name':
         this.#fleets.submitFleetName();
         break;
-      case 'map-select-route':
-        this.#routes.selectMapRoute(intent.id);
-        break;
       case 'map-select-fleet':
         this.#starMap.selectMapFleet(intent.id);
         break;
       case 'toggle-fleet-category':
         this.#starMap.toggleFleetCategory(intent.category);
         break;
-      case 'cancel-map-trade':
-        this.#cancelPointer();
-        break;
       case 'open-production':
         this.#production.openProduction(intent.planetId);
         break;
       case 'map-production-page':
         this.#production.selectMapProductionPage(intent.page);
-        break;
-      case 'prepare-route-transport':
-        this.#decisions.prepareRouteTransport(intent.routeId);
         break;
       case 'map-production-option':
         this.#production.selectMapProductionOption(intent.option);
@@ -536,17 +522,8 @@ export class MasterController {
       case 'unmute-decision':
         this.#decisions.unmuteDecision(intent.id);
         break;
-      case 'assign-trade-fleet':
-        this.#routes.assignTradeFleet(intent.routeId, intent.fleetId);
-        break;
       case 'resume-fleet-orders':
         this.#fleets.resumeFleetOrders(intent.id);
-        break;
-      case 'release-trade-fleet':
-        this.#routes.releaseTradeFleet(intent.id);
-        break;
-      case 'close-trade-route':
-        this.#routes.closeTradeRoute(intent.id);
         break;
       case 'move-research':
         this.#research.moveResearch(intent.technology, intent.index);
@@ -778,7 +755,6 @@ export class MasterController {
             };
             break;
           }
-          // Routes are made in Factories (Connect), not by dragging on the map.
           const fleetId = this.#starMap.fleetAtPoint(intent.point);
           if (!fleetId) return;
           this.#starMap.selectMapFleet(fleetId);
@@ -892,10 +868,7 @@ export class MasterController {
       ) &&
       ![
         'pointer-cancel',
-        'begin-map-route',
-        'cancel-map-trade',
         'map-size',
-        'map-select-route',
         'map-select-fleet',
         'toggle-fleet-category',
         'pointer-move',

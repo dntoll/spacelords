@@ -80,10 +80,9 @@ export type AppIntent =
         | 'allow-other-fleet-orders';
     }
   | {
-      readonly type: 'map-select-route' | 'map-select-fleet';
+      readonly type: 'map-select-fleet';
       readonly id: string;
     }
-  | { readonly type: 'cancel-map-trade' }
   | { readonly type: 'toggle-fleet-category'; readonly category: FleetCategory }
   | {
       readonly type: 'open-production';
@@ -118,7 +117,6 @@ export type AppIntent =
       readonly index: number;
     }
   | { readonly type: 'research-fit' }
-  | { readonly type: 'prepare-route-transport'; readonly routeId: string }
   | {
       readonly type:
         | 'open-decisions'
@@ -129,18 +127,8 @@ export type AppIntent =
     }
   | {
       readonly type:
-        | 'open-decision'
-        | 'skip-decision'
-        | 'mute-decision'
-        | 'unmute-decision'
-        | 'release-trade-fleet'
-        | 'close-trade-route';
+        'open-decision' | 'skip-decision' | 'mute-decision' | 'unmute-decision';
       readonly id: string;
-    }
-  | {
-      readonly type: 'assign-trade-fleet';
-      readonly routeId: string;
-      readonly fleetId: string;
     }
   | {
       readonly type: 'move-research';

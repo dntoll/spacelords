@@ -56,7 +56,7 @@ test('centrerat-kartfokus / kartpanel-till-events: Show centers Vesta above the 
     !isMobile,
     'Desktop places the panel beside the map, not below it.',
   );
-  const state = tradeNetworkState(false);
+  const state = tradeNetworkState();
   state.colonies[1]![1].projects = [];
   // produktionsbeslut-bara-for-skeppsfabrik: an idle ship factory asks for orders.
   state.colonies[1]![1].buildings.push({
@@ -90,7 +90,7 @@ test('rutter-endast-i-connect: native touch connects planets in Factories', asyn
   isMobile,
 }) => {
   test.skip(!isMobile, 'Native touch requires a mobile device.');
-  await start(page, tradeNetworkState(false));
+  await start(page, tradeNetworkState());
   await page.getByRole('button', { name: 'Factories', exact: true }).tap();
   await page.getByRole('button', { name: 'Connect Tellus', exact: true }).tap();
   await page.getByRole('button', { name: 'Connect Vesta', exact: true }).tap();

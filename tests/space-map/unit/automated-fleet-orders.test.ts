@@ -245,16 +245,6 @@ it.each(['salvage'] as const)(
         fleets: state.fleets.map((f) => ({
           ...f,
           automation,
-          routeId: 'nonexistent-route',
-        })),
-      }),
-    ).toThrow('Invalid saved automatic fleet order');
-    expect(() =>
-      Game.restore({
-        ...state,
-        fleets: state.fleets.map((f) => ({
-          ...f,
-          automation,
           ships: { ...f.ships, 'Civilian shuttle': 0, 'Salvage ship': 0 },
         })),
       }),

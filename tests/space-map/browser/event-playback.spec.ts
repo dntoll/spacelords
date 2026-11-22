@@ -8,7 +8,6 @@ import {
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import { collectTurnFrames } from '../../fixtures/turn-steps.js';
 import { startFirstSlot } from './save-helpers.js';
-import { routePlaybackState } from '../../fixtures/route-playback.js';
 import { researchStationState } from '../../fixtures/research-station.js';
 
 async function seed(page: Page, twoFleets = false) {
@@ -247,74 +246,6 @@ test('handelseannonsering / handelser-pa-kartan / handelser-vid-ankomst: announc
   await console.locator('summary').click();
   await expect(log.locator('[data-event-id]')).toHaveCount(3);
   expect(errors).toEqual([]);
-});
-
-test('samtidig-farledsanimation / destinationer-for-aktiva-skepp: route fleets move together inside a fixed mobile overview', async ({
-  page,
-}, testInfo) => {
-  await page.clock.install({ time: new Date('2026-10-31T00:00:00Z') });
-  const state = routePlaybackState();
-  await page.addInitScript((saved) => {
-    localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
-    localStorage.setItem(
-      'spacelords.save.v2.1',
-      JSON.stringify({ lastPlayed: '2026-10-31', state: saved }),
-    );
-  }, state);
-  await page.goto('./');
-  await startFirstSlot(page);
-  const canvas = page.locator('canvas[data-rendered="true"]');
-  await expect(canvas).toBeVisible();
-  await page.clock.pauseAt(new Date('2026-10-31T01:00:00Z'));
-  await requestTurn(page);
-  await advanceUntil(
-    page,
-    async () =>
-      (await canvas.getAttribute('data-moving-fleets')) ===
-      '["freighters","travellers"]',
-  );
-  const camera = () =>
-    canvas.evaluate((node) => {
-      const { cameraX, cameraY, cameraZoom } = (node as HTMLCanvasElement)
-        .dataset;
-      return {
-        x: Number(cameraX),
-        y: Number(cameraY),
-        zoom: Number(cameraZoom),
-      };
-    });
-  const framed = await camera();
-  const rect = (await canvas.boundingBox())!;
-  const planets = state.world.systems.flatMap((system) => system.planets);
-  for (const id of ['sol-0', 'sol-1']) {
-    const hex = planets.find((planet) => planet.id === id)!.position;
-    const point = HexGeometry.toPoint(new HexCoordinate(hex.q, hex.r));
-    expect(Math.abs((point.x - framed.x) * framed.zoom)).toBeLessThan(
-      rect.width / 2 - 20,
-    );
-    expect(Math.abs((point.y - framed.y) * framed.zoom)).toBeLessThan(
-      rect.height / 2 - 20,
-    );
-  }
-  await page.clock.runFor(160);
-  await expect(canvas).toHaveAttribute(
-    'data-moving-fleets',
-    '["freighters","travellers"]',
-  );
-  expect(await camera()).toEqual(framed);
-  expect(
-    Number(await canvas.getAttribute('data-moving-progress')),
-  ).toBeGreaterThan(0);
-  await page.screenshot({
-    path: testInfo.outputPath('simultaneous-route-traffic.png'),
-  });
-  await page.setViewportSize({ width: 851, height: 393 });
-  await page.clock.runFor(80);
-  await expect(canvas).toHaveAttribute(
-    'data-moving-fleets',
-    '["freighters","travellers"]',
-  );
-  await noOverflow(page);
 });
 
 test('en-flotta-i-taget / osynliga-flottor-utan-animation: full fleet routes are framed, unseen pirates are omitted and the original camera returns', async ({

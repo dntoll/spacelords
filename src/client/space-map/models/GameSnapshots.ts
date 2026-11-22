@@ -65,7 +65,6 @@ export interface ProductionReceipt {
 
 /** byggorsak-i-kon: why a queued ship is built, as facts for the view. */
 export type ShipPurpose =
-  | { readonly kind: 'link'; readonly from: string; readonly to: string }
   | { readonly kind: 'colonize' | 'explore'; readonly planet: string }
   | { readonly kind: 'fleet'; readonly fleet: string }
   | { readonly kind: 'order'; readonly order: ShipOrder['kind'] }
@@ -166,8 +165,6 @@ export interface FleetSnapshot {
   readonly canIssueOrders?: boolean;
   readonly ownName?: string;
   readonly joinFleetId?: string | undefined;
-  readonly routeId?: string | undefined;
-  readonly releaseRequested?: boolean | undefined;
   readonly cargo?: Readonly<Stock>;
   readonly id: string;
   readonly name: string;

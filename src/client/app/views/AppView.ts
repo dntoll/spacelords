@@ -7,7 +7,6 @@ import {
   type ProductionTab,
   renderProductionMapPanel,
   bindMapSelectionScroll,
-  renderMapTradeSelection,
   renderMapFleetPanel,
   renderMapLocationHeading,
   renderSaveSlots,
@@ -629,9 +628,6 @@ export class AppView implements AppPort {
         productionMap: model.productionMap,
         productionGuidance: model.productionGuidance,
         mapProblems: model.mapProblems,
-        mapTrade: model.mapTrade,
-        routes: model.tradeRoutes,
-        routeFleets: model.fleets,
         pirates: model.pirates,
         mapFleetId: model.mapFleetId,
         research: model.research.completed,
@@ -1491,18 +1487,6 @@ export class AppView implements AppPort {
       this.#panel.replaceChildren(salvage);
       return;
     }
-    const trade =
-      model.screen === 'map'
-        ? renderMapTradeSelection(model, this.#emit)
-        : null;
-    if (trade) {
-      this.#panel.setAttribute(
-        'aria-label',
-        model.mapTrade.routeId ? 'Selected route' : 'Trade route selection',
-      );
-      this.#panel.replaceChildren(trade);
-      return;
-    }
     if (model.screen === 'production') {
       this.#panel.setAttribute('aria-label', 'Production controls');
       // produktionsflikar: a newly chosen ship shows its details; otherwise
@@ -1747,25 +1731,6 @@ export class AppView implements AppPort {
       contents.push(
         element('span', 'pill', owned ? model.playerName : 'Uninhabited'),
       );
-    if (model.screen === 'map' && owned && object) {
-      const source = model.ownedPlanets.find(
-        (p) => p.position.key === cell?.position.key,
-      );
-      if (source) {
-        const routes = model.tradeRoutes.filter(
-          (r) => r.a === source.id || r.b === source.id,
-        );
-        if (routes.length) contents.push(element('h3', '', 'Connected routes'));
-        for (const route of routes)
-          contents.push(
-            button(
-              `${route.from} ↔ ${route.to}`,
-              () => this.#emit({ type: 'map-select-route', id: route.id }),
-              'button secondary-button',
-            ),
-          );
-      }
-    }
     const orderStatus = model.planetOrders.find(
       (status) => status.position.key === cell?.position.key,
     );

@@ -4,8 +4,6 @@ import { ShipOrders, type ShipOrder } from '../models/ShipOrders.js';
 /** byggorsak-i-kon: the sentence for why a queued ship is built. */
 export function shipPurposeText(purpose: ShipPurpose): string {
   switch (purpose.kind) {
-    case 'link':
-      return `For the link ${purpose.from} ↔ ${purpose.to}`;
     case 'colonize':
       return `To colonize ${purpose.planet}`;
     case 'explore':

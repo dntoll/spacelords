@@ -3,7 +3,6 @@ import {
   ResearchFacade,
   PlanetFacade,
   FleetFacade,
-  RouteFacade,
   ProductionFacade,
   OrderFacade,
   DecisionFacade,
@@ -29,8 +28,6 @@ import {
   type ProductionMapSnapshot,
   type ProductionGuidance,
   type MapProblem,
-  StarMapTrade,
-  type MapTradeSnapshot,
   type SaveRepository,
   ResearchTreeCamera,
   type ResearchCameraSnapshot,
@@ -42,7 +39,6 @@ import {
   needsAttention,
   type Decision,
   type DecisionScreen,
-  type TradeRouteSnapshot,
   FleetMapLayout,
   Camera,
   type CameraSnapshot,
@@ -139,11 +135,9 @@ export interface AppReadModel {
   readonly salvageQueue: Game['salvageQueue'];
   readonly attackQueue: Game['attackQueue'];
   readonly attentionScreens: readonly DecisionScreen[];
-  readonly tradeRoutes: readonly TradeRouteSnapshot[];
   readonly productionMap: ProductionMapSnapshot;
   readonly productionGuidance: ProductionGuidance | null;
   readonly mapProblems: readonly MapProblem[];
-  readonly mapTrade: MapTradeSnapshot;
   readonly ownedPlanets: readonly PlanetGameSnapshot[];
   readonly pendingEndTurn: boolean;
   readonly pendingResearchRemoval: Technology | null;
@@ -201,7 +195,6 @@ export class AppModel {
   readonly researchCase: ResearchFacade;
   readonly planet: PlanetFacade;
   readonly fleets: FleetFacade;
-  readonly routes: RouteFacade;
   readonly production: ProductionFacade;
   readonly orders: OrderFacade;
   readonly decisions: DecisionFacade;
@@ -249,10 +242,6 @@ export class AppModel {
   #mapViewport: MapViewport | null = null;
   #mapFocusRevision = 0;
   #pendingMapFocus: HexCoordinate | null = null;
-  readonly #mapTrade = new StarMapTrade(
-    () => this.#game,
-    () => this.#camera,
-  );
   #selectedFleetId: string | null = null;
   #fleetNameEdit: { readonly id: string; readonly draft: string } | null = null;
   #shipTransfer: {
@@ -292,7 +281,6 @@ export class AppModel {
     this.researchCase = new ResearchFacade(host);
     this.planet = new PlanetFacade(host);
     this.fleets = new FleetFacade(host);
-    this.routes = new RouteFacade(host);
     this.production = new ProductionFacade(host);
     this.orders = new OrderFacade(host);
     this.decisions = new DecisionFacade(host);
@@ -417,11 +405,8 @@ export class AppModel {
       salvageQueue: this.#game.salvageQueue,
       attackQueue: this.#game.attackQueue,
       attentionScreens: Object.freeze([
-        ...new Set([
-          ...decisions.filter(needsAttention).map(decisionScreen),
-        ]),
+        ...new Set([...decisions.filter(needsAttention).map(decisionScreen)]),
       ]),
-      tradeRoutes: this.#game.tradeRoutes,
       productionMap: this.#productionMapSnapshot(),
       productionGuidance:
         (this.#screen === 'production' || this.#screen === 'planet') &&
@@ -440,7 +425,6 @@ export class AppModel {
                 Object.freeze({
                   decisionId: decision.id,
                   planetId: decision.planetId,
-                  routeId: decision.routeId,
                   screen,
                   explanation: decision.label,
                 }),
@@ -448,7 +432,6 @@ export class AppModel {
             : [];
         }),
       ),
-      mapTrade: this.#mapTrade.snapshot,
       ownedPlanets: this.#game.ownedPlanetSnapshots(),
       pendingEndTurn: this.#pendingEndTurn,
       pendingResearchRemoval: this.#pendingResearchRemoval,
@@ -477,14 +460,7 @@ export class AppModel {
       round: this.#game.round,
       phase: this.#game.phase,
       interruption: this.#game.interruption,
-      fleets: this.#game
-        .fleetSnapshots()
-        .filter(
-          (fleet) =>
-            this.#screen !== 'orders' ||
-            this.#orderSelection?.page !== 'fleets' ||
-            !fleet.routeId,
-        ),
+      fleets: this.#game.fleetSnapshots(),
       pirates: this.#game.pirateSnapshots(),
       selectedFleet: this.#selectedFleetId
         ? this.#game.fleet(this.#selectedFleetId)
@@ -520,7 +496,6 @@ export class AppModel {
       ...previous,
       camera: this.#camera.snapshot,
       hoveredFleetId: this.#hoveredFleetId,
-      mapTrade: this.#mapTrade.snapshot,
       fleetDestinationPreview: this.#fleetDestinationPreview,
       fleetDragging: this.#fleetDragging,
     });
@@ -589,12 +564,6 @@ export class AppModel {
   selectPoint(point: Point): void {
     return this.starMap.selectPoint(point);
   }
-  selectMapRoute(id: string): void {
-    return this.routes.selectMapRoute(id);
-  }
-  assignMapTradeFleet(routeId: string, fleetId: string): void {
-    return this.routes.assignMapTradeFleet(routeId, fleetId);
-  }
 
   openPlanet(id?: string): void {
     return this.planet.openPlanet(id);
@@ -618,14 +587,11 @@ export class AppModel {
     this.cancelMapPointer();
     this.cancelShipTransfer();
     this.cancelFleetRename();
-    if (screen === 'fleets' || this.#screen === 'fleets')
-      this.#mapTrade.clearSelection();
     this.#destinationFleetId = null;
     this.#screen = screen;
     if (screen !== 'orders') this.#orderSelection = null;
     if (screen === 'production') {
       this.#mapFleetId = null;
-      this.#mapTrade.clearSelection();
       this.#fitProduction();
     }
   }
@@ -643,8 +609,6 @@ export class AppModel {
       : null;
     const ships =
       fleet?.ships ?? (selection.ship ? { [selection.ship]: 1 } : {});
-    const type = ships['Transport ship'] ? 'Transport ship' : 'Fighter';
-    const planets = this.#game.ownedPlanetSnapshots();
     return Object.freeze({
       ...selection,
       options: Object.freeze(
@@ -667,26 +631,12 @@ export class AppModel {
           }),
         ),
       ),
-      routes: ShipOrders.routes(
-        type,
-        selection.origin,
-        this.#game.tradeRoutes,
-        this.#game.fleetSnapshots(),
-        (route, origin) =>
-          Math.min(
-            ...[route.a, route.b].map((id) => {
-              const planet = planets.find((planet) => planet.id === id);
-              return planet ? origin.distanceTo(planet.position) : Infinity;
-            }),
-          ),
-      ),
       fleetTargets: Object.freeze(
         this.#game
           .fleetSnapshots()
           .filter(
             (target) =>
               target.id !== selection.fleetId &&
-              !target.routeId &&
               !target.upgrade &&
               target.position,
           ),
@@ -918,18 +868,6 @@ export class AppModel {
   }
   cancelEndTurn(): void {
     return this.decisions.cancelEndTurn();
-  }
-  createTradeRoute(a: string, b: string): void {
-    this.#game.createTradeRoute(a, b);
-  }
-  assignTradeFleet(routeId: string, fleetId: string): void {
-    return this.routes.assignTradeFleet(routeId, fleetId);
-  }
-  releaseTradeFleet(id: string): void {
-    return this.routes.releaseTradeFleet(id);
-  }
-  closeTradeRoute(id: string): void {
-    return this.routes.closeTradeRoute(id);
   }
   colonize(id: string): void {
     return this.planet.colonize(id);
@@ -1547,9 +1485,6 @@ export class AppModel {
       get pendingMapFocus() {
         return model.#pendingMapFocus;
       },
-      get mapTrade() {
-        return model.#mapTrade;
-      },
       get selectedFleetId() {
         return model.#selectedFleetId;
       },
@@ -1747,9 +1682,6 @@ export class AppModel {
       commitFleetDestination: () => model.commitFleetDestination(),
       cancelMapPointer: () => model.cancelMapPointer(),
       selectPoint: (point: Point) => model.selectPoint(point),
-      selectMapRoute: (id: string) => model.selectMapRoute(id),
-      assignMapTradeFleet: (routeId: string, fleetId: string) =>
-        model.assignMapTradeFleet(routeId, fleetId),
       openPlanet: (id?: string) => model.openPlanet(id),
       selectPlanetTab: (tab: PlanetTab) => model.selectPlanetTab(tab),
       inspectResearch: (technology: Technology | null) =>
@@ -1808,11 +1740,6 @@ export class AppModel {
       unmuteDecision: (id: string) => model.unmuteDecision(id),
       requestEndTurn: () => model.requestEndTurn(),
       cancelEndTurn: () => model.cancelEndTurn(),
-      createTradeRoute: (a: string, b: string) => model.createTradeRoute(a, b),
-      assignTradeFleet: (routeId: string, fleetId: string) =>
-        model.assignTradeFleet(routeId, fleetId),
-      releaseTradeFleet: (id: string) => model.releaseTradeFleet(id),
-      closeTradeRoute: (id: string) => model.closeTradeRoute(id),
       colonize: (id: string) => model.colonize(id),
       build: (type: BuildType, slotIndex?: number) =>
         model.build(type, slotIndex),
@@ -1983,7 +1910,6 @@ export interface AppHost {
   mapViewport: MapViewport | null;
   mapFocusRevision: number;
   pendingMapFocus: HexCoordinate | null;
-  mapTrade: StarMapTrade;
   selectedFleetId: string | null;
   fleetNameEdit: { readonly id: string; readonly draft: string } | null;
   shipTransfer: {
@@ -2023,8 +1949,6 @@ export interface AppHost {
   commitFleetDestination(): void;
   cancelMapPointer(): void;
   selectPoint(point: Point): void;
-  selectMapRoute(id: string): void;
-  assignMapTradeFleet(routeId: string, fleetId: string): void;
   openPlanet(id?: string): void;
   selectPlanetTab(tab: PlanetTab): void;
   inspectResearch(technology: Technology | null): void;
@@ -2072,10 +1996,6 @@ export interface AppHost {
   unmuteDecision(id: string): void;
   requestEndTurn(): boolean;
   cancelEndTurn(): void;
-  createTradeRoute(a: string, b: string): void;
-  assignTradeFleet(routeId: string, fleetId: string): void;
-  releaseTradeFleet(id: string): void;
-  closeTradeRoute(id: string): void;
   colonize(id: string): void;
   build(type: BuildType, slotIndex?: number): void;
   scheduleShip(

@@ -1,18 +1,9 @@
-export interface TransportAction {
-  readonly kind: 'research' | 'factory' | 'ship' | 'assign';
-  readonly planetId?: string;
-  readonly planetName?: string;
-  readonly blockedReason?: string;
-}
-
 export interface DecisionDescriptor {
   readonly id: string;
   readonly label: string;
-  readonly kind: 'research' | 'planet' | 'fleet' | 'route';
+  readonly kind: 'research' | 'planet' | 'fleet';
   readonly planetId?: string;
   readonly fleetId?: string;
-  readonly routeId?: string;
-  readonly transportAction?: Readonly<TransportAction>;
 }
 
 export interface Decision extends DecisionDescriptor {
@@ -66,7 +57,6 @@ export class DecisionBoard {
         kind: item.kind,
         ...(item.planetId ? { planetId: item.planetId } : {}),
         ...(item.fleetId ? { fleetId: item.fleetId } : {}),
-        ...(item.routeId ? { routeId: item.routeId } : {}),
       }),
     );
     this.skipped.delete(item.id);
