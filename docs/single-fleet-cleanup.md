@@ -1,8 +1,9 @@
 # Rensningsplan för Single fleet
 
-`single-fleet-rensning` är **Ej implementerat**: tidigare mekanik som inte
-hör till Single fleet ska tas bort tillsammans med tester, gränssnitt och
-aktiva krav som bara gäller den. Rensningen görs i små sammanhängande commits
+`single-fleet-rensning` är **Delvis implementerat**: den automatiska
+persontransporten och delar av handelsautomation har tagits bort.
+Planetekonomi, kolonisation, handelsrutter, flera flottor och övriga
+automatiska order återstår tillsammans med tillhörande tester och krav. Rensningen görs i små sammanhängande commits
 som pushas en i taget. Uppdatera checklistan i samma commit som arbetet.
 En annan agent ska kunna fortsätta från den pushade arbetsbranchen.
 
@@ -72,19 +73,26 @@ spelbar, men bevara fristående strids- och bordningstester.
 
 ## Arbetsläge och överlämning
 
-Utgångspunkt: `origin/single_fleet` vid planens skapande. Arbetet görs på
-`codex/single-fleet-cleanup` och pushas efter varje commit. Före fortsatt
-arbete: hämta origin, läs denna fil och `docs/single-fleet.md`, kontrollera
-senaste commit och lokalt arbetsläge. Integrera till `single_fleet` enligt
-projektets utforskningsflöde när en sammanhängande ändring är klar.
+Rensningsarbetet har integrerats i `single_fleet` utan driftsättning.
+Fortsätt från senaste `origin/single_fleet`, inte från `development` eller
+den gamla arbetsbranchen. Starta en ny arbetsbranch med
+`npm run work:start -- <agent>/<ämne> --from single_fleet`, gör små
+sammanhängande commits och pusha var och en. Läs denna fil och
+[single-fleet-planen](single-fleet.md), kontrollera branchens status och de
+återstående punkterna före fortsatt arbete. Uppdatera checklistan i samma
+commit som varje färdigt delsteg.
 
-Delsteg klart: automatisk befolkningsutjämning mellan planeter har tagits
-bort, inklusive dess modell, tillstånd, rundanrop och tillhörande enhets- och webbläsartester.
-Gamla automatiska transportorder och användargränssnitt finns fortfarande
-kvar och ska tas bort i ett senare steg. Den äldre områdesdokumentationen
-beskriver tills vidare den ärvda mekaniken och ska rensas enligt checklistan. Tid, AP, resursernas detaljer,
-startbesättning och övriga öppna designfrågor ska diskuteras och låsas med
-användaren innan ny spelmekanik implementeras.
+Användaren har uttryckligen bett att driftsättning ska vänta. `work:merge`
+publicerar normalt utforskningen; kör därför inte det förrän användaren
+vill publicera. Integrera färdiga delsteg utan driftsättning när användaren
+ber om det. Bevara lokala ändringar och bilagor från andra arbeten.
+
+Den äldre områdesdokumentationen beskriver tills vidare till stor del den
+ärvda mekaniken och ska rensas enligt checklistan. Tid, AP, resursernas
+detaljer, startbesättning och övriga öppna designfrågor ska diskuteras och
+låsas med användaren innan ny spelmekanik implementeras. Den uttryckligt
+beställda rensningen behöver inga nya designbeslut för de delar som redan
+är avgränsade ovan.
 
 ## Identifierade beroenden
 
@@ -126,9 +134,8 @@ fortfarande öppnas med ofullständigt stöd. Det är en tillfällig begränsnin
 hantera godkänd inkompatibilitet innan rensningen avslutas. Ytterligare
 framtida inkompatibla ändringar kräver ny avstämning.
 
-Senaste verifierade steg: typkontroll och 74 riktade tester för produktion
-och fabriksvyer passerade efter att de inaktuella syftestexterna tagits bort.
-Tidigare riktade kontroller finns i commitarnas historik. Hela sviten har inte
-körts om efter varje delsteg. Alla commits har pushats en och en till
-`origin/codex/single-fleet-cleanup`; branchen är ännu inte integrerad i
-`single_fleet`. Användaren har bett att ingen driftsättning sker ännu.
+Senaste kodsteget: typkontroll och 14 riktade tester för order och sparformat
+passerade efter att migreringen av `auto-transport` togs bort. Även 74
+riktade tester för produktion och fabriksvyer passerade i steget före det.
+Hela sviten har inte körts om efter varje delsteg. Tidigare delsteg finns
+som individuella commits i `single_fleet`.
