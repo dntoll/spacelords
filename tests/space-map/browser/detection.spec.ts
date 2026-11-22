@@ -62,7 +62,8 @@ test('aktuell-detektionssikt / kartans-sikttillstand: losing sight removes pirat
     .click();
   await selectMapHex(page, new HexCoordinate(10, -4));
   await endTurn(page);
-  await selectMapPoint(page, marker.point);
+  // The pirate's former hex is still selected; tapping it again would travel
+  // there (hexval-med-vag), so inspect the selection as it is.
   await expect(
     page.getByRole('article', { name: 'Space pirate', exact: true }),
   ).toHaveCount(0);
