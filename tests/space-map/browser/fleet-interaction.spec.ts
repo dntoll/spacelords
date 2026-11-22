@@ -1,9 +1,9 @@
-import { formFleet } from './fleet-helpers.js';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { FleetMapLayout } from '../../../src/client/space-map/models/star-map/FleetMapLayout.js';
 import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 import { selectMapObject } from './map-helpers.js';
-import { startFirstSlot } from './save-helpers.js';
+import { seedGame, startFirstSlot } from './save-helpers.js';
+import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import { expect, test, type Page } from '@playwright/test';
 
 async function mapCenter(page: Page) {
@@ -88,11 +88,23 @@ test('flottval-pa-kartan / dra-flottdestination: selects a fleet, previews a sna
 test('kartflottor / flottval-pa-kartan: colocated fleets occupy separate positions within the hex', async ({
   page,
 }, testInfo) => {
-  await page.goto('./');
-  await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await formFleet(page);
-  await page.getByRole('button', { name: 'Star map', exact: true }).click();
+  const state = new Game(createExampleGalaxy()).exportState();
+  const origin = state.fleets[0]!;
+  await seedGame(page, {
+    ...state,
+    fleets: [
+      origin,
+      {
+        ...origin,
+        id: 'fleet-second',
+        name: 'Fleet 1',
+        shipUnits: origin.shipUnits!.map((unit) => ({
+          ...unit,
+          id: `${unit.id}-second`,
+        })),
+      },
+    ],
+  });
   const { canvas } = await mapCenter(page);
   const saved = await page.evaluate(
     () =>

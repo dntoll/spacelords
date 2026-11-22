@@ -1,5 +1,3 @@
-import type { HexCoordinate } from '../../common/HexCoordinate.js';
-import type { BattleReport } from './Salvage.js';
 import {
   TacticalBattle,
   type BattleState,
@@ -9,12 +7,19 @@ import {
   type SavedBoardingEngagement,
 } from '../../boarding/models/index.js';
 
-export type ExplorationOrder = 'explore' | 'explore-stars';
+export interface BattleReport {
+  readonly fleetIds?: readonly string[];
+  readonly eventId?: string;
+  readonly position: { readonly q: number; readonly r: number };
+  readonly fleetId: string | null;
+  readonly title: string;
+  readonly summary: string;
+}
 
 export interface Discovery {
   readonly eventId?: string;
   readonly id: string;
-  readonly kind: 'planet' | 'planet-explored' | 'star' | 'pirate' | 'wreck';
+  readonly kind: 'planet' | 'planet-explored' | 'star' | 'pirate';
   readonly name: string;
   readonly position: { readonly q: number; readonly r: number };
   readonly fleetId: string | null;
@@ -34,7 +39,6 @@ export interface SavedTurnSimulation {
   readonly awaitingCombat: boolean;
   readonly discoveries: readonly Discovery[];
   readonly handling: boolean;
-  readonly otherFleets: boolean;
   readonly boarding?: SavedBoardingEngagement;
 }
 
@@ -53,7 +57,6 @@ export class TurnSimulation {
   awaitingCombat = false;
   discoveries: readonly Discovery[] = [];
   handling = false;
-  otherFleets = false;
   boarding: BoardingEngagement | null = null;
 
   constructor(budgets: readonly (readonly [string, number])[]) {
@@ -86,15 +89,17 @@ export class TurnSimulation {
   }
 
   permits(id: string): boolean {
+    if (this.tacticalBattles.length) return false;
+    // upptackt-stannar-resan: a discovery pause accepts a new destination without Handle.
+    if (this.discoveries.some((discovery) => discovery.fleetId === id))
+      return true;
     return (
-      !this.tacticalBattles.length &&
       this.handling &&
-      (this.otherFleets ||
-        this.discoveries.some(
-          (discovery) =>
-            discovery.fleetId === id &&
-            (!this.activeEventId || discovery.eventId === this.activeEventId),
-        ) ||
+      (this.discoveries.some(
+        (discovery) =>
+          discovery.fleetId === id &&
+          (!this.activeEventId || discovery.eventId === this.activeEventId),
+      ) ||
         this.battles.some(
           (battle) =>
             (battle.fleetId === id || battle.fleetIds?.includes(id)) &&
@@ -120,7 +125,6 @@ export class TurnSimulation {
           Object.freeze({
             ...battle,
             position: Object.freeze({ ...battle.position }),
-            wreckIds: Object.freeze([...battle.wreckIds]),
             ...(battle.fleetIds
               ? { fleetIds: Object.freeze([...battle.fleetIds]) }
               : {}),
@@ -141,7 +145,6 @@ export class TurnSimulation {
         ),
       ),
       handling: this.handling,
-      otherFleets: this.otherFleets,
       ...(this.boarding ? { boarding: this.boarding.snapshot() } : {}),
     });
   }
@@ -162,7 +165,6 @@ export class TurnSimulation {
       !Array.isArray(saved.discoveries) ||
       typeof saved.awaitingCombat !== 'boolean' ||
       typeof saved.handling !== 'boolean' ||
-      typeof saved.otherFleets !== 'boolean' ||
       (!saved.awaitingCombat &&
         !saved.economyApplied &&
         !saved.battles?.length) ||
@@ -181,7 +183,6 @@ export class TurnSimulation {
               !contains(battle.position) ||
               !battle.title ||
               !battle.summary ||
-              !Array.isArray(battle.wreckIds) ||
               (battle.fleetId !== null && !ids.has(battle.fleetId)),
           ))) ||
       new Set(saved.remaining.map(([id]: readonly [string, number]) => id))
@@ -197,7 +198,7 @@ export class TurnSimulation {
         (discovery: Discovery) =>
           (discovery.eventId !== undefined &&
             typeof discovery.eventId !== 'string') ||
-          !['planet', 'planet-explored', 'star', 'pirate', 'wreck'].includes(
+          !['planet', 'planet-explored', 'star', 'pirate'].includes(
             discovery.kind,
           ) ||
           !discovery.id ||
@@ -252,27 +253,8 @@ export class TurnSimulation {
     simulation.awaitingCombat = saved.awaitingCombat;
     simulation.discoveries = structuredClone(saved.discoveries);
     simulation.handling = saved.handling;
-    simulation.otherFleets = saved.otherFleets;
     if (saved.boarding)
       simulation.boarding = BoardingEngagement.restore(saved.boarding);
     return simulation;
   }
-}
-
-/** automatisk-hexutforskning / automatisk-stjarnutforskning: stable ties do not use hidden objects. */
-export function nearestUnexplored(
-  position: HexCoordinate,
-  candidates: readonly HexCoordinate[],
-  explored: ReadonlySet<string>,
-): HexCoordinate | null {
-  return (
-    candidates
-      .filter((candidate) => !explored.has(candidate.key))
-      .sort(
-        (a, b) =>
-          position.distanceTo(a) - position.distanceTo(b) ||
-          a.q - b.q ||
-          a.r - b.r,
-      )[0] ?? null
-  );
 }

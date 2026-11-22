@@ -89,7 +89,7 @@ describe('vy-plattformsgrans', () => {
 });
 
 describe('speltexter-i-vy', () => {
-  it('stores an upgrade as an outcome and lets the view choose the sentence', () => {
+  it('stores a failure as an outcome and lets the view choose the sentence', () => {
     const model = new AppModel();
     model.reportError(new Error('A Colony ship is required.'));
     expect(model.snapshot.notice).toEqual({
@@ -99,11 +99,6 @@ describe('speltexter-i-vy', () => {
     expect(playerNoticeText(model.snapshot.notice)).toBe(
       'A Colony ship is required.',
     );
-    expect(playerNoticeText({ kind: 'upgrade-ordered' })).toBe(
-      'Upgrade ordered.',
-    );
-    expect(JSON.stringify({ kind: 'upgrade-ordered' })).not.toContain(
-      'Upgrade ordered',
-    );
+    expect(Object.keys(model.snapshot.notice!)).toEqual(['kind', 'reason']);
   });
 });

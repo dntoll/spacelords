@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { researchStationState } from '../../fixtures/research-station.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import type { GameState } from '../../../src/client/space-map/models/Game.js';
 import { startFirstSlot } from './save-helpers.js';
+import { selectMapFleet } from './fleet-helpers.js';
 
 async function seed(page: Page, state: GameState) {
   await page.addInitScript((saved) => {
@@ -17,28 +17,16 @@ async function seed(page: Page, state: GameState) {
   await startFirstSlot(page);
 }
 
-test('egen-ordervy: compact fleet controls remain readable and named special orders open separately', async ({
+test('inga-move-stop-knappar: the home fleet has no Move or Stop button', async ({
   page,
 }, testInfo) => {
-  await seed(page, {
-    ...researchStationState(),
-    researched: ['Automated exploration'],
-  });
+  await seed(page, researchStationState());
   const card = page.locator('.fleet-card').first();
-  await expect(card.locator('.fleet-primary-orders button')).toHaveText([
-    'Move',
-    'Stop',
-    'Orders',
-  ]);
-  await card.getByRole('button', { name: 'Orders', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Explore stars', exact: true })
-    .click();
   await expect(
-    card.getByRole('button', { name: 'Orders', exact: true }),
-  ).toBeVisible();
+    card.getByRole('button', { name: 'Move', exact: true }),
+  ).toHaveCount(0);
   await expect(
-    card.getByRole('button', { name: 'Explore stars', exact: true }),
+    card.getByRole('button', { name: 'Stop', exact: true }),
   ).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath('readable-orders.png') });
 });
@@ -49,30 +37,30 @@ test('kompakt-forskningstrad / forskningsdetaljer-vid-val: compact tree tiles sh
   await seed(page, researchStationState());
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   const rocket = page.getByRole('button', {
-    name: 'Inspect Rocket engine factory',
+    name: 'Inspect Missiles',
     exact: true,
   });
   await rocket.focus();
-  const card = page.locator('[data-technology="Rocket engine factory"]');
+  const card = page.locator('[data-technology="Missiles"]');
   const size = await card.evaluate((node) => ({
     width: (node as HTMLElement).offsetWidth,
     height: (node as HTMLElement).offsetHeight,
   }));
   expect(size.width).toBeLessThanOrEqual(108);
   expect(size.height).toBe(48);
-  await expect(card.locator('.research-node-name')).toHaveText('Rocket engine');
+  await expect(card.locator('.research-node-name')).toHaveText('Missiles');
   await expect(card).not.toContainText('Available');
   await expect(rocket).toHaveAttribute('aria-description', 'Available');
   await expect(card.locator('.research-node-details')).toHaveCount(0);
   await expect(
-    page.getByRole('button', { name: 'Inspect Fighter factory', exact: true }),
+    page.getByRole('button', { name: 'Inspect Armored Fighter', exact: true }),
   ).toHaveCount(0);
   await rocket.click();
   const details = page.getByRole('region', {
     name: 'Selected research',
     exact: true,
   });
-  await expect(details).toContainText('Produces Rocket engines');
+  await expect(details).toContainText('two missile salvos');
   await expect(details).toContainText('Research time: 1 round');
   await expect(details).toContainText('Requires: No prerequisites');
   await page.screenshot({
@@ -80,7 +68,7 @@ test('kompakt-forskningstrad / forskningsdetaljer-vid-val: compact tree tiles sh
   });
   await details
     .getByRole('button', {
-      name: 'Research Rocket engine factory',
+      name: 'Research Missiles',
       exact: true,
     })
     .click();
@@ -101,7 +89,7 @@ test('research-med-ett-tryck: one native tap on Research queues the selection af
   await seed(page, researchStationState());
   await page.getByRole('button', { name: 'Research', exact: true }).tap();
   const header = page.getByRole('button', {
-    name: 'Inspect Rocket engine factory',
+    name: 'Inspect Missiles',
     exact: true,
   });
   await header.focus();
@@ -128,13 +116,13 @@ test('research-med-ett-tryck: one native tap on Research queues the selection af
   await expect(page.locator('.research-queue article')).toHaveCount(0);
   await page
     .getByRole('button', {
-      name: 'Research Rocket engine factory',
+      name: 'Research Missiles',
       exact: true,
     })
     .tap();
   await expect(page.locator('.research-queue article')).toHaveCount(1);
   await expect(page.locator('.research-queue article')).toContainText(
-    'Rocket engine factory',
+    'Missiles',
   );
 });
 
@@ -146,10 +134,12 @@ test('forskningsdetaljer-vid-val: dragging from a research tile pans without ins
     isMobile,
     'Native touch pan and pinch are covered by research-tree.spec.',
   );
+  // The four-technology tree fits a large screen, so use a phone-sized view.
+  await page.setViewportSize({ width: 360, height: 640 });
   await seed(page, researchStationState());
   await page.getByRole('button', { name: 'Research', exact: true }).click();
   const tile = page.getByRole('button', {
-    name: 'Inspect Rocket engine factory',
+    name: 'Inspect Missiles',
     exact: true,
   });
   const stage = page.locator('.research-tree-stage');
@@ -164,9 +154,10 @@ test('forskningsdetaljer-vid-val: dragging from a research tile pans without ins
   const box = (await tile.boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
+  // Drag towards the hidden part of the zoomed tree.
   await page.mouse.move(
-    box.x + box.width / 2 + 70,
-    box.y + box.height / 2 + 30,
+    box.x + box.width / 2 - 70,
+    box.y + box.height / 2 - 30,
     { steps: 8 },
   );
   await page.mouse.up();
@@ -177,93 +168,25 @@ test('forskningsdetaljer-vid-val: dragging from a research tile pans without ins
   await expect(page.locator('.research-queue article')).toHaveCount(0);
 });
 
-test('fabriksstatus-i-byggval: built, queued and absent factories have distinct status labels', async ({
-  page,
-}) => {
-  const state = tradeNetworkState();
-  state.colonies[0]![1].projects = [
-    {
-      id: 'queued-station',
-      type: 'Research station',
-      slotIndex: 2,
-      factoryId: null,
-      destinationFleetId: null,
-    },
-  ];
-  await seed(page, state);
-  await page.getByRole('button', { name: 'Factories', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Empty site 4 on Tellus', exact: true })
-    .click();
-  const options = page.locator('.factory-option');
-  const built = options.filter({
-    has: page.locator('.factory-option-title', {
-      hasText: 'Rocket engine factory',
-    }),
-  });
-  const queued = options.filter({
-    has: page.locator('.factory-option-title', { hasText: 'Research station' }),
-  });
-  const absent = options.filter({
-    has: page.locator('.factory-option-title', {
-      hasText: 'Transport ship factory',
-    }),
-  });
-  await expect(built).toHaveClass(/presence-built/);
-  await expect(built).toContainText('1 in group');
-  await expect(queued).toHaveClass(/presence-building/);
-  await expect(queued).toContainText('1 under construction');
-  await expect(absent).toHaveClass(/presence-absent/);
-  await expect(absent).toContainText('Not in group');
-  const colors = await Promise.all(
-    [built, queued, absent].map((row) =>
-      row.evaluate((node) => getComputedStyle(node).borderLeftColor),
-    ),
-  );
-  expect(new Set(colors).size).toBe(3);
-});
-
-test('uppmarksamhet-vid-titel / kompakt-ny-flotta / flyttmal-pa-kartan / inga-hexkoordinater: header and fleet controls save mobile space', async ({
+test('flyttmal-pa-kartan / inga-hexkoordinater: fleet controls save mobile space', async ({
   page,
 }, testInfo) => {
   await seed(page, researchStationState());
-  const header = page.locator('.app-header');
-  const warning = header.locator('.map-attention-legend');
-  await expect(warning).toHaveText('! Needs attention');
-  const brand = (await header.locator('.brand').boundingBox())!;
-  const badge = (await warning.boundingBox())!;
-  const nav = (await header.locator('.main-nav').boundingBox())!;
-  expect(
-    Math.abs(brand.y + brand.height / 2 - badge.y - badge.height / 2),
-  ).toBeLessThan(3);
-  expect(badge.x).toBeGreaterThanOrEqual(brand.x + brand.width);
-  expect(nav.y).toBeGreaterThanOrEqual(badge.y + badge.height);
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await page
-    .getByRole('button', {
-      name: 'Show decision: Home Fleet: choose an assignment',
-      exact: true,
-    })
-    .click();
-  const create = page.getByRole('group', { name: 'New fleet', exact: true });
-  await expect(create).toBeVisible();
-  expect((await create.boundingBox())!.height).toBeLessThanOrEqual(76);
+  await selectMapFleet(page, 'Home Fleet');
   await expect(page.locator('.coordinate-label')).toHaveCount(0);
   await page.screenshot({
     path: testInfo.outputPath('compact-fleet-header.png'),
   });
-  await page
-    .getByRole('button', {
+  await expect(
+    page.getByRole('button', {
       name: 'Choose destination for Home Fleet',
       exact: true,
-    })
-    .click();
+    }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole('combobox', { name: 'Destination hex', exact: true }),
   ).toHaveCount(0);
-  await expect(page.locator('.destination-mode')).toContainText(
-    'Choose a destination',
-  );
   await expect(page.locator('body')).not.toContainText(
     'Choose destination hex',
   );

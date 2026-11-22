@@ -40,11 +40,10 @@ describe('hexkarta', () => {
 });
 
 describe('fast-exempelvarld', () => {
-  it('starts with three reproducible systems and exactly one colony', () => {
+  it('starts with three reproducible systems and a start planet', () => {
     const galaxy = createExampleGalaxy();
     const planets = galaxy.systems.flatMap((system) => system.planets);
     expect(galaxy.systems).toHaveLength(3);
-    expect(planets.filter((planet) => planet.colony !== null)).toHaveLength(1);
     expect(galaxy.homePlanet.position.key).toBe('1,0');
     expect(new Set(planets.map((planet) => planet.type))).toEqual(
       new Set(['solid', 'gas']),
@@ -97,7 +96,6 @@ describe('planetinformation', () => {
             habitability,
             buildSlots: 3,
             resources: [],
-            colony: null,
           }),
       ).toThrow(RangeError);
     },
@@ -116,7 +114,6 @@ describe('planetinformation', () => {
             habitability: 50,
             buildSlots,
             resources: [],
-            colony: null,
           }),
       ).toThrow(RangeError);
     },
@@ -130,12 +127,8 @@ describe('mvc-arkitektur', () => {
     expect(() =>
       Object.assign(snapshot.resources[0]!, { perYear: 999 }),
     ).toThrow(TypeError);
-    expect(() => Object.assign(snapshot.colony!, { population: 0 })).toThrow(
-      TypeError,
-    );
     expect(() => Object.assign(snapshot.position, { q: 50 })).toThrow(
       TypeError,
     );
-    expect(galaxy.homePlanet.snapshot.colony?.population).toBe(12_000);
   });
 });

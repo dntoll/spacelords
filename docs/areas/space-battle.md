@@ -49,14 +49,15 @@ order till skeppen, och striden kan också testas fristående från
   framåtförflyttning och eldbåge följer samma riktning i alla sex lägen.
   Se [taktisk strid](../space-battle/tactical-combat.md).
 
-- **Stridsuppgraderingar:** `utforskade-stridsuppgraderingar`,
-  `missilernas-omradeseffekt` och `traffhex-istallet-for-mallista` är
-  **Fullständigt implementerat**. Missiles, Armor, Armored Transport och
-  Armored Fighter forskas fram och monteras med Upgrade. En Fighter bär två
-  missilsalvor. Missiler träffar vald hex och alla grannhexar, även egna skepp.
-  Skott siktas på stridskartan. Äldre sparade Fighters behåller sina salvor.
-  Se [taktisk strid](../space-battle/tactical-combat.md) och
-  [flottuppgradering](../fleet-upgrades.md).
+- **Stridsuppgraderingar:** `missilernas-omradeseffekt` och `traffhex-istallet-for-mallista` är
+  **Fullständigt implementerat**: en Fighter med missiler bär två salvor som
+  träffar vald hex och alla grannhexar, även egna skepp, och skott siktas på
+  stridskartan. `utforskade-stridsuppgraderingar` är **Delvis
+  implementerat**: Missiles, Armor, Armored Transport och Armored Fighter
+  finns i Research, men forskningen går inte framåt och Upgrade vid varv är
+  borttagen (`single-fleet-rensning`). Hur uppgraderingar monteras hör till
+  `gemensam-produktionsko-i-flottan`. Se
+  [taktisk strid](../space-battle/tactical-combat.md).
 
 - **Taktisk strid:** Ny separat hexkarta med alla deltagande skepp,
   utplacering, växelvisa aktiveringar, eldbågar, skydd, öppna D6-slag och

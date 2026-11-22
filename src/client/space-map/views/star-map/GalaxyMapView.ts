@@ -1,13 +1,12 @@
 import { MapViewport } from '../../models/star-map/MapViewport.js';
 import { renderMapEvent } from './MapEventView.js';
-import { renderMapTradeRoutes } from './MapTradeRoutesView.js';
 import { renderDetectionBoundary } from './DetectionMapView.js';
 import { renderTerrain } from '../TerrainMapView.js';
 import { createStarTextures, renderStarGlyph } from '../StarGlyph.js';
 import { showMapHex } from '../../models/star-map/StarAppearance.js';
 import starSprite from '../../assets/stars/plasma-star.webp';
-import { salvageMarkers } from '../../models/star-map/SalvageMapLayout.js';
 import { renderMapOverlays } from './MapOverlayView.js';
+import { renderTravelRoute } from './TravelRouteView.js';
 import p5 from 'p5';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import { HexGeometry, type Point } from '../../../common/HexCoordinate.js';
@@ -21,10 +20,11 @@ import { SHIP_SPRITES, type ShipSpriteType } from '../ShipImages.js';
 import { FleetMapLayout } from '../../models/star-map/FleetMapLayout.js';
 import { pirateAsFleet } from '../../models/PirateFleet.js';
 import { MapArtwork } from '../MapArtwork.js';
-import { renderPlanetGlyph, renderSalvageGlyph } from '../PlanetGlyph.js';
+import { renderPlanetGlyph } from '../PlanetGlyph.js';
+import { fleetGlidePoint } from './FleetGlide.js';
 
 const STAR_MAP_LABEL =
-  'Star map. Click a fleet or trade route to select it. Drag a fleet onto a route to assign it, or elsewhere to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.';
+  'Star map. Select a hex to see it and the route there; select it again to travel. Click a fleet to select it. Drag a fleet to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to the start planet; Enter selects the central hex.';
 
 export class GalaxyMapView implements MapPort {
   readonly #container: HTMLElement;
@@ -69,10 +69,6 @@ export class GalaxyMapView implements MapPort {
           this.#canvas?.setAttribute(
             'data-planet-images-ready',
             String(this.#artwork.planetCount),
-          );
-          this.#canvas?.setAttribute(
-            'data-shipyard-image-ready',
-            String(!!this.#artwork.station),
           );
           this.#requestDraw();
         });
@@ -211,10 +207,7 @@ export class GalaxyMapView implements MapPort {
       for (const movement of movements) {
         const from = HexGeometry.toPoint(movement.from),
           to = HexGeometry.toPoint(movement.to);
-        const center = {
-          x: from.x + (to.x - from.x) * progress,
-          y: from.y + (to.y - from.y) * progress,
-        };
+        const center = fleetGlidePoint(from, to, progress);
         const marker = markers.find(
           (candidate) => candidate.fleet.id === movement.fleetId,
         );
@@ -226,7 +219,7 @@ export class GalaxyMapView implements MapPort {
           });
         }
       }
-      // stillastaende-kamera-vid-forflyttning: only the ship marker moves.
+      // kamera-foljer-skepp: the marker glides; the camera snapshot follows it.
     }
     if (this.#canvas) {
       this.#canvas.dataset.cameraX = String(model.camera.center.x);
@@ -246,13 +239,9 @@ export class GalaxyMapView implements MapPort {
     }
     if (this.#descriptionScreen !== model.screen) {
       sketch.describe(
-        model.screen === 'orders'
-          ? 'Orders map. Choose a target for the selected order.'
-          : model.screen === 'fleets'
-            ? 'Fleets map. Fleet positions and destinations are highlighted; planets and trade routes are background landmarks.'
-            : model.screen === 'production'
-              ? 'Production map. Select an owned planet to build and inspect its project supply chain.'
-              : 'Star map. Your homeworld and its surroundings are visible. Stars are visible in unexplored space.',
+        model.screen === 'fleets'
+          ? 'Fleets map. Fleet positions and destinations are highlighted; planets are background landmarks.'
+          : 'Star map. The start planet and its surroundings are visible. Stars are visible in unexplored space.',
       );
       this.#descriptionScreen = model.screen;
     }
@@ -263,13 +252,9 @@ export class GalaxyMapView implements MapPort {
       );
       this.#canvas.setAttribute(
         'aria-label',
-        model.screen === 'orders'
-          ? 'Orders map. Choose the requested fleet, wreck, planet or Patrol center. Drag empty space to pan; pinch or use the wheel to zoom. Enter selects the central hex.'
-          : model.screen === 'fleets'
-            ? 'Fleets map. Click a fleet to select it; drag a fleet to set its destination. Planets and trade routes are background landmarks. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.'
-            : model.screen === 'production'
-              ? 'Production map. Select an owned planet to show build options and its queue. Drag empty space to pan; pinch or use the mouse wheel to zoom. Arrow keys pan; Enter selects the central hex.'
-              : STAR_MAP_LABEL,
+        model.screen === 'fleets'
+          ? 'Fleets map. Click a fleet to select it; drag a fleet to set its destination. Planets are background landmarks. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to the start planet; Enter selects the central hex.'
+          : STAR_MAP_LABEL,
       );
     }
     sketch.background('#0a1520');
@@ -296,8 +281,6 @@ export class GalaxyMapView implements MapPort {
     if (selected) this.#hex(sketch, selected, true, model.camera.zoom);
     renderTerrain(sketch, cells);
     renderDetectionBoundary(sketch, cells, model.camera.zoom);
-    // synliga-handelsrutter: selection fills stay below routes; objects stay above.
-    renderMapTradeRoutes(sketch, model);
     for (const cell of cells)
       if (cell.object)
         this.#object(
@@ -306,39 +289,12 @@ export class GalaxyMapView implements MapPort {
           model.camera.zoom,
           model.screen === 'fleets',
         );
+    renderTravelRoute(sketch, model.travelRoute, model.camera.zoom);
     renderMapOverlays(sketch, model, movementPoints, this.#shipImages);
-    for (const marker of salvageMarkers(
-      model.wrecks ?? [],
-      model.shipyards ?? [],
-      model.camera.zoom,
-    )) {
-      sketch.push();
-      sketch.translate(marker.point.x, marker.point.y);
-      sketch.stroke(
-        marker.id === model.salvageSelection ? '#ffffff' : '#e8bd76',
-      );
-      sketch.strokeWeight(marker.kind === 'yard' ? 2 / model.camera.zoom : 2);
-      sketch.fill('#152936');
-      renderSalvageGlyph(
-        sketch,
-        marker.kind,
-        model.camera.zoom,
-        marker.id === model.salvageSelection,
-        this.#artwork.station,
-      );
-      sketch.pop();
-    }
-    for (const choice of model.shipyardPlacement?.choices ?? []) {
-      const point = HexGeometry.toPoint(choice);
-      sketch.noFill();
-      sketch.stroke('#e8bd76');
-      sketch.strokeWeight(2 / model.camera.zoom);
-      sketch.circle(point.x, point.y, 32);
-    }
     if (this.#canvas)
       this.#canvas.style.cursor = model.fleetDragging
         ? 'grabbing'
-        : model.hoveredFleetId || model.mapTrade.hoveredRouteIds.length
+        : model.hoveredFleetId
           ? 'pointer'
           : 'grab';
     renderMapEvent(sketch, model);
@@ -398,20 +354,12 @@ export class GalaxyMapView implements MapPort {
     if (context && cell.explored && !cell.visible) context.globalAlpha *= 0.65;
     const color = star
       ? '#e9c78b'
-      : object.owned
-        ? '#b1e4d1'
-        : object.type === 'gas'
-          ? '#b8a7d6'
-          : '#b88870';
+      : object.type === 'gas'
+        ? '#b8a7d6'
+        : '#b88870';
     sketch.noStroke();
-    if (star) {
+    if (star)
       renderStarGlyph(sketch, point, zoom, cell.position, this.#starTextures);
-    } else if (object.owned) {
-      sketch.noFill();
-      sketch.stroke('#476f68');
-      sketch.strokeWeight(1 / zoom);
-      sketch.ellipse(point.x, point.y, 34, 26);
-    }
     sketch.noStroke();
     sketch.fill(color);
     if (!star) {
@@ -433,7 +381,7 @@ export class GalaxyMapView implements MapPort {
     if (zoom < 0.2 && cell.position.key !== this.#model?.selected?.position.key)
       return;
     sketch.noStroke();
-    sketch.fill(star ? '#d7c49e' : object.owned ? '#d5f5e5' : '#b9c4c5');
+    sketch.fill(star ? '#d7c49e' : '#b9c4c5');
     sketch.textAlign(sketch.CENTER, sketch.TOP);
     sketch.textSize(11 / zoom);
     sketch.text(

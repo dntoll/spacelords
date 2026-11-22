@@ -1,6 +1,4 @@
 import { finishTacticalCombat } from './battle-helpers.js';
-import { selectMapFleet } from './fleet-helpers.js';
-import { selectMapObject } from './map-helpers.js';
 import { expect, type Page, type Locator } from '@playwright/test';
 import {
   PREREQUISITES,
@@ -22,26 +20,24 @@ export async function chooseResearch(
       return {
         completed: slot.state.researched,
         queue: slot.state.researchQueue,
-        recovered: slot.state.recoveredResearch ?? [],
       };
     });
   const state = await saved();
   if (state.completed.includes(target) || state.queue.includes(target)) return;
   // forskningens-avslojande: campaigns research through the visible frontier.
-  if (!state.recovered.includes(target))
-    for (const prerequisite of PREREQUISITES[target]) {
-      if ((await saved()).completed.includes(prerequisite)) continue;
-      await chooseResearch(page, prerequisite);
-      for (
-        let turn = 0;
-        !(await saved()).completed.includes(prerequisite);
-        turn++
-      ) {
-        if (turn >= TECHNOLOGIES.length)
-          throw new Error(`Research stalled: ${prerequisite}`);
-        await endTurn(page);
-      }
+  for (const prerequisite of PREREQUISITES[target]) {
+    if ((await saved()).completed.includes(prerequisite)) continue;
+    await chooseResearch(page, prerequisite);
+    for (
+      let turn = 0;
+      !(await saved()).completed.includes(prerequisite);
+      turn++
+    ) {
+      if (turn >= TECHNOLOGIES.length)
+        throw new Error(`Research stalled: ${prerequisite}`);
+      await endTurn(page);
     }
+  }
   await page
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('button', { name: 'Research', exact: true })
@@ -60,15 +56,17 @@ export async function chooseResearch(
   await choose.click();
 }
 
-export async function connectTradePlanets(
-  page: Page,
-  from: string,
-  to: string,
-): Promise<void> {
-  await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await selectMapObject(page, from);
-  await page.locator('canvas[data-rendered="true"]').press('r');
-  await selectMapObject(page, to);
+/** Stores a saved game in slot 1 before the page loads and starts it. */
+export async function seedGame(page: Page, state: GameState): Promise<void> {
+  await page.addInitScript((saved) => {
+    if (!localStorage.getItem('spacelords.save.v2.1'))
+      localStorage.setItem(
+        'spacelords.save.v2.1',
+        JSON.stringify({ lastPlayed: '2026-11-22T00:00:00Z', state: saved }),
+      );
+  }, state);
+  await page.goto('./');
+  await startFirstSlot(page);
 }
 
 export async function startFirstSlot(page: Page): Promise<void> {
@@ -78,42 +76,9 @@ export async function startFirstSlot(page: Page): Promise<void> {
     .click();
 }
 
-export async function assignFleetToRoute(
-  page: Page,
-  fleet: string,
-  from: string,
-  to: string,
-): Promise<void> {
-  await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  await selectMapFleet(page, fleet);
-  const card = page.locator('.map-fleet-cards .selected-fleet-card');
-  const orders = card.getByRole('button', { name: 'Orders', exact: true });
-  await orders.focus();
-  await orders.press('Enter');
-  const join = page.getByRole('button', { name: 'Join route', exact: true });
-  await join.focus();
-  await join.press('Enter');
-  const route = page
-    .locator('.orders-view')
-    .getByRole('button', { name: `${from} ↔ ${to}`, exact: true });
-  await route.focus();
-  await route.press('Enter');
-}
-
 export async function endTurn(page: Page): Promise<void> {
   const onMap = (await page.locator('.map-page').count()) > 0;
-  if (
-    !(await page
-      .getByRole('button', { name: 'End turn', exact: true })
-      .isVisible())
-  )
-    await page.getByRole('button', { name: /^Decisions/ }).click();
   await page.getByRole('button', { name: 'End turn', exact: true }).click();
-  const warning = page.getByRole('dialog', { name: 'Decisions remaining' });
-  if (await warning.isVisible())
-    await warning
-      .getByRole('button', { name: 'End turn anyway', exact: true })
-      .click();
   await ignoreEventsUntil(page);
   await expect(
     page.getByRole('button', { name: 'End turn', exact: true }),
@@ -140,6 +105,14 @@ export async function ignoreEventsUntil(
           .isVisible()
       )
         return 'event';
+      const noticeText =
+        (await page.locator('.game-notice').textContent()) ?? '';
+      if (
+        /Pirate ship in sight|Star explored|Planet discovered|Planet explored|Wreck discovered/.test(
+          noticeText,
+        )
+      )
+        return 'discovery';
       return (await page
         .getByRole('button', { name: 'End turn', exact: true })
         .isEnabled())
@@ -149,6 +122,17 @@ export async function ignoreEventsUntil(
     await expect.poll(status, { timeout: 25000 }).not.toBe('running');
     if ((await status()) === 'battle') {
       await finishTacticalCombat(page);
+      continue;
+    }
+    if ((await status()) === 'discovery') {
+      const text = (await page.locator('.game-notice').textContent()) ?? '';
+      if (text.includes('Pirate ship in sight')) {
+        await expect(page.locator('.game-notice')).toBeHidden({
+          timeout: 8000,
+        });
+        continue;
+      }
+      await page.getByRole('button', { name: 'End turn', exact: true }).click();
       continue;
     }
     if ((await status()) !== 'event') return;

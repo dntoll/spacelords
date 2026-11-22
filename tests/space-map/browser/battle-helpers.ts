@@ -120,6 +120,15 @@ export async function finishTacticalCombat(page: Page): Promise<void> {
       await expect(dialog).toHaveCount(0);
       return;
     }
+    if (!(await dialog.isVisible())) {
+      // The game plays a side without armed ships on its own; wait for it.
+      await expect
+        .poll(async () => (await dialog.isVisible()) || !(await current()), {
+          timeout: 30000,
+        })
+        .toBe(true);
+      continue;
+    }
     if (state.phase === 'deployment') {
       await dialog
         .getByRole('button', { name: 'Auto deploy', exact: true })
@@ -159,10 +168,15 @@ export async function finishTacticalCombat(page: Page): Promise<void> {
     if (!state.activation) battle.command({ type: 'activate', id: piece.id });
     if (battleWeapons(piece.type, piece.hasMissiles).length)
       battle.actAutomatically();
-    else battle.command({ type: 'end-activation' });
+    // An unarmed ship may finish its own activation, for example by escaping.
+    else if (battle.snapshot.activation)
+      battle.command({ type: 'end-activation' });
     for (const command of commands) {
+      // The battle can end in the middle of the replayed activation.
+      if (!(await dialog.isVisible())) break;
       await expect
         .poll(async () => {
+          if (!(await dialog.isVisible())) return 'ready';
           const heading = await dialog
             .getByRole('heading')
             .first()

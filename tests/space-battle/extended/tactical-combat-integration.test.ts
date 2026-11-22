@@ -13,7 +13,6 @@ import {
   encounterGame,
 } from '../../fixtures/battle-checkpoint.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
-import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 
 describe('tactical combat integration', () => {
   it('sparad-taktisk-strid: rejects a checkpoint that replaces an actual participating ship', () => {
@@ -67,80 +66,6 @@ describe('tactical combat integration', () => {
     expect(restored.exportState()).toEqual(game.exportState());
     completeTacticalBattles(restored);
     expect(restored.interruption!.battles).toHaveLength(2);
-  });
-
-  it('gemensamt-stridsdeltagande / sparad-taktisk-strid: a merged reinforcement report still restores and points at its surviving fleet', () => {
-    const state = encounterGame().exportState();
-    const fleet = state.fleets[0]!;
-    const game = Game.restore({
-      ...state,
-      phase: 'planning',
-      simulation: null,
-      pirates: [{ ...state.pirates![0]!, position: { q: 8, r: -3 } }],
-      fleets: [
-        {
-          ...fleet,
-          id: 'a',
-          name: 'Incoming',
-          shipUnits: [],
-          position: { q: 7, r: -4 },
-          destination: { q: 8, r: -4 },
-          joinFleetId: 'b',
-        },
-        { ...fleet, id: 'b', name: 'Target', shipUnits: [] },
-      ],
-    });
-    game.startTurn();
-    for (let step = 0; !game.tacticalBattle && step < 20; step++) {
-      if (game.phase === 'interrupted') game.continueTurn();
-      game.applyFrame(game.nextTurnFrame()!);
-    }
-    completeTacticalBattles(game);
-    expect(game.fleet('a')).toBeNull();
-    expect(game.interruption!.battles![0]!.fleetId).toBe('b');
-    expect(Game.restore(game.exportState()).exportState()).toEqual(
-      game.exportState(),
-    );
-  });
-
-  it('vaxelvisa-skeppsaktiveringar: one towed wreck slows one individual tug instead of every Salvage ship', () => {
-    const state = encounterGame().exportState();
-    const first = state.fleets[0]!;
-    const game = Game.restore({
-      ...state,
-      phase: 'planning',
-      simulation: null,
-      pirates: [{ ...state.pirates![0]!, position: { q: 8, r: -3 } }],
-      salvage: {
-        ...state.salvage!,
-        wrecks: [
-          {
-            ...state.salvage!.wrecks[0]!,
-            position: new HexCoordinate(first.position!.q, first.position!.r),
-            towedBy: first.id,
-            reservedBy: first.id,
-          },
-        ],
-      },
-      fleets: [
-        {
-          ...first,
-          shipUnits: [],
-          ships: { ...first.ships, 'Salvage ship': 2 },
-        },
-      ],
-    });
-    game.startTurn();
-    for (let step = 0; !game.tacticalBattle && step < 20; step++) {
-      if (game.phase === 'interrupted') game.continueTurn();
-      game.applyFrame(game.nextTurnFrame()!);
-    }
-    expect(
-      game
-        .tacticalBattle!.pieces.filter((p) => p.type === 'Salvage ship')
-        .map((p) => p.movement)
-        .sort(),
-    ).toEqual([1, 3]);
   });
 
   it('gemensamt-stridsdeltagande / sparad-taktisk-strid: pauses with all ships, locks orders, and cannot skip a battle', () => {
@@ -232,10 +157,6 @@ describe('tactical combat integration', () => {
     expect(game.tacticalBattle).toBeNull();
     expect(game.fleet('fleet-home')!.shipUnits).not.toContainEqual(fighters[1]);
     expect(game.fleet('fleet-home')!.shipUnits).toContainEqual(fighters[0]);
-    const salvagedVictim = game.wrecks.find((w) => w.ship.id === victimId);
-    if (victim.status === 'wreck')
-      expect(salvagedVictim!.ship).toEqual(fighters[1]);
-    else expect(salvagedVictim).toBeUndefined();
     expect(game.interruption!.battles![0]!.fleetIds).toEqual(['fleet-home']);
     const combatEvent = game.events.find((event) =>
       event.text.startsWith('Combat at HEX'),
@@ -246,18 +167,6 @@ describe('tactical combat integration', () => {
     const saved = game.exportState();
     expect(Game.restore(saved).exportState()).toEqual(saved);
     expect(() => game.playBattleActivation()).toThrow();
-    const battleWrecks = game.wrecks.filter((wreck) =>
-      game.interruption!.battles![0]!.wreckIds.includes(wreck.id),
-    );
-    expect(battleWrecks.length).toBeLessThanOrEqual(2);
-    if (victim.status === 'wreck')
-      expect(battleWrecks.some((wreck) => wreck.ship.id === victimId)).toBe(
-        true,
-      );
-    else
-      expect(battleWrecks.some((wreck) => wreck.ship.id === victimId)).toBe(
-        false,
-      );
   });
 
   it('skeppsvis-retratt: escaping one ship regroups the original fleet and spends its remaining year movement', () => {

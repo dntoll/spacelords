@@ -20,7 +20,13 @@ function terrainGame(
   known = false,
 ): Game {
   const example = createExampleGalaxy();
-  const galaxy = new Galaxy(example.player, example.systems, 10, terrain);
+  const galaxy = new Galaxy(
+    example.player,
+    example.systems,
+    example.homePlanet.id,
+    10,
+    terrain,
+  );
   const state = new Game(galaxy).exportState();
   return Game.restore({
     ...state,
@@ -37,31 +43,6 @@ function finish(game: Game): ReturnType<typeof collectTurnFrames> {
   game.finishTurn();
   return frames;
 }
-
-describe('automatisk-hexutforskning', () => {
-  it('fills the inner frontier before extending an already explored western corridor', () => {
-    const original = new Game(createExampleGalaxy());
-    const state = original.exportState();
-    const home = original.galaxy.homePlanet.position;
-    const explored = new Set(
-      HexCoordinate.disk(2).map(
-        (offset) => new HexCoordinate(home.q + offset.q, home.r + offset.r).key,
-      ),
-    );
-    for (let q = -5; q <= 0; q++) explored.add(`${q},0`);
-    const game = Game.restore({
-      ...state,
-      researched: [...state.researched, 'Automated exploration'],
-      explored: [...explored],
-      fleets: state.fleets.map((fleet) => ({
-        ...fleet,
-        position: { q: -5, r: 0 },
-      })),
-    });
-    game.setExploration('fleet-home', 'explore');
-    expect(game.fleet('fleet-home')!.destination!.distanceTo(home)).toBe(3);
-  });
-});
 
 describe('utokad-galax / planetavstand-till-stjarna', () => {
   it('has 150 reproducible systems, 30301 cells, separated planets and clear orbit rings', () => {
@@ -308,49 +289,5 @@ describe('nebulosornas-sikt', () => {
     expect(Game.restore(game.exportState()).mapSnapshot()).toEqual(
       game.mapSnapshot(),
     );
-  });
-});
-
-describe('automatisk-stjarnutforskning', () => {
-  it('completes a full six-step orbit and discovers all three outer planets across reloads', () => {
-    const galaxy = createExpandedGalaxy();
-    const state = new Game(galaxy).exportState();
-    const star = galaxy.systems[1]!.star;
-    const approach = star.position.neighbors()[0]!;
-    let game = Game.restore({
-      ...state,
-      researched: [...state.researched, 'Automated exploration'],
-      pirates: [],
-      fleets: state.fleets.map((fleet) => ({
-        ...fleet,
-        position: { q: approach.q + 2, r: approach.r },
-      })),
-    });
-    game.setExploration('fleet-home', 'explore-stars');
-    const visited = new Set<string>();
-    let entered = false,
-      start: string | null = null,
-      returned = false;
-    for (let year = 0; year < 8 && !returned; year++) {
-      for (const frame of finish(game))
-        for (const step of frame.movements) {
-          if (
-            step.fleetId !== 'fleet-home' ||
-            step.to.distanceTo(star.position) !== 1
-          )
-            continue;
-          if (!entered) {
-            entered = true;
-            start = step.to.key;
-          } else if (step.to.key === start && visited.size === 6)
-            returned = true;
-          visited.add(step.to.key);
-        }
-      game = Game.restore(game.exportState());
-    }
-    expect(visited.size).toBe(6);
-    expect(returned).toBe(true);
-    for (const planet of galaxy.systems[1]!.planets)
-      expect(game.exportState().explored).toContain(planet.position.key);
   });
 });

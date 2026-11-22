@@ -15,16 +15,6 @@ export interface DetectionSource {
 
 /** aktuell-detektionssikt: observers determine current sight independently of memory. */
 export class Detection {
-  static planetRange(buildings: readonly { readonly type: string }[]): number {
-    return Math.max(
-      1,
-      ...buildings.map(
-        (building) =>
-          TELESCOPES.findIndex((type) => `${type} factory` === building.type) +
-          1,
-      ),
-    );
-  }
   static coverage(
     sources: readonly DetectionSource[],
     nebula: (point: HexCoordinate) => boolean = () => false,

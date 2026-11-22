@@ -1,22 +1,20 @@
-import type { MapViewport } from '../../models/ProductionMap.js';
+import type { MapViewport } from '../../models/MapScreen.js';
 import type { HexCoordinate } from '../../../common/HexCoordinate.js';
 import { type Point } from '../../../common/HexCoordinate.js';
-import type { FleetCategory } from '../../models/fleets/FleetCategory.js';
-import type { StarMapFacade } from '../../models/star-map/StarMapFacade.js';
+import type {
+  MapSelection,
+  StarMapFacade,
+} from '../../models/star-map/StarMapFacade.js';
 
 export class StarMapController {
   constructor(private readonly facade: StarMapFacade) {}
 
-  select(position: HexCoordinate): void {
+  select(position: HexCoordinate): MapSelection {
     return this.facade.select(position);
   }
 
   fleetAtPoint(point: Point): string | null {
     return this.facade.fleetAtPoint(point);
-  }
-
-  toggleFleetCategory(category: FleetCategory): void {
-    return this.facade.toggleFleetCategory(category);
   }
 
   selectMapFleet(id: string): void {
@@ -39,7 +37,7 @@ export class StarMapController {
     return this.facade.cancelMapPointer();
   }
 
-  selectPoint(point: Point): void {
+  selectPoint(point: Point): MapSelection {
     return this.facade.selectPoint(point);
   }
 
@@ -61,45 +59,5 @@ export class StarMapController {
 
   resizeMap(viewport: MapViewport): void {
     return this.facade.resizeMap(viewport);
-  }
-
-  salvageAtPoint(point: Point): string | null {
-    return this.facade.salvageAtPoint(point);
-  }
-
-  selectSalvage(id: string): void {
-    return this.facade.selectSalvage(id);
-  }
-
-  orderSalvage(fleetId: string, wreckId: string): void {
-    return this.facade.orderSalvage(fleetId, wreckId);
-  }
-
-  dropSalvage(point: Point): void {
-    return this.facade.dropSalvage(point);
-  }
-
-  previewSalvage(point: Point): void {
-    return this.facade.previewSalvage(point);
-  }
-
-  releaseWreck(fleetId: string, id: string): void {
-    return this.facade.releaseWreck(fleetId, id);
-  }
-
-  rebuildShipyard(id: string): void {
-    return this.facade.rebuildShipyard(id);
-  }
-
-  moveRepair(yardId: string, wreckId: string, index: number): void {
-    return this.facade.moveRepair(yardId, wreckId, index);
-  }
-
-  cancelShipyardPlacement(): void {
-    return this.facade.cancelShipyardPlacement();
-  }
-
-  placeShipyard(position: HexCoordinate): void {
-    return this.facade.placeShipyard(position);
   }
 }

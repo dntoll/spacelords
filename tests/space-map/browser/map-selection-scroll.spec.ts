@@ -4,7 +4,7 @@ import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { startFirstSlot } from './save-helpers.js';
 
 async function startScrollablePanel(page: Page): Promise<void> {
-  const initialState = tradeNetworkState(false);
+  const initialState = tradeNetworkState();
   const state = {
     ...initialState,
     fleets: [

@@ -1,21 +1,14 @@
 import type {
-  ShipOrder,
-  OrderKind,
   MapViewport,
-  ProjectType,
-  ShipType,
   TurnFrame,
   Technology,
-  PlanetQueueKind,
-  FactoriesAction,
-  FleetCategory,
 } from '../../space-map/models/index.js';
 import type {
   BattleCommand,
   BattleManeuver,
   BattleShot,
 } from '../../space-battle/models/index.js';
-import type { AppReadModel, PlanetTab } from '../models/AppModel.js';
+import type { AppReadModel } from '../models/AppModel.js';
 import type { HexCoordinate, Point } from '../../common/HexCoordinate.js';
 import type {
   BoardingCommand,
@@ -30,78 +23,26 @@ import type {
 
 export type AppIntent =
   | { readonly type: 'test-battle' }
-  | { readonly type: 'open-factories' }
-  | {
-      readonly type: 'factories';
-      readonly action: FactoriesAction;
-    }
   | {
       readonly type: 'test-boarding';
       readonly selection?: TestBoardingSelection;
     }
   | { readonly type: 'close-boarding' }
   | { readonly type: 'boarding-command'; readonly command: BoardingCommand }
-  | { readonly type: 'open-fleet-orders'; readonly id: string }
-  | {
-      readonly type: 'open-ship-orders';
-      readonly ship: ShipType;
-      readonly projectId?: string;
-    }
-  | { readonly type: 'order-kind'; readonly kind: OrderKind }
-  | { readonly type: 'apply-ship-order'; readonly order: ShipOrder }
-  | { readonly type: 'order-back' | 'clear-start-order' }
   | { readonly type: 'battle-command'; readonly command: BattleCommand }
-  | { readonly type: 'resume-fleet-orders'; readonly id: string }
-  | {
-      readonly type: 'move-repair';
-      readonly yardId: string;
-      readonly wreckId: string;
-      readonly index: number;
-    }
   | {
       readonly type: 'inspect-research';
       readonly technology: Technology | null;
     }
   | {
-      readonly type: 'salvage-wreck';
-      readonly fleetId: string;
-      readonly wreckId: string;
-    }
-  | {
-      readonly type: 'release-wreck';
-      readonly fleetId: string;
-      readonly id: string;
-    }
-  | {
-      readonly type: 'select-salvage' | 'rebuild-shipyard';
-      readonly id: string;
-    }
-  | { readonly type: 'cancel-shipyard-placement' }
-  | { readonly type: 'place-shipyard'; readonly position: HexCoordinate }
-  | {
       readonly type:
-        | 'handle-discoveries'
-        | 'ignore-discoveries'
-        | 'continue-turn'
-        | 'allow-other-fleet-orders';
+        'handle-discoveries' | 'ignore-discoveries' | 'continue-turn';
     }
   | {
-      readonly type: 'map-select-route' | 'map-select-fleet';
+      readonly type: 'map-select-fleet';
       readonly id: string;
     }
-  | { readonly type: 'cancel-map-trade' }
-  | { readonly type: 'toggle-fleet-category'; readonly category: FleetCategory }
-  | {
-      readonly type: 'open-production';
-      readonly planetId?: string;
-    }
-  | { readonly type: 'map-production-page'; readonly page: number }
-  | {
-      readonly type: 'map-production-option';
-      readonly option: ProjectType | null;
-    }
-  | { readonly type: 'map-production-project'; readonly id: string }
-  | { readonly type: 'map-production-build'; readonly option?: ProjectType }
+  | { readonly type: 'open-production' }
   | { readonly type: 'map-size'; readonly viewport: MapViewport }
   | { readonly type: 'research-pan'; readonly delta: Point }
   | {
@@ -114,39 +55,9 @@ export type AppIntent =
       readonly width: number;
       readonly height: number;
     }
-  | {
-      readonly type: 'add-salvage-queue' | 'remove-salvage-queue';
-      readonly wreckId: string;
-    }
-  | {
-      readonly type: 'move-salvage-queue';
-      readonly wreckId: string;
-      readonly index: number;
-    }
   | { readonly type: 'research-fit' }
-  | { readonly type: 'prepare-route-transport'; readonly routeId: string }
   | {
-      readonly type:
-        | 'open-decisions'
-        | 'confirm-end-turn'
-        | 'cancel-end-turn'
-        | 'confirm-research-removal'
-        | 'cancel-research-removal';
-    }
-  | {
-      readonly type:
-        | 'open-decision'
-        | 'skip-decision'
-        | 'mute-decision'
-        | 'unmute-decision'
-        | 'release-trade-fleet'
-        | 'close-trade-route';
-      readonly id: string;
-    }
-  | {
-      readonly type: 'assign-trade-fleet';
-      readonly routeId: string;
-      readonly fleetId: string;
+      readonly type: 'confirm-research-removal' | 'cancel-research-removal';
     }
   | {
       readonly type: 'move-research';
@@ -154,27 +65,6 @@ export type AppIntent =
       readonly index: number;
     }
   | { readonly type: 'remove-research'; readonly technology: Technology }
-  | {
-      readonly type: 'add-planet-queue' | 'remove-planet-queue';
-      readonly kind: PlanetQueueKind;
-      readonly planetId: string;
-    }
-  | {
-      readonly type: 'move-planet-queue';
-      readonly kind: PlanetQueueKind;
-      readonly planetId: string;
-      readonly index: number;
-    }
-  | {
-      readonly type: 'add-attack-queue' | 'remove-attack-queue';
-      readonly pirateId: string;
-    }
-  | {
-      readonly type: 'move-attack-queue';
-      readonly pirateId: string;
-      readonly index: number;
-    }
-  | { readonly type: 'request-colony-ship'; readonly planetId: string }
   | { readonly type: 'start-slot' | 'request-clear-slot'; readonly id: number }
   | { readonly type: 'open-saves' | 'cancel-clear-slot' | 'confirm-clear-slot' }
   | {
@@ -188,45 +78,19 @@ export type AppIntent =
         | 'end-turn';
     }
   | {
-      readonly type: 'planet-tab';
-      readonly tab: PlanetTab;
-    }
-  | { readonly type: 'open-planet'; readonly id?: string }
-  | {
-      readonly type: 'choose-ship-transfer';
-      readonly shipId?: string | undefined;
-      readonly fleetId: string;
-      readonly ship: ShipType;
-    }
-  | { readonly type: 'transfer-chosen-ship'; readonly target: string | null }
-  | {
       readonly type: 'begin-fleet-rename';
       readonly id: string;
     }
   | { readonly type: 'edit-fleet-name'; readonly draft: string }
   | { readonly type: 'cancel-fleet-rename'; readonly reason?: 'blur' }
   | { readonly type: 'submit-fleet-name' }
-  | { readonly type: 'cancel-ship-transfer' }
   | { readonly type: 'select'; readonly position: HexCoordinate }
   | { readonly type: 'pan'; readonly delta: Point }
   | { readonly type: 'zoom'; readonly factor: number; readonly anchor: Point }
   | { readonly type: 'research'; readonly technology: Technology | null }
-  | { readonly type: 'colonize'; readonly id: string }
-  | {
-      readonly type: 'cancel-project' | 'toggle-demolition';
-      readonly id: string;
-    }
   | {
       readonly type: 'open-fleet' | 'begin-destination' | 'clear-destination';
       readonly id: string;
-    }
-  | {
-      readonly type: 'transfer-ships';
-      readonly shipId?: string | undefined;
-      readonly source: string;
-      readonly ship: ShipType;
-      readonly amount: number;
-      readonly target: string | null;
     }
   | { readonly type: 'open-editor' | 'close-editor' }
   | { readonly type: 'editor-undo' | 'editor-redo' | 'editor-save' }

@@ -239,7 +239,7 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
 
 - **Dockningskorridor:** `dockningskorridor-sprite` är **Fullständigt implementerat**. Dockade skepp sammanbinds visuellt med en korridor. Se [bordningsstrid](../boarding/boarding-combat.md).
 
-- **Raptor-grafik:** `egen-raptor-grafik` är **Fullständigt implementerat**. Raptor och Raptor factory har egna sprites respektive symboler; fabrikens porträtt återstår. Se [skeppsgrafik](../ship-artwork.md).
+- **Raptor-grafik:** `egen-raptor-grafik` är **Fullständigt implementerat**. Raptor har en egen sprite. Se [skeppsgrafik](../ship-artwork.md).
 
 - **Bordningsskydd och flyktzoner:** `pirater-skyddar-bordade-skepp` och
   `flyktzoner-i-rymdstrid` är **Fullständigt implementerat**. Andra pirater
@@ -316,13 +316,14 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   `lassta-dockade-skepp`, `bordning-tva-rundor-skift`,
   `tva-skepp-pa-bordningskartan`, `unika-startpositioner-vid-bordning`,
   `avbryt-bordning-i-egna-skepp`,
-  `erovra-skepp-via-bordning`, `bordningsbeloning-last-teknik-karta` och
-  `raptor-efter-dockningsteknik` är **Fullständigt implementerat**. Pirater
+  `erovra-skepp-via-bordning` och `bordningsbeloning-last-teknik-karta` är
+  **Fullständigt implementerat**. Pirater
   har ett lastfartyg med slumpad last. Docka är en stridsorder längs babord
   eller styrbord. Skeppen låses med en brygga, rymdstridsrundan körs färdigt
   och bordning växlar sedan två rundor i taget mot rymdstrid. Vinst ger
-  båda skeppen, last, recovered `Raptor factory` och en kartplaceholder.
-  Sparformatet är version 14 med additiv migrering.
+  båda skeppen, last och en kartplaceholder. Den återvunna tekniken `Raptor
+factory` och `raptor-efter-dockningsteknik` är borttagna med fabrikerna
+  (`single-fleet-rensning`).
   `dockning-sida-vid-sida` är **Fullständigt implementerat** och ersätter att
   försvararen låg spegelvänd till höger: anfallaren ligger ovanför,
   försvararen under och en två rutor bred landgång på tio rutor med tunna

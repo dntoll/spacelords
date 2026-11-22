@@ -3,11 +3,7 @@ import {
   ResearchPointer,
   type ResearchPointerFact,
 } from './ResearchPointer.js';
-import type {
-  ResearchSnapshot,
-  Technology,
-  BuildType,
-} from '../../models/Game.js';
+import type { ResearchSnapshot, Technology } from '../../models/Game.js';
 import { PREREQUISITES } from '../../models/research/Research.js';
 import {
   ResearchTreeLayout,
@@ -15,7 +11,6 @@ import {
   type ResearchCameraSnapshot,
 } from '../../models/research/ResearchTree.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
-import { BUILDING_IMAGES, buildingImage } from '../BuildingImage.js';
 import { button, element } from '../../../common/dom.js';
 import { catalogIcon } from '../CatalogControls.js';
 
@@ -72,11 +67,10 @@ export function renderResearchTree(
     const type = node.technology;
     const complete = research.completed.includes(type);
     const queued = research.queue.indexOf(type);
-    const recovered = research.recovered?.includes(type) ?? false;
     const identified = isResearchIdentified(research, type);
-    const ready =
-      recovered ||
-      PREREQUISITES[type].every((p) => research.completed.includes(p));
+    const ready = PREREQUISITES[type].every((p) =>
+      research.completed.includes(p),
+    );
     const state = complete
       ? 'completed'
       : queued === 0
@@ -103,13 +97,7 @@ export function renderResearchTree(
     let touchClick = false;
     let lastTouch = -Infinity;
     const order = () => {
-      if (
-        !locked &&
-        !research.queueBlockedReason &&
-        identified &&
-        !complete &&
-        queued < 0
-      )
+      if (!locked && identified && !complete && queued < 0)
         emit({ type: 'research', technology: type });
     };
     choose.addEventListener('pointerup', (event) => {
@@ -131,7 +119,7 @@ export function renderResearchTree(
     choose.id = `research-node-${index}`;
     choose.setAttribute('aria-pressed', String(inspected === type));
     const art = researchArt(type, identified);
-    const name = identified ? type.replace(/ factory$/, '') : 'Unknown';
+    const name = identified ? type : 'Unknown';
     // storre-text-dar-det-far-plats: short words take a larger font.
     const roomy =
       name.length <= 18 && name.split(' ').every((word) => word.length <= 9);
@@ -144,15 +132,11 @@ export function renderResearchTree(
       : complete
         ? 'Researched'
         : queued === 0
-          ? research.stations
-            ? 'Researching'
-            : 'Waiting for station'
+          ? 'Researching'
           : queued > 0
             ? `Queued · ${queued + 1}`
             : ready
-              ? recovered
-                ? 'Recovered'
-                : 'Available'
+              ? 'Available'
               : 'Prerequisites pending';
     choose.setAttribute('aria-description', status);
     choose.title = `${identified ? type : 'Unknown technology'} · ${status}`;
@@ -211,22 +195,9 @@ export function researchArt(
   type: Technology,
   identified: boolean,
 ): HTMLElement | SVGSVGElement {
-  const art =
-    identified && type !== 'Trade logistics'
-      ? BUILDING_IMAGES[type as BuildType]
-        ? buildingImage(type as BuildType)
-        : catalogIcon(type)
-      : element(
-          'div',
-          'research-symbol',
-          !identified
-            ? '?'
-            : type === 'Trade logistics'
-              ? '↔'
-              : type === 'Transport ship factory'
-                ? '△'
-                : '⚙',
-        );
+  const art = identified
+    ? catalogIcon(type)
+    : element('div', 'research-symbol', '?');
   art.setAttribute('aria-hidden', 'true');
   return art;
 }

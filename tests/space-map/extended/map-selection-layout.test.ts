@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 
 let root: HTMLElement;
 let model: AppModel;
@@ -14,34 +13,6 @@ beforeEach(() => {
   document.body.replaceChildren(root);
   model = new AppModel();
   view = new AppView(root, () => ({ render() {}, dispose() {} }));
-});
-
-it('end-turn-vid-kartval: keeps End turn available with a selected planet, fleet and route', () => {
-  const state = tradeNetworkState();
-  model = new AppModel(undefined, {
-    load: () => ({ lastPlayed: '2026-10-26T10:00:00Z', state }),
-    save() {},
-    clear() {},
-  });
-  model.startSlot(1);
-  const intents: unknown[] = [];
-  view.bind((intent) => intents.push(intent));
-  for (const select of [
-    () => model.home(),
-    () => model.selectMapFleet('fleet-home'),
-    () => model.selectMapRoute('route-test'),
-  ]) {
-    select();
-    view.render(model.snapshot);
-    const end = root.querySelector<HTMLButtonElement>('.end-turn')!;
-    expect(end.hidden).toBe(false);
-    expect(end.disabled).toBe(false);
-    end.click();
-  }
-  expect(intents).toEqual(
-    Array.from({ length: 3 }, () => ({ type: 'end-turn' })),
-  );
-  view.dispose();
 });
 
 function expectSelection(active: boolean) {
@@ -62,7 +33,7 @@ describe('fokuserat-kartval', () => {
     ).toBeNull();
   });
 
-  it('gemensam-events-panel: keeps turn controls available while selecting planets and empty hexes', () => {
+  it('gemensam-events-panel / hexval-med-vag: keeps turn controls available while selecting planets and empty hexes', () => {
     view.render(model.snapshot);
     expectSelection(true);
     for (const explored of [true, false]) {
@@ -77,10 +48,16 @@ describe('fokuserat-kartval', () => {
       expect(cell).toBeDefined();
       model.select(cell.position);
       view.render(model.snapshot);
-      expectSelection(!explored);
-      expect(root.querySelector('.selection-panel')!.textContent).toBe(
-        explored ? '' : 'Unexplored',
-      );
+      // hexval-med-vag: a reachable empty hex shows the route there; this
+      // replaces the empty panel for explored space in fokuserat-kartval.
+      const route = model.snapshot.travelRoute
+        ? `${model.snapshot.travelRoute.steps.length} hex`
+        : '';
+      expectSelection(!explored || !!route);
+      const text = root.querySelector('.selection-panel')!.textContent;
+      expect(text.startsWith(explored ? '' : 'Unexplored')).toBe(true);
+      if (route) expect(text).toContain('Select the hex again to travel.');
+      else expect(text).toBe(explored ? '' : 'Unexplored');
     }
     model.home();
     view.render(model.snapshot);
@@ -125,66 +102,6 @@ describe('fokuserat-kartval', () => {
     );
     expect(root.querySelector('.selection-panel')!.textContent).not.toMatch(
       /Empty space|Unexplored space|No known celestial/,
-    );
-  });
-
-  it('gemensam-events-panel: keeps Events available while entering and leaving a selected trade route', () => {
-    const state = tradeNetworkState();
-    model = new AppModel(undefined, {
-      load: () => ({ lastPlayed: '2026-10-21T10:00:00Z', state }),
-      save() {},
-      clear() {},
-    });
-    model.startSlot(1);
-    model.selectMapRoute('route-test');
-    view.render(model.snapshot);
-    expectSelection(true);
-    expect(root.querySelector('[aria-label="Selected route"]')).not.toBeNull();
-    const empty = model.snapshot.cells.find(
-      (cell) =>
-        cell.explored &&
-        !cell.object &&
-        !model.snapshot.fleets.some(
-          (fleet) => fleet.position?.key === cell.position.key,
-        ),
-    )!;
-    model.select(empty.position);
-    view.render(model.snapshot);
-    expectSelection(false);
-  });
-});
-
-describe('rundkontroller-i-decisions', () => {
-  it('keeps Decisions open while advancing the year so Events and End turn stay available', () => {
-    model.openDecisions();
-    model.startTurn();
-    const frames = turnFrames(model, false);
-    expect(model.snapshot.screen).toBe('decisions');
-    for (const frame of frames) model.applyTurnFrame(frame);
-    model.finishTurn();
-    expect(model.snapshot.screen).toBe('decisions');
-    expect(model.snapshot.phase).toBe('planning');
-    expect(model.snapshot.events.length).toBeGreaterThan(0);
-  });
-  it('shows the event history and emits End turn from Decisions', () => {
-    const intents: unknown[] = [];
-    view.bind((intent) => intents.push(intent));
-    model.openDecisions();
-    view.render({
-      ...model.snapshot,
-      events: [{ id: 'arrival', round: 1, text: 'Fleet arrived.' }],
-    });
-    expect(root.querySelector('.event-year h3')?.textContent).toBe('Round 1');
-    expect(root.querySelector('[data-event-id="arrival"]')?.textContent).toBe(
-      'Fleet arrived.',
-    );
-    const end = root.querySelector<HTMLButtonElement>('.end-turn')!;
-    expect(end).not.toBeNull();
-    end.click();
-    expect(intents).toContainEqual({ type: 'end-turn' });
-    view.render({ ...model.snapshot, phase: 'simulating' });
-    expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
-      true,
     );
   });
 });

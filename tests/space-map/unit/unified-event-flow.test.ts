@@ -4,11 +4,9 @@ import { EventPlayback } from '../../../src/client/space-map/models/turn/EventPl
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import {
-  buildRounds,
   Game,
   type GameState,
 } from '../../../src/client/space-map/models/Game.js';
-import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 import type { IntentHandler } from '../../../src/client/app/views/ViewContracts.js';
 import { discoveryState } from '../../fixtures/exploration.js';
@@ -42,90 +40,6 @@ function session(initial: GameState = discoveryState()) {
 }
 
 describe('gemensamt-handelseflode', () => {
-  it('planetupptackt-fore-utforskning / utforskningsko: adding a discovery to the queue confirms the action and closes the choice', async () => {
-    const current = session().open();
-    current.emit({ type: 'confirm-end-turn' });
-    await vi.advanceTimersByTimeAsync(0);
-
-    for (let attempt = 0; attempt < 20; attempt++) {
-      const playback = current.model.snapshot.eventPlayback;
-      const action = playback?.events[playback.index]?.decision?.queueAction;
-      if (action) break;
-      if (playback?.stage === 'awaiting-choice')
-        current.emit({ type: 'ignore-discoveries' });
-      await vi.advanceTimersByTimeAsync(2_000);
-    }
-
-    const playback = current.model.snapshot.eventPlayback!;
-    const action = playback.events[playback.index]!.decision!.queueAction!;
-    expect(playback.stage).toBe('awaiting-choice');
-
-    current.emit({
-      type: 'add-planet-queue',
-      kind: action.kind,
-      planetId: action.planetId,
-    });
-
-    expect(
-      current.model.snapshot.planetQueues[action.kind].map(
-        (entry) => entry.planetId,
-      ),
-    ).toContain(action.planetId);
-    expect(current.model.snapshot.eventPlayback?.stage).toBe('filing');
-    await vi.advanceTimersByTimeAsync(500);
-    expect(
-      current.model.snapshot.eventPlayback?.events[
-        current.model.snapshot.eventPlayback.index
-      ]?.id,
-    ).not.toBe(playback.events[playback.index]!.id);
-    current.controller.dispose();
-  });
-
-  it('bargningsko: a wreck discovery can be queued and the choice is saved', () => {
-    const game = Game.restore(discoveryState());
-    game.startTurn();
-    while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
-    const checkpoint = game.exportState();
-    const wreck = checkpoint.salvage!.wrecks[0]!;
-    const discovery = checkpoint.simulation!.discoveries[0]!;
-    const state: GameState = {
-      ...checkpoint,
-      salvage: {
-        ...checkpoint.salvage!,
-        wrecks: checkpoint.salvage!.wrecks.map((item) =>
-          item.id === wreck.id ? { ...item, known: true } : item,
-        ),
-      },
-      simulation: {
-        ...checkpoint.simulation!,
-        discoveries: [
-          {
-            ...discovery,
-            id: wreck.id,
-            kind: 'wreck',
-            position: wreck.position,
-          },
-        ],
-      },
-    };
-    const slot = session(state);
-    const current = slot.open();
-    current.model.beginEventPlayback();
-    const playback = current.model.snapshot.eventPlayback!;
-    const event = playback.events[playback.index]!;
-    expect(event.decision?.salvageAction).toMatchObject({
-      wreckId: wreck.id,
-      label: 'Add to Salvage queue',
-    });
-    current.emit({ type: 'add-salvage-queue', wreckId: wreck.id });
-    expect(
-      current.model.snapshot.salvageQueue.map((item) => item.wreckId),
-    ).toContain(wreck.id);
-    expect(current.model.snapshot.eventPlayback?.stage).toBe('filing');
-    expect(slot.saved().state.salvageQueue).toContain(wreck.id);
-    current.controller.dispose();
-  });
-
   it.each([0, 1])(
     'stridsresultat-utan-upprepning: shows losses and survivors once while retaining wrecks and saved history (%s Fighters)',
     (fighters) => {
@@ -158,14 +72,11 @@ describe('gemensamt-handelseflode', () => {
           (item) => item.decision?.title === 'Battle report',
         ),
       ).not.toBe(true);
-      expect(model.snapshot.wrecks.map((w) => w.id)).toEqual(
-        expect.arrayContaining([...saved.simulation!.battles![0]!.wreckIds]),
-      );
       expect(model.snapshot.events).toEqual(saved.events);
     },
   );
 
-  it('geografisk-arsuppspelning / upptacktsbesked-utan-pausmening: discoveries retain location and fleet details without the generic pause sentence', () => {
+  it('upptackt-stannar-resan: a loaded discovery is a top flash without Handle or Ignore', () => {
     const game = Game.restore(discoveryState());
     game.startTurn();
     while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
@@ -175,21 +86,13 @@ describe('gemensamt-handelseflode', () => {
       clear() {},
     });
     model.startSlot(1);
-    const events = model.snapshot.eventPlayback!.events.filter(
-      (event) => event.decision,
-    );
-    expect(events.length).toBeGreaterThan(0);
-    for (const event of events)
-      expect(event.decision!.details.join('\n')).not.toContain(
-        'The round is paused',
-      );
+    expect(model.snapshot.phase).toBe('interrupted');
+    expect(model.snapshot.notice?.kind).toBe('discovery');
+    expect(model.snapshot.travelling).toBe(false);
     expect(
-      events.some((event) =>
-        /^HEX .+ · Home Fleet · \d+ hex remaining$/.test(
-          event.decision!.details[0] ?? '',
-        ),
-      ),
-    ).toBe(true);
+      model.snapshot.eventPlayback?.events.some((event) => event.decision),
+    ).not.toBe(true);
+    expect(model.snapshot.events.some((event) => event.position)).toBe(true);
   });
 
   it('waits for an explicit choice and files each interactive event once', () => {
@@ -218,94 +121,28 @@ describe('gemensamt-handelseflode', () => {
     expect(playback.snapshot.stage).toBe('announcing');
   });
 
-  it('utforskad-planet-visar-kolonisationsdata: includes type, build slots and the dedicated Colony ship action', () => {
-    const game = Game.restore(discoveryState());
-    game.startTurn();
-    while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
-    const checkpoint = game.exportState();
-    const discovery = checkpoint.simulation!.discoveries.find(
-      (item) => item.kind === 'planet',
-    )!;
-    const state: GameState = {
-      ...checkpoint,
-      surveyedPlanets: [...(checkpoint.surveyedPlanets ?? []), discovery.id],
-      simulation: {
-        ...checkpoint.simulation!,
-        discoveries: checkpoint.simulation!.discoveries.map((item) =>
-          item.id === discovery.id
-            ? { ...item, kind: 'planet-explored' as const }
-            : item,
-        ),
-      },
-    };
-    const current = session(state).open();
-    current.model.beginEventPlayback();
-    const event = current.model.snapshot.eventPlayback?.events.find(
-      (item) => item.decision?.title === 'Planet explored',
-    );
-    const planet = state.world.systems
-      .flatMap((system) => system.planets)
-      .find((item) => item.id === discovery.id)!;
-
-    expect(event?.decision?.details).toContain(
-      `Type: ${planet.environment} · Build slots: ${planet.buildSlots}.`,
-    );
-    expect(event?.decision?.colonyShipAction?.label).toBe('Build Colony ship');
-    current.controller.dispose();
-  });
-
-  it('spara-avbrutet-ar: restores each choice and handling without replaying movement, combat or announcements', async () => {
+  it('upptackt-stannar-resan / spara-avbrutet-ar: a discovery flash pauses the round and reload does not replay movement', async () => {
     const slot = session();
     let current = slot.open();
-    current.emit({ type: 'confirm-end-turn' });
+    current.emit({ type: 'end-turn' });
     await vi.advanceTimersByTimeAsync(0);
-    const first = current.model.snapshot.eventPlayback!;
-    expect(first.stage).toBe('awaiting-choice');
+    expect(current.model.snapshot.phase).toBe('interrupted');
+    expect(current.model.snapshot.notice?.kind).toBe('discovery');
+    expect(current.model.snapshot.travelling).toBe(false);
     const pausedPosition = slot.saved().state.fleets[0]!.position;
     const pausedMovement = slot.saved().state.simulation!.remaining;
-    await vi.advanceTimersByTimeAsync(20000);
-    expect(current.model.snapshot.eventPlayback?.index).toBe(0);
-    expect(slot.saved().state.simulation!.remaining).toEqual(pausedMovement);
-    current.emit({ type: 'ignore-discoveries' });
-    current.emit({ type: 'handle-discoveries' });
-    expect(current.model.snapshot.eventPlayback?.choice).toBe('ignore');
     current.controller.dispose();
     current = slot.open();
-    expect(current.model.snapshot.eventPlayback?.events[0]?.id).not.toBe(
-      first.events[0]!.id,
-    );
-    expect(
-      current.model.snapshot.eventPlayback?.history?.map((event) => event.id),
-    ).toContain(first.events[0]!.id);
-    expect(slot.saved().state.fleets[0]!.position).toEqual(pausedPosition);
-    const handled = current.model.snapshot.eventPlayback!.events[0]!;
-    current.emit({ type: 'handle-discoveries' });
-    // Reload during the filing animation must restore order handling, not ask again.
-    current.controller.dispose();
-    current = slot.open();
+    expect(current.model.snapshot.notice?.kind).toBe('discovery');
     expect(current.model.snapshot.eventPlayback).toBeNull();
-    expect(current.model.snapshot.interruption?.activeEventId).toBe(handled.id);
-    expect(current.model.snapshot.interruption?.handling).toBe(true);
-    expect(current.model.snapshot.mapFleetId).toBe(handled.decision!.fleetId);
+    expect(slot.saved().state.fleets[0]!.position).toEqual(pausedPosition);
     expect(slot.saved().state.simulation!.remaining).toEqual(pausedMovement);
-    current.emit({ type: 'continue-turn' });
-    expect(current.model.snapshot.phase).toBe('interrupted');
-    expect(
-      slot
-        .saved()
-        .state.events.some((event) => event.text.startsWith('Combat at')),
-    ).toBe(false);
-    const seen = [first.events[0]!.id, handled.id];
+    // fiendeupptackt-utan-end-turn: the pirate flash continues the round.
     for (let attempt = 0; attempt < 100; attempt++) {
       if (current.model.snapshot.tacticalBattle) {
         completeTacticalBattles(current.model);
         current.controller.dispose();
         current = slot.open();
-      }
-      const playback = current.model.snapshot.eventPlayback;
-      if (playback?.stage === 'awaiting-choice') {
-        seen.push(playback.events[playback.index]!.id);
-        current.emit({ type: 'ignore-discoveries' });
       }
       await vi.advanceTimersByTimeAsync(1850);
       if (
@@ -317,15 +154,11 @@ describe('gemensamt-handelseflode', () => {
     expect(current.model.snapshot.phase).toBe('planning');
     expect(current.model.snapshot.eventPlayback).toBeNull();
     expect(current.model.snapshot.round).toBe(2);
-    expect(new Set(seen).size).toBe(seen.length);
     expect(
       slot
         .saved()
         .state.events.filter((event) => event.text.startsWith('Combat at')),
     ).toHaveLength(1);
-    expect(
-      current.model.snapshot.events.map((event) => event.id).sort(),
-    ).toEqual([...current.model.snapshot.presentedEventIds].sort());
     current.controller.dispose();
     current = slot.open();
     expect(current.model.snapshot.eventPlayback).toBeNull();
@@ -426,41 +259,6 @@ describe('gemensamt-handelseflode', () => {
       model.snapshot.fleets.find((fleet) => fleet.id === 'fleet-home')!
         .canIssueOrders,
     ).toBe(false);
-    controller.dispose();
-  });
-
-  it('spara-avbrutet-ar: year-end review resumes after production without settling the year again', async () => {
-    const state = new Game(createExampleGalaxy()).exportState();
-    state.colonies[0]![1].projects.push({
-      id: 'detection-factory',
-      type: 'Telescope II factory',
-      slotIndex: 0,
-      factoryId: null,
-      destinationFleetId: null,
-    });
-    // byggtid-per-byggnad: construction is in its last round this year.
-    const game = Game.restore({
-      ...state,
-      construction: {
-        'detection-factory':
-          state.round - buildRounds('Telescope II factory') + 1,
-      },
-    });
-    game.startTurn();
-    while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
-    expect(game.interruption?.economyApplied).toBe(true);
-    const checkpoint = game.exportState();
-    const slot = session(checkpoint);
-    const { model, controller, emit } = slot.open();
-    for (let attempt = 0; attempt < 100; attempt++) {
-      if (model.snapshot.eventPlayback?.stage === 'awaiting-choice')
-        emit({ type: 'ignore-discoveries' });
-      await vi.advanceTimersByTimeAsync(1850);
-      if (model.snapshot.phase === 'planning' && !model.snapshot.eventPlayback)
-        break;
-    }
-    expect(slot.saved().state.round).toBe(checkpoint.round + 1);
-    expect(slot.saved().state.colonies).toEqual(checkpoint.colonies);
     controller.dispose();
   });
 });

@@ -1,12 +1,9 @@
 import { shipImage } from '../ShipView.js';
-import { shipTransferIssue } from '../../models/fleets/FleetTransfer.js';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import type { HexCoordinate } from '../../../common/HexCoordinate.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import { renderFleetCard } from '../FleetCard.js';
-import { bindShipTransfers } from './ShipTransferInput.js';
-import { button, element } from '../../../common/dom.js';
-import { mapFleetRouteFeedback } from '../StarMapTradeView.js';
+import { element } from '../../../common/dom.js';
 import { renderMapLocationHeading } from '../MapLocationHeading.js';
 
 export function renderMapFleetPanel(
@@ -20,13 +17,8 @@ export function renderMapFleetPanel(
   const cell = model.cells.find(
     (candidate) => candidate.position.key === position.key,
   );
-  const planet = model.ownedPlanets.find(
-    (candidate) => candidate.position.key === position.key,
-  );
   const place = renderMapLocationHeading(
     includeLocation ? (cell?.object?.name ?? 'Fleets') : 'Fleets',
-    includeLocation ? planet?.id : undefined,
-    emit,
   );
   place.classList.add('fleet-place');
   const local = model.fleets.filter(
@@ -75,72 +67,6 @@ export function renderMapFleetPanel(
     const card = renderFleetCard(fleet, model, emit);
     cards.append(card);
   }
-  const create = element('div', 'fleet-hangar new-fleet-drop');
-  create.dataset.newFleet = 'true';
-  create.setAttribute('role', 'group');
-  create.setAttribute('aria-label', 'New fleet');
-  create.append(
-    element('h3', '', 'New fleet'),
-    element('p', 'muted-note', 'Drop a ship here to form a fleet.'),
-  );
-  if (model.shipTransfer) {
-    const source = model.fleets.find(
-      (fleet) => fleet.id === model.shipTransfer?.fleetId,
-    );
-    const move = button('Move ship to new fleet', () =>
-      emit({ type: 'transfer-chosen-ship', target: null }),
-    );
-    move.disabled =
-      model.phase !== 'planning' || !source || !!shipTransferIssue(source);
-    create.append(move);
-  }
-  cards.append(create);
   panel.append(cards);
-  const feedback = mapFleetRouteFeedback(model);
-  if (feedback) panel.append(element('p', 'map-route-feedback', feedback));
-  if (model.shipTransfer) {
-    const transfer = model.shipTransfer;
-    const destinations = element('section', 'fleet-remote-targets');
-    destinations.append(
-      element('h3', '', 'Send ship to another fleet'),
-      element(
-        'p',
-        'muted-note',
-        `One ${transfer.ship}. Distant fleets receive physical reinforcements marked En route; an empty fleet receives the ship here.`,
-      ),
-    );
-    const select = element('select');
-    select.setAttribute('aria-label', 'Receiving fleet');
-    const placeholder = element('option', '', 'Choose receiving fleet');
-    placeholder.value = '';
-    select.append(placeholder);
-    for (const fleet of model.fleets.filter(
-      (fleet) => fleet.id !== transfer.fleetId,
-    )) {
-      const option = element(
-        'option',
-        '',
-        `${fleet.name} · ${fleet.position ? (fleet.position.key !== position.key ? 'En route' : 'Here') : 'No position'}`,
-      );
-      option.value = fleet.id;
-      select.append(option);
-    }
-    select.disabled = model.phase !== 'planning';
-    select.addEventListener('change', () => {
-      if (select.value)
-        emit({ type: 'transfer-chosen-ship', target: select.value });
-    });
-    destinations.append(
-      select,
-      button('Cancel ship transfer', () =>
-        emit({ type: 'cancel-ship-transfer' }),
-      ),
-    );
-    panel.append(destinations);
-  }
-  panel.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') emit({ type: 'cancel-ship-transfer' });
-  });
-  bindShipTransfers(panel, model, emit);
   return panel;
 }

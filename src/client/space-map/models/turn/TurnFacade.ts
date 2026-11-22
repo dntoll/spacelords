@@ -7,13 +7,13 @@ import { Camera } from '../Camera.js';
 import { CameraFraming } from './CameraFraming.js';
 import { type TurnFrame } from '../Game.js';
 import { HexGeometry } from '../../../common/HexCoordinate.js';
+import { travelFleet } from '../star-map/Travel.js';
 import type { AppHost, AppReadModel } from '../../../app/models/AppModel.js';
 
 export class TurnFacade {
   constructor(private readonly host: AppHost) {}
 
   startTurn(): void {
-    if (this.host.screen === 'orders') this.host.closeOrders();
     if (this.host.eventPlayback || this.host.movementPlayback) return;
     this.host.presentedEventIds.clear();
     this.host.turnContext = {
@@ -21,13 +21,11 @@ export class TurnFacade {
       selected: this.host.selected,
       mapFleetId: this.host.mapFleetId,
       selectedFleetId: this.host.selectedFleetId,
-      salvageSelection: this.host.salvageSelection,
       camera: this.host.camera.snapshot,
     };
-    this.host.pendingEndTurn = false;
     this.host.cancelMapPointer();
     if (
-      !['decisions', 'research', 'planet'].includes(this.host.screen) &&
+      !['research', 'production'].includes(this.host.screen) &&
       !this.host.isMapScreen()
     )
       this.host.screen = 'map';
@@ -37,6 +35,66 @@ export class TurnFacade {
 
   nextTurnFrame(): TurnFrame | null {
     return this.host.game.nextTurnFrame();
+  }
+
+  requestEndTurn(): boolean {
+    // game-over-utan-skepp: a lost home fleet cannot start another round.
+    if (this.host.game.defeated) return false;
+    return (
+      !this.host.eventPlayback &&
+      !this.host.movementPlayback &&
+      (this.host.game.phase === 'planning' || this.host.game.discoveryPause())
+    );
+  }
+
+  discoveryPause(): boolean {
+    return this.host.game.discoveryPause();
+  }
+
+  enemyDiscoveryResume(): boolean {
+    return this.host.game.enemyDiscoveryResume();
+  }
+
+  /** upptackt-stannar-resan: log the discoveries and flash them, without a choice. */
+  publishDiscoveryFlashes(): void {
+    const interruption = this.host.game.interruption;
+    if (!this.host.game.discoveryPause() || !interruption) return;
+    this.host.noteDiscoveries(
+      interruption.discoveries.map((discovery) =>
+        Object.freeze({
+          kind: discovery.kind,
+          name: discovery.name,
+          hex: `${discovery.position.q},${discovery.position.r}`,
+          ...(discovery.eventId ? { eventId: discovery.eventId } : {}),
+        }),
+      ),
+    );
+  }
+
+  /**
+   * resa-utan-synliga-pirater: with no pirate in sight the next round begins
+   * at once, until the fleet arrives or something needs the player.
+   */
+  continueVoyage(): boolean {
+    if (!this.host.voyage) return false;
+    if (!this.requestEndTurn()) return false;
+    const fleet = travelFleet(this.host.game, this.host.mapFleetId);
+    if (
+      !fleet?.destination ||
+      fleet.position?.key === fleet.destination.key ||
+      !this.host.game.routePreview(fleet.id, fleet.destination).length ||
+      this.host.game.pirateSnapshots().length ||
+      this.host.game.tacticalBattle
+    ) {
+      this.host.voyage = false;
+      return false;
+    }
+    return true;
+  }
+
+  handleDiscoveries(): void {
+    this.host.game.handleDiscoveries();
+    this.host.focusInterruptedFleet();
   }
 
   continueTurn(): void {
@@ -210,14 +268,7 @@ export class TurnFacade {
       context.selectedFleetId && this.host.game.fleet(context.selectedFleetId)
         ? context.selectedFleetId
         : null;
-    this.host.salvageSelection =
-      context.salvageSelection &&
-      [...this.host.game.wrecks, ...this.host.game.shipyards].some(
-        (item) => item.id === context.salvageSelection,
-      )
-        ? context.salvageSelection
-        : null;
-    this.host.camera.restore(context.camera);
+    // kamera-foljer-skepp: the voyage leaves the camera on the ship.
   }
 
   beginMovementPlayback(
@@ -245,6 +296,27 @@ export class TurnFacade {
 
   focusTurnMovement(movement: TurnMovement | readonly TurnMovement[]): void {
     this.host.movementPlayback!.begin(movement);
+  }
+
+  /** kamera-foljer-skepp: slide the visible camera with the player's ship. */
+  followTurnMovement(progress: number): void {
+    const step = this.host.movementPlayback?.currents.find(
+      (movement) => movement.fleetId === 'fleet-home',
+    );
+    const camera = this.host.eventCamera;
+    if (!step || !camera) return;
+    const from = HexGeometry.toPoint(step.from);
+    const to = HexGeometry.toPoint(step.to);
+    const t = Math.max(0, Math.min(1, progress));
+    const eased = t * t * (3 - 2 * t);
+    // The selection panel is hidden during the voyage, so the canvas center
+    // is the visible middle. Keeping the planning offset draws one shifted frame.
+    const point = {
+      x: from.x + (to.x - from.x) * eased,
+      y: from.y + (to.y - from.y) * eased,
+    };
+    camera.focusPoint(point);
+    this.host.camera.focusPoint(point);
   }
 
   completeTurnMovement(): void {

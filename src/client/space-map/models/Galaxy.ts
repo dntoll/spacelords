@@ -37,7 +37,6 @@ export interface MapObject {
   readonly kind: 'star' | 'planet';
   readonly name: string;
   readonly type: 'star' | 'solid' | 'gas';
-  readonly owned: boolean;
   readonly surveyed?: boolean;
   readonly environment?: PlanetEnvironmentType | 'Gas';
 }
@@ -72,14 +71,16 @@ export class Galaxy {
   constructor(
     readonly player: Player,
     systems: readonly StarSystem[],
+    /** enda-spelarflottan: the planet where the fleet starts; nobody owns it. */
+    homePlanetId: string,
     radius = 10,
     terrain: readonly TerrainHex[] = [],
   ) {
     this.radius = radius;
     this.systems = Object.freeze([...systems]);
     const planets = this.systems.flatMap((system) => system.planets);
-    const home = planets.find((planet) => planet.colony?.ownerId === player.id);
-    if (!home) throw new Error('The player needs a home planet.');
+    const home = planets.find((planet) => planet.id === homePlanetId);
+    if (!home) throw new Error('The player needs a start planet.');
     this.homePlanet = home;
     for (const system of systems)
       this.#stars.set(system.star.position.key, system.star);
@@ -128,7 +129,6 @@ export class Galaxy {
               kind: 'star',
               type: 'star',
               name: star.name,
-              owned: false,
             })
           : planet
             ? Object.freeze({
@@ -136,7 +136,6 @@ export class Galaxy {
                 type: planet.type,
                 environment: planet.type === 'gas' ? 'Gas' : planet.environment,
                 name: planet.name,
-                owned: planet.colony?.ownerId === player.id,
               })
             : null;
         const cell = Object.freeze({
@@ -156,7 +155,6 @@ export class Galaxy {
 
   mapSnapshot(
     explored?: ReadonlySet<string>,
-    ownedPlanetIds?: ReadonlySet<string>,
     visible: ReadonlySet<string> = explored ?? new Set(),
     knownTerrain: ReadonlySet<string> = explored ?? new Set(),
     planetEnvironments: ReadonlyMap<
@@ -177,7 +175,6 @@ export class Galaxy {
               kind: 'star' as const,
               type: 'star' as const,
               name: star.name,
-              owned: false,
             })
           : planet
             ? Object.freeze({
@@ -192,9 +189,6 @@ export class Galaxy {
                     }
                   : {}),
                 name: planet.name,
-                owned:
-                  ownedPlanetIds?.has(planet.id) ??
-                  planet.colony?.ownerId === this.player.id,
               })
             : null;
         return Object.freeze({
@@ -234,15 +228,5 @@ export class Galaxy {
       !this.isStar(position) &&
       this.terrainAt(position) !== 'dense-asteroids'
     );
-  }
-
-  ownedPlanetAt(position: HexCoordinate): Planet | undefined {
-    return this.systems
-      .flatMap((system) => system.planets)
-      .find(
-        (planet) =>
-          planet.position.key === position.key &&
-          planet.colony?.ownerId === this.player.id,
-      );
   }
 }

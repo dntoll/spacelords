@@ -1,4 +1,3 @@
-import { chooseFleetDestination } from './fleet-helpers.js';
 import { selectMapHex, selectMapObject } from './map-helpers.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { expect, test } from '@playwright/test';
@@ -35,7 +34,7 @@ for (const size of [
   { width: 844, height: 390 },
   { width: 667, height: 320 },
 ]) {
-  test(`end-turn-vid-kartval / rundkontroller-i-decisions: selection leaves room for End turn at ${size.width}x${size.height}`, async ({
+  test(`end-turn-vid-kartval: selection leaves room for End turn at ${size.width}x${size.height}`, async ({
     page,
   }, testInfo) => {
     await page.setViewportSize(size);
@@ -66,10 +65,10 @@ for (const size of [
       path: testInfo.outputPath('selection-lower-area.png'),
     });
 
-    await chooseFleetDestination(page);
     await selectMapObject(page, 'Vesta');
     await selectMapHex(page, new HexCoordinate(-2, 0));
-    await expect(panel).toBeHidden();
+    // hexval-med-vag: an empty hex shows the route there instead of nothing.
+    await expect(panel).toContainText('Select the hex again to travel.');
     await expect(console).toBeVisible();
     await expect(end).toBeVisible();
     await console.locator('summary').click();
@@ -78,7 +77,7 @@ for (const size of [
       page.getByText('Unexplored space', { exact: true }),
     ).toHaveCount(0);
     await endTurn(page);
-    await expect(log).toContainText('Home Fleet arrived at Vesta.');
+    await expect(log).not.toContainText('arrived at');
     await expect(end).toBeEnabled();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(log).not.toContainText('moved to');
@@ -88,12 +87,15 @@ for (const size of [
       endBounds.x,
     );
 
+    // On short landscape screens the open log and the route summary leave
+    // little map, so fold the log before choosing the next hex.
+    await console.locator('summary').click();
     await selectMapObject(page, 'Vesta');
+    await console.locator('summary').click();
     await expect(console).toBeVisible();
     await expect(end).toBeVisible();
-    await page.getByRole('button', { name: 'Decisions', exact: true }).click();
     await expect(console).toBeVisible();
-    await expect(log).toContainText('Home Fleet arrived at Vesta.');
+    await expect(log).not.toContainText('arrived at');
     await expect(
       log.getByRole('heading', { name: 'Round 1', exact: true }),
     ).toHaveCount(1);
@@ -102,12 +104,10 @@ for (const size of [
     await expect(
       log.getByRole('heading', { name: 'Round 1', exact: true }),
     ).toHaveCount(0);
-    await expect(
-      log.getByRole('heading', { name: 'Round 2', exact: true }),
-    ).toHaveCount(1);
+    await expect(log).not.toContainText('Home Fleet arrived at Vesta.');
     await expect(end).toBeEnabled();
     await page.screenshot({
-      path: testInfo.outputPath('decisions-turn-actions.png'),
+      path: testInfo.outputPath('turn-actions.png'),
     });
     expect(
       await page.evaluate(
@@ -118,8 +118,7 @@ for (const size of [
     ).toBe(true);
     await page.reload();
     await startFirstSlot(page);
-    await page.getByRole('button', { name: 'Decisions', exact: true }).click();
-    await console.locator('summary').click();
+    if (!(await log.isVisible())) await console.locator('summary').click();
     await expect(log).not.toContainText('Home Fleet arrived at Vesta.');
   });
 }

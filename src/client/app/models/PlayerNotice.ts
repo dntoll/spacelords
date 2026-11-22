@@ -1,15 +1,20 @@
 /** speltexter-i-vy: outcomes describe what happened. The view chooses the sentence. */
+export type DiscoveryFlash = {
+  readonly kind: 'planet' | 'planet-explored' | 'star' | 'pirate' | 'wreck';
+  readonly name: string;
+  readonly hex: string;
+};
+
 export type PlayerNotice =
   | null
-  | { readonly kind: 'upgrade-ordered' }
-  | { readonly kind: 'shipyard-queued' }
   | {
-      readonly kind: 'transport-preparation-queued';
-      readonly product: string;
-      readonly planet: string | null;
+      readonly kind: 'action-failed';
+      readonly reason: string;
     }
-  | { readonly kind: 'discoveries'; readonly names: readonly string[] }
-  | { readonly kind: 'action-failed'; readonly reason: string };
+  | {
+      readonly kind: 'discovery';
+      readonly flash: DiscoveryFlash;
+    };
 
 export function actionFailed(error: unknown): PlayerNotice {
   return Object.freeze({
@@ -18,12 +23,5 @@ export function actionFailed(error: unknown): PlayerNotice {
       error instanceof Error
         ? error.message
         : 'The order could not be completed.',
-  });
-}
-
-export function discoveriesNotice(names: readonly string[]): PlayerNotice {
-  return Object.freeze({
-    kind: 'discoveries',
-    names: Object.freeze([...names]),
   });
 }

@@ -1,13 +1,8 @@
 import {
   SaveController,
   ResearchController,
-  PlanetController,
   FleetController,
-  RouteController,
   ProductionController,
-  OrderController,
-  DecisionController,
-  FactoriesController,
   StarMapController,
   TurnController,
 } from '../../space-map/controllers/index.js';
@@ -22,36 +17,17 @@ import {
   isMapScreen,
 } from '../../space-map/models/index.js';
 import type { AppIntent, AppPort } from '../views/ViewContracts.js';
-import type { FactoriesAction } from '../../space-map/models/index.js';
 import type { Point } from '../../common/HexCoordinate.js';
 import { MapGesture } from '../../space-map/views/index.js';
-
-/** factories-sparas: Factories actions that change the saved game. */
-const FACTORY_ORDERS: ReadonlySet<FactoriesAction['kind']> = new Set([
-  'build',
-  'cancel-site',
-  'upgrade',
-  'connect',
-  'add-link',
-  'move-link',
-  'confirm-move',
-  'assign-escort',
-  'order-escort',
-]);
 
 export class MasterController {
   readonly #saveCase: SaveController;
   readonly #boarding: BoardingController;
   readonly #editor: BoardingEditorController;
-  readonly #factories: FactoriesController;
   readonly #battle: BattleController;
   readonly #research: ResearchController;
-  readonly #planet: PlanetController;
   readonly #fleets: FleetController;
-  readonly #routes: RouteController;
   readonly #production: ProductionController;
-  readonly #orders: OrderController;
-  readonly #decisions: DecisionController;
   readonly #starMap: StarMapController;
   readonly #turn: TurnController;
   readonly #model: AppModel;
@@ -62,14 +38,11 @@ export class MasterController {
   #disposed = false;
   #framingEvent = false;
   #battleAnimating = false;
-  #receiptTimer: ReturnType<typeof setTimeout> | undefined;
   #playbackTimer: ReturnType<typeof setTimeout> | undefined;
   #fleetPointer: {
     id: number;
     start: Point;
     dragged: boolean;
-    kind: 'fleet' | 'wreck' | 'salvage-target';
-    wreckId?: string;
   } | null = null;
 
   constructor(model: AppModel, view: AppPort) {
@@ -78,15 +51,10 @@ export class MasterController {
     this.#saveCase = new SaveController(model.saveCase);
     this.#boarding = new BoardingController(model.boarding);
     this.#editor = new BoardingEditorController(model.editorCase);
-    this.#factories = new FactoriesController(model.factoriesCase);
     this.#battle = new BattleController(model.battle);
     this.#research = new ResearchController(model.researchCase);
-    this.#planet = new PlanetController(model.planet);
     this.#fleets = new FleetController(model.fleets);
-    this.#routes = new RouteController(model.routes);
     this.#production = new ProductionController(model.production);
-    this.#orders = new OrderController(model.orders);
-    this.#decisions = new DecisionController(model.decisions);
     this.#starMap = new StarMapController(model.starMap);
     this.#turn = new TurnController(model.turn);
   }
@@ -105,7 +73,6 @@ export class MasterController {
   dispose(): void {
     this.#disposed = true;
     for (const resolve of this.#eventWaiters.splice(0)) resolve();
-    clearTimeout(this.#receiptTimer);
     clearTimeout(this.#playbackTimer);
     this.#cancelPointer();
     this.#view.dispose();
@@ -115,17 +82,7 @@ export class MasterController {
     try {
       if (this.#navigate(intent)) return;
       if (intent.type !== 'map-size') this.#model.clearNotice();
-      const receipt = this.#presented?.productionReceipt;
       this.#handleIntent(intent);
-      const nextReceipt = this.#presented?.productionReceipt;
-      if (nextReceipt !== receipt) {
-        clearTimeout(this.#receiptTimer);
-        if (nextReceipt)
-          this.#receiptTimer = setTimeout(() => {
-            this.#production.clearProductionReceipt();
-            this.#render();
-          }, 3000);
-      }
     } catch (error) {
       // Refused orders use Error and become a player notice. Other throws stay visible.
       if (!(error instanceof Error) || error.name !== 'Error')
@@ -217,18 +174,12 @@ export class MasterController {
       (!startingPinch &&
         (this.#fleetPointer ||
           previous.fleetDragging ||
-          previous.fleetDestinationPreview ||
-          previous.mapTrade.candidateRouteIds.length ||
-          previous.mapTrade.assignmentFleetId))
+          previous.fleetDestinationPreview))
     )
       return false;
     if (intent.type === 'pointer-start') {
       if (!startingPinch) {
-        if (
-          this.#starMap.salvageAtPoint(intent.point) ||
-          this.#starMap.fleetAtPoint(intent.point)
-        )
-          return false;
+        if (this.#starMap.fleetAtPoint(intent.point)) return false;
         this.#gesture.start(intent.id, intent.point);
         return true;
       }
@@ -279,16 +230,6 @@ export class MasterController {
   }
 
   #handleIntent(intent: AppIntent): void {
-    if (intent.type === 'factories') {
-      // skeppsorder-pa-planeten: ship factories hand over to the map.
-      const outcome = this.#factories.handle(intent.action);
-      if (outcome?.kind === 'open-production')
-        this.#production.openProduction(outcome.planetId);
-      // factories-sparas: orders change the game; browsing does not.
-      if (FACTORY_ORDERS.has(intent.action.kind)) this.#model.save();
-      this.#render();
-      return;
-    }
     if (intent.type === 'boarding-command') {
       this.#boarding.commandBoarding(intent.command);
       this.#render();
@@ -316,7 +257,6 @@ export class MasterController {
     const before = this.#presented ?? this.#model.snapshot;
     const playback = before.eventPlayback;
     if (playback) {
-      const current = playback.events[playback.index];
       if (
         playback.stage === 'awaiting-choice' &&
         ['handle-discoveries', 'ignore-discoveries'].includes(intent.type)
@@ -328,59 +268,11 @@ export class MasterController {
         this.#render();
         this.#schedulePlayback();
       }
-      if (
-        playback.stage === 'awaiting-choice' &&
-        intent.type === 'add-planet-queue' &&
-        current?.decision?.queueAction?.kind === intent.kind &&
-        current.decision.queueAction.planetId === intent.planetId
-      ) {
-        this.#model.addPlanetToQueue(intent.kind, intent.planetId);
-        this.#turn.chooseEvent('ignore');
-        this.#model.save();
-        this.#render();
-        this.#schedulePlayback();
-      }
-      if (
-        playback.stage === 'awaiting-choice' &&
-        intent.type === 'add-salvage-queue' &&
-        current?.decision?.salvageAction?.wreckId === intent.wreckId
-      ) {
-        this.#decisions.addWreckToSalvageQueue(intent.wreckId);
-        this.#turn.chooseEvent('ignore');
-        this.#model.save();
-        this.#render();
-        this.#schedulePlayback();
-      }
-      if (
-        playback.stage === 'awaiting-choice' &&
-        intent.type === 'add-attack-queue' &&
-        current?.decision?.attackAction?.pirateId === intent.pirateId
-      ) {
-        this.#decisions.addPirateToAttackQueue(intent.pirateId);
-        this.#turn.chooseEvent('ignore');
-        this.#model.save();
-        this.#render();
-        this.#schedulePlayback();
-      }
-      if (
-        playback.stage === 'awaiting-choice' &&
-        intent.type === 'request-colony-ship' &&
-        current?.decision?.colonyShipAction?.planetId === intent.planetId &&
-        !current.decision.colonyShipAction.blockedReason
-      ) {
-        this.#decisions.requestColonyShip(intent.planetId);
-        this.#turn.chooseEvent('ignore');
-        this.#model.save();
-        this.#render();
-        this.#schedulePlayback();
-      }
       return;
     }
     if (before.turnMovement) return;
     let mapOrder = false;
     if (intent.type.startsWith('open-') || intent.type === 'end-turn') {
-      this.#starMap.cancelShipyardPlacement();
-      this.#fleets.cancelShipTransfer();
       this.#fleets.cancelFleetRename();
     }
     if (
@@ -431,50 +323,8 @@ export class MasterController {
         this.#boarding.startTestBoarding(intent.selection);
         this.#schedulePlayback();
         break;
-      case 'salvage-wreck':
-        this.#starMap.orderSalvage(intent.fleetId, intent.wreckId);
-        break;
-      case 'release-wreck':
-        this.#starMap.releaseWreck(intent.fleetId, intent.id);
-        break;
-      case 'select-salvage':
-        this.#starMap.selectSalvage(intent.id);
-        break;
-      case 'rebuild-shipyard':
-        this.#starMap.rebuildShipyard(intent.id);
-        break;
-      case 'move-repair':
-        this.#starMap.moveRepair(intent.yardId, intent.wreckId, intent.index);
-        break;
-      case 'cancel-shipyard-placement':
-        this.#starMap.cancelShipyardPlacement();
-        break;
-      case 'place-shipyard':
-        this.#starMap.placeShipyard(intent.position);
-        break;
-      case 'open-fleet-orders':
-        this.#orders.openFleetOrders(intent.id);
-        break;
-      case 'open-ship-orders':
-        this.#orders.openShipOrders(intent.ship, intent.projectId);
-        break;
-      case 'order-kind':
-        this.#orders.chooseOrder(intent.kind);
-        break;
-      case 'apply-ship-order':
-        this.#orders.completeOrder(intent.order);
-        break;
-      case 'order-back':
-        this.#orders.orderBack();
-        break;
-      case 'clear-start-order':
-        this.#orders.clearStartOrder();
-        break;
       case 'handle-discoveries':
-        this.#decisions.handleDiscoveries();
-        break;
-      case 'allow-other-fleet-orders':
-        this.#decisions.allowOtherFleetOrders();
+        this.#turn.handleDiscoveries();
         break;
       case 'continue-turn':
         if (this.#model.snapshot.interruption?.handling) {
@@ -503,35 +353,11 @@ export class MasterController {
       case 'submit-fleet-name':
         this.#fleets.submitFleetName();
         break;
-      case 'map-select-route':
-        this.#routes.selectMapRoute(intent.id);
-        break;
       case 'map-select-fleet':
         this.#starMap.selectMapFleet(intent.id);
         break;
-      case 'toggle-fleet-category':
-        this.#starMap.toggleFleetCategory(intent.category);
-        break;
-      case 'cancel-map-trade':
-        this.#cancelPointer();
-        break;
       case 'open-production':
-        this.#production.openProduction(intent.planetId);
-        break;
-      case 'map-production-page':
-        this.#production.selectMapProductionPage(intent.page);
-        break;
-      case 'prepare-route-transport':
-        this.#decisions.prepareRouteTransport(intent.routeId);
-        break;
-      case 'map-production-option':
-        this.#production.selectMapProductionOption(intent.option);
-        break;
-      case 'map-production-project':
-        this.#production.selectMapProject(intent.id);
-        break;
-      case 'map-production-build':
-        this.#production.orderMapProduction(intent.option);
+        this.#production.openProduction();
         break;
       case 'research-size':
         this.#research.resizeResearch(intent.width, intent.height);
@@ -548,68 +374,11 @@ export class MasterController {
       case 'inspect-research':
         this.#research.inspectResearch(intent.technology);
         break;
-      case 'open-decisions':
-        this.#decisions.openDecisions();
-        break;
-      case 'open-decision':
-        this.#decisions.openDecision(intent.id);
-        break;
-      case 'skip-decision':
-        this.#decisions.skipDecision(intent.id);
-        break;
-      case 'mute-decision':
-        this.#decisions.muteDecision(intent.id);
-        break;
-      case 'unmute-decision':
-        this.#decisions.unmuteDecision(intent.id);
-        break;
-      case 'assign-trade-fleet':
-        this.#routes.assignTradeFleet(intent.routeId, intent.fleetId);
-        break;
-      case 'resume-fleet-orders':
-        this.#fleets.resumeFleetOrders(intent.id);
-        break;
-      case 'release-trade-fleet':
-        this.#routes.releaseTradeFleet(intent.id);
-        break;
-      case 'close-trade-route':
-        this.#routes.closeTradeRoute(intent.id);
-        break;
       case 'move-research':
         this.#research.moveResearch(intent.technology, intent.index);
         break;
       case 'remove-research':
         this.#research.requestResearchRemoval(intent.technology);
-        break;
-      case 'add-planet-queue':
-        this.#model.addPlanetToQueue(intent.kind, intent.planetId);
-        break;
-      case 'remove-planet-queue':
-        this.#model.removePlanetFromQueue(intent.kind, intent.planetId);
-        break;
-      case 'move-planet-queue':
-        this.#model.movePlanetQueue(intent.kind, intent.planetId, intent.index);
-        break;
-      case 'add-salvage-queue':
-        this.#decisions.addWreckToSalvageQueue(intent.wreckId);
-        break;
-      case 'remove-salvage-queue':
-        this.#decisions.removeWreckFromSalvageQueue(intent.wreckId);
-        break;
-      case 'move-salvage-queue':
-        this.#decisions.moveWreckInSalvageQueue(intent.wreckId, intent.index);
-        break;
-      case 'add-attack-queue':
-        this.#decisions.addPirateToAttackQueue(intent.pirateId);
-        break;
-      case 'remove-attack-queue':
-        this.#decisions.removePirateFromAttackQueue(intent.pirateId);
-        break;
-      case 'move-attack-queue':
-        this.#decisions.movePirateAttackQueue(intent.pirateId, intent.index);
-        break;
-      case 'request-colony-ship':
-        this.#decisions.requestColonyShip(intent.planetId);
         break;
       case 'confirm-research-removal':
         this.#research.confirmResearchRemoval();
@@ -617,12 +386,6 @@ export class MasterController {
       case 'cancel-research-removal':
         this.#research.requestResearchRemoval(null);
         break;
-      case 'cancel-end-turn':
-        this.#decisions.cancelEndTurn();
-        break;
-      case 'confirm-end-turn':
-        void this.#runTurn();
-        return;
       case 'open-saves':
         this.#cancelPointer();
         this.#saveCase.openSaves();
@@ -695,14 +458,8 @@ export class MasterController {
       case 'open-map':
         this.#starMap.openMap();
         break;
-      case 'open-planet':
-        this.#planet.openPlanet(intent.id);
-        break;
       case 'open-research':
         this.#research.openResearch();
-        break;
-      case 'open-factories':
-        this.#factories.open();
         break;
       case 'open-fleets':
         this.#fleets.openFleets();
@@ -711,12 +468,10 @@ export class MasterController {
         this.#starMap.home();
         break;
       case 'select': {
-        const snapshot = this.#model.snapshot;
-        mapOrder =
-          !!snapshot.destinationFleetId ||
-          snapshot.orderView?.page === 'patrol' ||
-          snapshot.orderView?.page === 'colonize';
-        this.#starMap.select(intent.position);
+        const selection = this.#starMap.select(intent.position);
+        mapOrder = selection === 'destination';
+        if (selection === 'travel') return this.#travel();
+        if (selection === 'resume') return this.#resumePausedTurn();
         break;
       }
       case 'pan':
@@ -725,45 +480,11 @@ export class MasterController {
       case 'zoom':
         this.#starMap.zoom(intent.factor, intent.anchor);
         break;
-      case 'planet-tab':
-        this.#planet.selectPlanetTab(intent.tab);
-        break;
       case 'research':
         this.#research.research(intent.technology);
         break;
-      case 'colonize':
-        this.#planet.colonize(intent.id);
-        break;
-      case 'cancel-project':
-        this.#planet.cancelProject(intent.id);
-        break;
-      case 'toggle-demolition':
-        this.#planet.toggleDemolition(intent.id);
-        break;
       case 'open-fleet':
         this.#fleets.openFleet(intent.id);
-        break;
-      case 'choose-ship-transfer':
-        this.#fleets.chooseShipTransfer(
-          intent.fleetId,
-          intent.ship,
-          intent.shipId,
-        );
-        break;
-      case 'transfer-chosen-ship':
-        this.#fleets.transferChosenShip(intent.target);
-        break;
-      case 'cancel-ship-transfer':
-        this.#fleets.cancelShipTransfer();
-        break;
-      case 'transfer-ships':
-        this.#fleets.transferShips(
-          intent.source,
-          intent.ship,
-          intent.amount,
-          intent.target,
-          intent.shipId,
-        );
         break;
       case 'begin-destination':
         this.#fleets.beginDestination(intent.id);
@@ -772,8 +493,9 @@ export class MasterController {
         this.#fleets.clearDestination(intent.id);
         break;
       case 'end-turn':
-        if (this.#decisions.requestEndTurn()) {
-          void this.#runTurn();
+        if (this.#turn.requestEndTurn()) {
+          // upptackt-stannar-resan: End turn finishes the paused round only.
+          void this.#runTurn(this.#model.snapshot.phase === 'interrupted');
           return;
         }
         break;
@@ -783,32 +505,6 @@ export class MasterController {
           this.#fleetPointer = null;
           this.#starMap.cancelMapPointer();
         } else {
-          const salvageId = this.#starMap.salvageAtPoint(intent.point);
-          if (salvageId) {
-            if (
-              (this.#model.snapshot.destinationFleetId &&
-                this.#model.snapshot.destinationOrder === 'salvage') ||
-              this.#model.snapshot.orderView?.page === 'salvage'
-            ) {
-              this.#fleetPointer = {
-                id: intent.id,
-                start: intent.point,
-                dragged: false,
-                kind: 'salvage-target',
-                wreckId: salvageId,
-              };
-              break;
-            }
-            this.#starMap.selectSalvage(salvageId);
-            this.#fleetPointer = {
-              id: intent.id,
-              start: intent.point,
-              dragged: false,
-              kind: 'wreck',
-            };
-            break;
-          }
-          // Routes are made in Factories (Connect), not by dragging on the map.
           const fleetId = this.#starMap.fleetAtPoint(intent.point);
           if (!fleetId) return;
           this.#starMap.selectMapFleet(fleetId);
@@ -816,7 +512,6 @@ export class MasterController {
             id: intent.id,
             start: intent.point,
             dragged: false,
-            kind: 'fleet',
           };
         }
         break;
@@ -825,7 +520,6 @@ export class MasterController {
         if (!this.#starMap.hoverMapFleet(null)) return;
         break;
       case 'pointer-cancel':
-        this.#starMap.cancelShipyardPlacement();
         this.#cancelPointer();
         if (this.#model.snapshot.screen === 'fleets') this.#fleets.openFleets();
         break;
@@ -839,14 +533,8 @@ export class MasterController {
             ) > 6
           )
             this.#fleetPointer.dragged = true;
-          if (this.#fleetPointer.dragged) {
-            if (this.#fleetPointer.kind === 'salvage-target') break;
-            if (this.#fleetPointer.kind === 'wreck') {
-              this.#starMap.previewSalvage(intent.point);
-              break;
-            }
+          if (this.#fleetPointer.dragged)
             this.#starMap.previewFleetDestination(intent.point);
-          }
           break;
         }
         if (this.#gesture.pointerCount === 0) {
@@ -875,35 +563,21 @@ export class MasterController {
               intent.point.y - this.#fleetPointer.start.y,
             ) > 6;
           this.#gesture.end(intent.id);
-          const pointer = this.#fleetPointer;
           this.#fleetPointer = null;
-          if (pointer.kind === 'salvage-target') {
-            if (!dragged) {
-              this.#starMap.selectSalvage(pointer.wreckId!);
-              mapOrder = true;
-            }
-            break;
-          }
           if (dragged) {
             mapOrder = true;
-            if (pointer.kind === 'wreck') {
-              this.#starMap.dropSalvage(intent.point);
-            } else {
-              this.#starMap.previewFleetDestination(intent.point);
-              this.#starMap.commitFleetDestination();
-            }
+            this.#starMap.previewFleetDestination(intent.point);
+            this.#starMap.commitFleetDestination();
           }
           break;
         }
         this.#gesture.move(intent.id, intent.point);
         const selected = this.#gesture.end(intent.id);
         if (selected) {
-          const snapshot = this.#model.snapshot;
-          mapOrder =
-            !!snapshot.destinationFleetId ||
-            snapshot.orderView?.page === 'patrol' ||
-            snapshot.orderView?.page === 'colonize';
-          this.#starMap.selectPoint(selected);
+          const selection = this.#starMap.selectPoint(selected);
+          mapOrder = selection === 'destination';
+          if (selection === 'travel') return this.#travel();
+          if (selection === 'resume') return this.#resumePausedTurn();
         }
         break;
       }
@@ -911,23 +585,14 @@ export class MasterController {
     if (
       !(['select', 'pointer-end'].includes(intent.type) && !mapOrder) &&
       !intent.type.startsWith('research-') &&
-      !intent.type.startsWith('supply-') &&
       !intent.type.startsWith('open-') &&
       !intent.type.startsWith('editor-') &&
       intent.type !== 'close-editor' &&
       intent.type !== 'cancel-editor-switch' &&
-      !(
-        intent.type.startsWith('map-production-') &&
-        intent.type !== 'map-production-build'
-      ) &&
       ![
         'pointer-cancel',
-        'begin-map-route',
-        'cancel-map-trade',
         'map-size',
-        'map-select-route',
         'map-select-fleet',
-        'toggle-fleet-category',
         'pointer-move',
         'pointer-start',
         'pan',
@@ -937,18 +602,51 @@ export class MasterController {
         'edit-fleet-name',
         'begin-fleet-rename',
         'cancel-fleet-rename',
-        'planet-tab',
-        'building-category',
-        'building-selection',
-        'build-search',
-        'production-selection',
-        'production-fleet',
-        'open-planet-project',
       ].includes(intent.type)
     )
       this.#model.save();
     this.#render();
     this.#schedulePlayback();
+  }
+
+  /** fiendeupptackt-utan-end-turn: show each flash, then continue without End turn. */
+  #scheduleEnemyResume(): void {
+    const wait = this.#model.snapshot.notice?.kind === 'discovery' ? 1600 : 0;
+    this.#playbackTimer = setTimeout(() => {
+      if (this.#disposed || !this.#turn.enemyDiscoveryResume()) return;
+      this.#model.advanceDiscoveryFlash();
+      this.#render();
+      if (this.#model.snapshot.notice?.kind === 'discovery') {
+        this.#scheduleEnemyResume();
+        return;
+      }
+      void this.#runTurn(true);
+    }, wait);
+  }
+
+  /** upptackt-stannar-resan: each discovery stays briefly, then the next one. */
+  #scheduleDiscoveryFlash(): void {
+    if (this.#model.snapshot.notice?.kind !== 'discovery') return;
+    this.#playbackTimer = setTimeout(() => {
+      if (this.#disposed) return;
+      this.#model.advanceDiscoveryFlash();
+      this.#render();
+      this.#schedulePlayback();
+    }, 1600);
+  }
+
+  /** hexval-med-vag: the confirmed hex starts the round at once. */
+  #travel(): void {
+    this.#model.save();
+    if (this.#turn.requestEndTurn()) void this.#runTurn();
+    else this.#render();
+  }
+
+  /** upptackt-stannar-resan: a new hex continues the paused round, not the chain. */
+  #resumePausedTurn(): void {
+    this.#model.save();
+    if (this.#model.snapshot.phase === 'interrupted') void this.#runTurn(true);
+    else this.#render();
   }
 
   async #runEditor(action: () => Promise<void>): Promise<void> {
@@ -995,6 +693,9 @@ export class MasterController {
       }, 450);
       return;
     }
+    // The boarding view hides the tactical battle. Continuing the round here
+    // reports an error and rebuilds the controls, so clicks never land.
+    if (snapshot.boardingBattle) return;
     if (snapshot.screen === 'saves') return;
     if (snapshot.battleFeedback) {
       this.#playbackTimer = setTimeout(() => {
@@ -1027,10 +728,30 @@ export class MasterController {
       return;
     }
     if (!playback) {
-      if (snapshot.phase === 'interrupted' && !snapshot.interruption?.handling)
+      if (this.#turn.discoveryPause()) {
+        this.#turn.publishDiscoveryFlashes();
+        this.#render();
+        // fiendeupptackt-utan-end-turn: the pirate flash continues the round.
+        if (this.#turn.enemyDiscoveryResume()) {
+          this.#scheduleEnemyResume();
+          return;
+        }
+        this.#scheduleDiscoveryFlash();
+        return;
+      }
+      if (
+        snapshot.phase === 'interrupted' &&
+        !snapshot.interruption?.handling &&
+        !snapshot.interruption?.tacticalBattles?.length
+      )
         this.#playbackTimer = setTimeout(() => {
           void this.#runTurn(true);
         }, 0);
+      else if (!this.#runningTurn && this.#turn.continueVoyage())
+        // resa-utan-synliga-pirater: unseen pirates take no time.
+        this.#playbackTimer = setTimeout(() => {
+          if (this.#turn.continueVoyage()) void this.#runTurn();
+        }, 250);
       return;
     }
     if (playback.stage === 'awaiting-choice') return;
@@ -1123,16 +844,12 @@ export class MasterController {
         this.#turn.beginMovementPlayback(movementPlayback, origin);
         for (const batch of batches) {
           this.#turn.focusTurnMovement(batch.map((track) => track[0]!));
-          this.#turn.frameTurnTrack(batch.flat());
+          // kamera-foljer-skepp: stay on the ship instead of framing the route.
+          this.#turn.followTurnMovement(0);
           this.#render();
-          await this.#animateCamera();
           if (this.#disposed) return;
           const steps = Math.max(...batch.map((track) => track.length));
-          const stepDuration = movementPlayback.isAutonomous(
-            batch[0]![0]!.fleetId,
-          )
-            ? Math.min(400, 4000 / steps)
-            : 400;
+          const stepDuration = 480;
           for (let index = 0; index < steps; index++) {
             const movements = batch.flatMap((track) =>
               track[index] ? [track[index]!] : [],
@@ -1142,8 +859,10 @@ export class MasterController {
             await (this.#view.animateTurnStep?.(
               { movements },
               (progress) => {
-                if (!this.#disposed && this.#turn.advanceTurnMovement(progress))
-                  this.#render();
+                if (this.#disposed) return;
+                this.#turn.followTurnMovement(progress);
+                if (this.#turn.advanceTurnMovement(progress)) this.#render();
+                else this.#view.renderCamera?.(this.#model.snapshot);
               },
               stepDuration,
             ) ?? Promise.resolve());
@@ -1179,6 +898,9 @@ export class MasterController {
       this.#render();
     } finally {
       this.#runningTurn = false;
+      // resa-utan-synliga-pirater: a finished round may start the next one.
+      if (!this.#disposed && !this.#model.snapshot.eventPlayback)
+        this.#schedulePlayback();
     }
   }
 }

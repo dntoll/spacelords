@@ -22,6 +22,30 @@ export class TurnController {
     return this.facade.continueTurn();
   }
 
+  requestEndTurn(): boolean {
+    return this.facade.requestEndTurn();
+  }
+
+  continueVoyage(): boolean {
+    return this.facade.continueVoyage();
+  }
+
+  discoveryPause(): boolean {
+    return this.facade.discoveryPause();
+  }
+
+  enemyDiscoveryResume(): boolean {
+    return this.facade.enemyDiscoveryResume();
+  }
+
+  publishDiscoveryFlashes(): void {
+    return this.facade.publishDiscoveryFlashes();
+  }
+
+  handleDiscoveries(): void {
+    return this.facade.handleDiscoveries();
+  }
+
   applyTurnFrame(frame: TurnFrame): void {
     return this.facade.applyTurnFrame(frame);
   }
@@ -73,6 +97,10 @@ export class TurnController {
 
   focusTurnMovement(movement: TurnMovement | readonly TurnMovement[]): void {
     return this.facade.focusTurnMovement(movement);
+  }
+
+  followTurnMovement(progress: number): void {
+    return this.facade.followTurnMovement(progress);
   }
 
   completeTurnMovement(): void {

@@ -1,12 +1,9 @@
 import type p5 from 'p5';
-import type { TradeRouteSnapshot } from '../../models/Logistics.js';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import { FleetMapLayout } from '../../models/star-map/FleetMapLayout.js';
 import type { FleetSnapshot } from '../../models/Game.js';
 import type { ShipSpriteType } from '../ShipImages.js';
 import { HexGeometry, type Point } from '../../../common/HexCoordinate.js';
-import { fleetCategory } from '../../models/fleets/FleetCategory.js';
-import { FLEET_CATEGORY_COLORS } from '../FleetCategoryColors.js';
 
 export function renderMapFleets(
   sketch: p5,
@@ -25,19 +22,15 @@ export function renderMapFleets(
     fleetDestinationPreview: null,
   },
   showUnselectedRings = false,
-  routeView: readonly TradeRouteSnapshot[] | null = null,
-  attentionFleetIds: readonly string[] = [],
   pirateIds: readonly string[] = [],
   movementPoints: ReadonlyMap<string, Point> = new Map(),
   shipImages: ReadonlyMap<ShipSpriteType, p5.Image> = new Map(),
   showDestinationArrows = true,
 ): void {
-  const markers = FleetMapLayout.markers(fleets, routeView ?? []).map(
-    (marker) => ({
-      ...marker,
-      point: movementPoints.get(marker.fleet.id) ?? marker.point,
-    }),
-  );
+  const markers = FleetMapLayout.markers(fleets).map((marker) => ({
+    ...marker,
+    point: movementPoints.get(marker.fleet.id) ?? marker.point,
+  }));
   const destinationFor = (fleet: FleetSnapshot) =>
     interaction.fleetDragging && interaction.mapFleetId === fleet.id
       ? interaction.fleetDestinationPreview
@@ -45,13 +38,9 @@ export function renderMapFleets(
 
   // kartflottor: draw routes underneath the separate fleet swarms.
   for (const { fleet, point } of markers) {
-    // ruttflottor-utan-destinationspilar / destinationspilar-endast-i-flottvyn
+    // destinationspilar-endast-i-flottvyn
     // vald-flotta-visar-destinationspil: the selected fleet keeps its arrow.
-    if (
-      fleet.routeId ||
-      (!showDestinationArrows && interaction.mapFleetId !== fleet.id)
-    )
-      continue;
+    if (!showDestinationArrows && interaction.mapFleetId !== fleet.id) continue;
     const target = destinationFor(fleet);
     if (!target) continue;
     const destination = HexGeometry.toPoint(target);
@@ -80,30 +69,21 @@ export function renderMapFleets(
     const hostile = pirateIds.includes(fleet.id);
     const selected = interaction.mapFleetId === fleet.id;
     const hovered = interaction.hoveredFleetId === fleet.id;
-    const needsOrder = attentionFleetIds.includes(fleet.id);
-    // flottkategorier: the Fleets map colours each fleet by its category;
-    // a fleet waiting for orders keeps its amber attention ring.
     const color = hostile
       ? '#ff8e85'
       : selected
         ? '#ffdc88'
         : hovered
           ? '#d5fff6'
-          : needsOrder
-            ? '#ffdc88'
-            : showUnselectedRings
-              ? FLEET_CATEGORY_COLORS[fleetCategory(fleet)]
-              : '#72d8ca';
-    if (hostile || selected || hovered || showUnselectedRings || needsOrder) {
+          : '#72d8ca';
+    if (hostile || selected || hovered || showUnselectedRings) {
       const context = sketch.drawingContext as
         CanvasRenderingContext2D | undefined;
       context?.setLineDash(
-        showUnselectedRings && !selected && !needsOrder
-          ? [3 / zoom, 3 / zoom]
-          : [],
+        showUnselectedRings && !selected ? [3 / zoom, 3 / zoom] : [],
       );
       sketch.stroke(color);
-      sketch.strokeWeight((selected || needsOrder ? 2.5 : 1.5) / zoom);
+      sketch.strokeWeight((selected ? 2.5 : 1.5) / zoom);
       if (selected || hovered)
         sketch.fill(selected ? '#ffdc8833' : '#72d8ca33');
       else sketch.noFill();

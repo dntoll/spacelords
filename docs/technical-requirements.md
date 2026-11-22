@@ -9,11 +9,6 @@ spelimplementation. Agentförslag är inte beslut. Se
 [planen och beslutslistan](single-fleet.md#plan-och-beslut-före-implementation).
 Spelbeteendena är fortfarande **Ej implementerat**.
 
-`produktionsstatus-for-separata-behov`: försörjningsöversikten för aktivt
-byggprojekt använder projektets egen kostnad; planetens samlade efterfrågan
-behålls för logistikplanering och ekonomivyn. Ett regressionstest skyddar
-statusen när en flottuppgradering beställer delar från lokal produktion.
-
 ## Historiska engångsrensningar i Single fleet
 
 `single-fleet-rensning`: de historiska engångsrensningarna
@@ -31,27 +26,6 @@ laddar bara nuvarande format, version 17, och avvisar äldre versioner med
 borttagna efter uttryckligt beslut enligt `avstamning-sparkompatibilitet`.
 Meningar nedan om hur äldre format läses beskriver hur de nuvarande fälten
 kom till; de gäller inte längre som laddningsstöd.
-
-## Planetköer, 2026-11-08
-
-- `PlanetQueues` äger de två beständiga prioritetslistorna. `Game` validerar
-  kunskapsnivå, beräknar framkomlig väg, reserverar mål och lämnar oföränderliga
-  köögonblicksbilder till vyn.
-- Detekterade och utforskade planeter lagras separat. Kartvyn får ingen
-  environment före utforskning och använder då en neutral planetsymbol.
-- Köredigering går som intention via controller till modellen. Vyn återanvänder
-  samma drag- och tangentbordshantering som övriga köer.
-- Äldre sparningar utan separat utforskningslista migrerar sina tidigare kända
-  planeter till utforskade. Nya sparningar lagrar båda köerna och aktiva mål.
-- `FleetDetour` ligger i domänmodellen och låter endast `Explore`,
-  `Explore stars` och Patrol ligga kvar medan ett kömål tillfälligt styr
-  destinationen. Vyn får en oföränderlig status och ändrar aldrig ordern.
-- `Attack queue` lagrar piratidentiteter men tilldelar bara mål vars nuvarande
-  position ligger i gemensam sikt. Sparversion 16 lägger till kön och avstickaren
-  som valfria, bakåtkompatibla data.
-- Riktad Colony ship-produktion är en atomisk modellåtgärd: målet läggs i
-  Colonization queue, närmaste nåbara färdiga fabrik väljs och projektet får
-  en typad Colonize-startorder.
 
 ## Stridens karta och kontroller, 2026-11-01
 
@@ -141,7 +115,8 @@ kom till; de gäller inte längre som laddningsstöd.
 - `flottor-fore-planetdetaljer`: hexpanelen bygger separata flottdelar och
   planetdelar; planetens rubrik tillhör planetdelen.
 - `animerade-stridsskott` och `skadepartiklar-i-strid`: TacticalBattle lämnar
-  en typad BattleShot med avfyrningsposition, vapen, mål och skaderesultat.
+  en typad BattleShot med avfyrningsposition, vapen, mål, skaderesultat och
+  valfria asteroidhexar som försvann. Äldre skott utan fältet läses som förut.
   Controller samordnar effekten genom ett asynkront vygränssnitt och spärrar
   stridshandlingar under presentationen. P5-vyn använder högst 128 partiklar
   och beställer bildrutor bara medan effekten lever. Effekterna använder inte
@@ -161,53 +136,6 @@ med binärsökning i sorterade hexrader. Indexet följer kartögonblicksbildens
 identitet och innehåller bara redan tillåten kartkunskap. Domänmodellen
 är oberoende av p5. Sparformat och galaxstorlek ändras inte.
 Se [orsak, mätning och tester](map-performance.md).
-
-## Orders och startorder
-
-`egen-ordervy`, `ruttval-for-order`, `flottval-pa-orderkarta`,
-`skeppsanpassade-specialorder`, `patrullcentrum-vid-order` och
-`startorder-for-nybyggda-skepp`: ShipOrders delar typade order, namn,
-kapabiliteter och ruttsortering mellan befintliga flottor och nyproduktion.
-OrdersView renderar HTML-val; MasterController och AppModel samordnar meny och
-kartval. Domänorder går genom Game. Move ligger kvar som separat kartval.
-OrderSelection är tillfälligt presentationsläge; mål- och startorder i spelet
-sparas direkt. Ruttflottor filtreras från mottagarkartan och dess träffytor.
-
-Project.initialOrder är ett valfritt tillägg. Ett skepp med uttrycklig order
-bildar en egen flotta och lagrar pendingOrder tills årsavräkningen är klar.
-Game validerar då målet igen och aktiverar ordern i planeringsfasen utan att
-ge ny rörelse samma år. Ett ogiltigt mål lämnar skeppet säkert och ger ett
-besked. Avbrott efter produktion sparar pendingOrder och återupptar den en
-gång. Äldre projekt använder tidigare destinationFleetId och standardflotta.
-PatrolOrder.approaching skiljer resan till nytt centrum från patrulleringen;
-äldre patruller saknar fältet och fortsätter på sitt ursprungliga sätt.
-Inga sparningar, versionsnummer eller lagringsnycklar rensas.
-
-Tester skyddar kapabiliteter, ruttgruppering och avstånd, uteslutna ruttmål,
-fysisk anslutning, nya skepps separata uppdrag, alla automatiska startorder,
-mål som försvinner under bygget samt sparning från pekar- och tangentbordsval.
-Mobilflöden för Orders, Join fleet, Patrol och startorder ingår i
-snabbpubliceringen. Samma nya väg används i befintliga UI-regressioner.
-
-## Flottuppgradering
-
-`flottorder-upgrade`, `automatisk-uppgraderingsforsorjning` och
-`spara-flottuppgradering`: ShipUpgrades beräknar målutrustning, komponentbehov
-och installation per ShipUnit. Game samordnar fysisk navigation, varv,
-bemanning och försörjning. FleetUpgradeOrder använder en separat
-beställningsidentitet i samma Logistics- och ComponentPlanner-flöde som
-vanlig produktion. Exakta motortyper krävs vid Upgrade; nybyggens vanliga
-motoralternativ behålls. Vyer får frysta order, mål och listor och skickar
-avsikter genom MasterController och AppModel. Sparning sker omedelbart.
-
-Fleet har ett valfritt `upgrade`-fält; äldre sparningar saknar det och kräver
-ingen migrering eller rensning. Sparade mål valideras mot skeppsidentitet,
-monterad utrustning och färdig forskning. Ordern kan inte kombineras med
-Route, Patrol eller andra samtidiga uppdrag. Tester skyddar alla
-skeppstyper, fjärrproduktion och fysisk frakt, konkurrerande reservationer,
-avbrott, förstört varv, underbemanning, förbjuden nedgradering och
-omladdning. Riktat mobiltest verifierar order, sparning och slutförande i
-Chromium och WebKit och ingår i snabbpubliceringen.
 
 ## Direkta stridsorder
 
@@ -303,19 +231,6 @@ statusfärg. Enhetstest skyddar skillnaden mellan färdig forskning, köstatus
 och okänd teknik. Riktade mobiltester kontrollerar verkliga renderade färger
 före och efter val i Chromium och WebKit. Inga modell- eller sparändringar.
 
-## Fabriksuppgraderingar
-
-`senaste-teknik-i-byggval` och `uppgradera-obsoleta-fabriker`:
-FactoryTechnology definierar versionskedjorna gemensamt för byggfilter,
-komponentfilter och uppgraderingar. Game lämnar frysta komponentval och
-uppgraderingsalternativ; vyn skickar en
-avsikt via MasterController och AppModel. Projektets valfria `upgradeBuildingId`
-knyter uppgraderingen till befintlig fabrik. Fabrikens id och plats bevaras;
-byggplats och befintliga arbetare reserveras inte en gång till. Samma
-personalberäkning används för genomförande, försörjningsvy och civiltrafik.
-Sparade uppgraderingar valideras; äldre sparningar kräver ingen migrering
-eller rensning. Modell- och gränssnittstester använder kravnamnen.
-
 ## Genererade symboler och kartbilder
 
 `genererade-symboler-och-kartbilder`: 31 separata transparenta PNG-original
@@ -324,19 +239,14 @@ prompter bevaras och manifestet uppdateras per fil. Kontrollera antal, filformat
 alpha, fria kanter och unika filnamn automatiskt; granska motiv, ljusriktning
 och symbolernas läsbarhet visuellt. Se [bildleveransen](generated-map-artwork.md).
 
-`spelgrafik-symboler`: BuildingSymbols ger varje byggnadstyp en egen symbol, inklusive den senare `Raptor factory` från `egen-raptor-grafik`, och delar dem mellan kataloger,
-byggnadsköer och identifierad forskning. Fyra befintliga porträtt behålls;
-övriga detaljvyer använder symbolen. Bilder är dekorativa vid namngivna val
-och ersätts av befintlig SVG-symbol vid laddningsfel.
+`spelgrafik-symboler`: CatalogControls ger varje identifierad teknik en
+dekorativ SVG-symbol i trädet, kön och detaljerna. Byggnadssymbolerna och
+byggnadsporträtten är borttagna med fabrikerna (`single-fleet-rensning`).
 
 `spelgrafik-planeter`: Galaxy lämnar planetens miljö i frysta, utforskade
 kartobjekt. Okända planeter lämnas fortsatt bort. PlanetImages delas av
 HTML-illustrationer, alla fyra kartvyer och sparförhandsvisning. MapArtwork
 laddar bilder en gång per kartinstans och ignorerar svar efter dispose.
-
-`spelgrafik-kartstation`: Orbital shipyard använder den genererade bilden i
-befintlig markörposition, med urvalsring och samma träffyta. Förstörda stationer
-filtreras fortsatt bort. Laddningsfel behåller tidigare kartglyfer.
 
 `python scripts/prepare-game-artwork.py` (Pillow) skapar WebP i klientens
 symbol-, planet- och kartkataloger. Alla bilder är högst 512 px, kvalitet 90,
@@ -352,12 +262,9 @@ Sparformat, MVC-gränser och domänens spelregler ändras inte.
 
 Krav och status: [enhetliga spelvyer](unified-interface.md).
 `gemensam-events-panel` behåller samma DOM-instans i appens nedre rad.
-`dragbara-koer` använder QueueView för bygg-, forsknings- och reparationsköer.
+`dragbara-koer` använder QueueView för forskningskön.
 Vyn förhandsvisar ordningen och skickar controller-intent först vid släpp.
 Pointer capture och dokumentlyssnare hanterar släpp utanför listan.
-`omordningsbar-reparationsko` använder move-repair med varv-ID, vrak-ID och
-målindex via controller och modell. Befintlig sparad array behåller ordningen;
-sparformat och lagringsnycklar ändras inte.
 
 `skeppssprites-pa-kartan` delar ShipImages-registret mellan HTML och p5.
 FleetMapLayout beräknar bildpositioner och träffgräns; bilder laddas en gång.
@@ -367,22 +274,22 @@ från aktuellt träd och viewport. Alla inmatningssätt använder samma modell.
 utforskning innan planetfakta hämtas. `bildpromptpaket` har ett granskningsbart
 manifest med referenser, användning och filnamn.
 
-## Kompakta vyer och produktionsstatus, 2026-10-27
+## Kompakta vyer, 2026-10-27
 
-`dragbara-flottorder`: FleetOrderDrag använder pekarhändelser endast för vänster
-musknapp. Sex pixlars horisontell rörelse startar dragning och pekarfångst;
-efterföljande klick stoppas före orderknappen eller ruttmenyn. Touch använder
-fortsatt webbläsarens inbyggda scroll. AppView bevarar scrollLeft per flott-ID
-vid omrendering. Träffytorna är fortsatt minst 44 × 44 px.
+`dragbara-flottorder`: Move- och Stop-knapparna är borttagna
+(`inga-move-stop-knappar`). Statusraden kan fortfarande dras i sidled.
+FleetOrderDrag använder pekarhändelser endast för vänster musknapp. Sex
+pixlars horisontell rörelse startar dragning och pekarfångst. Touch använder
+webbläsarens inbyggda scroll. AppView bevarar scrollLeft per flott-ID vid
+omrendering.
 
 `kompakt-forskningstrad`: ResearchTreeLayout och CSS använder 108 × 36 px,
 24 px horisontellt mellanrum och minst 12 px vertikalt. Layouten undviker
 överlapp även vid delade förkunskaper. Pilar och kameragränser delar måtten.
-Endast den synliga nodtiteln utelämnar suffixet factory och använder högst två
-rader. Full teknikidentitet behålls i intent, dataattribut, aria-label och
+Den synliga nodtiteln använder högst två rader. Full teknikidentitet behålls i intent, dataattribut, aria-label och
 detaljpanelen. aria-description och title visar status. Noderna använder olika
 bakgrundsfärger; färdiga visar ✓, pågående ▶ och köade sin köposition.
-`forskningens-avslojande` härleds från färdig, köad och återfunnen forskning
+`forskningens-avslojande` härleds från färdig och köad forskning
 samt att alla förkunskaper är färdiga. Anonyma rutor visar inga avslöjande
 namn, bilder eller tillgänglighetstexter.
 
@@ -397,16 +304,6 @@ detaljer och valmarkering utan att ersätta trädets pekarmål. Research queue
 ligger ovanpå trädytan och kan visas samtidigt. DiagramNavigation skiljer klick
 från dragning och pinch.
 AppView bevarar kamera, köläge och relevant fokus genom omrenderingar.
-
-`produktionsvalens-statusfarger`: Game härleder ProductionPresence från fysiska
-byggnader, lager, flottpositioner och projekt. Aktiva leveransvägar från andra
-ägda planeter till vald planet räknas en gång per productionOptions-anrop med
-Logistics.path, inklusive flera led. Frakt räknas inte som lager. ProductionOption
-exponerar oföränderliga presence, networkCount, queuedLocalCount och
-queuedNetworkCount. Lokal förekomst går före nätverk och därefter kö;
-köantal finns även på gröna och blå val. Vyn visar engelska statusetiketter,
-detaljer och en separat vit valmarkering. Byggregler, sortering och reservationer
-ändras inte. Sparformat 12 och lagringsnycklarna behålls.
 
 ## Stjärnbild och utzoomning
 
@@ -453,45 +350,6 @@ Detta är ett nytt uttryckligt beslut, inte en generell rensningspolicy.
 Namnen nedan är stabila referenser i tester, kod och dokumentation.
 Produktkraven finns separat i [product-requirements.md](product-requirements.md).
 
-## Patrol
-
-`flottpatrullering` — **Fullständigt implementerat**: FleetPatrol väljer mål
-och patrullpunkt oberoende av p5 och HTML. Game validerar ordern och använder
-befintlig effektiv flottfart, gemensam detektionssikt, routing och
-TurnSimulation. Jaktbeslut uppdateras mellan hexsteg utan framtida eller
-osynliga piratpositioner. Ingen extra rörelsebudget skapas vid orderbyte,
-förstärkning, avbrott eller omladdning.
-
-Game.setPatrol, controlleravsikten patrol-fleet och AppModel.patrolFleet
-förmedlar ordern. Vyer läser frysta ögonblicksbilder med centrum, härledd
-räckvidd och eventuellt piratmål. Samma kompakta orderrad används på Star map
-och Fleets. En aktiv patrull är ett uppdrag och ger inget sysslolöshetsbeslut.
-Handelstilldelning får ersätta en Patrol-kurs efter övrig validering;
-regeln om att andra resande flottor först måste stoppas behålls.
-
-`avstamning-sparkompatibilitet`: sparformat 11 läser fortsatt version 2–10
-utan rensning. Fleet.patrol lagrar centrum, nästa grannindex och eventuellt
-pirat-ID. Centrum och grannindex valideras, liksom att flottan har Fighter
-och inte samtidigt har rutt-, förstärknings- eller utforskningsorder.
-Återstående tid och uppskjuten strid använder befintligt avbrottsformat.
-Inga sparplatsnycklar eller rensningsmarkörer ändras.
-
-Verifiering av `flottpatrullering`: 17 modelltester samt två controller- och
-vytester skyddar order, målval, motorberoende gränser, förstärkning, kartkant,
-strid och sparade avbrott. Sex riktade mobilscenarier passerar i Chromium och
-WebKit; flottkortens höjd och pekytor kontrolleras och mobilbilder granskas.
-`snabb-testsvit`: en första körning överskred tidsgränsen. Patrol-vytesterna
-samlas därför i befintlig flottestmiljö; de 14 presentationstesterna i
-grouped-events och star-map-trade-view flyttas till den utökade sviten utan
-borttagning. Därefter passerar alla 475 snabba tester på 10,46 sekunder
-inklusive verktygsstart, av högst 20 sekunder.
-
-`snabb-testsvit` (2026-11-18): eftersom arbetstrådarna körs utan isolering kunde
-DOM från en testfil läcka till nästa. Bordningseditorns `role="status"` fick
-då `dragbara-koer` att fallera beroende på filordning. `tests/setup.ts` tömmer
-nu `body` och `head` efter varje test. Regressionstestet ligger i
-`tests/app/unit/test-dom-isolation.test.ts`.
-
 ## Aktuell sikt och teleskop
 
 `snabb-testsvit`: efter en avbruten körning över 20 sekunder flyttades 44
@@ -500,59 +358,19 @@ presentationstester för Research, planetöversikt, kartval och flottfokus till
 sikt- och teleskopregler samt centrala användarflöden: 447 tester på 9,97 sekunder
 inklusive verktygsstart vid verifieringen. Tidsgränsen är oförändrad.
 
-`aktuell-detektionssikt` beräknas p5-oberoende av Detection utifrån ägda planeter
-och flottornas monterade teleskop. MapCell skiljer `explored` från `visible`.
+`aktuell-detektionssikt` beräknas p5-oberoende av Detection utifrån
+flottornas monterade teleskop. MapCell skiljer `explored` från `visible`.
 Game filtrerar pirater innan oföränderliga läsdata lämnas till vyerna; träffprovning
 och informationspaneler använder samma filtrerade data. Sparplatskartan visar
 utforskning, inte bara aktuell sikt. Synfältskanten ritas i p5 instance mode.
 
-`teleskop-i-exploration-ships` lagrar teleskopnivå på ShipUnit. De tre
-komponenterna använder ComponentPlanner, planetlager och Logistics med separata
-fabriker. Planeringsförsök för olika nivåer ändrar inga lager, reservationer eller ID:n.
-`pirat-aterupptackt` jämför nuvarande kontakter med föregående observation.
+Sparformatet bevarar teleskop och piratkontakter. Upptäckter kan pausas och
+laddas om före finishTurn utan upprepad rörelse.
 
-Sparformat 9 bevarar teleskop och piratkontakter samt om årets ekonomisteg redan
-körts. Årssimuleringen har ett avslutande ekonomisteg; upptäckter där kan pausas
-och laddas om före finishTurn utan upprepad produktion, tillväxt eller rörelse.
-Version 2–8 migreras utan rensning; startskepp och äldre explorers får nivå I.
-Gamla produktionsorder behålls med nytt teleskopbehov och ny delplanering där
-försörjning finns. Forskningskön kompletteras med den nya förkunskapen. Gamla avbrott med enbart
-piratobservationer utanför sikt öppnas med Continue utan falsk piratdialog;
-förbrukad rörelse och väntande strid bevaras.
-
-`dubbelklick-bygger-pa-kartan` behåller aktuell sida när ett produktval byter
-kategori i en okategoriserad produktionsring. Ett dubbelklick kan därmed inte
-beställa en annan produkt efter det första klickets omritning.
-
-## Flottadministration på Star map
-
-`planetoppning-i-kartrubrik` använder en gemensam MapLocationHeading i hex-
-och flottpanelen. Open planet skickar planetens id till controllern så att
-planetinformationen öppnas för rubrikens planet, oberoende av tidigare hexval.
-Knappen har kompakt form och minst 44 px klickhöjd. Kartans R-tangent börjar
-en handelsrutt utan Create route-knapp; forsknings- och planeringsvillkoren
-kontrolleras före avsikten och domänens målvalidering behålls.
-
-`flottadministration`, `flottnamn-direktredigering` och
-`flottknappar-pa-kartan` använder gemensamma FleetCard och ShipTransferInput
-i kartpanelen och Fleets. FleetMapPanel visar flottorna vid aktuell position
-utan att ändra kartans hexval. HTML-panelen visar flottkorten direkt och rullas internt utan separat utfällning eller hjälpruta.
-`flottfokuserad-kartvy` och `delad-kartkamera` är **Fullständigt implementerat**.
-AppView monterar GalaxyMapView för både Star map och Fleets. Samma Camera i
-AppModel används utan återställning vid växling. Skärmens typ styr rendering,
-träfftestning och tillåtna ruttgester. Fleets tonar ned himlakroppar och rutter,
-döljer planetmärken och använder FleetMapPanel för flottval. Ej valda flottor
-får streckade cirklar med zoomkompenserade streck; ritkontextens streckmönster
-återställs före skeppen. Himlakropparnas namn ritas med full opacitet utanför
-kropparnas nedtonade ritkontext. Ingen separat
-minikarta, översiktsvy eller förhandsvisningsfabrik för flottor finns kvar.
-Explicit ruttval från flottpanelen öppnar Star map; kartbakgrunden är inaktiv.
-Sparformat och domänmodell ändras inte.
+## Flottkort och namn på Star map
 
 AppModel håller ett oföränderligt, tillfälligt namnutkast. MasterController
 samordnar redigering, validering och sparning genom befintliga Game-kommandon.
-En överföring till en ny flotta använder den befintliga sammanhängande
-domänhandlingen; kommandot returnerar den mottagande flottans ögonblicksbild.
 Inga nya domänbegrepp, relationer eller sparformat tillkommer;
 docs/domain-model.puml har granskats och behöver inte ändras.
 
@@ -565,13 +383,12 @@ till dubbelklick. Move-symbolen erbjuder Choose destination med
 hexväljare eller kartan utan drag.
 
 Enhetstesterna i fleet-map-management skyddar lokal gruppering, oförändrat
-hexval, skapande med ett skepp, avbrott, namnredigering, fokus, destinationsval,
-kameracentrering, avlägsna förstärkningar, ruttspärrar och sparade spel.
+hexval, avbrott, namnredigering, fokus, destinationsval, kameracentrering
+och sparade spel.
 fleet-map-overflow verifierar 25 flottor på samma hex, begränsad
 skeppsförhandsvisning och åtkomligt flottval på alla skärmprofiler.
 Webbläsartesterna följer hela kartflödet i Chromium och WebKit och provar
-native touch i mobil Chromium. Befintliga flott-, handels-, bygg- och
-sparplatstester behåller skyddet för spelreglerna. Båda testsviterna omfattas
+native touch i mobil Chromium. Befintliga flott- och sparplatstester behåller skyddet för spelreglerna. Båda testsviterna omfattas
 fortsatt av befintlig GitHub CI.
 
 ## Tekniska krav
@@ -597,11 +414,11 @@ fortsatt av befintlig GitHub CI.
 | `isolerad-bordningsmodul`        | Fullständigt implementerat | Bordningen är modulen `src/client/boarding/` med `controllers/`, `models/{battle,editor,map}/`, `views/{battle,editor,rendering}/`, `assets/` och `maps/`. Serverns kart-API ligger i `src/server/boarding/`, kartformatet i `src/shared/boarding/` och testerna i `tests/boarding/{unit,extended,browser}/`. Utöver det gemensamma får modulen använda `playerNoticeText` och `src/shared/boarding/`.                                                                                                                                                                                                                                                                                                                                                                                                                                    | ESLint `no-restricted-imports` i `eslint.config.mjs`, `npm run lint`                              |
 | `arkitekturkarta`                | Fullständigt implementerat | En hierarkisk kodkarta i PlantUML i `docs/architecture/`: `overview.puml` visar app-skal, `common/`, moduler, `src/shared` och server med faktiska importer, och en fil per modul visar fallen, deras lager, publika index-yta och beroenden. `scripts/architecture-map.mjs` genererar kartan från `architecture.config.mjs` och importerna; samma lista styr ESLint-gränserna. Agenter läser kartan före strukturella ändringar och kör `npm run architecture:map` efter dem.                                                                                                                                                                                                                                                                                                                                                            | `tests/tooling/architecture-map.test.mjs` i `npm run test:tooling`                                |
 | `master-controller`              | Fullständigt implementerat | En master tar emot avsikter, delegerar till rätt use-case-controller och är den enda som byter fall. Pågående år samordnas här.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Enhetstest `master-controller`, arkitekturgranskning                                              |
-| `use-case-controller`            | Fullständigt implementerat | Star map, Planet, Research, Fleets, Routes, Production, Orders, Decisions, Saves, Battle, Boarding och den lokala karteditorn har varsin controller. Den känner inte till DOM eller p5. HTTP mot `/api/boarding-maps` stannar i editorkontrollern.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Enhetstest `use-case-controller`                                                                  |
+| `use-case-controller`            | Fullständigt implementerat | Star map, Research, Fleets, Production, Turn, Saves, Battle, Boarding och den lokala karteditorn har varsin controller. Den känner inte till DOM eller p5. HTTP mot `/api/boarding-maps` stannar i editorkontrollern.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Enhetstest `use-case-controller`                                                                  |
 | `lokal-bordningskarteditor`      | Fullständigt implementerat | `GET` och `PUT` för bordningskartor kopplas in före API:ts 404-svar. JSON-tolkning gäller bara skrivningen. Katalogen hämtas endast i den lokala servermiljön; det statiska Pages-bygget anropar inte det lokala API:t. Knappen `Ship layouts` visas bara när katalogsvaret har minst en karta. En sparning behåller `[lights]` och övriga lager.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Enhetstester `lokal-bordningskarteditor`, utökat HTTP-test och mobiltest `snabb-mobilpublicering` |
 | `isometrisk-bordningskarteditor` | Fullständigt implementerat | Editorns `Isometric` använder bordningsstridens projektion, golv- och väggtexturer och upphöjda barriärer. `Top-down` används för spritejustering. Penslar, storlek, undo och spara fungerar i båda vyerna.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Enhetstest `isometrisk-bordningskarteditor`                                                       |
 | `modell-facad`                   | Fullständigt implementerat | Varje fall har en facad som är enda vägen in och bara visar det fallet får läsa och ändra. Ett fall öppnar inte ett annat.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Enhetstest `modell-facad`                                                                         |
-| `vy-plattformsgrans`             | Delvis implementerat       | Vyn äger DOM, p5 och kamera och kan ha en inre kameracontroller. Forskningsträdets pekning blir pan och zoom i vyn. Stjärnkartans pekning översätts fortfarande i mastern, eftersom handel, bärgning och flottor möts där. Bordning och strid ritas per bildruta. Övriga vyer ritas när något synligt ändrats.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Enhetstest `vy-plattformsgrans`, kartans `noLoop`                                                 |
+| `vy-plattformsgrans`             | Delvis implementerat       | Vyn äger DOM, p5 och kamera och kan ha en inre kameracontroller. Forskningsträdets pekning blir pan och zoom i vyn. Stjärnkartans pekning översätts fortfarande i mastern, eftersom flottval, destinationer och hexval möts där. Bordning och strid ritas per bildruta. Övriga vyer ritas när något synligt ändrats.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Enhetstest `vy-plattformsgrans`, kartans `noLoop`                                                 |
 | `speltexter-i-vy`                | Fullständigt implementerat | Fel, bekräftelser och upptäcktsbesked är strukturerade utfall. Vyn väljer meningen. Utfallet skrivs inte in i sparningen.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Enhetstest `speltexter-i-vy` och vytester av formuleringen                                        |
 | `plantuml-domanmodell`           | Fullständigt implementerat | Underhåll problemdomänens klasser och relationer i PlantUML. Lägg till domänbegrepp först när krav motiverar dem.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `docs/domain-model.puml`, domängranskning                                                         |
 | `branches-och-commits`           | Fullständigt implementerat | Arbeta på branches och gör regelbundna commits med tydliga meddelanden. Varje agent använder eget branchprefix, exempelvis `codex/` och `claude/`. Branchstrategin i övrigt ska diskuteras på nytt.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Git-historik och arbetsregler                                                                     |
@@ -615,17 +432,6 @@ fortsatt av befintlig GitHub CI.
   av ekonomiversion 2 raderade de tre äldre version 1-sparplatserna efter uttryckligt användarbeslut.
   Version 2 använder egna nycklar och återställs inte vid omladdning.
   Framtida formatändringar kräver bevarande eller nytt uttryckligt beslut.
-- Ekonomi, forskningsordning, rutter, last, reservationer och överhoppade beslut
-  ingår i sparformat version 3. Version 2 migreras utan att spel tas bort.
-  Modellerna PlanetEconomy, ResearchPlan,
-  Logistics och DecisionBoard hålls oberoende av HTML och p5.
-- `utvinningsbara-resurser`, `utvinningsbyggnader`, `planetlager`,
-  `planetbyggnadsko`, `forskningsko`, `forskningsberoenden`, `transportfabrik`,
-  `handelsnatverk`, `flera-ruttflottor`, `fysisk-frakt`,
-  `automatisk-resursforsorjning`, `beslutslista`, `hoppa-over-beslut` och
-  `rundvarning` skyddas av modell-, vy- och browsertester.
-  Utökad verifiering följer kedjan från nytt spel till försörjd koloni.
-  Äldre hänvisningar till årsbudget nedan är historik; planetlager ersätter dem.
 
 - `english-game` och `focused-interface`: vytester skyddar engelska handlingar,
   synliga modellvärden och beskrivningar av valda himlakroppar.
@@ -649,29 +455,6 @@ fortsatt av befintlig GitHub CI.
 - `produktionsstart`: integrationstest verifierar att byggd startsida och dess
   faktiska JavaScript- och CSS-filer går att hämta med rätt innehållstyp.
 
-- `byggnaders-resursanvandning`: vytest kontrollerar drift per färdig byggnad.
-- `flera-byggnader-av-samma-typ`, `planetbyggplatser`, `fabrikskoer`, `skepp-i-byggko` och
-  `skepp-till-destinationsflotta`: modelltester kontrollerar köordning över år,
-  budgetblockering, avbrott, byggplatser, mottagarval och reservbeteende.
-  Vytester kontrollerar controllerstyrda knappar, dragning och mottagarval;
-  browsertester kontrollerar beställning, omordning och färdigställning.
-- `forska-fram-fabriker`, `kolonisation` och `kartorderstatus`: modelltester
-  kontrollerar upplåsning, forskningsförutsättningar, kolonibildning, ägarskap
-  och orderräkning. Vy- och browsertester följer hela kedjan från forskning
-  till ny koloni; kartvyns markeringar kontrolleras separat.
-
-- `visa-byggalternativ`, `planetbudgetoversikt` och `gemensamma-byggnadsbilder`:
-  vytester skyddar sökning, kostnadsstatus, återgång till rätt plats,
-  budgetproportioner, rivningsreservationer och bilders reservvisning.
-  `kompakta-bygghandlingar` och `fabrikskoer` verifieras i webbläsare med
-  innehållsbreda knappar, minst 44 px klickhöjd och fabrik/beställning sida vid sida från
-  720 px panelbredd, annars staplade. Scrolläge och tangentbordsfokus verifieras.
-  Originalbilder behålls i `assets/original/buildings/`. Webbversionerna är
-  512 × 512 px WebP (kvalitet 85) i `src/client/space-map/assets/buildings/` och importeras
-  genom Vite, som ger byggda bilder rätt basadress och innehållshash.
-  Bildkopplingar ligger i vylagret; inga nya
-  domänbegrepp eller domänrelationer tillkommer.
-
 - `kartflottor`, `flottval-pa-kartan`, `dra-flottdestination` och
   `vald-flotta-visar-destinationspil`: gemensam
   p5-oberoende geometri används för ritning och träfftestning. Modellens
@@ -685,18 +468,12 @@ fortsatt av befintlig GitHub CI.
 
 - `skeppsbilder`, `flottadministration` och `flottfokuserad-kartvy`: samma
   optimerade transparenta WebP-bilder används i kartans flottpanel och
-  flottkartan. Modellens tillfälliga överföringsval är skrivskyddat för vyerna;
-  överföringar går genom controller och befintlig domänvalidering. Vyn hanterar
-  musdrag, touch och tangentbord. Enhetstester skyddar exakt en överföring,
-  tomma mottagare, olika positioner, låsta order och begränsade stora bildlistor.
-  Browsertester verifierar riktig bildladdning, gemensamt kameraläge,
-  rörelse, överföringar och native touchdrag på flottkartan.
+  flottkartan. Skeppsöverföring mellan flottor är borttagen
+  (`single-fleet-rensning`). Browsertester verifierar riktig bildladdning,
+  gemensamt kameraläge och rörelse på flottkartan.
   Se [skeppsgrafik](ship-artwork.md) för original, friläggning och webbversioner.
   `tomma-flottor-utan-position` gör flottans position valfri i domänmodellen.
-  Första överföringen eller fabriksleveransen sätter positionen; sista skeppet
-  släpper position och färdorder även vid kolonisation. Äldre sparade tomma
-  flottors position normaliseras vid inläsning. Enhetstester skyddar dessa
-  övergångar, samtidiga leveranser från olika planeter och sparformatet.
+  En flotta utan skepp saknar position och färdorder.
 
 Processkrav kan inte bevisas med meningsfulla enhetstester. De följs upp genom
 verktygskontroller, CI och granskning enligt tabellen.
@@ -738,8 +515,7 @@ ersätter den tidigare staplade mobillayouten. Webbläsarens helskärmsläge kr�
 
 `BrowserSaveRepository` är en lokal mock med en `localStorage`-nyckel per plats.
 `Game.exportState()` och `Game.restore()` bevarar värld, identifierarsekvens,
-kolonier, befolkning, byggnader, rivningsorder, gemensamma produktionsköer, forskning,
-flottor med färdriktning, utforskade hexagoner, händelser, år och fas.
+startplanet, forskning, flottor med färdriktning, utforskade hexagoner, händelser, år och fas.
 Modellerna beror inte på webbläsare eller p5. Förhandsvisningar får bara
 skrivskyddade, utforskade kartceller och använder p5 i instance mode.
 
@@ -757,39 +533,12 @@ Tester för `sparat-spel`, `tre-sparplatser`, `sparplats-utforskad-karta` och
 `tomm-sparplats` skyddar återupptagning, oberoende spel, filtrering av dold rymd,
 varningsdialog, avbrott, lagringsfel och radering av en enda plats.
 
-- `fabrikskoer`: fabriker visar beställningskontroller, inte egna köer.
-  Controllers skickar order till planetens enda produktionskö. Modellen
-  validerar rätt färdig fabrik och destination; låsta order och rivning spärras.
-
-- `bevara-aldre-produktionskoer` — **Fullständigt implementerat**: sparformat
-  version 4 använder en enda projektlista per koloni, liksom version 3. Version 2 läses från samma
-  sparplatsnycklar; planetens och fabrikernas gamla köer vävs ihop efter
-  projektidentifierare, med bibehållen ordning inom varje gammal kö. Gamla
-  projektidentifierare och leveransreservationer bevaras. Saknade delposter i
-  gamla lager fylls med noll. Upprepad återläsning ändrar inte kön. Automatisk
-  rensning av sparplatser infördes inte i version 4. Modelltester täcker
-  migreringen. Version 5 har ett separat uttryckligt undantag enligt
-  `engangsreset-terraformning` nedan.
-
-- `gemensam-planetko`, `skeppsdelar`, `delfabriker` och `automatiska-delorder`
-  skyddas av modelltester för en färdig order per år, reservationer, automatisk
-  delplanering, fabriksbrist, deltransporter och sparning, samt webbläsartester
-  som forskar fram fabrikerna och tillverkar en Fighter genom hela kedjan.
-
 - `handelser` och `arsrundor-och-order`: domänmodellen publicerar händelser när
   de inträffar; ankomst registreras exakt en gång. Livefaserna är planning, simulating och interrupted. Äldre sparad summary läses som planning och gamla steghändelser
   filtreras bort. Konsolen läser oföränderliga händelser, visar ett begränsat historikfönster
   utan att klippa senaste året och rullas enligt `senaste-aret-i-events`.
   Händelsehistoriken sparas i sin helhet. Tester skyddar fasväxling, ordning,
   ankomst, sparkompatibilitet, tillgänglig logg och små skärmar.
-
-- `skepp-ur-olastad-ruttflotta`: samma läsbara validering används för skeppsval,
-  klickflytt, dragning och domänens order. Game kontrollerar aktuell last före
-  mutation, inklusive skapande av nya flottor. När sista Transport ship lämnar
-  tas ruttuppdrag och Release-begäran bort och stängande rutter städas.
-  Modelltester skyddar last, oförändrat tillstånd vid avslag, fysisk resa,
-  lossning, väntande lagergods och sparning. Vy- och webbläsartester täcker
-  spärrade lastade flottor, dragning och New fleet för olastade flottor.
 
 2026-10-21: `utokad-testsvit` får 20 minuters jobbtid i GitHub CI. Den tidigare
 tiominutersgränsen avbröt körningen utan testfel efter att installation,
@@ -822,98 +571,21 @@ WebKit med sex arbetstrådar. Surfplatta WebKit väntar tills fler plattformar
 väljs. Detta ersätter de fyra profilerna och två arbetstrådar. Produktmålet
 att spelet ska gå att använda på surfplatta ligger kvar.
 
-- `fokuserat-kartval` och `rundkontroller-i-decisions`: enhetstester kontrollerar
-  växlingen mellan tomma rutor, himlakroppar, flottor och handelsrutter samt
-  rundknappens indata och spärr under simulering. Webbläsartester kontrollerar
-  nedre panelens utrymme och att Events och End turn går att använda i Decisions
-  utan sidscroll på telefon och i liggande format.
+- `fokuserat-kartval`: enhetstester kontrollerar växlingen mellan tomma
+  rutor, himlakroppar och flottor samt rundknappens indata och spärr under
+  simulering. Webbläsartester kontrollerar nedre panelens utrymme och att
+  Events och End turn går att använda utan sidscroll på telefon och i
+  liggande format.
 
-- `forskningstradets-utrymme`: enhetstester skyddar stationsantalets placering,
-  borttagna zoomkontroller och öppen kö vid orderändringar. Webbläsartester
+- `forskningstradets-utrymme`: enhetstester skyddar borttagna zoomkontroller och öppen kö vid orderändringar. Webbläsartester
   kontrollerar trädets tillgängliga yta i stående och liggande format,
   oförändrad trädyta när kön öppnas samt pinch, mushjul och tangentbord.
 
-## Automatiska delorder genom handelsnätverket
+## Sparkompatibilitet och flottkort
 
-`automatiska-delorder` — **Fullständigt implementerat**: `ComponentPlanner`
-tar fram en plan med privata tillgänglighetspooler och en lokal ID-sekvens.
-`Game` validerar hela planen innan köer, reservationer och ID-sekvens ändras.
-Alla produktionsorder använder samma planeringsingång och befintliga recept.
-Controllers och vyer behåller MVC-gränserna.
-
-Sparformat version 4 innehåller `componentOrders`, som kopplar huvudprojekt,
-del, mängd, källa, aktuell lagerplats och eventuell produktionsorder.
-`Shipment.componentOrderId` kopplar fysisk frakt till reservationen. Delar
-reserveras även för senare köprojekt och efter lossning fram till förbrukning.
-Avbrutna huvudorder släpper reservationer; delproduktion behålls och lastat
-gods följer tidigare avbrottsregler. Version 2 och 3 läses utan automatisk
-nybeställning eller radering. Sparplatsnycklarna ändras inte.
-
-Kartornas försörjningsläsmodeller får skrivskyddade mängder för beställd produktion och
-aktuella hinder. Framtida produktion blir aldrig en fiktiv Shipment.
-`streckade-rutter-utan-transporter` — **Fullständigt implementerat**:
-`TradeRouteSnapshot.hasActiveTransport` använder samma transportvillkor som
-ruttsökningen. p5-vyn använder detta värde för zoomoberoende streckning och
-återställer canvasens linjemönster efter ritning.
-
-Kravkopplade modelltester skyddar avslag utan delvisa ändringar, prioritering,
-leveranstider och likafall, reservationer, omordning, avbeställning, omlastning,
-sparning och faktisk färdigställning. Vytester skyddar streckningen vid flera
-zoomnivåer. Browsertester verifierar beställning genom controller, synlig
-väntan och fel, sparning och hela produktionskedjan. Snabbsviten behåller
-20-sekundersgränsen; den utökade sviten kör bygg- och browsertester i CI.
-
-## Terraforming och engångsrensning
-
-- `fardig-terraformning-till-temperate` — **Fullständigt implementerat**:
-  PlanetEnvironment härleder aktuell planettyp från befintligt sparad
-  habitability: stenplaneter vid 100% är Temperate. Grundtypen i galaxen
-  bevarar tidigare upptäckta forskningskedjor och Dome-förberedelser.
-  Game använder aktuell typ för byggvalidering och alla bilders snapshots,
-  ogiltigförklarar kartcachen vid färdigställande och avvecklar fabriker samt
-  köade terraformingfabriker före årsproduktionen. Befintlig logistikstädning
-  släpper reservationer för avbeställda projekt. Sparformat och version är
-  oförändrade; inga sparplatser rensas. Modelltester och mobiltest under samma
-  kravnamn skyddar färdigställande, material, övriga byggnader, bildval,
-  kartcache och omladdning.
-
-- `engangsreset-terraformning` — **Fullständigt implementerat**: efter uttryckligt
-  användarbeslut 2026-10-24 töms de tre befintliga testsparplatserna en gång.
-  Markören `spacelords.terraforming-v5-reset` förhindrar upprepad rensning.
-  Annan webbläsarlagring lämnas kvar.
-- `avstamning-sparkompatibilitet` — **Fullständigt implementerat**: arbetsregeln
-  finns i AGENTS.md. Beslutet ersätter äldre bevarandekrav enbart för denna leverans. Fråga
-  användaren på nytt vid framtida inkompatibla ändringar; testsparningarnas
-  nuvarande status är inte ett generellt tillstånd att radera spel.
-- Sparformat version 5 lagrar planetens aktuella habitability och
-  Dome-förberedelser per plats. Nya spel och köade Dome-projekt ska överleva
-  omladdning. Tidigare modellformat kan fortsatt läsas för regressionstester;
-  ingen migrering av användarens äldre testspel ingår i leveransen.
-- PlanetEnvironment beräknar kapacitet oberoende av HTML och p5. Game samordnar
-  utveckling, upptäckt och byggvalidering. Vyer läser skrivskyddade snapshots
-  och skickar order genom controllers. Forskningsträdets vy och kamera får
-  samma upptäckta teknikmängd.
-- Modelltester i `terraforming` använder kravnamnen `terraformning`,
-  `planettypsforskning`, `domes-per-byggplats`, `andningsbar-atmosfar`,
-  `habitability-kapacitet` och `engangsreset-terraformning`. Browserflödet
-  verifierar forskning, Dome, fabrik, atmosfärgräns och sparning på mobil och dator.
-
-- Det längre browserflödet för `skepp-till-rorlig-flotta` har 60 sekunders
-  tidsbudget för två rundor, omladdning och kartinteraktioner i WebKit.
-  Kontrollerna och CI-jobbets gräns på 20 minuter behålls.
-
-## Motorbestyckning och sparkompatibilitet
-
-`automatisk-motormontering` — **Fullständigt implementerat**: Modellen bevarar varje
-skepps stabila id och installerade motorer. Vyer får oföränderliga
-ögonblicksbilder och skickar individuella skeppsval via controller.
-Motorer och fart verifieras vid flytt, förstärkning, sammanslagning och kolonisering.
-
-`avstamning-sparkompatibilitet`: Sparversion 8 läser fortsatt version 2–7.
-Befintliga skepp får Rocket engine utan lageravdrag; äldre uppnådd forskning
-behålls och saknade motorförkunskaper kompletteras. Äldre köade skepp behålls
-med synligt motorbehov. Ingen ny rensningsmarkör eller ändrad lagringsnyckel
-införs. Laddning av version 2–5 och bevarande av motorbestyckning verifieras automatiskt.
+`avstamning-sparkompatibilitet`: framtida inkompatibla ändringar av sparade
+spel stäms av med användaren. Sparformatet är version 18 enligt
+`sparformat`; äldre versioner avvisas.
 
 `kompakta-flottkort` behåller fyra skepp per rad även när flera flottkort delar
 kartpanelen på dator eller surfplatta. Skeppsknapparnas bredd anpassas till
@@ -923,93 +595,11 @@ för hela flottan; Engines & speed tas bort från flottkorten enligt ändringen
 höga vid minst 220 px kortbredd. Webbläsarregressionen verifierar radantal, korthöjd och
 kontrollernas träffytor.
 
-`dome-fore-fabriksforslag` använder Game.productionGuidance och samma skrivskyddade
-byggplatsdata som produktionsalternativen. Ledig förberedd plats, tom plats som
-behöver Dome, köad Dome och upptagna platser skiljs åt i modellen. Fabriker och
-vanliga byggnader erbjuds endast med en ledig förberedd plats; Dome-alternativ
-prioriteras när lediga oförberedda platser finns. Befintliga fabrikers produkter
-påverkas inte. Kartan och planetens Production-undersida läser samma oföränderliga
-ProductionGuidance; alla val och beställningar går genom controller. Sparformat,
-forskning och Domes-per-byggplats-regler ändras inte.
-
-`produktionsflotta-efter-kolonisering` kräver lokal position för den automatiska
-hemflottan vid färdig produktion. Uttryckligen valda tomma mottagare fungerar
-fortfarande. Äldre sparningar med tom hemflotta hanteras utan formatändring.
-
-`produktionsflottors-automatiska-namn` lagrar nästa nummer per planet-ID och
-skeppstyp i sparformat 15. Game skapar namnet atomärt när produktionen behöver
-en ny flotta. Version 2–14 läses fortsatt; befintliga namn ändras inte och
-första nya numret väljs utan konflikt. `unika-flottnamn` valideras i Game vid namnbyte och används vid all automatisk
-namngivning. Inläsning normaliserar äldre dubbletter utan att ändra flott-ID,
-skepp, order eller sparformat. `rutt-eskortfordelning` använder samma
-TradeAssignment-validering i modell och förhandsvisning. Game fördelar Fighters
-via befintlig transferShips och fysisk FleetPursuit; skeppsenheter och motorer
-bevaras. Fördelningen räknar även väntande förstärkningar och muterar först efter
-validering. Kapacitet och leveranser använder fortfarande enbart Transport ship.
-`ruttflottor-pa-kartan` och `ruttflottor-vid-ruttanslutning` använder
-FleetMapLayout för både p5-rendering och träfftest. Route använder
-mittpunktsplacering. Star map och Fleets använder endpointplacering en halv
-hexradie mot ruttens andra ände och fasta världsmått mellan samlokaliserade
-flottor. Resande flottor använder verklig position. Vyn ändrar aldrig
-domänpositionen.
-
-`forskning-kraver-station` valideras i Game.selectResearch innan ResearchPlan
-lägger till tekniken eller dess förkunskaper. ResearchSnapshot exponerar
-queueBlockedReason från färdiga, ägda stationer utan rivningsorder. Samma
-läsmodell spärrar knappar och styr Decisions. Operating stations räknas fortsatt
-separat för framsteg. Befintliga sparningar och forskningsköer bevaras utan
-formatändring eller rensning.
-
-`dubbelklick-bygger-pa-kartan` använder en controlleravsikt med explicit
-produkttyp och befintliga beställningsoperationer i modellen. HTML-knapparna i
-byggcirkeln bevaras vid enbart ändrat val så att webbläsarens dubbelklick kan
-registreras; aria-pressed uppdateras utan att ersätta knapparna. Två efterföljande
-tryck på samma alternativ inom 500 ms beställer en gång även i WebKit, och
-den efterföljande syntetiska dubbelklickshändelsen skapar ingen extra order.
-Hovring behåller minst 4,5:1 kontrast mellan byggvalets text och bakgrund.
-`byggknapp-vid-titel` använder en gemensam flexrad för titel och Build i kartans
-byggdetaljer. Kostnader och hinder finns nedanför och ingen ny köbegränsning
-införs.
-
-`beslutsmarkering-pa-flikar` använder decisionScreen i modellen som gemensam
-målfunktion för Review och navigeringsmarkeringar. AppReadModel exponerar en
-oföränderlig lista attentionScreens som härleds från needsAttention. Kartans
-problemmarkeringar behåller sin avgränsning; byggval och lediga flottor ger
-flikmarkeringar och riktad gul vägledning enligt `beslutsvagledning-i-vyn`;
-röda problemringar behåller sin tidigare betydelse. Vyn lägger till ! samt
-Needs attention för tillgänglighet på varje berörd flik. Ingen ny data sparas.
-`tystade-beslut-sist` grupperas stabilt i DecisionBoard innan oföränderliga
-ögonblicksbilder skapas. Next decision tas bort från vy, controller och
-avsiktskontrakt; Review går fortsatt genom befintliga navigeringshandlingar.
-
-`produktionsval-efter-forekomst` härleds i Game.productionOptions från färdiga
-byggnader, lagrade Domes, komponentlager/frakt och befintliga flottor.
-`produktionsberoenden-i-byggval` härleds från projectDefinition.parts och
-fabrikens produktrecept samt BUILDINGS.component. Alternativa motorfabriker
-behandlas som ett gemensamt behov. Endast färdiga fabriker utan rivningsorder
-uppfyller producentbedömningen. ProductionPriorities använder en stabil
-beroendeordning med förekomstgrupper som prioritet; en cirkel bryts
-förutsägbart så att inga val försvinner eller låser traverseringen.
-ProductionOption exponerar oföränderliga antal och dependencyWarning. Vyn
-visar !, tillgänglig förklaring och vald varning, men ändrar inte domänregler
-eller spärrar Build på grund av rådgivningen. Befintliga controllers,
-validering, kategorier och sidor återanvänds. Granskning ändrar inte sparat spel,
-order, reservationer eller ID-sekvens. Sparformatet ändras inte.
-
-`senaste-aret-i-events` bevarar Decisions-konsolen ansluten när beslutslistan
-renderas om. Nya poster rullar listan till slutet. Läsposition mellan vyer
+`senaste-aret-i-events` bevarar konsolen ansluten när vyn renderas om. Nya poster rullar listan till slutet. Läsposition mellan vyer
 bevaras bara när samma poster visas. `utvikbara-events` använder HTML details/summary och
 tillfälligt presentationstillstånd i AppView. Utfällning rullar till senaste
 händelserna. Höjd begränsas av sidans och skärmens utrymme, med intern scroll.
-`rundkontroller-pa-fler-vyer` återanvänder TurnActionsView och befintliga
-controllerhandlingar. Research och planetvyn behålls under startTurn.
-
-`beslutsvagledning-i-vyn` använder en separat vy för åtgärdstext, Show och
-HTML-markeringar. needsAttention och decisionScreen är gemensamma med
-navigeringen. p5 ritar ringar från samma aktiva beslut och gemensam
-FleetMapLayout; markerade skepp och planeter behåller korrekt träfftest.
-Varken guidning, utfällning eller läsposition skapar nya domänorder,
-reservationer, sparfält eller ID:n. Befintliga sparningar bevaras.
+Research behålls under startTurn.
 
 ## Space pirates och strid
 
@@ -1071,56 +661,13 @@ verklig npm-start och fortsatt stopp vid fel. Länkskyddet testas med junctions
 på Windows utan krav på administratörsrättigheter och med symboliska länkar
 på Unix. Ingen publicering mot verkliga repon ingår i dessa tester.
 
-`forskningstradets-utrymme`: varningen om saknad Research station är ett
-överlägg utan att reservera någon innehållsrad. Trädet fyller ytan även utan stationer; native
+`forskningstradets-utrymme`: trädet fyller ytan; native
 touch-regressionen kontrollerar både tillgänglig höjd och zoom/panorering.
 
 `symbolbaserade-kataloger`: återgång från detaljer bevarar vald posts
 fokus även när WebKit släpper fokus före Back-handlingen. Vyn sparar
 återgångsmålet från indata, oberoende av webbläsarens aktiva element.
 Regressionstestet verifierar förlorat fokus före klicket.
-
-### Bärgning och strider i sparade spel
-
-`spara-bargning-och-stridsavbrott`: format 10 läser även format 2–9 utan rensning.
-Äldre spel får inga retroaktiva vrak. Vrakets ShipUnit, exklusiva reservationer,
-släp, stationer, ordnade reparationsköer, forskningsfynd och stridsrapporter sparas. Inkonsekvent
-dockning, fel motorantal och okända fynd avvisas.
-
-`bogsering-av-vrak`: årssimuleringen räknar 60 tidsenheter per flotta. Ett steg
-kostar 60/farten vid steget. Ändrad fart vid upphämtning, lossning eller reparation
-ger ingen ny tidsbudget. Äldre sparningars återstående hexantal omvandlas till tid.
-
-`stridsrapport-i-dialog`: alla strider i samma samtidiga steg avgörs innan paus.
-Controller sparar resultaten före visning. Handle ger orderbehörighet; Continue
-återupptar kvarvarande rörelse och applicerar årets ekonomi exakt en gång.
-
-`orbitalt-varv`, `automatisk-varvsplacering` och `automatisk-vrakreparation`:
-Factories väljer en ledig grannhex automatiskt och reserverar den vid köläggning.
-Reparationsköer är separata från planetens Build queue och behandlas i stabil
-varvsordning efter ordinarie produktion. Material och personer debiteras
-först vid färdig reparation; inga nya komponenter tillverkas för det gamla skrovet.
-Salvage håller vrak, dockning och order samlade. Vyer läser frysta ögonblicksbilder.
-Kartmarkörer och träffytor delar geometri; order nås också utan dragning.
-
-Riktade modelltester och mobiltester i Chromium och WebKit skyddar bärgning,
-bogseringens fart, varvsplacering, reparation, förstörelse, återuppbyggnad,
-forskningsundantag och omladdning. Snabbsvitens gräns på 20 sekunder gäller fortsatt.
-
-## Beslut som väntar på påbörjade åtgärder
-
-`beslut-vantar-pa-paborjad-atgard` bedöms i modellen från befintliga köer,
-forskningsmål, rutter, leveranser och lager. Samma bedömning används för
-Decisions, produktionsvägledning, försörjningsöversikten och projektens steg.
-Bedömningen utför inga order och ändrar inga verkliga lager, reservationer
-eller transportvägar. Tillgängligt lager för väntande transport räknas bara
-en gång i en stabil projektordning; senare projekt får inte lovas samma mängd.
-
-Vyerna läser oföränderliga ögonblicksbilder. Vänteskäl lagras inte i sparningen;
-de beräknas på nytt efter köändring och omladdning. Befintliga besluts-ID:n,
-Mute-inställningar och sparformat behålls. Det nya grundbeslutet
-`research-stalled` används när köad forskning saknar Research station och
-ingen ersättning har beställts.
 
 ## Uppspelning av avslutat år
 
@@ -1138,15 +685,16 @@ och återupptas inte efter omladdning; den fullständiga senaste årsloggen visa
 i stället. Upptäckts- och stridsavbrott behåller befintlig sparning och
 fortsättning; en återläst avbruten runda får sin normala uppspelning vid avslut.
 
-GameEvent får valfria frysta q/r-koordinater vid händelsens uppkomst, även genom
-LogisticsPort. Händelsepositionen beror inte på ett senare objekts position
+GameEvent får valfria frysta q/r-koordinater vid händelsens uppkomst. Händelsepositionen beror inte på ett senare objekts position
 eller existens. Äldre händelser utan koordinater läses utan migrering eller
 rensning. Händelser med ogiltig valfri position behåller sin text utan kartmål.
 Globala forskningshändelser får ingen konstruerad position. p5 i instance mode
 ritar ring och etikett från läsmodellen; HTML visar lista och kontroller.
 
-Uppspelningens kamera är separat från planeringskameran. Föregående vy,
-giltiga val och kamerans exakta centrum och zoom återställs vid avslut.
+Uppspelningens kamera är separat från planeringskameran. Föregående vy och
+giltiga val återställs vid avslut. Efter en färd stannar kameran på skeppet.
+En ren händelseuppspelning rör bara uppspelningskameran, så planeringskameran
+syns igen när händelsen är slut.
 Orienteringsbyte ändrar layout utan att återställa aktuell händelse.
 Listan växer med senaste årets innehåll och rullas internt vid maxhöjd.
 Enhetstester skyddar ordning, timer, spärrar, sparkompatibilitet, positioner
@@ -1155,67 +703,47 @@ kartmarkering, kontroller, rullning och omladdning i Chromium och WebKit.
 
 ## Flottpresentation och händelseannonsering
 
-### Gemensam autonom presentation 2026-11-08
+### Geografisk ordning
 
-`samtidig-automatisk-flottanimation` är **Fullständigt implementerat**.
-TurnMovementPlayback klassificerar Route/Civilian, Explore, Explore stars,
-Patrol, Guard routes, Auto salvage och automatiskt tilldelade planetköer från
-flottans domänsnapshot och samlar deras synliga spår i en gemensam första
-batch. Manuella spår behåller geografiskt sorterade enflottebatcher.
-MasterController ramar in alla batchens ändpunkter en gång och animerar ett
-steg per kvarvarande spår med samma klocka. En autonom batch begränsas till
-cirka fyra sekunders rörelse genom kortare bildtid per hex; manuella Move-steg
-behåller 400 ms. Simuleringsordning, rörelsebudget,
-upptäcktsavbrott och sparad händelseordning ändras inte.
-
-### Gemensam farledspresentation och geografisk ordning 2026-10-31
-
-`samtidig-farledsanimation`, `destinationer-for-aktiva-skepp` och
-`geografisk-arsuppspelning` är **Fullständigt implementerat**.
-Farledstrafiken ingår numera i den autonoma första gruppen. Manuella
-flottspår sorteras efter sin första synliga
-världsposition: stigande x, sedan fallande y. EventPlayback använder samma
-ordning för platsbundna händelser och lägger positionslösa sist, med stabil
-ordning för lika positioner. Simulering och sparad logg sorteras aldrig om;
-upptäckts- och stridsavbrott delar fortfarande upp presentationen.
-
-Controller ramar in gruppens alla synliga ändpunkter före första steget och
-animerar ett steg per kvarvarande spår samtidigt. Kortare spår stannar när
-de är klara. AppModel lämnar frysta turnMovements till vyerna; sikt uppdateras
-gemensamt när markörerna passerar hexkanten. GalaxyMapView interpolerar alla
-aktuella markörer med samma klocka. Destinationspilar begränsas till dessa
-flottor och till vald flotta utan Route, och döljs under händelser. Kameran förblir stilla under gruppens färd;
-befintlig storleksanpassning och minskad rörelse återanvänds.
-
-Detta ersätter den seriella presentationen nedan för autonoma order och tidigare
-krav på kronologisk annonsering. Domänmodell och sparformat ändras inte.
-Kravkopplade regressionstester skyddar samtidighet, geografisk ordning,
-destinationspilar, mobil inramning, sikt och kameraåterställning.
+TurnMovementPlayback lägger varje synligt spår i en egen grupp och sorterar
+grupperna geografiskt efter startplatsen, från vänster till höger och vid
+samma horisontella läge nerifrån och upp (`geografisk-arsuppspelning`). Den
+samtidiga presentationen av autonoma flottor är borttagen med de automatiska
+orderna (`single-fleet-rensning`). AppModel lämnar frysta turnMovements till
+vyerna; sikt uppdateras när markören passerar hexkanten. Destinationspilar
+begränsas till flottan som rör sig och till vald flotta, och döljs under
+händelser. `kamera-foljer-skepp` ersätter stillaståendet i
+`stillastaende-kamera-vid-forflyttning`: kameran följer spelarens skepp
+under färden och behåller zoom. `klick-pa-synlig-hex` träffar hexen i den
+kamera som ritas, även när uppspelningskameran skiljer sig från
+planeringskameran. Domänmodell och sparformat ändras inte.
 
 ### Händelseanpassad kamera
 
-`handelseanpassad-kartkamera` och `stillastaende-kamera-vid-forflyttning`
-är **Fullständigt implementerat**.
-Detta ersätter kameraföljningen i `en-flotta-i-taget` från 2026-10-30.
+`handelseanpassad-kartkamera` är **Fullständigt implementerat** för
+händelser. `kamera-foljer-skepp` ersätter stillaståendet under färd i
+`stillastaende-kamera-vid-forflyttning`, som i sin tur ersatte
+kameraföljningen i `en-flotta-i-taget` från 2026-10-30. Färden zoomar inte
+ut för att rymma hela rutten.
 CameraFraming beräknar oföränderliga kamerafaser från världspunkter och fri
-kartrektangel, oberoende av p5. En färds samtliga inspelade synliga ändpunkter
-ingår, så även mellanliggande svängar ryms. Dolda rörelser ingår aldrig.
+kartrektangel, oberoende av p5. Det används för händelser. En färd följer
+skeppet i stället för att rama in hela rutten. Dolda rörelser ingår aldrig.
 
-Utzoomning kring aktuellt centrum tar 300 ms och hoppas över när målen redan
-syns. Därefter panoreras och zoomas kameran samtidigt under 450 ms till
-största inramning upp till zoom 1. Hexarnas utbredning och 24 skärmpixlars
+Händelsens utzoomning kring aktuellt centrum tar 300 ms och hoppas över när
+målen redan syns. Därefter panoreras och zoomas kameran samtidigt under 450 ms
+till största inramning upp till zoom 1. Hexarnas utbredning och 24 skärmpixlars
 marginal ingår; på extremt små ytor minskas marginalen till en fjärdedel av
 ytans mått. Zoom interpoleras logaritmiskt och båda faserna använder mjuk
 acceleration och inbromsning. Målområdets skärmläge interpoleras så att målen
 förblir synliga även under en stor samtidig panorering och inzoomning.
-Uppspelningskameran får underskrida den manuella
-minzoomen för att hela färden ska rymmas. Spelarens zoomgränser ändras inte.
+Uppspelningskameran får underskrida den manuella minzoomen för att händelsens
+mål ska rymmas. Spelarens zoomgränser ändras inte. En färd använder inte den
+inramningen.
 
-MasterController inväntar kamerafaserna före skeppets första rörelsesteg.
-Vyns animationsklocka rapporterar progression; controllern uppdaterar modellen
-och vyn renderar dess läsmodell. GalaxyMapView ändrar enbart skeppsmarkörens
-position under färden. Kameran är gemensam genom rörelser och efterföljande
-händelser och är separat från planeringskameran. EventPlayback får den
+Under färden flyttar controllern kameran till skeppets glidpunkt och behåller
+zoomen. Vyns animationsklocka rapporterar progression; controllern uppdaterar
+modellen och vyn renderar dess läsmodell. Klick, panorering och zoom använder
+samma kamera som bilden. EventPlayback får den
 sessionsbundna fasen framing före announcing eller awaiting-choice; lästid
 och beslut börjar efter inramningen. Globala och äldre positionslösa
 händelser får ingen kamerafas.
@@ -1226,8 +754,9 @@ skeppsrörelse eller annonsering tillämpas den
 nya inramningen direkt utan att uppspelningen startas om. Vid minskad rörelse
 tillämpas slutläget direkt. Dispose avbryter animationsklockan och löser dess
 väntande löfte utan fortsatt modelluppdatering. Sparformat och domänmodell
-ändras inte. Enhets- och riktade mobiltester skyddar inramning, stillastående
-kamera, kontinuitet, rotation, minskad rörelse, beslut och återställning.
+ändras inte. Enhets- och riktade mobiltester skyddar inramning, att kameran
+följer skeppet, klick i den synliga kameran, kontinuitet, rotation, minskad
+rörelse, beslut och återställning.
 
 EventPlayback har stegen announcing (1 400 ms) och filing (450 ms).
 AppView visar den aktuella texten i ett fast HTML-lager ovanpå gränssnittet,
@@ -1278,24 +807,6 @@ markeringsringen. Information rullas internt, medan Handle och Ignore har
 minst 44 px träffyta och ligger utanför rullningen. Vid högst 360 px höjd döljs
 varumärkesraden tillfälligt; navigation och End turn förblir synliga.
 
-## Bärgningsval från flottan
-
-`bargningsorder-fran-flotta` använder befintlig SalvageOrder och samma
-kapacitetsbedömning för flottans knapp, vrakpanelen och dragning. Vrakets
-identitet väljs vid avslutat klick, så flera vrak i samma hex inte blandas
-ihop eller ersätts av en vanlig flyttorder. Valet går via controller och
-order sparas efter målvalet. Sparformatet ändras inte.
-
-## Sparad koloniseringsorder
-
-`koloniseringsorder`: Fleet har det valfria fältet colonizationTargetId i
-befintligt sparformat version 12. Äldre sparningar utan fältet läses som
-tidigare; ingen rensning eller inkompatibel migrering görs. Återläsningen
-validerar planet, Colony ship och oförenliga uppdrag. Game samordnar färd,
-strid och grundning; vyerna väljer planet och skickar avsikter via controller.
-Den befintliga metoden för kolonigrundning återanvänds för skeppsförbrukning,
-befolkning, lager och kartminne. Nya kolonier bidrar direkt till aktuell sikt.
-
 ## Snabbsvitens utrymme 2026-10-30
 
 `snabb-testsvit`: en diagnostisk körning godkände alla 579 tester men tog
@@ -1306,39 +817,6 @@ Spelregler, centrala användarflöden och de nya regressionstesterna för
 `grupperade-transporthandelser` och `ett-meddelande-per-skeppsbygge` behålls
 snabba. Därefter passerade 556 tester på 19,25 sekunder inklusive start.
 20-sekundersgränsen är oförändrad.
-
-## Sparade automatiska uppdrag
-
-`automatisk-bargning`, `automatisk-farledsbemanning`,
-`ombemanning-vid-stangd-farled`, `guard-routes` och
-`fria-utforsknings-och-patrullorder`: Fleet har ett valfritt
-automation-fält med värdet salvage, transport eller guard i befintlig
-sparversion 13. Saknat fält behåller äldre beteende. `homeRouteId` är
-valfritt för Civilian shuttles. Återläsningen validerar skeppstyp och
-oförenliga uppdrag. Ingen sparning rensas. Automated transport, Fleet
-patrol och Automated exploration plockas bort ur genomförd forskning, kö
-och bärgad forskning. Tidigare aktiva Patrol- och Explore-order får
-fortsätta. En väntande transport-automation tilldelas med den nya
-bemanningsregeln.
-
-Game samordnar målval, SalvageOrder och ruttbemanning. Auto salvage
-kontrolleras mot forskning i modellen samt visas i vyerna. Vyerna läser
-ögonblicksbilder och skickar order genom controller. Order sparas efter
-knapptryck. Nya ordertekniker är inga byggnadsalternativ. Den befintliga
-rörelsebudgeten återanvänds utan extra steg vid byte mellan hämtning och
-leverans. Detta ersätter `automatisk-rutttilldelning` och forskningslåsen
-för Explore, Patrol och Auto assign route i `forskade-automatiska-order`.
-
-## Civiltrafik
-
-Civiltrafikens beteendekrav finns i [civiltrafik](civilian-transport.md).
-CivilianTraffic håller bokningar, vägval och passagerare oberoende av p5 och DOM.
-Game samordnar trafik med fysisk flottförflyttning, strid och årsekonomi.
-En fabrik kan erbjuda flera skeppstyper; Transport ship factory erbjuder även
-Civilian shuttle, med separat kontroll av forskningen Civilian transport.
-Vyer får oföränderliga snapshots. Flottans tilläggsfält sparas i befintligt
-sparformat; äldre flottor normaliseras med noll Civilian shuttles. Ingen
-sparplats rensas och inga befintliga order aktiveras automatiskt.
 
 ## Taktisk strid och sparkompatibilitet
 
@@ -1400,7 +878,7 @@ konfliktmarkörer, publiceringskatalog och filinnehåll behålls.
 
 ## Raptor-grafik
 
-`egen-raptor-grafik`: ShipImages och BuildingSymbols tillhandahåller egna transparenta WebP-bilder för Raptor och Raptor factory. Fabriken använder symbolen som reservbild tills ett porträtt finns.
+`egen-raptor-grafik`: ShipImages tillhandahåller en egen transparent WebP-bild för Raptor.
 
 ## Dockningskorridor
 
@@ -1594,175 +1072,3 @@ markeringsläge till BoardingView, vilket förhindrar att ett redan markerat må
 skjuts. BoardingCameraController panorerar därefter målfiguren till den fria
 kartytans mitt under 300 ms med exakt bevarad zoom. Manuell kameraavbrytning och
 minskad rörelse använder samma regler som övriga automatiska kameraflöden.
-
-# Varvets materialförsörjning
-
-`varvets-automatiska-materialforsorjning`: varje fungerande varvs första
-reparationspost representeras i logistikens behov och använder vrakets stabila
-identitet för leveranser. Omordning uppdaterar planeringen. Befintliga
-sparfält används och leveranser på väg hanteras enligt logistikens vanliga
-regler. Riktade tester verifierar behov efter omladdning och transport fram till
-färdig reparation.
-
-## Bordningshandlingar och bildfrekvens
-
-- `granat-kostar-bara-vid-kast` och `stang-oppen-dorr`: BoardingBattle
-  exponerar `grenadeReason` och `doorReason` som läsfrågor. Kommandona
-  validerar med samma frågor innan `#spend`, och vyn stänger av knapparna
-  utifrån dem. `#hack` validerar dörren före AP-dragning. Regressionstester i
-  `tests/boarding/unit/boarding-actions.test.ts` och vytester i
-  `tests/space-battle/unit/battle-controls.test.ts`.
-- `gang-mot-avlagset-mal`: `BoardingBattle.routeTowards` väljer billigaste
-  väg till målet, eller till en kantgranne vid stängd dörr respektive en granne
-  vid upptagen ruta. `stepTowards` returnerar sista rutan som ryms i
-  kvarvarande AP. Vyn skickar `walk` vid andra trycket på ett mål som inte
-  ryms och `move` när hela vägen ryms.
-- `vand-mot-vald-ruta`: `boardingTurnsToward` ger kortaste följden av
-  45-gradersvändningar mot rutans närmaste av åtta riktningar. Vyn skickar
-  `face` vid första trycket på en tom ruta när vändning behövs och ryms;
-  kommandot vänder så långt AP räcker. Tester i
-  `tests/boarding/unit/boarding-walk-to-destination.test.ts` och
-  `tests/space-battle/unit/battle-controls.test.ts`.
-- `vandning-mot-nasta-steg`, `ap-fraktion-sparas` och
-  `sparad-gangdestination`: `walk` tar alla steg fram till sista
-  överkomliga framåtsteget och därefter de vändningar före nästa framåtsteg
-  som ryms. Är det som återstår mindre än nästa stegs kostnad, vilket det
-  alltid är när vägen inte nåtts, avslutas aktiveringen och resten sparas i
-  `BoardingPerson.carriedAp`, som läggs till vid nästa aktivering
-  (`#startActivation`) och då nollställs. Ett ej nått mål sparas i
-  `BoardingPerson.destination`; `move` och ett nått mål tar bort det. Vyn
-  väljer sparad destination när en soldat aktiveras och efter en animering
-  inom samma aktivering. Båda fälten är valfria, så äldre sparade spel laddas
-  oförändrade.
-- `fast-soldatordning`: `#beginRound` sorterar initiativet som tidigare och
-  fördelar sedan spelarsoldaternas platser på soldaterna i `people`-ordning.
-- `bordning-jamn-bildfrekvens`: profilering visade att p5:s `tint()` ritade om
-  hela figuratlasen fyra gånger per figur och bildruta. BoardingMapView ritar
-  nu bilder via `drawImage` med `filter: brightness()` och `globalAlpha`.
-  Golvlagret ritas i en `p5.Graphics` i isokoordinater med upplösning i
-  halvoktavsteg (högst 3072 px per sida) och nyckel av ljussignatur, sikt,
-  minne och laddade golvbilder. `paintTexturedQuad` hoppar över `clip()` när
-  klippolygonen är exakt texturens parallellogram, och väggar och objekt utanför
-  canvasen sorteras bort. Ritningen per bildruta blev ungefär tre gånger
-  snabbare i profileringen. Siktkonturen har en stråle förbi varje väggörn
-  inom räckhåll, i testbordningen 20 975 punkter, och ritades, klipptes och
-  användes för halvskyddsskuggor i varje bildruta (30–70 ms). Vyn projicerar
-  och förenklar den med Douglas–Peucker (tolerans 0,1 världspixel) en gång
-  per siktområde, `boardingSimplifiedOutline`, vilket gav 12 punkter och
-  0,1–0,2 ms. Golvlagrets nyckel är nu mängden någonsin sedda rutor, se
-  `jamn-ljuskarta-under-forflyttning`.
-- `snabb-bordningsvagsokning`: `pathTo` var en Dijkstra över ruta och
-  riktning som sorterade om hela kön vid varje uttag och kopierade vägen i
-  varje nod. `routeTowards` frågade upp till nio mål, vyn gjorde om sökningen
-  vid varje ritning med en ny `BoardingBattle`, och en civilist utan nåbar
-  utgång frågade varje ruta på kartan. I testbordningen tog en fråga upp till
-  56 ms, `routeTowards` 250 ms och en civilists drag 5,4 s i Node.
-  `BoardingRouteTree` söker nu en gång från personens ställning med en binär
-  heap ordnad på kostnad och sedan upptäcktsordning, och sparar föräldranoder
-  i stället för hela vägar. Varje rutas väg är den första ställning som nådde
-  rutan, samma väg som den tidigare sökningen stannade vid; en jämförelse över
-  ett helt testförlopp gav identiska vägar. Trädet cachas per person och
-  tillståndsobjekt, som övriga siktcacher, och `BoardingView` återanvänder en
-  `BoardingBattle` per visat tillstånd. Efteråt tar en fråga under 0,1 ms,
-  det tyngsta försvarardraget 250 ms och ett turavslut 45–65 ms. Varje
-  kommando beräknade dessutom sikt och kunskap två gånger, i `command()` och i
-  `synchronize()`. `#refreshKnowledge` hoppar nu över ett tillståndsobjekt
-  som den själv just producerade; den läser bara positioner, riktningar,
-  föremål och rök, inte sina egna utdata, så resultatet blir detsamma.
-  Siktytan (20–55 ms) återstår som kostnad. A* valdes bort eftersom de flesta frågor gäller många mål eller
-  mål som inte går att nå.
-- `ingen-rok-i-hela-vaggar`: `BoardingBattle.#smokeCanFill` avvisar rutor utan
-  terräng och rutor med oförstörd vägg, ytterskrov eller stängd dörr. Både
-  rökgranatens placering och spridningen vid rundslut använder den; spridningen
-  blockeras inte längre av personer. `smokeCells` filtreras med samma regel så
-  att äldre sparad rök i väggar inte visas. Sparformatet ändras inte.
-- `bordning-explosioner-och-forstorelse`: `BoardingEffectParticles` är
-  p5-oberoende och ger deterministiska partiklar per effekt och förfluten tid.
-  BoardingMapView startar en effekt när ett skott eller kast landar (granattypen
-  skickas med `playShot`) och när ett känt objekt blir förstört mellan två
-  renderade tillstånd. Effekterna ritas med canvas (additivt för eld) och håller
-  p5-loopen igång bara medan de pågår. Förstörda objekt ritas som bråte.
-- `avstangda-omojliga-handlingar`: vyn stänger av knapparna utifrån
-  kvarvarande AP och de exporterade kostnaderna `BOARDING_HACK_AP`,
-  `BOARDING_MED_PACK_AP` och `BOARDING_EVACUATE_AP`, plus avstånd och
-  modellens `grenadeReason` och `doorReason`.
-- `fasta-handlingsplatser`: BoardingView ritar alltid samma knappar i samma
-  ordning med fast storlek; knappar utan mål är avstängda i stället för
-  borttagna. `Open door` och `Close door` delar en plats: en vald dörr
-  avgör, annars en öppen dörr på destinationen, dörren framför soldaten och
-  sist en angränsande öppen dörr. `boardingActionButtonImage` ger
-  `Close door` spelets stängda dörrbild (`door-face.png`) i stället för
-  atlasens öppna dörr.
-  `Abort boarding` finns bara i kampanjen men ändras inte under en strid.
-- `gang-knapp-till-avlagset-mal`: `Move` är tillgänglig när
-  `routeTowards` hittar en väg och skickar `move` när hela vägen ryms,
-  annars `walk`. Vytester i `tests/space-battle/unit/battle-controls.test.ts`.
-- `utslagen-fiende-utan-sikte` och `ljudmarkor-bara-utom-sikt`:
-  `BoardingBattle.targetIndicators` tar bara med aktiva fiender, och
-  BoardingMapView ritar HP-mätare bara för aktiva personer och ljudmarkörer bara
-  utanför aktuell sikt. `attackPreview` är oförändrad.
-- Testisolering: snabbsviten kör med `isolate: false`. Testfiler som ersätter
-  `p5` med `vi.mock` laddar därför om vymodulen med `vi.resetModules()` och
-  dynamisk import, så att en vy som en annan fil redan laddat med riktig p5
-  inte återanvänds. Det rättar det tidigare ordningsberoende felet i
-  `spelidentisk-bordningseditor`.
-- `fiende-syns-till-sin-tur`: `BoardingBattleState.lingeringPersonIds` (valfritt
-  fält, så äldre sparade spel fungerar) håller försvarare och civila som
-  spelarsidan sett. `#refreshKnowledge` behåller ett id så länge personen lever
-  och inte är aktuell aktör; en försvarare måste dessutom stå kvar på sin senast
-  kända ruta. Civilfasen glömmer varje civil innan den agerar. `visibleSnapshot` tar med dem,
-  och BoardingMapView ritar dem utanför sikt i stället för frågetecknet. AI:n
-  och träffchanser använder fortfarande bara aktuell sikt.
-- `billig-vandning`: `BOARDING_TURN_AP = 0.25` används av vridkommandot,
-  vägsökningens vändsteg och `#move`, som drar varje stegs egen kostnad.
-  Vridknapparna är avstängda först under 0,25 AP. Kvartar är exakta flyttal,
-  så AP-summorna avrundas inte.
-- `geometrisk-sikt` och `delvis-synligt-mal`: `BoardingSightGeometry.ts` är ren
-  modellkod utan p5. Ruta (q, r) är enhetskvadraten kring (q, r). Synlig andel
-  mäts med 5×5 provpunkter och strålgång genom rutnätet (Amanatides–Woo), där
-  målrutan själv aldrig skymmer. Siktkonturen svepes med en stråle per grad
-  plus strålar strax förbi varje blockerande hörn. `BoardingBattle` cachar
-  blockerande rutor per tillstånd och använder andelen för `#canSee` (minst
-  `BOARDING_SEEN_SHARE`), skott och `boardingPartialSightDefense`.
-- `sikt-over-hela-skeppet`: `BoardingBattle` skickar
-  `boardingShipSightRadius(width, height)`, kartans diagonal plus en halv ruta,
-  som radie till alla siktberäkningar. `BOARDING_SIGHT_RADIUS` (8,5) är bara
-  standardvärdet för den fristående geometrin. Skottens gräns på 8 rutor i
-  `#canFire` är oförändrad.
-  `sightArea(id)` ger konturen och halvskydden till BoardingMapView, som ritar
-  dem på golvet före väggar och personer.
-- `halvskydd-skuggar-delvis`: `boardingTileSight` ger både synlig andel och
-  den andel av den synliga delen vars stråle passerar halvskydd inom en ruta
-  (Chebyshev) från målet. `#coveredShare` mäter från skyttens ruta mot målet och
-  ersätter `#coverBetween`. `boardingCoverShadow` bygger skuggfyrhörningen från
-  rutans silhuetthörn ut till mittavståndet plus 1,5 ruta; `sightArea` lämnar
-  den som `coverShadows`.
-- `halvskydd-markering-sammanfogad`: `boardingCoverShadow` tar valfritt en
-  låg väggs plattor och bygger då skuggan från deras hörn. Vyn fyller alla
-  skuggor med en gemensam bana (samma varvriktning, nonzero) och ritar konturen
-  på ett återanvänt offscreen-lager: alla kanter stryks och skuggornas insidor
-  raderas, så bara unionens yttre kant blir kvar. Både fyllning och kontur klipps
-  mot siktpolygonen och mot skeppets rutor. Rutramarna runt `halfCover` tas bort.
-- `hukad-ser-inte-over-halvskydd`: `#visionBlocksFor` och `#bodiesFor` gör
-  för en hukad betraktare lådor (hel ruta), låga väggar (deras plattor) och
-  hukade personer (pelare) blockerande när de ligger mer än en ruta bort
-  (Chebyshev). Det gäller sikt, kunskap, eldval, siktytan och skyddsandelen.
-- `grannruta-syns-genom-rok`: `#visionBlocksFor` tar emot målrutan; ligger
-  den inom en ruta (Chebyshev) från betraktaren används `#smokelessBlocks`,
-  där rök inte blockerar men väggar gör det. Det gäller sikt, kunskap, eldval,
-  sikte och skyddsandel; den ritade siktytan påverkas inte.
-- `skott-langs-fri-siktlinje`: `boardingAimPoint` väljer bland siktens 5×5
-  provpunkter den fria punkt som ligger närmast målrutans mitt. Skottet sparar
-  den som `aim`; glas krossas längs linjen dit och spårljuset ritas dit. Detta
-  ersätter linjen mitt-till-mitt i `krossbart-glas`.
-- `avstand-paverkar-traffchans`: `boardingRangeDefense(avstånd)` läggs till i
-  `attackPreview` (därmed även Overwatch), men inte i `meleePreview`.
-  Siktytan ritas med fyllnadsalfa 14 och 1,25 breda linjer; skuggor med alfa 24
-  och 1 bred linje.
-- `personer-som-pelare-i-sikt`: aktiva personer blir `BoardingSightBody`
-  (cirklar med radie 0,25 i rutans mitt, `cover` för hukande) och cachas per
-  tillstånd. Strålar mot stående cirklar blockeras; hukande cirklar inom en ruta
-  från målet räknas som halvskydd. Cirklar i skyttens och målets egna rutor
-  hoppas över. Siktkonturen får extra strålar vid cirklarnas tangenter, och
-  `boardingBodyShadow` ger skuggan bakom hukande. Den gamla kontrollen av
-  personer längs linjen mellan rutornas mitt är borttagen.

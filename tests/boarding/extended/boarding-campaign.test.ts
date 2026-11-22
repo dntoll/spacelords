@@ -7,12 +7,7 @@ import {
   SHIP_PROFILES,
   battleWeapons,
 } from '../../../src/client/space-battle/models/TacticalBattle.js';
-import {
-  BUILDINGS,
-  Game,
-  SHIPS,
-} from '../../../src/client/space-map/models/Game.js';
-import { ResearchPlan } from '../../../src/client/space-map/models/research/Research.js';
+import { Game, SHIPS } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import { emptyStock } from '../../../src/client/space-map/models/Economy.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
@@ -371,30 +366,14 @@ describe('avbryt-bordning-i-egna-skepp', () => {
   });
 });
 
-describe('bordningsbeloning-last-teknik-karta / raptor-efter-dockningsteknik', () => {
-  it('makes recovered Raptor factory researchable without Weapons module factory', () => {
-    const locked = new ResearchPlan();
-    expect(locked.prerequisites('Raptor factory')).toEqual([
-      'Weapons module factory',
-    ]);
-    const recovered = new ResearchPlan(
-      new Set(),
-      [],
-      new Set(['Raptor factory']),
-    );
-    expect(recovered.prerequisites('Raptor factory')).toEqual([]);
-    recovered.add('Raptor factory');
-    expect(recovered.queue).toEqual(['Raptor factory']);
-  });
-
-  it('builds a Raptor with light cannon stats after the factory is researched', () => {
+describe('bordningsbeloning-last-teknik-karta', () => {
+  it('gives a Raptor light cannon stats', () => {
     expect(SHIPS.Raptor).toEqual({ crew: 50, speed: 2 });
     expect(SHIP_PROFILES.Raptor).toEqual({ size: 1, hull: 3, movement: 3 });
     expect(battleWeapons('Raptor')).toEqual(['Light cannon']);
-    expect(BUILDINGS['Raptor factory'].ship).toBe('Raptor');
   });
 
-  it('captures hold cargo, recovers Raptor factory and reveals a disk of 4 around the nearest other pirate', () => {
+  it('captures hold cargo and reveals a disk of 4 around the nearest other pirate', () => {
     const galaxy = createExampleGalaxy();
     const state = new Game(galaxy).exportState();
     const nadir = state.pirates!.find(
@@ -474,7 +453,6 @@ describe('bordningsbeloning-last-teknik-karta / raptor-efter-dockningsteknik', (
     expect(game.boardingBattle).not.toBeNull();
     const before = new Set(game.exportState().explored);
     game.finishBoarding('victory');
-    expect(game.research.recovered).toContain('Raptor factory');
     expect(game.fleet(state.fleets[0]!.id)?.cargo?.Iron).toBe(7);
     expect(
       game.tacticalBattle!.pieces.find((piece) => piece.id === defender.id)

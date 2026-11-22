@@ -21,16 +21,10 @@ export class SaveFacade {
       lastPlayed: new Date().toISOString(),
       state: game.exportState(),
     });
-    this.host.mapTrade.clearSelection();
-    this.host.mapProductionPage = 0;
-    this.host.mapProductionOption = null;
-    this.host.mapProjectId = null;
     this.host.game = game;
     this.host.testBattle = null;
     this.host.testBoarding = null;
     this.host.battleFeedback = null;
-    this.host.orderSelection = null;
-    this.host.shipStartOrder = null;
     this.host.inspectedResearch = null;
     this.host.eventPlayback = null;
     this.host.presentedEventIds.clear();
@@ -42,9 +36,6 @@ export class SaveFacade {
     this.host.cameraFraming = null;
     this.host.playbackPositions = [];
     this.host.turnContext = null;
-    this.host.salvageSelection = null;
-    this.host.shipyardPlacement = null;
-    this.host.pendingEndTurn = false;
     this.host.pendingResearchRemoval = null;
     this.host.activeSlot = id;
     this.host.camera = new Camera(
@@ -57,13 +48,24 @@ export class SaveFacade {
     this.host.pendingClearSlot = null;
     this.host.selectedFleetId = null;
     this.host.fleetNameEdit = null;
-    this.host.shipTransfer = null;
     this.host.mapFleetId = null;
     this.host.destinationFleetId = null;
+    this.host.voyage = false;
+    this.host.resetDiscoveryFlashes();
     this.host.cancelMapPointer();
-    this.host.productionReceipt = null;
     if (game.interruption?.handling) this.host.focusInterruptedFleet();
     else if (game.phase === 'interrupted') this.host.beginEventPlayback();
+    if (game.discoveryPause())
+      this.host.noteDiscoveries(
+        game.interruption!.discoveries.map((discovery) =>
+          Object.freeze({
+            kind: discovery.kind,
+            name: discovery.name,
+            hex: `${discovery.position.q},${discovery.position.r}`,
+            ...(discovery.eventId ? { eventId: discovery.eventId } : {}),
+          }),
+        ),
+      );
   }
 
   openSaves(): void {

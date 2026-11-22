@@ -34,13 +34,9 @@ export class SaveMapPreview {
         sketch.noLoop();
         sketch.describe('Overview of explored space.');
         this.#ready = true;
-        this.#artwork.load(
-          sketch,
-          () => {
-            void sketch.redraw();
-          },
-          false,
-        );
+        this.#artwork.load(sketch, () => {
+          void sketch.redraw();
+        });
         void sketch
           .loadImage(starSprite)
           .then((sprite) => {
@@ -78,13 +74,7 @@ export class SaveMapPreview {
           sketch.endShape(sketch.CLOSE);
           if (cell.object) {
             sketch.noStroke();
-            sketch.fill(
-              cell.object.owned
-                ? '#b0e5ce'
-                : cell.object.kind === 'star'
-                  ? '#efcd85'
-                  : '#86adc5',
-            );
+            sketch.fill(cell.object.kind === 'star' ? '#efcd85' : '#86adc5');
             if (cell.object.kind === 'star')
               renderStarGlyph(
                 sketch,
@@ -98,7 +88,7 @@ export class SaveMapPreview {
                 sketch,
                 point,
                 18,
-                cell.object.owned ? '#b0e5ce' : '#86adc5',
+                '#86adc5',
                 cell.object.surveyed
                   ? this.#artwork.planet(
                       cell.object.type === 'gas'

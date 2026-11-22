@@ -1,8 +1,7 @@
 import { pirateAsFleet } from '../PirateFleet.js';
-import type { MapViewport } from '../ProductionMap.js';
-import { hitSalvageMarker } from './SalvageMapLayout.js';
+import type { MapViewport } from '../MapScreen.js';
 import { FleetMapLayout } from './FleetMapLayout.js';
-import { fleetCategory, type FleetCategory } from '../fleets/FleetCategory.js';
+import { travelFleet } from './Travel.js';
 import {
   HexGeometry,
   type HexCoordinate,
@@ -10,224 +9,100 @@ import {
 } from '../../../common/HexCoordinate.js';
 import type { AppHost } from '../../../app/models/AppModel.js';
 
+/** What a tap on the map did; the master starts a journey on `travel`. */
+export type MapSelection =
+  'ignored' | 'selected' | 'destination' | 'travel' | 'resume';
+
 export class StarMapFacade {
   constructor(private readonly host: AppHost) {}
 
-  select(position: HexCoordinate): void {
-    if (!this.host.isMapScreen()) return;
-    if (this.host.screen === 'orders' && this.host.orderSelection) {
-      if (this.host.orderSelection.page === 'patrol')
-        this.host.completeOrder({
-          kind: 'patrol',
-          position: { q: position.q, r: position.r },
-        });
-      else if (
-        this.host.orderSelection.page === 'colonize' ||
-        this.host.orderSelection.page === 'explore-planet'
-      ) {
-        const intel = this.host.game.planetIntel(position);
-        const valid =
-          this.host.orderSelection.page === 'colonize'
-            ? intel?.surveyed
-            : intel && !intel.surveyed;
-        const planet = valid
-          ? this.host.game.galaxy.systems
-              .flatMap((system) => system.planets)
-              .find((planet) => planet.position.key === position.key)
-          : null;
-        if (planet)
-          this.host.completeOrder({
-            kind: this.host.orderSelection.page,
-            planetId: planet.id,
-          });
-      }
-      return;
-    }
-    if (this.host.shipyardPlacement) {
-      this.host.placeShipyard(position);
-      return;
-    }
-    this.host.salvageSelection = null;
+  /**
+   * hexval-med-vag: the first tap selects a hex and shows the route there; a
+   * second tap on the selected hex sends the fleet on its way.
+   */
+  select(position: HexCoordinate): MapSelection {
+    if (!this.host.isMapScreen()) return 'ignored';
     if (!this.host.game.galaxy.cellAt(position)) {
-      if (this.host.screen === 'production') {
-        this.host.selected = position;
-        this.host.mapProjectId = null;
-        this.host.mapProductionOption = null;
-        this.host.mapProductionPage = 0;
-      }
       if (this.host.screen === 'fleets' && !this.host.destinationFleetId) {
-        this.host.cancelShipTransfer();
         this.host.cancelFleetRename();
         this.host.mapFleetId = null;
       }
-      return;
+      return 'ignored';
     }
     if (this.host.destinationFleetId) {
-      if (this.host.destinationOrder === 'salvage') {
-        const wrecks = this.host.game.wrecks.filter(
-          (wreck) =>
-            wreck.position.key === position.key &&
-            !wreck.reservedBy &&
-            !wreck.towedBy &&
-            !wreck.yardId,
-        );
-        if (wrecks.length !== 1)
-          throw new Error(
-            'Choose a specific available wreck marker or select a wreck from the list.',
-          );
-        this.host.selectSalvage(wrecks[0]!.id);
-      } else if (this.host.destinationOrder === 'colonize')
-        this.host.game.setColonization(this.host.destinationFleetId, position);
-      else
-        this.host.game.setDestination(this.host.destinationFleetId, position);
+      this.host.game.setDestination(this.host.destinationFleetId, position);
       this.host.destinationFleetId = null;
-      this.host.destinationOrder = 'move';
-    } else {
-      this.host.cancelShipTransfer();
-      this.host.cancelFleetRename();
-      this.host.mapTrade.clearSelection();
-      if (this.host.selected.key !== position.key) {
-        this.host.mapProductionOption = null;
-        this.host.mapProductionPage = 0;
-        this.host.mapProjectId = null;
-      }
-      this.host.selected = position;
-      this.host.mapFleetId = null;
-      this.host.fitProduction();
+      return 'destination';
     }
+    const fleet = travelFleet(this.host.game, this.host.mapFleetId);
+    const paused = this.host.game.discoveryPause();
+    if (
+      position.key === this.host.selected.key &&
+      fleet &&
+      (this.host.game.phase === 'planning' || paused) &&
+      this.host.game.routePreview(fleet.id, position).length
+    ) {
+      this.host.game.setDestination(fleet.id, position);
+      // upptackt-stannar-resan: a new hex continues this round only.
+      this.host.voyage = !paused;
+      return paused ? 'resume' : 'travel';
+    }
+    this.host.cancelFleetRename();
+    this.host.voyage = false;
+    this.host.selected = position;
+    this.host.mapFleetId = null;
+    return 'selected';
   }
 
   fleetAtPoint(point: Point): string | null {
-    if (
-      this.host.screen === 'orders' &&
-      this.host.orderSelection?.page !== 'fleets'
-    )
-      return null;
-    if (
-      !this.host.isMapScreen() ||
-      this.host.screen === 'production' ||
-      this.host.destinationFleetId
-    )
-      return null;
+    if (!this.host.isMapScreen() || this.host.destinationFleetId) return null;
     return FleetMapLayout.hit(
       [
-        ...this.host.game
-          .fleetSnapshots()
-          .filter(
-            (fleet) =>
-              this.host.screen !== 'orders' ||
-              this.host.orderSelection?.page !== 'fleets' ||
-              !fleet.routeId,
-          )
-          .filter(
-            (fleet) =>
-              this.host.screen !== 'fleets' ||
-              !this.host.hiddenFleetCategories.has(fleetCategory(fleet)),
-          ),
-        ...(this.host.screen === 'orders'
-          ? []
-          : this.host.game.pirateSnapshots().map(pirateAsFleet)),
+        ...this.host.game.fleetSnapshots(),
+        ...this.host.game.pirateSnapshots().map(pirateAsFleet),
       ],
-      this.host.camera.screenToWorld(point),
-      ['map', 'fleets'].includes(this.host.screen)
-        ? this.host.game.tradeRoutes
-        : [],
-      this.host.camera.snapshot.zoom,
+      this.#shownCamera().screenToWorld(point),
+      this.#shownCamera().snapshot.zoom,
     );
   }
 
-  /** flottkategorier: show or hide one category on the Fleets map. */
-  toggleFleetCategory(category: FleetCategory): void {
-    const hidden = this.host.hiddenFleetCategories;
-    if (hidden.has(category)) hidden.delete(category);
-    else hidden.add(category);
-    const selected = this.host.mapFleetId
-      ? this.host.game.fleet(this.host.mapFleetId)
-      : null;
-    if (selected && hidden.has(fleetCategory(selected)))
-      this.host.mapFleetId = null;
-  }
-
   selectMapFleet(id: string): void {
-    if (this.host.screen === 'orders') {
-      if (
-        this.host.orderSelection?.page === 'fleets' &&
-        this.host.orderSnapshot()?.fleetTargets.some((fleet) => fleet.id === id)
-      ) {
-        this.host.orderSelection = {
-          ...this.host.orderSelection,
-          selectedFleetId: id,
-        };
-        this.host.mapFleetId = id;
-      }
-      return;
-    }
-    this.host.salvageSelection = null;
-    if (!this.host.isMapScreen() || this.host.screen === 'production') return;
+    if (!this.host.isMapScreen()) return;
     const pirate = this.host.game
       .pirateSnapshots()
       .find((pirate) => pirate.id === id);
     const fleet =
       this.host.game.fleet(id) ?? (pirate ? pirateAsFleet(pirate) : null);
     if (fleet && Object.values(fleet.ships).some((count) => count > 0)) {
-      this.host.mapTrade.clearSelection();
       this.host.mapFleetId = id;
     }
   }
 
   hoverMapFleet(point: Point | null): boolean {
     const next = point ? this.host.fleetAtPoint(point) : null;
-    const changed = this.host.mapTrade.hover(
-      this.host.screen === 'fleets' || this.host.screen === 'production' || next
-        ? null
-        : point,
-    );
-    if (next === this.host.hoveredFleetId) return changed;
+    if (next === this.host.hoveredFleetId) return false;
     this.host.hoveredFleetId = next;
     return true;
   }
 
   previewFleetDestination(point: Point): void {
-    if (this.host.screen === 'orders') return;
     if (
       !this.host.isMapScreen() ||
-      this.host.screen === 'production' ||
       !this.host.mapFleetId ||
       !this.host.game.fleet(this.host.mapFleetId) ||
       !this.host.game.canIssueFleetOrders(this.host.mapFleetId)
     )
       return;
     this.host.fleetDragging = true;
-    if (
-      this.host.game.phase === 'planning' &&
-      this.host.screen === 'map' &&
-      this.host.mapTrade.hoverAssignment(this.host.mapFleetId, point)
-    ) {
-      this.host.fleetDestinationPreview = null;
-      return;
-    }
-    const target = HexGeometry.fromPoint(this.host.camera.screenToWorld(point));
-    this.host.fleetDestinationPreview =
-      !this.host.game.fleet(this.host.mapFleetId)?.routeId &&
-      this.host.game.galaxy.cellAt(target)
-        ? target
-        : null;
+    const target = HexGeometry.fromPoint(
+      this.#shownCamera().screenToWorld(point),
+    );
+    this.host.fleetDestinationPreview = this.host.game.galaxy.cellAt(target)
+      ? target
+      : null;
   }
 
   commitFleetDestination(): void {
-    const trade = this.host.mapTrade.snapshot;
-    if (
-      this.host.screen === 'map' &&
-      this.host.mapFleetId &&
-      trade.hoveredRouteIds.length
-    ) {
-      const id = this.host.mapFleetId;
-      const candidates = trade.hoveredRouteIds;
-      this.host.cancelMapPointer();
-      if (candidates.length > 1) this.host.mapTrade.choose(candidates, id);
-      else this.host.assignMapTradeFleet(candidates[0]!, id);
-      return;
-    }
     try {
       if (
         this.host.mapFleetId &&
@@ -244,37 +119,19 @@ export class StarMapFacade {
   }
 
   cancelMapPointer(): void {
-    this.host.mapTrade.cancel();
     this.host.hoveredFleetId = null;
     this.host.fleetDestinationPreview = null;
     this.host.fleetDragging = false;
   }
 
-  selectPoint(point: Point): void {
-    const world = this.host.camera.screenToWorld(point);
-    const hex = HexGeometry.fromPoint(world);
-    if (this.host.screen === 'map' && !this.host.destinationFleetId) {
-      const cell = this.host.game
-        .mapSnapshot()
-        .find((c) => c.position.key === hex.key);
-      const center = HexGeometry.toPoint(hex);
-      const onPlanet =
-        cell?.object?.kind === 'planet' &&
-        Math.hypot(world.x - center.x, world.y - center.y) <=
-          Math.max(8.5, 12 / this.host.camera.snapshot.zoom);
-      const routes = onPlanet ? [] : this.host.mapTrade.hits(point);
-      if (routes.length === 1) {
-        this.host.selectMapRoute(routes[0]!);
-        return;
-      }
-      if (routes.length > 1) {
-        this.host.mapFleetId = null;
-        this.host.mapTrade.clearSelection();
-        this.host.mapTrade.choose(routes);
-        return;
-      }
-    }
-    this.host.select(hex);
+  selectPoint(point: Point): MapSelection {
+    const world = this.#shownCamera().screenToWorld(point);
+    return this.select(HexGeometry.fromPoint(world));
+  }
+
+  /** klick-pa-synlig-hex: hits use the camera the map is drawing. */
+  #shownCamera() {
+    return this.host.eventCamera ?? this.host.camera;
   }
 
   openMap(): void {
@@ -283,24 +140,19 @@ export class StarMapFacade {
 
   pan(delta: Point): void {
     this.host.pendingMapFocus = null;
-    this.host.camera.panBy(delta);
+    this.#shownCamera().panBy(delta);
   }
 
   zoom(factor: number, anchor: Point): void {
     this.host.pendingMapFocus = null;
-    this.host.camera.zoomAt(factor, anchor);
+    this.#shownCamera().zoomAt(factor, anchor);
   }
 
   home(): void {
-    this.host.mapTrade.clearSelection();
     this.host.camera.reset();
     this.host.selected = this.host.game.galaxy.homePlanet.position;
     this.host.requestMapFocus(this.host.selected);
     this.host.mapFleetId = null;
-    this.host.mapProjectId = null;
-    this.host.mapProductionOption = null;
-    this.host.mapProductionPage = 0;
-    this.host.fitProduction();
   }
 
   resizeMap(viewport: MapViewport): void {
@@ -333,126 +185,5 @@ export class StarMapFacade {
       });
       this.host.pendingMapFocus = null;
     }
-    this.host.fitProduction();
-  }
-
-  salvageAtPoint(point: Point): string | null {
-    if (
-      this.host.screen === 'orders' &&
-      this.host.orderSelection?.page !== 'salvage'
-    )
-      return null;
-    if (
-      !this.host.isMapScreen() ||
-      (this.host.destinationFleetId &&
-        this.host.destinationOrder !== 'salvage') ||
-      this.host.shipyardPlacement
-    )
-      return null;
-    return (
-      hitSalvageMarker(
-        this.host.game.wrecks,
-        this.host.game.shipyards,
-        this.host.camera.snapshot.zoom,
-        this.host.camera.screenToWorld(point),
-      )?.id ?? null
-    );
-  }
-
-  selectSalvage(id: string): void {
-    if (this.host.screen === 'orders') {
-      if (this.host.orderSelection?.page === 'salvage')
-        this.host.completeOrder({ kind: 'salvage', wreckId: id });
-      return;
-    }
-    if (
-      this.host.destinationFleetId &&
-      this.host.destinationOrder === 'salvage'
-    ) {
-      this.host.orderSalvage(this.host.destinationFleetId, id);
-      this.host.destinationFleetId = null;
-      this.host.destinationOrder = 'move';
-      return;
-    }
-    this.host.shipyardPlacement = null;
-    this.host.screen = 'map';
-    this.host.salvageSelection = id;
-    this.host.mapFleetId = null;
-  }
-
-  orderSalvage(fleetId: string, wreckId: string): void {
-    this.host.game.orderSalvage(fleetId, wreckId);
-    this.host.salvageSelection = null;
-    this.host.mapFleetId = fleetId;
-  }
-
-  dropSalvage(point: Point): void {
-    const fleetId = this.host.salvageDropTarget(point);
-    if (!fleetId || !this.host.salvageSelection)
-      throw new Error('Drop the wreck onto a fleet with a Salvage ship.');
-    this.host.orderSalvage(fleetId, this.host.salvageSelection);
-    this.host.hoveredFleetId = null;
-  }
-
-  previewSalvage(point: Point): void {
-    this.host.hoveredFleetId = this.host.salvageDropTarget(point);
-  }
-
-  returnToShipyard(id: string): void {
-    this.host.game.returnToShipyard(id);
-  }
-
-  releaseWreck(fleetId: string, id: string): void {
-    this.host.game.releaseWreck(fleetId, id);
-  }
-
-  beginShipyardPlacement(
-    planetId: string,
-    site?: number,
-    yardId: string | null = null,
-  ): void {
-    const choices = this.host.game.freeShipyardHexes(planetId);
-    if (!choices.length)
-      throw new Error('No free neighboring hex is available.');
-    this.host.shipyardPlacement = Object.freeze({
-      planetId,
-      site,
-      yardId,
-      choices,
-    });
-    this.host.screen = 'map';
-    this.host.salvageSelection = null;
-    this.host.mapFleetId = null;
-  }
-
-  rebuildShipyard(id: string): void {
-    const yard = this.host.game.shipyards.find((item) => item.id === id);
-    if (yard) this.host.beginShipyardPlacement(yard.planetId, undefined, id);
-  }
-
-  moveRepair(yardId: string, wreckId: string, index: number): void {
-    this.host.game.moveRepair(yardId, wreckId, index);
-  }
-
-  cancelShipyardPlacement(): void {
-    this.host.shipyardPlacement = null;
-  }
-
-  placeShipyard(position: HexCoordinate): void {
-    const placement = this.host.shipyardPlacement;
-    if (!placement) return;
-    if (placement.yardId)
-      this.host.game.scheduleRebuildShipyard(placement.yardId, position);
-    else
-      this.host.game.scheduleBuild(
-        this.host.game.galaxy.systems
-          .flatMap((system) => system.planets)
-          .find((planet) => planet.id === placement.planetId)!,
-        'Orbital shipyard',
-        placement.site,
-        position,
-      );
-    this.host.shipyardPlacement = null;
-    this.host.notice = Object.freeze({ kind: 'shipyard-queued' });
   }
 }

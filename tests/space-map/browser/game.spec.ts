@@ -1,9 +1,5 @@
-import { scenarioTimeout } from '../../browser-timeouts.js';
-import { chooseFleetOrder, chooseShipStartFleet } from './fleet-helpers.js';
-import { formFleet, selectMapFleet } from './fleet-helpers.js';
 import { selectMapObject } from './map-helpers.js';
-import { chooseFleetDestination } from './fleet-helpers.js';
-import { startFirstSlot, endTurn, chooseResearch } from './save-helpers.js';
+import { startFirstSlot } from './save-helpers.js';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 async function canvas(page: Page): Promise<Locator> {
@@ -65,34 +61,11 @@ test('hexkarta / lokal-sikt / synliga-stjarnor: paints a real canvas without hid
   ).toHaveCount(0);
 });
 
-test('planetinformation / visa-byggalternativ / vynavigation: preserves camera through both views', async ({
+test('vynavigation: preserves the map camera through Research', async ({
   page,
 }, testInfo) => {
   await page.locator('canvas[data-rendered="true"]').press('+');
   const zoom = await page.getByLabel('Map zoom').textContent();
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Tellus', exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText('Stored 100 · Extracting 0/round', { exact: true }).first(),
-  ).toBeVisible();
-  await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  await expect(
-    page.getByText('Build, upgrade and cancel construction in Factories.'),
-  ).toBeVisible();
-  await page.screenshot({
-    path: testInfo.outputPath('planet.png'),
-    fullPage: true,
-  });
-  await page
-    .getByRole('navigation', { name: 'Main navigation' })
-    .getByRole('button', { name: 'Star map', exact: true })
-    .click();
-  await canvas(page);
-  await expect(page.getByLabel('Map zoom')).toHaveText(zoom ?? '');
   for (let count = 0; count < 3; count += 1) {
     await page
       .getByRole('navigation', { name: 'Main navigation' })
@@ -101,10 +74,10 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
     await expect(
       page.getByRole('heading', { name: 'Research', exact: true }),
     ).toBeVisible();
-    // forskningsvy-utan-station: a new game shows the way to Factories.
+    // flottforskning-av-tekniker: the Queue tab explains the paused research.
     await expect(
-      page.getByText('Research needs a Research station.', { exact: false }),
-    ).toBeVisible();
+      page.getByText('Research does not advance yet.'),
+    ).toBeAttached();
     await expect(page.locator('canvas')).toHaveCount(0);
     if (count === 0)
       await page.screenshot({
@@ -128,30 +101,18 @@ test('planetinformation / visa-byggalternativ / vynavigation: preserves camera t
   await expect(page.getByLabel('Map zoom')).toHaveText('100%');
 });
 
-test('flottadministration / flottdestinationer: map orders and fleet-grid transfers preserve fleets', async ({
+test('inga-move-stop-knappar: Home Fleet has no Move or Stop', async ({
   page,
 }) => {
-  await chooseFleetDestination(page);
   await expect(
-    page.getByText('Choose a destination for Home Fleet.'),
-  ).toBeVisible();
-  await selectMapObject(page, 'Vesta');
+    page.getByRole('button', { name: 'Move', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Stop', exact: true }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole('button', { name: 'Clear destination', exact: true }),
-  ).toBeVisible();
-  await selectMapObject(page, 'Tellus');
-  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await formFleet(page);
-  await expect(
-    page.getByRole('button', { name: 'Fighter 1 in Fleet 1' }),
-  ).toBeVisible();
-  await page
-    .getByRole('button', { name: 'Exploration ship 1 in Home Fleet' })
-    .click();
-  await page.getByRole('button', { name: 'Move ship to Fleet 1' }).click();
-  await expect(
-    page.getByRole('button', { name: 'Exploration ship 1 in Fleet 1' }),
-  ).toBeVisible();
+  ).toHaveCount(0);
 });
 
 test('kartnavigation: keyboard pans and zooms, canvas hit-testing selects the home planet', async ({
@@ -169,9 +130,9 @@ test('kartnavigation: keyboard pans and zooms, canvas hit-testing selects the ho
   await expect(position).toHaveText(before ?? '');
   await selectMapObject(page, 'Vesta');
   await selectMapObject(page, 'Tellus');
-  await expect(
-    page.getByRole('button', { name: 'Open planet', exact: true }),
-  ).toBeVisible();
+  await expect(page.locator('.planet-selection-details')).toContainText(
+    'Tellus',
+  );
 });
 
 test('kartnavigation: a mouse drag pans without changing selection; wheel zoom stays bounded', async ({
@@ -190,9 +151,9 @@ test('kartnavigation: a mouse drag pans without changing selection; wheel zoom s
   await page.mouse.move(panStart.x + 100, panStart.y + 40, { steps: 8 });
   await page.mouse.up();
   await expect(position).not.toHaveText(before ?? '');
-  await expect(
-    page.getByRole('button', { name: 'Open planet', exact: true }),
-  ).toBeVisible();
+  await expect(page.locator('.planet-selection-details')).toContainText(
+    'Tellus',
+  );
   await page.mouse.move(panStart.x, panStart.y);
   await page.mouse.wheel(0, -100);
   await expect(page.getByLabel('Map zoom')).not.toHaveText('100%');
@@ -209,9 +170,9 @@ test('kartnavigation: native touch selects the planet', async ({
   await canvas(page);
   await selectMapObject(page, 'Vesta');
   await selectMapObject(page, 'Tellus', 'touch');
-  await expect(
-    page.getByRole('button', { name: 'Open planet', exact: true }),
-  ).toBeVisible();
+  await expect(page.locator('.planet-selection-details')).toContainText(
+    'Tellus',
+  );
 });
 
 test('kartnavigation: native touch drag and pinch preserve the selected planet', async ({
@@ -248,9 +209,9 @@ test('kartnavigation: native touch drag and pinch preserve the selected planet',
     touchPoints: [],
   });
   await expect(position).not.toHaveText(before ?? '');
-  await expect(
-    page.getByRole('button', { name: 'Open planet', exact: true }),
-  ).toBeVisible();
+  await expect(page.locator('.planet-selection-details')).toContainText(
+    'Tellus',
+  );
   const zoom = await page.getByLabel('Map zoom').textContent();
   const pinchY = point.y - 60;
   for (const x of [point.x - 40, point.x + 40]) {
@@ -283,9 +244,9 @@ test('kartnavigation: native touch drag and pinch preserve the selected planet',
   });
   await session.detach();
   await expect(page.getByLabel('Map zoom')).not.toHaveText(zoom ?? '');
-  await expect(
-    page.getByRole('button', { name: 'Open planet', exact: true }),
-  ).toBeVisible();
+  await expect(page.locator('.planet-selection-details')).toContainText(
+    'Tellus',
+  );
 });
 
 test('flera-skarmstorlekar: canvas follows its container without horizontal overflow', async ({
@@ -313,104 +274,10 @@ test('flera-skarmstorlekar: canvas follows its container without horizontal over
       .toBeLessThan(1);
     await expect(map).toHaveAttribute('data-rendered', 'true');
   }
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
+  await selectMapObject(page, 'Tellus');
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth,
     ),
   ).toBe(false);
-});
-
-test('byggtid-per-byggnad / skeppsorder-pa-planeten / forska-fram-fabriker / kolonisation: research, build ships and settle a new colony', async ({
-  page,
-}, testInfo) => {
-  scenarioTimeout(120_000);
-  const nextYear = async () => {
-    await page.getByRole('button', { name: 'Star map', exact: true }).click();
-    await endTurn(page);
-  };
-  const construction = async () => {
-    await page
-      .getByRole('button', { name: 'Open planet', exact: true })
-      .click();
-  };
-  await page.getByRole('button', { name: 'Factories', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Empty site 1 on Tellus', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Build Research station', exact: true })
-    .click();
-  for (let round = 0; round < 3; round++) await nextYear();
-  await page
-    .getByRole('navigation', { name: 'Main navigation' })
-    .getByRole('button', { name: 'Research', exact: true })
-    .click();
-  await chooseResearch(page, 'Colony ship factory');
-  for (let round = 0; round < 3; round++) await nextYear();
-  await page.getByRole('button', { name: 'Factories', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Empty site 2 on Tellus', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Build Colony ship factory', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Empty site 3 on Tellus', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Build Rocket engine factory', exact: true })
-    .click();
-  for (let round = 0; round < 3; round++) await nextYear();
-  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await formFleet(page);
-  await page.getByRole('button', { name: 'Production', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Show Colony ship', exact: true })
-    .click();
-  await chooseShipStartFleet(page, 'Fleet 1');
-  await page.getByRole('button', { name: 'Build', exact: true }).click();
-  await page.getByRole('tab', { name: 'Queue · 1' }).click();
-  await expect(page.locator('.map-queue-row')).toContainText('Colony ship');
-  await expect(page.locator('.map-queue-row .queue-drag-handle')).toHaveCount(
-    0,
-  );
-  for (let year = 0; year < 4; year++) await nextYear();
-  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await selectMapFleet(page, 'Fleet 1');
-  await expect(
-    page.getByRole('button', { name: 'Colony ship 1 in Fleet 1', exact: true }),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Star map', exact: true }).click();
-  // planetutforskning-vid-ankomst: Colony ships settle only explored planets.
-  await chooseFleetDestination(page, 'Home Fleet');
-  await selectMapObject(page, 'Vesta');
-  await chooseFleetDestination(page, 'Fleet 1');
-  await selectMapObject(page, 'Vesta');
-  await nextYear();
-  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await selectMapFleet(page, 'Fleet 1');
-  await chooseFleetOrder(page, 'Colonize');
-  await selectMapObject(page, 'Vesta');
-  await nextYear();
-  await selectMapObject(page, 'Vesta');
-  await expect(page.locator('.order-status')).toContainText(
-    '1 empty building sites',
-  );
-  await page.screenshot({
-    path: testInfo.outputPath('colonized-map.png'),
-    fullPage: true,
-  });
-  await construction();
-  await expect(
-    page.getByRole('heading', { name: 'Vesta', exact: true }),
-  ).toBeVisible();
-  await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  await expect(page.locator('.building-site')).toHaveCount(6);
-  await expect(
-    page.getByText('Build, upgrade and cancel construction in Factories.'),
-  ).toBeVisible();
-  await expect(page.locator('.locked-site')).toHaveCount(5);
 });

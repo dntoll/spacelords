@@ -15,10 +15,7 @@ import {
 
 describe('forsknings-tradnavigation', () => {
   it('kompakt-forskningstrad / storre-forskningstext: two-line tiles pack independent branches without overlap', () => {
-    const layout = new ResearchTreeLayout([
-      'Rocket engine factory',
-      'Telescope I factory',
-    ]);
+    const layout = new ResearchTreeLayout(['Missiles', 'Armor']);
     expect(layout.cardHeight).toBe(48);
     expect(layout.cardWidth).toBeLessThanOrEqual(108);
     const [first, second] = layout.nodes;
@@ -27,14 +24,14 @@ describe('forsknings-tradnavigation', () => {
   });
   it('forskningskamerans-granser: stops at the complete tree and cannot pan it into empty space', () => {
     const camera = new ResearchTreeCamera();
-    camera.resize(800, 600);
+    camera.resize(200, 150);
     camera.fit();
     const fitted = camera.snapshot;
     camera.zoomAt(0.1, { x: 10, y: 10 });
     expect(camera.snapshot).toEqual(fitted);
     camera.panBy({ x: 10000, y: -10000 });
     expect(camera.snapshot).toEqual(fitted);
-    camera.zoomAt(100, { x: 400, y: 300 });
+    camera.zoomAt(100, { x: 100, y: 75 });
     camera.panBy({ x: 10000, y: 10000 });
     const upper = camera.snapshot;
     expect(upper.offset.x + 32 * upper.zoom).toBeLessThanOrEqual(16.01);
@@ -42,7 +39,7 @@ describe('forsknings-tradnavigation', () => {
   });
   it('forskningskamerans-granser: recenters a small tree and rebinds after resize and newly available branches', () => {
     const camera = new ResearchTreeCamera();
-    camera.setTechnologies(['Rocket engine factory']);
+    camera.setTechnologies(['Missiles']);
     camera.resize(800, 600);
     camera.fit();
     expect(camera.snapshot.zoom).toBe(1.8);
@@ -50,10 +47,9 @@ describe('forsknings-tradnavigation', () => {
     camera.panBy({ x: -1000, y: 1000 });
     expect(camera.snapshot).toEqual(small);
     camera.setTechnologies(TECHNOLOGIES);
-    camera.fit();
-    expect(camera.snapshot.zoom).toBeLessThan(small.zoom);
     camera.resize(390, 700);
     camera.fit();
+    expect(camera.snapshot.zoom).toBeLessThan(small.zoom);
     const phone = camera.snapshot;
     camera.zoomAt(0.01, { x: 0, y: 0 });
     camera.panBy({ x: 900, y: -900 });

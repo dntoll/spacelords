@@ -2,25 +2,11 @@ import { Game } from '../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/space-map/models/exampleGalaxy.js';
 
 /**
- * Tellus with a Research station. `shipFactory` adds an idle Transport ship
- * factory, which is what makes Production ask for an order
- * (`produktionsbeslut-bara-for-skeppsfabrik`).
+ * A new game whose discovered planets are also surveyed. The planet economy
+ * and its Research stations are gone (`single-fleet-rensning`).
  */
-export function researchStationState({ shipFactory = false } = {}) {
+export function researchStationState() {
   const state = new Game(createExampleGalaxy()).exportState();
-  state.colonies[0]![1].buildings.push({
-    id: 'test-research-station',
-    type: 'Research station',
-    slotIndex: 0,
-    demolition: false,
-  });
-  if (shipFactory)
-    state.colonies[0]![1].buildings.push({
-      id: 'test-yard',
-      type: 'Transport ship factory',
-      slotIndex: 1,
-      demolition: false,
-    });
   return {
     ...state,
     surveyedPlanets: state.world.systems

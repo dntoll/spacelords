@@ -80,31 +80,13 @@ for (const size of [
     await expect(page.locator('canvas[data-rendered="true"]')).toHaveCount(1);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expectContentFits(page);
-    await page
-      .getByRole('button', { name: 'Open planet', exact: true })
-      .click();
-    await expect(
-      page.getByText('12,000', { exact: true }).first(),
-    ).toBeVisible();
-    await expectContentFits(page);
-    await expect(page.getByText('Iron', { exact: true })).toBeVisible();
-    await expect(
-      page
-        .getByText('Stored 100 · Extracting 0/round', { exact: true })
-        .first(),
-    ).toBeVisible();
-    await expectContentFits(page);
-    await page
-      .getByRole('button', { name: 'Building sites', exact: true })
-      .click();
-    await page.getByRole('button', { name: 'Factories', exact: true }).click();
-    await page
-      .getByRole('button', { name: 'Empty site 1 on Tellus', exact: true })
-      .click();
-    await expect(
-      page.getByRole('button', { name: 'Build Research station', exact: true }),
-    ).toBeEnabled();
-    await expectContentFits(page);
+    for (const label of ['Fleets', 'Production']) {
+      await page
+        .getByRole('navigation', { name: 'Main navigation' })
+        .getByRole('button', { name: label, exact: true })
+        .click();
+      await expectContentFits(page);
+    }
     await page
       .getByRole('navigation', { name: 'Main navigation' })
       .getByRole('button', { name: 'Research', exact: true })
@@ -125,7 +107,7 @@ for (const size of [
   });
 }
 
-test('viewport-game-layout: wider fallback font metrics cannot expand the planet screen', async ({
+test('viewport-game-layout: wider fallback font metrics cannot expand Research', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 568 });
@@ -134,48 +116,10 @@ test('viewport-game-layout: wider fallback font metrics cannot expand the planet
   await page.addStyleTag({
     content: ':root { font-family: system-ui, sans-serif; font-size: 18px; }',
   });
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
   await expectContentFits(page);
-  await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  await expectContentFits(page);
-  await page.getByRole('button', { name: 'Factories', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Empty site 1 on Tellus', exact: true })
-    .click();
-  await expect(
-    page.getByRole('button', { name: 'Build Research station', exact: true }),
-  ).toBeEnabled();
   await page
     .getByRole('navigation', { name: 'Main navigation' })
     .getByRole('button', { name: 'Research', exact: true })
     .click();
-  await expectContentFits(page);
-});
-
-test('planetsida-informerar: building sites guide players to Factories', async ({
-  page,
-}) => {
-  await page.goto('./');
-  await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  await expect(
-    page.getByText('Build, upgrade and cancel construction in Factories.'),
-  ).toBeVisible();
-  await expectContentFits(page);
-  await page.getByRole('button', { name: 'Factories', exact: true }).click();
-  const site = page.getByRole('button', {
-    name: 'Empty site 1 on Tellus',
-    exact: true,
-  });
-  await site.focus();
-  await site.press('Enter');
-  await expect(
-    page.getByRole('button', { name: 'Build Research station', exact: true }),
-  ).toBeVisible();
   await expectContentFits(page);
 });

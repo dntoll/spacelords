@@ -5,7 +5,6 @@ import { MasterController } from '../../../src/client/app/controllers/MasterCont
 import { AppView } from '../../../src/client/app/views/AppView.js';
 import { TECHNOLOGIES } from '../../../src/client/space-map/models/research/Research.js';
 import { renderResearch } from '../../../src/client/space-map/views/research/ResearchView.js';
-import { domeProductionState } from '../../fixtures/production-dome.js';
 import { researchStationModel } from '../../fixtures/research-station-model.js';
 
 // inga-overflodiga-navigeringsknappar: screens offer no buttons back to the
@@ -33,7 +32,7 @@ function mount(model: AppModel) {
 }
 
 describe('inga-overflodiga-navigeringsknappar', () => {
-  it('Research has no way back to the map or to Factories besides the main navigation', () => {
+  it('Research has no way back to the map besides the main navigation', () => {
     for (const model of [new AppModel(), researchStationModel()]) {
       const { controller, labels, root } = mount(model);
       model.openResearch();
@@ -44,30 +43,14 @@ describe('inga-overflodiga-navigeringsknappar', () => {
     }
   });
 
-  it('the planet page and Production guidance link to no main navigation screen', () => {
+  it('Production links to no main navigation screen', () => {
     const model = researchStationModel();
     const { controller, labels } = mount(model);
-    model.openPlanet('sol-0');
+    model.openProduction();
     controller.start();
-    expect(model.snapshot.screen).toBe('planet');
+    expect(model.snapshot.screen).toBe('production');
     for (const label of REDUNDANT) expect(labels()).not.toContain(label);
     controller.dispose();
-
-    const dome = new AppModel(undefined, {
-      load: () => ({
-        lastPlayed: '2026-10-25T00:00:00Z',
-        state: domeProductionState(false),
-      }),
-      save() {},
-      clear() {},
-    });
-    dome.startSlot(1);
-    dome.openProduction('sol-0');
-    const production = mount(dome);
-    expect(dome.snapshot.productionGuidance?.kind).toBe('research');
-    for (const label of REDUNDANT)
-      expect(production.labels()).not.toContain(label);
-    production.controller.dispose();
   });
 });
 
@@ -77,9 +60,6 @@ it('forskningstrad-utan-pilspetsar: dependency lines end without arrowheads', ()
       available: TECHNOLOGIES,
       completed: [],
       selected: null,
-      stations: 1,
-      builtStations: 1,
-      queueBlockedReason: null,
       queue: [],
     },
     false,

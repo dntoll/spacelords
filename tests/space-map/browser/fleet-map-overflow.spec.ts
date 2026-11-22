@@ -6,7 +6,7 @@ import { startFirstSlot } from './save-helpers.js';
 test('flottadministration / skeppsbilder / viewport-game-layout: long fleet lists stay bounded and the selected fleet is reachable', async ({
   page,
 }) => {
-  const initial = tradeNetworkState(false);
+  const initial = tradeNetworkState();
   const original = initial.fleets[0]!;
   const state = {
     ...initial,
@@ -81,7 +81,7 @@ test('flottadministration / skeppsbilder / viewport-game-layout: long fleet list
 test('kompakt-flottkort-med-order: fleet stats share the hangar and compact controls remain accessible', async ({
   page,
 }) => {
-  const initial = tradeNetworkState(false);
+  const initial = tradeNetworkState();
   const original = initial.fleets[0]!;
   const state = {
     ...initial,
@@ -132,18 +132,14 @@ test('kompakt-flottkort-med-order: fleet stats share the hangar and compact cont
   expect(layout.nameWidth).toBeGreaterThanOrEqual(88);
   await expect(card.locator('.fleet-hangar .fleet-stats')).toBeVisible();
   await expect(
-    card.locator('.fleet-order-row .fleet-primary-orders'),
-  ).toBeVisible();
-  expect(
-    layout.targets.every(({ width, height }) => width > 0 && height > 0),
-  ).toBe(true);
-
-  await expect(
     card.getByRole('button', {
       name: 'Choose destination for Compact 0',
       exact: true,
     }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  expect(
+    layout.targets.every(({ width, height }) => width > 0 && height > 0),
+  ).toBe(true);
   await page.screenshot({
     path: `test-results/compact-fleets-${test.info().project.name}.png`,
   });

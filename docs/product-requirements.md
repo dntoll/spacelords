@@ -27,15 +27,16 @@ rymdstrid, bordningar och utveckling av skepp och besättning står i centrum.
   reparationer.
 
 Riktningen är ännu inte implementerad. Se [Single fleet](single-fleet.md)
-för krav och öppna frågor. Följande avsnitt beskriver den ärvda spelversionen.
+för krav och öppna frågor. Den tidigare planetekonomin är borttagen.
+Följande avsnitt beskriver det spelet innehåller nu.
 
 ## Spelidé
 
-Spelaren leder ett rymdimperium från en hemplanet. Varje spelår är en runda:
-spelaren ger order, avslutar rundan och ser sedan året spelas upp. Imperiet
-växer genom utforskning, kolonisation, forskning och produktion. Pirater,
-strider och bordningar ger motstånd. Spelet ska gå att spela på mobil,
-surfplatta och dator, och alla texter i spelet är på engelska.
+Spelaren leder en flotta från startplaneten Tellus. Varje runda ger spelaren
+order, avslutar rundan och ser sedan rundan spelas upp. Utforskning, pirater,
+strider och bordningar står i centrum. Spelaren äger inga planeter. Spelet ska
+gå att spela på mobil, surfplatta och dator, och alla texter i spelet är på
+engelska.
 
 ## Start och sparade spel
 
@@ -50,65 +51,35 @@ surfplatta och dator, och alla texter i spelet är på engelska.
 - Galaxen är en hexkarta med stjärnor, planeter, gasplaneter och terräng som
   nebulosor och stoft. Stjärnor syns alltid; resten syns inom aktuell sikt
   eller som kartminne.
-- Spelaren zoomar och panorerar, väljer planeter, flottor och rutter och
-  drar flottor till mål.
-- Ägda planeter och flottor ger sikt. Teleskop ökar räckvidden.
-
-## Planeter och kolonier
-
-- En ägd planet har befolkning, habitability, fyndigheter av Iron, Water och
-  Oil och ett antal byggplatser.
-- Befolkningen växer varje år upp till planetens tak och jämnas ut mellan
-  planeter som är förbundna.
-- Under 80 % habitability behöver en byggplats en Dome. Terraforming höjer
-  habitability och ändrar planettypen.
-- Planetsidan visar planetens läge, resurser, byggnader och byggplatser. Där
-  kan en byggnad rivas; allt annat byggande sker i Factories.
-
-## Ekonomi och produktion
-
-- Planeter som förbinds av fraktskepp bildar en grupp. Gruppen delar råvaror
-  och delar, och varje länk tar en runda.
-- Utvinning sker där fyndigheten finns. Fabriker tillverkar delar som motorer,
-  vapen och teleskop när ett skepp behöver dem, och slutprodukter som skepp.
-- `Factories` visar grupperna, deras planeter och byggplatser. Där byggs och
-  uppgraderas fabriker, Domes och terraforming, och där skapas länkar mellan
-  planeter med `Connect`. Det som behövs först rekommenderas överst.
-- `Production` på kartan beställer skepp på en planet och visar kön, med
-  varje skepps delar och varför det byggs.
-- Mining ships, som utvinner där ingen planet finns, kommer senare.
-
-## Research
-
-- Forskning kräver en Research station. Tekniker ligger i ett träd, köas och
-  tar 1–3 rundor. Förkunskaper köas automatiskt.
-- Forskning låser upp fabriker, skepp, terraforming och order.
+- Spelaren zoomar och panorerar, väljer himlakroppar och flottor och drar en
+  flotta till ett mål.
+- Flottorna ger sikt. Teleskop ökar räckvidden.
+- Planeter är platser. En utforskad planet visar typ, miljö och resurser.
 
 ## Flottor
 
-- Flottor kan flytta, utforska planeter och stjärnor, kolonisera, patrullera,
-  bärga vrak, frakta på en länk eller eskortera den.
-- Nybyggda skepp får en startorder. Planetköer fördelar utforskning och
-  kolonisation till lediga flottor.
-- Flottor kan delas, slås ihop, döpas om och uppgraderas vid ett varv.
-- `Fleets` färgar flottor efter uppgift och kan dölja kategorier.
+- Flottan styrs med hexval och kan byta namn. Den har inga Move- eller
+  Stop-knappar. Ett Exploration ship utforskar planeten det står på.
+- Förlorar Home Fleet alla sina skepp är spelet över.
 
-## Rundan och beslut
+## Research och Production
 
-- Året spelas upp i ordning: autonoma flottor, övriga färder och sedan
-  händelser i geografisk ordning med kameran på platsen.
-- Upptäckter, piratkontakter och strider kan avbryta året, så att spelaren
+- Research visar skeppsteknikerna i ett träd med kö. Forskningen går inte
+  framåt förrän teknikforskningen är beslutad.
+- Production väntar på den gemensamma produktionskön.
+
+## Rundan
+
+- Rundan spelas upp i ordning: färder och sedan händelser i geografisk
+  ordning med kameran på platsen.
+- Upptäckter, piratkontakter och strider kan avbryta rundan, så att spelaren
   kan välja vad som ska hända.
-- `Decisions` samlar det som väntar på spelaren under underrubriker.
-  Återkommande besked kan tystas.
 
-## Pirater, strid och bärgning
+## Pirater och strid
 
-- Space pirates finns vid vissa stjärnor, bär byte och kan anfalla.
+- Space pirates finns vid stjärnorna, bär byte och kan anfalla.
 - Möten mellan flottor avgörs i en taktisk rymdstrid där spelaren styr
   skeppen. Ett skadat fientligt skepp kan bordas.
-- Strider lämnar vrak. Bärgningsskepp tar hem vraken till orbitala varv, där
-  de repareras eller ger forskning.
 
 ## Bordning
 
@@ -118,6 +89,7 @@ surfplatta och dator, och alla texter i spelet är på engelska.
 
 ## Framtida riktning
 
-- Mining ships och asteroidbälten.
-- Diplomati, fler produkter och föroreningar från fabriker.
+- Det som [Single fleet](single-fleet.md) beskriver, när de öppna frågorna är
+  beslutade.
+- Asteroidbälten.
 - Multiplayer med en eller två rundor per verkligt dygn.

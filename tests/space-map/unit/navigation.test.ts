@@ -22,34 +22,21 @@ class TestView implements AppPort {
 }
 
 describe('vynavigation', () => {
-  it('preserves camera and selection through planet and research navigation', () => {
+  it('preserves camera and selection through Production and Research navigation', () => {
     const model = new AppModel();
     const view = new TestView();
     new MasterController(model, view).start();
     view.handler({ type: 'pan', delta: { x: 45, y: -20 } });
     view.handler({ type: 'zoom', factor: 1.5, anchor: { x: 0, y: 0 } });
     const before = model.snapshot;
-    view.handler({ type: 'open-planet' });
-    expect(model.snapshot.screen).toBe('planet');
-    expect(model.snapshot.planet?.name).toBe('Tellus');
+    view.handler({ type: 'open-production' });
+    expect(model.snapshot.screen).toBe('production');
     view.handler({ type: 'open-research' });
     expect(model.snapshot.screen).toBe('research');
     view.handler({ type: 'open-map' });
     expect(model.snapshot.camera).toEqual(before.camera);
     expect(model.snapshot.selected).toEqual(before.selected);
     expect(view.renderCount).toBe(6);
-  });
-
-  it('does not allow opening unowned or hidden planets', () => {
-    const model = new AppModel();
-    model.select(new HexCoordinate(0, 1));
-    model.openPlanet();
-    expect(model.snapshot.screen).toBe('map');
-    model.select(new HexCoordinate(-1, 0));
-    model.openPlanet();
-    expect(model.snapshot.screen).toBe('map');
-    expect(model.snapshot.selected?.object).toBeNull();
-    expect(model.snapshot.planet).toBeNull();
   });
 });
 

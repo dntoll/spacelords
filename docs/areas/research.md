@@ -1,28 +1,46 @@
 # Research
 
 `Research` visar ett zoom- och panorerbart forskningsträd, en kö med flikar
-och detaljer för vald teknik. Forskning kräver en färdig Research station,
-och en teknik tar 1–3 rundor. Förkunskaper köas automatiskt.
+och detaljer för vald teknik. Trädet innehåller bara skeppstekniker:
+`Missiles`, `Armor`, `Armored Transport` och `Armored Fighter`. Förkunskaper
+köas automatiskt och en teknik tar 1–3 rundor. Forskningen går inte framåt
+förrän forskningskapaciteten i [Single fleet](../single-fleet.md) är beslutad
+(`flottforskning-av-tekniker`, **Ej implementerat**); Research säger
+`Research does not advance yet.`
 
 ## Krav
 
 - **Tydlig forskningsstatus:** `forskningsstatus-med-tydliga-farger` är
-  **Fullständigt implementerat**. Research skiljer blå tillgänglig forskning
-  från grön färdig forskning med ✓. Pågående är gul, köad lila och låst grå.
-  Valmarkeringen bevarar statusfärgen. Se [renare spelgränssnitt](../compact-interface.md).
+  **Fullständigt implementerat**. Tillgänglig forskning är blå, färdig grön med
+  ✓, pågående gul, köad lila och låst grå. Se
+  [renare spelgränssnitt](../compact-interface.md).
 
-- **Forskning:** `forsknings-tradnavigation` är **Fullständigt implementerat**:
-  ett zoom- och panorerbart forskningsträd med beroendelinjer och bibehållen kamera.
-  `forskningstrad-utan-pilspetsar` (2026-11-20) är **Fullständigt
-  implementerat**: linjerna saknar pilspetsar.
-  `forskning-kraver-station` är **Fullständigt implementerat**: en färdig
-  Research station krävs för nya forskningsbeställningar. Befintliga köer väntar
-  utan drift; Decisions föreslår forskning först när en station finns. Detta
-  ersätter tidigare fri köläggning under `forskningsko`.
-  `forskningstradets-utrymme` är **Fullständigt implementerat**: trädet fyller
-  vyn under rubriken, antal stationer visas bredvid rubriken även med bredare
-  systemtypsnitt på smala telefoner och Research queue
-  öppnas vid behov. Zoomrutan är borttagen; pinch och mushjul finns kvar.
-  Forskningskö med automatiska förkunskaper låser upp alla
-  skeppsfabriker och Trade logistics. Grundutvinning och Research station finns
-  från start.
+- **Trädnavigation:** `forsknings-tradnavigation`,
+  `forskningstrad-utan-pilspetsar`, `forskningstradets-utrymme` och
+  `forskningskamerans-granser` är **Fullständigt implementerat**. Trädet har
+  beroendelinjer utan pilspetsar, fyller vyn och behåller kameran inom trädet.
+
+- **Trädets utseende:** `forskning-utan-rubrikrad`,
+  `forskningstrad-utan-korsningar`, `forskningstrad-raka-linjer`,
+  `storre-forskningstext`, `storre-text-dar-det-far-plats`,
+  `detaljer-utan-scroll`, `forskningsflikar`, `forskningsikon-i-detaljer` och
+  `symbolbaserade-kataloger` är **Fullständigt implementerat**. Varje teknik
+  har en dekorativ symbol och sitt namn.
+
+- **Kö och tid:** `forskningstid`, `kompakta-koknappar` och `dragbara-koer`
+  är **Fullständigt implementerat** för kön. En teknik tar 1–3 rundor efter
+  djup i trädet. Kön ordnas med draghandtag och poster tas bort med ×.
+
+- **Avslöjande:** `kompakt-forskningstrad`, `forskningens-avslojande`,
+  `forskningsdetaljer-vid-val` och `dubbelklick-koar-forskning` är
+  **Fullständigt implementerat**. Okända tekniker visar bara `?` tills
+  förkunskaperna är klara eller tekniken är köad.
+
+## Borttaget med `single-fleet-rensning`
+
+Research station, fabriks-, Dome-, terraformings-, handels-, order- och
+bärgningsteknikerna finns inte längre. Följande krav gäller därför inte:
+`forskning-kraver-station`, `forsta-station-pa-vag`,
+`forskningsvy-utan-station`, `bygga-forskningsstation`,
+`planettypsforskning`, `colony-ship-efter-rocket-engine` och
+`raptor-efter-dockningsteknik`.

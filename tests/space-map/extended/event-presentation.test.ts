@@ -4,8 +4,6 @@ import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
 import { renderEventContent } from '../../../src/client/space-map/views/turn/EventContent.js';
 import { renderEvents } from '../../../src/client/space-map/views/turn/EventsView.js';
-import { BUILDING_IMAGES } from '../../../src/client/space-map/views/BuildingImage.js';
-import { BUILDING_SYMBOLS } from '../../../src/client/space-map/views/BuildingSymbols.js';
 import { SHIP_IMAGES } from '../../../src/client/space-map/views/ShipImages.js';
 import type { GameEvent } from '../../../src/client/space-map/models/Game.js';
 
@@ -28,24 +26,20 @@ it('flottor-fore-planetdetaljer: keeps the planet heading and information below 
   view.dispose();
 });
 
-it('bilder-i-events: uses portraits, building symbols and ship images in the same grouped report without losing text', () => {
+it('bilder-i-events: uses ship images in the same grouped report without losing text', () => {
   const event: GameEvent = {
     id: 'built',
     round: 1,
     heading: 'Tellus',
-    text: 'Tellus:\nResearch station completed.\nIron mine completed.\nColony ship produced.',
+    text: 'Tellus:\nFighter joined.\nRaptor captured.',
     lines: [
       {
-        text: 'Research station completed.',
-        illustration: { kind: 'building', type: 'Research station' },
+        text: 'Fighter joined.',
+        illustration: { kind: 'ship', type: 'Fighter' },
       },
       {
-        text: 'Iron mine completed.',
-        illustration: { kind: 'building', type: 'Iron mine' },
-      },
-      {
-        text: 'Colony ship produced.',
-        illustration: { kind: 'ship', type: 'Colony ship' },
+        text: 'Raptor captured.',
+        illustration: { kind: 'ship', type: 'Raptor' },
       },
     ],
   };
@@ -57,17 +51,13 @@ it('bilder-i-events: uses portraits, building symbols and ship images in the sam
       [...content.querySelectorAll('img')].map((image) =>
         image.getAttribute('src'),
       ),
-    ).toEqual([
-      BUILDING_IMAGES['Research station'],
-      BUILDING_SYMBOLS['Iron mine'],
-      SHIP_IMAGES['Colony ship'],
-    ]);
+    ).toEqual([SHIP_IMAGES.Fighter, SHIP_IMAGES.Raptor]);
     expect(
       [...content.querySelectorAll('img')].every((image) => image.alt === ''),
     ).toBe(true);
     content.querySelector('img')!.dispatchEvent(new Event('error'));
     expect(content.textContent).toBe(event.text);
-    expect(content.querySelectorAll('img')).toHaveLength(2);
+    expect(content.querySelectorAll('img')).toHaveLength(1);
   }
   expect(
     renderEventContent({ id: 'old', round: 1, text: 'Legacy production.' })

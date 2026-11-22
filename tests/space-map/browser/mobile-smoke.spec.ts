@@ -29,10 +29,9 @@ test('snabb-mobilpublicering / viewport-game-layout / sparat-spel: touch navigat
   const map = page.locator('canvas[data-rendered="true"]');
   await expect(map).toBeVisible();
   await expectMapFillsGameArea(page);
-  await page.getByRole('button', { name: 'Open planet', exact: true }).tap();
-  await expect(
-    page.getByRole('heading', { name: 'Tellus', exact: true }),
-  ).toBeVisible();
+  await expect(page.locator('.planet-selection-details')).toContainText(
+    'Tellus',
+  );
   await page.getByRole('button', { name: 'Research', exact: true }).tap();
   await expect(
     page.getByRole('heading', { name: 'Research', exact: true }),

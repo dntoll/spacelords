@@ -66,10 +66,9 @@ describe('handelseannonsering / handelser-pa-kartan', () => {
   });
   it('planetinformation-pa-kartan: returns immutable current, basic and hidden planet knowledge', () => {
     const state = new Game(createExampleGalaxy()).exportState();
-    state.colonies[0]![1].habitability = 73;
     const game = Game.restore(state);
     const home = game.planetKnowledge(game.galaxy.homePlanet.position)!;
-    expect(home.habitability).toBe(73);
+    expect(home.habitability).toBe(game.galaxy.homePlanet.habitability);
     expect(Object.isFrozen(home)).toBe(true);
     const planets = game.galaxy.systems.flatMap((system) => system.planets);
     const vesta = planets.find((planet) => planet.name === 'Vesta')!;
@@ -134,7 +133,7 @@ describe('handelseannonsering / handelser-pa-kartan', () => {
     model.select(model.snapshot.selected!.position);
     view.render(model.snapshot);
     expect(panel.hidden).toBe(false);
-    for (const screen of ['research', 'decisions', 'planet', 'map'] as const) {
+    for (const screen of ['research', 'production', 'map'] as const) {
       view.render({ ...model.snapshot, screen });
       expect(root.querySelector('.turn-console')).toBe(panel);
       expect(panel.open).toBe(true);
@@ -143,7 +142,7 @@ describe('handelseannonsering / handelser-pa-kartan', () => {
     }
     view.render({
       ...model.snapshot,
-      screen: 'planet',
+      screen: 'production',
       phase: 'simulating',
     });
     expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
@@ -243,30 +242,6 @@ describe('handelser / arsrundor-och-order', () => {
       ),
     ).toBe(false);
   });
-  it('keeps arrivals in actual movement order before production events', () => {
-    const start = new Game(createExampleGalaxy());
-    start.transferShips('fleet-home', 'Fighter', 1, null);
-    start.setDestination('fleet-home', new HexCoordinate(3, 0));
-    start.scheduleBuild(start.galaxy.homePlanet, 'Research station');
-    const state = start.exportState();
-    const station = start.planetSnapshot(start.galaxy.homePlanet)!.projects[0]!;
-    // byggtid-per-byggnad: the station is in its last round of construction.
-    const game = Game.restore({
-      ...state,
-      construction: { [station.id]: state.round - 2 },
-    });
-    const scout = game.fleetSnapshots()[1]!;
-    game.setDestination(scout.id, new HexCoordinate(0, 1));
-    game.startTurn();
-    game.applyFrame(game.nextTurnFrame()!);
-    expect(game.events.map((event) => event.text)).toEqual([
-      `${scout.name} arrived at Vesta.`,
-    ]);
-    collectTurnFrames(game, false);
-    expect(game.events[1]!.text).toBe('Home Fleet arrived at HEX 3,0.');
-    game.finishTurn();
-    expect(game.events[2]!.text).toContain('Research station was completed');
-  });
   it('shows a persistent console ordered by year instead of a dialog and disables End turn during animation', async () => {
     vi.useFakeTimers();
     const root = document.createElement('div');
@@ -283,8 +258,6 @@ describe('handelser / arsrundor-och-order', () => {
       dispose() {},
       animateTurnStep: () => animation,
     }));
-    for (const decision of model.snapshot.decisions)
-      model.skipDecision(decision.id);
     const controller = new MasterController(model, view);
     controller.start();
     const end = root.querySelector<HTMLButtonElement>('.end-turn')!;
@@ -373,7 +346,7 @@ it('utvikbara-events / senaste-aret-i-events: retains every event in the latest 
   const root = document.createElement('div');
   document.body.replaceChildren(root);
   const model = new AppModel();
-  model.openDecisions();
+  model.openResearch();
   const view = new AppView(root, () => ({ render() {}, dispose() {} }));
   const events = Array.from({ length: 140 }, (_, index) => ({
     id: `latest-${index}`,
@@ -387,13 +360,13 @@ it('utvikbara-events / senaste-aret-i-events: retains every event in the latest 
   view.dispose();
 });
 
-it('rundkontroller-pa-fler-vyer: exposes Events and End turn on Research and planet pages and keeps the view through a turn', () => {
-  for (const screen of ['research', 'planet'] as const) {
+it('rundkontroller-pa-fler-vyer: exposes Events and End turn on Research and Production and keeps the view through a turn', () => {
+  for (const screen of ['research', 'production'] as const) {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
     const model = new AppModel();
     if (screen === 'research') model.openResearch();
-    else model.openPlanet();
+    else model.openProduction();
     const view = new AppView(root, () => ({ render() {}, dispose() {} }));
     view.render(model.snapshot);
     expect(root.querySelector('.turn-console')).not.toBeNull();

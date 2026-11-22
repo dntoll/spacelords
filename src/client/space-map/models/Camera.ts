@@ -91,7 +91,13 @@ export class Camera {
   }
 
   focus(position: HexCoordinate): void {
-    this.#setCenter(HexGeometry.toPoint(position));
+    this.focusPoint(HexGeometry.toPoint(position));
+  }
+
+  /** kamera-foljer-skepp: keep a moving ship near the middle without changing zoom. */
+  focusPoint(point: Point): void {
+    if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return;
+    this.#setCenter(point);
   }
 
   restore(snapshot: CameraSnapshot): void {

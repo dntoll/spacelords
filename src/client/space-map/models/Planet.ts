@@ -23,20 +23,6 @@ export class Player {
   }
 }
 
-export class Colony {
-  readonly buildings: readonly string[] = Object.freeze([]);
-
-  constructor(
-    readonly ownerId: string,
-    readonly population: number,
-  ) {
-    if (!Number.isSafeInteger(population) || population < 0) {
-      throw new RangeError('Population must be a non-negative integer.');
-    }
-    Object.freeze(this);
-  }
-}
-
 export interface PlanetSnapshot {
   readonly id: string;
   readonly name: string;
@@ -46,7 +32,6 @@ export interface PlanetSnapshot {
   readonly habitability: number;
   readonly buildSlots: number;
   readonly resources: readonly ResourceYield[];
-  readonly colony: Colony | null;
 }
 
 export class Planet implements PlanetSnapshot {
@@ -58,7 +43,6 @@ export class Planet implements PlanetSnapshot {
   readonly habitability: number;
   readonly buildSlots: number;
   readonly resources: readonly ResourceYield[];
-  readonly colony: Colony | null;
 
   constructor(data: PlanetSnapshot) {
     if (
@@ -98,11 +82,16 @@ export class Planet implements PlanetSnapshot {
     this.resources = Object.freeze(
       data.resources.map((resource) => Object.freeze({ ...resource })),
     );
-    this.colony = data.colony;
     Object.freeze(this);
   }
 
   get snapshot(): PlanetSnapshot {
     return this;
+  }
+
+  /** A fully habitable solid planet counts as Temperate. */
+  get environmentType(): PlanetEnvironmentType | 'Gas' {
+    if (this.type === 'gas') return 'Gas';
+    return this.habitability === 100 ? 'Temperate' : this.environment;
   }
 }

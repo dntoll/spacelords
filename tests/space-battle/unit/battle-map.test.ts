@@ -50,6 +50,7 @@ function drawing(
   const stack: number[] = [];
   const noses: Point[] = [];
   const markers: Point[] = [];
+  const circles: Point[] = [];
   const arcs: number[] = [];
   const fills: unknown[][] = [];
   const texts: string[] = [];
@@ -101,7 +102,7 @@ function drawing(
     noStroke: noop,
     noFill: noop,
     drawingContext: { globalAlpha: 1 },
-    circle: noop,
+    circle: (x: number, y: number) => circles.push({ x, y }),
     imageMode: noop,
     image: (image: { url: string }) => {
       images.push({
@@ -147,6 +148,7 @@ function drawing(
     view,
     noses,
     markers,
+    circles,
     arcs,
     images,
     fills,
@@ -263,6 +265,92 @@ it('avfyra-pa-markerat-mal / begransad-stridskamera: drag, pinch, cancelled poin
     new KeyboardEvent('keydown', { key: 'Enter', repeat: true }),
   );
   expect(select).toHaveBeenCalledExactlyOnceWith({ q: 4, r: 3 });
+  view.dispose();
+});
+
+it('animerade-stridsskott: a destroyed ship stays intact until the shot arrives', () => {
+  const { view, noses, fills } = drawing(false);
+  let frame: FrameRequestCallback | undefined;
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    frame = callback;
+    return 1;
+  });
+  vi.stubGlobal('cancelAnimationFrame', () => {});
+  const now = vi.spyOn(performance, 'now').mockReturnValue(1_000);
+  const state = createTestBattle().snapshot;
+  const enemy = {
+    ...state.pieces.find((piece) => piece.id === 'test-pirate-1')!,
+    position: { q: 4, r: 3 },
+    status: 'destroyed' as const,
+    hull: 0,
+  };
+  view.render(
+    { ...state, phase: 'fighting', pieces: [enemy] },
+    null,
+    null,
+    'Cannon',
+  );
+  noses.length = 0;
+  fills.length = 0;
+  void view.animateShot({
+    id: 'shot',
+    weapon: 'Cannon',
+    from: { q: 1, r: 3 },
+    at: enemy.position,
+    impacts: [
+      {
+        id: enemy.id,
+        position: enemy.position,
+        damage: 2,
+        previousHull: 2,
+        destroyed: true,
+      },
+    ],
+  });
+  expect(noses.length).toBeGreaterThan(0);
+  expect(
+    fills.some(([color]) => color === '#9aa3ad' || color === '#5e6973'),
+  ).toBe(false);
+  noses.length = 0;
+  fills.length = 0;
+  frame!(1_400);
+  expect(noses.length).toBe(0);
+  expect(
+    fills.some(([color]) => color === '#9aa3ad' || color === '#5e6973'),
+  ).toBe(true);
+  view.dispose();
+  now.mockRestore();
+});
+
+it('animerade-stridsskott: reduced motion shows the impact mark without a hanging projectile', () => {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: query.includes('reduce'),
+    media: query,
+    addEventListener() {},
+    removeEventListener() {},
+  }));
+  const { view, circles, container } = drawing(false);
+  view.render(createTestBattle().snapshot, null, null, 'Cannon');
+  circles.length = 0;
+  const from = HexGeometry.toPoint(new HexCoordinate(1, 3));
+  const at = HexGeometry.toPoint(new HexCoordinate(4, 3));
+  void view.animateShot({
+    id: 'shot',
+    weapon: 'Cannon',
+    from: { q: 1, r: 3 },
+    at: { q: 4, r: 3 },
+    impacts: [],
+  });
+  expect(container.dataset.shotStage).toBe('static');
+  expect(
+    circles.some((circle) => Math.hypot(circle.x - at.x, circle.y - at.y) < 1),
+  ).toBe(true);
+  expect(
+    circles.some((circle) => {
+      const along = (circle.x - from.x) / (at.x - from.x || 1);
+      return along > 0.05 && along < 0.95 && Math.abs(circle.y - from.y) < 2;
+    }),
+  ).toBe(false);
   view.dispose();
 });
 

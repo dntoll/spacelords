@@ -1,7 +1,5 @@
 import { pirateAsFleet } from '../../models/PirateFleet.js';
-import { fleetCategory } from '../../models/fleets/FleetCategory.js';
-import { decisionScreen, needsAttention } from '../../models/Decisions.js';
-import { HexGeometry, type Point } from '../../../common/HexCoordinate.js';
+import { type Point } from '../../../common/HexCoordinate.js';
 import type p5 from 'p5';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import type { ShipSpriteType } from '../ShipImages.js';
@@ -13,58 +11,19 @@ export function renderMapOverlays(
   movementPoints: ReadonlyMap<string, Point> = new Map(),
   shipImages: ReadonlyMap<ShipSpriteType, p5.Image> = new Map(),
 ): void {
-  if (model.screen === 'production') {
-    for (const planet of model.ownedPlanets) {
-      const point = HexGeometry.toPoint(planet.position);
-      const attention = model.mapProblems.some(
-        (p) => p.planetId === planet.id && p.screen === model.screen,
-      );
-      const decision = model.decisions.some(
-        (decision) =>
-          needsAttention(decision) &&
-          decision.planetId === planet.id &&
-          decisionScreen(decision) === model.screen,
-      );
-      if (!attention && !decision) continue;
-      const zoom = model.camera.zoom;
-      sketch.noFill();
-      sketch.stroke(attention ? '#ff8e85' : '#ffdc88');
-      sketch.strokeWeight(2.5 / zoom);
-      sketch.circle(point.x, point.y, 42 / zoom);
-      sketch.noStroke();
-      sketch.fill(attention ? '#ffaaa2' : '#ffdc88');
-      sketch.textSize(12 / zoom);
-      sketch.textAlign(sketch.CENTER, sketch.BOTTOM);
-      sketch.text('!', point.x, point.y - 24 / zoom);
-    }
-  }
   if (model.screen === 'production') return;
-  // kartflottor: colony badges must not hide selectable fleet markers.
   renderMapFleets(
     sketch,
-    [
-      // flottkategorier: hidden categories leave the Fleets map.
-      ...model.fleets.filter(
-        (fleet) =>
-          model.screen !== 'fleets' ||
-          !model.hiddenFleetCategories.includes(fleetCategory(fleet)),
-      ),
-      ...(model.pirates ?? []).map(pirateAsFleet),
-    ].map((fleet) =>
-      (model.turnMovement || model.eventPlayback) &&
-      !model.turnMovements.some((movement) => movement.fleetId === fleet.id)
-        ? { ...fleet, destination: null }
-        : fleet,
+    [...model.fleets, ...(model.pirates ?? []).map(pirateAsFleet)].map(
+      (fleet) =>
+        (model.turnMovement || model.eventPlayback) &&
+        !model.turnMovements.some((movement) => movement.fleetId === fleet.id)
+          ? { ...fleet, destination: null }
+          : fleet,
     ),
     model.camera.zoom,
     model,
     model.screen === 'fleets',
-    ['map', 'fleets'].includes(model.screen) ? model.tradeRoutes : null,
-    model.screen === 'fleets'
-      ? model.decisions
-          .filter(needsAttention)
-          .flatMap((decision) => (decision.fleetId ? [decision.fleetId] : []))
-      : [],
     (model.pirates ?? []).map((pirate) => pirate.id),
     movementPoints,
     shipImages,

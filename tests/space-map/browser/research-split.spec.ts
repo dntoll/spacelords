@@ -3,7 +3,7 @@ import { researchStationState } from '../../fixtures/research-station.js';
 import { startFirstSlot } from './save-helpers.js';
 import { TECHNOLOGIES } from '../../../src/client/space-map/models/research/Research.js';
 
-test('kompakt-forskningstrad: shortened technology names fit two lines in narrow tiles', async ({
+test('kompakt-forskningstrad: technology names fit two lines in narrow tiles', async ({
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 320, height: 568 });
@@ -34,9 +34,9 @@ test('kompakt-forskningstrad: shortened technology names fit two lines in narrow
       };
     }),
   );
-  expect(labels.length).toBeGreaterThan(15);
+  expect(labels.length).toBe(TECHNOLOGIES.length);
   for (const label of labels) {
-    expect(label.name).toBe(label.technology.replace(/ factory$/, ''));
+    expect(label.name).toBe(label.technology);
     expect(label.width).toBeLessThanOrEqual(108);
     expect(label.fits, label.technology).toBe(true);
   }
@@ -75,20 +75,18 @@ for (const size of [
     const stage = page.locator('.research-tree-stage');
     const before = (await tree.boundingBox())!;
     const rocket = page.getByRole('button', {
-      name: 'Inspect Rocket engine factory',
+      name: 'Inspect Missiles',
       exact: true,
     });
     await rocket.focus();
     const camera = await stage.getAttribute('style');
     await rocket.click();
-    await expect(details.getByRole('heading')).toHaveText(
-      'Rocket engine factory',
-    );
+    await expect(details.getByRole('heading')).toHaveText('Missiles');
     await expect(stage).toHaveAttribute('style', camera!);
     expect(await tree.boundingBox()).toEqual(before);
     expect(
       await page
-        .locator('[data-technology="Rocket engine factory"]')
+        .locator('[data-technology="Missiles"]')
         .evaluate((node) => (node as HTMLElement).offsetHeight),
     ).toBe(48);
     const selected = (await details.boundingBox())!;
@@ -101,7 +99,7 @@ for (const size of [
       expect(selected.x).toBeGreaterThanOrEqual(before.x + before.width);
     }
     const action = details.getByRole('button', {
-      name: 'Research Rocket engine factory',
+      name: 'Research Missiles',
       exact: true,
     });
     const actionBounds = (await action.boundingBox())!;
@@ -155,7 +153,7 @@ for (const size of [
     expect(await tree.boundingBox()).toEqual(before);
     await action.click();
     await expect(page.locator('.research-queue article')).toContainText(
-      'Rocket engine factory',
+      'Missiles',
     );
     await expect(action).toBeDisabled();
     await expect(details).toContainText('Researching');

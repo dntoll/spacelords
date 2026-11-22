@@ -27,14 +27,9 @@ function repository() {
 }
 
 describe('sparat-spel / frontend-backend-mock', () => {
-  it('round-trips research, construction, fleets, exploration, events and future IDs', () => {
+  it('round-trips research, fleets, exploration, events and future IDs', () => {
     const game = new Game(createExampleGalaxy());
-    game.scheduleBuild(game.galaxy.homePlanet, 'Research station', 0);
-    for (let round = 0; round < 3; round++) {
-      for (const frame of turnFrames(game)) game.applyFrame(frame);
-      game.finishTurn();
-    }
-    game.selectResearch('Colony ship factory');
+    game.selectResearch('Armor');
     game.setDestination('fleet-home', new HexCoordinate(3, 0));
     for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
@@ -45,58 +40,9 @@ describe('sparat-spel / frontend-backend-mock', () => {
     expect(restored.exportState()).toEqual(game.exportState());
     expect(restored.mapSnapshot()).toEqual(game.mapSnapshot());
     expect(restored.fleetSnapshots()).toEqual(game.fleetSnapshots());
-    expect(restored.planetSnapshot(restored.galaxy.homePlanet)).toEqual(
-      game.planetSnapshot(game.galaxy.homePlanet),
-    );
-
-    restored.scheduleBuild(restored.galaxy.homePlanet, 'Research station', 1);
-    game.scheduleBuild(game.galaxy.homePlanet, 'Research station', 1);
+    restored.setDestination('fleet-home', new HexCoordinate(4, 0));
+    game.setDestination('fleet-home', new HexCoordinate(4, 0));
     expect(restored.exportState()).toEqual(game.exportState());
-  });
-  it('preserves pending factory queues, recipients, demolition and build orders through later turns', () => {
-    const state = new Game(createExampleGalaxy()).exportState();
-    state.colonies[0]![1].stock['Rocket engine'] = 6;
-    const game = Game.restore(state);
-    const home = game.galaxy.homePlanet;
-    const turn = (current: Game) => {
-      for (const frame of turnFrames(current)) current.applyFrame(frame);
-      current.finishTurn();
-    };
-    game.scheduleBuild(home, 'Research station', 0);
-    for (let round = 0; round < 3; round++) turn(game);
-    game.selectResearch('Colony ship factory');
-    turn(game);
-    turn(game);
-    turn(game);
-    turn(game);
-    game.scheduleBuild(home, 'Colony ship factory', 1);
-    for (let round = 0; round < 3; round++) turn(game);
-    const snapshot = game.planetSnapshot(home)!;
-    const factory = snapshot.buildings.find(
-      (building) => building.type === 'Colony ship factory',
-    )!;
-    game.scheduleShip(home, 'Colony ship', 'fleet-home', factory.id);
-    game.scheduleShip(home, 'Colony ship', null, factory.id);
-    game.scheduleBuild(home, 'Research station', 2);
-    game.selectResearch('Fighter factory');
-    game.toggleDemolition(
-      home,
-      snapshot.buildings.find(
-        (building) => building.type === 'Research station',
-      )!.id,
-    );
-    const restored = Game.restore(
-      JSON.parse(JSON.stringify(game.exportState())) as ReturnType<
-        Game['exportState']
-      >,
-    );
-    expect(restored.planetSnapshot(restored.galaxy.homePlanet)).toEqual(
-      game.planetSnapshot(home),
-    );
-    turn(game);
-    turn(restored);
-    expect(restored.exportState()).toEqual(game.exportState());
-    expect(restored.fleetSnapshots()[0]?.ships['Colony ship']).toBe(1);
   });
   it('keeps three slots independent across application instances', () => {
     const saves = repository();
@@ -255,7 +201,7 @@ describe('frontend-backend-mock', () => {
     );
     model.setDestination('fleet-home', 3, 0);
     model.save();
-    emit({ type: 'confirm-end-turn' });
+    emit({ type: 'end-turn' });
     expect(model.snapshot.phase).toBe('simulating');
     expect(repo.load(1)?.state.phase).toBe('planning');
     finishAnimation();

@@ -1,34 +1,22 @@
 import {
-  renderOrders,
   gameText,
   discoveryControls,
-  updateDecisionGuidance,
-  renderProductionRing,
-  type ProductionTab,
-  renderProductionMapPanel,
+  renderProduction,
   bindMapSelectionScroll,
-  renderMapTradeSelection,
   renderMapFleetPanel,
   renderMapLocationHeading,
   renderSaveSlots,
   clearSlotDialog,
-  renderPlanet,
   renderResearch,
   showResearchTab,
   type ResearchTab,
   renderResearchSelection,
   updateResearchCamera,
   planetIllustration,
-  DecisionLayout,
-  renderDecisions,
-  renderTurnWarning,
   renderTurnActions,
   renderEvents,
   renderCombatLog,
   renderEventContent,
-  renderSalvageSelection,
-  FactoriesView,
-  FLEET_CATEGORY_COLORS,
 } from '../../space-map/views/index.js';
 import {
   BattleView,
@@ -42,13 +30,9 @@ import {
 import {
   pirateAsFleet,
   isMapScreen,
-  productionPosition,
   type MapScreen,
-  needsAttention,
   type MapCell,
   type TurnFrame,
-  FLEET_CATEGORIES,
-  fleetCategory,
 } from '../../space-map/models/index.js';
 import type { AppReadModel, Screen } from '../models/AppModel.js';
 import { playerNoticeText } from './playerNoticeText.js';
@@ -70,10 +54,6 @@ export class AppView implements AppPort {
   #battleView: BattleView | null = null;
   #boardingView: BoardingView | null = null;
   #editorView: BoardingEditorView | null = null;
-  #productionTab: ProductionTab = 'queue';
-  #productionOption: string | null = null;
-  #decisionLayout = new DecisionLayout();
-  #factoriesView: FactoriesView | null = null;
   readonly #root: HTMLElement;
   readonly #mapFactory: MapFactory;
   #emit: IntentHandler = () => undefined;
@@ -90,21 +70,16 @@ export class AppView implements AppPort {
   #saveKey = '';
   #dialog: HTMLDialogElement | null = null;
   #clearReturnSlot: number | null = null;
-  #planetScroll = new Map<string, number>();
-  #catalogDetailKey: string | null = null;
-  #catalogReturnKey: string | null = null;
   #decisionDialog: HTMLDialogElement | null = null;
+  #gameOverDialog: HTMLDialogElement | null = null;
   #researchKey = '';
   #inspectedResearch: AppReadModel['inspectedResearch'] = null;
   #researchViewport: HTMLElement | null = null;
   #researchObserver: ResizeObserver | null = null;
   #mapObserver: ResizeObserver | null = null;
-  #ring: HTMLElement | null = null;
-  #ringKey = '';
   #viewportKey = '';
   #mapFocusRevision = 0;
   #resizeFrame = 0;
-  #productionDetailType: string | null = null;
   #eventsExpanded = false;
   #playingEvents = false;
   #turnActions: HTMLElement | null = null;
@@ -147,16 +122,6 @@ export class AppView implements AppPort {
     if (this.#editorView) {
       this.#editorView.dispose();
       this.#editorView = null;
-      this.#screen = null;
-      this.#saveKey = '';
-    }
-    if (model.screen === 'factories' && model.factories) {
-      this.#renderFactories(model);
-      return;
-    }
-    if (this.#factoriesView) {
-      this.#factoriesView.dispose();
-      this.#factoriesView = null;
       this.#screen = null;
       this.#saveKey = '';
     }
@@ -314,14 +279,6 @@ export class AppView implements AppPort {
           : focusScope?.hasAttribute('data-fleet-id')
             ? `[data-fleet-id="${focusScope.getAttribute('data-fleet-id')}"]`
             : null;
-    if (this.#screen === 'planet') {
-      const panel = this.#root.querySelector<HTMLElement>('.planet-content');
-      if (panel?.dataset.planetId)
-        this.#planetScroll.set(
-          `${panel.dataset.planetId}:${panel.dataset.planetTab}`,
-          panel.scrollTop,
-        );
-    }
     if (
       changedScreen &&
       isMapScreen(this.#screen) &&
@@ -334,23 +291,12 @@ export class AppView implements AppPort {
       if (page) page.dataset.mapScreen = model.screen;
       const heading = page?.querySelector('h1');
       if (heading)
-        heading.textContent =
-          model.screen === 'map'
-            ? 'Star map'
-            : model.screen === 'fleets'
-              ? 'Fleets'
-              : model.screen === 'orders'
-                ? 'Orders'
-                : 'Production';
+        heading.textContent = model.screen === 'map' ? 'Star map' : 'Fleets';
       this.#selectionKey = '';
-      this.#ringKey = '';
       this.#screen = model.screen;
     } else if (changedScreen) {
       this.#mapObserver?.disconnect();
       this.#mapObserver = null;
-      this.#ring?.remove();
-      this.#ring = null;
-      this.#ringKey = '';
       this.#viewportKey = '';
       this.#map?.dispose();
       this.#map = null;
@@ -358,18 +304,7 @@ export class AppView implements AppPort {
       this.#root.replaceChildren(this.#header(model.screen));
       const main = element('main', 'page');
       if (isMapScreen(model.screen)) main.append(this.#mapPage(model.screen));
-      else if (model.screen === 'planet' && model.planet)
-        main.append(
-          renderPlanet(model.planet, model.playerName, this.#emit, model),
-        );
-      else if (model.screen === 'decisions')
-        main.append(
-          renderDecisions(
-            model,
-            this.#emit,
-            (this.#decisionLayout = new DecisionLayout()),
-          ),
-        );
+      else if (model.screen === 'production') main.append(renderProduction());
       else
         main.append(
           renderResearch(
@@ -391,55 +326,7 @@ export class AppView implements AppPort {
         heading?.focus({ preventScroll: true });
       }
       this.#screen = model.screen;
-    } else if (model.screen === 'planet' && model.planet) {
-      this.#root
-        .querySelector('main')
-        ?.replaceChildren(
-          renderPlanet(model.planet, model.playerName, this.#emit, model),
-        );
     }
-    if (!changedScreen && model.screen === 'planet' && focusLabel) {
-      const scope = scopeSelector
-        ? this.#root.querySelector(scopeSelector)
-        : this.#root;
-      const focus =
-        [...(scope?.querySelectorAll<HTMLElement>('[aria-label]') ?? [])].find(
-          (node) => node.getAttribute('aria-label') === focusLabel,
-        ) ??
-        scope?.querySelector<HTMLElement>('.fleet-name-button') ??
-        this.#root.querySelector<HTMLElement>(
-          '.map-queue-choice[aria-pressed="true"]',
-        );
-      focus?.focus({ preventScroll: true });
-    }
-    if (model.screen === 'planet' && model.planet) {
-      const panel = this.#root.querySelector<HTMLElement>('.planet-content');
-      if (panel) {
-        panel.dataset.planetId = model.planet.id;
-        panel.scrollTop =
-          this.#planetScroll.get(`${model.planet.id}:${model.planetTab}`) ?? 0;
-      }
-    }
-    const detail = this.#root.querySelector<HTMLElement>('.catalog-details');
-    const detailKey = detail?.dataset.detailKey ?? null;
-    if (detailKey && detailKey !== this.#catalogDetailKey) {
-      detail?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
-      detail?.scrollIntoView?.({ block: 'start' });
-    } else if (
-      !detailKey &&
-      this.#catalogDetailKey &&
-      (focusLabel === 'Back to buildings' ||
-        focusLabel === 'Back to products' ||
-        this.#catalogReturnKey === this.#catalogDetailKey)
-    ) {
-      const item = [
-        ...this.#root.querySelectorAll<HTMLElement>('[data-catalog-item]'),
-      ].find((node) => node.dataset.catalogItem === this.#catalogDetailKey);
-      item?.focus({ preventScroll: true });
-      item?.scrollIntoView?.({ block: 'nearest' });
-    }
-    this.#catalogDetailKey = detailKey;
-    this.#catalogReturnKey = null;
     // forskningsflikar: the chosen tab and queue scroll survive re-renders.
     const researchTab = (this.#root.querySelector<HTMLElement>(
       '.research-bottom',
@@ -566,50 +453,8 @@ export class AppView implements AppPort {
         }
       }
     }
-    if (!changedScreen && model.screen === 'decisions') {
-      // senaste-aret-i-events: keep the log attached while decisions change.
-      // stilla-beslutslista: the list keeps its layout, scroll and focus.
-      const previous = this.#root.querySelector<HTMLElement>(
-        '.decisions-page .empire-content',
-      );
-      const scroll = previous?.scrollTop ?? 0;
-      const focused =
-        document.activeElement instanceof HTMLElement &&
-        previous?.contains(document.activeElement)
-          ? {
-              card: document.activeElement.closest<HTMLElement>(
-                '[data-decision-id]',
-              )?.dataset.decisionId,
-              label: document.activeElement.textContent,
-            }
-          : null;
-      const page = renderDecisions(model, this.#emit, this.#decisionLayout);
-      const content = page.querySelector<HTMLElement>('.empire-content')!;
-      previous?.replaceWith(content);
-      content.scrollTop = scroll;
-      if (focused?.card) {
-        const card = content.querySelector(
-          `[data-decision-id="${focused.card}"]`,
-        );
-        const buttons = [
-          ...(card?.querySelectorAll<HTMLButtonElement>('button') ?? []),
-        ].filter((item) => !item.disabled);
-        const twin: Record<string, string> = { Mute: 'Unmute', Unmute: 'Mute' };
-        const control =
-          buttons.find((item) => item.textContent === focused.label) ??
-          buttons.find(
-            (item) => item.textContent === twin[focused.label ?? ''],
-          ) ??
-          buttons[0];
-        control?.focus({ preventScroll: true });
-      }
-    }
     this.#attachTurnActions(previousActions, previousEventScroll);
     this.#syncLocalEditorNav(model);
-    this.#renderMapProblems(model);
-    const counter = this.#root.querySelector('.decision-counter');
-    if (counter)
-      counter.textContent = `Decisions (${model.decisions.filter(needsAttention).length})`;
     if (isMapScreen(model.screen)) {
       this.#root
         .querySelector('.map-page')
@@ -618,11 +463,6 @@ export class AppView implements AppPort {
         .querySelector('.map-page')
         ?.classList.toggle('is-turn-movement', !!model.turnMovement);
       this.#map?.render(model);
-      if (model.eventPlayback || model.turnMovement) {
-        this.#ring?.remove();
-        this.#ring = null;
-        this.#ringKey = '';
-      } else this.#renderProductionRing(model);
       this.#mapFocusRevision = model.mapFocusRevision;
       if (this.#zoom)
         this.#zoom.value = `${Math.round(model.camera.zoom * 100)}%`;
@@ -631,23 +471,10 @@ export class AppView implements AppPort {
       const key = JSON.stringify({
         eventPlayback: !!model.eventPlayback,
         turnMovement: !!model.turnMovement,
-        salvageSelection: model.salvageSelection,
-        shipyardPlacement: model.shipyardPlacement,
-        wrecks: model.wrecks,
-        shipyards: model.shipyards,
         screen: model.screen,
-        orderView: model.orderView,
-        productionStartOrder: model.productionStartOrder,
-        productionMap: model.productionMap,
-        productionGuidance: model.productionGuidance,
-        mapProblems: model.mapProblems,
-        mapTrade: model.mapTrade,
-        routes: model.tradeRoutes,
-        routeFleets: model.fleets,
         pirates: model.pirates,
         mapFleetId: model.mapFleetId,
         research: model.research.completed,
-        orders: model.planetOrders,
         phase: model.phase,
         selected: model.selected,
         selectedPlanetInfo: model.selectedPlanetInfo,
@@ -658,9 +485,9 @@ export class AppView implements AppPort {
           (fleet) => fleet.position?.key === model.selected?.position.key,
         ),
         destination: model.destinationFleetId,
-        destinationOrder: model.destinationOrder,
-        shipTransfer: model.shipTransfer,
         fleetNameEdit: model.fleetNameEdit,
+        travelRoute: model.travelRoute,
+        travelling: model.travelling,
       });
       if (key !== this.#selectionKey) {
         this.#selectionKey = key;
@@ -694,9 +521,17 @@ export class AppView implements AppPort {
         ?.classList.toggle('has-selection', selected);
     }
     const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
-    if (end) end.disabled = model.phase !== 'planning' || !!model.eventPlayback;
+    const discoveryPause =
+      model.phase === 'interrupted' &&
+      !model.tacticalBattle &&
+      !!model.interruption?.discoveries.length;
+    if (end)
+      end.disabled =
+        !!model.defeated ||
+        !!model.eventPlayback ||
+        !!model.turnMovement ||
+        (model.phase !== 'planning' && !discoveryPause);
     this.#renderTurnConsole(model);
-    updateDecisionGuidance(this.#root, model, this.#emit);
     if (isMapScreen(model.screen)) this.#measureMap();
     for (const control of this.#root.querySelectorAll<HTMLButtonElement>(
       'header button',
@@ -742,15 +577,8 @@ export class AppView implements AppPort {
           : restored;
       focusTarget?.focus({ preventScroll: true });
     }
-    if (
-      model.screen === 'production' &&
-      model.productionMap.selectedOption?.type !== this.#productionDetailType
-    ) {
-      this.#productionDetailType =
-        model.productionMap.selectedOption?.type ?? null;
-      if (this.#productionDetailType && this.#panel) this.#panel.scrollTop = 0;
-    }
     this.#renderNotice(model);
+    this.#renderGameOver(model);
     if (editingName) delete active.dataset.rendering;
     this.#root.querySelector('.discovery-controls')?.remove();
     if (model.phase === 'interrupted' && model.interruption) {
@@ -760,8 +588,6 @@ export class AppView implements AppPort {
         !model.turnMovement
       )
         this.#root.append(discoveryControls(model, this.#emit));
-    } else if (model.pendingEndTurn) {
-      this.#decisionDialog = renderTurnWarning(model, this.#emit);
     } else if (model.pendingResearchRemoval) {
       const dialog = element('dialog', 'decision-dialog');
       dialog.setAttribute('aria-label', 'Remove research');
@@ -906,55 +732,6 @@ export class AppView implements AppPort {
           details.append(renderCombatLog(current.combatLog));
         }
         const actions = element('div', 'event-actions');
-        if (current.decision.queueAction) {
-          const action = current.decision.queueAction;
-          actions.append(
-            button(action.label, () =>
-              this.#emit({
-                type: 'add-planet-queue',
-                kind: action.kind,
-                planetId: action.planetId,
-              }),
-            ),
-          );
-        }
-        if (current.decision.salvageAction) {
-          const action = current.decision.salvageAction;
-          actions.append(
-            button(action.label, () =>
-              this.#emit({
-                type: 'add-salvage-queue',
-                wreckId: action.wreckId,
-              }),
-            ),
-          );
-        }
-        if (current.decision.attackAction) {
-          const action = current.decision.attackAction;
-          actions.append(
-            button(action.label, () =>
-              this.#emit({
-                type: 'add-attack-queue',
-                pirateId: action.pirateId,
-              }),
-            ),
-          );
-        }
-        if (current.decision.colonyShipAction) {
-          const action = current.decision.colonyShipAction;
-          const build = button(action.label, () =>
-            this.#emit({
-              type: 'request-colony-ship',
-              planetId: action.planetId,
-            }),
-          );
-          build.disabled = !!action.blockedReason;
-          if (action.blockedReason) {
-            build.title = action.blockedReason;
-            build.dataset.blocked = 'true';
-          }
-          actions.append(build);
-        }
         actions.append(
           button('Handle', () => this.#emit({ type: 'handle-discoveries' })),
           button('Ignore', () => this.#emit({ type: 'ignore-discoveries' })),
@@ -1082,21 +859,6 @@ export class AppView implements AppPort {
   }
 
   #renderNotice(model: AppReadModel): void {
-    this.#root.querySelector('.production-receipt')?.remove();
-    const receipt = model.productionReceipt;
-    if (
-      receipt &&
-      model.screen === 'production' &&
-      model.planet?.id === receipt.planetId
-    ) {
-      const confirmation = element(
-        'p',
-        'production-receipt',
-        `Queued ${receipt.product} · #${receipt.queuePosition}`,
-      );
-      confirmation.setAttribute('role', 'status');
-      this.#root.append(confirmation);
-    }
     const existingNotice = this.#root.querySelector('.game-notice');
     const noticeText = playerNoticeText(model.notice);
     if (noticeText) {
@@ -1107,11 +869,42 @@ export class AppView implements AppPort {
     } else existingNotice?.remove();
   }
 
+  /** game-over-utan-skepp: the lost home fleet ends the game. */
+  #renderGameOver(model: AppReadModel): void {
+    const show =
+      model.defeated &&
+      model.screen !== 'saves' &&
+      !model.tacticalBattle &&
+      !model.boardingBattle &&
+      !model.battleFeedback;
+    if (!show) {
+      this.#gameOverDialog?.close();
+      this.#gameOverDialog?.remove();
+      this.#gameOverDialog = null;
+      return;
+    }
+    if (this.#gameOverDialog?.isConnected) return;
+    const dialog = element('dialog', 'game-over-dialog');
+    dialog.setAttribute('aria-labelledby', 'game-over-title');
+    const title = element('h2', '', 'Game over');
+    title.id = 'game-over-title';
+    const fleet =
+      model.fleets.find((candidate) => candidate.id === 'fleet-home') ??
+      model.fleets[0];
+    dialog.append(
+      title,
+      element('p', '', `${fleet?.name ?? 'Home Fleet'} has no ships left.`),
+      button('Saved games', () => this.#emit({ type: 'open-saves' }), 'button'),
+    );
+    dialog.addEventListener('cancel', (event) => event.preventDefault());
+    this.#gameOverDialog = dialog;
+    this.#root.append(dialog);
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+  }
+
   dispose(): void {
     this.#editorView?.dispose();
     this.#editorView = null;
-    this.#factoriesView?.dispose();
-    this.#factoriesView = null;
     this.#boardingView?.dispose();
     this.#battleView?.dispose();
     this.#disposed = true;
@@ -1129,6 +922,9 @@ export class AppView implements AppPort {
     this.#decisionDialog?.close();
     this.#decisionDialog?.remove();
     this.#decisionDialog = null;
+    this.#gameOverDialog?.close();
+    this.#gameOverDialog?.remove();
+    this.#gameOverDialog = null;
     this.#previews.forEach((preview) => preview.dispose());
     this.#previews = [];
     this.#dialog?.close();
@@ -1204,9 +1000,7 @@ export class AppView implements AppPort {
       ['map', 'Star map'],
       ['research', 'Research'],
       ['fleets', 'Fleets'],
-      ['factories', 'Factories'],
       ['production', 'Production'],
-      ['decisions', 'Decisions'],
     ] as const) {
       const choice = button(
         label,
@@ -1219,70 +1013,17 @@ export class AppView implements AppPort {
                   ? 'open-research'
                   : target === 'fleets'
                     ? 'open-fleets'
-                    : target === 'factories'
-                      ? 'open-factories'
-                      : target === 'production'
-                        ? 'open-production'
-                        : 'open-decisions',
+                    : 'open-production',
           }),
         'nav-button',
       );
       choice.dataset.screen = target;
       if (screen === target) choice.setAttribute('aria-current', 'page');
-      if (target === 'decisions') choice.classList.add('decision-counter');
       navigation.append(choice);
     }
     // helskarm-fran-sparade-spel: fullscreen is chosen on Saved games only.
     header.append(brand, navigation);
     return header;
-  }
-
-  /** Förenklad produktion: the Factories screens under the main header. */
-  #renderFactories(model: AppReadModel): void {
-    const previousActions = this.#turnActions;
-    const previousEventScroll =
-      previousActions?.querySelector<HTMLElement>('[role="log"]')?.scrollTop ??
-      0;
-    if (this.#screen !== 'factories' || !this.#factoriesView) {
-      this.#mapObserver?.disconnect();
-      this.#mapObserver = null;
-      this.#ring?.remove();
-      this.#ring = null;
-      this.#ringKey = '';
-      this.#viewportKey = '';
-      this.#map?.dispose();
-      this.#map = null;
-      this.#selectionKey = '';
-      const main = element('main', 'page factories-page');
-      this.#root.replaceChildren(this.#header('factories'), main);
-      this.#factoriesView = new FactoriesView(main, (action) =>
-        this.#emit({ type: 'factories', action }),
-      );
-      this.#screen = 'factories';
-    }
-    this.#factoriesView.render(
-      model.factories!,
-      playerNoticeText(model.notice),
-    );
-    // runda-avslutas-fran-factories: the shared End turn bar and its warning.
-    this.#attachTurnActions(previousActions, previousEventScroll);
-    const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
-    if (end) end.disabled = model.phase !== 'planning' || !!model.eventPlayback;
-    this.#renderTurnConsole(model);
-    this.#renderMapProblems(model);
-    const counter = this.#root.querySelector('.decision-counter');
-    if (counter)
-      counter.textContent = `Decisions (${model.decisions.filter(needsAttention).length})`;
-    // beslutsvagledning-i-vyn: route and missing-goods decisions live here.
-    updateDecisionGuidance(this.#root, model, this.#emit);
-    this.#decisionDialog?.close();
-    this.#decisionDialog?.remove();
-    this.#decisionDialog = null;
-    if (model.pendingEndTurn) {
-      this.#decisionDialog = renderTurnWarning(model, this.#emit);
-      this.#root.append(this.#decisionDialog);
-      this.#decisionDialog.showModal();
-    }
   }
 
   // gemensam-events-panel: retain one log and its reading position across screens.
@@ -1309,13 +1050,7 @@ export class AppView implements AppPort {
       element(
         'h1',
         'visually-hidden',
-        screen === 'fleets'
-          ? 'Fleets'
-          : screen === 'orders'
-            ? 'Orders'
-            : screen === 'production'
-              ? 'Production'
-              : 'Star map',
+        screen === 'fleets' ? 'Fleets' : 'Star map',
       ),
     );
     this.#container = element('div', 'map-container');
@@ -1341,58 +1076,24 @@ export class AppView implements AppPort {
     const width = this.#container.clientWidth,
       height = this.#container.clientHeight;
     if (!width || !height) return;
-    const production = this.#screen === 'production';
-    const wide = window.matchMedia('(min-width: 601px)').matches;
-    const panelHeight = Math.min(224, Math.max(88, height - 320 - 16));
-    this.#root
-      .querySelector<HTMLElement>('.map-page')
-      ?.style.setProperty('--production-panel-height', `${panelHeight}px`);
-    const origin = this.#ring?.getBoundingClientRect();
     const mapBounds = this.#container.getBoundingClientRect();
     const panelBounds =
       this.#panel && !this.#panel.hidden
         ? this.#panel.getBoundingClientRect()
         : null;
-    const bounds = this.#ring
-      ? [...this.#ring.querySelectorAll('button')].map((node) =>
-          node.getBoundingClientRect(),
-        )
-      : [];
     const viewport = {
       width,
       height,
       fontScale:
         parseFloat(getComputedStyle(document.documentElement).fontSize) / 16,
-      ...(origin && bounds.length
-        ? {
-            ringLeft: Math.ceil(
-              Math.max(1, ...bounds.map((rect) => origin.x - rect.left)) - 0.01,
-            ),
-            ringRight: Math.ceil(
-              Math.max(1, ...bounds.map((rect) => rect.right - origin.x)) -
-                0.01,
-            ),
-            ringTop: Math.ceil(
-              Math.max(1, ...bounds.map((rect) => origin.y - rect.top)) - 0.01,
-            ),
-            ringBottom: Math.ceil(
-              Math.max(1, ...bounds.map((rect) => rect.bottom - origin.y)) -
-                0.01,
-            ),
-          }
-        : {}),
       availableWidth:
-        production && wide
-          ? width - Math.min(350, width * 0.4) - 24
-          : panelBounds && panelBounds.left > mapBounds.left + width * 0.5
-            ? Math.max(1, panelBounds.left - mapBounds.left - 8)
-            : width,
+        panelBounds && panelBounds.left > mapBounds.left + width * 0.5
+          ? Math.max(1, panelBounds.left - mapBounds.left - 8)
+          : width,
       availableHeight:
-        production && !wide
-          ? height - panelHeight - 16
-          : panelBounds && panelBounds.width > width * 0.6
-            ? Math.max(1, panelBounds.top - mapBounds.top - 8)
-            : height,
+        panelBounds && panelBounds.width > width * 0.6
+          ? Math.max(1, panelBounds.top - mapBounds.top - 8)
+          : height,
     };
     const key = JSON.stringify([viewport, this.#mapFocusRevision]);
     if (key === this.#viewportKey) return;
@@ -1404,201 +1105,10 @@ export class AppView implements AppPort {
     );
   }
 
-  #renderMapProblems(model: AppReadModel): void {
-    for (const control of this.#root.querySelectorAll<HTMLElement>(
-      '.nav-button[data-screen]',
-    )) {
-      const attention = model.attentionScreens.some(
-        (screen) => screen === control.dataset.screen,
-      );
-      control.querySelector('.nav-attention')?.remove();
-      control.querySelector('.nav-new')?.remove();
-      // ny-fabrik-med-guldstjarna: a gold star leads to a new factory.
-      if (control.dataset.screen === 'factories' && model.newFactories.length) {
-        const star = element('span', 'nav-new', '★');
-        star.setAttribute('aria-hidden', 'true');
-        control.append(star);
-      }
-      if (attention) {
-        const marker = element('span', 'nav-attention', '!');
-        marker.setAttribute('aria-hidden', 'true');
-        control.append(marker);
-        control.title = `${control.getAttribute('aria-label')}: Needs attention`;
-      } else control.removeAttribute('title');
-      control.setAttribute(
-        'aria-description',
-        attention ? 'Needs attention' : '',
-      );
-    }
-    let legend = this.#root.querySelector<HTMLElement>('.map-attention-legend');
-    const show = model.attentionScreens.length > 0;
-    if (show && !legend) {
-      legend = element('p', 'map-attention-legend', '! Needs attention');
-      this.#root
-        .querySelector('.app-header')
-        ?.insertBefore(legend, this.#root.querySelector('.main-nav'));
-    }
-    if (!show) legend?.remove();
-    this.#renderFleetCategories(model);
-  }
-
-  /** flottkategorier: a colour key that also shows or hides each category. */
-  #renderFleetCategories(model: AppReadModel): void {
-    const existing = this.#root.querySelector<HTMLElement>(
-      '.fleet-category-legend',
-    );
-    if (model.screen !== 'fleets' || !this.#container) {
-      existing?.remove();
-      return;
-    }
-    const present = new Set(model.fleets.map(fleetCategory));
-    const categories = FLEET_CATEGORIES.filter(
-      (category) =>
-        present.has(category) || model.hiddenFleetCategories.includes(category),
-    );
-    const key = JSON.stringify([categories, model.hiddenFleetCategories]);
-    if (existing?.dataset.key === key && existing.parentElement) return;
-    const focused =
-      document.activeElement instanceof HTMLElement &&
-      existing?.contains(document.activeElement)
-        ? document.activeElement.dataset.category
-        : undefined;
-    const legend = element('div', 'fleet-category-legend hud');
-    legend.dataset.key = key;
-    legend.setAttribute('role', 'group');
-    legend.setAttribute('aria-label', 'Fleet categories');
-    for (const category of categories) {
-      const shown = !model.hiddenFleetCategories.includes(category);
-      const toggle = button(
-        category,
-        () => this.#emit({ type: 'toggle-fleet-category', category }),
-        `fleet-category-toggle${shown ? '' : ' hidden-category'}`,
-      );
-      toggle.dataset.category = category;
-      toggle.style.setProperty(
-        '--fleet-category',
-        FLEET_CATEGORY_COLORS[category],
-      );
-      toggle.setAttribute('aria-pressed', String(shown));
-      toggle.title = `${shown ? 'Hide' : 'Show'} ${category.toLowerCase()} fleets`;
-      legend.append(toggle);
-    }
-    if (existing) existing.replaceWith(legend);
-    else this.#container.append(legend);
-    if (focused)
-      legend
-        .querySelector<HTMLElement>(`[data-category="${focused}"]`)
-        ?.focus({ preventScroll: true });
-  }
-
-  #renderProductionRing(model: AppReadModel): void {
-    const planet = model.screen === 'production' ? model.planet : null;
-    if (!planet) {
-      this.#ring?.remove();
-      this.#ring = null;
-      this.#ringKey = '';
-      return;
-    }
-    const key = JSON.stringify([
-      planet.id,
-      model.phase,
-      model.productionMap.options,
-      model.productionMap.radius,
-    ]);
-    if (key !== this.#ringKey || !this.#ring) {
-      const active = document.activeElement;
-      const label =
-        active instanceof HTMLElement && this.#ring?.contains(active)
-          ? active.getAttribute('aria-label')
-          : null;
-      this.#ring?.remove();
-      this.#ring = renderProductionRing(model, this.#emit);
-      this.#container?.append(this.#ring);
-      this.#ringKey = key;
-      if (label)
-        [...this.#ring.querySelectorAll<HTMLElement>('[aria-label]')]
-          .find((node) => node.getAttribute('aria-label') === label)
-          ?.focus({ preventScroll: true });
-    }
-    for (const choice of this.#ring.querySelectorAll<HTMLElement>(
-      '[data-production-option]',
-    )) {
-      choice.setAttribute(
-        'aria-pressed',
-        String(
-          choice.dataset.productionOption ===
-            model.productionMap.selectedOption?.type,
-        ),
-      );
-    }
-    const point = productionPosition(
-      HexGeometry.toPoint(planet.position),
-      model.camera,
-      {
-        width: this.#container?.clientWidth ?? 0,
-        height: this.#container?.clientHeight ?? 0,
-        availableWidth: 1,
-        availableHeight: 1,
-      },
-    );
-    this.#ring.style.left = `${point.x}px`;
-    this.#ring.style.top = `${point.y}px`;
-  }
-
   #renderSelection(model: AppReadModel): void {
     if (!this.#panel) return;
     this.#cancelSelectionGesture?.();
     this.#panel.hidden = false;
-    if (model.screen === 'orders') {
-      const page = this.#root.querySelector<HTMLElement>('.map-page');
-      if (page) page.dataset.orderPage = model.orderView?.page ?? 'menu';
-      this.#panel.setAttribute('aria-label', 'Orders');
-      this.#panel.replaceChildren(renderOrders(model, this.#emit));
-      return;
-    }
-    const salvage = renderSalvageSelection(model, this.#emit);
-    if (salvage) {
-      this.#panel.setAttribute('aria-label', 'Salvage and shipyard');
-      this.#panel.replaceChildren(salvage);
-      return;
-    }
-    const trade =
-      model.screen === 'map'
-        ? renderMapTradeSelection(model, this.#emit)
-        : null;
-    if (trade) {
-      this.#panel.setAttribute(
-        'aria-label',
-        model.mapTrade.routeId ? 'Selected route' : 'Trade route selection',
-      );
-      this.#panel.replaceChildren(trade);
-      return;
-    }
-    if (model.screen === 'production') {
-      this.#panel.setAttribute('aria-label', 'Production controls');
-      // produktionsflikar: a newly chosen ship shows its details; otherwise
-      // the player's tab stays.
-      const option = model.productionMap.selectedOption?.type ?? null;
-      if (option !== this.#productionOption)
-        this.#productionTab = option ? 'selected' : 'queue';
-      this.#productionOption = option;
-      this.#panel.replaceChildren(
-        ...(model.planet
-          ? [
-              renderProductionMapPanel(
-                model,
-                this.#emit,
-                this.#productionTab,
-                (tab) => {
-                  this.#productionTab = tab;
-                },
-              ),
-            ]
-          : []),
-      );
-      this.#panel.hidden = !model.planet;
-      return;
-    }
     const selectedFleet = [
       ...model.fleets,
       ...(model.pirates ?? []).map(pirateAsFleet),
@@ -1620,10 +1130,6 @@ export class AppView implements AppPort {
     }
     const cell = model.selected;
     const object = cell?.object;
-    const owned = object?.kind === 'planet' && object.owned;
-    const source = model.ownedPlanets.find(
-      (planet) => planet.position.key === cell?.position.key,
-    );
     const terrainName =
       cell?.terrain === 'dense-asteroids'
         ? 'Dense asteroid belt'
@@ -1634,15 +1140,12 @@ export class AppView implements AppPort {
             : null;
     const title = renderMapLocationHeading(
       object?.name ?? terrainName ?? 'Fleets',
-      source?.id,
-      this.#emit,
     );
-    const description = owned
-      ? 'A colony of your empire.'
-      : object?.kind === 'star'
+    const description =
+      object?.kind === 'star'
         ? 'A star. Its hex is impassable.'
         : object?.kind === 'planet'
-          ? 'An uninhabited world near your homeworld.'
+          ? 'A planet.'
           : cell?.terrain === 'dense-asteroids'
             ? 'Impassable asteroid field.'
             : cell?.terrain === 'sparse-asteroids'
@@ -1674,7 +1177,7 @@ export class AppView implements AppPort {
           element(
             'p',
             'planet-map-info',
-            `Type: ${model.selectedPlanetInfo.environment} · Habitability: ${model.selectedPlanetInfo.habitability}% · Building sites: ${model.selectedPlanetInfo.buildSlots}/${model.selectedPlanetInfo.maxBuildSlots}`,
+            `Type: ${model.selectedPlanetInfo.environment} · Habitability: ${model.selectedPlanetInfo.habitability}%`,
           ),
           element(
             'p',
@@ -1682,21 +1185,6 @@ export class AppView implements AppPort {
             `Resources: ${model.selectedPlanetInfo.resources.map((resource) => `${resource.name} ${resource.perYear}/round`).join(', ') || 'None'}`,
           ),
         );
-        if (
-          !owned &&
-          !model.planetQueues.colonization.some(
-            (item) => item.planetId === model.selectedPlanetInfo!.id,
-          )
-        )
-          summary.append(
-            button('Add to Colonization queue', () =>
-              this.#emit({
-                type: 'add-planet-queue',
-                kind: 'colonization',
-                planetId: model.selectedPlanetInfo!.id,
-              }),
-            ),
-          );
       } else {
         summary.append(
           element(
@@ -1705,39 +1193,36 @@ export class AppView implements AppPort {
             'Planet details have not been explored.',
           ),
         );
-        if (
-          !model.planetQueues.exploration.some(
-            (item) => item.planetId === model.selectedPlanetInfo!.id,
-          )
-        )
-          summary.append(
-            button('Add to Exploration queue', () =>
-              this.#emit({
-                type: 'add-planet-queue',
-                kind: 'exploration',
-                planetId: model.selectedPlanetInfo!.id,
-              }),
-            ),
-          );
       }
       contents.push(summary);
     } else if (model.screen === 'map' && cell && !cell.explored && !object) {
+      contents.push(renderMapLocationHeading('Unexplored'));
+    }
+    const route = model.travelRoute;
+    if (route && model.screen === 'map' && !model.destinationFleetId) {
+      // hexval-med-vag: say how far it is and how to set off.
+      const rounds = Math.ceil(
+        route.steps.length / Math.max(1, route.perRound),
+      );
+      const fleetName =
+        model.fleets.find((fleet) => fleet.id === route.fleetId)?.name ??
+        'The fleet';
       contents.push(
-        renderMapLocationHeading('Unexplored', undefined, this.#emit),
+        element(
+          'p',
+          'travel-route',
+          model.travelling
+            ? `${fleetName} is on its way · ${route.steps.length} hex left.`
+            : `${route.steps.length} hex · about ${rounds} ${rounds === 1 ? 'round' : 'rounds'} for ${fleetName}. Select the hex again to travel.`,
+        ),
       );
     }
-    if (destinationFleet) {
-      const colonization = model.destinationOrder === 'colonize';
-      const salvage = model.destinationOrder === 'salvage';
+    if (destinationFleet)
       contents.push(
         element(
           'p',
           'destination-mode',
-          salvage
-            ? `Choose a wreck to salvage with ${destinationFleet.name}.`
-            : colonization
-              ? `Choose a planet to colonize with ${destinationFleet.name}.`
-              : `Choose a destination for ${destinationFleet.name}.`,
+          `Choose a destination for ${destinationFleet.name}.`,
         ),
         button(
           'Cancel',
@@ -1746,106 +1231,6 @@ export class AppView implements AppPort {
               type: model.screen === 'fleets' ? 'open-fleets' : 'open-map',
             }),
           'button',
-        ),
-      );
-      if (salvage || colonization) {
-        const picker = element('select');
-        picker.setAttribute(
-          'aria-label',
-          salvage ? 'Salvage wreck' : 'Colonization planet',
-        );
-        const placeholder = element(
-          'option',
-          '',
-          salvage ? 'Choose a wreck to salvage' : 'Choose a planet to colonize',
-        );
-        placeholder.value = '';
-        picker.append(placeholder);
-        if (salvage) {
-          for (const wreck of model.wrecks.filter(
-            (wreck) => !wreck.reservedBy && !wreck.towedBy && !wreck.yardId,
-          )) {
-            const option = element(
-              'option',
-              '',
-              `${wreck.ship.type} wreck · ${wreck.ship.engines['Rocket engine']} Rocket / ${wreck.ship.engines['Ion pulse engine']} Ion${wreck.ship.telescope ? ` · Telescope ${wreck.ship.telescope}` : ''}`,
-            );
-            option.value = wreck.id;
-            picker.append(option);
-          }
-        } else
-          for (const target of model.cells) {
-            if (
-              colonization &&
-              (!target.explored ||
-                target.object?.kind !== 'planet' ||
-                !target.object.surveyed ||
-                target.object.owned)
-            )
-              continue;
-            if (target.passable === false) continue;
-            const option = element(
-              'option',
-              '',
-              target.object?.name ?? 'Empty space',
-            );
-            option.value = target.position.key;
-            picker.append(option);
-          }
-        picker.addEventListener('change', () => {
-          if (!picker.value) return;
-          if (salvage) {
-            this.#emit({ type: 'select-salvage', id: picker.value });
-            return;
-          }
-          const [q, r] = picker.value.split(',').map(Number);
-          this.#emit({ type: 'select', position: new HexCoordinate(q!, r!) });
-        });
-        picker.addEventListener('keydown', (event) => {
-          if (event.key === 'Escape')
-            this.#emit({
-              type: model.screen === 'fleets' ? 'open-fleets' : 'open-map',
-            });
-        });
-        contents.push(picker);
-        if (salvage && picker.options.length === 1)
-          contents.push(
-            element('p', 'muted-note', 'No available wrecks are known.'),
-          );
-      }
-    }
-    if (model.screen === 'map' && object?.kind === 'planet')
-      contents.push(
-        element('span', 'pill', owned ? model.playerName : 'Uninhabited'),
-      );
-    if (model.screen === 'map' && owned && object) {
-      const source = model.ownedPlanets.find(
-        (p) => p.position.key === cell?.position.key,
-      );
-      if (source) {
-        const routes = model.tradeRoutes.filter(
-          (r) => r.a === source.id || r.b === source.id,
-        );
-        if (routes.length) contents.push(element('h3', '', 'Connected routes'));
-        for (const route of routes)
-          contents.push(
-            button(
-              `${route.from} ↔ ${route.to}`,
-              () => this.#emit({ type: 'map-select-route', id: route.id }),
-              'button secondary-button',
-            ),
-          );
-      }
-    }
-    const orderStatus = model.planetOrders.find(
-      (status) => status.position.key === cell?.position.key,
-    );
-    if (model.screen === 'map' && orderStatus)
-      contents.push(
-        element(
-          'p',
-          'order-status',
-          `${orderStatus.emptySites} empty building sites · ${orderStatus.emptyQueues} idle planet build queue`,
         ),
       );
     if (model.screen === 'map' && cell && !model.destinationFleetId) {
@@ -1889,8 +1274,6 @@ export class AppView implements AppPort {
 
   renderCamera(model: AppReadModel): void {
     this.#map?.render(model);
-    if (!model.eventPlayback && !model.turnMovement)
-      this.#renderProductionRing(model);
     this.#announcementModel = model.eventPlayback ? model : null;
     this.#positionAnnouncement();
     if (this.#zoom)

@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
-import { turnFrames } from '../../fixtures/turn-steps.js';
-import { completeConstruction } from '../../fixtures/construction.js';
+import { renderMapLocationHeading } from '../../../src/client/space-map/views/index.js';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
@@ -44,45 +43,23 @@ function click(label: string): void {
 }
 
 describe('planetinformation', () => {
-  it('opens the owned planet and presents its actual model values', () => {
-    start();
-    click('Open planet');
-    expect(root.querySelector('h1')?.textContent).toBe('Tellus');
-    expect(root.textContent).toContain('12,000');
-    expect(root.textContent).toContain('100%');
-    expect(root.textContent).toContain('Stored 100');
-    expect(root.textContent).toContain('0');
-    expect(root.textContent).toContain('Your empire');
-  });
-
   it('treats planet names as text rather than markup', () => {
-    const model = new AppModel();
-    model.openPlanet();
-    const view = new AppView(root, mapFactory);
-    view.render({
-      ...model.snapshot,
-      planet: {
-        ...model.snapshot.planet!,
-        name: '<img src=x onerror="alert(1)">',
-      },
-    });
-    expect(root.querySelector('h1')?.textContent).toBe(
+    const heading = renderMapLocationHeading('<img src=x onerror="alert(1)">');
+    expect(heading.querySelector('h2')?.textContent).toBe(
       '<img src=x onerror="alert(1)">',
     );
-    expect(root.querySelector('img[src="x"], [onerror]')).toBeNull();
+    expect(heading.querySelector('img')).toBeNull();
   });
 });
 
 describe('forskningsoversikt', () => {
-  // forskningsvy-utan-station replaces the disabled tree of a new game.
-  it('shows no research tree before a Research station exists, only the way to build one', () => {
+  // flottforskning-av-tekniker: the tree is shown, but research does not advance yet.
+  it('shows the research tree and says that research does not advance yet', () => {
     start();
     click('Research');
     expect(root.querySelector('h1')?.textContent).toBe('Research');
-    expect(root.textContent).toContain('Research needs a Research station.');
-    expect(
-      root.querySelector('[data-technology="Rocket engine factory"]'),
-    ).toBeNull();
+    expect(root.textContent).toContain('Research does not advance yet.');
+    expect(root.querySelector('[data-technology="Missiles"]')).not.toBeNull();
     click('Star map');
     expect(root.querySelector('[data-testid="map-container"]')).not.toBeNull();
   });
@@ -116,12 +93,10 @@ describe('english-game / focused-interface', () => {
     start();
     expect(
       root.querySelector('[aria-label="Selected hex"]')?.textContent,
-    ).toContain('A colony of your empire.');
-    expect(root.querySelector('[aria-label="Open planet"]')).not.toBeNull();
+    ).toContain('A planet.');
+    expect(root.querySelector('[aria-label="Open planet"]')).toBeNull();
     expect(root.textContent).not.toContain('Din plats i galaxen.');
-    click('Open planet');
-    expect(root.textContent).toContain('Your empire');
-    expect(root.textContent).toContain('Population');
+    expect(root.textContent).toContain('Type: Temperate');
   });
 });
 
@@ -140,97 +115,16 @@ describe('focused-interface', () => {
     select(0, 1);
     expect(
       root.querySelector('[aria-label="Selected hex"]')?.textContent,
-    ).toContain('An uninhabited world near your homeworld.');
+    ).toContain('A planet.');
     expect(root.querySelector('[aria-label="Open planet"]')).toBeNull();
-  });
-});
-
-describe('viewport-game-layout', () => {
-  it('separates Overview and building site management', () => {
-    start();
-    click('Open planet');
-    expect(root.querySelector('[role="tab"]')).toBeNull();
-    expect(root.querySelector('.overview')?.textContent).toContain('Buildings');
-    expect(root.querySelector('.overview')?.textContent).toContain('Resources');
-  });
-});
-
-describe('byggnaders-resursanvandning', () => {
-  it('shows upkeep per completed building in Buildings', () => {
-    const model = new AppModel();
-    model.build('Research station');
-    completeConstruction(model, 'Research station');
-
-    model.openPlanet();
-    const controller = new MasterController(
-      model,
-      new AppView(root, mapFactory),
-    );
-    controller.start();
-    click('Building sites');
-    expect(root.querySelector('.building-panel')?.textContent).toContain(
-      '600 workers · No recurring material cost',
-    );
-  });
-});
-
-function advance(model: AppModel): void {
-  for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
-  model.finishTurn();
-}
-function buildShipyard(model: AppModel): void {
-  model.build('Research station');
-  completeConstruction(model, 'Research station');
-  model.research('Colony ship factory');
-  advance(model);
-  advance(model);
-  advance(model);
-  advance(model);
-  model.build('Colony ship factory');
-  completeConstruction(model, 'Colony ship factory');
-  model.build('Rocket engine factory');
-  completeConstruction(model, 'Rocket engine factory');
-}
-
-describe('kolonisation / kartorderstatus', () => {
-  it('offers Colonize at an uninhabited destination and opens the resulting colony', () => {
-    const model = new AppModel();
-    buildShipyard(model);
-    model.scheduleShip('Colony ship', null);
-    // en-enhet-per-fabrik-och-runda: three engines, then the ship.
-    for (let year = 0; year < 4; year++) advance(model);
-    model.setDestination('fleet-home', 0, 1);
-    advance(model);
-    model.select(new HexCoordinate(0, 1));
-    new MasterController(model, new AppView(root, mapFactory)).start();
-    click('Orders');
-    click('Colonize');
-    model.select(new HexCoordinate(0, 1));
-    new MasterController(model, new AppView(root, mapFactory)).start();
-    expect(
-      model.snapshot.cells.find((cell) => cell.position.key === '0,1')!.object!
-        .owned,
-    ).toBe(true);
-    click('Open planet');
-    expect(root.querySelector('h1')!.textContent).toBe('Vesta');
-    expect(root.textContent).toContain('1,000');
-    click('Building sites');
-    expect(root.querySelectorAll('.building-site')).toHaveLength(6);
-    expect(root.textContent).toContain(
-      'A Dome is required before this site can be used.',
-    );
-    expect(root.querySelectorAll('.locked-site')).toHaveLength(5);
   });
 });
 
 describe('kompakta-koknappar', () => {
   it('uses symbols while preserving named research actions, boundaries and controller dispatch', () => {
     const model = new AppModel();
-    model.build('Research station');
-    completeConstruction(model, 'Research station');
-    model.research('Exploration ship factory');
-    model.research('Colony ship factory');
-    model.research('Transport ship factory');
+    model.research('Missiles');
+    model.research('Armored Transport');
     model.openResearch();
     new MasterController(model, new AppView(root, mapFactory)).start();
     const rows = () => [...root.querySelectorAll('.research-queue article')];
@@ -240,21 +134,19 @@ describe('kompakta-koknappar', () => {
     expect(buttons().map((b) => b.textContent)).toEqual(['⠿', '×']);
     expect(buttons()[0]!.disabled).toBe(false);
     for (const control of buttons()) {
-      expect(control.getAttribute('aria-label')).toContain(
-        'Rocket engine factory',
-      );
+      expect(control.getAttribute('aria-label')).toContain('Missiles');
       expect(control.title.length).toBeGreaterThan(0);
     }
     const handle =
-      rows()[3]!.querySelector<HTMLButtonElement>('.queue-drag-handle')!;
+      rows()[0]!.querySelector<HTMLButtonElement>('.queue-drag-handle')!;
     for (const key of [' ', 'ArrowDown', 'Enter'])
       handle.dispatchEvent(
         new KeyboardEvent('keydown', { key, bubbles: true }),
       );
-    expect(model.snapshot.research.queue[3]).toBe('Transport ship factory');
-    rows()[4]!.querySelector<HTMLButtonElement>('.queue-icon-button')!.click();
-    expect(model.snapshot.research.queue).toContain('Colony ship factory');
+    expect(model.snapshot.research.queue[1]).toBe('Missiles');
+    rows()[2]!.querySelector<HTMLButtonElement>('.queue-icon-button')!.click();
+    expect(model.snapshot.research.queue).toContain('Armored Transport');
     click('Remove research');
-    expect(model.snapshot.research.queue).not.toContain('Colony ship factory');
+    expect(model.snapshot.research.queue).not.toContain('Armored Transport');
   });
 });

@@ -151,34 +151,3 @@ describe('dra-flottdestination', () => {
     expect(model.snapshot.fleets[0]!.destination).toBeNull();
   });
 });
-
-describe('flottval-pa-kartan', () => {
-  it('chooses the closest fleet when hit circles overlap and excludes empty fleets', () => {
-    const { model } = setup();
-    for (let index = 0; index < 12; index += 1) model.createFleet('fleet-home');
-    const first = model.snapshot.fleets[0]!;
-    const fleets = Array.from({ length: 30 }, (_, index) => ({
-      ...first,
-      id: `test-${index}`,
-    }));
-    for (const marker of FleetMapLayout.markers(fleets))
-      expect(FleetMapLayout.hit(fleets, marker.point)).toBe(marker.fleet.id);
-    const empty = {
-      ...first,
-      ships: {
-        Fighter: 0,
-        'Colony ship': 0,
-        'Exploration ship': 0,
-        'Transport ship': 0,
-        'Civilian shuttle': 0,
-        'Space pirate': 0,
-        'Salvage ship': 0,
-        Raptor: 0,
-      },
-    };
-    expect(FleetMapLayout.markers([empty])).toHaveLength(0);
-    expect(
-      FleetMapLayout.hit([empty], HexGeometry.toPoint(first.position!)),
-    ).toBeNull();
-  });
-});

@@ -4,59 +4,6 @@ import { startFirstSlot } from './save-helpers.js';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { ResearchTreeLayout } from '../../../src/client/space-map/models/research/ResearchTree.js';
 
-test('transport-ship-efter-rocket-engine: transport shares the engine prerequisite with Colony ship and can be researched before exploration', async ({
-  page,
-}) => {
-  await page.addInitScript(
-    (state) => {
-      localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
-      localStorage.setItem(
-        'spacelords.save.v2.1',
-        JSON.stringify({ lastPlayed: '2026-10-30T00:00:00Z', state }),
-      );
-    },
-    { ...researchStationState(), researched: ['Rocket engine factory'] },
-  );
-  await page.goto('./');
-  await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Research', exact: true }).click();
-  await expect(
-    page.locator(
-      '[data-from="Rocket engine factory"][data-to="Transport ship factory"]',
-    ),
-  ).toHaveCount(1);
-  await expect(
-    page.locator(
-      '[data-from="Exploration ship factory"][data-to="Transport ship factory"]',
-    ),
-  ).toHaveCount(0);
-  const transport = page.getByRole('button', {
-    name: 'Inspect Transport ship factory',
-    exact: true,
-  });
-  await transport.focus();
-  await transport.click();
-  await expect(page.locator('.research-details .research-requires')).toHaveText(
-    'Requires: Rocket engine factory',
-  );
-  await page
-    .getByRole('button', {
-      name: 'Research Transport ship factory',
-      exact: true,
-    })
-    .click();
-  await expect(page.locator('.research-queue article')).toHaveCount(1);
-  await expect(page.locator('.research-queue article')).toContainText(
-    'Transport ship factory',
-  );
-  await expect(
-    page.getByRole('button', {
-      name: 'Inspect Exploration ship factory',
-      exact: true,
-    }),
-  ).toHaveCount(0);
-});
-
 test('forsknings-tradnavigation: native touch pans and pinches the tree', async ({
   page,
   context,
@@ -125,6 +72,8 @@ test('forsknings-tradnavigation: native touch pans and pinches the tree', async 
 test('forsknings-tradnavigation: dependency lines, navigation and research preserve the camera', async ({
   page,
 }, testInfo) => {
+  // The four-technology tree fits a large screen, so use a phone-sized view.
+  await page.setViewportSize({ width: 360, height: 640 });
   await page.addInitScript((state) => {
     if (localStorage.getItem('research-station-seeded')) return;
     localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
@@ -145,9 +94,7 @@ test('forsknings-tradnavigation: dependency lines, navigation and research prese
   await expect(page.locator('.research-node')).toHaveCount(layout.nodes.length);
   await expect(page.locator('.research-edge')).toHaveCount(layout.edges.length);
   await expect(
-    page.locator(
-      '[data-from="Weapons module factory"][data-to="Fighter factory"]',
-    ),
+    page.locator('[data-from="Armor"][data-to="Armored Fighter"]'),
   ).not.toHaveAttribute('marker-end');
   await tree.focus();
   const initial = await stage.getAttribute('style');
@@ -160,7 +107,7 @@ test('forsknings-tradnavigation: dependency lines, navigation and research prese
   }
   await expect(stage).not.toHaveAttribute('style', zoomed!);
   const choose = page.getByRole('button', {
-    name: 'Inspect Rocket engine factory',
+    name: 'Inspect Missiles',
     exact: true,
   });
   await choose.focus();
@@ -176,7 +123,7 @@ test('forsknings-tradnavigation: dependency lines, navigation and research prese
   await expect(page.locator('.research-queue article')).toHaveCount(0);
   await page
     .getByRole('button', {
-      name: 'Research Rocket engine factory',
+      name: 'Research Missiles',
       exact: true,
     })
     .click();
@@ -189,11 +136,12 @@ test('forsknings-tradnavigation: dependency lines, navigation and research prese
   expect(Math.abs(after.y - camera.y)).toBeLessThanOrEqual(
     Math.abs(after.height - camera.height) + 0.5,
   );
+  await expect(page.locator('[data-technology="Missiles"]')).toHaveAttribute(
+    'data-state',
+    'active',
+  );
   await expect(
-    page.locator('[data-technology="Rocket engine factory"]'),
-  ).toHaveAttribute('data-state', 'active');
-  await expect(
-    page.locator('[data-technology="Fighter factory"]'),
+    page.locator('[data-technology="Armored Fighter"]'),
   ).toHaveAttribute('data-identified', 'false');
   await page.screenshot({ path: testInfo.outputPath('research-tree.png') });
   await tree.press('0');
@@ -229,7 +177,8 @@ test('forsknings-tradnavigation: mouse drag pans and wheel zooms without queuein
   isMobile,
 }) => {
   test.skip(isMobile, 'Mouse gestures are covered on desktop.');
-  // forskningsvy-utan-station: the tree needs a built Research station.
+  // The four-technology tree fits a large screen, so use a phone-sized view.
+  await page.setViewportSize({ width: 360, height: 640 });
   await page.addInitScript((state) => {
     localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
     localStorage.setItem(
@@ -270,8 +219,7 @@ for (const size of [
     page,
   }, testInfo) => {
     await page.setViewportSize(size);
-    // forskning-utan-rubrikrad: a built station shows the tree, and the empty
-    // queue adds the Choose research guidance above it.
+    // forskning-utan-rubrikrad: the tree fills the page without a heading row.
     await page.addInitScript((state) => {
       localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
       localStorage.setItem(
@@ -299,20 +247,10 @@ for (const size of [
     expect(bounds.width).toBeGreaterThanOrEqual(
       pageBounds.width - (size.width > 640 ? details.width + 8 : 0) - 26,
     );
-    const guidance = page.locator('.research-page .decision-guidance');
-    await expect(guidance).toBeVisible();
-    const guide = (await guidance.boundingBox())!;
     expect(bounds.height).toBeGreaterThanOrEqual(
-      pageBounds.height -
-        guide.height -
-        (size.width <= 640 ? details.height + 8 : 0) -
-        50,
+      pageBounds.height - (size.width <= 640 ? details.height + 8 : 0) - 50,
     );
     expect(bounds.height).toBeGreaterThan(pageBounds.height * 0.3);
-    await expect(page.locator('.research-queue-summary')).toHaveAttribute(
-      'aria-label',
-      /Research stations · \d+/,
-    );
     await expect(
       page.locator('.research-tree-tools, .research-sidebar'),
     ).toHaveCount(0);
