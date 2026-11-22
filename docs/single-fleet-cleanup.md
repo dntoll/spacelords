@@ -37,6 +37,8 @@ spelbar, men bevara fristående strids- och bordningstester.
 - [x] Inventera kopplingar och välj små, byggbara borttagningssteg; notera
       beroenden och tillfälliga begränsningar nedan.
 - [x] Ta bort automatisk befolkningsutjämning och dess isolerade tester.
+- [x] Ta bort historiska engångsrensningar för terraforming och utökad galax
+      samt deras tester; hantera det nya sparformatet i ett senare steg.
 - [ ] Ta bort planetbaserade fabriker, produktionsnätverk, handelsrutter och
       automatiska transporter med deras vyer, tester och krav.
 - [ ] Ta bort kolonisation, planetägande, befolkning, Domes och terraforming
@@ -97,3 +99,8 @@ miljön: `check-runner` fick tom npm-versionsutdata och `mobile-config` fick
 också `EPERM`. Miljön använder Node 24 medan projektet anger Node 26; följ
 upp kontrollerna i en miljö med rätt version och tillåtna processer.
 Den gamla sparversionen avvisas ännu inte uttryckligen; se checklistan.
+
+Historiska engångsrensningar av webbläsarens sparplatser är borttagna.
+Befintliga sparningar raderas inte automatiskt vid lagringsåtkomst. Den
+framtida inkompatibiliteten ska fortfarande hanteras uttryckligt enligt
+checklistan; gamla spel kan tills dess öppnas med ofullständigt stöd.

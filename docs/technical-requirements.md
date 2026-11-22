@@ -14,6 +14,13 @@ byggprojekt använder projektets egen kostnad; planetens samlade efterfrågan
 behålls för logistikplanering och ekonomivyn. Ett regressionstest skyddar
 statusen när en flottuppgradering beställer delar från lokal produktion.
 
+## Historiska engångsrensningar i Single fleet
+
+`single-fleet-rensning`: de historiska engångsrensningarna
+`engangsreset-terraformning` och `engangsreset-utokad-galax` har tagits bort.
+Äldre avsnitt nedan beskriver historiken, inte aktuellt beteende.
+Sparkompatibiliteten för den pågående omställningen är ännu inte färdig.
+
 ## Sparformat
 
 `sparformat` (2026-11-21) är **Fullständigt implementerat**: `Game.restore`

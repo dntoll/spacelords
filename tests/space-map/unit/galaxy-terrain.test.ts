@@ -13,7 +13,6 @@ import {
 import { HexNavigation } from '../../../src/client/space-map/models/HexNavigation.js';
 import { Detection } from '../../../src/client/space-map/models/Detection.js';
 import { collectTurnFrames } from '../../fixtures/turn-steps.js';
-import { BrowserSaveRepository } from '../../../src/client/space-map/storage/BrowserSaveRepository.js';
 
 function terrainGame(
   terrain: readonly TerrainHex[],
@@ -353,34 +352,5 @@ describe('automatisk-stjarnutforskning', () => {
     expect(returned).toBe(true);
     for (const planet of galaxy.systems[1]!.planets)
       expect(game.exportState().explored).toContain(planet.position.key);
-  });
-});
-
-describe('engangsreset-utokad-galax', () => {
-  it('clears old slots once and preserves new games on every subsequent access', () => {
-    const values = new Map<string, string>([
-      ['spacelords.terraforming-v5-reset', 'done'],
-    ]);
-    for (const slot of [1, 2, 3])
-      values.set(`spacelords.save.v2.${slot}`, 'old save');
-    const repository = new BrowserSaveRepository({
-      getItem: (key) => values.get(key) ?? null,
-      setItem: (key, value) => {
-        values.set(key, value);
-      },
-      removeItem: (key) => {
-        values.delete(key);
-      },
-    });
-    expect(repository.load(1)).toBeNull();
-    expect(repository.load(2)).toBeNull();
-    expect(repository.load(3)).toBeNull();
-    const saved = {
-      lastPlayed: new Date().toISOString(),
-      state: terrainGame([]).exportState(),
-    };
-    repository.save(1, saved);
-    expect(repository.load(1)).toEqual(saved);
-    expect(repository.load(1)).toEqual(saved);
   });
 });

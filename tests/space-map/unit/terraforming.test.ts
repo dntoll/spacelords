@@ -8,7 +8,6 @@ import {
   type BuildType,
 } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
-import { BrowserSaveRepository } from '../../../src/client/space-map/storage/BrowserSaveRepository.js';
 import type { TerraformEnvironment } from '../../../src/client/space-map/models/Planet.js';
 
 function setup(habitability = 25, environment = 'Desert', potential = 6) {
@@ -456,34 +455,5 @@ describe('planettypsforskning', () => {
     expect(discovered.research.available).toContain('Ice dome');
     const gas = game.galaxy.systems[0]!.planets[2]!;
     expect(game.planetSnapshot(gas)).toBeNull();
-  });
-});
-
-describe('engangsreset-terraformning', () => {
-  it('clears all three previous slots once and preserves new saves and unrelated storage', () => {
-    const values = new Map([
-      ['another-app', 'keep'],
-      ...[1, 2, 3].map(
-        (slot) => [`spacelords.save.v2.${slot}`, 'old'] as [string, string],
-      ),
-    ]);
-    const storage = {
-      getItem: (key: string) => values.get(key) ?? null,
-      setItem: (key: string, value: string) => {
-        values.set(key, value);
-      },
-      removeItem: (key: string) => {
-        values.delete(key);
-      },
-    };
-    const repository = new BrowserSaveRepository(storage);
-    for (const slot of [1, 2, 3]) expect(repository.load(slot)).toBeNull();
-    const saved = {
-      lastPlayed: new Date().toISOString(),
-      state: new Game(createExampleGalaxy()).exportState(),
-    };
-    repository.save(2, saved);
-    expect(new BrowserSaveRepository(storage).load(2)).toEqual(saved);
-    expect(values.get('another-app')).toBe('keep');
   });
 });
