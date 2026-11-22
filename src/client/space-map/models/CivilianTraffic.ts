@@ -1,5 +1,3 @@
-import type { HexCoordinate } from '../../common/HexCoordinate.js';
-
 export const SHUTTLE_CAPACITY = 500;
 
 export interface CivilianOrder {
@@ -12,18 +10,6 @@ export interface CivilianOrder {
   path: string[];
   stopping: boolean;
   status: string;
-}
-
-export interface CivilianFleet {
-  ordersPaused?: boolean;
-  id: string;
-  name: string;
-  ships: { readonly 'Civilian shuttle': number };
-  position: HexCoordinate | null;
-  destination: HexCoordinate | null;
-  courseOrigin?: HexCoordinate;
-  civilian?: CivilianOrder;
-  homeRouteId?: string;
 }
 
 export class CivilianTraffic {
@@ -63,18 +49,5 @@ export class CivilianTraffic {
         (!order.sourceId || !order.targetId))
     )
       throw new Error('Invalid saved civilian transport order.');
-  }
-
-  stop(fleet: CivilianFleet): void {
-    if (!fleet.civilian) return;
-    if (fleet.civilian.passengers) {
-      if (!fleet.civilian.stopping)
-        fleet.civilian.status = `Stopping after delivery: ${fleet.civilian.status}`;
-      fleet.civilian.stopping = true;
-    } else {
-      delete fleet.civilian;
-      fleet.destination = null;
-      delete fleet.courseOrigin;
-    }
   }
 }

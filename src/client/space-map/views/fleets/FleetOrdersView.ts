@@ -42,23 +42,19 @@ export function renderFleetOrders(
         : 'Release from trade route'
       : fleet.upgrade
         ? 'Cancel Upgrade'
-        : fleet.civilian?.passengers
-          ? 'Stop Civilian transport after delivery'
-          : fleet.civilian
-            ? 'Stop Civilian transport'
-            : fleet.automation
-              ? 'Cancel automatic order'
-              : fleet.salvage
-                ? 'Cancel salvage'
-                : fleet.colonizationTargetId
-                  ? 'Cancel colonization'
-                  : fleet.explorationTargetId
-                    ? 'Cancel planet exploration'
-                    : fleet.patrol
-                      ? 'Cancel patrol'
-                      : fleet.joinFleetId
-                        ? 'Cancel reinforcement'
-                        : 'Clear destination',
+        : fleet.automation
+          ? 'Cancel automatic order'
+          : fleet.salvage
+            ? 'Cancel salvage'
+            : fleet.colonizationTargetId
+              ? 'Cancel colonization'
+              : fleet.explorationTargetId
+                ? 'Cancel planet exploration'
+                : fleet.patrol
+                  ? 'Cancel patrol'
+                  : fleet.joinFleetId
+                    ? 'Cancel reinforcement'
+                    : 'Clear destination',
     () =>
       emit({
         type: fleet.routeId ? 'release-trade-fleet' : 'clear-destination',

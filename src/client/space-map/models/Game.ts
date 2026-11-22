@@ -369,7 +369,6 @@ export class Game {
   #attackQueue: string[] = [];
   #salvageQueue: string[] = [];
   #surveyedPlanets = new Set<string>();
-  readonly #civilianTraffic = new CivilianTraffic();
   #logistics = new Logistics();
   // produktionsnatverk: shared stock and goods moving between planets.
   #network = new NetworkEconomy();
@@ -3297,10 +3296,6 @@ export class Game {
   }
   #validateProjectFleet(planet: Planet, id: string | null): void {
     const fleet = id ? this.#fleetState(id) : null;
-    if (fleet?.civilian)
-      throw new Error(
-        'Choose a fleet without Civilian transport for new ships.',
-      );
     if (fleet?.routeId)
       throw new Error('Choose a fleet without a trade route for new ships.');
     if (fleet?.position && fleet.position.key !== planet.position.key)
@@ -3456,18 +3451,12 @@ export class Game {
     fleet.courseOrigin = fleet.position!;
   }
   clearDestination(id: string): void {
-    const civilFleet = this.#fleetState(id);
-    if (civilFleet.civilian) {
-      if (!this.canIssueFleetOrders(id))
-        throw new Error('Orders are locked during simulation.');
-      this.#civilianTraffic.stop(civilFleet);
-      return;
-    }
     this.#requireFleetOrders(id);
     this.#salvage.stop(id);
     this.#cancelFleetUpgrade(this.#fleetState(id));
     delete this.#fleetState(id).pendingOrder;
     delete this.#fleetState(id).automation;
+    delete this.#fleetState(id).civilian;
     delete this.#fleetState(id).colonizationTargetId;
     delete this.#fleetState(id).explorationTargetId;
     delete this.#fleetState(id).planetQueue;

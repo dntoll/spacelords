@@ -198,7 +198,6 @@ export function renderFleetCard(
     if (fleet.patrol && assignment.startsWith('Patrol:'))
       status.classList.add('fleet-patrol-status');
     if (fleet.upgrade) status.classList.add('fleet-upgrade-status');
-    if (fleet.civilian) status.classList.add('fleet-civilian-status');
     orderRow.append(status);
   }
   orderRow.append(orders);
@@ -271,8 +270,6 @@ export function fleetAssignmentLabel(
         ?.name ?? 'shipyard';
     return `Upgrade: ${fleet.upgrade.issue ?? (fleet.destination ? `travelling to ${planet}` : `awaiting components at ${planet}`)}`;
   }
-  if (fleet.civilian)
-    return `Civilian transport: ${fleet.civilian.status} · ${fleet.civilian.passengers} passengers aboard`;
   if (fleet.automation === 'salvage')
     return `Auto salvage: ${fleet.towing?.length ? 'returning to shipyard' : fleet.salvage?.targets.length ? 'collecting a wreck' : 'waiting for an available wreck'}`;
   if (fleet.colonizationTargetId) {
