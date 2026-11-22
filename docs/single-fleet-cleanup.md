@@ -44,6 +44,7 @@ spelbar, men bevara fristående strids- och bordningstester.
 - [x] Ta bort transportpassagerares förluster och fortsatta färder efter strid.
 - [x] Ta bort passagerarbaserade spärrar för förflyttning och skeppsbyte.
 - [x] Ta bort särskild stopp- och statusvisning för gamla transportorder.
+- [x] Ta bort modell och sparfält för de gamla persontransportorderna.
 - [x] Låt nybyggda transportskepp sluta starta automatiska handelsorder.
 - [x] Ta bort `guard-routes`, dess automatiska eskortval och tillhörande tester.
 - [x] Ta bort historiska engångsrensningar för terraforming och utökad galax
@@ -140,3 +141,7 @@ kopplingar till Civilian transport finns kvar tills hela tillståndet rensas.
 Civilian transport har inte längre en särskild stoppkontroll, statusvisning
 eller spärr för nya skepp och rutter. Äldre sparfält och kontroll av dessa
 återstår.
+
+Modellen för gamla Civilian transport-order, dess validering och fälten
+för passagerare och hemrutt har tagits bort. Civilian shuttle som skepp
+behålls tills dess roll har diskuterats.

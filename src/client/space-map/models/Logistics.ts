@@ -16,8 +16,6 @@ export interface TransportFleet {
   position: HexCoordinate | null;
   destination: HexCoordinate | null;
   courseOrigin?: HexCoordinate;
-  civilian?: { readonly legRouteId?: string };
-  homeRouteId?: string;
   routeId?: string;
   releaseRequested?: boolean;
   ships: { readonly 'Transport ship': number };
@@ -137,14 +135,7 @@ export class Logistics {
   /** Closed routes disappear once no fleet still refers to them. */
   cleanup(port: LogisticsPort): void {
     this.routes = this.routes.filter(
-      (r) =>
-        !r.closing ||
-        port.fleets.some(
-          (f) =>
-            f.routeId === r.id ||
-            f.homeRouteId === r.id ||
-            f.civilian?.legRouteId === r.id,
-        ),
+      (r) => !r.closing || port.fleets.some((f) => f.routeId === r.id),
     );
   }
 

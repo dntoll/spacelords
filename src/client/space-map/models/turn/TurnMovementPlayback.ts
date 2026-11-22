@@ -103,7 +103,6 @@ export class TurnMovementPlayback {
         'routeId' in fleet &&
         !!(
           fleet.routeId ||
-          fleet.civilian ||
           fleet.exploration ||
           fleet.patrol ||
           fleet.automation ||
@@ -124,7 +123,6 @@ export class TurnMovementPlayback {
       fleet &&
       'routeId' in fleet &&
       (fleet.routeId ||
-        fleet.civilian ||
         fleet.exploration ||
         fleet.patrol ||
         fleet.automation ||

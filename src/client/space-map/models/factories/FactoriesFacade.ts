@@ -1389,7 +1389,6 @@ export class FactoriesFacade {
           fleet.ships['Transport ship'] > 0 &&
           !fleet.routeId &&
           !fleet.destination &&
-          !fleet.civilian &&
           fleet.position !== null &&
           positions.has(fleet.position.key),
       )

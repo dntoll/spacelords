@@ -10,11 +10,6 @@ import {
   type FleetUpgradeOrder,
   type ShipUpgradeTarget,
 } from './ShipUpgrades.js';
-import {
-  CivilianTraffic,
-  SHUTTLE_CAPACITY,
-  type CivilianOrder,
-} from './CivilianTraffic.js';
 import { engineCount, armedShipCount } from './ShipEquipment.js';
 import { FactoryTechnology } from './FactoryTechnology.js';
 import { FleetPatrol, type PatrolOrder } from './FleetPatrol.js';
@@ -244,9 +239,7 @@ interface Fleet {
   pendingOrder?: ShipOrder;
   upgrade?: FleetUpgradeOrder;
   ordersPaused?: boolean;
-  civilian?: CivilianOrder;
   automation?: 'salvage';
-  homeRouteId?: string;
   colonizationTargetId?: string;
   explorationTargetId?: string;
   planetQueue?: PlanetQueueKind;
@@ -657,24 +650,6 @@ export class Game {
       ({ position: current, destination, courseOrigin, ships, ...rest }) => {
         const fleet = { ...rest, ships: { ...zeroShips(), ...ships } };
         const empty = game.#shipCount(fleet.ships) === 0;
-        if (fleet.civilian !== undefined) {
-          CivilianTraffic.validate(
-            fleet.civilian,
-            fleet.ships['Civilian shuttle'] * SHUTTLE_CAPACITY,
-            (id) => game.#colonies.has(id),
-          );
-          if (
-            empty ||
-            !fleet.ships['Civilian shuttle'] ||
-            fleet.routeId ||
-            fleet.automation ||
-            fleet.patrol ||
-            fleet.exploration ||
-            fleet.joinFleetId ||
-            fleet.colonizationTargetId
-          )
-            throw new Error('Invalid saved civilian fleet.');
-        }
         if (
           fleet.automation !== undefined &&
           (fleet.automation !== 'salvage' ||
@@ -687,11 +662,6 @@ export class Game {
             fleet.colonizationTargetId)
         )
           throw new Error('Invalid saved automatic fleet order.');
-        if (
-          fleet.homeRouteId !== undefined &&
-          (typeof fleet.homeRouteId !== 'string' || !fleet.homeRouteId)
-        )
-          throw new Error('Invalid saved civilian home route.');
         if (
           fleet.colonizationTargetId !== undefined &&
           (typeof fleet.colonizationTargetId !== 'string' ||
@@ -911,7 +881,6 @@ export class Game {
         );
         if (
           fleet.routeId ||
-          fleet.civilian ||
           fleet.automation ||
           fleet.patrol ||
           fleet.exploration ||
@@ -1875,7 +1844,6 @@ export class Game {
             ? { detour: Object.freeze({ ...fleet.detour }) }
             : {}),
           ...(fleet.automation ? { automation: fleet.automation } : {}),
-          ...(fleet.homeRouteId ? { homeRouteId: fleet.homeRouteId } : {}),
           ...(fleet.ordersPaused ? { ordersPaused: true } : {}),
           salvage: this.#salvage.order(fleet.id)
             ? Object.freeze({
@@ -1935,14 +1903,6 @@ export class Game {
           joinFleetId: fleet.joinFleetId,
           releaseRequested: fleet.releaseRequested,
           cargo: Object.freeze(this.#cargo(fleet.id)),
-          ...(fleet.civilian
-            ? {
-                civilian: Object.freeze({
-                  ...fleet.civilian,
-                  path: Object.freeze([...fleet.civilian.path]),
-                }),
-              }
-            : {}),
         }),
       ),
     );
@@ -2379,7 +2339,6 @@ export class Game {
     this.#cancelFleetUpgrade(fleet);
     delete fleet.pendingOrder;
     delete fleet.automation;
-    delete fleet.civilian;
     delete fleet.colonizationTargetId;
     delete fleet.explorationTargetId;
     delete fleet.planetQueue;
@@ -2397,7 +2356,6 @@ export class Game {
     this.#cancelFleetUpgrade(fleet);
     delete fleet.pendingOrder;
     delete fleet.automation;
-    delete fleet.civilian;
     delete fleet.colonizationTargetId;
     delete fleet.patrol;
     delete fleet.exploration;
@@ -3441,7 +3399,6 @@ export class Game {
     this.#cancelFleetUpgrade(fleet);
     delete fleet.pendingOrder;
     delete fleet.automation;
-    delete fleet.civilian;
     delete fleet.colonizationTargetId;
     delete fleet.explorationTargetId;
     delete fleet.planetQueue;
@@ -3456,7 +3413,6 @@ export class Game {
     this.#cancelFleetUpgrade(this.#fleetState(id));
     delete this.#fleetState(id).pendingOrder;
     delete this.#fleetState(id).automation;
-    delete this.#fleetState(id).civilian;
     delete this.#fleetState(id).colonizationTargetId;
     delete this.#fleetState(id).explorationTargetId;
     delete this.#fleetState(id).planetQueue;
@@ -4006,7 +3962,6 @@ export class Game {
         delete fleet.colonizationTargetId;
         this.#salvage.stop(fleet.id);
         if (fleet.routeId) fleet.ordersPaused = true;
-        delete fleet.civilian;
         simulation.remaining.set(fleet.id, 0);
         this.#salvage.follow(fleet);
       }
@@ -4168,7 +4123,6 @@ export class Game {
     this.#cancelFleetUpgrade(fleet);
     delete fleet.pendingOrder;
     delete fleet.automation;
-    delete fleet.civilian;
     delete fleet.colonizationTargetId;
     delete fleet.explorationTargetId;
     delete fleet.planetQueue;
@@ -4201,7 +4155,6 @@ export class Game {
     this.#cancelFleetUpgrade(fleet);
     delete fleet.pendingOrder;
     delete fleet.automation;
-    delete fleet.civilian;
     delete fleet.colonizationTargetId;
     delete fleet.starSurvey;
     this.#updatePatrol(fleet);
@@ -4692,14 +4645,12 @@ export class Game {
           (fleet) =>
             fleet.id === destinationFleetId &&
             !fleet.routeId &&
-            !fleet.civilian &&
             (!fleet.position || fleet.position.key === planet.position.key),
         ) ??
         this.#fleets.find(
           (fleet) =>
             fleet.id === state.homeFleetId &&
             !fleet.routeId &&
-            !fleet.civilian &&
             fleet.position?.key === planet.position.key,
         ));
     if (!reserve) {
@@ -5005,7 +4956,6 @@ export class Game {
         !f.patrol &&
         !f.automation &&
         !f.upgrade &&
-        !f.civilian &&
         !f.destination &&
         this.#shipCount(f.ships),
     ))
@@ -6293,7 +6243,6 @@ export class Game {
       !fleet.patrol &&
       !fleet.exploration &&
       !fleet.automation &&
-      !fleet.civilian &&
       !fleet.upgrade &&
       !fleet.joinFleetId &&
       !fleet.ordersPaused &&
@@ -6583,21 +6532,10 @@ export class Game {
   }
   // tomma-flottor-utan-position: the last ship releases both location and course.
   #releaseEmptyFleet(fleet: Fleet): void {
-    if (fleet.civilian)
-      fleet.civilian.reserved = Math.min(
-        fleet.civilian.reserved,
-        fleet.ships['Civilian shuttle'] * SHUTTLE_CAPACITY,
-      );
-    if (fleet.civilian && !fleet.ships['Civilian shuttle']) {
-      delete fleet.civilian;
-      fleet.destination = null;
-      delete fleet.courseOrigin;
-    }
     if (fleet.automation && !fleet.ships['Salvage ship']) {
       this.#cancelFleetUpgrade(fleet);
       delete fleet.pendingOrder;
       delete fleet.automation;
-      delete fleet.civilian;
       this.#salvage.stop(fleet.id);
       fleet.destination = null;
       delete fleet.courseOrigin;
@@ -6805,7 +6743,6 @@ export class Game {
     fleet.destination = null;
     delete fleet.courseOrigin;
     if (fleet.colonizationTargetId || fleet.explorationTargetId) return;
-    if (fleet.civilian?.passengers) return;
     // ruttflottor-utan-ankomstbesked / flottorder-upgrade: arrival does not finish these orders.
     if (fleet.routeId || fleet.upgrade) return;
     // ankomstbesked-endast-vid-manuell-forflyttning: automatic legs arrive silently.

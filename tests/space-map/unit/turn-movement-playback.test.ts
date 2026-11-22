@@ -118,17 +118,6 @@ it('samtidig-automatisk-flottanimation: groups every autonomous order while manu
   const base = new Game(createExampleGalaxy()).fleetSnapshots()[0]!;
   const fleets = [
     { ...base, id: 'route', routeId: 'route-a' },
-    {
-      ...base,
-      id: 'civilian',
-      civilian: {
-        status: 'Waiting',
-        passengers: 0,
-        reserved: 0,
-        path: [],
-        stopping: false,
-      },
-    },
     { ...base, id: 'explore', exploration: 'explore' as const },
     {
       ...base,
@@ -162,7 +151,7 @@ it('samtidig-automatisk-flottanimation: groups every autonomous order while manu
   expect(
     playback.batches.map((batch) => batch.map((track) => track[0]!.fleetId)),
   ).toEqual([
-    ['route', 'civilian', 'explore', 'patrol', 'salvage', 'planet-queue'],
+    ['route', 'explore', 'patrol', 'salvage', 'planet-queue'],
     ['manual'],
   ]);
 });

@@ -7,7 +7,6 @@ import type {
   ShipType,
   ShipUnit,
 } from './Catalog.js';
-import type { CivilianOrder } from './CivilianTraffic.js';
 import type { Component, EconomySnapshot, Stock } from './Economy.js';
 import type { PlanetEnvironmentType } from './Planet.js';
 import type { PlanetQueueKind } from './PlanetQueues.js';
@@ -144,11 +143,7 @@ export interface FleetSnapshot {
   readonly upgrade?: Readonly<FleetUpgradeOrder>;
 
   readonly ordersPaused?: boolean;
-  readonly civilian?: Readonly<
-    Omit<CivilianOrder, 'path'> & { readonly path: readonly string[] }
-  >;
   readonly automation?: 'salvage';
-  readonly homeRouteId?: string;
   readonly colonizationTargetId?: string;
   readonly explorationTargetId?: string;
   readonly planetQueue?: PlanetQueueKind;
