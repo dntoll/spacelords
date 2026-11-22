@@ -410,7 +410,7 @@ export class AppModel {
   fleetAtPoint(point: Point): string | null {
     return this.starMap.fleetAtPoint(point);
   }
-  selectMapFleet(id: string): void {
+  selectMapFleet(id: string): MapSelection {
     return this.starMap.selectMapFleet(id);
   }
   hoverMapFleet(point: Point | null): boolean {
@@ -1179,7 +1179,7 @@ export interface AppHost {
   reportError(error: unknown): void;
   clearNotice(): void;
   fleetAtPoint(point: Point): string | null;
-  selectMapFleet(id: string): void;
+  selectMapFleet(id: string): MapSelection;
   hoverMapFleet(point: Point | null): boolean;
   previewFleetDestination(point: Point): void;
   commitFleetDestination(): void;

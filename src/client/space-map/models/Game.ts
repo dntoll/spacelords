@@ -1438,6 +1438,16 @@ export class Game {
       ...this.#fleets.map((fleet) => [fleet.id, this.#speed(fleet)] as const),
       ...this.#pirates.map((pirate) => [pirate.id, 1] as const),
     ]);
+    // strid-i-samma-hex: fleets that already share a hex fight before moving.
+    if (
+      this.#fleets.some(
+        (fleet) =>
+          fleet.position &&
+          this.#shipCount(fleet.ships) &&
+          this.#hostileAt(fleet.position),
+      )
+    )
+      this.#simulation.awaitingCombat = true;
     this.#phase = 'simulating';
   }
   nextTurnFrame(): TurnFrame | null {
@@ -1466,8 +1476,18 @@ export class Game {
           ? 1
           : 0,
     )[0];
-    return (this.#pendingFrame = frame
-      ? Object.freeze({ movements: frame.movements })
+    // strid-i-samma-hex: a pirate whose hex the player enters stays to fight.
+    const entered = new Set(
+      frame?.movements
+        .filter((movement) => !pirates.has(movement.fleetId))
+        .map((movement) => movement.to.key),
+    );
+    const movements = frame?.movements.filter(
+      (movement) =>
+        !pirates.has(movement.fleetId) || !entered.has(movement.from.key),
+    );
+    return (this.#pendingFrame = movements?.length
+      ? Object.freeze({ movements: Object.freeze(movements) })
       : Object.freeze({ movements: Object.freeze([]), settlement: true }));
   }
   #movingFleets(): PursuingFleet[] {

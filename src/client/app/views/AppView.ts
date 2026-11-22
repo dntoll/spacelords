@@ -1076,8 +1076,14 @@ export class AppView implements AppPort {
       selectedFleet ? 'Selected fleet' : 'Selected hex',
     );
     if (selectedFleet?.position) {
+      const travel = model.pirates.some(
+        (pirate) => pirate.id === selectedFleet.id,
+      )
+        ? travelNote(model)
+        : null;
       this.#panel.replaceChildren(
         renderMapFleetPanel(model, this.#emit, selectedFleet.position),
+        ...(travel ? [travel] : []),
       );
       return;
     }
@@ -1151,25 +1157,9 @@ export class AppView implements AppPort {
     } else if (model.screen === 'map' && cell && !cell.explored && !object) {
       contents.push(renderMapLocationHeading('Unexplored'));
     }
-    const route = model.travelRoute;
-    if (route && model.screen === 'map' && !model.destinationFleetId) {
-      // hexval-med-vag: say how far it is and how to set off.
-      const rounds = Math.ceil(
-        route.steps.length / Math.max(1, route.perRound),
-      );
-      const fleetName =
-        model.fleets.find((fleet) => fleet.id === route.fleetId)?.name ??
-        'The fleet';
-      contents.push(
-        element(
-          'p',
-          'travel-route',
-          model.travelling
-            ? `${fleetName} is on its way · ${route.steps.length} hex left.`
-            : `${route.steps.length} hex · about ${rounds} ${rounds === 1 ? 'round' : 'rounds'} for ${fleetName}. Select the hex again to travel.`,
-        ),
-      );
-    }
+    const travel = travelNote(model);
+    if (travel && model.screen === 'map' && !model.destinationFleetId)
+      contents.push(travel);
     if (destinationFleet)
       contents.push(
         element(
@@ -1266,4 +1256,21 @@ export class AppView implements AppPort {
       this.#presentationFrame = requestAnimationFrame(draw);
     });
   }
+}
+
+/** hexval-med-vag: how far the selected hex is and how to set off. */
+function travelNote(model: AppReadModel): HTMLElement | null {
+  const route = model.travelRoute;
+  if (!route) return null;
+  const rounds = Math.ceil(route.steps.length / Math.max(1, route.perRound));
+  const fleetName =
+    model.fleets.find((fleet) => fleet.id === route.fleetId)?.name ??
+    'The fleet';
+  return element(
+    'p',
+    'travel-route',
+    model.travelling
+      ? `${fleetName} is on its way · ${route.steps.length} hex left.`
+      : `${route.steps.length} hex · about ${rounds} ${rounds === 1 ? 'round' : 'rounds'} for ${fleetName}. Select the hex again to travel.`,
+  );
 }

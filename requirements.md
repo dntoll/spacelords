@@ -50,7 +50,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   av rundan, händelser och avbrott. Allt kvarvarande är **Fullständigt
   implementerat**.
 - **[Space pirates](docs/areas/pirates-and-salvage.md):** pirater,
-  patrullering och strid per hex. Allt kvarvarande är **Fullständigt
+  patrullering och strid per hex; strid när spelarens flotta och en pirat
+  delar hex (`strid-i-samma-hex`). Allt kvarvarande är **Fullständigt
   implementerat**.
 - **[Rymdstrid](docs/areas/space-battle.md):** taktisk strid och testläget.
   **Fullständigt implementerat** utom `utforskade-stridsuppgraderingar`, som

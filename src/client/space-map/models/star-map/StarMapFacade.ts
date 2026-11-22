@@ -63,16 +63,28 @@ export class StarMapFacade {
     );
   }
 
-  selectMapFleet(id: string): void {
-    if (!this.host.isMapScreen()) return;
+  /**
+   * hexval-med-vag / strid-i-samma-hex: a pirate is selected like its hex, so
+   * a second tap on it sends the fleet there to fight.
+   */
+  selectMapFleet(id: string): MapSelection {
+    if (!this.host.isMapScreen()) return 'ignored';
     const pirate = this.host.game
       .pirateSnapshots()
       .find((pirate) => pirate.id === id);
-    const fleet =
-      this.host.game.fleet(id) ?? (pirate ? pirateAsFleet(pirate) : null);
+    if (pirate) {
+      if (this.host.mapFleetId === id) return this.select(pirate.position);
+      this.host.voyage = false;
+      this.host.selected = pirate.position;
+      this.host.mapFleetId = id;
+      return 'selected';
+    }
+    const fleet = this.host.game.fleet(id);
     if (fleet && Object.values(fleet.ships).some((count) => count > 0)) {
       this.host.mapFleetId = id;
+      return 'selected';
     }
+    return 'ignored';
   }
 
   hoverMapFleet(point: Point | null): boolean {

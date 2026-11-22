@@ -134,3 +134,30 @@ describe('hexval-med-vag / resa-utan-synliga-pirater', () => {
     expect(app.snapshot.fleets[0]!.destination?.key).toBe(target.key);
   });
 });
+
+describe('hexval-med-vag / strid-i-samma-hex', () => {
+  it('a first tap on a pirate shows the route to it and a second tap sends the fleet', () => {
+    const initial = new Game(createExampleGalaxy()).exportState();
+    const pirate = initial.pirates![0]!;
+    const app = model({
+      ...initial,
+      pirates: [pirate],
+      fleets: [
+        {
+          ...initial.fleets[0]!,
+          position: { q: pirate.position.q - 1, r: pirate.position.r },
+        },
+      ],
+    });
+    expect(app.snapshot.pirates).toHaveLength(1);
+    expect(app.starMap.selectMapFleet(pirate.id)).toBe('selected');
+    expect(app.snapshot.mapFleetId).toBe(pirate.id);
+    expect(app.snapshot.travelRoute?.steps.at(-1)?.key).toBe(
+      `${pirate.position.q},${pirate.position.r}`,
+    );
+    expect(app.starMap.selectMapFleet(pirate.id)).toBe('travel');
+    expect(app.snapshot.fleets[0]!.destination?.key).toBe(
+      `${pirate.position.q},${pirate.position.r}`,
+    );
+  });
+});

@@ -17,7 +17,7 @@ export class StarMapController {
     return this.facade.fleetAtPoint(point);
   }
 
-  selectMapFleet(id: string): void {
+  selectMapFleet(id: string): MapSelection {
     return this.facade.selectMapFleet(id);
   }
 

@@ -41,6 +41,8 @@ export class MasterController {
   #playbackTimer: ReturnType<typeof setTimeout> | undefined;
   #fleetPointer: {
     id: number;
+    fleetId: string;
+    again: boolean;
     start: Point;
     dragged: boolean;
   } | null = null;
@@ -505,9 +507,13 @@ export class MasterController {
         } else {
           const fleetId = this.#starMap.fleetAtPoint(intent.point);
           if (!fleetId) return;
-          this.#starMap.selectMapFleet(fleetId);
+          // hexval-med-vag: a second tap on a selected pirate travels on release.
+          const again = this.#model.snapshot.mapFleetId === fleetId;
+          if (!again) this.#starMap.selectMapFleet(fleetId);
           this.#fleetPointer = {
             id: intent.id,
+            fleetId,
+            again,
             start: intent.point,
             dragged: false,
           };
@@ -560,8 +566,15 @@ export class MasterController {
               intent.point.x - this.#fleetPointer.start.x,
               intent.point.y - this.#fleetPointer.start.y,
             ) > 6;
+          const pointer = this.#fleetPointer;
           this.#gesture.end(intent.id);
           this.#fleetPointer = null;
+          if (
+            !dragged &&
+            pointer.again &&
+            this.#starMap.selectMapFleet(pointer.fleetId) === 'travel'
+          )
+            return this.#travel();
           if (dragged) {
             mapOrder = true;
             this.#starMap.previewFleetDestination(intent.point);

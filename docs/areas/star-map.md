@@ -24,7 +24,9 @@ flotta till ett mål. Planeter är platser; spelaren äger dem inte
   flottan vidare medan piraterna agerar. Upptäckter och strider pausar som
   förut; när de är avklarade fortsätter resan. Asteroidhexar som kräver en
   hel runda avbryter inte resan, men en resa utan känd väg gör det.
-  Ett nytt hexval eller Stop avbryter resan.
+  Ett nytt hexval eller Stop avbryter resan. En synlig pirat väljs som sin
+  hex: första trycket visar piraten och vägen, det andra skickar flottan
+  dit, där striden börjar enligt `strid-i-samma-hex`.
 
 - **Kartobjekt:** `kartobjekt-foljer-zoom` är **Fullständigt implementerat**.
   Flottor följer kartans skala.

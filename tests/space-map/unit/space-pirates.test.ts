@@ -191,17 +191,21 @@ describe('flottstrid-per-hex', () => {
     expect(reports[0]!.text).toContain('A');
     expect(reports[0]!.text).toContain('B');
   });
-  it('does not fight fleets that swap hexes in the same movement step', () => {
+  it('strid-i-samma-hex: entering the pirate’s hex holds it there, so they fight instead of swapping', () => {
     const state = battle(0, 1, 1).exportState();
     const game = Game.restore({
       ...state,
       fleets: state.fleets.map((f) => ({ ...f, destination: { q: 8, r: -3 } })),
     });
-    turn(game);
-    expect(game.fleet('fleet-home')!.ships['Exploration ship']).toBe(1);
-    expect(game.events.some((e) => e.text.startsWith('Combat at HEX'))).toBe(
-      false,
-    );
+    game.startTurn();
+    for (let step = 0; step < 20 && !game.tacticalBattle; step++) {
+      if (game.phase === 'interrupted') game.continueTurn();
+      const frame = game.nextTurnFrame();
+      if (!frame) break;
+      game.applyFrame(frame);
+    }
+    expect(game.tacticalBattle).not.toBeNull();
+    expect(game.fleet('fleet-home')!.position?.key).toBe('8,-3');
   });
 });
 
