@@ -185,8 +185,8 @@ Den gamla sparversionen avvisas ännu inte uttryckligen; se checklistan.
 
 ## Fortsätt här
 
-Rensningen är genomförd på `claude/single-fleet-cleanup` och pushad, men
-inte mergad till `single_fleet`, `development` eller `main` och inte
+Rensningen är genomförd och mergad till `single_fleet` 2026-11-22 på
+användarens begäran, men inte till `development` eller `main` och inte
 driftsatt. Planetägande, kolonisation, befolkning, Domes, terraforming,
 fabriker, planetproduktion, handel, transporter, varv, bärgning, Decisions,
 planetköer, automatiska order, flera flottor att administrera och planet-
@@ -233,3 +233,14 @@ Kända begränsningar:
 Lokalt i sandlådan krävde Playwright en tillfällig konfiguration med
 `launchOptions.executablePath: '/opt/pw-browsers/chromium'` och
 `npm run build:pages` före körning. Konfigurationen är inte committad.
+
+Läge 2026-11-22 efter `ap-pa-starmap`: Star map styrs med hexval och AP utan
+End turn, och strid utlöses när flottan och en pirat delar hex. Enhetssviten
+passerar (900 tester). Playwright på `desktop-chromium`: 69 passerar, 7 hoppas
+över och 8 Star map-tester faller (`event-playback` ×3, `event-controls`
+Research-footer, `exploration-interruptions` checkpoint,
+`fleet-map-management` och `space-pirates` ×2). De föll redan på
+`single_fleet` före AP-ändringen eller bygger på den gamla
+händelseuppspelningen, och skrivs om med nya Star map enligt beslut med
+användaren. Rymdstrid, bordning, sparade spel och mobilens smoke-test
+passerar.
