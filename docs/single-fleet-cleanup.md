@@ -39,6 +39,7 @@ spelbar, men bevara fristående strids- och bordningstester.
 - [x] Ta bort automatisk befolkningsutjämning och dess isolerade tester.
 - [x] Ta bort automatisk ombemanning när en handelsrutt stängs.
 - [x] Ta bort automatisk tilldelning av transporter till handelsrutter.
+- [x] Ta bort möjligheten att starta äldre Civilian transport-order.
 - [x] Låt nybyggda transportskepp sluta starta automatiska handelsorder.
 - [x] Ta bort `guard-routes`, dess automatiska eskortval och tillhörande tester.
 - [x] Ta bort historiska engångsrensningar för terraforming och utökad galax
@@ -120,5 +121,5 @@ handels- eller transportorder. Produktion på planeter finns tills vidare
 kvar och tas bort i senare steg.
 
 Automatisk tilldelning av handelsrutter (`automatisk-farledsbemanning`)
-är borttagen. Den äldre inaktiva Civilian transport-ordern och manuella
-handelsrutter finns kvar tills de rensas.
+är borttagen. Sparat tillstånd och visning för äldre Civilian transport-order samt
+manuella handelsrutter finns kvar tills de rensas.

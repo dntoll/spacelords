@@ -14,8 +14,7 @@ export type ShipOrder =
   | { readonly kind: 'colonize'; readonly planetId: string }
   | { readonly kind: 'explore-planet'; readonly planetId: string }
   | {
-      readonly kind:
-        'auto-salvage' | 'civilian-transport' | 'explore' | 'explore-stars';
+      readonly kind: 'auto-salvage' | 'explore' | 'explore-stars';
     };
 export type OrderKind = ShipOrder['kind'] | 'upgrade' | 'return-shipyard';
 export interface OrderOption {
@@ -109,13 +108,6 @@ export class ShipOrders {
     }
     if (ships['Colony ship'])
       add('colonize', 'Colonize', 'Choose an uninhabited planet on the map.');
-    if (ships['Civilian shuttle'])
-      add(
-        'civilian-transport',
-        'Civilian transport',
-        'Carry people to available jobs through trade routes.',
-        'Civilian transport',
-      );
     if (upgradeable)
       add(
         'upgrade',
@@ -173,7 +165,6 @@ export class ShipOrders {
       colonize: 'Colonize',
       'explore-planet': 'Explore planet',
       'auto-salvage': 'Auto salvage',
-      'civilian-transport': 'Civilian transport',
       explore: 'Explore',
       'explore-stars': 'Explore stars',
     }[order.kind];
@@ -210,12 +201,7 @@ export class ShipOrders {
       )
         throw new Error('Invalid saved ship order.');
     } else if (
-      ![
-        'auto-salvage',
-        'civilian-transport',
-        'explore',
-        'explore-stars',
-      ].includes(order.kind)
+      !['auto-salvage', 'explore', 'explore-stars'].includes(order.kind)
     )
       throw new Error('Invalid saved ship order.');
   }

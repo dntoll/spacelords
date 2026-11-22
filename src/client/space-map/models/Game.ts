@@ -2118,7 +2118,6 @@ export class Game {
       const planet = this.#planetById(order.planetId)!;
       this.setPlanetExploration(id, planet.position);
     } else if (order.kind === 'auto-salvage') this.setAutomaticSalvage(id);
-    else if (order.kind === 'civilian-transport') this.setCivilianTransport(id);
     else this.setExploration(id, order.kind);
   }
 
@@ -2354,19 +2353,6 @@ export class Game {
         planet,
       );
     }
-  }
-
-  setCivilianTransport(fleetId: string): void {
-    this.#requirePlanning();
-    this.#requireFleetOrders(fleetId);
-    this.#requireOrderResearch('Civilian transport');
-    const fleet = this.#fleetState(fleetId);
-    if (!fleet.ships['Civilian shuttle'])
-      throw new Error('A Civilian shuttle is required.');
-    if (this.#salvage.towing(fleetId).length)
-      throw new Error('Release towed wrecks first.');
-    this.clearDestination(fleetId);
-    fleet.civilian = CivilianTraffic.order();
   }
 
   setAutomaticSalvage(fleetId: string): void {

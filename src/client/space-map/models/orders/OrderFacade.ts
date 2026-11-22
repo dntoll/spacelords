@@ -69,7 +69,6 @@ export class OrderFacade {
       this.host.closeOrders();
     } else if (
       kind === 'auto-salvage' ||
-      kind === 'civilian-transport' ||
       kind === 'explore' ||
       kind === 'explore-stars'
     )

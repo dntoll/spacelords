@@ -182,12 +182,6 @@ export class FleetFacade {
     this.host.game.setAutomaticSalvage(id);
   }
 
-  civilianTransport(id: string): void {
-    this.host.destinationFleetId = null;
-    this.host.destinationOrder = 'move';
-    this.host.game.setCivilianTransport(id);
-  }
-
   patrolFleet(id: string): void {
     this.host.game.setPatrol(id);
   }

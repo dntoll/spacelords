@@ -1057,9 +1057,6 @@ export class AppModel {
   automateSalvage(id: string): void {
     return this.fleets.automateSalvage(id);
   }
-  civilianTransport(id: string): void {
-    return this.fleets.civilianTransport(id);
-  }
   patrolFleet(id: string): void {
     return this.fleets.patrolFleet(id);
   }
@@ -1884,7 +1881,6 @@ export class AppModel {
       exploreFleet: (id: string, order: ExplorationOrder) =>
         model.exploreFleet(id, order),
       automateSalvage: (id: string) => model.automateSalvage(id),
-      civilianTransport: (id: string) => model.civilianTransport(id),
       patrolFleet: (id: string) => model.patrolFleet(id),
       handleDiscoveries: () => model.handleDiscoveries(),
       focusInterruptedFleet: () => model.#focusInterruptedFleet(),
@@ -2143,7 +2139,6 @@ export interface AppHost {
   nextTurnFrame(): TurnFrame | null;
   exploreFleet(id: string, order: ExplorationOrder): void;
   automateSalvage(id: string): void;
-  civilianTransport(id: string): void;
   patrolFleet(id: string): void;
   handleDiscoveries(): void;
   focusInterruptedFleet(): void;

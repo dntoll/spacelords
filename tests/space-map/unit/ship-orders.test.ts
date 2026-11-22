@@ -85,7 +85,6 @@ describe('startorder-for-nybyggda-skepp / flottval-pa-orderkarta', () => {
     { ship: 'Exploration ship', order: { kind: 'explore' } },
     { ship: 'Exploration ship', order: { kind: 'explore-stars' } },
     { ship: 'Fighter', order: { kind: 'patrol', position: { q: 7, r: 0 } } },
-    { ship: 'Civilian shuttle', order: { kind: 'civilian-transport' } },
   ])(
     'activates $order.kind for the new $ship only after construction',
     ({ ship, order }) => {
@@ -139,8 +138,6 @@ describe('startorder-for-nybyggda-skepp / flottval-pa-orderkarta', () => {
         expect(fleet.automation).toBe('salvage');
       else if (order.kind === 'patrol')
         expect(fleet.patrol!.center).toEqual(order.position);
-      else if (order.kind === 'civilian-transport')
-        expect(fleet.civilian).toBeDefined();
       else expect(fleet.exploration).toBe(order.kind);
       expect(resumed.fleet('fleet-home')!.automation).toBeUndefined();
       expect(resumed.fleet('fleet-home')!.exploration).toBeUndefined();
