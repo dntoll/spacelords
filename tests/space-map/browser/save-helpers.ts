@@ -106,7 +106,8 @@ export async function ignoreEventsUntil(
       )
         return 'event';
       const noticeText =
-        (await page.locator('.game-notice').textContent()) ?? '';
+        // textContent() would wait for a notice that may never appear.
+        (await page.locator('.game-notice').allTextContents()).join(' ');
       if (
         /Pirate ship in sight|Star explored|Planet discovered|Planet explored|Wreck discovered/.test(
           noticeText,
@@ -125,7 +126,9 @@ export async function ignoreEventsUntil(
       continue;
     }
     if ((await status()) === 'discovery') {
-      const text = (await page.locator('.game-notice').textContent()) ?? '';
+      const text = (await page.locator('.game-notice').allTextContents()).join(
+        ' ',
+      );
       if (text.includes('Pirate ship in sight')) {
         await expect(page.locator('.game-notice')).toBeHidden({
           timeout: 8000,
