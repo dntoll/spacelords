@@ -40,6 +40,7 @@ spelbar, men bevara fristående strids- och bordningstester.
 - [x] Ta bort automatisk ombemanning när en handelsrutt stängs.
 - [x] Ta bort automatisk tilldelning av transporter till handelsrutter.
 - [x] Ta bort möjligheten att starta äldre Civilian transport-order.
+- [x] Ta bort gammal migrering som placerade sparade passagerare på planeter.
 - [x] Låt nybyggda transportskepp sluta starta automatiska handelsorder.
 - [x] Ta bort `guard-routes`, dess automatiska eskortval och tillhörande tester.
 - [x] Ta bort historiska engångsrensningar för terraforming och utökad galax
@@ -123,3 +124,6 @@ kvar och tas bort i senare steg.
 Automatisk tilldelning av handelsrutter (`automatisk-farledsbemanning`)
 är borttagen. Sparat tillstånd och visning för äldre Civilian transport-order samt
 manuella handelsrutter finns kvar tills de rensas.
+
+Äldre sparningar migrerar inte längre passagerare till planetbefolkning.
+Den separata hanteringen för gamla Civilian transport-ordrar återstår.

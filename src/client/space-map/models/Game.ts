@@ -658,7 +658,6 @@ export class Game {
       ({ position: current, destination, courseOrigin, ships, ...rest }) => {
         const fleet = { ...rest, ships: { ...zeroShips(), ...ships } };
         const empty = game.#shipCount(fleet.ships) === 0;
-        let landed = false;
         if (fleet.civilian !== undefined) {
           CivilianTraffic.validate(
             fleet.civilian,
@@ -676,16 +675,6 @@ export class Game {
             fleet.colonizationTargetId
           )
             throw new Error('Invalid saved civilian fleet.');
-          // befolkningsutjamning-i-grupp: passengers of the old shuttle trips
-          // land at their destination, or back home, and the shuttle stops.
-          const { passengers, reserved, targetId, sourceId } = fleet.civilian;
-          if (passengers || reserved) {
-            const colony =
-              game.#colonies.get(targetId!) ?? game.#colonies.get(sourceId!);
-            if (colony) colony.population += passengers;
-            fleet.civilian = CivilianTraffic.order();
-            landed = true;
-          }
         }
         if (
           fleet.automation !== undefined &&
@@ -760,9 +749,8 @@ export class Game {
           ...fleet,
           ships: { ...fleet.ships },
           position: empty ? null : position(current!),
-          destination:
-            !empty && !landed && destination ? position(destination) : null,
-          ...(!empty && !landed && courseOrigin
+          destination: !empty && destination ? position(destination) : null,
+          ...(!empty && courseOrigin
             ? { courseOrigin: position(courseOrigin) }
             : {}),
         };
